@@ -61,6 +61,7 @@ dependencies:
   - process
   - prologue
   - random
+  - react-flux
   - scope-searcher
   - split
   - text
