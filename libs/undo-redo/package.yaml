@@ -1,0 +1,17 @@
+name:               undo-redo
+version:            0.1.0.0
+author:             New Byte Order <contact@newbyteorder.com>
+maintainer:         New Byte Order <contact@newbyteorder.com>
+
+dependencies:
+  - base
+
+
+default-extensions:
+  - NoImplicitPrelude
+
+library:
+    source-dirs: src
+    ghc-options: -Wall -O2 -threaded
+    other-modules:
+    #   - Paths_batch_lib_luna_empire
