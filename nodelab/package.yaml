@@ -43,6 +43,7 @@ dependencies:
   - convert
   - data-default
   - datetime
+  - deepseq
   - errors
   - fgl
   - ghcjs-base

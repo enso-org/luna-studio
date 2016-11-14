@@ -39,6 +39,8 @@ import           JS.Tutorial                       (showStep)
 import           JS.UI                             (initializeGl, initializeHelp, render, triggerWindowResize)
 import           JS.UUID                           (generateUUID)
 import           JS.WebSocket                      (WebSocket)
+import qualified React.Dispatcher                  as Dispatcher
+import qualified React.Store.Nodelab               as Nodelab
 import qualified React.View.Nodelab                as Nodelab
 import           Reactive.Commands.Command         (execCommand)
 import qualified Reactive.Plugins.Core.Action.Init as Init
@@ -46,21 +48,23 @@ import qualified Reactive.Plugins.Core.Network     as CoreNetwork
 import qualified Reactive.Plugins.Loader.Loader    as Loader
 import           Reactive.State.Global             (initialState)
 import qualified Reactive.State.Global             as Global
-import qualified React.Store.Nodelab as Nodelab
+
 
 
 runMainNetwork :: WebSocket -> IO ()
 runMainNetwork socket = do
-    let store = React.mkStore $ Nodelab.Store 1
+    let store = Nodelab.store
     React.reactRender "nodelab-app" (Nodelab.nodelabApp store) $ Nodelab.Props 10
 
     React.alterStore store Nodelab.Add
+    let store2 = Nodelab.store
+    React.alterStore store2 Nodelab.Add
     -- initializeGl
     -- initializeHelp
     -- render
-    --
+
     lastLocation <- GraphLocation.loadLocation
-    --
+
     random <- newStdGen
     projectListRequestId <- generateUUID
     clientId             <- generateUUID

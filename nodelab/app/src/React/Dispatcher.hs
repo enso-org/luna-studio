@@ -1,9 +1,11 @@
-
 module React.Dispatcher (
     dispatch
     ) where
 
-import           React.Flux as React
+import           React.Flux
+import qualified React.Store.Nodelab as Nodelab
 
-dispatch :: React.ViewEventHandler
-dispatch = []
+
+
+dispatch :: Nodelab.Action -> ViewEventHandler
+dispatch a = [SomeStoreAction Nodelab.store a]

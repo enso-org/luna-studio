@@ -14,14 +14,14 @@ name = "nodelab"
 nodelabApp :: ReactStore Nodelab.Store -> ReactView Nodelab.Props
 nodelabApp reactStore = React.defineControllerView name reactStore $ \(Nodelab.Store i) (Nodelab.Props j) ->
     div_ $ do
-        nodeEditor_ i
-        nodeEditor_ j
+        nodeEditor_ Nodelab.store i
+        nodeEditor_ Nodelab.store j
 
 
-nodeEditor :: Int -> ReactView ()
-nodeEditor i = React.defineView "node editor" $ \() ->
-    elemString $ "node editor test " <> show i
+nodeEditor :: ReactStore Nodelab.Store -> Int -> ReactView ()
+nodeEditor s i = React.defineControllerView "node editor" s $ \(Nodelab.Store si) () ->
+    elemString $ "node editor test " <> show si
 
 
-nodeEditor_ :: Int -> ReactElementM ViewEventHandler ()
-nodeEditor_ i = React.view (nodeEditor i) () mempty
+nodeEditor_ :: ReactStore Nodelab.Store -> Int -> ReactElementM ViewEventHandler ()
+nodeEditor_ s i = React.view (nodeEditor s i) () mempty
