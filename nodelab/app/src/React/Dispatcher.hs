@@ -8,4 +8,4 @@ import qualified React.Store.Nodelab as Nodelab
 
 
 dispatch :: Nodelab.Action -> ViewEventHandler
-dispatch a = [SomeStoreAction Nodelab.store a]
+dispatch a = []

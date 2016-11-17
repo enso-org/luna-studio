@@ -27,5 +27,5 @@ instance StoreData Store where
             Add -> return $ Store $ i + 1
             Sub -> return $ Store $ i - 1
 
-store :: ReactStore Store
+store :: IO (ReactStore Store)
 store = mkStore $ Store 1

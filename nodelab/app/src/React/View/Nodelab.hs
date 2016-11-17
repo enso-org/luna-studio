@@ -11,11 +11,11 @@ import qualified React.Store.Nodelab as Nodelab
 name :: JSString
 name = "nodelab"
 
-nodelabApp :: ReactStore Nodelab.Store -> ReactView Nodelab.Props
-nodelabApp reactStore = React.defineControllerView name reactStore $ \(Nodelab.Store i) (Nodelab.Props j) ->
+nodelabApp :: ReactStore Nodelab.Store -> ReactStore Nodelab.Store -> ReactStore Nodelab.Store -> ReactView Nodelab.Props
+nodelabApp store1 store2 reactStore = React.defineControllerView name reactStore $ \(Nodelab.Store i) (Nodelab.Props j) ->
     div_ $ do
-        nodeEditor_ Nodelab.store i
-        nodeEditor_ Nodelab.store j
+        nodeEditor_ store1 i
+        nodeEditor_ store2 j
 
 
 nodeEditor :: ReactStore Nodelab.Store -> Int -> ReactView ()

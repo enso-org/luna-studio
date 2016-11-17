@@ -53,11 +53,12 @@ import qualified Reactive.State.Global             as Global
 
 runMainNetwork :: WebSocket -> IO ()
 runMainNetwork socket = do
-    let store = Nodelab.store
-    React.reactRender "nodelab-app" (Nodelab.nodelabApp store) $ Nodelab.Props 10
+    store <- Nodelab.store
+    store1 <- Nodelab.store
+    store2 <- Nodelab.store
+    React.reactRender "nodelab-app" (Nodelab.nodelabApp store1 store2 store) $ Nodelab.Props 10
 
-    React.alterStore store Nodelab.Add
-    let store2 = Nodelab.store
+    React.alterStore store1 Nodelab.Sub
     React.alterStore store2 Nodelab.Add
     -- initializeGl
     -- initializeHelp
