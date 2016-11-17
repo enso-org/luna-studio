@@ -61,24 +61,24 @@ toTransformer :: Command a () -> (IO (), a) -> (IO (), a)
 toTransformer cmd (_, a) = execCommand cmd a
 
 actions :: [Event.Event -> Maybe (Command State ())]
-actions =  [ Debug.toActionEv
-           , Control.toAction
-           , Widget.toAction
-           , General.toAction
-           , Camera.toAction
-           , Graph.toAction
-           , MultiSelection.toAction
-           , Drag.toAction
-           , Connect.toAction
-           , Navigation.toAction
-           , Collaboration.toAction
-           , NodeSearcher.toAction
-           , ProjectManager.toAction
-           , ConnectionPen.toAction
-           , Tutorial.toAction
-           , Sandbox.toAction
-           , Clipboard.toAction
-           , Debug.toAction
+actions =  [ --Debug.toActionEv
+        --    , Control.toAction
+        --    , Widget.toAction
+        --    , General.toAction
+        --    , Camera.toAction
+           Graph.toAction
+        --    , MultiSelection.toAction
+        --    , Drag.toAction
+        --    , Connect.toAction
+        --    , Navigation.toAction
+        --    , Collaboration.toAction
+        --    , NodeSearcher.toAction
+        --    , ProjectManager.toAction
+        --    , ConnectionPen.toAction
+        --    , Tutorial.toAction
+        --    , Sandbox.toAction
+        --    , Clipboard.toAction
+        --    , Debug.toAction
            ]
 
 runCommands :: [Event.Event -> Maybe (Command State ())] -> Event.Event -> Command State ()
@@ -113,22 +113,22 @@ processEvent var ev = do
 
 makeNetworkDescription :: WebSocket -> MVar State -> IO ()
 makeNetworkDescription conn state = do
-    let handlers = [ Handlers.resizeHandler
-                   , Handlers.mouseDownHandler
-                   , Handlers.mouseUpHandler
-                   , Handlers.mouseMovedHandler
-                   , Handlers.mouseDblClickHandler
-                   , Handlers.mouseWheelHandler
-                   , Handlers.keyDownHandler
-                   , Handlers.keyPressedHandler
-                   , Handlers.keyUpHandler
-                   , Handlers.webSocketHandler conn
-                   , Handlers.connectionPenHandler
-                   , Handlers.textEditorHandler
-                   , Handlers.customEventHandler
-                   , Handlers.copyClipboardHandler
-                   , Handlers.cutClipboardHandler
-                   , Handlers.pasteClipboardHandler
+    let handlers = [ --Handlers.resizeHandler
+                --    , Handlers.mouseDownHandler
+                --    , Handlers.mouseUpHandler
+                --    , Handlers.mouseMovedHandler
+                --    , Handlers.mouseDblClickHandler
+                --    , Handlers.mouseWheelHandler
+                --    , Handlers.keyDownHandler
+                --    , Handlers.keyPressedHandler
+                --    , Handlers.keyUpHandler
+                    Handlers.webSocketHandler conn
+                --    , Handlers.connectionPenHandler
+                --    , Handlers.textEditorHandler
+                --    , Handlers.customEventHandler
+                --    , Handlers.copyClipboardHandler
+                --    , Handlers.cutClipboardHandler
+                --    , Handlers.pasteClipboardHandler
                    ]
 
     let registerHandler (AddHandler rh) = rh (processEvent state)

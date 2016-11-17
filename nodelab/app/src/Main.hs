@@ -39,8 +39,7 @@ import           JS.Tutorial                       (showStep)
 import           JS.UI                             (initializeGl, initializeHelp, render, triggerWindowResize)
 import           JS.UUID                           (generateUUID)
 import           JS.WebSocket                      (WebSocket)
-import qualified React.Dispatcher                  as Dispatcher
-import qualified React.Store.Nodelab               as Nodelab
+import qualified React.Stores                      as Stores
 import qualified React.View.Nodelab                as Nodelab
 import           Reactive.Commands.Command         (execCommand)
 import qualified Reactive.Plugins.Core.Action.Init as Init
@@ -53,13 +52,9 @@ import qualified Reactive.State.Global             as Global
 
 runMainNetwork :: WebSocket -> IO ()
 runMainNetwork socket = do
-    store <- Nodelab.store
-    store1 <- Nodelab.store
-    store2 <- Nodelab.store
-    React.reactRender "nodelab-app" (Nodelab.nodelabApp store1 store2 store) $ Nodelab.Props 10
+    stores <- Stores.create
+    React.reactRender "nodelab-app" (Nodelab.nodelabApp stores) ()
 
-    React.alterStore store1 Nodelab.Sub
-    React.alterStore store2 Nodelab.Add
     -- initializeGl
     -- initializeHelp
     -- render
@@ -76,14 +71,15 @@ runMainNetwork socket = do
     withJust tutorial $ \step -> showStep step
 
 
-    let initState = initialState initTime clientId random tutorial & Global.workspace . Workspace.lastUILocation .~ lastLocation
-                                                                   & Global.pendingRequests %~ Set.insert projectListRequestId
+    let initState = initialState initTime clientId random tutorial stores
+                  & Global.workspace . Workspace.lastUILocation .~ lastLocation
+                  & Global.pendingRequests %~ Set.insert projectListRequestId
     let (initActions, initState') = execCommand Init.initialize initState
     -- initActions
 
     state <- newMVar initState'
     -- state <- newMVar initState
-    -- CoreNetwork.makeNetworkDescription socket state
+    CoreNetwork.makeNetworkDescription socket state
     -- triggerWindowResize
     --
     -- BatchCmd.listProjects projectListRequestId
