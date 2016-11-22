@@ -1,31 +1,22 @@
 {-# LANGUAGE DeriveAnyClass #-}
 {-# LANGUAGE TypeFamilies   #-}
 
-module React.Store.Node where
+module React.Store.Node (
+    module React.Store.Node,
+    module X,
+) where
 
-import           Control.DeepSeq    (NFData)
-import           Object.Widget.Node (Node)
+import           Object.Widget.Node as X
 import           React.Flux
 import           Utils.PreludePlus
 
 
 
-data Store = Store { _node :: Node }
-           deriving (Show, Generic)
 
-makeLenses ''Store
+instance StoreData Node where
+    transform _ = return
 
-data Action = ModifyNode (Node -> Node)
-            deriving (Generic, NFData, Typeable)
-
-instance StoreData Store where
-    type StoreAction Store = Action
-    transform action store = do
-        case action of
-            ModifyNode f -> putStrLn "call ModifyNode"
-                         >> return (store & node %~ f)
-
-type Ref = ReactStore Store
+type Ref = ReactStore Node
 
 create :: Node -> IO Ref
-create = mkStore . Store
+create = mkStore

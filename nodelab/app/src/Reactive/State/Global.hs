@@ -18,7 +18,6 @@ import           Batch.Workspace
 import qualified Empire.API.Graph.Collaboration as Collaboration
 import qualified Event.Event                    as Event
 import           React.Stores                   (Stores)
-import qualified React.Stores                   as Stores
 import qualified Reactive.State.Camera          as Camera
 import qualified Reactive.State.Collaboration   as Collaboration
 import qualified Reactive.State.Connect         as Connect

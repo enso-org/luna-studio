@@ -7,6 +7,7 @@ import           Prologue
 import           Empire.API.Data.Node         (NodeId)
 import           Empire.API.Data.Output       (Output)
 import qualified Object.Widget.FunctionPort   as Model
+import qualified React.Stores                 as Stores
 import           Reactive.Commands.Command    (Command)
 import qualified Reactive.Commands.UIRegistry as UICmd
 import           Reactive.State.Global        (State, inRegistry)
@@ -17,10 +18,8 @@ import           UI.Handlers.FunctionPort     ()
 
 
 
-
 registerOutput :: NodeId -> Output -> Command State ()
 registerOutput nodeId output = do
     let outputModel = Model.fromOutput nodeId output
-    outputsEdgeId <- use $ Global.uiElements . UIElements.outputsEdge
-    outputWidget <- inRegistry $ UICmd.register outputsEdgeId outputModel def
-    Global.graph . Graph.outputWidget ?= outputWidget
+    outputRef <- Input.create outputModel
+    Global.stores . Stores.outputs . at outputNo ?= outputWidget

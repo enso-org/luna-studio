@@ -4,23 +4,27 @@ module UI.Handlers.Node where
 
 import           Utils.PreludePlus            hiding (stripPrefix)
 
+import qualified Data.HashMap.Strict          as HashMap
 import           Data.HMap.Lazy               (HTMap, TypeKey (..))
 import qualified Data.Text.Lazy               as Text
 import           Utils.Vector
 
 import           Event.Keyboard               (KeyMods (..))
 import qualified Event.Mouse                  as Mouse
-import           Object.Widget                (CompositeWidget, DblClickHandler, KeyPressedHandler, ResizableWidget,
-                                               UIHandlers, WidgetFile, WidgetId, createWidget, dblClick, keyDown,
-                                               mouseOut, mouseOver, mousePressed, objectId, updateWidget, widget)
+import           Object.Widget                (CompositeWidget, DblClickHandler, KeyPressedHandler, ResizableWidget, UIHandlers, WidgetFile,
+                                               WidgetId, createWidget, dblClick, keyDown, mouseOut, mouseOver, mousePressed, objectId,
+                                               updateWidget, widget)
 
+import qualified React.Store.Node             as Node
+import qualified React.Stores                 as Stores
+
+import qualified Object.Widget.CodeEditor     as CodeEditor
 import qualified Object.Widget.Group          as Group
 import qualified Object.Widget.Label          as Label
 import qualified Object.Widget.LabeledTextBox as LabeledTextBox
 import qualified Object.Widget.Node           as Model
 import qualified Object.Widget.TextBox        as TextBox
 import qualified Object.Widget.Toggle         as Toggle
-import qualified Object.Widget.CodeEditor     as CodeEditor
 import           Reactive.Commands.Batch      (cancelCollaborativeTouch, collaborativeTouch)
 import           Reactive.Commands.Command    (Command)
 import qualified Reactive.Commands.UIRegistry as UICmd
@@ -36,13 +40,13 @@ import           UI.Handlers.Button           (DblClickedHandler (..), MousePres
 import           UI.Handlers.Generic          (ValueChangedHandler (..))
 import           UI.Handlers.LabeledTextBox   ()
 import           UI.Layout                    as Layout
+import           UI.Widget.CodeEditor         ()
 import           UI.Widget.Group              ()
 import           UI.Widget.Label              ()
 import           UI.Widget.LabeledTextBox     ()
 import           UI.Widget.Node               ()
 import           UI.Widget.TextBox            ()
 import           UI.Widget.Toggle             ()
-import           UI.Widget.CodeEditor         ()
 
 import           Empire.API.Data.Node         (NodeId)
 
@@ -201,13 +205,13 @@ toggleSelect wid = do
 
 unselectAll :: Command Global.State ()
 unselectAll = do
-    widgets <- allNodes
-    nodesToCancelTouch <- inRegistry $ forM widgets $ \wf -> do
-        let widgetId = wf ^. objectId
-        if wf ^. widget . Model.isSelected then do
-                UICmd.update_ widgetId $ Model.isSelected .~ False
-                return $ Just $ wf ^. widget . Model.nodeId
-        else return Nothing
+    nodeRefs <- allNodes
+    nodesToCancelTouch <- forM nodeRefs $
+        Stores.modifyIf (view Node.isSelected)
+            (\node -> do
+                return ( node & Node.isSelected .~ False
+                       , Just $ node ^. Node.nodeId))
+            (return . const Nothing)
 
     cancelCollaborativeTouch $ catMaybes nodesToCancelTouch
 
@@ -236,11 +240,9 @@ widgetHandlers = def & keyDown      .~ keyDownHandler
                      & mouseOver .~ const onMouseOver
                      & mouseOut  .~ const onMouseOut
 
-allNodes :: Command Global.State [WidgetFile Model.Node]
-allNodes = do
-    widgetIds <- use $ Global.graph . Graph.nodeWidgets
-    mayWidgets <- mapM (inRegistry . UIRegistry.lookupTypedM) widgetIds
-    return $ catMaybes mayWidgets
+allNodes :: Command Global.State [Node.Ref]
+allNodes = use $ Global.stores . Stores.nodes . to HashMap.elems
+
 
 unselectNode :: WidgetId -> Command UIRegistry.State ()
 unselectNode = flip UICmd.update_ (Model.isSelected .~ False)

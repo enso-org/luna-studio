@@ -7,6 +7,7 @@ import           Prologue
 import           Empire.API.Data.Input        (Input)
 import           Empire.API.Data.Node         (NodeId)
 import qualified Object.Widget.FunctionPort   as Model
+import qualified React.Stores                 as Stores
 import           Reactive.Commands.Command    (Command)
 import qualified Reactive.Commands.UIRegistry as UICmd
 import           Reactive.State.Global        (State, inRegistry)
@@ -17,10 +18,8 @@ import           UI.Handlers.FunctionPort     ()
 
 
 
-
 registerInput :: NodeId -> Int -> Input -> Command State ()
 registerInput nodeId inputNo input = do
     let inputModel = Model.fromInput nodeId input
-    inputsEdgeId <- use $ Global.uiElements . UIElements.inputsEdge
-    inputWidget <- inRegistry $ UICmd.register inputsEdgeId inputModel def
-    Global.graph . Graph.inputWidgetsMap . at inputNo ?= inputWidget
+    inputRef <- Input.create inputModel
+    Global.stores . Stores.inputs . at inputNo ?= inputWidget
