@@ -49,7 +49,6 @@ import           Reactive.State.Global             (initialState)
 import qualified Reactive.State.Global             as Global
 
 
-
 runMainNetwork :: WebSocket -> IO ()
 runMainNetwork socket = do
     stores <- Stores.create
@@ -74,8 +73,8 @@ runMainNetwork socket = do
     let initState = initialState initTime clientId random tutorial stores
                   & Global.workspace . Workspace.lastUILocation .~ lastLocation
                   & Global.pendingRequests %~ Set.insert projectListRequestId
-    let (initActions, initState') = execCommand Init.initialize initState
-    -- initActions
+
+    initState' <- execCommand Init.initialize initState
 
     state <- newMVar initState'
     -- state <- newMVar initState

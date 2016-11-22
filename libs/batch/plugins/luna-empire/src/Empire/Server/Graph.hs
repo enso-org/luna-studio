@@ -234,13 +234,14 @@ handleGetProgram req@(Request uuid request) = do
     let location = request ^. GetProgram.location
     currentEmpireEnv <- use Env.empireEnv
     empireNotifEnv   <- use Env.empireNotif
-    (resultGraph, _) <- liftIO $ Empire.runEmpire empireNotifEnv currentEmpireEnv $ Graph.getGraph location
-    (resultCode,  _) <- liftIO $ Empire.runEmpire empireNotifEnv currentEmpireEnv $ Graph.getCode  location
-    case (resultGraph, resultCode) of
-        (Left err, _) -> replyFail logger err req
-        (_, Left err) -> replyFail logger err req
-        (Right graph, Right code) -> do
-            replyResult req $ GetProgram.Result graph (Text.pack code) (Breadcrumb []) mockNSData
+    resultGraph <- liftIO $ Empire.execEmpire empireNotifEnv currentEmpireEnv $ Graph.getGraph       location
+    resultCode  <- liftIO $ Empire.execEmpire empireNotifEnv currentEmpireEnv $ Graph.getCode        location
+    resultCrumb <- liftIO $ Empire.execEmpire empireNotifEnv currentEmpireEnv $ Graph.decodeLocation location
+    let result = (,,) <$> resultGraph <*> resultCode <*> resultCrumb
+    case result of
+        Left err -> replyFail logger err req
+        Right (graph, code, crumb) ->
+            replyResult req $ GetProgram.Result graph (Text.pack code) crumb mockNSData
 
 handleDumpGraphViz :: Request DumpGraphViz.Request -> StateT Env BusT ()
 handleDumpGraphViz (Request _ request) = do

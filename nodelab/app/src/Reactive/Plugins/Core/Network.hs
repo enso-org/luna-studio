@@ -57,9 +57,6 @@ consoleTimeStart, consoleTimeEnd :: String -> IO ()
 consoleTimeStart = consoleTimeStart' . JSString.pack
 consoleTimeEnd   = consoleTimeEnd'   . JSString.pack
 
-toTransformer :: Command a () -> (IO (), a) -> (IO (), a)
-toTransformer cmd (_, a) = execCommand cmd a
-
 actions :: [Event.Event -> Maybe (Command State ())]
 actions =  [ --Debug.toActionEv
         --    , Control.toAction
@@ -105,11 +102,12 @@ processEvent var ev = do
     timestamp <- getCurrentTime
     let state' = state & Global.jsState .~ jsState
                        & Global.lastEventTimestamp .~ timestamp
-    let (ioActions, newState) = execCommand (runCommands actions realEvent) state'
-    catch (ioActions >> UI.shouldRender) (handleExcept newState realEvent)
-    when displayProcessingTime $
-        consoleTimeEnd (realEvent ^. Event.name)
-    putMVar var newState
+    flip catch (handleExcept realEvent) $ do
+        newState <- execCommand (runCommands actions realEvent) state'
+        UI.shouldRender
+        when displayProcessingTime $
+            consoleTimeEnd (realEvent ^. Event.name)
+        putMVar var newState
 
 makeNetworkDescription :: WebSocket -> MVar State -> IO ()
 makeNetworkDescription conn state = do
@@ -135,6 +133,6 @@ makeNetworkDescription conn state = do
 
     sequence_ $ registerHandler <$> handlers
 
-handleExcept :: State -> Event.Event -> JSException  -> IO ()
-handleExcept _ event except =
+handleExcept :: Event.Event -> JSException  -> IO ()
+handleExcept event except =
     putStrLn $ "JavaScriptException: " <> show except <> "\n\nwhile processing: " <> show event

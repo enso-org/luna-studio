@@ -22,6 +22,7 @@ import qualified Data.Text.Lazy                    as Text
 import qualified Data.Tree                         as Tree
 import qualified Data.UUID                         as UUID
 
+import           Empire.API.Data.Breadcrumb        as Breadcrumb
 import           Empire.API.Data.Input             (Input (Input))
 import           Empire.API.Data.Output            (Output (Output))
 import           Empire.Data.BreadcrumbHierarchy   (topLevelIDs)
@@ -53,6 +54,9 @@ import qualified Old.Luna.Syntax.Term.Expr.Lit     as Lit
 import           Luna.Syntax.Model.Network.Builder (TCData (..), Type (..), replacement)
 import qualified Luna.Syntax.Model.Network.Builder as Builder
 
+decodeBreadcrumbs :: Breadcrumb BreadcrumbItem -> Command Graph (Breadcrumb (Named BreadcrumbItem))
+decodeBreadcrumbs (Breadcrumb items) = do
+    fmap Breadcrumb $ forM items $ \item@(Breadcrumb.Lambda nid) -> flip Named item <$> (Text.pack <$> getNodeName nid)
 
 buildGraph :: Command Graph API.Graph
 buildGraph = API.Graph <$> buildNodes <*> buildConnections

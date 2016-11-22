@@ -16,7 +16,7 @@ import           Reactive.Commands.Graph.Unrender (unrender)
 import           Reactive.State.Global            (State)
 import qualified Reactive.State.Global            as Global
 
-import           Empire.API.Data.Breadcrumb       (Breadcrumb (..), BreadcrumbItem)
+import           Empire.API.Data.Breadcrumb       (Breadcrumb (..), BreadcrumbItem, Named)
 import           Empire.API.Data.GraphLocation    (GraphLocation (..))
 import qualified Empire.API.Data.GraphLocation    as GraphLocation
 import           Empire.API.Data.Project          (ProjectId)
@@ -35,7 +35,6 @@ loadGraph location = do
     unrender
     Global.workspace . Workspace.currentLocation .= location
     saveCurrentLocation
-    displayCurrentBreadcrumb
     BatchCmd.getProgram
 
 navigateToGraph :: GraphLocation -> Command State ()
@@ -43,8 +42,8 @@ navigateToGraph location = do
     currentLocation <- use $ Global.workspace . Workspace.currentLocation
     when (currentLocation /= location) $ loadGraph location
 
-displayCurrentBreadcrumb :: Command State ()
-displayCurrentBreadcrumb = Breadcrumbs.update enterBreadcrumbs
+displayCurrentBreadcrumb :: Breadcrumb (Named BreadcrumbItem) -> Command State ()
+displayCurrentBreadcrumb breadcrumbs = Breadcrumbs.update enterBreadcrumbs breadcrumbs
 
 enterBreadcrumbs :: Breadcrumb BreadcrumbItem -> Command State ()
 enterBreadcrumbs newBc = do

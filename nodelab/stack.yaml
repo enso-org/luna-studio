@@ -21,19 +21,19 @@ packages:
   - location: ../libs/scope-searcher
     extra-dep: true
   - location:
-      git: https://github.com/wdanilo/container.git
+      git: https://github.com/luna/container.git
       commit: cd137cdfa6059cc267aa865d78bbbf0a17a4c657
     extra-dep: true
   - location:
-      git:    https://github.com/wdanilo/data-repr.git
+      git:    https://github.com/luna/data-repr.git
       commit: a725e4dad9b0916514662e917cef692a91a51029
     extra-dep: true
   - location:
-      git: https://github.com/wdanilo/hsprocessing.git
+      git: https://github.com/luna/hsprocessing.git
       commit: b96747cf0c3a4362b4d5827eb567be85c2d1dd13
     extra-dep: true
   - location:
-      git: https://github.com/wdanilo/prologue.git
+      git: https://github.com/luna/prologue.git
       # commit: 9ba882921b6e2527923bbb0f9ba54c41b43a8135  # 1.0.6
       commit: 48c846701e796d28734f96524ba1e0b36cce57c0  # 1.0.2
     extra-dep: true

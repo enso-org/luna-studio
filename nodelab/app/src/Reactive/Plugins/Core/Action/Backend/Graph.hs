@@ -8,7 +8,7 @@ import           Utils.PreludePlus
 
 import qualified Empire.API.Data.Connection                  as Connection
 import qualified Empire.API.Data.Graph                       as Graph
-import           Empire.API.Data.GraphLocation               (GraphLocation)
+import           Empire.API.Data.GraphLocation               (GraphLocation (..))
 import qualified Empire.API.Data.Node                        as Node
 import qualified Empire.API.Graph.AddNode                    as AddNode
 import qualified Empire.API.Graph.AddSubgraph                as AddSubgraph
@@ -40,6 +40,7 @@ import           Reactive.Commands.Node.Create               (addDummyNode)
 import           Reactive.Commands.Node.NodeMeta             (updateNodesMeta)
 import           Reactive.Commands.Node.Remove               (localRemoveNodes)
 import           Reactive.Commands.Node.Update               (updateNode, updateNodeProfilingData, updateNodeValue)
+import           Reactive.Commands.ProjectManager            (displayCurrentBreadcrumb)
 import           Reactive.Commands.UUID                      (isOwnRequest)
 import           Reactive.Plugins.Core.Action.Backend.Common (doNothing, handleResponse)
 import           Reactive.State.Global                       (State)
@@ -68,8 +69,10 @@ toAction (Event.Batch ev) = Just $ case ev of
                     connections = result ^. GetProgram.graph . Graph.connections
                     code        = result ^. GetProgram.code
                     nsData      = result ^. GetProgram.nodeSearcherData
+                    breadcrumb  = result ^. GetProgram.breadcrumb
 
                 Global.workspace . Workspace.nodeSearcherData .= nsData
+                displayCurrentBreadcrumb breadcrumb
                 renderGraph nodes connections
                 autoZoom
                 performIO $ UI.setText code
@@ -87,7 +90,6 @@ toAction (Event.Batch ev) = Just $ case ev of
                 collaborativeModify [nodeId]
                 when shouldSelect $ selectNodes [nodeId]
 
-    --TODO(LJK, MK): Result should be a list of added nodes ids
     AddSubgraphResponse response@(Response.Response uuid (AddSubgraph.Request loc nodes connections) _) -> do
         shouldProcess   <- isCurrentLocationAndGraphLoaded loc
         correctLocation <- isCurrentLocation loc

@@ -10,6 +10,7 @@ module Empire.Commands.Graph
     , connectPersistent
     , connectCondTC
     , connectNoTC
+    , decodeLocation
     , disconnect
     , getNodeMeta
     , getCode
@@ -39,6 +40,7 @@ import           Empire.Data.Graph               (Graph)
 import qualified Empire.Data.Graph               as Graph
 import qualified Empire.Data.Library             as Library
 
+import           Empire.API.Data.Breadcrumb      (Breadcrumb, Named, BreadcrumbItem)
 import           Empire.API.Data.Connection      (Connection (..))
 import           Empire.API.Data.DefaultValue    (PortDefault (Constant), Value (..))
 import qualified Empire.API.Data.Graph           as APIGraph
@@ -204,6 +206,9 @@ getCode loc = withGraph loc $ do
 
 getGraph :: GraphLocation -> Empire APIGraph.Graph
 getGraph loc = withTC loc True GraphBuilder.buildGraph
+
+decodeLocation :: GraphLocation -> Empire (Breadcrumb (Named BreadcrumbItem))
+decodeLocation loc@(GraphLocation _ _ crumbs) = withGraph loc $ GraphBuilder.decodeBreadcrumbs crumbs
 
 renameNode :: GraphLocation -> NodeId -> Text -> Empire ()
 renameNode loc nid name = withTC loc False $ do
