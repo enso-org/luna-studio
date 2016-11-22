@@ -10,7 +10,7 @@ import           Utils.PreludePlus
 import qualified Reactive.State.Graph as Graph
 
 
-data Store = Store { _graph :: Graph.State }
+data Store = Store
            deriving (Show, Generic)
 
 
@@ -25,5 +25,7 @@ instance StoreData Store where
             AddNode -> putStrLn "call AddNode" >> return store
             DelNode -> putStrLn "call DelNode" >> return store
 
-create :: IO (ReactStore Store)
-create = mkStore $ Store def
+type Ref = ReactStore Store
+
+create :: IO Ref
+create = mkStore $ Store
