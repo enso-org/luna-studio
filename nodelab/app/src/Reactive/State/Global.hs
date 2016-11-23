@@ -15,10 +15,12 @@ import           System.Random                  (StdGen)
 import qualified System.Random                  as Random
 
 import           Batch.Workspace
+import           Empire.API.Data.Node           (NodeId)
 import qualified Empire.API.Graph.Collaboration as Collaboration
 import qualified Event.Event                    as Event
 import qualified React.Store                    as Store
 import qualified React.Store.App                as App
+import qualified React.Store.Node               as Node
 import qualified React.Store.NodeEditor         as NodeEditor
 import qualified Reactive.State.Camera          as Camera
 import qualified Reactive.State.Collaboration   as Collaboration
@@ -70,6 +72,9 @@ inApp action = action =<< use app
 
 inNodeEditor :: (NodeEditor.Ref -> Command State r) -> Command State r
 inNodeEditor action = inApp $ (action . view App.nodeEditor) <=< Store.get
+
+inNode :: NodeId -> (Maybe Node.Ref -> Command State r) -> Command State r
+inNode nodeId action = inNodeEditor $ (action . view (NodeEditor.nodes . at nodeId)) <=< Store.get
 
 initialState :: DateTime -> Collaboration.ClientId -> StdGen -> Maybe Int -> App.Ref -> State
 initialState = State (Vector2 200 200) def def def def def def def def def def def defJsState def def

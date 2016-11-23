@@ -20,6 +20,9 @@ import           Utils.Angle
 import           Utils.PreludePlus
 import           Utils.Vector
 
+import qualified React.Store as Store
+import qualified React.Store.Node as Node
+
 import           Object.UITypes
 import           Object.Widget
 import qualified Object.Widget.Connection            as ConnectionModel
@@ -39,7 +42,7 @@ import           UI.Instances                        ()
 import           Empire.API.Data.Connection          (ConnectionId)
 import qualified Empire.API.Data.Connection          as Connection
 import           Empire.API.Data.Node                (NodeId)
-import qualified Empire.API.Data.Node                as Node
+import qualified Empire.API.Data.Node                as NodeAPI
 import qualified Empire.API.Data.Port                as Port
 import           Empire.API.Data.PortRef             (AnyPortRef (..), InPortRef (..))
 import qualified Empire.API.Data.PortRef             as PortRef
@@ -56,7 +59,7 @@ getPort portRef = runMaybeT $ do
     lift $ inRegistry $ UICmd.lookup widgetId
 
 getGraphPort :: AnyPortRef -> Command Global.State (Maybe Port.Port)
-getGraphPort portRef = preuse $ Global.graph . Graph.nodesMap . ix (portRef ^. PortRef.nodeId) . Node.ports . ix (portRef ^. PortRef.portId)
+getGraphPort portRef = preuse $ Global.graph . Graph.nodesMap . ix (portRef ^. PortRef.nodeId) . NodeAPI.ports . ix (portRef ^. PortRef.portId)
 
 getNode :: NodeId -> Command Global.State (Maybe Model.Node)
 getNode nodeId = runMaybeT $ do
@@ -78,15 +81,18 @@ portRefToWidgetId portRef = preuse $ Global.graph . Graph.portWidgetsMap . ix po
 nats :: [Integer]
 nats = [1..]
 
-focusNode :: WidgetId -> Command Global.State ()
-focusNode wid = do
-    nodes <- allNodes
-    let sortedNodes = sortBy (comparing $ negate . (view $ widget . Model.zPos)) nodes
-        sortedIds   = (view objectId) <$> sortedNodes
-        newOrder    = wid : (delete wid sortedIds)
-    inRegistry $ forM_ (zip newOrder nats) $ \(wid, ix) -> do
+focusNode :: Node.Ref -> Command Global.State ()
+focusNode nodeRef = do
+    nodeRefs <- allNodes
+    nodeVals <- mapM Store.get nodeRefs
+    let nodes = zip nodeVals nodeRefs
+        sortedNodes = sortBy (comparing $ negate . (view $ _1 . Model.zPos)) nodes
+        sortedIds   = view _2 <$> sortedNodes
+        newOrder    = nodeRef : delete nodeRef sortedIds
+
+    forM_ (zip newOrder nats) $ \(ref, ix) -> do
         let newZPos = negate $ (fromIntegral ix) / 100.0
-        UICmd.update wid $ Model.zPos .~ newZPos
+        Store.modify_ (Node.zPos .~ newZPos) ref
 
 updateNodeZOrder :: Command Global.State ()
 updateNodeZOrder = do

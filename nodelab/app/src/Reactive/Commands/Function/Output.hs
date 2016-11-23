@@ -23,6 +23,6 @@ import           UI.Handlers.FunctionPort     ()
 registerOutput :: NodeId -> Output -> Command State ()
 registerOutput nodeId output = do
     let outputModel = Model.fromOutput nodeId output
-    Global.inNodeEditor $ Store.modify_ $ \ nodeEditor -> do
+    Global.inNodeEditor $ Store.modifyM_ $ \ nodeEditor -> do
         outputRef <- Output.create outputModel
         return $ nodeEditor & NodeEditor.outputs ?~ outputRef

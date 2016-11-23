@@ -209,10 +209,9 @@ unselectAll = do
     nodeRefs <- allNodes
     nodesToCancelTouch <- forM nodeRefs $
         Store.modifyIf (view Node.isSelected)
-            (\node -> do
-                return ( node & Node.isSelected .~ False
-                       , Just $ node ^. Node.nodeId))
-            (return . const Nothing)
+            (\node -> ( node & Node.isSelected .~ False
+                      , Just $ node ^. Node.nodeId))
+            (const Nothing)
 
     cancelCollaborativeTouch $ catMaybes nodesToCancelTouch
 

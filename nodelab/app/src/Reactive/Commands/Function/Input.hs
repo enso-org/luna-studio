@@ -20,6 +20,6 @@ import           UI.Handlers.FunctionPort   ()
 registerInput :: NodeId -> Int -> Input -> Command State ()
 registerInput nodeId inputNo input = do
     let inputModel = Model.fromInput nodeId input
-    Global.inNodeEditor $ Store.modify_ $ \ nodeEditor -> do
+    Global.inNodeEditor $ Store.modifyM_ $ \ nodeEditor -> do
         inputRef <- Input.create inputModel
         return $ nodeEditor & NodeEditor.inputs . at inputNo ?~ inputRef
