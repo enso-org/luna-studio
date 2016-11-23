@@ -15,8 +15,9 @@ import           Object.Widget                (CompositeWidget, DblClickHandler,
                                                WidgetId, createWidget, dblClick, keyDown, mouseOut, mouseOver, mousePressed, objectId,
                                                updateWidget, widget)
 
+import qualified React.Store                  as Store
 import qualified React.Store.Node             as Node
-import qualified React.Stores                 as Stores
+import qualified React.Store.NodeEditor       as NodeEditor
 
 import qualified Object.Widget.CodeEditor     as CodeEditor
 import qualified Object.Widget.Group          as Group
@@ -207,7 +208,7 @@ unselectAll :: Command Global.State ()
 unselectAll = do
     nodeRefs <- allNodes
     nodesToCancelTouch <- forM nodeRefs $
-        Stores.modifyIf (view Node.isSelected)
+        Store.modifyIf (view Node.isSelected)
             (\node -> do
                 return ( node & Node.isSelected .~ False
                        , Just $ node ^. Node.nodeId))
@@ -241,7 +242,8 @@ widgetHandlers = def & keyDown      .~ keyDownHandler
                      & mouseOut  .~ const onMouseOut
 
 allNodes :: Command Global.State [Node.Ref]
-allNodes = use $ Global.stores . Stores.nodes . to HashMap.elems
+allNodes = Global.inNodeEditor $
+    Store.use (NodeEditor.nodes . to HashMap.elems)
 
 
 unselectNode :: WidgetId -> Command UIRegistry.State ()

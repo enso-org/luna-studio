@@ -1,19 +1,19 @@
 {-# LANGUAGE OverloadedStrings #-}
-module React.View.Nodelab where
+module React.View.App where
 
 import           React.Flux
 import qualified React.Flux            as React
 import           Utils.PreludePlus
 
-import           React.Stores          (Stores)
+import qualified React.Store.App       as App
 import           React.View.NodeEditor (nodeEditor_)
 
 
 name :: JSString
 name = "nodelab"
 
-nodelabApp :: Stores -> ReactView ()
-nodelabApp stores = React.defineView
-    name $ \() ->
+app :: App.Ref -> ReactView ()
+app ref = React.defineControllerView
+    name ref $ \store () ->
     div_ $ do
-        nodeEditor_ stores
+        nodeEditor_ (store ^. App.nodeEditor)

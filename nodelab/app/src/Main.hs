@@ -39,8 +39,8 @@ import           JS.Tutorial                       (showStep)
 import           JS.UI                             (initializeGl, initializeHelp, render, triggerWindowResize)
 import           JS.UUID                           (generateUUID)
 import           JS.WebSocket                      (WebSocket)
-import qualified React.Stores                      as Stores
-import qualified React.View.Nodelab                as Nodelab
+import qualified React.Store.App                   as App
+import qualified React.View.App                    as App
 import           Reactive.Commands.Command         (execCommand)
 import qualified Reactive.Plugins.Core.Action.Init as Init
 import qualified Reactive.Plugins.Core.Network     as CoreNetwork
@@ -51,8 +51,8 @@ import qualified Reactive.State.Global             as Global
 
 runMainNetwork :: WebSocket -> IO ()
 runMainNetwork socket = do
-    stores <- Stores.create
-    React.reactRender "nodelab-app" (Nodelab.nodelabApp stores) ()
+    appRef <- App.create
+    React.reactRender "nodelab-app" (App.app appRef) ()
 
     -- initializeGl
     -- initializeHelp
@@ -70,14 +70,14 @@ runMainNetwork socket = do
     withJust tutorial $ \step -> showStep step
 
 
-    let initState = initialState initTime clientId random tutorial stores
+    let initState = initialState initTime clientId random tutorial appRef
                   & Global.workspace . Workspace.lastUILocation .~ lastLocation
                   & Global.pendingRequests %~ Set.insert projectListRequestId
 
-    initState' <- execCommand Init.initialize initState
-
-    state <- newMVar initState'
-    -- state <- newMVar initState
+    -- initState' <- execCommand Init.initialize initState
+    --
+    -- state <- newMVar initState'
+    state <- newMVar initState
     CoreNetwork.makeNetworkDescription socket state
     -- triggerWindowResize
     --

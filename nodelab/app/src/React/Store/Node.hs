@@ -18,5 +18,5 @@ instance StoreData Node where
 
 type Ref = ReactStore Node
 
-create :: Node -> IO Ref
-create = mkStore
+create :: MonadIO m => Node -> m Ref
+create = liftIO . mkStore

@@ -8,7 +8,7 @@ module Utils.PreludePlus (
 
 import           Control.Applicative      as X
 import           Control.Lens             as X
-import           Control.Monad            as X (MonadPlus, join, mplus, mzero, unless, void, when)
+import           Control.Monad            as X (MonadPlus, join, mplus, mzero, unless, void, when, (<=<), (>=>))
 import           Control.Monad.IO.Class   as X (MonadIO, liftIO)
 import           Control.Monad.Trans      as X (MonadTrans, lift)
 import           Data.Char                as X

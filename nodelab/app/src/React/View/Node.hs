@@ -6,8 +6,6 @@ import qualified React.Flux        as React
 import           Utils.PreludePlus
 
 import qualified React.Store.Node  as Node
-import           React.Stores      (Stores)
-import qualified React.Stores      as Stores
 
 
 
