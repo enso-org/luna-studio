@@ -12,13 +12,13 @@ module Reactive.Commands.Graph
     ) where
 
 
+import           Control.Monad.Trans.Maybe           (runMaybeT)
 import qualified Data.HashMap.Lazy                   as HashMap
-import qualified Data.Set                            as Set
 import           Data.Ord                            (comparing)
+import qualified Data.Set                            as Set
 import           Utils.Angle
 import           Utils.PreludePlus
 import           Utils.Vector
-import           Control.Monad.Trans.Maybe (runMaybeT)
 
 import           Object.UITypes
 import           Object.Widget
@@ -33,6 +33,7 @@ import           Reactive.State.Global               (inRegistry)
 import qualified Reactive.State.Global               as Global
 import qualified Reactive.State.Graph                as Graph
 import qualified Reactive.State.UIRegistry           as UIRegistry
+import           UI.Handlers.Node                    (allNodes)
 import           UI.Instances                        ()
 
 import           Empire.API.Data.Connection          (ConnectionId)
@@ -42,12 +43,6 @@ import qualified Empire.API.Data.Node                as Node
 import qualified Empire.API.Data.Port                as Port
 import           Empire.API.Data.PortRef             (AnyPortRef (..), InPortRef (..))
 import qualified Empire.API.Data.PortRef             as PortRef
-
-allNodes :: Command Global.State [WidgetFile Model.Node]
-allNodes = do
-    widgetIds <- use $ Global.graph . Graph.nodeWidgets
-    mayWidgets <- mapM (\wid -> inRegistry $ UIRegistry.lookupTypedM wid) widgetIds
-    return $ catMaybes mayWidgets
 
 -- allPorts :: Command Global.State [WidgetFile PortModel.Port]
 -- allPorts = do

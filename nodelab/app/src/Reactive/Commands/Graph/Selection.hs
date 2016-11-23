@@ -14,7 +14,7 @@ import           Object.Widget                (WidgetFile (..), objectId, widget
 import qualified Object.Widget.Node           as NodeModel
 
 import           Reactive.Commands.Batch      (cancelCollaborativeTouch, collaborativeTouch)
-import           Reactive.Commands.Command    (Command, performIO)
+import           Reactive.Commands.Command    (Command)
 import           Reactive.Commands.Graph      (allNodes, nodeIdToWidgetId)
 import qualified Reactive.Commands.UIRegistry as UICmd
 import           Reactive.State.Global        (State, inRegistry)
@@ -41,7 +41,6 @@ selectAll = do
 selectNodes :: [NodeId] -> Command State ()
 selectNodes nodeIds = do
     unselectAll
-    widgets <- allNodes
     widgetIds <- fmap catMaybes $ mapM nodeIdToWidgetId nodeIds
     inRegistry $ forM_ widgetIds $ (flip UICmd.update) (NodeModel.isSelected .~ True)
     focusSelectedNode
