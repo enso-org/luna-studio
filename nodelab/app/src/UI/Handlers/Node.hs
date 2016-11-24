@@ -15,7 +15,9 @@ import           Object.Widget                (CompositeWidget, DblClickHandler,
                                                WidgetId, createWidget, dblClick, keyDown, mouseOut, mouseOver, mousePressed, objectId,
                                                updateWidget, widget)
 
+import           React.Store                  (Ref, WRef)
 import qualified React.Store                  as Store
+import           React.Store.Node             (Node)
 import qualified React.Store.Node             as Node
 import qualified React.Store.NodeEditor       as NodeEditor
 
@@ -240,10 +242,12 @@ widgetHandlers = def & keyDown      .~ keyDownHandler
                      & mouseOver .~ const onMouseOver
                      & mouseOut  .~ const onMouseOut
 
-allNodes :: Command Global.State [Node.Ref]
+allNodes :: Command Global.State [Ref Node]
 allNodes = Global.inNodeEditor $
     Store.use (NodeEditor.nodes . to HashMap.elems)
 
+allNodes' :: Command Global.State [WRef Node]
+allNodes' = mapM Store.get' =<< allNodes
 
 unselectNode :: WidgetId -> Command UIRegistry.State ()
 unselectNode = flip UICmd.update_ (Model.isSelected .~ False)

@@ -1,30 +1,34 @@
 module Reactive.Plugins.Core.Action.Navigation where
 
-import qualified Data.HashMap.Strict          as HashMap
+import qualified Data.HashMap.Strict        as HashMap
 
 import           Utils.PreludePlus
 import           Utils.Vector
 
-import           Object.Widget                (Position, WidgetFile, WidgetId, objectId, widget)
-import qualified Object.Widget.Node           as Model
+import           React.Store                (Ref, WRef (..), ref, widget)
+import qualified React.Store                as Store
+import           React.Store.Node           (Node)
+import qualified React.Store.Node           as Node
 
-import           Event.Event                  (Event (Keyboard))
-import           Event.Keyboard               (KeyMods (..))
-import qualified Event.Keyboard               as Keyboard
+import           Object.Widget              (Position)
+import qualified Object.Widget.Node         as Model
 
-import           Reactive.State.Global        (State, inRegistry)
-import qualified Reactive.State.Global        as Global
-import qualified Reactive.State.Graph         as Graph
+import           Event.Event                (Event (Keyboard))
+import           Event.Keyboard             (KeyMods (..))
+import qualified Event.Keyboard             as Keyboard
 
-import qualified Empire.API.Data.Connection   as C
-import qualified Empire.API.Data.Node         as N
-import qualified Empire.API.Data.Port         as P
-import qualified Empire.API.Data.PortRef      as R
+import           Reactive.State.Global      (State)
+import qualified Reactive.State.Global      as Global
+import qualified Reactive.State.Graph       as Graph
 
-import           Reactive.Commands.Batch      (cancelCollaborativeTouch, collaborativeTouch)
-import           Reactive.Commands.Command    (Command)
-import           Reactive.Commands.Graph      (allNodes, widgetIdToNodeWidget)
-import qualified Reactive.Commands.UIRegistry as UICmd
+import qualified Empire.API.Data.Connection as C
+import           Empire.API.Data.Node       (NodeId)
+import qualified Empire.API.Data.Port       as P
+import qualified Empire.API.Data.PortRef    as R
+
+import           Reactive.Commands.Batch    (cancelCollaborativeTouch, collaborativeTouch)
+import           Reactive.Commands.Command  (Command)
+import           Reactive.Commands.Graph    (allNodes')
 
 
 
@@ -48,9 +52,9 @@ toAction (Keyboard _ (Keyboard.Event Keyboard.Down char (KeyMods True True False
     _     -> Nothing
 toAction _ = Nothing
 
-goPrev, goNext :: Command State ()
+goPrev :: Command State ()
 goPrev = do
-    nodes <- allNodes
+    nodes <- allNodes'
     let selectedNodes = findSelected nodes
     unless (null selectedNodes) $ do
         let nodeSrc = findLeftMost selectedNodes
@@ -63,8 +67,10 @@ goPrev = do
             Nothing -> do
                 prevFirstPortNodeIdMay <- preuse $ Global.graph . Graph.connectionsMap . ix inPortRefFirstPort . C.src . R.srcNodeId
                 withJust prevFirstPortNodeIdMay $ \prevFirstPortNodeId -> goToNodeId selectedNodes prevFirstPortNodeId
+
+goNext :: Command State ()
 goNext = do
-    nodes <- allNodes
+    nodes <- allNodes'
     let selectedNodes = findSelected nodes
     unless (null selectedNodes) $ do
         let nodeSrc = findRightMost selectedNodes
@@ -75,7 +81,7 @@ goNext = do
             let nextNode = findUpMost nextNodes
             changeSelection selectedNodes nextNode
 
-getDstNodeIds :: N.NodeId -> Command State [N.NodeId]
+getDstNodeIds :: NodeId -> Command State [NodeId]
 getDstNodeIds nodeId = do
     connMap <- use $ Global.graph . Graph.connectionsMap
     let connections = filter matchNodeId $ HashMap.elems connMap
@@ -83,17 +89,16 @@ getDstNodeIds nodeId = do
     where
         matchNodeId conn = conn ^. C.src . R.srcNodeId == nodeId
 
-toWidgetFile :: N.NodeId -> Command State (Maybe (WidgetFile Model.Node))
+toWidgetFile :: NodeId -> Command State (Maybe (WRef Node))
 toWidgetFile nodeId = do
-    widgetIdMay <- preuse $ Global.graph . Graph.nodeWidgetsMap . ix nodeId
-    nodeMayMay <- inRegistry $ mapM widgetIdToNodeWidget widgetIdMay
-    return $ join nodeMayMay
+    nodeRef <- Global.inNode nodeId return
+    mapM Store.get' nodeRef
 
-goToNodeId :: [WidgetFile Model.Node] -> N.NodeId -> Command State ()
+goToNodeId :: [WRef Node] -> NodeId -> Command State ()
 goToNodeId selectedNodes nodeId = do
-    widgetIdMay <- preuse $ Global.graph . Graph.nodeWidgetsMap . ix nodeId
-    withJust widgetIdMay $ \widgetId ->
-        changeSelection' selectedNodes nodeId widgetId
+    refNodeMay <- Global.inNode nodeId return
+    withJust refNodeMay $ \refNode ->
+        changeSelection' selectedNodes nodeId refNode
 
 goRight, goLeft, goDown, goUp :: Command State ()
 goRight = go findRightMost findNodesOnRightSide findNearestRight
@@ -101,12 +106,12 @@ goLeft  = go findLeftMost  findNodesOnLeftSide  findNearestLeft
 goDown  = go findDownMost  findNodesOnDownSide  findNearestDown
 goUp    = go findUpMost    findNodesOnUpSide    findNearestUp
 
-go :: ([WidgetFile Model.Node] -> WidgetFile Model.Node) ->
-      (Position -> [WidgetFile Model.Node] -> [WidgetFile Model.Node]) ->
-      (Position -> [WidgetFile Model.Node] -> WidgetFile Model.Node) ->
+go :: ([WRef Node] -> WRef Node) ->
+      (Position -> [WRef Node] -> [WRef Node]) ->
+      (Position -> [WRef Node] -> WRef Node) ->
       Command State ()
 go findMost findNodesOnSide findNearest = do
-    nodes <- allNodes
+    nodes <- allNodes'
     let selectedNodes = findSelected nodes
     unless (null selectedNodes) $ do
         let nodeSrc = findMost selectedNodes
@@ -125,13 +130,13 @@ axisDistanceLeft  (Vector2 x _) = -x
 axisDistanceDown  (Vector2 _ y) =  y
 axisDistanceUp    (Vector2 _ y) = -y
 
-findNearestRight, findNearestLeft, findNearestDown, findNearestUp :: Position -> [WidgetFile Model.Node] -> WidgetFile Model.Node
+findNearestRight, findNearestLeft, findNearestDown, findNearestUp :: Position -> [WRef Node] -> WRef Node
 findNearestRight pos = maximumBy (compare `on` closenest pos axisDistanceRight)
 findNearestLeft  pos = maximumBy (compare `on` closenest pos axisDistanceLeft)
 findNearestDown  pos = maximumBy (compare `on` closenest pos axisDistanceDown)
 findNearestUp    pos = maximumBy (compare `on` closenest pos axisDistanceUp)
 
-closenest :: Position -> (Vector2 Double -> Double) -> WidgetFile Model.Node -> Double
+closenest :: Position -> (Vector2 Double -> Double) -> WRef Node -> Double
 closenest pos axisDistance wf = axisDist / (dist ** closenestPow) where
     pos' = wf ^. widget . Model.position
     vect = pos' - pos
@@ -144,12 +149,12 @@ goConeLeft  = goCone findLeftMost  findNodesOnLeft  findNodesOnLeftSide
 goConeDown  = goCone findDownMost  findNodesOnDown  findNodesOnDownSide
 goConeUp    = goCone findUpMost    findNodesOnUp    findNodesOnUpSide
 
-goCone :: ([WidgetFile Model.Node] -> WidgetFile Model.Node) ->
-          (Position -> [WidgetFile Model.Node] -> [WidgetFile Model.Node]) ->
-          (Position -> [WidgetFile Model.Node] -> [WidgetFile Model.Node]) ->
+goCone :: ([WRef Node] -> WRef Node) ->
+          (Position -> [WRef Node] -> [WRef Node]) ->
+          (Position -> [WRef Node] -> [WRef Node]) ->
           Command State ()
 goCone findMost findNodesInCone findNodesOnSide = do
-    nodes <- allNodes
+    nodes <- allNodes'
     let selectedNodes = findSelected nodes
     unless (null selectedNodes) $ do
         let nodeSrc = findMost selectedNodes
@@ -157,28 +162,28 @@ goCone findMost findNodesInCone findNodesOnSide = do
             nodesCone = findNodesInCone pos nodes
             nodesSide = findNodesOnSide pos nodes
         if not $ null nodesCone
-            then                               changeSelection selectedNodes $ findNearestNode pos nodesCone
+            then                           changeSelection selectedNodes $ findNearestNode pos nodesCone
             else unless (null nodesSide) $ changeSelection selectedNodes $ findNearestNode pos nodesSide
 
-findRightMost, findLeftMost, findDownMost, findUpMost :: [WidgetFile Model.Node] -> WidgetFile Model.Node
+findRightMost, findLeftMost, findDownMost, findUpMost :: [WRef Node] -> WRef Node
 findRightMost = maximumBy (compare `on` (^. widget . Model.position . x))
 findLeftMost  = minimumBy (compare `on` (^. widget . Model.position . x))
 findDownMost  = maximumBy (compare `on` (^. widget . Model.position . y))
 findUpMost    = minimumBy (compare `on` (^. widget . Model.position . y))
 
-findNodesOnRightSide, findNodesOnLeftSide, findNodesOnDownSide, findNodesOnUpSide :: Position -> [WidgetFile Model.Node] -> [WidgetFile Model.Node]
+findNodesOnRightSide, findNodesOnLeftSide, findNodesOnDownSide, findNodesOnUpSide :: Position -> [WRef Node] -> [WRef Node]
 findNodesOnRightSide pos = filter $ \wf -> wf ^. widget . Model.position . x > pos ^. x
 findNodesOnLeftSide  pos = filter $ \wf -> wf ^. widget . Model.position . x < pos ^. x
 findNodesOnDownSide  pos = filter $ \wf -> wf ^. widget . Model.position . y > pos ^. y
 findNodesOnUpSide    pos = filter $ \wf -> wf ^. widget . Model.position . y < pos ^. y
 
-findNodesOnRight, findNodesOnLeft, findNodesOnDown, findNodesOnUp :: Position -> [WidgetFile Model.Node] -> [WidgetFile Model.Node]
+findNodesOnRight, findNodesOnLeft, findNodesOnDown, findNodesOnUp :: Position -> [WRef Node] -> [WRef Node]
 findNodesOnRight = filter . isOnRight
 findNodesOnLeft  = filter . isOnLeft
 findNodesOnDown  = filter . isOnDown
 findNodesOnUp    = filter . isOnUp
 
-isOnRight, isOnLeft, isOnDown, isOnUp :: Position -> WidgetFile Model.Node -> Bool
+isOnRight, isOnLeft, isOnDown, isOnUp :: Position -> WRef Node -> Bool
 isOnRight = isInCone (>)  skip (>=)
 isOnLeft  = isInCone (<)  skip (>=)
 isOnDown  = isInCone skip (>)  (<)
@@ -187,41 +192,42 @@ isOnUp    = isInCone skip (<)  (<)
 skip :: Double -> Double -> Bool
 skip _ _ = True
 
-isInCone :: (Double -> Double -> Bool) -> (Double -> Double -> Bool) -> (Double -> Double -> Bool) -> Position -> WidgetFile Model.Node -> Bool
+isInCone :: (Double -> Double -> Bool) -> (Double -> Double -> Bool) -> (Double -> Double -> Bool) -> Position -> WRef Node -> Bool
 isInCone cmpDXZero cmpDYZero cmpDims pos wf = dx `cmpDXZero` 0.0 && dy `cmpDYZero` 0.0 && abs dx `cmpDims` abs dy where
     nodePos = wf ^. widget . Model.position
     dx = nodePos ^. x - pos ^. x
     dy = nodePos ^. y - pos ^. y
 
-findSelected :: [WidgetFile Model.Node] -> [WidgetFile Model.Node]
-findSelected = filter $ \wf -> wf ^. widget . Model.isSelected
+findSelected :: [WRef Node] -> [WRef Node]
+findSelected = filter $ view (widget . Node.isSelected)
 
-findNearestNode :: Position -> [WidgetFile Model.Node] -> WidgetFile Model.Node
+findNearestNode :: Position -> [WRef Node] -> WRef Node
 findNearestNode pos = minimumBy (compare `on` distance pos)
 
-distance :: Position -> WidgetFile Model.Node -> Double
+distance :: Position -> WRef Node -> Double
 distance pos wf = lengthSquared (wpos - pos) where
     wpos = wf ^. widget . Model.position
 
-changeSelection :: [WidgetFile Model.Node] -> WidgetFile Model.Node -> Command State ()
+changeSelection :: [WRef Node] -> WRef Node -> Command State ()
 changeSelection selectedNodes node = do
     unselectNodes selectedNodes
     selectNode node
 
-changeSelection' :: [WidgetFile Model.Node] -> N.NodeId -> WidgetId -> Command State ()
-changeSelection' selectedNodes nodeId widgetId = do
+changeSelection' :: [WRef Node] -> NodeId -> Ref Node -> Command State ()
+changeSelection' selectedNodes nodeId nodeRef = do
     unselectNodes selectedNodes
-    selectNode' nodeId widgetId
+    selectNode' nodeId nodeRef
 
-unselectNodes :: [WidgetFile Model.Node] -> Command State ()
+unselectNodes :: [WRef Node] -> Command State ()
 unselectNodes selectedNodes = do
-    inRegistry $ forM_ selectedNodes $ \node -> UICmd.update_ (node ^. objectId) $ Model.isSelected .~ False
-    cancelCollaborativeTouch $ (^. widget . Model.nodeId) <$> selectedNodes
+    forM_ selectedNodes $
+        Store.modify_ (Model.isSelected .~ False) . _ref
+    cancelCollaborativeTouch $ view (widget . Model.nodeId) <$> selectedNodes
 
-selectNode :: WidgetFile Model.Node -> Command State ()
-selectNode node = selectNode' (node ^. widget . Model.nodeId) (node ^. objectId)
+selectNode :: WRef Node -> Command State ()
+selectNode node = selectNode' (node ^. widget . Model.nodeId) (node ^. ref)
 
-selectNode' :: N.NodeId -> WidgetId -> Command State ()
-selectNode' nodeId widgetId = do
-    inRegistry $ UICmd.update_ widgetId $ Model.isSelected .~ True
+selectNode' :: NodeId -> Ref Node -> Command State ()
+selectNode' nodeId nodeRef = do
+    Store.modify_ (Model.isSelected .~ True) nodeRef
     collaborativeTouch [nodeId]

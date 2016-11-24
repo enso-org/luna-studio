@@ -5,6 +5,7 @@ module Reactive.Commands.Graph
     , updateConnectionsForNodes
     , connectionIdToWidgetId
     , allNodes
+    , allNodes'
     , widgetIdToNodeWidget
     , nodeIdToWidgetId
     , focusNode
@@ -20,11 +21,12 @@ import           Utils.Angle
 import           Utils.PreludePlus
 import           Utils.Vector
 
-import qualified React.Store as Store
-import qualified React.Store.Node as Node
+import           React.Store                         (ref, widget)
+import qualified React.Store                         as Store
+import qualified React.Store.Node                    as Node
 
 import           Object.UITypes
-import           Object.Widget
+import           Object.Widget                       hiding (widget)
 import qualified Object.Widget.Connection            as ConnectionModel
 import qualified Object.Widget.Node                  as Model
 import qualified Object.Widget.Port                  as PortModel
@@ -36,7 +38,7 @@ import           Reactive.State.Global               (inRegistry)
 import qualified Reactive.State.Global               as Global
 import qualified Reactive.State.Graph                as Graph
 import qualified Reactive.State.UIRegistry           as UIRegistry
-import           UI.Handlers.Node                    (allNodes)
+import           UI.Handlers.Node                    (allNodes, allNodes')
 import           UI.Instances                        ()
 
 import           Empire.API.Data.Connection          (ConnectionId)
@@ -83,25 +85,24 @@ nats = [1..]
 
 focusNode :: Node.Ref -> Command Global.State ()
 focusNode nodeRef = do
-    nodeRefs <- allNodes
-    nodeVals <- mapM Store.get nodeRefs
-    let nodes = zip nodeVals nodeRefs
-        sortedNodes = sortBy (comparing $ negate . (view $ _1 . Model.zPos)) nodes
-        sortedIds   = view _2 <$> sortedNodes
-        newOrder    = nodeRef : delete nodeRef sortedIds
-
-    forM_ (zip newOrder nats) $ \(ref, ix) -> do
+    node <- Store.get' nodeRef
+    nodes <- mapM Store.get' =<< allNodes
+    let sortedNodes = sortBy (comparing $ negate . (view $ widget . Model.zPos)) nodes
+        equalFst a b = a ^. widget == b ^. widget
+        newOrderNodes = node : deleteBy equalFst node sortedNodes
+        newOrderRefs  = view ref <$> newOrderNodes
+    forM_ (zip newOrderRefs nats) $ \(ref, ix) -> do
         let newZPos = negate $ (fromIntegral ix) / 100.0
         Store.modify_ (Node.zPos .~ newZPos) ref
 
 updateNodeZOrder :: Command Global.State ()
 updateNodeZOrder = do
-    nodes <- allNodes
+    nodes <- mapM Store.get' =<< allNodes
     let sortedNodes = sortBy (comparing $ negate . (view $ widget . Model.zPos)) nodes
-        sortedIds   = (view objectId) <$> sortedNodes
-    inRegistry $ forM_ (zip sortedIds nats) $ \(wid, ix) -> do
+        sortedRefs  = view ref <$> sortedNodes
+    forM_ (zip sortedRefs nats) $ \(ref, ix) -> do
         let newZPos = negate $ (fromIntegral ix) / 100.0
-        UICmd.update wid $ Model.zPos .~ newZPos
+        Store.modify_ (Node.zPos .~ newZPos) ref
 
 updateConnections :: Command Global.State ()
 updateConnections = do

@@ -25,6 +25,7 @@ default-extensions:
   - ScopedTypeVariables
   - StandaloneDeriving
   - TemplateHaskell
+  - TupleSections
 
 ghc-options:
     -Wall
