@@ -17,6 +17,7 @@ import           Event.Keyboard                    (KeyMods (..))
 import qualified Event.Keyboard                    as Keyboard
 import qualified Object.Widget                     as Widget
 import qualified Object.Widget.Node                as UINode
+import           React.Store                       (widget)
 import           Reactive.Commands.Batch           (addSubgraph)
 import           Reactive.Commands.Command         (Command, performIO)
 import           Reactive.Commands.Graph.Selection (selectedNodes)
@@ -41,7 +42,7 @@ toAction _ = Nothing
 
 copySelectionToClipboard :: Command State ()
 copySelectionToClipboard = do
-  nodeIds <- map (view $ Widget.widget . UINode.nodeId) <$> selectedNodes
+  nodeIds <- map (view $ widget . UINode.nodeId) <$> selectedNodes
   graph <- use Global.graph
   let subgraph = separateSubgraph nodeIds graph
   performIO $ copyStringToClipboard $ fromString $ unpack $ encode subgraph

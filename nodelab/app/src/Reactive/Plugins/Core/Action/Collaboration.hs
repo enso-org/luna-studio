@@ -20,13 +20,13 @@ import           Reactive.Commands.Collaboration   (updateClient)
 import           Reactive.Commands.Command         (Command)
 import           Reactive.Commands.Graph           (nodeIdToWidgetId)
 import           Reactive.Commands.Graph.Selection (selectedNodes)
+import           Reactive.State.Collaboration      (ColorId)
 import           Reactive.State.Global             (State, inRegistry)
 import qualified Reactive.State.Global             as Global
 import qualified Reactive.State.Graph              as GraphST
-import           Reactive.State.Collaboration      (ColorId)
 
-import           Object.Widget                     (widget)
 import qualified Object.Widget.Node                as NodeModel
+import           React.Store                       (widget)
 import qualified Reactive.Commands.UIRegistry      as UICmd
 
 

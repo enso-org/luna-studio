@@ -9,8 +9,8 @@ import           Reactive.Commands.Command         (Command)
 import           Reactive.State.Global             (State)
 import qualified Reactive.State.Global             as Global
 
-import           Object.Widget                     (widget)
 import qualified Object.Widget.Node                as UINode
+import           React.Store                       (widget)
 import qualified Reactive.Commands.Batch           as BatchCmd
 import           Reactive.Commands.Graph.Selection (selectedNodes)
 import qualified Reactive.State.UIElements         as UIElements

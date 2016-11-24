@@ -3,7 +3,7 @@ module Reactive.Commands.Node.Remove
     , localRemoveNodes
     ) where
 
-import           Object.Widget                      (widget)
+import           React.Store                        (widget)
 import           Reactive.Commands.Command          (Command)
 import           Reactive.Commands.Graph            (nodeIdToWidgetId)
 import           Reactive.Commands.Graph.Disconnect (localDisconnectAll)

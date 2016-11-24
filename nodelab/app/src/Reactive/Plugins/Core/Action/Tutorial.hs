@@ -21,8 +21,8 @@ import qualified Event.Keyboard                    as Keyboard
 import qualified Event.NodeSearcher                as NodeSearcher
 
 import qualified Batch.Workspace                   as Workspace
-import           Object.Widget                     (widget)
 import qualified Object.Widget.Node                as UINode
+import           React.Store                       (widget)
 import           Reactive.Commands.Command         (Command, performIO)
 import           Reactive.Commands.Graph.Selection (selectedNodes)
 import qualified Reactive.State.Global             as Global

@@ -10,10 +10,10 @@ import           Utils.PreludePlus
 
 import           Empire.API.Data.Node         (NodeId)
 
+import           React.Store                  (WRef (..), ref, widget)
 import qualified React.Store                  as Store
-import React.Store                  (WRef(..), ref, widget)
-import qualified React.Store.Node as Node
-import React.Store.Node (Node)
+import           React.Store.Node             (Node)
+import qualified React.Store.Node             as Node
 
 import           Reactive.Commands.Batch      (cancelCollaborativeTouch, collaborativeTouch)
 import           Reactive.Commands.Command    (Command)
@@ -53,5 +53,6 @@ selectedNodes = do
 
 focusSelectedNode :: Command State ()
 focusSelectedNode = do
-    widgets <- selectedNodes
-    inRegistry $ UIRegistry.focusedWidget .= (view ref <$> widgets ^? ix 0)
+    $notImplemented --TODO react
+    -- widgets <- selectedNodes
+    -- inRegistry $ UIRegistry.focusedWidget .= (view ref <$> widgets ^? ix 0)

@@ -16,8 +16,8 @@ import           Utils.Vector
 import qualified JS.NodeSearcher                   as UI
 
 import qualified Batch.Workspace                   as Workspace
-import qualified Object.Widget                     as Widget
-import qualified Object.Widget.Node                as NodeModel
+import           React.Store                       (widget)
+import qualified React.Store.Node                  as Node
 
 import           Reactive.Commands.Camera          (syncCamera)
 import           Reactive.Commands.Command         (Command, performIO)
@@ -28,7 +28,7 @@ import qualified Reactive.State.Graph              as Graph
 import qualified Reactive.State.UIElements         as UIElements
 
 import           Empire.API.Data.Node              (NodeId)
-import qualified Empire.API.Data.Node              as Node
+import qualified Empire.API.Data.Node              as NodeAPI
 import qualified Empire.API.Data.Port              as Port
 import qualified Empire.API.Data.TypeRep           as TypeRep
 import qualified Empire.API.Data.ValueType         as ValueType
@@ -61,8 +61,8 @@ position = do
     -- factor <- use $ Global.camera . Camera.camera . Camera.factor
     selected <- selectedNodes
     nsPos <- zoom Global.camera $ Camera.workspaceToScreen $ case selected of
-            [wf]   -> (wf ^. Widget.widget . NodeModel.position) + Vector2 230.0 0
-            _     -> mousePos'
+            [wref] -> (wref ^. widget . Node.position) + Vector2 230.0 0
+            _      -> mousePos'
     nsPos' <- zoom Global.camera $ Camera.screenToWorkspaceM nsPos
     return (nsPos', nsPos)
 
@@ -95,8 +95,8 @@ scopedData = do
     mscope <- case selected of
             []     -> return Nothing
             [wf]   -> do
-                let nodeId = wf ^. Widget.widget . NodeModel.nodeId
-                mvt <- preuse $ Global.graph . Graph.nodesMap . ix nodeId . Node.ports . ix (Port.OutPortId Port.All) . Port.valueType
+                let nodeId = wf ^. widget . Node.nodeId
+                mvt <- preuse $ Global.graph . Graph.nodesMap . ix nodeId . NodeAPI.ports . ix (Port.OutPortId Port.All) . Port.valueType
                 return $ case mvt of
                     Nothing -> Nothing
                     Just vt -> case vt of
