@@ -25,8 +25,6 @@ module Reactive.State.Graph
     , lookUpConnection
     , nodes
     , nodesMap
-    , nodeWidgets
-    , nodeWidgetsMap
     , outputs
     , outputsId
     , outputWidget
@@ -92,7 +90,6 @@ data State = State { _nodesMap             :: NodesMap
                    , _inputsMap            :: IntMap Input
                    , _outputsId            :: Maybe NodeId
                    , _outputs              :: Maybe Output
-                   , _nodeWidgetsMap       :: HashMap NodeId     WidgetId
                    , _connectionWidgetsMap :: HashMap InPortRef  WidgetId
                    , _portWidgetsMap       :: HashMap AnyPortRef WidgetId
                    , _inputWidgetsMap      :: IntMap WidgetId
@@ -103,7 +100,7 @@ makeLenses ''State
 
 instance ToJSON State
 instance Default State where
-    def = State def def def def def def def def def def def
+    def = State def def def def def def def def def def
 
 connectionToNodeIds :: Connection -> (NodeId, NodeId)
 connectionToNodeIds conn = ( conn ^. Connection.src . PortRef.srcNodeId
@@ -111,9 +108,6 @@ connectionToNodeIds conn = ( conn ^. Connection.src . PortRef.srcNodeId
 
 nodes :: Getter State [Node]
 nodes = to getNodes
-
-nodeWidgets :: Getter State [WidgetId]
-nodeWidgets = to $ HashMap.elems . view nodeWidgetsMap
 
 connections :: Getter State [Connection]
 connections = to getConnections

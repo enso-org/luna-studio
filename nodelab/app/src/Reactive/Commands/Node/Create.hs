@@ -95,7 +95,7 @@ expandSelectedNodes = do
 editNodeExpression :: NodeId -> Command Global.State ()
 editNodeExpression nodeId = do
     exprMay     <- preuse $ Global.graph . Graph.nodesMap . ix nodeId . Node.nodeType . Node.expression
-    nodeRefMay <- Global.inNode nodeId return
+    nodeRefMay <- Global.getNode nodeId
     withJust exprMay $ \expr -> withJust nodeRefMay $ \nodeRef -> do
         node <- Store.get nodeRef
         pos <- zoom Global.camera $ Camera.workspaceToScreen $ node ^. Model.position

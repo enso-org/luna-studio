@@ -15,6 +15,7 @@ import           Object.Widget                      (DragMoveHandler, UIHandlers
 import qualified Object.Widget.Connection           as Model
 import qualified Object.Widget.Node                 as NodeModel
 import qualified Object.Widget.Port                 as PortModel
+import qualified React.Store                        as Store
 import           Reactive.Commands.Command          (Command)
 import           Reactive.Commands.Graph.Disconnect (disconnectAll)
 import qualified Reactive.Commands.UIRegistry       as UICmd
@@ -58,9 +59,9 @@ dragHandler ds _ wid = do
         connectionColor <- inRegistry $ UICmd.get wid Model.color
         Just srcPortRef   <- preuse $ Global.graph . Graph.connectionsMap . ix connId . Connection.src
         Just portWidgetId <- use $ Global.graph . Graph.portWidgetsMap . at (PortRef.OutPortRef' srcPortRef)
-        Just nodeWidgetId <- use $ Global.graph . Graph.nodeWidgetsMap . at (srcPortRef ^. PortRef.srcNodeId)
+        Just nodeWidgetRef <- Global.getNode $ srcPortRef ^. PortRef.srcNodeId
         disconnectAll [connId]
-        sourceNodePos   <- inRegistry $ UICmd.get nodeWidgetId NodeModel.position
+        sourceNodePos   <- view NodeModel.position <$> Store.get nodeWidgetRef
         sourcePortAngle <- inRegistry $ UICmd.get portWidgetId PortModel.angleVector
         -- let coord = floor <$> sourceNodePos + shiftVec
         Global.connect . Connect.connecting ?= Connecting (PortRef.OutPortRef' srcPortRef) sourcePortAngle sourceNodePos
@@ -70,9 +71,9 @@ dragHandler ds _ wid = do
         connectionColor <- inRegistry $ UICmd.get wid Model.color
         Just dstPortRef <- preuse $ Global.graph . Graph.connectionsMap . ix connId . Connection.dst
         Just portWidgetId <- use $ Global.graph . Graph.portWidgetsMap . at (PortRef.InPortRef' dstPortRef)
-        Just nodeWidgetId <- use $ Global.graph . Graph.nodeWidgetsMap . at (dstPortRef ^. PortRef.dstNodeId)
+        Just nodeWidgetRef <- Global.getNode $ dstPortRef ^. PortRef.dstNodeId
         disconnectAll [connId]
-        dstNodePos   <- inRegistry $ UICmd.get nodeWidgetId NodeModel.position
+        dstNodePos   <- view NodeModel.position <$> Store.get nodeWidgetRef
         dstPortAngle <- inRegistry $ UICmd.get portWidgetId PortModel.angleVector
         -- let coord = floor <$> dstNodePos + shiftVec
         Global.connect . Connect.connecting ?= Connecting (PortRef.InPortRef' dstPortRef) dstPortAngle dstNodePos

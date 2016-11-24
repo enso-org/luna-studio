@@ -76,6 +76,9 @@ inNodeEditor action = inApp $ (action . view App.nodeEditor) <=< Store.get
 inNode :: NodeId -> (Maybe Node.Ref -> Command State r) -> Command State r
 inNode nodeId action = inNodeEditor $ (action . view (NodeEditor.nodes . at nodeId)) <=< Store.get
 
+getNode :: NodeId -> Command State (Maybe Node.Ref)
+getNode nodeId = inNode nodeId return
+
 initialState :: DateTime -> Collaboration.ClientId -> StdGen -> Maybe Int -> App.Ref -> State
 initialState = State (Vector2 200 200) def def def def def def def def def def def defJsState def def
 

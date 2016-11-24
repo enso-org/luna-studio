@@ -7,12 +7,13 @@ module Reactive.Commands.Node.Update
     , updateExpression
     ) where
 
-import           Utils.PreludePlus                    hiding (id)
+import           Utils.PreludePlus
 
 import           Control.Monad.State                  (modify)
 import qualified Data.Text.Lazy                       as Text
 
-import qualified Object.Widget.Node                   as Model
+import qualified React.Store                          as Store
+import qualified React.Store.Node                     as Model
 
 import           Reactive.Commands.Command            (Command)
 import           Reactive.Commands.Graph              (nodeIdToWidgetId, updateConnectionsForNodes)
@@ -46,40 +47,36 @@ updateExistingNode node = do
     let nodeId  = node ^. Node.nodeId
     maybeWidgetId <- nodeIdToWidgetId nodeId
     zoom Global.graph $ modify (Graph.addNode node)
-    withJust maybeWidgetId $ \widgetId -> do
-        displayPorts widgetId node
-
-        case node ^. Node.nodeType of
-            Node.ExpressionNode expression -> do
-                inRegistry $ UICmd.update_ widgetId $ Model.expression .~ expression
-            _ -> return ()
-        inRegistry $ UICmd.update_ widgetId $ Model.code .~ (node ^. Node.code)
+    Global.inNode nodeId $ mapM_ $ Store.modifyM_ $ \model -> do
+        -- displayPorts widgetId node --TODO react
+        let model' = model & case node ^. Node.nodeType of
+                Node.ExpressionNode expression -> Model.expression .~ expression
+                _                              -> id
+        return $ model' & Model.code .~ (node ^. Node.code)
         -- TODO: obsluzyc to ze moga zniknac polaczenia
     updateConnectionsForNodes [nodeId]
 
 updateNodeValue :: NodeId -> NodeResult.NodeValue -> Command State ()
-updateNodeValue nid val = do
-    mayWidgetId <- nodeIdToWidgetId nid
-    inRegistry $ do
-        withJust mayWidgetId $ \widgetId -> do
-            -- removeVisualization widgetId
-            case val of
-                NodeResult.Value name [] -> do
-                    UICmd.update_ widgetId $ Model.value   .~ name
-                    UICmd.update_ widgetId $ Model.isError .~ False
-                NodeResult.Value name valueReprs -> do
-                    UICmd.update_ widgetId $ Model.value   .~ name
-                    UICmd.update_ widgetId $ Model.isError .~ False
-                    visualizeNodeValueReprs widgetId valueReprs
-                NodeResult.Error msg -> do
-                    UICmd.update_ widgetId $ Model.value   .~ limitString errorLen (Text.pack $ showError msg)
-                    UICmd.update_ widgetId $ Model.isError .~ True
-                    visualizeError widgetId msg
+updateNodeValue nid val =
+    Global.inNode nid $ mapM_ $ Store.modify_ $
+        -- removeVisualization widgetId
+        case val of
+            NodeResult.Value name [] ->
+                (Model.value   .~ name)
+                . (Model.isError .~ False)
+            NodeResult.Value name valueReprs ->
+                (Model.value   .~ name)
+                . (Model.isError .~ False)
+                -- visualizeNodeValueReprs widgetId valueReprs --TODO react
+            NodeResult.Error msg ->
+                (Model.value   .~ limitString errorLen (Text.pack $ showError msg))
+                . (Model.isError .~ True)
+                -- visualizeError widgetId msg --TODO react
 
 updateNodeProfilingData :: NodeId -> Integer -> Command State ()
-updateNodeProfilingData id execTime = do
-    widgetId <- nodeIdToWidgetId id
-    inRegistry $ withJust widgetId $ flip UICmd.update_ $ Model.execTime ?~ execTime
+updateNodeProfilingData nodeId execTime =
+    Global.inNode nodeId $ mapM_ $ Store.modify_ $
+        Model.execTime ?~ execTime
 
 updateExpression :: NodeId -> Text -> Command State ()
 updateExpression nodeId expr = do

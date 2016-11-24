@@ -12,6 +12,7 @@ import           Empire.API.Data.NodeMeta     (NodeMeta (..))
 import qualified Empire.API.Data.NodeMeta     as NodeMeta
 
 import qualified Object.Widget.Node           as NodeModel
+import qualified React.Store                  as Store
 
 import qualified Reactive.Commands.Batch      as BatchCmd
 import           Reactive.Commands.Command    (Command)
@@ -27,10 +28,9 @@ updateNodeMeta' :: NodeId -> NodeMeta -> Command Global.State ()
 updateNodeMeta' nodeId meta = do
     Global.graph . Graph.nodesMap . ix nodeId . Node.nodeMeta .= meta
     widgetId' <- nodeIdToWidgetId nodeId
-    inRegistry $ do
-        withJust widgetId' $ \widgetId -> do
-            UICmd.update_ widgetId $ NodeModel.visualizationsEnabled .~ meta ^. NodeMeta.displayResult
-            UICmd.move    widgetId $ fromTuple $  meta ^. NodeMeta.position
+    withJust widgetId' $ Store.modify_ $
+        NodeModel.visualizationsEnabled .~ meta ^. NodeMeta.displayResult
+        -- UICmd.move    widgetId $ fromTuple $  meta ^. NodeMeta.position --TODO react
 
 -- updateNodeMeta :: NodeId -> NodeMeta -> Command Global.State ()
 -- updateNodeMeta nodeId meta = do

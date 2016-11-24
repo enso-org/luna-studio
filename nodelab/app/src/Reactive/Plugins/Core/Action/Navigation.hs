@@ -91,12 +91,12 @@ getDstNodeIds nodeId = do
 
 toWidgetFile :: NodeId -> Command State (Maybe (WRef Node))
 toWidgetFile nodeId = do
-    nodeRef <- Global.inNode nodeId return
+    nodeRef <- Global.getNode nodeId
     mapM Store.get' nodeRef
 
 goToNodeId :: [WRef Node] -> NodeId -> Command State ()
 goToNodeId selectedNodes nodeId = do
-    refNodeMay <- Global.inNode nodeId return
+    refNodeMay <- Global.getNode nodeId
     withJust refNodeMay $ \refNode ->
         changeSelection' selectedNodes nodeId refNode
 

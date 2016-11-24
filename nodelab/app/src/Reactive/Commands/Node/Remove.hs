@@ -4,6 +4,8 @@ module Reactive.Commands.Node.Remove
     ) where
 
 import           React.Store                        (widget)
+import qualified React.Store                        as Store
+import qualified React.Store.NodeEditor             as NodeEditor
 import           Reactive.Commands.Command          (Command)
 import           Reactive.Commands.Graph            (nodeIdToWidgetId)
 import           Reactive.Commands.Graph.Disconnect (localDisconnectAll)
@@ -12,8 +14,6 @@ import           Reactive.State.Global              (State, inRegistry)
 import qualified Reactive.State.Global              as Global
 import qualified Reactive.State.Graph               as Graph
 import           Utils.PreludePlus
-
-import           Reactive.Commands.UIRegistry       (removeWidget)
 
 import           Empire.API.Data.Node               (NodeId)
 import qualified Object.Widget.Node                 as NodeModel
@@ -38,7 +38,7 @@ localRemoveNodes nodeIds = forM_ nodeIds $ \nodeId -> do
     localDisconnectAll danglingConns
 
     nodeWidgetId <- nodeIdToWidgetId nodeId
-    inRegistry $ withJust nodeWidgetId removeWidget
 
     Global.graph %= Graph.removeNode nodeId
-    Global.graph . Graph.nodeWidgetsMap . at nodeId .= Nothing
+    Global.inNodeEditor $ Store.modify_ $
+        NodeEditor.nodes . at nodeId .~ Nothing

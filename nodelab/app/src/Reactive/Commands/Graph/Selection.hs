@@ -41,8 +41,8 @@ selectAll = do
 selectNodes :: [NodeId] -> Command State ()
 selectNodes nodeIds = do
     unselectAll
-    widgetIds <- fmap catMaybes $ mapM nodeIdToWidgetId nodeIds
-    inRegistry $ forM_ widgetIds $ (flip UICmd.update) (Node.isSelected .~ True)
+    nodeRefs <- fmap catMaybes $ mapM nodeIdToWidgetId nodeIds
+    forM_ nodeRefs $ Store.modify_ (Node.isSelected .~ True)
     focusSelectedNode
     collaborativeTouch nodeIds
 

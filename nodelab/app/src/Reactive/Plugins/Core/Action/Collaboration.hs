@@ -18,7 +18,7 @@ import qualified Event.Event                       as Event
 import           Reactive.Commands.Batch           (collaborativeTouch)
 import           Reactive.Commands.Collaboration   (updateClient)
 import           Reactive.Commands.Command         (Command)
-import           Reactive.Commands.Graph           (nodeIdToWidgetId)
+import           Reactive.Commands.Graph           (allNodes, nodeIdToWidgetId)
 import           Reactive.Commands.Graph.Selection (selectedNodes)
 import           Reactive.State.Collaboration      (ColorId)
 import           Reactive.State.Global             (State, inRegistry)
@@ -27,6 +27,7 @@ import qualified Reactive.State.Graph              as GraphST
 
 import qualified Object.Widget.Node                as NodeModel
 import           React.Store                       (widget)
+import qualified React.Store                       as Store
 import qualified Reactive.Commands.UIRegistry      as UICmd
 
 
@@ -51,11 +52,11 @@ touchCurrentlySelected = do
 
 expireTouchedNodes :: Command State ()
 expireTouchedNodes = do
-    widgetIds   <- use $ Global.graph . GraphST.nodeWidgets
+    widgetIds   <- allNodes
     currentTime <- use Global.lastEventTimestamp
-    inRegistry $ forM_ widgetIds $ \nodeWidget ->
-        UICmd.update_ nodeWidget $ (NodeModel.collaboration . NodeModel.touch  %~ Map.filter (\(ts, _) -> DT.diffSeconds ts currentTime > 0))
-                                 . (NodeModel.collaboration . NodeModel.modify %~ Map.filter (\ ts     -> DT.diffSeconds ts currentTime > 0))
+    forM_ widgetIds $ Store.modify_ $
+        (  NodeModel.collaboration . NodeModel.touch  %~ Map.filter (\(ts, _) -> DT.diffSeconds ts currentTime > 0))
+        . (NodeModel.collaboration . NodeModel.modify %~ Map.filter (\ ts     -> DT.diffSeconds ts currentTime > 0))
 
 everyNSeconds :: Integer -> Command State () -> Command State ()
 everyNSeconds interval action = do
@@ -68,8 +69,7 @@ toAction (Event.Batch ev) = Just $ case ev of
         shouldProcess <- isCurrentLocationAndGraphLoaded (update ^. Collaboration.location)
         let clientId = update ^. Collaboration.clientId
             touchNodes nodeIds setter = forM_ nodeIds $ \nodeId -> do
-                    nodeWidgetMay <- nodeIdToWidgetId nodeId
-                    inRegistry $ withJust nodeWidgetMay $ \nodeWidget -> UICmd.update_ nodeWidget  setter
+                Global.inNode nodeId $ mapM_ $ Store.modify_ setter
         myClientId   <- use Global.clientId
         currentTime  <- use Global.lastEventTimestamp
         when (shouldProcess && clientId /= myClientId) $ do

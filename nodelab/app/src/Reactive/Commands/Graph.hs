@@ -64,15 +64,13 @@ getGraphPort :: AnyPortRef -> Command Global.State (Maybe Port.Port)
 getGraphPort portRef = preuse $ Global.graph . Graph.nodesMap . ix (portRef ^. PortRef.nodeId) . NodeAPI.ports . ix (portRef ^. PortRef.portId)
 
 getNode :: NodeId -> Command Global.State (Maybe Model.Node)
-getNode nodeId = runMaybeT $ do
-    (Just widgetId)   <- preuse $ Global.graph . Graph.nodeWidgetsMap . ix nodeId
-    lift $ inRegistry $ UICmd.lookup widgetId
+getNode nodeId = Global.inNode nodeId $ mapM Store.get
 
 widgetIdToNodeWidget :: WidgetId -> Command UIRegistry.State (Maybe (WidgetFile Model.Node))
 widgetIdToNodeWidget = UIRegistry.lookupTypedM
 
-nodeIdToWidgetId :: NodeId -> Command Global.State (Maybe WidgetId)
-nodeIdToWidgetId nodeId = preuse $ Global.graph . Graph.nodeWidgetsMap . ix nodeId
+nodeIdToWidgetId :: NodeId -> Command Global.State (Maybe Node.Ref)
+nodeIdToWidgetId = Global.getNode
 
 connectionIdToWidgetId :: ConnectionId -> Command Global.State (Maybe WidgetId)
 connectionIdToWidgetId connectionId = preuse $ Global.graph . Graph.connectionWidgetsMap . ix connectionId
