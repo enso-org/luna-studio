@@ -13,6 +13,7 @@ import           GHCJS.Prim                                          (JSExceptio
 import           Reactive.Handlers                                   (AddHandler (..))
 import qualified Reactive.Handlers                                   as Handlers
 
+import           Event.Event                                         (Event)
 import qualified Event.Event                                         as Event
 import qualified Event.Processors.Batch                              as BatchEventProcessor
 import qualified Event.Processors.CustomEvent                        as CustomEventProcessor
@@ -57,7 +58,7 @@ consoleTimeStart, consoleTimeEnd :: String -> IO ()
 consoleTimeStart = consoleTimeStart' . JSString.pack
 consoleTimeEnd   = consoleTimeEnd'   . JSString.pack
 
-actions :: [Event.Event -> Maybe (Command State ())]
+actions :: [Event -> Maybe (Command State ())]
 actions =  [ --Debug.toActionEv
         --    , Control.toAction
         --    , Widget.toAction
@@ -78,19 +79,18 @@ actions =  [ --Debug.toActionEv
         --    , Debug.toAction
            ]
 
-runCommands :: [Event.Event -> Maybe (Command State ())] -> Event.Event -> Command State ()
+runCommands :: [Event -> Maybe (Command State ())] -> Event -> Command State ()
 runCommands cmds event = sequence_ . catMaybes $ fmap ($ event) cmds
 
-preprocessEvent :: Event.Event -> IO Event.Event
+preprocessEvent :: Event -> IO Event
 preprocessEvent ev = do
     let batchEvent = BatchEventProcessor.process  ev
     customEvent   <- CustomEventProcessor.process ev
 
     return $ fromMaybe ev $ getLast $ Last batchEvent <> Last customEvent
 
-processEvent :: MVar State -> Event.Event -> IO ()
-processEvent var ev = do
-    state     <- takeMVar var
+processEvent :: MVar State -> Event -> IO ()
+processEvent var ev = modifyMVar_ var $ \state -> do
     realEvent <- preprocessEvent ev
     when displayProcessingTime $ do
         consoleTimeStart $ (realEvent ^. Event.name) <>" show and force"
@@ -102,12 +102,12 @@ processEvent var ev = do
     timestamp <- getCurrentTime
     let state' = state & Global.jsState .~ jsState
                        & Global.lastEventTimestamp .~ timestamp
-    flip catch (handleExcept realEvent) $ do
+    flip catch (handleExcept state realEvent) $ do
         newState <- execCommand (runCommands actions realEvent) state'
         UI.shouldRender
         when displayProcessingTime $
             consoleTimeEnd (realEvent ^. Event.name)
-        putMVar var newState
+        return newState
 
 makeNetworkDescription :: WebSocket -> MVar State -> IO ()
 makeNetworkDescription conn state = do
@@ -133,6 +133,7 @@ makeNetworkDescription conn state = do
 
     sequence_ $ registerHandler <$> handlers
 
-handleExcept :: Event.Event -> JSException  -> IO ()
-handleExcept event except =
+handleExcept :: State -> Event -> JSException -> IO State
+handleExcept oldState event except = do
     putStrLn $ "JavaScriptException: " <> show except <> "\n\nwhile processing: " <> show event
+    return oldState
