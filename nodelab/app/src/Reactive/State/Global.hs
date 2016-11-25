@@ -20,6 +20,7 @@ import qualified Empire.API.Graph.Collaboration as Collaboration
 import qualified Event.Event                    as Event
 import qualified React.Store                    as Store
 import qualified React.Store.App                as App
+import qualified React.Store.CodeEditor         as CodeEditor
 import qualified React.Store.Node               as Node
 import qualified React.Store.NodeEditor         as NodeEditor
 import qualified Reactive.State.Camera          as Camera
@@ -72,6 +73,9 @@ inApp action = action =<< use app
 
 inNodeEditor :: (NodeEditor.Ref -> Command State r) -> Command State r
 inNodeEditor action = inApp $ (action . view App.nodeEditor) <=< Store.get
+
+inCodeEditor :: (CodeEditor.Ref -> Command State r) -> Command State r
+inCodeEditor action = inApp $ (action . view App.codeEditor) <=< Store.get
 
 inNode :: NodeId -> (Maybe Node.Ref -> Command State r) -> Command State r
 inNode nodeId action = inNodeEditor $ (action . view (NodeEditor.nodes . at nodeId)) <=< Store.get

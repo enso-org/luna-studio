@@ -29,6 +29,7 @@ import qualified Event.Event                                 as Event
 
 import           Reactive.Commands.Batch                     (collaborativeModify, requestCollaborationRefresh)
 import           Reactive.Commands.Camera                    (autoZoom)
+import qualified Reactive.Commands.CodeEditor                as CodeEditor
 import           Reactive.Commands.Command                   (Command, performIO)
 import           Reactive.Commands.Graph                     (updateConnection)
 import           Reactive.Commands.Graph.Connect             (localConnectNodes)
@@ -72,10 +73,10 @@ toAction (Event.Batch ev) = Just $ case ev of
                     breadcrumb  = result ^. GetProgram.breadcrumb
 
                 Global.workspace . Workspace.nodeSearcherData .= nsData
-                displayCurrentBreadcrumb breadcrumb
+                -- displayCurrentBreadcrumb breadcrumb --TODO react
                 renderGraph nodes connections
-                autoZoom
-                performIO $ UI.setText code
+                -- autoZoom --TODO react
+                CodeEditor.setCode code
                 Global.workspace . Workspace.isGraphLoaded .= True
                 requestCollaborationRefresh
 

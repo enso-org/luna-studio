@@ -17,7 +17,7 @@ node :: Node.Ref -> ReactView ()
 node nodeRef = React.defineControllerView
     name nodeRef $ \nodeStore () -> do
         div_ $ do
-            elemString $ "node test"
+            elemString $ "node: " <> show (nodeStore ^. Node.name)
 
 
 node_ :: Node.Ref -> ReactElementM ViewEventHandler ()

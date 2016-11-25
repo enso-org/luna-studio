@@ -70,7 +70,7 @@ actions =  [ --Debug.toActionEv
         --    , Navigation.toAction
         --    , Collaboration.toAction
         --    , NodeSearcher.toAction
-        --    , ProjectManager.toAction
+           , ProjectManager.toAction
         --    , ConnectionPen.toAction
         --    , Tutorial.toAction
         --    , Sandbox.toAction

@@ -17,7 +17,7 @@ name = "node-editor"
 nodeEditor :: NodeEditor.Ref -> ReactView ()
 nodeEditor ref = React.defineControllerView name ref $ \store () -> do
     div_ $ do
-        elemString $ "node editor test"
+        elemString $ "node editor:"
         forM_ (store ^. NodeEditor.nodes . to HashMap.elems) $ \nodeRef -> do
             node_ nodeRef
 

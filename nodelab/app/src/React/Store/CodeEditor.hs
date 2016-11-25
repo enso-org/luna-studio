@@ -1,19 +1,15 @@
 {-# LANGUAGE DeriveAnyClass #-}
 {-# LANGUAGE TypeFamilies   #-}
 
-module React.Store.App where
+module React.Store.CodeEditor where
 
-import           Control.DeepSeq        (NFData)
+import           Control.DeepSeq   (NFData)
 import           React.Flux
 import           Utils.PreludePlus
 
-import qualified React.Store.CodeEditor as CodeEditor
-import qualified React.Store.NodeEditor as NodeEditor
 
 
-
-data Store = Store { _nodeEditor :: NodeEditor.Ref
-                   , _codeEditor :: CodeEditor.Ref
+data Store = Store { _code   :: Text
                    }
 
 makeLenses ''Store
@@ -28,4 +24,4 @@ instance StoreData Store where
 type Ref = ReactStore Store
 
 create :: MonadIO m => m Ref
-create = liftIO . mkStore =<< Store <$> NodeEditor.create <*> CodeEditor.create
+create = liftIO $ mkStore $ Store def

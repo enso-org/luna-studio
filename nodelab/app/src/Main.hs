@@ -81,7 +81,7 @@ runMainNetwork socket = do
     CoreNetwork.makeNetworkDescription socket state
     -- triggerWindowResize
     --
-    -- BatchCmd.listProjects projectListRequestId
+    BatchCmd.listProjects projectListRequestId
     return ()
 
 main :: IO ()
