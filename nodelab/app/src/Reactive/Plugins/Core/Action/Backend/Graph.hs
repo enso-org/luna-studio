@@ -153,7 +153,7 @@ toAction (Event.Batch ev) = Just $ case ev of
     CodeUpdated update -> do
         shouldProcess <- isCurrentLocationAndGraphLoaded (update ^. CodeUpdate.location)
         correctLocation <- isCurrentLocation (update ^. CodeUpdate.location)
-        when (shouldProcess && correctLocation) $ performIO $ UI.setText $ update ^. CodeUpdate.code
+        when (shouldProcess && correctLocation) $ CodeEditor.setCode $ update ^. CodeUpdate.code
 
     -- CollaborationUpdate update -> -- handled in Collaboration.hs
     RemoveNodesResponse          response -> handleResponse response doNothing
