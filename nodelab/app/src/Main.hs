@@ -54,10 +54,6 @@ runMainNetwork socket = do
     appRef <- App.create
     React.reactRender "nodelab-app" (App.app appRef) ()
 
-    -- initializeGl
-    -- initializeHelp
-    -- render
-
     lastLocation <- GraphLocation.loadLocation
 
     random <- newStdGen
@@ -82,7 +78,6 @@ runMainNetwork socket = do
     -- triggerWindowResize
     --
     BatchCmd.listProjects projectListRequestId
-    return ()
 
 main :: IO ()
 main = Loader.withActiveConnection runMainNetwork

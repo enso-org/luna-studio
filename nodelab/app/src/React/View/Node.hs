@@ -16,7 +16,7 @@ name = "node-editor"
 node :: Node.Ref -> ReactView ()
 node nodeRef = React.defineControllerView
     name nodeRef $ \nodeStore () -> do
-        div_ $ do
+        div_ [onClick $ \_ _ -> Node.dispatch nodeRef Node.OnClick] $ do
             elemString $ "node: " <> show (nodeStore ^. Node.name)
 
 
