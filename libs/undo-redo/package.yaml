@@ -5,13 +5,44 @@ maintainer:         New Byte Order <contact@newbyteorder.com>
 
 dependencies:
   - base
-
+  - binary
+  - zmq-bus-config
+  - zmq-bus
+  - lens
+  - mtl
+  - bytestring
+  - prologue
 
 default-extensions:
   - NoImplicitPrelude
+  - DeriveGeneric
+  - TemplateHaskell
+  - MultiParamTypeClasses
 
 library:
     source-dirs: src
-    ghc-options: -Wall -O2 -threaded
-    other-modules:
-    #   - Paths_batch_lib_luna_empire
+    ghc-options: -Wall -O2
+    # other-modules:
+    #     - Undo-redo
+
+executables:
+ undo-redo-exec:
+   dependencies:
+     - undo-redo
+     - base
+     - prologue
+     - zmq-bus
+     - zmq-bus-config
+     - m-logger
+
+   source-dirs: app
+   main:        Main.hs
+   ghc-options: -Wall -O2 -threaded
+
+tests:
+   spec:
+       main: Spec.hs
+       source-dirs: test
+       dependencies:
+           - undo-redo
+           - hspec

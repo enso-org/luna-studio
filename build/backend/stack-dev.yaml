@@ -10,6 +10,7 @@ packages:
 - {extra-dep: true, location: ../../libs/luna-empire-api}
 - {extra-dep: true, location: ../../libs/m-logger}
 - {extra-dep: true, location: ../../libs/scope-searcher}
+- {extra-dep: true, location: ../../libs/undo-redo}
 - {extra-dep: true, location: ../../libs/ws-connector}
 - {extra-dep: true, location: ../../libs/zmq-bus-config}
 - {extra-dep: true, location: ../../libs/zmq-bus}
@@ -19,6 +20,7 @@ packages:
 - {location: ../../tools/batch/plugins/bus-logger}
 - {location: ../../tools/batch/plugins/luna-empire}
 - {location: ../../tools/batch/plugins/request-monitor}
+- {location: ../../libs/undo-redo}
 - extra-dep: false
   location:  ../../../luna/compiler
 - extra-dep: false
