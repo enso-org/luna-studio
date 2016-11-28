@@ -7,7 +7,6 @@ import           Data.Aeson                     (ToJSON)
 import           Utils.PreludePlus
 import           Utils.Vector
 
-import           Reactive.State.Collaboration   (ColorId)
 import           Data.Map.Lazy                  (Map)
 import qualified Data.Text.Lazy                 as Text
 import           Data.Time.Clock                (UTCTime)
@@ -17,6 +16,9 @@ import qualified Empire.API.Data.Port           as P
 import           Empire.API.Graph.Collaboration (ClientId)
 import           Object.UITypes
 import           Object.Widget
+import           Reactive.State.Collaboration   (ColorId)
+
+
 
 data Elements = Elements { _expressionLabel     :: WidgetId
                          , _portGroup           :: WidgetId

@@ -1,26 +1,17 @@
 {-# LANGUAGE DeriveAnyClass #-}
 {-# LANGUAGE TypeFamilies   #-}
 
-module React.Store.Function.Input where
+module React.Store.Function.Input (
+    module React.Store.Function.Input,
+    module X
+) where
 
 import           Control.DeepSeq            (NFData)
-import           Object.Widget.FunctionPort (FunctionPort)
-import           React.Flux
+import           Object.Widget.FunctionPort as X
 import           Utils.PreludePlus
 
 
-
-data Store = Store { _input :: FunctionPort }
-           deriving (Show, Generic)
+type Input = FunctionPort
 
 data Action = Action
             deriving (Show, Generic, NFData, Typeable)
-
-instance StoreData Store where
-    type StoreAction Store = Action
-    transform _  = return
-
-type Ref = ReactStore Store
-
-create :: MonadIO m => FunctionPort -> m Ref
-create = liftIO . mkStore . Store

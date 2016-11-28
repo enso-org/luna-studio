@@ -4,24 +4,16 @@
 module React.Store.CodeEditor where
 
 import           Control.DeepSeq   (NFData)
-import           React.Flux
 import           Utils.PreludePlus
 
 
 
-data Store = Store { _code   :: Text
-                   }
+data CodeEditor = CodeEditor { _code   :: Text }
 
-makeLenses ''Store
+makeLenses ''CodeEditor
 
 data Action = Action
             deriving (Show, Generic, NFData, Typeable)
 
-instance StoreData Store where
-    type StoreAction Store = Action
-    transform _ = return
-
-type Ref = ReactStore Store
-
-create :: MonadIO m => m Ref
-create = liftIO $ mkStore $ Store def
+instance Default CodeEditor where
+    def = CodeEditor def

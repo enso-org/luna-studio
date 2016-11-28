@@ -58,9 +58,10 @@ registerNode :: Node -> Command State (Ref Model.Node)
 registerNode node = do
     let nodeModel = Model.fromNode node
         nodeId    = node ^. Node.nodeId
-    Global.inNodeEditor $ Store.modifyM $ \nodeEditor -> do
-        ref <- Model.create nodeModel
-        return (nodeEditor & NodeEditor.nodes . at nodeId ?~ ref, ref)
+    Global.inNodeEditor $ Store.modifyM $ do
+        ref <- lift $ Store.create nodeModel
+        NodeEditor.nodes . at nodeId ?= ref
+        return ref
 
 --TODO react
 -- nodeHandlers :: Node -> HTMap

@@ -39,6 +39,7 @@ import           JS.Tutorial                       (showStep)
 import           JS.UI                             (initializeGl, initializeHelp, render, triggerWindowResize)
 import           JS.UUID                           (generateUUID)
 import           JS.WebSocket                      (WebSocket)
+import qualified React.Store                       as Store
 import qualified React.Store.App                   as App
 import qualified React.View.App                    as App
 import           Reactive.Commands.Command         (execCommand)
@@ -51,7 +52,7 @@ import qualified Reactive.State.Global             as Global
 
 runMainNetwork :: WebSocket -> IO ()
 runMainNetwork socket = do
-    appRef <- App.create
+    appRef <- Store.createApp undefined
     React.reactRender "nodelab-app" (App.app appRef) ()
 
     lastLocation <- GraphLocation.loadLocation

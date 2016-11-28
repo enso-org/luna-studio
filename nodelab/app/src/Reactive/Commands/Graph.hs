@@ -21,8 +21,9 @@ import           Utils.Angle
 import           Utils.PreludePlus
 import           Utils.Vector
 
-import           React.Store                         (ref, widget)
+import           React.Store                         (Ref, ref, widget)
 import qualified React.Store                         as Store
+import           React.Store.Node                    (Node)
 import qualified React.Store.Node                    as Node
 
 import           Object.UITypes
@@ -69,7 +70,7 @@ getNode nodeId = Global.inNode nodeId $ mapM Store.get
 widgetIdToNodeWidget :: WidgetId -> Command UIRegistry.State (Maybe (WidgetFile Model.Node))
 widgetIdToNodeWidget = UIRegistry.lookupTypedM
 
-nodeIdToWidgetId :: NodeId -> Command Global.State (Maybe Node.Ref)
+nodeIdToWidgetId :: NodeId -> Command Global.State (Maybe (Ref Node))
 nodeIdToWidgetId = Global.getNode
 
 connectionIdToWidgetId :: ConnectionId -> Command Global.State (Maybe WidgetId)
@@ -81,7 +82,7 @@ portRefToWidgetId portRef = preuse $ Global.graph . Graph.portWidgetsMap . ix po
 nats :: [Integer]
 nats = [1..]
 
-focusNode :: Node.Ref -> Command Global.State ()
+focusNode :: Ref Node -> Command Global.State ()
 focusNode nodeRef = do
     node <- Store.get' nodeRef
     nodes <- mapM Store.get' =<< allNodes

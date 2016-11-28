@@ -4,7 +4,7 @@ module Reactive.Commands.Function.Input
 
 import           Prologue
 
-import           Empire.API.Data.Input      (Input)
+import qualified Empire.API.Data.Input      as API
 import           Empire.API.Data.Node       (NodeId)
 import qualified Object.Widget.FunctionPort as Model
 import qualified React.Store                as Store
@@ -17,9 +17,9 @@ import           UI.Handlers.FunctionPort   ()
 
 
 
-registerInput :: NodeId -> Int -> Input -> Command State ()
+registerInput :: NodeId -> Int -> API.Input -> Command State ()
 registerInput nodeId inputNo input = do
     let inputModel = Model.fromInput nodeId input
-    Global.inNodeEditor $ Store.modifyM_ $ \ nodeEditor -> do
-        inputRef <- Input.create inputModel
-        return $ nodeEditor & NodeEditor.inputs . at inputNo ?~ inputRef
+    Global.inNodeEditor $ Store.modifyM_ $ do
+        inputRef <- lift $ Store.create $ inputModel
+        NodeEditor.inputs . at inputNo ?= inputRef

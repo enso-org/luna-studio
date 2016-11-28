@@ -47,12 +47,12 @@ updateExistingNode node = do
     let nodeId  = node ^. Node.nodeId
     maybeWidgetId <- nodeIdToWidgetId nodeId
     zoom Global.graph $ modify (Graph.addNode node)
-    Global.inNode nodeId $ mapM_ $ Store.modifyM_ $ \model -> do
+    Global.inNode nodeId $ mapM_ $ Store.modifyM_ $ do
         -- displayPorts widgetId node --TODO react
-        let model' = model & case node ^. Node.nodeType of
-                Node.ExpressionNode expression -> Model.expression .~ expression
-                _                              -> id
-        return $ model' & Model.code .~ (node ^. Node.code)
+        case node ^. Node.nodeType of
+            Node.ExpressionNode expression -> Model.expression .= expression
+            _                              -> return ()
+        Model.code .= (node ^. Node.code)
         -- TODO: obsluzyc to ze moga zniknac polaczenia
     updateConnectionsForNodes [nodeId]
 

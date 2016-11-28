@@ -18,10 +18,13 @@ import           Batch.Workspace
 import           Empire.API.Data.Node           (NodeId)
 import qualified Empire.API.Graph.Collaboration as Collaboration
 import qualified Event.Event                    as Event
+import           React.Store                    (Ref)
 import qualified React.Store                    as Store
+import           React.Store.App                (App)
 import qualified React.Store.App                as App
-import qualified React.Store.CodeEditor         as CodeEditor
-import qualified React.Store.Node               as Node
+import           React.Store.CodeEditor         (CodeEditor)
+import           React.Store.Node               (Node)
+import           React.Store.NodeEditor         (NodeEditor)
 import qualified React.Store.NodeEditor         as NodeEditor
 import qualified Reactive.State.Camera          as Camera
 import qualified Reactive.State.Collaboration   as Collaboration
@@ -56,34 +59,34 @@ data State = State { _mousePos           :: Vector2 Int
                    , _clientId           :: Collaboration.ClientId
                    , _random             :: StdGen
                    , _tutorial           :: Maybe Int
-                   , _app                :: App.Ref
+                   , _app                :: Ref App
                    } deriving (Generic)
 
 instance ToJSON State
 instance ToJSON StdGen where
     toJSON _ = toJSON "(random-generator)"
-instance ToJSON App.Ref where
-    toJSON _ = toJSON "(App.Ref)"
+instance ToJSON (Ref App) where
+    toJSON _ = toJSON "((Ref App))"
 
 
 makeLenses ''State
 
-inApp :: (App.Ref -> Command State r) -> Command State r
+inApp :: (Ref App -> Command State r) -> Command State r
 inApp action = action =<< use app
 
-inNodeEditor :: (NodeEditor.Ref -> Command State r) -> Command State r
+inNodeEditor :: (Ref NodeEditor -> Command State r) -> Command State r
 inNodeEditor action = inApp $ (action . view App.nodeEditor) <=< Store.get
 
-inCodeEditor :: (CodeEditor.Ref -> Command State r) -> Command State r
+inCodeEditor :: (Ref CodeEditor -> Command State r) -> Command State r
 inCodeEditor action = inApp $ (action . view App.codeEditor) <=< Store.get
 
-inNode :: NodeId -> (Maybe Node.Ref -> Command State r) -> Command State r
+inNode :: NodeId -> (Maybe (Ref Node) -> Command State r) -> Command State r
 inNode nodeId action = inNodeEditor $ (action . view (NodeEditor.nodes . at nodeId)) <=< Store.get
 
-getNode :: NodeId -> Command State (Maybe Node.Ref)
+getNode :: NodeId -> Command State (Maybe (Ref Node))
 getNode nodeId = inNode nodeId return
 
-initialState :: DateTime -> Collaboration.ClientId -> StdGen -> Maybe Int -> App.Ref -> State
+initialState :: DateTime -> Collaboration.ClientId -> StdGen -> Maybe Int -> (Ref App) -> State
 initialState = State (Vector2 200 200) def def def def def def def def def def def defJsState def def
 
 inRegistry :: Command UIRegistry.State a -> Command State a
