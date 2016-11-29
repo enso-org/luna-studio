@@ -9,8 +9,8 @@ import qualified React.Store.NodeEvent as Node
 
 
 
-data Event = NodeEvent Node.Event
-             deriving (Show, Generic, NFData, Typeable)
+data UIEvent = NodeEvent Node.Event
+               deriving (Show, Generic, NFData, Typeable)
 
-instance ToJSON   Event
-instance FromJSON Event
+instance ToJSON   UIEvent
+instance FromJSON UIEvent

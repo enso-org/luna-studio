@@ -14,7 +14,7 @@ import qualified Event.Keyboard      as Keyboard
 import qualified Event.Mouse         as Mouse
 import qualified Event.NodeSearcher  as NodeSearcher
 import qualified Event.TextEditor    as TextEditor
-import qualified Event.UI            as UI
+import  Event.UI            (UIEvent)
 import qualified Event.Widget        as Widget
 import qualified Event.Window        as Window
 import           Utils.PreludePlus
@@ -30,7 +30,7 @@ instance Show JSState where
     show _ = "JSState"
 
 data Event = Init
-           | UI                               UI.Event
+           | UI                                UIEvent
            | Window                       Window.Event
            | Keyboard      JSState      Keyboard.Event
            | Mouse         JSState      Mouse.RawEvent

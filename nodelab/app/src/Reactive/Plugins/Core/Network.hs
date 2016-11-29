@@ -35,6 +35,7 @@ import qualified Reactive.Plugins.Core.Action.NodeSearcher           as NodeSear
 import qualified Reactive.Plugins.Core.Action.Sandbox                as Sandbox
 import qualified Reactive.Plugins.Core.Action.Tutorial               as Tutorial
 import qualified Reactive.Plugins.Core.Action.Widget                 as Widget
+import qualified Reactive.Plugins.Core.Action.Node as Node
 
 import           Reactive.Commands.Command                           (Command, execCommand)
 import           Reactive.State.Global                               (State)
@@ -72,6 +73,7 @@ actions =  [ --Debug.toActionEv
         --    , Collaboration.toAction
         --    , NodeSearcher.toAction
            , ProjectManager.toAction
+           , Node.toAction
         --    , ConnectionPen.toAction
         --    , Tutorial.toAction
         --    , Sandbox.toAction

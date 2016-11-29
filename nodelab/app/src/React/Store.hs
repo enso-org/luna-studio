@@ -11,19 +11,19 @@ import           React.Flux
 import           Utils.PreludePlus          as P hiding (transform)
 
 import qualified Event.Event                as Event
-import qualified Event.UI                   as UI
+import Event.UI                   (UIEvent)
 import           React.Store.App            (App (App))
 import           React.Store.Ref            as X
 
 
 
 instance Typeable a => StoreData (Store a) where
-    type StoreAction (Store a) = UI.Event
+    type StoreAction (Store a) = UIEvent
     transform event store = do
         (store ^. sendEvent) $ Event.UI event
         return $ store
 
-dispatch :: Typeable a => Ref a -> UI.Event -> [SomeStoreAction]
+dispatch :: Typeable a => Ref a -> UIEvent -> [SomeStoreAction]
 dispatch s a = [SomeStoreAction s a]
 
 create' :: (StoreData (Store a), MonadIO m) => SendEvent -> a -> m (Ref a)
