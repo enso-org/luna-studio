@@ -12,7 +12,7 @@ import           Data.HMap.Lazy                    (TypeKey (..))
 import qualified Data.HMap.Lazy                    as HMap
 import           Data.Layer_OLD.Cover_OLD          (uncover)
 import           Data.Maybe                        (catMaybes, fromMaybe)
-import           Data.Prop                         (prop, ( # ))
+import           Old.Data.Prop                     (prop, ( # ))
 import           Data.Record                       (ANY (..), caseTest, of')
 import qualified Data.Text.Lazy                    as Text
 import           Prologue                          hiding (( # ))
@@ -34,27 +34,27 @@ import           Empire.ASTOps.Remove              (safeRemove)
 
 import           Empire.Utils.TextResult           (nodeValueToText)
 
-import           Luna.Pretty.GraphViz              (renderAndOpen)
+import           Old.Luna.Pretty.GraphViz          (renderAndOpen)
 
-import           Luna.Syntax.Model.Network.Builder (Meta (..), TCData (..), Type (..), tcErrors)
-import qualified Luna.Syntax.Model.Network.Builder as Builder
+import           Old.Luna.Syntax.Model.Network.Builder (Meta (..), TCData (..), Type (..), tcErrors)
+import qualified Old.Luna.Syntax.Model.Network.Builder as Builder
 import           Old.Luna.Syntax.Term.Class        (Cons (..), Unify (..))
 import qualified Old.Luna.Syntax.Term.Expr.Lit     as Lit
 
-import           Luna.Compilation.Error            as TCError
+import           Old.Luna.Compilation.Error            as TCError
 
-import           Luna.Interpreter.Layer            (InterpreterData (..))
-import qualified Luna.Interpreter.Layer            as Interpreter
-import           Luna.Interpreter.Value            (Data, attachListener, toExceptIO, unsafeFromData)
-import qualified Luna.Interpreter.Value            as Value
+import           Luna.Pass.Evaluation.Interpreter.Layer (InterpreterData (..))
+import qualified Luna.Pass.Evaluation.Interpreter.Layer as Interpreter
+import           Luna.Pass.Evaluation.Interpreter.Value (Data, attachListener, toExceptIO, unsafeFromData)
+import qualified Luna.Pass.Evaluation.Interpreter.Value as Value
 
 import           Empire.Commands.Graphics          (fromMaterial)
 
 
 -- TODO: This might deserve rewriting to some more general solution
 import qualified Graphics.API                      as G
-import           Luna.Interpreter.Charts           (autoScatterChartDouble, autoScatterChartDoubleTuple, autoScatterChartInt,
-                                                    autoScatterChartIntTuple)
+import           Luna.Pass.Evaluation.Interpreter.Charts (autoScatterChartDouble, autoScatterChartDoubleTuple, autoScatterChartInt,
+                                                          autoScatterChartIntTuple)
 
 metaKey :: TypeKey NodeMeta
 metaKey = TypeKey

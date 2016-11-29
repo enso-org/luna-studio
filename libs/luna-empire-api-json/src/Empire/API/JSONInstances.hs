@@ -79,7 +79,7 @@ instance FromJSON Node.NodeType
 instance ToJSON NodeMeta.NodeMeta
 instance FromJSON NodeMeta.NodeMeta
 
-instance (ToJSON b) => ToJSON (Map UUID b) where
+instance {-# OVERLAPPING #-} (ToJSON b) => ToJSON (Map UUID b) where
     toJSON = toJSON . Map.mapKeys UUID.toString
     {-# INLINE toJSON #-}
 
@@ -95,11 +95,11 @@ instance (ToJSON b) => ToJSON  (Map OutPortRef b) where
     toJSON = toJSON . Map.mapKeys show
     {-# INLINE toJSON #-}
 
-instance (ToJSON b) => ToJSON  (Map PortId b) where
+instance {-# OVERLAPPING #-} (ToJSON b) => ToJSON  (Map PortId b) where
     toJSON = toJSON . Map.mapKeys show
     {-# INLINE toJSON #-}
 
-instance (FromJSON b) => FromJSON  (Map PortId b) where
+instance {-# OVERLAPPING #-} (FromJSON b) => FromJSON  (Map PortId b) where
     parseJSON = fmap (Map.mapKeys read) . parseJSON -- TODO: use readMaybe
     {-# INLINE parseJSON #-}
 

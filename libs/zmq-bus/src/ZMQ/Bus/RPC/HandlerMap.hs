@@ -32,7 +32,7 @@ import           Data.Map                   as X
 import qualified Data.Map                   as Map
 
 import           Language.Haskell.TH
-import           Prologue                   hiding (error)
+import           Prologue                   hiding (error, Type)
 import           System.Log.MLogger
 import           ZMQ.Bus.Data.Message       (CorrelationID)
 import           ZMQ.Bus.RPC.RPC            (RPC)

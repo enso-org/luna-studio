@@ -29,7 +29,7 @@ import           Empire.Data.Library
 import           Empire.Empire
 import           Control.Concurrent.STM.TChan (TChan, newTChan)
 import           Control.Concurrent.STM       (atomically)
-import           Luna.Pretty.GraphViz         (renderAndOpen, toGraphViz)
+import           Old.Luna.Pretty.GraphViz     (renderAndOpen, toGraphViz)
 
 import           Test.Hspec (around, describe, expectationFailure, it, shouldSatisfy)
 
@@ -39,8 +39,8 @@ spec = around withChannels $
         it "descends into `def foo` and asserts null list of nodes inside" $ \env -> do
             u1 <- nextRandom
             (res, state) <- runEmpire env def $ do
-                (pid, _) <- createProject Nothing "dupa"
-                (lid, _) <- createLibrary pid (Just "xd") "/xd/xd"
+                (pid, _) <- createProject Nothing "project1"
+                (lid, _) <- createLibrary pid (Just "lib1") "/libs/lib1"
 
                 let loc = GraphLocation pid lid $ Breadcrumb []
                 let loc' = GraphLocation pid lid $ Breadcrumb [Breadcrumb.Lambda u1]
@@ -63,8 +63,8 @@ withChannels = bracket createChannels (const $ return ())
 
 test :: Empire Graph
 test = do
-    (pid, _) <- createProject Nothing "dupa"
-    (lid, _) <- createLibrary pid (Just "xd") "/xd/xd"
+    (pid, _) <- createProject Nothing "project1"
+    (lid, _) <- createLibrary pid (Just "lib1") "/libs/lib1"
 
     let loc = GraphLocation pid lid $ Breadcrumb []
 

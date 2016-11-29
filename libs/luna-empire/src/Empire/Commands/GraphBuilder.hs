@@ -16,7 +16,7 @@ import qualified Data.List                         as List
 import           Data.Map                          (Map)
 import qualified Data.Map                          as Map
 import           Data.Maybe                        (catMaybes, fromMaybe, maybeToList)
-import           Data.Prop                         (prop)
+import           Old.Data.Prop                     (prop)
 import           Data.Record                       (ANY (..), caseTest, of')
 import qualified Data.Text.Lazy                    as Text
 import qualified Data.Tree                         as Tree
@@ -47,12 +47,11 @@ import qualified Empire.Commands.GraphUtils        as GraphUtils
 import           Empire.Data.AST                   (ClusRef, EdgeRef, NodeRef)
 import           Empire.Empire
 
-import qualified Luna.Syntax.Term.Function         as Function
 import           Old.Luna.Syntax.Term.Class        (Acc (..), App (..), Blank (..), Cons (..), Lam (..), Match (..), Var (..))
 import qualified Old.Luna.Syntax.Term.Expr.Lit     as Lit
 
-import           Luna.Syntax.Model.Network.Builder (TCData (..), Type (..), replacement)
-import qualified Luna.Syntax.Model.Network.Builder as Builder
+import           Old.Luna.Syntax.Model.Network.Builder (TCData (..), Type (..), replacement)
+import qualified Old.Luna.Syntax.Model.Network.Builder as Builder
 
 decodeBreadcrumbs :: Breadcrumb BreadcrumbItem -> Command Graph (Breadcrumb (Named BreadcrumbItem))
 decodeBreadcrumbs (Breadcrumb items) = do
@@ -115,20 +114,6 @@ getPortState ref = do
                 _       -> WithDefault . Expression <$> Print.printExpression ref
             of' $ \Blank   -> return NotConnected
             of' $ \ANY     -> WithDefault . Expression <$> Print.printExpression ref
-
-extractAppArgTypes :: ASTOp m => NodeRef -> m [ValueType]
-extractAppArgTypes ref = do
-    node <- Builder.read ref
-    args <- runMaybeT $ do
-        repl :: ClusRef <- MaybeT $ cast <$> Builder.follow (prop TCData . replacement) ref
-        sig <- MaybeT $ Builder.follow (prop Builder.Lambda) repl
-        return $ sig ^. Function.args
-    case args of
-        Nothing -> return []
-        Just as -> do
-            let unpacked = unlayer <$> as
-            types <- mapM (Builder.follow (prop Type) >=> Builder.follow source) unpacked
-            mapM getTypeRep types
 
 extractArgTypes :: ASTOp m => NodeRef -> m [ValueType]
 extractArgTypes ref = do

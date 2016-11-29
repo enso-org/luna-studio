@@ -28,18 +28,18 @@ import qualified Empire.Commands.GraphBuilder      as GraphBuilder
 import qualified Empire.Commands.Publisher         as Publisher
 
 import qualified StdLibMock                                      as StdLib
-import qualified Luna.Library.Symbol                             as Symbol
-import qualified Luna.Compilation.Stage.TypeCheck                as TypeCheck
-import qualified Luna.Compilation.Stage.TypeCheck.Class          as TypeCheckState
-import           Luna.Compilation.Stage.TypeCheck                (Loop (..), Sequence (..))
-import           Luna.Compilation.Pass.Inference.Literals        (LiteralsPass (..))
-import           Luna.Compilation.Pass.Inference.Struct          (StructuralInferencePass (..))
-import           Luna.Compilation.Pass.Inference.Unification     (StrictUnificationPass (..))
-import           Luna.Compilation.Pass.Inference.Importing       (SymbolImportingPass (..))
-import           Luna.Compilation.Pass.Inference.Scan            (ScanPass (..))
-import           Luna.Syntax.Model.Network.Builder               (Sign (..))
+import qualified Luna.IR.Library.Symbol                          as Symbol
+import qualified Old.Luna.Compilation.Stage.TypeCheck            as TypeCheck
+import qualified Old.Luna.Compilation.Stage.TypeCheck.Class      as TypeCheckState
+import           Old.Luna.Compilation.Stage.TypeCheck            (Loop (..), Sequence (..))
+import           Luna.Pass.Inference.Literals                    (LiteralsPass (..))
+import           Luna.Pass.Inference.Struct                      (StructuralInferencePass (..))
+import           Luna.Pass.Inference.Unification                 (StrictUnificationPass (..))
+import           Luna.Pass.Inference.Importing                   (SymbolImportingPass (..))
+import           Luna.Pass.Inference.Scan                        (ScanPass (..))
+import           Old.Luna.Syntax.Model.Network.Builder           (Sign (..))
 
-import qualified Luna.Interpreter.Interpreter                    as Interpreter
+import qualified Luna.Pass.Evaluation.Interpreter.Interpreter    as Interpreter
 
 import qualified Empire.ASTOp                                    as ASTOp
 

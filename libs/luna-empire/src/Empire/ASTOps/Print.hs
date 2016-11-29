@@ -19,7 +19,7 @@ import           Empire.API.Data.TypeRep  (TypeRep (..))
 import           Old.Luna.Syntax.Term.Class   (Acc (..), App (..), Blank (..), Match (..), Var (..), Cons (..), Curry (..), Lam (..))
 import qualified Old.Luna.Syntax.Term.Expr.Lit     as Lit
 
-import qualified Luna.Syntax.Model.Network.Builder as Builder
+import qualified Old.Luna.Syntax.Model.Network.Builder as Builder
 
 getTypeRep :: ASTOp m => NodeRef -> m TypeRep
 getTypeRep tp = do

@@ -14,10 +14,10 @@ import           Data.Graph.Builders                     (Connectible)
 import           Data.Graph.Model.Events                 (ELEMENT (..))
 import           Empire.Data.AST                         (AST, EdgeRef, NodeRef)
 import           Empire.Empire                           (Command, Error, empire)
-import qualified Luna.Syntax.Model.Network.Builder.Class as Builder
-import           Luna.Syntax.Model.Network.Builder.Term  (NetworkBuilderT, TermBuilder_OLD, runNetworkBuilderT)
-import           Luna.Syntax.Model.Text.Location         (LocationT, MonadLocation)
-import qualified Luna.Syntax.Model.Text.Location         as Location
+import qualified Old.Luna.Syntax.Model.Network.Builder.Class as Builder
+import           Old.Luna.Syntax.Model.Network.Builder.Term  (NetworkBuilderT, TermBuilder_OLD, runNetworkBuilderT)
+import           Luna.IR.Layers.Loc                      (LocationT, MonadLocation)
+import qualified Luna.IR.Layers.Loc                      as Location
 import           Old.Luna.Syntax.Term.Class              (Acc, App, Blank, Cons, Curry, Lam, Match, Unify, Var)
 import qualified Old.Luna.Syntax.Term.Expr.Lit           as Lit
 import           Type.Inference

@@ -16,7 +16,7 @@ import           Empire.ASTOps.Remove         (safeRemove)
 
 import           Empire.API.Data.DefaultValue (PortDefault (..), Value (..))
 
-import qualified Luna.Syntax.Model.Network.Builder as Builder
+import qualified Old.Luna.Syntax.Model.Network.Builder as Builder
 
 import qualified Luna.Parser.Parser as Parser
 import qualified Luna.Parser.State  as Parser

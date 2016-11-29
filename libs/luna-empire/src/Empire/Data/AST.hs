@@ -5,10 +5,10 @@ module Empire.Data.AST where
 
 import           Prologue
 
-import Data.Graph                             (Node, Link, Ref, Edge, Cluster)
-import Luna.Syntax.Model.Network.Builder.Term (NetGraph, NetNode, NetLayers, NetCluster)
-import Luna.Runtime.Dynamics                  (Static)
-import Luna.Syntax.Model.Network.Term         (Draft)
+import Data.Graph                                 (Node, Link, Ref, Edge, Cluster)
+import Old.Luna.Syntax.Model.Network.Builder.Term (NetGraph, NetNode, NetLayers, NetCluster)
+import Old.Luna.Runtime.Dynamics                  (Static)
+import Old.Luna.Syntax.Model.Network.Term         (Draft)
 
 type ASTNode       = NetNode
 type ASTEdge       = Link ASTNode

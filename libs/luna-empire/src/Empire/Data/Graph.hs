@@ -7,7 +7,7 @@ import           Empire.Data.BreadcrumbHierarchy   (BreadcrumbHierarchy, empty)
 import           Empire.Data.AST                   (AST, NodeRef)
 import           Prologue
 
-import           Luna.Syntax.Model.Network.Builder (runNetworkBuilderT, star)
+import           Old.Luna.Syntax.Model.Network.Builder (runNetworkBuilderT, star)
 
 data Graph = Graph { _ast                 :: AST
                    , _nodeMapping         :: Map NodeId NodeRef

@@ -5,8 +5,8 @@ module Empire.ASTOps.Remove where
 import           Prologue                      hiding ((#))
 import           Data.Construction             (destruct)
 import           Data.Container                (size)
-import           Data.Prop                     ((#))
-import           Data.Layer_OLD.Cover_OLD (uncover, covered)
+import           Old.Data.Prop                 ((#))
+import           Data.Layer_OLD.Cover_OLD      (uncover, covered)
 import           Data.Graph                    (Inputs (..), Succs (..))
 import           Data.Direction                (source)
 import           Data.List                     (nub)
@@ -14,8 +14,8 @@ import           Data.List                     (nub)
 import           Empire.ASTOp                  (ASTOp)
 import           Empire.Data.AST               (NodeRef)
 
-import qualified Luna.Syntax.Model.Network.Builder as Builder
-import           Luna.Syntax.Model.Network.Builder (Type (..))
+import qualified Old.Luna.Syntax.Model.Network.Builder as Builder
+import           Old.Luna.Syntax.Model.Network.Builder (Type (..))
 
 removeNode :: ASTOp m => NodeRef -> m ()
 removeNode ref = do

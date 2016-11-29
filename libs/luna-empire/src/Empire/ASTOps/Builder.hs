@@ -9,7 +9,7 @@ import qualified Data.HMap.Lazy                     as HMap
 import           Data.Layer_OLD.Cover_OLD           (covered, uncover)
 import           Data.List                          (dropWhileEnd)
 import           Data.Maybe                         (isJust, isNothing)
-import           Data.Prop                          (prop, ( # ))
+import           Old.Data.Prop                      (prop, ( # ))
 import           Data.Record                        (ANY (..), caseTest, cons, of')
 import           Prologue                           hiding (cons, ( # ))
 
@@ -21,10 +21,10 @@ import           Empire.Data.NodeMarker             (NodeMarker, nodeMarkerKey)
 import           Old.Luna.Syntax.Term.Class         (Acc (..), App (..), Blank (..), Curry (..), Match (..), Var (..))
 import qualified Old.Luna.Syntax.Term.Expr.Lit      as Lit
 
-import           Luna.Syntax.Model.Network.Builder  (Meta (..))
-import qualified Luna.Syntax.Model.Network.Builder  as Builder
-import           Luna.Syntax.Term.Function.Argument (Arg)
-import qualified Luna.Syntax.Term.Function.Argument as Arg
+import           Old.Luna.Syntax.Model.Network.Builder  (Meta (..))
+import qualified Old.Luna.Syntax.Model.Network.Builder  as Builder
+import           Luna.IR.Function.Argument (Arg)
+import qualified Luna.IR.Function.Argument as Arg
 
 functionApplicationNode :: Lens' ASTNode EdgeRef
 functionApplicationNode = covered . lens getter setter where
