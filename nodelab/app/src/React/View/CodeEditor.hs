@@ -1,7 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 module React.View.CodeEditor where
 
-import qualified Data.HashMap.Strict    as HashMap
 import           Data.Text.Lazy         (unpack)
 import           React.Flux
 import qualified React.Flux             as React

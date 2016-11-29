@@ -4,7 +4,6 @@ import           Data.Aeson          (ToJSON, toJSON)
 import           GHCJS.Marshal.Pure  (PFromJSVal (..), PToJSVal (..))
 import           GHCJS.Types         (JSVal)
 
-import           Utils.PreludePlus
 import qualified Event.Batch         as Batch
 import qualified Event.Clipboard     as Clipboard
 import qualified Event.Connection    as Connection
@@ -15,8 +14,11 @@ import qualified Event.Keyboard      as Keyboard
 import qualified Event.Mouse         as Mouse
 import qualified Event.NodeSearcher  as NodeSearcher
 import qualified Event.TextEditor    as TextEditor
+import qualified Event.UI            as UI
 import qualified Event.Widget        as Widget
 import qualified Event.Window        as Window
+import           Utils.PreludePlus
+
 
 
 newtype JSState = JSState JSVal deriving (PFromJSVal, PToJSVal)
@@ -28,6 +30,7 @@ instance Show JSState where
     show _ = "JSState"
 
 data Event = Init
+           | UI                               UI.Event
            | Window                       Window.Event
            | Keyboard      JSState      Keyboard.Event
            | Mouse         JSState      Mouse.RawEvent

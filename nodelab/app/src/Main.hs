@@ -1,3 +1,4 @@
+{-# LANGUAGE RecursiveDo #-}
 module Main where
 
 
@@ -52,30 +53,27 @@ import qualified Reactive.State.Global             as Global
 
 runMainNetwork :: WebSocket -> IO ()
 runMainNetwork socket = do
-    appRef <- Store.createApp undefined
-    React.reactRender "nodelab-app" (App.app appRef) ()
-
     lastLocation <- GraphLocation.loadLocation
-
     random <- newStdGen
     projectListRequestId <- generateUUID
     clientId             <- generateUUID
     initTime             <- getCurrentTime
     tutorial'            <- shouldRunTutorial
     let tutorial = if tutorial' then Just 0 else Nothing
-
     withJust tutorial $ \step -> showStep step
 
+    mdo
+        appRef <- Store.createApp $ CoreNetwork.processEvent state
+        React.reactRender "nodelab-app" (App.app appRef) ()
 
-    let initState = initialState initTime clientId random tutorial appRef
-                  & Global.workspace . Workspace.lastUILocation .~ lastLocation
-                  & Global.pendingRequests %~ Set.insert projectListRequestId
+        let initState = initialState initTime clientId random tutorial appRef
+                      & Global.workspace . Workspace.lastUILocation .~ lastLocation
+                      & Global.pendingRequests %~ Set.insert projectListRequestId
 
-    -- initState' <- execCommand Init.initialize initState
-    --
-    -- state <- newMVar initState'
-    state <- newMVar initState
-    CoreNetwork.makeNetworkDescription socket state
+        -- initState' <- execCommand Init.initialize initState
+        -- state <- newMVar initState'
+        state <- newMVar initState
+        CoreNetwork.makeNetworkDescription socket state
     -- triggerWindowResize
     --
     BatchCmd.listProjects projectListRequestId

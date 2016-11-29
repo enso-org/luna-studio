@@ -1,16 +1,8 @@
-{-# LANGUAGE DeriveAnyClass #-}
-
 module React.Store.Node (
     module React.Store.Node,
     module X,
 ) where
 
-import           Control.DeepSeq    (NFData)
-import           Utils.PreludePlus
-
-import           Object.Widget.Node as X
-
-
-
-data Event = OnClick
-            deriving (Show, Generic, NFData, Typeable)
+--TODO these modules should be moved directly to this file
+import           Object.Widget.Node    as X
+import           React.Store.NodeEvent as X

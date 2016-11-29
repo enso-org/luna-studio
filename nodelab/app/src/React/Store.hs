@@ -6,27 +6,25 @@ module React.Store
     , module X
 ) where
 
-import           Control.DeepSeq            (NFData)
 import           Control.Monad.Trans.Reader
 import           React.Flux
 import           Utils.PreludePlus          as P hiding (transform)
 
+import qualified Event.Event                as Event
+import qualified Event.UI                   as UI
 import           React.Store.App            (App (App))
 import qualified React.Store.Node           as Node
 import           React.Store.Ref            as X
 
 
 
-data UIEvent = NodeEvent Node.Event
-             deriving (Show, Generic, NFData, Typeable)
-
 instance Typeable a => StoreData (Store a) where
-    type StoreAction (Store a) = UIEvent
+    type StoreAction (Store a) = UI.Event
     transform event store = do
-        print event
+        (store ^. sendEvent) $ Event.UI event
         return $ store
 
-dispatch :: Typeable a => Ref a -> UIEvent -> [SomeStoreAction]
+dispatch :: Typeable a => Ref a -> UI.Event -> [SomeStoreAction]
 dispatch s a = [SomeStoreAction s a]
 
 create' :: (StoreData (Store a), MonadIO m) => SendEvent -> a -> m (Ref a)
