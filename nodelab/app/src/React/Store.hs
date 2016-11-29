@@ -13,7 +13,6 @@ import           Utils.PreludePlus          as P hiding (transform)
 import qualified Event.Event                as Event
 import qualified Event.UI                   as UI
 import           React.Store.App            (App (App))
-import qualified React.Store.Node           as Node
 import           React.Store.Ref            as X
 
 

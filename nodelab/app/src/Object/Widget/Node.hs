@@ -51,7 +51,6 @@ makeLenses ''Collaboration
 instance ToJSON Collaboration
 
 data Node = Node { _nodeId                :: N.NodeId
-                 , _controls              :: [Maybe WidgetId]
                  , _ports                 :: [WidgetId]
                  , _position              :: Position
                  , _zPos                  :: Double
@@ -78,7 +77,7 @@ makeLenses ''Elements
 instance ToJSON Elements
 
 makeNode :: N.NodeId -> Position -> Text -> Maybe Text -> Text -> Maybe Text -> Bool -> Node
-makeNode nid pos expr code name tpe vis = Node nid [] [] pos 0.0 expr code name "" tpe False False False vis def Nothing False def
+makeNode nid pos expr code name tpe vis = Node nid [] pos 0.0 expr code name "" tpe False False False vis def Nothing False def
 
 fromNode :: N.Node -> Node
 fromNode n = let position' = uncurry Vector2 $ n ^. N.nodeMeta ^. NM.position
