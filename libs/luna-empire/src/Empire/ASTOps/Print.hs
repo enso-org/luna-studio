@@ -89,10 +89,10 @@ printExpression' suppressNodes paren nodeRef = do
     caseTest (uncover node) $ do
         of' $ \(Lam as o) -> do
             args    <- ASTBuilder.unpackArguments as
-            argReps <- mapM (recur False) args
+            argReps <- mapM (printExpression' False False) args
             out     <- Builder.follow source o
-            let sugared = all (== "_") argReps
-            repr    <- recur sugared out
+            sugared <- and <$> mapM ASTBuilder.isBlank args
+            repr    <- printExpression' False sugared out
             let bindsRep = if sugared then "" else "-> " ++ unwords (('$' :) <$> argReps) ++ " "
             return $ parenIf (not sugared && paren) $ bindsRep ++ repr
         of' $ \(Match l r) -> do

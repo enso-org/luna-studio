@@ -28,6 +28,8 @@ import           Empire.API.Data.Breadcrumb   as Breadcrumb
 import           Empire.API.Data.PortRef      (AnyPortRef(..), InPortRef (..), OutPortRef (..), srcNodeId)
 import           Empire.API.Data.TypeRep
 import           Empire.API.Data.ValueType
+import           Empire.ASTOp                 (runASTOp)
+import           Empire.ASTOps.Print          (printNodeExpression)
 import           Empire.Commands.AST
 import           Empire.Commands.Graph        as Graph
 import           Empire.Commands.Library
@@ -383,6 +385,18 @@ spec = around withChannels $
               Left err -> expectationFailure err
               Right code -> do
                   lines code `shouldMatchList` ["def foo in0:", "    in0"]
+        it "prints node name for `def foo`" $ \env -> do
+            u1 <- nextRandom
+            (res, _) <- runGraph env $ \mkLoc -> do
+                let loc = mkLoc $ Breadcrumb []
+                    loc' = mkLoc $ Breadcrumb [Breadcrumb.Lambda u1]
+                Graph.addNode loc u1 "def foo" def
+                target <- withGraph loc $ GraphUtils.getASTTarget u1
+                expr <- withGraph loc $ zoom ast $ runASTOp $ printNodeExpression target
+                return expr
+            case res of
+                Left err -> expectationFailure err
+                Right expr -> expr `shouldBe` "-> $in0 in0"
 
 withChannels :: (CommunicationEnv -> IO ()) -> IO ()
 withChannels = bracket createChannels (const $ return ())
