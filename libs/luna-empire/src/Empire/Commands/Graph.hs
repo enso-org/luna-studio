@@ -40,12 +40,12 @@ import qualified Data.UUID                     as UUID
 import qualified Data.UUID.V4                  as UUID (nextRandom)
 import           Prologue
 
-import           Empire.Data.BreadcrumbHierarchy (addID, addWithLeafs, removeID)
+import           Empire.Data.BreadcrumbHierarchy (addID, addWithLeafs, removeID, topLevelIDs)
 import           Empire.Data.Graph               (Graph)
 import qualified Empire.Data.Graph               as Graph
 import qualified Empire.Data.Library             as Library
 
-import           Empire.API.Data.Breadcrumb      (Breadcrumb, Named, BreadcrumbItem)
+import           Empire.API.Data.Breadcrumb      as Breadcrumb (Breadcrumb(..), Named, BreadcrumbItem(..))
 import           Empire.API.Data.Connection      (Connection (..))
 import           Empire.API.Data.DefaultValue    (PortDefault (Constant), Value (..))
 import qualified Empire.API.Data.Graph           as APIGraph
@@ -104,7 +104,7 @@ addNodeNoTC loc uuid expr meta = do
         lambdaUUID <- liftIO $ UUID.nextRandom
         lambdaOutput <- zoom Graph.ast $ AST.getLambdaOutputRef parsedRef
         outputIsOneOfTheInputs <- zoom Graph.ast $ runASTOp $ lambdaOutput `AST.isLambdaInput` parsedRef
-        Graph.nodeMapping . at lambdaUUID ?= Graph.AnonymousNode lambdaOutput
+        when (not outputIsOneOfTheInputs) $ Graph.nodeMapping . at lambdaUUID ?= Graph.AnonymousNode lambdaOutput
         Graph.breadcrumbHierarchy %= addWithLeafs (node ^. Node.nodeId)
             (if outputIsOneOfTheInputs then [] else [lambdaUUID])
         zoom Graph.ast $ runASTOp $ Builder.withRef lambdaOutput $ prop Builder.Meta %~ HMap.insert nodeMarkerKey (NodeMarker lambdaUUID)
@@ -138,8 +138,18 @@ addSubgraph loc nodes conns = withTC loc False $ do
         _ -> return ()
     forM_ conns $ \(Connection src dst) -> connectNoTC loc src dst
 
+descendInto :: GraphLocation -> NodeId -> GraphLocation
+descendInto (GraphLocation pid lid breadcrumb) nid = GraphLocation pid lid breadcrumb'
+    where
+        breadcrumb' = coerce $ coerce breadcrumb ++ [Breadcrumb.Lambda nid]
+
 removeNodes :: GraphLocation -> [NodeId] -> Empire ()
-removeNodes loc nodeIds = withTC loc False $ forM_ nodeIds $ removeNodeNoTC
+removeNodes loc nodeIds = do
+    forM nodeIds $ \nodeId -> do
+        children <- withTC (loc `descendInto` nodeId) False $ do
+            uses Graph.breadcrumbHierarchy topLevelIDs
+        removeNodes (loc `descendInto` nodeId) children
+    withTC loc False $ forM_ nodeIds removeNodeNoTC
 
 removeNodeNoTC :: NodeId -> Command Graph ()
 removeNodeNoTC nodeId = do
@@ -219,7 +229,7 @@ getNodeMeta loc nodeId = withGraph loc $ do
 
 getCode :: GraphLocation -> Empire String
 getCode loc = withGraph loc $ do
-    allNodes <- uses Graph.nodeMapping Map.keys
+    allNodes <- uses Graph.breadcrumbHierarchy topLevelIDs
     refs     <- mapM GraphUtils.getASTPointer allNodes
     metas    <- zoom Graph.ast $ mapM AST.readMeta refs
     let sorted = fmap snd $ sort $ zip metas allNodes
@@ -284,9 +294,19 @@ unAcc nodeId = do
 
 unApp :: NodeId -> Int -> Command Graph ()
 unApp nodeId pos = do
-    astNode <- GraphUtils.getASTTarget nodeId
-    newNodeRef <- zoom Graph.ast $ AST.unapplyArgument astNode pos
-    GraphUtils.rewireNode nodeId newNodeRef
+    edges <- GraphBuilder.getEdgePortMapping
+    let connectionToOutputEdge = case edges of
+            Nothing              -> False
+            Just (_, outputEdge) -> outputEdge == nodeId
+    if | connectionToOutputEdge -> do
+        lambda  <- use Graph.insideNode <?!> "impossible: removing connection to output edge while outside node"
+        astNode <- GraphUtils.getASTTarget lambda
+        newNodeRef <- zoom Graph.ast $ AST.setLambdaOutputToBlank astNode
+        GraphUtils.rewireNode lambda newNodeRef
+       | otherwise -> do
+        astNode <- GraphUtils.getASTTarget nodeId
+        newNodeRef <- zoom Graph.ast $ AST.unapplyArgument astNode pos
+        GraphUtils.rewireNode nodeId newNodeRef
 
 makeAcc :: NodeId -> NodeId -> Int -> Command Graph ()
 makeAcc src dst inputPos = do
@@ -318,7 +338,7 @@ makeApp src dst pos inputPos = do
         lambda <- use Graph.insideNode <?!> "impossible: connecting to output edge while outside node"
         srcAst <- GraphUtils.getASTVar    src
         dstAst <- GraphUtils.getASTTarget lambda
-        newNodeRef <- zoom Graph.ast $ AST.redirectLambdaOutput dstAst srcAst pos
+        newNodeRef <- zoom Graph.ast $ AST.redirectLambdaOutput dstAst srcAst
         GraphUtils.rewireNode lambda newNodeRef
        | connectToInputEdge -> do
         lambda  <- use Graph.insideNode <?!> "impossible: connecting to input edge while outside node"

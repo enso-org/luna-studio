@@ -273,14 +273,23 @@ printExpression = runASTOp . Printer.printExpression
 applyFunction :: NodeRef -> NodeRef -> Int -> Command AST NodeRef
 applyFunction = runASTOp .:. ASTBuilder.applyFunction
 
-redirectLambdaOutput :: NodeRef -> NodeRef -> Int -> Command AST NodeRef
-redirectLambdaOutput lambdaRef newOutputRef pos = runASTOp $ do
+redirectLambdaOutput :: NodeRef -> NodeRef -> Command AST NodeRef
+redirectLambdaOutput lambdaRef newOutputRef = runASTOp $ do
     lambda <- Builder.read lambdaRef
     caseTest (uncover lambda) $ do
         of' $ \(Lam args _) -> do
             args' <- (mapM . mapM) (Builder.follow source) args
             Builder.lam args' newOutputRef
         of' $ \ANY -> throwError $ show lambdaRef ++ " is not lambda"
+
+setLambdaOutputToBlank :: NodeRef -> Command AST NodeRef
+setLambdaOutputToBlank lambdaRef = runASTOp $ do
+    lambda <- Builder.read lambdaRef
+    caseTest (uncover lambda) $ do
+        of' $ \(Lam args _) -> do
+          args' <- (mapM . mapM) (Builder.follow source) args
+          blank <- Builder.blank
+          Builder.lam args' blank
 
 unapplyArgument :: NodeRef -> Int -> Command AST NodeRef
 unapplyArgument = runASTOp .: ASTBuilder.removeArg

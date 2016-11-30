@@ -9,7 +9,9 @@ module EmpireSpec (spec) where
 import           Prologue hiding (toList)
 import           Control.Exception (bracket)
 import           Control.Monad.Except (throwError)
+import           Data.Container.Class (usedIxes)
 import           Data.Foldable (toList)
+import           Data.Graph.Model.Node (nodeStore)
 import           Data.List (find, sort, stripPrefix)
 import qualified Data.Map as Map
 import           Data.UUID (nil)
@@ -319,6 +321,46 @@ spec = around withChannels $
               Left err -> expectationFailure err
               Right conns -> do
                   conns `shouldSatisfy` ((== 1) . length)
+        it "cleans after removing `def foo` with `4` inside connected to output" $ \env -> do
+            u1 <- nextRandom
+            u2 <- nextRandom
+            (res, _) <- runGraph env $ \mkLoc -> do
+                let loc = mkLoc $ Breadcrumb []
+                    loc' = mkLoc $ Breadcrumb [Breadcrumb.Lambda u1]
+                Graph.addNode loc u1 "def foo" def
+                n2 <- Graph.addNode loc' u2 "4" def
+                Just (_, out) <- Graph.withGraph loc' $ GraphBuilder.getEdgePortMapping
+                let referenceConnection = (OutPortRef (n2 ^. nodeId) All, InPortRef out (Arg 0))
+                Graph.connect loc' (referenceConnection ^. _1) (referenceConnection ^. _2)
+                Graph.removeNodes loc [u1]
+                mapping <- withGraph loc $ use nodeMapping
+                ast <- withGraph loc $ use ast
+                return (ast, mapping)
+            case res of
+                Left err -> expectationFailure err
+                Right (ast, mapping) -> do
+                    mapping `shouldSatisfy` Map.null
+                    ast ^. _Wrapped . nodeStore . to usedIxes `shouldMatchList` [0]
+        it "ignores nodes outside lambda while pretty-printing code inside it" $ \env -> do
+            u1 <- nextRandom
+            u2 <- nextRandom
+            u3 <- nextRandom
+            u4 <- nextRandom
+            u5 <- nextRandom
+            (res, _) <- runGraph env $ \mkLoc -> do
+                let loc = mkLoc $ Breadcrumb []
+                    loc' = mkLoc $ Breadcrumb [Breadcrumb.Lambda u1]
+                Graph.addNode loc u1 "def foo" def
+                Graph.addNode loc u2 "3" def
+                Graph.addNode loc u3 "4" def
+                Graph.addNode loc' u4 "5" def
+                Graph.addNode loc' u5 "6" def
+                (,) <$> Graph.getCode loc <*> Graph.getCode loc'
+            case res of
+                Left err -> expectationFailure err
+                Right (topCode, lambdaCode) -> do
+                    lines topCode `shouldMatchList` ["node3 = 4", "node2 = 3", "foo = -> $in0 in0"]
+                    lines lambdaCode `shouldMatchList` ["node5 = 6", "node4 = 5"]
 
 withChannels :: (CommunicationEnv -> IO ()) -> IO ()
 withChannels = bracket createChannels (const $ return ())

@@ -230,18 +230,11 @@ stdlibMethods :: [String]
 stdlibMethods = filter (elem '.') StdLibMock.symbolsNames
 
 handleGetProgram :: Request GetProgram.Request -> StateT Env BusT ()
-handleGetProgram req@(Request uuid request) = do
-    let location = request ^. GetProgram.location
-    currentEmpireEnv <- use Env.empireEnv
-    empireNotifEnv   <- use Env.empireNotif
-    resultGraph <- liftIO $ Empire.execEmpire empireNotifEnv currentEmpireEnv $ Graph.getGraph       location
-    resultCode  <- liftIO $ Empire.execEmpire empireNotifEnv currentEmpireEnv $ Graph.getCode        location
-    resultCrumb <- liftIO $ Empire.execEmpire empireNotifEnv currentEmpireEnv $ Graph.decodeLocation location
-    let result = (,,) <$> resultGraph <*> resultCode <*> resultCrumb
-    case result of
-        Left err -> replyFail logger err req
-        Right (graph, code, crumb) ->
-            replyResult req $ GetProgram.Result graph (Text.pack code) crumb mockNSData
+handleGetProgram = modifyGraph action success where
+    action (GetProgram.Request location) = (,,) <$> Graph.getGraph location
+                                                <*> Graph.getCode location
+                                                <*> Graph.decodeLocation location
+    success req (graph, code, crumb) = replyResult req $ GetProgram.Result graph (Text.pack code) crumb mockNSData
 
 handleDumpGraphViz :: Request DumpGraphViz.Request -> StateT Env BusT ()
 handleDumpGraphViz (Request _ request) = do
