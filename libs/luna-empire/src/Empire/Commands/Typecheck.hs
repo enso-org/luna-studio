@@ -64,7 +64,7 @@ collect pass = return ()
 
 runTC :: Command Graph ()
 runTC = do
-    allNodeIds <- uses Graph.breadcrumbHierarchy topLevelIDs
+    allNodeIds <- uses Graph.nodeMapping $ Map.keys
     roots <- mapM GraphUtils.getASTPointer allNodeIds
     ast   <- use Graph.ast
     (_, g) <- TypeCheck.runT $ flip ASTOp.runGraph ast $ do
