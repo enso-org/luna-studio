@@ -17,7 +17,7 @@ import qualified Event.Mouse                       as Mouse
 
 import qualified Reactive.Commands.Batch           as BatchCmd
 import           Reactive.Commands.Command         (Command)
-import           Reactive.Commands.Graph           (allNodes, nodeIdToWidgetId, updateConnectionsForNodes)
+import           Reactive.Commands.Graph           (allNodes, updateConnectionsForNodes)
 import           Reactive.Commands.Graph.Selection (selectedNodes)
 import qualified Reactive.Commands.UIRegistry      as UICmd
 import qualified Reactive.State.Camera             as Camera
@@ -41,7 +41,7 @@ import qualified Empire.API.Data.Node              as Node
 
 
 toAction :: Event -> Maybe (Command State ())
---TODO react
+--TODO[react]
 -- toAction (Mouse _ (Mouse.Event Mouse.Pressed  pos Mouse.LeftButton (KeyMods False False False False) (Just _))) = Just $ startDrag pos
 -- toAction (Mouse _ (Mouse.Event Mouse.Moved    pos Mouse.LeftButton (KeyMods False False False False) _))        = Just $ handleMove pos False
 -- toAction (Mouse _ (Mouse.Event Mouse.Moved    pos Mouse.LeftButton (KeyMods True  False False False) _))        = Just $ handleMove pos True

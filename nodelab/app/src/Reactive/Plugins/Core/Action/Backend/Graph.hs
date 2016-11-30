@@ -73,9 +73,9 @@ toAction (Event.Batch ev) = Just $ case ev of
                     breadcrumb  = result ^. GetProgram.breadcrumb
 
                 Global.workspace . Workspace.nodeSearcherData .= nsData
-                -- displayCurrentBreadcrumb breadcrumb --TODO react
+                -- displayCurrentBreadcrumb breadcrumb --TODO[react]
                 renderGraph nodes connections
-                -- autoZoom --TODO react
+                -- autoZoom --TODO[react]
                 CodeEditor.setCode code
                 Global.workspace . Workspace.isGraphLoaded .= True
                 requestCollaborationRefresh

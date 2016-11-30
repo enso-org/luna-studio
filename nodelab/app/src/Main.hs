@@ -37,11 +37,9 @@ import           Control.Concurrent.MVar
 import qualified JS.GraphLocation                  as GraphLocation
 import           JS.Tutorial                       (shouldRunTutorial)
 import           JS.Tutorial                       (showStep)
-import           JS.UI                             (initializeGl, initializeHelp, render, triggerWindowResize)
 import           JS.UUID                           (generateUUID)
 import           JS.WebSocket                      (WebSocket)
 import qualified React.Store                       as Store
-import qualified React.Store.App                   as App
 import qualified React.View.App                    as App
 import           Reactive.Commands.Command         (execCommand)
 import qualified Reactive.Plugins.Core.Action.Init as Init
@@ -49,6 +47,7 @@ import qualified Reactive.Plugins.Core.Network     as CoreNetwork
 import qualified Reactive.Plugins.Loader.Loader    as Loader
 import           Reactive.State.Global             (initialState)
 import qualified Reactive.State.Global             as Global
+
 
 
 runMainNetwork :: WebSocket -> IO ()

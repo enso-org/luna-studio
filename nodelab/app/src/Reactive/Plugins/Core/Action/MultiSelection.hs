@@ -24,14 +24,13 @@ import qualified Reactive.State.UIRegistry         as UIRegistry
 
 import           Reactive.Commands.Batch           (cancelCollaborativeTouch, collaborativeTouch)
 import           Reactive.Commands.Command         (Command, performIO)
-import           Reactive.Commands.Graph           (widgetIdToNodeWidget)
 import           Reactive.Commands.Graph.Selection (focusSelectedNode, selectAll, selectedNodes, unselectAll)
 import qualified Reactive.Commands.UIRegistry      as UICmd
 
 import           UI.Raycaster                      (getObjectsInRect)
 
 
---TODO react
+--TODO[react]
 toAction :: Event -> Maybe (Command State ())
 -- toAction (Mouse _       (Mouse.Event Mouse.Pressed  pos Mouse.LeftButton (KeyMods False False False False) Nothing)) = Just $ startDrag pos
 -- toAction (Mouse jsstate (Mouse.Event Mouse.Moved    pos Mouse.LeftButton _ _)) = Just $ handleMove jsstate pos
@@ -72,7 +71,7 @@ toAction _ = Nothing
 --         rightBottom = Vector2 (max (start ^. x) (end ^. x)) (max (start ^. y) (end ^. y))
 --         ids         = getObjectsInRect jsstate leftTop (rightBottom - leftTop)
 --     oldSelected <- selectedNodes
---     newSelectedFiles <-  inRegistry $ mapM widgetIdToNodeWidget ids
+--     newSelectedFiles <-  inRegistry $ mapM Global.getNode ids
 --     let oldSet     = Set.fromList $ view ref <$> oldSelected
 --         newSet     = Set.fromList $ view ref <$> catMaybes newSelectedFiles
 --         toSelect   = Set.difference newSet oldSet

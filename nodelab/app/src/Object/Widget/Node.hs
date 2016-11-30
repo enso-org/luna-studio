@@ -13,9 +13,11 @@ import           Data.Time.Clock                (UTCTime)
 import qualified Empire.API.Data.Node           as N
 import qualified Empire.API.Data.NodeMeta       as NM
 import qualified Empire.API.Data.Port           as P
+import           Empire.API.Data.PortRef        (AnyPortRef)
 import           Empire.API.Graph.Collaboration (ClientId)
 import           Object.UITypes
 import           Object.Widget
+import           Object.Widget.Port             (Port)
 import           Reactive.State.Collaboration   (ColorId)
 
 
@@ -51,7 +53,7 @@ makeLenses ''Collaboration
 instance ToJSON Collaboration
 
 data Node = Node { _nodeId                :: N.NodeId
-                 , _ports                 :: [WidgetId]
+                 , _ports                 :: Map AnyPortRef Port
                  , _position              :: Position
                  , _zPos                  :: Double
                  , _expression            :: Text
@@ -77,7 +79,7 @@ makeLenses ''Elements
 instance ToJSON Elements
 
 makeNode :: N.NodeId -> Position -> Text -> Maybe Text -> Text -> Maybe Text -> Bool -> Node
-makeNode nid pos expr code name tpe vis = Node nid [] pos 0.0 expr code name "" tpe False False False vis def Nothing False def
+makeNode nid pos expr code name tpe vis = Node nid def pos 0.0 expr code name "" tpe False False False vis def Nothing False def
 
 fromNode :: N.Node -> Node
 fromNode n = let position' = uncurry Vector2 $ n ^. N.nodeMeta ^. NM.position

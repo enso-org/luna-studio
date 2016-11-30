@@ -1,8 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module Reactive.Commands.Node.Ports
-    ( displayPorts
-    ) where
+module Reactive.Commands.Node.Ports where
 
 import           Control.Monad.State                 hiding (State)
 import qualified Data.Map.Lazy                       as Map
@@ -60,35 +58,35 @@ makePorts node = makePort <$> ports where
         shouldCount (InPortId (Arg _))         = 1
 
 
-displayPorts :: WidgetId -> Node -> Command Global.State ()
-displayPorts wid node = do
-        portGroup <- inRegistry $ UICmd.get wid $ Model.elements . Model.portGroup
-        oldPorts  <- inRegistry $ UICmd.children portGroup
-        oldPortWidgets <- forM oldPorts $ \wid' -> inRegistry $ (UICmd.lookup wid')
-        let portRefs = (view PortModel.portRef) <$> oldPortWidgets
-        forM_ portRefs $ \wid' -> Global.graph . Graph.portWidgetsMap . at wid' .= Nothing
-        inRegistry $ mapM_ UICmd.removeWidget oldPorts
-
-        groupId      <- inRegistry $ Node.portControlsGroupId wid
-        portControls <- inRegistry $ UICmd.children groupId
-        inRegistry $ mapM_ UICmd.removeWidget portControls
-
-        inLabelsGroupId <- inRegistry $ Node.inLabelsGroupId wid
-        inLabels        <- inRegistry $ UICmd.children inLabelsGroupId
-        inRegistry $ mapM_ UICmd.removeWidget inLabels
-
-        outLabelsGroupId <- inRegistry $ Node.outLabelsGroupId wid
-        outLabels        <- inRegistry $ UICmd.children outLabelsGroupId
-        inRegistry $ mapM_ UICmd.removeWidget outLabels
-
-        forM_ (makePorts node    ) $ \p -> do
-            portWidgetId <- inRegistry $ UICmd.register portGroup p def
-            Global.graph . Graph.portWidgetsMap . at (p ^. PortModel.portRef) ?= portWidgetId
-        inRegistry $ forM_ (node ^. Node.ports) $ makePortControl groupId node
-        inRegistry $ forM_ (node ^. Node.ports) $ \p -> case p ^. Port.portId of
-            InPortId  Self -> return ()
-            InPortId  _    -> makePortLabel inLabelsGroupId  p
-            OutPortId _    -> makePortLabel outLabelsGroupId p
+-- displayPorts :: WidgetId -> Node -> Command Global.State () --TODO[react] probably remove
+-- displayPorts wid node = do
+--         portGroup <- inRegistry $ UICmd.get wid $ Model.elements . Model.portGroup
+--         oldPorts  <- inRegistry $ UICmd.children portGroup
+--         oldPortWidgets <- forM oldPorts $ \wid' -> inRegistry $ (UICmd.lookup wid')
+--         let portRefs = (view PortModel.portRef) <$> oldPortWidgets
+--         forM_ portRefs $ \wid' -> Global.graph . Graph.portWidgetsMap . at wid' .= Nothing
+--         inRegistry $ mapM_ UICmd.removeWidget oldPorts
+--
+--         groupId      <- inRegistry $ Node.portControlsGroupId wid
+--         portControls <- inRegistry $ UICmd.children groupId
+--         inRegistry $ mapM_ UICmd.removeWidget portControls
+--
+--         inLabelsGroupId <- inRegistry $ Node.inLabelsGroupId wid
+--         inLabels        <- inRegistry $ UICmd.children inLabelsGroupId
+--         inRegistry $ mapM_ UICmd.removeWidget inLabels
+--
+--         outLabelsGroupId <- inRegistry $ Node.outLabelsGroupId wid
+--         outLabels        <- inRegistry $ UICmd.children outLabelsGroupId
+--         inRegistry $ mapM_ UICmd.removeWidget outLabels
+--
+--         forM_ (makePorts node    ) $ \p -> do
+--             portWidgetId <- inRegistry $ UICmd.register portGroup p def
+--             Global.graph . Graph.portWidgetsMap . at (p ^. PortModel.portRef) ?= portWidgetId
+--         inRegistry $ forM_ (node ^. Node.ports) $ makePortControl groupId node
+--         inRegistry $ forM_ (node ^. Node.ports) $ \p -> case p ^. Port.portId of
+--             InPortId  Self -> return ()
+--             InPortId  _    -> makePortLabel inLabelsGroupId  p
+--             OutPortId _    -> makePortLabel outLabelsGroupId p
 
 
 makePortLabel :: WidgetId -> Port -> Command UIRegistry.State ()

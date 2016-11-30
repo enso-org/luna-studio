@@ -7,10 +7,9 @@ import           React.Store                        (widget)
 import qualified React.Store                        as Store
 import qualified React.Store.NodeEditor             as NodeEditor
 import           Reactive.Commands.Command          (Command)
-import           Reactive.Commands.Graph            (nodeIdToWidgetId)
 import           Reactive.Commands.Graph.Disconnect (localDisconnectAll)
 import qualified Reactive.Commands.Graph.Selection  as Selection
-import           Reactive.State.Global              (State, inRegistry)
+import           Reactive.State.Global              (State)
 import qualified Reactive.State.Global              as Global
 import qualified Reactive.State.Graph               as Graph
 import           Utils.PreludePlus
@@ -33,12 +32,9 @@ performRemoval nodeIds = do
     GA.sendEvent $ GA.RemoveNode $ length nodeIds
 
 localRemoveNodes :: [NodeId] -> Command State ()
-localRemoveNodes nodeIds = forM_ nodeIds $ \nodeId -> do
+localRemoveNodes = mapM_ $ \nodeId -> do
     danglingConns <- uses Global.graph $ Graph.connectionIdsContainingNode nodeId
     localDisconnectAll danglingConns
-
-    nodeWidgetId <- nodeIdToWidgetId nodeId
-
     Global.graph %= Graph.removeNode nodeId
     Global.inNodeEditor $ Store.modify_ $
         NodeEditor.nodes . at nodeId .~ Nothing

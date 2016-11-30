@@ -16,7 +16,7 @@ import qualified React.Store                  as Store
 
 import qualified Reactive.Commands.Batch      as BatchCmd
 import           Reactive.Commands.Command    (Command)
-import           Reactive.Commands.Graph      (nodeIdToWidgetId, updateConnectionsForNodes)
+import           Reactive.Commands.Graph      (updateConnectionsForNodes)
 import qualified Reactive.Commands.UIRegistry as UICmd
 import           Reactive.State.Global        (inRegistry)
 import qualified Reactive.State.Global        as Global
@@ -27,10 +27,10 @@ import qualified Reactive.State.Graph         as Graph
 updateNodeMeta' :: NodeId -> NodeMeta -> Command Global.State ()
 updateNodeMeta' nodeId meta = do
     Global.graph . Graph.nodesMap . ix nodeId . Node.nodeMeta .= meta
-    widgetId' <- nodeIdToWidgetId nodeId
-    withJust widgetId' $ Store.modify_ $
+    nodeRef <- Global.getNode nodeId
+    withJust nodeRef $ Store.modify_ $
         NodeModel.visualizationsEnabled .~ meta ^. NodeMeta.displayResult
-        -- UICmd.move    widgetId $ fromTuple $  meta ^. NodeMeta.position --TODO react
+        -- UICmd.move    widgetId $ fromTuple $  meta ^. NodeMeta.position --TODO[react]
 
 -- updateNodeMeta :: NodeId -> NodeMeta -> Command Global.State ()
 -- updateNodeMeta nodeId meta = do

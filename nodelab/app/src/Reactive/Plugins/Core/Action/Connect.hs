@@ -19,6 +19,7 @@ import qualified Event.Mouse                     as Mouse
 
 import           Reactive.Commands.Command       (Command)
 import           Reactive.Commands.Graph         (portRefToWidgetId)
+import           qualified Reactive.Commands.Graph         as Graph
 import           Reactive.Commands.Graph.Connect (batchConnectNodes)
 import qualified Reactive.Commands.UIRegistry    as UICmd
 import qualified Reactive.State.Camera           as Camera
@@ -79,12 +80,12 @@ handleMove coord (Connecting sourceRef _ nodePos) = do
     startLine <- case sourceRef of
             (InPortRef' (InPortRef _ Self)) -> return nodePos
             _                   -> do
-                maySourceWidget <- portRefToWidgetId sourceRef
-                case maySourceWidget of
-                    Just sourceWidget -> inRegistry $ do
-                        newVector <- UICmd.get sourceWidget PortModel.angleVector
-                        portCount <- UICmd.get sourceWidget PortModel.portCount
-                        let
+                maySourcePort <- Graph.getPort sourceRef
+                case maySourcePort of
+                    Just sourcePort -> inRegistry $ do
+                        let newVector = sourcePort ^. PortModel.angleVector
+                            portCount = sourcePort ^. PortModel.portCount
+
                             portAngle = toAngle $ newVector
                             angle     = boundedAngle portAngle portCount nodePos current
                             sx        = (nodePos ^. x) + outerPos * cos angle

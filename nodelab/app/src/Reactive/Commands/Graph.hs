@@ -1,14 +1,13 @@
 module Reactive.Commands.Graph
-    ( portRefToWidgetId
-    , updateConnections
-    , updateConnection
-    , updateConnectionsForNodes
-    , connectionIdToWidgetId
-    , allNodes
+    ( allNodes
     , allNodes'
-    , widgetIdToNodeWidget
-    , nodeIdToWidgetId
+    , connectionIdToWidgetId
     , focusNode
+    , getPort
+    , portRefToWidgetId
+    , updateConnection
+    , updateConnections
+    , updateConnectionsForNodes
     , updateNodeZOrder
     ) where
 
@@ -19,7 +18,7 @@ import           Data.Ord                            (comparing)
 import qualified Data.Set                            as Set
 import           Utils.Angle
 import           Utils.PreludePlus
-import           Utils.Vector
+import           Utils.Vector                        (Vector2 (Vector2), lengthSquared)
 
 import           React.Store                         (Ref, ref, widget)
 import qualified React.Store                         as Store
@@ -38,7 +37,6 @@ import qualified Reactive.Commands.UIRegistry        as UICmd
 import           Reactive.State.Global               (inRegistry)
 import qualified Reactive.State.Global               as Global
 import qualified Reactive.State.Graph                as Graph
-import qualified Reactive.State.UIRegistry           as UIRegistry
 import           UI.Handlers.Node                    (allNodes, allNodes')
 import           UI.Instances                        ()
 
@@ -50,16 +48,12 @@ import qualified Empire.API.Data.Port                as Port
 import           Empire.API.Data.PortRef             (AnyPortRef (..), InPortRef (..))
 import qualified Empire.API.Data.PortRef             as PortRef
 
--- allPorts :: Command Global.State [WidgetFile PortModel.Port]
--- allPorts = do
---     widgetIds <- use $ Global.graph . Graph.portWidgets
---     mayWidgets <- mapM (\wid -> inRegistry $ UIRegistry.lookupTypedM wid) widgetIds
---     return $ catMaybes mayWidgets
+
 
 getPort :: AnyPortRef -> Command Global.State (Maybe PortModel.Port)
 getPort portRef = runMaybeT $ do
-    (Just widgetId) <- preuse $ Global.graph . Graph.portWidgetsMap . ix portRef
-    lift $ inRegistry $ UICmd.lookup widgetId
+    Just node <- lift $ getNode $ portRef ^. PortRef.nodeId
+    fromJustM $ node ^? Node.ports . ix portRef
 
 getGraphPort :: AnyPortRef -> Command Global.State (Maybe Port.Port)
 getGraphPort portRef = preuse $ Global.graph . Graph.nodesMap . ix (portRef ^. PortRef.nodeId) . NodeAPI.ports . ix (portRef ^. PortRef.portId)
@@ -67,17 +61,11 @@ getGraphPort portRef = preuse $ Global.graph . Graph.nodesMap . ix (portRef ^. P
 getNode :: NodeId -> Command Global.State (Maybe Model.Node)
 getNode nodeId = Global.inNode nodeId $ mapM Store.get
 
-widgetIdToNodeWidget :: WidgetId -> Command UIRegistry.State (Maybe (WidgetFile Model.Node))
-widgetIdToNodeWidget = UIRegistry.lookupTypedM
-
-nodeIdToWidgetId :: NodeId -> Command Global.State (Maybe (Ref Node))
-nodeIdToWidgetId = Global.getNode
-
 connectionIdToWidgetId :: ConnectionId -> Command Global.State (Maybe WidgetId)
 connectionIdToWidgetId connectionId = preuse $ Global.graph . Graph.connectionWidgetsMap . ix connectionId
 
-portRefToWidgetId :: AnyPortRef -> Command Global.State (Maybe WidgetId)
-portRefToWidgetId portRef = preuse $ Global.graph . Graph.portWidgetsMap . ix portRef
+portRefToWidgetId :: AnyPortRef -> Command Global.State (Maybe (Ref Node))
+portRefToWidgetId = Global.getNode . view PortRef.nodeId
 
 nats :: [Integer]
 nats = [1..]
@@ -90,18 +78,18 @@ focusNode nodeRef = do
         equalFst a b = a ^. widget == b ^. widget
         newOrderNodes = node : deleteBy equalFst node sortedNodes
         newOrderRefs  = view ref <$> newOrderNodes
-    forM_ (zip newOrderRefs nats) $ \(ref, ix) -> do
-        let newZPos = negate $ (fromIntegral ix) / 100.0
-        Store.modify_ (Node.zPos .~ newZPos) ref
+    forM_ (zip newOrderRefs nats) $ \(nRef, idx) -> do
+        let newZPos = negate $ (fromIntegral idx) / 100.0
+        Store.modify_ (Node.zPos .~ newZPos) nRef
 
 updateNodeZOrder :: Command Global.State ()
 updateNodeZOrder = do
     nodes <- mapM Store.get' =<< allNodes
     let sortedNodes = sortBy (comparing $ negate . (view $ widget . Model.zPos)) nodes
         sortedRefs  = view ref <$> sortedNodes
-    forM_ (zip sortedRefs nats) $ \(ref, ix) -> do
-        let newZPos = negate $ (fromIntegral ix) / 100.0
-        Store.modify_ (Node.zPos .~ newZPos) ref
+    forM_ (zip sortedRefs nats) $ \(nRef, idx) -> do
+        let newZPos = negate $ (fromIntegral idx) / 100.0
+        Store.modify_ (Node.zPos .~ newZPos) nRef
 
 updateConnections :: Command Global.State ()
 updateConnections = do

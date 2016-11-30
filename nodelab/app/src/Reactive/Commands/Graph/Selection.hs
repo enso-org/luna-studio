@@ -8,19 +8,19 @@ module Reactive.Commands.Graph.Selection
 
 import           Utils.PreludePlus
 
-import           Empire.API.Data.Node         (NodeId)
+import           Empire.API.Data.Node      (NodeId)
 
-import           React.Store                  (WRef (..), ref, widget)
-import qualified React.Store                  as Store
-import           React.Store.Node             (Node)
-import qualified React.Store.Node             as Node
+import           React.Store               (WRef (..), widget)
+import qualified React.Store               as Store
+import           React.Store.Node          (Node)
+import qualified React.Store.Node          as Node
 
-import           Reactive.Commands.Batch      (cancelCollaborativeTouch, collaborativeTouch)
-import           Reactive.Commands.Command    (Command)
-import           Reactive.Commands.Graph      (allNodes, allNodes', nodeIdToWidgetId)
-import qualified Reactive.Commands.UIRegistry as UICmd
-import           Reactive.State.Global        (State, inRegistry)
-import qualified Reactive.State.UIRegistry    as UIRegistry
+import           Reactive.Commands.Batch   (cancelCollaborativeTouch, collaborativeTouch)
+import           Reactive.Commands.Command (Command)
+import           Reactive.Commands.Graph   (allNodes, allNodes')
+import           Reactive.State.Global     (State)
+import qualified Reactive.State.Global     as Global
+
 
 
 unselectAll :: Command State ()
@@ -41,7 +41,7 @@ selectAll = do
 selectNodes :: [NodeId] -> Command State ()
 selectNodes nodeIds = do
     unselectAll
-    nodeRefs <- fmap catMaybes $ mapM nodeIdToWidgetId nodeIds
+    nodeRefs <- fmap catMaybes $ mapM Global.getNode nodeIds
     forM_ nodeRefs $ Store.modify_ (Node.isSelected .~ True)
     focusSelectedNode
     collaborativeTouch nodeIds
@@ -53,6 +53,6 @@ selectedNodes = do
 
 focusSelectedNode :: Command State ()
 focusSelectedNode = do
-    $notImplemented --TODO react
+    $notImplemented --TODO[react]
     -- widgets <- selectedNodes
     -- inRegistry $ UIRegistry.focusedWidget .= (view ref <$> widgets ^? ix 0)

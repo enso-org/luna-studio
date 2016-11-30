@@ -16,7 +16,7 @@ import qualified React.Store                          as Store
 import qualified React.Store.Node                     as Model
 
 import           Reactive.Commands.Command            (Command)
-import           Reactive.Commands.Graph              (nodeIdToWidgetId, updateConnectionsForNodes)
+import           Reactive.Commands.Graph              (updateConnectionsForNodes)
 import qualified Reactive.Commands.UIRegistry         as UICmd
 import           Reactive.State.Global                (State, inRegistry)
 import qualified Reactive.State.Global                as Global
@@ -28,8 +28,9 @@ import qualified Empire.API.Graph.NodeResultUpdate    as NodeResult
 
 import qualified Reactive.Commands.Batch              as BatchCmd
 import           Reactive.Commands.Node.Create        (addNode)
-import           Reactive.Commands.Node.Ports         (displayPorts)
 import           Reactive.Commands.Node.Visualization (limitString, showError, visualizeError, visualizeNodeValueReprs)
+
+
 
 errorLen :: Int
 errorLen = 40
@@ -45,10 +46,10 @@ updateNode node = do
 updateExistingNode :: Node -> Command State ()
 updateExistingNode node = do
     let nodeId  = node ^. Node.nodeId
-    maybeWidgetId <- nodeIdToWidgetId nodeId
+    maybeWidgetId <- Global.getNode nodeId
     zoom Global.graph $ modify (Graph.addNode node)
     Global.inNode nodeId $ mapM_ $ Store.modifyM_ $ do
-        -- displayPorts widgetId node --TODO react
+        -- displayPorts widgetId node --TODO[react]
         case node ^. Node.nodeType of
             Node.ExpressionNode expression -> Model.expression .= expression
             _                              -> return ()
@@ -67,11 +68,11 @@ updateNodeValue nid val =
             NodeResult.Value name valueReprs ->
                 (Model.value   .~ name)
                 . (Model.isError .~ False)
-                -- visualizeNodeValueReprs widgetId valueReprs --TODO react
+                -- visualizeNodeValueReprs widgetId valueReprs --TODO[react]
             NodeResult.Error msg ->
                 (Model.value   .~ limitString errorLen (Text.pack $ showError msg))
                 . (Model.isError .~ True)
-                -- visualizeError widgetId msg --TODO react
+                -- visualizeError widgetId msg --TODO[react]
 
 updateNodeProfilingData :: NodeId -> Integer -> Command State ()
 updateNodeProfilingData nodeId execTime =

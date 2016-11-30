@@ -21,8 +21,6 @@ module Reactive.State.Graph
     , lookUpConnection
     , nodes
     , nodesMap
-    , portWidgets
-    , portWidgetsMap
     , removeConnections
     , removeNode
     , updateNodes
@@ -33,8 +31,6 @@ import           Utils.PreludePlus          hiding ((.=))
 import           Data.Hashable              (Hashable)
 import           Data.HashMap.Strict        (HashMap)
 import qualified Data.HashMap.Strict        as HashMap
-import           Data.IntMap                (IntMap)
-import qualified Data.IntMap                as IntMap
 import qualified Data.Map.Strict            as Map
 import qualified Data.Set                   as Set
 import           Data.UUID.Types            (UUID)
@@ -78,14 +74,13 @@ instance Hashable AnyPortRef
 data State = State { _nodesMap             :: NodesMap
                    , _connectionsMap       :: ConnectionsMap
                    , _connectionWidgetsMap :: HashMap InPortRef  WidgetId
-                   , _portWidgetsMap       :: HashMap AnyPortRef WidgetId
                    } deriving (Show, Eq, Generic)
 
 makeLenses ''State
 
 instance ToJSON State
 instance Default State where
-    def = State def def def def
+    def = State def def def
 
 connectionToNodeIds :: Connection -> (NodeId, NodeId)
 connectionToNodeIds conn = ( conn ^. Connection.src . PortRef.srcNodeId
@@ -99,9 +94,6 @@ connections = to getConnections
 
 connectionWidgets :: Getter State [WidgetId]
 connectionWidgets = to $ HashMap.elems . view connectionWidgetsMap
-
-portWidgets :: Getter State [WidgetId]
-portWidgets = to $ HashMap.elems . view portWidgetsMap
 
 getNodes :: State -> [Node]
 getNodes = HashMap.elems . getNodesMap

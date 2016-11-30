@@ -19,7 +19,7 @@ import qualified React.Store.NodeEditor            as NodeEditor
 
 import           Reactive.Commands.Command         (Command)
 import           Reactive.Commands.EnterNode       (enterNode)
-import           Reactive.Commands.Graph           (focusNode, widgetIdToNodeWidget)
+import           Reactive.Commands.Graph           (focusNode)
 import           Reactive.Commands.Graph.Selection (selectedNodes)
 import           Reactive.Commands.Node.NodeMeta   (modifyNodeMeta)
 import           Reactive.Commands.Node.Remove     (removeSelectedNodes)
@@ -63,7 +63,7 @@ registerNode node = do
         NodeEditor.nodes . at nodeId ?= ref
         return ref
 
---TODO react
+--TODO[react]
 -- nodeHandlers :: Node -> HTMap
 -- nodeHandlers node = addHandler (UINode.RemoveNodeHandler            removeSelectedNodes)
 --                   $ addHandler (UINode.RenameNodeHandler            $ \_ nodeId name -> BatchCmd.renameNode nodeId name)

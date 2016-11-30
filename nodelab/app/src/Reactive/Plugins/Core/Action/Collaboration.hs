@@ -18,7 +18,7 @@ import qualified Event.Event                       as Event
 import           Reactive.Commands.Batch           (collaborativeTouch)
 import           Reactive.Commands.Collaboration   (updateClient)
 import           Reactive.Commands.Command         (Command)
-import           Reactive.Commands.Graph           (allNodes, nodeIdToWidgetId)
+import           Reactive.Commands.Graph           (allNodes)
 import           Reactive.Commands.Graph.Selection (selectedNodes)
 import           Reactive.State.Collaboration      (ColorId)
 import           Reactive.State.Global             (State, inRegistry)

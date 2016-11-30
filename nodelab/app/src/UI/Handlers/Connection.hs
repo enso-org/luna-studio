@@ -17,6 +17,7 @@ import qualified Object.Widget.Node                 as NodeModel
 import qualified Object.Widget.Port                 as PortModel
 import qualified React.Store                        as Store
 import           Reactive.Commands.Command          (Command)
+import qualified Reactive.Commands.Graph            as Graph
 import           Reactive.Commands.Graph.Disconnect (disconnectAll)
 import qualified Reactive.Commands.UIRegistry       as UICmd
 import           Reactive.State.Connect             (Connecting (Connecting))
@@ -25,7 +26,6 @@ import           Reactive.State.Global              (inRegistry)
 import qualified Reactive.State.Global              as Global
 import qualified Reactive.State.Graph               as Graph
 import qualified Reactive.State.UIRegistry          as UIRegistry
-
 import           UI.Generic                         (abortDrag, startDrag)
 
 
@@ -57,12 +57,12 @@ dragHandler ds _ wid = do
     when (mouseX > endCoeff) $ do
         connId <- inRegistry $ UICmd.get wid Model.connectionId
         connectionColor <- inRegistry $ UICmd.get wid Model.color
-        Just srcPortRef   <- preuse $ Global.graph . Graph.connectionsMap . ix connId . Connection.src
-        Just portWidgetId <- use $ Global.graph . Graph.portWidgetsMap . at (PortRef.OutPortRef' srcPortRef)
+        Just srcPortRef <- preuse $ Global.graph . Graph.connectionsMap . ix connId . Connection.src
+        Just port <- Graph.getPort $ PortRef.OutPortRef' srcPortRef
         Just nodeWidgetRef <- Global.getNode $ srcPortRef ^. PortRef.srcNodeId
         disconnectAll [connId]
         sourceNodePos   <- view NodeModel.position <$> Store.get nodeWidgetRef
-        sourcePortAngle <- inRegistry $ UICmd.get portWidgetId PortModel.angleVector
+        let sourcePortAngle = port ^. PortModel.angleVector
         -- let coord = floor <$> sourceNodePos + shiftVec
         Global.connect . Connect.connecting ?= Connecting (PortRef.OutPortRef' srcPortRef) sourcePortAngle sourceNodePos
         void $ zoom Global.uiRegistry $ setCurrentConnectionColor connectionColor
@@ -70,11 +70,11 @@ dragHandler ds _ wid = do
         connId <- inRegistry $ UICmd.get wid Model.connectionId
         connectionColor <- inRegistry $ UICmd.get wid Model.color
         Just dstPortRef <- preuse $ Global.graph . Graph.connectionsMap . ix connId . Connection.dst
-        Just portWidgetId <- use $ Global.graph . Graph.portWidgetsMap . at (PortRef.InPortRef' dstPortRef)
+        Just port <- Graph.getPort $ PortRef.InPortRef' dstPortRef
         Just nodeWidgetRef <- Global.getNode $ dstPortRef ^. PortRef.dstNodeId
         disconnectAll [connId]
         dstNodePos   <- view NodeModel.position <$> Store.get nodeWidgetRef
-        dstPortAngle <- inRegistry $ UICmd.get portWidgetId PortModel.angleVector
+        let dstPortAngle = port ^. PortModel.angleVector
         -- let coord = floor <$> dstNodePos + shiftVec
         Global.connect . Connect.connecting ?= Connecting (PortRef.InPortRef' dstPortRef) dstPortAngle dstNodePos
         void $ zoom Global.uiRegistry $ setCurrentConnectionColor connectionColor
