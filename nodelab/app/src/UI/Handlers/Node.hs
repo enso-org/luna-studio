@@ -11,9 +11,8 @@ import           Utils.Vector
 
 import           Event.Keyboard               (KeyMods (..))
 import qualified Event.Mouse                  as Mouse
-import           Object.Widget                (CompositeWidget, DblClickHandler, KeyPressedHandler, ResizableWidget, UIHandlers, WidgetFile,
-                                               WidgetId, createWidget, dblClick, keyDown, mouseOut, mouseOver, mousePressed, objectId,
-                                               updateWidget, widget)
+import           Object.Widget                (CompositeWidget, DblClickHandler, KeyPressedHandler, ResizableWidget, UIHandlers, WidgetId,
+                                               createWidget, dblClick, keyDown, mouseOut, mouseOver, mousePressed, updateWidget)
 
 import           React.Store                  (Ref, WRef)
 import qualified React.Store                  as Store
@@ -33,7 +32,6 @@ import           Reactive.Commands.Command    (Command)
 import qualified Reactive.Commands.UIRegistry as UICmd
 import           Reactive.State.Global        (inRegistry)
 import qualified Reactive.State.Global        as Global
-import qualified Reactive.State.Graph         as Graph
 import           Reactive.State.UIRegistry    (addHandler)
 import qualified Reactive.State.UIRegistry    as UIRegistry
 

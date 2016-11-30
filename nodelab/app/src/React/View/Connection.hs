@@ -1,0 +1,27 @@
+{-# LANGUAGE OverloadedStrings #-}
+module React.View.Connection where
+
+import           React.Flux
+import qualified React.Flux             as React
+import           Utils.PreludePlus
+
+import qualified Event.UI               as UI
+import           React.Store            (Ref, dt)
+import qualified React.Store            as Store
+import           React.Store.Connection (Connection)
+import qualified React.Store.Connection as Connection
+
+
+name :: JSString
+name = "connection-editor"
+
+
+connection :: Ref Connection -> ReactView ()
+connection connectionRef = React.defineControllerView
+    name connectionRef $ \connectionStore () -> do
+        div_ $ do
+            elemString $ "connection: " <> show (connectionStore ^. dt)
+
+
+connection_ :: Ref Connection -> ReactElementM ViewEventHandler ()
+connection_ connectionRef = React.view (connection connectionRef) () mempty

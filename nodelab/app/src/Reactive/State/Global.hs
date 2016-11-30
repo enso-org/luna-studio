@@ -15,6 +15,7 @@ import           System.Random                  (StdGen)
 import qualified System.Random                  as Random
 
 import           Batch.Workspace
+import           Empire.API.Data.Connection     (ConnectionId)
 import           Empire.API.Data.Node           (NodeId)
 import qualified Empire.API.Graph.Collaboration as Collaboration
 import qualified Event.Event                    as Event
@@ -23,6 +24,7 @@ import qualified React.Store                    as Store
 import           React.Store.App                (App)
 import qualified React.Store.App                as App
 import           React.Store.CodeEditor         (CodeEditor)
+import           React.Store.Connection         (Connection)
 import           React.Store.Node               (Node)
 import           React.Store.NodeEditor         (NodeEditor)
 import qualified React.Store.NodeEditor         as NodeEditor
@@ -85,6 +87,13 @@ inNode nodeId action = inNodeEditor $ (action . view (NodeEditor.nodes . at node
 
 getNode :: NodeId -> Command State (Maybe (Ref Node))
 getNode nodeId = inNode nodeId return
+
+inConnection :: ConnectionId -> (Maybe (Ref Connection) -> Command State r) -> Command State r
+inConnection connectionId action =
+    inNodeEditor $ (action . view (NodeEditor.connections . at connectionId)) <=< Store.get
+
+getConnection :: ConnectionId -> Command State (Maybe (Ref Connection))
+getConnection connectionId = inConnection connectionId return
 
 initialState :: DateTime -> Collaboration.ClientId -> StdGen -> Maybe Int -> (Ref App) -> State
 initialState = State (Vector2 200 200) def def def def def def def def def def def defJsState def def

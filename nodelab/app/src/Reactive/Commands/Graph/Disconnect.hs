@@ -5,26 +5,25 @@ module Reactive.Commands.Graph.Disconnect
 
 import           Utils.PreludePlus
 
-import           Reactive.Commands.Command    (Command)
-import           Reactive.Commands.Graph      (connectionIdToWidgetId)
-import           Reactive.Commands.UIRegistry (removeWidget)
-import           Reactive.State.Global        (State)
-import qualified Reactive.State.Global        as Global
-import qualified Reactive.State.Graph         as Graph
-
-import           Empire.API.Data.Connection   (Connection, ConnectionId)
-import qualified Empire.API.Data.Connection   as Connection
-import           Empire.API.Data.PortRef      (InPortRef, OutPortRef)
-import qualified Reactive.Commands.Batch      as BatchCmd
+import           Empire.API.Data.Connection (Connection, ConnectionId)
+import qualified Empire.API.Data.Connection as Connection
+import           Empire.API.Data.PortRef    (InPortRef, OutPortRef)
+import qualified React.Store                as Store
+import qualified React.Store.NodeEditor     as NodeEditor
+import qualified Reactive.Commands.Batch    as BatchCmd
+import           Reactive.Commands.Command  (Command)
+import           Reactive.State.Global      (State)
+import qualified Reactive.State.Global      as Global
+import qualified Reactive.State.Graph       as Graph
 
 
 
 localDisconnectAll :: [ConnectionId] -> Command State ()
 localDisconnectAll connectionIds = do
-    widgetIds <- mapM connectionIdToWidgetId connectionIds
-    zoom Global.uiRegistry $ mapM_ removeWidget $ catMaybes widgetIds
+    Global.inNodeEditor $ Store.modifyM_ $
+        forM_ connectionIds $ \ connectionId ->
+            NodeEditor.connections . at connectionId .= Nothing
     Global.graph           %= Graph.removeConnections connectionIds
-    forM_ connectionIds $ \connId -> Global.graph . Graph.connectionWidgetsMap . at connId .= Nothing
 
 connectionToRefs :: Connection -> (OutPortRef, InPortRef)
 connectionToRefs conn = (conn ^. Connection.src, conn ^. Connection.dst)

@@ -17,8 +17,7 @@ import qualified React.Store.Node                     as Model
 
 import           Reactive.Commands.Command            (Command)
 import           Reactive.Commands.Graph              (updateConnectionsForNodes)
-import qualified Reactive.Commands.UIRegistry         as UICmd
-import           Reactive.State.Global                (State, inRegistry)
+import           Reactive.State.Global                (State)
 import qualified Reactive.State.Global                as Global
 import qualified Reactive.State.Graph                 as Graph
 

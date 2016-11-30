@@ -22,10 +22,10 @@ import           Utils.Vector                        (Vector2 (Vector2), lengthS
 
 import           React.Store                         (Ref, ref, widget)
 import qualified React.Store                         as Store
+import           React.Store.Connection              (Connection)
 import           React.Store.Node                    (Node)
 import qualified React.Store.Node                    as Node
 
-import           Object.UITypes
 import           Object.Widget                       hiding (widget)
 import qualified Object.Widget.Connection            as ConnectionModel
 import qualified Object.Widget.Node                  as Model
@@ -33,8 +33,6 @@ import qualified Object.Widget.Port                  as PortModel
 
 import           Reactive.Commands.Command           (Command)
 import           Reactive.Commands.Node.Ports.Colors (vtToColor)
-import qualified Reactive.Commands.UIRegistry        as UICmd
-import           Reactive.State.Global               (inRegistry)
 import qualified Reactive.State.Global               as Global
 import qualified Reactive.State.Graph                as Graph
 import           UI.Handlers.Node                    (allNodes, allNodes')
@@ -61,9 +59,11 @@ getGraphPort portRef = preuse $ Global.graph . Graph.nodesMap . ix (portRef ^. P
 getNode :: NodeId -> Command Global.State (Maybe Model.Node)
 getNode nodeId = Global.inNode nodeId $ mapM Store.get
 
-connectionIdToWidgetId :: ConnectionId -> Command Global.State (Maybe WidgetId)
-connectionIdToWidgetId connectionId = preuse $ Global.graph . Graph.connectionWidgetsMap . ix connectionId
+--TODO[react] delete and use Global.getConnection instead
+connectionIdToWidgetId :: ConnectionId -> Command Global.State (Maybe (Ref Connection))
+connectionIdToWidgetId = Global.getConnection
 
+--TODO[react] rename to portRefToNodeRef
 portRefToWidgetId :: AnyPortRef -> Command Global.State (Maybe (Ref Node))
 portRefToWidgetId = Global.getNode . view PortRef.nodeId
 
@@ -116,14 +116,14 @@ lineEndPos node1Pos node2Pos radius Nothing = moveByAngle node1Pos radius portAn
 
 updateConnection :: ConnectionId -> Command Global.State () -- FIXME: run in MaybeT
 updateConnection connectionId = do
-    (Just connection) <- preuse $ Global.graph . Graph.connectionsMap       . ix connectionId -- fatal
-    (Just widgetId  ) <- preuse $ Global.graph . Graph.connectionWidgetsMap . ix connectionId -- fatal
+    Just connection    <- preuse $ Global.graph . Graph.connectionsMap       . ix connectionId -- fatal
+    Just connectionRef <- Global.getConnection connectionId -- fatal
 
-    (Just srcNode   ) <- getNode $ connection ^. Connection.src . PortRef.srcNodeId           -- fatal
-    (Just dstNode   ) <- getNode $ connection ^. Connection.dst . PortRef.dstNodeId           -- fatal
+    Just srcNode       <- getNode $ connection ^. Connection.src . PortRef.srcNodeId           -- fatal
+    Just dstNode       <- getNode $ connection ^. Connection.dst . PortRef.dstNodeId           -- fatal
 
-    srcPort           <- getPort      $ OutPortRef' $ connection ^. Connection.src            -- non-fatal
-    dstPort           <- getPort      $ InPortRef'  $ connection ^. Connection.dst            -- non-fatal
+    srcPort            <- getPort      $ OutPortRef' $ connection ^. Connection.src            -- non-fatal
+    dstPort            <- getPort      $ InPortRef'  $ connection ^. Connection.dst            -- non-fatal
     let dstNodePos     = dstNode ^. widgetPosition
         srcNodePos     = srcNode ^. widgetPosition
         dstRadius      = portRadius $ connection ^. Connection.dst
@@ -135,10 +135,11 @@ updateConnection connectionId = do
         fallbackColor  = 13
         color          = fromMaybe fallbackColor $ vtToColor <$> (view Port.valueType) <$> srcGraphPort
 
-    void $ inRegistry $ UICmd.update widgetId $ (ConnectionModel.from    .~ posSrc)
-                                              . (ConnectionModel.to      .~ posDst)
-                                              . (ConnectionModel.visible .~ visible)
-                                              . (ConnectionModel.color   .~ color)
+    flip Store.modifyM_ connectionRef $ do
+        ConnectionModel.from    .= posSrc
+        ConnectionModel.to      .= posDst
+        ConnectionModel.visible .= visible
+        ConnectionModel.color   .= color
 
 moveByAngle :: Vector2 Double -> Double -> Angle -> Vector2 Double
 moveByAngle (Vector2 x y) radius angle = Vector2 (x + radius * cos angle) (y + radius * sin angle)
