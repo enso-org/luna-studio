@@ -41,23 +41,8 @@ initTextEditor = do
 
     Global.uiElements . UIElements.textEditorToggle .= toggleId
 
-initInputsEdge :: Command State ()
-initInputsEdge = do
-    let group = Group.create & Group.style     .~ Style.inputsEdgeStyle
-    groupId <- inRegistry $ UICmd.register sceneInterfaceId group $ Layout.verticalLayoutHandler 5.0
-    Global.uiElements . UIElements.inputsEdge .= groupId
-
-initOutputsEdge :: Command State ()
-initOutputsEdge = do
-    let group = Group.create & Group.style    .~ Style.outputsEdgeStyle
-    groupId <- inRegistry $ UICmd.register sceneInterfaceId group $ Layout.verticalLayoutHandler 5.0
-    Global.uiElements . UIElements.outputsEdge .= groupId
-
-
 initialize :: Command State ()
 initialize = do
     void $ initSidebar
     initBreadcrumb
     initTextEditor
-    initInputsEdge
-    initOutputsEdge
