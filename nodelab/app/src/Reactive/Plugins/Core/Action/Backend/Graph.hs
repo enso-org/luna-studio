@@ -28,9 +28,8 @@ import           Event.Batch                                 (Event (..))
 import qualified Event.Event                                 as Event
 
 import           Reactive.Commands.Batch                     (collaborativeModify, requestCollaborationRefresh)
-import           Reactive.Commands.Camera                    (autoZoom)
 import qualified Reactive.Commands.CodeEditor                as CodeEditor
-import           Reactive.Commands.Command                   (Command, performIO)
+import           Reactive.Commands.Command                   (Command)
 import           Reactive.Commands.Graph                     (updateConnection)
 import           Reactive.Commands.Graph.Connect             (localConnectNodes)
 import           Reactive.Commands.Graph.Disconnect          (localDisconnectAll)
@@ -41,13 +40,11 @@ import           Reactive.Commands.Node.Create               (addDummyNode)
 import           Reactive.Commands.Node.NodeMeta             (updateNodesMeta)
 import           Reactive.Commands.Node.Remove               (localRemoveNodes)
 import           Reactive.Commands.Node.Update               (updateNode, updateNodeProfilingData, updateNodeValue)
-import           Reactive.Commands.ProjectManager            (displayCurrentBreadcrumb)
 import           Reactive.Commands.UUID                      (isOwnRequest)
 import           Reactive.Plugins.Core.Action.Backend.Common (doNothing, handleResponse)
 import           Reactive.State.Global                       (State)
 import qualified Reactive.State.Global                       as Global
 
-import qualified JS.TextEditor                               as UI
 
 
 isCurrentLocation :: GraphLocation -> Command State Bool

@@ -1,10 +1,8 @@
 module Reactive.Commands.Graph
     ( allNodes
     , allNodes'
-    , connectionIdToWidgetId
     , focusNode
     , getPort
-    , portRefToWidgetId
     , updateConnection
     , updateConnections
     , updateConnectionsForNodes
@@ -22,7 +20,6 @@ import           Utils.Vector                        (Vector2 (Vector2), lengthS
 
 import           React.Store                         (Ref, ref, widget)
 import qualified React.Store                         as Store
-import           React.Store.Connection              (Connection)
 import           React.Store.Node                    (Node)
 import qualified React.Store.Node                    as Node
 
@@ -58,14 +55,6 @@ getGraphPort portRef = preuse $ Global.graph . Graph.nodesMap . ix (portRef ^. P
 
 getNode :: NodeId -> Command Global.State (Maybe Model.Node)
 getNode nodeId = Global.inNode nodeId $ mapM Store.get
-
---TODO[react] delete and use Global.getConnection instead
-connectionIdToWidgetId :: ConnectionId -> Command Global.State (Maybe (Ref Connection))
-connectionIdToWidgetId = Global.getConnection
-
---TODO[react] rename to portRefToNodeRef
-portRefToWidgetId :: AnyPortRef -> Command Global.State (Maybe (Ref Node))
-portRefToWidgetId = Global.getNode . view PortRef.nodeId
 
 nats :: [Integer]
 nats = [1..]

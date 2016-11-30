@@ -18,8 +18,7 @@ import           Event.Mouse                     hiding (Event, widget)
 import qualified Event.Mouse                     as Mouse
 
 import           Reactive.Commands.Command       (Command)
-import           Reactive.Commands.Graph         (portRefToWidgetId)
-import           qualified Reactive.Commands.Graph         as Graph
+import qualified Reactive.Commands.Graph         as Graph
 import           Reactive.Commands.Graph.Connect (batchConnectNodes)
 import qualified Reactive.Commands.UIRegistry    as UICmd
 import qualified Reactive.State.Camera           as Camera
