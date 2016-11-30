@@ -14,22 +14,22 @@ module Reactive.Commands.Camera
      , zoomOut
      , wheelZoom
      , resetZoom
-     , updateWindowSize
+    --  , updateWindowSize --TODO[react] remove
      ) where
 
 import           Utils.PreludePlus
 import           Utils.Vector
 
-import qualified Empire.API.Data.Node       as Node
+import qualified Empire.API.Data.Node      as Node
 
-import qualified Event.Mouse                as Mouse
-import qualified JS.Camera                  as JS
-import           Reactive.Commands.Command  (Command, performIO)
-import           Reactive.Commands.UILayout as UILayout
-import           Reactive.State.Camera      (DragHistory (..))
-import qualified Reactive.State.Camera      as Camera
-import qualified Reactive.State.Global      as Global
-import qualified Reactive.State.Graph       as Graph
+import qualified Event.Mouse               as Mouse
+import qualified JS.Camera                 as JS
+import           Reactive.Commands.Command (Command, performIO)
+-- import           Reactive.Commands.UILayout as UILayout --TODO[react] remove
+import           Reactive.State.Camera     (DragHistory (..))
+import qualified Reactive.State.Camera     as Camera
+import qualified Reactive.State.Global     as Global
+import qualified Reactive.State.Graph      as Graph
 
 
 minCamFactor, maxCamFactor, dragZoomSpeed, wheelZoomSpeed, panStep, zoomFactorStep :: Double
@@ -184,14 +184,14 @@ cameraBottom camFactor camPanY halfScreenY =  halfScreenY / camFactor + camPanY
 htmlX        camFactor camPanX halfScreenX =  halfScreenX - camPanX * camFactor
 htmlY        camFactor camPanY halfScreenY =  halfScreenY - camPanY * camFactor
 
-
-updateWindowSize :: Vector2 Int -> Command Global.State ()
-updateWindowSize size = do
-    textEditorWidth <- UILayout.relayoutTextEditor size
-    zoom Global.camera $ do
-        let canvasWidth = size ^. x - textEditorWidth
-        Camera.camera . Camera.windowSize .= size
-        Camera.camera . Camera.screenSize .= Vector2 canvasWidth (size ^. y)
-        syncCamera
-        performIO $ JS.updateScreenSize canvasWidth (size ^. y)
-    UILayout.relayout
+--TODO[react] remove
+-- updateWindowSize :: Vector2 Int -> Command Global.State ()
+-- updateWindowSize size = do
+--     textEditorWidth <- UILayout.relayoutTextEditor size
+--     zoom Global.camera $ do
+--         let canvasWidth = size ^. x - textEditorWidth
+--         Camera.camera . Camera.windowSize .= size
+--         Camera.camera . Camera.screenSize .= Vector2 canvasWidth (size ^. y)
+--         syncCamera
+--         performIO $ JS.updateScreenSize canvasWidth (size ^. y)
+--     UILayout.relayout

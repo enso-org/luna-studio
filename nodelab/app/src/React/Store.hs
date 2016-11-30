@@ -11,7 +11,7 @@ import           React.Flux
 import           Utils.PreludePlus          as P hiding (transform)
 
 import qualified Event.Event                as Event
-import Event.UI                   (UIEvent)
+import           Event.UI                   (UIEvent)
 import           React.Store.App            (App (App))
 import           React.Store.Ref            as X
 
@@ -35,4 +35,4 @@ create a = do
     create' se a
 
 createApp :: MonadIO m => SendEvent -> m (Ref App)
-createApp = runReaderT (create =<< (App <$> create def <*> create def))
+createApp = runReaderT (create =<< (App <$> create def <*> create def <*> pure True))

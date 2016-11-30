@@ -20,4 +20,5 @@ app ref = React.defineControllerView
     name ref $ \store () ->
         div_ $ do
             div_ $ nodeEditor_ (store ^. dt . App.nodeEditor)
-            div_ $ codeEditor_ (store ^. dt . App.codeEditor)
+            when (store ^. dt . App.codeEditorVisible) $
+                div_ $ codeEditor_ (store ^. dt . App.codeEditor)

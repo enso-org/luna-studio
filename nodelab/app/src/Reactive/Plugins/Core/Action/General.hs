@@ -16,7 +16,7 @@ import qualified Reactive.State.Global     as Global
 
 toAction :: Event -> Maybe (Command Global.State ())
 toAction (Mouse _ (Mouse.Event Mouse.Moved pos _ _ _)) = Just $ updateMousePos pos
-toAction (Window (Window.Resized width height))        = Just $ Camera.updateWindowSize (Vector2 width height)
+-- toAction (Window (Window.Resized width height))        = Just $ Camera.updateWindowSize (Vector2 width height) --TODO[react] remove
 toAction _                                             = Nothing
 
 updateMousePos :: Vector2 Int -> Command Global.State ()

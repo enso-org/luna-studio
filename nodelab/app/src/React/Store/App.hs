@@ -12,8 +12,9 @@ import           React.Store.Ref        (Ref)
 
 
 
-data App = App { _nodeEditor :: Ref NodeEditor
-               , _codeEditor :: Ref CodeEditor
+data App = App { _nodeEditor        :: Ref NodeEditor
+               , _codeEditor        :: Ref CodeEditor
+               , _codeEditorVisible :: Bool
                }
 
 makeLenses ''App
