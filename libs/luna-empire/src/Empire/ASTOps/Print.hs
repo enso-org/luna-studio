@@ -71,8 +71,8 @@ printFunctionHeader function = do
             return $ "def " ++ name ++ " " ++ unwords args ++ ":"
 
 printExpression' :: ASTOp m => Bool -> Bool -> NodeRef -> m String
-printExpression' suppresNodes paren nodeRef = do
-    let recur = printExpression' suppresNodes
+printExpression' suppressNodes paren nodeRef = do
+    let recur = printExpression' suppressNodes
     node <- Builder.read nodeRef
     let displayFun funExpr args = do
             unpackedArgs <- ASTBuilder.unpackArguments args
@@ -101,7 +101,7 @@ printExpression' suppresNodes paren nodeRef = do
             return $ leftRep ++ " = " ++ rightRep
         of' $ \(Var n) -> do
             isNode <- ASTBuilder.isGraphNode nodeRef
-            return $ if isNode && suppresNodes then "_" else unwrap n
+            return $ if isNode && suppressNodes then "_" else unwrap n
         of' $ \(Acc n t) -> do
             targetRef <- Builder.follow source t
             target    <- Builder.read targetRef
