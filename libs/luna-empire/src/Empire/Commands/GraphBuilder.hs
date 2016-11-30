@@ -367,6 +367,19 @@ getOutputEdgeInputs inputEdge outputEdge = do
             return $ Just (OutPortRef id arg, InPortRef outputEdge (Arg 0))
         _ -> return Nothing
 
+nodeConnectedToOutput :: Command Graph (Maybe NodeId)
+nodeConnectedToOutput = do
+    lambda <- use Graph.insideNode
+    case lambda of
+        Nothing -> return Nothing
+        _       -> do
+            (i, o) <- getEdgePortMapping <?!> "inside node so it's ok"
+            connection <- getOutputEdgeInputs i o
+            case connection of
+                Nothing -> return Nothing
+                Just (OutPortRef nid _, _) -> return $ Just nid
+
+
 resolveInputNodeId :: Maybe (NodeId, NodeId) -> [NodeRef] -> NodeRef -> Command Graph (Maybe NodeId)
 resolveInputNodeId edgeNodes lambdaArgs ref = do
     nodeId <- zoom Graph.ast $ runASTOp $ ASTBuilder.getNodeId ref

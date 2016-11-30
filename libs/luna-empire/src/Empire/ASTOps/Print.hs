@@ -45,6 +45,30 @@ parenIf :: Bool -> String -> String
 parenIf False s = s
 parenIf True  s = "(" ++ s ++ ")"
 
+printFunctionArguments :: ASTOp m => NodeRef -> m [String]
+printFunctionArguments lam = do
+    l <- Builder.read lam
+    caseTest (uncover l) $ do
+        of' $ \(Lam args _) -> do
+            args' <- ASTBuilder.unpackArguments args
+            mapM printExpression args'
+
+printReturnValue :: ASTOp m => NodeRef -> m String
+printReturnValue lam = do
+    l <- Builder.read lam
+    caseTest (uncover l) $ do
+        of' $ \(Lam _ out) -> do
+            out' <- Builder.follow source out
+            printExpression out'
+
+printFunctionHeader :: ASTOp m => NodeRef -> m String
+printFunctionHeader function = do
+    f <- Builder.read function
+    caseTest (uncover f) $ do
+        of' $ \(Match l r) -> do
+            name <- Builder.follow source l >>= printExpression
+            args <- Builder.follow source r >>= printFunctionArguments
+            return $ "def " ++ name ++ " " ++ unwords args ++ ":"
 
 printExpression' :: ASTOp m => Bool -> Bool -> NodeRef -> m String
 printExpression' suppresNodes paren nodeRef = do

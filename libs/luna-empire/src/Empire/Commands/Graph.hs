@@ -229,12 +229,25 @@ getNodeMeta loc nodeId = withGraph loc $ do
 
 getCode :: GraphLocation -> Empire String
 getCode loc = withGraph loc $ do
+    inFunction <- use Graph.insideNode
+    function <- forM inFunction $ \nodeId -> do
+        ptr <- GraphUtils.getASTPointer nodeId
+        header <- zoom Graph.ast $ AST.printFunctionHeader ptr
+        lam <- GraphUtils.getASTTarget nodeId
+        ret <- zoom Graph.ast $ AST.printReturnValue lam
+        return (header, ret)
+    returnedNodeId <- GraphBuilder.nodeConnectedToOutput
     allNodes <- uses Graph.breadcrumbHierarchy topLevelIDs
-    refs     <- mapM GraphUtils.getASTPointer allNodes
+    refs     <- mapM GraphUtils.getASTPointer $ flip filter allNodes $ \nid ->
+        case returnedNodeId of
+            Just id -> id /= nid
+            _       -> True
     metas    <- zoom Graph.ast $ mapM AST.readMeta refs
     let sorted = fmap snd $ sort $ zip metas allNodes
-    lines <- sequence $ printNodeLine <$> sorted
-    return $ unlines lines
+    lines <- mapM printNodeLine sorted
+    return $ unlines $ case function of
+        Just (header, ret) -> header : map ("    " ++) (lines ++ [ret])
+        _                  -> lines
 
 getGraph :: GraphLocation -> Empire APIGraph.Graph
 getGraph loc = withTC loc True GraphBuilder.buildGraph

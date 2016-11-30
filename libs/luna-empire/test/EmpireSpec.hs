@@ -360,7 +360,29 @@ spec = around withChannels $
                 Left err -> expectationFailure err
                 Right (topCode, lambdaCode) -> do
                     lines topCode `shouldMatchList` ["node3 = 4", "node2 = 3", "foo = -> $in0 in0"]
-                    lines lambdaCode `shouldMatchList` ["node5 = 6", "node4 = 5"]
+                    lines lambdaCode `shouldMatchList` ["def foo in0:", "    node5 = 6", "    node4 = 5", "    in0"]
+        it "properly pretty-prints functions" $ \env -> do
+            u1 <- nextRandom
+            (res, _) <- runGraph env $ \mkLoc -> do
+                let loc = mkLoc $ Breadcrumb []
+                    loc' = mkLoc $ Breadcrumb [Breadcrumb.Lambda u1]
+                Graph.addNode loc u1 "-> $a $b a + b" def
+                Graph.getCode loc'
+            case res of
+                Left err -> expectationFailure err
+                Right code -> do
+                    lines code `shouldMatchList` ["def node1 a b:", "    a + b"]
+        it "prints `def foo` function" $ \env -> do
+          u1 <- nextRandom
+          (res, _) <- runGraph env $ \mkLoc -> do
+              let loc = mkLoc $ Breadcrumb []
+                  loc' = mkLoc $ Breadcrumb [Breadcrumb.Lambda u1]
+              Graph.addNode loc u1 "def foo" def
+              Graph.getCode loc'
+          case res of
+              Left err -> expectationFailure err
+              Right code -> do
+                  lines code `shouldMatchList` ["def foo in0:", "    in0"]
 
 withChannels :: (CommunicationEnv -> IO ()) -> IO ()
 withChannels = bracket createChannels (const $ return ())

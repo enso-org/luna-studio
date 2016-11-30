@@ -270,6 +270,12 @@ removeSubtree = runASTOp . safeRemove
 printExpression :: NodeRef -> Command AST String
 printExpression = runASTOp . Printer.printExpression
 
+printFunctionHeader :: NodeRef -> Command AST String
+printFunctionHeader = runASTOp . Printer.printFunctionHeader
+
+printReturnValue :: NodeRef -> Command AST String
+printReturnValue = runASTOp . Printer.printReturnValue
+
 applyFunction :: NodeRef -> NodeRef -> Int -> Command AST NodeRef
 applyFunction = runASTOp .:. ASTBuilder.applyFunction
 
