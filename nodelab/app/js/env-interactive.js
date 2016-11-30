@@ -13,7 +13,6 @@ module.exports = function() {
   window.CodeEditor     = require('Widget/CodeEditor');
   window.Connection     = require('Widget/Connection');
   window.DataFrame      = require('Widget/DataFrame');
-  window.FunctionPort   = require('Widget/FunctionPort');
   window.Graphics       = require('Widget/Graphics');
   window.GraphNode      = require('Widget/Node');
   window.Group          = require('Widget/Group');

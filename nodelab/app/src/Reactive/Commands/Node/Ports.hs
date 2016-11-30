@@ -27,7 +27,7 @@ import qualified Reactive.State.UIRegistry           as UIRegistry
 
 import           Empire.API.Data.Node                (Node)
 import qualified Empire.API.Data.Node                as Node
-import           Empire.API.Data.Port                (InPort (..), InPort (..), Port (..), PortId (..))
+import           Empire.API.Data.Port                (InPort (..), OutPort (..), Port (..), PortId (..))
 import qualified Empire.API.Data.Port                as Port
 import           Empire.API.Data.PortRef             (toAnyPortRef)
 import qualified Empire.API.Data.ValueType           as ValueType
@@ -39,7 +39,6 @@ makePorts node = makePort <$> ports where
         portId  = port ^. Port.portId
         portRef = toAnyPortRef nodeId portId
         angle   = PortModel.defaultAngle (portCount portId) portId
-        isOnly  = 0 == portCount (InPortId Self)
     ports   = Map.elems $ node ^. Node.ports
     portIds = Map.keys  $ node ^. Node.ports
     portCount :: PortId -> Int
@@ -52,6 +51,14 @@ makePorts node = makePort <$> ports where
         isIn (OutPortId _)      = 0
         isIn (InPortId (Arg _)) = 1
         isIn (InPortId Self)    = 0
+    isOnly :: Bool
+    isOnly = 0 == (sum $ fmap shouldCount portIds) where
+        shouldCount :: PortId -> Int
+        shouldCount (OutPortId All)            = 0
+        shouldCount (InPortId Self)            = 0
+        shouldCount (OutPortId (Projection _)) = 1
+        shouldCount (InPortId (Arg _))         = 1
+
 
 displayPorts :: WidgetId -> Node -> Command Global.State ()
 displayPorts wid node = do
@@ -75,8 +82,8 @@ displayPorts wid node = do
         inRegistry $ mapM_ UICmd.removeWidget outLabels
 
         forM_ (makePorts node    ) $ \p -> do
-             portWidgetId <- inRegistry $ UICmd.register portGroup p def
-             Global.graph . Graph.portWidgetsMap . at (p ^. PortModel.portRef) ?= portWidgetId
+            portWidgetId <- inRegistry $ UICmd.register portGroup p def
+            Global.graph . Graph.portWidgetsMap . at (p ^. PortModel.portRef) ?= portWidgetId
         inRegistry $ forM_ (node ^. Node.ports) $ makePortControl groupId node
         inRegistry $ forM_ (node ^. Node.ports) $ \p -> case p ^. Port.portId of
             InPortId  Self -> return ()

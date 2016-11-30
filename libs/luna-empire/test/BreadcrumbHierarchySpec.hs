@@ -46,3 +46,8 @@ spec = describe "forest" $ do
         replaceAt (Breadcrumb [Lambda (uuid 9)]) empty forest123 == Nothing
     it "removes from top level" $
         topLevelIDs (removeID (uuid 1) forest123) == [uuid 3, uuid 2]
+    it "adds with nested node" $ do
+        let hierarchy = addID (uuid 1) empty
+            given = addWithLeafs (uuid 2) [uuid 3, uuid 4] hierarchy
+            when  = topLevelIDs <$> given `navigateTo` (Breadcrumb [Lambda $ uuid 2])
+        when == Just [uuid 3, uuid 4]

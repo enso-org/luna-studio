@@ -4,6 +4,7 @@ module Empire.Data.BreadcrumbHierarchy (
     , replaceAt
     , navigateTo
     , addID
+    , addWithLeafs
     , removeID
     , topLevelIDs
     ) where
@@ -49,6 +50,11 @@ at nid forest = snd <$> find ((==) nid . fst) topLevel
 
 addID :: NodeId -> BreadcrumbHierarchy -> BreadcrumbHierarchy
 addID nodeid (BC hierarchy) = BC $ Node nodeid [] : hierarchy
+
+addWithLeafs :: NodeId -> [NodeId] -> BreadcrumbHierarchy -> BreadcrumbHierarchy
+addWithLeafs nodeid leafs (BC hierarchy) = BC $ Node nodeid children : hierarchy
+    where
+        children = map (\nid -> Node nid []) leafs
 
 removeID :: NodeId -> BreadcrumbHierarchy -> BreadcrumbHierarchy
 removeID nodeid (BC hierarchy) = BC $ filter (\(Node nid _) -> nid /= nodeid) hierarchy

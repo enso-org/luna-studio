@@ -1,3 +1,4 @@
+{-# LANGUAGE MultiWayIf #-}
 module Empire.Commands.Graph
     ( addNode
     , addNodeCondTC
@@ -19,23 +20,27 @@ module Empire.Commands.Graph
     , renameNode
     , dumpGraphViz
     , typecheck
+    , withTC
+    , withGraph
     ) where
 
-import           Control.Monad                   (forM, forM_)
-import           Control.Monad.Except            (throwError)
-import           Control.Monad.State             hiding (when)
-import           Data.IntMap                     (IntMap)
-import qualified Data.IntMap                     as IntMap
-import           Data.List                       (sort)
-import qualified Data.Map                        as Map
-import           Data.Maybe                      (catMaybes)
-import           Data.Text.Lazy                  (Text)
-import qualified Data.Text.Lazy                  as Text
-import           Data.Traversable                (forM)
-import qualified Data.UUID                       as UUID
+import           Control.Monad                 (forM, forM_)
+import           Control.Monad.Except          (throwError)
+import           Control.Monad.State           hiding (when)
+import           Data.Coerce                   (coerce)
+import           Data.IntMap                   (IntMap)
+import qualified Data.IntMap                   as IntMap
+import           Data.List                     as List (last, sort)
+import qualified Data.Map                      as Map
+import           Data.Maybe                    (catMaybes)
+import           Data.Text.Lazy                (Text)
+import qualified Data.Text.Lazy                as Text
+import           Data.Traversable              (forM)
+import qualified Data.UUID                     as UUID
+import qualified Data.UUID.V4                  as UUID (nextRandom)
 import           Prologue
 
-import           Empire.Data.BreadcrumbHierarchy (addID, removeID)
+import           Empire.Data.BreadcrumbHierarchy (addID, addWithLeafs, removeID)
 import           Empire.Data.Graph               (Graph)
 import qualified Empire.Data.Graph               as Graph
 import qualified Empire.Data.Library             as Library
@@ -56,6 +61,11 @@ import qualified Empire.API.Data.Port            as Port (PortState (..), state)
 import           Empire.API.Data.PortRef         (AnyPortRef (..), InPortRef (..), OutPortRef (..))
 import qualified Empire.API.Data.PortRef         as PortRef
 import           Empire.API.Data.Project         (ProjectId)
+import qualified Old.Luna.Syntax.Model.Network.Builder  as Builder
+import qualified Data.HMap.Lazy                     as HMap
+import           Empire.Data.NodeMarker             (NodeMarker(..), nodeMarkerKey)
+import           Old.Data.Prop                      (prop, ( # ))
+import Empire.ASTOp (runASTOp)
 
 import           Debug.Trace                     (trace)
 import qualified Empire.Commands.AST             as AST
@@ -85,21 +95,32 @@ addNode loc uuid expr meta = withTC loc False $ addNodeNoTC loc uuid expr meta
 addNodeNoTC :: GraphLocation -> NodeId -> Text -> NodeMeta -> Command Graph Node
 addNodeNoTC loc uuid expr meta = do
     newNodeName <- generateNodeName
-    refNode <- zoom Graph.ast $ AST.addNode uuid newNodeName (Text.unpack expr)
+    (parsedRef, refNode) <- zoom Graph.ast $ AST.addNode uuid newNodeName (Text.unpack expr)
+    parsedIsLambda <- zoom Graph.ast $ AST.isLambda parsedRef
     zoom Graph.ast $ AST.writeMeta refNode meta
-    Graph.nodeMapping . at uuid ?= refNode
+    Graph.nodeMapping . at uuid ?= Graph.MatchNode refNode
     node <- GraphBuilder.buildNode uuid
-    Graph.breadcrumbHierarchy %= addID (node ^. Node.nodeId)
-    Publisher.notifyNodesUpdate loc node
+    if parsedIsLambda then do
+        lambdaUUID <- liftIO $ UUID.nextRandom
+        lambdaOutput <- zoom Graph.ast $ AST.getLambdaOutputRef parsedRef
+        outputIsOneOfTheInputs <- zoom Graph.ast $ runASTOp $ lambdaOutput `AST.isLambdaInput` parsedRef
+        Graph.nodeMapping . at lambdaUUID ?= Graph.AnonymousNode lambdaOutput
+        Graph.breadcrumbHierarchy %= addWithLeafs (node ^. Node.nodeId)
+            (if outputIsOneOfTheInputs then [] else [lambdaUUID])
+        zoom Graph.ast $ runASTOp $ Builder.withRef lambdaOutput $ prop Builder.Meta %~ HMap.insert nodeMarkerKey (NodeMarker lambdaUUID)
+    else Graph.breadcrumbHierarchy %= addID (node ^. Node.nodeId)
+    Publisher.notifyNodeUpdate loc node
     return node
 
 addPersistentNode :: Node -> Command Graph NodeId
 addPersistentNode n = case n ^. Node.nodeType of
     Node.ExpressionNode expr -> do
         let newNodeId = n ^. Node.nodeId
-        refNode <- zoom Graph.ast $ AST.addNode newNodeId (Text.unpack $ n ^. Node.name) (Text.unpack expr)
+        (parsedRef, refNode) <- zoom Graph.ast $ AST.addNode newNodeId (Text.unpack $ n ^. Node.name) (Text.unpack expr)
         zoom Graph.ast $ AST.writeMeta refNode (n ^. Node.nodeMeta)
-        Graph.nodeMapping . at newNodeId ?= refNode
+        Graph.nodeMapping . at newNodeId ?= Graph.MatchNode refNode
+        lambdaUUID <- liftIO $ UUID.nextRandom
+        Graph.nodeMapping . at lambdaUUID ?= Graph.AnonymousNode parsedRef
         mapM_ (setDefault newNodeId) (Map.toList $ n ^. Node.ports)
         return newNodeId
     _ -> return UUID.nil
@@ -117,9 +138,8 @@ addSubgraph loc nodes conns = withTC loc False $ do
         _ -> return ()
     forM_ conns $ \(Connection src dst) -> connectNoTC loc src dst
 
-
 removeNodes :: GraphLocation -> [NodeId] -> Empire ()
-removeNodes loc nodeIds = withTC loc False $ forM_ nodeIds removeNodeNoTC
+removeNodes loc nodeIds = withTC loc False $ forM_ nodeIds $ removeNodeNoTC
 
 removeNodeNoTC :: NodeId -> Command Graph ()
 removeNodeNoTC nodeId = do
@@ -162,14 +182,16 @@ connect :: GraphLocation -> OutPortRef -> InPortRef -> Empire ()
 connect loc outPort inPort = withTC loc False $ connectNoTC loc outPort inPort
 
 connectPersistent :: OutPortRef -> InPortRef -> Command Graph ()
-connectPersistent (OutPortRef srcNodeId All) (InPortRef dstNodeId dstPort) =
+connectPersistent (OutPortRef srcNodeId srcPort) (InPortRef dstNodeId dstPort) = do
+    let inputPos = case srcPort of
+            All            -> 0   -- FIXME: do not equalise All with Projection 0
+            Projection int -> int
     case dstPort of
-        Self    -> makeAcc srcNodeId dstNodeId
-        Arg num -> makeApp srcNodeId dstNodeId num
-connectPersistent _ _ = throwError "Source port should be All"
+        Self    -> makeAcc srcNodeId dstNodeId inputPos
+        Arg num -> makeApp srcNodeId dstNodeId num inputPos
 
 connectNoTC :: GraphLocation -> OutPortRef -> InPortRef -> Command Graph ()
-connectNoTC loc outPort@(OutPortRef srcNodeId All) inPort@(InPortRef dstNodeId dstPort) = connectPersistent outPort inPort
+connectNoTC loc outPort@(OutPortRef srcNodeId srcPort) inPort@(InPortRef dstNodeId dstPort) = connectPersistent outPort inPort
 
 setDefaultValue :: GraphLocation -> AnyPortRef -> PortDefault -> Empire ()
 setDefaultValue loc portRef val = withTC loc False $ setDefaultValue' portRef val
@@ -217,8 +239,7 @@ renameNode loc nid name = withTC loc False $ do
 
 dumpGraphViz :: GraphLocation -> Empire ()
 dumpGraphViz loc = withGraph loc $ do
-    zoom Graph.ast   $ AST.dumpGraphViz "gui_dump"
-    {-zoom Graph.tcAST $ AST.dumpGraphViz "gui_tc_dump"-}
+    zoom Graph.ast $ AST.dumpGraphViz "gui_dump"
 
 typecheck :: GraphLocation -> Empire ()
 typecheck loc = withGraph loc $ runTC loc False
@@ -267,16 +288,47 @@ unApp nodeId pos = do
     newNodeRef <- zoom Graph.ast $ AST.unapplyArgument astNode pos
     GraphUtils.rewireNode nodeId newNodeRef
 
-makeAcc :: NodeId -> NodeId -> Command Graph ()
-makeAcc src dst = do
-    srcAst <- GraphUtils.getASTVar    src
-    dstAst <- GraphUtils.getASTTarget dst
-    newNodeRef <- zoom Graph.ast $ AST.makeAccessor srcAst dstAst
-    GraphUtils.rewireNode dst newNodeRef
+makeAcc :: NodeId -> NodeId -> Int -> Command Graph ()
+makeAcc src dst inputPos = do
+    edges <- GraphBuilder.getEdgePortMapping
+    let (connectToInputEdge, connectToOutputEdge) = case edges of
+            Nothing           -> (False, False)
+            Just (input, out) -> (input == src, out == dst)
+    if | connectToInputEdge -> do
+        lambda  <- use Graph.insideNode <?!> "impossible: connecting to input edge while outside node"
+        lambda' <- GraphUtils.getASTTarget lambda
+        srcAst  <- zoom Graph.ast $ AST.getLambdaInputRef lambda' inputPos
+        dstAst  <- GraphUtils.getASTTarget dst
+        newNodeRef <- zoom Graph.ast $ AST.makeAccessor srcAst dstAst
+        GraphUtils.rewireNode dst newNodeRef
+       | otherwise -> do
+        srcAst <- GraphUtils.getASTVar    src
+        dstAst <- GraphUtils.getASTTarget dst
+        newNodeRef <- zoom Graph.ast $ AST.makeAccessor srcAst dstAst
+        GraphUtils.rewireNode dst newNodeRef
 
-makeApp :: NodeId -> NodeId -> Int -> Command Graph ()
-makeApp src dst pos = do
-    srcAst <- GraphUtils.getASTVar    src
-    dstAst <- GraphUtils.getASTTarget dst
-    newNodeRef <- zoom Graph.ast $ AST.applyFunction dstAst srcAst pos
-    GraphUtils.rewireNode dst newNodeRef
+
+makeApp :: NodeId -> NodeId -> Int -> Int -> Command Graph ()
+makeApp src dst pos inputPos = do
+    edges <- GraphBuilder.getEdgePortMapping
+    let (connectToInputEdge, connectToOutputEdge) = case edges of
+            Nothing           -> (False, False)
+            Just (input, out) -> (input == src, out == dst)
+    if | connectToOutputEdge -> do
+        lambda <- use Graph.insideNode <?!> "impossible: connecting to output edge while outside node"
+        srcAst <- GraphUtils.getASTVar    src
+        dstAst <- GraphUtils.getASTTarget lambda
+        newNodeRef <- zoom Graph.ast $ AST.redirectLambdaOutput dstAst srcAst pos
+        GraphUtils.rewireNode lambda newNodeRef
+       | connectToInputEdge -> do
+        lambda  <- use Graph.insideNode <?!> "impossible: connecting to input edge while outside node"
+        lambda' <- GraphUtils.getASTTarget lambda
+        srcAst  <- zoom Graph.ast $ AST.getLambdaInputRef lambda' inputPos
+        dstAst  <- GraphUtils.getASTTarget dst
+        newNodeRef <- zoom Graph.ast $ AST.applyFunction dstAst srcAst pos
+        GraphUtils.rewireNode dst newNodeRef
+       | otherwise -> do
+        srcAst <- GraphUtils.getASTVar    src
+        dstAst <- GraphUtils.getASTTarget dst
+        newNodeRef <- zoom Graph.ast $ AST.applyFunction dstAst srcAst pos
+        GraphUtils.rewireNode dst newNodeRef

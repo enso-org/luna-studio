@@ -13,7 +13,9 @@ import qualified Empire.Commands.AST     as AST
 
 
 getASTPointer :: NodeId -> Command Graph NodeRef
-getASTPointer nodeId = use (Graph.nodeMapping . at nodeId) <?!> "Node does not exist"
+getASTPointer nodeId = Graph.getAnyRef <$> (use (Graph.nodeMapping . at nodeId) <?!> err)
+    where
+        err = "Node " ++ show nodeId ++ " does not exist"
 
 getASTTarget :: NodeId -> Command Graph NodeRef
 getASTTarget nodeId = do

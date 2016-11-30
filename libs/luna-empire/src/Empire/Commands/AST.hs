@@ -5,11 +5,12 @@
 module Empire.Commands.AST where
 
 import           Control.Arrow                     (second)
-import           Control.Monad.Except              (runExceptT)
+import           Control.Monad.Except              (runExceptT, throwError)
 import           Control.Monad.State
 import           Data.Graph                        (Inputs (..), source)
 import           Data.HMap.Lazy                    (TypeKey (..))
 import qualified Data.HMap.Lazy                    as HMap
+import           Data.List                         (find)
 import           Data.Layer_OLD.Cover_OLD          (uncover)
 import           Data.Maybe                        (catMaybes, fromMaybe)
 import           Old.Data.Prop                     (prop, ( # ))
@@ -38,7 +39,7 @@ import           Old.Luna.Pretty.GraphViz          (renderAndOpen)
 
 import           Old.Luna.Syntax.Model.Network.Builder (Meta (..), TCData (..), Type (..), tcErrors)
 import qualified Old.Luna.Syntax.Model.Network.Builder as Builder
-import           Old.Luna.Syntax.Term.Class        (Cons (..), Unify (..))
+import           Old.Luna.Syntax.Term.Class        (Cons (..), Unify (..), Lam(..))
 import qualified Old.Luna.Syntax.Term.Expr.Lit     as Lit
 
 import           Old.Luna.Compilation.Error            as TCError
@@ -59,11 +60,11 @@ import           Luna.Pass.Evaluation.Interpreter.Charts (autoScatterChartDouble
 metaKey :: TypeKey NodeMeta
 metaKey = TypeKey
 
-addNode :: NodeId -> String -> String -> Command AST NodeRef
+addNode :: NodeId -> String -> String -> Command AST (NodeRef, NodeRef)
 addNode nid name expr = runASTOp $ do
     (exprName, ref) <- Parser.parseExpr expr
     let name' = fromMaybe name $ fmap Text.unpack exprName
-    ASTBuilder.makeNodeRep (NodeMarker nid) name' ref
+    (,) <$> pure ref <*> ASTBuilder.makeNodeRep (NodeMarker nid) name' ref
 
 addDefault :: PortDefault -> Command AST NodeRef
 addDefault val = runASTOp $ Parser.parsePortDefault val
@@ -272,6 +273,15 @@ printExpression = runASTOp . Printer.printExpression
 applyFunction :: NodeRef -> NodeRef -> Int -> Command AST NodeRef
 applyFunction = runASTOp .:. ASTBuilder.applyFunction
 
+redirectLambdaOutput :: NodeRef -> NodeRef -> Int -> Command AST NodeRef
+redirectLambdaOutput lambdaRef newOutputRef pos = runASTOp $ do
+    lambda <- Builder.read lambdaRef
+    caseTest (uncover lambda) $ do
+        of' $ \(Lam args _) -> do
+            args' <- (mapM . mapM) (Builder.follow source) args
+            Builder.lam args' newOutputRef
+        of' $ \ANY -> throwError $ show lambdaRef ++ " is not lambda"
+
 unapplyArgument :: NodeRef -> Int -> Command AST NodeRef
 unapplyArgument = runASTOp .: ASTBuilder.removeArg
 
@@ -290,6 +300,31 @@ getVarNode :: NodeRef -> Command AST NodeRef
 getVarNode nodeRef = runASTOp $ Builder.read nodeRef
                             >>= return . view ASTBuilder.leftMatchOperand
                             >>= Builder.follow source
+
+getLambdaInputRef :: NodeRef -> Int -> Command AST NodeRef
+getLambdaInputRef nodeRef pos = runASTOp $ do
+    node <- Builder.read nodeRef
+    caseTest (uncover node) $ do
+        of' $ \(Lam args out) -> (!! pos) <$> ASTBuilder.unpackArguments args
+
+isLambda :: NodeRef -> Command AST Bool
+isLambda ref = runASTOp $ do
+  node <- Builder.read ref
+  caseTest (uncover node) $ do
+    of' $ \(Lam _ _) -> return True
+    of' $ \ANY       -> return False
+
+isLambdaInput :: ASTOp m => NodeRef -> NodeRef -> m Bool
+isLambdaInput node lambdaRef = do
+    lambda <- Builder.read lambdaRef
+    caseTest (uncover lambda) $ do
+        of' $ \(Lam args _) -> (node `elem`) <$> ASTBuilder.unpackArguments args
+
+getLambdaOutputRef :: NodeRef -> Command AST NodeRef
+getLambdaOutputRef lambdaRef = runASTOp $ do
+    lambda <- Builder.read lambdaRef
+    caseTest (uncover lambda) $ do
+        of' $ \(Lam _ out) -> Builder.follow source out
 
 replaceTargetNode :: NodeRef -> NodeRef -> Command AST ()
 replaceTargetNode matchNodeId newTargetId = runASTOp $ do

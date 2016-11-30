@@ -5,17 +5,18 @@ module Empire.Commands.Typecheck where
 import           Prologue
 import           Control.Monad.State     hiding (when)
 import           Unsafe.Coerce           (unsafeCoerce)
-import           Control.Monad.Error     (throwError)
+import           Control.Monad.Except    (throwError)
 import           Control.Monad           (forM_)
 import           Control.Monad.Reader    (ask)
 import           Data.List               (sort)
 import qualified Data.Map                as Map
-import           Data.Maybe              (isNothing)
+import           Data.Maybe              (isNothing, maybeToList)
 
+import           Empire.Data.BreadcrumbHierarchy   (topLevelIDs)
 import qualified Empire.Data.Graph                 as Graph
 import           Empire.Data.Graph                 (Graph)
 import           Empire.Data.BreadcrumbHierarchy   (topLevelIDs)
-import           Empire.API.Data.Node              (NodeId)
+import           Empire.API.Data.Node              (NodeId, nodeId)
 import qualified Empire.API.Data.NodeMeta          as NodeMeta
 import           Empire.API.Data.GraphLocation     (GraphLocation (..))
 import qualified Empire.API.Graph.NodeResultUpdate as NodeResult
@@ -63,7 +64,7 @@ collect pass = return ()
 
 runTC :: Command Graph ()
 runTC = do
-    allNodeIds <- uses Graph.nodeMapping Map.keys
+    allNodeIds <- uses Graph.breadcrumbHierarchy topLevelIDs
     roots <- mapM GraphUtils.getASTPointer allNodeIds
     ast   <- use Graph.ast
     (_, g) <- TypeCheck.runT $ flip ASTOp.runGraph ast $ do
@@ -88,7 +89,7 @@ runTC = do
 runInterpreter :: Command Graph ()
 runInterpreter = do
     ast        <- use Graph.ast
-    allNodes   <- uses Graph.nodeMapping Map.keys
+    allNodes   <- uses Graph.breadcrumbHierarchy topLevelIDs
     refs       <- mapM GraphUtils.getASTPointer allNodes
     metas      <- zoom Graph.ast $ mapM AST.readMeta refs
     let sorted = fmap snd $ sort $ zip metas allNodes
@@ -119,7 +120,14 @@ updateNodes loc = do
         rep <- zoom graph $ GraphBuilder.buildNode id
         cached <- uses nodesCache $ Map.lookup id
         when (cached /= Just rep) $ do
-            Publisher.notifyNodesUpdate loc rep
+            Publisher.notifyNodeUpdate loc rep
+            nodesCache %= Map.insert id rep
+    edgeNodes  <- zoom graph $ GraphBuilder.buildEdgeNodes
+    forM_ edgeNodes $ \edges -> forM_ edges $ \rep -> do
+        let id = rep ^. nodeId
+        cached <- uses nodesCache $ Map.lookup id
+        when (cached /= Just rep) $ do
+            Publisher.notifyNodeUpdate loc rep
             nodesCache %= Map.insert id rep
 
 updateValues :: GraphLocation -> Command InterpreterEnv ()
@@ -127,7 +135,7 @@ updateValues loc = do
     dests <- use destructors
     liftIO $ sequence_ dests
     destructors .= []
-    allNodeIds <- uses (graph . Graph.nodeMapping) Map.keys
+    allNodeIds <- uses (graph . Graph.breadcrumbHierarchy) topLevelIDs
     forM_ allNodeIds $ \id -> do
         noErrors <- isNothing <$> uses errorsCache (Map.lookup id)
         when noErrors $ do

@@ -13,8 +13,8 @@ import           Prologue
 import qualified Empire.API.Graph.NodeResultUpdate as NodeResult
 import qualified Empire.API.Graph.NodesUpdate      as Node
 
-notifyNodesUpdate :: GraphLocation -> Node -> Command s ()
-notifyNodesUpdate loc n = do
+notifyNodeUpdate :: GraphLocation -> Node -> Command s ()
+notifyNodeUpdate loc n = do
     chan <- asks $ view updatesChan
     liftIO $ atomically $ writeTChan chan $ NodesUpdate $ Node.Update loc [n]
 

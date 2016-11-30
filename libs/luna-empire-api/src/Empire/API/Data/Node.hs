@@ -6,10 +6,8 @@ import qualified Data.Map.Lazy             as Map
 import           Data.UUID.Types           (UUID)
 import           Prologue
 
-import           Empire.API.Data.Input     (Input)
 import           Empire.API.Data.NodeMeta  (NodeMeta)
 import qualified Empire.API.Data.NodeMeta  as NodeMeta
-import           Empire.API.Data.Output    (Output)
 import           Empire.API.Data.Port      (Port, PortId)
 import qualified Empire.API.Data.Port      as Port
 import           Empire.API.Data.ValueType (ValueType (..))
@@ -20,8 +18,8 @@ type NodeId = UUID
 type FunctionType = [String]
 
 data NodeType = ExpressionNode  { _expression :: Text }
-              | InputEdge       { _inputs     :: [Input] }
-              | OutputEdge      { _output     :: Output }
+              | InputEdge
+              | OutputEdge
               | InputNode       { _inputIx    :: Int  }
               | OutputNode      { _outputIx   :: Int  }
               | FunctionNode    { _functionType :: FunctionType }

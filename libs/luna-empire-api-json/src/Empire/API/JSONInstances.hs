@@ -19,11 +19,9 @@ import           Empire.API.Data.DefaultValue          as DefaultValue
 import           Empire.API.Data.Error                 as Error
 import           Empire.API.Data.Graph                 as Graph
 import           Empire.API.Data.GraphLocation         as GraphLocation
-import           Empire.API.Data.Input                 as Input
 import           Empire.API.Data.Library               as Library
 import           Empire.API.Data.Node                  as Node
 import           Empire.API.Data.NodeMeta              as NodeMeta
-import           Empire.API.Data.Output                as Output
 import           Empire.API.Data.Port                  as Port
 import           Empire.API.Data.PortRef               as PortRef
 import           Empire.API.Data.Project               as Project
@@ -138,10 +136,6 @@ instance FromJSON DefaultValue.PortDefault
 
 instance ToJSON Graph.Graph
 instance FromJSON Graph.Graph
-instance ToJSON Input.Input
-instance FromJSON Input.Input
-instance ToJSON Output.Output
-instance FromJSON Output.Output
 
 instance ToJSON t => ToJSON (Error.Error t)
 

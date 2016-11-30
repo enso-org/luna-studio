@@ -93,6 +93,8 @@ fromNode n = let position' = uncurry Vector2 $ n ^. N.nodeMeta ^. NM.position
         N.OutputNode outputIx       ->  makeNode nodeId' position' (Text.pack $ "Output " <> show outputIx) code name' Nothing vis
         N.ModuleNode                ->  makeNode nodeId' position' "Module"    code name' Nothing vis
         N.FunctionNode tpeSig       -> (makeNode nodeId' position' "Function"  code name' Nothing vis) & value .~ (Text.pack $ intercalate " -> " tpeSig)
+        N.InputEdge                 ->  makeNode nodeId' position' "Input"     code name' Nothing vis
+        N.OutputEdge                ->  makeNode nodeId' position' "Output"    code name' Nothing vis
 
 
 instance IsDisplayObject Node where
