@@ -65,27 +65,23 @@ collectEvents endPoints = do
                 userId = show senderId
                 content = msg ^. Message.message
             case topic of
-                "empire.undo." -> f
-                "empire.redo." -> g
+                "empire.undo." -> f endPoints
+                "empire.redo." -> g endPoints
                 "empire." -> do collectedMessage userId content
 
-liftBus :: Bus.Bus a -> Undo a
-liftBus act = undefined --fixme [SB]
-
-f :: Undo ()
-f = do
+f :: BusEndPoints -> Undo ()
+f endPoints = do
     h <- uses undo head
     redo %= (h :)
     undo %= tail
-    liftBus $ sendMessage (UndoMessage undoTopic dummyMsg)
+    void $ Bus.runBus endPoints $ sendMessage (UndoMessage undoTopic dummyMsg)
 
-g :: Undo ()
-g = do
+g :: BusEndPoints -> Undo ()
+g endPoints = do
     h <- uses redo head
     undo %= (h :)
     redo %= tail
-    liftBus $ sendMessage (UndoMessage undoTopic dummyMsg)
-
+    void $ Bus.runBus endPoints $ sendMessage (UndoMessage undoTopic dummyMsg)
 
 collectedMessage :: String -> ByteString -> Undo ()
 collectedMessage userId content = undo %= (UndoItem userId content :)
