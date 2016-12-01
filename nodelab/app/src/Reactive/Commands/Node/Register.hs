@@ -18,12 +18,14 @@ import qualified Reactive.State.UIElements         as UIElements
 import qualified Empire.API.Data.NodeMeta          as NodeMeta
 import qualified JS.GoogleAnalytics                as GA
 
+import          Reactive.Commands.Node.Snap
 
 
 registerNode :: Text -> Command State ()
 registerNode expr = do
     nodePos <- use $ Global.uiElements . UIElements.nsPos
-    let nodeMeta = def & NodeMeta.position .~ (toTuple nodePos)
+    let nodePosSnapped = snap nodePos
+        nodeMeta = def & NodeMeta.position .~ (toTuple nodePosSnapped)
     selected   <- selectedNodes
     let connectTo = case selected of
             []     -> Nothing

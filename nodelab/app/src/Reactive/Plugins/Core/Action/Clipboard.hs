@@ -22,6 +22,7 @@ import           Reactive.Commands.Batch           (addSubgraph)
 import           Reactive.Commands.Command         (Command, performIO)
 import           Reactive.Commands.Graph.Selection (selectedNodes)
 import           Reactive.Commands.Node.Remove     (removeSelectedNodes)
+import           Reactive.Commands.Node.Snap       (snapCoord)
 import qualified Reactive.State.Camera             as Camera
 import           Reactive.State.Global             (State)
 import qualified Reactive.State.Global             as Global
@@ -63,9 +64,9 @@ pasteFromClipboard clipboardData = do
       let shiftX = mousePosX - (minimum $ map (^. Node.nodeMeta . NodeMeta.position . _1) nodes)
           shiftY = mousePosY - (minimum $ map (^. Node.nodeMeta . NodeMeta.position . _2) nodes)
           shiftNodeX :: Node -> Node
-          shiftNodeX = Node.nodeMeta . NodeMeta.position . _1 %~ (+shiftX)
+          shiftNodeX = Node.nodeMeta . NodeMeta.position . _1 %~ snapCoord . (+shiftX)
           shiftNodeY :: Node -> Node
-          shiftNodeY = Node.nodeMeta . NodeMeta.position . _2 %~ (+shiftY)
+          shiftNodeY = Node.nodeMeta . NodeMeta.position . _2 %~ snapCoord . (+shiftY)
           shiftNode :: Node -> Node
           shiftNode = shiftNodeY . shiftNodeX
           nodes' = map shiftNode nodes

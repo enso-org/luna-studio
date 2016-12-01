@@ -9,8 +9,10 @@
 * [Brunch](http://brunch.io) v.1.8.5 (```npm install -g brunch@1.8.5```)
 * ```brew install pkg-config```
 * ```brew install zmq```
+* ```brew install mercurial```
 * ```stack install happy```
 * ```stack install hsc2hs```
+
 
 ## Setup
 
