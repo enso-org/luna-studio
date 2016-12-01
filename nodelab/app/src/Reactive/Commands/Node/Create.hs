@@ -18,7 +18,6 @@ import qualified React.Store.Node                  as Model
 import qualified React.Store.NodeEditor            as NodeEditor
 
 import           Reactive.Commands.Command         (Command)
-import           Reactive.Commands.EnterNode       (enterNode)
 import           Reactive.Commands.Graph           (focusNode)
 import           Reactive.Commands.Graph.Selection (selectedNodes)
 import           Reactive.Commands.Node.NodeMeta   (modifyNodeMeta)
@@ -73,9 +72,6 @@ registerNode node = do
 --                   $ addHandler (UINode.EditNodeExpressionHandler    editNodeExpression)
 --                   $ addHandler (UINode.VisualizationsToggledHandler visualizationsToggled)
 --                   $ addHandler (UINode.CodeChangedHandler           codeChanged)
---                   $ addEnterNodeHandler where
---                         addEnterNodeHandler = if node ^. Node.canEnter then addHandler (UINode.EnterNodeHandler $ enterNode $ Breadcrumb.Lambda $ node ^. Node.nodeId) mempty
---                                                                        else mempty
 
 visualizationsToggled :: WidgetId -> NodeId -> Bool -> Command Global.State ()
 visualizationsToggled _ nid val = modifyNodeMeta nid (NodeMeta.displayResult .~ val)

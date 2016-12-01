@@ -103,9 +103,6 @@ visualizationsToggledHandler = TypeKey :: TypeKey VisualizationsToggledHandler
 newtype ChangeInputNodeTypeHandler = ChangeInputNodeTypeHandler (WidgetId -> NodeId -> Text -> Command Global.State ())
 changeInputNodeTypeHandler = TypeKey :: TypeKey ChangeInputNodeTypeHandler
 
-newtype EnterNodeHandler = EnterNodeHandler (Command Global.State ())
-enterNodeHandler = TypeKey :: TypeKey EnterNodeHandler
-
 newtype ExpandNodeHandler = ExpandNodeHandler (Command Global.State ())
 expandNodeHandler = TypeKey :: TypeKey ExpandNodeHandler
 
@@ -140,11 +137,6 @@ triggerChangeInputNodeTypeHandler wid model = do
     withJust (model ^. Model.tpe) $ \tpe -> do
         maybeHandler <- inRegistry $ UICmd.handler wid changeInputNodeTypeHandler
         withJust maybeHandler $ \(ChangeInputNodeTypeHandler handler) -> handler wid (model ^. Model.nodeId) tpe
-
-triggerEnterNodeHandler :: WidgetId -> Command Global.State ()
-triggerEnterNodeHandler wid = do
-    maybeHandler <- inRegistry $ UICmd.handler wid enterNodeHandler
-    withJust maybeHandler $ \(EnterNodeHandler handler) -> handler
 
 triggerExpandNodeHandler :: WidgetId -> Command Global.State ()
 triggerExpandNodeHandler wid = do
@@ -215,9 +207,6 @@ unselectAll = do
 
     cancelCollaborativeTouch $ catMaybes nodesToCancelTouch
 
-dblClickHandler :: DblClickHandler Global.State
-dblClickHandler _ _ = triggerEnterNodeHandler
-
 showHidePortLabels :: Bool -> WidgetId -> Command UIRegistry.State ()
 showHidePortLabels show wid = do
     inLabels <- inLabelsGroupId wid
@@ -236,7 +225,6 @@ onMouseOut  wid = inRegistry $ do
 widgetHandlers :: UIHandlers Global.State
 widgetHandlers = def & keyDown      .~ keyDownHandler
                      & mousePressed .~ (\evt _ wid -> selectNode evt wid)
-                     & dblClick     .~ dblClickHandler
                      & mouseOver .~ const onMouseOver
                      & mouseOut  .~ const onMouseOut
 

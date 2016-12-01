@@ -19,8 +19,11 @@ name = "node-editor"
 node :: Ref Node -> ReactView ()
 node nodeRef = React.defineControllerView
     name nodeRef $ \nodeStore () -> do
-        div_ [onClick $ \_ _ -> Store.dispatch nodeRef $ UI.NodeEvent Node.OnClick] $ do
-            elemString $ "node: " <> show (nodeStore ^. dt . Node.name)
+        let n = nodeStore ^. dt
+        div_ [ onClick       $ \_ _ -> Store.dispatch nodeRef $ UI.NodeEvent Node.OnClick
+             , onDoubleClick $ \_ _ -> Store.dispatch nodeRef $ UI.NodeEvent $ Node.Enter $ n ^. Node.nodeId
+             ] $ do
+            elemString $ "node: " <> show (n ^. Node.name)
 
 
 node_ :: Ref Node -> ReactElementM ViewEventHandler ()

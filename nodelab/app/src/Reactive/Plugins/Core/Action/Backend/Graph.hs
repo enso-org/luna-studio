@@ -35,7 +35,7 @@ import           Reactive.Commands.Graph.Connect             (localConnectNodes)
 import           Reactive.Commands.Graph.Disconnect          (localDisconnectAll)
 import           Reactive.Commands.Graph.Render              (renderGraph)
 import           Reactive.Commands.Graph.Selection           (selectNodes)
-import           Reactive.Commands.Node                      (renameNode)
+import           qualified Reactive.Commands.Node as Node
 import           Reactive.Commands.Node.Create               (addDummyNode)
 import           Reactive.Commands.Node.NodeMeta             (updateNodesMeta)
 import           Reactive.Commands.Node.Remove               (localRemoveNodes)
@@ -129,7 +129,7 @@ toAction (Event.Batch ev) = Just $ case ev of
     NodeRenamed update -> do
         shouldProcess <- isCurrentLocationAndGraphLoaded (update ^. RenameNode.location')
         correctLocation <- isCurrentLocation (update ^. RenameNode.location')
-        when (shouldProcess && correctLocation) $ renameNode (update ^. RenameNode.nodeId') (update ^. RenameNode.name')
+        when (shouldProcess && correctLocation) $ Node.rename (update ^. RenameNode.nodeId') (update ^. RenameNode.name')
 
     NodesRemoved update -> do
         shouldProcess <- isCurrentLocationAndGraphLoaded (update ^. RemoveNodes.location')
