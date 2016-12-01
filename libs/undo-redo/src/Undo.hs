@@ -64,7 +64,40 @@ collectEvents endPoints = do
             let topic = msg ^. Message.topic
                 userId = show senderId
                 content = msg ^. Message.message
-            collectedMessage userId content
+            case topic of
+                "empire.undo." -> f
+                "empire.redo." -> g
+                "empire." -> do collectedMessage userId content
+
+liftBus :: Bus.Bus a -> Undo a
+liftBus act = undefined --fixme [SB]
+
+f :: Undo ()
+f = do
+    h <- uses undo head
+    redo %= (h :)
+    undo %= tail
+    liftBus $ sendMessage (UndoMessage undoTopic dummyMsg)
+
+g :: Undo ()
+g = do
+    h <- uses redo head
+    undo %= (h :)
+    redo %= tail
+    liftBus $ sendMessage (UndoMessage undoTopic dummyMsg)
+
 
 collectedMessage :: String -> ByteString -> Undo ()
-collectedMessage userId content = items %= (UndoItem userId content :)
+collectedMessage userId content = undo %= (UndoItem userId content :)
+
+sendMessage :: UndoMessage -> Bus.Bus ()
+sendMessage (UndoMessage topic msg) = do
+        void $ Bus.send Flag.Enable $ Message.Message topic msg
+sendMessage _ = return ()
+
+-- filter message update response
+-- dla undo message odpakuj sprawdz czy update czy request, jesli update
+
+-- composeUndoMessage :: ByteString -> UndoMessage
+-- composeUndoMessage content = do
+--
