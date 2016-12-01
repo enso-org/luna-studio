@@ -9,6 +9,9 @@ import           Event.Keyboard                             (KeyMods (..))
 import qualified Event.Keyboard                             as Keyboard
 import qualified Event.NodeSearcher                         as NodeSearcher
 
+import           Event.Event                                (Event (UI))
+import           Event.UI                                   (UIEvent (NodeSearcherEvent))
+import qualified React.Store.NodeSearcher                   as NodeSearcher
 import           Reactive.Commands.Command                  (Command)
 import qualified Reactive.Commands.CommandSearcher.Commands as CS
 import           Reactive.Commands.Node.Register            (registerNode)
@@ -18,6 +21,7 @@ import qualified Reactive.State.Global                      as Global
 
 
 toAction :: Event -> Maybe (Command Global.State ())
+toAction (UI (NodeSearcherEvent NodeSearcher.Display)) = Just $ print "DISPLAY"
 toAction (NodeSearcher (NodeSearcher.Query  expr)) = Just $ NS.querySearch expr
 toAction (NodeSearcher (NodeSearcher.Tree   expr)) = Just $ NS.queryTree expr
 toAction (NodeSearcher (NodeSearcher.Create expr nodeIdMay)) = case nodeIdMay of

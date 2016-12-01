@@ -73,7 +73,7 @@ actions =  [ --Debug.toActionEv
         --    , Connect.toAction
         --    , Navigation.toAction
         --    , Collaboration.toAction
-        --    , NodeSearcher.toAction
+           , NodeSearcher.toAction
            , App.toAction
            , Breadcrumbs.toAction
            , Node.toAction

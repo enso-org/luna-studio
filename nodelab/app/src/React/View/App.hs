@@ -5,14 +5,16 @@ import           React.Flux
 import qualified React.Flux                  as React
 import           Utils.PreludePlus
 
-import           React.Store                 (Ref, dt)
+import qualified Event.UI                    as UI
+import           React.Store                 (Ref, dispatch, dt)
 import           React.Store.App             (App)
 import qualified React.Store.App             as App
+import qualified React.Store.NodeSearcher    as NS
 import           React.View.Breadcrumbs      (breadcrumbs_)
 import           React.View.CodeEditor       (codeEditor_)
 import           React.View.CodeEditorToggle (codeEditorToggle_)
 import           React.View.NodeEditor       (nodeEditor_)
-import           React.View.NodeSearcher       (nodeSearcher_)
+import           React.View.NodeSearcher     (nodeSearcher_)
 
 
 
@@ -21,11 +23,13 @@ name = "nodelab"
 
 app :: Ref App -> ReactView ()
 app ref = React.defineControllerView
-    name ref $ \store () ->
-        div_ $ do
-            breadcrumbs_ (store ^. dt . App.breadcrumbs)
-            nodeEditor_ (store ^. dt . App.nodeEditor)
+    name ref $ \store () -> do
+        let s = store ^. dt
+        div_ [onKeyDown $ \_ _ -> dispatch (s ^. App.nodeSearcher) $ UI.NodeSearcherEvent $ NS.Display
+             , "tabindex" $= "0"] $ do
+            breadcrumbs_ (s ^. App.breadcrumbs)
+            nodeEditor_ (s ^. App.nodeEditor)
             codeEditorToggle_ ref
-            when (store ^. dt . App.codeEditorVisible) $
-                codeEditor_ (store ^. dt . App.codeEditor)
-            nodeSearcher_ (store ^. dt . App.nodeSearcher)
+            when (s ^. App.codeEditorVisible) $
+                codeEditor_ (s ^. App.codeEditor)
+            nodeSearcher_ (s ^. App.nodeSearcher)
