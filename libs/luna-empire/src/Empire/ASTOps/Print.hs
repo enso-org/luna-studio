@@ -45,10 +45,34 @@ parenIf :: Bool -> String -> String
 parenIf False s = s
 parenIf True  s = "(" ++ s ++ ")"
 
+printFunctionArguments :: ASTOp m => NodeRef -> m [String]
+printFunctionArguments lam = do
+    l <- Builder.read lam
+    caseTest (uncover l) $ do
+        of' $ \(Lam args _) -> do
+            args' <- ASTBuilder.unpackArguments args
+            mapM printExpression args'
+
+printReturnValue :: ASTOp m => NodeRef -> m String
+printReturnValue lam = do
+    l <- Builder.read lam
+    caseTest (uncover l) $ do
+        of' $ \(Lam _ out) -> do
+            out' <- Builder.follow source out
+            printExpression out'
+
+printFunctionHeader :: ASTOp m => NodeRef -> m String
+printFunctionHeader function = do
+    f <- Builder.read function
+    caseTest (uncover f) $ do
+        of' $ \(Match l r) -> do
+            name <- Builder.follow source l >>= printExpression
+            args <- Builder.follow source r >>= printFunctionArguments
+            return $ "def " ++ name ++ " " ++ unwords args ++ ":"
 
 printExpression' :: ASTOp m => Bool -> Bool -> NodeRef -> m String
-printExpression' suppresNodes paren nodeRef = do
-    let recur = printExpression' suppresNodes
+printExpression' suppressNodes paren nodeRef = do
+    let recur = printExpression' suppressNodes
     node <- Builder.read nodeRef
     let displayFun funExpr args = do
             unpackedArgs <- ASTBuilder.unpackArguments args
@@ -65,10 +89,10 @@ printExpression' suppresNodes paren nodeRef = do
     caseTest (uncover node) $ do
         of' $ \(Lam as o) -> do
             args    <- ASTBuilder.unpackArguments as
-            argReps <- mapM (recur False) args
+            argReps <- mapM (printExpression' False False) args
             out     <- Builder.follow source o
-            let sugared = all (== "_") argReps
-            repr    <- recur sugared out
+            sugared <- and <$> mapM ASTBuilder.isBlank args
+            repr    <- printExpression' False sugared out
             let bindsRep = if sugared then "" else "-> " ++ unwords (('$' :) <$> argReps) ++ " "
             return $ parenIf (not sugared && paren) $ bindsRep ++ repr
         of' $ \(Match l r) -> do
@@ -77,7 +101,7 @@ printExpression' suppresNodes paren nodeRef = do
             return $ leftRep ++ " = " ++ rightRep
         of' $ \(Var n) -> do
             isNode <- ASTBuilder.isGraphNode nodeRef
-            return $ if isNode && suppresNodes then "_" else unwrap n
+            return $ if isNode && suppressNodes then "_" else unwrap n
         of' $ \(Acc n t) -> do
             targetRef <- Builder.follow source t
             target    <- Builder.read targetRef
