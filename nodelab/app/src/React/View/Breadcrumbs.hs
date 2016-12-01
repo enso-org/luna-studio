@@ -23,8 +23,8 @@ name = "breadcrumbs"
 breadcrumbs :: Ref Breadcrumbs -> ReactView ()
 breadcrumbs ref = React.defineControllerView name ref $ \store () -> do
     div_ $ do
-        forM_ (reverse $ tails $ store ^. dt . B.items) $ \bc -> do
-            button_ [ onClick $ \_ _ -> dispatch ref $ UI.BreadcrumbsEvent $ B.Enter $ unname bc] $ case bc of
+        forM_ (inits $ store ^. dt . B.items) $ \bc -> do
+            button_ [ onClick $ \_ _ -> dispatch ref $ UI.BreadcrumbsEvent $ B.Enter $ unname bc] $ case reverse bc of
                 []      -> elemString "project name here"
                 (item:_) -> elemString $ unpack $ item ^. B.name
 

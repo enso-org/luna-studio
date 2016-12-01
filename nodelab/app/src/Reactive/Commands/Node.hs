@@ -30,7 +30,7 @@ tryEnter node = when (node ^. Node.canEnter) $
 enter :: BreadcrumbItem -> Command State ()
 enter item = do
     location <- use $ Global.workspace . Workspace.currentLocation
-    let newLocation = location & GraphLocation.breadcrumb . Breadcrumb.items %~ (item:)
+    let newLocation = location & GraphLocation.breadcrumb . Breadcrumb.items %~ (++ [item])
     ProjectManager.navigateToGraph newLocation
 
 exit :: Command State ()
