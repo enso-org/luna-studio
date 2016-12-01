@@ -1,6 +1,6 @@
 {-# LANGUAGE DeriveAnyClass #-}
 
-module React.Store.NodeEvent where
+module React.Event.Node where
 
 import           Control.DeepSeq          (NFData)
 import           Data.Aeson               (FromJSON, ToJSON)

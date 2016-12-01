@@ -4,5 +4,5 @@ module React.Store.Node (
 ) where
 
 --TODO these modules should be moved directly to this file
-import           Object.Widget.Node    as X
-import           React.Store.NodeEvent as X
+import           Object.Widget.Node as X
+import           React.Event.Node   as X

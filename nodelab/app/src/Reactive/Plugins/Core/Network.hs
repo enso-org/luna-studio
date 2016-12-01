@@ -18,6 +18,7 @@ import qualified Event.Event                                         as Event
 import qualified Event.Processors.Batch                              as BatchEventProcessor
 import qualified Event.Processors.CustomEvent                        as CustomEventProcessor
 
+import qualified Reactive.Plugins.Core.Action.App                    as App
 import qualified Reactive.Plugins.Core.Action.Backend.Control        as Control
 import qualified Reactive.Plugins.Core.Action.Backend.Graph          as Graph
 import qualified Reactive.Plugins.Core.Action.Backend.ProjectManager as ProjectManager
@@ -31,11 +32,11 @@ import qualified Reactive.Plugins.Core.Action.Drag                   as Drag
 import qualified Reactive.Plugins.Core.Action.General                as General
 import qualified Reactive.Plugins.Core.Action.MultiSelection         as MultiSelection
 import qualified Reactive.Plugins.Core.Action.Navigation             as Navigation
+import qualified Reactive.Plugins.Core.Action.Node                   as Node
 import qualified Reactive.Plugins.Core.Action.NodeSearcher           as NodeSearcher
 import qualified Reactive.Plugins.Core.Action.Sandbox                as Sandbox
 import qualified Reactive.Plugins.Core.Action.Tutorial               as Tutorial
 import qualified Reactive.Plugins.Core.Action.Widget                 as Widget
-import qualified Reactive.Plugins.Core.Action.Node as Node
 
 import           Reactive.Commands.Command                           (Command, execCommand)
 import           Reactive.State.Global                               (State)
@@ -72,8 +73,9 @@ actions =  [ --Debug.toActionEv
         --    , Navigation.toAction
         --    , Collaboration.toAction
         --    , NodeSearcher.toAction
-           , ProjectManager.toAction
+           , App.toAction
            , Node.toAction
+           , ProjectManager.toAction
         --    , ConnectionPen.toAction
         --    , Tutorial.toAction
         --    , Sandbox.toAction
