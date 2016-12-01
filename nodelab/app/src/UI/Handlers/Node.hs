@@ -2,7 +2,7 @@
 
 module UI.Handlers.Node where
 
-import           Utils.PreludePlus            hiding (stripPrefix)
+import           Utils.PreludePlus                        hiding (stripPrefix)
 
 import qualified Data.HashMap.Strict          as HashMap
 import           Data.HMap.Lazy               (HTMap, TypeKey (..))
@@ -23,6 +23,7 @@ import qualified React.Store.NodeEditor       as NodeEditor
 import qualified Object.Widget.CodeEditor     as CodeEditor
 import qualified Object.Widget.Group          as Group
 import qualified Object.Widget.Label          as Label
+import           Reactive.Commands.Graph.SelectionHistory (dropSelectionHistory, modifySelectionHistory)
 import qualified Object.Widget.LabeledTextBox as LabeledTextBox
 import qualified Object.Widget.Node           as Model
 import qualified Object.Widget.TextBox        as TextBox
@@ -50,6 +51,7 @@ import           UI.Widget.TextBox            ()
 import           UI.Widget.Toggle             ()
 
 import           Empire.API.Data.Node         (NodeId)
+
 
 
 nameHandlers :: WidgetId -> HTMap
@@ -184,6 +186,7 @@ performSelect wid = do
     unless isSelected $ do
         unselectAll
         inRegistry $ UICmd.update_ wid (Model.isSelected .~ True)
+        modifySelectionHistory [nodeId]
         collaborativeTouch [nodeId]
 
 toggleSelect :: WidgetId -> Command Global.State ()
@@ -191,9 +194,9 @@ toggleSelect wid = do
     newNode <- inRegistry $ UICmd.update wid (Model.isSelected %~ not)
     let nodeId = newNode ^. Model.nodeId
     if newNode ^. Model.isSelected then
-      collaborativeTouch [nodeId]
+        modifySelectionHistory [nodeId] >> collaborativeTouch [nodeId]
     else
-      cancelCollaborativeTouch [nodeId]
+        dropSelectionHistory >> cancelCollaborativeTouch [nodeId]
 
 
 unselectAll :: Command Global.State ()

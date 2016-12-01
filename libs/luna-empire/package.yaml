@@ -15,6 +15,8 @@ tests:
             - luna-empire
             - hspec
 
+ghc-options: -Wall -Wno-unused-do-bind
+
 dependencies:
     - aeson
     - aeson-pretty
