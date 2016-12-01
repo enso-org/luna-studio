@@ -20,7 +20,7 @@ import           Utils.PreludePlus          as P hiding (transform)
 instance Typeable a => StoreData (Store a) where
     type StoreAction (Store a) = UIEvent
     transform event store = do
-        forkIO $ (store ^. sendEvent) $ Event.UI event
+        void $ forkIO $ (store ^. sendEvent) $ Event.UI event
         return $ store
 
 dispatch :: Typeable a => Ref a -> UIEvent -> [SomeStoreAction]

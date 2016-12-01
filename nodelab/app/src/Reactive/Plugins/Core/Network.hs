@@ -22,6 +22,7 @@ import qualified Reactive.Plugins.Core.Action.App                    as App
 import qualified Reactive.Plugins.Core.Action.Backend.Control        as Control
 import qualified Reactive.Plugins.Core.Action.Backend.Graph          as Graph
 import qualified Reactive.Plugins.Core.Action.Backend.ProjectManager as ProjectManager
+import qualified Reactive.Plugins.Core.Action.Breadcrumbs            as Breadcrumbs
 import qualified Reactive.Plugins.Core.Action.Camera                 as Camera
 import qualified Reactive.Plugins.Core.Action.Clipboard              as Clipboard
 import qualified Reactive.Plugins.Core.Action.Collaboration          as Collaboration
@@ -74,6 +75,7 @@ actions =  [ --Debug.toActionEv
         --    , Collaboration.toAction
         --    , NodeSearcher.toAction
            , App.toAction
+           , Breadcrumbs.toAction
            , Node.toAction
            , ProjectManager.toAction
         --    , ConnectionPen.toAction
