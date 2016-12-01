@@ -12,6 +12,7 @@ import           React.View.Breadcrumbs      (breadcrumbs_)
 import           React.View.CodeEditor       (codeEditor_)
 import           React.View.CodeEditorToggle (codeEditorToggle_)
 import           React.View.NodeEditor       (nodeEditor_)
+import           React.View.NodeSearcher       (nodeSearcher_)
 
 
 
@@ -27,3 +28,4 @@ app ref = React.defineControllerView
             codeEditorToggle_ ref
             when (store ^. dt . App.codeEditorVisible) $
                 codeEditor_ (store ^. dt . App.codeEditor)
+            nodeSearcher_ (store ^. dt . App.nodeSearcher)
