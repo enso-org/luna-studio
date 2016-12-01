@@ -24,20 +24,33 @@ import qualified ZMQ.Bus.Trans                     as Bus
 
 data UndoItem =  UndoItem { _userId  :: String
                           , _content :: ByteString
-                           } deriving (Show, Eq)
+                          } deriving (Show, Eq)
 
-newtype UndoList = UndoList { _items :: [UndoItem] } deriving (Show, Eq)
+data UndoMessage = UndoMessage { _topic :: String
+                               , _message :: ByteString
+                               } deriving (Show, Eq)
+
+data UndoList = UndoList { _undo :: [UndoItem]
+                         , _redo :: [UndoItem]
+                         } deriving (Show, Eq)
+
 
 type Undo a = forall m. (MonadIO m, MonadState UndoList m) =>  m a
 
 makeLenses ''UndoList
 makeLenses ''UndoItem
+makeLenses ''UndoMessage
 
 empty :: UndoList
-empty = UndoList []
+empty = UndoList [] []
 
 runUndo :: BusEndPoints -> IO ()
 runUndo endPoints = evalStateT (collectEvents endPoints) empty
+
+undoTopic = "undo.undo"
+redoTopic = "undo.redo"
+dummyMsg :: ByteString
+dummyMsg = "dummy"
 
 collectEvents :: BusEndPoints -> Undo ()
 collectEvents endPoints = do
