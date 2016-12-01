@@ -23,6 +23,7 @@ import           React.Store                    (Ref)
 import qualified React.Store                    as Store
 import           React.Store.App                (App)
 import qualified React.Store.App                as App
+import           React.Store.Breadcrumbs        (Breadcrumbs)
 import           React.Store.CodeEditor         (CodeEditor)
 import           React.Store.Connection         (Connection)
 import           React.Store.Node               (Node)
@@ -73,15 +74,22 @@ instance ToJSON (Ref App) where
 
 makeLenses ''State
 
+--TODO[react] rename to withApp
 inApp :: (Ref App -> Command State r) -> Command State r
 inApp action = action =<< use app
 
+--TODO[react] rename to withCodeEditor
 inNodeEditor :: (Ref NodeEditor -> Command State r) -> Command State r
 inNodeEditor action = inApp $ (action . view App.nodeEditor) <=< Store.get
 
+--TODO[react] rename to withNodeEditor
 inCodeEditor :: (Ref CodeEditor -> Command State r) -> Command State r
 inCodeEditor action = inApp $ (action . view App.codeEditor) <=< Store.get
 
+withBreadcrumbs :: (Ref Breadcrumbs -> Command State r) -> Command State r
+withBreadcrumbs action = inApp $ (action . view App.breadcrumbs) <=< Store.get
+
+--TODO[react] rename to withNode
 inNode :: NodeId -> (Maybe (Ref Node) -> Command State r) -> Command State r
 inNode nodeId action = inNodeEditor $ (action . view (NodeEditor.nodes . at nodeId)) <=< Store.get
 

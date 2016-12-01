@@ -2,14 +2,16 @@
 module React.View.App where
 
 import           React.Flux
-import qualified React.Flux            as React
+import qualified React.Flux             as React
 import           Utils.PreludePlus
 
-import           React.Store           (Ref, dt)
-import           React.Store.App       (App)
-import qualified React.Store.App       as App
-import           React.View.CodeEditor (codeEditor_)
-import           React.View.NodeEditor (nodeEditor_)
+import           React.Store            (Ref, dt)
+import           React.Store.App        (App)
+import qualified React.Store.App        as App
+import           React.View.Breadcrumbs (breadcrumbs_)
+import           React.View.CodeEditor  (codeEditor_)
+import           React.View.NodeEditor  (nodeEditor_)
+
 
 
 name :: JSString
@@ -19,6 +21,7 @@ app :: Ref App -> ReactView ()
 app ref = React.defineControllerView
     name ref $ \store () ->
         div_ $ do
-            div_ $ nodeEditor_ (store ^. dt . App.nodeEditor)
+            breadcrumbs_ (store ^. dt . App.breadcrumbs)
+            nodeEditor_ (store ^. dt . App.nodeEditor)
             when (store ^. dt . App.codeEditorVisible) $
-                div_ $ codeEditor_ (store ^. dt . App.codeEditor)
+                codeEditor_ (store ^. dt . App.codeEditor)

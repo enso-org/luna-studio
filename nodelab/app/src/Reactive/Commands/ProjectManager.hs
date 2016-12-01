@@ -1,7 +1,6 @@
-{-# LANGUAGE OverloadedStrings #-}
 module Reactive.Commands.ProjectManager
     ( loadProject
-    , displayCurrentBreadcrumb
+    , setCurrentBreadcrumb
     , navigateToGraph
     , loadGraph
     ) where
@@ -42,8 +41,8 @@ navigateToGraph location = do
     currentLocation <- use $ Global.workspace . Workspace.currentLocation
     when (currentLocation /= location) $ loadGraph location
 
-displayCurrentBreadcrumb :: Breadcrumb (Named BreadcrumbItem) -> Command State ()
-displayCurrentBreadcrumb breadcrumbs = Breadcrumbs.update enterBreadcrumbs breadcrumbs
+setCurrentBreadcrumb :: Breadcrumb (Named BreadcrumbItem) -> Command State ()
+setCurrentBreadcrumb breadcrumbs = Breadcrumbs.set breadcrumbs
 
 enterBreadcrumbs :: Breadcrumb BreadcrumbItem -> Command State ()
 enterBreadcrumbs newBc = do

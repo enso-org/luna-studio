@@ -17,3 +17,6 @@ makeLenses ''Named
 instance Binary a => Binary (Breadcrumb a)
 instance Binary a => Binary (Named a)
 instance Binary BreadcrumbItem
+
+instance Default (Breadcrumb a) where
+    def = Breadcrumb def

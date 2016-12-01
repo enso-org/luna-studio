@@ -15,7 +15,6 @@ import qualified Reactive.State.UIElements                  as UIElements
 import           Reactive.State.UIRegistry                  (addHandler, sceneInterfaceId)
 import qualified Style.Layout                               as Style
 import qualified UI.Handlers.Button                         as Button
-import qualified UI.Layout                                  as Layout
 
 
 
@@ -27,12 +26,6 @@ initSidebar = do
     Global.uiElements . UIElements.sidebar .= sidebar
     return sidebar
 
-initBreadcrumb :: Command State ()
-initBreadcrumb = do
-    let group = Group.create & Group.position  .~ Style.breadcrumbPosition
-                             & Group.style     .~ Style.breadcrumbStyle
-    groupId <- inRegistry $ UICmd.register sceneInterfaceId group $ Layout.horizontalLayoutHandlerNoResize 5.0
-    Global.uiElements . UIElements.breadcrumbs .= groupId
 
 initTextEditor :: Command State ()
 initTextEditor = do
@@ -44,5 +37,4 @@ initTextEditor = do
 initialize :: Command State ()
 initialize = do
     void $ initSidebar
-    initBreadcrumb
     initTextEditor

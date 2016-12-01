@@ -40,6 +40,7 @@ import           Reactive.Commands.Node.Create               (addDummyNode)
 import           Reactive.Commands.Node.NodeMeta             (updateNodesMeta)
 import           Reactive.Commands.Node.Remove               (localRemoveNodes)
 import           Reactive.Commands.Node.Update               (updateNode, updateNodeProfilingData, updateNodeValue)
+import           Reactive.Commands.ProjectManager            (setCurrentBreadcrumb)
 import           Reactive.Commands.UUID                      (isOwnRequest)
 import           Reactive.Plugins.Core.Action.Backend.Common (doNothing, handleResponse)
 import           Reactive.State.Global                       (State)
@@ -70,7 +71,7 @@ toAction (Event.Batch ev) = Just $ case ev of
                     breadcrumb  = result ^. GetProgram.breadcrumb
 
                 Global.workspace . Workspace.nodeSearcherData .= nsData
-                -- displayCurrentBreadcrumb breadcrumb --TODO[react]
+                setCurrentBreadcrumb breadcrumb
                 renderGraph nodes connections
                 -- autoZoom --TODO[react]
                 CodeEditor.setCode code
