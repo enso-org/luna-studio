@@ -17,5 +17,5 @@ import qualified Reactive.State.Graph      as Graph
 renameNode :: NodeId -> Text -> Command Global.State ()
 renameNode nodeId name = do
     Global.graph . Graph.nodesMap . ix nodeId . Node.name .= name
-    Global.inNode nodeId $
+    Global.withNode nodeId $
         mapM_ $ Store.modify_ (Model.name .~ name)

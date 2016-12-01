@@ -69,7 +69,7 @@ toAction (Event.Batch ev) = Just $ case ev of
         shouldProcess <- isCurrentLocationAndGraphLoaded (update ^. Collaboration.location)
         let clientId = update ^. Collaboration.clientId
             touchNodes nodeIds setter = forM_ nodeIds $ \nodeId -> do
-                Global.inNode nodeId $ mapM_ $ Store.modify_ setter
+                Global.withNode nodeId $ mapM_ $ Store.modify_ setter
         myClientId   <- use Global.clientId
         currentTime  <- use Global.lastEventTimestamp
         when (shouldProcess && clientId /= myClientId) $ do

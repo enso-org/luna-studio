@@ -20,7 +20,7 @@ import qualified Reactive.State.Graph       as Graph
 
 localDisconnectAll :: [ConnectionId] -> Command State ()
 localDisconnectAll connectionIds = do
-    Global.inNodeEditor $ Store.modifyM_ $
+    Global.withNodeEditor $ Store.modifyM_ $
         forM_ connectionIds $ \ connectionId ->
             NodeEditor.connections . at connectionId .= Nothing
     Global.graph           %= Graph.removeConnections connectionIds

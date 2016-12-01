@@ -58,7 +58,7 @@ registerNode :: Node -> Command State (Ref Model.Node)
 registerNode node = do
     let nodeModel = Model.fromNode node
         nodeId    = node ^. Node.nodeId
-    Global.inNodeEditor $ Store.modifyM $ do
+    Global.withNodeEditor $ Store.modifyM $ do
         ref <- lift $ Store.create nodeModel
         NodeEditor.nodes . at nodeId ?= ref
         return ref

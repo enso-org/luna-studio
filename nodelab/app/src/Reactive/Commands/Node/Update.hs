@@ -47,7 +47,7 @@ updateExistingNode node = do
     let nodeId  = node ^. Node.nodeId
     maybeWidgetId <- Global.getNode nodeId
     zoom Global.graph $ modify (Graph.addNode node)
-    Global.inNode nodeId $ mapM_ $ Store.modifyM_ $ do
+    Global.withNode nodeId $ mapM_ $ Store.modifyM_ $ do
         -- displayPorts widgetId node --TODO[react]
         case node ^. Node.nodeType of
             Node.ExpressionNode expression -> Model.expression .= expression
@@ -58,7 +58,7 @@ updateExistingNode node = do
 
 updateNodeValue :: NodeId -> NodeResult.NodeValue -> Command State ()
 updateNodeValue nid val =
-    Global.inNode nid $ mapM_ $ Store.modify_ $
+    Global.withNode nid $ mapM_ $ Store.modify_ $
         -- removeVisualization widgetId
         case val of
             NodeResult.Value name [] ->
@@ -75,7 +75,7 @@ updateNodeValue nid val =
 
 updateNodeProfilingData :: NodeId -> Integer -> Command State ()
 updateNodeProfilingData nodeId execTime =
-    Global.inNode nodeId $ mapM_ $ Store.modify_ $
+    Global.withNode nodeId $ mapM_ $ Store.modify_ $
         Model.execTime ?~ execTime
 
 updateExpression :: NodeId -> Text -> Command State ()

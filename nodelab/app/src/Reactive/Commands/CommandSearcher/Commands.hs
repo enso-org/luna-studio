@@ -75,7 +75,7 @@ help = do
 toggleText :: Command Global.State ()
 toggleText = do
     GA.sendEvent $ GA.ToggleText
-    Global.inApp $ Store.modify_ $ App.codeEditorVisible %~ not
+    Global.withApp $ Store.modify_ $ App.codeEditorVisible %~ not
     -- size <- use $ Global.camera . Camera.camera . Camera.windowSize --TODO[react] remove
     -- Camera.updateWindowSize size
 

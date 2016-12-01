@@ -31,7 +31,7 @@ localConnectNodes src dst = do
     connectionId <- zoom Global.graph $ Graph.addConnection src dst
     let newConnection = not $ isJust prevConn
     when newConnection $ do
-        Global.inNodeEditor $ Store.modifyM_ $ do
+        Global.withNodeEditor $ Store.modifyM_ $ do
             let connection = ConnectionModel.Connection connectionId True def def (dst ^. withArrow) def def
             connectionRef <- lift $ Store.create connection
             NodeEditor.connections . at dst ?= connectionRef

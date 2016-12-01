@@ -17,7 +17,7 @@ import qualified Reactive.State.Global     as Global
 unrender :: Command State ()
 unrender = do
     Global.workspace . Workspace.isGraphLoaded    .= False
-    Global.inApp $ Store.modifyM_ $ do
+    Global.withApp $ Store.modifyM_ $ do
         nodeEditor <- lift $ Store.create def
         codeEditor <- lift $ Store.create def
         App.nodeEditor .= nodeEditor

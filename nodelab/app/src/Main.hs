@@ -25,28 +25,26 @@ module Main where
 
 -- http://www.network-science.de/ascii/
 
-import           Data.DateTime                     (getCurrentTime)
-import qualified Data.Set                          as Set
-import qualified React.Flux                        as React
-import           System.Random                     (newStdGen)
+import           Data.DateTime                  (getCurrentTime)
+import qualified Data.Set                       as Set
+import qualified React.Flux                     as React
+import           System.Random                  (newStdGen)
 import           Utils.PreludePlus
 
-import qualified Batch.Workspace                   as Workspace
-import qualified BatchConnector.Commands           as BatchCmd
+import qualified Batch.Workspace                as Workspace
+import qualified BatchConnector.Commands        as BatchCmd
 import           Control.Concurrent.MVar
-import qualified JS.GraphLocation                  as GraphLocation
-import           JS.Tutorial                       (shouldRunTutorial)
-import           JS.Tutorial                       (showStep)
-import           JS.UUID                           (generateUUID)
-import           JS.WebSocket                      (WebSocket)
-import qualified React.Store                       as Store
-import qualified React.View.App                    as App
-import           Reactive.Commands.Command         (execCommand)
-import qualified Reactive.Plugins.Core.Action.Init as Init
-import qualified Reactive.Plugins.Core.Network     as CoreNetwork
-import qualified Reactive.Plugins.Loader.Loader    as Loader
-import           Reactive.State.Global             (initialState)
-import qualified Reactive.State.Global             as Global
+import qualified JS.GraphLocation               as GraphLocation
+import           JS.Tutorial                    (shouldRunTutorial)
+import           JS.Tutorial                    (showStep)
+import           JS.UUID                        (generateUUID)
+import           JS.WebSocket                   (WebSocket)
+import qualified React.Store                    as Store
+import qualified React.View.App                 as App
+import qualified Reactive.Plugins.Core.Network  as CoreNetwork
+import qualified Reactive.Plugins.Loader.Loader as Loader
+import           Reactive.State.Global          (initialState)
+import qualified Reactive.State.Global          as Global
 
 
 
@@ -69,12 +67,9 @@ runMainNetwork socket = do
                       & Global.workspace . Workspace.lastUILocation .~ lastLocation
                       & Global.pendingRequests %~ Set.insert projectListRequestId
 
-        -- initState' <- execCommand Init.initialize initState
-        -- state <- newMVar initState'
         state <- newMVar initState
         CoreNetwork.makeNetworkDescription socket state
-    -- triggerWindowResize
-    --
+
     BatchCmd.listProjects projectListRequestId
 
 main :: IO ()

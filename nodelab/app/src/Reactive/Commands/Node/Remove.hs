@@ -36,5 +36,5 @@ localRemoveNodes = mapM_ $ \nodeId -> do
     danglingConns <- uses Global.graph $ Graph.connectionIdsContainingNode nodeId
     localDisconnectAll danglingConns
     Global.graph %= Graph.removeNode nodeId
-    Global.inNodeEditor $ Store.modify_ $
+    Global.withNodeEditor $ Store.modify_ $
         NodeEditor.nodes . at nodeId .~ Nothing

@@ -74,34 +74,30 @@ instance ToJSON (Ref App) where
 
 makeLenses ''State
 
---TODO[react] rename to withApp
-inApp :: (Ref App -> Command State r) -> Command State r
-inApp action = action =<< use app
+withApp :: (Ref App -> Command State r) -> Command State r
+withApp action = action =<< use app
 
---TODO[react] rename to withCodeEditor
-inNodeEditor :: (Ref NodeEditor -> Command State r) -> Command State r
-inNodeEditor action = inApp $ (action . view App.nodeEditor) <=< Store.get
+withNodeEditor :: (Ref NodeEditor -> Command State r) -> Command State r
+withNodeEditor action = withApp $ (action . view App.nodeEditor) <=< Store.get
 
---TODO[react] rename to withNodeEditor
-inCodeEditor :: (Ref CodeEditor -> Command State r) -> Command State r
-inCodeEditor action = inApp $ (action . view App.codeEditor) <=< Store.get
+withCodeEditor :: (Ref CodeEditor -> Command State r) -> Command State r
+withCodeEditor action = withApp $ (action . view App.codeEditor) <=< Store.get
 
 withBreadcrumbs :: (Ref Breadcrumbs -> Command State r) -> Command State r
-withBreadcrumbs action = inApp $ (action . view App.breadcrumbs) <=< Store.get
+withBreadcrumbs action = withApp $ (action . view App.breadcrumbs) <=< Store.get
 
---TODO[react] rename to withNode
-inNode :: NodeId -> (Maybe (Ref Node) -> Command State r) -> Command State r
-inNode nodeId action = inNodeEditor $ (action . view (NodeEditor.nodes . at nodeId)) <=< Store.get
+withNode :: NodeId -> (Maybe (Ref Node) -> Command State r) -> Command State r
+withNode nodeId action = withNodeEditor $ (action . view (NodeEditor.nodes . at nodeId)) <=< Store.get
 
 getNode :: NodeId -> Command State (Maybe (Ref Node))
-getNode nodeId = inNode nodeId return
+getNode nodeId = withNode nodeId return
 
-inConnection :: ConnectionId -> (Maybe (Ref Connection) -> Command State r) -> Command State r
-inConnection connectionId action =
-    inNodeEditor $ (action . view (NodeEditor.connections . at connectionId)) <=< Store.get
+withConnection :: ConnectionId -> (Maybe (Ref Connection) -> Command State r) -> Command State r
+withConnection connectionId action =
+    withNodeEditor $ (action . view (NodeEditor.connections . at connectionId)) <=< Store.get
 
 getConnection :: ConnectionId -> Command State (Maybe (Ref Connection))
-getConnection connectionId = inConnection connectionId return
+getConnection connectionId = withConnection connectionId return
 
 initialState :: DateTime -> Collaboration.ClientId -> StdGen -> Maybe Int -> (Ref App) -> State
 initialState = State (Vector2 200 200) def def def def def def def def def def def defJsState def def

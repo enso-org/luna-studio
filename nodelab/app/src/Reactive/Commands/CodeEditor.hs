@@ -15,4 +15,4 @@ import           Reactive.State.Global     (State)
 
 setCode :: Text -> Command State ()
 setCode code =
-    Global.inCodeEditor $ Store.modify_ $ CodeEditor.code .~ code
+    Global.withCodeEditor $ Store.modify_ $ CodeEditor.code .~ code

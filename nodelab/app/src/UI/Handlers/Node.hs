@@ -241,7 +241,7 @@ widgetHandlers = def & keyDown      .~ keyDownHandler
                      & mouseOut  .~ const onMouseOut
 
 allNodes :: Command Global.State [Ref Node]
-allNodes = Global.inNodeEditor $
+allNodes = Global.withNodeEditor $
     Store.use (NodeEditor.nodes . to HashMap.elems)
 
 allNodes' :: Command Global.State [WRef Node]

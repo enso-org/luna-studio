@@ -54,7 +54,7 @@ getGraphPort :: AnyPortRef -> Command Global.State (Maybe Port.Port)
 getGraphPort portRef = preuse $ Global.graph . Graph.nodesMap . ix (portRef ^. PortRef.nodeId) . NodeAPI.ports . ix (portRef ^. PortRef.portId)
 
 getNode :: NodeId -> Command Global.State (Maybe Model.Node)
-getNode nodeId = Global.inNode nodeId $ mapM Store.get
+getNode nodeId = Global.withNode nodeId $ mapM Store.get
 
 nats :: [Integer]
 nats = [1..]
