@@ -34,9 +34,3 @@ run cmd = case cmd of
     Cmd.Run {} -> do
         endPoints <- EP.clientFromConfig <$> Config.load
         Undo.runUndo endPoints
-
--- main :: IO()
--- main = do
---     endPoints <- EP.clientFromConfig <$> Config.load
---     Undo.run endPoints
---     putStrLn "sfhdnbilsnmgvkaj;ergionmzdlc,mzoasdjhgsh"
