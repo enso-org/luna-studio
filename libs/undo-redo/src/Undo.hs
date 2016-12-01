@@ -4,8 +4,11 @@
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE DeriveAnyClass #-}
 {-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE OverloadedStrings #-}
 
-module Undo where
+
+
+    module Undo where
 
 import Control.Monad.State
 import Control.Lens
@@ -15,6 +18,7 @@ import Data.Binary (Binary)
 import Data.Maybe
 import Prelude
 import qualified ZMQ.Bus.Bus                       as Bus
+import qualified ZMQ.Bus.Data.Flag                 as Flag
 import qualified ZMQ.Bus.Data.Message              as Message
 import           ZMQ.Bus.Data.MessageFrame         (MessageFrame (MessageFrame))
 import           ZMQ.Bus.EndPoint                  (BusEndPoints)
