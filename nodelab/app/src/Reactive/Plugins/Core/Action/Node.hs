@@ -15,6 +15,5 @@ import           Utils.PreludePlus
 
 --TODO[react] merge Drag in
 toAction :: Event -> Maybe (Command State ())
-toAction (UI (NodeEvent (Node.Click evt nodeId))) = Just $ Global.getNode nodeId >>= mapM_ (Node.selectNode (mouseShiftKey evt))
 toAction (UI (NodeEvent (Node.Enter nodeId))) = Just $ mapM_ Node.tryEnter =<< preuse (Global.graph . Graph.nodesMap . ix nodeId)
 toAction _   = Nothing

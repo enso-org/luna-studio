@@ -5,12 +5,15 @@ module React.Event.App where
 
 import           Control.DeepSeq   (NFData)
 import           Data.Aeson        (FromJSON, ToJSON)
+import           React.Flux        (MouseEvent)
 
 import           Utils.PreludePlus
 
 
 
 data Event = ToggleCodeEditor
+           | MouseMove  MouseEvent
+           | MouseUp
             deriving (Show, Generic, NFData, Typeable)
 
 instance ToJSON   Event

@@ -6,11 +6,12 @@ module Reactive.Plugins.Core.Action.Drag
 import           React.Flux                        (mouseScreenX, mouseScreenY, mouseShiftKey)
 
 import           Event.Event                       (Event (UI))
-import           Event.UI                          (UIEvent (NodeEvent))
+import           Event.UI                          (UIEvent (NodeEvent, AppEvent))
+import qualified React.Event.Node                  as Node
+import qualified React.Event.App                  as App
 import           React.Store                       (widget, _ref)
 import qualified React.Store                       as Store
 import qualified React.Store.Node                  as Model
-import qualified React.Event.Node                  as Node
 import qualified Reactive.Commands.Node            as Node
 import           Utils.PreludePlus
 import           Utils.Vector
@@ -27,7 +28,7 @@ import qualified Event.Mouse                       as Mouse
 import qualified Reactive.Commands.Batch           as BatchCmd
 import           Reactive.Commands.Command         (Command)
 import           Reactive.Commands.Graph           (allNodes, updateConnectionsForNodes)
-import           Reactive.Commands.Graph.Selection (selectedNodes, selectNodes)
+import           Reactive.Commands.Graph.Selection (selectNodes, selectedNodes)
 import           Reactive.Commands.Node.Snap       (snap)
 import qualified Reactive.Commands.UIRegistry      as UICmd
 import qualified Reactive.State.Camera             as Camera
@@ -46,19 +47,20 @@ import           Object.Widget.Label               (Label)
 
 import qualified UI.Handlers.Node                  as Node
 
-import qualified Empire.API.Data.Node              as Node
 import           Empire.API.Data.Node              (NodeId)
+import qualified Empire.API.Data.Node              as Node
 
 
 --TODO[react] implement
 toAction :: Event -> Maybe (Command State ())
-toAction (UI (NodeEvent (Node.StopDrag nodeId))) = Just $ stopDrag nodeId
-toAction (UI (NodeEvent (Node.StartDrag mouseEvt))) = Just $ do
-    let pos = Vector2 (mouseScreenX mouseEvt) (mouseScreenY mouseEvt)
+toAction (UI (NodeEvent (Node.MouseDown evt nodeId))) = Just $ do
+    Global.getNode nodeId >>= mapM_ (Node.selectNode (mouseShiftKey evt))
+    let pos = Vector2 (mouseScreenX evt) (mouseScreenY evt)
     startDrag pos
-toAction (UI (NodeEvent (Node.Drag mouseEvt nodeId))) = Just $ do
-    let pos = Vector2 (mouseScreenX mouseEvt) (mouseScreenY mouseEvt)
-    handleMove pos $ mouseShiftKey mouseEvt
+toAction (UI (AppEvent   App.MouseUp)) = Just stopDrag
+toAction (UI (AppEvent  (App.MouseMove evt))) = Just $ do
+    let pos = Vector2 (mouseScreenX evt) (mouseScreenY evt)
+    handleMove pos $ mouseShiftKey evt
 
 -- toAction (Mouse _ (Mouse.Event Mouse.Pressed  pos Mouse.LeftButton (KeyMods _ False False False) (Just _))) = Just $ startDrag pos
 -- toAction (Mouse _ (Mouse.Event Mouse.Moved    pos Mouse.LeftButton (KeyMods True False False False) _))        = Just $ handleMove pos False
@@ -139,20 +141,18 @@ moveNodes delta = do
         Store.modify_ (Model.position %~ (+delta)) . _ref
     updateConnectionsForNodes $ (view $ widget . Model.nodeId) <$> nodes
 
-stopDrag :: NodeId -> Command State ()
-stopDrag nodeId = do
+stopDrag :: Command State ()
+stopDrag = do
     dragHistory <- use $ Global.drag . Drag.history
 
     withJust dragHistory $ \(DragHistory start current _ _) -> do
         Global.drag . Drag.history .= Nothing
-        if start == current
-            then selectNodes [nodeId]
-            else do
-                selected <- selectedNodes
-                let nodesToUpdate = (\w -> (w ^. widget . Model.nodeId, w ^. widget . widgetPosition)) <$> selected
-                updates <- forM nodesToUpdate $ \(wid, pos) -> do
-                    Global.graph . Graph.nodesMap . ix wid . Node.position .= toTuple pos
-                    newMeta <- preuse $ Global.graph . Graph.nodesMap . ix wid . Node.nodeMeta
-                    return $ (wid, ) <$> newMeta
-                BatchCmd.updateNodeMeta $ catMaybes updates
-                updateConnectionsForNodes $ fst <$> nodesToUpdate
+        when (start /= current) $ do
+            selected <- selectedNodes
+            let nodesToUpdate = (\w -> (w ^. widget . Model.nodeId, w ^. widget . widgetPosition)) <$> selected
+            updates <- forM nodesToUpdate $ \(wid, pos) -> do
+                Global.graph . Graph.nodesMap . ix wid . Node.position .= toTuple pos
+                newMeta <- preuse $ Global.graph . Graph.nodesMap . ix wid . Node.nodeMeta
+                return $ (wid, ) <$> newMeta
+            BatchCmd.updateNodeMeta $ catMaybes updates
+            updateConnectionsForNodes $ fst <$> nodesToUpdate
