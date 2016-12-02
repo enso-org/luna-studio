@@ -80,6 +80,6 @@ selectedNodes = do
 
 focusSelectedNode :: Command State ()
 focusSelectedNode = do
-    $notImplemented --TODO[react]
+    return () --TODO[react]
     -- widgets <- selectedNodes
     -- inRegistry $ UIRegistry.focusedWidget .= (view ref <$> widgets ^? ix 0)
