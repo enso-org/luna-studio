@@ -35,7 +35,7 @@ build:
   run_tests:
     image: alpine
     commands:
-      - apk update && apk add zeromq s6 gmp supervisor
+      - apk update && apk add zeromq s6 gmp supervisor mercurial g++
       - cd supervisor && supervisord -c $DRONE_DIR/supervisor/supervisord.conf
       - export PATH=$PATH:$DRONE_DIR/dist/bin
       - export LUNAROOT=$DRONE_DIR/env
