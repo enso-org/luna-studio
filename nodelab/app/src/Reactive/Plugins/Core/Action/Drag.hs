@@ -9,7 +9,8 @@ import           Event.Event                       (Event (UI))
 import           Event.UI                          (UIEvent (NodeEvent))
 import           React.Store                       (widget, _ref)
 import qualified React.Store                       as Store
-import qualified React.Store.Node                  as Node
+import qualified React.Store.Node                  as Model
+import qualified React.Event.Node                  as Node
 import qualified Reactive.Commands.Node            as Node
 import           Utils.PreludePlus
 import           Utils.Vector
@@ -42,7 +43,6 @@ import           Style.Layout                      (gridSize)
 import           Object.Widget                     (Position)
 import qualified Object.Widget                     as Widget
 import           Object.Widget.Label               (Label)
-import qualified Object.Widget.Node                as Model
 
 import qualified UI.Handlers.Node                  as Node
 
@@ -50,9 +50,12 @@ import qualified Empire.API.Data.Node              as Node
 
 --TODO[react] implement
 toAction :: Event -> Maybe (Command State ())
+toAction (UI (NodeEvent Node.StopDrag )) = Just $ stopDrag
+toAction (UI (NodeEvent (Node.StartDrag mouseEvt))) = Just $ do
+    let pos = Vector2 (mouseScreenX mouseEvt) (mouseScreenY mouseEvt)
+    startDrag pos
 toAction (UI (NodeEvent (Node.Drag mouseEvt nodeId))) = Just $ do
     let pos = Vector2 (mouseScreenX mouseEvt) (mouseScreenY mouseEvt)
-    print (pos, mouseShiftKey mouseEvt)
     handleMove pos $ mouseShiftKey mouseEvt
 
 -- toAction (Mouse _ (Mouse.Event Mouse.Pressed  pos Mouse.LeftButton (KeyMods _ False False False) (Just _))) = Just $ startDrag pos
@@ -97,12 +100,13 @@ toAction _ = Nothing
 --             then Just $ n ^. Widget.widget . Model.position
 --             else Nothing
 --
--- startDrag :: Vector2 Int -> Command State ()
--- startDrag coord = do
---     nodePos     <- zoom Global.uiRegistry getNodePosUnderCursor
---     nodePos'    <- zoom Global.uiRegistry getNodePosLabelUnderCursor
---     withJust (nodePos `mplus` nodePos') $ \widgetPos -> do
---         Global.drag . Drag.history ?= DragHistory coord coord coord widgetPos
+startDrag :: Vector2 Int -> Command State ()
+startDrag coord = do
+    --TODO[react]
+    -- nodePos     <- zoom Global.uiRegistry getNodePosUnderCursor
+    -- nodePos'    <- zoom Global.uiRegistry getNodePosLabelUnderCursor
+    -- withJust (nodePos `mplus` nodePos') $ \widgetPos -> do
+        Global.drag . Drag.history ?= DragHistory coord coord coord def -- widgetPos
 --
 delay :: Vector2 Double -> Double -> Bool
 delay (Vector2 x y) d = x < -d || x > d || y > d || y < -d
@@ -120,8 +124,8 @@ handleMove coord snapped = do
             newDeltaWsSnapped = newNodePosSnapped - widgetPos
         if snapped then do
             when ((lengthSquared newDeltaWsSnapped > 0.1) && (delay deltaWs $ fromIntegral gridSize)) $ do
-                 moveNodes newDeltaWsSnapped
-                 Global.drag . Drag.history ?= DragHistory start current coord newNodePosSnapped
+                moveNodes newDeltaWsSnapped
+                Global.drag . Drag.history ?= DragHistory start current coord newNodePosSnapped
         else do
             moveNodes deltaWs
             Global.drag . Drag.history ?= DragHistory start current coord newNodePos
@@ -132,22 +136,20 @@ moveNodes delta = do
     forM_ nodes $
         Store.modify_ (Model.position %~ (+delta)) . _ref
     updateConnectionsForNodes $ (view $ widget . Model.nodeId) <$> nodes
---
--- stopDrag :: Command State ()
--- stopDrag = do
---     dragHistory <- use $ Global.drag . Drag.history
---
---     withJust dragHistory $ \(DragHistory start current _ _) -> do
---         Global.drag . Drag.history .= Nothing
---         when (start /= current) $ do
---             widgets <- allNodes
---
---             let selected = filter (^. widget . Model.isSelected) widgets
---                 nodesToUpdate = (\w -> (w ^. widget . Model.nodeId, w ^. widget . widgetPosition)) <$> selected
---
---             updates <- forM nodesToUpdate $ \(wid, pos) -> do
---                 Global.graph . Graph.nodesMap . ix wid . Node.position .= toTuple pos
---                 newMeta <- preuse $ Global.graph . Graph.nodesMap . ix wid . Node.nodeMeta
---                 return $ (wid, ) <$> newMeta
---             BatchCmd.updateNodeMeta $ catMaybes updates
---             updateConnectionsForNodes $ fst <$> nodesToUpdate
+
+stopDrag :: Command State ()
+stopDrag = do
+    dragHistory <- use $ Global.drag . Drag.history
+
+    withJust dragHistory $ \(DragHistory start current _ _) -> do
+        Global.drag . Drag.history .= Nothing
+        when (start /= current) $ do
+            selected <- selectedNodes
+            let nodesToUpdate = (\w -> (w ^. widget . Model.nodeId, w ^. widget . widgetPosition)) <$> selected
+
+            updates <- forM nodesToUpdate $ \(wid, pos) -> do
+                Global.graph . Graph.nodesMap . ix wid . Node.position .= toTuple pos
+                newMeta <- preuse $ Global.graph . Graph.nodesMap . ix wid . Node.nodeMeta
+                return $ (wid, ) <$> newMeta
+            BatchCmd.updateNodeMeta $ catMaybes updates
+            updateConnectionsForNodes $ fst <$> nodesToUpdate

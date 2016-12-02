@@ -27,7 +27,9 @@ node nodeRef = React.defineControllerView
         g_
             [ onClick       $ \_ e -> Store.dispatch nodeRef $ UI.NodeEvent $ Node.Click e nodeId
             , onDoubleClick $ \_ _ -> Store.dispatch nodeRef $ UI.NodeEvent $ Node.Enter nodeId
-            , onDrag        $ \_ e -> Store.dispatch nodeRef $ UI.NodeEvent $ Node.Drag e nodeId
+            , onMouseDown   $ \_ e -> Store.dispatch nodeRef $ UI.NodeEvent $ Node.StartDrag e
+            , onMouseUp     $ \_ _ -> Store.dispatch nodeRef $ UI.NodeEvent $ Node.StopDrag
+            , onMouseMove   $ \_ e -> Store.dispatch nodeRef $ UI.NodeEvent $ Node.Drag e nodeId
             , "className" $= "node"
             , "viewbox"   $= "0 0 40 40"
             , "transform" $= translate
