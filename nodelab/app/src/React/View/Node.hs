@@ -32,7 +32,7 @@ node nodeRef = React.defineControllerView
                   , "cx"          $= "20"
                   , "cy"          $= "20"
                   , "r"           $= "5"
-                  , "fill"        $= "green"
+                  , "fill"        $= "#8ABEB7"
                   ] $ mempty
               circle_
                   [ "className"   $= "input"
@@ -40,8 +40,9 @@ node nodeRef = React.defineControllerView
                   , "cy"          $= "20"
                   , "r"           $= "18.5"
                   , "strokeWidth" $= "3px"
-                  , "stroke"      $= "green"
+                  , "stroke"      $= "#8ABEB7"
                   , "fill"        $= "none"
+                  , "clipPath"    $= "url(#clipInput)"
                   ] $ mempty
               circle_
                   [ "className"   $= "output"
@@ -49,8 +50,9 @@ node nodeRef = React.defineControllerView
                   , "cy"          $= "20"
                   , "r"           $= "18.5"
                   , "strokeWidth" $= "3px"
-                  , "stroke"      $= "#d20"
+                  , "stroke"      $= "#B294BB"
                   , "fill"        $= "none"
+                  , "clipPath"    $= "url(#clipOutput)"
                   ] $ mempty
 
 
