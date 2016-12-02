@@ -21,14 +21,13 @@ import           Reactive.Commands.Command         (Command)
 import           Reactive.Commands.Graph           (allNodes)
 import           Reactive.Commands.Graph.Selection (selectedNodes)
 import           Reactive.State.Collaboration      (ColorId)
-import           Reactive.State.Global             (State, inRegistry)
+import           Reactive.State.Global             (State)
 import qualified Reactive.State.Global             as Global
-import qualified Reactive.State.Graph              as GraphST
 
 import qualified Object.Widget.Node                as NodeModel
 import           React.Store                       (widget)
 import qualified React.Store                       as Store
-import qualified Reactive.Commands.UIRegistry      as UICmd
+
 
 
 refreshTime, modifyTime :: Integer

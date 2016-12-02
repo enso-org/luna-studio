@@ -19,8 +19,11 @@ name = "node-editor"
 node :: Ref Node -> ReactView ()
 node nodeRef = React.defineControllerView
     name nodeRef $ \nodeStore () -> do
+
+        let n = nodeStore ^. dt
         g_
-            [ onClick $ \_ _ -> Store.dispatch nodeRef $ UI.NodeEvent Node.OnClick
+            [ onClick       $ \_ _ -> Store.dispatch nodeRef $ UI.NodeEvent Node.OnClick
+            , onDoubleClick $ \_ _ -> Store.dispatch nodeRef $ UI.NodeEvent $ Node.Enter $ n ^. Node.nodeId
             , "className" $= "node"
             , "viewbox"   $= "0 0 40 40"
             ] $ do

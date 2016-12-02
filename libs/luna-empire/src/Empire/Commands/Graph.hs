@@ -16,6 +16,8 @@ module Empire.Commands.Graph
     , getNodeMeta
     , getCode
     , getGraph
+    , getNodes
+    , getConnections
     , setDefaultValue
     , renameNode
     , dumpGraphViz
@@ -251,6 +253,12 @@ getCode loc = withGraph loc $ do
 
 getGraph :: GraphLocation -> Empire APIGraph.Graph
 getGraph loc = withTC loc True GraphBuilder.buildGraph
+
+getNodes :: GraphLocation -> Empire [Node]
+getNodes loc = withTC loc True $ view APIGraph.nodes <$> GraphBuilder.buildGraph
+
+getConnections :: GraphLocation -> Empire [(OutPortRef, InPortRef)]
+getConnections loc = withTC loc True $ view APIGraph.connections <$> GraphBuilder.buildGraph
 
 decodeLocation :: GraphLocation -> Empire (Breadcrumb (Named BreadcrumbItem))
 decodeLocation loc@(GraphLocation _ _ crumbs) = withGraph loc $ GraphBuilder.decodeBreadcrumbs crumbs

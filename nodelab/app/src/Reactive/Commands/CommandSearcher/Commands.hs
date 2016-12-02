@@ -2,8 +2,7 @@
 {-# LANGUAGE ViewPatterns      #-}
 
 module Reactive.Commands.CommandSearcher.Commands
-    ( toggleText
-    , querySearchCmd
+    ( querySearchCmd
     , queryTreeCmd
     , runCommand
     , help
@@ -20,16 +19,14 @@ import qualified Empire.API.Data.Project          as Project
 import           Event.Event                      (JSState)
 import qualified JS.GoogleAnalytics               as GA
 import qualified JS.NodeSearcher                  as UI
-import qualified React.Store                      as Store
-import qualified React.Store.App                  as App
 import qualified Reactive.Commands.Batch          as BatchCmd
+import qualified Reactive.Commands.CodeEditor     as CodeEditor
 import           Reactive.Commands.Command        (Command, performIO)
 import           Reactive.Commands.NodeSearcher   as NS
 import           Reactive.Commands.ProjectManager (loadProject)
 import qualified Reactive.State.Global            as Global
 import           Text.ScopeSearcher.Item          (Item (..))
 import qualified Text.ScopeSearcher.Scope         as Scope
-
 
 
 commands :: Command Global.State ([(Text, Item)])
@@ -72,12 +69,6 @@ help = do
     GA.sendEvent $ GA.OpenHelp
     performIO $ openHelp'
 
-toggleText :: Command Global.State ()
-toggleText = do
-    GA.sendEvent $ GA.ToggleText
-    Global.withApp $ Store.modify_ $ App.codeEditorVisible %~ not
-    -- size <- use $ Global.camera . Camera.camera . Camera.windowSize --TODO[react] remove
-    -- Camera.updateWindowSize size
 
 foreign import javascript safe "$('.tutorial-box').show().focus()"    openHelp'  :: IO ()
 foreign import javascript safe "common.enableGA($1)"    enableGA' :: Bool -> IO ()
@@ -96,7 +87,7 @@ runCommand (stripPrefix "project.open." -> Just name) = openProject name
 runCommand "project.export"                           = exportCurrentProject
 runCommand "help"                                     = help
 runCommand "insert"                                   = NS.openFresh
-runCommand "toggleTextEditor"                         = toggleText
+runCommand "toggleTextEditor"                         = CodeEditor.toggle
 runCommand "settings.disableGoogleAnalytics"          = enableGA False
 runCommand "settings.enableGoogleAnalytics"           = enableGA True
 runCommand cmd                                        = performIO $ putStrLn $ "Unknown command " <> (Text.unpack cmd)

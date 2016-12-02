@@ -2,6 +2,7 @@ module Reactive.Commands.ProjectManager
     ( loadProject
     , setCurrentBreadcrumb
     , navigateToGraph
+    , enterBreadcrumbs
     , loadGraph
     ) where
 

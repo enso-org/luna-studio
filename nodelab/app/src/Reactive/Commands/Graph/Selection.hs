@@ -4,8 +4,13 @@ module Reactive.Commands.Graph.Selection
      , selectAll
      , selectNodes
      , unselectAll
+     , unselectAllAndDropSelectionHistory
+     , dropSelectionHistory
+     , modifySelectionHistory
+     , selectPreviousNodes
      ) where
 
+import qualified Data.Set                                 as Set
 import           Utils.PreludePlus
 
 import           Empire.API.Data.Node      (NodeId)
@@ -20,6 +25,7 @@ import           Reactive.Commands.Command (Command)
 import           Reactive.Commands.Graph   (allNodes, allNodes')
 import           Reactive.State.Global     (State)
 import qualified Reactive.State.Global     as Global
+import           Reactive.Commands.Graph.SelectionHistory
 
 
 
@@ -33,18 +39,37 @@ unselectAll = do
             (const Nothing)
     cancelCollaborativeTouch $ catMaybes nodesToCancelTouch
 
+unselectAllAndDropSelectionHistory :: Command State ()
+unselectAllAndDropSelectionHistory = unselectAll >> dropSelectionHistory
+
 selectAll :: Command State ()
 selectAll = do
     widgets <- allNodes'
     selectNodes $ (view $ widget . Node.nodeId) <$> widgets
 
 selectNodes :: [NodeId] -> Command State ()
-selectNodes nodeIds = do
+selectNodes nodeIds = selectNodes' nodeIds >> modifySelectionHistory nodeIds
+
+selectNodes' :: [NodeId] -> Command State ()
+selectNodes' nodeIds = do
     unselectAll
     nodeRefs <- fmap catMaybes $ mapM Global.getNode nodeIds
     forM_ nodeRefs $ Store.modify_ (Node.isSelected .~ True)
     focusSelectedNode
     collaborativeTouch nodeIds
+
+selectPreviousNodes :: Command State ()
+selectPreviousNodes = do
+    maybeSelection <- uses Global.selectionHistory listToMaybe
+    case maybeSelection of
+        Nothing         -> dropSelectionHistory
+        Just nodeIdsSet -> do
+            Global.selectionHistory %= drop 1
+            selectNodes' $ Set.toList nodeIdsSet
+            selection <- map (^. widget . Node.nodeId) <$> selectedNodes
+            case selection of
+                []        -> selectPreviousNodes
+                otherwise -> modifySelectionHistory selection
 
 selectedNodes :: Command State [WRef Node]
 selectedNodes = do

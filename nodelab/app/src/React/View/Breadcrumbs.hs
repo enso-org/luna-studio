@@ -4,12 +4,15 @@ module React.View.Breadcrumbs (
     breadcrumbs_
 ) where
 
+import           Data.Text.Lazy          (unpack)
 import           React.Flux
 import qualified React.Flux              as React
 import           Utils.PreludePlus
 
-import           React.Store             (Ref, dt)
+import qualified Event.UI                as UI
+import           React.Store             (Ref, dispatch, dt)
 import           React.Store.Breadcrumbs (Breadcrumbs)
+import qualified React.Store.Breadcrumbs as B
 
 
 
@@ -20,14 +23,17 @@ name = "breadcrumbs"
 breadcrumbs :: Ref Breadcrumbs -> ReactView ()
 breadcrumbs ref = React.defineControllerView name ref $ \store () -> do
     div_ $ do
-        elemString $ "breadcrumbs:"
-        div_ $ do
-            elemString $ show $ store ^. dt
+        forM_ (inits $ store ^. dt . B.items) $ \bc -> do
+            button_ [ onClick $ \_ _ -> dispatch ref $ UI.BreadcrumbsEvent $ B.Enter $ unname bc] $ case reverse bc of
+                []      -> elemString "project name here"
+                (item:_) -> elemString $ unpack $ item ^. B.name
 
 
 breadcrumbs_ :: Ref Breadcrumbs -> ReactElementM ViewEventHandler ()
 breadcrumbs_ ref = React.view (breadcrumbs ref) () mempty
 
+unname :: [B.Named a] -> B.Breadcrumb a
+unname = B.Breadcrumb . map B._breadcrumb
 
 --TODO[react]
 -- initBreadcrumb :: Command State ()

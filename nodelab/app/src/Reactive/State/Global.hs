@@ -17,6 +17,7 @@ import qualified System.Random                  as Random
 import           Batch.Workspace
 import           Empire.API.Data.Connection     (ConnectionId)
 import           Empire.API.Data.Node           (NodeId)
+import qualified Empire.API.Data.Node           as Node
 import qualified Empire.API.Graph.Collaboration as Collaboration
 import qualified Event.Event                    as Event
 import           React.Store                    (Ref)
@@ -47,6 +48,7 @@ data State = State { _mousePos           :: Vector2 Int
                    , _graph              :: Graph.State
                    , _camera             :: Camera.State
                    , _multiSelection     :: MultiSelection.State
+                   , _selectionHistory   :: [Set Node.NodeId]
                    , _drag               :: Drag.State
                    , _connect            :: Connect.State
                    , _uiRegistry         :: UIRegistry.State
@@ -100,7 +102,7 @@ getConnection :: ConnectionId -> Command State (Maybe (Ref Connection))
 getConnection connectionId = withConnection connectionId return
 
 initialState :: DateTime -> Collaboration.ClientId -> StdGen -> Maybe Int -> (Ref App) -> State
-initialState = State (Vector2 200 200) def def def def def def def def def def def defJsState def def
+initialState = State (Vector2 200 200) def def def def def def def def def def def def defJsState def def
 
 inRegistry :: Command UIRegistry.State a -> Command State a
 inRegistry = zoom uiRegistry

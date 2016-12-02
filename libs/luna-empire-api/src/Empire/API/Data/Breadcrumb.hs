@@ -1,15 +1,19 @@
+{-# LANGUAGE DeriveAnyClass #-}
 module Empire.API.Data.Breadcrumb where
 
+import           Control.DeepSeq      (NFData)
 import           Data.Binary          (Binary)
 import           Empire.API.Data.Node (NodeId)
 import           Prologue
 
-data BreadcrumbItem = Lambda NodeId   deriving (Show, Eq, Generic)
+
+
+data BreadcrumbItem = Lambda NodeId   deriving (Show, Eq, Generic, NFData)
 data Named a        = Named  { _name       :: Text
                              , _breadcrumb :: a
                              } deriving (Show, Eq, Generic)
 
-newtype Breadcrumb a = Breadcrumb { _items :: [a] } deriving (Show, Eq, Generic)
+newtype Breadcrumb a = Breadcrumb { _items :: [a] } deriving (Show, Eq, Generic, NFData)
 
 makeLenses ''Breadcrumb
 makeLenses ''Named

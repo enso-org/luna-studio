@@ -6,21 +6,21 @@ module React.Store
     , module X
 ) where
 
+import           Control.Concurrent
 import           Control.Monad.Trans.Reader
 import           React.Flux
-import           Utils.PreludePlus          as P hiding (transform)
 
 import qualified Event.Event                as Event
 import           Event.UI                   (UIEvent)
 import           React.Store.App            (App (App))
 import           React.Store.Ref            as X
-
+import           Utils.PreludePlus          as P hiding (transform)
 
 
 instance Typeable a => StoreData (Store a) where
     type StoreAction (Store a) = UIEvent
     transform event store = do
-        (store ^. sendEvent) $ Event.UI event
+        void $ forkIO $ (store ^. sendEvent) $ Event.UI event
         return $ store
 
 dispatch :: Typeable a => Ref a -> UIEvent -> [SomeStoreAction]
@@ -35,4 +35,4 @@ create a = do
     create' se a
 
 createApp :: MonadIO m => SendEvent -> m (Ref App)
-createApp = runReaderT (create =<< (App <$> create def <*> create def <*> create def <*> pure True))
+createApp = runReaderT (create =<< (App <$> create def <*> create def <*> create def <*> pure True <*> create def))

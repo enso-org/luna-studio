@@ -2,7 +2,7 @@
 
 module UI.Handlers.Node where
 
-import           Utils.PreludePlus            hiding (stripPrefix)
+import           Utils.PreludePlus                        hiding (stripPrefix)
 
 import qualified Data.HashMap.Strict          as HashMap
 import           Data.HMap.Lazy               (HTMap, TypeKey (..))
@@ -23,6 +23,7 @@ import qualified React.Store.NodeEditor       as NodeEditor
 import qualified Object.Widget.CodeEditor     as CodeEditor
 import qualified Object.Widget.Group          as Group
 import qualified Object.Widget.Label          as Label
+import           Reactive.Commands.Graph.SelectionHistory (dropSelectionHistory, modifySelectionHistory)
 import qualified Object.Widget.LabeledTextBox as LabeledTextBox
 import qualified Object.Widget.Node           as Model
 import qualified Object.Widget.TextBox        as TextBox
@@ -50,6 +51,7 @@ import           UI.Widget.TextBox            ()
 import           UI.Widget.Toggle             ()
 
 import           Empire.API.Data.Node         (NodeId)
+
 
 
 nameHandlers :: WidgetId -> HTMap
@@ -103,9 +105,6 @@ visualizationsToggledHandler = TypeKey :: TypeKey VisualizationsToggledHandler
 newtype ChangeInputNodeTypeHandler = ChangeInputNodeTypeHandler (WidgetId -> NodeId -> Text -> Command Global.State ())
 changeInputNodeTypeHandler = TypeKey :: TypeKey ChangeInputNodeTypeHandler
 
-newtype EnterNodeHandler = EnterNodeHandler (Command Global.State ())
-enterNodeHandler = TypeKey :: TypeKey EnterNodeHandler
-
 newtype ExpandNodeHandler = ExpandNodeHandler (Command Global.State ())
 expandNodeHandler = TypeKey :: TypeKey ExpandNodeHandler
 
@@ -140,11 +139,6 @@ triggerChangeInputNodeTypeHandler wid model = do
     withJust (model ^. Model.tpe) $ \tpe -> do
         maybeHandler <- inRegistry $ UICmd.handler wid changeInputNodeTypeHandler
         withJust maybeHandler $ \(ChangeInputNodeTypeHandler handler) -> handler wid (model ^. Model.nodeId) tpe
-
-triggerEnterNodeHandler :: WidgetId -> Command Global.State ()
-triggerEnterNodeHandler wid = do
-    maybeHandler <- inRegistry $ UICmd.handler wid enterNodeHandler
-    withJust maybeHandler $ \(EnterNodeHandler handler) -> handler
 
 triggerExpandNodeHandler :: WidgetId -> Command Global.State ()
 triggerExpandNodeHandler wid = do
@@ -192,6 +186,7 @@ performSelect wid = do
     unless isSelected $ do
         unselectAll
         inRegistry $ UICmd.update_ wid (Model.isSelected .~ True)
+        modifySelectionHistory [nodeId]
         collaborativeTouch [nodeId]
 
 toggleSelect :: WidgetId -> Command Global.State ()
@@ -199,9 +194,9 @@ toggleSelect wid = do
     newNode <- inRegistry $ UICmd.update wid (Model.isSelected %~ not)
     let nodeId = newNode ^. Model.nodeId
     if newNode ^. Model.isSelected then
-      collaborativeTouch [nodeId]
+        modifySelectionHistory [nodeId] >> collaborativeTouch [nodeId]
     else
-      cancelCollaborativeTouch [nodeId]
+        dropSelectionHistory >> cancelCollaborativeTouch [nodeId]
 
 
 unselectAll :: Command Global.State ()
@@ -214,9 +209,6 @@ unselectAll = do
             (const Nothing)
 
     cancelCollaborativeTouch $ catMaybes nodesToCancelTouch
-
-dblClickHandler :: DblClickHandler Global.State
-dblClickHandler _ _ = triggerEnterNodeHandler
 
 showHidePortLabels :: Bool -> WidgetId -> Command UIRegistry.State ()
 showHidePortLabels show wid = do
@@ -236,7 +228,6 @@ onMouseOut  wid = inRegistry $ do
 widgetHandlers :: UIHandlers Global.State
 widgetHandlers = def & keyDown      .~ keyDownHandler
                      & mousePressed .~ (\evt _ wid -> selectNode evt wid)
-                     & dblClick     .~ dblClickHandler
                      & mouseOver .~ const onMouseOver
                      & mouseOut  .~ const onMouseOut
 
