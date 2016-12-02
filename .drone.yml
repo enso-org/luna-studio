@@ -25,6 +25,7 @@ build:
       email: $$DOCKERHUB_EMAIL
     commands:
       - date
+      - apk update && apk add mercurial g++
       - mkdir -p .stack-ghcjs
       - export STACK_ROOT=$DRONE_DIR/.stack-ghcjs
       - cd $DRONE_DIR/nodelab
