@@ -14,5 +14,6 @@ import           Utils.PreludePlus
 
 toAction :: Event -> Maybe (Command State ())
 toAction (UI (NodeEvent Node.OnClick)) = Just $ print "ONCLICK"
+toAction (UI (NodeEvent (Node.Drag pos nodeId))) = Just $ print (pos, nodeId)
 toAction (UI (NodeEvent (Node.Enter nodeId))) = Just $ mapM_ Node.tryEnter =<< preuse (Global.graph . Graph.nodesMap . ix nodeId)
 toAction _   = Nothing
