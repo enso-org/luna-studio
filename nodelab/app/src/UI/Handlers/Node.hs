@@ -4,53 +4,55 @@ module UI.Handlers.Node where
 
 import           Utils.PreludePlus                        hiding (stripPrefix)
 
-import qualified Data.HashMap.Strict          as HashMap
-import           Data.HMap.Lazy               (HTMap, TypeKey (..))
-import qualified Data.Text.Lazy               as Text
+import           Control.Monad.Trans.State                (get)
+import qualified Data.HashMap.Strict                      as HashMap
+import           Data.HMap.Lazy                           (HTMap, TypeKey (..))
+import qualified Data.Text.Lazy                           as Text
 import           Utils.Vector
 
-import           Event.Keyboard               (KeyMods (..))
-import qualified Event.Mouse                  as Mouse
-import           Object.Widget                (CompositeWidget, DblClickHandler, KeyPressedHandler, ResizableWidget, UIHandlers, WidgetId,
-                                               createWidget, dblClick, keyDown, mouseOut, mouseOver, mousePressed, updateWidget)
+import           Event.Keyboard                           (KeyMods (..))
+import qualified Event.Mouse                              as Mouse
+import           Object.Widget                            (CompositeWidget, DblClickHandler, KeyPressedHandler, ResizableWidget, UIHandlers,
+                                                           WidgetId, createWidget, dblClick, keyDown, mouseOut, mouseOver, mousePressed,
+                                                           updateWidget)
 
-import           React.Store                  (Ref, WRef)
-import qualified React.Store                  as Store
-import           React.Store.Node             (Node)
-import qualified React.Store.Node             as Node
-import qualified React.Store.NodeEditor       as NodeEditor
+import           React.Store                              (Ref, WRef)
+import qualified React.Store                              as Store
+import           React.Store.Node                         (Node)
+import qualified React.Store.Node                         as Node
+import qualified React.Store.NodeEditor                   as NodeEditor
 
-import qualified Object.Widget.CodeEditor     as CodeEditor
-import qualified Object.Widget.Group          as Group
-import qualified Object.Widget.Label          as Label
+import qualified Object.Widget.CodeEditor                 as CodeEditor
+import qualified Object.Widget.Group                      as Group
+import qualified Object.Widget.Label                      as Label
+import qualified Object.Widget.LabeledTextBox             as LabeledTextBox
+import qualified Object.Widget.Node                       as Model
+import qualified Object.Widget.TextBox                    as TextBox
+import qualified Object.Widget.Toggle                     as Toggle
+import           Reactive.Commands.Batch                  (cancelCollaborativeTouch, collaborativeTouch)
+import           Reactive.Commands.Command                (Command)
 import           Reactive.Commands.Graph.SelectionHistory (dropSelectionHistory, modifySelectionHistory)
-import qualified Object.Widget.LabeledTextBox as LabeledTextBox
-import qualified Object.Widget.Node           as Model
-import qualified Object.Widget.TextBox        as TextBox
-import qualified Object.Widget.Toggle         as Toggle
-import           Reactive.Commands.Batch      (cancelCollaborativeTouch, collaborativeTouch)
-import           Reactive.Commands.Command    (Command)
-import qualified Reactive.Commands.UIRegistry as UICmd
-import           Reactive.State.Global        (inRegistry)
-import qualified Reactive.State.Global        as Global
-import           Reactive.State.UIRegistry    (addHandler)
-import qualified Reactive.State.UIRegistry    as UIRegistry
+import qualified Reactive.Commands.UIRegistry             as UICmd
+import           Reactive.State.Global                    (inRegistry)
+import qualified Reactive.State.Global                    as Global
+import           Reactive.State.UIRegistry                (addHandler)
+import qualified Reactive.State.UIRegistry                as UIRegistry
 
-import qualified Style.Node                   as Style
-import           UI.Generic                   (whenChanged)
-import           UI.Handlers.Button           (DblClickedHandler (..), MousePressedHandler (..))
-import           UI.Handlers.Generic          (ValueChangedHandler (..))
-import           UI.Handlers.LabeledTextBox   ()
-import           UI.Layout                    as Layout
-import           UI.Widget.CodeEditor         ()
-import           UI.Widget.Group              ()
-import           UI.Widget.Label              ()
-import           UI.Widget.LabeledTextBox     ()
-import           UI.Widget.Node               ()
-import           UI.Widget.TextBox            ()
-import           UI.Widget.Toggle             ()
+import qualified Style.Node                               as Style
+import           UI.Generic                               (whenChanged)
+import           UI.Handlers.Button                       (DblClickedHandler (..), MousePressedHandler (..))
+import           UI.Handlers.Generic                      (ValueChangedHandler (..))
+import           UI.Handlers.LabeledTextBox               ()
+import           UI.Layout                                as Layout
+import           UI.Widget.CodeEditor                     ()
+import           UI.Widget.Group                          ()
+import           UI.Widget.Label                          ()
+import           UI.Widget.LabeledTextBox                 ()
+import           UI.Widget.Node                           ()
+import           UI.Widget.TextBox                        ()
+import           UI.Widget.Toggle                         ()
 
-import           Empire.API.Data.Node         (NodeId)
+import           Empire.API.Data.Node                     (NodeId)
 
 
 
@@ -162,36 +164,37 @@ keyDownHandler '\x08' _ _ wid = triggerRemoveHandler wid
 keyDownHandler '\x2e' _ _ wid = triggerRemoveHandler wid
 keyDownHandler _      _ _ _  = return ()
 
-selectNode :: Mouse.Event' -> WidgetId -> Command Global.State ()
-selectNode evt wid = do
-    let action = handleSelection evt
+selectNode :: Bool -> Ref Node -> Command Global.State ()
+selectNode combine wid = do
+    let action = handleSelection combine
     selectNode' action wid
 
-selectNode' :: (WidgetId -> Command Global.State ()) -> WidgetId -> Command Global.State ()
+selectNode' :: (Ref Node -> Command Global.State ()) -> Ref Node -> Command Global.State ()
 selectNode' action wid = do
-    triggerFocusNodeHandler wid
-    UICmd.takeFocus wid
+    -- triggerFocusNodeHandler wid --TODO[react]
+    -- UICmd.takeFocus wid
     action wid
 
-handleSelection :: Mouse.Event' -> (WidgetId -> Command Global.State ())
-handleSelection evt = case evt ^. Mouse.keyMods of
-    KeyMods False False False False -> performSelect
-    KeyMods False False True  False -> toggleSelect
-    _                               -> const $ return ()
+handleSelection :: Bool -> (Ref Node -> Command Global.State ())
+handleSelection False = performSelect
+handleSelection True  = toggleSelect
 
-performSelect :: WidgetId -> Command Global.State ()
-performSelect wid = do
-    isSelected <- inRegistry $ UICmd.get wid Model.isSelected
-    nodeId     <- inRegistry $ UICmd.get wid Model.nodeId
+performSelect :: Ref Node -> Command Global.State ()
+performSelect nodeRef = do
+    node <- Store.get nodeRef
+    let isSelected = node ^. Model.isSelected
+        nodeId     = node ^. Model.nodeId
     unless isSelected $ do
         unselectAll
-        inRegistry $ UICmd.update_ wid (Model.isSelected .~ True)
+        Store.modify_ (Model.isSelected .~ True) nodeRef
         modifySelectionHistory [nodeId]
         collaborativeTouch [nodeId]
 
-toggleSelect :: WidgetId -> Command Global.State ()
-toggleSelect wid = do
-    newNode <- inRegistry $ UICmd.update wid (Model.isSelected %~ not)
+toggleSelect :: Ref Node -> Command Global.State ()
+toggleSelect nodeRef = do
+    newNode <- flip Store.modifyM nodeRef $ do
+        Model.isSelected %= not
+        get
     let nodeId = newNode ^. Model.nodeId
     if newNode ^. Model.isSelected then
         modifySelectionHistory [nodeId] >> collaborativeTouch [nodeId]
@@ -227,7 +230,6 @@ onMouseOut  wid = inRegistry $ do
 
 widgetHandlers :: UIHandlers Global.State
 widgetHandlers = def & keyDown      .~ keyDownHandler
-                     & mousePressed .~ (\evt _ wid -> selectNode evt wid)
                      & mouseOver .~ const onMouseOver
                      & mouseOut  .~ const onMouseOut
 
@@ -255,8 +257,7 @@ instance CompositeWidget Model.Node where
         portGroup <- UICmd.register wid grp def
 
         let label = Style.expressionLabel $ trimExpression $ model ^. Model.expression
-        expressionLabelId <- UICmd.register wid label $ addHandler (DblClickedHandler $ const $ triggerEditNodeExpressionHandler wid model)
-                                                     $ onClicked (\evt _ -> selectNode evt wid)
+        expressionLabelId <- UICmd.register wid label $ addHandler (DblClickedHandler $ const $ triggerEditNodeExpressionHandler wid model) def
 
         let group  = Group.create & Group.position .~ Style.controlsPosition
         controlGroups <- UICmd.register wid group Style.controlsLayout

@@ -28,9 +28,9 @@ updateNodeMeta' :: NodeId -> NodeMeta -> Command Global.State ()
 updateNodeMeta' nodeId meta = do
     Global.graph . Graph.nodesMap . ix nodeId . Node.nodeMeta .= meta
     nodeRef <- Global.getNode nodeId
-    withJust nodeRef $ Store.modify_ $
-        NodeModel.visualizationsEnabled .~ meta ^. NodeMeta.displayResult
-        -- UICmd.move    widgetId $ fromTuple $  meta ^. NodeMeta.position --TODO[react]
+    withJust nodeRef $ Store.modifyM_ $ do
+        NodeModel.visualizationsEnabled .= meta ^. NodeMeta.displayResult
+        NodeModel.position .= fromTuple (meta ^. NodeMeta.position)
 
 -- updateNodeMeta :: NodeId -> NodeMeta -> Command Global.State ()
 -- updateNodeMeta nodeId meta = do

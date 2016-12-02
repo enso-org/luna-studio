@@ -69,7 +69,7 @@ actions =  [ --Debug.toActionEv
         --    , Camera.toAction
            Graph.toAction
         --    , MultiSelection.toAction
-        --    , Drag.toAction
+           , Drag.toAction
         --    , Connect.toAction
         --    , Navigation.toAction
         --    , Collaboration.toAction

@@ -32,6 +32,8 @@ import           Prelude                  hiding (mapM, mapM_, print, putStr, pu
 import qualified Prelude
 import           Prologue                 as X (toString)
 import           Text.Show.Pretty         (ppShow)
+import           Utils.Instances          ()
+
 
 
 print :: (MonadIO m, Show s) => s -> m ()

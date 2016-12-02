@@ -25,11 +25,7 @@ import qualified Reactive.State.UIRegistry         as UIRegistry
 
 import           Reactive.Commands.Batch           (cancelCollaborativeTouch, collaborativeTouch)
 import           Reactive.Commands.Command         (Command, performIO)
-import           Reactive.Commands.Graph.Selection (focusSelectedNode,
-                                                    modifySelectionHistory,
-                                                    selectAll,
-                                                    selectedNodes,
-                                                    unselectAll,
+import           Reactive.Commands.Graph.Selection (focusSelectedNode, modifySelectionHistory, selectAll, selectedNodes, unselectAll,
                                                     unselectAllAndDropSelectionHistory)
 import qualified Reactive.Commands.UIRegistry      as UICmd
 
@@ -42,20 +38,11 @@ toAction :: Event -> Maybe (Command State ())
 -- toAction (Mouse jsstate (Mouse.Event Mouse.Moved    pos Mouse.LeftButton _ _)) = Just $ handleMove jsstate pos
 -- toAction (Mouse _       (Mouse.Event Mouse.Released _   Mouse.LeftButton _ _)) = Just stopDrag
 --
--- toAction (Keyboard _ (Keyboard.Event Keyboard.Press 'A'   _)) = Just trySelectAll
--- toAction (Keyboard _ (Keyboard.Event Keyboard.Down  '\27' _)) = Just tryUnselectAll
+-- toAction (Keyboard _ (Keyboard.Event Keyboard.Press 'A'   _)) = Just selectAll
+-- toAction (Keyboard _ (Keyboard.Event Keyboard.Down  '\27' _)) = Just unselectAll
 toAction _ = Nothing
 
--- trySelectAll :: Command State ()
--- trySelectAll = do
---     focusedWidget <- inRegistry $ use UIRegistry.focusedWidget
---     when (isNothing focusedWidget) selectAll
---
--- tryUnselectAll :: Command State ()
--- tryUnselectAll = do
---     focusedWidget <- inRegistry $ use UIRegistry.focusedWidget
---     when (isNothing focusedWidget) unselectAllAndDropSelectionHistory
---
+
 -- startDrag :: Vector2 Int -> Command State ()
 -- startDrag coord = do
 --     Global.multiSelection . MultiSelection.history ?= DragHistory coord coord

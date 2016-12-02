@@ -41,7 +41,7 @@ exit = do
         [] -> return ()
 
 
-rename :: NodeId -> Text -> Command Global.State ()
+rename :: NodeId -> Text -> Command State ()
 rename nodeId name = do
     Global.graph . Graph.nodesMap . ix nodeId . Node.name .= name
     Global.withNode nodeId $
