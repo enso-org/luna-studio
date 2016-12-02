@@ -19,8 +19,14 @@ name = "node-editor"
 
 nodeEditor :: Ref NodeEditor -> ReactView ()
 nodeEditor ref = React.defineControllerView name ref $ \store () -> do
-    div_ $ do
-        elemString $ "node editor:"
+    svg_
+        [ "className"   $= "graph"
+        , "width"       $= "800px"
+        , "height"      $= "500px"
+        , "xmlns"       $= "http://www.w3.org/2000/svg"
+        , "xmlns:xlink" $= "http://www.w3.org/1999/xlink"
+        ]
+        $ do
         forM_ (store ^. dt . NodeEditor.nodes . to HashMap.elems) $ \nodeRef -> do
             node_ nodeRef
         forM_ (store ^. dt . NodeEditor.connections . to HashMap.elems) $ \connectionRef -> do

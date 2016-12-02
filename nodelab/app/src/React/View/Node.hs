@@ -19,8 +19,36 @@ name = "node-editor"
 node :: Ref Node -> ReactView ()
 node nodeRef = React.defineControllerView
     name nodeRef $ \nodeStore () -> do
-        div_ [onClick $ \_ _ -> Store.dispatch nodeRef $ UI.NodeEvent Node.OnClick] $ do
-            elemString $ "node: " <> show (nodeStore ^. dt . Node.name)
+        g_
+            [ onClick $ \_ _ -> Store.dispatch nodeRef $ UI.NodeEvent Node.OnClick
+            , "className" $= "node"
+            , "viewbox"   $= "0 0 40 40"
+            ] $ do
+              circle_
+                  [ "className"   $= "self"
+                  , "cx"          $= "20"
+                  , "cy"          $= "20"
+                  , "r"           $= "5"
+                  , "fill"        $= "green"
+                  ] $ mempty
+              circle_
+                  [ "className"   $= "input"
+                  , "cx"          $= "20"
+                  , "cy"          $= "20"
+                  , "r"           $= "18.5"
+                  , "strokeWidth" $= "3px"
+                  , "stroke"      $= "green"
+                  , "fill"        $= "none"
+                  ] $ mempty
+              circle_
+                  [ "className"   $= "output"
+                  , "cx"          $= "20"
+                  , "cy"          $= "20"
+                  , "r"           $= "18.5"
+                  , "strokeWidth" $= "3px"
+                  , "stroke"      $= "#d20"
+                  , "fill"        $= "none"
+                  ] $ mempty
 
 
 node_ :: Ref Node -> ReactElementM ViewEventHandler ()
