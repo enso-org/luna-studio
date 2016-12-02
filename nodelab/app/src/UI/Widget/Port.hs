@@ -73,14 +73,14 @@ onMouseOut  wid = inRegistry $ do
     nodeId <- toNodeId wid
     Node.showHidePortLabels False nodeId
 
-selectNode evt _ wid = do
-    nodeId <- inRegistry $ toNodeId wid
-    Node.selectNode evt nodeId
+-- selectNode evt _ wid = do --TODO[react]
+--     nodeId <- inRegistry $ toNodeId wid
+--     Node.selectNode evt nodeId
 
 widgetHandlers :: UIHandlers Global.State
 widgetHandlers = def & mouseOver .~ const onMouseOver
                      & mouseOut  .~ const onMouseOut
-                     & mousePressed .~ selectNode
+                    --  & mousePressed .~ selectNode --TODO[react]
 
 instance CompositeWidget Model.Port
 instance ResizableWidget Model.Port

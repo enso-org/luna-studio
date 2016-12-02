@@ -12,8 +12,8 @@ import           Utils.PreludePlus
 
 
 
-data Event = OnClick
-           | Drag MouseEvent NodeId
+data Event = Click MouseEvent NodeId
+           | Drag  MouseEvent NodeId
            | Enter NodeId
             deriving (Show, Generic, NFData, Typeable)
 

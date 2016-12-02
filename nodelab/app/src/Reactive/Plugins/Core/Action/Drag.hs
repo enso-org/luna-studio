@@ -3,10 +3,18 @@ module Reactive.Plugins.Core.Action.Drag
     ( toAction
     ) where
 
+import           React.Flux                        (mouseScreenX, mouseScreenY, mouseShiftKey)
+
+import           Event.Event                       (Event (UI))
+import           Event.UI                          (UIEvent (NodeEvent))
+import           React.Store                       (widget, _ref)
+import qualified React.Store                       as Store
+import qualified React.Store.Node                  as Node
+import qualified Reactive.Commands.Node            as Node
 import           Utils.PreludePlus
 import           Utils.Vector
 
-import           Object.Widget                     (WidgetFile, objectId, parent, widget, widgetPosition)
+import           Object.Widget                     (WidgetFile, objectId, parent, widgetPosition)
 
 import           Control.Monad.State               ()
 import           Control.Monad.Trans.Maybe
@@ -42,6 +50,11 @@ import qualified Empire.API.Data.Node              as Node
 
 --TODO[react] implement
 toAction :: Event -> Maybe (Command State ())
+toAction (UI (NodeEvent (Node.Drag mouseEvt nodeId))) = Just $ do
+    let pos = Vector2 (mouseScreenX mouseEvt) (mouseScreenY mouseEvt)
+    print (pos, mouseShiftKey mouseEvt)
+    handleMove pos $ mouseShiftKey mouseEvt
+
 -- toAction (Mouse _ (Mouse.Event Mouse.Pressed  pos Mouse.LeftButton (KeyMods _ False False False) (Just _))) = Just $ startDrag pos
 -- toAction (Mouse _ (Mouse.Event Mouse.Moved    pos Mouse.LeftButton (KeyMods True False False False) _))        = Just $ handleMove pos False
 -- toAction (Mouse _ (Mouse.Event Mouse.Moved    pos Mouse.LeftButton (KeyMods False  False False False) _))        = Just $ handleMove pos True
@@ -91,37 +104,34 @@ toAction _ = Nothing
 --     withJust (nodePos `mplus` nodePos') $ \widgetPos -> do
 --         Global.drag . Drag.history ?= DragHistory coord coord coord widgetPos
 --
--- delay :: Vector2 Double -> Double -> Bool
--- delay (Vector2 x y) d = x < -d || x > d || y > d || y < -d
---
---
--- handleMove :: Vector2 Int -> Bool -> Command State ()
--- handleMove coord snapped = do
---     factor <- use $ Global.camera . Camera.camera . Camera.factor
---     dragHistory <- use $ Global.drag . Drag.history
---     withJust dragHistory $ \(DragHistory start previous current widgetPos) -> do
---         let delta = coord - current
---             deltaWs = Camera.scaledScreenToWorkspace factor delta
---             newNodePos = widgetPos + deltaWs
---             newNodePosSnapped = snap newNodePos
---             newDeltaWsSnapped = newNodePosSnapped - widgetPos
---         if snapped then do
---             when ((lengthSquared newDeltaWsSnapped > 0.1) && (delay deltaWs $ fromIntegral gridSize)) $ do
---                  moveNodes newDeltaWsSnapped
---                  Global.drag . Drag.history ?= DragHistory start current coord newNodePosSnapped
---         else do
---             moveNodes deltaWs
---             Global.drag . Drag.history ?= DragHistory start current coord newNodePos
---
--- moveNodes :: Vector2 Double -> Command State ()
--- moveNodes delta = do
---     widgets <- selectedNodes
---     let selectedIdsWithPos = (\w -> (w ^. widget . Model.nodeId , w ^. widget . widgetPosition)) <$> widgets
---     forM_ selectedIdsWithPos $ \(id, pos) -> do
---         widgetIdMay <- Global.getNode id
---         withJust widgetIdMay $ \widgetId ->
---             zoom Global.uiRegistry $ UICmd.move widgetId (pos + delta)
---     updateConnectionsForNodes $ (view $ widget . Model.nodeId) <$> widgets
+delay :: Vector2 Double -> Double -> Bool
+delay (Vector2 x y) d = x < -d || x > d || y > d || y < -d
+
+
+handleMove :: Vector2 Int -> Bool -> Command State ()
+handleMove coord snapped = do
+    factor <- use $ Global.camera . Camera.camera . Camera.factor
+    dragHistory <- use $ Global.drag . Drag.history
+    withJust dragHistory $ \(DragHistory start previous current widgetPos) -> do
+        let delta = coord - current
+            deltaWs = Camera.scaledScreenToWorkspace factor delta
+            newNodePos = widgetPos + deltaWs
+            newNodePosSnapped = snap newNodePos
+            newDeltaWsSnapped = newNodePosSnapped - widgetPos
+        if snapped then do
+            when ((lengthSquared newDeltaWsSnapped > 0.1) && (delay deltaWs $ fromIntegral gridSize)) $ do
+                 moveNodes newDeltaWsSnapped
+                 Global.drag . Drag.history ?= DragHistory start current coord newNodePosSnapped
+        else do
+            moveNodes deltaWs
+            Global.drag . Drag.history ?= DragHistory start current coord newNodePos
+
+moveNodes :: Vector2 Double -> Command State ()
+moveNodes delta = do
+    nodes <- selectedNodes
+    forM_ nodes $
+        Store.modify_ (Model.position %~ (+delta)) . _ref
+    updateConnectionsForNodes $ (view $ widget . Model.nodeId) <$> nodes
 --
 -- stopDrag :: Command State ()
 -- stopDrag = do

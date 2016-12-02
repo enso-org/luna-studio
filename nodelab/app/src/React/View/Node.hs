@@ -21,12 +21,13 @@ node :: Ref Node -> ReactView ()
 node nodeRef = React.defineControllerView
     name nodeRef $ \nodeStore () -> do
         let n = nodeStore ^. dt
+            nodeId = n ^. Node.nodeId
             pos = n ^. Node.position
             translate = fromString $ "translate(" <> show (pos ^. x) <> "," <> show (pos ^. y) <> ")"
         g_
-            [ onClick       $ \_ _ -> Store.dispatch nodeRef $ UI.NodeEvent Node.OnClick
-            , onDoubleClick $ \_ _ -> Store.dispatch nodeRef $ UI.NodeEvent $ Node.Enter $ n ^. Node.nodeId
-            , onDrag        $ \_ e -> Store.dispatch nodeRef $ UI.NodeEvent $ Node.Drag e $ n ^. Node.nodeId
+            [ onClick       $ \_ e -> Store.dispatch nodeRef $ UI.NodeEvent $ Node.Click e nodeId
+            , onDoubleClick $ \_ _ -> Store.dispatch nodeRef $ UI.NodeEvent $ Node.Enter nodeId
+            , onDrag        $ \_ e -> Store.dispatch nodeRef $ UI.NodeEvent $ Node.Drag e nodeId
             , "className" $= "node"
             , "viewbox"   $= "0 0 40 40"
             , "transform" $= translate
@@ -36,7 +37,7 @@ node nodeRef = React.defineControllerView
                     , "cx"          $= "20"
                     , "cy"          $= "20"
                     , "r"           $= "5"
-                    , "fill"        $= "#8ABEB7"
+                    , "fill"        $= if n ^. Node.isSelected then "#8A1E17" else "#8ABEB7" --TODO select node another way
                     ] $ mempty
                 circle_
                     [ "className"   $= "input"
