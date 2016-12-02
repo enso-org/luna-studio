@@ -13,19 +13,20 @@ module Reactive.Commands.Graph.Selection
 import qualified Data.Set                                 as Set
 import           Utils.PreludePlus
 
-import           Empire.API.Data.Node      (NodeId)
+import           Empire.API.Data.Node                     (NodeId)
 
-import           React.Store               (WRef (..), widget)
-import qualified React.Store               as Store
-import           React.Store.Node          (Node)
-import qualified React.Store.Node          as Node
+import           React.Store                              (WRef (..), widget)
+import qualified React.Store                              as Store
+import           React.Store.Node                         (Node)
+import qualified React.Store.Node                         as Node
 
-import           Reactive.Commands.Batch   (cancelCollaborativeTouch, collaborativeTouch)
-import           Reactive.Commands.Command (Command)
-import           Reactive.Commands.Graph   (allNodes, allNodes')
-import           Reactive.State.Global     (State)
-import qualified Reactive.State.Global     as Global
+import           Reactive.Commands.Batch                  (cancelCollaborativeTouch, collaborativeTouch)
+import           Reactive.Commands.Command                (Command)
+import           Reactive.Commands.Graph                  (allNodes, allNodes')
 import           Reactive.Commands.Graph.SelectionHistory
+import           Reactive.State.Global                    (State, inRegistry)
+import qualified Reactive.State.Global                    as Global
+import qualified Reactive.State.UIRegistry                as UIRegistry
 
 
 
@@ -37,6 +38,7 @@ unselectAll = do
             ( node & Node.isSelected .~ False
             , Just $ node ^. Node.nodeId))
             (const Nothing)
+    inRegistry $ UIRegistry.focusedWidget .= def
     cancelCollaborativeTouch $ catMaybes nodesToCancelTouch
 
 unselectAllAndDropSelectionHistory :: Command State ()
