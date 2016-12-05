@@ -1,0 +1,51 @@
+// resets
+
+svg * {
+    pointer-events: all; // Tweak for using events on SVG elements
+}
+
+
+// node
+
+.node {
+    .self {
+        r: 5;
+    }
+}
+
+.node--collapsed {
+    .self {
+        cx: 20;
+        cy: 20;
+    }
+}
+
+
+// selection mark
+
+.selection-mark {
+    fill:       none;
+    stroke:     transparent;
+    transition: all 100ms ease-in-out;
+    stroke:     orange;
+    opacity:    0;
+}
+
+.node--selected {
+    .selection-mark {
+        opacity: 1;
+    }
+}
+
+.node--collapsed {
+    .selection-mark {
+        cx: 20;
+        cy: 20;
+        r:  20;
+    }
+    &.node--selected {
+        .selection-mark {
+            r: 30;
+        }
+    }
+}

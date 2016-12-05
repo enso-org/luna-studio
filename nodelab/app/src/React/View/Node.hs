@@ -28,36 +28,30 @@ node nodeRef = React.defineControllerView
             [ onClick       $ \_ e -> Store.dispatch nodeRef $ UI.NodeEvent $ Node.Click e nodeId
             , onDoubleClick $ \_ _ -> Store.dispatch nodeRef $ UI.NodeEvent $ Node.Enter nodeId
             , onMouseDown   $ \_ e -> Store.dispatch nodeRef $ UI.NodeEvent $ Node.MouseDown e nodeId
-            , "className" $= "node"
-            , "viewbox"   $= "0 0 40 40"
+            , "className" $= (fromString $ "node node--collapsed" <> (if n ^. Node.isSelected then " node--selected" else []))
             , "transform" $= translate
             ] $ do
                 circle_
+                    [ "className" $= "selection-mark"
+                    ] $ mempty
+                circle_
                     [ "className"   $= "self"
-                    , "cx"          $= "20"
-                    , "cy"          $= "20"
-                    , "r"           $= "5"
-                    , "fill"        $= if n ^. Node.isSelected then "#8A1E17" else "#8ABEB7" --TODO select node another way
+                    , "fill"        $= "#8ABEB7"
                     ] $ mempty
-                circle_
-                    [ "className"   $= "input"
-                    , "cx"          $= "20"
-                    , "cy"          $= "20"
-                    , "r"           $= "18.5"
-                    , "strokeWidth" $= "3px"
-                    , "stroke"      $= "#8ABEB7"
-                    , "fill"        $= "none"
-                    , "clipPath"    $= "url(#clipInput)"
+                path_
+                    [ "className"   $= "input input--01"
+                    , "fill"        $= "#8ABEB7"
+                    , "d"           $= "M18 0 A 20 20 0 0 0 0 18 H3 A 17 17 0 0 1 18 3"
                     ] $ mempty
-                circle_
-                    [ "className"   $= "output"
-                    , "cx"          $= "20"
-                    , "cy"          $= "20"
-                    , "r"           $= "18.5"
-                    , "strokeWidth" $= "3px"
-                    , "stroke"      $= "#B294BB"
-                    , "fill"        $= "none"
-                    , "clipPath"    $= "url(#clipOutput)"
+                path_
+                    [ "className"   $= "input input--02"
+                    , "fill"        $= "#B5BD68"
+                    , "d"           $= "M0 22 A 20 20 0 0 0 18 40 V37 A 17 17 0 0 1 3 22"
+                    ] $ mempty
+                path_
+                    [ "className"   $= "output output--01"
+                    , "fill"        $= "#B294BB"
+                    , "d"           $= "M22 0 A 20 20.1 0 0 1 22 40 V37 A 17 17.1 0 0 0 22 3"
                     ] $ mempty
 
 

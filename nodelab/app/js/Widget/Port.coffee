@@ -18,7 +18,7 @@ class Port
   constructor: (widgetId, isSelf) ->
     @isSelf = isSelf
     @uniforms =
-      size:      { type: 'v2', value: new THREE.Vector2(width, height) }
+      size:      {type: 'v2', value: new THREE.Vector2(width, height)}
       color:     {type: 'v4', value: new (THREE.Color)('red')}
       colorFar:  {type: 'v4', value: colorFar}
       highlight: {type: 'i',  value: 0}
@@ -55,4 +55,3 @@ class Port
   updateMouseDist: (mouseDist) -> @uniforms.mouseDist.value = mouseDist
   widgetMoved: -> null
 module.exports = Port
-

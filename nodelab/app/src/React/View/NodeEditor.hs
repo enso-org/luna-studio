@@ -27,23 +27,6 @@ nodeEditor ref = React.defineControllerView name ref $ \store () -> do
         , "xmlns:xlink" $= "http://www.w3.org/1999/xlink"
         ]
         $ do
-        defs_
-            $ do
-                clipPath_ [ "id" $= "clipInput" ] $ do
-                    rect_
-                        [ "x"      $= "0"
-                        , "y"      $= "0"
-                        , "height" $= "40"
-                        , "width"  $= "18"
-                        ] $ do mempty
-                clipPath_ [ "id" $= "clipOutput" ] $ do
-                    rect_
-                        [ "x"      $= "22"
-                        , "y"      $= "0"
-                        , "height" $= "40"
-                        , "width"  $= "18"
-                        ] $ do mempty
-
         forM_ (store ^. dt . NodeEditor.nodes . to HashMap.elems) $ \nodeRef -> do
             node_ nodeRef
         forM_ (store ^. dt . NodeEditor.connections . to HashMap.elems) $ \connectionRef -> do
