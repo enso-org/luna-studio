@@ -51,7 +51,7 @@ import           Empire.API.Data.Node              (NodeId)
 import qualified Empire.API.Data.Node              as Node
 
 
---TODO[react] implement
+
 toAction :: Event -> Maybe (Command State ())
 toAction (UI (NodeEvent (Node.MouseDown evt nodeId))) = Just $ do
     Global.getNode nodeId >>= mapM_ (Node.selectNode (mouseShiftKey evt))
@@ -61,49 +61,8 @@ toAction (UI (AppEvent   App.MouseUp)) = Just stopDrag
 toAction (UI (AppEvent  (App.MouseMove evt))) = Just $ do
     let pos = Vector2 (mouseScreenX evt) (mouseScreenY evt)
     handleMove pos $ mouseShiftKey evt
-
--- toAction (Mouse _ (Mouse.Event Mouse.Pressed  pos Mouse.LeftButton (KeyMods _ False False False) (Just _))) = Just $ startDrag pos
--- toAction (Mouse _ (Mouse.Event Mouse.Moved    pos Mouse.LeftButton (KeyMods True False False False) _))        = Just $ handleMove pos False
--- toAction (Mouse _ (Mouse.Event Mouse.Moved    pos Mouse.LeftButton (KeyMods False  False False False) _))        = Just $ handleMove pos True
--- toAction (Mouse _ (Mouse.Event Mouse.Released _   Mouse.LeftButton _ _)) = Just stopDrag
 toAction _ = Nothing
 
---
--- isNodeUnderCursor :: Command UIRegistry.State Bool
--- isNodeUnderCursor = isJust <$> runMaybeT act where
---     act = do
---         Just wid <- lift $ use UIRegistry.widgetOver
---         Just w   <- lift (UIRegistry.lookupTypedM wid :: Command UIRegistry.State (Maybe (WidgetFile Model.Node)))
---         return w
---
--- isNodeLabelUnderCursor :: Command UIRegistry.State Bool
--- isNodeLabelUnderCursor = fromMaybe False <$> runMaybeT act where
---     act = do
---         Just wid <- lift $ use UIRegistry.widgetOver
---         Just w   <- lift (UIRegistry.lookupTypedM wid :: Command UIRegistry.State (Maybe (WidgetFile Label)))
---         Just p   <- return $ w ^. parent
---         Just _   <- lift (UIRegistry.lookupTypedM p :: Command UIRegistry.State (Maybe (WidgetFile Model.Node)))
---         exId <- lift $ Node.expressionId p
---         return $ wid == exId
---
--- getNodePosUnderCursor :: Command UIRegistry.State (Maybe Position)
--- getNodePosUnderCursor = runMaybeT $ do
---     (Just id) <- lift $ use UIRegistry.widgetOver
---     (Just w ) <- lift $ (UIRegistry.lookupTypedM id :: Command UIRegistry.State (Maybe (WidgetFile Model.Node)))
---     return $ w ^. Widget.widget . Model.position
---
--- getNodePosLabelUnderCursor :: Command UIRegistry.State (Maybe Position)
--- getNodePosLabelUnderCursor = runMaybeT act >>= return . join where
---     act = do
---         (Just id) <- lift $ use UIRegistry.widgetOver
---         (Just w)  <- lift $ (UIRegistry.lookupTypedM id :: Command UIRegistry.State (Maybe (WidgetFile Label)))
---         (Just p)  <- return $ w ^. parent
---         (Just n)  <- lift $ (UIRegistry.lookupTypedM p :: Command UIRegistry.State (Maybe (WidgetFile Model.Node)))
---         exId <- lift $ Node.expressionId p
---         return $ if id == exId
---             then Just $ n ^. Widget.widget . Model.position
---             else Nothing
---
 startDrag :: Vector2 Int -> Command State ()
 startDrag coord = do
     --TODO[react]
@@ -111,7 +70,7 @@ startDrag coord = do
     -- nodePos'    <- zoom Global.uiRegistry getNodePosLabelUnderCursor
     -- withJust (nodePos `mplus` nodePos') $ \widgetPos -> do
         Global.drag . Drag.history ?= DragHistory coord coord coord def -- widgetPos
---
+
 delay :: Vector2 Double -> Double -> Bool
 delay (Vector2 x y) d = x < -d || x > d || y > d || y < -d
 
