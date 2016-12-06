@@ -1,3 +1,8 @@
+// variables
+
+@selectColor: orange; //#33CCFF;
+
+
 // resets
 
 svg * {
@@ -8,18 +13,28 @@ svg * {
 // node
 
 .node {
-    .self {
+    .port--self {
         r: 5;
     }
 }
 
 .node--collapsed {
-    .self {
+    .port--self {
         cx: 20;
         cy: 20;
     }
 }
 
+.port {
+    &:hover {
+        stroke: @selectColor;
+        stroke-width: 2px;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+        fill: @selectColor;
+
+    }
+}
 
 // selection mark
 
@@ -27,7 +42,7 @@ svg * {
     fill:       none;
     stroke:     transparent;
     transition: all 100ms ease-in-out;
-    stroke:     orange;
+    stroke:     @selectColor;
     opacity:    0;
 }
 
