@@ -15,7 +15,6 @@ import qualified Event.Clipboard                   as Clipboard
 import           Event.Event                       (Event (..))
 import           Event.Keyboard                    (KeyMods (..))
 import qualified Event.Keyboard                    as Keyboard
-import qualified Object.Widget                     as Widget
 import qualified Object.Widget.Node                as UINode
 import           React.Store                       (widget)
 import           Reactive.Commands.Batch           (addSubgraph)
