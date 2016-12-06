@@ -1,16 +1,17 @@
 {-# LANGUAGE OverloadedStrings #-}
 module React.View.NodeEditor where
 
-import qualified Data.HashMap.Strict    as HashMap
+import qualified Data.HashMap.Strict     as HashMap
 import           React.Flux
-import qualified React.Flux             as React
+import qualified React.Flux              as React
 import           Utils.PreludePlus
 
-import           React.Store            (Ref, dt)
-import           React.Store.NodeEditor (NodeEditor)
-import qualified React.Store.NodeEditor as NodeEditor
-import           React.View.Connection  (connection_)
-import           React.View.Node        (node_)
+import           React.Store             (Ref, dt)
+import           React.Store.NodeEditor  (NodeEditor)
+import qualified React.Store.NodeEditor  as NodeEditor
+import           React.View.Connection   (connection_)
+import           React.View.Node         (node_)
+import           React.View.SelectionBox (selectionBox_)
 
 
 name :: JSString
@@ -33,6 +34,7 @@ nodeEditor ref = React.defineControllerView name ref $ \store () -> do
                     node_ nodeRef
                 forM_ (store ^. dt . NodeEditor.connections . to HashMap.elems) $ \connectionRef -> do
                     connection_ connectionRef
+                selectionBox_ (store ^. dt . NodeEditor.selectionBox)
 
 nodeEditor_ :: Ref NodeEditor -> ReactElementM ViewEventHandler ()
 nodeEditor_ ref = React.view (nodeEditor ref) () mempty
