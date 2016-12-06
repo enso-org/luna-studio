@@ -26,7 +26,7 @@ app ref = React.defineControllerView
     name ref $ \store () -> do
         let s = store ^. dt
         div_ [ onKeyDown   $ \_ _ -> dispatch (s ^. App.nodeSearcher) $ UI.NodeSearcherEvent $ NS.Display
-             , onMouseUp   $ \_ _ -> dispatch ref $ UI.AppEvent $ App.MouseUp
+             , onMouseUp   $ \_ e -> dispatch ref $ UI.AppEvent $ App.MouseUp e
              , onMouseMove $ \_ e -> dispatch ref $ UI.AppEvent $ App.MouseMove e
              , "tabindex" $= "0"] $ do
             breadcrumbs_ (s ^. App.breadcrumbs)

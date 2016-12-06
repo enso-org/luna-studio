@@ -1,5 +1,4 @@
 {-# LANGUAGE DeriveAnyClass #-}
-{-# LANGUAGE ImplicitParams #-}
 
 module EmpireUtils (
       runEmp
@@ -33,28 +32,29 @@ import           Empire.Data.Graph             (Graph)
 import qualified Empire.Data.Library           as Library (body)
 import           Empire.Empire                 (CommunicationEnv(..), Env, Error, Empire, InterpreterEnv(..), runEmpire)
 import           Prologue                      hiding (mapping, toList, (|>))
+import           Data.Reflection               (Given(..), give)
 
 import           Test.Hspec                    (expectationFailure)
 
 
-runEmp :: CommunicationEnv -> ((?graphLoc :: GraphLocation) => Empire a) -> IO (Either Error a, Env)
+runEmp :: CommunicationEnv -> (Given GraphLocation => Empire a) -> IO (Either Error a, Env)
 runEmp env act = runEmpire env def $ do
     (pid, _) <- createProject Nothing "project1"
     (lid, _) <- createLibrary pid (Just "lib1") "/libs/lib1"
     let toLoc = GraphLocation pid lid
-    let ?graphLoc = toLoc $ Breadcrumb [] in act
+    give (toLoc $ Breadcrumb []) act
 
-evalEmp :: CommunicationEnv -> ((?graphLoc :: GraphLocation) => Empire a) -> IO (Either Error a)
+evalEmp :: CommunicationEnv -> (Given GraphLocation => Empire a) -> IO (Either Error a)
 evalEmp env act = fst <$> runEmp env act
 
 runEmp' :: CommunicationEnv -> Env -> Graph ->
-              ((?graphLoc :: GraphLocation) => Empire a) -> IO (Either Error a, Env)
+              (Given GraphLocation => Empire a) -> IO (Either Error a, Env)
 runEmp' env st newGraph act = runEmpire env st $ do
     pid <- (fst . head) <$> listProjects
     lid <- (fst . head) <$> listLibraries pid
     withLibrary pid lid $ Library.body .= newGraph
     let toLoc = GraphLocation pid lid
-    let ?graphLoc = toLoc $ Breadcrumb [] in act
+    give (toLoc $ Breadcrumb []) act
 
 graphIDs :: GraphLocation -> Empire [NodeId]
 graphIDs loc = do
@@ -80,8 +80,8 @@ withResult :: Either String a -> (a -> IO b) -> IO b
 withResult (Left err)  _   = expectationFailure err >> throwM DummyB
 withResult (Right res) act = act res
 
-top :: (?graphLoc :: GraphLocation) => GraphLocation
-top = ?graphLoc
+top :: Given GraphLocation => GraphLocation
+top = given
 
 infixl 5 |>
 (|>) :: GraphLocation -> NodeId -> GraphLocation

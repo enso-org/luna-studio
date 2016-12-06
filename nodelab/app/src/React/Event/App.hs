@@ -13,7 +13,7 @@ import           Utils.PreludePlus
 
 data Event = ToggleCodeEditor
            | MouseMove  MouseEvent
-           | MouseUp
+           | MouseUp    MouseEvent
             deriving (Show, Generic, NFData, Typeable)
 
 instance ToJSON   Event
