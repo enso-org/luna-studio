@@ -19,6 +19,7 @@ import           React.Store.SelectionBox          (SelectionBox (SelectionBox))
 import qualified React.Store.SelectionBox          as SelectionBox
 import           Reactive.Commands.Command         (Command)
 import           Reactive.Commands.Graph.Selection (focusSelectedNode, modifySelectionHistory, selectNodes, selectedNodes, unselectAll)
+import qualified Reactive.State.Drag               as Drag
 import           Reactive.State.Global             (State)
 import qualified Reactive.State.Global             as Global
 import qualified Reactive.State.Graph              as Graph
@@ -28,14 +29,13 @@ import qualified Reactive.State.MultiSelection     as MultiSelection
 
 
 toAction :: Event -> Maybe (Command State ())
---TODO[react] implement
--- toAction (UI (NodeEditorEvent (NodeEditor.MouseDown evt))) = Just $ do
---     let pos = Vector2 (mousePageX evt) (mousePageY evt)
---     startDrag pos
--- toAction (UI (AppEvent  (App.MouseUp   _  ))) = Just $ stopDrag
--- toAction (UI (AppEvent  (App.MouseMove evt))) = Just $ do
---     let pos = Vector2 (mousePageX evt) (mousePageY evt)
---     handleMove pos
+toAction (UI (NodeEditorEvent (NodeEditor.MouseDown evt))) = Just $ do
+    let pos = Vector2 (mousePageX evt) (mousePageY evt)
+    startDrag pos
+toAction (UI (AppEvent  (App.MouseUp   _  ))) = Just $ stopDrag
+toAction (UI (AppEvent  (App.MouseMove evt))) = Just $ do
+    let pos = Vector2 (mousePageX evt) (mousePageY evt)
+    handleMove pos
 --TODO[react] implement
 -- toAction (Keyboard _ (Keyboard.Event Keyboard.Press 'A'   _)) = Just selectAll
 -- toAction (Keyboard _ (Keyboard.Event Keyboard.Down  '\27' _)) = Just unselectAll
@@ -44,8 +44,10 @@ toAction _ = Nothing
 
 startDrag :: Vector2 Int -> Command State ()
 startDrag coord = do
-    Global.multiSelection . MultiSelection.history ?= DragHistory coord coord
-    unselectAll
+    nodeDrag <- use $ Global.drag . Drag.history
+    unless (isJust nodeDrag) $ do
+        Global.multiSelection . MultiSelection.history ?= DragHistory coord coord
+        unselectAll
 
 handleMove :: Vector2 Int -> Command State ()
 handleMove coord = do
