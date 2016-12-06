@@ -11,7 +11,7 @@ import           React.Store.Node  (Node)
 import qualified React.Store.Node  as Node
 import           Utils.PreludePlus
 import           Utils.Vector      (x, y)
-
+import React.View.Port (port_)
 
 name :: JSString
 name = "node-editor"
@@ -57,6 +57,7 @@ node nodeRef = React.defineControllerView
                     , "stroke"      $= "#B294BB"
                     , "d"           $= "M22 0 A 20 20.1 0 0 1 22 40 V37 A 17 17.1 0 0 0 22 3 V0.1"
                     ] $ mempty
+                forM_ (n ^. Node.ports) $ port_ nodeRef
 
 
 node_ :: Ref Node -> ReactElementM ViewEventHandler ()
