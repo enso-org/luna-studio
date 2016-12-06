@@ -30,6 +30,7 @@ import           React.Store.Connection         (Connection)
 import           React.Store.Node               (Node)
 import           React.Store.NodeEditor         (NodeEditor)
 import qualified React.Store.NodeEditor         as NodeEditor
+import           React.Store.SelectionBox       (SelectionBox)
 import qualified Reactive.State.Camera          as Camera
 import qualified Reactive.State.Collaboration   as Collaboration
 import qualified Reactive.State.Connect         as Connect
@@ -87,6 +88,9 @@ withCodeEditor action = withApp $ (action . view App.codeEditor) <=< Store.get
 
 withBreadcrumbs :: (Ref Breadcrumbs -> Command State r) -> Command State r
 withBreadcrumbs action = withApp $ (action . view App.breadcrumbs) <=< Store.get
+
+withSelectionBox :: (Ref SelectionBox -> Command State r) -> Command State r
+withSelectionBox action = withNodeEditor $ (action . view NodeEditor.selectionBox) <=< Store.get
 
 withNode :: NodeId -> (Maybe (Ref Node) -> Command State r) -> Command State r
 withNode nodeId action = withNodeEditor $ (action . view (NodeEditor.nodes . at nodeId)) <=< Store.get

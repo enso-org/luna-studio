@@ -7,8 +7,8 @@ import           Utils.Vector
 
 data SelectionBox = SelectionBox
     { _visible :: Bool
-    , _start   :: Vector2 Double
-    , _end     :: Vector2 Double
+    , _start   :: Vector2 Int
+    , _end     :: Vector2 Int
     } deriving (Show)
 
 makeLenses ''SelectionBox

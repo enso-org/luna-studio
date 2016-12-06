@@ -6,7 +6,9 @@ import           React.Flux
 import qualified React.Flux              as React
 import           Utils.PreludePlus
 
-import           React.Store             (Ref, dt)
+import qualified Event.UI                as UI
+import qualified React.Event.NodeEditor  as NE
+import           React.Store             (Ref, dispatch, dt)
 import           React.Store.NodeEditor  (NodeEditor)
 import qualified React.Store.NodeEditor  as NodeEditor
 import           React.View.Connection   (connection_)
@@ -24,6 +26,7 @@ nodeEditor ref = React.defineControllerView name ref $ \store () -> do
         [ "className"   $= "graph"
         , "xmlns"       $= "http://www.w3.org/2000/svg"
         , "xmlns:xlink" $= "http://www.w3.org/1999/xlink"
+        , onMouseDown   $ \_ e -> dispatch ref $ UI.NodeEditorEvent $ NE.MouseDown e
         ]
         $ do
         g_
