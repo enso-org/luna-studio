@@ -33,6 +33,7 @@ node nodeRef = React.defineControllerView
             , onMouseDown   $ \_ e -> Store.dispatch nodeRef $ UI.NodeEvent $ Node.MouseDown e nodeId
             , "className" $= (fromString $ "node node--collapsed" <> (if n ^. Node.isSelected then " node--selected" else []))
             , "transform" $= translate
+            , "key"       $= fromString (show nodeId)
             ] $ do
                 circle_
                     [ "className" $= "selection-mark"

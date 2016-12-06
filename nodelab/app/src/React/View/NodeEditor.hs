@@ -25,7 +25,7 @@ nodeEditor ref = React.defineControllerView name ref $ \store () -> do
     svg_
         [ "className"   $= "graph"
         , "xmlns"       $= "http://www.w3.org/2000/svg"
-        , "xmlns:xlink" $= "http://www.w3.org/1999/xlink"
+        , "xmlnsXlink"  $= "http://www.w3.org/1999/xlink"
         , onMouseDown   $ \_ e -> dispatch ref $ UI.NodeEditorEvent $ NE.MouseDown e
         ]
         $ do

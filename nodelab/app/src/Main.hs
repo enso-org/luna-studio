@@ -70,6 +70,7 @@ runMainNetwork socket = do
         state <- newMVar initState
         CoreNetwork.makeNetworkDescription socket state
 
+    App.focus
     BatchCmd.listProjects projectListRequestId
 
 main :: IO ()

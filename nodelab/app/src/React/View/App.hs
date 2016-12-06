@@ -1,3 +1,4 @@
+{-# LANGUAGE JavaScriptFFI     #-}
 {-# LANGUAGE OverloadedStrings #-}
 module React.View.App where
 
@@ -28,10 +29,13 @@ app ref = React.defineControllerView
         div_ [ onKeyDown   $ \_ _ -> dispatch (s ^. App.nodeSearcher) $ UI.NodeSearcherEvent $ NS.Display
              , onMouseUp   $ \_ e -> dispatch ref $ UI.AppEvent $ App.MouseUp e
              , onMouseMove $ \_ e -> dispatch ref $ UI.AppEvent $ App.MouseMove e
-             , "tabindex" $= "0"] $ do
+             , "id"       $= "focus-root"
+             , "tabIndex" $= "-1"] $ do
             breadcrumbs_ (s ^. App.breadcrumbs)
             nodeEditor_ (s ^. App.nodeEditor)
             codeEditorToggle_ ref
             when (s ^. App.codeEditorVisible) $
                 codeEditor_ (s ^. App.codeEditor)
             nodeSearcher_ (s ^. App.nodeSearcher)
+
+foreign import javascript safe "document.getElementById('focus-root').focus()" focus :: IO ()

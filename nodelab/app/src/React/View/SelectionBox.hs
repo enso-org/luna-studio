@@ -29,7 +29,7 @@ selectionBox ref = React.defineControllerView name ref $ \store () -> do
           [ "width"     $= fromString (show width)
           , "height"    $= fromString (show height)
           , "style"     @= Aeson.object
-              [ "stroke-width" Aeson..= ("3" :: String)
+              [ "strokeWidth"  Aeson..= ("3" :: String)
               , "stroke"       Aeson..= ("rgb(255,255,255)" :: String)
               , "opacity"      Aeson..= ("0.2" :: String)
               ]
