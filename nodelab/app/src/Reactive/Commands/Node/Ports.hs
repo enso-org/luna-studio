@@ -30,32 +30,32 @@ import qualified Empire.API.Data.Port                as Port
 import           Empire.API.Data.PortRef             (toAnyPortRef)
 import qualified Empire.API.Data.ValueType           as ValueType
 
-makePorts :: Node -> [PortModel.Port]
-makePorts node = makePort <$> ports where
-    nodeId  = node ^. Node.nodeId
-    makePort port = PortModel.Port portRef angle (portCount portId) isOnly (colorPort port) False where
-        portId  = port ^. Port.portId
-        portRef = toAnyPortRef nodeId portId
-        angle   = PortModel.defaultAngle (portCount portId) portId
-    ports   = Map.elems $ node ^. Node.ports
-    portIds = Map.keys  $ node ^. Node.ports
-    portCount :: PortId -> Int
-    portCount (OutPortId _) = sum $ fmap isOut portIds where
-        isOut :: PortId -> Int
-        isOut (OutPortId _) = 1
-        isOut (InPortId  _) = 0
-    portCount (InPortId  _) = sum $ fmap isIn  portIds where
-        isIn :: PortId -> Int
-        isIn (OutPortId _)      = 0
-        isIn (InPortId (Arg _)) = 1
-        isIn (InPortId Self)    = 0
-    isOnly :: Bool
-    isOnly = 0 == (sum $ fmap shouldCount portIds) where
-        shouldCount :: PortId -> Int
-        shouldCount (OutPortId All)            = 0
-        shouldCount (InPortId Self)            = 0
-        shouldCount (OutPortId (Projection _)) = 1
-        shouldCount (InPortId (Arg _))         = 1
+-- makePorts :: Node -> [PortModel.Port] --TODO[react] code moved entirely to Object.Widget.Node
+-- makePorts node = makePort <$> ports where
+--     nodeId  = node ^. Node.nodeId
+--     makePort port = PortModel.Port portRef angle (portCount portId) isOnly (colorPort port) False where
+--         portId  = port ^. Port.portId
+--         portRef = toAnyPortRef nodeId portId
+--         angle   = PortModel.defaultAngle (portCount portId) portId
+--     ports   = Map.elems $ node ^. Node.ports
+--     portIds = Map.keys  $ node ^. Node.ports
+--     portCount :: PortId -> Int
+--     portCount (OutPortId _) = sum $ fmap isOut portIds where
+--         isOut :: PortId -> Int
+--         isOut (OutPortId _) = 1
+--         isOut (InPortId  _) = 0
+--     portCount (InPortId  _) = sum $ fmap isIn  portIds where
+--         isIn :: PortId -> Int
+--         isIn (OutPortId _)      = 0
+--         isIn (InPortId (Arg _)) = 1
+--         isIn (InPortId Self)    = 0
+--     isOnly :: Bool
+--     isOnly = 0 == (sum $ fmap shouldCount portIds) where
+--         shouldCount :: PortId -> Int
+--         shouldCount (OutPortId All)            = 0
+--         shouldCount (InPortId Self)            = 0
+--         shouldCount (OutPortId (Projection _)) = 1
+--         shouldCount (InPortId (Arg _))         = 1
 
 
 -- displayPorts :: WidgetId -> Node -> Command Global.State () --TODO[react] probably remove
