@@ -21,8 +21,14 @@ data Request = Request { _location  :: GraphLocation
                        } deriving (Generic, Show, Eq)
 type Result = Node
 
-type Response = Response.Response Request Result
-instance Response.ResponseResult Request Result
+data Inverse = Inverse { _nodeId    :: NodeId
+                       , _nodeType'  :: NodeType
+                       , _nodeMeta'  :: NodeMeta
+                       , _connectTo' :: Maybe NodeId
+                       } deriving (Generic, Show,Eq)
+
+type Response = Response.Response Request Inverse Result
+instance Response.ResponseResult Request Inverse Result
 
 data Update = Update { _location'  :: GraphLocation
                      , _node'      :: Node
@@ -30,10 +36,13 @@ data Update = Update { _location'  :: GraphLocation
 
 makeLenses ''Request
 makeLenses ''Update
+makeLenses ''Inverse
 
 instance Binary NodeType
 instance Binary Request
 instance Binary Update
+instance Binary Inverse
+
 
 instance G.GraphRequest Request where location = location
 

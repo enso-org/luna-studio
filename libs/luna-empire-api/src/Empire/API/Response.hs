@@ -19,24 +19,25 @@ instance (Binary a) => Binary (Status a)
 makeLenses ''Status
 makePrisms ''Status
 
-data Response req res = Response { _requestId :: UUID
-                                 , _request  :: req
-                                 , _status   :: Status res
-                                 }
+data Response req inv res = Response { _requestId :: UUID
+                                     , _request   :: req
+                                     , _inverse   :: Status (Maybe inv)
+                                     , _status    :: Status res
+                                     }
                       deriving (Generic, Show, Eq)
 
-type SimpleResponse req = Response req ()
+type SimpleResponse req inv = Response req inv ()
 
-class (MessageTopic (Request req), MessageTopic (Response req res), Binary req, Binary res) => ResponseResult req res | req -> res where
-  result :: Request req -> res -> Response req res
-  result (Request uuid req) payload = Response uuid req (Ok payload)
+class (MessageTopic (Request req), MessageTopic (Response req inv res), Binary req, Binary inv, Binary res) => ResponseResult req inv res | req -> inv res where
+  result :: Request req -> Maybe inv -> res -> Response req inv res
+  result (Request uuid req) inv payload = Response uuid req (Ok inv) (Ok payload)
 
-  error :: Request req -> String -> Response req res
-  error  (Request uuid req) msg     = Response uuid req (Error msg)
+  error :: Request req -> String-> Response req inv res
+  error  (Request uuid req) msg = Response uuid req (Error msg) (Error msg)
 
-ok :: (ResponseResult req (), MessageTopic (Response req ())) => Request req -> Response req ()
-ok (Request uuid req) = Response uuid req (Ok ())
+ok :: (ResponseResult req inv (), MessageTopic (Response req inv ())) => Request req -> Maybe inv -> Response req inv ()
+ok (Request uuid req) inv = Response uuid req (Ok inv) (Ok ())
 
 makeLenses ''Response
 
-instance (Binary req, Binary res) => Binary (Response req res)
+instance (Binary req, Binary res, Binary inv) => Binary (Response req inv res)

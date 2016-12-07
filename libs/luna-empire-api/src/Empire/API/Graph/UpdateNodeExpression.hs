@@ -16,8 +16,8 @@ data Request = Request { _location   :: GraphLocation
                        , _expression :: Text
                        } deriving (Generic, Show, Eq)
 
-type Response = Response.SimpleResponse Request
-instance Response.ResponseResult Request ()
+type Response = Response.SimpleResponse Request ()
+instance Response.ResponseResult Request () ()
 
 
 makeLenses ''Request

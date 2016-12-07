@@ -133,7 +133,8 @@ generateNodeId :: IO NodeId
 generateNodeId = UUID.nextRandom
 
 addExpressionNode :: GraphLocation -> Text -> NodeMeta -> Maybe NodeId -> Empire Node
-addExpressionNode location expression nodeMeta connectTo = case parseExpr expression of
+addExpressionNode location expression nodeMeta connectTo =
+    case parseExpr expression of
     Expression expression -> do
         nodeId <- liftIO generateNodeId
         Graph.addNodeCondTC (isNothing connectTo) location nodeId expression nodeMeta

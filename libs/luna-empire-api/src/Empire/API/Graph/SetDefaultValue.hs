@@ -17,8 +17,9 @@ data Request = Request { _location     :: GraphLocation
                        , _defaultValue :: PortDefault
                        } deriving (Generic, Show, Eq)
 
-type Response = Response.SimpleResponse Request
-instance Response.ResponseResult Request ()
+
+type Response = Response.SimpleResponse Request ()
+instance Response.ResponseResult Request () ()
 
 makeLenses ''Request
 instance Binary Request

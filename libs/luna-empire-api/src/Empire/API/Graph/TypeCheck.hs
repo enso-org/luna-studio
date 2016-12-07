@@ -18,8 +18,8 @@ makeLenses ''Request
 instance Binary Request
 instance G.GraphRequest Request where location = location
 
-type Response = Response.Response Request ()
-instance Response.ResponseResult Request ()
+type Response = Response.Response Request () ()
+instance Response.ResponseResult Request () ()
 
 
 topicPrefix = "empire.environment.debug.typecheck"

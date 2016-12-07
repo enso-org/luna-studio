@@ -17,8 +17,8 @@ data Request = Request { _location :: GraphLocation
                        , _updates  :: [SingleUpdate]
                        } deriving (Generic, Show, Eq)
 
-type Response = Response.SimpleResponse Request
-instance Response.ResponseResult Request ()
+type Response = Response.SimpleResponse Request ()
+instance Response.ResponseResult Request () ()
 
 data Update   = Update { _location' :: GraphLocation
                        , _updates'  :: [SingleUpdate]

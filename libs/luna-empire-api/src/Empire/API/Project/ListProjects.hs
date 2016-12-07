@@ -18,8 +18,8 @@ data Result  = Result { _projects :: [(ProjectId, Project)]
 data Update  = Update { _projects' :: [(ProjectId, Project)]
                       } deriving (Generic, Show, Eq)
 
-type Response = Response.Response Request Result
-instance Response.ResponseResult Request Result
+type Response = Response.Response Request () Result
+instance Response.ResponseResult Request () Result
 
 makeLenses ''Request
 makeLenses ''Result

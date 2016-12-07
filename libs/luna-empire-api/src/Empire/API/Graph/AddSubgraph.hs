@@ -17,11 +17,18 @@ data Request = Request { _location    :: GraphLocation
                        , _connections :: [Connection]
                        } deriving (Generic, Show, Eq)
 
-type Response = Response.SimpleResponse Request
-instance Response.ResponseResult Request ()
+data Inverse = Inverse { _location'    :: GraphLocation
+                       , _nodes'       :: [Node]
+                       , _connections' :: [Connection]
+                       } deriving (Generic, Show, Eq)
+
+type Response = Response.SimpleResponse Request Inverse
+instance Response.ResponseResult Request Inverse ()
 
 makeLenses ''Request
+makeLenses ''Inverse
 instance Binary Request
+instance Binary Inverse
 instance G.GraphRequest Request where location = location
 
 topicPrefix = "empire.graph.node.addSubgraph"

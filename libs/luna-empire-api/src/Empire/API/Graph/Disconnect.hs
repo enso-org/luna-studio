@@ -16,8 +16,13 @@ data Request = Request { _location :: GraphLocation
                        , _dst      :: InPortRef
                        } deriving (Generic, Show, Eq)
 
-type Response = Response.SimpleResponse Request
-instance Response.ResponseResult Request ()
+data Inverse = Inverse { _locationPrev  :: GraphLocation
+                       , _srcPrev       :: OutPort
+                       , _dstPrev       :: InPortRef
+                       } deriving (Generic, Show, Eq)
+
+type Response = Response.SimpleResponse Request Inverse
+instance Response.ResponseResult Request Inverse ()
 
 data Update = Update   { _location' :: GraphLocation
                        , _dst'      :: InPortRef
@@ -26,8 +31,10 @@ data Update = Update   { _location' :: GraphLocation
 
 makeLenses ''Request
 makeLenses ''Update
+makeLenses ''Inverse
 instance Binary Request
 instance Binary Update
+instance Binary Inverse
 
 instance G.GraphRequest Request where location = location
 

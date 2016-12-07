@@ -201,7 +201,7 @@ instance ToJSON ImportProject.Request
 instance ToJSON ImportProject.Result
 
 
-instance (ToJSON req, ToJSON res) => ToJSON (Response.Response req res)
+instance (ToJSON req, ToJSON res, ToJSON inv) => ToJSON (Response.Response req inv res)
 instance (ToJSON payload) => ToJSON (Response.Status payload)
 
 instance ToJSON NodeSearcherUpdate.Update
