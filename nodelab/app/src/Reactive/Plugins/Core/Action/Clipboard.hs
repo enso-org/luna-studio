@@ -54,12 +54,12 @@ pasteFromClipboard :: Text -> Command State ()
 pasteFromClipboard clipboardData = do
   let maybeSkeleton = decode $ encodeUtf8 clipboardData :: Maybe GraphSkeleton
   when (isJust maybeSkeleton) $ do
-      graphNodesIds <- (Set.fromList . HashMap.keys) <$> (use $ Global.graph . Graph.nodesMap)
+      graphNodesIds <- Set.fromList . HashMap.keys <$> use (Global.graph . Graph.nodesMap)
       let skeleton    = fromJust maybeSkeleton
           nodes       = view GraphSkeleton.nodesList skeleton
           connections = filter (\conn -> Set.member (conn ^. Connection.src . PortRef.srcNodeId) graphNodesIds) $ view GraphSkeleton.connectionsList skeleton
       mousePos <- use $ Global.mousePos
-      (Vector2 mousePosX mousePosY) <- zoom Global.camera $ Camera.screenToWorkspaceM mousePos
+      Vector2 mousePosX mousePosY <- zoom Global.camera $ Camera.screenToWorkspaceM mousePos
       let shiftX = mousePosX - (minimum $ map (^. Node.nodeMeta . NodeMeta.position . _1) nodes)
           shiftY = mousePosY - (minimum $ map (^. Node.nodeMeta . NodeMeta.position . _2) nodes)
           shiftNodeX :: Node -> Node

@@ -1,3 +1,4 @@
+{-# LANGUAGE MultiWayIf    #-}
 {-# LANGUAGE TupleSections #-}
 module Reactive.Plugins.Core.Action.Drag
     ( toAction
@@ -5,9 +6,12 @@ module Reactive.Plugins.Core.Action.Drag
 
 import           Utils.PreludePlus
 import           Utils.Vector
+import           Data.Map                          (Map)
+import qualified Data.Map                          as Map
 
-import           Object.Widget                     (WidgetFile, objectId, parent, widget, widgetPosition)
+import           Object.Widget                     (WidgetFile, parent, widget, widgetPosition)
 
+import           Control.Arrow
 import           Control.Monad.State               ()
 import           Control.Monad.Trans.Maybe
 
@@ -15,122 +19,103 @@ import           Event.Event
 import           Event.Keyboard                    hiding (Event)
 import qualified Event.Mouse                       as Mouse
 
+import qualified Empire.API.Data.Node              as Node
+import           Empire.API.Data.Node              (NodeId)
+
 import qualified Reactive.Commands.Batch           as BatchCmd
 import           Reactive.Commands.Command         (Command)
-import           Reactive.Commands.Graph           (allNodes, updateConnectionsForNodes, nodeIdToWidgetId)
+import           Reactive.Commands.Graph           (allNodes, nodeIdToWidgetId, updateConnectionsForNodes)
 import           Reactive.Commands.Graph.Selection (selectNodes, selectedNodes)
 import           Reactive.Commands.Node.Snap       (snap)
 import qualified Reactive.Commands.UIRegistry      as UICmd
 import qualified Reactive.State.Camera             as Camera
 import           Reactive.State.Drag               (DragHistory (..))
 import qualified Reactive.State.Drag               as Drag
-import           Reactive.State.Global             (State, inRegistry)
+import           Reactive.State.Global             (State)
 import qualified Reactive.State.Global             as Global
 import qualified Reactive.State.Graph              as Graph
 import qualified Reactive.State.UIRegistry         as UIRegistry
 
-import           Style.Layout                      (gridSize)
 
-import           Object.Widget                     (Position)
 import qualified Object.Widget                     as Widget
 import           Object.Widget.Label               (Label)
 import qualified Object.Widget.Node                as Model
 
 import qualified UI.Handlers.Node                  as Node
 
-import qualified Empire.API.Data.Node              as Node
 
 
 toAction :: Event -> Maybe (Command State ())
-toAction (Mouse _ (Mouse.Event Mouse.Pressed  pos Mouse.LeftButton (KeyMods _ False False False) (Just _))) = Just $ startDrag pos
-toAction (Mouse _ (Mouse.Event Mouse.Moved    pos Mouse.LeftButton (KeyMods True False False False) _))        = Just $ handleMove pos False
-toAction (Mouse _ (Mouse.Event Mouse.Moved    pos Mouse.LeftButton (KeyMods False  False False False) _))        = Just $ handleMove pos True
-toAction (Mouse _ (Mouse.Event Mouse.Released _   Mouse.LeftButton _ _)) = Just stopDrag
-toAction _ = Nothing
+toAction (Mouse _ (Mouse.Event Mouse.Pressed  pos Mouse.LeftButton (KeyMods True False False False)  (Just _))) = Just $ startDrag  pos False
+toAction (Mouse _ (Mouse.Event Mouse.Pressed  pos Mouse.LeftButton (KeyMods False False False False) (Just _))) = Just $ startDrag  pos True
+toAction (Mouse _ (Mouse.Event Mouse.Moved    pos Mouse.LeftButton (KeyMods True False False False)  _))        = Just $ handleMove pos False
+toAction (Mouse _ (Mouse.Event Mouse.Moved    pos Mouse.LeftButton (KeyMods False False False False) _))        = Just $ handleMove pos True
+toAction (Mouse _ (Mouse.Event Mouse.Released pos Mouse.LeftButton _ _))                                        = Just $ stopDrag   pos
+toAction _                                                                                                      = Nothing
 
 
-isNodeUnderCursor :: Command UIRegistry.State Bool
-isNodeUnderCursor = isJust <$> runMaybeT act where
-    act = do
-        Just wid <- lift $ use UIRegistry.widgetOver
-        Just w   <- lift (UIRegistry.lookupTypedM wid :: Command UIRegistry.State (Maybe (WidgetFile Model.Node)))
-        return w
+getNodeIdUnderCursorFromNode :: Command UIRegistry.State (Maybe NodeId)
+getNodeIdUnderCursorFromNode = runMaybeT $ do
+    Just wid <- lift $ use UIRegistry.widgetOver
+    Just w   <- lift (UIRegistry.lookupTypedM wid :: Command UIRegistry.State (Maybe (WidgetFile Model.Node)))
+    return $ w ^. Widget.widget . Model.nodeId
 
-isNodeLabelUnderCursor :: Command UIRegistry.State Bool
-isNodeLabelUnderCursor = fromMaybe False <$> runMaybeT act where
+getNodeIdUnderCursorFromLabel :: Command UIRegistry.State (Maybe NodeId)
+getNodeIdUnderCursorFromLabel = runMaybeT act >>= return . join where
     act = do
         Just wid <- lift $ use UIRegistry.widgetOver
         Just w   <- lift (UIRegistry.lookupTypedM wid :: Command UIRegistry.State (Maybe (WidgetFile Label)))
         Just p   <- return $ w ^. parent
-        Just _   <- lift (UIRegistry.lookupTypedM p :: Command UIRegistry.State (Maybe (WidgetFile Model.Node)))
+        Just n   <- lift (UIRegistry.lookupTypedM p :: Command UIRegistry.State (Maybe (WidgetFile Model.Node)))
         exId <- lift $ Node.expressionId p
-        return $ wid == exId
-
-getNodePosUnderCursor :: Command UIRegistry.State (Maybe Position)
-getNodePosUnderCursor = runMaybeT $ do
-    (Just id) <- lift $ use UIRegistry.widgetOver
-    (Just w ) <- lift $ (UIRegistry.lookupTypedM id :: Command UIRegistry.State (Maybe (WidgetFile Model.Node)))
-    return $ w ^. Widget.widget . Model.position
-
-getNodePosLabelUnderCursor :: Command UIRegistry.State (Maybe Position)
-getNodePosLabelUnderCursor = runMaybeT act >>= return . join where
-    act = do
-        (Just id) <- lift $ use UIRegistry.widgetOver
-        (Just w)  <- lift $ (UIRegistry.lookupTypedM id :: Command UIRegistry.State (Maybe (WidgetFile Label)))
-        (Just p)  <- return $ w ^. parent
-        (Just n)  <- lift $ (UIRegistry.lookupTypedM p :: Command UIRegistry.State (Maybe (WidgetFile Model.Node)))
-        exId <- lift $ Node.expressionId p
-        return $ if id == exId
-            then Just $ n ^. Widget.widget . Model.position
+        return $ if wid == exId
+            then Just $ n ^. Widget.widget . Model.nodeId
             else Nothing
 
-startDrag :: Vector2 Int -> Command State ()
-startDrag coord = do
-    nodePos     <- zoom Global.uiRegistry getNodePosUnderCursor
-    nodePos'    <- zoom Global.uiRegistry getNodePosLabelUnderCursor
-    withJust (nodePos `mplus` nodePos') $ \widgetPos -> do
-        Global.drag . Drag.history ?= DragHistory coord coord coord widgetPos
-
-delay :: Vector2 Double -> Double -> Bool
-delay (Vector2 x y) d = x < -d || x > d || y > d || y < -d
-
+startDrag :: Vector2 Int -> Bool -> Command State ()
+startDrag coord snapped = do
+    nodeId'  <- zoom Global.uiRegistry getNodeIdUnderCursorFromNode
+    nodeId'' <- zoom Global.uiRegistry getNodeIdUnderCursorFromLabel
+    withJust (nodeId' <|> nodeId'') $ \nodeId -> do
+        nodes' <- selectedNodes
+        let nodes = view Widget.widget <$> nodes'
+            nodesPos = Map.fromList $ (view Model.nodeId &&& view Model.position) <$> nodes
+        if snapped
+            then do
+                let snappedNodes = Map.map snap nodesPos
+                Global.drag . Drag.history ?= DragHistory coord nodeId snappedNodes
+                moveNodes snappedNodes
+            else Global.drag . Drag.history ?= DragHistory coord nodeId nodesPos
 
 handleMove :: Vector2 Int -> Bool -> Command State ()
 handleMove coord snapped = do
     factor <- use $ Global.camera . Camera.camera . Camera.factor
     dragHistory <- use $ Global.drag . Drag.history
-    withJust dragHistory $ \(DragHistory start previous current widgetPos) -> do
-        let delta = coord - current
+    withJust dragHistory $ \(DragHistory mousePos draggedNodeId nodesPos) -> do
+        let delta = coord - mousePos
             deltaWs = Camera.scaledScreenToWorkspace factor delta
-            newNodePos = widgetPos + deltaWs
-            newNodePosSnapped = snap newNodePos
-            newDeltaWsSnapped = newNodePosSnapped - widgetPos
-        if snapped then do
-            when ((lengthSquared newDeltaWsSnapped > 0.1) && (delay deltaWs $ fromIntegral gridSize)) $ do
-                 moveNodes newDeltaWsSnapped
-                 Global.drag . Drag.history ?= DragHistory start current coord newNodePosSnapped
-        else do
-            moveNodes deltaWs
-            Global.drag . Drag.history ?= DragHistory start current coord newNodePos
+            shift = if snapped
+                        then case Map.lookup draggedNodeId nodesPos of
+                            Just pos -> snap (pos + deltaWs) - pos
+                            Nothing  -> deltaWs
+                        else deltaWs
+        moveNodes $ Map.map (+shift) nodesPos
 
-moveNodes :: Vector2 Double -> Command State ()
-moveNodes delta = do
-    widgets <- selectedNodes
-    let selectedIdsWithPos = (\w -> (w ^. widget . Model.nodeId , w ^. widget . widgetPosition)) <$> widgets
-    forM_ selectedIdsWithPos $ \(id, pos) -> do
-        widgetIdMay <- nodeIdToWidgetId id
+moveNodes :: Map NodeId (Vector2 Double) -> Command State ()
+moveNodes nodesPos = do
+    forM_ (Map.toList nodesPos) $ \(nodeId, pos) -> do
+        widgetIdMay <- nodeIdToWidgetId nodeId
         withJust widgetIdMay $ \widgetId ->
-            zoom Global.uiRegistry $ UICmd.move widgetId (pos + delta)
-    updateConnectionsForNodes $ (view $ widget . Model.nodeId) <$> widgets
+            zoom Global.uiRegistry $ UICmd.move widgetId pos
+    updateConnectionsForNodes $ Map.keys nodesPos
 
-stopDrag :: Command State ()
-stopDrag = do
+stopDrag :: Vector2 Int -> Command State ()
+stopDrag coord = do
     dragHistory <- use $ Global.drag . Drag.history
-
-    withJust dragHistory $ \(DragHistory start current _ _) -> do
+    withJust dragHistory $ \(DragHistory start nodeId _) -> do
         Global.drag . Drag.history .= Nothing
-        case start == current of
-            False -> do
+        if start /= coord
+            then do
                 widgets <- allNodes
 
                 let selected = filter (^. widget . Model.isSelected) widgets
@@ -142,7 +127,4 @@ stopDrag = do
                     return $ (wid, ) <$> newMeta
                 BatchCmd.updateNodeMeta $ catMaybes updates
                 updateConnectionsForNodes $ fst <$> nodesToUpdate
-            True -> whenM (zoom Global.uiRegistry isNodeUnderCursor) $ do
-                (Just id) <- inRegistry $ use UIRegistry.widgetOver
-                (Just w ) <- inRegistry $ (UIRegistry.lookupTypedM id :: Command UIRegistry.State (Maybe (WidgetFile Model.Node)))
-                selectNodes [w ^. Widget.widget . Model.nodeId]
+            else selectNodes [nodeId]

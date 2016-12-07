@@ -7,8 +7,8 @@ import           Data.Construction             (destruct)
 import           Data.Container                (size)
 import           Old.Data.Prop                 ((#))
 import           Data.Layer_OLD.Cover_OLD      (uncover, covered)
-import           Data.Graph                    (Inputs (..), Succs (..))
-import           Data.Direction                (source)
+import           Old.Data.Graph                    (Inputs (..), Succs (..))
+import           Old.Data.Direction                (source)
 import           Data.List                     (nub)
 
 import           Empire.ASTOp                  (ASTOp)
@@ -37,4 +37,3 @@ performSafeRemoval ref = do
     toRemove <- fmap nub $ mapM (Builder.follow source) $ uncover node # Inputs
     removeNode ref
     mapM_ safeRemove toRemove
-

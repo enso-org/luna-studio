@@ -4,13 +4,13 @@ module Empire.ASTOps.Builder where
 
 import           Control.Monad                      (foldM)
 import           Control.Monad.Error                (throwError)
-import           Data.Direction                     (source)
+import           Old.Data.Direction                     (source)
 import qualified Data.HMap.Lazy                     as HMap
 import           Data.Layer_OLD.Cover_OLD           (covered, uncover)
 import           Data.List                          (dropWhileEnd)
 import           Data.Maybe                         (isJust, isNothing)
 import           Old.Data.Prop                      (prop, ( # ))
-import           Data.Record                        (ANY (..), caseTest, cons, of')
+import           Old.Data.Record                        (ANY (..), caseTest, cons, of')
 import           Prologue                           hiding (cons, ( # ))
 
 import           Empire.API.Data.Node               (NodeId)
