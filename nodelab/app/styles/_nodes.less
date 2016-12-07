@@ -1,14 +1,3 @@
-// variables
-
-@selectColor: orange; //#33CCFF;
-
-
-// resets
-
-svg * {
-    pointer-events: all; // Tweak for using events on SVG elements
-}
-
 // graph
 
 .graph {
@@ -20,6 +9,15 @@ svg * {
 // node
 
 .node {
+    position: relative;
+    .name {
+        fill:        @colorName;
+        text-anchor: middle;
+        font-weight: 100;
+        &::selection {
+            background: none;
+        }
+    }
     .port--self {
         r: 5;
     }
@@ -35,8 +33,8 @@ svg * {
 .port {
     stroke-width: 0px;
     &:hover {
-        stroke-width: 2px;
-        stroke-linecap: round;
+        stroke-width:    2px;
+        stroke-linecap:  round;
         stroke-linejoin: round;
 
     }
@@ -48,7 +46,7 @@ svg * {
     fill:       none;
     stroke:     transparent;
     transition: all 100ms ease-in-out;
-    stroke:     @selectColor;
+    stroke:     @colorSelect;
     opacity:    0;
 }
 
