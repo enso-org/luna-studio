@@ -40,11 +40,11 @@ codeEditor ref = React.defineControllerView name ref $ \store () -> do
                         , "height"     Aeson..= ("807px"  ::String)
                         , "width"      Aeson..= ("41px"   ::String)
                         ]
-                    ] $ do div_ [ "className" $= "ace_gutter-cell" ] $ elemString $ "1"
+                    ] $ do div_ [ "className" $= "ace_gutter-cell" ] $ elemString "1"
                 div_
                     [ "className" $= "ace_gutter-active-line"
                     , "style"     @= Aeson.object [ "height" Aeson..= ("19px"::String) ]
-                    ] $ mempty
+                    ] mempty
             div_
                 [ "className" $= "ace_scroller"
                 , "style"     @= Aeson.object
