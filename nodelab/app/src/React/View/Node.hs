@@ -1,6 +1,9 @@
 {-# LANGUAGE OverloadedStrings #-}
 module React.View.Node where
 
+
+import qualified Data.Text.Lazy    as Text
+
 import           React.Flux
 import qualified React.Flux        as React
 
@@ -30,6 +33,7 @@ node nodeRef = React.defineControllerView
             , onMouseDown   $ \_ e -> Store.dispatch nodeRef $ UI.NodeEvent $ Node.MouseDown e nodeId
             , "className" $= (fromString $ "node node--collapsed" <> (if n ^. Node.isSelected then " node--selected" else []))
             , "transform" $= translate
+            , "key"       $= fromString (show nodeId)
             ] $ do
                 circle_
                     [ "className" $= "selection-mark"
@@ -57,6 +61,9 @@ node nodeRef = React.defineControllerView
                     , "stroke"      $= "#B294BB"
                     , "d"           $= "M22 0 A 20 20.1 0 0 1 22 40 V37 A 17 17.1 0 0 0 22 3 V0.1"
                     ] mempty
+                text_
+                    [ "className"   $= "name"
+                    ] $ elemString $ Text.unpack $ n ^. Node.name
 
                 forM_ (n ^. Node.ports) $ port_ nodeRef
 

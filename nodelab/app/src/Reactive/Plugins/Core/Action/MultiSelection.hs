@@ -2,98 +2,91 @@
 
 module Reactive.Plugins.Core.Action.MultiSelection where
 
-import           Control.Monad.State               (modify)
-import qualified Data.Set                          as Set
-import           JS.MultiSelection                 (displaySelectionBox, hideSelectionBox)
+import           React.Flux                        (mousePageX, mousePageY)
 import           Utils.PreludePlus
-import           Utils.Vector                      (Vector2 (..), x, y)
+import           Utils.Vector                      (Vector2 (..), fromTuple, x, y)
 
-import           Object.Widget                     (objectId, widget)
+import           Empire.API.Data.Node              (Node)
+import qualified Empire.API.Data.Node              as Node
+import           Event.Event                       (Event (UI))
+import           Event.UI                          (UIEvent (AppEvent, NodeEditorEvent))
 import qualified Object.Widget.Node                as NodeModel
-
-import           Event.Event                       (Event (Keyboard, Mouse), JSState)
-import           Event.Keyboard                    (KeyMods (..))
-import qualified Event.Keyboard                    as Keyboard
-import qualified Event.Mouse                       as Mouse
-
-import qualified Reactive.State.Camera             as Camera
-import           Reactive.State.Global             (State, inRegistry)
+import qualified React.Event.App                   as App
+import qualified React.Event.NodeEditor            as NodeEditor
+import           React.Store                       (widget)
+import qualified React.Store                       as Store
+import           React.Store.SelectionBox          (SelectionBox (SelectionBox))
+import qualified React.Store.SelectionBox          as SelectionBox
+import           Reactive.Commands.Command         (Command)
+import           Reactive.Commands.Graph.Selection (focusSelectedNode, modifySelectionHistory, selectNodes, selectedNodes, unselectAll)
+import qualified Reactive.State.Drag               as Drag
+import           Reactive.State.Global             (State)
 import qualified Reactive.State.Global             as Global
+import qualified Reactive.State.Graph              as Graph
 import           Reactive.State.MultiSelection     (DragHistory (..))
 import qualified Reactive.State.MultiSelection     as MultiSelection
-import qualified Reactive.State.UIRegistry         as UIRegistry
-
-import           Reactive.Commands.Batch           (cancelCollaborativeTouch, collaborativeTouch)
-import           Reactive.Commands.Command         (Command, performIO)
-import           Reactive.Commands.Graph.Selection (focusSelectedNode, modifySelectionHistory, selectAll, selectedNodes, unselectAll,
-                                                    unselectAllAndDropSelectionHistory)
-import qualified Reactive.Commands.UIRegistry      as UICmd
-
-import           UI.Raycaster                      (getObjectsInRect)
 
 
---TODO[react] implement
+
 toAction :: Event -> Maybe (Command State ())
--- toAction (Mouse _       (Mouse.Event Mouse.Pressed  pos Mouse.LeftButton (KeyMods False False False False) Nothing)) = Just $ startDrag pos
--- toAction (Mouse jsstate (Mouse.Event Mouse.Moved    pos Mouse.LeftButton _ _)) = Just $ handleMove jsstate pos
--- toAction (Mouse _       (Mouse.Event Mouse.Released _   Mouse.LeftButton _ _)) = Just stopDrag
---
+toAction (UI (NodeEditorEvent (NodeEditor.MouseDown evt))) = Just $ do
+    let pos = Vector2 (mousePageX evt) (mousePageY evt)
+    startDrag pos
+toAction (UI (AppEvent  (App.MouseUp   _  ))) = Just $ stopDrag
+toAction (UI (AppEvent  (App.MouseMove evt))) = Just $ do
+    let pos = Vector2 (mousePageX evt) (mousePageY evt)
+    handleMove pos
+--TODO[react] implement
 -- toAction (Keyboard _ (Keyboard.Event Keyboard.Press 'A'   _)) = Just selectAll
 -- toAction (Keyboard _ (Keyboard.Event Keyboard.Down  '\27' _)) = Just unselectAll
 toAction _ = Nothing
 
 
--- startDrag :: Vector2 Int -> Command State ()
--- startDrag coord = do
---     Global.multiSelection . MultiSelection.history ?= DragHistory coord coord
---     unselectAll
---
--- handleMove :: JSState -> Vector2 Int -> Command State ()
--- handleMove jsstate coord = do
---     dragHistory <- use $ Global.multiSelection . MultiSelection.history
---     case dragHistory of
---         Nothing                          -> return ()
---         Just (DragHistory start _current) -> do
---             Global.multiSelection . MultiSelection.history ?= DragHistory start coord
---             updateSelection jsstate start coord
---             drawSelectionBox start coord
---
--- updateSelection :: JSState -> Vector2 Int -> Vector2 Int -> Command State ()
--- updateSelection jsstate start end = do
---     let leftTop     = Vector2 (min (start ^. x) (end ^. x)) (min (start ^. y) (end ^. y))
---         rightBottom = Vector2 (max (start ^. x) (end ^. x)) (max (start ^. y) (end ^. y))
---         ids         = getObjectsInRect jsstate leftTop (rightBottom - leftTop)
---     oldSelected <- selectedNodes
---     newSelectedFiles <-  inRegistry $ mapM widgetIdToNodeWidget ids
---     let oldSet     = Set.fromList $ view objectId <$> oldSelected
---         newSet     = Set.fromList $ view objectId <$> catMaybes newSelectedFiles
---         toSelect   = Set.difference newSet oldSet
---         toUnselect = Set.difference oldSet newSet
---     inRegistry $ do
---         forM_ toSelect   $ flip UICmd.update_ $ NodeModel.isSelected .~ True
---         forM_ toUnselect $ flip UICmd.update_ $ NodeModel.isSelected .~ False
---     do
---         let oldSet     = Set.fromList $ view (widget . NodeModel.nodeId) <$> oldSelected
---             newSet     = Set.fromList $ view (widget . NodeModel.nodeId) <$> catMaybes newSelectedFiles
---             toSelect   = Set.difference newSet oldSet
---             toUnselect = Set.difference oldSet newSet
---         collaborativeTouch $ Set.toList toSelect
---         cancelCollaborativeTouch $ Set.toList toUnselect
---
--- drawSelectionBox :: Vector2 Int -> Vector2 Int -> Command State ()
--- drawSelectionBox start end = do
---     camera <- use $ Global.camera . Camera.camera
---     let startSelectionBox = Camera.screenToWorkspace camera start
---         endSelectionBox   = Camera.screenToWorkspace camera end
---     performIO $ displaySelectionBox startSelectionBox endSelectionBox
---
--- stopDrag :: Command State ()
--- stopDrag = do
---     wasSelecting <- uses (Global.multiSelection . MultiSelection.history) isJust
---     when wasSelecting $ do
---         Global.multiSelection . MultiSelection.history .= Nothing
---         performIO hideSelectionBox
---         focusSelectedNode
---         selectedWidgets <- selectedNodes
---         let selectedNodesIds = map (^. widget . NodeModel.nodeId) selectedWidgets
---         modifySelectionHistory selectedNodesIds
+startDrag :: Vector2 Int -> Command State ()
+startDrag coord = do
+    nodeDrag <- use $ Global.drag . Drag.history
+    unless (isJust nodeDrag) $ do
+        Global.multiSelection . MultiSelection.history ?= DragHistory coord coord
+        unselectAll
+
+handleMove :: Vector2 Int -> Command State ()
+handleMove coord = do
+    dragHistory <- use $ Global.multiSelection . MultiSelection.history
+    case dragHistory of
+        Nothing                          -> return ()
+        Just (DragHistory start _current) -> do
+            Global.multiSelection . MultiSelection.history ?= DragHistory start coord
+            updateSelection start coord
+            drawSelectionBox start coord
+
+inRect :: Vector2 Int -> Vector2 Int -> Node -> Bool
+inRect leftTop rightBottom node = pos ^. x >= leftTop ^. x
+                               && pos ^. x <= rightBottom ^. x
+                               && pos ^. y <= leftTop ^. y
+                               && pos ^. y >= rightBottom ^. y
+    where pos = fmap round $ fromTuple $ node ^. Node.position
+
+updateSelection :: Vector2 Int -> Vector2 Int -> Command State ()
+updateSelection start end = do
+    let leftTop     = Vector2 (min (start ^. x) (end ^. x)) (max (start ^. y) (end ^. y))
+        rightBottom = Vector2 (max (start ^. x) (end ^. x)) (min (start ^. y) (end ^. y))
+    nodeIds <- map Node._nodeId . filter (inRect leftTop rightBottom) <$> use (Global.graph . Graph.nodes)
+    selectNodes nodeIds
+
+drawSelectionBox :: Vector2 Int -> Vector2 Int -> Command State ()
+drawSelectionBox start end = do
+    Global.withSelectionBox $ Store.modify_ $ const $ SelectionBox True start end
+
+hideSelectionBox :: Command State ()
+hideSelectionBox = Global.withSelectionBox $ Store.modify_ $ SelectionBox.visible .~ False
+
+stopDrag :: Command State ()
+stopDrag = do
+    wasSelecting <- uses (Global.multiSelection . MultiSelection.history) isJust
+    when wasSelecting $ do
+        Global.multiSelection . MultiSelection.history .= Nothing
+        hideSelectionBox
+        focusSelectedNode
+        selectedWidgets <- selectedNodes
+        let selectedNodesIds = map (^. widget . NodeModel.nodeId) selectedWidgets
+        modifySelectionHistory selectedNodesIds

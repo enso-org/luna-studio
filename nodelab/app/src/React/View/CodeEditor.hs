@@ -36,7 +36,7 @@ codeEditor ref = React.defineControllerView name ref $ \store () -> do
                     [ "className" $= "ace_layer ace_gutter-layer ace_folding-enabled"
                     , "style"     @= Aeson.object
                         [ "background" Aeson..= ("#1e1e1e"::String)
-                        , "margin-top" Aeson..= ("0px"    ::String)
+                        , "marginTop"  Aeson..= ("0px"    ::String)
                         , "height"     Aeson..= ("807px"  ::String)
                         , "width"      Aeson..= ("41px"   ::String)
                         ]
@@ -56,10 +56,10 @@ codeEditor ref = React.defineControllerView name ref $ \store () -> do
                 div_
                     [ "className" $= "ace_content"
                     , "style"     @= Aeson.object
-                        [ "margin-top"  Aeson..= ("0"    ::String)
+                        [ "marginTop"   Aeson..= ("0"    ::String)
                         , "width"       Aeson..= ("276px"::String)
                         , "height"      Aeson..= ("663px"::String)
-                        , "margin-left" Aeson..= ("0"    ::String)
+                        , "marginLeft"  Aeson..= ("0"    ::String)
                         ]
                     ] $ do
                     div_

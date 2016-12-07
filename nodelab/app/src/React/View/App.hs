@@ -1,3 +1,4 @@
+{-# LANGUAGE JavaScriptFFI     #-}
 {-# LANGUAGE OverloadedStrings #-}
 module React.View.App where
 
@@ -9,7 +10,6 @@ import qualified Event.UI                    as UI
 import           React.Store                 (Ref, dispatch, dt)
 import           React.Store.App             (App)
 import qualified React.Store.App             as App
-import qualified React.Store.NodeSearcher    as NS
 import           React.View.Breadcrumbs      (breadcrumbs_)
 import           React.View.CodeEditor       (codeEditor_)
 import           React.View.CodeEditorToggle (codeEditorToggle_)
@@ -25,13 +25,16 @@ app :: Ref App -> ReactView ()
 app ref = React.defineControllerView
     name ref $ \store () -> do
         let s = store ^. dt
-        div_ [ onKeyDown   $ \_ _ -> dispatch (s ^. App.nodeSearcher) $ UI.NodeSearcherEvent $ NS.Display
-             , onMouseUp   $ \_ _ -> dispatch ref $ UI.AppEvent $ App.MouseUp
+        div_ [ onKeyDown   $ \_ e -> dispatch ref $ UI.AppEvent $ App.KeyDown e
+             , onMouseUp   $ \_ e -> dispatch ref $ UI.AppEvent $ App.MouseUp e
              , onMouseMove $ \_ e -> dispatch ref $ UI.AppEvent $ App.MouseMove e
-             , "tabindex" $= "0"] $ do
+             , "id"       $= "focus-root"
+             , "tabIndex" $= "-1"] $ do
             breadcrumbs_ (s ^. App.breadcrumbs)
             nodeEditor_ (s ^. App.nodeEditor)
             codeEditorToggle_ ref
             when (s ^. App.codeEditorVisible) $
                 codeEditor_ (s ^. App.codeEditor)
             nodeSearcher_ (s ^. App.nodeSearcher)
+
+foreign import javascript safe "document.getElementById('focus-root').focus()" focus :: IO ()

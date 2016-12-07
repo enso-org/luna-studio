@@ -68,11 +68,11 @@ actions =  [ --Debug.toActionEv
         --    , General.toAction
         --    , Camera.toAction
            Graph.toAction
-        --    , MultiSelection.toAction
            , Drag.toAction
         --    , Connect.toAction
         --    , Navigation.toAction
         --    , Collaboration.toAction
+           , MultiSelection.toAction
            , NodeSearcher.toAction
            , App.toAction
            , Breadcrumbs.toAction
