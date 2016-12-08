@@ -26,7 +26,7 @@ import qualified React.Store.Node                  as Model
 import qualified Reactive.Commands.Batch           as BatchCmd
 import           Reactive.Commands.Command         (Command)
 import           Reactive.Commands.Graph           (updateConnectionsForNodes)
-import           Reactive.Commands.Graph.Selection (selectedNodes)
+import           Reactive.Commands.Graph.Selection (addToSelection, modifySelectionHistory, selectedNodes)
 import           Reactive.Commands.Node.Snap       (snap)
 import qualified Reactive.State.Camera             as Camera
 import           Reactive.State.Drag               (DragHistory (..))
@@ -34,17 +34,14 @@ import qualified Reactive.State.Drag               as Drag
 import           Reactive.State.Global             (State)
 import qualified Reactive.State.Global             as Global
 import qualified Reactive.State.Graph              as Graph
-import qualified UI.Handlers.Node                  as Node
 import           Utils.PreludePlus
 import           Utils.Vector
 
 
-
-
 toAction :: Event -> Maybe (Command State ())
 toAction (UI (NodeEvent (Node.MouseDown evt nodeId))) = Just $ do
-    when (not (mouseCtrlKey evt || mouseMetaKey evt)) $ do
-        Global.getNode nodeId >>= mapM_ Node.performSelect
+    when (not $ mouseCtrlKey evt || mouseMetaKey evt) $ do
+        addToSelection [nodeId] >>= modifySelectionHistory
     let pos = Vector2 (mouseScreenX evt) (mouseScreenY evt)
     startDrag nodeId pos $ not $ mouseShiftKey evt
 toAction (UI (AppEvent  (App.MouseUp evt))) = Just $ do

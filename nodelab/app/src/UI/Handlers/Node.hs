@@ -161,54 +161,55 @@ keyDownHandler '\x08' _ _ wid = triggerRemoveHandler wid
 keyDownHandler '\x2e' _ _ wid = triggerRemoveHandler wid
 keyDownHandler _      _ _ _  = return ()
 
-selectNode :: Bool -> Ref Node -> Command Global.State ()
-selectNode combine wid = do
-    let action = handleSelection combine
-    selectNode' action wid
-
-selectNode' :: (Ref Node -> Command Global.State ()) -> Ref Node -> Command Global.State ()
-selectNode' action wid = do
-    -- triggerFocusNodeHandler wid --TODO[react]
-    -- UICmd.takeFocus wid
-    action wid
-
-handleSelection :: Bool -> (Ref Node -> Command Global.State ())
-handleSelection False = performSelect
-handleSelection True  = toggleSelect
-
-performSelect :: Ref Node -> Command Global.State ()
-performSelect nodeRef = do
-    node <- Store.get nodeRef
-    let isSelected = node ^. Model.isSelected
-        nodeId     = node ^. Model.nodeId
-    unless isSelected $ do
-        unselectAll
-        Store.modify_ (Model.isSelected .~ True) nodeRef
-        modifySelectionHistory [nodeId]
-        collaborativeTouch [nodeId]
-
-toggleSelect :: Ref Node -> Command Global.State ()
-toggleSelect nodeRef = do
-    newNode <- flip Store.modifyM nodeRef $ do
-        Model.isSelected %= not
-        get
-    let nodeId = newNode ^. Model.nodeId
-    if newNode ^. Model.isSelected then
-        modifySelectionHistory [nodeId] >> collaborativeTouch [nodeId]
-    else
-        dropSelectionHistory >> cancelCollaborativeTouch [nodeId]
-
-
-unselectAll :: Command Global.State ()
-unselectAll = do
-    nodeRefs <- allNodes
-    nodesToCancelTouch <- forM nodeRefs $
-        Store.modifyIf (view Node.isSelected)
-            (\node -> ( node & Node.isSelected .~ False
-                      , Just $ node ^. Node.nodeId))
-            (const Nothing)
-
-    cancelCollaborativeTouch $ catMaybes nodesToCancelTouch
+-- TODO[react]: Unused code. Handled by Reactive.Commands.Graph.Selection
+-- selectNode :: Bool -> Ref Node -> Command Global.State ()
+-- selectNode combine wid = do
+--     let action = handleSelection combine
+--     selectNode' action wid
+--
+-- selectNode' :: (Ref Node -> Command Global.State ()) -> Ref Node -> Command Global.State ()
+-- selectNode' action wid = do
+--     -- triggerFocusNodeHandler wid --TODO[react]
+--     -- UICmd.takeFocus wid
+--     action wid
+--
+-- handleSelection :: Bool -> (Ref Node -> Command Global.State ())
+-- handleSelection False = performSelect
+-- handleSelection True  = toggleSelect
+--
+-- performSelect :: Ref Node -> Command Global.State ()
+-- performSelect nodeRef = do
+--     node <- Store.get nodeRef
+--     let isSelected = node ^. Model.isSelected
+--         nodeId     = node ^. Model.nodeId
+--     unless isSelected $ do
+--         unselectAll
+--         Store.modify_ (Model.isSelected .~ True) nodeRef
+--         modifySelectionHistory [nodeId]
+--         collaborativeTouch [nodeId]
+--
+-- toggleSelect :: Ref Node -> Command Global.State ()
+-- toggleSelect nodeRef = do
+--     newNode <- flip Store.modifyM nodeRef $ do
+--         Model.isSelected %= not
+--         get
+--     let nodeId = newNode ^. Model.nodeId
+--     if newNode ^. Model.isSelected then
+--         modifySelectionHistory [nodeId] >> collaborativeTouch [nodeId]
+--     else
+--         dropSelectionHistory >> cancelCollaborativeTouch [nodeId]
+--
+--
+-- unselectAll :: Command Global.State ()
+-- unselectAll = do
+--     nodeRefs <- allNodes
+--     nodesToCancelTouch <- forM nodeRefs $
+--         Store.modifyIf (view Node.isSelected)
+--             (\node -> ( node & Node.isSelected .~ False
+--                       , Just $ node ^. Node.nodeId))
+--             (const Nothing)
+--
+--     cancelCollaborativeTouch $ catMaybes nodesToCancelTouch
 
 showHidePortLabels :: Bool -> WidgetId -> Command UIRegistry.State ()
 showHidePortLabels show wid = do
@@ -237,8 +238,9 @@ allNodes = Global.withNodeEditor $
 allNodes' :: Command Global.State [WRef Node]
 allNodes' = mapM Store.get' =<< allNodes
 
-unselectNode :: WidgetId -> Command UIRegistry.State ()
-unselectNode = flip UICmd.update_ (Model.isSelected .~ False)
+-- TODO[react]: Unused code. Handled by Reactive.Commands.Graph.Selection
+-- unselectNode :: WidgetId -> Command UIRegistry.State ()
+-- unselectNode = flip UICmd.update_ (Model.isSelected .~ False)
 
 onClicked h = addHandler (MousePressedHandler h) mempty
 
