@@ -248,11 +248,13 @@ stdlibMethods :: [String]
 stdlibMethods = filter (elem '.') StdLibMock.symbolsNames
 
 handleGetProgram :: Request GetProgram.Request -> StateT Env BusT ()
-handleGetProgram = modifyGraph action success where
-    action (GetProgram.Request location) = (,,) <$> Graph.getGraph location
-                                                <*> Graph.getCode location
-                                                <*> Graph.decodeLocation location
-    success req (graph, code, crumb) = replyResult req $ GetProgram.Result graph (Text.pack code) crumb mockNSData
+handleGetProgram = modifyGraph (mtuple action) success where
+    action (GetProgram.Request location) = do
+        graph <- Graph.getGraph location
+        code <-  Graph.getCode location
+        crumb <- Graph.decodeLocation location
+        return $ GetProgram.Result graph (Text.pack code) crumb mockNSData
+    success req _ res = replyResult req () res
 
 handleDumpGraphViz :: Request DumpGraphViz.Request -> StateT Env BusT ()
 handleDumpGraphViz (Request _ request) = do
