@@ -1,3 +1,4 @@
+{-# LANGUAGE StandaloneDeriving #-}
 module Empire.Data.Graph where
 
 import           Data.Map.Lazy                     (Map)
@@ -15,7 +16,7 @@ data Graph = Graph { _ast                   :: AST
                    , _breadcrumbPortMapping :: Map NodeId (NodeId, NodeId)
                    , _lastNameId            :: Integer
                    , _insideNode            :: Maybe NodeId
-                   } deriving (Show)
+                   } deriving Show
 
 data NodeIDTarget = MatchNode     NodeRef
                   | AnonymousNode NodeRef
@@ -31,4 +32,5 @@ instance Default Graph where
     def = Graph defaultAST def empty Map.empty 0 Nothing
 
 defaultAST :: AST
-defaultAST = snd (runIdentity $ runNetworkBuilderT def star :: (NodeRef, AST))
+defaultAST = $notImplemented
+-- defaultAST = snd (runIdentity $ runNetworkBuilderT def star :: (NodeRef, AST))

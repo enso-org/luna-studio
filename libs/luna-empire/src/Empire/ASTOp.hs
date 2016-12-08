@@ -1,4 +1,5 @@
 {-# LANGUAGE ConstraintKinds      #-}
+{-# LANGUAGE DataKinds            #-}
 {-# LANGUAGE FlexibleContexts     #-}
 {-# LANGUAGE TypeOperators        #-}
 {-# LANGUAGE UndecidableInstances #-}
@@ -12,7 +13,7 @@ import           Data.Construction                       (Destructor, Unregister
 import           Old.Data.Graph.Builder                      (MonadBuilder)
 import           Old.Data.Graph.Builders                     (Connectible)
 import           Old.Data.Graph.Model.Events                 (ELEMENT (..))
-import           Empire.Data.AST                         (AST, EdgeRef, NodeRef)
+import           Empire.Data.AST                         (AST, EdgeRef, NodeRef, Marker, Meta, Inputs)
 import           Empire.Empire                           (Command, Error, empire)
 import qualified Old.Luna.Syntax.Model.Network.Builder.Class as Builder
 import           Old.Luna.Syntax.Model.Network.Builder.Term  (NetworkBuilderT, TermBuilder_OLD, runNetworkBuilderT)
@@ -22,26 +23,11 @@ import           Old.Luna.Syntax.Term.Class              (Acc, App, Blank, Cons,
 import qualified Old.Luna.Syntax.Term.Expr.Lit           as Lit
 import           Type.Inference
 
-type ASTOp m = ( MonadIO m
-               , MonadFix m
-               , MonadError Error m
-               , Destructor m NodeRef
-               , Unregister m EdgeRef
-               , MonadBuilder AST m
-               , MonadLocation m
-               , TermBuilder_OLD Blank      m NodeRef
-               , TermBuilder_OLD Lit.Number m NodeRef
-               , TermBuilder_OLD Lit.String m NodeRef
-               , TermBuilder_OLD Acc        m NodeRef
-               , TermBuilder_OLD App        m NodeRef
-               , TermBuilder_OLD Match      m NodeRef
-               , TermBuilder_OLD Var        m NodeRef
-               , TermBuilder_OLD Unify      m NodeRef
-               , TermBuilder_OLD Cons       m NodeRef
-               , TermBuilder_OLD Curry      m NodeRef
-               , TermBuilder_OLD Lam        m NodeRef
-               , Connectible NodeRef NodeRef m
-               )
+import Luna.IR (IRMonad, Accessibles, ExprNet, ExprLinkNet, ExprLinkLayers, ExprLayers, Model)
+import Luna.IR.Layer.Succs (Succs)
+
+type ASTOp m = (MonadThrow m, IRMonad m, Accessibles m ('[ExprNet, ExprLinkNet] <> ExprLayers '[Model, Marker, Meta, Inputs, Succs] <> ExprLinkLayers '[Model]))
+
 
 runBuilder :: NetworkBuilderT AST m (KnownTypeT ELEMENT NodeRef n) => Builder.NetworkBuilderT m a -> AST -> n (a, AST)
 runBuilder cmd ast = runInferenceT ELEMENT (Proxy :: Proxy NodeRef)

@@ -1,3 +1,4 @@
+{-# LANGUAGE ConstraintKinds #-}
 {-# LANGUAGE DataKinds     #-}
 {-# LANGUAGE TypeOperators #-}
 
@@ -5,21 +6,26 @@ module Empire.Data.AST where
 
 import           Prologue
 
-import Data.Container.Class                       (usedIxes)
-import Old.Data.Graph                                 (Node, Link, Ref, Edge, Cluster, nodeStore)
-import Old.Luna.Syntax.Model.Network.Builder.Term (NetGraph, NetNode, NetLayers, NetCluster)
-import Old.Luna.Runtime.Dynamics                  (Static)
-import Old.Luna.Syntax.Model.Network.Term         (Draft)
+import Luna.IR (IRMonad, AnyExpr, AnyExprLink, Accessibles, ExprNet, ExprLinkNet,
+                ExprLayers, Model, ExprLinkLayers, LayerData)
 
-type ASTNode       = NetNode
-type ASTEdge       = Link ASTNode
-type AST           = NetGraph
+import Empire.API.Data.Node (NodeId)
+import Empire.API.Data.NodeMeta (NodeMeta)
 
-type NodeRef       = Ref Node ASTNode
-type EdgeRef       = Ref Edge ASTEdge
-type ClusRef       = Ref Cluster NetCluster
+type AST           = ()
+type NodeRef       = AnyExpr
+type EdgeRef       = AnyExprLink
 
-type UncoveredNode = Draft Static NetLayers
+data Marker = Marker
+newtype NodeMarker = NodeMarker NodeId deriving (Show, Eq)
+type instance LayerData Marker t = Maybe NodeMarker
+
+data Meta = Meta
+type instance LayerData Meta t = Maybe NodeMeta
+
+data Inputs = Inputs
+type instance LayerData Inputs t = [EdgeRef]
 
 astNull :: AST -> Bool
-astNull ast = ast ^. _Wrapped . nodeStore . to usedIxes == [0]
+astNull = $notImplemented
+-- astNull ast = ast ^. elems . to Map.null

@@ -1,25 +1,23 @@
 {-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE TypeApplications #-}
 
 module Empire.ASTOps.Remove where
 
 import           Prologue                      hiding ((#))
 import           Data.Construction             (destruct)
-import           Data.Container                (size)
-import           Old.Data.Prop                 ((#))
 import           Data.Layer_OLD.Cover_OLD      (uncover, covered)
-import           Old.Data.Graph                    (Inputs (..), Succs (..))
-import           Old.Data.Direction                (source)
 import           Data.List                     (nub)
 
 import           Empire.ASTOp                  (ASTOp)
-import           Empire.Data.AST               (NodeRef)
+import           Empire.Data.AST               (NodeRef, Inputs)
 
-import qualified Old.Luna.Syntax.Model.Network.Builder as Builder
-import           Old.Luna.Syntax.Model.Network.Builder (Type (..))
+
+import Luna.IR as IR (delete, readLayer, source)
+import Luna.IR.Layer.Succs (Succs)
+import Data.Set (size)
 
 removeNode :: ASTOp m => NodeRef -> m ()
-removeNode ref = do
-    void $ destruct ref
+removeNode ref = delete ref
 
 safeRemove :: ASTOp m => NodeRef -> m ()
 safeRemove ref = do
@@ -29,11 +27,12 @@ safeRemove ref = do
         else performSafeRemoval ref
 
 getRefCount :: ASTOp m => NodeRef -> m Int
-getRefCount ref = (size . (# Succs)) <$> Builder.read ref
+getRefCount ref = IR.readLayer @Succs ref >>= pure . size
 
 performSafeRemoval :: ASTOp m => NodeRef -> m ()
 performSafeRemoval ref = do
-    node <- Builder.read ref
-    toRemove <- fmap nub $ mapM (Builder.follow source) $ uncover node # Inputs
+    node <- pure ref
+    inputs <- IR.readLayer @Inputs node
+    toRemove <- fmap nub $ mapM IR.source $ inputs
     removeNode ref
     mapM_ safeRemove toRemove
