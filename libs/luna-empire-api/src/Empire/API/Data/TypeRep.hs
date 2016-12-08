@@ -1,6 +1,6 @@
 module Empire.API.Data.TypeRep where
 
-import Prologue    hiding (intercalate)
+import Prologue    hiding (intercalate, TypeRep)
 
 import Data.Binary (Binary)
 import Data.List   (intercalate)
@@ -31,4 +31,3 @@ instance ToString TypeRep where
         toString' _ _ TStar = "*"
         toString' _ _ TBlank = ""
         toString' _ _ (TAcc n t) = toString' True True t <> "." <> n
-

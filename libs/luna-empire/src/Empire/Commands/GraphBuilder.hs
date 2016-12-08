@@ -9,7 +9,7 @@ import           Control.Monad.Except              (throwError)
 import           Control.Monad.State               hiding (when)
 import           Control.Monad.Trans.Maybe         (MaybeT (..), runMaybeT)
 
-import           Data.Graph                        (source)
+import           Old.Data.Graph                        (source)
 import qualified Data.IntMap                       as IntMap
 import           Data.Layer_OLD.Cover_OLD          (covered, uncover)
 import qualified Data.List                         as List
@@ -17,7 +17,7 @@ import           Data.Map                          (Map)
 import qualified Data.Map                          as Map
 import           Data.Maybe                        (catMaybes, fromMaybe, maybeToList)
 import           Old.Data.Prop                     (prop)
-import           Data.Record                       (ANY (..), caseTest, of')
+import           Old.Data.Record                       (ANY (..), caseTest, of')
 import qualified Data.Text.Lazy                    as Text
 import qualified Data.Tree                         as Tree
 import qualified Data.UUID                         as UUID
