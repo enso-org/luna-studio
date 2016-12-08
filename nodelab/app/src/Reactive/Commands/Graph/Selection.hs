@@ -70,8 +70,8 @@ selectPreviousNodes = do
             selectNodes' $ Set.toList nodeIdsSet
             selection <- map (^. widget . Node.nodeId) <$> selectedNodes
             case selection of
-                []        -> selectPreviousNodes
-                otherwise -> modifySelectionHistory selection
+                [] -> selectPreviousNodes
+                _  -> modifySelectionHistory selection
 
 selectedNodes :: Command State [WRef Node]
 selectedNodes = do

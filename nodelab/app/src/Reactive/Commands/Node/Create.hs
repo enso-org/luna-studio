@@ -11,35 +11,24 @@ import           Utils.Vector
 import           Control.Monad.State               (modify)
 import qualified Data.Text.Lazy                    as Text
 
+import           Empire.API.Data.Node              (Node, NodeId)
+import qualified Empire.API.Data.Node              as Node
+import qualified Empire.API.Data.NodeMeta          as NodeMeta
 import           Object.UITypes                    (WidgetId)
-import           React.Store                       (Ref, WRef (..), ref, widget)
+import           React.Store                       (Ref, WRef (..), widget)
 import qualified React.Store                       as Store
 import qualified React.Store.Node                  as Model
 import qualified React.Store.NodeEditor            as NodeEditor
-
+import qualified Reactive.Commands.Batch           as BatchCmd
 import           Reactive.Commands.Command         (Command)
 import           Reactive.Commands.Graph           (focusNode)
 import           Reactive.Commands.Graph.Selection (selectedNodes)
 import           Reactive.Commands.Node.NodeMeta   (modifyNodeMeta)
-import           Reactive.Commands.Node.Remove     (removeSelectedNodes)
-import qualified Reactive.Commands.UIRegistry      as UICmd
+import qualified Reactive.Commands.NodeSearcher    as NS
 import qualified Reactive.State.Camera             as Camera
-import           Reactive.State.Global             (State, inRegistry)
+import           Reactive.State.Global             (State)
 import qualified Reactive.State.Global             as Global
 import qualified Reactive.State.Graph              as Graph
-import           Reactive.State.UIRegistry         (addHandler, sceneGraphId)
-
-import qualified Reactive.Commands.Batch           as BatchCmd
-
-import           Data.HMap.Lazy                    (HTMap)
-import qualified UI.Handlers.Node                  as UINode
-
-import qualified Empire.API.Data.Breadcrumb        as Breadcrumb
-import           Empire.API.Data.Node              (Node, NodeId)
-import qualified Empire.API.Data.Node              as Node
-import qualified Empire.API.Data.NodeMeta          as NodeMeta
-
-import qualified Reactive.Commands.NodeSearcher    as NS
 
 
 addNode :: Node -> Command State ()

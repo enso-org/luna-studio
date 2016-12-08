@@ -6,21 +6,19 @@ module Reactive.Commands.Node.NodeMeta
 import           Utils.PreludePlus
 import           Utils.Vector
 
-import           Empire.API.Data.Node         (NodeId)
-import qualified Empire.API.Data.Node         as Node
-import           Empire.API.Data.NodeMeta     (NodeMeta (..))
-import qualified Empire.API.Data.NodeMeta     as NodeMeta
+import           Empire.API.Data.Node      (NodeId)
+import qualified Empire.API.Data.Node      as Node
+import           Empire.API.Data.NodeMeta  (NodeMeta (..))
+import qualified Empire.API.Data.NodeMeta  as NodeMeta
 
-import qualified Object.Widget.Node           as NodeModel
-import qualified React.Store                  as Store
+import qualified Object.Widget.Node        as NodeModel
+import qualified React.Store               as Store
 
-import qualified Reactive.Commands.Batch      as BatchCmd
-import           Reactive.Commands.Command    (Command)
-import           Reactive.Commands.Graph      (updateConnectionsForNodes)
-import qualified Reactive.Commands.UIRegistry as UICmd
-import           Reactive.State.Global        (inRegistry)
-import qualified Reactive.State.Global        as Global
-import qualified Reactive.State.Graph         as Graph
+import qualified Reactive.Commands.Batch   as BatchCmd
+import           Reactive.Commands.Command (Command)
+import           Reactive.Commands.Graph   (updateConnectionsForNodes)
+import qualified Reactive.State.Global     as Global
+import qualified Reactive.State.Graph      as Graph
 
 
 

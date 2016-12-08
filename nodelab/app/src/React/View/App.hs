@@ -26,7 +26,8 @@ app ref = React.defineControllerView
     name ref $ \store () -> do
         let s = store ^. dt
         div_ [ onKeyDown   $ \e k -> preventDefault e : dispatch ref (UI.AppEvent $ App.KeyDown k)
-             , onMouseUp   $ \_ m -> dispatch ref $ UI.AppEvent $ App.MouseUp m
+             , onMouseDown $ \_ m -> dispatch ref $ UI.AppEvent $ App.MouseDown m
+             , onMouseUp   $ \_ m -> dispatch ref $ UI.AppEvent $ App.MouseUp   m
              , onMouseMove $ \_ m -> dispatch ref $ UI.AppEvent $ App.MouseMove m
              , "id"       $= "focus-root"
              , "tabIndex" $= "-1"] $ do

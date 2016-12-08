@@ -18,8 +18,10 @@ name = "node-searcher"
 
 searcher :: Ref Searcher -> ReactView ()
 searcher ref = React.defineControllerView
-    name ref $ \nsStore () -> do
-        div_ $ elemString "Searcher"
+    name ref $ \store () -> do
+        let s = store ^. dt
+        when (s ^. Searcher.visible) $ do
+            input_ mempty
 
 
 searcher_ :: Ref Searcher -> ReactElementM ViewEventHandler ()

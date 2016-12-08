@@ -10,11 +10,8 @@ import           Data.HMap.Lazy                           (HTMap, TypeKey (..))
 import qualified Data.Text.Lazy                           as Text
 import           Utils.Vector
 
-import           Event.Keyboard                           (KeyMods (..))
-import qualified Event.Mouse                              as Mouse
-import           Object.Widget                            (CompositeWidget, DblClickHandler, KeyPressedHandler, ResizableWidget, UIHandlers,
-                                                           WidgetId, createWidget, dblClick, keyDown, mouseOut, mouseOver, mousePressed,
-                                                           updateWidget)
+import           Object.Widget                            (CompositeWidget, KeyPressedHandler, ResizableWidget, UIHandlers, WidgetId,
+                                                           createWidget, keyDown, mouseOut, mouseOver, updateWidget)
 
 import           React.Store                              (Ref, WRef)
 import qualified React.Store                              as Store
