@@ -10,6 +10,7 @@ import qualified React.Event.Breadcrumbs as Breadcrumbs
 import qualified React.Event.CodeEditor  as CodeEditor
 import qualified React.Event.Node        as Node
 import qualified React.Event.NodeEditor  as NodeEditor
+import qualified React.Event.Searcher    as Searcher
 
 
 data UIEvent = AppEvent          App.Event
@@ -17,6 +18,7 @@ data UIEvent = AppEvent          App.Event
              | CodeEditorEvent   CodeEditor.Event
              | NodeEditorEvent   NodeEditor.Event
              | NodeEvent         Node.Event
+             | SearcherEvent     Searcher.Event
                deriving (Show, Generic, NFData, Typeable)
 
 instance ToJSON   UIEvent

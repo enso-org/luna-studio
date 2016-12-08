@@ -1,4 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# OPTIONS_GHC -fno-warn-type-defaults #-}
 module React.View.Breadcrumbs (
     breadcrumbs,
     breadcrumbs_

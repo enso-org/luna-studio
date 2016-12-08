@@ -8,8 +8,7 @@ import           React.Flux
 import qualified React.Flux        as React
 
 import qualified Event.UI          as UI
-import           React.Store       (Ref, dt)
-import qualified React.Store       as Store
+import           React.Store       (Ref, dispatch, dt)
 import           React.Store.Node  (Node)
 import qualified React.Store.Node  as Node
 import           React.View.Port   (port_)
@@ -28,9 +27,9 @@ node nodeRef = React.defineControllerView
             pos = n ^. Node.position
             translate = fromString $ "translate(" <> show (pos ^. x) <> "," <> show (pos ^. y) <> ")"
         g_
-            [ onClick       $ \_ m -> Store.dispatch nodeRef $ UI.NodeEvent $ Node.Select m nodeId
-            , onDoubleClick $ \_ _ -> Store.dispatch nodeRef $ UI.NodeEvent $ Node.Enter nodeId
-            , onMouseDown   $ \e m -> stopPropagation e : Store.dispatch nodeRef (UI.NodeEvent $ Node.MouseDown m nodeId)
+            [ onClick       $ \_ m -> dispatch nodeRef $ UI.NodeEvent $ Node.Select m nodeId
+            , onDoubleClick $ \_ _ -> dispatch nodeRef $ UI.NodeEvent $ Node.Enter nodeId
+            , onMouseDown   $ \e m -> stopPropagation e : dispatch nodeRef (UI.NodeEvent $ Node.MouseDown m nodeId)
             , "className" $= (fromString $ "node node--collapsed" <> (if n ^. Node.isSelected then " node--selected" else []))
             , "transform" $= translate
             , "key"       $= fromString (show nodeId)
