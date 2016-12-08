@@ -4,7 +4,8 @@ module Reactive.Plugins.Core.Action.Drag
     ( toAction
     ) where
 
-import           React.Flux                        ( mouseCtrlKey
+import           React.Flux                        ( mouseAltKey
+                                                   , mouseCtrlKey
                                                    , mouseMetaKey
                                                    , mouseScreenX
                                                    , mouseScreenY
@@ -26,7 +27,7 @@ import qualified React.Store.Node                  as Model
 import qualified Reactive.Commands.Batch           as BatchCmd
 import           Reactive.Commands.Command         (Command)
 import           Reactive.Commands.Graph           (updateConnectionsForNodes)
-import           Reactive.Commands.Graph.Selection (addToSelection, modifySelectionHistory, selectedNodes)
+import           Reactive.Commands.Graph.Selection (selectNodes, modifySelectionHistory, selectedNodes)
 import           Reactive.Commands.Node.Snap       (snap)
 import qualified Reactive.State.Camera             as Camera
 import           Reactive.State.Drag               (DragHistory (..))
@@ -40,10 +41,9 @@ import           Utils.Vector
 
 toAction :: Event -> Maybe (Command State ())
 toAction (UI (NodeEvent (Node.MouseDown evt nodeId))) = Just $ do
-    when (not $ mouseCtrlKey evt || mouseMetaKey evt) $ do
-        addToSelection [nodeId] >>= modifySelectionHistory
-    let pos = Vector2 (mouseScreenX evt) (mouseScreenY evt)
-    startDrag nodeId pos $ not $ mouseShiftKey evt
+    when (not $ mouseCtrlKey evt || mouseMetaKey evt || mouseAltKey evt) $ do
+        let pos = Vector2 (mouseScreenX evt) (mouseScreenY evt)
+        startDrag nodeId pos $ not $ mouseShiftKey evt
 toAction (UI (AppEvent  (App.MouseUp evt))) = Just $ do
     let pos = Vector2 (mouseScreenX evt) (mouseScreenY evt)
     stopDrag pos
@@ -55,14 +55,18 @@ toAction _ = Nothing
 
 startDrag :: NodeId -> Vector2 Int -> Bool -> Command State ()
 startDrag nodeId coord snapped = do
-    nodes <- map _widget <$> selectedNodes
-    let nodesPos = Map.fromList $ (view Model.nodeId &&& view Model.position) <$> nodes
-    if snapped
-        then do
-            let snappedNodes = Map.map snap nodesPos
-            Global.drag . Drag.history ?= DragHistory coord nodeId snappedNodes
-            moveNodes snappedNodes
-        else Global.drag . Drag.history ?= DragHistory coord nodeId nodesPos
+    mayDraggedNodeRef <- Global.getNode nodeId
+    withJust mayDraggedNodeRef $ \draggedNodeRef -> do
+        isSelected <- view Model.isSelected <$> Store.get draggedNodeRef
+        when (not isSelected) $ selectNodes [nodeId]
+        nodes <- map _widget <$> selectedNodes
+        let nodesPos = Map.fromList $ (view Model.nodeId &&& view Model.position) <$> nodes
+        if snapped
+            then do
+                let snappedNodes = Map.map snap nodesPos
+                Global.drag . Drag.history ?= DragHistory coord nodeId snappedNodes
+                moveNodes snappedNodes
+            else Global.drag . Drag.history ?= DragHistory coord nodeId nodesPos
 
 
 handleMove :: Vector2 Int -> Bool -> Command State ()
@@ -89,14 +93,16 @@ moveNodes nodesPos = do
 stopDrag :: Vector2 Int -> Command State ()
 stopDrag coord = do
     dragHistory <- use $ Global.drag . Drag.history
-    withJust dragHistory $ \(DragHistory start _ _) -> do
+    withJust dragHistory $ \(DragHistory start nodeId _) -> do
         Global.drag . Drag.history .= Nothing
-        when (start /= coord) $ do
-            selected <- selectedNodes
-            let nodesToUpdate = (\w -> (w ^. widget . Model.nodeId, w ^. widget . Model.position)) <$> selected
-            updates <- forM nodesToUpdate $ \(wid, pos) -> do
-                Global.graph . Graph.nodesMap . ix wid . Node.position .= toTuple pos
-                newMeta <- preuse $ Global.graph . Graph.nodesMap . ix wid . Node.nodeMeta
-                return $ (wid, ) <$> newMeta
-            BatchCmd.updateNodeMeta $ catMaybes updates
-            updateConnectionsForNodes $ fst <$> nodesToUpdate
+        if (start /= coord)
+            then do
+                selected <- selectedNodes
+                let nodesToUpdate = (\w -> (w ^. widget . Model.nodeId, w ^. widget . Model.position)) <$> selected
+                updates <- forM nodesToUpdate $ \(wid, pos) -> do
+                    Global.graph . Graph.nodesMap . ix wid . Node.position .= toTuple pos
+                    newMeta <- preuse $ Global.graph . Graph.nodesMap . ix wid . Node.nodeMeta
+                    return $ (wid, ) <$> newMeta
+                BatchCmd.updateNodeMeta $ catMaybes updates
+                updateConnectionsForNodes $ fst <$> nodesToUpdate
+            else selectNodes [nodeId]

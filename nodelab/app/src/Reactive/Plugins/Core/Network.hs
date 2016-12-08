@@ -77,7 +77,7 @@ actions =  [ Breadcrumbs.toAction
         --    , General.toAction
         --    , Camera.toAction
         --    , Connect.toAction
-        --    , Navigation.toAction
+           , Navigation.toAction
         --    , Collaboration.toAction
         --    , NodeSearcher.toAction
         --    , ConnectionPen.toAction

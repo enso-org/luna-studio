@@ -14,6 +14,8 @@ import           React.Store                       (widget)
 import qualified React.Store                       as Store
 import qualified React.Store.Node                  as Node
 import qualified React.Store.Searcher              as Searcher
+import qualified React.View.App                    as App
+import qualified React.View.Searcher               as Searcher
 
 import           Reactive.Commands.Camera          (syncCamera)
 import           Reactive.Commands.Command         (Command, performIO)
@@ -45,11 +47,16 @@ open = do
     -- let offset = Vector2 0 (floor $ -40.0 * factor)
     -- (nsPos', nsPos) <- ensureNSVisible
     -- Global.uiElements . UIElements.nsPos .= nsPos'
-    Global.withSearcher $ Store.modify_ $ Searcher.visible .~ True
+    Global.withSearcher $ Store.modifyM_ $ do
+        Searcher.results .= def
+        Searcher.visible .= True
+    liftIO Searcher.focus
     -- performIO $ UI.initNodeSearcher "" Nothing (nsPos + offset) False
 
 close :: Command State ()
-close = Global.withSearcher $ Store.modify_ $ Searcher.visible .~ False
+close = do
+    Global.withSearcher $ Store.modify_ $ Searcher.visible .~ False
+    liftIO App.focus
 
 openEdit :: Text -> NodeId -> Vector2 Int -> Command State ()
 openEdit expr nodeId pos = do
@@ -120,7 +127,8 @@ querySearch :: Text -> Command State ()
 querySearch query = do
     sd <- scopedData
     let items = Scope.searchInScope sd query
-    performIO $ UI.displayQueryResults UI.NodeSearcher items
+    Global.withSearcher $ Store.modify_ $
+        Searcher.results .~ items
 
 queryTree :: Text -> Command State ()
 queryTree query = do

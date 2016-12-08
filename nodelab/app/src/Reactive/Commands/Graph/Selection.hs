@@ -33,7 +33,7 @@ import qualified Reactive.State.UIRegistry                as UIRegistry
 
 
 handleSelection :: Bool -> NodeId -> Command Global.State ()
-handleSelection False nodeId = addToSelection [nodeId] >> return ()
+handleSelection False nodeId = return () --handled by Reactive.Plugins.Core.Action.Drag
 handleSelection True  nodeId = toggleSelect   nodeId
 
 toggleSelect :: NodeId -> Command Global.State ()
