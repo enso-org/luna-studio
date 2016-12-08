@@ -68,8 +68,8 @@ modifyIfM cond actionTrue actionFalse store = liftIO $ modifyStoreIf store cond'
     actionTrue' = runStoreModifyM actionTrue
     actionFalse' = actionFalse . _dt
 
-inside :: (p -> Command a r) -> Ref p -> Command a r
-inside action parentRef = action =<< get parentRef
+with :: (p -> Command a r) -> Ref p -> Command a r
+with action parentRef = action =<< get parentRef
 
 get :: Ref p -> Command s p
 get rf = _dt <$> liftIO (getStoreData rf)

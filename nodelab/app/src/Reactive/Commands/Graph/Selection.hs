@@ -8,6 +8,8 @@ module Reactive.Commands.Graph.Selection
      , dropSelectionHistory
      , modifySelectionHistory
      , selectPreviousNodes
+     , handleSelection
+     , addToSelection
      ) where
 
 import qualified Data.Set                                 as Set
@@ -30,6 +32,24 @@ import qualified Reactive.State.UIRegistry                as UIRegistry
 
 
 
+handleSelection :: Bool -> NodeId -> Command Global.State ()
+handleSelection False nodeId = addToSelection [nodeId] >> return ()
+handleSelection True  nodeId = toggleSelect   nodeId
+
+toggleSelect :: NodeId -> Command Global.State ()
+toggleSelect nodeId = do
+    mayNodeRef <- Global.getNode nodeId
+    withJust mayNodeRef $ \nodeRef -> do
+        isSelected <- view Node.isSelected <$> Store.get nodeRef
+        if isSelected
+            then do
+                Store.modify_ (Node.isSelected .~ False) nodeRef
+                selection <- map (view $ widget . Node.nodeId) <$> selectedNodes
+                case selection of
+                    [] -> dropSelectionHistory
+                    _  -> modifySelectionHistory selection
+            else addToSelection [nodeId] >> return ()
+
 unselectAll :: Command State ()
 unselectAll = do
     refs <- allNodes
@@ -50,15 +70,17 @@ selectAll = do
     selectNodes $ (view $ widget . Node.nodeId) <$> widgets
 
 selectNodes :: [NodeId] -> Command State ()
-selectNodes nodeIds = selectNodes' nodeIds >> modifySelectionHistory nodeIds
+selectNodes nodeIds = unselectAll >> addToSelection nodeIds >>= modifySelectionHistory
 
-selectNodes' :: [NodeId] -> Command State ()
-selectNodes' nodeIds = do
-    unselectAll
+-- Please be aware that this function modifies selection without changing selection history.
+-- If your new selection should be added to history launch modifySelectionHistory with ids from result.
+addToSelection :: [NodeId] -> Command State [NodeId]
+addToSelection nodeIds = do
     nodeRefs <- fmap catMaybes $ mapM Global.getNode nodeIds
     forM_ nodeRefs $ Store.modify_ (Node.isSelected .~ True)
     focusSelectedNode
     collaborativeTouch nodeIds
+    map (^. widget . Node.nodeId) <$> selectedNodes
 
 selectPreviousNodes :: Command State ()
 selectPreviousNodes = do
@@ -67,11 +89,11 @@ selectPreviousNodes = do
         Nothing         -> dropSelectionHistory
         Just nodeIdsSet -> do
             Global.selectionHistory %= drop 1
-            selectNodes' $ Set.toList nodeIdsSet
-            selection <- map (^. widget . Node.nodeId) <$> selectedNodes
+            unselectAll
+            selection <- addToSelection $ Set.toList nodeIdsSet
             case selection of
-                []        -> selectPreviousNodes
-                otherwise -> modifySelectionHistory selection
+                [] -> selectPreviousNodes
+                _  -> modifySelectionHistory selection
 
 selectedNodes :: Command State [WRef Node]
 selectedNodes = do

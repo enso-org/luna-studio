@@ -3,14 +3,14 @@ module Reactive.Commands.Node.Remove
     , localRemoveNodes
     ) where
 
+import qualified Data.Set                           as Set
 import           React.Store                        (widget)
 import qualified React.Store                        as Store
 import qualified React.Store.NodeEditor             as NodeEditor
-import qualified Data.Set                           as Set
 import           Reactive.Commands.Command          (Command)
 import           Reactive.Commands.Graph.Disconnect (localDisconnectAll)
 import           Reactive.Commands.Graph.Selection  (selectPreviousNodes, selectedNodes)
-import           Reactive.State.Global              (State, inRegistry)
+import           Reactive.State.Global              (State)
 import qualified Reactive.State.Global              as Global
 import qualified Reactive.State.Graph               as Graph
 import           Utils.PreludePlus
@@ -24,8 +24,8 @@ import qualified JS.GoogleAnalytics                 as GA
 
 removeSelectedNodes :: Command State ()
 removeSelectedNodes = do
-    selectedNodes <- selectedNodes
-    performRemoval $ (^. widget . NodeModel.nodeId) <$> selectedNodes
+    selected <- selectedNodes
+    performRemoval $ (^. widget . NodeModel.nodeId) <$> selected
     selectPreviousNodes
 
 performRemoval :: [NodeId] -> Command State ()

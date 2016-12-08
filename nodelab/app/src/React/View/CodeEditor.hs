@@ -8,7 +8,7 @@ import qualified React.Flux             as React
 import           Utils.PreludePlus
 
 import           React.Store            (Ref, dt)
-import           React.Store.CodeEditor (CodeEditor)
+import           React.Store.CodeEditor (CodeEditor, visible)
 import qualified React.Store.CodeEditor as CodeEditor
 
 
