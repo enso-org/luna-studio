@@ -4,9 +4,12 @@ import           Utils.PreludePlus
 
 
 
-data CodeEditor = CodeEditor { _code   :: Text }
+data CodeEditor = CodeEditor
+        { _visible :: Bool
+        , _code   :: Text
+        }
 
 makeLenses ''CodeEditor
 
 instance Default CodeEditor where
-    def = CodeEditor def
+    def = CodeEditor True def

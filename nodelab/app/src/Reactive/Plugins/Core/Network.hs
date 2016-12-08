@@ -18,13 +18,13 @@ import qualified Event.Event                                         as Event
 import qualified Event.Processors.Batch                              as BatchEventProcessor
 import qualified Event.Processors.CustomEvent                        as CustomEventProcessor
 
-import qualified Reactive.Plugins.Core.Action.App                    as App
 import qualified Reactive.Plugins.Core.Action.Backend.Control        as Control
 import qualified Reactive.Plugins.Core.Action.Backend.Graph          as Graph
 import qualified Reactive.Plugins.Core.Action.Backend.ProjectManager as ProjectManager
 import qualified Reactive.Plugins.Core.Action.Breadcrumbs            as Breadcrumbs
 import qualified Reactive.Plugins.Core.Action.Camera                 as Camera
 import qualified Reactive.Plugins.Core.Action.Clipboard              as Clipboard
+import qualified Reactive.Plugins.Core.Action.CodeEditor             as CodeEditor
 import qualified Reactive.Plugins.Core.Action.Collaboration          as Collaboration
 import qualified Reactive.Plugins.Core.Action.Connect                as Connect
 import qualified Reactive.Plugins.Core.Action.ConnectionPen          as ConnectionPen
@@ -63,23 +63,23 @@ consoleTimeStart = consoleTimeStart' . JSString.pack
 consoleTimeEnd   = consoleTimeEnd'   . JSString.pack
 
 actions :: [Event -> Maybe (Command State ())]
-actions =  [ --Debug.toActionEv
+actions =  [ Breadcrumbs.toAction
+           , CodeEditor.toAction
+           , Drag.toAction
+           , Graph.toAction
+           , MultiSelection.toAction
+           , Node.toAction
+           , ProjectManager.toAction
+           , Searcher.toAction
+        --Debug.toActionEv
         --    , Control.toAction
         --    , Widget.toAction
         --    , General.toAction
         --    , Camera.toAction
-           Graph.toAction
-           , Drag.toAction
         --    , Connect.toAction
         --    , Navigation.toAction
         --    , Collaboration.toAction
-           , MultiSelection.toAction
-           --  , NodeSearcher.toAction
-           , Searcher.toAction
-           , App.toAction
-           , Breadcrumbs.toAction
-           , Node.toAction
-           , ProjectManager.toAction
+        --    , NodeSearcher.toAction
         --    , ConnectionPen.toAction
         --    , Tutorial.toAction
         --    , Sandbox.toAction

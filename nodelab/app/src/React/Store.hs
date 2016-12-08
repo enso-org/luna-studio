@@ -36,4 +36,4 @@ create a = do
     create' se a
 
 createApp :: MonadIO m => SendEvent -> m (Ref App)
-createApp = runReaderT (create =<< (App <$> create def <*> (create =<< (NodeEditor.mk <$> create def)) <*> create def <*> pure True <*> create def))
+createApp = runReaderT (create =<< (App <$> create def <*> (create =<< (NodeEditor.mk <$> create def)) <*> create def <*> create def))

@@ -33,9 +33,8 @@ app ref = React.defineControllerView
              , "tabIndex" $= "-1"] $ do
             breadcrumbs_ (s ^. App.breadcrumbs)
             nodeEditor_ (s ^. App.nodeEditor)
-            codeEditorToggle_ ref
-            when (s ^. App.codeEditorVisible) $
-                codeEditor_ (s ^. App.codeEditor)
+            codeEditorToggle_ (s ^. App.codeEditor)
+            codeEditor_ (s ^. App.codeEditor)
             searcher_ (s ^. App.searcher)
 
 foreign import javascript safe "document.getElementById('focus-root').focus()" focus :: IO ()

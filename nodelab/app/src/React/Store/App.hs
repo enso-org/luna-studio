@@ -19,7 +19,6 @@ import           Utils.PreludePlus
 data App = App { _breadcrumbs       :: Ref Breadcrumbs
                , _nodeEditor        :: Ref NodeEditor
                , _codeEditor        :: Ref CodeEditor
-               , _codeEditorVisible :: Bool
                , _searcher          :: Ref Searcher
                }
 
