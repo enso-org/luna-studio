@@ -34,10 +34,10 @@ replyFail logger errMsg req = do
   logger Logger.error $ formatErrorMessage req errMsg
   sendToBus' $ Response.error req errMsg
 
-replyOk :: forall a b. (Binary a, Binary b, Response.ResponseResult a b (), MessageTopic (Response.Response a b ())) => Request a -> Maybe b -> StateT Env BusT ()
+replyOk :: forall a b c. (Binary a, Binary b, Response.ResponseResult a b (), MessageTopic (Response.Response a b ())) => Request a -> b -> StateT Env BusT ()
 replyOk req inv = sendToBus' $ Response.ok req inv
 
-replyResult :: forall a b c. (Binary a, Binary b, Binary c, Response.ResponseResult a b c) => Request a -> Maybe b -> c -> StateT Env BusT ()
+replyResult :: forall a b c. (Binary a, Binary b, Binary c, Response.ResponseResult a b c) => Request a -> b -> c -> StateT Env BusT ()
 replyResult req inv res = sendToBus' $ Response.result req inv res
 
 errorMessage :: String

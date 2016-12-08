@@ -6,6 +6,7 @@ import           Prologue
 import           Empire.API.Data.Connection    (Connection)
 import           Empire.API.Data.GraphLocation (GraphLocation)
 import           Empire.API.Data.Node          (NodeId, Node)
+import           Empire.API.Data.PortRef       (OutPortRef(..), InPortRef(..))
 import qualified Empire.API.Response           as Response
 import qualified Empire.API.Graph.Request      as G
 import qualified Empire.API.Topic              as T
@@ -15,9 +16,8 @@ data Request = Request { _location :: GraphLocation
                        , _nodeIds  :: [NodeId]
                        } deriving (Generic, Show, Eq)
 
-data Inverse = Inverse { _locationPrev :: GraphLocation
-                       , _nodes :: [Node]
-                       , _connections :: [Connection]
+data Inverse = Inverse { _nodes :: [Node]
+                       , _connections :: [(OutPortRef, InPortRef)]
                        } deriving (Generic, Show, Eq)
 
 type Response = Response.SimpleResponse Request Inverse
