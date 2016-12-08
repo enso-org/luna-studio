@@ -31,7 +31,7 @@ nodeEditor ref = React.defineControllerView name ref $ \store () -> do
         $ do
         g_
             [ "className" $= "scene"
-            --, "transform" $= translate
+            , "transform" $= "matrix(1,0,0,1,0,0)" --TODO: Apply zooming and panning https://developer.mozilla.org/en/docs/Web/SVG/Attribute/transform
             ] $ do
                 forM_ (store ^. dt . NodeEditor.nodes . to HashMap.elems) $ \nodeRef -> do
                     node_ nodeRef

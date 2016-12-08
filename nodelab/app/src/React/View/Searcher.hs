@@ -1,6 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 module React.View.Searcher where
 
+import qualified Data.Aeson           as Aeson
 import           React.Flux
 import qualified React.Flux           as React
 import           Utils.PreludePlus

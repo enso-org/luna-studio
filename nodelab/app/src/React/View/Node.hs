@@ -26,7 +26,7 @@ node nodeRef = React.defineControllerView
         let n = nodeStore ^. dt
             nodeId = n ^. Node.nodeId
             pos = n ^. Node.position
-            translate = fromString $ "translate(" <> show (pos ^. x) <> "," <> show (pos ^. y) <> ")"
+            translate = fromString $ "translate(" <> show (pos ^. x) <> "," <> show (pos ^. y) <> ")" -- TODO: Consider implementing matrices
         g_
             [ onClick       $ \_ m -> Store.dispatch nodeRef $ UI.NodeEvent $ Node.Select m nodeId
             , onDoubleClick $ \_ _ -> Store.dispatch nodeRef $ UI.NodeEvent $ Node.Enter nodeId
@@ -63,7 +63,7 @@ node nodeRef = React.defineControllerView
                     ] mempty
                 text_
                     [ "className" $= "name"
-                    , "x"         $= "20" -- FIXME: half of the node width
+                    , "x"         $= "22" -- FIXME: half of the node width
                     , "y"         $= "-16"
                     ] $ elemString $ Text.unpack $ n ^. Node.name
 
