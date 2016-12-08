@@ -5,6 +5,10 @@ import qualified Data.HashMap.Strict        as HashMap
 import           Utils.PreludePlus
 import           Utils.Vector
 
+import           React.Flux                 (keyCode, KeyboardEvent)
+
+import qualified React.Event.App            as App
+
 import           React.Store                (Ref, WRef (..), ref, widget)
 import qualified React.Store                as Store
 import           React.Store.Node           (Node)
@@ -13,9 +17,11 @@ import qualified React.Store.Node           as Node
 import           Object.Widget              (Position)
 import qualified Object.Widget.Node         as Model
 
-import           Event.Event                (Event (Keyboard))
+import           Event.Event                (Event (Keyboard, UI))
 import           Event.Keyboard             (KeyMods (..))
 import qualified Event.Keyboard             as Keyboard
+import qualified Event.Keys                 as Keys
+import           Event.UI                   (UIEvent (AppEvent))
 
 import           Reactive.State.Global      (State)
 import qualified Reactive.State.Global      as Global
@@ -33,24 +39,22 @@ import           Reactive.Commands.Graph    (allNodes')
 
 
 toAction :: Event -> Maybe (Command State ())
-toAction (Keyboard _ (Keyboard.Event Keyboard.Down char (KeyMods True False False False))) = case char of
-    '\t'  -> Just goPrev
-    '\37' -> Just goPrev
-    '\39' -> Just goNext
-    _     -> Nothing
-toAction (Keyboard _ (Keyboard.Event Keyboard.Down char (KeyMods False False False False))) = case char of
-    '\37' -> Just goLeft
-    '\39' -> Just goRight
-    '\38' -> Just goUp
-    '\40' -> Just goDown
-    _     -> Nothing
-toAction (Keyboard _ (Keyboard.Event Keyboard.Down char (KeyMods True True False False))) = case char of
-    '\37' -> Just goConeLeft
-    '\39' -> Just goConeRight
-    '\38' -> Just goConeUp
-    '\40' -> Just goConeDown
-    _     -> Nothing
+toAction (UI (AppEvent (App.KeyDown e))) = Just $ handleKey e
 toAction _ = Nothing
+
+handleKey :: KeyboardEvent -> Command State ()
+handleKey evt
+    | Keys.withShift     evt Keys.leftArrow  = goPrev
+    | Keys.withShift     evt Keys.rightArrow = goNext
+    | Keys.withoutMods   evt Keys.leftArrow  = goLeft
+    | Keys.withoutMods   evt Keys.upArrow    = goUp
+    | Keys.withoutMods   evt Keys.rightArrow = goRight
+    | Keys.withoutMods   evt Keys.downArrow  = goDown
+    | Keys.withCtrlShift evt Keys.leftArrow  = goConeLeft
+    | Keys.withCtrlShift evt Keys.upArrow    = goConeUp
+    | Keys.withCtrlShift evt Keys.rightArrow = goConeRight
+    | Keys.withCtrlShift evt Keys.downArrow  = goConeDown
+    | otherwise                              = return ()
 
 goPrev :: Command State ()
 goPrev = do
