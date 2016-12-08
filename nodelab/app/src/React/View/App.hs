@@ -29,12 +29,17 @@ app ref = React.defineControllerView
              , onMouseUp   $ \_ e -> dispatch ref $ UI.AppEvent $ App.MouseUp e
              , onMouseMove $ \_ e -> dispatch ref $ UI.AppEvent $ App.MouseMove e
              , "id"       $= "focus-root"
-             , "tabIndex" $= "-1"] $ do
-            breadcrumbs_ (s ^. App.breadcrumbs)
-            nodeEditor_ (s ^. App.nodeEditor)
-            codeEditorToggle_ ref
-            when (s ^. App.codeEditorVisible) $
-                codeEditor_ (s ^. App.codeEditor)
-            nodeSearcher_ (s ^. App.nodeSearcher)
+             , "tabIndex" $= "-1"
+             ] $ do
+                 div_ [ "className" $= "main" ] $ do
+                     div_ [ "className" $= "graph-editor" ] $ do
+                        breadcrumbs_ (s ^. App.breadcrumbs)
+                        nodeEditor_ (s ^. App.nodeEditor)
+                        codeEditorToggle_ ref
+                        nodeSearcher_ (s ^. App.nodeSearcher)
+                     when (s ^. App.codeEditorVisible) $
+                        codeEditor_ (s ^. App.codeEditor)
+
+
 
 foreign import javascript safe "document.getElementById('focus-root').focus()" focus :: IO ()

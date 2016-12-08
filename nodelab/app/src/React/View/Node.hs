@@ -61,7 +61,6 @@ node nodeRef = React.defineControllerView
                     , "stroke"    $= "#B294BB"
                     , "d"         $= "M22 0 A 20 20.1 0 0 1 22 40 V37 A 17 17.1 0 0 0 22 3 V0.1"
                     ] mempty
-
                 text_
                     [ "className" $= "name"
                     , "x"         $= "20" -- FIXME: half of the node width

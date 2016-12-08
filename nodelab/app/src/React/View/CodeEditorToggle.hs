@@ -17,8 +17,10 @@ name = "code-editor-toggle"
 
 codeEditorToggle :: Ref App -> ReactView ()
 codeEditorToggle ref = React.defineView name $ \() -> do
-    button_ [ onClick $ \_ _ -> dispatch ref $ UI.AppEvent App.ToggleCodeEditor] $ do
-        elemString $ "toggle code editor"
+    button_ [ onClick $ \_ _ -> dispatch ref $ UI.AppEvent App.ToggleCodeEditor
+            , "className" $= "code-editor-toggle"
+            ] $ do
+        elemString $ []
 
 
 codeEditorToggle_ :: Ref App -> ReactElementM ViewEventHandler ()
