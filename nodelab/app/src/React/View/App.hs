@@ -14,7 +14,7 @@ import           React.View.Breadcrumbs      (breadcrumbs_)
 import           React.View.CodeEditor       (codeEditor_)
 import           React.View.CodeEditorToggle (codeEditorToggle_)
 import           React.View.NodeEditor       (nodeEditor_)
-import           React.View.NodeSearcher     (nodeSearcher_)
+import           React.View.Searcher         (searcher_)
 
 
 
@@ -25,9 +25,9 @@ app :: Ref App -> ReactView ()
 app ref = React.defineControllerView
     name ref $ \store () -> do
         let s = store ^. dt
-        div_ [ onKeyDown   $ \_ e -> dispatch ref $ UI.AppEvent $ App.KeyDown e
-             , onMouseUp   $ \_ e -> dispatch ref $ UI.AppEvent $ App.MouseUp e
-             , onMouseMove $ \_ e -> dispatch ref $ UI.AppEvent $ App.MouseMove e
+        div_ [ onKeyDown   $ \e k -> preventDefault e : dispatch ref (UI.AppEvent $ App.KeyDown k)
+             , onMouseUp   $ \_ m -> dispatch ref $ UI.AppEvent $ App.MouseUp m
+             , onMouseMove $ \_ m -> dispatch ref $ UI.AppEvent $ App.MouseMove m
              , "id"       $= "focus-root"
              , "tabIndex" $= "-1"] $ do
             breadcrumbs_ (s ^. App.breadcrumbs)
@@ -35,6 +35,6 @@ app ref = React.defineControllerView
             codeEditorToggle_ ref
             when (s ^. App.codeEditorVisible) $
                 codeEditor_ (s ^. App.codeEditor)
-            nodeSearcher_ (s ^. App.nodeSearcher)
+            searcher_ (s ^. App.searcher)
 
 foreign import javascript safe "document.getElementById('focus-root').focus()" focus :: IO ()

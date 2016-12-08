@@ -19,7 +19,6 @@ import           React.Store.SelectionBox          (SelectionBox (SelectionBox))
 import qualified React.Store.SelectionBox          as SelectionBox
 import           Reactive.Commands.Command         (Command)
 import           Reactive.Commands.Graph.Selection (focusSelectedNode, modifySelectionHistory, selectNodes, selectedNodes, unselectAll)
-import qualified Reactive.State.Drag               as Drag
 import           Reactive.State.Global             (State)
 import qualified Reactive.State.Global             as Global
 import qualified Reactive.State.Graph              as Graph
@@ -44,10 +43,8 @@ toAction _ = Nothing
 
 startDrag :: Vector2 Int -> Command State ()
 startDrag coord = do
-    nodeDrag <- use $ Global.drag . Drag.history
-    unless (isJust nodeDrag) $ do
-        Global.multiSelection . MultiSelection.history ?= DragHistory coord coord
-        unselectAll
+    Global.multiSelection . MultiSelection.history ?= DragHistory coord coord
+    unselectAll
 
 handleMove :: Vector2 Int -> Command State ()
 handleMove coord = do

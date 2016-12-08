@@ -36,6 +36,7 @@ import qualified Reactive.Plugins.Core.Action.Navigation             as Navigati
 import qualified Reactive.Plugins.Core.Action.Node                   as Node
 import qualified Reactive.Plugins.Core.Action.NodeSearcher           as NodeSearcher
 import qualified Reactive.Plugins.Core.Action.Sandbox                as Sandbox
+import qualified Reactive.Plugins.Core.Action.Searcher               as Searcher
 import qualified Reactive.Plugins.Core.Action.Tutorial               as Tutorial
 import qualified Reactive.Plugins.Core.Action.Widget                 as Widget
 
@@ -73,7 +74,8 @@ actions =  [ --Debug.toActionEv
         --    , Navigation.toAction
         --    , Collaboration.toAction
            , MultiSelection.toAction
-           , NodeSearcher.toAction
+           --  , NodeSearcher.toAction
+           , Searcher.toAction
            , App.toAction
            , Breadcrumbs.toAction
            , Node.toAction
