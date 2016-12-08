@@ -28,7 +28,7 @@ node nodeRef = React.defineControllerView
             pos = n ^. Node.position
             translate = fromString $ "translate(" <> show (pos ^. x) <> "," <> show (pos ^. y) <> ")"
         g_
-            [ onClick       $ \_ m -> Store.dispatch nodeRef $ UI.NodeEvent $ Node.Click m nodeId
+            [ onClick       $ \_ m -> Store.dispatch nodeRef $ UI.NodeEvent $ Node.Select m nodeId
             , onDoubleClick $ \_ _ -> Store.dispatch nodeRef $ UI.NodeEvent $ Node.Enter nodeId
             , onMouseDown   $ \e m -> stopPropagation e : Store.dispatch nodeRef (UI.NodeEvent $ Node.MouseDown m nodeId)
             , "className" $= (fromString $ "node node--collapsed" <> (if n ^. Node.isSelected then " node--selected" else []))

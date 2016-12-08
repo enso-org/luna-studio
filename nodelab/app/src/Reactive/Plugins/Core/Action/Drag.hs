@@ -4,7 +4,11 @@ module Reactive.Plugins.Core.Action.Drag
     ( toAction
     ) where
 
-import           React.Flux                        (mouseScreenX, mouseScreenY, mouseShiftKey)
+import           React.Flux                        ( mouseCtrlKey
+                                                   , mouseMetaKey
+                                                   , mouseScreenX
+                                                   , mouseScreenY
+                                                   , mouseShiftKey)
 
 import           Control.Arrow
 import           Control.Monad.State               ()
@@ -39,7 +43,8 @@ import           Utils.Vector
 
 toAction :: Event -> Maybe (Command State ())
 toAction (UI (NodeEvent (Node.MouseDown evt nodeId))) = Just $ do
-    Global.getNode nodeId >>= mapM_ (Node.selectNode (mouseShiftKey evt))
+    when (not (mouseCtrlKey evt || mouseMetaKey evt)) $ do
+        Global.getNode nodeId >>= mapM_ Node.performSelect
     let pos = Vector2 (mouseScreenX evt) (mouseScreenY evt)
     startDrag nodeId pos $ not $ mouseShiftKey evt
 toAction (UI (AppEvent  (App.MouseUp evt))) = Just $ do
@@ -70,12 +75,12 @@ handleMove coord snapped = do
     withJust dragHistory $ \(DragHistory mousePos draggedNodeId nodesPos) -> do
         let delta = coord - mousePos
             deltaWs = Camera.scaledScreenToWorkspace factor delta
-            shift = if snapped
+            shift' = if snapped
                         then case Map.lookup draggedNodeId nodesPos of
                             Just pos -> snap (pos + deltaWs) - pos
                             Nothing  -> deltaWs
                         else deltaWs
-        moveNodes $ Map.map (+shift) nodesPos
+        moveNodes $ Map.map (+shift') nodesPos
 
 moveNodes :: Map NodeId (Vector2 Double) -> Command State ()
 moveNodes nodesPos = do

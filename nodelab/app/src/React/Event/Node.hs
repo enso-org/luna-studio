@@ -12,7 +12,7 @@ import           Utils.PreludePlus
 
 
 
-data Event = Click MouseEvent NodeId
+data Event = Select MouseEvent NodeId
            | MouseDown MouseEvent NodeId
            | Enter NodeId
             deriving (Show, Generic, NFData, Typeable)
