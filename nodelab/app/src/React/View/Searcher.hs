@@ -21,7 +21,12 @@ searcher ref = React.defineControllerView
     name ref $ \store () -> do
         let s = store ^. dt
         when (s ^. Searcher.visible) $ do
-            input_ mempty
+            div_ [ "className" $= "node-searcher"
+                 , "style"     @= Aeson.object [ "top"  Aeson..= ("50%"::String)
+                                               , "left" Aeson..= ("50%"::String)
+                                               ]
+                 ] $ do
+                     input_ mempty
 
 
 searcher_ :: Ref Searcher -> ReactElementM ViewEventHandler ()
