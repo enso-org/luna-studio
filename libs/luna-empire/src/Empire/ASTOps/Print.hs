@@ -1,11 +1,11 @@
 module Empire.ASTOps.Print where
 
-import           Prologue
+import           Prologue                 hiding (TypeRep)
 import           Data.List                (dropWhileEnd, delete)
-import           Data.Record              (ANY (..), caseTest, of')
+import           Old.Data.Record              (ANY (..), caseTest, of')
 import qualified Data.Text.Lazy           as Text
 import           Data.Layer_OLD.Cover_OLD (uncover, covered)
-import           Data.Direction           (source)
+import           Old.Data.Direction           (source)
 import           Data.Map                 (Map)
 import qualified Data.Map                 as Map
 import           Data.Char                (isAlpha)

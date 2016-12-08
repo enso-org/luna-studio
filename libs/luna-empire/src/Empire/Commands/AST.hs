@@ -1,4 +1,5 @@
 {-# LANGUAGE FlexibleContexts    #-}
+{-# LANGUAGE LambdaCase          #-}
 {-# LANGUAGE OverloadedStrings   #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
@@ -7,16 +8,16 @@ module Empire.Commands.AST where
 import           Control.Arrow                     (second)
 import           Control.Monad.Except              (runExceptT, throwError)
 import           Control.Monad.State
-import           Data.Graph                        (Inputs (..), source)
+import           Old.Data.Graph                        (Inputs (..), source)
 import           Data.HMap.Lazy                    (TypeKey (..))
 import qualified Data.HMap.Lazy                    as HMap
 import           Data.List                         (find)
 import           Data.Layer_OLD.Cover_OLD          (uncover)
 import           Data.Maybe                        (catMaybes, fromMaybe)
 import           Old.Data.Prop                     (prop, ( # ))
-import           Data.Record                       (ANY (..), caseTest, of')
+import           Old.Data.Record                       (ANY (..), caseTest, of')
 import qualified Data.Text.Lazy                    as Text
-import           Prologue                          hiding (( # ))
+import           Prologue                          hiding (( # ), TypeRep, tryHead)
 
 import           Empire.API.Data.DefaultValue      (PortDefault, Value (..))
 import qualified Empire.API.Data.Error             as APIError
@@ -34,6 +35,8 @@ import qualified Empire.ASTOps.Print               as Printer
 import           Empire.ASTOps.Remove              (safeRemove)
 
 import           Empire.Utils.TextResult           (nodeValueToText)
+
+import qualified Luna.IR                           as New
 
 import           Old.Luna.Pretty.GraphViz          (renderAndOpen)
 
@@ -236,6 +239,10 @@ readMeta ref = runASTOp $ HMap.lookup metaKey . view (prop Meta) <$> Builder.rea
 
 getError :: NodeRef -> Command AST (Maybe (APIError.Error TypeRep))
 getError = runASTOp . getError'
+
+tryHead :: [a] -> Maybe a
+tryHead [] = Nothing
+tryHead (a:_) = Just a
 
 getError' :: ASTOp m => NodeRef -> m (Maybe (APIError.Error TypeRep))
 getError' ref = do

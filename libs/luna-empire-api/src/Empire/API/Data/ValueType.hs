@@ -6,7 +6,7 @@ module Empire.API.Data.ValueType where
 import           Data.Binary             (Binary)
 import           Data.Hashable           (Hashable)
 import qualified Data.Text.Lazy          as Text
-import           Prologue
+import           Prologue                hiding (TypeRep)
 
 import           Empire.API.Data.TypeRep (TypeRep (..))
 

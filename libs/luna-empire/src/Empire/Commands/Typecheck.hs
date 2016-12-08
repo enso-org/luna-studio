@@ -2,7 +2,7 @@
 
 module Empire.Commands.Typecheck where
 
-import           Prologue
+import           Prologue                hiding (TypeRep)
 import           Control.Monad.State     hiding (when)
 import           Unsafe.Coerce           (unsafeCoerce)
 import           Control.Monad.Except    (throwError)
