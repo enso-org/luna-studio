@@ -11,6 +11,7 @@ import           Utils.Vector
 data Searcher = Searcher
       { _visible     :: Bool
       , _position    :: Vector2 Int
+      , _selected    :: Int
       , _input       :: Text
       , _results     :: [QueryResult]
       } deriving (Show, Generic)
@@ -18,4 +19,4 @@ data Searcher = Searcher
 makeLenses ''Searcher
 
 instance Default Searcher where
-    def = Searcher False def def def
+    def = Searcher False def def def def
