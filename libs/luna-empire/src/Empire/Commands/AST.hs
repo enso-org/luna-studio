@@ -2,20 +2,18 @@
 {-# LANGUAGE LambdaCase          #-}
 {-# LANGUAGE OverloadedStrings   #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TypeApplications    #-}
+{-# LANGUAGE ViewPatterns        #-}
 
 module Empire.Commands.AST where
 
 import           Control.Arrow                     (second)
 import           Control.Monad.Except              (runExceptT, throwError)
 import           Control.Monad.State
-import           Old.Data.Graph                        (Inputs (..), source)
 import           Data.HMap.Lazy                    (TypeKey (..))
 import qualified Data.HMap.Lazy                    as HMap
 import           Data.List                         (find)
-import           Data.Layer_OLD.Cover_OLD          (uncover)
 import           Data.Maybe                        (catMaybes, fromMaybe)
-import           Old.Data.Prop                     (prop, ( # ))
-import           Old.Data.Record                       (ANY (..), caseTest, of')
 import qualified Data.Text.Lazy                    as Text
 import           Prologue                          hiding (( # ), TypeRep, tryHead)
 
@@ -24,8 +22,8 @@ import qualified Empire.API.Data.Error             as APIError
 import           Empire.API.Data.Node              (NodeId)
 import           Empire.API.Data.NodeMeta          (NodeMeta)
 import           Empire.API.Data.TypeRep           (TypeRep)
-import           Empire.Data.AST                   (AST, ASTNode, NodeRef)
-import           Empire.Data.NodeMarker            (NodeMarker (..))
+import           Empire.Data.AST                   (AST, NodeRef, Meta, NodeMarker(..), TCData(..), TCError(..),
+                                                    TypeLayer, Inputs, tcErrors)
 import           Empire.Empire
 
 import           Empire.ASTOp                      (ASTOp, runASTOp)
@@ -36,16 +34,12 @@ import           Empire.ASTOps.Remove              (safeRemove)
 
 import           Empire.Utils.TextResult           (nodeValueToText)
 
-import qualified Luna.IR                           as New
+import           Luna.IR.Expr.Term.Uni
+import           Luna.IR (match)
+import qualified Luna.IR.Function as IR (Arg, arg)
+import qualified Luna.IR as IR
 
 import           Old.Luna.Pretty.GraphViz          (renderAndOpen)
-
-import           Old.Luna.Syntax.Model.Network.Builder (Meta (..), TCData (..), Type (..), tcErrors)
-import qualified Old.Luna.Syntax.Model.Network.Builder as Builder
-import           Old.Luna.Syntax.Term.Class        (Cons (..), Unify (..), Lam(..))
-import qualified Old.Luna.Syntax.Term.Expr.Lit     as Lit
-
-import           Old.Luna.Compilation.Error            as TCError
 
 import           Luna.Pass.Evaluation.Interpreter.Layer (InterpreterData (..))
 import qualified Luna.Pass.Evaluation.Interpreter.Layer as Interpreter
@@ -79,10 +73,9 @@ limit = limitHead where
     limitTail  = reverse . take limitCount . reverse
 
 valueDecoderForType :: ASTOp m => NodeRef -> m (Maybe (Data -> Value))
-valueDecoderForType tp = do
-    tpNode <- Builder.read tp
-    caseTest (uncover tpNode) $ do
-        of' $ \(Cons (Lit.String n) as) -> case n of
+valueDecoderForType tpNode = do
+    match tpNode $ \case
+        Cons (toString -> n) -> case n of
             "Int"            -> return $ Just $ IntValue       . unsafeFromData
             "String"         -> return $ Just $ StringValue    . unsafeFromData
             "Double"         -> return $ Just $ DoubleValue    . unsafeFromData
@@ -100,73 +93,11 @@ valueDecoderForType tp = do
             {-"Figure"         -> return $ Just $ Graphics       $ fromFigure       v-}
             {-"Material"       -> return $ Just $ Graphics       $ fromMaterial     v-}
             "RGBColor"       -> return $ Just $ Graphics . fromMaterial . colorRGBToMaterial . unsafeFromData
-            "Stream"         -> do
-                args <- ASTBuilder.unpackArguments as
-                case args of
-                    [a] -> valueDecoderForType a
-                    _   -> return Nothing
-            "List"           -> do
-                args <- ASTBuilder.unpackArguments as
-                case args of
-                    [a] -> do
-                        arg <- Builder.read a
-                        caseTest (uncover arg) $ do
-                            of' $ \(Cons (Lit.String n) as) -> case n of
-                                "Int"    -> return $ Just $ IntList    . unsafeFromData
-                                "Double" -> return $ Just $ DoubleList . unsafeFromData
-                                "Bool"   -> return $ Just $ BoolList   . unsafeFromData
-                                "String" -> return $ Just $ StringList . unsafeFromData
-                                "Maybe"  -> do
-                                    args <- ASTBuilder.unpackArguments as
-                                    case args of
-                                        [a] -> do
-                                            arg <- Builder.read a
-                                            caseTest (uncover arg) $ do
-                                                of' $ \(Cons (Lit.String n) _) -> case n of
-                                                    "Int"    -> return $ Just $ StringMaybeList . intMaybeListToStringMaybeList    . unsafeFromData
-                                                    "Double" -> return $ Just $ StringMaybeList . doubleMaybeListToStringMaybeList . unsafeFromData
-                                                    "Bool"   -> return $ Just $ StringMaybeList . boolMaybeListToStringMaybeList   . unsafeFromData
-                                                    "String" -> return $ Just $ StringMaybeList . unsafeFromData
-                                                    _        -> return Nothing
-                                                of' $ \ANY -> return Nothing
-                                _        -> return Nothing
-                            of' $ \ANY -> return Nothing
-                    _ -> return Nothing
-            "Maybe"           -> do
-                args <- ASTBuilder.unpackArguments as
-                case args of
-                    [a] -> do
-                        arg <- Builder.read a
-                        caseTest (uncover arg) $ do
-                            of' $ \(Cons (Lit.String n) _) -> case n of
-                                "Int"    -> return $ Just $ IntMaybe    . unsafeFromData
-                                "Double" -> return $ Just $ DoubleMaybe . unsafeFromData
-                                "Bool"   -> return $ Just $ BoolMaybe   . unsafeFromData
-                                "String" -> return $ Just $ StringMaybe . unsafeFromData
-                                _        -> return Nothing
-                            of' $ \ANY -> return Nothing
-                    _ -> return Nothing
-            "Map"           -> do
-                args <- ASTBuilder.unpackArguments as
-                case args of
-                    [k, v] -> do
-                        argKey <- Builder.read k
-                        argVal <- Builder.read v
-                        caseTest (uncover argKey) $ do
-                            of' $ \(Cons (Lit.String n) _) -> case n of
-                                "String" -> caseTest (uncover argVal) $ do
-                                    of' $ \(Cons (Lit.String n) _) -> case n of
-                                        "Int"    -> return $ Just $ StringStringMap . stringIntMapToStringStringMap    . unsafeFromData
-                                        "Double" -> return $ Just $ StringStringMap . stringDoubleMapToStringStringMap . unsafeFromData
-                                        "Bool"   -> return $ Just $ StringStringMap . stringBoolMapToStringStringMap   . unsafeFromData
-                                        "String" -> return $ Just $ StringStringMap . unsafeFromData
-                                        _        -> return Nothing
-                                    of' $ \ANY -> return Nothing
-                                _        -> return Nothing
-                            of' $ \ANY -> return Nothing
-                    _ -> return Nothing
-            _ -> return Nothing
-        of' $ \ANY -> return Nothing
+            "Stream"         -> $notImplemented
+            "List"           -> $notImplemented
+            "Maybe"           -> $notImplemented
+            "Map"           -> $notImplemented
+        _ -> return Nothing
 
 intMaybeListToStringMaybeList :: [Maybe Int] -> [Maybe String]
 intMaybeListToStringMaybeList = fmap (fmap show)
@@ -215,27 +146,28 @@ decorateValue val = (name, values) where
 
 data ValueRep = PlainVal (Text, [Value]) | Listener (((Text, [Value]) -> IO ()) -> IO (IO ()))
 
+type instance IR.LayerData InterpreterData t = Interpreter.InterpreterLayer
+
 getNodeValue :: NodeRef -> Command AST (Either String ValueRep)
-getNodeValue ref = runASTOp $ do
-    node    <- Builder.read ref
-    tp      <- Builder.follow source $ node ^. prop Type
-    tpNode  <- Builder.read tp
-    decoder <- decoderForType tp
-    case node ^. prop InterpreterData . Interpreter.value of
+getNodeValue node = runASTOp $ do
+    tpNode  <- IR.source =<< IR.readLayer @TypeLayer node
+    decoder <- decoderForType tpNode
+    v <- (^. Interpreter.value) <$> IR.readLayer @InterpreterData node
+    case v of
         Left  err -> return $ Right $ PlainVal ("", [])
         Right val -> do
             val <- liftIO . runExceptT $ toExceptIO val
             case val of
                 Left  s -> return $ Left s
-                Right v -> caseTest (uncover tpNode) $ do
-                    of' $ \(Cons (Lit.String n) as) -> case n of
+                Right v -> match tpNode $ \case
+                    Cons (toString -> n) -> case n of
                         "Stream"  -> return $ Right $ Listener $ \f -> attachListener (unsafeFromData v) (f . decoder)
                         "Twitter" -> return $ Right $ Listener $ \_ -> attachListener (unsafeFromData v) (const $ return ())
                         _         -> return $ Right $ PlainVal $ decoder v
-                    of' $ \ANY -> return $ Right $ PlainVal ("", [])
+                    _ -> return $ Right $ PlainVal ("", [])
 
 readMeta :: NodeRef -> Command AST (Maybe NodeMeta)
-readMeta ref = runASTOp $ HMap.lookup metaKey . view (prop Meta) <$> Builder.read ref
+readMeta ref = runASTOp $ IR.readLayer @Meta ref
 
 getError :: NodeRef -> Command AST (Maybe (APIError.Error TypeRep))
 getError = runASTOp . getError'
@@ -245,30 +177,32 @@ tryHead [] = Nothing
 tryHead (a:_) = Just a
 
 getError' :: ASTOp m => NodeRef -> m (Maybe (APIError.Error TypeRep))
-getError' ref = do
-    n :: ASTNode <- Builder.read ref
-    err <- mapM reprError $ n ^. prop TCData . tcErrors
-    inps <- mapM (Builder.follow source) $ uncover n # Inputs
+getError' n = do
+    tc <- view tcErrors <$> IR.readLayer @TCData n
+    err <- mapM reprError tc
+    inp <- IR.readLayer @Inputs n
+    inps <- mapM (IR.source) inp
     inpErrs <- catMaybes <$> mapM getError' inps
     return $ tryHead err <|> tryHead inpErrs
 
 reprError :: ASTOp m => TCError NodeRef -> m (APIError.Error TypeRep)
 reprError tcErr = case tcErr of
-    TCError.ImportError Nothing m  -> return $ APIError.ImportError m
-    TCError.ImportError (Just n) m -> do
-        tp <- Builder.follow source =<< Builder.follow (prop Type) n
+    ImportError Nothing m  -> return $ APIError.ImportError m
+    ImportError (Just n) m -> do
+        tp <- do
+            t <- IR.readLayer @TypeLayer n
+            IR.source t
         tpRep <- Printer.getTypeRep tp
         return $ APIError.NoMethodError m tpRep
-    TCError.UnificationError uni -> do
-        uniNode <- Builder.read uni
-        caseTest (uncover uniNode) $ do
-            of' $ \(Unify l r) -> APIError.TypeError <$> (Printer.getTypeRep =<< Builder.follow source l) <*> (Printer.getTypeRep =<< Builder.follow source r)
-            of' $ \ANY         -> impossible
+    UnificationError uniNode -> do
+        match uniNode $ \case
+            (Unify l r) -> APIError.TypeError <$> (Printer.getTypeRep =<< IR.source l) <*> (Printer.getTypeRep =<< IR.source r)
+            _         -> impossible
 
 writeMeta :: NodeRef -> NodeMeta -> Command AST ()
-writeMeta ref newMeta = runASTOp $ Builder.withRef ref $ prop Meta %~ HMap.insert metaKey newMeta
+writeMeta ref newMeta = runASTOp $ IR.writeLayer @Meta (Just newMeta) ref
 
-renameVar :: NodeRef -> String -> Command AST ()
+renameVar :: NodeRef -> String -> Command AST NodeRef
 renameVar = runASTOp .: ASTBuilder.renameVar
 
 removeSubtree :: NodeRef -> Command AST ()
@@ -287,22 +221,27 @@ applyFunction :: NodeRef -> NodeRef -> Int -> Command AST NodeRef
 applyFunction = runASTOp .:. ASTBuilder.applyFunction
 
 redirectLambdaOutput :: NodeRef -> NodeRef -> Command AST NodeRef
-redirectLambdaOutput lambdaRef newOutputRef = runASTOp $ do
-    lambda <- Builder.read lambdaRef
-    caseTest (uncover lambda) $ do
-        of' $ \(Lam args _) -> do
-            args' <- (mapM . mapM) (Builder.follow source) args
-            Builder.lam args' newOutputRef
-        of' $ \ANY -> throwError $ show lambdaRef ++ " is not lambda"
+redirectLambdaOutput lambda newOutputRef = runASTOp $ do
+    match lambda $ \case
+        (Lam args _) -> do
+            args' <- ASTBuilder.unpackLamArguments lambda
+            lams args' newOutputRef
+
+lams :: ASTOp m => [NodeRef] -> NodeRef -> m NodeRef
+lams args output = IR.unsafeRelayout <$> foldM f (IR.unsafeRelayout output) (IR.unsafeRelayout <$> args)
+    where
+        f arg' lam' = lamAny (IR.arg arg') lam'
+
+lamAny :: ASTOp m => IR.Arg NodeRef -> NodeRef -> m NodeRef
+lamAny a b = fmap IR.generalize $ IR.lam a b
 
 setLambdaOutputToBlank :: NodeRef -> Command AST NodeRef
-setLambdaOutputToBlank lambdaRef = runASTOp $ do
-    lambda <- Builder.read lambdaRef
-    caseTest (uncover lambda) $ do
-        of' $ \(Lam args _) -> do
-          args' <- (mapM . mapM) (Builder.follow source) args
-          blank <- Builder.blank
-          Builder.lam args' blank
+setLambdaOutputToBlank lambda = runASTOp $ do
+    match lambda $ \case
+        (Lam args _) -> do
+          args' <- ASTBuilder.unpackLamArguments lambda
+          blank <- IR.generalize <$> IR.blank
+          lams args' blank
 
 unapplyArgument :: NodeRef -> Int -> Command AST NodeRef
 unapplyArgument = runASTOp .: ASTBuilder.removeArg
@@ -314,46 +253,40 @@ removeAccessor :: NodeRef -> Command AST NodeRef
 removeAccessor = runASTOp . ASTBuilder.unAcc
 
 getTargetNode :: NodeRef -> Command AST NodeRef
-getTargetNode nodeRef = runASTOp $ Builder.read nodeRef
-                               >>= return . view ASTBuilder.rightMatchOperand
-                               >>= Builder.follow source
+getTargetNode node = runASTOp $ ASTBuilder.rightMatchOperand node >>= IR.source
 
 getVarNode :: NodeRef -> Command AST NodeRef
-getVarNode nodeRef = runASTOp $ Builder.read nodeRef
-                            >>= return . view ASTBuilder.leftMatchOperand
-                            >>= Builder.follow source
+getVarNode node = runASTOp $ ASTBuilder.leftMatchOperand node >>= IR.source
 
 getLambdaInputRef :: NodeRef -> Int -> Command AST NodeRef
-getLambdaInputRef nodeRef pos = runASTOp $ do
-    node <- Builder.read nodeRef
-    caseTest (uncover node) $ do
-        of' $ \(Lam args out) -> (!! pos) <$> ASTBuilder.unpackArguments args
+getLambdaInputRef node pos = runASTOp $ do
+    match node $ \case
+        (Lam args out) -> (!! pos) <$> ASTBuilder.unpackLamArguments node
 
 isLambda :: NodeRef -> Command AST Bool
-isLambda ref = runASTOp $ do
-  node <- Builder.read ref
-  caseTest (uncover node) $ do
-    of' $ \(Lam _ _) -> return True
-    of' $ \ANY       -> return False
+isLambda node = runASTOp $ do
+    match node $ \case
+      (Lam _ _) -> return True
+      _       -> return False
 
 isLambdaInput :: ASTOp m => NodeRef -> NodeRef -> m Bool
-isLambdaInput node lambdaRef = do
-    lambda <- Builder.read lambdaRef
-    caseTest (uncover lambda) $ do
-        of' $ \(Lam args _) -> (node `elem`) <$> ASTBuilder.unpackArguments args
+isLambdaInput node lambda = do
+    match lambda $ \case
+        (Lam args _) -> (node `elem`) <$> ASTBuilder.unpackLamArguments node
 
 getLambdaOutputRef :: NodeRef -> Command AST NodeRef
-getLambdaOutputRef lambdaRef = runASTOp $ do
-    lambda <- Builder.read lambdaRef
-    caseTest (uncover lambda) $ do
-        of' $ \(Lam _ out) -> Builder.follow source out
+getLambdaOutputRef lambda = runASTOp $ do
+    match lambda $ \case
+        (Lam _ out) -> IR.source out
 
-replaceTargetNode :: NodeRef -> NodeRef -> Command AST ()
-replaceTargetNode matchNodeId newTargetId = runASTOp $ do
-    Builder.reconnect ASTBuilder.rightMatchOperand matchNodeId newTargetId
-    return ()
+replaceTargetNode :: NodeRef -> NodeRef -> Command AST NodeRef
+replaceTargetNode matchNode newTarget = runASTOp $ do
+    match matchNode $ \case
+        Unify l r -> do
+            l' <- IR.source l
+            IR.generalize <$> IR.unify l' newTarget
 
 dumpGraphViz :: String -> Command AST ()
-dumpGraphViz name = do
-    g <- runASTOp Builder.get
-    liftIO $ renderAndOpen [(name, name, g)]
+dumpGraphViz name = $notImplemented
+    -- g <- runASTOp Builder.get
+    -- liftIO $ renderAndOpen [(name, name, g)]

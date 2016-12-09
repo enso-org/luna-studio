@@ -1,3 +1,5 @@
+{-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE ViewPatterns #-}
 module Empire.ASTOps.Print where
 
 import           Prologue                 hiding (TypeRep)
@@ -13,109 +15,95 @@ import           Empire.Data.AST          (NodeRef)
 import qualified Empire.ASTOps.Builder    as ASTBuilder
 import           Empire.API.Data.TypeRep  (TypeRep (..))
 import           Luna.IR.Expr.Term.Uni
+import           Luna.IR (match)
 import qualified Luna.IR as IR
 
 
 getTypeRep :: ASTOp m => NodeRef -> m TypeRep
 getTypeRep tp = match tp $ \case
-      Cons (fromString -> s) as -> do
-            args <- ASTBuilder.unpackArguments as
-            argReps <- mapM getTypeRep args
-            return $ TCons s argReps
-        Lam as out -> do
-            args   <- ASTBuilder.unpackArguments as
-            argReps <- mapM getTypeRep args
-            outRep <- getTypeRep =<< IR.source out
-            return $ TLam argReps outRep
-        Acc (fromString -> n) t -> do
-            rep <- IR.source t >>= getTypeRep
-            return $ TAcc n rep
-        Var (fromString -> n) -> return $ TVar $ delete '#' n
-        Star -> return TStar
-        _ -> return TBlank
+    Cons (toString -> s) -> do
+        return $ TCons s []
+    Lam as out -> do
+        args   <- ASTBuilder.unpackLamArguments tp
+        argReps <- mapM getTypeRep args
+        outRep <- getTypeRep =<< IR.source out
+        return $ TLam argReps outRep
+    Acc (toString -> n) t -> do
+        rep <- IR.source t >>= getTypeRep
+        return $ TAcc n rep
+    Var (toString -> n) -> return $ TVar $ delete '#' n
+    Star -> return TStar
+    _ -> return TBlank
 
 parenIf :: Bool -> String -> String
 parenIf False s = s
 parenIf True  s = "(" ++ s ++ ")"
 
 printFunctionArguments :: ASTOp m => NodeRef -> m [String]
-printFunctionArguments lam = do
-    l <- Builder.read lam
-    caseTest (uncover l) $ do
-        Lam args _) -> do
-            args' <- ASTBuilder.unpackArguments args
-            mapM printExpression args'
+printFunctionArguments lam = match lam $ \case
+    Lam args _ -> do
+        args' <- ASTBuilder.unpackLamArguments lam
+        mapM printExpression args'
 
 printReturnValue :: ASTOp m => NodeRef -> m String
-printReturnValue lam = do
-    l <- Builder.read lam
-    caseTest (uncover l) $ do
-        Lam _ out) -> do
-            out' <- Builder.follow source out
-            printExpression out'
+printReturnValue lam = match lam $ \case
+    Lam _ out -> do
+        out' <- IR.source out
+        printExpression out'
 
 printFunctionHeader :: ASTOp m => NodeRef -> m String
-printFunctionHeader function = do
-    f <- Builder.read function
-    caseTest (uncover f) $ do
-        Match l r) -> do
-            name <- Builder.follow source l >>= printExpression
-            args <- Builder.follow source r >>= printFunctionArguments
-            return $ "def " ++ name ++ " " ++ unwords args ++ ":"
+printFunctionHeader function = match function $ \case
+    Match l r -> do
+        name <- IR.source l >>= printExpression
+        args <- IR.source r >>= printFunctionArguments
+        return $ "def " ++ name ++ " " ++ unwords args ++ ":"
 
 printExpression' :: ASTOp m => Bool -> Bool -> NodeRef -> m String
-printExpression' suppressNodes paren nodeRef = do
+printExpression' suppressNodes paren node = do
     let recur = printExpression' suppressNodes
-    node <- Builder.read nodeRef
-    let displayFun funExpr args = do
-            unpackedArgs <- ASTBuilder.unpackArguments args
+    let displayFun funExpr node' = do
+            unpackedArgs <- ASTBuilder.dumpArguments node'
             argsRep <- mapM (recur True) unpackedArgs
             if all (not . isAlpha) funExpr && length argsRep == 2
                 then return $ parenIf paren $ head argsRep ++ " " ++ funExpr ++ " " ++ (argsRep !! 1)
                 else do
                     let dropTailBlanks = dropWhileEnd (== "_") argsRep
-                    let shouldParen = paren && not (null args)
+                    let shouldParen = paren && not (null unpackedArgs)
                     case argsRep of
                         a : as -> return $ parenIf shouldParen $ funExpr ++ " " ++ unwords dropTailBlanks
                         _ -> return funExpr
 
-    caseTest (uncover node) $ do
-        Lam as o) -> do
-            args    <- ASTBuilder.unpackArguments as
+    match node $ \case
+        Lam as o -> do
+            args    <- ASTBuilder.unpackLamArguments node
             argReps <- mapM (printExpression' False False) args
-            out     <- Builder.follow source o
+            out     <- IR.source o
             sugared <- and <$> mapM ASTBuilder.isBlank args
             repr    <- printExpression' False sugared out
             let bindsRep = if sugared then "" else "-> " ++ unwords (('$' :) <$> argReps) ++ " "
             return $ parenIf (not sugared && paren) $ bindsRep ++ repr
-        Match l r) -> do
-            leftRep  <- Builder.follow source l >>= recur paren
-            rightRep <- Builder.follow source r >>= recur paren
+        Match l r -> do
+            leftRep  <- IR.source l >>= recur paren
+            rightRep <- IR.source r >>= recur paren
             return $ leftRep ++ " = " ++ rightRep
-        Var n) -> do
-            isNode <- ASTBuilder.isGraphNode nodeRef
-            return $ if isNode && suppressNodes then "_" else unwrap n
-        Acc n t) -> do
-            targetRef <- Builder.follow source t
-            target    <- Builder.read targetRef
-            caseTest (uncover target) $ do
-                Blank -> return $ "_." <> unwrap n
+        Var (toString -> n) -> do
+            isNode <- ASTBuilder.isGraphNode node
+            return $ if isNode && suppressNodes then "_" else n
+        Acc (toString -> n) t -> do
+            target <- IR.source t
+            match target $ \case
+                Blank -> return $ "_." <> n
                 _ -> do
-                    targetRep <- recur True targetRef
-                    return $ if targetRep == "_" then unwrap n else targetRep <> "." <> unwrap n
-        App f args) -> do
-            funExpr <- Builder.follow source f >>= recur True
-            displayFun funExpr args
-        Curry f args) -> do
-            funExpr <- Builder.follow source f >>= recur True
-            displayFun ("@" <> funExpr) args
+                    targetRep <- recur True target
+                    return $ if targetRep == "_" then n else targetRep <> "." <> n
+        App f args -> do
+            funExpr <- IR.source f >>= recur True
+            displayFun funExpr node
         Blank -> return "_"
-        Lit.Number _ s) -> return $ case s of
-            Lit.Rational r -> show r
-            Lit.Integer  i -> show i
-            Lit.Double   d -> printf "%f" d
-        Lit.String s) -> return $ show s
-        Cons (Lit.String n) _) -> return n
+        IR.Rational r -> pure $ show r
+        IR.Integer  i -> pure $ show i
+        IR.String s -> return $ show s
+        Cons (toString -> n) -> return n
         _ -> return ""
 
 printExpression :: ASTOp m => NodeRef -> m String

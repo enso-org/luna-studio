@@ -32,7 +32,9 @@ parsePortDefault (Expression expr)          = snd <$> parseExpr expr
 parsePortDefault (Constant (IntValue i))    = IR.generalize <$> IR.integer i
 parsePortDefault (Constant (StringValue s)) = IR.generalize <$> IR.rawString s
 parsePortDefault (Constant (DoubleValue d)) = IR.generalize <$> IR.rational (approxRational d 0.1)
-parsePortDefault (Constant (BoolValue b))   = IR.generalize <$> IR.cons (IR.rawString $ show b)
+parsePortDefault (Constant (BoolValue b))   = do
+    bool' <- IR.rawString $ show b
+    IR.generalize <$> IR.cons bool'
 
 replace :: String -> String -> String -> String
 replace word with = intercalate with . splitOn word

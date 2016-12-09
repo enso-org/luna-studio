@@ -1,46 +1,64 @@
 {-# LANGUAGE ConstraintKinds      #-}
 {-# LANGUAGE DataKinds            #-}
 {-# LANGUAGE FlexibleContexts     #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE TypeOperators        #-}
 {-# LANGUAGE UndecidableInstances #-}
+{-# LANGUAGE StandaloneDeriving   #-}
+{-# LANGUAGE TypeApplications     #-}
 
 module Empire.ASTOp where
 
 import           Prologue                                hiding (Cons, Curry, Num)
 
-import           Control.Monad.Error                     (ErrorT, MonadError, runErrorT)
+import           Control.Monad.Error                     (throwError)
 import           Data.Construction                       (Destructor, Unregister)
-import           Old.Data.Graph.Builder                      (MonadBuilder)
-import           Old.Data.Graph.Builders                     (Connectible)
-import           Old.Data.Graph.Model.Events                 (ELEMENT (..))
-import           Empire.Data.AST                         (AST, EdgeRef, NodeRef, Marker, Meta, Inputs)
+import           Empire.Data.AST                         (AST, EdgeRef, NodeRef, Marker, Meta,
+                                                          Inputs, TypeLayer, TCData)
 import           Empire.Empire                           (Command, Error, empire)
-import qualified Old.Luna.Syntax.Model.Network.Builder.Class as Builder
-import           Old.Luna.Syntax.Model.Network.Builder.Term  (NetworkBuilderT, TermBuilder_OLD, runNetworkBuilderT)
 import           Luna.IR.Layer.Loc                      (LocationT, MonadLocation)
 import qualified Luna.IR.Layer.Loc                      as Location
-import           Old.Luna.Syntax.Term.Class              (Acc, App, Blank, Cons, Curry, Lam, Match, Unify, Var)
-import qualified Old.Luna.Syntax.Term.Expr.Lit           as Lit
+import qualified Luna.Pass    as Pass (SubPass, Inputs, Outputs, Preserves, eval')
+import Luna.Pass.Evaluation.Interpreter.Layer (InterpreterData)
 import           Type.Inference
 
-import Luna.IR (IRMonad, Accessibles, ExprNet, ExprLinkNet, ExprLinkLayers, ExprLayers, Model)
+import Luna.IR (IRMonad, Accessibles, ExprNet, ExprLinkNet, ExprLinkLayers, ExprLayers, Model,
+                IRT(..), EXPR, LINK', attachLayer, registerElemLayer, runRegs, runIRT, blank, generalize)
 import Luna.IR.Layer.Succs (Succs)
 
-type ASTOp m = (MonadThrow m, IRMonad m, Accessibles m ('[ExprNet, ExprLinkNet] <> ExprLayers '[Model, Marker, Meta, Inputs, Succs] <> ExprLinkLayers '[Model]))
+type ASTOp m = (MonadThrow m, IRMonad m,
+                Accessibles m ('[ExprNet, ExprLinkNet] <>
+                    ExprLayers '[Model, Marker, Meta, Inputs, Succs, InterpreterData, TCData, TypeLayer] <>
+                    ExprLinkLayers '[Model]))
 
+data EmpirePass
+type instance Pass.Inputs  EmpirePass   = '[ExprNet, ExprLinkNet] <>
+    ExprLayers '[Model, Meta, Marker, Inputs, TypeLayer, Succs, InterpreterData, TypeLayer, TCData] <>
+    ExprLinkLayers '[Model]
+type instance Pass.Outputs EmpirePass   = '[ExprNet, ExprLinkNet] <>
+    ExprLayers '[Model, Meta, Marker, Inputs, TypeLayer, Succs, InterpreterData, TypeLayer, TCData] <>
+    ExprLinkLayers '[Model]
+type instance Pass.Preserves EmpirePass = '[]
 
-runBuilder :: NetworkBuilderT AST m (KnownTypeT ELEMENT NodeRef n) => Builder.NetworkBuilderT m a -> AST -> n (a, AST)
-runBuilder cmd ast = runInferenceT ELEMENT (Proxy :: Proxy NodeRef)
-                   $ runNetworkBuilderT ast
-                   $ Builder.runNetworkBuilderT cmd
+deriving instance MonadThrow a => MonadThrow (IRT a)
 
-runGraph :: (Monad n, NetworkBuilderT AST m (LocationT (KnownTypeT ELEMENT NodeRef n))) => Builder.NetworkBuilderT (ErrorT Error m) a -> AST -> n (Either Error a, AST)
-runGraph cmd g = runInferenceT ELEMENT (Proxy :: Proxy NodeRef)
-               $ flip Location.evalT Nothing
-               $ runNetworkBuilderT g
-               $ runErrorT
-               $ Builder.runNetworkBuilderT
-               $ cmd
-
-runASTOp :: NetworkBuilderT AST m (LocationT (KnownTypeT ELEMENT NodeRef IO)) => Builder.NetworkBuilderT (ErrorT Error m) a -> Command AST a
-runASTOp = empire . const . runGraph
+runASTOp :: Pass.SubPass EmpirePass (IRT IO) a -> Command AST a
+runASTOp pass = do
+    a <- liftIO $ runIRT $ do
+        runRegs
+        registerElemLayer @EXPR @Meta   $ \_ _ -> return Nothing
+        registerElemLayer @EXPR @Marker $ \_ _ -> return Nothing
+        registerElemLayer @EXPR @Inputs $ \_ _ -> return []
+        registerElemLayer @EXPR @TypeLayer $ \_ _ -> $notImplemented
+        registerElemLayer @EXPR @InterpreterData $ \_ _ -> $notImplemented
+        attachLayer (typeRep' @Model) (typeRep' @EXPR)
+        attachLayer (typeRep' @Model) (typeRep' @(LINK' EXPR))
+        attachLayer (typeRep' @Meta)  (typeRep' @EXPR)
+        attachLayer (typeRep' @Marker) (typeRep' @EXPR)
+        attachLayer (typeRep' @Inputs) (typeRep' @EXPR)
+        attachLayer (typeRep' @TypeLayer) (typeRep' @EXPR)
+        attachLayer (typeRep' @InterpreterData) (typeRep' @EXPR)
+        Pass.eval' pass
+    case a of
+        Left _ -> throwError "pass internal error"
+        Right a -> return a

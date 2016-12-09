@@ -9,6 +9,8 @@ import           Prologue
 import Luna.IR (IRMonad, AnyExpr, AnyExprLink, Accessibles, ExprNet, ExprLinkNet,
                 ExprLayers, Model, ExprLinkLayers, LayerData)
 
+import Luna.Pass.Evaluation.Interpreter.Value (Value)
+
 import Empire.API.Data.Node (NodeId)
 import Empire.API.Data.NodeMeta (NodeMeta)
 
@@ -25,6 +27,19 @@ type instance LayerData Meta t = Maybe NodeMeta
 
 data Inputs = Inputs
 type instance LayerData Inputs t = [EdgeRef]
+
+data TCData = TCData
+type instance LayerData TCData t = TCDataMock
+
+data TypeLayer = TypeLayer
+type instance LayerData TypeLayer t = EdgeRef
+
+data TCError a = ImportError (Maybe a) String
+               | UnificationError a
+
+data TCDataMock = TCDataMock { _tcErrors :: [TCError NodeRef] }
+
+makeLenses ''TCDataMock
 
 astNull :: AST -> Bool
 astNull = $notImplemented
