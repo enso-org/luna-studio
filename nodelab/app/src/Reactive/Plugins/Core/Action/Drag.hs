@@ -4,12 +4,7 @@ module Reactive.Plugins.Core.Action.Drag
     ( toAction
     ) where
 
-import           React.Flux                        ( mouseAltKey
-                                                   , mouseCtrlKey
-                                                   , mouseMetaKey
-                                                   , mouseScreenX
-                                                   , mouseScreenY
-                                                   , mouseShiftKey)
+import           React.Flux                        (mouseAltKey, mouseCtrlKey, mouseMetaKey, mouseScreenX, mouseScreenY, mouseShiftKey)
 
 import           Control.Arrow
 import           Control.Monad.State               ()
@@ -27,7 +22,7 @@ import qualified React.Store.Node                  as Model
 import qualified Reactive.Commands.Batch           as BatchCmd
 import           Reactive.Commands.Command         (Command)
 import           Reactive.Commands.Graph           (updateConnectionsForNodes)
-import           Reactive.Commands.Graph.Selection (selectNodes, modifySelectionHistory, selectedNodes)
+import           Reactive.Commands.Graph.Selection (selectNodes, selectedNodes)
 import           Reactive.Commands.Node.Snap       (snap)
 import qualified Reactive.State.Camera             as Camera
 import           Reactive.State.Drag               (DragHistory (..))

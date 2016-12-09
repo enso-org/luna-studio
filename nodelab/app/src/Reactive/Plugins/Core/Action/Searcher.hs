@@ -2,7 +2,7 @@
 
 module Reactive.Plugins.Core.Action.Searcher where
 
-import           React.Flux                 (KeyboardEvent, keyCode)
+import           React.Flux                 (KeyboardEvent)
 import           Utils.PreludePlus
 
 import           Event.Event                (Event (UI))
@@ -25,13 +25,14 @@ toAction _ = Nothing
 
 handleAppKey :: KeyboardEvent -> Command State ()
 handleAppKey evt
-    | keyCode evt == Keys.tab = Searcher.open
-    | otherwise               = return ()
+    | Keys.withoutMods evt Keys.tab = Searcher.open
+    | otherwise                     = return ()
 
 handleSearcherKey :: KeyboardEvent -> Command State ()
 handleSearcherKey evt
-    | keyCode evt == Keys.enter     = Searcher.accept
-    | keyCode evt == Keys.esc       = Searcher.close
-    | keyCode evt == Keys.downArrow = Searcher.moveDown
-    | keyCode evt == Keys.upArrow   = Searcher.moveUp
-    | otherwise                     = return ()
+    | Keys.withoutMods evt Keys.enter     = Searcher.accept
+    | Keys.withoutMods evt Keys.tab       = Searcher.close
+    | Keys.withoutMods evt Keys.esc       = Searcher.close
+    | Keys.withoutMods evt Keys.downArrow = Searcher.moveDown
+    | Keys.withoutMods evt Keys.upArrow   = Searcher.moveUp
+    | otherwise                           = return ()

@@ -39,7 +39,6 @@ import qualified Reactive.State.ConnectionPen   as ConnectionPen
 import qualified Reactive.State.Drag            as Drag
 import qualified Reactive.State.Graph           as Graph
 import qualified Reactive.State.MultiSelection  as MultiSelection
-import qualified Reactive.State.UIElements      as UIElements
 import qualified Reactive.State.UIRegistry      as UIRegistry
 
 
@@ -56,7 +55,6 @@ data State = State { _mousePos           :: Vector2 Int
                    , _uiRegistry         :: UIRegistry.State
                    , _connectionPen      :: ConnectionPen.State
                    , _workspace          :: Workspace
-                   , _uiElements         :: UIElements.State
                    , _lastEvent          :: Maybe Event.Event
                    , _eventNum           :: Int
                    , _jsState            :: Event.JSState
@@ -109,8 +107,8 @@ withConnection connectionId action =
 getConnection :: ConnectionId -> Command State (Maybe (Ref Connection))
 getConnection connectionId = withConnection connectionId return
 
-initialState :: DateTime -> Collaboration.ClientId -> StdGen -> Maybe Int -> (Ref App) -> State
-initialState = State (Vector2 200 200) def def def def def def def def def def def def defJsState def def
+initialState :: DateTime -> Collaboration.ClientId -> StdGen -> Maybe Int -> Ref App -> State
+initialState = State (Vector2 200 200) def def def def def def def def def def def defJsState def def
 
 inRegistry :: Command UIRegistry.State a -> Command State a
 inRegistry = zoom uiRegistry

@@ -4,9 +4,9 @@ module Reactive.Commands.Searcher where
 
 import qualified Data.Map                          as Map
 import qualified Data.Text.Lazy                    as Text
+import qualified Text.ScopeSearcher.QueryResult    as Result
 import           Utils.PreludePlus
 import           Utils.Vector
-import qualified Text.ScopeSearcher.QueryResult as Result
 
 import qualified JS.NodeSearcher                   as UI
 
@@ -21,11 +21,11 @@ import qualified React.View.Searcher               as Searcher
 import           Reactive.Commands.Camera          (syncCamera)
 import           Reactive.Commands.Command         (Command, performIO)
 import           Reactive.Commands.Graph.Selection (selectedNodes)
+import           Reactive.Commands.Node.Register   (registerNode)
 import qualified Reactive.State.Camera             as Camera
 import           Reactive.State.Global             (State)
 import qualified Reactive.State.Global             as Global
 import qualified Reactive.State.Graph              as Graph
-import Reactive.Commands.Node.Register (registerNode)
 
 import           Empire.API.Data.Node              (NodeId)
 import qualified Empire.API.Data.Node              as NodeAPI
@@ -49,9 +49,11 @@ open = do
     -- let offset = Vector2 0 (floor $ -40.0 * factor)
     -- (nsPos', nsPos) <- ensureNSVisible
     -- Global.uiElements . UIElements.nsPos .= nsPos'
+    pos <- use Global.mousePos
     Global.withSearcher $ Store.modifyM_ $ do
-        Searcher.results .= def
-        Searcher.visible .= True
+        Searcher.results  .= def
+        Searcher.position .= pos
+        Searcher.visible  .= True
         Searcher.selected .= 0
     liftIO Searcher.focus
     -- performIO $ UI.initNodeSearcher "" Nothing (nsPos + offset) False
@@ -75,8 +77,9 @@ accept :: Command State ()
 accept = do
     searcher <- Global.withSearcher $ Store.get
     let selected = searcher ^. Searcher.selected
+        pos      = searcher ^. Searcher.position
         mayResult = listToMaybe $ drop selected $ searcher ^. Searcher.results
-    registerNode $ case mayResult of
+    registerNode pos $ case mayResult of
         Just result -> result ^. Result.name
         Nothing -> searcher ^. Searcher.input
     close

@@ -24,7 +24,7 @@ import           Reactive.Commands.Command         (Command)
 import           Reactive.Commands.Graph           (focusNode)
 import           Reactive.Commands.Graph.Selection (selectedNodes)
 import           Reactive.Commands.Node.NodeMeta   (modifyNodeMeta)
-import qualified Reactive.Commands.NodeSearcher    as NS
+import qualified Reactive.Commands.Searcher        as Searcher
 import qualified Reactive.State.Camera             as Camera
 import           Reactive.State.Global             (State)
 import qualified Reactive.State.Global             as Global
@@ -87,4 +87,4 @@ editNodeExpression nodeId = do
         pos <- zoom Global.camera $ Camera.workspaceToScreen $ node ^. Model.position
         let halfCharWidth = 4
             offset = Vector2 (-10 - halfCharWidth * fromIntegral (Text.length expr)) (-59)
-        NS.openEdit expr nodeId $ pos + offset
+        Searcher.openEdit expr nodeId $ pos + offset

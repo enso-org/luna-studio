@@ -5,36 +5,28 @@ import qualified Data.HashMap.Strict        as HashMap
 import           Utils.PreludePlus
 import           Utils.Vector
 
-import           React.Flux                 (keyCode, KeyboardEvent)
-
-import qualified React.Event.App            as App
-
-import           React.Store                (Ref, WRef (..), ref, widget)
-import qualified React.Store                as Store
-import           React.Store.Node           (Node)
-import qualified React.Store.Node           as Node
-
-import           Object.Widget              (Position)
-import qualified Object.Widget.Node         as Model
-
-import           Event.Event                (Event (Keyboard, UI))
-import           Event.Keyboard             (KeyMods (..))
-import qualified Event.Keyboard             as Keyboard
-import qualified Event.Keys                 as Keys
-import           Event.UI                   (UIEvent (AppEvent))
-
-import           Reactive.State.Global      (State)
-import qualified Reactive.State.Global      as Global
-import qualified Reactive.State.Graph       as Graph
+import           React.Flux                 (KeyboardEvent)
 
 import qualified Empire.API.Data.Connection as C
 import           Empire.API.Data.Node       (NodeId)
 import qualified Empire.API.Data.Port       as P
 import qualified Empire.API.Data.PortRef    as R
-
+import           Event.Event                (Event (UI))
+import qualified Event.Keys                 as Keys
+import           Event.UI                   (UIEvent (AppEvent))
+import           Object.Widget              (Position)
+import qualified Object.Widget.Node         as Model
+import qualified React.Event.App            as App
+import           React.Store                (Ref, WRef (..), ref, widget)
+import qualified React.Store                as Store
+import           React.Store.Node           (Node)
+import qualified React.Store.Node           as Node
 import           Reactive.Commands.Batch    (cancelCollaborativeTouch, collaborativeTouch)
 import           Reactive.Commands.Command  (Command)
 import           Reactive.Commands.Graph    (allNodes')
+import           Reactive.State.Global      (State)
+import qualified Reactive.State.Global      as Global
+import qualified Reactive.State.Graph       as Graph
 
 
 

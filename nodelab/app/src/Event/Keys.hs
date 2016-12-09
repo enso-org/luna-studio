@@ -2,8 +2,14 @@ module Event.Keys where
 
 import           Utils.PreludePlus
 
-import           React.Flux                 (KeyboardEvent (..))
+import           React.Flux        (KeyboardEvent (KeyboardEvent))
 
+
+a :: Int
+a = 65
+
+del :: Int
+del = 46
 
 tab :: Int
 tab = 9

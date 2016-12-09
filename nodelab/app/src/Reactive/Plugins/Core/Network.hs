@@ -18,6 +18,7 @@ import qualified Event.Event                                         as Event
 import qualified Event.Processors.Batch                              as BatchEventProcessor
 import qualified Event.Processors.CustomEvent                        as CustomEventProcessor
 
+import qualified Reactive.Plugins.Core.Action.App                    as App
 import qualified Reactive.Plugins.Core.Action.Backend.Control        as Control
 import qualified Reactive.Plugins.Core.Action.Backend.Graph          as Graph
 import qualified Reactive.Plugins.Core.Action.Backend.ProjectManager as ProjectManager
@@ -30,7 +31,6 @@ import qualified Reactive.Plugins.Core.Action.Connect                as Connect
 import qualified Reactive.Plugins.Core.Action.ConnectionPen          as ConnectionPen
 import qualified Reactive.Plugins.Core.Action.Debug                  as Debug
 import qualified Reactive.Plugins.Core.Action.Drag                   as Drag
-import qualified Reactive.Plugins.Core.Action.General                as General
 import qualified Reactive.Plugins.Core.Action.MultiSelection         as MultiSelection
 import qualified Reactive.Plugins.Core.Action.Navigation             as Navigation
 import qualified Reactive.Plugins.Core.Action.Node                   as Node
@@ -63,21 +63,21 @@ consoleTimeStart = consoleTimeStart' . JSString.pack
 consoleTimeEnd   = consoleTimeEnd'   . JSString.pack
 
 actions :: [Event -> Maybe (Command State ())]
-actions =  [ Breadcrumbs.toAction
+actions =  [ App.toAction
+           , Breadcrumbs.toAction
            , CodeEditor.toAction
            , Drag.toAction
            , Graph.toAction
            , MultiSelection.toAction
+           , Navigation.toAction
            , Node.toAction
            , ProjectManager.toAction
            , Searcher.toAction
         --Debug.toActionEv
         --    , Control.toAction
         --    , Widget.toAction
-        --    , General.toAction
         --    , Camera.toAction
         --    , Connect.toAction
-           , Navigation.toAction
         --    , Collaboration.toAction
         --    , NodeSearcher.toAction
         --    , ConnectionPen.toAction
