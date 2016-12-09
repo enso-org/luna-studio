@@ -6,6 +6,7 @@ import qualified Data.Map                          as Map
 import qualified Data.Text.Lazy                    as Text
 import           Utils.PreludePlus
 import           Utils.Vector
+import qualified Text.ScopeSearcher.QueryResult as Result
 
 import qualified JS.NodeSearcher                   as UI
 
@@ -24,6 +25,7 @@ import qualified Reactive.State.Camera             as Camera
 import           Reactive.State.Global             (State)
 import qualified Reactive.State.Global             as Global
 import qualified Reactive.State.Graph              as Graph
+import Reactive.Commands.Node.Register (registerNode)
 
 import           Empire.API.Data.Node              (NodeId)
 import qualified Empire.API.Data.Node              as NodeAPI
@@ -70,7 +72,14 @@ moveUp = Global.withSearcher $ Store.modifyM_ $ do
     Searcher.selected %= \p -> (p - 1) `mod` items
 
 accept :: Command State ()
-accept = return ()
+accept = do
+    searcher <- Global.withSearcher $ Store.get
+    let selected = searcher ^. Searcher.selected
+        mayResult = listToMaybe $ drop selected $ searcher ^. Searcher.results
+    registerNode $ case mayResult of
+        Just result -> result ^. Result.name
+        Nothing -> searcher ^. Searcher.input
+    close
 
 openEdit :: Text -> NodeId -> Vector2 Int -> Command State ()
 openEdit expr nodeId pos = do
@@ -142,6 +151,7 @@ querySearch query = do
     sd <- scopedData
     let items = Scope.searchInScope sd query
     Global.withSearcher $ Store.modifyM_ $ do
+        Searcher.input .= query
         s <- use Searcher.selected
         when (s >= length items) $
             Searcher.selected .= length items - 1

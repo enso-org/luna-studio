@@ -1,7 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 module React.View.Node where
 
-
 import qualified Data.Text.Lazy    as Text
 
 import           React.Flux
@@ -14,6 +13,8 @@ import qualified React.Store.Node  as Node
 import           React.View.Port   (port_)
 import           Utils.PreludePlus
 import           Utils.Vector      (x, y)
+
+
 
 name :: JSString
 name = "node-editor"
@@ -64,7 +65,12 @@ node nodeRef = React.defineControllerView
                     [ "className" $= "name"
                     , "x"         $= "22" -- FIXME: half of the node width
                     , "y"         $= "-16"
-                    ] $ elemString $ Text.unpack $ n ^. Node.name
+                    ] $ elemString $ Text.unpack $ n ^. Node.expression
+                text_
+                    [ "className" $= "name"
+                    , "x"         $= "22" -- FIXME: half of the node width
+                    , "y"         $= "65"
+                    ] $ elemString $ Text.unpack $ n ^. Node.value
 
                 forM_ (n ^. Node.ports) $ port_ nodeRef
 
