@@ -48,7 +48,6 @@ updateExistingNode node = do
     maybeWidgetId <- Global.getNode nodeId
     zoom Global.graph $ modify (Graph.addNode node)
     Global.withNode nodeId $ mapM_ $ Store.modifyM_ $ do
-        -- displayPorts widgetId node --TODO[react]
         case node ^. Node.nodeType of
             Node.ExpressionNode expression -> Model.expression .= expression
             _                              -> return ()
