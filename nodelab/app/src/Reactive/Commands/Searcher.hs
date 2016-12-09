@@ -50,6 +50,7 @@ open = do
     Global.withSearcher $ Store.modifyM_ $ do
         Searcher.results .= def
         Searcher.visible .= True
+        Searcher.selected .= 0
     liftIO Searcher.focus
     -- performIO $ UI.initNodeSearcher "" Nothing (nsPos + offset) False
 
@@ -57,6 +58,19 @@ close :: Command State ()
 close = do
     Global.withSearcher $ Store.modify_ $ Searcher.visible .~ False
     liftIO App.focus
+
+moveDown :: Command State ()
+moveDown = Global.withSearcher $ Store.modifyM_ $ do
+    items <- length <$> use Searcher.results
+    Searcher.selected %= \p -> (p + 1) `mod` items
+
+moveUp :: Command State ()
+moveUp = Global.withSearcher $ Store.modifyM_ $ do
+    items <- length <$> use Searcher.results
+    Searcher.selected %= \p -> (p - 1) `mod` items
+
+accept :: Command State ()
+accept = return ()
 
 openEdit :: Text -> NodeId -> Vector2 Int -> Command State ()
 openEdit expr nodeId pos = do
@@ -127,8 +141,11 @@ querySearch :: Text -> Command State ()
 querySearch query = do
     sd <- scopedData
     let items = Scope.searchInScope sd query
-    Global.withSearcher $ Store.modify_ $
-        Searcher.results .~ items
+    Global.withSearcher $ Store.modifyM_ $ do
+        s <- use Searcher.selected
+        when (s >= length items) $
+            Searcher.selected .= length items - 1
+        Searcher.results .= items
 
 queryTree :: Text -> Command State ()
 queryTree query = do

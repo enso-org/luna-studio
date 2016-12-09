@@ -1,19 +1,19 @@
 {-# LANGUAGE OverloadedStrings #-}
 module React.View.Searcher where
 
-import qualified Data.Aeson           as Aeson
+import qualified Data.Aeson                     as Aeson
 import           React.Flux
-import qualified React.Flux           as React
-import qualified Data.Aeson               as Aeson
+import qualified React.Flux                     as React
+import  Data.Text.Lazy (unpack)
 
+import qualified Event.UI                       as UI
+import           React.Event.Searcher
+import           React.Store                    (Ref, dispatch, dt)
+import           React.Store.Searcher           (Searcher)
+import qualified React.Store.Searcher           as Searcher
+import qualified Text.ScopeSearcher.QueryResult as Result
 import           Utils.PreludePlus
 import           Utils.Vector
-import qualified Event.UI             as UI
-import           React.Event.Searcher
-import           React.Store          (Ref, dispatch, dt)
-import           React.Store.Searcher (Searcher)
-import qualified React.Store.Searcher as Searcher
-
 
 
 name :: JSString
@@ -26,7 +26,7 @@ searcher ref = React.defineControllerView
         let s = store ^. dt
             pos = s ^. Searcher.position
         when (s ^. Searcher.visible) $ do
-            div_ [ "className" $= "node-searcher"
+            div_ [ "className" $= "searcher"
                  , "style"     @= Aeson.object [ "top"  Aeson..= (show (pos ^. y) <> "px" :: String)
                                                , "left" Aeson..= (show (pos ^. x) <> "px" :: String)
                                                ]
@@ -37,6 +37,13 @@ searcher ref = React.defineControllerView
                         , onKeyDown   $ \e k ->  stopPropagation e : dispatch ref (UI.SearcherEvent $ KeyDown k)
                         , onChange    $ \e -> let val = target e "value" in dispatch ref $ UI.SearcherEvent $ InputChanged $ fromString val
                         ]
+                    div_ ["className" $= "searcher-results"] $
+                        forM_ (zip (s ^. Searcher.results) [0..]) $ \(result, idx) ->
+                            div_ ["className" $= if idx == s ^. Searcher.selected then "result-selected" else "result"] $ do
+                                div_ ["className" $= "result-prefix"] $
+                                    elemString $ fromString $ unpack (result ^. Result.prefix) <> "."
+                                div_ ["className" $= "result-name"] $
+                                    elemString $ fromString $ unpack $ result ^. Result.name
 
 
 searcher_ :: Ref Searcher -> ReactElementM ViewEventHandler ()

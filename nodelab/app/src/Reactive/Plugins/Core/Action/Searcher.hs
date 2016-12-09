@@ -30,5 +30,8 @@ handleAppKey evt
 
 handleSearcherKey :: KeyboardEvent -> Command State ()
 handleSearcherKey evt
-    | keyCode evt == Keys.esc = Searcher.close
-    | otherwise               = return ()
+    | keyCode evt == Keys.enter     = Searcher.accept
+    | keyCode evt == Keys.esc       = Searcher.close
+    | keyCode evt == Keys.downArrow = Searcher.moveDown
+    | keyCode evt == Keys.upArrow   = Searcher.moveUp
+    | otherwise                     = return ()

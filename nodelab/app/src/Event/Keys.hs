@@ -8,6 +8,9 @@ import           React.Flux                 (KeyboardEvent (..))
 tab :: Int
 tab = 9
 
+enter :: Int
+enter = 13
+
 esc :: Int
 esc = 27
 
