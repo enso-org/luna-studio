@@ -34,13 +34,14 @@ node nodeRef = React.defineControllerView
             , "transform" $= translate
             , "key"       $= fromString (show nodeId)
             ] $ do
+                forM_ (n ^. Node.ports) $ port_ nodeRef
                 text_
                     [ "className" $= "name"
                     , "x"         $= "22" -- FIXME: half of the node width
                     , "y"         $= "-16"
                     ] $ elemString $ Text.unpack $ n ^. Node.name
 
-                forM_ (n ^. Node.ports) $ port_ nodeRef
+
 
 
 node_ :: Ref Node -> ReactElementM ViewEventHandler ()

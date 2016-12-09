@@ -40,4 +40,5 @@ app ref = React.defineControllerView
                         searcher_ (s ^. App.searcher)
                      codeEditor_ (s ^. App.codeEditor)
 
+
 foreign import javascript safe "document.getElementById('focus-root').focus()" focus :: IO ()
