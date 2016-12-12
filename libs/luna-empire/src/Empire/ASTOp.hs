@@ -11,17 +11,19 @@ module Empire.ASTOp where
 
 import           Prologue                                hiding (Cons, Curry, Num)
 
+import           Control.Monad                           (foldM)
 import           Control.Monad.State                     (get, put)
 import           Control.Monad.Except                    (throwError)
-import           Empire.Data.AST                         (AST, ASTState(..), Marker, Meta,
+import           Empire.Data.AST                         (AST, ASTState(..), Marker, Meta, NodeRef,
                                                           Inputs, TypeLayer, TCData)
 import           Empire.Empire                           (Command)
 import qualified Luna.Pass    as Pass (SubPass, Inputs, Outputs, Preserves, eval')
 import Luna.Pass.Evaluation.Interpreter.Layer (InterpreterData)
 
 import Luna.IR (IRMonad, Accessibles, ExprNet, ExprLinkNet, ExprLinkLayers, ExprLayers, Model,
-                IRT(..), runIRT,
+                IRT(..), runIRT, unsafeRelayout, generalize, lam,
                 putIRState, snapshot)
+import qualified Luna.IR.Function as IR (Arg, arg)
 import Luna.IR.Layer.Succs (Succs)
 
 type ASTOp m = (MonadThrow m, IRMonad m,
@@ -56,3 +58,11 @@ runASTOp pass = do
     case a of
         Left err -> throwError $ "pass internal error: " ++ show err
         Right res -> return res
+
+lams :: ASTOp m => [NodeRef] -> NodeRef -> m NodeRef
+lams args output = unsafeRelayout <$> foldM f (unsafeRelayout output) (unsafeRelayout <$> args)
+    where
+        f arg' lam' = lamAny (IR.arg arg') lam'
+
+lamAny :: ASTOp m => IR.Arg NodeRef -> NodeRef -> m NodeRef
+lamAny a b = fmap generalize $ lam a b

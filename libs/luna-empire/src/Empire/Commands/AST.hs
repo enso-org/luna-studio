@@ -25,7 +25,7 @@ import           Empire.Data.AST                   (AST, NodeRef, Meta, NodeMark
                                                     TypeLayer, Inputs, tcErrors)
 import           Empire.Empire
 
-import           Empire.ASTOp                      (ASTOp, runASTOp)
+import           Empire.ASTOp                      (ASTOp, runASTOp, lams)
 import qualified Empire.ASTOps.Builder             as ASTBuilder
 import qualified Empire.ASTOps.Parse               as Parser
 import qualified Empire.ASTOps.Print               as Printer
@@ -229,14 +229,6 @@ redirectLambdaOutput lambda newOutputRef = runASTOp $ do
             args' <- ASTBuilder.unpackLamArguments lambda
             lams args' newOutputRef
         _ -> throwM $ NotLambdaException lambda
-
-lams :: ASTOp m => [NodeRef] -> NodeRef -> m NodeRef
-lams args output = IR.unsafeRelayout <$> foldM f (IR.unsafeRelayout output) (IR.unsafeRelayout <$> args)
-    where
-        f arg' lam' = lamAny (IR.arg arg') lam'
-
-lamAny :: ASTOp m => IR.Arg NodeRef -> NodeRef -> m NodeRef
-lamAny a b = fmap IR.generalize $ IR.lam a b
 
 setLambdaOutputToBlank :: NodeRef -> Command AST NodeRef
 setLambdaOutputToBlank lambda = runASTOp $ do

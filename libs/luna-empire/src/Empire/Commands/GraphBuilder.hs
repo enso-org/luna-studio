@@ -131,8 +131,8 @@ rhsIsLambda nid = do
     node <- GraphUtils.getASTTarget nid
     zoom Graph.ast $ runASTOp $ do
         match node $ \case
-            (Lam _ _) -> return True
-            _       -> return False
+            Lam{} -> return True
+            _     -> return False
 
 getNodeName :: NodeId -> Command Graph (Maybe Text)
 getNodeName nid = do
@@ -142,7 +142,10 @@ getNodeName nid = do
         vnode <- GraphUtils.getASTVar nid
         zoom Graph.ast $ runASTOp $ do
             match vnode $ \case
-                Var (toString -> n) -> return $ Just (Text.pack n)
+                Var n -> do
+                    str <- IR.source n
+                    match str $ \case
+                        IR.String s -> return $ Just (Text.pack s)
     else return Nothing
 
 getPortState :: ASTOp m => NodeRef -> m PortState

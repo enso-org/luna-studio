@@ -241,3 +241,9 @@ spec = around withChannels $ do
             withResult res $ \(endAst, mapping) -> do
                 mapping `shouldSatisfy` Map.null
                 endAst `shouldSatisfy` AST.astNull
+        it "RHS of `def foo` is Lam" $ \env -> do
+            u1 <- mkUUID
+            res <- evalEmp env $ do
+                Graph.addNode top u1 "def foo" def
+                Graph.withGraph top $ GraphBuilder.rhsIsLambda u1
+            withResult res $ \a -> a `shouldBe` True

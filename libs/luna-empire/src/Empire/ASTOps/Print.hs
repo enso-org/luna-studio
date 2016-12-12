@@ -86,9 +86,12 @@ printExpression' suppressNodes paren node = do
             leftRep  <- IR.source l >>= recur paren
             rightRep <- IR.source r >>= recur paren
             return $ leftRep ++ " = " ++ rightRep
-        Var (toString -> n) -> do
-            isNode <- ASTBuilder.isGraphNode node
-            return $ if isNode && suppressNodes then "_" else n
+        Var n -> do
+            str <- IR.source n
+            match str $ \case
+                IR.String s -> do
+                    isNode <- ASTBuilder.isGraphNode node
+                    return $ if isNode && suppressNodes then "_" else s
         Acc (toString -> n) t -> do
             target <- IR.source t
             match target $ \case

@@ -47,4 +47,3 @@ makeLenses ''TCDataMock
 
 astNull :: AST -> Bool
 astNull = $notImplemented
--- astNull ast = ast ^. elems . to Map.null
