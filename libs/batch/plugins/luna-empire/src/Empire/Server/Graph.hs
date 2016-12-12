@@ -164,9 +164,9 @@ mtuple f a = f a >>= \b -> pure ((),b)
 
 handleAddNode :: Request AddNode.Request -> StateT Env BusT ()
 handleAddNode = modifyGraph (mtuple action) success where
-    action (AddNode.Request location nodeType nodeMeta connectTo) = case nodeType of
+    action (AddNode.Request location nodeType nodeMeta connectTo nodeId) = case nodeType of
         AddNode.ExpressionNode expression -> addExpressionNode location expression nodeMeta connectTo
-    success request@(Request _ req@(AddNode.Request location nodeType nodeMeta connectTo)) _ node = do
+    success request@(Request _ req@(AddNode.Request location nodeType nodeMeta connectTo nodeId)) _ node = do
         replyResult request () node
         sendToBus' $ AddNode.Update location node
         case nodeType of
