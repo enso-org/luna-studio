@@ -45,7 +45,6 @@ updateNode node = do
 updateExistingNode :: Node -> Command State ()
 updateExistingNode node = do
     let nodeId  = node ^. Node.nodeId
-    maybeWidgetId <- Global.getNode nodeId
     zoom Global.graph $ modify (Graph.addNode node)
     Global.withNode nodeId $ mapM_ $ Store.modifyM_ $ do
         case node ^. Node.nodeType of
