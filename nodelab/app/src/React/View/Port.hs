@@ -12,17 +12,15 @@ import           Object.Widget.Port (Port)
 import qualified Object.Widget.Port as Port
 import qualified Data.JSString.Text as JS
 import qualified Numeric as Numeric
---import qualified Data.Text as T
---import qualified Data.Text.Internal.Lazy as TS
+
+
+showF :: Float -> String
+showF a = Numeric.showFFloat (Just 1) a ""
+
 
 name :: JSString
 name = "port"
 
---pi :: Float
---pi = 3.14159
-
-showF :: Float -> String
-showF a = Numeric.showFFloat (Just 1) a ""
 
 port :: Ref Node -> ReactView Port
 port ref = React.defineView name $ \port -> do
@@ -31,16 +29,6 @@ port ref = React.defineView name $ \port -> do
 
 port_ :: Ref Node -> Port -> ReactElementM ViewEventHandler ()
 port_ ref p = React.view (port ref) p mempty
-
-
-portSelf_ :: ReactElementM ViewEventHandler ()
-portSelf_ = do
-    let color = "#8ABEB7"
-    circle_
-        [ "className" $= "port port--self"
-        , "fill"      $= color
-        , "stroke"    $= color
-        ] mempty
 
 
 portIO_ :: ReactElementM ViewEventHandler ()
@@ -85,4 +73,14 @@ portIO_ = do
         , "fill"      $= color
         , "stroke"    $= color
         , "d"         $= svgPath
+        ] mempty
+
+
+portSelf_ :: ReactElementM ViewEventHandler ()
+portSelf_ = do
+    let color = "#8ABEB7"
+    circle_
+        [ "className" $= "port port--self"
+        , "fill"      $= color
+        , "stroke"    $= color
         ] mempty
