@@ -25,30 +25,56 @@ node nodeRef = React.defineControllerView
             nodeId = n ^. Node.nodeId
             pos = n ^. Node.position
             translate = fromString $ "translate(" <> show (pos ^. x) <> "," <> show (pos ^. y) <> ")" -- TODO: Consider implementing matrices
-        g_
-            [ onClick       $ \_ m -> dispatch nodeRef $ UI.NodeEvent $ Node.Select m nodeId
-            , onDoubleClick $ \_ _ -> dispatch nodeRef $ UI.NodeEvent $ Node.Enter nodeId
-            , onMouseDown   $ \e m -> stopPropagation e : dispatch nodeRef (UI.NodeEvent $ Node.MouseDown m nodeId)
-            , "className" $= (fromString $ "node node--collapsed" <> (if n ^. Node.isSelected then " node--selected" else []))
-            , "transform" $= translate
-            , "key"       $= fromString (show nodeId)
-            ] $ do
-                circle_
-                    [ "className" $= "selection-mark"
-                    ] mempty
+        if n ^. Node.isExpanded then
+             g_
+                 [ onClick       $ \_ m -> dispatch nodeRef $ UI.NodeEvent $ Node.Select m nodeId
+                 , onDoubleClick $ \_ _ -> dispatch nodeRef $ UI.NodeEvent $ Node.Enter nodeId
+                 , onMouseDown   $ \e m -> stopPropagation e : dispatch nodeRef (UI.NodeEvent $ Node.MouseDown m nodeId)
+                 , "className" $= (fromString $ "node node--collapsed" <> (if n ^. Node.isSelected then " node--selected" else []))
+                 , "transform" $= translate
+                 , "key"       $= fromString (show nodeId)
+                 ] $ do
+                     circle_
+                         [ "className" $= "selection-mark"
+                         ] mempty
 
-                forM_ (n ^. Node.ports) $ port_ nodeRef
+                     forM_ (n ^. Node.ports) $ port_ nodeRef
 
-                text_
-                    [ "className" $= "name"
-                    , "x"         $= "20"
-                    , "y"         $= "-16"
-                    ] $ elemString $ Text.unpack $ n ^. Node.expression
-                text_
-                    [ "className" $= "name"
-                    , "x"         $= "20"
-                    , "y"         $= "65"
-                    ] $ elemString $ Text.unpack $ n ^. Node.value
+                     text_
+                         [ "className" $= "name"
+                         , "x"         $= "20"
+                         , "y"         $= "-16"
+                         ] $ elemString $ Text.unpack (n ^. Node.expression) <> " EXPANDED"
+                     text_
+                         [ "className" $= "name"
+                         , "x"         $= "20"
+                         , "y"         $= "65"
+                         ] $ elemString $ Text.unpack $ n ^. Node.value
+        else
+            g_
+                [ onClick       $ \_ m -> dispatch nodeRef $ UI.NodeEvent $ Node.Select m nodeId
+                , onDoubleClick $ \_ _ -> dispatch nodeRef $ UI.NodeEvent $ Node.Enter nodeId
+                , onMouseDown   $ \e m -> stopPropagation e : dispatch nodeRef (UI.NodeEvent $ Node.MouseDown m nodeId)
+                , "className" $= (fromString $ "node node--collapsed" <> (if n ^. Node.isSelected then " node--selected" else []))
+                , "transform" $= translate
+                , "key"       $= fromString (show nodeId)
+                ] $ do
+                    circle_
+                        [ "className" $= "selection-mark"
+                        ] mempty
+
+                    forM_ (n ^. Node.ports) $ port_ nodeRef
+
+                    text_
+                        [ "className" $= "name"
+                        , "x"         $= "20"
+                        , "y"         $= "-16"
+                        ] $ elemString $ Text.unpack $ n ^. Node.expression
+                    text_
+                        [ "className" $= "name"
+                        , "x"         $= "20"
+                        , "y"         $= "65"
+                        ] $ elemString $ Text.unpack $ n ^. Node.value
 
 
 node_ :: Ref Node -> ReactElementM ViewEventHandler ()

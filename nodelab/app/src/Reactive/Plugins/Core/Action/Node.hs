@@ -10,6 +10,7 @@ import qualified React.Store.Node                  as Node
 import           Reactive.Commands.Command         (Command)
 import           Reactive.Commands.Graph.Selection (handleSelection, selectAll, unselectAll)
 import qualified Reactive.Commands.Node            as Node
+import           Reactive.Commands.Node.Node       (expandSelectedNodes)
 import           Reactive.Commands.Node.Remove     (removeSelectedNodes)
 import           Reactive.State.Global             (State)
 import qualified Reactive.State.Global             as Global
@@ -28,7 +29,8 @@ toAction _   = Nothing
 
 handleKey :: KeyboardEvent -> Command State ()
 handleKey evt
-    | Keys.withCtrl    evt Keys.a   = selectAll
-    | Keys.withoutMods evt Keys.del = removeSelectedNodes
-    | Keys.withoutMods evt Keys.esc = unselectAll
-    | otherwise                     = return ()
+    | Keys.withCtrl    evt Keys.a     = selectAll
+    | Keys.withoutMods evt Keys.del   = removeSelectedNodes
+    | Keys.withoutMods evt Keys.esc   = unselectAll
+    | Keys.withoutMods evt Keys.enter = expandSelectedNodes
+    | otherwise                       = return ()
