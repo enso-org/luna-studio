@@ -1,17 +1,17 @@
 {-# LANGUAGE OverloadedStrings #-}
 module React.View.Port where
 
-import qualified Event.UI          as UI
+import qualified Data.JSString.Text as JS
+import qualified Event.UI           as UI
+import qualified Numeric            as Numeric
+import           Object.Widget.Port (Port)
+import qualified Object.Widget.Port as Port
 import           React.Flux
-import qualified React.Flux        as React
-import           React.Store       (Ref, dispatch)
+import qualified React.Flux         as React
+import           React.Store        (Ref, dispatch)
 import           React.Store.Node   (Node)
 import qualified React.Store.Node   as Node
 import           Utils.PreludePlus
-import           Object.Widget.Port (Port)
-import qualified Object.Widget.Port as Port
-import qualified Data.JSString.Text as JS
-import qualified Numeric as Numeric
 
 
 data Portkind a b = Input  Int Int
@@ -85,3 +85,46 @@ drawPortIO_ number inputs mod1 mod2 mod3 = do
         , "stroke"    $= color
         , "d"         $= svgPath
         ] mempty
+
+
+--TODO[react] probably remove
+-- displayPorts :: WidgetId -> Node -> Command Global.State ()
+-- displayPorts wid node = do
+--         portGroup <- inRegistry $ UICmd.get wid $ Model.elements . Model.portGroup
+--         oldPorts  <- inRegistry $ UICmd.children portGroup
+--         oldPortWidgets <- forM oldPorts $ \wid' -> inRegistry $ (UICmd.lookup wid')
+--         let portRefs = (view PortModel.portRef) <$> oldPortWidgets
+--         forM_ portRefs $ \wid' -> Global.graph . Graph.portWidgetsMap . at wid' .= Nothing
+--         inRegistry $ mapM_ UICmd.removeWidget oldPorts
+--
+--         groupId      <- inRegistry $ Node.portControlsGroupId wid
+--         portControls <- inRegistry $ UICmd.children groupId
+--         inRegistry $ mapM_ UICmd.removeWidget portControls
+--
+--         inLabelsGroupId <- inRegistry $ Node.inLabelsGroupId wid
+--         inLabels        <- inRegistry $ UICmd.children inLabelsGroupId
+--         inRegistry $ mapM_ UICmd.removeWidget inLabels
+--
+--         outLabelsGroupId <- inRegistry $ Node.outLabelsGroupId wid
+--         outLabels        <- inRegistry $ UICmd.children outLabelsGroupId
+--         inRegistry $ mapM_ UICmd.removeWidget outLabels
+--
+--         forM_ (makePorts node    ) $ \p -> do
+--             portWidgetId <- inRegistry $ UICmd.register portGroup p def
+--             Global.graph . Graph.portWidgetsMap . at (p ^. PortModel.portRef) ?= portWidgetId
+--         inRegistry $ forM_ (node ^. Node.ports) $ makePortControl groupId node
+--         inRegistry $ forM_ (node ^. Node.ports) $ \p -> case p ^. Port.portId of
+--             InPortId  Self -> return ()
+--             InPortId  _    -> makePortLabel inLabelsGroupId  p
+--             OutPortId _    -> makePortLabel outLabelsGroupId p
+
+--TODO[react] probably remove
+-- makePortLabel :: WidgetId -> Port -> Command UIRegistry.State ()
+-- makePortLabel parent port = do
+--     let align = case port ^. Port.portId of
+--             InPortId  _ -> Label.Right
+--             OutPortId _ -> Label.Left
+--         label = Label.create (Vector2 360 15) text & Label.alignment .~ align
+--         text  = (Text.pack $ port ^. Port.name) <> " :: " <> portType
+--         portType = port ^. Port.valueType . ValueType.toText
+--     UICmd.register_ parent label def

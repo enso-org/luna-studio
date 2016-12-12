@@ -43,8 +43,7 @@ registerNode node = do
 
 --TODO[react]
 -- nodeHandlers :: Node -> HTMap
--- nodeHandlers node = addHandler (UINode.RemoveNodeHandler            removeSelectedNodes)
---                   $ addHandler (UINode.RenameNodeHandler            $ \_ nodeId name -> BatchCmd.renameNode nodeId name)
+-- nodeHandlers node = addHandler (UINode.RenameNodeHandler            $ \_ nodeId name -> BatchCmd.renameNode nodeId name)
 --                   $ addHandler (UINode.ChangeInputNodeTypeHandler   $ \_ nodeId name -> BatchCmd.setInputNodeType nodeId name)
 --                   $ addHandler (UINode.FocusNodeHandler             focusNode)
 --                   $ addHandler (UINode.ExpandNodeHandler            expandSelectedNodes)

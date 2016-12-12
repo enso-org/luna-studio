@@ -15,6 +15,7 @@ import           Utils.PreludePlus
 data Event = Select MouseEvent NodeId
            | MouseDown MouseEvent NodeId
            | Enter NodeId
+           | EditExpression NodeId
             deriving (Show, Generic, NFData, Typeable)
 
 instance ToJSON   Event
