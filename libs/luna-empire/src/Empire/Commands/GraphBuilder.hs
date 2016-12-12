@@ -195,11 +195,11 @@ extractPortInfo node = do
             if and areBlank && isApp
                 then extractPortInfo =<< IR.source o
                 else do
-                    tpRef <- $notImplemented
+                    tpRef <- IR.source =<< IR.readLayer @TypeLayer node
                     types <- extractArgTypes tpRef
                     return (types, [])
         _ -> do
-            tpRef <- $notImplemented
+            tpRef <- IR.source =<< IR.readLayer @TypeLayer node
             types <- extractArgTypes tpRef
             return (types, [])
 
