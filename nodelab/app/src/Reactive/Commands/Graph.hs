@@ -3,9 +3,9 @@ module Reactive.Commands.Graph
     , allNodes'
     , focusNode
     , getPort
-    , updateConnection
-    , updateConnections
-    , updateConnectionsForNodes
+    -- , updateConnection
+    -- , updateConnections
+    -- , updateConnectionsForNodes
     , updateNodeZOrder
     ) where
 
@@ -87,62 +87,62 @@ updateNodeZOrder = do
         let newZPos = negate $ (fromIntegral idx) / 100.0
         Store.modify_ (Node.zPos .~ newZPos) nRef
 
-updateConnections :: Command State ()
-updateConnections = do
-    connectionIds <- uses (Global.graph . Graph.connectionsMap) HashMap.keys
-    mapM_ updateConnection connectionIds
-
-updateConnectionsForNodes :: [NodeId] -> Command State ()
-updateConnectionsForNodes nodes = do
-    connections <- uses (Global.graph . Graph.connectionsMap) HashMap.toList
-    let nodes' = Set.fromList nodes
-        connectionsToUpdate = [wid | (wid, conn) <- connections, (    (conn ^. Connection.src . PortRef.srcNodeId) `Set.member` nodes'
-                                                                 || (conn ^. Connection.dst . PortRef.dstNodeId) `Set.member` nodes') ]
-    mapM_ updateConnection connectionsToUpdate
-
-lineEndPos :: Vector2 Double -> Vector2 Double -> Double -> Maybe PortModel.Port -> Vector2 Double
-lineEndPos node1Pos node2Pos radius (Just port) = moveByAngle node1Pos radius portAngle' where
-    portAngle   = port ^. PortModel.angle
-    portCount   = port ^. PortModel.portCount
-    portAngle'  = boundedAngle portAngle portCount node1Pos node2Pos
-lineEndPos node1Pos node2Pos radius Nothing = moveByAngle node1Pos radius portAngle where
-    portAngle = toAngle $ node2Pos - node1Pos
-
+-- TODO[react]: Find out if we need this
+-- updateConnections :: Command Global.State ()
+-- updateConnections = do
+--     connectionIds <- uses (Global.graph . Graph.connectionsMap) HashMap.keys
+--     mapM_ updateConnection connectionIds
 --
-
-updateConnection :: ConnectionId -> Command State () -- FIXME: run in MaybeT
-updateConnection connectionId = do
-    Just connection    <- preuse $ Global.graph . Graph.connectionsMap       . ix connectionId -- fatal
-    Just connectionRef <- Global.getConnection connectionId -- fatal
-
-    Just srcNode       <- getNode $ connection ^. Connection.src . PortRef.srcNodeId           -- fatal
-    Just dstNode       <- getNode $ connection ^. Connection.dst . PortRef.dstNodeId           -- fatal
-
-    srcPort            <- getPort      $ OutPortRef' $ connection ^. Connection.src            -- non-fatal
-    dstPort            <- getPort      $ InPortRef'  $ connection ^. Connection.dst            -- non-fatal
-    let dstNodePos     = dstNode ^. Model.position
-        srcNodePos     = srcNode ^. Model.position
-        dstRadius      = portRadius $ connection ^. Connection.dst
-        posSrc         = lineEndPos srcNodePos dstNodePos normalPortRadius srcPort
-        posDst         = lineEndPos dstNodePos srcNodePos dstRadius        dstPort
-
-    srcGraphPort      <- getGraphPort $ OutPortRef' $ connection ^. Connection.src            -- non-fatal
-    let visible        = lengthSquared (dstNodePos - srcNodePos) > 100
-        fallbackColor  = 13
-        color          = fromMaybe fallbackColor $ vtToColor <$> (view Port.valueType) <$> srcGraphPort
-
-    flip Store.modifyM_ connectionRef $ do
-        ConnectionModel.from    .= posSrc
-        ConnectionModel.to      .= posDst
-        ConnectionModel.visible .= visible
-        ConnectionModel.color   .= color
-
-moveByAngle :: Vector2 Double -> Double -> Angle -> Vector2 Double
-moveByAngle (Vector2 x y) radius angle = Vector2 (x + radius * cos angle) (y + radius * sin angle)
-
-normalPortRadius :: Double
-normalPortRadius = 22.0
-
-portRadius :: InPortRef -> Double
-portRadius (InPortRef _ Port.Self) = 0.0
-portRadius _ = normalPortRadius
+-- updateConnectionsForNodes :: [NodeId] -> Command Global.State ()
+-- updateConnectionsForNodes nodes = do
+--     connections <- uses (Global.graph . Graph.connectionsMap) HashMap.toList
+--     let nodes' = Set.fromList nodes
+--         connectionsToUpdate = [wid | (wid, conn) <- connections, (    (conn ^. Connection.src . PortRef.srcNodeId) `Set.member` nodes'
+--                                                                  || (conn ^. Connection.dst . PortRef.dstNodeId) `Set.member` nodes') ]
+--     mapM_ updateConnection connectionsToUpdate
+--
+-- lineEndPos :: Vector2 Double -> Vector2 Double -> Double -> Maybe PortModel.Port -> Vector2 Double
+-- lineEndPos node1Pos node2Pos radius (Just port) = moveByAngle node1Pos radius portAngle' where
+--     portAngle   = port ^. PortModel.angle
+--     portCount   = port ^. PortModel.portCount
+--     portAngle'  = boundedAngle portAngle portCount node1Pos node2Pos
+-- lineEndPos node1Pos node2Pos radius Nothing = moveByAngle node1Pos radius portAngle where
+--     portAngle = toAngle $ node2Pos - node1Pos
+--
+--
+-- updateConnection :: ConnectionId -> Command Global.State () -- FIXME: run in MaybeT
+-- updateConnection connectionId = do
+--     Just connection    <- preuse $ Global.graph . Graph.connectionsMap       . ix connectionId -- fatal
+--     Just connectionRef <- Global.getConnection connectionId -- fatal
+--
+--     Just srcNode       <- getNode $ connection ^. Connection.src . PortRef.srcNodeId           -- fatal
+--     Just dstNode       <- getNode $ connection ^. Connection.dst . PortRef.dstNodeId           -- fatal
+--
+--     srcPort            <- getPort      $ OutPortRef' $ connection ^. Connection.src            -- non-fatal
+--     dstPort            <- getPort      $ InPortRef'  $ connection ^. Connection.dst            -- non-fatal
+--     let dstNodePos     = dstNode ^. widgetPosition
+--         srcNodePos     = srcNode ^. widgetPosition
+--         dstRadius      = portRadius $ connection ^. Connection.dst
+--         posSrc         = lineEndPos srcNodePos dstNodePos normalPortRadius srcPort
+--         posDst         = lineEndPos dstNodePos srcNodePos dstRadius        dstPort
+--
+--     srcGraphPort      <- getGraphPort $ OutPortRef' $ connection ^. Connection.src            -- non-fatal
+--     let visible        = lengthSquared (dstNodePos - srcNodePos) > 100
+--         fallbackColor  = 13
+--         color          = fromMaybe fallbackColor $ vtToColor <$> (view Port.valueType) <$> srcGraphPort
+--
+--     flip Store.modifyM_ connectionRef $ do
+--         ConnectionModel.from    .= posSrc
+--         ConnectionModel.to      .= posDst
+--         ConnectionModel.visible .= visible
+--         ConnectionModel.color   .= color
+--
+-- moveByAngle :: Vector2 Double -> Double -> Angle -> Vector2 Double
+-- moveByAngle (Vector2 x y) radius angle = Vector2 (x + radius * cos angle) (y + radius * sin angle)
+--
+-- normalPortRadius :: Double
+-- normalPortRadius = 22.0
+--
+-- portRadius :: InPortRef -> Double
+-- portRadius (InPortRef _ Port.Self) = 0.0
+-- portRadius _ = normalPortRadius

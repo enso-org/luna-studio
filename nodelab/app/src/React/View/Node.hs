@@ -1,30 +1,51 @@
 {-# LANGUAGE OverloadedStrings #-}
 module React.View.Node where
 
-import qualified Data.Text.Lazy           as Text
-import           React.Flux
-import qualified React.Flux               as React
-
-import qualified Event.UI                 as UI
-import           React.Store              (Ref, dispatch, dt)
-import           React.Store.Node         (Node)
-import qualified React.Store.Node         as Node
-import           React.View.Port          (port_)
-import           React.View.Visualization (strValue, visualization_)
 import           Utils.PreludePlus
 import           Utils.Vector             (x, y)
 
+import qualified Data.Map.Lazy            as Map
+import qualified Data.Text.Lazy           as Text
+
+import           Empire.API.Data.Port     (InPort (..), PortId (..))
+
+import qualified Event.UI                 as UI
+
+import           Object.Widget.Port       (Port (..))
+
+import           React.Flux
+import qualified React.Flux               as React
+
+import           React.Store              (Ref, dispatch, dt)
+import           React.Store.Node         (Node)
+import qualified React.Store.Node         as Node
+
+import           React.View.Port          (port_)
+import           React.View.Visualization (strValue, visualization_)
 
 name :: JSString
 name = "node-editor"
+
+isIn :: Port -> Int
+isIn (Port _ (InPortId (Arg _)) _ _) = 1
+isIn _ = 0
+
+isOut :: Port -> Int
+isOut (Port _ (OutPortId _) _ _) = 1
+isOut _ = 0
+
+countPorts :: Port -> [Port] -> Int
+countPorts (Port _ (InPortId _)  _ _) ports = foldl (\acc p -> acc + (isIn p))  0 ports
+countPorts (Port _ (OutPortId _) _ _) ports = foldl (\acc p -> acc + (isOut p)) 0 ports
 
 --FIXME: move all styles to CSS
 node :: Ref Node -> ReactView ()
 node nodeRef = React.defineControllerView
     name nodeRef $ \nodeStore () -> do
-        let n = nodeStore ^. dt
-            nodeId = n ^. Node.nodeId
-            pos = n ^. Node.position
+        let n         = nodeStore ^. dt
+            nodeId    = n ^. Node.nodeId
+            pos       = n ^. Node.position
+            ports     = Map.elems $ n ^. Node.ports
             translate = fromString $ "translate(" <> show (pos ^. x) <> "," <> show (pos ^. y) <> ")" -- TODO: Consider implementing matrices
         if n ^. Node.isExpanded then
              g_
@@ -39,7 +60,7 @@ node nodeRef = React.defineControllerView
                          [ "className" $= "selection-mark"
                          ] mempty
 
-                     forM_ (n ^. Node.ports) $ port_ nodeRef
+                     forM_ ports $ \port -> port_ nodeRef port (countPorts port ports)
 
                      text_
                          [ "className" $= "name"
@@ -65,7 +86,7 @@ node nodeRef = React.defineControllerView
                         [ "className" $= "selection-mark"
                         ] mempty
 
-                    forM_ (n ^. Node.ports) $ port_ nodeRef
+                    forM_ ports $ \port -> port_ nodeRef port (countPorts port ports)
 
                     text_
                         [ onDoubleClick $ \e _ -> stopPropagation e : dispatch nodeRef (UI.NodeEvent $ Node.EditExpression nodeId)

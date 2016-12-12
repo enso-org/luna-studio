@@ -1,11 +1,10 @@
 {-# LANGUAGE ExistentialQuantification #-}
 {-# LANGUAGE OverloadedStrings         #-}
-
 module Object.Widget.Node where
 
 import           Control.Arrow
 import           Data.Aeson                          (ToJSON)
-import           Utils.PreludePlus
+import           Utils.PreludePlus                   hiding (set)
 import           Utils.Vector
 
 import           Data.Map.Lazy                       (Map)
@@ -14,7 +13,7 @@ import qualified Data.Text.Lazy                      as Text
 import           Data.Time.Clock                     (UTCTime)
 import qualified Empire.API.Data.Node                as N
 import qualified Empire.API.Data.NodeMeta            as NM
-import           Empire.API.Data.Port                (InPort (..), OutPort (..), PortId (..))
+import           Empire.API.Data.Port                (OutPort (..), PortId (..))
 import qualified Empire.API.Data.Port                as P
 import           Empire.API.Data.PortRef             (AnyPortRef, toAnyPortRef)
 import           Empire.API.Graph.Collaboration      (ClientId)
@@ -86,29 +85,10 @@ makeNode nid ports' pos expr code' name' tpe' vis = Node nid ports' pos 0.0 expr
 makePorts :: N.Node -> [PortModel.Port]
 makePorts node = makePort <$> ports' where
     nodeId'  = node ^. N.nodeId
-    makePort port = PortModel.Port portRef angle (portCount portId) isOnly (colorPort port) False where
+    makePort port = PortModel.Port portRef portId (colorPort port) False where
         portId  = port ^. P.portId
         portRef = toAnyPortRef nodeId' portId
-        angle   = PortModel.defaultAngle (portCount portId) portId
     ports'  = Map.elems $ node ^. N.ports
-    portIds = Map.keys  $ node ^. N.ports
-    portCount :: PortId -> Int
-    portCount (OutPortId _) = sum $ fmap isOut portIds where
-        isOut :: PortId -> Int
-        isOut (OutPortId _) = 1
-        isOut (InPortId  _) = 0
-    portCount (InPortId  _) = sum $ fmap isIn  portIds where
-        isIn :: PortId -> Int
-        isIn (OutPortId _)      = 0
-        isIn (InPortId (Arg _)) = 1
-        isIn (InPortId Self)    = 0
-    isOnly :: Bool
-    isOnly = 0 == (sum $ fmap shouldCount portIds) where
-        shouldCount :: PortId -> Int
-        shouldCount (OutPortId All)            = 0
-        shouldCount (InPortId Self)            = 0
-        shouldCount (OutPortId (Projection _)) = 1
-        shouldCount (InPortId (Arg _))         = 1
 
 fromNode :: N.Node -> Node
 fromNode n = let position' = uncurry Vector2 $ n ^. N.nodeMeta ^. NM.position

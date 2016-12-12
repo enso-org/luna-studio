@@ -6,7 +6,6 @@ module Reactive.Plugins.Core.Action.Backend.Graph
 import qualified Batch.Workspace                             as Workspace
 import           Utils.PreludePlus
 
-import qualified Empire.API.Data.Connection                  as Connection
 import qualified Empire.API.Data.Graph                       as Graph
 import           Empire.API.Data.GraphLocation               (GraphLocation (..))
 import qualified Empire.API.Data.Node                        as Node
@@ -30,12 +29,11 @@ import qualified Event.Event                                 as Event
 import           Reactive.Commands.Batch                     (collaborativeModify, requestCollaborationRefresh)
 import qualified Reactive.Commands.CodeEditor                as CodeEditor
 import           Reactive.Commands.Command                   (Command)
-import           Reactive.Commands.Graph                     (updateConnection)
-import           Reactive.Commands.Graph.Connect             (localConnectNodes)
+-- import           Reactive.Commands.Graph                     (updateConnection)
 import           Reactive.Commands.Graph.Disconnect          (localDisconnectAll)
 import           Reactive.Commands.Graph.Render              (renderGraph)
 import           Reactive.Commands.Graph.Selection           (selectNodes)
-import           qualified Reactive.Commands.Node as Node
+import qualified Reactive.Commands.Node                      as Node
 import           Reactive.Commands.Node.Create               (addDummyNode)
 import           Reactive.Commands.Node.NodeMeta             (updateNodesMeta)
 import           Reactive.Commands.Node.Remove               (localRemoveNodes)
@@ -94,8 +92,9 @@ toAction (Event.Batch ev) = Just $ case ev of
         correctLocation <- isCurrentLocation loc
         when (shouldProcess && correctLocation) $ do
             mapM_ addDummyNode nodes
-            connectionIds <- forM connections $ \conn -> localConnectNodes (conn ^. Connection.src) (conn ^. Connection.dst)
-            mapM_ updateConnection connectionIds
+            -- TODO[react]: Find out if we need this
+            -- connectionIds <- forM connections $ \conn -> localConnectNodes (conn ^. Connection.src) (conn ^. Connection.dst)
+            -- mapM_ updateConnection connectionIds
             whenM (isOwnRequest uuid) $ do
                 let nodeIds = map (^. Node.nodeId) nodes
                 collaborativeModify nodeIds
@@ -103,9 +102,10 @@ toAction (Event.Batch ev) = Just $ case ev of
         handleResponse response doNothing
 
     NodesConnected update -> do
-        whenM (isCurrentLocation $ update ^. Connect.location') $ do
-            connectionId <- localConnectNodes (update ^. Connect.src') (update ^. Connect.dst')
-            updateConnection connectionId
+        whenM (isCurrentLocation $ update ^. Connect.location') $ return () --do
+            -- TODO[react]: Find out correct way to do this
+            -- connectionId <- localConnectNodes (update ^. Connect.src') (update ^. Connect.dst')
+            -- updateConnection connectionId
 
     NodesDisconnected update -> do
         whenM (isCurrentLocation $ update ^. Disconnect.location') $ do

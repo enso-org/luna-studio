@@ -9,24 +9,29 @@ module Reactive.Commands.Node.Update
 
 import           Utils.PreludePlus
 
+import           Control.Arrow
 import           Control.Monad.State               (modify)
+
+import qualified Data.Map.Lazy                     as Map
 
 import qualified React.Store                       as Store
 import qualified React.Store.Node                  as Model
 
+import qualified Reactive.Commands.Batch           as BatchCmd
 import           Reactive.Commands.Command         (Command)
-import           Reactive.Commands.Graph           (updateConnectionsForNodes)
+import           Reactive.Commands.Node.Create     (addNode)
+
 import           Reactive.State.Global             (State)
 import qualified Reactive.State.Global             as Global
 import qualified Reactive.State.Graph              as Graph
 
 import           Empire.API.Data.Node              (Node, NodeId)
 import qualified Empire.API.Data.Node              as Node
+
 import           Empire.API.Graph.NodeResultUpdate (NodeValue)
 
-import qualified Reactive.Commands.Batch           as BatchCmd
-import           Reactive.Commands.Node.Create     (addNode)
-
+import           Object.Widget.Node                (makePorts)
+import           Object.Widget.Port                (portRef)
 
 
 updateNode :: Node -> Command State ()
@@ -45,9 +50,11 @@ updateExistingNode node = do
         case node ^. Node.nodeType of
             Node.ExpressionNode expression -> Model.expression .= expression
             _                              -> return ()
-        Model.code .= (node ^. Node.code)
+        Model.code  .= (node ^. Node.code)
+        Model.ports .= (Map.fromList $ map (view portRef &&& id) $ makePorts node)
         -- TODO: obsluzyc to ze moga zniknac polaczenia
-    updateConnectionsForNodes [nodeId]
+    -- TODO[react]: find out if we need this
+    -- updateConnectionsForNodes [nodeId]
 
 updateNodeValue :: NodeId -> NodeValue -> Command State ()
 updateNodeValue nid val =

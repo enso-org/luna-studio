@@ -1,55 +1,48 @@
 {-# LANGUAGE OverloadedStrings #-}
 module React.View.Port where
 
-import qualified Data.JSString.Text as JS
-import qualified Event.UI           as UI
-import qualified Numeric            as Numeric
-import           Object.Widget.Port (Port)
-import qualified Object.Widget.Port as Port
-import           React.Flux
-import qualified React.Flux         as React
-import           React.Store        (Ref, dispatch)
-import           React.Store.Node   (Node)
-import qualified React.Store.Node   as Node
 import           Utils.PreludePlus
 
+import           Empire.API.Data.Port (InPort (..), OutPort (..), PortId (..))
 
-data Portkind a b = Input  Int Int
-                  | Output Int Int
-                  | Self
-                  deriving (Eq, Ord)
+import qualified Numeric              as Numeric
+
+import           Object.Widget.Port   (Port (..))
+
+import           React.Flux
+import qualified React.Flux           as React
+
+import           React.Store          (Ref)
+import           React.Store.Node     (Node)
 
 
 showF :: Float -> String
 showF a = Numeric.showFFloat (Just 1) a ""
 
-
 name :: JSString
 name = "port"
 
+port :: Ref Node -> Int -> ReactView Port
+port _ numOfPorts = React.defineView name $ \p -> do
+    drawPort_ p numOfPorts
 
-port :: Ref Node -> ReactView Port
-port ref = React.defineView name $ \port -> do
-    drawPort_ (Output 1 3)
+port_ :: Ref Node -> Port -> Int -> ReactElementM ViewEventHandler ()
+port_ ref p numOfPorts = React.view (port ref numOfPorts) p mempty
 
-
-port_ :: Ref Node -> Port -> ReactElementM ViewEventHandler ()
-port_ ref p = React.view (port ref) p mempty
-
-
-drawPort_ :: Portkind a b -> ReactElementM ViewEventHandler ()
-drawPort_ Self = let color = "#8ABEB7" in
+drawPort_ :: Port -> Int -> ReactElementM ViewEventHandler ()
+drawPort_ (Port _ (InPortId Self) _ _) _ = let color = "#8ABEB7" in
     circle_
         [ "className" $= "port port--self"
         , "fill"      $= color
         , "stroke"    $= color
         ] mempty
-drawPort_ (Input  a b) = drawPortIO_ a b   1  "0" "1"
-drawPort_ (Output a b) = drawPortIO_ a b (-1) "1" "0"
+drawPort_ (Port _ (InPortId  (Arg i))        _ _) numOfPorts = drawPortIO_ (i+1) numOfPorts   1  "0" "1"
+drawPort_ (Port _ (OutPortId (Projection i)) _ _) numOfPorts = drawPortIO_ (i+1) numOfPorts (-1) "1" "0"
+drawPort_ (Port _ (OutPortId All)            _ _) numOfPorts = drawPortIO_ 1 numOfPorts (-1) "1" "0"
 
-
+-- TODO[Jan Kłosowski]: Count this properly without (+1)
 drawPortIO_ :: Int -> Int -> Float -> String -> String -> ReactElementM ViewEventHandler ()
-drawPortIO_ number inputs mod1 mod2 mod3 = do
+drawPortIO_ number numOfPorts mod1 mod2 mod3 = do
     let color = "#8ABEB7"
         r1    = 20 :: Float
         line  = 3 :: Float
@@ -57,7 +50,7 @@ drawPortIO_ number inputs mod1 mod2 mod3 = do
         r2   = r1 - line
         gap' = gap * (r1/r2)
 
-        t   = pi / fromIntegral inputs
+        t   = pi / fromIntegral numOfPorts
         t1  = fromIntegral number * t - pi - t + gap/2
         t2  = fromIntegral number * t - pi - gap/2
         t1' = fromIntegral number * t - pi - t + gap'/2
@@ -85,7 +78,6 @@ drawPortIO_ number inputs mod1 mod2 mod3 = do
         , "stroke"    $= color
         , "d"         $= svgPath
         ] mempty
-
 
 --TODO[react] probably remove
 -- displayPorts :: WidgetId -> Node -> Command Global.State ()
@@ -128,3 +120,14 @@ drawPortIO_ number inputs mod1 mod2 mod3 = do
 --         text  = (Text.pack $ port ^. Port.name) <> " :: " <> portType
 --         portType = port ^. Port.valueType . ValueType.toText
 --     UICmd.register_ parent label def
+--
+-- TODO[react]: handle this:
+-- onMouseOver, onMouseOut :: WidgetId -> Command Global.State ()
+-- onMouseOver wid = inRegistry $ do
+--     UICmd.update_ wid $ Model.highlight .~ True
+--     nodeId <- toNodeId wid
+--     Node.showHidePortLabels True nodeId
+-- onMouseOut  wid = inRegistry $ do
+--     UICmd.update_ wid $ Model.highlight .~ False
+--     nodeId <- toNodeId wid
+--     Node.showHidePortLabels False nodeId

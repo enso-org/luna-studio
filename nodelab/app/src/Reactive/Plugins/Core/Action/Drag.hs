@@ -21,7 +21,6 @@ import qualified React.Store                       as Store
 import qualified React.Store.Node                  as Model
 import qualified Reactive.Commands.Batch           as BatchCmd
 import           Reactive.Commands.Command         (Command)
-import           Reactive.Commands.Graph           (updateConnectionsForNodes)
 import           Reactive.Commands.Graph.Selection (selectNodes, selectedNodes)
 import           Reactive.Commands.Node.Snap       (snap)
 import qualified Reactive.State.Camera             as Camera
@@ -83,7 +82,8 @@ moveNodes nodesPos = do
     forM_ (Map.toList nodesPos) $ \(nodeId, pos) -> do
         Global.withNode nodeId $ mapM_ $ Store.modify_ $
             Model.position .~ pos
-    updateConnectionsForNodes $ Map.keys nodesPos
+    -- TODO[react]: Find out if we need this
+    -- updateConnectionsForNodes $ Map.keys nodesPos
 
 stopDrag :: Vector2 Int -> Command State ()
 stopDrag coord = do
@@ -99,5 +99,6 @@ stopDrag coord = do
                     newMeta <- preuse $ Global.graph . Graph.nodesMap . ix wid . Node.nodeMeta
                     return $ (wid, ) <$> newMeta
                 BatchCmd.updateNodeMeta $ catMaybes updates
-                updateConnectionsForNodes $ fst <$> nodesToUpdate
+                -- TODO[react]: Find out if we need this
+                -- updateConnectionsForNodes $ fst <$> nodesToUpdate
             else selectNodes [nodeId]
