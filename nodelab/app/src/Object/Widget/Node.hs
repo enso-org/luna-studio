@@ -25,15 +25,13 @@ import           Reactive.Commands.Node.Ports.Colors (colorPort)
 import           Reactive.State.Collaboration        (ColorId)
 
 
-data Elements = Elements { _expressionLabel     :: WidgetId
-                         , _portGroup           :: WidgetId
+data Elements = Elements { _portGroup           :: WidgetId
                          , _portControls        :: WidgetId
                          , _inLabelsGroup       :: WidgetId
                          , _outLabelsGroup      :: WidgetId
                          , _expandedGroup       :: WidgetId
                          , _nodeGroup           :: WidgetId
                          , _nameTextBox         :: WidgetId
-                         , _valueLabel          :: WidgetId
                          , _visualizationGroup  :: WidgetId
                          , _execTimeLabel       :: WidgetId
                          , _nodeType            :: Maybe WidgetId
@@ -42,7 +40,7 @@ data Elements = Elements { _expressionLabel     :: WidgetId
                          } deriving (Eq, Show, Generic)
 
 instance Default Elements where
-    def = Elements def def def def def def def def def def def def def def
+    def = Elements def def def def def def def def def def def def
 
 type CollaborationMap = Map ClientId UTCTime
 data Collaboration = Collaboration { _touch  :: Map ClientId (UTCTime, ColorId)

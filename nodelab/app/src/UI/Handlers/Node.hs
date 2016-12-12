@@ -163,9 +163,6 @@ instance CompositeWidget Model.Node where
         let grp    = Group.create & Group.size .~ Vector2 1 1
         portGroup <- UICmd.register wid grp def
 
-        let label = Style.expressionLabel $ trimExpression $ model ^. Model.expression
-        expressionLabelId <- UICmd.register wid label def
-
         let group  = Group.create & Group.position .~ Style.controlsPosition
         controlGroups <- UICmd.register wid group Style.controlsLayout
 
@@ -202,23 +199,18 @@ instance CompositeWidget Model.Node where
         let grp    = Group.create
         portControlsGroupId <- UICmd.register expandedGroup grp Style.expandedGroupLayout
 
-        let label  = Style.valueLabel ""
-        valueLabelId <- UICmd.register controlGroups label def
-
         let group  = Group.create & Group.style   .~ Style.visualizationGroupStyle
                                   & Group.visible .~ (model ^. Model.isExpanded)
                                   & Group.size    . y .~ 0
         visualizationGroupId <- UICmd.register controlGroups group (Layout.verticalLayoutHandler 0.0)
 
-        void $ UIRegistry.updateWidgetM wid $ Model.elements %~ ( (Model.expressionLabel     .~ expressionLabelId          )
-                                                               . (Model.expandedGroup       .~ expandedGroup              )
+        void $ UIRegistry.updateWidgetM wid $ Model.elements %~ ( (Model.expandedGroup       .~ expandedGroup              )
                                                                . (Model.nodeGroup           .~ nodeGroupId                )
                                                                . (Model.portGroup           .~ portGroup                  )
                                                                . (Model.portControls        .~ portControlsGroupId        )
                                                                . (Model.inLabelsGroup       .~ inLabelsGroupId            )
                                                                . (Model.outLabelsGroup      .~ outLabelsGroupId           )
                                                                . (Model.nameTextBox         .~ nameTextBoxId              )
-                                                               . (Model.valueLabel          .~ valueLabelId               )
                                                                . (Model.visualizationGroup  .~ visualizationGroupId       )
                                                                . (Model.execTimeLabel       .~ execTimeLabelId            )
                                                                . (Model.visualizationToggle .~ Just visualizationToggleId )
@@ -232,10 +224,6 @@ instance CompositeWidget Model.Node where
             UICmd.update_ controlsId $ Group.visible .~ (model ^. Model.isExpanded)
             UICmd.update_ valueVisId $ Group.visible .~ (model ^. Model.isExpanded)
 
-        whenChanged old model Model.expression $ do
-            let exprId = model ^. Model.elements . Model.expressionLabel
-            UICmd.update_ exprId     $ Label.label   .~ trimExpression (model ^. Model.expression)
-
         whenChanged old model Model.name  $ do
             let nameTbId = model ^. Model.elements . Model.nameTextBox
             UICmd.update_ nameTbId   $ LabeledTextBox.value .~ (model ^. Model.name)
@@ -244,10 +232,6 @@ instance CompositeWidget Model.Node where
             let visTgId = model ^. Model.elements . Model.visualizationToggle
             withJust visTgId $ \visTgId -> UICmd.update_ visTgId $ Toggle.value .~ (model ^. Model.visualizationsEnabled)
 
-        whenChanged old model Model.value $ do
-            let valueId = model ^. Model.elements . Model.valueLabel
-            UICmd.update_ valueId    $ Label.label   .~ (model ^. Model.value)
-
         whenChanged old model Model.tpe   $ withJust (model ^. Model.tpe) $ \tpe -> do
             let typeTbId = model ^. Model.elements . Model.nodeType
             withJust typeTbId $ \typeTbId -> UICmd.update_ typeTbId $ LabeledTextBox.value .~ tpe
@@ -255,11 +239,6 @@ instance CompositeWidget Model.Node where
         whenChanged old model Model.execTime $ do
             let etId = model ^. Model.elements . Model.execTimeLabel
             UICmd.update_ etId $ Label.label     .~ (fromMaybe "Execution time: --" $ (\v -> "Execution time: " <> v <> " ms") <$> (Text.pack . show) <$> model ^. Model.execTime)
-
-        whenChanged old model Model.isExpanded $ do
-            let valueId = model ^. Model.elements . Model.valueLabel
-            UICmd.update_ valueId  $ Label.alignment .~ (if model ^. Model.isExpanded then Label.Left else Label.Center)
-            UICmd.moveX   valueId  $ if model ^. Model.isExpanded then 0.0 else -25.0
 
         withJust (model ^. Model.code) $ \codeBody -> do
             let nodeGroupId = model ^. Model.elements . Model.nodeGroup
@@ -285,9 +264,6 @@ inLabelsGroupId wid = UICmd.get wid $ Model.elements . Model.inLabelsGroup
 
 outLabelsGroupId :: WidgetId -> Command UIRegistry.State WidgetId
 outLabelsGroupId wid = UICmd.get wid $ Model.elements . Model.outLabelsGroup
-
-expressionId :: WidgetId -> Command UIRegistry.State WidgetId
-expressionId wid = UICmd.get wid $ Model.elements . Model.expressionLabel
 
 valueGroupId :: WidgetId -> Command UIRegistry.State WidgetId
 valueGroupId wid = UICmd.get wid $ Model.elements . Model.visualizationGroup
