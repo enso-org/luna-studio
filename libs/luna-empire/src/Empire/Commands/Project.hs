@@ -4,7 +4,7 @@ module Empire.Commands.Project
     , createProject
     ) where
 
-import           Control.Monad.Error     (throwError)
+import           Control.Monad.Except    (throwError)
 import           Control.Monad.Reader
 import           Control.Monad.State
 import           Prologue

@@ -29,34 +29,26 @@ module Empire.Commands.Graph
     ) where
 
 import           Control.Monad                 (forM, forM_)
-import           Control.Monad.Except          (throwError)
 import           Control.Monad.State           hiding (when)
 import           Data.Coerce                   (coerce)
-import           Data.IntMap                   (IntMap)
-import qualified Data.IntMap                   as IntMap
-import           Data.List                     as List (last, sort)
+import           Data.List                     (sort)
 import qualified Data.Map                      as Map
-import           Data.Maybe                    (catMaybes)
 import           Data.Text.Lazy                (Text)
 import qualified Data.Text.Lazy                as Text
-import           Data.Traversable              (forM)
 import qualified Data.UUID                     as UUID
 import qualified Data.UUID.V4                  as UUID (nextRandom)
-import           Prologue
+import           Prologue                      hiding (children, filtered)
 
 import           Empire.Data.AST                 (Marker, NodeMarker(..))
 import           Empire.Data.BreadcrumbHierarchy (addID, addWithLeafs, removeID, topLevelIDs)
 import           Empire.Data.Graph               (Graph)
 import qualified Empire.Data.Graph               as Graph
-import qualified Empire.Data.Library             as Library
 
 import           Empire.API.Data.Breadcrumb      as Breadcrumb (Breadcrumb(..), Named, BreadcrumbItem(..))
 import           Empire.API.Data.Connection      (Connection (..))
-import           Empire.API.Data.DefaultValue    (PortDefault (Constant), Value (..))
+import           Empire.API.Data.DefaultValue    (PortDefault (Constant))
 import qualified Empire.API.Data.Graph           as APIGraph
 import           Empire.API.Data.GraphLocation   (GraphLocation (..))
-import qualified Empire.API.Data.GraphLocation   as GraphLocation
-import           Empire.API.Data.Library         (LibraryId)
 import           Empire.API.Data.Node            (Node (..), NodeId)
 import qualified Empire.API.Data.Node            as Node
 import           Empire.API.Data.NodeMeta        (NodeMeta)
@@ -65,16 +57,12 @@ import           Empire.API.Data.Port            (InPort (..), OutPort (..), Por
 import qualified Empire.API.Data.Port            as Port (PortState (..), state)
 import           Empire.API.Data.PortRef         (AnyPortRef (..), InPortRef (..), OutPortRef (..))
 import qualified Empire.API.Data.PortRef         as PortRef
-import           Empire.API.Data.Project         (ProjectId)
-import qualified Data.HMap.Lazy                     as HMap
 import Empire.ASTOp (runASTOp)
 
-import           Debug.Trace                     (trace)
 import qualified Empire.Commands.AST             as AST
 import           Empire.Commands.Breadcrumb      (withBreadcrumb)
 import qualified Empire.Commands.GraphBuilder    as GraphBuilder
 import qualified Empire.Commands.GraphUtils      as GraphUtils
-import           Empire.Commands.Library         (withLibrary)
 import qualified Empire.Commands.Publisher       as Publisher
 import           Empire.Empire
 
@@ -186,7 +174,7 @@ updateNodeMeta loc nodeId newMeta = withGraph loc $ do
         when doTC $ runTC loc False
     where
         triggerTC :: NodeMeta -> NodeMeta -> Bool
-        triggerTC oldMeta newMeta = oldMeta ^. NodeMeta.displayResult /= newMeta ^. NodeMeta.displayResult
+        triggerTC oldMeta' newMeta' = oldMeta' ^. NodeMeta.displayResult /= newMeta' ^. NodeMeta.displayResult
 
 connectCondTC :: Bool -> GraphLocation -> OutPortRef -> InPortRef -> Empire ()
 connectCondTC doTC loc outPort inPort = withGraph loc $ do
@@ -206,7 +194,7 @@ connectPersistent (OutPortRef srcNodeId srcPort) (InPortRef dstNodeId dstPort) =
         Arg num -> makeApp srcNodeId dstNodeId num inputPos
 
 connectNoTC :: GraphLocation -> OutPortRef -> InPortRef -> Command Graph ()
-connectNoTC loc outPort@(OutPortRef srcNodeId srcPort) inPort@(InPortRef dstNodeId dstPort) = connectPersistent outPort inPort
+connectNoTC _loc outPort inPort = connectPersistent outPort inPort
 
 setDefaultValue :: GraphLocation -> AnyPortRef -> PortDefault -> Empire ()
 setDefaultValue loc portRef val = withTC loc False $ setDefaultValue' portRef val
@@ -225,7 +213,7 @@ setDefaultValue' portRef val = do
     GraphUtils.rewireNode nodeId newRef
 
 disconnect :: GraphLocation -> InPortRef -> Empire ()
-disconnect loc port@(InPortRef dstNodeId dstPort) = withTC loc False $ disconnectPort port
+disconnect loc port = withTC loc False $ disconnectPort port
 
 getNodeMeta :: GraphLocation -> NodeId -> Empire (Maybe NodeMeta)
 getNodeMeta loc nodeId = withGraph loc $ do
@@ -245,14 +233,14 @@ getCode loc = withGraph loc $ do
     allNodes <- uses Graph.breadcrumbHierarchy topLevelIDs
     refs     <- mapM GraphUtils.getASTPointer $ flip filter allNodes $ \nid ->
         case returnedNodeId of
-            Just id -> id /= nid
+            Just id' -> id' /= nid
             _       -> True
     metas    <- zoom Graph.ast $ mapM AST.readMeta refs
     let sorted = fmap snd $ sort $ zip metas allNodes
-    lines <- mapM printNodeLine sorted
+    lines' <- mapM printNodeLine sorted
     return $ unlines $ case function of
-        Just (header, ret) -> header : map ("    " ++) (lines ++ [ret])
-        _                  -> lines
+        Just (header, ret) -> header : map ("    " ++) (lines' ++ [ret])
+        _                  -> lines'
 
 getGraph :: GraphLocation -> Empire APIGraph.Graph
 getGraph loc = withTC loc True GraphBuilder.buildGraph
@@ -269,7 +257,7 @@ decodeLocation loc@(GraphLocation _ _ crumbs) = withGraph loc $ GraphBuilder.dec
 renameNode :: GraphLocation -> NodeId -> Text -> Empire ()
 renameNode loc nid name = withTC loc False $ do
     vref <- GraphUtils.getASTVar nid
-    newVar <- zoom Graph.ast $ AST.renameVar vref (Text.unpack name)
+    _newVar <- zoom Graph.ast $ AST.renameVar vref (Text.unpack name)
     $notImplemented
 
 dumpGraphViz :: GraphLocation -> Empire ()
@@ -336,9 +324,9 @@ unApp nodeId pos = do
 makeAcc :: NodeId -> NodeId -> Int -> Command Graph ()
 makeAcc src dst inputPos = do
     edges <- GraphBuilder.getEdgePortMapping
-    let (connectToInputEdge, connectToOutputEdge) = case edges of
-            Nothing           -> (False, False)
-            Just (input, out) -> (input == src, out == dst)
+    let connectToInputEdge = case edges of
+            Nothing           -> False
+            Just (input, _out) -> input == src
     if | connectToInputEdge -> do
         lambda  <- use Graph.insideNode <?!> "impossible: connecting to input edge while outside node"
         lambda' <- GraphUtils.getASTTarget lambda

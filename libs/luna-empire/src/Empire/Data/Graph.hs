@@ -8,11 +8,10 @@ import           Empire.API.Data.Node              (NodeId)
 import           Empire.Data.BreadcrumbHierarchy   (BreadcrumbHierarchy, empty)
 import           Prologue
 
-import           Empire.Data.AST                   (AST, ASTState(..), EdgeRef, NodeRef, Marker, Meta,
+import           Empire.Data.AST                   (AST, ASTState(..), NodeRef, Marker, Meta,
                                                     Inputs, TypeLayer, TCData, TCDataMock(..))
-import Luna.IR (IRMonad, Accessibles, ExprNet, ExprLinkNet, ExprLinkLayers, ExprLayers, LayerData, Model,
-                IRT(..), EXPR, LINK', attachLayer, registerElemLayer, runIRT, runRegs, blank, generalize,
-                layerReg4, snapshot)
+import Luna.IR (LayerData, Model,
+                EXPR, LINK', attachLayer, registerElemLayer, runIRT, runRegs, snapshot)
 import Luna.IR.Layer.Succs (Succs)
 import Luna.Pass.Evaluation.Interpreter.Layer (InterpreterData, InterpreterLayer)
 

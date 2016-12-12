@@ -7,25 +7,22 @@ module Empire.Commands.Persistence
     , exportProject
     ) where
 
-import           Control.Monad.Except            (catchError, throwError)
+import           Control.Monad.Except            (throwError)
 import           Control.Monad.Reader
 import           Control.Monad.State
-import qualified Data.ByteString.Lazy            as BS (ByteString, putStrLn, readFile, writeFile)
+import qualified Data.ByteString.Lazy            as BS (ByteString, readFile, writeFile)
 import qualified Data.IntMap                     as IntMap
-import           Data.Maybe                      (fromMaybe)
 import qualified Data.UUID                       as UUID
 import qualified Data.UUID.V4                    as UUID
-import           Prologue
+import           Prologue                        hiding (p)
 import           System.FilePath                 (takeBaseName)
 
-import           Empire.Data.Library             (Library)
 import qualified Empire.Data.Library             as Library
 import           Empire.Data.Project             (Project)
 import qualified Empire.Data.Project             as Project
 
 import qualified Empire.API.Data.Graph           as G
 import           Empire.API.Data.GraphLocation   (GraphLocation (..))
-import           Empire.API.Data.Library         (LibraryId)
 import           Empire.API.Data.Project         (ProjectId)
 import qualified Empire.API.Persistence.Envelope as E
 import qualified Empire.API.Persistence.Library  as L
@@ -35,14 +32,11 @@ import qualified Empire.Commands.Graph           as Graph
 import           Empire.Commands.GraphBuilder    (buildGraph)
 import           Empire.Commands.Library         (createLibrary, listLibraries, withLibrary)
 import           Empire.Commands.Project         (createProject, withProject)
-import           Empire.Empire                   (Command, Empire)
-import qualified Empire.Empire                   as Empire
-import qualified Empire.Utils.IdGen              as IdGen
+import           Empire.Empire                   (Empire)
 
 import qualified Data.Aeson                      as JSON
 import qualified Data.Aeson.Encode.Pretty        as JSON
 
-import qualified Data.Text.Lazy                  as Text
 import           Data.Text.Lazy.Encoding         (decodeUtf8, encodeUtf8)
 import           Empire.API.JSONInstances        ()
 
@@ -113,8 +107,8 @@ loadProject path = do
         maybeProjId = UUID.fromString basename
     case proj of
       Nothing   -> throwError $ "Cannot read JSON from " <> path
-      Just proj -> do
-        (pid, _) <- createProjectFromPersistent maybeProjId proj
+      Just proj' -> do
+        (pid, _) <- createProjectFromPersistent maybeProjId proj'
         return pid
 
 
@@ -126,13 +120,14 @@ importProject bytes = do
     let proj = readProject $ encodeUtf8 bytes
     case proj of
       Nothing   -> throwError $ "Cannot decode JSON"
-      Just proj -> createProjectFromPersistent (Just projectId) proj
+      Just proj' -> createProjectFromPersistent (Just projectId) proj'
 
 exportProject :: ProjectId -> Empire Text
 exportProject pid = do
   project <- toPersistentProject pid
   return $ decodeUtf8 $ serialize $ E.pack project
 
+defaultProjectName, defaultLibraryName, defaultLibraryPath :: String
 defaultProjectName = "default"
 defaultLibraryName = "Main"
 defaultLibraryPath = "Main.luna"

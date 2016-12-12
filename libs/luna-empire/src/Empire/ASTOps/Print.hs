@@ -53,7 +53,7 @@ printReturnValue lam = match lam $ \case
 
 printFunctionHeader :: ASTOp m => NodeRef -> m String
 printFunctionHeader function = match function $ \case
-    Match l r -> do
+    Unify l r -> do
         name <- IR.source l >>= printExpression
         args <- IR.source r >>= printFunctionArguments
         return $ "def " ++ name ++ " " ++ unwords args ++ ":"
@@ -82,7 +82,7 @@ printExpression' suppressNodes paren node = do
             repr    <- printExpression' False sugared out
             let bindsRep = if sugared then "" else "-> " ++ unwords (('$' :) <$> argReps) ++ " "
             return $ parenIf (not sugared && paren) $ bindsRep ++ repr
-        Match l r -> do
+        Unify l r -> do
             leftRep  <- IR.source l >>= recur paren
             rightRep <- IR.source r >>= recur paren
             return $ leftRep ++ " = " ++ rightRep

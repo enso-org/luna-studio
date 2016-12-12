@@ -8,14 +8,13 @@
 module Empire.Commands.AST where
 
 import           Control.Arrow                     (second)
-import           Control.Monad.Except              (runExceptT, throwError)
+import           Control.Exception                 (Exception)
+import           Control.Monad.Except              (runExceptT)
 import           Control.Monad.State
 import           Data.HMap.Lazy                    (TypeKey (..))
-import qualified Data.HMap.Lazy                    as HMap
-import           Data.List                         (find)
 import           Data.Maybe                        (catMaybes, fromMaybe)
 import qualified Data.Text.Lazy                    as Text
-import           Prologue                          hiding (( # ), TypeRep, tryHead)
+import           Prologue                          hiding (( # ), TypeRep, tryHead, s)
 
 import           Empire.API.Data.DefaultValue      (PortDefault, Value (..))
 import qualified Empire.API.Data.Error             as APIError
@@ -38,8 +37,6 @@ import           Luna.IR.Expr.Term.Uni
 import           Luna.IR (match)
 import qualified Luna.IR.Function as IR (Arg, arg)
 import qualified Luna.IR as IR
-
-import           Old.Luna.Pretty.GraphViz          (renderAndOpen)
 
 import           Luna.Pass.Evaluation.Interpreter.Layer (InterpreterData (..))
 import qualified Luna.Pass.Evaluation.Interpreter.Layer as Interpreter
@@ -70,7 +67,6 @@ limit :: [a] -> [a]
 limit = limitHead where
     limitCount = 1000
     limitHead  = take limitCount
-    limitTail  = reverse . take limitCount . reverse
 
 valueDecoderForType :: ASTOp m => NodeRef -> m (Maybe (Data -> Value))
 valueDecoderForType tpNode = do
@@ -95,8 +91,9 @@ valueDecoderForType tpNode = do
             "RGBColor"       -> return $ Just $ Graphics . fromMaterial . colorRGBToMaterial . unsafeFromData
             "Stream"         -> $notImplemented
             "List"           -> $notImplemented
-            "Maybe"           -> $notImplemented
-            "Map"           -> $notImplemented
+            "Maybe"          -> $notImplemented
+            "Map"            -> $notImplemented
+            _                -> return Nothing
         _ -> return Nothing
 
 intMaybeListToStringMaybeList :: [Maybe Int] -> [Maybe String]
@@ -154,16 +151,16 @@ getNodeValue node = runASTOp $ do
     decoder <- decoderForType tpNode
     v <- (^. Interpreter.value) <$> IR.readLayer @InterpreterData node
     case v of
-        Left  err -> return $ Right $ PlainVal ("", [])
+        Left  _err -> return $ Right $ PlainVal ("", [])
         Right val -> do
-            val <- liftIO . runExceptT $ toExceptIO val
-            case val of
+            val' <- liftIO . runExceptT $ toExceptIO val
+            case val' of
                 Left  s -> return $ Left s
-                Right v -> match tpNode $ \case
+                Right v' -> match tpNode $ \case
                     Cons (toString -> n) -> case n of
-                        "Stream"  -> return $ Right $ Listener $ \f -> attachListener (unsafeFromData v) (f . decoder)
-                        "Twitter" -> return $ Right $ Listener $ \_ -> attachListener (unsafeFromData v) (const $ return ())
-                        _         -> return $ Right $ PlainVal $ decoder v
+                        "Stream"  -> return $ Right $ Listener $ \f -> attachListener (unsafeFromData v') (f . decoder)
+                        "Twitter" -> return $ Right $ Listener $ \_ -> attachListener (unsafeFromData v') (const $ return ())
+                        _         -> return $ Right $ PlainVal $ decoder v'
                     _ -> return $ Right $ PlainVal ("", [])
 
 readMeta :: NodeRef -> Command AST (Maybe NodeMeta)
@@ -220,12 +217,18 @@ printReturnValue = runASTOp . Printer.printReturnValue
 applyFunction :: NodeRef -> NodeRef -> Int -> Command AST NodeRef
 applyFunction = runASTOp .:. ASTBuilder.applyFunction
 
+data NotLambdaException = NotLambdaException NodeRef
+    deriving (Show)
+
+instance Exception NotLambdaException
+
 redirectLambdaOutput :: NodeRef -> NodeRef -> Command AST NodeRef
 redirectLambdaOutput lambda newOutputRef = runASTOp $ do
     match lambda $ \case
-        (Lam args _) -> do
+        Lam _args _ -> do
             args' <- ASTBuilder.unpackLamArguments lambda
             lams args' newOutputRef
+        _ -> throwM $ NotLambdaException lambda
 
 lams :: ASTOp m => [NodeRef] -> NodeRef -> m NodeRef
 lams args output = IR.unsafeRelayout <$> foldM f (IR.unsafeRelayout output) (IR.unsafeRelayout <$> args)
@@ -238,10 +241,11 @@ lamAny a b = fmap IR.generalize $ IR.lam a b
 setLambdaOutputToBlank :: NodeRef -> Command AST NodeRef
 setLambdaOutputToBlank lambda = runASTOp $ do
     match lambda $ \case
-        (Lam args _) -> do
-          args' <- ASTBuilder.unpackLamArguments lambda
-          blank <- IR.generalize <$> IR.blank
-          lams args' blank
+        Lam _args _ -> do
+            args' <- ASTBuilder.unpackLamArguments lambda
+            blank <- IR.generalize <$> IR.blank
+            lams args' blank
+        _ -> throwM $ NotLambdaException lambda
 
 unapplyArgument :: NodeRef -> Int -> Command AST NodeRef
 unapplyArgument = runASTOp .: ASTBuilder.removeArg
@@ -261,32 +265,41 @@ getVarNode node = runASTOp $ ASTBuilder.leftMatchOperand node >>= IR.source
 getLambdaInputRef :: NodeRef -> Int -> Command AST NodeRef
 getLambdaInputRef node pos = runASTOp $ do
     match node $ \case
-        (Lam args out) -> (!! pos) <$> ASTBuilder.unpackLamArguments node
+        Lam _args _out -> (!! pos) <$> ASTBuilder.unpackLamArguments node
+        _ -> throwM $ NotLambdaException node
 
 isLambda :: NodeRef -> Command AST Bool
 isLambda node = runASTOp $ do
     match node $ \case
-      (Lam _ _) -> return True
-      _       -> return False
+      Lam{} -> return True
+      _     -> return False
 
 isLambdaInput :: ASTOp m => NodeRef -> NodeRef -> m Bool
 isLambdaInput node lambda = do
     match lambda $ \case
-        (Lam args _) -> (node `elem`) <$> ASTBuilder.unpackLamArguments node
+        Lam _args _ -> (node `elem`) <$> ASTBuilder.unpackLamArguments node
+        _ -> throwM $ NotLambdaException lambda
 
 getLambdaOutputRef :: NodeRef -> Command AST NodeRef
 getLambdaOutputRef lambda = runASTOp $ do
     match lambda $ \case
-        (Lam _ out) -> IR.source out
+        Lam _ out -> IR.source out
+        _ -> throwM $ NotLambdaException lambda
+
+data NotUnifyException = NotUnifyException NodeRef
+    deriving (Show)
+
+instance Exception NotUnifyException
 
 replaceTargetNode :: NodeRef -> NodeRef -> Command AST NodeRef
 replaceTargetNode matchNode newTarget = runASTOp $ do
     match matchNode $ \case
-        Unify l r -> do
+        Unify l _r -> do
             l' <- IR.source l
             IR.generalize <$> IR.unify l' newTarget
+        _ -> throwM $ NotUnifyException matchNode
 
 dumpGraphViz :: String -> Command AST ()
-dumpGraphViz name = $notImplemented
+dumpGraphViz _name = $notImplemented
     -- g <- runASTOp Builder.get
     -- liftIO $ renderAndOpen [(name, name, g)]

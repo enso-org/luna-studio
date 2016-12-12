@@ -12,22 +12,17 @@ module Empire.ASTOp where
 import           Prologue                                hiding (Cons, Curry, Num)
 
 import           Control.Monad.State                     (get, put)
-import           Control.Monad.Error                     (throwError)
-import           Data.Construction                       (Destructor, Unregister)
-import           Empire.Data.AST                         (AST, ASTState(..), EdgeRef, NodeRef, Marker, Meta,
-                                                          Inputs, TypeLayer, TCData, TCDataMock(..))
-import           Empire.Empire                           (Command, Error, empire)
-import           Luna.IR.Layer.Loc                      (LocationT, MonadLocation)
-import qualified Luna.IR.Layer.Loc                      as Location
+import           Control.Monad.Except                    (throwError)
+import           Empire.Data.AST                         (AST, ASTState(..), Marker, Meta,
+                                                          Inputs, TypeLayer, TCData)
+import           Empire.Empire                           (Command)
 import qualified Luna.Pass    as Pass (SubPass, Inputs, Outputs, Preserves, eval')
-import Luna.Pass.Evaluation.Interpreter.Layer (InterpreterData, InterpreterLayer)
-import           Type.Inference
+import Luna.Pass.Evaluation.Interpreter.Layer (InterpreterData)
 
-import Luna.IR (IRMonad, Accessibles, ExprNet, ExprLinkNet, ExprLinkLayers, ExprLayers, LayerData, Model,
-                IRT(..), EXPR, LINK', attachLayer, registerElemLayer, runIRT, runRegs, blank, generalize,
-                layerReg4, putIRState, snapshot)
+import Luna.IR (IRMonad, Accessibles, ExprNet, ExprLinkNet, ExprLinkLayers, ExprLayers, Model,
+                IRT(..), runIRT,
+                putIRState, snapshot)
 import Luna.IR.Layer.Succs (Succs)
-import qualified Luna.IR.Internal.LayerStore as Store
 
 type ASTOp m = (MonadThrow m, IRMonad m,
                 Accessibles m ('[ExprNet, ExprLinkNet] <>
@@ -51,7 +46,7 @@ runBuilder = $notImplemented
 
 runASTOp :: Pass.SubPass EmpirePass (IRT IO) a -> Command AST a
 runASTOp pass = do
-    (ASTState currentState) <- get
+    ASTState currentState <- get
     (a, st) <- liftIO $ runIRT $ do
         putIRState currentState
         a <- Pass.eval' pass
@@ -60,4 +55,4 @@ runASTOp pass = do
     put $ ASTState st
     case a of
         Left err -> throwError $ "pass internal error: " ++ show err
-        Right a -> return a
+        Right res -> return res

@@ -7,15 +7,14 @@ module Empire.Data.AST where
 
 import           Prologue
 
-import Luna.IR (AnyExpr, AnyExprLink, GetIRSubMonad, IRState', LayerData, IRT)
+import Luna.IR (AnyExpr, AnyExprLink, IRState', LayerData, IRT)
 import Luna.IR.Layer.Type as IR (Type)
 
 import Empire.API.Data.Node (NodeId)
 import Empire.API.Data.NodeMeta (NodeMeta)
 
 -- newtype ASTState = forall m. ASTState (IRState' m)
-data ASTState where
-    ASTState :: IRState' (IRT IO) -> ASTState
+data ASTState = ASTState (IRState' (IRT IO))
 
 instance Show ASTState where
     show _ = "AST"

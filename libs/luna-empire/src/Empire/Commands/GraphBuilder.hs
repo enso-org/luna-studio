@@ -6,23 +6,19 @@
 
 module Empire.Commands.GraphBuilder where
 
-import           Prologue
+import           Prologue                          hiding (p, s, index)
 
 import           Control.Monad.Except              (throwError)
 import           Control.Monad.State               hiding (when)
-import           Control.Monad.Trans.Maybe         (MaybeT (..), runMaybeT)
 
-import qualified Data.IntMap                       as IntMap
 import qualified Data.List                         as List
-import           Data.Map                          (Map)
 import qualified Data.Map                          as Map
 import           Data.Maybe                        (catMaybes, fromMaybe, maybeToList)
 import qualified Data.Text.Lazy                    as Text
-import qualified Data.Tree                         as Tree
-import qualified Data.UUID                         as UUID
 import qualified Data.UUID.V4                      as UUID (nextRandom)
 
-import           Empire.API.Data.Breadcrumb        as Breadcrumb
+import           Empire.API.Data.Breadcrumb        (Breadcrumb(..), BreadcrumbItem, Named(..))
+import qualified Empire.API.Data.Breadcrumb        as Breadcrumb
 import           Empire.Data.BreadcrumbHierarchy   (topLevelIDs)
 import           Empire.Data.Graph                 (Graph)
 import qualified Empire.Data.Graph                 as Graph
@@ -31,20 +27,18 @@ import           Empire.API.Data.DefaultValue      (PortDefault (..), Value (..)
 import qualified Empire.API.Data.Graph             as API
 import           Empire.API.Data.Node              (NodeId)
 import qualified Empire.API.Data.Node              as API
-import           Empire.API.Data.NodeMeta          (NodeMeta (..))
 import           Empire.API.Data.Port              (InPort (..), OutPort (..), Port (..), PortId (..), PortState (..))
 import qualified Empire.API.Data.Port              as Port
 import           Empire.API.Data.PortRef           (InPortRef (..), OutPortRef (..))
 import           Empire.API.Data.TypeRep           (TypeRep(TLam))
 import           Empire.API.Data.ValueType         (ValueType (..))
-import qualified Empire.API.Data.ValueType         as ValueType
 
 import           Empire.ASTOp                      (ASTOp, runASTOp)
 import qualified Empire.ASTOps.Builder             as ASTBuilder
 import qualified Empire.ASTOps.Print               as Print
 import qualified Empire.Commands.AST               as AST
 import qualified Empire.Commands.GraphUtils        as GraphUtils
-import           Empire.Data.AST                   (EdgeRef, NodeRef, TypeLayer)
+import           Empire.Data.AST                   (NodeRef, TypeLayer)
 import           Empire.Empire
 
 import           Luna.IR (match)
@@ -99,25 +93,25 @@ getEdgePortMapping :: Command Graph (Maybe (NodeId, NodeId))
 getEdgePortMapping = do
     lastBreadcrumbId <- use Graph.insideNode
     case lastBreadcrumbId of
-        Just id -> do
-            isLambda <- rhsIsLambda id
+        Just id' -> do
+            isLambda <- rhsIsLambda id'
             if isLambda
-                then Just <$> getOrCreatePortMapping id
+                then Just <$> getOrCreatePortMapping id'
                 else return Nothing
         _ -> return Nothing
 
 buildNode :: NodeId -> Command Graph API.Node
 buildNode nid = do
     root  <- GraphUtils.getASTPointer nid
-    match <- isMatch root
-    ref   <- if match then GraphUtils.getASTTarget nid else return root
+    match' <- isMatch root
+    ref   <- if match' then GraphUtils.getASTTarget nid else return root
     expr  <- zoom Graph.ast $ runASTOp $ Print.printNodeExpression ref
     meta  <- zoom Graph.ast $ AST.readMeta root
     name  <- fromMaybe "" <$> getNodeName nid
     canEnter <- canEnterNode nid
     ports <- buildPorts ref
     let code    = Nothing -- Just $ Text.pack expr
-        portMap = Map.fromList $ flip fmap ports $ \p@(Port id _ _ _) -> (id, p)
+        portMap = Map.fromList $ flip fmap ports $ \p@(Port id' _ _ _) -> (id', p)
     return $ API.Node nid name (API.ExpressionNode $ Text.pack expr) canEnter portMap (fromMaybe def meta) code
 
 isMatch :: NodeRef -> Command Graph Bool
@@ -129,8 +123,8 @@ isMatch node = zoom Graph.ast $ runASTOp $ do
 canEnterNode :: NodeId -> Command Graph Bool
 canEnterNode nid = do
     root  <- GraphUtils.getASTPointer nid
-    match <- isMatch root
-    if match then rhsIsLambda nid else return False
+    match' <- isMatch root
+    if match' then rhsIsLambda nid else return False
 
 rhsIsLambda :: NodeId -> Command Graph Bool
 rhsIsLambda nid = do
@@ -148,7 +142,7 @@ getNodeName nid = do
         vnode <- GraphUtils.getASTVar nid
         zoom Graph.ast $ runASTOp $ do
             match vnode $ \case
-                (Var (toString -> n)) -> return $ Just (Text.pack n)
+                Var (toString -> n) -> return $ Just (Text.pack n)
     else return Nothing
 
 getPortState :: ASTOp m => NodeRef -> m PortState
@@ -169,7 +163,7 @@ getPortState node = do
 extractArgTypes :: ASTOp m => NodeRef -> m [ValueType]
 extractArgTypes node = do
     match node $ \case
-        (Lam args out) -> do
+        Lam _args out -> do
             unpacked <- ASTBuilder.unpackLamArguments node
             as     <- mapM getTypeRep unpacked
             tailAs <- IR.source out >>= extractArgTypes
@@ -179,7 +173,7 @@ extractArgTypes node = do
 extractPortInfo :: ASTOp m => NodeRef -> m ([ValueType], [PortState])
 extractPortInfo node = do
     match node $ \case
-        (App f args) -> do
+        App f _args -> do
             unpacked       <- ASTBuilder.dumpArguments node
             portStates     <- mapM getPortState unpacked
             tp    <- do
@@ -188,7 +182,7 @@ extractPortInfo node = do
                 IR.source foo
             types <- extractArgTypes tp
             return (types, portStates)
-        (Lam as o) -> do
+        Lam _as o -> do
             args     <- ASTBuilder.unpackLamArguments node
             areBlank <- mapM ASTBuilder.isBlank args
             isApp    <- ASTBuilder.isApp =<< IR.source o
@@ -219,7 +213,7 @@ buildSelfPort' seenAcc node = do
     match node $ \case
         (Acc _ t)  -> IR.source t >>= buildSelfPort' True
         (App t _)  -> IR.source t >>= buildSelfPort' seenAcc
-        (Lam as o) -> do
+        Lam _as o -> do
             args <- ASTBuilder.unpackLamArguments node
             areBlank <- mapM ASTBuilder.isBlank args
             if and areBlank
@@ -263,15 +257,15 @@ buildInputEdge :: NodeId -> Command Graph API.Node
 buildInputEdge nid = do
     lastb <- use Graph.insideNode <?!> "top-level nodes have no input edge"
     ref   <- GraphUtils.getASTTarget lastb
-    (types, states) <- zoom Graph.ast $ runASTOp $ extractPortInfo ref
+    (types, _states) <- zoom Graph.ast $ runASTOp $ extractPortInfo ref
     argTypes <- case types of
         [] -> do
             numberOfArguments <- length <$> (zoom Graph.ast $ runASTOp $ extractArgTypes ref)
             return $ replicate numberOfArguments AnyType
         _ -> return types
     out <- zoom Graph.ast $ runASTOp $ followTypeRep ref
-    let nameGen = fmap (\i -> "input" ++ show i) [0..]
-        inputEdges = zipWith3 (\n t i -> Port (OutPortId $ Projection i) n t Port.NotConnected) nameGen argTypes [0..]
+    let nameGen = fmap (\i -> "input" ++ show i) [(0::Int)..]
+        inputEdges = zipWith3 (\n t i -> Port (OutPortId $ Projection i) n t Port.NotConnected) nameGen argTypes [(0::Int)..]
     return $
         API.Node nid
             "inputEdge"
@@ -313,24 +307,24 @@ getSelfNodeRef = getSelfNodeRef' False
 getPositionalNodeRefs :: ASTOp m => NodeRef -> m [NodeRef]
 getPositionalNodeRefs node = do
     match node $ \case
-        (App _ args) -> ASTBuilder.dumpArguments node
-        _          -> return []
+        App{} -> ASTBuilder.dumpArguments node
+        _     -> return []
 
 getLambdaOutputRef :: ASTOp m => NodeRef -> m NodeRef
 getLambdaOutputRef node = do
     match node $ \case
-        (Lam _ out) -> IR.source out
+        Lam _ out -> IR.source out
 
 getLambdaArgRefs :: ASTOp m => NodeRef -> m [NodeRef]
 getLambdaArgRefs node = do
     match node $ \case
-        (Lam args _) -> ASTBuilder.unpackLamArguments node
-        _          -> return []
+        Lam{} -> ASTBuilder.unpackLamArguments node
+        _     -> return []
 
 getLambdaInputArgNumber :: ASTOp m => NodeRef -> m (Maybe Int)
 getLambdaInputArgNumber lambda = do
     match lambda $ \case
-        (Lam args out) -> do
+        Lam _args out -> do
             out' <- IR.source out
             (out' `List.elemIndex`) <$> ASTBuilder.unpackLamArguments lambda
         _ -> return Nothing
@@ -342,16 +336,16 @@ getOutputEdgeInputs inputEdge outputEdge = do
     nid <- zoom Graph.ast $ runASTOp $ do
         outputIsInputNum <- getLambdaInputArgNumber ref
         case outputIsInputNum of
-            Just ix -> return $ Just (inputEdge, Projection ix)
+            Just index -> return $ Just (inputEdge, Projection index)
             _       -> do
                 output <- getLambdaOutputRef ref
                 nid <- ASTBuilder.getNodeId output
                 case nid of
-                    Just id -> return $ Just (id, All)
+                    Just id' -> return $ Just (id', All)
                     _       -> return Nothing
     case nid of
-        Just (id, arg) -> do
-            return $ Just (OutPortRef id arg, InPortRef outputEdge (Arg 0))
+        Just (id', arg) -> do
+            return $ Just (OutPortRef id' arg, InPortRef outputEdge (Arg 0))
         _ -> return Nothing
 
 nodeConnectedToOutput :: Command Graph (Maybe NodeId)
@@ -371,15 +365,15 @@ resolveInputNodeId :: Maybe (NodeId, NodeId) -> [NodeRef] -> NodeRef -> Command 
 resolveInputNodeId edgeNodes lambdaArgs ref = do
     nodeId <- zoom Graph.ast $ runASTOp $ ASTBuilder.getNodeId ref
     case List.find (== ref) lambdaArgs of
-        Just a -> return $ fmap fst edgeNodes
+        Just _ -> return $ fmap fst edgeNodes
         _      -> return nodeId
 
 getOuterLambdaArguments :: Command Graph [NodeRef]
 getOuterLambdaArguments = do
     lambda <- use Graph.insideNode
     case lambda of
-        Just lambda -> do
-            ref <- GraphUtils.getASTTarget lambda
+        Just lambda' -> do
+            ref <- GraphUtils.getASTTarget lambda'
             lambdaArgs <- zoom Graph.ast $ runASTOp $ getLambdaArgRefs ref
             return lambdaArgs
         _ -> return []
@@ -387,8 +381,8 @@ getOuterLambdaArguments = do
 getNodeInputs :: Maybe (NodeId, NodeId) -> NodeId -> Command Graph [(OutPortRef, InPortRef)]
 getNodeInputs edgeNodes nodeId = do
     root        <- GraphUtils.getASTPointer nodeId
-    match       <- isMatch root
-    ref         <- if match then GraphUtils.getASTTarget nodeId else return root
+    match'       <- isMatch root
+    ref         <- if match' then GraphUtils.getASTTarget nodeId else return root
     selfMay     <- zoom Graph.ast $ runASTOp $ getSelfNodeRef ref
     lambdaArgs  <- getOuterLambdaArguments
     selfNodeMay <- case selfMay of
