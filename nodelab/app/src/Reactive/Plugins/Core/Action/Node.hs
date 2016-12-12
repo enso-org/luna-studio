@@ -8,7 +8,7 @@ import           Event.UI                          (UIEvent (AppEvent, NodeEvent
 import qualified React.Event.App                   as App
 import qualified React.Store.Node                  as Node
 import           Reactive.Commands.Command         (Command)
-import           Reactive.Commands.Graph.Selection (handleSelection, selectAll, unselectAll)
+import           Reactive.Commands.Graph.Selection (selectAll, toggleSelect, unselectAll)
 import qualified Reactive.Commands.Node            as Node
 import           Reactive.Commands.Node.Remove     as Node
 import           Reactive.State.Global             (State)
@@ -21,7 +21,7 @@ import           Utils.PreludePlus
 toAction :: Event -> Maybe (Command State ())
 toAction (UI (NodeEvent (Node.Enter          nodeId))) = Just $ mapM_ Node.tryEnter =<< preuse (Global.graph . Graph.nodesMap . ix nodeId)
 toAction (UI (NodeEvent (Node.EditExpression nodeId))) = Just $ Node.editExpression nodeId
-toAction (UI (NodeEvent (Node.Select     evt nodeId))) = Just $ handleSelection (mouseCtrlKey evt || mouseMetaKey evt) nodeId
+toAction (UI (NodeEvent (Node.Select     evt nodeId))) = Just $ when (mouseCtrlKey evt || mouseMetaKey evt) $ toggleSelect nodeId
 toAction (UI (AppEvent (App.KeyDown e))) = Just $ handleKey e
 toAction _   = Nothing
 

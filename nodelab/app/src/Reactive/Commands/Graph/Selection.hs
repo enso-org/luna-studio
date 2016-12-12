@@ -1,15 +1,15 @@
 module Reactive.Commands.Graph.Selection
-     ( selectedNodes
+     ( addToSelection
+     , dropSelectionHistory
      , focusSelectedNode
+     , modifySelectionHistory
      , selectAll
+     , selectedNodes
      , selectNodes
+     , selectPreviousNodes
+     , toggleSelect
      , unselectAll
      , unselectAllAndDropSelectionHistory
-     , dropSelectionHistory
-     , modifySelectionHistory
-     , selectPreviousNodes
-     , handleSelection
-     , addToSelection
      ) where
 
 import qualified Data.Set                                 as Set
@@ -32,9 +32,6 @@ import qualified Reactive.State.UIRegistry                as UIRegistry
 
 
 
-handleSelection :: Bool -> NodeId -> Command Global.State ()
-handleSelection False nodeId = return () --handled by Reactive.Plugins.Core.Action.Drag
-handleSelection True  nodeId = toggleSelect   nodeId
 
 toggleSelect :: NodeId -> Command Global.State ()
 toggleSelect nodeId = do

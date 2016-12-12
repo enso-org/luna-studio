@@ -18,21 +18,21 @@ import           Utils.Angle
 import           Utils.PreludePlus
 import           Utils.Vector                        (Vector2 (Vector2), lengthSquared)
 
-import           React.Store                         (Ref, ref, widget)
+import           React.Store                         (Ref, WRef, ref, widget)
 import qualified React.Store                         as Store
 import           React.Store.Node                    (Node)
 import qualified React.Store.Node                    as Node
+import qualified React.Store.NodeEditor              as NodeEditor
 
-import           Object.Widget                       hiding (widget)
 import qualified Object.Widget.Connection            as ConnectionModel
 import qualified Object.Widget.Node                  as Model
 import qualified Object.Widget.Port                  as PortModel
 
 import           Reactive.Commands.Command           (Command)
 import           Reactive.Commands.Node.Ports.Colors (vtToColor)
+import           Reactive.State.Global               (State)
 import qualified Reactive.State.Global               as Global
 import qualified Reactive.State.Graph                as Graph
-import           UI.Handlers.Node                    (allNodes, allNodes')
 import           UI.Instances                        ()
 
 import           Empire.API.Data.Connection          (ConnectionId)
@@ -45,21 +45,28 @@ import qualified Empire.API.Data.PortRef             as PortRef
 
 
 
-getPort :: AnyPortRef -> Command Global.State (Maybe PortModel.Port)
+allNodes :: Command State [Ref Node]
+allNodes = Global.withNodeEditor $
+    Store.use (NodeEditor.nodes . to HashMap.elems)
+
+allNodes' :: Command State [WRef Node]
+allNodes' = mapM Store.get' =<< allNodes
+
+getPort :: AnyPortRef -> Command State (Maybe PortModel.Port)
 getPort portRef = runMaybeT $ do
     Just node <- lift $ getNode $ portRef ^. PortRef.nodeId
     fromJustM $ node ^? Node.ports . ix portRef
 
-getGraphPort :: AnyPortRef -> Command Global.State (Maybe Port.Port)
+getGraphPort :: AnyPortRef -> Command State (Maybe Port.Port)
 getGraphPort portRef = preuse $ Global.graph . Graph.nodesMap . ix (portRef ^. PortRef.nodeId) . NodeAPI.ports . ix (portRef ^. PortRef.portId)
 
-getNode :: NodeId -> Command Global.State (Maybe Model.Node)
+getNode :: NodeId -> Command State (Maybe Model.Node)
 getNode nodeId = Global.withNode nodeId $ mapM Store.get
 
 nats :: [Integer]
 nats = [1..]
 
-focusNode :: Ref Node -> Command Global.State ()
+focusNode :: Ref Node -> Command State ()
 focusNode nodeRef = do
     node <- Store.get' nodeRef
     nodes <- mapM Store.get' =<< allNodes
@@ -71,7 +78,7 @@ focusNode nodeRef = do
         let newZPos = negate $ (fromIntegral idx) / 100.0
         Store.modify_ (Node.zPos .~ newZPos) nRef
 
-updateNodeZOrder :: Command Global.State ()
+updateNodeZOrder :: Command State ()
 updateNodeZOrder = do
     nodes <- mapM Store.get' =<< allNodes
     let sortedNodes = sortBy (comparing $ negate . (view $ widget . Model.zPos)) nodes
@@ -80,12 +87,12 @@ updateNodeZOrder = do
         let newZPos = negate $ (fromIntegral idx) / 100.0
         Store.modify_ (Node.zPos .~ newZPos) nRef
 
-updateConnections :: Command Global.State ()
+updateConnections :: Command State ()
 updateConnections = do
     connectionIds <- uses (Global.graph . Graph.connectionsMap) HashMap.keys
     mapM_ updateConnection connectionIds
 
-updateConnectionsForNodes :: [NodeId] -> Command Global.State ()
+updateConnectionsForNodes :: [NodeId] -> Command State ()
 updateConnectionsForNodes nodes = do
     connections <- uses (Global.graph . Graph.connectionsMap) HashMap.toList
     let nodes' = Set.fromList nodes
@@ -103,7 +110,7 @@ lineEndPos node1Pos node2Pos radius Nothing = moveByAngle node1Pos radius portAn
 
 --
 
-updateConnection :: ConnectionId -> Command Global.State () -- FIXME: run in MaybeT
+updateConnection :: ConnectionId -> Command State () -- FIXME: run in MaybeT
 updateConnection connectionId = do
     Just connection    <- preuse $ Global.graph . Graph.connectionsMap       . ix connectionId -- fatal
     Just connectionRef <- Global.getConnection connectionId -- fatal
@@ -113,8 +120,8 @@ updateConnection connectionId = do
 
     srcPort            <- getPort      $ OutPortRef' $ connection ^. Connection.src            -- non-fatal
     dstPort            <- getPort      $ InPortRef'  $ connection ^. Connection.dst            -- non-fatal
-    let dstNodePos     = dstNode ^. widgetPosition
-        srcNodePos     = srcNode ^. widgetPosition
+    let dstNodePos     = dstNode ^. Model.position
+        srcNodePos     = srcNode ^. Model.position
         dstRadius      = portRadius $ connection ^. Connection.dst
         posSrc         = lineEndPos srcNodePos dstNodePos normalPortRadius srcPort
         posDst         = lineEndPos dstNodePos srcNodePos dstRadius        dstPort

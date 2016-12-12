@@ -150,13 +150,6 @@ widgetHandlers :: UIHandlers Global.State
 widgetHandlers = def & mouseOver .~ const onMouseOver
                      & mouseOut  .~ const onMouseOut
 
-allNodes :: Command Global.State [Ref Node]
-allNodes = Global.withNodeEditor $
-    Store.use (NodeEditor.nodes . to HashMap.elems)
-
-allNodes' :: Command Global.State [WRef Node]
-allNodes' = mapM Store.get' =<< allNodes
-
 onClicked h = addHandler (MousePressedHandler h) mempty
 
 displayCodeEditor :: WidgetId -> WidgetId -> Text -> Command UIRegistry.State WidgetId
