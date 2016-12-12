@@ -1,20 +1,18 @@
 {-# LANGUAGE OverloadedStrings #-}
 module React.View.Node where
 
-import qualified Data.Text.Lazy                       as Text
+import qualified Data.Text.Lazy           as Text
 import           React.Flux
-import qualified React.Flux                           as React
+import qualified React.Flux               as React
 
-import qualified Empire.API.Graph.NodeResultUpdate    as NodeResult
-import qualified Event.UI                             as UI
-import           React.Store                          (Ref, dispatch, dt)
-import           React.Store.Node                     (Node)
-import qualified React.Store.Node                     as Node
-import           React.View.Port                      (port_)
-import           Reactive.Commands.Node.Visualization (limitString, showError, visualizeError, visualizeNodeValueReprs)
+import qualified Event.UI                 as UI
+import           React.Store              (Ref, dispatch, dt)
+import           React.Store.Node         (Node)
+import qualified React.Store.Node         as Node
+import           React.View.Port          (port_)
+import           React.View.Visualization (strValue, visualization_)
 import           Utils.PreludePlus
-import           Utils.Vector                         (x, y)
-
+import           Utils.Vector             (x, y)
 
 
 name :: JSString
@@ -52,7 +50,8 @@ node nodeRef = React.defineControllerView
                          [ "className" $= "name"
                          , "x"         $= "20"
                          , "y"         $= "65"
-                         ] $ elemString $ value n
+                         ] $ elemString $ strValue n
+                     forM_ (n ^. Node.value) visualization_
         else
             g_
                 [ onClick       $ \_ m -> dispatch nodeRef $ UI.NodeEvent $ Node.Select m nodeId
@@ -78,22 +77,8 @@ node nodeRef = React.defineControllerView
                         [ "className" $= "name"
                         , "x"         $= "20"
                         , "y"         $= "65"
-                        ] $ elemString $ value n
+                        ] $ elemString $ strValue n
 
 
 node_ :: Ref Node -> ReactElementM ViewEventHandler ()
 node_ nodeRef = React.view (node nodeRef) () mempty
-
-errorLen :: Int
-errorLen = 40
-
-value :: Node -> String
-value node = Text.unpack $ case node ^. Node.value of
-    Nothing -> ""
-    Just (NodeResult.Value name []) -> name
-    Just (NodeResult.Value name valueReprs) -> name
-        -- visualizeNodeValueReprs widgetId valueReprs --TODO[react]
-    Just (NodeResult.Error msg) ->
-        limitString errorLen (Text.pack $ showError msg)
-        -- . (Model.isError .~ True)
-        -- visualizeError widgetId msg --TODO[react]

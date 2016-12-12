@@ -22,7 +22,7 @@ import qualified Reactive.State.Graph              as Graph
 
 import           Empire.API.Data.Node              (Node, NodeId)
 import qualified Empire.API.Data.Node              as Node
-import qualified Empire.API.Graph.NodeResultUpdate as NodeResult
+import           Empire.API.Graph.NodeResultUpdate (NodeValue)
 
 import qualified Reactive.Commands.Batch           as BatchCmd
 import           Reactive.Commands.Node.Create     (addNode)
@@ -49,7 +49,7 @@ updateExistingNode node = do
         -- TODO: obsluzyc to ze moga zniknac polaczenia
     updateConnectionsForNodes [nodeId]
 
-updateNodeValue :: NodeId -> NodeResult.NodeValue -> Command State ()
+updateNodeValue :: NodeId -> NodeValue -> Command State ()
 updateNodeValue nid val =
     Global.withNode nid $ mapM_ $ Store.modify_ $
         Model.value ?~ val
