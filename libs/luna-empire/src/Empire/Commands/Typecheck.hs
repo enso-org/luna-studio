@@ -66,24 +66,7 @@ runTC :: Command Graph ()
 runTC = do
     allNodeIds <- uses Graph.nodeMapping $ Map.keys
     roots <- mapM GraphUtils.getASTPointer allNodeIds
-    ast   <- use Graph.ast
-    (_, g) <- TypeCheck.runT $ flip ASTOp.runGraph ast $ do
-        Symbol.loadFunctions StdLib.symbols
-        TypeCheckState.modify_ $ TypeCheckState.freshRoots .~ roots
-        let seq3 a b c     = Sequence a $ Sequence b c
-            seq4 a b c d   = Sequence a $ seq3 b c d
-            seq5 a b c d e = Sequence a $ seq4 b c d e
-        let tc = seq4
-                     ScanPass
-                     LiteralsPass
-                     StructuralInferencePass
-                     (Loop $ Sequence
-                         (Loop $ Sequence
-                             SymbolImportingPass
-                             (Loop $ StrictUnificationPass Positive False))
-                         (StrictUnificationPass Negative True))
-        TypeCheck.runTCWithArtifacts tc collect
-    Graph.ast .= g
+    $notImplemented
     return ()
 
 runInterpreter :: Command Graph ()
@@ -94,7 +77,7 @@ runInterpreter = do
     metas      <- zoom Graph.ast $ mapM AST.readMeta refs
     let sorted = fmap snd $ sort $ zip metas allNodes
     evals      <- mapM GraphUtils.getASTVar sorted
-    newAst     <- liftIO $ fmap snd $ flip ASTOp.runBuilder ast $ Interpreter.run evals
+    newAst     <- liftIO $ fmap snd $ $notImplemented
     Graph.ast .= newAst
     return ()
 

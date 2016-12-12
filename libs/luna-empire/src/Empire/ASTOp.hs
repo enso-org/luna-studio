@@ -13,18 +13,21 @@ import           Prologue                                hiding (Cons, Curry, Nu
 
 import           Control.Monad.Error                     (throwError)
 import           Data.Construction                       (Destructor, Unregister)
+import           Data.Set                                as Set (empty)
 import           Empire.Data.AST                         (AST, EdgeRef, NodeRef, Marker, Meta,
-                                                          Inputs, TypeLayer, TCData)
+                                                          Inputs, TypeLayer, TCData, TCDataMock(..))
 import           Empire.Empire                           (Command, Error, empire)
 import           Luna.IR.Layer.Loc                      (LocationT, MonadLocation)
 import qualified Luna.IR.Layer.Loc                      as Location
 import qualified Luna.Pass    as Pass (SubPass, Inputs, Outputs, Preserves, eval')
-import Luna.Pass.Evaluation.Interpreter.Layer (InterpreterData)
+import Luna.Pass.Evaluation.Interpreter.Layer (InterpreterData, InterpreterLayer)
 import           Type.Inference
 
-import Luna.IR (IRMonad, Accessibles, ExprNet, ExprLinkNet, ExprLinkLayers, ExprLayers, Model,
-                IRT(..), EXPR, LINK', attachLayer, registerElemLayer, runRegs, runIRT, blank, generalize)
+import Luna.IR (IRMonad, Accessibles, ExprNet, ExprLinkNet, ExprLinkLayers, ExprLayers, LayerData, Model,
+                IRT(..), EXPR, LINK', attachLayer, registerElemLayer, runRegs, runIRT, blank, generalize,
+                layerReg4)
 import Luna.IR.Layer.Succs (Succs)
+import qualified Luna.IR.Internal.LayerStore as Store
 
 type ASTOp m = (MonadThrow m, IRMonad m,
                 Accessibles m ('[ExprNet, ExprLinkNet] <>
@@ -42,6 +45,14 @@ type instance Pass.Preserves EmpirePass = '[]
 
 deriving instance MonadThrow a => MonadThrow (IRT a)
 
+runGraph :: a
+runGraph = $notImplemented
+
+runBuilder :: a
+runBuilder = $notImplemented
+
+type instance LayerData InterpreterData t = InterpreterLayer
+
 runASTOp :: Pass.SubPass EmpirePass (IRT IO) a -> Command AST a
 runASTOp pass = do
     a <- liftIO $ runIRT $ do
@@ -49,8 +60,11 @@ runASTOp pass = do
         registerElemLayer @EXPR @Meta   $ \_ _ -> return Nothing
         registerElemLayer @EXPR @Marker $ \_ _ -> return Nothing
         registerElemLayer @EXPR @Inputs $ \_ _ -> return []
-        registerElemLayer @EXPR @TypeLayer $ \_ _ -> $notImplemented
-        registerElemLayer @EXPR @InterpreterData $ \_ _ -> $notImplemented
+        registerElemLayer @EXPR @InterpreterData $ \_ _ -> return (def::InterpreterLayer)
+        registerElemLayer @EXPR @Succs $ \_ _ -> return Set.empty
+        registerElemLayer @EXPR @TCData $ \_ _ -> return $ TCDataMock []
+        layerReg4
+        -- registerElemLayer @EXPR @Type . consTypeLayer =<< runInIR (Store.newSTRef Nothing)
         attachLayer (typeRep' @Model) (typeRep' @EXPR)
         attachLayer (typeRep' @Model) (typeRep' @(LINK' EXPR))
         attachLayer (typeRep' @Meta)  (typeRep' @EXPR)
@@ -58,7 +72,9 @@ runASTOp pass = do
         attachLayer (typeRep' @Inputs) (typeRep' @EXPR)
         attachLayer (typeRep' @TypeLayer) (typeRep' @EXPR)
         attachLayer (typeRep' @InterpreterData) (typeRep' @EXPR)
+        attachLayer (typeRep' @Succs) (typeRep' @EXPR)
+        attachLayer (typeRep' @TCData) (typeRep' @EXPR)
         Pass.eval' pass
     case a of
-        Left _ -> throwError "pass internal error"
+        Left err -> throwError $ "pass internal error: " ++ show err
         Right a -> return a

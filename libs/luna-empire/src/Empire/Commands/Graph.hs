@@ -1,4 +1,6 @@
-{-# LANGUAGE MultiWayIf #-}
+{-# LANGUAGE MultiWayIf       #-}
+{-# LANGUAGE TypeApplications #-}
+
 module Empire.Commands.Graph
     ( addNode
     , addNodeCondTC
@@ -42,6 +44,7 @@ import qualified Data.UUID                     as UUID
 import qualified Data.UUID.V4                  as UUID (nextRandom)
 import           Prologue
 
+import           Empire.Data.AST                 (Marker, NodeMarker(..))
 import           Empire.Data.BreadcrumbHierarchy (addID, addWithLeafs, removeID, topLevelIDs)
 import           Empire.Data.Graph               (Graph)
 import qualified Empire.Data.Graph               as Graph
@@ -63,10 +66,7 @@ import qualified Empire.API.Data.Port            as Port (PortState (..), state)
 import           Empire.API.Data.PortRef         (AnyPortRef (..), InPortRef (..), OutPortRef (..))
 import qualified Empire.API.Data.PortRef         as PortRef
 import           Empire.API.Data.Project         (ProjectId)
-import qualified Old.Luna.Syntax.Model.Network.Builder  as Builder
 import qualified Data.HMap.Lazy                     as HMap
-import           Empire.Data.NodeMarker             (NodeMarker(..), nodeMarkerKey)
-import           Old.Data.Prop                      (prop, ( # ))
 import Empire.ASTOp (runASTOp)
 
 import           Debug.Trace                     (trace)
@@ -77,6 +77,8 @@ import qualified Empire.Commands.GraphUtils      as GraphUtils
 import           Empire.Commands.Library         (withLibrary)
 import qualified Empire.Commands.Publisher       as Publisher
 import           Empire.Empire
+
+import qualified Luna.IR as IR
 
 generateNodeName :: Command Graph String
 generateNodeName = do
@@ -109,7 +111,8 @@ addNodeNoTC loc uuid expr meta = do
         when (not outputIsOneOfTheInputs) $ Graph.nodeMapping . at lambdaUUID ?= Graph.AnonymousNode lambdaOutput
         Graph.breadcrumbHierarchy %= addWithLeafs (node ^. Node.nodeId)
             (if outputIsOneOfTheInputs then [] else [lambdaUUID])
-        zoom Graph.ast $ runASTOp $ Builder.withRef lambdaOutput $ prop Builder.Meta %~ HMap.insert nodeMarkerKey (NodeMarker lambdaUUID)
+        zoom Graph.ast $ runASTOp $ do
+            IR.writeLayer @Marker (Just $ NodeMarker lambdaUUID) lambdaOutput
     else Graph.breadcrumbHierarchy %= addID (node ^. Node.nodeId)
     Publisher.notifyNodeUpdate loc node
     return node
@@ -266,7 +269,8 @@ decodeLocation loc@(GraphLocation _ _ crumbs) = withGraph loc $ GraphBuilder.dec
 renameNode :: GraphLocation -> NodeId -> Text -> Empire ()
 renameNode loc nid name = withTC loc False $ do
     vref <- GraphUtils.getASTVar nid
-    zoom Graph.ast $ AST.renameVar vref (Text.unpack name)
+    newVar <- zoom Graph.ast $ AST.renameVar vref (Text.unpack name)
+    $notImplemented
 
 dumpGraphViz :: GraphLocation -> Empire ()
 dumpGraphViz loc = withGraph loc $ do

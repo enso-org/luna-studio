@@ -8,7 +8,7 @@ import           Prologue
 
 import Luna.IR (IRMonad, AnyExpr, AnyExprLink, Accessibles, ExprNet, ExprLinkNet,
                 ExprLayers, Model, ExprLinkLayers, LayerData)
-
+import Luna.IR.Layer.Type as IR (Type)
 import Luna.Pass.Evaluation.Interpreter.Value (Value)
 
 import Empire.API.Data.Node (NodeId)
@@ -31,8 +31,7 @@ type instance LayerData Inputs t = [EdgeRef]
 data TCData = TCData
 type instance LayerData TCData t = TCDataMock
 
-data TypeLayer = TypeLayer
-type instance LayerData TypeLayer t = EdgeRef
+type TypeLayer = IR.Type
 
 data TCError a = ImportError (Maybe a) String
                | UnificationError a
