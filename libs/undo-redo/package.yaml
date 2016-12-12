@@ -12,6 +12,10 @@ dependencies:
   - mtl
   - bytestring
   - prologue
+  - container
+  - luna-empire-api
+  - batch-lib-luna-empire
+  - stm
 
 default-extensions:
   - NoImplicitPrelude
@@ -34,6 +38,9 @@ executables:
      - zmq-bus
      - zmq-bus-config
      - m-logger
+     - container
+     - batch-lib-luna-empire
+     - stm
 
    source-dirs: app
    main:        Main.hs
