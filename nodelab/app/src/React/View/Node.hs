@@ -66,7 +66,7 @@ node nodeRef = React.defineControllerView
                     forM_ (n ^. Node.ports) $ port_ nodeRef
 
                     text_
-                        [ onDoubleClick $ \_ _ -> dispatch nodeRef $ UI.NodeEvent $ Node.EditExpression nodeId
+                        [ onDoubleClick $ \e _ -> stopPropagation e : dispatch nodeRef (UI.NodeEvent $ Node.EditExpression nodeId)
                         , "className" $= "name"
                         , "x"         $= "20"
                         , "y"         $= "-16"

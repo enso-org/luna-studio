@@ -47,6 +47,5 @@ registerNode node = do
 --                   $ addHandler (UINode.ChangeInputNodeTypeHandler   $ \_ nodeId name -> BatchCmd.setInputNodeType nodeId name)
 --                   $ addHandler (UINode.FocusNodeHandler             focusNode)
 --                   $ addHandler (UINode.ExpandNodeHandler            expandSelectedNodes)
---                   $ addHandler (UINode.EditNodeExpressionHandler    editNodeExpression)
 --                   $ addHandler (UINode.VisualizationsToggledHandler visualizationsToggled)
 --                   $ addHandler (UINode.CodeChangedHandler           codeChanged)

@@ -101,12 +101,6 @@ visualizationsToggledHandler = TypeKey :: TypeKey VisualizationsToggledHandler
 newtype ChangeInputNodeTypeHandler = ChangeInputNodeTypeHandler (WidgetId -> NodeId -> Text -> Command Global.State ())
 changeInputNodeTypeHandler = TypeKey :: TypeKey ChangeInputNodeTypeHandler
 
-newtype ExpandNodeHandler = ExpandNodeHandler (Command Global.State ())
-expandNodeHandler = TypeKey :: TypeKey ExpandNodeHandler
-
-newtype EditNodeExpressionHandler = EditNodeExpressionHandler (NodeId -> Command Global.State ())
-editNodeExpressionHandler = TypeKey :: TypeKey EditNodeExpressionHandler
-
 newtype CodeChangedHandler = CodeChangedHandler (NodeId -> Text -> Command Global.State ())
 codeChangedHandler = TypeKey :: TypeKey CodeChangedHandler
 
@@ -131,25 +125,11 @@ triggerChangeInputNodeTypeHandler wid model = do
         maybeHandler <- inRegistry $ UICmd.handler wid changeInputNodeTypeHandler
         withJust maybeHandler $ \(ChangeInputNodeTypeHandler handler) -> handler wid (model ^. Model.nodeId) tpe
 
-triggerExpandNodeHandler :: WidgetId -> Command Global.State ()
-triggerExpandNodeHandler wid = do
-    maybeHandler <- inRegistry $ UICmd.handler wid expandNodeHandler
-    withJust maybeHandler $ \(ExpandNodeHandler handler) -> handler
-
-triggerEditNodeExpressionHandler :: WidgetId -> Model.Node -> Command Global.State ()
-triggerEditNodeExpressionHandler wid model = do
-    maybeHandler <- inRegistry $ UICmd.handler wid editNodeExpressionHandler
-    withJust maybeHandler $ \(EditNodeExpressionHandler handler) -> handler (model ^. Model.nodeId)
-
 triggerCodeChangedHandler :: WidgetId -> Text -> Command Global.State ()
 triggerCodeChangedHandler wid newCode = do
     nodeId       <- inRegistry $ UICmd.get wid Model.nodeId
     maybeHandler <- inRegistry $ UICmd.handler wid codeChangedHandler
     withJust maybeHandler $ \(CodeChangedHandler handler) -> handler nodeId newCode
-
-keyDownHandler :: KeyPressedHandler Global.State
-keyDownHandler '\r'   _ _ wid = triggerExpandNodeHandler wid
-keyDownHandler _      _ _ _  = return ()
 
 showHidePortLabels :: Bool -> WidgetId -> Command UIRegistry.State ()
 showHidePortLabels show wid = do
@@ -167,8 +147,7 @@ onMouseOut  wid = inRegistry $ do
     showHidePortLabels False wid
 
 widgetHandlers :: UIHandlers Global.State
-widgetHandlers = def & keyDown      .~ keyDownHandler
-                     & mouseOver .~ const onMouseOver
+widgetHandlers = def & mouseOver .~ const onMouseOver
                      & mouseOut  .~ const onMouseOut
 
 allNodes :: Command Global.State [Ref Node]
@@ -192,7 +171,7 @@ instance CompositeWidget Model.Node where
         portGroup <- UICmd.register wid grp def
 
         let label = Style.expressionLabel $ trimExpression $ model ^. Model.expression
-        expressionLabelId <- UICmd.register wid label $ addHandler (DblClickedHandler $ const $ triggerEditNodeExpressionHandler wid model) def
+        expressionLabelId <- UICmd.register wid label def
 
         let group  = Group.create & Group.position .~ Style.controlsPosition
         controlGroups <- UICmd.register wid group Style.controlsLayout

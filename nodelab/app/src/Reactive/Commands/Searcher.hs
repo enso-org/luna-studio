@@ -22,6 +22,7 @@ import           Reactive.Commands.Camera          (syncCamera)
 import           Reactive.Commands.Command         (Command, performIO)
 import           Reactive.Commands.Graph.Selection (selectedNodes)
 import           Reactive.Commands.Node.Register   (registerNode)
+import qualified Reactive.Commands.Node.Update     as Node
 import qualified Reactive.State.Camera             as Camera
 import           Reactive.State.Global             (State)
 import qualified Reactive.State.Global             as Global
@@ -44,19 +45,22 @@ searcherData = use $ Global.workspace . Workspace.nodeSearcherData
 
 open :: Command State ()
 open = do
-    GA.sendEvent GA.NodeSearcher
-    -- factor <- use $ Global.camera . Camera.camera . Camera.factor
-    -- let offset = Vector2 0 (floor $ -40.0 * factor)
-    -- (nsPos', nsPos) <- ensureNSVisible
-    -- Global.uiElements . UIElements.nsPos .= nsPos'
-    pos <- use Global.mousePos
-    Global.withSearcher $ Store.modifyM_ $ do
-        Searcher.results  .= def
-        Searcher.position .= pos
-        Searcher.visible  .= True
-        Searcher.selected .= 0
-    liftIO Searcher.focus
+  -- factor <- use $ Global.camera . Camera.camera . Camera.factor
+  -- let offset = Vector2 0 (floor $ -40.0 * factor)
+  -- (nsPos', nsPos) <- ensureNSVisible
+    openWith def =<< use Global.mousePos
     -- performIO $ UI.initNodeSearcher "" Nothing (nsPos + offset) False
+
+openWith :: Maybe NodeId -> Vector2 Int -> Command State ()
+openWith nodeId pos = do
+    GA.sendEvent GA.NodeSearcher
+    Global.withSearcher $ Store.modifyM_ $ do
+        Searcher.visible  .= True
+        Searcher.position .= pos
+        Searcher.results  .= def
+        Searcher.selected .= 0
+        Searcher.nodeId   .= nodeId
+    liftIO Searcher.focus
 
 close :: Command State ()
 close = do
@@ -76,17 +80,22 @@ moveUp = Global.withSearcher $ Store.modifyM_ $ do
 accept :: Command State ()
 accept = do
     searcher <- Global.withSearcher $ Store.get
-    let selected = searcher ^. Searcher.selected
-        pos      = searcher ^. Searcher.position
+    let selected  = searcher ^. Searcher.selected
+        mayNodeId = searcher ^. Searcher.nodeId
+        pos       = searcher ^. Searcher.position
         mayResult = listToMaybe $ drop selected $ searcher ^. Searcher.results
-    registerNode pos $ case mayResult of
-        Just result -> result ^. Result.name
-        Nothing -> searcher ^. Searcher.input
+        expression = case mayResult of
+            Just result -> result ^. Result.name
+            Nothing -> searcher ^. Searcher.input
+    case mayNodeId of
+        Nothing -> registerNode pos expression
+        Just nodeId-> Node.updateExpression nodeId expression
     close
 
 openEdit :: Text -> NodeId -> Vector2 Int -> Command State ()
 openEdit expr nodeId pos = do
-    performIO $ UI.initNodeSearcher expr (Just nodeId) pos False
+    openWith (Just nodeId) pos
+    querySearch expr
 
 position :: Command State (Vector2 Double, Vector2 Int)
 position = do

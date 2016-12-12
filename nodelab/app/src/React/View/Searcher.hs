@@ -2,9 +2,9 @@
 module React.View.Searcher where
 
 import qualified Data.Aeson                     as Aeson
+import           Data.Text.Lazy                 (unpack)
 import           React.Flux
 import qualified React.Flux                     as React
-import  Data.Text.Lazy (unpack)
 
 import qualified Event.UI                       as UI
 import           React.Event.Searcher
@@ -33,6 +33,7 @@ searcher ref = React.defineControllerView
                  ] $ do
                     input_
                         [ "id" $= "focus-searcher"
+                        , "value" $= fromString (unpack $ s ^. Searcher.input)
                         , onMouseDown $ \e _ -> [stopPropagation e]
                         , onKeyDown   $ \e k ->  stopPropagation e : dispatch ref (UI.SearcherEvent $ KeyDown k)
                         , onChange    $ \e -> let val = target e "value" in dispatch ref $ UI.SearcherEvent $ InputChanged $ fromString val

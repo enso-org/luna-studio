@@ -8,8 +8,6 @@ module Reactive.Commands.Node
     , rename
     ) where
 
-import qualified Data.Text.Lazy                    as Text
-
 import qualified Batch.Workspace                   as Workspace
 import           Empire.API.Data.Breadcrumb        (BreadcrumbItem (..))
 import qualified Empire.API.Data.Breadcrumb        as Breadcrumb
@@ -21,18 +19,15 @@ import           Object.UITypes                    (WidgetId)
 import qualified Object.Widget.Node                as Model
 import           React.Store                       (WRef (..), widget)
 import qualified React.Store                       as Store
-import qualified Reactive.Commands.Batch           as BatchCmd
 import           Reactive.Commands.Command         (Command)
 import           Reactive.Commands.Graph.Selection (selectedNodes)
 import           Reactive.Commands.Node.NodeMeta   (modifyNodeMeta)
 import           Reactive.Commands.ProjectManager  as ProjectManager
 import qualified Reactive.Commands.Searcher        as Searcher
-import qualified Reactive.State.Camera             as Camera
 import           Reactive.State.Global             (State)
 import qualified Reactive.State.Global             as Global
 import qualified Reactive.State.Graph              as Graph
 import           Utils.PreludePlus
-import           Utils.Vector
 
 
 
@@ -71,17 +66,11 @@ expandSelectedNodes = do
 visualizationsToggled :: WidgetId -> NodeId -> Bool -> Command State ()
 visualizationsToggled _ nid val = modifyNodeMeta nid (NodeMeta.displayResult .~ val)
 
-codeChanged :: NodeId -> Text -> Command State ()
-codeChanged nodeId newCode = do
-    BatchCmd.setCode nodeId newCode
-
 editExpression :: NodeId -> Command State ()
 editExpression nodeId = do
     exprMay     <- preuse $ Global.graph . Graph.nodesMap . ix nodeId . Node.nodeType . Node.expression
     nodeRefMay <- Global.getNode nodeId
     withJust exprMay $ \expr -> withJust nodeRefMay $ \nodeRef -> do
         node <- Store.get nodeRef
-        pos <- zoom Global.camera $ Camera.workspaceToScreen $ node ^. Model.position
-        let halfCharWidth = 4
-            offset = Vector2 (-10 - halfCharWidth * fromIntegral (Text.length expr)) (-59)
-        Searcher.openEdit expr nodeId $ pos + offset
+        let pos = round <$> node ^. Model.position
+        Searcher.openEdit expr nodeId $ pos
