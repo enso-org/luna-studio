@@ -6,10 +6,8 @@ module Empire.Data.AST where
 
 import           Prologue
 
-import Luna.IR (IRMonad, AnyExpr, AnyExprLink, Accessibles, ExprNet, ExprLinkNet,
-                ExprLayers, Model, ExprLinkLayers, LayerData)
+import Luna.IR (AnyExpr, AnyExprLink, LayerData)
 import Luna.IR.Layer.Type as IR (Type)
-import Luna.Pass.Evaluation.Interpreter.Value (Value)
 
 import Empire.API.Data.Node (NodeId)
 import Empire.API.Data.NodeMeta (NodeMeta)

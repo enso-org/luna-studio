@@ -43,8 +43,6 @@ type instance Pass.Outputs EmpirePass   = '[ExprNet, ExprLinkNet] <>
     ExprLinkLayers '[Model]
 type instance Pass.Preserves EmpirePass = '[]
 
-deriving instance MonadThrow a => MonadThrow (IRT a)
-
 runGraph :: a
 runGraph = $notImplemented
 
@@ -63,8 +61,6 @@ runASTOp pass = do
         registerElemLayer @EXPR @InterpreterData $ \_ _ -> return (def::InterpreterLayer)
         registerElemLayer @EXPR @Succs $ \_ _ -> return Set.empty
         registerElemLayer @EXPR @TCData $ \_ _ -> return $ TCDataMock []
-        layerReg4
-        -- registerElemLayer @EXPR @Type . consTypeLayer =<< runInIR (Store.newSTRef Nothing)
         attachLayer (typeRep' @Model) (typeRep' @EXPR)
         attachLayer (typeRep' @Model) (typeRep' @(LINK' EXPR))
         attachLayer (typeRep' @Meta)  (typeRep' @EXPR)
