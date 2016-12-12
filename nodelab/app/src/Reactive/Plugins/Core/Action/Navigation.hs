@@ -121,10 +121,10 @@ closenestPow :: Double
 closenestPow = 2.5
 
 axisDistanceRight, axisDistanceLeft, axisDistanceDown, axisDistanceUp :: Vector2 Double -> Double
-axisDistanceRight (Vector2 x _) =  x
-axisDistanceLeft  (Vector2 x _) = -x
-axisDistanceDown  (Vector2 _ y) =  y
-axisDistanceUp    (Vector2 _ y) = -y
+axisDistanceRight (Vector2 x' _) =  x'
+axisDistanceLeft  (Vector2 x' _) = -x'
+axisDistanceDown  (Vector2 _ y') =  y'
+axisDistanceUp    (Vector2 _ y') = -y'
 
 findNearestRight, findNearestLeft, findNearestDown, findNearestUp :: Position -> [WRef Node] -> WRef Node
 findNearestRight pos = maximumBy (compare `on` closenest pos axisDistanceRight)

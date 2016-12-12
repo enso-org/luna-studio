@@ -9,30 +9,25 @@ module Reactive.Commands.Node.Update
 
 import           Utils.PreludePlus
 
-import           Control.Monad.State                  (modify)
-import qualified Data.Text.Lazy                       as Text
+import           Control.Monad.State               (modify)
 
-import qualified React.Store                          as Store
-import qualified React.Store.Node                     as Model
+import qualified React.Store                       as Store
+import qualified React.Store.Node                  as Model
 
-import           Reactive.Commands.Command            (Command)
-import           Reactive.Commands.Graph              (updateConnectionsForNodes)
-import           Reactive.State.Global                (State)
-import qualified Reactive.State.Global                as Global
-import qualified Reactive.State.Graph                 as Graph
+import           Reactive.Commands.Command         (Command)
+import           Reactive.Commands.Graph           (updateConnectionsForNodes)
+import           Reactive.State.Global             (State)
+import qualified Reactive.State.Global             as Global
+import qualified Reactive.State.Graph              as Graph
 
-import           Empire.API.Data.Node                 (Node, NodeId)
-import qualified Empire.API.Data.Node                 as Node
-import qualified Empire.API.Graph.NodeResultUpdate    as NodeResult
+import           Empire.API.Data.Node              (Node, NodeId)
+import qualified Empire.API.Data.Node              as Node
+import qualified Empire.API.Graph.NodeResultUpdate as NodeResult
 
-import qualified Reactive.Commands.Batch              as BatchCmd
-import           Reactive.Commands.Node.Create        (addNode)
-import           Reactive.Commands.Node.Visualization (limitString, showError, visualizeError, visualizeNodeValueReprs)
+import qualified Reactive.Commands.Batch           as BatchCmd
+import           Reactive.Commands.Node.Create     (addNode)
 
 
-
-errorLen :: Int
-errorLen = 40
 
 updateNode :: Node -> Command State ()
 updateNode node = do
@@ -57,19 +52,7 @@ updateExistingNode node = do
 updateNodeValue :: NodeId -> NodeResult.NodeValue -> Command State ()
 updateNodeValue nid val =
     Global.withNode nid $ mapM_ $ Store.modify_ $
-        -- removeVisualization widgetId
-        case val of
-            NodeResult.Value name [] ->
-                (Model.value   .~ name)
-                . (Model.isError .~ False)
-            NodeResult.Value name valueReprs ->
-                (Model.value   .~ name)
-                . (Model.isError .~ False)
-                -- visualizeNodeValueReprs widgetId valueReprs --TODO[react]
-            NodeResult.Error msg ->
-                (Model.value   .~ limitString errorLen (Text.pack $ showError msg))
-                . (Model.isError .~ True)
-                -- visualizeError widgetId msg --TODO[react]
+        Model.value ?~ val
 
 updateNodeProfilingData :: NodeId -> Integer -> Command State ()
 updateNodeProfilingData nodeId execTime =

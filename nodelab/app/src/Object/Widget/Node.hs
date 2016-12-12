@@ -18,11 +18,13 @@ import           Empire.API.Data.Port                (InPort (..), OutPort (..),
 import qualified Empire.API.Data.Port                as P
 import           Empire.API.Data.PortRef             (AnyPortRef, toAnyPortRef)
 import           Empire.API.Graph.Collaboration      (ClientId)
+import           Empire.API.Graph.NodeResultUpdate   (NodeValue)
 import           Object.UITypes
 import           Object.Widget
 import qualified Object.Widget.Port                  as PortModel
 import           Reactive.Commands.Node.Ports.Colors (colorPort)
 import           Reactive.State.Collaboration        (ColorId)
+
 
 
 data Elements = Elements { _portGroup           :: WidgetId
@@ -60,11 +62,10 @@ data Node = Node { _nodeId                :: N.NodeId
                  , _expression            :: Text
                  , _code                  :: Maybe Text
                  , _name                  :: Text
-                 , _value                 :: Text
+                 , _value                 :: Maybe NodeValue
                  , _tpe                   :: Maybe Text
                  , _isExpanded            :: Bool
                  , _isSelected            :: Bool
-                 , _isError               :: Bool
                  , _visualizationsEnabled :: Bool
                  , _collaboration         :: Collaboration
                  , _execTime              :: Maybe Integer
@@ -80,7 +81,7 @@ makeLenses ''Elements
 instance ToJSON Elements
 
 makeNode :: N.NodeId -> Map AnyPortRef PortModel.Port -> Position -> Text -> Maybe Text -> Text -> Maybe Text -> Bool -> Node
-makeNode nid ports' pos expr code' name' tpe' vis = Node nid ports' pos 0.0 expr code' name' "" tpe' False False False vis def Nothing False def
+makeNode nid ports' pos expr code' name' tpe' vis = Node nid ports' pos 0.0 expr code' name' Nothing tpe' False False vis def Nothing False def
 
 makePorts :: N.Node -> [PortModel.Port]
 makePorts node = makePort <$> ports' where
@@ -123,7 +124,7 @@ fromNode n = let position' = uncurry Vector2 $ n ^. N.nodeMeta ^. NM.position
             tpe' = Text.pack $ fromMaybe "?" $ show <$> n ^? N.ports . ix (OutPortId All) . P.valueType
         N.OutputNode outputIx        ->  makeNode nodeId' ports' position' (Text.pack $ "Output " <> show outputIx) code' name' Nothing vis
         N.ModuleNode                 ->  makeNode nodeId' ports' position' "Module"    code' name' Nothing vis
-        N.FunctionNode tpeSig        -> (makeNode nodeId' ports' position' "Function"  code' name' Nothing vis) & value .~ (Text.pack $ intercalate " -> " tpeSig)
+        N.FunctionNode tpeSig        -> (makeNode nodeId' ports' position' "Function"  code' name' Nothing vis) -- & value .~ (Text.pack $ intercalate " -> " tpeSig) --TODO[react]
         N.InputEdge                  ->  makeNode nodeId' ports' position' "Input"     code' name' Nothing vis
         N.OutputEdge                 ->  makeNode nodeId' ports' position' "Output"    code' name' Nothing vis
 

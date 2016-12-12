@@ -64,7 +64,8 @@ instance UIDisplayObject Model.Node where
         node <- UIR.lookup wid :: IO Node
 
         whenChanged old model Model.isSelected    $ setSelected      node $ model ^. Model.isSelected
-        whenChanged old model Model.isError       $ setError         node $ model ^. Model.isError
+        --TODO[react]
+        -- whenChanged old model Model.isError       $ setError         node $ model ^. Model.isError
         whenChanged old model Model.zPos          $ setZPos          node $ model ^. Model.zPos
         whenChanged old model Model.highlight     $ setHighlight     node $ model ^. Model.highlight
         whenChanged old model Model.collaboration $ setCollaboration node $ model ^. Model.collaboration
