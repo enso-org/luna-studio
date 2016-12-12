@@ -33,7 +33,7 @@ handleCreateLibrary req@(Request _ request) = do
         Left err -> replyFail logger err req
         Right (libraryId, library) -> do
             Env.empireEnv .= newEmpireEnv
-            replyResult req $ CreateLibrary.Result libraryId $ DataLibrary.toAPI library
+            replyResult req () $ CreateLibrary.Result libraryId $ DataLibrary.toAPI library
             sendToBus' $ CreateLibrary.Update libraryId $ DataLibrary.toAPI library
 
 handleListLibraries :: Request ListLibraries.Request -> StateT Env BusT ()
@@ -46,4 +46,4 @@ handleListLibraries req@(Request _ request) = do
         Left err -> replyFail logger err req
         Right librariesList -> do
             Env.empireEnv .= newEmpireEnv
-            replyResult req $ ListLibraries.Result $ (_2 %~ DataLibrary.toAPI) <$> librariesList
+            replyResult req () $ ListLibraries.Result $ (_2 %~ DataLibrary.toAPI) <$> librariesList

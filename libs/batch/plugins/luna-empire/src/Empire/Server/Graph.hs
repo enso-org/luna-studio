@@ -159,7 +159,7 @@ connectNodes location expr dstNodeId srcNodeId = do
 
 -- Handlers
 
-mtuple :: (a -> m b) -> a -> m ((), b)
+mtuple :: (Monad m, Applicative m)=>(a -> m b) -> a -> m ((), b)
 mtuple f a = f a >>= \b -> pure ((),b)
 
 handleAddNode :: Request AddNode.Request -> StateT Env BusT ()
@@ -195,14 +195,15 @@ handleRemoveNodes = modifyGraphOk action success where
         (,) <$> pure inverse <*> Graph.removeNodes location nodeIds
     success (RemoveNodes.Request location nodeIds) _ result = sendToBus' $ RemoveNodes.Update location nodeIds
 
-handleUpdateNodeExpression :: Request UpdateNodeExpression.Request -> StateT Env BusT ()
-handleUpdateNodeExpression = modifyGraphOk action success where
+handleUpdateNodeExpression :: Request UpdateNodeExpression.Request -> StateT Env BusT ()-- fixme [SB] returns Result with no new informations and change node expression has addNode+removeNodes
+handleUpdateNodeExpression = modifyGraph action success where
     action (UpdateNodeExpression.Request location nodeId expression) = do
-        oldExpr <- Graph.withGraph location $ GraphUtils.getASTTarget nodeId >>= Print.printNodeExpression
+        oldExpr <- Graph.withGraph location $ undefined -- GraphUtils.getASTTarget nodeId >>= Print.printNodeExpression
         let newNodeId = nodeId
             inverse = UpdateNodeExpression.Inverse oldExpr
-        (,) <$> pure inverse <*> Graph.updateNodeExpression location nodeId newNodeId expression
-    success (UpdateNodeExpression.Request location nodeId expression) _ nodeMay = do
+            res = Graph.updateNodeExpression location nodeId newNodeId expression
+        (,) <$> pure inverse <*> res
+    success request@(Request _ req@(UpdateNodeExpression.Request location nodeId expression)) _ nodeMay = do
         withJust nodeMay $ \node -> do
             sendToBus' $ AddNode.Update location node
             sendToBus' $ RemoveNodes.Update location [nodeId]
