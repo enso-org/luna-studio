@@ -18,7 +18,7 @@ import           Event.Mouse               (MouseButton)
 import qualified Event.Mouse               as Mouse
 import           Event.Widget              (Payload)
 import           Object.UITypes
-import           Reactive.Commands.Command (Command)
+import           Luna.Studio.Commands.Command (Command)
 import           Luna.Studio.State.Camera     (Camera)
 import qualified Luna.Studio.State.Camera     as Camera
 import           Luna.Studio.Data.CtxDynamic

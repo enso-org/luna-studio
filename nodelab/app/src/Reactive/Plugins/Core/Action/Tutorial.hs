@@ -23,8 +23,8 @@ import qualified Event.NodeSearcher                as NodeSearcher
 import qualified Luna.Studio.Batch.Workspace                   as Workspace
 import qualified Object.Widget.Node                as UINode
 import           Luna.Studio.React.Store                       (widget)
-import           Reactive.Commands.Command         (Command, performIO)
-import           Reactive.Commands.Graph.Selection (selectedNodes)
+import           Luna.Studio.Commands.Command         (Command, performIO)
+import           Luna.Studio.Commands.Graph.Selection (selectedNodes)
 import qualified Luna.Studio.State.Global             as Global
 import qualified Luna.Studio.State.Graph              as Graph
 

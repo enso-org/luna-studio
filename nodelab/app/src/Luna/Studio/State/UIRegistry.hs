@@ -40,7 +40,7 @@ import           Luna.Studio.Prelude         hiding (children, lookup)
 import           Object.Widget
 import           Object.Widget.Connection
 import           Object.Widget.Scene
-import           Reactive.Commands.Command (Command)
+import           Luna.Studio.Commands.Command (Command)
 import           UI.Widget.Connection      ()
 import           Luna.Studio.Data.Aeson               (intMapToJSON)
 

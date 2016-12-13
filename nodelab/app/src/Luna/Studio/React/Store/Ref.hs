@@ -10,7 +10,7 @@ import           React.Flux
 import           Luna.Studio.Prelude          as P hiding (transform)
 
 import qualified Event.Event                as E
-import           Reactive.Commands.Command  (Command)
+import           Luna.Studio.Commands.Command  (Command)
 
 
 

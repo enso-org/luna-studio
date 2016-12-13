@@ -5,7 +5,7 @@ module Object.LunaValue where
 import           Luna.Studio.Prelude         hiding (Choice)
 import qualified Luna.Studio.State.UIRegistry as UIRegistry
 import           Object.UITypes            (WidgetId)
-import           Reactive.Commands.Command (Command)
+import           Luna.Studio.Commands.Command (Command)
 import           Data.HMap.Lazy (HTMap)
 import           Data.Aeson (ToJSON, toJSON)
 newtype LunaExpression = LunaExpression String

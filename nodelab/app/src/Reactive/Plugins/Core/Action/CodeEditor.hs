@@ -3,8 +3,8 @@ module Reactive.Plugins.Core.Action.CodeEditor where
 import           Event.Event                  (Event (UI))
 import           Event.UI                     (UIEvent (CodeEditorEvent))
 import qualified Luna.Studio.React.Event.CodeEditor       as CodeEditor
-import qualified Reactive.Commands.CodeEditor as CodeEditor
-import           Reactive.Commands.Command    (Command)
+import qualified Luna.Studio.Commands.CodeEditor as CodeEditor
+import           Luna.Studio.Commands.Command    (Command)
 import           Luna.Studio.State.Global        (State)
 import           Luna.Studio.Prelude
 

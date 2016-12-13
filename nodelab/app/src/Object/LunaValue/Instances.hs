@@ -3,8 +3,8 @@
 module Object.LunaValue.Instances where
 
 import           Object.UITypes                  (WidgetId)
-import           Reactive.Commands.Command       (Command)
-import           Reactive.Commands.UIRegistry    as UICmd
+import           Luna.Studio.Commands.Command       (Command)
+import           Luna.Studio.Commands.UIRegistry    as UICmd
 import qualified Luna.Studio.State.Global           as Global
 import           Luna.Studio.State.UIRegistry       (addHandler)
 import           Luna.Studio.Prelude               hiding (Choice)

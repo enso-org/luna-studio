@@ -8,8 +8,8 @@ import           Event.Event                  (JSState)
 import           Event.Widget                 (Payload (..))
 import           Object.Widget                (UIHandlers, WidgetId, fromWidgetId, widgetCustom)
 import qualified Object.Widget.CodeEditor     as Model
-import           Reactive.Commands.Command    (Command)
-import qualified Reactive.Commands.UIRegistry as UICmd
+import           Luna.Studio.Commands.Command    (Command)
+import qualified Luna.Studio.Commands.UIRegistry as UICmd
 import           Luna.Studio.State.Global        (inRegistry_)
 import qualified Luna.Studio.State.Global        as Global
 

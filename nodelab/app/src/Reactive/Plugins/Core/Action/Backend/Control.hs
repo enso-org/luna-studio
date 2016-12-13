@@ -7,7 +7,7 @@ import           Luna.Studio.Prelude
 import qualified Event.Batch                      as Batch
 import           Event.Event                      (Event (Batch))
 
-import           Reactive.Commands.Command        (Command)
+import           Luna.Studio.Commands.Command        (Command)
 import           Luna.Studio.State.Global            (State)
 
 toAction :: Event -> Maybe (Command State ())

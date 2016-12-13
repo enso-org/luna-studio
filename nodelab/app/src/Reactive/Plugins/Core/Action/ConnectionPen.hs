@@ -24,11 +24,11 @@ import           Luna.Studio.State.Global              (State)
 import qualified Luna.Studio.State.Global              as Global
 import qualified Luna.Studio.State.UIRegistry          as UIRegistry
 
-import           Reactive.Commands.Command          (Command, performIO)
-import           Reactive.Commands.Graph.Disconnect (disconnectAll)
+import           Luna.Studio.Commands.Command          (Command, performIO)
+import           Luna.Studio.Commands.Graph.Disconnect (disconnectAll)
 import qualified Luna.Studio.State.ConnectionPen       as ConnectionPen
 
-import qualified Reactive.Commands.Batch            as BatchCmd
+import qualified Luna.Studio.Commands.Batch            as BatchCmd
 
 import qualified Empire.API.Data.Port               as Port
 import           Empire.API.Data.PortRef            (InPortRef (..), OutPortRef (..))

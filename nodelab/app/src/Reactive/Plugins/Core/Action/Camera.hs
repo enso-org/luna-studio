@@ -13,9 +13,9 @@ import qualified Event.Mouse               as Mouse
 import qualified Luna.Studio.State.Camera     as Camera
 import qualified Luna.Studio.State.Global     as Global
 
-import           Reactive.Commands.Camera  (autoZoom, panCamera, panDown, panDrag, panLeft, panRight, panUp, resetZoom, syncCamera,
+import           Luna.Studio.Commands.Camera  (autoZoom, panCamera, panDown, panDrag, panLeft, panRight, panUp, resetZoom, syncCamera,
                                             wheelZoom, zoomDrag, zoomIn, zoomOut)
-import           Reactive.Commands.Command (Command)
+import           Luna.Studio.Commands.Command (Command)
 
 
 toAction :: Event -> Maybe (Command Global.State ())

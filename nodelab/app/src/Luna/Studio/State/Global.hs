@@ -10,7 +10,7 @@ import           Data.Aeson                     (ToJSON, toJSON)
 import           Data.DateTime                  (DateTime)
 import           Data.Set                       (Set)
 import           Data.UUID.Types                (UUID)
-import           Reactive.Commands.Command      (Command)
+import           Luna.Studio.Commands.Command      (Command)
 import           System.Random                  (StdGen)
 import qualified System.Random                  as Random
 

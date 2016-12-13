@@ -1,7 +1,7 @@
 module Luna.Studio.State.Camera where
 
 import           Data.Aeson                (ToJSON)
-import           Reactive.Commands.Command (Command)
+import           Luna.Studio.Commands.Command (Command)
 import           Luna.Studio.Prelude
 import           Luna.Studio.Data.Vector
 

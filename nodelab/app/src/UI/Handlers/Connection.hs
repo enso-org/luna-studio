@@ -17,10 +17,10 @@ module UI.Handlers.Connection where
 -- import qualified Object.Widget.Node                 as NodeModel
 -- import qualified Object.Widget.Port                 as PortModel
 -- import qualified Luna.Studio.React.Store                        as Store
--- import           Reactive.Commands.Command          (Command)
--- import qualified Reactive.Commands.Graph            as Graph
--- import           Reactive.Commands.Graph.Disconnect (disconnectAll)
--- import qualified Reactive.Commands.UIRegistry       as UICmd
+-- import           Luna.Studio.Commands.Command          (Command)
+-- import qualified Luna.Studio.Commands.Graph            as Graph
+-- import           Luna.Studio.Commands.Graph.Disconnect (disconnectAll)
+-- import qualified Luna.Studio.Commands.UIRegistry       as UICmd
 -- import           Luna.Studio.State.Connect             (Connecting (Connecting))
 -- import qualified Luna.Studio.State.Connect             as Connect
 -- import           Luna.Studio.State.Global              (inRegistry)

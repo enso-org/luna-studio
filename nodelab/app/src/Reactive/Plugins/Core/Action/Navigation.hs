@@ -21,9 +21,9 @@ import           Luna.Studio.React.Store                (Ref, WRef (..), ref, wi
 import qualified Luna.Studio.React.Store                as Store
 import           Luna.Studio.React.Model.Node           (Node)
 import qualified Luna.Studio.React.Model.Node           as Node
-import           Reactive.Commands.Batch    (cancelCollaborativeTouch, collaborativeTouch)
-import           Reactive.Commands.Command  (Command)
-import           Reactive.Commands.Graph    (allNodes')
+import           Luna.Studio.Commands.Batch    (cancelCollaborativeTouch, collaborativeTouch)
+import           Luna.Studio.Commands.Command  (Command)
+import           Luna.Studio.Commands.Graph    (allNodes')
 import           Luna.Studio.State.Global      (State)
 import qualified Luna.Studio.State.Global      as Global
 import qualified Luna.Studio.State.Graph       as Graph

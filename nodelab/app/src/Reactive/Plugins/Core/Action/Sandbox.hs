@@ -7,10 +7,10 @@ import           Luna.Studio.Data.Vector
 
 import           Event.Event                     (Event (..))
 import qualified Event.Keyboard                  as Keyboard
-import           Reactive.Commands.Command       (Command, performIO)
+import           Luna.Studio.Commands.Command       (Command, performIO)
 import qualified Luna.Studio.State.Global           as Global
 
-import qualified Reactive.Commands.UIRegistry    as UICmd
+import qualified Luna.Studio.Commands.UIRegistry    as UICmd
 import           Luna.Studio.State.UIRegistry       (addHandler, sceneGraphId)
 
 import qualified Object.Widget.CodeEditor        as CodeEditor
@@ -24,7 +24,7 @@ import qualified Object.Widget.Slider.Continuous as ContinuousSlider
 import qualified Object.Widget.Slider.Discrete   as DiscreteSlider
 import qualified Object.Widget.Toggle            as Toggle
 
-import qualified Reactive.Commands.Batch         as BatchCmd
+import qualified Luna.Studio.Commands.Batch         as BatchCmd
 
 import           Object.LunaValue
 import           Object.LunaValue.Instances      ()

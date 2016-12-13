@@ -9,11 +9,11 @@ import           Event.Event               (Event (..))
 -- import qualified Event.Keyboard                             as Keyboard
 -- import qualified Event.NodeSearcher                         as NodeSearcher
 --
-import           Reactive.Commands.Command (Command)
--- import qualified Reactive.Commands.CommandSearcher.Commands as CS
--- import           Reactive.Commands.Node.Register            (registerNode)
--- import           Reactive.Commands.Node.Update              (updateExpression)
--- import qualified Reactive.Commands.NodeSearcher             as NS
+import           Luna.Studio.Commands.Command (Command)
+-- import qualified Luna.Studio.Commands.CommandSearcher.Commands as CS
+-- import           Luna.Studio.Commands.Node.Register            (registerNode)
+-- import           Luna.Studio.Commands.Node.Update              (updateExpression)
+-- import qualified Luna.Studio.Commands.NodeSearcher             as NS
 import qualified Luna.Studio.State.Global     as Global
 --
 --TODO[react]

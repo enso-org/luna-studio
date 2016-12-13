@@ -19,10 +19,10 @@ import qualified Luna.Studio.React.Event.Node                  as Node
 import           Luna.Studio.React.Store                       (widget, _widget)
 import qualified Luna.Studio.React.Store                       as Store
 import qualified Luna.Studio.React.Model.Node                  as Model
-import qualified Reactive.Commands.Batch           as BatchCmd
-import           Reactive.Commands.Command         (Command)
-import           Reactive.Commands.Graph.Selection (selectNodes, selectedNodes)
-import           Reactive.Commands.Node.Snap       (snap)
+import qualified Luna.Studio.Commands.Batch           as BatchCmd
+import           Luna.Studio.Commands.Command         (Command)
+import           Luna.Studio.Commands.Graph.Selection (selectNodes, selectedNodes)
+import           Luna.Studio.Commands.Node.Snap       (snap)
 import qualified Luna.Studio.State.Camera             as Camera
 import           Luna.Studio.State.Drag               (DragHistory (..))
 import qualified Luna.Studio.State.Drag               as Drag

@@ -16,8 +16,8 @@ import           Object.Widget                   (CompositeWidget, DblClickHandl
                                                   mousePressed, resizeWidget, startPos, updateWidget)
 import qualified Object.Widget.Slider.Continuous as Model
 import qualified Object.Widget.TextBox           as TextBox
-import           Reactive.Commands.Command       (Command)
-import qualified Reactive.Commands.UIRegistry    as UICmd
+import           Luna.Studio.Commands.Command       (Command)
+import qualified Luna.Studio.Commands.UIRegistry    as UICmd
 import           Luna.Studio.State.Global           (inRegistry)
 import qualified Luna.Studio.State.Global           as Global
 import           Luna.Studio.State.UIRegistry       (addHandler)

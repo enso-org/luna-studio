@@ -15,7 +15,7 @@ import qualified Event.Debug               as Debug
 import           Event.Event               (Event (..))
 
 import           Control.Monad.State       hiding (state)
-import           Reactive.Commands.Command (Command, performIO)
+import           Luna.Studio.Commands.Command (Command, performIO)
 import qualified Luna.Studio.State.Global     as Global
 
 import           Data.Aeson                (toJSON)

@@ -26,20 +26,20 @@ import qualified Empire.API.Response                         as Response
 import           Event.Batch                                 (Event (..))
 import qualified Event.Event                                 as Event
 
-import           Reactive.Commands.Batch                     (collaborativeModify, requestCollaborationRefresh)
-import qualified Reactive.Commands.CodeEditor                as CodeEditor
-import           Reactive.Commands.Command                   (Command)
--- import           Reactive.Commands.Graph                     (updateConnection)
-import           Reactive.Commands.Graph.Disconnect          (localDisconnectAll)
-import           Reactive.Commands.Graph.Render              (renderGraph)
-import           Reactive.Commands.Graph.Selection           (selectNodes)
-import qualified Reactive.Commands.Node                      as Node
-import           Reactive.Commands.Node.Create               (addDummyNode)
-import           Reactive.Commands.Node.NodeMeta             (updateNodesMeta)
-import           Reactive.Commands.Node.Remove               (localRemoveNodes)
-import           Reactive.Commands.Node.Update               (updateNode, updateNodeProfilingData, updateNodeValue)
-import           Reactive.Commands.ProjectManager            (setCurrentBreadcrumb)
-import           Reactive.Commands.UUID                      (isOwnRequest)
+import           Luna.Studio.Commands.Batch                     (collaborativeModify, requestCollaborationRefresh)
+import qualified Luna.Studio.Commands.CodeEditor                as CodeEditor
+import           Luna.Studio.Commands.Command                   (Command)
+-- import           Luna.Studio.Commands.Graph                     (updateConnection)
+import           Luna.Studio.Commands.Graph.Disconnect          (localDisconnectAll)
+import           Luna.Studio.Commands.Graph.Render              (renderGraph)
+import           Luna.Studio.Commands.Graph.Selection           (selectNodes)
+import qualified Luna.Studio.Commands.Node                      as Node
+import           Luna.Studio.Commands.Node.Create               (addDummyNode)
+import           Luna.Studio.Commands.Node.NodeMeta             (updateNodesMeta)
+import           Luna.Studio.Commands.Node.Remove               (localRemoveNodes)
+import           Luna.Studio.Commands.Node.Update               (updateNode, updateNodeProfilingData, updateNodeValue)
+import           Luna.Studio.Commands.ProjectManager            (setCurrentBreadcrumb)
+import           Luna.Studio.Commands.UUID                      (isOwnRequest)
 import           Reactive.Plugins.Core.Action.Backend.Common (doNothing, handleResponse)
 import           Luna.Studio.State.Global                       (State)
 import qualified Luna.Studio.State.Global                       as Global

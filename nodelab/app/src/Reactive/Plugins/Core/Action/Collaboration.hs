@@ -15,11 +15,11 @@ import qualified Empire.API.Graph.Collaboration    as Collaboration
 import           Event.Batch                       (Event (..))
 import qualified Event.Event                       as Event
 
-import           Reactive.Commands.Batch           (collaborativeTouch)
-import           Reactive.Commands.Collaboration   (updateClient)
-import           Reactive.Commands.Command         (Command)
-import           Reactive.Commands.Graph           (allNodes)
-import           Reactive.Commands.Graph.Selection (selectedNodes)
+import           Luna.Studio.Commands.Batch           (collaborativeTouch)
+import           Luna.Studio.Commands.Collaboration   (updateClient)
+import           Luna.Studio.Commands.Command         (Command)
+import           Luna.Studio.Commands.Graph           (allNodes)
+import           Luna.Studio.Commands.Graph.Selection (selectedNodes)
 import           Luna.Studio.State.Collaboration      (ColorId)
 import           Luna.Studio.State.Global             (State)
 import qualified Luna.Studio.State.Global             as Global

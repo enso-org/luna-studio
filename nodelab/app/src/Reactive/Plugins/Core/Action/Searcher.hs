@@ -10,8 +10,8 @@ import qualified Event.Keys                 as Keys
 import           Event.UI                   (UIEvent (AppEvent, SearcherEvent))
 import qualified Luna.Studio.React.Event.App            as App
 import qualified Luna.Studio.React.Event.Searcher       as Searcher
-import           Reactive.Commands.Command  (Command)
-import qualified Reactive.Commands.Searcher as Searcher
+import           Luna.Studio.Commands.Command  (Command)
+import qualified Luna.Studio.Commands.Searcher as Searcher
 import           Luna.Studio.State.Global      (State)
 
 

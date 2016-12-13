@@ -10,8 +10,8 @@ import           Event.Event                  (JSState)
 import           Object.Widget                (ClickHandler, IsDisplayObject, KeyDownHandler, UIHandlers, WidgetId, dblClick, fromWidgetId,
                                                keyDown, widgetSize)
 import qualified Object.Widget.TextBox        as Model
-import           Reactive.Commands.Command    (Command)
-import qualified Reactive.Commands.UIRegistry as UICmd
+import           Luna.Studio.Commands.Command    (Command)
+import qualified Luna.Studio.Commands.UIRegistry as UICmd
 import           Luna.Studio.State.Global        (inRegistry)
 import qualified Luna.Studio.State.Global        as Global
 import qualified Luna.Studio.State.UIRegistry    as UIRegistry

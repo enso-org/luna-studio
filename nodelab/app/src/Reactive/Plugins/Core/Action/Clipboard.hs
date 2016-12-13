@@ -17,11 +17,11 @@ import           Event.Keyboard                    (KeyMods (..))
 import qualified Event.Keyboard                    as Keyboard
 import qualified Object.Widget.Node                as UINode
 import           Luna.Studio.React.Store                       (widget)
-import           Reactive.Commands.Batch           (addSubgraph)
-import           Reactive.Commands.Command         (Command, performIO)
-import           Reactive.Commands.Graph.Selection (selectedNodes)
-import           Reactive.Commands.Node.Remove     (removeSelectedNodes)
-import           Reactive.Commands.Node.Snap       (snapCoord)
+import           Luna.Studio.Commands.Batch           (addSubgraph)
+import           Luna.Studio.Commands.Command         (Command, performIO)
+import           Luna.Studio.Commands.Graph.Selection (selectedNodes)
+import           Luna.Studio.Commands.Node.Remove     (removeSelectedNodes)
+import           Luna.Studio.Commands.Node.Snap       (snapCoord)
 import qualified Luna.Studio.State.Camera             as Camera
 import           Luna.Studio.State.Global             (State)
 import qualified Luna.Studio.State.Global             as Global

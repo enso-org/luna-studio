@@ -17,8 +17,8 @@ import           Luna.Studio.React.Store                       (widget)
 import qualified Luna.Studio.React.Store                       as Store
 import           Luna.Studio.React.Model.SelectionBox          (SelectionBox (SelectionBox))
 import qualified Luna.Studio.React.Model.SelectionBox          as SelectionBox
-import           Reactive.Commands.Command         (Command)
-import           Reactive.Commands.Graph.Selection (focusSelectedNode, modifySelectionHistory, selectNodes, selectedNodes, unselectAll)
+import           Luna.Studio.Commands.Command         (Command)
+import           Luna.Studio.Commands.Graph.Selection (focusSelectedNode, modifySelectionHistory, selectNodes, selectedNodes, unselectAll)
 import           Luna.Studio.State.Global             (State)
 import qualified Luna.Studio.State.Global             as Global
 import qualified Luna.Studio.State.Graph              as Graph

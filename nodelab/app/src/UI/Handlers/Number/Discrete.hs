@@ -14,8 +14,8 @@ import           Object.Widget                 (DblClickHandler, DragEndHandler,
                                                 CompositeWidget, createWidget, updateWidget, ResizableWidget, resizeWidget)
 import qualified Object.Widget.Number.Discrete as Model
 import qualified Object.Widget.TextBox         as TextBox
-import           Reactive.Commands.Command     (Command)
-import qualified Reactive.Commands.UIRegistry  as UICmd
+import           Luna.Studio.Commands.Command     (Command)
+import qualified Luna.Studio.Commands.UIRegistry  as UICmd
 import           Luna.Studio.State.Global         (inRegistry)
 import qualified Luna.Studio.State.Global         as Global
 import           Luna.Studio.State.UIRegistry     (addHandler)

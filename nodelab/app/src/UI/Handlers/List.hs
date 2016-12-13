@@ -16,8 +16,8 @@ import qualified Object.Widget.Group           as Group
 import qualified Object.Widget.Label           as Label
 import           Object.Widget.List            (List (..))
 import qualified Object.Widget.List            as List
-import           Reactive.Commands.Command     (Command)
-import qualified Reactive.Commands.UIRegistry  as UICmd
+import           Luna.Studio.Commands.Command     (Command)
+import qualified Luna.Studio.Commands.UIRegistry  as UICmd
 import           Luna.Studio.State.Global         (inRegistry)
 import qualified Luna.Studio.State.Global         as Global
 import           Luna.Studio.State.UIRegistry     (addHandler)

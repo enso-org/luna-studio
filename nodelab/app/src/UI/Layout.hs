@@ -8,8 +8,8 @@ import           Data.HMap.Lazy               (HTMap)
 import           Luna.Studio.Data.Vector
 
 import           Object.Widget                (WidgetId, widgetSize, widgetVisible)
-import           Reactive.Commands.Command    (Command)
-import qualified Reactive.Commands.UIRegistry as UICmd
+import           Luna.Studio.Commands.Command    (Command)
+import qualified Luna.Studio.Commands.UIRegistry as UICmd
 import           Luna.Studio.State.UIRegistry    (addHandler)
 import qualified Luna.Studio.State.UIRegistry    as UIRegistry
 

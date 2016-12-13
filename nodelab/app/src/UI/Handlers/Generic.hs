@@ -6,8 +6,8 @@ import           Luna.Studio.Prelude
 import           Data.HMap.Lazy               (HTMap, TypeKey (..))
 
 import           Object.Widget                (WidgetId)
-import           Reactive.Commands.Command    (Command)
-import qualified Reactive.Commands.UIRegistry as UICmd
+import           Luna.Studio.Commands.Command    (Command)
+import qualified Luna.Studio.Commands.UIRegistry as UICmd
 import           Luna.Studio.State.Global        (inRegistry)
 import qualified Luna.Studio.State.Global        as Global
 import           Luna.Studio.State.UIRegistry    (addHandler)

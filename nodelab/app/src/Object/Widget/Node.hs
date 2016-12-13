@@ -21,7 +21,7 @@ import           Empire.API.Graph.NodeResultUpdate   (NodeValue)
 import           Object.UITypes
 import           Object.Widget
 import qualified Object.Widget.Port                  as PortModel
-import           Reactive.Commands.Node.Ports.Colors (colorPort)
+import           Luna.Studio.Commands.Node.Ports.Colors (colorPort)
 import           Luna.Studio.State.Collaboration        (ColorId)
 
 

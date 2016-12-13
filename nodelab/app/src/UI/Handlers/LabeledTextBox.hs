@@ -9,8 +9,8 @@ import           Object.Widget                (CompositeWidget, DblClickHandler,
                                                dblClick, resizeWidget, updateWidget)
 import qualified Object.Widget.LabeledTextBox as Model
 import qualified Object.Widget.TextBox        as TextBox
-import           Reactive.Commands.Command    (Command)
-import qualified Reactive.Commands.UIRegistry as UICmd
+import           Luna.Studio.Commands.Command    (Command)
+import qualified Luna.Studio.Commands.UIRegistry as UICmd
 import           Luna.Studio.State.Global        (inRegistry)
 import qualified Luna.Studio.State.Global        as Global
 import           Luna.Studio.State.UIRegistry    (addHandler)

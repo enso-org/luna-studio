@@ -10,8 +10,8 @@ module UI.Widget.Port where
 -- import           Object.Widget
 -- import qualified Object.Widget.Port           as Model
 --
--- import           Reactive.Commands.Command    (Command)
--- import qualified Reactive.Commands.UIRegistry as UICmd
+-- import           Luna.Studio.Commands.Command    (Command)
+-- import qualified Luna.Studio.Commands.UIRegistry as UICmd
 -- import           Luna.Studio.State.Global        (inRegistry)
 -- import qualified Luna.Studio.State.Global        as Global
 -- import qualified Luna.Studio.State.UIRegistry    as UIRegistry (State)

@@ -7,8 +7,8 @@ import           Data.HMap.Lazy               (TypeKey (..))
 
 import           Object.Widget                (WidgetId, ResizableWidget, resizeWidget)
 import qualified Object.Widget.Group          as Model
-import           Reactive.Commands.Command    (Command)
-import qualified Reactive.Commands.UIRegistry as UICmd
+import           Luna.Studio.Commands.Command    (Command)
+import qualified Luna.Studio.Commands.UIRegistry as UICmd
 import qualified Luna.Studio.State.UIRegistry    as UIRegistry
 
 import           UI.Generic                   (defaultResize)

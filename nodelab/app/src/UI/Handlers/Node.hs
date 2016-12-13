@@ -26,10 +26,10 @@ import qualified Object.Widget.LabeledTextBox             as LabeledTextBox
 import qualified Object.Widget.Node                       as Model
 import qualified Object.Widget.TextBox                    as TextBox
 import qualified Object.Widget.Toggle                     as Toggle
-import           Reactive.Commands.Batch                  (cancelCollaborativeTouch, collaborativeTouch)
-import           Reactive.Commands.Command                (Command)
-import           Reactive.Commands.Graph.SelectionHistory (dropSelectionHistory, modifySelectionHistory)
-import qualified Reactive.Commands.UIRegistry             as UICmd
+import           Luna.Studio.Commands.Batch                  (cancelCollaborativeTouch, collaborativeTouch)
+import           Luna.Studio.Commands.Command                (Command)
+import           Luna.Studio.Commands.Graph.SelectionHistory (dropSelectionHistory, modifySelectionHistory)
+import qualified Luna.Studio.Commands.UIRegistry             as UICmd
 import           Luna.Studio.State.Global                    (inRegistry)
 import qualified Luna.Studio.State.Global                    as Global
 import           Luna.Studio.State.UIRegistry                (addHandler)

@@ -20,9 +20,9 @@ import qualified Event.Batch                                 as Batch
 import qualified Event.CustomEvent                           as CustomEvent
 import           Event.Event                                 (Event (Batch, CustomEvent))
 import           JS.DownloadFile                             (downloadFile)
-import qualified Reactive.Commands.Batch                     as BatchCmd (importProject)
-import           Reactive.Commands.Command                   (Command, performIO)
-import           Reactive.Commands.ProjectManager            (loadGraph, loadProject)
+import qualified Luna.Studio.Commands.Batch                     as BatchCmd (importProject)
+import           Luna.Studio.Commands.Command                   (Command, performIO)
+import           Luna.Studio.Commands.ProjectManager            (loadGraph, loadProject)
 import           Reactive.Plugins.Core.Action.Backend.Common (handleResponse)
 import           Luna.Studio.State.Global                       (State)
 import qualified Luna.Studio.State.Global                       as Global

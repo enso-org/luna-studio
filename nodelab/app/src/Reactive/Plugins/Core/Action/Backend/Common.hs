@@ -10,8 +10,8 @@ import qualified Data.Text.Lazy            as Text
 import qualified Data.UUID.Types           as UUID (toString)
 import           Luna.Studio.Prelude
 
-import           Reactive.Commands.Command (Command, performIO)
-import           Reactive.Commands.UUID    (isOwnRequest, unregisterRequest)
+import           Luna.Studio.Commands.Command (Command, performIO)
+import           Luna.Studio.Commands.UUID    (isOwnRequest, unregisterRequest)
 import           Luna.Studio.State.Global     (State)
 
 import qualified Empire.API.Response       as Response

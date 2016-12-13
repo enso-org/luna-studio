@@ -8,7 +8,7 @@ import           Luna.Studio.Prelude
 import           Data.HMap.Lazy               ()
 
 import           Object.Widget                (UIHandlers, click, dblClick, mouseOut, mouseOver, mousePressed)
-import           Reactive.Commands.Command    (performIO)
+import           Luna.Studio.Commands.Command    (performIO)
 import           Luna.Studio.State.Global        ()
 import qualified Luna.Studio.State.Global        as Global
 

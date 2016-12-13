@@ -8,8 +8,8 @@ import           Event.Event                  (JSState)
 import qualified Event.Mouse                  as Mouse
 import           Object.Widget                (ClickHandler, DblClickHandler, UIHandlers, WidgetId, click, dblClick,
                                                mouseOut, mouseOver, mousePressed)
-import           Reactive.Commands.Command    (Command, performIO)
-import qualified Reactive.Commands.UIRegistry as UICmd
+import           Luna.Studio.Commands.Command    (Command, performIO)
+import qualified Luna.Studio.Commands.UIRegistry as UICmd
 import           Luna.Studio.State.Global        (inRegistry)
 import qualified Luna.Studio.State.Global        as Global
 

@@ -8,10 +8,10 @@ import           Event.UI                          (UIEvent (AppEvent, NodeEvent
 import qualified Luna.Studio.React.Event.App                   as App
 import qualified Luna.Studio.React.Model.Node                  as Node
 import qualified Luna.Studio.React.Event.Node                  as Node
-import           Reactive.Commands.Command         (Command)
-import           Reactive.Commands.Graph.Selection (selectAll, toggleSelect, unselectAll)
-import qualified Reactive.Commands.Node            as Node
-import           Reactive.Commands.Node.Remove     as Node
+import           Luna.Studio.Commands.Command         (Command)
+import           Luna.Studio.Commands.Graph.Selection (selectAll, toggleSelect, unselectAll)
+import qualified Luna.Studio.Commands.Node            as Node
+import           Luna.Studio.Commands.Node.Remove     as Node
 import           Luna.Studio.State.Global             (State)
 import qualified Luna.Studio.State.Global             as Global
 import qualified Luna.Studio.State.Graph              as Graph
