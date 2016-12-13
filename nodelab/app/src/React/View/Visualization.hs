@@ -1,6 +1,11 @@
 {-# LANGUAGE LambdaCase        #-}
 {-# LANGUAGE OverloadedStrings #-}
-module React.View.Visualization where
+module React.View.Visualization
+( visualization
+, visualization_
+, strValue
+)
+where
 
 import           Control.Arrow                     ((***))
 import           Data.List.Split                   (wordsBy)
@@ -80,7 +85,8 @@ nodeError_ err = do
 
 nodeValues_ :: [Value] -> ReactElementM ViewEventHandler ()
 nodeValues_ =
-    mapM_ (uncurry nodeValue_) . zip [0..]
+    g_ .
+        mapM_ (uncurry nodeValue_) . zip [0..]
 
 nodeValue_ :: Int -> Value -> ReactElementM ViewEventHandler ()
 nodeValue_ visIx = \case
@@ -101,7 +107,7 @@ nodeValue_ visIx = \case
             rows = transpose cols'
             widget = DataFrame.create Style.dataFrameWidgetSize heads rows
         dataFrame_ visIx widget
-    _ -> text_ $ elemString "other"
+    _ -> return ()
 
 listTable :: [Text] -> DataFrame
 listTable col = DataFrame.create Style.plotSize ["Index", "Value"] rows where

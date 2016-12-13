@@ -25,7 +25,8 @@ graphics_ visIx (GR.Graphics layers) = do
         labelAlign GR.Left   = Label.Left
         labelAlign GR.Center = Label.Center
         labelAlign GR.Right  = Label.Right
-    text_ $ elemString $ fromString $ show widget
+    text_ ["key" $= fromString (show visIx)] $
+        elemString $ fromString $ show widget
 
 
 fromLayers :: [GR.Layer] -> [Graphics.Item]
