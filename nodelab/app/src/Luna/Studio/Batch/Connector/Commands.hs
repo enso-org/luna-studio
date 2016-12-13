@@ -1,13 +1,13 @@
-module BatchConnector.Commands where
+module Luna.Studio.Batch.Connector.Commands where
 
 import           Luna.Studio.Prelude
 
 import qualified Data.Text.Lazy                        as Text
 import           Data.UUID.Types                       (UUID)
 
-import           Batch.Workspace                       (Workspace)
-import qualified Batch.Workspace                       as Workspace
-import           BatchConnector.Connection             (sendRequest, sendUpdate)
+import           Luna.Studio.Batch.Workspace                       (Workspace)
+import qualified Luna.Studio.Batch.Workspace                       as Workspace
+import           Luna.Studio.Batch.Connector.Connection             (sendRequest, sendUpdate)
 
 import           Empire.API.Data.Connection            (Connection)
 import qualified Empire.API.Data.DefaultValue          as DefaultValue

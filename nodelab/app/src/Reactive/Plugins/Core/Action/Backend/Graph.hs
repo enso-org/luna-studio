@@ -3,7 +3,7 @@ module Reactive.Plugins.Core.Action.Backend.Graph
     ) where
 
 
-import qualified Batch.Workspace                             as Workspace
+import qualified Luna.Studio.Batch.Workspace                             as Workspace
 import           Luna.Studio.Prelude
 
 import qualified Empire.API.Data.Graph                       as Graph

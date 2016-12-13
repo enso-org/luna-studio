@@ -15,7 +15,7 @@ import qualified Empire.API.Project.ImportProject            as ImportProject
 import qualified Empire.API.Project.ListProjects             as ListProjects
 import qualified Empire.API.Project.CreateProject            as CreateProject
 
-import qualified Batch.Workspace                             as Workspace
+import qualified Luna.Studio.Batch.Workspace                             as Workspace
 import qualified Event.Batch                                 as Batch
 import qualified Event.CustomEvent                           as CustomEvent
 import           Event.Event                                 (Event (Batch, CustomEvent))

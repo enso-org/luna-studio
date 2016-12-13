@@ -10,7 +10,7 @@ import           Luna.Studio.Data.Vector
 
 import qualified JS.NodeSearcher                   as UI
 
-import qualified Batch.Workspace                   as Workspace
+import qualified Luna.Studio.Batch.Workspace                   as Workspace
 import           React.Store                       (widget)
 import qualified React.Store                       as Store
 import qualified React.Model.Node                  as Node

@@ -14,7 +14,7 @@ import qualified Data.Text.Lazy                   as Text
 import           Luna.Studio.Prelude                hiding (Item, stripPrefix)
 import           Luna.Studio.Data.Vector
 
-import qualified Batch.Workspace                  as Workspace
+import qualified Luna.Studio.Batch.Workspace                  as Workspace
 import qualified Empire.API.Data.Project          as Project
 import           Event.Event                      (JSState)
 import qualified JS.GoogleAnalytics               as GA

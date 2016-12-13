@@ -5,7 +5,7 @@ module Reactive.Commands.Graph.Unrender
 
 import           Luna.Studio.Prelude
 
-import qualified Batch.Workspace           as Workspace
+import qualified Luna.Studio.Batch.Workspace           as Workspace
 import qualified React.Store               as Store
 import qualified React.Model.NodeEditor    as NodeEditor
 import           Reactive.Commands.Command (Command)

@@ -31,8 +31,8 @@ import qualified React.Flux                     as React
 import           System.Random                  (newStdGen)
 import           Luna.Studio.Prelude
 
-import qualified Batch.Workspace                as Workspace
-import qualified BatchConnector.Commands        as BatchCmd
+import qualified Luna.Studio.Batch.Workspace                as Workspace
+import qualified Luna.Studio.Batch.Connector.Commands        as BatchCmd
 import           Control.Concurrent.MVar
 import qualified JS.GraphLocation               as GraphLocation
 import           JS.Tutorial                    (shouldRunTutorial)

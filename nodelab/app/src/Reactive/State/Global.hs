@@ -14,7 +14,7 @@ import           Reactive.Commands.Command      (Command)
 import           System.Random                  (StdGen)
 import qualified System.Random                  as Random
 
-import           Batch.Workspace
+import           Luna.Studio.Batch.Workspace
 import           Empire.API.Data.Connection     (ConnectionId)
 import           Empire.API.Data.Node           (NodeId)
 import qualified Empire.API.Data.Node           as Node

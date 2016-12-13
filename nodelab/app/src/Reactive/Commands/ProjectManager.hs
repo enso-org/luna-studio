@@ -8,7 +8,7 @@ module Reactive.Commands.ProjectManager
 
 import           Luna.Studio.Prelude
 
-import qualified Batch.Workspace                  as Workspace
+import qualified Luna.Studio.Batch.Workspace                  as Workspace
 import qualified Reactive.Commands.Batch          as BatchCmd
 import qualified Reactive.Commands.Breadcrumbs    as Breadcrumbs
 import           Reactive.Commands.Command        (Command, performIO)

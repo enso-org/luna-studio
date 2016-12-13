@@ -10,7 +10,7 @@ import qualified Data.JSString              as JSString
 import           JavaScript.Web.Storage     (getItem, localStorage, setItem)
 import           Luna.Studio.Prelude
 
-import qualified Batch.Workspace            as Workspace
+import qualified Luna.Studio.Batch.Workspace            as Workspace
 
 
 

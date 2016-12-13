@@ -1,4 +1,4 @@
-module Batch.Workspace where
+module Luna.Studio.Batch.Workspace where
 
 import           Data.Aeson                    (FromJSON, ToJSON)
 import qualified Data.IntMap.Lazy              as IntMap

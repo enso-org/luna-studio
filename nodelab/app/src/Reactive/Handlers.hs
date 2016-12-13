@@ -39,7 +39,7 @@ import           GHCJS.Marshal.Pure        (pFromJSVal)
 import           GHCJS.Prim                (fromJSString)
 import qualified JavaScript.Array          as JSArray
 
-import qualified BatchConnector.Connection as Connection
+import qualified Luna.Studio.Batch.Connector.Connection as Connection
 import qualified Data.JSString             as JSString
 import           Data.JSString.Text        (lazyTextFromJSString)
 import qualified Event.Clipboard           as Clipboard

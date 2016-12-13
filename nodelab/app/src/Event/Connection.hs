@@ -1,7 +1,7 @@
 module Event.Connection where
 
 import Luna.Studio.Prelude
-import BatchConnector.Connection (WebMessage)
+import Luna.Studio.Batch.Connector.Connection (WebMessage)
 import Data.Aeson (ToJSON, toJSON)
 
 data Event = Message { _message :: WebMessage }

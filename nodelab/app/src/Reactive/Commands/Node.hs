@@ -8,7 +8,7 @@ module Reactive.Commands.Node
     , rename
     ) where
 
-import qualified Batch.Workspace                   as Workspace
+import qualified Luna.Studio.Batch.Workspace                   as Workspace
 import           Empire.API.Data.Breadcrumb        (BreadcrumbItem (..))
 import qualified Empire.API.Data.Breadcrumb        as Breadcrumb
 import qualified Empire.API.Data.GraphLocation     as GraphLocation

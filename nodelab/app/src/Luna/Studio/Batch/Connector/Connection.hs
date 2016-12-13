@@ -1,4 +1,4 @@
-module BatchConnector.Connection where
+module Luna.Studio.Batch.Connector.Connection where
 
 import           Data.Binary                 (Binary)
 import qualified Data.Binary                 as Binary

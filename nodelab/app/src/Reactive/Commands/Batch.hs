@@ -3,8 +3,8 @@ module Reactive.Commands.Batch  where
 import           Data.UUID.Types              (UUID)
 import           Luna.Studio.Prelude
 
-import           Batch.Workspace              (Workspace)
-import qualified BatchConnector.Commands      as BatchCmd
+import           Luna.Studio.Batch.Workspace              (Workspace)
+import qualified Luna.Studio.Batch.Connector.Commands      as BatchCmd
 
 import           Reactive.Commands.Command    (Command, performIO)
 import           Reactive.Commands.UUID       (registerRequest)
