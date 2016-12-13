@@ -17,8 +17,8 @@ import qualified Empire.API.Data.Node              as Node
 import qualified Empire.API.Data.NodeMeta          as NodeMeta
 import           Object.UITypes                    (WidgetId)
 import qualified Object.Widget.Node                as Model
-import           React.Store                       (WRef (..), widget)
-import qualified React.Store                       as Store
+import           Luna.Studio.React.Store                       (WRef (..), widget)
+import qualified Luna.Studio.React.Store                       as Store
 import           Reactive.Commands.Command         (Command)
 import           Reactive.Commands.Graph.Selection (selectedNodes)
 import           Reactive.Commands.Node.NodeMeta   (modifyNodeMeta)

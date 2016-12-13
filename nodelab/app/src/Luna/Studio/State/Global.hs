@@ -20,18 +20,18 @@ import           Empire.API.Data.Node           (NodeId)
 import qualified Empire.API.Data.Node           as Node
 import qualified Empire.API.Graph.Collaboration as Collaboration
 import qualified Event.Event                    as Event
-import           React.Store                    (Ref)
-import qualified React.Store                    as Store
-import           React.Model.App                (App)
-import qualified React.Model.App                as App
-import           React.Model.Breadcrumbs        (Breadcrumbs)
-import           React.Model.CodeEditor         (CodeEditor)
-import           React.Model.Connection         (Connection)
-import           React.Model.Node               (Node)
-import           React.Model.NodeEditor         (NodeEditor)
-import qualified React.Model.NodeEditor         as NodeEditor
-import           React.Model.Searcher           (Searcher)
-import           React.Model.SelectionBox       (SelectionBox)
+import           Luna.Studio.React.Store                    (Ref)
+import qualified Luna.Studio.React.Store                    as Store
+import           Luna.Studio.React.Model.App                (App)
+import qualified Luna.Studio.React.Model.App                as App
+import           Luna.Studio.React.Model.Breadcrumbs        (Breadcrumbs)
+import           Luna.Studio.React.Model.CodeEditor         (CodeEditor)
+import           Luna.Studio.React.Model.Connection         (Connection)
+import           Luna.Studio.React.Model.Node               (Node)
+import           Luna.Studio.React.Model.NodeEditor         (NodeEditor)
+import qualified Luna.Studio.React.Model.NodeEditor         as NodeEditor
+import           Luna.Studio.React.Model.Searcher           (Searcher)
+import           Luna.Studio.React.Model.SelectionBox       (SelectionBox)
 import qualified Luna.Studio.State.Camera          as Camera
 import qualified Luna.Studio.State.Collaboration   as Collaboration
 import qualified Luna.Studio.State.Connect         as Connect

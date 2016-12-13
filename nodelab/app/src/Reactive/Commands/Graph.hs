@@ -18,11 +18,11 @@ import           Luna.Studio.Data.Angle
 import           Luna.Studio.Prelude
 import           Luna.Studio.Data.Vector                        (Vector2 (Vector2), lengthSquared)
 
-import           React.Store                         (Ref, WRef, ref, widget)
-import qualified React.Store                         as Store
-import           React.Model.Node                    (Node)
-import qualified React.Model.Node                    as Node
-import qualified React.Model.NodeEditor              as NodeEditor
+import           Luna.Studio.React.Store                         (Ref, WRef, ref, widget)
+import qualified Luna.Studio.React.Store                         as Store
+import           Luna.Studio.React.Model.Node                    (Node)
+import qualified Luna.Studio.React.Model.Node                    as Node
+import qualified Luna.Studio.React.Model.NodeEditor              as NodeEditor
 
 import qualified Object.Widget.Connection            as ConnectionModel
 import qualified Object.Widget.Node                  as Model

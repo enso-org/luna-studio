@@ -6,8 +6,8 @@ module Reactive.Commands.Graph.Unrender
 import           Luna.Studio.Prelude
 
 import qualified Luna.Studio.Batch.Workspace           as Workspace
-import qualified React.Store               as Store
-import qualified React.Model.NodeEditor    as NodeEditor
+import qualified Luna.Studio.React.Store               as Store
+import qualified Luna.Studio.React.Model.NodeEditor    as NodeEditor
 import           Reactive.Commands.Command (Command)
 import           Luna.Studio.State.Global     (State)
 import qualified Luna.Studio.State.Global     as Global

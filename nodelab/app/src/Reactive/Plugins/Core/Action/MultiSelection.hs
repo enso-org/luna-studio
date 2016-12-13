@@ -11,12 +11,12 @@ import qualified Empire.API.Data.Node              as Node
 import           Event.Event                       (Event (UI))
 import           Event.UI                          (UIEvent (AppEvent, NodeEditorEvent))
 import qualified Object.Widget.Node                as NodeModel
-import qualified React.Event.App                   as App
-import qualified React.Event.NodeEditor            as NodeEditor
-import           React.Store                       (widget)
-import qualified React.Store                       as Store
-import           React.Model.SelectionBox          (SelectionBox (SelectionBox))
-import qualified React.Model.SelectionBox          as SelectionBox
+import qualified Luna.Studio.React.Event.App                   as App
+import qualified Luna.Studio.React.Event.NodeEditor            as NodeEditor
+import           Luna.Studio.React.Store                       (widget)
+import qualified Luna.Studio.React.Store                       as Store
+import           Luna.Studio.React.Model.SelectionBox          (SelectionBox (SelectionBox))
+import qualified Luna.Studio.React.Model.SelectionBox          as SelectionBox
 import           Reactive.Commands.Command         (Command)
 import           Reactive.Commands.Graph.Selection (focusSelectedNode, modifySelectionHistory, selectNodes, selectedNodes, unselectAll)
 import           Luna.Studio.State.Global             (State)

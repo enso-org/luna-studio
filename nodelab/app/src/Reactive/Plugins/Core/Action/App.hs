@@ -7,7 +7,7 @@ import           Luna.Studio.Data.Vector
 
 import           Event.Event
 import           Event.UI                  (UIEvent (AppEvent))
-import qualified React.Event.App           as App
+import qualified Luna.Studio.React.Event.App           as App
 import           React.Flux                (mousePageX, mousePageY)
 import           Reactive.Commands.Command (Command)
 import qualified Luna.Studio.State.Global     as Global

@@ -4,9 +4,9 @@ module Reactive.Commands.Node.Remove
     ) where
 
 import qualified Data.Set                           as Set
-import           React.Store                        (widget)
-import qualified React.Store                        as Store
-import qualified React.Model.NodeEditor             as NodeEditor
+import           Luna.Studio.React.Store                        (widget)
+import qualified Luna.Studio.React.Store                        as Store
+import qualified Luna.Studio.React.Model.NodeEditor             as NodeEditor
 import           Reactive.Commands.Command          (Command)
 import           Reactive.Commands.Graph.Disconnect (localDisconnectAll)
 import           Reactive.Commands.Graph.Selection  (selectPreviousNodes, selectedNodes)

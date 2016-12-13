@@ -8,8 +8,8 @@ import           Luna.Studio.Prelude
 
 import           Empire.API.Data.Node      (NodeId)
 import qualified JS.GoogleAnalytics        as GA
-import qualified React.Store               as Store
-import qualified React.Model.CodeEditor    as CodeEditor
+import qualified Luna.Studio.React.Store               as Store
+import qualified Luna.Studio.React.Model.CodeEditor    as CodeEditor
 import qualified Reactive.Commands.Batch   as BatchCmd
 import           Reactive.Commands.Command (Command)
 import           Luna.Studio.State.Global     (State)

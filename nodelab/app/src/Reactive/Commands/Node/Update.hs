@@ -14,8 +14,8 @@ import           Control.Monad.State               (modify)
 
 import qualified Data.Map.Lazy                     as Map
 
-import qualified React.Store                       as Store
-import qualified React.Model.Node                  as Model
+import qualified Luna.Studio.React.Store                       as Store
+import qualified Luna.Studio.React.Model.Node                  as Model
 
 import qualified Reactive.Commands.Batch           as BatchCmd
 import           Reactive.Commands.Command         (Command)

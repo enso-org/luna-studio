@@ -39,8 +39,8 @@ import           JS.Tutorial                    (shouldRunTutorial)
 import           JS.Tutorial                    (showStep)
 import           JS.UUID                        (generateUUID)
 import           JS.WebSocket                   (WebSocket)
-import qualified React.Store                    as Store
-import qualified React.View.App                 as App
+import qualified Luna.Studio.React.Store                    as Store
+import qualified Luna.Studio.React.View.App                 as App
 import qualified Reactive.Plugins.Core.Network  as CoreNetwork
 import qualified Reactive.Plugins.Loader.Loader as Loader
 import           Luna.Studio.State.Global          (initialState)

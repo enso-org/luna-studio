@@ -17,10 +17,10 @@ import           Luna.Studio.Prelude
 
 import           Empire.API.Data.Node                     (NodeId)
 
-import           React.Store                              (WRef (..), widget)
-import qualified React.Store                              as Store
-import           React.Model.Node                         (Node)
-import qualified React.Model.Node                         as Node
+import           Luna.Studio.React.Store                              (WRef (..), widget)
+import qualified Luna.Studio.React.Store                              as Store
+import           Luna.Studio.React.Model.Node                         (Node)
+import qualified Luna.Studio.React.Model.Node                         as Node
 
 import           Reactive.Commands.Batch                  (cancelCollaborativeTouch, collaborativeTouch)
 import           Reactive.Commands.Command                (Command)

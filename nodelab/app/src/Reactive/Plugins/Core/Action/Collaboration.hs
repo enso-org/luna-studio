@@ -25,8 +25,8 @@ import           Luna.Studio.State.Global             (State)
 import qualified Luna.Studio.State.Global             as Global
 
 import qualified Object.Widget.Node                as NodeModel
-import           React.Store                       (widget)
-import qualified React.Store                       as Store
+import           Luna.Studio.React.Store                       (widget)
+import qualified Luna.Studio.React.Store                       as Store
 
 
 

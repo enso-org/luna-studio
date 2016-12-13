@@ -14,11 +14,11 @@ import           Empire.API.Data.Node              (NodeId)
 import qualified Empire.API.Data.Node              as Node
 import           Event.Event
 import           Event.UI                          (UIEvent (AppEvent, NodeEvent))
-import qualified React.Event.App                   as App
-import qualified React.Event.Node                  as Node
-import           React.Store                       (widget, _widget)
-import qualified React.Store                       as Store
-import qualified React.Model.Node                  as Model
+import qualified Luna.Studio.React.Event.App                   as App
+import qualified Luna.Studio.React.Event.Node                  as Node
+import           Luna.Studio.React.Store                       (widget, _widget)
+import qualified Luna.Studio.React.Store                       as Store
+import qualified Luna.Studio.React.Model.Node                  as Model
 import qualified Reactive.Commands.Batch           as BatchCmd
 import           Reactive.Commands.Command         (Command)
 import           Reactive.Commands.Graph.Selection (selectNodes, selectedNodes)

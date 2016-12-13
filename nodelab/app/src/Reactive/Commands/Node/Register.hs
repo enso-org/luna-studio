@@ -8,7 +8,7 @@ import           Luna.Studio.Data.Vector                      (Vector2, toTuple)
 import qualified Empire.API.Data.NodeMeta          as NodeMeta
 import qualified JS.GoogleAnalytics                as GA
 import qualified Object.Widget.Node                as UINode
-import           React.Store                       (widget)
+import           Luna.Studio.React.Store                       (widget)
 import qualified Reactive.Commands.Batch           as BatchCmd
 import           Reactive.Commands.Command         (Command)
 import           Reactive.Commands.Graph.Selection (selectedNodes)

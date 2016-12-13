@@ -16,7 +16,7 @@ import           Event.Event                       (Event (..))
 import           Event.Keyboard                    (KeyMods (..))
 import qualified Event.Keyboard                    as Keyboard
 import qualified Object.Widget.Node                as UINode
-import           React.Store                       (widget)
+import           Luna.Studio.React.Store                       (widget)
 import           Reactive.Commands.Batch           (addSubgraph)
 import           Reactive.Commands.Command         (Command, performIO)
 import           Reactive.Commands.Graph.Selection (selectedNodes)

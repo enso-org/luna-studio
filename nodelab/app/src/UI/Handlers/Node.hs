@@ -13,11 +13,11 @@ import           Luna.Studio.Data.Vector
 import           Object.Widget                            (CompositeWidget, KeyPressedHandler, ResizableWidget, UIHandlers, WidgetId,
                                                            createWidget, keyDown, mouseOut, mouseOver, updateWidget)
 
-import           React.Store                              (Ref, WRef)
-import qualified React.Store                              as Store
-import           React.Model.Node                         (Node)
-import qualified React.Model.Node                         as Node
-import qualified React.Model.NodeEditor                   as NodeEditor
+import           Luna.Studio.React.Store                              (Ref, WRef)
+import qualified Luna.Studio.React.Store                              as Store
+import           Luna.Studio.React.Model.Node                         (Node)
+import qualified Luna.Studio.React.Model.Node                         as Node
+import qualified Luna.Studio.React.Model.NodeEditor                   as NodeEditor
 
 import qualified Object.Widget.CodeEditor                 as CodeEditor
 import qualified Object.Widget.Group                      as Group

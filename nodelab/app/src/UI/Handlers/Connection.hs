@@ -16,7 +16,7 @@ module UI.Handlers.Connection where
 -- import qualified Object.Widget.Connection           as Model
 -- import qualified Object.Widget.Node                 as NodeModel
 -- import qualified Object.Widget.Port                 as PortModel
--- import qualified React.Store                        as Store
+-- import qualified Luna.Studio.React.Store                        as Store
 -- import           Reactive.Commands.Command          (Command)
 -- import qualified Reactive.Commands.Graph            as Graph
 -- import           Reactive.Commands.Graph.Disconnect (disconnectAll)

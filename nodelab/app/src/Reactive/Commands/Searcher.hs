@@ -11,12 +11,12 @@ import           Luna.Studio.Data.Vector
 import qualified JS.NodeSearcher                   as UI
 
 import qualified Luna.Studio.Batch.Workspace                   as Workspace
-import           React.Store                       (widget)
-import qualified React.Store                       as Store
-import qualified React.Model.Node                  as Node
-import qualified React.Model.Searcher              as Searcher
-import qualified React.View.App                    as App
-import qualified React.View.Searcher               as Searcher
+import           Luna.Studio.React.Store                       (widget)
+import qualified Luna.Studio.React.Store                       as Store
+import qualified Luna.Studio.React.Model.Node                  as Node
+import qualified Luna.Studio.React.Model.Searcher              as Searcher
+import qualified Luna.Studio.React.View.App                    as App
+import qualified Luna.Studio.React.View.Searcher               as Searcher
 
 import           Reactive.Commands.Camera          (syncCamera)
 import           Reactive.Commands.Command         (Command, performIO)

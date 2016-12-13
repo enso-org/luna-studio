@@ -9,10 +9,10 @@ import           Control.Monad.State       (modify)
 
 import           Empire.API.Data.Node      (Node)
 import qualified Empire.API.Data.Node      as Node
-import           React.Store               (Ref)
-import qualified React.Store               as Store
-import qualified React.Model.Node          as Model
-import qualified React.Model.NodeEditor    as NodeEditor
+import           Luna.Studio.React.Store               (Ref)
+import qualified Luna.Studio.React.Store               as Store
+import qualified Luna.Studio.React.Model.Node          as Model
+import qualified Luna.Studio.React.Model.NodeEditor    as NodeEditor
 import           Reactive.Commands.Command (Command)
 import           Reactive.Commands.Graph   (focusNode)
 import           Luna.Studio.State.Global     (State)

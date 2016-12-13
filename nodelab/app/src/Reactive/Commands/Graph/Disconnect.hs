@@ -8,8 +8,8 @@ import           Luna.Studio.Prelude
 import           Empire.API.Data.Connection (Connection, ConnectionId)
 import qualified Empire.API.Data.Connection as Connection
 import           Empire.API.Data.PortRef    (InPortRef, OutPortRef)
-import qualified React.Store                as Store
-import qualified React.Model.NodeEditor     as NodeEditor
+import qualified Luna.Studio.React.Store                as Store
+import qualified Luna.Studio.React.Model.NodeEditor     as NodeEditor
 import qualified Reactive.Commands.Batch    as BatchCmd
 import           Reactive.Commands.Command  (Command)
 import           Luna.Studio.State.Global      (State)
