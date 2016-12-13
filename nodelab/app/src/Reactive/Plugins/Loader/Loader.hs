@@ -1,6 +1,6 @@
 module Reactive.Plugins.Loader.Loader where
 
-import           Utils.PreludePlus
+import           Luna.Studio.Prelude
 import qualified JS.WebSocket      as WS
 import           JS.WebSocket      (WebSocket)
 import           JS.Config         (getBackendAddress)

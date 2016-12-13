@@ -29,7 +29,7 @@ import           Data.DateTime                  (getCurrentTime)
 import qualified Data.Set                       as Set
 import qualified React.Flux                     as React
 import           System.Random                  (newStdGen)
-import           Utils.PreludePlus
+import           Luna.Studio.Prelude
 
 import qualified Batch.Workspace                as Workspace
 import qualified BatchConnector.Commands        as BatchCmd

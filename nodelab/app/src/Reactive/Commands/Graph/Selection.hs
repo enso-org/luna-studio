@@ -13,7 +13,7 @@ module Reactive.Commands.Graph.Selection
      ) where
 
 import qualified Data.Set                                 as Set
-import           Utils.PreludePlus
+import           Luna.Studio.Prelude
 
 import           Empire.API.Data.Node                     (NodeId)
 

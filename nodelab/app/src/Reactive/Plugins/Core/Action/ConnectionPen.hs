@@ -4,8 +4,8 @@ module Reactive.Plugins.Core.Action.ConnectionPen
     ( toAction
     ) where
 
-import           Utils.PreludePlus
-import           Utils.Vector                       (Vector2)
+import           Luna.Studio.Prelude
+import           Luna.Studio.Data.Vector                       (Vector2)
 
 import qualified JS.ConnectionPen                   as UI
 

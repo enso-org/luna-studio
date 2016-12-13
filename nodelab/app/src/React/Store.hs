@@ -15,7 +15,7 @@ import           Event.UI                   (UIEvent)
 import           React.Model.App            (App (App))
 import qualified React.Model.NodeEditor     as NodeEditor
 import           React.Store.Ref            as X
-import           Utils.PreludePlus          as P hiding (transform)
+import           Luna.Studio.Prelude          as P hiding (transform)
 
 
 instance Typeable a => StoreData (Store a) where

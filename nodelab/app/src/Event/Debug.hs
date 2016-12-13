@@ -2,7 +2,7 @@ module Event.Debug where
 
 
 import           Data.Aeson        (ToJSON)
-import           Utils.PreludePlus
+import           Luna.Studio.Prelude
 
 
 data Event = GetState deriving (Eq, Show, Generic)

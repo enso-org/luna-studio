@@ -9,7 +9,7 @@ module Reactive.Plugins.Core.Action.Debug
 
 
 import           JS.Debug                  (cinfo, clog, lastEv, processedEvent, saveState, shouldExportState)
-import           Utils.PreludePlus
+import           Luna.Studio.Prelude
 
 import qualified Event.Debug               as Debug
 import           Event.Event               (Event (..))

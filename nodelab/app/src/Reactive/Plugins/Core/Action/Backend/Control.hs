@@ -2,7 +2,7 @@ module Reactive.Plugins.Core.Action.Backend.Control
     ( toAction
     ) where
 
-import           Utils.PreludePlus
+import           Luna.Studio.Prelude
 
 import qualified Event.Batch                      as Batch
 import           Event.Event                      (Event (Batch))

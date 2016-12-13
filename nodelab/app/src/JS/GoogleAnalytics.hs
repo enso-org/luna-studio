@@ -10,7 +10,7 @@ module JS.GoogleAnalytics
 import           Data.JSString.Text        (lazyTextToJSString)
 import           Data.Text.Lazy            (pack)
 import           GHCJS.Nullable            (Nullable, maybeToNullable)
-import           Utils.PreludePlus
+import           Luna.Studio.Prelude
 
 import           Reactive.Commands.Command (Command, performIO)
 

@@ -12,8 +12,8 @@ import           React.Store                    (Ref, dispatch, dt)
 import           React.Model.Searcher           (Searcher)
 import qualified React.Model.Searcher           as Searcher
 import qualified Text.ScopeSearcher.QueryResult as Result
-import           Utils.PreludePlus
-import           Utils.Vector
+import           Luna.Studio.Prelude
+import           Luna.Studio.Data.Vector
 
 
 name :: JSString

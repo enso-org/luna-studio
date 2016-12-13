@@ -5,7 +5,7 @@ module JS.CustomEvent
 
 import           GHCJS.Foreign.Callback
 import           GHCJS.Types
-import           Utils.PreludePlus
+import           Luna.Studio.Prelude
 
 foreign import javascript safe "require('CustomEvent').initializeEvents()"
     initializeEvents :: IO ()

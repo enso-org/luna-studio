@@ -9,7 +9,7 @@ module JS.TextEditor
 import           Data.JSString.Text
 import           GHCJS.Foreign.Callback
 import           GHCJS.Types
-import           Utils.PreludePlus
+import           Luna.Studio.Prelude
 
 
 

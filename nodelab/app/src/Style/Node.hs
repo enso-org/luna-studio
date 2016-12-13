@@ -1,7 +1,7 @@
 module Style.Node where
 
-import           Utils.PreludePlus
-import           Utils.Vector
+import           Luna.Studio.Prelude
+import           Luna.Studio.Data.Vector
 import           Data.HMap.Lazy               (HTMap)
 
 import           Style.Types

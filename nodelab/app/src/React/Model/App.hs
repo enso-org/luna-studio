@@ -10,7 +10,7 @@ import           React.Model.CodeEditor  (CodeEditor)
 import           React.Model.NodeEditor  (NodeEditor)
 import           React.Store.Ref         (Ref)
 import           React.Model.Searcher    (Searcher)
-import           Utils.PreludePlus
+import           Luna.Studio.Prelude
 
 
 

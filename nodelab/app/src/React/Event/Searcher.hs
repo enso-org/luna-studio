@@ -7,7 +7,7 @@ import           Control.DeepSeq   (NFData)
 import           Data.Aeson        (FromJSON, ToJSON)
 import           React.Flux        (KeyboardEvent)
 
-import           Utils.PreludePlus
+import           Luna.Studio.Prelude
 
 
 

@@ -2,11 +2,11 @@
 
 module UI.Handlers.List where
 
-import           Utils.PreludePlus
+import           Luna.Studio.Prelude
 
 import           Data.HMap.Lazy                (HTMap)
 import qualified Data.Text.Lazy                as Text
-import           Utils.Vector
+import           Luna.Studio.Data.Vector
 
 import           Object.LunaValue              (AnyLunaValue (..), createValueWidget)
 import           Object.Widget                 (WidgetId, CompositeWidget, createWidget, updateWidget, ResizableWidget, resizeWidget)

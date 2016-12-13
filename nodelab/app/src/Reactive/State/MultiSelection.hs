@@ -2,8 +2,8 @@ module Reactive.State.MultiSelection where
 
 
 import           Data.Aeson        (ToJSON)
-import           Utils.PreludePlus
-import           Utils.Vector
+import           Luna.Studio.Prelude
+import           Luna.Studio.Data.Vector
 
 data DragHistory = DragHistory { _dragStartPos   :: Vector2 Int
                                , _dragCurrentPos :: Vector2 Int

@@ -3,7 +3,7 @@ module Reactive.Plugins.Core.Action.Collaboration
     ) where
 
 
-import           Utils.PreludePlus
+import           Luna.Studio.Prelude
 
 import qualified Batch.Workspace                   as Workspace
 import qualified Data.DateTime                     as DT

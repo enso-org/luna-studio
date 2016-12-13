@@ -4,7 +4,7 @@ module React.View.App where
 
 import           React.Flux
 import qualified React.Flux                  as React
-import           Utils.PreludePlus
+import           Luna.Studio.Prelude
 
 import qualified Event.UI                    as UI
 import           React.Store                 (Ref, dispatch, dt)

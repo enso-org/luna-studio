@@ -1,6 +1,6 @@
 module React.Model.CodeEditor where
 
-import           Utils.PreludePlus
+import           Luna.Studio.Prelude
 
 
 

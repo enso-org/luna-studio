@@ -7,7 +7,7 @@ import           React.Flux
 import qualified React.Flux             as React
 import           React.Store            (Ref, dispatch)
 import           React.Model.CodeEditor (CodeEditor)
-import           Utils.PreludePlus
+import           Luna.Studio.Prelude
 
 
 

@@ -1,7 +1,7 @@
 module UI.Widget.Group where
 
-import           Utils.PreludePlus
-import           Utils.Vector
+import           Luna.Studio.Prelude
+import           Luna.Studio.Data.Vector
 
 import           GHCJS.Marshal.Pure           (PFromJSVal (..), PToJSVal (..))
 

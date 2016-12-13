@@ -1,6 +1,6 @@
 module React.Model.DataFrame where
 
-import           Utils.PreludePlus
+import           Luna.Studio.Prelude
 import           Data.Aeson (ToJSON)
 
 data DataFrame = DataFrame { _headers   :: [Text]

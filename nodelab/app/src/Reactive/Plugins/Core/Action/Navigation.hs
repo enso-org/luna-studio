@@ -2,8 +2,8 @@ module Reactive.Plugins.Core.Action.Navigation where
 
 import qualified Data.HashMap.Strict        as HashMap
 
-import           Utils.PreludePlus
-import           Utils.Vector
+import           Luna.Studio.Prelude
+import           Luna.Studio.Data.Vector
 
 import           React.Flux                 (KeyboardEvent)
 

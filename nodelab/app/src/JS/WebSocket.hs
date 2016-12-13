@@ -16,7 +16,7 @@ import           Data.JSString
 import           GHCJS.Foreign.Callback
 import           GHCJS.Marshal.Pure     (PFromJSVal (..), PToJSVal (..))
 import           GHCJS.Types            (IsJSVal)
-import           Utils.PreludePlus
+import           Luna.Studio.Prelude
 
 newtype WebSocket      = WebSocket      JSVal deriving (PFromJSVal, PToJSVal)
 newtype WSMessageEvent = WSMessageEvent JSVal deriving (PFromJSVal, PToJSVal)

@@ -8,7 +8,7 @@ module Reactive.Plugins.Core.Action.Backend.Common
 import qualified Data.Aeson                as JSON (ToJSON)
 import qualified Data.Text.Lazy            as Text
 import qualified Data.UUID.Types           as UUID (toString)
-import           Utils.PreludePlus
+import           Luna.Studio.Prelude
 
 import           Reactive.Commands.Command (Command, performIO)
 import           Reactive.Commands.UUID    (isOwnRequest, unregisterRequest)

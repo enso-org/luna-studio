@@ -4,8 +4,8 @@ module Object.Widget.Node where
 
 import           Control.Arrow
 import           Data.Aeson                          (ToJSON)
-import           Utils.PreludePlus                   hiding (set)
-import           Utils.Vector
+import           Luna.Studio.Prelude                   hiding (set)
+import           Luna.Studio.Data.Vector
 
 import           Data.Map.Lazy                       (Map)
 import qualified Data.Map.Lazy                       as Map

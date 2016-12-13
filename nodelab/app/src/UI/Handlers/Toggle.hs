@@ -1,6 +1,6 @@
 module UI.Handlers.Toggle where
 
-import           Utils.PreludePlus
+import           Luna.Studio.Prelude
 
 import           Object.Widget                (ClickHandler, KeyUpHandler, UIHandlers, WidgetId, click, keyUp)
 import qualified Object.Widget.Toggle         as Model

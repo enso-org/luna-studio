@@ -2,8 +2,8 @@ module Reactive.State.Camera where
 
 import           Data.Aeson                (ToJSON)
 import           Reactive.Commands.Command (Command)
-import           Utils.PreludePlus
-import           Utils.Vector
+import           Luna.Studio.Prelude
+import           Luna.Studio.Data.Vector
 
 
 data DragHistory =  PanDragHistory  { _panPreviousPos :: Vector2 Int }

@@ -5,7 +5,7 @@ import           React.Flux
 
 import           Object.Widget.Plots.Image           (Image)
 import qualified Object.Widget.Plots.Image           as Image
-import           Utils.PreludePlus
+import           Luna.Studio.Prelude
 
 
 

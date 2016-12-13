@@ -5,8 +5,8 @@ module Reactive.Commands.Searcher where
 import qualified Data.Map                          as Map
 import qualified Data.Text.Lazy                    as Text
 import qualified Text.ScopeSearcher.QueryResult    as Result
-import           Utils.PreludePlus
-import           Utils.Vector
+import           Luna.Studio.Prelude
+import           Luna.Studio.Data.Vector
 
 import qualified JS.NodeSearcher                   as UI
 

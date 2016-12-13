@@ -1,8 +1,8 @@
 module UI.Raycaster where
 
-import           Utils.PreludePlus
+import           Luna.Studio.Prelude
 
-import           Utils.Vector
+import           Luna.Studio.Data.Vector
 
 import           GHCJS.Marshal      (fromJSVal)
 import           GHCJS.Marshal.Pure (pFromJSVal)

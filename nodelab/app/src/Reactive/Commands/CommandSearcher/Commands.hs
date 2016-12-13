@@ -11,8 +11,8 @@ module Reactive.Commands.CommandSearcher.Commands
 import qualified Data.Map                         as Map
 import           Data.Text.Lazy                   (stripPrefix)
 import qualified Data.Text.Lazy                   as Text
-import           Utils.PreludePlus                hiding (Item, stripPrefix)
-import           Utils.Vector
+import           Luna.Studio.Prelude                hiding (Item, stripPrefix)
+import           Luna.Studio.Data.Vector
 
 import qualified Batch.Workspace                  as Workspace
 import qualified Empire.API.Data.Project          as Project

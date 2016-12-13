@@ -1,8 +1,8 @@
 module UI.Handlers.Group where
 
-import           Utils.PreludePlus
+import           Luna.Studio.Prelude
 
-import           Utils.Vector
+import           Luna.Studio.Data.Vector
 import           Data.HMap.Lazy               (TypeKey (..))
 
 import           Object.Widget                (WidgetId, ResizableWidget, resizeWidget)

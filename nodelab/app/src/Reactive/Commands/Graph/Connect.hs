@@ -4,7 +4,7 @@ module Reactive.Commands.Graph.Connect
     ) where
 
 
-import           Utils.PreludePlus
+import           Luna.Studio.Prelude
 
 import           Empire.API.Data.Connection (ConnectionId)
 import qualified Empire.API.Data.Port       as Port

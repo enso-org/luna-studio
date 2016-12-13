@@ -2,7 +2,7 @@
 
 module Object.LunaValue where
 
-import           Utils.PreludePlus         hiding (Choice)
+import           Luna.Studio.Prelude         hiding (Choice)
 import qualified Reactive.State.UIRegistry as UIRegistry
 import           Object.UITypes            (WidgetId)
 import           Reactive.Commands.Command (Command)

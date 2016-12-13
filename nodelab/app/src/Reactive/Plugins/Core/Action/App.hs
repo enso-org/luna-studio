@@ -2,8 +2,8 @@ module Reactive.Plugins.Core.Action.App
     ( toAction
     ) where
 
-import           Utils.PreludePlus
-import           Utils.Vector
+import           Luna.Studio.Prelude
+import           Luna.Studio.Data.Vector
 
 import           Event.Event
 import           Event.UI                  (UIEvent (AppEvent))

@@ -3,8 +3,8 @@ module JS.MultiSelection
     , hideSelectionBox
     ) where
 
-import           Utils.PreludePlus
-import           Utils.Vector
+import           Luna.Studio.Prelude
+import           Luna.Studio.Data.Vector
 
 foreign import javascript safe "require('Selection').show($1, $2, $3, $4)"
     displaySelectionBoxJS :: Double -> Double -> Double -> Double -> IO ()

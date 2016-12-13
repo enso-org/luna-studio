@@ -2,8 +2,8 @@ module React.Model.Searcher where
 
 import           Empire.API.Data.Node           (NodeId)
 import           Text.ScopeSearcher.QueryResult (QueryResult)
-import           Utils.PreludePlus
-import           Utils.Vector
+import           Luna.Studio.Prelude
+import           Luna.Studio.Data.Vector
 
 
 

@@ -1,8 +1,8 @@
 module UI.Handlers.TextBox where
 
-import           Utils.PreludePlus
+import           Luna.Studio.Prelude
 
-import           Utils.Vector
+import           Luna.Studio.Data.Vector
 
 import           Data.JSString.Text           (lazyTextFromJSString)
 

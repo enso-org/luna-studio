@@ -1,11 +1,11 @@
 module UI.Handlers.Number.Continuous where
 
-import           Utils.PreludePlus
+import           Luna.Studio.Prelude
 
 import           Data.HMap.Lazy                  (HTMap)
 import qualified Data.Text.Lazy                  as Text
 import           Data.Text.Lazy.Read             (rational)
-import           Utils.Vector
+import           Luna.Studio.Data.Vector
 
 import qualified Event.Mouse                     as Mouse
 import           Object.Widget                   (DblClickHandler, DragEndHandler, DragMoveHandler, KeyUpHandler,

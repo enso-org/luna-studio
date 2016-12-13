@@ -1,6 +1,6 @@
 module Event.Connection where
 
-import Utils.PreludePlus
+import Luna.Studio.Prelude
 import BatchConnector.Connection (WebMessage)
 import Data.Aeson (ToJSON, toJSON)
 

@@ -2,8 +2,8 @@ module Reactive.Commands.Node.Register
     ( registerNode
     ) where
 
-import           Utils.PreludePlus
-import           Utils.Vector                      (Vector2, toTuple)
+import           Luna.Studio.Prelude
+import           Luna.Studio.Data.Vector                      (Vector2, toTuple)
 
 import qualified Empire.API.Data.NodeMeta          as NodeMeta
 import qualified JS.GoogleAnalytics                as GA

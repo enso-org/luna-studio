@@ -1,6 +1,6 @@
 {-# LANGUAGE DataKinds #-}
 
-module Utils.Shader (
+module Luna.Studio.Data.Shader (
     ShaderBox(..)
   , Location(..)
   , createShaderBox
@@ -8,7 +8,7 @@ module Utils.Shader (
 
 import           Development.Placeholders
 import           Prologue                            hiding (Bounded, s)
-import           Utils.Vector                        (Vector2 (Vector2))
+import           Luna.Studio.Data.Vector                        (Vector2 (Vector2))
 
 import qualified Data.Array.Linear                   as A
 import           Data.Array.Linear.Color.Class

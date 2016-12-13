@@ -1,7 +1,7 @@
-module Utils.Vector where
+module Luna.Studio.Data.Vector where
 
 import           Data.Aeson        (ToJSON)
-import           Utils.PreludePlus
+import           Luna.Studio.Prelude
 
 data Vector2 a = Vector2 { _x :: a
                          , _y :: a

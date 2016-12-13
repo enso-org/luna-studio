@@ -1,6 +1,6 @@
 module UI.Registry where
 
-import           Utils.PreludePlus
+import           Luna.Studio.Prelude
 
 import           GHCJS.Marshal.Pure (PFromJSVal (..), PToJSVal (..))
 import           Object.Widget      (WidgetId, fromWidgetId)

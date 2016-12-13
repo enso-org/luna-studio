@@ -4,8 +4,8 @@ module Reactive.State.ConnectionPen where
 import           Data.Aeson               (ToJSON)
 import           Empire.API.Data.Node     (NodeId)
 import           Empire.API.JSONInstances ()
-import           Utils.PreludePlus
-import           Utils.Vector
+import           Luna.Studio.Prelude
+import           Luna.Studio.Data.Vector
 
 data DrawingType = Connecting | Disconnecting deriving (Show, Eq, Generic)
 

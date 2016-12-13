@@ -5,9 +5,9 @@ module Reactive.Plugins.Core.Action.Connect where
 --     , handleMove
 --     ) where
 --
--- import           Utils.Angle                     (boundedAngle, toAngle)
--- import           Utils.PreludePlus
--- import           Utils.Vector                    (Vector2 (Vector2), x, y)
+-- import           Luna.Studio.Data.Angle                     (boundedAngle, toAngle)
+-- import           Luna.Studio.Prelude
+-- import           Luna.Studio.Data.Vector                    (Vector2 (Vector2), x, y)
 --
 -- import           Object.Widget                   (WidgetFile, parent, widget)
 -- import qualified Object.Widget.Connection        as UIConnection

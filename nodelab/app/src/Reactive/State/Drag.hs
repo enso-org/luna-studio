@@ -2,8 +2,8 @@ module Reactive.State.Drag where
 
 import           Data.Aeson               (ToJSON)
 import           Data.Map                 (Map)
-import           Utils.PreludePlus
-import           Utils.Vector
+import           Luna.Studio.Prelude
+import           Luna.Studio.Data.Vector
 
 import           Empire.API.Data.Node     (NodeId)
 import           Empire.API.JSONInstances ()

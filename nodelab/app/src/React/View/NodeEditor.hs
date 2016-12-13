@@ -4,7 +4,7 @@ module React.View.NodeEditor where
 import qualified Data.HashMap.Strict     as HashMap
 import           React.Flux
 import qualified React.Flux              as React
-import           Utils.PreludePlus
+import           Luna.Studio.Prelude
 
 import qualified Event.UI                as UI
 import qualified React.Event.NodeEditor  as NE

@@ -3,7 +3,7 @@ module Reactive.Plugins.Core.Action.Camera
     ( toAction
     ) where
 
-import           Utils.PreludePlus
+import           Luna.Studio.Prelude
 
 import           Event.Event               (Event (Keyboard, Mouse))
 import           Event.Keyboard            (KeyMods (..))

@@ -2,7 +2,7 @@
 
 module UI.Handlers.Generic where
 
-import           Utils.PreludePlus
+import           Luna.Studio.Prelude
 import           Data.HMap.Lazy               (HTMap, TypeKey (..))
 
 import           Object.Widget                (WidgetId)

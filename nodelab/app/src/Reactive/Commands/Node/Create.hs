@@ -18,7 +18,7 @@ import           Reactive.Commands.Graph   (focusNode)
 import           Reactive.State.Global     (State)
 import qualified Reactive.State.Global     as Global
 import qualified Reactive.State.Graph      as Graph
-import           Utils.PreludePlus
+import           Luna.Studio.Prelude
 
 
 addNode :: Node -> Command State ()

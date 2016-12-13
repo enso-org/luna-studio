@@ -4,7 +4,7 @@ module Event.Processors.Batch (process) where
 import           Data.Binary                (Binary, decode)
 import           Data.ByteString.Lazy.Char8 (ByteString)
 import qualified Data.Map.Lazy              as Map
-import           Utils.PreludePlus          hiding (cons)
+import           Luna.Studio.Prelude          hiding (cons)
 
 import           BatchConnector.Connection  (ControlCode (ConnectionTakeover, Welcome), WebMessage (ControlMessage, WebMessage))
 import qualified Empire.API.Topic           as Topic

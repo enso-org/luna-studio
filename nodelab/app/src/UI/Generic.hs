@@ -3,8 +3,8 @@
 module UI.Generic where
 
 import           GHCJS.Marshal.Pure        (pToJSVal)
-import           Utils.PreludePlus         hiding (children)
-import           Utils.Vector
+import           Luna.Studio.Prelude         hiding (children)
+import           Luna.Studio.Data.Vector
 
 import qualified Event.Mouse               as Mouse
 import           Object.Widget             (DragState (..), IsDisplayObject, WidgetFile, WidgetId, children, objectId, widget,

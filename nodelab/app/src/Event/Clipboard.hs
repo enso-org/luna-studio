@@ -1,7 +1,7 @@
 module Event.Clipboard where
 
 import           Data.Aeson        (ToJSON)
-import           Utils.PreludePlus
+import           Luna.Studio.Prelude
 
 
 data Event = Copy

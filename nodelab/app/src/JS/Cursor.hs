@@ -4,7 +4,7 @@ module JS.Cursor
     , Cursor(..)
     ) where
 
-import           Utils.PreludePlus
+import           Luna.Studio.Prelude
 
 foreign import javascript safe "$('#canvas2d').css({cursor: $1})" setCursor' :: JSString -> IO ()
 

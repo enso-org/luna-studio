@@ -1,7 +1,7 @@
 module Reactive.Commands.Batch  where
 
 import           Data.UUID.Types              (UUID)
-import           Utils.PreludePlus
+import           Luna.Studio.Prelude
 
 import           Batch.Workspace              (Workspace)
 import qualified BatchConnector.Commands      as BatchCmd

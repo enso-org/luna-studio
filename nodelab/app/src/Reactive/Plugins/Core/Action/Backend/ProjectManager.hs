@@ -6,7 +6,7 @@ import qualified Data.Map.Lazy                               as Map
 import qualified Data.Text.Lazy                              as Text
 import qualified Data.UUID.Types                             as UUID
 import           GHCJS.Marshal.Pure                          (pFromJSVal)
-import           Utils.PreludePlus
+import           Luna.Studio.Prelude
 
 import           Empire.API.Data.Breadcrumb                  (Breadcrumb (..))
 import qualified Empire.API.Data.GraphLocation               as GraphLocation

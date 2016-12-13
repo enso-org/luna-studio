@@ -24,7 +24,7 @@ module Reactive.State.Graph
     , updateNodes
     ) where
 
-import           Utils.PreludePlus          hiding ((.=))
+import           Luna.Studio.Prelude          hiding ((.=))
 
 import           Data.Hashable              (Hashable)
 import           Data.HashMap.Strict        (HashMap)

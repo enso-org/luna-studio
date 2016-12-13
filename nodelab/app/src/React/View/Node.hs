@@ -1,8 +1,8 @@
 {-# LANGUAGE OverloadedStrings #-}
 module React.View.Node where
 
-import           Utils.PreludePlus
-import           Utils.Vector             (x, y)
+import           Luna.Studio.Prelude
+import           Luna.Studio.Data.Vector             (x, y)
 import qualified Data.Map.Lazy            as Map
 import qualified Data.Text.Lazy           as Text
 import           React.Flux

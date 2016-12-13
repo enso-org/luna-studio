@@ -1,4 +1,4 @@
-module Utils.Instances where
+module Luna.Studio.Utils.Instances where
 
 import           Data.Aeson
 import           Development.Placeholders

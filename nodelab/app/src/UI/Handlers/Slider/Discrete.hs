@@ -1,8 +1,8 @@
 module UI.Handlers.Slider.Discrete where
 
-import           Utils.PreludePlus
+import           Luna.Studio.Prelude
 
-import           Utils.Vector                  (Vector2(..), x, y)
+import           Luna.Studio.Data.Vector                  (Vector2(..), x, y)
 import           Data.HMap.Lazy                (HTMap)
 import qualified Data.Text.Lazy                as Text
 import           Data.Text.Lazy.Read           (signed, decimal)

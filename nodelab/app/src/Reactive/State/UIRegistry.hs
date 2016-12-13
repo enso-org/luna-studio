@@ -34,15 +34,15 @@ import           Data.Aeson                (ToJSON, object, toJSON)
 import           Data.HMap.Lazy            (HTMap)
 import qualified Data.HMap.Lazy            as HMap
 import qualified Data.IntMap.Lazy          as IntMap
-import           Utils.CtxDynamic
-import           Utils.PreludePlus         hiding (children, lookup)
+import           Luna.Studio.Data.CtxDynamic
+import           Luna.Studio.Prelude         hiding (children, lookup)
 
 import           Object.Widget
 import           Object.Widget.Connection
 import           Object.Widget.Scene
 import           Reactive.Commands.Command (Command)
 import           UI.Widget.Connection      ()
-import           Utils.Aeson               (intMapToJSON)
+import           Luna.Studio.Data.Aeson               (intMapToJSON)
 
 instance CompositeWidget Scene where
     createWidget _   _ = return ()

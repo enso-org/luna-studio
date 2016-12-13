@@ -17,8 +17,8 @@ module Reactive.Commands.Camera
     --  , updateWindowSize --TODO[react] remove
      ) where
 
-import           Utils.PreludePlus
-import           Utils.Vector
+import           Luna.Studio.Prelude
+import           Luna.Studio.Data.Vector
 
 import qualified Empire.API.Data.Node      as Node
 

@@ -2,7 +2,7 @@ module Reactive.Commands.Breadcrumbs (
     set
 ) where
 
-import           Utils.PreludePlus          hiding (group, set)
+import           Luna.Studio.Prelude          hiding (group, set)
 
 import           Empire.API.Data.Breadcrumb (Breadcrumb (..), BreadcrumbItem, Named)
 import qualified React.Store                as Store

@@ -1,6 +1,6 @@
 module BatchConnector.Commands where
 
-import           Utils.PreludePlus
+import           Luna.Studio.Prelude
 
 import qualified Data.Text.Lazy                        as Text
 import           Data.UUID.Types                       (UUID)

@@ -1,10 +1,10 @@
 module Event.Mouse where
 
 
-import Utils.PreludePlus
+import Luna.Studio.Prelude
 
 import Event.Keyboard  (KeyMods(..))
-import Utils.Vector
+import Luna.Studio.Data.Vector
 import Object.UITypes
 import Data.Aeson (ToJSON)
 

@@ -4,7 +4,7 @@ import           Data.Aeson                    (FromJSON, ToJSON)
 import qualified Data.IntMap.Lazy              as IntMap
 import           Data.Map.Lazy                 (Map)
 import           Data.UUID.Types               (nil)
-import           Utils.PreludePlus
+import           Luna.Studio.Prelude
 
 import           Empire.API.Data.Breadcrumb    (Breadcrumb (..), BreadcrumbItem)
 import           Empire.API.Data.GraphLocation (GraphLocation (..))

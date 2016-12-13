@@ -1,7 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 module React.View.Port where
 
-import           Utils.PreludePlus
+import           Luna.Studio.Prelude
 
 import           Empire.API.Data.Port (InPort (..), OutPort (..), PortId (..))
 

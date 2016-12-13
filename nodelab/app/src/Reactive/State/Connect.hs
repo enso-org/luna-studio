@@ -2,8 +2,8 @@ module Reactive.State.Connect where
 
 
 import           Data.Aeson               (ToJSON)
-import           Utils.PreludePlus
-import           Utils.Vector
+import           Luna.Studio.Prelude
+import           Luna.Studio.Data.Vector
 
 import           Empire.API.Data.PortRef  (AnyPortRef)
 import           Empire.API.JSONInstances ()

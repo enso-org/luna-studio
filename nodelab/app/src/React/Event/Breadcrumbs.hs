@@ -8,7 +8,7 @@ import           Data.Aeson                 (FromJSON, ToJSON)
 
 import           Empire.API.Data.Breadcrumb (Breadcrumb, BreadcrumbItem)
 import           Empire.API.JSONInstances   ()
-import           Utils.PreludePlus
+import           Luna.Studio.Prelude
 
 
 

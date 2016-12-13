@@ -21,8 +21,8 @@ module Reactive.Handlers
     , pasteClipboardHandler
     ) where
 
-import           Utils.PreludePlus         hiding (on)
-import           Utils.Vector              (Vector2 (Vector2))
+import           Luna.Studio.Prelude         hiding (on)
+import           Luna.Studio.Data.Vector              (Vector2 (Vector2))
 
 import           GHCJS.DOM                 (currentDocument, currentWindow)
 import qualified GHCJS.DOM.Document        as Document

@@ -3,7 +3,7 @@ module Reactive.Commands.Graph.Unrender
     ( unrender
     ) where
 
-import           Utils.PreludePlus
+import           Luna.Studio.Prelude
 
 import qualified Batch.Workspace           as Workspace
 import qualified React.Store               as Store

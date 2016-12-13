@@ -13,7 +13,7 @@ import           Reactive.Commands.Graph.Selection  (selectPreviousNodes, select
 import           Reactive.State.Global              (State)
 import qualified Reactive.State.Global              as Global
 import qualified Reactive.State.Graph               as Graph
-import           Utils.PreludePlus
+import           Luna.Studio.Prelude
 
 import           Empire.API.Data.Node               (NodeId)
 import qualified Object.Widget.Node                 as NodeModel

@@ -10,8 +10,8 @@ module JS.ConnectionPen
 
 import           GHCJS.Foreign.Callback
 import           JavaScript.Array
-import           Utils.PreludePlus
-import           Utils.Vector
+import           Luna.Studio.Prelude
+import           Luna.Studio.Data.Vector
 
 
 foreign import javascript safe "connectionPen.beginPath($1, $2, $3)" beginPath'   :: Int -> Int -> Bool -> IO ()

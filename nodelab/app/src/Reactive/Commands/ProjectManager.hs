@@ -6,7 +6,7 @@ module Reactive.Commands.ProjectManager
     , loadGraph
     ) where
 
-import           Utils.PreludePlus
+import           Luna.Studio.Prelude
 
 import qualified Batch.Workspace                  as Workspace
 import qualified Reactive.Commands.Batch          as BatchCmd

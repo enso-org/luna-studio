@@ -27,8 +27,8 @@ import           Reactive.State.Global             (State)
 import qualified Reactive.State.Global             as Global
 import qualified Reactive.State.Graph              as Graph
 import           Reactive.State.GraphSkeleton      as GraphSkeleton
-import           Utils.PreludePlus
-import           Utils.Vector                      (Vector2 (..))
+import           Luna.Studio.Prelude
+import           Luna.Studio.Data.Vector                      (Vector2 (..))
 
 
 foreign import javascript safe "clipboard.copy($1)" copyStringToClipboard :: JSString -> IO ()

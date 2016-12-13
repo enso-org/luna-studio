@@ -1,6 +1,6 @@
 module Reactive.State.GraphSkeleton where
 
-import           Utils.PreludePlus
+import           Luna.Studio.Prelude
 
 import           Data.Aeson
 import qualified Data.Set                   as Set

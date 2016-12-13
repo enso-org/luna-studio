@@ -4,7 +4,7 @@ module Reactive.Commands.CodeEditor
     , codeChanged
     ) where
 
-import           Utils.PreludePlus
+import           Luna.Studio.Prelude
 
 import           Empire.API.Data.Node      (NodeId)
 import qualified JS.GoogleAnalytics        as GA

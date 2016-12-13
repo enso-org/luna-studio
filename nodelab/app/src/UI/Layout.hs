@@ -1,11 +1,11 @@
 {-# LANGUAGE Rank2Types #-}
 module UI.Layout where
 
-import           Utils.PreludePlus            hiding (lens)
+import           Luna.Studio.Prelude            hiding (lens)
 
 import           Control.Monad                (foldM)
 import           Data.HMap.Lazy               (HTMap)
-import           Utils.Vector
+import           Luna.Studio.Data.Vector
 
 import           Object.Widget                (WidgetId, widgetSize, widgetVisible)
 import           Reactive.Commands.Command    (Command)

@@ -7,7 +7,7 @@ import           Control.Monad.Trans.State  hiding (get, modify)
 import qualified Control.Monad.Trans.State  as State
 import           Data.Tuple                 (swap)
 import           React.Flux
-import           Utils.PreludePlus          as P hiding (transform)
+import           Luna.Studio.Prelude          as P hiding (transform)
 
 import qualified Event.Event                as E
 import           Reactive.Commands.Command  (Command)

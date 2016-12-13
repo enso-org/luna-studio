@@ -3,9 +3,9 @@ module Object.Widget.Connection where
 import           Data.Aeson                 (ToJSON)
 import           Empire.API.Data.Connection (ConnectionId)
 import           Object.Widget
-import           Utils.PreludePlus          hiding (from, set, to)
-import qualified Utils.PreludePlus          as Prelude
-import           Utils.Vector
+import           Luna.Studio.Prelude          hiding (from, set, to)
+import qualified Luna.Studio.Prelude          as Prelude
+import           Luna.Studio.Data.Vector
 
 data ConnectionHighlight = None | SrcHighlight | DstHighlight deriving (Eq, Show, Generic)
 

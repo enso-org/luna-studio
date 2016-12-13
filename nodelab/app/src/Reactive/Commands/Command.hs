@@ -4,7 +4,7 @@ module Reactive.Commands.Command where
 
 import           Control.Lens.Internal.Zoom
 import           Control.Monad.State
-import           Utils.PreludePlus
+import           Luna.Studio.Prelude
 
 
 newtype Command a b = Command { unCommand :: StateT a IO b }

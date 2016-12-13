@@ -1,7 +1,7 @@
 module Object.UITypes where
 
 import           Data.Aeson        (FromJSON, ToJSON)
-import           Utils.PreludePlus
+import           Luna.Studio.Prelude
 
 
 newtype WidgetId = WidgetId { fromWidgetId :: Int } deriving (Show, Eq, ToJSON, Default, FromJSON, Ord)

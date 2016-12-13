@@ -4,7 +4,7 @@ module Reactive.Plugins.Core.Action.Tutorial where
 
 import           Control.Monad.Trans.Maybe         (runMaybeT)
 import qualified Data.Text.Lazy                    as Text
-import           Utils.PreludePlus                 hiding (Choice)
+import           Luna.Studio.Prelude                 hiding (Choice)
 
 import qualified Empire.API.Data.DefaultValue      as DefaultValue
 import           Empire.API.Data.GraphLocation     (GraphLocation)

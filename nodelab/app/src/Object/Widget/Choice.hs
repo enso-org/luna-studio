@@ -1,8 +1,8 @@
 module Object.Widget.Choice where
 
 import           Data.Aeson          (ToJSON)
-import           Utils.PreludePlus   hiding (Choice)
-import           Utils.Vector
+import           Luna.Studio.Prelude   hiding (Choice)
+import           Luna.Studio.Data.Vector
 
 import           Object.Widget
 import           Object.Widget.Group (Group (..))

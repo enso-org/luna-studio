@@ -3,7 +3,7 @@ module Reactive.Commands.Graph.Disconnect
      , localDisconnectAll
      ) where
 
-import           Utils.PreludePlus
+import           Luna.Studio.Prelude
 
 import           Empire.API.Data.Connection (Connection, ConnectionId)
 import qualified Empire.API.Data.Connection as Connection

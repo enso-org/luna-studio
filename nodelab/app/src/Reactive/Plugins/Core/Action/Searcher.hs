@@ -3,7 +3,7 @@
 module Reactive.Plugins.Core.Action.Searcher where
 
 import           React.Flux                 (KeyboardEvent)
-import           Utils.PreludePlus
+import           Luna.Studio.Prelude
 
 import           Event.Event                (Event (UI))
 import qualified Event.Keys                 as Keys

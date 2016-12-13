@@ -2,8 +2,8 @@
 
 module Style.Layout where
 
-import           Utils.PreludePlus
-import           Utils.Vector
+import           Luna.Studio.Prelude
+import           Luna.Studio.Data.Vector
 
 import qualified Object.Widget.Button as Button
 import qualified Object.Widget.Group  as Group

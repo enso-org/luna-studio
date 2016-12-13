@@ -6,8 +6,8 @@ module JS.NodeSearcher
     ) where
 
 import           Data.JSString.Text             (lazyTextToJSString)
-import           Utils.PreludePlus
-import           Utils.Vector
+import           Luna.Studio.Prelude
+import           Luna.Studio.Data.Vector
 
 import           Data.Aeson                     (toJSON)
 import           Empire.API.Data.Node           (NodeId)

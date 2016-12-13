@@ -15,7 +15,7 @@ import           Reactive.Commands.Node.Remove     as Node
 import           Reactive.State.Global             (State)
 import qualified Reactive.State.Global             as Global
 import qualified Reactive.State.Graph              as Graph
-import           Utils.PreludePlus
+import           Luna.Studio.Prelude
 
 
 

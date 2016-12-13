@@ -12,7 +12,7 @@ module JS.UI
     ) where
 
 import           Data.JSString.Text (lazyTextToJSString)
-import           Utils.PreludePlus
+import           Luna.Studio.Prelude
 
 foreign import javascript safe "require('Rendering').initialize()" initializeGl :: IO ()
 

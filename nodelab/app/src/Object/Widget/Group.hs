@@ -1,7 +1,7 @@
 module Object.Widget.Group where
 
-import            Utils.PreludePlus
-import            Utils.Vector
+import            Luna.Studio.Prelude
+import            Luna.Studio.Data.Vector
 import Data.Aeson (ToJSON)
 import Style.Types
 import qualified Style.Group as Style

@@ -1,6 +1,6 @@
 module UI.Widget.Slider where
 
-import           Utils.PreludePlus  hiding (span)
+import           Luna.Studio.Prelude  hiding (span)
 
 import           GHCJS.Marshal.Pure (PFromJSVal (..), PToJSVal (..))
 

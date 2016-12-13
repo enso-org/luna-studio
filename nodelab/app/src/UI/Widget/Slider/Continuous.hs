@@ -1,7 +1,7 @@
 module UI.Widget.Slider.Continuous where
 
-import           Utils.PreludePlus
-import           Utils.Vector
+import           Luna.Studio.Prelude
+import           Luna.Studio.Data.Vector
 
 import           Data.JSString.Text              (lazyTextToJSString)
 

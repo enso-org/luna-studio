@@ -4,8 +4,8 @@ module Reactive.Commands.Node.Snap
     ) where
 
 import           Style.Layout                       (gridSize)
-import           Utils.PreludePlus
-import           Utils.Vector
+import           Luna.Studio.Prelude
+import           Luna.Studio.Data.Vector
 
 
 snapCoord :: Double -> Double

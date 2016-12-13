@@ -2,10 +2,10 @@
 module UI.Handlers where
 
 -- TODO[react]: Find out if we need this
--- import           Utils.PreludePlus
+-- import           Luna.Studio.Prelude
 --
 -- import           Data.Typeable                    (typeOf)
--- import           Utils.CtxDynamic
+-- import           Luna.Studio.Data.CtxDynamic
 --
 -- import           Object.Widget                    (DisplayObject, UIHandlers)
 -- import           Object.Widget.Button             (Button)

@@ -5,7 +5,7 @@ import qualified Data.Aeson             as Aeson
 import           Data.Text.Lazy         (unpack)
 import           React.Flux
 import qualified React.Flux             as React
-import           Utils.PreludePlus
+import           Luna.Studio.Prelude
 
 import           React.Store            (Ref, dt)
 import           React.Model.CodeEditor (CodeEditor)

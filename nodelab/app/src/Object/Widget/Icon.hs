@@ -1,8 +1,8 @@
 module Object.Widget.Icon where
 
 import           Data.Aeson        (ToJSON)
-import           Utils.PreludePlus
-import           Utils.Vector
+import           Luna.Studio.Prelude
+import           Luna.Studio.Data.Vector
 
 import           Object.Widget
 

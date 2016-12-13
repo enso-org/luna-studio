@@ -1,10 +1,10 @@
 module UI.Handlers.Connection where
 
 -- TODO[react]: Find out if we need this
--- import           Utils.PreludePlus
+-- import           Luna.Studio.Prelude
 --
 -- import           Data.HMap.Lazy                     (TypeKey (..))
--- import           Utils.Vector
+-- import           Luna.Studio.Data.Vector
 --
 -- import qualified Empire.API.Data.Connection         as Connection
 -- import qualified Empire.API.Data.PortRef            as PortRef

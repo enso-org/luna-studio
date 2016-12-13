@@ -1,6 +1,6 @@
 module Reactive.Plugins.Core.Network where
 
-import           Utils.PreludePlus
+import           Luna.Studio.Prelude
 
 import           Control.Concurrent.MVar
 

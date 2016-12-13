@@ -3,7 +3,7 @@ module Event.UI where
 
 import           Control.DeepSeq         (NFData)
 import           Data.Aeson              (FromJSON, ToJSON)
-import           Utils.PreludePlus
+import           Luna.Studio.Prelude
 
 import qualified React.Event.App         as App
 import qualified React.Event.Breadcrumbs as Breadcrumbs

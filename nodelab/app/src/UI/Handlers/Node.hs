@@ -2,13 +2,13 @@
 
 module UI.Handlers.Node where
 
-import           Utils.PreludePlus                        hiding (stripPrefix)
+import           Luna.Studio.Prelude                        hiding (stripPrefix)
 
 import           Control.Monad.Trans.State                (get)
 import qualified Data.HashMap.Strict                      as HashMap
 import           Data.HMap.Lazy                           (HTMap, TypeKey (..))
 import qualified Data.Text.Lazy                           as Text
-import           Utils.Vector
+import           Luna.Studio.Data.Vector
 
 import           Object.Widget                            (CompositeWidget, KeyPressedHandler, ResizableWidget, UIHandlers, WidgetId,
                                                            createWidget, keyDown, mouseOut, mouseOver, updateWidget)

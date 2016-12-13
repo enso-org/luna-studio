@@ -3,8 +3,8 @@
 module UI.Widget.Node where
 
 import qualified Data.Map.Lazy                as Map
-import           Utils.PreludePlus
-import           Utils.Vector
+import           Luna.Studio.Prelude
+import           Luna.Studio.Data.Vector
 
 import           Data.Aeson                   (toJSON)
 import           GHCJS.Marshal                (toJSVal)

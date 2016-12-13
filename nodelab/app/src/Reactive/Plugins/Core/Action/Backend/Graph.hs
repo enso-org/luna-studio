@@ -4,7 +4,7 @@ module Reactive.Plugins.Core.Action.Backend.Graph
 
 
 import qualified Batch.Workspace                             as Workspace
-import           Utils.PreludePlus
+import           Luna.Studio.Prelude
 
 import qualified Empire.API.Data.Graph                       as Graph
 import           Empire.API.Data.GraphLocation               (GraphLocation (..))

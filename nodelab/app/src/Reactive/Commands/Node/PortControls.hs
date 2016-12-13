@@ -3,8 +3,8 @@ module Reactive.Commands.Node.PortControls
     ( makePortControl
     ) where
 
-import           Utils.PreludePlus               hiding (group)
-import           Utils.Vector
+import           Luna.Studio.Prelude               hiding (group)
+import           Luna.Studio.Data.Vector
 
 import qualified Data.Map.Lazy                   as Map
 import qualified Data.Text.Lazy                  as Text

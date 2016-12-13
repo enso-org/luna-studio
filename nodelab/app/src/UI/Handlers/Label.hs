@@ -3,7 +3,7 @@ module UI.Handlers.Label ( widgetHandlers
                          , DblClickedHandler
                          ) where
 
-import           Utils.PreludePlus
+import           Luna.Studio.Prelude
 
 import           Data.HMap.Lazy               ()
 

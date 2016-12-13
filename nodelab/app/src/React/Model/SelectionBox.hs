@@ -1,7 +1,7 @@
 module React.Model.SelectionBox where
 
-import           Utils.PreludePlus
-import           Utils.Vector
+import           Luna.Studio.Prelude
+import           Luna.Studio.Data.Vector
 
 
 

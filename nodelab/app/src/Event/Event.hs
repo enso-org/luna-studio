@@ -16,7 +16,7 @@ import qualified Event.TextEditor    as TextEditor
 import           Event.UI            (UIEvent)
 import qualified Event.Widget        as Widget
 import qualified Event.Window        as Window
-import           Utils.PreludePlus
+import           Luna.Studio.Prelude
 
 
 

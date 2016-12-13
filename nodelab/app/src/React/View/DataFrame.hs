@@ -6,7 +6,7 @@ import           React.Flux
 
 import           React.Model.DataFrame (DataFrame)
 import qualified React.Model.DataFrame as DataFrame
-import           Utils.PreludePlus
+import           Luna.Studio.Prelude
 
 
 

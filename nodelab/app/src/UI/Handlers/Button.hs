@@ -1,6 +1,6 @@
 module UI.Handlers.Button where
 
-import           Utils.PreludePlus
+import           Luna.Studio.Prelude
 
 import           Data.HMap.Lazy               (TypeKey (..))
 

@@ -1,8 +1,8 @@
-module Utils.Angle where
+module Luna.Studio.Data.Angle where
 
 import           Data.Fixed
-import           Utils.PreludePlus
-import           Utils.Vector
+import           Luna.Studio.Prelude
+import           Luna.Studio.Data.Vector
 
 type Angle  = Double
 

@@ -1,6 +1,6 @@
 module UI.Handlers.CodeEditor where
 
-import           Utils.PreludePlus
+import           Luna.Studio.Prelude
 
 import           Data.JSString.Text           (lazyTextFromJSString)
 

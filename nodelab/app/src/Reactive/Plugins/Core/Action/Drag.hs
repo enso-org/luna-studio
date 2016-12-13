@@ -29,8 +29,8 @@ import qualified Reactive.State.Drag               as Drag
 import           Reactive.State.Global             (State)
 import qualified Reactive.State.Global             as Global
 import qualified Reactive.State.Graph              as Graph
-import           Utils.PreludePlus
-import           Utils.Vector
+import           Luna.Studio.Prelude
+import           Luna.Studio.Data.Vector
 
 
 toAction :: Event -> Maybe (Command State ())

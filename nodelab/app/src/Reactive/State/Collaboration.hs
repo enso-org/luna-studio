@@ -3,7 +3,7 @@ module Reactive.State.Collaboration where
 import           Data.Aeson                     (ToJSON)
 import           Data.DateTime                  (DateTime)
 import           Data.Map.Lazy                  (Map)
-import           Utils.PreludePlus
+import           Luna.Studio.Prelude
 
 import           Empire.API.Graph.Collaboration (ClientId)
 import           Empire.API.JSONInstances       ()

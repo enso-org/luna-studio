@@ -2,7 +2,7 @@
 
 module UI.Widget.Port where
 -- TODO[react]: This should be removed
--- import           Utils.PreludePlus
+-- import           Luna.Studio.Prelude
 --
 -- import           GHCJS.Marshal.Pure           (PFromJSVal (..), PToJSVal (..))
 --

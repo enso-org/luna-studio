@@ -14,9 +14,9 @@ import           Control.Monad.Trans.Maybe           (runMaybeT)
 import qualified Data.HashMap.Lazy                   as HashMap
 import           Data.Ord                            (comparing)
 import qualified Data.Set                            as Set
-import           Utils.Angle
-import           Utils.PreludePlus
-import           Utils.Vector                        (Vector2 (Vector2), lengthSquared)
+import           Luna.Studio.Data.Angle
+import           Luna.Studio.Prelude
+import           Luna.Studio.Data.Vector                        (Vector2 (Vector2), lengthSquared)
 
 import           React.Store                         (Ref, WRef, ref, widget)
 import qualified React.Store                         as Store

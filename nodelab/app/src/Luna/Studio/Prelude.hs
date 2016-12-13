@@ -1,7 +1,7 @@
 {-# LANGUAGE LambdaCase #-}
 
-module Utils.PreludePlus (
-    module Utils.PreludePlus,
+module Luna.Studio.Prelude (
+    module Luna.Studio.Prelude,
     module Prelude,
     module X
 ) where
@@ -32,7 +32,7 @@ import           Prelude                  hiding (mapM, mapM_, print, putStr, pu
 import qualified Prelude
 import           Prologue                 as X (toString)
 import           Text.Show.Pretty         (ppShow)
-import           Utils.Instances          ()
+import           Luna.Studio.Utils.Instances          ()
 
 
 

@@ -4,8 +4,8 @@ module React.View.SelectionBox where
 import qualified Data.Aeson               as Aeson
 import           React.Flux
 import qualified React.Flux               as React
-import           Utils.PreludePlus
-import           Utils.Vector             (Vector2 (Vector2), x, y)
+import           Luna.Studio.Prelude
+import           Luna.Studio.Data.Vector             (Vector2 (Vector2), x, y)
 
 import           React.Store              (Ref, dt)
 import           React.Model.SelectionBox (SelectionBox, end, start, visible)

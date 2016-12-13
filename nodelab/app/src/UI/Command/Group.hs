@@ -2,8 +2,8 @@
 
 module UI.Command.Group where
 
-import           Utils.PreludePlus
-import           Utils.Vector
+import           Luna.Studio.Prelude
+import           Luna.Studio.Data.Vector
 
 import           Object.Widget                (WidgetId, widgetPosition, widgetSize)
 import           Reactive.Commands.Command    (Command)

@@ -2,7 +2,7 @@
 
 module Reactive.Plugins.Core.Action.NodeSearcher where
 
-import           Utils.PreludePlus         hiding (stripPrefix)
+import           Luna.Studio.Prelude         hiding (stripPrefix)
 --
 import           Event.Event               (Event (..))
 -- import           Event.Keyboard                             (KeyMods (..))

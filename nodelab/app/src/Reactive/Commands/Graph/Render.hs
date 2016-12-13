@@ -2,7 +2,7 @@ module Reactive.Commands.Graph.Render
     ( renderGraph
     ) where
 
-import           Utils.PreludePlus
+import           Luna.Studio.Prelude
 
 import qualified Data.HashMap.Lazy               as HashMap
 

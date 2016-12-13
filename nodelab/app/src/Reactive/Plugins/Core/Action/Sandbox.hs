@@ -2,8 +2,8 @@
 
 module Reactive.Plugins.Core.Action.Sandbox where
 
-import           Utils.PreludePlus
-import           Utils.Vector
+import           Luna.Studio.Prelude
+import           Luna.Studio.Data.Vector
 
 import           Event.Event                     (Event (..))
 import qualified Event.Keyboard                  as Keyboard

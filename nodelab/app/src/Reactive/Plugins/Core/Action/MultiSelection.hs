@@ -3,8 +3,8 @@
 module Reactive.Plugins.Core.Action.MultiSelection where
 
 import           React.Flux                        (mousePageX, mousePageY)
-import           Utils.PreludePlus
-import           Utils.Vector                      (Vector2 (..), fromTuple, x, y)
+import           Luna.Studio.Prelude
+import           Luna.Studio.Data.Vector                      (Vector2 (..), fromTuple, x, y)
 
 import           Empire.API.Data.Node              (Node)
 import qualified Empire.API.Data.Node              as Node

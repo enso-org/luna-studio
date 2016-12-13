@@ -2,7 +2,7 @@ module Event.NodeSearcher where
 
 
 import           Data.Aeson               (FromJSON, ToJSON)
-import           Utils.PreludePlus
+import           Luna.Studio.Prelude
 import           Empire.API.Data.Node     (NodeId)
 import           Empire.API.JSONInstances ()
 

@@ -7,7 +7,7 @@ module Reactive.Commands.Node.Update
     , updateExpression
     ) where
 
-import           Utils.PreludePlus
+import           Luna.Studio.Prelude
 
 import           Control.Arrow
 import           Control.Monad.State               (modify)

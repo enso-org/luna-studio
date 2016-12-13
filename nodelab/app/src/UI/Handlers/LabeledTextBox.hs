@@ -1,9 +1,9 @@
 module UI.Handlers.LabeledTextBox where
 
-import           Utils.PreludePlus
+import           Luna.Studio.Prelude
 
 import           Data.HMap.Lazy               (HTMap)
-import           Utils.Vector
+import           Luna.Studio.Data.Vector
 
 import           Object.Widget                (CompositeWidget, DblClickHandler, ResizableWidget, UIHandlers, WidgetId, createWidget,
                                                dblClick, resizeWidget, updateWidget)

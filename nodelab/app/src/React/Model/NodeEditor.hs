@@ -2,7 +2,7 @@ module React.Model.NodeEditor where
 
 import           Data.HashMap.Strict      (HashMap)
 import qualified Data.HashMap.Strict      as HashMap
-import           Utils.PreludePlus
+import           Luna.Studio.Prelude
 
 import           Empire.API.Data.Node     (NodeId)
 import           Empire.API.Data.PortRef  (InPortRef)

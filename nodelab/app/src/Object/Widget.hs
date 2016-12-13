@@ -21,9 +21,9 @@ import           Object.UITypes
 import           Reactive.Commands.Command (Command)
 import           Reactive.State.Camera     (Camera)
 import qualified Reactive.State.Camera     as Camera
-import           Utils.CtxDynamic
-import           Utils.PreludePlus         hiding (children, (.=))
-import           Utils.Vector              (Vector2 (Vector2))
+import           Luna.Studio.Data.CtxDynamic
+import           Luna.Studio.Prelude         hiding (children, (.=))
+import           Luna.Studio.Data.Vector              (Vector2 (Vector2))
 
 
 type DisplayObject = CtxDynamic DisplayObjectClass

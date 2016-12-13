@@ -3,8 +3,8 @@ module Reactive.Commands.Node.NodeMeta
     , modifyNodeMeta
     ) where
 
-import           Utils.PreludePlus
-import           Utils.Vector
+import           Luna.Studio.Prelude
+import           Luna.Studio.Data.Vector
 
 import           Empire.API.Data.Node      (NodeId)
 import qualified Empire.API.Data.Node      as Node

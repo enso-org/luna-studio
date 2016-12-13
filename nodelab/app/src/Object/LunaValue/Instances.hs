@@ -7,8 +7,8 @@ import           Reactive.Commands.Command       (Command)
 import           Reactive.Commands.UIRegistry    as UICmd
 import qualified Reactive.State.Global           as Global
 import           Reactive.State.UIRegistry       (addHandler)
-import           Utils.PreludePlus               hiding (Choice)
-import           Utils.Vector
+import           Luna.Studio.Prelude               hiding (Choice)
+import           Luna.Studio.Data.Vector
 
 import           Object.LunaValue
 

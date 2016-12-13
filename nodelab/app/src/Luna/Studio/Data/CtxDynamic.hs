@@ -7,11 +7,11 @@
 {-# LANGUAGE ScopedTypeVariables   #-}
 {-# LANGUAGE UndecidableInstances  #-}
 
-module Utils.CtxDynamic where
+module Luna.Studio.Data.CtxDynamic where
 
 import           Data.Dynamic
 import           Unsafe.Coerce
-import           Utils.PreludePlus
+import           Luna.Studio.Prelude
 
 data CtxDynamic ctx where
     CtxDynamic :: ctx a => TypeRep -> a -> CtxDynamic ctx

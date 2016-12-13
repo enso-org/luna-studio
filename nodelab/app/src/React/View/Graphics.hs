@@ -9,9 +9,9 @@ import qualified Object.Widget.Graphics as Graphics
 import qualified Object.Widget.Label    as Label
 import qualified Style.Layout           as Style
 import qualified UI.Instances           ()
-import           Utils.PreludePlus
-import qualified Utils.Shader           as Shader
-import           Utils.Vector           hiding (normalize)
+import           Luna.Studio.Prelude
+import qualified Luna.Studio.Data.Shader           as Shader
+import           Luna.Studio.Data.Vector           hiding (normalize)
 
 
 

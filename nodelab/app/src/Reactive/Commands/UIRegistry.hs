@@ -33,8 +33,8 @@ module Reactive.Commands.UIRegistry
 
 import           Data.HMap.Lazy            (HTMap, TypeKey (..))
 import qualified Data.HMap.Lazy            as HMap
-import           Utils.PreludePlus         hiding (children, lookup)
-import           Utils.Vector
+import           Luna.Studio.Prelude         hiding (children, lookup)
+import           Luna.Studio.Data.Vector
 
 import qualified JS.Cursor                 as Cursor
 import           Object.Widget             (CompositeWidget, objectId, createWidget, fromWidgetId, WidgetId, widget, widgetSize, widgetPosition, resizeWidget, updateWidget)

@@ -1,6 +1,6 @@
 module Event.Keyboard where
 
-import Utils.PreludePlus
+import Luna.Studio.Prelude
 import Data.Aeson (ToJSON)
 
 data Type = Press | Down | Up deriving (Eq, Show, Generic)

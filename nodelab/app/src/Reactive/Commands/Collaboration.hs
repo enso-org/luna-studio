@@ -4,7 +4,7 @@ module Reactive.Commands.Collaboration
     ) where
 
 import qualified Data.Map.Lazy                as Map
-import           Utils.PreludePlus
+import           Luna.Studio.Prelude
 
 import           Empire.API.Graph.Collaboration (ClientId)
 import           Reactive.Commands.Command    (Command)

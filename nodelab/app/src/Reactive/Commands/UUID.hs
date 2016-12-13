@@ -7,7 +7,7 @@ module Reactive.Commands.UUID
 import qualified Data.Set                  as Set
 import           Data.UUID.Types           (UUID)
 import           Data.UUID.Types.Internal  (buildFromBytes)
-import           Utils.PreludePlus
+import           Luna.Studio.Prelude
 
 import           Reactive.Commands.Command (Command)
 import           Reactive.State.Global     (State, nextRandom, pendingRequests)

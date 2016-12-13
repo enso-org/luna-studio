@@ -1,9 +1,9 @@
 module UI.Handlers.Choice where
 
-import           Utils.PreludePlus                hiding (Choice)
+import           Luna.Studio.Prelude                hiding (Choice)
 
 import           Data.HMap.Lazy                   (HTMap)
-import           Utils.Vector
+import           Luna.Studio.Data.Vector
 
 import           Object.Widget                    (CompositeWidget, ResizableWidget, UIHandlers, WidgetId, createWidget,
                                                    resizeWidget, updateWidget)

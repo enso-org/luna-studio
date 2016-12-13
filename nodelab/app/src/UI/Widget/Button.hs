@@ -1,7 +1,7 @@
 module UI.Widget.Button where
 
-import           Utils.PreludePlus
-import           Utils.Vector
+import           Luna.Studio.Prelude
+import           Luna.Studio.Data.Vector
 
 import qualified Data.JSString        as JSString
 import           Data.JSString.Text   (lazyTextToJSString)

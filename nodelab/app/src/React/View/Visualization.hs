@@ -29,8 +29,8 @@ import           React.View.Graphics               (graphics_)
 import           React.View.Image                  (image_)
 import qualified Style.Layout                      as Style
 import qualified UI.Instances                      ()
-import           Utils.PreludePlus
-import           Utils.Vector                      hiding (normalize)
+import           Luna.Studio.Prelude
+import           Luna.Studio.Data.Vector                      hiding (normalize)
 
 
 

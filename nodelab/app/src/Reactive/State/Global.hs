@@ -3,8 +3,8 @@
 module Reactive.State.Global where
 
 import           Data.Word                      (Word8)
-import           Utils.PreludePlus
-import           Utils.Vector
+import           Luna.Studio.Prelude
+import           Luna.Studio.Data.Vector
 
 import           Data.Aeson                     (ToJSON, toJSON)
 import           Data.DateTime                  (DateTime)
