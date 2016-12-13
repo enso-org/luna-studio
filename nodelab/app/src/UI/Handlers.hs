@@ -12,7 +12,6 @@ module UI.Handlers where
 -- import           Object.Widget.Choice.RadioButton (RadioButton)
 -- import           Object.Widget.CodeEditor         (CodeEditor)
 -- import           Object.Widget.Connection         (Connection, CurrentConnection)
--- import           Object.Widget.DataFrame          (DataFrame)
 -- import           Object.Widget.Graphics           (Graphics)
 -- import           Object.Widget.Group              (Group)
 -- import           Object.Widget.Icon               (Icon)
@@ -38,7 +37,6 @@ module UI.Handlers where
 -- import           UI.Widget.Choice.RadioButton     ()
 -- import           UI.Widget.CodeEditor             ()
 -- import           UI.Widget.Connection             ()
--- import           UI.Widget.DataFrame              ()
 -- import           UI.Widget.Graphics               ()
 -- import           UI.Widget.Group                  ()
 -- import           UI.Widget.LabeledTextBox         ()
@@ -89,7 +87,6 @@ module UI.Handlers where
 -- labelType             = typeOf (undefined :: Label)
 -- imageType             = typeOf (undefined :: Image)
 -- longTextType          = typeOf (undefined :: LongText)
--- dataFrameType         = typeOf (undefined :: DataFrame)
 -- graphicsType          = typeOf (undefined :: Graphics)
 -- iconType              = typeOf (undefined :: Icon)
 -- codeEditorType        = typeOf (undefined :: CodeEditor)
@@ -117,7 +114,6 @@ module UI.Handlers where
 --         | tpe ==            labelType  =            Label.widgetHandlers
 --         | tpe ==            imageType  = def
 --         | tpe ==         longTextType  = def
---         | tpe ==        dataFrameType  = def
 --         | tpe ==         graphicsType  = def
 --         | tpe ==             iconType  = def
 --         | tpe ==       codeEditorType  =       CodeEditor.widgetHandlers

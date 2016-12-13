@@ -12,7 +12,6 @@ module.exports = function() {
   window.Button         = require('Widget/Button');
   window.CodeEditor     = require('Widget/CodeEditor');
   window.Connection     = require('Widget/Connection');
-  window.DataFrame      = require('Widget/DataFrame');
   window.Graphics       = require('Widget/Graphics');
   window.GraphNode      = require('Widget/Node');
   window.Group          = require('Widget/Group');

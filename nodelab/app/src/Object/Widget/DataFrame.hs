@@ -16,8 +16,3 @@ instance ToJSON DataFrame
 
 create :: Size -> [Text] -> [[Text]] -> DataFrame
 create s h v = DataFrame def s h v
-
-instance IsDisplayObject DataFrame where
-    widgetPosition = position
-    widgetSize     = size
-    widgetVisible  = to $ const True
