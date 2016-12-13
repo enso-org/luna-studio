@@ -9,8 +9,8 @@ import           Utils.PreludePlus
 import qualified Event.UI                as UI
 import qualified React.Event.NodeEditor  as NE
 import           React.Store             (Ref, dispatch, dt)
-import           React.Store.NodeEditor  (NodeEditor)
-import qualified React.Store.NodeEditor  as NodeEditor
+import           React.Model.NodeEditor  (NodeEditor)
+import qualified React.Model.NodeEditor  as NodeEditor
 import           React.View.Connection   (connection_)
 import           React.View.Node         (node_)
 import           React.View.SelectionBox (selectionBox_)

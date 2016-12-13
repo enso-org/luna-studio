@@ -1,5 +1,5 @@
-module React.Store.Connection (
-    module React.Store.Connection,
+module React.Model.Connection (
+    module React.Model.Connection,
     module X,
 ) where
 

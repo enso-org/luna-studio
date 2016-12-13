@@ -6,7 +6,8 @@ import           Event.Event                       (Event (UI))
 import qualified Event.Keys                        as Keys
 import           Event.UI                          (UIEvent (AppEvent, NodeEvent))
 import qualified React.Event.App                   as App
-import qualified React.Store.Node                  as Node
+import qualified React.Model.Node                  as Node
+import qualified React.Event.Node                  as Node
 import           Reactive.Commands.Command         (Command)
 import           Reactive.Commands.Graph.Selection (selectAll, toggleSelect, unselectAll)
 import qualified Reactive.Commands.Node            as Node

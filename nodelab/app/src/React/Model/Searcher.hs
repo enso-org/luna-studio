@@ -1,6 +1,4 @@
-module React.Store.Searcher (
-    module React.Store.Searcher,
-) where
+module React.Model.Searcher where
 
 import           Empire.API.Data.Node           (NodeId)
 import           Text.ScopeSearcher.QueryResult (QueryResult)

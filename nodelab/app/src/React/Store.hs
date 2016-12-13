@@ -12,8 +12,8 @@ import           React.Flux
 
 import qualified Event.Event                as Event
 import           Event.UI                   (UIEvent)
-import           React.Store.App            (App (App))
-import qualified React.Store.NodeEditor     as NodeEditor
+import           React.Model.App            (App (App))
+import qualified React.Model.NodeEditor     as NodeEditor
 import           React.Store.Ref            as X
 import           Utils.PreludePlus          as P hiding (transform)
 

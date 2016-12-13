@@ -9,7 +9,7 @@ import           Utils.PreludePlus
 import           Empire.API.Data.Node      (NodeId)
 import qualified JS.GoogleAnalytics        as GA
 import qualified React.Store               as Store
-import qualified React.Store.CodeEditor    as CodeEditor
+import qualified React.Model.CodeEditor    as CodeEditor
 import qualified Reactive.Commands.Batch   as BatchCmd
 import           Reactive.Commands.Command (Command)
 import           Reactive.State.Global     (State)

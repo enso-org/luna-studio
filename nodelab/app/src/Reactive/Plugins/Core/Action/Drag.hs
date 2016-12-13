@@ -18,7 +18,7 @@ import qualified React.Event.App                   as App
 import qualified React.Event.Node                  as Node
 import           React.Store                       (widget, _widget)
 import qualified React.Store                       as Store
-import qualified React.Store.Node                  as Model
+import qualified React.Model.Node                  as Model
 import qualified Reactive.Commands.Batch           as BatchCmd
 import           Reactive.Commands.Command         (Command)
 import           Reactive.Commands.Graph.Selection (selectNodes, selectedNodes)

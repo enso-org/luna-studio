@@ -8,8 +8,9 @@ import           Utils.PreludePlus
 
 import qualified Event.UI                    as UI
 import           React.Store                 (Ref, dispatch, dt)
-import           React.Store.App             (App)
-import qualified React.Store.App             as App
+import           React.Model.App             (App)
+import qualified React.Model.App             as App
+import qualified React.Event.App             as App
 import           React.View.Breadcrumbs      (breadcrumbs_)
 import           React.View.CodeEditor       (codeEditor_)
 import           React.View.CodeEditorToggle (codeEditorToggle_)

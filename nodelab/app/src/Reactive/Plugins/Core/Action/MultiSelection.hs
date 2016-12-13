@@ -15,8 +15,8 @@ import qualified React.Event.App                   as App
 import qualified React.Event.NodeEditor            as NodeEditor
 import           React.Store                       (widget)
 import qualified React.Store                       as Store
-import           React.Store.SelectionBox          (SelectionBox (SelectionBox))
-import qualified React.Store.SelectionBox          as SelectionBox
+import           React.Model.SelectionBox          (SelectionBox (SelectionBox))
+import qualified React.Model.SelectionBox          as SelectionBox
 import           Reactive.Commands.Command         (Command)
 import           Reactive.Commands.Graph.Selection (focusSelectedNode, modifySelectionHistory, selectNodes, selectedNodes, unselectAll)
 import           Reactive.State.Global             (State)

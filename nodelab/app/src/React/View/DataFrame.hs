@@ -4,8 +4,8 @@ module React.View.DataFrame where
 import qualified Data.Text.Lazy          as Text
 import           React.Flux
 
-import           Object.Widget.DataFrame (DataFrame)
-import qualified Object.Widget.DataFrame as DataFrame
+import           React.Model.DataFrame (DataFrame)
+import qualified React.Model.DataFrame as DataFrame
 import           Utils.PreludePlus
 
 

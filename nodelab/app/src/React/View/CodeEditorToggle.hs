@@ -6,7 +6,7 @@ import qualified React.Event.CodeEditor as CodeEditor
 import           React.Flux
 import qualified React.Flux             as React
 import           React.Store            (Ref, dispatch)
-import           React.Store.CodeEditor (CodeEditor)
+import           React.Model.CodeEditor (CodeEditor)
 import           Utils.PreludePlus
 
 

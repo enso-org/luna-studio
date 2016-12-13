@@ -13,8 +13,8 @@ import qualified JS.NodeSearcher                   as UI
 import qualified Batch.Workspace                   as Workspace
 import           React.Store                       (widget)
 import qualified React.Store                       as Store
-import qualified React.Store.Node                  as Node
-import qualified React.Store.Searcher              as Searcher
+import qualified React.Model.Node                  as Node
+import qualified React.Model.Searcher              as Searcher
 import qualified React.View.App                    as App
 import qualified React.View.Searcher               as Searcher
 

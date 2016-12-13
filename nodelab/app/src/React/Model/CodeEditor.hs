@@ -1,4 +1,4 @@
-module React.Store.CodeEditor where
+module React.Model.CodeEditor where
 
 import           Utils.PreludePlus
 

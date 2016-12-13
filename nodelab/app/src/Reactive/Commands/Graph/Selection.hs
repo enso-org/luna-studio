@@ -19,8 +19,8 @@ import           Empire.API.Data.Node                     (NodeId)
 
 import           React.Store                              (WRef (..), widget)
 import qualified React.Store                              as Store
-import           React.Store.Node                         (Node)
-import qualified React.Store.Node                         as Node
+import           React.Model.Node                         (Node)
+import qualified React.Model.Node                         as Node
 
 import           Reactive.Commands.Batch                  (cancelCollaborativeTouch, collaborativeTouch)
 import           Reactive.Commands.Command                (Command)

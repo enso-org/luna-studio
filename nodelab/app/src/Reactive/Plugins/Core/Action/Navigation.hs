@@ -19,8 +19,8 @@ import qualified Object.Widget.Node         as Model
 import qualified React.Event.App            as App
 import           React.Store                (Ref, WRef (..), ref, widget)
 import qualified React.Store                as Store
-import           React.Store.Node           (Node)
-import qualified React.Store.Node           as Node
+import           React.Model.Node           (Node)
+import qualified React.Model.Node           as Node
 import           Reactive.Commands.Batch    (cancelCollaborativeTouch, collaborativeTouch)
 import           Reactive.Commands.Command  (Command)
 import           Reactive.Commands.Graph    (allNodes')

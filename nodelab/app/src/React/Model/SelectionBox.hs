@@ -1,4 +1,4 @@
-module React.Store.SelectionBox where
+module React.Model.SelectionBox where
 
 import           Utils.PreludePlus
 import           Utils.Vector

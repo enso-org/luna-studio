@@ -11,8 +11,8 @@ import           Empire.API.Data.Node      (Node)
 import qualified Empire.API.Data.Node      as Node
 import           React.Store               (Ref)
 import qualified React.Store               as Store
-import qualified React.Store.Node          as Model
-import qualified React.Store.NodeEditor    as NodeEditor
+import qualified React.Model.Node          as Model
+import qualified React.Model.NodeEditor    as NodeEditor
 import           Reactive.Commands.Command (Command)
 import           Reactive.Commands.Graph   (focusNode)
 import           Reactive.State.Global     (State)

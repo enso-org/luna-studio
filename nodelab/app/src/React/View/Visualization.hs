@@ -19,16 +19,15 @@ import qualified Empire.API.Data.Error             as LunaError
 import           Empire.API.Data.TypeRep           (TypeRep)
 import           Empire.API.Graph.NodeResultUpdate (NodeValue)
 import qualified Empire.API.Graph.NodeResultUpdate as NodeResult
-import           Object.Widget.DataFrame           (DataFrame)
-import qualified Object.Widget.DataFrame           as DataFrame
+import           React.Model.DataFrame           (DataFrame)
+import qualified React.Model.DataFrame           as DataFrame
 import qualified Object.Widget.Plots.Image         as Image
-import           React.Store.Node                  (Node)
-import qualified React.Store.Node                  as Node
+import           React.Model.Node                  (Node)
+import qualified React.Model.Node                  as Node
 import           React.View.DataFrame              (dataFrame_)
 import           React.View.Graphics               (graphics_)
 import           React.View.Image                  (image_)
 import qualified Style.Layout                      as Style
-import qualified Style.Node                        as Style
 import qualified UI.Instances                      ()
 import           Utils.PreludePlus
 import           Utils.Vector                      hiding (normalize)
@@ -105,12 +104,12 @@ nodeValue_ visIx = \case
         let heads = Text.pack <$> fst <$> cols
             cols' = fmap DefaultValue.stringify <$> snd <$> cols
             rows = transpose cols'
-            widget = DataFrame.create Style.dataFrameWidgetSize heads rows
+            widget = DataFrame.create heads rows
         dataFrame_ visIx widget
     _ -> return ()
 
 listTable :: [Text] -> DataFrame
-listTable col = DataFrame.create Style.plotSize ["Index", "Value"] rows where
+listTable col = DataFrame.create ["Index", "Value"] rows where
     nats = [1..] :: [Integer]
     idxs = Text.pack . show <$> take (length col) nats
     cols = [idxs, col]
@@ -120,7 +119,7 @@ mapTuple :: (b -> c) -> (b, b) -> (c, c)
 mapTuple = join (***)
 
 listTablePairs :: [(Text, Text)] -> DataFrame
-listTablePairs rows = DataFrame.create Style.plotSize ["fst", "snd"] $ (\(f,s) -> [f,s]) <$> rows
+listTablePairs rows = DataFrame.create ["fst", "snd"] $ (\(f,s) -> [f,s]) <$> rows
 
 normalize :: String -> String
 normalize = intercalate "<br />" . wordsBy (== '\n')

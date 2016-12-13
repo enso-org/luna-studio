@@ -11,7 +11,7 @@ import qualified Empire.API.Data.Port       as Port
 import           Empire.API.Data.PortRef    (InPortRef (..), OutPortRef (..))
 import qualified Object.Widget.Connection   as ConnectionModel
 import qualified React.Store                as Store
-import qualified React.Store.NodeEditor     as NodeEditor
+import qualified React.Model.NodeEditor     as NodeEditor
 import qualified Reactive.Commands.Batch    as BatchCmd
 import           Reactive.Commands.Command  (Command)
 import qualified Reactive.State.Global      as Global

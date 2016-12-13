@@ -3,25 +3,22 @@ module React.View.Node where
 
 import           Utils.PreludePlus
 import           Utils.Vector             (x, y)
-
 import qualified Data.Map.Lazy            as Map
 import qualified Data.Text.Lazy           as Text
-
-import           Empire.API.Data.Port     (InPort (..), PortId (..))
-
-import qualified Event.UI                 as UI
-
-import           Object.Widget.Port       (Port (..))
-
 import           React.Flux
 import qualified React.Flux               as React
 
+import qualified Event.UI                 as UI
+import           Empire.API.Data.Port     (InPort (..), PortId (..))
+import           Object.Widget.Port       (Port (..))
 import           React.Store              (Ref, dispatch, dt)
-import           React.Store.Node         (Node)
-import qualified React.Store.Node         as Node
-
+import           React.Model.Node         (Node)
+import qualified React.Model.Node         as Node
+import qualified React.Event.Node         as Node
 import           React.View.Port          (port_)
 import           React.View.Visualization (strValue, visualization_)
+
+
 
 name :: JSString
 name = "node-editor"

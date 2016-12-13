@@ -8,8 +8,8 @@ import qualified React.Flux             as React
 import           Utils.PreludePlus
 
 import           React.Store            (Ref, dt)
-import           React.Store.CodeEditor (CodeEditor, visible)
-import qualified React.Store.CodeEditor as CodeEditor
+import           React.Model.CodeEditor (CodeEditor)
+import qualified React.Model.CodeEditor as CodeEditor
 
 
 name :: JSString

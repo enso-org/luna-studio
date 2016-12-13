@@ -12,8 +12,8 @@ import           Utils.PreludePlus
 
 import qualified Event.UI                as UI
 import           React.Store             (Ref, dispatch, dt)
-import           React.Store.Breadcrumbs (Breadcrumbs)
-import qualified React.Store.Breadcrumbs as B
+import           React.Model.Breadcrumbs (Breadcrumbs)
+import qualified React.Model.Breadcrumbs as B
 
 
 

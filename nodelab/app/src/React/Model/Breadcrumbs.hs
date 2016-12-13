@@ -1,5 +1,5 @@
-module React.Store.Breadcrumbs (
-    module React.Store.Breadcrumbs,
+module React.Model.Breadcrumbs (
+    module React.Model.Breadcrumbs,
     module X,
 ) where
 

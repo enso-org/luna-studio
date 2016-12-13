@@ -1,17 +1,15 @@
 {-# LANGUAGE DeriveAnyClass #-}
 {-# LANGUAGE TypeFamilies   #-}
 
-module React.Store.App (
-    module React.Store.App,
-    module X
+module React.Model.App (
+    module React.Model.App,
 ) where
 
-import           React.Event.App         as X
-import           React.Store.Breadcrumbs (Breadcrumbs)
-import           React.Store.CodeEditor  (CodeEditor)
-import           React.Store.NodeEditor  (NodeEditor)
+import           React.Model.Breadcrumbs (Breadcrumbs)
+import           React.Model.CodeEditor  (CodeEditor)
+import           React.Model.NodeEditor  (NodeEditor)
 import           React.Store.Ref         (Ref)
-import           React.Store.Searcher    (Searcher)
+import           React.Model.Searcher    (Searcher)
 import           Utils.PreludePlus
 
 

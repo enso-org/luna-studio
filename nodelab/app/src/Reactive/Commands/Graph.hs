@@ -20,9 +20,9 @@ import           Utils.Vector                        (Vector2 (Vector2), lengthS
 
 import           React.Store                         (Ref, WRef, ref, widget)
 import qualified React.Store                         as Store
-import           React.Store.Node                    (Node)
-import qualified React.Store.Node                    as Node
-import qualified React.Store.NodeEditor              as NodeEditor
+import           React.Model.Node                    (Node)
+import qualified React.Model.Node                    as Node
+import qualified React.Model.NodeEditor              as NodeEditor
 
 import qualified Object.Widget.Connection            as ConnectionModel
 import qualified Object.Widget.Node                  as Model

@@ -22,16 +22,16 @@ import qualified Empire.API.Graph.Collaboration as Collaboration
 import qualified Event.Event                    as Event
 import           React.Store                    (Ref)
 import qualified React.Store                    as Store
-import           React.Store.App                (App)
-import qualified React.Store.App                as App
-import           React.Store.Breadcrumbs        (Breadcrumbs)
-import           React.Store.CodeEditor         (CodeEditor)
-import           React.Store.Connection         (Connection)
-import           React.Store.Node               (Node)
-import           React.Store.NodeEditor         (NodeEditor)
-import qualified React.Store.NodeEditor         as NodeEditor
-import           React.Store.Searcher           (Searcher)
-import           React.Store.SelectionBox       (SelectionBox)
+import           React.Model.App                (App)
+import qualified React.Model.App                as App
+import           React.Model.Breadcrumbs        (Breadcrumbs)
+import           React.Model.CodeEditor         (CodeEditor)
+import           React.Model.Connection         (Connection)
+import           React.Model.Node               (Node)
+import           React.Model.NodeEditor         (NodeEditor)
+import qualified React.Model.NodeEditor         as NodeEditor
+import           React.Model.Searcher           (Searcher)
+import           React.Model.SelectionBox       (SelectionBox)
 import qualified Reactive.State.Camera          as Camera
 import qualified Reactive.State.Collaboration   as Collaboration
 import qualified Reactive.State.Connect         as Connect

@@ -13,7 +13,7 @@ import           React.Flux
 import qualified React.Flux           as React
 
 import           React.Store          (Ref)
-import           React.Store.Node     (Node)
+import           React.Model.Node     (Node)
 
 
 showF :: Float -> String

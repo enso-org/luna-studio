@@ -7,7 +7,7 @@ import           Utils.PreludePlus
 
 import qualified Batch.Workspace           as Workspace
 import qualified React.Store               as Store
-import qualified React.Store.NodeEditor    as NodeEditor
+import qualified React.Model.NodeEditor    as NodeEditor
 import           Reactive.Commands.Command (Command)
 import           Reactive.State.Global     (State)
 import qualified Reactive.State.Global     as Global

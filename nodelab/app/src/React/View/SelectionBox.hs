@@ -8,7 +8,7 @@ import           Utils.PreludePlus
 import           Utils.Vector             (Vector2 (Vector2), x, y)
 
 import           React.Store              (Ref, dt)
-import           React.Store.SelectionBox (SelectionBox, end, start, visible)
+import           React.Model.SelectionBox (SelectionBox, end, start, visible)
 
 
 

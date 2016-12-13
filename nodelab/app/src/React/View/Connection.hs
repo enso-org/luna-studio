@@ -8,8 +8,8 @@ import           Utils.PreludePlus
 import qualified Event.UI               as UI
 import           React.Store            (Ref, dt)
 import qualified React.Store            as Store
-import           React.Store.Connection (Connection)
-import qualified React.Store.Connection as Connection
+import           React.Model.Connection (Connection)
+import qualified React.Model.Connection as Connection
 
 
 name :: JSString

@@ -9,8 +9,8 @@ import qualified React.Flux                     as React
 import qualified Event.UI                       as UI
 import           React.Event.Searcher
 import           React.Store                    (Ref, dispatch, dt)
-import           React.Store.Searcher           (Searcher)
-import qualified React.Store.Searcher           as Searcher
+import           React.Model.Searcher           (Searcher)
+import qualified React.Model.Searcher           as Searcher
 import qualified Text.ScopeSearcher.QueryResult as Result
 import           Utils.PreludePlus
 import           Utils.Vector
