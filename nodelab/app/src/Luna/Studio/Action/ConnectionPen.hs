@@ -1,6 +1,6 @@
 {-# LANGUAGE TupleSections #-}
 
-module Reactive.Plugins.Core.Action.ConnectionPen
+module Luna.Studio.Action.ConnectionPen
     ( toAction
     ) where
 

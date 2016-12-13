@@ -1,4 +1,4 @@
-module Reactive.Plugins.Core.Action.Node where
+module Luna.Studio.Action.Node where
 
 import           React.Flux                        (KeyboardEvent, mouseCtrlKey, mouseMetaKey)
 

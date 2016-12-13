@@ -1,4 +1,4 @@
-module Reactive.Plugins.Core.Action.Connect where
+module Luna.Studio.Action.Connect where
 
 -- TODO[react]: modify this so we don't need angle
 --     ( toAction

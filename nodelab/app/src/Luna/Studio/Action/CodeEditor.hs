@@ -1,4 +1,4 @@
-module Reactive.Plugins.Core.Action.CodeEditor where
+module Luna.Studio.Action.CodeEditor where
 
 import           Event.Event                  (Event (UI))
 import           Event.UI                     (UIEvent (CodeEditorEvent))

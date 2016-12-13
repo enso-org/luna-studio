@@ -1,4 +1,4 @@
-module Reactive.Plugins.Core.Action.Backend.Common
+module Luna.Studio.Action.Backend.Common
     ( whenOk
     , handleResponse
     , doNothing

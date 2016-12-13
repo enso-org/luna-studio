@@ -1,4 +1,4 @@
-module Reactive.Plugins.Core.Action.Clipboard where
+module Luna.Studio.Action.Clipboard where
 
 
 import           Data.Aeson                        (decode, encode)

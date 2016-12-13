@@ -1,4 +1,4 @@
-module Reactive.Plugins.Core.Action.Navigation where
+module Luna.Studio.Action.Navigation where
 
 import qualified Data.HashMap.Strict        as HashMap
 

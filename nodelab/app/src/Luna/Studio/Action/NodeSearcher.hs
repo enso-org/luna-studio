@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module Reactive.Plugins.Core.Action.NodeSearcher where
+module Luna.Studio.Action.NodeSearcher where
 
 import           Luna.Studio.Prelude         hiding (stripPrefix)
 --

@@ -1,6 +1,6 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 
-module Reactive.Plugins.Core.Action.MultiSelection where
+module Luna.Studio.Action.MultiSelection where
 
 import           React.Flux                        (mousePageX, mousePageY)
 import           Luna.Studio.Prelude

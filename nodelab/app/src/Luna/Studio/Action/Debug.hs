@@ -2,7 +2,7 @@
 
 {-# LANGUAGE OverloadedStrings #-}
 
-module Reactive.Plugins.Core.Action.Debug
+module Luna.Studio.Action.Debug
     ( toAction
     , toActionEv
     ) where

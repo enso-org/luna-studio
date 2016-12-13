@@ -1,4 +1,4 @@
-module Reactive.Plugins.Core.Action.Collaboration
+module Luna.Studio.Action.Collaboration
     ( toAction
     ) where
 

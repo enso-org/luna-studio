@@ -18,27 +18,27 @@ import qualified Event.Event                                         as Event
 import qualified Event.Processors.Batch                              as BatchEventProcessor
 import qualified Event.Processors.CustomEvent                        as CustomEventProcessor
 
-import qualified Reactive.Plugins.Core.Action.App                    as App
-import qualified Reactive.Plugins.Core.Action.Backend.Control        as Control
-import qualified Reactive.Plugins.Core.Action.Backend.Graph          as Graph
-import qualified Reactive.Plugins.Core.Action.Backend.ProjectManager as ProjectManager
-import qualified Reactive.Plugins.Core.Action.Breadcrumbs            as Breadcrumbs
-import qualified Reactive.Plugins.Core.Action.Camera                 as Camera
-import qualified Reactive.Plugins.Core.Action.Clipboard              as Clipboard
-import qualified Reactive.Plugins.Core.Action.CodeEditor             as CodeEditor
-import qualified Reactive.Plugins.Core.Action.Collaboration          as Collaboration
-import qualified Reactive.Plugins.Core.Action.Connect                as Connect
-import qualified Reactive.Plugins.Core.Action.ConnectionPen          as ConnectionPen
-import qualified Reactive.Plugins.Core.Action.Debug                  as Debug
-import qualified Reactive.Plugins.Core.Action.Drag                   as Drag
-import qualified Reactive.Plugins.Core.Action.MultiSelection         as MultiSelection
-import qualified Reactive.Plugins.Core.Action.Navigation             as Navigation
-import qualified Reactive.Plugins.Core.Action.Node                   as Node
-import qualified Reactive.Plugins.Core.Action.NodeSearcher           as NodeSearcher
-import qualified Reactive.Plugins.Core.Action.Sandbox                as Sandbox
-import qualified Reactive.Plugins.Core.Action.Searcher               as Searcher
-import qualified Reactive.Plugins.Core.Action.Tutorial               as Tutorial
-import qualified Reactive.Plugins.Core.Action.Widget                 as Widget
+import qualified Luna.Studio.Action.App                    as App
+import qualified Luna.Studio.Action.Backend.Control        as Control
+import qualified Luna.Studio.Action.Backend.Graph          as Graph
+import qualified Luna.Studio.Action.Backend.ProjectManager as ProjectManager
+import qualified Luna.Studio.Action.Breadcrumbs            as Breadcrumbs
+import qualified Luna.Studio.Action.Camera                 as Camera
+import qualified Luna.Studio.Action.Clipboard              as Clipboard
+import qualified Luna.Studio.Action.CodeEditor             as CodeEditor
+import qualified Luna.Studio.Action.Collaboration          as Collaboration
+import qualified Luna.Studio.Action.Connect                as Connect
+import qualified Luna.Studio.Action.ConnectionPen          as ConnectionPen
+import qualified Luna.Studio.Action.Debug                  as Debug
+import qualified Luna.Studio.Action.Drag                   as Drag
+import qualified Luna.Studio.Action.MultiSelection         as MultiSelection
+import qualified Luna.Studio.Action.Navigation             as Navigation
+import qualified Luna.Studio.Action.Node                   as Node
+import qualified Luna.Studio.Action.NodeSearcher           as NodeSearcher
+import qualified Luna.Studio.Action.Sandbox                as Sandbox
+import qualified Luna.Studio.Action.Searcher               as Searcher
+import qualified Luna.Studio.Action.Tutorial               as Tutorial
+import qualified Luna.Studio.Action.Widget                 as Widget
 
 import           Luna.Studio.Commands.Command                           (Command, execCommand)
 import           Luna.Studio.State.Global                               (State)

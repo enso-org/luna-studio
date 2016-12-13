@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module Reactive.Plugins.Core.Action.Widget where
+module Luna.Studio.Action.Widget where
 
 -- TODO[react]: Find out if we need this
 --     ( toAction

@@ -1,5 +1,5 @@
 {-# LANGUAGE NamedFieldPuns #-}
-module Reactive.Plugins.Core.Action.Camera
+module Luna.Studio.Action.Camera
     ( toAction
     ) where
 

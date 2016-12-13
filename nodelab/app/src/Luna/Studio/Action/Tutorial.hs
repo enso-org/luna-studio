@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module Reactive.Plugins.Core.Action.Tutorial where
+module Luna.Studio.Action.Tutorial where
 
 import           Control.Monad.Trans.Maybe         (runMaybeT)
 import qualified Data.Text.Lazy                    as Text

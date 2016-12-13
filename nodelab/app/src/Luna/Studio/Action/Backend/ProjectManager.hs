@@ -1,4 +1,4 @@
-module Reactive.Plugins.Core.Action.Backend.ProjectManager
+module Luna.Studio.Action.Backend.ProjectManager
     ( toAction
     ) where
 
@@ -23,7 +23,7 @@ import           JS.DownloadFile                             (downloadFile)
 import qualified Luna.Studio.Commands.Batch                     as BatchCmd (importProject)
 import           Luna.Studio.Commands.Command                   (Command, performIO)
 import           Luna.Studio.Commands.ProjectManager            (loadGraph, loadProject)
-import           Reactive.Plugins.Core.Action.Backend.Common (handleResponse)
+import           Luna.Studio.Action.Backend.Common (handleResponse)
 import           Luna.Studio.State.Global                       (State)
 import qualified Luna.Studio.State.Global                       as Global
 

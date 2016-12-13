@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module Reactive.Plugins.Core.Action.Searcher where
+module Luna.Studio.Action.Searcher where
 
 import           React.Flux                 (KeyboardEvent)
 import           Luna.Studio.Prelude

@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module Reactive.Plugins.Core.Action.Sandbox where
+module Luna.Studio.Action.Sandbox where
 
 import           Luna.Studio.Prelude
 import           Luna.Studio.Data.Vector

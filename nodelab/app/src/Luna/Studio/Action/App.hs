@@ -1,4 +1,4 @@
-module Reactive.Plugins.Core.Action.App
+module Luna.Studio.Action.App
     ( toAction
     ) where
 

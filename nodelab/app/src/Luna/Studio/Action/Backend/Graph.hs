@@ -1,4 +1,4 @@
-module Reactive.Plugins.Core.Action.Backend.Graph
+module Luna.Studio.Action.Backend.Graph
     ( toAction
     ) where
 
@@ -40,7 +40,7 @@ import           Luna.Studio.Commands.Node.Remove               (localRemoveNode
 import           Luna.Studio.Commands.Node.Update               (updateNode, updateNodeProfilingData, updateNodeValue)
 import           Luna.Studio.Commands.ProjectManager            (setCurrentBreadcrumb)
 import           Luna.Studio.Commands.UUID                      (isOwnRequest)
-import           Reactive.Plugins.Core.Action.Backend.Common (doNothing, handleResponse)
+import           Luna.Studio.Action.Backend.Common (doNothing, handleResponse)
 import           Luna.Studio.State.Global                       (State)
 import qualified Luna.Studio.State.Global                       as Global
 

@@ -1,4 +1,4 @@
-module Reactive.Plugins.Core.Action.Breadcrumbs where
+module Luna.Studio.Action.Breadcrumbs where
 
 import           Event.Event                      (Event (UI))
 import           Event.UI                         (UIEvent (BreadcrumbsEvent))

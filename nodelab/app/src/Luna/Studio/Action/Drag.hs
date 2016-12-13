@@ -1,6 +1,6 @@
 {-# LANGUAGE MultiWayIf    #-}
 {-# LANGUAGE TupleSections #-}
-module Reactive.Plugins.Core.Action.Drag
+module Luna.Studio.Action.Drag
     ( toAction
     ) where
 
