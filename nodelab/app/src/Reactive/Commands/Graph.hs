@@ -30,9 +30,9 @@ import qualified Object.Widget.Port                  as PortModel
 
 import           Reactive.Commands.Command           (Command)
 import           Reactive.Commands.Node.Ports.Colors (vtToColor)
-import           Reactive.State.Global               (State)
-import qualified Reactive.State.Global               as Global
-import qualified Reactive.State.Graph                as Graph
+import           Luna.Studio.State.Global               (State)
+import qualified Luna.Studio.State.Global               as Global
+import qualified Luna.Studio.State.Graph                as Graph
 import           UI.Instances                        ()
 
 import           Empire.API.Data.Connection          (ConnectionId)

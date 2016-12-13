@@ -1,4 +1,4 @@
-module Reactive.State.MultiSelection where
+module Luna.Studio.State.MultiSelection where
 
 
 import           Data.Aeson        (ToJSON)

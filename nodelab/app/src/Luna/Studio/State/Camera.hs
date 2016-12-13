@@ -1,4 +1,4 @@
-module Reactive.State.Camera where
+module Luna.Studio.State.Camera where
 
 import           Data.Aeson                (ToJSON)
 import           Reactive.Commands.Command (Command)

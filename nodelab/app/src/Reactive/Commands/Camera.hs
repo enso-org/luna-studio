@@ -26,10 +26,10 @@ import qualified Event.Mouse               as Mouse
 import qualified JS.Camera                 as JS
 import           Reactive.Commands.Command (Command, performIO)
 -- import           Reactive.Commands.UILayout as UILayout --TODO[react] remove
-import           Reactive.State.Camera     (DragHistory (..))
-import qualified Reactive.State.Camera     as Camera
-import qualified Reactive.State.Global     as Global
-import qualified Reactive.State.Graph      as Graph
+import           Luna.Studio.State.Camera     (DragHistory (..))
+import qualified Luna.Studio.State.Camera     as Camera
+import qualified Luna.Studio.State.Global     as Global
+import qualified Luna.Studio.State.Graph      as Graph
 
 
 minCamFactor, maxCamFactor, dragZoomSpeed, wheelZoomSpeed, panStep, zoomFactorStep :: Double

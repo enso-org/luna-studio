@@ -9,7 +9,7 @@ import           Object.Widget                (WidgetId, ResizableWidget, resize
 import qualified Object.Widget.Group          as Model
 import           Reactive.Commands.Command    (Command)
 import qualified Reactive.Commands.UIRegistry as UICmd
-import qualified Reactive.State.UIRegistry    as UIRegistry
+import qualified Luna.Studio.State.UIRegistry    as UIRegistry
 
 import           UI.Generic                   (defaultResize)
 

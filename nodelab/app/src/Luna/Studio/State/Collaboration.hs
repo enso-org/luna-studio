@@ -1,4 +1,4 @@
-module Reactive.State.Collaboration where
+module Luna.Studio.State.Collaboration where
 
 import           Data.Aeson                     (ToJSON)
 import           Data.DateTime                  (DateTime)

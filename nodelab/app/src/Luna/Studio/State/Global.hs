@@ -1,6 +1,6 @@
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
-module Reactive.State.Global where
+module Luna.Studio.State.Global where
 
 import           Data.Word                      (Word8)
 import           Luna.Studio.Prelude
@@ -32,14 +32,14 @@ import           React.Model.NodeEditor         (NodeEditor)
 import qualified React.Model.NodeEditor         as NodeEditor
 import           React.Model.Searcher           (Searcher)
 import           React.Model.SelectionBox       (SelectionBox)
-import qualified Reactive.State.Camera          as Camera
-import qualified Reactive.State.Collaboration   as Collaboration
-import qualified Reactive.State.Connect         as Connect
-import qualified Reactive.State.ConnectionPen   as ConnectionPen
-import qualified Reactive.State.Drag            as Drag
-import qualified Reactive.State.Graph           as Graph
-import qualified Reactive.State.MultiSelection  as MultiSelection
-import qualified Reactive.State.UIRegistry      as UIRegistry
+import qualified Luna.Studio.State.Camera          as Camera
+import qualified Luna.Studio.State.Collaboration   as Collaboration
+import qualified Luna.Studio.State.Connect         as Connect
+import qualified Luna.Studio.State.ConnectionPen   as ConnectionPen
+import qualified Luna.Studio.State.Drag            as Drag
+import qualified Luna.Studio.State.Graph           as Graph
+import qualified Luna.Studio.State.MultiSelection  as MultiSelection
+import qualified Luna.Studio.State.UIRegistry      as UIRegistry
 
 
 

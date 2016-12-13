@@ -12,7 +12,7 @@ import           Luna.Studio.Prelude
 
 import           Reactive.Commands.Command (Command, performIO)
 import           Reactive.Commands.UUID    (isOwnRequest, unregisterRequest)
-import           Reactive.State.Global     (State)
+import           Luna.Studio.State.Global     (State)
 
 import qualified Empire.API.Response       as Response
 import qualified Empire.API.Topic          as Topic

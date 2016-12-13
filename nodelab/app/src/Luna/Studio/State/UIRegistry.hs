@@ -2,7 +2,7 @@
 {-# LANGUAGE OverloadedStrings    #-}
 {-# LANGUAGE UndecidableInstances #-}
 
-module Reactive.State.UIRegistry
+module Luna.Studio.State.UIRegistry
     ( Object.Widget.State
     , Object.Widget.WidgetMap
     , dragState

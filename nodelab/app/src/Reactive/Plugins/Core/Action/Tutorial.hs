@@ -25,8 +25,8 @@ import qualified Object.Widget.Node                as UINode
 import           React.Store                       (widget)
 import           Reactive.Commands.Command         (Command, performIO)
 import           Reactive.Commands.Graph.Selection (selectedNodes)
-import qualified Reactive.State.Global             as Global
-import qualified Reactive.State.Graph              as Graph
+import qualified Luna.Studio.State.Global             as Global
+import qualified Luna.Studio.State.Graph              as Graph
 
 import           JS.Tutorial                       (closeOnboarding, showStep)
 

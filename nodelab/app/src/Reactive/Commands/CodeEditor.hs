@@ -12,8 +12,8 @@ import qualified React.Store               as Store
 import qualified React.Model.CodeEditor    as CodeEditor
 import qualified Reactive.Commands.Batch   as BatchCmd
 import           Reactive.Commands.Command (Command)
-import           Reactive.State.Global     (State)
-import qualified Reactive.State.Global     as Global
+import           Luna.Studio.State.Global     (State)
+import qualified Luna.Studio.State.Global     as Global
 
 
 

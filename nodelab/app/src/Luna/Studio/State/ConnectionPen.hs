@@ -1,4 +1,4 @@
-module Reactive.State.ConnectionPen where
+module Luna.Studio.State.ConnectionPen where
 
 
 import           Data.Aeson               (ToJSON)

@@ -26,9 +26,9 @@ import           Reactive.Commands.Batch                  (cancelCollaborativeTo
 import           Reactive.Commands.Command                (Command)
 import           Reactive.Commands.Graph                  (allNodes, allNodes')
 import           Reactive.Commands.Graph.SelectionHistory
-import           Reactive.State.Global                    (State, inRegistry)
-import qualified Reactive.State.Global                    as Global
-import qualified Reactive.State.UIRegistry                as UIRegistry
+import           Luna.Studio.State.Global                    (State, inRegistry)
+import qualified Luna.Studio.State.Global                    as Global
+import qualified Luna.Studio.State.UIRegistry                as UIRegistry
 
 
 

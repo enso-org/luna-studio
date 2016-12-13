@@ -19,8 +19,8 @@ import qualified Event.Mouse               as Mouse
 import           Event.Widget              (Payload)
 import           Object.UITypes
 import           Reactive.Commands.Command (Command)
-import           Reactive.State.Camera     (Camera)
-import qualified Reactive.State.Camera     as Camera
+import           Luna.Studio.State.Camera     (Camera)
+import qualified Luna.Studio.State.Camera     as Camera
 import           Luna.Studio.Data.CtxDynamic
 import           Luna.Studio.Prelude         hiding (children, (.=))
 import           Luna.Studio.Data.Vector              (Vector2 (Vector2))

@@ -11,8 +11,8 @@ import           Object.Widget.Choice             (Choice (..))
 import           Object.Widget.Choice.RadioButton (RadioButton (..))
 
 import           Reactive.Commands.Command        (Command)
-import           Reactive.State.Global            (inRegistry)
-import           Reactive.State.UIRegistry        (addHandler)
+import           Luna.Studio.State.Global            (inRegistry)
+import           Luna.Studio.State.UIRegistry        (addHandler)
 
 import           UI.Command.Group                 as Group
 import           UI.Generic                       (defaultResize)
@@ -29,7 +29,7 @@ import qualified Object.Widget.Choice             as Choice
 import qualified Object.Widget.Choice.RadioButton as RadioButton
 import qualified Object.Widget.Group              as Group
 import qualified Reactive.Commands.UIRegistry     as UICmd
-import qualified Reactive.State.Global            as Global
+import qualified Luna.Studio.State.Global            as Global
 import qualified UI.Handlers.Choice.RadioButton   as RadioButton
 
 

@@ -12,9 +12,9 @@ import           Reactive.Commands.Command         (Command)
 import           Reactive.Commands.Graph.Selection (selectAll, toggleSelect, unselectAll)
 import qualified Reactive.Commands.Node            as Node
 import           Reactive.Commands.Node.Remove     as Node
-import           Reactive.State.Global             (State)
-import qualified Reactive.State.Global             as Global
-import qualified Reactive.State.Graph              as Graph
+import           Luna.Studio.State.Global             (State)
+import qualified Luna.Studio.State.Global             as Global
+import qualified Luna.Studio.State.Graph              as Graph
 import           Luna.Studio.Prelude
 
 

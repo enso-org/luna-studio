@@ -19,11 +19,11 @@ import           React.Model.SelectionBox          (SelectionBox (SelectionBox))
 import qualified React.Model.SelectionBox          as SelectionBox
 import           Reactive.Commands.Command         (Command)
 import           Reactive.Commands.Graph.Selection (focusSelectedNode, modifySelectionHistory, selectNodes, selectedNodes, unselectAll)
-import           Reactive.State.Global             (State)
-import qualified Reactive.State.Global             as Global
-import qualified Reactive.State.Graph              as Graph
-import           Reactive.State.MultiSelection     (DragHistory (..))
-import qualified Reactive.State.MultiSelection     as MultiSelection
+import           Luna.Studio.State.Global             (State)
+import qualified Luna.Studio.State.Global             as Global
+import qualified Luna.Studio.State.Graph              as Graph
+import           Luna.Studio.State.MultiSelection     (DragHistory (..))
+import qualified Luna.Studio.State.MultiSelection     as MultiSelection
 
 
 

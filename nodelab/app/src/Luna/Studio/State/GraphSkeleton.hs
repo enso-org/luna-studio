@@ -1,4 +1,4 @@
-module Reactive.State.GraphSkeleton where
+module Luna.Studio.State.GraphSkeleton where
 
 import           Luna.Studio.Prelude
 
@@ -8,7 +8,7 @@ import qualified Data.Set                   as Set
 import           Empire.API.Data.Connection (Connection)
 import           Empire.API.Data.Node       (Node, NodeId)
 import qualified Empire.API.Data.Node       as Node
-import           Reactive.State.Graph       (State, connectionsToNodes, getNodes)
+import           Luna.Studio.State.Graph       (State, connectionsToNodes, getNodes)
 
 
 data GraphSkeleton = GraphSkeleton { _nodesList       :: [Node]

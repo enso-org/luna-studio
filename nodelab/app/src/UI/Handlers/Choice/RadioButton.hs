@@ -8,8 +8,8 @@ import           Object.Widget                    (ClickHandler, UIHandlers, Wid
 
 import           Reactive.Commands.Command        (Command)
 import qualified Reactive.Commands.UIRegistry     as UICmd
-import           Reactive.State.Global            (inRegistry)
-import qualified Reactive.State.Global            as Global
+import           Luna.Studio.State.Global            (inRegistry)
+import qualified Luna.Studio.State.Global            as Global
 
 import           UI.Widget.Toggle                 ()
 

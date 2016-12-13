@@ -13,7 +13,7 @@ import qualified Reactive.Commands.Batch           as BatchCmd
 import           Reactive.Commands.Command         (Command)
 import           Reactive.Commands.Graph.Selection (selectedNodes)
 import           Reactive.Commands.Node.Snap
-import           Reactive.State.Global             (State)
+import           Luna.Studio.State.Global             (State)
 
 
 

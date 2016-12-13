@@ -20,13 +20,13 @@ import           Event.Event
 import           Event.Keyboard                     hiding (Event)
 import qualified Event.Mouse                        as Mouse
 
-import           Reactive.State.Global              (State)
-import qualified Reactive.State.Global              as Global
-import qualified Reactive.State.UIRegistry          as UIRegistry
+import           Luna.Studio.State.Global              (State)
+import qualified Luna.Studio.State.Global              as Global
+import qualified Luna.Studio.State.UIRegistry          as UIRegistry
 
 import           Reactive.Commands.Command          (Command, performIO)
 import           Reactive.Commands.Graph.Disconnect (disconnectAll)
-import qualified Reactive.State.ConnectionPen       as ConnectionPen
+import qualified Luna.Studio.State.ConnectionPen       as ConnectionPen
 
 import qualified Reactive.Commands.Batch            as BatchCmd
 

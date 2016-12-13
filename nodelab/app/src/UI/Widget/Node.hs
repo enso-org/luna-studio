@@ -14,7 +14,7 @@ import           GHCJS.Marshal.Pure           (PFromJSVal (..), PToJSVal (..))
 import           Object.UITypes
 import           Object.Widget
 import qualified Object.Widget.Node           as Model
-import           Reactive.State.Collaboration (unColorId)
+import           Luna.Studio.State.Collaboration (unColorId)
 
 import           UI.Generic                   (whenChanged)
 import qualified UI.Registry                  as UIR

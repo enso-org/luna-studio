@@ -23,12 +23,12 @@ module Reactive.Plugins.Core.Action.Connect where
 -- import qualified Reactive.Commands.Graph         as Graph
 -- import           Reactive.Commands.Graph.Connect (batchConnectNodes)
 -- import qualified Reactive.Commands.UIRegistry    as UICmd
--- import qualified Reactive.State.Camera           as Camera
--- import           Reactive.State.Connect          (Connecting (Connecting))
--- import qualified Reactive.State.Connect          as Connect
--- import           Reactive.State.Global           (State, inRegistry)
--- import qualified Reactive.State.Global           as Global
--- import qualified Reactive.State.UIRegistry       as UIRegistry
+-- import qualified Luna.Studio.State.Camera           as Camera
+-- import           Luna.Studio.State.Connect          (Connecting (Connecting))
+-- import qualified Luna.Studio.State.Connect          as Connect
+-- import           Luna.Studio.State.Global           (State, inRegistry)
+-- import qualified Luna.Studio.State.Global           as Global
+-- import qualified Luna.Studio.State.UIRegistry       as UIRegistry
 --
 -- import           Empire.API.Data.Port            (InPort (Self))
 -- import           Empire.API.Data.PortRef         (AnyPortRef (..), InPortRef (..), OutPortRef (..))

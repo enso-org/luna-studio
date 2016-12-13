@@ -14,9 +14,9 @@ import           Reactive.Commands.Command       (Command)
 import           Reactive.Commands.Graph         (updateNodeZOrder)
 import           Reactive.Commands.Graph.Connect (localConnectNodes)
 import           Reactive.Commands.Node.Create   (registerNode)
-import           Reactive.State.Global           (State)
-import qualified Reactive.State.Global           as Global
-import qualified Reactive.State.Graph            as Graph
+import           Luna.Studio.State.Global           (State)
+import qualified Luna.Studio.State.Global           as Global
+import qualified Luna.Studio.State.Graph            as Graph
 
 
 

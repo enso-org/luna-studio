@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module Reactive.State.Graph
+module Luna.Studio.State.Graph
     ( State(..)
     , addConnection
     , addNode

@@ -12,9 +12,9 @@ import qualified React.Store                as Store
 import qualified React.Model.NodeEditor     as NodeEditor
 import qualified Reactive.Commands.Batch    as BatchCmd
 import           Reactive.Commands.Command  (Command)
-import           Reactive.State.Global      (State)
-import qualified Reactive.State.Global      as Global
-import qualified Reactive.State.Graph       as Graph
+import           Luna.Studio.State.Global      (State)
+import qualified Luna.Studio.State.Global      as Global
+import qualified Luna.Studio.State.Graph       as Graph
 
 
 

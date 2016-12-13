@@ -5,7 +5,7 @@ import           Event.UI                     (UIEvent (CodeEditorEvent))
 import qualified React.Event.CodeEditor       as CodeEditor
 import qualified Reactive.Commands.CodeEditor as CodeEditor
 import           Reactive.Commands.Command    (Command)
-import           Reactive.State.Global        (State)
+import           Luna.Studio.State.Global        (State)
 import           Luna.Studio.Prelude
 
 

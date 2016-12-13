@@ -23,8 +23,8 @@ import           UI.Instances ()
 
 import           Reactive.Commands.Command       (Command)
 import qualified Reactive.Commands.UIRegistry    as UICmd
-import           Reactive.State.UIRegistry       (addHandler)
-import qualified Reactive.State.UIRegistry       as UIRegistry
+import           Luna.Studio.State.UIRegistry       (addHandler)
+import qualified Luna.Studio.State.UIRegistry       as UIRegistry
 
 import qualified Reactive.Commands.Batch         as BatchCmd
 

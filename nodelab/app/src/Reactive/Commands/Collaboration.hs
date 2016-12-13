@@ -8,10 +8,10 @@ import           Luna.Studio.Prelude
 
 import           Empire.API.Graph.Collaboration (ClientId)
 import           Reactive.Commands.Command    (Command)
-import           Reactive.State.Collaboration (ColorId)
-import qualified Reactive.State.Collaboration as Collaboration
-import           Reactive.State.Global        (State)
-import qualified Reactive.State.Global        as Global
+import           Luna.Studio.State.Collaboration (ColorId)
+import qualified Luna.Studio.State.Collaboration as Collaboration
+import           Luna.Studio.State.Global        (State)
+import qualified Luna.Studio.State.Global        as Global
 
 updateClient :: ClientId -> Command State ColorId
 updateClient clId = do

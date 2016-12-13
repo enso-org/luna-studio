@@ -29,7 +29,7 @@ module UI.Handlers where
 -- import           Object.Widget.Slider.Discrete    (DiscreteSlider)
 -- import           Object.Widget.TextBox            (TextBox)
 -- import           Object.Widget.Toggle             (Toggle)
--- import           Reactive.State.Global            (State)
+-- import           Luna.Studio.State.Global            (State)
 --
 -- import           UI.Widget                        ()
 -- import           UI.Widget.Button                 ()

@@ -10,8 +10,8 @@ import           Object.Widget                (ClickHandler, DblClickHandler, UI
                                                mouseOut, mouseOver, mousePressed)
 import           Reactive.Commands.Command    (Command, performIO)
 import qualified Reactive.Commands.UIRegistry as UICmd
-import           Reactive.State.Global        (inRegistry)
-import qualified Reactive.State.Global        as Global
+import           Luna.Studio.State.Global        (inRegistry)
+import qualified Luna.Studio.State.Global        as Global
 
 import           JS.Cursor                    (Cursor (Normal, Pointer), setCursor)
 import           UI.Widget.Toggle             ()

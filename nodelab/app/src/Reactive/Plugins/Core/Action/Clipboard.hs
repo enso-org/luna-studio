@@ -22,11 +22,11 @@ import           Reactive.Commands.Command         (Command, performIO)
 import           Reactive.Commands.Graph.Selection (selectedNodes)
 import           Reactive.Commands.Node.Remove     (removeSelectedNodes)
 import           Reactive.Commands.Node.Snap       (snapCoord)
-import qualified Reactive.State.Camera             as Camera
-import           Reactive.State.Global             (State)
-import qualified Reactive.State.Global             as Global
-import qualified Reactive.State.Graph              as Graph
-import           Reactive.State.GraphSkeleton      as GraphSkeleton
+import qualified Luna.Studio.State.Camera             as Camera
+import           Luna.Studio.State.Global             (State)
+import qualified Luna.Studio.State.Global             as Global
+import qualified Luna.Studio.State.Graph              as Graph
+import           Luna.Studio.State.GraphSkeleton      as GraphSkeleton
 import           Luna.Studio.Prelude
 import           Luna.Studio.Data.Vector                      (Vector2 (..))
 

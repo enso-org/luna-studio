@@ -18,9 +18,9 @@ import qualified Object.Widget.Slider.Discrete as Model
 import qualified Object.Widget.TextBox         as TextBox
 import           Reactive.Commands.Command     (Command, performIO)
 import qualified Reactive.Commands.UIRegistry  as UICmd
-import           Reactive.State.Global         (inRegistry)
-import qualified Reactive.State.Global         as Global
-import           Reactive.State.UIRegistry     (addHandler)
+import           Luna.Studio.State.Global         (inRegistry)
+import qualified Luna.Studio.State.Global         as Global
+import           Luna.Studio.State.UIRegistry     (addHandler)
 
 import           UI.Generic                    (startDrag)
 import           UI.Handlers.Generic           (ValueChangedHandler (..), triggerValueChanged)

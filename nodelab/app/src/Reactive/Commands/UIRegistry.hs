@@ -40,8 +40,8 @@ import qualified JS.Cursor                 as Cursor
 import           Object.Widget             (CompositeWidget, objectId, createWidget, fromWidgetId, WidgetId, widget, widgetSize, widgetPosition, resizeWidget, updateWidget)
 import qualified Object.Widget as Widget
 import           Reactive.Commands.Command (Command, performIO)
-import qualified Reactive.State.Global     as Global
-import qualified Reactive.State.UIRegistry as UIRegistry
+import qualified Luna.Studio.State.Global     as Global
+import qualified Luna.Studio.State.UIRegistry as UIRegistry
 import qualified UI.Generic                as UI
 
 -- TODO: extract duplicated code in two functions beneath

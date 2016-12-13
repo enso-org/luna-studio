@@ -20,9 +20,9 @@ import           Reactive.Commands.Collaboration   (updateClient)
 import           Reactive.Commands.Command         (Command)
 import           Reactive.Commands.Graph           (allNodes)
 import           Reactive.Commands.Graph.Selection (selectedNodes)
-import           Reactive.State.Collaboration      (ColorId)
-import           Reactive.State.Global             (State)
-import qualified Reactive.State.Global             as Global
+import           Luna.Studio.State.Collaboration      (ColorId)
+import           Luna.Studio.State.Global             (State)
+import qualified Luna.Studio.State.Global             as Global
 
 import qualified Object.Widget.Node                as NodeModel
 import           React.Store                       (widget)

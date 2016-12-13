@@ -10,7 +10,7 @@ import           Data.UUID.Types.Internal  (buildFromBytes)
 import           Luna.Studio.Prelude
 
 import           Reactive.Commands.Command (Command)
-import           Reactive.State.Global     (State, nextRandom, pendingRequests)
+import           Luna.Studio.State.Global     (State, nextRandom, pendingRequests)
 
 getUUID :: Command State UUID
 getUUID = do

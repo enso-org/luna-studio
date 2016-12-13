@@ -7,8 +7,8 @@ import           Luna.Studio.Prelude          hiding (group, set)
 import           Empire.API.Data.Breadcrumb (Breadcrumb (..), BreadcrumbItem, Named)
 import qualified React.Store                as Store
 import           Reactive.Commands.Command  (Command)
-import           Reactive.State.Global      (State)
-import qualified Reactive.State.Global      as Global
+import           Luna.Studio.State.Global      (State)
+import qualified Luna.Studio.State.Global      as Global
 
 
 

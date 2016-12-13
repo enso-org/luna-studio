@@ -9,8 +9,8 @@ import qualified Luna.Studio.Batch.Workspace           as Workspace
 import qualified React.Store               as Store
 import qualified React.Model.NodeEditor    as NodeEditor
 import           Reactive.Commands.Command (Command)
-import           Reactive.State.Global     (State)
-import qualified Reactive.State.Global     as Global
+import           Luna.Studio.State.Global     (State)
+import qualified Luna.Studio.State.Global     as Global
 
 
 

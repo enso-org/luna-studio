@@ -24,9 +24,9 @@ import qualified React.Model.Node           as Node
 import           Reactive.Commands.Batch    (cancelCollaborativeTouch, collaborativeTouch)
 import           Reactive.Commands.Command  (Command)
 import           Reactive.Commands.Graph    (allNodes')
-import           Reactive.State.Global      (State)
-import qualified Reactive.State.Global      as Global
-import qualified Reactive.State.Graph       as Graph
+import           Luna.Studio.State.Global      (State)
+import qualified Luna.Studio.State.Global      as Global
+import qualified Luna.Studio.State.Graph       as Graph
 
 
 

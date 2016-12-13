@@ -21,12 +21,12 @@ module UI.Handlers.Connection where
 -- import qualified Reactive.Commands.Graph            as Graph
 -- import           Reactive.Commands.Graph.Disconnect (disconnectAll)
 -- import qualified Reactive.Commands.UIRegistry       as UICmd
--- import           Reactive.State.Connect             (Connecting (Connecting))
--- import qualified Reactive.State.Connect             as Connect
--- import           Reactive.State.Global              (inRegistry)
--- import qualified Reactive.State.Global              as Global
--- import qualified Reactive.State.Graph               as Graph
--- import qualified Reactive.State.UIRegistry          as UIRegistry
+-- import           Luna.Studio.State.Connect             (Connecting (Connecting))
+-- import qualified Luna.Studio.State.Connect             as Connect
+-- import           Luna.Studio.State.Global              (inRegistry)
+-- import qualified Luna.Studio.State.Global              as Global
+-- import qualified Luna.Studio.State.Graph               as Graph
+-- import qualified Luna.Studio.State.UIRegistry          as UIRegistry
 -- import           UI.Generic                         (abortDrag, startDrag)
 --
 --

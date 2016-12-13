@@ -23,12 +23,12 @@ import qualified Reactive.Commands.Batch           as BatchCmd
 import           Reactive.Commands.Command         (Command)
 import           Reactive.Commands.Graph.Selection (selectNodes, selectedNodes)
 import           Reactive.Commands.Node.Snap       (snap)
-import qualified Reactive.State.Camera             as Camera
-import           Reactive.State.Drag               (DragHistory (..))
-import qualified Reactive.State.Drag               as Drag
-import           Reactive.State.Global             (State)
-import qualified Reactive.State.Global             as Global
-import qualified Reactive.State.Graph              as Graph
+import qualified Luna.Studio.State.Camera             as Camera
+import           Luna.Studio.State.Drag               (DragHistory (..))
+import qualified Luna.Studio.State.Drag               as Drag
+import           Luna.Studio.State.Global             (State)
+import qualified Luna.Studio.State.Global             as Global
+import qualified Luna.Studio.State.Graph              as Graph
 import           Luna.Studio.Prelude
 import           Luna.Studio.Data.Vector
 

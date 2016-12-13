@@ -8,7 +8,7 @@ import           Luna.Studio.Data.Vector
 import           Object.Widget                (WidgetId, widgetPosition, widgetSize)
 import           Reactive.Commands.Command    (Command)
 import qualified Reactive.Commands.UIRegistry as UICmd
-import qualified Reactive.State.UIRegistry    as UIRegistry
+import qualified Luna.Studio.State.UIRegistry    as UIRegistry
 
 import           Style.Types                  (Padding (..))
 

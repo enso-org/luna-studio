@@ -16,7 +16,7 @@ import           Event.Event               (Event (..))
 
 import           Control.Monad.State       hiding (state)
 import           Reactive.Commands.Command (Command, performIO)
-import qualified Reactive.State.Global     as Global
+import qualified Luna.Studio.State.Global     as Global
 
 import           Data.Aeson                (toJSON)
 import           GHCJS.Marshal             (toJSVal)

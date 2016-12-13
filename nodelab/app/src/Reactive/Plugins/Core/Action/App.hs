@@ -10,7 +10,7 @@ import           Event.UI                  (UIEvent (AppEvent))
 import qualified React.Event.App           as App
 import           React.Flux                (mousePageX, mousePageY)
 import           Reactive.Commands.Command (Command)
-import qualified Reactive.State.Global     as Global
+import qualified Luna.Studio.State.Global     as Global
 
 
 

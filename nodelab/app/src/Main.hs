@@ -43,8 +43,8 @@ import qualified React.Store                    as Store
 import qualified React.View.App                 as App
 import qualified Reactive.Plugins.Core.Network  as CoreNetwork
 import qualified Reactive.Plugins.Loader.Loader as Loader
-import           Reactive.State.Global          (initialState)
-import qualified Reactive.State.Global          as Global
+import           Luna.Studio.State.Global          (initialState)
+import qualified Luna.Studio.State.Global          as Global
 
 
 

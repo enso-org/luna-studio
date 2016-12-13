@@ -24,8 +24,8 @@ import qualified Reactive.Commands.Batch                     as BatchCmd (import
 import           Reactive.Commands.Command                   (Command, performIO)
 import           Reactive.Commands.ProjectManager            (loadGraph, loadProject)
 import           Reactive.Plugins.Core.Action.Backend.Common (handleResponse)
-import           Reactive.State.Global                       (State)
-import qualified Reactive.State.Global                       as Global
+import           Luna.Studio.State.Global                       (State)
+import qualified Luna.Studio.State.Global                       as Global
 
 toAction :: Event -> Maybe (Command State ())
 toAction (Batch (Batch.ProjectList response)) = Just $ handleResponse response $ \_ (ListProjects.Result projects) -> do

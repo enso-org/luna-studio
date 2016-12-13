@@ -10,8 +10,8 @@ import qualified Event.Mouse               as Mouse
 import           Object.Widget             (DragState (..), IsDisplayObject, WidgetFile, WidgetId, children, objectId, widget,
                                             widgetPosition)
 import           Reactive.Commands.Command (Command, performIO)
-import qualified Reactive.State.Global     as Global
-import qualified Reactive.State.UIRegistry as UIRegistry
+import qualified Luna.Studio.State.Global     as Global
+import qualified Luna.Studio.State.UIRegistry as UIRegistry
 import qualified UI.Registry               as UIR
 import           UI.Widget                 (GenericWidget (..), UIWidget)
 

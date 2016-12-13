@@ -8,10 +8,10 @@ import           Luna.Studio.Data.Vector
 import           Event.Event                     (Event (..))
 import qualified Event.Keyboard                  as Keyboard
 import           Reactive.Commands.Command       (Command, performIO)
-import qualified Reactive.State.Global           as Global
+import qualified Luna.Studio.State.Global           as Global
 
 import qualified Reactive.Commands.UIRegistry    as UICmd
-import           Reactive.State.UIRegistry       (addHandler, sceneGraphId)
+import           Luna.Studio.State.UIRegistry       (addHandler, sceneGraphId)
 
 import qualified Object.Widget.CodeEditor        as CodeEditor
 import qualified Object.Widget.Graphics          as G
@@ -28,7 +28,7 @@ import qualified Reactive.Commands.Batch         as BatchCmd
 
 import           Object.LunaValue
 import           Object.LunaValue.Instances      ()
-import           Reactive.State.Global           (inRegistry)
+import           Luna.Studio.State.Global           (inRegistry)
 import           UI.Handlers.Generic             (ValueChangedHandler (..))
 import           UI.Layout                       as Layout
 

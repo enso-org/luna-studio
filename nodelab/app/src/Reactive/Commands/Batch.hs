@@ -8,7 +8,7 @@ import qualified Luna.Studio.Batch.Connector.Commands      as BatchCmd
 
 import           Reactive.Commands.Command    (Command, performIO)
 import           Reactive.Commands.UUID       (registerRequest)
-import           Reactive.State.Global        (State, clientId, workspace)
+import           Luna.Studio.State.Global        (State, clientId, workspace)
 
 import           Empire.API.Data.Connection   (Connection)
 import qualified Empire.API.Data.DefaultValue as DefaultValue

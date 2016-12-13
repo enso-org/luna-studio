@@ -30,10 +30,10 @@ import           Reactive.Commands.Batch                  (cancelCollaborativeTo
 import           Reactive.Commands.Command                (Command)
 import           Reactive.Commands.Graph.SelectionHistory (dropSelectionHistory, modifySelectionHistory)
 import qualified Reactive.Commands.UIRegistry             as UICmd
-import           Reactive.State.Global                    (inRegistry)
-import qualified Reactive.State.Global                    as Global
-import           Reactive.State.UIRegistry                (addHandler)
-import qualified Reactive.State.UIRegistry                as UIRegistry
+import           Luna.Studio.State.Global                    (inRegistry)
+import qualified Luna.Studio.State.Global                    as Global
+import           Luna.Studio.State.UIRegistry                (addHandler)
+import qualified Luna.Studio.State.UIRegistry                as UIRegistry
 
 import qualified Style.Node                               as Style
 import           UI.Generic                               (whenChanged)

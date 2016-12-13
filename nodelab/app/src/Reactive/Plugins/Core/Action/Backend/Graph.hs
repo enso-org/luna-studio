@@ -41,8 +41,8 @@ import           Reactive.Commands.Node.Update               (updateNode, update
 import           Reactive.Commands.ProjectManager            (setCurrentBreadcrumb)
 import           Reactive.Commands.UUID                      (isOwnRequest)
 import           Reactive.Plugins.Core.Action.Backend.Common (doNothing, handleResponse)
-import           Reactive.State.Global                       (State)
-import qualified Reactive.State.Global                       as Global
+import           Luna.Studio.State.Global                       (State)
+import qualified Luna.Studio.State.Global                       as Global
 
 
 

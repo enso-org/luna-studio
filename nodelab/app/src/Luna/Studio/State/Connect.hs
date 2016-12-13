@@ -1,4 +1,4 @@
-module Reactive.State.Connect where
+module Luna.Studio.State.Connect where
 
 
 import           Data.Aeson               (ToJSON)

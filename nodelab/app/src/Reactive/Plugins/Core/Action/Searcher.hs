@@ -12,7 +12,7 @@ import qualified React.Event.App            as App
 import qualified React.Event.Searcher       as Searcher
 import           Reactive.Commands.Command  (Command)
 import qualified Reactive.Commands.Searcher as Searcher
-import           Reactive.State.Global      (State)
+import           Luna.Studio.State.Global      (State)
 
 
 

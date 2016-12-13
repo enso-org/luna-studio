@@ -14,7 +14,7 @@ import           Reactive.Commands.Command (Command)
 -- import           Reactive.Commands.Node.Register            (registerNode)
 -- import           Reactive.Commands.Node.Update              (updateExpression)
 -- import qualified Reactive.Commands.NodeSearcher             as NS
-import qualified Reactive.State.Global     as Global
+import qualified Luna.Studio.State.Global     as Global
 --
 --TODO[react]
 toAction :: Event -> Maybe (Command Global.State ())

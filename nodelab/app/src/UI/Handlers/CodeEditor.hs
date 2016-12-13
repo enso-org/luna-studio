@@ -10,8 +10,8 @@ import           Object.Widget                (UIHandlers, WidgetId, fromWidgetI
 import qualified Object.Widget.CodeEditor     as Model
 import           Reactive.Commands.Command    (Command)
 import qualified Reactive.Commands.UIRegistry as UICmd
-import           Reactive.State.Global        (inRegistry_)
-import qualified Reactive.State.Global        as Global
+import           Luna.Studio.State.Global        (inRegistry_)
+import qualified Luna.Studio.State.Global        as Global
 
 import           UI.Handlers.Generic          (triggerValueChanged)
 import           UI.Widget.CodeEditor         ()

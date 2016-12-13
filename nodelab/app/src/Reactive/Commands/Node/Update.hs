@@ -21,9 +21,9 @@ import qualified Reactive.Commands.Batch           as BatchCmd
 import           Reactive.Commands.Command         (Command)
 import           Reactive.Commands.Node.Create     (addNode)
 
-import           Reactive.State.Global             (State)
-import qualified Reactive.State.Global             as Global
-import qualified Reactive.State.Graph              as Graph
+import           Luna.Studio.State.Global             (State)
+import qualified Luna.Studio.State.Global             as Global
+import qualified Luna.Studio.State.Graph              as Graph
 
 import           Empire.API.Data.Node              (Node, NodeId)
 import qualified Empire.API.Data.Node              as Node

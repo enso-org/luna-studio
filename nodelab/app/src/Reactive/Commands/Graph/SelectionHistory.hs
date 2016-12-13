@@ -6,8 +6,8 @@ import           Luna.Studio.Prelude
 import           Empire.API.Data.Node      (NodeId)
 
 import           Reactive.Commands.Command (Command)
-import           Reactive.State.Global     (State)
-import qualified Reactive.State.Global     as Global
+import           Luna.Studio.State.Global     (State)
+import qualified Luna.Studio.State.Global     as Global
 
 
 historyMaxLength = 10

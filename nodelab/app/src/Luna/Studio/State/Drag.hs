@@ -1,4 +1,4 @@
-module Reactive.State.Drag where
+module Luna.Studio.State.Drag where
 
 import           Data.Aeson               (ToJSON)
 import           Data.Map                 (Map)

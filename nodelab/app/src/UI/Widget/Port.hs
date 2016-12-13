@@ -12,9 +12,9 @@ module UI.Widget.Port where
 --
 -- import           Reactive.Commands.Command    (Command)
 -- import qualified Reactive.Commands.UIRegistry as UICmd
--- import           Reactive.State.Global        (inRegistry)
--- import qualified Reactive.State.Global        as Global
--- import qualified Reactive.State.UIRegistry    as UIRegistry (State)
+-- import           Luna.Studio.State.Global        (inRegistry)
+-- import qualified Luna.Studio.State.Global        as Global
+-- import qualified Luna.Studio.State.UIRegistry    as UIRegistry (State)
 --
 -- import qualified UI.Handlers.Node             as Node
 -- import qualified UI.Registry                  as UIR

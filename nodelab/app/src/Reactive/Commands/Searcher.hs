@@ -23,10 +23,10 @@ import           Reactive.Commands.Command         (Command, performIO)
 import           Reactive.Commands.Graph.Selection (selectedNodes)
 import           Reactive.Commands.Node.Register   (registerNode)
 import qualified Reactive.Commands.Node.Update     as Node
-import qualified Reactive.State.Camera             as Camera
-import           Reactive.State.Global             (State)
-import qualified Reactive.State.Global             as Global
-import qualified Reactive.State.Graph              as Graph
+import qualified Luna.Studio.State.Camera             as Camera
+import           Luna.Studio.State.Global             (State)
+import qualified Luna.Studio.State.Global             as Global
+import qualified Luna.Studio.State.Graph              as Graph
 
 import           Empire.API.Data.Node              (NodeId)
 import qualified Empire.API.Data.Node              as NodeAPI

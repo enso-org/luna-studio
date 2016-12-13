@@ -24,7 +24,7 @@ import qualified Reactive.Commands.CodeEditor     as CodeEditor
 import           Reactive.Commands.Command        (Command, performIO)
 import           Reactive.Commands.NodeSearcher   as NS
 import           Reactive.Commands.ProjectManager (loadProject)
-import qualified Reactive.State.Global            as Global
+import qualified Luna.Studio.State.Global            as Global
 import           Text.ScopeSearcher.Item          (Item (..))
 import qualified Text.ScopeSearcher.Scope         as Scope
 

@@ -5,7 +5,7 @@ import           Event.UI                         (UIEvent (BreadcrumbsEvent))
 import qualified React.Event.Breadcrumbs          as Breadcrumbs
 import           Reactive.Commands.Command        (Command)
 import qualified Reactive.Commands.ProjectManager as ProjectManager
-import           Reactive.State.Global            (State)
+import           Luna.Studio.State.Global            (State)
 import           Luna.Studio.Prelude
 
 

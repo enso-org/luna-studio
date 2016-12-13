@@ -24,9 +24,9 @@ import           Reactive.Commands.Graph.Selection (selectedNodes)
 import           Reactive.Commands.Node.NodeMeta   (modifyNodeMeta)
 import           Reactive.Commands.ProjectManager  as ProjectManager
 import qualified Reactive.Commands.Searcher        as Searcher
-import           Reactive.State.Global             (State)
-import qualified Reactive.State.Global             as Global
-import qualified Reactive.State.Graph              as Graph
+import           Luna.Studio.State.Global             (State)
+import qualified Luna.Studio.State.Global             as Global
+import qualified Luna.Studio.State.Graph              as Graph
 import           Luna.Studio.Prelude
 
 

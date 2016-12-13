@@ -18,10 +18,10 @@ module Reactive.Plugins.Core.Action.Widget where
 -- import qualified Object.Widget             as Widget
 -- import           Object.Widget.Port        ()
 -- import           Reactive.Commands.Command (Command)
--- import           Reactive.State.Camera     (Camera)
--- import qualified Reactive.State.Camera     as Camera
--- import qualified Reactive.State.Global     as Global
--- import qualified Reactive.State.UIRegistry as UIRegistry
+-- import           Luna.Studio.State.Camera     (Camera)
+-- import qualified Luna.Studio.State.Camera     as Camera
+-- import qualified Luna.Studio.State.Global     as Global
+-- import qualified Luna.Studio.State.UIRegistry as UIRegistry
 -- import           UI.Handlers               (widgetHandlers)
 --
 --

@@ -16,8 +16,8 @@ import qualified React.Store               as Store
 
 import qualified Reactive.Commands.Batch   as BatchCmd
 import           Reactive.Commands.Command (Command)
-import qualified Reactive.State.Global     as Global
-import qualified Reactive.State.Graph      as Graph
+import qualified Luna.Studio.State.Global     as Global
+import qualified Luna.Studio.State.Graph      as Graph
 
 
 

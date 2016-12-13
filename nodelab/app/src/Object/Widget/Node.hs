@@ -22,7 +22,7 @@ import           Object.UITypes
 import           Object.Widget
 import qualified Object.Widget.Port                  as PortModel
 import           Reactive.Commands.Node.Ports.Colors (colorPort)
-import           Reactive.State.Collaboration        (ColorId)
+import           Luna.Studio.State.Collaboration        (ColorId)
 
 
 

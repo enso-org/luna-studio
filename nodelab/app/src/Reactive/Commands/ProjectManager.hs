@@ -13,8 +13,8 @@ import qualified Reactive.Commands.Batch          as BatchCmd
 import qualified Reactive.Commands.Breadcrumbs    as Breadcrumbs
 import           Reactive.Commands.Command        (Command, performIO)
 import           Reactive.Commands.Graph.Unrender (unrender)
-import           Reactive.State.Global            (State)
-import qualified Reactive.State.Global            as Global
+import           Luna.Studio.State.Global            (State)
+import qualified Luna.Studio.State.Global            as Global
 
 import           Empire.API.Data.Breadcrumb       (Breadcrumb (..), BreadcrumbItem, Named)
 import           Empire.API.Data.GraphLocation    (GraphLocation (..))

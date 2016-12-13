@@ -41,8 +41,8 @@ import qualified Reactive.Plugins.Core.Action.Tutorial               as Tutorial
 import qualified Reactive.Plugins.Core.Action.Widget                 as Widget
 
 import           Reactive.Commands.Command                           (Command, execCommand)
-import           Reactive.State.Global                               (State)
-import qualified Reactive.State.Global                               as Global
+import           Luna.Studio.State.Global                               (State)
+import qualified Luna.Studio.State.Global                               as Global
 
 import qualified JS.Debug
 import qualified JS.UI                                               as UI
