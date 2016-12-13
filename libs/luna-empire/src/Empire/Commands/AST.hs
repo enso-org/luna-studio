@@ -35,7 +35,6 @@ import           Empire.Utils.TextResult           (nodeValueToText)
 
 import           Luna.IR.Expr.Term.Uni
 import           Luna.IR (match)
-import qualified Luna.IR.Function as IR (Arg, arg)
 import qualified Luna.IR as IR
 
 import           Luna.Pass.Evaluation.Interpreter.Layer (InterpreterData (..))
@@ -266,11 +265,13 @@ isLambda node = runASTOp $ do
       Lam{} -> return True
       _     -> return False
 
-isLambdaInput :: ASTOp m => NodeRef -> NodeRef -> m Bool
-isLambdaInput node lambda = do
-    match lambda $ \case
-        Lam _args _ -> (node `elem`) <$> ASTBuilder.unpackLamArguments node
-        _ -> throwM $ NotLambdaException lambda
+isTrivialLambda :: NodeRef -> Command AST Bool
+isTrivialLambda node = runASTOp $ match node $ \case
+    Lam _args out -> do
+        args <- ASTBuilder.unpackLamArguments node
+        out' <- IR.source out
+        return $ out' `elem` args
+    _ -> throwM $ NotLambdaException node
 
 getLambdaOutputRef :: NodeRef -> Command AST NodeRef
 getLambdaOutputRef lambda = runASTOp $ do

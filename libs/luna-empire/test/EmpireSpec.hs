@@ -14,6 +14,9 @@ import qualified Empire.API.Data.Port          as Port
 import           Empire.API.Data.PortRef       (InPortRef (..), OutPortRef (..))
 import           Empire.API.Data.TypeRep       (TypeRep(TCons))
 import           Empire.API.Data.ValueType     (ValueType(TypeIdent))
+import           Empire.ASTOp                  (runASTOp)
+import qualified Empire.ASTOps.Parse           as Parser
+import qualified Empire.Commands.AST           as AST (isTrivialLambda)
 import qualified Empire.Commands.Graph         as Graph (addNode, connect, getGraph, getNodes,
                                                          getConnections, removeNodes, withGraph)
 import qualified Empire.Commands.GraphBuilder  as GraphBuilder
@@ -246,4 +249,10 @@ spec = around withChannels $ do
             res <- evalEmp env $ do
                 Graph.addNode top u1 "def foo" def
                 Graph.withGraph top $ GraphBuilder.rhsIsLambda u1
+            withResult res $ \a -> a `shouldBe` True
+        it "`def foo` is trivial - has output connected to input" $ \env -> do
+            res <- evalEmp env $ do
+                Graph.withGraph top $ zoom ast $ do
+                   (_, ref) <- runASTOp $ Parser.parseExpr "def foo"
+                   AST.isTrivialLambda ref
             withResult res $ \a -> a `shouldBe` True

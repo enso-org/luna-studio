@@ -95,7 +95,7 @@ addNodeNoTC loc uuid expr meta = do
     if parsedIsLambda then do
         lambdaUUID <- liftIO $ UUID.nextRandom
         lambdaOutput <- zoom Graph.ast $ AST.getLambdaOutputRef parsedRef
-        outputIsOneOfTheInputs <- zoom Graph.ast $ runASTOp $ lambdaOutput `AST.isLambdaInput` parsedRef
+        outputIsOneOfTheInputs <- zoom Graph.ast $ AST.isTrivialLambda parsedRef
         when (not outputIsOneOfTheInputs) $ Graph.nodeMapping . at lambdaUUID ?= Graph.AnonymousNode lambdaOutput
         Graph.breadcrumbHierarchy %= addWithLeafs (node ^. Node.nodeId)
             (if outputIsOneOfTheInputs then [] else [lambdaUUID])
