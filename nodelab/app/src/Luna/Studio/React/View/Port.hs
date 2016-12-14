@@ -12,6 +12,7 @@ import           Object.Widget.Port   (Port (..))
 import           React.Flux
 import qualified React.Flux           as React
 
+import           Luna.Studio.Utils.Color      (color')
 import           Luna.Studio.React.Store          (Ref)
 import           Luna.Studio.React.Model.Node     (Node)
 
@@ -43,7 +44,7 @@ drawPort_ (Port _ (OutPortId All)            _ _) numOfPorts = drawPortIO_ 1 num
 -- TODO[Jan Kłosowski]: Count this properly without (+1)
 drawPortIO_ :: Int -> Int -> Float -> String -> String -> ReactElementM ViewEventHandler ()
 drawPortIO_ number numOfPorts mod1 mod2 mod3 = do
-    let color = "#8ABEB7"
+    let color = color' 5 --TODO[Piotr Młodawski]: get color from model
         r1    = 20 :: Float
         line  = 3 :: Float
         gap   = 0.15 :: Float
