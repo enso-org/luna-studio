@@ -61,26 +61,20 @@ import           ZMQ.Bus.EndPoint                  (BusEndPoints)
 import qualified ZMQ.Bus.Trans                     as Bus
 import           ZMQ.Bus.RPC.RPC                   as RPC
 
--- data Action = AddNode.Request | AddSubgraph.Request deriving (Show)
+
 data UndoMessage where
     UndoMessage :: (Binary undoReq, Binary redoReq) => undoReq -> redoReq -> UndoMessage
--- deriving instance Show UndoMessage => Show (UndoMessage)
 
--- data UndoMessage = UndoMessage { _undoAction :: RemoveNodes.Request --undo.node.add/redo.node.add
---                                , _redoAction :: AddSubgraph.Request
---                                } deriving (Show)
+data History = History { _undo :: [UndoMessage]
+                       , _redo :: [UndoMessage]
+                         }
 
-data UndoList = UndoList { _undo :: [UndoMessage]
-                         , _redo :: [UndoMessage]
-                         } --deriving (Show)
+newtype UndoT t a = UndoT (StateT History (ReaderT BusEndPoints t) a)
+    deriving (Applicative, Functor, Monad, MonadState History, MonadReader BusEndPoints, MonadIO, MonadThrow)
 
-newtype UndoT t a = UndoT (StateT UndoList t a) deriving (Applicative, Functor, Monad, MonadTrans, MonadState UndoList, MonadIO)
--- instance MonadTrans UndoT where
---     lift = UndoT
--- type Undo a = forall m. (MonadIO m, MonadState UndoList m) =>  m a
+data Action = ActUndo | ActRedo
 
-makeLenses ''UndoList
-makeLenses ''UndoMessage
+makeLenses ''History
 
 type Handler = ByteString -> UndoT IO ()
 
