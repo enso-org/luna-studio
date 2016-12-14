@@ -152,11 +152,19 @@ collectedMessage topic content = do
         doNothing _ = return ()
     void $ handler content
 
-sendMessage :: Binary a => String -> a -> Bus.Bus ()
-sendMessage topic bin = do
-    void $ Bus.send Flag.Enable $ Message.Message topic $ toStrict $ Bin.encode bin
 
--- sendMessage :: UndoMessage -> Bus.Bus ()
--- sendMessage (UndoMessage topic msg) = do
---         void $ Bus.send Flag.Enable $ Message.Message topic msg
--- sendMessage _ = return ()
+takeEndPointsAndRun :: Bus.Bus () -> UndoT IO ()
+takeEndPointsAndRun action = do
+    endPoints <- ask
+    void $ Bus.runBus endPoints action
+
+sendUndo :: UndoMessage -> Bus.Bus ()
+sendUndo msg = sendMessage ActUndo "undo" msg
+
+sendRedo :: UndoMessage -> Bus.Bus ()
+sendRedo msg = sendMessage ActRedo "redo" msg
+
+sendMessage :: Action -> String -> UndoMessage -> Bus.Bus ()
+sendMessage action topic msg = void $ Bus.send Flag.Enable $ Message.Message topic $ case action of
+    ActUndo -> case msg of UndoMessage u _ -> toStrict $ Bin.encode u
+    ActRedo -> case msg of UndoMessage _ r -> toStrict $ Bin.encode r
