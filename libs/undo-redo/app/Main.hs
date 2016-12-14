@@ -10,7 +10,7 @@ import           Version
 
 import qualified System.Log.Options   as Opt
 import           System.Log.Options (help, long, metavar, short)
-import           Undo                 as Undo
+import qualified Undo                 as Undo
 import qualified ZMQ.Bus.EndPoint     as EP
 import qualified ZMQ.Bus.Config       as Config
 
@@ -33,4 +33,4 @@ run cmd = case cmd of
     Cmd.Version  -> putStrLn Version.fullVersion
     Cmd.Run {} -> do
         endPoints <- EP.clientFromConfig <$> Config.load
-        Undo.runUndo endPoints
+        Undo.runUndo endPoints Undo.empty
