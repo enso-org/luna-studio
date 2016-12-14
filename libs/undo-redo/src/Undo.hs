@@ -80,71 +80,138 @@ type Handler = ByteString -> UndoT IO ()
 
 handlersMap :: Map String Handler
 handlersMap = Map.fromList
-    [  makeHandler handleAddSubgraphUdo
-    -- , makeHandler handleAddNodeUndo
-    -- , makeHandler handleRemoveNodes
+    [ makeHandler handleAddSubgraphUndo
+    , makeHandler handleAddNodeUndo
+    , makeHandler handleRemoveNodesUndo
+    , makeHandler handleUpdateNodeExpressionUndo
+    , makeHandler handleRenameNodeUndo
     ]
 
+type UndoRequests a = (UndoRequest a, RedoRequest a)
 
-makeHandler :: forall a. (Topic.MessageTopic a, Binary a) => (a -> UndoT IO ()) -> (String, Handler)
-makeHandler h = (Topic.topic (undefined :: a), process) where
-   process content = h request where request = decode . fromStrict $ content
+type family UndoRequest t where
+    UndoRequest AddNode.Response              = RemoveNodes.Request
+    UndoRequest AddSubgraph.Response          = RemoveNodes.Request
+    UndoRequest RemoveNodes.Response          = AddSubgraph.Request
+    UndoRequest UpdateNodeExpression.Response = UpdateNodeExpression.Request
+    UndoRequest RenameNode.Response           = RenameNode.Request
 
--- handleAddNodeUndo :: AddNode.Response -> UndoT IO ()
--- handleAddNodeUndo (Response.Response _ (AddNode.Request location nodeType nodeMeta connectTo _) _ res) =
---     case res of
---         Response.Error  err -> return ()
---         Response.Ok node -> do
---             let nodeId  = node ^. Node.nodeId
---                 undoMsg = RemoveNodes.Request location [nodeId]
---                 redoMsg = AddNode.Request location nodeType nodeMeta connectTo $ Just (nodeId)
---             undo %= (UndoMessage undoMsg redoMsg :)
+type family RedoRequest t where
+    RedoRequest AddNode.Response              = AddNode.Request
+    RedoRequest AddSubgraph.Response          = AddSubgraph.Request
+    RedoRequest RemoveNodes.Response          = RemoveNodes.Request
+    RedoRequest UpdateNodeExpression.Response = UpdateNodeExpression.Request
+    RedoRequest RenameNode.Response           = RenameNode.Request
 
-handleAddSubgraphUdo :: AddSubgraph.Response -> UndoT IO ()  --dodac result do pola addsubgraph response bo zwraca request z podmienionym id
-handleAddSubgraphUdo (Response.Response  _ (AddSubgraph.Request location nodes connections) _ _ ) = do
-    let ids = map (^. Node.nodeId) nodes
-        undoMsg = RemoveNodes.Request location ids
-        redoMsg = AddSubgraph.Request location nodes connections
-    undo %= (UndoMessage undoMsg redoMsg :)
 
--- handleRemoveNodesUndo :: RemoveNodes.Response -> UndoT IO ()
--- handleRemoveNodesUndo (Response.Response _ (RemoveNodes.Request location noddesIds) (RemoveNodes.Inverse nodes connections) _)
---
-empty :: UndoList
-empty = UndoList [] []
+makeHandler :: forall response. (Topic.MessageTopic response, Binary response, Binary (UndoRequest response), Binary (RedoRequest response))
+            => (response -> Maybe (UndoRequests response)) -> (String, Handler)
+makeHandler h =
+    let process content = let request = decode . fromStrict $ content
+                          in case h request of
+                              Nothing           -> throwM BusErrorException
+                              Just (r, q) -> handle r q
+    in (Topic.topic (undefined :: response), process)
 
-runUndo :: BusEndPoints -> IO ()
-runUndo endPoints = evalStateT collect Undo.empty
-    where UndoT collect = collectEvents endPoints
+handle :: (Binary a, Binary b) => a -> b -> UndoT IO ()
+handle undoReq redoReq = undo %= (UndoMessage undoReq redoReq :)
 
-collectEvents :: BusEndPoints -> UndoT IO ()
-collectEvents endPoints = do
-    msgFrame <- Bus.runBus endPoints $ Bus.receive'
-    case (join msgFrame) of
-        Right (MessageFrame msg corId senderId lastFrm) -> do
-            let topic = msg ^. Message.topic
-                userId = show senderId
-                content = msg ^. Message.message
-            case topic of
-                "empire.undo" -> f endPoints
-                "empire.redo" -> g endPoints
-                "empire." -> do collectedMessage topic content
+withOk :: Response.Status a -> (a -> Maybe b) -> Maybe b
+withOk (Response.Error _) _ = Nothing
+withOk (Response.Ok a)    f = f a
 
-f :: BusEndPoints -> UndoT IO ()
-f endPoints = do
+handleAddNodeUndo :: AddNode.Response -> Maybe (RemoveNodes.Request, AddNode.Request)
+handleAddNodeUndo (Response.Response _ (AddNode.Request location nodeType nodeMeta connectTo _) _ res) =
+    withOk res $ \node ->
+        let nodeId  = node ^. Node.nodeId
+            undoMsg = RemoveNodes.Request location [nodeId]
+            redoMsg = AddNode.Request location nodeType nodeMeta connectTo $ Just (nodeId)
+        in Just (undoMsg, redoMsg)
+
+handleAddSubgraphUndo :: AddSubgraph.Response -> Maybe (RemoveNodes.Request, AddSubgraph.Request)  --dodac result do pola addsubgraph response bo zwraca request z podmienionym id
+handleAddSubgraphUndo (Response.Response  _ (AddSubgraph.Request location nodes connections) _ res ) =
+    withOk res $ const $
+        let ids = map (^. Node.nodeId) nodes
+            undoMsg = RemoveNodes.Request location ids
+            redoMsg = AddSubgraph.Request location nodes connections
+        in Just (undoMsg, redoMsg)
+
+
+handleRemoveNodesUndo :: RemoveNodes.Response -> Maybe (AddSubgraph.Request, RemoveNodes.Request)
+handleRemoveNodesUndo (Response.Response _ (RemoveNodes.Request location noddesIds) (RemoveNodes.Inverse nodes connections) res) =
+    withOk res $ const $
+        let undoMsg = AddSubgraph.Request location nodes connections
+            redoMsg = RemoveNodes.Request location noddesIds
+        in Just (undoMsg, redoMsg)
+
+handleUpdateNodeExpressionUndo :: UpdateNodeExpression.Response -> Maybe ( UpdateNodeExpression.Request,  UpdateNodeExpression.Request)
+handleUpdateNodeExpressionUndo (Response.Response _ (UpdateNodeExpression.Request location nodeId expression) oldExpr res) =
+    withOk res $ const $
+        let undoMsg = UpdateNodeExpression.Request location nodeId oldExpr
+            redoMsg = UpdateNodeExpression.Request location nodeId expression
+        in Just (undoMsg, redoMsg)
+
+handleRenameNodeUndo :: RenameNode.Response -> Maybe (RenameNode.Request, RenameNode.Request)
+handleRenameNodeUndo (Response.Response _ (RenameNode.Request location nodeId name) namePrev res) =
+    withOk res $ const $
+        let undoMsg = RenameNode.Request location nodeId namePrev
+            redoMsg = RenameNode.Request location nodeId name
+        in Just (undoMsg, redoMsg)
+
+-- handleConnectUndo
+
+-- handleDisconnectUndo :: Disconnect.Response -> Maybe (Connect.Request, Disconnect.Request)
+-- handleDisconnectUndo (Response.Response _ (Disconnect.Request location dst) connections res)
+--     withOk res $ const $
+--         let undoMsg = Connect.Request location
+
+empty :: History
+empty = History [] []
+
+runUndo :: BusEndPoints -> History -> IO ()
+runUndo endPoints state = do
+    let UndoT collect = do
+            msg <- receiveEvent endPoints
+            collectEvents msg
+    runReaderT (evalStateT collect state) endPoints
+
+data BusErrorException = BusErrorException deriving (Show)
+instance Exception BusErrorException
+
+receiveEvent :: (MonadThrow m, MonadIO m) => BusEndPoints -> m MessageFrame
+receiveEvent endPoints = do
+    msgFrame <- Bus.runBus endPoints $ Bus.receive
+    case msgFrame of
+        Left err  -> throwM BusErrorException
+        Right msg -> return msg
+
+collectEvents :: MessageFrame -> UndoT IO ()
+collectEvents (MessageFrame msg corId senderId lastFrm) = do
+    let topic = msg ^. Message.topic
+        userId = show senderId
+        content = msg ^. Message.message
+    case topic of
+        "empire.undo" -> do
+            req <- doUndo
+            takeEndPointsAndRun $ sendUndo req
+        "empire.redo" -> do
+            req <- doRedo
+            takeEndPointsAndRun $ sendRedo req
+        "empire." -> do collectedMessage topic content
+
+doUndo :: UndoT IO UndoMessage
+doUndo = do
     h <- uses undo head
     redo %= (h :)
     undo %= tail
-    let msg = case h of UndoMessage undo _ -> undo
-    void $ Bus.runBus endPoints $ sendMessage "undo" msg
+    return h
 
-g :: BusEndPoints -> UndoT IO ()
-g endPoints = do
+doRedo :: UndoT IO UndoMessage
+doRedo = do
     h <- uses redo head
     undo %= (h :)
     redo %= tail
-    let msg = h ^. redoAction
-    void $ Bus.runBus endPoints $ sendMessage "redo" msg
+    return h
 
 collectedMessage :: String -> ByteString -> UndoT IO ()
 collectedMessage topic content = do
