@@ -69,7 +69,8 @@ node nodeRef = React.defineControllerView
                          , "x"         $= "20"
                          , "y"         $= "65"
                          ] $ elemString $ strValue n
-                     forM_ (n ^. Node.value) visualization_
+                     g_  [ "transform" $= "translate(20,80)"
+                         ] $ forM_ (n ^. Node.value) visualization_
         else
             g_
                 [ onClick       $ \_ m -> dispatch nodeRef $ UI.NodeEvent $ Node.Select m nodeId

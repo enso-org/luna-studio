@@ -55,11 +55,12 @@ openWith :: Maybe NodeId -> Vector2 Int -> Command State ()
 openWith nodeId pos = do
     GA.sendEvent GA.NodeSearcher
     Global.withSearcher $ Store.modifyM_ $ do
-        Searcher.visible  .= True
+        Searcher.input    .= def
+        Searcher.nodeId   .= nodeId
         Searcher.position .= pos
         Searcher.results  .= def
         Searcher.selected .= 0
-        Searcher.nodeId   .= nodeId
+        Searcher.visible  .= True
     liftIO Searcher.focus
 
 close :: Command State ()
