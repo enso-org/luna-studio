@@ -36,25 +36,33 @@ drawPort_ (Port _ (InPortId Self) _ _) _ = let color = "#8ABEB7" in
         , "fill"      $= color
         , "stroke"    $= color
         ] mempty
-drawPort_ (Port _ (InPortId  (Arg i))        _ _) numOfPorts = drawPortIO_ (i+1) numOfPorts   1  "0" "1"
-drawPort_ (Port _ (OutPortId (Projection i)) _ _) numOfPorts = drawPortIO_ (i+1) numOfPorts (-1) "1" "0"
-drawPort_ (Port _ (OutPortId All)            _ _) numOfPorts = drawPortIO_ 1 numOfPorts (-1) "1" "0"
+drawPort_ (Port _ (InPortId  (Arg        i)) _ _) numOfPorts = drawPortIO_ i   numOfPorts   1  "0" "1" False
+drawPort_ (Port _ (OutPortId (Projection i)) _ _) numOfPorts = drawPortIO_ i   numOfPorts (-1) "1" "0" False
+drawPort_ (Port _ (OutPortId  All          ) _ _) numOfPorts = drawPortIO_ def numOfPorts  def def def True  -- FIXME It seems to not target the single port situation.
 
--- TODO[Jan Kłosowski]: Count this properly without (+1)
-drawPortIO_ :: Int -> Int -> Float -> String -> String -> ReactElementM ViewEventHandler ()
-drawPortIO_ number numOfPorts mod1 mod2 mod3 = do
-    let color = "#8ABEB7"
-        r1    = 20 :: Float
-        line  = 3 :: Float
-        gap   = 0.15 :: Float
-        r2   = r1 - line
-        gap' = gap * (r1/r2)
+
+drawPortIO_ :: Int -> Int -> Float -> String -> String -> Bool -> ReactElementM ViewEventHandler ()
+drawPortIO_ _ _ _ _ _ True =
+    let color = "#8ABEB7" in
+    circle_
+        [ "className" $= "port port--o port--o--single"
+        , "stroke"    $= color
+        ] mempty
+
+drawPortIO_ number numOfPorts mod1 mod2 mod3 False = do
+    let color   = "#8ABEB7"
+        r1      = 20 :: Float
+        line    = 3 :: Float
+        gap     = 0.15 :: Float
+        r2      = r1 - line
+        gap'    = gap * (r1/r2)
+        number' = number + 1
 
         t   = pi / fromIntegral numOfPorts
-        t1  = fromIntegral number * t - pi - t + gap/2
-        t2  = fromIntegral number * t - pi - gap/2
-        t1' = fromIntegral number * t - pi - t + gap'/2
-        t2' = fromIntegral number * t - pi - gap'/2
+        t1  = fromIntegral number' * t - pi - t + gap/2
+        t2  = fromIntegral number' * t - pi - gap/2
+        t1' = fromIntegral number' * t - pi - t + gap'/2
+        t2' = fromIntegral number' * t - pi - gap'/2
 
         ax = showF $ r1 * sin(t1 * mod1) + r1
         ay = showF $ r1 * cos(t1 * mod1) + r1
@@ -73,7 +81,7 @@ drawPortIO_ number numOfPorts mod1 mod2 mod3 = do
                               " L" <> ax <> " " <> ay
 
     path_
-        [ "className" $= (fromString $ "port port--i port--i--" <> show number)
+        [ "className" $= (fromString $ "port port--i port--i--" <> show number')
         , "fill"      $= color
         , "stroke"    $= color
         , "d"         $= svgPath
