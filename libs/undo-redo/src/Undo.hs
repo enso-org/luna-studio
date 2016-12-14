@@ -13,42 +13,46 @@
 
 module Undo where
 
-
-import           Control.Concurrent.STM.TChan (writeTChan)
-
-import Control.Monad.State
-import Control.Lens
-import Control.Exception.Base
-import           Control.Monad.STM                (atomically)
+import           Control.Exception                (Exception)
+import           Control.Exception.Safe           (MonadThrow, throwM)
+import           Control.Lens
+import           Control.Monad.Reader
+import           Control.Monad.State
+import           Control.Monad.STM                 (atomically)
 import           Data.ByteString                   (ByteString)
-import           Data.ByteString.Lazy                   (toStrict,fromStrict)
-import Data.Binary (Binary, decode)
-import qualified Data.Binary                  as Bin
+import           Data.ByteString.Lazy              (toStrict,fromStrict)
+import           Data.Binary                       (Binary, decode)
+import qualified Data.Binary                       as Bin
 
-import qualified Data.Map.Strict       as Map
-import           Data.Map.Strict       (Map)
-import Data.Maybe
-import Data.Set hiding (map)
-import Prelude
+import qualified Data.Map.Strict                   as Map
+import           Data.Map.Strict                   (Map)
+import           Data.Maybe
+import           Data.Set                          hiding (map)
+import           Prologue                          hiding (throwM)
 
-import           Empire.API.Data.GraphLocation (GraphLocation)
-import           Empire.API.Data.Graph         (Graph)
-import           Empire.API.Data.Node          (Node, NodeId)
-import qualified Empire.API.Data.Node          as Node
-import           Empire.API.Data.NodeMeta      (NodeMeta)
-import qualified Empire.API.Graph.AddNode      as AddNode
-import qualified Empire.API.Graph.AddSubgraph  as AddSubgraph
-import qualified Empire.API.Graph.RemoveNodes  as RemoveNodes
-import qualified Empire.API.Topic              as Topic
-import           Empire.API.Response           (Response (..))
-import qualified Empire.API.Response           as Response
-import qualified Empire.API.Request            as Request
-import           Empire.API.Request            (Request (..))
-import qualified Empire.API.Topic              as T
-import           Empire.Env                   (Env)
-import qualified Empire.Env                   as Env
-import qualified Empire.Server.Graph           as Graph
-import           Empire.Server.Server          (sendToBus')
+import           Empire.API.Data.GraphLocation     (GraphLocation)
+import           Empire.API.Data.Graph             (Graph)
+import           Empire.API.Data.Node              (Node, NodeId)
+import qualified Empire.API.Data.Node              as Node
+import           Empire.API.Data.NodeMeta          (NodeMeta)
+import qualified Empire.API.Graph.AddNode          as AddNode
+import qualified Empire.API.Graph.AddSubgraph      as AddSubgraph
+import qualified Empire.API.Graph.RemoveNodes      as RemoveNodes
+import qualified Empire.API.Graph.RenameNode       as RenameNode
+import qualified Empire.API.Graph.UpdateNodeExpression as UpdateNodeExpression
+import qualified Empire.API.Topic                  as Topic
+import           Empire.API.Response               (Response (..))
+import qualified Empire.API.Response               as Response
+import qualified Empire.API.Request                as Request
+import           Empire.API.Request                (Request (..))
+import qualified Empire.API.Topic                  as T
+
+
+import           Empire.Env                        (Env)
+import qualified Empire.Env                        as Env
+import qualified Empire.Server.Graph               as Graph
+import           Empire.Server.Server              (sendToBus')
+
 import qualified ZMQ.Bus.Bus                       as Bus
 import qualified ZMQ.Bus.Data.Flag                 as Flag
 import qualified ZMQ.Bus.Data.Message              as Message
