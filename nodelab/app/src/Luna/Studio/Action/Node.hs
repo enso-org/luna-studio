@@ -6,7 +6,6 @@ import           Event.Event                       (Event (UI))
 import qualified Event.Keys                        as Keys
 import           Event.UI                          (UIEvent (AppEvent, NodeEvent))
 import qualified Luna.Studio.React.Event.App                   as App
-import qualified Luna.Studio.React.Model.Node                  as Node
 import qualified Luna.Studio.React.Event.Node                  as Node
 import           Luna.Studio.Commands.Command         (Command)
 import           Luna.Studio.Commands.Graph.Selection (selectAll, toggleSelect, unselectAll)
