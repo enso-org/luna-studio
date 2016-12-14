@@ -2,8 +2,8 @@
 
 module Style.Layout where
 
-import           Utils.PreludePlus
-import           Utils.Vector
+import           Luna.Studio.Prelude
+import           Luna.Studio.Data.Vector
 
 import qualified Object.Widget.Button as Button
 import qualified Object.Widget.Group  as Group
@@ -85,10 +85,9 @@ inputsEdgeStyle = def & Group.background   ?~ Color 0.0 0.0 0.0 0.0
 errorMessageWrapMargin :: Int
 errorMessageWrapMargin = 30
 
-errorMessageWidgetSize, visualizationWidgetSize , dataFrameWidgetSize :: Vector2 Double
+errorMessageWidgetSize, visualizationWidgetSize :: Vector2 Double
 errorMessageWidgetSize  = Vector2 200 200
 visualizationWidgetSize = Vector2 200 200
-dataFrameWidgetSize     = Vector2 400 200
 
 
 gridSize :: Int

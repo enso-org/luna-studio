@@ -1,8 +1,8 @@
 module UI.Handlers.Slider.Discrete where
 
-import           Utils.PreludePlus
+import           Luna.Studio.Prelude
 
-import           Utils.Vector                  (Vector2(..), x, y)
+import           Luna.Studio.Data.Vector                  (Vector2(..), x, y)
 import           Data.HMap.Lazy                (HTMap)
 import qualified Data.Text.Lazy                as Text
 import           Data.Text.Lazy.Read           (signed, decimal)
@@ -16,11 +16,11 @@ import           Object.Widget                 (DblClickHandler, DragEndHandler,
                                                 CompositeWidget, createWidget, updateWidget, ResizableWidget, resizeWidget)
 import qualified Object.Widget.Slider.Discrete as Model
 import qualified Object.Widget.TextBox         as TextBox
-import           Reactive.Commands.Command     (Command, performIO)
-import qualified Reactive.Commands.UIRegistry  as UICmd
-import           Reactive.State.Global         (inRegistry)
-import qualified Reactive.State.Global         as Global
-import           Reactive.State.UIRegistry     (addHandler)
+import           Luna.Studio.Commands.Command     (Command, performIO)
+import qualified Luna.Studio.Commands.UIRegistry  as UICmd
+import           Luna.Studio.State.Global         (inRegistry)
+import qualified Luna.Studio.State.Global         as Global
+import           Luna.Studio.State.UIRegistry     (addHandler)
 
 import           UI.Generic                    (startDrag)
 import           UI.Handlers.Generic           (ValueChangedHandler (..), triggerValueChanged)

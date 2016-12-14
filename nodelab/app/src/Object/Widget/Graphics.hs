@@ -1,8 +1,8 @@
 module Object.Widget.Graphics where
 
 import           Data.Aeson        (ToJSON)
-import           Utils.PreludePlus hiding (Item)
-import           Utils.Vector
+import           Luna.Studio.Prelude hiding (Item)
+import           Luna.Studio.Data.Vector
 
 import           Object.Widget
 import           Object.Widget.Label (TextAlignment)

@@ -29,22 +29,22 @@ import           Data.DateTime                  (getCurrentTime)
 import qualified Data.Set                       as Set
 import qualified React.Flux                     as React
 import           System.Random                  (newStdGen)
-import           Utils.PreludePlus
+import           Luna.Studio.Prelude
 
-import qualified Batch.Workspace                as Workspace
-import qualified BatchConnector.Commands        as BatchCmd
+import qualified Luna.Studio.Batch.Workspace                as Workspace
+import qualified Luna.Studio.Batch.Connector.Commands        as BatchCmd
 import           Control.Concurrent.MVar
 import qualified JS.GraphLocation               as GraphLocation
 import           JS.Tutorial                    (shouldRunTutorial)
 import           JS.Tutorial                    (showStep)
 import           JS.UUID                        (generateUUID)
 import           JS.WebSocket                   (WebSocket)
-import qualified React.Store                    as Store
-import qualified React.View.App                 as App
+import qualified Luna.Studio.React.Store                    as Store
+import qualified Luna.Studio.React.View.App                 as App
 import qualified Reactive.Plugins.Core.Network  as CoreNetwork
 import qualified Reactive.Plugins.Loader.Loader as Loader
-import           Reactive.State.Global          (initialState)
-import qualified Reactive.State.Global          as Global
+import           Luna.Studio.State.Global          (initialState)
+import qualified Luna.Studio.State.Global          as Global
 
 
 

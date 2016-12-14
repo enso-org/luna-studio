@@ -1,6 +1,6 @@
 module Style.Button where
 
-import           Utils.PreludePlus
+import           Luna.Studio.Prelude
 
 import           Object.Widget.Label (TextAlignment (..))
 import           Style.Types

@@ -2,8 +2,8 @@ module Object.Widget.Label where
 
 import           Data.Aeson        (ToJSON)
 import           Object.Widget
-import           Utils.PreludePlus hiding (Either (..))
-import           Utils.Vector
+import           Luna.Studio.Prelude hiding (Either (..))
+import           Luna.Studio.Data.Vector
 
 data TextAlignment = Left | Center | Right deriving (Eq, Show, Generic)
 data FontStyle     = SansSerif | Monospace deriving (Eq, Show, Generic)

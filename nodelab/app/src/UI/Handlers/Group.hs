@@ -1,15 +1,15 @@
 module UI.Handlers.Group where
 
-import           Utils.PreludePlus
+import           Luna.Studio.Prelude
 
-import           Utils.Vector
+import           Luna.Studio.Data.Vector
 import           Data.HMap.Lazy               (TypeKey (..))
 
 import           Object.Widget                (WidgetId, ResizableWidget, resizeWidget)
 import qualified Object.Widget.Group          as Model
-import           Reactive.Commands.Command    (Command)
-import qualified Reactive.Commands.UIRegistry as UICmd
-import qualified Reactive.State.UIRegistry    as UIRegistry
+import           Luna.Studio.Commands.Command    (Command)
+import qualified Luna.Studio.Commands.UIRegistry as UICmd
+import qualified Luna.Studio.State.UIRegistry    as UIRegistry
 
 import           UI.Generic                   (defaultResize)
 

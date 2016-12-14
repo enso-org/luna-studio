@@ -2,15 +2,15 @@
 
 module UI.Handlers.Generic where
 
-import           Utils.PreludePlus
+import           Luna.Studio.Prelude
 import           Data.HMap.Lazy               (HTMap, TypeKey (..))
 
 import           Object.Widget                (WidgetId)
-import           Reactive.Commands.Command    (Command)
-import qualified Reactive.Commands.UIRegistry as UICmd
-import           Reactive.State.Global        (inRegistry)
-import qualified Reactive.State.Global        as Global
-import           Reactive.State.UIRegistry    (addHandler)
+import           Luna.Studio.Commands.Command    (Command)
+import qualified Luna.Studio.Commands.UIRegistry as UICmd
+import           Luna.Studio.State.Global        (inRegistry)
+import qualified Luna.Studio.State.Global        as Global
+import           Luna.Studio.State.UIRegistry    (addHandler)
 
 newtype ValueChangedHandler a = ValueChangedHandler (a -> WidgetId -> Command Global.State ())
 

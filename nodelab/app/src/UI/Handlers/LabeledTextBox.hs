@@ -1,19 +1,19 @@
 module UI.Handlers.LabeledTextBox where
 
-import           Utils.PreludePlus
+import           Luna.Studio.Prelude
 
 import           Data.HMap.Lazy               (HTMap)
-import           Utils.Vector
+import           Luna.Studio.Data.Vector
 
 import           Object.Widget                (CompositeWidget, DblClickHandler, ResizableWidget, UIHandlers, WidgetId, createWidget,
                                                dblClick, resizeWidget, updateWidget)
 import qualified Object.Widget.LabeledTextBox as Model
 import qualified Object.Widget.TextBox        as TextBox
-import           Reactive.Commands.Command    (Command)
-import qualified Reactive.Commands.UIRegistry as UICmd
-import           Reactive.State.Global        (inRegistry)
-import qualified Reactive.State.Global        as Global
-import           Reactive.State.UIRegistry    (addHandler)
+import           Luna.Studio.Commands.Command    (Command)
+import qualified Luna.Studio.Commands.UIRegistry as UICmd
+import           Luna.Studio.State.Global        (inRegistry)
+import qualified Luna.Studio.State.Global        as Global
+import           Luna.Studio.State.UIRegistry    (addHandler)
 
 import           UI.Generic                   (defaultResize)
 import           UI.Widget.LabeledTextBox     ()

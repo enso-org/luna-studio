@@ -2,7 +2,7 @@ module Event.CustomEvent where
 
 
 import           Data.Aeson        (ToJSON, toJSON)
-import           Utils.PreludePlus
+import           Luna.Studio.Prelude
 
 
 data Event = RawEvent String JSVal deriving (Generic)

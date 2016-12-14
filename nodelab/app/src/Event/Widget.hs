@@ -1,7 +1,7 @@
 module Event.Widget where
 
 import           Data.Aeson               (FromJSON, ToJSON)
-import           Utils.PreludePlus
+import           Luna.Studio.Prelude
 
 import           Empire.API.JSONInstances ()
 import           Object.UITypes            (WidgetId)

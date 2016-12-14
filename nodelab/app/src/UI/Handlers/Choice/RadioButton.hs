@@ -1,15 +1,15 @@
 module UI.Handlers.Choice.RadioButton where
 
-import           Utils.PreludePlus
+import           Luna.Studio.Prelude
 
 import           Data.HMap.Lazy                   (TypeKey (..))
 
 import           Object.Widget                    (ClickHandler, UIHandlers, WidgetId, click)
 
-import           Reactive.Commands.Command        (Command)
-import qualified Reactive.Commands.UIRegistry     as UICmd
-import           Reactive.State.Global            (inRegistry)
-import qualified Reactive.State.Global            as Global
+import           Luna.Studio.Commands.Command        (Command)
+import qualified Luna.Studio.Commands.UIRegistry     as UICmd
+import           Luna.Studio.State.Global            (inRegistry)
+import qualified Luna.Studio.State.Global            as Global
 
 import           UI.Widget.Toggle                 ()
 

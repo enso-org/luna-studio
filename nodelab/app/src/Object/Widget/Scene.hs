@@ -2,7 +2,7 @@
 
 module Object.Widget.Scene where
 
-import Utils.PreludePlus
+import Luna.Studio.Prelude
 import Object.Widget
 import Data.Aeson (ToJSON)
 

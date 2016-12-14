@@ -3,15 +3,15 @@
 module UI.Generic where
 
 import           GHCJS.Marshal.Pure        (pToJSVal)
-import           Utils.PreludePlus         hiding (children)
-import           Utils.Vector
+import           Luna.Studio.Prelude         hiding (children)
+import           Luna.Studio.Data.Vector
 
 import qualified Event.Mouse               as Mouse
 import           Object.Widget             (DragState (..), IsDisplayObject, WidgetFile, WidgetId, children, objectId, widget,
                                             widgetPosition)
-import           Reactive.Commands.Command (Command, performIO)
-import qualified Reactive.State.Global     as Global
-import qualified Reactive.State.UIRegistry as UIRegistry
+import           Luna.Studio.Commands.Command (Command, performIO)
+import qualified Luna.Studio.State.Global     as Global
+import qualified Luna.Studio.State.UIRegistry as UIRegistry
 import qualified UI.Registry               as UIR
 import           UI.Widget                 (GenericWidget (..), UIWidget)
 

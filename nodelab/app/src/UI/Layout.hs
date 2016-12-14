@@ -1,17 +1,17 @@
 {-# LANGUAGE Rank2Types #-}
 module UI.Layout where
 
-import           Utils.PreludePlus            hiding (lens)
+import           Luna.Studio.Prelude            hiding (lens)
 
 import           Control.Monad                (foldM)
 import           Data.HMap.Lazy               (HTMap)
-import           Utils.Vector
+import           Luna.Studio.Data.Vector
 
 import           Object.Widget                (WidgetId, widgetSize, widgetVisible)
-import           Reactive.Commands.Command    (Command)
-import qualified Reactive.Commands.UIRegistry as UICmd
-import           Reactive.State.UIRegistry    (addHandler)
-import qualified Reactive.State.UIRegistry    as UIRegistry
+import           Luna.Studio.Commands.Command    (Command)
+import qualified Luna.Studio.Commands.UIRegistry as UICmd
+import           Luna.Studio.State.UIRegistry    (addHandler)
+import qualified Luna.Studio.State.UIRegistry    as UIRegistry
 
 import qualified Object.Widget.Group          as Group
 import qualified UI.Command.Group             as Group

@@ -1,14 +1,14 @@
 module UI.Widget.Group where
 
-import           Utils.PreludePlus
-import           Utils.Vector
+import           Luna.Studio.Prelude
+import           Luna.Studio.Data.Vector
 
 import           GHCJS.Marshal.Pure           (PFromJSVal (..), PToJSVal (..))
 
 import           Object.UITypes
 import           Object.Widget
 import qualified Object.Widget.Group          as Model
-import qualified Reactive.Commands.UIRegistry as UICmd
+import qualified Luna.Studio.Commands.UIRegistry as UICmd
 
 import           Style.Types                  (Color (..), Padding (..))
 import           UI.Generic                   (whenChanged)

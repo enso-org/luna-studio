@@ -1,6 +1,6 @@
 module UI.Widget.Number where
 
-import           Utils.PreludePlus
+import           Luna.Studio.Prelude
 
 import           GHCJS.Marshal.Pure (PFromJSVal (..), PToJSVal (..))
 

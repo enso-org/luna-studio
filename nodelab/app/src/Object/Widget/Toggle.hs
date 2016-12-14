@@ -1,7 +1,7 @@
 module Object.Widget.Toggle where
 
-import            Utils.PreludePlus
-import            Utils.Vector
+import            Luna.Studio.Prelude
+import            Luna.Studio.Data.Vector
 import            Object.Widget
 import Data.Aeson (ToJSON)
 

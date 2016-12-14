@@ -3,8 +3,8 @@ module Object.Widget.Slider.Continuous where
 import           Data.Aeson        (ToJSON)
 import           Numeric
 import           Object.Widget
-import           Utils.PreludePlus
-import           Utils.Vector
+import           Luna.Studio.Prelude
+import           Luna.Studio.Data.Vector
 
 data ContinuousSlider = ContinuousSlider { _position       :: Vector2 Double
                                          , _size           :: Vector2 Double

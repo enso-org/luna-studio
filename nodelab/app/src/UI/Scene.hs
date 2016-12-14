@@ -1,6 +1,6 @@
 module UI.Scene where
 
-import           Utils.PreludePlus
+import           Luna.Studio.Prelude
 
 import qualified Data.JSString      as JSString
 import           GHCJS.Foreign

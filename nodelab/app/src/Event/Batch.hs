@@ -1,6 +1,6 @@
 module Event.Batch where
 
-import           Utils.PreludePlus
+import           Luna.Studio.Prelude
 
 import qualified Empire.API.Control.EmpireStarted      as EmpireStarted
 import qualified Empire.API.Graph.AddNode              as AddNode

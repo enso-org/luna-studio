@@ -2,13 +2,13 @@
 
 module UI.Command.Group where
 
-import           Utils.PreludePlus
-import           Utils.Vector
+import           Luna.Studio.Prelude
+import           Luna.Studio.Data.Vector
 
 import           Object.Widget                (WidgetId, widgetPosition, widgetSize)
-import           Reactive.Commands.Command    (Command)
-import qualified Reactive.Commands.UIRegistry as UICmd
-import qualified Reactive.State.UIRegistry    as UIRegistry
+import           Luna.Studio.Commands.Command    (Command)
+import qualified Luna.Studio.Commands.UIRegistry as UICmd
+import qualified Luna.Studio.State.UIRegistry    as UIRegistry
 
 import           Style.Types                  (Padding (..))
 

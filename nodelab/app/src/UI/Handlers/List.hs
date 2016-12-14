@@ -2,11 +2,11 @@
 
 module UI.Handlers.List where
 
-import           Utils.PreludePlus
+import           Luna.Studio.Prelude
 
 import           Data.HMap.Lazy                (HTMap)
 import qualified Data.Text.Lazy                as Text
-import           Utils.Vector
+import           Luna.Studio.Data.Vector
 
 import           Object.LunaValue              (AnyLunaValue (..), createValueWidget)
 import           Object.Widget                 (WidgetId, CompositeWidget, createWidget, updateWidget, ResizableWidget, resizeWidget)
@@ -16,12 +16,12 @@ import qualified Object.Widget.Group           as Group
 import qualified Object.Widget.Label           as Label
 import           Object.Widget.List            (List (..))
 import qualified Object.Widget.List            as List
-import           Reactive.Commands.Command     (Command)
-import qualified Reactive.Commands.UIRegistry  as UICmd
-import           Reactive.State.Global         (inRegistry)
-import qualified Reactive.State.Global         as Global
-import           Reactive.State.UIRegistry     (addHandler)
-import qualified Reactive.State.UIRegistry     as UIRegistry
+import           Luna.Studio.Commands.Command     (Command)
+import qualified Luna.Studio.Commands.UIRegistry  as UICmd
+import           Luna.Studio.State.Global         (inRegistry)
+import qualified Luna.Studio.State.Global         as Global
+import           Luna.Studio.State.UIRegistry     (addHandler)
+import qualified Luna.Studio.State.UIRegistry     as UIRegistry
 
 import           UI.Generic                    (defaultResize)
 import           UI.Handlers.Group             (triggerWidgetResized)

@@ -3,7 +3,7 @@
 
 module JS.Camera where
 
-import           Utils.PreludePlus
+import           Luna.Studio.Prelude
 
 foreign import javascript safe "common.camera.updateProjectionMatrix()"
     updateProjectionMatrix :: IO ()

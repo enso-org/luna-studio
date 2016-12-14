@@ -2,7 +2,7 @@ module Event.TextEditor where
 
 
 import           Data.Aeson        (ToJSON)
-import           Utils.PreludePlus
+import           Luna.Studio.Prelude
 
 data Event = CodeModified { _code :: Text } deriving (Eq, Show, Typeable, Generic)
 

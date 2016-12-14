@@ -1,11 +1,11 @@
 module UI.Handlers.Number.Continuous where
 
-import           Utils.PreludePlus
+import           Luna.Studio.Prelude
 
 import           Data.HMap.Lazy                  (HTMap)
 import qualified Data.Text.Lazy                  as Text
 import           Data.Text.Lazy.Read             (rational)
-import           Utils.Vector
+import           Luna.Studio.Data.Vector
 
 import qualified Event.Mouse                     as Mouse
 import           Object.Widget                   (DblClickHandler, DragEndHandler, DragMoveHandler, KeyUpHandler,
@@ -14,11 +14,11 @@ import           Object.Widget                   (DblClickHandler, DragEndHandle
                                                   CompositeWidget, createWidget, updateWidget, ResizableWidget, resizeWidget)
 import qualified Object.Widget.Number.Continuous as Model
 import qualified Object.Widget.TextBox           as TextBox
-import           Reactive.Commands.Command       (Command)
-import qualified Reactive.Commands.UIRegistry    as UICmd
-import           Reactive.State.Global           (inRegistry)
-import qualified Reactive.State.Global           as Global
-import           Reactive.State.UIRegistry       (addHandler)
+import           Luna.Studio.Commands.Command       (Command)
+import qualified Luna.Studio.Commands.UIRegistry    as UICmd
+import           Luna.Studio.State.Global           (inRegistry)
+import qualified Luna.Studio.State.Global           as Global
+import           Luna.Studio.State.UIRegistry       (addHandler)
 
 import           UI.Generic                      (startDrag)
 import           UI.Widget.Number                (keyModMult)

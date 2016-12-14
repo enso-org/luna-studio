@@ -1,11 +1,11 @@
 module UI.Widget.Label where
 
-import           Utils.PreludePlus
+import           Luna.Studio.Prelude
 
 import qualified Data.JSString       as JSString
 import           Data.JSString.Text  (lazyTextToJSString)
 import           GHCJS.Marshal.Pure  (PFromJSVal (..), PToJSVal (..))
-import           Utils.Vector
+import           Luna.Studio.Data.Vector
 
 import           Object.UITypes
 import           Object.Widget

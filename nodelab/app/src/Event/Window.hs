@@ -1,7 +1,7 @@
 module Event.Window where
 
 import           Data.Aeson        (ToJSON)
-import           Utils.PreludePlus
+import           Luna.Studio.Prelude
 
 
 data Event = Resized { _innerWidth  :: Int

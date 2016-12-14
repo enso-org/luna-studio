@@ -2,22 +2,22 @@
 
 module UI.Handlers.Node where
 
-import           Utils.PreludePlus                        hiding (stripPrefix)
+import           Luna.Studio.Prelude                        hiding (stripPrefix)
 
 import           Control.Monad.Trans.State                (get)
 import qualified Data.HashMap.Strict                      as HashMap
 import           Data.HMap.Lazy                           (HTMap, TypeKey (..))
 import qualified Data.Text.Lazy                           as Text
-import           Utils.Vector
+import           Luna.Studio.Data.Vector
 
 import           Object.Widget                            (CompositeWidget, KeyPressedHandler, ResizableWidget, UIHandlers, WidgetId,
                                                            createWidget, keyDown, mouseOut, mouseOver, updateWidget)
 
-import           React.Store                              (Ref, WRef)
-import qualified React.Store                              as Store
-import           React.Store.Node                         (Node)
-import qualified React.Store.Node                         as Node
-import qualified React.Store.NodeEditor                   as NodeEditor
+import           Luna.Studio.React.Store                              (Ref, WRef)
+import qualified Luna.Studio.React.Store                              as Store
+import           Luna.Studio.React.Model.Node                         (Node)
+import qualified Luna.Studio.React.Model.Node                         as Node
+import qualified Luna.Studio.React.Model.NodeEditor                   as NodeEditor
 
 import qualified Object.Widget.CodeEditor                 as CodeEditor
 import qualified Object.Widget.Group                      as Group
@@ -26,14 +26,14 @@ import qualified Object.Widget.LabeledTextBox             as LabeledTextBox
 import qualified Object.Widget.Node                       as Model
 import qualified Object.Widget.TextBox                    as TextBox
 import qualified Object.Widget.Toggle                     as Toggle
-import           Reactive.Commands.Batch                  (cancelCollaborativeTouch, collaborativeTouch)
-import           Reactive.Commands.Command                (Command)
-import           Reactive.Commands.Graph.SelectionHistory (dropSelectionHistory, modifySelectionHistory)
-import qualified Reactive.Commands.UIRegistry             as UICmd
-import           Reactive.State.Global                    (inRegistry)
-import qualified Reactive.State.Global                    as Global
-import           Reactive.State.UIRegistry                (addHandler)
-import qualified Reactive.State.UIRegistry                as UIRegistry
+import           Luna.Studio.Commands.Batch                  (cancelCollaborativeTouch, collaborativeTouch)
+import           Luna.Studio.Commands.Command                (Command)
+import           Luna.Studio.Commands.Graph.SelectionHistory (dropSelectionHistory, modifySelectionHistory)
+import qualified Luna.Studio.Commands.UIRegistry             as UICmd
+import           Luna.Studio.State.Global                    (inRegistry)
+import qualified Luna.Studio.State.Global                    as Global
+import           Luna.Studio.State.UIRegistry                (addHandler)
+import qualified Luna.Studio.State.UIRegistry                as UIRegistry
 
 import qualified Style.Node                               as Style
 import           UI.Generic                               (whenChanged)

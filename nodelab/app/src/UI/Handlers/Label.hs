@@ -3,14 +3,14 @@ module UI.Handlers.Label ( widgetHandlers
                          , DblClickedHandler
                          ) where
 
-import           Utils.PreludePlus
+import           Luna.Studio.Prelude
 
 import           Data.HMap.Lazy               ()
 
 import           Object.Widget                (UIHandlers, click, dblClick, mouseOut, mouseOver, mousePressed)
-import           Reactive.Commands.Command    (performIO)
-import           Reactive.State.Global        ()
-import qualified Reactive.State.Global        as Global
+import           Luna.Studio.Commands.Command    (performIO)
+import           Luna.Studio.State.Global        ()
+import qualified Luna.Studio.State.Global        as Global
 
 import           JS.Cursor                    (Cursor (Normal, Pointer), setCursor)
 import           UI.Handlers.Button           (ClickedHandler, DblClickedHandler, clickHandler, dblClickHandler, triggerMousePressed)

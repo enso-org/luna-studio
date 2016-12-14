@@ -3,12 +3,12 @@
 module Object.LunaValue.Instances where
 
 import           Object.UITypes                  (WidgetId)
-import           Reactive.Commands.Command       (Command)
-import           Reactive.Commands.UIRegistry    as UICmd
-import qualified Reactive.State.Global           as Global
-import           Reactive.State.UIRegistry       (addHandler)
-import           Utils.PreludePlus               hiding (Choice)
-import           Utils.Vector
+import           Luna.Studio.Commands.Command       (Command)
+import           Luna.Studio.Commands.UIRegistry    as UICmd
+import qualified Luna.Studio.State.Global           as Global
+import           Luna.Studio.State.UIRegistry       (addHandler)
+import           Luna.Studio.Prelude               hiding (Choice)
+import           Luna.Studio.Data.Vector
 
 import           Object.LunaValue
 

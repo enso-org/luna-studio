@@ -1,10 +1,10 @@
 module UI.Handlers.Connection where
 
 -- TODO[react]: Find out if we need this
--- import           Utils.PreludePlus
+-- import           Luna.Studio.Prelude
 --
 -- import           Data.HMap.Lazy                     (TypeKey (..))
--- import           Utils.Vector
+-- import           Luna.Studio.Data.Vector
 --
 -- import qualified Empire.API.Data.Connection         as Connection
 -- import qualified Empire.API.Data.PortRef            as PortRef
@@ -16,17 +16,17 @@ module UI.Handlers.Connection where
 -- import qualified Object.Widget.Connection           as Model
 -- import qualified Object.Widget.Node                 as NodeModel
 -- import qualified Object.Widget.Port                 as PortModel
--- import qualified React.Store                        as Store
--- import           Reactive.Commands.Command          (Command)
--- import qualified Reactive.Commands.Graph            as Graph
--- import           Reactive.Commands.Graph.Disconnect (disconnectAll)
--- import qualified Reactive.Commands.UIRegistry       as UICmd
--- import           Reactive.State.Connect             (Connecting (Connecting))
--- import qualified Reactive.State.Connect             as Connect
--- import           Reactive.State.Global              (inRegistry)
--- import qualified Reactive.State.Global              as Global
--- import qualified Reactive.State.Graph               as Graph
--- import qualified Reactive.State.UIRegistry          as UIRegistry
+-- import qualified Luna.Studio.React.Store                        as Store
+-- import           Luna.Studio.Commands.Command          (Command)
+-- import qualified Luna.Studio.Commands.Graph            as Graph
+-- import           Luna.Studio.Commands.Graph.Disconnect (disconnectAll)
+-- import qualified Luna.Studio.Commands.UIRegistry       as UICmd
+-- import           Luna.Studio.State.Connect             (Connecting (Connecting))
+-- import qualified Luna.Studio.State.Connect             as Connect
+-- import           Luna.Studio.State.Global              (inRegistry)
+-- import qualified Luna.Studio.State.Global              as Global
+-- import qualified Luna.Studio.State.Graph               as Graph
+-- import qualified Luna.Studio.State.UIRegistry          as UIRegistry
 -- import           UI.Generic                         (abortDrag, startDrag)
 --
 --

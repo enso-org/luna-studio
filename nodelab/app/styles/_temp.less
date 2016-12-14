@@ -63,3 +63,60 @@
   float: left;
   margin-right: 20px;
 }
+
+.scrollbar(@backgroundColor, @slider, @radius) {
+  &::-webkit-scrollbar {
+    -webkit-appearance: none;
+  }
+  &::-webkit-scrollbar:vertical {
+    width: 11px;
+  }
+  &::-webkit-scrollbar:horizontal {
+    display: none;
+  }
+  &::-webkit-scrollbar-thumb {
+      border-radius: @radius;
+      border: 2px solid @backgroundColor; /* sho.scrollbard match background, can't be transparent */
+      background-color: @slider;
+  }
+  &::-webkit-scrollbar-track {
+      background-color: @backgroundColor;
+      border-radius: 8px;
+  }
+}
+
+foreignObject.data-frame {
+  height: 400px;
+  width: 200px;
+  div {
+    position:       fixed;
+    background:     transparent;
+    color:          white;
+    font-size:      21px;
+    padding:        10px;
+    margin:         0;
+    overflow:       auto;
+    .scrollbar(rgba(0,0,0,0.2),rgba(255,255,255,0.8), 8px);
+    word-wrap:      break-word;
+    box-sizing:     border-box;
+    height: inherit;
+    table {
+      box-sizing:     border-box;
+      width:95%;
+      margin: auto;
+      border-collapse: collapse;
+      border-spacing: none;
+      td, th {
+        padding: 3px 5px;
+        text-align: right;
+        border: 1px solid #555;
+      }
+      th {
+        background: #555;
+      }
+      td {
+        font-weight: normal
+      }
+    }
+  }
+}

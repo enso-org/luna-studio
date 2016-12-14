@@ -4,8 +4,8 @@ module Object.Widget.Node where
 
 import           Control.Arrow
 import           Data.Aeson                          (ToJSON)
-import           Utils.PreludePlus                   hiding (set)
-import           Utils.Vector
+import           Luna.Studio.Prelude                   hiding (set)
+import           Luna.Studio.Data.Vector
 
 import           Data.Map.Lazy                       (Map)
 import qualified Data.Map.Lazy                       as Map
@@ -21,8 +21,8 @@ import           Empire.API.Graph.NodeResultUpdate   (NodeValue)
 import           Object.UITypes
 import           Object.Widget
 import qualified Object.Widget.Port                  as PortModel
-import           Reactive.Commands.Node.Ports.Colors (colorPort)
-import           Reactive.State.Collaboration        (ColorId)
+import           Luna.Studio.Commands.Node.Ports.Colors (colorPort)
+import           Luna.Studio.State.Collaboration        (ColorId)
 
 
 

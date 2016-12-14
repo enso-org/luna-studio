@@ -1,6 +1,6 @@
 module Style.Function where
 
-import           Utils.PreludePlus
+import           Luna.Studio.Prelude
 
 portWidth, portHoverWidth, portLabelGap :: Double
 portWidth = 10.0

@@ -1,7 +1,7 @@
 module Style.Types where
 
 import           Data.Aeson        (ToJSON)
-import           Utils.PreludePlus
+import           Luna.Studio.Prelude
 
 data Color   = Color { _r :: Double
                      , _g :: Double

@@ -2,7 +2,7 @@
 
 module UI.Widget.Port where
 -- TODO[react]: This should be removed
--- import           Utils.PreludePlus
+-- import           Luna.Studio.Prelude
 --
 -- import           GHCJS.Marshal.Pure           (PFromJSVal (..), PToJSVal (..))
 --
@@ -10,11 +10,11 @@ module UI.Widget.Port where
 -- import           Object.Widget
 -- import qualified Object.Widget.Port           as Model
 --
--- import           Reactive.Commands.Command    (Command)
--- import qualified Reactive.Commands.UIRegistry as UICmd
--- import           Reactive.State.Global        (inRegistry)
--- import qualified Reactive.State.Global        as Global
--- import qualified Reactive.State.UIRegistry    as UIRegistry (State)
+-- import           Luna.Studio.Commands.Command    (Command)
+-- import qualified Luna.Studio.Commands.UIRegistry as UICmd
+-- import           Luna.Studio.State.Global        (inRegistry)
+-- import qualified Luna.Studio.State.Global        as Global
+-- import qualified Luna.Studio.State.UIRegistry    as UIRegistry (State)
 --
 -- import qualified UI.Handlers.Node             as Node
 -- import qualified UI.Registry                  as UIR

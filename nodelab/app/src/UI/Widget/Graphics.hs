@@ -1,7 +1,7 @@
 module UI.Widget.Graphics where
 
-import           Utils.PreludePlus      hiding (Item)
-import           Utils.Vector
+import           Luna.Studio.Prelude      hiding (Item)
+import           Luna.Studio.Data.Vector
 
 import           GHCJS.Marshal.Pure     (PFromJSVal (..), PToJSVal (..))
 

@@ -2,8 +2,8 @@ module Object.Widget.Number.Discrete where
 
 import           Data.Aeson        (ToJSON)
 import           Object.Widget
-import           Utils.PreludePlus
-import           Utils.Vector
+import           Luna.Studio.Prelude
+import           Luna.Studio.Data.Vector
 
 data DiscreteNumber = DiscreteNumber { _position       :: Vector2 Double
                                      , _size           :: Vector2 Double

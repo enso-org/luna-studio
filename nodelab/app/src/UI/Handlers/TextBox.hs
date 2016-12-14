@@ -1,8 +1,8 @@
 module UI.Handlers.TextBox where
 
-import           Utils.PreludePlus
+import           Luna.Studio.Prelude
 
-import           Utils.Vector
+import           Luna.Studio.Data.Vector
 
 import           Data.JSString.Text           (lazyTextFromJSString)
 
@@ -10,11 +10,11 @@ import           Event.Event                  (JSState)
 import           Object.Widget                (ClickHandler, IsDisplayObject, KeyDownHandler, UIHandlers, WidgetId, dblClick, fromWidgetId,
                                                keyDown, widgetSize)
 import qualified Object.Widget.TextBox        as Model
-import           Reactive.Commands.Command    (Command)
-import qualified Reactive.Commands.UIRegistry as UICmd
-import           Reactive.State.Global        (inRegistry)
-import qualified Reactive.State.Global        as Global
-import qualified Reactive.State.UIRegistry    as UIRegistry
+import           Luna.Studio.Commands.Command    (Command)
+import qualified Luna.Studio.Commands.UIRegistry as UICmd
+import           Luna.Studio.State.Global        (inRegistry)
+import qualified Luna.Studio.State.Global        as Global
+import qualified Luna.Studio.State.UIRegistry    as UIRegistry
 
 import           UI.Generic                   (defaultResize)
 import           UI.Handlers.Generic          (triggerValueChanged)

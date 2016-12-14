@@ -1,6 +1,6 @@
 module Event.Keys where
 
-import           Utils.PreludePlus
+import           Luna.Studio.Prelude
 
 import           React.Flux        (KeyboardEvent (KeyboardEvent))
 

@@ -1,8 +1,8 @@
 module Object.Widget.Port where
 
 import           Data.Aeson               (ToJSON)
-import           Utils.PreludePlus        hiding (set)
-import           Utils.Vector
+import           Luna.Studio.Prelude        hiding (set)
+import           Luna.Studio.Data.Vector
 
 import           Empire.API.Data.Port     (PortId (..))
 import           Empire.API.Data.PortRef  (AnyPortRef)

@@ -1,13 +1,13 @@
 module UI.Handlers.Toggle where
 
-import           Utils.PreludePlus
+import           Luna.Studio.Prelude
 
 import           Object.Widget                (ClickHandler, KeyUpHandler, UIHandlers, WidgetId, click, keyUp)
 import qualified Object.Widget.Toggle         as Model
-import           Reactive.Commands.Command    (Command)
-import qualified Reactive.Commands.UIRegistry as UICmd
-import           Reactive.State.Global        (inRegistry)
-import qualified Reactive.State.Global        as Global
+import           Luna.Studio.Commands.Command    (Command)
+import qualified Luna.Studio.Commands.UIRegistry as UICmd
+import           Luna.Studio.State.Global        (inRegistry)
+import qualified Luna.Studio.State.Global        as Global
 
 import           UI.Handlers.Generic          (triggerValueChanged)
 import           UI.Widget.Toggle             ()

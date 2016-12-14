@@ -4,7 +4,7 @@ import           Control.Monad     (liftM)
 import           Data.Aeson        (fromJSON)
 import qualified Data.Aeson        as AE
 import           GHCJS.Marshal     (fromJSVal)
-import           Utils.PreludePlus
+import           Luna.Studio.Prelude
 
 import           Event.CustomEvent as CustomEvent
 import           Event.Debug       (Event (..))
