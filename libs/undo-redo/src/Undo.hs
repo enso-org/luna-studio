@@ -7,6 +7,9 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE DeriveFunctor #-}
+{-# LANGUAGE GADTs #-}
+{-# LANGUAGE StandaloneDeriving #-}
+{-# LANGUAGE ExistentialQuantification #-}
 
 module Undo where
 
@@ -25,7 +28,7 @@ import qualified Data.Binary                  as Bin
 import qualified Data.Map.Strict       as Map
 import           Data.Map.Strict       (Map)
 import Data.Maybe
-import Data.Set
+import Data.Set hiding (map)
 import Prelude
 
 import           Empire.API.Data.GraphLocation (GraphLocation)
@@ -34,6 +37,7 @@ import           Empire.API.Data.Node          (Node, NodeId)
 import qualified Empire.API.Data.Node          as Node
 import           Empire.API.Data.NodeMeta      (NodeMeta)
 import qualified Empire.API.Graph.AddNode      as AddNode
+import qualified Empire.API.Graph.AddSubgraph  as AddSubgraph
 import qualified Empire.API.Graph.RemoveNodes  as RemoveNodes
 import qualified Empire.API.Topic              as Topic
 import           Empire.API.Response           (Response (..))
@@ -53,15 +57,18 @@ import           ZMQ.Bus.EndPoint                  (BusEndPoints)
 import qualified ZMQ.Bus.Trans                     as Bus
 import           ZMQ.Bus.RPC.RPC                   as RPC
 
--- data Action = AddNode.Request | RemoveNodes.Request deriving (Show)
+-- data Action = AddNode.Request | AddSubgraph.Request deriving (Show)
+data UndoMessage where
+    UndoMessage :: (Binary undoReq, Binary redoReq) => undoReq -> redoReq -> UndoMessage
+-- deriving instance Show UndoMessage => Show (UndoMessage)
 
-data UndoMessage = UndoMessage { _undoAction :: RemoveNodes.Request --undo.node.add/redo.node.add
-                               , _redoAction :: AddNode.Request
-                               } deriving (Show)
+-- data UndoMessage = UndoMessage { _undoAction :: RemoveNodes.Request --undo.node.add/redo.node.add
+--                                , _redoAction :: AddSubgraph.Request
+--                                } deriving (Show)
 
 data UndoList = UndoList { _undo :: [UndoMessage]
                          , _redo :: [UndoMessage]
-                         } deriving (Show)
+                         } --deriving (Show)
 
 newtype UndoT t a = UndoT (StateT UndoList t a) deriving (Applicative, Functor, Monad, MonadTrans, MonadState UndoList, MonadIO)
 -- instance MonadTrans UndoT where
@@ -75,8 +82,8 @@ type Handler = ByteString -> UndoT IO ()
 
 handlersMap :: Map String Handler
 handlersMap = Map.fromList
-    [ makeHandler handleAddNodeUndo
-    -- , makeHandler handleAddSubgraph
+    [  makeHandler handleAddSubgraphUdo
+    -- , makeHandler handleAddNodeUndo
     -- , makeHandler handleRemoveNodes
     ]
 
@@ -85,16 +92,26 @@ makeHandler :: forall a. (Topic.MessageTopic a, Binary a) => (a -> UndoT IO ()) 
 makeHandler h = (Topic.topic (undefined :: a), process) where
    process content = h request where request = decode . fromStrict $ content
 
-handleAddNodeUndo :: AddNode.Response -> UndoT IO ()
-handleAddNodeUndo (Response.Response _ (AddNode.Request location nodeType nodeMeta connectTo _) _ res) =
-    case res of
-        Response.Error  err -> return ()
-        Response.Ok node -> do
-            let nodeId  = node ^. Node.nodeId
-                undoMsg = RemoveNodes.Request location [nodeId]
-                redoMsg = AddNode.Request location nodeType nodeMeta connectTo $ Just (nodeId)
-            undo %= (UndoMessage undoMsg redoMsg :)
+-- handleAddNodeUndo :: AddNode.Response -> UndoT IO ()
+-- handleAddNodeUndo (Response.Response _ (AddNode.Request location nodeType nodeMeta connectTo _) _ res) =
+--     case res of
+--         Response.Error  err -> return ()
+--         Response.Ok node -> do
+--             let nodeId  = node ^. Node.nodeId
+--                 undoMsg = RemoveNodes.Request location [nodeId]
+--                 redoMsg = AddNode.Request location nodeType nodeMeta connectTo $ Just (nodeId)
+--             undo %= (UndoMessage undoMsg redoMsg :)
 
+handleAddSubgraphUdo :: AddSubgraph.Response -> UndoT IO ()  --dodac result do pola addsubgraph response bo zwraca request z podmienionym id
+handleAddSubgraphUdo (Response.Response  _ (AddSubgraph.Request location nodes connections) _ _ ) = do
+    let ids = map (^. Node.nodeId) nodes
+        undoMsg = RemoveNodes.Request location ids
+        redoMsg = AddSubgraph.Request location nodes connections
+    undo %= (UndoMessage undoMsg redoMsg :)
+
+-- handleRemoveNodesUndo :: RemoveNodes.Response -> UndoT IO ()
+-- handleRemoveNodesUndo (Response.Response _ (RemoveNodes.Request location noddesIds) (RemoveNodes.Inverse nodes connections) _)
+--
 empty :: UndoList
 empty = UndoList [] []
 
@@ -111,8 +128,8 @@ collectEvents endPoints = do
                 userId = show senderId
                 content = msg ^. Message.message
             case topic of
-                "empire.undo." -> f endPoints
-                "empire.redo." -> g endPoints
+                "empire.undo" -> f endPoints
+                "empire.redo" -> g endPoints
                 "empire." -> do collectedMessage topic content
 
 f :: BusEndPoints -> UndoT IO ()
@@ -120,8 +137,8 @@ f endPoints = do
     h <- uses undo head
     redo %= (h :)
     undo %= tail
-    let msg = h ^. undoAction
-    void $ Bus.runBus endPoints $ sendMessage "undo" msg--(UndoMessage undoTopic dummyMsg)
+    let msg = case h of UndoMessage undo _ -> undo
+    void $ Bus.runBus endPoints $ sendMessage "undo" msg
 
 g :: BusEndPoints -> UndoT IO ()
 g endPoints = do
@@ -129,7 +146,7 @@ g endPoints = do
     undo %= (h :)
     redo %= tail
     let msg = h ^. redoAction
-    void $ Bus.runBus endPoints $ sendMessage "redo" msg--(UndoMessage undoTopic dummyMsg)
+    void $ Bus.runBus endPoints $ sendMessage "redo" msg
 
 collectedMessage :: String -> ByteString -> UndoT IO ()
 collectedMessage topic content = do
