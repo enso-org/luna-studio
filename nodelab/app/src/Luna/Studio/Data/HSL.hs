@@ -1,6 +1,9 @@
-module Luna.Studio.Utils.Color where
+module Luna.Studio.Data.HSL where
 
-import Luna.Studio.Prelude
+import           Luna.Studio.Data.Color (Color (Color))
+import           Luna.Studio.Prelude
+
+
 
 data HSL a = HSL { _h :: a
                  , _s :: a
@@ -9,16 +12,16 @@ data HSL a = HSL { _h :: a
 
 makeLenses ''HSL
 
-color :: Int -> HSL Float
-color 0 = HSL 0.0 0.0 0.5
-color i = HSL (hue * 2.0 * pi) 0.6 0.5
+color :: Color -> HSL Float
+color (Color 0) = HSL 0.0 0.0 0.5
+color (Color i) = HSL (hue * 2.0 * pi) 0.6 0.5
     where
         hue = start + delta * (fromIntegral i)
         start = 90.6 / (2 * pi)
         steps = 16.0
         delta = 1.0 / steps
 
-color' :: Int -> JSString
+color' :: Color -> JSString
 color' = toJSString . color
 
 toJSString :: (Fractional a, Show a) => HSL a -> JSString

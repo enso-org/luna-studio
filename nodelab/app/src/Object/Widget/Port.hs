@@ -1,18 +1,19 @@
 module Object.Widget.Port where
 
 import           Data.Aeson               (ToJSON)
-import           Luna.Studio.Prelude        hiding (set)
 import           Luna.Studio.Data.Vector
+import           Luna.Studio.Prelude      hiding (set)
 
 import           Empire.API.Data.Port     (PortId (..))
 import           Empire.API.Data.PortRef  (AnyPortRef)
 import qualified Empire.API.JSONInstances ()
+import           Luna.Studio.Data.Color   (Color)
 
 import           Object.Widget
 
 data Port = Port { _portRef     :: AnyPortRef
                  , _portId      :: PortId
-                 , _color       :: Int
+                 , _color       :: Color
                  , _highlight   :: Bool
                  } deriving (Eq, Show, Typeable, Generic)
 

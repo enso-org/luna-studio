@@ -3,18 +3,20 @@ module Luna.Studio.React.View.Port where
 
 import           Luna.Studio.Prelude
 
-import           Empire.API.Data.Port (InPort (..), OutPort (..), PortId (..))
+import           Empire.API.Data.Port         (InPort (..), OutPort (..), PortId (..))
 
-import qualified Numeric              as Numeric
+import qualified Numeric                      as Numeric
 
-import           Object.Widget.Port   (Port (..))
+import           Object.Widget.Port           (Port (..))
 
 import           React.Flux
-import qualified React.Flux           as React
+import qualified React.Flux                   as React
 
-import           Luna.Studio.Utils.Color      (color')
-import           Luna.Studio.React.Store          (Ref)
-import           Luna.Studio.React.Model.Node     (Node)
+import           Luna.Studio.Data.Color       (Color(Color))
+import           Luna.Studio.Data.HSL         (color')
+import           Luna.Studio.React.Model.Node (Node)
+import           Luna.Studio.React.Store      (Ref)
+
 
 
 showF :: Float -> String
@@ -59,14 +61,13 @@ drawPortSingle_ =
 drawPortIO_ :: Int -> Int -> Float -> String -> String -> ReactElementM ViewEventHandler ()
 drawPortIO_ number numOfPorts mod1 mod2 mod3 = do
 
-    let color   = color' 5
-        r1      = 20 :: Float
-        line    = 3 :: Float
-        gap     = 0.15 :: Float
-        r2      = r1 - line
-        gap'    = gap * (r1/r2)
+    let color = color' $ Color 5 --TODO [Piotr Młodawski]: get color from model
+        r1    = 20 :: Float
+        line  = 3 :: Float
+        gap   = 0.15 :: Float
+        r2   = r1 - line
+        gap' = gap * (r1/r2)
         number' = number + 1
-
 
         t   = pi / fromIntegral numOfPorts
         t1  = fromIntegral number' * t - pi - t + gap/2
