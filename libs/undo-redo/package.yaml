@@ -16,6 +16,8 @@ dependencies:
   - luna-empire-api
   - batch-lib-luna-empire
   - stm
+  - safe-exceptions
+
 
 default-extensions:
   - NoImplicitPrelude
@@ -33,14 +35,8 @@ executables:
  undo-redo-exec:
    dependencies:
      - undo-redo
-     - base
-     - prologue
-     - zmq-bus
-     - zmq-bus-config
      - m-logger
-     - container
-     - batch-lib-luna-empire
-     - stm
+
 
    source-dirs: app
    main:        Main.hs
