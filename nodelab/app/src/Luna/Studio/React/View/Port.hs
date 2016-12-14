@@ -26,30 +26,37 @@ port :: Ref Node -> Int -> ReactView Port
 port _ numOfPorts = React.defineView name $ \p -> do
     drawPort_ p numOfPorts
 
+
 port_ :: Ref Node -> Port -> Int -> ReactElementM ViewEventHandler ()
 port_ ref p numOfPorts = React.view (port ref numOfPorts) p mempty
 
+
 drawPort_ :: Port -> Int -> ReactElementM ViewEventHandler ()
-drawPort_ (Port _ (InPortId Self) _ _) _ = let color = "#8ABEB7" in
+drawPort_ (Port _ (InPortId   Self         ) _ _) _          = drawPortSelf_
+drawPort_ (Port _ (OutPortId  All          ) _ _) _          = drawPortSingle_
+drawPort_ (Port _ (InPortId  (Arg        i)) _ _) numOfPorts = drawPortIO_ i numOfPorts   1  "0" "1"
+drawPort_ (Port _ (OutPortId (Projection i)) _ _) numOfPorts = drawPortIO_ i numOfPorts (-1) "1" "0"
+
+
+drawPortSelf_ :: ReactElementM ViewEventHandler ()
+drawPortSelf_ =
+    let color = "#8ABEB7" in
     circle_
         [ "className" $= "port port--self"
         , "fill"      $= color
         , "stroke"    $= color
         ] mempty
-drawPort_ (Port _ (InPortId  (Arg        i)) _ _) numOfPorts = drawPortIO_ i   numOfPorts   1  "0" "1" False
-drawPort_ (Port _ (OutPortId (Projection i)) _ _) numOfPorts = drawPortIO_ i   numOfPorts (-1) "1" "0" False
-drawPort_ (Port _ (OutPortId  All          ) _ _) numOfPorts = drawPortIO_ def numOfPorts  def def def True  -- FIXME It seems to not target the single port situation.
 
-
-drawPortIO_ :: Int -> Int -> Float -> String -> String -> Bool -> ReactElementM ViewEventHandler ()
-drawPortIO_ _ _ _ _ _ True =
+drawPortSingle_ :: ReactElementM ViewEventHandler ()
+drawPortSingle_ =
     let color = "#8ABEB7" in
     circle_
         [ "className" $= "port port--o port--o--single"
         , "stroke"    $= color
         ] mempty
 
-drawPortIO_ number numOfPorts mod1 mod2 mod3 False = do
+drawPortIO_ :: Int -> Int -> Float -> String -> String -> ReactElementM ViewEventHandler ()
+drawPortIO_ number numOfPorts mod1 mod2 mod3 = do
     let color   = "#8ABEB7"
         r1      = 20 :: Float
         line    = 3 :: Float
@@ -64,11 +71,11 @@ drawPortIO_ number numOfPorts mod1 mod2 mod3 False = do
         t1' = fromIntegral number' * t - pi - t + gap'/2
         t2' = fromIntegral number' * t - pi - gap'/2
 
-        ax = showF $ r1 * sin(t1 * mod1) + r1
-        ay = showF $ r1 * cos(t1 * mod1) + r1
+        ax = showF $ r1 * sin(t1  * mod1) + r1
+        ay = showF $ r1 * cos(t1  * mod1) + r1
 
-        bx = showF $ r1 * sin(t2 * mod1) + r1
-        by = showF $ r1 * cos(t2 * mod1) + r1
+        bx = showF $ r1 * sin(t2  * mod1) + r1
+        by = showF $ r1 * cos(t2  * mod1) + r1
 
         cx = showF $ r2 * sin(t2' * mod1) + r1
         cy = showF $ r2 * cos(t2' * mod1) + r1
