@@ -3,26 +3,26 @@
 module Object.Widget.Node where
 
 import           Control.Arrow
-import           Data.Aeson                          (ToJSON)
-import           Luna.Studio.Prelude                   hiding (set)
+import           Data.Aeson                        (ToJSON)
 import           Luna.Studio.Data.Vector
+import           Luna.Studio.Prelude               hiding (set)
 
-import           Data.Map.Lazy                       (Map)
-import qualified Data.Map.Lazy                       as Map
-import qualified Data.Text.Lazy                      as Text
-import           Data.Time.Clock                     (UTCTime)
-import qualified Empire.API.Data.Node                as N
-import qualified Empire.API.Data.NodeMeta            as NM
-import           Empire.API.Data.Port                (OutPort (..), PortId (..))
-import qualified Empire.API.Data.Port                as P
-import           Empire.API.Data.PortRef             (AnyPortRef, toAnyPortRef)
-import           Empire.API.Graph.Collaboration      (ClientId)
-import           Empire.API.Graph.NodeResultUpdate   (NodeValue)
+import           Data.Map.Lazy                     (Map)
+import qualified Data.Map.Lazy                     as Map
+import qualified Data.Text.Lazy                    as Text
+import           Data.Time.Clock                   (UTCTime)
+import qualified Empire.API.Data.Node              as N
+import qualified Empire.API.Data.NodeMeta          as NM
+import           Empire.API.Data.Port              (OutPort (..), PortId (..))
+import qualified Empire.API.Data.Port              as P
+import           Empire.API.Data.PortRef           (AnyPortRef, toAnyPortRef)
+import           Empire.API.Graph.Collaboration    (ClientId)
+import           Empire.API.Graph.NodeResultUpdate (NodeValue)
+import           Luna.Studio.Data.Color            (colorPort)
+import           Luna.Studio.State.Collaboration   (ColorId)
 import           Object.UITypes
 import           Object.Widget
-import qualified Object.Widget.Port                  as PortModel
-import           Luna.Studio.Commands.Node.Ports.Colors (colorPort)
-import           Luna.Studio.State.Collaboration        (ColorId)
+import qualified Object.Widget.Port                as PortModel
 
 
 

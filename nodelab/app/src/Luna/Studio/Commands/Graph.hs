@@ -10,38 +10,38 @@ module Luna.Studio.Commands.Graph
     ) where
 
 
-import           Control.Monad.Trans.Maybe           (runMaybeT)
-import qualified Data.HashMap.Lazy                   as HashMap
-import           Data.Ord                            (comparing)
-import qualified Data.Set                            as Set
+import           Control.Monad.Trans.Maybe          (runMaybeT)
+import qualified Data.HashMap.Lazy                  as HashMap
+import           Data.Ord                           (comparing)
+import qualified Data.Set                           as Set
 import           Luna.Studio.Data.Angle
+import           Luna.Studio.Data.Vector            (Vector2 (Vector2), lengthSquared)
 import           Luna.Studio.Prelude
-import           Luna.Studio.Data.Vector                        (Vector2 (Vector2), lengthSquared)
 
-import           Luna.Studio.React.Store                         (Ref, WRef, ref, widget)
-import qualified Luna.Studio.React.Store                         as Store
-import           Luna.Studio.React.Model.Node                    (Node)
-import qualified Luna.Studio.React.Model.Node                    as Node
-import qualified Luna.Studio.React.Model.NodeEditor              as NodeEditor
+import           Luna.Studio.React.Model.Node       (Node)
+import qualified Luna.Studio.React.Model.Node       as Node
+import qualified Luna.Studio.React.Model.NodeEditor as NodeEditor
+import           Luna.Studio.React.Store            (Ref, WRef, ref, widget)
+import qualified Luna.Studio.React.Store            as Store
 
-import qualified Object.Widget.Connection            as ConnectionModel
-import qualified Object.Widget.Node                  as Model
-import qualified Object.Widget.Port                  as PortModel
+import qualified Object.Widget.Connection           as ConnectionModel
+import qualified Object.Widget.Node                 as Model
+import qualified Object.Widget.Port                 as PortModel
 
-import           Luna.Studio.Commands.Command           (Command)
-import           Luna.Studio.Commands.Node.Ports.Colors (vtToColor)
-import           Luna.Studio.State.Global               (State)
-import qualified Luna.Studio.State.Global               as Global
-import qualified Luna.Studio.State.Graph                as Graph
-import           UI.Instances                        ()
+import           Luna.Studio.Commands.Command       (Command)
+import           Luna.Studio.Data.Color             (vtToColor)
+import           Luna.Studio.State.Global           (State)
+import qualified Luna.Studio.State.Global           as Global
+import qualified Luna.Studio.State.Graph            as Graph
+import           UI.Instances                       ()
 
-import           Empire.API.Data.Connection          (ConnectionId)
-import qualified Empire.API.Data.Connection          as Connection
-import           Empire.API.Data.Node                (NodeId)
-import qualified Empire.API.Data.Node                as NodeAPI
-import qualified Empire.API.Data.Port                as Port
-import           Empire.API.Data.PortRef             (AnyPortRef (..), InPortRef (..))
-import qualified Empire.API.Data.PortRef             as PortRef
+import           Empire.API.Data.Connection         (ConnectionId)
+import qualified Empire.API.Data.Connection         as Connection
+import           Empire.API.Data.Node               (NodeId)
+import qualified Empire.API.Data.Node               as NodeAPI
+import qualified Empire.API.Data.Port               as Port
+import           Empire.API.Data.PortRef            (AnyPortRef (..), InPortRef (..))
+import qualified Empire.API.Data.PortRef            as PortRef
 
 
 
