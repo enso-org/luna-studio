@@ -19,7 +19,6 @@ import           Empire.Data.AST                         (AST, ASTState(..), Mar
 import           Empire.Empire                           (Command)
 import qualified Luna.Pass    as Pass (SubPass, Inputs, Outputs, Preserves, Events, eval')
 import Luna.Pass.Evaluation.Interpreter.Layer (InterpreterData)
-import GHC.Prim (Any)
 
 import Data.Event (Emitter, type (//))
 import Luna.IR (IRMonad, Accessibles, ExprNet, ExprLinkNet, ExprLinkLayers, ExprLayers, Model,

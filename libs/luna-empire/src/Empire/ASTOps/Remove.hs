@@ -4,8 +4,6 @@
 module Empire.ASTOps.Remove where
 
 import           Empire.Prelude
-import           Data.Construction             (destruct)
-import           Data.Layer_OLD.Cover_OLD      (uncover, covered)
 import           Data.List                     (nub)
 
 import           Empire.ASTOp                  (ASTOp)

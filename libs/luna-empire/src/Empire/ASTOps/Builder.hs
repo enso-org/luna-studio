@@ -11,8 +11,6 @@ import           Control.Exception                  (Exception)
 import           Control.Monad                      (foldM, replicateM)
 import           Control.Monad.Error                (throwError)
 import           Data.Coerce                        (coerce)
-import qualified Data.HMap.Lazy                     as HMap
-import           Data.Layer_OLD.Cover_OLD           (covered, uncover)
 import           Data.List                          (dropWhileEnd)
 import           Data.Maybe                         (isJust, isNothing)
 import           Empire.Prelude

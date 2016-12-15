@@ -11,7 +11,6 @@ import           Control.Arrow                     (second)
 import           Control.Exception                 (Exception)
 import           Control.Monad.Except              (runExceptT)
 import           Control.Monad.State
-import           Data.HMap.Lazy                    (TypeKey (..))
 import           Data.Maybe                        (catMaybes, fromMaybe)
 import           Data.Text.Lazy                    (Text)
 import qualified Data.Text.Lazy                    as Text
@@ -51,8 +50,6 @@ import qualified Graphics.API                      as G
 import           Luna.Pass.Evaluation.Interpreter.Charts (autoScatterChartDouble, autoScatterChartDoubleTuple, autoScatterChartInt,
                                                           autoScatterChartIntTuple)
 
-metaKey :: TypeKey NodeMeta
-metaKey = TypeKey
 
 addNode :: NodeId -> String -> String -> Command AST (NodeRef, NodeRef)
 addNode nid name expr = runASTOp $ do

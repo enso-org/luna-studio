@@ -1,4 +1,5 @@
 {-# LANGUAGE DeriveAnyClass #-}
+{-# LANGUAGE RankNTypes     #-}
 
 module EmpireUtils (
       runEmp
