@@ -18,7 +18,8 @@ import           Empire.ASTOp                  (runASTOp)
 import qualified Empire.ASTOps.Parse           as Parser
 import qualified Empire.Commands.AST           as AST (isTrivialLambda)
 import qualified Empire.Commands.Graph         as Graph (addNode, connect, getGraph, getNodes,
-                                                         getConnections, removeNodes, withGraph)
+                                                         getConnections, removeNodes, withGraph,
+                                                         renameNode)
 import qualified Empire.Commands.GraphBuilder  as GraphBuilder
 import           Empire.Commands.Library       (withLibrary)
 import qualified Empire.Commands.Typecheck     as Typecheck (run)
@@ -256,3 +257,10 @@ spec = around withChannels $ do
                    (_, ref) <- runASTOp $ Parser.parseExpr "def foo"
                    AST.isTrivialLambda ref
             withResult res $ \a -> a `shouldBe` True
+        it "changes name of a variable in-place" $ \env -> do
+            u1 <- mkUUID
+            res <- evalEmp env $ do
+                Graph.addNode top u1 "foo" def
+                Graph.renameNode top u1 "bar"
+                Graph.getNodes top
+            withResult res $ \nodes -> head nodes ^. Node.name `shouldBe` "bar"

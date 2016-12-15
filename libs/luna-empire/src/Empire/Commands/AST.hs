@@ -199,7 +199,7 @@ reprError tcErr = case tcErr of
 writeMeta :: NodeRef -> NodeMeta -> Command AST ()
 writeMeta ref newMeta = runASTOp $ IR.writeLayer @Meta (Just newMeta) ref
 
-renameVar :: NodeRef -> String -> Command AST NodeRef
+renameVar :: NodeRef -> String -> Command AST ()
 renameVar = runASTOp .: ASTBuilder.renameVar
 
 removeSubtree :: NodeRef -> Command AST ()
@@ -253,6 +253,13 @@ getTargetNode node = runASTOp $ ASTBuilder.rightMatchOperand node >>= IR.source
 
 getVarNode :: NodeRef -> Command AST NodeRef
 getVarNode node = runASTOp $ ASTBuilder.leftMatchOperand node >>= IR.source
+
+getVarName :: NodeRef -> Command AST String
+getVarName node = runASTOp $ match node $ \case
+    Var n -> do
+        str <- IR.source n
+        match str $ \case
+            IR.String s -> return s
 
 getLambdaInputRef :: NodeRef -> Int -> Command AST NodeRef
 getLambdaInputRef node pos = runASTOp $ do
