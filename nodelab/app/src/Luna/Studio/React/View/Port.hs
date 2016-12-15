@@ -63,12 +63,12 @@ drawPortSingle_ = let color = color' $ Color 5 in
 drawPortIO_ :: Int -> Int -> Float -> String -> String -> ReactElementM ViewEventHandler ()
 drawPortIO_ number numOfPorts mod1 mod2 mod3 = do
 
-    let color = color' $ Color 5 --TODO [Piotr Młodawski]: get color from model
-        r1    = 20 :: Float
-        line  = 3 :: Float
-        gap   = 0.15 :: Float
-        r2   = r1 - line
-        gap' = gap * (r1/r2)
+    let color   = color' $ Color 5 --TODO [Piotr Młodawski]: get color from model
+        r1      = 20 :: Float
+        line    = 3 :: Float
+        gap     = 0.15 :: Float
+        r2      = r1 - line
+        gap'    = gap * (r1/r2)
         number' = number + 1
 
         t   = pi / fromIntegral numOfPorts

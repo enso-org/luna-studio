@@ -13,6 +13,7 @@ import qualified Luna.Studio.React.Model.Connection as Connection
 import           Luna.Studio.Data.Color             (Color(Color))
 import           Luna.Studio.Data.HSL               (color')
 
+
 name :: JSString
 name = "connection-editor"
 
@@ -26,7 +27,6 @@ connection connectionRef = React.defineControllerView
 
 connection_ :: Ref Connection -> ReactElementM ViewEventHandler ()
 connection_ connectionRef = React.view (connection connectionRef) () mempty
-
 
 
 drawConnection_ :: Float -> Float -> Float -> Float -> String -> ReactElementM ViewEventHandler ()
@@ -45,3 +45,25 @@ drawConnection_ x1 y1 x2 y2 color = do
         , "stroke"      $= color
         , "strokeWidth" $= "3"
         ] mempty
+
+
+nodeToNodeAngle :: Float -> Float -> Float -> Float -> Float
+nodeToNodeAngle x1 y1 x2 y2 = atan $ (y1-y2) / (x1-x2) -- TODO
+
+inputAngle1 :: Float
+inputAngle1 = 1
+
+inputAngle2 :: Float
+inputAngle2 = 2
+
+outputAngle1 :: Float
+outputAngle1 = 1
+
+outputAngle2 :: Float
+outputAngle2 = 1
+
+{-- The simplest version:
+    if     nodeToNodeAngle <= outputAngle1 then outputAngle1
+    elseif nodeToNodeAngle >= outputAngle2 then outputAngle2
+    else   nodeToNodeAngle
+--}
