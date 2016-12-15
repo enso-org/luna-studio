@@ -45,12 +45,6 @@ type instance Pass.Outputs EmpirePass   = '[ExprNet, ExprLinkNet] <>
 type instance Pass.Events EmpirePass = '[NEW // LINK' EXPR, NEW // EXPR]
 type instance Pass.Preserves EmpirePass = '[]
 
-runGraph :: a
-runGraph = $notImplemented
-
-runBuilder :: a
-runBuilder = $notImplemented
-
 runASTOp :: Pass.SubPass EmpirePass (Pass.PassManager (IRBuilder IO)) a -> Command AST a
 runASTOp pass = do
     ASTState currentStateIR currentStatePass <- get
