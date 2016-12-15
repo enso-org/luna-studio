@@ -138,8 +138,8 @@ handleAddSubgraphUndo (Response.Response  _ (AddSubgraph.Request location nodes 
 
 
 handleRemoveNodesUndo :: RemoveNodes.Response -> Maybe (AddSubgraph.Request, RemoveNodes.Request)
-handleRemoveNodesUndo (Response.Response _ (RemoveNodes.Request location noddesIds) (RemoveNodes.Inverse nodes connections) res) =
-    withOk res $ const $
+handleRemoveNodesUndo (Response.Response _ (RemoveNodes.Request location noddesIds) inv res) =
+    withOk inv $ \(RemoveNodes.Inverse nodes connections)->
         let undoMsg = AddSubgraph.Request location nodes connections
             redoMsg = RemoveNodes.Request location noddesIds
         in Just (undoMsg, redoMsg)
