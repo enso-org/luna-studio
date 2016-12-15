@@ -13,7 +13,7 @@ import qualified Empire.API.Request            as R
 
 data Request = Request { _location   :: GraphLocation
                        , _nodeId     :: NodeId
-                       , _expression :: Text
+                       , _expression :: Text.Text
                        } deriving (Generic, Show, Eq)
 
 type Response = Response.SimpleResponse Request

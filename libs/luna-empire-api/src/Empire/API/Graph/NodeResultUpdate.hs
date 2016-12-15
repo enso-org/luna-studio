@@ -1,6 +1,6 @@
 module Empire.API.Graph.NodeResultUpdate where
 
-import           Prologue                      hiding (TypeRep)
+import           Prologue                      hiding (TypeRep, Text)
 import           Data.Binary                   (Binary)
 import           Data.Text.Lazy                (Text)
 

@@ -4,7 +4,8 @@ import           Data.Binary               (Binary)
 import           Data.Map.Lazy             (Map)
 import qualified Data.Map.Lazy             as Map
 import           Data.UUID.Types           (UUID)
-import           Prologue
+import           Data.Text.Lazy            (Text)
+import           Prologue hiding (Text)
 
 import           Empire.API.Data.NodeMeta  (NodeMeta)
 import qualified Empire.API.Data.NodeMeta  as NodeMeta

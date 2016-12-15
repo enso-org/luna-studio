@@ -13,8 +13,9 @@ import           Control.Monad.Except              (runExceptT)
 import           Control.Monad.State
 import           Data.HMap.Lazy                    (TypeKey (..))
 import           Data.Maybe                        (catMaybes, fromMaybe)
+import           Data.Text.Lazy                    (Text)
 import qualified Data.Text.Lazy                    as Text
-import           Prologue                          hiding (( # ), TypeRep, tryHead, s)
+import           Prologue                          hiding (( # ), Text, TypeRep, tryHead, s)
 
 import           Empire.API.Data.DefaultValue      (PortDefault, Value (..))
 import qualified Empire.API.Data.Error             as APIError
@@ -22,7 +23,7 @@ import           Empire.API.Data.Node              (NodeId)
 import           Empire.API.Data.NodeMeta          (NodeMeta)
 import           Empire.API.Data.TypeRep           (TypeRep)
 import           Empire.Data.AST                   (AST, NodeRef, Meta, NodeMarker(..), TCData(..), TCError(..),
-                                                    TypeLayer, Inputs, tcErrors)
+                                                    TypeLayer, InputsLayer, tcErrors)
 import           Empire.Empire
 
 import           Empire.ASTOp                      (ASTOp, runASTOp, lams)
@@ -176,7 +177,7 @@ getError' :: ASTOp m => NodeRef -> m (Maybe (APIError.Error TypeRep))
 getError' n = do
     tc <- view tcErrors <$> IR.readLayer @TCData n
     err <- mapM reprError tc
-    inp <- IR.readLayer @Inputs n
+    inp <- IR.readLayer @InputsLayer n
     inps <- mapM (IR.source) inp
     inpErrs <- catMaybes <$> mapM getError' inps
     return $ tryHead err <|> tryHead inpErrs

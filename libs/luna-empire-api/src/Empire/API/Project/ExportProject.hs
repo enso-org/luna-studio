@@ -2,7 +2,7 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 module Empire.API.Project.ExportProject where
 
-import           Prologue
+import           Prologue hiding (Text)
 import           Data.Binary           (Binary)
 import           Data.Text.Lazy        (Text)
 

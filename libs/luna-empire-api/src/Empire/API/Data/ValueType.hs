@@ -39,7 +39,7 @@ toEnum' _ = Other
 toEnum :: Getter ValueType ValueTypeEnum
 toEnum = to toEnum'
 
-toText :: Getter ValueType Text
+toText :: Getter ValueType Text.Text
 toText = to $ \v -> case v of
     AnyType     -> "*"
     TypeIdent a -> Text.pack $ toString a

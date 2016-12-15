@@ -9,7 +9,7 @@ import           Data.Layer_OLD.Cover_OLD      (uncover, covered)
 import           Data.List                     (nub)
 
 import           Empire.ASTOp                  (ASTOp)
-import           Empire.Data.AST               (NodeRef, Inputs)
+import           Empire.Data.AST               (NodeRef, InputsLayer)
 
 
 import Luna.IR as IR (delete, readLayer, source)
@@ -32,7 +32,7 @@ getRefCount ref = IR.readLayer @Succs ref >>= pure . size
 performSafeRemoval :: ASTOp m => NodeRef -> m ()
 performSafeRemoval ref = do
     node <- pure ref
-    inputs <- IR.readLayer @Inputs node
+    inputs <- IR.readLayer @InputsLayer node
     toRemove <- fmap nub $ mapM IR.source $ inputs
     removeNode ref
     mapM_ safeRemove toRemove

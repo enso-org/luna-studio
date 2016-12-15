@@ -15,29 +15,34 @@ import           Control.Monad                           (foldM)
 import           Control.Monad.State                     (get, put)
 import           Control.Monad.Except                    (throwError)
 import           Empire.Data.AST                         (AST, ASTState(..), Marker, Meta, NodeRef,
-                                                          Inputs, TypeLayer, TCData)
+                                                          InputsLayer, TypeLayer, TCData)
 import           Empire.Empire                           (Command)
-import qualified Luna.Pass    as Pass (SubPass, Inputs, Outputs, Preserves, eval')
+import qualified Luna.Pass    as Pass (SubPass, Inputs, Outputs, Preserves, Events, eval')
 import Luna.Pass.Evaluation.Interpreter.Layer (InterpreterData)
+import GHC.Prim (Any)
 
+import Data.Event (Emitter, type (//))
 import Luna.IR (IRMonad, Accessibles, ExprNet, ExprLinkNet, ExprLinkLayers, ExprLayers, Model,
-                IRT(..), runIRT, unsafeRelayout, generalize, lam,
-                putIRState, snapshot)
+                unsafeRelayout, generalize, lam, evalIRBuilder, evalPassManager,
+                snapshot, IRBuilder, NEW, LINK', EXPR, putIR, thaw, Abstract)
+import qualified Luna.Pass.Manager as Pass (PassManager, get)
 import qualified Luna.IR.Function as IR (Arg, arg)
 import Luna.IR.Layer.Succs (Succs)
 
-type ASTOp m = (MonadThrow m, IRMonad m,
+type ASTOp m = (MonadThrow m, IRMonad m, Emitter m (NEW // LINK' EXPR), Emitter m (NEW // EXPR),
                 Accessibles m ('[ExprNet, ExprLinkNet] <>
-                    ExprLayers '[Model, Marker, Meta, Inputs, Succs, InterpreterData, TCData, TypeLayer] <>
+                    ExprLayers '[Model, Marker, Meta, InputsLayer, Succs, InterpreterData, TCData, TypeLayer] <>
                     ExprLinkLayers '[Model]))
 
 data EmpirePass
+type instance Abstract EmpirePass = EmpirePass
 type instance Pass.Inputs  EmpirePass   = '[ExprNet, ExprLinkNet] <>
-    ExprLayers '[Model, Meta, Marker, Inputs, TypeLayer, Succs, InterpreterData, TypeLayer, TCData] <>
+    ExprLayers '[Model, Meta, Marker, InputsLayer, TypeLayer, Succs, InterpreterData, TypeLayer, TCData] <>
     ExprLinkLayers '[Model]
 type instance Pass.Outputs EmpirePass   = '[ExprNet, ExprLinkNet] <>
-    ExprLayers '[Model, Meta, Marker, Inputs, TypeLayer, Succs, InterpreterData, TypeLayer, TCData] <>
+    ExprLayers '[Model, Meta, Marker, InputsLayer, TypeLayer, Succs, InterpreterData, TypeLayer, TCData] <>
     ExprLinkLayers '[Model]
+type instance Pass.Events EmpirePass = '[NEW // LINK' EXPR, NEW // EXPR]
 type instance Pass.Preserves EmpirePass = '[]
 
 runGraph :: a
@@ -46,15 +51,15 @@ runGraph = $notImplemented
 runBuilder :: a
 runBuilder = $notImplemented
 
-runASTOp :: Pass.SubPass EmpirePass (IRT IO) a -> Command AST a
+runASTOp :: Pass.SubPass EmpirePass (Pass.PassManager (IRBuilder IO)) a -> Command AST a
 runASTOp pass = do
-    ASTState currentState <- get
-    (a, st) <- liftIO $ runIRT $ do
-        putIRState currentState
+    ASTState currentStateIR currentStatePass <- get
+    (a, (st, pass)) <- liftIO $ flip evalIRBuilder currentStateIR $ flip evalPassManager currentStatePass $ do
         a <- Pass.eval' pass
         st <- snapshot
-        return (a, st)
-    put $ ASTState st
+        pass <- Pass.get
+        return (a, (st, pass))
+    put $ ASTState st pass
     case a of
         Left err -> throwError $ "pass internal error: " ++ show err
         Right res -> return res

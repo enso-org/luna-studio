@@ -2,7 +2,7 @@
 
 module Empire.ASTOps.Parse where
 
-import           Prologue                     hiding (s)
+import           Prologue                     hiding (Text, s)
 
 import           Data.Char                    (isLetter)
 import           Data.List.Split              (splitOn)
@@ -19,7 +19,7 @@ import           Empire.API.Data.DefaultValue (PortDefault (..), Value (..))
 import qualified Luna.IR.Function as IR (arg)
 import qualified Luna.IR as IR
 
-parseExpr :: ASTOp m => String -> m (Maybe Text, NodeRef)
+parseExpr :: ASTOp m => String -> m (Maybe Text.Text, NodeRef)
 parseExpr s = do
   lamRes <- tryParseLambda s
   case lamRes of
@@ -30,22 +30,22 @@ parseExpr s = do
               return (Nothing, i')
           _      -> case takeWhile isLetter s of
               [] -> $notImplemented
-              v -> IR.rawVar v >>= \v' -> return (Nothing, IR.generalize v')
+              v -> IR.strVar v >>= \v' -> return (Nothing, IR.generalize v')
 
-tryParseLambda :: ASTOp m => String -> m (Maybe Text, Maybe NodeRef)
+tryParseLambda :: ASTOp m => String -> m (Maybe Text.Text, Maybe NodeRef)
 tryParseLambda s = case words s of
     ("def" : name : _) -> do
-        v <- IR.rawVar "in0"
+        v <- IR.strVar "in0"
         lam <- IR.generalize <$> IR.lam (IR.arg v) v
         return (Just (Text.pack name), Just lam)
     ["->"] -> do
-        v <- IR.rawVar "arg0"
+        v <- IR.strVar "arg0"
         lam <- IR.generalize <$> IR.lam (IR.arg v) v
         return $ (Nothing, Just lam)
     ("->" : rest) -> do
         let (as, body) = partition ((== '$') . head) rest
         let args = fmap (drop 1) as
-        argRefs <- mapM IR.rawVar args
+        argRefs <- mapM IR.strVar args
         (_, bodyRef) <- parseExpr $ unwords body
         lam <- lams (map IR.generalize argRefs) bodyRef
         return $ (Nothing, Just lam)
@@ -54,10 +54,10 @@ tryParseLambda s = case words s of
 parsePortDefault :: ASTOp m => PortDefault -> m NodeRef
 parsePortDefault (Expression expr)          = snd <$> parseExpr expr
 parsePortDefault (Constant (IntValue i))    = IR.generalize <$> IR.integer i
-parsePortDefault (Constant (StringValue s)) = IR.generalize <$> IR.rawString s
+parsePortDefault (Constant (StringValue s)) = IR.generalize <$> IR.string s
 parsePortDefault (Constant (DoubleValue d)) = IR.generalize <$> IR.rational (approxRational d 0.1)
 parsePortDefault (Constant (BoolValue b))   = do
-    bool' <- IR.rawString $ show b
+    bool' <- IR.string $ show b
     IR.generalize <$> IR.cons bool'
 
 replace :: String -> String -> String -> String

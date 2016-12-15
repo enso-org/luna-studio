@@ -2,6 +2,7 @@ module Empire.API.Graph.RenameNode where
 
 import           Prologue
 import           Data.Binary                   (Binary)
+import qualified Data.Text.Lazy                as Text
 
 import           Empire.API.Data.GraphLocation (GraphLocation)
 import           Empire.API.Data.Node          (NodeId)
@@ -12,7 +13,7 @@ import qualified Empire.API.Request            as R
 
 data Request = Request { _location :: GraphLocation
                        , _nodeId   :: NodeId
-                       , _name     :: Text
+                       , _name     :: Text.Text
                        } deriving (Generic, Show, Eq)
 
 type Response = Response.SimpleResponse Request
@@ -20,7 +21,7 @@ instance Response.ResponseResult Request ()
 
 data Update   = Update { _location' :: GraphLocation
                        , _nodeId'   :: NodeId
-                       , _name'     :: Text
+                       , _name'     :: Text.Text
                        } deriving (Generic, Show, Eq)
 
 

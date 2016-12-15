@@ -207,13 +207,13 @@ unAcc ref = do
     case names of
         []     -> throwM SelfPortNotConnectedException
         n : ns -> do
-            v   <- IR.generalize <$> IR.rawVar n
+            v   <- IR.generalize <$> IR.strVar n
             acc <- buildAccessors v ns
             if null args then return acc else reapply acc args
 
 makeNodeRep :: ASTOp m => NodeMarker -> String -> NodeRef -> m NodeRef
 makeNodeRep marker name node = do
-    (nameVar :: NodeRef) <- IR.generalize <$> IR.rawVar name
+    (nameVar :: NodeRef) <- IR.generalize <$> IR.strVar name
     IR.writeLayer @Marker (Just marker) nameVar
     IR.generalize <$> IR.unify nameVar node
 
@@ -231,7 +231,7 @@ leftMatchOperand node = match node $ \case
 
 renameVar :: ASTOp m => NodeRef -> String -> m NodeRef
 renameVar vref name = match vref $ \case
-    Var _ -> IR.generalize <$> IR.rawVar name
+    Var _ -> IR.generalize <$> IR.strVar name
 
 isGraphNode :: ASTOp m => NodeRef -> m Bool
 isGraphNode = fmap isJust . getNodeId

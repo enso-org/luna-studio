@@ -45,5 +45,5 @@ instance Binary PortDefault
 makePrisms ''Value
 makePrisms ''PortDefault
 
-stringify :: Value -> Text
+stringify :: Value -> Text.Text
 stringify = Text.pack . show

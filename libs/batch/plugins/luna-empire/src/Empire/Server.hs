@@ -40,7 +40,7 @@ import qualified Empire.Env                       as Env
 import qualified Empire.Handlers                  as Handlers
 import qualified Empire.Server.Server             as Server
 import qualified Empire.Utils                     as Utils
-import           Prologue
+import           Prologue                         hiding (Text)
 import qualified System.Log.MLogger               as Logger
 import           ZMQ.Bus.Bus                      (Bus)
 import qualified ZMQ.Bus.Bus                      as Bus

@@ -1,6 +1,6 @@
 module Empire.Utils.TextResult where
 
-import           Prologue
+import           Prologue hiding (Text)
 import qualified Data.Text.Lazy               as Text
 
 import           Empire.API.Data.DefaultValue (Value (..))
@@ -27,7 +27,7 @@ showMaybeStr :: Maybe String -> String
 showMaybeStr Nothing  = show (Nothing :: Maybe String)
 showMaybeStr (Just s) = show (Just $ showStr s)
 
-nodeValueToText :: Value -> Text
+nodeValueToText :: Value -> Text.Text
 nodeValueToText w = Text.pack $ case w of
     IntValue        v -> show v
     DoubleValue     v -> show v

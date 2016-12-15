@@ -6,7 +6,7 @@
 
 module Empire.Commands.GraphBuilder where
 
-import           Prologue                          hiding (p, s, index)
+import           Prologue                          hiding (Text, p, s, index)
 
 import           Control.Monad.Except              (throwError)
 import           Control.Monad.State               hiding (when)
@@ -14,6 +14,7 @@ import           Control.Monad.State               hiding (when)
 import qualified Data.List                         as List
 import qualified Data.Map                          as Map
 import           Data.Maybe                        (catMaybes, fromMaybe, maybeToList)
+import           Data.Text.Lazy                    (Text)
 import qualified Data.Text.Lazy                    as Text
 import qualified Data.UUID.V4                      as UUID (nextRandom)
 

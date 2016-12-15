@@ -2,7 +2,7 @@ module Empire.API.Graph.GetProgram where
 
 import           Data.Binary                   (Binary)
 import           Data.Text.Lazy                (Text)
-import           Prologue
+import           Prologue hiding (Text)
 
 import           Empire.API.Data.Breadcrumb    (Breadcrumb, BreadcrumbItem, Named)
 import           Empire.API.Data.Graph         (Graph)
