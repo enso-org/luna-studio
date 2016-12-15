@@ -12,6 +12,7 @@ import           Luna.Studio.React.Model.Connection (Connection)
 import qualified Luna.Studio.React.Model.Connection as Connection
 import           Luna.Studio.Data.Color             (Color(Color))
 import           Luna.Studio.Data.HSL               (color')
+import qualified Luna.Studio.React.View.Port        as P
 
 
 name :: JSString
@@ -48,18 +49,27 @@ drawConnection_ x1 y1 x2 y2 color = do
 
 
 nodeToNodeAngle :: Float -> Float -> Float -> Float -> Float
-nodeToNodeAngle x1 y1 x2 y2 = atan $ (y1-y2) / (x1-x2) -- TODO
+nodeToNodeAngle x1 y1 x2 y2 = atan $ (y1-y2) / (x1-x2) -- FIXME
 
-inputAngle1 :: Float
-inputAngle1 = 1
+inputAngle1 :: Int -> Int -> Float -- FIXME
+inputAngle1 number numOfPorts =
+    let
+        number' = fromIntegral $ number + 1
+        r       = P.nodeRadius - P.connectionWidth*0.5
+        gap     = P.portGap r
+        t       = P.portAngle numOfPorts
 
-inputAngle2 :: Float
-inputAngle2 = 2
+        t1      = number' * t - pi - t + gap/2
+        t2      = number' * t - pi     - gap/2
+    in 1
 
-outputAngle1 :: Float
+inputAngle2 :: Float -- FIXME
+inputAngle2 = 1
+
+outputAngle1 :: Float -- FIXME
 outputAngle1 = 1
 
-outputAngle2 :: Float
+outputAngle2 :: Float -- FIXME
 outputAngle2 = 1
 
 {-- The simplest version:

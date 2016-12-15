@@ -18,9 +18,51 @@ import           Luna.Studio.React.Model.Node (Node)
 import           Luna.Studio.React.Store      (Ref)
 
 
+
+-- utils
+
 showF :: Float -> String
 showF a = Numeric.showFFloat (Just 1) a ""
 
+-- global vars
+
+nodeRadius :: Float
+nodeRadius = 20
+
+connectionWidth :: Float
+connectionWidth = 3
+
+portGap :: Float -> Float
+portGap r = 0.15 * (nodeRadius / r)
+
+portAngle :: Int -> Float
+portAngle numOfPorts = pi / fromIntegral numOfPorts
+
+
+inputAngle1 :: Int -> Int -> Float -- FIXME
+inputAngle1 number numOfPorts =
+    let
+        number' = fromIntegral $ number + 1
+        r       = P.nodeRadius - P.connectionWidth*0.5
+        gap     = P.portGap r
+        t       = P.portAngle numOfPorts
+
+        t1      = number' * t - pi - t + gap/2
+        t2      = number' * t - pi     - gap/2
+    in
+    t   = portAngle numOfPorts
+    t1  = fromIntegral number' * t - pi - t + gap/2
+    
+inputAngle2 :: Float -- FIXME
+inputAngle2 = 1
+
+outputAngle1 :: Float -- FIXME
+outputAngle1 = 1
+
+outputAngle2 :: Float -- FIXME
+outputAngle2 = 1
+
+--
 
 name :: JSString
 name = "port"
@@ -64,14 +106,13 @@ drawPortIO_ :: Int -> Int -> Float -> String -> String -> ReactElementM ViewEven
 drawPortIO_ number numOfPorts mod1 mod2 mod3 = do
 
     let color   = color' $ Color 5 --TODO [Piotr Młodawski]: get color from model
-        r1      = 20 :: Float
-        line    = 3 :: Float
-        gap     = 0.15 :: Float
-        r2      = r1 - line
-        gap'    = gap * (r1/r2)
+        r1      = nodeRadius
+        gap     = portGap r1
+        r2      = nodeRadius - connectionWidth
+        gap'    = portGap r2
         number' = number + 1
 
-        t   = pi / fromIntegral numOfPorts
+        t   = portAngle numOfPorts
         t1  = fromIntegral number' * t - pi - t + gap/2
         t2  = fromIntegral number' * t - pi - gap/2
         t1' = fromIntegral number' * t - pi - t + gap'/2
