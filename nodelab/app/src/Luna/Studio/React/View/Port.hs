@@ -18,19 +18,22 @@ import           Luna.Studio.React.Model.Node (Node)
 import           Luna.Studio.React.Store      (Ref)
 
 
-
 showF :: Float -> String
 showF a = Numeric.showFFloat (Just 1) a ""
 
+
 name :: JSString
 name = "port"
+
 
 port :: Ref Node -> Int -> Bool -> ReactView Port
 port _ numOfPorts isOnly = React.defineView name $ \p -> do
     drawPort_ p numOfPorts isOnly
 
+
 port_ :: Ref Node -> Port -> Int -> Bool -> ReactElementM ViewEventHandler ()
 port_ ref p numOfPorts isOnly = React.view (port ref numOfPorts isOnly) p mempty
+
 
 drawPort_ :: Port -> Int -> Bool -> ReactElementM ViewEventHandler ()
 drawPort_ (Port _ (InPortId   Self         ) _ _) _          _     = drawPortSelf_
@@ -48,12 +51,14 @@ drawPortSelf_ = let color = color' $ Color 5 in
         , "stroke"    $= color
         ] mempty
 
+
 drawPortSingle_ :: ReactElementM ViewEventHandler ()
 drawPortSingle_ = let color = color' $ Color 5 in
     circle_
         [ "className" $= "port port--o port--o--single"
         , "stroke"    $= color
         ] mempty
+
 
 drawPortIO_ :: Int -> Int -> Float -> String -> String -> ReactElementM ViewEventHandler ()
 drawPortIO_ number numOfPorts mod1 mod2 mod3 = do
@@ -94,6 +99,25 @@ drawPortIO_ number numOfPorts mod1 mod2 mod3 = do
         , "stroke"    $= color
         , "d"         $= svgPath
         ] mempty
+
+
+drawConnection_ :: Float -> Float -> Float -> Float -> String -> ReactElementM ViewEventHandler ()
+drawConnection_ x1 y1 x2 y2 color = do
+    let x1    = fromString $ show x1
+        y1    = fromString $ show y1
+        x2    = fromString $ show x2
+        y2    = fromString $ show y2
+        color = color' $ Color 5
+    line_
+        [ "className"   $= "connection"
+        , "x1"          $= x1
+        , "y1"          $= y1
+        , "x2"          $= x2
+        , "y2"          $= y2
+        , "stroke"      $= color
+        , "strokeWidth" $= "3"
+        ] mempty
+
 
 --TODO[react] probably remove
 -- displayPorts :: WidgetId -> Node -> Command Global.State ()

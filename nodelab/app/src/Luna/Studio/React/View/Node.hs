@@ -71,6 +71,7 @@ node nodeRef = React.defineControllerView
                          ] mempty
 
                      makePorts nodeRef $ filter (\(Port _ portId _ _) -> portId /= InPortId Self) ports
+
                      makePorts nodeRef $ filter (\(Port _ portId _ _) -> portId == InPortId Self) ports
 
                      text_
