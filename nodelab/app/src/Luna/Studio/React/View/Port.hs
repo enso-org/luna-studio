@@ -27,23 +27,22 @@ name = "port"
 
 port :: Ref Node -> Int -> ReactView Port
 port _ numOfPorts = React.defineView name $ \p -> do
-    drawPort_ p numOfPorts
+    drawPort_ p numOfPorts False
 
 
 port_ :: Ref Node -> Port -> Int -> ReactElementM ViewEventHandler ()
 port_ ref p numOfPorts = React.view (port ref numOfPorts) p mempty
 
 
-drawPort_ :: Port -> Int -> ReactElementM ViewEventHandler ()
-drawPort_ (Port _ (InPortId   Self         ) _ _) _          = drawPortSelf_
-drawPort_ (Port _ (OutPortId  All          ) _ _) _          = drawPortSingle_
-drawPort_ (Port _ (InPortId  (Arg        i)) _ _) numOfPorts = drawPortIO_ i numOfPorts   1  "0" "1"
-drawPort_ (Port _ (OutPortId (Projection i)) _ _) numOfPorts = drawPortIO_ i numOfPorts (-1) "1" "0"
-
+drawPort_ :: Port -> Int -> Bool -> ReactElementM ViewEventHandler ()
+drawPort_ (Port _ (InPortId   Self         ) _ _) _          _     = drawPortSelf_
+drawPort_ (Port _ (OutPortId  All          ) _ _) 1          True  = drawPortSingle_
+drawPort_ (Port _ (OutPortId  All          ) _ _) numOfPorts _     = drawPortIO_ 0 numOfPorts (-1) "1" "0"
+drawPort_ (Port _ (OutPortId (Projection i)) _ _) numOfPorts _     = drawPortIO_ i numOfPorts (-1) "1" "0"
+drawPort_ (Port _ (InPortId  (Arg        i)) _ _) numOfPorts _     = drawPortIO_ i numOfPorts   1  "0" "1"
 
 drawPortSelf_ :: ReactElementM ViewEventHandler ()
-drawPortSelf_ =
-    let color = "#8ABEB7" in
+drawPortSelf_ = let color = color' $ Color 5 in
     circle_
         [ "className" $= "port port--self"
         , "fill"      $= color
@@ -51,8 +50,7 @@ drawPortSelf_ =
         ] mempty
 
 drawPortSingle_ :: ReactElementM ViewEventHandler ()
-drawPortSingle_ =
-    let color = "#8ABEB7" in
+drawPortSingle_ = let color = color' $ Color 5 in
     circle_
         [ "className" $= "port port--o port--o--single"
         , "stroke"    $= color
