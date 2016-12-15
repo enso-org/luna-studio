@@ -70,7 +70,8 @@ node nodeRef = React.defineControllerView
                          [ "className" $= "selection-mark"
                          ] mempty
 
-                     makePorts nodeRef ports
+                     makePorts nodeRef $ filter (\(Port _ portId _ _) -> portId /= InPortId Self) ports
+                     makePorts nodeRef $ filter (\(Port _ portId _ _) -> portId == InPortId Self) ports
 
                      text_
                          [ "className" $= "name"
@@ -97,7 +98,8 @@ node nodeRef = React.defineControllerView
                         [ "className" $= "selection-mark"
                         ] mempty
 
-                    makePorts nodeRef ports
+                    makePorts nodeRef $ filter (\(Port _ portId _ _) -> portId /= InPortId Self) ports
+                    makePorts nodeRef $ filter (\(Port _ portId _ _) -> portId == InPortId Self) ports
 
                     text_
                         [ onDoubleClick $ \e _ -> stopPropagation e : dispatch nodeRef (UI.NodeEvent $ Node.EditExpression nodeId)
