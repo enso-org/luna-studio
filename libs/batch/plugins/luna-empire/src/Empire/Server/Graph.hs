@@ -181,7 +181,7 @@ handleAddNode = modifyGraph (mtuple action) success where
         replyResult request () node
         sendToBus' $ AddNode.Update location node
         case nodeType of
-            AddNode.ExpressionNode expr -> withJust connectTo $ connectNodes location expr (node ^. Node.nodeId) 
+            AddNode.ExpressionNode expr -> withJust connectTo $ connectNodes location expr (node ^. Node.nodeId)
 
 handleAddSubgraph :: Request AddSubgraph.Request -> StateT Env BusT ()
 handleAddSubgraph (Request reqId (AddSubgraph.Request location nodes connections)) = do
@@ -211,7 +211,7 @@ handleUpdateNodeExpression = modifyGraph action success where
     action (UpdateNodeExpression.Request location nodeId expression) = do
         oldExpr <- Graph.withGraph location $ undefined -- GraphUtils.getASTTarget nodeId >>= Print.printNodeExpression
         let newNodeId = nodeId
-            inverse = UpdateNodeExpression.Inverse oldExpr
+            inverse = UpdateNodeExpression.Inverse (Text.pack  oldExpr)
             res = Graph.updateNodeExpression location nodeId newNodeId expression
         (,) <$> pure inverse <*> res
     success request@(Request _ req@(UpdateNodeExpression.Request location nodeId expression)) _ nodeMay = do
@@ -243,8 +243,8 @@ handleConnectReq doTC = modifyGraphOk (mtuple action) success where
 handleDisconnect :: Request Disconnect.Request -> StateT Env BusT ()
 handleDisconnect = modifyGraphOk action success where
     action  (Disconnect.Request location dst) = do
-        connections <- Graph.withGraph location buildConnections
-        let inverse = Disconnect.Inverse connections
+        connection <- Graph.withGraph location buildConnections
+        let inverse = Disconnect.Inverse $ fst $ head connection
         (,) <$> pure inverse <*> Graph.disconnect location dst
     success (Disconnect.Request location dst) _ result = sendToBus' $ Disconnect.Update location dst
 

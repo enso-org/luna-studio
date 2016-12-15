@@ -16,7 +16,7 @@ data Request = Request { _location   :: GraphLocation
                        , _expression :: Text
                        } deriving (Generic, Show, Eq)
 
-data Inverse = Inverse { _expressionPrev :: String
+data Inverse = Inverse { _expressionPrev :: Text
                        } deriving (Generic, Show, Eq)
 
 type Result = Maybe Node

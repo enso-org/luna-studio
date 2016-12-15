@@ -16,7 +16,7 @@ data Request = Request { _location :: GraphLocation
                        , _dst      :: InPortRef
                        } deriving (Generic, Show, Eq)
 
-data Inverse = Inverse { _connections :: [(OutPortRef, InPortRef)]
+data Inverse = Inverse { _src :: OutPortRef
                        } deriving (Generic, Show, Eq)
 
 type Response = Response.SimpleResponse Request Inverse

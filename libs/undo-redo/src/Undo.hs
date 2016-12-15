@@ -23,6 +23,7 @@ import           Data.ByteString                   (ByteString)
 import           Data.ByteString.Lazy              (toStrict,fromStrict)
 import           Data.Binary                       (Binary, decode)
 import qualified Data.Binary                       as Bin
+import qualified Data.Text.Lazy                        as Text
 
 import qualified Data.Map.Strict                   as Map
 import           Data.Map.Strict                   (Map)
@@ -30,13 +31,18 @@ import           Data.Maybe
 import           Data.Set                          hiding (map)
 import           Prologue                          hiding (throwM)
 
+import           Empire.API.Data.Connection        (Connection)
+import           Empire.API.Data.Connection        as Connection
 import           Empire.API.Data.GraphLocation     (GraphLocation)
 import           Empire.API.Data.Graph             (Graph)
 import           Empire.API.Data.Node              (Node, NodeId)
 import qualified Empire.API.Data.Node              as Node
 import           Empire.API.Data.NodeMeta          (NodeMeta)
+import           Empire.API.Data.PortRef (InPortRef, OutPortRef, dstNodeId, srcNodeId)
 import qualified Empire.API.Graph.AddNode          as AddNode
 import qualified Empire.API.Graph.AddSubgraph      as AddSubgraph
+import qualified Empire.API.Graph.Connect              as Connect
+import qualified Empire.API.Graph.Disconnect           as Disconnect
 import qualified Empire.API.Graph.RemoveNodes      as RemoveNodes
 import qualified Empire.API.Graph.RenameNode       as RenameNode
 import qualified Empire.API.Graph.UpdateNodeExpression as UpdateNodeExpression
@@ -85,6 +91,8 @@ handlersMap = Map.fromList
     , makeHandler handleRemoveNodesUndo
     , makeHandler handleUpdateNodeExpressionUndo
     , makeHandler handleRenameNodeUndo
+    , makeHandler handleConnectUndo
+    , makeHandler handleDisconnectUndo
     ]
 
 type UndoRequests a = (UndoRequest a, RedoRequest a)
@@ -95,6 +103,8 @@ type family UndoRequest t where
     UndoRequest RemoveNodes.Response          = AddSubgraph.Request
     UndoRequest UpdateNodeExpression.Response = UpdateNodeExpression.Request
     UndoRequest RenameNode.Response           = RenameNode.Request
+    UndoRequest Connect.Response              = Disconnect.Request
+    UndoRequest Disconnect.Response           = Connect.Request
 
 type family RedoRequest t where
     RedoRequest AddNode.Response              = AddNode.Request
@@ -102,6 +112,8 @@ type family RedoRequest t where
     RedoRequest RemoveNodes.Response          = RemoveNodes.Request
     RedoRequest UpdateNodeExpression.Response = UpdateNodeExpression.Request
     RedoRequest RenameNode.Response           = RenameNode.Request
+    RedoRequest Connect.Response              = Connect.Request
+    RedoRequest Disconnect.Response           = Disconnect.Request
 
 
 makeHandler :: forall response. (Topic.MessageTopic response, Binary response, Binary (UndoRequest response), Binary (RedoRequest response))
@@ -136,34 +148,50 @@ handleAddSubgraphUndo (Response.Response  _ (AddSubgraph.Request location nodes 
             redoMsg = AddSubgraph.Request location nodes connections
         in Just (undoMsg, redoMsg)
 
+connect :: (OutPortRef, InPortRef) -> Connection
+connect ports = Connection src dst
+    where src = fst ports
+          dst = snd ports
 
 handleRemoveNodesUndo :: RemoveNodes.Response -> Maybe (AddSubgraph.Request, RemoveNodes.Request)
-handleRemoveNodesUndo (Response.Response _ (RemoveNodes.Request location noddesIds) inv res) =
-    withOk inv $ \(RemoveNodes.Inverse nodes connections)->
-        let undoMsg = AddSubgraph.Request location nodes connections
+handleRemoveNodesUndo (Response.Response _ (RemoveNodes.Request location noddesIds) inv _) =
+    withOk inv $ \(RemoveNodes.Inverse nodes connectionPorts)->
+        let connections = connect <$> connectionPorts
+            undoMsg = AddSubgraph.Request location nodes connections
             redoMsg = RemoveNodes.Request location noddesIds
         in Just (undoMsg, redoMsg)
 
 handleUpdateNodeExpressionUndo :: UpdateNodeExpression.Response -> Maybe ( UpdateNodeExpression.Request,  UpdateNodeExpression.Request)
-handleUpdateNodeExpressionUndo (Response.Response _ (UpdateNodeExpression.Request location nodeId expression) oldExpr res) =
-    withOk res $ const $
+handleUpdateNodeExpressionUndo (Response.Response _ (UpdateNodeExpression.Request location nodeId expression) inv res) =
+    withOk inv $ \(UpdateNodeExpression.Inverse oldExpr) ->
         let undoMsg = UpdateNodeExpression.Request location nodeId oldExpr
             redoMsg = UpdateNodeExpression.Request location nodeId expression
         in Just (undoMsg, redoMsg)
 
-handleRenameNodeUndo :: RenameNode.Response -> Maybe (RenameNode.Request, RenameNode.Request)
-handleRenameNodeUndo (Response.Response _ (RenameNode.Request location nodeId name) namePrev res) =
+handleRenameNodeUndo :: RenameNode.Response ->  Maybe (RenameNode.Request, RenameNode.Request)
+handleRenameNodeUndo (Response.Response _ (RenameNode.Request location nodeId name) inv res) =
+    withOk inv $ \(RenameNode.Inverse namePrev) ->
+        case namePrev of
+            Nothing -> let undoMsg = RenameNode.Request location nodeId ""
+                           redoMsg = RenameNode.Request location nodeId name
+                       in Just (undoMsg, redoMsg)
+            Just nameOld -> let undoMsg = RenameNode.Request location nodeId nameOld
+                                redoMsg = RenameNode.Request location nodeId name
+                            in Just (undoMsg, redoMsg)
+
+handleConnectUndo :: Connect.Response -> Maybe (Disconnect.Request, Connect.Request)
+handleConnectUndo (Response.Response _ (Connect.Request location src dst) inv res) =
     withOk res $ const $
-        let undoMsg = RenameNode.Request location nodeId namePrev
-            redoMsg = RenameNode.Request location nodeId name
+        let undoMsg = Disconnect.Request location dst
+            redoMsg = Connect.Request location src dst
         in Just (undoMsg, redoMsg)
 
--- handleConnectUndo
-
--- handleDisconnectUndo :: Disconnect.Response -> Maybe (Connect.Request, Disconnect.Request)
--- handleDisconnectUndo (Response.Response _ (Disconnect.Request location dst) connections res)
---     withOk res $ const $
---         let undoMsg = Connect.Request location
+handleDisconnectUndo :: Disconnect.Response -> Maybe (Connect.Request, Disconnect.Request)
+handleDisconnectUndo (Response.Response _ (Disconnect.Request location dst) inv res) =
+    withOk inv $ \(Disconnect.Inverse src) ->
+        let undoMsg = Connect.Request location src dst
+            redoMsg = Disconnect.Request location dst
+        in Just (undoMsg, redoMsg)
 
 empty :: History
 empty = History [] []
