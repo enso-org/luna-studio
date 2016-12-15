@@ -25,21 +25,20 @@ showF a = Numeric.showFFloat (Just 1) a ""
 name :: JSString
 name = "port"
 
-port :: Ref Node -> Int -> ReactView Port
-port _ numOfPorts = React.defineView name $ \p -> do
-    drawPort_ p numOfPorts False
+port :: Ref Node -> Int -> Bool -> ReactView Port
+port _ numOfPorts isOnly = React.defineView name $ \p -> do
+    drawPort_ p numOfPorts isOnly
 
-
-port_ :: Ref Node -> Port -> Int -> ReactElementM ViewEventHandler ()
-port_ ref p numOfPorts = React.view (port ref numOfPorts) p mempty
-
+port_ :: Ref Node -> Port -> Int -> Bool -> ReactElementM ViewEventHandler ()
+port_ ref p numOfPorts isOnly = React.view (port ref numOfPorts isOnly) p mempty
 
 drawPort_ :: Port -> Int -> Bool -> ReactElementM ViewEventHandler ()
 drawPort_ (Port _ (InPortId   Self         ) _ _) _          _     = drawPortSelf_
-drawPort_ (Port _ (OutPortId  All          ) _ _) 1          True  = drawPortSingle_
-drawPort_ (Port _ (OutPortId  All          ) _ _) numOfPorts _     = drawPortIO_ 0 numOfPorts (-1) "1" "0"
-drawPort_ (Port _ (OutPortId (Projection i)) _ _) numOfPorts _     = drawPortIO_ i numOfPorts (-1) "1" "0"
+drawPort_ (Port _ (OutPortId  All          ) _ _) _          True  = drawPortSingle_
+drawPort_ (Port _ (OutPortId  All          ) _ _) numOfPorts False = drawPortIO_ 0 numOfPorts (-1) "1" "0"
 drawPort_ (Port _ (InPortId  (Arg        i)) _ _) numOfPorts _     = drawPortIO_ i numOfPorts   1  "0" "1"
+drawPort_ (Port _ (OutPortId (Projection i)) _ _) numOfPorts _     = drawPortIO_ i numOfPorts (-1) "1" "0"
+
 
 drawPortSelf_ :: ReactElementM ViewEventHandler ()
 drawPortSelf_ = let color = color' $ Color 5 in

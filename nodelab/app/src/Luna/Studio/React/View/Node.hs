@@ -31,9 +31,22 @@ isOut :: Port -> Int
 isOut (Port _ (OutPortId _) _ _) = 1
 isOut _ = 0
 
-countPorts :: Port -> [Port] -> Int
-countPorts (Port _ (InPortId _)  _ _) ports = foldl (\acc p -> acc + (isIn p))  0 ports
-countPorts (Port _ (OutPortId _) _ _) ports = foldl (\acc p -> acc + (isOut p)) 0 ports
+countInPorts :: [Port] -> Int
+countInPorts ports = foldl (\acc p -> acc + (isIn p)) 0 ports
+
+countOutPorts :: [Port] -> Int
+countOutPorts ports = foldl (\acc p -> acc + (isOut p)) 0 ports
+
+countPorts :: [Port] -> Int
+countPorts ports = (countInPorts ports) + (countOutPorts ports)
+
+countSameTypePorts :: Port -> [Port] -> Int
+countSameTypePorts (Port _ (InPortId _)  _ _) = countInPorts
+countSameTypePorts (Port _ (OutPortId _) _ _) = countOutPorts
+
+makePorts :: Ref Node -> [Port] -> ReactElementM ViewEventHandler ()
+makePorts nodeRef ports = forM_ ports $ \port -> port_ nodeRef port (countSameTypePorts port ports) (countPorts ports == 1)
+
 
 --FIXME: move all styles to CSS
 node :: Ref Node -> ReactView ()
@@ -57,7 +70,7 @@ node nodeRef = React.defineControllerView
                          [ "className" $= "selection-mark"
                          ] mempty
 
-                     forM_ ports $ \port -> port_ nodeRef port (countPorts port ports)
+                     makePorts nodeRef ports
 
                      text_
                          [ "className" $= "name"
@@ -84,7 +97,7 @@ node nodeRef = React.defineControllerView
                         [ "className" $= "selection-mark"
                         ] mempty
 
-                    forM_ ports $ \port -> port_ nodeRef port (countPorts port ports)
+                    makePorts nodeRef ports
 
                     text_
                         [ onDoubleClick $ \e _ -> stopPropagation e : dispatch nodeRef (UI.NodeEvent $ Node.EditExpression nodeId)
