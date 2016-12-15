@@ -23,7 +23,7 @@ import Luna.Pass.Evaluation.Interpreter.Layer (InterpreterData)
 import Data.Event (Emitter, type (//))
 import Luna.IR (IRMonad, Accessibles, ExprNet, ExprLinkNet, ExprLinkLayers, ExprLayers, Model,
                 unsafeRelayout, generalize, lam, evalIRBuilder, evalPassManager,
-                snapshot, IRBuilder, NEW, LINK', EXPR, putIR, thaw, Abstract)
+                snapshot, IRBuilder, NEW, LINK', EXPR, Abstract)
 import qualified Luna.Pass.Manager as Pass (PassManager, get)
 import qualified Luna.IR.Function as IR (Arg, arg)
 import Luna.IR.Layer.Succs (Succs)
@@ -47,12 +47,12 @@ type instance Pass.Preserves EmpirePass = '[]
 runASTOp :: Pass.SubPass EmpirePass (Pass.PassManager (IRBuilder IO)) a -> Command AST a
 runASTOp pass = do
     ASTState currentStateIR currentStatePass <- get
-    (a, (st, pass)) <- liftIO $ flip evalIRBuilder currentStateIR $ flip evalPassManager currentStatePass $ do
+    (a, (st, passSt)) <- liftIO $ flip evalIRBuilder currentStateIR $ flip evalPassManager currentStatePass $ do
         a <- Pass.eval' pass
         st <- snapshot
-        pass <- Pass.get
-        return (a, (st, pass))
-    put $ ASTState st pass
+        passSt <- Pass.get
+        return (a, (st, passSt))
+    put $ ASTState st passSt
     case a of
         Left err -> throwError $ "pass internal error: " ++ show err
         Right res -> return res

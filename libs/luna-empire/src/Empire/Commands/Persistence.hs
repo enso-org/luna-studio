@@ -94,7 +94,7 @@ createProjectFromPersistent maybePid p = do
       let graph = lib ^. L.graph
           nodes = graph ^. G.nodes
           connections = graph ^. G.connections
-      mapM Graph.addPersistentNode nodes
+      mapM_ Graph.addPersistentNode nodes
       mapM (uncurry Graph.connectPersistent) connections
   project <- withProject pid (get >>= return)
   return (pid, project)

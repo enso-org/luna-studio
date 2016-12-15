@@ -4,7 +4,7 @@ module Empire.Commands.Library
     , createLibrary
     ) where
 
-import           Control.Monad.Error     (throwError)
+import           Control.Monad.Except    (throwError)
 import           Control.Monad.Reader
 import           Control.Monad.State
 import qualified Data.IntMap             as IntMap
@@ -26,8 +26,8 @@ import qualified Empire.Utils.IdGen      as IdGen
 createLibrary :: ProjectId -> Maybe String -> FilePath -> Empire (LibraryId, Library)
 createLibrary pid name path = withProject pid $ do
     let library = Library.make name path
-    id <- insertAtNewId library
-    return (id, library)
+    id' <- insertAtNewId library
+    return (id', library)
 
 listLibraries :: ProjectId -> Empire [(LibraryId, Library)]
 listLibraries pid = withProject pid $ uses Project.libs IntMap.toList

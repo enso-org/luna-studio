@@ -7,18 +7,16 @@
 
 module Empire.ASTOps.Builder where
 
-import           Control.Exception                  (Exception)
 import           Control.Monad                      (foldM, replicateM)
-import           Control.Monad.Error                (throwError)
+import           Control.Monad.Except               (throwError)
 import           Data.Coerce                        (coerce)
-import           Data.List                          (dropWhileEnd)
 import           Data.Maybe                         (isJust, isNothing)
 import           Empire.Prelude
 
 import           Empire.API.Data.Node               (NodeId)
 import           Empire.ASTOp                       (ASTOp)
 import           Empire.ASTOps.Remove               (removeNode)
-import           Empire.Data.AST                    (EdgeRef, NodeRef, NodeMarker(..), Marker, Meta(..))
+import           Empire.Data.AST                    (EdgeRef, NodeRef, NodeMarker(..), Marker)
 
 import Luna.IR.Expr.Term (Term(Sym_String))
 import Luna.IR.Expr.Term.Uni
@@ -44,16 +42,16 @@ unpackLamArguments expr = match expr $ \case
     Lam (Arg.Arg _ b) a -> do
         nextLam <- IR.source a
         args    <- dumpArguments nextLam
-        arg     <- IR.source b
-        return $ arg : args
+        arg'    <- IR.source b
+        return $ arg' : args
     _       -> return []
 
-isApp :: _ => IR.Expr l -> m Bool
+isApp :: ASTOp m => NodeRef -> m Bool
 isApp expr = match expr $ \case
     App{} -> return True
     _     -> return False
 
-isBlank :: _ => IR.Expr layout0 -> m0 Bool
+isBlank :: ASTOp m => NodeRef -> m Bool
 isBlank expr = match expr $ \case
     Blank{} -> return True
     _       -> return False
@@ -70,7 +68,7 @@ getName node = do
 
 data NotAppException = NotAppException deriving (Show, Exception)
 
-removeArg :: (ASTOp m, MonadThrow m) => NodeRef -> Int -> m NodeRef
+removeArg :: ASTOp m => NodeRef -> Int -> m NodeRef
 removeArg expr i = match expr $ \case
     App a (Arg.Arg _ c) -> do
         nextApp <- IR.source a
@@ -83,7 +81,7 @@ removeArg expr i = match expr $ \case
             IR.generalize <$> IR.app f (arg d)
     _       -> throwM NotAppException
 
-destructApp :: _ => NodeRef -> m (NodeRef, [NodeRef])
+destructApp :: ASTOp m => NodeRef -> m (NodeRef, [NodeRef])
 destructApp app' = match app' $ \case
     App a _ -> do
         unpackedArgs <- dumpArguments app'
@@ -99,13 +97,13 @@ apps fun exprs = IR.unsafeRelayout <$> foldM f (IR.unsafeRelayout fun) (IR.unsaf
 appAny :: ASTOp m => NodeRef -> Arg (NodeRef) -> m NodeRef
 appAny = fmap IR.generalize .: IR.app
 
-newApplication :: _ => NodeRef -> NodeRef -> Int -> m NodeRef
+newApplication :: ASTOp m => NodeRef -> NodeRef -> Int -> m NodeRef
 newApplication fun arg' pos = do
     blanks <- sequence $ replicate pos IR.blank
     let args = IR.generalize blanks ++ [arg']
     apps fun args
 
-rewireApplication :: _ => NodeRef -> NodeRef -> Int -> m NodeRef
+rewireApplication :: ASTOp m => NodeRef -> NodeRef -> Int -> m NodeRef
 rewireApplication fun arg' pos = do
     (target, oldArgs) <- destructApp fun
 
@@ -116,10 +114,10 @@ rewireApplication fun arg' pos = do
 
     apps target withNewArg
 
-applyFunction :: _ => NodeRef -> NodeRef -> Int -> m NodeRef
-applyFunction fun arg pos = match fun $ \case
-    App{} -> rewireApplication fun arg pos
-    _     -> newApplication fun arg pos
+applyFunction :: ASTOp m => NodeRef -> NodeRef -> Int -> m NodeRef
+applyFunction fun arg' pos = match fun $ \case
+    App{} -> rewireApplication fun arg' pos
+    _     -> newApplication fun arg' pos
 
 
 reapply :: ASTOp m => NodeRef -> [NodeRef] -> m NodeRef
@@ -160,7 +158,7 @@ dumpAccessors' firstApp ref = do
 dumpAccessors :: ASTOp m => NodeRef -> m (Maybe NodeRef, [String])
 dumpAccessors = dumpAccessors' True
 
-dumpArguments :: _ => IR.Expr l -> m [IR.Expr l]
+dumpArguments :: ASTOp m => NodeRef -> m [NodeRef]
 dumpArguments expr = match expr $ \case
     App a (Arg.Arg _ b) -> do
         nextApp <- IR.source a

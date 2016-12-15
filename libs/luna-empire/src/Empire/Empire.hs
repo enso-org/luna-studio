@@ -12,7 +12,7 @@ import           Empire.Data.Project           (Project)
 import           Empire.Prelude
 
 import           Control.Concurrent.STM.TChan  (TChan)
-import           Control.Monad.Error           (ErrorT (..), MonadError, runErrorT, throwError)
+import           Control.Monad.Except          (ExceptT (..), MonadError, runExceptT, throwError)
 import           Control.Monad.Reader
 import           Control.Monad.State
 import           Data.Map.Lazy                 (Map)
@@ -48,18 +48,18 @@ makeLenses ''InterpreterEnv
 instance Default InterpreterEnv where
     def = InterpreterEnv def def def def def
 
-type Command s a = ErrorT Error (ReaderT CommunicationEnv (StateT s IO)) a
+type Command s a = ExceptT Error (ReaderT CommunicationEnv (StateT s IO)) a
 
 type Empire a = Command Env a
 
 runEmpire :: CommunicationEnv -> s -> Command s a -> IO (Either Error a, s)
-runEmpire notif st cmd = runStateT (runReaderT (runErrorT cmd) notif) st
+runEmpire notif st cmd = runStateT (runReaderT (runExceptT cmd) notif) st
 
 execEmpire :: CommunicationEnv -> s -> Command s a -> IO (Either Error a)
 execEmpire = fmap fst .:. runEmpire
 
 empire :: (CommunicationEnv -> s -> IO (Either Error a, s)) -> Command s a
-empire = ErrorT . ReaderT . fmap StateT
+empire = ExceptT . ReaderT . fmap StateT
 
 infixr 4 <?!>
 (<?!>) :: MonadError Error m => m (Maybe a) -> Error -> m a

@@ -4,11 +4,7 @@ module Empire.ASTOps.Print where
 
 import           Empire.Prelude
 import           Data.List                (dropWhileEnd, delete)
-import qualified Data.Text.Lazy           as Text
-import           Data.Map                 (Map)
-import qualified Data.Map                 as Map
 import           Data.Char                (isAlpha)
-import           Text.Printf              (printf)
 
 import           Empire.ASTOp             (ASTOp)
 import           Empire.Data.AST          (NodeRef)
@@ -24,7 +20,7 @@ getTypeRep tp = match tp $ \case
     Cons n -> do
         name <- ASTBuilder.getName n
         return $ TCons name []
-    Lam as out -> do
+    Lam _as out -> do
         args   <- ASTBuilder.unpackLamArguments tp
         argReps <- mapM getTypeRep args
         outRep <- getTypeRep =<< IR.source out
@@ -45,7 +41,7 @@ parenIf True  s = "(" ++ s ++ ")"
 
 printFunctionArguments :: ASTOp m => NodeRef -> m [String]
 printFunctionArguments lam = match lam $ \case
-    Lam args _ -> do
+    Lam _args _ -> do
         args' <- ASTBuilder.unpackLamArguments lam
         mapM printExpression args'
 
@@ -78,7 +74,7 @@ printExpression' suppressNodes paren node = do
                         _ -> return funExpr
 
     match node $ \case
-        Lam as o -> do
+        Lam _as o -> do
             args    <- ASTBuilder.unpackLamArguments node
             argReps <- mapM (printExpression' False False) args
             out     <- IR.source o
@@ -102,7 +98,7 @@ printExpression' suppressNodes paren node = do
                 _ -> do
                     targetRep <- recur True target
                     return $ if targetRep == "_" then name else targetRep <> "." <> name
-        App f args -> do
+        App f _args -> do
             funExpr <- IR.source f >>= recur True
             displayFun funExpr node
         Blank -> return "_"

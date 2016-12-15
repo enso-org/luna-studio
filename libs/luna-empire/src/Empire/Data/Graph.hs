@@ -3,22 +3,16 @@ module Empire.Data.Graph where
 
 import           Data.Map.Lazy                     (Map)
 import qualified Data.Map                          as Map (empty)
-import qualified Data.Set                          as Set (empty)
-import           Data.Typeable                     (typeRep)
 import           Empire.API.Data.Node              (NodeId)
 import           Empire.Data.BreadcrumbHierarchy   (BreadcrumbHierarchy, empty)
 import           Empire.Prelude
 
 import           Empire.Data.AST                   (AST, ASTState(..), NodeRef, Marker, Meta,
-                                                    InputsLayer, TypeLayer, TCData, TCDataMock(..),
-                                                    registerEmpireLayers)
-import Luna.IR (LayerData, Model, evalIRBuilder', evalPassManager', WorkingElem, writeLayer, ElemScope,
-                EXPR, LINK', attachLayer, registerLayer, runRegs, snapshot, readAttr, IRMonad,
-                MonadPassManager, EXPRESSION)
-import Luna.IR.Layer.Succs (Succs)
-import qualified Luna.Pass as Pass (Pass, DynPass, compile)
-import qualified Luna.Pass.Manager as Pass (PassManager, get)
-import Luna.Pass.Evaluation.Interpreter.Layer (InterpreterData, InterpreterLayer)
+                                                    InputsLayer, TCData, registerEmpireLayers)
+import Luna.IR (evalIRBuilder', evalPassManager',
+                EXPR, attachLayer, runRegs, snapshot)
+import qualified Luna.Pass.Manager as Pass (get)
+import Luna.Pass.Evaluation.Interpreter.Layer (InterpreterData)
 
 import System.IO.Unsafe (unsafePerformIO)
 

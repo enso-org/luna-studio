@@ -51,14 +51,21 @@ tryParseLambda s = case words s of
         return $ (Nothing, Just lam)
     _ -> return (Nothing, Nothing)
 
+data PortDefaultNotConstructibleException = PortDefaultNotConstructibleException PortDefault
+    deriving Show
+
+instance Exception PortDefaultNotConstructibleException
+
 parsePortDefault :: ASTOp m => PortDefault -> m NodeRef
 parsePortDefault (Expression expr)          = snd <$> parseExpr expr
 parsePortDefault (Constant (IntValue i))    = IR.generalize <$> IR.integer i
 parsePortDefault (Constant (StringValue s)) = IR.generalize <$> IR.string s
 parsePortDefault (Constant (DoubleValue d)) = IR.generalize <$> IR.rational (approxRational d 0.1)
+parsePortDefault (Constant (RationalValue r)) = IR.generalize <$> IR.rational r
 parsePortDefault (Constant (BoolValue b))   = do
     bool' <- IR.string $ show b
     IR.generalize <$> IR.cons bool'
+parsePortDefault d = throwM $ PortDefaultNotConstructibleException d
 
 replace :: String -> String -> String -> String
 replace word with = intercalate with . splitOn word
