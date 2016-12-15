@@ -1,47 +1,51 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Luna.Studio.React.View.Connection where
 
-import           React.Flux
-import qualified React.Flux             as React
+import           Luna.Studio.Data.Vector
 import           Luna.Studio.Prelude
+import           React.Flux
+import qualified React.Flux                         as React
 
-import qualified Event.UI               as UI
-import           Luna.Studio.React.Store            (Ref, dt)
-import qualified Luna.Studio.React.Store            as Store
+import qualified Event.UI                           as UI
+import           Luna.Studio.Data.Color             (Color (Color))
+import           Luna.Studio.Data.HSL               (color')
 import           Luna.Studio.React.Model.Connection (Connection)
 import qualified Luna.Studio.React.Model.Connection as Connection
-import           Luna.Studio.Data.Color             (Color(Color))
-import           Luna.Studio.Data.HSL               (color')
+import           Luna.Studio.React.Store            (Ref, dt)
+import qualified Luna.Studio.React.Store            as Store
+
 
 name :: JSString
 name = "connection-editor"
 
-
 connection :: Ref Connection -> ReactView ()
 connection connectionRef = React.defineControllerView
     name connectionRef $ \connectionStore () -> do
-        div_ $ do
-            elemString $ "connection: " <> show (connectionStore ^. dt)
-
+        let connection = connectionStore ^. dt
+            srcX       = connection ^. Connection.from . x
+            srcY       = connection ^. Connection.from . y
+            dstX       = connection ^. Connection.to . x
+            dstY       = connection ^. Connection.to . y
+            color      = connection ^. Connection.color
+        drawConnection_ srcX srcY dstX dstY color
 
 connection_ :: Ref Connection -> ReactElementM ViewEventHandler ()
 connection_ connectionRef = React.view (connection connectionRef) () mempty
 
-
-
-drawConnection_ :: Float -> Float -> Float -> Float -> String -> ReactElementM ViewEventHandler ()
+drawConnection_ :: Double -> Double -> Double -> Double -> Int -> ReactElementM ViewEventHandler ()
 drawConnection_ x1 y1 x2 y2 color = do
-    let x1    = fromString $ show x1
-        y1    = fromString $ show y1
-        x2    = fromString $ show x2
-        y2    = fromString $ show y2
+    let x1'   = fromString $ show x1
+        y1'   = fromString $ show y1
+        x2'   = fromString $ show x2
+        y2'   = fromString $ show y2
+        --TODO[react]: Apply correct color
         color = color' $ Color 5
     line_
         [ "className"   $= "connection"
-        , "x1"          $= x1
-        , "y1"          $= y1
-        , "x2"          $= x2
-        , "y2"          $= y2
+        , "x1"          $= x1'
+        , "y1"          $= y1'
+        , "x2"          $= x2'
+        , "y2"          $= y2'
         , "stroke"      $= color
         , "strokeWidth" $= "3"
         ] mempty

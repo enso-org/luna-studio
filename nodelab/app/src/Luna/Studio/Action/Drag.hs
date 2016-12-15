@@ -4,33 +4,34 @@ module Luna.Studio.Action.Drag
     ( toAction
     ) where
 
-import           React.Flux                        (mouseAltKey, mouseCtrlKey, mouseMetaKey, mouseScreenX, mouseScreenY, mouseShiftKey)
+import           React.Flux                           (mouseAltKey, mouseCtrlKey, mouseMetaKey, mouseScreenX, mouseScreenY, mouseShiftKey)
 
 import           Control.Arrow
-import           Control.Monad.State               ()
-import           Data.Map                          (Map)
-import qualified Data.Map                          as Map
-import           Empire.API.Data.Node              (NodeId)
-import qualified Empire.API.Data.Node              as Node
+import           Control.Monad.State                  ()
+import           Data.Map                             (Map)
+import qualified Data.Map                             as Map
+import           Empire.API.Data.Node                 (NodeId)
+import qualified Empire.API.Data.Node                 as Node
 import           Event.Event
-import           Event.UI                          (UIEvent (AppEvent, NodeEvent))
-import qualified Luna.Studio.React.Event.App                   as App
-import qualified Luna.Studio.React.Event.Node                  as Node
-import           Luna.Studio.React.Store                       (widget, _widget)
-import qualified Luna.Studio.React.Store                       as Store
-import qualified Luna.Studio.React.Model.Node                  as Model
+import           Event.UI                             (UIEvent (AppEvent, NodeEvent))
 import qualified Luna.Studio.Commands.Batch           as BatchCmd
 import           Luna.Studio.Commands.Command         (Command)
+import           Luna.Studio.Commands.Graph.Connect   (updateConnectionsForNodes)
 import           Luna.Studio.Commands.Graph.Selection (selectNodes, selectedNodes)
 import           Luna.Studio.Commands.Node.Snap       (snap)
+import           Luna.Studio.Data.Vector
+import           Luna.Studio.Prelude
+import qualified Luna.Studio.React.Event.App          as App
+import qualified Luna.Studio.React.Event.Node         as Node
+import qualified Luna.Studio.React.Model.Node         as Model
+import           Luna.Studio.React.Store              (widget, _widget)
+import qualified Luna.Studio.React.Store              as Store
 import qualified Luna.Studio.State.Camera             as Camera
 import           Luna.Studio.State.Drag               (DragHistory (..))
 import qualified Luna.Studio.State.Drag               as Drag
 import           Luna.Studio.State.Global             (State)
 import qualified Luna.Studio.State.Global             as Global
 import qualified Luna.Studio.State.Graph              as Graph
-import           Luna.Studio.Prelude
-import           Luna.Studio.Data.Vector
 
 
 toAction :: Event -> Maybe (Command State ())
@@ -82,8 +83,7 @@ moveNodes nodesPos = do
     forM_ (Map.toList nodesPos) $ \(nodeId, pos) -> do
         Global.withNode nodeId $ mapM_ $ Store.modify_ $
             Model.position .~ pos
-    -- TODO[react]: Find out if we need this
-    -- updateConnectionsForNodes $ Map.keys nodesPos
+    updateConnectionsForNodes $ Map.keys nodesPos
 
 stopDrag :: Vector2 Int -> Command State ()
 stopDrag coord = do
@@ -99,6 +99,5 @@ stopDrag coord = do
                     newMeta <- preuse $ Global.graph . Graph.nodesMap . ix wid . Node.nodeMeta
                     return $ (wid, ) <$> newMeta
                 BatchCmd.updateNodeMeta $ catMaybes updates
-                -- TODO[react]: Find out if we need this
-                -- updateConnectionsForNodes $ fst <$> nodesToUpdate
+                updateConnectionsForNodes $ fst <$> nodesToUpdate
             else selectNodes [nodeId]
