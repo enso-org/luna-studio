@@ -37,7 +37,7 @@ import           Data.Text.Lazy                (Text)
 import qualified Data.Text.Lazy                as Text
 import qualified Data.UUID                     as UUID
 import qualified Data.UUID.V4                  as UUID (nextRandom)
-import           Prologue                      hiding (Text, children, filtered)
+import           Empire.Prelude
 
 import           Empire.Data.AST                 (Marker, NodeMarker(..))
 import           Empire.Data.BreadcrumbHierarchy (addID, addWithLeafs, removeID, topLevelIDs)
@@ -170,7 +170,7 @@ updateNodeMeta loc nodeId newMeta = withGraph loc $ do
     doTCMay <- forM oldMetaMay $ \oldMeta ->
         return $ triggerTC oldMeta newMeta
     zoom Graph.ast $ AST.writeMeta ref newMeta
-    withJust doTCMay $ \doTC ->
+    forM_ doTCMay $ \doTC ->
         when doTC $ runTC loc False
     where
         triggerTC :: NodeMeta -> NodeMeta -> Bool

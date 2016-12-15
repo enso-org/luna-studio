@@ -7,7 +7,7 @@ import qualified Data.Set                          as Set (empty)
 import           Data.Typeable                     (typeRep)
 import           Empire.API.Data.Node              (NodeId)
 import           Empire.Data.BreadcrumbHierarchy   (BreadcrumbHierarchy, empty)
-import           Prologue
+import           Empire.Prelude
 
 import           Empire.Data.AST                   (AST, ASTState(..), NodeRef, Marker, Meta,
                                                     InputsLayer, TypeLayer, TCData, TCDataMock(..),

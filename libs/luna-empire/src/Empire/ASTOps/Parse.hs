@@ -2,11 +2,11 @@
 
 module Empire.ASTOps.Parse where
 
-import           Prologue                     hiding (Text, s)
+import           Empire.Prelude
 
 import           Data.Char                    (isLetter)
 import           Data.List.Split              (splitOn)
-import           Data.List                    (partition, takeWhile)
+import           Data.List                    (intercalate, partition, takeWhile)
 import           Data.Ratio                   (approxRational)
 import qualified Data.Text.Lazy               as Text
 import           Text.Read                    (readMaybe)

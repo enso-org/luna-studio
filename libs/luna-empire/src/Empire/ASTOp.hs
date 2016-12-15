@@ -9,7 +9,7 @@
 
 module Empire.ASTOp where
 
-import           Prologue                                hiding (Cons, Curry, Num)
+import           Empire.Prelude
 
 import           Control.Monad                           (foldM)
 import           Control.Monad.State                     (get, put)

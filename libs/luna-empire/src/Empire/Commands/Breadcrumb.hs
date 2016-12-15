@@ -2,7 +2,7 @@ module Empire.Commands.Breadcrumb (
       withBreadcrumb
       ) where
 
-import           Prologue                   hiding (at, toList)
+import           Empire.Prelude
 
 import           Control.Monad.Except       (throwError)
 import           Control.Monad.Reader

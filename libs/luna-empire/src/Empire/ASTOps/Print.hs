@@ -2,7 +2,7 @@
 {-# LANGUAGE ViewPatterns #-}
 module Empire.ASTOps.Print where
 
-import           Prologue                 hiding (TypeRep)
+import           Empire.Prelude
 import           Data.List                (dropWhileEnd, delete)
 import qualified Data.Text.Lazy           as Text
 import           Data.Map                 (Map)
@@ -21,17 +21,21 @@ import qualified Luna.IR as IR
 
 getTypeRep :: ASTOp m => NodeRef -> m TypeRep
 getTypeRep tp = match tp $ \case
-    Cons (toString -> s) -> do
-        return $ TCons s []
+    Cons n -> do
+        name <- ASTBuilder.getName n
+        return $ TCons name []
     Lam as out -> do
         args   <- ASTBuilder.unpackLamArguments tp
         argReps <- mapM getTypeRep args
         outRep <- getTypeRep =<< IR.source out
         return $ TLam argReps outRep
-    Acc (toString -> n) t -> do
+    Acc n t -> do
+        name <- ASTBuilder.getName n
         rep <- IR.source t >>= getTypeRep
-        return $ TAcc n rep
-    Var (toString -> n) -> return $ TVar $ delete '#' n
+        return $ TAcc name rep
+    Var n -> do
+        name <- ASTBuilder.getName n
+        return $ TVar $ delete '#' name
     Star -> return TStar
     _ -> return TBlank
 
@@ -87,18 +91,17 @@ printExpression' suppressNodes paren node = do
             rightRep <- IR.source r >>= recur paren
             return $ leftRep ++ " = " ++ rightRep
         Var n -> do
-            str <- IR.source n
-            match str $ \case
-                IR.String s -> do
-                    isNode <- ASTBuilder.isGraphNode node
-                    return $ if isNode && suppressNodes then "_" else s
-        Acc (toString -> n) t -> do
+            name <- ASTBuilder.getName n
+            isNode <- ASTBuilder.isGraphNode node
+            return $ if isNode && suppressNodes then "_" else name
+        Acc n t -> do
+            name <- ASTBuilder.getName n
             target <- IR.source t
             match target $ \case
-                Blank -> return $ "_." <> n
+                Blank -> return $ "_." <> name
                 _ -> do
                     targetRep <- recur True target
-                    return $ if targetRep == "_" then n else targetRep <> "." <> n
+                    return $ if targetRep == "_" then name else targetRep <> "." <> name
         App f args -> do
             funExpr <- IR.source f >>= recur True
             displayFun funExpr node
@@ -106,7 +109,7 @@ printExpression' suppressNodes paren node = do
         IR.Rational r -> pure $ show r
         IR.Integer  i -> pure $ show i
         IR.String s -> return $ show s
-        Cons (toString -> n) -> return n
+        Cons n -> ASTBuilder.getName n
         _ -> return ""
 
 printExpression :: ASTOp m => NodeRef -> m String

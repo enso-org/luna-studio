@@ -9,7 +9,7 @@ import           Empire.API.Data.Project       (ProjectId)
 import           Empire.API.Data.TypeRep       (TypeRep)
 import           Empire.Data.Graph             (Graph)
 import           Empire.Data.Project           (Project)
-import           Prologue                      hiding (TypeRep)
+import           Empire.Prelude
 
 import           Control.Concurrent.STM.TChan  (TChan)
 import           Control.Monad.Error           (ErrorT (..), MonadError, runErrorT, throwError)

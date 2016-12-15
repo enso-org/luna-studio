@@ -2,8 +2,8 @@
 
 module Empire.Commands.Typecheck where
 
-import           Prologue                hiding (TypeRep)
-import           Control.Monad           (forM_)
+import           Empire.Prelude
+import           Control.Monad           (forM_, void)
 import           Control.Monad.Reader    (ask)
 import           Data.List               (sort)
 import qualified Data.Map                as Map

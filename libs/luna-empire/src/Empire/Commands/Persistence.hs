@@ -12,10 +12,11 @@ import           Control.Monad.Reader
 import           Control.Monad.State
 import qualified Data.ByteString.Lazy            as BS (ByteString, readFile, writeFile)
 import qualified Data.IntMap                     as IntMap
+import           Data.String                     (fromString)
 import           Data.Text.Lazy                  (Text)
 import qualified Data.UUID                       as UUID
 import qualified Data.UUID.V4                    as UUID
-import           Prologue                        hiding (Text, p)
+import           Empire.Prelude
 import           System.FilePath                 (takeBaseName)
 
 import qualified Empire.Data.Library             as Library

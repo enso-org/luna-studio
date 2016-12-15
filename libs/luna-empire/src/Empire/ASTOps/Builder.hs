@@ -15,7 +15,7 @@ import qualified Data.HMap.Lazy                     as HMap
 import           Data.Layer_OLD.Cover_OLD           (covered, uncover)
 import           Data.List                          (dropWhileEnd)
 import           Data.Maybe                         (isJust, isNothing)
-import           Prologue                           hiding (cons, ( # ))
+import           Empire.Prelude
 
 import           Empire.API.Data.Node               (NodeId)
 import           Empire.ASTOp                       (ASTOp)
@@ -59,6 +59,16 @@ isBlank :: _ => IR.Expr layout0 -> m0 Bool
 isBlank expr = match expr $ \case
     Blank{} -> return True
     _       -> return False
+
+getVarName :: ASTOp m => NodeRef -> m String
+getVarName node = match node $ \case
+    Var n -> getName n
+
+getName :: ASTOp m => EdgeRef -> m String
+getName node = do
+    str <- IR.source node
+    match str $ \case
+        IR.String s -> return s
 
 data NotAppException = NotAppException deriving (Show, Exception)
 
@@ -130,8 +140,9 @@ dumpAccessors' :: ASTOp m => Bool -> NodeRef -> m (Maybe NodeRef, [String])
 dumpAccessors' firstApp ref = do
     node <- pure ref
     match node $ \case
-        Var (toString -> name) -> do
+        Var n -> do
             isNode <- isGraphNode ref
+            name <- getName n
             if isNode
                 then return (Just ref, [])
                 else return (Nothing, [name])
@@ -141,8 +152,9 @@ dumpAccessors' firstApp ref = do
                 else do
                     target <- IR.source t
                     dumpAccessors' False target
-        Acc (toString -> name) t -> do
+        Acc n t -> do
             target <- IR.source t
+            name <- getName n
             (tgt, names) <- dumpAccessors' False target
             return (tgt, names ++ [name])
         _ -> return (Just ref, [])

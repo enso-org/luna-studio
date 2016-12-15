@@ -6,7 +6,7 @@
 
 module Empire.Commands.GraphBuilder where
 
-import           Prologue                          hiding (Text, p, s, index)
+import           Empire.Prelude
 
 import           Control.Monad.Except              (throwError)
 import           Control.Monad.State               hiding (when)
@@ -144,25 +144,25 @@ getNodeName nid = do
         zoom Graph.ast $ runASTOp $ do
             match vnode $ \case
                 Var n -> do
-                    str <- IR.source n
-                    match str $ \case
-                        IR.String s -> return $ Just (Text.pack s)
+                    name <- ASTBuilder.getName n
+                    return $ Just (Text.pack name)
     else return Nothing
 
 getPortState :: ASTOp m => NodeRef -> m PortState
 getPortState node = do
     isConnected <- ASTBuilder.isGraphNode node
-    if isConnected then return Connected else do
-        match node $ \case
-            (IR.String s)   -> return . WithDefault . Constant . StringValue $ s
-            IR.Integer i    -> return $ WithDefault $ Constant $ IntValue $ fromIntegral i
-            IR.Rational r   -> return $ WithDefault $ Constant $ RationalValue r
-            (Cons (toString -> s)) -> case s of
+    if isConnected then return Connected else match node $ \case
+        (IR.String s)   -> return . WithDefault . Constant . StringValue $ s
+        IR.Integer i    -> return $ WithDefault $ Constant $ IntValue $ fromIntegral i
+        IR.Rational r   -> return $ WithDefault $ Constant $ RationalValue r
+        (Cons n) -> do
+            name <- ASTBuilder.getName n
+            case name of
                 "False" -> return . WithDefault . Constant . BoolValue $ False
                 "True"  -> return . WithDefault . Constant . BoolValue $ True
                 _       -> WithDefault . Expression <$> Print.printExpression node
-            Blank   -> return NotConnected
-            _     -> WithDefault . Expression <$> Print.printExpression node
+        Blank   -> return NotConnected
+        _     -> WithDefault . Expression <$> Print.printExpression node
 
 extractArgTypes :: ASTOp m => NodeRef -> m [ValueType]
 extractArgTypes node = do

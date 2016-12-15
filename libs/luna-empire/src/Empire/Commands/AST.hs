@@ -15,7 +15,7 @@ import           Data.HMap.Lazy                    (TypeKey (..))
 import           Data.Maybe                        (catMaybes, fromMaybe)
 import           Data.Text.Lazy                    (Text)
 import qualified Data.Text.Lazy                    as Text
-import           Prologue                          hiding (( # ), Text, TypeRep, tryHead, s)
+import           Empire.Prelude
 
 import           Empire.API.Data.DefaultValue      (PortDefault, Value (..))
 import qualified Empire.API.Data.Error             as APIError
@@ -69,9 +69,10 @@ limit = limitHead where
     limitHead  = take limitCount
 
 valueDecoderForType :: ASTOp m => NodeRef -> m (Maybe (Data -> Value))
-valueDecoderForType tpNode = do
-    match tpNode $ \case
-        Cons (toString -> n) -> case n of
+valueDecoderForType tpNode = match tpNode $ \case
+    Cons n -> do
+        name <- ASTBuilder.getName n
+        case name of
             "Int"            -> return $ Just $ IntValue       . unsafeFromData
             "String"         -> return $ Just $ StringValue    . unsafeFromData
             "Double"         -> return $ Just $ DoubleValue    . unsafeFromData
@@ -94,7 +95,7 @@ valueDecoderForType tpNode = do
             "Maybe"          -> $notImplemented
             "Map"            -> $notImplemented
             _                -> return Nothing
-        _ -> return Nothing
+    _ -> return Nothing
 
 intMaybeListToStringMaybeList :: [Maybe Int] -> [Maybe String]
 intMaybeListToStringMaybeList = fmap (fmap show)
@@ -157,10 +158,12 @@ getNodeValue node = runASTOp $ do
             case val' of
                 Left  s -> return $ Left s
                 Right v' -> match tpNode $ \case
-                    Cons (toString -> n) -> case n of
-                        "Stream"  -> return $ Right $ Listener $ \f -> attachListener (unsafeFromData v') (f . decoder)
-                        "Twitter" -> return $ Right $ Listener $ \_ -> attachListener (unsafeFromData v') (const $ return ())
-                        _         -> return $ Right $ PlainVal $ decoder v'
+                    Cons n -> do
+                        name <- ASTBuilder.getName n
+                        case name of
+                            "Stream"  -> return $ Right $ Listener $ \f -> attachListener (unsafeFromData v') (f . decoder)
+                            "Twitter" -> return $ Right $ Listener $ \_ -> attachListener (unsafeFromData v') (const $ return ())
+                            _         -> return $ Right $ PlainVal $ decoder v'
                     _ -> return $ Right $ PlainVal ("", [])
 
 readMeta :: NodeRef -> Command AST (Maybe NodeMeta)
@@ -193,8 +196,8 @@ reprError tcErr = case tcErr of
         return $ APIError.NoMethodError m tpRep
     UnificationError uniNode -> do
         match uniNode $ \case
-            (Unify l r) -> APIError.TypeError <$> (Printer.getTypeRep =<< IR.source l) <*> (Printer.getTypeRep =<< IR.source r)
-            _         -> impossible
+            Unify l r -> APIError.TypeError <$> (Printer.getTypeRep =<< IR.source l) <*> (Printer.getTypeRep =<< IR.source r)
+            _         -> throwM $ NotUnifyException uniNode
 
 writeMeta :: NodeRef -> NodeMeta -> Command AST ()
 writeMeta ref newMeta = runASTOp $ IR.writeLayer @Meta (Just newMeta) ref
@@ -255,11 +258,7 @@ getVarNode :: NodeRef -> Command AST NodeRef
 getVarNode node = runASTOp $ ASTBuilder.leftMatchOperand node >>= IR.source
 
 getVarName :: NodeRef -> Command AST String
-getVarName node = runASTOp $ match node $ \case
-    Var n -> do
-        str <- IR.source n
-        match str $ \case
-            IR.String s -> return s
+getVarName node = runASTOp $ ASTBuilder.getVarName node
 
 getLambdaInputRef :: NodeRef -> Int -> Command AST NodeRef
 getLambdaInputRef node pos = runASTOp $ do

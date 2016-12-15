@@ -24,14 +24,18 @@ dependencies:
     - base
     - bytestring
     - container
+    - convert
     - data-construction
+    - data-default
     - data-layer
     - data-prop
     - directory
     - either
+    - exceptions
     - fgl
     - filepath
     - ghc-prim
+    - lens
     - luna
     - luna-empire-api
     - luna-empire-api-json

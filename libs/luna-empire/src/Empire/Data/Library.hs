@@ -4,7 +4,7 @@ import qualified Empire.API.Data.Graph          as API (Graph)
 import qualified Empire.API.Data.Library        as API
 import qualified Empire.API.Persistence.Library as Persistence
 import           Empire.Data.Graph              (Graph)
-import           Prologue                       hiding (p)
+import           Empire.Prelude
 
 
 data Library = Library { _name    :: Maybe String

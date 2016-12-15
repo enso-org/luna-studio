@@ -1,6 +1,6 @@
 module Empire.Utils.TextResult where
 
-import           Prologue hiding (Text)
+import           Empire.Prelude
 import qualified Data.Text.Lazy               as Text
 
 import           Empire.API.Data.DefaultValue (Value (..))

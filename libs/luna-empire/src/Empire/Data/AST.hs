@@ -6,7 +6,7 @@
 
 module Empire.Data.AST where
 
-import           Prologue
+import           Empire.Prelude
 
 import Luna.IR (AnyExpr, AnyExprLink, EXPRESSION, IR, IRMonad, Layer, LayerData, IRBuilder,
                 type Abstract, ElemScope, Attr, WorkingElem, registerLayer, readAttr, writeLayer)

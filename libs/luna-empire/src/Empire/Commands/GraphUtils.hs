@@ -1,6 +1,6 @@
 module Empire.Commands.GraphUtils where
 
-import           Prologue
+import           Empire.Prelude
 
 import           Empire.Empire
 

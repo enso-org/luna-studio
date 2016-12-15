@@ -3,7 +3,7 @@
 
 module Empire.ASTOps.Remove where
 
-import           Prologue                      hiding ((#))
+import           Empire.Prelude
 import           Data.Construction             (destruct)
 import           Data.Layer_OLD.Cover_OLD      (uncover, covered)
 import           Data.List                     (nub)

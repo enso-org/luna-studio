@@ -8,7 +8,7 @@ import           Control.Monad.Error     (throwError)
 import           Control.Monad.Reader
 import           Control.Monad.State
 import qualified Data.IntMap             as IntMap
-import           Prologue
+import           Empire.Prelude
 
 import           Empire.Data.Library     (Library)
 import qualified Empire.Data.Library     as Library
