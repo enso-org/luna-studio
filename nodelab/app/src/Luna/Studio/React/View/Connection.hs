@@ -10,7 +10,8 @@ import           Luna.Studio.React.Store            (Ref, dt)
 import qualified Luna.Studio.React.Store            as Store
 import           Luna.Studio.React.Model.Connection (Connection)
 import qualified Luna.Studio.React.Model.Connection as Connection
-
+import           Luna.Studio.Data.Color             (Color(Color))
+import           Luna.Studio.Data.HSL               (color')
 
 name :: JSString
 name = "connection-editor"
@@ -25,3 +26,22 @@ connection connectionRef = React.defineControllerView
 
 connection_ :: Ref Connection -> ReactElementM ViewEventHandler ()
 connection_ connectionRef = React.view (connection connectionRef) () mempty
+
+
+
+drawConnection_ :: Float -> Float -> Float -> Float -> String -> ReactElementM ViewEventHandler ()
+drawConnection_ x1 y1 x2 y2 color = do
+    let x1    = fromString $ show x1
+        y1    = fromString $ show y1
+        x2    = fromString $ show x2
+        y2    = fromString $ show y2
+        color = color' $ Color 5
+    line_
+        [ "className"   $= "connection"
+        , "x1"          $= x1
+        , "y1"          $= y1
+        , "x2"          $= x2
+        , "y2"          $= y2
+        , "stroke"      $= color
+        , "strokeWidth" $= "3"
+        ] mempty

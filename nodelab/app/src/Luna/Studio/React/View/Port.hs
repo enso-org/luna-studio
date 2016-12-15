@@ -101,24 +101,6 @@ drawPortIO_ number numOfPorts mod1 mod2 mod3 = do
         ] mempty
 
 
-drawConnection_ :: Float -> Float -> Float -> Float -> String -> ReactElementM ViewEventHandler ()
-drawConnection_ x1 y1 x2 y2 color = do
-    let x1    = fromString $ show x1
-        y1    = fromString $ show y1
-        x2    = fromString $ show x2
-        y2    = fromString $ show y2
-        color = color' $ Color 5
-    line_
-        [ "className"   $= "connection"
-        , "x1"          $= x1
-        , "y1"          $= y1
-        , "x2"          $= x2
-        , "y2"          $= y2
-        , "stroke"      $= color
-        , "strokeWidth" $= "3"
-        ] mempty
-
-
 --TODO[react] probably remove
 -- displayPorts :: WidgetId -> Node -> Command Global.State ()
 -- displayPorts wid node = do
