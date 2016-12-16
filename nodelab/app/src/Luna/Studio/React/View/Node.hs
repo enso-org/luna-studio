@@ -1,23 +1,23 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Luna.Studio.React.View.Node where
 
+import qualified Data.Map.Lazy                        as Map
+import qualified Data.Text.Lazy                       as Text
+import           Luna.Studio.Data.Vector              (x, y)
 import           Luna.Studio.Prelude
-import           Luna.Studio.Data.Vector             (x, y)
-import qualified Data.Map.Lazy            as Map
-import qualified Data.Text.Lazy           as Text
 import           React.Flux
-import qualified React.Flux               as React
+import qualified React.Flux                           as React
 
-import qualified Event.UI                 as UI
-import           Empire.API.Data.Port     (InPort (..), PortId (..))
-import           Object.Widget.Port       (Port (..))
-import           Luna.Studio.React.Store              (Ref, dispatch, dt)
+import           Empire.API.Data.Node                 (NodeId)
+import           Empire.API.Data.Port                 (InPort (..), PortId (..))
+import qualified Event.UI                             as UI
+import qualified Luna.Studio.React.Event.Node         as Node
 import           Luna.Studio.React.Model.Node         (Node)
 import qualified Luna.Studio.React.Model.Node         as Node
-import qualified Luna.Studio.React.Event.Node         as Node
+import           Luna.Studio.React.Store              (Ref, dispatch, dt)
 import           Luna.Studio.React.View.Port          (port_)
 import           Luna.Studio.React.View.Visualization (strValue, visualization_)
-
+import           Object.Widget.Port                   (Port (..))
 
 
 name :: JSString
@@ -44,8 +44,8 @@ countSameTypePorts :: Port -> [Port] -> Int
 countSameTypePorts (Port _ (InPortId _)  _ _) = countInPorts
 countSameTypePorts (Port _ (OutPortId _) _ _) = countOutPorts
 
-makePorts :: Ref Node -> [Port] -> ReactElementM ViewEventHandler ()
-makePorts nodeRef ports = forM_ ports $ \port -> port_ nodeRef port (countSameTypePorts port ports) (countPorts ports == 1)
+makePorts :: Ref Node -> NodeId -> [Port] -> ReactElementM ViewEventHandler ()
+makePorts nodeRef nodeId ports = forM_ ports $ \port -> port_ nodeRef port (countSameTypePorts port ports) (countPorts ports == 1)
 
 
 --FIXME: move all styles to CSS
@@ -70,9 +70,8 @@ node nodeRef = React.defineControllerView
                          [ "className" $= "selection-mark"
                          ] mempty
 
-                     makePorts nodeRef $ filter (\(Port _ portId _ _) -> portId /= InPortId Self) ports
-
-                     makePorts nodeRef $ filter (\(Port _ portId _ _) -> portId == InPortId Self) ports
+                     makePorts nodeRef nodeId $ filter (\(Port _ portId _ _) -> portId /= InPortId Self) ports
+                     makePorts nodeRef nodeId $ filter (\(Port _ portId _ _) -> portId == InPortId Self) ports
 
                      text_
                          [ "className" $= "name"
@@ -99,8 +98,8 @@ node nodeRef = React.defineControllerView
                         [ "className" $= "selection-mark"
                         ] mempty
 
-                    makePorts nodeRef $ filter (\(Port _ portId _ _) -> portId /= InPortId Self) ports
-                    makePorts nodeRef $ filter (\(Port _ portId _ _) -> portId == InPortId Self) ports
+                    makePorts nodeRef nodeId $ filter (\(Port _ portId _ _) -> portId /= InPortId Self) ports
+                    makePorts nodeRef nodeId $ filter (\(Port _ portId _ _) -> portId == InPortId Self) ports
 
                     text_
                         [ onDoubleClick $ \e _ -> stopPropagation e : dispatch nodeRef (UI.NodeEvent $ Node.EditExpression nodeId)

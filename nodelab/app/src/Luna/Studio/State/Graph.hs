@@ -7,6 +7,7 @@ module Luna.Studio.State.Graph
     , connectionIdsContainingNode
     , connections
     , connectionsContainingNode
+    , connectionsContainingNodes
     , connectionsMap
     , connectionsToNodes
     , connectionsToNodesIds
@@ -26,27 +27,27 @@ module Luna.Studio.State.Graph
 
 import           Luna.Studio.Prelude          hiding ((.=))
 
-import           Data.Hashable              (Hashable)
-import           Data.HashMap.Strict        (HashMap)
-import qualified Data.HashMap.Strict        as HashMap
-import qualified Data.Map.Strict            as Map
-import qualified Data.Set                   as Set
-import           Data.UUID.Types            (UUID)
+import           Data.Hashable                (Hashable)
+import           Data.HashMap.Strict          (HashMap)
+import qualified Data.HashMap.Strict          as HashMap
+import qualified Data.Map.Strict              as Map
+import qualified Data.Set                     as Set
+import           Data.UUID.Types              (UUID)
 
-import           Data.Aeson                 hiding ((.:))
-import           Empire.API.Data.Connection (Connection (..), ConnectionId)
-import qualified Empire.API.Data.Connection as Connection
-import           Empire.API.Data.Node       (Node, NodeId)
-import qualified Empire.API.Data.Node       as Node
-import           Empire.API.Data.Port       (InPort, OutPort)
-import           Empire.API.Data.PortRef    (AnyPortRef, InPortRef, OutPortRef)
-import qualified Empire.API.Data.PortRef    as PortRef
-import qualified Empire.API.JSONInstances   ()
-import           Luna.Studio.Commands.Command  (Command)
+import           Data.Aeson                   hiding ((.:))
+import           Empire.API.Data.Connection   (Connection (..), ConnectionId)
+import qualified Empire.API.Data.Connection   as Connection
+import           Empire.API.Data.Node         (Node, NodeId)
+import qualified Empire.API.Data.Node         as Node
+import           Empire.API.Data.Port         (InPort, OutPort)
+import           Empire.API.Data.PortRef      (AnyPortRef, InPortRef, OutPortRef)
+import qualified Empire.API.Data.PortRef      as PortRef
+import qualified Empire.API.JSONInstances     ()
+import           Luna.Studio.Commands.Command (Command)
 
 
 type NodesMap       = HashMap NodeId Node
-type ConnectionsMap = HashMap InPortRef Connection
+type ConnectionsMap = HashMap ConnectionId Connection
 
 
 instance (ToJSON b) => ToJSON (HashMap UUID b) where
@@ -139,6 +140,12 @@ endsWithNode nid conn = conn ^. Connection.dst . PortRef.dstNodeId == nid
 
 connectionsContainingNode :: NodeId -> State -> [Connection]
 connectionsContainingNode nid state = filter (containsNode nid) $ getConnections state
+
+connectionsContainingNodes :: [NodeId] -> State -> [Connection]
+connectionsContainingNodes nodeIds state = let nodeIdsSet = Set.fromList nodeIds
+    in flip filter (getConnections state) $ \conn -> (
+        (Set.member (conn ^. Connection.src . PortRef.srcNodeId) nodeIdsSet) ||
+        (Set.member (conn ^. Connection.dst . PortRef.dstNodeId) nodeIdsSet))
 
 connectionsToNodes :: Set.Set NodeId -> State -> [Connection]
 connectionsToNodes nodeIds state = filter ((flip Set.member nodeIds) . (view $ Connection.dst . PortRef.dstNodeId)) $ getConnections state
