@@ -98,31 +98,30 @@ drawPortIO_ num numOfPorts mod1 mod2 mod3 = do
 
     let color   = color' $ Color 5 --TODO [Piotr Młodawski]: get color from model
 
-        number = num + 1
-
         t1  = portAngleStart num numOfPorts nodeRadius
         t2  = portAngleStop  num numOfPorts nodeRadius
+
         t1' = portAngleStart num numOfPorts nodeRadius'
         t2' = portAngleStop  num numOfPorts nodeRadius'
 
-        ax = showF $ nodeRadius * sin(t1 * mod1) + nodeRadius
-        ay = showF $ nodeRadius * cos(t1 * mod1) + nodeRadius
+        ax = showF $ nodeRadius * sin(t1 * mod1)
+        ay = showF $ nodeRadius * cos(t1 * mod1)
 
-        bx = showF $ nodeRadius * sin(t2 * mod1) + nodeRadius
-        by = showF $ nodeRadius * cos(t2 * mod1) + nodeRadius
+        bx = showF $ nodeRadius * sin(t2 * mod1)
+        by = showF $ nodeRadius * cos(t2 * mod1)
 
-        cx = showF $ nodeRadius' * sin(t2' * mod1) + nodeRadius
-        cy = showF $ nodeRadius' * cos(t2' * mod1) + nodeRadius
+        cx = showF $ nodeRadius' * sin(t2' * mod1)
+        cy = showF $ nodeRadius' * cos(t2' * mod1)
 
-        dx = showF $ nodeRadius' * sin(t1' * mod1) + nodeRadius
-        dy = showF $ nodeRadius' * cos(t1' * mod1) + nodeRadius
+        dx = showF $ nodeRadius' * sin(t1' * mod1)
+        dy = showF $ nodeRadius' * cos(t1' * mod1)
 
         svgPath = fromString $ "M" <> ax <> " " <> ay <> " A " <> show nodeRadius  <> " " <> show nodeRadius  <> " 1 0 " <> mod2 <> " " <> bx <> " " <> by <>
                               " L" <> cx <> " " <> cy <> " A " <> show nodeRadius' <> " " <> show nodeRadius' <> " 1 0 " <> mod3 <> " " <> dx <> " " <> dy <>
                               " L" <> ax <> " " <> ay
 
     path_
-        [ "className" $= (fromString $ "port port--i port--i--" <> show number)
+        [ "className" $= (fromString $ "port port--i port--i--" <> show (num+1))
         , "fill"      $= color
         , "stroke"    $= color
         , "d"         $= svgPath

@@ -75,13 +75,11 @@ node nodeRef = React.defineControllerView
 
                      text_
                          [ "className" $= "name"
-                         , "x"         $= "20"
-                         , "y"         $= "-16"
+                         , "y"         $= "-36"
                          ] $ elemString $ Text.unpack (n ^. Node.expression) <> " EXPANDED"
                      text_
                          [ "className" $= "name"
-                         , "x"         $= "20"
-                         , "y"         $= "65"
+                         , "y"         $= "45"
                          ] $ elemString $ strValue n
                      g_  [ "transform" $= "translate(-25,80)"
                          ] $ forM_ (n ^. Node.value) visualization_
@@ -104,13 +102,11 @@ node nodeRef = React.defineControllerView
                     text_
                         [ onDoubleClick $ \e _ -> stopPropagation e : dispatch nodeRef (UI.NodeEvent $ Node.EditExpression nodeId)
                         , "className" $= "name"
-                        , "x"         $= "20"
-                        , "y"         $= "-16"
+                        , "y"         $= "-36"
                         ] $ elemString $ Text.unpack $ n ^. Node.expression
                     text_
                         [ "className" $= "name"
-                        , "x"         $= "20"
-                        , "y"         $= "65"
+                        , "y"         $= "45"
                         ] $ elemString $ strValue n
 
 

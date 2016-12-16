@@ -1,3 +1,11 @@
+// connection
+
+.connection {
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+
 // node
 
 .node {
@@ -15,21 +23,12 @@
     }
     .port--o--single {
         r: 18.5;
-        cx: 20;
-        cy: 20;
         stroke-width: 3px;
         fill: none;
         &:hover {
             stroke-width: 5px;
         }
 
-    }
-}
-
-.node--collapsed {
-    .port--self {
-        cx: 20;
-        cy: 20;
     }
 }
 
@@ -61,8 +60,6 @@
 
 .node--collapsed {
     .selection-mark {
-        cx: 20;
-        cy: 20;
         r:  20;
     }
     &.node--selected {
