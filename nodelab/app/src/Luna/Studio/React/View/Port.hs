@@ -18,51 +18,42 @@ import           Luna.Studio.React.Model.Node (Node)
 import           Luna.Studio.React.Store      (Ref)
 
 
-
--- utils
-
 showF :: Float -> String
 showF a = Numeric.showFFloat (Just 1) a ""
-
--- global vars
-
-nodeRadius :: Float
-nodeRadius = 20
 
 connectionWidth :: Float
 connectionWidth = 3
 
+nodeRadius :: Float
+nodeRadius = 20
+
+nodeRadius' :: Float
+nodeRadius' = nodeRadius - connectionWidth
+
+portRadius :: Float
+portRadius = nodeRadius - connectionWidth/2
+
 portGap :: Float -> Float
-portGap r = 0.15 * (nodeRadius / r)
+portGap r = 0.15 * nodeRadius / r -- to avoid gap narrowing
+
 
 portAngle :: Int -> Float
 portAngle numOfPorts = pi / fromIntegral numOfPorts
 
+portAngleStart :: Int -> Int -> Float -> Float
+portAngleStart num numOfPorts r =
+    let number = fromIntegral num + 1
+        gap    = portGap r
+        t      = portAngle numOfPorts
+    in  number * t - pi - t + gap/2
 
-inputAngle1 :: Int -> Int -> Float -- FIXME
-inputAngle1 number numOfPorts =
-    let
-        number' = fromIntegral $ number + 1
-        r       = P.nodeRadius - P.connectionWidth*0.5
-        gap     = P.portGap r
-        t       = P.portAngle numOfPorts
+portAngleStop :: Int -> Int -> Float -> Float
+portAngleStop num numOfPorts r =
+    let number = fromIntegral num + 1
+        gap    = portGap r
+        t      = portAngle numOfPorts
+    in  number * t - pi - gap/2
 
-        t1      = number' * t - pi - t + gap/2
-        t2      = number' * t - pi     - gap/2
-    in
-    t   = portAngle numOfPorts
-    t1  = fromIntegral number' * t - pi - t + gap/2
-    
-inputAngle2 :: Float -- FIXME
-inputAngle2 = 1
-
-outputAngle1 :: Float -- FIXME
-outputAngle1 = 1
-
-outputAngle2 :: Float -- FIXME
-outputAngle2 = 1
-
---
 
 name :: JSString
 name = "port"
@@ -103,39 +94,35 @@ drawPortSingle_ = let color = color' $ Color 5 in
 
 
 drawPortIO_ :: Int -> Int -> Float -> String -> String -> ReactElementM ViewEventHandler ()
-drawPortIO_ number numOfPorts mod1 mod2 mod3 = do
+drawPortIO_ num numOfPorts mod1 mod2 mod3 = do
 
     let color   = color' $ Color 5 --TODO [Piotr Młodawski]: get color from model
-        r1      = nodeRadius
-        gap     = portGap r1
-        r2      = nodeRadius - connectionWidth
-        gap'    = portGap r2
-        number' = number + 1
 
-        t   = portAngle numOfPorts
-        t1  = fromIntegral number' * t - pi - t + gap/2
-        t2  = fromIntegral number' * t - pi - gap/2
-        t1' = fromIntegral number' * t - pi - t + gap'/2
-        t2' = fromIntegral number' * t - pi - gap'/2
+        number = num + 1
 
-        ax = showF $ r1 * sin(t1  * mod1) + r1
-        ay = showF $ r1 * cos(t1  * mod1) + r1
+        t1  = portAngleStart num numOfPorts nodeRadius
+        t2  = portAngleStop  num numOfPorts nodeRadius
+        t1' = portAngleStart num numOfPorts nodeRadius'
+        t2' = portAngleStop  num numOfPorts nodeRadius'
 
-        bx = showF $ r1 * sin(t2  * mod1) + r1
-        by = showF $ r1 * cos(t2  * mod1) + r1
+        ax = showF $ nodeRadius * sin(t1 * mod1) + nodeRadius
+        ay = showF $ nodeRadius * cos(t1 * mod1) + nodeRadius
 
-        cx = showF $ r2 * sin(t2' * mod1) + r1
-        cy = showF $ r2 * cos(t2' * mod1) + r1
+        bx = showF $ nodeRadius * sin(t2 * mod1) + nodeRadius
+        by = showF $ nodeRadius * cos(t2 * mod1) + nodeRadius
 
-        dx = showF $ r2 * sin(t1' * mod1) + r1
-        dy = showF $ r2 * cos(t1' * mod1) + r1
+        cx = showF $ nodeRadius' * sin(t2' * mod1) + nodeRadius
+        cy = showF $ nodeRadius' * cos(t2' * mod1) + nodeRadius
 
-        svgPath = fromString $ "M" <> ax <> " " <> ay <> " A " <> show r1 <> " " <> show r1 <> " 1 0 " <> mod2 <> " " <> bx <> " " <> by <>
-                              " L" <> cx <> " " <> cy <> " A " <> show r2 <> " " <> show r2 <> " 1 0 " <> mod3 <> " " <> dx <> " " <> dy <>
+        dx = showF $ nodeRadius' * sin(t1' * mod1) + nodeRadius
+        dy = showF $ nodeRadius' * cos(t1' * mod1) + nodeRadius
+
+        svgPath = fromString $ "M" <> ax <> " " <> ay <> " A " <> show nodeRadius  <> " " <> show nodeRadius  <> " 1 0 " <> mod2 <> " " <> bx <> " " <> by <>
+                              " L" <> cx <> " " <> cy <> " A " <> show nodeRadius' <> " " <> show nodeRadius' <> " 1 0 " <> mod3 <> " " <> dx <> " " <> dy <>
                               " L" <> ax <> " " <> ay
 
     path_
-        [ "className" $= (fromString $ "port port--i port--i--" <> show number')
+        [ "className" $= (fromString $ "port port--i port--i--" <> show number)
         , "fill"      $= color
         , "stroke"    $= color
         , "d"         $= svgPath
