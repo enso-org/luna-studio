@@ -1,127 +1,84 @@
-module Luna.Studio.Action.Connect where
+module Luna.Studio.Action.Connect
+    ( toAction
+    ) where
 
--- TODO[react]: modify this so we don't need angle
---     ( toAction
---     , handleMove
---     ) where
---
--- import           Luna.Studio.Data.Angle                     (boundedAngle, toAngle)
--- import           Luna.Studio.Prelude
--- import           Luna.Studio.Data.Vector                    (Vector2 (Vector2), x, y)
---
--- import           Object.Widget                   (WidgetFile, parent, widget)
--- import qualified Object.Widget.Connection        as UIConnection
--- import qualified Object.Widget.Node              as NodeModel
--- import qualified Object.Widget.Port              as PortModel
---
--- import           Event.Event                     (Event (..))
--- import           Event.Keyboard                  hiding (Event)
--- import           Event.Mouse                     hiding (Event, widget)
--- import qualified Event.Mouse                     as Mouse
---
--- import           Luna.Studio.Commands.Command       (Command)
--- import qualified Luna.Studio.Commands.Graph         as Graph
--- import           Luna.Studio.Commands.Graph.Connect (batchConnectNodes)
--- import qualified Luna.Studio.Commands.UIRegistry    as UICmd
--- import qualified Luna.Studio.State.Camera           as Camera
--- import           Luna.Studio.State.Connect          (Connecting (Connecting))
--- import qualified Luna.Studio.State.Connect          as Connect
--- import           Luna.Studio.State.Global           (State, inRegistry)
--- import qualified Luna.Studio.State.Global           as Global
--- import qualified Luna.Studio.State.UIRegistry       as UIRegistry
---
--- import           Empire.API.Data.Port            (InPort (Self))
--- import           Empire.API.Data.PortRef         (AnyPortRef (..), InPortRef (..), OutPortRef (..))
--- import qualified Empire.API.Data.PortRef         as PortRef (dstNodeId, srcNodeId)
--- import qualified JS.GoogleAnalytics              as GA
---
---
---
--- toAction :: Event -> Maybe (Command State ())
--- toAction (Mouse _ (Mouse.Event Mouse.Pressed  _   Mouse.LeftButton (KeyMods False False False False) (Just evWd))) = Just $ startDragFromPort evWd
--- toAction (Mouse _ (Mouse.Event Mouse.Moved    pos Mouse.LeftButton _ _      )) = Just $ whileConnecting $ handleMove pos
--- toAction (Mouse _ (Mouse.Event Mouse.Moved    _   _                _ _      )) = Just $ whileConnecting $ stopDrag'
--- toAction (Mouse _ (Mouse.Event Mouse.Released _   Mouse.LeftButton _ mayEvWd)) = Just $ whileConnecting $ stopDrag mayEvWd
--- toAction _                                                                     = Nothing
---
--- showCurrentConnection :: Vector2 Double -> Vector2 Double -> Bool -> Command UIRegistry.State ()
--- showCurrentConnection src dst arrow = UICmd.update_ UIRegistry.currentConnectionId $ (UIConnection.currentFrom    .~ src)
---                                                                                    . (UIConnection.currentTo      .~ dst)
---                                                                                    . (UIConnection.currentVisible .~ True)
---                                                                                    . (UIConnection.currentArrow   .~ arrow)
---
--- setCurrentConnectionColor :: Int -> Command UIRegistry.State ()
--- setCurrentConnectionColor color = UICmd.update_ UIRegistry.currentConnectionId $ UIConnection.currentColor .~ color
---
--- hideCurrentConnection :: Command UIRegistry.State ()
--- hideCurrentConnection = UICmd.update_ UIRegistry.currentConnectionId $ UIConnection.currentVisible .~ False
---
--- getPortWidgetUnderCursor :: EventWidget -> Command UIRegistry.State (Maybe (WidgetFile PortModel.Port))
--- getPortWidgetUnderCursor (EventWidget wid _ _) = UIRegistry.lookupTypedM wid
---
--- startDragFromPort :: Mouse.EventWidget -> Command State ()
--- startDragFromPort evWd = do
---     sourcePortWd <- zoom Global.uiRegistry $ getPortWidgetUnderCursor evWd
---     withJust sourcePortWd $ \file -> do
---         let model = file ^. widget
---         let sourceRef = model ^. PortModel.portRef
---         nodeWidget <- inRegistry $ UICmd.parent $ fromJust $ file ^. parent
---         sourceNodePos <- inRegistry $ UICmd.get nodeWidget NodeModel.position
---         Global.connect . Connect.connecting ?= Connecting sourceRef (model ^. PortModel.angleVector) sourceNodePos
---         zoom Global.uiRegistry $ setCurrentConnectionColor $ model ^. PortModel.color
---
--- whileConnecting :: (Connecting -> Command State ()) -> Command State ()
--- whileConnecting run = do
---     connectingMay <- use $ Global.connect . Connect.connecting
---     withJust connectingMay $ \connecting -> run connecting
---
--- handleMove :: Vector2 Int -> Connecting -> Command State ()
--- handleMove coord (Connecting sourceRef _ nodePos) = do
---     current <- zoom Global.camera $ Camera.screenToWorkspaceM coord
---     startLine <- case sourceRef of
---             (InPortRef' (InPortRef _ Self)) -> return nodePos
---             _                   -> do
---                 maySourcePort <- Graph.getPort sourceRef
---                 case maySourcePort of
---                     Just sourcePort -> inRegistry $ do
---                         let newVector = sourcePort ^. PortModel.angleVector
---                             portCount = sourcePort ^. PortModel.portCount
---
---                             portAngle = toAngle $ newVector
---                             angle     = boundedAngle portAngle portCount nodePos current
---                             sx        = (nodePos ^. x) + outerPos * cos angle
---                             sy        = (nodePos ^. y) + outerPos * sin angle
---                             outerPos  = 22.0
---                         return $ Vector2 sx sy
---                     Nothing -> return nodePos
---     inRegistry $ case sourceRef of
---         InPortRef'   (InPortRef _ Self) -> showCurrentConnection current startLine False
---         InPortRef'   (InPortRef _ _)    -> showCurrentConnection current startLine True
---         OutPortRef'  _                  -> showCurrentConnection startLine current True
---
--- stopDrag' :: Connect.Connecting -> Command State ()
--- stopDrag' _ = do
---     Global.connect . Connect.connecting .= Nothing
---     zoom Global.uiRegistry hideCurrentConnection
---
--- toValidConnection :: AnyPortRef -> AnyPortRef -> Maybe (OutPortRef, InPortRef)
--- toValidConnection src' dst' = (normalize src' dst') >>= toOtherNode where
---     normalize (OutPortRef' a) (InPortRef' b) = Just (a, b)
---     normalize (InPortRef' a) (OutPortRef' b) = Just (b, a)
---     normalize _ _ = Nothing
---     toOtherNode (a, b)
---         | a ^. PortRef.srcNodeId /= b ^. PortRef.dstNodeId = Just (a, b)
---         | otherwise                                        = Nothing
---
--- stopDrag :: Maybe Mouse.EventWidget -> Connect.Connecting -> Command State ()
--- stopDrag mayEvWd (Connecting sourceRef _ _) = do
---     Global.connect . Connect.connecting .= Nothing
---     zoom Global.uiRegistry hideCurrentConnection
---     withJust mayEvWd $ \evWd -> do
---         destinationFile <- zoom Global.uiRegistry $ getPortWidgetUnderCursor evWd
---         withJust destinationFile $ \destinationFile' -> do
---             let destinationRef = destinationFile' ^. widget . PortModel.portRef
---             let srcDstMay = toValidConnection sourceRef destinationRef
---             withJust srcDstMay $ \(src, dst) -> do
---                 batchConnectNodes src dst
---                 GA.sendEvent $ GA.Connect GA.Manual
+import           Empire.API.Data.Node               (NodeId)
+import           Empire.API.Data.Port               (PortId)
+import           Empire.API.Data.PortRef            (toAnyPortRef)
+import           Empire.API.Data.PortRef            (AnyPortRef (..), InPortRef (..), OutPortRef (..))
+import qualified Empire.API.Data.PortRef            as PortRef
+import           Event.Event                        (Event (UI))
+import           Event.UI                           (UIEvent (AppEvent, NodeEvent))
+import qualified JS.GoogleAnalytics                 as GA
+import           Luna.Studio.Commands.Command       (Command)
+import           Luna.Studio.Commands.Graph.Connect (batchConnectNodes)
+import           Luna.Studio.Data.Vector
+import           Luna.Studio.Prelude
+import qualified Luna.Studio.React.Event.App        as App
+import qualified Luna.Studio.React.Event.Node       as Node
+import           Luna.Studio.React.Model.Connection (CurrentConnection)
+import qualified Luna.Studio.React.Model.Node       as NodeModel
+import qualified Luna.Studio.React.Model.NodeEditor as NodeEditor
+import qualified Luna.Studio.React.Store            as Store
+import           Luna.Studio.React.Store.Ref        (Ref)
+import qualified Luna.Studio.React.Store.Ref        as Ref
+import qualified Luna.Studio.State.Camera           as Camera
+import           Luna.Studio.State.Global           (State)
+import qualified Luna.Studio.State.Global           as Global
+import qualified Object.Widget.Connection           as ConnectionModel
+import           React.Flux                         (mouseScreenX, mouseScreenY)
+
+
+toAction :: Event -> Maybe (Command State ())
+toAction (UI (NodeEvent (Node.StartConnection nodeId portId))) = Just $ startDragFromPort nodeId portId
+toAction (UI (AppEvent  (App.MouseMove evt)))                  = Just $ whileConnecting $ handleMove pos
+    where pos = Vector2 (mouseScreenX evt) (mouseScreenY evt)
+toAction (UI (AppEvent (App.MouseUp _)))                       = Just $ whileConnecting $ stopDrag'
+toAction (UI (NodeEvent (Node.EndConnection nodeId portId)))   = Just $ whileConnecting $ stopDrag nodeId portId
+toAction _                                                     = Nothing
+
+
+startDragFromPort :: NodeId -> PortId -> Command State ()
+startDragFromPort nodeId portId = do
+    maySrcNodeRef <- Global.getNode nodeId
+    withJust maySrcNodeRef $ \srcNodeRef -> do
+        let portRef = toAnyPortRef nodeId portId
+        from' <- view NodeModel.position <$> Store.get srcNodeRef
+        let connection = ConnectionModel.CurrentConnection portRef True from' from' False  def
+        Global.withNodeEditor $ Store.modifyM_ $ do
+            connectionRef <- lift $ Store.create connection
+            NodeEditor.currentConnection ?= connectionRef
+
+whileConnecting :: (Ref CurrentConnection -> Command State ()) -> Command State ()
+whileConnecting run = do
+    mayCurrentConnectionRef <- Global.withNodeEditor $ Store.use NodeEditor.currentConnection
+    withJust mayCurrentConnectionRef $ \currentConnectionRef -> run currentConnectionRef
+
+handleMove :: Vector2 Int -> Ref CurrentConnection -> Command State ()
+handleMove (Vector2 x' y') connRef = do
+    --TODO[react]: temp solution in next line
+    to' <- zoom Global.camera $ Camera.screenToWorkspaceM (Vector2 (x'+200) y')
+    flip Store.modifyM_ connRef $ do
+        ConnectionModel.currentTo .= to'
+
+stopDrag' :: Ref CurrentConnection -> Command State ()
+stopDrag' _ = Global.withNodeEditor $ Store.modifyM_ $ NodeEditor.currentConnection .= Nothing
+
+toValidConnection :: AnyPortRef -> AnyPortRef -> Maybe (OutPortRef, InPortRef)
+toValidConnection src' dst' = (normalize' src' dst') >>= toOtherNode where
+    normalize' (OutPortRef' a) (InPortRef' b) = Just (a, b)
+    normalize' (InPortRef' a) (OutPortRef' b) = Just (b, a)
+    normalize' _ _ = Nothing
+    toOtherNode (a, b)
+        | a ^. PortRef.srcNodeId /= b ^. PortRef.dstNodeId = Just (a, b)
+        | otherwise                                        = Nothing
+
+stopDrag :: NodeId -> PortId -> Ref CurrentConnection -> Command State ()
+stopDrag nodeId portId connRef = do
+    Global.withNodeEditor $ Store.modifyM_ $ NodeEditor.currentConnection .= Nothing
+    srcPortRef <- view ConnectionModel.srcPortRef <$> Ref.get connRef
+    let dstPortRef = toAnyPortRef nodeId portId
+        validConn  = toValidConnection srcPortRef dstPortRef
+    withJust validConn $ \(src, dst) -> do
+        batchConnectNodes src dst
+        GA.sendEvent $ GA.Connect GA.Manual

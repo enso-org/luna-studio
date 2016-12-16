@@ -12,6 +12,7 @@ import           Luna.Studio.Data.Color   (Color)
 import           Object.Widget
 
 data Port = Port { _portRef     :: AnyPortRef
+                 -- TODO[react]: Find out if we need portId here since it seems to be present in portRef
                  , _portId      :: PortId
                  , _color       :: Color
                  , _highlight   :: Bool

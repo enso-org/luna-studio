@@ -1,17 +1,17 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Luna.Studio.React.View.NodeEditor where
 
-import qualified Data.HashMap.Strict     as HashMap
-import           React.Flux
-import qualified React.Flux              as React
+import qualified Data.HashMap.Strict                 as HashMap
 import           Luna.Studio.Prelude
+import           React.Flux
+import qualified React.Flux                          as React
 
-import qualified Event.UI                as UI
+import qualified Event.UI                            as UI
 import qualified Luna.Studio.React.Event.NodeEditor  as NE
-import           Luna.Studio.React.Store             (Ref, dispatch, dt)
 import           Luna.Studio.React.Model.NodeEditor  (NodeEditor)
 import qualified Luna.Studio.React.Model.NodeEditor  as NodeEditor
-import           Luna.Studio.React.View.Connection   (connection_)
+import           Luna.Studio.React.Store             (Ref, dispatch, dt)
+import           Luna.Studio.React.View.Connection   (connection_, currentConnection_)
 import           Luna.Studio.React.View.Node         (node_)
 import           Luna.Studio.React.View.SelectionBox (selectionBox_)
 
@@ -37,6 +37,9 @@ nodeEditor ref = React.defineControllerView name ref $ \store () -> do
                     node_ nodeRef
                 forM_ (store ^. dt . NodeEditor.connections . to HashMap.elems) $ \connectionRef -> do
                     connection_ connectionRef
+                forM_ (store ^. dt . NodeEditor.currentConnection) $ \connectionRef -> do
+                    currentConnection_ connectionRef
+
                 selectionBox_ (store ^. dt . NodeEditor.selectionBox)
 
 nodeEditor_ :: Ref NodeEditor -> ReactElementM ViewEventHandler ()

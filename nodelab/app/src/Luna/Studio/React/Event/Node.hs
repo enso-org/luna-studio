@@ -7,15 +7,18 @@ import           Data.Aeson               (FromJSON, ToJSON)
 import           React.Flux               (MouseEvent)
 
 import           Empire.API.Data.Node     (NodeId)
+import           Empire.API.Data.Port     (PortId)
 import           Empire.API.JSONInstances ()
 import           Luna.Studio.Prelude
 
 
 
-data Event = Select MouseEvent NodeId
-           | MouseDown MouseEvent NodeId
-           | Enter NodeId
-           | EditExpression NodeId
+data Event = Select          MouseEvent NodeId
+           | MouseDown       MouseEvent NodeId
+           | Enter           NodeId
+           | EditExpression  NodeId
+           | StartConnection NodeId PortId
+           | EndConnection   NodeId PortId
             deriving (Show, Generic, NFData, Typeable)
 
 instance ToJSON   Event

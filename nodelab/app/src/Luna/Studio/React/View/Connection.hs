@@ -9,7 +9,7 @@ import qualified React.Flux                         as React
 import qualified Event.UI                           as UI
 import           Luna.Studio.Data.Color             (Color (Color))
 import           Luna.Studio.Data.HSL               (color')
-import           Luna.Studio.React.Model.Connection (Connection)
+import           Luna.Studio.React.Model.Connection (Connection, CurrentConnection)
 import qualified Luna.Studio.React.Model.Connection as Connection
 import           Luna.Studio.React.Store            (Ref, dt)
 import qualified Luna.Studio.React.Store            as Store
@@ -32,6 +32,21 @@ connection connectionRef = React.defineControllerView
 
 connection_ :: Ref Connection -> ReactElementM ViewEventHandler ()
 connection_ connectionRef = React.view (connection connectionRef) () mempty
+
+
+currentConnection :: Ref CurrentConnection -> ReactView ()
+currentConnection connectionRef = React.defineControllerView
+    name connectionRef $ \connectionStore () -> do
+        let connection = connectionStore ^. dt
+            srcX       = connection ^. Connection.currentFrom . x
+            srcY       = connection ^. Connection.currentFrom . y
+            dstX       = connection ^. Connection.currentTo . x
+            dstY       = connection ^. Connection.currentTo . y
+            color      = connection ^. Connection.currentColor
+        drawConnection_ srcX srcY dstX dstY color
+
+currentConnection_ :: Ref CurrentConnection -> ReactElementM ViewEventHandler ()
+currentConnection_ connectionRef = React.view (currentConnection connectionRef) () mempty
 
 
 drawConnection_ :: Double -> Double -> Double -> Double -> Int -> ReactElementM ViewEventHandler ()

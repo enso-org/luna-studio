@@ -45,7 +45,7 @@ countSameTypePorts (Port _ (InPortId _)  _ _) = countInPorts
 countSameTypePorts (Port _ (OutPortId _) _ _) = countOutPorts
 
 makePorts :: Ref Node -> NodeId -> [Port] -> ReactElementM ViewEventHandler ()
-makePorts nodeRef nodeId ports = forM_ ports $ \port -> port_ nodeRef port (countSameTypePorts port ports) (countPorts ports == 1)
+makePorts nodeRef nodeId ports = forM_ ports $ \port -> port_ nodeRef nodeId port (countSameTypePorts port ports) (countPorts ports == 1)
 
 
 --FIXME: move all styles to CSS
