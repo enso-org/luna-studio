@@ -8,6 +8,7 @@ import           Empire.API.Data.Port               (InPort (..), OutPort (..), 
 import qualified Event.UI                           as UI
 import           Luna.Studio.Data.Color             (Color (Color))
 import           Luna.Studio.Data.HSL               (color')
+import           Luna.Studio.Data.Angle             (Angle)
 import qualified Luna.Studio.React.Event.Node       as Node
 import           Luna.Studio.React.Model.Node       (Node)
 import           Luna.Studio.React.Store            (Ref, dispatch)
@@ -30,21 +31,21 @@ nodeRadius' = nodeRadius - connectionWidth
 portRadius :: Double
 portRadius = nodeRadius - connectionWidth/2
 
-portGap :: Double -> Double
+portGap :: Double -> Angle
 portGap r = 0.15 * nodeRadius / r -- to avoid gap narrowing
 
 
-portAngle :: Int -> Double
+portAngle :: Int -> Angle
 portAngle numOfPorts = pi / fromIntegral numOfPorts
 
-portAngleStart :: Int -> Int -> Double -> Double
+portAngleStart :: Int -> Int -> Double -> Angle
 portAngleStart num numOfPorts r =
     let number = fromIntegral num + 1
         gap    = portGap r
         t      = portAngle numOfPorts
     in  number * t - pi - t + gap/2
 
-portAngleStop :: Int -> Int -> Double -> Double
+portAngleStop :: Int -> Int -> Double -> Angle
 portAngleStop num numOfPorts r =
     let number = fromIntegral num + 1
         gap    = portGap r
