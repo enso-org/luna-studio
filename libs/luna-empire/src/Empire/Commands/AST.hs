@@ -32,6 +32,7 @@ import           Empire.ASTOps.Remove              (safeRemove)
 
 import           Empire.Utils.TextResult           (nodeValueToText)
 
+import           Luna.IR.Expr.Term (Term(Sym_Unify))
 import           Luna.IR.Expr.Term.Uni
 import           Luna.IR (match)
 import qualified Luna.IR as IR
@@ -287,12 +288,15 @@ data NotUnifyException = NotUnifyException NodeRef
 
 instance Exception NotUnifyException
 
-replaceTargetNode :: NodeRef -> NodeRef -> Command AST NodeRef
+replaceTargetNode :: NodeRef -> NodeRef -> Command AST ()
 replaceTargetNode matchNode newTarget = runASTOp $ do
     match matchNode $ \case
-        Unify l _r -> do
-            l' <- IR.source l
-            IR.generalize <$> IR.unify l' newTarget
+        Unify _l r -> do
+            IR.delete r
+            link <- IR.link newTarget matchNode
+            let changeUnify target (Sym_Unify l _) = Sym_Unify l target
+                (unify :: IR.Expr (IR.E IR.Unify)) = IR.unsafeGeneralize matchNode
+            IR.modifyExprTerm unify $ changeUnify $ IR.unsafeGeneralize link
         _ -> throwM $ NotUnifyException matchNode
 
 dumpGraphViz :: String -> Command AST ()

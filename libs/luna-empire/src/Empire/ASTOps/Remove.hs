@@ -15,7 +15,7 @@ import Luna.IR.Layer.Succs (Succs)
 import Data.Set (size)
 
 removeNode :: ASTOp m => NodeRef -> m ()
-removeNode ref = delete ref
+removeNode ref = $notImplemented
 
 safeRemove :: ASTOp m => NodeRef -> m ()
 safeRemove ref = do

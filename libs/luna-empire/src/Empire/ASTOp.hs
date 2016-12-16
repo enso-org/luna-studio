@@ -23,7 +23,7 @@ import Luna.Pass.Evaluation.Interpreter.Layer (InterpreterData)
 import Data.Event (Emitter, type (//))
 import Luna.IR (IRMonad, Accessibles, ExprNet, ExprLinkNet, ExprLinkLayers, ExprLayers, Model,
                 unsafeRelayout, generalize, lam, evalIRBuilder, evalPassManager,
-                snapshot, IRBuilder, NEW, LINK', EXPR, Abstract)
+                snapshot, IRBuilder, NEW, DELETE, LINK', EXPR, Abstract)
 import qualified Luna.Pass.Manager as Pass (PassManager, get)
 import qualified Luna.IR.Function as IR (Arg, arg)
 import Luna.IR.Layer.Succs (Succs)
@@ -41,7 +41,7 @@ type instance Pass.Inputs  EmpirePass   = '[ExprNet, ExprLinkNet] <>
 type instance Pass.Outputs EmpirePass   = '[ExprNet, ExprLinkNet] <>
     ExprLayers '[Model, Meta, Marker, InputsLayer, TypeLayer, Succs, InterpreterData, TypeLayer, TCData] <>
     ExprLinkLayers '[Model]
-type instance Pass.Events EmpirePass = '[NEW // LINK' EXPR, NEW // EXPR]
+type instance Pass.Events EmpirePass = '[NEW // LINK' EXPR, NEW // EXPR, DELETE // LINK' EXPR]
 type instance Pass.Preserves EmpirePass = '[]
 
 runASTOp :: Pass.SubPass EmpirePass (Pass.PassManager (IRBuilder IO)) a -> Command AST a
