@@ -3,51 +3,50 @@ module Luna.Studio.React.View.Port where
 
 import           Luna.Studio.Prelude
 
-import           Empire.API.Data.Port         (InPort (..), OutPort (..), PortId (..))
+import           Empire.API.Data.Port              (InPort (..), OutPort (..), PortId (..))
 
-import qualified Numeric                      as Numeric
+import qualified Numeric                           as Numeric
 
-import           Object.Widget.Port           (Port (..))
+import           Object.Widget.Port                (Port (..))
 
 import           React.Flux
-import qualified React.Flux                   as React
+import qualified React.Flux                        as React
 
-import           Luna.Studio.Data.Color       (Color(Color))
-import           Luna.Studio.Data.HSL         (color')
-import           Luna.Studio.React.Model.Node (Node)
-import           Luna.Studio.React.Store      (Ref)
+import           Luna.Studio.Data.Color            (Color(Color))
+import           Luna.Studio.Data.HSL              (color')
+import           Luna.Studio.React.Model.Node      (Node)
+import           Luna.Studio.React.Store           (Ref)
+
+import           Luna.Studio.React.View.Connection (connectionWidth)
 
 
-showF :: Float -> String
+showF :: Double -> String
 showF a = Numeric.showFFloat (Just 1) a ""
 
-connectionWidth :: Float
-connectionWidth = 3
-
-nodeRadius :: Float
+nodeRadius :: Double
 nodeRadius = 20
 
-nodeRadius' :: Float
+nodeRadius' :: Double
 nodeRadius' = nodeRadius - connectionWidth
 
-portRadius :: Float
+portRadius :: Double
 portRadius = nodeRadius - connectionWidth/2
 
-portGap :: Float -> Float
+portGap :: Double -> Double
 portGap r = 0.15 * nodeRadius / r -- to avoid gap narrowing
 
 
-portAngle :: Int -> Float
+portAngle :: Int -> Double
 portAngle numOfPorts = pi / fromIntegral numOfPorts
 
-portAngleStart :: Int -> Int -> Float -> Float
+portAngleStart :: Int -> Int -> Double -> Double
 portAngleStart num numOfPorts r =
     let number = fromIntegral num + 1
         gap    = portGap r
         t      = portAngle numOfPorts
     in  number * t - pi - t + gap/2
 
-portAngleStop :: Int -> Int -> Float -> Float
+portAngleStop :: Int -> Int -> Double -> Double
 portAngleStop num numOfPorts r =
     let number = fromIntegral num + 1
         gap    = portGap r
@@ -93,7 +92,7 @@ drawPortSingle_ = let color = color' $ Color 5 in
         ] mempty
 
 
-drawPortIO_ :: Int -> Int -> Float -> String -> String -> ReactElementM ViewEventHandler ()
+drawPortIO_ :: Int -> Int -> Double -> String -> String -> ReactElementM ViewEventHandler ()
 drawPortIO_ num numOfPorts mod1 mod2 mod3 = do
 
     let color   = color' $ Color 5 --TODO [Piotr Młodawski]: get color from model

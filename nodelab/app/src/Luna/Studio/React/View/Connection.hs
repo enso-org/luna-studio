@@ -19,6 +19,9 @@ import qualified Luna.Studio.React.Store            as Store
 name :: JSString
 name = "connection-editor"
 
+connectionWidth :: Double
+connectionWidth = 3
+
 connection :: Ref Connection -> ReactView ()
 connection connectionRef = React.defineControllerView
     name connectionRef $ \connectionStore () -> do
@@ -42,6 +45,7 @@ drawConnection_ x1 y1 x2 y2 color = do
         y2'   = fromString $ show y2
         --TODO[react]: Apply correct color
         color = color' $ Color 5
+        width = fromString $ show connectionWidth
     line_
         [ "className"   $= "connection"
         , "x1"          $= x1'
@@ -49,11 +53,11 @@ drawConnection_ x1 y1 x2 y2 color = do
         , "x2"          $= x2'
         , "y2"          $= y2'
         , "stroke"      $= color
-        , "strokeWidth" $= "3"
+        , "strokeWidth" $= width
         ] mempty
 
 
-nodeToNodeAngle :: Float -> Float -> Float -> Float -> Float
+nodeToNodeAngle :: Double -> Double -> Double -> Double -> Double
 nodeToNodeAngle x1 y1 x2 y2 = atan $ (y1-y2) / (x1-x2) -- FIXME
 
 
