@@ -3,21 +3,19 @@ module Luna.Studio.React.View.Port where
 
 import           Luna.Studio.Prelude
 
-import           Empire.API.Data.Port              (InPort (..), OutPort (..), PortId (..))
-
-import qualified Numeric                           as Numeric
-
-import           Object.Widget.Port                (Port (..))
-
-import           React.Flux
-import qualified React.Flux                        as React
-
-import           Luna.Studio.Data.Color            (Color(Color))
-import           Luna.Studio.Data.HSL              (color')
-import           Luna.Studio.React.Model.Node      (Node)
-import           Luna.Studio.React.Store           (Ref)
-
-import           Luna.Studio.React.View.Connection (connectionWidth)
+import           Empire.API.Data.Node               (NodeId)
+import           Empire.API.Data.Port               (InPort (..), OutPort (..), PortId (..))
+import qualified Event.UI                           as UI
+import           Luna.Studio.Data.Color             (Color (Color))
+import           Luna.Studio.Data.HSL               (color')
+import qualified Luna.Studio.React.Event.Node       as Node
+import           Luna.Studio.React.Model.Node       (Node)
+import           Luna.Studio.React.Store            (Ref, dispatch)
+import           Luna.Studio.React.View.Connection  (connectionWidth)
+import qualified Numeric                            as Numeric
+import           Object.Widget.Port                 (Port (..))
+import           React.Flux                         hiding (view)
+import qualified React.Flux                         as React
 
 
 showF :: Double -> String
@@ -57,43 +55,42 @@ portAngleStop num numOfPorts r =
 name :: JSString
 name = "port"
 
+port :: Ref Node -> NodeId -> Int -> Bool -> ReactView Port
+port nodeRef nodeId numOfPorts isOnly = React.defineView name $ \p -> do
+    drawPort_ nodeRef nodeId p numOfPorts isOnly
 
-port :: Ref Node -> Int -> Bool -> ReactView Port
-port _ numOfPorts isOnly = React.defineView name $ \p -> do
-    drawPort_ p numOfPorts isOnly
+port_ :: Ref Node -> NodeId -> Port -> Int -> Bool -> ReactElementM ViewEventHandler ()
+port_ ref nodeId p numOfPorts isOnly = React.view (port ref nodeId numOfPorts isOnly) p mempty
 
+drawPort_ :: Ref Node -> NodeId -> Port -> Int -> Bool -> ReactElementM ViewEventHandler ()
+drawPort_ nodeRef nodeId (Port _ portId@(InPortId   Self         ) _ _) _          _     = drawPortSelf_   nodeRef nodeId portId
+drawPort_ nodeRef nodeId (Port _ portId@(OutPortId  All          ) _ _) _          True  = drawPortSingle_ nodeRef nodeId portId
+drawPort_ nodeRef nodeId (Port _ portId@(OutPortId  All          ) _ _) numOfPorts False = drawPortIO_     nodeRef nodeId portId 0 numOfPorts (-1) "1" "0"
+drawPort_ nodeRef nodeId (Port _ portId@(InPortId  (Arg        i)) _ _) numOfPorts _     = drawPortIO_     nodeRef nodeId portId i numOfPorts   1  "0" "1"
+drawPort_ nodeRef nodeId (Port _ portId@(OutPortId (Projection i)) _ _) numOfPorts _     = drawPortIO_     nodeRef nodeId portId i numOfPorts (-1) "1" "0"
 
-port_ :: Ref Node -> Port -> Int -> Bool -> ReactElementM ViewEventHandler ()
-port_ ref p numOfPorts isOnly = React.view (port ref numOfPorts isOnly) p mempty
-
-
-drawPort_ :: Port -> Int -> Bool -> ReactElementM ViewEventHandler ()
-drawPort_ (Port _ (InPortId   Self         ) _ _) _          _     = drawPortSelf_
-drawPort_ (Port _ (OutPortId  All          ) _ _) _          True  = drawPortSingle_
-drawPort_ (Port _ (OutPortId  All          ) _ _) numOfPorts False = drawPortIO_ 0 numOfPorts (-1) "1" "0"
-drawPort_ (Port _ (InPortId  (Arg        i)) _ _) numOfPorts _     = drawPortIO_ i numOfPorts   1  "0" "1"
-drawPort_ (Port _ (OutPortId (Projection i)) _ _) numOfPorts _     = drawPortIO_ i numOfPorts (-1) "1" "0"
-
-
-drawPortSelf_ :: ReactElementM ViewEventHandler ()
-drawPortSelf_ = let color = color' $ Color 5 in
+drawPortSelf_ :: Ref Node -> NodeId -> PortId -> ReactElementM ViewEventHandler ()
+drawPortSelf_ nodeRef nodeId portId = let color = color' $ Color 5 in
     circle_
-        [ "className" $= "port port--self"
+        [ onMouseDown $ \e _ -> stopPropagation e : dispatch nodeRef (UI.NodeEvent $ Node.StartConnection nodeId portId)
+        , onMouseUp   $ \e _ -> stopPropagation e : dispatch nodeRef (UI.NodeEvent $ Node.EndConnection   nodeId portId)
+        , "className" $= "port port--self"
         , "fill"      $= color
         , "stroke"    $= color
         ] mempty
 
-
-drawPortSingle_ :: ReactElementM ViewEventHandler ()
-drawPortSingle_ = let color = color' $ Color 5 in
+drawPortSingle_ :: Ref Node -> NodeId -> PortId -> ReactElementM ViewEventHandler ()
+drawPortSingle_ nodeRef nodeId portId = let color = color' $ Color 5 in
     circle_
-        [ "className" $= "port port--o port--o--single"
+        [ onMouseDown $ \e _ -> stopPropagation e : dispatch nodeRef (UI.NodeEvent $ Node.StartConnection nodeId portId)
+        , onMouseUp   $ \e _ -> stopPropagation e : dispatch nodeRef (UI.NodeEvent $ Node.EndConnection   nodeId portId)
+        , "className" $= "port port--o port--o--single"
         , "stroke"    $= color
         ] mempty
 
 
-drawPortIO_ :: Int -> Int -> Double -> String -> String -> ReactElementM ViewEventHandler ()
-drawPortIO_ num numOfPorts mod1 mod2 mod3 = do
+drawPortIO_ :: Ref Node -> NodeId -> PortId -> Int -> Int -> Double -> String -> String -> ReactElementM ViewEventHandler ()
+drawPortIO_ nodeRef nodeId portId num numOfPorts mod1 mod2 mod3 = do
 
     let color   = color' $ Color 5 --TODO [Piotr Młodawski]: get color from model
 
@@ -120,7 +117,9 @@ drawPortIO_ num numOfPorts mod1 mod2 mod3 = do
                               " L" <> ax <> " " <> ay
 
     path_
-        [ "className" $= (fromString $ "port port--i port--i--" <> show (num+1))
+        [ onMouseDown $ \e _ -> stopPropagation e : dispatch nodeRef (UI.NodeEvent $ Node.StartConnection nodeId portId)
+        , onMouseUp   $ \e _ -> stopPropagation e : dispatch nodeRef (UI.NodeEvent $ Node.EndConnection   nodeId portId)
+        , "className" $= (fromString $ "port port--i port--i--" <> show (num+1))
         , "fill"      $= color
         , "stroke"    $= color
         , "d"         $= svgPath

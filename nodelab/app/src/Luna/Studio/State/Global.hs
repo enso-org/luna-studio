@@ -2,44 +2,43 @@
 
 module Luna.Studio.State.Global where
 
-import           Data.Word                      (Word8)
-import           Luna.Studio.Prelude
+import           Data.Word                            (Word8)
 import           Luna.Studio.Data.Vector
+import           Luna.Studio.Prelude
 
-import           Data.Aeson                     (ToJSON, toJSON)
-import           Data.DateTime                  (DateTime)
-import           Data.Set                       (Set)
-import           Data.UUID.Types                (UUID)
-import           Luna.Studio.Commands.Command      (Command)
-import           System.Random                  (StdGen)
-import qualified System.Random                  as Random
+import           Data.Aeson                           (ToJSON, toJSON)
+import           Data.DateTime                        (DateTime)
+import           Data.Set                             (Set)
+import           Data.UUID.Types                      (UUID)
+import           Luna.Studio.Commands.Command         (Command)
+import           System.Random                        (StdGen)
+import qualified System.Random                        as Random
 
+import           Empire.API.Data.Connection           (ConnectionId)
+import           Empire.API.Data.Node                 (NodeId)
+import qualified Empire.API.Data.Node                 as Node
+import qualified Empire.API.Graph.Collaboration       as Collaboration
+import qualified Event.Event                          as Event
 import           Luna.Studio.Batch.Workspace
-import           Empire.API.Data.Connection     (ConnectionId)
-import           Empire.API.Data.Node           (NodeId)
-import qualified Empire.API.Data.Node           as Node
-import qualified Empire.API.Graph.Collaboration as Collaboration
-import qualified Event.Event                    as Event
-import           Luna.Studio.React.Store                    (Ref)
-import qualified Luna.Studio.React.Store                    as Store
-import           Luna.Studio.React.Model.App                (App)
-import qualified Luna.Studio.React.Model.App                as App
-import           Luna.Studio.React.Model.Breadcrumbs        (Breadcrumbs)
-import           Luna.Studio.React.Model.CodeEditor         (CodeEditor)
-import           Luna.Studio.React.Model.Connection         (Connection)
-import           Luna.Studio.React.Model.Node               (Node)
-import           Luna.Studio.React.Model.NodeEditor         (NodeEditor)
-import qualified Luna.Studio.React.Model.NodeEditor         as NodeEditor
-import           Luna.Studio.React.Model.Searcher           (Searcher)
-import           Luna.Studio.React.Model.SelectionBox       (SelectionBox)
-import qualified Luna.Studio.State.Camera          as Camera
-import qualified Luna.Studio.State.Collaboration   as Collaboration
-import qualified Luna.Studio.State.Connect         as Connect
-import qualified Luna.Studio.State.ConnectionPen   as ConnectionPen
-import qualified Luna.Studio.State.Drag            as Drag
-import qualified Luna.Studio.State.Graph           as Graph
-import qualified Luna.Studio.State.MultiSelection  as MultiSelection
-import qualified Luna.Studio.State.UIRegistry      as UIRegistry
+import           Luna.Studio.React.Model.App          (App)
+import qualified Luna.Studio.React.Model.App          as App
+import           Luna.Studio.React.Model.Breadcrumbs  (Breadcrumbs)
+import           Luna.Studio.React.Model.CodeEditor   (CodeEditor)
+import           Luna.Studio.React.Model.Connection   (Connection)
+import           Luna.Studio.React.Model.Node         (Node)
+import           Luna.Studio.React.Model.NodeEditor   (NodeEditor)
+import qualified Luna.Studio.React.Model.NodeEditor   as NodeEditor
+import           Luna.Studio.React.Model.Searcher     (Searcher)
+import           Luna.Studio.React.Model.SelectionBox (SelectionBox)
+import           Luna.Studio.React.Store              (Ref)
+import qualified Luna.Studio.React.Store              as Store
+import qualified Luna.Studio.State.Camera             as Camera
+import qualified Luna.Studio.State.Collaboration      as Collaboration
+import qualified Luna.Studio.State.ConnectionPen      as ConnectionPen
+import qualified Luna.Studio.State.Drag               as Drag
+import qualified Luna.Studio.State.Graph              as Graph
+import qualified Luna.Studio.State.MultiSelection     as MultiSelection
+import qualified Luna.Studio.State.UIRegistry         as UIRegistry
 
 
 
@@ -51,7 +50,6 @@ data State = State { _mousePos           :: Vector2 Int
                    , _multiSelection     :: MultiSelection.State
                    , _selectionHistory   :: [Set Node.NodeId]
                    , _drag               :: Drag.State
-                   , _connect            :: Connect.State
                    , _uiRegistry         :: UIRegistry.State
                    , _connectionPen      :: ConnectionPen.State
                    , _workspace          :: Workspace
@@ -108,7 +106,7 @@ getConnection :: ConnectionId -> Command State (Maybe (Ref Connection))
 getConnection connectionId = withConnection connectionId return
 
 initialState :: DateTime -> Collaboration.ClientId -> StdGen -> Maybe Int -> Ref App -> State
-initialState = State (Vector2 200 200) def def def def def def def def def def def defJsState def def
+initialState = State (Vector2 200 200) def def def def def def def def def def defJsState def def
 
 inRegistry :: Command UIRegistry.State a -> Command State a
 inRegistry = zoom uiRegistry

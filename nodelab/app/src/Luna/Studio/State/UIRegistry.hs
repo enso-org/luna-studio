@@ -26,23 +26,23 @@ module Luna.Studio.State.UIRegistry
     , LookupFor
     ) where
 
-import           Control.Arrow             (first)
-import qualified Control.Monad.State       as MState
-import           Control.Monad.Trans.RWS   (RWS)
-import qualified Control.Monad.Trans.RWS   as RWS
-import           Data.Aeson                (ToJSON, object, toJSON)
-import           Data.HMap.Lazy            (HTMap)
-import qualified Data.HMap.Lazy            as HMap
-import qualified Data.IntMap.Lazy          as IntMap
+import           Control.Arrow                (first)
+import qualified Control.Monad.State          as MState
+import           Control.Monad.Trans.RWS      (RWS)
+import qualified Control.Monad.Trans.RWS      as RWS
+import           Data.Aeson                   (ToJSON, object, toJSON)
+import           Data.HMap.Lazy               (HTMap)
+import qualified Data.HMap.Lazy               as HMap
+import qualified Data.IntMap.Lazy             as IntMap
 import           Luna.Studio.Data.CtxDynamic
-import           Luna.Studio.Prelude         hiding (children, lookup)
+import           Luna.Studio.Prelude          hiding (children, lookup)
 
+import           Luna.Studio.Commands.Command (Command)
+import           Luna.Studio.Data.Aeson       (intMapToJSON)
 import           Object.Widget
 import           Object.Widget.Connection
 import           Object.Widget.Scene
-import           Luna.Studio.Commands.Command (Command)
-import           UI.Widget.Connection      ()
-import           Luna.Studio.Data.Aeson               (intMapToJSON)
+import           UI.Widget.Connection         ()
 
 instance CompositeWidget Scene where
     createWidget _   _ = return ()
@@ -71,11 +71,9 @@ instance Show State where
 defaultWidgets :: [(WidgetId, WidgetFile DisplayObject)]
 defaultWidgets = [ (sceneInterfaceId,     sceneInterface)
                  , (sceneGraphId,         sceneGraph)
-                 , (currentConnectionId,  currentConnection)
                  ] where
     sceneInterface    = WidgetFile sceneInterfaceId    (toCtxDynamic $ Scene) Nothing [] def
     sceneGraph        = WidgetFile sceneGraphId        (toCtxDynamic $ Scene) Nothing [] def
-    currentConnection = WidgetFile currentConnectionId (toCtxDynamic $ CurrentConnection False def def True def) Nothing [] def
 
 instance Default State where
     def = State (fromList $ map (first fromWidgetId) defaultWidgets) def def def def

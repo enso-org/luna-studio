@@ -4,19 +4,19 @@ import           Luna.Studio.Prelude
 
 import           Control.Concurrent.MVar
 
-import           Control.Exception                                   (catch)
-import           Data.DateTime                                       (getCurrentTime)
-import           Data.Monoid                                         (Last (..))
-import qualified Data.Text.Lazy                                      as Text
-import           GHCJS.Prim                                          (JSException)
+import           Control.Exception                         (catch)
+import           Data.DateTime                             (getCurrentTime)
+import           Data.Monoid                               (Last (..))
+import qualified Data.Text.Lazy                            as Text
+import           GHCJS.Prim                                (JSException)
 
-import           Reactive.Handlers                                   (AddHandler (..))
-import qualified Reactive.Handlers                                   as Handlers
+import           Reactive.Handlers                         (AddHandler (..))
+import qualified Reactive.Handlers                         as Handlers
 
-import           Event.Event                                         (Event)
-import qualified Event.Event                                         as Event
-import qualified Event.Processors.Batch                              as BatchEventProcessor
-import qualified Event.Processors.CustomEvent                        as CustomEventProcessor
+import           Event.Event                               (Event)
+import qualified Event.Event                               as Event
+import qualified Event.Processors.Batch                    as BatchEventProcessor
+import qualified Event.Processors.CustomEvent              as CustomEventProcessor
 
 import qualified Luna.Studio.Action.App                    as App
 import qualified Luna.Studio.Action.Backend.Control        as Control
@@ -40,15 +40,15 @@ import qualified Luna.Studio.Action.Searcher               as Searcher
 import qualified Luna.Studio.Action.Tutorial               as Tutorial
 import qualified Luna.Studio.Action.Widget                 as Widget
 
-import           Luna.Studio.Commands.Command                           (Command, execCommand)
-import           Luna.Studio.State.Global                               (State)
-import qualified Luna.Studio.State.Global                               as Global
+import           Luna.Studio.Commands.Command              (Command, execCommand)
+import           Luna.Studio.State.Global                  (State)
+import qualified Luna.Studio.State.Global                  as Global
 
 import qualified JS.Debug
-import qualified JS.UI                                               as UI
-import           JS.WebSocket                                        (WebSocket)
+import qualified JS.UI                                     as UI
+import           JS.WebSocket                              (WebSocket)
 
-import qualified Data.JSString                                       as JSString
+import qualified Data.JSString                             as JSString
 
 
 displayProcessingTime :: Bool
@@ -66,6 +66,7 @@ actions :: [Event -> Maybe (Command State ())]
 actions =  [ App.toAction
            , Breadcrumbs.toAction
            , CodeEditor.toAction
+           , Connect.toAction
            , Drag.toAction
            , Graph.toAction
            , MultiSelection.toAction
@@ -77,7 +78,6 @@ actions =  [ App.toAction
         --    , Control.toAction
         --    , Widget.toAction
         --    , Camera.toAction
-        --    , Connect.toAction
         --    , Collaboration.toAction
         --    , NodeSearcher.toAction
         --    , ConnectionPen.toAction

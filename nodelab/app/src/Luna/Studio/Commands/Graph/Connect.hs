@@ -86,8 +86,8 @@ updateConnection connection = do
             (_, Nothing)                       -> return ()
             (Just srcNodeRef, Just dstNodeRef) -> do
                 --TODO[react]: Find out correct values that should be put in those lines
-                from <- view NodeModel.position <$> Store.get srcNodeRef
-                to   <- view NodeModel.position <$> Store.get dstNodeRef
+                from' <- view NodeModel.position <$> Store.get srcNodeRef
+                to'   <- view NodeModel.position <$> Store.get dstNodeRef
                 let visible   = True
                     arrow     = (connection ^. Connection.dst) ^. withArrow
                     color     = def
@@ -95,8 +95,8 @@ updateConnection connection = do
 
                 flip Store.modifyM_ connectionRef $ do
                     ConnectionModel.visible   .= visible
-                    ConnectionModel.from      .= from
-                    ConnectionModel.to        .= to
+                    ConnectionModel.from      .= from'
+                    ConnectionModel.to        .= to'
                     ConnectionModel.arrow     .= arrow
                     ConnectionModel.color     .= color
                     ConnectionModel.highlight .= highlight
