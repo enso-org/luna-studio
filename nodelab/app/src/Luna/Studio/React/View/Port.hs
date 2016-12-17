@@ -19,6 +19,9 @@ import           React.Flux                         hiding (view)
 import qualified React.Flux                         as React
 
 
+name :: JSString
+name = "port"
+
 showF :: Double -> String
 showF a = Numeric.showFFloat (Just 1) a ""
 
@@ -29,11 +32,10 @@ nodeRadius' :: Double
 nodeRadius' = nodeRadius - connectionWidth
 
 portRadius :: Double
-portRadius = nodeRadius - connectionWidth/2
+portRadius  = nodeRadius - connectionWidth/2
 
 portGap :: Double -> Angle
 portGap r = 0.15 * nodeRadius / r -- to avoid gap narrowing
-
 
 portAngle :: Int -> Angle
 portAngle numOfPorts = pi / fromIntegral numOfPorts
@@ -53,9 +55,6 @@ portAngleStop num numOfPorts r =
     in  number * t - pi - gap/2
 
 
-name :: JSString
-name = "port"
-
 port :: Ref Node -> NodeId -> Int -> Bool -> ReactView Port
 port nodeRef nodeId numOfPorts isOnly = React.defineView name $ \p -> do
     drawPort_ nodeRef nodeId p numOfPorts isOnly
@@ -66,9 +65,9 @@ port_ ref nodeId p numOfPorts isOnly = React.view (port ref nodeId numOfPorts is
 drawPort_ :: Ref Node -> NodeId -> Port -> Int -> Bool -> ReactElementM ViewEventHandler ()
 drawPort_ nodeRef nodeId (Port _ portId@(InPortId   Self         ) _ _) _          _     = drawPortSelf_   nodeRef nodeId portId
 drawPort_ nodeRef nodeId (Port _ portId@(OutPortId  All          ) _ _) _          True  = drawPortSingle_ nodeRef nodeId portId
-drawPort_ nodeRef nodeId (Port _ portId@(OutPortId  All          ) _ _) numOfPorts False = drawPortIO_     nodeRef nodeId portId 0 numOfPorts (-1) "1" "0"
-drawPort_ nodeRef nodeId (Port _ portId@(InPortId  (Arg        i)) _ _) numOfPorts _     = drawPortIO_     nodeRef nodeId portId i numOfPorts   1  "0" "1"
-drawPort_ nodeRef nodeId (Port _ portId@(OutPortId (Projection i)) _ _) numOfPorts _     = drawPortIO_     nodeRef nodeId portId i numOfPorts (-1) "1" "0"
+drawPort_ nodeRef nodeId (Port _ portId@(OutPortId  All          ) _ _) numOfPorts False = drawPortIO_     nodeRef nodeId portId 0 numOfPorts False
+drawPort_ nodeRef nodeId (Port _ portId@(InPortId  (Arg        i)) _ _) numOfPorts _     = drawPortIO_     nodeRef nodeId portId i numOfPorts True
+drawPort_ nodeRef nodeId (Port _ portId@(OutPortId (Projection i)) _ _) numOfPorts _     = drawPortIO_     nodeRef nodeId portId i numOfPorts False
 
 drawPortSelf_ :: Ref Node -> NodeId -> PortId -> ReactElementM ViewEventHandler ()
 drawPortSelf_ nodeRef nodeId portId = let color = color' $ Color 5 in
@@ -90,37 +89,48 @@ drawPortSingle_ nodeRef nodeId portId = let color = color' $ Color 5 in
         ] mempty
 
 
-drawPortIO_ :: Ref Node -> NodeId -> PortId -> Int -> Int -> Double -> String -> String -> ReactElementM ViewEventHandler ()
-drawPortIO_ nodeRef nodeId portId num numOfPorts mod1 mod2 mod3 = do
+drawPortIO_ :: Ref Node -> NodeId -> PortId -> Int -> Int -> Bool -> ReactElementM ViewEventHandler ()
+drawPortIO_ nodeRef nodeId portId num numOfPorts isInput = do
 
-    let color   = color' $ Color 5 --TODO [Piotr Młodawski]: get color from model
+    let
+        color = color' $ Color 5 --TODO [Piotr Młodawski]: get color from model
 
-        t1  = portAngleStart num numOfPorts nodeRadius
-        t2  = portAngleStop  num numOfPorts nodeRadius
+        svgFlag1 = case isInput of True  -> "0"
+                                   False -> "1"
+        svgFlag2 = case isInput of True  -> "1"
+                                   False -> "0"
+        classes  = case isInput of True  -> "port port--i port--i--"
+                                   False -> "port port--o port--o--"
+        mod      = case isInput of True  ->  1.0
+                                   False -> -1.0
 
-        t1' = portAngleStart num numOfPorts nodeRadius'
-        t2' = portAngleStop  num numOfPorts nodeRadius'
+        startPortArcX r = r * sin(portAngleStart num numOfPorts r * mod)
+        startPortArcY r = r * cos(portAngleStart num numOfPorts r * mod)
+        stopPortArcX  r = r * sin(portAngleStop  num numOfPorts r * mod)
+        stopPortArcY  r = r * cos(portAngleStop  num numOfPorts r * mod)
 
-        ax = showF $ nodeRadius * sin(t1 * mod1)
-        ay = showF $ nodeRadius * cos(t1 * mod1)
+        ax = startPortArcX nodeRadius
+        ay = startPortArcY nodeRadius
 
-        bx = showF $ nodeRadius * sin(t2 * mod1)
-        by = showF $ nodeRadius * cos(t2 * mod1)
+        bx = stopPortArcX  nodeRadius
+        by = stopPortArcY  nodeRadius
 
-        cx = showF $ nodeRadius' * sin(t2' * mod1)
-        cy = showF $ nodeRadius' * cos(t2' * mod1)
+        cx = stopPortArcX  nodeRadius'
+        cy = stopPortArcY  nodeRadius'
 
-        dx = showF $ nodeRadius' * sin(t1' * mod1)
-        dy = showF $ nodeRadius' * cos(t1' * mod1)
+        dx = startPortArcX nodeRadius'
+        dy = startPortArcY nodeRadius'
 
-        svgPath = fromString $ "M" <> ax <> " " <> ay <> " A " <> show nodeRadius  <> " " <> show nodeRadius  <> " 1 0 " <> mod2 <> " " <> bx <> " " <> by <>
-                              " L" <> cx <> " " <> cy <> " A " <> show nodeRadius' <> " " <> show nodeRadius' <> " 1 0 " <> mod3 <> " " <> dx <> " " <> dy <>
-                              " L" <> ax <> " " <> ay
+        svgPath = fromString $ "M" <> showF ax <> " " <> showF ay <>
+                              " A " <> show nodeRadius  <> " " <> show nodeRadius  <> " 1 0 " <> svgFlag1 <> " " <> showF bx <> " " <> showF by <>
+                              " L" <> showF cx <> " " <> showF cy <>
+                              " A " <> show nodeRadius' <> " " <> show nodeRadius' <> " 1 0 " <> svgFlag2 <> " " <> showF dx <> " " <> showF dy <>
+                              " L" <> showF ax <> " " <> showF ay
 
     path_
         [ onMouseDown $ \e _ -> stopPropagation e : dispatch nodeRef (UI.NodeEvent $ Node.StartConnection nodeId portId)
         , onMouseUp   $ \e _ -> stopPropagation e : dispatch nodeRef (UI.NodeEvent $ Node.EndConnection   nodeId portId)
-        , "className" $= (fromString $ "port port--i port--i--" <> show (num+1))
+        , "className" $= (fromString $ classes <> show (num+1))
         , "fill"      $= color
         , "stroke"    $= color
         , "d"         $= svgPath
