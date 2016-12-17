@@ -88,7 +88,6 @@ drawPortSingle_ nodeRef nodeId portId = let color = color' $ Color 5 in
         , "stroke"    $= color
         ] mempty
 
-
 drawPortIO_ :: Ref Node -> NodeId -> PortId -> Int -> Int -> Bool -> ReactElementM ViewEventHandler ()
 drawPortIO_ nodeRef nodeId portId num numOfPorts isInput = do
 
@@ -122,7 +121,7 @@ drawPortIO_ nodeRef nodeId portId num numOfPorts isInput = do
         dy = startPortArcY nodeRadius'
 
         svgPath = fromString $ "M" <> showF ax <> " " <> showF ay <>
-                              " A " <> show nodeRadius  <> " " <> show nodeRadius  <> " 1 0 " <> svgFlag1 <> " " <> showF bx <> " " <> showF by <>
+                              " A " <> show nodeRadius <> " " <> show nodeRadius <> " 1 0 " <> svgFlag1 <> " " <> showF bx <> " " <> showF by <>
                               " L" <> showF cx <> " " <> showF cy <>
                               " A " <> show nodeRadius' <> " " <> show nodeRadius' <> " 1 0 " <> svgFlag2 <> " " <> showF dx <> " " <> showF dy <>
                               " L" <> showF ax <> " " <> showF ay
