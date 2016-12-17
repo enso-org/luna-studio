@@ -35,7 +35,7 @@ portRadius :: Double
 portRadius  = nodeRadius - connectionWidth/2
 
 portGap :: Double -> Angle
-portGap r = 0.15 * nodeRadius / r -- to avoid gap narrowing
+portGap r = 0.2 * nodeRadius / r -- to avoid gap narrowing
 
 portAngle :: Int -> Angle
 portAngle numOfPorts = pi / fromIntegral numOfPorts
@@ -80,13 +80,21 @@ drawPortSelf_ nodeRef nodeId portId = let color = color' $ Color 5 in
         ] mempty
 
 drawPortSingle_ :: Ref Node -> NodeId -> PortId -> ReactElementM ViewEventHandler ()
-drawPortSingle_ nodeRef nodeId portId = let color = color' $ Color 5 in
-    circle_
+drawPortSingle_ nodeRef nodeId portId = do
+    let color = color' $ Color 5
+        r1 = show nodeRadius
+        r2 = show nodeRadius'
+        svgPath a b = fromString $ "M0 -" <> r1 <> " A " <> r1 <> " " <> r1 <> " 1 0 " <> show a <> " 0 "  <> r1 <> " L0 "  <> r2 <>
+                                                    "A " <> r2 <> " " <> r2 <> " 1 0 " <> show b <> " 0 -" <> r2 <> " Z "
+    path_
         [ onMouseDown $ \e _ -> stopPropagation e : dispatch nodeRef (UI.NodeEvent $ Node.StartConnection nodeId portId)
         , onMouseUp   $ \e _ -> stopPropagation e : dispatch nodeRef (UI.NodeEvent $ Node.EndConnection   nodeId portId)
-        , "className" $= "port port--o port--o--single"
+        , "className" $= "port port--o--single"
+        , "fill"      $= color
         , "stroke"    $= color
+        , "d"         $= (svgPath 0 1 <> svgPath 1 0)
         ] mempty
+
 
 drawPortIO_ :: Ref Node -> NodeId -> PortId -> Int -> Int -> Bool -> ReactElementM ViewEventHandler ()
 drawPortIO_ nodeRef nodeId portId num numOfPorts isInput = do
@@ -120,11 +128,11 @@ drawPortIO_ nodeRef nodeId portId num numOfPorts isInput = do
         dx = startPortArcX nodeRadius'
         dy = startPortArcY nodeRadius'
 
-        svgPath = fromString $ "M" <> showF ax <> " " <> showF ay <>
+        svgPath = fromString $ "M"  <> showF ax <> " " <> showF ay <>
                               " A " <> show nodeRadius <> " " <> show nodeRadius <> " 1 0 " <> svgFlag1 <> " " <> showF bx <> " " <> showF by <>
-                              " L" <> showF cx <> " " <> showF cy <>
+                              " L " <> showF cx <> " " <> showF cy <>
                               " A " <> show nodeRadius' <> " " <> show nodeRadius' <> " 1 0 " <> svgFlag2 <> " " <> showF dx <> " " <> showF dy <>
-                              " L" <> showF ax <> " " <> showF ay
+                              " Z"
 
     path_
         [ onMouseDown $ \e _ -> stopPropagation e : dispatch nodeRef (UI.NodeEvent $ Node.StartConnection nodeId portId)

@@ -58,8 +58,7 @@ drawConnection_ x1 y1 x2 y2 color = do
         y1'   = fromString $ show y1
         x2'   = fromString $ show x2
         y2'   = fromString $ show y2
-        --TODO[react]: Apply correct color
-        color = color' $ Color 5
+        color = color' $ Color 5 --TODO[react]: Apply correct color
         width = fromString $ show connectionWidth
     line_
         [ "className"   $= "connection"

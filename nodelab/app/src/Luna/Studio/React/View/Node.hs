@@ -92,9 +92,7 @@ node nodeRef = React.defineControllerView
                 , "transform" $= translate
                 , "key"       $= fromString (show nodeId)
                 ] $ do
-                    circle_
-                        [ "className" $= "selection-mark"
-                        ] mempty
+                    circle_ [ "className" $= "selection-mark" ] mempty
 
                     makePorts nodeRef nodeId $ filter (\(Port _ portId _ _) -> portId /= InPortId Self) ports
                     makePorts nodeRef nodeId $ filter (\(Port _ portId _ _) -> portId == InPortId Self) ports
