@@ -62,12 +62,14 @@ port nodeRef nodeId numOfPorts isOnly = React.defineView name $ \p -> do
 port_ :: Ref Node -> NodeId -> Port -> Int -> Bool -> ReactElementM ViewEventHandler ()
 port_ ref nodeId p numOfPorts isOnly = React.view (port ref nodeId numOfPorts isOnly) p mempty
 
+
 drawPort_ :: Ref Node -> NodeId -> Port -> Int -> Bool -> ReactElementM ViewEventHandler ()
 drawPort_ nodeRef nodeId (Port _ portId@(InPortId   Self         ) _ _) _          _     = drawPortSelf_   nodeRef nodeId portId
 drawPort_ nodeRef nodeId (Port _ portId@(OutPortId  All          ) _ _) _          True  = drawPortSingle_ nodeRef nodeId portId
 drawPort_ nodeRef nodeId (Port _ portId@(OutPortId  All          ) _ _) numOfPorts False = drawPortIO_     nodeRef nodeId portId 0 numOfPorts False
 drawPort_ nodeRef nodeId (Port _ portId@(InPortId  (Arg        i)) _ _) numOfPorts _     = drawPortIO_     nodeRef nodeId portId i numOfPorts True
 drawPort_ nodeRef nodeId (Port _ portId@(OutPortId (Projection i)) _ _) numOfPorts _     = drawPortIO_     nodeRef nodeId portId i numOfPorts False
+
 
 drawPortSelf_ :: Ref Node -> NodeId -> PortId -> ReactElementM ViewEventHandler ()
 drawPortSelf_ nodeRef nodeId portId = let color = color' $ Color 5 in
@@ -79,13 +81,15 @@ drawPortSelf_ nodeRef nodeId portId = let color = color' $ Color 5 in
         , "stroke"    $= color
         ] mempty
 
+
 drawPortSingle_ :: Ref Node -> NodeId -> PortId -> ReactElementM ViewEventHandler ()
 drawPortSingle_ nodeRef nodeId portId = do
+
     let color = color' $ Color 5
         r1 = show nodeRadius
         r2 = show nodeRadius'
-        svgPath a b = fromString $ "M0 -" <> r1 <> " A " <> r1 <> " " <> r1 <> " 1 0 " <> show a <> " 0 "  <> r1 <> " L0 "  <> r2 <>
-                                                    "A " <> r2 <> " " <> r2 <> " 1 0 " <> show b <> " 0 -" <> r2 <> " Z "
+        svgPath a b = fromString $ "M0 -" <> r1 <> " A " <> r1 <> " " <> r1 <> " 1 0 " <> show a <> " 0 "  <> r1 <>
+                                   " L0 " <> r2 <>  "A " <> r2 <> " " <> r2 <> " 1 0 " <> show b <> " 0 -" <> r2 <> " Z "
     path_
         [ onMouseDown $ \e _ -> stopPropagation e : dispatch nodeRef (UI.NodeEvent $ Node.StartConnection nodeId portId)
         , onMouseUp   $ \e _ -> stopPropagation e : dispatch nodeRef (UI.NodeEvent $ Node.EndConnection   nodeId portId)
@@ -100,14 +104,14 @@ drawPortIO_ :: Ref Node -> NodeId -> PortId -> Int -> Int -> Bool -> ReactElemen
 drawPortIO_ nodeRef nodeId portId num numOfPorts isInput = do
 
     let
-        color = color' $ Color 5 --TODO [Piotr Młodawski]: get color from model
+        color    = color' $ Color 5 --TODO [Piotr Młodawski]: get color from model
 
+        classes  = case isInput of True  -> "port port--i port--i--"
+                                   False -> "port port--o port--o--"
         svgFlag1 = case isInput of True  -> "0"
                                    False -> "1"
         svgFlag2 = case isInput of True  -> "1"
                                    False -> "0"
-        classes  = case isInput of True  -> "port port--i port--i--"
-                                   False -> "port port--o port--o--"
         mod      = case isInput of True  ->  1.0
                                    False -> -1.0
 
@@ -116,24 +120,22 @@ drawPortIO_ nodeRef nodeId portId num numOfPorts isInput = do
         stopPortArcX  r = r * sin(portAngleStop  num numOfPorts r * mod)
         stopPortArcY  r = r * cos(portAngleStop  num numOfPorts r * mod)
 
-        ax = startPortArcX nodeRadius
-        ay = startPortArcY nodeRadius
+        ax = showF $ startPortArcX nodeRadius
+        ay = showF $ startPortArcY nodeRadius
+        bx = showF $ stopPortArcX  nodeRadius
+        by = showF $ stopPortArcY  nodeRadius
+        cx = showF $ stopPortArcX  nodeRadius'
+        cy = showF $ stopPortArcY  nodeRadius'
+        dx = showF $ startPortArcX nodeRadius'
+        dy = showF $ startPortArcY nodeRadius'
+        r1 = show nodeRadius
+        r2 = show nodeRadius'
 
-        bx = stopPortArcX  nodeRadius
-        by = stopPortArcY  nodeRadius
-
-        cx = stopPortArcX  nodeRadius'
-        cy = stopPortArcY  nodeRadius'
-
-        dx = startPortArcX nodeRadius'
-        dy = startPortArcY nodeRadius'
-
-        svgPath = fromString $ "M"  <> showF ax <> " " <> showF ay <>
-                              " A " <> show nodeRadius <> " " <> show nodeRadius <> " 1 0 " <> svgFlag1 <> " " <> showF bx <> " " <> showF by <>
-                              " L " <> showF cx <> " " <> showF cy <>
-                              " A " <> show nodeRadius' <> " " <> show nodeRadius' <> " 1 0 " <> svgFlag2 <> " " <> showF dx <> " " <> showF dy <>
+        svgPath = fromString $ "M"  <> ax <> " " <> ay <>
+                              " A " <> r1 <> " " <> r1 <> " 1 0 " <> svgFlag1 <> " " <> bx <> " " <> by <>
+                              " L " <> cx <> " " <> cy <>
+                              " A " <> r2 <> " " <> r2 <> " 1 0 " <> svgFlag2 <> " " <> dx <> " " <> dy <>
                               " Z"
-
     path_
         [ onMouseDown $ \e _ -> stopPropagation e : dispatch nodeRef (UI.NodeEvent $ Node.StartConnection nodeId portId)
         , onMouseUp   $ \e _ -> stopPropagation e : dispatch nodeRef (UI.NodeEvent $ Node.EndConnection   nodeId portId)
