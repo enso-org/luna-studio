@@ -12,8 +12,7 @@ import           Luna.Studio.Data.Angle             (Angle)
 import qualified Luna.Studio.React.Event.Node       as Node
 import           Luna.Studio.React.Model.Node       (Node)
 import           Luna.Studio.React.Store            (Ref, dispatch)
-import           Luna.Studio.React.View.Connection  (connectionWidth)
-import qualified Numeric                            as Numeric
+import           Luna.Studio.React.View.Global
 import           Object.Widget.Port                 (Port (..))
 import           React.Flux                         hiding (view)
 import qualified React.Flux                         as React
@@ -21,38 +20,6 @@ import qualified React.Flux                         as React
 
 name :: JSString
 name = "port"
-
-showF :: Double -> String
-showF a = Numeric.showFFloat (Just 1) a ""
-
-nodeRadius :: Double
-nodeRadius = 20
-
-nodeRadius' :: Double
-nodeRadius' = nodeRadius - connectionWidth
-
-portRadius :: Double
-portRadius  = nodeRadius - connectionWidth/2
-
-portGap :: Double -> Angle
-portGap r = 0.2 * nodeRadius / r -- to avoid gap narrowing
-
-portAngle :: Int -> Angle
-portAngle numOfPorts = pi / fromIntegral numOfPorts
-
-portAngleStart :: Int -> Int -> Double -> Angle
-portAngleStart num numOfPorts r =
-    let number = fromIntegral num + 1
-        gap    = portGap r
-        t      = portAngle numOfPorts
-    in  number * t - pi - t + gap/2
-
-portAngleStop :: Int -> Int -> Double -> Angle
-portAngleStop num numOfPorts r =
-    let number = fromIntegral num + 1
-        gap    = portGap r
-        t      = portAngle numOfPorts
-    in  number * t - pi - gap/2
 
 
 port :: Ref Node -> NodeId -> Int -> Bool -> ReactView Port
@@ -89,7 +56,7 @@ drawPortSingle_ nodeRef nodeId portId = do
         r1 = show nodeRadius
         r2 = show nodeRadius'
         svgPath a b = fromString $ "M0 -" <> r1 <> " A " <> r1 <> " " <> r1 <> " 1 0 " <> show a <> " 0 "  <> r1 <>
-                                   " L0 " <> r2 <>  "A " <> r2 <> " " <> r2 <> " 1 0 " <> show b <> " 0 -" <> r2 <> " Z "
+                                   " L0 " <> r2 <> " A " <> r2 <> " " <> r2 <> " 1 0 " <> show b <> " 0 -" <> r2 <> " Z "
     path_
         [ onMouseDown $ \e _ -> stopPropagation e : dispatch nodeRef (UI.NodeEvent $ Node.StartConnection nodeId portId)
         , onMouseUp   $ \e _ -> stopPropagation e : dispatch nodeRef (UI.NodeEvent $ Node.EndConnection   nodeId portId)
@@ -120,14 +87,14 @@ drawPortIO_ nodeRef nodeId portId num numOfPorts isInput = do
         stopPortArcX  r = r * sin(portAngleStop  num numOfPorts r * mod)
         stopPortArcY  r = r * cos(portAngleStop  num numOfPorts r * mod)
 
-        ax = showF $ startPortArcX nodeRadius
-        ay = showF $ startPortArcY nodeRadius
-        bx = showF $ stopPortArcX  nodeRadius
-        by = showF $ stopPortArcY  nodeRadius
-        cx = showF $ stopPortArcX  nodeRadius'
-        cy = showF $ stopPortArcY  nodeRadius'
-        dx = showF $ startPortArcX nodeRadius'
-        dy = showF $ startPortArcY nodeRadius'
+        ax = showSvg $ startPortArcX nodeRadius
+        ay = showSvg $ startPortArcY nodeRadius
+        bx = showSvg $ stopPortArcX  nodeRadius
+        by = showSvg $ stopPortArcY  nodeRadius
+        cx = showSvg $ stopPortArcX  nodeRadius'
+        cy = showSvg $ stopPortArcY  nodeRadius'
+        dx = showSvg $ startPortArcX nodeRadius'
+        dy = showSvg $ startPortArcY nodeRadius'
         r1 = show nodeRadius
         r2 = show nodeRadius'
 

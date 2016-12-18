@@ -9,18 +9,17 @@ import qualified React.Flux                         as React
 import qualified Event.UI                           as UI
 import           Luna.Studio.Data.Color             (Color (Color))
 import           Luna.Studio.Data.HSL               (color')
+import           Luna.Studio.Data.Angle             (Angle)
 import           Luna.Studio.React.Model.Connection (Connection, CurrentConnection)
 import qualified Luna.Studio.React.Model.Connection as Connection
 import           Luna.Studio.React.Store            (Ref, dt)
 import qualified Luna.Studio.React.Store            as Store
-
+import           Luna.Studio.React.View.Global
 
 
 name :: JSString
 name = "connection-editor"
 
-connectionWidth :: Double
-connectionWidth = 3
 
 connection :: Ref Connection -> ReactView ()
 connection connectionRef = React.defineControllerView
@@ -54,10 +53,14 @@ currentConnection_ connectionRef = React.view (currentConnection connectionRef) 
 
 drawConnection_ :: Double -> Double -> Double -> Double -> Int -> ReactElementM ViewEventHandler ()
 drawConnection_ x1 y1 x2 y2 color = do
-    let x1'   = fromString $ show x1
-        y1'   = fromString $ show y1
-        x2'   = fromString $ show x2
-        y2'   = fromString $ show y2
+    let
+        t = nodeToNodeAngle x1 y1 x2 y2
+
+        x1' = fromString $ showSvg $ portRadius * cos(t) + x1
+        y1' = fromString $ showSvg $ portRadius * sin(t) + y1
+        x2' = fromString $ showSvg $ portRadius * (-cos(t)) + x2
+        y2' = fromString $ showSvg $ portRadius * (-sin(t)) + y2
+
         color = color' $ Color 5 --TODO[react]: Apply correct color
         width = fromString $ show connectionWidth
     line_
@@ -71,12 +74,17 @@ drawConnection_ x1 y1 x2 y2 color = do
         ] mempty
 
 
-nodeToNodeAngle :: Double -> Double -> Double -> Double -> Double
-nodeToNodeAngle x1 y1 x2 y2 = atan $ (y1-y2) / (x1-x2) -- FIXME
+nodeToNodeAngle :: Double -> Double -> Double -> Double -> Angle
+nodeToNodeAngle srcX srcY dstX dstY
+    | srcX < dstX = atan ((srcY-dstY) / (srcX-dstX))
+    | otherwise   = atan ((srcY-dstY) / (srcX-dstX)) + pi
 
 
 {-- The simplest version:
     if     nodeToNodeAngle <= outputStart then outputAngleStart
     elseif nodeToNodeAngle >= outputStop then outputAngle
     else   nodeToNodeAngle
+
+    float x = r*cos(t)
+    float y = r*sin(t)
 --}
