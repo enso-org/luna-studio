@@ -15,9 +15,11 @@ import qualified Luna.Studio.React.Event.Node         as Node
 import           Luna.Studio.React.Model.Node         (Node)
 import qualified Luna.Studio.React.Model.Node         as Node
 import           Luna.Studio.React.Store              (Ref, dispatch, dt)
+import           Luna.Studio.React.View.ForeignObject (foreignObject_)
 import           Luna.Studio.React.View.Port          (port_)
 import           Luna.Studio.React.View.Visualization (strValue, visualization_)
 import           Object.Widget.Port                   (Port (..))
+
 
 
 name :: JSString
@@ -72,17 +74,19 @@ node nodeRef = React.defineControllerView
 
                      makePorts nodeRef nodeId $ filter (\(Port _ portId _ _) -> portId /= InPortId Self) ports
                      makePorts nodeRef nodeId $ filter (\(Port _ portId _ _) -> portId == InPortId Self) ports
-
-                     text_
-                         [ "className" $= "name"
-                         , "y"         $= "-36"
-                         ] $ elemString $ Text.unpack (n ^. Node.expression) <> " EXPANDED"
-                     text_
-                         [ "className" $= "name"
-                         , "y"         $= "45"
-                         ] $ elemString $ strValue n
-                     g_  [ "transform" $= "translate(-25,80)"
-                         ] $ forM_ (n ^. Node.value) visualization_
+                     foreignObject_ $ do
+                        div_ [ "className" $= "node-expanded" ]$ do
+                            div_ [ "className" $= "name"] $
+                                elemString $ Text.unpack (n ^. Node.expression)
+                            div_ [ "className" $= "properties" ]$ do
+                                div_ [ "className" $= "label" ] $ elemString "Name"
+                                div_ [ "className" $= "value" ] $ elemString $ fromString $ Text.unpack $ n ^. Node.name
+                                div_ [ "className" $= "label" ] $ elemString "Display result"
+                                div_ [ "className" $= "value" ] $ elemString "on/off"
+                            div_ [ "className" $= "value"] $
+                                elemString $ strValue n
+                            div_ [ "className" $= "visualizations" ] $
+                                forM_ (n ^. Node.value) visualization_
         else
             g_
                 [ onClick       $ \_ m -> dispatch nodeRef $ UI.NodeEvent $ Node.Select m nodeId

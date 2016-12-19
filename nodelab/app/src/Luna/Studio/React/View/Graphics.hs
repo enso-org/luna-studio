@@ -1,18 +1,18 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Luna.Studio.React.View.Graphics where
 
-import qualified Data.Text.Lazy         as Text
-import           React.Flux hiding (label_)
+import qualified Data.Text.Lazy          as Text
+import           React.Flux              hiding (label_)
 
-import qualified Graphics.API           as GR
-import qualified Object.Widget.Graphics as Graphics
-import qualified Object.Widget.Graphics as G
-import qualified Object.Widget.Label    as Label
-import qualified Style.Layout           as Style
-import qualified UI.Instances           ()
+import qualified Graphics.API            as GR
+import qualified Luna.Studio.Data.Shader as Shader
+import           Luna.Studio.Data.Vector hiding (normalize)
 import           Luna.Studio.Prelude
-import qualified Luna.Studio.Data.Shader           as Shader
-import           Luna.Studio.Data.Vector           hiding (normalize)
+import qualified Object.Widget.Graphics  as Graphics
+import qualified Object.Widget.Graphics  as G
+import qualified Object.Widget.Label     as Label
+import qualified Style.Layout            as Style
+import qualified UI.Instances            ()
 
 
 
@@ -26,9 +26,11 @@ graphics_ visIx (GR.Graphics layers) = do
         labelAlign GR.Left   = Label.Left
         labelAlign GR.Center = Label.Center
         labelAlign GR.Right  = Label.Right
-    g_ [ "key" $= fromString (show visIx)] $ do
-        forM_ labels $ (label_ $ widget ^. G.size)
-        forM_ items $ (item_ $ widget ^. G.size)
+    div_ ["className" $= "visualization"] $
+        svg_ $
+            g_ [ "key" $= fromString (show visIx)] $ do
+                forM_ labels $ (label_ $ widget ^. G.size)
+                forM_ items $ (item_ $ widget ^. G.size)
 
 label_ :: Vector2 Double -> G.Label -> ReactElementM ViewEventHandler ()
 label_ size label = do

@@ -64,6 +64,37 @@
   margin-right: 20px;
 }
 
+.node-expanded {
+  width:   240px;
+  color:  @colorName;
+  .properties {
+    width: inherit;
+    color: white;
+    overflow: hidden;
+    background: #333;
+    padding: 7px;
+    border-radius: 10px;
+    .name .value { }
+    .label {
+      float: left;
+      width: 120px;
+      overflow: hidden;
+    }
+    .value {
+      overflow: hidden;
+      width: 120px;
+      text-align: right;
+      float: left;
+    }
+  }
+}
+.visualizations {
+  .visualization {
+    padding: 5px;
+    background: #333;
+  }
+}
+
 .scrollbar(@backgroundColor, @slider, @radius) {
   &::-webkit-scrollbar {
     -webkit-appearance: none;
@@ -85,9 +116,9 @@
   }
 }
 
-foreignObject.data-frame {
-  height: 400px;
-  width: 200px;
+.data-frame {
+  height: 200px;
+  width:  200px;
   div {
     position:       fixed;
     background:     transparent;
