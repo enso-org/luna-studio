@@ -56,14 +56,14 @@ connectionSrc :: Vector2 Double -> Vector2 Double -> Int -> Int -> Bool -> Vecto
 connectionSrc (Vector2 x1 y1) (Vector2 x2 y2) _   _          True =
     let t    = nodeToNodeAngle x1 y1 x2 y2
         srcX = portRadius * cos(t) + x1
-        srcY = portRadius * sin(t) + y2
+        srcY = portRadius * sin(t) + y1
     in  Vector2 srcX srcY
 connectionSrc (Vector2 x1 y1) (Vector2 x2 y2) num numOfPorts _    =
     let t      = nodeToNodeAngle x1 y1 x2 y2
         number = num
         ports  = numOfPorts
         srcX   = portRadius * cos(t) + x1
-        srcY   = portRadius * sin(t) + y2
+        srcY   = portRadius * sin(t) + y1
     in  Vector2 srcX srcY
 
 
