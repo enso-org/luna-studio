@@ -82,7 +82,13 @@ node nodeRef = React.defineControllerView
                                 div_ [ "className" $= "label" ] $ elemString "Name"
                                 div_ [ "className" $= "value" ] $ elemString $ fromString $ Text.unpack $ n ^. Node.name
                                 div_ [ "className" $= "label" ] $ elemString "Display result"
-                                div_ [ "className" $= "value" ] $ elemString "on/off"
+                                div_ [ "className" $= "value" ] $
+                                    label_ ["className" $= "switch"] $ do
+                                        input_ ["type" $= "checkbox"
+                                               ,"value" $= if n ^. Node.visualizationsEnabled then "on" else "off"
+                                               , onChange $ \e -> let val = not $ bool $ target e "value" in dispatch nodeRef $ UI.NodeEvent $ Node.DisplayResultChanged val nodeId
+                                               ]
+                                        div_ ["className" $= "slider"] mempty
                             div_ [ "className" $= "value"] $
                                 elemString $ strValue n
                             div_ [ "className" $= "visualizations" ] $
@@ -114,3 +120,7 @@ node nodeRef = React.defineControllerView
 
 node_ :: Ref Node -> ReactElementM ViewEventHandler ()
 node_ nodeRef = React.view (node nodeRef) () mempty
+
+bool :: String -> Bool
+bool "on" = True
+bool _    = False

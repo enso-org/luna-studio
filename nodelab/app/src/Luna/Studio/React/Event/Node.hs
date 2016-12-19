@@ -13,12 +13,13 @@ import           Luna.Studio.Prelude
 
 
 
-data Event = Select          MouseEvent NodeId
-           | MouseDown       MouseEvent NodeId
-           | Enter           NodeId
-           | EditExpression  NodeId
-           | StartConnection NodeId PortId
-           | EndConnection   NodeId PortId
+data Event = DisplayResultChanged Bool NodeId
+           | EditExpression       NodeId
+           | EndConnection        NodeId PortId
+           | Enter                NodeId
+           | MouseDown            MouseEvent NodeId
+           | Select               MouseEvent NodeId
+           | StartConnection      NodeId PortId
             deriving (Show, Generic, NFData, Typeable)
 
 instance ToJSON   Event
