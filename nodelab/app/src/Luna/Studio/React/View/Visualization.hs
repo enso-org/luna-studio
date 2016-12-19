@@ -19,18 +19,18 @@ import qualified Empire.API.Data.Error             as LunaError
 import           Empire.API.Data.TypeRep           (TypeRep)
 import           Empire.API.Graph.NodeResultUpdate (NodeValue)
 import qualified Empire.API.Graph.NodeResultUpdate as NodeResult
-import           Luna.Studio.React.Model.DataFrame           (DataFrame)
-import qualified Luna.Studio.React.Model.DataFrame           as DataFrame
+import           Luna.Studio.Data.Vector           hiding (normalize)
+import           Luna.Studio.Prelude
+import           Luna.Studio.React.Model.DataFrame (DataFrame)
+import qualified Luna.Studio.React.Model.DataFrame as DataFrame
+import           Luna.Studio.React.Model.Node      (Node)
+import qualified Luna.Studio.React.Model.Node      as Node
+import           Luna.Studio.React.View.DataFrame  (dataFrame_)
+import           Luna.Studio.React.View.Graphics   (graphics_)
+import           Luna.Studio.React.View.Image      (image_)
 import qualified Object.Widget.Plots.Image         as Image
-import           Luna.Studio.React.Model.Node                  (Node)
-import qualified Luna.Studio.React.Model.Node                  as Node
-import           Luna.Studio.React.View.DataFrame              (dataFrame_)
-import           Luna.Studio.React.View.Graphics               (graphics_)
-import           Luna.Studio.React.View.Image                  (image_)
 import qualified Style.Layout                      as Style
 import qualified UI.Instances                      ()
-import           Luna.Studio.Prelude
-import           Luna.Studio.Data.Vector                      hiding (normalize)
 
 
 
@@ -80,12 +80,11 @@ showErrorSep sep err = case err of
 nodeError_ :: LunaError.Error TypeRep -> ReactElementM ViewEventHandler ()
 nodeError_ err = do
     let message = wrapLines Style.errorMessageWrapMargin $ showErrorSep "\n" err
-    text_ $ elemString message
+    div_ [ "className" $= "visualization" ] $ elemString message
 
 nodeValues_ :: [Value] -> ReactElementM ViewEventHandler ()
 nodeValues_ =
-    g_ .
-        mapM_ (uncurry nodeValue_) . zip [0..]
+    mapM_ (uncurry nodeValue_) . zip [0..]
 
 nodeValue_ :: Int -> Value -> ReactElementM ViewEventHandler ()
 nodeValue_ visIx = \case
@@ -97,8 +96,8 @@ nodeValue_ visIx = \case
     IntPairList     v -> dataFrame_ visIx $ listTablePairs $ mapTuple (Text.pack . show) <$> v
     DoublePairList  v -> dataFrame_ visIx $ listTablePairs $ mapTuple (Text.pack . show) <$> v
     Image     url w h -> image_ visIx $ Image.create (Vector2 w h) $ Text.pack url
-    StringValue   str -> text_ $ elemString $ fromString $ normalize str
-    Lambda        str -> text_ $ elemString $ fromString $ normalize str
+    StringValue   str -> div_ $ elemString $ fromString $ normalize str
+    Lambda        str -> div_ $ elemString $ fromString $ normalize str
     Graphics       gr -> graphics_ visIx gr
     DataFrame    cols -> do
         let heads = Text.pack <$> fst <$> cols

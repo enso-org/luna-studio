@@ -4,30 +4,30 @@ module Luna.Studio.Commands.Node
     , editExpression
     , enter
     , exit
-    , tryEnter
     , rename
+    , tryEnter
+    , visualizationsToggled
     ) where
 
-import qualified Luna.Studio.Batch.Workspace                   as Workspace
-import           Empire.API.Data.Breadcrumb        (BreadcrumbItem (..))
-import qualified Empire.API.Data.Breadcrumb        as Breadcrumb
-import qualified Empire.API.Data.GraphLocation     as GraphLocation
-import           Empire.API.Data.Node              (Node, NodeId)
-import qualified Empire.API.Data.Node              as Node
-import qualified Empire.API.Data.NodeMeta          as NodeMeta
-import           Object.UITypes                    (WidgetId)
-import qualified Object.Widget.Node                as Model
-import           Luna.Studio.React.Store                       (WRef (..), widget)
-import qualified Luna.Studio.React.Store                       as Store
+import           Empire.API.Data.Breadcrumb           (BreadcrumbItem (..))
+import qualified Empire.API.Data.Breadcrumb           as Breadcrumb
+import qualified Empire.API.Data.GraphLocation        as GraphLocation
+import           Empire.API.Data.Node                 (Node, NodeId)
+import qualified Empire.API.Data.Node                 as Node
+import qualified Empire.API.Data.NodeMeta             as NodeMeta
+import qualified Luna.Studio.Batch.Workspace          as Workspace
 import           Luna.Studio.Commands.Command         (Command)
 import           Luna.Studio.Commands.Graph.Selection (selectedNodes)
 import           Luna.Studio.Commands.Node.NodeMeta   (modifyNodeMeta)
 import           Luna.Studio.Commands.ProjectManager  as ProjectManager
 import qualified Luna.Studio.Commands.Searcher        as Searcher
+import           Luna.Studio.Prelude
+import           Luna.Studio.React.Store              (WRef (..), widget)
+import qualified Luna.Studio.React.Store              as Store
 import           Luna.Studio.State.Global             (State)
 import qualified Luna.Studio.State.Global             as Global
 import qualified Luna.Studio.State.Graph              as Graph
-import           Luna.Studio.Prelude
+import qualified Object.Widget.Node                   as Model
 
 
 
@@ -63,8 +63,10 @@ expandSelectedNodes = do
     forM_ sn $
         Store.modify_ update . _ref
 
-visualizationsToggled :: WidgetId -> NodeId -> Bool -> Command State ()
-visualizationsToggled _ nid val = modifyNodeMeta nid (NodeMeta.displayResult .~ val)
+visualizationsToggled :: NodeId -> Bool -> Command State ()
+visualizationsToggled nid val = do
+    modifyNodeMeta nid $ NodeMeta.displayResult .~ val
+    Global.withNode nid $ mapM_ $ Store.modify_ (Model.visualizationsEnabled .~ val)
 
 editExpression :: NodeId -> Command State ()
 editExpression nodeId = do

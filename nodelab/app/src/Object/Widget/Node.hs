@@ -36,12 +36,11 @@ data Elements = Elements { _portGroup           :: WidgetId
                          , _visualizationGroup  :: WidgetId
                          , _execTimeLabel       :: WidgetId
                          , _nodeType            :: Maybe WidgetId
-                         , _visualizationToggle :: Maybe WidgetId
                          , _codeEditor          :: Maybe WidgetId
                          } deriving (Eq, Show, Generic)
 
 instance Default Elements where
-    def = Elements def def def def def def def def def def def def
+    def = Elements def def def def def def def def def def def
 
 type CollaborationMap = Map ClientId UTCTime
 data Collaboration = Collaboration { _touch  :: Map ClientId (UTCTime, ColorId)

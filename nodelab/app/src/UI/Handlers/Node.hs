@@ -2,30 +2,23 @@
 
 module UI.Handlers.Node where
 
-import           Luna.Studio.Prelude                        hiding (stripPrefix)
+import           Luna.Studio.Prelude                         hiding (stripPrefix)
 
-import           Control.Monad.Trans.State                (get)
-import qualified Data.HashMap.Strict                      as HashMap
-import           Data.HMap.Lazy                           (HTMap, TypeKey (..))
-import qualified Data.Text.Lazy                           as Text
+import           Control.Monad.Trans.State                   (get)
+import qualified Data.HashMap.Strict                         as HashMap
+import           Data.HMap.Lazy                              (HTMap, TypeKey (..))
+import qualified Data.Text.Lazy                              as Text
 import           Luna.Studio.Data.Vector
 
-import           Object.Widget                            (CompositeWidget, KeyPressedHandler, ResizableWidget, UIHandlers, WidgetId,
-                                                           createWidget, keyDown, mouseOut, mouseOver, updateWidget)
+import           Object.Widget                               (CompositeWidget, KeyPressedHandler, ResizableWidget, UIHandlers, WidgetId,
+                                                              createWidget, keyDown, mouseOut, mouseOver, updateWidget)
 
-import           Luna.Studio.React.Store                              (Ref, WRef)
-import qualified Luna.Studio.React.Store                              as Store
-import           Luna.Studio.React.Model.Node                         (Node)
-import qualified Luna.Studio.React.Model.Node                         as Node
-import qualified Luna.Studio.React.Model.NodeEditor                   as NodeEditor
+import           Luna.Studio.React.Model.Node                (Node)
+import qualified Luna.Studio.React.Model.Node                as Node
+import qualified Luna.Studio.React.Model.NodeEditor          as NodeEditor
+import           Luna.Studio.React.Store                     (Ref, WRef)
+import qualified Luna.Studio.React.Store                     as Store
 
-import qualified Object.Widget.CodeEditor                 as CodeEditor
-import qualified Object.Widget.Group                      as Group
-import qualified Object.Widget.Label                      as Label
-import qualified Object.Widget.LabeledTextBox             as LabeledTextBox
-import qualified Object.Widget.Node                       as Model
-import qualified Object.Widget.TextBox                    as TextBox
-import qualified Object.Widget.Toggle                     as Toggle
 import           Luna.Studio.Commands.Batch                  (cancelCollaborativeTouch, collaborativeTouch)
 import           Luna.Studio.Commands.Command                (Command)
 import           Luna.Studio.Commands.Graph.SelectionHistory (dropSelectionHistory, modifySelectionHistory)
@@ -34,22 +27,29 @@ import           Luna.Studio.State.Global                    (inRegistry)
 import qualified Luna.Studio.State.Global                    as Global
 import           Luna.Studio.State.UIRegistry                (addHandler)
 import qualified Luna.Studio.State.UIRegistry                as UIRegistry
+import qualified Object.Widget.CodeEditor                    as CodeEditor
+import qualified Object.Widget.Group                         as Group
+import qualified Object.Widget.Label                         as Label
+import qualified Object.Widget.LabeledTextBox                as LabeledTextBox
+import qualified Object.Widget.Node                          as Model
+import qualified Object.Widget.TextBox                       as TextBox
+import qualified Object.Widget.Toggle                        as Toggle
 
-import qualified Style.Node                               as Style
-import           UI.Generic                               (whenChanged)
-import           UI.Handlers.Button                       (DblClickedHandler (..), MousePressedHandler (..))
-import           UI.Handlers.Generic                      (ValueChangedHandler (..))
-import           UI.Handlers.LabeledTextBox               ()
-import           UI.Layout                                as Layout
-import           UI.Widget.CodeEditor                     ()
-import           UI.Widget.Group                          ()
-import           UI.Widget.Label                          ()
-import           UI.Widget.LabeledTextBox                 ()
-import           UI.Widget.Node                           ()
-import           UI.Widget.TextBox                        ()
-import           UI.Widget.Toggle                         ()
+import qualified Style.Node                                  as Style
+import           UI.Generic                                  (whenChanged)
+import           UI.Handlers.Button                          (DblClickedHandler (..), MousePressedHandler (..))
+import           UI.Handlers.Generic                         (ValueChangedHandler (..))
+import           UI.Handlers.LabeledTextBox                  ()
+import           UI.Layout                                   as Layout
+import           UI.Widget.CodeEditor                        ()
+import           UI.Widget.Group                             ()
+import           UI.Widget.Label                             ()
+import           UI.Widget.LabeledTextBox                    ()
+import           UI.Widget.Node                              ()
+import           UI.Widget.TextBox                           ()
+import           UI.Widget.Toggle                            ()
 
-import           Empire.API.Data.Node                     (NodeId)
+import           Empire.API.Data.Node                        (NodeId)
 
 
 
@@ -58,19 +58,10 @@ nameHandlers wid = addHandler (ValueChangedHandler $ nameValueChangedHandler wid
                 $ addHandler (UICmd.LostFocus $ inRegistry . flip UICmd.update_ (TextBox.isEditing .~ False))
                 $ mempty
 
-visualizationToggleHandlers :: WidgetId -> HTMap
-visualizationToggleHandlers wid = addHandler (ValueChangedHandler $ visualizationToggledHandler wid)
-                                 $ mempty
-
 nameValueChangedHandler :: WidgetId -> Text -> WidgetId -> Command Global.State ()
 nameValueChangedHandler parent val _ = do
     model <- inRegistry $ UICmd.update parent $ Model.name .~ val
     triggerRenameNodeHandler parent model
-
-visualizationToggledHandler :: WidgetId -> Bool -> WidgetId -> Command Global.State ()
-visualizationToggledHandler parent val _ = do
-    model <- inRegistry $ UICmd.update parent $ Model.visualizationsEnabled .~ val
-    triggerVisualizationsToggledHandler parent model
 
 typeHandlers :: WidgetId -> HTMap
 typeHandlers wid = addHandler (ValueChangedHandler $ typeValueChangedHandler wid)
@@ -95,9 +86,6 @@ focusNodeHandler = TypeKey :: TypeKey FocusNodeHandler
 newtype RenameNodeHandler = RenameNodeHandler (WidgetId -> NodeId -> Text -> Command Global.State ())
 renameNodeHandler = TypeKey :: TypeKey RenameNodeHandler
 
-newtype VisualizationsToggledHandler = VisualizationsToggledHandler (WidgetId -> NodeId -> Bool -> Command Global.State ())
-visualizationsToggledHandler = TypeKey :: TypeKey VisualizationsToggledHandler
-
 newtype ChangeInputNodeTypeHandler = ChangeInputNodeTypeHandler (WidgetId -> NodeId -> Text -> Command Global.State ())
 changeInputNodeTypeHandler = TypeKey :: TypeKey ChangeInputNodeTypeHandler
 
@@ -113,11 +101,6 @@ triggerRenameNodeHandler :: WidgetId -> Model.Node -> Command Global.State ()
 triggerRenameNodeHandler wid model = do
     maybeHandler <- inRegistry $ UICmd.handler wid renameNodeHandler
     withJust maybeHandler $ \(RenameNodeHandler handler) -> handler wid (model ^. Model.nodeId) (model ^. Model.name)
-
-triggerVisualizationsToggledHandler :: WidgetId -> Model.Node -> Command Global.State ()
-triggerVisualizationsToggledHandler wid model = do
-    maybeHandler <- inRegistry $ UICmd.handler wid visualizationsToggledHandler
-    withJust maybeHandler $ \(VisualizationsToggledHandler handler) -> handler wid (model ^. Model.nodeId) (model ^. Model.visualizationsEnabled)
 
 triggerChangeInputNodeTypeHandler :: WidgetId -> Model.Node -> Command Global.State ()
 triggerChangeInputNodeTypeHandler wid model = do
@@ -188,8 +171,6 @@ instance CompositeWidget Model.Node where
 
         codeEditorId <- mapM (displayCodeEditor wid nodeGroupId) $ model ^. Model.code
 
-        let widget = Toggle.create Style.portControlSize "Display result" $ model ^. Model.visualizationsEnabled
-        visualizationToggleId <- UICmd.register nodeGroupId widget $ visualizationToggleHandlers wid
 
         withJust (model ^. Model.tpe) $ \_tpe -> do
             let widget = LabeledTextBox.create Style.portControlSize "Type" (fromMaybe "" $ model ^. Model.tpe)
@@ -213,7 +194,6 @@ instance CompositeWidget Model.Node where
                                                                . (Model.nameTextBox         .~ nameTextBoxId              )
                                                                . (Model.visualizationGroup  .~ visualizationGroupId       )
                                                                . (Model.execTimeLabel       .~ execTimeLabelId            )
-                                                               . (Model.visualizationToggle .~ Just visualizationToggleId )
                                                                . (Model.codeEditor          .~ codeEditorId               )
                                                                )
 
@@ -227,10 +207,6 @@ instance CompositeWidget Model.Node where
         whenChanged old model Model.name  $ do
             let nameTbId = model ^. Model.elements . Model.nameTextBox
             UICmd.update_ nameTbId   $ LabeledTextBox.value .~ (model ^. Model.name)
-
-        whenChanged old model Model.visualizationsEnabled  $ do
-            let visTgId = model ^. Model.elements . Model.visualizationToggle
-            withJust visTgId $ \visTgId -> UICmd.update_ visTgId $ Toggle.value .~ (model ^. Model.visualizationsEnabled)
 
         whenChanged old model Model.tpe   $ withJust (model ^. Model.tpe) $ \tpe -> do
             let typeTbId = model ^. Model.elements . Model.nodeType
