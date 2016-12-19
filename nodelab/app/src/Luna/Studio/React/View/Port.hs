@@ -6,9 +6,9 @@ import           Luna.Studio.Prelude
 import           Empire.API.Data.Node               (NodeId)
 import           Empire.API.Data.Port               (InPort (..), OutPort (..), PortId (..))
 import qualified Event.UI                           as UI
+import           Luna.Studio.Data.Angle             (Angle)
 import           Luna.Studio.Data.Color             (Color (Color))
 import           Luna.Studio.Data.HSL               (color')
-import           Luna.Studio.Data.Angle             (Angle)
 import qualified Luna.Studio.React.Event.Node       as Node
 import           Luna.Studio.React.Model.Node       (Node)
 import           Luna.Studio.React.Store            (Ref, dispatch)
@@ -16,6 +16,7 @@ import           Luna.Studio.React.View.Global
 import           Object.Widget.Port                 (Port (..))
 import           React.Flux                         hiding (view)
 import qualified React.Flux                         as React
+
 
 
 name :: JSString
@@ -52,7 +53,8 @@ drawPortSelf_ nodeRef nodeId portId = let color = color' $ Color 5 in
 drawPortSingle_ :: Ref Node -> NodeId -> PortId -> ReactElementM ViewEventHandler ()
 drawPortSingle_ nodeRef nodeId portId = do
 
-    let color = color' $ Color 5
+    let
+        color = color' $ Color 5
         r1 = show nodeRadius
         r2 = show nodeRadius'
         svgPath a b = fromString $ "M0 -" <> r1 <> " A " <> r1 <> " " <> r1 <> " 1 0 " <> show a <> " 0 "  <> r1 <>
@@ -70,8 +72,7 @@ drawPortSingle_ nodeRef nodeId portId = do
 drawPortIO_ :: Ref Node -> NodeId -> PortId -> Int -> Int -> Bool -> ReactElementM ViewEventHandler ()
 drawPortIO_ nodeRef nodeId portId num numOfPorts isInput = do
 
-    let
-        color    = color' $ Color 5 --TODO [Piotr Młodawski]: get color from model
+    let color    = color' $ Color 5 --TODO [Piotr Młodawski]: get color from model
 
         classes  = case isInput of True  -> "port port--i port--i--"
                                    False -> "port port--o port--o--"

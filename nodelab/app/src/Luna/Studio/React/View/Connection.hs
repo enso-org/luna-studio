@@ -30,7 +30,7 @@ connection connectionRef = React.defineControllerView
             dstX       = connection ^. Connection.to . x
             dstY       = connection ^. Connection.to . y
             color      = connection ^. Connection.color
-        drawConnection_ srcX srcY dstX dstY color
+        drawConnection_ (Vector2 srcX srcY) (Vector2 dstX dstY) color
 
 connection_ :: Ref Connection -> ReactElementM ViewEventHandler ()
 connection_ connectionRef = React.view (connection connectionRef) () mempty
@@ -45,46 +45,26 @@ currentConnection connectionRef = React.defineControllerView
             dstX       = connection ^. Connection.currentTo . x
             dstY       = connection ^. Connection.currentTo . y
             color      = connection ^. Connection.currentColor
-        drawConnection_ srcX srcY dstX dstY color
+        drawConnection_ (Vector2 srcX srcY) (Vector2 dstX dstY) color
 
 currentConnection_ :: Ref CurrentConnection -> ReactElementM ViewEventHandler ()
 currentConnection_ connectionRef = React.view (currentConnection connectionRef) () mempty
 
 
-drawConnection_ :: Double -> Double -> Double -> Double -> Int -> ReactElementM ViewEventHandler ()
-drawConnection_ x1 y1 x2 y2 color = do
-    let
-        t = nodeToNodeAngle x1 y1 x2 y2
-
-        x1' = fromString $ showSvg $ portRadius * cos(t) + x1
-        y1' = fromString $ showSvg $ portRadius * sin(t) + y1
-        x2' = fromString $ showSvg $ portRadius * (-cos(t)) + x2
-        y2' = fromString $ showSvg $ portRadius * (-sin(t)) + y2
-
+drawConnection_ :: Vector2 Double -> Vector2 Double -> Int -> ReactElementM ViewEventHandler ()
+drawConnection_ (Vector2 srcX srcY) (Vector2 dstX dstY) color =
+    let x1 = fromString $ showSvg $ srcX
+        y1 = fromString $ showSvg $ srcY
+        x2 = fromString $ showSvg $ dstX
+        y2 = fromString $ showSvg $ dstY
         color = color' $ Color 5 --TODO[react]: Apply correct color
         width = fromString $ show connectionWidth
-    line_
-        [ "className"   $= "connection"
-        , "x1"          $= x1'
-        , "y1"          $= y1'
-        , "x2"          $= x2'
-        , "y2"          $= y2'
-        , "stroke"      $= color
-        , "strokeWidth" $= width
-        ] mempty
-
-
-nodeToNodeAngle :: Double -> Double -> Double -> Double -> Angle
-nodeToNodeAngle srcX srcY dstX dstY
-    | srcX < dstX = atan ((srcY-dstY) / (srcX-dstX))
-    | otherwise   = atan ((srcY-dstY) / (srcX-dstX)) + pi
-
-
-{-- The simplest version:
-    if     nodeToNodeAngle <= outputStart then outputAngleStart
-    elseif nodeToNodeAngle >= outputStop then outputAngle
-    else   nodeToNodeAngle
-
-    float x = r*cos(t)
-    float y = r*sin(t)
---}
+    in  line_
+            [ "className"   $= "connection"
+            , "x1"          $= x1
+            , "y1"          $= y1
+            , "x2"          $= x2
+            , "y2"          $= y2
+            , "stroke"      $= color
+            , "strokeWidth" $= width
+            ] mempty

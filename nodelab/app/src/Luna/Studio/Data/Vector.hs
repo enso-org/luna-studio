@@ -18,8 +18,8 @@ instance Num a => Num (Vector2 a) where
     (Vector2 x1 y1) + (Vector2 x2 y2) = Vector2 (x1 + x2) (y1 + y2)
     (Vector2 x1 y1) - (Vector2 x2 y2) = Vector2 (x1 - x2) (y1 - y2)
     (Vector2 x1 y1) * (Vector2 x2 y2) = Vector2 (x1 * x2) (y1 * y2)
-    abs    (Vector2 x1 y1)              = Vector2 (abs    x1) (abs    y1)
-    signum (Vector2 x1 y1)              = Vector2 (signum x1) (signum y1)
+    abs    (Vector2 x1 y1)            = Vector2 (abs    x1) (abs    y1)
+    signum (Vector2 x1 y1)            = Vector2 (signum x1) (signum y1)
     fromInteger i                     = let val = fromInteger i in Vector2 val val
 
 lengthSquared :: Num a => Vector2 a -> a
