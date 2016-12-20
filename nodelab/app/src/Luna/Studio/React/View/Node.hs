@@ -82,7 +82,7 @@ node ref = React.defineControllerView
                                 div_ [ "className" $= "label" ] $ elemString "Name"
                                 div_
                                     [ "className" $= "value"
-                                    , onDoubleClick $ \_ m -> dispatch ref $ UI.NodeEvent $ Node.NameEditStart nodeId
+                                    , onDoubleClick $ \_ _ -> dispatch ref $ UI.NodeEvent $ Node.NameEditStart nodeId
                                     ] $
                                     case n ^. Node.nameEdit of
                                         Just name ->
@@ -103,6 +103,9 @@ node ref = React.defineControllerView
                                                , onChange $ \e -> let val = not $ bool $ target e "value" in dispatch ref $ UI.NodeEvent $ Node.DisplayResultChanged val nodeId
                                                ]
                                         div_ ["className" $= "slider"] mempty
+                                withJust (n ^. Node.execTime) $ \execTime -> do
+                                    div_ ["className" $= "label"] $ elemString "Execution time"
+                                    div_ ["className" $= "value"] $ elemString $ show execTime <> " ms"
                             div_ [ "className" $= "value"] $
                                 elemString $ strValue n
                             div_ [ "className" $= "visualizations" ] $
