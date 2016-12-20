@@ -15,11 +15,11 @@ import qualified Luna.Pass.Manager as Pass (PassManager, State)
 import qualified Luna.Pass as Pass
 import Luna.Pass (type Events, type Inputs, type Outputs, type Preserves)
 import Luna.Pass.Evaluation.Interpreter.Layer (InterpreterData, InterpreterLayer)
-
+import System.Log (Logger, DropLogger)
 import Empire.API.Data.Node (NodeId)
 import Empire.API.Data.NodeMeta (NodeMeta)
 
-data ASTState = ASTState IR (Pass.State (IRBuilder IO))
+data ASTState = ASTState IR (Pass.State (IRBuilder (Logger DropLogger IO)))
 
 instance Show ASTState where
     show _ = "AST"
@@ -42,7 +42,7 @@ marker = do
     (el, _) <- readAttr @WorkingElem
     writeLayer @Marker Nothing el
 
-marker_reg :: (IRMonad m) => Pass.PassManager m ()
+marker_reg :: (MonadIO m, IRMonad m) => Pass.PassManager m ()
 marker_reg = registerLayer (typeRep @Proxy @Marker Proxy) $ \_ -> Pass.compile marker
 
 data Meta
@@ -58,7 +58,7 @@ meta = do
     (el, _) <- readAttr @WorkingElem
     writeLayer @Meta Nothing el
 
-meta_reg :: (IRMonad m) => Pass.PassManager m ()
+meta_reg :: (MonadIO m, IRMonad m) => Pass.PassManager m ()
 meta_reg = registerLayer (typeRep @Proxy @Meta Proxy) $ \_ -> Pass.compile meta
 
 data InputsLayer
@@ -74,7 +74,7 @@ inputsLayer = do
     (el, _) <- readAttr @WorkingElem
     writeLayer @InputsLayer [] el
 
-inputsLayer_reg :: (IRMonad m) => Pass.PassManager m ()
+inputsLayer_reg :: (MonadIO m, IRMonad m) => Pass.PassManager m ()
 inputsLayer_reg = registerLayer (typeRep @Proxy @InputsLayer Proxy) $ \_ -> Pass.compile inputsLayer
 
 data TCData
@@ -90,7 +90,7 @@ tcData = do
     (el, _) <- readAttr @WorkingElem
     writeLayer @TCData (TCDataMock []) el
 
-tcData_reg :: (IRMonad m) => Pass.PassManager m ()
+tcData_reg :: (MonadIO m, IRMonad m) => Pass.PassManager m ()
 tcData_reg = registerLayer (typeRep @Proxy @TCData Proxy) $ \_ -> Pass.compile tcData
 
 type instance LayerData InterpreterData t = InterpreterLayer
@@ -105,10 +105,10 @@ intData = do
     (el, _) <- readAttr @WorkingElem
     writeLayer @InterpreterData def el
 
-intData_reg :: (IRMonad m) => Pass.PassManager m ()
+intData_reg :: (MonadIO m, IRMonad m) => Pass.PassManager m ()
 intData_reg = registerLayer (typeRep @Proxy @InterpreterData Proxy) $ \_ -> Pass.compile intData
 
-registerEmpireLayers :: (IRMonad m) => Pass.PassManager m ()
+registerEmpireLayers :: (MonadIO m, IRMonad m) => Pass.PassManager m ()
 registerEmpireLayers = sequence_ [ marker_reg
                                  , meta_reg
                                  , inputsLayer_reg

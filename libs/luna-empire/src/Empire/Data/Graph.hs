@@ -13,7 +13,7 @@ import Luna.IR (evalIRBuilder', evalPassManager',
                 EXPR, attachLayer, runRegs, snapshot)
 import qualified Luna.Pass.Manager as Pass (get)
 import Luna.Pass.Evaluation.Interpreter.Layer (InterpreterData)
-
+import System.Log (dropLogs)
 import System.IO.Unsafe (unsafePerformIO)
 
 
@@ -43,7 +43,7 @@ defaultAST = prepareASTOp
 
 {-# NOINLINE prepareASTOp #-}
 prepareASTOp :: AST
-prepareASTOp = unsafePerformIO $ liftIO $ evalIRBuilder' $ evalPassManager' $ do
+prepareASTOp = unsafePerformIO $ liftIO $ dropLogs $ evalIRBuilder' $ evalPassManager' $ do
     runRegs
     registerEmpireLayers
     attachLayer 10 (typeRep' @Meta)  (typeRep' @EXPR)

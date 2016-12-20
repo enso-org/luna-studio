@@ -28,7 +28,7 @@ import           Empire.ASTOp                      (ASTOp, runASTOp, lams)
 import qualified Empire.ASTOps.Builder             as ASTBuilder
 import qualified Empire.ASTOps.Parse               as Parser
 import qualified Empire.ASTOps.Print               as Printer
-import           Empire.ASTOps.Remove              (safeRemove)
+import           Empire.ASTOps.Remove              (removeNode)
 
 import           Empire.Utils.TextResult           (nodeValueToText)
 
@@ -203,7 +203,7 @@ renameVar :: NodeRef -> String -> Command AST ()
 renameVar = runASTOp .: ASTBuilder.renameVar
 
 removeSubtree :: NodeRef -> Command AST ()
-removeSubtree = runASTOp . safeRemove
+removeSubtree = runASTOp . removeNode
 
 printExpression :: NodeRef -> Command AST String
 printExpression = runASTOp . Printer.printExpression

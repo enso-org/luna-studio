@@ -26,9 +26,11 @@ import Luna.IR (IRMonad, Accessibles, ExprNet, ExprLinkNet, ExprLinkLayers, Expr
                 snapshot, IRBuilder, NEW, DELETE, LINK', EXPR, Abstract)
 import qualified Luna.Pass.Manager as Pass (PassManager, get)
 import qualified Luna.IR.Function as IR (Arg, arg)
+import System.Log (Logger, DropLogger, dropLogs)
 import Luna.IR.Layer.Succs (Succs)
 
 type ASTOp m = (MonadThrow m, IRMonad m, Emitter m (NEW // LINK' EXPR), Emitter m (NEW // EXPR),
+                Emitter m (DELETE // LINK' EXPR), Emitter m (DELETE // EXPR),
                 Accessibles m ('[ExprNet, ExprLinkNet] <>
                     ExprLayers '[Model, Marker, Meta, InputsLayer, Succs, InterpreterData, TCData, TypeLayer] <>
                     ExprLinkLayers '[Model]))
@@ -41,13 +43,13 @@ type instance Pass.Inputs  EmpirePass   = '[ExprNet, ExprLinkNet] <>
 type instance Pass.Outputs EmpirePass   = '[ExprNet, ExprLinkNet] <>
     ExprLayers '[Model, Meta, Marker, InputsLayer, TypeLayer, Succs, InterpreterData, TypeLayer, TCData] <>
     ExprLinkLayers '[Model]
-type instance Pass.Events EmpirePass = '[NEW // LINK' EXPR, NEW // EXPR, DELETE // LINK' EXPR]
+type instance Pass.Events EmpirePass = '[NEW // LINK' EXPR, NEW // EXPR, DELETE // LINK' EXPR, DELETE // EXPR]
 type instance Pass.Preserves EmpirePass = '[]
 
-runASTOp :: Pass.SubPass EmpirePass (Pass.PassManager (IRBuilder IO)) a -> Command AST a
+runASTOp :: Pass.SubPass EmpirePass (Pass.PassManager (IRBuilder (Logger DropLogger IO))) a -> Command AST a
 runASTOp pass = do
     ASTState currentStateIR currentStatePass <- get
-    (a, (st, passSt)) <- liftIO $ flip evalIRBuilder currentStateIR $ flip evalPassManager currentStatePass $ do
+    (a, (st, passSt)) <- liftIO $ dropLogs $ flip evalIRBuilder currentStateIR $ flip evalPassManager currentStatePass $ do
         a <- Pass.eval' pass
         st <- snapshot
         passSt <- Pass.get
