@@ -53,7 +53,11 @@ currentConnection connectionRef = React.defineControllerView
             dstX       = connection ^. Connection.currentTo . x
             dstY       = connection ^. Connection.currentTo . y
             color      = connection ^. Connection.currentColor
-        drawConnection_ (Vector2 srcX srcY) (Vector2 dstX dstY) color
+            num        = 0
+            numOfPorts = 0
+            isSingle   = True
+            srcXY      = connectionSrc (Vector2 srcX srcY) (Vector2 dstX dstY) num numOfPorts isSingle
+        drawConnection_ srcXY (Vector2 dstX dstY) color
 
 currentConnection_ :: Ref CurrentConnection -> ReactElementM ViewEventHandler ()
 currentConnection_ connectionRef = React.view (currentConnection connectionRef) () mempty
