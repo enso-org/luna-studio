@@ -57,8 +57,8 @@ portAngleStop num numOfPorts r =
 
 nodeToNodeAngle :: Double -> Double -> Double -> Double -> Angle
 nodeToNodeAngle srcX srcY dstX dstY
-    | srcX < dstX = atan ((srcY-dstY) / (srcX-dstX))
-    | otherwise   = atan ((srcY-dstY) / (srcX-dstX)) + pi
+    | srcX < dstX = atan ((srcY - dstY) / (srcX - dstX))
+    | otherwise   = atan ((srcY - dstY) / (srcX - dstX)) + pi
 
 connectionSrc :: Vector2 Double -> Vector2 Double -> Int -> Int -> IsSingle -> Vector2 Double
 connectionSrc (Vector2 x1 y1) (Vector2 x2 y2) _ _ True =

@@ -14,8 +14,8 @@ import           Luna.Studio.React.Store.Ref          (Ref)
 
 
 
-data NodeEditor = NodeEditor { _zoom              :: Double
-                             , _pan               :: Vector2 Double
+data NodeEditor = NodeEditor { _pan               :: Vector2 Double
+                             , _factor            :: Double
                              , _nodes             :: HashMap NodeId    (Ref Node)
                              , _connections       :: HashMap InPortRef (Ref Connection)
                              , _currentConnection :: Maybe (Ref CurrentConnection)
@@ -26,7 +26,7 @@ data NodeEditor = NodeEditor { _zoom              :: Double
 makeLenses ''NodeEditor
 
 mk :: Ref SelectionBox -> NodeEditor
-mk = NodeEditor 1 def HashMap.empty HashMap.empty Nothing
+mk = NodeEditor def 1 HashMap.empty HashMap.empty Nothing
 
 reset :: NodeEditor -> NodeEditor
 reset = mk . _selectionBox

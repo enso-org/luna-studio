@@ -8,6 +8,15 @@ import           React.Flux        (KeyboardEvent (KeyboardEvent))
 a :: Int
 a = 65
 
+plus :: Int
+plus = 187
+
+minus :: Int
+minus = 189
+
+zero :: Int
+zero = 48
+
 del :: Int
 del = 46
 

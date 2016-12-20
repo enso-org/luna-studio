@@ -24,10 +24,10 @@ name = "node-editor"
 nodeEditor :: Ref NodeEditor -> ReactView ()
 nodeEditor ref = React.defineControllerView name ref $ \store () -> do
     let ne = store ^. dt
-        offsetX    = show $ ne ^. NodeEditor.pan . x
-        offsetY    = show $ ne ^. NodeEditor.pan . y
-        scale      = show $ ne ^. NodeEditor.zoom
-        transform' = "matrix(" <> scale <> " , 0, 0, " <> scale <> " , " <> offsetX <> " , " <> offsetY <> " )"
+        panX   = show $ ne ^. NodeEditor.pan . x
+        panY   = show $ ne ^. NodeEditor.pan . y
+        factor = show $ ne ^. NodeEditor.factor
+        transform' = "matrix(" <> factor <> " , 0, 0, " <> factor <> " , " <> panX <> " , " <> panY <> " )"
     svg_
         [ "className"   $= "graph"
         , "xmlns"       $= "http://www.w3.org/2000/svg"
