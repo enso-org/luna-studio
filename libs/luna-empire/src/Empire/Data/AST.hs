@@ -9,7 +9,8 @@ module Empire.Data.AST where
 import           Empire.Prelude
 
 import Luna.IR (AnyExpr, AnyExprLink, EXPRESSION, IR, IRMonad, Layer, LayerData, IRBuilder,
-                type Abstract, ElemScope, Attr, WorkingElem, registerLayer, readAttr, writeLayer)
+                type Abstract, ElemScope, Attr, WorkingElem, registerLayer,
+                readAttr, writeLayer)
 import Luna.IR.Layer.Type as IR (Type)
 import qualified Luna.Pass.Manager as Pass (PassManager, State)
 import qualified Luna.Pass as Pass
@@ -124,6 +125,3 @@ data TCError a = ImportError (Maybe a) String
 data TCDataMock = TCDataMock { _tcErrors :: [TCError NodeRef] }
 
 makeLenses ''TCDataMock
-
-astNull :: AST -> Bool
-astNull = $notImplemented

@@ -23,7 +23,6 @@ import qualified Empire.Commands.Graph         as Graph (addNode, connect, getGr
 import qualified Empire.Commands.GraphBuilder  as GraphBuilder
 import           Empire.Commands.Library       (withLibrary)
 import qualified Empire.Commands.Typecheck     as Typecheck (run)
-import           Empire.Data.AST               as AST (astNull)
 import           Empire.Data.Graph             (NodeIDTarget(..), ast, nodeMapping)
 import qualified Empire.Data.Library           as Library (body)
 import           Empire.Empire                 (InterpreterEnv(..))
@@ -244,7 +243,7 @@ spec = around withChannels $ do
                 Graph.withGraph top $ (,) <$> use ast <*> use nodeMapping
             withResult res $ \(endAst, mapping) -> do
                 mapping `shouldSatisfy` Map.null
-                endAst `shouldSatisfy` AST.astNull
+                endAst `shouldSatisfy` astNull
         it "RHS of `def foo` is Lam" $ \env -> do
             u1 <- mkUUID
             res <- evalEmp env $ do
