@@ -17,20 +17,20 @@ module Luna.Studio.Commands.Camera
     --  , updateWindowSize --TODO[react] remove
      ) where
 
-import           Luna.Studio.Prelude
+import qualified Empire.API.Data.Node               as Node
+import qualified Event.Mouse                        as Mouse
+import qualified JS.Camera                          as JS
+import           Luna.Studio.Commands.Command       (Command, performIO)
 import           Luna.Studio.Data.Vector
-
-import qualified Empire.API.Data.Node      as Node
-
-import qualified Event.Mouse               as Mouse
-import qualified JS.Camera                 as JS
-import           Luna.Studio.Commands.Command (Command, performIO)
+import           Luna.Studio.Prelude
+import qualified Luna.Studio.React.Model.NodeEditor as NodeEditor
+import qualified Luna.Studio.React.Store            as Store
+import           Luna.Studio.State.Camera           (DragHistory (..))
+import qualified Luna.Studio.State.Camera           as Camera
+import           Luna.Studio.State.Global           (State)
+import qualified Luna.Studio.State.Global           as Global
+import qualified Luna.Studio.State.Graph            as Graph
 -- import           Reactive.Commands.UILayout as UILayout --TODO[react] remove
-import           Luna.Studio.State.Camera     (DragHistory (..))
-import qualified Luna.Studio.State.Camera     as Camera
-import qualified Luna.Studio.State.Global     as Global
-import qualified Luna.Studio.State.Graph      as Graph
-
 
 minCamFactor, maxCamFactor, dragZoomSpeed, wheelZoomSpeed, panStep, zoomFactorStep :: Double
 minCamFactor   =   0.2
@@ -48,11 +48,11 @@ panCamera delta = do
     camFactor <- use $ Camera.camera . Camera.factor
     Camera.camera . Camera.pan += ((/ camFactor) <$> delta)
 
-panLeft, panRight, panUp, panDown :: Command Camera.State ()
-panLeft  = panCamera $ Vector2 (-panStep)         0
-panRight = panCamera $ Vector2   panStep          0
-panUp    = panCamera $ Vector2        0   (-panStep)
-panDown  = panCamera $ Vector2        0     panStep
+-- panLeft, panRight, panUp, panDown :: Command Camera.State ()
+-- panLeft  = panCamera $ Vector2 (-panStep)         0
+-- panRight = panCamera $ Vector2   panStep          0
+-- panUp    = panCamera $ Vector2        0   (-panStep)
+-- panDown  = panCamera $ Vector2        0     panStep
 
 setZoom :: Double -> Command Camera.State ()
 setZoom newFactor = Camera.camera . Camera.factor .= (restrictCamFactor newFactor)
@@ -195,3 +195,20 @@ htmlY        camFactor camPanY halfScreenY =  halfScreenY - camPanY * camFactor
 --         syncCamera
 --         performIO $ JS.updateScreenSize canvasWidth (size ^. y)
 --     UILayout.relayout
+
+--TODO[react]: Apply correct movement of pan considering actual zoom
+panLeft :: Command State ()
+panLeft = Global.withNodeEditor $ Store.modifyM_ $ do
+    NodeEditor.pan += Vector2 (-panStep) 0
+
+panRight :: Command State ()
+panRight = Global.withNodeEditor $ Store.modifyM_ $ do
+    NodeEditor.pan += Vector2 panStep 0
+
+panUp :: Command State ()
+panUp = Global.withNodeEditor $ Store.modifyM_ $ do
+    NodeEditor.pan += Vector2 0 (-panStep)
+
+panDown :: Command State ()
+panDown = Global.withNodeEditor $ Store.modifyM_ $ do
+    NodeEditor.pan += Vector2 0 panStep
