@@ -7,6 +7,8 @@ import           Numeric                            (showFFloat)
 import           Luna.Studio.Data.Angle             (Angle)
 import           Luna.Studio.Data.Vector
 
+type IsSingle = Bool
+type IsSelf   = Bool
 
 showSvg :: Double -> String
 showSvg a = Numeric.showFFloat (Just 1) a "" -- limit Double to two decimal numbers
@@ -52,13 +54,14 @@ nodeToNodeAngle srcX srcY dstX dstY
     | otherwise   = atan ((srcY-dstY) / (srcX-dstX)) + pi
 
 
-connectionSrc :: Vector2 Double -> Vector2 Double -> Int -> Int -> Bool -> Vector2 Double
-connectionSrc (Vector2 x1 y1) (Vector2 x2 y2) _   _          True =
+connectionSrc :: Vector2 Double -> Vector2 Double -> Int -> Int -> IsSingle -> Vector2 Double
+connectionSrc (Vector2 x1 y1) (Vector2 x2 y2) _ _ True =
     let t    = nodeToNodeAngle x1 y1 x2 y2
         srcX = portRadius * cos(t) + x1
         srcY = portRadius * sin(t) + y1
     in  Vector2 srcX srcY
-connectionSrc (Vector2 x1 y1) (Vector2 x2 y2) num numOfPorts _    =
+-- FIXME: implement port limits
+connectionSrc (Vector2 x1 y1) (Vector2 x2 y2) num numOfPorts _ =
     let t      = nodeToNodeAngle x1 y1 x2 y2
         number = num
         ports  = numOfPorts
@@ -67,9 +70,10 @@ connectionSrc (Vector2 x1 y1) (Vector2 x2 y2) num numOfPorts _    =
     in  Vector2 srcX srcY
 
 
-connectionDst :: Vector2 Double -> Vector2 Double -> Int -> Int -> Bool -> Vector2 Double
-connectionDst (Vector2 _  _ ) (Vector2 x2 y2) _   _          True = Vector2 x2 y2
-connectionDst (Vector2 x1 y1) (Vector2 x2 y2) num numOfPorts _    =
+connectionDst :: Vector2 Double -> Vector2 Double -> Int -> Int -> IsSelf -> Vector2 Double
+connectionDst (Vector2 _  _ ) (Vector2 x2 y2) _ _ True = Vector2 x2 y2
+-- FIXME: implement port limits
+connectionDst (Vector2 x1 y1) (Vector2 x2 y2) num numOfPorts _ =
     let t      = nodeToNodeAngle x1 y1 x2 y2
         number = num
         ports  = numOfPorts
