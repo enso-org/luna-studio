@@ -61,7 +61,7 @@ connectionSrc (Vector2 x1 y1) (Vector2 x2 y2) _ _ True =
         srcY = portRadius * sin(t) + y1
     in  Vector2 srcX srcY
 -- FIXME: implement port limits
-connectionSrc (Vector2 x1 y1) (Vector2 x2 y2) num numOfPorts _ =
+connectionSrc (Vector2 x1 y1) (Vector2 x2 y2) num numOfPorts False =
     let t      = nodeToNodeAngle x1 y1 x2 y2
         number = num
         ports  = numOfPorts
@@ -73,7 +73,7 @@ connectionSrc (Vector2 x1 y1) (Vector2 x2 y2) num numOfPorts _ =
 connectionDst :: Vector2 Double -> Vector2 Double -> Int -> Int -> IsSelf -> Vector2 Double
 connectionDst (Vector2 _  _ ) (Vector2 x2 y2) _ _ True = Vector2 x2 y2
 -- FIXME: implement port limits
-connectionDst (Vector2 x1 y1) (Vector2 x2 y2) num numOfPorts _ =
+connectionDst (Vector2 x1 y1) (Vector2 x2 y2) num numOfPorts False =
     let t      = nodeToNodeAngle x1 y1 x2 y2
         number = num
         ports  = numOfPorts
