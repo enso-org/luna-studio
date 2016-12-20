@@ -149,12 +149,15 @@ instance ToJSON Connect.Request
 instance ToJSON Connect.Update
 
 instance ToJSON Disconnect.Request
+instance ToJSON Disconnect.Inverse
 instance ToJSON Disconnect.Update
 
 instance ToJSON RemoveNodes.Request
+instance ToJSON RemoveNodes.Inverse
 instance ToJSON RemoveNodes.Update
 
 instance ToJSON RenameNode.Request
+instance ToJSON RenameNode.Inverse
 instance ToJSON RenameNode.Update
 
 instance ToJSON UpdateNodeMeta.Request
@@ -163,6 +166,7 @@ instance ToJSON UpdateNodeMeta.Update
 instance ToJSON NodesUpdate.Update
 
 instance ToJSON UpdateNodeExpression.Request
+instance ToJSON UpdateNodeExpression.Inverse
 
 instance ToJSON NodeResultUpdate.Update
 instance ToJSON NodeResultUpdate.NodeValue

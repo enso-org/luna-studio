@@ -35,8 +35,8 @@ withUUID act = do
     uuid <- registerRequest
     performIO $ act uuid
 
-addNode :: Text -> NodeMeta -> Maybe NodeId -> Command State ()
-addNode = withWorkspace .:. BatchCmd.addNode
+addNode :: Text -> NodeMeta -> Maybe NodeId -> Maybe NodeId -> Command State ()
+addNode = withWorkspace .:: BatchCmd.addNode
 
 addSubgraph :: [Node] -> [Connection] -> Command State ()
 addSubgraph = withWorkspace .: BatchCmd.addSubgraph

@@ -43,8 +43,8 @@ import qualified Empire.API.Project.ListProjects       as ListProjects
 withLibrary :: Workspace -> (GraphLocation -> a) -> a
 withLibrary w f = f (w ^. Workspace.currentLocation)
 
-addNode :: Text -> NodeMeta -> Maybe NodeId -> Workspace -> UUID -> IO ()
-addNode expression meta connectTo workspace uuid = sendRequest uuid $ (withLibrary workspace AddNode.Request) (AddNode.ExpressionNode expression) meta connectTo
+addNode :: Text -> NodeMeta -> Maybe NodeId -> Maybe NodeId -> Workspace -> UUID -> IO ()
+addNode expression meta connectTo nodeId workspace uuid = sendRequest uuid $ (withLibrary workspace AddNode.Request) (AddNode.ExpressionNode expression) meta connectTo nodeId
 
 addSubgraph :: [Node] -> [Connection] -> Workspace -> UUID -> IO ()
 addSubgraph nodes connections workspace uuid = sendRequest uuid $ (withLibrary workspace AddSubgraph.Request) nodes connections
