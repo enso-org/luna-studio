@@ -7,6 +7,10 @@ module Luna.Studio.Commands.Node
     , rename
     , tryEnter
     , visualizationsToggled
+    , startEditName
+    , editName
+    , applyName
+    , discardName
     ) where
 
 import           Empire.API.Data.Breadcrumb           (BreadcrumbItem (..))
@@ -16,6 +20,7 @@ import           Empire.API.Data.Node                 (Node, NodeId)
 import qualified Empire.API.Data.Node                 as Node
 import qualified Empire.API.Data.NodeMeta             as NodeMeta
 import qualified Luna.Studio.Batch.Workspace          as Workspace
+import qualified Luna.Studio.Commands.Batch           as Batch
 import           Luna.Studio.Commands.Command         (Command)
 import           Luna.Studio.Commands.Graph.Selection (selectedNodes)
 import           Luna.Studio.Commands.Node.NodeMeta   (modifyNodeMeta)
@@ -24,12 +29,44 @@ import qualified Luna.Studio.Commands.Searcher        as Searcher
 import           Luna.Studio.Prelude
 import           Luna.Studio.React.Store              (WRef (..), widget)
 import qualified Luna.Studio.React.Store              as Store
+import qualified Luna.Studio.React.View.App           as App
+import qualified Luna.Studio.React.View.Node          as Node
 import           Luna.Studio.State.Global             (State)
 import qualified Luna.Studio.State.Global             as Global
 import qualified Luna.Studio.State.Graph              as Graph
 import qualified Object.Widget.Node                   as Model
 
 
+
+startEditName :: NodeId -> Command State ()
+startEditName nodeId = do
+    Global.withNode nodeId $ mapM_ $ Store.modifyM_ $ do
+        name <- use Model.name
+        Model.nameEdit ?= name
+    liftIO Node.focusNameLabel
+
+editName :: NodeId -> Text -> Command State ()
+editName nodeId name =
+    Global.withNode nodeId $ mapM_ $ Store.modify_ $
+        Model.nameEdit ?~ name
+
+applyName :: NodeId -> Command State ()
+applyName nodeId = do
+    mayName <- Global.withNode nodeId $ mapM $ Store.modifyM $ do
+        mayName <- use Model.nameEdit
+        Model.nameEdit .= Nothing
+        -- case ne of
+            -- Just name -> Model.name .= name
+            -- Nothing -> return ()
+        return mayName
+    forM_ (join mayName) $ Batch.renameNode nodeId
+    liftIO App.focus
+
+discardName :: NodeId -> Command State ()
+discardName nodeId = do
+    Global.withNode nodeId $ mapM_ $ Store.modify_ $
+        Model.nameEdit .~ Nothing
+    liftIO App.focus
 
 tryEnter :: Node -> Command State ()
 tryEnter node = when (node ^. Node.canEnter) $

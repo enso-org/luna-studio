@@ -2,6 +2,7 @@ module Luna.Studio.Action.Node where
 
 import           React.Flux                           (KeyboardEvent, mouseCtrlKey, mouseMetaKey)
 
+import           Empire.API.Data.Node                 (NodeId)
 import           Event.Event                          (Event (UI))
 import qualified Event.Keys                           as Keys
 import           Event.UI                             (UIEvent (AppEvent, NodeEvent))
@@ -19,19 +20,28 @@ import qualified Luna.Studio.State.Graph              as Graph
 
 
 toAction :: Event -> Maybe (Command State ())
-toAction (UI (NodeEvent (Node.Enter          nodeId))) = Just $ mapM_ Node.tryEnter =<< preuse (Global.graph . Graph.nodesMap . ix nodeId)
-toAction (UI (NodeEvent (Node.EditExpression nodeId))) = Just $ Node.editExpression nodeId
-toAction (UI (NodeEvent (Node.Select     evt nodeId))) = Just $ when (mouseCtrlKey evt || mouseMetaKey evt) $ toggleSelect nodeId
+toAction (UI (NodeEvent (Node.Enter            nodeId))) = Just $ mapM_ Node.tryEnter =<< preuse (Global.graph . Graph.nodesMap . ix nodeId)
+toAction (UI (NodeEvent (Node.EditExpression   nodeId))) = Just $ Node.editExpression nodeId
+toAction (UI (NodeEvent (Node.Select      kevt nodeId))) = Just $ when (mouseCtrlKey kevt || mouseMetaKey kevt) $ toggleSelect nodeId
 toAction (UI (NodeEvent (Node.DisplayResultChanged flag nodeId))) = Just $ Node.visualizationsToggled nodeId flag
-toAction (UI (AppEvent (App.KeyDown e))) = Just $ handleKey e
+toAction (UI (NodeEvent (Node.NameEditStart    nodeId))) = Just $ Node.startEditName nodeId
+toAction (UI (NodeEvent (Node.NameKeyDown kevt nodeId))) = Just $ handleKeyNode kevt nodeId
+toAction (UI (NodeEvent (Node.NameChange   val nodeId))) = Just $ Node.editName nodeId val
+toAction (UI (AppEvent (App.KeyDown e))) = Just $ handleKeyApp e
 toAction _   = Nothing
 
 
+handleKeyNode :: KeyboardEvent -> NodeId -> Command State ()
+handleKeyNode kevt nodeId
+    | Keys.withoutMods kevt Keys.enter = Node.applyName   nodeId
+    | Keys.withoutMods kevt Keys.esc   = Node.discardName nodeId
+    | otherwise                        = return ()
 
-handleKey :: KeyboardEvent -> Command State ()
-handleKey evt
-    | Keys.withCtrl    evt Keys.a     = selectAll
-    | Keys.withoutMods evt Keys.del   = Node.removeSelectedNodes
-    | Keys.withoutMods evt Keys.esc   = unselectAll
-    | Keys.withoutMods evt Keys.enter = Node.expandSelectedNodes
-    | otherwise                       = return ()
+
+handleKeyApp :: KeyboardEvent -> Command State ()
+handleKeyApp kevt
+    | Keys.withCtrl    kevt Keys.a     = selectAll
+    | Keys.withoutMods kevt Keys.del   = Node.removeSelectedNodes
+    | Keys.withoutMods kevt Keys.esc   = unselectAll
+    | Keys.withoutMods kevt Keys.enter = Node.expandSelectedNodes
+    | otherwise                        = return ()

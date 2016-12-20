@@ -53,16 +53,6 @@ import           Empire.API.Data.Node                        (NodeId)
 
 
 
-nameHandlers :: WidgetId -> HTMap
-nameHandlers wid = addHandler (ValueChangedHandler $ nameValueChangedHandler wid)
-                $ addHandler (UICmd.LostFocus $ inRegistry . flip UICmd.update_ (TextBox.isEditing .~ False))
-                $ mempty
-
-nameValueChangedHandler :: WidgetId -> Text -> WidgetId -> Command Global.State ()
-nameValueChangedHandler parent val _ = do
-    model <- inRegistry $ UICmd.update parent $ Model.name .~ val
-    triggerRenameNodeHandler parent model
-
 typeHandlers :: WidgetId -> HTMap
 typeHandlers wid = addHandler (ValueChangedHandler $ typeValueChangedHandler wid)
                 $ addHandler (UICmd.LostFocus $ inRegistry . flip UICmd.update_ (TextBox.isEditing .~ False))
@@ -80,27 +70,11 @@ codeHandlers :: WidgetId -> HTMap
 codeHandlers wid = addHandler (ValueChangedHandler $ codeEditorChangedHandler wid)
                 $ mempty
 
-newtype FocusNodeHandler = FocusNodeHandler (WidgetId -> Command Global.State ())
-focusNodeHandler = TypeKey :: TypeKey FocusNodeHandler
-
-newtype RenameNodeHandler = RenameNodeHandler (WidgetId -> NodeId -> Text -> Command Global.State ())
-renameNodeHandler = TypeKey :: TypeKey RenameNodeHandler
-
 newtype ChangeInputNodeTypeHandler = ChangeInputNodeTypeHandler (WidgetId -> NodeId -> Text -> Command Global.State ())
 changeInputNodeTypeHandler = TypeKey :: TypeKey ChangeInputNodeTypeHandler
 
 newtype CodeChangedHandler = CodeChangedHandler (NodeId -> Text -> Command Global.State ())
 codeChangedHandler = TypeKey :: TypeKey CodeChangedHandler
-
-triggerFocusNodeHandler :: WidgetId -> Command Global.State ()
-triggerFocusNodeHandler wid = do
-    maybeHandler <- inRegistry $ UICmd.handler wid focusNodeHandler
-    withJust maybeHandler $ \(FocusNodeHandler handler) -> handler wid
-
-triggerRenameNodeHandler :: WidgetId -> Model.Node -> Command Global.State ()
-triggerRenameNodeHandler wid model = do
-    maybeHandler <- inRegistry $ UICmd.handler wid renameNodeHandler
-    withJust maybeHandler $ \(RenameNodeHandler handler) -> handler wid (model ^. Model.nodeId) (model ^. Model.name)
 
 triggerChangeInputNodeTypeHandler :: WidgetId -> Model.Node -> Command Global.State ()
 triggerChangeInputNodeTypeHandler wid model = do
@@ -166,9 +140,6 @@ instance CompositeWidget Model.Node where
 
         nodeGroupId <- UICmd.register expandedGroup Group.create Style.expandedGroupLayout
 
-        let widget = LabeledTextBox.create Style.portControlSize "Name" $ model ^. Model.name
-        nameTextBoxId <- UICmd.register nodeGroupId widget $ nameHandlers wid
-
         codeEditorId <- mapM (displayCodeEditor wid nodeGroupId) $ model ^. Model.code
 
 
@@ -180,19 +151,12 @@ instance CompositeWidget Model.Node where
         let grp    = Group.create
         portControlsGroupId <- UICmd.register expandedGroup grp Style.expandedGroupLayout
 
-        let group  = Group.create & Group.style   .~ Style.visualizationGroupStyle
-                                  & Group.visible .~ (model ^. Model.isExpanded)
-                                  & Group.size    . y .~ 0
-        visualizationGroupId <- UICmd.register controlGroups group (Layout.verticalLayoutHandler 0.0)
-
         void $ UIRegistry.updateWidgetM wid $ Model.elements %~ ( (Model.expandedGroup       .~ expandedGroup              )
                                                                . (Model.nodeGroup           .~ nodeGroupId                )
                                                                . (Model.portGroup           .~ portGroup                  )
                                                                . (Model.portControls        .~ portControlsGroupId        )
                                                                . (Model.inLabelsGroup       .~ inLabelsGroupId            )
                                                                . (Model.outLabelsGroup      .~ outLabelsGroupId           )
-                                                               . (Model.nameTextBox         .~ nameTextBoxId              )
-                                                               . (Model.visualizationGroup  .~ visualizationGroupId       )
                                                                . (Model.execTimeLabel       .~ execTimeLabelId            )
                                                                . (Model.codeEditor          .~ codeEditorId               )
                                                                )
@@ -200,13 +164,7 @@ instance CompositeWidget Model.Node where
     updateWidget wid old model = do
         whenChanged old model Model.isExpanded $ do
             let controlsId = model ^. Model.elements . Model.expandedGroup
-                valueVisId = model ^. Model.elements . Model.visualizationGroup
             UICmd.update_ controlsId $ Group.visible .~ (model ^. Model.isExpanded)
-            UICmd.update_ valueVisId $ Group.visible .~ (model ^. Model.isExpanded)
-
-        whenChanged old model Model.name  $ do
-            let nameTbId = model ^. Model.elements . Model.nameTextBox
-            UICmd.update_ nameTbId   $ LabeledTextBox.value .~ (model ^. Model.name)
 
         whenChanged old model Model.tpe   $ withJust (model ^. Model.tpe) $ \tpe -> do
             let typeTbId = model ^. Model.elements . Model.nodeType
@@ -240,9 +198,6 @@ inLabelsGroupId wid = UICmd.get wid $ Model.elements . Model.inLabelsGroup
 
 outLabelsGroupId :: WidgetId -> Command UIRegistry.State WidgetId
 outLabelsGroupId wid = UICmd.get wid $ Model.elements . Model.outLabelsGroup
-
-valueGroupId :: WidgetId -> Command UIRegistry.State WidgetId
-valueGroupId wid = UICmd.get wid $ Model.elements . Model.visualizationGroup
 
 trimExpression :: Text -> Text
 trimExpression expr
