@@ -26,8 +26,7 @@ import qualified Object.Widget.Port                as PortModel
 
 
 
-data Elements = Elements { _portGroup           :: WidgetId
-                         , _portControls        :: WidgetId
+data Elements = Elements { _portControls        :: WidgetId
                          , _inLabelsGroup       :: WidgetId
                          , _outLabelsGroup      :: WidgetId
                          , _expandedGroup       :: WidgetId
@@ -37,7 +36,7 @@ data Elements = Elements { _portGroup           :: WidgetId
                          } deriving (Eq, Show, Generic)
 
 instance Default Elements where
-    def = Elements def def def def def def def def
+    def = Elements def def def def def def def
 
 type CollaborationMap = Map ClientId UTCTime
 data Collaboration = Collaboration { _touch  :: Map ClientId (UTCTime, ColorId)

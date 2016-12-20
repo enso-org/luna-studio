@@ -150,7 +150,6 @@ instance CompositeWidget Model.Node where
 
         void $ UIRegistry.updateWidgetM wid $ Model.elements %~ ( (Model.expandedGroup       .~ expandedGroup              )
                                                                . (Model.nodeGroup           .~ nodeGroupId                )
-                                                               . (Model.portGroup           .~ portGroup                  )
                                                                . (Model.portControls        .~ portControlsGroupId        )
                                                                . (Model.inLabelsGroup       .~ inLabelsGroupId            )
                                                                . (Model.outLabelsGroup      .~ outLabelsGroupId           )
