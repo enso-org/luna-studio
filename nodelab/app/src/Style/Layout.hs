@@ -91,4 +91,4 @@ visualizationWidgetSize = Vector2 200 200
 
 
 gridSize :: Int
-gridSize = 8
+gridSize = 16
