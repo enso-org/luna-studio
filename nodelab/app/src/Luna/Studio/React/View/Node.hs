@@ -16,38 +16,17 @@ import           Luna.Studio.React.Model.Node         (Node)
 import qualified Luna.Studio.React.Model.Node         as Node
 import           Luna.Studio.React.Store              (Ref, dispatch, dt)
 import           Luna.Studio.React.View.ForeignObject (foreignObject_)
+import           Luna.Studio.React.View.Global
 import           Luna.Studio.React.View.Port          (port_)
 import           Luna.Studio.React.View.Visualization (strValue, visualization_)
 import           Object.Widget.Port                   (Port (..))
 
 
-
 objName :: JSString
 objName = "node-editor"
 
-isIn :: Port -> Int
-isIn (Port _ (InPortId (Arg _)) _ _) = 1
-isIn _ = 0
-
-isOut :: Port -> Int
-isOut (Port _ (OutPortId _) _ _) = 1
-isOut _ = 0
-
-countInPorts :: [Port] -> Int
-countInPorts ports = foldl (\acc p -> acc + (isIn p)) 0 ports
-
-countOutPorts :: [Port] -> Int
-countOutPorts ports = foldl (\acc p -> acc + (isOut p)) 0 ports
-
-countPorts :: [Port] -> Int
-countPorts ports = (countInPorts ports) + (countOutPorts ports)
-
-countSameTypePorts :: Port -> [Port] -> Int
-countSameTypePorts (Port _ (InPortId _)  _ _) = countInPorts
-countSameTypePorts (Port _ (OutPortId _) _ _) = countOutPorts
-
 makePorts :: Ref Node -> NodeId -> [Port] -> ReactElementM ViewEventHandler ()
-makePorts ref nodeId ports = forM_ ports $ \port -> port_ ref nodeId port (countSameTypePorts port ports) (countPorts ports == 1)
+makePorts nodeRef nodeId ports = forM_ ports $ \port -> port_ nodeRef nodeId port (countSameTypePorts port ports) (isPortSingle port ports)
 
 
 --FIXME: move all styles to CSS

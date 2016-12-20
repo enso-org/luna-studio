@@ -2,6 +2,7 @@ module Luna.Studio.Commands.Graph
     ( allNodes
     , allNodes'
     , focusNode
+    , getNode
     , getPort
     -- , updateConnection
     -- , updateConnections
