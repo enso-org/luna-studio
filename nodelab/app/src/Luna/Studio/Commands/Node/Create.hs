@@ -5,20 +5,20 @@ module Luna.Studio.Commands.Node.Create
     , registerNode
     ) where
 
-import           Control.Monad.State       (modify)
+import           Control.Monad.State                (modify)
 
-import           Empire.API.Data.Node      (Node)
-import qualified Empire.API.Data.Node      as Node
-import           Luna.Studio.React.Store               (Ref)
-import qualified Luna.Studio.React.Store               as Store
-import qualified Luna.Studio.React.Model.Node          as Model
-import qualified Luna.Studio.React.Model.NodeEditor    as NodeEditor
-import           Luna.Studio.Commands.Command (Command)
-import           Luna.Studio.Commands.Graph   (focusNode)
-import           Luna.Studio.State.Global     (State)
-import qualified Luna.Studio.State.Global     as Global
-import qualified Luna.Studio.State.Graph      as Graph
+import           Empire.API.Data.Node               (Node)
+import qualified Empire.API.Data.Node               as Node
+import           Luna.Studio.Commands.Command       (Command)
+import           Luna.Studio.Commands.Graph         (focusNode)
 import           Luna.Studio.Prelude
+import qualified Luna.Studio.React.Model.Node       as Model
+import qualified Luna.Studio.React.Model.NodeEditor as NodeEditor
+import           Luna.Studio.React.Store            (Ref)
+import qualified Luna.Studio.React.Store            as Store
+import           Luna.Studio.State.Global           (State)
+import qualified Luna.Studio.State.Global           as Global
+import qualified Luna.Studio.State.Graph            as Graph
 
 
 addNode :: Node -> Command State ()
@@ -43,8 +43,7 @@ registerNode node = do
 
 --TODO[react]
 -- nodeHandlers :: Node -> HTMap
--- nodeHandlers node = addHandler (UINode.RenameNodeHandler            $ \_ nodeId name -> BatchCmd.renameNode nodeId name)
---                   $ addHandler (UINode.ChangeInputNodeTypeHandler   $ \_ nodeId name -> BatchCmd.setInputNodeType nodeId name)
+-- nodeHandlers node = addHandler (UINode.ChangeInputNodeTypeHandler   $ \_ nodeId name -> BatchCmd.setInputNodeType nodeId name)
 --                   $ addHandler (UINode.FocusNodeHandler             focusNode)
 --                   $ addHandler (UINode.ExpandNodeHandler            expandSelectedNodes)
 --                   $ addHandler (UINode.VisualizationsToggledHandler visualizationsToggled)

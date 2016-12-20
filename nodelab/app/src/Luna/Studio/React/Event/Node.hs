@@ -4,7 +4,7 @@ module Luna.Studio.React.Event.Node where
 
 import           Control.DeepSeq          (NFData)
 import           Data.Aeson               (FromJSON, ToJSON)
-import           React.Flux               (MouseEvent)
+import           React.Flux               (KeyboardEvent, MouseEvent)
 
 import           Empire.API.Data.Node     (NodeId)
 import           Empire.API.Data.Port     (PortId)
@@ -20,6 +20,9 @@ data Event = DisplayResultChanged Bool NodeId
            | MouseDown            MouseEvent NodeId
            | Select               MouseEvent NodeId
            | StartConnection      NodeId PortId
+           | NameEditStart        NodeId
+           | NameKeyDown          KeyboardEvent NodeId
+           | NameChange           Text NodeId
             deriving (Show, Generic, NFData, Typeable)
 
 instance ToJSON   Event

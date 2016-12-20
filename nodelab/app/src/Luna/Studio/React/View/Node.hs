@@ -22,8 +22,8 @@ import           Object.Widget.Port                   (Port (..))
 
 
 
-name :: JSString
-name = "node-editor"
+objName :: JSString
+objName = "node-editor"
 
 isIn :: Port -> Int
 isIn (Port _ (InPortId (Arg _)) _ _) = 1
@@ -47,13 +47,13 @@ countSameTypePorts (Port _ (InPortId _)  _ _) = countInPorts
 countSameTypePorts (Port _ (OutPortId _) _ _) = countOutPorts
 
 makePorts :: Ref Node -> NodeId -> [Port] -> ReactElementM ViewEventHandler ()
-makePorts nodeRef nodeId ports = forM_ ports $ \port -> port_ nodeRef nodeId port (countSameTypePorts port ports) (countPorts ports == 1)
+makePorts ref nodeId ports = forM_ ports $ \port -> port_ ref nodeId port (countSameTypePorts port ports) (countPorts ports == 1)
 
 
 --FIXME: move all styles to CSS
 node :: Ref Node -> ReactView ()
-node nodeRef = React.defineControllerView
-    name nodeRef $ \nodeStore () -> do
+node ref = React.defineControllerView
+    objName ref $ \nodeStore () -> do
         let n         = nodeStore ^. dt
             nodeId    = n ^. Node.nodeId
             pos       = n ^. Node.position
@@ -61,9 +61,9 @@ node nodeRef = React.defineControllerView
             translate = fromString $ "translate(" <> show (pos ^. x) <> "," <> show (pos ^. y) <> ")" -- TODO: Consider implementing matrices
         if n ^. Node.isExpanded then
              g_
-                 [ onClick       $ \_ m -> dispatch nodeRef $ UI.NodeEvent $ Node.Select m nodeId
-                 , onDoubleClick $ \_ _ -> dispatch nodeRef $ UI.NodeEvent $ Node.Enter nodeId
-                 , onMouseDown   $ \e m -> stopPropagation e : dispatch nodeRef (UI.NodeEvent $ Node.MouseDown m nodeId)
+                 [ onClick       $ \_ m -> dispatch ref $ UI.NodeEvent $ Node.Select m nodeId
+                 , onDoubleClick $ \_ _ -> dispatch ref $ UI.NodeEvent $ Node.Enter nodeId
+                 , onMouseDown   $ \e m -> stopPropagation e : dispatch ref (UI.NodeEvent $ Node.MouseDown m nodeId)
                  , "className" $= (fromString $ "node node--collapsed" <> (if n ^. Node.isSelected then " node--selected" else []))
                  , "transform" $= translate
                  , "key"       $= fromString (show nodeId)
@@ -72,21 +72,35 @@ node nodeRef = React.defineControllerView
                          [ "className" $= "selection-mark"
                          ] mempty
 
-                     makePorts nodeRef nodeId $ filter (\(Port _ portId _ _) -> portId /= InPortId Self) ports
-                     makePorts nodeRef nodeId $ filter (\(Port _ portId _ _) -> portId == InPortId Self) ports
+                     makePorts ref nodeId $ filter (\(Port _ portId _ _) -> portId /= InPortId Self) ports
+                     makePorts ref nodeId $ filter (\(Port _ portId _ _) -> portId == InPortId Self) ports
                      foreignObject_ $ do
                         div_ [ "className" $= "node-expanded" ]$ do
                             div_ [ "className" $= "name"] $
                                 elemString $ Text.unpack (n ^. Node.expression)
                             div_ [ "className" $= "properties" ]$ do
                                 div_ [ "className" $= "label" ] $ elemString "Name"
-                                div_ [ "className" $= "value" ] $ elemString $ fromString $ Text.unpack $ n ^. Node.name
+                                div_
+                                    [ "className" $= "value"
+                                    , onDoubleClick $ \_ m -> dispatch ref $ UI.NodeEvent $ Node.NameEditStart nodeId
+                                    ] $
+                                    case n ^. Node.nameEdit of
+                                        Just name ->
+                                            input_
+                                                [ "id" $= "focus-nameLabel"
+                                                , "value" $= fromString (Text.unpack name)
+                                                , onMouseDown $ \e _ -> [stopPropagation e]
+                                                , onKeyDown   $ \e k ->  stopPropagation e : dispatch ref (UI.NodeEvent $ Node.NameKeyDown k nodeId)
+                                                , onChange    $ \e -> let val = target e "value" in dispatch ref $ UI.NodeEvent $ Node.NameChange (fromString val) nodeId
+                                                ]
+                                        Nothing ->
+                                            elemString $ fromString $ Text.unpack $ n ^. Node.name
                                 div_ [ "className" $= "label" ] $ elemString "Display result"
                                 div_ [ "className" $= "value" ] $
                                     label_ ["className" $= "switch"] $ do
                                         input_ ["type" $= "checkbox"
                                                ,"value" $= if n ^. Node.visualizationsEnabled then "on" else "off"
-                                               , onChange $ \e -> let val = not $ bool $ target e "value" in dispatch nodeRef $ UI.NodeEvent $ Node.DisplayResultChanged val nodeId
+                                               , onChange $ \e -> let val = not $ bool $ target e "value" in dispatch ref $ UI.NodeEvent $ Node.DisplayResultChanged val nodeId
                                                ]
                                         div_ ["className" $= "slider"] mempty
                             div_ [ "className" $= "value"] $
@@ -95,20 +109,20 @@ node nodeRef = React.defineControllerView
                                 forM_ (n ^. Node.value) visualization_
         else
             g_
-                [ onClick       $ \_ m -> dispatch nodeRef $ UI.NodeEvent $ Node.Select m nodeId
-                , onDoubleClick $ \_ _ -> dispatch nodeRef $ UI.NodeEvent $ Node.Enter nodeId
-                , onMouseDown   $ \e m -> stopPropagation e : dispatch nodeRef (UI.NodeEvent $ Node.MouseDown m nodeId)
+                [ onClick       $ \_ m -> dispatch ref $ UI.NodeEvent $ Node.Select m nodeId
+                , onDoubleClick $ \_ _ -> dispatch ref $ UI.NodeEvent $ Node.Enter nodeId
+                , onMouseDown   $ \e m -> stopPropagation e : dispatch ref (UI.NodeEvent $ Node.MouseDown m nodeId)
                 , "className" $= (fromString $ "node node--collapsed" <> (if n ^. Node.isSelected then " node--selected" else []))
                 , "transform" $= translate
                 , "key"       $= fromString (show nodeId)
                 ] $ do
                     circle_ [ "className" $= "selection-mark" ] mempty
 
-                    makePorts nodeRef nodeId $ filter (\(Port _ portId _ _) -> portId /= InPortId Self) ports
-                    makePorts nodeRef nodeId $ filter (\(Port _ portId _ _) -> portId == InPortId Self) ports
+                    makePorts ref nodeId $ filter (\(Port _ portId _ _) -> portId /= InPortId Self) ports
+                    makePorts ref nodeId $ filter (\(Port _ portId _ _) -> portId == InPortId Self) ports
 
                     text_
-                        [ onDoubleClick $ \e _ -> stopPropagation e : dispatch nodeRef (UI.NodeEvent $ Node.EditExpression nodeId)
+                        [ onDoubleClick $ \e _ -> stopPropagation e : dispatch ref (UI.NodeEvent $ Node.EditExpression nodeId)
                         , "className" $= "name"
                         , "y"         $= "-36"
                         ] $ elemString $ Text.unpack $ n ^. Node.expression
@@ -119,7 +133,10 @@ node nodeRef = React.defineControllerView
 
 
 node_ :: Ref Node -> ReactElementM ViewEventHandler ()
-node_ nodeRef = React.view (node nodeRef) () mempty
+node_ ref = React.view (node ref) () mempty
+
+foreign import javascript safe "document.getElementById('focus-nameLabel').focus()" focusNameLabel :: IO ()
+
 
 bool :: String -> Bool
 bool "on" = True

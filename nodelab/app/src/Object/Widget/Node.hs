@@ -32,15 +32,13 @@ data Elements = Elements { _portGroup           :: WidgetId
                          , _outLabelsGroup      :: WidgetId
                          , _expandedGroup       :: WidgetId
                          , _nodeGroup           :: WidgetId
-                         , _nameTextBox         :: WidgetId
-                         , _visualizationGroup  :: WidgetId
                          , _execTimeLabel       :: WidgetId
                          , _nodeType            :: Maybe WidgetId
                          , _codeEditor          :: Maybe WidgetId
                          } deriving (Eq, Show, Generic)
 
 instance Default Elements where
-    def = Elements def def def def def def def def def def def
+    def = Elements def def def def def def def def def
 
 type CollaborationMap = Map ClientId UTCTime
 data Collaboration = Collaboration { _touch  :: Map ClientId (UTCTime, ColorId)
@@ -60,6 +58,7 @@ data Node = Node { _nodeId                :: N.NodeId
                  , _expression            :: Text
                  , _code                  :: Maybe Text
                  , _name                  :: Text
+                 , _nameEdit              :: Maybe Text
                  , _value                 :: Maybe NodeValue
                  , _tpe                   :: Maybe Text
                  , _isExpanded            :: Bool
@@ -79,7 +78,7 @@ makeLenses ''Elements
 instance ToJSON Elements
 
 makeNode :: N.NodeId -> Map AnyPortRef PortModel.Port -> Position -> Text -> Maybe Text -> Text -> Maybe Text -> Bool -> Node
-makeNode nid ports' pos expr code' name' tpe' vis = Node nid ports' pos 0.0 expr code' name' Nothing tpe' False False vis def Nothing False def
+makeNode nid ports' pos expr code' name' tpe' vis = Node nid ports' pos 0.0 expr code' name' def def tpe' False False vis def Nothing False def
 
 makePorts :: N.Node -> [PortModel.Port]
 makePorts node = makePort <$> ports' where
