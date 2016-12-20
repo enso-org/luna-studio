@@ -2,6 +2,7 @@
 module Luna.Studio.React.View.NodeEditor where
 
 import qualified Data.HashMap.Strict                 as HashMap
+import           Luna.Studio.Data.Vector
 import           Luna.Studio.Prelude
 import           React.Flux
 import qualified React.Flux                          as React
@@ -22,6 +23,11 @@ name = "node-editor"
 
 nodeEditor :: Ref NodeEditor -> ReactView ()
 nodeEditor ref = React.defineControllerView name ref $ \store () -> do
+    let nodeEditor = store ^. dt
+        offsetX    = show $ nodeEditor ^. NodeEditor.pan . x
+        offsetY    = show $ nodeEditor ^. NodeEditor.pan . y
+        scale      = show $ nodeEditor ^. NodeEditor.zoom
+        transform' = "matrix(" <> scale <> " , 0, 0, " <> scale <> " , " <> offsetX <> " , " <> offsetY <> " )"
     svg_
         [ "className"   $= "graph"
         , "xmlns"       $= "http://www.w3.org/2000/svg"
@@ -31,7 +37,7 @@ nodeEditor ref = React.defineControllerView name ref $ \store () -> do
         $ do
         g_
             [ "className" $= "scene"
-            , "transform" $= "matrix(1,0,0,1,0,0)" --TODO: Apply zooming and panning https://developer.mozilla.org/en/docs/Web/SVG/Attribute/transform
+            , "transform" $= fromString transform'
             ] $ do
                 forM_ (store ^. dt . NodeEditor.nodes . to HashMap.elems) $ \nodeRef -> do
                     node_ nodeRef

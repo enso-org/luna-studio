@@ -74,10 +74,10 @@ actions =  [ App.toAction
            , Node.toAction
            , ProjectManager.toAction
            , Searcher.toAction
+           , Camera.toAction
         --Debug.toActionEv
         --    , Control.toAction
         --    , Widget.toAction
-        --    , Camera.toAction
         --    , Collaboration.toAction
         --    , NodeSearcher.toAction
         --    , ConnectionPen.toAction
