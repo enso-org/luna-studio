@@ -31,5 +31,5 @@ registerNode expr = do
             []     -> Nothing
             [wf]   -> Just $ wf ^. widget . UINode.nodeId
             (_:_) -> Nothing
-    BatchCmd.addNode expr nodeMeta connectTo nodeId
+    BatchCmd.addNode expr nodeMeta connectTo
     GA.sendEvent $ GA.AddNode $ if isJust connectTo then GA.AutoConnect else GA.Simple
