@@ -317,7 +317,10 @@ getPositionalNodeRefs node = do
 getLambdaOutputRef :: ASTOp m => NodeRef -> m NodeRef
 getLambdaOutputRef node = do
     match node $ \case
-        Lam _ out -> IR.source out
+        Lam _ out -> do
+            nextLam <- IR.source out
+            getLambdaOutputRef nextLam
+        _         -> return node
 
 getLambdaArgRefs :: ASTOp m => NodeRef -> m [NodeRef]
 getLambdaArgRefs node = do

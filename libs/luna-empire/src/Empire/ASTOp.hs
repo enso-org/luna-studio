@@ -60,9 +60,10 @@ runASTOp pass = do
         Right res -> return res
 
 lams :: ASTOp m => [NodeRef] -> NodeRef -> m NodeRef
-lams args output = unsafeRelayout <$> foldM f (unsafeRelayout output) (unsafeRelayout <$> args)
+lams args output = unsafeRelayout <$> foldM f (unsafeRelayout seed) (unsafeRelayout <$> rest)
     where
         f arg' lam' = lamAny (IR.arg arg') lam'
+        (seed : rest) = args ++ [output]
 
 lamAny :: ASTOp m => IR.Arg NodeRef -> NodeRef -> m NodeRef
 lamAny a b = fmap generalize $ lam a b

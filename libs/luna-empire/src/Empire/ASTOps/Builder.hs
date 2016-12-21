@@ -249,6 +249,4 @@ isGraphNode :: ASTOp m => NodeRef -> m Bool
 isGraphNode = fmap isJust . getNodeId
 
 getNodeId :: ASTOp m => NodeRef -> m (Maybe NodeId)
-getNodeId ref = do
-    node <- pure ref
-    coerce <$> IR.readLayer @Marker node
+getNodeId node = coerce <$> IR.readLayer @Marker node

@@ -138,7 +138,7 @@ descendInto (GraphLocation pid lid breadcrumb) nid = GraphLocation pid lid bread
 
 removeNodes :: GraphLocation -> [NodeId] -> Empire ()
 removeNodes loc nodeIds = do
-    forM nodeIds $ \nodeId -> do
+    forM_ nodeIds $ \nodeId -> do
         children <- withTC (loc `descendInto` nodeId) False $ do
             uses Graph.breadcrumbHierarchy topLevelIDs
         removeNodes (loc `descendInto` nodeId) children
