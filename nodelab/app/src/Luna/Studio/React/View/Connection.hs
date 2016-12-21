@@ -5,7 +5,6 @@ import           Luna.Studio.Data.Vector
 import           Luna.Studio.Prelude
 import           React.Flux
 import qualified React.Flux                         as React
-
 import qualified Event.UI                           as UI
 import           Luna.Studio.Data.Color             (Color (Color))
 import           Luna.Studio.Data.HSL               (color')
@@ -71,12 +70,11 @@ drawConnection_ (Vector2 srcX srcY) (Vector2 dstX dstY) color =
         y2 = fromString $ showSvg $ dstY
         color = color' $ Color 5 --TODO[react]: Apply correct color
         width = fromString $ show connectionWidth
-    in  line_
-            [ "className"   $= "connection"
-            , "x1"          $= x1
-            , "y1"          $= y1
-            , "x2"          $= x2
-            , "y2"          $= y2
-            , "stroke"      $= color
-            , "strokeWidth" $= width
-            ] mempty
+    in line_
+        [ "x1"          $= x1
+        , "y1"          $= y1
+        , "x2"          $= x2
+        , "y2"          $= y2
+        , "stroke"      $= color
+        , "strokeWidth" $= width
+        ] mempty

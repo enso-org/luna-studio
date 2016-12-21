@@ -2,17 +2,18 @@
 module Luna.Studio.React.View.NodeEditor where
 
 import qualified Data.HashMap.Strict                 as HashMap
+import qualified Data.Aeson                          as Aeson
 import           Luna.Studio.Data.Vector
 import           Luna.Studio.Prelude
 import           React.Flux
 import qualified React.Flux                          as React
-
 import qualified Event.UI                            as UI
 import qualified Luna.Studio.React.Event.NodeEditor  as NE
 import           Luna.Studio.React.Model.NodeEditor  (NodeEditor)
 import qualified Luna.Studio.React.Model.NodeEditor  as NodeEditor
 import           Luna.Studio.React.Store             (Ref, dispatch, dt)
 import           Luna.Studio.React.View.Connection   (connection_, currentConnection_)
+import           Luna.Studio.React.View.Global
 import           Luna.Studio.React.View.Node         (node_)
 import           Luna.Studio.React.View.SelectionBox (selectionBox_)
 
@@ -27,25 +28,23 @@ nodeEditor ref = React.defineControllerView name ref $ \store () -> do
         offsetX    = show $ nodeEditor ^. NodeEditor.pan . x
         offsetY    = show $ nodeEditor ^. NodeEditor.pan . y
         scale      = show $ nodeEditor ^. NodeEditor.zoom
-        transform' = "matrix(" <> scale <> " , 0, 0, " <> scale <> " , " <> offsetX <> " , " <> offsetY <> " )"
-    svg_
+        transform = fromString $ transformMatrix scale offsetX offsetY
+    div_
         [ "className"   $= "graph"
-        , "xmlns"       $= "http://www.w3.org/2000/svg"
-        , "xmlnsXlink"  $= "http://www.w3.org/1999/xlink"
         , onMouseDown   $ \_ e -> dispatch ref $ UI.NodeEditorEvent $ NE.MouseDown e
-        ]
-        $ do
-        g_
-            [ "className" $= "scene"
-            , "transform" $= fromString transform'
+        ] $ do
+        svg_
+            [ "className" $= "plane plane-connections" ] $ do
+                g_ [ "className" $= "connections"
+                   , "transform" $= transform
+                   ] $ do
+                    forM_ (store ^. dt . NodeEditor.connections . to HashMap.elems) $ \connectionRef -> connection_ connectionRef
+                    forM_ (store ^. dt . NodeEditor.currentConnection) $ \connectionRef -> currentConnection_ connectionRef
+        div_
+            [ "className" $= "plane plane--nodes"
+            , "style"     @= Aeson.object [ "transform" Aeson..= (transformMatrix scale offsetX offsetY) ]
             ] $ do
-                forM_ (store ^. dt . NodeEditor.nodes . to HashMap.elems) $ \nodeRef -> do
-                    node_ nodeRef
-                forM_ (store ^. dt . NodeEditor.connections . to HashMap.elems) $ \connectionRef -> do
-                    connection_ connectionRef
-                forM_ (store ^. dt . NodeEditor.currentConnection) $ \connectionRef -> do
-                    currentConnection_ connectionRef
-
+                forM_ (store ^. dt . NodeEditor.nodes . to HashMap.elems) $ \nodeRef -> node_ nodeRef
                 selectionBox_ (store ^. dt . NodeEditor.selectionBox)
 
 nodeEditor_ :: Ref NodeEditor -> ReactElementM ViewEventHandler ()

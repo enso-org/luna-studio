@@ -74,14 +74,10 @@ drawPortIO_ nodeRef nodeId portId num numOfPorts isInput = do
 
     let color    = color' $ Color 5 --TODO [Piotr Młodawski]: get color from model
 
-        classes  = case isInput of True  -> "port port--i port--i--"
-                                   False -> "port port--o port--o--"
-        svgFlag1 = case isInput of True  -> "0"
-                                   False -> "1"
-        svgFlag2 = case isInput of True  -> "1"
-                                   False -> "0"
-        mod      = case isInput of True  ->  1.0
-                                   False -> -1.0
+        classes  = if isInput then "port port--i port--i--" else "port port--o port--o--"
+        svgFlag1 = if isInput then "0" else "1"
+        svgFlag2 = if isInput then "1" else "0"
+        mod      = if isInput then 1.0 else -1.0
 
         startPortArcX r = r * sin(portAngleStart num numOfPorts r * mod)
         startPortArcY r = r * cos(portAngleStart num numOfPorts r * mod)

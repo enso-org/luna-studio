@@ -1,8 +1,33 @@
+.graph {
+    position: relative;
+    flex: none;
+}
+.plane {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    .connections {
+
+    }
+}
+.plane--nodes {
+    svg {
+        overflow: inherit;
+        width:  16px;
+        height: 16px;
+    }
+}
+
 // connection
 
 .connection {
-    stroke-linecap: round;
-    stroke-linejoin: round;
+    position: relative;
+    width:    0;
+    height:   0;
+    line {
+        stroke-linecap:  round;
+        stroke-linejoin: round;
+    }
 }
 
 
@@ -10,6 +35,8 @@
 
 .node {
     position: relative;
+    width:    0;
+    height:   0;
     .name {
         fill:        @colorName;
         text-anchor: middle;
@@ -51,7 +78,7 @@
 
 .node--collapsed {
     .selection-mark {
-        r:  20;
+        r: 20;
     }
     &.node--selected {
         .selection-mark {

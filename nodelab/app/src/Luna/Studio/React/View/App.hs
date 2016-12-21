@@ -18,7 +18,6 @@ import           Luna.Studio.React.View.NodeEditor       (nodeEditor_)
 import           Luna.Studio.React.View.Searcher         (searcher_)
 
 
-
 name :: JSString
 name = "nodelab"
 
