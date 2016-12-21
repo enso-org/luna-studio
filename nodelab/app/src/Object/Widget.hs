@@ -19,8 +19,8 @@ import qualified Event.Mouse               as Mouse
 import           Event.Widget              (Payload)
 import           Object.UITypes
 import           Luna.Studio.Commands.Command (Command)
-import           Luna.Studio.State.Camera     (Camera)
-import qualified Luna.Studio.State.Camera     as Camera
+-- import           Luna.Studio.State.Camera     (Camera)
+-- import qualified Luna.Studio.State.Camera     as Camera
 import           Luna.Studio.Data.CtxDynamic
 import           Luna.Studio.Prelude         hiding (children, (.=))
 import           Luna.Studio.Data.Vector              (Vector2 (Vector2))
@@ -141,9 +141,10 @@ sceneToLocal (Vector2 x y) [ aa, ab, _ , _
                                x' = aa * x + ba * y + da
                                y' = ab * x + bb * y + db
 
-screenToLocal :: Camera -> Vector2 Int -> [Double]  -> Vector2 Double
-screenToLocal cam mousePos widgetMatrix = sceneToLocal workspacePos widgetMatrix where
-    workspacePos = Camera.screenToWorkspace cam mousePos
+--TODO[react]: Why this is even here???
+-- screenToLocal :: Camera -> Vector2 Int -> [Double]  -> Vector2 Double
+-- screenToLocal cam mousePos widgetMatrix = sceneToLocal workspacePos widgetMatrix where
+--     workspacePos = Camera.screenToWorkspace cam mousePos
 
 type MouseMoveHandler     s =        Mouse.Event' -> JSState -> WidgetId -> Command s ()
 type MousePressedHandler  s =        Mouse.Event' -> JSState -> WidgetId -> Command s ()

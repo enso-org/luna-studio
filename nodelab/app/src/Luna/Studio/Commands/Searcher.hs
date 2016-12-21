@@ -2,41 +2,41 @@
 module Luna.Studio.Commands.Searcher where
 
 
-import qualified Data.Map                          as Map
-import qualified Data.Text.Lazy                    as Text
-import qualified Text.ScopeSearcher.QueryResult    as Result
-import           Luna.Studio.Prelude
+import qualified Data.Map                             as Map
+import qualified Data.Text.Lazy                       as Text
 import           Luna.Studio.Data.Vector
+import           Luna.Studio.Prelude
+import qualified Text.ScopeSearcher.QueryResult       as Result
 
-import qualified JS.NodeSearcher                   as UI
+import qualified JS.NodeSearcher                      as UI
 
-import qualified Luna.Studio.Batch.Workspace                   as Workspace
-import           Luna.Studio.React.Store                       (widget)
-import qualified Luna.Studio.React.Store                       as Store
-import qualified Luna.Studio.React.Model.Node                  as Node
-import qualified Luna.Studio.React.Model.Searcher              as Searcher
-import qualified Luna.Studio.React.View.App                    as App
-import qualified Luna.Studio.React.View.Searcher               as Searcher
+import qualified Luna.Studio.Batch.Workspace          as Workspace
+import qualified Luna.Studio.React.Model.Node         as Node
+import qualified Luna.Studio.React.Model.Searcher     as Searcher
+import           Luna.Studio.React.Store              (widget)
+import qualified Luna.Studio.React.Store              as Store
+import qualified Luna.Studio.React.View.App           as App
+import qualified Luna.Studio.React.View.Searcher      as Searcher
 
-import           Luna.Studio.Commands.Camera          (syncCamera)
+-- import           Luna.Studio.Commands.Camera          (syncCamera)
 import           Luna.Studio.Commands.Command         (Command, performIO)
 import           Luna.Studio.Commands.Graph.Selection (selectedNodes)
 import           Luna.Studio.Commands.Node.Register   (registerNode)
 import qualified Luna.Studio.Commands.Node.Update     as Node
-import qualified Luna.Studio.State.Camera             as Camera
+-- import qualified Luna.Studio.State.Camera             as Camera
 import           Luna.Studio.State.Global             (State)
 import qualified Luna.Studio.State.Global             as Global
 import qualified Luna.Studio.State.Graph              as Graph
 
-import           Empire.API.Data.Node              (NodeId)
-import qualified Empire.API.Data.Node              as NodeAPI
-import qualified Empire.API.Data.Port              as Port
-import qualified Empire.API.Data.TypeRep           as TypeRep
-import qualified Empire.API.Data.ValueType         as ValueType
+import           Empire.API.Data.Node                 (NodeId)
+import qualified Empire.API.Data.Node                 as NodeAPI
+import qualified Empire.API.Data.Port                 as Port
+import qualified Empire.API.Data.TypeRep              as TypeRep
+import qualified Empire.API.Data.ValueType            as ValueType
 
-import qualified JS.GoogleAnalytics                as GA
-import           Text.ScopeSearcher.Item           (Item (..), Items, _Group)
-import qualified Text.ScopeSearcher.Scope          as Scope
+import qualified JS.GoogleAnalytics                   as GA
+import           Text.ScopeSearcher.Item              (Item (..), Items, _Group)
+import qualified Text.ScopeSearcher.Scope             as Scope
 
 
 
@@ -51,7 +51,7 @@ open = do
     openWith def =<< use Global.mousePos
     -- performIO $ UI.initNodeSearcher "" Nothing (nsPos + offset) False
 
-openWith :: Maybe NodeId -> Vector2 Int -> Command State ()
+openWith :: Maybe NodeId -> Vector2 Double -> Command State ()
 openWith nodeId pos = do
     GA.sendEvent GA.NodeSearcher
     Global.withSearcher $ Store.modifyM_ $ do
@@ -93,41 +93,41 @@ accept = do
         Just nodeId-> Node.updateExpression nodeId expression
     close
 
-openEdit :: Text -> NodeId -> Vector2 Int -> Command State ()
+openEdit :: Text -> NodeId -> Vector2 Double -> Command State ()
 openEdit expr nodeId pos = do
     openWith (Just nodeId) pos
     querySearch expr
 
-position :: Command State (Vector2 Double, Vector2 Int)
-position = do
-    mousePos <- use Global.mousePos
-    mousePos' <- zoom Global.camera $ Camera.screenToWorkspaceM mousePos
-    -- factor <- use $ Global.camera . Camera.camera . Camera.factor
-    selected <- selectedNodes
-    nsPos <- zoom Global.camera $ Camera.workspaceToScreen $ case selected of
-            [wref] -> (wref ^. widget . Node.position) + Vector2 230.0 0
-            _      -> mousePos'
-    nsPos' <- zoom Global.camera $ Camera.screenToWorkspaceM nsPos
-    return (nsPos', nsPos)
-
-ensureNSVisible :: Command State (Vector2 Double, Vector2 Int)
-ensureNSVisible = do
-    (workspacePos, screenPos) <- position
-    screenSize <- use $ Global.camera . Camera.camera . Camera.screenSize
-    x' <- if screenPos ^. x > (screenSize ^. x - 250)
-        then do
-            Global.camera . Camera.camera . Camera.pan . x .= workspacePos ^. x
-            zoom Global.camera syncCamera
-            return . floor $ fromIntegral (screenSize ^. x) / (2.0 :: Double)
-        else return $ screenPos ^. x
-    y' <- if screenPos ^. y > (screenSize ^. y - 250)
-        then do
-            Global.camera . Camera.camera . Camera.pan . y .= workspacePos ^. y
-            zoom Global.camera syncCamera
-            return . floor $ fromIntegral (screenSize ^. y) / (2.0 :: Double)
-        else return $ screenPos ^. y
-
-    return (workspacePos, Vector2 x' y')
+-- position :: Command State (Vector2 Double, Vector2 Int)
+-- position = do
+--     mousePos <- use Global.mousePos
+--     mousePos' <- zoom Global.camera $ Camera.screenToWorkspaceM mousePos
+--     -- factor <- use $ Global.camera . Camera.camera . Camera.factor
+--     selected <- selectedNodes
+--     nsPos <- zoom Global.camera $ Camera.workspaceToScreen $ case selected of
+--             [wref] -> (wref ^. widget . Node.position) + Vector2 230.0 0
+--             _      -> mousePos'
+--     nsPos' <- zoom Global.camera $ Camera.screenToWorkspaceM nsPos
+--     return (nsPos', nsPos)
+--
+-- ensureNSVisible :: Command State (Vector2 Double, Vector2 Int)
+-- ensureNSVisible = do
+--     (workspacePos, screenPos) <- position
+--     screenSize <- use $ Global.camera . Camera.camera . Camera.screenSize
+--     x' <- if screenPos ^. x > (screenSize ^. x - 250)
+--         then do
+--             Global.camera . Camera.camera . Camera.pan . x .= workspacePos ^. x
+--             zoom Global.camera syncCamera
+--             return . floor $ fromIntegral (screenSize ^. x) / (2.0 :: Double)
+--         else return $ screenPos ^. x
+--     y' <- if screenPos ^. y > (screenSize ^. y - 250)
+--         then do
+--             Global.camera . Camera.camera . Camera.pan . y .= workspacePos ^. y
+--             zoom Global.camera syncCamera
+--             return . floor $ fromIntegral (screenSize ^. y) / (2.0 :: Double)
+--         else return $ screenPos ^. y
+--
+--     return (workspacePos, Vector2 x' y')
 
 globalFunctions :: Items -> Items
 globalFunctions = Map.filter (== Element)

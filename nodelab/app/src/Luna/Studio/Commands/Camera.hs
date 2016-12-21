@@ -8,7 +8,7 @@ module Luna.Studio.Commands.Camera
      , panLeft
      , panRight
     --  , autoZoom
-     , syncCamera
+    --  , syncCamera
     --  , zoomDrag
      , zoomIn
      , zoomOut
@@ -25,8 +25,8 @@ import           Luna.Studio.Data.Vector
 import           Luna.Studio.Prelude
 import qualified Luna.Studio.React.Model.NodeEditor as NodeEditor
 import qualified Luna.Studio.React.Store            as Store
-import           Luna.Studio.State.Camera           (DragHistory (..))
-import qualified Luna.Studio.State.Camera           as Camera
+-- import           Luna.Studio.State.Camera           (DragHistory (..))
+-- import qualified Luna.Studio.State.Camera           as Camera
 import           Luna.Studio.State.Global           (State)
 import qualified Luna.Studio.State.Global           as Global
 import qualified Luna.Studio.State.Graph            as Graph
@@ -126,10 +126,6 @@ import qualified Luna.Studio.State.Graph            as Graph
 --
 -- zoomDrag _ _ = return ()
 --
-
-syncCamera :: Command Camera.State ()
-syncCamera = return ()
-
 -- syncCamera :: Command Camera.State ()
 -- syncCamera = do
 --     cPan            <- use $ Camera.camera . Camera.pan

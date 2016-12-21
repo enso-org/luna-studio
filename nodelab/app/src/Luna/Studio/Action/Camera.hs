@@ -4,19 +4,14 @@ module Luna.Studio.Action.Camera
     ) where
 
 import           Event.Event                  (Event (UI))
-import qualified Event.Keys                   as Keys
 import           Event.UI                     (UIEvent (AppEvent))
 import           Luna.Studio.Commands.Camera
 import           Luna.Studio.Commands.Command (Command)
+import qualified Luna.Studio.Event.Keys       as Keys
 import           Luna.Studio.Prelude
 import qualified Luna.Studio.React.Event.App  as App
 import           Luna.Studio.State.Global     (State)
 import           React.Flux                   (KeyboardEvent)
-
-import System.IO.Unsafe (unsafePerformIO)
-
-traceShowMToStdout :: (Show a, Monad m) => a -> m ()
-traceShowMToStdout v = unsafePerformIO $ print v >> return (return ())
 
 -- toAction :: Event -> Maybe (Command Global.State ())
 -- toAction (Keyboard _ (Keyboard.Event Keyboard.Press 'h' _)) = Just $ autoZoom
@@ -32,7 +27,7 @@ traceShowMToStdout v = unsafePerformIO $ print v >> return (return ())
 -- toAction' _ = Nothing
 
 toAction :: Event -> Maybe (Command State ())
-toAction (UI (AppEvent (App.KeyDown e))) = Just $ traceShowMToStdout e >> handleKey e
+toAction (UI (AppEvent (App.KeyDown e))) = Just $ handleKey e
 toAction _ = Nothing
 
 handleKey :: KeyboardEvent -> Command State ()

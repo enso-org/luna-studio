@@ -9,7 +9,7 @@ import           Empire.API.Data.Node     (NodeId)
 import           Empire.API.JSONInstances ()
 
 
-data DragHistory = DragHistory { _dragStartPos  :: Vector2 Int
+data DragHistory = DragHistory { _dragStartPos  :: Vector2 Double
                                , _draggedNodeId :: NodeId
                                , _nodesStartPos :: Map NodeId (Vector2 Double)
                                } deriving (Eq, Show, Generic)

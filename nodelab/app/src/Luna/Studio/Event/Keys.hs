@@ -1,4 +1,4 @@
-module Event.Keys where
+module Luna.Studio.Event.Keys where
 
 import           Luna.Studio.Prelude
 

@@ -4,8 +4,6 @@ module Luna.Studio.Action.Drag
     ( toAction
     ) where
 
-import           React.Flux                           (mouseAltKey, mouseCtrlKey, mouseMetaKey, mouseScreenX, mouseScreenY, mouseShiftKey)
-
 import           Control.Arrow
 import           Control.Monad.State                  ()
 import           Data.Map                             (Map)
@@ -20,13 +18,13 @@ import           Luna.Studio.Commands.Graph.Connect   (updateConnectionsForNodes
 import           Luna.Studio.Commands.Graph.Selection (selectNodes, selectedNodes)
 import           Luna.Studio.Commands.Node.Snap       (snap)
 import           Luna.Studio.Data.Vector
+import           Luna.Studio.Event.Mouse
 import           Luna.Studio.Prelude
 import qualified Luna.Studio.React.Event.App          as App
 import qualified Luna.Studio.React.Event.Node         as Node
 import qualified Luna.Studio.React.Model.Node         as Model
 import           Luna.Studio.React.Store              (widget, _widget)
 import qualified Luna.Studio.React.Store              as Store
-import qualified Luna.Studio.State.Camera             as Camera
 import           Luna.Studio.State.Drag               (DragHistory (..))
 import qualified Luna.Studio.State.Drag               as Drag
 import           Luna.Studio.State.Global             (State)
@@ -36,19 +34,13 @@ import qualified Luna.Studio.State.Graph              as Graph
 
 toAction :: Event -> Maybe (Command State ())
 toAction (UI (NodeEvent (Node.MouseDown evt nodeId))) = Just $ do
-    when (not $ mouseCtrlKey evt || mouseMetaKey evt || mouseAltKey evt) $ do
-        let pos = Vector2 (mouseScreenX evt) (mouseScreenY evt)
-        startDrag nodeId pos $ not $ mouseShiftKey evt
-toAction (UI (AppEvent  (App.MouseUp evt))) = Just $ do
-    let pos = Vector2 (mouseScreenX evt) (mouseScreenY evt)
-    stopDrag pos
-toAction (UI (AppEvent  (App.MouseMove evt))) = Just $ do
-    let pos = Vector2 (mouseScreenX evt) (mouseScreenY evt)
-    handleMove pos $ not $ mouseShiftKey evt
-toAction _ = Nothing
+    when (withoutMods evt || withShift evt) $ startDrag nodeId (getMousePosition evt) (not $ withShift evt)
+toAction (UI (AppEvent  (App.MouseUp evt)))   = Just $ stopDrag $ getMousePosition evt
+toAction (UI (AppEvent  (App.MouseMove evt))) = Just $ handleMove (getMousePosition evt) (not $ withShift evt)
+toAction _                                    = Nothing
 
 
-startDrag :: NodeId -> Vector2 Int -> Bool -> Command State ()
+startDrag :: NodeId -> Vector2 Double -> Bool -> Command State ()
 startDrag nodeId coord snapped = do
     mayDraggedNodeRef <- Global.getNode nodeId
     withJust mayDraggedNodeRef $ \draggedNodeRef -> do
@@ -64,13 +56,13 @@ startDrag nodeId coord snapped = do
             else Global.drag . Drag.history ?= DragHistory coord nodeId nodesPos
 
 
-handleMove :: Vector2 Int -> Bool -> Command State ()
+handleMove :: Vector2 Double -> Bool -> Command State ()
 handleMove coord snapped = do
-    factor <- use $ Global.camera . Camera.camera . Camera.factor
+    -- factor <- use $ Global.camera . Camera.camera . Camera.factor
     dragHistory <- use $ Global.drag . Drag.history
     withJust dragHistory $ \(DragHistory mousePos draggedNodeId nodesPos) -> do
         let delta = coord - mousePos
-            deltaWs = Camera.scaledScreenToWorkspace factor delta
+            deltaWs = delta --Camera.scaledScreenToWorkspace factor delta
             shift' = if snapped
                         then case Map.lookup draggedNodeId nodesPos of
                             Just pos -> snap (pos + deltaWs) - pos
@@ -85,7 +77,7 @@ moveNodes nodesPos = do
             Model.position .~ pos
     updateConnectionsForNodes $ Map.keys nodesPos
 
-stopDrag :: Vector2 Int -> Command State ()
+stopDrag :: Vector2 Double -> Command State ()
 stopDrag coord = do
     dragHistory <- use $ Global.drag . Drag.history
     withJust dragHistory $ \(DragHistory start nodeId _) -> do
