@@ -1,20 +1,24 @@
-{-# LANGUAGE TypeApplications #-}
-module Empire.Data.Graph where
+module Empire.Data.Graph (
+    Graph(..)
+  , ast
+  , nodeMapping
+  , breadcrumbHierarchy
+  , breadcrumbPortMapping
+  , lastNameId
+  , insideNode
+  , NodeIDTarget(MatchNode, AnonymousNode)
+  , getAnyRef
+  , defaultGraph
+  ) where
 
 import           Data.Map.Lazy                     (Map)
 import qualified Data.Map                          as Map (empty)
 import           Empire.API.Data.Node              (NodeId)
-import           Empire.Data.BreadcrumbHierarchy   (BreadcrumbHierarchy, empty)
+import           Empire.Data.BreadcrumbHierarchy   (BreadcrumbHierarchy)
+import qualified Empire.Data.BreadcrumbHierarchy   as BC (empty)
 import           Empire.Prelude
 
-import           Empire.Data.AST                   (AST, ASTState(..), NodeRef, Marker, Meta,
-                                                    InputsLayer, TCData, registerEmpireLayers)
-import Luna.IR (evalIRBuilder', evalPassManager',
-                EXPR, attachLayer, runRegs, snapshot)
-import qualified Luna.Pass.Manager as Pass (get)
-import Luna.Pass.Evaluation.Interpreter.Layer (InterpreterData)
-import System.Log (dropLogs)
-import System.IO.Unsafe (unsafePerformIO)
+import           Empire.Data.AST                   (AST, NodeRef, defaultAST)
 
 
 data Graph = Graph { _ast                   :: AST
@@ -35,22 +39,7 @@ getAnyRef (AnonymousNode ref) = ref
 
 makeLenses ''Graph
 
-instance Default Graph where
-    def = Graph defaultAST def empty Map.empty 0 Nothing
-
-defaultAST :: AST
-defaultAST = prepareASTOp
-
-{-# NOINLINE prepareASTOp #-}
-prepareASTOp :: AST
-prepareASTOp = unsafePerformIO $ liftIO $ dropLogs $ evalIRBuilder' $ evalPassManager' $ do
-    runRegs
-    registerEmpireLayers
-    attachLayer 10 (typeRep' @Meta)  (typeRep' @EXPR)
-    attachLayer 10 (typeRep' @Marker) (typeRep' @EXPR)
-    attachLayer 10 (typeRep' @InputsLayer) (typeRep' @EXPR)
-    attachLayer 10 (typeRep' @InterpreterData) (typeRep' @EXPR)
-    attachLayer 10 (typeRep' @TCData) (typeRep' @EXPR)
-    st <- snapshot
-    pass <- Pass.get
-    return $ ASTState st pass
+defaultGraph :: IO Graph
+defaultGraph = do
+    ast' <- defaultAST
+    return $ Graph ast' Map.empty BC.empty Map.empty 0 Nothing

@@ -45,9 +45,6 @@ data InterpreterEnv = InterpreterEnv { _valuesCache :: Map NodeId [Value]
                                      }
 makeLenses ''InterpreterEnv
 
-instance Default InterpreterEnv where
-    def = InterpreterEnv def def def def def
-
 type Command s a = ExceptT Error (ReaderT CommunicationEnv (StateT s IO)) a
 
 type Empire a = Command Env a

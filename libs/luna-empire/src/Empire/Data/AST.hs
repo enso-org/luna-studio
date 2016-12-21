@@ -9,11 +9,13 @@ module Empire.Data.AST where
 import           Empire.Prelude
 
 import Luna.IR (AnyExpr, AnyExprLink, EXPRESSION, IR, IRMonad, Layer, LayerData, IRBuilder,
-                type Abstract, ElemScope, Attr, WorkingElem, registerLayer,
-                readAttr, writeLayer)
+                type Abstract, ElemScope, Attr, WorkingElem, registerLayer, EXPR, snapshot,
+                readAttr, writeLayer, attachLayer, evalIRBuilder', evalPassManager', runRegs)
+import System.Log (dropLogs)
 import Luna.IR.Layer.Type as IR (Type)
 import qualified Luna.Pass.Manager as Pass (PassManager, State)
 import qualified Luna.Pass as Pass
+import qualified Luna.Pass.Manager as PassManager (get)
 import Luna.Pass (type Events, type Inputs, type Outputs, type Preserves)
 import Luna.Pass.Evaluation.Interpreter.Layer (InterpreterData, InterpreterLayer)
 import System.Log (Logger, DropLogger)
@@ -24,6 +26,19 @@ data ASTState = ASTState IR (Pass.State (IRBuilder (Logger DropLogger IO)))
 
 instance Show ASTState where
     show _ = "AST"
+
+defaultAST :: IO AST
+defaultAST = dropLogs $ evalIRBuilder' $ evalPassManager' $ do
+    runRegs
+    registerEmpireLayers
+    attachLayer 10 (typeRep' @Meta)  (typeRep' @EXPR)
+    attachLayer 10 (typeRep' @Marker) (typeRep' @EXPR)
+    attachLayer 10 (typeRep' @InputsLayer) (typeRep' @EXPR)
+    attachLayer 10 (typeRep' @InterpreterData) (typeRep' @EXPR)
+    attachLayer 10 (typeRep' @TCData) (typeRep' @EXPR)
+    st <- snapshot
+    pass <- PassManager.get
+    return $ ASTState st pass
 
 type AST           = ASTState
 type NodeRef       = AnyExpr

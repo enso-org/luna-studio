@@ -25,7 +25,7 @@ import qualified Empire.Utils.IdGen      as IdGen
 
 createLibrary :: ProjectId -> Maybe String -> FilePath -> Empire (LibraryId, Library)
 createLibrary pid name path = withProject pid $ do
-    let library = Library.make name path
+    library <- liftIO $ Library.make name path
     id' <- insertAtNewId library
     return (id', library)
 

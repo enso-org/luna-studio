@@ -3,7 +3,7 @@ module Empire.Data.Library where
 import qualified Empire.API.Data.Graph          as API (Graph)
 import qualified Empire.API.Data.Library        as API
 import qualified Empire.API.Persistence.Library as Persistence
-import           Empire.Data.Graph              (Graph)
+import           Empire.Data.Graph              (Graph, defaultGraph)
 import           Empire.Prelude
 
 
@@ -12,8 +12,8 @@ data Library = Library { _name    :: Maybe String
                        , _body    :: Graph
                        } deriving (Show)
 
-make :: Maybe String -> FilePath -> Library
-make name path = Library name path def
+make :: Maybe String -> FilePath -> IO Library
+make name path = Library name path <$> defaultGraph
 
 makeLenses ''Library
 
