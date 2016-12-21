@@ -7,7 +7,7 @@ import           Empire.API.Data.GraphLocation (GraphLocation)
 import           Empire.API.Data.Node          (Node, NodeId)
 import           Empire.API.Data.Project       (ProjectId)
 import           Empire.API.Data.TypeRep       (TypeRep)
-import           Empire.Data.Graph             (Graph)
+import           Empire.Data.Graph             (Graph, defaultGraph)
 import           Empire.Data.Project           (Project)
 import           Empire.Prelude
 
@@ -44,6 +44,11 @@ data InterpreterEnv = InterpreterEnv { _valuesCache :: Map NodeId [Value]
                                      , _destructors :: [IO ()]
                                      }
 makeLenses ''InterpreterEnv
+
+defaultInterpreterEnv :: IO InterpreterEnv
+defaultInterpreterEnv = do
+    g <- defaultGraph
+    return $ InterpreterEnv def def def g []
 
 type Command s a = ExceptT Error (ReaderT CommunicationEnv (StateT s IO)) a
 

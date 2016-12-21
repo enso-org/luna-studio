@@ -95,12 +95,14 @@ readAll chan = do
         Just _  -> readAll chan
 
 startTCWorker :: Empire.CommunicationEnv -> TChan (GraphLocation, Graph, Bool) -> Bus ()
-startTCWorker env chan = liftIO $ void $ Empire.runEmpire env def $ forever $ do
-    (loc, g, flush) <- liftIO $ atomically $ readAll chan
-    if flush then Typecheck.flushCache else return ()
-    Empire.graph .= g
-    Typecheck.run loc
-    {-zoom (Empire.graph . ast) $ AST.dumpGraphViz "tc_graph"-}
+startTCWorker env chan = liftIO $ do
+    interpreterEnv <- Empire.defaultInterpreterEnv
+    void $ Empire.runEmpire env interpreterEnv $ forever $ do
+        (loc, g, flush) <- liftIO $ atomically $ readAll chan
+        if flush then Typecheck.flushCache else return ()
+        Empire.graph .= g
+        Typecheck.run loc
+        {-zoom (Empire.graph . ast) $ AST.dumpGraphViz "tc_graph"-}
 
 
 startToBusWorker :: TChan Message -> Bus ()

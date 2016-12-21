@@ -1,14 +1,11 @@
-{-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE TypeApplications #-}
-
 module Empire.ASTOps.Remove where
 
-import           Empire.Prelude
+import           Empire.Prelude           ()
 
-import           Empire.Data.AST               (NodeRef)
-import           Empire.ASTOp                  (ASTOp)
+import           Empire.Data.AST          (NodeRef)
+import           Empire.ASTOp             (ASTOp)
 
-import Luna.IR.Expr.Combinators (deleteSubtree)
+import           Luna.IR.Expr.Combinators (deleteSubtree)
 
 
 removeNode :: ASTOp m => NodeRef -> m ()

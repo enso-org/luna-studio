@@ -1,14 +1,11 @@
-{-# LANGUAGE DeriveAnyClass #-}
-{-# LANGUAGE LambdaCase #-}
-{-# LANGUAGE PartialTypeSignatures #-}
+{-# LANGUAGE DeriveAnyClass      #-}
+{-# LANGUAGE LambdaCase          #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE TypeApplications #-}
-{-# LANGUAGE ViewPatterns #-}
+{-# LANGUAGE TypeApplications    #-}
 
 module Empire.ASTOps.Builder where
 
 import           Control.Monad                      (foldM, replicateM)
-import           Control.Monad.Except               (throwError)
 import           Data.Coerce                        (coerce)
 import           Data.Maybe                         (isJust, isNothing)
 import           Empire.Prelude
@@ -164,8 +161,8 @@ dumpArguments expr = match expr $ \case
     App a (Arg.Arg _ b) -> do
         nextApp <- IR.source a
         args    <- dumpArguments nextApp
-        arg     <- IR.source b
-        return $ arg : args
+        arg'    <- IR.source b
+        return $ arg' : args
     _       -> return []
 
 buildAccessors :: ASTOp m => NodeRef -> [String] -> m NodeRef
@@ -188,7 +185,7 @@ applyAccessors' apped node = match node $ \case
                 trep <- applyAccessors' False tgt
                 newAcc <- IR.generalize <$> IR.acc name trep
                 if apped then return newAcc else apps newAcc []
-    App f as -> do
+    App f _as -> do
     -- FIXME[MK]: this clause is identical to the curry one. And it happens often. Maybe curry is a wrong abstraction? How to unify it with App? Susp?
         fr   <- IR.source f
         args <- dumpArguments node
@@ -201,7 +198,7 @@ data SelfPortNotExistantException = SelfPortNotExistantException deriving (Show,
 
 makeAccessor :: ASTOp m => NodeRef -> NodeRef -> m NodeRef
 makeAccessor target naming = do
-    (oldTarget, names) <- dumpAccessors naming
+    (_, names) <- dumpAccessors naming
     when (null names) $ throwM SelfPortNotExistantException
     args <- dumpArguments naming
     acc <- buildAccessors target names
