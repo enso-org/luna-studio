@@ -39,10 +39,10 @@ import qualified Data.UUID                     as UUID
 import qualified Data.UUID.V4                  as UUID (nextRandom)
 import           Empire.Prelude
 
-import           Empire.Data.AST                 (Marker, NodeMarker(..))
 import           Empire.Data.BreadcrumbHierarchy (addID, addWithLeafs, removeID, topLevelIDs)
 import           Empire.Data.Graph               (Graph)
 import qualified Empire.Data.Graph               as Graph
+import           Empire.Data.Layers              (Marker, NodeMarker(..))
 
 import           Empire.API.Data.Breadcrumb      as Breadcrumb (Breadcrumb(..), Named, BreadcrumbItem(..))
 import           Empire.API.Data.Connection      (Connection (..))
@@ -57,7 +57,7 @@ import           Empire.API.Data.Port            (InPort (..), OutPort (..), Por
 import qualified Empire.API.Data.Port            as Port (PortState (..), state)
 import           Empire.API.Data.PortRef         (AnyPortRef (..), InPortRef (..), OutPortRef (..))
 import qualified Empire.API.Data.PortRef         as PortRef
-import Empire.ASTOp (runASTOp)
+import           Empire.ASTOp                    (runASTOp)
 
 import qualified Empire.Commands.AST             as AST
 import           Empire.Commands.Breadcrumb      (withBreadcrumb)

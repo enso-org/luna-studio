@@ -39,7 +39,8 @@ import qualified Empire.ASTOps.Builder             as ASTBuilder
 import qualified Empire.ASTOps.Print               as Print
 import qualified Empire.Commands.AST               as AST
 import qualified Empire.Commands.GraphUtils        as GraphUtils
-import           Empire.Data.AST                   (NodeRef, TypeLayer)
+import           Empire.Data.AST                   (NodeRef)
+import           Empire.Data.Layers                (TypeLayer)
 import           Empire.Empire
 
 import           Luna.IR (match)

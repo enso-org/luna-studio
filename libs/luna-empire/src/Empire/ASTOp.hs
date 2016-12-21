@@ -14,7 +14,8 @@ import           Empire.Prelude
 import           Control.Monad                           (foldM)
 import           Control.Monad.State                     (get, put)
 import           Control.Monad.Except                    (throwError)
-import           Empire.Data.AST                         (AST, ASTState(..), Marker, Meta, NodeRef,
+import           Empire.Data.AST                         (AST, ASTState(..), NodeRef)
+import           Empire.Data.Layers                      (Marker, Meta,
                                                           InputsLayer, TypeLayer, TCData)
 import           Empire.Empire                           (Command)
 import qualified Luna.Pass    as Pass (SubPass, Inputs, Outputs, Preserves, Events, eval')

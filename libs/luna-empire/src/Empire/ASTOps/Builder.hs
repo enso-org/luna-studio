@@ -16,7 +16,8 @@ import           Empire.Prelude
 import           Empire.API.Data.Node               (NodeId)
 import           Empire.ASTOp                       (ASTOp)
 import           Empire.ASTOps.Remove               (removeNode)
-import           Empire.Data.AST                    (EdgeRef, NodeRef, NodeMarker(..), Marker)
+import           Empire.Data.AST                    (EdgeRef, NodeRef)
+import           Empire.Data.Layers                 (NodeMarker(..), Marker)
 
 import Luna.IR.Expr.Term (Term(Sym_String))
 import Luna.IR.Expr.Term.Uni

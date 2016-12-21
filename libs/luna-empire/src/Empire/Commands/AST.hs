@@ -20,7 +20,8 @@ import qualified Empire.API.Data.Error             as APIError
 import           Empire.API.Data.Node              (NodeId)
 import           Empire.API.Data.NodeMeta          (NodeMeta)
 import           Empire.API.Data.TypeRep           (TypeRep)
-import           Empire.Data.AST                   (AST, NodeRef, Meta, NodeMarker(..), TCData, TCError(..),
+import           Empire.Data.AST                   (AST, NodeRef)
+import           Empire.Data.Layers                (Meta, NodeMarker(..), TCData, TCError(..),
                                                     TypeLayer, InputsLayer, tcErrors)
 import           Empire.Empire
 
