@@ -32,11 +32,11 @@ port_ ref nodeId p numOfPorts isOnly = React.view (port ref nodeId numOfPorts is
 
 
 drawPort_ :: Ref Node -> NodeId -> Port -> Int -> Bool -> ReactElementM ViewEventHandler ()
-drawPort_ nodeRef nodeId (Port _ portId@(InPortId   Self         ) _ _) _          _     = drawPortSelf_   nodeRef nodeId portId
-drawPort_ nodeRef nodeId (Port _ portId@(OutPortId  All          ) _ _) _          True  = drawPortSingle_ nodeRef nodeId portId
-drawPort_ nodeRef nodeId (Port _ portId@(OutPortId  All          ) _ _) numOfPorts False = drawPortIO_     nodeRef nodeId portId 0 numOfPorts False
-drawPort_ nodeRef nodeId (Port _ portId@(InPortId  (Arg        i)) _ _) numOfPorts _     = drawPortIO_     nodeRef nodeId portId i numOfPorts True
-drawPort_ nodeRef nodeId (Port _ portId@(OutPortId (Projection i)) _ _) numOfPorts _     = drawPortIO_     nodeRef nodeId portId i numOfPorts False
+drawPort_ nodeRef nodeId (Port _ portId@(InPortId   Self         ) _) _          _     = drawPortSelf_   nodeRef nodeId portId
+drawPort_ nodeRef nodeId (Port _ portId@(OutPortId  All          ) _) _          True  = drawPortSingle_ nodeRef nodeId portId
+drawPort_ nodeRef nodeId (Port _ portId@(OutPortId  All          ) _) numOfPorts False = drawPortIO_     nodeRef nodeId portId 0 numOfPorts False
+drawPort_ nodeRef nodeId (Port _ portId@(InPortId  (Arg        i)) _) numOfPorts _     = drawPortIO_     nodeRef nodeId portId i numOfPorts True
+drawPort_ nodeRef nodeId (Port _ portId@(OutPortId (Projection i)) _) numOfPorts _     = drawPortIO_     nodeRef nodeId portId i numOfPorts False
 
 
 drawPortSelf_ :: Ref Node -> NodeId -> PortId -> ReactElementM ViewEventHandler ()

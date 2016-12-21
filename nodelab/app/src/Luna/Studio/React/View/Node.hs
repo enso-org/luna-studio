@@ -18,8 +18,11 @@ import           Luna.Studio.React.Store              (Ref, dispatch, dt)
 import           Luna.Studio.React.View.ForeignObject (foreignObject_)
 import           Luna.Studio.React.View.Global
 import           Luna.Studio.React.View.Port          (port_)
+import           Luna.Studio.React.View.PortControl   (portControl_)
 import           Luna.Studio.React.View.Visualization (strValue, visualization_)
 import           Object.Widget.Port                   (Port (..))
+import qualified Object.Widget.Port                   as Port
+
 
 
 objName :: JSString
@@ -51,8 +54,8 @@ node ref = React.defineControllerView
                          [ "className" $= "selection-mark"
                          ] mempty
 
-                     makePorts ref nodeId $ filter (\(Port _ portId _ _) -> portId /= InPortId Self) ports
-                     makePorts ref nodeId $ filter (\(Port _ portId _ _) -> portId == InPortId Self) ports
+                     makePorts ref nodeId $ filter (\port -> (port ^. Port.portId) /= InPortId Self) ports
+                     makePorts ref nodeId $ filter (\port -> (port ^. Port.portId) == InPortId Self) ports
                      foreignObject_ $ do
                         div_ [ "className" $= "node-expanded" ]$ do
                             div_ [ "className" $= "name"] $
@@ -74,6 +77,7 @@ node ref = React.defineControllerView
                                                 ]
                                         Nothing ->
                                             elemString $ fromString $ Text.unpack $ n ^. Node.name
+                                -- forM_ (n ^. Node.ports) $ portControl_ n
                                 div_ [ "className" $= "label" ] $ elemString "Display result"
                                 div_ [ "className" $= "value" ] $
                                     label_ ["className" $= "switch"] $ do
@@ -100,8 +104,8 @@ node ref = React.defineControllerView
                 ] $ do
                     circle_ [ "className" $= "selection-mark" ] mempty
 
-                    makePorts ref nodeId $ filter (\(Port _ portId _ _) -> portId /= InPortId Self) ports
-                    makePorts ref nodeId $ filter (\(Port _ portId _ _) -> portId == InPortId Self) ports
+                    makePorts ref nodeId $ filter (\port -> (port ^. Port.portId) /= InPortId Self) ports
+                    makePorts ref nodeId $ filter (\port -> (port ^. Port.portId) == InPortId Self) ports
 
                     text_
                         [ onDoubleClick $ \e _ -> stopPropagation e : dispatch ref (UI.NodeEvent $ Node.EditExpression nodeId)

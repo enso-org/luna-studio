@@ -14,6 +14,9 @@ import           Luna.Studio.State.Global     (State)
 import           Numeric                      (showFFloat)
 import qualified Object.Widget.Node           as Node
 import           Object.Widget.Port           (Port (..))
+import qualified Object.Widget.Port           as Port
+
+
 
 type IsSingle = Bool
 type IsSelf   = Bool
@@ -87,12 +90,14 @@ connectionDst (Vector2 x1 y1) (Vector2 x2 y2) num numOfPorts False =
     in  Vector2 dstX dstY
 
 isIn :: Port -> Int
-isIn (Port _ (InPortId (Arg _)) _ _) = 1
-isIn _ = 0
+isIn port = case port ^. Port.portId of
+    InPortId (Arg _) -> 1
+    _                -> 0
 
 isOut :: Port -> Int
-isOut (Port _ (OutPortId _) _ _) = 1
-isOut _ = 0
+isOut port = case port ^. Port.portId of
+    OutPortId _ -> 1
+    _           -> 0
 
 countInPorts :: [Port] -> Int
 countInPorts ports = foldl (\acc p -> acc + (isIn p)) 0 ports
@@ -104,21 +109,25 @@ countPorts :: [Port] -> Int
 countPorts ports = (countInPorts ports) + (countOutPorts ports)
 
 countSameTypePorts :: Port -> [Port] -> Int
-countSameTypePorts (Port _ (InPortId _)  _ _) = countInPorts
-countSameTypePorts (Port _ (OutPortId _) _ _) = countOutPorts
+countSameTypePorts port = case port ^. Port.portId of
+    InPortId  _ -> countInPorts
+    OutPortId _ -> countOutPorts
 
 getPortNumber :: Port -> Int
-getPortNumber (Port _ (InPortId  (Arg i))        _ _) = i
-getPortNumber (Port _ (OutPortId (Projection i)) _ _) = i
-getPortNumber _ = 0
+getPortNumber port = case port ^. Port.portId of
+    InPortId  (Arg i)        -> i
+    OutPortId (Projection i) -> i
+    _                        -> 0
 
 isPortSingle :: Port -> [Port] -> Bool
-isPortSingle (Port _ (OutPortId All) _ _) ports = countPorts ports == 1
-isPortSingle _ _ = False
+isPortSingle port ports = case port ^. Port.portId of
+    OutPortId All -> countPorts ports == 1
+    _             -> False
 
 isPortSelf :: Port -> Bool
-isPortSelf (Port _ (InPortId Self) _ _) = True
-isPortSelf _ = False
+isPortSelf port = case port ^. Port.portId of
+    InPortId Self -> True
+    _             -> False
 
 
 getConnectionPosition :: NodeId -> PortId -> NodeId -> PortId -> Command State (Maybe (Vector2 Double, Vector2 Double))

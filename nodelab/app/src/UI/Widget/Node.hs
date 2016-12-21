@@ -2,25 +2,25 @@
 
 module UI.Widget.Node where
 
-import qualified Data.Map.Lazy                as Map
-import           Luna.Studio.Prelude
+import qualified Data.Map.Lazy                   as Map
 import           Luna.Studio.Data.Vector
+import           Luna.Studio.Prelude
 
-import           Data.Aeson                   (toJSON)
-import           GHCJS.Marshal                (toJSVal)
-import           GHCJS.Marshal.Pure           (PFromJSVal (..), PToJSVal (..))
+import           Data.Aeson                      (toJSON)
+import           GHCJS.Marshal                   (toJSVal)
+import           GHCJS.Marshal.Pure              (PFromJSVal (..), PToJSVal (..))
 
 
+import           Luna.Studio.State.Collaboration (unColorId)
 import           Object.UITypes
 import           Object.Widget
-import qualified Object.Widget.Node           as Model
-import           Luna.Studio.State.Collaboration (unColorId)
+import qualified Object.Widget.Node              as Model
 
-import           UI.Generic                   (whenChanged)
-import qualified UI.Registry                  as UIR
-import           UI.Widget                    (UIContainer, UIWidget)
-import           UI.Widget                    (GenericWidget (..))
-import qualified UI.Widget                    as UIT
+import           UI.Generic                      (whenChanged)
+import qualified UI.Registry                     as UIR
+import           UI.Widget                       (UIContainer, UIWidget)
+import           UI.Widget                       (GenericWidget (..))
+import qualified UI.Widget                       as UIT
 
 newtype Node = Node { unNode :: JSVal } deriving (PToJSVal, PFromJSVal)
 
@@ -67,5 +67,6 @@ instance UIDisplayObject Model.Node where
         --TODO[react]
         -- whenChanged old model Model.isError       $ setError         node $ model ^. Model.isError
         whenChanged old model Model.zPos          $ setZPos          node $ model ^. Model.zPos
-        whenChanged old model Model.highlight     $ setHighlight     node $ model ^. Model.highlight
+        --TODO[react]
+        -- whenChanged old model Model.highlight     $ setHighlight     node $ model ^. Model.highlight
         whenChanged old model Model.collaboration $ setCollaboration node $ model ^. Model.collaboration

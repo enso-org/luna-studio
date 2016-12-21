@@ -97,10 +97,12 @@ showHidePortLabels show wid = do
 
 onMouseOver, onMouseOut :: WidgetId -> Command Global.State ()
 onMouseOver wid = inRegistry $ do
-    UICmd.update_ wid $ Model.highlight .~ True
+    --TODO[react]
+    -- UICmd.update_ wid $ Model.highlight .~ True
     showHidePortLabels True wid
 onMouseOut  wid = inRegistry $ do
-    UICmd.update_ wid $ Model.highlight .~ False
+    --TODO[react]
+    -- UICmd.update_ wid $ Model.highlight .~ False
     showHidePortLabels False wid
 
 widgetHandlers :: UIHandlers Global.State
