@@ -1,5 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
-module Luna.Studio.React.View.DataFrame where
+module Luna.Studio.React.View.Visualization.DataFrame where
 
 import qualified Data.Text.Lazy                       as Text
 import           React.Flux
@@ -7,7 +7,6 @@ import           React.Flux
 import           Luna.Studio.Prelude
 import           Luna.Studio.React.Model.DataFrame    (DataFrame)
 import qualified Luna.Studio.React.Model.DataFrame    as DataFrame
-import           Luna.Studio.React.View.ForeignObject (foreignObject_)
 
 
 

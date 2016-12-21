@@ -5,13 +5,13 @@
 
 module Object.Widget.List where
 
-import           Data.Aeson          (ToJSON)
-import           Luna.Studio.Prelude   hiding (Choice)
+import           Data.Aeson                       (ToJSON)
 import           Luna.Studio.Data.Vector
+import           Luna.Studio.Prelude              hiding (Choice)
 
-import           Object.LunaValue
+import           Luna.Studio.React.View.LunaValue
 import           Object.Widget
-import           Object.Widget.Group (Group (..))
+import           Object.Widget.Group              (Group (..))
 
 data List = List { _position    :: Vector2 Double
                  , _size        :: Vector2 Double

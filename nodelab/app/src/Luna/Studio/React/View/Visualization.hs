@@ -25,9 +25,9 @@ import           Luna.Studio.React.Model.DataFrame (DataFrame)
 import qualified Luna.Studio.React.Model.DataFrame as DataFrame
 import           Luna.Studio.React.Model.Node      (Node)
 import qualified Luna.Studio.React.Model.Node      as Node
-import           Luna.Studio.React.View.DataFrame  (dataFrame_)
-import           Luna.Studio.React.View.Graphics   (graphics_)
-import           Luna.Studio.React.View.Image      (image_)
+import           Luna.Studio.React.View.Visualization.DataFrame  (dataFrame_)
+import           Luna.Studio.React.View.Visualization.Graphics   (graphics_)
+import           Luna.Studio.React.View.Visualization.Image      (image_)
 import qualified Object.Widget.Plots.Image         as Image
 import qualified Style.Layout                      as Style
 import qualified UI.Instances                      ()

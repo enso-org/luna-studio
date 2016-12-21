@@ -21,12 +21,12 @@ data Port = Port { _portRef     :: AnyPortRef
 makeLenses ''Port
 instance ToJSON Port
 
-instance IsDisplayObject Port where
-    widgetPosition = lens (\_ -> Vector2 0.0 0.0) (error "Port has no position setter")
-    widgetSize     = lens get set where
-        get _      = Vector2 0.0 0.0
-        set w _    = w
-    widgetVisible  = to $ const True
+-- instance IsDisplayObject Port where
+--     widgetPosition = lens (\_ -> Vector2 0.0 0.0) (error "Port has no position setter")
+--     widgetSize     = lens get set where
+--         get _      = Vector2 0.0 0.0
+--         set w _    = w
+--     widgetVisible  = to $ const True
 
 -- TODO[react]: Should be removed
 -- angle :: Getter Port Double
