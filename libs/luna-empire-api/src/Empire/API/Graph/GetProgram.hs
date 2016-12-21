@@ -1,7 +1,6 @@
 module Empire.API.Graph.GetProgram where
 
 import           Data.Binary                   (Binary)
-import           Data.Text.Lazy                (Text)
 import           Prologue
 
 import           Empire.API.Data.Breadcrumb    (Breadcrumb, BreadcrumbItem, Named)

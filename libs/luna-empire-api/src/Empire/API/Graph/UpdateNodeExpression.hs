@@ -2,7 +2,6 @@ module Empire.API.Graph.UpdateNodeExpression where
 
 import           Data.Binary                   (Binary)
 import           Prologue
-import qualified Data.Text.Lazy                as Text
 
 import           Empire.API.Data.GraphLocation (GraphLocation)
 import           Empire.API.Data.Node          (NodeId, Node)

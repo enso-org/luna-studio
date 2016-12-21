@@ -2,7 +2,6 @@ module Empire.API.Graph.NodeResultUpdate where
 
 import           Prologue                      hiding (TypeRep)
 import           Data.Binary                   (Binary)
-import           Data.Text.Lazy                (Text)
 
 import qualified Empire.API.Data.DefaultValue  as DV (Value)
 import           Empire.API.Data.GraphLocation (GraphLocation)

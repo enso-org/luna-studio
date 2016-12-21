@@ -35,8 +35,6 @@ import qualified Data.IntMap                   as IntMap
 import           Data.List                     as List (last, sort)
 import qualified Data.Map                      as Map
 import           Data.Maybe                    (catMaybes)
-import           Data.Text.Lazy                (Text)
-import qualified Data.Text.Lazy                as Text
 import           Data.Traversable              (forM)
 import qualified Data.UUID                     as UUID
 import qualified Data.UUID.V4                  as UUID (nextRandom)
@@ -97,7 +95,7 @@ addNode loc uuid expr meta = withTC loc False $ addNodeNoTC loc uuid expr meta
 addNodeNoTC :: GraphLocation -> NodeId -> Text -> NodeMeta -> Command Graph Node
 addNodeNoTC loc uuid expr meta = do
     newNodeName <- generateNodeName
-    (parsedRef, refNode) <- zoom Graph.ast $ AST.addNode uuid newNodeName (Text.unpack expr)
+    (parsedRef, refNode) <- zoom Graph.ast $ AST.addNode uuid newNodeName (convert expr)
     parsedIsLambda <- zoom Graph.ast $ AST.isLambda parsedRef
     zoom Graph.ast $ AST.writeMeta refNode meta
     Graph.nodeMapping . at uuid ?= Graph.MatchNode refNode
@@ -118,7 +116,7 @@ addPersistentNode :: Node -> Command Graph NodeId
 addPersistentNode n = case n ^. Node.nodeType of
     Node.ExpressionNode expr -> do
         let newNodeId = n ^. Node.nodeId
-        (parsedRef, refNode) <- zoom Graph.ast $ AST.addNode newNodeId (Text.unpack $ n ^. Node.name) (Text.unpack expr)
+        (parsedRef, refNode) <- zoom Graph.ast $ AST.addNode newNodeId (convert $ n ^. Node.name) (convert expr)
         zoom Graph.ast $ AST.writeMeta refNode (n ^. Node.nodeMeta)
         Graph.nodeMapping . at newNodeId ?= Graph.MatchNode refNode
         lambdaUUID <- liftIO $ UUID.nextRandom
@@ -266,7 +264,7 @@ decodeLocation loc@(GraphLocation _ _ crumbs) = withGraph loc $ GraphBuilder.dec
 renameNode :: GraphLocation -> NodeId -> Text -> Empire ()
 renameNode loc nid name = withTC loc False $ do
     vref <- GraphUtils.getASTVar nid
-    zoom Graph.ast $ AST.renameVar vref (Text.unpack name)
+    zoom Graph.ast $ AST.renameVar vref (convert name)
 
 dumpGraphViz :: GraphLocation -> Empire ()
 dumpGraphViz loc = withGraph loc $ do
