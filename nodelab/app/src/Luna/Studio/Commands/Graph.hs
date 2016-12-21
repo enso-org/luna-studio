@@ -102,7 +102,7 @@ updateNodeZOrder = do
 --                                                                  || (conn ^. Connection.dst . PortRef.dstNodeId) `Set.member` nodes') ]
 --     mapM_ updateConnection connectionsToUpdate
 --
--- lineEndPos :: Vector2 Double -> Vector2 Double -> Double -> Maybe PortModel.Port -> Vector2 Double
+-- lineEndPos :: Position -> Position -> Double -> Maybe PortModel.Port -> Position
 -- lineEndPos node1Pos node2Pos radius (Just port) = moveByAngle node1Pos radius portAngle' where
 --     portAngle   = port ^. PortModel.angle
 --     portCount   = port ^. PortModel.portCount
@@ -138,8 +138,8 @@ updateNodeZOrder = do
 --         ConnectionModel.visible .= visible
 --         ConnectionModel.color   .= color
 --
--- moveByAngle :: Vector2 Double -> Double -> Angle -> Vector2 Double
--- moveByAngle (Vector2 x y) radius angle = Vector2 (x + radius * cos angle) (y + radius * sin angle)
+-- moveByAngle :: Position -> Double -> Angle -> Position
+-- moveByAngle (Position x y) radius angle = Position (x + radius * cos angle) (y + radius * sin angle)
 --
 -- normalPortRadius :: Double
 -- normalPortRadius = 22.0

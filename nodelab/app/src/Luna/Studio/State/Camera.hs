@@ -6,8 +6,8 @@ module Luna.Studio.State.Camera where
 -- import           Luna.Studio.Data.Vector
 --
 --
--- data DragHistory =  PanDragHistory  { _panPreviousPos :: Vector2 Int }
---                  | ZoomDragHistory  { _zoomPreviousPos :: Vector2 Int
+-- data DragHistory =  PanDragHistory  { _panPreviousPos :: Position }
+--                  | ZoomDragHistory  { _zoomPreviousPos :: Position
 --                                     , _zoomFPScreen    :: Vector2 Int
 --                                     , _zoomFPWorkspace :: Vector2 Double }
 --                  deriving (Eq, Show, Generic)
@@ -36,12 +36,12 @@ module Luna.Studio.State.Camera where
 -- instance Default State where
 --     def = State def def
 --
--- glToWorkspace :: Camera -> Vector2 Double -> Vector2 Double
+-- glToWorkspace :: Camera -> Position -> Position
 -- glToWorkspace (Camera _ _ pan factor) (Vector2 xGl yGl) = Vector2
 --     (xGl / factor + pan ^. x)
 --     (yGl / factor + pan ^. y)
 --
--- screenToGl :: Vector2 Int -> Vector2 Int -> Vector2 Double
+-- screenToGl :: Vector2 Int -> Position -> Position
 -- screenToGl (Vector2 screenSizeX screenSizeY) (Vector2 x y) = Vector2
 --     (fromIntegral x - (fromIntegral screenSizeX) / 2.0)
 --     (fromIntegral y - (fromIntegral screenSizeY) / 2.0)
@@ -55,16 +55,16 @@ module Luna.Studio.State.Camera where
 --     factor <- use $ camera . factor
 --     return $ (/ factor) . fromIntegral <$> delta
 --
--- screenToWorkspace :: Camera -> Vector2 Int -> Vector2 Double
+-- screenToWorkspace :: Camera -> Position -> Position
 -- screenToWorkspace camera pos =
 --     glToWorkspace camera $ screenToGl (camera ^. screenSize) pos
 --
--- screenToWorkspaceM :: Vector2 Int -> Command State (Vector2 Double)
+-- screenToWorkspaceM :: Position -> Command State (Position)
 -- screenToWorkspaceM pos = do
 --     camera <- use camera
 --     return $ screenToWorkspace camera pos
 --
--- workspaceToScreen :: Vector2 Double -> Command State (Vector2 Int)
+-- workspaceToScreen :: Position -> Command State (Position)
 -- workspaceToScreen (Vector2 px py) = do
 --     screenSize' <- use $ camera . screenSize
 --     pan'        <- use $ camera . pan

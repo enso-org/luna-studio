@@ -21,7 +21,7 @@ import qualified Empire.API.Data.Node               as Node
 import qualified Event.Mouse                        as Mouse
 import qualified JS.Camera                          as JS
 import           Luna.Studio.Commands.Command       (Command, performIO)
-import           Luna.Studio.Data.Vector
+import           Luna.Studio.Data.Vector            (Position, Vector2 (Vector2))
 import           Luna.Studio.Prelude
 import qualified Luna.Studio.React.Model.NodeEditor as NodeEditor
 import qualified Luna.Studio.React.Store            as Store
@@ -66,14 +66,14 @@ import qualified Luna.Studio.State.Graph            as Graph
 --     factor <- use $ Camera.camera . Camera.factor
 --     setZoom $ factor / zoomFactorStep
 --
--- wheelZoom :: Vector2 Int -> Vector2 Double -> Command Camera.State ()
+-- wheelZoom :: Position -> Vector2 Double -> Command Camera.State ()
 -- wheelZoom pos delta = do
 --     camera         <- use $ Camera.camera
 --     let delta'      = (- delta ^. x - delta ^. y) / wheelZoomSpeed
 --         workspace   = Camera.screenToWorkspace camera pos
 --     fixedPointZoom pos workspace delta'
 --
--- fixedPointZoom :: Vector2 Int -> Vector2 Double -> Double -> Command Camera.State ()
+-- fixedPointZoom :: Position -> Position -> Double -> Command Camera.State ()
 -- fixedPointZoom fpScreen fpWorkspace delta = do
 --     oldFactor           <- use $ Camera.camera . Camera.factor
 --

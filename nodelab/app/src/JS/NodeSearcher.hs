@@ -6,7 +6,7 @@ module JS.NodeSearcher
     ) where
 
 import           Data.JSString.Text             (lazyTextToJSString)
-import           Luna.Studio.Data.Vector
+import           Luna.Studio.Data.Vector        (Position, x, y)
 import           Luna.Studio.Prelude
 
 import           Data.Aeson                     (toJSON)
@@ -20,7 +20,7 @@ import           Text.ScopeSearcher.QueryResult (Highlight (..), QueryResult (..
 foreign import javascript safe "require('node_searcher').create($1, $2, $3, $4, $5)"
     initNodeSearcher' :: JSString -> JSVal -> Double -> Double -> Bool -> IO ()
 
-initNodeSearcher :: Text -> Maybe NodeId -> Vector2 Double -> Bool -> IO ()
+initNodeSearcher :: Text -> Maybe NodeId -> Position -> Bool -> IO ()
 initNodeSearcher expr nodeId pos command = do
     nodeId' <- toJSVal $ toJSON nodeId
     initNodeSearcher' (lazyTextToJSString expr) nodeId' (pos ^. x) (pos ^. y) command

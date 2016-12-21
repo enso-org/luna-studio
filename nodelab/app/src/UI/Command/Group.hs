@@ -2,21 +2,21 @@
 
 module UI.Command.Group where
 
+import           Luna.Studio.Data.Vector         (Position, Vector2 (Vector2), x, y)
 import           Luna.Studio.Prelude
-import           Luna.Studio.Data.Vector
 
-import           Object.Widget                (WidgetId, widgetPosition, widgetSize)
 import           Luna.Studio.Commands.Command    (Command)
 import qualified Luna.Studio.Commands.UIRegistry as UICmd
 import qualified Luna.Studio.State.UIRegistry    as UIRegistry
+import           Object.Widget                   (WidgetId, widgetPosition, widgetSize)
 
-import           Style.Types                  (Padding (..))
+import           Style.Types                     (Padding (..))
 
 maximum' :: [Double] -> Double
 maximum' [] = 0.0
 maximum' xs = maximum xs
 
-getFarEdge :: Getter (Vector2 Double) Double -> WidgetId -> Command UIRegistry.State Double
+getFarEdge :: Getter (Position) Double -> WidgetId -> Command UIRegistry.State Double
 getFarEdge getter wid = do
     offset <- UICmd.get' wid $ widgetPosition . getter
     size   <- UICmd.get' wid $ widgetSize     . getter

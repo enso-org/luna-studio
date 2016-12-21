@@ -1,13 +1,13 @@
 module Object.Widget.Graphics where
 
-import           Data.Aeson        (ToJSON)
-import           Luna.Studio.Prelude hiding (Item)
-import           Luna.Studio.Data.Vector
+import           Data.Aeson              (ToJSON)
+import           Luna.Studio.Data.Vector (Position, Vector2)
+import           Luna.Studio.Prelude     hiding (Item)
 
 import           Object.Widget
-import           Object.Widget.Label (TextAlignment)
+import           Object.Widget.Label     (TextAlignment)
 
-data Box = Box { _boxPosition :: Vector2 Double
+data Box = Box { _boxPosition :: Position
                } deriving (Eq, Show, Typeable, Generic)
 
 data Item = Item { _shader :: Text
@@ -16,13 +16,13 @@ data Item = Item { _shader :: Text
                  , _boxOffset :: Vector2 Double
                  } deriving (Eq, Show, Typeable, Generic)
 
-data Label = Label { _labelPosition :: Vector2 Double
+data Label = Label { _labelPosition :: Position
                    , _fontSize      :: Double
                    , _textAlignment :: TextAlignment
                    , _text          :: Text
                    } deriving (Eq, Show, Typeable, Generic)
 
-data Graphics = Graphics { _position :: Vector2 Double
+data Graphics = Graphics { _position :: Position
                          , _size     :: Vector2 Double
                          , _items    :: [Item]
                          , _labels   :: [Label]

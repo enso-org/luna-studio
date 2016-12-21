@@ -8,22 +8,22 @@ module Object.Widget (
     module Object.UITypes
 ) where
 
-import           Data.Aeson                (ToJSON, object, toJSON, (.=))
-import           Data.HMap.Lazy            (HTMap)
-import           Data.IntMap.Lazy          (IntMap)
-import           Event.Event               (JSState)
-import           Event.Keyboard            (KeyMods)
-import qualified Event.Keyboard            as Keyboard
-import           Event.Mouse               (MouseButton)
-import qualified Event.Mouse               as Mouse
-import           Event.Widget              (Payload)
-import           Object.UITypes
+import           Data.Aeson                   (ToJSON, object, toJSON, (.=))
+import           Data.HMap.Lazy               (HTMap)
+import           Data.IntMap.Lazy             (IntMap)
+import           Event.Event                  (JSState)
+import           Event.Keyboard               (KeyMods)
+import qualified Event.Keyboard               as Keyboard
+import           Event.Mouse                  (MouseButton)
+import qualified Event.Mouse                  as Mouse
+import           Event.Widget                 (Payload)
 import           Luna.Studio.Commands.Command (Command)
+import           Object.UITypes
 -- import           Luna.Studio.State.Camera     (Camera)
 -- import qualified Luna.Studio.State.Camera     as Camera
 import           Luna.Studio.Data.CtxDynamic
-import           Luna.Studio.Prelude         hiding (children, (.=))
-import           Luna.Studio.Data.Vector              (Vector2 (Vector2))
+import           Luna.Studio.Data.Vector      (Position, Vector2 (Vector2))
+import           Luna.Studio.Prelude          hiding (children, (.=))
 
 
 type DisplayObject = CtxDynamic DisplayObjectClass
@@ -49,7 +49,6 @@ data WidgetFile b = WidgetFile { _objectId :: WidgetId
                                , _handlers :: HTMap
                                } deriving (Generic)
 
-type Position = Vector2 Double
 type Size     = Vector2 Double
 
 class IsDisplayObject a where
@@ -114,9 +113,9 @@ data DragState = DragState { _widgetId     :: WidgetId
                            , _scene        :: SceneType
                            , _button       :: MouseButton
                            , _keyMods      :: Keyboard.KeyMods
-                           , _startPos     :: Vector2 Double
-                           , _previousPos  :: Vector2 Double
-                           , _currentPos   :: Vector2 Double
+                           , _startPos     :: Position
+                           , _previousPos  :: Position
+                           , _currentPos   :: Position
                            } deriving (Show, Eq, Generic)
 
 type WidgetMap = IntMap (WidgetFile DisplayObject)
@@ -142,7 +141,7 @@ sceneToLocal (Vector2 x y) [ aa, ab, _ , _
                                y' = ab * x + bb * y + db
 
 --TODO[react]: Why this is even here???
--- screenToLocal :: Camera -> Vector2 Int -> [Double]  -> Vector2 Double
+-- screenToLocal :: Camera -> Position -> [Double]  -> Position
 -- screenToLocal cam mousePos widgetMatrix = sceneToLocal workspacePos widgetMatrix where
 --     workspacePos = Camera.screenToWorkspace cam mousePos
 

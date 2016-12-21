@@ -63,7 +63,7 @@ nodeToNodeAngle srcX srcY dstX dstY
     | srcX < dstX = atan ((srcY - dstY) / (srcX - dstX))
     | otherwise   = atan ((srcY - dstY) / (srcX - dstX)) + pi
 
-connectionSrc :: Vector2 Double -> Vector2 Double -> Int -> Int -> IsSingle -> Vector2 Double
+connectionSrc :: Position -> Position -> Int -> Int -> IsSingle -> Position
 connectionSrc (Vector2 x1 y1) (Vector2 x2 y2) _ _ True =
     let t    = nodeToNodeAngle x1 y1 x2 y2
         srcX = portRadius * cos(t) + x1
@@ -78,7 +78,7 @@ connectionSrc (Vector2 x1 y1) (Vector2 x2 y2) num numOfPorts False =
         srcY   = portRadius * sin(t) + y1
     in  Vector2 srcX srcY
 
-connectionDst :: Vector2 Double -> Vector2 Double -> Int -> Int -> IsSelf -> Vector2 Double
+connectionDst :: Position -> Position -> Int -> Int -> IsSelf -> Position
 connectionDst (Vector2 _  _ ) (Vector2 x2 y2) _ _ True = Vector2 x2 y2
 -- FIXME: implement port limits
 connectionDst (Vector2 x1 y1) (Vector2 x2 y2) num numOfPorts False =
@@ -130,7 +130,7 @@ isPortSelf port = case port ^. Port.portId of
     _             -> False
 
 
-getConnectionPosition :: NodeId -> PortId -> NodeId -> PortId -> Command State (Maybe (Vector2 Double, Vector2 Double))
+getConnectionPosition :: NodeId -> PortId -> NodeId -> PortId -> Command State (Maybe (Position, Position))
 getConnectionPosition srcNodeId srcPortId dstNodeId dstPortId = do
     maySrcNode <- getNode srcNodeId
     mayDstNode <- getNode dstNodeId
@@ -148,7 +148,7 @@ getConnectionPosition srcNodeId srcPortId dstNodeId dstPortId = do
             return $ Just (srcConnPos, dstConnPos)
         _ -> return Nothing
 
-getCurrentConnectionSrcPosition :: NodeId -> PortId -> Vector2 Double -> Command State (Maybe (Vector2 Double))
+getCurrentConnectionSrcPosition :: NodeId -> PortId -> Position -> Command State (Maybe Position)
 getCurrentConnectionSrcPosition srcNodeId srcPortId dstPos = do
     maySrcNode <- getNode srcNodeId
     maySrcPort <- getPort $ toAnyPortRef srcNodeId srcPortId

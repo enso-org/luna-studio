@@ -1,3 +1,4 @@
+{-# LANGUAGE LambdaCase          #-}
 {-# LANGUAGE RankNTypes          #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
@@ -31,18 +32,19 @@ module Luna.Studio.Commands.UIRegistry
     , update_
     ) where
 
-import           Data.HMap.Lazy            (HTMap, TypeKey (..))
-import qualified Data.HMap.Lazy            as HMap
-import           Luna.Studio.Prelude         hiding (children, lookup)
+import           Data.HMap.Lazy               (HTMap, TypeKey (..))
+import qualified Data.HMap.Lazy               as HMap
 import           Luna.Studio.Data.Vector
+import           Luna.Studio.Prelude          hiding (children, lookup)
 
-import qualified JS.Cursor                 as Cursor
-import           Object.Widget             (CompositeWidget, objectId, createWidget, fromWidgetId, WidgetId, widget, widgetSize, widgetPosition, resizeWidget, updateWidget)
-import qualified Object.Widget as Widget
+import qualified JS.Cursor                    as Cursor
 import           Luna.Studio.Commands.Command (Command, performIO)
 import qualified Luna.Studio.State.Global     as Global
 import qualified Luna.Studio.State.UIRegistry as UIRegistry
-import qualified UI.Generic                as UI
+import           Object.Widget                (CompositeWidget, WidgetId, createWidget, fromWidgetId, objectId, resizeWidget, updateWidget,
+                                               widget, widgetPosition, widgetSize)
+import qualified Object.Widget                as Widget
+import qualified UI.Generic                   as UI
 
 -- TODO: extract duplicated code in two functions beneath
 register :: (CompositeWidget a, Widget.DisplayObjectClass a) => WidgetId -> a -> HTMap -> Command UIRegistry.State WidgetId
@@ -95,10 +97,10 @@ tryUpdate widgetId fun = do
 update_ :: (Eq a, CompositeWidget a, Widget.DisplayObjectClass a) => WidgetId -> (a -> a) -> Command UIRegistry.State ()
 update_ widgetId fun = void $ update widgetId fun
 
-move :: WidgetId -> Vector2 Double -> Command UIRegistry.State ()
-move widgetId vec = do
-    UIRegistry.widgets . ix (fromWidgetId widgetId) . widget . widgetPosition .= vec
-    UI.updatePosition' widgetId vec
+move :: WidgetId -> Position -> Command UIRegistry.State ()
+move widgetId pos = do
+    UIRegistry.widgets . ix (fromWidgetId widgetId) . widget . widgetPosition .= pos
+    UI.updatePosition' widgetId pos
 
 moveY :: WidgetId -> Double -> Command UIRegistry.State ()
 moveY widgetId ny = do

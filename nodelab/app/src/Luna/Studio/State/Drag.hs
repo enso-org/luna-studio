@@ -2,16 +2,16 @@ module Luna.Studio.State.Drag where
 
 import           Data.Aeson               (ToJSON)
 import           Data.Map                 (Map)
+import           Luna.Studio.Data.Vector  (Position)
 import           Luna.Studio.Prelude
-import           Luna.Studio.Data.Vector
 
 import           Empire.API.Data.Node     (NodeId)
 import           Empire.API.JSONInstances ()
 
 
-data DragHistory = DragHistory { _dragStartPos  :: Vector2 Double
+data DragHistory = DragHistory { _dragStartPos  :: Position
                                , _draggedNodeId :: NodeId
-                               , _nodesStartPos :: Map NodeId (Vector2 Double)
+                               , _nodesStartPos :: Map NodeId (Position)
                                } deriving (Eq, Show, Generic)
 
 data State = State { _history :: Maybe DragHistory

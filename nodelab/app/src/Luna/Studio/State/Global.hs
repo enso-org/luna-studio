@@ -3,7 +3,7 @@
 module Luna.Studio.State.Global where
 
 import           Data.Word                            (Word8)
-import           Luna.Studio.Data.Vector
+import           Luna.Studio.Data.Vector              (Position, Vector2 (Vector2))
 import           Luna.Studio.Prelude
 
 import           Data.Aeson                           (ToJSON, toJSON)
@@ -44,7 +44,7 @@ import qualified Luna.Studio.State.UIRegistry         as UIRegistry
 
 foreign import javascript safe "{}" defJsState :: Event.JSState
 
-data State = State { _mousePos           :: Vector2 Double
+data State = State { _mousePos           :: Position
                    , _graph              :: Graph.State
                   --  , _camera             :: Camera.State
                    , _multiSelection     :: MultiSelection.State

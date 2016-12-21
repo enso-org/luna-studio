@@ -2,7 +2,7 @@ module Luna.Studio.Commands.Node.Register
     ( registerNode
     ) where
 
-import           Luna.Studio.Data.Vector              (Vector2, toTuple)
+import           Luna.Studio.Data.Vector              (Position, toTuple)
 import           Luna.Studio.Prelude
 
 import qualified Empire.API.Data.NodeMeta             as NodeMeta
@@ -17,7 +17,7 @@ import qualified Object.Widget.Node                   as UINode
 
 
 
-registerNode :: Vector2 Double -> Text -> Command State ()
+registerNode :: Position -> Text -> Command State ()
 registerNode nodePos expr = do
     let nodePosSnapped = snap nodePos
         nodeMeta = def & NodeMeta.position .~ toTuple nodePosSnapped

@@ -3,7 +3,7 @@ module Object.Widget.Connection where
 import           Data.Aeson                 (ToJSON)
 import           Empire.API.Data.Connection (ConnectionId)
 import           Empire.API.Data.PortRef    (AnyPortRef)
-import           Luna.Studio.Data.Vector
+import           Luna.Studio.Data.Vector    (Position)
 import           Luna.Studio.Prelude        hiding (from, set, to)
 import qualified Luna.Studio.Prelude        as Prelude
 import           Object.Widget
@@ -12,8 +12,8 @@ data ConnectionHighlight = None | SrcHighlight | DstHighlight deriving (Eq, Show
 
 data Connection = Connection { _connectionId :: ConnectionId
                              , _visible      :: Bool
-                             , _from         :: Vector2 Double
-                             , _to           :: Vector2 Double
+                             , _from         :: Position
+                             , _to           :: Position
                              , _arrow        :: Bool
                              , _color        :: Int
                              , _highlight    :: ConnectionHighlight
@@ -35,8 +35,8 @@ instance IsDisplayObject Connection where
 --TODO[react]: Find out if this can be treated as regular connection
 data CurrentConnection = CurrentConnection { _srcPortRef          :: AnyPortRef
                                            , _currentVisible      :: Bool
-                                           , _currentFrom         :: Vector2 Double
-                                           , _currentTo           :: Vector2 Double
+                                           , _currentFrom         :: Position
+                                           , _currentTo           :: Position
                                            , _currentArrow        :: Bool
                                            , _currentColor        :: Int
                                            } deriving (Eq, Show, Typeable, Generic)

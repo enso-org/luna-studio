@@ -2,7 +2,7 @@ module Luna.Studio.Action.Navigation where
 
 import qualified Data.HashMap.Strict          as HashMap
 
-import           Luna.Studio.Data.Vector
+import           Luna.Studio.Data.Vector      (Position, Vector2 (Vector2), lengthSquared, magnitude, x, y)
 import           Luna.Studio.Prelude
 
 import           React.Flux                   (KeyboardEvent)
@@ -25,7 +25,6 @@ import qualified Luna.Studio.React.Store      as Store
 import           Luna.Studio.State.Global     (State)
 import qualified Luna.Studio.State.Global     as Global
 import qualified Luna.Studio.State.Graph      as Graph
-import           Object.Widget                (Position)
 import qualified Object.Widget.Node           as Model
 
 
@@ -120,7 +119,7 @@ go findMost findNodesOnSide findNearest = do
 closenestPow :: Double
 closenestPow = 2.5
 
-axisDistanceRight, axisDistanceLeft, axisDistanceDown, axisDistanceUp :: Vector2 Double -> Double
+axisDistanceRight, axisDistanceLeft, axisDistanceDown, axisDistanceUp :: Position -> Double
 axisDistanceRight (Vector2 x' _) =  x'
 axisDistanceLeft  (Vector2 x' _) = -x'
 axisDistanceDown  (Vector2 _ y') =  y'
@@ -132,7 +131,7 @@ findNearestLeft  pos = maximumBy (compare `on` closenest pos axisDistanceLeft)
 findNearestDown  pos = maximumBy (compare `on` closenest pos axisDistanceDown)
 findNearestUp    pos = maximumBy (compare `on` closenest pos axisDistanceUp)
 
-closenest :: Position -> (Vector2 Double -> Double) -> WRef Node -> Double
+closenest :: Position -> (Position -> Double) -> WRef Node -> Double
 closenest pos axisDistance wf = axisDist / (dist ** closenestPow) where
     pos' = wf ^. widget . Model.position
     vect = pos' - pos

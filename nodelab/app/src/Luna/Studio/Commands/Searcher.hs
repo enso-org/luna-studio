@@ -4,7 +4,7 @@ module Luna.Studio.Commands.Searcher where
 
 import qualified Data.Map                             as Map
 import qualified Data.Text.Lazy                       as Text
-import           Luna.Studio.Data.Vector
+import           Luna.Studio.Data.Vector              (Position)
 import           Luna.Studio.Prelude
 import qualified Text.ScopeSearcher.QueryResult       as Result
 
@@ -51,7 +51,7 @@ open = do
     openWith def =<< use Global.mousePos
     -- performIO $ UI.initNodeSearcher "" Nothing (nsPos + offset) False
 
-openWith :: Maybe NodeId -> Vector2 Double -> Command State ()
+openWith :: Maybe NodeId -> Position -> Command State ()
 openWith nodeId pos = do
     GA.sendEvent GA.NodeSearcher
     Global.withSearcher $ Store.modifyM_ $ do
@@ -93,12 +93,12 @@ accept = do
         Just nodeId-> Node.updateExpression nodeId expression
     close
 
-openEdit :: Text -> NodeId -> Vector2 Double -> Command State ()
+openEdit :: Text -> NodeId -> Position -> Command State ()
 openEdit expr nodeId pos = do
     openWith (Just nodeId) pos
     querySearch expr
 
--- position :: Command State (Vector2 Double, Vector2 Int)
+-- position :: Command State (Position, Position)
 -- position = do
 --     mousePos <- use Global.mousePos
 --     mousePos' <- zoom Global.camera $ Camera.screenToWorkspaceM mousePos
@@ -110,7 +110,7 @@ openEdit expr nodeId pos = do
 --     nsPos' <- zoom Global.camera $ Camera.screenToWorkspaceM nsPos
 --     return (nsPos', nsPos)
 --
--- ensureNSVisible :: Command State (Vector2 Double, Vector2 Int)
+-- ensureNSVisible :: Command State (Position, Position)
 -- ensureNSVisible = do
 --     (workspacePos, screenPos) <- position
 --     screenSize <- use $ Global.camera . Camera.camera . Camera.screenSize

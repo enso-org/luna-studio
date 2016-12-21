@@ -1,11 +1,11 @@
 module Object.Widget.Toggle where
 
-import            Luna.Studio.Prelude
-import            Luna.Studio.Data.Vector
-import            Object.Widget
-import Data.Aeson (ToJSON)
+import           Data.Aeson              (ToJSON)
+import           Luna.Studio.Data.Vector (Position, Vector2)
+import           Luna.Studio.Prelude
+import           Object.Widget
 
-data Toggle = Toggle { _position :: Vector2 Double
+data Toggle = Toggle { _position :: Position
                      , _size     :: Vector2 Double
                      , _label    :: Text
                      , _value    :: Bool

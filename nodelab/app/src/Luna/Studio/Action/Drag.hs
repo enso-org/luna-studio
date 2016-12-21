@@ -17,7 +17,7 @@ import           Luna.Studio.Commands.Command         (Command)
 import           Luna.Studio.Commands.Graph.Connect   (updateConnectionsForNodes)
 import           Luna.Studio.Commands.Graph.Selection (selectNodes, selectedNodes)
 import           Luna.Studio.Commands.Node.Snap       (snap)
-import           Luna.Studio.Data.Vector
+import           Luna.Studio.Data.Vector              (Position, toTuple)
 import           Luna.Studio.Event.Mouse
 import           Luna.Studio.Prelude
 import qualified Luna.Studio.React.Event.App          as App
@@ -40,7 +40,7 @@ toAction (UI (AppEvent  (App.MouseMove evt))) = Just $ handleMove (getMousePosit
 toAction _                                    = Nothing
 
 
-startDrag :: NodeId -> Vector2 Double -> Bool -> Command State ()
+startDrag :: NodeId -> Position -> Bool -> Command State ()
 startDrag nodeId coord snapped = do
     mayDraggedNodeRef <- Global.getNode nodeId
     withJust mayDraggedNodeRef $ \draggedNodeRef -> do
@@ -56,7 +56,7 @@ startDrag nodeId coord snapped = do
             else Global.drag . Drag.history ?= DragHistory coord nodeId nodesPos
 
 
-handleMove :: Vector2 Double -> Bool -> Command State ()
+handleMove :: Position -> Bool -> Command State ()
 handleMove coord snapped = do
     -- factor <- use $ Global.camera . Camera.camera . Camera.factor
     dragHistory <- use $ Global.drag . Drag.history
@@ -70,14 +70,14 @@ handleMove coord snapped = do
                         else deltaWs
         moveNodes $ Map.map (+shift') nodesPos
 
-moveNodes :: Map NodeId (Vector2 Double) -> Command State ()
+moveNodes :: Map NodeId Position -> Command State ()
 moveNodes nodesPos = do
     forM_ (Map.toList nodesPos) $ \(nodeId, pos) -> do
         Global.withNode nodeId $ mapM_ $ Store.modify_ $
             Model.position .~ pos
     updateConnectionsForNodes $ Map.keys nodesPos
 
-stopDrag :: Vector2 Double -> Command State ()
+stopDrag :: Position -> Command State ()
 stopDrag coord = do
     dragHistory <- use $ Global.drag . Drag.history
     withJust dragHistory $ \(DragHistory start nodeId _) -> do

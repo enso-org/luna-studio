@@ -1,15 +1,15 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Luna.Studio.React.View.Connection where
 
-import           Luna.Studio.Data.Vector
+import           Luna.Studio.Data.Vector            (Position, Vector2 (Vector2), x, y)
 import           Luna.Studio.Prelude
 import           React.Flux
 import qualified React.Flux                         as React
 
 import qualified Event.UI                           as UI
+import           Luna.Studio.Data.Angle             (Angle)
 import           Luna.Studio.Data.Color             (Color (Color))
 import           Luna.Studio.Data.HSL               (color')
-import           Luna.Studio.Data.Angle             (Angle)
 import           Luna.Studio.React.Model.Connection (Connection, CurrentConnection)
 import qualified Luna.Studio.React.Model.Connection as Connection
 import           Luna.Studio.React.Store            (Ref, dt)
@@ -63,7 +63,7 @@ currentConnection_ :: Ref CurrentConnection -> ReactElementM ViewEventHandler ()
 currentConnection_ connectionRef = React.view (currentConnection connectionRef) () mempty
 
 
-drawConnection_ :: Vector2 Double -> Vector2 Double -> Int -> ReactElementM ViewEventHandler ()
+drawConnection_ :: Position -> Position -> Int -> ReactElementM ViewEventHandler ()
 drawConnection_ (Vector2 srcX srcY) (Vector2 dstX dstY) color =
     let x1 = fromString $ showSvg $ srcX
         y1 = fromString $ showSvg $ srcY

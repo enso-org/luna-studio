@@ -12,7 +12,7 @@ import           Event.UI                           (UIEvent (AppEvent, NodeEven
 import qualified JS.GoogleAnalytics                 as GA
 import           Luna.Studio.Commands.Command       (Command)
 import           Luna.Studio.Commands.Graph.Connect (batchConnectNodes)
-import           Luna.Studio.Data.Vector
+import           Luna.Studio.Data.Vector            (Position, Vector2 (Vector2))
 import           Luna.Studio.Prelude
 import qualified Luna.Studio.React.Event.App        as App
 import qualified Luna.Studio.React.Event.Node       as Node
@@ -38,7 +38,7 @@ toAction (UI (NodeEvent (Node.EndConnection _ nodeId portId)))     = Just $ whil
 toAction _                                                         = Nothing
 
 
-startDragFromPort :: Vector2 Double -> NodeId -> PortId -> Command State ()
+startDragFromPort :: Position -> NodeId -> PortId -> Command State ()
 startDragFromPort mousePos nodeId portId = do
     maySrcPos <- getCurrentConnectionSrcPosition nodeId portId mousePos
     let portRef = toAnyPortRef nodeId portId
@@ -53,7 +53,7 @@ whileConnecting run = do
     mayCurrentConnectionRef <- Global.withNodeEditor $ Store.use NodeEditor.currentConnection
     withJust mayCurrentConnectionRef $ \currentConnectionRef -> run currentConnectionRef
 
-handleMove :: Vector2 Double -> Ref CurrentConnection -> Command State ()
+handleMove :: Position -> Ref CurrentConnection -> Command State ()
 handleMove mousePos connRef = flip Store.modifyM_ connRef $ ConnectionModel.currentTo .= mousePos
 
 stopDrag' :: Ref CurrentConnection -> Command State ()

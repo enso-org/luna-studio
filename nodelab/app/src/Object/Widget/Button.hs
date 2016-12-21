@@ -1,17 +1,17 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Object.Widget.Button where
 
-import Luna.Studio.Prelude
-import Luna.Studio.Data.Vector
+import           Luna.Studio.Data.Vector (Position, Vector2 (Vector2))
+import           Luna.Studio.Prelude
 
-import Object.Widget
-import Data.Aeson (ToJSON)
+import           Data.Aeson              (ToJSON)
+import           Object.Widget
 
-import Style.Types
-import qualified Style.Button as Style
-import qualified Object.Widget.Label as Label
+import qualified Object.Widget.Label     as Label
+import qualified Style.Button            as Style
+import           Style.Types
 
-data Button = Button { _position :: Vector2 Double
+data Button = Button { _position :: Position
                      , _size     :: Vector2 Double
                      , _label    :: Text
                      , _icon     :: Maybe Text
