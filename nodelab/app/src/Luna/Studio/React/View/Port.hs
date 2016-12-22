@@ -14,6 +14,7 @@ import           Luna.Studio.React.Model.Node  (Node)
 import           Luna.Studio.React.Store       (Ref, dispatch)
 import           Luna.Studio.React.View.Global
 import           Object.Widget.Port            (Port (..))
+import qualified Object.Widget.Port            as Port
 import           React.Flux                    hiding (view)
 import qualified React.Flux                    as React
 
@@ -32,11 +33,14 @@ port_ ref nodeId p numOfPorts isOnly = React.view (port ref nodeId numOfPorts is
 
 
 drawPort_ :: Ref Node -> NodeId -> Port -> Int -> Bool -> ReactElementM ViewEventHandler ()
-drawPort_ nodeRef nodeId (Port _ portId@(InPortId   Self         ) _) _          _     = drawPortSelf_   nodeRef nodeId portId
-drawPort_ nodeRef nodeId (Port _ portId@(OutPortId  All          ) _) _          True  = drawPortSingle_ nodeRef nodeId portId
-drawPort_ nodeRef nodeId (Port _ portId@(OutPortId  All          ) _) numOfPorts False = drawPortIO_     nodeRef nodeId portId 0 numOfPorts False
-drawPort_ nodeRef nodeId (Port _ portId@(InPortId  (Arg        i)) _) numOfPorts _     = drawPortIO_     nodeRef nodeId portId i numOfPorts True
-drawPort_ nodeRef nodeId (Port _ portId@(OutPortId (Projection i)) _) numOfPorts _     = drawPortIO_     nodeRef nodeId portId i numOfPorts False
+drawPort_ nodeRef nodeId port numOfPorts isOnly = do
+    let portId = port ^. Port.portId
+    case portId of
+        InPortId   Self          ->                drawPortSelf_   nodeRef nodeId portId
+        OutPortId  All           -> if isOnly then drawPortSingle_ nodeRef nodeId portId
+                                    else           drawPortIO_     nodeRef nodeId portId 0 numOfPorts False
+        InPortId  (Arg        i) ->                drawPortIO_     nodeRef nodeId portId i numOfPorts True
+        OutPortId (Projection i) ->                drawPortIO_     nodeRef nodeId portId i numOfPorts False
 
 
 drawPortSelf_ :: Ref Node -> NodeId -> PortId -> ReactElementM ViewEventHandler ()

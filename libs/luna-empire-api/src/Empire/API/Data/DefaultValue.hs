@@ -1,10 +1,13 @@
+{-# LANGUAGE DeriveAnyClass #-}
+
 module Empire.API.Data.DefaultValue where
 
-import           Data.Binary          (Binary)
-import           Data.Text.Lazy       as Text
+import           Control.DeepSeq (NFData)
+import           Data.Binary     (Binary)
+import           Data.Text.Lazy  as Text
 import           Prologue
 
-import qualified Graphics.API      as G
+import qualified Graphics.API    as G
 
 
 data Value = IntValue        Int
@@ -35,9 +38,9 @@ data Value = IntValue        Int
 
            | Graphics        G.Graphics
            | Lambda          String
-           deriving (Generic, Show, Eq)
+           deriving (Generic, Show, Eq, NFData)
 
-data PortDefault = Expression String | Constant Value deriving (Generic, Show, Eq)
+data PortDefault = Expression String | Constant Value deriving (Generic, Show, Eq, NFData)
 
 instance Binary Value
 instance Binary PortDefault

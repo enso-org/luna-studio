@@ -35,46 +35,46 @@ import qualified Style.Node                      as Style
 import qualified Style.Types                     as Style
 
 import qualified Empire.API.Data.DefaultValue    as DefaultValue
-import           Empire.API.Data.Node            (Node)
-import qualified Empire.API.Data.Node            as Node
-import           Empire.API.Data.Port            (InPort (..), InPort (..), OutPort (..), Port (..), PortId (..))
-import qualified Empire.API.Data.Port            as Port
-import           Empire.API.Data.PortRef         (AnyPortRef (..), toAnyPortRef)
+import qualified Empire.API.Data.Node            as NodeAPI
+import           Empire.API.Data.Port            (InPort (..), InPort (..), OutPort (..), PortId (..))
+import qualified Empire.API.Data.Port            as PortAPI
+import           Empire.API.Data.PortRef         (AnyPortRef (..), portId', toAnyPortRef)
 import qualified Empire.API.Data.ValueType       as ValueType
+import           Luna.Studio.React.Store         (Ref, dispatch)
+import           Object.Widget.Node              (Node)
+import qualified Object.Widget.Node              as Node
+import           Object.Widget.Port              (Port)
+import qualified Object.Widget.Port              as Port
 
 
 
 isLiteral :: Getter Node Bool
 isLiteral = to $ isLiteral' where
     isLiteral' node = not $ any isIn' portIds where
-        portIds = Map.keys $ node ^. Node.ports
+        portIds = map portId' $ Map.keys $ node ^. Node.ports
         isIn' :: PortId -> Bool
         isIn' (OutPortId _) = False
         isIn' (InPortId  _) = True
 
 
-portControl_ :: Node -> Port -> ReactElementM ViewEventHandler ()
-portControl_ node port =
+portControl_ :: Ref Node -> Node -> Port -> ReactElementM ViewEventHandler ()
+portControl_ ref node port =
     let portRef = toAnyPortRef nodeId $ port ^. Port.portId
         nodeId  = node ^. Node.nodeId
     in
     case port ^. Port.portId of
-        InPortId  (Arg _) -> inPortControl_ portRef port
-        OutPortId All     -> when (node ^. isLiteral) $ inPortControl_ portRef port
+        InPortId  (Arg _) -> inPortControl_ ref portRef port
+        OutPortId All     -> when (node ^. isLiteral) $ inPortControl_ ref portRef port
         _ -> return ()
 
-inPortControl_ :: AnyPortRef -> Port -> ReactElementM ViewEventHandler ()
-inPortControl_ portRef port = case port ^. Port.state of
-    Port.NotConnected    -> do
+inPortControl_ :: Ref Node -> AnyPortRef -> Port -> ReactElementM ViewEventHandler ()
+inPortControl_ ref portRef port = case port ^. Port.state of
+    PortAPI.NotConnected    -> do
         case port ^. Port.valueType . ValueType.toEnum of
             ValueType.Other -> return ()
             _               -> do
-                let group = Group.create & Group.style . Group.padding .~ Style.Padding 0.0 0.0 0.0 Style.setLabelOffsetX
                 -- groupId <- UICmd.register group (Layout.horizontalLayoutHandler 0.0)
-                let label  = Label.create Style.setLabelSize (Text.pack $ port ^. Port.name)
-                           & Label.position . x .~ Style.setLabelOffsetX
-                    button = Button.create Style.setButtonSize "not set"
-                    zeroValue = case port ^. Port.valueType . ValueType.toEnum of
+                let zeroValue = case port ^. Port.valueType . ValueType.toEnum of
                         ValueType.DiscreteNumber   -> DefaultValue.IntValue    def
                         ValueType.ContinuousNumber -> DefaultValue.DoubleValue def
                         ValueType.String           -> DefaultValue.StringValue def
@@ -82,16 +82,17 @@ inPortControl_ portRef port = case port ^. Port.state of
                         _                          -> undefined
                     handlers = addHandler (Button.ClickedHandler $ \_ -> BatchCmd.setDefaultValue portRef (DefaultValue.Constant $ zeroValue)
                         ) mempty
-
+                div_ [ "className" $= "label" ] $ elemString $ fromString $ port ^. Port.name
+                div_ [ "className" $= "value" ] $ button_ $ elemString "not set"
                 -- UICmd.register_ groupId label def
                 -- UICmd.register_ groupId button handlers
                 return ()
-    Port.Connected       -> do
+    PortAPI.Connected       -> do
         let widget = Label.create (Style.portControlSize & x -~ Style.setLabelOffsetX) (Text.pack $ (port ^. Port.name) <> " (connected)")
                    & Label.position . x .~ Style.setLabelOffsetX
         -- void $ UICmd.register widget def
         return ()
-    Port.WithDefault defVal -> void $ case port ^. Port.valueType . ValueType.toEnum of
+    PortAPI.WithDefault defVal -> void $ case port ^. Port.valueType . ValueType.toEnum of
         ValueType.DiscreteNumber -> do
             let label = port ^. Port.name
                 value = fromMaybe 0 $ defVal ^? DefaultValue._Constant . DefaultValue._IntValue
