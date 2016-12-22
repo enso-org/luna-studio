@@ -74,9 +74,9 @@ buildNodes = do
 type EdgeNodes = (API.Node, API.Node)
 
 buildEdgeNodes :: Command Graph (Maybe EdgeNodes)
-buildEdgeNodes = runASTOp getEdgePortMapping >>= \p -> case p of
+buildEdgeNodes = runASTOp $ getEdgePortMapping >>= \p -> case p of
     Just (inputPort, outputPort) -> do
-        inputEdge <- buildInputEdge inputPort
+        inputEdge  <- buildInputEdge inputPort
         outputEdge <- buildOutputEdge outputPort
         return $ Just (inputEdge, outputEdge)
     _ -> return Nothing
@@ -255,17 +255,17 @@ buildConnections = do
     let foo = maybeToList $ join outputEdgeConnections
     return $ foo ++ concat connections
 
-buildInputEdge :: NodeId -> Command Graph API.Node
+buildInputEdge :: ASTOp m => NodeId -> m API.Node
 buildInputEdge nid = do
-    lastb <- use Graph.insideNode <?!> "top-level nodes have no input edge"
-    ref   <- runASTOp $ GraphUtils.getASTTarget lastb
-    (types, _states) <- runASTOp $ extractPortInfo ref
+    Just lastb <- use Graph.insideNode
+    ref   <- GraphUtils.getASTTarget lastb
+    (types, _states) <- extractPortInfo ref
     argTypes <- case types of
         [] -> do
-            numberOfArguments <- length <$> (runASTOp $ extractArgTypes ref)
+            numberOfArguments <- length <$> (extractArgTypes ref)
             return $ replicate numberOfArguments AnyType
         _ -> return types
-    out <- runASTOp $ followTypeRep ref
+    out <- followTypeRep ref
     let nameGen = fmap (\i -> "input" ++ show i) [(0::Int)..]
         inputEdges = zipWith3 (\n t i -> Port (OutPortId $ Projection i) n t Port.NotConnected) nameGen argTypes [(0::Int)..]
     return $
@@ -277,11 +277,11 @@ buildInputEdge nid = do
             def
             def
 
-buildOutputEdge :: NodeId -> Command Graph API.Node
+buildOutputEdge :: ASTOp m => NodeId -> m API.Node
 buildOutputEdge nid = do
-    lastb <- use Graph.insideNode <?!> "top-level nodes have no output edge"
-    ref <- runASTOp $ GraphUtils.getASTTarget lastb
-    out <- runASTOp $ followTypeRep ref
+    Just lastb <- use Graph.insideNode
+    ref <- GraphUtils.getASTTarget lastb
+    out <- followTypeRep ref
     outputType <- case out of
         TypeIdent (TLam _ t) -> return $ TypeIdent t
         TypeIdent t -> return $ TypeIdent t
