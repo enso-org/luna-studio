@@ -21,17 +21,17 @@ getASTPointer nodeId = Graph.getAnyRef <$> (use (Graph.nodeMapping . at nodeId) 
 getASTTarget :: NodeId -> Command Graph NodeRef
 getASTTarget nodeId = do
     matchNode <- getASTPointer nodeId
-    zoom Graph.ast $ runASTOp $ AST.getTargetNode matchNode
+    runASTOp $ AST.getTargetNode matchNode
 
 getASTVar :: NodeId -> Command Graph NodeRef
 getASTVar nodeId = do
     matchNode <- getASTPointer nodeId
-    zoom Graph.ast $ runASTOp $ AST.getVarNode matchNode
+    runASTOp $ AST.getVarNode matchNode
 
 rewireNode :: NodeId -> NodeRef -> Command Graph ()
 rewireNode nodeId newTarget = do
     matchNode <- getASTPointer nodeId
     oldTarget <- getASTTarget  nodeId
-    zoom Graph.ast $ runASTOp $ do
+    runASTOp $ do
         AST.replaceTargetNode matchNode newTarget
         AST.removeSubtree oldTarget

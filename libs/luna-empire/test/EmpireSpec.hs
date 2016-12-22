@@ -252,7 +252,7 @@ spec = around withChannels $ do
             withResult res $ \a -> a `shouldBe` True
         it "`def foo` is trivial - has output connected to input" $ \env -> do
             res <- evalEmp env $ do
-                Graph.withGraph top $ zoom ast $ do
+                Graph.withGraph top $ do
                    (_, ref) <- runASTOp $ Parser.parseExpr "def foo"
                    runASTOp $ AST.isTrivialLambda ref
             withResult res $ \a -> a `shouldBe` True

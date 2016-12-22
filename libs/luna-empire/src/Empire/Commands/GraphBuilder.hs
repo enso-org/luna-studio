@@ -107,8 +107,8 @@ buildNode nid = do
     root  <- GraphUtils.getASTPointer nid
     match' <- isMatch root
     ref   <- if match' then GraphUtils.getASTTarget nid else return root
-    expr  <- zoom Graph.ast $ runASTOp $ Print.printNodeExpression ref
-    meta  <- zoom Graph.ast $ runASTOp $ AST.readMeta root
+    expr  <- runASTOp $ Print.printNodeExpression ref
+    meta  <- runASTOp $ AST.readMeta root
     name  <- fromMaybe "" <$> getNodeName nid
     canEnter <- canEnterNode nid
     ports <- buildPorts ref
@@ -117,7 +117,7 @@ buildNode nid = do
     return $ API.Node nid name (API.ExpressionNode $ Text.pack expr) canEnter portMap (fromMaybe def meta) code
 
 isMatch :: NodeRef -> Command Graph Bool
-isMatch node = zoom Graph.ast $ runASTOp $ do
+isMatch node = runASTOp $ do
     match node $ \case
         (Unify _ _) -> return True
         _           -> return False
@@ -131,7 +131,7 @@ canEnterNode nid = do
 rhsIsLambda :: NodeId -> Command Graph Bool
 rhsIsLambda nid = do
     node <- GraphUtils.getASTTarget nid
-    zoom Graph.ast $ runASTOp $ do
+    runASTOp $ do
         match node $ \case
             Lam{} -> return True
             _     -> return False
@@ -142,7 +142,7 @@ getNodeName nid = do
     match' <- isMatch root
     if match' then do
         vnode <- GraphUtils.getASTVar nid
-        zoom Graph.ast $ runASTOp $ do
+        runASTOp $ do
             match vnode $ \case
                 Var n -> do
                     name <- ASTBuilder.getName n
@@ -242,7 +242,7 @@ getTypeRep tp = do
     return $ TypeIdent rep
 
 buildPorts :: NodeRef -> Command Graph [Port]
-buildPorts ref = zoom Graph.ast $ runASTOp $ do
+buildPorts ref = runASTOp $ do
     selfPort <- maybeToList <$> buildSelfPort ref
     argPorts <- buildArgPorts ref
     tpRep    <- followTypeRep ref
@@ -262,13 +262,13 @@ buildInputEdge :: NodeId -> Command Graph API.Node
 buildInputEdge nid = do
     lastb <- use Graph.insideNode <?!> "top-level nodes have no input edge"
     ref   <- GraphUtils.getASTTarget lastb
-    (types, _states) <- zoom Graph.ast $ runASTOp $ extractPortInfo ref
+    (types, _states) <- runASTOp $ extractPortInfo ref
     argTypes <- case types of
         [] -> do
-            numberOfArguments <- length <$> (zoom Graph.ast $ runASTOp $ extractArgTypes ref)
+            numberOfArguments <- length <$> (runASTOp $ extractArgTypes ref)
             return $ replicate numberOfArguments AnyType
         _ -> return types
-    out <- zoom Graph.ast $ runASTOp $ followTypeRep ref
+    out <- runASTOp $ followTypeRep ref
     let nameGen = fmap (\i -> "input" ++ show i) [(0::Int)..]
         inputEdges = zipWith3 (\n t i -> Port (OutPortId $ Projection i) n t Port.NotConnected) nameGen argTypes [(0::Int)..]
     return $
@@ -284,7 +284,7 @@ buildOutputEdge :: NodeId -> Command Graph API.Node
 buildOutputEdge nid = do
     lastb <- use Graph.insideNode <?!> "top-level nodes have no output edge"
     ref <- GraphUtils.getASTTarget lastb
-    out <- zoom Graph.ast $ runASTOp $ followTypeRep ref
+    out <- runASTOp $ followTypeRep ref
     outputType <- case out of
         TypeIdent (TLam _ t) -> return $ TypeIdent t
         TypeIdent t -> return $ TypeIdent t
@@ -341,7 +341,7 @@ getOutputEdgeInputs :: NodeId -> NodeId -> Command Graph (Maybe (OutPortRef, InP
 getOutputEdgeInputs inputEdge outputEdge = do
     lambda <- use Graph.insideNode <?!> "top-level nodes have no edges"
     ref <- GraphUtils.getASTTarget lambda
-    nid <- zoom Graph.ast $ runASTOp $ do
+    nid <- runASTOp $ do
         outputIsInputNum <- getLambdaInputArgNumber ref
         case outputIsInputNum of
             Just index -> return $ Just (inputEdge, Projection index)
@@ -371,7 +371,7 @@ nodeConnectedToOutput = do
 
 resolveInputNodeId :: Maybe (NodeId, NodeId) -> [NodeRef] -> NodeRef -> Command Graph (Maybe NodeId)
 resolveInputNodeId edgeNodes lambdaArgs ref = do
-    nodeId <- zoom Graph.ast $ runASTOp $ ASTBuilder.getNodeId ref
+    nodeId <- runASTOp $ ASTBuilder.getNodeId ref
     case List.find (== ref) lambdaArgs of
         Just _ -> return $ fmap fst edgeNodes
         _      -> return nodeId
@@ -382,7 +382,7 @@ getOuterLambdaArguments = do
     case lambda of
         Just lambda' -> do
             ref <- GraphUtils.getASTTarget lambda'
-            lambdaArgs <- zoom Graph.ast $ runASTOp $ getLambdaArgRefs ref
+            lambdaArgs <- runASTOp $ getLambdaArgRefs ref
             return lambdaArgs
         _ -> return []
 
@@ -391,7 +391,7 @@ getNodeInputs edgeNodes nodeId = do
     root        <- GraphUtils.getASTPointer nodeId
     match'       <- isMatch root
     ref         <- if match' then GraphUtils.getASTTarget nodeId else return root
-    selfMay     <- zoom Graph.ast $ runASTOp $ getSelfNodeRef ref
+    selfMay     <- runASTOp $ getSelfNodeRef ref
     lambdaArgs  <- getOuterLambdaArguments
     selfNodeMay <- case selfMay of
         Just self -> resolveInputNodeId edgeNodes lambdaArgs self
@@ -399,7 +399,7 @@ getNodeInputs edgeNodes nodeId = do
     let selfConnMay = (,) <$> (OutPortRef <$> selfNodeMay <*> Just All)
                           <*> (Just $ InPortRef nodeId Self)
 
-    args       <- zoom Graph.ast $ runASTOp $ getPositionalNodeRefs ref
+    args       <- runASTOp $ getPositionalNodeRefs ref
     nodeMays   <- mapM (resolveInputNodeId edgeNodes lambdaArgs) args
     let withInd  = zip nodeMays [0..]
         onlyExt  = catMaybes $ (\(n, i) -> (,) <$> n <*> Just i) <$> withInd

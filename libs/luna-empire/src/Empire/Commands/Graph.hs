@@ -87,19 +87,19 @@ addNode loc uuid expr meta = withTC loc False $ addNodeNoTC loc uuid expr meta
 addNodeNoTC :: GraphLocation -> NodeId -> Text -> NodeMeta -> Command Graph Node
 addNodeNoTC loc uuid expr meta = do
     newNodeName <- generateNodeName
-    (parsedRef, refNode) <- zoom Graph.ast $ runASTOp $ AST.addNode uuid newNodeName (Text.unpack expr)
-    parsedIsLambda <- zoom Graph.ast $ runASTOp $ AST.isLambda parsedRef
-    zoom Graph.ast $ runASTOp $ AST.writeMeta refNode meta
+    (parsedRef, refNode) <- runASTOp $ AST.addNode uuid newNodeName (Text.unpack expr)
+    parsedIsLambda <- runASTOp $ AST.isLambda parsedRef
+    runASTOp $ AST.writeMeta refNode meta
     Graph.nodeMapping . at uuid ?= Graph.MatchNode refNode
     node <- GraphBuilder.buildNode uuid
     if parsedIsLambda then do
         lambdaUUID <- liftIO $ UUID.nextRandom
-        lambdaOutput <- zoom Graph.ast $ runASTOp $ AST.getLambdaOutputRef parsedRef
-        outputIsOneOfTheInputs <- zoom Graph.ast $ runASTOp $ AST.isTrivialLambda parsedRef
+        lambdaOutput <- runASTOp $ AST.getLambdaOutputRef parsedRef
+        outputIsOneOfTheInputs <- runASTOp $ AST.isTrivialLambda parsedRef
         when (not outputIsOneOfTheInputs) $ Graph.nodeMapping . at lambdaUUID ?= Graph.AnonymousNode lambdaOutput
         Graph.breadcrumbHierarchy %= addWithLeafs (node ^. Node.nodeId)
             (if outputIsOneOfTheInputs then [] else [lambdaUUID])
-        zoom Graph.ast $ runASTOp $ do
+        runASTOp $ do
             IR.writeLayer @Marker (Just $ NodeMarker lambdaUUID) lambdaOutput
     else Graph.breadcrumbHierarchy %= addID (node ^. Node.nodeId)
     Publisher.notifyNodeUpdate loc node
@@ -109,8 +109,8 @@ addPersistentNode :: Node -> Command Graph NodeId
 addPersistentNode n = case n ^. Node.nodeType of
     Node.ExpressionNode expr -> do
         let newNodeId = n ^. Node.nodeId
-        (parsedRef, refNode) <- zoom Graph.ast $ runASTOp $ AST.addNode newNodeId (Text.unpack $ n ^. Node.name) (Text.unpack expr)
-        zoom Graph.ast $ runASTOp $ AST.writeMeta refNode (n ^. Node.nodeMeta)
+        (parsedRef, refNode) <- runASTOp $ AST.addNode newNodeId (Text.unpack $ n ^. Node.name) (Text.unpack expr)
+        runASTOp $ AST.writeMeta refNode (n ^. Node.nodeMeta)
         Graph.nodeMapping . at newNodeId ?= Graph.MatchNode refNode
         lambdaUUID <- liftIO $ UUID.nextRandom
         Graph.nodeMapping . at lambdaUUID ?= Graph.AnonymousNode parsedRef
@@ -149,7 +149,7 @@ removeNodeNoTC nodeId = do
     astRef <- GraphUtils.getASTPointer nodeId
     obsoleteEdges <- getOutEdges nodeId
     mapM_ disconnectPort obsoleteEdges
-    zoom Graph.ast $ runASTOp $ AST.removeSubtree astRef
+    runASTOp $ AST.removeSubtree astRef
     Graph.nodeMapping %= Map.delete nodeId
     Graph.breadcrumbHierarchy %= removeID nodeId
 
@@ -157,7 +157,7 @@ updateNodeExpression :: GraphLocation -> NodeId -> NodeId -> Text -> Empire (May
 updateNodeExpression loc nodeId newNodeId expr = do
     metaMay <- withGraph loc $ do
         ref <- GraphUtils.getASTPointer nodeId
-        zoom Graph.ast $ runASTOp $ AST.readMeta ref
+        runASTOp $ AST.readMeta ref
     forM metaMay $ \meta ->
         withTC loc False $ do
             removeNodeNoTC nodeId
@@ -166,10 +166,10 @@ updateNodeExpression loc nodeId newNodeId expr = do
 updateNodeMeta :: GraphLocation -> NodeId -> NodeMeta -> Empire ()
 updateNodeMeta loc nodeId newMeta = withGraph loc $ do
     ref <- GraphUtils.getASTPointer nodeId
-    oldMetaMay <- zoom Graph.ast $ runASTOp $ AST.readMeta ref
+    oldMetaMay <- runASTOp $ AST.readMeta ref
     doTCMay <- forM oldMetaMay $ \oldMeta ->
         return $ triggerTC oldMeta newMeta
-    zoom Graph.ast $ runASTOp $ AST.writeMeta ref newMeta
+    runASTOp $ AST.writeMeta ref newMeta
     forM_ doTCMay $ \doTC ->
         when doTC $ runTC loc False
     where
@@ -201,11 +201,11 @@ setDefaultValue loc portRef val = withTC loc False $ setDefaultValue' portRef va
 
 setDefaultValue' :: AnyPortRef -> PortDefault -> Command Graph ()
 setDefaultValue' portRef val = do
-    parsed <- zoom Graph.ast $ runASTOp $ AST.addDefault val
+    parsed <- runASTOp $ AST.addDefault val
     (nodeId, newRef) <- case portRef of
         InPortRef' (InPortRef nodeId port) -> do
             ref <- GraphUtils.getASTTarget nodeId
-            newRef <- zoom Graph.ast $ case port of
+            newRef <- case port of
                 Self    -> runASTOp $ AST.makeAccessor parsed ref
                 Arg num -> runASTOp $ AST.applyFunction ref parsed num
             return (nodeId, newRef)
@@ -218,16 +218,16 @@ disconnect loc port = withTC loc False $ disconnectPort port
 getNodeMeta :: GraphLocation -> NodeId -> Empire (Maybe NodeMeta)
 getNodeMeta loc nodeId = withGraph loc $ do
     ref <- GraphUtils.getASTPointer nodeId
-    zoom Graph.ast $ runASTOp $ AST.readMeta ref
+    runASTOp $ AST.readMeta ref
 
 getCode :: GraphLocation -> Empire String
 getCode loc = withGraph loc $ do
     inFunction <- use Graph.insideNode
     function <- forM inFunction $ \nodeId -> do
         ptr <- GraphUtils.getASTPointer nodeId
-        header <- zoom Graph.ast $ runASTOp $ AST.printFunctionHeader ptr
+        header <- runASTOp $ AST.printFunctionHeader ptr
         lam <- GraphUtils.getASTTarget nodeId
-        ret <- zoom Graph.ast $ runASTOp $ AST.printReturnValue lam
+        ret <- runASTOp $ AST.printReturnValue lam
         return (header, ret)
     returnedNodeId <- GraphBuilder.nodeConnectedToOutput
     allNodes <- uses Graph.breadcrumbHierarchy topLevelIDs
@@ -235,7 +235,7 @@ getCode loc = withGraph loc $ do
         case returnedNodeId of
             Just id' -> id' /= nid
             _       -> True
-    metas    <- zoom Graph.ast $ runASTOp $ mapM AST.readMeta refs
+    metas    <- runASTOp $ mapM AST.readMeta refs
     let sorted = fmap snd $ sort $ zip metas allNodes
     lines' <- mapM printNodeLine sorted
     return $ unlines $ case function of
@@ -257,11 +257,11 @@ decodeLocation loc@(GraphLocation _ _ crumbs) = withGraph loc $ GraphBuilder.dec
 renameNode :: GraphLocation -> NodeId -> Text -> Empire ()
 renameNode loc nid name = withTC loc False $ do
     vref <- GraphUtils.getASTVar nid
-    zoom Graph.ast $ runASTOp $ AST.renameVar vref (Text.unpack name)
+    runASTOp $ AST.renameVar vref (Text.unpack name)
 
 dumpGraphViz :: GraphLocation -> Empire ()
 dumpGraphViz loc = withGraph loc $ do
-    zoom Graph.ast $ runASTOp $ AST.dumpGraphViz "gui_dump"
+    runASTOp $ AST.dumpGraphViz "gui_dump"
 
 typecheck :: GraphLocation -> Empire ()
 typecheck loc = withGraph loc $ runTC loc False
@@ -274,7 +274,7 @@ runTC loc flush = do
     Publisher.requestTC loc g flush
 
 printNodeLine :: NodeId -> Command Graph String
-printNodeLine nodeId = GraphUtils.getASTPointer nodeId >>= (zoom Graph.ast . runASTOp . AST.printExpression)
+printNodeLine nodeId = GraphUtils.getASTPointer nodeId >>= (runASTOp . AST.printExpression)
 
 withTC :: GraphLocation -> Bool -> Command Graph a -> Empire a
 withTC loc flush cmd = withGraph loc $ do
@@ -301,7 +301,7 @@ disconnectPort (InPortRef dstNodeId dstPort) =
 unAcc :: NodeId -> Command Graph ()
 unAcc nodeId = do
     dstAst <- GraphUtils.getASTTarget nodeId
-    newNodeRef <- zoom Graph.ast $ runASTOp $ AST.removeAccessor dstAst
+    newNodeRef <- runASTOp $ AST.removeAccessor dstAst
     GraphUtils.rewireNode nodeId newNodeRef
 
 unApp :: NodeId -> Int -> Command Graph ()
@@ -313,11 +313,11 @@ unApp nodeId pos = do
     if | connectionToOutputEdge -> do
         lambda  <- use Graph.insideNode <?!> "impossible: removing connection to output edge while outside node"
         astNode <- GraphUtils.getASTTarget lambda
-        newNodeRef <- zoom Graph.ast $ runASTOp $ AST.setLambdaOutputToBlank astNode
+        newNodeRef <- runASTOp $ AST.setLambdaOutputToBlank astNode
         GraphUtils.rewireNode lambda newNodeRef
        | otherwise -> do
         astNode <- GraphUtils.getASTTarget nodeId
-        newNodeRef <- zoom Graph.ast $ runASTOp $ AST.unapplyArgument astNode pos
+        newNodeRef <- runASTOp $ AST.unapplyArgument astNode pos
         GraphUtils.rewireNode nodeId newNodeRef
 
 makeAcc :: NodeId -> NodeId -> Int -> Command Graph ()
@@ -329,14 +329,14 @@ makeAcc src dst inputPos = do
     if | connectToInputEdge -> do
         lambda  <- use Graph.insideNode <?!> "impossible: connecting to input edge while outside node"
         lambda' <- GraphUtils.getASTTarget lambda
-        srcAst  <- zoom Graph.ast $ runASTOp $ AST.getLambdaInputRef lambda' inputPos
+        srcAst  <- runASTOp $ AST.getLambdaInputRef lambda' inputPos
         dstAst  <- GraphUtils.getASTTarget dst
-        newNodeRef <- zoom Graph.ast $ runASTOp $ AST.makeAccessor srcAst dstAst
+        newNodeRef <- runASTOp $ AST.makeAccessor srcAst dstAst
         GraphUtils.rewireNode dst newNodeRef
        | otherwise -> do
         srcAst <- GraphUtils.getASTVar    src
         dstAst <- GraphUtils.getASTTarget dst
-        newNodeRef <- zoom Graph.ast $ runASTOp $ AST.makeAccessor srcAst dstAst
+        newNodeRef <- runASTOp $ AST.makeAccessor srcAst dstAst
         GraphUtils.rewireNode dst newNodeRef
 
 
@@ -350,17 +350,17 @@ makeApp src dst pos inputPos = do
         lambda <- use Graph.insideNode <?!> "impossible: connecting to output edge while outside node"
         srcAst <- GraphUtils.getASTVar    src
         dstAst <- GraphUtils.getASTTarget lambda
-        newNodeRef <- zoom Graph.ast $ runASTOp $ AST.redirectLambdaOutput dstAst srcAst
+        newNodeRef <- runASTOp $ AST.redirectLambdaOutput dstAst srcAst
         GraphUtils.rewireNode lambda newNodeRef
        | connectToInputEdge -> do
         lambda  <- use Graph.insideNode <?!> "impossible: connecting to input edge while outside node"
         lambda' <- GraphUtils.getASTTarget lambda
-        srcAst  <- zoom Graph.ast $ runASTOp $ AST.getLambdaInputRef lambda' inputPos
+        srcAst  <- runASTOp $ AST.getLambdaInputRef lambda' inputPos
         dstAst  <- GraphUtils.getASTTarget dst
-        newNodeRef <- zoom Graph.ast $ runASTOp $ AST.applyFunction dstAst srcAst pos
+        newNodeRef <- runASTOp $ AST.applyFunction dstAst srcAst pos
         GraphUtils.rewireNode dst newNodeRef
        | otherwise -> do
         srcAst <- GraphUtils.getASTVar    src
         dstAst <- GraphUtils.getASTTarget dst
-        newNodeRef <- zoom Graph.ast $ runASTOp $ AST.applyFunction dstAst srcAst pos
+        newNodeRef <- runASTOp $ AST.applyFunction dstAst srcAst pos
         GraphUtils.rewireNode dst newNodeRef

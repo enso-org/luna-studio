@@ -30,12 +30,12 @@ import qualified Empire.Commands.Publisher         as Publisher
 getNodeValueReprs :: NodeId -> Command Graph (Either String AST.ValueRep)
 getNodeValueReprs nid = do
     nodeRef <- GraphUtils.getASTPointer nid
-    metaMay <- zoom Graph.ast $ runASTOp $ AST.readMeta nodeRef
+    metaMay <- runASTOp $ AST.readMeta nodeRef
     case metaMay of
         Just meta -> if meta ^. NodeMeta.displayResult
             then do
                 valRef <- GraphUtils.getASTVar nid
-                zoom Graph.ast $ runASTOp $ AST.getNodeValue valRef
+                runASTOp $ AST.getNodeValue valRef
             else   return $ Right $ AST.PlainVal ("", [])
         Nothing -> return $ Right $ AST.PlainVal ("", [])
 
@@ -57,7 +57,7 @@ runInterpreter = do
     _ast        <- use Graph.ast
     allNodes   <- uses Graph.breadcrumbHierarchy topLevelIDs
     refs       <- mapM GraphUtils.getASTPointer allNodes
-    metas      <- zoom Graph.ast $ runASTOp $ mapM AST.readMeta refs
+    metas      <- runASTOp $ mapM AST.readMeta refs
     let sorted = fmap snd $ sort $ zip metas allNodes
     _evals      <- mapM GraphUtils.getASTVar sorted
     newAst     <- liftIO $ fmap snd $ $notImplemented
@@ -80,7 +80,7 @@ updateNodes loc = do
     forM_ allNodeIds $ \nid -> do
         ref <- zoom graph $ GraphUtils.getASTTarget nid
 
-        err <- zoom (graph . Graph.ast) $ runASTOp $ AST.getError ref
+        err <- zoom graph $ runASTOp $ AST.getError ref
         reportError loc nid err
 
         rep <- zoom graph $ GraphBuilder.buildNode nid

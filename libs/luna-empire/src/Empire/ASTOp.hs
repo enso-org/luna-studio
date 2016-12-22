@@ -15,6 +15,8 @@ import           Control.Monad        (foldM)
 import           Control.Monad.State  (get, put)
 import           Control.Monad.Except (throwError)
 import           Empire.Data.AST      (AST, ASTState(..), NodeRef)
+import           Empire.Data.Graph    (Graph)
+import qualified Empire.Data.Graph    as Graph (ast)
 import           Empire.Data.Layers   (Marker, Meta,
                                       InputsLayer, TypeLayer, TCData)
 import           Empire.Empire        (Command)
@@ -63,8 +65,8 @@ type instance Events    EmpirePass = EmpireEmitters
 type instance Preserves EmpirePass = '[]
 
 runASTOp :: Pass.SubPass EmpirePass (Pass.PassManager (IRBuilder (Logger DropLogger IO))) a
-         -> Command AST a
-runASTOp pass = do
+         -> Command Graph a
+runASTOp pass = zoom Graph.ast $ do
     ASTState currentStateIR currentStatePass <- get
     let evalIR = dropLogs . flip evalIRBuilder currentStateIR . flip evalPassManager currentStatePass
     (a, (st, passSt)) <- liftIO $ evalIR $ do

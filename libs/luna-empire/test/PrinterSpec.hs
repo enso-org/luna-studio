@@ -56,5 +56,5 @@ spec = around withChannels $ do
                 Graph.addNode top u1 "def foo" def
                 Graph.withGraph top $ do
                     target <- GraphUtils.getASTTarget u1
-                    zoom ast $ runASTOp $ printNodeExpression target
+                    runASTOp $ printNodeExpression target
             withResult res $ \expr -> expr `shouldBe` "-> $in0 in0"
