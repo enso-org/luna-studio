@@ -8,6 +8,7 @@ import qualified Data.Binary                      as Bin
 import qualified Data.ByteString                  as ByteString
 import qualified Data.ByteString.Char8            as Char8 (pack)
 import           Data.ByteString.Lazy             (fromStrict, toStrict)
+import qualified Data.Text                        as Text
 import qualified Data.UUID.V4                     as UUID
 import qualified Empire.API.Data.Breadcrumb       as Breadcrumb
 import           Empire.API.Data.DefaultValue     (PortDefault (Constant), Value (DoubleValue))
