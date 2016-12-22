@@ -1,7 +1,7 @@
 module UI.Widget.Plots.Image where
 
-import           Luna.Studio.Prelude
 import           Luna.Studio.Data.Vector
+import           Luna.Studio.Prelude
 
 import           Data.JSString.Text        (lazyTextToJSString)
 import           GHCJS.Marshal.Pure        (PFromJSVal (..), PToJSVal (..))
@@ -27,7 +27,8 @@ create :: WidgetId -> Model.Image -> IO Image
 create oid model = do
     plot <- create' (fromWidgetId oid) (model ^. Model.size . x) (model ^. Model.size . y)
     setData' plot $ lazyTextToJSString $ model ^. Model.image
-    UI.setWidgetPosition (model ^. widgetPosition) plot
+    -- TODO[react]: Does not make sense anymore
+    -- UI.setWidgetPosition (model ^. widgetPosition) plot
     return plot
 
 instance UIDisplayObject Model.Image where

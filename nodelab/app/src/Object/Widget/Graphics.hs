@@ -1,7 +1,7 @@
 module Object.Widget.Graphics where
 
 import           Data.Aeson              (ToJSON)
-import           Luna.Studio.Data.Vector (Position, Vector2)
+import           Luna.Studio.Data.Vector (Position, Size, Vector2)
 import           Luna.Studio.Prelude     hiding (Item)
 
 import           Object.Widget
@@ -12,7 +12,7 @@ data Box = Box { _boxPosition :: Position
 
 data Item = Item { _shader :: Text
                  , _boxes  :: [Box]
-                 , _boxSize   :: Vector2 Double
+                 , _boxSize   :: Size
                  , _boxOffset :: Vector2 Double
                  } deriving (Eq, Show, Typeable, Generic)
 
@@ -23,7 +23,7 @@ data Label = Label { _labelPosition :: Position
                    } deriving (Eq, Show, Typeable, Generic)
 
 data Graphics = Graphics { _position :: Position
-                         , _size     :: Vector2 Double
+                         , _size     :: Size
                          , _items    :: [Item]
                          , _labels   :: [Label]
                          } deriving (Eq, Show, Typeable, Generic)
@@ -40,8 +40,3 @@ instance ToJSON Graphics
 
 create :: Size -> [Item] -> [Label] -> Graphics
 create = Graphics def
-
-instance IsDisplayObject Graphics where
-    widgetPosition = position
-    widgetSize     = size
-    widgetVisible  = to $ const True

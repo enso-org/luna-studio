@@ -21,43 +21,43 @@ module Reactive.Handlers
     , pasteClipboardHandler
     ) where
 
-import           Luna.Studio.Prelude         hiding (on)
-import           Luna.Studio.Data.Vector              (Vector2 (Vector2))
+import           Luna.Studio.Data.Vector                (Position (Position), Vector2 (Vector2))
+import           Luna.Studio.Prelude                    hiding (on)
 
-import           GHCJS.DOM                 (currentDocument, currentWindow)
-import qualified GHCJS.DOM.Document        as Document
-import           GHCJS.DOM.Element         (Element, dblClick, keyDown, keyPress, keyUp, mouseDown, mouseMove, mouseUp, wheel)
-import           GHCJS.DOM.EventM          (EventM, EventName)
-import qualified GHCJS.DOM.EventM          as EventM
-import qualified GHCJS.DOM.KeyboardEvent   as KeyboardEvent
-import qualified GHCJS.DOM.MouseEvent      as MouseEvent
-import qualified GHCJS.DOM.UIEvent         as UIEvent
-import qualified GHCJS.DOM.WheelEvent      as WheelEvent
-import           GHCJS.DOM.Window          (getInnerHeight, getInnerWidth, resize)
-import           GHCJS.Marshal             (fromJSValUnchecked)
-import           GHCJS.Marshal.Pure        (pFromJSVal)
-import           GHCJS.Prim                (fromJSString)
-import qualified JavaScript.Array          as JSArray
+import           GHCJS.DOM                              (currentDocument, currentWindow)
+import qualified GHCJS.DOM.Document                     as Document
+import           GHCJS.DOM.Element                      (Element, dblClick, keyDown, keyPress, keyUp, mouseDown, mouseMove, mouseUp, wheel)
+import           GHCJS.DOM.EventM                       (EventM, EventName)
+import qualified GHCJS.DOM.EventM                       as EventM
+import qualified GHCJS.DOM.KeyboardEvent                as KeyboardEvent
+import qualified GHCJS.DOM.MouseEvent                   as MouseEvent
+import qualified GHCJS.DOM.UIEvent                      as UIEvent
+import qualified GHCJS.DOM.WheelEvent                   as WheelEvent
+import           GHCJS.DOM.Window                       (getInnerHeight, getInnerWidth, resize)
+import           GHCJS.Marshal                          (fromJSValUnchecked)
+import           GHCJS.Marshal.Pure                     (pFromJSVal)
+import           GHCJS.Prim                             (fromJSString)
+import qualified JavaScript.Array                       as JSArray
 
-import qualified Luna.Studio.Batch.Connector.Connection as Connection
-import qualified Data.JSString             as JSString
-import           Data.JSString.Text        (lazyTextFromJSString)
-import qualified Event.Clipboard           as Clipboard
-import qualified Event.Connection          as Connection
-import qualified Event.ConnectionPen       as ConnectionPen
-import qualified Event.CustomEvent         as CustomEvent
+import qualified Data.JSString                          as JSString
+import           Data.JSString.Text                     (lazyTextFromJSString)
+import qualified Event.Clipboard                        as Clipboard
+import qualified Event.Connection                       as Connection
+import qualified Event.ConnectionPen                    as ConnectionPen
+import qualified Event.CustomEvent                      as CustomEvent
 import           Event.Event
-import qualified Event.Keyboard            as Keyboard
-import qualified Event.Mouse               as Mouse
-import qualified Event.TextEditor          as TextEditor
-import qualified Event.Window              as Window
-import qualified JS.Clipboard              as Clipboard
-import qualified JS.ConnectionPen          as ConnectionPen
-import qualified JS.CustomEvent            as CustomEvent
-import qualified JS.TextEditor             as TextEditor
-import qualified JS.WebSocket              as WebSocket
-import           Object.UITypes            as Mouse
-import           UI.Raycaster              hiding (widgetMatrix)
+import qualified Event.Keyboard                         as Keyboard
+import qualified Event.Mouse                            as Mouse
+import qualified Event.TextEditor                       as TextEditor
+import qualified Event.Window                           as Window
+import qualified JS.Clipboard                           as Clipboard
+import qualified JS.ConnectionPen                       as ConnectionPen
+import qualified JS.CustomEvent                         as CustomEvent
+import qualified JS.TextEditor                          as TextEditor
+import qualified JS.WebSocket                           as WebSocket
+import qualified Luna.Studio.Batch.Connector.Connection as Connection
+import           Object.UITypes                         as Mouse
+import           UI.Raycaster                           hiding (widgetMatrix)
 
 
 data AddHandler a = AddHandler ((a -> IO ()) -> IO (IO ()))
@@ -85,12 +85,12 @@ readKeyMods' = do
     meta   <- KeyboardEvent.getMetaKey  e
     return $  Keyboard.KeyMods shift ctrl alt meta
 
-readMousePos :: (MouseEvent.IsMouseEvent e) => EventM t e Mouse.MousePosition
+readMousePos :: (MouseEvent.IsMouseEvent e) => EventM t e Position
 readMousePos = do
     e <- EventM.event
-    x <- MouseEvent.getClientX e
-    y <- MouseEvent.getClientY e
-    return $ Vector2 x y
+    x <- fromIntegral <$> MouseEvent.getClientX e
+    y <- fromIntegral <$> MouseEvent.getClientY e
+    return $ Position (Vector2 x y)
 
 uiWhichButton :: (UIEvent.IsUIEvent e) => EventM t e Mouse.MouseButton
 uiWhichButton = EventM.uiWhich >>= return . Mouse.toMouseButton

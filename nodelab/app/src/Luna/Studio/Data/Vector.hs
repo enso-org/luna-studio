@@ -1,16 +1,47 @@
+{-# LANGUAGE TypeFamilies #-}
 module Luna.Studio.Data.Vector where
 
 import           Data.Aeson          (ToJSON)
 import           Luna.Studio.Prelude
+--TODO[react]: Make this import possible
+-- import           Control.Lens.Utils  (makePfxLenses)
+import           Prologue            (wrapped')
 
-type Position = Vector2 Double
 
-data Vector2 a = Vector2 { _x :: a
-                         , _y :: a
-                         } deriving (Eq, Show, Functor, Generic)
 
+--TODO[react]: Consider change Vector2 -> V2: https://hackage.haskell.org/package/linear-1.20.5/docs/Linear-V2.html
+
+--------------------
+-- === Vector === --
+--------------------
+
+type family VectorOf a
+
+class IsVector a where
+    vector :: Lens' a (VectorOf a)
+
+
+-- === Dimensions === --
+
+class           Dim1 a where x :: Lens' a (Item a)
+class Dim1 a => Dim2 a where y :: Lens' a (Item a)
+class Dim2 a => Dim3 a where z :: Lens' a (Item a)
+
+
+---------------------
+-- === Vector2 === --
+---------------------
+
+-- === Definition === --
+
+data Vector2 a = Vector2 { _vector2_x, _vector2_y :: a } deriving (Eq, Show, Functor, Generic)
 makeLenses ''Vector2
 
+
+-- === Instances === --
+
+instance Dim1 (Vector2 a) where x = vector2_x
+instance Dim2 (Vector2 a) where y = vector2_y
 instance ToJSON a => ToJSON (Vector2 a)
 
 instance Default a => Default (Vector2 a) where
@@ -23,6 +54,22 @@ instance Num a => Num (Vector2 a) where
     abs    (Vector2 x1 y1)            = Vector2 (abs    x1) (abs    y1)
     signum (Vector2 x1 y1)            = Vector2 (signum x1) (signum y1)
     fromInteger i                     = let val = fromInteger i in Vector2 val val
+
+instance IsList (Vector2 a) where
+    type Item (Vector2 a) = a
+    fromList [x',y'] = Vector2 x' y'
+    fromList _     = error "List must be of length 2 to create Vector2."
+    toList   vec   = [vec ^. x, vec ^. y]
+
+instance Applicative Vector2 where
+    pure v                          = Vector2 v v
+    (Vector2 f g) <*> (Vector2 x y) = Vector2 (f x) (g y)
+
+instance Monoid a => Monoid (Vector2 a) where
+    mempty                                    = Vector2 mempty mempty
+    (Vector2 x1 y1) `mappend` (Vector2 x2 y2) = Vector2 (x1 `mappend` x2) (y1 `mappend` y2)
+
+-- === Functions === --
 
 lengthSquared :: Num a => Vector2 a -> a
 lengthSquared (Vector2 x' y') = x' * x' + y' * y'
@@ -38,7 +85,6 @@ explode (Vector2 x' y') = Vector2 (fact * x') (fact * y') where
     fact  = shift (\x' -> 1.0 / (x' ** 4)) lenSq
     lenSq = x' * x' + y' * y'
 
-
 shift :: (Double -> Double) -> Double -> Double
 shift f x' = if x' < shiftConst then 0.0
                                 else f (x' - shiftConst)
@@ -48,14 +94,6 @@ nudgeFromZero :: Double -> Double
 nudgeFromZero v = (sign v) * (0.1 + (abs v)) where
     sign v = if v == 0.0 then 1 else signum v
 
-instance Applicative Vector2 where
-    pure v                          = Vector2 v v
-    (Vector2 f g) <*> (Vector2 x y) = Vector2 (f x) (g y)
-
-instance Monoid a => Monoid (Vector2 a) where
-    mempty                                    = Vector2 mempty mempty
-    (Vector2 x1 y1) `mappend` (Vector2 x2 y2) = Vector2 (x1 `mappend` x2) (y1 `mappend` y2)
-
 negateSnd :: Num a => Vector2 a -> Vector2 a
 negateSnd (Vector2 x y) = Vector2 x (-y)
 
@@ -64,3 +102,65 @@ fromTuple (a, b) = Vector2 a b
 
 toTuple :: Num a => Vector2 a -> (a, a)
 toTuple (Vector2 a b) = (a, b)
+
+
+-----------------------
+-- === Position === ---
+-----------------------
+
+-- === Definition === --
+
+newtype Position = Position (Vector2 Double) deriving (Eq, Show, Generic)
+makeWrapped ''Position
+
+
+-- === Instances === --
+
+instance Dim1 Position where x = vector . x
+instance Dim2 Position where y = vector . y
+instance ToJSON Position
+
+instance Default Position where
+    def = Position def
+
+type instance VectorOf Position = Vector2 Double
+
+instance IsVector Position where
+    vector = wrapped' ; {-# INLINE vector #-}
+
+instance IsList Position where
+    type Item Position = Double
+    fromList l = Position (fromList l)
+    toList   p = [p ^. x, p ^. y]
+
+moveByVector :: Position -> Vector2 Double -> Position
+moveByVector pos vec = pos & vector %~ (+vec)
+
+-------------------
+-- === Size === ---
+-------------------
+
+-- === Definition === --
+
+newtype Size = Size (Vector2 Double) deriving (Eq, Show, Generic)
+makeWrapped ''Size
+
+
+-- === Instances === --
+
+instance Dim1 Size where x = vector . x
+instance Dim2 Size where y = vector . y
+instance ToJSON Size
+
+instance Default Size where
+    def = Size def
+
+type instance VectorOf Size = Vector2 Double
+
+instance IsVector Size where
+    vector = wrapped' ; {-# INLINE vector #-}
+
+instance IsList Size where
+    type Item Size = Double
+    fromList l = Size (fromList l)
+    toList   p = [p ^. x, p ^. y]

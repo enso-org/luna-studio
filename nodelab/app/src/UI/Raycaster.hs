@@ -4,29 +4,29 @@ import           Luna.Studio.Prelude
 
 import           Luna.Studio.Data.Vector
 
-import           GHCJS.Marshal      (fromJSVal)
-import           GHCJS.Marshal.Pure (pFromJSVal)
-import           JavaScript.Array   (JSArray)
-import qualified JavaScript.Array   as JSArray
+import           GHCJS.Marshal           (fromJSVal)
+import           GHCJS.Marshal.Pure      (pFromJSVal)
+import           JavaScript.Array        (JSArray)
+import qualified JavaScript.Array        as JSArray
 
-import           Event.Event        (JSState)
-import           Object.Widget      (SceneType (..), WidgetId (WidgetId), fromWidgetId)
+import           Event.Event             (JSState)
+import           Object.Widget           (SceneType (..), WidgetId (WidgetId), fromWidgetId)
 
-foreign import javascript safe "raycaster.getMapPixelAt($1, $2)" getMapPixelAtJS :: Int -> Int -> IO JSArray
+foreign import javascript safe "raycaster.getMapPixelAt($1, $2)" getMapPixelAtJS :: Double -> Double -> IO JSArray
 
-getMapPixelAt :: Vector2 Int -> IO JSArray
+getMapPixelAt :: Position -> IO JSArray
 getMapPixelAt pos = getMapPixelAtJS (pos ^. x) (pos ^. y)
 
-foreign import javascript safe "raycaster.getObjectsInRect($2, $3, $4, $5)" getObjectsInRect' :: JSState -> Int -> Int -> Int -> Int -> JSArray
+foreign import javascript safe "raycaster.getObjectsInRect($2, $3, $4, $5)" getObjectsInRect' :: JSState -> Double -> Double -> Double -> Double -> JSArray
 
-getObjectsInRect :: JSState -> Vector2 Int -> Vector2 Int -> [WidgetId]
+getObjectsInRect :: JSState -> Position -> Size -> [WidgetId]
 getObjectsInRect jsstate pos size = map WidgetId list where
     idsJS = getObjectsInRect' jsstate (pos ^. x) (pos ^. y) (size ^. x) (size ^. y)
     list  = (pFromJSVal :: JSVal -> Int) <$> JSArray.toList idsJS
 
 foreign import javascript safe "raycaster.widgetMatrix($1)" widgetMatrix :: Int -> IO JSArray
 
-readObjectId :: Vector2 Int -> IO (Maybe WidgetId)
+readObjectId :: Position -> IO (Maybe WidgetId)
 readObjectId pos = do
     pixel <- getMapPixelAt pos
     let read i = fromJSVal $ JSArray.index i pixel :: IO (Maybe Int)

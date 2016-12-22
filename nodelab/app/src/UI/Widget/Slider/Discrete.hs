@@ -1,7 +1,7 @@
 module UI.Widget.Slider.Discrete where
 
-import           Luna.Studio.Prelude
 import           Luna.Studio.Data.Vector
+import           Luna.Studio.Prelude
 
 import           Data.JSString.Text            (lazyTextToJSString)
 
@@ -21,7 +21,8 @@ createSlider oid model = do
     setLabel       model slider
     setValue       model slider
     setTicks       model slider
-    UI.setWidgetPosition (model ^. widgetPosition) slider
+    -- TODO[react]: Does not make sense anymore
+    -- UI.setWidgetPosition (model ^. widgetPosition) slider
     return slider
 
 setLabel :: Model.DiscreteSlider -> Slider -> IO ()

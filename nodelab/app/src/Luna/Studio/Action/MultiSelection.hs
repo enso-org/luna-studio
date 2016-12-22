@@ -2,51 +2,49 @@
 
 module Luna.Studio.Action.MultiSelection where
 
-import           React.Flux                        (mousePageX, mousePageY)
+import           Luna.Studio.Data.Vector              (Position (Position), Vector2 (Vector2), fromTuple, x, y)
 import           Luna.Studio.Prelude
-import           Luna.Studio.Data.Vector                      (Vector2 (..), fromTuple, x, y)
+import           React.Flux                           (mousePageX, mousePageY)
 
-import           Empire.API.Data.Node              (Node)
-import qualified Empire.API.Data.Node              as Node
-import           Event.Event                       (Event (UI))
-import           Event.UI                          (UIEvent (AppEvent, NodeEditorEvent))
-import qualified Object.Widget.Node                as NodeModel
-import qualified Luna.Studio.React.Event.App                   as App
-import qualified Luna.Studio.React.Event.NodeEditor            as NodeEditor
-import           Luna.Studio.React.Store                       (widget)
-import qualified Luna.Studio.React.Store                       as Store
-import           Luna.Studio.React.Model.SelectionBox          (SelectionBox (SelectionBox))
-import qualified Luna.Studio.React.Model.SelectionBox          as SelectionBox
+import           Empire.API.Data.Node                 (Node)
+import qualified Empire.API.Data.Node                 as Node
+import           Event.Event                          (Event (UI))
+import           Event.UI                             (UIEvent (AppEvent, NodeEditorEvent))
 import           Luna.Studio.Commands.Command         (Command)
 import           Luna.Studio.Commands.Graph.Selection (focusSelectedNode, modifySelectionHistory, selectNodes, selectedNodes, unselectAll)
+import           Luna.Studio.Event.Mouse              (getMousePosition)
+import qualified Luna.Studio.React.Event.App          as App
+import qualified Luna.Studio.React.Event.NodeEditor   as NodeEditor
+import           Luna.Studio.React.Model.SelectionBox (SelectionBox (SelectionBox))
+import qualified Luna.Studio.React.Model.SelectionBox as SelectionBox
+import           Luna.Studio.React.Store              (widget)
+import qualified Luna.Studio.React.Store              as Store
 import           Luna.Studio.State.Global             (State)
 import qualified Luna.Studio.State.Global             as Global
 import qualified Luna.Studio.State.Graph              as Graph
 import           Luna.Studio.State.MultiSelection     (DragHistory (..))
 import qualified Luna.Studio.State.MultiSelection     as MultiSelection
+import qualified Object.Widget.Node                   as NodeModel
 
 
 
 toAction :: Event -> Maybe (Command State ())
-toAction (UI (NodeEditorEvent (NodeEditor.MouseDown evt))) = Just $ do
-    let pos = Vector2 (mousePageX evt) (mousePageY evt)
-    startDrag pos
-toAction (UI (AppEvent  (App.MouseUp   _  ))) = Just $ stopDrag
-toAction (UI (AppEvent  (App.MouseMove evt))) = Just $ do
-    let pos = Vector2 (mousePageX evt) (mousePageY evt)
-    handleMove pos
+-- TODO[react]: Find out if wee need to check for mods
+toAction (UI (NodeEditorEvent (NodeEditor.MouseDown evt))) = Just $ startDrag $ getMousePosition evt
+toAction (UI (AppEvent  (App.MouseUp   _  )))              = Just $ stopDrag
+toAction (UI (AppEvent  (App.MouseMove evt)))              = Just $ handleMove $ getMousePosition evt
+toAction _                                                 = Nothing
 --TODO[react] implement
 -- toAction (Keyboard _ (Keyboard.Event Keyboard.Press 'A'   _)) = Just selectAll
 -- toAction (Keyboard _ (Keyboard.Event Keyboard.Down  '\27' _)) = Just unselectAll
-toAction _ = Nothing
 
 
-startDrag :: Vector2 Int -> Command State ()
+startDrag :: Position -> Command State ()
 startDrag coord = do
     Global.multiSelection . MultiSelection.history ?= DragHistory coord coord
     unselectAll
 
-handleMove :: Vector2 Int -> Command State ()
+handleMove :: Position -> Command State ()
 handleMove coord = do
     dragHistory <- use $ Global.multiSelection . MultiSelection.history
     case dragHistory of
@@ -56,21 +54,21 @@ handleMove coord = do
             updateSelection start coord
             drawSelectionBox start coord
 
-inRect :: Vector2 Int -> Vector2 Int -> Node -> Bool
+inRect :: Position -> Position -> Node -> Bool
 inRect leftTop rightBottom node = pos ^. x >= leftTop ^. x
                                && pos ^. x <= rightBottom ^. x
                                && pos ^. y <= leftTop ^. y
                                && pos ^. y >= rightBottom ^. y
-    where pos = fmap round $ fromTuple $ node ^. Node.position
+    where pos = Position (fromTuple $ node ^. Node.position)
 
-updateSelection :: Vector2 Int -> Vector2 Int -> Command State ()
+updateSelection :: Position -> Position -> Command State ()
 updateSelection start end = do
-    let leftTop     = Vector2 (min (start ^. x) (end ^. x)) (max (start ^. y) (end ^. y))
-        rightBottom = Vector2 (max (start ^. x) (end ^. x)) (min (start ^. y) (end ^. y))
+    let leftTop     = Position (Vector2 (min (start ^. x) (end ^. x)) (max (start ^. y) (end ^. y)))
+        rightBottom = Position (Vector2 (max (start ^. x) (end ^. x)) (min (start ^. y) (end ^. y)))
     nodeIds <- map Node._nodeId . filter (inRect leftTop rightBottom) <$> use (Global.graph . Graph.nodes)
     selectNodes nodeIds
 
-drawSelectionBox :: Vector2 Int -> Vector2 Int -> Command State ()
+drawSelectionBox :: Position -> Position -> Command State ()
 drawSelectionBox start end = do
     Global.withSelectionBox $ Store.modify_ $ const $ SelectionBox True start end
 

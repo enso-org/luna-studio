@@ -1,13 +1,13 @@
 module Luna.Studio.Event.Mouse where
 
 
-import           Luna.Studio.Data.Vector (Position, Vector2 (Vector2))
+import           Luna.Studio.Data.Vector (Position (Position), Vector2 (Vector2))
 import           Luna.Studio.Prelude
 import           React.Flux              (MouseEvent (MouseEvent), mousePageX, mousePageY)
 
 --TODO[react]: Apply zoom and pan
 getMousePosition :: MouseEvent -> Position
-getMousePosition e = Vector2 (fromIntegral $ mousePageX e) (fromIntegral $ mousePageY e)
+getMousePosition e = Position (Vector2 (fromIntegral $ mousePageX e) (fromIntegral $ mousePageY e))
 
 withoutMods :: MouseEvent -> Bool
 withoutMods (MouseEvent False _ _ _ _ False _ False _ _ _ _ _ False) = True

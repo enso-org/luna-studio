@@ -1,7 +1,7 @@
 module UI.Widget.Choice.RadioButton where
 
-import           Luna.Studio.Prelude
 import           Luna.Studio.Data.Vector
+import           Luna.Studio.Prelude
 
 import           Data.JSString.Text               (lazyTextToJSString)
 import           GHCJS.Marshal.Pure               (PFromJSVal (..), PToJSVal (..))
@@ -29,7 +29,8 @@ create oid model = do
     widget      <- create' (fromWidgetId oid) (model ^. Model.size . x) (model ^. Model.size . y)
     setLabel       model widget
     setValue       model widget
-    UI.setWidgetPosition (model ^. widgetPosition) widget
+    -- TODO[react]: Does not make sense anymore
+    -- UI.setWidgetPosition (model ^. widgetPosition) widget
     return widget
 
 setLabel :: Model.RadioButton -> RadioButton -> IO ()

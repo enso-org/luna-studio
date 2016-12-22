@@ -1,12 +1,12 @@
 module Object.Widget.Slider.Discrete where
 
 import           Data.Aeson              (ToJSON)
-import           Luna.Studio.Data.Vector (Position, Vector2)
+import           Luna.Studio.Data.Vector (Position, Size)
 import           Luna.Studio.Prelude
 import           Object.Widget
 
 data DiscreteSlider = DiscreteSlider { _position       :: Position
-                                     , _size           :: Vector2 Double
+                                     , _size           :: Size
                                      , _label          :: Text
                                      , _enabled        :: Bool
                                      , _minValue       :: Int
@@ -20,11 +20,6 @@ instance ToJSON DiscreteSlider
 
 create :: Size -> Text -> Int -> Int -> Int -> DiscreteSlider
 create s l min' max' v = DiscreteSlider def s l True min' max' v def
-
-instance IsDisplayObject DiscreteSlider where
-    widgetPosition = position
-    widgetSize     = size
-    widgetVisible  = to $ const True
 
 displayValue' :: DiscreteSlider -> String
 displayValue' slider = show $ slider ^. value

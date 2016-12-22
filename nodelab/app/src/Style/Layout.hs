@@ -2,7 +2,7 @@
 
 module Style.Layout where
 
-import           Luna.Studio.Data.Vector (Position, Vector2 (Vector2))
+import           Luna.Studio.Data.Vector (Position (Position), Size (Size), Vector2 (Vector2))
 import           Luna.Studio.Prelude
 
 import qualified Object.Widget.Button    as Button
@@ -27,7 +27,7 @@ sidebarWidth                   = 0.0
 breadcrumbBackground           :: Color
 breadcrumbBackground           = sidebarBackground
 breadcrumbPosition             :: Position
-breadcrumbPosition             = Vector2 sidebarWidth 0.0
+breadcrumbPosition             = Position (Vector2 sidebarWidth 0.0)
 
 breadcrumbStyle               :: Group.Style
 breadcrumbStyle                = def & Group.background   ?~ Color 1.0 1.0 1.0 0.05
@@ -38,9 +38,9 @@ breadcrumbsHeight              :: Double
 breadcrumbsHeight              = 20.0
 
 breadcrumbItemStyle            :: Button.Style
-breadcrumbItemSize             = Vector2 150.0 20.0 :: Vector2 Double
+breadcrumbItemSize             = Size (Vector2 150.0 20.0) :: Size
 
-breadcrumbItemSize            :: Vector2 Double
+breadcrumbItemSize            :: Size
 breadcrumbItemStyle            = def & Button.rounded    .~ False
                                      & Button.background .~ transparent
                                      & Button.alignment  .~ Label.Left
@@ -49,17 +49,17 @@ projectChooser                 :: Group.Style
 projectChooser                 = def & Group.padding    .~ uniformPadding 5.0
                                      & Group.background ?~ sidebarBackground
 
-projectListItemSize, createProjectButtonSize :: Vector2 Double
-projectListItemSize            = Vector2 190.0 20.0
-createProjectButtonSize        = Vector2 200.0 20.0
+projectListItemSize, createProjectButtonSize :: Size
+projectListItemSize            = Size (Vector2 190.0 20.0)
+createProjectButtonSize        = Size (Vector2 200.0 20.0)
 
 createProjectDialogPosition   :: Position
-createProjectDialogPosition    = Vector2 230.0 40.0
+createProjectDialogPosition    = Position (Vector2 230.0 40.0)
 
-createProjectDialogTextBoxSize, createProjectDialogOKSize, createProjectDialogCancelSize :: Vector2 Double
-createProjectDialogTextBoxSize = Vector2 200.0 20.0
-createProjectDialogOKSize      = Vector2 100.0 20.0
-createProjectDialogCancelSize  = Vector2  80.0 20.0
+createProjectDialogTextBoxSize, createProjectDialogOKSize, createProjectDialogCancelSize :: Size
+createProjectDialogTextBoxSize = Size (Vector2 200.0 20.0)
+createProjectDialogOKSize      = Size (Vector2 100.0 20.0)
+createProjectDialogCancelSize  = Size (Vector2  80.0 20.0)
 
 createProjectDialogStyle      :: Group.Style
 createProjectDialogStyle       = def & Group.background ?~ Color 0.3 0.3 0.5 1.0
@@ -70,7 +70,7 @@ projectChooserStyle = def & Group.background   ?~ Color 0.55 0.55 0.55 1.0
                           & Group.padding      .~ uniformPadding 5.0
 
 textEditorToggle :: Button.Button
-textEditorToggle = Button.create (Vector2 10 1000) ":" & Button.style .~ style where
+textEditorToggle = Button.create (Size (Vector2 10 1000)) ":" & Button.style .~ style where
      style = def & Button.rounded    .~ False
                  & Button.background .~ Color 0.1 0.1 0.1 1.0
                  & Button.alignment  .~ Label.Center
@@ -87,9 +87,9 @@ inputsEdgeStyle = def & Group.background   ?~ Color 0.0 0.0 0.0 0.0
 errorMessageWrapMargin :: Int
 errorMessageWrapMargin = 30
 
-errorMessageWidgetSize, visualizationWidgetSize :: Vector2 Double
-errorMessageWidgetSize  = Vector2 200 200
-visualizationWidgetSize = Vector2 200 200
+errorMessageWidgetSize, visualizationWidgetSize :: Size
+errorMessageWidgetSize  = Size (Vector2 200 200)
+visualizationWidgetSize = Size (Vector2 200 200)
 
 
 gridSize :: Int

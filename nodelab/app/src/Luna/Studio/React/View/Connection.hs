@@ -24,10 +24,8 @@ connection :: Ref Connection -> ReactView ()
 connection connectionRef = React.defineControllerView
     name connectionRef $ \connectionStore () -> do
         let connection = connectionStore ^. dt
-            srcX       = connection ^. Connection.from . x
-            srcY       = connection ^. Connection.from . y
-            dstX       = connection ^. Connection.to . x
-            dstY       = connection ^. Connection.to . y
+            src        = connection ^. Connection.from
+            dst        = connection ^. Connection.to
             color      = connection ^. Connection.color
             num        = 0
             numOfPorts = 0
@@ -35,8 +33,8 @@ connection connectionRef = React.defineControllerView
             numOfPorts'= 0
             isSingle   = True
             isSelf     = True
-            srcXY      = connectionSrc (Vector2 srcX srcY) (Vector2 dstX dstY) num  numOfPorts  isSingle
-            dstXY      = connectionDst (Vector2 srcX srcY) (Vector2 dstX dstY) num' numOfPorts' isSelf
+            srcXY      = connectionSrc src dst num  numOfPorts  isSingle
+            dstXY      = connectionDst src dst num' numOfPorts' isSelf
         drawConnection_ srcXY dstXY color
 
 connection_ :: Ref Connection -> ReactElementM ViewEventHandler ()
@@ -47,28 +45,25 @@ currentConnection :: Ref CurrentConnection -> ReactView ()
 currentConnection connectionRef = React.defineControllerView
     name connectionRef $ \connectionStore () -> do
         let connection = connectionStore ^. dt
-            srcX       = connection ^. Connection.currentFrom . x
-            srcY       = connection ^. Connection.currentFrom . y
-            dstX       = connection ^. Connection.currentTo . x
-            dstY       = connection ^. Connection.currentTo . y
+            src        = connection ^. Connection.currentFrom
+            dst        = connection ^. Connection.currentTo
             color      = connection ^. Connection.currentColor
             num        = 0
             numOfPorts = 0
             isSingle   = True
-            srcXY      = connectionSrc (Vector2 srcX srcY) (Vector2 dstX dstY) num numOfPorts isSingle
-            dstXY      = Vector2 dstX dstY
-        drawConnection_ srcXY dstXY color
+            srcXY      = connectionSrc src dst num numOfPorts isSingle
+        drawConnection_ srcXY dst color
 
 currentConnection_ :: Ref CurrentConnection -> ReactElementM ViewEventHandler ()
 currentConnection_ connectionRef = React.view (currentConnection connectionRef) () mempty
 
 
 drawConnection_ :: Position -> Position -> Int -> ReactElementM ViewEventHandler ()
-drawConnection_ (Vector2 srcX srcY) (Vector2 dstX dstY) color =
-    let x1 = fromString $ showSvg $ srcX
-        y1 = fromString $ showSvg $ srcY
-        x2 = fromString $ showSvg $ dstX
-        y2 = fromString $ showSvg $ dstY
+drawConnection_ src dst color =
+    let x1 = fromString $ showSvg $ src ^. x
+        y1 = fromString $ showSvg $ src ^. y
+        x2 = fromString $ showSvg $ dst ^. x
+        y2 = fromString $ showSvg $ dst ^. y
         color = color' $ Color 5 --TODO[react]: Apply correct color
         width = fromString $ show connectionWidth
     in line_

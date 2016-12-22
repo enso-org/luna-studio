@@ -22,7 +22,7 @@ import           Object.UITypes
 -- import           Luna.Studio.State.Camera     (Camera)
 -- import qualified Luna.Studio.State.Camera     as Camera
 import           Luna.Studio.Data.CtxDynamic
-import           Luna.Studio.Data.Vector      (Position, Vector2 (Vector2))
+import           Luna.Studio.Data.Vector      (Position, Size, Vector2 (Vector2))
 import           Luna.Studio.Prelude          hiding (children, (.=))
 
 
@@ -48,8 +48,6 @@ data WidgetFile b = WidgetFile { _objectId :: WidgetId
                                , _children :: [WidgetId]
                                , _handlers :: HTMap
                                } deriving (Generic)
-
-type Size     = Vector2 Double
 
 class IsDisplayObject a where
     widgetPosition :: Lens'  a Position
@@ -101,8 +99,8 @@ class CompositeWidget a where
     updateWidget _ _ _ = return ()
 
 class ResizableWidget a where
-    resizeWidget    :: WidgetId -> Vector2 Double -> a -> Command State ()
-    default resizeWidget :: WidgetId -> Vector2 Double -> a -> Command State ()
+    resizeWidget    :: WidgetId -> Size -> a -> Command State ()
+    default resizeWidget :: WidgetId -> Size -> a -> Command State ()
     resizeWidget _ _ _ = return ()
 
 instance ResizableWidget DisplayObject where
@@ -130,15 +128,16 @@ data State = State { _widgets         :: WidgetMap
 
 instance ToJSON DragState
 
+--TODO[react]: Why this is even here???
 -- TODO: fix non-exhaustive pattern
-sceneToLocal :: Vector2 Double -> [Double] -> Vector2 Double
-sceneToLocal (Vector2 x y) [ aa, ab, _ , _
-                           , ba, bb, _ , _
-                           , _ , _ , _ , _
-                           , da, db, _ , _
-                           ] = Vector2 x' y' where
-                               x' = aa * x + ba * y + da
-                               y' = ab * x + bb * y + db
+-- sceneToLocal :: Vector2 Double -> [Double] -> Vector2 Double
+-- sceneToLocal (Vector2 x y) [ aa, ab, _ , _
+--                            , ba, bb, _ , _
+--                            , _ , _ , _ , _
+--                            , da, db, _ , _
+--                            ] = Vector2 x' y' where
+--                                x' = aa * x + ba * y + da
+--                                y' = ab * x + bb * y + db
 
 --TODO[react]: Why this is even here???
 -- screenToLocal :: Camera -> Position -> [Double]  -> Position

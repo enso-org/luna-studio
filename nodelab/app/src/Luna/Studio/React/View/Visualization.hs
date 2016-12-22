@@ -7,30 +7,30 @@ module Luna.Studio.React.View.Visualization
 )
 where
 
-import           Control.Arrow                     ((***))
-import           Data.List.Split                   (wordsBy)
-import qualified Data.Text.Lazy                    as Text
-import           React.Flux                        hiding (image_)
-import qualified React.Flux                        as React
+import           Control.Arrow                                  ((***))
+import           Data.List.Split                                (wordsBy)
+import qualified Data.Text.Lazy                                 as Text
+import           React.Flux                                     hiding (image_)
+import qualified React.Flux                                     as React
 
-import           Empire.API.Data.DefaultValue      (Value (..))
-import qualified Empire.API.Data.DefaultValue      as DefaultValue
-import qualified Empire.API.Data.Error             as LunaError
-import           Empire.API.Data.TypeRep           (TypeRep)
-import           Empire.API.Graph.NodeResultUpdate (NodeValue)
-import qualified Empire.API.Graph.NodeResultUpdate as NodeResult
-import           Luna.Studio.Data.Vector           hiding (normalize)
+import           Empire.API.Data.DefaultValue                   (Value (..))
+import qualified Empire.API.Data.DefaultValue                   as DefaultValue
+import qualified Empire.API.Data.Error                          as LunaError
+import           Empire.API.Data.TypeRep                        (TypeRep)
+import           Empire.API.Graph.NodeResultUpdate              (NodeValue)
+import qualified Empire.API.Graph.NodeResultUpdate              as NodeResult
+import           Luna.Studio.Data.Vector                        hiding (normalize)
 import           Luna.Studio.Prelude
-import           Luna.Studio.React.Model.DataFrame (DataFrame)
-import qualified Luna.Studio.React.Model.DataFrame as DataFrame
-import           Luna.Studio.React.Model.Node      (Node)
-import qualified Luna.Studio.React.Model.Node      as Node
-import           Luna.Studio.React.View.Visualization.DataFrame  (dataFrame_)
-import           Luna.Studio.React.View.Visualization.Graphics   (graphics_)
-import           Luna.Studio.React.View.Visualization.Image      (image_)
-import qualified Object.Widget.Plots.Image         as Image
-import qualified Style.Layout                      as Style
-import qualified UI.Instances                      ()
+import           Luna.Studio.React.Model.DataFrame              (DataFrame)
+import qualified Luna.Studio.React.Model.DataFrame              as DataFrame
+import           Luna.Studio.React.Model.Node                   (Node)
+import qualified Luna.Studio.React.Model.Node                   as Node
+import           Luna.Studio.React.View.Visualization.DataFrame (dataFrame_)
+import           Luna.Studio.React.View.Visualization.Graphics  (graphics_)
+import           Luna.Studio.React.View.Visualization.Image     (image_)
+import qualified Object.Widget.Plots.Image                      as Image
+import qualified Style.Layout                                   as Style
+import qualified UI.Instances                                   ()
 
 
 
@@ -95,7 +95,7 @@ nodeValue_ visIx = \case
     StringStringMap v -> dataFrame_ visIx $ listTablePairs $ (mapTuple Text.pack) <$> v
     IntPairList     v -> dataFrame_ visIx $ listTablePairs $ mapTuple (Text.pack . show) <$> v
     DoublePairList  v -> dataFrame_ visIx $ listTablePairs $ mapTuple (Text.pack . show) <$> v
-    Image     url w h -> image_ visIx $ Image.create (Vector2 w h) $ Text.pack url
+    Image     url w h -> image_ visIx $ Image.create (Size (Vector2 w h)) $ Text.pack url
     StringValue   str -> div_ $ elemString $ fromString $ normalize str
     Lambda        str -> div_ $ elemString $ fromString $ normalize str
     Graphics       gr -> graphics_ visIx gr

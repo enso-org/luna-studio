@@ -22,7 +22,7 @@ graphics_ visIx (GR.Graphics layers) = do
         labels = createLabels =<< layers
         widget = Graphics.create Style.visualizationWidgetSize items labels
         createLabels (GR.Layer _ _ (GR.Labels l)) = createLabel <$> l
-        createLabel  (GR.Label (GR.Point x' y') fontSize align text) = Graphics.Label (Vector2 x' y') fontSize (labelAlign align) $ Text.pack text
+        createLabel  (GR.Label (GR.Point x' y') fontSize align text) = Graphics.Label (Position (Vector2 x' y')) fontSize (labelAlign align) $ Text.pack text
         labelAlign GR.Left   = Label.Left
         labelAlign GR.Center = Label.Center
         labelAlign GR.Right  = Label.Right
@@ -32,7 +32,7 @@ graphics_ visIx (GR.Graphics layers) = do
                 forM_ labels $ (label_ $ widget ^. G.size)
                 forM_ items $ (item_ $ widget ^. G.size)
 
-label_ :: Vector2 Double -> G.Label -> ReactElementM ViewEventHandler ()
+label_ :: Size -> G.Label -> ReactElementM ViewEventHandler ()
 label_ size label = do
     text_
         [ "x" $= fromString (show $ (label ^. G.labelPosition . x) * (size ^. x))
@@ -42,7 +42,7 @@ label_ size label = do
         ] $
         elemString $ fromString $ Text.unpack $ label ^. G.text
 
-item_ :: Vector2 Double -> G.Item -> ReactElementM ViewEventHandler ()
+item_ :: Size -> G.Item -> ReactElementM ViewEventHandler ()
 item_ size item = do
     g_ mempty --TODO implement
 
@@ -57,7 +57,7 @@ createBoxes (GR.Transformations transf) = createBoxFromTransf <$> transf
 createBoxes (GR.Translations    transl) = createBoxFromTransl <$> transl
 
 createBoxFromTransf :: GR.Transformation -> Graphics.Box
-createBoxFromTransf (GR.Transformation _ _ dx dy _ _) = Graphics.Box (Vector2 dx dy)
+createBoxFromTransf (GR.Transformation _ _ dx dy _ _) = Graphics.Box (Position (Vector2 dx dy))
 
 createBoxFromTransl :: GR.Point -> Graphics.Box
-createBoxFromTransl (GR.Point dx dy) = Graphics.Box (Vector2 dx dy)
+createBoxFromTransl (GR.Point dx dy) = Graphics.Box (Position (Vector2 dx dy))

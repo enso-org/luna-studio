@@ -3,7 +3,7 @@
 module Luna.Studio.State.Global where
 
 import           Data.Word                            (Word8)
-import           Luna.Studio.Data.Vector              (Position, Vector2 (Vector2))
+import           Luna.Studio.Data.Vector              (Position (Position), Vector2 (Vector2))
 import           Luna.Studio.Prelude
 
 import           Data.Aeson                           (ToJSON, toJSON)
@@ -106,7 +106,7 @@ getConnection :: ConnectionId -> Command State (Maybe (Ref Connection))
 getConnection connectionId = withConnection connectionId return
 
 initialState :: DateTime -> Collaboration.ClientId -> StdGen -> Maybe Int -> Ref App -> State
-initialState = State (Vector2 200 200) def def def def def def def def def defJsState def def
+initialState = State (Position (Vector2 200 200)) def def def def def def def def def defJsState def def
 
 inRegistry :: Command UIRegistry.State a -> Command State a
 inRegistry = zoom uiRegistry

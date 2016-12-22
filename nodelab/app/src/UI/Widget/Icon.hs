@@ -1,20 +1,20 @@
 module UI.Widget.Icon where
 
-import           Luna.Studio.Prelude
 import           Luna.Studio.Data.Vector
+import           Luna.Studio.Prelude
 
-import           Data.JSString.Text (lazyTextToJSString)
-import           GHCJS.Marshal.Pure (PFromJSVal (..), PToJSVal (..))
+import           Data.JSString.Text      (lazyTextToJSString)
+import           GHCJS.Marshal.Pure      (PFromJSVal (..), PToJSVal (..))
 
 import           Object.UITypes
 import           Object.Widget
-import qualified Object.Widget.Icon as Model
+import qualified Object.Widget.Icon      as Model
 
-import           UI.Generic         (whenChanged)
-import qualified UI.Generic         as UI
-import qualified UI.Registry        as UI
-import           UI.Widget          (UIWidget)
-import qualified UI.Widget          as Widget
+import           UI.Generic              (whenChanged)
+import qualified UI.Generic              as UI
+import qualified UI.Registry             as UI
+import           UI.Widget               (UIWidget)
+import qualified UI.Widget               as Widget
 
 newtype Icon = Icon JSVal deriving (PToJSVal, PFromJSVal)
 
@@ -27,7 +27,8 @@ create :: WidgetId -> Model.Icon -> IO Icon
 create oid model = do
     widget      <- create' (fromWidgetId oid) (model ^. Model.size . x) (model ^. Model.size . y)
     setIcon model widget
-    UI.setWidgetPosition (model ^. widgetPosition) widget
+    -- TODO[react]: Does not make sense anymore
+    -- UI.setWidgetPosition (model ^. widgetPosition) widget
     return widget
 
 setIcon :: Model.Icon -> Icon -> IO ()

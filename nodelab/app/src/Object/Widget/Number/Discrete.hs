@@ -1,12 +1,12 @@
 module Object.Widget.Number.Discrete where
 
 import           Data.Aeson              (ToJSON)
-import           Luna.Studio.Data.Vector (Position, Vector2)
+import           Luna.Studio.Data.Vector (Position, Size)
 import           Luna.Studio.Prelude
 import           Object.Widget
 
 data DiscreteNumber = DiscreteNumber { _position       :: Position
-                                     , _size           :: Vector2 Double
+                                     , _size           :: Size
                                      , _label          :: Text
                                      , _value          :: Int
                                      , _enabled        :: Bool
@@ -18,11 +18,6 @@ instance ToJSON DiscreteNumber
 
 create :: Size -> Text -> Int -> DiscreteNumber
 create s l v = DiscreteNumber def s l v True def
-
-instance IsDisplayObject DiscreteNumber where
-    widgetPosition = position
-    widgetSize     = size
-    widgetVisible  = to $ const True
 
 displayValue' :: DiscreteNumber -> String
 displayValue' model = show $ model ^. value

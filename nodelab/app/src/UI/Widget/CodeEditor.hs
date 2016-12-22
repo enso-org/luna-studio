@@ -3,8 +3,8 @@
 
 module UI.Widget.CodeEditor where
 
-import           Luna.Studio.Prelude
 import           Luna.Studio.Data.Vector
+import           Luna.Studio.Prelude
 
 import qualified Data.JSString            ()
 import           Data.JSString.Text       (lazyTextToJSString)
@@ -31,7 +31,8 @@ foreign import javascript safe "$1.setCode($2)"             setCode'       :: Co
 create :: WidgetId -> Model.CodeEditor -> IO CodeEditor
 create oid model = do
     codeEditor <- create' (fromWidgetId oid) (model ^. Model.size . x) (model ^. Model.size . y)
-    UI.setWidgetPosition (model ^. widgetPosition) codeEditor
+    -- TODO[react]: Does not make sense anymore
+    -- UI.setWidgetPosition (model ^. widgetPosition) codeEditor
     setCode model codeEditor
     return codeEditor
 

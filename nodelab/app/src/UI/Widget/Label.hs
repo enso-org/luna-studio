@@ -2,19 +2,19 @@ module UI.Widget.Label where
 
 import           Luna.Studio.Prelude
 
-import qualified Data.JSString       as JSString
-import           Data.JSString.Text  (lazyTextToJSString)
-import           GHCJS.Marshal.Pure  (PFromJSVal (..), PToJSVal (..))
+import qualified Data.JSString           as JSString
+import           Data.JSString.Text      (lazyTextToJSString)
+import           GHCJS.Marshal.Pure      (PFromJSVal (..), PToJSVal (..))
 import           Luna.Studio.Data.Vector
 
 import           Object.UITypes
 import           Object.Widget
-import qualified Object.Widget.Label as Model
+import qualified Object.Widget.Label     as Model
 
-import qualified UI.Generic          as UI
-import qualified UI.Registry         as UI
-import           UI.Widget           (UIWidget)
-import qualified UI.Widget           as Widget
+import qualified UI.Generic              as UI
+import qualified UI.Registry             as UI
+import           UI.Widget               (UIWidget)
+import qualified UI.Widget               as Widget
 
 newtype Label = Label JSVal deriving (PToJSVal, PFromJSVal)
 
@@ -30,7 +30,8 @@ create oid model = do
     widget      <- create' (fromWidgetId oid) (model ^. Model.size . x) (model ^. Model.size . y)
     setAlignment model widget
     setMonospace model widget
-    UI.setWidgetPosition (model ^. widgetPosition) widget
+    -- TODO[react]: Does not make sense anymore
+    -- UI.setWidgetPosition (model ^. widgetPosition) widget
     return widget
 
 setLabel :: Model.Label -> Label -> IO ()

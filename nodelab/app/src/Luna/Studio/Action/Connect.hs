@@ -13,6 +13,7 @@ import qualified JS.GoogleAnalytics                 as GA
 import           Luna.Studio.Commands.Command       (Command)
 import           Luna.Studio.Commands.Graph.Connect (batchConnectNodes)
 import           Luna.Studio.Data.Vector            (Position, Vector2 (Vector2))
+import           Luna.Studio.Event.Mouse            (getMousePosition)
 import           Luna.Studio.Prelude
 import qualified Luna.Studio.React.Event.App        as App
 import qualified Luna.Studio.React.Event.Node       as Node
@@ -30,9 +31,9 @@ import           React.Flux                         (mouseScreenX, mouseScreenY)
 
 toAction :: Event -> Maybe (Command State ())
 toAction (UI (NodeEvent (Node.StartConnection evt nodeId portId))) = Just $ startDragFromPort pos nodeId portId
-    where pos = Vector2 (fromIntegral $ mouseScreenX evt) (fromIntegral $ mouseScreenY evt)
+    where pos = getMousePosition evt
 toAction (UI (AppEvent  (App.MouseMove evt)))                      = Just $ whileConnecting $ handleMove pos
-    where pos = Vector2 (fromIntegral $ mouseScreenX evt) (fromIntegral $ mouseScreenY evt)
+    where pos = getMousePosition evt
 toAction (UI (AppEvent (App.MouseUp _)))                           = Just $ whileConnecting $ stopDrag'
 toAction (UI (NodeEvent (Node.EndConnection _ nodeId portId)))     = Just $ whileConnecting $ stopDrag nodeId portId
 toAction _                                                         = Nothing

@@ -1,12 +1,12 @@
 module Luna.Studio.State.MultiSelection where
 
 
-import           Data.Aeson        (ToJSON)
-import           Luna.Studio.Prelude
+import           Data.Aeson              (ToJSON)
 import           Luna.Studio.Data.Vector
+import           Luna.Studio.Prelude
 
-data DragHistory = DragHistory { _dragStartPos   :: Vector2 Int
-                               , _dragCurrentPos :: Vector2 Int
+data DragHistory = DragHistory { _dragStartPos   :: Position
+                               , _dragCurrentPos :: Position
                                } deriving (Eq, Show, Generic)
 
 

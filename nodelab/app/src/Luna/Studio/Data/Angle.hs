@@ -30,7 +30,7 @@ boundedAngle centralAngle' count src dst = angle where
     centralAngle = centralAngle'
     minAngle = centralAngle - span'
     maxAngle = centralAngle + span'
-    connAngle = toAngle (dst - src)
+    connAngle = toAngle $ (dst ^. vector) - (src ^. vector)
     diffAngle = (normAngle $ (centralAngle' - connAngle + pi)) - pi
     angle
         | diffAngle < (-span') = maxAngle

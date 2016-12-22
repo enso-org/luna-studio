@@ -1,14 +1,14 @@
 module Luna.Studio.React.Model.SelectionBox where
 
-import           Luna.Studio.Prelude
 import           Luna.Studio.Data.Vector
+import           Luna.Studio.Prelude
 
 
 
 data SelectionBox = SelectionBox
     { _visible :: Bool
-    , _start   :: Vector2 Int
-    , _end     :: Vector2 Int
+    , _start   :: Position
+    , _end     :: Position
     } deriving (Show)
 
 makeLenses ''SelectionBox

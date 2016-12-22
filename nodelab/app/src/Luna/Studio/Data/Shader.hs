@@ -1,5 +1,6 @@
 {-# LANGUAGE DataKinds #-}
 
+-- TODO[react]: THIS FILE REQUIRES SERIOUS REFACTOR
 module Luna.Studio.Data.Shader (
     ShaderBox(..)
   , Location(..)
@@ -7,8 +8,8 @@ module Luna.Studio.Data.Shader (
   ) where
 
 import           Development.Placeholders
+import           Luna.Studio.Data.Vector             (Position (Position), Size (Size), Vector2 (Vector2), vector, x, y)
 import           Prologue                            hiding (Bounded, s)
-import           Luna.Studio.Data.Vector                        (Vector2 (Vector2))
 
 import qualified Data.Array.Linear                   as A
 import           Data.Array.Linear.Color.Class
@@ -25,16 +26,16 @@ import           Math.Space.Metric.Bounded
 
 
 type Vector = Vector2 Double
-type Size   = Vector
 type Shader = String
 
-data Bound = Bound { __leftTop     :: Vector
-                   , __rightBottom :: Vector
+data Bound = Bound { __leftTop     :: Position
+                   , __rightBottom :: Position
                    } deriving (Show, Eq)
 
 makeLenses ''Bound
 
-data Location = Location { _size   :: Size
+--TODO[react]: Should here really be only one underscore?
+data Location = Location { _size    :: Size
                          , __offset :: Vector
                          } deriving (Show, Eq)
 
@@ -123,14 +124,20 @@ createShader objSize objectMay = fromMaybe "" $ compileObject <$> objectMay wher
 -- size calculation
 
 defBound :: Bound
-defBound = Bound (Vector2 (-1.0) (-1.0)) (Vector2 1.0 1.0)
+defBound = Bound (Position (Vector2 (-1.0) (-1.0))) (Position (Vector2 1.0 1.0))
 
 toLocation :: Bound -> Location
-toLocation (Bound (Vector2 x1 y1) (Vector2 x2 y2)) = Location (Vector2 w h) (Vector2 sx sy) where
-    w  = max 0.0 $ x2 - x1
-    h  = max 0.0 $ y2 - y1
-    sx = (x1 + x2) / 2.0
-    sy = (y1 + y2) / 2.0
+toLocation (Bound leftTop rightBottom) = Location size' offset where
+    x1     = leftTop ^. x
+    y1     = leftTop ^. y
+    x2     = rightBottom ^. x
+    y2     = rightBottom ^. y
+    w      = max 0.0 $ x2 - x1
+    h      = max 0.0 $ y2 - y1
+    sx     = (x1 + x2) / 2.0
+    sy     = (y1 + y2) / 2.0
+    size'  = Size (Vector2 w h)
+    offset = Vector2 sx sy
 
 -- expandBound :: Double -> Double -> Bound -> Bound
 -- expandBound 0.0 0.0 bound = bound
@@ -140,19 +147,16 @@ toLocation (Bound (Vector2 x1 y1) (Vector2 x2 y2)) = Location (Vector2 w h) (Vec
 --     x2' = max x2 $ x2 + dx
 --     y2' = max y2 $ y2 + dy
 
-moveBound :: Double -> Double -> Bound -> Bound
-moveBound 0.0 0.0 bound = bound
-moveBound dx  dy (Bound (Vector2 x1 y1) (Vector2 x2 y2)) = Bound (Vector2 x1' y1') (Vector2 x2' y2') where
-    x1' = x1 + dx
-    y1' = y1 + dy
-    x2' = x2 + dx
-    y2' = y2 + dy
+moveBound :: Vector2 Double -> Bound -> Bound
+moveBound vec (Bound leftTop rightBottom) = Bound p1 p2 where
+    p1 = Position (leftTop ^. vector + vec)
+    p2 = Position (rightBottom ^. vector + vec)
 
-minCorner :: Ord a => Vector2 a -> Vector2 a -> Vector2 a
-minCorner (Vector2 x1 y1) (Vector2 x2 y2) = Vector2 (min x1 x2) (min y1 y2)
+minCorner :: Position -> Position -> Position
+minCorner p1 p2 = Position (Vector2 (min (p1 ^. x) (p2 ^. x)) (min (p1 ^. y) (p2 ^. y)))
 
-maxCorner :: Ord a => Vector2 a -> Vector2 a -> Vector2 a
-maxCorner (Vector2 x1 y1) (Vector2 x2 y2) = Vector2 (max x1 x2) (max y1 y2)
+maxCorner :: Position -> Position -> Position
+maxCorner p1 p2 = Position (Vector2 (max (p1 ^. x) (p2 ^. x)) (max (p1 ^. y) (p2 ^. y)))
 
 maxBounds :: Bound -> Bound -> Bound
 maxBounds (Bound lt1 rb1) (Bound lt2 rb2) = Bound (minCorner lt1 lt2) (maxCorner rb1 rb2)
@@ -166,15 +170,15 @@ maxBoundsList [bound]           = bound
 maxBoundsList (bound:boundList) = foldl maxBounds bound boundList
 
 toShaderBound :: Size -> A.BVec 2 Float
-toShaderBound (Vector2 x y) = A.vec2 (toFloat x) (toFloat y)
+toShaderBound size' = A.vec2 (toFloat (size' ^. x)) (toFloat (size' ^. y))
 
 calcFigureBound :: G.Figure -> Bound
-calcFigureBound (G.Square s)      = Bound (Vector2 (-s2) (-s2)) (Vector2 s2 s2) where s2 = s / 2.0
-calcFigureBound (G.Rectangle w h) = Bound (Vector2 (-w2) (-h2)) (Vector2 w2 h2) where w2 = w / 2.0; h2 = h / 2.0
-calcFigureBound (G.Circle d)      = Bound (Vector2 (-d)  (-d))  (Vector2 d  d)
+calcFigureBound (G.Square s)      = Bound (Position (Vector2 (-s2) (-s2))) (Position (Vector2 s2 s2)) where s2 = s / 2.0
+calcFigureBound (G.Rectangle w h) = Bound (Position (Vector2 (-w2) (-h2))) (Position (Vector2 w2 h2)) where w2 = w / 2.0; h2 = h / 2.0
+calcFigureBound (G.Circle d)      = Bound (Position (Vector2 (-d)  (-d)))  (Position (Vector2 d  d))
 
 calcPrimitiveBound :: G.Primitive -> Bound
-calcPrimitiveBound (G.Primitive figure (G.Point dx dy) _) = moveBound dx dy $ calcFigureBound figure
+calcPrimitiveBound (G.Primitive figure (G.Point dx dy) _) = moveBound (Vector2 dx dy) $ calcFigureBound figure
 -- calcPrimitiveBound (G.Primitive figure (G.Point dx dy) attr) = trace ("pri " <> "dx " <> show dx <> " dy " <> show dy <> " " <> show bound <> " " <> show figure) $ bound where
 --     bound = moveBound dx dy $ calcFigureBound figure
 
@@ -197,7 +201,7 @@ calcGeoCompBound (G.GeoElem  surfaces)   = calcSurfacesBound surfaces
 calcGeoCompBound (G.GeoGroup geometries) = maxBoundsList $ calcGeometryBound <$> geometries
 
 calcGeometryBound :: G.Geometry -> Bound
-calcGeometryBound (G.Geometry geoComp trans _) = moveBound dx dy $ calcGeoCompBound geoComp where
+calcGeometryBound (G.Geometry geoComp trans _) = moveBound (Vector2 dx dy) $ calcGeoCompBound geoComp where
     Vector2 dx dy = toTranslation trans
 -- calcGeometryBound (G.Geometry geoComp trans matMay) = trace ("geo " <> "dx " <> show dx <> " dy " <> show dy <> " " <> show bound) $ bound where
 --     bound = moveBound dx dy $ calcGeoCompBound geoComp
@@ -218,7 +222,7 @@ createShaderBox geometry = ShaderBox (createShader (location ^. size) objMay) lo
 _createShaderBoxTest :: G.Geometry -> ShaderBox
 _createShaderBoxTest geometry = ShaderBox (createShader (location ^. size) objMay) location where
     -- location = calcGeometryLocation geometry
-    location = toLocation $ Bound (Vector2 0.0 0.0) (Vector2 1.0 1.0)
+    location = toLocation $ Bound (Position (Vector2 0.0 0.0)) (Position (Vector2 1.0 1.0))
     objMay   = fromGeometry geometry
 
 _testGeo :: G.Geometry
@@ -234,7 +238,7 @@ _testGeo = G.Geometry geoComp trans justMat where
 _test :: IO ()
 _test = do
     let _geometry = _testGeo
-        ShaderBox _shaderTxt (Location (Vector2 _ _) (Vector2 _ _)) = createShaderBox _geometry
+        ShaderBox _shaderTxt (Location (Size _) (Vector2 _ _)) = createShaderBox _geometry
     return ()
 
 

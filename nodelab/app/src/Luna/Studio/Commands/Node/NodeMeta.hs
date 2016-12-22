@@ -3,16 +3,16 @@ module Luna.Studio.Commands.Node.NodeMeta
     , modifyNodeMeta
     ) where
 
-import           Luna.Studio.Prelude
 import           Luna.Studio.Data.Vector
+import           Luna.Studio.Prelude
 
-import           Empire.API.Data.Node      (NodeId)
-import qualified Empire.API.Data.Node      as Node
-import           Empire.API.Data.NodeMeta  (NodeMeta (..))
-import qualified Empire.API.Data.NodeMeta  as NodeMeta
+import           Empire.API.Data.Node         (NodeId)
+import qualified Empire.API.Data.Node         as Node
+import           Empire.API.Data.NodeMeta     (NodeMeta (..))
+import qualified Empire.API.Data.NodeMeta     as NodeMeta
 
-import qualified Object.Widget.Node        as NodeModel
-import qualified Luna.Studio.React.Store               as Store
+import qualified Luna.Studio.React.Store      as Store
+import qualified Object.Widget.Node           as NodeModel
 
 import qualified Luna.Studio.Commands.Batch   as BatchCmd
 import           Luna.Studio.Commands.Command (Command)
@@ -27,7 +27,7 @@ updateNodeMeta' nodeId meta = do
     nodeRef <- Global.getNode nodeId
     withJust nodeRef $ Store.modifyM_ $ do
         NodeModel.visualizationsEnabled .= meta ^. NodeMeta.displayResult
-        NodeModel.position .= fromTuple (meta ^. NodeMeta.position)
+        NodeModel.position .= Position (fromTuple $ meta ^. NodeMeta.position)
 
 updateNodeMeta :: NodeId -> NodeMeta -> Command Global.State ()
 updateNodeMeta nodeId meta = do

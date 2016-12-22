@@ -54,6 +54,7 @@ dependencies:
   - hsprocessing
   - language-glsl
   - lens
+  - lens-utils
   - luna-empire-api
   - luna-empire-api-json
   - MissingH

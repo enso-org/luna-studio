@@ -1,14 +1,14 @@
 module Object.Widget.Icon where
 
 import           Data.Aeson              (ToJSON)
-import           Luna.Studio.Data.Vector (Position, Vector2)
+import           Luna.Studio.Data.Vector (Position, Size)
 import           Luna.Studio.Prelude
 
 import           Object.Widget
 
 
 data Icon = Icon { _position :: Position
-                 , _size     :: Vector2 Double
+                 , _size     :: Size
                  , _shader   :: Text
                  } deriving (Eq, Show, Typeable, Generic)
 
@@ -18,8 +18,3 @@ instance ToJSON Icon
 
 create :: Text -> Icon
 create = Icon def def
-
-instance IsDisplayObject Icon where
-    widgetPosition = position
-    widgetSize     = size
-    widgetVisible  = to $ const True
