@@ -31,6 +31,7 @@ app ref = React.defineControllerView
              , onMouseMove $ \_ m -> dispatch ref $ UI.AppEvent $ App.MouseMove m
              , "id"       $= "focus-root"
              , "tabIndex" $= "-1"
+             , "className" $= "noselect"
              ] $ do
                  div_ [ "className" $= "main" ] $ do
                      div_ [ "className" $= "graph-editor" ] $ do
