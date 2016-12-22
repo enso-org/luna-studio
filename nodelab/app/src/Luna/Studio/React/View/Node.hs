@@ -13,8 +13,6 @@ import qualified Luna.Studio.React.Event.Node         as Node
 import           Luna.Studio.React.Model.Node         (Node)
 import qualified Luna.Studio.React.Model.Node         as Node
 import           Luna.Studio.React.Store              (Ref, dispatch, dt)
-import           Luna.Studio.React.View.ForeignObject (foreignObject_)
-import           Luna.Studio.React.View.Global
 import           Luna.Studio.React.View.Global
 import           Luna.Studio.React.View.Port          (port_)
 import           Luna.Studio.React.View.PortControl   (portControl_)
@@ -23,6 +21,7 @@ import           Object.Widget.Port                   (Port (..))
 import qualified Object.Widget.Port                   as Port
 import           React.Flux
 import qualified React.Flux                           as React
+
 
 
 objName :: JSString
@@ -77,13 +76,12 @@ node ref = React.defineControllerView
                                         elemString $ fromString $ Text.unpack $ n ^. Node.name
                             forM_ (n ^. Node.ports) $ portControl_ ref n
                             div_ [ "className" $= "label" ] $ elemString "Display result"
-                            div_ [ "className" $= "value" ] $
-                                label_ ["className" $= "switch"] $ do
-                                    input_ ["type" $= "checkbox"
-                                           ,"value" $= if n ^. Node.visualizationsEnabled then "on" else "off"
-                                           , onChange $ \e -> let val = not $ bool $ target e "value" in dispatch ref $ UI.NodeEvent $ Node.DisplayResultChanged val nodeId
-                                           ]
-                                    div_ ["className" $= "slider"] mempty
+                            div_ [ "className" $= "value" ] $ do
+                                let val = n ^. Node.visualizationsEnabled
+                                button_
+                                    [ onClick $ \_ _ -> dispatch ref $ UI.NodeEvent $ Node.DisplayResultChanged (not val) nodeId
+                                    ] $
+                                    elemString $ fromString $ if val then "yes" else "no"
                             withJust (n ^. Node.execTime) $ \execTime -> do
                                 div_ ["className" $= "label"] $ elemString "Execution time"
                                 div_ ["className" $= "value"] $ elemString $ show execTime <> " ms"
@@ -120,8 +118,3 @@ node_ :: Ref Node -> ReactElementM ViewEventHandler ()
 node_ ref = React.view (node ref) () mempty
 
 foreign import javascript safe "document.getElementById('focus-nameLabel').focus()" focusNameLabel :: IO ()
-
-
-bool :: String -> Bool
-bool "on" = True
-bool _    = False
