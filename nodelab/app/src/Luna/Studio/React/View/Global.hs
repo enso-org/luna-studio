@@ -91,33 +91,26 @@ connectionDst (Vector2 x1 y1) (Vector2 x2 y2) num numOfPorts _    =
     let t      = nodeToNodeAngle x1 y1 x2 y2
         number = num
         ports  = numOfPorts
-        dstX   = portRadius * (-cos(t)) + x2 -- FIXME: implement port limits
+        dstX   = portRadius * (-cos(t)) + x2
         dstY   = portRadius * (-sin(t)) + y2
-    in  Vector2 dstX dstY
+    in  Vector2 dstX dstY -- FIXME: implement port limits
 
 
-
-
-isIn :: Port -> Int
-isIn port = case port ^. Port.portId of
+countInput :: Port -> Int
+countInput port = case port ^. Port.portId of
     InPortId (Arg _) -> 1
     _                -> 0
 
-maybeInput :: Port -> Maybe Int
-maybeInput port = case port ^. Port.portId of
-    InPortId (Arg _) -> Just 1
-    _                -> Nothing
-
-isOut :: Port -> Int
-isOut port = case port ^. Port.portId of
+countOutput :: Port -> Int
+countOutput port = case port ^. Port.portId of
     OutPortId _ -> 1
     _           -> 0
 
 countInputs :: [Port] -> Int
-countInputs ports = foldl (\acc p -> acc + (isIn p)) 0 ports
+countInputs  ports = foldl (\acc p -> acc + (countInput  p)) 0 ports
 
 countOutputs :: [Port] -> Int
-countOutputs ports = foldl (\acc p -> acc + (isOut p)) 0 ports
+countOutputs ports = foldl (\acc p -> acc + (countOutput p)) 0 ports
 
 countPorts :: [Port] -> Int
 countPorts ports = (countInputs ports) + (countOutputs ports)
