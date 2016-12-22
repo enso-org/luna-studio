@@ -248,7 +248,7 @@ spec = around withChannels $ do
             u1 <- mkUUID
             res <- evalEmp env $ do
                 Graph.addNode top u1 "def foo" def
-                Graph.withGraph top $ GraphBuilder.rhsIsLambda u1
+                Graph.withGraph top $ runASTOp $ GraphBuilder.rhsIsLambda u1
             withResult res $ \a -> a `shouldBe` True
         it "`def foo` is trivial - has output connected to input" $ \env -> do
             res <- evalEmp env $ do

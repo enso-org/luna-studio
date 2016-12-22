@@ -58,7 +58,7 @@ decodeBreadcrumbs (Breadcrumb items) = fmap Breadcrumb $ forM items nameBreadcru
 buildGraph :: Command Graph API.Graph
 buildGraph = do
     parent <- use Graph.insideNode
-    canEnter <- forM parent canEnterNode
+    canEnter <- runASTOp $ forM parent canEnterNode
     when (not $ fromMaybe True canEnter) $ throwError $ "cannot enter node " ++ show parent
     API.Graph <$> buildNodes <*> buildConnections
 
@@ -96,7 +96,7 @@ getEdgePortMapping = do
     lastBreadcrumbId <- use Graph.insideNode
     case lastBreadcrumbId of
         Just id' -> do
-            isLambda <- rhsIsLambda id'
+            isLambda <- runASTOp $ rhsIsLambda id'
             if isLambda
                 then Just <$> getOrCreatePortMapping id'
                 else return Nothing
@@ -110,7 +110,7 @@ buildNode nid = do
     expr  <- runASTOp $ Print.printNodeExpression ref
     meta  <- runASTOp $ AST.readMeta root
     name  <- fromMaybe "" <$> getNodeName nid
-    canEnter <- canEnterNode nid
+    canEnter <- runASTOp $ canEnterNode nid
     ports <- buildPorts ref
     let code    = Nothing -- Just $ Text.pack expr
         portMap = Map.fromList $ flip fmap ports $ \p@(Port id' _ _ _) -> (id', p)
@@ -121,14 +121,14 @@ isMatch node = match node $ \case
     Unify{} -> return True
     _       -> return False
 
-canEnterNode :: NodeId -> Command Graph Bool
+canEnterNode :: ASTOp m => NodeId -> m Bool
 canEnterNode nid = do
-    root  <- runASTOp $ GraphUtils.getASTPointer nid
-    match' <- runASTOp $ isMatch root
+    root  <- GraphUtils.getASTPointer nid
+    match' <- isMatch root
     if match' then rhsIsLambda nid else return False
 
-rhsIsLambda :: NodeId -> Command Graph Bool
-rhsIsLambda nid = runASTOp $ do
+rhsIsLambda :: ASTOp m => NodeId -> m Bool
+rhsIsLambda nid = do
     node <- GraphUtils.getASTTarget nid
     match node $ \case
         Lam{} -> return True
