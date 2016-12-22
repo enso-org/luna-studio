@@ -3,36 +3,10 @@ module Luna.Studio.React.View.PortControl
     ( portControl_
     ) where
 
-import           Luna.Studio.Data.Vector
-import           Luna.Studio.Prelude             hiding (group)
 
 import qualified Data.Map.Lazy                   as Map
 import qualified Data.Text.Lazy                  as Text
 import           React.Flux
-
-import           Object.UITypes                  (WidgetId)
-import qualified Object.Widget.Button            as Button
-import qualified Object.Widget.Group             as Group
-import qualified Object.Widget.Label             as Label
-import qualified Object.Widget.LabeledTextBox    as LabeledTextBox
-import qualified Object.Widget.Number.Continuous as ContinuousNumber
-import qualified Object.Widget.Number.Discrete   as DiscreteNumber
-import qualified Object.Widget.Toggle            as Toggle
-import qualified UI.Handlers.Button              as Button
-import           UI.Handlers.Generic             (onValueChanged)
-import           UI.Instances                    ()
-
-import           Luna.Studio.Commands.Command    (Command)
-import qualified Luna.Studio.Commands.UIRegistry as UICmd
-import           Luna.Studio.State.UIRegistry    (addHandler)
-import qualified Luna.Studio.State.UIRegistry    as UIRegistry
-
-import qualified Luna.Studio.Commands.Batch      as BatchCmd
-
-import           UI.Layout                       as Layout
-
-import qualified Style.Node                      as Style
-import qualified Style.Types                     as Style
 
 import qualified Empire.API.Data.DefaultValue    as DefaultValue
 import qualified Empire.API.Data.Node            as NodeAPI
@@ -40,11 +14,34 @@ import           Empire.API.Data.Port            (InPort (..), InPort (..), OutP
 import qualified Empire.API.Data.Port            as PortAPI
 import           Empire.API.Data.PortRef         (AnyPortRef (..), portId', toAnyPortRef)
 import qualified Empire.API.Data.ValueType       as ValueType
+import qualified Event.UI                        as UI
+import qualified Luna.Studio.Commands.Batch      as BatchCmd
+import           Luna.Studio.Commands.Command    (Command)
+import qualified Luna.Studio.Commands.UIRegistry as UICmd
+import           Luna.Studio.Data.Vector
+import           Luna.Studio.Prelude             hiding (group)
+import qualified Luna.Studio.React.Event.Node    as Node
 import           Luna.Studio.React.Store         (Ref, dispatch)
+import           Luna.Studio.State.UIRegistry    (addHandler)
+import qualified Luna.Studio.State.UIRegistry    as UIRegistry
+import           Object.UITypes                  (WidgetId)
+import qualified Object.Widget.Button            as Button
+import qualified Object.Widget.Group             as Group
+import qualified Object.Widget.Label             as Label
+import qualified Object.Widget.LabeledTextBox    as LabeledTextBox
 import           Object.Widget.Node              (Node)
 import qualified Object.Widget.Node              as Node
+import qualified Object.Widget.Number.Continuous as ContinuousNumber
+import qualified Object.Widget.Number.Discrete   as DiscreteNumber
 import           Object.Widget.Port              (Port)
 import qualified Object.Widget.Port              as Port
+import qualified Object.Widget.Toggle            as Toggle
+import qualified Style.Node                      as Style
+import qualified Style.Types                     as Style
+import qualified UI.Handlers.Button              as Button
+import           UI.Handlers.Generic             (onValueChanged)
+import           UI.Instances                    ()
+import           UI.Layout                       as Layout
 
 
 
@@ -73,19 +70,18 @@ inPortControl_ ref portRef port = case port ^. Port.state of
         case port ^. Port.valueType . ValueType.toEnum of
             ValueType.Other -> return ()
             _               -> do
-                -- groupId <- UICmd.register group (Layout.horizontalLayoutHandler 0.0)
                 let zeroValue = case port ^. Port.valueType . ValueType.toEnum of
                         ValueType.DiscreteNumber   -> DefaultValue.IntValue    def
                         ValueType.ContinuousNumber -> DefaultValue.DoubleValue def
                         ValueType.String           -> DefaultValue.StringValue def
                         ValueType.Bool             -> DefaultValue.BoolValue   False
                         _                          -> undefined
-                    handlers = addHandler (Button.ClickedHandler $ \_ -> BatchCmd.setDefaultValue portRef (DefaultValue.Constant $ zeroValue)
-                        ) mempty
+                    defaultValue = DefaultValue.Constant zeroValue
                 div_ [ "className" $= "label" ] $ elemString $ fromString $ port ^. Port.name
-                div_ [ "className" $= "value" ] $ button_ $ elemString "not set"
-                -- UICmd.register_ groupId label def
-                -- UICmd.register_ groupId button handlers
+                div_ [ "className" $= "value" ] $
+                    button_
+                        [ onClick $ \_ _ -> dispatch ref $ UI.NodeEvent $ Node.SetDefaultValue portRef defaultValue] $
+                        elemString "not set"
                 return ()
     PortAPI.Connected       -> do
         let widget = Label.create (Style.portControlSize & x -~ Style.setLabelOffsetX) (Text.pack $ (port ^. Port.name) <> " (connected)")

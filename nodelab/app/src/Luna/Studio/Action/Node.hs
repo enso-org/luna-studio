@@ -5,6 +5,7 @@ import           React.Flux                           (KeyboardEvent, mouseCtrlK
 import           Empire.API.Data.Node                 (NodeId)
 import           Event.Event                          (Event (UI))
 import           Event.UI                             (UIEvent (AppEvent, NodeEvent))
+import qualified Luna.Studio.Commands.Batch           as Batch
 import           Luna.Studio.Commands.Command         (Command)
 import           Luna.Studio.Commands.Graph.Selection (selectAll, toggleSelect, unselectAll)
 import qualified Luna.Studio.Commands.Node            as Node
@@ -27,6 +28,7 @@ toAction (UI (NodeEvent (Node.DisplayResultChanged flag nodeId))) = Just $ Node.
 toAction (UI (NodeEvent (Node.NameEditStart    nodeId))) = Just $ Node.startEditName nodeId
 toAction (UI (NodeEvent (Node.NameKeyDown kevt nodeId))) = Just $ handleKeyNode kevt nodeId
 toAction (UI (NodeEvent (Node.NameChange   val nodeId))) = Just $ Node.editName nodeId val
+toAction (UI (NodeEvent (Node.SetDefaultValue portRef defaultValue))) = Just $ Batch.setDefaultValue portRef defaultValue
 toAction (UI (AppEvent (App.KeyDown e))) = Just $ handleKeyApp e
 toAction _   = Nothing
 
