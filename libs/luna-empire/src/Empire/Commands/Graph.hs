@@ -261,7 +261,7 @@ renameNode loc nid name = withTC loc False $ do
 
 dumpGraphViz :: GraphLocation -> Empire ()
 dumpGraphViz loc = withGraph loc $ do
-    zoom Graph.ast $ AST.dumpGraphViz "gui_dump"
+    zoom Graph.ast $ runASTOp $ AST.dumpGraphViz "gui_dump"
 
 typecheck :: GraphLocation -> Empire ()
 typecheck loc = withGraph loc $ runTC loc False

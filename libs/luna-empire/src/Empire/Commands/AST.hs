@@ -296,7 +296,7 @@ replaceTargetNode matchNode newTarget = do
             IR.changeSource (IR.generalize r) newTarget
         _ -> throwM $ NotUnifyException matchNode
 
-dumpGraphViz :: String -> Command AST ()
+dumpGraphViz :: ASTOp m => String -> m ()
 dumpGraphViz _name = $notImplemented
     -- g <- runASTOp Builder.get
     -- liftIO $ renderAndOpen [(name, name, g)]
