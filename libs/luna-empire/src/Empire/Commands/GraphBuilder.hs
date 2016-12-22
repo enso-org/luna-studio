@@ -105,7 +105,7 @@ getEdgePortMapping = do
 buildNode :: NodeId -> Command Graph API.Node
 buildNode nid = do
     root  <- runASTOp $ GraphUtils.getASTPointer nid
-    match' <- isMatch root
+    match' <- runASTOp $ isMatch root
     ref   <- if match' then runASTOp $ GraphUtils.getASTTarget nid else return root
     expr  <- runASTOp $ Print.printNodeExpression ref
     meta  <- runASTOp $ AST.readMeta root
@@ -116,30 +116,28 @@ buildNode nid = do
         portMap = Map.fromList $ flip fmap ports $ \p@(Port id' _ _ _) -> (id', p)
     return $ API.Node nid name (API.ExpressionNode $ Text.pack expr) canEnter portMap (fromMaybe def meta) code
 
-isMatch :: NodeRef -> Command Graph Bool
-isMatch node = runASTOp $ do
-    match node $ \case
-        (Unify _ _) -> return True
-        _           -> return False
+isMatch :: ASTOp m => NodeRef -> m Bool
+isMatch node = match node $ \case
+    Unify{} -> return True
+    _       -> return False
 
 canEnterNode :: NodeId -> Command Graph Bool
 canEnterNode nid = do
     root  <- runASTOp $ GraphUtils.getASTPointer nid
-    match' <- isMatch root
+    match' <- runASTOp $ isMatch root
     if match' then rhsIsLambda nid else return False
 
 rhsIsLambda :: NodeId -> Command Graph Bool
-rhsIsLambda nid = do
-    node <- runASTOp $ GraphUtils.getASTTarget nid
-    runASTOp $ do
-        match node $ \case
-            Lam{} -> return True
-            _     -> return False
+rhsIsLambda nid = runASTOp $ do
+    node <- GraphUtils.getASTTarget nid
+    match node $ \case
+        Lam{} -> return True
+        _     -> return False
 
 getNodeName :: NodeId -> Command Graph (Maybe Text)
 getNodeName nid = do
     root  <- runASTOp $ GraphUtils.getASTPointer nid
-    match' <- isMatch root
+    match' <- runASTOp $ isMatch root
     if match' then do
         vnode <- runASTOp $ GraphUtils.getASTVar nid
         runASTOp $ do
@@ -370,26 +368,26 @@ nodeConnectedToOutput = do
 
 
 resolveInputNodeId :: Maybe (NodeId, NodeId) -> [NodeRef] -> NodeRef -> Command Graph (Maybe NodeId)
-resolveInputNodeId edgeNodes lambdaArgs ref = do
-    nodeId <- runASTOp $ ASTBuilder.getNodeId ref
+resolveInputNodeId edgeNodes lambdaArgs ref = runASTOp $ do
+    nodeId <- ASTBuilder.getNodeId ref
     case List.find (== ref) lambdaArgs of
         Just _ -> return $ fmap fst edgeNodes
         _      -> return nodeId
 
 getOuterLambdaArguments :: Command Graph [NodeRef]
-getOuterLambdaArguments = do
+getOuterLambdaArguments = runASTOp $ do
     lambda <- use Graph.insideNode
     case lambda of
         Just lambda' -> do
-            ref <- runASTOp $ GraphUtils.getASTTarget lambda'
-            lambdaArgs <- runASTOp $ getLambdaArgRefs ref
+            ref <- GraphUtils.getASTTarget lambda'
+            lambdaArgs <- getLambdaArgRefs ref
             return lambdaArgs
         _ -> return []
 
 getNodeInputs :: Maybe (NodeId, NodeId) -> NodeId -> Command Graph [(OutPortRef, InPortRef)]
 getNodeInputs edgeNodes nodeId = do
     root        <- runASTOp $ GraphUtils.getASTPointer nodeId
-    match'       <- isMatch root
+    match'      <- runASTOp $ isMatch root
     ref         <- if match' then runASTOp $ GraphUtils.getASTTarget nodeId else return root
     selfMay     <- runASTOp $ getSelfNodeRef ref
     lambdaArgs  <- getOuterLambdaArguments
