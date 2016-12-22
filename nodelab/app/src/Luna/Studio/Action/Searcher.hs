@@ -2,17 +2,17 @@
 
 module Luna.Studio.Action.Searcher where
 
-import           React.Flux                 (KeyboardEvent)
 import           Luna.Studio.Prelude
+import           React.Flux                       (KeyboardEvent)
 
-import           Event.Event                (Event (UI))
-import qualified Event.Keys                 as Keys
-import           Event.UI                   (UIEvent (AppEvent, SearcherEvent))
-import qualified Luna.Studio.React.Event.App            as App
-import qualified Luna.Studio.React.Event.Searcher       as Searcher
-import           Luna.Studio.Commands.Command  (Command)
-import qualified Luna.Studio.Commands.Searcher as Searcher
-import           Luna.Studio.State.Global      (State)
+import           Event.Event                      (Event (UI))
+import           Event.UI                         (UIEvent (AppEvent, SearcherEvent))
+import           Luna.Studio.Commands.Command     (Command)
+import qualified Luna.Studio.Commands.Searcher    as Searcher
+import qualified Luna.Studio.Event.Keys           as Keys
+import qualified Luna.Studio.React.Event.App      as App
+import qualified Luna.Studio.React.Event.Searcher as Searcher
+import           Luna.Studio.State.Global         (State)
 
 
 

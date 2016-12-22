@@ -1,15 +1,15 @@
 module Luna.Studio.React.Model.Searcher where
 
 import           Empire.API.Data.Node           (NodeId)
-import           Text.ScopeSearcher.QueryResult (QueryResult)
+import           Luna.Studio.Data.Vector        (Position)
 import           Luna.Studio.Prelude
-import           Luna.Studio.Data.Vector
+import           Text.ScopeSearcher.QueryResult (QueryResult)
 
 
 
 data Searcher = Searcher
       { _visible     :: Bool
-      , _position    :: Vector2 Int
+      , _position    :: Position
       , _selected    :: Int
       , _input       :: Text
       , _results     :: [QueryResult]

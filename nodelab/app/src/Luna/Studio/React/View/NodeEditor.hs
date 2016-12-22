@@ -24,12 +24,14 @@ name = "node-editor"
 
 nodeEditor :: Ref NodeEditor -> ReactView ()
 nodeEditor ref = React.defineControllerView name ref $ \store () -> do
-    let nodeEditor = store ^. dt
-        offsetX    = show $ nodeEditor ^. NodeEditor.pan . x
-        offsetY    = show $ nodeEditor ^. NodeEditor.pan . y
-        scale      = show $ nodeEditor ^. NodeEditor.zoom
+
+    let ne = store ^. dt
+        offsetX    = show $ ne ^. NodeEditor.pan . x
+        offsetY    = show $ ne ^. NodeEditor.pan . y
+        scale      = show $ ne ^. NodeEditor.factor
         transform = fromString $ transformMatrix scale offsetX offsetY
     div_
+
         [ "className"   $= "graph"
         , onMouseDown   $ \_ e -> dispatch ref $ UI.NodeEditorEvent $ NE.MouseDown e
         ] $ do

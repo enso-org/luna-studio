@@ -15,11 +15,11 @@ import           Luna.Studio.Prelude
 
 data Event = DisplayResultChanged Bool NodeId
            | EditExpression       NodeId
-           | EndConnection        NodeId PortId
+           | EndConnection        MouseEvent NodeId PortId
            | Enter                NodeId
            | MouseDown            MouseEvent NodeId
            | Select               MouseEvent NodeId
-           | StartConnection      NodeId PortId
+           | StartConnection      MouseEvent NodeId PortId
            | NameEditStart        NodeId
            | NameKeyDown          KeyboardEvent NodeId
            | NameChange           Text NodeId

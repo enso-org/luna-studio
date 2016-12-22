@@ -1,14 +1,14 @@
 module Object.Widget.TextBox where
 
+import           Data.Aeson              (ToJSON)
+import           Luna.Studio.Data.Vector (Position, Vector2)
 import           Luna.Studio.Prelude
-import           Luna.Studio.Data.Vector
 import           Object.Widget
-import           Data.Aeson (ToJSON)
 
 data TextAlignment = Left | Center | Right deriving (Eq, Show, Generic)
 instance ToJSON TextAlignment
 
-data TextBox = TextBox { _position  :: Vector2 Double
+data TextBox = TextBox { _position  :: Position
                        , _size      :: Vector2 Double
                        , _value     :: Text
                        , _alignment :: TextAlignment

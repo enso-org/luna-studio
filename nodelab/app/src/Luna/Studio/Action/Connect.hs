@@ -1,7 +1,7 @@
 module Luna.Studio.Action.Connect
     ( toAction
     ) where
-
+--TODO[react]: transform mousePos to correct position
 import           Empire.API.Data.Node               (NodeId)
 import           Empire.API.Data.Port               (PortId)
 import           Empire.API.Data.PortRef            (toAnyPortRef)
@@ -12,17 +12,16 @@ import           Event.UI                           (UIEvent (AppEvent, NodeEven
 import qualified JS.GoogleAnalytics                 as GA
 import           Luna.Studio.Commands.Command       (Command)
 import           Luna.Studio.Commands.Graph.Connect (batchConnectNodes)
-import           Luna.Studio.Data.Vector
+import           Luna.Studio.Data.Vector            (Position, Vector2 (Vector2))
 import           Luna.Studio.Prelude
 import qualified Luna.Studio.React.Event.App        as App
 import qualified Luna.Studio.React.Event.Node       as Node
 import           Luna.Studio.React.Model.Connection (CurrentConnection)
-import qualified Luna.Studio.React.Model.Node       as NodeModel
 import qualified Luna.Studio.React.Model.NodeEditor as NodeEditor
 import qualified Luna.Studio.React.Store            as Store
 import           Luna.Studio.React.Store.Ref        (Ref)
 import qualified Luna.Studio.React.Store.Ref        as Ref
-import qualified Luna.Studio.State.Camera           as Camera
+import           Luna.Studio.React.View.Global      (getCurrentConnectionSrcPosition)
 import           Luna.Studio.State.Global           (State)
 import qualified Luna.Studio.State.Global           as Global
 import qualified Object.Widget.Connection           as ConnectionModel
@@ -30,21 +29,21 @@ import           React.Flux                         (mouseScreenX, mouseScreenY)
 
 
 toAction :: Event -> Maybe (Command State ())
-toAction (UI (NodeEvent (Node.StartConnection nodeId portId))) = Just $ startDragFromPort nodeId portId
-toAction (UI (AppEvent  (App.MouseMove evt)))                  = Just $ whileConnecting $ handleMove pos
-    where pos = Vector2 (mouseScreenX evt) (mouseScreenY evt)
-toAction (UI (AppEvent (App.MouseUp _)))                       = Just $ whileConnecting $ stopDrag'
-toAction (UI (NodeEvent (Node.EndConnection nodeId portId)))   = Just $ whileConnecting $ stopDrag nodeId portId
-toAction _                                                     = Nothing
+toAction (UI (NodeEvent (Node.StartConnection evt nodeId portId))) = Just $ startDragFromPort pos nodeId portId
+    where pos = Vector2 (fromIntegral $ mouseScreenX evt) (fromIntegral $ mouseScreenY evt)
+toAction (UI (AppEvent  (App.MouseMove evt)))                      = Just $ whileConnecting $ handleMove pos
+    where pos = Vector2 (fromIntegral $ mouseScreenX evt) (fromIntegral $ mouseScreenY evt)
+toAction (UI (AppEvent (App.MouseUp _)))                           = Just $ whileConnecting $ stopDrag'
+toAction (UI (NodeEvent (Node.EndConnection _ nodeId portId)))     = Just $ whileConnecting $ stopDrag nodeId portId
+toAction _                                                         = Nothing
 
 
-startDragFromPort :: NodeId -> PortId -> Command State ()
-startDragFromPort nodeId portId = do
-    maySrcNodeRef <- Global.getNode nodeId
-    withJust maySrcNodeRef $ \srcNodeRef -> do
-        let portRef = toAnyPortRef nodeId portId
-        from' <- view NodeModel.position <$> Store.get srcNodeRef
-        let connection = ConnectionModel.CurrentConnection portRef True from' from' False  def
+startDragFromPort :: Position -> NodeId -> PortId -> Command State ()
+startDragFromPort mousePos nodeId portId = do
+    maySrcPos <- getCurrentConnectionSrcPosition nodeId portId mousePos
+    let portRef = toAnyPortRef nodeId portId
+    withJust maySrcPos $ \srcPos -> do
+        let connection = ConnectionModel.CurrentConnection portRef True srcPos mousePos False def
         Global.withNodeEditor $ Store.modifyM_ $ do
             connectionRef <- lift $ Store.create connection
             NodeEditor.currentConnection ?= connectionRef
@@ -54,12 +53,8 @@ whileConnecting run = do
     mayCurrentConnectionRef <- Global.withNodeEditor $ Store.use NodeEditor.currentConnection
     withJust mayCurrentConnectionRef $ \currentConnectionRef -> run currentConnectionRef
 
-handleMove :: Vector2 Int -> Ref CurrentConnection -> Command State ()
-handleMove (Vector2 x' y') connRef = do
-    --TODO[react]: temp solution in next line
-    to' <- zoom Global.camera $ Camera.screenToWorkspaceM (Vector2 (x'+200) y')
-    flip Store.modifyM_ connRef $ do
-        ConnectionModel.currentTo .= to'
+handleMove :: Position -> Ref CurrentConnection -> Command State ()
+handleMove mousePos connRef = flip Store.modifyM_ connRef $ ConnectionModel.currentTo .= mousePos
 
 stopDrag' :: Ref CurrentConnection -> Command State ()
 stopDrag' _ = Global.withNodeEditor $ Store.modifyM_ $ NodeEditor.currentConnection .= Nothing

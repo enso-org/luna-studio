@@ -2,18 +2,18 @@
 
 module UI.Generic where
 
-import           GHCJS.Marshal.Pure        (pToJSVal)
-import           Luna.Studio.Prelude         hiding (children)
-import           Luna.Studio.Data.Vector
+import           GHCJS.Marshal.Pure           (pToJSVal)
+import           Luna.Studio.Data.Vector      (Position, Vector2 (Vector2))
+import           Luna.Studio.Prelude          hiding (children)
 
-import qualified Event.Mouse               as Mouse
-import           Object.Widget             (DragState (..), IsDisplayObject, WidgetFile, WidgetId, children, objectId, widget,
-                                            widgetPosition)
+import qualified Event.Mouse                  as Mouse
 import           Luna.Studio.Commands.Command (Command, performIO)
 import qualified Luna.Studio.State.Global     as Global
 import qualified Luna.Studio.State.UIRegistry as UIRegistry
-import qualified UI.Registry               as UIR
-import           UI.Widget                 (GenericWidget (..), UIWidget)
+import           Object.Widget                (DragState (..), IsDisplayObject, WidgetFile, WidgetId, children, objectId, widget,
+                                               widgetPosition)
+import qualified UI.Registry                  as UIR
+import           UI.Widget                    (GenericWidget (..), UIWidget)
 
 
 foreign import javascript safe "$1.mesh.position.x = $2; $1.mesh.position.y = $3; $1.widgetMoved()"
@@ -28,7 +28,7 @@ foreign import javascript safe "$1.setSize($2, $3)"
 foreign import javascript safe "require('Rendering').removeWidget($1)"
     removeWidget :: Int -> IO ()
 
-setWidgetPosition :: UIWidget a => Vector2 Double -> a -> IO ()
+setWidgetPosition :: UIWidget a => Position -> a -> IO ()
 setWidgetPosition (Vector2 x y) widget = setWidgetPosition' (pToJSVal widget) x y
 
 updatePosition :: (IsDisplayObject b) => WidgetFile b -> Command UIRegistry.State ()
@@ -50,7 +50,7 @@ recursiveWidgetMoved widgetId = do
                 widgetMoved (pToJSVal w)
             recursiveWidgetMoved widgetId
 
-updatePosition' :: WidgetId -> Vector2 Double -> Command UIRegistry.State ()
+updatePosition' :: WidgetId -> Position -> Command UIRegistry.State ()
 updatePosition' widgetId position = do
     performIO $ do
         w <- UIR.lookup widgetId :: IO GenericWidget

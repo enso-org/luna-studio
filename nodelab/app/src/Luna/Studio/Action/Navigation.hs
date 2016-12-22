@@ -1,32 +1,31 @@
 module Luna.Studio.Action.Navigation where
 
-import qualified Data.HashMap.Strict        as HashMap
+import qualified Data.HashMap.Strict          as HashMap
 
+import           Luna.Studio.Data.Vector      (Position, Vector2 (Vector2), lengthSquared, magnitude, x, y)
 import           Luna.Studio.Prelude
-import           Luna.Studio.Data.Vector
 
-import           React.Flux                 (KeyboardEvent)
+import           React.Flux                   (KeyboardEvent)
 
-import qualified Empire.API.Data.Connection as C
-import           Empire.API.Data.Node       (NodeId)
-import qualified Empire.API.Data.Port       as P
-import qualified Empire.API.Data.PortRef    as R
-import           Event.Event                (Event (UI))
-import qualified Event.Keys                 as Keys
-import           Event.UI                   (UIEvent (AppEvent))
-import           Object.Widget              (Position)
-import qualified Object.Widget.Node         as Model
-import qualified Luna.Studio.React.Event.App            as App
-import           Luna.Studio.React.Store                (Ref, WRef (..), ref, widget)
-import qualified Luna.Studio.React.Store                as Store
-import           Luna.Studio.React.Model.Node           (Node)
-import qualified Luna.Studio.React.Model.Node           as Node
-import           Luna.Studio.Commands.Batch    (cancelCollaborativeTouch, collaborativeTouch)
-import           Luna.Studio.Commands.Command  (Command)
-import           Luna.Studio.Commands.Graph    (allNodes')
-import           Luna.Studio.State.Global      (State)
-import qualified Luna.Studio.State.Global      as Global
-import qualified Luna.Studio.State.Graph       as Graph
+import qualified Empire.API.Data.Connection   as C
+import           Empire.API.Data.Node         (NodeId)
+import qualified Empire.API.Data.Port         as P
+import qualified Empire.API.Data.PortRef      as R
+import           Event.Event                  (Event (UI))
+import           Event.UI                     (UIEvent (AppEvent))
+import           Luna.Studio.Commands.Batch   (cancelCollaborativeTouch, collaborativeTouch)
+import           Luna.Studio.Commands.Command (Command)
+import           Luna.Studio.Commands.Graph   (allNodes')
+import qualified Luna.Studio.Event.Keys       as Keys
+import qualified Luna.Studio.React.Event.App  as App
+import           Luna.Studio.React.Model.Node (Node)
+import qualified Luna.Studio.React.Model.Node as Node
+import           Luna.Studio.React.Store      (Ref, WRef (..), ref, widget)
+import qualified Luna.Studio.React.Store      as Store
+import           Luna.Studio.State.Global     (State)
+import qualified Luna.Studio.State.Global     as Global
+import qualified Luna.Studio.State.Graph      as Graph
+import qualified Object.Widget.Node           as Model
 
 
 
@@ -120,7 +119,7 @@ go findMost findNodesOnSide findNearest = do
 closenestPow :: Double
 closenestPow = 2.5
 
-axisDistanceRight, axisDistanceLeft, axisDistanceDown, axisDistanceUp :: Vector2 Double -> Double
+axisDistanceRight, axisDistanceLeft, axisDistanceDown, axisDistanceUp :: Position -> Double
 axisDistanceRight (Vector2 x' _) =  x'
 axisDistanceLeft  (Vector2 x' _) = -x'
 axisDistanceDown  (Vector2 _ y') =  y'
@@ -132,7 +131,7 @@ findNearestLeft  pos = maximumBy (compare `on` closenest pos axisDistanceLeft)
 findNearestDown  pos = maximumBy (compare `on` closenest pos axisDistanceDown)
 findNearestUp    pos = maximumBy (compare `on` closenest pos axisDistanceUp)
 
-closenest :: Position -> (Vector2 Double -> Double) -> WRef Node -> Double
+closenest :: Position -> (Position -> Double) -> WRef Node -> Double
 closenest pos axisDistance wf = axisDist / (dist ** closenestPow) where
     pos' = wf ^. widget . Model.position
     vect = pos' - pos

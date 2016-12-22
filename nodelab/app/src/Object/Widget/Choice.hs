@@ -1,13 +1,13 @@
 module Object.Widget.Choice where
 
-import           Data.Aeson          (ToJSON)
-import           Luna.Studio.Prelude   hiding (Choice)
-import           Luna.Studio.Data.Vector
+import           Data.Aeson              (ToJSON)
+import           Luna.Studio.Data.Vector (Position, Vector2 (Vector2))
+import           Luna.Studio.Prelude     hiding (Choice)
 
 import           Object.Widget
-import           Object.Widget.Group (Group (..))
+import           Object.Widget.Group     (Group (..))
 
-data Choice = Choice { _position :: Vector2 Double
+data Choice = Choice { _position :: Position
                      , _size     :: Vector2 Double
                      , _label    :: Text
                      , _options  :: [Text]

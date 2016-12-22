@@ -2,24 +2,24 @@ module Luna.Studio.Commands.Node.Register
     ( registerNode
     ) where
 
+import           Luna.Studio.Data.Vector              (Position, toTuple)
 import           Luna.Studio.Prelude
-import           Luna.Studio.Data.Vector                      (Vector2, toTuple)
 
-import qualified Empire.API.Data.NodeMeta          as NodeMeta
-import qualified JS.GoogleAnalytics                as GA
-import qualified Object.Widget.Node                as UINode
-import           Luna.Studio.React.Store                       (widget)
+import qualified Empire.API.Data.NodeMeta             as NodeMeta
+import qualified JS.GoogleAnalytics                   as GA
 import qualified Luna.Studio.Commands.Batch           as BatchCmd
 import           Luna.Studio.Commands.Command         (Command)
 import           Luna.Studio.Commands.Graph.Selection (selectedNodes)
 import           Luna.Studio.Commands.Node.Snap
+import           Luna.Studio.React.Store              (widget)
 import           Luna.Studio.State.Global             (State)
+import qualified Object.Widget.Node                   as UINode
 
 
 
-registerNode :: Vector2 Int -> Text -> Command State ()
+registerNode :: Position -> Text -> Command State ()
 registerNode nodePos expr = do
-    let nodePosSnapped = snap $ fmap fromIntegral nodePos
+    let nodePosSnapped = snap nodePos
         nodeMeta = def & NodeMeta.position .~ toTuple nodePosSnapped
     selected   <- selectedNodes
     let connectTo = case selected of

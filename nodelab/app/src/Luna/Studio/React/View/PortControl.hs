@@ -1,13 +1,14 @@
 {-# LANGUAGE OverloadedStrings #-}
-module Luna.Studio.Commands.Node.PortControls
-    ( makePortControl
+module Luna.Studio.React.View.PortControl
+    ( portControl_
     ) where
 
-import           Luna.Studio.Prelude               hiding (group)
 import           Luna.Studio.Data.Vector
+import           Luna.Studio.Prelude             hiding (group)
 
 import qualified Data.Map.Lazy                   as Map
 import qualified Data.Text.Lazy                  as Text
+import           React.Flux
 
 import           Object.UITypes                  (WidgetId)
 import qualified Object.Widget.Button            as Button
@@ -19,14 +20,14 @@ import qualified Object.Widget.Number.Discrete   as DiscreteNumber
 import qualified Object.Widget.Toggle            as Toggle
 import qualified UI.Handlers.Button              as Button
 import           UI.Handlers.Generic             (onValueChanged)
-import           UI.Instances ()
+import           UI.Instances                    ()
 
-import           Luna.Studio.Commands.Command       (Command)
-import qualified Luna.Studio.Commands.UIRegistry    as UICmd
-import           Luna.Studio.State.UIRegistry       (addHandler)
-import qualified Luna.Studio.State.UIRegistry       as UIRegistry
+import           Luna.Studio.Commands.Command    (Command)
+import qualified Luna.Studio.Commands.UIRegistry as UICmd
+import           Luna.Studio.State.UIRegistry    (addHandler)
+import qualified Luna.Studio.State.UIRegistry    as UIRegistry
 
-import qualified Luna.Studio.Commands.Batch         as BatchCmd
+import qualified Luna.Studio.Commands.Batch      as BatchCmd
 
 import           UI.Layout                       as Layout
 
@@ -41,6 +42,8 @@ import qualified Empire.API.Data.Port            as Port
 import           Empire.API.Data.PortRef         (AnyPortRef (..), toAnyPortRef)
 import qualified Empire.API.Data.ValueType       as ValueType
 
+
+
 isLiteral :: Getter Node Bool
 isLiteral = to $ isLiteral' where
     isLiteral' node = not $ any isIn' portIds where
@@ -50,24 +53,24 @@ isLiteral = to $ isLiteral' where
         isIn' (InPortId  _) = True
 
 
-makePortControl :: WidgetId -> Node  -> Port -> Command UIRegistry.State ()
-makePortControl groupParent node port =
+portControl_ :: Node -> Port -> ReactElementM ViewEventHandler ()
+portControl_ node port =
     let portRef = toAnyPortRef nodeId $ port ^. Port.portId
         nodeId  = node ^. Node.nodeId
     in
     case port ^. Port.portId of
-        InPortId  (Arg _) -> makeInPortControl groupParent portRef port
-        OutPortId All     -> when (node ^. isLiteral) $ makeInPortControl groupParent portRef port
+        InPortId  (Arg _) -> inPortControl_ portRef port
+        OutPortId All     -> when (node ^. isLiteral) $ inPortControl_ portRef port
         _ -> return ()
 
-makeInPortControl :: WidgetId -> AnyPortRef -> Port -> Command UIRegistry.State ()
-makeInPortControl parent portRef port = case port ^. Port.state of
+inPortControl_ :: AnyPortRef -> Port -> ReactElementM ViewEventHandler ()
+inPortControl_ portRef port = case port ^. Port.state of
     Port.NotConnected    -> do
         case port ^. Port.valueType . ValueType.toEnum of
             ValueType.Other -> return ()
             _               -> do
                 let group = Group.create & Group.style . Group.padding .~ Style.Padding 0.0 0.0 0.0 Style.setLabelOffsetX
-                groupId <- UICmd.register parent group (Layout.horizontalLayoutHandler 0.0)
+                -- groupId <- UICmd.register group (Layout.horizontalLayoutHandler 0.0)
                 let label  = Label.create Style.setLabelSize (Text.pack $ port ^. Port.name)
                            & Label.position . x .~ Style.setLabelOffsetX
                     button = Button.create Style.setButtonSize "not set"
@@ -80,39 +83,46 @@ makeInPortControl parent portRef port = case port ^. Port.state of
                     handlers = addHandler (Button.ClickedHandler $ \_ -> BatchCmd.setDefaultValue portRef (DefaultValue.Constant $ zeroValue)
                         ) mempty
 
-                UICmd.register_ groupId label def
-                UICmd.register_ groupId button handlers
+                -- UICmd.register_ groupId label def
+                -- UICmd.register_ groupId button handlers
+                return ()
     Port.Connected       -> do
         let widget = Label.create (Style.portControlSize & x -~ Style.setLabelOffsetX) (Text.pack $ (port ^. Port.name) <> " (connected)")
                    & Label.position . x .~ Style.setLabelOffsetX
-        void $ UICmd.register parent widget def
+        -- void $ UICmd.register widget def
+        return ()
     Port.WithDefault defVal -> void $ case port ^. Port.valueType . ValueType.toEnum of
         ValueType.DiscreteNumber -> do
             let label = port ^. Port.name
                 value = fromMaybe 0 $ defVal ^? DefaultValue._Constant . DefaultValue._IntValue
                 widget = DiscreteNumber.create Style.portControlSize (Text.pack $ label) value
                 handlers = onValueChanged $ \val _ -> BatchCmd.setDefaultValue portRef (DefaultValue.Constant $ DefaultValue.IntValue val)
-            UICmd.register parent widget handlers
+            -- UICmd.register widget handlers
+            return ()
         ValueType.ContinuousNumber -> do
             let label = port ^. Port.name
                 value = fromMaybe 0.0 $ defVal ^? DefaultValue._Constant . DefaultValue._DoubleValue
                 widget = ContinuousNumber.create Style.portControlSize (Text.pack $ label) value
                 handlers = onValueChanged $ \val _ -> BatchCmd.setDefaultValue portRef (DefaultValue.Constant $ DefaultValue.DoubleValue val)
-            UICmd.register parent widget handlers
+            -- UICmd.register widget handlers
+            return ()
         ValueType.String -> do
             let label = port ^. Port.name
                 value = fromMaybe "" $ defVal ^? DefaultValue._Constant . DefaultValue._StringValue
                 widget = LabeledTextBox.create Style.portControlSize (Text.pack $ label) (Text.pack $ value)
                 handlers = onValueChanged $ \val _ -> BatchCmd.setDefaultValue portRef (DefaultValue.Constant $ DefaultValue.StringValue $ Text.unpack val)
-            UICmd.register parent widget handlers
+            -- UICmd.register widget handlers
+            return ()
         ValueType.Bool -> do
             let label = port ^. Port.name
                 value = fromMaybe True $ defVal ^? DefaultValue._Constant . DefaultValue._BoolValue
                 widget = Toggle.create Style.portControlSize (Text.pack $ label) value
                 handlers = onValueChanged $ \val _ -> BatchCmd.setDefaultValue portRef (DefaultValue.Constant $ DefaultValue.BoolValue val)
-            UICmd.register parent widget handlers
+            -- UICmd.register widget handlers
+            return ()
         ValueType.Other -> do
             let widget = Label.create (Style.portControlSize & x -~ Style.setLabelOffsetX) (Text.pack $ (port ^. Port.name) )
                        & Label.position . x .~ Style.setLabelOffsetX
 
-            UICmd.register parent widget mempty
+            -- UICmd.register widget mempty
+            return ()

@@ -34,8 +34,6 @@ import qualified Luna.Studio.Action.Drag                   as Drag
 import qualified Luna.Studio.Action.MultiSelection         as MultiSelection
 import qualified Luna.Studio.Action.Navigation             as Navigation
 import qualified Luna.Studio.Action.Node                   as Node
-import qualified Luna.Studio.Action.NodeSearcher           as NodeSearcher
-import qualified Luna.Studio.Action.Sandbox                as Sandbox
 import qualified Luna.Studio.Action.Searcher               as Searcher
 import qualified Luna.Studio.Action.Tutorial               as Tutorial
 import qualified Luna.Studio.Action.Widget                 as Widget
@@ -79,10 +77,8 @@ actions =  [ App.toAction
         --    , Control.toAction
         --    , Widget.toAction
         --    , Collaboration.toAction
-        --    , NodeSearcher.toAction
         --    , ConnectionPen.toAction
         --    , Tutorial.toAction
-        --    , Sandbox.toAction
         --    , Clipboard.toAction
         --    , Debug.toAction
            ]

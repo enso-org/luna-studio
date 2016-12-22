@@ -1,32 +1,33 @@
 module Object.Widget.Port where
 
 import           Data.Aeson               (ToJSON)
-import           Luna.Studio.Data.Vector
 import           Luna.Studio.Prelude      hiding (set)
 
-import           Empire.API.Data.Port     (PortId (..))
-import           Empire.API.Data.PortRef  (AnyPortRef)
+import qualified Empire.API.Data.Node     as API
+import qualified Empire.API.Data.Port     as API
+import           Empire.API.Data.PortRef  (AnyPortRef, toAnyPortRef)
 import qualified Empire.API.JSONInstances ()
 import           Luna.Studio.Data.Color   (Color)
+import           Luna.Studio.Data.Color   (colorPort)
 
-import           Object.Widget
+
 
 data Port = Port { _portRef     :: AnyPortRef
                  -- TODO[react]: Find out if we need portId here since it seems to be present in portRef
-                 , _portId      :: PortId
+                 , _portId      :: API.PortId
                  , _color       :: Color
-                 , _highlight   :: Bool
                  } deriving (Eq, Show, Typeable, Generic)
 
 makeLenses ''Port
 instance ToJSON Port
 
-instance IsDisplayObject Port where
-    widgetPosition = lens (\_ -> Vector2 0.0 0.0) (error "Port has no position setter")
-    widgetSize     = lens get set where
-        get _      = Vector2 0.0 0.0
-        set w _    = w
-    widgetVisible  = to $ const True
+fromPorts :: API.NodeId -> [API.Port] -> [Port]
+fromPorts nodeId ports = fromPort nodeId <$> ports where
+
+fromPort :: API.NodeId -> API.Port -> Port
+fromPort nodeId port = Port portRef' portId' (colorPort port) where
+    portId'  = port ^. API.portId
+    portRef' = toAnyPortRef nodeId portId'
 
 -- TODO[react]: Should be removed
 -- angle :: Getter Port Double

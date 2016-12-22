@@ -7,7 +7,7 @@ module Luna.Studio.Action.Widget where
 --     ) where
 --
 -- import           Luna.Studio.Prelude
--- import           Luna.Studio.Data.Vector
+-- import           Luna.Studio.Data.Vector   (Position)
 --
 -- import           Event.Event
 -- import qualified Event.Keyboard            as Keyboard
@@ -77,7 +77,7 @@ module Luna.Studio.Action.Widget where
 --
 -- handleMouseOverOut _ _ = return ()
 --
--- absPosToRel :: Widget.SceneType -> Camera -> [Double] -> Vector2 Double -> Vector2 Double
+-- absPosToRel :: Widget.SceneType -> Camera -> [Double] -> Position -> Position
 -- absPosToRel Widget.HUD       _      mat pos = Widget.sceneToLocal pos          mat
 -- absPosToRel Widget.Workspace camera mat pos = Widget.sceneToLocal workspacePos mat where
 --     workspacePos = Camera.screenToWorkspace camera (round <$> pos)

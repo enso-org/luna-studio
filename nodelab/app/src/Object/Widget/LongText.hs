@@ -1,9 +1,9 @@
 module Object.Widget.LongText where
 
+import           Data.Aeson              (ToJSON)
+import           Luna.Studio.Data.Vector (Position, Vector2)
 import           Luna.Studio.Prelude
-import           Luna.Studio.Data.Vector
 import           Object.Widget
-import           Data.Aeson (ToJSON)
 
 data TextAlignment = Left | Center | Right deriving (Eq, Show, Generic)
 instance ToJSON TextAlignment
@@ -11,7 +11,7 @@ instance ToJSON TextAlignment
 data Type = Text | Code deriving (Eq, Show, Generic)
 instance ToJSON Type
 
-data LongText = LongText { _position  :: Vector2 Double
+data LongText = LongText { _position  :: Position
                          , _size      :: Vector2 Double
                          , _value     :: Text
                          , _alignment :: TextAlignment

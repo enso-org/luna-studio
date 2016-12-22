@@ -1,11 +1,11 @@
 module Object.Widget.CodeEditor where
 
+import           Data.Aeson              (ToJSON)
+import           Luna.Studio.Data.Vector (Position, Vector2 (Vector2))
 import           Luna.Studio.Prelude
-import           Luna.Studio.Data.Vector
 import           Object.Widget
-import           Data.Aeson (ToJSON)
 
-data CodeEditor = CodeEditor { _position  :: Vector2 Double
+data CodeEditor = CodeEditor { _position  :: Position
                              , _size      :: Vector2 Double
                              , _value     :: Text
                              } deriving (Eq, Show, Typeable, Generic)

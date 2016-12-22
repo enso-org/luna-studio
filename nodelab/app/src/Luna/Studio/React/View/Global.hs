@@ -1,11 +1,22 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Luna.Studio.React.View.Global where
 
-import           Luna.Studio.Prelude
-
-import           Numeric                            (showFFloat)
-import           Luna.Studio.Data.Angle             (Angle)
+import qualified Data.Map.Lazy                as Map
+import           Empire.API.Data.Node         (NodeId)
+import           Empire.API.Data.Port         (InPort (..), OutPort (..), PortId (..))
+import           Empire.API.Data.PortRef      (toAnyPortRef)
+import           Luna.Studio.Commands.Command (Command)
+import           Luna.Studio.Commands.Graph   (getNode, getPort)
+import           Luna.Studio.Data.Angle       (Angle)
 import           Luna.Studio.Data.Vector
+import           Luna.Studio.Prelude
+import           Luna.Studio.State.Global     (State)
+import           Numeric                      (showFFloat)
+import qualified Object.Widget.Node           as Node
+import           Object.Widget.Port           (Port (..))
+import qualified Object.Widget.Port           as Port
+
+
 
 type IsSingle = Bool
 type IsSelf   = Bool
@@ -53,19 +64,19 @@ portAngleStop num numOfPorts r =
         t      = portAngle numOfPorts
     in  number * t - pi - gap/2
 
-
 nodeToNodeAngle :: Double -> Double -> Double -> Double -> Angle
 nodeToNodeAngle srcX srcY dstX dstY
-    | srcX < dstX = atan ((srcY-dstY) / (srcX-dstX))
-    | otherwise   = atan ((srcY-dstY) / (srcX-dstX)) + pi
+    | srcX < dstX = atan ((srcY - dstY) / (srcX - dstX))
+    | otherwise   = atan ((srcY - dstY) / (srcX - dstX)) + pi
 
-
-connectionSrc :: Vector2 Double -> Vector2 Double -> Int -> Int -> IsSingle -> Vector2 Double
-connectionSrc (Vector2 x1 y1) (Vector2 x2 y2) _   _          True  =
+--FIXME: why portRadius is doubled?
+connectionSrc :: Position -> Position -> Int -> Int -> IsSingle -> Position
+connectionSrc (Vector2 x1 y1) (Vector2 x2 y2) _ _ True =
     let t    = nodeToNodeAngle x1 y1 x2 y2
-        srcX = portRadius * cos(t) + x1
-        srcY = portRadius * sin(t) + y1
+        srcX = portRadius/2 * cos(t) + x1
+        srcY = portRadius/2 * sin(t) + y1
     in  Vector2 srcX srcY
+
 -- FIXME: implement port limits
 connectionSrc (Vector2 x1 y1) (Vector2 x2 y2) num numOfPorts False =
     let t      = nodeToNodeAngle x1 y1 x2 y2
@@ -76,8 +87,9 @@ connectionSrc (Vector2 x1 y1) (Vector2 x2 y2) num numOfPorts False =
     in  Vector2 srcX srcY
 
 
-connectionDst :: Vector2 Double -> Vector2 Double -> Int -> Int -> IsSelf -> Vector2 Double
-connectionDst (Vector2 _  _ ) (Vector2 x2 y2) _   _          True  = Vector2 x2 y2
+connectionDst :: Position -> Position -> Int -> Int -> IsSelf -> Position
+connectionDst (Vector2 _  _ ) (Vector2 x2 y2) _ _ True = Vector2 x2 y2
+
 -- FIXME: implement port limits
 connectionDst (Vector2 x1 y1) (Vector2 x2 y2) num numOfPorts False =
     let t      = nodeToNodeAngle x1 y1 x2 y2
@@ -86,3 +98,75 @@ connectionDst (Vector2 x1 y1) (Vector2 x2 y2) num numOfPorts False =
         dstX   = portRadius * (-cos(t)) + x2
         dstY   = portRadius * (-sin(t)) + y2
     in  Vector2 dstX dstY
+
+isIn :: Port -> Int
+isIn port = case port ^. Port.portId of
+    InPortId (Arg _) -> 1
+    _                -> 0
+
+isOut :: Port -> Int
+isOut port = case port ^. Port.portId of
+    OutPortId _ -> 1
+    _           -> 0
+
+countInPorts :: [Port] -> Int
+countInPorts ports = foldl (\acc p -> acc + (isIn p)) 0 ports
+
+countOutPorts :: [Port] -> Int
+countOutPorts ports = foldl (\acc p -> acc + (isOut p)) 0 ports
+
+countPorts :: [Port] -> Int
+countPorts ports = (countInPorts ports) + (countOutPorts ports)
+
+countSameTypePorts :: Port -> [Port] -> Int
+countSameTypePorts port = case port ^. Port.portId of
+    InPortId  _ -> countInPorts
+    OutPortId _ -> countOutPorts
+
+getPortNumber :: Port -> Int
+getPortNumber port = case port ^. Port.portId of
+    InPortId  (Arg i)        -> i
+    OutPortId (Projection i) -> i
+    _                        -> 0
+
+isPortSingle :: Port -> [Port] -> Bool
+isPortSingle port ports = case port ^. Port.portId of
+    OutPortId All -> countPorts ports == 1
+    _             -> False
+
+isPortSelf :: Port -> Bool
+isPortSelf port = case port ^. Port.portId of
+    InPortId Self -> True
+    _             -> False
+
+
+getConnectionPosition :: NodeId -> PortId -> NodeId -> PortId -> Command State (Maybe (Position, Position))
+getConnectionPosition srcNodeId srcPortId dstNodeId dstPortId = do
+    maySrcNode <- getNode srcNodeId
+    mayDstNode <- getNode dstNodeId
+    maySrcPort <- getPort $ toAnyPortRef srcNodeId srcPortId
+    mayDstPort <- getPort $ toAnyPortRef dstNodeId dstPortId
+
+    case (maySrcNode, maySrcPort, mayDstNode, mayDstPort) of
+        (Just srcNode, Just srcPort, Just dstNode, Just dstPort) -> do
+            let srcPorts   = Map.elems $ srcNode ^. Node.ports
+                dstPorts   = Map.elems $ dstNode ^. Node.ports
+                srcPos     = srcNode ^. Node.position
+                dstPos     = dstNode ^. Node.position
+                srcConnPos = connectionSrc srcPos dstPos (getPortNumber srcPort) (countSameTypePorts srcPort srcPorts) (isPortSingle srcPort srcPorts)
+                dstConnPos = connectionDst srcPos dstPos (getPortNumber dstPort) (countSameTypePorts dstPort dstPorts) (isPortSelf dstPort)
+            return $ Just (srcConnPos, dstConnPos)
+        _ -> return Nothing
+
+getCurrentConnectionSrcPosition :: NodeId -> PortId -> Position -> Command State (Maybe Position)
+getCurrentConnectionSrcPosition srcNodeId srcPortId dstPos = do
+    maySrcNode <- getNode srcNodeId
+    maySrcPort <- getPort $ toAnyPortRef srcNodeId srcPortId
+
+    case (maySrcNode, maySrcPort) of
+        (Just srcNode, Just srcPort) -> do
+            let srcPorts   = Map.elems $ srcNode ^. Node.ports
+                srcPos     = srcNode ^. Node.position
+                srcConnPos = connectionSrc srcPos dstPos (getPortNumber srcPort) (countSameTypePorts srcPort srcPorts) (isPortSingle srcPort srcPorts)
+            return $ Just srcConnPos
+        _ -> return Nothing

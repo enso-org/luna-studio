@@ -1,42 +1,39 @@
 .graph {
     position: relative;
-    flex: none;
+    flex:     none;
 }
 .plane {
     position: absolute;
-    width: 100%;
-    height: 100%;
-    .connections {
-
-    }
+    width:    100%;
+    height:   100%;
 }
 .plane--nodes {
     svg {
         overflow: inherit;
-        width:  16px;
-        height: 16px;
+        width:    10px;
+        height:   10px;
     }
 }
+
 
 // connection
 
 .connection {
-    position: relative;
-    width:    0;
-    height:   0;
-    line {
-        stroke-linecap:  round;
-        stroke-linejoin: round;
-    }
+    stroke-linecap:  round;
+    stroke-linejoin: round;
 }
+
+// FIXME [Piotr Mołdawski] Implement Haskell exception for zero length connections
+[x1="NaN"] { display: none } // hides React error when you start drawing a connection
+
 
 
 // node
 
 .node {
-    position: relative;
-    width:    0;
-    height:   0;
+    position: absolute;
+    width:    10px;
+    height:   10px;
     .name {
         fill:        @colorName;
         text-anchor: middle;

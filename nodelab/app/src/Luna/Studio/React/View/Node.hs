@@ -17,40 +17,21 @@ import qualified Luna.Studio.React.Model.Node         as Node
 import           Luna.Studio.React.Store              (Ref, dispatch, dt)
 import           Luna.Studio.React.View.Global
 import           Luna.Studio.React.View.ForeignObject (foreignObject_)
+import           Luna.Studio.React.View.Global
 import           Luna.Studio.React.View.Port          (port_)
+import           Luna.Studio.React.View.PortControl   (portControl_)
 import           Luna.Studio.React.View.Visualization (strValue, visualization_)
 import           Object.Widget.Port                   (Port (..))
+import qualified Object.Widget.Port                   as Port
 
 
 objName :: JSString
 objName = "node-editor"
 
-isIn :: Port -> Int
-isIn (Port _ (InPortId (Arg _)) _ _) = 1
-isIn _ = 0
-
-isOut :: Port -> Int
-isOut (Port _ (OutPortId _) _ _) = 1
-isOut _ = 0
-
-countInPorts :: [Port] -> Int
-countInPorts ports = foldl (\acc p -> acc + (isIn p)) 0 ports
-
-countOutPorts :: [Port] -> Int
-countOutPorts ports = foldl (\acc p -> acc + (isOut p)) 0 ports
-
-countPorts :: [Port] -> Int
-countPorts ports = (countInPorts ports) + (countOutPorts ports)
-
-countSameTypePorts :: Port -> [Port] -> Int
-countSameTypePorts (Port _ (InPortId _)  _ _) = countInPorts
-countSameTypePorts (Port _ (OutPortId _) _ _) = countOutPorts
-
 makePorts :: Ref Node -> NodeId -> [Port] -> ReactElementM ViewEventHandler ()
-makePorts ref nodeId ports = forM_ ports $ \port -> port_ ref nodeId port (countSameTypePorts port ports) (countPorts ports == 1)
+makePorts nodeRef nodeId ports = forM_ ports $ \port -> port_ nodeRef nodeId port (countSameTypePorts port ports) (isPortSingle port ports)
 
 
---FIXME: move all styles to CSS
 node :: Ref Node -> ReactView ()
 node ref = React.defineControllerView
     objName ref $ \nodeStore () -> do
@@ -69,19 +50,19 @@ node ref = React.defineControllerView
                  , "style"     @= Aeson.object [ "transform" Aeson..= (transformTranslate offsetX offsetY) ]
                  , "key"       $= fromString (show nodeId)
                  ] $ do
-                    svg_ [ "viewBox" $= "0 0 16 16" ] $ do
+                    svg_ [ "viewBox" $= "0 0 10 10" ] $ do
                         circle_ [ "className" $= "selection-mark" ] mempty
-                        makePorts ref nodeId $ filter (\(Port _ portId _ _) -> portId /= InPortId Self) ports
-                        makePorts ref nodeId $ filter (\(Port _ portId _ _) -> portId == InPortId Self) ports
+                        makePorts ref nodeId $ filter (\port -> port ^. Port.portId /= InPortId Self) ports
+                        makePorts ref nodeId $ filter (\port -> port ^. Port.portId == InPortId Self) ports
 
-                    div_ [ "className" $= "node-expanded" ] $ do
+                    div_ [ "className" $= "node-expanded" ]$ do
                         div_ [ "className" $= "name"] $
                             elemString $ Text.unpack (n ^. Node.expression)
-                        div_ [ "className" $= "properties" ] $ do
+                        div_ [ "className" $= "properties" ]$ do
                             div_ [ "className" $= "label" ] $ elemString "Name"
                             div_
                                 [ "className" $= "value"
-                                , onDoubleClick $ \_ m -> dispatch ref $ UI.NodeEvent $ Node.NameEditStart nodeId
+                                , onDoubleClick $ \_ _ -> dispatch ref $ UI.NodeEvent $ Node.NameEditStart nodeId
                                 ] $
                                 case n ^. Node.nameEdit of
                                     Just name ->
@@ -94,6 +75,7 @@ node ref = React.defineControllerView
                                             ]
                                     Nothing ->
                                         elemString $ fromString $ Text.unpack $ n ^. Node.name
+                            -- forM_ (n ^. Node.ports) $ portControl_ n
                             div_ [ "className" $= "label" ] $ elemString "Display result"
                             div_ [ "className" $= "value" ] $
                                 label_ ["className" $= "switch"] $ do
@@ -102,10 +84,14 @@ node ref = React.defineControllerView
                                            , onChange $ \e -> let val = not $ bool $ target e "value" in dispatch ref $ UI.NodeEvent $ Node.DisplayResultChanged val nodeId
                                            ]
                                     div_ ["className" $= "slider"] mempty
+                            withJust (n ^. Node.execTime) $ \execTime -> do
+                                div_ ["className" $= "label"] $ elemString "Execution time"
+                                div_ ["className" $= "value"] $ elemString $ show execTime <> " ms"
                         div_ [ "className" $= "value"] $
                             elemString $ strValue n
                         div_ [ "className" $= "visualizations" ] $
                             forM_ (n ^. Node.value) visualization_
+
         else
             div_
                 [ onClick       $ \_ m -> dispatch ref $ UI.NodeEvent $ Node.Select m nodeId
@@ -115,10 +101,10 @@ node ref = React.defineControllerView
                 , "style"     @= Aeson.object [ "transform" Aeson..= (transformTranslate offsetX offsetY) ]
                 , "key"       $= fromString (show nodeId)
                 ] $ do
-                    svg_ [ "viewBox" $= "0 0 16 16" ] $ do
+                    svg_ [ "viewBox" $= "0 0 10 10" ] $ do
                         circle_ [ "className" $= "selection-mark" ] mempty
-                        makePorts ref nodeId $ filter (\(Port _ portId _ _) -> portId /= InPortId Self) ports
-                        makePorts ref nodeId $ filter (\(Port _ portId _ _) -> portId == InPortId Self) ports
+                        makePorts ref nodeId $ filter (\port -> (port ^. Port.portId) /= InPortId Self) ports
+                        makePorts ref nodeId $ filter (\port -> (port ^. Port.portId) == InPortId Self) ports
                         text_
                             [ onDoubleClick $ \e _ -> stopPropagation e : dispatch ref (UI.NodeEvent $ Node.EditExpression nodeId)
                             , "className"  $= "name"
@@ -128,6 +114,7 @@ node ref = React.defineControllerView
                             [ "className"  $= "name"
                             , "y"          $= "45"
                             ] $ elemString $ strValue n
+
 
 
 node_ :: Ref Node -> ReactElementM ViewEventHandler ()

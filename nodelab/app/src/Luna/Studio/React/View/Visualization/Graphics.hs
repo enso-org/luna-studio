@@ -1,5 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
-module Luna.Studio.React.View.Graphics where
+module Luna.Studio.React.View.Visualization.Graphics where
 
 import qualified Data.Text.Lazy          as Text
 import           React.Flux              hiding (label_)

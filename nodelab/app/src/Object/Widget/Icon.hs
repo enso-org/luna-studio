@@ -1,13 +1,13 @@
 module Object.Widget.Icon where
 
-import           Data.Aeson        (ToJSON)
+import           Data.Aeson              (ToJSON)
+import           Luna.Studio.Data.Vector (Position, Vector2)
 import           Luna.Studio.Prelude
-import           Luna.Studio.Data.Vector
 
 import           Object.Widget
 
 
-data Icon = Icon { _position :: Vector2 Double
+data Icon = Icon { _position :: Position
                  , _size     :: Vector2 Double
                  , _shader   :: Text
                  } deriving (Eq, Show, Typeable, Generic)

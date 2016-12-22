@@ -2,12 +2,12 @@
 
 module Style.Layout where
 
+import           Luna.Studio.Data.Vector (Position, Vector2 (Vector2))
 import           Luna.Studio.Prelude
-import           Luna.Studio.Data.Vector
 
-import qualified Object.Widget.Button as Button
-import qualified Object.Widget.Group  as Group
-import qualified Object.Widget.Label  as Label
+import qualified Object.Widget.Button    as Button
+import qualified Object.Widget.Group     as Group
+import qualified Object.Widget.Label     as Label
 import           Style.Types
 
 sidebarPadding                 :: Double
@@ -26,7 +26,7 @@ sidebarWidth                   = 0.0
 
 breadcrumbBackground           :: Color
 breadcrumbBackground           = sidebarBackground
-breadcrumbPosition             :: Vector2 Double
+breadcrumbPosition             :: Position
 breadcrumbPosition             = Vector2 sidebarWidth 0.0
 
 breadcrumbStyle               :: Group.Style
@@ -53,8 +53,10 @@ projectListItemSize, createProjectButtonSize :: Vector2 Double
 projectListItemSize            = Vector2 190.0 20.0
 createProjectButtonSize        = Vector2 200.0 20.0
 
-createProjectDialogPosition, createProjectDialogTextBoxSize, createProjectDialogOKSize, createProjectDialogCancelSize :: Vector2 Double
+createProjectDialogPosition   :: Position
 createProjectDialogPosition    = Vector2 230.0 40.0
+
+createProjectDialogTextBoxSize, createProjectDialogOKSize, createProjectDialogCancelSize :: Vector2 Double
 createProjectDialogTextBoxSize = Vector2 200.0 20.0
 createProjectDialogOKSize      = Vector2 100.0 20.0
 createProjectDialogCancelSize  = Vector2  80.0 20.0

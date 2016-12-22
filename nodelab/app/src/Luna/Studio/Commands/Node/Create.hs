@@ -44,7 +44,4 @@ registerNode node = do
 --TODO[react]
 -- nodeHandlers :: Node -> HTMap
 -- nodeHandlers node = addHandler (UINode.ChangeInputNodeTypeHandler   $ \_ nodeId name -> BatchCmd.setInputNodeType nodeId name)
---                   $ addHandler (UINode.FocusNodeHandler             focusNode)
---                   $ addHandler (UINode.ExpandNodeHandler            expandSelectedNodes)
---                   $ addHandler (UINode.VisualizationsToggledHandler visualizationsToggled)
 --                   $ addHandler (UINode.CodeChangedHandler           codeChanged)

@@ -97,10 +97,12 @@ showHidePortLabels show wid = do
 
 onMouseOver, onMouseOut :: WidgetId -> Command Global.State ()
 onMouseOver wid = inRegistry $ do
-    UICmd.update_ wid $ Model.highlight .~ True
+    --TODO[react]
+    -- UICmd.update_ wid $ Model.highlight .~ True
     showHidePortLabels True wid
 onMouseOut  wid = inRegistry $ do
-    UICmd.update_ wid $ Model.highlight .~ False
+    --TODO[react]
+    -- UICmd.update_ wid $ Model.highlight .~ False
     showHidePortLabels False wid
 
 widgetHandlers :: UIHandlers Global.State
@@ -135,9 +137,6 @@ instance CompositeWidget Model.Node where
                                   & Group.visible .~ (model ^. Model.isExpanded)
         expandedGroup <- UICmd.register controlGroups grp Style.expandedGroupLayout
 
-        let label  = Style.execTimeLabel "Execution time: --"
-        execTimeLabelId <- UICmd.register expandedGroup label def
-
         nodeGroupId <- UICmd.register expandedGroup Group.create Style.expandedGroupLayout
 
         codeEditorId <- mapM (displayCodeEditor wid nodeGroupId) $ model ^. Model.code
@@ -153,11 +152,9 @@ instance CompositeWidget Model.Node where
 
         void $ UIRegistry.updateWidgetM wid $ Model.elements %~ ( (Model.expandedGroup       .~ expandedGroup              )
                                                                . (Model.nodeGroup           .~ nodeGroupId                )
-                                                               . (Model.portGroup           .~ portGroup                  )
                                                                . (Model.portControls        .~ portControlsGroupId        )
                                                                . (Model.inLabelsGroup       .~ inLabelsGroupId            )
                                                                . (Model.outLabelsGroup      .~ outLabelsGroupId           )
-                                                               . (Model.execTimeLabel       .~ execTimeLabelId            )
                                                                . (Model.codeEditor          .~ codeEditorId               )
                                                                )
 
@@ -169,10 +166,6 @@ instance CompositeWidget Model.Node where
         whenChanged old model Model.tpe   $ withJust (model ^. Model.tpe) $ \tpe -> do
             let typeTbId = model ^. Model.elements . Model.nodeType
             withJust typeTbId $ \typeTbId -> UICmd.update_ typeTbId $ LabeledTextBox.value .~ tpe
-
-        whenChanged old model Model.execTime $ do
-            let etId = model ^. Model.elements . Model.execTimeLabel
-            UICmd.update_ etId $ Label.label     .~ (fromMaybe "Execution time: --" $ (\v -> "Execution time: " <> v <> " ms") <$> (Text.pack . show) <$> model ^. Model.execTime)
 
         withJust (model ^. Model.code) $ \codeBody -> do
             let nodeGroupId = model ^. Model.elements . Model.nodeGroup

@@ -1,5 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
-module Luna.Studio.React.View.Image where
+module Luna.Studio.React.View.Visualization.Image where
 
 import           React.Flux
 

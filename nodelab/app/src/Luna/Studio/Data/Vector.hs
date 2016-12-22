@@ -1,7 +1,9 @@
 module Luna.Studio.Data.Vector where
 
-import           Data.Aeson        (ToJSON)
+import           Data.Aeson          (ToJSON)
 import           Luna.Studio.Prelude
+
+type Position = Vector2 Double
 
 data Vector2 a = Vector2 { _x :: a
                          , _y :: a

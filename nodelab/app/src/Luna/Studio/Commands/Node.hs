@@ -111,5 +111,5 @@ editExpression nodeId = do
     nodeRefMay <- Global.getNode nodeId
     withJust exprMay $ \expr -> withJust nodeRefMay $ \nodeRef -> do
         node <- Store.get nodeRef
-        let pos = round <$> node ^. Model.position
+        let pos = node ^. Model.position
         Searcher.openEdit expr nodeId $ pos

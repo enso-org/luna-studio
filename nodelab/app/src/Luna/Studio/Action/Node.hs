@@ -4,12 +4,12 @@ import           React.Flux                           (KeyboardEvent, mouseCtrlK
 
 import           Empire.API.Data.Node                 (NodeId)
 import           Event.Event                          (Event (UI))
-import qualified Event.Keys                           as Keys
 import           Event.UI                             (UIEvent (AppEvent, NodeEvent))
 import           Luna.Studio.Commands.Command         (Command)
 import           Luna.Studio.Commands.Graph.Selection (selectAll, toggleSelect, unselectAll)
 import qualified Luna.Studio.Commands.Node            as Node
 import           Luna.Studio.Commands.Node.Remove     as Node
+import qualified Luna.Studio.Event.Keys               as Keys
 import           Luna.Studio.Prelude
 import qualified Luna.Studio.React.Event.App          as App
 import qualified Luna.Studio.React.Event.Node         as Node

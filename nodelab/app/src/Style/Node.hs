@@ -1,14 +1,14 @@
 module Style.Node where
 
+import           Data.HMap.Lazy          (HTMap)
+import           Luna.Studio.Data.Vector (Position, Vector2 (Vector2), x, y)
 import           Luna.Studio.Prelude
-import           Luna.Studio.Data.Vector
-import           Data.HMap.Lazy               (HTMap)
 
 import           Style.Types
 
-import qualified Object.Widget.Group as Group
-import qualified Object.Widget.Label as Label
-import qualified UI.Layout           as Layout
+import qualified Object.Widget.Group     as Group
+import qualified Object.Widget.Label     as Label
+import qualified UI.Layout               as Layout
 
 nodeRadius :: Double
 nodeRadius = 25.0
@@ -19,7 +19,7 @@ expressionLabel = Label.Label position size align Label.Monospace where
     size     = Vector2 300.0 20.0
     align    = Label.Center
 
-controlsPosition :: Vector2 Double
+controlsPosition :: Position
 controlsPosition = Vector2 (-nodeRadius) 35.0
 
 controlsLayout, inLabelsLayout, expandedGroupLayout :: HTMap
@@ -63,11 +63,6 @@ setLabelOffsetX = 10.0
 
 labeledPadding :: Padding
 labeledPadding = xyPadding setLabelOffsetX 0.0
-
-execTimeLabel :: Text -> Label.Label
-execTimeLabel = Label.Label (Vector2 setLabelOffsetX 0) size align def where
-    size     = Vector2 0 0 -- (portControlSize & x -~ setLabelOffsetX)
-    align    = Label.Left
 
 codeEditorSize :: Vector2 Double
 codeEditorSize = Vector2 300.0 150.0
