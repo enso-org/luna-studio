@@ -42,6 +42,7 @@ import qualified UI.Handlers.Button              as Button
 import           UI.Handlers.Generic             (onValueChanged)
 import           UI.Instances                    ()
 import           UI.Layout                       as Layout
+import           Luna.Studio.React.View.Global
 
 
 
@@ -65,61 +66,62 @@ portControl_ ref node port =
         _ -> return ()
 
 inPortControl_ :: Ref Node -> AnyPortRef -> Port -> ReactElementM ViewEventHandler ()
-inPortControl_ ref portRef port = case port ^. Port.state of
-    PortAPI.NotConnected    -> do
-        case port ^. Port.valueType . ValueType.toEnum of
-            ValueType.Other -> return ()
-            _               -> do
-                let zeroValue = case port ^. Port.valueType . ValueType.toEnum of
-                        ValueType.DiscreteNumber   -> DefaultValue.IntValue    def
-                        ValueType.ContinuousNumber -> DefaultValue.DoubleValue def
-                        ValueType.String           -> DefaultValue.StringValue def
-                        ValueType.Bool             -> DefaultValue.BoolValue   False
-                        _                          -> undefined
-                    defaultValue = DefaultValue.Constant zeroValue
-                div_ [ "className" $= "label" ] $ elemString $ fromString $ port ^. Port.name
-                div_ [ "className" $= "value" ] $
+inPortControl_ ref portRef port = do
+    div_ [ "className" $= "label" ] $ elemString $ fromString $ port ^. Port.name
+    div_ [ "className" $= "value" ] $ case port ^. Port.state of
+        PortAPI.NotConnected    -> do
+            case port ^. Port.valueType . ValueType.toEnum of
+                ValueType.Other -> elemString $ fromString $ "(other)"
+                _               -> do
+                    let zeroValue = case port ^. Port.valueType . ValueType.toEnum of
+                            ValueType.DiscreteNumber   -> DefaultValue.IntValue    def
+                            ValueType.ContinuousNumber -> DefaultValue.DoubleValue def
+                            ValueType.String           -> DefaultValue.StringValue def
+                            ValueType.Bool             -> DefaultValue.BoolValue   False
+                            _                          -> undefined
+                        defaultValue = DefaultValue.Constant zeroValue
                     button_
-                        [ onClick $ \_ _ -> dispatch ref $ UI.NodeEvent $ Node.SetDefaultValue portRef defaultValue] $
+                        [ onClick $ \_ _ -> dispatch ref $ UI.NodeEvent $ Node.SetDefaultValue portRef defaultValue ] $
                         elemString "not set"
+        PortAPI.Connected       -> do
+            elemString $ fromString $ "(connected)"
+        PortAPI.WithDefault defVal -> void $ case port ^. Port.valueType . ValueType.toEnum of
+            ValueType.DiscreteNumber -> do
+                let label = port ^. Port.name
+                    value = fromMaybe 0 $ defVal ^? DefaultValue._Constant . DefaultValue._IntValue
+                    widget = DiscreteNumber.create Style.portControlSize (Text.pack $ label) value
+                    handlers = onValueChanged $ \val _ -> BatchCmd.setDefaultValue portRef (DefaultValue.Constant $ DefaultValue.IntValue val)
+                elemString $ fromString $ show value
+                -- UICmd.register widget handlers
                 return ()
-    PortAPI.Connected       -> do
-        let widget = Label.create (Style.portControlSize & x -~ Style.setLabelOffsetX) (Text.pack $ (port ^. Port.name) <> " (connected)")
-                   & Label.position . x .~ Style.setLabelOffsetX
-        -- void $ UICmd.register widget def
-        return ()
-    PortAPI.WithDefault defVal -> void $ case port ^. Port.valueType . ValueType.toEnum of
-        ValueType.DiscreteNumber -> do
-            let label = port ^. Port.name
-                value = fromMaybe 0 $ defVal ^? DefaultValue._Constant . DefaultValue._IntValue
-                widget = DiscreteNumber.create Style.portControlSize (Text.pack $ label) value
-                handlers = onValueChanged $ \val _ -> BatchCmd.setDefaultValue portRef (DefaultValue.Constant $ DefaultValue.IntValue val)
-            -- UICmd.register widget handlers
-            return ()
-        ValueType.ContinuousNumber -> do
-            let label = port ^. Port.name
-                value = fromMaybe 0.0 $ defVal ^? DefaultValue._Constant . DefaultValue._DoubleValue
-                widget = ContinuousNumber.create Style.portControlSize (Text.pack $ label) value
-                handlers = onValueChanged $ \val _ -> BatchCmd.setDefaultValue portRef (DefaultValue.Constant $ DefaultValue.DoubleValue val)
-            -- UICmd.register widget handlers
-            return ()
-        ValueType.String -> do
-            let label = port ^. Port.name
-                value = fromMaybe "" $ defVal ^? DefaultValue._Constant . DefaultValue._StringValue
-                widget = LabeledTextBox.create Style.portControlSize (Text.pack $ label) (Text.pack $ value)
-                handlers = onValueChanged $ \val _ -> BatchCmd.setDefaultValue portRef (DefaultValue.Constant $ DefaultValue.StringValue $ Text.unpack val)
-            -- UICmd.register widget handlers
-            return ()
-        ValueType.Bool -> do
-            let label = port ^. Port.name
-                value = fromMaybe True $ defVal ^? DefaultValue._Constant . DefaultValue._BoolValue
-                widget = Toggle.create Style.portControlSize (Text.pack $ label) value
-                handlers = onValueChanged $ \val _ -> BatchCmd.setDefaultValue portRef (DefaultValue.Constant $ DefaultValue.BoolValue val)
-            -- UICmd.register widget handlers
-            return ()
-        ValueType.Other -> do
-            let widget = Label.create (Style.portControlSize & x -~ Style.setLabelOffsetX) (Text.pack $ (port ^. Port.name) )
-                       & Label.position . x .~ Style.setLabelOffsetX
-
-            -- UICmd.register widget mempty
-            return ()
+            ValueType.ContinuousNumber -> do
+                let label = port ^. Port.name
+                    value = fromMaybe 0.0 $ defVal ^? DefaultValue._Constant . DefaultValue._DoubleValue
+                    widget = ContinuousNumber.create Style.portControlSize (Text.pack $ label) value
+                    handlers = onValueChanged $ \val _ -> BatchCmd.setDefaultValue portRef (DefaultValue.Constant $ DefaultValue.DoubleValue val)
+                elemString $ fromString $ "(ContinuousNumber)"
+                -- UICmd.register widget handlers
+                return ()
+            ValueType.String -> do
+                let label = port ^. Port.name
+                    value = fromMaybe "" $ defVal ^? DefaultValue._Constant . DefaultValue._StringValue
+                    defaultValue val = DefaultValue.Constant $ DefaultValue.StringValue val
+                input_
+                    ["id" $= "focus-portcontrol"
+                    ,"value" $= fromString value
+                    , onMouseDown $ \e _ -> [stopPropagation e]
+                    , onKeyDown   $ \e k ->  [stopPropagation e]
+                    , onChange    $ \e -> let val = target e "value" in dispatch ref $ UI.NodeEvent $ Node.SetDefaultValue portRef $ defaultValue val
+                    ]
+            ValueType.Bool -> do
+                let label = port ^. Port.name
+                    value = fromMaybe True $ defVal ^? DefaultValue._Constant . DefaultValue._BoolValue
+                    defaultValue = DefaultValue.Constant $ DefaultValue.BoolValue $ not value
+                button_
+                    [ onClick $ \_ _ -> dispatch ref $ UI.NodeEvent $ Node.SetDefaultValue portRef $ defaultValue
+                    ] $
+                    elemString $ fromString $ show value
+            ValueType.Other -> do
+                let widget = Label.create (Style.portControlSize & x -~ Style.setLabelOffsetX) (Text.pack $ (port ^. Port.name) )
+                           & Label.position . x .~ Style.setLabelOffsetX
+                elemString $ fromString $ "(Other)"
