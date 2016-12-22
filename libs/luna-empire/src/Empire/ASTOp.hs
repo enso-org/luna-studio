@@ -12,10 +12,10 @@ module Empire.ASTOp (
 import           Empire.Prelude
 
 import           Control.Monad        (foldM)
-import           Control.Monad.State  (get, put)
+import           Control.Monad.State  (StateT, evalStateT, get, put)
 import           Control.Monad.Except (throwError)
-import           Empire.Data.AST      (AST, ASTState(..), NodeRef)
-import           Empire.Data.Graph    (Graph)
+import           Empire.Data.AST      (NodeRef)
+import           Empire.Data.Graph    (AST, ASTState(..), Graph)
 import qualified Empire.Data.Graph    as Graph (ast)
 import           Empire.Data.Layers   (Marker, Meta,
                                       InputsLayer, TypeLayer, TCData)
@@ -38,6 +38,7 @@ import           System.Log (Logger, DropLogger, dropLogs)
 
 
 type ASTOp m = (MonadThrow m, IRMonad m,
+                MonadState Graph m,
                 Emitters m EmpireEmitters,
                 Accessibles m EmpireAccessibles)
 
@@ -64,17 +65,21 @@ type instance Outputs   EmpirePass = EmpireAccessibles
 type instance Events    EmpirePass = EmpireEmitters
 type instance Preserves EmpirePass = '[]
 
-runASTOp :: Pass.SubPass EmpirePass (Pass.PassManager (IRBuilder (Logger DropLogger IO))) a
+runASTOp :: Pass.SubPass EmpirePass (Pass.PassManager (IRBuilder (Logger DropLogger (StateT Graph IO)))) a
          -> Command Graph a
-runASTOp pass = zoom Graph.ast $ do
-    ASTState currentStateIR currentStatePass <- get
-    let evalIR = dropLogs . flip evalIRBuilder currentStateIR . flip evalPassManager currentStatePass
+runASTOp pass = do
+    g <- get
+    ASTState currentStateIR currentStatePass <- use Graph.ast
+    let evalIR = flip evalStateT g
+               . dropLogs
+               . flip evalIRBuilder currentStateIR
+               . flip evalPassManager currentStatePass
     (a, (st, passSt)) <- liftIO $ evalIR $ do
         a      <- Pass.eval' pass
         st     <- snapshot
         passSt <- Pass.get
         return (a, (st, passSt))
-    put $ ASTState st passSt
+    Graph.ast .= ASTState st passSt
     case a of
         Left err -> throwError $ "pass internal error: " ++ show err
         Right res -> return res

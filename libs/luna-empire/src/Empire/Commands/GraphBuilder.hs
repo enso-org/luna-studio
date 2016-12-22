@@ -104,9 +104,9 @@ getEdgePortMapping = do
 
 buildNode :: NodeId -> Command Graph API.Node
 buildNode nid = do
-    root  <- GraphUtils.getASTPointer nid
+    root  <- runASTOp $ GraphUtils.getASTPointer nid
     match' <- isMatch root
-    ref   <- if match' then GraphUtils.getASTTarget nid else return root
+    ref   <- if match' then runASTOp $ GraphUtils.getASTTarget nid else return root
     expr  <- runASTOp $ Print.printNodeExpression ref
     meta  <- runASTOp $ AST.readMeta root
     name  <- fromMaybe "" <$> getNodeName nid
@@ -124,13 +124,13 @@ isMatch node = runASTOp $ do
 
 canEnterNode :: NodeId -> Command Graph Bool
 canEnterNode nid = do
-    root  <- GraphUtils.getASTPointer nid
+    root  <- runASTOp $ GraphUtils.getASTPointer nid
     match' <- isMatch root
     if match' then rhsIsLambda nid else return False
 
 rhsIsLambda :: NodeId -> Command Graph Bool
 rhsIsLambda nid = do
-    node <- GraphUtils.getASTTarget nid
+    node <- runASTOp $ GraphUtils.getASTTarget nid
     runASTOp $ do
         match node $ \case
             Lam{} -> return True
@@ -138,10 +138,10 @@ rhsIsLambda nid = do
 
 getNodeName :: NodeId -> Command Graph (Maybe Text)
 getNodeName nid = do
-    root  <- GraphUtils.getASTPointer nid
+    root  <- runASTOp $ GraphUtils.getASTPointer nid
     match' <- isMatch root
     if match' then do
-        vnode <- GraphUtils.getASTVar nid
+        vnode <- runASTOp $ GraphUtils.getASTVar nid
         runASTOp $ do
             match vnode $ \case
                 Var n -> do
@@ -261,7 +261,7 @@ buildConnections = do
 buildInputEdge :: NodeId -> Command Graph API.Node
 buildInputEdge nid = do
     lastb <- use Graph.insideNode <?!> "top-level nodes have no input edge"
-    ref   <- GraphUtils.getASTTarget lastb
+    ref   <- runASTOp $ GraphUtils.getASTTarget lastb
     (types, _states) <- runASTOp $ extractPortInfo ref
     argTypes <- case types of
         [] -> do
@@ -283,7 +283,7 @@ buildInputEdge nid = do
 buildOutputEdge :: NodeId -> Command Graph API.Node
 buildOutputEdge nid = do
     lastb <- use Graph.insideNode <?!> "top-level nodes have no output edge"
-    ref <- GraphUtils.getASTTarget lastb
+    ref <- runASTOp $ GraphUtils.getASTTarget lastb
     out <- runASTOp $ followTypeRep ref
     outputType <- case out of
         TypeIdent (TLam _ t) -> return $ TypeIdent t
@@ -340,7 +340,7 @@ getLambdaInputArgNumber lambda = do
 getOutputEdgeInputs :: NodeId -> NodeId -> Command Graph (Maybe (OutPortRef, InPortRef))
 getOutputEdgeInputs inputEdge outputEdge = do
     lambda <- use Graph.insideNode <?!> "top-level nodes have no edges"
-    ref <- GraphUtils.getASTTarget lambda
+    ref <- runASTOp $ GraphUtils.getASTTarget lambda
     nid <- runASTOp $ do
         outputIsInputNum <- getLambdaInputArgNumber ref
         case outputIsInputNum of
@@ -381,16 +381,16 @@ getOuterLambdaArguments = do
     lambda <- use Graph.insideNode
     case lambda of
         Just lambda' -> do
-            ref <- GraphUtils.getASTTarget lambda'
+            ref <- runASTOp $ GraphUtils.getASTTarget lambda'
             lambdaArgs <- runASTOp $ getLambdaArgRefs ref
             return lambdaArgs
         _ -> return []
 
 getNodeInputs :: Maybe (NodeId, NodeId) -> NodeId -> Command Graph [(OutPortRef, InPortRef)]
 getNodeInputs edgeNodes nodeId = do
-    root        <- GraphUtils.getASTPointer nodeId
+    root        <- runASTOp $ GraphUtils.getASTPointer nodeId
     match'       <- isMatch root
-    ref         <- if match' then GraphUtils.getASTTarget nodeId else return root
+    ref         <- if match' then runASTOp $ GraphUtils.getASTTarget nodeId else return root
     selfMay     <- runASTOp $ getSelfNodeRef ref
     lambdaArgs  <- getOuterLambdaArguments
     selfNodeMay <- case selfMay of

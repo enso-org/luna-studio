@@ -4,7 +4,8 @@ import           Empire.Prelude
 
 import           Empire.Empire
 
-import           Empire.ASTOp            (runASTOp)
+import           Data.Maybe              (fromJust)
+import           Empire.ASTOp            (ASTOp)
 import           Empire.Data.AST         (NodeRef)
 import           Empire.Data.Graph       (Graph)
 import qualified Empire.Data.Graph       as Graph
@@ -13,25 +14,30 @@ import qualified Empire.Commands.AST     as AST
 
 
 
-getASTPointer :: NodeId -> Command Graph NodeRef
-getASTPointer nodeId = Graph.getAnyRef <$> (use (Graph.nodeMapping . at nodeId) <?!> err)
-    where
-        err = "Node " ++ show nodeId ++ " does not exist"
+data NodeDoesNotExistException = NodeDoesNotExistException NodeId
+    deriving Show
+instance Exception NodeDoesNotExistException
 
-getASTTarget :: NodeId -> Command Graph NodeRef
+getASTPointer :: ASTOp m => NodeId -> m NodeRef
+getASTPointer nodeId = do
+    node <- use (Graph.nodeMapping . at nodeId)
+    case node of
+        Just target -> pure $ Graph.getAnyRef target
+        _           -> throwM $ NodeDoesNotExistException nodeId
+
+getASTTarget :: ASTOp m => NodeId -> m NodeRef
 getASTTarget nodeId = do
     matchNode <- getASTPointer nodeId
-    runASTOp $ AST.getTargetNode matchNode
+    AST.getTargetNode matchNode
 
-getASTVar :: NodeId -> Command Graph NodeRef
+getASTVar :: ASTOp m => NodeId -> m NodeRef
 getASTVar nodeId = do
     matchNode <- getASTPointer nodeId
-    runASTOp $ AST.getVarNode matchNode
+    AST.getVarNode matchNode
 
-rewireNode :: NodeId -> NodeRef -> Command Graph ()
+rewireNode :: ASTOp m => NodeId -> NodeRef -> m ()
 rewireNode nodeId newTarget = do
     matchNode <- getASTPointer nodeId
     oldTarget <- getASTTarget  nodeId
-    runASTOp $ do
-        AST.replaceTargetNode matchNode newTarget
-        AST.removeSubtree oldTarget
+    AST.replaceTargetNode matchNode newTarget
+    AST.removeSubtree oldTarget

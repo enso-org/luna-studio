@@ -29,12 +29,12 @@ import qualified Empire.Commands.Publisher         as Publisher
 
 getNodeValueReprs :: NodeId -> Command Graph (Either String AST.ValueRep)
 getNodeValueReprs nid = do
-    nodeRef <- GraphUtils.getASTPointer nid
+    nodeRef <- runASTOp $ GraphUtils.getASTPointer nid
     metaMay <- runASTOp $ AST.readMeta nodeRef
     case metaMay of
         Just meta -> if meta ^. NodeMeta.displayResult
             then do
-                valRef <- GraphUtils.getASTVar nid
+                valRef <- runASTOp $ GraphUtils.getASTVar nid
                 runASTOp $ AST.getNodeValue valRef
             else   return $ Right $ AST.PlainVal ("", [])
         Nothing -> return $ Right $ AST.PlainVal ("", [])
@@ -48,7 +48,7 @@ collect _ = return ()
 runTC :: Command Graph ()
 runTC = do
     allNodeIds <- uses Graph.nodeMapping $ Map.keys
-    _roots <- mapM GraphUtils.getASTPointer allNodeIds
+    _roots <- runASTOp $ mapM GraphUtils.getASTPointer allNodeIds
     $notImplemented
     return ()
 
@@ -56,10 +56,10 @@ runInterpreter :: Command Graph ()
 runInterpreter = do
     _ast        <- use Graph.ast
     allNodes   <- uses Graph.breadcrumbHierarchy topLevelIDs
-    refs       <- mapM GraphUtils.getASTPointer allNodes
+    refs       <- runASTOp $ mapM GraphUtils.getASTPointer allNodes
     metas      <- runASTOp $ mapM AST.readMeta refs
     let sorted = fmap snd $ sort $ zip metas allNodes
-    _evals      <- mapM GraphUtils.getASTVar sorted
+    _evals      <- runASTOp $ mapM GraphUtils.getASTVar sorted
     newAst     <- liftIO $ fmap snd $ $notImplemented
     Graph.ast .= newAst
     return ()
@@ -78,7 +78,7 @@ updateNodes :: GraphLocation -> Command InterpreterEnv ()
 updateNodes loc = do
     allNodeIds <- uses (graph . Graph.breadcrumbHierarchy) topLevelIDs
     forM_ allNodeIds $ \nid -> do
-        ref <- zoom graph $ GraphUtils.getASTTarget nid
+        ref <- zoom graph $ runASTOp $ GraphUtils.getASTTarget nid
 
         err <- zoom graph $ runASTOp $ AST.getError ref
         reportError loc nid err
