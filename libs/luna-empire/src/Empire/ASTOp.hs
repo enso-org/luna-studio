@@ -12,7 +12,7 @@ module Empire.ASTOp (
 import           Empire.Prelude
 
 import           Control.Monad        (foldM)
-import           Control.Monad.State  (StateT, evalStateT, get, put)
+import           Control.Monad.State  (StateT, runStateT, get, put)
 import           Control.Monad.Except (throwError)
 import           Empire.Data.AST      (NodeRef)
 import           Empire.Data.Graph    (AST, ASTState(..), Graph)
@@ -70,16 +70,16 @@ runASTOp :: Pass.SubPass EmpirePass (Pass.PassManager (IRBuilder (Logger DropLog
 runASTOp pass = do
     g <- get
     ASTState currentStateIR currentStatePass <- use Graph.ast
-    let evalIR = flip evalStateT g
+    let evalIR = flip runStateT g
                . dropLogs
                . flip evalIRBuilder currentStateIR
                . flip evalPassManager currentStatePass
-    (a, (st, passSt)) <- liftIO $ evalIR $ do
+    ((a, (st, passSt)), newG) <- liftIO $ evalIR $ do
         a      <- Pass.eval' pass
         st     <- snapshot
         passSt <- Pass.get
         return (a, (st, passSt))
-    Graph.ast .= ASTState st passSt
+    put $ newG & Graph.ast .~ ASTState st passSt
     case a of
         Left err -> throwError $ "pass internal error: " ++ show err
         Right res -> return res
