@@ -49,7 +49,7 @@ import           Luna.IR.Expr.Term.Uni
 
 nameBreadcrumb :: BreadcrumbItem -> Command Graph (Named BreadcrumbItem)
 nameBreadcrumb item@(Breadcrumb.Lambda nid) = do
-    name <- getNodeName nid
+    name <- runASTOp $ getNodeName nid
     return $ Named (fromMaybe "" name) item
 
 decodeBreadcrumbs :: Breadcrumb BreadcrumbItem -> Command Graph (Breadcrumb (Named BreadcrumbItem))
@@ -103,14 +103,14 @@ getEdgePortMapping = do
         _ -> return Nothing
 
 buildNode :: NodeId -> Command Graph API.Node
-buildNode nid = do
-    root  <- runASTOp $ GraphUtils.getASTPointer nid
-    match' <- runASTOp $ isMatch root
-    ref   <- if match' then runASTOp $ GraphUtils.getASTTarget nid else return root
-    expr  <- runASTOp $ Print.printNodeExpression ref
-    meta  <- runASTOp $ AST.readMeta root
-    name  <- fromMaybe "" <$> getNodeName nid
-    canEnter <- runASTOp $ canEnterNode nid
+buildNode nid = runASTOp $ do
+    root     <- GraphUtils.getASTPointer nid
+    match'   <- isMatch root
+    ref      <- if match' then GraphUtils.getASTTarget nid else return root
+    expr     <- Print.printNodeExpression ref
+    meta     <- AST.readMeta root
+    name     <- fromMaybe "" <$> getNodeName nid
+    canEnter <- canEnterNode nid
     ports <- buildPorts ref
     let code    = Nothing -- Just $ Text.pack expr
         portMap = Map.fromList $ flip fmap ports $ \p@(Port id' _ _ _) -> (id', p)
@@ -134,17 +134,16 @@ rhsIsLambda nid = do
         Lam{} -> return True
         _     -> return False
 
-getNodeName :: NodeId -> Command Graph (Maybe Text)
+getNodeName :: ASTOp m => NodeId -> m (Maybe Text)
 getNodeName nid = do
-    root  <- runASTOp $ GraphUtils.getASTPointer nid
-    match' <- runASTOp $ isMatch root
+    root  <- GraphUtils.getASTPointer nid
+    match' <- isMatch root
     if match' then do
-        vnode <- runASTOp $ GraphUtils.getASTVar nid
-        runASTOp $ do
-            match vnode $ \case
-                Var n -> do
-                    name <- ASTBuilder.getName n
-                    return $ Just (Text.pack name)
+        vnode <- GraphUtils.getASTVar nid
+        match vnode $ \case
+            Var n -> do
+                name <- ASTBuilder.getName n
+                return $ Just (Text.pack name)
     else return Nothing
 
 getPortState :: ASTOp m => NodeRef -> m PortState
@@ -239,8 +238,8 @@ getTypeRep tp = do
     rep <- Print.getTypeRep tp
     return $ TypeIdent rep
 
-buildPorts :: NodeRef -> Command Graph [Port]
-buildPorts ref = runASTOp $ do
+buildPorts :: ASTOp m => NodeRef -> m [Port]
+buildPorts ref = do
     selfPort <- maybeToList <$> buildSelfPort ref
     argPorts <- buildArgPorts ref
     tpRep    <- followTypeRep ref
