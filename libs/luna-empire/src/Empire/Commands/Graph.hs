@@ -229,7 +229,7 @@ getCode loc = withGraph loc $ do
         lam <- runASTOp $ GraphUtils.getASTTarget nodeId
         ret <- runASTOp $ AST.printReturnValue lam
         return (header, ret)
-    returnedNodeId <- GraphBuilder.nodeConnectedToOutput
+    returnedNodeId <- runASTOp $ GraphBuilder.nodeConnectedToOutput
     allNodes <- uses Graph.breadcrumbHierarchy topLevelIDs
     refs     <- runASTOp $ mapM GraphUtils.getASTPointer $ flip filter allNodes $ \nid ->
         case returnedNodeId of

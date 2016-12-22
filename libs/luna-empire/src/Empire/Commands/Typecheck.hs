@@ -88,7 +88,7 @@ updateNodes loc = do
         when (cached /= Just rep) $ do
             Publisher.notifyNodeUpdate loc rep
             nodesCache %= Map.insert nid rep
-    edgeNodes  <- zoom graph $ GraphBuilder.buildEdgeNodes
+    edgeNodes  <- zoom graph $ runASTOp $ GraphBuilder.buildEdgeNodes
     forM_ edgeNodes $ \edges -> forM_ edges $ \rep -> do
         let nid = rep ^. nodeId
         cached <- uses nodesCache $ Map.lookup nid

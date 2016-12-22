@@ -60,21 +60,21 @@ buildGraph = do
     parent <- use Graph.insideNode
     canEnter <- runASTOp $ forM parent canEnterNode
     when (not $ fromMaybe True canEnter) $ throwError $ "cannot enter node " ++ show parent
-    API.Graph <$> buildNodes <*> buildConnections
+    API.Graph <$> runASTOp buildNodes <*> buildConnections
 
-buildNodes :: Command Graph [API.Node]
+buildNodes :: (ASTOp m, MonadIO m) => m [API.Node]
 buildNodes = do
     allNodeIds <- uses Graph.breadcrumbHierarchy topLevelIDs
     edges <- buildEdgeNodes
-    nodes <- runASTOp $ mapM buildNode allNodeIds
+    nodes <- mapM buildNode allNodeIds
     return $ nodes ++ case edges of
         Just (inputEdge, outputEdge) -> [inputEdge, outputEdge]
         _                            -> []
 
 type EdgeNodes = (API.Node, API.Node)
 
-buildEdgeNodes :: Command Graph (Maybe EdgeNodes)
-buildEdgeNodes = runASTOp $ getEdgePortMapping >>= \p -> case p of
+buildEdgeNodes :: (ASTOp m, MonadIO m) => m (Maybe EdgeNodes)
+buildEdgeNodes = getEdgePortMapping >>= \p -> case p of
     Just (inputPort, outputPort) -> do
         inputEdge  <- buildInputEdge inputPort
         outputEdge <- buildOutputEdge outputPort
@@ -250,8 +250,8 @@ buildConnections :: Command Graph [(OutPortRef, InPortRef)]
 buildConnections = do
     allNodes <- uses Graph.breadcrumbHierarchy topLevelIDs
     edges <- runASTOp $ getEdgePortMapping
-    connections <- mapM (getNodeInputs edges) allNodes
-    outputEdgeConnections <- forM edges $ uncurry getOutputEdgeInputs
+    connections <- runASTOp $ mapM (getNodeInputs edges) allNodes
+    outputEdgeConnections <- runASTOp $ forM edges $ uncurry getOutputEdgeInputs
     let foo = maybeToList $ join outputEdgeConnections
     return $ foo ++ concat connections
 
@@ -334,11 +334,11 @@ getLambdaInputArgNumber lambda = do
             (out' `List.elemIndex`) <$> ASTBuilder.unpackLamArguments lambda
         _ -> return Nothing
 
-getOutputEdgeInputs :: NodeId -> NodeId -> Command Graph (Maybe (OutPortRef, InPortRef))
+getOutputEdgeInputs :: ASTOp m => NodeId -> NodeId -> m (Maybe (OutPortRef, InPortRef))
 getOutputEdgeInputs inputEdge outputEdge = do
-    lambda <- use Graph.insideNode <?!> "top-level nodes have no edges"
-    ref <- runASTOp $ GraphUtils.getASTTarget lambda
-    nid <- runASTOp $ do
+    Just lambda <- use Graph.insideNode
+    ref <- GraphUtils.getASTTarget lambda
+    nid <- do
         outputIsInputNum <- getLambdaInputArgNumber ref
         case outputIsInputNum of
             Just index -> return $ Just (inputEdge, Projection index)
@@ -353,13 +353,13 @@ getOutputEdgeInputs inputEdge outputEdge = do
             return $ Just (OutPortRef id' arg, InPortRef outputEdge (Arg 0))
         _ -> return Nothing
 
-nodeConnectedToOutput :: Command Graph (Maybe NodeId)
+nodeConnectedToOutput :: (MonadIO m, ASTOp m) => m (Maybe NodeId)
 nodeConnectedToOutput = do
     lambda <- use Graph.insideNode
     case lambda of
         Nothing -> return Nothing
         _       -> do
-            edges <- runASTOp getEdgePortMapping
+            edges <- getEdgePortMapping
             case edges of
                 Just (i, o) -> do
                     connection <- getOutputEdgeInputs i o
@@ -369,15 +369,15 @@ nodeConnectedToOutput = do
                 _           -> return Nothing
 
 
-resolveInputNodeId :: Maybe (NodeId, NodeId) -> [NodeRef] -> NodeRef -> Command Graph (Maybe NodeId)
-resolveInputNodeId edgeNodes lambdaArgs ref = runASTOp $ do
+resolveInputNodeId :: ASTOp m => Maybe (NodeId, NodeId) -> [NodeRef] -> NodeRef -> m (Maybe NodeId)
+resolveInputNodeId edgeNodes lambdaArgs ref = do
     nodeId <- ASTBuilder.getNodeId ref
     case List.find (== ref) lambdaArgs of
         Just _ -> return $ fmap fst edgeNodes
         _      -> return nodeId
 
-getOuterLambdaArguments :: Command Graph [NodeRef]
-getOuterLambdaArguments = runASTOp $ do
+getOuterLambdaArguments :: ASTOp m => m [NodeRef]
+getOuterLambdaArguments = do
     lambda <- use Graph.insideNode
     case lambda of
         Just lambda' -> do
@@ -386,12 +386,12 @@ getOuterLambdaArguments = runASTOp $ do
             return lambdaArgs
         _ -> return []
 
-getNodeInputs :: Maybe (NodeId, NodeId) -> NodeId -> Command Graph [(OutPortRef, InPortRef)]
+getNodeInputs :: ASTOp m => Maybe (NodeId, NodeId) -> NodeId -> m [(OutPortRef, InPortRef)]
 getNodeInputs edgeNodes nodeId = do
-    root        <- runASTOp $ GraphUtils.getASTPointer nodeId
-    match'      <- runASTOp $ isMatch root
-    ref         <- if match' then runASTOp $ GraphUtils.getASTTarget nodeId else return root
-    selfMay     <- runASTOp $ getSelfNodeRef ref
+    root        <- GraphUtils.getASTPointer nodeId
+    match'      <- isMatch root
+    ref         <- if match' then GraphUtils.getASTTarget nodeId else return root
+    selfMay     <- getSelfNodeRef ref
     lambdaArgs  <- getOuterLambdaArguments
     selfNodeMay <- case selfMay of
         Just self -> resolveInputNodeId edgeNodes lambdaArgs self
@@ -399,7 +399,7 @@ getNodeInputs edgeNodes nodeId = do
     let selfConnMay = (,) <$> (OutPortRef <$> selfNodeMay <*> Just All)
                           <*> (Just $ InPortRef nodeId Self)
 
-    args       <- runASTOp $ getPositionalNodeRefs ref
+    args       <- getPositionalNodeRefs ref
     nodeMays   <- mapM (resolveInputNodeId edgeNodes lambdaArgs) args
     let withInd  = zip nodeMays [0..]
         onlyExt  = catMaybes $ (\(n, i) -> (,) <$> n <*> Just i) <$> withInd
