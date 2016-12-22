@@ -91,7 +91,7 @@ addNodeNoTC loc uuid expr meta = do
     parsedIsLambda <- runASTOp $ AST.isLambda parsedRef
     runASTOp $ AST.writeMeta refNode meta
     Graph.nodeMapping . at uuid ?= Graph.MatchNode refNode
-    node <- GraphBuilder.buildNode uuid
+    node <- runASTOp $ GraphBuilder.buildNode uuid
     if parsedIsLambda then do
         lambdaUUID <- liftIO $ UUID.nextRandom
         lambdaOutput <- runASTOp $ AST.getLambdaOutputRef parsedRef
@@ -306,7 +306,7 @@ unAcc nodeId = do
 
 unApp :: NodeId -> Int -> Command Graph ()
 unApp nodeId pos = do
-    edges <- GraphBuilder.getEdgePortMapping
+    edges <- runASTOp GraphBuilder.getEdgePortMapping
     let connectionToOutputEdge = case edges of
             Nothing              -> False
             Just (_, outputEdge) -> outputEdge == nodeId
@@ -322,7 +322,7 @@ unApp nodeId pos = do
 
 makeAcc :: NodeId -> NodeId -> Int -> Command Graph ()
 makeAcc src dst inputPos = do
-    edges <- GraphBuilder.getEdgePortMapping
+    edges <- runASTOp GraphBuilder.getEdgePortMapping
     let connectToInputEdge = case edges of
             Nothing           -> False
             Just (input, _out) -> input == src
@@ -342,7 +342,7 @@ makeAcc src dst inputPos = do
 
 makeApp :: NodeId -> NodeId -> Int -> Int -> Command Graph ()
 makeApp src dst pos inputPos = do
-    edges <- GraphBuilder.getEdgePortMapping
+    edges <- runASTOp GraphBuilder.getEdgePortMapping
     let (connectToInputEdge, connectToOutputEdge) = case edges of
             Nothing           -> (False, False)
             Just (input, out) -> (input == src, out == dst)

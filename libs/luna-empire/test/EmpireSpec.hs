@@ -63,7 +63,7 @@ spec = around withChannels $ do
                 Graph.addNode top u1 "def foo" def
                 let loc' = top |> u1
                 Graph.addNode loc' u2 "4" def
-                Just (_, out) <- Graph.withGraph loc' $ GraphBuilder.getEdgePortMapping
+                Just (_, out) <- Graph.withGraph loc' $ runASTOp GraphBuilder.getEdgePortMapping
                 let referenceConnection = (OutPortRef u2 Port.All, InPortRef out (Port.Arg 0))
                 uncurry (Graph.connect loc') referenceConnection
                 connections <- Graph.getConnections loc'
@@ -78,7 +78,7 @@ spec = around withChannels $ do
                 Graph.addNode top u1 "def foo" def
                 let loc' = top |> u1
                 Graph.addNode loc' u2 "succ" def
-                Just (input, _) <- Graph.withGraph loc' $ GraphBuilder.getEdgePortMapping
+                Just (input, _) <- Graph.withGraph loc' $ runASTOp GraphBuilder.getEdgePortMapping
                 let referenceConnection = (OutPortRef input Port.All, InPortRef u2 Port.Self)
                 uncurry (Graph.connect loc') referenceConnection
                 connections <- Graph.getConnections loc'
@@ -93,7 +93,7 @@ spec = around withChannels $ do
                 let loc' = top |> u1
                 Graph.addNode top u1 "def foo" def
                 Graph.addNode loc' u2 "succ" def
-                Just (input, _) <- Graph.withGraph loc' $ GraphBuilder.getEdgePortMapping
+                Just (input, _) <- Graph.withGraph loc' $ runASTOp GraphBuilder.getEdgePortMapping
                 let referenceConnection = (OutPortRef input Port.All, InPortRef u2 (Port.Arg 0))
                 uncurry (Graph.connect loc') referenceConnection
                 connections <- Graph.getConnections loc'
@@ -107,7 +107,7 @@ spec = around withChannels $ do
                 let loc' = top |> u1
                 Graph.addNode top u1 "def foo" def
                 conns <- Graph.getConnections loc'
-                Just edges <- Graph.withGraph loc' $ GraphBuilder.getEdgePortMapping
+                Just edges <- Graph.withGraph loc' $ runASTOp GraphBuilder.getEdgePortMapping
                 return (conns, edges)
             withResult res $ \(connections, (inputEdge, outputEdge)) -> do
                 connections `shouldMatchList` [(OutPortRef inputEdge (Port.Projection 0), InPortRef outputEdge (Port.Arg 0))]
@@ -236,7 +236,7 @@ spec = around withChannels $ do
                 let loc' = top |> u1
                 Graph.addNode top u1 "def foo" def
                 Graph.addNode loc' u2 "4" def
-                Just (_, out) <- Graph.withGraph loc' $ GraphBuilder.getEdgePortMapping
+                Just (_, out) <- Graph.withGraph loc' $ runASTOp GraphBuilder.getEdgePortMapping
                 let referenceConnection = (OutPortRef u2 Port.All, InPortRef out (Port.Arg 0))
                 uncurry (Graph.connect loc') referenceConnection
                 Graph.removeNodes top [u1]

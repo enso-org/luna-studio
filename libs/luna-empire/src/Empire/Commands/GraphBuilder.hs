@@ -66,7 +66,7 @@ buildNodes :: Command Graph [API.Node]
 buildNodes = do
     allNodeIds <- uses Graph.breadcrumbHierarchy topLevelIDs
     edges <- buildEdgeNodes
-    nodes <- mapM buildNode allNodeIds
+    nodes <- runASTOp $ mapM buildNode allNodeIds
     return $ nodes ++ case edges of
         Just (inputEdge, outputEdge) -> [inputEdge, outputEdge]
         _                            -> []
@@ -74,14 +74,14 @@ buildNodes = do
 type EdgeNodes = (API.Node, API.Node)
 
 buildEdgeNodes :: Command Graph (Maybe EdgeNodes)
-buildEdgeNodes = getEdgePortMapping >>= \p -> case p of
+buildEdgeNodes = runASTOp getEdgePortMapping >>= \p -> case p of
     Just (inputPort, outputPort) -> do
         inputEdge <- buildInputEdge inputPort
         outputEdge <- buildOutputEdge outputPort
         return $ Just (inputEdge, outputEdge)
     _ -> return Nothing
 
-getOrCreatePortMapping :: NodeId -> Command Graph (NodeId, NodeId)
+getOrCreatePortMapping :: (ASTOp m, MonadIO m) => NodeId -> m (NodeId, NodeId)
 getOrCreatePortMapping nid = do
     existingMapping <- uses Graph.breadcrumbPortMapping $ Map.lookup nid
     case existingMapping of
@@ -91,19 +91,19 @@ getOrCreatePortMapping nid = do
             Graph.breadcrumbPortMapping . at nid ?= ids
             return ids
 
-getEdgePortMapping :: Command Graph (Maybe (NodeId, NodeId))
+getEdgePortMapping :: (MonadIO m, ASTOp m) => m (Maybe (NodeId, NodeId))
 getEdgePortMapping = do
     lastBreadcrumbId <- use Graph.insideNode
     case lastBreadcrumbId of
         Just id' -> do
-            isLambda <- runASTOp $ rhsIsLambda id'
+            isLambda <- rhsIsLambda id'
             if isLambda
                 then Just <$> getOrCreatePortMapping id'
                 else return Nothing
         _ -> return Nothing
 
-buildNode :: NodeId -> Command Graph API.Node
-buildNode nid = runASTOp $ do
+buildNode :: ASTOp m => NodeId -> m API.Node
+buildNode nid = do
     root     <- GraphUtils.getASTPointer nid
     match'   <- isMatch root
     ref      <- if match' then GraphUtils.getASTTarget nid else return root
@@ -249,7 +249,7 @@ buildPorts ref = do
 buildConnections :: Command Graph [(OutPortRef, InPortRef)]
 buildConnections = do
     allNodes <- uses Graph.breadcrumbHierarchy topLevelIDs
-    edges <- getEdgePortMapping
+    edges <- runASTOp $ getEdgePortMapping
     connections <- mapM (getNodeInputs edges) allNodes
     outputEdgeConnections <- forM edges $ uncurry getOutputEdgeInputs
     let foo = maybeToList $ join outputEdgeConnections
@@ -359,11 +359,14 @@ nodeConnectedToOutput = do
     case lambda of
         Nothing -> return Nothing
         _       -> do
-            (i, o) <- getEdgePortMapping <?!> "inside node so it's ok"
-            connection <- getOutputEdgeInputs i o
-            case connection of
-                Nothing -> return Nothing
-                Just (OutPortRef nid _, _) -> return $ Just nid
+            edges <- runASTOp getEdgePortMapping
+            case edges of
+                Just (i, o) -> do
+                    connection <- getOutputEdgeInputs i o
+                    case connection of
+                        Nothing -> return Nothing
+                        Just (OutPortRef nid _, _) -> return $ Just nid
+                _           -> return Nothing
 
 
 resolveInputNodeId :: Maybe (NodeId, NodeId) -> [NodeRef] -> NodeRef -> Command Graph (Maybe NodeId)

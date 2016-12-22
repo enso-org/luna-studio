@@ -83,7 +83,7 @@ updateNodes loc = do
         err <- zoom graph $ runASTOp $ AST.getError ref
         reportError loc nid err
 
-        rep <- zoom graph $ GraphBuilder.buildNode nid
+        rep <- zoom graph $ runASTOp $ GraphBuilder.buildNode nid
         cached <- uses nodesCache $ Map.lookup nid
         when (cached /= Just rep) $ do
             Publisher.notifyNodeUpdate loc rep
