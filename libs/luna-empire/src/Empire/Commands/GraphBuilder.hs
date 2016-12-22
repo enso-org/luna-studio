@@ -108,7 +108,7 @@ buildNode nid = do
     match' <- isMatch root
     ref   <- if match' then GraphUtils.getASTTarget nid else return root
     expr  <- zoom Graph.ast $ runASTOp $ Print.printNodeExpression ref
-    meta  <- zoom Graph.ast $ AST.readMeta root
+    meta  <- zoom Graph.ast $ runASTOp $ AST.readMeta root
     name  <- fromMaybe "" <$> getNodeName nid
     canEnter <- canEnterNode nid
     ports <- buildPorts ref

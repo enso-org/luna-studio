@@ -52,14 +52,14 @@ import           Luna.Pass.Evaluation.Interpreter.Charts (autoScatterChartDouble
                                                           autoScatterChartIntTuple)
 
 
-addNode :: NodeId -> String -> String -> Command AST (NodeRef, NodeRef)
-addNode nid name expr = runASTOp $ do
+addNode :: ASTOp m => NodeId -> String -> String -> m (NodeRef, NodeRef)
+addNode nid name expr = do
     (exprName, ref) <- Parser.parseExpr expr
     let name' = fromMaybe name $ fmap Text.unpack exprName
     (,) <$> pure ref <*> ASTBuilder.makeNodeRep (NodeMarker nid) name' ref
 
-addDefault :: PortDefault -> Command AST NodeRef
-addDefault val = runASTOp $ Parser.parsePortDefault val
+addDefault :: ASTOp m => PortDefault -> m NodeRef
+addDefault val = Parser.parsePortDefault val
 
 limit :: [a] -> [a]
 limit = limitHead where
@@ -144,8 +144,8 @@ data ValueRep = PlainVal (Text, [Value]) | Listener (((Text, [Value]) -> IO ()) 
 
 type instance IR.LayerData InterpreterData t = Interpreter.InterpreterLayer
 
-getNodeValue :: NodeRef -> Command AST (Either String ValueRep)
-getNodeValue node = runASTOp $ do
+getNodeValue :: (MonadIO m, ASTOp m) => NodeRef -> m (Either String ValueRep)
+getNodeValue node = do
     tpNode  <- IR.source =<< IR.readLayer @TypeLayer node
     decoder <- decoderForType tpNode
     v <- (^. Interpreter.value) <$> IR.readLayer @InterpreterData node
@@ -164,11 +164,11 @@ getNodeValue node = runASTOp $ do
                             _         -> return $ Right $ PlainVal $ decoder v'
                     _ -> return $ Right $ PlainVal ("", [])
 
-readMeta :: NodeRef -> Command AST (Maybe NodeMeta)
-readMeta ref = runASTOp $ IR.readLayer @Meta ref
+readMeta :: ASTOp m => NodeRef -> m (Maybe NodeMeta)
+readMeta ref = IR.readLayer @Meta ref
 
-getError :: NodeRef -> Command AST (Maybe (APIError.Error TypeRep))
-getError = runASTOp . getError'
+getError :: ASTOp m => NodeRef -> m (Maybe (APIError.Error TypeRep))
+getError = getError'
 
 tryHead :: [a] -> Maybe a
 tryHead [] = Nothing
@@ -197,42 +197,42 @@ reprError tcErr = case tcErr of
             Unify l r -> APIError.TypeError <$> (Printer.getTypeRep =<< IR.source l) <*> (Printer.getTypeRep =<< IR.source r)
             _         -> throwM $ NotUnifyException uniNode
 
-writeMeta :: NodeRef -> NodeMeta -> Command AST ()
-writeMeta ref newMeta = runASTOp $ IR.writeLayer @Meta (Just newMeta) ref
+writeMeta :: ASTOp m => NodeRef -> NodeMeta -> m ()
+writeMeta ref newMeta = IR.writeLayer @Meta (Just newMeta) ref
 
-renameVar :: NodeRef -> String -> Command AST ()
-renameVar = runASTOp .: ASTBuilder.renameVar
+renameVar :: ASTOp m => NodeRef -> String -> m ()
+renameVar = ASTBuilder.renameVar
 
-removeSubtree :: NodeRef -> Command AST ()
-removeSubtree = runASTOp . removeNode
+removeSubtree :: ASTOp m => NodeRef -> m ()
+removeSubtree = removeNode
 
-printExpression :: NodeRef -> Command AST String
-printExpression = runASTOp . Printer.printExpression
+printExpression :: ASTOp m => NodeRef -> m String
+printExpression = Printer.printExpression
 
-printFunctionHeader :: NodeRef -> Command AST String
-printFunctionHeader = runASTOp . Printer.printFunctionHeader
+printFunctionHeader :: ASTOp m => NodeRef -> m String
+printFunctionHeader = Printer.printFunctionHeader
 
-printReturnValue :: NodeRef -> Command AST String
-printReturnValue = runASTOp . Printer.printReturnValue
+printReturnValue :: ASTOp m => NodeRef -> m String
+printReturnValue = Printer.printReturnValue
 
-applyFunction :: NodeRef -> NodeRef -> Int -> Command AST NodeRef
-applyFunction = runASTOp .:. ASTBuilder.applyFunction
+applyFunction :: ASTOp m => NodeRef -> NodeRef -> Int -> m NodeRef
+applyFunction = ASTBuilder.applyFunction
 
 data NotLambdaException = NotLambdaException NodeRef
     deriving (Show)
 
 instance Exception NotLambdaException
 
-redirectLambdaOutput :: NodeRef -> NodeRef -> Command AST NodeRef
-redirectLambdaOutput lambda newOutputRef = runASTOp $ do
+redirectLambdaOutput :: ASTOp m => NodeRef -> NodeRef -> m NodeRef
+redirectLambdaOutput lambda newOutputRef = do
     match lambda $ \case
         Lam _args _ -> do
             args' <- ASTBuilder.unpackLamArguments lambda
             lams args' newOutputRef
         _ -> throwM $ NotLambdaException lambda
 
-setLambdaOutputToBlank :: NodeRef -> Command AST NodeRef
-setLambdaOutputToBlank lambda = runASTOp $ do
+setLambdaOutputToBlank :: ASTOp m => NodeRef -> m NodeRef
+setLambdaOutputToBlank lambda = do
     match lambda $ \case
         Lam _args _ -> do
             args' <- ASTBuilder.unpackLamArguments lambda
@@ -240,46 +240,46 @@ setLambdaOutputToBlank lambda = runASTOp $ do
             lams args' blank
         _ -> throwM $ NotLambdaException lambda
 
-unapplyArgument :: NodeRef -> Int -> Command AST NodeRef
-unapplyArgument = runASTOp .: ASTBuilder.removeArg
+unapplyArgument :: ASTOp m => NodeRef -> Int -> m NodeRef
+unapplyArgument = ASTBuilder.removeArg
 
-makeAccessor :: NodeRef -> NodeRef -> Command AST NodeRef
-makeAccessor = runASTOp .: ASTBuilder.makeAccessor
+makeAccessor :: ASTOp m => NodeRef -> NodeRef -> m NodeRef
+makeAccessor = ASTBuilder.makeAccessor
 
-removeAccessor :: NodeRef -> Command AST NodeRef
-removeAccessor = runASTOp . ASTBuilder.unAcc
+removeAccessor :: ASTOp m => NodeRef -> m NodeRef
+removeAccessor = ASTBuilder.unAcc
 
-getTargetNode :: NodeRef -> Command AST NodeRef
-getTargetNode node = runASTOp $ ASTBuilder.rightMatchOperand node >>= IR.source
+getTargetNode :: ASTOp m => NodeRef -> m NodeRef
+getTargetNode node = ASTBuilder.rightMatchOperand node >>= IR.source
 
-getVarNode :: NodeRef -> Command AST NodeRef
-getVarNode node = runASTOp $ ASTBuilder.leftMatchOperand node >>= IR.source
+getVarNode :: ASTOp m => NodeRef -> m NodeRef
+getVarNode node = ASTBuilder.leftMatchOperand node >>= IR.source
 
-getVarName :: NodeRef -> Command AST String
-getVarName node = runASTOp $ ASTBuilder.getVarName node
+getVarName :: ASTOp m => NodeRef -> m String
+getVarName node = ASTBuilder.getVarName node
 
-getLambdaInputRef :: NodeRef -> Int -> Command AST NodeRef
-getLambdaInputRef node pos = runASTOp $ do
+getLambdaInputRef :: ASTOp m => NodeRef -> Int -> m NodeRef
+getLambdaInputRef node pos = do
     match node $ \case
         Lam _args _out -> (!! pos) <$> ASTBuilder.unpackLamArguments node
         _ -> throwM $ NotLambdaException node
 
-isLambda :: NodeRef -> Command AST Bool
-isLambda node = runASTOp $ do
+isLambda :: ASTOp m => NodeRef -> m Bool
+isLambda node = do
     match node $ \case
       Lam{} -> return True
       _     -> return False
 
-isTrivialLambda :: NodeRef -> Command AST Bool
-isTrivialLambda node = runASTOp $ match node $ \case
+isTrivialLambda :: ASTOp m => NodeRef -> m Bool
+isTrivialLambda node = match node $ \case
     Lam _args out -> do
         args <- ASTBuilder.unpackLamArguments node
         out' <- IR.source out
         return $ out' `elem` args
     _ -> throwM $ NotLambdaException node
 
-getLambdaOutputRef :: NodeRef -> Command AST NodeRef
-getLambdaOutputRef lambda = runASTOp $ do
+getLambdaOutputRef :: ASTOp m => NodeRef -> m NodeRef
+getLambdaOutputRef lambda = do
     match lambda $ \case
         Lam _ out -> IR.source out
         _ -> throwM $ NotLambdaException lambda
@@ -289,8 +289,8 @@ data NotUnifyException = NotUnifyException NodeRef
 
 instance Exception NotUnifyException
 
-replaceTargetNode :: NodeRef -> NodeRef -> Command AST ()
-replaceTargetNode matchNode newTarget = runASTOp $ do
+replaceTargetNode :: ASTOp m => NodeRef -> NodeRef -> m ()
+replaceTargetNode matchNode newTarget = do
     match matchNode $ \case
         Unify _l r -> do
             IR.changeSource (IR.generalize r) newTarget

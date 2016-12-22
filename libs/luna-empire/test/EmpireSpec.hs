@@ -254,7 +254,7 @@ spec = around withChannels $ do
             res <- evalEmp env $ do
                 Graph.withGraph top $ zoom ast $ do
                    (_, ref) <- runASTOp $ Parser.parseExpr "def foo"
-                   AST.isTrivialLambda ref
+                   runASTOp $ AST.isTrivialLambda ref
             withResult res $ \a -> a `shouldBe` True
         it "changes name of a variable in-place" $ \env -> do
             u1 <- mkUUID

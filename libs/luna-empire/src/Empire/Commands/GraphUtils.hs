@@ -4,6 +4,7 @@ import           Empire.Prelude
 
 import           Empire.Empire
 
+import           Empire.ASTOp            (runASTOp)
 import           Empire.Data.AST         (NodeRef)
 import           Empire.Data.Graph       (Graph)
 import qualified Empire.Data.Graph       as Graph
@@ -20,17 +21,17 @@ getASTPointer nodeId = Graph.getAnyRef <$> (use (Graph.nodeMapping . at nodeId) 
 getASTTarget :: NodeId -> Command Graph NodeRef
 getASTTarget nodeId = do
     matchNode <- getASTPointer nodeId
-    zoom Graph.ast $ AST.getTargetNode matchNode
+    zoom Graph.ast $ runASTOp $ AST.getTargetNode matchNode
 
 getASTVar :: NodeId -> Command Graph NodeRef
 getASTVar nodeId = do
     matchNode <- getASTPointer nodeId
-    zoom Graph.ast $ AST.getVarNode matchNode
+    zoom Graph.ast $ runASTOp $ AST.getVarNode matchNode
 
 rewireNode :: NodeId -> NodeRef -> Command Graph ()
 rewireNode nodeId newTarget = do
     matchNode <- getASTPointer nodeId
     oldTarget <- getASTTarget  nodeId
-    zoom Graph.ast $ do
+    zoom Graph.ast $ runASTOp $ do
         AST.replaceTargetNode matchNode newTarget
         AST.removeSubtree oldTarget

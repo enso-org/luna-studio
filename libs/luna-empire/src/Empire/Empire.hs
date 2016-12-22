@@ -50,6 +50,7 @@ defaultInterpreterEnv = do
     g <- defaultGraph
     return $ InterpreterEnv def def def g []
 
+type CommandStack s = ExceptT Error (ReaderT CommunicationEnv (StateT s IO))
 type Command s a = ExceptT Error (ReaderT CommunicationEnv (StateT s IO)) a
 
 type Empire a = Command Env a
