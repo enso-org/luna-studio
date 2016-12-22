@@ -91,7 +91,6 @@ node ref = React.defineControllerView
                             elemString $ strValue n
                         div_ [ "className" $= "visualizations" ] $
                             forM_ (n ^. Node.value) visualization_
-
         else
             div_
                 [ onClick       $ \_ m -> dispatch ref $ UI.NodeEvent $ Node.Select m nodeId

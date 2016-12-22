@@ -69,59 +69,63 @@ nodeToNodeAngle srcX srcY dstX dstY
     | srcX < dstX = atan ((srcY - dstY) / (srcX - dstX))
     | otherwise   = atan ((srcY - dstY) / (srcX - dstX)) + pi
 
---FIXME: why portRadius is doubled?
-connectionSrc :: Position -> Position -> Int -> Int -> IsSingle -> Position
-connectionSrc (Vector2 x1 y1) (Vector2 x2 y2) _ _ True =
-    let t    = nodeToNodeAngle x1 y1 x2 y2
-        srcX = portRadius/2 * cos(t) + x1
-        srcY = portRadius/2 * sin(t) + y1
-    in  Vector2 srcX srcY
 
--- FIXME: implement port limits
-connectionSrc (Vector2 x1 y1) (Vector2 x2 y2) num numOfPorts False =
+connectionSrc :: Position -> Position -> Int -> Int -> IsSingle -> Position
+connectionSrc (Vector2 x1 y1) (Vector2 x2 y2) _   _          True =
+    let t      = nodeToNodeAngle x1 y1 x2 y2
+        srcX   = portRadius/2 * cos t + x1 --FIXME: why portRadius is doubled?
+        srcY   = portRadius/2 * sin t + y1
+    in  Vector2 srcX srcY
+connectionSrc (Vector2 x1 y1) (Vector2 x2 y2) num numOfPorts _    =
     let t      = nodeToNodeAngle x1 y1 x2 y2
         number = num
         ports  = numOfPorts
-        srcX   = portRadius * cos(t) + x1
-        srcY   = portRadius * sin(t) + y1
-    in  Vector2 srcX srcY
+        srcX   = portRadius/2 * cos(t) + x1
+        srcY   = portRadius/2 * sin(t) + y1
+    in  Vector2 srcX srcY -- FIXME: implement port limits
 
 
 connectionDst :: Position -> Position -> Int -> Int -> IsSelf -> Position
-connectionDst (Vector2 _  _ ) (Vector2 x2 y2) _ _ True = Vector2 x2 y2
-
--- FIXME: implement port limits
-connectionDst (Vector2 x1 y1) (Vector2 x2 y2) num numOfPorts False =
+connectionDst (Vector2 _  _ ) (Vector2 x2 y2) _   _          True = Vector2 x2 y2
+connectionDst (Vector2 x1 y1) (Vector2 x2 y2) num numOfPorts _    =
     let t      = nodeToNodeAngle x1 y1 x2 y2
         number = num
         ports  = numOfPorts
-        dstX   = portRadius * (-cos(t)) + x2
+        dstX   = portRadius * (-cos(t)) + x2 -- FIXME: implement port limits
         dstY   = portRadius * (-sin(t)) + y2
     in  Vector2 dstX dstY
+
+
+
 
 isIn :: Port -> Int
 isIn port = case port ^. Port.portId of
     InPortId (Arg _) -> 1
     _                -> 0
 
+maybeInput :: Port -> Maybe Int
+maybeInput port = case port ^. Port.portId of
+    InPortId (Arg _) -> Just 1
+    _                -> Nothing
+
 isOut :: Port -> Int
 isOut port = case port ^. Port.portId of
     OutPortId _ -> 1
     _           -> 0
 
-countInPorts :: [Port] -> Int
-countInPorts ports = foldl (\acc p -> acc + (isIn p)) 0 ports
+countInputs :: [Port] -> Int
+countInputs ports = foldl (\acc p -> acc + (isIn p)) 0 ports
 
-countOutPorts :: [Port] -> Int
-countOutPorts ports = foldl (\acc p -> acc + (isOut p)) 0 ports
+countOutputs :: [Port] -> Int
+countOutputs ports = foldl (\acc p -> acc + (isOut p)) 0 ports
 
 countPorts :: [Port] -> Int
-countPorts ports = (countInPorts ports) + (countOutPorts ports)
+countPorts ports = (countInputs ports) + (countOutputs ports)
 
 countSameTypePorts :: Port -> [Port] -> Int
 countSameTypePorts port = case port ^. Port.portId of
-    InPortId  _ -> countInPorts
-    OutPortId _ -> countOutPorts
+    InPortId  _ -> countInputs
+    OutPortId _ -> countOutputs
 
 getPortNumber :: Port -> Int
 getPortNumber port = case port ^. Port.portId of
