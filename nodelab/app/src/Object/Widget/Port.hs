@@ -1,33 +1,44 @@
 module Object.Widget.Port where
 
-import           Data.Aeson               (ToJSON)
-import           Luna.Studio.Prelude      hiding (set)
+import           Data.Aeson                (ToJSON)
+import           Luna.Studio.Prelude       hiding (set)
 
-import qualified Empire.API.Data.Node     as API
-import qualified Empire.API.Data.Port     as API
-import           Empire.API.Data.PortRef  (AnyPortRef, toAnyPortRef)
-import qualified Empire.API.JSONInstances ()
-import           Luna.Studio.Data.Color   (Color)
-import           Luna.Studio.Data.Color   (colorPort)
+import           Empire.API.Data.Node      (NodeId)
+import qualified Empire.API.Data.Port      as API
+import           Empire.API.Data.PortRef   (AnyPortRef, toAnyPortRef)
+import           Empire.API.Data.ValueType (ValueType)
+import qualified Empire.API.JSONInstances  ()
+import           Luna.Studio.Data.Color    (Color)
+import           Luna.Studio.Data.Color    (colorPort)
 
 
 
 data Port = Port { _portRef     :: AnyPortRef
-                 -- TODO[react]: Find out if we need portId here since it seems to be present in portRef
-                 , _portId      :: API.PortId
+                 , _port        :: API.Port
                  , _color       :: Color
                  } deriving (Eq, Show, Typeable, Generic)
 
 makeLenses ''Port
 instance ToJSON Port
 
-fromPorts :: API.NodeId -> [API.Port] -> [Port]
+portId :: Getter Port API.PortId
+portId = port . API.portId
+
+name :: Getter Port String
+name = port . API.name
+
+valueType :: Getter Port ValueType
+valueType = port . API.valueType
+
+state :: Getter Port API.PortState
+state = port . API.state
+
+fromPorts :: NodeId -> [API.Port] -> [Port]
 fromPorts nodeId ports = fromPort nodeId <$> ports where
 
-fromPort :: API.NodeId -> API.Port -> Port
-fromPort nodeId port = Port portRef' portId' (colorPort port) where
-    portId'  = port ^. API.portId
-    portRef' = toAnyPortRef nodeId portId'
+fromPort :: NodeId -> API.Port -> Port
+fromPort nodeId port = Port portRef' port (colorPort port) where
+    portRef' = toAnyPortRef nodeId $ port ^. API.portId
 
 -- TODO[react]: Should be removed
 -- angle :: Getter Port Double
