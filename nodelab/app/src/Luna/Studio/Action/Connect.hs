@@ -2,6 +2,9 @@ module Luna.Studio.Action.Connect
     ( toAction
     ) where
 --TODO[react]: transform mousePos to correct position
+
+import           React.Flux                         (mouseScreenX, mouseScreenY)
+
 import           Empire.API.Data.Node               (NodeId)
 import           Empire.API.Data.Port               (PortId)
 import           Empire.API.Data.PortRef            (toAnyPortRef)
@@ -12,6 +15,7 @@ import           Event.UI                           (UIEvent (AppEvent, NodeEven
 import qualified JS.GoogleAnalytics                 as GA
 import           Luna.Studio.Commands.Command       (Command)
 import           Luna.Studio.Commands.Graph.Connect (batchConnectNodes)
+import           Luna.Studio.Data.Color             (Color (Color))
 import           Luna.Studio.Data.Vector            (Position, Vector2 (Vector2))
 import           Luna.Studio.Event.Mouse            (getMousePosition)
 import           Luna.Studio.Prelude
@@ -26,7 +30,7 @@ import           Luna.Studio.React.View.Global      (getCurrentConnectionSrcPosi
 import           Luna.Studio.State.Global           (State)
 import qualified Luna.Studio.State.Global           as Global
 import qualified Object.Widget.Connection           as ConnectionModel
-import           React.Flux                         (mouseScreenX, mouseScreenY)
+
 
 
 toAction :: Event -> Maybe (Command State ())
@@ -44,7 +48,7 @@ startDragFromPort mousePos nodeId portId = do
     maySrcPos <- getCurrentConnectionSrcPosition nodeId portId mousePos
     let portRef = toAnyPortRef nodeId portId
     withJust maySrcPos $ \srcPos -> do
-        let connection = ConnectionModel.CurrentConnection portRef True srcPos mousePos False def
+        let connection = ConnectionModel.CurrentConnection portRef True srcPos mousePos False $ Color 5 --TODO[react] get proper color
         Global.withNodeEditor $ Store.modifyM_ $ do
             connectionRef <- lift $ Store.create connection
             NodeEditor.currentConnection ?= connectionRef

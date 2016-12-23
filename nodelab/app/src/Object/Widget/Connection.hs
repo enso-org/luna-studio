@@ -3,10 +3,12 @@ module Object.Widget.Connection where
 import           Data.Aeson                 (ToJSON)
 import           Empire.API.Data.Connection (ConnectionId)
 import           Empire.API.Data.PortRef    (AnyPortRef)
+import           Luna.Studio.Data.Color     (Color)
 import           Luna.Studio.Data.Vector    (Position)
 import           Luna.Studio.Prelude        hiding (from, set, to)
-import qualified Luna.Studio.Prelude        as Prelude
-import           Object.Widget
+import           Object.Widget              ()
+
+
 
 data ConnectionHighlight = None | SrcHighlight | DstHighlight deriving (Eq, Show, Generic)
 
@@ -15,7 +17,7 @@ data Connection = Connection { _connectionId :: ConnectionId
                              , _from         :: Position
                              , _to           :: Position
                              , _arrow        :: Bool
-                             , _color        :: Int
+                             , _color        :: Color
                              , _highlight    :: ConnectionHighlight
                              } deriving (Eq, Show, Typeable, Generic)
 
@@ -31,7 +33,7 @@ data CurrentConnection = CurrentConnection { _srcPortRef          :: AnyPortRef
                                            , _currentFrom         :: Position
                                            , _currentTo           :: Position
                                            , _currentArrow        :: Bool
-                                           , _currentColor        :: Int
+                                           , _currentColor        :: Color
                                            } deriving (Eq, Show, Typeable, Generic)
 
 makeLenses ''CurrentConnection

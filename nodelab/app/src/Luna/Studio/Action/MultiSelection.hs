@@ -4,7 +4,6 @@ module Luna.Studio.Action.MultiSelection where
 
 import           Luna.Studio.Data.Vector              (Position (Position), Vector2 (Vector2), fromTuple, x, y)
 import           Luna.Studio.Prelude
-import           React.Flux                           (mousePageX, mousePageY)
 
 import           Empire.API.Data.Node                 (Node)
 import qualified Empire.API.Data.Node                 as Node

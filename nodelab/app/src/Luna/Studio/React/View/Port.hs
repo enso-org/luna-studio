@@ -7,8 +7,7 @@ import           Empire.API.Data.Node          (NodeId)
 import           Empire.API.Data.Port          (InPort (..), OutPort (..), PortId (..))
 import qualified Event.UI                      as UI
 import           Luna.Studio.Data.Angle        (Angle)
-import           Luna.Studio.Data.Color        (Color (Color))
-import           Luna.Studio.Data.HSL          (color')
+import           Luna.Studio.Data.Color        (Color, toJSString)
 import qualified Luna.Studio.React.Event.Node  as Node
 import           Luna.Studio.React.Model.Node  (Node)
 import           Luna.Studio.React.Store       (Ref, dispatch)
@@ -46,7 +45,7 @@ drawPort_ nodeRef nodeId port numOfPorts isOnly = do
 drawPortSelf_ :: Ref Node -> NodeId -> Port -> ReactElementM ViewEventHandler ()
 drawPortSelf_ nodeRef nodeId port =
     let portId = port ^. Port.portId
-        color = color' $ port ^. Port.color
+        color = toJSString $ port ^. Port.color
     in
     circle_
         [ onMouseDown $ \e m -> stopPropagation e : dispatch nodeRef (UI.NodeEvent $ Node.StartConnection m nodeId portId)
@@ -62,7 +61,7 @@ drawPortSingle_ nodeRef nodeId port = do
 
     let
         portId = port ^. Port.portId
-        color = color' $ port ^. Port.color
+        color = toJSString $ port ^. Port.color
         r1 = show nodeRadius
         r2 = show nodeRadius'
         svgPath a b = fromString $ "M0 -" <> r1 <> " A " <> r1 <> " " <> r1 <> " 1 0 " <> show a <> " 0 "  <> r1 <>
@@ -81,7 +80,7 @@ drawPortIO_ :: Ref Node -> NodeId -> Port -> Int -> Int -> Bool -> ReactElementM
 drawPortIO_ nodeRef nodeId port num numOfPorts isInput = do
 
     let portId = port ^. Port.portId
-        color = color' $ port ^. Port.color
+        color = toJSString $ port ^. Port.color
 
         classes  = if isInput then "port port--i port--i--" else "port port--o port--o--"
         svgFlag1 = if isInput then "0" else "1"

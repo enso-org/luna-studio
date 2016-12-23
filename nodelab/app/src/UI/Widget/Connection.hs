@@ -2,8 +2,8 @@
 
 module UI.Widget.Connection where
 
-import           Luna.Studio.Prelude
 import           Luna.Studio.Data.Vector
+import           Luna.Studio.Prelude
 
 import           GHCJS.Marshal.Pure       (PFromJSVal (..), PToJSVal (..))
 
@@ -41,7 +41,8 @@ create (WidgetId widgetId) model = do
     setPos     connection (model ^. Model.from . x)  (model ^. Model.from . y)  (model ^. Model.to . x)  (model ^. Model.to . y) widgetId
     setVisible connection (model ^. Model.visible)
     setArrow   connection (model ^. Model.arrow)
-    setColor   connection (model ^. Model.color)
+    --TODO[react] : remove
+    -- setColor   connection (model ^. Model.color)
     setHighlight connection (model ^. Model.highlight)
     return connection
 
@@ -57,7 +58,8 @@ instance UIDisplayObject Model.Connection where
         setPos     connection (model ^. Model.from . x)  (model ^. Model.from . y)  (model ^. Model.to . x)  (model ^. Model.to . y) (fromWidgetId widgetId)
         setVisible connection (model ^. Model.visible)
         setArrow   connection (model ^. Model.arrow)
-        setColor   connection (model ^. Model.color)
+        --TODO[react] remove
+        -- setColor   connection (model ^. Model.color)
         setHighlight connection (model ^. Model.highlight)
 
 instance UIDisplayObject Model.CurrentConnection where
@@ -67,7 +69,8 @@ instance UIDisplayObject Model.CurrentConnection where
         setPos     connection (model ^. Model.currentFrom . x)  (model ^. Model.currentFrom . y)  (model ^. Model.currentTo . x)  (model ^. Model.currentTo . y) (fromWidgetId widgetId)
         setVisible connection (model ^. Model.currentVisible)
         setArrow   connection (model ^. Model.currentArrow)
-        setColor   connection (model ^. Model.currentColor)
+        --TODO[react] remove
+        -- setColor   connection (model ^. Model.currentColor)
         setIsConnecting (model ^. Model.currentVisible)
 
 instance CompositeWidget Model.Connection
