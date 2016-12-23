@@ -38,6 +38,7 @@ import qualified Luna.Studio.State.ConnectionPen      as ConnectionPen
 import qualified Luna.Studio.State.Drag               as Drag
 import qualified Luna.Studio.State.Graph              as Graph
 import qualified Luna.Studio.State.MultiSelection     as MultiSelection
+import qualified Luna.Studio.State.Slider             as Slider
 import qualified Luna.Studio.State.UIRegistry         as UIRegistry
 
 
@@ -50,6 +51,7 @@ data State = State { _mousePos           :: Position
                    , _multiSelection     :: MultiSelection.State
                    , _selectionHistory   :: [Set Node.NodeId]
                    , _drag               :: Drag.State
+                   , _slider             :: Maybe Slider.State
                    , _uiRegistry         :: UIRegistry.State
                    , _connectionPen      :: ConnectionPen.State
                    , _workspace          :: Workspace
@@ -69,7 +71,7 @@ instance ToJSON State
 instance ToJSON StdGen where
     toJSON _ = toJSON "(random-generator)"
 instance ToJSON (Ref App) where
-    toJSON _ = toJSON "((Ref App))"
+    toJSON _ = toJSON "(Ref App)"
 
 
 makeLenses ''State
@@ -106,7 +108,7 @@ getConnection :: ConnectionId -> Command State (Maybe (Ref Connection))
 getConnection connectionId = withConnection connectionId return
 
 initialState :: DateTime -> Collaboration.ClientId -> StdGen -> Maybe Int -> Ref App -> State
-initialState = State (Position (Vector2 200 200)) def def def def def def def def def defJsState def def
+initialState = State (Position (Vector2 200 200)) def def def def def def def def def def defJsState def def
 
 inRegistry :: Command UIRegistry.State a -> Command State a
 inRegistry = zoom uiRegistry

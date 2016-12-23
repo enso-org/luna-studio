@@ -2,7 +2,7 @@ module Luna.Studio.Action.Navigation where
 
 import qualified Data.HashMap.Strict          as HashMap
 
-import           Luna.Studio.Data.Vector      (Position (Position), Vector2 (Vector2), lengthSquared, magnitude, vector, x, y)
+import           Luna.Studio.Data.Vector      (Position (Position), lengthSquared, magnitude, vector, x, y)
 import           Luna.Studio.Prelude
 
 import           React.Flux                   (KeyboardEvent)

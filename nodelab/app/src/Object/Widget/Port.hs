@@ -21,16 +21,16 @@ data Port = Port { _portRef     :: AnyPortRef
 makeLenses ''Port
 instance ToJSON Port
 
-portId :: Getter Port API.PortId
+portId :: Lens' Port API.PortId
 portId = port . API.portId
 
-name :: Getter Port String
+name :: Lens' Port String
 name = port . API.name
 
-valueType :: Getter Port ValueType
+valueType :: Lens' Port ValueType
 valueType = port . API.valueType
 
-state :: Getter Port API.PortState
+state :: Lens' Port API.PortState
 state = port . API.state
 
 fromPorts :: NodeId -> [API.Port] -> [Port]
