@@ -201,14 +201,16 @@ runUndo endPoints state = do
     let UndoT collect = do
             msg <- receiveEvent endPoints
             collectEvents msg
-    runReaderT (evalStateT collect state) endPoints
+    runReaderT (evalStateT (forever collect) state) endPoints
 
 data BusErrorException = BusErrorException deriving (Show)
 instance Exception BusErrorException
 
-receiveEvent :: (MonadThrow m, MonadIO m) => BusEndPoints -> m MessageFrame
+receiveEvent :: (MonadThrow m, MonadIO m) => BusEndPoints -> m MessageFrame --fixme [SB] przenies runBus do runUndo
 receiveEvent endPoints = do
-    msgFrame <- Bus.runBus endPoints $ Bus.receive
+    msgFrame <- Bus.runBus endPoints $ do
+         mapM_ Bus.subscribe ["empire.", "undo."]
+         Bus.receive
     case msgFrame of
         Left err  -> throwM BusErrorException
         Right msg -> return msg
@@ -219,13 +221,13 @@ collectEvents (MessageFrame msg corId senderId lastFrm) = do
         userId = show senderId
         content = msg ^. Message.message
     case topic of
-        "empire.undo" -> do
+        "empire.undo.request" -> do
             req <- doUndo
             takeEndPointsAndRun $ sendUndo req
-        "empire.redo" -> do
+        "empire.redo.request" -> do
             req <- doRedo
             takeEndPointsAndRun $ sendRedo req
-        "empire." -> do collectedMessage topic content
+        _ -> do collectedMessage topic content
 
 doUndo :: UndoT IO UndoMessage
 doUndo = do
@@ -254,10 +256,10 @@ takeEndPointsAndRun action = do
     void $ Bus.runBus endPoints action
 
 sendUndo :: UndoMessage -> Bus.Bus ()
-sendUndo msg = sendMessage ActUndo "undo" msg
+sendUndo msg = sendMessage ActUndo "empire.graph.node.remove.request" msg
 
 sendRedo :: UndoMessage -> Bus.Bus ()
-sendRedo msg = sendMessage ActRedo "redo" msg
+sendRedo msg = sendMessage ActRedo "redo." msg
 
 sendMessage :: Action -> String -> UndoMessage -> Bus.Bus ()
 sendMessage action topic msg = void $ Bus.send Flag.Enable $ Message.Message topic $ case action of

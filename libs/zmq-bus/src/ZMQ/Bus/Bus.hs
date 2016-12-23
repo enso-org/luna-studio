@@ -101,7 +101,7 @@ sendFrame :: MessageFrame -> Bus ()
 sendFrame = sendByteString . MessageFrame.toByteString
 
 
-receive :: Bus MessageFrame
+receive :: Bus MessageFrame --fixme [SB] receive & receive' are doing the same thing, leave just one
 receive = receive' >>= lift . hoistEither
 
 
