@@ -20,7 +20,8 @@ import qualified Empire.API.Data.Error             as APIError
 import           Empire.API.Data.Node              (NodeId)
 import           Empire.API.Data.NodeMeta          (NodeMeta)
 import           Empire.API.Data.TypeRep           (TypeRep)
-import           Empire.Data.AST                   (NodeRef)
+import           Empire.Data.AST                   (NodeRef, astExceptionFromException,
+                                                    astExceptionToException)
 import           Empire.Data.Graph                 (AST)
 import           Empire.Data.Layers                (Meta, NodeMarker(..), TCData, TCError(..),
                                                     TypeLayer, InputsLayer, tcErrors)
@@ -222,7 +223,9 @@ applyFunction = ASTBuilder.applyFunction
 data NotLambdaException = NotLambdaException NodeRef
     deriving (Show)
 
-instance Exception NotLambdaException
+instance Exception NotLambdaException where
+    toException = astExceptionToException
+    fromException = astExceptionFromException
 
 redirectLambdaOutput :: ASTOp m => NodeRef -> NodeRef -> m NodeRef
 redirectLambdaOutput lambda newOutputRef = do
@@ -288,7 +291,9 @@ getLambdaOutputRef lambda = do
 data NotUnifyException = NotUnifyException NodeRef
     deriving (Show)
 
-instance Exception NotUnifyException
+instance Exception NotUnifyException where
+    toException = astExceptionToException
+    fromException = astExceptionFromException
 
 replaceTargetNode :: ASTOp m => NodeRef -> NodeRef -> m ()
 replaceTargetNode matchNode newTarget = do

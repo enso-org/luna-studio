@@ -165,7 +165,7 @@ spec = around withChannels $ do
                 Graph.addNode top u1 "4" def
                 graphIDs $ top |> u1
             case res of
-                Left err -> case stripPrefix "cannot enter node Just" err of
+                Left err -> case stripPrefix "CannotEnterNodeException" err of
                     Just _ -> return ()
                     _      -> expectationFailure err
                 Right _  -> expectationFailure "should throw"

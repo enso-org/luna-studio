@@ -11,7 +11,8 @@ import           Data.Ratio                   (approxRational)
 import qualified Data.Text.Lazy               as Text
 import           Text.Read                    (readMaybe)
 
-import           Empire.Data.AST              (NodeRef)
+import           Empire.Data.AST              (NodeRef, astExceptionToException,
+                                               astExceptionFromException)
 import           Empire.ASTOp                 (ASTOp, lams)
 
 import           Empire.API.Data.DefaultValue (PortDefault (..), Value (..))
@@ -54,7 +55,9 @@ tryParseLambda s = case words s of
 data PortDefaultNotConstructibleException = PortDefaultNotConstructibleException PortDefault
     deriving Show
 
-instance Exception PortDefaultNotConstructibleException
+instance Exception PortDefaultNotConstructibleException where
+    toException = astExceptionToException
+    fromException = astExceptionFromException
 
 parsePortDefault :: ASTOp m => PortDefault -> m NodeRef
 parsePortDefault (Expression expr)          = snd <$> parseExpr expr

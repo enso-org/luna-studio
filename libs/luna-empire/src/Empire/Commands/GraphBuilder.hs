@@ -8,12 +8,11 @@ module Empire.Commands.GraphBuilder where
 
 import           Empire.Prelude
 
-import           Control.Monad.Except              (throwError)
 import           Control.Monad.State               hiding (when)
 
 import qualified Data.List                         as List
 import qualified Data.Map                          as Map
-import           Data.Maybe                        (catMaybes, fromMaybe, maybeToList)
+import           Data.Maybe                        (catMaybes, fromJust, fromMaybe, maybeToList)
 import           Data.Text.Lazy                    (Text)
 import qualified Data.Text.Lazy                    as Text
 import qualified Data.UUID.V4                      as UUID (nextRandom)
@@ -39,7 +38,8 @@ import qualified Empire.ASTOps.Builder             as ASTBuilder
 import qualified Empire.ASTOps.Print               as Print
 import qualified Empire.Commands.AST               as AST
 import qualified Empire.Commands.GraphUtils        as GraphUtils
-import           Empire.Data.AST                   (NodeRef)
+import           Empire.Data.AST                   (NodeRef, astExceptionToException,
+                                                    astExceptionFromException)
 import           Empire.Data.Layers                (TypeLayer)
 import           Empire.Empire
 
@@ -55,12 +55,18 @@ nameBreadcrumb item@(Breadcrumb.Lambda nid) = do
 decodeBreadcrumbs :: Breadcrumb BreadcrumbItem -> Command Graph (Breadcrumb (Named BreadcrumbItem))
 decodeBreadcrumbs (Breadcrumb items) = fmap Breadcrumb $ forM items nameBreadcrumb
 
+data CannotEnterNodeException = CannotEnterNodeException NodeId
+    deriving Show
+instance Exception CannotEnterNodeException where
+    toException = astExceptionToException
+    fromException = astExceptionFromException
+
 buildGraph :: Command Graph API.Graph
-buildGraph = do
+buildGraph = runASTOp $ do
     parent <- use Graph.insideNode
-    canEnter <- runASTOp $ forM parent canEnterNode
-    when (not $ fromMaybe True canEnter) $ throwError $ "cannot enter node " ++ show parent
-    API.Graph <$> runASTOp buildNodes <*> buildConnections
+    canEnter <- forM parent canEnterNode
+    when (not $ fromMaybe True canEnter) $ throwM $ CannotEnterNodeException (fromJust parent)
+    API.Graph <$> buildNodes <*> buildConnections
 
 buildNodes :: (ASTOp m, MonadIO m) => m [API.Node]
 buildNodes = do
@@ -246,12 +252,12 @@ buildPorts ref = do
     outState <- getPortState ref
     return $ selfPort ++ argPorts ++ [Port (OutPortId All) "Output" tpRep outState]
 
-buildConnections :: Command Graph [(OutPortRef, InPortRef)]
+buildConnections :: (ASTOp m, MonadIO m) => m [(OutPortRef, InPortRef)]
 buildConnections = do
     allNodes <- uses Graph.breadcrumbHierarchy topLevelIDs
-    edges <- runASTOp $ getEdgePortMapping
-    connections <- runASTOp $ mapM (getNodeInputs edges) allNodes
-    outputEdgeConnections <- runASTOp $ forM edges $ uncurry getOutputEdgeInputs
+    edges <- getEdgePortMapping
+    connections <- mapM (getNodeInputs edges) allNodes
+    outputEdgeConnections <- forM edges $ uncurry getOutputEdgeInputs
     let foo = maybeToList $ join outputEdgeConnections
     return $ foo ++ concat connections
 

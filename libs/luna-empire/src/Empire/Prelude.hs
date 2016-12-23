@@ -10,7 +10,8 @@ module Empire.Prelude (
     , module Control.Lens.Operators
     , def
     , Default
-    , Exception
+    , SomeException
+    , Exception(..)
     , ix
     , liftIO
     , makeLenses
@@ -31,7 +32,7 @@ module Empire.Prelude (
     ) where
 
 import Control.Applicative ((<|>))
-import Control.Exception (Exception)
+import Control.Exception (SomeException, Exception(..))
 import Control.Lens (makeLenses, view, zoom, uses, use, at, _1, _2, ix)
 import Control.Lens.Operators
 import Control.Monad (when)

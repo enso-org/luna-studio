@@ -6,7 +6,8 @@ import           Empire.Empire
 
 import           Data.Maybe              (fromJust)
 import           Empire.ASTOp            (ASTOp)
-import           Empire.Data.AST         (NodeRef)
+import           Empire.Data.AST         (NodeRef, astExceptionToException,
+                                          astExceptionFromException)
 import           Empire.Data.Graph       (Graph)
 import qualified Empire.Data.Graph       as Graph
 import           Empire.API.Data.Node    (NodeId)
@@ -16,7 +17,9 @@ import qualified Empire.Commands.AST     as AST
 
 data NodeDoesNotExistException = NodeDoesNotExistException NodeId
     deriving Show
-instance Exception NodeDoesNotExistException
+instance Exception NodeDoesNotExistException where
+    toException = astExceptionToException
+    fromException = astExceptionFromException
 
 getASTPointer :: ASTOp m => NodeId -> m NodeRef
 getASTPointer nodeId = do

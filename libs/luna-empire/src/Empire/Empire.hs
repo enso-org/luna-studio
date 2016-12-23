@@ -1,3 +1,5 @@
+{-# LANGUAGE ScopedTypeVariables       #-}
+
 module Empire.Empire where
 
 import           Empire.API.Data.AsyncUpdate   (AsyncUpdate)
@@ -7,10 +9,12 @@ import           Empire.API.Data.GraphLocation (GraphLocation)
 import           Empire.API.Data.Node          (Node, NodeId)
 import           Empire.API.Data.Project       (ProjectId)
 import           Empire.API.Data.TypeRep       (TypeRep)
+import           Empire.Data.AST               (SomeASTException)
 import           Empire.Data.Graph             (Graph, defaultGraph)
 import           Empire.Data.Project           (Project)
 import           Empire.Prelude
 
+import           Control.Exception             (try)
 import           Control.Concurrent.STM.TChan  (TChan)
 import           Control.Monad.Except          (ExceptT (..), MonadError, runExceptT, throwError)
 import           Control.Monad.Reader
@@ -56,7 +60,11 @@ type Command s a = ExceptT Error (ReaderT CommunicationEnv (StateT s IO)) a
 type Empire a = Command Env a
 
 runEmpire :: CommunicationEnv -> s -> Command s a -> IO (Either Error a, s)
-runEmpire notif st cmd = runStateT (runReaderT (runExceptT cmd) notif) st
+runEmpire notif st cmd = do
+    res <- try $ runStateT (runReaderT (runExceptT cmd) notif) st
+    case res of
+        Left (exc :: SomeASTException) -> return (Left (displayException exc), st)
+        Right (eea, st')               -> return (eea, st')
 
 execEmpire :: CommunicationEnv -> s -> Command s a -> IO (Either Error a)
 execEmpire = fmap fst .:. runEmpire
