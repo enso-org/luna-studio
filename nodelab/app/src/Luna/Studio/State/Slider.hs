@@ -1,0 +1,28 @@
+{-# LANGUAGE DeriveAnyClass #-}
+module Luna.Studio.State.Slider where
+
+import           Control.DeepSeq          (NFData)
+import           Data.Aeson               (FromJSON, ToJSON)
+import           Luna.Studio.Data.Vector  (Position)
+import           Luna.Studio.Prelude
+
+import           Empire.API.Data.PortRef  (AnyPortRef)
+import           Empire.API.JSONInstances ()
+
+
+
+data State = State { _portRef   :: AnyPortRef
+                   , _startPos  :: Position
+                   , _initValue :: InitValue
+                   } deriving (Eq, Show, Generic)
+
+data InitValue = Discrete  Int
+               | Continous Double
+               deriving (Eq, Show, Generic, NFData)
+
+makeLenses ''State
+makeLenses ''InitValue
+
+instance ToJSON State
+instance ToJSON InitValue
+instance FromJSON InitValue

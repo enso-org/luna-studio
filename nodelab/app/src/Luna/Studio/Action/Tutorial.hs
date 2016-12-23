@@ -2,33 +2,33 @@
 
 module Luna.Studio.Action.Tutorial where
 
-import           Control.Monad.Trans.Maybe         (runMaybeT)
-import qualified Data.Text.Lazy                    as Text
-import           Luna.Studio.Prelude                 hiding (Choice)
+import           Control.Monad.Trans.Maybe            (runMaybeT)
+import qualified Data.Text.Lazy                       as Text
+import           Luna.Studio.Prelude
 
-import qualified Empire.API.Data.DefaultValue      as DefaultValue
-import           Empire.API.Data.GraphLocation     (GraphLocation)
-import qualified Empire.API.Data.Node              as Node
-import qualified Empire.API.Data.Port              as Port
-import qualified Empire.API.Data.PortRef           as PortRef
-import qualified Empire.API.Graph.Connect          as Connect
-import qualified Empire.API.Graph.NodesUpdate      as NodesUpdate
-import qualified Event.Batch                       as Batch
-import qualified Event.CustomEvent                 as CustomEvent
-import           Event.Event                       (Event (..))
-import           Event.Keyboard                    (KeyMods (..))
-import qualified Event.Keyboard                    as Keyboard
-import qualified Event.NodeSearcher                as NodeSearcher
+import qualified Empire.API.Data.DefaultValue         as DefaultValue
+import           Empire.API.Data.GraphLocation        (GraphLocation)
+import qualified Empire.API.Data.Node                 as Node
+import qualified Empire.API.Data.Port                 as Port
+import qualified Empire.API.Data.PortRef              as PortRef
+import qualified Empire.API.Graph.Connect             as Connect
+import qualified Empire.API.Graph.NodesUpdate         as NodesUpdate
+import qualified Event.Batch                          as Batch
+import qualified Event.CustomEvent                    as CustomEvent
+import           Event.Event                          (Event (..))
+import           Event.Keyboard                       (KeyMods (..))
+import qualified Event.Keyboard                       as Keyboard
+import qualified Event.NodeSearcher                   as NodeSearcher
 
-import qualified Luna.Studio.Batch.Workspace                   as Workspace
-import qualified Object.Widget.Node                as UINode
-import           Luna.Studio.React.Store                       (widget)
+import qualified Luna.Studio.Batch.Workspace          as Workspace
 import           Luna.Studio.Commands.Command         (Command, performIO)
 import           Luna.Studio.Commands.Graph.Selection (selectedNodes)
+import           Luna.Studio.React.Store              (widget)
 import qualified Luna.Studio.State.Global             as Global
 import qualified Luna.Studio.State.Graph              as Graph
+import qualified Object.Widget.Node                   as UINode
 
-import           JS.Tutorial                       (closeOnboarding, showStep)
+import           JS.Tutorial                          (closeOnboarding, showStep)
 
 
 --  0. TAB

@@ -3,8 +3,6 @@ module Luna.Studio.Action.Connect
     ) where
 --TODO[react]: transform mousePos to correct position
 
-import           React.Flux                         (mouseScreenX, mouseScreenY)
-
 import           Empire.API.Data.Node               (NodeId)
 import           Empire.API.Data.Port               (PortId)
 import           Empire.API.Data.PortRef            (toAnyPortRef)
@@ -16,8 +14,8 @@ import qualified JS.GoogleAnalytics                 as GA
 import           Luna.Studio.Commands.Command       (Command)
 import           Luna.Studio.Commands.Graph.Connect (batchConnectNodes)
 import           Luna.Studio.Data.Color             (Color (Color))
-import           Luna.Studio.Data.Vector            (Position, Vector2 (Vector2))
-import           Luna.Studio.Event.Mouse            (getMousePosition)
+import           Luna.Studio.Data.Vector            (Position)
+import           Luna.Studio.Event.Mouse            (mousePosition)
 import           Luna.Studio.Prelude
 import qualified Luna.Studio.React.Event.App        as App
 import qualified Luna.Studio.React.Event.Node       as Node
@@ -35,9 +33,9 @@ import qualified Object.Widget.Connection           as ConnectionModel
 
 toAction :: Event -> Maybe (Command State ())
 toAction (UI (NodeEvent (Node.StartConnection evt nodeId portId))) = Just $ startDragFromPort pos nodeId portId
-    where pos = getMousePosition evt
+    where pos = mousePosition evt
 toAction (UI (AppEvent  (App.MouseMove evt)))                      = Just $ whileConnecting $ handleMove pos
-    where pos = getMousePosition evt
+    where pos = mousePosition evt
 toAction (UI (AppEvent (App.MouseUp _)))                           = Just $ whileConnecting $ stopDrag'
 toAction (UI (NodeEvent (Node.EndConnection _ nodeId portId)))     = Just $ whileConnecting $ stopDrag nodeId portId
 toAction _                                                         = Nothing

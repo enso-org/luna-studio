@@ -30,7 +30,6 @@ import           Luna.Studio.React.View.Global      (getConnectionPosition)
 import qualified Luna.Studio.State.Global           as Global
 import qualified Luna.Studio.State.Graph            as Graph
 
-import           UI.Instances                       ()
 
 
 batchConnectNodes :: OutPortRef -> InPortRef -> Command Global.State ()

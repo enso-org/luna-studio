@@ -33,7 +33,6 @@ import qualified Object.Widget.Label                         as Label
 import qualified Object.Widget.LabeledTextBox                as LabeledTextBox
 import qualified Object.Widget.Node                          as Model
 import qualified Object.Widget.TextBox                       as TextBox
-import qualified Object.Widget.Toggle                        as Toggle
 
 import qualified Style.Node                                  as Style
 import           UI.Generic                                  (whenChanged)
@@ -47,7 +46,6 @@ import           UI.Widget.Label                             ()
 import           UI.Widget.LabeledTextBox                    ()
 import           UI.Widget.Node                              ()
 import           UI.Widget.TextBox                           ()
-import           UI.Widget.Toggle                            ()
 
 import           Empire.API.Data.Node                        (NodeId)
 

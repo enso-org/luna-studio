@@ -17,7 +17,7 @@ import           Luna.Studio.Commands.Command         (Command)
 import           Luna.Studio.Commands.Graph.Connect   (updateConnectionsForNodes)
 import           Luna.Studio.Commands.Graph.Selection (selectNodes, selectedNodes)
 import           Luna.Studio.Commands.Node.Snap       (snap)
-import           Luna.Studio.Data.Vector              (Position (Position), moveByVector, toTuple, vector)
+import           Luna.Studio.Data.Vector              (Position, moveByVector, toTuple, vector)
 import           Luna.Studio.Event.Mouse
 import           Luna.Studio.Prelude
 import qualified Luna.Studio.React.Event.App          as App
@@ -34,9 +34,9 @@ import qualified Luna.Studio.State.Graph              as Graph
 
 toAction :: Event -> Maybe (Command State ())
 toAction (UI (NodeEvent (Node.MouseDown evt nodeId))) = Just $ do
-    when (withoutMods evt || withShift evt) $ startDrag nodeId (getMousePosition evt) (not $ withShift evt)
-toAction (UI (AppEvent  (App.MouseUp evt)))   = Just $ stopDrag $ getMousePosition evt
-toAction (UI (AppEvent  (App.MouseMove evt))) = Just $ handleMove (getMousePosition evt) (not $ withShift evt)
+    when (withoutMods evt || withShift evt) $ startDrag nodeId (mousePosition evt) (not $ withShift evt)
+toAction (UI (AppEvent  (App.MouseUp evt)))   = Just $ stopDrag $ mousePosition evt
+toAction (UI (AppEvent  (App.MouseMove evt))) = Just $ handleMove (mousePosition evt) (not $ withShift evt)
 toAction _                                    = Nothing
 
 

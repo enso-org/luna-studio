@@ -10,7 +10,9 @@ import           Luna.Studio.Commands.Command         (Command)
 import           Luna.Studio.Commands.Graph.Selection (selectAll, toggleSelect, unselectAll)
 import qualified Luna.Studio.Commands.Node            as Node
 import           Luna.Studio.Commands.Node.Remove     as Node
+import qualified Luna.Studio.Commands.PortControl     as PortControl
 import qualified Luna.Studio.Event.Keys               as Keys
+import           Luna.Studio.Event.Mouse              (mousePosition)
 import           Luna.Studio.Prelude
 import qualified Luna.Studio.React.Event.App          as App
 import qualified Luna.Studio.React.Event.Node         as Node
@@ -28,8 +30,11 @@ toAction (UI (NodeEvent (Node.DisplayResultChanged flag nodeId))) = Just $ Node.
 toAction (UI (NodeEvent (Node.NameEditStart    nodeId))) = Just $ Node.startEditName nodeId
 toAction (UI (NodeEvent (Node.NameKeyDown kevt nodeId))) = Just $ handleKeyNode kevt nodeId
 toAction (UI (NodeEvent (Node.NameChange   val nodeId))) = Just $ Node.editName nodeId val
-toAction (UI (NodeEvent (Node.SetDefaultValue portRef defaultValue))) = Just $ Batch.setDefaultValue portRef defaultValue
-toAction (UI (AppEvent (App.KeyDown e))) = Just $ handleKeyApp e
+toAction (UI (NodeEvent (Node.PortSetDefaultValue portRef defaultValue))) = Just $ Batch.setDefaultValue portRef defaultValue
+toAction (UI (NodeEvent (Node.PortInitSlider mevt portRef sliderInit)))   = Just $ PortControl.startMoveSlider portRef (mousePosition mevt) sliderInit
+toAction (UI (AppEvent  (App.KeyDown   kevt))) = Just $ handleKeyApp kevt
+toAction (UI (AppEvent  (App.MouseMove mevt))) = Just $ PortControl.moveSlider     $ mousePosition mevt
+toAction (UI (AppEvent  (App.MouseUp   mevt))) = Just $ PortControl.stopMoveSlider $ mousePosition mevt
 toAction _   = Nothing
 
 

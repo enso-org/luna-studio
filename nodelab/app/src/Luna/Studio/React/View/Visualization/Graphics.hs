@@ -12,7 +12,6 @@ import qualified Object.Widget.Graphics  as Graphics
 import qualified Object.Widget.Graphics  as G
 import qualified Object.Widget.Label     as Label
 import qualified Style.Layout            as Style
-import qualified UI.Instances            ()
 
 
 

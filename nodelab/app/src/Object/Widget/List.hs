@@ -7,7 +7,7 @@ module Object.Widget.List where
 
 import           Data.Aeson                       (ToJSON)
 import           Luna.Studio.Data.Vector          (Position, Size (Size), Vector2 (Vector2))
-import           Luna.Studio.Prelude              hiding (Choice)
+import           Luna.Studio.Prelude
 
 import           Luna.Studio.React.View.LunaValue
 import           Object.Widget.Group              (Group (..))

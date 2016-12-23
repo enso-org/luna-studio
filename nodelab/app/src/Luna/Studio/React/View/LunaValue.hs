@@ -9,14 +9,10 @@ import           React.Flux
 import           Luna.Studio.Commands.Command    (Command)
 import           Luna.Studio.Commands.UIRegistry as UICmd
 import           Luna.Studio.Data.Vector
-import           Luna.Studio.Prelude             hiding (Choice)
-import           Luna.Studio.Prelude             hiding (Choice)
+import           Luna.Studio.Prelude
 import qualified Luna.Studio.State.Global        as Global
 import           Luna.Studio.State.UIRegistry    (addHandler)
 import           Object.UITypes                  (WidgetId)
-import qualified Object.Widget.Number.Continuous as ContinuousNumber
-import qualified Object.Widget.Number.Discrete   as DiscreteNumber
-import qualified Object.Widget.Toggle            as Toggle
 import           UI.Handlers.Generic             (ValueChangedHandler (..), triggerValueChanged)
 
 

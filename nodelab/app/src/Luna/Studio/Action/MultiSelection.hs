@@ -11,7 +11,7 @@ import           Event.Event                          (Event (UI))
 import           Event.UI                             (UIEvent (AppEvent, NodeEditorEvent))
 import           Luna.Studio.Commands.Command         (Command)
 import           Luna.Studio.Commands.Graph.Selection (focusSelectedNode, modifySelectionHistory, selectNodes, selectedNodes, unselectAll)
-import           Luna.Studio.Event.Mouse              (getMousePosition)
+import           Luna.Studio.Event.Mouse              (mousePosition)
 import qualified Luna.Studio.React.Event.App          as App
 import qualified Luna.Studio.React.Event.NodeEditor   as NodeEditor
 import           Luna.Studio.React.Model.SelectionBox (SelectionBox (SelectionBox))
@@ -29,9 +29,9 @@ import qualified Object.Widget.Node                   as NodeModel
 
 toAction :: Event -> Maybe (Command State ())
 -- TODO[react]: Find out if wee need to check for mods
-toAction (UI (NodeEditorEvent (NodeEditor.MouseDown evt))) = Just $ startDrag $ getMousePosition evt
+toAction (UI (NodeEditorEvent (NodeEditor.MouseDown evt))) = Just $ startDrag $ mousePosition evt
 toAction (UI (AppEvent  (App.MouseUp   _  )))              = Just $ stopDrag
-toAction (UI (AppEvent  (App.MouseMove evt)))              = Just $ handleMove $ getMousePosition evt
+toAction (UI (AppEvent  (App.MouseMove evt)))              = Just $ handleMove $ mousePosition evt
 toAction _                                                 = Nothing
 --TODO[react] implement
 -- toAction (Keyboard _ (Keyboard.Event Keyboard.Press 'A'   _)) = Just selectAll

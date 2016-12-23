@@ -8,7 +8,7 @@ module Luna.Studio.Commands.ProjectManager
 
 import           Luna.Studio.Prelude
 
-import qualified Luna.Studio.Batch.Workspace                  as Workspace
+import qualified Luna.Studio.Batch.Workspace         as Workspace
 import qualified Luna.Studio.Commands.Batch          as BatchCmd
 import qualified Luna.Studio.Commands.Breadcrumbs    as Breadcrumbs
 import           Luna.Studio.Commands.Command        (Command, performIO)
@@ -16,13 +16,12 @@ import           Luna.Studio.Commands.Graph.Unrender (unrender)
 import           Luna.Studio.State.Global            (State)
 import qualified Luna.Studio.State.Global            as Global
 
-import           Empire.API.Data.Breadcrumb       (Breadcrumb (..), BreadcrumbItem, Named)
-import           Empire.API.Data.GraphLocation    (GraphLocation (..))
-import qualified Empire.API.Data.GraphLocation    as GraphLocation
-import           Empire.API.Data.Project          (ProjectId)
+import           Empire.API.Data.Breadcrumb          (Breadcrumb (..), BreadcrumbItem, Named)
+import           Empire.API.Data.GraphLocation       (GraphLocation (..))
+import qualified Empire.API.Data.GraphLocation       as GraphLocation
+import           Empire.API.Data.Project             (ProjectId)
 
-import qualified JS.GraphLocation                 as JS
-import           UI.Instances                     ()
+import qualified JS.GraphLocation                    as JS
 
 
 loadProject :: ProjectId -> Command State ()

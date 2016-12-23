@@ -23,6 +23,5 @@ module.exports = function() {
   window.Port           = require('Widget/Port');
   window.Slider         = require('Widget/Slider');
   window.TextBox        = require('Widget/TextBox');
-  window.Toggle         = require('Widget/Toggle');
   window.h$errorMsg     = require("BSOD").appCrashed;
 };

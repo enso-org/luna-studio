@@ -3,46 +3,23 @@ module Luna.Studio.React.View.PortControl
     ( portControl_
     ) where
 
-
-import qualified Data.Map.Lazy                   as Map
-import qualified Data.Text.Lazy                  as Text
+import qualified Data.Map.Lazy                as Map
 import           React.Flux
 
-import qualified Empire.API.Data.DefaultValue    as DefaultValue
-import qualified Empire.API.Data.Node            as NodeAPI
-import           Empire.API.Data.Port            (InPort (..), InPort (..), OutPort (..), PortId (..))
-import qualified Empire.API.Data.Port            as PortAPI
-import           Empire.API.Data.PortRef         (AnyPortRef (..), portId', toAnyPortRef)
-import qualified Empire.API.Data.ValueType       as ValueType
-import qualified Event.UI                        as UI
-import qualified Luna.Studio.Commands.Batch      as BatchCmd
-import           Luna.Studio.Commands.Command    (Command)
-import qualified Luna.Studio.Commands.UIRegistry as UICmd
-import           Luna.Studio.Data.Vector
-import           Luna.Studio.Prelude             hiding (group)
-import qualified Luna.Studio.React.Event.Node    as Node
-import           Luna.Studio.React.Store         (Ref, dispatch)
-import           Luna.Studio.State.UIRegistry    (addHandler)
-import qualified Luna.Studio.State.UIRegistry    as UIRegistry
-import           Object.UITypes                  (WidgetId)
-import qualified Object.Widget.Button            as Button
-import qualified Object.Widget.Group             as Group
-import qualified Object.Widget.Label             as Label
-import qualified Object.Widget.LabeledTextBox    as LabeledTextBox
-import           Object.Widget.Node              (Node)
-import qualified Object.Widget.Node              as Node
-import qualified Object.Widget.Number.Continuous as ContinuousNumber
-import qualified Object.Widget.Number.Discrete   as DiscreteNumber
-import           Object.Widget.Port              (Port)
-import qualified Object.Widget.Port              as Port
-import qualified Object.Widget.Toggle            as Toggle
-import qualified Style.Node                      as Style
-import qualified Style.Types                     as Style
-import qualified UI.Handlers.Button              as Button
-import           UI.Handlers.Generic             (onValueChanged)
-import           UI.Instances                    ()
-import           UI.Layout                       as Layout
-import           Luna.Studio.React.View.Global
+import qualified Empire.API.Data.DefaultValue as DefaultValue
+import           Empire.API.Data.Port         (InPort (..), InPort (..), OutPort (..), PortId (..))
+import qualified Empire.API.Data.Port         as PortAPI
+import           Empire.API.Data.PortRef      (AnyPortRef (..), portId', toAnyPortRef)
+import qualified Empire.API.Data.ValueType    as ValueType
+import qualified Event.UI                     as UI
+import           Luna.Studio.Prelude          hiding (group)
+import qualified Luna.Studio.React.Event.Node as Node
+import           Luna.Studio.React.Store      (Ref, dispatch)
+import qualified Luna.Studio.State.Slider     as Slider
+import           Object.Widget.Node           (Node)
+import qualified Object.Widget.Node           as Node
+import           Object.Widget.Port           (Port)
+import qualified Object.Widget.Port           as Port
 
 
 
@@ -81,47 +58,43 @@ inPortControl_ ref portRef port = do
                             _                          -> undefined
                         defaultValue = DefaultValue.Constant zeroValue
                     button_
-                        [ onClick $ \_ _ -> dispatch ref $ UI.NodeEvent $ Node.SetDefaultValue portRef defaultValue ] $
+                        [ onClick $ \_ _ -> dispatch ref $ UI.NodeEvent $ Node.PortSetDefaultValue portRef defaultValue ] $
                         elemString "not set"
         PortAPI.Connected       -> do
             elemString $ fromString $ "(connected)"
         PortAPI.WithDefault defVal -> void $ case port ^. Port.valueType . ValueType.toEnum of
             ValueType.DiscreteNumber -> do
-                let label = port ^. Port.name
-                    value = fromMaybe 0 $ defVal ^? DefaultValue._Constant . DefaultValue._IntValue
-                    widget = DiscreteNumber.create Style.portControlSize (Text.pack $ label) value
-                    handlers = onValueChanged $ \val _ -> BatchCmd.setDefaultValue portRef (DefaultValue.Constant $ DefaultValue.IntValue val)
-                elemString $ fromString $ show value
-                -- UICmd.register widget handlers
-                return ()
+                let value = fromMaybe 0 $ defVal ^? DefaultValue._Constant . DefaultValue._IntValue
+                div_
+                    [ "className" $= "horizontal-slider"
+                    --TODO[react]: +1 with Q and up key, -1 with W and down key, edit on double click
+                    , onMouseDown $ \e m -> stopPropagation e : dispatch ref (UI.NodeEvent $ Node.PortInitSlider m portRef $ Slider.Discrete value)
+                    ] $
+                    elemString $ fromString $ show value
             ValueType.ContinuousNumber -> do
-                let label = port ^. Port.name
-                    value = fromMaybe 0.0 $ defVal ^? DefaultValue._Constant . DefaultValue._DoubleValue
-                    widget = ContinuousNumber.create Style.portControlSize (Text.pack $ label) value
-                    handlers = onValueChanged $ \val _ -> BatchCmd.setDefaultValue portRef (DefaultValue.Constant $ DefaultValue.DoubleValue val)
-                elemString $ fromString $ "(ContinuousNumber)"
-                -- UICmd.register widget handlers
-                return ()
+                let value = fromMaybe 0.0 $ defVal ^? DefaultValue._Constant . DefaultValue._DoubleValue
+                div_
+                    [ "className" $= "horizontal-slider"
+                    --TODO[react]: +1 with Q and up key, -1 with W and down key, edit on double click
+                    , onMouseDown $ \e m -> stopPropagation e : dispatch ref (UI.NodeEvent $ Node.PortInitSlider m portRef $ Slider.Continous value)
+                    ] $
+                    elemString $ fromString $ show value
             ValueType.String -> do
-                let label = port ^. Port.name
-                    value = fromMaybe "" $ defVal ^? DefaultValue._Constant . DefaultValue._StringValue
+                let value = fromMaybe "" $ defVal ^? DefaultValue._Constant . DefaultValue._StringValue
                     defaultValue val = DefaultValue.Constant $ DefaultValue.StringValue val
                 input_
                     ["id" $= "focus-portcontrol"
                     ,"value" $= fromString value
                     , onMouseDown $ \e _ -> [stopPropagation e]
                     , onKeyDown   $ \e k ->  [stopPropagation e]
-                    , onChange    $ \e -> let val = target e "value" in dispatch ref $ UI.NodeEvent $ Node.SetDefaultValue portRef $ defaultValue val
+                    , onChange    $ \e -> let val = target e "value" in dispatch ref $ UI.NodeEvent $ Node.PortSetDefaultValue portRef $ defaultValue val
                     ]
             ValueType.Bool -> do
-                let label = port ^. Port.name
-                    value = fromMaybe True $ defVal ^? DefaultValue._Constant . DefaultValue._BoolValue
+                let value = fromMaybe True $ defVal ^? DefaultValue._Constant . DefaultValue._BoolValue
                     defaultValue = DefaultValue.Constant $ DefaultValue.BoolValue $ not value
                 button_
-                    [ onClick $ \_ _ -> dispatch ref $ UI.NodeEvent $ Node.SetDefaultValue portRef $ defaultValue
+                    [ onClick $ \_ _ -> dispatch ref $ UI.NodeEvent $ Node.PortSetDefaultValue portRef $ defaultValue
                     ] $
                     elemString $ fromString $ show value
-            ValueType.Other -> do
-                let widget = Label.create (Style.portControlSize & x -~ Style.setLabelOffsetX) (Text.pack $ (port ^. Port.name) )
-                           & Label.position . x .~ Style.setLabelOffsetX
-                elemString $ fromString $ "(Other)"
+            ValueType.Other ->
+                elemString $ fromString $ " "

@@ -30,7 +30,6 @@ import           Luna.Studio.React.View.Visualization.Graphics  (graphics_)
 import           Luna.Studio.React.View.Visualization.Image     (image_)
 import qualified Object.Widget.Plots.Image                      as Image
 import qualified Style.Layout                                   as Style
-import qualified UI.Instances                                   ()
 
 
 

@@ -20,7 +20,6 @@ import           Empire.API.Graph.Collaboration    (ClientId)
 import           Empire.API.Graph.NodeResultUpdate (NodeValue)
 import           Luna.Studio.State.Collaboration   (ColorId)
 import           Object.UITypes
-import           Object.Widget
 import           Object.Widget.Port                (Port)
 import qualified Object.Widget.Port                as Port
 
