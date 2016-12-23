@@ -57,7 +57,7 @@ import           Empire.API.Data.Port            (InPort (..), OutPort (..), Por
 import qualified Empire.API.Data.Port            as Port (PortState (..), state)
 import           Empire.API.Data.PortRef         (AnyPortRef (..), InPortRef (..), OutPortRef (..))
 import qualified Empire.API.Data.PortRef         as PortRef
-import           Empire.ASTOp                    (runASTOp)
+import           Empire.ASTOp                    (ASTOp, runASTOp)
 
 import qualified Empire.Commands.AST             as AST
 import           Empire.Commands.Breadcrumb      (withBreadcrumb)
@@ -68,7 +68,7 @@ import           Empire.Empire
 
 import qualified Luna.IR as IR
 
-generateNodeName :: Command Graph String
+generateNodeName :: ASTOp m => m String
 generateNodeName = do
     lastNameId <- use Graph.lastNameId
     let newNameId = lastNameId + 1
@@ -86,31 +86,32 @@ addNode loc uuid expr meta = withTC loc False $ addNodeNoTC loc uuid expr meta
 
 addNodeNoTC :: GraphLocation -> NodeId -> Text -> NodeMeta -> Command Graph Node
 addNodeNoTC loc uuid expr meta = do
-    newNodeName <- generateNodeName
-    (parsedRef, refNode) <- runASTOp $ AST.addNode uuid newNodeName (Text.unpack expr)
-    parsedIsLambda <- runASTOp $ AST.isLambda parsedRef
-    runASTOp $ AST.writeMeta refNode meta
-    Graph.nodeMapping . at uuid ?= Graph.MatchNode refNode
-    node <- runASTOp $ GraphBuilder.buildNode uuid
-    if parsedIsLambda then do
-        lambdaUUID <- liftIO $ UUID.nextRandom
-        lambdaOutput <- runASTOp $ AST.getLambdaOutputRef parsedRef
-        outputIsOneOfTheInputs <- runASTOp $ AST.isTrivialLambda parsedRef
-        when (not outputIsOneOfTheInputs) $ Graph.nodeMapping . at lambdaUUID ?= Graph.AnonymousNode lambdaOutput
-        Graph.breadcrumbHierarchy %= addWithLeafs (node ^. Node.nodeId)
-            (if outputIsOneOfTheInputs then [] else [lambdaUUID])
-        runASTOp $ do
+    node <- runASTOp $ do
+        newNodeName <- generateNodeName
+        (parsedRef, refNode) <- AST.addNode uuid newNodeName (Text.unpack expr)
+        parsedIsLambda <- AST.isLambda parsedRef
+        AST.writeMeta refNode meta
+        Graph.nodeMapping . at uuid ?= Graph.MatchNode refNode
+        node <- GraphBuilder.buildNode uuid
+        if parsedIsLambda then do
+            lambdaUUID <- liftIO $ UUID.nextRandom
+            lambdaOutput <- AST.getLambdaOutputRef parsedRef
+            outputIsOneOfTheInputs <- AST.isTrivialLambda parsedRef
+            when (not outputIsOneOfTheInputs) $ Graph.nodeMapping . at lambdaUUID ?= Graph.AnonymousNode lambdaOutput
+            Graph.breadcrumbHierarchy %= addWithLeafs (node ^. Node.nodeId)
+                (if outputIsOneOfTheInputs then [] else [lambdaUUID])
             IR.writeLayer @Marker (Just $ NodeMarker lambdaUUID) lambdaOutput
-    else Graph.breadcrumbHierarchy %= addID (node ^. Node.nodeId)
+        else Graph.breadcrumbHierarchy %= addID (node ^. Node.nodeId)
+        return node
     Publisher.notifyNodeUpdate loc node
     return node
 
-addPersistentNode :: Node -> Command Graph NodeId
+addPersistentNode :: (ASTOp m, MonadIO m) => Node -> m NodeId
 addPersistentNode n = case n ^. Node.nodeType of
     Node.ExpressionNode expr -> do
         let newNodeId = n ^. Node.nodeId
-        (parsedRef, refNode) <- runASTOp $ AST.addNode newNodeId (Text.unpack $ n ^. Node.name) (Text.unpack expr)
-        runASTOp $ AST.writeMeta refNode (n ^. Node.nodeMeta)
+        (parsedRef, refNode) <- AST.addNode newNodeId (Text.unpack $ n ^. Node.name) (Text.unpack expr)
+        AST.writeMeta refNode (n ^. Node.nodeMeta)
         Graph.nodeMapping . at newNodeId ?= Graph.MatchNode refNode
         lambdaUUID <- liftIO $ UUID.nextRandom
         Graph.nodeMapping . at lambdaUUID ?= Graph.AnonymousNode parsedRef
@@ -142,25 +143,25 @@ removeNodes loc nodeIds = do
         children <- withTC (loc `descendInto` nodeId) False $ do
             uses Graph.breadcrumbHierarchy topLevelIDs
         removeNodes (loc `descendInto` nodeId) children
-    withTC loc False $ forM_ nodeIds removeNodeNoTC
+    withTC loc False $ runASTOp $ forM_ nodeIds removeNodeNoTC
 
-removeNodeNoTC :: NodeId -> Command Graph ()
+removeNodeNoTC :: (ASTOp m, MonadIO m) => NodeId -> m ()
 removeNodeNoTC nodeId = do
-    astRef <- runASTOp $ GraphUtils.getASTPointer nodeId
+    astRef <- GraphUtils.getASTPointer nodeId
     obsoleteEdges <- getOutEdges nodeId
     mapM_ disconnectPort obsoleteEdges
-    runASTOp $ AST.removeSubtree astRef
+    AST.removeSubtree astRef
     Graph.nodeMapping %= Map.delete nodeId
     Graph.breadcrumbHierarchy %= removeID nodeId
 
 updateNodeExpression :: GraphLocation -> NodeId -> NodeId -> Text -> Empire (Maybe Node)
 updateNodeExpression loc nodeId newNodeId expr = do
-    metaMay <- withGraph loc $ do
-        ref <- runASTOp $ GraphUtils.getASTPointer nodeId
-        runASTOp $ AST.readMeta ref
+    metaMay <- withGraph loc $ runASTOp $ do
+        ref <- GraphUtils.getASTPointer nodeId
+        AST.readMeta ref
     forM metaMay $ \meta ->
         withTC loc False $ do
-            removeNodeNoTC nodeId
+            runASTOp $ removeNodeNoTC nodeId
             addNodeNoTC loc newNodeId expr meta
 
 updateNodeMeta :: GraphLocation -> NodeId -> NodeMeta -> Empire ()
@@ -184,7 +185,7 @@ connectCondTC doTC loc outPort inPort = withGraph loc $ do
 connect :: GraphLocation -> OutPortRef -> InPortRef -> Empire ()
 connect loc outPort inPort = withTC loc False $ connectNoTC loc outPort inPort
 
-connectPersistent :: OutPortRef -> InPortRef -> Command Graph ()
+connectPersistent :: (ASTOp m, MonadIO m) => OutPortRef -> InPortRef -> m ()
 connectPersistent (OutPortRef srcNodeId srcPort) (InPortRef dstNodeId dstPort) = do
     let inputPos = case srcPort of
             All            -> 0   -- FIXME: do not equalise All with Projection 0
@@ -194,48 +195,48 @@ connectPersistent (OutPortRef srcNodeId srcPort) (InPortRef dstNodeId dstPort) =
         Arg num -> makeApp srcNodeId dstNodeId num inputPos
 
 connectNoTC :: GraphLocation -> OutPortRef -> InPortRef -> Command Graph ()
-connectNoTC _loc outPort inPort = connectPersistent outPort inPort
+connectNoTC _loc outPort inPort = runASTOp $ connectPersistent outPort inPort
 
 setDefaultValue :: GraphLocation -> AnyPortRef -> PortDefault -> Empire ()
-setDefaultValue loc portRef val = withTC loc False $ setDefaultValue' portRef val
+setDefaultValue loc portRef val = withTC loc False $ runASTOp $ setDefaultValue' portRef val
 
-setDefaultValue' :: AnyPortRef -> PortDefault -> Command Graph ()
+setDefaultValue' :: ASTOp m => AnyPortRef -> PortDefault -> m ()
 setDefaultValue' portRef val = do
-    parsed <- runASTOp $ AST.addDefault val
+    parsed <- AST.addDefault val
     (nodeId, newRef) <- case portRef of
         InPortRef' (InPortRef nodeId port) -> do
-            ref <- runASTOp $ GraphUtils.getASTTarget nodeId
+            ref <- GraphUtils.getASTTarget nodeId
             newRef <- case port of
-                Self    -> runASTOp $ AST.makeAccessor parsed ref
-                Arg num -> runASTOp $ AST.applyFunction ref parsed num
+                Self    -> AST.makeAccessor parsed ref
+                Arg num -> AST.applyFunction ref parsed num
             return (nodeId, newRef)
         OutPortRef' (OutPortRef nodeId _) -> return (nodeId, parsed)
-    runASTOp $ GraphUtils.rewireNode nodeId newRef
+    GraphUtils.rewireNode nodeId newRef
 
 disconnect :: GraphLocation -> InPortRef -> Empire ()
-disconnect loc port = withTC loc False $ disconnectPort port
+disconnect loc port = withTC loc False $ runASTOp $ disconnectPort port
 
 getNodeMeta :: GraphLocation -> NodeId -> Empire (Maybe NodeMeta)
-getNodeMeta loc nodeId = withGraph loc $ do
-    ref <- runASTOp $ GraphUtils.getASTPointer nodeId
-    runASTOp $ AST.readMeta ref
+getNodeMeta loc nodeId = withGraph loc $ runASTOp $ do
+    ref <- GraphUtils.getASTPointer nodeId
+    AST.readMeta ref
 
 getCode :: GraphLocation -> Empire String
-getCode loc = withGraph loc $ do
+getCode loc = withGraph loc $ runASTOp $ do
     inFunction <- use Graph.insideNode
     function <- forM inFunction $ \nodeId -> do
-        ptr <- runASTOp $ GraphUtils.getASTPointer nodeId
-        header <- runASTOp $ AST.printFunctionHeader ptr
-        lam <- runASTOp $ GraphUtils.getASTTarget nodeId
-        ret <- runASTOp $ AST.printReturnValue lam
+        ptr <- GraphUtils.getASTPointer nodeId
+        header <- AST.printFunctionHeader ptr
+        lam <- GraphUtils.getASTTarget nodeId
+        ret <- AST.printReturnValue lam
         return (header, ret)
-    returnedNodeId <- runASTOp $ GraphBuilder.nodeConnectedToOutput
+    returnedNodeId <- GraphBuilder.nodeConnectedToOutput
     allNodes <- uses Graph.breadcrumbHierarchy topLevelIDs
-    refs     <- runASTOp $ mapM GraphUtils.getASTPointer $ flip filter allNodes $ \nid ->
+    refs     <- mapM GraphUtils.getASTPointer $ flip filter allNodes $ \nid ->
         case returnedNodeId of
             Just id' -> id' /= nid
             _       -> True
-    metas    <- runASTOp $ mapM AST.readMeta refs
+    metas    <- mapM AST.readMeta refs
     let sorted = fmap snd $ sort $ zip metas allNodes
     lines' <- mapM printNodeLine sorted
     return $ unlines $ case function of
@@ -243,13 +244,13 @@ getCode loc = withGraph loc $ do
         _                  -> lines'
 
 getGraph :: GraphLocation -> Empire APIGraph.Graph
-getGraph loc = withTC loc True GraphBuilder.buildGraph
+getGraph loc = withTC loc True $ runASTOp GraphBuilder.buildGraph
 
 getNodes :: GraphLocation -> Empire [Node]
-getNodes loc = withTC loc True $ view APIGraph.nodes <$> GraphBuilder.buildGraph
+getNodes loc = withTC loc True $ runASTOp $ view APIGraph.nodes <$> GraphBuilder.buildGraph
 
 getConnections :: GraphLocation -> Empire [(OutPortRef, InPortRef)]
-getConnections loc = withTC loc True $ view APIGraph.connections <$> GraphBuilder.buildGraph
+getConnections loc = withTC loc True $ runASTOp $ view APIGraph.connections <$> GraphBuilder.buildGraph
 
 decodeLocation :: GraphLocation -> Empire (Breadcrumb (Named BreadcrumbItem))
 decodeLocation loc@(GraphLocation _ _ crumbs) = withGraph loc $ GraphBuilder.decodeBreadcrumbs crumbs
@@ -273,8 +274,8 @@ runTC loc flush = do
     g <- get
     Publisher.requestTC loc g flush
 
-printNodeLine :: NodeId -> Command Graph String
-printNodeLine nodeId = runASTOp (GraphUtils.getASTPointer nodeId) >>= (runASTOp . AST.printExpression)
+printNodeLine :: ASTOp m => NodeId -> m String
+printNodeLine nodeId = GraphUtils.getASTPointer nodeId >>= AST.printExpression
 
 withTC :: GraphLocation -> Bool -> Command Graph a -> Empire a
 withTC loc flush cmd = withGraph loc $ do
@@ -285,82 +286,82 @@ withTC loc flush cmd = withGraph loc $ do
 withGraph :: GraphLocation -> Command Graph a -> Empire a
 withGraph (GraphLocation pid lid breadcrumb) = withBreadcrumb pid lid breadcrumb
 
-getOutEdges :: NodeId -> Command Graph [InPortRef]
+getOutEdges :: (ASTOp m, MonadIO m) => NodeId -> m [InPortRef]
 getOutEdges nodeId = do
     graphRep <- GraphBuilder.buildGraph
     let edges    = graphRep ^. APIGraph.connections
         filtered = filter (\(opr, _) -> opr ^. PortRef.srcNodeId == nodeId) edges
     return $ view _2 <$> filtered
 
-disconnectPort :: InPortRef -> Command Graph ()
+disconnectPort :: (ASTOp m, MonadIO m) => InPortRef -> m ()
 disconnectPort (InPortRef dstNodeId dstPort) =
     case dstPort of
         Self    -> unAcc dstNodeId
         Arg num -> unApp dstNodeId num
 
-unAcc :: NodeId -> Command Graph ()
+unAcc :: ASTOp m => NodeId -> m ()
 unAcc nodeId = do
-    dstAst <- runASTOp $ GraphUtils.getASTTarget nodeId
-    newNodeRef <- runASTOp $ AST.removeAccessor dstAst
-    runASTOp $ GraphUtils.rewireNode nodeId newNodeRef
+    dstAst <- GraphUtils.getASTTarget nodeId
+    newNodeRef <- AST.removeAccessor dstAst
+    GraphUtils.rewireNode nodeId newNodeRef
 
-unApp :: NodeId -> Int -> Command Graph ()
+unApp :: (ASTOp m, MonadIO m) => NodeId -> Int -> m ()
 unApp nodeId pos = do
-    edges <- runASTOp GraphBuilder.getEdgePortMapping
+    edges <- GraphBuilder.getEdgePortMapping
     let connectionToOutputEdge = case edges of
             Nothing              -> False
             Just (_, outputEdge) -> outputEdge == nodeId
     if | connectionToOutputEdge -> do
-        lambda  <- use Graph.insideNode <?!> "impossible: removing connection to output edge while outside node"
-        astNode <- runASTOp $ GraphUtils.getASTTarget lambda
-        newNodeRef <- runASTOp $ AST.setLambdaOutputToBlank astNode
-        runASTOp $ GraphUtils.rewireNode lambda newNodeRef
+        Just lambda  <- use Graph.insideNode
+        astNode <- GraphUtils.getASTTarget lambda
+        newNodeRef <- AST.setLambdaOutputToBlank astNode
+        GraphUtils.rewireNode lambda newNodeRef
        | otherwise -> do
-        astNode <- runASTOp $ GraphUtils.getASTTarget nodeId
-        newNodeRef <- runASTOp $ AST.unapplyArgument astNode pos
-        runASTOp $ GraphUtils.rewireNode nodeId newNodeRef
+        astNode <- GraphUtils.getASTTarget nodeId
+        newNodeRef <- AST.unapplyArgument astNode pos
+        GraphUtils.rewireNode nodeId newNodeRef
 
-makeAcc :: NodeId -> NodeId -> Int -> Command Graph ()
+makeAcc :: (ASTOp m, MonadIO m) => NodeId -> NodeId -> Int -> m ()
 makeAcc src dst inputPos = do
-    edges <- runASTOp GraphBuilder.getEdgePortMapping
+    edges <- GraphBuilder.getEdgePortMapping
     let connectToInputEdge = case edges of
             Nothing           -> False
             Just (input, _out) -> input == src
     if | connectToInputEdge -> do
-        lambda  <- use Graph.insideNode <?!> "impossible: connecting to input edge while outside node"
-        lambda' <- runASTOp $ GraphUtils.getASTTarget lambda
-        srcAst  <- runASTOp $ AST.getLambdaInputRef lambda' inputPos
-        dstAst  <- runASTOp $ GraphUtils.getASTTarget dst
-        newNodeRef <- runASTOp $ AST.makeAccessor srcAst dstAst
-        runASTOp $ GraphUtils.rewireNode dst newNodeRef
+        Just lambda  <- use Graph.insideNode
+        lambda' <- GraphUtils.getASTTarget lambda
+        srcAst  <- AST.getLambdaInputRef lambda' inputPos
+        dstAst  <- GraphUtils.getASTTarget dst
+        newNodeRef <- AST.makeAccessor srcAst dstAst
+        GraphUtils.rewireNode dst newNodeRef
        | otherwise -> do
-        srcAst <- runASTOp $ GraphUtils.getASTVar    src
-        dstAst <- runASTOp $ GraphUtils.getASTTarget dst
-        newNodeRef <- runASTOp $ AST.makeAccessor srcAst dstAst
-        runASTOp $ GraphUtils.rewireNode dst newNodeRef
+        srcAst <- GraphUtils.getASTVar    src
+        dstAst <- GraphUtils.getASTTarget dst
+        newNodeRef <- AST.makeAccessor srcAst dstAst
+        GraphUtils.rewireNode dst newNodeRef
 
 
-makeApp :: NodeId -> NodeId -> Int -> Int -> Command Graph ()
+makeApp :: (ASTOp m, MonadIO m) => NodeId -> NodeId -> Int -> Int -> m ()
 makeApp src dst pos inputPos = do
-    edges <- runASTOp GraphBuilder.getEdgePortMapping
+    edges <- GraphBuilder.getEdgePortMapping
     let (connectToInputEdge, connectToOutputEdge) = case edges of
             Nothing           -> (False, False)
             Just (input, out) -> (input == src, out == dst)
     if | connectToOutputEdge -> do
-        lambda <- use Graph.insideNode <?!> "impossible: connecting to output edge while outside node"
-        srcAst <- runASTOp $ GraphUtils.getASTVar    src
-        dstAst <- runASTOp $ GraphUtils.getASTTarget lambda
-        newNodeRef <- runASTOp $ AST.redirectLambdaOutput dstAst srcAst
-        runASTOp $ GraphUtils.rewireNode lambda newNodeRef
+        Just lambda <- use Graph.insideNode
+        srcAst <- GraphUtils.getASTVar    src
+        dstAst <- GraphUtils.getASTTarget lambda
+        newNodeRef <- AST.redirectLambdaOutput dstAst srcAst
+        GraphUtils.rewireNode lambda newNodeRef
        | connectToInputEdge -> do
-        lambda  <- use Graph.insideNode <?!> "impossible: connecting to input edge while outside node"
-        lambda' <- runASTOp $ GraphUtils.getASTTarget lambda
-        srcAst  <- runASTOp $ AST.getLambdaInputRef lambda' inputPos
-        dstAst  <- runASTOp $ GraphUtils.getASTTarget dst
-        newNodeRef <- runASTOp $ AST.applyFunction dstAst srcAst pos
-        runASTOp $ GraphUtils.rewireNode dst newNodeRef
+        Just lambda  <- use Graph.insideNode
+        lambda' <- GraphUtils.getASTTarget lambda
+        srcAst  <- AST.getLambdaInputRef lambda' inputPos
+        dstAst  <- GraphUtils.getASTTarget dst
+        newNodeRef <- AST.applyFunction dstAst srcAst pos
+        GraphUtils.rewireNode dst newNodeRef
        | otherwise -> do
-        srcAst <- runASTOp $ GraphUtils.getASTVar    src
-        dstAst <- runASTOp $ GraphUtils.getASTTarget dst
-        newNodeRef <- runASTOp $ AST.applyFunction dstAst srcAst pos
-        runASTOp $ GraphUtils.rewireNode dst newNodeRef
+        srcAst <- GraphUtils.getASTVar    src
+        dstAst <- GraphUtils.getASTTarget dst
+        newNodeRef <- AST.applyFunction dstAst srcAst pos
+        GraphUtils.rewireNode dst newNodeRef

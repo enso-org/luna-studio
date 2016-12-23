@@ -61,8 +61,8 @@ instance Exception CannotEnterNodeException where
     toException = astExceptionToException
     fromException = astExceptionFromException
 
-buildGraph :: Command Graph API.Graph
-buildGraph = runASTOp $ do
+buildGraph :: (ASTOp m, MonadIO m) => m API.Graph
+buildGraph = do
     parent <- use Graph.insideNode
     canEnter <- forM parent canEnterNode
     when (not $ fromMaybe True canEnter) $ throwM $ CannotEnterNodeException (fromJust parent)

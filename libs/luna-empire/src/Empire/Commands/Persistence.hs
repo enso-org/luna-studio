@@ -30,6 +30,7 @@ import qualified Empire.API.Persistence.Envelope as E
 import qualified Empire.API.Persistence.Library  as L
 import qualified Empire.API.Persistence.Project  as P
 
+import           Empire.ASTOp                    (runASTOp)
 import qualified Empire.Commands.Graph           as Graph
 import           Empire.Commands.GraphBuilder    (buildGraph)
 import           Empire.Commands.Library         (createLibrary, listLibraries, withLibrary)
@@ -56,7 +57,7 @@ toPersistentProject pid = do
     return $ Project.toPersistent proj
 
   libs' <- forM (libs) $ \(lid, lib) -> do
-    graph <- withLibrary pid lid . zoom Library.body $ buildGraph
+    graph <- withLibrary pid lid . zoom Library.body $ runASTOp buildGraph
     return $ (lid, Library.toPersistent lib graph)
 
   return $ almostProject $ IntMap.fromList libs'
@@ -94,8 +95,8 @@ createProjectFromPersistent maybePid p = do
       let graph = lib ^. L.graph
           nodes = graph ^. G.nodes
           connections = graph ^. G.connections
-      mapM_ Graph.addPersistentNode nodes
-      mapM (uncurry Graph.connectPersistent) connections
+      runASTOp $ mapM_ Graph.addPersistentNode nodes
+      runASTOp $ mapM (uncurry Graph.connectPersistent) connections
   project <- withProject pid (get >>= return)
   return (pid, project)
 
