@@ -34,7 +34,6 @@ import           Luna.Studio.Data.Color             (vtToColor)
 import           Luna.Studio.State.Global           (State)
 import qualified Luna.Studio.State.Global           as Global
 import qualified Luna.Studio.State.Graph            as Graph
-import           UI.Instances                       ()
 
 import           Empire.API.Data.Connection         (ConnectionId)
 import qualified Empire.API.Data.Connection         as Connection

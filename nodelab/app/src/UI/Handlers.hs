@@ -9,7 +9,6 @@ module UI.Handlers where
 --
 -- import           Object.Widget                    (DisplayObject, UIHandlers)
 -- import           Object.Widget.Button             (Button)
--- import           Object.Widget.Choice.RadioButton (RadioButton)
 -- import           Object.Widget.CodeEditor         (CodeEditor)
 -- import           Object.Widget.Connection         (Connection, CurrentConnection)
 -- import           Object.Widget.Graphics           (Graphics)
@@ -33,8 +32,6 @@ module UI.Handlers where
 --
 -- import           UI.Widget                        ()
 -- import           UI.Widget.Button                 ()
--- import           UI.Widget.Choice                 ()
--- import           UI.Widget.Choice.RadioButton     ()
 -- import           UI.Widget.CodeEditor             ()
 -- import           UI.Widget.Connection             ()
 -- import           UI.Widget.Graphics               ()
@@ -49,8 +46,6 @@ module UI.Handlers where
 -- import           UI.Widget.Toggle                 ()
 --
 -- import qualified UI.Handlers.Button               as Button
--- import           UI.Handlers.Choice               ()
--- import qualified UI.Handlers.Choice.RadioButton   as RadioButton
 -- import qualified UI.Handlers.CodeEditor           as CodeEditor
 -- import qualified UI.Handlers.Connection           as Connection
 -- import qualified UI.Handlers.Label                as Label
@@ -79,7 +74,6 @@ module UI.Handlers where
 -- toggleType            = typeOf (undefined :: Toggle)
 -- textBoxType           = typeOf (undefined :: TextBox)
 -- labeledTextBoxType    = typeOf (undefined :: LabeledTextBox)
--- radioButtonType       = typeOf (undefined :: RadioButton)
 -- groupType             = typeOf (undefined :: Group)
 -- buttonType            = typeOf (undefined :: Button)
 -- listType              = typeOf (undefined :: List)
@@ -106,7 +100,6 @@ module UI.Handlers where
 --         | tpe ==           toggleType  =           Toggle.widgetHandlers
 --         | tpe ==          textBoxType  =          TextBox.widgetHandlers
 --         | tpe ==   labeledTextBoxType  =   LabeledTextBox.widgetHandlers
---         | tpe ==      radioButtonType  =      RadioButton.widgetHandlers
 --         | tpe ==            groupType  = def
 --         | tpe ==           buttonType  =           Button.widgetHandlers
 --         | tpe ==             listType  = def

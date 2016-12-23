@@ -20,7 +20,6 @@ import           Object.Widget.Node           (Node)
 import qualified Object.Widget.Node           as Node
 import           Object.Widget.Port           (Port)
 import qualified Object.Widget.Port           as Port
-import           UI.Instances                 ()
 
 
 
@@ -68,6 +67,7 @@ inPortControl_ ref portRef port = do
                 let value = fromMaybe 0 $ defVal ^? DefaultValue._Constant . DefaultValue._IntValue
                 div_
                     [ "className" $= "horizontal-slider"
+                    --TODO[react]: +1 with Q and up key, -1 with W and down key, edit on double click
                     , onMouseDown $ \e m -> stopPropagation e : dispatch ref (UI.NodeEvent $ Node.PortInitSlider m portRef $ Slider.Discrete value)
                     ] $
                     elemString $ fromString $ show value
@@ -75,6 +75,7 @@ inPortControl_ ref portRef port = do
                 let value = fromMaybe 0.0 $ defVal ^? DefaultValue._Constant . DefaultValue._DoubleValue
                 div_
                     [ "className" $= "horizontal-slider"
+                    --TODO[react]: +1 with Q and up key, -1 with W and down key, edit on double click
                     , onMouseDown $ \e m -> stopPropagation e : dispatch ref (UI.NodeEvent $ Node.PortInitSlider m portRef $ Slider.Continous value)
                     ] $
                     elemString $ fromString $ show value
