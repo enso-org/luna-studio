@@ -25,7 +25,11 @@ connection connectionRef = React.defineControllerView
     name connectionRef $ \connectionStore () -> do
         let connection = connectionStore ^. dt
             src        = connection ^. Connection.from
+            srcX       = connection ^. Connection.from ^. x
+            srcY       = connection ^. Connection.from ^. y
             dst        = connection ^. Connection.to
+            dstX       = connection ^. Connection.to ^. x
+            dstY       = connection ^. Connection.to ^. y
             color      = connection ^. Connection.color
             num        = 0
             numOfPorts = 0

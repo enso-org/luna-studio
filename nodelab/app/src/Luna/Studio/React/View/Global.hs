@@ -64,6 +64,7 @@ portAngleStop num numOfPorts r =
         t      = portAngle numOfPorts
     in  number * t - pi - gap/2
 
+
 nodeToNodeAngle :: Double -> Double -> Double -> Double -> Angle
 nodeToNodeAngle srcX srcY dstX dstY
     | srcX < dstX = atan ((srcY - dstY) / (srcX - dstX))
@@ -77,7 +78,7 @@ connectionSrc src dst _ _ True =
         x2     = dst ^. x
         y2     = dst ^. y
         t      = nodeToNodeAngle x1 y1 x2 y2
-        srcX   = portRadius/2 * cos t + x1 --FIXME: find why portRadius is doubled?
+        srcX   = portRadius/2 * cos t + x1                                      --FIXME: find why portRadius is doubled?
         srcY   = portRadius/2 * sin t + y1
     in  Position (Vector2 srcX srcY)
 connectionSrc src dst num numOfPorts _    =
@@ -90,7 +91,8 @@ connectionSrc src dst num numOfPorts _    =
         ports  = numOfPorts
         srcX   = portRadius/2 * cos t + x1
         srcY   = portRadius/2 * sin t + y1
-    in  Position (Vector2 srcX srcY) -- FIXME: implement port limits
+        srcX'  = if (x1 > x2) then 10.0 else 11.0
+    in  Position (Vector2 srcX srcY)                                            -- FIXME: implement port limits
 
 connectionDst :: Position -> Position -> Int -> Int -> IsSelf -> Position
 connectionDst src dst _   _          True = dst

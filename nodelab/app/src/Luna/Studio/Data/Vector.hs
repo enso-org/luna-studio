@@ -55,6 +55,31 @@ instance Num a => Num (Vector2 a) where
     signum (Vector2 x1 y1)            = Vector2 (signum x1) (signum y1)
     fromInteger i                     = let val = fromInteger i in Vector2 val val
 
+instance Ord a => Ord (Vector2 a) where
+    compare (Vector2 x1 y1) (Vector2 x2 y2)
+        | y1 <  y2  = LT
+        | y1 == y2  = if (x1 == x2) then EQ else if (x1 < x2) then LT else GT
+        | otherwise = GT
+    (Vector2 x1 y1) < (Vector2 x2 y2)
+        | y1 <  y2  = True
+        | y1 == y2  = if (x1 < x2)  then True else False
+        | otherwise = False
+    (Vector2 x1 y1) <= (Vector2 x2 y2)
+        | y1 <= y2  = True
+        | y1 == y2  = if (x1 <= x2) then True else False
+        | otherwise = False
+    (Vector2 x1 y1) > (Vector2 x2 y2)
+        | y1 >  y2  = True
+        | y1 == y2  = if (x1 > x2)  then True else False
+        | otherwise = False
+    (Vector2 x1 y1) >= (Vector2 x2 y2)
+        | y1 >= y2  = True
+        | y1 == y2  = if (x1 >= x2) then True else False
+        | otherwise = False
+    max (Vector2 x1 y1) (Vector2 x2 y2) = Vector2 (max x1 x2) (max y1 y2)
+    min (Vector2 x1 y1) (Vector2 x2 y2) = Vector2 (min x1 x2) (min y1 y2)
+
+
 instance IsList (Vector2 a) where
     type Item (Vector2 a) = a
     fromList [x',y'] = Vector2 x' y'
@@ -68,6 +93,7 @@ instance Applicative Vector2 where
 instance Monoid a => Monoid (Vector2 a) where
     mempty                                    = Vector2 mempty mempty
     (Vector2 x1 y1) `mappend` (Vector2 x2 y2) = Vector2 (x1 `mappend` x2) (y1 `mappend` y2)
+
 
 -- === Functions === --
 
@@ -103,6 +129,12 @@ fromTuple (a, b) = Vector2 a b
 toTuple :: Num a => Vector2 a -> (a, a)
 toTuple (Vector2 a b) = (a, b)
 
+minMax :: Ord a => Vector2 a -> Vector2 a -> Vector2 a
+minMax (Vector2 a b) (Vector2 a' b') = Vector2 (min a a') (max b b')
+
+maxMin :: Ord a => Vector2 a -> Vector2 a -> Vector2 a
+maxMin (Vector2 a b) (Vector2 a' b') = Vector2 (max a a') (min b b')
+
 
 -----------------------
 -- === Position === ---
@@ -135,6 +167,7 @@ instance IsList Position where
 
 moveByVector :: Position -> Vector2 Double -> Position
 moveByVector pos vec = pos & vector %~ (+vec)
+
 
 -------------------
 -- === Size === ---
