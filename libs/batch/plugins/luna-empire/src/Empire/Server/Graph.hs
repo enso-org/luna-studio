@@ -15,8 +15,8 @@ import           Data.List                             (break, partition)
 import           Data.List.Split                       (splitOneOf)
 import qualified Data.Map                              as Map
 import           Data.Maybe                            (fromMaybe, isJust, isNothing)
-import           Data.Text.Lazy                        (Text, stripPrefix)
-import qualified Data.Text.Lazy                        as Text
+import           Data.Text                             (stripPrefix)
+import qualified Data.Text                             as Text
 import           Data.Traversable                      (forM)
 import           Data.UUID.Types                       (UUID)
 import qualified Data.UUID.Types                       as UUID
@@ -259,11 +259,11 @@ mockNSData = Map.fromList $ functionsList <> modulesList where
     nodeSearcherSymbols = filter (not . flip elem StdLibMock.experimental) StdLibMock.symbolsNames
     (methods, functions) = partition (elem '.') nodeSearcherSymbols
     functionsList = functionEntry <$> functions
-    functionEntry function = (Text.pack function, NS.Element)
+    functionEntry function = (convert function, NS.Element)
     modulesMethodsMap = foldl updateModulesMethodsMap Map.empty methods
     updateModulesMethodsMap map el = Map.insert moduleName methodNames map where
         (moduleName, dotMethodName) = break (== '.') el
         methodName = tail dotMethodName
         methodNames = methodName : (fromMaybe [] $ Map.lookup moduleName map)
     modulesList = (uncurry moduleEntry) <$> Map.toList modulesMethodsMap
-    moduleEntry moduleName methodList = (Text.pack moduleName, NS.Group $ Map.fromList $ functionEntry <$> methodList)
+    moduleEntry moduleName methodList = (convert moduleName, NS.Group $ Map.fromList $ functionEntry <$> methodList)

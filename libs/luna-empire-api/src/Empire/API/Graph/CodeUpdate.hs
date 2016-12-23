@@ -5,7 +5,6 @@ import           Data.Binary                   (Binary)
 
 import           Empire.API.Data.GraphLocation (GraphLocation)
 import           Empire.API.Data.Node          (Node)
-import           Data.Text.Lazy                (Text)
 import qualified Empire.API.Topic              as T
 
 data Update = Update { _location :: GraphLocation

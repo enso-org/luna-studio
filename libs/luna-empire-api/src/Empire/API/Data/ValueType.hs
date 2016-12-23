@@ -5,7 +5,7 @@ module Empire.API.Data.ValueType where
 
 import           Data.Binary             (Binary)
 import           Data.Hashable           (Hashable)
-import qualified Data.Text.Lazy          as Text
+import qualified Data.Text               as Text
 import           Prologue                hiding (TypeRep)
 
 import           Empire.API.Data.TypeRep (TypeRep (..))
@@ -42,4 +42,4 @@ toEnum = to toEnum'
 toText :: Getter ValueType Text
 toText = to $ \v -> case v of
     AnyType     -> "*"
-    TypeIdent a -> Text.pack $ toString a
+    TypeIdent a -> convert a

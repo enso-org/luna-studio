@@ -2,7 +2,6 @@ module Empire.API.Graph.TypeCheck where
 
 import           Prologue
 import           Data.Binary                   (Binary)
-import           Data.Text.Lazy                (Text)
 
 import           Empire.API.Data.GraphLocation (GraphLocation)
 import qualified Empire.API.Graph.Request      as G

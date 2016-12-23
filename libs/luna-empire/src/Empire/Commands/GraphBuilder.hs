@@ -18,7 +18,6 @@ import qualified Data.Map                          as Map
 import           Data.Maybe                        (catMaybes, fromMaybe, maybeToList)
 import           Old.Data.Prop                     (prop)
 import           Old.Data.Record                       (ANY (..), caseTest, of')
-import qualified Data.Text.Lazy                    as Text
 import qualified Data.Tree                         as Tree
 import qualified Data.UUID                         as UUID
 import qualified Data.UUID.V4                      as UUID (nextRandom)
@@ -121,7 +120,7 @@ buildNode nid = do
     ports <- buildPorts ref
     let code    = Nothing -- Just $ Text.pack expr
         portMap = Map.fromList $ flip fmap ports $ \p@(Port id _ _ _) -> (id, p)
-    return $ API.Node nid name (API.ExpressionNode $ Text.pack expr) canEnter portMap (fromMaybe def meta) code
+    return $ API.Node nid name (API.ExpressionNode $ convert expr) canEnter portMap (fromMaybe def meta) code
 
 isMatch :: NodeRef -> Command Graph Bool
 isMatch ref = zoom Graph.ast $ runASTOp $ do
@@ -153,7 +152,7 @@ getNodeName nid = do
         vref <- GraphUtils.getASTVar nid
         zoom Graph.ast $ runASTOp $ do
             vnode <- Builder.read vref
-            caseTest (uncover vnode) $ of' $ \(Var (Lit.String n)) -> return $ Just (Text.pack n)
+            caseTest (uncover vnode) $ of' $ \(Var (Lit.String n)) -> return $ Just (convert n)
     else return Nothing
 
 getPortState :: ASTOp m => NodeRef -> m PortState
