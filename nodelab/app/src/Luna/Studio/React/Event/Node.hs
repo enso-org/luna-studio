@@ -26,6 +26,8 @@ data Event = DisplayResultChanged Bool          NodeId
            | NameKeyDown          KeyboardEvent NodeId
            | NameChange           Text          NodeId
            | PortSetDefaultValue                AnyPortRef PortDefault
+           | PortApplyString      KeyboardEvent AnyPortRef PortDefault
+           | PortEditString                     AnyPortRef PortDefault
            | PortInitSlider          MouseEvent AnyPortRef Slider.InitValue
             deriving (Show, Generic, NFData, Typeable)
 

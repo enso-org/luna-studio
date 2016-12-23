@@ -86,8 +86,8 @@ inPortControl_ ref portRef port = do
                     ["id" $= "focus-portcontrol"
                     ,"value" $= fromString value
                     , onMouseDown $ \e _ -> [stopPropagation e]
-                    , onKeyDown   $ \e k ->  [stopPropagation e]
-                    , onChange    $ \e -> let val = target e "value" in dispatch ref $ UI.NodeEvent $ Node.PortSetDefaultValue portRef $ defaultValue val
+                    , onKeyDown   $ \e k -> let val = target e "value" in stopPropagation e : dispatch ref (UI.NodeEvent $ Node.PortApplyString k portRef $ defaultValue val)
+                    , onChange    $ \e   -> let val = target e "value" in dispatch ref $ UI.NodeEvent $ Node.PortEditString portRef $ defaultValue val
                     ]
             ValueType.Bool -> do
                 let value = fromMaybe True $ defVal ^? DefaultValue._Constant . DefaultValue._BoolValue
@@ -97,4 +97,4 @@ inPortControl_ ref portRef port = do
                     ] $
                     elemString $ fromString $ show value
             ValueType.Other ->
-                elemString $ fromString $ " "
+                elemString $ fromString $ "(other)"

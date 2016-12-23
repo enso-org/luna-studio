@@ -4,8 +4,9 @@ import           Data.Aeson              (ToJSON)
 import           Luna.Studio.Data.Vector (Position, Size, Vector2)
 import           Luna.Studio.Prelude     hiding (Item)
 
-import           Object.Widget
 import           Object.Widget.Label     (TextAlignment)
+
+
 
 data Box = Box { _boxPosition :: Position
                } deriving (Eq, Show, Typeable, Generic)
