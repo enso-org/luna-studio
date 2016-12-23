@@ -4,7 +4,7 @@ module Object.Widget.Node where
 
 import           Control.Arrow
 import           Data.Aeson                        (ToJSON)
-import           Luna.Studio.Data.Vector           (Position, Vector2 (Vector2))
+import           Luna.Studio.Data.Vector           (Position (Position), Vector2 (Vector2))
 import           Luna.Studio.Prelude               hiding (set)
 
 import           Data.Map.Lazy                     (Map)
@@ -81,7 +81,7 @@ makePorts :: NodeAPI.Node -> [Port]
 makePorts node = Port.fromPorts (node ^. NodeAPI.nodeId) (Map.elems $ node ^. NodeAPI.ports)
 
 fromNode :: NodeAPI.Node -> Node
-fromNode n = let position' = uncurry Vector2 $ n ^. NodeAPI.nodeMeta ^. MetaAPI.position
+fromNode n = let position' = Position (uncurry Vector2 $ n ^. NodeAPI.nodeMeta ^. MetaAPI.position)
                  nodeId'   = n ^. NodeAPI.nodeId
                  name'     = n ^. NodeAPI.name
                  vis       = n ^. NodeAPI.nodeMeta . MetaAPI.displayResult
@@ -98,24 +98,9 @@ fromNode n = let position' = uncurry Vector2 $ n ^. NodeAPI.nodeMeta ^. MetaAPI.
         NodeAPI.InputEdge                  ->  makeNode nodeId' ports' position' "Input"     code' name' Nothing vis
         NodeAPI.OutputEdge                 ->  makeNode nodeId' ports' position' "Output"    code' name' Nothing vis
 
-
-instance IsDisplayObject Node where
-    widgetPosition = position
-    widgetSize     = lens get set where
-        get _      = Vector2 60.0 60.0
-        set w _    = w
-    widgetVisible  = to $ const True
-
 data PendingNode = PendingNode { _pendingExpression :: Text
                                , _pendingPosition   :: Position
                                } deriving (Eq, Show, Typeable, Generic)
 
 makeLenses ''PendingNode
 instance ToJSON PendingNode
-
-instance IsDisplayObject PendingNode where
-    widgetPosition = pendingPosition
-    widgetSize     = lens get set where
-        get _      = Vector2 60.0 60.0
-        set w _    = w
-    widgetVisible  = to $ const True

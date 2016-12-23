@@ -31,3 +31,6 @@ instance ToString TypeRep where
         toString' _ _ TStar = "*"
         toString' _ _ TBlank = ""
         toString' _ _ (TAcc n t) = toString' True True t <> "." <> n
+
+instance Convertible TypeRep Text where
+    convert = convert . toString ; {-# INLINE convert #-}

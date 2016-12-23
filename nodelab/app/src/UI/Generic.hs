@@ -3,7 +3,7 @@
 module UI.Generic where
 
 import           GHCJS.Marshal.Pure           (pToJSVal)
-import           Luna.Studio.Data.Vector      (Position, Vector2 (Vector2))
+import           Luna.Studio.Data.Vector      (Position, Size, x, y)
 import           Luna.Studio.Prelude          hiding (children)
 
 import qualified Event.Mouse                  as Mouse
@@ -29,7 +29,7 @@ foreign import javascript safe "require('Rendering').removeWidget($1)"
     removeWidget :: Int -> IO ()
 
 setWidgetPosition :: UIWidget a => Position -> a -> IO ()
-setWidgetPosition (Vector2 x y) widget = setWidgetPosition' (pToJSVal widget) x y
+setWidgetPosition pos widget = setWidgetPosition' (pToJSVal widget) (pos ^. x) (pos ^. y)
 
 updatePosition :: (IsDisplayObject b) => WidgetFile b -> Command UIRegistry.State ()
 updatePosition file = do
@@ -57,12 +57,12 @@ updatePosition' widgetId position = do
         setWidgetPosition position w
     recursiveWidgetMoved widgetId
 
-setSize :: WidgetId -> Vector2 Double -> IO ()
-setSize wid (Vector2 x y) = do
+setSize :: WidgetId -> Size -> IO ()
+setSize wid size = do
     w <- UIR.lookup wid :: IO GenericWidget
-    setSize' w x y
+    setSize' w (size ^. x) (size ^. y)
 
-defaultResize :: WidgetId -> Vector2 Double -> a -> Command UIRegistry.State ()
+defaultResize :: WidgetId -> Size -> a -> Command UIRegistry.State ()
 defaultResize wid size _ = performIO $ setSize wid size
 
 startDrag :: Mouse.Event' -> WidgetId -> Command Global.State ()

@@ -17,7 +17,7 @@ import           Luna.Studio.Commands.Command         (Command)
 import           Luna.Studio.Commands.Graph.Connect   (updateConnectionsForNodes)
 import           Luna.Studio.Commands.Graph.Selection (selectNodes, selectedNodes)
 import           Luna.Studio.Commands.Node.Snap       (snap)
-import           Luna.Studio.Data.Vector              (Position, toTuple)
+import           Luna.Studio.Data.Vector              (Position (Position), moveByVector, toTuple, vector)
 import           Luna.Studio.Event.Mouse
 import           Luna.Studio.Prelude
 import qualified Luna.Studio.React.Event.App          as App
@@ -61,14 +61,15 @@ handleMove coord snapped = do
     -- factor <- use $ Global.camera . Camera.camera . Camera.factor
     dragHistory <- use $ Global.drag . Drag.history
     withJust dragHistory $ \(DragHistory mousePos draggedNodeId nodesPos) -> do
-        let delta = coord - mousePos
+        let delta = coord ^. vector - mousePos ^. vector
             deltaWs = delta --Camera.scaledScreenToWorkspace factor delta
             shift' = if snapped
                         then case Map.lookup draggedNodeId nodesPos of
-                            Just pos -> snap (pos + deltaWs) - pos
+                            Just pos -> do
+                                snap (moveByVector pos deltaWs) ^. vector - pos ^. vector
                             Nothing  -> deltaWs
                         else deltaWs
-        moveNodes $ Map.map (+shift') nodesPos
+        moveNodes $ Map.map (flip moveByVector shift') nodesPos
 
 moveNodes :: Map NodeId Position -> Command State ()
 moveNodes nodesPos = do
@@ -87,7 +88,7 @@ stopDrag coord = do
                 selected <- selectedNodes
                 let nodesToUpdate = (\w -> (w ^. widget . Model.nodeId, w ^. widget . Model.position)) <$> selected
                 updates <- forM nodesToUpdate $ \(wid, pos) -> do
-                    Global.graph . Graph.nodesMap . ix wid . Node.position .= toTuple pos
+                    Global.graph . Graph.nodesMap . ix wid . Node.position .= toTuple (pos ^. vector)
                     newMeta <- preuse $ Global.graph . Graph.nodesMap . ix wid . Node.nodeMeta
                     return $ (wid, ) <$> newMeta
                 BatchCmd.updateNodeMeta $ catMaybes updates

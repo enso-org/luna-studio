@@ -2,6 +2,9 @@ module Luna.Studio.Action.Connect
     ( toAction
     ) where
 --TODO[react]: transform mousePos to correct position
+
+import           React.Flux                         (mouseScreenX, mouseScreenY)
+
 import           Empire.API.Data.Node               (NodeId)
 import           Empire.API.Data.Port               (PortId)
 import           Empire.API.Data.PortRef            (toAnyPortRef)
@@ -12,7 +15,9 @@ import           Event.UI                           (UIEvent (AppEvent, NodeEven
 import qualified JS.GoogleAnalytics                 as GA
 import           Luna.Studio.Commands.Command       (Command)
 import           Luna.Studio.Commands.Graph.Connect (batchConnectNodes)
+import           Luna.Studio.Data.Color             (Color (Color))
 import           Luna.Studio.Data.Vector            (Position, Vector2 (Vector2))
+import           Luna.Studio.Event.Mouse            (getMousePosition)
 import           Luna.Studio.Prelude
 import qualified Luna.Studio.React.Event.App        as App
 import qualified Luna.Studio.React.Event.Node       as Node
@@ -25,14 +30,14 @@ import           Luna.Studio.React.View.Global      (getCurrentConnectionSrcPosi
 import           Luna.Studio.State.Global           (State)
 import qualified Luna.Studio.State.Global           as Global
 import qualified Object.Widget.Connection           as ConnectionModel
-import           React.Flux                         (mouseScreenX, mouseScreenY)
+
 
 
 toAction :: Event -> Maybe (Command State ())
 toAction (UI (NodeEvent (Node.StartConnection evt nodeId portId))) = Just $ startDragFromPort pos nodeId portId
-    where pos = Vector2 (fromIntegral $ mouseScreenX evt) (fromIntegral $ mouseScreenY evt)
+    where pos = getMousePosition evt
 toAction (UI (AppEvent  (App.MouseMove evt)))                      = Just $ whileConnecting $ handleMove pos
-    where pos = Vector2 (fromIntegral $ mouseScreenX evt) (fromIntegral $ mouseScreenY evt)
+    where pos = getMousePosition evt
 toAction (UI (AppEvent (App.MouseUp _)))                           = Just $ whileConnecting $ stopDrag'
 toAction (UI (NodeEvent (Node.EndConnection _ nodeId portId)))     = Just $ whileConnecting $ stopDrag nodeId portId
 toAction _                                                         = Nothing
@@ -43,7 +48,7 @@ startDragFromPort mousePos nodeId portId = do
     maySrcPos <- getCurrentConnectionSrcPosition nodeId portId mousePos
     let portRef = toAnyPortRef nodeId portId
     withJust maySrcPos $ \srcPos -> do
-        let connection = ConnectionModel.CurrentConnection portRef True srcPos mousePos False def
+        let connection = ConnectionModel.CurrentConnection portRef True srcPos mousePos False $ Color 5 --TODO[react] get proper color
         Global.withNodeEditor $ Store.modifyM_ $ do
             connectionRef <- lift $ Store.create connection
             NodeEditor.currentConnection ?= connectionRef

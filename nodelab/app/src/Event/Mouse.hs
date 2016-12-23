@@ -1,12 +1,12 @@
 module Event.Mouse where
 
 
-import Luna.Studio.Prelude
+import           Luna.Studio.Prelude
 
-import Event.Keyboard  (KeyMods(..))
-import Luna.Studio.Data.Vector
-import Object.UITypes
-import Data.Aeson (ToJSON)
+import           Data.Aeson              (ToJSON)
+import           Event.Keyboard          (KeyMods (..))
+import           Luna.Studio.Data.Vector
+import           Object.UITypes
 
 data MouseButton = NoButton
                  | LeftButton
@@ -21,8 +21,6 @@ toMouseButton 1  = LeftButton
 toMouseButton 2  = MiddleButton
 toMouseButton 3  = RightButton
 toMouseButton _  = NoButton
-
-type MousePosition = Vector2 Int
 
 data Type = Pressed
           | Released
@@ -40,7 +38,7 @@ data EventWidget = EventWidget { _widgetId    :: WidgetId
 makeLenses ''EventWidget
 
 data Event a = Event { _tpe         :: Type
-                     , _position    :: Vector2 a
+                     , _position    :: Position
                      , _button      :: MouseButton
                      , _keyMods     :: KeyMods
                      , _widget      :: Maybe EventWidget

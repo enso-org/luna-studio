@@ -3,8 +3,8 @@
 
 module UI.Widget.LabeledTextBox where
 
-import           Luna.Studio.Prelude
 import           Luna.Studio.Data.Vector
+import           Luna.Studio.Prelude
 
 import           Data.JSString.Text           (lazyTextToJSString)
 import           GHCJS.Marshal.Pure           (PFromJSVal (..), PToJSVal (..))
@@ -29,7 +29,8 @@ foreign import javascript safe "$1.setLabel($2)"                     setLabel' :
 create :: WidgetId -> Model.LabeledTextBox -> IO LabeledTextBox
 create oid model = do
     textBox      <- create' (fromWidgetId oid) (model ^. Model.size . x) (model ^. Model.size . y)
-    UI.setWidgetPosition (model ^. widgetPosition) textBox
+    -- TODO[react]: Does not make sense anymore
+    -- UI.setWidgetPosition (model ^. widgetPosition) textBox
     return textBox
 
 setLabel :: Model.LabeledTextBox -> LabeledTextBox -> IO ()

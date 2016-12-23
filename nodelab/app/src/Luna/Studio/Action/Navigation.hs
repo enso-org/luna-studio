@@ -2,7 +2,7 @@ module Luna.Studio.Action.Navigation where
 
 import qualified Data.HashMap.Strict          as HashMap
 
-import           Luna.Studio.Data.Vector      (Position, Vector2 (Vector2), lengthSquared, magnitude, x, y)
+import           Luna.Studio.Data.Vector      (Position (Position), Vector2 (Vector2), lengthSquared, magnitude, vector, x, y)
 import           Luna.Studio.Prelude
 
 import           React.Flux                   (KeyboardEvent)
@@ -120,10 +120,10 @@ closenestPow :: Double
 closenestPow = 2.5
 
 axisDistanceRight, axisDistanceLeft, axisDistanceDown, axisDistanceUp :: Position -> Double
-axisDistanceRight (Vector2 x' _) =  x'
-axisDistanceLeft  (Vector2 x' _) = -x'
-axisDistanceDown  (Vector2 _ y') =  y'
-axisDistanceUp    (Vector2 _ y') = -y'
+axisDistanceRight pos =   pos ^. x
+axisDistanceLeft  pos = -(pos ^. x)
+axisDistanceDown  pos =   pos ^. y
+axisDistanceUp    pos = -(pos ^. y)
 
 findNearestRight, findNearestLeft, findNearestDown, findNearestUp :: Position -> [WRef Node] -> WRef Node
 findNearestRight pos = maximumBy (compare `on` closenest pos axisDistanceRight)
@@ -134,9 +134,9 @@ findNearestUp    pos = maximumBy (compare `on` closenest pos axisDistanceUp)
 closenest :: Position -> (Position -> Double) -> WRef Node -> Double
 closenest pos axisDistance wf = axisDist / (dist ** closenestPow) where
     pos' = wf ^. widget . Model.position
-    vect = pos' - pos
+    vect = pos' ^. vector - pos ^. vector
     dist = magnitude vect
-    axisDist = axisDistance vect
+    axisDist = axisDistance (Position vect)
 
 goConeRight, goConeLeft, goConeDown, goConeUp :: Command State ()
 goConeRight = goCone findRightMost findNodesOnRight findNodesOnRightSide
@@ -200,7 +200,7 @@ findNearestNode :: Position -> [WRef Node] -> WRef Node
 findNearestNode pos = minimumBy (compare `on` distance pos)
 
 distance :: Position -> WRef Node -> Double
-distance pos wf = lengthSquared (wpos - pos) where
+distance pos wf = lengthSquared (wpos ^. vector - pos ^. vector) where
     wpos = wf ^. widget . Model.position
 
 changeSelection :: [WRef Node] -> WRef Node -> Command State ()

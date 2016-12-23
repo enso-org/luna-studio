@@ -1,13 +1,13 @@
 module Object.Widget.Slider.Continuous where
 
 import           Data.Aeson              (ToJSON)
-import           Luna.Studio.Data.Vector (Position, Vector2)
+import           Luna.Studio.Data.Vector (Position, Size)
 import           Luna.Studio.Prelude
 import           Numeric
 import           Object.Widget
 
 data ContinuousSlider = ContinuousSlider { _position       :: Position
-                                         , _size           :: Vector2 Double
+                                         , _size           :: Size
                                          , _label          :: Text
                                          , _enabled        :: Bool
                                          , _minValue       :: Double
@@ -21,11 +21,6 @@ instance ToJSON ContinuousSlider
 
 create :: Size -> Text -> Double -> Double -> Double -> ContinuousSlider
 create s l minVal maxVal v = ContinuousSlider def s l True minVal maxVal v def
-
-instance IsDisplayObject ContinuousSlider where
-    widgetPosition = position
-    widgetSize     = size
-    widgetVisible  = to $ const True
 
 displayValue' :: ContinuousSlider -> String
 displayValue' slider = showFFloat (Just $ precision) val "" where

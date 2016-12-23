@@ -104,25 +104,25 @@ move widgetId pos = do
 
 moveY :: WidgetId -> Double -> Command UIRegistry.State ()
 moveY widgetId ny = do
-    pos <- preuse $ UIRegistry.widgets . ix (fromWidgetId widgetId) . widget . widgetPosition
-    withJust pos $ \(Vector2 px _) -> do
+    mayPos <- preuse $ UIRegistry.widgets . ix (fromWidgetId widgetId) . widget . widgetPosition
+    withJust mayPos $ \pos -> do
         UIRegistry.widgets . ix (fromWidgetId widgetId) . widget . widgetPosition . y .= ny
-        let vec = Vector2 px ny
-        UI.updatePosition' widgetId vec
+        UI.updatePosition' widgetId $ Position (Vector2 (pos ^. x) ny)
 
 moveX :: WidgetId -> Double -> Command UIRegistry.State ()
 moveX widgetId nx = do
-    pos <- preuse $ UIRegistry.widgets . ix (fromWidgetId widgetId) . widget . widgetPosition
-    withJust pos $ \(Vector2 _ py) -> do
+    mayPos <- preuse $ UIRegistry.widgets . ix (fromWidgetId widgetId) . widget . widgetPosition
+    withJust mayPos $ \pos -> do
         UIRegistry.widgets . ix (fromWidgetId widgetId) . widget . widgetPosition . x .= nx
-        let vec = Vector2 nx py
-        UI.updatePosition' widgetId vec
+        UI.updatePosition' widgetId $ Position (Vector2 nx (pos ^. y))
 
 moveBy :: WidgetId -> Vector2 Double -> Command UIRegistry.State ()
 moveBy widgetId vec = do
-    UIRegistry.widgets . ix (fromWidgetId widgetId) . widget . widgetPosition += vec
-    pos <- preuse $ UIRegistry.widgets . ix (fromWidgetId widgetId) . widget . widgetPosition
-    withJust pos $ UI.updatePosition' widgetId
+    mayPos <- preuse $ UIRegistry.widgets . ix (fromWidgetId widgetId) . widget . widgetPosition
+    withJust mayPos $ \pos -> do
+        UIRegistry.widgets . ix (fromWidgetId widgetId) . widget . widgetPosition .= moveByVector pos vec
+        mayNewPos <- preuse $ UIRegistry.widgets . ix (fromWidgetId widgetId) . widget . widgetPosition
+        withJust mayNewPos $ UI.updatePosition' widgetId
 
 newtype ChildrenResizedHandler = ChildrenResizedHandler (WidgetId -> Command UIRegistry.State ())
 triggerChildrenResized :: WidgetId -> Command UIRegistry.State ()
@@ -131,16 +131,16 @@ triggerChildrenResized widgetId = do
     maybeHandler <- handler widgetId key
     withJust maybeHandler $ \(ChildrenResizedHandler handler') -> handler' widgetId
 
-resize :: WidgetId -> Vector2 Double -> Command UIRegistry.State ()
-resize widgetId vec = resize' widgetId (const vec)
+resize :: WidgetId -> Size -> Command UIRegistry.State ()
+resize widgetId size = resize' widgetId (const size)
 
-resize' :: WidgetId -> (Vector2 Double -> Vector2 Double) -> Command UIRegistry.State ()
+resize' :: WidgetId -> (Size -> Size) -> Command UIRegistry.State ()
 resize' = resize'CB True
 
-resizeNoCB :: WidgetId -> (Vector2 Double -> Vector2 Double) -> Command UIRegistry.State ()
+resizeNoCB :: WidgetId -> (Size -> Size) -> Command UIRegistry.State ()
 resizeNoCB = resize'CB False
 
-resize'CB :: Bool -> WidgetId -> (Vector2 Double -> Vector2 Double) -> Command UIRegistry.State ()
+resize'CB :: Bool -> WidgetId -> (Size -> Size) -> Command UIRegistry.State ()
 resize'CB cb widgetId f = do
     UIRegistry.widgets . ix (fromWidgetId widgetId) . widget . widgetSize %= f
     mayWidgetFile <- preuse $ UIRegistry.widgets . ix (fromWidgetId widgetId)

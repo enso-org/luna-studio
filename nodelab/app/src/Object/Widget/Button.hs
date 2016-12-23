@@ -1,18 +1,17 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Object.Widget.Button where
 
-import           Luna.Studio.Data.Vector (Position, Vector2 (Vector2))
+import           Luna.Studio.Data.Vector (Position, Size)
 import           Luna.Studio.Prelude
 
 import           Data.Aeson              (ToJSON)
-import           Object.Widget
 
 import qualified Object.Widget.Label     as Label
 import qualified Style.Button            as Style
 import           Style.Types
 
 data Button = Button { _position :: Position
-                     , _size     :: Vector2 Double
+                     , _size     :: Size
                      , _label    :: Text
                      , _icon     :: Maybe Text
                      , _enabled  :: Bool
@@ -32,11 +31,6 @@ instance ToJSON Style
 
 instance Default Style where
     def = Style Style.background Style.rounded Style.textAlignment
-
-instance IsDisplayObject Button where
-    widgetPosition = position
-    widgetSize     = size
-    widgetVisible  = to $ const True
 
 create :: Size -> Text -> Button
 create s l = Button def s l Nothing True def

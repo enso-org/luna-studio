@@ -8,7 +8,6 @@ import qualified Data.Binary                    as Bin
 import qualified Data.ByteString.Lazy           as BS
 import qualified Data.List                      as List
 import           Data.Maybe                     (fromMaybe)
-import qualified Data.Text.Lazy                 as Text
 import qualified Data.UUID                      as UUID
 import           Prologue
 
@@ -64,7 +63,7 @@ run cmd = case cmd of
     Cmd.ImportAndSave inFile outFile -> do
       endPoints <- EP.clientFromConfig <$> Config.load
       projectData <- readFile inFile
-      r <- ResultSaver.importAndSave endPoints (Text.pack projectData)
+      r <- ResultSaver.importAndSave endPoints (convert projectData)
       case r of
           Left err   -> logger criticalFail err
           Right dump -> do

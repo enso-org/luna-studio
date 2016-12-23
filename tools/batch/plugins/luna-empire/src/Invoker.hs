@@ -8,7 +8,6 @@ import qualified Data.Binary                      as Bin
 import qualified Data.ByteString                  as ByteString
 import qualified Data.ByteString.Char8            as Char8 (pack)
 import           Data.ByteString.Lazy             (fromStrict, toStrict)
-import qualified Data.Text.Lazy                   as Text
 import qualified Data.UUID.V4                     as UUID
 import qualified Empire.API.Data.Breadcrumb       as Breadcrumb
 import           Empire.API.Data.DefaultValue     (PortDefault (Constant), Value (DoubleValue))
@@ -135,7 +134,7 @@ sendToBus endPoints msg = do
   void $ Bus.runBus endPoints $ Bus.send Flag.Enable $ Message.Message (Topic.topic msg') $ toStrict . Bin.encode $ msg'
 
 addNode :: EP.BusEndPoints -> GraphLocation -> String -> Double -> Double -> IO ()
-addNode endPoints graphLocation expression x y = sendToBus endPoints $ AddNode.Request graphLocation (AddNode.ExpressionNode $ Text.pack expression) (NodeMeta.NodeMeta (x, y) True) Nothing
+addNode endPoints graphLocation expression x y = sendToBus endPoints $ AddNode.Request graphLocation (AddNode.ExpressionNode $ convert expression) (NodeMeta.NodeMeta (x, y) True) Nothing
 
 removeNode :: EP.BusEndPoints -> GraphLocation -> NodeId -> IO ()
 removeNode endPoints graphLocation nodeId = sendToBus endPoints $ RemoveNodes.Request graphLocation [nodeId]

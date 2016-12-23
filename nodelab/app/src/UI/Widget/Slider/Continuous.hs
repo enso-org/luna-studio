@@ -1,7 +1,7 @@
 module UI.Widget.Slider.Continuous where
 
-import           Luna.Studio.Prelude
 import           Luna.Studio.Data.Vector
+import           Luna.Studio.Prelude
 
 import           Data.JSString.Text              (lazyTextToJSString)
 
@@ -20,7 +20,8 @@ createSlider oid model = do
     slider      <- create' (fromWidgetId oid) (model ^. Model.size . x) (model ^. Model.size . y)
     setLabel       model slider
     setValue       model slider
-    UI.setWidgetPosition (model ^. widgetPosition) slider
+    -- TODO[react]: Does not make sense anymore
+    -- UI.setWidgetPosition (model ^. widgetPosition) slider
     return slider
 
 setLabel :: Model.ContinuousSlider -> Slider -> IO ()

@@ -1,7 +1,6 @@
 module Empire.Utils.TextResult where
 
 import           Prologue
-import qualified Data.Text.Lazy               as Text
 
 import           Empire.API.Data.DefaultValue (Value (..))
 
@@ -28,7 +27,7 @@ showMaybeStr Nothing  = show (Nothing :: Maybe String)
 showMaybeStr (Just s) = show (Just $ showStr s)
 
 nodeValueToText :: Value -> Text
-nodeValueToText w = Text.pack $ case w of
+nodeValueToText w = convert $ case w of
     IntValue        v -> show v
     DoubleValue     v -> show v
     BoolValue       v -> show v

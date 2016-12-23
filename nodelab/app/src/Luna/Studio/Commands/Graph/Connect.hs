@@ -23,6 +23,7 @@ import qualified Object.Widget.Connection           as ConnectionModel
 
 import qualified Luna.Studio.Commands.Batch         as BatchCmd
 import           Luna.Studio.Commands.Command       (Command)
+import           Luna.Studio.Data.Color             (Color (Color))
 import qualified Luna.Studio.React.Model.NodeEditor as NodeEditor
 import qualified Luna.Studio.React.Store            as Store
 import           Luna.Studio.React.View.Global      (getConnectionPosition)
@@ -52,7 +53,9 @@ localConnectNodes src dst = do
             dstPortId = InPortId (dst ^. PortRef.dstPortId)
         mayPos <- getConnectionPosition srcNodeId srcPortId dstNodeId dstPortId
         withJust mayPos $ \(srcPos, dstPos) -> Global.withNodeEditor $ Store.modifyM_ $ do
-            let connection = ConnectionModel.Connection connectionId True srcPos dstPos (dst ^. withArrow) def def
+
+            let color = Color 5 --TODO[react] get proper color
+                connection = ConnectionModel.Connection connectionId True srcPos dstPos (dst ^. withArrow) color def
             connectionRef <- lift $ Store.create connection
             NodeEditor.connections . at dst ?= connectionRef
     return connectionId
@@ -82,5 +85,5 @@ updateConnection connection = do
             ConnectionModel.from      .= from'
             ConnectionModel.to        .= to'
             ConnectionModel.arrow     .= (connection ^. Connection.dst) ^. withArrow
-            ConnectionModel.color     .= def
+            ConnectionModel.color     .= Color 5 --TODO[react] get proper color
             ConnectionModel.highlight .= def

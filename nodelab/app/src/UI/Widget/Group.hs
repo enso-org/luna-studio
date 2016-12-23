@@ -1,21 +1,21 @@
 module UI.Widget.Group where
 
-import           Luna.Studio.Prelude
 import           Luna.Studio.Data.Vector
+import           Luna.Studio.Prelude
 
-import           GHCJS.Marshal.Pure           (PFromJSVal (..), PToJSVal (..))
+import           GHCJS.Marshal.Pure              (PFromJSVal (..), PToJSVal (..))
 
+import qualified Luna.Studio.Commands.UIRegistry as UICmd
 import           Object.UITypes
 import           Object.Widget
-import qualified Object.Widget.Group          as Model
-import qualified Luna.Studio.Commands.UIRegistry as UICmd
+import qualified Object.Widget.Group             as Model
 
-import           Style.Types                  (Color (..), Padding (..))
-import           UI.Generic                   (whenChanged)
-import qualified UI.Generic                   as UI
-import qualified UI.Registry                  as UI
-import           UI.Widget                    (UIWidget)
-import qualified UI.Widget                    as Widget
+import           Style.Types                     (Color (..), Padding (..))
+import           UI.Generic                      (whenChanged)
+import qualified UI.Generic                      as UI
+import qualified UI.Registry                     as UI
+import           UI.Widget                       (UIWidget)
+import qualified UI.Widget                       as Widget
 
 newtype Group = Group JSVal deriving (PToJSVal, PFromJSVal)
 
@@ -45,29 +45,30 @@ setBorderRadius group model = do
     let (a, b, c, d) = model ^. Model.style . Model.borderRadius
     setBorderRadius' group a b c d
 
-create :: WidgetId -> Model.Group -> IO Group
-create oid model = do
-    group      <- create' (fromWidgetId oid) (model ^. Model.size . x) (model ^. Model.size . y)
-    setBgColor group model
-    setPadding group model
-    setBorderRadius group model
-    setVisible' group $ model ^. Model.visible
-    UI.setWidgetPosition (model ^. widgetPosition) group
-    return group
-
-instance UIDisplayObject Model.Group where
-    createUI parentId wid model = do
-        group    <- create wid model
-        parent   <- UI.lookup parentId :: IO Widget.GenericWidget
-        UI.register wid group
-        Widget.add group parent
-
-    updateUI wid old model = do
-        group <- UI.lookup wid :: IO Group
-        whenChanged old model Model.visible $ setVisible' group $ model ^. Model.visible
-        whenChanged old model (Model.style . Model.background  ) $ setBgColor  group model
-        whenChanged old model (Model.style . Model.borderRadius) $ setBorderRadius  group model
-        whenChanged old model (Model.style . Model.padding     ) $ setPadding group model
+-- TODO[react]: Does not make sense anymore
+-- create :: WidgetId -> Model.Group -> IO Group
+-- create oid model = do
+--     group      <- create' (fromWidgetId oid) (model ^. Model.size . x) (model ^. Model.size . y)
+--     setBgColor group model
+--     setPadding group model
+--     setBorderRadius group model
+--     setVisible' group $ model ^. Model.visible
+--     UI.setWidgetPosition (model ^. widgetPosition) group
+--     return group
+--
+-- instance UIDisplayObject Model.Group where
+--     createUI parentId wid model = do
+--         group    <- create wid model
+--         parent   <- UI.lookup parentId :: IO Widget.GenericWidget
+--         UI.register wid group
+--         Widget.add group parent
+--
+--     updateUI wid old model = do
+--         group <- UI.lookup wid :: IO Group
+--         whenChanged old model Model.visible $ setVisible' group $ model ^. Model.visible
+--         whenChanged old model (Model.style . Model.background  ) $ setBgColor  group model
+--         whenChanged old model (Model.style . Model.borderRadius) $ setBorderRadius  group model
+--         whenChanged old model (Model.style . Model.padding     ) $ setPadding group model
 
 instance CompositeWidget Model.Group where
     updateWidget wid old model = do

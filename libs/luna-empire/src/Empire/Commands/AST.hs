@@ -16,7 +16,6 @@ import           Data.Layer_OLD.Cover_OLD          (uncover)
 import           Data.Maybe                        (catMaybes, fromMaybe)
 import           Old.Data.Prop                     (prop, ( # ))
 import           Old.Data.Record                       (ANY (..), caseTest, of')
-import qualified Data.Text.Lazy                    as Text
 import           Prologue                          hiding (( # ), TypeRep, tryHead)
 
 import           Empire.API.Data.DefaultValue      (PortDefault, Value (..))
@@ -66,7 +65,7 @@ metaKey = TypeKey
 addNode :: NodeId -> String -> String -> Command AST (NodeRef, NodeRef)
 addNode nid name expr = runASTOp $ do
     (exprName, ref) <- Parser.parseExpr expr
-    let name' = fromMaybe name $ fmap Text.unpack exprName
+    let name' = fromMaybe name $ fmap convert exprName
     (,) <$> pure ref <*> ASTBuilder.makeNodeRep (NodeMarker nid) name' ref
 
 addDefault :: PortDefault -> Command AST NodeRef

@@ -4,7 +4,6 @@ module Empire.API.Data.DefaultValue where
 
 import           Control.DeepSeq (NFData)
 import           Data.Binary     (Binary)
-import           Data.Text.Lazy  as Text
 import           Prologue
 
 import qualified Graphics.API    as G
@@ -49,4 +48,4 @@ makePrisms ''Value
 makePrisms ''PortDefault
 
 stringify :: Value -> Text
-stringify = Text.pack . show
+stringify = convert . show

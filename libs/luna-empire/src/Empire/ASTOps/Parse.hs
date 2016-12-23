@@ -7,7 +7,6 @@ import           Prologue
 import           Control.Monad.Except         (throwError)
 import           Data.List.Split              (splitOn)
 import           Data.List                    (partition)
-import qualified Data.Text.Lazy               as Text
 
 import           Empire.Data.AST              (NodeRef)
 import           Empire.ASTOp                 (ASTOp)
@@ -48,7 +47,7 @@ tryParseLambda s = case words s of
     ("def" : name : _) -> do
         v <- Builder.var $ fromString "in0"
         lam <- Builder.lam [Builder.arg v] v
-        return (Just (Text.pack name), Just lam)
+        return (Just (convert name), Just lam)
     ["->"] -> do
         v <- Builder.var $ fromString "arg0"
         lam <- Builder.lam [Builder.arg v] v

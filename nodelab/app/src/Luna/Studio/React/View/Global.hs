@@ -71,24 +71,35 @@ nodeToNodeAngle srcX srcY dstX dstY
 
 
 connectionSrc :: Position -> Position -> Int -> Int -> IsSingle -> Position
-connectionSrc (Vector2 x1 y1) (Vector2 x2 y2) _   _          True =
-    let t      = nodeToNodeAngle x1 y1 x2 y2
-        srcX   = portRadius * cos t + x1
-        srcY   = portRadius * sin t + y1
-    in  Vector2 srcX srcY
-connectionSrc (Vector2 x1 y1) (Vector2 x2 y2) num numOfPorts False =
-    let t      = nodeToNodeAngle x1 y1 x2 y2
+connectionSrc src dst _ _ True =
+    let x1     = src ^. x
+        y1     = src ^. y
+        x2     = dst ^. x
+        y2     = dst ^. y
+        t      = nodeToNodeAngle x1 y1 x2 y2
+        srcX   = portRadius/2 * cos t + x1 --FIXME: find why portRadius is doubled?
+        srcY   = portRadius/2 * sin t + y1
+    in  Position (Vector2 srcX srcY)
+connectionSrc src dst num numOfPorts _    =
+    let x1     = src ^. x
+        y1     = src ^. y
+        x2     = dst ^. x
+        y2     = dst ^. y
+        t      = nodeToNodeAngle x1 y1 x2 y2
         number = num
         ports  = numOfPorts
-        srcX   = portRadius * cos t + x1
-        srcY   = portRadius * sin t + y1
-    in  Vector2 srcX srcY -- FIXME: implement port limits
-
+        srcX   = portRadius/2 * cos t + x1
+        srcY   = portRadius/2 * sin t + y1
+    in  Position (Vector2 srcX srcY) -- FIXME: implement port limits
 
 connectionDst :: Position -> Position -> Int -> Int -> IsSelf -> Position
-connectionDst (Vector2 _  _ ) (Vector2 x2 y2) _   _          True = Vector2 x2 y2
-connectionDst (Vector2 x1 y1) (Vector2 x2 y2) num numOfPorts _    =
-    let t      = nodeToNodeAngle x1 y1 x2 y2
+connectionDst src dst _   _          True = dst
+connectionDst src dst num numOfPorts _    =
+    let x1     = src ^. x
+        y1     = src ^. y
+        x2     = dst ^. x
+        y2     = dst ^. y
+        t      = nodeToNodeAngle x1 y1 x2 y2
         number = num
         ports  = numOfPorts
         dstX   = portRadius * (- cos t) + x2

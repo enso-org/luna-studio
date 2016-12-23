@@ -3,22 +3,22 @@
 
 module UI.Widget.TextBox where
 
-import           Luna.Studio.Prelude
 import           Luna.Studio.Data.Vector
+import           Luna.Studio.Prelude
 
-import qualified Data.JSString         as JSString
-import           Data.JSString.Text    (lazyTextToJSString)
-import           GHCJS.Marshal.Pure    (PFromJSVal (..), PToJSVal (..))
+import qualified Data.JSString           as JSString
+import           Data.JSString.Text      (lazyTextToJSString)
+import           GHCJS.Marshal.Pure      (PFromJSVal (..), PToJSVal (..))
 
 import           Object.UITypes
 import           Object.Widget
-import qualified Object.Widget.TextBox as Model
+import qualified Object.Widget.TextBox   as Model
 
-import           UI.Generic            (whenChanged)
-import qualified UI.Generic            as UI
-import qualified UI.Registry           as UI
-import           UI.Widget             (UIWidget)
-import qualified UI.Widget             as Widget
+import           UI.Generic              (whenChanged)
+import qualified UI.Generic              as UI
+import qualified UI.Registry             as UI
+import           UI.Widget               (UIWidget)
+import qualified UI.Widget               as Widget
 
 
 newtype TextBox = TextBox JSVal deriving (PToJSVal, PFromJSVal)
@@ -35,7 +35,8 @@ create :: WidgetId -> Model.TextBox -> IO TextBox
 create oid model = do
     textBox      <- create' (fromWidgetId oid) (model ^. Model.size . x) (model ^. Model.size . y)
     setAlignment   model textBox
-    UI.setWidgetPosition (model ^. widgetPosition) textBox
+    -- TODO[react]: Does not make sense anymore
+    -- UI.setWidgetPosition (model ^. widgetPosition) textBox
     return textBox
 
 setValueLabel :: Model.TextBox -> TextBox -> IO ()

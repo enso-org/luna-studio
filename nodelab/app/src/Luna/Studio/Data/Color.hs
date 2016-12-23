@@ -3,6 +3,7 @@ module Luna.Studio.Data.Color
     ( colorPort
     , vtToColor
     , Color (..)
+    , toJSString
     ) where
 
 import           Data.Aeson                (FromJSON, ToJSON)
@@ -22,6 +23,31 @@ newtype Color = Color { fromColor :: Int }
 instance FromJSON Color
 instance ToJSON Color
 
+
+
+data HSL a = HSL { _h :: a
+                 , _s :: a
+                 , _l :: a
+                 } deriving (Eq, Ord, Show)
+
+makeLenses ''HSL
+
+toHsl :: Color -> HSL Float
+toHsl (Color 0) = HSL 0.0 0.0 0.5
+toHsl (Color i) = HSL (hue * 2.0 * pi) 0.6 0.5
+    where
+        hue = start + delta * (fromIntegral i)
+        start = 90.6 / (2 * pi)
+        steps = 16.0
+        delta = 1.0 / steps
+
+toJSString :: Color -> JSString
+toJSString = hslToJSString . toHsl
+
+hslToJSString :: (Fractional a, Show a) => HSL a -> JSString
+hslToJSString hsl = fromString $ "hsl(" <> show ((hsl ^. h) * 360.0) <> ","
+                                     <> show ((hsl ^. s) * 100.0) <> "%,"
+                                     <> show ((hsl ^. l) * 100.0) <> "%)"
 
 hashMany :: [TypeRep] -> Int
 hashMany as = sum $ zipWith (*) powers (tpRepToColor <$> as) where

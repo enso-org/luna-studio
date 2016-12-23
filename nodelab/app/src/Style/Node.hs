@@ -1,62 +1,62 @@
 module Style.Node where
 
-import           Data.HMap.Lazy          (HTMap)
-import           Luna.Studio.Data.Vector (Position, Vector2 (Vector2), x, y)
+import           Luna.Studio.Data.Vector (Position (Position), Size (Size), Vector2 (Vector2), x, y)
 import           Luna.Studio.Prelude
 
 import           Style.Types
 
 import qualified Object.Widget.Group     as Group
 import qualified Object.Widget.Label     as Label
-import qualified UI.Layout               as Layout
 
 nodeRadius :: Double
 nodeRadius = 25.0
 
 expressionLabel, valueLabel :: Text -> Label.Label
 expressionLabel = Label.Label position size align Label.Monospace where
-    position = Vector2 (-150.0) (-50.0)
-    size     = Vector2 300.0 20.0
+    position = Position (Vector2 (-150.0) (-50.0))
+    size     = Size (Vector2 300.0 20.0)
     align    = Label.Center
 
 controlsPosition :: Position
-controlsPosition = Vector2 (-nodeRadius) 35.0
+controlsPosition = Position (Vector2 (-nodeRadius) 35.0)
 
-controlsLayout, inLabelsLayout, expandedGroupLayout :: HTMap
-controlsLayout = Layout.verticalLayoutHandler 5.0
-inLabelsLayout = Layout.verticalLayoutHandler 5.0
+-- TODO[react]: Does not make sense anymore
+-- controlsLayout, inLabelsLayout, expandedGroupLayout :: HTMap
+-- controlsLayout = Layout.verticalLayoutHandler 5.0
+-- inLabelsLayout = Layout.verticalLayoutHandler 5.0
 
 expandedGroupStyle, visualizationGroupStyle :: Group.Style
 expandedGroupStyle = def & Group.background ?~ Color 0.15 0.15 0.15 0.8
                          & Group.padding .~ uniformPadding 5.0
 
+-- TODO[react]: Does not make sense anymore
 -- controlsPosition = Vector2 (-30.0) (-30.0)
 -- controlsLayout   = Layout.verticalLayoutHandler 5.0
 --
 -- expandedGroupStyle = def & Group.background ?~ (0.2, 0.2, 0.2)
 --                          & Group.padding .~ (Padding 70.0 0.0 10.0 0.0)
 --                          & Group.borderRadius .~ (10.0, 10.0, 30.0, 10.0)
-
-expandedGroupLayout = Layout.verticalLayoutHandler 5.0
+--
+-- expandedGroupLayout = Layout.verticalLayoutHandler 5.0
 
 valueLabel = Label.Label position size align def where
-    position = Vector2 (-25.0) 0
-    size     = Vector2 100.0 20.0
+    position = Position (Vector2 (-25.0) 0)
+    size     = Size (Vector2 100.0 20.0)
     align    = Label.Center
 
 
 
 visualizationGroupStyle = expandedGroupStyle
 
-plotSize :: Vector2 Double
-plotSize = Vector2 200.0 150.0
+plotSize :: Size
+plotSize = Size (Vector2 200.0 150.0)
 
-portControlSize :: Vector2 Double
-portControlSize = Vector2 200.0 20.0
+portControlSize :: Size
+portControlSize = Size (Vector2 200.0 20.0)
 
-setLabelSize, setButtonSize :: Vector2 Double
-setLabelSize  = Vector2 (0.7 * (portControlSize ^. x) - setLabelOffsetX) (portControlSize ^. y)
-setButtonSize = Vector2 (0.3 * (portControlSize ^. x)) (portControlSize ^. y)
+setLabelSize, setButtonSize :: Size
+setLabelSize  = Size (Vector2 (0.7 * (portControlSize ^. x) - setLabelOffsetX) (portControlSize ^. y))
+setButtonSize = Size (Vector2 (0.3 * (portControlSize ^. x)) (portControlSize ^. y))
 
 setLabelOffsetX :: Double
 setLabelOffsetX = 10.0
@@ -64,5 +64,5 @@ setLabelOffsetX = 10.0
 labeledPadding :: Padding
 labeledPadding = xyPadding setLabelOffsetX 0.0
 
-codeEditorSize :: Vector2 Double
-codeEditorSize = Vector2 300.0 150.0
+codeEditorSize :: Size
+codeEditorSize = Size (Vector2 300.0 150.0)

@@ -1,20 +1,20 @@
 module UI.Widget.Toggle where
 
-import           Luna.Studio.Prelude
 import           Luna.Studio.Data.Vector
+import           Luna.Studio.Prelude
 
-import           Data.JSString.Text   (lazyTextToJSString)
-import           GHCJS.Marshal.Pure   (PFromJSVal (..), PToJSVal (..))
+import           Data.JSString.Text      (lazyTextToJSString)
+import           GHCJS.Marshal.Pure      (PFromJSVal (..), PToJSVal (..))
 
 import           Object.UITypes
 import           Object.Widget
-import qualified Object.Widget.Toggle as Model
+import qualified Object.Widget.Toggle    as Model
 
-import           UI.Generic           (whenChanged)
-import qualified UI.Generic           as UI
-import qualified UI.Registry          as UI
-import           UI.Widget            (UIWidget)
-import qualified UI.Widget            as Widget
+import           UI.Generic              (whenChanged)
+import qualified UI.Generic              as UI
+import qualified UI.Registry             as UI
+import           UI.Widget               (UIWidget)
+import qualified UI.Widget               as Widget
 
 newtype Toggle = Toggle JSVal deriving (PToJSVal, PFromJSVal)
 
@@ -30,7 +30,8 @@ create oid model = do
     toggle      <- create' (fromWidgetId oid) (model ^. Model.size . x) (model ^. Model.size . y)
     setLabel       model toggle
     setValue       model toggle
-    UI.setWidgetPosition (model ^. widgetPosition) toggle
+    -- TODO[react]: Does not make sense anymore
+    -- UI.setWidgetPosition (model ^. widgetPosition) toggle
     return toggle
 
 setLabel :: Model.Toggle -> Toggle -> IO ()
