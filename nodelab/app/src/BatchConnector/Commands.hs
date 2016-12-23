@@ -31,6 +31,7 @@ import qualified Empire.API.Graph.SetCode              as SetCode
 import qualified Empire.API.Graph.SetDefaultValue      as SetDefaultValue
 import qualified Empire.API.Graph.SetInputNodeType     as SetInputNodeType
 import qualified Empire.API.Graph.Undo                 as Undo
+import qualified Empire.API.Graph.Redo                 as Redo
 import qualified Empire.API.Graph.UpdateNodeExpression as UpdateNodeExpression
 import qualified Empire.API.Graph.UpdateNodeMeta       as UpdateNodeMeta
 import qualified Empire.API.Library.CreateLibrary      as CreateLibrary
@@ -121,4 +122,4 @@ requestUndo :: UUID -> IO ()
 requestUndo uuid = sendRequest uuid $ Undo.Request Undo.UndoRequest
 
 requestRedo :: UUID -> IO ()
-requestRedo uuid = sendRequest uuid $ Undo.Request Undo.RedoRequest
+requestRedo uuid = sendRequest uuid $ Redo.Request Redo.RedoRequest

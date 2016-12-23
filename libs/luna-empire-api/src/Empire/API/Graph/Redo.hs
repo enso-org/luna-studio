@@ -1,4 +1,4 @@
-module Empire.API.Graph.Undo where
+module Empire.API.Graph.Redo where
 
 import Prologue
 import           Data.Binary                   (Binary)
@@ -9,15 +9,15 @@ import qualified Empire.API.Topic              as T
 import qualified Empire.API.Response           as Response
 import qualified Empire.API.Request            as R
 
-data UndoRequest  = UndoRequest deriving (Generic, Show, Eq)
+data RedoRequest = RedoRequest deriving (Generic, Show, Eq)
 
-data Request = Request {_request  :: UndoRequest
+data Request = Request {_request  :: RedoRequest
                        } deriving (Generic, Show, Eq)
 
-makeLenses ''UndoRequest
+makeLenses ''RedoRequest
 makeLenses ''Request
 
-instance Binary UndoRequest
+instance Binary RedoRequest
 instance Binary Request
 
 type Response = Response.Response Request () ()
