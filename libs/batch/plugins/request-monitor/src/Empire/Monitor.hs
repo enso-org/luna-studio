@@ -39,8 +39,8 @@ import qualified ZMQ.Bus.Trans                    as Bus
 
 import           Data.Time.Clock.POSIX
 
-defaultTopic :: String
-defaultTopic = "empire."
+defaultTopics :: [String]
+defaultTopics = ["empire.", "undo."]
 
 logger :: Logger.Logger
 logger = Logger.getLogger $(Logger.moduleName)
@@ -52,7 +52,7 @@ run endPoints projectRoot timeout script = do
     logger Logger.info $ "Working directory: " <> dir
     Bus.runBus endPoints $ do
         let formatted = True
-            topics = [defaultTopic]
+            topics = defaultTopics
         logger Logger.info $ "Subscribing to topics: " <> show topics
         logger Logger.info $ (Utils.display formatted) endPoints
         mapM_ Bus.subscribe topics

@@ -62,7 +62,7 @@ sendToBus msg = void $ lift $ BusT $ Bus.send Flag.Enable $ Message.Message (Top
 
 save :: BusEndPoints -> GraphLocation -> IO (Either Bus.Error ProjectDump)
 save endPoints graphLocation = Bus.runBus endPoints $ do
-    let topics = ["empire."]
+    let topics = ["empire.", "undo."]
     logger Logger.info $ "Subscribing to topics: " <> show topics
     logger Logger.info $ (Utils.display True) endPoints
     mapM_ Bus.subscribe topics
@@ -79,7 +79,7 @@ runSave graphLocation = do
 
 importAndSave :: BusEndPoints -> Text -> IO (Either Bus.Error ProjectDump)
 importAndSave endPoints projectData = Bus.runBus endPoints $ do
-    let topics = ["empire."]
+    let topics = ["empire.", "undo."]
     logger Logger.info $ "Subscribing to topics: " <> show topics
     logger Logger.info $ (Utils.display True) endPoints
     mapM_ Bus.subscribe topics
