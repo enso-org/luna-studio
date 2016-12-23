@@ -117,3 +117,9 @@ importProject = withUUID . BatchCmd.importProject
 
 dumpGraphViz :: Command State ()
 dumpGraphViz = withWorkspace BatchCmd.dumpGraphViz
+
+requestRedo :: Command State ()
+requestRedo = withUUID BatchCmd.requestRedo
+
+requestUndo :: Command State ()
+requestUndo = withUUID BatchCmd.requestUndo

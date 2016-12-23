@@ -34,6 +34,7 @@ import qualified Reactive.Plugins.Core.Action.Navigation             as Navigati
 import qualified Reactive.Plugins.Core.Action.NodeSearcher           as NodeSearcher
 import qualified Reactive.Plugins.Core.Action.Sandbox                as Sandbox
 import qualified Reactive.Plugins.Core.Action.Tutorial               as Tutorial
+import qualified Reactive.Plugins.Core.Action.Undo                   as Undo
 import qualified Reactive.Plugins.Core.Action.Widget                 as Widget
 
 import           Reactive.Commands.Command                           (Command, execCommand)
@@ -77,6 +78,7 @@ actions =  [ Debug.toActionEv
            , Sandbox.toAction
            , Clipboard.toAction
            , Debug.toAction
+           , Undo.toAction
            ]
 
 runCommands :: [Event -> Maybe (Command State ())] -> Event -> Command State ()
