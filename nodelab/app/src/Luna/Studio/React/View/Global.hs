@@ -104,7 +104,7 @@ connectionDst src dst num numOfPorts _    =
         ports  = numOfPorts
         dstX   = portRadius * (- cos t) + x2
         dstY   = portRadius * (- sin t) + y2
-    in  Vector2 dstX dstY -- FIXME: implement port limits
+    in  Position (Vector2 dstX dstY)
 
 
 countInput :: Port -> Int
