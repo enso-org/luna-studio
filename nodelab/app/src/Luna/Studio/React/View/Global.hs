@@ -78,8 +78,8 @@ connectionSrc src dst _ _ True =
         x2     = dst ^. x
         y2     = dst ^. y
         t      = nodeToNodeAngle x1 y1 x2 y2
-        srcX   = portRadius/2 * cos t + x1                                      --FIXME: find why portRadius is doubled?
-        srcY   = portRadius/2 * sin t + y1
+        srcX   = portRadius * cos t + x1
+        srcY   = portRadius * sin t + y1
     in  Position (Vector2 srcX srcY)
 connectionSrc src dst num numOfPorts _    =
     let x1     = src ^. x
@@ -89,8 +89,8 @@ connectionSrc src dst num numOfPorts _    =
         t      = nodeToNodeAngle x1 y1 x2 y2
         number = num
         ports  = numOfPorts
-        srcX   = portRadius/2 * cos t + x1
-        srcY   = portRadius/2 * sin t + y1
+        srcX   = portRadius * cos t + x1
+        srcY   = portRadius * sin t + y1
         srcX'  = if (x1 > x2) then 10.0 else 11.0
     in  Position (Vector2 srcX srcY)                                            -- FIXME: implement port limits
 
