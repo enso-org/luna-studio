@@ -57,7 +57,19 @@ whileConnecting run = do
     withJust mayCurrentConnectionRef $ \currentConnectionRef -> run currentConnectionRef
 
 handleMove :: Position -> Ref CurrentConnection -> Command State ()
-handleMove mousePos connRef = flip Store.modifyM_ connRef $ ConnectionModel.currentTo .= mousePos
+handleMove mousePos connRef = do
+    -- TODO[react]: Find out way to keep information about ports type (if port
+    --              is OutPort or InPort don't convert to PortId which drop info
+    --              about In/Out type)
+    srcPortRef <- view ConnectionModel.srcPortRef <$> Ref.get connRef
+    let srcNodeId = srcPortRef ^. PortRef.nodeId
+        srcPortId = srcPortRef ^. PortRef.portId
+    maySrcPos <- getCurrentConnectionSrcPosition srcNodeId srcPortId mousePos
+    case maySrcPos of
+        Just pos -> flip Store.modifyM_ connRef $ do
+            ConnectionModel.currentTo .= mousePos
+            ConnectionModel.currentFrom .= pos
+        Nothing  -> stopDrag' connRef
 
 stopDrag' :: Ref CurrentConnection -> Command State ()
 stopDrag' _ = Global.withNodeEditor $ Store.modifyM_ $ NodeEditor.currentConnection .= Nothing
