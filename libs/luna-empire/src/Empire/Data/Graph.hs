@@ -27,9 +27,8 @@ import           Empire.Data.AST                   (NodeRef)
 import           Control.Monad.State (MonadState(..), StateT, evalStateT, lift)
 import           Empire.Data.Layers  (attachEmpireLayers, registerEmpireLayers)
 
-import           Luna.IR            (AnyExpr, AnyExprLink, IR, IRBuilder,
-                                     evalIRBuilder', evalPassManager', snapshot,
-                                     runRegs)
+import           Luna.IR            (IR, IRBuilder, evalIRBuilder', evalPassManager',
+                                     snapshot, runRegs)
 import qualified Luna.Pass.Manager  as Pass (State)
 import qualified Luna.Pass.Manager  as PassManager (PassManager, get)
 

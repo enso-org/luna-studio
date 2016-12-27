@@ -21,12 +21,10 @@ import           Empire.API.Data.Node              (NodeId)
 import           Empire.API.Data.NodeMeta          (NodeMeta)
 import           Empire.API.Data.TypeRep           (TypeRep)
 import           Empire.Data.AST                   (NodeRef, NotLambdaException(..), NotUnifyException(..))
-import           Empire.Data.Graph                 (AST)
 import           Empire.Data.Layers                (Meta, NodeMarker(..), TCData, TCError(..),
                                                     TypeLayer, InputsLayer, tcErrors)
-import           Empire.Empire
 
-import           Empire.ASTOp                      (ASTOp, runASTOp, lams)
+import           Empire.ASTOp                      (ASTOp, lams)
 import qualified Empire.ASTOps.Builder             as ASTBuilder
 import qualified Empire.ASTOps.Parse               as Parser
 import qualified Empire.ASTOps.Print               as Printer
