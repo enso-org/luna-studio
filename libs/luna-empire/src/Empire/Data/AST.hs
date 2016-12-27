@@ -34,3 +34,24 @@ astExceptionFromException :: Exception e => SomeException -> Maybe e
 astExceptionFromException x = do
     SomeASTException a <- fromException x
     cast a
+
+data NotUnifyException = NotUnifyException NodeRef
+    deriving (Show)
+
+instance Exception NotUnifyException where
+    toException = astExceptionToException
+    fromException = astExceptionFromException
+
+data NotLambdaException = NotLambdaException NodeRef
+    deriving (Show)
+
+instance Exception NotLambdaException where
+    toException = astExceptionToException
+    fromException = astExceptionFromException
+
+data NotAppException = NotAppException NodeRef
+    deriving (Show)
+
+instance Exception NotAppException where
+    toException = astExceptionToException
+    fromException = astExceptionFromException

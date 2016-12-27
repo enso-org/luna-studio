@@ -13,7 +13,9 @@ import           Empire.Prelude
 import           Empire.API.Data.Node               (NodeId)
 import           Empire.ASTOp                       (ASTOp)
 import           Empire.ASTOps.Remove               (removeNode)
-import           Empire.Data.AST                    (EdgeRef, NodeRef)
+import           Empire.Data.AST                    (EdgeRef, NodeRef, NotAppException(..),
+                                                     NotUnifyException(..), astExceptionFromException,
+                                                     astExceptionToException)
 import           Empire.Data.Layers                 (NodeMarker(..), Marker)
 
 import Luna.IR.Expr.Term (Term(Sym_String))
@@ -64,8 +66,6 @@ getName node = do
     match str $ \case
         IR.String s -> return s
 
-data NotAppException = NotAppException deriving (Show, Exception)
-
 removeArg :: ASTOp m => NodeRef -> Int -> m NodeRef
 removeArg expr i = match expr $ \case
     App a (Arg.Arg _ c) -> do
@@ -77,7 +77,7 @@ removeArg expr i = match expr $ \case
             d <- IR.source c
             f <- removeArg nextApp (i - 1)
             IR.generalize <$> IR.app f (arg d)
-    _       -> throwM NotAppException
+    _       -> throwM $ NotAppException expr
 
 destructApp :: ASTOp m => NodeRef -> m (NodeRef, [NodeRef])
 destructApp app' = match app' $ \case
@@ -85,7 +85,7 @@ destructApp app' = match app' $ \case
         unpackedArgs <- dumpArguments app'
         target <- IR.source a
         return (target, unpackedArgs)
-    _ -> throwM NotAppException
+    _ -> throwM $ NotAppException app'
 
 apps :: ASTOp m => IR.Expr f -> [NodeRef] -> m NodeRef
 apps fun exprs = IR.unsafeRelayout <$> foldM f (IR.unsafeRelayout fun) (IR.unsafeRelayout <$> exprs)
@@ -194,25 +194,35 @@ applyAccessors' apped node = match node $ \case
         apps frep argReps
     _ -> return node
 
-data SelfPortNotExistantException = SelfPortNotExistantException deriving (Show, Exception)
+data SelfPortNotExistantException = SelfPortNotExistantException NodeRef
+    deriving (Show)
+
+instance Exception SelfPortNotExistantException where
+    toException = astExceptionToException
+    fromException = astExceptionFromException
 
 makeAccessor :: ASTOp m => NodeRef -> NodeRef -> m NodeRef
 makeAccessor target naming = do
     (_, names) <- dumpAccessors naming
-    when (null names) $ throwM SelfPortNotExistantException
+    when (null names) $ throwM $ SelfPortNotExistantException naming
     args <- dumpArguments naming
     acc <- buildAccessors target names
     if null args then return acc else reapply acc args
 
-data SelfPortNotConnectedException = SelfPortNotConnectedException deriving (Show, Exception)
+data SelfPortNotConnectedException = SelfPortNotConnectedException NodeRef
+    deriving (Show)
+
+instance Exception SelfPortNotConnectedException where
+    toException = astExceptionToException
+    fromException = astExceptionFromException
 
 unAcc :: ASTOp m => NodeRef -> m NodeRef
 unAcc ref = do
     (target, names) <- dumpAccessors ref
     args            <- dumpArguments ref
-    when (isNothing target) $ throwM SelfPortNotConnectedException
+    when (isNothing target) $ throwM $ SelfPortNotConnectedException ref
     case names of
-        []     -> throwM SelfPortNotConnectedException
+        []     -> throwM $ SelfPortNotConnectedException ref
         n : ns -> do
             v   <- IR.generalize <$> IR.strVar n
             acc <- buildAccessors v ns
@@ -224,17 +234,15 @@ makeNodeRep marker name node = do
     IR.writeLayer @Marker (Just marker) nameVar
     IR.generalize <$> IR.unify nameVar node
 
-data NotUnifyException = NotUnifyException deriving (Show, Exception)
-
 rightMatchOperand :: ASTOp m => NodeRef -> m EdgeRef
 rightMatchOperand node = match node $ \case
     Unify _ b -> pure b
-    _         -> throwM NotUnifyException
+    _         -> throwM $ NotUnifyException node
 
 leftMatchOperand :: ASTOp m => NodeRef -> m EdgeRef
 leftMatchOperand node = match node $ \case
     Unify a _ -> pure a
-    _         -> throwM NotUnifyException
+    _         -> throwM $ NotUnifyException node
 
 renameVar :: ASTOp m => NodeRef -> String -> m ()
 renameVar vref name = match vref $ \case
