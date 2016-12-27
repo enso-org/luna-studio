@@ -4,7 +4,8 @@ module Luna.Studio.React.View.Global where
 import qualified Data.Map.Lazy                as Map
 import           Empire.API.Data.Node         (NodeId)
 import           Empire.API.Data.Port         (InPort (..), OutPort (..), PortId (..))
-import           Empire.API.Data.PortRef      (AnyPortRef, toAnyPortRef)
+import           Empire.API.Data.PortRef      (AnyPortRef (InPortRef', OutPortRef'), InPortRef, OutPortRef, toAnyPortRef)
+import qualified Empire.API.Data.PortRef      as PortRef
 import           Luna.Studio.Commands.Command (Command)
 import           Luna.Studio.Commands.Graph   (getNode, getPort)
 import           Luna.Studio.Data.Angle       (Angle)
@@ -151,12 +152,13 @@ isPortSelf port = case port ^. Port.portId of
     _             -> False
 
 
-getConnectionPosition :: NodeId -> PortId -> NodeId -> PortId -> Command State (Maybe (Position, Position))
-getConnectionPosition srcNodeId srcPortId dstNodeId dstPortId = do
-    maySrcNode <- getNode srcNodeId
-    mayDstNode <- getNode dstNodeId
-    maySrcPort <- getPort $ toAnyPortRef srcNodeId srcPortId
-    mayDstPort <- getPort $ toAnyPortRef dstNodeId dstPortId
+getConnectionPosition :: OutPortRef -> InPortRef -> Command State (Maybe (Position, Position))
+getConnectionPosition srcPortRef dstPortRef = do
+    maySrcNode <- getNode $ srcPortRef ^. PortRef.srcNodeId
+    mayDstNode <- getNode $ dstPortRef ^. PortRef.dstNodeId
+    -- TODO[react]: Function getPort should work for InPortRef and OutPortRef as well
+    maySrcPort <- getPort $ OutPortRef' srcPortRef
+    mayDstPort <- getPort $ InPortRef'  dstPortRef
 
     case (maySrcNode, maySrcPort, mayDstNode, mayDstPort) of
         (Just srcNode, Just srcPort, Just dstNode, Just dstPort) -> do
@@ -169,10 +171,10 @@ getConnectionPosition srcNodeId srcPortId dstNodeId dstPortId = do
             return $ Just (srcConnPos, dstConnPos)
         _ -> return Nothing
 
-getCurrentConnectionSrcPosition :: NodeId -> PortId -> Position -> Command State (Maybe Position)
-getCurrentConnectionSrcPosition srcNodeId srcPortId dstPos = do
-    maySrcNode <- getNode srcNodeId
-    maySrcPort <- getPort $ toAnyPortRef srcNodeId srcPortId
+getCurrentConnectionSrcPosition :: AnyPortRef -> Position -> Command State (Maybe Position)
+getCurrentConnectionSrcPosition srcPortRef dstPos = do
+    maySrcNode <- getNode $ srcPortRef ^. PortRef.nodeId
+    maySrcPort <- getPort srcPortRef
 
     case (maySrcNode, maySrcPort) of
         (Just srcNode, Just srcPort) -> do
@@ -182,5 +184,9 @@ getCurrentConnectionSrcPosition srcNodeId srcPortId dstPos = do
             return $ Just srcConnPos
         _ -> return Nothing
 
-getConnectionColor :: AnyPortRef -> Command State (Maybe Color)
-getConnectionColor portRef = (fmap $ view Port.color) <$> (getPort portRef)
+getConnectionColor :: OutPortRef -> Command State (Maybe Color)
+-- TODO[react]: Function getPort should work for InPortRef and OutPortRef as well
+getConnectionColor portRef = (fmap $ view Port.color) <$> (getPort $ OutPortRef' portRef)
+
+getCurrentConnectionColor :: AnyPortRef -> Command State (Maybe Color)
+getCurrentConnectionColor portRef = (fmap $ view Port.color) <$> (getPort portRef)

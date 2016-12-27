@@ -46,13 +46,9 @@ localConnectNodes src dst = do
     connectionId <- zoom Global.graph $ Graph.addConnection src dst
     let newConnection = not $ isJust prevConn
     when newConnection $ do
-        let srcNodeId = src ^. PortRef.srcNodeId
-            srcPortId = OutPortId (src ^. PortRef.srcPortId)
-            dstNodeId = dst ^. PortRef.dstNodeId
-            dstPortId = InPortId (dst ^. PortRef.dstPortId)
-        mayPos <- getConnectionPosition srcNodeId srcPortId dstNodeId dstPortId
+        mayPos <- getConnectionPosition src dst
         withJust mayPos $ \(srcPos, dstPos) -> do
-            mayColor <- getConnectionColor $ toAnyPortRef srcNodeId srcPortId
+            mayColor <- getConnectionColor src
             withJust mayColor $ \color -> Global.withNodeEditor $ Store.modifyM_ $ do
                 let connection = ConnectionModel.Connection connectionId True srcPos dstPos (dst ^. withArrow) color def
                 connectionRef <- lift $ Store.create connection
@@ -74,13 +70,11 @@ updateConnection :: Connection -> Command Global.State ()
 updateConnection connection = do
     mayConnectionRef <- Global.getConnection $ connection ^. Connection.dst
     withJust mayConnectionRef $ \connectionRef -> do
-        let srcNodeId = connection ^. Connection.src . PortRef.srcNodeId
-            srcPortId = OutPortId (connection ^. Connection.src . PortRef.srcPortId)
-            dstNodeId = connection ^. Connection.dst . PortRef.dstNodeId
-            dstPortId = InPortId (connection ^. Connection.dst . PortRef.dstPortId)
-        mayPos <- getConnectionPosition srcNodeId srcPortId dstNodeId dstPortId
+        let src = connection ^. Connection.src
+            dst = connection ^. Connection.dst
+        mayPos <- getConnectionPosition src dst
         withJust mayPos $ \(from', to') -> do
-            mayColor <- getConnectionColor $ toAnyPortRef srcNodeId srcPortId
+            mayColor <- getConnectionColor src
             withJust mayColor $ \color -> flip Store.modifyM_ connectionRef $ do
                 ConnectionModel.visible   .= True
                 ConnectionModel.from      .= from'

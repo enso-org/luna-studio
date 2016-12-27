@@ -20,7 +20,6 @@ data NodeEditor = NodeEditor { _pan               :: Vector2 Double
                              , _connections       :: HashMap InPortRef (Ref Connection)
                              , _currentConnection :: Maybe (Ref CurrentConnection)
                              , _selectionBox      :: Ref SelectionBox
-
                              }
 
 makeLenses ''NodeEditor

@@ -3,28 +3,25 @@ module Luna.Studio.Action.Connect
     ) where
 --TODO[react]: transform mousePos to correct position
 
-import           Empire.API.Data.Node               (NodeId)
-import           Empire.API.Data.Port               (PortId)
-import           Empire.API.Data.PortRef            (toAnyPortRef)
-import           Empire.API.Data.PortRef            (AnyPortRef (..), InPortRef (..), OutPortRef (..))
+import           Empire.API.Data.Connection         (ConnectionId)
+import           Empire.API.Data.PortRef            (AnyPortRef (InPortRef', OutPortRef'), InPortRef (InPortRef), OutPortRef (OutPortRef))
 import qualified Empire.API.Data.PortRef            as PortRef
 import           Event.Event                        (Event (UI))
-import           Event.UI                           (UIEvent (AppEvent, NodeEvent))
+import           Event.UI                           (UIEvent (AppEvent, ConnectionEvent))
 import qualified JS.GoogleAnalytics                 as GA
 import           Luna.Studio.Commands.Command       (Command)
 import           Luna.Studio.Commands.Graph.Connect (batchConnectNodes)
-import           Luna.Studio.Data.Color             (Color (Color))
 import           Luna.Studio.Data.Vector            (Position)
 import           Luna.Studio.Event.Mouse            (mousePosition)
 import           Luna.Studio.Prelude
 import qualified Luna.Studio.React.Event.App        as App
-import qualified Luna.Studio.React.Event.Node       as Node
+import qualified Luna.Studio.React.Event.Connection as Connection
 import           Luna.Studio.React.Model.Connection (CurrentConnection)
 import qualified Luna.Studio.React.Model.NodeEditor as NodeEditor
 import qualified Luna.Studio.React.Store            as Store
 import           Luna.Studio.React.Store.Ref        (Ref)
 import qualified Luna.Studio.React.Store.Ref        as Ref
-import           Luna.Studio.React.View.Global      (getConnectionColor, getCurrentConnectionSrcPosition)
+import           Luna.Studio.React.View.Global      (getCurrentConnectionColor, getCurrentConnectionSrcPosition)
 import           Luna.Studio.State.Global           (State)
 import qualified Luna.Studio.State.Global           as Global
 import qualified Object.Widget.Connection           as ConnectionModel
@@ -32,21 +29,22 @@ import qualified Object.Widget.Connection           as ConnectionModel
 
 
 toAction :: Event -> Maybe (Command State ())
-toAction (UI (NodeEvent (Node.StartConnection evt nodeId portId))) = Just $ startDragFromPort pos nodeId portId
+toAction (UI (ConnectionEvent (Connection.StartConnection evt portRef))) = Just $ startDragFromPort pos portRef
     where pos = mousePosition evt
-toAction (UI (AppEvent  (App.MouseMove evt)))                      = Just $ whileConnecting $ handleMove pos
+toAction (UI (AppEvent  (App.MouseMove evt)))                            = Just $ whileConnecting $ handleMove pos
     where pos = mousePosition evt
-toAction (UI (AppEvent (App.MouseUp _)))                           = Just $ whileConnecting $ stopDrag'
-toAction (UI (NodeEvent (Node.EndConnection _ nodeId portId)))     = Just $ whileConnecting $ stopDrag nodeId portId
-toAction _                                                         = Nothing
+toAction (UI (AppEvent (App.MouseUp _)))                                 = Just $ whileConnecting $ stopDrag'
+toAction (UI (ConnectionEvent (Connection.EndConnection _ portRef)))     = Just $ whileConnecting $ stopDrag portRef
+toAction (UI (ConnectionEvent (Connection.ModifyConnection evt connId))) = Just $ modifyConnection pos connId
+    where pos = mousePosition evt
+toAction _                                                               = Nothing
 
 
-startDragFromPort :: Position -> NodeId -> PortId -> Command State ()
-startDragFromPort mousePos nodeId portId = do
-    maySrcPos <- getCurrentConnectionSrcPosition nodeId portId mousePos
-    let portRef = toAnyPortRef nodeId portId
+startDragFromPort :: Position -> AnyPortRef -> Command State ()
+startDragFromPort mousePos portRef = do
+    maySrcPos <- getCurrentConnectionSrcPosition portRef mousePos
     withJust maySrcPos $ \srcPos -> do
-        mayColor  <- getConnectionColor portRef
+        mayColor  <- getCurrentConnectionColor portRef
         withJust mayColor $ \color -> do
             let connection = ConnectionModel.CurrentConnection portRef True srcPos mousePos False color
             Global.withNodeEditor $ Store.modifyM_ $ do
@@ -60,13 +58,8 @@ whileConnecting run = do
 
 handleMove :: Position -> Ref CurrentConnection -> Command State ()
 handleMove mousePos connRef = do
-    -- TODO[react]: Find out way to keep information about ports type (if port
-    --              is OutPort or InPort don't convert to PortId which drop info
-    --              about In/Out type)
     srcPortRef <- view ConnectionModel.srcPortRef <$> Ref.get connRef
-    let srcNodeId = srcPortRef ^. PortRef.nodeId
-        srcPortId = srcPortRef ^. PortRef.portId
-    maySrcPos <- getCurrentConnectionSrcPosition srcNodeId srcPortId mousePos
+    maySrcPos <- getCurrentConnectionSrcPosition srcPortRef mousePos
     case maySrcPos of
         Just pos -> flip Store.modifyM_ connRef $ do
             ConnectionModel.currentTo .= mousePos
@@ -85,12 +78,14 @@ toValidConnection src' dst' = (normalize' src' dst') >>= toOtherNode where
         | a ^. PortRef.srcNodeId /= b ^. PortRef.dstNodeId = Just (a, b)
         | otherwise                                        = Nothing
 
-stopDrag :: NodeId -> PortId -> Ref CurrentConnection -> Command State ()
-stopDrag nodeId portId connRef = do
+stopDrag :: AnyPortRef -> Ref CurrentConnection -> Command State ()
+stopDrag dstPortRef connRef = do
     Global.withNodeEditor $ Store.modifyM_ $ NodeEditor.currentConnection .= Nothing
     srcPortRef <- view ConnectionModel.srcPortRef <$> Ref.get connRef
-    let dstPortRef = toAnyPortRef nodeId portId
-        validConn  = toValidConnection srcPortRef dstPortRef
-    withJust validConn $ \(src, dst) -> do
+    withJust (toValidConnection srcPortRef dstPortRef) $ \(src, dst) -> do
         batchConnectNodes src dst
         GA.sendEvent $ GA.Connect GA.Manual
+
+--TODO[react]: Implement this function
+modifyConnection :: Position -> ConnectionId -> Command State ()
+modifyConnection mousePos connId = return ()
