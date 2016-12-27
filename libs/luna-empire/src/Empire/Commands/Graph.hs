@@ -106,7 +106,7 @@ addNodeNoTC loc uuid expr meta = do
     Publisher.notifyNodeUpdate loc node
     return node
 
-addPersistentNode :: (ASTOp m, MonadIO m) => Node -> m NodeId
+addPersistentNode :: ASTOp m => Node -> m NodeId
 addPersistentNode n = case n ^. Node.nodeType of
     Node.ExpressionNode expr -> do
         let newNodeId = n ^. Node.nodeId
@@ -145,7 +145,7 @@ removeNodes loc nodeIds = do
         removeNodes (loc `descendInto` nodeId) children
     withTC loc False $ runASTOp $ forM_ nodeIds removeNodeNoTC
 
-removeNodeNoTC :: (ASTOp m, MonadIO m) => NodeId -> m ()
+removeNodeNoTC :: ASTOp m => NodeId -> m ()
 removeNodeNoTC nodeId = do
     astRef <- GraphUtils.getASTPointer nodeId
     obsoleteEdges <- getOutEdges nodeId
@@ -187,7 +187,7 @@ connectCondTC doTC loc outPort inPort = withGraph loc $ do
 connect :: GraphLocation -> OutPortRef -> InPortRef -> Empire ()
 connect loc outPort inPort = withTC loc False $ connectNoTC loc outPort inPort
 
-connectPersistent :: (ASTOp m, MonadIO m) => OutPortRef -> InPortRef -> m ()
+connectPersistent :: ASTOp m => OutPortRef -> InPortRef -> m ()
 connectPersistent (OutPortRef srcNodeId srcPort) (InPortRef dstNodeId dstPort) = do
     let inputPos = case srcPort of
             All            -> 0   -- FIXME: do not equalise All with Projection 0
@@ -288,14 +288,14 @@ withTC loc flush cmd = withGraph loc $ do
 withGraph :: GraphLocation -> Command Graph a -> Empire a
 withGraph (GraphLocation pid lid breadcrumb) = withBreadcrumb pid lid breadcrumb
 
-getOutEdges :: (ASTOp m, MonadIO m) => NodeId -> m [InPortRef]
+getOutEdges :: ASTOp m => NodeId -> m [InPortRef]
 getOutEdges nodeId = do
     graphRep <- GraphBuilder.buildGraph
     let edges    = graphRep ^. APIGraph.connections
         filtered = filter (\(opr, _) -> opr ^. PortRef.srcNodeId == nodeId) edges
     return $ view _2 <$> filtered
 
-disconnectPort :: (ASTOp m, MonadIO m) => InPortRef -> m ()
+disconnectPort :: ASTOp m => InPortRef -> m ()
 disconnectPort (InPortRef dstNodeId dstPort) =
     case dstPort of
         Self    -> unAcc dstNodeId
@@ -307,7 +307,7 @@ unAcc nodeId = do
     newNodeRef <- AST.removeAccessor dstAst
     GraphUtils.rewireNode nodeId newNodeRef
 
-unApp :: (ASTOp m, MonadIO m) => NodeId -> Int -> m ()
+unApp :: ASTOp m => NodeId -> Int -> m ()
 unApp nodeId pos = do
     edges <- GraphBuilder.getEdgePortMapping
     let connectionToOutputEdge = case edges of
@@ -323,7 +323,7 @@ unApp nodeId pos = do
         newNodeRef <- AST.unapplyArgument astNode pos
         GraphUtils.rewireNode nodeId newNodeRef
 
-makeAcc :: (ASTOp m, MonadIO m) => NodeId -> NodeId -> Int -> m ()
+makeAcc :: ASTOp m => NodeId -> NodeId -> Int -> m ()
 makeAcc src dst inputPos = do
     edges <- GraphBuilder.getEdgePortMapping
     let connectToInputEdge = case edges of
@@ -343,7 +343,7 @@ makeAcc src dst inputPos = do
         GraphUtils.rewireNode dst newNodeRef
 
 
-makeApp :: (ASTOp m, MonadIO m) => NodeId -> NodeId -> Int -> Int -> m ()
+makeApp :: ASTOp m => NodeId -> NodeId -> Int -> Int -> m ()
 makeApp src dst pos inputPos = do
     edges <- GraphBuilder.getEdgePortMapping
     let (connectToInputEdge, connectToOutputEdge) = case edges of

@@ -38,6 +38,7 @@ import           System.Log (Logger, DropLogger, dropLogs)
 
 
 type ASTOp m = (MonadThrow m, IRMonad m,
+                MonadIO m,
                 MonadState Graph m,
                 Emitters m EmpireEmitters,
                 Accessibles m EmpireAccessibles)

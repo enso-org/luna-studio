@@ -61,14 +61,14 @@ instance Exception CannotEnterNodeException where
     toException = astExceptionToException
     fromException = astExceptionFromException
 
-buildGraph :: (ASTOp m, MonadIO m) => m API.Graph
+buildGraph :: ASTOp m => m API.Graph
 buildGraph = do
     parent <- use Graph.insideNode
     canEnter <- forM parent canEnterNode
     when (not $ fromMaybe True canEnter) $ throwM $ CannotEnterNodeException (fromJust parent)
     API.Graph <$> buildNodes <*> buildConnections
 
-buildNodes :: (ASTOp m, MonadIO m) => m [API.Node]
+buildNodes :: ASTOp m => m [API.Node]
 buildNodes = do
     allNodeIds <- uses Graph.breadcrumbHierarchy topLevelIDs
     edges <- buildEdgeNodes
@@ -79,7 +79,7 @@ buildNodes = do
 
 type EdgeNodes = (API.Node, API.Node)
 
-buildEdgeNodes :: (ASTOp m, MonadIO m) => m (Maybe EdgeNodes)
+buildEdgeNodes :: ASTOp m => m (Maybe EdgeNodes)
 buildEdgeNodes = getEdgePortMapping >>= \p -> case p of
     Just (inputPort, outputPort) -> do
         inputEdge  <- buildInputEdge inputPort
@@ -87,7 +87,7 @@ buildEdgeNodes = getEdgePortMapping >>= \p -> case p of
         return $ Just (inputEdge, outputEdge)
     _ -> return Nothing
 
-getOrCreatePortMapping :: (ASTOp m, MonadIO m) => NodeId -> m (NodeId, NodeId)
+getOrCreatePortMapping :: ASTOp m => NodeId -> m (NodeId, NodeId)
 getOrCreatePortMapping nid = do
     existingMapping <- uses Graph.breadcrumbPortMapping $ Map.lookup nid
     case existingMapping of
@@ -252,7 +252,7 @@ buildPorts ref = do
     outState <- getPortState ref
     return $ selfPort ++ argPorts ++ [Port (OutPortId All) "Output" tpRep outState]
 
-buildConnections :: (ASTOp m, MonadIO m) => m [(OutPortRef, InPortRef)]
+buildConnections :: ASTOp m => m [(OutPortRef, InPortRef)]
 buildConnections = do
     allNodes <- uses Graph.breadcrumbHierarchy topLevelIDs
     edges <- getEdgePortMapping
