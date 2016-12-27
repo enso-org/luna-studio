@@ -248,8 +248,7 @@ renameVar :: ASTOp m => NodeRef -> String -> m ()
 renameVar vref name = match vref $ \case
     Var n -> do
         (var :: IR.Expr (IR.E IR.String)) <- IR.unsafeGeneralize <$> IR.source n
-        let setStringLiteral s (Sym_String _) = Sym_String s
-        IR.modifyExprTerm var $ setStringLiteral name
+        IR.modifyExprTerm var $ IR.lit .~ name
 
 isGraphNode :: ASTOp m => NodeRef -> m Bool
 isGraphNode = fmap isJust . getNodeId
