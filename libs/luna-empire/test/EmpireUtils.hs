@@ -107,7 +107,7 @@ mkUUID = nextRandom
 astNull :: AST -> Bool
 astNull (ASTState (IR m) _) =
     let Just exprMap = m ^. at (typeRep' @EXPR)
-        LayerStore _ freeExpr _ _ = exprMap
+        LayerStore _ freeExpr _ = exprMap
         Just linkMap = m ^. at (typeRep' @(LINK' EXPR))
-        LayerStore _ freeLink _ _ = linkMap
+        LayerStore _ freeLink _ = linkMap
     in  0 `elem` freeExpr && 0 `elem` freeLink
