@@ -28,14 +28,14 @@ import qualified Empire.Commands.Publisher         as Publisher
 
 
 getNodeValueReprs :: NodeId -> Command Graph (Either String AST.ValueRep)
-getNodeValueReprs nid = do
-    nodeRef <- runASTOp $ GraphUtils.getASTPointer nid
-    metaMay <- runASTOp $ AST.readMeta nodeRef
+getNodeValueReprs nid = runASTOp $ do
+    nodeRef <- GraphUtils.getASTPointer nid
+    metaMay <- AST.readMeta nodeRef
     case metaMay of
         Just meta -> if meta ^. NodeMeta.displayResult
             then do
-                valRef <- runASTOp $ GraphUtils.getASTVar nid
-                runASTOp $ AST.getNodeValue valRef
+                valRef <- GraphUtils.getASTVar nid
+                AST.getNodeValue valRef
             else   return $ Right $ AST.PlainVal ("", [])
         Nothing -> return $ Right $ AST.PlainVal ("", [])
 
@@ -53,13 +53,13 @@ runTC = do
     return ()
 
 runInterpreter :: Command Graph ()
-runInterpreter = do
+runInterpreter = runASTOp $ do
     _ast        <- use Graph.ast
     allNodes   <- uses Graph.breadcrumbHierarchy topLevelIDs
-    refs       <- runASTOp $ mapM GraphUtils.getASTPointer allNodes
-    metas      <- runASTOp $ mapM AST.readMeta refs
+    refs       <- mapM GraphUtils.getASTPointer allNodes
+    metas      <- mapM AST.readMeta refs
     let sorted = fmap snd $ sort $ zip metas allNodes
-    _evals      <- runASTOp $ mapM GraphUtils.getASTVar sorted
+    _evals      <- mapM GraphUtils.getASTVar sorted
     newAst     <- liftIO $ fmap snd $ $notImplemented
     Graph.ast .= newAst
     return ()
@@ -78,9 +78,9 @@ updateNodes :: GraphLocation -> Command InterpreterEnv ()
 updateNodes loc = do
     allNodeIds <- uses (graph . Graph.breadcrumbHierarchy) topLevelIDs
     forM_ allNodeIds $ \nid -> do
-        ref <- zoom graph $ runASTOp $ GraphUtils.getASTTarget nid
-
-        err <- zoom graph $ runASTOp $ AST.getError ref
+        err <- zoom graph $ runASTOp $ do
+            ref <- GraphUtils.getASTTarget nid
+            AST.getError ref
         reportError loc nid err
 
         rep <- zoom graph $ runASTOp $ GraphBuilder.buildNode nid
