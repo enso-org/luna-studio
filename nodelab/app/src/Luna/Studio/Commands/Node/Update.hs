@@ -10,28 +10,29 @@ module Luna.Studio.Commands.Node.Update
 import           Luna.Studio.Prelude
 
 import           Control.Arrow
-import           Control.Monad.State               (modify)
+import           Control.Monad.State                (modify)
 
-import qualified Data.Map.Lazy                     as Map
+import qualified Data.Map.Lazy                      as Map
 
-import qualified Luna.Studio.React.Store                       as Store
-import qualified Luna.Studio.React.Model.Node                  as Model
+import qualified Luna.Studio.React.Model.Node       as Model
+import qualified Luna.Studio.React.Store            as Store
 
-import qualified Luna.Studio.Commands.Batch           as BatchCmd
-import           Luna.Studio.Commands.Command         (Command)
-import           Luna.Studio.Commands.Node.Create     (addNode)
+import qualified Luna.Studio.Commands.Batch         as BatchCmd
+import           Luna.Studio.Commands.Command       (Command)
+import           Luna.Studio.Commands.Graph.Connect (updateConnectionsForNodes)
+import           Luna.Studio.Commands.Node.Create   (addNode)
 
-import           Luna.Studio.State.Global             (State)
-import qualified Luna.Studio.State.Global             as Global
-import qualified Luna.Studio.State.Graph              as Graph
+import           Luna.Studio.State.Global           (State)
+import qualified Luna.Studio.State.Global           as Global
+import qualified Luna.Studio.State.Graph            as Graph
 
-import           Empire.API.Data.Node              (Node, NodeId)
-import qualified Empire.API.Data.Node              as Node
+import           Empire.API.Data.Node               (Node, NodeId)
+import qualified Empire.API.Data.Node               as Node
 
-import           Empire.API.Graph.NodeResultUpdate (NodeValue)
+import           Empire.API.Graph.NodeResultUpdate  (NodeValue)
 
-import           Object.Widget.Node                (makePorts)
-import           Object.Widget.Port                (portRef)
+import           Object.Widget.Node                 (makePorts)
+import           Object.Widget.Port                 (portRef)
 
 
 updateNode :: Node -> Command State ()
@@ -53,8 +54,8 @@ updateExistingNode node = do
         Model.code  .= (node ^. Node.code)
         Model.ports .= (Map.fromList $ map (view portRef &&& id) $ makePorts node)
         -- TODO: obsluzyc to ze moga zniknac polaczenia
-    -- TODO[react]: find out if we need this
-    -- updateConnectionsForNodes [nodeId]
+        -- Comment[LJK]: Is this real issue???
+    updateConnectionsForNodes [nodeId]
 
 updateNodeValue :: NodeId -> NodeValue -> Command State ()
 updateNodeValue nid val =

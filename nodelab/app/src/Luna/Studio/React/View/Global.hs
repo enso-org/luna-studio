@@ -4,10 +4,11 @@ module Luna.Studio.React.View.Global where
 import qualified Data.Map.Lazy                as Map
 import           Empire.API.Data.Node         (NodeId)
 import           Empire.API.Data.Port         (InPort (..), OutPort (..), PortId (..))
-import           Empire.API.Data.PortRef      (toAnyPortRef)
+import           Empire.API.Data.PortRef      (AnyPortRef, toAnyPortRef)
 import           Luna.Studio.Commands.Command (Command)
 import           Luna.Studio.Commands.Graph   (getNode, getPort)
 import           Luna.Studio.Data.Angle       (Angle)
+import           Luna.Studio.Data.Color       (Color)
 import           Luna.Studio.Data.Vector
 import           Luna.Studio.Prelude
 import           Luna.Studio.State.Global     (State)
@@ -180,3 +181,6 @@ getCurrentConnectionSrcPosition srcNodeId srcPortId dstPos = do
                 srcConnPos = connectionSrc srcPos dstPos (getPortNumber srcPort) (countSameTypePorts srcPort srcPorts) (isPortSingle srcPort srcPorts)
             return $ Just srcConnPos
         _ -> return Nothing
+
+getConnectionColor :: AnyPortRef -> Command State (Maybe Color)
+getConnectionColor portRef = (fmap $ view Port.color) <$> (getPort portRef)

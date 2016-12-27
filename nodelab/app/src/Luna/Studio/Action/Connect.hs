@@ -24,7 +24,7 @@ import qualified Luna.Studio.React.Model.NodeEditor as NodeEditor
 import qualified Luna.Studio.React.Store            as Store
 import           Luna.Studio.React.Store.Ref        (Ref)
 import qualified Luna.Studio.React.Store.Ref        as Ref
-import           Luna.Studio.React.View.Global      (getCurrentConnectionSrcPosition)
+import           Luna.Studio.React.View.Global      (getConnectionColor, getCurrentConnectionSrcPosition)
 import           Luna.Studio.State.Global           (State)
 import qualified Luna.Studio.State.Global           as Global
 import qualified Object.Widget.Connection           as ConnectionModel
@@ -46,10 +46,12 @@ startDragFromPort mousePos nodeId portId = do
     maySrcPos <- getCurrentConnectionSrcPosition nodeId portId mousePos
     let portRef = toAnyPortRef nodeId portId
     withJust maySrcPos $ \srcPos -> do
-        let connection = ConnectionModel.CurrentConnection portRef True srcPos mousePos False $ Color 5 --TODO[react] get proper color
-        Global.withNodeEditor $ Store.modifyM_ $ do
-            connectionRef <- lift $ Store.create connection
-            NodeEditor.currentConnection ?= connectionRef
+        mayColor  <- getConnectionColor portRef
+        withJust mayColor $ \color -> do
+            let connection = ConnectionModel.CurrentConnection portRef True srcPos mousePos False color
+            Global.withNodeEditor $ Store.modifyM_ $ do
+                connectionRef <- lift $ Store.create connection
+                NodeEditor.currentConnection ?= connectionRef
 
 whileConnecting :: (Ref CurrentConnection -> Command State ()) -> Command State ()
 whileConnecting run = do
