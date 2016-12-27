@@ -22,7 +22,7 @@ import           Object.UITypes
 -- import           Luna.Studio.State.Camera     (Camera)
 -- import qualified Luna.Studio.State.Camera     as Camera
 import           Luna.Studio.Data.CtxDynamic
-import           Luna.Studio.Data.Vector      (Position, Size, Vector2 (Vector2))
+import           Luna.Studio.Data.Vector      (Position, Size)
 import           Luna.Studio.Prelude          hiding (children, (.=))
 
 

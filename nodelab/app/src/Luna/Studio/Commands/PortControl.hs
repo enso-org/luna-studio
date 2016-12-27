@@ -2,7 +2,8 @@
 module Luna.Studio.Commands.PortControl (
     startMoveSlider,
     moveSlider,
-    stopMoveSlider
+    stopMoveSlider,
+    setPortDefault
 ) where
 
 import qualified Empire.API.Data.DefaultValue as DefaultValue
@@ -21,6 +22,13 @@ import qualified Object.Widget.Node           as Node
 import qualified Object.Widget.Port           as Port
 
 
+
+setPortDefault :: AnyPortRef -> DefaultValue.PortDefault -> Command State ()
+setPortDefault portRef defaultValue = do
+    Global.withNode (portRef ^. PortRef.nodeId) $ mapM_ $ Store.modify_ $
+        Node.ports . ix portRef . Port.state .~ PortAPI.WithDefault defaultValue
+
+
 startMoveSlider :: AnyPortRef -> Position -> Slider.InitValue -> Command State ()
 startMoveSlider portRef initPos startVal = do
     Global.slider ?= Slider.State portRef initPos startVal
@@ -32,8 +40,7 @@ moveSlider currentPostion = do
     withJust maySlider $ \slider -> do
         let defaultValue = newDefaultValue currentPostion slider
             portRef = slider ^. Slider.portRef
-        Global.withNode (portRef ^. PortRef.nodeId) $ mapM_ $ Store.modify_ $
-            Node.ports . ix portRef . Port.state .~ PortAPI.WithDefault defaultValue
+        setPortDefault portRef defaultValue
 
 stopMoveSlider :: Position -> Command State ()
 stopMoveSlider currentPostion = do

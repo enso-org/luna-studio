@@ -15,7 +15,6 @@ import           React.Flux
 import qualified React.Flux                         as React
 
 
-
 name :: JSString
 name = "connection-editor"
 
@@ -25,21 +24,9 @@ connection connectionRef = React.defineControllerView
     name connectionRef $ \connectionStore () -> do
         let connection = connectionStore ^. dt
             src        = connection ^. Connection.from
-            srcX       = connection ^. Connection.from ^. x
-            srcY       = connection ^. Connection.from ^. y
             dst        = connection ^. Connection.to
-            dstX       = connection ^. Connection.to ^. x
-            dstY       = connection ^. Connection.to ^. y
             color      = connection ^. Connection.color
-            num        = 0
-            numOfPorts = 0
-            num'       = 0
-            numOfPorts'= 0
-            isSingle   = True
-            isSelf     = True
-            srcXY      = connectionSrc src dst num  numOfPorts  isSingle
-            dstXY      = connectionDst src dst num' numOfPorts' isSelf
-        drawConnection_ srcXY dstXY color
+        drawConnection_ src dst color
 
 connection_ :: Ref Connection -> ReactElementM ViewEventHandler ()
 connection_ connectionRef = React.view (connection connectionRef) () mempty
@@ -52,24 +39,20 @@ currentConnection connectionRef = React.defineControllerView
             src        = connection ^. Connection.currentFrom
             dst        = connection ^. Connection.currentTo
             color      = connection ^. Connection.currentColor
-            num        = 0
-            numOfPorts = 0
-            isSingle   = True
-            srcXY      = connectionSrc src dst num numOfPorts isSingle
-        drawConnection_ srcXY dst color
+        drawConnection_ src dst color
 
 currentConnection_ :: Ref CurrentConnection -> ReactElementM ViewEventHandler ()
 currentConnection_ connectionRef = React.view (currentConnection connectionRef) () mempty
 
 
 drawConnection_ :: Position -> Position -> Color -> ReactElementM ViewEventHandler ()
-drawConnection_ src dst color =
+drawConnection_ src dst color = do
     let x1 = fromString $ showSvg $ src ^. x
         y1 = fromString $ showSvg $ src ^. y
         x2 = fromString $ showSvg $ dst ^. x
         y2 = fromString $ showSvg $ dst ^. y
         width = fromString $ show connectionWidth
-    in line_
+    line_
         [ "x1"          $= x1
         , "y1"          $= y1
         , "x2"          $= x2

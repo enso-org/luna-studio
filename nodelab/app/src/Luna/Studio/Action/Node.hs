@@ -30,6 +30,9 @@ toAction (UI (NodeEvent (Node.DisplayResultChanged flag nodeId))) = Just $ Node.
 toAction (UI (NodeEvent (Node.NameEditStart    nodeId))) = Just $ Node.startEditName nodeId
 toAction (UI (NodeEvent (Node.NameKeyDown kevt nodeId))) = Just $ handleKeyNode kevt nodeId
 toAction (UI (NodeEvent (Node.NameChange   val nodeId))) = Just $ Node.editName nodeId val
+toAction (UI (NodeEvent (Node.PortEditString       portRef defaultValue))) = Just $ PortControl.setPortDefault portRef defaultValue
+toAction (UI (NodeEvent (Node.PortApplyString kevt portRef defaultValue))) = Just $ when (Keys.withoutMods kevt Keys.enter) $
+                                                                                        Batch.setDefaultValue portRef defaultValue
 toAction (UI (NodeEvent (Node.PortSetDefaultValue portRef defaultValue))) = Just $ Batch.setDefaultValue portRef defaultValue
 toAction (UI (NodeEvent (Node.PortInitSlider mevt portRef sliderInit)))   = Just $ PortControl.startMoveSlider portRef (mousePosition mevt) sliderInit
 toAction (UI (AppEvent  (App.KeyDown   kevt))) = Just $ handleKeyApp kevt

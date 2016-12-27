@@ -19,13 +19,27 @@ type family VectorOf a
 
 class IsVector a where
     vector :: Lens' a (VectorOf a)
+    default vector :: (Wrapped a, Unwrapped a ~ VectorOf a) => Lens' a (VectorOf a)
+    vector = wrapped'
 
 
 -- === Dimensions === --
 
-class           Dim1 a where x :: Lens' a (Item a)
-class Dim1 a => Dim2 a where y :: Lens' a (Item a)
-class Dim2 a => Dim3 a where z :: Lens' a (Item a)
+class Dim1 a where
+    x :: Lens' a (Item a)
+    default x :: (IsVector a, Item (VectorOf a) ~ Item a, Dim1 (VectorOf a)) => Lens' a (Item a)
+    x = vector . x
+
+class Dim1 a => Dim2 a where
+    y :: Lens' a (Item a)
+    default y :: (IsVector a, Item (VectorOf a) ~ Item a, Dim2 (VectorOf a)) => Lens' a (Item a)
+    y = vector . y
+
+class Dim2 a => Dim3 a where
+    z :: Lens' a (Item a)
+    default z :: (IsVector a, Item (VectorOf a) ~ Item a, Dim3 (VectorOf a)) => Lens' a (Item a)
+    z = vector . z
+
 
 
 ---------------------
@@ -54,31 +68,6 @@ instance Num a => Num (Vector2 a) where
     abs    (Vector2 x1 y1)            = Vector2 (abs    x1) (abs    y1)
     signum (Vector2 x1 y1)            = Vector2 (signum x1) (signum y1)
     fromInteger i                     = let val = fromInteger i in Vector2 val val
-
-instance Ord a => Ord (Vector2 a) where
-    compare (Vector2 x1 y1) (Vector2 x2 y2)
-        | y1 <  y2  = LT
-        | y1 == y2  = if (x1 == x2) then EQ else if (x1 < x2) then LT else GT
-        | otherwise = GT
-    (Vector2 x1 y1) < (Vector2 x2 y2)
-        | y1 <  y2  = True
-        | y1 == y2  = if (x1 < x2)  then True else False
-        | otherwise = False
-    (Vector2 x1 y1) <= (Vector2 x2 y2)
-        | y1 <= y2  = True
-        | y1 == y2  = if (x1 <= x2) then True else False
-        | otherwise = False
-    (Vector2 x1 y1) > (Vector2 x2 y2)
-        | y1 >  y2  = True
-        | y1 == y2  = if (x1 > x2)  then True else False
-        | otherwise = False
-    (Vector2 x1 y1) >= (Vector2 x2 y2)
-        | y1 >= y2  = True
-        | y1 == y2  = if (x1 >= x2) then True else False
-        | otherwise = False
-    max (Vector2 x1 y1) (Vector2 x2 y2) = Vector2 (max x1 x2) (max y1 y2)
-    min (Vector2 x1 y1) (Vector2 x2 y2) = Vector2 (min x1 x2) (min y1 y2)
-
 
 instance IsList (Vector2 a) where
     type Item (Vector2 a) = a
@@ -136,37 +125,71 @@ maxMin :: Ord a => Vector2 a -> Vector2 a -> Vector2 a
 maxMin (Vector2 a b) (Vector2 a' b') = Vector2 (max a a') (min b b')
 
 
+
 -----------------------
 -- === Position === ---
 -----------------------
 
 -- === Definition === --
 
-newtype Position = Position (Vector2 Double) deriving (Eq, Show, Generic)
+newtype Position = Position (Vector2 Double) deriving (Eq, Show, Generic, Default)
 makeWrapped ''Position
 
 
 -- === Instances === --
 
-instance Dim1 Position where x = vector . x
-instance Dim2 Position where y = vector . y
-instance ToJSON Position
-
-instance Default Position where
-    def = Position def
-
 type instance VectorOf Position = Vector2 Double
 
-instance IsVector Position where
-    vector = wrapped' ; {-# INLINE vector #-}
+instance IsVector Position
+instance Dim1     Position
+instance Dim2     Position
+instance ToJSON   Position
 
 instance IsList Position where
     type Item Position = Double
     fromList l = Position (fromList l)
     toList   p = [p ^. x, p ^. y]
 
+
+-- === Functions === ---
+
 moveByVector :: Position -> Vector2 Double -> Position
 moveByVector pos vec = pos & vector %~ (+vec)
+
+-- TODO[react]: Possible solution to differ Mouse Position and Graph Position
+-- makeClassy  ''Position
+-- class HasPosition a where
+--     position :: Lens' a Position
+--
+-- instance HasPosition Position where
+--     position = id
+--
+-- data Screen
+-- data Graph
+-- data Node
+-- data Vis
+--
+--
+-- newtype Coord t = Coord Position deriving (Eq, Show, Generic, Default)
+-- makeWrapped ''Coord
+--
+--
+-- rebase :: Coord t -> Coord t'
+-- rebase = rewrapped
+--
+-- instance HasPosition (Coord t) where
+--     position = unwrap'
+--
+-- instance HasVector (Coord t) where
+--     vector = position . vector
+--
+-- instance Dim1 (Coord t)
+-- instance Dim2 (Coord t)
+--
+-- Coord Screen
+-- Coord Graph
+-- Coord Node
+
 
 
 -------------------
@@ -175,23 +198,18 @@ moveByVector pos vec = pos & vector %~ (+vec)
 
 -- === Definition === --
 
-newtype Size = Size (Vector2 Double) deriving (Eq, Show, Generic)
+newtype Size = Size (Vector2 Double) deriving (Eq, Show, Generic, Default)
 makeWrapped ''Size
 
 
 -- === Instances === --
 
-instance Dim1 Size where x = vector . x
-instance Dim2 Size where y = vector . y
-instance ToJSON Size
-
-instance Default Size where
-    def = Size def
-
 type instance VectorOf Size = Vector2 Double
 
-instance IsVector Size where
-    vector = wrapped' ; {-# INLINE vector #-}
+instance IsVector Size
+instance Dim1 Size
+instance Dim2 Size
+instance ToJSON Size
 
 instance IsList Size where
     type Item Size = Double
