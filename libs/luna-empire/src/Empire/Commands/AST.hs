@@ -201,9 +201,6 @@ reprError tcErr = case tcErr of
 writeMeta :: ASTOp m => NodeRef -> NodeMeta -> m ()
 writeMeta ref newMeta = IR.writeLayer @Meta (Just newMeta) ref
 
-renameVar :: ASTOp m => NodeRef -> String -> m ()
-renameVar = ASTBuilder.renameVar
-
 removeSubtree :: ASTOp m => NodeRef -> m ()
 removeSubtree = removeNode
 
