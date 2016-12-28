@@ -3,7 +3,6 @@
 module Empire.ASTOps.Deconstruct (
     deconstructApp
   , extractArguments
-  , unpackLamArguments
   ) where
 
 import           Empire.Prelude
@@ -45,6 +44,3 @@ extractArguments expr = match expr $ \case
         arg'    <- IR.source b
         return $ arg' : args
     _       -> return []
-
-unpackLamArguments :: ASTOp m => NodeRef -> m [NodeRef]
-unpackLamArguments = extractArguments

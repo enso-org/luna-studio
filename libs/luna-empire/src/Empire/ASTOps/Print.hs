@@ -22,7 +22,7 @@ getTypeRep tp = match tp $ \case
         name <- ASTBuilder.getName n
         return $ TCons name []
     Lam _as out -> do
-        args   <- ASTDeconstruct.unpackLamArguments tp
+        args   <- ASTDeconstruct.extractArguments tp
         argReps <- mapM getTypeRep args
         outRep <- getTypeRep =<< IR.source out
         return $ TLam argReps outRep
@@ -43,7 +43,7 @@ parenIf True  s = "(" ++ s ++ ")"
 printFunctionArguments :: ASTOp m => NodeRef -> m [String]
 printFunctionArguments lam = match lam $ \case
     Lam _args _ -> do
-        args' <- ASTDeconstruct.unpackLamArguments lam
+        args' <- ASTDeconstruct.extractArguments lam
         mapM printExpression args'
 
 printReturnValue :: ASTOp m => NodeRef -> m String
@@ -76,7 +76,7 @@ printExpression' suppressNodes paren node = do
 
     match node $ \case
         Lam _as o -> do
-            args    <- ASTDeconstruct.unpackLamArguments node
+            args    <- ASTDeconstruct.extractArguments node
             argReps <- mapM (printExpression' False False) args
             out     <- IR.source o
             sugared <- and <$> mapM ASTBuilder.isBlank args

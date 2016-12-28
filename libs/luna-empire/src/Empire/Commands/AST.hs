@@ -222,7 +222,7 @@ redirectLambdaOutput :: ASTOp m => NodeRef -> NodeRef -> m NodeRef
 redirectLambdaOutput lambda newOutputRef = do
     match lambda $ \case
         Lam _args _ -> do
-            args' <- ASTDeconstruct.unpackLamArguments lambda
+            args' <- ASTDeconstruct.extractArguments lambda
             lams args' newOutputRef
         _ -> throwM $ NotLambdaException lambda
 
@@ -230,7 +230,7 @@ setLambdaOutputToBlank :: ASTOp m => NodeRef -> m NodeRef
 setLambdaOutputToBlank lambda = do
     match lambda $ \case
         Lam _args _ -> do
-            args' <- ASTDeconstruct.unpackLamArguments lambda
+            args' <- ASTDeconstruct.extractArguments lambda
             blank <- IR.generalize <$> IR.blank
             lams args' blank
         _ -> throwM $ NotLambdaException lambda
@@ -256,7 +256,7 @@ getVarName node = ASTBuilder.getVarName node
 getLambdaInputRef :: ASTOp m => NodeRef -> Int -> m NodeRef
 getLambdaInputRef node pos = do
     match node $ \case
-        Lam _args _out -> (!! pos) <$> ASTDeconstruct.unpackLamArguments node
+        Lam _args _out -> (!! pos) <$> ASTDeconstruct.extractArguments node
         _ -> throwM $ NotLambdaException node
 
 isLambda :: ASTOp m => NodeRef -> m Bool
@@ -268,7 +268,7 @@ isLambda node = do
 isTrivialLambda :: ASTOp m => NodeRef -> m Bool
 isTrivialLambda node = match node $ \case
     Lam _args out -> do
-        args <- ASTDeconstruct.unpackLamArguments node
+        args <- ASTDeconstruct.extractArguments node
         out' <- IR.source out
         return $ out' `elem` args
     _ -> throwM $ NotLambdaException node
