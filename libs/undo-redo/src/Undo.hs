@@ -66,6 +66,15 @@ import           ZMQ.Bus.Data.MessageFrame         (MessageFrame (MessageFrame))
 import           ZMQ.Bus.EndPoint                  (BusEndPoints)
 import qualified ZMQ.Bus.Trans                     as Bus
 import           ZMQ.Bus.RPC.RPC                   as RPC
+import qualified ZMQ.Bus.Data.Topic              as ZMQTopic
+import qualified ZMQ.Bus.Env                     as Env
+import           System.ZMQ4.Monadic             (ZMQ)
+import qualified System.ZMQ4.Monadic             as ZMQ
+import qualified ZMQ.Bus.EndPoint                as EP
+import qualified ZMQ.Bus.Data.MessageFrame       as MessageFrame
+import qualified ZMQ.RPC.Client                  as Client
+import qualified ZMQ.Bus.Control.Handler.Methods as Methods
+import           Control.Error                   (ExceptT, hoistEither, runExceptT)
 
 import System.IO (stdout,hFlush)
 
@@ -75,20 +84,22 @@ import System.IO (stdout,hFlush)
 data UndoMessage where
     UndoMessage :: (Binary undoReq, Binary redoReq) => Topic.Topic -> undoReq -> Topic.Topic -> redoReq -> UndoMessage
 
-data History = History { _undo :: [UndoMessage]
-                       , _redo :: [UndoMessage]
-                         }
+data UndoState z = UndoState { _undo :: [UndoMessage]
+                           , _redo :: [UndoMessage]
+                           , _bus :: Env.BusEnv z
+                           }
+makeLenses ''UndoState
 
-newtype UndoT t a = UndoT (StateT History (ReaderT BusEndPoints t) a)
-    deriving (Applicative, Functor, Monad, MonadState History, MonadReader BusEndPoints, MonadIO, MonadThrow)
+newtype Undo z a = Undo (StateT (UndoState z) (ReaderT BusEndPoints (ZMQ z)) a)
+    deriving (Applicative, Functor, Monad, MonadState (UndoState z), MonadReader BusEndPoints, MonadIO, MonadThrow)
+
+
 
 data Action = ActUndo | ActRedo
 
-makeLenses ''History
+type Handler z = ByteString -> Undo z ()
 
-type Handler = ByteString -> UndoT IO ()
-
-handlersMap :: Map String Handler
+handlersMap :: Map String (Handler z)
 handlersMap = Map.fromList
     [ makeHandler handleAddSubgraphUndo
     , makeHandler handleAddNodeUndo
@@ -122,10 +133,10 @@ type family RedoResponseRequest t where
 flushHelper :: MonadIO m => String -> m ()
 flushHelper text = liftIO $ putStrLn text >> hFlush stdout
 
-makeHandler :: forall response. (Topic.MessageTopic response, Binary response,
+makeHandler :: forall response z. (Topic.MessageTopic response, Binary response,
             Topic.MessageTopic (Request.Request (UndoResponseRequest response)), Binary (UndoResponseRequest response),
             Topic.MessageTopic (Request.Request (RedoResponseRequest response)), Binary (RedoResponseRequest response))
-            => (response -> Maybe (UndoRequests response)) -> (String, Handler)
+            => (response -> Maybe (UndoRequests response)) -> (String, (Handler z))
 makeHandler h =
     let process content = let request = decode . fromStrict $ content
                           in case h request of
@@ -133,7 +144,7 @@ makeHandler h =
                               Just (r, q) -> handle  (Topic.topic (Request.Request UUID.nil r)) r (Topic.topic (Request.Request UUID.nil q)) q
     in (Topic.topic (undefined :: response), process)
 
-handle :: (Binary a, Binary b) => Topic.Topic -> a -> Topic.Topic -> b -> UndoT IO ()
+handle :: (Binary a, Binary b) => Topic.Topic -> a -> Topic.Topic -> b -> Undo z ()
 handle topicUndo undoReq topicRedo redoReq = undo %= (UndoMessage topicUndo undoReq topicRedo redoReq :)
 
 withOk :: Response.Status a -> (a -> Maybe b) -> Maybe b
@@ -201,31 +212,45 @@ handleDisconnectUndo (Response.Response _ (Disconnect.Request location dst) inv 
             redoMsg = Disconnect.Request location dst
         in Just (undoMsg, redoMsg)
 
-empty :: History
-empty = History [] []
 
-runUndo :: BusEndPoints -> History -> IO ()
-runUndo endPoints state = do
-    flushHelper $ show $ Map.keys handlersMap
-    let UndoT collect = do
-            msg <- receiveEvent endPoints
-            flushHelper $ show $ msg
-            collectEvents msg
-    runReaderT (evalStateT (forever collect) state) endPoints
+runUndo :: BusEndPoints -> IO ()
+runUndo endPoints = ZMQ.runZMQ $ do
+    clientID <- do
+        socket <- ZMQ.socket ZMQ.Req
+        ZMQ.connect socket $ EP.controlEndPoint endPoints
+        let request = Methods.CreateID
+        Right response <- runExceptT $ Client.query socket request
+        ZMQ.close socket
+        return $ Methods.clientID response
+    subSocket  <- ZMQ.socket ZMQ.Sub
+    ZMQ.subscribe subSocket $ ZMQTopic.toByteString "empire."
+    pushSocket <- ZMQ.socket ZMQ.Push
+    ZMQ.connect subSocket  $ EP.pubEndPoint  endPoints
+    ZMQ.connect pushSocket $ EP.pullEndPoint endPoints
+
+    let Undo collect = do
+            forever $ do
+                msg <- receiveEvent subSocket
+                collectEvents msg
+        state = UndoState [] [] (Env.BusEnv subSocket pushSocket clientID 0)
+    flip runReaderT endPoints $ evalStateT collect state
+
 
 data BusErrorException = BusErrorException deriving (Show)
 instance Exception BusErrorException
 
-receiveEvent :: (MonadThrow m, MonadIO m) => BusEndPoints -> m MessageFrame --fixme [SB] przenies runBus do runUndo
-receiveEvent endPoints = do
-    msgFrame <- Bus.runBus endPoints $ do
-         Bus.subscribe "empire."
-         Bus.receive
-    case msgFrame of
-        Left err  -> throwM BusErrorException
-        Right msg -> return msg
+receive :: ZMQ.Socket z ZMQ.Sub -> Undo z ByteString
+receive sub = Undo $ lift $ lift $ ZMQ.receive sub
 
-collectEvents :: MessageFrame -> UndoT IO ()
+receiveEvent :: ZMQ.Socket z ZMQ.Sub -> Undo z MessageFrame --fixme [SB] przenies runBus do runUndo
+receiveEvent sub = do
+    msg <- receive sub
+    let res = MessageFrame.fromByteString msg
+    case res of
+        Left _ -> throwM BusErrorException
+        Right m -> return m
+
+collectEvents :: MessageFrame -> Undo z ()
 collectEvents (MessageFrame msg corId senderId lastFrm) = do
     let topic = msg ^. Message.topic
         userId = show senderId
@@ -241,28 +266,28 @@ collectEvents (MessageFrame msg corId senderId lastFrm) = do
             takeEndPointsAndRun $ sendRedo req
         _ -> do collectedMessage topic content
 
-doUndo :: UndoT IO UndoMessage
+doUndo :: MonadState (UndoState z) m => m UndoMessage
 doUndo = do
     h <- uses undo head
     redo %= (h :)
     undo %= tail
     return h
 
-doRedo :: UndoT IO UndoMessage
+doRedo :: MonadState (UndoState z) m => m UndoMessage
 doRedo = do
     h <- uses redo head
     undo %= (h :)
     redo %= tail
     return h
 
-collectedMessage :: String -> ByteString -> UndoT IO ()
+collectedMessage :: String -> ByteString -> Undo z ()
 collectedMessage topic content = do
     let handler   = Map.findWithDefault doNothing topic handlersMap
         doNothing _ = return ()
     void $ handler content
 
 
-takeEndPointsAndRun :: Bus.Bus () -> UndoT IO ()
+takeEndPointsAndRun :: Bus.Bus () -> Undo z ()
 takeEndPointsAndRun action = do
     endPoints <- ask
     void $ Bus.runBus endPoints action
