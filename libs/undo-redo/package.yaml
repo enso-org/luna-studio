@@ -18,6 +18,7 @@ dependencies:
   - stm
   - safe-exceptions
   - text
+  - uuid
 
 default-extensions:
   - NoImplicitPrelude
