@@ -183,7 +183,7 @@ extractPortInfo :: ASTOp m => NodeRef -> m ([ValueType], [PortState])
 extractPortInfo node = do
     match node $ \case
         App f _args -> do
-            unpacked       <- ASTDeconstruct.dumpArguments node
+            unpacked       <- ASTDeconstruct.extractArguments node
             portStates     <- mapM getPortState unpacked
             tp    <- do
                 f' <- IR.source f
@@ -316,7 +316,7 @@ getSelfNodeRef = getSelfNodeRef' False
 getPositionalNodeRefs :: ASTOp m => NodeRef -> m [NodeRef]
 getPositionalNodeRefs node = do
     match node $ \case
-        App{} -> ASTDeconstruct.dumpArguments node
+        App{} -> ASTDeconstruct.extractArguments node
         _     -> return []
 
 getLambdaOutputRef :: ASTOp m => NodeRef -> m NodeRef

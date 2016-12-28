@@ -63,7 +63,7 @@ printExpression' :: ASTOp m => Bool -> Bool -> NodeRef -> m String
 printExpression' suppressNodes paren node = do
     let recur = printExpression' suppressNodes
     let displayFun funExpr node' = do
-            unpackedArgs <- ASTDeconstruct.dumpArguments node'
+            unpackedArgs <- ASTDeconstruct.extractArguments node'
             argsRep <- mapM (recur True) unpackedArgs
             if all (not . isAlpha) funExpr && length argsRep == 2
                 then return $ parenIf paren $ head argsRep ++ " " ++ funExpr ++ " " ++ (argsRep !! 1)

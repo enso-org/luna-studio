@@ -12,7 +12,7 @@ import           Empire.Prelude
 
 import           Empire.API.Data.Node               (NodeId)
 import           Empire.ASTOp                       (ASTOp)
-import           Empire.ASTOps.Deconstruct          (deconstructApp, dumpArguments)
+import           Empire.ASTOps.Deconstruct          (deconstructApp, extractArguments)
 import           Empire.ASTOps.Remove               (removeNode)
 import           Empire.Data.AST                    (EdgeRef, NodeRef, NotAppException(..),
                                                      NotUnifyException(..), astExceptionFromException,
@@ -164,7 +164,7 @@ applyAccessors' apped node = match node $ \case
     App f _as -> do
     -- FIXME[MK]: this clause is identical to the curry one. And it happens often. Maybe curry is a wrong abstraction? How to unify it with App? Susp?
         fr   <- IR.source f
-        args <- dumpArguments node
+        args <- extractArguments node
         frep <- applyAccessors' True fr
         argReps <- mapM (applyAccessors' False) args
         apps frep argReps
@@ -181,7 +181,7 @@ makeAccessor :: ASTOp m => NodeRef -> NodeRef -> m NodeRef
 makeAccessor target naming = do
     (_, names) <- dumpAccessors naming
     when (null names) $ throwM $ SelfPortNotExistantException naming
-    args <- dumpArguments naming
+    args <- extractArguments naming
     acc <- buildAccessors target names
     if null args then return acc else reapply acc args
 
@@ -195,7 +195,7 @@ instance Exception SelfPortNotConnectedException where
 unAcc :: ASTOp m => NodeRef -> m NodeRef
 unAcc ref = do
     (target, names) <- dumpAccessors ref
-    args            <- dumpArguments ref
+    args            <- extractArguments ref
     when (isNothing target) $ throwM $ SelfPortNotConnectedException ref
     case names of
         []     -> throwM $ SelfPortNotConnectedException ref

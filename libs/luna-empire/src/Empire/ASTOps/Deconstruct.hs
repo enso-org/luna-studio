@@ -2,7 +2,7 @@
 
 module Empire.ASTOps.Deconstruct (
     deconstructApp
-  , dumpArguments
+  , extractArguments
   , unpackLamArguments
   ) where
 
@@ -27,24 +27,24 @@ import qualified Luna.IR as IR
 deconstructApp :: ASTOp m => NodeRef -> m (NodeRef, [NodeRef])
 deconstructApp app' = match app' $ \case
     App a _ -> do
-        unpackedArgs <- dumpArguments app'
+        unpackedArgs <- extractArguments app'
         target <- IR.source a
         return (target, unpackedArgs)
     _ -> throwM $ NotAppException app'
 
-dumpArguments :: ASTOp m => NodeRef -> m [NodeRef]
-dumpArguments expr = match expr $ \case
+extractArguments :: ASTOp m => NodeRef -> m [NodeRef]
+extractArguments expr = match expr $ \case
     App a (Arg.Arg _ b) -> do
         nextApp <- IR.source a
-        args    <- dumpArguments nextApp
+        args    <- extractArguments nextApp
         arg'    <- IR.source b
         return $ arg' : args
     Lam (Arg.Arg _ b) a -> do
         nextLam <- IR.source a
-        args    <- dumpArguments nextLam
+        args    <- extractArguments nextLam
         arg'    <- IR.source b
         return $ arg' : args
     _       -> return []
 
 unpackLamArguments :: ASTOp m => NodeRef -> m [NodeRef]
-unpackLamArguments = dumpArguments
+unpackLamArguments = extractArguments
