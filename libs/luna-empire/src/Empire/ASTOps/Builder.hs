@@ -138,8 +138,8 @@ instance Exception SelfPortNotConnectedException where
     toException = astExceptionToException
     fromException = astExceptionFromException
 
-unAcc :: ASTOp m => NodeRef -> m NodeRef
-unAcc ref = do
+removeAccessor :: ASTOp m => NodeRef -> m NodeRef
+removeAccessor ref = do
     (target, names) <- dumpAccessors ref
     args            <- extractArguments ref
     when (isNothing target) $ throwM $ SelfPortNotConnectedException ref

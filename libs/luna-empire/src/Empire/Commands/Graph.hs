@@ -303,7 +303,7 @@ disconnectPort (InPortRef dstNodeId dstPort) =
 unAcc :: ASTOp m => NodeId -> m ()
 unAcc nodeId = do
     dstAst <- GraphUtils.getASTTarget nodeId
-    newNodeRef <- AST.removeAccessor dstAst
+    newNodeRef <- ASTBuilder.removeAccessor dstAst
     GraphUtils.rewireNode nodeId newNodeRef
 
 unApp :: ASTOp m => NodeId -> Int -> m ()
