@@ -226,18 +226,10 @@ getNodeMeta loc nodeId = withGraph loc $ runASTOp $ do
     ref <- GraphUtils.getASTPointer nodeId
     AST.readMeta ref
 
-printFunction :: ASTOp m => NodeId -> m (String, String)
-printFunction nodeId = do
-    ptr <- GraphUtils.getASTPointer nodeId
-    header <- ASTPrint.printFunctionHeader ptr
-    lam <- GraphUtils.getASTTarget nodeId
-    ret <- ASTPrint.printReturnValue lam
-    return (header, ret)
-
 getCode :: GraphLocation -> Empire String
 getCode loc = withGraph loc $ runASTOp $ do
     inFunction <- use Graph.insideNode
-    function <- forM inFunction printFunction
+    function <- forM inFunction ASTPrint.printFunction
     returnedNodeId <- GraphBuilder.nodeConnectedToOutput
     allNodes <- uses Graph.breadcrumbHierarchy topLevelIDs
     refs     <- mapM GraphUtils.getASTPointer $ flip filter allNodes $ \nid ->

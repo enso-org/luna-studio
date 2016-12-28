@@ -11,6 +11,7 @@ import           Empire.Data.AST           (NodeRef)
 import qualified Empire.ASTOps.Builder     as ASTBuilder
 import qualified Empire.ASTOps.Read        as ASTRead
 import qualified Empire.ASTOps.Deconstruct as ASTDeconstruct
+import           Empire.API.Data.Node      (NodeId)
 import           Empire.API.Data.TypeRep   (TypeRep (..))
 import           Luna.IR.Expr.Term.Uni
 import           Luna.IR (match)
@@ -40,6 +41,14 @@ getTypeRep tp = match tp $ \case
 parenIf :: Bool -> String -> String
 parenIf False s = s
 parenIf True  s = "(" ++ s ++ ")"
+
+printFunction :: ASTOp m => NodeId -> m (String, String)
+printFunction nodeId = do
+    ptr <- ASTRead.getASTPointer nodeId
+    header <- printFunctionHeader ptr
+    lam <- ASTRead.getASTTarget nodeId
+    ret <- printReturnValue lam
+    return (header, ret)
 
 printFunctionArguments :: ASTOp m => NodeRef -> m [String]
 printFunctionArguments lam = match lam $ \case
