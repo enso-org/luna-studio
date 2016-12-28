@@ -59,6 +59,7 @@ import           Empire.API.Data.PortRef         (AnyPortRef (..), InPortRef (..
 import qualified Empire.API.Data.PortRef         as PortRef
 import           Empire.ASTOp                    (ASTOp, runASTOp)
 
+import qualified Empire.ASTOps.Builder           as ASTBuilder
 import qualified Empire.ASTOps.Read              as ASTRead
 import qualified Empire.ASTOps.Print             as ASTPrint
 import qualified Empire.ASTOps.Remove            as ASTRemove
@@ -212,7 +213,7 @@ setDefaultValue' portRef val = do
         InPortRef' (InPortRef nodeId port) -> do
             ref <- GraphUtils.getASTTarget nodeId
             newRef <- case port of
-                Self    -> AST.makeAccessor parsed ref
+                Self    -> ASTBuilder.makeAccessor parsed ref
                 Arg num -> AST.applyFunction ref parsed num
             return (nodeId, newRef)
         OutPortRef' (OutPortRef nodeId _) -> return (nodeId, parsed)
@@ -332,12 +333,12 @@ makeAcc src dst inputPos = do
         lambda' <- GraphUtils.getASTTarget lambda
         srcAst  <- AST.getLambdaInputRef lambda' inputPos
         dstAst  <- GraphUtils.getASTTarget dst
-        newNodeRef <- AST.makeAccessor srcAst dstAst
+        newNodeRef <- ASTBuilder.makeAccessor srcAst dstAst
         GraphUtils.rewireNode dst newNodeRef
        | otherwise -> do
         srcAst <- GraphUtils.getASTVar    src
         dstAst <- GraphUtils.getASTTarget dst
-        newNodeRef <- AST.makeAccessor srcAst dstAst
+        newNodeRef <- ASTBuilder.makeAccessor srcAst dstAst
         GraphUtils.rewireNode dst newNodeRef
 
 

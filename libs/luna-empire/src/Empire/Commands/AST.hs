@@ -227,9 +227,6 @@ setLambdaOutputToBlank lambda = do
             ASTBuilder.lams args' blank
         _ -> throwM $ NotLambdaException lambda
 
-makeAccessor :: ASTOp m => NodeRef -> NodeRef -> m NodeRef
-makeAccessor = ASTBuilder.makeAccessor
-
 removeAccessor :: ASTOp m => NodeRef -> m NodeRef
 removeAccessor = ASTBuilder.unAcc
 
