@@ -60,6 +60,7 @@ import qualified Empire.API.Data.PortRef         as PortRef
 import           Empire.ASTOp                    (ASTOp, runASTOp)
 
 import qualified Empire.ASTOps.Read              as ASTRead
+import qualified Empire.ASTOps.Print             as ASTPrint
 import qualified Empire.ASTOps.Remove            as ASTRemove
 import qualified Empire.Commands.AST             as AST
 import           Empire.Commands.Breadcrumb      (withBreadcrumb)
@@ -225,15 +226,18 @@ getNodeMeta loc nodeId = withGraph loc $ runASTOp $ do
     ref <- GraphUtils.getASTPointer nodeId
     AST.readMeta ref
 
+printFunction :: ASTOp m => NodeId -> m (String, String)
+printFunction nodeId = do
+    ptr <- GraphUtils.getASTPointer nodeId
+    header <- ASTPrint.printFunctionHeader ptr
+    lam <- GraphUtils.getASTTarget nodeId
+    ret <- ASTPrint.printReturnValue lam
+    return (header, ret)
+
 getCode :: GraphLocation -> Empire String
 getCode loc = withGraph loc $ runASTOp $ do
     inFunction <- use Graph.insideNode
-    function <- forM inFunction $ \nodeId -> do
-        ptr <- GraphUtils.getASTPointer nodeId
-        header <- AST.printFunctionHeader ptr
-        lam <- GraphUtils.getASTTarget nodeId
-        ret <- AST.printReturnValue lam
-        return (header, ret)
+    function <- forM inFunction printFunction
     returnedNodeId <- GraphBuilder.nodeConnectedToOutput
     allNodes <- uses Graph.breadcrumbHierarchy topLevelIDs
     refs     <- mapM GraphUtils.getASTPointer $ flip filter allNodes $ \nid ->
@@ -279,7 +283,7 @@ runTC loc flush = do
     Publisher.requestTC loc g flush
 
 printNodeLine :: ASTOp m => NodeId -> m String
-printNodeLine nodeId = GraphUtils.getASTPointer nodeId >>= AST.printExpression
+printNodeLine nodeId = GraphUtils.getASTPointer nodeId >>= ASTPrint.printExpression
 
 withTC :: GraphLocation -> Bool -> Command Graph a -> Empire a
 withTC loc flush cmd = withGraph loc $ do

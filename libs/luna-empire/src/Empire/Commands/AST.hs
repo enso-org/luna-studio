@@ -207,15 +207,6 @@ renameVar = ASTBuilder.renameVar
 removeSubtree :: ASTOp m => NodeRef -> m ()
 removeSubtree = removeNode
 
-printExpression :: ASTOp m => NodeRef -> m String
-printExpression = Printer.printExpression
-
-printFunctionHeader :: ASTOp m => NodeRef -> m String
-printFunctionHeader = Printer.printFunctionHeader
-
-printReturnValue :: ASTOp m => NodeRef -> m String
-printReturnValue = Printer.printReturnValue
-
 applyFunction :: ASTOp m => NodeRef -> NodeRef -> Int -> m NodeRef
 applyFunction = ASTBuilder.applyFunction
 
