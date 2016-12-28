@@ -233,9 +233,6 @@ makeAccessor = ASTBuilder.makeAccessor
 removeAccessor :: ASTOp m => NodeRef -> m NodeRef
 removeAccessor = ASTBuilder.unAcc
 
-getVarName :: ASTOp m => NodeRef -> m String
-getVarName node = ASTRead.getVarName node
-
 getLambdaInputRef :: ASTOp m => NodeRef -> Int -> m NodeRef
 getLambdaInputRef node pos = do
     match node $ \case
