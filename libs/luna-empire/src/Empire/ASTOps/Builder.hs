@@ -35,9 +35,6 @@ accessorTarget :: ASTOp m => NodeRef -> m EdgeRef
 accessorTarget node = match node $ \case
     Acc _ t -> pure t
 
-unpackArguments :: ASTOp m => [Arg EdgeRef] -> m [NodeRef]
-unpackArguments args = mapM (IR.source . Arg.__val_) args
-
 isApp :: ASTOp m => NodeRef -> m Bool
 isApp expr = match expr $ \case
     App{} -> return True
