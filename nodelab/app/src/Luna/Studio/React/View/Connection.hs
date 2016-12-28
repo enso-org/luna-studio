@@ -15,6 +15,7 @@ import           React.Flux
 import qualified React.Flux                         as React
 
 
+
 name :: JSString
 name = "connection-editor"
 
@@ -53,7 +54,10 @@ drawConnection_ src dst color = do
         y2 = fromString $ showSvg $ dst ^. y
         width = fromString $ show connectionWidth
     line_
-        [ "x1"          $= x1
+        [ "className"   $= ((fromString $ showSvg $ portAngleStop 2 2 20) ++ " "
+                        ++ (fromString $ showSvg $ portAngleStart 2 2 20) ++ " " 
+                        ++ (fromString $ showSvg $ nodeToNodeAngle src dst + 2 * pi))
+        , "x1"          $= x1
         , "y1"          $= y1
         , "x2"          $= x2
         , "y2"          $= y2

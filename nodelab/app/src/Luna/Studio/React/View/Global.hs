@@ -17,12 +17,11 @@ import           Object.Widget.Port           (Port (..))
 import qualified Object.Widget.Port           as Port
 
 
-
 type IsSingle = Bool
 type IsSelf   = Bool
 
 showSvg :: Double -> String
-showSvg a = Numeric.showFFloat (Just 1) a "" -- limit Double to two decimal numbers
+showSvg a = Numeric.showFFloat (Just 2) a "" -- limit Double to two decimal numbers
 
 transformMatrix :: String -> String -> String -> String
 transformMatrix scale offsetX offsetY = "matrix(" <> scale <> " , 0, 0, " <> scale <> " , " <> offsetX <> " , " <> offsetY <> " )"
@@ -54,7 +53,7 @@ portAngleStart num numOfPorts r =
     let number = fromIntegral num + 1
         gap    = portGap r
         t      = portAngle numOfPorts
-    in  number * t - pi - t + gap/2
+    in  number * t + pi - t + gap/2
 
 
 portAngleStop :: Int -> Int -> Double -> Angle
@@ -62,7 +61,7 @@ portAngleStop num numOfPorts r =
     let number = fromIntegral num + 1
         gap    = portGap r
         t      = portAngle numOfPorts
-    in  number * t - pi - gap/2
+    in  number * t + pi - gap/2
 
 
 nodeToNodeAngle :: Position -> Position -> Angle
@@ -78,43 +77,38 @@ nodeToNodeAngle src dst =
 
 connectionSrc :: Position -> Position -> Int -> Int -> IsSingle -> Position
 connectionSrc src dst _ _ True =
-    let x1     = src ^. x
-        y1     = src ^. y
-        x2     = dst ^. x
-        y2     = dst ^. y
-        t      = nodeToNodeAngle x1 y1 x2 y2
-        srcX   = portRadius * cos t + x1
-        srcY   = portRadius * sin t + y1
-    in  Position (Vector2 srcX srcY)
+    let t  = nodeToNodeAngle src dst
+        x' = portRadius * cos t + src ^. x
+        y' = portRadius * sin t + src ^. y
+    in  Position (Vector2 x' y')
 connectionSrc src dst num numOfPorts _    =
-    let x1     = src ^. x
-        y1     = src ^. y
-        x2     = dst ^. x
-        y2     = dst ^. y
-        t      = nodeToNodeAngle src dst
-        t1     = portAngleStart num numOfPorts portRadius
-        t2     = portAngleStop  num numOfPorts portRadius
-        t'     = if (t < t1) then t1 else if (t > t2) then t2 else t
-        number = num
-        ports  = numOfPorts
-        srcX   = portRadius * cos t + x1
-        srcY   = portRadius * sin t + y1
-        srcX'  = if (x1 > x2) then 10.0 else 11.0
-    in  Position (Vector2 srcX srcY)                                            -- FIXME: implement port limits
-
+    let -- a  = portAngleStart num numOfPorts portRadius
+        -- b  = portAngleStop  num numOfPorts portRadius
+        t  = nodeToNodeAngle src dst
+        x'  = portRadius * cos t + src ^. x
+        y'  = portRadius * sin t + src ^. y
+    in  Position (Vector2 x' y')
+    
 connectionDst :: Position -> Position -> Int -> Int -> IsSelf -> Position
 connectionDst src dst _   _          True = dst
 connectionDst src dst num numOfPorts _    =
-    let x1     = src ^. x
-        y1     = src ^. y
-        x2     = dst ^. x
-        y2     = dst ^. y
-        t      = nodeToNodeAngle src dst
-        number = num
-        ports  = numOfPorts
-        dstX   = portRadius * (- cos t) + x2
-        dstY   = portRadius * (- sin t) + y2
-    in  Position (Vector2 dstX dstY)
+    let a  = portAngleStop  num numOfPorts portRadius
+        b  = portAngleStart num numOfPorts portRadius
+        t  = nodeToNodeAngle src dst
+
+        a' = a -- if a < pi/2 then a + 2 * pi else a
+        b' = b
+        t' = t --if t < pi then t + pi else t - pi
+
+        t''= if t' - pi > a'
+             then a' - pi
+             else if t' - pi < b'
+             then b' - pi
+             else t'
+
+        x' = portRadius * (-cos t'') + dst ^. x
+        y' = portRadius * (-sin t'') + dst ^. y
+    in  Position (Vector2 x' y')
 
 
 countInput :: Port -> Int
