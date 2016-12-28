@@ -19,6 +19,9 @@ dependencies:
   - safe-exceptions
   - text
   - uuid
+  - zeromq4-haskell
+  - zmq-rpc
+  - errors
 
 default-extensions:
   - NoImplicitPrelude
