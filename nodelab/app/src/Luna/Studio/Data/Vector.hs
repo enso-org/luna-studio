@@ -124,6 +124,9 @@ minMax (Vector2 a b) (Vector2 a' b') = Vector2 (min a a') (max b b')
 maxMin :: Ord a => Vector2 a -> Vector2 a -> Vector2 a
 maxMin (Vector2 a b) (Vector2 a' b') = Vector2 (max a a') (min b b')
 
+scalarProduct :: Num a => Vector2 a -> a -> Vector2 a
+scalarProduct vec k = vec & x *~ k & y *~ k
+
 
 
 -----------------------
@@ -153,8 +156,11 @@ instance IsList Position where
 
 -- === Functions === ---
 
-moveByVector :: Position -> Vector2 Double -> Position
-moveByVector pos vec = pos & vector %~ (+vec)
+move :: Position -> Vector2 Double -> Position
+move pos vec = pos & vector +~ vec
+
+rescale :: Position -> Double -> Position
+rescale pos factor = pos & vector %~ (flip scalarProduct factor)
 
 -- TODO[react]: Possible solution to differ Mouse Position and Graph Position
 -- makeClassy  ''Position

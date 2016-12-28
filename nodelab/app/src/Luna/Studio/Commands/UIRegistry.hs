@@ -120,7 +120,7 @@ moveBy :: WidgetId -> Vector2 Double -> Command UIRegistry.State ()
 moveBy widgetId vec = do
     mayPos <- preuse $ UIRegistry.widgets . ix (fromWidgetId widgetId) . widget . widgetPosition
     withJust mayPos $ \pos -> do
-        UIRegistry.widgets . ix (fromWidgetId widgetId) . widget . widgetPosition .= moveByVector pos vec
+        UIRegistry.widgets . ix (fromWidgetId widgetId) . widget . widgetPosition .= move pos vec
         mayNewPos <- preuse $ UIRegistry.widgets . ix (fromWidgetId widgetId) . widget . widgetPosition
         withJust mayNewPos $ UI.updatePosition' widgetId
 
