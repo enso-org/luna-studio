@@ -24,4 +24,4 @@ import System.IO (stdout,hFlush)
 main :: IO ()
 main = do
     endPoints <- EP.clientFromConfig <$> Config.load
-    Undo.runUndo endPoints Undo.empty
+    Undo.runUndo endPoints

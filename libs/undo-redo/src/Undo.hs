@@ -173,11 +173,11 @@ connect ports = Connection src dst
           dst = snd ports
 
 handleRemoveNodesUndo :: RemoveNodes.Response -> Maybe (AddSubgraph.Request, RemoveNodes.Request)
-handleRemoveNodesUndo (Response.Response _ (RemoveNodes.Request location noddesIds) inv _) =
+handleRemoveNodesUndo (Response.Response _ (RemoveNodes.Request location nodesIds) inv _) =
     withOk inv $ \(RemoveNodes.Inverse nodes connectionPorts)->
         let connections = connect <$> connectionPorts
             undoMsg = AddSubgraph.Request location nodes connections
-            redoMsg = RemoveNodes.Request location noddesIds
+            redoMsg = RemoveNodes.Request location nodesIds
         in Just (undoMsg, redoMsg)
 
 handleUpdateNodeExpressionUndo :: UpdateNodeExpression.Response -> Maybe ( UpdateNodeExpression.Request,  UpdateNodeExpression.Request)
@@ -231,7 +231,7 @@ runUndo endPoints = ZMQ.runZMQ $ do
     let Undo collect = do
             forever $ do
                 msg <- receiveEvent subSocket
-                collectEvents msg
+                collectEvents msg clientID
         state = UndoState [] [] (Env.BusEnv subSocket pushSocket clientID 0)
     flip runReaderT endPoints $ evalStateT collect state
 
@@ -250,8 +250,8 @@ receiveEvent sub = do
         Left _ -> throwM BusErrorException
         Right m -> return m
 
-collectEvents :: MessageFrame -> Undo z ()
-collectEvents (MessageFrame msg corId senderId lastFrm) = do
+collectEvents :: MessageFrame -> Message.ClientID -> Undo z ()
+collectEvents (MessageFrame msg corId senderId lastFrm) myId = do
     let topic = msg ^. Message.topic
         userId = show senderId
         content = msg ^. Message.message
@@ -264,7 +264,8 @@ collectEvents (MessageFrame msg corId senderId lastFrm) = do
         "empire.redo.request" -> do
             req <- doRedo
             takeEndPointsAndRun $ sendRedo req
-        _ -> do collectedMessage topic content
+        _ -> if myId /= senderId then (collectedMessage topic content) else return ()
+
 
 doUndo :: MonadState (UndoState z) m => m UndoMessage
 doUndo = do
