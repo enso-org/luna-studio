@@ -173,7 +173,7 @@ extractArgTypes :: ASTOp m => NodeRef -> m [ValueType]
 extractArgTypes node = do
     match node $ \case
         Lam _args out -> do
-            unpacked <- ASTBuilder.unpackLamArguments node
+            unpacked <- ASTDeconstruct.unpackLamArguments node
             as     <- mapM getTypeRep unpacked
             tailAs <- IR.source out >>= extractArgTypes
             return $ as ++ tailAs
@@ -192,7 +192,7 @@ extractPortInfo node = do
             types <- extractArgTypes tp
             return (types, portStates)
         Lam _as o -> do
-            args     <- ASTBuilder.unpackLamArguments node
+            args     <- ASTDeconstruct.unpackLamArguments node
             areBlank <- mapM ASTBuilder.isBlank args
             isApp    <- ASTBuilder.isApp =<< IR.source o
             if and areBlank && isApp
@@ -223,7 +223,7 @@ buildSelfPort' seenAcc node = do
         (Acc _ t)  -> IR.source t >>= buildSelfPort' True
         (App t _)  -> IR.source t >>= buildSelfPort' seenAcc
         Lam _as o -> do
-            args <- ASTBuilder.unpackLamArguments node
+            args <- ASTDeconstruct.unpackLamArguments node
             areBlank <- mapM ASTBuilder.isBlank args
             if and areBlank
                 then IR.source o >>= buildSelfPort' seenAcc
@@ -330,7 +330,7 @@ getLambdaOutputRef node = do
 getLambdaArgRefs :: ASTOp m => NodeRef -> m [NodeRef]
 getLambdaArgRefs node = do
     match node $ \case
-        Lam{} -> ASTBuilder.unpackLamArguments node
+        Lam{} -> ASTDeconstruct.unpackLamArguments node
         _     -> return []
 
 getLambdaInputArgNumber :: ASTOp m => NodeRef -> m (Maybe Int)
@@ -338,7 +338,7 @@ getLambdaInputArgNumber lambda = do
     match lambda $ \case
         Lam _args out -> do
             out' <- IR.source out
-            (out' `List.elemIndex`) <$> ASTBuilder.unpackLamArguments lambda
+            (out' `List.elemIndex`) <$> ASTDeconstruct.unpackLamArguments lambda
         _ -> return Nothing
 
 getOutputEdgeInputs :: ASTOp m => NodeId -> NodeId -> m (Maybe (OutPortRef, InPortRef))

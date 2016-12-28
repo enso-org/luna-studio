@@ -26,6 +26,7 @@ import           Empire.Data.Layers                (Meta, NodeMarker(..), TCData
 
 import           Empire.ASTOp                      (ASTOp, lams)
 import qualified Empire.ASTOps.Builder             as ASTBuilder
+import qualified Empire.ASTOps.Deconstruct         as ASTDeconstruct
 import qualified Empire.ASTOps.Parse               as Parser
 import qualified Empire.ASTOps.Print               as Printer
 import           Empire.ASTOps.Remove              (removeNode)
@@ -221,7 +222,7 @@ redirectLambdaOutput :: ASTOp m => NodeRef -> NodeRef -> m NodeRef
 redirectLambdaOutput lambda newOutputRef = do
     match lambda $ \case
         Lam _args _ -> do
-            args' <- ASTBuilder.unpackLamArguments lambda
+            args' <- ASTDeconstruct.unpackLamArguments lambda
             lams args' newOutputRef
         _ -> throwM $ NotLambdaException lambda
 
@@ -229,7 +230,7 @@ setLambdaOutputToBlank :: ASTOp m => NodeRef -> m NodeRef
 setLambdaOutputToBlank lambda = do
     match lambda $ \case
         Lam _args _ -> do
-            args' <- ASTBuilder.unpackLamArguments lambda
+            args' <- ASTDeconstruct.unpackLamArguments lambda
             blank <- IR.generalize <$> IR.blank
             lams args' blank
         _ -> throwM $ NotLambdaException lambda
@@ -255,7 +256,7 @@ getVarName node = ASTBuilder.getVarName node
 getLambdaInputRef :: ASTOp m => NodeRef -> Int -> m NodeRef
 getLambdaInputRef node pos = do
     match node $ \case
-        Lam _args _out -> (!! pos) <$> ASTBuilder.unpackLamArguments node
+        Lam _args _out -> (!! pos) <$> ASTDeconstruct.unpackLamArguments node
         _ -> throwM $ NotLambdaException node
 
 isLambda :: ASTOp m => NodeRef -> m Bool
@@ -267,7 +268,7 @@ isLambda node = do
 isTrivialLambda :: ASTOp m => NodeRef -> m Bool
 isTrivialLambda node = match node $ \case
     Lam _args out -> do
-        args <- ASTBuilder.unpackLamArguments node
+        args <- ASTDeconstruct.unpackLamArguments node
         out' <- IR.source out
         return $ out' `elem` args
     _ -> throwM $ NotLambdaException node
