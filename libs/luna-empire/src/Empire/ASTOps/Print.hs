@@ -6,10 +6,11 @@ import           Empire.Prelude
 import           Data.List                (dropWhileEnd, delete)
 import           Data.Char                (isAlpha)
 
-import           Empire.ASTOp             (ASTOp)
-import           Empire.Data.AST          (NodeRef)
-import qualified Empire.ASTOps.Builder    as ASTBuilder
-import           Empire.API.Data.TypeRep  (TypeRep (..))
+import           Empire.ASTOp              (ASTOp)
+import           Empire.Data.AST           (NodeRef)
+import qualified Empire.ASTOps.Builder     as ASTBuilder
+import qualified Empire.ASTOps.Deconstruct as ASTDeconstruct
+import           Empire.API.Data.TypeRep   (TypeRep (..))
 import           Luna.IR.Expr.Term.Uni
 import           Luna.IR (match)
 import qualified Luna.IR as IR
@@ -62,7 +63,7 @@ printExpression' :: ASTOp m => Bool -> Bool -> NodeRef -> m String
 printExpression' suppressNodes paren node = do
     let recur = printExpression' suppressNodes
     let displayFun funExpr node' = do
-            unpackedArgs <- ASTBuilder.dumpArguments node'
+            unpackedArgs <- ASTDeconstruct.dumpArguments node'
             argsRep <- mapM (recur True) unpackedArgs
             if all (not . isAlpha) funExpr && length argsRep == 2
                 then return $ parenIf paren $ head argsRep ++ " " ++ funExpr ++ " " ++ (argsRep !! 1)

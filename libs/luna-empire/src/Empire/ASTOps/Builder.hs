@@ -12,6 +12,7 @@ import           Empire.Prelude
 
 import           Empire.API.Data.Node               (NodeId)
 import           Empire.ASTOp                       (ASTOp)
+import           Empire.ASTOps.Deconstruct          (deconstructApp, dumpArguments)
 import           Empire.ASTOps.Remove               (removeNode)
 import           Empire.Data.AST                    (EdgeRef, NodeRef, NotAppException(..),
                                                      NotUnifyException(..), astExceptionFromException,
@@ -79,13 +80,6 @@ removeArg expr i = match expr $ \case
             IR.generalize <$> IR.app f (arg d)
     _       -> throwM $ NotAppException expr
 
-destructApp :: ASTOp m => NodeRef -> m (NodeRef, [NodeRef])
-destructApp app' = match app' $ \case
-    App a _ -> do
-        unpackedArgs <- dumpArguments app'
-        target <- IR.source a
-        return (target, unpackedArgs)
-    _ -> throwM $ NotAppException app'
 
 apps :: ASTOp m => IR.Expr f -> [NodeRef] -> m NodeRef
 apps fun exprs = IR.unsafeRelayout <$> foldM f (IR.unsafeRelayout fun) (IR.unsafeRelayout <$> exprs)
@@ -103,7 +97,7 @@ newApplication fun arg' pos = do
 
 rewireApplication :: ASTOp m => NodeRef -> NodeRef -> Int -> m NodeRef
 rewireApplication fun arg' pos = do
-    (target, oldArgs) <- destructApp fun
+    (target, oldArgs) <- deconstructApp fun
 
     let argsLength = max (pos + 1) (length oldArgs)
     blanks <- replicateM (argsLength - length oldArgs) IR.blank
@@ -155,15 +149,6 @@ dumpAccessors' firstApp ref = do
 
 dumpAccessors :: ASTOp m => NodeRef -> m (Maybe NodeRef, [String])
 dumpAccessors = dumpAccessors' True
-
-dumpArguments :: ASTOp m => NodeRef -> m [NodeRef]
-dumpArguments expr = match expr $ \case
-    App a (Arg.Arg _ b) -> do
-        nextApp <- IR.source a
-        args    <- dumpArguments nextApp
-        arg'    <- IR.source b
-        return $ arg' : args
-    _       -> return []
 
 buildAccessors :: ASTOp m => NodeRef -> [String] -> m NodeRef
 buildAccessors = foldM $ \t n -> IR.rawAcc n t >>= flip apps []

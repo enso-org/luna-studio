@@ -35,6 +35,7 @@ import           Empire.API.Data.ValueType         (ValueType (..))
 
 import           Empire.ASTOp                      (ASTOp, runASTOp)
 import qualified Empire.ASTOps.Builder             as ASTBuilder
+import qualified Empire.ASTOps.Deconstruct         as ASTDeconstruct
 import qualified Empire.ASTOps.Print               as Print
 import qualified Empire.Commands.AST               as AST
 import qualified Empire.Commands.GraphUtils        as GraphUtils
@@ -182,7 +183,7 @@ extractPortInfo :: ASTOp m => NodeRef -> m ([ValueType], [PortState])
 extractPortInfo node = do
     match node $ \case
         App f _args -> do
-            unpacked       <- ASTBuilder.dumpArguments node
+            unpacked       <- ASTDeconstruct.dumpArguments node
             portStates     <- mapM getPortState unpacked
             tp    <- do
                 f' <- IR.source f
@@ -315,7 +316,7 @@ getSelfNodeRef = getSelfNodeRef' False
 getPositionalNodeRefs :: ASTOp m => NodeRef -> m [NodeRef]
 getPositionalNodeRefs node = do
     match node $ \case
-        App{} -> ASTBuilder.dumpArguments node
+        App{} -> ASTDeconstruct.dumpArguments node
         _     -> return []
 
 getLambdaOutputRef :: ASTOp m => NodeRef -> m NodeRef
