@@ -24,6 +24,6 @@ type Response = Response.Response Request () ()
 instance Response.ResponseResult Request () ()
 
 
-topicPrefix = "empire.undo"
+topicPrefix = "empire.redo"
 instance T.MessageTopic (R.Request Request)  where topic _ = topicPrefix <> T.request
 instance T.MessageTopic Response where topic _ = topicPrefix <> T.response
