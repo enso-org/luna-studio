@@ -59,6 +59,7 @@ import           Empire.API.Data.PortRef         (AnyPortRef (..), InPortRef (..
 import qualified Empire.API.Data.PortRef         as PortRef
 import           Empire.ASTOp                    (ASTOp, runASTOp)
 
+import qualified Empire.ASTOps.Read              as ASTRead
 import qualified Empire.ASTOps.Remove            as ASTRemove
 import qualified Empire.Commands.AST             as AST
 import           Empire.Commands.Breadcrumb      (withBreadcrumb)
@@ -90,7 +91,7 @@ addNodeNoTC loc uuid expr meta = do
     node <- runASTOp $ do
         newNodeName <- generateNodeName
         (parsedRef, refNode) <- AST.addNode uuid newNodeName (Text.unpack expr)
-        parsedIsLambda <- AST.isLambda parsedRef
+        parsedIsLambda <- ASTRead.isLambda parsedRef
         AST.writeMeta refNode meta
         Graph.nodeMapping . at uuid ?= Graph.MatchNode refNode
         node <- GraphBuilder.buildNode uuid

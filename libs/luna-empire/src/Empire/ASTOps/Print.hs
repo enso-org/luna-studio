@@ -80,7 +80,7 @@ printExpression' suppressNodes paren node = do
             args    <- ASTDeconstruct.extractArguments node
             argReps <- mapM (printExpression' False False) args
             out     <- IR.source o
-            sugared <- and <$> mapM ASTBuilder.isBlank args
+            sugared <- and <$> mapM ASTRead.isBlank args
             repr    <- printExpression' False sugared out
             let bindsRep = if sugared then "" else "-> " ++ unwords (('$' :) <$> argReps) ++ " "
             return $ parenIf (not sugared && paren) $ bindsRep ++ repr

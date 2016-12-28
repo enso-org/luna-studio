@@ -13,6 +13,10 @@ module Empire.ASTOps.Read (
   , getNodeId
   , getVarName
   , getName
+  , isApp
+  , isBlank
+  , isLambda
+  , isMatch
   ) where
 
 import           Data.Coerce                        (coerce)
@@ -24,6 +28,7 @@ import           Empire.ASTOp                       (ASTOp)
 import           Empire.Data.AST                    (NodeRef, EdgeRef)
 import           Empire.Data.Layers                 (NodeMarker(..), Marker)
 
+import qualified Luna.IR.Expr.Combinators as IRExpr
 import Luna.IR.Expr.Term.Uni
 import Luna.IR.Function (arg)
 import           Luna.IR.Function.Argument (Arg)
@@ -47,3 +52,15 @@ getName node = do
     str <- IR.source node
     match str $ \case
         IR.String s -> return s
+
+isApp :: ASTOp m => NodeRef -> m Bool
+isApp expr = isJust <$> IRExpr.narrowAtom @IR.App expr
+
+isBlank :: ASTOp m => NodeRef -> m Bool
+isBlank expr = isJust <$> IRExpr.narrowAtom @IR.Blank expr
+
+isLambda :: ASTOp m => NodeRef -> m Bool
+isLambda expr = isJust <$> IRExpr.narrowAtom @IR.Lam expr
+
+isMatch :: ASTOp m => NodeRef -> m Bool
+isMatch expr = isJust <$> IRExpr.narrowAtom @IR.Unify expr

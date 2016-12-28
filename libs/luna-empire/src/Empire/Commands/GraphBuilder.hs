@@ -113,7 +113,7 @@ getEdgePortMapping = do
 buildNode :: ASTOp m => NodeId -> m API.Node
 buildNode nid = do
     root     <- GraphUtils.getASTPointer nid
-    match'   <- isMatch root
+    match'   <- ASTRead.isMatch root
     ref      <- if match' then GraphUtils.getASTTarget nid else return root
     expr     <- Print.printNodeExpression ref
     meta     <- AST.readMeta root
@@ -124,15 +124,11 @@ buildNode nid = do
         portMap = Map.fromList $ flip fmap ports $ \p@(Port id' _ _ _) -> (id', p)
     return $ API.Node nid name (API.ExpressionNode $ Text.pack expr) canEnter portMap (fromMaybe def meta) code
 
-isMatch :: ASTOp m => NodeRef -> m Bool
-isMatch node = match node $ \case
-    Unify{} -> return True
-    _       -> return False
 
 canEnterNode :: ASTOp m => NodeId -> m Bool
 canEnterNode nid = do
     root  <- GraphUtils.getASTPointer nid
-    match' <- isMatch root
+    match' <- ASTRead.isMatch root
     if match' then rhsIsLambda nid else return False
 
 rhsIsLambda :: ASTOp m => NodeId -> m Bool
@@ -145,7 +141,7 @@ rhsIsLambda nid = do
 getNodeName :: ASTOp m => NodeId -> m (Maybe Text)
 getNodeName nid = do
     root  <- GraphUtils.getASTPointer nid
-    match' <- isMatch root
+    match' <- ASTRead.isMatch root
     if match' then do
         vnode <- GraphUtils.getASTVar nid
         match vnode $ \case
@@ -194,8 +190,8 @@ extractPortInfo node = do
             return (types, portStates)
         Lam _as o -> do
             args     <- ASTDeconstruct.extractArguments node
-            areBlank <- mapM ASTBuilder.isBlank args
-            isApp    <- ASTBuilder.isApp =<< IR.source o
+            areBlank <- mapM ASTRead.isBlank args
+            isApp    <- ASTRead.isApp =<< IR.source o
             if and areBlank && isApp
                 then extractPortInfo =<< IR.source o
                 else do
@@ -225,7 +221,7 @@ buildSelfPort' seenAcc node = do
         (App t _)  -> IR.source t >>= buildSelfPort' seenAcc
         Lam _as o -> do
             args <- ASTDeconstruct.extractArguments node
-            areBlank <- mapM ASTBuilder.isBlank args
+            areBlank <- mapM ASTRead.isBlank args
             if and areBlank
                 then IR.source o >>= buildSelfPort' seenAcc
                 else if seenAcc then buildPort False else return Nothing
@@ -397,7 +393,7 @@ getOuterLambdaArguments = do
 getNodeInputs :: ASTOp m => Maybe (NodeId, NodeId) -> NodeId -> m [(OutPortRef, InPortRef)]
 getNodeInputs edgeNodes nodeId = do
     root        <- GraphUtils.getASTPointer nodeId
-    match'      <- isMatch root
+    match'      <- ASTRead.isMatch root
     ref         <- if match' then GraphUtils.getASTTarget nodeId else return root
     selfMay     <- getSelfNodeRef ref
     lambdaArgs  <- getOuterLambdaArguments
