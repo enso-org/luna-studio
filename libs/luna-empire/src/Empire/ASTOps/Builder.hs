@@ -12,7 +12,7 @@ import           Empire.Prelude
 
 import           Empire.API.Data.Node               (NodeId)
 import           Empire.ASTOp                       (ASTOp)
-import           Empire.ASTOps.Deconstruct          (deconstructApp, extractArguments)
+import           Empire.ASTOps.Deconstruct          (deconstructApp, extractArguments, dumpAccessors)
 import           Empire.ASTOps.Read                 (isGraphNode, getName, isBlank)
 import           Empire.ASTOps.Remove               (removeSubtree)
 import           Empire.Data.AST                    (EdgeRef, NodeRef, NotAppException(..),
@@ -86,33 +86,6 @@ reapply funRef args = do
             return f
         _ -> return funRef
     apps fun args
-
-
-dumpAccessors' :: ASTOp m => Bool -> NodeRef -> m (Maybe NodeRef, [String])
-dumpAccessors' firstApp ref = do
-    node <- pure ref
-    match node $ \case
-        Var n -> do
-            isNode <- isGraphNode ref
-            name <- getName n
-            if isNode
-                then return (Just ref, [])
-                else return (Nothing, [name])
-        App t a -> do
-            if not firstApp && not (null a)
-                then return (Just ref, [])
-                else do
-                    target <- IR.source t
-                    dumpAccessors' False target
-        Acc n t -> do
-            target <- IR.source t
-            name <- getName n
-            (tgt, names) <- dumpAccessors' False target
-            return (tgt, names ++ [name])
-        _ -> return (Just ref, [])
-
-dumpAccessors :: ASTOp m => NodeRef -> m (Maybe NodeRef, [String])
-dumpAccessors = dumpAccessors' True
 
 buildAccessors :: ASTOp m => NodeRef -> [String] -> m NodeRef
 buildAccessors = foldM $ \t n -> IR.rawAcc n t >>= flip apps []

@@ -3,18 +3,16 @@
 module Empire.ASTOps.Deconstruct (
     deconstructApp
   , extractArguments
+  , dumpAccessors
   ) where
 
 import           Empire.Prelude
 
-import           Empire.API.Data.Node               (NodeId)
 import           Empire.ASTOp                       (ASTOp)
-import           Empire.Data.AST                    (EdgeRef, NodeRef, NotAppException(..))
-import           Empire.Data.Layers                 (NodeMarker(..), Marker)
+import qualified Empire.ASTOps.Read                 as Read
+import           Empire.Data.AST                    (NodeRef, NotAppException(..))
 
-import Luna.IR.Expr.Term.Uni
-import Luna.IR.Function (arg)
-import           Luna.IR.Function.Argument (Arg)
+import           Luna.IR.Expr.Term.Uni
 import qualified Luna.IR.Function.Argument as Arg
 import           Luna.IR (match)
 import qualified Luna.IR as IR
@@ -41,3 +39,29 @@ extractArguments expr = match expr $ \case
         arg'    <- IR.source b
         return $ arg' : args
     _       -> return []
+
+
+dumpAccessors' :: ASTOp m => Bool -> NodeRef -> m (Maybe NodeRef, [String])
+dumpAccessors' firstApp node = do
+    match node $ \case
+        Var n -> do
+            isNode <- Read.isGraphNode node
+            name <- Read.getName n
+            if isNode
+                then return (Just node, [])
+                else return (Nothing, [name])
+        App t a -> do
+            if not firstApp && not (null a)
+                then return (Just node, [])
+                else do
+                    target <- IR.source t
+                    dumpAccessors' False target
+        Acc n t -> do
+            target <- IR.source t
+            name <- Read.getName n
+            (tgt, names) <- dumpAccessors' False target
+            return (tgt, names ++ [name])
+        _ -> return (Just node, [])
+
+dumpAccessors :: ASTOp m => NodeRef -> m (Maybe NodeRef, [String])
+dumpAccessors = dumpAccessors' True
