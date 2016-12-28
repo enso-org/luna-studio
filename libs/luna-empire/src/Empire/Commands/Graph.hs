@@ -59,6 +59,7 @@ import           Empire.API.Data.PortRef         (AnyPortRef (..), InPortRef (..
 import qualified Empire.API.Data.PortRef         as PortRef
 import           Empire.ASTOp                    (ASTOp, runASTOp)
 
+import qualified Empire.ASTOps.Remove            as ASTRemove
 import qualified Empire.Commands.AST             as AST
 import           Empire.Commands.Breadcrumb      (withBreadcrumb)
 import qualified Empire.Commands.GraphBuilder    as GraphBuilder
@@ -320,7 +321,7 @@ unApp nodeId pos = do
         GraphUtils.rewireNode lambda newNodeRef
        | otherwise -> do
         astNode <- GraphUtils.getASTTarget nodeId
-        newNodeRef <- AST.unapplyArgument astNode pos
+        newNodeRef <- ASTRemove.removeArg astNode pos
         GraphUtils.rewireNode nodeId newNodeRef
 
 makeAcc :: ASTOp m => NodeId -> NodeId -> Int -> m ()

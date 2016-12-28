@@ -17,6 +17,7 @@ import qualified Luna.IR as IR
 removeNode :: ASTOp m => NodeRef -> m ()
 removeNode ref = deleteSubtree ref
 
+-- | Creates new App node with Blank inserted at specified position
 removeArg :: ASTOp m => NodeRef -> Int -> m NodeRef
 removeArg expr i = match expr $ \case
     App a (Arg _ c) -> do
