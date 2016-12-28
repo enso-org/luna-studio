@@ -308,12 +308,6 @@ getSelfNodeRef' seenAcc node = do
 getSelfNodeRef :: ASTOp m => NodeRef -> m (Maybe NodeRef)
 getSelfNodeRef = getSelfNodeRef' False
 
-getPositionalNodeRefs :: ASTOp m => NodeRef -> m [NodeRef]
-getPositionalNodeRefs node = do
-    match node $ \case
-        App{} -> ASTDeconstruct.extractArguments node
-        _     -> return []
-
 getLambdaOutputRef :: ASTOp m => NodeRef -> m NodeRef
 getLambdaOutputRef node = do
     match node $ \case
@@ -321,12 +315,6 @@ getLambdaOutputRef node = do
             nextLam <- IR.source out
             getLambdaOutputRef nextLam
         _         -> return node
-
-getLambdaArgRefs :: ASTOp m => NodeRef -> m [NodeRef]
-getLambdaArgRefs node = do
-    match node $ \case
-        Lam{} -> ASTDeconstruct.extractArguments node
-        _     -> return []
 
 getLambdaInputArgNumber :: ASTOp m => NodeRef -> m (Maybe Int)
 getLambdaInputArgNumber lambda = do
@@ -384,7 +372,7 @@ getOuterLambdaArguments = do
     case lambda of
         Just lambda' -> do
             ref <- GraphUtils.getASTTarget lambda'
-            lambdaArgs <- getLambdaArgRefs ref
+            lambdaArgs <- ASTDeconstruct.extractArguments ref
             return lambdaArgs
         _ -> return []
 
@@ -401,7 +389,7 @@ getNodeInputs edgeNodes nodeId = do
     let selfConnMay = (,) <$> (OutPortRef <$> selfNodeMay <*> Just All)
                           <*> (Just $ InPortRef nodeId Self)
 
-    args       <- getPositionalNodeRefs ref
+    args       <- ASTDeconstruct.extractArguments ref
     nodeMays   <- mapM (resolveInputNodeId edgeNodes lambdaArgs) args
     let withInd  = zip nodeMays [0..]
         onlyExt  = catMaybes $ (\(n, i) -> (,) <$> n <*> Just i) <$> withInd
