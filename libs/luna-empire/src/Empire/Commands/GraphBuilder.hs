@@ -49,13 +49,13 @@ import           Luna.IR (match)
 import qualified Luna.IR as IR
 import           Luna.IR.Expr.Term.Uni
 
-nameBreadcrumb :: BreadcrumbItem -> Command Graph (Named BreadcrumbItem)
+nameBreadcrumb :: ASTOp m => BreadcrumbItem -> m (Named BreadcrumbItem)
 nameBreadcrumb item@(Breadcrumb.Lambda nid) = do
-    name <- runASTOp $ getNodeName nid
+    name <- getNodeName nid
     return $ Named (fromMaybe "" name) item
 
 decodeBreadcrumbs :: Breadcrumb BreadcrumbItem -> Command Graph (Breadcrumb (Named BreadcrumbItem))
-decodeBreadcrumbs (Breadcrumb items) = fmap Breadcrumb $ forM items nameBreadcrumb
+decodeBreadcrumbs (Breadcrumb items) = fmap Breadcrumb $ runASTOp $ forM items nameBreadcrumb
 
 data CannotEnterNodeException = CannotEnterNodeException NodeId
     deriving Show
