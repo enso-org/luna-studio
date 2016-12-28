@@ -14,7 +14,7 @@ import           Empire.API.Data.Node               (NodeId)
 import           Empire.ASTOp                       (ASTOp)
 import           Empire.ASTOps.Deconstruct          (deconstructApp, extractArguments)
 import           Empire.ASTOps.Read                 (isGraphNode, getName, isBlank)
-import           Empire.ASTOps.Remove               (removeNode)
+import           Empire.ASTOps.Remove               (removeSubtree)
 import           Empire.Data.AST                    (EdgeRef, NodeRef, NotAppException(..),
                                                      NotUnifyException(..), astExceptionFromException,
                                                      astExceptionToException)
@@ -82,7 +82,7 @@ reapply funRef args = do
     fun <- match funNode $ \case
         App t _ -> do
             f <- IR.source t
-            removeNode funRef
+            removeSubtree funRef
             return f
         _ -> return funRef
     apps fun args

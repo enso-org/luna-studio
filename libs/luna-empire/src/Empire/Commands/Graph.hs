@@ -154,7 +154,7 @@ removeNodeNoTC nodeId = do
     astRef <- GraphUtils.getASTPointer nodeId
     obsoleteEdges <- getOutEdges nodeId
     mapM_ disconnectPort obsoleteEdges
-    AST.removeSubtree astRef
+    ASTRemove.removeSubtree astRef
     Graph.nodeMapping %= Map.delete nodeId
     Graph.breadcrumbHierarchy %= removeID nodeId
 

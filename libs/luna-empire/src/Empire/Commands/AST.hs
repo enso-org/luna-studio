@@ -30,7 +30,7 @@ import qualified Empire.ASTOps.Deconstruct         as ASTDeconstruct
 import qualified Empire.ASTOps.Parse               as Parser
 import qualified Empire.ASTOps.Print               as Printer
 import qualified Empire.ASTOps.Read                as ASTRead
-import           Empire.ASTOps.Remove              (removeArg, removeNode)
+import           Empire.ASTOps.Remove              (removeArg)
 
 import           Empire.Utils.TextResult           (nodeValueToText)
 
@@ -197,9 +197,6 @@ reprError tcErr = case tcErr of
 
 writeMeta :: ASTOp m => NodeRef -> NodeMeta -> m ()
 writeMeta ref newMeta = IR.writeLayer @Meta (Just newMeta) ref
-
-removeSubtree :: ASTOp m => NodeRef -> m ()
-removeSubtree = removeNode
 
 redirectLambdaOutput :: ASTOp m => NodeRef -> NodeRef -> m NodeRef
 redirectLambdaOutput lambda newOutputRef = do

@@ -1,6 +1,9 @@
 {-# LANGUAGE LambdaCase #-}
 
-module Empire.ASTOps.Remove where
+module Empire.ASTOps.Remove (
+    removeArg
+  , removeSubtree
+  ) where
 
 import           Empire.Prelude
 
@@ -14,8 +17,8 @@ import           Luna.IR.Function.Argument (Arg(..))
 import           Luna.IR (match)
 import qualified Luna.IR as IR
 
-removeNode :: ASTOp m => NodeRef -> m ()
-removeNode ref = deleteSubtree ref
+removeSubtree :: ASTOp m => NodeRef -> m ()
+removeSubtree ref = deleteSubtree ref
 
 -- | Creates new App node with Blank inserted at specified position
 removeArg :: ASTOp m => NodeRef -> Int -> m NodeRef
