@@ -29,7 +29,7 @@ import qualified Empire.ASTOps.Builder             as ASTBuilder
 import qualified Empire.ASTOps.Deconstruct         as ASTDeconstruct
 import qualified Empire.ASTOps.Parse               as Parser
 import qualified Empire.ASTOps.Print               as Printer
-import           Empire.ASTOps.Remove              (removeNode)
+import           Empire.ASTOps.Remove              (removeArg, removeNode)
 
 import           Empire.Utils.TextResult           (nodeValueToText)
 
@@ -236,7 +236,7 @@ setLambdaOutputToBlank lambda = do
         _ -> throwM $ NotLambdaException lambda
 
 unapplyArgument :: ASTOp m => NodeRef -> Int -> m NodeRef
-unapplyArgument = ASTBuilder.removeArg
+unapplyArgument = removeArg
 
 makeAccessor :: ASTOp m => NodeRef -> NodeRef -> m NodeRef
 makeAccessor = ASTBuilder.makeAccessor

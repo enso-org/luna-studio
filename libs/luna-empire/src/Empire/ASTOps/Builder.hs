@@ -55,20 +55,6 @@ getName node = do
     match str $ \case
         IR.String s -> return s
 
-removeArg :: ASTOp m => NodeRef -> Int -> m NodeRef
-removeArg expr i = match expr $ \case
-    App a (Arg.Arg _ c) -> do
-        nextApp <- IR.source a
-        if i == 0 then do
-            b  <- IR.blank
-            IR.generalize <$> IR.app nextApp (arg b)
-        else do
-            d <- IR.source c
-            f <- removeArg nextApp (i - 1)
-            IR.generalize <$> IR.app f (arg d)
-    _       -> throwM $ NotAppException expr
-
-
 apps :: ASTOp m => IR.Expr f -> [NodeRef] -> m NodeRef
 apps fun exprs = IR.unsafeRelayout <$> foldM f (IR.unsafeRelayout fun) (IR.unsafeRelayout <$> exprs)
     where
