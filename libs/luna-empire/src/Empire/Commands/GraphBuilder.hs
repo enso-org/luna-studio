@@ -37,6 +37,7 @@ import           Empire.ASTOp                      (ASTOp, runASTOp)
 import qualified Empire.ASTOps.Builder             as ASTBuilder
 import qualified Empire.ASTOps.Deconstruct         as ASTDeconstruct
 import qualified Empire.ASTOps.Print               as Print
+import qualified Empire.ASTOps.Read                as ASTRead
 import qualified Empire.Commands.AST               as AST
 import qualified Empire.Commands.GraphUtils        as GraphUtils
 import           Empire.Data.AST                   (NodeRef, astExceptionToException,
@@ -155,7 +156,7 @@ getNodeName nid = do
 
 getPortState :: ASTOp m => NodeRef -> m PortState
 getPortState node = do
-    isConnected <- ASTBuilder.isGraphNode node
+    isConnected <- ASTRead.isGraphNode node
     if isConnected then return Connected else match node $ \case
         (IR.String s)   -> return . WithDefault . Constant . StringValue $ s
         IR.Integer i    -> return $ WithDefault $ Constant $ IntValue $ fromIntegral i
@@ -351,7 +352,7 @@ getOutputEdgeInputs inputEdge outputEdge = do
             Just index -> return $ Just (inputEdge, Projection index)
             _       -> do
                 output <- getLambdaOutputRef ref
-                nid <- ASTBuilder.getNodeId output
+                nid <- ASTRead.getNodeId output
                 case nid of
                     Just id' -> return $ Just (id', All)
                     _       -> return Nothing
@@ -378,7 +379,7 @@ nodeConnectedToOutput = do
 
 resolveInputNodeId :: ASTOp m => Maybe (NodeId, NodeId) -> [NodeRef] -> NodeRef -> m (Maybe NodeId)
 resolveInputNodeId edgeNodes lambdaArgs ref = do
-    nodeId <- ASTBuilder.getNodeId ref
+    nodeId <- ASTRead.getNodeId ref
     case List.find (== ref) lambdaArgs of
         Just _ -> return $ fmap fst edgeNodes
         _      -> return nodeId

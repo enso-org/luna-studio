@@ -13,6 +13,7 @@ import           Empire.Prelude
 import           Empire.API.Data.Node               (NodeId)
 import           Empire.ASTOp                       (ASTOp)
 import           Empire.ASTOps.Deconstruct          (deconstructApp, extractArguments)
+import           Empire.ASTOps.Read                 (isGraphNode)
 import           Empire.ASTOps.Remove               (removeNode)
 import           Empire.Data.AST                    (EdgeRef, NodeRef, NotAppException(..),
                                                      NotUnifyException(..), astExceptionFromException,
@@ -198,9 +199,3 @@ renameVar vref name = match vref $ \case
     Var n -> do
         (var :: IR.Expr (IR.E IR.String)) <- IR.unsafeGeneralize <$> IR.source n
         IR.modifyExprTerm var $ IR.lit .~ name
-
-isGraphNode :: ASTOp m => NodeRef -> m Bool
-isGraphNode = fmap isJust . getNodeId
-
-getNodeId :: ASTOp m => NodeRef -> m (Maybe NodeId)
-getNodeId node = coerce <$> IR.readLayer @Marker node

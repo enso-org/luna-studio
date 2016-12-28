@@ -9,6 +9,7 @@ import           Data.Char                (isAlpha)
 import           Empire.ASTOp              (ASTOp)
 import           Empire.Data.AST           (NodeRef)
 import qualified Empire.ASTOps.Builder     as ASTBuilder
+import qualified Empire.ASTOps.Read        as ASTRead
 import qualified Empire.ASTOps.Deconstruct as ASTDeconstruct
 import           Empire.API.Data.TypeRep   (TypeRep (..))
 import           Luna.IR.Expr.Term.Uni
@@ -89,7 +90,7 @@ printExpression' suppressNodes paren node = do
             return $ leftRep ++ " = " ++ rightRep
         Var n -> do
             name <- ASTBuilder.getName n
-            isNode <- ASTBuilder.isGraphNode node
+            isNode <- ASTRead.isGraphNode node
             return $ if isNode && suppressNodes then "_" else name
         Acc n t -> do
             name <- ASTBuilder.getName n
