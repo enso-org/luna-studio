@@ -214,7 +214,7 @@ setDefaultValue' portRef val = do
             ref <- GraphUtils.getASTTarget nodeId
             newRef <- case port of
                 Self    -> ASTBuilder.makeAccessor parsed ref
-                Arg num -> AST.applyFunction ref parsed num
+                Arg num -> ASTBuilder.applyFunction ref parsed num
             return (nodeId, newRef)
         OutPortRef' (OutPortRef nodeId _) -> return (nodeId, parsed)
     GraphUtils.rewireNode nodeId newRef
@@ -359,10 +359,10 @@ makeApp src dst pos inputPos = do
         lambda' <- GraphUtils.getASTTarget lambda
         srcAst  <- AST.getLambdaInputRef lambda' inputPos
         dstAst  <- GraphUtils.getASTTarget dst
-        newNodeRef <- AST.applyFunction dstAst srcAst pos
+        newNodeRef <- ASTBuilder.applyFunction dstAst srcAst pos
         GraphUtils.rewireNode dst newNodeRef
        | otherwise -> do
         srcAst <- GraphUtils.getASTVar    src
         dstAst <- GraphUtils.getASTTarget dst
-        newNodeRef <- AST.applyFunction dstAst srcAst pos
+        newNodeRef <- ASTBuilder.applyFunction dstAst srcAst pos
         GraphUtils.rewireNode dst newNodeRef

@@ -207,9 +207,6 @@ renameVar = ASTBuilder.renameVar
 removeSubtree :: ASTOp m => NodeRef -> m ()
 removeSubtree = removeNode
 
-applyFunction :: ASTOp m => NodeRef -> NodeRef -> Int -> m NodeRef
-applyFunction = ASTBuilder.applyFunction
-
 redirectLambdaOutput :: ASTOp m => NodeRef -> NodeRef -> m NodeRef
 redirectLambdaOutput lambda newOutputRef = do
     match lambda $ \case
