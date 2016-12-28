@@ -245,10 +245,10 @@ removeAccessor :: ASTOp m => NodeRef -> m NodeRef
 removeAccessor = ASTBuilder.unAcc
 
 getTargetNode :: ASTOp m => NodeRef -> m NodeRef
-getTargetNode node = ASTBuilder.rightMatchOperand node >>= IR.source
+getTargetNode node = ASTDeconstruct.rightMatchOperand node >>= IR.source
 
 getVarNode :: ASTOp m => NodeRef -> m NodeRef
-getVarNode node = ASTBuilder.leftMatchOperand node >>= IR.source
+getVarNode node = ASTDeconstruct.leftMatchOperand node >>= IR.source
 
 getVarName :: ASTOp m => NodeRef -> m String
 getVarName node = ASTBuilder.getVarName node

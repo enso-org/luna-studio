@@ -210,16 +210,6 @@ makeNodeRep marker name node = do
     IR.writeLayer @Marker (Just marker) nameVar
     IR.generalize <$> IR.unify nameVar node
 
-rightMatchOperand :: ASTOp m => NodeRef -> m EdgeRef
-rightMatchOperand node = match node $ \case
-    Unify _ b -> pure b
-    _         -> throwM $ NotUnifyException node
-
-leftMatchOperand :: ASTOp m => NodeRef -> m EdgeRef
-leftMatchOperand node = match node $ \case
-    Unify a _ -> pure a
-    _         -> throwM $ NotUnifyException node
-
 renameVar :: ASTOp m => NodeRef -> String -> m ()
 renameVar vref name = match vref $ \case
     Var n -> do

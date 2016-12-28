@@ -3,6 +3,8 @@
 module Empire.ASTOps.Deconstruct (
     deconstructApp
   , extractArguments
+  , rightMatchOperand
+  , leftMatchOperand
   ) where
 
 import           Empire.Prelude
@@ -44,3 +46,13 @@ extractArguments expr = match expr $ \case
         arg'    <- IR.source b
         return $ arg' : args
     _       -> return []
+
+rightMatchOperand :: ASTOp m => NodeRef -> m EdgeRef
+rightMatchOperand node = match node $ \case
+    Unify _ b -> pure b
+    _         -> throwM $ NotUnifyException node
+
+leftMatchOperand :: ASTOp m => NodeRef -> m EdgeRef
+leftMatchOperand node = match node $ \case
+    Unify a _ -> pure a
+    _         -> throwM $ NotUnifyException node
