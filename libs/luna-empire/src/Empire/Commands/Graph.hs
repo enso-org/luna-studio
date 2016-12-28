@@ -99,7 +99,7 @@ addNodeNoTC loc uuid expr meta = do
         node <- GraphBuilder.buildNode uuid
         if parsedIsLambda then do
             lambdaUUID <- liftIO $ UUID.nextRandom
-            lambdaOutput <- AST.getLambdaOutputRef parsedRef
+            lambdaOutput <- ASTRead.getLambdaOutputRef parsedRef
             outputIsOneOfTheInputs <- AST.isTrivialLambda parsedRef
             when (not outputIsOneOfTheInputs) $ Graph.nodeMapping . at lambdaUUID ?= Graph.AnonymousNode lambdaOutput
             Graph.breadcrumbHierarchy %= addWithLeafs (node ^. Node.nodeId)

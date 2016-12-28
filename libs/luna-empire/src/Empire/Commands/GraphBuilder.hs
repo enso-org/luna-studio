@@ -308,14 +308,6 @@ getSelfNodeRef' seenAcc node = do
 getSelfNodeRef :: ASTOp m => NodeRef -> m (Maybe NodeRef)
 getSelfNodeRef = getSelfNodeRef' False
 
-getLambdaOutputRef :: ASTOp m => NodeRef -> m NodeRef
-getLambdaOutputRef node = do
-    match node $ \case
-        Lam _ out -> do
-            nextLam <- IR.source out
-            getLambdaOutputRef nextLam
-        _         -> return node
-
 getLambdaInputArgNumber :: ASTOp m => NodeRef -> m (Maybe Int)
 getLambdaInputArgNumber lambda = do
     match lambda $ \case
@@ -333,7 +325,7 @@ getOutputEdgeInputs inputEdge outputEdge = do
         case outputIsInputNum of
             Just index -> return $ Just (inputEdge, Projection index)
             _       -> do
-                output <- getLambdaOutputRef ref
+                output <- ASTRead.getLambdaOutputRef ref
                 nid <- ASTRead.getNodeId output
                 case nid of
                     Just id' -> return $ Just (id', All)

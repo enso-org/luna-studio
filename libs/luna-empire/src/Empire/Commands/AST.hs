@@ -229,12 +229,6 @@ isTrivialLambda node = match node $ \case
         return $ out' `elem` args
     _ -> throwM $ NotLambdaException node
 
-getLambdaOutputRef :: ASTOp m => NodeRef -> m NodeRef
-getLambdaOutputRef lambda = do
-    match lambda $ \case
-        Lam _ out -> IR.source out
-        _ -> throwM $ NotLambdaException lambda
-
 replaceTargetNode :: ASTOp m => NodeRef -> NodeRef -> m ()
 replaceTargetNode matchNode newTarget = do
     match matchNode $ \case

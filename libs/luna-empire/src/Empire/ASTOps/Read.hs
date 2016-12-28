@@ -20,6 +20,7 @@ module Empire.ASTOps.Read (
   , getASTPointer
   , getASTTarget
   , getASTVar
+  , getLambdaOutputRef
   ) where
 
 import           Data.Coerce                        (coerce)
@@ -29,6 +30,7 @@ import           Empire.Prelude
 import           Empire.API.Data.Node               (NodeId)
 import           Empire.ASTOp                       (ASTOp)
 import           Empire.Data.AST                    (NodeRef, EdgeRef, NotUnifyException(..),
+                                                     NotLambdaException(..),
                                                      astExceptionFromException, astExceptionToException)
 import qualified Empire.Data.Graph                  as Graph
 import           Empire.Data.Layers                 (NodeMarker(..), Marker)
@@ -96,6 +98,16 @@ getASTVar :: ASTOp m => NodeId -> m NodeRef
 getASTVar nodeId = do
     matchNode <- getASTPointer nodeId
     getVarNode matchNode
+
+getLambdaOutputRef :: ASTOp m => NodeRef -> m NodeRef
+getLambdaOutputRef = getLambdaOutputRef' False
+
+getLambdaOutputRef' :: ASTOp m => Bool -> NodeRef -> m NodeRef
+getLambdaOutputRef' firstLam node = match node $ \case
+    Lam _ out -> do
+        nextLam <- IR.source out
+        getLambdaOutputRef' True nextLam
+    _         -> if firstLam then return node else throwM $ NotLambdaException node
 
 isApp :: ASTOp m => NodeRef -> m Bool
 isApp expr = isJust <$> IRExpr.narrowAtom @IR.App expr
