@@ -17,6 +17,9 @@ module Empire.ASTOps.Read (
   , isBlank
   , isLambda
   , isMatch
+  , getASTPointer
+  , getASTTarget
+  , getASTVar
   ) where
 
 import           Data.Coerce                        (coerce)
@@ -25,7 +28,9 @@ import           Empire.Prelude
 
 import           Empire.API.Data.Node               (NodeId)
 import           Empire.ASTOp                       (ASTOp)
-import           Empire.Data.AST                    (NodeRef, EdgeRef)
+import           Empire.Data.AST                    (NodeRef, EdgeRef, NotUnifyException(..),
+                                                     astExceptionFromException, astExceptionToException)
+import qualified Empire.Data.Graph                  as Graph
 import           Empire.Data.Layers                 (NodeMarker(..), Marker)
 
 import qualified Luna.IR.Expr.Combinators as IRExpr
@@ -52,6 +57,45 @@ getName node = do
     str <- IR.source node
     match str $ \case
         IR.String s -> return s
+
+rightMatchOperand :: ASTOp m => NodeRef -> m EdgeRef
+rightMatchOperand node = match node $ \case
+    Unify _ b -> pure b
+    _         -> throwM $ NotUnifyException node
+
+getTargetNode :: ASTOp m => NodeRef -> m NodeRef
+getTargetNode node = rightMatchOperand node >>= IR.source
+
+leftMatchOperand :: ASTOp m => NodeRef -> m EdgeRef
+leftMatchOperand node = match node $ \case
+    Unify a _ -> pure a
+    _         -> throwM $ NotUnifyException node
+
+getVarNode :: ASTOp m => NodeRef -> m NodeRef
+getVarNode node = leftMatchOperand node >>= IR.source
+
+data NodeDoesNotExistException = NodeDoesNotExistException NodeId
+    deriving Show
+instance Exception NodeDoesNotExistException where
+    toException = astExceptionToException
+    fromException = astExceptionFromException
+
+getASTPointer :: ASTOp m => NodeId -> m NodeRef
+getASTPointer nodeId = do
+    node <- use (Graph.nodeMapping . at nodeId)
+    case node of
+        Just target -> pure $ Graph.getAnyRef target
+        _           -> throwM $ NodeDoesNotExistException nodeId
+
+getASTTarget :: ASTOp m => NodeId -> m NodeRef
+getASTTarget nodeId = do
+    matchNode <- getASTPointer nodeId
+    getTargetNode matchNode
+
+getASTVar :: ASTOp m => NodeId -> m NodeRef
+getASTVar nodeId = do
+    matchNode <- getASTPointer nodeId
+    getVarNode matchNode
 
 isApp :: ASTOp m => NodeRef -> m Bool
 isApp expr = isJust <$> IRExpr.narrowAtom @IR.App expr

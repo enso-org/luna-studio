@@ -1,42 +1,20 @@
-module Empire.Commands.GraphUtils where
+module Empire.Commands.GraphUtils (
+    getASTPointer
+  , getASTTarget
+  , getASTVar
 
-import           Empire.Prelude
+  , rewireNode
+  ) where
 
-import           Empire.Empire
+import           Empire.Prelude ()
 
-import           Data.Maybe              (fromJust)
 import           Empire.ASTOp            (ASTOp)
-import           Empire.Data.AST         (NodeRef, astExceptionToException,
-                                          astExceptionFromException)
-import           Empire.Data.Graph       (Graph)
-import qualified Empire.Data.Graph       as Graph
+import           Empire.ASTOps.Read      (getASTPointer, getASTTarget, getASTVar)
+import           Empire.Data.AST         (NodeRef)
 import           Empire.API.Data.Node    (NodeId)
 import qualified Empire.Commands.AST     as AST
 
 
-
-data NodeDoesNotExistException = NodeDoesNotExistException NodeId
-    deriving Show
-instance Exception NodeDoesNotExistException where
-    toException = astExceptionToException
-    fromException = astExceptionFromException
-
-getASTPointer :: ASTOp m => NodeId -> m NodeRef
-getASTPointer nodeId = do
-    node <- use (Graph.nodeMapping . at nodeId)
-    case node of
-        Just target -> pure $ Graph.getAnyRef target
-        _           -> throwM $ NodeDoesNotExistException nodeId
-
-getASTTarget :: ASTOp m => NodeId -> m NodeRef
-getASTTarget nodeId = do
-    matchNode <- getASTPointer nodeId
-    AST.getTargetNode matchNode
-
-getASTVar :: ASTOp m => NodeId -> m NodeRef
-getASTVar nodeId = do
-    matchNode <- getASTPointer nodeId
-    AST.getVarNode matchNode
 
 rewireNode :: ASTOp m => NodeId -> NodeRef -> m ()
 rewireNode nodeId newTarget = do

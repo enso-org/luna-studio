@@ -3,8 +3,6 @@
 module Empire.ASTOps.Deconstruct (
     deconstructApp
   , extractArguments
-  , rightMatchOperand
-  , leftMatchOperand
   ) where
 
 import           Empire.Prelude
@@ -12,9 +10,7 @@ import           Empire.Prelude
 import           Empire.API.Data.Node               (NodeId)
 import           Empire.ASTOp                       (ASTOp)
 import           Empire.ASTOps.Remove               (removeNode)
-import           Empire.Data.AST                    (EdgeRef, NodeRef, NotAppException(..),
-                                                     NotUnifyException(..), astExceptionFromException,
-                                                     astExceptionToException)
+import           Empire.Data.AST                    (EdgeRef, NodeRef, NotAppException(..))
 import           Empire.Data.Layers                 (NodeMarker(..), Marker)
 
 import Luna.IR.Expr.Term.Uni
@@ -46,13 +42,3 @@ extractArguments expr = match expr $ \case
         arg'    <- IR.source b
         return $ arg' : args
     _       -> return []
-
-rightMatchOperand :: ASTOp m => NodeRef -> m EdgeRef
-rightMatchOperand node = match node $ \case
-    Unify _ b -> pure b
-    _         -> throwM $ NotUnifyException node
-
-leftMatchOperand :: ASTOp m => NodeRef -> m EdgeRef
-leftMatchOperand node = match node $ \case
-    Unify a _ -> pure a
-    _         -> throwM $ NotUnifyException node
