@@ -29,6 +29,7 @@ import qualified Empire.ASTOps.Builder             as ASTBuilder
 import qualified Empire.ASTOps.Deconstruct         as ASTDeconstruct
 import qualified Empire.ASTOps.Parse               as Parser
 import qualified Empire.ASTOps.Print               as Printer
+import qualified Empire.ASTOps.Read                as ASTRead
 import           Empire.ASTOps.Remove              (removeArg, removeNode)
 
 import           Empire.Utils.TextResult           (nodeValueToText)
@@ -69,7 +70,7 @@ limit = limitHead where
 valueDecoderForType :: ASTOp m => NodeRef -> m (Maybe (Data -> Value))
 valueDecoderForType tpNode = match tpNode $ \case
     Cons n -> do
-        name <- ASTBuilder.getName n
+        name <- ASTRead.getName n
         case name of
             "Int"            -> return $ Just $ IntValue       . unsafeFromData
             "String"         -> return $ Just $ StringValue    . unsafeFromData
@@ -157,7 +158,7 @@ getNodeValue node = do
                 Left  s -> return $ Left s
                 Right v' -> match tpNode $ \case
                     Cons n -> do
-                        name <- ASTBuilder.getName n
+                        name <- ASTRead.getName n
                         case name of
                             "Stream"  -> return $ Right $ Listener $ \f -> attachListener (unsafeFromData v') (f . decoder)
                             "Twitter" -> return $ Right $ Listener $ \_ -> attachListener (unsafeFromData v') (const $ return ())
@@ -248,7 +249,7 @@ getVarNode :: ASTOp m => NodeRef -> m NodeRef
 getVarNode node = ASTDeconstruct.leftMatchOperand node >>= IR.source
 
 getVarName :: ASTOp m => NodeRef -> m String
-getVarName node = ASTBuilder.getVarName node
+getVarName node = ASTRead.getVarName node
 
 getLambdaInputRef :: ASTOp m => NodeRef -> Int -> m NodeRef
 getLambdaInputRef node pos = do

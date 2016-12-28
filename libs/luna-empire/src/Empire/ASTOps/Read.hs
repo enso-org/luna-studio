@@ -1,3 +1,4 @@
+{-# LANGUAGE LambdaCase       #-}
 {-# LANGUAGE TypeApplications #-}
 
 {-|
@@ -10,6 +11,8 @@ AST, without modifying it. They can still throw exceptions though.
 module Empire.ASTOps.Read (
     isGraphNode
   , getNodeId
+  , getVarName
+  , getName
   ) where
 
 import           Data.Coerce                        (coerce)
@@ -18,7 +21,7 @@ import           Empire.Prelude
 
 import           Empire.API.Data.Node               (NodeId)
 import           Empire.ASTOp                       (ASTOp)
-import           Empire.Data.AST                    (NodeRef)
+import           Empire.Data.AST                    (NodeRef, EdgeRef)
 import           Empire.Data.Layers                 (NodeMarker(..), Marker)
 
 import Luna.IR.Expr.Term.Uni
@@ -34,3 +37,13 @@ isGraphNode = fmap isJust . getNodeId
 
 getNodeId :: ASTOp m => NodeRef -> m (Maybe NodeId)
 getNodeId node = coerce <$> IR.readLayer @Marker node
+
+getVarName :: ASTOp m => NodeRef -> m String
+getVarName node = match node $ \case
+    Var n -> getName n
+
+getName :: ASTOp m => EdgeRef -> m String
+getName node = do
+    str <- IR.source node
+    match str $ \case
+        IR.String s -> return s

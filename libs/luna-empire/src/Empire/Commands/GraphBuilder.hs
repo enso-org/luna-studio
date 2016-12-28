@@ -150,7 +150,7 @@ getNodeName nid = do
         vnode <- GraphUtils.getASTVar nid
         match vnode $ \case
             Var n -> do
-                name <- ASTBuilder.getName n
+                name <- ASTRead.getName n
                 return $ Just (Text.pack name)
     else return Nothing
 
@@ -162,7 +162,7 @@ getPortState node = do
         IR.Integer i    -> return $ WithDefault $ Constant $ IntValue $ fromIntegral i
         IR.Rational r   -> return $ WithDefault $ Constant $ RationalValue r
         (Cons n) -> do
-            name <- ASTBuilder.getName n
+            name <- ASTRead.getName n
             case name of
                 "False" -> return . WithDefault . Constant . BoolValue $ False
                 "True"  -> return . WithDefault . Constant . BoolValue $ True

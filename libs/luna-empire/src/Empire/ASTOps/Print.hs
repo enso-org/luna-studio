@@ -20,7 +20,7 @@ import qualified Luna.IR as IR
 getTypeRep :: ASTOp m => NodeRef -> m TypeRep
 getTypeRep tp = match tp $ \case
     Cons n -> do
-        name <- ASTBuilder.getName n
+        name <- ASTRead.getName n
         return $ TCons name []
     Lam _as out -> do
         args   <- ASTDeconstruct.extractArguments tp
@@ -28,11 +28,11 @@ getTypeRep tp = match tp $ \case
         outRep <- getTypeRep =<< IR.source out
         return $ TLam argReps outRep
     Acc n t -> do
-        name <- ASTBuilder.getName n
+        name <- ASTRead.getName n
         rep <- IR.source t >>= getTypeRep
         return $ TAcc name rep
     Var n -> do
-        name <- ASTBuilder.getName n
+        name <- ASTRead.getName n
         return $ TVar $ delete '#' name
     Star -> return TStar
     _ -> return TBlank
@@ -89,11 +89,11 @@ printExpression' suppressNodes paren node = do
             rightRep <- IR.source r >>= recur paren
             return $ leftRep ++ " = " ++ rightRep
         Var n -> do
-            name <- ASTBuilder.getName n
+            name <- ASTRead.getName n
             isNode <- ASTRead.isGraphNode node
             return $ if isNode && suppressNodes then "_" else name
         Acc n t -> do
-            name <- ASTBuilder.getName n
+            name <- ASTRead.getName n
             target <- IR.source t
             match target $ \case
                 Blank -> return $ "_." <> name
@@ -107,7 +107,7 @@ printExpression' suppressNodes paren node = do
         IR.Rational r -> pure $ show r
         IR.Integer  i -> pure $ show i
         IR.String s -> return $ show s
-        Cons n -> ASTBuilder.getName n
+        Cons n -> ASTRead.getName n
         _ -> return ""
 
 printExpression :: ASTOp m => NodeRef -> m String

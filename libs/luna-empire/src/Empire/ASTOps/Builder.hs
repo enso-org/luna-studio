@@ -13,7 +13,7 @@ import           Empire.Prelude
 import           Empire.API.Data.Node               (NodeId)
 import           Empire.ASTOp                       (ASTOp)
 import           Empire.ASTOps.Deconstruct          (deconstructApp, extractArguments)
-import           Empire.ASTOps.Read                 (isGraphNode)
+import           Empire.ASTOps.Read                 (isGraphNode, getName)
 import           Empire.ASTOps.Remove               (removeNode)
 import           Empire.Data.AST                    (EdgeRef, NodeRef, NotAppException(..),
                                                      NotUnifyException(..), astExceptionFromException,
@@ -45,16 +45,6 @@ isBlank :: ASTOp m => NodeRef -> m Bool
 isBlank expr = match expr $ \case
     Blank{} -> return True
     _       -> return False
-
-getVarName :: ASTOp m => NodeRef -> m String
-getVarName node = match node $ \case
-    Var n -> getName n
-
-getName :: ASTOp m => EdgeRef -> m String
-getName node = do
-    str <- IR.source node
-    match str $ \case
-        IR.String s -> return s
 
 apps :: ASTOp m => IR.Expr f -> [NodeRef] -> m NodeRef
 apps fun exprs = IR.unsafeRelayout <$> foldM f (IR.unsafeRelayout fun) (IR.unsafeRelayout <$> exprs)
