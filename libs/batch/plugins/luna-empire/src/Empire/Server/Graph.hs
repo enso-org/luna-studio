@@ -209,9 +209,9 @@ handleRemoveNodes = modifyGraphOk action success where
 handleUpdateNodeExpression :: Request UpdateNodeExpression.Request -> StateT Env BusT ()-- fixme [SB] returns Result with no new informations and change node expression has addNode+removeNodes
 handleUpdateNodeExpression = modifyGraph action success where
     action (UpdateNodeExpression.Request location nodeId expression) = do
-        oldExpr <- Graph.withGraph location $ undefined -- GraphUtils.getASTTarget nodeId >>= Print.printNodeExpression
+        oldExpr <- Graph.withGraph location $ $notImplemented -- GraphUtils.getASTTarget nodeId >>= Print.printNodeExpression
         let newNodeId = nodeId
-            inverse = UpdateNodeExpression.Inverse (Text.pack  oldExpr)
+            inverse = UpdateNodeExpression.Inverse (Text.pack oldExpr)
             res = Graph.updateNodeExpression location nodeId newNodeId expression
         (,) <$> pure inverse <*> res
     success request@(Request _ req@(UpdateNodeExpression.Request location nodeId expression)) _ nodeMay = do
