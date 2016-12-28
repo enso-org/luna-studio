@@ -40,6 +40,8 @@ extractArguments expr = match expr $ \case
         return $ arg' : args
     _       -> return []
 
+dumpAccessors :: ASTOp m => NodeRef -> m (Maybe NodeRef, [String])
+dumpAccessors = dumpAccessors' True
 
 dumpAccessors' :: ASTOp m => Bool -> NodeRef -> m (Maybe NodeRef, [String])
 dumpAccessors' firstApp node = do
@@ -51,17 +53,11 @@ dumpAccessors' firstApp node = do
                 then return (Just node, [])
                 else return (Nothing, [name])
         App t a -> do
-            if not firstApp && not (null a)
-                then return (Just node, [])
-                else do
-                    target <- IR.source t
-                    dumpAccessors' False target
+            target <- IR.source t
+            dumpAccessors' False target
         Acc n t -> do
             target <- IR.source t
             name <- Read.getName n
             (tgt, names) <- dumpAccessors' False target
             return (tgt, names ++ [name])
         _ -> return (Just node, [])
-
-dumpAccessors :: ASTOp m => NodeRef -> m (Maybe NodeRef, [String])
-dumpAccessors = dumpAccessors' True

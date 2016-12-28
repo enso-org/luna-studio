@@ -88,7 +88,7 @@ reapply funRef args = do
     apps fun args
 
 buildAccessors :: ASTOp m => NodeRef -> [String] -> m NodeRef
-buildAccessors = foldM $ \t n -> IR.rawAcc n t >>= flip apps []
+buildAccessors = foldM $ \t n -> IR.generalize <$> IR.rawAcc n t
 
 applyAccessors :: ASTOp m => NodeRef -> m NodeRef
 applyAccessors = applyAccessors' False

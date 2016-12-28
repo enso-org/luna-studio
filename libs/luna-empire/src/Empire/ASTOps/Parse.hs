@@ -13,7 +13,7 @@ import           Text.Read                    (readMaybe)
 
 import           Empire.Data.AST              (NodeRef, astExceptionToException,
                                                astExceptionFromException)
-import           Empire.ASTOps.Builder        (lams)
+import           Empire.ASTOps.Builder        (buildAccessors, lams)
 import           Empire.ASTOp                 (ASTOp)
 
 import           Empire.API.Data.DefaultValue (PortDefault (..), Value (..))
@@ -24,15 +24,27 @@ import qualified Luna.IR as IR
 parseExpr :: ASTOp m => String -> m (Maybe Text.Text, NodeRef)
 parseExpr s = do
   lamRes <- tryParseLambda s
+  accs <- tryParseAccessors s
   case lamRes of
       (name, Just l)  -> return (name, l)
       _               -> case (readMaybe s :: Maybe Int) of
           Just i -> do
               i' <- IR.generalize <$> IR.integer i
               return (Nothing, i')
-          _      -> case takeWhile isLetter s of
-              [] -> $notImplemented
-              v -> IR.strVar v >>= \v' -> return (Nothing, IR.generalize v')
+          _      -> case accs of
+              Just ref -> return (Nothing, ref)
+              _ -> case takeWhile isLetter s of
+                  [] -> $notImplemented
+                  v -> IR.strVar v >>= \v' -> return (Nothing, IR.generalize v')
+
+tryParseAccessors :: ASTOp m => String -> m (Maybe NodeRef)
+tryParseAccessors s = case splitOn "." s of
+    []  -> return Nothing
+    [a] -> return Nothing
+    (var:accs) -> do
+        v <- IR.generalize <$> IR.strVar var
+        node <- buildAccessors v accs
+        return $ Just node
 
 tryParseLambda :: ASTOp m => String -> m (Maybe Text.Text, Maybe NodeRef)
 tryParseLambda s = case words s of

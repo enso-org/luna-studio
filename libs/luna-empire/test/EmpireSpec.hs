@@ -15,7 +15,9 @@ import           Empire.API.Data.PortRef       (InPortRef (..), OutPortRef (..))
 import           Empire.API.Data.TypeRep       (TypeRep(TCons))
 import           Empire.API.Data.ValueType     (ValueType(TypeIdent))
 import           Empire.ASTOp                  (runASTOp)
+import qualified Empire.ASTOps.Deconstruct     as ASTDeconstruct
 import qualified Empire.ASTOps.Parse           as Parser
+import qualified Empire.ASTOps.Read            as ASTRead
 import qualified Empire.Commands.AST           as AST (isTrivialLambda)
 import qualified Empire.Commands.Graph         as Graph (addNode, connect, getGraph, getNodes,
                                                          getConnections, removeNodes, withGraph,
@@ -263,3 +265,46 @@ spec = around withChannels $ do
                 Graph.renameNode top u1 "bar"
                 Graph.getNodes top
             withResult res $ \nodes -> head nodes ^. Node.name `shouldBe` "bar"
+    describe "dumpAccessors" $ do
+        it "foo.bar" $ \env -> do
+            u1 <- mkUUID
+            res <- evalEmp env $ do
+                Graph.addNode top u1 "foo.bar" def
+                Graph.withGraph top $ runASTOp $ do
+                    accs <- ASTRead.getASTTarget u1
+                    ASTDeconstruct.dumpAccessors accs
+            withResult res $ \(node, accs) -> do
+                node `shouldBe` Nothing
+                accs `shouldBe` ["foo", "bar"]
+        it "baz ---o foo.bar" $ \env -> do
+            u1 <- mkUUID
+            u2 <- mkUUID
+            res <- evalEmp env $ do
+                Graph.addNode top u1 "foo.bar" def
+                Graph.addNode top u2 "baz" def
+                Graph.connect top (OutPortRef u2 Port.All) (InPortRef u1 (Port.Self))
+                Graph.withGraph top $ runASTOp $ do
+                    accs <- ASTRead.getASTTarget u1
+                    (,) <$> ASTRead.getASTVar u2 <*> ASTDeconstruct.dumpAccessors accs
+            withResult res $ \(reference, (node, accs)) -> do
+                node `shouldBe` Just reference
+                accs `shouldBe` ["foo", "bar"]
+        it "1 ---> foo ---o bar ---o baz" $ \env -> do
+            u1 <- mkUUID
+            u2 <- mkUUID
+            u3 <- mkUUID
+            u4 <- mkUUID
+            res <- evalEmp env $ do
+                Graph.addNode top u1 "1" def
+                Graph.addNode top u2 "foo" def
+                Graph.connect top (OutPortRef u1 Port.All) (InPortRef u2 (Port.Arg 0))
+                Graph.addNode top u3 "bar" def
+                Graph.connect top (OutPortRef u2 Port.All) (InPortRef u3 Port.Self)
+                Graph.addNode top u4 "baz" def
+                Graph.connect top (OutPortRef u3 Port.All) (InPortRef u4 Port.Self)
+                Graph.withGraph top $ runASTOp $ do
+                    accs <- ASTRead.getASTTarget u4
+                    (,) <$> ASTRead.getASTVar u3 <*> ASTDeconstruct.dumpAccessors accs
+            withResult res $ \(reference, (node, accs)) -> do
+                node `shouldBe` Just reference
+                accs `shouldBe` ["baz"]
