@@ -25,7 +25,7 @@ import qualified ZMQ.Bus.Config                 as Config
 import qualified ZMQ.Bus.EndPoint               as EP
 
 defaultTopics :: [String]
-defaultTopics = ["empire.", "undo."]
+defaultTopics = ["empire."]
 
 logger :: Logger
 logger = getLogger $moduleName

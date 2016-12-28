@@ -40,7 +40,7 @@ import qualified ZMQ.Bus.Trans                    as Bus
 import           Data.Time.Clock.POSIX
 
 defaultTopics :: [String]
-defaultTopics = ["empire.", "undo."]
+defaultTopics = ["empire."]
 
 logger :: Logger.Logger
 logger = Logger.getLogger $(Logger.moduleName)

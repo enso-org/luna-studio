@@ -23,7 +23,7 @@ logger :: Logger
 logger = getLogger $moduleName
 
 relevantTopics :: [String]
-relevantTopics =  ["empire.", "undo."]
+relevantTopics =  ["empire."]
 
 shouldPassToClient :: MessageFrame.MessageFrame -> Message.ClientID -> Bool
 shouldPassToClient frame clientId = isNotSender where
