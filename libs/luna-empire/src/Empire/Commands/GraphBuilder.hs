@@ -144,10 +144,8 @@ getNodeName nid = do
     match' <- ASTRead.isMatch root
     if match' then do
         vnode <- GraphUtils.getASTVar nid
-        match vnode $ \case
-            Var n -> do
-                name <- ASTRead.getName n
-                return $ Just (Text.pack name)
+        name <- ASTRead.getVarName vnode
+        return $ Just (Text.pack name)
     else return Nothing
 
 getPortState :: ASTOp m => NodeRef -> m PortState
