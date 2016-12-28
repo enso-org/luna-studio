@@ -35,9 +35,7 @@ connection connectionRef = React.defineControllerView
             width      = fromString $ show connectionWidth
         line_
             [ onMouseDown $ \e m -> stopPropagation e : dispatch connectionRef (UI.ConnectionEvent $ Connection.ModifyConnection m connId)
-            , "className"   $= ((fromString $ showSvg $ portAngleStop  2 2 20) ++ " "
-                            ++  (fromString $ showSvg $ portAngleStart 2 2 20) ++ " "
-                            ++  (fromString $ showSvg $ nodeToNodeAngle src dst + 2 * pi))
+            --, "className"   $= (fromString $ showSvg $ nodeToNodeAngle src dst)
             , "x1"          $= x1
             , "y1"          $= y1
             , "x2"          $= x2

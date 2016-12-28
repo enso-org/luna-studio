@@ -28,7 +28,7 @@ showSvg a = Numeric.showFFloat (Just 2) a "" -- limit Double to two decimal numb
 transformMatrix :: String -> String -> String -> String
 transformMatrix scale offsetX offsetY = "matrix(" <> scale <> " , 0, 0, " <> scale <> " , " <> offsetX <> " , " <> offsetY <> " )"
 
-transformTranslate:: String -> String ->  String
+transformTranslate :: String -> String ->  String
 transformTranslate offsetX offsetY = "matrix( 1 , 0, 0, 1, " <> offsetX <> " , " <> offsetY <> " )"
 
 connectionWidth :: Double
@@ -55,7 +55,7 @@ portAngleStart num numOfPorts r =
     let number = fromIntegral num + 1
         gap    = portGap r
         t      = portAngle numOfPorts
-    in  number * t + pi - t + gap/2
+    in  pi - number * t + gap/2 --number * t + pi - t + gap/2
 
 
 portAngleStop :: Int -> Int -> Double -> Angle
@@ -63,7 +63,7 @@ portAngleStop num numOfPorts r =
     let number = fromIntegral num + 1
         gap    = portGap r
         t      = portAngle numOfPorts
-    in  number * t + pi - gap/2
+    in  pi - number * t + t - gap/2 --number * t + pi - gap/2
 
 
 nodeToNodeAngle :: Position -> Position -> Angle
@@ -84,13 +84,20 @@ connectionSrc src dst _ _ True =
         y' = portRadius * sin t + src ^. y
     in  Position (Vector2 x' y')
 connectionSrc src dst num numOfPorts _    =
-    let -- a  = portAngleStart num numOfPorts portRadius
-        -- b  = portAngleStop  num numOfPorts portRadius
+    let a  = portAngleStop  num numOfPorts portRadius
+        b  = portAngleStart num numOfPorts portRadius
         t  = nodeToNodeAngle src dst
-        x'  = portRadius * cos t + src ^. x
-        y'  = portRadius * sin t + src ^. y
+        a' = if a < pi then a + (2 * pi) else a
+        b' = if b < pi then b + (2 * pi) else b
+        t' = if t < pi then t + (2 * pi) else t
+        g  = portGap portRadius / 4
+
+        t''= if t' > a'- pi/2 - g then a - pi/2 - g else
+             if t' < b'- pi/2 + g then b - pi/2 + g else t --TODO: determine why the pi/2 offset is necessary
+        x' = portRadius * cos t'' + src ^. x
+        y' = portRadius * sin t'' + src ^. y
     in  Position (Vector2 x' y')
-    
+
 connectionDst :: Position -> Position -> Int -> Int -> IsSelf -> Position
 connectionDst src dst _   _          True = dst
 connectionDst src dst num numOfPorts _    =
@@ -98,16 +105,14 @@ connectionDst src dst num numOfPorts _    =
         b  = portAngleStart num numOfPorts portRadius
         t  = nodeToNodeAngle src dst
 
-        a' = a -- if a < pi/2 then a + 2 * pi else a
-        b' = b
-        t' = t --if t < pi then t + pi else t - pi
+        a' = if a < pi then a + (2 * pi) else a
+        b' = if b < pi then b + (2 * pi) else b
+        t' = if t < pi then t + (2 * pi) else t
 
-        t''= if t' - pi > a'
-             then a' - pi
-             else if t' - pi < b'
-             then b' - pi
-             else t'
+        g = portGap portRadius / 4
 
+        t''= if t' > a'- pi/2 - g then a - pi/2 - g else
+             if t' < b'- pi/2 + g then b - pi/2 + g else t --TODO: determine why the pi/2 offset is necessary
         x' = portRadius * (-cos t'') + dst ^. x
         y' = portRadius * (-sin t'') + dst ^. y
     in  Position (Vector2 x' y')

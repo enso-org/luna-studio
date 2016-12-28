@@ -81,9 +81,9 @@ drawPortIO_ nodeRef port num numOfPorts isInput = do
         color   = toJSString $ port ^. Port.color
 
         classes  = if isInput then "port port--i port--i--" else "port port--o port--o--"
-        svgFlag1 = if isInput then "0" else "1"
-        svgFlag2 = if isInput then "1" else "0"
-        mod      = if isInput then 1.0 else -1.0
+        svgFlag1 = if isInput then "1" else "0"
+        svgFlag2 = if isInput then "0" else "1"
+        mod      = if isInput then -1.0 else 1.0
 
         startPortArcX r = r * sin(portAngleStart num numOfPorts r * mod)
         startPortArcY r = r * cos(portAngleStart num numOfPorts r * mod)
