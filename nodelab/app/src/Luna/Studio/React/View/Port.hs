@@ -3,19 +3,19 @@ module Luna.Studio.React.View.Port where
 
 import           Luna.Studio.Prelude
 
-import           Empire.API.Data.Node          (NodeId)
-import           Empire.API.Data.Port          (InPort (..), OutPort (..), PortId (..))
-import qualified Event.UI                      as UI
-import           Luna.Studio.Data.Angle        (Angle)
-import           Luna.Studio.Data.Color        (Color, toJSString)
-import qualified Luna.Studio.React.Event.Node  as Node
-import           Luna.Studio.React.Model.Node  (Node)
-import           Luna.Studio.React.Store       (Ref, dispatch)
+import           Empire.API.Data.Node               (NodeId)
+import           Empire.API.Data.Port               (InPort (..), OutPort (..), PortId (..))
+import qualified Event.UI                           as UI
+import           Luna.Studio.Data.Angle             (Angle)
+import           Luna.Studio.Data.Color             (Color, toJSString)
+import qualified Luna.Studio.React.Event.Connection as Connection
+import           Luna.Studio.React.Model.Node       (Node)
+import           Luna.Studio.React.Store            (Ref, dispatch)
 import           Luna.Studio.React.View.Global
-import           Object.Widget.Port            (Port (..))
-import qualified Object.Widget.Port            as Port
-import           React.Flux                    hiding (view)
-import qualified React.Flux                    as React
+import           Object.Widget.Port                 (Port (..))
+import qualified Object.Widget.Port                 as Port
+import           React.Flux                         hiding (view)
+import qualified React.Flux                         as React
 
 
 
@@ -23,52 +23,50 @@ name :: JSString
 name = "port"
 
 
-port :: Ref Node -> NodeId -> Int -> Bool -> ReactView Port
-port nodeRef nodeId numOfPorts isOnly = React.defineView name $ \p -> do
-    drawPort_ nodeRef nodeId p numOfPorts isOnly
+port :: Ref Node -> Int -> Bool -> ReactView Port
+port nodeRef numOfPorts isOnly = React.defineView name $ \p -> do
+    drawPort_ nodeRef p numOfPorts isOnly
 
-port_ :: Ref Node -> NodeId -> Port -> Int -> Bool -> ReactElementM ViewEventHandler ()
-port_ ref nodeId p numOfPorts isOnly = React.view (port ref nodeId numOfPorts isOnly) p mempty
-
-
-drawPort_ :: Ref Node -> NodeId -> Port -> Int -> Bool -> ReactElementM ViewEventHandler ()
-drawPort_ nodeRef nodeId port numOfPorts isOnly = do
-    let portId = port ^. Port.portId
-    case portId of
-        InPortId   Self          ->                drawPortSelf_   nodeRef nodeId port
-        OutPortId  All           -> if isOnly then drawPortSingle_ nodeRef nodeId port
-                                    else           drawPortIO_     nodeRef nodeId port 0 numOfPorts False
-        InPortId  (Arg        i) ->                drawPortIO_     nodeRef nodeId port i numOfPorts True
-        OutPortId (Projection i) ->                drawPortIO_     nodeRef nodeId port i numOfPorts False
+port_ :: Ref Node -> Port -> Int -> Bool -> ReactElementM ViewEventHandler ()
+port_ ref p numOfPorts isOnly = React.view (port ref numOfPorts isOnly) p mempty
 
 
-drawPortSelf_ :: Ref Node -> NodeId -> Port -> ReactElementM ViewEventHandler ()
-drawPortSelf_ nodeRef nodeId port =
-    let portId = port ^. Port.portId
-        color = toJSString $ port ^. Port.color
+drawPort_ :: Ref Node -> Port -> Int -> Bool -> ReactElementM ViewEventHandler ()
+drawPort_ nodeRef port numOfPorts isOnly = do
+    case port ^. Port.portId of
+        InPortId   Self          ->                drawPortSelf_   nodeRef port
+        OutPortId  All           -> if isOnly then drawPortSingle_ nodeRef port
+                                    else           drawPortIO_     nodeRef port 0 numOfPorts False
+        InPortId  (Arg        i) ->                drawPortIO_     nodeRef port i numOfPorts True
+        OutPortId (Projection i) ->                drawPortIO_     nodeRef port i numOfPorts False
+
+
+drawPortSelf_ :: Ref Node -> Port -> ReactElementM ViewEventHandler ()
+drawPortSelf_ nodeRef port =
+    let portRef = port ^. Port.portRef
+        color   = toJSString $ port ^. Port.color
     in
     circle_
-        [ onMouseDown $ \e m -> stopPropagation e : dispatch nodeRef (UI.NodeEvent $ Node.StartConnection m nodeId portId)
-        , onMouseUp   $ \e m -> stopPropagation e : dispatch nodeRef (UI.NodeEvent $ Node.EndConnection   m nodeId portId)
+        [ onMouseDown $ \e m -> stopPropagation e : dispatch nodeRef (UI.ConnectionEvent $ Connection.StartConnection m portRef)
+        , onMouseUp   $ \e m -> stopPropagation e : dispatch nodeRef (UI.ConnectionEvent $ Connection.EndConnection   m portRef)
         , "className" $= "port port--self"
         , "fill"      $= color
         , "stroke"    $= color
         ] mempty
 
 
-drawPortSingle_ :: Ref Node -> NodeId -> Port -> ReactElementM ViewEventHandler ()
-drawPortSingle_ nodeRef nodeId port = do
+drawPortSingle_ :: Ref Node -> Port -> ReactElementM ViewEventHandler ()
+drawPortSingle_ nodeRef port = do
 
-    let
-        portId = port ^. Port.portId
-        color = toJSString $ port ^. Port.color
-        r1 = show nodeRadius
-        r2 = show nodeRadius'
+    let portRef     = port ^. Port.portRef
+        color       = toJSString $ port ^. Port.color
+        r1          = show nodeRadius
+        r2          = show nodeRadius'
         svgPath a b = fromString $ "M0 -" <> r1 <> " A " <> r1 <> " " <> r1 <> " 1 0 " <> show a <> " 0 "  <> r1 <>
                                    " L0 " <> r2 <> " A " <> r2 <> " " <> r2 <> " 1 0 " <> show b <> " 0 -" <> r2 <> " Z "
     path_
-        [ onMouseDown $ \e m -> stopPropagation e : dispatch nodeRef (UI.NodeEvent $ Node.StartConnection m nodeId portId)
-        , onMouseUp   $ \e m -> stopPropagation e : dispatch nodeRef (UI.NodeEvent $ Node.EndConnection   m nodeId portId)
+        [ onMouseDown $ \e m -> stopPropagation e : dispatch nodeRef (UI.ConnectionEvent $ Connection.StartConnection m portRef)
+        , onMouseUp   $ \e m -> stopPropagation e : dispatch nodeRef (UI.ConnectionEvent $ Connection.EndConnection   m portRef)
         , "className" $= "port port--o--single"
         , "fill"      $= color
         , "stroke"    $= color
@@ -76,11 +74,11 @@ drawPortSingle_ nodeRef nodeId port = do
         ] mempty
 
 
-drawPortIO_ :: Ref Node -> NodeId -> Port -> Int -> Int -> Bool -> ReactElementM ViewEventHandler ()
-drawPortIO_ nodeRef nodeId port num numOfPorts isInput = do
+drawPortIO_ :: Ref Node -> Port -> Int -> Int -> Bool -> ReactElementM ViewEventHandler ()
+drawPortIO_ nodeRef port num numOfPorts isInput = do
 
-    let portId = port ^. Port.portId
-        color = toJSString $ port ^. Port.color
+    let portRef = port ^. Port.portRef
+        color   = toJSString $ port ^. Port.color
 
         classes  = if isInput then "port port--i port--i--" else "port port--o port--o--"
         svgFlag1 = if isInput then "0" else "1"
@@ -109,8 +107,8 @@ drawPortIO_ nodeRef nodeId port num numOfPorts isInput = do
                               " A " <> r2 <> " " <> r2 <> " 1 0 " <> svgFlag2 <> " " <> dx <> " " <> dy <>
                               " Z"
     path_
-        [ onMouseDown $ \e m -> stopPropagation e : dispatch nodeRef (UI.NodeEvent $ Node.StartConnection m nodeId portId)
-        , onMouseUp   $ \e m -> stopPropagation e : dispatch nodeRef (UI.NodeEvent $ Node.EndConnection   m nodeId portId)
+        [ onMouseDown $ \e m -> stopPropagation e : dispatch nodeRef (UI.ConnectionEvent $ Connection.StartConnection m portRef)
+        , onMouseUp   $ \e m -> stopPropagation e : dispatch nodeRef (UI.ConnectionEvent $ Connection.EndConnection   m portRef)
         , "className" $= (fromString $ classes <> show (num+1))
         , "fill"      $= color
         , "stroke"    $= color

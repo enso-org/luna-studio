@@ -4,6 +4,7 @@ module Luna.Studio.Commands.Graph
     , focusNode
     , getNode
     , getPort
+    , getConnection
     -- , updateConnection
     -- , updateConnections
     -- , updateConnectionsForNodes
@@ -52,6 +53,8 @@ allNodes = Global.withNodeEditor $
 allNodes' :: Command State [WRef Node]
 allNodes' = mapM Store.get' =<< allNodes
 
+-- TODO[react]: Reconsider module Empire.API.Data.PortRef because it is impossible
+--              to use this function if AnyPortRef is specified to InPortRef or OutPortRef
 getPort :: AnyPortRef -> Command State (Maybe PortModel.Port)
 getPort portRef = runMaybeT $ do
     Just node <- lift $ getNode $ portRef ^. PortRef.nodeId
@@ -62,6 +65,9 @@ getGraphPort portRef = preuse $ Global.graph . Graph.nodesMap . ix (portRef ^. P
 
 getNode :: NodeId -> Command State (Maybe Model.Node)
 getNode nodeId = Global.withNode nodeId $ mapM Store.get
+
+getConnection :: ConnectionId -> Command State (Maybe ConnectionModel.Connection)
+getConnection connId = Global.withConnection connId $ mapM Store.get
 
 nats :: [Integer]
 nats = [1..]

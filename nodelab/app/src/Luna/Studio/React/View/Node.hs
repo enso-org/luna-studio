@@ -27,8 +27,8 @@ import qualified React.Flux                           as React
 objName :: JSString
 objName = "node-editor"
 
-makePorts :: Ref Node -> NodeId -> [Port] -> ReactElementM ViewEventHandler ()
-makePorts nodeRef nodeId ports = forM_ ports $ \port -> port_ nodeRef nodeId port (countSameTypePorts port ports) (isPortSingle port ports)
+makePorts :: Ref Node -> [Port] -> ReactElementM ViewEventHandler ()
+makePorts nodeRef ports = forM_ ports $ \port -> port_ nodeRef port (countSameTypePorts port ports) (isPortSingle port ports)
 
 
 node :: Ref Node -> ReactView ()
@@ -51,8 +51,8 @@ node ref = React.defineControllerView
                  ] $ do
                     svg_ [ "viewBox" $= "0 0 10 10" ] $ do
                         circle_ [ "className" $= "selection-mark" ] mempty
-                        makePorts ref nodeId $ filter (\port -> port ^. Port.portId /= InPortId Self) ports
-                        makePorts ref nodeId $ filter (\port -> port ^. Port.portId == InPortId Self) ports
+                        makePorts ref $ filter (\port -> port ^. Port.portId /= InPortId Self) ports
+                        makePorts ref $ filter (\port -> port ^. Port.portId == InPortId Self) ports
 
                     div_ [ "className" $= "node-expanded" ]$ do
                         div_ [ "className" $= "name"] $
@@ -100,8 +100,8 @@ node ref = React.defineControllerView
                 ] $ do
                     svg_ [ "viewBox" $= "0 0 10 10" ] $ do
                         circle_ [ "className" $= "selection-mark" ] mempty
-                        makePorts ref nodeId $ filter (\port -> (port ^. Port.portId) /= InPortId Self) ports
-                        makePorts ref nodeId $ filter (\port -> (port ^. Port.portId) == InPortId Self) ports
+                        makePorts ref $ filter (\port -> (port ^. Port.portId) /= InPortId Self) ports
+                        makePorts ref $ filter (\port -> (port ^. Port.portId) == InPortId Self) ports
                         text_
                             [ onDoubleClick $ \e _ -> stopPropagation e : dispatch ref (UI.NodeEvent $ Node.EditExpression nodeId)
                             , "className"  $= "name"

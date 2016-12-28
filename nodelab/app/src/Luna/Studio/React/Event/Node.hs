@@ -17,11 +17,9 @@ import qualified Luna.Studio.State.Slider     as Slider
 
 data Event = DisplayResultChanged Bool          NodeId
            | EditExpression                     NodeId
-           | EndConnection        MouseEvent    NodeId     PortId
            | Enter                              NodeId
            | MouseDown            MouseEvent    NodeId
            | Select               MouseEvent    NodeId
-           | StartConnection      MouseEvent    NodeId     PortId
            | NameEditStart                      NodeId
            | NameKeyDown          KeyboardEvent NodeId
            | NameChange           Text          NodeId
