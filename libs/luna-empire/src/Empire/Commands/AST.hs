@@ -24,7 +24,7 @@ import           Empire.Data.AST                   (NodeRef, NotLambdaException(
 import           Empire.Data.Layers                (Meta, NodeMarker(..), TCData, TCError(..),
                                                     TypeLayer, InputsLayer, tcErrors)
 
-import           Empire.ASTOp                      (ASTOp, lams)
+import           Empire.ASTOp                      (ASTOp)
 import qualified Empire.ASTOps.Builder             as ASTBuilder
 import qualified Empire.ASTOps.Deconstruct         as ASTDeconstruct
 import qualified Empire.ASTOps.Parse               as Parser
@@ -224,7 +224,7 @@ redirectLambdaOutput lambda newOutputRef = do
     match lambda $ \case
         Lam _args _ -> do
             args' <- ASTDeconstruct.extractArguments lambda
-            lams args' newOutputRef
+            ASTBuilder.lams args' newOutputRef
         _ -> throwM $ NotLambdaException lambda
 
 setLambdaOutputToBlank :: ASTOp m => NodeRef -> m NodeRef
@@ -233,7 +233,7 @@ setLambdaOutputToBlank lambda = do
         Lam _args _ -> do
             args' <- ASTDeconstruct.extractArguments lambda
             blank <- IR.generalize <$> IR.blank
-            lams args' blank
+            ASTBuilder.lams args' blank
         _ -> throwM $ NotLambdaException lambda
 
 makeAccessor :: ASTOp m => NodeRef -> NodeRef -> m NodeRef

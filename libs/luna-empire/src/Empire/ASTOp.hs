@@ -6,16 +6,13 @@
 module Empire.ASTOp (
     ASTOp
   , runASTOp
-  , lams
   ) where
 
 import           Empire.Prelude
 
-import           Control.Monad        (foldM)
 import           Control.Monad.State  (StateT, runStateT, get, put)
 import           Control.Monad.Except (throwError)
-import           Empire.Data.AST      (NodeRef)
-import           Empire.Data.Graph    (AST, ASTState(..), Graph)
+import           Empire.Data.Graph    (ASTState(..), Graph)
 import qualified Empire.Data.Graph    as Graph (ast)
 import           Empire.Data.Layers   (Marker, Meta,
                                       InputsLayer, TypeLayer, TCData)
@@ -25,9 +22,7 @@ import           Data.Event           (Emitters, type (//))
 import           Luna.IR              (Abstract, Accessibles, IRBuilder, IRMonad,
                                        ExprNet, ExprLinkNet, ExprLinkLayers, ExprLayers,
                                        Model, NEW, DELETE, LINK', EXPR,
-                                       unsafeRelayout, generalize, lam, evalIRBuilder,
-                                       evalPassManager, snapshot)
-import qualified Luna.IR.Function     as IR (Arg, arg)
+                                       evalIRBuilder, evalPassManager, snapshot)
 import           Luna.IR.Layer.Succs  (Succs)
 import           Luna.Pass            (Inputs, Outputs, Preserves, Events)
 import qualified Luna.Pass            as Pass (SubPass, eval')
@@ -84,12 +79,3 @@ runASTOp pass = do
     case a of
         Left err -> throwError $ "pass internal error: " ++ show err
         Right res -> return res
-
-lams :: ASTOp m => [NodeRef] -> NodeRef -> m NodeRef
-lams args output = unsafeRelayout <$> foldM f (unsafeRelayout seed) (unsafeRelayout <$> rest)
-    where
-        f arg' lam' = lamAny (IR.arg arg') lam'
-        (seed : rest) = args ++ [output]
-
-lamAny :: ASTOp m => IR.Arg NodeRef -> NodeRef -> m NodeRef
-lamAny a b = fmap generalize $ lam a b

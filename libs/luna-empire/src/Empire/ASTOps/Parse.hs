@@ -13,7 +13,8 @@ import           Text.Read                    (readMaybe)
 
 import           Empire.Data.AST              (NodeRef, astExceptionToException,
                                                astExceptionFromException)
-import           Empire.ASTOp                 (ASTOp, lams)
+import           Empire.ASTOps.Builder        (lams)
+import           Empire.ASTOp                 (ASTOp)
 
 import           Empire.API.Data.DefaultValue (PortDefault (..), Value (..))
 

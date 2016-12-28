@@ -44,6 +44,15 @@ apps fun exprs = IR.unsafeRelayout <$> foldM f (IR.unsafeRelayout fun) (IR.unsaf
 appAny :: ASTOp m => NodeRef -> Arg (NodeRef) -> m NodeRef
 appAny = fmap IR.generalize .: IR.app
 
+lams :: ASTOp m => [NodeRef] -> NodeRef -> m NodeRef
+lams args output = IR.unsafeRelayout <$> foldM f (IR.unsafeRelayout seed) (IR.unsafeRelayout <$> rest)
+    where
+        f arg' lam' = lamAny (arg arg') lam'
+        (seed : rest) = args ++ [output]
+
+lamAny :: ASTOp m => Arg NodeRef -> NodeRef -> m NodeRef
+lamAny a b = fmap IR.generalize $ IR.lam a b
+
 newApplication :: ASTOp m => NodeRef -> NodeRef -> Int -> m NodeRef
 newApplication fun arg' pos = do
     blanks <- sequence $ replicate pos IR.blank
