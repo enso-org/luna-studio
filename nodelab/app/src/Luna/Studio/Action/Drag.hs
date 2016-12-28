@@ -17,8 +17,8 @@ import           Luna.Studio.Commands.Command         (Command)
 import           Luna.Studio.Commands.Graph.Connect   (updateConnectionsForNodes)
 import           Luna.Studio.Commands.Graph.Selection (selectNodes, selectedNodes)
 import           Luna.Studio.Commands.Node.Snap       (snap)
-import           Luna.Studio.Data.Vector              (Position, moveByVector, toTuple, vector)
-import           Luna.Studio.Event.Mouse
+import           Luna.Studio.Data.Vector              (Position, move, toTuple, vector)
+import           Luna.Studio.Event.Mouse              (withShift, withoutMods, workspacePosition)
 import           Luna.Studio.Prelude
 import qualified Luna.Studio.React.Event.App          as App
 import qualified Luna.Studio.React.Event.Node         as Node
@@ -30,18 +30,20 @@ import qualified Luna.Studio.State.Drag               as Drag
 import           Luna.Studio.State.Global             (State)
 import qualified Luna.Studio.State.Global             as Global
 import qualified Luna.Studio.State.Graph              as Graph
+import           React.Flux                           (MouseEvent)
 
 
 toAction :: Event -> Maybe (Command State ())
 toAction (UI (NodeEvent (Node.MouseDown evt nodeId))) = Just $ do
-    when (withoutMods evt || withShift evt) $ startDrag nodeId (mousePosition evt) (not $ withShift evt)
-toAction (UI (AppEvent  (App.MouseUp evt)))   = Just $ stopDrag $ mousePosition evt
-toAction (UI (AppEvent  (App.MouseMove evt))) = Just $ handleMove (mousePosition evt) (not $ withShift evt)
+    when (withoutMods evt || withShift evt) $ startDrag nodeId evt (not $ withShift evt)
+toAction (UI (AppEvent  (App.MouseUp evt)))   = Just $ stopDrag evt
+toAction (UI (AppEvent  (App.MouseMove evt))) = Just $ handleMove evt (not $ withShift evt)
 toAction _                                    = Nothing
 
 
-startDrag :: NodeId -> Position -> Bool -> Command State ()
-startDrag nodeId coord snapped = do
+startDrag :: NodeId -> MouseEvent -> Bool -> Command State ()
+startDrag nodeId evt snapped = do
+    coord <- workspacePosition evt
     mayDraggedNodeRef <- Global.getNode nodeId
     withJust mayDraggedNodeRef $ \draggedNodeRef -> do
         isSelected <- view Model.isSelected <$> Store.get draggedNodeRef
@@ -56,20 +58,23 @@ startDrag nodeId coord snapped = do
             else Global.drag . Drag.history ?= DragHistory coord nodeId nodesPos
 
 
-handleMove :: Position -> Bool -> Command State ()
-handleMove coord snapped = do
+handleMove :: MouseEvent -> Bool -> Command State ()
+handleMove evt snapped = do
+    coord <- workspacePosition evt
+    -- TODO[react]: Probably remove
     -- factor <- use $ Global.camera . Camera.camera . Camera.factor
     dragHistory <- use $ Global.drag . Drag.history
     withJust dragHistory $ \(DragHistory mousePos draggedNodeId nodesPos) -> do
         let delta = coord ^. vector - mousePos ^. vector
+            --TODO[react]: Find out if we need some extra rescale here
             deltaWs = delta --Camera.scaledScreenToWorkspace factor delta
             shift' = if snapped
                         then case Map.lookup draggedNodeId nodesPos of
                             Just pos -> do
-                                snap (moveByVector pos deltaWs) ^. vector - pos ^. vector
+                                snap (move pos deltaWs) ^. vector - pos ^. vector
                             Nothing  -> deltaWs
                         else deltaWs
-        moveNodes $ Map.map (flip moveByVector shift') nodesPos
+        moveNodes $ Map.map (flip move shift') nodesPos
 
 moveNodes :: Map NodeId Position -> Command State ()
 moveNodes nodesPos = do
@@ -78,8 +83,9 @@ moveNodes nodesPos = do
             Model.position .~ pos
     updateConnectionsForNodes $ Map.keys nodesPos
 
-stopDrag :: Position -> Command State ()
-stopDrag coord = do
+stopDrag :: MouseEvent -> Command State ()
+stopDrag evt = do
+    coord <- workspacePosition evt
     dragHistory <- use $ Global.drag . Drag.history
     withJust dragHistory $ \(DragHistory start nodeId _) -> do
         Global.drag . Drag.history .= Nothing

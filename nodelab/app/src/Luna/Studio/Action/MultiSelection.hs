@@ -2,7 +2,7 @@
 
 module Luna.Studio.Action.MultiSelection where
 
-import           Luna.Studio.Data.Vector              (Position (Position), Vector2 (Vector2), fromTuple, x, y)
+import           Luna.Studio.Data.Vector              (Position (Position), Vector2 (Vector2), fromTuple, rescale, x, y)
 import           Luna.Studio.Prelude
 
 import           Empire.API.Data.Node                 (Node)
@@ -10,10 +10,12 @@ import qualified Empire.API.Data.Node                 as Node
 import           Event.Event                          (Event (UI))
 import           Event.UI                             (UIEvent (AppEvent, NodeEditorEvent))
 import           Luna.Studio.Commands.Command         (Command)
+import           Luna.Studio.Commands.Graph           (allNodes)
 import           Luna.Studio.Commands.Graph.Selection (focusSelectedNode, modifySelectionHistory, selectNodes, selectedNodes, unselectAll)
-import           Luna.Studio.Event.Mouse              (mousePosition)
+import           Luna.Studio.Event.Mouse              (workspacePosition)
 import qualified Luna.Studio.React.Event.App          as App
 import qualified Luna.Studio.React.Event.NodeEditor   as NodeEditor
+import qualified Luna.Studio.React.Model.NodeEditor   as NodeEditor
 import           Luna.Studio.React.Model.SelectionBox (SelectionBox (SelectionBox))
 import qualified Luna.Studio.React.Model.SelectionBox as SelectionBox
 import           Luna.Studio.React.Store              (widget)
@@ -24,31 +26,33 @@ import qualified Luna.Studio.State.Graph              as Graph
 import           Luna.Studio.State.MultiSelection     (DragHistory (..))
 import qualified Luna.Studio.State.MultiSelection     as MultiSelection
 import qualified Object.Widget.Node                   as NodeModel
-
+import           React.Flux                           (MouseEvent)
 
 
 toAction :: Event -> Maybe (Command State ())
 -- TODO[react]: Find out if wee need to check for mods
-toAction (UI (NodeEditorEvent (NodeEditor.MouseDown evt))) = Just $ startDrag $ mousePosition evt
+toAction (UI (NodeEditorEvent (NodeEditor.MouseDown evt))) = Just $ startDrag evt
 toAction (UI (AppEvent  (App.MouseUp   _  )))              = Just $ stopDrag
-toAction (UI (AppEvent  (App.MouseMove evt)))              = Just $ handleMove $ mousePosition evt
+toAction (UI (AppEvent  (App.MouseMove evt)))              = Just $ handleMove evt
 toAction _                                                 = Nothing
 --TODO[react] implement
 -- toAction (Keyboard _ (Keyboard.Event Keyboard.Press 'A'   _)) = Just selectAll
 -- toAction (Keyboard _ (Keyboard.Event Keyboard.Down  '\27' _)) = Just unselectAll
 
 
-startDrag :: Position -> Command State ()
-startDrag coord = do
+startDrag :: MouseEvent -> Command State ()
+startDrag evt = do
+    coord <- workspacePosition evt
     Global.multiSelection . MultiSelection.history ?= DragHistory coord coord
     unselectAll
 
-handleMove :: Position -> Command State ()
-handleMove coord = do
+handleMove :: MouseEvent -> Command State ()
+handleMove evt = do
     dragHistory <- use $ Global.multiSelection . MultiSelection.history
     case dragHistory of
         Nothing                          -> return ()
         Just (DragHistory start _current) -> do
+            coord <- workspacePosition evt
             Global.multiSelection . MultiSelection.history ?= DragHistory start coord
             updateSelection start coord
             drawSelectionBox start coord

@@ -1,17 +1,19 @@
 module Luna.Studio.Event.Mouse where
 
 
-import           Luna.Studio.Data.Vector (Position (Position), Vector2 (Vector2))
+import           Luna.Studio.Commands.Command (Command)
+import           Luna.Studio.Data.Vector      (Position (Position), Vector2 (Vector2))
 import           Luna.Studio.Prelude
-import           React.Flux              (MouseEvent (MouseEvent), mousePageX, mousePageY)
+import           Luna.Studio.State.Camera     (translateToWorkspace)
+import           Luna.Studio.State.Global     (State)
+import           React.Flux                   (MouseEvent (MouseEvent), mousePageX, mousePageY)
 -- import           Data.Bits (setBit, testBit)
 -- import           Type.List (Index)
 -- import           Data.Typeable
 
 
---TODO[react]: implement, apply zoom and pan
-workspacePosition :: MouseEvent -> Position
-workspacePosition = mousePosition
+workspacePosition :: MouseEvent -> Command State (Position)
+workspacePosition = translateToWorkspace . mousePosition
 
 mousePosition :: MouseEvent -> Position
 mousePosition e = Position (Vector2 (fromIntegral $ mousePageX e) (fromIntegral $ mousePageY e))
@@ -55,7 +57,7 @@ withCtrlAltShift _                                                    = False
 
 -- TODO[react]: Consider rewrite with below approach. Also we need to find a way
 --              to use regular key as mod to MouseEvent. We should talk about
---              this and keeping full state of Keyboard and Mouse with Wojciech. 
+--              this and keeping full state of Keyboard and Mouse with Wojciech.
 -- data ModType = Alt
 --              | Ctrl
 --              | Shift

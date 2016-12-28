@@ -12,7 +12,7 @@ import qualified JS.GoogleAnalytics                 as GA
 import           Luna.Studio.Commands.Command       (Command)
 import           Luna.Studio.Commands.Graph.Connect (batchConnectNodes)
 import           Luna.Studio.Data.Vector            (Position)
-import           Luna.Studio.Event.Mouse            (mousePosition)
+import           Luna.Studio.Event.Mouse            (workspacePosition)
 import           Luna.Studio.Prelude
 import qualified Luna.Studio.React.Event.App        as App
 import qualified Luna.Studio.React.Event.Connection as Connection
@@ -25,23 +25,21 @@ import           Luna.Studio.React.View.Global      (getCurrentConnectionColor, 
 import           Luna.Studio.State.Global           (State)
 import qualified Luna.Studio.State.Global           as Global
 import qualified Object.Widget.Connection           as ConnectionModel
-
+import           React.Flux                         (MouseEvent)
 
 
 toAction :: Event -> Maybe (Command State ())
-toAction (UI (ConnectionEvent (Connection.StartConnection evt portRef))) = Just $ startDragFromPort pos portRef
-    where pos = mousePosition evt
-toAction (UI (AppEvent  (App.MouseMove evt)))                            = Just $ whileConnecting $ handleMove pos
-    where pos = mousePosition evt
+toAction (UI (ConnectionEvent (Connection.StartConnection evt portRef))) = Just $ startDragFromPort evt portRef
+toAction (UI (AppEvent  (App.MouseMove evt)))                            = Just $ whileConnecting $ handleMove evt
 toAction (UI (AppEvent (App.MouseUp _)))                                 = Just $ whileConnecting $ stopDrag'
 toAction (UI (ConnectionEvent (Connection.EndConnection _ portRef)))     = Just $ whileConnecting $ stopDrag portRef
-toAction (UI (ConnectionEvent (Connection.ModifyConnection evt connId))) = Just $ modifyConnection pos connId
-    where pos = mousePosition evt
+toAction (UI (ConnectionEvent (Connection.ModifyConnection evt connId))) = Just $ modifyConnection evt connId
 toAction _                                                               = Nothing
 
 
-startDragFromPort :: Position -> AnyPortRef -> Command State ()
-startDragFromPort mousePos portRef = do
+startDragFromPort :: MouseEvent -> AnyPortRef -> Command State ()
+startDragFromPort evt portRef = do
+    mousePos  <- workspacePosition evt
     maySrcPos <- getCurrentConnectionSrcPosition portRef mousePos
     withJust maySrcPos $ \srcPos -> do
         mayColor  <- getCurrentConnectionColor portRef
@@ -56,10 +54,11 @@ whileConnecting run = do
     mayCurrentConnectionRef <- Global.withNodeEditor $ Store.use NodeEditor.currentConnection
     withJust mayCurrentConnectionRef $ \currentConnectionRef -> run currentConnectionRef
 
-handleMove :: Position -> Ref CurrentConnection -> Command State ()
-handleMove mousePos connRef = do
+handleMove :: MouseEvent -> Ref CurrentConnection -> Command State ()
+handleMove evt connRef = do
+    mousePos   <- workspacePosition evt
     srcPortRef <- view ConnectionModel.srcPortRef <$> Ref.get connRef
-    maySrcPos <- getCurrentConnectionSrcPosition srcPortRef mousePos
+    maySrcPos  <- getCurrentConnectionSrcPosition srcPortRef mousePos
     case maySrcPos of
         Just pos -> flip Store.modifyM_ connRef $ do
             ConnectionModel.currentTo .= mousePos
@@ -87,5 +86,5 @@ stopDrag dstPortRef connRef = do
         GA.sendEvent $ GA.Connect GA.Manual
 
 --TODO[react]: Implement this function
-modifyConnection :: Position -> ConnectionId -> Command State ()
-modifyConnection mousePos connId = return ()
+modifyConnection :: MouseEvent -> ConnectionId -> Command State ()
+modifyConnection evt connId = return ()

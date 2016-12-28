@@ -1,11 +1,22 @@
 module Luna.Studio.State.Camera where
---
--- import           Data.Aeson                (ToJSON)
--- import           Luna.Studio.Commands.Command (Command)
--- import           Luna.Studio.Prelude
--- import           Luna.Studio.Data.Vector
---
---
+
+import           Luna.Studio.Commands.Command       (Command)
+import           Luna.Studio.Data.Vector            (Position, move, rescale)
+import           Luna.Studio.Prelude
+import qualified Luna.Studio.React.Model.NodeEditor as NodeEditor
+import qualified Luna.Studio.React.Store            as Store
+import           Luna.Studio.State.Global           (State)
+import qualified Luna.Studio.State.Global           as Global
+
+
+-- TODO[react]: Implement this correctly
+translateToWorkspace :: Position -> Command State (Position)
+translateToWorkspace pos = do
+    factor <- Global.withNodeEditor $ Store.use NodeEditor.factor
+    pan <- Global.withNodeEditor $ Store.use NodeEditor.pan
+    return $ rescale (move pos $ -pan) $ 1/factor
+
+-- TODO[react]: remove once camera is reimplemented
 -- data DragHistory =  PanDragHistory  { _panPreviousPos :: Position }
 --                  | ZoomDragHistory  { _zoomPreviousPos :: Position
 --                                     , _zoomFPScreen    :: Vector2 Int
