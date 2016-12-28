@@ -168,20 +168,17 @@ getNodeValue node = do
 readMeta :: ASTOp m => NodeRef -> m (Maybe NodeMeta)
 readMeta ref = IR.readLayer @Meta ref
 
-getError :: ASTOp m => NodeRef -> m (Maybe (APIError.Error TypeRep))
-getError = getError'
-
 tryHead :: [a] -> Maybe a
 tryHead [] = Nothing
 tryHead (a:_) = Just a
 
-getError' :: ASTOp m => NodeRef -> m (Maybe (APIError.Error TypeRep))
-getError' n = do
+getError :: ASTOp m => NodeRef -> m (Maybe (APIError.Error TypeRep))
+getError n = do
     tc <- view tcErrors <$> IR.readLayer @TCData n
     err <- mapM reprError tc
     inp <- IR.readLayer @InputsLayer n
     inps <- mapM (IR.source) inp
-    inpErrs <- catMaybes <$> mapM getError' inps
+    inpErrs <- catMaybes <$> mapM getError inps
     return $ tryHead err <|> tryHead inpErrs
 
 reprError :: ASTOp m => TCError NodeRef -> m (APIError.Error TypeRep)
