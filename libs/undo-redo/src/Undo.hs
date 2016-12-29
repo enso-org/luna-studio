@@ -24,12 +24,13 @@ import           Data.ByteString.Lazy              (toStrict,fromStrict)
 import           Data.Binary                       (Binary, decode)
 import qualified Data.Binary                       as Bin
 import qualified Data.Text.Lazy                        as Text
-
+import qualified Data.List as List
 import qualified Data.Map.Strict                   as Map
 import           Data.Map.Strict                   (Map)
 import           Data.Maybe
 import           Data.Set                          hiding (map)
 import           Prologue                          hiding (throwM)
+import Util as Util
 
 import           Data.UUID as UUID (nil)
 import           Data.UUID.V4 as UUID (nextRandom)
@@ -45,6 +46,7 @@ import qualified Empire.API.Graph.AddNode          as AddNode
 import qualified Empire.API.Graph.AddSubgraph      as AddSubgraph
 import qualified Empire.API.Graph.Connect              as Connect
 import qualified Empire.API.Graph.Disconnect           as Disconnect
+import qualified Empire.API.Data.PortRef           as PortRef
 import qualified Empire.API.Graph.RemoveNodes      as RemoveNodes
 import qualified Empire.API.Graph.RenameNode       as RenameNode
 import qualified Empire.API.Graph.UpdateNodeExpression as UpdateNodeExpression
@@ -160,11 +162,11 @@ handleAddNodeUndo (Response.Response _ (AddNode.Request location nodeType nodeMe
         in Just (undoMsg, redoMsg)
 
 handleAddSubgraphUndo :: AddSubgraph.Response -> Maybe (RemoveNodes.Request, AddSubgraph.Request)  --dodac result do pola addsubgraph response bo zwraca request z podmienionym id
-handleAddSubgraphUndo (Response.Response  _ (AddSubgraph.Request location nodes connections) _ res ) =
+handleAddSubgraphUndo (Response.Response  _ (AddSubgraph.Request location nodes connections saveNodeIds) _ res ) =
     withOk res $ const $
         let ids = map (^. Node.nodeId) nodes
             undoMsg = RemoveNodes.Request location ids
-            redoMsg = AddSubgraph.Request location nodes connections
+            redoMsg = AddSubgraph.Request location nodes connections True
         in Just (undoMsg, redoMsg)
 
 connect :: (OutPortRef, InPortRef) -> Connection
@@ -172,11 +174,25 @@ connect ports = Connection src dst
     where src = fst ports
           dst = snd ports
 
+filterNodes :: [NodeId] -> [Node] -> [Node]
+filterNodes nodesIds nodes =
+    let q x = List.find (\node -> node ^. Node.nodeId == x) nodes
+        p = map q nodesIds
+    in catMaybes p
+
+filterConnections :: [(OutPortRef, InPortRef)] -> [NodeId] -> [(OutPortRef, InPortRef)]
+filterConnections connectionPorts nodesIds =
+    let q x = Prologue.filter (\port -> (((PortRef.OutPortRef' (fst port)) ^. PortRef.nodeId == x) || ( (PortRef.InPortRef' (snd port)) ^. PortRef.nodeId == x)) ) connectionPorts
+        p = map q nodesIds
+    in concat p
+
 handleRemoveNodesUndo :: RemoveNodes.Response -> Maybe (AddSubgraph.Request, RemoveNodes.Request)
 handleRemoveNodesUndo (Response.Response _ (RemoveNodes.Request location nodesIds) inv _) =
     withOk inv $ \(RemoveNodes.Inverse nodes connectionPorts)->
-        let connections = connect <$> connectionPorts
-            undoMsg = AddSubgraph.Request location nodes connections
+        let deletedNodes = filterNodes nodesIds nodes
+            deletedConnections  = filterConnections connectionPorts nodesIds
+            connections = connect <$> deletedConnections
+            undoMsg = AddSubgraph.Request location deletedNodes connections True
             redoMsg = RemoveNodes.Request location nodesIds
         in Just (undoMsg, redoMsg)
 

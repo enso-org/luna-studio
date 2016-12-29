@@ -184,18 +184,22 @@ handleAddNode = modifyGraph (mtuple action) success where
             AddNode.ExpressionNode expr -> withJust connectTo $ connectNodes location expr (node ^. Node.nodeId)
 
 handleAddSubgraph :: Request AddSubgraph.Request -> StateT Env BusT ()
-handleAddSubgraph (Request reqId (AddSubgraph.Request location nodes connections)) = do
-    newIds <- liftIO $ mapM (const generateNodeId) nodes
-    let idMapping' = Map.fromList $ flip zip newIds $ flip map nodes $ view Node.nodeId
-        connectionsSrcs = map (^. Connection.src . PortRef.srcNodeId) connections
-        idMapping = Map.union idMapping' $ Map.fromList (zip connectionsSrcs connectionsSrcs)
-        nodes' = flip map nodes $ Node.nodeId %~ (idMapping Map.!)
-        connections' = map (\conn -> conn & Connection.src . PortRef.srcNodeId %~ (idMapping Map.!)
-                                          & Connection.dst . PortRef.dstNodeId %~ (idMapping Map.!)
-                           ) connections
-        action  _       = Graph.addSubgraph location nodes' connections'
-        success _ _ _   = return ()
-    modifyGraphOk (mtuple action) success (Request reqId (AddSubgraph.Request location nodes' connections'))
+handleAddSubgraph = modifyGraphOk (mtuple action) success where
+    action (AddSubgraph.Request location nodes connections saveNodeIds) = do
+        newIds <- liftIO $ mapM (const generateNodeId) nodes
+        if saveNodeIds then Graph.addSubgraph location nodes connections
+        else
+            let
+                idMapping' = Map.fromList $ flip zip newIds $ flip map nodes $ view Node.nodeId
+                connectionsSrcs = map (^. Connection.src . PortRef.srcNodeId) connections
+                idMapping = Map.union idMapping' $ Map.fromList (zip connectionsSrcs connectionsSrcs)
+                nodes' = flip map nodes $ Node.nodeId %~ (idMapping Map.!)
+                connections' = map (\conn -> conn & Connection.src . PortRef.srcNodeId %~ (idMapping Map.!)
+                                                  & Connection.dst . PortRef.dstNodeId %~ (idMapping Map.!)
+                                   ) connections
+            in Graph.addSubgraph location nodes' connections'
+
+    success _ _ _   = return ()
 
 handleRemoveNodes :: Request RemoveNodes.Request -> StateT Env BusT ()
 handleRemoveNodes = modifyGraphOk action success where
