@@ -63,87 +63,88 @@ limit = limitHead where
     limitCount = 1000
     limitHead  = take limitCount
 
-valueDecoderForType :: ASTOp m => NodeRef -> m (Maybe (Data -> Value))
-valueDecoderForType tpNode = match tpNode $ \case
+data ValueDecoderRep = ConsRep String
+                     | AppRep ValueDecoderRep ValueDecoderRep
+
+valueDecoderRep :: ASTOp m => NodeRef -> m (Maybe ValueDecoderRep)
+valueDecoderRep node = match node $ \case
     Cons n -> do
         name <- ASTRead.getName n
-        case name of
-            "Int"            -> return $ Just $ IntValue       . unsafeFromData
-            "String"         -> return $ Just $ StringValue    . unsafeFromData
-            "Double"         -> return $ Just $ DoubleValue    . unsafeFromData
-            "Bool"           -> return $ Just $ BoolValue      . unsafeFromData
-            "Histogram"      -> return $ Just $ Histogram      . unsafeFromData
-            "IntPairList"    -> return $ Just $ IntPairList    . unsafeFromData
-            "DoublePairList" -> return $ Just $ DoublePairList . unsafeFromData
-            {-"Graphics"       -> return $ Just $ Graphics       $ fromGraphics     v-}
-            {-"Layer"          -> return $ Just $ Graphics       $ fromLayer        v-}
-            {-"Geometry"       -> return $ Just $ Graphics       $ fromGeometry     v-}
-            {-"GeoComponent"   -> return $ Just $ Graphics       $ fromGeoComponent v-}
-            {-"Surface"        -> return $ Just $ Graphics       $ fromSurface      v-}
-            {-"Shape"          -> return $ Just $ Graphics       $ fromShape        v-}
-            {-"Primitive"      -> return $ Just $ Graphics       $ fromPrimitive    v-}
-            {-"Figure"         -> return $ Just $ Graphics       $ fromFigure       v-}
-            {-"Material"       -> return $ Just $ Graphics       $ fromMaterial     v-}
-            "RGBColor"       -> return $ Just $ Graphics . fromMaterial . colorRGBToMaterial . unsafeFromData
-            _                -> return Nothing
+        return $ Just $ ConsRep name
     App tc (Arg _ typ) -> do
-        tcCons <- IR.source tc
-        tcName <- ASTRead.getVarName tcCons
-        typCons <- IR.source typ
-        case tcName of
-            "Stream" -> valueDecoderForType typCons
-            "List"   -> do
-                match typCons $ \case
-                    Cons n -> do
-                        name <- ASTRead.getName n
-                        case name of
-                            "Int"    -> return $ Just $ IntList    . unsafeFromData
-                            "Double" -> return $ Just $ DoubleList . unsafeFromData
-                            "Bool"   -> return $ Just $ BoolList   . unsafeFromData
-                            "String" -> return $ Just $ StringList . unsafeFromData
-                            _        -> return Nothing
-                    App firstArg (Arg _ secondArg) -> do
-                        firstArgCons <- IR.source firstArg
-                        firstArgName <- ASTRead.getVarName firstArgCons
-                        case firstArgName of
-                            "Maybe" -> do
-                                secondArgCons <- IR.source secondArg
-                                secondArgName <- ASTRead.getVarName secondArgCons
-                                case secondArgName of
-                                    "Int"    -> return $ Just $ StringMaybeList . intMaybeListToStringMaybeList    . unsafeFromData
-                                    "Double" -> return $ Just $ StringMaybeList . doubleMaybeListToStringMaybeList . unsafeFromData
-                                    "Bool"   -> return $ Just $ StringMaybeList . boolMaybeListToStringMaybeList   . unsafeFromData
-                                    "String" -> return $ Just $ StringMaybeList . unsafeFromData
-                                    _        -> return Nothing
-                            _ -> return Nothing
-                    _ -> return Nothing
-            "Maybe"  -> do
-                typConsName <- ASTRead.getVarName typCons
-                case typConsName of
-                    "Int"    -> return $ Just $ IntMaybe    . unsafeFromData
-                    "Double" -> return $ Just $ DoubleMaybe . unsafeFromData
-                    "Bool"   -> return $ Just $ BoolMaybe   . unsafeFromData
-                    "String" -> return $ Just $ StringMaybe . unsafeFromData
-                    _        -> return Nothing
-            "Map"    -> do
-                match typCons $ \case
-                    App firstArg (Arg _ secondArg) -> do
-                        firstArgCons <- IR.source firstArg
-                        firstArgName <- ASTRead.getVarName firstArgCons
-                        case firstArgName of
-                            "String" -> do
-                                secondArgCons <- IR.source secondArg
-                                secondArgName <- ASTRead.getVarName secondArgCons
-                                case secondArgName of
-                                    "Int"    -> return $ Just $ StringStringMap . stringIntMapToStringStringMap    . unsafeFromData
-                                    "Double" -> return $ Just $ StringStringMap . stringDoubleMapToStringStringMap . unsafeFromData
-                                    "Bool"   -> return $ Just $ StringStringMap . stringBoolMapToStringStringMap   . unsafeFromData
-                                    "String" -> return $ Just $ StringStringMap . unsafeFromData
-                                    _        -> return Nothing
-                            _ -> return Nothing
-                    _ -> return Nothing
+        tc' <- IR.source tc
+        typ' <- IR.source typ
+        tcRep <- valueDecoderRep tc'
+        typRep <- valueDecoderRep typ'
+        case tcRep of
+            Just r -> case typRep of
+                Just s -> return $ Just $ AppRep r s
+                _ -> return Nothing
             _ -> return Nothing
     _ -> return Nothing
+
+concreteValueDecoder :: ValueDecoderRep -> Maybe (Data -> Value)
+concreteValueDecoder rep = case rep of
+    ConsRep name ->
+        case name of
+          "Int"            -> Just $ IntValue       . unsafeFromData
+          "String"         -> Just $ StringValue    . unsafeFromData
+          "Double"         -> Just $ DoubleValue    . unsafeFromData
+          "Bool"           -> Just $ BoolValue      . unsafeFromData
+          "Histogram"      -> Just $ Histogram      . unsafeFromData
+          "IntPairList"    -> Just $ IntPairList    . unsafeFromData
+          "DoublePairList" -> Just $ DoublePairList . unsafeFromData
+          {-"Graphics"       -> Just $ Graphics       $ fromGraphics     v-}
+          {-"Layer"          -> Just $ Graphics       $ fromLayer        v-}
+          {-"Geometry"       -> Just $ Graphics       $ fromGeometry     v-}
+          {-"GeoComponent"   -> Just $ Graphics       $ fromGeoComponent v-}
+          {-"Surface"        -> Just $ Graphics       $ fromSurface      v-}
+          {-"Shape"          -> Just $ Graphics       $ fromShape        v-}
+          {-"Primitive"      -> Just $ Graphics       $ fromPrimitive    v-}
+          {-"Figure"         -> Just $ Graphics       $ fromFigure       v-}
+          {-"Material"       -> Just $ Graphics       $ fromMaterial     v-}
+          "RGBColor"       -> Just $ Graphics . fromMaterial . colorRGBToMaterial . unsafeFromData
+          _                -> Nothing
+    AppRep (ConsRep "Stream") param -> concreteValueDecoder param
+    AppRep (ConsRep "Maybe") param -> case param of
+        ConsRep name -> case name of
+            "Int"    -> Just $ IntMaybe    . unsafeFromData
+            "Double" -> Just $ DoubleMaybe . unsafeFromData
+            "Bool"   -> Just $ BoolMaybe   . unsafeFromData
+            "String" -> Just $ StringMaybe . unsafeFromData
+            _        -> Nothing
+        _ -> Nothing
+    AppRep (ConsRep "List") param -> case param of
+        ConsRep name -> case name of
+            "Int"    -> Just $ IntList    . unsafeFromData
+            "Double" -> Just $ DoubleList . unsafeFromData
+            "Bool"   -> Just $ BoolList   . unsafeFromData
+            "String" -> Just $ StringList . unsafeFromData
+            _        -> Nothing
+        AppRep (ConsRep "Maybe") param' -> case param' of
+            ConsRep name -> case name of
+                "Int"    -> Just $ StringMaybeList . intMaybeListToStringMaybeList    . unsafeFromData
+                "Double" -> Just $ StringMaybeList . doubleMaybeListToStringMaybeList . unsafeFromData
+                "Bool"   -> Just $ StringMaybeList . boolMaybeListToStringMaybeList   . unsafeFromData
+                "String" -> Just $ StringMaybeList . unsafeFromData
+                _ -> Nothing
+            _ -> Nothing
+        _ -> Nothing
+    AppRep (ConsRep "Map") (AppRep (ConsRep "String") (ConsRep param)) -> case param of
+        "Int"    -> Just $ StringStringMap . stringIntMapToStringStringMap    . unsafeFromData
+        "Double" -> Just $ StringStringMap . stringDoubleMapToStringStringMap . unsafeFromData
+        "Bool"   -> Just $ StringStringMap . stringBoolMapToStringStringMap   . unsafeFromData
+        "String" -> Just $ StringStringMap . unsafeFromData
+        _        -> Nothing
+    _ -> Nothing
+
+
+valueDecoderForType :: ASTOp m => NodeRef -> m (Maybe (Data -> Value))
+valueDecoderForType tpNode = do
+    rep <- valueDecoderRep tpNode
+    return $ case rep of
+        Just r -> concreteValueDecoder r
+        _      -> Nothing
 
 intMaybeListToStringMaybeList :: [Maybe Int] -> [Maybe String]
 intMaybeListToStringMaybeList = fmap (fmap show)
