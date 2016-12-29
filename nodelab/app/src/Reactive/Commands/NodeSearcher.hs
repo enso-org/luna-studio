@@ -31,7 +31,6 @@ import           Empire.API.Data.Node              (NodeId)
 import qualified Empire.API.Data.Node              as Node
 import qualified Empire.API.Data.Port              as Port
 import qualified Empire.API.Data.TypeRep           as TypeRep
-import qualified Empire.API.Data.ValueType         as ValueType
 
 import qualified JS.GoogleAnalytics                as GA
 import           Text.ScopeSearcher.Item           (Item (..), Items, _Group)
@@ -100,7 +99,7 @@ scopedData = do
                 return $ case mvt of
                     Nothing -> Nothing
                     Just vt -> case vt of
-                        ValueType.TypeIdent (TypeRep.TCons ti _) -> Just $ Text.pack ti
+                        TypeRep.TCons ti _ -> Just $ Text.pack ti
                         _ -> Nothing
             (_:_) -> return Nothing
     case mscope of

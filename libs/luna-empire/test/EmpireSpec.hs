@@ -13,7 +13,6 @@ import qualified Empire.API.Data.Node          as Node (NodeType(ExpressionNode)
 import qualified Empire.API.Data.Port          as Port
 import           Empire.API.Data.PortRef       (InPortRef (..), OutPortRef (..))
 import           Empire.API.Data.TypeRep       (TypeRep(TCons))
-import           Empire.API.Data.ValueType     (ValueType(TypeIdent))
 import           Empire.ASTOp                  (runASTOp)
 import qualified Empire.ASTOps.Deconstruct     as ASTDeconstruct
 import qualified Empire.ASTOps.Parse           as Parser
@@ -186,7 +185,7 @@ spec = around withChannels $ do
                     let Just input = find ((== "inputEdge") . view Node.name) nodes'
                         ports' = toList $ input ^. Node.ports
                         types = map (view Port.valueType) ports'
-                    types `shouldMatchList` [TypeIdent (TCons "Int" []), TypeIdent (TCons "Int" [])]
+                    types `shouldMatchList` [TCons "Int" [], TCons "Int" []]
         it "properly typechecks output nodes" $ \env -> do
             u1 <- mkUUID
             (res, st) <- runEmp env $ do
@@ -202,7 +201,7 @@ spec = around withChannels $ do
                     let Just output' = find ((== "outputEdge") . view Node.name) nodes'
                         ports' = toList $ output' ^. Node.ports
                         types = map (view Port.valueType) ports'
-                    types `shouldBe` [TypeIdent (TCons "Int" [])]
+                    types `shouldBe` [TCons "Int" []]
         it "adds lambda nodeid to node mapping" $ \env -> do
             u1 <- mkUUID
             res <- evalEmp env $ do

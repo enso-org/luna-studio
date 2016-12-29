@@ -37,8 +37,7 @@ import qualified Empire.API.Data.Node              as API
 import           Empire.API.Data.Port              (InPort (..), OutPort (..), Port (..), PortId (..), PortState (..))
 import qualified Empire.API.Data.Port              as Port
 import           Empire.API.Data.PortRef           (InPortRef (..), OutPortRef (..))
-import           Empire.API.Data.TypeRep           (TypeRep(TLam))
-import           Empire.API.Data.ValueType         (ValueType (..))
+import           Empire.API.Data.TypeRep           (TypeRep(TLam, TStar))
 
 import           Empire.ASTOp                      (ASTOp, runASTOp)
 import qualified Empire.ASTOps.Deconstruct         as ASTDeconstruct
@@ -163,7 +162,7 @@ getPortState node = do
         Blank   -> return NotConnected
         _     -> WithDefault . Expression <$> Print.printExpression node
 
-extractArgTypes :: ASTOp m => NodeRef -> m [ValueType]
+extractArgTypes :: ASTOp m => NodeRef -> m [TypeRep]
 extractArgTypes node = do
     match node $ \case
         Lam _args out -> do
@@ -173,7 +172,7 @@ extractArgTypes node = do
             return $ as ++ tailAs
         _ -> return []
 
-extractPortInfo :: ASTOp m => NodeRef -> m ([ValueType], [PortState])
+extractPortInfo :: ASTOp m => NodeRef -> m ([TypeRep], [PortState])
 extractPortInfo node = do
     match node $ \case
         App f _args -> do
@@ -203,13 +202,13 @@ extractPortInfo node = do
 buildArgPorts :: ASTOp m => NodeRef -> m [Port]
 buildArgPorts ref = do
     (types, states) <- extractPortInfo ref
-    let psCons = zipWith3 Port (InPortId . Arg <$> [(0::Int)..]) (("arg " <>) . show <$> [(0::Int)..]) (types ++ replicate (length states - length types) AnyType)
+    let psCons = zipWith3 Port (InPortId . Arg <$> [(0::Int)..]) (("arg " <>) . show <$> [(0::Int)..]) (types ++ replicate (length states - length types) TStar)
     return $ zipWith ($) psCons (states ++ repeat NotConnected)
 
 buildSelfPort' :: ASTOp m => Bool -> NodeRef -> m (Maybe Port)
 buildSelfPort' seenAcc node = do
     let buildPort noType = do
-            tpRep     <- if noType then return AnyType else followTypeRep node
+            tpRep     <- if noType then return TStar else followTypeRep node
             portState <- getPortState node
             return . Just $ Port (InPortId Self) "self" tpRep portState
 
@@ -229,15 +228,15 @@ buildSelfPort' seenAcc node = do
 buildSelfPort :: ASTOp m => NodeRef -> m (Maybe Port)
 buildSelfPort = buildSelfPort' False
 
-followTypeRep :: ASTOp m => NodeRef -> m ValueType
+followTypeRep :: ASTOp m => NodeRef -> m TypeRep
 followTypeRep ref = do
     tp <- IR.source =<< IR.readLayer @TypeLayer ref
     getTypeRep tp
 
-getTypeRep :: ASTOp m => NodeRef -> m ValueType
+getTypeRep :: ASTOp m => NodeRef -> m TypeRep
 getTypeRep tp = do
     rep <- Print.getTypeRep tp
-    return $ TypeIdent rep
+    return $ rep
 
 buildPorts :: ASTOp m => NodeRef -> m [Port]
 buildPorts ref = do
@@ -264,7 +263,7 @@ buildInputEdge nid = do
     argTypes <- case types of
         [] -> do
             numberOfArguments <- length <$> (extractArgTypes ref)
-            return $ replicate numberOfArguments AnyType
+            return $ replicate numberOfArguments TStar
         _ -> return types
     let nameGen = fmap (\i -> "input" ++ show i) [(0::Int)..]
         inputEdges = zipWith3 (\n t i -> Port (OutPortId $ Projection i) n t Port.NotConnected) nameGen argTypes [(0::Int)..]
@@ -283,8 +282,7 @@ buildOutputEdge nid = do
     ref <- GraphUtils.getASTTarget lastb
     out <- followTypeRep ref
     outputType <- case out of
-        TypeIdent (TLam _ t) -> return $ TypeIdent t
-        TypeIdent t -> return $ TypeIdent t
+        TLam _ t -> return t
         a -> return a
     let port = Port (InPortId $ Arg 0) "output" outputType Port.NotConnected
     return $

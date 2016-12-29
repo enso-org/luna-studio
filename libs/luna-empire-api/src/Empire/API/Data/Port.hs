@@ -1,10 +1,10 @@
 module Empire.API.Data.Port where
 
-import Prologue
+import Prologue                     hiding (TypeRep)
 import Data.Binary                  (Binary)
 
 import Empire.API.Data.DefaultValue (PortDefault)
-import Empire.API.Data.ValueType    (ValueType)
+import Empire.API.Data.TypeRep      (TypeRep)
 
 data InPort  = Self | Arg Int        deriving (Generic, Show, Eq, Read)
 data OutPort = All  | Projection Int deriving (Generic, Show, Eq, Read)
@@ -36,7 +36,7 @@ data PortState = NotConnected | Connected | WithDefault PortDefault deriving (Sh
 
 data Port = Port { _portId     :: PortId
                  , _name       :: String
-                 , _valueType  :: ValueType
+                 , _valueType  :: TypeRep
                  , _state      :: PortState
                  } deriving (Show, Eq, Generic)
 
@@ -45,5 +45,3 @@ makePrisms ''PortState
 instance Binary PortId
 instance Binary Port
 instance Binary PortState
-
-

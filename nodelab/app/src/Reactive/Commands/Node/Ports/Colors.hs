@@ -10,7 +10,6 @@ import           Utils.PreludePlus
 import           Empire.API.Data.Port      (Port)
 import qualified Empire.API.Data.Port      as Port
 import           Empire.API.Data.TypeRep   (TypeRep (..))
-import           Empire.API.Data.ValueType (ValueType (..))
 
 
 
@@ -34,9 +33,8 @@ tpRepToColor (TLam as out) = ensureRange . hashMany $ out : as
 tpRepToColor (TVar _n) = 9
 tpRepToColor _ = 0
 
-vtToColor :: ValueType -> Int
-vtToColor (TypeIdent t) = tpRepToColor t
-vtToColor _ = 0
+vtToColor :: TypeRep -> Int
+vtToColor = tpRepToColor
 
 colorPort :: Port -> Int
 colorPort port = vtToColor $ port ^. Port.valueType
