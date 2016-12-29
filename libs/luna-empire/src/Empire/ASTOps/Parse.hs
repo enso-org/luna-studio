@@ -1,12 +1,15 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module Empire.ASTOps.Parse where
+module Empire.ASTOps.Parse (
+    parseExpr
+  , parsePortDefault
+  ) where
 
 import           Empire.Prelude
 
 import           Data.Char                    (isLetter)
 import           Data.List.Split              (splitOn)
-import           Data.List                    (intercalate, partition, takeWhile)
+import           Data.List                    (partition, takeWhile)
 import           Data.Ratio                   (approxRational)
 import qualified Data.Text.Lazy               as Text
 import           Text.Read                    (readMaybe)
@@ -40,7 +43,7 @@ parseExpr s = do
 tryParseAccessors :: ASTOp m => String -> m (Maybe NodeRef)
 tryParseAccessors s = case splitOn "." s of
     []  -> return Nothing
-    [a] -> return Nothing
+    [_a] -> return Nothing
     (var:accs) -> do
         v <- IR.generalize <$> IR.strVar var
         node <- buildAccessors v accs
@@ -82,6 +85,3 @@ parsePortDefault (Constant (BoolValue b))   = do
     bool' <- IR.string $ show b
     IR.generalize <$> IR.cons bool'
 parsePortDefault d = throwM $ PortDefaultNotConstructibleException d
-
-replace :: String -> String -> String -> String
-replace word with = intercalate with . splitOn word

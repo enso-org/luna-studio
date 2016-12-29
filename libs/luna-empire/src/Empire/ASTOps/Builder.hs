@@ -3,38 +3,33 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeApplications    #-}
 
-module Empire.ASTOps.Builder where
+module Empire.ASTOps.Builder (
+    buildAccessors
+  , lams
+  , makeNodeRep
+  , makeAccessor
+  , applyFunction
+  , renameVar
+  , removeAccessor
+  ) where
 
 import           Control.Monad                      (foldM, replicateM)
-import           Data.Coerce                        (coerce)
-import           Data.Maybe                         (isJust, isNothing)
+import           Data.Maybe                         (isNothing)
 import           Empire.Prelude
 
-import           Empire.API.Data.Node               (NodeId)
 import           Empire.ASTOp                       (ASTOp)
 import           Empire.ASTOps.Deconstruct          (deconstructApp, extractArguments, dumpAccessors)
-import           Empire.ASTOps.Read                 (isGraphNode, getName, isBlank)
 import           Empire.ASTOps.Remove               (removeSubtree)
-import           Empire.Data.AST                    (EdgeRef, NodeRef, NotAppException(..),
-                                                     NotUnifyException(..), astExceptionFromException,
+import           Empire.Data.AST                    (NodeRef, astExceptionFromException,
                                                      astExceptionToException)
 import           Empire.Data.Layers                 (NodeMarker(..), Marker)
 
-import Luna.IR.Expr.Term (Term(Sym_String))
-import Luna.IR.Expr.Term.Uni
-import Luna.IR.Function (arg)
+import           Luna.IR.Expr.Term.Uni
+import           Luna.IR.Function (arg)
 import           Luna.IR.Function.Argument (Arg)
-import qualified Luna.IR.Function.Argument as Arg
 import           Luna.IR (match)
 import qualified Luna.IR as IR
 
-functionApplicationNode :: ASTOp m => NodeRef -> m EdgeRef
-functionApplicationNode node = match node $ \case
-    App f _ -> pure f
-
-accessorTarget :: ASTOp m => NodeRef -> m EdgeRef
-accessorTarget node = match node $ \case
-    Acc _ t -> pure t
 
 apps :: ASTOp m => IR.Expr f -> [NodeRef] -> m NodeRef
 apps fun exprs = IR.unsafeRelayout <$> foldM f (IR.unsafeRelayout fun) (IR.unsafeRelayout <$> exprs)
@@ -89,31 +84,6 @@ reapply funRef args = do
 
 buildAccessors :: ASTOp m => NodeRef -> [String] -> m NodeRef
 buildAccessors = foldM $ \t n -> IR.generalize <$> IR.rawAcc n t
-
-applyAccessors :: ASTOp m => NodeRef -> m NodeRef
-applyAccessors = applyAccessors' False
-
--- FIXME[MK]: move to TC pass
-applyAccessors' :: ASTOp m => Bool -> NodeRef -> m NodeRef
-applyAccessors' apped node = match node $ \case
-    Var _ -> if apped then return node else apps node []
-    Acc n t -> do
-        name  <- IR.source n
-        tgt   <- IR.source t
-        isLam <- isBlank tgt
-        if isLam
-            then return node
-            else do
-                trep <- applyAccessors' False tgt
-                newAcc <- IR.generalize <$> IR.acc name trep
-                if apped then return newAcc else apps newAcc []
-    App f _as -> do
-        fr   <- IR.source f
-        args <- extractArguments node
-        frep <- applyAccessors' True fr
-        argReps <- mapM (applyAccessors' False) args
-        apps frep argReps
-    _ -> return node
 
 data SelfPortNotExistantException = SelfPortNotExistantException NodeRef
     deriving (Show)

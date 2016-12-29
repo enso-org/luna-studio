@@ -1,6 +1,12 @@
-{-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE LambdaCase   #-}
 {-# LANGUAGE ViewPatterns #-}
-module Empire.ASTOps.Print where
+
+module Empire.ASTOps.Print (
+    getTypeRep
+  , printExpression
+  , printNodeExpression
+  , printFunction
+  ) where
 
 import           Empire.Prelude
 import           Data.List                (dropWhileEnd, delete)
