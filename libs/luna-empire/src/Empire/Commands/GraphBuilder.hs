@@ -104,7 +104,7 @@ getEdgePortMapping = do
     lastBreadcrumbId <- use Graph.insideNode
     case lastBreadcrumbId of
         Just id' -> do
-            isLambda <- rhsIsLambda id'
+            isLambda <- AST.rhsIsLambda id'
             if isLambda
                 then Just <$> getOrCreatePortMapping id'
                 else return Nothing
@@ -129,14 +129,7 @@ canEnterNode :: ASTOp m => NodeId -> m Bool
 canEnterNode nid = do
     root  <- GraphUtils.getASTPointer nid
     match' <- ASTRead.isMatch root
-    if match' then rhsIsLambda nid else return False
-
-rhsIsLambda :: ASTOp m => NodeId -> m Bool
-rhsIsLambda nid = do
-    node <- GraphUtils.getASTTarget nid
-    match node $ \case
-        Lam{} -> return True
-        _     -> return False
+    if match' then AST.rhsIsLambda nid else return False
 
 getNodeName :: ASTOp m => NodeId -> m (Maybe Text)
 getNodeName nid = do

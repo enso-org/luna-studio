@@ -226,6 +226,11 @@ isTrivialLambda node = match node $ \case
         return $ out' `elem` args
     _ -> throwM $ NotLambdaException node
 
+rhsIsLambda :: ASTOp m => NodeId -> m Bool
+rhsIsLambda nid = do
+    node <- ASTRead.getASTTarget nid
+    ASTRead.isLambda node
+
 replaceTargetNode :: ASTOp m => NodeRef -> NodeRef -> m ()
 replaceTargetNode matchNode newTarget = do
     match matchNode $ \case
