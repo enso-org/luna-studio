@@ -21,6 +21,7 @@ module Empire.ASTOps.Read (
   , getASTTarget
   , getASTVar
   , getLambdaOutputRef
+  , getSelfNodeRef
   ) where
 
 import           Data.Coerce                        (coerce)
@@ -98,6 +99,15 @@ getASTVar :: ASTOp m => NodeId -> m NodeRef
 getASTVar nodeId = do
     matchNode <- getASTPointer nodeId
     getVarNode matchNode
+
+getSelfNodeRef :: ASTOp m => NodeRef -> m (Maybe NodeRef)
+getSelfNodeRef = getSelfNodeRef' False
+
+getSelfNodeRef' :: ASTOp m => Bool -> NodeRef -> m (Maybe NodeRef)
+getSelfNodeRef' seenAcc node = match node $ \case
+    Acc _ t -> IR.source t >>= getSelfNodeRef' True
+    App t _ -> IR.source t >>= getSelfNodeRef' seenAcc
+    _       -> return $ if seenAcc then Just node else Nothing
 
 getLambdaOutputRef :: ASTOp m => NodeRef -> m NodeRef
 getLambdaOutputRef = getLambdaOutputRef' False

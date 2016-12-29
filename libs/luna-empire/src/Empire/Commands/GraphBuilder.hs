@@ -296,16 +296,6 @@ buildOutputEdge nid = do
             def
             def
 
-getSelfNodeRef' :: ASTOp m => Bool -> NodeRef -> m (Maybe NodeRef)
-getSelfNodeRef' seenAcc node = do
-    match node $ \case
-        (Acc _ t) -> IR.source t >>= getSelfNodeRef' True
-        (App t _) -> IR.source t >>= getSelfNodeRef' seenAcc
-        _       -> return $ if seenAcc then Just node else Nothing
-
-getSelfNodeRef :: ASTOp m => NodeRef -> m (Maybe NodeRef)
-getSelfNodeRef = getSelfNodeRef' False
-
 getLambdaInputArgNumber :: ASTOp m => NodeRef -> m (Maybe Int)
 getLambdaInputArgNumber lambda = do
     match lambda $ \case
@@ -371,7 +361,7 @@ getNodeInputs edgeNodes nodeId = do
     root        <- GraphUtils.getASTPointer nodeId
     match'      <- ASTRead.isMatch root
     ref         <- if match' then GraphUtils.getASTTarget nodeId else return root
-    selfMay     <- getSelfNodeRef ref
+    selfMay     <- ASTRead.getSelfNodeRef ref
     lambdaArgs  <- getOuterLambdaArguments
     selfNodeMay <- case selfMay of
         Just self -> resolveInputNodeId edgeNodes lambdaArgs self
