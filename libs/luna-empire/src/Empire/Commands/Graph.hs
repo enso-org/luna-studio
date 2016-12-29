@@ -261,7 +261,7 @@ decodeLocation loc@(GraphLocation _ _ crumbs) = withGraph loc $ GraphBuilder.dec
 renameNode :: GraphLocation -> NodeId -> Text -> Empire ()
 renameNode loc nid name = withTC loc False $ runASTOp $ do
     vref <- GraphUtils.getASTVar nid
-    ASTBuilder.renameVar vref (Text.unpack name)
+    ASTModify.renameVar vref (Text.unpack name)
 
 dumpGraphViz :: GraphLocation -> Empire ()
 dumpGraphViz loc = withGraph loc $ do

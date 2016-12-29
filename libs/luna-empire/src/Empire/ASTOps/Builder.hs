@@ -9,7 +9,6 @@ module Empire.ASTOps.Builder (
   , makeNodeRep
   , makeAccessor
   , applyFunction
-  , renameVar
   , removeAccessor
   ) where
 
@@ -124,9 +123,3 @@ makeNodeRep marker name node = do
     (nameVar :: NodeRef) <- IR.generalize <$> IR.strVar name
     IR.writeLayer @Marker (Just marker) nameVar
     IR.generalize <$> IR.unify nameVar node
-
-renameVar :: ASTOp m => NodeRef -> String -> m ()
-renameVar vref name = match vref $ \case
-    Var n -> do
-        (var :: IR.Expr (IR.E IR.String)) <- IR.unsafeGeneralize <$> IR.source n
-        IR.modifyExprTerm var $ IR.lit .~ name

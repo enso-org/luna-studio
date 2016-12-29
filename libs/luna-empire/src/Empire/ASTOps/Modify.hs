@@ -1,4 +1,5 @@
-{-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE LambdaCase          #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 
 {-| This module contains operations that output modified nodes.
     These functions use reading, deconstructing and building APIs.
@@ -7,6 +8,7 @@
 
 module Empire.ASTOps.Modify (
     redirectLambdaOutput
+  , renameVar
   , rewireNode
   , setLambdaOutputToBlank
   ) where
@@ -59,3 +61,9 @@ rewireNode nodeId newTarget = do
     oldTarget <- ASTRead.getASTTarget  nodeId
     replaceTargetNode matchNode newTarget
     ASTRemove.removeSubtree oldTarget
+
+renameVar :: ASTOp m => NodeRef -> String -> m ()
+renameVar vref name = match vref $ \case
+    Var n -> do
+        (var :: IR.Expr (IR.E IR.String)) <- IR.unsafeGeneralize <$> IR.source n
+        IR.modifyExprTerm var $ IR.lit .~ name
