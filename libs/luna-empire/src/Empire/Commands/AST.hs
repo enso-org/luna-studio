@@ -214,13 +214,6 @@ rhsIsLambda nid = do
     node <- ASTRead.getASTTarget nid
     ASTRead.isLambda node
 
-replaceTargetNode :: ASTOp m => NodeRef -> NodeRef -> m ()
-replaceTargetNode matchNode newTarget = do
-    match matchNode $ \case
-        Unify _l r -> do
-            IR.changeSource (IR.generalize r) newTarget
-        _ -> throwM $ NotUnifyException matchNode
-
 dumpGraphViz :: ASTOp m => String -> m ()
 dumpGraphViz _name = $notImplemented
     -- g <- runASTOp Builder.get
