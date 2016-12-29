@@ -167,7 +167,7 @@ extractArgTypes node = do
     match node $ \case
         Lam _args out -> do
             unpacked <- ASTDeconstruct.extractArguments node
-            as     <- mapM getTypeRep unpacked
+            as     <- mapM Print.getTypeRep unpacked
             tailAs <- IR.source out >>= extractArgTypes
             return $ as ++ tailAs
         _ -> return []
@@ -231,12 +231,7 @@ buildSelfPort = buildSelfPort' False
 followTypeRep :: ASTOp m => NodeRef -> m TypeRep
 followTypeRep ref = do
     tp <- IR.source =<< IR.readLayer @TypeLayer ref
-    getTypeRep tp
-
-getTypeRep :: ASTOp m => NodeRef -> m TypeRep
-getTypeRep tp = do
-    rep <- Print.getTypeRep tp
-    return $ rep
+    Print.getTypeRep tp
 
 buildPorts :: ASTOp m => NodeRef -> m [Port]
 buildPorts ref = do
