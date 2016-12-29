@@ -4,7 +4,14 @@
 {-# LANGUAGE TypeApplications    #-}
 {-# LANGUAGE ViewPatterns        #-}
 
-module Empire.Commands.GraphBuilder where
+module Empire.Commands.GraphBuilder (
+    buildNode
+  , buildEdgeNodes
+  , buildGraph
+  , decodeBreadcrumbs
+  , getEdgePortMapping
+  , nodeConnectedToOutput
+  ) where
 
 import           Empire.Prelude
 
@@ -34,7 +41,6 @@ import           Empire.API.Data.TypeRep           (TypeRep(TLam))
 import           Empire.API.Data.ValueType         (ValueType (..))
 
 import           Empire.ASTOp                      (ASTOp, runASTOp)
-import qualified Empire.ASTOps.Builder             as ASTBuilder
 import qualified Empire.ASTOps.Deconstruct         as ASTDeconstruct
 import qualified Empire.ASTOps.Print               as Print
 import qualified Empire.ASTOps.Read                as ASTRead
@@ -260,7 +266,6 @@ buildInputEdge nid = do
             numberOfArguments <- length <$> (extractArgTypes ref)
             return $ replicate numberOfArguments AnyType
         _ -> return types
-    out <- followTypeRep ref
     let nameGen = fmap (\i -> "input" ++ show i) [(0::Int)..]
         inputEdges = zipWith3 (\n t i -> Port (OutPortId $ Projection i) n t Port.NotConnected) nameGen argTypes [(0::Int)..]
     return $
