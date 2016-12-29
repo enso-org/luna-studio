@@ -335,7 +335,7 @@ getOutputEdgeInputs inputEdge outputEdge = do
             return $ Just (OutPortRef id' arg, InPortRef outputEdge (Arg 0))
         _ -> return Nothing
 
-nodeConnectedToOutput :: (MonadIO m, ASTOp m) => m (Maybe NodeId)
+nodeConnectedToOutput :: ASTOp m => m (Maybe NodeId)
 nodeConnectedToOutput = do
     lambda <- use Graph.insideNode
     case lambda of
