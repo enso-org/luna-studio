@@ -14,24 +14,26 @@ module Luna.Studio.Commands.Camera
      , zoomOut
     --  , wheelZoom
      , resetZoom
+     , resetPan
     --  , updateWindowSize --TODO[react] remove
      ) where
 
-import qualified Empire.API.Data.Node               as Node
-import qualified Event.Mouse                        as Mouse
-import qualified JS.Camera                          as JS
-import           Luna.Studio.Commands.Command       (Command, performIO)
-import           Luna.Studio.Data.Vector            (Position, Vector2 (Vector2))
+import           Data.Matrix                           (Matrix, getElem, multStd2, setElem)
+import qualified Data.Matrix                           as Matrix
+
+import           Luna.Studio.Commands.Command          (Command)
+import           Luna.Studio.Data.CoordsTransformation (logicalToScreen, screenToLogical)
+import           Luna.Studio.Data.Vector               (Vector2 (Vector2), x, y)
 import           Luna.Studio.Prelude
-import qualified Luna.Studio.React.Model.NodeEditor as NodeEditor
-import qualified Luna.Studio.React.Store            as Store
+import qualified Luna.Studio.React.Model.NodeEditor    as NodeEditor
+import qualified Luna.Studio.React.Store               as Store
+import           Luna.Studio.State.Global              (State)
+import qualified Luna.Studio.State.Global              as Global
+
+-- import           Reactive.Commands.UILayout as UILayout --TODO[react] remove
 -- import           Luna.Studio.State.Camera           (DragHistory (..))
 -- import qualified Luna.Studio.State.Camera           as Camera
-import           Luna.Studio.State.Global           (State)
-import qualified Luna.Studio.State.Global           as Global
-import qualified Luna.Studio.State.Graph            as Graph
--- import           Reactive.Commands.UILayout as UILayout --TODO[react] remove
-
+-- import qualified JS.Camera                             as JS
 
 -- autoZoom :: Command Global.State ()
 -- autoZoom = do
@@ -177,13 +179,30 @@ wheelZoomSpeed =  64.0
 panStep        =  50.0
 zoomFactorStep =   1.1
 
-restrictCamFactor :: Double -> Double
-restrictCamFactor = min maxCamFactor . max minCamFactor
+restrictFactor :: Double -> Double -> Double
+restrictFactor scale factor
+    | scale * factor < minCamFactor = minCamFactor / scale
+    | scale * factor > maxCamFactor = maxCamFactor / scale
+    | otherwise                     = factor
+
+modifyCamera :: Matrix Double -> Matrix Double -> Command State ()
+modifyCamera matrix invertedMatrix = Global.withNodeEditor $ Store.modifyM_ $ do
+    NodeEditor.screenTransform . logicalToScreen %= (flip multStd2 matrix)
+    NodeEditor.screenTransform . screenToLogical %= (multStd2 invertedMatrix)
 
 panCamera :: Vector2 Double -> Command State ()
-panCamera delta = Global.withNodeEditor $ Store.modifyM_ $ do
-    factor <- use NodeEditor.factor
-    NodeEditor.pan += ((/ factor) <$> delta)
+panCamera delta = modifyCamera translateMatrix invertedMatrix where
+    x'              = delta ^. x
+    y'              = delta ^. y
+    translateMatrix = Matrix.fromList 4 4 [ 1 , 0 , 0, 0
+                                          , 0 , 1 , 0, 0
+                                          , 0 , 0 , 1, 0
+                                          , x', y', 0, 1 ]
+    invertedMatrix  = Matrix.fromList 4 4 [ 1    , 0    , 0, 0
+                                          , 0    , 1    , 0, 0
+                                          , 0    , 0    , 1, 0
+                                          , (-x'), (-y'), 0, 1 ]
+
 
 panLeft, panRight, panUp, panDown :: Command State ()
 panLeft  = panCamera $ Vector2 (-panStep) 0
@@ -191,16 +210,32 @@ panRight = panCamera $ Vector2 panStep    0
 panUp    = panCamera $ Vector2 0          (-panStep)
 panDown  = panCamera $ Vector2 0          panStep
 
+zoomCamera :: Double -> Command State ()
+zoomCamera factor = do
+    transformMatrix <- Global.withNodeEditor $ Store.use $ NodeEditor.screenTransform . logicalToScreen
+    let s              = restrictFactor (getElem 1 1 transformMatrix) factor
+        scaleMatrix    = Matrix.fromList 4 4 [ s, 0, 0, 0
+                                             , 0, s, 0, 0
+                                             , 0, 0, 1, 0
+                                             , 0, 0, 0, 1 ]
+        invertedMatrix = Matrix.fromList 4 4 [ (1/s), 0    , 0, 0
+                                             , 0    , (1/s), 0, 0
+                                             , 0    , 0    , 1, 0
+                                             , 0    , 0    , 0, 1 ]
+    modifyCamera scaleMatrix invertedMatrix
+
 zoomIn :: Command State ()
-zoomIn = Global.withNodeEditor $ Store.modifyM_ $ do
-    prevFactor <- use NodeEditor.factor
-    NodeEditor.factor .= restrictCamFactor (prevFactor * zoomFactorStep)
+zoomIn = zoomCamera zoomFactorStep
 
 zoomOut :: Command State ()
-zoomOut = Global.withNodeEditor $ Store.modifyM_ $ do
-    prevFactor <- use NodeEditor.factor
-    NodeEditor.factor .= restrictCamFactor (prevFactor / zoomFactorStep)
+zoomOut = zoomCamera (1/zoomFactorStep)
 
 resetZoom :: Command State ()
 resetZoom = Global.withNodeEditor $ Store.modifyM_ $ do
-    NodeEditor.factor .= 1
+    NodeEditor.screenTransform . logicalToScreen %= (setElem 1 (1,1) . setElem 1 (2,2))
+    NodeEditor.screenTransform . screenToLogical %= (setElem 1 (1,1) . setElem 1 (2,2))
+
+resetPan :: Command State ()
+resetPan = Global.withNodeEditor $ Store.modifyM_ $ do
+    NodeEditor.screenTransform . logicalToScreen %= (setElem 0 (4,1) . setElem 0 (4,2))
+    NodeEditor.screenTransform . screenToLogical %= (setElem 0 (4,1) . setElem 0 (4,2))

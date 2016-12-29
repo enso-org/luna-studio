@@ -57,6 +57,7 @@ dependencies:
   - lens-utils
   - luna-empire-api
   - luna-empire-api-json
+  - matrix
   - MissingH
   - mtl
   - placeholders
