@@ -59,9 +59,6 @@ addNode nid name expr = do
     let name' = fromMaybe name $ fmap Text.unpack exprName
     (,) <$> pure ref <*> ASTBuilder.makeNodeRep (NodeMarker nid) name' ref
 
-addDefault :: ASTOp m => PortDefault -> m NodeRef
-addDefault val = Parser.parsePortDefault val
-
 limit :: [a] -> [a]
 limit = limitHead where
     limitCount = 1000

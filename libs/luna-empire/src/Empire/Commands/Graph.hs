@@ -61,6 +61,7 @@ import           Empire.ASTOp                    (ASTOp, runASTOp)
 
 import qualified Empire.ASTOps.Builder           as ASTBuilder
 import qualified Empire.ASTOps.Read              as ASTRead
+import qualified Empire.ASTOps.Parse             as ASTParse
 import qualified Empire.ASTOps.Print             as ASTPrint
 import qualified Empire.ASTOps.Remove            as ASTRemove
 import qualified Empire.Commands.AST             as AST
@@ -208,7 +209,7 @@ setDefaultValue loc portRef val = withTC loc False $ runASTOp $ setDefaultValue'
 
 setDefaultValue' :: ASTOp m => AnyPortRef -> PortDefault -> m ()
 setDefaultValue' portRef val = do
-    parsed <- AST.addDefault val
+    parsed <- ASTParse.parsePortDefault val
     (nodeId, newRef) <- case portRef of
         InPortRef' (InPortRef nodeId port) -> do
             ref <- GraphUtils.getASTTarget nodeId
