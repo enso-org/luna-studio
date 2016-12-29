@@ -15,7 +15,7 @@ import           Data.Text.Lazy                    (Text)
 import qualified Data.Text.Lazy                    as Text
 import           Empire.Prelude
 
-import           Empire.API.Data.DefaultValue      (PortDefault, Value (..))
+import           Empire.API.Data.DefaultValue      (Value (..))
 import qualified Empire.API.Data.Error             as APIError
 import           Empire.API.Data.Node              (NodeId)
 import           Empire.API.Data.NodeMeta          (NodeMeta)
@@ -30,13 +30,12 @@ import qualified Empire.ASTOps.Deconstruct         as ASTDeconstruct
 import qualified Empire.ASTOps.Parse               as Parser
 import qualified Empire.ASTOps.Print               as Printer
 import qualified Empire.ASTOps.Read                as ASTRead
-import           Empire.ASTOps.Remove              (removeArg)
 
 import           Empire.Utils.TextResult           (nodeValueToText)
 
+import           Luna.IR.Function.Argument (Arg(..))
 import           Luna.IR (match)
 import qualified Luna.IR as IR
-import qualified Luna.IR.Expr.Combinators as IR (changeSource)
 import           Luna.IR.Expr.Term.Uni
 
 import           Luna.Pass.Evaluation.Interpreter.Layer (InterpreterData (..))
@@ -86,11 +85,64 @@ valueDecoderForType tpNode = match tpNode $ \case
             {-"Figure"         -> return $ Just $ Graphics       $ fromFigure       v-}
             {-"Material"       -> return $ Just $ Graphics       $ fromMaterial     v-}
             "RGBColor"       -> return $ Just $ Graphics . fromMaterial . colorRGBToMaterial . unsafeFromData
-            "Stream"         -> $notImplemented
-            "List"           -> $notImplemented
-            "Maybe"          -> $notImplemented
-            "Map"            -> $notImplemented
             _                -> return Nothing
+    App tc (Arg _ typ) -> do
+        tcCons <- IR.source tc
+        tcName <- ASTRead.getVarName tcCons
+        typCons <- IR.source typ
+        case tcName of
+            "Stream" -> valueDecoderForType typCons
+            "List"   -> do
+                match typCons $ \case
+                    Cons n -> do
+                        name <- ASTRead.getName n
+                        case name of
+                            "Int"    -> return $ Just $ IntList    . unsafeFromData
+                            "Double" -> return $ Just $ DoubleList . unsafeFromData
+                            "Bool"   -> return $ Just $ BoolList   . unsafeFromData
+                            "String" -> return $ Just $ StringList . unsafeFromData
+                            _        -> return Nothing
+                    App firstArg (Arg _ secondArg) -> do
+                        firstArgCons <- IR.source firstArg
+                        firstArgName <- ASTRead.getVarName firstArgCons
+                        case firstArgName of
+                            "Maybe" -> do
+                                secondArgCons <- IR.source secondArg
+                                secondArgName <- ASTRead.getVarName secondArgCons
+                                case secondArgName of
+                                    "Int"    -> return $ Just $ StringMaybeList . intMaybeListToStringMaybeList    . unsafeFromData
+                                    "Double" -> return $ Just $ StringMaybeList . doubleMaybeListToStringMaybeList . unsafeFromData
+                                    "Bool"   -> return $ Just $ StringMaybeList . boolMaybeListToStringMaybeList   . unsafeFromData
+                                    "String" -> return $ Just $ StringMaybeList . unsafeFromData
+                                    _        -> return Nothing
+                            _ -> return Nothing
+                    _ -> return Nothing
+            "Maybe"  -> do
+                typConsName <- ASTRead.getVarName typCons
+                case typConsName of
+                    "Int"    -> return $ Just $ IntMaybe    . unsafeFromData
+                    "Double" -> return $ Just $ DoubleMaybe . unsafeFromData
+                    "Bool"   -> return $ Just $ BoolMaybe   . unsafeFromData
+                    "String" -> return $ Just $ StringMaybe . unsafeFromData
+                    _        -> return Nothing
+            "Map"    -> do
+                match typCons $ \case
+                    App firstArg (Arg _ secondArg) -> do
+                        firstArgCons <- IR.source firstArg
+                        firstArgName <- ASTRead.getVarName firstArgCons
+                        case firstArgName of
+                            "String" -> do
+                                secondArgCons <- IR.source secondArg
+                                secondArgName <- ASTRead.getVarName secondArgCons
+                                case secondArgName of
+                                    "Int"    -> return $ Just $ StringStringMap . stringIntMapToStringStringMap    . unsafeFromData
+                                    "Double" -> return $ Just $ StringStringMap . stringDoubleMapToStringStringMap . unsafeFromData
+                                    "Bool"   -> return $ Just $ StringStringMap . stringBoolMapToStringStringMap   . unsafeFromData
+                                    "String" -> return $ Just $ StringStringMap . unsafeFromData
+                                    _        -> return Nothing
+                            _ -> return Nothing
+                    _ -> return Nothing
+            _ -> return Nothing
     _ -> return Nothing
 
 intMaybeListToStringMaybeList :: [Maybe Int] -> [Maybe String]
