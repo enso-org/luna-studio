@@ -108,7 +108,6 @@ applyAccessors' apped node = match node $ \case
                 newAcc <- IR.generalize <$> IR.acc name trep
                 if apped then return newAcc else apps newAcc []
     App f _as -> do
-    -- FIXME[MK]: this clause is identical to the curry one. And it happens often. Maybe curry is a wrong abstraction? How to unify it with App? Susp?
         fr   <- IR.source f
         args <- extractArguments node
         frep <- applyAccessors' True fr
