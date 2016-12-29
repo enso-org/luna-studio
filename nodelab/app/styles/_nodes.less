@@ -5,10 +5,10 @@
 }
 */
 .graph {
-    position: elative;
+    position: relative;
     flex:     none;
-    width:    0;
-    height:   0;
+//    width:    0;
+//    height:   0;
     overflow: inherit;
 }
 .plane {
@@ -40,7 +40,6 @@
 [x1="NaN"] { display: none } // hides React error when you start drawing a connection
 
 
-
 // node
 
 .node {
@@ -51,6 +50,7 @@
         fill:        @colorName;
         text-anchor: middle;
         font-weight: 300;
+        filter: drop-shadow( 3px 3px 2px rgba(0,0,0,.7) );
         &::selection {
             background: none;
         }

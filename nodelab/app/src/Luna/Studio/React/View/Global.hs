@@ -32,7 +32,7 @@ transformTranslate :: String -> String ->  String
 transformTranslate offsetX offsetY = "matrix( 1 , 0, 0, 1, " <> offsetX <> " , " <> offsetY <> " )"
 
 connectionWidth :: Double
-connectionWidth = 3
+connectionWidth = 2
 
 nodeRadius :: Double
 nodeRadius = 20

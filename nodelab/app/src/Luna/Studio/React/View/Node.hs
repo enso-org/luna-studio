@@ -55,7 +55,7 @@ node ref = React.defineControllerView
                         makePorts ref $ filter (\port -> port ^. Port.portId == InPortId Self) ports
 
                     div_ [ "className" $= "node-expanded" ]$ do
-                        div_ [ "className" $= "name"] $
+                        div_ [ "className" $= "name" ] $
                             elemString $ Text.unpack (n ^. Node.expression)
                         div_ [ "className" $= "properties" ]$ do
                             div_ [ "className" $= "label" ] $ elemString "Name"
@@ -105,6 +105,7 @@ node ref = React.defineControllerView
                         text_
                             [ onDoubleClick $ \e _ -> stopPropagation e : dispatch ref (UI.NodeEvent $ Node.EditExpression nodeId)
                             , "className"  $= "name"
+                            , "style"      @= Aeson.object [ "filter" Aeson..= ("url(#textShadow)"::String) ]
                             , "y"          $= "-36"
                             ] $ elemString $ Text.unpack $ n ^. Node.expression
                         text_
