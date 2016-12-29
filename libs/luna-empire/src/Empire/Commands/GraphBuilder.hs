@@ -68,11 +68,18 @@ instance Exception CannotEnterNodeException where
     toException = astExceptionToException
     fromException = astExceptionFromException
 
+throwIfCannotEnter :: ASTOp m => m ()
+throwIfCannotEnter = do
+    parent <- use Graph.insideNode
+    case parent of
+        Just node -> do
+            canEnter <- canEnterNode node
+            when (not canEnter) $ throwM $ CannotEnterNodeException node
+        _ -> return ()
+
 buildGraph :: ASTOp m => m API.Graph
 buildGraph = do
-    parent <- use Graph.insideNode
-    canEnter <- forM parent canEnterNode
-    when (not $ fromMaybe True canEnter) $ throwM $ CannotEnterNodeException (fromJust parent)
+    throwIfCannotEnter
     API.Graph <$> buildNodes <*> buildConnections
 
 buildNodes :: ASTOp m => m [API.Node]
