@@ -195,23 +195,6 @@ reprError tcErr = case tcErr of
 writeMeta :: ASTOp m => NodeRef -> NodeMeta -> m ()
 writeMeta ref newMeta = IR.writeLayer @Meta (Just newMeta) ref
 
-redirectLambdaOutput :: ASTOp m => NodeRef -> NodeRef -> m NodeRef
-redirectLambdaOutput lambda newOutputRef = do
-    match lambda $ \case
-        Lam _args _ -> do
-            args' <- ASTDeconstruct.extractArguments lambda
-            ASTBuilder.lams args' newOutputRef
-        _ -> throwM $ NotLambdaException lambda
-
-setLambdaOutputToBlank :: ASTOp m => NodeRef -> m NodeRef
-setLambdaOutputToBlank lambda = do
-    match lambda $ \case
-        Lam _args _ -> do
-            args' <- ASTDeconstruct.extractArguments lambda
-            blank <- IR.generalize <$> IR.blank
-            ASTBuilder.lams args' blank
-        _ -> throwM $ NotLambdaException lambda
-
 getLambdaInputRef :: ASTOp m => NodeRef -> Int -> m NodeRef
 getLambdaInputRef node pos = do
     match node $ \case

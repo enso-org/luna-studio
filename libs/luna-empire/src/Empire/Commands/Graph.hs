@@ -60,6 +60,7 @@ import qualified Empire.API.Data.PortRef         as PortRef
 import           Empire.ASTOp                    (ASTOp, runASTOp)
 
 import qualified Empire.ASTOps.Builder           as ASTBuilder
+import qualified Empire.ASTOps.Modify            as ASTModify
 import qualified Empire.ASTOps.Read              as ASTRead
 import qualified Empire.ASTOps.Parse             as ASTParse
 import qualified Empire.ASTOps.Print             as ASTPrint
@@ -316,7 +317,7 @@ unApp nodeId pos = do
     if | connectionToOutputEdge -> do
         Just lambda  <- use Graph.insideNode
         astNode <- GraphUtils.getASTTarget lambda
-        newNodeRef <- AST.setLambdaOutputToBlank astNode
+        newNodeRef <- ASTModify.setLambdaOutputToBlank astNode
         GraphUtils.rewireNode lambda newNodeRef
        | otherwise -> do
         astNode <- GraphUtils.getASTTarget nodeId
@@ -353,7 +354,7 @@ makeApp src dst pos inputPos = do
         Just lambda <- use Graph.insideNode
         srcAst <- GraphUtils.getASTVar    src
         dstAst <- GraphUtils.getASTTarget lambda
-        newNodeRef <- AST.redirectLambdaOutput dstAst srcAst
+        newNodeRef <- ASTModify.redirectLambdaOutput dstAst srcAst
         GraphUtils.rewireNode lambda newNodeRef
        | connectToInputEdge -> do
         Just lambda  <- use Graph.insideNode
