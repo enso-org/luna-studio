@@ -22,6 +22,8 @@ module Empire.ASTOps.Read (
   , getASTVar
   , getLambdaOutputRef
   , getSelfNodeRef
+  , canEnterNode
+  , rhsIsLambda
   ) where
 
 import           Data.Coerce                        (coerce)
@@ -130,3 +132,14 @@ isLambda expr = isJust <$> IRExpr.narrowAtom @IR.Lam expr
 
 isMatch :: ASTOp m => NodeRef -> m Bool
 isMatch expr = isJust <$> IRExpr.narrowAtom @IR.Unify expr
+
+rhsIsLambda :: ASTOp m => NodeId -> m Bool
+rhsIsLambda nid = do
+    node <- getASTTarget nid
+    isLambda node
+
+canEnterNode :: ASTOp m => NodeId -> m Bool
+canEnterNode nid = do
+    root   <- getASTPointer nid
+    match' <- isMatch root
+    if match' then rhsIsLambda nid else return False

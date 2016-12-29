@@ -209,11 +209,6 @@ isTrivialLambda node = match node $ \case
         return $ out' `elem` args
     _ -> throwM $ NotLambdaException node
 
-rhsIsLambda :: ASTOp m => NodeId -> m Bool
-rhsIsLambda nid = do
-    node <- ASTRead.getASTTarget nid
-    ASTRead.isLambda node
-
 dumpGraphViz :: ASTOp m => String -> m ()
 dumpGraphViz _name = $notImplemented
     -- g <- runASTOp Builder.get

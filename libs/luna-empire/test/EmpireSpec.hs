@@ -17,7 +17,7 @@ import           Empire.ASTOp                  (runASTOp)
 import qualified Empire.ASTOps.Deconstruct     as ASTDeconstruct
 import qualified Empire.ASTOps.Parse           as Parser
 import qualified Empire.ASTOps.Read            as ASTRead
-import qualified Empire.Commands.AST           as AST (isTrivialLambda, rhsIsLambda)
+import qualified Empire.Commands.AST           as AST (isTrivialLambda)
 import qualified Empire.Commands.Graph         as Graph (addNode, connect, getGraph, getNodes,
                                                          getConnections, removeNodes, withGraph,
                                                          renameNode)
@@ -249,7 +249,7 @@ spec = around withChannels $ do
             u1 <- mkUUID
             res <- evalEmp env $ do
                 Graph.addNode top u1 "def foo" def
-                Graph.withGraph top $ runASTOp $ AST.rhsIsLambda u1
+                Graph.withGraph top $ runASTOp $ ASTRead.rhsIsLambda u1
             withResult res $ \a -> a `shouldBe` True
         it "`def foo` is trivial - has output connected to input" $ \env -> do
             res <- evalEmp env $ do

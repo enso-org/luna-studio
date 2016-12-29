@@ -73,7 +73,7 @@ throwIfCannotEnter = do
     parent <- use Graph.insideNode
     case parent of
         Just node -> do
-            canEnter <- canEnterNode node
+            canEnter <- ASTRead.canEnterNode node
             when (not canEnter) $ throwM $ CannotEnterNodeException node
         _ -> return ()
 
@@ -116,7 +116,7 @@ getEdgePortMapping = do
     lastBreadcrumbId <- use Graph.insideNode
     case lastBreadcrumbId of
         Just id' -> do
-            isLambda <- AST.rhsIsLambda id'
+            isLambda <- ASTRead.rhsIsLambda id'
             if isLambda
                 then Just <$> getOrCreatePortMapping id'
                 else return Nothing
@@ -130,18 +130,11 @@ buildNode nid = do
     expr     <- Print.printNodeExpression ref
     meta     <- AST.readMeta root
     name     <- fromMaybe "" <$> getNodeName nid
-    canEnter <- canEnterNode nid
+    canEnter <- ASTRead.canEnterNode nid
     ports <- buildPorts ref
     let code    = Nothing -- Just $ Text.pack expr
         portMap = Map.fromList $ flip fmap ports $ \p@(Port id' _ _ _) -> (id', p)
     return $ API.Node nid name (API.ExpressionNode $ Text.pack expr) canEnter portMap (fromMaybe def meta) code
-
-
-canEnterNode :: ASTOp m => NodeId -> m Bool
-canEnterNode nid = do
-    root  <- GraphUtils.getASTPointer nid
-    match' <- ASTRead.isMatch root
-    if match' then AST.rhsIsLambda nid else return False
 
 getNodeName :: ASTOp m => NodeId -> m (Maybe Text)
 getNodeName nid = do
