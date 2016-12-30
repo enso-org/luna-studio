@@ -41,4 +41,5 @@ handleKey evt
     | Keys.withCtrl      evt Keys.minus      = zoomOut
     | Keys.withCtrlShift evt Keys.minus      = zoomOut
     | Keys.withCtrl      evt Keys.zero       = resetZoom
+    | Keys.withCtrlShift evt Keys.zero       = resetPan
     | otherwise                              = return ()

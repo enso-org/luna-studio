@@ -2,6 +2,8 @@
 module Luna.Studio.React.View.Global where
 
 import qualified Data.Map.Lazy                as Map
+import           Data.Matrix                  (Matrix)
+import qualified Data.Matrix                  as Matrix
 import           Empire.API.Data.Node         (NodeId)
 import           Empire.API.Data.Port         (InPort (..), OutPort (..), PortId (..))
 import           Empire.API.Data.PortRef      (AnyPortRef (InPortRef', OutPortRef'), InPortRef, OutPortRef, toAnyPortRef)
@@ -30,6 +32,9 @@ transformMatrix scale offsetX offsetY = "matrix(" <> scale <> " , 0, 0, " <> sca
 
 transformTranslate :: String -> String ->  String
 transformTranslate offsetX offsetY = "matrix( 1 , 0, 0, 1, " <> offsetX <> " , " <> offsetY <> " )"
+
+showTransformMatrix :: Show a => Matrix a -> String
+showTransformMatrix matrix = (foldl (<>) "matrix3d(" $ intersperse ", " $ map show $ Matrix.toList matrix) <> ")"
 
 connectionWidth :: Double
 connectionWidth = 2.6

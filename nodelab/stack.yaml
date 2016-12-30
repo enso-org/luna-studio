@@ -6,11 +6,14 @@ setup-info:
   ghcjs:
     source:
       ghcjs-0.2.0.20160517_ghc-7.10.3:
+        # FIXME: Maybe sth more appropriate than dupa.tar here?
         url: "https://s3-eu-west-1.amazonaws.com/nbo-toolchain/ghcjs/ghcjs-0.2.0.20160517-dupa.tar.gz"
 ghc-options:
   nodelab: -DGHCJS_BROWSER
 extra-deps:
   - datetime-0.3.1
+  - loop-0.3.0
+  - matrix-0.3.5.0
   - placeholders-0.1
 packages:
   - .

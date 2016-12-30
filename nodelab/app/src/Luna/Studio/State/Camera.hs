@@ -1,20 +1,23 @@
 module Luna.Studio.State.Camera where
 
-import           Luna.Studio.Commands.Command       (Command)
-import           Luna.Studio.Data.Vector            (Position, move, rescale)
+import           Data.Matrix                           (getElem, multStd2)
+import qualified Data.Matrix                           as Matrix
+import           Luna.Studio.Commands.Command          (Command)
+import           Luna.Studio.Data.CoordsTransformation (screenToLogical)
+import           Luna.Studio.Data.Vector               (Position (Position), Vector2 (Vector2), x, y)
 import           Luna.Studio.Prelude
-import qualified Luna.Studio.React.Model.NodeEditor as NodeEditor
-import qualified Luna.Studio.React.Store            as Store
-import           Luna.Studio.State.Global           (State)
-import qualified Luna.Studio.State.Global           as Global
+import qualified Luna.Studio.React.Model.NodeEditor    as NodeEditor
+import qualified Luna.Studio.React.Store               as Store
+import           Luna.Studio.State.Global              (State)
+import qualified Luna.Studio.State.Global              as Global
 
 
--- TODO[react]: Implement this correctly
 translateToWorkspace :: Position -> Command State (Position)
 translateToWorkspace pos = do
-    factor <- Global.withNodeEditor $ Store.use NodeEditor.factor
-    pan <- Global.withNodeEditor $ Store.use NodeEditor.pan
-    return $ rescale (move pos $ -pan) $ 1/factor
+    transformMatrix <- Global.withNodeEditor $ Store.use $ NodeEditor.screenTransform . screenToLogical
+    let posMatrix      = Matrix.fromList 1 4 [ pos ^. x, pos ^. y, 1, 1]
+        posInWorkspace = multStd2 posMatrix transformMatrix
+    return $ Position (Vector2 (getElem 1 1 posInWorkspace) (getElem 1 2 posInWorkspace))
 
 -- TODO[react]: remove once camera is reimplemented
 -- data DragHistory =  PanDragHistory  { _panPreviousPos :: Position }
