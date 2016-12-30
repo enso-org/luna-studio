@@ -162,6 +162,17 @@ move pos vec = pos & vector +~ vec
 rescale :: Position -> Double -> Position
 rescale pos factor = pos & vector %~ (flip scalarProduct factor)
 
+leftTopPoint :: [Position] -> Maybe (Position)
+leftTopPoint []        = Nothing
+leftTopPoint positions = Just $ Position (Vector2 (minimum $ view x <$> positions) (minimum $ view y <$> positions))
+
+rightBottomPoint :: [Position] -> Maybe (Position)
+rightBottomPoint []        = Nothing
+rightBottomPoint positions = Just $ Position (Vector2 (maximum $ view x <$> positions) (maximum $ view y <$> positions))
+
+minimumRectangle :: [Position] -> Maybe (Position, Position)
+minimumRectangle positions = (,) <$> (leftTopPoint positions) <*> (rightBottomPoint positions)
+
 -- TODO[react]: Possible solution to differ Mouse Position and Graph Position
 -- makeClassy  ''Position
 -- class HasPosition a where

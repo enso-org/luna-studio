@@ -7,28 +7,33 @@ module Luna.Studio.Commands.Camera
      , panUp
      , panLeft
      , panRight
-    --  , autoZoom
+     , autoZoom
     --  , syncCamera
     --  , zoomDrag
      , zoomIn
      , zoomOut
     --  , wheelZoom
-     , resetZoom
+     , resetCamera
      , resetPan
+     , resetZoom
     --  , updateWindowSize --TODO[react] remove
      ) where
 
-import           Data.Matrix                           (Matrix, getElem, multStd2, setElem)
-import qualified Data.Matrix                           as Matrix
+import           Data.Matrix                           (Matrix, getElem, identity, multStd2, setElem)
 
+import qualified Empire.API.Data.Node                  as Node
 import           Luna.Studio.Commands.Command          (Command)
 import           Luna.Studio.Data.CoordsTransformation (logicalToScreen, screenToLogical)
-import           Luna.Studio.Data.Vector               (Vector2 (Vector2), x, y)
+import           Luna.Studio.Data.Matrix               (homothetyMatrix, invertedHomothetyMatrix, invertedScaleMatrix,
+                                                        invertedTranslationMatrix, scaleMatrix, translationMatrix)
+import           Luna.Studio.Data.Vector               (Position (Position), Size (Size), Vector2 (Vector2), fromTuple, minimumRectangle,
+                                                        scalarProduct, vector, x, y)
 import           Luna.Studio.Prelude
 import qualified Luna.Studio.React.Model.NodeEditor    as NodeEditor
 import qualified Luna.Studio.React.Store               as Store
 import           Luna.Studio.State.Global              (State)
 import qualified Luna.Studio.State.Global              as Global
+import qualified Luna.Studio.State.Graph               as Graph
 
 -- import           Reactive.Commands.UILayout as UILayout --TODO[react] remove
 -- import           Luna.Studio.State.Camera           (DragHistory (..))
@@ -58,16 +63,6 @@ import qualified Luna.Studio.State.Global              as Global
 --
 --     zoom Global.camera syncCamera
 
--- zoomIn :: Command Camera.State ()
--- zoomIn = do
---     factor <- use $ Camera.camera . Camera.factor
---     setZoom $ factor * zoomFactorStep
-
--- zoomOut :: Command Camera.State ()
--- zoomOut = do
---     factor <- use $ Camera.camera . Camera.factor
---     setZoom $ factor / zoomFactorStep
---
 -- wheelZoom :: Position -> Vector2 Double -> Command Camera.State ()
 -- wheelZoom pos delta = do
 --     camera         <- use $ Camera.camera
@@ -171,13 +166,18 @@ import qualified Luna.Studio.State.Global              as Global
 --         performIO $ JS.updateScreenSize canvasWidth (size ^. y)
 --     UILayout.relayout
 
-minCamFactor, maxCamFactor, dragZoomSpeed, wheelZoomSpeed, panStep, zoomFactorStep :: Double
-minCamFactor   =   0.2
-maxCamFactor   =   8.0
-dragZoomSpeed  = 512.0
-wheelZoomSpeed =  64.0
-panStep        =  50.0
-zoomFactorStep =   1.1
+minCamFactor, maxCamFactor, dragZoomSpeed, wheelZoomSpeed, panStep, zoomFactorStep, padding :: Double
+minCamFactor   = 0.2
+maxCamFactor   = 8
+dragZoomSpeed  = 512
+wheelZoomSpeed = 64
+panStep        = 50
+zoomFactorStep = 1.1
+padding = 80
+--TODO[react]: Find out how to get real screen size
+screenSize :: Size
+-- screenSize = Size (Vector2 2000 1680)
+screenSize = Size (Vector2 1266.66 1191.25)
 
 restrictFactor :: Double -> Double -> Double
 restrictFactor scale factor
@@ -185,24 +185,14 @@ restrictFactor scale factor
     | scale * factor > maxCamFactor = maxCamFactor / scale
     | otherwise                     = factor
 
+--TODO[react]: Take care of numeric stability (always inverse or once in x times)
 modifyCamera :: Matrix Double -> Matrix Double -> Command State ()
 modifyCamera matrix invertedMatrix = Global.withNodeEditor $ Store.modifyM_ $ do
     NodeEditor.screenTransform . logicalToScreen %= (flip multStd2 matrix)
     NodeEditor.screenTransform . screenToLogical %= (multStd2 invertedMatrix)
 
 panCamera :: Vector2 Double -> Command State ()
-panCamera delta = modifyCamera translateMatrix invertedMatrix where
-    x'              = delta ^. x
-    y'              = delta ^. y
-    translateMatrix = Matrix.fromList 4 4 [ 1 , 0 , 0, 0
-                                          , 0 , 1 , 0, 0
-                                          , 0 , 0 , 1, 0
-                                          , x', y', 0, 1 ]
-    invertedMatrix  = Matrix.fromList 4 4 [ 1    , 0    , 0, 0
-                                          , 0    , 1    , 0, 0
-                                          , 0    , 0    , 1, 0
-                                          , (-x'), (-y'), 0, 1 ]
-
+panCamera delta = modifyCamera (translationMatrix delta) (invertedTranslationMatrix delta)
 
 panLeft, panRight, panUp, panDown :: Command State ()
 panLeft  = panCamera $ Vector2 (-panStep) 0
@@ -214,15 +204,7 @@ zoomCamera :: Double -> Command State ()
 zoomCamera factor = do
     transformMatrix <- Global.withNodeEditor $ Store.use $ NodeEditor.screenTransform . logicalToScreen
     let s              = restrictFactor (getElem 1 1 transformMatrix) factor
-        scaleMatrix    = Matrix.fromList 4 4 [ s, 0, 0, 0
-                                             , 0, s, 0, 0
-                                             , 0, 0, 1, 0
-                                             , 0, 0, 0, 1 ]
-        invertedMatrix = Matrix.fromList 4 4 [ (1/s), 0    , 0, 0
-                                             , 0    , (1/s), 0, 0
-                                             , 0    , 0    , 1, 0
-                                             , 0    , 0    , 0, 1 ]
-    modifyCamera scaleMatrix invertedMatrix
+    modifyCamera (scaleMatrix s) (invertedScaleMatrix s)
 
 --TODO[react]: Perform zoom relative to the center of screen
 zoomIn :: Command State ()
@@ -241,3 +223,22 @@ resetPan :: Command State ()
 resetPan = Global.withNodeEditor $ Store.modifyM_ $ do
     NodeEditor.screenTransform . logicalToScreen %= (setElem 0 (4,1) . setElem 0 (4,2))
     NodeEditor.screenTransform . screenToLogical %= (setElem 0 (4,1) . setElem 0 (4,2))
+
+resetCamera :: Command State ()
+resetCamera = Global.withNodeEditor $ Store.modifyM_ $ do
+    NodeEditor.screenTransform . logicalToScreen .= identity 4
+    NodeEditor.screenTransform . screenToLogical .= identity 4
+
+autoZoom :: Command State ()
+autoZoom = do
+    nodes <- use $ Global.graph . Graph.nodes
+    case minimumRectangle $ map (Position . fromTuple) $ view Node.position <$> nodes of
+        Just (leftTop, rightBottom) -> do
+            let span         = Size (Vector2 (rightBottom ^. x - leftTop ^. x + 2 * padding) (rightBottom ^. y - leftTop ^. y + 2 * padding))
+                shift        = (Vector2 padding padding) + scalarProduct (screenSize ^. vector - span ^. vector) 0.5 - leftTop ^. vector
+                factor       = min 1 $ min (screenSize ^. x / span ^. x) (screenSize ^. y / span ^. y)
+                screenCenter = Position (scalarProduct (screenSize ^. vector) 0.5)
+            Global.withNodeEditor $ Store.modifyM_ $ do
+                NodeEditor.screenTransform . logicalToScreen .= multStd2 (translationMatrix shift) (homothetyMatrix screenCenter factor)
+                NodeEditor.screenTransform . screenToLogical .= multStd2 (invertedHomothetyMatrix screenCenter factor) (invertedTranslationMatrix shift)
+        Nothing -> resetCamera
