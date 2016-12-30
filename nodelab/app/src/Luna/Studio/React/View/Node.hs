@@ -105,7 +105,7 @@ node ref = React.defineControllerView
                         text_
                             [ onDoubleClick $ \e _ -> stopPropagation e : dispatch ref (UI.NodeEvent $ Node.EditExpression nodeId)
                             , "className"  $= "name"
-                            , "style"      @= Aeson.object [ "filter" Aeson..= ("url(#textShadow)"::) ]
+                            , "style"      @= Aeson.object [ "filter" Aeson..= ("url(#textShadow)":: String) ]
                             , "y"          $= "-36"
                             ] $ elemString $ Text.unpack $ n ^. Node.expression
                         text_
