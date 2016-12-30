@@ -29,14 +29,14 @@ import qualified Empire.Data.Library           as Library (body)
 import           Empire.Empire                 (InterpreterEnv(..))
 import           Prologue                      hiding (mapping, toList, (|>))
 
-import           Test.Hspec (Spec, around, describe, expectationFailure, it,
+import           Test.Hspec (Spec, around, describe, expectationFailure, it, parallel,
                              shouldBe, shouldContain, shouldSatisfy, shouldMatchList)
 
 import           EmpireUtils
 
 
 spec :: Spec
-spec = around withChannels $ do
+spec = around withChannels $ parallel $ do
     describe "luna-empire" $ do
         it "descends into `def foo` and asserts two edges inside" $ \env -> do
             u1 <- mkUUID

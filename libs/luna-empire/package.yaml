@@ -11,7 +11,7 @@ tests:
     spec:
         main: Spec.hs
         source-dirs: test
-        ghc-options: -Wno-unused-do-bind
+        ghc-options: -Wno-unused-do-bind -threaded -with-rtsopts=-N4
         dependencies:
             - luna-empire
             - hspec

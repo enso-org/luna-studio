@@ -16,7 +16,7 @@ import qualified Luna.IR             as IR
 import qualified Luna.Pass.Evaluation.Interpreter.Value as Luna
 import           Text.Show.Functions ()
 import           Test.Hspec (Expectation, Spec, describe, it,
-                             shouldSatisfy)
+                             parallel, shouldSatisfy)
 import           Test.Hspec.QuickCheck (prop)
 import           Test.QuickCheck.Monadic (assert, monadicIO)
 import           Test.QuickCheck.Property (Property)
@@ -85,7 +85,7 @@ conses names = do
         IR.generalize <$> IR.app newName (IR.arg acc)) seedM rest
 
 spec :: Spec
-spec = do
+spec = parallel $ do
     describe "valueDecoderForType" $ do
         it "Int"               $ existsDecoder $ cons "Int"
         it "String"            $ existsDecoder $ cons "String"
