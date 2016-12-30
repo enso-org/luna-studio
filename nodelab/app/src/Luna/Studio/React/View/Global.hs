@@ -25,7 +25,7 @@ type IsSingle = Bool
 type IsSelf   = Bool
 
 showSvg :: Double -> String
-showSvg a = Numeric.showFFloat (Just 2) a "" -- limit Double to two decimal numbers
+showSvg a = Numeric.showFFloat (Just 8) a "" -- limit Double to two decimal numbers
 
 transformMatrix :: String -> String -> String -> String
 transformMatrix scale offsetX offsetY = "matrix(" <> scale <> " , 0, 0, " <> scale <> " , " <> offsetX <> " , " <> offsetY <> " )"

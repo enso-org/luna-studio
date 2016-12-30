@@ -36,7 +36,9 @@ nodeEditor ref = React.defineControllerView name ref $ \store () -> do
         , onMouseDown   $ \_ e -> dispatch ref $ UI.NodeEditorEvent $ NE.MouseDown e
         ] $ do
         svg_
-            [ "className" $= "plane plane-connections" ] $ do
+            [ "className" $= "plane plane-connections"
+            , "style"   @= Aeson.object [ "transform" Aeson..= transform ]
+            ] $ do
             defs_ [] $ do
                 el "filter"
                     [ "id"     $= "textShadow" ] $ do
@@ -58,7 +60,7 @@ nodeEditor ref = React.defineControllerView name ref $ \store () -> do
                             ] mempty
 
             g_ [ "className" $= "connections"
-               , "style"   @= Aeson.object [ "transform" Aeson..= transform ]
+
                ] $ do
                 forM_ (store ^. dt . NodeEditor.connections . to HashMap.elems) $ \connectionRef -> connection_ connectionRef
                 forM_ (store ^. dt . NodeEditor.currentConnection) $ \connectionRef -> currentConnection_ connectionRef
