@@ -35,41 +35,42 @@ nodeEditor ref = React.defineControllerView name ref $ \store () -> do
         [ "className"   $= "graph"
         , onMouseDown   $ \_ e -> dispatch ref $ UI.NodeEditorEvent $ NE.MouseDown e
         ] $ do
-        svg_
-            [ "className" $= "plane plane-connections"
-            , "style"   @= Aeson.object [ "transform" Aeson..= transform ]
-            ] $ do
-            defs_ [] $ do
-                el "filter"
-                    [ "id"     $= "textShadow" ] $ do
-                        el "feOffset"
-                            [ "result" $= "offOut"
-                            , "in"     $= "SourceAlpha"
-                            , "dx"     $= "0"
-                            , "dy"     $= "0"
-                            ] mempty
-                        el "feGaussianBlur"
-                            [ "result"       $= "blurOut"
-                            , "in"           $= "offOut"
-                            , "stdDeviation" $= "2"
-                            ] mempty
-                        el "feBlend"
-                            [ "in"   $= "SourceGraphic"
-                            , "in2"  $= "blurOut"
-                            , "mode" $= "normal"
-                            ] mempty
+        div_ [ "className" $= "graph-center"] $ do
+            svg_
+                [ "className" $= "plane plane-connections"
+                , "style"   @= Aeson.object [ "transform" Aeson..= transform ]
+                ] $ do
+                defs_ [] $ do
+                    el "filter"
+                        [ "id"     $= "textShadow" ] $ do
+                            el "feOffset"
+                                [ "result" $= "offOut"
+                                , "in"     $= "SourceAlpha"
+                                , "dx"     $= "0"
+                                , "dy"     $= "0"
+                                ] mempty
+                            el "feGaussianBlur"
+                                [ "result"       $= "blurOut"
+                                , "in"           $= "offOut"
+                                , "stdDeviation" $= "2"
+                                ] mempty
+                            el "feBlend"
+                                [ "in"   $= "SourceGraphic"
+                                , "in2"  $= "blurOut"
+                                , "mode" $= "normal"
+                                ] mempty
 
-            g_ [ "className" $= "connections"
+                g_ [ "className" $= "connections"
 
-               ] $ do
-                forM_ (store ^. dt . NodeEditor.connections . to HashMap.elems) $ \connectionRef -> connection_ connectionRef
-                forM_ (store ^. dt . NodeEditor.currentConnection) $ \connectionRef -> currentConnection_ connectionRef
-                selectionBox_ (store ^. dt . NodeEditor.selectionBox)
-        div_
-            [ "className" $= "plane plane--nodes"
-            , "style"     @= Aeson.object [ "transform" Aeson..= transform ]
-            ] $ do
-                forM_ (store ^. dt . NodeEditor.nodes . to HashMap.elems) $ \nodeRef -> node_ nodeRef
+                   ] $ do
+                    forM_ (store ^. dt . NodeEditor.connections . to HashMap.elems) $ \connectionRef -> connection_ connectionRef
+                    forM_ (store ^. dt . NodeEditor.currentConnection) $ \connectionRef -> currentConnection_ connectionRef
+                    selectionBox_ (store ^. dt . NodeEditor.selectionBox)
+            div_
+                [ "className" $= "plane plane--nodes"
+                , "style"     @= Aeson.object [ "transform" Aeson..= transform ]
+                ] $ do
+                    forM_ (store ^. dt . NodeEditor.nodes . to HashMap.elems) $ \nodeRef -> node_ nodeRef
 
 nodeEditor_ :: Ref NodeEditor -> ReactElementM ViewEventHandler ()
 nodeEditor_ ref = React.view (nodeEditor ref) () mempty
