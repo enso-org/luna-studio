@@ -224,9 +224,11 @@ zoomCamera factor = do
                                              , 0    , 0    , 0, 1 ]
     modifyCamera scaleMatrix invertedMatrix
 
+--TODO[react]: Perform zoom relative to the center of screen
 zoomIn :: Command State ()
 zoomIn = zoomCamera zoomFactorStep
 
+--TODO[react]: Perform zoom relative to the center of screen
 zoomOut :: Command State ()
 zoomOut = zoomCamera (1/zoomFactorStep)
 
