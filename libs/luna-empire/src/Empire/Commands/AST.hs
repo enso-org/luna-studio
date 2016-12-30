@@ -10,6 +10,8 @@ module Empire.Commands.AST where
 import           Control.Arrow                     (second)
 import           Control.Monad.Except              (runExceptT)
 import           Control.Monad.State
+import qualified Data.Aeson                        as Aeson
+import qualified Data.ByteString.Lazy.Char8        as BS.C8
 import           Data.Maybe                        (catMaybes, fromMaybe)
 import           Data.Text.Lazy                    (Text)
 import qualified Data.Text.Lazy                    as Text
@@ -37,6 +39,7 @@ import           Luna.IR.Function.Argument (Arg(..))
 import           Luna.IR (match)
 import qualified Luna.IR as IR
 import           Luna.IR.Expr.Term.Uni
+import qualified Luna.IR.Repr.Vis as Vis
 
 import           Luna.Pass.Evaluation.Interpreter.Layer (InterpreterData (..))
 import qualified Luna.Pass.Evaluation.Interpreter.Layer as Interpreter
@@ -44,7 +47,7 @@ import           Luna.Pass.Evaluation.Interpreter.Value (Data, attachListener, t
 import qualified Luna.Pass.Evaluation.Interpreter.Value as Value
 
 import           Empire.Commands.Graphics          (fromMaterial)
-
+import           Web.Browser                       (openBrowser)
 
 -- TODO: This might deserve rewriting to some more general solution
 import qualified Graphics.API                      as G
@@ -263,6 +266,7 @@ isTrivialLambda node = match node $ \case
     _ -> throwM $ NotLambdaException node
 
 dumpGraphViz :: ASTOp m => String -> m ()
-dumpGraphViz _name = $notImplemented
-    -- g <- runASTOp Builder.get
-    -- liftIO $ renderAndOpen [(name, name, g)]
+dumpGraphViz name = do
+    ((), diff) <- Vis.newRunDiffT $ Vis.snapshot name
+    let vis = BS.C8.unpack $ Aeson.encode $ diff
+    void $ liftIO $ openBrowser $ "http://localhost:8000?cfg=" <> vis

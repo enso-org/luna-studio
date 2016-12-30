@@ -36,6 +36,7 @@ dependencies:
     - luna-empire-api-json
     - m-logger
     - mtl
+    - open-browser
     - prologue
     - split
     - stm

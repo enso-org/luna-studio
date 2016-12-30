@@ -21,7 +21,7 @@ import           Empire.Empire        (Command)
 import           Data.Event           (Emitters, type (//))
 import           Luna.IR              (Abstract, Accessibles, IRBuilder, IRMonad,
                                        ExprNet, ExprLinkNet, ExprLinkLayers, ExprLayers,
-                                       Model, NEW, DELETE, LINK', EXPR,
+                                       Model, UID, NEW, DELETE, LINK', EXPR,
                                        evalIRBuilder, evalPassManager, snapshot)
 import           Luna.IR.Layer.Succs  (Succs)
 import           Luna.Pass            (Inputs, Outputs, Preserves, Events)
@@ -46,8 +46,10 @@ type EmpireAccessibles = '[ExprNet, ExprLinkNet] <>
                            Succs,
                            InterpreterData,
                            TCData,
-                           TypeLayer] <>
-          ExprLinkLayers '[Model]
+                           TypeLayer,
+                           UID] <>
+          ExprLinkLayers '[Model,
+                           UID]
 
 type EmpireEmitters = '[NEW // LINK' EXPR,
                         NEW // EXPR,
