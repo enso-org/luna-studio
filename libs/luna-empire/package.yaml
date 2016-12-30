@@ -15,6 +15,7 @@ tests:
         dependencies:
             - luna-empire
             - hspec
+            - QuickCheck
             - reflection
 
 ghc-options: -Wall
