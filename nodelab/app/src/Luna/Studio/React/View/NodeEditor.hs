@@ -31,37 +31,34 @@ nodeEditor ref = React.defineControllerView name ref $ \store () -> do
         transformMatrix = ne ^. NodeEditor.screenTransform . CoordsTransformation.logicalToScreen
         transform       = showTransformMatrix transformMatrix
     div_
-
-        [ "className"   $= "graph"
-        , onMouseDown   $ \_ e -> dispatch ref $ UI.NodeEditorEvent $ NE.MouseDown e
+        [ "className" $= "graph"
+        , "id"        $= "Graph"
+        , onMouseDown $ \_ e -> dispatch ref $ UI.NodeEditorEvent $ NE.MouseDown e
         ] $ do
         svg_
             [ "className" $= "plane plane-connections"
-            , "style"   @= Aeson.object [ "transform" Aeson..= transform ]
+            , "style"     @= Aeson.object [ "transform" Aeson..= transform ]
             ] $ do
             defs_ [] $ do
-                el "filter"
-                    [ "id"     $= "textShadow" ] $ do
-                        el "feOffset"
-                            [ "result" $= "offOut"
-                            , "in"     $= "SourceAlpha"
-                            , "dx"     $= "0"
-                            , "dy"     $= "0"
-                            ] mempty
-                        el "feGaussianBlur"
-                            [ "result"       $= "blurOut"
-                            , "in"           $= "offOut"
-                            , "stdDeviation" $= "2"
-                            ] mempty
-                        el "feBlend"
-                            [ "in"   $= "SourceGraphic"
-                            , "in2"  $= "blurOut"
-                            , "mode" $= "normal"
-                            ] mempty
+                el "filter" [ "id" $= "textShadow" ] $ do
+                    el "feOffset"
+                        [ "result" $= "offOut"
+                        , "in"     $= "SourceAlpha"
+                        , "dx"     $= "0"
+                        , "dy"     $= "0"
+                        ] mempty
+                    el "feGaussianBlur"
+                        [ "result"       $= "blurOut"
+                        , "in"           $= "offOut"
+                        , "stdDeviation" $= "2"
+                        ] mempty
+                    el "feBlend"
+                        [ "in"   $= "SourceGraphic"
+                        , "in2"  $= "blurOut"
+                        , "mode" $= "normal"
+                        ] mempty
 
-            g_ [ "className" $= "connections"
-
-               ] $ do
+            g_ [ "className" $= "connections" ] $ do
                 forM_ (store ^. dt . NodeEditor.connections . to HashMap.elems) $ \connectionRef -> connection_ connectionRef
                 forM_ (store ^. dt . NodeEditor.currentConnection) $ \connectionRef -> currentConnection_ connectionRef
                 selectionBox_ (store ^. dt . NodeEditor.selectionBox)
