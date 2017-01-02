@@ -52,7 +52,10 @@ addNode :: Text -> NodeMeta -> Maybe NodeId -> Workspace -> UUID -> IO ()
 addNode expression meta connectTo workspace uuid = addNode' Nothing expression meta connectTo workspace uuid
 
 addSubgraph :: [Node] -> [Connection] -> Workspace -> UUID -> IO ()
-addSubgraph nodes connections workspace uuid = sendRequest uuid $ (withLibrary workspace AddSubgraph.Request) nodes connections
+addSubgraph nodes connections workspace uuid = addSubgraph' nodes connections workspace uuid False
+
+addSubgraph' :: [Node] -> [Connection] -> Workspace -> UUID  -> Bool -> IO ()
+addSubgraph' nodes connections workspace uuid saveNodeIds = sendRequest uuid $ (withLibrary workspace AddSubgraph.Request) nodes connections saveNodeIds
 
 createProject :: Text -> UUID -> IO ()
 createProject name uuid = sendRequest uuid $ CreateProject.Request $ Text.unpack name

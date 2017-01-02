@@ -90,7 +90,7 @@ toAction (Event.Batch ev) = Just $ case ev of
                 collaborativeModify [nodeId]
                 when shouldSelect $ selectNodes [nodeId]
 
-    AddSubgraphResponse response@(Response.Response uuid (AddSubgraph.Request loc nodes connections) _ _) -> do
+    AddSubgraphResponse response@(Response.Response uuid (AddSubgraph.Request loc nodes connections _) _ _ ) -> do
         shouldProcess   <- isCurrentLocationAndGraphLoaded loc
         correctLocation <- isCurrentLocation loc
         when (shouldProcess && correctLocation) $ do
