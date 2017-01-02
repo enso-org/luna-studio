@@ -1,3 +1,5 @@
+[x1="NaN"] { display: none } // FIXME [Piotr Mołdawski] Implement Haskell exception for zero length connections
+
 #editor {
   height:     100%;
   width:      100%;
@@ -79,34 +81,27 @@
 }
 
 .node-expanded {
-  width:   240px;
-  color:  @colorName;
-  .properties {
-    width: inherit;
-    color: white;
-    overflow: hidden;
-    background: #333;
-    padding: 7px;
-    border-radius: 10px;
-    .name .value { }
-    .label {
-      float: left;
-      width: 120px;
-      overflow: hidden;
+    width:   240px;
+    color:  @colorName;
+    .properties {
+        width: inherit;
+        color: white;
+        overflow: hidden;
+        background: #333;
+        padding: 7px;
+        border-radius: 10px;
+        .label {
+            float: left;
+            width: 120px;
+            overflow: hidden;
+        }
+        .value {
+            overflow: hidden;
+            width: 120px;
+            text-align: right;
+            float: left;
+        }
     }
-    .value {
-      overflow: hidden;
-      width: 120px;
-      text-align: right;
-      float: left;
-    }
-  }
-}
-.visualizations {
-  .visualization {
-    padding: 5px;
-    background: #333;
-  }
 }
 
 .scrollbar(@backgroundColor, @slider, @radius) {
@@ -127,41 +122,5 @@
   &::-webkit-scrollbar-track {
       background-color: @backgroundColor;
       border-radius: 8px;
-  }
-}
-
-.data-frame {
-  height: 200px;
-  width:  200px;
-  div {
-    position:       fixed;
-    background:     transparent;
-    color:          white;
-    font-size:      21px;
-    padding:        10px;
-    margin:         0;
-    overflow:       auto;
-    .scrollbar(rgba(0,0,0,0.2),rgba(255,255,255,0.8), 8px);
-    word-wrap:      break-word;
-    box-sizing:     border-box;
-    height: inherit;
-    table {
-      box-sizing:     border-box;
-      width:95%;
-      margin: auto;
-      border-collapse: collapse;
-      border-spacing: none;
-      td, th {
-        padding: 3px 5px;
-        text-align: right;
-        border: 1px solid #555;
-      }
-      th {
-        background: #555;
-      }
-      td {
-        font-weight: normal
-      }
-    }
   }
 }

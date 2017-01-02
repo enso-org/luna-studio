@@ -30,7 +30,73 @@ objName = "node-editor"
 makePorts :: Ref Node -> [Port] -> ReactElementM ViewEventHandler ()
 makePorts nodeRef ports = forM_ ports $ \port -> port_ nodeRef port (countSameTypePorts port ports) (isPortSingle port ports)
 
+node :: Ref Node -> ReactView ()
+node ref = React.defineControllerView
+    objName ref $ \nodeStore () -> do
+        let n         = nodeStore ^. dt
+            nodeId    = n ^. Node.nodeId
+            pos       = n ^. Node.position
+            ports     = Map.elems $ n ^. Node.ports
+            offsetX   = show (pos ^. x)
+            offsetY   = show (pos ^. y)
 
+        div_
+            [ onClick       $ \_ m -> dispatch ref $ UI.NodeEvent $ Node.Select m nodeId
+            , onDoubleClick $ \_ _ -> dispatch ref $ UI.NodeEvent $ Node.Enter nodeId
+            , onMouseDown   $ \e m -> stopPropagation e : dispatch ref (UI.NodeEvent $ Node.MouseDown m nodeId)
+            , "className" $= (fromString $ "node" <> (if n ^. Node.isExpanded then " node--expanded" else " node--collapsed")
+                                                  <> (if n ^. Node.isSelected then " node--selected" else []))
+            , "style"     @= Aeson.object [ "transform" Aeson..= (transformTranslate offsetX offsetY) ]
+            , "key"       $= fromString (show nodeId)
+            ] $ do
+
+            svg_ [ "viewBox" $= "0 0 10 10" ] $ rect_ [ "className" $= "node__selection-mark" ] mempty
+
+            div_ [ "className" $= "node__properties" ] $ do
+                div_ [ "className" $= "blur" ] mempty
+                div_
+                    [ "className" $= "value"
+                    , onDoubleClick $ \_ _ -> dispatch ref $ UI.NodeEvent $ Node.NameEditStart nodeId
+                    ] $
+                    case n ^. Node.nameEdit of
+                        Just name ->
+                            input_
+                                [ "id" $= "focus-nameLabel"
+                                , "value" $= fromString (Text.unpack name)
+                                , onMouseDown $ \e _ -> [stopPropagation e]
+                                , onKeyDown   $ \e k ->  stopPropagation e : dispatch ref (UI.NodeEvent $ Node.NameKeyDown k nodeId)
+                                , onChange    $ \e -> let val = target e "value" in dispatch ref $ UI.NodeEvent $ Node.NameChange (fromString val) nodeId
+                                ]
+                        Nothing ->
+                            elemString $ fromString $ Text.unpack $ n ^. Node.name
+                forM_ (n ^. Node.ports) $ portControl_ ref n
+                div_ [ "className" $= "label" ] $ elemString "Display result"
+                div_ [ "className" $= "value" ] $ do
+                    let val = n ^. Node.visualizationsEnabled
+                    button_
+                        [ onClick $ \_ _ -> dispatch ref $ UI.NodeEvent $ Node.DisplayResultChanged (not val) nodeId
+                        ] $
+                        elemString $ fromString $ if val then "yes" else "no"
+                withJust (n ^. Node.execTime) $ \execTime -> do
+                    div_ ["className" $= "label"] $ elemString "Execution time"
+                    div_ ["className" $= "value"] $ elemString $ show execTime <> " ms"
+
+            div_ [ "className" $= "node__visualization" ] $
+                forM_ (n ^. Node.value) visualization_
+
+            svg_ [ "viewBox" $= "0 0 10 10" ] $ do
+                text_
+                    [ onDoubleClick $ \e _ -> stopPropagation e : dispatch ref (UI.NodeEvent $ Node.EditExpression nodeId)
+                    , "className"  $= "node__name"
+                    , "y"          $= "-36"
+                    ] $ elemString $ Text.unpack $ n ^. Node.expression
+                if n ^. Node.isExpanded then do
+                    makePorts ref $ filter (\port -> (port ^. Port.portId) == InPortId Self) ports
+                else do
+                    makePorts ref $ filter (\port -> (port ^. Port.portId) /= InPortId Self) ports
+                    makePorts ref $ filter (\port -> (port ^. Port.portId) == InPortId Self) ports
+
+{-
 node :: Ref Node -> ReactView ()
 node ref = React.defineControllerView
     objName ref $ \nodeStore () -> do
@@ -50,13 +116,19 @@ node ref = React.defineControllerView
                  , "key"       $= fromString (show nodeId)
                  ] $ do
                     svg_ [ "viewBox" $= "0 0 10 10" ] $ do
-                        circle_ [ "className" $= "selection-mark" ] mempty
-                        makePorts ref $ filter (\port -> port ^. Port.portId /= InPortId Self) ports
-                        makePorts ref $ filter (\port -> port ^. Port.portId == InPortId Self) ports
+                        --circle_ [ "className" $= "selection-mark" ] mempty
+                        --makePorts ref $ filter (\port -> port ^. Port.portId /= InPortId Self) ports
+                        --makePorts ref $ filter (\port -> port ^. Port.portId == InPortId Self) ports
+                        text_
+                            [ onDoubleClick $ \e _ -> stopPropagation e : dispatch ref (UI.NodeEvent $ Node.EditExpression nodeId)
+                            , "className"  $= "name"
+                            , "style"      @= Aeson.object [ "filter" Aeson..= ("url(#textShadow)":: String) ]
+                            , "y"          $= "-36"
+                            ] $ elemString $ Text.unpack $ n ^. Node.expression
 
                     div_ [ "className" $= "node-expanded" ]$ do
-                        div_ [ "className" $= "name" ] $
-                            elemString $ Text.unpack (n ^. Node.expression)
+                        --div_ [ "className" $= "name" ] $
+                        --    elemString $ Text.unpack (n ^. Node.expression)
                         div_ [ "className" $= "properties" ]$ do
                             div_ [ "className" $= "label" ] $ elemString "Name"
                             div_
@@ -113,7 +185,7 @@ node ref = React.defineControllerView
                             , "y"          $= "45"
                             ] $ elemString $ strValue n
 
-
+-}
 
 node_ :: Ref Node -> ReactElementM ViewEventHandler ()
 node_ ref = React.view (node ref) () mempty

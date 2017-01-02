@@ -1,22 +1,17 @@
-/*.graph-editor {
-    display:         flex;
-    align-items:     center;
-    justify-content: center;
-}
-*/
 .graph {
     position: relative;
     flex:     none;
-//    width:    0;
-//    height:   0;
     overflow: inherit;
+    color:    @colorName;
 }
+
 .plane {
     position: absolute;
     width:    10px;
     height:   10px;
     overflow: inherit;
 }
+
 .plane--nodes {
     svg {
         position: absolute;
@@ -36,9 +31,6 @@
     stroke-linejoin: round;
 }
 
-// FIXME [Piotr Mołdawski] Implement Haskell exception for zero length connections
-[x1="NaN"] { display: none } // hides React error when you start drawing a connection
-
 
 // node
 
@@ -46,20 +38,20 @@
     position: absolute;
     width:    10px;
     height:   10px;
-    .name {
-        fill:        @colorName;
-        text-anchor: middle;
-        font-weight: 300;
-        filter: drop-shadow( 3px 3px 2px rgba(0,0,0,.7) );
-        &::selection {
-            background: none;
-        }
-    }
     .port--self {
         r: 5;
     }
-}
 
+}
+.node__name {
+    fill:        @colorName;
+    text-anchor: middle;
+    font-weight: 300;
+    filter:      "url(#textShadow)";
+    &::selection {
+        background: none;
+    }
+}
 .port {
     stroke-width: 0px;
     &:hover {
@@ -72,27 +64,84 @@
 
 // selection mark
 
-.selection-mark {
+.node__selection-mark {
     fill:       none;
     stroke:     transparent;
-    transition: all 100ms ease-in-out;
+    transition: all 90ms ease-in-out;
     stroke:     @colorSelect;
     opacity:    0;
+    x:         -20px;
+    y:         -20px;
+    width:      40px;
+    height:     40px;
+    rx:         20px;
+    ry:         20px;
 }
 
 .node--selected {
-    .selection-mark {
+    .node__selection-mark {
         opacity: 1;
     }
 }
 
-.node--collapsed {
-    .selection-mark {
-        r: 20;
+.node--selected {
+    .node__selection-mark {
+        x:     -30px;
+        y:     -30px;
+        width:  60px;
+        height: 60px;
+        rx:     30px;
+        ry:     30px;
+    }
+}
+.node--expanded {
+    .node__selection-mark {
+        x:      0px;
+        y:     -20px;
+        width:  272px;
+        height: 126px;
+        rx:     4px;
+        ry:     4px;
     }
     &.node--selected {
-        .selection-mark {
-            r: 30;
+        .node__selection-mark {
+            x:     -10px;
+            y:     -30px;
+            width:  292px;
+            height: 146px;
+            rx:     12px;
+            ry:     12px;
         }
     }
+}
+
+// node expanded
+
+.node__properties {
+    width: 0;
+    height: 32px;
+    overflow: hidden;
+    opacity: 0;
+    transition: all 90ms ease-in-out;
+}
+
+.node--expanded {
+    .node__properties {
+        position:      relative;
+        font-size:     12px;
+        padding:       12px 16px;
+        position:      relative;
+        top:          -20px;
+        border-radius: 4px;
+        width:         240px;
+        height:        auto;
+        overflow:      hidden;
+        background:    @colorNodeBackground;
+        opacity:       1;
+    }
+}
+
+.node__visualisation {
+    opacity:         0;
+    backdrop-filter: brightness(1) blur(20px);
 }
