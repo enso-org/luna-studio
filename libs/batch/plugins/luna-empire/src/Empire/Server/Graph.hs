@@ -224,8 +224,12 @@ handleUpdateNodeExpression = modifyGraph action success where
             sendToBus' $ RemoveNodes.Update location [nodeId]
 
 handleUpdateNodeMeta :: Request UpdateNodeMeta.Request -> StateT Env BusT ()
-handleUpdateNodeMeta = modifyGraphOk (mtuple action) success where
-    action  (UpdateNodeMeta.Request location updates) = forM_ updates $ uncurry $ Graph.updateNodeMeta location
+handleUpdateNodeMeta = modifyGraphOk action success where
+    action  (UpdateNodeMeta.Request location updates) = do 
+        allNodes <- Graph.withGraph location buildNodes
+        let inv = UpdateNodeMeta.Inverse allNodes
+            res = forM_ updates $ uncurry $ Graph.updateNodeMeta location
+        (,) <$> pure inv <*> res
     success (UpdateNodeMeta.Request location updates) _ result = sendToBus' $ UpdateNodeMeta.Update location updates
 
 handleRenameNode :: Request RenameNode.Request -> StateT Env BusT ()

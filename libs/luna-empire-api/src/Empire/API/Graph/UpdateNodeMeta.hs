@@ -4,7 +4,7 @@ import           Data.Binary                   (Binary)
 import           Prologue
 
 import           Empire.API.Data.GraphLocation (GraphLocation)
-import           Empire.API.Data.Node          (NodeId)
+import           Empire.API.Data.Node          (NodeId, Node)
 import           Empire.API.Data.NodeMeta      (NodeMeta)
 import qualified Empire.API.Response           as Response
 import qualified Empire.API.Graph.Request      as G
@@ -17,8 +17,12 @@ data Request = Request { _location :: GraphLocation
                        , _updates  :: [SingleUpdate]
                        } deriving (Generic, Show, Eq)
 
-type Response = Response.SimpleResponse Request ()
-instance Response.ResponseResult Request () ()
+
+data Inverse = Inverse { _prevNodes :: [Node]
+                       } deriving (Generic, Show, Eq)
+
+type Response = Response.SimpleResponse Request Inverse
+instance Response.ResponseResult Request Inverse ()
 
 data Update   = Update { _location' :: GraphLocation
                        , _updates'  :: [SingleUpdate]
@@ -26,9 +30,11 @@ data Update   = Update { _location' :: GraphLocation
 
 
 makeLenses ''Request
+makeLenses ''Inverse
 makeLenses ''Update
 
 instance Binary Request
+instance Binary Inverse
 instance Binary Update
 instance G.GraphRequest Request where location = location
 

@@ -50,6 +50,8 @@ import qualified Empire.API.Data.PortRef           as PortRef
 import qualified Empire.API.Graph.RemoveNodes      as RemoveNodes
 import qualified Empire.API.Graph.RenameNode       as RenameNode
 import qualified Empire.API.Graph.UpdateNodeExpression as UpdateNodeExpression
+import           Empire.API.Graph.UpdateNodeMeta   (SingleUpdate)
+import qualified Empire.API.Graph.UpdateNodeMeta   as UpdateNodeMeta
 import qualified Empire.API.Topic                  as Topic
 import           Empire.API.Response               (Response (..))
 import qualified Empire.API.Response               as Response
@@ -107,6 +109,7 @@ handlersMap = Map.fromList
     , makeHandler handleAddNodeUndo
     , makeHandler handleRemoveNodesUndo
     , makeHandler handleUpdateNodeExpressionUndo
+    , makeHandler handleUpdateNodeMetaUndo
     , makeHandler handleRenameNodeUndo
     , makeHandler handleConnectUndo
     , makeHandler handleDisconnectUndo
@@ -119,6 +122,7 @@ type family UndoResponseRequest t where
     UndoResponseRequest AddSubgraph.Response          = RemoveNodes.Request
     UndoResponseRequest RemoveNodes.Response          = AddSubgraph.Request
     UndoResponseRequest UpdateNodeExpression.Response = UpdateNodeExpression.Request
+    UndoResponseRequest UpdateNodeMeta.Response       = UpdateNodeMeta.Request
     UndoResponseRequest RenameNode.Response           = RenameNode.Request
     UndoResponseRequest Connect.Response              = Disconnect.Request
     UndoResponseRequest Disconnect.Response           = Connect.Request
@@ -128,6 +132,7 @@ type family RedoResponseRequest t where
     RedoResponseRequest AddSubgraph.Response          = AddSubgraph.Request
     RedoResponseRequest RemoveNodes.Response          = RemoveNodes.Request
     RedoResponseRequest UpdateNodeExpression.Response = UpdateNodeExpression.Request
+    RedoResponseRequest UpdateNodeMeta.Response       = UpdateNodeMeta.Request
     RedoResponseRequest RenameNode.Response           = RenameNode.Request
     RedoResponseRequest Connect.Response              = Connect.Request
     RedoResponseRequest Disconnect.Response           = Disconnect.Request
@@ -202,6 +207,24 @@ handleUpdateNodeExpressionUndo (Response.Response _ (UpdateNodeExpression.Reques
         let undoMsg = UpdateNodeExpression.Request location nodeId oldExpr
             redoMsg = UpdateNodeExpression.Request location nodeId expression
         in Just (undoMsg, redoMsg)
+
+tupleUpdate :: Node -> SingleUpdate
+tupleUpdate node = (node ^. Node.nodeId, node ^. Node.nodeMeta)
+
+filterMeta :: [Node] -> [SingleUpdate] -> [SingleUpdate]
+filterMeta allNodes updates =
+    let nodeIds = map fst updates
+        q x  = List.find (\node -> node ^. Node.nodeId == x) allNodes
+        p = catMaybes $ map q nodeIds
+    in map tupleUpdate p
+
+handleUpdateNodeMetaUndo :: UpdateNodeMeta.Response -> Maybe (UpdateNodeMeta.Request, UpdateNodeMeta.Request)
+handleUpdateNodeMetaUndo (Response.Response _ (UpdateNodeMeta.Request location updates) inv _) =
+    withOk inv $ \(UpdateNodeMeta.Inverse nodes) ->
+    let prevMeta = filterMeta nodes updates
+        undoMsg = UpdateNodeMeta.Request location prevMeta
+        redoMsg = UpdateNodeMeta.Request location updates
+    in Just (undoMsg, redoMsg)
 
 handleRenameNodeUndo :: RenameNode.Response ->  Maybe (RenameNode.Request, RenameNode.Request)
 handleRenameNodeUndo (Response.Response _ (RenameNode.Request location nodeId name) inv res) =
