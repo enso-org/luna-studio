@@ -10,6 +10,8 @@ import qualified Empire.API.Graph.Request      as G
 import qualified Empire.API.Request            as R
 import qualified Empire.API.Response           as Response
 import qualified Empire.API.Topic              as T
+import qualified Data.Map                      as Map
+
 
 
 data Request = Request { _location    :: GraphLocation
@@ -18,17 +20,18 @@ data Request = Request { _location    :: GraphLocation
                        , _saveNodeIds :: Bool
                        } deriving (Generic, Show, Eq)
 
--- data Result = Result { _nodes'       :: [Node]
---                      , _connections' :: [Connection]
---                      } deriving (Generic, Show, Eq)
---
--- type Response = Response.Response Request () Result
--- instance Response.ResponseResult Request () Result
-type Response = Response.SimpleResponse Request ()
-instance Response.ResponseResult Request () ()
+type Result = Maybe (Map.Map NodeId NodeId)
+
+
+type Response = Response.Response Request () Result
+instance Response.ResponseResult Request () Result
+-- type Response = Response.SimpleResponse Request ()
+-- instance Response.ResponseResult Request () ()
 
 makeLenses ''Request
+-- makeLenses ''Result
 instance Binary Request
+-- instance Binary Result
 instance G.GraphRequest Request where location = location
 
 topicPrefix = "empire.graph.node.addSubgraph"
