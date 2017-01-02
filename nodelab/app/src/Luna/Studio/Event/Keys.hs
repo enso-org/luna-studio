@@ -2,11 +2,14 @@ module Luna.Studio.Event.Keys where
 
 import           Luna.Studio.Prelude
 
-import           React.Flux        (KeyboardEvent (KeyboardEvent))
+import           React.Flux          (KeyboardEvent (KeyboardEvent))
 
 
 a :: Int
 a = 65
+
+h :: Int
+h = 72
 
 plus :: Int
 plus = 187

@@ -23,7 +23,7 @@ import           Luna.Studio.Commands.Command         (Command, performIO)
 import           Luna.Studio.Commands.Graph.Selection (selectedNodes)
 import           Luna.Studio.Commands.Node.Register   (registerNode)
 import qualified Luna.Studio.Commands.Node.Update     as Node
--- import qualified Luna.Studio.State.Camera             as Camera
+import           Luna.Studio.State.Camera             (translateToWorkspace)
 import           Luna.Studio.State.Global             (State)
 import qualified Luna.Studio.State.Global             as Global
 import qualified Luna.Studio.State.Graph              as Graph
@@ -81,9 +81,10 @@ moveUp = Global.withSearcher $ Store.modifyM_ $ do
 accept :: Command State ()
 accept = do
     searcher <- Global.withSearcher $ Store.get
+    pos <- translateToWorkspace (searcher ^. Searcher.position)
     let selected  = searcher ^. Searcher.selected
         mayNodeId = searcher ^. Searcher.nodeId
-        pos       = searcher ^. Searcher.position
+        -- pos       = searcher ^. Searcher.position
         mayResult = listToMaybe $ drop selected $ searcher ^. Searcher.results
         expression = case mayResult of
             Just result -> result ^. Result.name

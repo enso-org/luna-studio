@@ -32,14 +32,17 @@ toAction _ = Nothing
 
 handleKey :: KeyboardEvent -> Command State ()
 handleKey evt
-    | Keys.withCtrl      evt Keys.leftArrow  = panLeft
-    | Keys.withCtrl      evt Keys.rightArrow = panRight
-    | Keys.withCtrl      evt Keys.upArrow    = panUp
-    | Keys.withCtrl      evt Keys.downArrow  = panDown
-    | Keys.withCtrl      evt Keys.plus       = zoomIn
-    | Keys.withCtrlShift evt Keys.plus       = zoomIn
-    | Keys.withCtrl      evt Keys.minus      = zoomOut
-    | Keys.withCtrlShift evt Keys.minus      = zoomOut
-    | Keys.withCtrl      evt Keys.zero       = resetZoom
-    | Keys.withCtrlShift evt Keys.zero       = resetPan
-    | otherwise                              = return ()
+    | Keys.withCtrl         evt Keys.leftArrow  = panLeft
+    | Keys.withCtrl         evt Keys.rightArrow = panRight
+    | Keys.withCtrl         evt Keys.upArrow    = panUp
+    | Keys.withCtrl         evt Keys.downArrow  = panDown
+    | Keys.withCtrl         evt Keys.plus       = zoomIn
+    | Keys.withCtrlShift    evt Keys.plus       = zoomIn
+    | Keys.withCtrl         evt Keys.minus      = zoomOut
+    | Keys.withCtrlShift    evt Keys.minus      = zoomOut
+    | Keys.withCtrl         evt Keys.zero       = resetZoom
+    | Keys.withCtrlShift    evt Keys.zero       = resetPan
+    | Keys.withCtrlAltShift evt Keys.zero       = resetCamera
+    | Keys.withCtrlShift    evt Keys.zero       = autoZoom
+    | Keys.withoutMods      evt Keys.h          = autoZoom
+    | otherwise                                 = return ()
