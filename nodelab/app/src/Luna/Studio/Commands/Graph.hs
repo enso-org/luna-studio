@@ -26,9 +26,9 @@ import qualified Luna.Studio.React.Model.NodeEditor as NodeEditor
 import           Luna.Studio.React.Store            (Ref, WRef, ref, widget)
 import qualified Luna.Studio.React.Store            as Store
 
+import qualified Luna.Studio.React.Model.Node       as Model
+import qualified Luna.Studio.React.Model.Port       as PortModel
 import qualified Object.Widget.Connection           as ConnectionModel
-import qualified Object.Widget.Node                 as Model
-import qualified Object.Widget.Port                 as PortModel
 
 import           Luna.Studio.Commands.Command       (Command)
 import           Luna.Studio.Data.Color             (vtToColor)

@@ -1,7 +1,6 @@
-module Object.Widget.Port where
+module Luna.Studio.React.Model.Port where
 
 import           Data.Aeson                (ToJSON)
-import           Luna.Studio.Prelude       hiding (set)
 
 import           Empire.API.Data.Node      (NodeId)
 import qualified Empire.API.Data.Port      as API
@@ -10,6 +9,7 @@ import           Empire.API.Data.ValueType (ValueType)
 import qualified Empire.API.JSONInstances  ()
 import           Luna.Studio.Data.Color    (Color)
 import           Luna.Studio.Data.Color    (colorPort)
+import           Luna.Studio.Prelude       hiding (set)
 
 
 

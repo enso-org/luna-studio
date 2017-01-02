@@ -5,7 +5,6 @@ import qualified Data.HashMap.Strict                   as HashMap
 import           Empire.API.Data.Node                  (NodeId)
 import           Empire.API.Data.PortRef               (InPortRef)
 import           Luna.Studio.Data.CoordsTransformation
-import           Luna.Studio.Data.Vector
 import           Luna.Studio.Prelude
 import           Luna.Studio.React.Model.Connection    (Connection, CurrentConnection)
 import           Luna.Studio.React.Model.Node          (Node)

@@ -5,15 +5,15 @@ module Luna.Studio.Action.Collaboration
 
 import           Luna.Studio.Prelude
 
-import qualified Luna.Studio.Batch.Workspace                   as Workspace
-import qualified Data.DateTime                     as DT
-import qualified Data.Map.Lazy                     as Map
+import qualified Data.DateTime                        as DT
+import qualified Data.Map.Lazy                        as Map
+import qualified Luna.Studio.Batch.Workspace          as Workspace
 
-import           Empire.API.Data.GraphLocation     (GraphLocation)
-import qualified Empire.API.Graph.Collaboration    as Collaboration
+import           Empire.API.Data.GraphLocation        (GraphLocation)
+import qualified Empire.API.Graph.Collaboration       as Collaboration
 
-import           Event.Batch                       (Event (..))
-import qualified Event.Event                       as Event
+import           Event.Batch                          (Event (..))
+import qualified Event.Event                          as Event
 
 import           Luna.Studio.Commands.Batch           (collaborativeTouch)
 import           Luna.Studio.Commands.Collaboration   (updateClient)
@@ -24,9 +24,9 @@ import           Luna.Studio.State.Collaboration      (ColorId)
 import           Luna.Studio.State.Global             (State)
 import qualified Luna.Studio.State.Global             as Global
 
-import qualified Object.Widget.Node                as NodeModel
-import           Luna.Studio.React.Store                       (widget)
-import qualified Luna.Studio.React.Store                       as Store
+import qualified Luna.Studio.React.Model.Node         as NodeModel
+import           Luna.Studio.React.Store              (widget)
+import qualified Luna.Studio.React.Store              as Store
 
 
 

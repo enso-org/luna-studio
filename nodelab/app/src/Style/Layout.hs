@@ -5,10 +5,10 @@ module Style.Layout where
 import           Luna.Studio.Data.Vector (Position (Position), Size (Size), Vector2 (Vector2))
 import           Luna.Studio.Prelude
 
-import qualified Object.Widget.Button    as Button
 import qualified Object.Widget.Group     as Group
-import qualified Object.Widget.Label     as Label
 import           Style.Types
+
+
 
 sidebarPadding                 :: Double
 sidebarPadding                 = 10.0
@@ -37,13 +37,13 @@ breadcrumbStyle                = def & Group.background   ?~ Color 1.0 1.0 1.0 0
 breadcrumbsHeight              :: Double
 breadcrumbsHeight              = 20.0
 
-breadcrumbItemStyle            :: Button.Style
-breadcrumbItemSize             = Size (Vector2 150.0 20.0) :: Size
-
-breadcrumbItemSize            :: Size
-breadcrumbItemStyle            = def & Button.rounded    .~ False
-                                     & Button.background .~ transparent
-                                     & Button.alignment  .~ Label.Left
+-- breadcrumbItemStyle            :: Button.Style
+-- breadcrumbItemSize             = Size (Vector2 150.0 20.0) :: Size
+--
+-- breadcrumbItemSize            :: Size
+-- breadcrumbItemStyle            = def & Button.rounded    .~ False
+--                                      & Button.background .~ transparent
+--                                      & Button.alignment  .~ Label.Left
 
 projectChooser                 :: Group.Style
 projectChooser                 = def & Group.padding    .~ uniformPadding 5.0
@@ -69,11 +69,11 @@ projectChooserStyle :: Group.Style
 projectChooserStyle = def & Group.background   ?~ Color 0.55 0.55 0.55 1.0
                           & Group.padding      .~ uniformPadding 5.0
 
-textEditorToggle :: Button.Button
-textEditorToggle = Button.create (Size (Vector2 10 1000)) ":" & Button.style .~ style where
-     style = def & Button.rounded    .~ False
-                 & Button.background .~ Color 0.1 0.1 0.1 1.0
-                 & Button.alignment  .~ Label.Center
+-- textEditorToggle :: Button.Button
+-- textEditorToggle = Button.create (Size (Vector2 10 1000)) ":" & Button.style .~ style where
+--      style = def & Button.rounded    .~ False
+--                  & Button.background .~ Color 0.1 0.1 0.1 1.0
+--                  & Button.alignment  .~ Label.Center
 
 outputsEdgeStyle :: Group.Style
 outputsEdgeStyle = def & Group.background   ?~ Color 0.0 0.0 0.0 0.0

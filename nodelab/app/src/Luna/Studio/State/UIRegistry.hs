@@ -42,7 +42,7 @@ import           Luna.Studio.Data.Aeson       (intMapToJSON)
 import           Object.Widget
 import           Object.Widget.Connection
 import           Object.Widget.Scene
-import           UI.Widget.Connection         ()
+
 
 instance CompositeWidget Scene where
     createWidget _   _ = return ()

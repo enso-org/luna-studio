@@ -14,11 +14,11 @@ import           Luna.Studio.Data.Angle       (Angle)
 import           Luna.Studio.Data.Color       (Color)
 import           Luna.Studio.Data.Vector
 import           Luna.Studio.Prelude
+import qualified Luna.Studio.React.Model.Node as Node
+import           Luna.Studio.React.Model.Port (Port (..))
+import qualified Luna.Studio.React.Model.Port as Port
 import           Luna.Studio.State.Global     (State)
 import           Numeric                      (showFFloat)
-import qualified Object.Widget.Node           as Node
-import           Object.Widget.Port           (Port (..))
-import qualified Object.Widget.Port           as Port
 
 
 type IsSingle = Bool

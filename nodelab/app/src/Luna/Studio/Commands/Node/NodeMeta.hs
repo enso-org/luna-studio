@@ -11,8 +11,8 @@ import qualified Empire.API.Data.Node         as Node
 import           Empire.API.Data.NodeMeta     (NodeMeta (..))
 import qualified Empire.API.Data.NodeMeta     as NodeMeta
 
+import qualified Luna.Studio.React.Model.Node as NodeModel
 import qualified Luna.Studio.React.Store      as Store
-import qualified Object.Widget.Node           as NodeModel
 
 import qualified Luna.Studio.Commands.Batch   as BatchCmd
 import           Luna.Studio.Commands.Command (Command)

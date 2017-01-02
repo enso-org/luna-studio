@@ -31,8 +31,8 @@ import qualified Empire.API.Data.Node               as Node
 
 import           Empire.API.Graph.NodeResultUpdate  (NodeValue)
 
-import           Object.Widget.Node                 (makePorts)
-import           Object.Widget.Port                 (portRef)
+import           Luna.Studio.React.Model.Node       (makePorts)
+import           Luna.Studio.React.Model.Port       (portRef)
 
 
 updateNode :: Node -> Command State ()

@@ -20,12 +20,12 @@ import qualified Luna.Studio.Event.Keys       as Keys
 import qualified Luna.Studio.React.Event.App  as App
 import           Luna.Studio.React.Model.Node (Node)
 import qualified Luna.Studio.React.Model.Node as Node
+import qualified Luna.Studio.React.Model.Node as Model
 import           Luna.Studio.React.Store      (Ref, WRef (..), ref, widget)
 import qualified Luna.Studio.React.Store      as Store
 import           Luna.Studio.State.Global     (State)
 import qualified Luna.Studio.State.Global     as Global
 import qualified Luna.Studio.State.Graph      as Graph
-import qualified Object.Widget.Node           as Model
 
 
 

@@ -23,10 +23,10 @@ import qualified Event.NodeSearcher                   as NodeSearcher
 import qualified Luna.Studio.Batch.Workspace          as Workspace
 import           Luna.Studio.Commands.Command         (Command, performIO)
 import           Luna.Studio.Commands.Graph.Selection (selectedNodes)
+import qualified Luna.Studio.React.Model.Node         as UINode
 import           Luna.Studio.React.Store              (widget)
 import qualified Luna.Studio.State.Global             as Global
 import qualified Luna.Studio.State.Graph              as Graph
-import qualified Object.Widget.Node                   as UINode
 
 import           JS.Tutorial                          (closeOnboarding, showStep)
 
