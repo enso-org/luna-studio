@@ -166,18 +166,28 @@ import qualified Luna.Studio.State.Graph               as Graph
 --         performIO $ JS.updateScreenSize canvasWidth (size ^. y)
 --     UILayout.relayout
 
-minCamFactor, maxCamFactor, dragZoomSpeed, wheelZoomSpeed, panStep, zoomFactorStep, padding :: Double
+foreign import javascript safe "document.getElementById('Graph').offsetWidth"  screenWidth  :: IO Double
+foreign import javascript safe "document.getElementById('Graph').offsetHeight" screenHeight :: IO Double
+
+getScreenSize :: Command State Size
+getScreenSize = liftIO $ Size . fromTuple <$> ((,) <$> screenWidth <*> screenHeight)
+
+getScreenCenter :: Command State Position
+getScreenCenter = getScreenCenterFromSize <$> getScreenSize
+
+getScreenCenterFromSize :: Size -> Position
+getScreenCenterFromSize = Position . flip scalarProduct 0.5 . view vector
+
+
+minCamFactor, maxCamFactor, dragZoomSpeed, wheelZoomSpeed, panStep, zoomFactorStep :: Double
 minCamFactor   = 0.2
 maxCamFactor   = 8
 dragZoomSpeed  = 512
 wheelZoomSpeed = 64
 panStep        = 50
 zoomFactorStep = 1.1
-padding = 80
---TODO[react]: Find out how to get real screen size
-screenSize :: Size
--- screenSize = Size (Vector2 2000 1680)
-screenSize = Size (Vector2 1266.66 1191.25)
+padding :: Vector2 Double
+padding = Vector2 80 80
 
 restrictFactor :: Double -> Double -> Double
 restrictFactor scale factor
@@ -200,19 +210,17 @@ panRight = panCamera $ Vector2 panStep    0
 panUp    = panCamera $ Vector2 0          (-panStep)
 panDown  = panCamera $ Vector2 0          panStep
 
-zoomCamera :: Double -> Command State ()
-zoomCamera factor = do
+zoomCamera :: Position -> Double -> Command State ()
+zoomCamera zoomCenter factor = do
     transformMatrix <- Global.withNodeEditor $ Store.use $ NodeEditor.screenTransform . logicalToScreen
-    let s              = restrictFactor (getElem 1 1 transformMatrix) factor
-    modifyCamera (scaleMatrix s) (invertedScaleMatrix s)
+    let s = restrictFactor (getElem 1 1 transformMatrix) factor
+    modifyCamera (homothetyMatrix zoomCenter s) (invertedHomothetyMatrix zoomCenter s)
 
---TODO[react]: Perform zoom relative to the center of screen
 zoomIn :: Command State ()
-zoomIn = zoomCamera zoomFactorStep
+zoomIn = getScreenCenter >>= flip zoomCamera zoomFactorStep
 
---TODO[react]: Perform zoom relative to the center of screen
 zoomOut :: Command State ()
-zoomOut = zoomCamera (1/zoomFactorStep)
+zoomOut = getScreenCenter >>= flip zoomCamera (1/zoomFactorStep)
 
 resetZoom :: Command State ()
 resetZoom = Global.withNodeEditor $ Store.modifyM_ $ do
@@ -234,10 +242,12 @@ autoZoom = do
     nodes <- use $ Global.graph . Graph.nodes
     case minimumRectangle $ map (Position . fromTuple) $ view Node.position <$> nodes of
         Just (leftTop, rightBottom) -> do
-            let span         = Size (Vector2 (rightBottom ^. x - leftTop ^. x + 2 * padding) (rightBottom ^. y - leftTop ^. y + 2 * padding))
-                shift        = (Vector2 padding padding) + scalarProduct (screenSize ^. vector - span ^. vector) 0.5 - leftTop ^. vector
+            screenSize <- getScreenSize
+            let screenCenter = getScreenCenterFromSize screenSize
+                span         = Size (rightBottom ^. vector - leftTop ^. vector + scalarProduct padding 2)
+                shift        = padding + screenCenter ^. vector - scalarProduct (span ^. vector) 0.5 - leftTop ^. vector
                 factor       = min 1 $ min (screenSize ^. x / span ^. x) (screenSize ^. y / span ^. y)
-                screenCenter = Position (scalarProduct (screenSize ^. vector) 0.5)
+
             Global.withNodeEditor $ Store.modifyM_ $ do
                 NodeEditor.screenTransform . logicalToScreen .= multStd2 (translationMatrix shift) (homothetyMatrix screenCenter factor)
                 NodeEditor.screenTransform . screenToLogical .= multStd2 (invertedHomothetyMatrix screenCenter factor) (invertedTranslationMatrix shift)
