@@ -3,16 +3,18 @@ module Luna.Studio.Action.Camera
     ( toAction
     ) where
 
-import           Event.Event                  (Event (UI))
-import           Event.UI                     (UIEvent (AppEvent))
+import           Event.Event                        (Event (UI))
+import           Event.UI                           (UIEvent (AppEvent, NodeEditorEvent))
 import           Luna.Studio.Commands.Camera
-import           Luna.Studio.Commands.Command (Command)
-import qualified Luna.Studio.Event.Keys       as Keys
+import           Luna.Studio.Commands.Command       (Command)
+import qualified Luna.Studio.Event.Keys             as Keys
+import           Luna.Studio.Event.Mouse            (mousePosition)
+import qualified Luna.Studio.Event.Mouse            as Mouse
 import           Luna.Studio.Prelude
-import qualified Luna.Studio.React.Event.App  as App
-import           Luna.Studio.State.Global     (State)
-import           React.Flux                   (KeyboardEvent)
-
+import qualified Luna.Studio.React.Event.App        as App
+import qualified Luna.Studio.React.Event.NodeEditor as NodeEditor
+import           Luna.Studio.State.Global           (State)
+import           React.Flux                         (KeyboardEvent)
 -- toAction :: Event -> Maybe (Command Global.State ())
 -- toAction (Keyboard _ (Keyboard.Event Keyboard.Press 'h' _)) = Just $ autoZoom
 -- toAction evt = (zoom Global.camera) <$> (>> syncCamera) <$> toAction' evt
@@ -27,8 +29,15 @@ import           React.Flux                   (KeyboardEvent)
 -- toAction' _ = Nothing
 
 toAction :: Event -> Maybe (Command State ())
-toAction (UI (AppEvent (App.KeyDown e))) = Just $ handleKey e
-toAction _ = Nothing
+toAction (UI (AppEvent (App.KeyDown   e))) = Just $ handleKey e
+toAction (UI (NodeEditorEvent (NodeEditor.MouseDown e))) = Just $ when shouldProceed $ startZoomDrag pos where
+    shouldProceed = Mouse.withAlt e -- TODO[react]: Change for this: Mouse.withoutMods e && Mouse.rightButton e
+    pos           = mousePosition e
+toAction (UI (AppEvent (App.MouseMove e))) = Just $ zoomDrag pos where
+    pos = mousePosition e
+toAction (UI (AppEvent (App.MouseUp   _))) = Just stopZoomDrag
+toAction _                                 = Nothing
+
 
 handleKey :: KeyboardEvent -> Command State ()
 handleKey evt

@@ -19,11 +19,11 @@ import qualified Luna.Studio.React.View.App           as App
 import qualified Luna.Studio.React.View.Searcher      as Searcher
 
 -- import           Luna.Studio.Commands.Camera          (syncCamera)
+import           Luna.Studio.Commands.Camera          (translateToWorkspace)
 import           Luna.Studio.Commands.Command         (Command, performIO)
 import           Luna.Studio.Commands.Graph.Selection (selectedNodes)
 import           Luna.Studio.Commands.Node.Register   (registerNode)
 import qualified Luna.Studio.Commands.Node.Update     as Node
-import           Luna.Studio.State.Camera             (translateToWorkspace)
 import           Luna.Studio.State.Global             (State)
 import qualified Luna.Studio.State.Global             as Global
 import qualified Luna.Studio.State.Graph              as Graph

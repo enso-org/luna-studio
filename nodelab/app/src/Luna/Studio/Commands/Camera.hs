@@ -13,55 +13,44 @@ module Luna.Studio.Commands.Camera
      , zoomIn
      , zoomOut
     --  , wheelZoom
+     , startZoomDrag
+     , stopZoomDrag
+     , zoomDrag
      , resetCamera
      , resetPan
      , resetZoom
-    --  , updateWindowSize --TODO[react] remove
+     , translateToWorkspace
      ) where
 
 import           Data.Matrix                           (Matrix, getElem, identity, multStd2, setElem)
-
+import           Data.Matrix                           as Matrix
 import qualified Empire.API.Data.Node                  as Node
 import           Luna.Studio.Commands.Command          (Command)
 import           Luna.Studio.Data.CoordsTransformation (logicalToScreen, screenToLogical)
-import           Luna.Studio.Data.Matrix               (homothetyMatrix, invertedHomothetyMatrix, invertedScaleMatrix,
-                                                        invertedTranslationMatrix, scaleMatrix, translationMatrix)
-import           Luna.Studio.Data.Vector               (Position (Position), Size (Size), Vector2 (Vector2), fromTuple, minimumRectangle,
-                                                        scalarProduct, vector, x, y)
+import           Luna.Studio.Data.Matrix               (homothetyMatrix, invertedHomothetyMatrix, invertedTranslationMatrix,
+                                                        translationMatrix)
+import           Luna.Studio.Data.Vector               (Position (Position), ScreenPosition, Size (Size), Vector2 (Vector2), fromTuple,
+                                                        minimumRectangle, scalarProduct, vector, x, y)
 import           Luna.Studio.Prelude
 import qualified Luna.Studio.React.Model.NodeEditor    as NodeEditor
 import qualified Luna.Studio.React.Store               as Store
+import qualified Luna.Studio.State.Camera              as Camera
 import           Luna.Studio.State.Global              (State)
 import qualified Luna.Studio.State.Global              as Global
 import qualified Luna.Studio.State.Graph               as Graph
+
+translateToWorkspace :: Position -> Command State (Position)
+translateToWorkspace pos = do
+    transformMatrix <- Global.withNodeEditor $ Store.use $ NodeEditor.screenTransform . screenToLogical
+    let posMatrix      = Matrix.fromList 1 4 [ pos ^. x, pos ^. y, 1, 1]
+        posInWorkspace = multStd2 posMatrix transformMatrix
+    return $ Position (Vector2 (getElem 1 1 posInWorkspace) (getElem 1 2 posInWorkspace))
+
 
 -- import           Reactive.Commands.UILayout as UILayout --TODO[react] remove
 -- import           Luna.Studio.State.Camera           (DragHistory (..))
 -- import qualified Luna.Studio.State.Camera           as Camera
 -- import qualified JS.Camera                             as JS
-
--- autoZoom :: Command Global.State ()
--- autoZoom = do
---     nodes             <- use $ Global.graph  . Graph.nodes
---     screenSize'       <- use $ Global.camera . Camera.camera . Camera.screenSize
---
---     zoom Global.camera $ setZoom 1.0
---     Global.camera . Camera.camera . Camera.pan    .= Vector2 0.0 0.0
---
---     when (length nodes > 0) $ do
---         let padding        = Vector2 80.0 80.0
---             screenSize     = fromIntegral <$> screenSize'
---             minXY          = -padding + (Vector2 (minimum $ (^. Node.position . _1) <$> nodes) (minimum $ (^. Node.position . _2) <$> nodes))
---             maxXY          =  padding + (Vector2 (maximum $ (^. Node.position . _1) <$> nodes) (maximum $ (^. Node.position . _2) <$> nodes))
---             spanXY         = maxXY - minXY
---             zoomFactorXY   = Vector2 (screenSize ^. x / spanXY ^. x) (screenSize ^. y / spanXY ^. y)
---             zoomFactor     = min 1.0 $ min (zoomFactorXY ^. x) (zoomFactorXY ^. y)
---             zoomPan        = minXY + ((/2.0) <$> spanXY)
---
---         zoom Global.camera $ setZoom zoomFactor
---         Global.camera . Camera.camera . Camera.pan    .= zoomPan
---
---     zoom Global.camera syncCamera
 
 -- wheelZoom :: Position -> Vector2 Double -> Command Camera.State ()
 -- wheelZoom pos delta = do
@@ -69,21 +58,6 @@ import qualified Luna.Studio.State.Graph               as Graph
 --     let delta'      = (- delta ^. x - delta ^. y) / wheelZoomSpeed
 --         workspace   = Camera.screenToWorkspace camera pos
 --     fixedPointZoom pos workspace delta'
---
--- fixedPointZoom :: Position -> Position -> Double -> Command Camera.State ()
--- fixedPointZoom fpScreen fpWorkspace delta = do
---     oldFactor           <- use $ Camera.camera . Camera.factor
---
---     let newFactor        = oldFactor * (1.0 + delta)
---     setZoom newFactor
---
---     oldCamera           <- use $ Camera.camera
---     let nonPannedCamera  = oldCamera & Camera.factor .~ (restrictCamFactor newFactor)
---                                      & Camera.pan    .~ Vector2 0.0 0.0
---         newWorkspace     = Camera.screenToWorkspace nonPannedCamera fpScreen
---         newPan           = -newWorkspace + fpWorkspace
---
---     Camera.camera . Camera.pan .= newPan
 --
 -- panDrag :: Mouse.Type -> Vector2 Int -> Command Camera.State ()
 -- panDrag Mouse.Pressed pos = do
@@ -102,26 +76,6 @@ import qualified Luna.Studio.State.Graph               as Graph
 --
 -- panDrag _ _ = return ()
 --
--- zoomDrag :: Mouse.Type -> Vector2 Int -> Command Camera.State ()
--- zoomDrag Mouse.Pressed screenPos = do
---     camera           <- use $ Camera.camera
---     let workspacePos  = Camera.screenToWorkspace camera screenPos
---     Camera.history   ?= ZoomDragHistory screenPos screenPos workspacePos
---
--- zoomDrag Mouse.Moved   pos = do
---     history <- use $ Camera.history
---     case history of
---         Just (ZoomDragHistory prev fpScreen fpWorkspace) -> do
---             Camera.history ?= ZoomDragHistory pos fpScreen fpWorkspace
---             let deltaV = fromIntegral <$> (prev - pos)
---                 delta  = (-deltaV ^. x + deltaV ^. y) / dragZoomSpeed
---             fixedPointZoom fpScreen fpWorkspace delta
---         _                           -> return ()
---
--- zoomDrag Mouse.Released _ = do
---     Camera.history .= Nothing
---
--- zoomDrag _ _ = return ()
 --
 -- syncCamera :: Command Camera.State ()
 -- syncCamera = do
@@ -154,17 +108,6 @@ import qualified Luna.Studio.State.Graph               as Graph
 -- htmlX        camFactor camPanX halfScreenX =  halfScreenX - camPanX * camFactor
 -- htmlY        camFactor camPanY halfScreenY =  halfScreenY - camPanY * camFactor
 
---TODO[react] remove
--- updateWindowSize :: Vector2 Int -> Command Global.State ()
--- updateWindowSize size = do
---     textEditorWidth <- UILayout.relayoutTextEditor size
---     zoom Global.camera $ do
---         let canvasWidth = size ^. x - textEditorWidth
---         Camera.camera . Camera.windowSize .= size
---         Camera.camera . Camera.screenSize .= Vector2 canvasWidth (size ^. y)
---         syncCamera
---         performIO $ JS.updateScreenSize canvasWidth (size ^. y)
---     UILayout.relayout
 
 foreign import javascript safe "document.getElementById('Graph').offsetWidth"  screenWidth  :: IO Double
 foreign import javascript safe "document.getElementById('Graph').offsetHeight" screenHeight :: IO Double
@@ -210,7 +153,7 @@ panRight = panCamera $ Vector2 panStep    0
 panUp    = panCamera $ Vector2 0          (-panStep)
 panDown  = panCamera $ Vector2 0          panStep
 
-zoomCamera :: Position -> Double -> Command State ()
+zoomCamera :: ScreenPosition -> Double -> Command State ()
 zoomCamera zoomCenter factor = do
     transformMatrix <- Global.withNodeEditor $ Store.use $ NodeEditor.screenTransform . logicalToScreen
     let s = restrictFactor (getElem 1 1 transformMatrix) factor
@@ -252,3 +195,20 @@ autoZoom = do
                 NodeEditor.screenTransform . logicalToScreen .= multStd2 (translationMatrix shift) (homothetyMatrix screenCenter factor)
                 NodeEditor.screenTransform . screenToLogical .= multStd2 (invertedHomothetyMatrix screenCenter factor) (invertedTranslationMatrix shift)
         Nothing -> resetCamera
+
+startZoomDrag :: ScreenPosition -> Command State ()
+startZoomDrag pos = Global.cameraState ?= Camera.ZoomDrag pos pos
+
+zoomDrag :: ScreenPosition -> Command State ()
+zoomDrag actPos = do
+    mayState <- use Global.cameraState
+    withJust mayState $ \state -> case state of
+        Camera.ZoomDrag fixedPoint prevPos -> do
+            Global.cameraState ?= Camera.ZoomDrag fixedPoint actPos
+            let delta = actPos ^. vector - prevPos ^. vector
+                scale = 1 + (delta ^. x - delta ^. y) / dragZoomSpeed
+            zoomCamera fixedPoint scale
+        _ -> return ()
+
+stopZoomDrag :: Command State ()
+stopZoomDrag = Global.cameraState .= Nothing
