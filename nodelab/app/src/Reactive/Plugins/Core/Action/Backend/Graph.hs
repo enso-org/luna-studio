@@ -2,6 +2,7 @@ module Reactive.Plugins.Core.Action.Backend.Graph
     ( toAction
     ) where
 
+import qualified Data.Map                                    as Map
 
 import qualified Batch.Workspace                             as Workspace
 import           Utils.PreludePlus
@@ -10,6 +11,7 @@ import qualified Empire.API.Data.Connection                  as Connection
 import qualified Empire.API.Data.Graph                       as Graph
 import           Empire.API.Data.GraphLocation               (GraphLocation (..))
 import qualified Empire.API.Data.Node                        as Node
+import qualified Empire.API.Data.PortRef                     as PortRef
 import qualified Empire.API.Graph.AddNode                    as AddNode
 import qualified Empire.API.Graph.AddSubgraph                as AddSubgraph
 import qualified Empire.API.Graph.CodeUpdate                 as CodeUpdate
@@ -90,18 +92,33 @@ toAction (Event.Batch ev) = Just $ case ev of
                 collaborativeModify [nodeId]
                 when shouldSelect $ selectNodes [nodeId]
 
-    AddSubgraphResponse response@(Response.Response uuid (AddSubgraph.Request loc nodes connections _) _ _ ) -> do
+    AddSubgraphResponse response@(Response.Response uuid (AddSubgraph.Request loc nodes connections _) _ (Response.Ok idsMaybeMap) ) -> do
         shouldProcess   <- isCurrentLocationAndGraphLoaded loc
         correctLocation <- isCurrentLocation loc
-        when (shouldProcess && correctLocation) $ do
-            mapM_ addDummyNode nodes
-            connectionIds <- forM connections $ \conn -> localConnectNodes (conn ^. Connection.src) (conn ^. Connection.dst)
-            mapM_ updateConnection connectionIds
-            whenM (isOwnRequest uuid) $ do
-                let nodeIds = map (^. Node.nodeId) nodes
-                collaborativeModify nodeIds
-                selectNodes nodeIds
-        handleResponse response doNothing
+        case idsMaybeMap of
+            Nothing -> do when (shouldProcess && correctLocation) $ do
+                            mapM_ addDummyNode nodes
+                            connectionIds <- forM connections $ \conn -> localConnectNodes (conn ^. Connection.src) (conn ^. Connection.dst)
+                            mapM_ updateConnection connectionIds
+                            whenM (isOwnRequest uuid) $ do
+                                let nodeIds = map (^. Node.nodeId) nodes
+                                collaborativeModify nodeIds
+                                selectNodes nodeIds
+                            handleResponse response doNothing
+            Just idsMap -> do let nodes' = flip map nodes $ Node.nodeId %~ (idsMap Map.!)
+                                  connections' = map (\conn -> conn & Connection.src . PortRef.srcNodeId %~ (idsMap Map.!)
+                                                                & Connection.dst . PortRef.dstNodeId %~ (idsMap Map.!)
+                                                                ) connections
+                              when (shouldProcess && correctLocation) $ do
+                                    mapM_ addDummyNode nodes'
+                                    connectionIds <- forM connections' $ \conn -> localConnectNodes (conn ^. Connection.src) (conn ^. Connection.dst)
+                                    mapM_ updateConnection connectionIds
+                                    whenM (isOwnRequest uuid) $ do
+                                        let nodeIds = map (^. Node.nodeId) nodes'
+                                        collaborativeModify nodeIds
+                                        selectNodes nodeIds
+                                    handleResponse response doNothing
+
 
     NodesConnected update -> do
         whenM (isCurrentLocation $ update ^. Connect.location') $ do

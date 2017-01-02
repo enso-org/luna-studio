@@ -212,7 +212,7 @@ handleUpdateNodeExpression = modifyGraph action success where
 
 handleUpdateNodeMeta :: Request UpdateNodeMeta.Request -> StateT Env BusT ()
 handleUpdateNodeMeta = modifyGraphOk action success where
-    action  (UpdateNodeMeta.Request location updates) = do 
+    action  (UpdateNodeMeta.Request location updates) = do
         allNodes <- Graph.withGraph location buildNodes
         let inv = UpdateNodeMeta.Inverse allNodes
             res = forM_ updates $ uncurry $ Graph.updateNodeMeta location

@@ -161,6 +161,7 @@ instance ToJSON RenameNode.Inverse
 instance ToJSON RenameNode.Update
 
 instance ToJSON UpdateNodeMeta.Request
+instance ToJSON UpdateNodeMeta.Inverse
 instance ToJSON UpdateNodeMeta.Update
 
 instance ToJSON NodesUpdate.Update

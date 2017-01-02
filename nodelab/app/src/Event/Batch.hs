@@ -36,6 +36,7 @@ data Event = UnknownEvent String
            | NodesDisconnected                      Disconnect.Update
            | DisconnectResponse                     Disconnect.Response
            | NodeMetaUpdated                    UpdateNodeMeta.Update
+           | NodeMetaInverse                    UpdateNodeMeta.Inverse
            | NodeMetaResponse                   UpdateNodeMeta.Response
            | NodeRenamed                            RenameNode.Update
            | NodeRenameResponse                     RenameNode.Response

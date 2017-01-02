@@ -25,13 +25,9 @@ type Result = Maybe (Map.Map NodeId NodeId)
 
 type Response = Response.Response Request () Result
 instance Response.ResponseResult Request () Result
--- type Response = Response.SimpleResponse Request ()
--- instance Response.ResponseResult Request () ()
 
 makeLenses ''Request
--- makeLenses ''Result
 instance Binary Request
--- instance Binary Result
 instance G.GraphRequest Request where location = location
 
 topicPrefix = "empire.graph.node.addSubgraph"

@@ -168,11 +168,20 @@ handleAddNodeUndo (Response.Response _ (AddNode.Request location nodeType nodeMe
 
 handleAddSubgraphUndo :: AddSubgraph.Response -> Maybe (RemoveNodes.Request, AddSubgraph.Request)  --dodac result do pola addsubgraph response bo zwraca request z podmienionym id
 handleAddSubgraphUndo (Response.Response  _ (AddSubgraph.Request location nodes connections saveNodeIds) _ res ) =
-    withOk res $ const $
-        let ids = map (^. Node.nodeId) nodes
-            undoMsg = RemoveNodes.Request location ids
-            redoMsg = AddSubgraph.Request location nodes connections True
-        in Just (undoMsg, redoMsg)
+    withOk res $ \idMapping ->
+        case idMapping of
+            Nothing -> let ids = map (^. Node.nodeId) nodes
+                           undoMsg = RemoveNodes.Request location ids
+                           redoMsg = AddSubgraph.Request location nodes connections True
+                       in Just (undoMsg, redoMsg)
+            Just idsMap -> let nodes' = flip map nodes $ Node.nodeId %~ (idsMap Map.!)
+                               connections' = map (\conn -> conn & Connection.src . PortRef.srcNodeId %~ (idsMap Map.!)
+                                                                 & Connection.dst . PortRef.dstNodeId %~ (idsMap Map.!)
+                                                                 ) connections
+                               ids' = map (^. Node.nodeId) nodes'
+                               undoMsg = RemoveNodes.Request location ids'
+                               redoMsg = AddSubgraph.Request location nodes' connections' True
+                           in Just (undoMsg, redoMsg)
 
 connect :: (OutPortRef, InPortRef) -> Connection
 connect ports = Connection src dst
@@ -193,7 +202,7 @@ filterConnections connectionPorts nodesIds =
 
 handleRemoveNodesUndo :: RemoveNodes.Response -> Maybe (AddSubgraph.Request, RemoveNodes.Request)
 handleRemoveNodesUndo (Response.Response _ (RemoveNodes.Request location nodesIds) inv _) =
-    withOk inv $ \(RemoveNodes.Inverse nodes connectionPorts)->
+    withOk inv $ \(RemoveNodes.Inverse nodes connectionPorts) ->
         let deletedNodes = filterNodes nodesIds nodes
             deletedConnections  = filterConnections connectionPorts nodesIds
             connections = connect <$> deletedConnections

@@ -160,7 +160,7 @@ addSubgraph loc nodes conns saveIds = do
                 Node.ExpressionNode expr -> void $ addNodeNoTC loc (n ^. Node.nodeId) expr (n ^. Node.nodeMeta)
                 _ -> return ()
             forM_ connections' $ \(Connection src dst) -> connectNoTC loc src dst
-            return $ Just idMapping'
+            return $ Just idMapping
 
 descendInto :: GraphLocation -> NodeId -> GraphLocation
 descendInto (GraphLocation pid lid breadcrumb) nid = GraphLocation pid lid breadcrumb'
