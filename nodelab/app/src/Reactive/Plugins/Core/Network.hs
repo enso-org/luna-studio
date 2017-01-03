@@ -43,7 +43,6 @@ import           Luna.Studio.State.Global                  (State)
 import qualified Luna.Studio.State.Global                  as Global
 
 import qualified JS.Debug
-import qualified JS.UI                                     as UI
 import           JS.WebSocket                              (WebSocket)
 
 import qualified Data.JSString                             as JSString
@@ -108,7 +107,6 @@ processEvent var ev = modifyMVar_ var $ \state -> do
                        & Global.lastEventTimestamp .~ timestamp
     flip catch (handleExcept state realEvent) $ do
         newState <- execCommand (runCommands actions realEvent) state'
-        UI.shouldRender
         when displayProcessingTime $
             consoleTimeEnd (realEvent ^. Event.name)
         return newState

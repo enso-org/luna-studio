@@ -197,7 +197,8 @@ removeWidget widgetId = do
     parentId <- parent widgetId
     -- widgetOver <- use $ UIRegistry.widgetOver
     widgets <- UIRegistry.unregisterM widgetId
-    when (elem widgetId widgets) $ performIO $ Cursor.setCursor Cursor.Normal
+    --TODO[react] remove
+    -- when (elem widgetId widgets) $ performIO $ Cursor.setCursor Cursor.Normal
     forM_ widgets $ performIO . UI.removeWidget . fromWidgetId
     triggerChildrenResized parentId
 
