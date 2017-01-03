@@ -18,41 +18,50 @@ workspacePosition = translateToWorkspace . mousePosition
 mousePosition :: MouseEvent -> Position
 mousePosition e = Position (Vector2 (fromIntegral $ mousePageX e) (fromIntegral $ mousePageY e))
 
-withoutMods :: MouseEvent -> Bool
-withoutMods (MouseEvent False _ _ _ _ False _ False _ _ _ _ _ False) = True
-withoutMods _                                                        = False
+leftButton :: Int
+leftButton = 0
 
-withCtrl :: MouseEvent -> Bool
-withCtrl (MouseEvent False _ _ _ _ True _ _    _ _ _ _ _ False) = True
-withCtrl (MouseEvent False _ _ _ _ _    _ True _ _ _ _ _ False) = True
-withCtrl _                                                      = False
+middleButton :: Int
+middleButton = 1
 
-withAlt :: MouseEvent -> Bool
-withAlt (MouseEvent True _ _ _ _ False _ False _ _ _ _ _ False) = True
-withAlt _                                                       = False
+rightButton :: Int
+rightButton = 2
 
-withShift :: MouseEvent -> Bool
-withShift (MouseEvent False _ _ _ _ False _ False _ _ _ _ _ True) = True
-withShift _                                                       = False
+withoutMods :: MouseEvent -> Int -> Bool
+withoutMods (MouseEvent False b _ _ _ False _ False _ _ _ _ _ False) button = button == b
+withoutMods _ _                                                             = False
 
-withCtrlAlt :: MouseEvent -> Bool
-withCtrlAlt (MouseEvent True _ _ _ _ True _ _    _ _ _ _ _ False) = True
-withCtrlAlt (MouseEvent True _ _ _ _ _    _ True _ _ _ _ _ False) = True
-withCtrlAlt _                                                     = False
+withCtrl :: MouseEvent -> Int -> Bool
+withCtrl (MouseEvent False b _ _ _ True _ _    _ _ _ _ _ False) button = button == b
+withCtrl (MouseEvent False b _ _ _ _    _ True _ _ _ _ _ False) button = button == b
+withCtrl _ _                                                           = False
 
-withCtrlShift :: MouseEvent -> Bool
-withCtrlShift (MouseEvent False _ _ _ _ True _ _    _ _ _ _ _ True) = True
-withCtrlShift (MouseEvent False _ _ _ _ _    _ True _ _ _ _ _ True) = True
-withCtrlShift _                                                     = False
+withAlt :: MouseEvent -> Int -> Bool
+withAlt (MouseEvent True b _ _ _ False _ False _ _ _ _ _ False) button = button == b
+withAlt _ _                                                            = False
 
-withAltShift :: MouseEvent -> Bool
-withAltShift (MouseEvent True _ _ _ _ False _ False _ _ _ _ _ True) = True
-withAltShift _                                                      = False
+withShift :: MouseEvent -> Int -> Bool
+withShift (MouseEvent False b _ _ _ False _ False _ _ _ _ _ True) button = button == b
+withShift _ _                                                            = False
 
-withCtrlAltShift :: MouseEvent -> Bool
-withCtrlAltShift (MouseEvent True _ _ _ _ True _ _    _ _ _ _ _ True) = True
-withCtrlAltShift (MouseEvent True _ _ _ _ _    _ True _ _ _ _ _ True) = True
-withCtrlAltShift _                                                    = False
+withCtrlAlt :: MouseEvent -> Int -> Bool
+withCtrlAlt (MouseEvent True b _ _ _ True _ _    _ _ _ _ _ False) button = button == b
+withCtrlAlt (MouseEvent True b _ _ _ _    _ True _ _ _ _ _ False) button = button == b
+withCtrlAlt _ _                                                          = False
+
+withCtrlShift :: MouseEvent -> Int -> Bool
+withCtrlShift (MouseEvent False b _ _ _ True _ _    _ _ _ _ _ True) button = button == b
+withCtrlShift (MouseEvent False b _ _ _ _    _ True _ _ _ _ _ True) button = button == b
+withCtrlShift _ _                                                          = False
+
+withAltShift :: MouseEvent -> Int -> Bool
+withAltShift (MouseEvent True b _ _ _ False _ False _ _ _ _ _ True) button = button == b
+withAltShift _ _                                                           = False
+
+withCtrlAltShift :: MouseEvent -> Int -> Bool
+withCtrlAltShift (MouseEvent True b _ _ _ True _ _    _ _ _ _ _ True) button = button == b
+withCtrlAltShift (MouseEvent True b _ _ _ _    _ True _ _ _ _ _ True) button = button == b
+withCtrlAltShift _ _                                                         = False
 
 
 -- TODO[react]: Consider rewrite with below approach. Also we need to find a way

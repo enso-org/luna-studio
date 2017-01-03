@@ -12,6 +12,7 @@ import           Event.UI                             (UIEvent (AppEvent, NodeEd
 import           Luna.Studio.Commands.Command         (Command)
 import           Luna.Studio.Commands.Graph.Selection (focusSelectedNode, modifySelectionHistory, selectNodes, selectedNodes, unselectAll)
 import           Luna.Studio.Event.Mouse              (workspacePosition)
+import qualified Luna.Studio.Event.Mouse              as Mouse
 import qualified Luna.Studio.React.Event.App          as App
 import qualified Luna.Studio.React.Event.NodeEditor   as NodeEditor
 import qualified Luna.Studio.React.Model.Node         as NodeModel
@@ -28,14 +29,11 @@ import           React.Flux                           (MouseEvent)
 
 
 toAction :: Event -> Maybe (Command State ())
--- TODO[react]: Find out if wee need to check for mods
-toAction (UI (NodeEditorEvent (NodeEditor.MouseDown evt))) = Just $ startDrag evt
+toAction (UI (NodeEditorEvent (NodeEditor.MouseDown evt))) = Just $ when shouldProceed $ startDrag evt where
+    shouldProceed = Mouse.withoutMods evt Mouse.leftButton
 toAction (UI (AppEvent  (App.MouseUp   _  )))              = Just $ stopDrag
 toAction (UI (AppEvent  (App.MouseMove evt)))              = Just $ handleMove evt
 toAction _                                                 = Nothing
---TODO[react] implement
--- toAction (Keyboard _ (Keyboard.Event Keyboard.Press 'A'   _)) = Just selectAll
--- toAction (Keyboard _ (Keyboard.Event Keyboard.Down  '\27' _)) = Just unselectAll
 
 
 startDrag :: MouseEvent -> Command State ()

@@ -31,7 +31,7 @@ import           React.Flux                         (KeyboardEvent)
 toAction :: Event -> Maybe (Command State ())
 toAction (UI (AppEvent (App.KeyDown   e))) = Just $ handleKey e
 toAction (UI (NodeEditorEvent (NodeEditor.MouseDown e))) = Just $ when shouldProceed $ startZoomDrag pos where
-    shouldProceed = Mouse.withAlt e -- TODO[react]: Change for this: Mouse.withoutMods e && Mouse.rightButton e
+    shouldProceed = Mouse.withoutMods e Mouse.rightButton
     pos           = mousePosition e
 toAction (UI (AppEvent (App.MouseMove e))) = Just $ zoomDrag pos where
     pos = mousePosition e

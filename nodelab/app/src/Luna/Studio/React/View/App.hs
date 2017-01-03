@@ -2,15 +2,15 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Luna.Studio.React.View.App where
 
-import           React.Flux
-import qualified React.Flux                  as React
 import           Luna.Studio.Prelude
+import           React.Flux
+import qualified React.Flux                              as React
 
-import qualified Event.UI                    as UI
-import           Luna.Studio.React.Store                 (Ref, dispatch, dt)
+import qualified Event.UI                                as UI
+import qualified Luna.Studio.React.Event.App             as App
 import           Luna.Studio.React.Model.App             (App)
 import qualified Luna.Studio.React.Model.App             as App
-import qualified Luna.Studio.React.Event.App             as App
+import           Luna.Studio.React.Store                 (Ref, dispatch, dt)
 import           Luna.Studio.React.View.Breadcrumbs      (breadcrumbs_)
 import           Luna.Studio.React.View.CodeEditor       (codeEditor_)
 import           Luna.Studio.React.View.CodeEditorToggle (codeEditorToggle_)
@@ -25,10 +25,11 @@ app :: Ref App -> ReactView ()
 app ref = React.defineControllerView
     name ref $ \store () -> do
         let s = store ^. dt
-        div_ [ onKeyDown   $ \e k -> preventDefault e : dispatch ref (UI.AppEvent $ App.KeyDown k)
-             , onMouseDown $ \_ m -> dispatch ref $ UI.AppEvent $ App.MouseDown m
-             , onMouseUp   $ \_ m -> dispatch ref $ UI.AppEvent $ App.MouseUp   m
-             , onMouseMove $ \_ m -> dispatch ref $ UI.AppEvent $ App.MouseMove m
+        div_ [ onKeyDown     $ \e k -> preventDefault e : dispatch ref (UI.AppEvent $ App.KeyDown k)
+             , onContextMenu $ \e _ -> [preventDefault e]
+             , onMouseDown   $ \_ m -> dispatch ref $ UI.AppEvent $ App.MouseDown m
+             , onMouseUp     $ \_ m -> dispatch ref $ UI.AppEvent $ App.MouseUp   m
+             , onMouseMove   $ \_ m -> dispatch ref $ UI.AppEvent $ App.MouseMove m
              , "id"       $= "focus-root"
              , "tabIndex" $= "-1"
              , "className" $= "noselect"
