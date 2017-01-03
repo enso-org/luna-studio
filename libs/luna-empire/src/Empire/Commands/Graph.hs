@@ -136,17 +136,17 @@ generateNodeId :: IO NodeId
 generateNodeId = UUID.nextRandom
 
 addSubgraph :: GraphLocation -> [Node] -> [Connection] -> Bool -> Empire (Maybe (Map.Map NodeId NodeId))
-addSubgraph loc nodes conns saveIds = do
-    newIds <- liftIO $ mapM (const generateNodeId) nodes
-    if saveIds then
-        withTC loc False $ do
-            forM_ nodes $ \n -> case n ^. Node.nodeType of
-                Node.ExpressionNode expr -> void $ addNodeNoTC loc (n ^. Node.nodeId) expr (n ^. Node.nodeMeta)
-                _ -> return ()
-            forM_ conns $ \(Connection src dst) -> connectNoTC loc src dst
-            return Nothing
+addSubgraph loc nodes conns saveIds = withTC loc False $ do
 
-    else
+    newIds <- liftIO $ mapM (const generateNodeId) nodes
+    if saveIds then do
+        forM_ nodes $ \n -> case n ^. Node.nodeType of
+            Node.ExpressionNode expr -> void $ addNodeNoTC loc (n ^. Node.nodeId) expr (n ^. Node.nodeMeta)
+            _ -> return ()
+        forM_ conns $ \(Connection src dst) -> connectNoTC loc src dst
+        return Nothing
+
+    else do
         let
             idMapping' = Map.fromList $ flip zip newIds $ flip map nodes $ view Node.nodeId
             connectionsSrcs = map (^. Connection.src . PortRef.srcNodeId) conns
@@ -155,12 +155,11 @@ addSubgraph loc nodes conns saveIds = do
             connections' = map (\conn -> conn & Connection.src . PortRef.srcNodeId %~ (idMapping Map.!)
                                               & Connection.dst . PortRef.dstNodeId %~ (idMapping Map.!)
                                ) conns
-        in withTC loc False $ do
-            forM_ nodes' $ \n -> case n ^. Node.nodeType of
-                Node.ExpressionNode expr -> void $ addNodeNoTC loc (n ^. Node.nodeId) expr (n ^. Node.nodeMeta)
-                _ -> return ()
-            forM_ connections' $ \(Connection src dst) -> connectNoTC loc src dst
-            return $ Just idMapping
+        forM_ nodes' $ \n -> case n ^. Node.nodeType of
+            Node.ExpressionNode expr -> void $ addNodeNoTC loc (n ^. Node.nodeId) expr (n ^. Node.nodeMeta)
+            _ -> return ()
+        forM_ connections' $ \(Connection src dst) -> connectNoTC loc src dst
+        return $ Just idMapping
 
 descendInto :: GraphLocation -> NodeId -> GraphLocation
 descendInto (GraphLocation pid lid breadcrumb) nid = GraphLocation pid lid breadcrumb'
