@@ -22,7 +22,6 @@ import qualified Luna.Studio.React.Store                     as Store
 import           Luna.Studio.Commands.Batch                  (cancelCollaborativeTouch, collaborativeTouch)
 import           Luna.Studio.Commands.Command                (Command)
 import           Luna.Studio.Commands.Graph.SelectionHistory (dropSelectionHistory, modifySelectionHistory)
-import qualified Luna.Studio.Commands.UIRegistry             as UICmd
 import qualified Luna.Studio.React.Model.Node                as Model
 import           Luna.Studio.State.Global                    (inRegistry)
 import qualified Luna.Studio.State.Global                    as Global

@@ -7,7 +7,6 @@ import           Data.Aeson                      (ToJSON, toJSON)
 import           React.Flux
 
 import           Luna.Studio.Commands.Command    (Command)
-import           Luna.Studio.Commands.UIRegistry as UICmd
 import           Luna.Studio.Data.Vector
 import           Luna.Studio.Prelude
 import qualified Luna.Studio.State.Global        as Global
