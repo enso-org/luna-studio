@@ -279,7 +279,7 @@ runUndo endPoints = ZMQ.runZMQ $ do
     let Undo collect = do
             forever $ do
                 msg <- receiveEvent subSocket
-                collectEvents msg clientID
+                collectEvents msg clientID pushSocket
         state = UndoState [] [] (Env.BusEnv subSocket pushSocket clientID 0)
     flip runReaderT endPoints $ evalStateT collect state
 
@@ -298,21 +298,29 @@ receiveEvent sub = do
         Left _ -> throwM BusErrorException
         Right m -> return m
 
-collectEvents :: MessageFrame -> Message.ClientID -> Undo z ()
-collectEvents (MessageFrame msg corId senderId lastFrm) myId = do
+collectEvents :: MessageFrame -> Message.ClientID -> ZMQ.Socket z ZMQ.Push -> Undo z ()
+collectEvents (MessageFrame msg corId senderId lastFrm) myId push = do
     let topic = msg ^. Message.topic
         userId = show senderId
         content = msg ^. Message.message
     flushHelper $ show $ topic
+    flushHelper "myId: "
+    flushHelper $ show $ myId
+    flushHelper "clientId: "
+    flushHelper $ show $ senderId
+
     case topic of
         "empire.undo.request" -> do
             req <- doUndo
             flushHelper "runUndo"
-            takeEndPointsAndRun $ sendUndo req
+            sendUndo req push myId
         "empire.redo.request" -> do
             req <- doRedo
-            takeEndPointsAndRun $ sendRedo req
-        _ -> if myId /= senderId then (collectedMessage topic content) else return ()
+            sendRedo req push myId
+        _ -> Control.Monad.State.when (myId /= senderId) $
+                do
+                    collectedMessage topic content
+                    flushHelper "addmsgToQueue"
 
 
 doUndo :: MonadState (UndoState z) m => m UndoMessage
@@ -335,21 +343,31 @@ collectedMessage topic content = do
         doNothing _ = return ()
     void $ handler content
 
+send :: ZMQ.Socket z ZMQ.Push -> Message.ClientID -> Message.Message -> Undo z ()
+send push clientID msg = do
+    requestID <- do
+        s <- use bus
+        let requestID = Env.requestID s
+        bus .= s { Env.requestID = requestID + 1 }
+        return requestID
+    let correlationID = Message.CorrelationID clientID requestID
+        msgFrame = MessageFrame msg correlationID clientID Flag.Enable
+        bytestr = MessageFrame.toByteString msgFrame
+    Undo $ lift $ lift $ ZMQ.send push [] bytestr
 
-takeEndPointsAndRun :: Bus.Bus () -> Undo z ()
-takeEndPointsAndRun action = do
-    endPoints <- ask
-    void $ Bus.runBus endPoints action
+-- takeEndPointsAndRun :: Bus.Bus () -> BusEndPoints -> Undo z ()
+-- takeEndPointsAndRun action endPoints = do
+--     void $ Bus.runBus endPoints action
 
-sendUndo :: UndoMessage -> Bus.Bus ()
-sendUndo msg = sendMessage ActUndo msg
+sendUndo :: UndoMessage -> ZMQ.Socket z ZMQ.Push -> Message.ClientID -> Undo z ()
+sendUndo msg push clientID = sendMessage push clientID ActUndo msg
 
-sendRedo :: UndoMessage -> Bus.Bus ()
-sendRedo msg = sendMessage ActRedo msg
+sendRedo :: UndoMessage -> ZMQ.Socket z ZMQ.Push -> Message.ClientID -> Undo z ()
+sendRedo msg push clientID = sendMessage push clientID ActRedo msg
 
-sendMessage :: Action -> UndoMessage -> Bus.Bus ()
-sendMessage action msg = do
+sendMessage :: ZMQ.Socket z ZMQ.Push -> Message.ClientID -> Action -> UndoMessage -> Undo z ()
+sendMessage push clientID action msg = do
     uuid <- liftIO $ UUID.nextRandom
-    void $ Bus.send Flag.Enable $ case action of
+    void $ send push clientID $ case action of
         ActUndo -> case msg of UndoMessage tu u _ _ -> Message.Message tu $ toStrict $ Bin.encode $ Request.Request uuid u
         ActRedo -> case msg of UndoMessage _ _ tr r -> Message.Message tr $ toStrict $ Bin.encode $ Request.Request uuid r
