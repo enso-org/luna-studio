@@ -2,21 +2,21 @@
 
 module Luna.Studio.Commands.Camera
      ( panCamera
-    --  , panDrag
      , panDown
      , panUp
      , panLeft
      , panRight
      , autoZoom
     --  , syncCamera
-    --  , zoomDrag
      , zoomIn
      , zoomOut
     --  , wheelZoom
      , startZoomDrag
-     , stopZoomDrag
      , zoomDrag
+     , startPanDrag
+     , panDrag
      , resetCamera
+     , resetCameraState
      , resetPan
      , resetZoom
      , translateToWorkspace
@@ -58,56 +58,6 @@ translateToWorkspace pos = do
 --     let delta'      = (- delta ^. x - delta ^. y) / wheelZoomSpeed
 --         workspace   = Camera.screenToWorkspace camera pos
 --     fixedPointZoom pos workspace delta'
---
--- panDrag :: Mouse.Type -> Vector2 Int -> Command Camera.State ()
--- panDrag Mouse.Pressed pos = do
---     Camera.history ?= PanDragHistory pos
---
--- panDrag Mouse.Moved   pos = do
---     history <- use $ Camera.history
---     case history of
---         Just (PanDragHistory prev) -> do
---             Camera.history ?= PanDragHistory pos
---             panCamera $ fromIntegral <$> prev - pos
---         _                          -> return ()
---
--- panDrag Mouse.Released _ = do
---     Camera.history .= Nothing
---
--- panDrag _ _ = return ()
---
---
--- syncCamera :: Command Camera.State ()
--- syncCamera = do
---     cPan            <- use $ Camera.camera . Camera.pan
---     cFactor         <- use $ Camera.camera . Camera.factor
---     screenSize      <- use $ Camera.camera . Camera.screenSize
---     let hScreen      = (/ 2.0) . fromIntegral <$> screenSize
---         camLeft      = appX cameraLeft
---         camRight     = appX cameraRight
---         camTop       = appY cameraTop
---         camBottom    = appY cameraBottom
---         hX           = appX htmlX
---         hY           = appY htmlY
---         appX      f  = f cFactor (cPan ^. x) (hScreen ^. x)
---         appY      f  = f cFactor (cPan ^. y) (hScreen ^. y)
---     performIO $ do
---         JS.updateCamera cFactor camLeft camRight camTop camBottom
---         JS.updateCameraHUD 0.0 (fromIntegral $ screenSize ^. x) 0.0 (fromIntegral $ screenSize ^. y)
---         JS.updateHtmCanvasPanPos hX hY cFactor
---         JS.updateProjectionMatrix
---         JS.updateHUDProjectionMatrix
---
---
---
--- cameraLeft, cameraRight, cameraTop, cameraBottom, htmlX, htmlY :: Double -> Double -> Double -> Double
--- cameraLeft   camFactor camPanX halfScreenX = -halfScreenX / camFactor + camPanX
--- cameraRight  camFactor camPanX halfScreenX =  halfScreenX / camFactor + camPanX
--- cameraTop    camFactor camPanY halfScreenY = -halfScreenY / camFactor + camPanY
--- cameraBottom camFactor camPanY halfScreenY =  halfScreenY / camFactor + camPanY
--- htmlX        camFactor camPanX halfScreenX =  halfScreenX - camPanX * camFactor
--- htmlY        camFactor camPanY halfScreenY =  halfScreenY - camPanY * camFactor
-
 
 foreign import javascript safe "document.getElementById('Graph').offsetWidth"  screenWidth  :: IO Double
 foreign import javascript safe "document.getElementById('Graph').offsetHeight" screenHeight :: IO Double
@@ -196,6 +146,9 @@ autoZoom = do
                 NodeEditor.screenTransform . screenToLogical .= multStd2 (invertedHomothetyMatrix screenCenter factor) (invertedTranslationMatrix shift)
         Nothing -> resetCamera
 
+resetCameraState :: Command State ()
+resetCameraState = Global.cameraState .= Nothing
+
 startZoomDrag :: ScreenPosition -> Command State ()
 startZoomDrag pos = Global.cameraState ?= Camera.ZoomDrag pos pos
 
@@ -210,5 +163,15 @@ zoomDrag actPos = do
             zoomCamera fixedPoint scale
         _ -> return ()
 
-stopZoomDrag :: Command State ()
-stopZoomDrag = Global.cameraState .= Nothing
+startPanDrag :: ScreenPosition -> Command State ()
+startPanDrag pos = Global.cameraState ?= Camera.PanDrag pos
+
+panDrag :: ScreenPosition -> Command State ()
+panDrag actPos = do
+    mayState <- use Global.cameraState
+    withJust mayState $ \state -> case state of
+        Camera.PanDrag prevPos -> do
+            Global.cameraState ?= Camera.PanDrag actPos
+            let delta = actPos ^. vector - prevPos ^. vector
+            panCamera delta
+        _ -> return ()

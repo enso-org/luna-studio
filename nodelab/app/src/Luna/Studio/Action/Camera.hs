@@ -14,7 +14,8 @@ import           Luna.Studio.Prelude
 import qualified Luna.Studio.React.Event.App        as App
 import qualified Luna.Studio.React.Event.NodeEditor as NodeEditor
 import           Luna.Studio.State.Global           (State)
-import           React.Flux                         (KeyboardEvent)
+import           React.Flux                         (KeyboardEvent, MouseEvent)
+
 -- toAction :: Event -> Maybe (Command Global.State ())
 -- toAction (Keyboard _ (Keyboard.Event Keyboard.Press 'h' _)) = Just $ autoZoom
 -- toAction evt = (zoom Global.camera) <$> (>> syncCamera) <$> toAction' evt
@@ -28,15 +29,13 @@ import           React.Flux                         (KeyboardEvent)
 --
 -- toAction' _ = Nothing
 
+-- TODO[react]: Consider mac trackpad!!!
 toAction :: Event -> Maybe (Command State ())
-toAction (UI (AppEvent (App.KeyDown   e))) = Just $ handleKey e
-toAction (UI (NodeEditorEvent (NodeEditor.MouseDown e))) = Just $ when shouldProceed $ startZoomDrag pos where
-    shouldProceed = Mouse.withoutMods e Mouse.rightButton
-    pos           = mousePosition e
-toAction (UI (AppEvent (App.MouseMove e))) = Just $ zoomDrag pos where
-    pos = mousePosition e
-toAction (UI (AppEvent (App.MouseUp   _))) = Just stopZoomDrag
-toAction _                                 = Nothing
+toAction (UI (AppEvent (App.KeyDown   e)))               = Just $ handleKey e
+toAction (UI (NodeEditorEvent (NodeEditor.MouseDown e))) = Just $ handleMouseDown e
+toAction (UI (AppEvent (App.MouseMove e)))               = Just $ handleMouseMove e
+toAction (UI (AppEvent (App.MouseUp   _)))               = Just resetCameraState
+toAction _                                               = Nothing
 
 
 handleKey :: KeyboardEvent -> Command State ()
@@ -55,3 +54,16 @@ handleKey evt
     | Keys.withCtrlShift    evt Keys.zero       = autoZoom
     | Keys.withoutMods      evt Keys.h          = autoZoom
     | otherwise                                 = return ()
+
+
+handleMouseDown :: MouseEvent -> Command State ()
+handleMouseDown evt
+    | Mouse.withoutMods evt Mouse.rightButton  = startZoomDrag $ mousePosition evt
+    | Mouse.withoutMods evt Mouse.middleButton = startPanDrag  $ mousePosition evt
+    | otherwise                                = return ()
+
+handleMouseMove :: MouseEvent -> Command State ()
+handleMouseMove evt
+    | Mouse.withoutMods evt Mouse.rightButton  = zoomDrag $ mousePosition evt
+    | Mouse.withoutMods evt Mouse.middleButton = panDrag  $ mousePosition evt
+    | otherwise                                = return ()
