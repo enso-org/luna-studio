@@ -57,7 +57,7 @@ errorLen :: Int
 errorLen = 40
 
 limitString :: Int -> Text -> Text
-limitString limit str | Text.length str > limit64 = Text.take limit64 str <> "..."
+limitString limit str | Text.length str > limit64 = Text.take limit64 str <> "…"
                       | otherwise                 = str
                       where limit64 = fromIntegral limit
 
@@ -79,7 +79,7 @@ showErrorSep sep err = case err of
 nodeError_ :: LunaError.Error TypeRep -> ReactElementM ViewEventHandler ()
 nodeError_ err = do
     let message = wrapLines Style.errorMessageWrapMargin $ showErrorSep "\n" err
-    div_ [ "className" $= "visualization" ] $ elemString message
+    div_ [ "className" $= "vis vis--error" ] $ elemString message
 
 nodeValues_ :: [Value] -> ReactElementM ViewEventHandler ()
 nodeValues_ =

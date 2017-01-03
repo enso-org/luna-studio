@@ -14,14 +14,14 @@ dataFrame_ :: Int -> DataFrame -> ReactElementM ViewEventHandler ()
 dataFrame_ visIx df =
     div_
         [ "key" $= fromString (show visIx)
-        , "className" $= "visualization data-frame" ] $
-        div_ $
-            table_ $
-                tbody_ $ do
-                    tr_ $ forM_ (df ^. DataFrame.headers) $
-                        th_ .
+        , "className" $= "vis vis--table" ] $ do
+        div_ [ "className" $= "blur" ] mempty
+        table_ $
+            tbody_ $ do
+                tr_ $ forM_ (df ^. DataFrame.headers) $
+                    th_ .
+                        elemString . fromString . Text.unpack
+                forM_ (df ^. DataFrame.rows) $ \row ->
+                    tr_ $ forM_ row $
+                        td_ .
                             elemString . fromString . Text.unpack
-                    forM_ (df ^. DataFrame.rows) $ \row ->
-                        tr_ $ forM_ row $
-                            td_ .
-                                elemString . fromString . Text.unpack

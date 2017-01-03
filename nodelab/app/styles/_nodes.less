@@ -98,8 +98,8 @@
     .node__selection-mark {
         x:      0px;
         y:     -20px;
-        width:  272px;
-        height: 126px;
+        width:  224px;
+        height: 82px;
         rx:     4px;
         ry:     4px;
     }
@@ -107,41 +107,85 @@
         .node__selection-mark {
             x:     -10px;
             y:     -30px;
-            width:  292px;
-            height: 146px;
+            width:  244px;
+            height: 102px;
             rx:     12px;
             ry:     12px;
         }
+    }
+    .node__visualization {
+        left: 0;
+        top: -8px;
     }
 }
 
 // node expanded
 
 .node__properties {
-    width: 0;
-    height: 32px;
-    overflow: hidden;
-    opacity: 0;
-    transition: all 90ms ease-in-out;
+    color:         @colorTextUneditable;
+    background:    @colorNodeBackground;
+    line-height:   16px;
+    width:         1px;
+    height:        32px;
+    opacity:       0;
+    transition:    all 90ms ease-in-out;
+    top:          -20px;
+    padding:       12px 12px 8px;
+    position:      relative;
+    border-radius: 4px;
+    overflow:      hidden;
+    .row {
+        display: flex;
+        width: 200px;
+        justify-content: space-between;
+    }
+}
+.node__properties,
+.node__visualization {
+    font-size:     10px;
 }
 
 .node--expanded {
     .node__properties {
-        position:      relative;
-        font-size:     12px;
-        padding:       12px 16px;
-        position:      relative;
-        top:          -20px;
-        border-radius: 4px;
-        width:         240px;
         height:        auto;
-        overflow:      hidden;
-        background:    @colorNodeBackground;
+        width:         200px;
         opacity:       1;
     }
 }
 
-.node__visualisation {
-    opacity:         0;
-    backdrop-filter: brightness(1) blur(20px);
+.node__visualization {
+    position: relative;
+    left: -30px;
+    top: -16px;
+    table {
+        border: 0;
+        width: 100%;
+        text-align: left;
+        border-collapse: collapse;
+    }
+    td, th {
+        line-height: 20px;
+        padding: 0 12px;
+    }
+    th {
+        border-bottom: 2px solid rgba(255,255,255,.02);
+    }
+    tr {
+        &:nth-child(even) {
+            background: rgba(255,255,255,.0)
+        }
+    }
+}
+.vis {
+    position: relative;
+    width: 224px;
+    height: 200px;
+    overflow: scroll;
+}
+.blur {
+    backdrop-filter: blur(12px);
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    z-index: -1;
 }

@@ -53,42 +53,45 @@ node ref = React.defineControllerView
             svg_ [ "viewBox" $= "0 0 10 10" ] $ rect_ [ "className" $= "node__selection-mark" ] mempty
 
             div_ [ "className" $= "node__properties" ] $ do
-                div_ [ "className" $= "blur" ] mempty
                 div_
-                    [ "className" $= "value"
+                    [ "className" $= "value value--name"
                     , onDoubleClick $ \_ _ -> dispatch ref $ UI.NodeEvent $ Node.NameEditStart nodeId
                     ] $
                     case n ^. Node.nameEdit of
                         Just name ->
                             input_
                                 [ "id" $= "focus-nameLabel"
-                                , "value" $= fromString (Text.unpack name)
+                                , "value value--name" $= fromString (Text.unpack name)
                                 , onMouseDown $ \e _ -> [stopPropagation e]
                                 , onKeyDown   $ \e k ->  stopPropagation e : dispatch ref (UI.NodeEvent $ Node.NameKeyDown k nodeId)
                                 , onChange    $ \e -> let val = target e "value" in dispatch ref $ UI.NodeEvent $ Node.NameChange (fromString val) nodeId
                                 ]
                         Nothing ->
                             elemString $ fromString $ Text.unpack $ n ^. Node.name
-                forM_ (n ^. Node.ports) $ portControl_ ref n
-                div_ [ "className" $= "label" ] $ elemString "Display result"
-                div_ [ "className" $= "value" ] $ do
-                    let val = n ^. Node.visualizationsEnabled
-                    button_
-                        [ onClick $ \_ _ -> dispatch ref $ UI.NodeEvent $ Node.DisplayResultChanged (not val) nodeId
-                        ] $
-                        elemString $ fromString $ if val then "yes" else "no"
-                withJust (n ^. Node.execTime) $ \execTime -> do
-                    div_ ["className" $= "label"] $ elemString "Execution time"
-                    div_ ["className" $= "value"] $ elemString $ show execTime <> " ms"
 
-            div_ [ "className" $= "node__visualization" ] $
+                forM_ (n ^. Node.ports) $ portControl_ ref n
+
+                div_ [ "className" $= "row" ] $ do
+                    div_ [ "className" $= "label" ] $ elemString "Display results"
+                    div_ [ "className" $= "value" ] $ do
+                        let val = n ^. Node.visualizationsEnabled
+                        button_
+                            [ onClick $ \_ _ -> dispatch ref $ UI.NodeEvent $ Node.DisplayResultChanged (not val) nodeId
+                            ] $
+                            elemString $ fromString $ if val then "yes" else "no"
+                div_ [ "className" $= "row" ] $ do
+                    withJust (n ^. Node.execTime) $ \execTime -> do
+                        div_ ["className" $= "label"] $ elemString "Execution time"
+                        div_ ["className" $= "value"] $ elemString $ show execTime <> " ms"
+
+            div_ [ "className" $= "node__visualization" ] $ do
                 forM_ (n ^. Node.value) visualization_
 
             svg_ [ "viewBox" $= "0 0 10 10" ] $ do
                 text_
                     [ onDoubleClick $ \e _ -> stopPropagation e : dispatch ref (UI.NodeEvent $ Node.EditExpression nodeId)
                     , "className"  $= "node__name"
-                    , "y"          $= "-36"
+                    , "y"          $= "-40"
                     ] $ elemString $ Text.unpack $ n ^. Node.expression
                 if n ^. Node.isExpanded then do
                     makePorts ref $ filter (\port -> (port ^. Port.portId) == InPortId Self) ports
