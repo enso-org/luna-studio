@@ -36,7 +36,7 @@ toHsl :: Color -> HSL Float
 toHsl (Color 0) = HSL 0.0 0.0 0.5
 toHsl (Color i) = HSL (hue * 2.0 * pi) 0.6 0.5
     where
-        hue = start + delta * (fromIntegral i)
+        hue = start + delta * (fromIntegral i - 1)
         start = 90.6 / (2 * pi)
         steps = 16.0
         delta = 1.0 / steps
