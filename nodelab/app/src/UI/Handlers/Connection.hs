@@ -14,8 +14,8 @@ module UI.Handlers.Connection where
 -- import           Object.Widget                      (DragMoveHandler, UIHandlers, WidgetId, dragMove, mouseMove, mouseOut, mousePressed,
 --                                                      startPos)
 -- import qualified Object.Widget.Connection           as Model
--- import qualified Object.Widget.Node                 as NodeModel
--- import qualified Object.Widget.Port                 as PortModel
+-- import qualified Luna.Studio.React.Model.Node                 as NodeModel
+-- import qualified Luna.Studio.React.Model.Port                 as PortModel
 -- import qualified Luna.Studio.React.Store                        as Store
 -- import           Luna.Studio.Commands.Command          (Command)
 -- import qualified Luna.Studio.Commands.Graph            as Graph

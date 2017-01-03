@@ -3,23 +3,23 @@ module Luna.Studio.Commands.Node.Remove
     , localRemoveNodes
     ) where
 
-import qualified Data.Set                           as Set
-import           Luna.Studio.React.Store                        (widget)
-import qualified Luna.Studio.React.Store                        as Store
-import qualified Luna.Studio.React.Model.NodeEditor             as NodeEditor
+import qualified Data.Set                              as Set
 import           Luna.Studio.Commands.Command          (Command)
 import           Luna.Studio.Commands.Graph.Disconnect (localDisconnectAll)
 import           Luna.Studio.Commands.Graph.Selection  (selectPreviousNodes, selectedNodes)
+import           Luna.Studio.Prelude
+import qualified Luna.Studio.React.Model.NodeEditor    as NodeEditor
+import           Luna.Studio.React.Store               (widget)
+import qualified Luna.Studio.React.Store               as Store
 import           Luna.Studio.State.Global              (State)
 import qualified Luna.Studio.State.Global              as Global
 import qualified Luna.Studio.State.Graph               as Graph
-import           Luna.Studio.Prelude
 
-import           Empire.API.Data.Node               (NodeId)
-import qualified Object.Widget.Node                 as NodeModel
+import           Empire.API.Data.Node                  (NodeId)
 import qualified Luna.Studio.Commands.Batch            as BatchCmd
+import qualified Luna.Studio.React.Model.Node          as NodeModel
 
-import qualified JS.GoogleAnalytics                 as GA
+import qualified JS.GoogleAnalytics                    as GA
 
 
 removeSelectedNodes :: Command State ()

@@ -12,13 +12,13 @@ import           Luna.Studio.Prelude
 import qualified Luna.Studio.React.Event.Node         as Node
 import           Luna.Studio.React.Model.Node         (Node)
 import qualified Luna.Studio.React.Model.Node         as Node
+import           Luna.Studio.React.Model.Port         (Port (..))
+import qualified Luna.Studio.React.Model.Port         as Port
 import           Luna.Studio.React.Store              (Ref, dispatch, dt)
 import           Luna.Studio.React.View.Global
 import           Luna.Studio.React.View.Port          (port_)
 import           Luna.Studio.React.View.PortControl   (portControl_)
 import           Luna.Studio.React.View.Visualization (strValue, visualization_)
-import           Object.Widget.Port                   (Port (..))
-import qualified Object.Widget.Port                   as Port
 import           React.Flux
 import qualified React.Flux                           as React
 

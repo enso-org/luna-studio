@@ -32,7 +32,7 @@ import           Luna.Studio.React.Model.Searcher     (Searcher)
 import           Luna.Studio.React.Model.SelectionBox (SelectionBox)
 import           Luna.Studio.React.Store              (Ref)
 import qualified Luna.Studio.React.Store              as Store
--- import qualified Luna.Studio.State.Camera             as Camera
+import qualified Luna.Studio.State.Camera             as Camera
 import qualified Luna.Studio.State.Collaboration      as Collaboration
 import qualified Luna.Studio.State.ConnectionPen      as ConnectionPen
 import qualified Luna.Studio.State.Drag               as Drag
@@ -47,7 +47,7 @@ foreign import javascript safe "{}" defJsState :: Event.JSState
 
 data State = State { _mousePos           :: Position
                    , _graph              :: Graph.State
-                  --  , _camera             :: Camera.State
+                   , _cameraState        :: Maybe Camera.State
                    , _multiSelection     :: MultiSelection.State
                    , _selectionHistory   :: [Set Node.NodeId]
                    , _drag               :: Drag.State
@@ -108,7 +108,7 @@ getConnection :: ConnectionId -> Command State (Maybe (Ref Connection))
 getConnection connectionId = withConnection connectionId return
 
 initialState :: DateTime -> Collaboration.ClientId -> StdGen -> Maybe Int -> Ref App -> State
-initialState = State (Position (Vector2 200 200)) def def def def def def def def def def defJsState def def
+initialState = State (Position (Vector2 200 200)) def Nothing def def def def def def def def def defJsState def def
 
 inRegistry :: Command UIRegistry.State a -> Command State a
 inRegistry = zoom uiRegistry

@@ -14,12 +14,12 @@ import qualified Empire.API.Data.ValueType    as ValueType
 import qualified Event.UI                     as UI
 import           Luna.Studio.Prelude          hiding (group)
 import qualified Luna.Studio.React.Event.Node as Node
+import           Luna.Studio.React.Model.Node (Node)
+import qualified Luna.Studio.React.Model.Node as Node
+import           Luna.Studio.React.Model.Port (Port)
+import qualified Luna.Studio.React.Model.Port as Port
 import           Luna.Studio.React.Store      (Ref, dispatch)
 import qualified Luna.Studio.State.Slider     as Slider
-import           Object.Widget.Node           (Node)
-import qualified Object.Widget.Node           as Node
-import           Object.Widget.Port           (Port)
-import qualified Object.Widget.Port           as Port
 
 
 

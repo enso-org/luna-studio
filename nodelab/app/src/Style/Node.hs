@@ -5,7 +5,6 @@ import           Luna.Studio.Prelude
 
 import           Style.Types
 
-import qualified Object.Widget.Group     as Group
 import qualified Object.Widget.Label     as Label
 
 nodeRadius :: Double
@@ -20,25 +19,6 @@ expressionLabel = Label.Label position size align Label.Monospace where
 controlsPosition :: Position
 controlsPosition = Position (Vector2 (-nodeRadius) 35.0)
 
--- TODO[react]: Does not make sense anymore
--- controlsLayout, inLabelsLayout, expandedGroupLayout :: HTMap
--- controlsLayout = Layout.verticalLayoutHandler 5.0
--- inLabelsLayout = Layout.verticalLayoutHandler 5.0
-
-expandedGroupStyle, visualizationGroupStyle :: Group.Style
-expandedGroupStyle = def & Group.background ?~ Color 0.15 0.15 0.15 0.8
-                         & Group.padding .~ uniformPadding 5.0
-
--- TODO[react]: Does not make sense anymore
--- controlsPosition = Vector2 (-30.0) (-30.0)
--- controlsLayout   = Layout.verticalLayoutHandler 5.0
---
--- expandedGroupStyle = def & Group.background ?~ (0.2, 0.2, 0.2)
---                          & Group.padding .~ (Padding 70.0 0.0 10.0 0.0)
---                          & Group.borderRadius .~ (10.0, 10.0, 30.0, 10.0)
---
--- expandedGroupLayout = Layout.verticalLayoutHandler 5.0
-
 valueLabel = Label.Label position size align def where
     position = Position (Vector2 (-25.0) 0)
     size     = Size (Vector2 100.0 20.0)
@@ -46,7 +26,6 @@ valueLabel = Label.Label position size align def where
 
 
 
-visualizationGroupStyle = expandedGroupStyle
 
 plotSize :: Size
 plotSize = Size (Vector2 200.0 150.0)

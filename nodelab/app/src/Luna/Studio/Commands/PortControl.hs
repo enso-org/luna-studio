@@ -14,12 +14,12 @@ import qualified Luna.Studio.Commands.Batch   as Batch
 import           Luna.Studio.Commands.Command (Command)
 import           Luna.Studio.Data.Vector      (Position, x)
 import           Luna.Studio.Prelude
+import qualified Luna.Studio.React.Model.Node as Node
+import qualified Luna.Studio.React.Model.Port as Port
 import qualified Luna.Studio.React.Store      as Store
 import           Luna.Studio.State.Global     (State)
 import qualified Luna.Studio.State.Global     as Global
 import qualified Luna.Studio.State.Slider     as Slider
-import qualified Object.Widget.Node           as Node
-import qualified Object.Widget.Port           as Port
 
 
 

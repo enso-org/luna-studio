@@ -10,10 +10,10 @@ import           Luna.Studio.Data.Angle             (Angle)
 import           Luna.Studio.Data.Color             (Color, toJSString)
 import qualified Luna.Studio.React.Event.Connection as Connection
 import           Luna.Studio.React.Model.Node       (Node)
+import           Luna.Studio.React.Model.Port       (Port (..))
+import qualified Luna.Studio.React.Model.Port       as Port
 import           Luna.Studio.React.Store            (Ref, dispatch)
 import           Luna.Studio.React.View.Global
-import           Object.Widget.Port                 (Port (..))
-import qualified Object.Widget.Port                 as Port
 import           React.Flux                         hiding (view)
 import qualified React.Flux                         as React
 

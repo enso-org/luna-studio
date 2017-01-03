@@ -16,7 +16,6 @@ module Luna.Studio.Action.Sandbox where
 -- import qualified Object.Widget.CodeEditor        as CodeEditor
 -- import qualified Object.Widget.Graphics          as G
 -- import qualified Object.Widget.Group             as Group
--- import qualified Object.Widget.LabeledTextBox    as LabeledTextBox
 -- import qualified Object.Widget.List              as List
 -- import qualified Object.Widget.Number.Continuous as ContinuousNumber
 -- import qualified Object.Widget.Number.Discrete   as DiscreteNumber
@@ -50,7 +49,6 @@ module Luna.Studio.Action.Sandbox where
 --     register $ DiscreteSlider.create (Vector2 200 20) "DiscreteSlider" 3 8 4
 --     register $ CodeEditor.create (Vector2 300 150) "class Point:\n    x y z :: Int\n  origin      = Point 0 0 0\n  Point x y _ = origin\n  print 'Origin XY coords are ($x,$y)'"
 --     register $ Toggle.create (Vector2 200 20) "Toggle" True
---     register $ LabeledTextBox.create (Vector2 200 20) "Textbox" "foo"
 --
 --     let values = (AnyLunaValue <$> ([1, 2, 3, 4, 5, 6, 7] :: [Int]))
 --               <> (AnyLunaValue <$> ([0.1, 0.2, 0.3] :: [Double]))

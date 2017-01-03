@@ -1,10 +1,10 @@
 module Luna.Studio.Event.Mouse where
 
 
+import           Luna.Studio.Commands.Camera  (translateToWorkspace)
 import           Luna.Studio.Commands.Command (Command)
 import           Luna.Studio.Data.Vector      (Position (Position), Vector2 (Vector2))
 import           Luna.Studio.Prelude
-import           Luna.Studio.State.Camera     (translateToWorkspace)
 import           Luna.Studio.State.Global     (State)
 import           React.Flux                   (MouseEvent (MouseEvent), mousePageX, mousePageY)
 -- import           Data.Bits (setBit, testBit)

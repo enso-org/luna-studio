@@ -27,6 +27,7 @@ import           Luna.Studio.Commands.Node.NodeMeta   (modifyNodeMeta)
 import           Luna.Studio.Commands.ProjectManager  as ProjectManager
 import qualified Luna.Studio.Commands.Searcher        as Searcher
 import           Luna.Studio.Prelude
+import qualified Luna.Studio.React.Model.Node         as Model
 import           Luna.Studio.React.Store              (WRef (..), widget)
 import qualified Luna.Studio.React.Store              as Store
 import qualified Luna.Studio.React.View.App           as App
@@ -34,7 +35,6 @@ import qualified Luna.Studio.React.View.Node          as Node
 import           Luna.Studio.State.Global             (State)
 import qualified Luna.Studio.State.Global             as Global
 import qualified Luna.Studio.State.Graph              as Graph
-import qualified Object.Widget.Node                   as Model
 
 
 

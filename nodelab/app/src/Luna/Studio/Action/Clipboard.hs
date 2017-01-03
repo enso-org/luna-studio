@@ -15,7 +15,7 @@ module Luna.Studio.Action.Clipboard where
 -- import           Event.Event                       (Event (..))
 -- import           Event.Keyboard                    (KeyMods (..))
 -- import qualified Event.Keyboard                    as Keyboard
--- import qualified Object.Widget.Node                as UINode
+-- import qualified Luna.Studio.React.Model.Node                as UINode
 -- import           Luna.Studio.React.Store                       (widget)
 -- import           Luna.Studio.Commands.Batch           (addSubgraph)
 -- import           Luna.Studio.Commands.Command         (Command, performIO)

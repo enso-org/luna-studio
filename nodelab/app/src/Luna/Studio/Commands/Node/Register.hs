@@ -11,9 +11,9 @@ import qualified Luna.Studio.Commands.Batch           as BatchCmd
 import           Luna.Studio.Commands.Command         (Command)
 import           Luna.Studio.Commands.Graph.Selection (selectedNodes)
 import           Luna.Studio.Commands.Node.Snap
+import qualified Luna.Studio.React.Model.Node         as UINode
 import           Luna.Studio.React.Store              (widget)
 import           Luna.Studio.State.Global             (State)
-import qualified Object.Widget.Node                   as UINode
 
 
 

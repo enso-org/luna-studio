@@ -4,21 +4,21 @@ module Luna.Studio.Action.ConnectionPen
     ( toAction
     ) where
 
+import           Luna.Studio.Data.Vector               (Vector2)
 import           Luna.Studio.Prelude
-import           Luna.Studio.Data.Vector                       (Vector2)
 
-import qualified JS.ConnectionPen                   as UI
+import qualified JS.ConnectionPen                      as UI
 
-import           Empire.API.Data.Node               (NodeId)
+import           Empire.API.Data.Node                  (NodeId)
+import qualified Luna.Studio.React.Model.Node          as UINode
 import           Object.UITypes
-import           Object.Widget                      (WidgetFile, widget)
-import qualified Object.Widget.Connection           as UIConnection
-import qualified Object.Widget.Node                 as UINode
+import           Object.Widget                         (WidgetFile, widget)
+import qualified Object.Widget.Connection              as UIConnection
 
-import qualified Event.ConnectionPen                as ConnectionPen
+import qualified Event.ConnectionPen                   as ConnectionPen
 import           Event.Event
-import           Event.Keyboard                     hiding (Event)
-import qualified Event.Mouse                        as Mouse
+import           Event.Keyboard                        hiding (Event)
+import qualified Event.Mouse                           as Mouse
 
 import           Luna.Studio.State.Global              (State)
 import qualified Luna.Studio.State.Global              as Global
@@ -30,10 +30,10 @@ import qualified Luna.Studio.State.ConnectionPen       as ConnectionPen
 
 import qualified Luna.Studio.Commands.Batch            as BatchCmd
 
-import qualified Empire.API.Data.Port               as Port
-import           Empire.API.Data.PortRef            (InPortRef (..), OutPortRef (..))
+import qualified Empire.API.Data.Port                  as Port
+import           Empire.API.Data.PortRef               (InPortRef (..), OutPortRef (..))
 
-import qualified JS.GoogleAnalytics                 as GA
+import qualified JS.GoogleAnalytics                    as GA
 
 
 --TODO[react] imlement

@@ -2,7 +2,7 @@
 
 module Luna.Studio.Action.MultiSelection where
 
-import           Luna.Studio.Data.Vector              (Position (Position), Vector2 (Vector2), fromTuple, rescale, x, y)
+import           Luna.Studio.Data.Vector              (Position (Position), Vector2 (Vector2), fromTuple, x, y)
 import           Luna.Studio.Prelude
 
 import           Empire.API.Data.Node                 (Node)
@@ -10,12 +10,11 @@ import qualified Empire.API.Data.Node                 as Node
 import           Event.Event                          (Event (UI))
 import           Event.UI                             (UIEvent (AppEvent, NodeEditorEvent))
 import           Luna.Studio.Commands.Command         (Command)
-import           Luna.Studio.Commands.Graph           (allNodes)
 import           Luna.Studio.Commands.Graph.Selection (focusSelectedNode, modifySelectionHistory, selectNodes, selectedNodes, unselectAll)
 import           Luna.Studio.Event.Mouse              (workspacePosition)
 import qualified Luna.Studio.React.Event.App          as App
 import qualified Luna.Studio.React.Event.NodeEditor   as NodeEditor
-import qualified Luna.Studio.React.Model.NodeEditor   as NodeEditor
+import qualified Luna.Studio.React.Model.Node         as NodeModel
 import           Luna.Studio.React.Model.SelectionBox (SelectionBox (SelectionBox))
 import qualified Luna.Studio.React.Model.SelectionBox as SelectionBox
 import           Luna.Studio.React.Store              (widget)
@@ -25,7 +24,6 @@ import qualified Luna.Studio.State.Global             as Global
 import qualified Luna.Studio.State.Graph              as Graph
 import           Luna.Studio.State.MultiSelection     (DragHistory (..))
 import qualified Luna.Studio.State.MultiSelection     as MultiSelection
-import qualified Object.Widget.Node                   as NodeModel
 import           React.Flux                           (MouseEvent)
 
 

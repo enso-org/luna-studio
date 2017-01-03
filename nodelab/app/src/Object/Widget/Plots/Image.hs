@@ -4,7 +4,6 @@ import           Data.Aeson              (ToJSON)
 import           Luna.Studio.Data.Vector (Position, Size)
 import           Luna.Studio.Prelude
 
-import           Object.Widget
 
 
 data Image = Image { _position   :: Position

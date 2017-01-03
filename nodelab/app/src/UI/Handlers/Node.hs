@@ -23,6 +23,7 @@ import           Luna.Studio.Commands.Batch                  (cancelCollaborativ
 import           Luna.Studio.Commands.Command                (Command)
 import           Luna.Studio.Commands.Graph.SelectionHistory (dropSelectionHistory, modifySelectionHistory)
 import qualified Luna.Studio.Commands.UIRegistry             as UICmd
+import qualified Luna.Studio.React.Model.Node                as Model
 import           Luna.Studio.State.Global                    (inRegistry)
 import qualified Luna.Studio.State.Global                    as Global
 import           Luna.Studio.State.UIRegistry                (addHandler)
@@ -30,21 +31,13 @@ import qualified Luna.Studio.State.UIRegistry                as UIRegistry
 import qualified Object.Widget.CodeEditor                    as CodeEditor
 import qualified Object.Widget.Group                         as Group
 import qualified Object.Widget.Label                         as Label
-import qualified Object.Widget.LabeledTextBox                as LabeledTextBox
-import qualified Object.Widget.Node                          as Model
 import qualified Object.Widget.TextBox                       as TextBox
 
 import qualified Style.Node                                  as Style
 import           UI.Generic                                  (whenChanged)
-import           UI.Handlers.Button                          (DblClickedHandler (..), MousePressedHandler (..))
 import           UI.Handlers.Generic                         (ValueChangedHandler (..))
-import           UI.Handlers.LabeledTextBox                  ()
-import           UI.Layout                                   as Layout
 import           UI.Widget.CodeEditor                        ()
 import           UI.Widget.Group                             ()
-import           UI.Widget.Label                             ()
-import           UI.Widget.LabeledTextBox                    ()
-import           UI.Widget.Node                              ()
 import           UI.Widget.TextBox                           ()
 
 import           Empire.API.Data.Node                        (NodeId)
@@ -107,8 +100,6 @@ triggerChangeInputNodeTypeHandler wid model = do
 -- widgetHandlers = def & mouseOver .~ const onMouseOver
 --                      & mouseOut  .~ const onMouseOut
 --
--- onClicked h = addHandler (MousePressedHandler h) mempty
---
 -- displayCodeEditor :: WidgetId -> WidgetId -> Text -> Command UIRegistry.State WidgetId
 -- displayCodeEditor nodeWidgetId nodeGroupId code = do
 --     let widget = CodeEditor.create Style.codeEditorSize code
@@ -141,12 +132,6 @@ instance ResizableWidget Model.Node
 --
 --         codeEditorId <- mapM (displayCodeEditor wid nodeGroupId) $ model ^. Model.code
 --
---
---         withJust (model ^. Model.tpe) $ \_tpe -> do
---             let widget = LabeledTextBox.create Style.portControlSize "Type" (fromMaybe "" $ model ^. Model.tpe)
---             nodeTpeId <- UICmd.register nodeGroupId widget $ typeHandlers wid
---             void $ UIRegistry.updateWidgetM wid $ Model.elements . Model.nodeType     ?~ nodeTpeId
---
 --         let grp    = Group.create
 --         portControlsGroupId <- UICmd.register expandedGroup grp Style.expandedGroupLayout
 --
@@ -162,10 +147,6 @@ instance ResizableWidget Model.Node
 --         whenChanged old model Model.isExpanded $ do
 --             let controlsId = model ^. Model.elements . Model.expandedGroup
 --             UICmd.update_ controlsId $ Group.visible .~ (model ^. Model.isExpanded)
---
---         whenChanged old model Model.tpe   $ withJust (model ^. Model.tpe) $ \tpe -> do
---             let typeTbId = model ^. Model.elements . Model.nodeType
---             withJust typeTbId $ \typeTbId -> UICmd.update_ typeTbId $ LabeledTextBox.value .~ tpe
 --
 --         withJust (model ^. Model.code) $ \codeBody -> do
 --             let nodeGroupId = model ^. Model.elements . Model.nodeGroup

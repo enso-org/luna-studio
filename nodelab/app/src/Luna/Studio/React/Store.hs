@@ -1,5 +1,7 @@
 {-# LANGUAGE DeriveAnyClass #-}
 {-# LANGUAGE TypeFamilies   #-}
+{-# OPTIONS_GHC -fno-warn-orphans #-}
+
 
 module Luna.Studio.React.Store
     ( module Luna.Studio.React.Store
@@ -10,12 +12,13 @@ import           Control.Concurrent
 import           Control.Monad.Trans.Reader
 import           React.Flux
 
-import qualified Event.Event                as Event
-import           Event.UI                   (UIEvent)
-import           Luna.Studio.React.Model.App            (App (App))
-import qualified Luna.Studio.React.Model.NodeEditor     as NodeEditor
-import           Luna.Studio.React.Store.Ref            as X
-import           Luna.Studio.Prelude          as P hiding (transform)
+import qualified Event.Event                        as Event
+import           Event.UI                           (UIEvent)
+import           Luna.Studio.Prelude                as P hiding (transform)
+import           Luna.Studio.React.Model.App        (App (App))
+import qualified Luna.Studio.React.Model.NodeEditor as NodeEditor
+import           Luna.Studio.React.Store.Ref        as X
+
 
 
 instance Typeable a => StoreData (Store a) where

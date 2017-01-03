@@ -232,3 +232,12 @@ instance IsList Size where
     type Item Size = Double
     fromList l = Size (fromList l)
     toList   p = [p ^. x, p ^. y]
+
+
+
+-----------------------------
+-- === ScreenPosition === ---
+-----------------------------
+
+-- TODO[react]: Introduce sth else instead of simplest alias
+type ScreenPosition = Position
