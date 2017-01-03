@@ -25,7 +25,8 @@ graphics_ visIx (GR.Graphics layers) = do
         labelAlign GR.Left   = Label.Left
         labelAlign GR.Center = Label.Center
         labelAlign GR.Right  = Label.Right
-    div_ ["className" $= "visualization"] $
+    div_ ["className" $= "vis vis--graph"] $ do
+        div_ [ "className" $= "blur" ] mempty
         svg_ $
             g_ [ "key" $= fromString (show visIx)] $ do
                 forM_ labels $ (label_ $ widget ^. G.size)

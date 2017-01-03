@@ -17,11 +17,14 @@ dataFrame_ visIx df =
         , "className" $= "vis vis--table" ] $ do
         div_ [ "className" $= "blur" ] mempty
         table_ $
-            tbody_ $ do
+            thead_ $
                 tr_ $ forM_ (df ^. DataFrame.headers) $
                     th_ .
                         elemString . fromString . Text.unpack
-                forM_ (df ^. DataFrame.rows) $ \row ->
-                    tr_ $ forM_ row $
-                        td_ .
-                            elemString . fromString . Text.unpack
+        div_ [ "className" $= "scroll" ] $
+            table_ $
+                tbody_ $
+                    forM_ (df ^. DataFrame.rows) $ \row ->
+                        tr_ $ forM_ row $
+                            td_ .
+                                elemString . fromString . Text.unpack
