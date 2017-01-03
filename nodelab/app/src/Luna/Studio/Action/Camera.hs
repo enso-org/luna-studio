@@ -16,20 +16,9 @@ import qualified Luna.Studio.React.Event.NodeEditor as NodeEditor
 import           Luna.Studio.State.Global           (State)
 import           React.Flux                         (KeyboardEvent, MouseEvent)
 
--- toAction :: Event -> Maybe (Command Global.State ())
--- toAction (Keyboard _ (Keyboard.Event Keyboard.Press 'h' _)) = Just $ autoZoom
--- toAction evt = (zoom Global.camera) <$> (>> syncCamera) <$> toAction' evt
---
--- toAction' :: Event -> Maybe (Command Camera.State ())
--- toAction' (Mouse _ (Mouse.Event evt pos RightButton  KeyMods {_ctrl = False} _)) = Just $ zoomDrag evt pos
--- toAction' (Mouse _ (Mouse.Event evt pos MiddleButton _ _)) = Just $ panDrag  evt pos
---
--- toAction' (Mouse _ (Mouse.Event (Mouse.Wheel delta) _   _ KeyMods {_ctrl = False} _)) = Just $ panCamera delta
--- toAction' (Mouse _ (Mouse.Event (Mouse.Wheel delta) pos _ KeyMods {_ctrl = True} _))  = Just $ wheelZoom pos delta
---
--- toAction' _ = Nothing
 
 -- TODO[react]: Consider mac trackpad!!!
+-- TODO[react]: Implement wheelZoom trigger
 toAction :: Event -> Maybe (Command State ())
 toAction (UI (AppEvent (App.KeyDown   e)))               = Just $ handleKey e
 toAction (UI (NodeEditorEvent (NodeEditor.MouseDown e))) = Just $ handleMouseDown e

@@ -7,10 +7,9 @@ module Luna.Studio.Commands.Camera
      , panLeft
      , panRight
      , autoZoom
-    --  , syncCamera
      , zoomIn
      , zoomOut
-    --  , wheelZoom
+     , wheelZoom
      , startZoomDrag
      , zoomDrag
      , startPanDrag
@@ -47,17 +46,9 @@ translateToWorkspace pos = do
     return $ Position (Vector2 (getElem 1 1 posInWorkspace) (getElem 1 2 posInWorkspace))
 
 
--- import           Reactive.Commands.UILayout as UILayout --TODO[react] remove
--- import           Luna.Studio.State.Camera           (DragHistory (..))
--- import qualified Luna.Studio.State.Camera           as Camera
--- import qualified JS.Camera                             as JS
-
--- wheelZoom :: Position -> Vector2 Double -> Command Camera.State ()
--- wheelZoom pos delta = do
---     camera         <- use $ Camera.camera
---     let delta'      = (- delta ^. x - delta ^. y) / wheelZoomSpeed
---         workspace   = Camera.screenToWorkspace camera pos
---     fixedPointZoom pos workspace delta'
+-- TODO[react]: Find out how to get onScroll
+wheelZoom :: ScreenPosition -> Double -> Command State ()
+wheelZoom pos delta = zoomCamera pos delta
 
 foreign import javascript safe "document.getElementById('Graph').offsetWidth"  screenWidth  :: IO Double
 foreign import javascript safe "document.getElementById('Graph').offsetHeight" screenHeight :: IO Double
