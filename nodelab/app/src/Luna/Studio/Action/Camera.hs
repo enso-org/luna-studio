@@ -14,16 +14,18 @@ import           Luna.Studio.Prelude
 import qualified Luna.Studio.React.Event.App        as App
 import qualified Luna.Studio.React.Event.NodeEditor as NodeEditor
 import           Luna.Studio.State.Global           (State)
-import           React.Flux                         (KeyboardEvent, MouseEvent)
+import           React.Flux                         (KeyboardEvent, MouseEvent, wheelDeltaY)
 
 
 -- TODO[react]: Consider mac trackpad!!!
--- TODO[react]: Implement wheelZoom trigger
 toAction :: Event -> Maybe (Command State ())
 toAction (UI (AppEvent (App.KeyDown   e)))               = Just $ handleKey e
 toAction (UI (NodeEditorEvent (NodeEditor.MouseDown e))) = Just $ handleMouseDown e
 toAction (UI (AppEvent (App.MouseMove e)))               = Just $ handleMouseMove e
 toAction (UI (AppEvent (App.MouseUp   _)))               = Just resetCameraState
+toAction (UI (NodeEditorEvent (NodeEditor.Wheel m w)))   = Just $ wheelZoom pos delta where
+    pos   = mousePosition m
+    delta = fromIntegral $ wheelDeltaY w
 toAction _                                               = Nothing
 
 

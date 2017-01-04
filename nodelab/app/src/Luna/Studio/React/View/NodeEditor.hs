@@ -8,7 +8,7 @@ import qualified React.Flux                            as React
 import           React.Flux.Internal                   (el)
 
 import qualified Event.UI                              as UI
-import qualified Luna.Studio.Data.CoordsTransformation as CoordsTransformation
+import qualified Luna.Studio.Data.CameraTransformation as CameraTransformation
 import           Luna.Studio.Data.Vector
 import           Luna.Studio.Prelude                   hiding (transform)
 import qualified Luna.Studio.React.Event.NodeEditor    as NE
@@ -28,13 +28,14 @@ nodeEditor :: Ref NodeEditor -> ReactView ()
 nodeEditor ref = React.defineControllerView name ref $ \store () -> do
 
     let ne = store ^. dt
-        transformMatrix = ne ^. NodeEditor.screenTransform . CoordsTransformation.logicalToScreen
+        transformMatrix = ne ^. NodeEditor.screenTransform . CameraTransformation.logicalToScreen
         transform       = showTransformMatrix transformMatrix
     div_
         [ "className" $= "graph"
         , "id"        $= "Graph"
         , "key"       $= "graph"
-        , onMouseDown $ \_ e -> dispatch ref $ UI.NodeEditorEvent $ NE.MouseDown e
+        , onMouseDown $ \_ e   -> dispatch ref $ UI.NodeEditorEvent $ NE.MouseDown e
+        , onWheel     $ \_ m w -> dispatch ref $ UI.NodeEditorEvent $ NE.Wheel m w
         ] $ do
         svg_
             [ "className" $= "plane plane-connections"

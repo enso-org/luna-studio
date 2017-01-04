@@ -4,7 +4,7 @@ import           Data.HashMap.Strict                   (HashMap)
 import qualified Data.HashMap.Strict                   as HashMap
 import           Empire.API.Data.Node                  (NodeId)
 import           Empire.API.Data.PortRef               (InPortRef)
-import           Luna.Studio.Data.CoordsTransformation
+import           Luna.Studio.Data.CameraTransformation
 import           Luna.Studio.Prelude
 import           Luna.Studio.React.Model.Connection    (Connection, CurrentConnection)
 import           Luna.Studio.React.Model.Node          (Node)
@@ -13,7 +13,7 @@ import           Luna.Studio.React.Store.Ref           (Ref)
 
 
 
-data NodeEditor = NodeEditor { _screenTransform   :: CoordsTransformation
+data NodeEditor = NodeEditor { _screenTransform   :: CameraTransformation
                              , _nodes             :: HashMap NodeId    (Ref Node)
                              , _connections       :: HashMap InPortRef (Ref Connection)
                              , _currentConnection :: Maybe (Ref CurrentConnection)
