@@ -23,7 +23,8 @@ name = "breadcrumbs"
 
 breadcrumbs :: Ref Breadcrumbs -> ReactView ()
 breadcrumbs ref = React.defineControllerView name ref $ \store () -> do
-    div_ [ "className" $= "breadcrumbs" ] $ do
+    div_ [ "className" $= "breadcrumbs"
+         , "key"       $= "breadcrumbs" ] $ do
         forM_ (zip [0..] $ inits $ store ^. dt . B.items) $ \(key, bc) -> do
             div_
                 [ "className" $= "breadcrumbs__item breadcrumbs__item--home"

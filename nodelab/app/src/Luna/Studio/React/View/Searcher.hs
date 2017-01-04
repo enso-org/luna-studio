@@ -25,11 +25,12 @@ searcher ref = React.defineControllerView
     name ref $ \store () -> do
         let s = store ^. dt
             pos = s ^. Searcher.position
-        when (s ^. Searcher.visible) $ do
+        if s ^. Searcher.visible then do
             div_ [ "className" $= "searcher"
                  , "style"     @= Aeson.object [ "top"  Aeson..= (show (pos ^. y) <> "px" :: String)
                                                , "left" Aeson..= (show (pos ^. x) <> "px" :: String)
                                                ]
+                 , "key" $= "searcher"
                  ] $ do
                     input_
                         [ "id" $= "focus-searcher"
@@ -45,6 +46,7 @@ searcher ref = React.defineControllerView
                                     elemString $ fromString $ unpack (result ^. Result.prefix) <> "."
                                 div_ ["className" $= "result-name"] $
                                     elemString $ fromString $ unpack $ result ^. Result.name
+          else div_ ["key" $= "searcher"] mempty
 
 
 searcher_ :: Ref Searcher -> ReactElementM ViewEventHandler ()

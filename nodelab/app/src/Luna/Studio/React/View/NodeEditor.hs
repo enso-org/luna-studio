@@ -33,37 +33,45 @@ nodeEditor ref = React.defineControllerView name ref $ \store () -> do
     div_
         [ "className" $= "graph"
         , "id"        $= "Graph"
+        , "key"       $= "graph"
         , onMouseDown $ \_ e -> dispatch ref $ UI.NodeEditorEvent $ NE.MouseDown e
         ] $ do
         svg_
             [ "className" $= "plane plane-connections"
             , "style"     @= Aeson.object [ "transform" Aeson..= transform ]
+            , "key"       $= "svg"
             ] $ do
-            defs_ [] $ do
-                el "filter" [ "id" $= "textShadow" ] $ do
+            defs_ ["key" $= "defs"] $ do
+                el "filter" [ "id" $= "textShadow"
+                            , "key" $= "textShadow" ] $ do
                     el "feOffset"
                         [ "result" $= "offOut"
                         , "in"     $= "SourceAlpha"
                         , "dx"     $= "0"
                         , "dy"     $= "0"
+                        , "key"    $= "feOffset"
                         ] mempty
                     el "feGaussianBlur"
                         [ "result"       $= "blurOut"
                         , "in"           $= "offOut"
                         , "stdDeviation" $= "2"
+                        , "key"          $= "feGaussianBlur"
                         ] mempty
                     el "feBlend"
                         [ "in"   $= "SourceGraphic"
                         , "in2"  $= "blurOut"
                         , "mode" $= "normal"
+                        , "key"  $= "feBlend"
                         ] mempty
 
-            g_ [ "className" $= "connections" ] $ do
+            g_ [ "key"       $= "connections"
+               , "className" $= "connections" ] $ do
                 forM_ (store ^. dt . NodeEditor.connections . to HashMap.elems) $ \connectionRef -> connection_ connectionRef
                 forM_ (store ^. dt . NodeEditor.currentConnection) $ \connectionRef -> currentConnection_ connectionRef
                 selectionBox_ (store ^. dt . NodeEditor.selectionBox)
         div_
             [ "className" $= "plane plane--nodes"
+            , "key"       $= "plane"
             , "style"     @= Aeson.object [ "transform" Aeson..= transform ]
             ] $ do
                 forM_ (store ^. dt . NodeEditor.nodes . to HashMap.elems) $ \nodeRef -> node_ nodeRef

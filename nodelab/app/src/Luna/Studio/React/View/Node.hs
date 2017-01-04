@@ -25,7 +25,7 @@ import qualified React.Flux                           as React
 
 
 objName :: JSString
-objName = "node-editor"
+objName = "node"
 
 makePorts :: Ref Node -> [Port] -> ReactElementM ViewEventHandler ()
 makePorts nodeRef ports = forM_ ports $ \port -> port_ nodeRef port (countSameTypePorts port ports) (isPortSingle port ports)
@@ -50,9 +50,12 @@ node ref = React.defineControllerView
             , "key"       $= fromString (show nodeId)
             ] $ do
 
-            svg_ [ "viewBox" $= "0 0 10 10" ] $ rect_ [ "className" $= "node__selection-mark" ] mempty
+            svg_ [ "viewBox" $= "0 0 10 10"
+                 , "key" $= "viewbox"] $
+                rect_ [ "className" $= "node__selection-mark" ] mempty
 
-            div_ [ "className" $= "node__properties" ] $ do
+            div_ [ "className" $= "node__properties"
+                 , "key"       $= "node__properties" ] $ do
                 div_
                     [ "className" $= "value value--name"
                     , onDoubleClick $ \_ _ -> dispatch ref $ UI.NodeEvent $ Node.NameEditStart nodeId
@@ -84,10 +87,12 @@ node ref = React.defineControllerView
                         div_ ["className" $= "label"] $ elemString "Execution time"
                         div_ ["className" $= "value"] $ elemString $ show execTime <> " ms"
 
-            div_ [ "className" $= "node__visualization" ] $ do
+            div_ [ "className" $= "node__visualization"
+                 , "key"       $= "node__visualization" ] $ do
                 forM_ (n ^. Node.value) visualization_
 
-            svg_ [ "viewBox" $= "0 0 10 10" ] $ do
+            svg_ [ "viewBox" $= "0 0 10 10"
+                 , "key" $= "viewbox2" ] $ do
                 text_
                     [ onDoubleClick $ \e _ -> stopPropagation e : dispatch ref (UI.NodeEvent $ Node.EditExpression nodeId)
                     , "className"  $= "node__name"
