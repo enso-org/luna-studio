@@ -1,14 +1,14 @@
-module Luna.Studio.Data.CoordsTransformation where
+module Luna.Studio.Data.CameraTransformation where
 
 import           Data.Matrix         (Matrix, identity)
 import           Luna.Studio.Prelude
 
 --TODO[react]: Consider if we can require those Matrices to be squared and of size 4
-data CoordsTransformation = CoordsTransformation { _screenToLogical :: Matrix Double
+data CameraTransformation = CameraTransformation { _screenToLogical :: Matrix Double
                                                  , _logicalToScreen :: Matrix Double
                                                  }
 
-makeLenses ''CoordsTransformation
+makeLenses ''CameraTransformation
 
-instance Default CoordsTransformation where
-    def = CoordsTransformation (identity 4) (identity 4)
+instance Default CameraTransformation where
+    def = CameraTransformation (identity 4) (identity 4)
