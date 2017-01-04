@@ -23,6 +23,7 @@ dependencies:
   - zmq-rpc
   - errors
   - ghc
+  - uuid-types
 
 default-extensions:
   - NoImplicitPrelude

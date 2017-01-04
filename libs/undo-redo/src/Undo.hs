@@ -29,6 +29,7 @@ import qualified Data.Map.Strict                   as Map
 import           Data.Map.Strict                   (Map)
 import           Data.Maybe
 import           Data.Set                          hiding (map)
+import           Data.UUID.Types                       (UUID)
 import           Prologue                          hiding (throwM)
 import Util as Util
 
@@ -86,7 +87,7 @@ import System.IO (stdout,hFlush)
 
 
 data UndoMessage where
-    UndoMessage :: (Binary undoReq, Binary redoReq) => Topic.Topic -> undoReq -> Topic.Topic -> redoReq -> UndoMessage
+    UndoMessage :: (Binary undoReq, Binary redoReq) => UUID -> Topic.Topic -> undoReq -> Topic.Topic -> redoReq -> UndoMessage
 
 data UndoState z = UndoState { _undo :: [UndoMessage]
                            , _redo :: [UndoMessage]
@@ -140,26 +141,28 @@ type family RedoResponseRequest t where
 flushHelper :: MonadIO m => String -> m ()
 flushHelper text = liftIO $ putStrLn text >> hFlush stdout
 
-makeHandler :: forall response z. (Topic.MessageTopic response, Binary response,
-            Topic.MessageTopic (Request.Request (UndoResponseRequest response)), Binary (UndoResponseRequest response),
-            Topic.MessageTopic (Request.Request (RedoResponseRequest response)), Binary (RedoResponseRequest response))
-            => (response -> Maybe (UndoRequests response)) -> (String, (Handler z))
+makeHandler :: forall t u v z. (Topic.MessageTopic (Response.Response t u v), Binary (Response.Response t u v),
+            Topic.MessageTopic (Request.Request (UndoResponseRequest (Response.Response t u v))), Binary (UndoResponseRequest (Response.Response t u v)),
+            Topic.MessageTopic (Request.Request (RedoResponseRequest (Response.Response t u v))), Binary (RedoResponseRequest (Response.Response t u v)))
+            => ((Response.Response t u v) -> Maybe (UndoRequests (Response.Response t u v))) -> (String, (Handler z))
 makeHandler h =
-    let process content = let request = decode . fromStrict $ content
-                          in case h request of
-                              Nothing           -> throwM BusErrorException
-                              Just (r, q) -> handle  (Topic.topic (Request.Request UUID.nil r)) r (Topic.topic (Request.Request UUID.nil q)) q
-    in (Topic.topic (undefined :: response), process)
+    let process content = let response = decode . fromStrict $ content
+                              maybeGuiID = response ^. Response.guiID
+                              guiID = fromJust maybeGuiID --fixme zrób case albo coś innego
+                          in case h response of
+                              Nothing     -> throwM BusErrorException
+                              Just (r, q) -> handle guiID (Topic.topic (Request.Request UUID.nil Nothing r)) r (Topic.topic (Request.Request UUID.nil Nothing q)) q
+    in (Topic.topic (undefined :: (Response.Response t u v)), process)
 
-handle :: (Binary a, Binary b) => Topic.Topic -> a -> Topic.Topic -> b -> Undo z ()
-handle topicUndo undoReq topicRedo redoReq = undo %= (UndoMessage topicUndo undoReq topicRedo redoReq :)
+handle :: (Binary a, Binary b) => UUID -> Topic.Topic -> a -> Topic.Topic -> b -> Undo z ()
+handle guiID topicUndo undoReq topicRedo redoReq = undo %= (UndoMessage guiID topicUndo undoReq topicRedo redoReq :)
 
 withOk :: Response.Status a -> (a -> Maybe b) -> Maybe b
 withOk (Response.Error _) _ = Nothing
 withOk (Response.Ok a)    f = f a
 
 handleAddNodeUndo :: AddNode.Response -> Maybe (RemoveNodes.Request, AddNode.Request)
-handleAddNodeUndo (Response.Response _ (AddNode.Request location nodeType nodeMeta connectTo _) _ res) =
+handleAddNodeUndo (Response.Response _  guiID (AddNode.Request location nodeType nodeMeta connectTo _) _ res) =
     withOk res $ \node ->
         let nodeId  = node ^. Node.nodeId
             undoMsg = RemoveNodes.Request location [nodeId]
@@ -167,7 +170,7 @@ handleAddNodeUndo (Response.Response _ (AddNode.Request location nodeType nodeMe
         in Just (undoMsg, redoMsg)
 
 handleAddSubgraphUndo :: AddSubgraph.Response -> Maybe (RemoveNodes.Request, AddSubgraph.Request)  --dodac result do pola addsubgraph response bo zwraca request z podmienionym id
-handleAddSubgraphUndo (Response.Response  _ (AddSubgraph.Request location nodes connections saveNodeIds) _ res ) =
+handleAddSubgraphUndo (Response.Response  _ guiID (AddSubgraph.Request location nodes connections saveNodeIds) _ res ) =
     withOk res $ \idMapping ->
         case idMapping of
             Nothing -> let ids = map (^. Node.nodeId) nodes
@@ -201,7 +204,7 @@ filterConnections connectionPorts nodesIds =
     in concat p
 
 handleRemoveNodesUndo :: RemoveNodes.Response -> Maybe (AddSubgraph.Request, RemoveNodes.Request)
-handleRemoveNodesUndo (Response.Response _ (RemoveNodes.Request location nodesIds) inv _) =
+handleRemoveNodesUndo (Response.Response _ guiID (RemoveNodes.Request location nodesIds) inv _) =
     withOk inv $ \(RemoveNodes.Inverse nodes connectionPorts) ->
         let deletedNodes = filterNodes nodesIds nodes
             deletedConnections  = filterConnections connectionPorts nodesIds
@@ -211,7 +214,7 @@ handleRemoveNodesUndo (Response.Response _ (RemoveNodes.Request location nodesId
         in Just (undoMsg, redoMsg)
 
 handleUpdateNodeExpressionUndo :: UpdateNodeExpression.Response -> Maybe ( UpdateNodeExpression.Request,  UpdateNodeExpression.Request)
-handleUpdateNodeExpressionUndo (Response.Response _ (UpdateNodeExpression.Request location nodeId expression) inv res) =
+handleUpdateNodeExpressionUndo (Response.Response _ guiID (UpdateNodeExpression.Request location nodeId expression) inv res) =
     withOk inv $ \(UpdateNodeExpression.Inverse oldExpr) ->
         let undoMsg = UpdateNodeExpression.Request location nodeId oldExpr
             redoMsg = UpdateNodeExpression.Request location nodeId expression
@@ -228,7 +231,7 @@ filterMeta allNodes updates =
     in map tupleUpdate p
 
 handleUpdateNodeMetaUndo :: UpdateNodeMeta.Response -> Maybe (UpdateNodeMeta.Request, UpdateNodeMeta.Request)
-handleUpdateNodeMetaUndo (Response.Response _ (UpdateNodeMeta.Request location updates) inv _) =
+handleUpdateNodeMetaUndo (Response.Response _ guiID (UpdateNodeMeta.Request location updates) inv _) =
     withOk inv $ \(UpdateNodeMeta.Inverse nodes) ->
     let prevMeta = filterMeta nodes updates
         undoMsg = UpdateNodeMeta.Request location prevMeta
@@ -236,7 +239,7 @@ handleUpdateNodeMetaUndo (Response.Response _ (UpdateNodeMeta.Request location u
     in Just (undoMsg, redoMsg)
 
 handleRenameNodeUndo :: RenameNode.Response ->  Maybe (RenameNode.Request, RenameNode.Request)
-handleRenameNodeUndo (Response.Response _ (RenameNode.Request location nodeId name) inv res) =
+handleRenameNodeUndo (Response.Response _ guiID (RenameNode.Request location nodeId name) inv res) =
     withOk inv $ \(RenameNode.Inverse namePrev) ->
         case namePrev of
             Nothing -> let undoMsg = RenameNode.Request location nodeId ""
@@ -247,14 +250,14 @@ handleRenameNodeUndo (Response.Response _ (RenameNode.Request location nodeId na
                             in Just (undoMsg, redoMsg)
 
 handleConnectUndo :: Connect.Response -> Maybe (Disconnect.Request, Connect.Request)
-handleConnectUndo (Response.Response _ (Connect.Request location src dst) inv res) =
+handleConnectUndo (Response.Response _ guiID (Connect.Request location src dst) inv res) =
     withOk res $ const $
         let undoMsg = Disconnect.Request location dst
             redoMsg = Connect.Request location src dst
         in Just (undoMsg, redoMsg)
 
 handleDisconnectUndo :: Disconnect.Response -> Maybe (Connect.Request, Disconnect.Request)
-handleDisconnectUndo (Response.Response _ (Disconnect.Request location dst) inv res) =
+handleDisconnectUndo (Response.Response _ guiID (Disconnect.Request location dst) inv res) =
     withOk inv $ \(Disconnect.Inverse src) ->
         let undoMsg = Connect.Request location src dst
             redoMsg = Disconnect.Request location dst
@@ -300,8 +303,7 @@ receiveEvent sub = do
 
 collectEvents :: MessageFrame -> Message.ClientID -> ZMQ.Socket z ZMQ.Push -> Undo z ()
 collectEvents (MessageFrame msg corId senderId lastFrm) myId push = do
-    let topic = msg ^. Message.topic
-        userId = show senderId
+    let topic   = msg ^. Message.topic
         content = msg ^. Message.message
     flushHelper $ show $ topic
     flushHelper "myId: "
@@ -355,10 +357,6 @@ send push clientID msg = do
         bytestr = MessageFrame.toByteString msgFrame
     Undo $ lift $ lift $ ZMQ.send push [] bytestr
 
--- takeEndPointsAndRun :: Bus.Bus () -> BusEndPoints -> Undo z ()
--- takeEndPointsAndRun action endPoints = do
---     void $ Bus.runBus endPoints action
-
 sendUndo :: UndoMessage -> ZMQ.Socket z ZMQ.Push -> Message.ClientID -> Undo z ()
 sendUndo msg push clientID = sendMessage push clientID ActUndo msg
 
@@ -369,5 +367,5 @@ sendMessage :: ZMQ.Socket z ZMQ.Push -> Message.ClientID -> Action -> UndoMessag
 sendMessage push clientID action msg = do
     uuid <- liftIO $ UUID.nextRandom
     void $ send push clientID $ case action of
-        ActUndo -> case msg of UndoMessage tu u _ _ -> Message.Message tu $ toStrict $ Bin.encode $ Request.Request uuid u
-        ActRedo -> case msg of UndoMessage _ _ tr r -> Message.Message tr $ toStrict $ Bin.encode $ Request.Request uuid r
+        ActUndo -> case msg of UndoMessage _ tu u _ _ -> Message.Message tu $ toStrict $ Bin.encode $ Request.Request uuid Nothing u
+        ActRedo -> case msg of UndoMessage _ _ _ tr r -> Message.Message tr $ toStrict $ Bin.encode $ Request.Request uuid Nothing r
