@@ -18,56 +18,66 @@ name = "code-editor"
 
 codeEditor :: Ref CodeEditor -> ReactView ()
 codeEditor ref = React.defineControllerView name ref $ \store () -> do
-    div_
-        [ "className" $= "code-editor" ] $ do
+    div_ [ "key"       $= name
+         , "className" $= name] $ do
+        div_
+            [ "key"       $= "editor"
+            , "id"        $= "editor"
+            , "className" $= "ace_editor ace-twilight ace_dark"
+            , "style"     @= Aeson.object [ "color" Aeson..= ("#eee"::String) ]
+            ] $ do
             div_
-                [ "id"        $= "editor"
-                , "className" $= "ace_editor ace-twilight ace_dark"
-                , "style"     @= Aeson.object [ "color" Aeson..= ("#eee"::String) ]
+                [ "key"       $= "ace_gutter"
+                , "className" $= "ace_gutter" ] $ do
+                div_
+                    [ "key"       $= "ace_layer"
+                    , "className" $= "ace_layer ace_gutter-layer ace_folding-enabled"
+                    , "style"     @= Aeson.object
+                        [ "background" Aeson..= ("#1e1e1e"::String)
+                        , "marginTop"  Aeson..= ("0px"    ::String)
+                        , "height"     Aeson..= ("807px"  ::String)
+                        , "width"      Aeson..= ("41px"   ::String)
+                        ]
+                    ] $ div_ [ "key"       $= "cell"
+                             , "className" $= "ace_gutter-cell" ] $
+                            elemString "1"
+                div_
+                    [ "key"       $= "active-line"
+                    , "className" $= "ace_gutter-active-line"
+                    , "style"     @= Aeson.object [ "height" Aeson..= ("19px"::String) ]
+                    ] mempty
+            div_
+                [ "key" $= "scroller"
+                , "className" $= "ace_scroller"
+                , "style"     @= Aeson.object
+                    [ "left"   Aeson..= ("41px"::String)
+                    , "right"  Aeson..= ("0"   ::String)
+                    , "bottom" Aeson..= ("0"   ::String)
+                    ]
                 ] $ do
                 div_
-                    [ "className" $= "ace_gutter" ] $ do
-                    div_
-                        [ "className" $= "ace_layer ace_gutter-layer ace_folding-enabled"
-                        , "style"     @= Aeson.object
-                            [ "background" Aeson..= ("#1e1e1e"::String)
-                            , "marginTop"  Aeson..= ("0px"    ::String)
-                            , "height"     Aeson..= ("807px"  ::String)
-                            , "width"      Aeson..= ("41px"   ::String)
-                            ]
-                        ] $ do div_ [ "className" $= "ace_gutter-cell" ] $ elemString "1"
-                    div_
-                        [ "className" $= "ace_gutter-active-line"
-                        , "style"     @= Aeson.object [ "height" Aeson..= ("19px"::String) ]
-                        ] mempty
-                div_
-                    [ "className" $= "ace_scroller"
+                    [ "key"       $= "content"
+                    , "className" $= "ace_content"
                     , "style"     @= Aeson.object
-                        [ "left"   Aeson..= ("41px"::String)
-                        , "right"  Aeson..= ("0"   ::String)
-                        , "bottom" Aeson..= ("0"   ::String)
+                        [ "marginTop"   Aeson..= ("0"    ::String)
+                        , "width"       Aeson..= ("276px"::String)
+                        , "height"      Aeson..= ("663px"::String)
+                        , "marginLeft"  Aeson..= ("0"    ::String)
                         ]
                     ] $ do
                     div_
-                        [ "className" $= "ace_content"
-                        , "style"     @= Aeson.object
-                            [ "marginTop"   Aeson..= ("0"    ::String)
-                            , "width"       Aeson..= ("276px"::String)
-                            , "height"      Aeson..= ("663px"::String)
-                            , "marginLeft"  Aeson..= ("0"    ::String)
-                            ]
-                        ] $ do
+                        [ "key"       $= "content"
+                        , "className" $= "ace_layer ace_text-layer" ]
+                        $ do
                         div_
-                            [ "className" $= "ace_layer ace_text-layer" ]
-                            $ do
-                            div_
-                                [ "className" $= "ace_active-line"
-                                , "style"     @= Aeson.object [ "padding" Aeson..= ("0 4px" ::String) ]
-                                ] $ do elemString $ unpack $ store ^. dt . CodeEditor.code
+                            [ "key"       $= "active-line"
+                            , "className" $= "ace_active-line"
+                            , "style"     @= Aeson.object [ "padding" Aeson..= ("0 4px" ::String) ]
+                            ] $ do elemString $ unpack $ store ^. dt . CodeEditor.code
 
 
 codeEditor_ :: Ref CodeEditor -> ReactElementM ViewEventHandler ()
-codeEditor_ ref = React.view (codeEditor ref) () mempty
+codeEditor_ ref = React.viewWithSKey (codeEditor ref) name () mempty
 
 
 --TODO[react] remove

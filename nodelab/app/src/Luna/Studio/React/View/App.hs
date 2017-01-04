@@ -2,7 +2,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Luna.Studio.React.View.App where
 
-import           Luna.Studio.Prelude
+import           Luna.Studio.Prelude hiding (on)
 import           React.Flux
 import qualified React.Flux                              as React
 
@@ -19,7 +19,7 @@ import           Luna.Studio.React.View.Searcher         (searcher_)
 
 
 name :: JSString
-name = "nodelab"
+name = "app"
 
 app :: Ref App -> ReactView ()
 app ref = React.defineControllerView
@@ -30,12 +30,15 @@ app ref = React.defineControllerView
              , onMouseDown   $ \_ m -> dispatch ref $ UI.AppEvent $ App.MouseDown m
              , onMouseUp     $ \_ m -> dispatch ref $ UI.AppEvent $ App.MouseUp   m
              , onMouseMove   $ \_ m -> dispatch ref $ UI.AppEvent $ App.MouseMove m
-             , "id"       $= "focus-root"
-             , "tabIndex" $= "-1"
+             , "key"       $= "app"
+             , "id"        $= "focus-root"
+             , "tabIndex"  $= "-1"
              , "className" $= "noselect"
              ] $ do
-                 div_ [ "className" $= "main" ] $ do
-                     div_ [ "className" $= "graph-editor" ] $ do
+                 div_ [ "className" $= "main"
+                      , "key"       $= "main"] $ do
+                     div_ [ "className" $= "graph-editor"
+                          , "key"       $= "graph-editor" ] $ do
                         breadcrumbs_ (s ^. App.breadcrumbs)
                         nodeEditor_ (s ^. App.nodeEditor)
                         codeEditorToggle_ (s ^. App.codeEditor)

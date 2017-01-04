@@ -50,7 +50,7 @@ searcher ref = React.defineControllerView
 
 
 searcher_ :: Ref Searcher -> ReactElementM ViewEventHandler ()
-searcher_ ref = React.view (searcher ref) () mempty
+searcher_ ref = React.viewWithSKey (searcher ref) name () mempty
 
 
 foreign import javascript safe "document.getElementById('focus-searcher').focus()" focus :: IO ()

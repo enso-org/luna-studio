@@ -28,7 +28,7 @@ port nodeRef numOfPorts isOnly = React.defineView name $ \p -> do
     drawPort_ nodeRef p numOfPorts isOnly
 
 port_ :: Ref Node -> Port -> Int -> Bool -> ReactElementM ViewEventHandler ()
-port_ ref p numOfPorts isOnly = React.view (port ref numOfPorts isOnly) p mempty
+port_ ref p numOfPorts isOnly = React.viewWithSKey (port ref numOfPorts isOnly) (fromString $ show $ p ^. Port.portId) p mempty
 
 
 drawPort_ :: Ref Node -> Port -> Int -> Bool -> ReactElementM ViewEventHandler ()
@@ -45,11 +45,13 @@ drawPortSelf_ :: Ref Node -> Port -> ReactElementM ViewEventHandler ()
 drawPortSelf_ nodeRef port =
     let portRef = port ^. Port.portRef
         color   = toJSString $ port ^. Port.color
+        portId  = port ^. Port.portId
     in
     circle_
         [ onMouseDown $ \e m -> stopPropagation e : dispatch nodeRef (UI.ConnectionEvent $ Connection.StartConnection m portRef)
         , onMouseUp   $ \e m -> stopPropagation e : dispatch nodeRef (UI.ConnectionEvent $ Connection.EndConnection   m portRef)
         , "className" $= "port port--self"
+        , "key"       $= fromString (show portId)
         , "fill"      $= color
         , "stroke"    $= color
         ] mempty
@@ -59,6 +61,7 @@ drawPortSingle_ :: Ref Node -> Port -> ReactElementM ViewEventHandler ()
 drawPortSingle_ nodeRef port = do
 
     let portRef     = port ^. Port.portRef
+        portId      = port ^. Port.portId
         color       = toJSString $ port ^. Port.color
         r1          = show nodeRadius
         r2          = show nodeRadius'
@@ -68,6 +71,7 @@ drawPortSingle_ nodeRef port = do
         [ onMouseDown $ \e m -> stopPropagation e : dispatch nodeRef (UI.ConnectionEvent $ Connection.StartConnection m portRef)
         , onMouseUp   $ \e m -> stopPropagation e : dispatch nodeRef (UI.ConnectionEvent $ Connection.EndConnection   m portRef)
         , "className" $= "port port--o--single"
+        , "key"       $= fromString (show portId)
         , "fill"      $= color
         , "stroke"    $= color
         , "d"         $= (svgPath 0 1 <> svgPath 1 0)
@@ -78,6 +82,7 @@ drawPortIO_ :: Ref Node -> Port -> Int -> Int -> Bool -> ReactElementM ViewEvent
 drawPortIO_ nodeRef port num numOfPorts isInput = do
 
     let portRef = port ^. Port.portRef
+        portId  = port ^. Port.portId
         color   = toJSString $ port ^. Port.color
 
         classes  = if isInput then "port port--i port--i--" else "port port--o port--o--"
@@ -110,6 +115,7 @@ drawPortIO_ nodeRef port num numOfPorts isInput = do
         [ onMouseDown $ \e m -> stopPropagation e : dispatch nodeRef (UI.ConnectionEvent $ Connection.StartConnection m portRef)
         , onMouseUp   $ \e m -> stopPropagation e : dispatch nodeRef (UI.ConnectionEvent $ Connection.EndConnection   m portRef)
         , "className" $= (fromString $ classes <> show (num+1))
+        , "key"       $= fromString (show portId)
         , "fill"      $= color
         , "stroke"    $= color
         , "d"         $= svgPath

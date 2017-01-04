@@ -44,9 +44,14 @@ portControl_ ref node port =
 
 inPortControl_ :: Ref Node -> AnyPortRef -> Port -> ReactElementM ViewEventHandler ()
 inPortControl_ ref portRef port = do
-    div_ [ "className" $= "row row--arg" ] $ do
-        div_ [ "className" $= "label" ] $ elemString $ fromString $ port ^. Port.name
-        div_ [ "className" $= "value" ] $ case port ^. Port.state of
+    div_ [ "key" $= fromString (show $ port ^. Port.portId)
+         , "className" $= "row row--arg" ] $ do
+        div_ [ "key"       $= "label"
+             , "className" $= "label" ] $
+             elemString $ fromString $ port ^. Port.name
+        div_ [ "key"       $= "value"
+             , "className" $= "value" ] $
+             case port ^. Port.state of
             PortAPI.NotConnected    -> do
                 case port ^. Port.valueType . ValueType.toEnum of
                     ValueType.Other -> elemString $ fromString $ "(other)"

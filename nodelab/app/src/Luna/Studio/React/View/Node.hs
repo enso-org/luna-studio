@@ -41,29 +41,32 @@ node ref = React.defineControllerView
             offsetY   = show (pos ^. y)
 
         div_
-            [ onClick       $ \_ m -> dispatch ref $ UI.NodeEvent $ Node.Select m nodeId
+            [ "key"       $= fromString (show nodeId)
+            , onClick       $ \_ m -> dispatch ref $ UI.NodeEvent $ Node.Select m nodeId
             , onDoubleClick $ \_ _ -> dispatch ref $ UI.NodeEvent $ Node.Enter nodeId
             , onMouseDown   $ \e m -> stopPropagation e : dispatch ref (UI.NodeEvent $ Node.MouseDown m nodeId)
             , "className" $= (fromString $ "node" <> (if n ^. Node.isExpanded then " node--expanded" else " node--collapsed")
                                                   <> (if n ^. Node.isSelected then " node--selected" else []))
             , "style"     @= Aeson.object [ "transform" Aeson..= (transformTranslate offsetX offsetY) ]
-            , "key"       $= fromString (show nodeId)
             ] $ do
 
-            svg_ [ "viewBox" $= "0 0 10 10"
-                 , "key" $= "viewbox"] $
-                rect_ [ "className" $= "node__selection-mark" ] mempty
+            svg_ [ "key"     $= "viewbox"
+                 , "viewBox" $= "0 0 10 10" ] $
+                rect_ [ "key"       $= "selection-mark"
+                      , "className" $= "node__selection-mark" ] mempty
 
-            div_ [ "className" $= "node__properties"
-                 , "key"       $= "node__properties" ] $ do
+            div_ [ "key"       $= "properties"
+                 , "className" $= "node__properties" ] $ do
                 div_
-                    [ "className" $= "value value--name"
+                    [ "key"       $= "value"
+                    , "className" $= "value value--name"
                     , onDoubleClick $ \_ _ -> dispatch ref $ UI.NodeEvent $ Node.NameEditStart nodeId
                     ] $
                     case n ^. Node.nameEdit of
                         Just name ->
                             input_
-                                [ "id" $= "focus-nameLabel"
+                                [ "key" $= "name-label"
+                                , "id"  $= "focus-nameLabel"
                                 , "value value--name" $= fromString (Text.unpack name)
                                 , onMouseDown $ \e _ -> [stopPropagation e]
                                 , onKeyDown   $ \e k ->  stopPropagation e : dispatch ref (UI.NodeEvent $ Node.NameKeyDown k nodeId)
@@ -74,29 +77,39 @@ node ref = React.defineControllerView
 
                 forM_ (n ^. Node.ports) $ portControl_ ref n
 
-                div_ [ "className" $= "row" ] $ do
-                    div_ [ "className" $= "label" ] $ elemString "Display results"
-                    div_ [ "className" $= "value" ] $ do
+                div_ [ "key"       $= "display-results"
+                     , "className" $= "row" ] $ do
+                    div_ [ "key"       $= "label"
+                         , "className" $= "label" ] $ elemString "Display results"
+                    div_ [ "key"       $= "value"
+                         , "className" $= "value" ] $ do
                         let val = n ^. Node.visualizationsEnabled
                         button_
-                            [ onClick $ \_ _ -> dispatch ref $ UI.NodeEvent $ Node.DisplayResultChanged (not val) nodeId
+                            [ "key" $= "button"
+                            , onClick $ \_ _ -> dispatch ref $ UI.NodeEvent $ Node.DisplayResultChanged (not val) nodeId
                             ] $
                             elemString $ fromString $ if val then "yes" else "no"
-                div_ [ "className" $= "row" ] $ do
+                div_ [ "key" $= "execution-time"
+                     , "className" $= "row" ] $ do
                     withJust (n ^. Node.execTime) $ \execTime -> do
-                        div_ ["className" $= "label"] $ elemString "Execution time"
-                        div_ ["className" $= "value"] $ elemString $ show execTime <> " ms"
+                        div_ ["key"       $= "label"
+                            , "className" $= "label"] $
+                            elemString "Execution time"
+                        div_ ["key"       $= "value"
+                            , "className" $= "value"] $
+                            elemString $ show execTime <> " ms"
 
-            div_ [ "className" $= "node__visualization"
-                 , "key"       $= "node__visualization" ] $ do
+            div_ [ "key"       $= "visualization"
+                 , "className" $= "node__visualization"] $ do
                 forM_ (n ^. Node.value) visualization_
 
-            svg_ [ "viewBox" $= "0 0 10 10"
-                 , "key" $= "viewbox2" ] $ do
+            svg_ [ "key" $= "viewbox2"
+                 , "viewBox" $= "0 0 10 10"] $ do
                 text_
-                    [ onDoubleClick $ \e _ -> stopPropagation e : dispatch ref (UI.NodeEvent $ Node.EditExpression nodeId)
-                    , "className"  $= "node__name"
-                    , "y"          $= "-40"
+                    [ "key"         $= "name"
+                    , onDoubleClick $ \e _ -> stopPropagation e : dispatch ref (UI.NodeEvent $ Node.EditExpression nodeId)
+                    , "className"   $= "node__name"
+                    , "y"           $= "-40"
                     ] $ elemString $ Text.unpack $ n ^. Node.expression
                 if n ^. Node.isExpanded then do
                     makePorts ref $ filter (\port -> (port ^. Port.portId) == InPortId Self) ports
@@ -195,7 +208,7 @@ node ref = React.defineControllerView
 
 -}
 
-node_ :: Ref Node -> ReactElementM ViewEventHandler ()
-node_ ref = React.view (node ref) () mempty
+node_ :: NodeId -> Ref Node -> ReactElementM ViewEventHandler ()
+node_ nodeId ref = React.viewWithSKey (node ref) (fromString $ show nodeId) () mempty
 
 foreign import javascript safe "document.getElementById('focus-nameLabel').focus()" focusNameLabel :: IO ()

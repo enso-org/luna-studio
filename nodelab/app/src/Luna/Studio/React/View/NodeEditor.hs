@@ -39,7 +39,7 @@ nodeEditor ref = React.defineControllerView name ref $ \store () -> do
         svg_
             [ "className" $= "plane plane-connections"
             , "style"     @= Aeson.object [ "transform" Aeson..= transform ]
-            , "key"       $= "svg"
+            , "key"       $= "connections"
             ] $ do
             defs_ ["key" $= "defs"] $ do
                 el "filter" [ "id" $= "textShadow"
@@ -71,10 +71,10 @@ nodeEditor ref = React.defineControllerView name ref $ \store () -> do
                 selectionBox_ (store ^. dt . NodeEditor.selectionBox)
         div_
             [ "className" $= "plane plane--nodes"
-            , "key"       $= "plane"
+            , "key"       $= "nodes"
             , "style"     @= Aeson.object [ "transform" Aeson..= transform ]
             ] $ do
-                forM_ (store ^. dt . NodeEditor.nodes . to HashMap.elems) $ \nodeRef -> node_ nodeRef
+                forM_ (store ^. dt . NodeEditor.nodes . to HashMap.toList) $ uncurry node_
 
 nodeEditor_ :: Ref NodeEditor -> ReactElementM ViewEventHandler ()
-nodeEditor_ ref = React.view (nodeEditor ref) () mempty
+nodeEditor_ ref = React.viewWithSKey (nodeEditor ref) name () mempty
