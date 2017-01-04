@@ -30,21 +30,40 @@ connection connectionRef = React.defineControllerView
             src        = connection ^. Connection.from
             dst        = connection ^. Connection.to
             color      = connection ^. Connection.color
-            x1         = fromString $ showSvg $ src ^. x
-            y1         = fromString $ showSvg $ src ^. y
-            x2         = fromString $ showSvg $ dst ^. x
-            y2         = fromString $ showSvg $ dst ^. y
+
+            x1         = src ^. x
+            y1         = src ^. y
+            x2         = (x1 + x2') / 2
+            y2         = (y1 + y2') / 2
+
+            x1'        = x2
+            y1'        = y2
+            x2'        = dst ^. x 
+            y2'        = dst ^. y
+
             width      = fromString $ show connectionWidth
-        line_
-            [ onMouseDown $ \e m -> stopPropagation e : dispatch connectionRef (UI.ConnectionEvent $ Connection.ModifyConnection m connId)
-            --, "className"   $= (fromString $ showSvg $ nodeToNodeAngle src dst)
-            , "x1"          $= x1
-            , "y1"          $= y1
-            , "x2"          $= x2
-            , "y2"          $= y2
-            , "stroke"      $= toJSString color
-            , "strokeWidth" $= width
-            ] mempty
+        g_ [ "className" $= "connection" ] $ do
+            line_
+                [ onMouseDown $ \e m -> stopPropagation e : dispatch connectionRef (UI.ConnectionEvent $ Connection.ModifyConnection m connId)
+                , "className"   $= "connection__src"
+                , "x1"          $= (fromString $ showSvg x1)
+                , "y1"          $= (fromString $ showSvg y1)
+                , "x2"          $= (fromString $ showSvg x2)
+                , "y2"          $= (fromString $ showSvg y2)
+                , "stroke"      $= toJSString color
+                , "strokeWidth" $= width
+                ] mempty
+            line_
+                [ onMouseDown $ \e m -> stopPropagation e : dispatch connectionRef (UI.ConnectionEvent $ Connection.ModifyConnection m connId)
+                , "className"   $= "connection__dst"
+                , "x1"          $= (fromString $ showSvg x1')
+                , "y1"          $= (fromString $ showSvg y1')
+                , "x2"          $= (fromString $ showSvg x2')
+                , "y2"          $= (fromString $ showSvg y2')
+                , "stroke"      $= toJSString color
+                , "strokeWidth" $= width
+                ] mempty
+
 
 connection_ :: InPortRef -> Ref Connection -> ReactElementM ViewEventHandler ()
 connection_ inPortRef connectionRef = React.viewWithSKey (connection connectionRef) (fromString $ show inPortRef) () mempty
