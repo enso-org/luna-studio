@@ -79,7 +79,9 @@ showErrorSep sep err = case err of
 nodeError_ :: LunaError.Error TypeRep -> ReactElementM ViewEventHandler ()
 nodeError_ err = do
     let message = wrapLines Style.errorMessageWrapMargin $ showErrorSep "\n" err
-    div_ [ "className" $= "vis vis--error" ] $ elemString message
+    div_ [ "key"       $= "error"
+         , "className" $= "vis vis--error" ] $
+        elemString message
 
 nodeValues_ :: [Value] -> ReactElementM ViewEventHandler ()
 nodeValues_ =

@@ -66,7 +66,7 @@ nodeEditor ref = React.defineControllerView name ref $ \store () -> do
 
             g_ [ "key"       $= "connections"
                , "className" $= "connections" ] $ do
-                forM_ (store ^. dt . NodeEditor.connections . to HashMap.elems) $ \connectionRef -> connection_ connectionRef
+                forM_ (store ^. dt . NodeEditor.connections . to HashMap.toList) $ uncurry connection_
                 forM_ (store ^. dt . NodeEditor.currentConnection) $ \connectionRef -> currentConnection_ connectionRef
                 selectionBox_ (store ^. dt . NodeEditor.selectionBox)
         div_

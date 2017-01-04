@@ -37,4 +37,4 @@ selectionBox ref = React.defineControllerView name ref $ \store () -> do
           ] mempty
 
 selectionBox_ :: Ref SelectionBox -> ReactElementM ViewEventHandler ()
-selectionBox_ ref = React.view (selectionBox ref) () mempty
+selectionBox_ ref = React.viewWithSKey (selectionBox ref) name () mempty

@@ -1,6 +1,10 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Luna.Studio.React.View.Connection where
 
+import           React.Flux
+import qualified React.Flux                         as React
+
+import           Empire.API.Data.PortRef            (InPortRef)
 import qualified Event.UI                           as UI
 import           Luna.Studio.Data.Angle             (Angle)
 import           Luna.Studio.Data.Color             (Color, toJSString)
@@ -11,9 +15,7 @@ import           Luna.Studio.React.Model.Connection (Connection, CurrentConnecti
 import qualified Luna.Studio.React.Model.Connection as Connection
 import           Luna.Studio.React.Store            (Ref, dispatch, dt)
 import qualified Luna.Studio.React.Store            as Store
-import           Luna.Studio.React.View.Global      --(connectionWidth, showSvg)
-import           React.Flux
-import qualified React.Flux                         as React
+import           Luna.Studio.React.View.Global
 
 
 name :: JSString
@@ -44,8 +46,8 @@ connection connectionRef = React.defineControllerView
             , "strokeWidth" $= width
             ] mempty
 
-connection_ :: Ref Connection -> ReactElementM ViewEventHandler ()
-connection_ connectionRef = React.view (connection connectionRef) () mempty
+connection_ :: InPortRef -> Ref Connection -> ReactElementM ViewEventHandler ()
+connection_ inPortRef connectionRef = React.viewWithSKey (connection connectionRef) (fromString $ show inPortRef) () mempty
 
 
 currentConnection :: Ref CurrentConnection -> ReactView ()
@@ -70,4 +72,4 @@ currentConnection connectionRef = React.defineControllerView
             ] mempty
 
 currentConnection_ :: Ref CurrentConnection -> ReactElementM ViewEventHandler ()
-currentConnection_ connectionRef = React.view (currentConnection connectionRef) () mempty
+currentConnection_ connectionRef = React.viewWithSKey (currentConnection connectionRef) "current-connection" () mempty

@@ -26,27 +26,32 @@ searcher ref = React.defineControllerView
         let s = store ^. dt
             pos = s ^. Searcher.position
         if s ^. Searcher.visible then do
-            div_ [ "className" $= "searcher"
+            div_ [ "key"       $= name
+                 , "className" $= name
                  , "style"     @= Aeson.object [ "top"  Aeson..= (show (pos ^. y) <> "px" :: String)
                                                , "left" Aeson..= (show (pos ^. x) <> "px" :: String)
                                                ]
-                 , "key" $= "searcher"
                  ] $ do
                     input_
-                        [ "id" $= "focus-searcher"
+                        [ "key"   $= "input"
+                        , "id"    $= "focus-searcher"
                         , "value" $= fromString (unpack $ s ^. Searcher.input)
                         , onMouseDown $ \e _ -> [stopPropagation e]
                         , onKeyDown   $ \e k ->  stopPropagation e : dispatch ref (UI.SearcherEvent $ KeyDown k)
                         , onChange    $ \e -> let val = target e "value" in dispatch ref $ UI.SearcherEvent $ InputChanged $ fromString val
                         ]
-                    div_ ["className" $= "searcher-results"] $
+                    div_ [ "key"       $= "results"
+                         , "className" $= "searcher-results"] $
                         forM_ (zip (s ^. Searcher.results) [0..]) $ \(result, idx) ->
-                            div_ ["className" $= if idx == s ^. Searcher.selected then "result-selected" else "result"] $ do
-                                div_ ["className" $= "result-prefix"] $
+                            div_ [ "key" $= fromString (show idx)
+                                 , "className" $= if idx == s ^. Searcher.selected then "result-selected" else "result"] $ do
+                                div_ ["key" $= "prefix"
+                                     ,"className" $= "result-prefix"] $
                                     elemString $ fromString $ unpack (result ^. Result.prefix) <> "."
-                                div_ ["className" $= "result-name"] $
+                                div_ ["key" $= "name"
+                                     ,"className" $= "result-name"] $
                                     elemString $ fromString $ unpack $ result ^. Result.name
-          else div_ ["key" $= "searcher"] mempty
+          else div_ ["key" $= name ] mempty
 
 
 searcher_ :: Ref Searcher -> ReactElementM ViewEventHandler ()
