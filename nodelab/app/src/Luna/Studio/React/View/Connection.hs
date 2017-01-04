@@ -30,36 +30,32 @@ connection connectionRef = React.defineControllerView
             src        = connection ^. Connection.from
             dst        = connection ^. Connection.to
             color      = connection ^. Connection.color
-
-            x1         = src ^. x
-            y1         = src ^. y
-            x2         = (x1 + x2') / 2
-            y2         = (y1 + y2') / 2
-
-            x1'        = x2
-            y1'        = y2
-            x2'        = dst ^. x 
-            y2'        = dst ^. y
+            srcX       = src ^. x
+            srcY       = src ^. y
+            dstX       = dst ^. x
+            dstY       = dst ^. y
+            midX       = (srcX + dstX) / 2
+            midY       = (srcY + dstY) / 2
 
             width      = fromString $ show connectionWidth
         g_ [ "className" $= "connection" ] $ do
             line_
                 [ onMouseDown $ \e m -> stopPropagation e : dispatch connectionRef (UI.ConnectionEvent $ Connection.ModifyConnection m connId)
                 , "className"   $= "connection__src"
-                , "x1"          $= (fromString $ showSvg x1)
-                , "y1"          $= (fromString $ showSvg y1)
-                , "x2"          $= (fromString $ showSvg x2)
-                , "y2"          $= (fromString $ showSvg y2)
+                , "x1"          $= (fromString $ showSvg srcX)
+                , "y1"          $= (fromString $ showSvg srcY)
+                , "x2"          $= (fromString $ showSvg midX)
+                , "y2"          $= (fromString $ showSvg midY)
                 , "stroke"      $= toJSString color
                 , "strokeWidth" $= width
                 ] mempty
             line_
                 [ onMouseDown $ \e m -> stopPropagation e : dispatch connectionRef (UI.ConnectionEvent $ Connection.ModifyConnection m connId)
                 , "className"   $= "connection__dst"
-                , "x1"          $= (fromString $ showSvg x1')
-                , "y1"          $= (fromString $ showSvg y1')
-                , "x2"          $= (fromString $ showSvg x2')
-                , "y2"          $= (fromString $ showSvg y2')
+                , "x1"          $= (fromString $ showSvg midX)
+                , "y1"          $= (fromString $ showSvg midY)
+                , "x2"          $= (fromString $ showSvg dstX)
+                , "y2"          $= (fromString $ showSvg dstY)
                 , "stroke"      $= toJSString color
                 , "strokeWidth" $= width
                 ] mempty
