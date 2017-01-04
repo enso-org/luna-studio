@@ -22,7 +22,7 @@ logger = Logger.getLogger $(Logger.moduleName)
 
 
 handleCreateLibrary :: Request CreateLibrary.Request -> StateT Env BusT ()
-handleCreateLibrary req@(Request _ request) = do
+handleCreateLibrary req@(Request _ _ request) = do
     currentEmpireEnv <- use Env.empireEnv
     empireNotifEnv   <- use Env.empireNotif
     (result, newEmpireEnv) <- liftIO $ Empire.runEmpire empireNotifEnv currentEmpireEnv $ Library.createLibrary
@@ -37,7 +37,7 @@ handleCreateLibrary req@(Request _ request) = do
             sendToBus' $ CreateLibrary.Update libraryId $ DataLibrary.toAPI library
 
 handleListLibraries :: Request ListLibraries.Request -> StateT Env BusT ()
-handleListLibraries req@(Request _ request) = do
+handleListLibraries req@(Request _ _ request) = do
     currentEmpireEnv <- use Env.empireEnv
     empireNotifEnv   <- use Env.empireNotif
     (result, newEmpireEnv) <- liftIO $ Empire.runEmpire empireNotifEnv currentEmpireEnv $ Library.listLibraries

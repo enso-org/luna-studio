@@ -26,7 +26,7 @@ logger = Logger.getLogger $(Logger.moduleName)
 
 
 handleCreateProject :: Request CreateProject.Request -> StateT Env BusT ()
-handleCreateProject req@(Request _ request) = do
+handleCreateProject req@(Request _ _ request) = do
     currentEmpireEnv <- use Env.empireEnv
     empireNotifEnv   <- use Env.empireNotif
     (result, newEmpireEnv) <- liftIO $ Empire.runEmpire empireNotifEnv currentEmpireEnv $ do
@@ -65,7 +65,7 @@ sendListProjectsUpdate = do
             sendToBus' $ ListProjects.Update $ (_2 %~ DataProject.toAPI) <$> projectList
 
 handleExportProject :: Request ExportProject.Request -> StateT Env BusT ()
-handleExportProject req@(Request _ (ExportProject.Request projectId)) = do
+handleExportProject req@(Request _ _ (ExportProject.Request projectId)) = do
     currentEmpireEnv <- use Env.empireEnv
     empireNotifEnv   <- use Env.empireNotif
     (result, newEmpireEnv) <- liftIO $ Empire.runEmpire empireNotifEnv currentEmpireEnv $ Persistence.exportProject projectId
@@ -75,7 +75,7 @@ handleExportProject req@(Request _ (ExportProject.Request projectId)) = do
             replyResult req () $ ExportProject.Result projectData
 
 handleImportProject :: Request ImportProject.Request -> StateT Env BusT ()
-handleImportProject req@(Request _ (ImportProject.Request projectData)) = do
+handleImportProject req@(Request _ _ (ImportProject.Request projectData)) = do
     currentEmpireEnv <- use Env.empireEnv
     empireNotifEnv   <- use Env.empireNotif
     (result, newEmpireEnv) <- liftIO $ Empire.runEmpire empireNotifEnv currentEmpireEnv $ Persistence.importProject projectData

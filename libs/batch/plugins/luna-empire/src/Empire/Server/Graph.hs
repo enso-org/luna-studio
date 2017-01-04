@@ -116,7 +116,7 @@ forceTC location = do
     void $ liftIO $ Empire.runEmpire empireNotifEnv currentEmpireEnv $ Graph.typecheck location
 
 modifyGraph :: forall req inv res d. (G.GraphRequest req, Response.ResponseResult req inv res ) => (req -> Empire (inv, res)) -> (Request req -> inv -> res -> StateT Env BusT ()) -> Request req -> StateT Env BusT ()
-modifyGraph action success req@(Request uuid request) = do
+modifyGraph action success req@(Request uuid guiID request) = do
     currentEmpireEnv <- use Env.empireEnv
     empireNotifEnv   <- use Env.empireNotif
     (result, newEmpireEnv) <- liftIO $ Empire.runEmpire empireNotifEnv currentEmpireEnv $ action request
@@ -129,7 +129,7 @@ modifyGraph action success req@(Request uuid request) = do
             saveCurrentProject $ request ^. G.location
 
 modifyGraphOk :: forall req inv res d. (Bin.Binary req, G.GraphRequest req, Response.ResponseResult req inv res, Response.ResponseResult req inv ()) => (req -> Empire (inv, res)) -> (req -> inv -> res -> StateT Env BusT ()) -> Request req -> StateT Env BusT ()
-modifyGraphOk action success = modifyGraph action (\req@(Request uuid request) inv res -> replyOk req inv >> success request inv res)
+modifyGraphOk action success = modifyGraph action (\req@(Request uuid guiID request) inv res -> replyOk req inv >> success request inv res)
 
 -- helpers
 
@@ -164,7 +164,7 @@ connectNodes :: GraphLocation -> Text -> NodeId -> NodeId -> StateT Env BusT ()
 connectNodes location expr dstNodeId srcNodeId = do
     let exprCall = head $ splitOneOf " ." $ Text.unpack expr
         inPort = if exprCall `elem` stdlibFunctions then Arg 0 else Self
-        connectRequest = Request UUID.nil $ Connect.Request location (OutPortRef srcNodeId All) (InPortRef dstNodeId inPort)
+        connectRequest = Request UUID.nil Nothing $ Connect.Request location (OutPortRef srcNodeId All) (InPortRef dstNodeId inPort)
     handleConnectReq False connectRequest -- TODO: refactor (we should not call handlers from handlers)
     forceTC location
 
@@ -177,7 +177,7 @@ handleAddNode :: Request AddNode.Request -> StateT Env BusT ()
 handleAddNode = modifyGraph (mtuple action) success where
     action (AddNode.Request location nodeType nodeMeta connectTo nodeId) = case nodeType of
         AddNode.ExpressionNode expression -> addExpressionNode location expression nodeMeta connectTo nodeId
-    success request@(Request _ req@(AddNode.Request location nodeType nodeMeta connectTo nodeId)) _ node = do
+    success request@(Request _ _ req@(AddNode.Request location nodeType nodeMeta connectTo nodeId)) _ node = do
         replyResult request () node
         sendToBus' $ AddNode.Update location node
         case nodeType of
@@ -186,7 +186,7 @@ handleAddNode = modifyGraph (mtuple action) success where
 handleAddSubgraph :: Request AddSubgraph.Request -> StateT Env BusT ()
 handleAddSubgraph = modifyGraph (mtuple action) success where
     action (AddSubgraph.Request location nodes connections saveNodeIds) = Graph.addSubgraph location nodes connections saveNodeIds
-    success request@(Request _ req@(AddSubgraph.Request location nodes connections saveNodeIds)) _ idMap   = do
+    success request@(Request _ _ req@(AddSubgraph.Request location nodes connections saveNodeIds)) _ idMap   = do
         replyResult request () idMap
 
 handleRemoveNodes :: Request RemoveNodes.Request -> StateT Env BusT ()
@@ -206,7 +206,7 @@ handleUpdateNodeExpression = modifyGraph action success where
             inverse = UpdateNodeExpression.Inverse (Text.pack oldExpr)
             res = Graph.updateNodeExpression location nodeId newNodeId expression
         (,) <$> pure inverse <*> res
-    success request@(Request _ req@(UpdateNodeExpression.Request location nodeId expression)) _ nodeMay = do
+    success request@(Request _ _ req@(UpdateNodeExpression.Request location nodeId expression)) _ nodeMay = do
         withJust nodeMay $ \node -> do
             sendToBus' $ AddNode.Update location node
             sendToBus' $ RemoveNodes.Update location [nodeId]
@@ -265,14 +265,14 @@ handleGetProgram = modifyGraph (mtuple action) success where
     success req _ res = replyResult req () res
 
 handleDumpGraphViz :: Request DumpGraphViz.Request -> StateT Env BusT ()
-handleDumpGraphViz (Request _ request) = do
+handleDumpGraphViz (Request _ _ request) = do
     let location = request ^. DumpGraphViz.location
     currentEmpireEnv <- use Env.empireEnv
     empireNotifEnv   <- use Env.empireNotif
     void $ liftIO $ Empire.runEmpire empireNotifEnv currentEmpireEnv $ Graph.dumpGraphViz location
 
 handleTypecheck :: Request TypeCheck.Request -> StateT Env BusT ()
-handleTypecheck req@(Request _ request) = do
+handleTypecheck req@(Request _ _ request) = do
     let location = request ^. TypeCheck.location
     currentEmpireEnv <- use Env.empireEnv
     empireNotifEnv   <- use Env.empireNotif

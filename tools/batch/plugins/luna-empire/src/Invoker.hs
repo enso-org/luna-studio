@@ -132,7 +132,7 @@ main = do
 sendToBus :: (Topic.MessageTopic (Request a), Bin.Binary a) => EP.BusEndPoints -> a -> IO ()
 sendToBus endPoints msg = do
   uuid <- UUID.nextRandom
-  let msg' = Request uuid msg
+  let msg' = Request uuid Nothing msg
   void $ Bus.runBus endPoints $ Bus.send Flag.Enable $ Message.Message (Topic.topic msg') $ toStrict . Bin.encode $ msg'
 
 addNode :: EP.BusEndPoints -> GraphLocation -> String -> Double -> Double -> NodeId -> IO ()
