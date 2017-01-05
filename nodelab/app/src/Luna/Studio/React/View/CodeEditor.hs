@@ -18,8 +18,12 @@ name = "code-editor"
 
 codeEditor :: Ref CodeEditor -> ReactView ()
 codeEditor ref = React.defineControllerView name ref $ \store () -> do
+    let isVisible = store ^. dt . CodeEditor.visible
+        showFlag  = if isVisible then " code-editor--expanded" else " code-editor--collapsed"
+        classes   = name <> showFlag
     div_ [ "key"       $= name
-         , "className" $= name] $ do
+         , "className" $= classes
+         ] $ do
         div_
             [ "key"       $= "editor"
             , "id"        $= "editor"

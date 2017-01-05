@@ -67,7 +67,7 @@ body {
     height:     40px;
     background: #282828;
     overflow:   hidden;
-    cursor:     ew-resize;
+    cursor:     pointer;
     border-radius: 3px;
 }
 
@@ -77,9 +77,12 @@ body {
 }
 
 .code-editor {
-    flex:      1 auto;
-    min-width: 200px;
-    display:   none;
+    width: 30%;
+    background: rgb(30, 30, 30);
+    z-index: 10;
+}
+.code-editor--collapsed {
+    display: none;
 }
 
 .searcher {
