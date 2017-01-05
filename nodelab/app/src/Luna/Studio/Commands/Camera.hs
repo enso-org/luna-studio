@@ -43,7 +43,7 @@ minCamFactor, maxCamFactor, dragZoomSpeed, wheelZoomSpeed, panStep, zoomFactorSt
 minCamFactor   = 0.2
 maxCamFactor   = 8
 dragZoomSpeed  = 512
-wheelZoomSpeed = 64
+wheelZoomSpeed = 512
 panStep        = 50
 zoomFactorStep = 1.1
 padding :: Vector2 Double
@@ -164,8 +164,7 @@ resetZoom = Global.withNodeEditor $ Store.modifyM_ $ do
     NodeEditor.screenTransform . screenToLogical %= (setElem 1 (1,1) . setElem 1 (2,2))
 
 wheelZoom :: ScreenPosition -> Double -> Command State ()
-wheelZoom pos delta = zoomCamera pos (1 + delta / wheelZoomSpeed)
-
+wheelZoom pos delta = zoomCamera pos (1 - delta / wheelZoomSpeed)
 
 
 autoZoom :: Command State ()
