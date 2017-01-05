@@ -44,7 +44,7 @@ startDragFromPort evt portRef = do
     withJust maySrcPos $ \srcPos -> do
         mayColor  <- getCurrentConnectionColor portRef
         withJust mayColor $ \color -> do
-            let connection = ConnectionModel.CurrentConnection portRef True srcPos mousePos False color
+            let connection = ConnectionModel.CurrentConnection portRef srcPos mousePos color
             Global.withNodeEditor $ Store.modifyM_ $ do
                 connectionRef <- lift $ Store.create connection
                 NodeEditor.currentConnection ?= connectionRef

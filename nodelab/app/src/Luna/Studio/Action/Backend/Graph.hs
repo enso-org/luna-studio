@@ -29,6 +29,7 @@ import qualified Event.Event                           as Event
 
 import           Luna.Studio.Action.Backend.Common     (doNothing, handleResponse)
 import           Luna.Studio.Commands.Batch            (collaborativeModify, requestCollaborationRefresh)
+import           Luna.Studio.Commands.Camera           (autoZoom)
 import qualified Luna.Studio.Commands.CodeEditor       as CodeEditor
 import           Luna.Studio.Commands.Command          (Command)
 import           Luna.Studio.Commands.Graph.Connect    (localConnectNodes, updateConnectionsForNodes)
@@ -59,23 +60,23 @@ isCurrentLocationAndGraphLoaded location = do
 toAction :: Event.Event -> Maybe (Command State ())
 toAction (Event.Batch ev) = Just $ case ev of
     ProgramFetched response -> handleResponse response $ \_ result -> do
-            let location = response ^. Response.request . GetProgram.location
-            isGraphLoaded  <- use $ Global.workspace . Workspace.isGraphLoaded
-            isGoodLocation <- isCurrentLocation location
-            when (isGoodLocation && not isGraphLoaded) $ do
-                let nodes       = result ^. GetProgram.graph . Graph.nodes
-                    connections = result ^. GetProgram.graph . Graph.connections
-                    code        = result ^. GetProgram.code
-                    nsData      = result ^. GetProgram.nodeSearcherData
-                    breadcrumb  = result ^. GetProgram.breadcrumb
+        let location = response ^. Response.request . GetProgram.location
+        isGraphLoaded  <- use $ Global.workspace . Workspace.isGraphLoaded
+        isGoodLocation <- isCurrentLocation location
+        when (isGoodLocation && not isGraphLoaded) $ do
+            let nodes       = result ^. GetProgram.graph . Graph.nodes
+                connections = result ^. GetProgram.graph . Graph.connections
+                code        = result ^. GetProgram.code
+                nsData      = result ^. GetProgram.nodeSearcherData
+                breadcrumb  = result ^. GetProgram.breadcrumb
 
-                Global.workspace . Workspace.nodeSearcherData .= nsData
-                setCurrentBreadcrumb breadcrumb
-                renderGraph nodes connections
-                -- autoZoom --TODO[react]
-                CodeEditor.setCode code
-                Global.workspace . Workspace.isGraphLoaded .= True
-                requestCollaborationRefresh
+            Global.workspace . Workspace.nodeSearcherData .= nsData
+            setCurrentBreadcrumb breadcrumb
+            renderGraph nodes connections
+            autoZoom
+            CodeEditor.setCode code
+            Global.workspace . Workspace.isGraphLoaded .= True
+            requestCollaborationRefresh
 
     AddNodeResponse response@(Response.Response uuid (AddNode.Request loc _ _ _) _) -> do
         shouldProcess   <- isCurrentLocationAndGraphLoaded loc
@@ -104,10 +105,7 @@ toAction (Event.Batch ev) = Just $ case ev of
 
     NodesConnected update -> do
         whenM (isCurrentLocation $ update ^. Connect.location') $ do
-            -- TODO[react]: Find out correct way to do this
-            localConnectNodes (update ^. Connect.src') (update ^. Connect.dst')
-            return ()
-            -- updateConnection connectionId
+            void $ localConnectNodes (update ^. Connect.src') (update ^. Connect.dst')
 
     NodesDisconnected update -> do
         whenM (isCurrentLocation $ update ^. Disconnect.location') $ do
