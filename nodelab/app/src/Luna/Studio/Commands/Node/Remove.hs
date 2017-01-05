@@ -34,12 +34,13 @@ performRemoval nodeIds = do
     GA.sendEvent $ GA.RemoveNode $ length nodeIds
 
 localRemoveNodes :: [NodeId] -> Command State ()
-localRemoveNodes nodeIds = forM_ nodeIds $ \nodeId -> do
+localRemoveNodes nodeIds = do
     selectedNodesIds <- map (^. widget . NodeModel.nodeId) <$> selectedNodes
     let selectPrevious =  Set.isSubsetOf (Set.fromList selectedNodesIds) $ Set.fromList nodeIds
-    danglingConns <- uses Global.graph $ Graph.connectionIdsContainingNode nodeId
+    danglingConns <- concat <$> forM nodeIds (uses Global.graph . Graph.connectionIdsContainingNode)
     localDisconnectAll danglingConns
-    Global.graph %= Graph.removeNode nodeId
-    Global.withNodeEditor $ Store.modify_ $
-        NodeEditor.nodes . at nodeId .~ Nothing
+    forM_ nodeIds $ \nodeId -> Global.graph %= Graph.removeNode nodeId
+    Global.withNodeEditor $ Store.modifyM_ $
+        forM_ nodeIds $ \nodeId ->
+            NodeEditor.nodes . at nodeId .= Nothing
     when selectPrevious selectPreviousNodes
