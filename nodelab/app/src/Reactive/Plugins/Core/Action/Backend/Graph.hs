@@ -81,7 +81,7 @@ toAction (Event.Batch ev) = Just $ case ev of
                 Global.workspace . Workspace.isGraphLoaded .= True
                 requestCollaborationRefresh
 
-    AddNodeResponse response@(Response.Response uuid (AddNode.Request loc _ _ _ _) _ _) -> do
+    AddNodeResponse response@(Response.Response uuid guiID (AddNode.Request loc _ _ _ _) _ _) -> do
         shouldProcess   <- isCurrentLocationAndGraphLoaded loc
         correctLocation <- isCurrentLocation loc
         shouldSelect    <- isOwnRequest uuid
@@ -92,7 +92,7 @@ toAction (Event.Batch ev) = Just $ case ev of
                 collaborativeModify [nodeId]
                 when shouldSelect $ selectNodes [nodeId]
 
-    AddSubgraphResponse response@(Response.Response uuid (AddSubgraph.Request loc nodes connections _) _ (Response.Ok idsMaybeMap) ) -> do
+    AddSubgraphResponse response@(Response.Response uuid guiID (AddSubgraph.Request loc nodes connections _) _ (Response.Ok idsMaybeMap) ) -> do
         shouldProcess   <- isCurrentLocationAndGraphLoaded loc
         correctLocation <- isCurrentLocation loc
         case idsMaybeMap of

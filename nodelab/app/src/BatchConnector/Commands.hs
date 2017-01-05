@@ -45,60 +45,60 @@ import qualified Empire.API.Project.ListProjects       as ListProjects
 withLibrary :: Workspace -> (GraphLocation -> a) -> a
 withLibrary w f = f (w ^. Workspace.currentLocation)
 
-addNode' :: Maybe NodeId -> Text -> NodeMeta -> Maybe NodeId -> Workspace -> UUID -> IO ()
-addNode' maybeNodeId expression meta connectTo workspace uuid = sendRequest uuid $ (withLibrary workspace AddNode.Request) (AddNode.ExpressionNode expression) meta connectTo maybeNodeId
+addNode' :: Maybe NodeId -> Text -> NodeMeta -> Maybe NodeId -> Workspace -> UUID -> Maybe UUID -> IO ()
+addNode' maybeNodeId expression meta connectTo workspace uuid guiID = sendRequest uuid guiID $ (withLibrary workspace AddNode.Request) (AddNode.ExpressionNode expression) meta connectTo maybeNodeId
 
-addNode :: Text -> NodeMeta -> Maybe NodeId -> Workspace -> UUID -> IO ()
-addNode expression meta connectTo workspace uuid = addNode' Nothing expression meta connectTo workspace uuid
+addNode :: Text -> NodeMeta -> Maybe NodeId -> Workspace -> UUID -> Maybe UUID -> IO ()
+addNode expression meta connectTo workspace uuid guiID = addNode' Nothing expression meta connectTo workspace uuid guiID
 
-addSubgraph :: [Node] -> [Connection] -> Workspace -> UUID -> IO ()
-addSubgraph nodes connections workspace uuid = addSubgraph' nodes connections workspace uuid False
+addSubgraph :: [Node] -> [Connection] -> Workspace -> UUID -> Maybe UUID -> IO ()
+addSubgraph nodes connections workspace uuid guiID = addSubgraph' nodes connections workspace uuid guiID False
 
-addSubgraph' :: [Node] -> [Connection] -> Workspace -> UUID  -> Bool -> IO ()
-addSubgraph' nodes connections workspace uuid saveNodeIds = sendRequest uuid $ (withLibrary workspace AddSubgraph.Request) nodes connections saveNodeIds
+addSubgraph' :: [Node] -> [Connection] -> Workspace -> UUID -> Maybe UUID -> Bool -> IO ()
+addSubgraph' nodes connections workspace uuid guiID saveNodeIds = sendRequest uuid guiID $ (withLibrary workspace AddSubgraph.Request) nodes connections saveNodeIds
 
-createProject :: Text -> UUID -> IO ()
-createProject name uuid = sendRequest uuid $ CreateProject.Request $ Text.unpack name
+createProject :: Text -> UUID -> Maybe UUID -> IO ()
+createProject name uuid guiID = sendRequest uuid guiID $ CreateProject.Request $ Text.unpack name
 
-listProjects :: UUID -> IO ()
-listProjects uuid = sendRequest uuid ListProjects.Request
+listProjects :: UUID -> Maybe UUID -> IO ()
+listProjects uuid guiID = sendRequest uuid guiID ListProjects.Request
 
-createLibrary :: Text -> Text -> Workspace -> UUID -> IO ()
-createLibrary name path workspace uuid = sendRequest uuid $ CreateLibrary.Request (workspace ^. Workspace.currentLocation . GraphLocation.projectId)
+createLibrary :: Text -> Text -> Workspace -> UUID -> Maybe UUID -> IO ()
+createLibrary name path workspace uuid guiID= sendRequest uuid guiID $ CreateLibrary.Request (workspace ^. Workspace.currentLocation . GraphLocation.projectId)
                                                                                   (Just $ Text.unpack name)
                                                                                   (Text.unpack path)
-listLibraries :: ProjectId -> UUID -> IO ()
-listLibraries projectId uuid = sendRequest uuid $ ListLibraries.Request projectId
+listLibraries :: ProjectId -> UUID -> Maybe UUID -> IO ()
+listLibraries projectId uuid guiID = sendRequest uuid guiID $ ListLibraries.Request projectId
 
-getProgram :: Workspace -> UUID -> IO ()
-getProgram workspace uuid = sendRequest uuid $ withLibrary workspace GetProgram.Request
+getProgram :: Workspace -> UUID -> Maybe UUID -> IO ()
+getProgram workspace uuid guiID = sendRequest uuid guiID $ withLibrary workspace GetProgram.Request
 
-updateNodeExpression :: NodeId -> Text -> Workspace -> UUID -> IO ()
-updateNodeExpression nodeId expression workspace uuid = sendRequest uuid $ withLibrary workspace UpdateNodeExpression.Request nodeId expression
+updateNodeExpression :: NodeId -> Text -> Workspace -> UUID -> Maybe UUID -> IO ()
+updateNodeExpression nodeId expression workspace uuid guiID = sendRequest uuid guiID $ withLibrary workspace UpdateNodeExpression.Request nodeId expression
 
-updateNodeMeta :: [(NodeId, NodeMeta)] -> Workspace -> UUID -> IO ()
-updateNodeMeta updates workspace uuid = sendRequest uuid $ withLibrary workspace UpdateNodeMeta.Request updates
+updateNodeMeta :: [(NodeId, NodeMeta)] -> Workspace -> UUID -> Maybe UUID -> IO ()
+updateNodeMeta updates workspace uuid guiID = sendRequest uuid guiID $ withLibrary workspace UpdateNodeMeta.Request updates
 
-renameNode :: NodeId -> Text -> Workspace -> UUID -> IO ()
-renameNode nid name w uuid = sendRequest uuid $ withLibrary w RenameNode.Request nid name
+renameNode :: NodeId -> Text -> Workspace -> UUID -> Maybe UUID -> IO ()
+renameNode nid name w uuid guiID = sendRequest uuid guiID $ withLibrary w RenameNode.Request nid name
 
-setCode :: NodeId -> Text -> Workspace -> UUID -> IO ()
-setCode nid newCode w uuid = sendRequest uuid $ withLibrary w SetCode.Request nid newCode
+setCode :: NodeId -> Text -> Workspace -> UUID -> Maybe UUID -> IO ()
+setCode nid newCode w uuid guiID = sendRequest uuid guiID $ withLibrary w SetCode.Request nid newCode
 
-removeNodes :: [NodeId] -> Workspace -> UUID ->  IO ()
-removeNodes nodeIds workspace uuid = sendRequest uuid $ withLibrary workspace RemoveNodes.Request nodeIds
+removeNodes :: [NodeId] -> Workspace -> UUID -> Maybe UUID ->  IO ()
+removeNodes nodeIds workspace uuid guiID = sendRequest uuid guiID $ withLibrary workspace RemoveNodes.Request nodeIds
 
-connectNodes :: OutPortRef -> InPortRef -> Workspace -> UUID -> IO ()
-connectNodes src dst workspace uuid = sendRequest uuid $ (withLibrary workspace Connect.Request) src dst
+connectNodes :: OutPortRef -> InPortRef -> Workspace -> UUID -> Maybe UUID -> IO ()
+connectNodes src dst workspace uuid guiID = sendRequest uuid guiID $ (withLibrary workspace Connect.Request) src dst
 
-disconnectNodes :: InPortRef -> Workspace -> UUID -> IO ()
-disconnectNodes dst workspace uuid = sendRequest uuid $ withLibrary workspace Disconnect.Request dst
+disconnectNodes :: InPortRef -> Workspace -> UUID -> Maybe UUID -> IO ()
+disconnectNodes dst workspace uuid guiID = sendRequest uuid guiID $ withLibrary workspace Disconnect.Request dst
 
-setDefaultValue :: AnyPortRef -> DefaultValue.PortDefault -> Workspace -> UUID -> IO ()
-setDefaultValue portRef val workspace uuid = sendRequest uuid $ (withLibrary workspace SetDefaultValue.Request) portRef val
+setDefaultValue :: AnyPortRef -> DefaultValue.PortDefault -> Workspace -> UUID -> Maybe UUID -> IO ()
+setDefaultValue portRef val workspace uuid guiID = sendRequest uuid guiID $ (withLibrary workspace SetDefaultValue.Request) portRef val
 
-setInputNodeType :: NodeId -> Text -> Workspace -> UUID -> IO ()
-setInputNodeType nodeId tpe workspace uuid = sendRequest uuid $ (withLibrary workspace SetInputNodeType.Request) nodeId (Text.unpack tpe)
+setInputNodeType :: NodeId -> Text -> Workspace -> UUID -> Maybe UUID -> IO ()
+setInputNodeType nodeId tpe workspace uuid guiID = sendRequest uuid guiID $ (withLibrary workspace SetInputNodeType.Request) nodeId (Text.unpack tpe)
 
 requestCollaborationRefresh :: Collaboration.ClientId -> Workspace -> IO ()
 requestCollaborationRefresh clientId workspace = sendUpdate $ (withLibrary workspace Collaboration.Update) clientId  $ Collaboration.Refresh
@@ -112,17 +112,17 @@ collaborativeModify clientId ids workspace = sendUpdate $ (withLibrary workspace
 cancelCollaborativeTouch :: Collaboration.ClientId -> [NodeId] -> Workspace -> IO ()
 cancelCollaborativeTouch clientId ids workspace = sendUpdate $ (withLibrary workspace Collaboration.Update) clientId $ Collaboration.CancelTouch ids
 
-exportProject :: ProjectId -> UUID -> IO ()
-exportProject pid uuid = sendRequest uuid $ ExportProject.Request pid
+exportProject :: ProjectId -> UUID -> Maybe UUID -> IO ()
+exportProject pid uuid guiID = sendRequest uuid guiID $ ExportProject.Request pid
 
-importProject :: Text -> UUID -> IO ()
-importProject payload uuid = sendRequest uuid $ ImportProject.Request payload
+importProject :: Text -> UUID -> Maybe UUID -> IO ()
+importProject payload uuid guiID = sendRequest uuid guiID $ ImportProject.Request payload
 
-dumpGraphViz :: Workspace -> UUID -> IO ()
-dumpGraphViz workspace uuid = sendRequest uuid $ withLibrary workspace DumpGraphViz.Request
+dumpGraphViz :: Workspace -> UUID -> Maybe UUID -> IO ()
+dumpGraphViz workspace uuid guiID = sendRequest uuid guiID $ withLibrary workspace DumpGraphViz.Request
 
-requestUndo :: UUID -> IO ()
-requestUndo uuid = sendRequest uuid $ Undo.Request Undo.UndoRequest
+requestUndo :: UUID -> Maybe UUID -> IO ()
+requestUndo uuid guiID = sendRequest uuid guiID $ Undo.Request Undo.UndoRequest
 
-requestRedo :: UUID -> IO ()
-requestRedo uuid = sendRequest uuid $ Redo.Request Redo.RedoRequest
+requestRedo :: UUID -> Maybe UUID -> IO ()
+requestRedo uuid guiID = sendRequest uuid guiID $ Redo.Request Redo.RedoRequest

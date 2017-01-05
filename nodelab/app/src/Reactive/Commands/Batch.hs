@@ -19,21 +19,23 @@ import qualified Empire.API.Data.PortRef      as PortRef (dstNodeId, nodeId)
 import           Empire.API.Data.Project      (ProjectId)
 
 
-withWorkspace :: (Workspace -> UUID -> IO ()) -> Command State ()
+withWorkspace :: (Workspace -> UUID -> Maybe UUID -> IO ()) -> Command State ()
 withWorkspace act = do
-    uuid      <- registerRequest
+    uuid       <- registerRequest
+    guiID      <- use $ clientId
     workspace' <- use workspace
-    performIO $ act workspace' uuid
+    performIO $ act workspace' uuid $ Just guiID
 
 withWorkspace' :: (Workspace -> IO ()) -> Command State ()
 withWorkspace' act = do
     workspace' <- use workspace
     performIO $ act workspace'
 
-withUUID :: (UUID -> IO ()) -> Command State ()
+withUUID :: (UUID -> Maybe UUID -> IO ()) -> Command State ()
 withUUID act = do
-    uuid <- registerRequest
-    performIO $ act uuid
+    uuid  <- registerRequest
+    guiID <- use $ clientId
+    performIO $ act uuid $ Just guiID
 
 addNode :: Text -> NodeMeta -> Maybe NodeId -> Command State ()
 addNode = withWorkspace .:. BatchCmd.addNode
