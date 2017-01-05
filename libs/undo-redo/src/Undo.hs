@@ -19,7 +19,7 @@ import           Control.Lens
 import           Control.Monad.Reader
 import           Control.Monad.State
 import           Control.Monad.STM                 (atomically)
-import           Data.ByteString                   (ByteString)
+import           Data.ByteString                   (ByteString, empty)
 import           Data.ByteString.Lazy              (toStrict,fromStrict)
 import           Data.Binary                       (Binary, decode)
 import qualified Data.Binary                       as Bin
@@ -28,7 +28,7 @@ import qualified Data.List as List
 import qualified Data.Map.Strict                   as Map
 import           Data.Map.Strict                   (Map)
 import           Data.Maybe
-import           Data.Set                          hiding (map)
+import qualified Data.Set                          as Set
 import           Data.UUID.Types                       (UUID)
 import           Prologue                          hiding (throwM)
 import Util as Util
@@ -50,6 +50,8 @@ import qualified Empire.API.Graph.Disconnect           as Disconnect
 import qualified Empire.API.Data.PortRef           as PortRef
 import qualified Empire.API.Graph.RemoveNodes      as RemoveNodes
 import qualified Empire.API.Graph.RenameNode       as RenameNode
+import qualified Empire.API.Graph.Undo             as UndoRequest
+import qualified Empire.API.Graph.Redo             as RedoRequest
 import qualified Empire.API.Graph.UpdateNodeExpression as UpdateNodeExpression
 import           Empire.API.Graph.UpdateNodeMeta   (SingleUpdate)
 import qualified Empire.API.Graph.UpdateNodeMeta   as UpdateNodeMeta
@@ -82,8 +84,6 @@ import qualified ZMQ.Bus.Control.Handler.Methods as Methods
 import           Control.Error                   (ExceptT, hoistEither, runExceptT)
 
 import System.IO (stdout,hFlush)
-
-
 
 
 data UndoMessage where
@@ -280,7 +280,7 @@ runUndo endPoints = ZMQ.runZMQ $ do
     ZMQ.connect pushSocket $ EP.pullEndPoint endPoints
 
     let Undo collect = do
-            forever $ do
+             forever $ do
                 msg <- receiveEvent subSocket
                 collectEvents msg clientID pushSocket
         state = UndoState [] [] (Env.BusEnv subSocket pushSocket clientID 0)
@@ -293,51 +293,73 @@ instance Exception BusErrorException
 receive :: ZMQ.Socket z ZMQ.Sub -> Undo z ByteString
 receive sub = Undo $ lift $ lift $ ZMQ.receive sub
 
-receiveEvent :: ZMQ.Socket z ZMQ.Sub -> Undo z MessageFrame --fixme [SB] przenies runBus do runUndo
+isEmpty :: ByteString -> Bool
+isEmpty msg = empty == msg
+
+receiveEvent :: ZMQ.Socket z ZMQ.Sub -> Undo z MessageFrame
 receiveEvent sub = do
-    msg <- receive sub
-    let res = MessageFrame.fromByteString msg
-    case res of
-        Left _ -> throwM BusErrorException
-        Right m -> return m
+    bytes <- receive sub
+    case MessageFrame.fromByteString bytes of
+       Left _ -> throwM BusErrorException
+       Right frame -> do
+           case frame of
+               MessageFrame msg _ _ _ -> do
+                    let emptyMsg = isEmpty $ msg ^. Message.message
+                    if emptyMsg then receiveEvent sub else return frame
 
 collectEvents :: MessageFrame -> Message.ClientID -> ZMQ.Socket z ZMQ.Push -> Undo z ()
-collectEvents (MessageFrame msg corId senderId lastFrm) myId push = do
+collectEvents (MessageFrame msg corId senderId lastFrm) myId push  = do
     let topic   = msg ^. Message.topic
         content = msg ^. Message.message
-    flushHelper $ show $ topic
-    flushHelper "myId: "
-    flushHelper $ show $ myId
-    flushHelper "clientId: "
-    flushHelper $ show $ senderId
+        Request.Request _ guiID (RedoRequest.Request _) = decode . fromStrict $ content
 
     case topic of
         "empire.undo.request" -> do
-            req <- doUndo
-            flushHelper "runUndo"
-            sendUndo req push myId
+            req <- doUndo guiID
+            case req of
+                Just msg -> sendUndo msg push myId
+                Nothing  -> return ()
         "empire.redo.request" -> do
-            req <- doRedo
-            sendRedo req push myId
-        _ -> Control.Monad.State.when (myId /= senderId) $
-                do
-                    collectedMessage topic content
-                    flushHelper "addmsgToQueue"
+            req <- doRedo guiID
+            case req of
+                Just msg -> sendRedo msg push myId
+                Nothing  -> return ()
+        _ -> if (guiID /= Nothing ) then  collectedMessage topic content else return ()
+
+compareId :: Maybe UUID -> UndoMessage -> Bool
+compareId guiID msg =
+    case guiID of
+        Just userID -> case msg of UndoMessage x _ _ _ _ -> x == userID
+        Nothing     -> False
+
+del :: UndoMessage -> UndoMessage -> Bool
+del (UndoMessage a1 _ _ _ _) (UndoMessage a2 _ _ _ _) = (a1 == a2) -- && (b1 == b2) && (c1 == c2) && (d1 == d2)
+
+-- filterUndoList :: UUID -> [UndoMessage] -> (UndoMessage, [UndoMessage])
+-- filterUndoList guiID undoList = do
+--     index <- List.findIndex (compareId guiID) undoList
+--     msg <- undoList !! index
+--     let (ys,zs) = splitAt index undoList   in   ys ++ (tail zs)
+--     return (msg, undoList)
 
 
-doUndo :: MonadState (UndoState z) m => m UndoMessage
-doUndo = do
-    h <- uses undo head
-    redo %= (h :)
-    undo %= tail
-    return h
+doUndo :: MonadState (UndoState z) m => Maybe UUID -> m (Maybe UndoMessage)
+doUndo guiID = do
+    h <- uses undo $ List.find (compareId guiID)
+    case h of
+        Just msg -> do redo %= (msg :)
+                       undo %= List.deleteBy del msg
+                       return $ Just msg
+        Nothing  -> return Nothing
 
-doRedo :: MonadState (UndoState z) m => m UndoMessage
-doRedo = do
-    h <- uses redo head
-    undo %= (h :)
-    redo %= tail
-    return h
+doRedo :: MonadState (UndoState z) m => Maybe UUID -> m (Maybe UndoMessage)
+doRedo guiID = do
+    h <- uses undo $ List.find (compareId guiID)
+    case h of
+        Just msg -> do undo %= (msg :)
+                       redo %= List.deleteBy del msg
+                       return $ Just msg
+        Nothing  -> return Nothing
 
 collectedMessage :: String -> ByteString -> Undo z ()
 collectedMessage topic content = do
