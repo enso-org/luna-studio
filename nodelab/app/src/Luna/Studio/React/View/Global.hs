@@ -82,13 +82,13 @@ nodeToNodeAngle src dst =
         else atan ((srcY - dstY) / (srcX - dstX)) + pi
 
 
-connectionSrc :: Position -> Position -> Int -> Int -> IsSingle -> Position
-connectionSrc src dst _ _ True =
+connectionSrc :: Position -> Position -> Bool -> Bool -> Int -> Int -> IsSingle -> Position
+connectionSrc src dst isSrcExpanded isDstExpanded _ _ True =
     let t  = nodeToNodeAngle src dst
         x' = portRadius * cos t + src ^. x
         y' = portRadius * sin t + src ^. y
     in  Position (Vector2 x' y')
-connectionSrc src dst num numOfPorts _    =
+connectionSrc src dst isSrcExpanded isDstExpanded num numOfPorts _    =
     let a  = portAngleStop  num numOfPorts portRadius
         b  = portAngleStart num numOfPorts portRadius
         t  = nodeToNodeAngle src dst
@@ -103,9 +103,9 @@ connectionSrc src dst num numOfPorts _    =
         y' = portRadius * sin t'' + src ^. y
     in  Position (Vector2 x' y')
 
-connectionDst :: Position -> Position -> Int -> Int -> IsSelf -> Position
-connectionDst src dst _   _          True = dst
-connectionDst src dst num numOfPorts _    =
+connectionDst :: Position -> Position -> Bool -> Bool -> Int -> Int -> IsSelf -> Position
+connectionDst src dst isSrcExpanded isDstExpanded _   _          True = dst
+connectionDst src dst isSrcExpanded isDstExpanded num numOfPorts _    =
     let a  = portAngleStop  num numOfPorts portRadius
         b  = portAngleStart num numOfPorts portRadius
         t  = nodeToNodeAngle src dst
@@ -174,12 +174,14 @@ getConnectionPosition srcPortRef dstPortRef = do
 
     case (maySrcNode, maySrcPort, mayDstNode, mayDstPort) of
         (Just srcNode, Just srcPort, Just dstNode, Just dstPort) -> do
-            let srcPorts   = Map.elems $ srcNode ^. Node.ports
-                dstPorts   = Map.elems $ dstNode ^. Node.ports
-                srcPos     = srcNode ^. Node.position
-                dstPos     = dstNode ^. Node.position
-                srcConnPos = connectionSrc srcPos dstPos (getPortNumber srcPort) (countSameTypePorts srcPort srcPorts) (isPortSingle srcPort srcPorts)
-                dstConnPos = connectionDst srcPos dstPos (getPortNumber dstPort) (countSameTypePorts dstPort dstPorts) (isPortSelf dstPort)
+            let srcPorts      = Map.elems $ srcNode ^. Node.ports
+                dstPorts      = Map.elems $ dstNode ^. Node.ports
+                srcPos        = srcNode ^. Node.position
+                dstPos        = dstNode ^. Node.position
+                isSrcExpanded = srcNode ^. Node.isExpanded
+                isDstExpanded = dstNode ^. Node.isExpanded
+                srcConnPos    = connectionSrc srcPos dstPos isSrcExpanded isDstExpanded (getPortNumber srcPort) (countSameTypePorts srcPort srcPorts) (isPortSingle srcPort srcPorts)
+                dstConnPos    = connectionDst srcPos dstPos isSrcExpanded isDstExpanded (getPortNumber dstPort) (countSameTypePorts dstPort dstPorts) (isPortSelf dstPort)
             return $ Just (srcConnPos, dstConnPos)
         _ -> return Nothing
 
@@ -190,9 +192,10 @@ getCurrentConnectionSrcPosition srcPortRef dstPos = do
 
     case (maySrcNode, maySrcPort) of
         (Just srcNode, Just srcPort) -> do
-            let srcPorts   = Map.elems $ srcNode ^. Node.ports
-                srcPos     = srcNode ^. Node.position
-                srcConnPos = connectionSrc srcPos dstPos (getPortNumber srcPort) (countSameTypePorts srcPort srcPorts) (isPortSingle srcPort srcPorts)
+            let srcPorts      = Map.elems $ srcNode ^. Node.ports
+                srcPos        = srcNode ^. Node.position
+                isSrcExpanded = srcNode ^. Node.isExpanded
+                srcConnPos    = connectionSrc srcPos dstPos isSrcExpanded False (getPortNumber srcPort) (countSameTypePorts srcPort srcPorts) (isPortSingle srcPort srcPorts)
             return $ Just srcConnPos
         _ -> return Nothing
 

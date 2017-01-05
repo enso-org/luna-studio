@@ -50,7 +50,7 @@ localConnectNodes src dst = do
         withJust mayPos $ \(srcPos, dstPos) -> do
             mayColor <- getConnectionColor src
             withJust mayColor $ \color -> Global.withNodeEditor $ Store.modifyM_ $ do
-                let connection = ConnectionModel.Connection connectionId True srcPos dstPos (dst ^. withArrow) color def
+                let connection = ConnectionModel.Connection connectionId srcPos dstPos color
                 connectionRef <- lift $ Store.create connection
                 NodeEditor.connections . at dst ?= connectionRef
     return connectionId
@@ -76,9 +76,6 @@ updateConnection connection = do
         withJust mayPos $ \(from', to') -> do
             mayColor <- getConnectionColor src
             withJust mayColor $ \color -> flip Store.modifyM_ connectionRef $ do
-                ConnectionModel.visible   .= True
                 ConnectionModel.from      .= from'
                 ConnectionModel.to        .= to'
-                ConnectionModel.arrow     .= (connection ^. Connection.dst) ^. withArrow
                 ConnectionModel.color     .= color
-                ConnectionModel.highlight .= def
