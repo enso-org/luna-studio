@@ -121,6 +121,18 @@
         left: 0;
         top: -8px;
     }
+    .port--o {
+        animation-iteration-count: 0;
+        animation-timing-function: ease-in-out;
+        animation-duration:        90ms;
+        animation-name:            outputExpanding;
+        cx:                        225px;
+    }
+}
+
+@keyframes outputExpanding {
+    from { cx:   0px }
+    to   { cx: 225px }
 }
 
 // node expanded
@@ -143,6 +155,9 @@
         display:         flex;
         width:           200px;
         justify-content: space-between;
+    }
+    .row--output-name {
+        justify-content: flex-end;
     }
 }
 
@@ -198,9 +213,9 @@
     position: relative;
     svg {
         position: relative;
-        top: 15px;
-        left: -5px;
-        fill: #666;
+        top:      15px;
+        left:    -5px;
+        fill:     #666;
         overflow: initial;
     }
 }

@@ -39,6 +39,12 @@ showTransformMatrix matrix = (foldl (<>) "matrix3d(" $ intersperse ", " $ map sh
 connectionWidth :: Double
 connectionWidth = 2.6
 
+lineHeight :: Double
+lineHeight = 16.0
+
+nodeExpandedWidth :: Double
+nodeExpandedWidth = 270
+
 nodeRadius :: Double
 nodeRadius = 20
 
