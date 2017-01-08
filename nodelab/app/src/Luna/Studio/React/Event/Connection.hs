@@ -11,9 +11,14 @@ import           Empire.API.Data.PortRef    (AnyPortRef)
 import           Empire.API.JSONInstances   ()
 import           Luna.Studio.Prelude
 
+data ModifiedEnd = Source | Destination deriving (Eq, Generic, NFData, Show, Typeable)
+
+instance ToJSON   ModifiedEnd
+instance FromJSON ModifiedEnd
+
 data Event = StartConnection  MouseEvent AnyPortRef
            | EndConnection    MouseEvent AnyPortRef
-           | ModifyConnection MouseEvent ConnectionId
+           | ModifyConnection MouseEvent ConnectionId ModifiedEnd
             deriving (Show, Generic, NFData, Typeable)
 
 instance ToJSON   Event

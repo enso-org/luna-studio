@@ -5,19 +5,19 @@ module Luna.Studio.Commands.Graph.Disconnect
 
 import           Luna.Studio.Prelude
 
-import           Empire.API.Data.Connection (Connection, ConnectionId)
-import qualified Empire.API.Data.Connection as Connection
-import           Empire.API.Data.PortRef    (InPortRef, OutPortRef)
-import qualified Luna.Studio.React.Store                as Store
-import qualified Luna.Studio.React.Model.NodeEditor     as NodeEditor
-import qualified Luna.Studio.Commands.Batch    as BatchCmd
-import           Luna.Studio.Commands.Command  (Command)
-import           Luna.Studio.State.Global      (State)
-import qualified Luna.Studio.State.Global      as Global
-import qualified Luna.Studio.State.Graph       as Graph
+import           Empire.API.Data.Connection         (Connection, ConnectionId)
+import qualified Empire.API.Data.Connection         as Connection
+import           Empire.API.Data.PortRef            (InPortRef, OutPortRef)
+import qualified Luna.Studio.Commands.Batch         as BatchCmd
+import           Luna.Studio.Commands.Command       (Command)
+import qualified Luna.Studio.React.Model.NodeEditor as NodeEditor
+import qualified Luna.Studio.React.Store            as Store
+import           Luna.Studio.State.Global           (State)
+import qualified Luna.Studio.State.Global           as Global
+import qualified Luna.Studio.State.Graph            as Graph
 
 
-
+-- TODO[react]: Is "All" in name necessary?
 localDisconnectAll :: [ConnectionId] -> Command State ()
 localDisconnectAll connectionIds = do
     Global.withNodeEditor $ Store.modifyM_ $

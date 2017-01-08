@@ -2,6 +2,7 @@ module Object.Widget.Connection where
 
 import           Data.Aeson                 (ToJSON)
 import           Empire.API.Data.Connection (ConnectionId)
+import qualified Empire.API.Data.Connection as Empire
 import           Empire.API.Data.PortRef    (AnyPortRef)
 import           Luna.Studio.Data.Color     (Color)
 import           Luna.Studio.Data.Vector    (Position)
@@ -19,6 +20,7 @@ makeLenses ''Connection
 instance ToJSON Connection
 
 data CurrentConnection = CurrentConnection { _srcPortRef          :: AnyPortRef
+                                           , _modifiedConnection  :: Maybe Empire.Connection
                                            , _currentFrom         :: Position
                                            , _currentTo           :: Position
                                            , _currentColor        :: Color

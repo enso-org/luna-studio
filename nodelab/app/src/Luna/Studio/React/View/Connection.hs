@@ -10,6 +10,7 @@ import           Luna.Studio.Data.Angle             (Angle)
 import           Luna.Studio.Data.Color             (Color, toJSString)
 import           Luna.Studio.Data.Vector            (Position, Vector2 (Vector2), x, y)
 import           Luna.Studio.Prelude
+import           Luna.Studio.React.Event.Connection (ModifiedEnd (Destination, Source))
 import qualified Luna.Studio.React.Event.Connection as Connection
 import           Luna.Studio.React.Model.Connection (Connection, CurrentConnection)
 import qualified Luna.Studio.React.Model.Connection as Connection
@@ -40,7 +41,7 @@ connection connectionRef = React.defineControllerView
             width      = fromString $ show connectionWidth
         g_ [ "className" $= "connection" ] $ do
             line_
-                [ onMouseDown $ \e m -> stopPropagation e : dispatch connectionRef (UI.ConnectionEvent $ Connection.ModifyConnection m connId)
+                [ onMouseDown $ \e m -> stopPropagation e : dispatch connectionRef (UI.ConnectionEvent $ Connection.ModifyConnection m connId Source)
                 , "className"   $= "connection__src"
                 , "x1"          $= (fromString $ showSvg srcX)
                 , "y1"          $= (fromString $ showSvg srcY)
@@ -50,7 +51,7 @@ connection connectionRef = React.defineControllerView
                 , "strokeWidth" $= width
                 ] mempty
             line_
-                [ onMouseDown $ \e m -> stopPropagation e : dispatch connectionRef (UI.ConnectionEvent $ Connection.ModifyConnection m connId)
+                [ onMouseDown $ \e m -> stopPropagation e : dispatch connectionRef (UI.ConnectionEvent $ Connection.ModifyConnection m connId Destination)
                 , "className"   $= "connection__dst"
                 , "x1"          $= (fromString $ showSvg midX)
                 , "y1"          $= (fromString $ showSvg midY)
