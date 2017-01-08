@@ -28,7 +28,7 @@ import           Luna.Studio.Data.Vector            (Position (Position), Vector
 import qualified Luna.Studio.React.Model.NodeEditor as NodeEditor
 import qualified Luna.Studio.React.Store            as Store
 import qualified Luna.Studio.React.Store.Ref        as Ref
-import           Luna.Studio.React.View.Global      (getConnectionColor, getConnectionPosition)
+import           Luna.Studio.React.View.Connection  (getConnectionColor, getConnectionPosition)
 import qualified Luna.Studio.State.Global           as Global
 import qualified Luna.Studio.State.Graph            as Graph
 

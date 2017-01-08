@@ -87,48 +87,6 @@ nodeToNodeAngle src dst =
         then atan ((srcY - dstY) / (srcX - dstX))
         else atan ((srcY - dstY) / (srcX - dstX)) + pi
 
-
-connectionSrc :: Position -> Position -> Bool -> Bool -> Int -> Int -> IsSingle -> Position
-connectionSrc src dst isSrcExpanded isDstExpanded _ _ True =
-    let t  = nodeToNodeAngle src dst
-        x' = portRadius * cos t + src ^. x
-        y' = portRadius * sin t + src ^. y
-    in  Position (Vector2 x' y')
-connectionSrc src dst isSrcExpanded isDstExpanded num numOfPorts _    =
-    let a  = portAngleStop  num numOfPorts portRadius
-        b  = portAngleStart num numOfPorts portRadius
-        t  = nodeToNodeAngle src dst
-        a' = if a < pi then a + (2 * pi) else a
-        b' = if b < pi then b + (2 * pi) else b
-        t' = if t < pi then t + (2 * pi) else t
-        g  = portGap portRadius / 4
-
-        t''= if t' > a'- pi/2 - g then a - pi/2 - g else
-             if t' < b'- pi/2 + g then b - pi/2 + g else t --TODO: determine why the pi/2 offset is necessary
-        x' = portRadius * cos t'' + src ^. x
-        y' = portRadius * sin t'' + src ^. y
-    in  Position (Vector2 x' y')
-
-connectionDst :: Position -> Position -> Bool -> Bool -> Int -> Int -> IsSelf -> Position
-connectionDst src dst isSrcExpanded isDstExpanded _   _          True = dst
-connectionDst src dst isSrcExpanded isDstExpanded num numOfPorts _    =
-    let a  = portAngleStop  num numOfPorts portRadius
-        b  = portAngleStart num numOfPorts portRadius
-        t  = nodeToNodeAngle src dst
-
-        a' = if a < pi then a + (2 * pi) else a
-        b' = if b < pi then b + (2 * pi) else b
-        t' = if t < pi then t + (2 * pi) else t
-
-        g = portGap portRadius / 4
-
-        t''= if t' > a'- pi/2 - g then a - pi/2 - g else
-             if t' < b'- pi/2 + g then b - pi/2 + g else t --TODO: determine why the pi/2 offset is necessary
-        x' = portRadius * (-cos t'') + dst ^. x
-        y' = portRadius * (-sin t'') + dst ^. y
-    in  Position (Vector2 x' y')
-
-
 countInput :: Port -> Int
 countInput port = case port ^. Port.portId of
     InPortId (Arg _) -> 1
@@ -168,46 +126,3 @@ isPortSelf :: Port -> Bool
 isPortSelf port = case port ^. Port.portId of
     InPortId Self -> True
     _             -> False
-
-
-getConnectionPosition :: OutPortRef -> InPortRef -> Command State (Maybe (Position, Position))
-getConnectionPosition srcPortRef dstPortRef = do
-    maySrcNode <- getNode $ srcPortRef ^. PortRef.srcNodeId
-    mayDstNode <- getNode $ dstPortRef ^. PortRef.dstNodeId
-    -- TODO[react]: Function getPort should work for InPortRef and OutPortRef as well
-    maySrcPort <- getPort $ OutPortRef' srcPortRef
-    mayDstPort <- getPort $ InPortRef'  dstPortRef
-
-    case (maySrcNode, maySrcPort, mayDstNode, mayDstPort) of
-        (Just srcNode, Just srcPort, Just dstNode, Just dstPort) -> do
-            let srcPorts      = Map.elems $ srcNode ^. Node.ports
-                dstPorts      = Map.elems $ dstNode ^. Node.ports
-                srcPos        = srcNode ^. Node.position
-                dstPos        = dstNode ^. Node.position
-                isSrcExpanded = srcNode ^. Node.isExpanded
-                isDstExpanded = dstNode ^. Node.isExpanded
-                srcConnPos    = connectionSrc srcPos dstPos isSrcExpanded isDstExpanded (getPortNumber srcPort) (countSameTypePorts srcPort srcPorts) (isPortSingle srcPort srcPorts)
-                dstConnPos    = connectionDst srcPos dstPos isSrcExpanded isDstExpanded (getPortNumber dstPort) (countSameTypePorts dstPort dstPorts) (isPortSelf dstPort)
-            return $ Just (srcConnPos, dstConnPos)
-        _ -> return Nothing
-
-getCurrentConnectionSrcPosition :: AnyPortRef -> Position -> Command State (Maybe Position)
-getCurrentConnectionSrcPosition srcPortRef dstPos = do
-    maySrcNode <- getNode $ srcPortRef ^. PortRef.nodeId
-    maySrcPort <- getPort srcPortRef
-
-    case (maySrcNode, maySrcPort) of
-        (Just srcNode, Just srcPort) -> do
-            let srcPorts      = Map.elems $ srcNode ^. Node.ports
-                srcPos        = srcNode ^. Node.position
-                isSrcExpanded = srcNode ^. Node.isExpanded
-                srcConnPos    = connectionSrc srcPos dstPos isSrcExpanded False (getPortNumber srcPort) (countSameTypePorts srcPort srcPorts) (isPortSingle srcPort srcPorts)
-            return $ Just srcConnPos
-        _ -> return Nothing
-
-getConnectionColor :: OutPortRef -> Command State (Maybe Color)
--- TODO[react]: Function getPort should work for InPortRef and OutPortRef as well
-getConnectionColor portRef = (fmap $ view Port.color) <$> (getPort $ OutPortRef' portRef)
-
-getCurrentConnectionColor :: AnyPortRef -> Command State (Maybe Color)
-getCurrentConnectionColor portRef = (fmap $ view Port.color) <$> (getPort portRef)

@@ -28,7 +28,7 @@ import qualified Luna.Studio.React.Model.NodeEditor    as NodeEditor
 import qualified Luna.Studio.React.Store               as Store
 import           Luna.Studio.React.Store.Ref           (Ref)
 import qualified Luna.Studio.React.Store.Ref           as Ref
-import           Luna.Studio.React.View.Global         (getCurrentConnectionColor, getCurrentConnectionSrcPosition)
+import           Luna.Studio.React.View.Connection     (getCurrentConnectionColor, getCurrentConnectionSrcPosition)
 import           Luna.Studio.State.Global              (State)
 import qualified Luna.Studio.State.Global              as Global
 import qualified Luna.Studio.State.Graph               as Graph
