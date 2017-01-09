@@ -1,6 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Luna.Studio.React.View.Port where
 
+import           Control.DeepSeq                    (force)
 import           Luna.Studio.Prelude
 
 import           Empire.API.Data.Node               (NodeId)
@@ -23,48 +24,47 @@ name :: JSString
 name = "port"
 
 
-port :: Ref Node -> Int -> Bool -> ReactView Port
-port nodeRef numOfPorts isOnly = React.defineView name $ \p -> do
-    drawPort_ nodeRef p numOfPorts isOnly
+port :: ReactView (Ref Node, Int, Bool, Port)
+port = React.defineView name $ \(ref, numOfPorts, isOnly, p) -> do
+    drawPort_ ref p numOfPorts isOnly
 
-portExpanded :: Ref Node -> ReactView Port
-portExpanded nodeRef = React.defineView name $ \p -> do
-    drawPortExpanded_ nodeRef p
-
+portExpanded :: ReactView (Ref Node, Port)
+portExpanded = React.defineView name $ \(ref, p) -> do
+    drawPortExpanded_ ref p
 
 port_ :: Ref Node -> Port -> Int -> Bool -> ReactElementM ViewEventHandler ()
-port_ ref p numOfPorts isOnly = React.viewWithSKey (port ref numOfPorts isOnly) (fromString $ show $ p ^. Port.portId) p mempty
+port_ !ref (force -> !p) !numOfPorts !isOnly = React.viewWithSKey port (fromString $ show $ p ^. Port.portId) (ref, numOfPorts, isOnly, p) mempty
 
 portExpanded_ :: Ref Node -> Port -> ReactElementM ViewEventHandler ()
-portExpanded_ ref p = React.viewWithSKey (portExpanded ref) (fromString $ show $ p ^. Port.portId) p mempty
+portExpanded_ !ref (force -> !p) = React.viewWithSKey portExpanded (fromString $ show $ p ^. Port.portId) (ref, p) mempty
 
 
 drawPort_ :: Ref Node -> Port -> Int -> Bool -> ReactElementM ViewEventHandler ()
-drawPort_ nodeRef port numOfPorts isOnly = do
+drawPort_ ref port numOfPorts isOnly = do
     case port ^. Port.portId of
-        InPortId   Self          ->                drawPortSelf_   nodeRef port
-        OutPortId  All           -> if isOnly then drawPortSingle_ nodeRef port
-                                    else           drawPortIO_     nodeRef port 0 numOfPorts False
-        InPortId  (Arg        i) ->                drawPortIO_     nodeRef port i numOfPorts True
-        OutPortId (Projection i) ->                drawPortIO_     nodeRef port i numOfPorts False
+        InPortId   Self          ->                drawPortSelf_   ref port
+        OutPortId  All           -> if isOnly then drawPortSingle_ ref port
+                                    else           drawPortIO_     ref port 0 numOfPorts False
+        InPortId  (Arg        i) ->                drawPortIO_     ref port i numOfPorts True
+        OutPortId (Projection i) ->                drawPortIO_     ref port i numOfPorts False
 
 drawPortExpanded_ :: Ref Node -> Port -> ReactElementM ViewEventHandler ()
-drawPortExpanded_ nodeRef port = do
+drawPortExpanded_ ref port = do
     case port ^. Port.portId of
-        InPortId   Self          -> drawPortSelf_       nodeRef port
-        OutPortId  All           -> drawPortIOExpanded_ nodeRef port 0 False
-        InPortId  (Arg        i) -> drawPortIOExpanded_ nodeRef port i True
-        OutPortId (Projection i) -> drawPortIOExpanded_ nodeRef port i False
+        InPortId   Self          -> drawPortSelf_       ref port
+        OutPortId  All           -> drawPortIOExpanded_ ref port 0 False
+        InPortId  (Arg        i) -> drawPortIOExpanded_ ref port i True
+        OutPortId (Projection i) -> drawPortIOExpanded_ ref port i False
 
 drawPortSelf_ :: Ref Node -> Port -> ReactElementM ViewEventHandler ()
-drawPortSelf_ nodeRef port =
+drawPortSelf_ ref port =
     let portRef = port ^. Port.portRef
         color   = toJSString $ port ^. Port.color
         portId  = port ^. Port.portId
     in
     circle_
-        [ onMouseDown $ \e m -> stopPropagation e : dispatch nodeRef (UI.ConnectionEvent $ Connection.StartConnection m portRef)
-        , onMouseUp   $ \e m -> stopPropagation e : dispatch nodeRef (UI.ConnectionEvent $ Connection.EndConnection   m portRef)
+        [ onMouseDown $ \e m -> stopPropagation e : dispatch ref (UI.ConnectionEvent $ Connection.StartConnection m portRef)
+        , onMouseUp   $ \e m -> stopPropagation e : dispatch ref (UI.ConnectionEvent $ Connection.EndConnection   m portRef)
         , "className" $= "port port--self"
         , "key"       $= fromString (show portId)
         , "fill"      $= color
@@ -72,7 +72,7 @@ drawPortSelf_ nodeRef port =
         ] mempty
 
 drawPortSingle_ :: Ref Node -> Port -> ReactElementM ViewEventHandler ()
-drawPortSingle_ nodeRef port = do
+drawPortSingle_ ref port = do
 
     let portRef     = port ^. Port.portRef
         portId      = port ^. Port.portId
@@ -82,8 +82,8 @@ drawPortSingle_ nodeRef port = do
         svgPath a b = fromString $ "M0 -" <> r1 <> " A " <> r1 <> " " <> r1 <> " 1 0 " <> show a <> " 0 "  <> r1 <>
                                    " L0 " <> r2 <> " A " <> r2 <> " " <> r2 <> " 1 0 " <> show b <> " 0 -" <> r2 <> " Z "
     path_
-        [ onMouseDown $ \e m -> stopPropagation e : dispatch nodeRef (UI.ConnectionEvent $ Connection.StartConnection m portRef)
-        , onMouseUp   $ \e m -> stopPropagation e : dispatch nodeRef (UI.ConnectionEvent $ Connection.EndConnection   m portRef)
+        [ onMouseDown $ \e m -> stopPropagation e : dispatch ref (UI.ConnectionEvent $ Connection.StartConnection m portRef)
+        , onMouseUp   $ \e m -> stopPropagation e : dispatch ref (UI.ConnectionEvent $ Connection.EndConnection   m portRef)
         , "className" $= "port port--o--single"
         , "key"       $= fromString (show portId)
         , "fill"      $= color
@@ -93,7 +93,7 @@ drawPortSingle_ nodeRef port = do
 
 
 drawPortIO_ :: Ref Node -> Port -> Int -> Int -> Bool -> ReactElementM ViewEventHandler ()
-drawPortIO_ nodeRef port num numOfPorts isInput = do
+drawPortIO_ ref port num numOfPorts isInput = do
 
     let portRef = port ^. Port.portRef
         portId  = port ^. Port.portId
@@ -126,8 +126,8 @@ drawPortIO_ nodeRef port num numOfPorts isInput = do
                               " A " <> r2 <> " " <> r2 <> " 1 0 " <> svgFlag2 <> " " <> dx <> " " <> dy <>
                               " Z"
     path_
-        [ onMouseDown $ \e m -> stopPropagation e : dispatch nodeRef (UI.ConnectionEvent $ Connection.StartConnection m portRef)
-        , onMouseUp   $ \e m -> stopPropagation e : dispatch nodeRef (UI.ConnectionEvent $ Connection.EndConnection   m portRef)
+        [ onMouseDown $ \e m -> stopPropagation e : dispatch ref (UI.ConnectionEvent $ Connection.StartConnection m portRef)
+        , onMouseUp   $ \e m -> stopPropagation e : dispatch ref (UI.ConnectionEvent $ Connection.EndConnection   m portRef)
         , "className" $= (fromString $ classes <> show (num+1))
         , "key"       $= fromString (show portId)
         , "fill"      $= color
@@ -137,7 +137,7 @@ drawPortIO_ nodeRef port num numOfPorts isInput = do
 
 
 drawPortIOExpanded_ :: Ref Node -> Port -> Int -> Bool -> ReactElementM ViewEventHandler ()
-drawPortIOExpanded_ nodeRef port num isInput = do
+drawPortIOExpanded_ ref port num isInput = do
 
     let portRef = port ^. Port.portRef
         portId  = port ^. Port.portId
@@ -146,8 +146,8 @@ drawPortIOExpanded_ nodeRef port num isInput = do
         n       = if isInput then 1 else 0
 
     circle_
-        [ onMouseDown $ \e m -> stopPropagation e : dispatch nodeRef (UI.ConnectionEvent $ Connection.StartConnection m portRef)
-        , onMouseUp   $ \e m -> stopPropagation e : dispatch nodeRef (UI.ConnectionEvent $ Connection.EndConnection   m portRef)
+        [ onMouseDown $ \e m -> stopPropagation e : dispatch ref (UI.ConnectionEvent $ Connection.StartConnection m portRef)
+        , onMouseUp   $ \e m -> stopPropagation e : dispatch ref (UI.ConnectionEvent $ Connection.EndConnection   m portRef)
         , "className" $= fromString (classes <> show (num + 1) )
         , "key"       $= fromString (show portId <> show num)
         , "fill"      $= color

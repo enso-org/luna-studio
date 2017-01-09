@@ -114,6 +114,7 @@ addNode newNode state  = state & nodesMap . at (newNode ^. Node.nodeId) ?~ newNo
 removeNode :: NodeId -> State -> State
 removeNode remNodeId state = state & nodesMap . at remNodeId .~ Nothing
 
+-- TODO[react]: Consider ConnectionId as new type
 addConnection :: OutPortRef -> InPortRef -> Command State ConnectionId
 addConnection sourcePortRef destPortRef = do
     connectionsMap . at destPortRef ?= Connection sourcePortRef destPortRef

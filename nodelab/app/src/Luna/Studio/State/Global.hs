@@ -45,6 +45,7 @@ import qualified Luna.Studio.State.UIRegistry         as UIRegistry
 
 foreign import javascript safe "{}" defJsState :: Event.JSState
 
+-- TODO[react]: Move all action states to ActionState
 data State = State { _mousePos           :: Position
                    , _graph              :: Graph.State
                    , _cameraState        :: Maybe Camera.State
@@ -52,6 +53,7 @@ data State = State { _mousePos           :: Position
                    , _selectionHistory   :: [Set Node.NodeId]
                    , _drag               :: Drag.State
                    , _slider             :: Maybe Slider.State
+                   -- TODO[react]: wyjebawszy
                    , _uiRegistry         :: UIRegistry.State
                    , _connectionPen      :: ConnectionPen.State
                    , _workspace          :: Workspace

@@ -1,16 +1,18 @@
+{-# LANGUAGE DeriveAnyClass #-}
 module Empire.API.Graph.NodeResultUpdate where
 
-import           Prologue                      hiding (TypeRep)
+import           Control.DeepSeq               (NFData)
 import           Data.Binary                   (Binary)
+import           Prologue                      hiding (TypeRep)
 
 import qualified Empire.API.Data.DefaultValue  as DV (Value)
+import           Empire.API.Data.Error         (Error)
 import           Empire.API.Data.GraphLocation (GraphLocation)
 import           Empire.API.Data.Node          (NodeId)
 import           Empire.API.Data.TypeRep       (TypeRep)
-import           Empire.API.Data.Error         (Error)
 import qualified Empire.API.Topic              as T
 
-data NodeValue = Value Text [DV.Value] | Error (Error TypeRep) deriving (Show, Eq, Generic)
+data NodeValue = Value Text [DV.Value] | Error (Error TypeRep) deriving (Show, Eq, Generic, NFData)
 
 data Update = Update { _location  :: GraphLocation
                      , _nodeId    :: NodeId

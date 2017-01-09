@@ -16,7 +16,7 @@ import           Luna.Studio.React.Model.Port         (Port (..))
 import qualified Luna.Studio.React.Model.Port         as Port
 import           Luna.Studio.React.Store              (Ref, dispatch, dt)
 import           Luna.Studio.React.View.Global
-import           Luna.Studio.React.View.Port          (port_, portExpanded_)
+import           Luna.Studio.React.View.Port          (portExpanded_, port_)
 import           Luna.Studio.React.View.PortControl   (portControl_)
 import           Luna.Studio.React.View.Visualization (strValue, visualization_)
 import           React.Flux

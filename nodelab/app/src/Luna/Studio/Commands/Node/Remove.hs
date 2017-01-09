@@ -5,7 +5,7 @@ module Luna.Studio.Commands.Node.Remove
 
 import qualified Data.Set                              as Set
 import           Luna.Studio.Commands.Command          (Command)
-import           Luna.Studio.Commands.Graph.Disconnect (localDisconnectAll)
+import           Luna.Studio.Commands.Graph.Disconnect (localDisconnect)
 import           Luna.Studio.Commands.Graph.Selection  (selectPreviousNodes, selectedNodes)
 import           Luna.Studio.Prelude
 import qualified Luna.Studio.React.Model.NodeEditor    as NodeEditor
@@ -38,7 +38,7 @@ localRemoveNodes nodeIds = do
     selectedNodesIds <- map (^. widget . NodeModel.nodeId) <$> selectedNodes
     let selectPrevious =  Set.isSubsetOf (Set.fromList selectedNodesIds) $ Set.fromList nodeIds
     danglingConns <- concat <$> forM nodeIds (uses Global.graph . Graph.connectionIdsContainingNode)
-    localDisconnectAll danglingConns
+    localDisconnect danglingConns
     forM_ nodeIds $ \nodeId -> Global.graph %= Graph.removeNode nodeId
     Global.withNodeEditor $ Store.modifyM_ $
         forM_ nodeIds $ \nodeId ->
