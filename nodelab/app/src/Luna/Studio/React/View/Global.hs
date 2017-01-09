@@ -4,20 +4,12 @@ module Luna.Studio.React.View.Global where
 import qualified Data.Map.Lazy                as Map
 import           Data.Matrix                  (Matrix)
 import qualified Data.Matrix                  as Matrix
-import           Empire.API.Data.Node         (NodeId)
 import           Empire.API.Data.Port         (InPort (..), OutPort (..), PortId (..))
-import           Empire.API.Data.PortRef      (AnyPortRef (InPortRef', OutPortRef'), InPortRef, OutPortRef, toAnyPortRef)
-import qualified Empire.API.Data.PortRef      as PortRef
-import           Luna.Studio.Commands.Command (Command)
-import           Luna.Studio.Commands.Graph   (getNode, getPort)
 import           Luna.Studio.Data.Angle       (Angle)
-import           Luna.Studio.Data.Color       (Color)
 import           Luna.Studio.Data.Vector
 import           Luna.Studio.Prelude
-import qualified Luna.Studio.React.Model.Node as Node
 import           Luna.Studio.React.Model.Port (Port (..))
 import qualified Luna.Studio.React.Model.Port as Port
-import           Luna.Studio.State.Global     (State)
 import           Numeric                      (showFFloat)
 
 
@@ -40,7 +32,7 @@ connectionWidth :: Double
 connectionWidth = 2.6
 
 lineHeight :: Double
-lineHeight = 16.0
+lineHeight = 16
 
 nodeExpandedWidth :: Double
 nodeExpandedWidth = 270
