@@ -4,11 +4,11 @@ module Luna.Studio.Action.Connect
 --TODO[react]: transform mousePos to correct position
 
 
-import qualified Data.HashMap.Strict                   as Map
 import           Empire.API.Data.Connection            (Connection)
 import           Empire.API.Data.Connection            (ConnectionId)
 import qualified Empire.API.Data.Connection            as Connection
-import           Empire.API.Data.PortRef               (AnyPortRef (InPortRef', OutPortRef'), InPortRef (InPortRef),
+import           Empire.API.Data.PortRef               (AnyPortRef (InPortRef', OutPortRef'),
+                                                        InPortRef  (InPortRef),
                                                         OutPortRef (OutPortRef))
 import qualified Empire.API.Data.PortRef               as PortRef
 import           Event.Event                           (Event (UI))
@@ -18,7 +18,6 @@ import           Luna.Studio.Commands.Batch            (disconnectNodes)
 import           Luna.Studio.Commands.Command          (Command)
 import           Luna.Studio.Commands.Graph.Connect    (batchConnectNodes, localConnectNodes)
 import           Luna.Studio.Commands.Graph.Disconnect (localDisconnectAll)
-import           Luna.Studio.Data.Vector               (Position)
 import           Luna.Studio.Event.Mouse               (workspacePosition)
 import           Luna.Studio.Prelude
 import qualified Luna.Studio.React.Event.App           as App
@@ -37,8 +36,8 @@ import           React.Flux                            (MouseEvent)
 
 toAction :: Event -> Maybe (Command State ())
 toAction (UI (ConnectionEvent (Connection.StartConnection evt portRef)))     = Just $ startDragFromPort evt portRef Nothing
-toAction (UI (AppEvent  (App.MouseMove evt)))                                = Just $ whileConnecting $ handleMove evt
-toAction (UI (AppEvent (App.MouseUp _)))                                     = Just $ whileConnecting $ stopDrag'
+toAction (UI (AppEvent        (App.MouseMove evt)))                          = Just $ whileConnecting $ handleMove evt
+toAction (UI (AppEvent        (App.MouseUp _)))                              = Just $ whileConnecting $ stopDrag'
 toAction (UI (ConnectionEvent (Connection.EndConnection _ portRef)))         = Just $ whileConnecting $ stopDrag portRef
 toAction (UI (ConnectionEvent (Connection.ModifyConnection evt connId end))) = Just $ modifyConnection evt connId end
 toAction _                                                               = Nothing
@@ -114,7 +113,6 @@ modifyConnection :: MouseEvent -> ConnectionId -> Connection.ModifiedEnd -> Comm
 modifyConnection evt connId modifiedEnd = do
     mayConn <- preuse $ Global.graph . Graph.connectionsMap . ix connId
     withJust mayConn $ \conn -> do
-        mousePos  <- workspacePosition evt
         case modifiedEnd of
             Connection.Source      -> startDragFromPort evt (InPortRef'  (conn ^. Connection.dst)) (Just conn)
             Connection.Destination -> startDragFromPort evt (OutPortRef' (conn ^. Connection.src)) (Just conn)
