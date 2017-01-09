@@ -31,9 +31,13 @@ name = "connection-editor"
 connectionSrc :: Position -> Position -> Bool -> Bool -> Int -> Int -> IsSingle -> Position
 connectionSrc src dst isSrcExpanded isDstExpanded _ _ True =
     let t  = nodeToNodeAngle src dst
-        x' = portRadius * cos t + src ^. x
-        y' = portRadius * sin t + src ^. y
-    in  Position (Vector2 x' y')
+        srcExpX = src ^. x + nodeExpandedWidth
+        srcExpY = src ^. y
+        srcX = if isSrcExpanded then srcExpX else portRadius * cos t + src ^. x
+        srcY = if isSrcExpanded then srcExpY else portRadius * sin t + src ^. y
+
+    in  Position (Vector2 srcX srcY)
+
 connectionSrc src dst isSrcExpanded isDstExpanded num numOfPorts _    =
     let a  = portAngleStop  num numOfPorts portRadius
         b  = portAngleStart num numOfPorts portRadius
@@ -42,12 +46,15 @@ connectionSrc src dst isSrcExpanded isDstExpanded num numOfPorts _    =
         b' = if b < pi then b + (2 * pi) else b
         t' = if t < pi then t + (2 * pi) else t
         g  = portGap portRadius / 4
-
         t''= if t' > a'- pi/2 - g then a - pi/2 - g else
-             if t' < b'- pi/2 + g then b - pi/2 + g else t --TODO: determine why the pi/2 offset is necessary
-        x' = portRadius * cos t'' + src ^. x
-        y' = portRadius * sin t'' + src ^. y
-    in  Position (Vector2 x' y')
+             if t' < b'- pi/2 + g then b - pi/2 + g else t
+
+        srcExpX = src ^. x + nodeExpandedWidth
+        srcExpY = src ^. y
+        srcX = if isSrcExpanded then srcExpX else portRadius * cos t'' + src ^. x
+        srcY = if isSrcExpanded then srcExpY else portRadius * sin t'' + src ^. y
+
+    in  Position (Vector2 srcX srcY)
 
 
 connectionDst :: Position -> Position -> Bool -> Bool -> Int -> Int -> IsSelf -> Position
@@ -56,18 +63,17 @@ connectionDst src dst isSrcExpanded isDstExpanded num numOfPorts _    =
     let a  = portAngleStop  num numOfPorts portRadius
         b  = portAngleStart num numOfPorts portRadius
         t  = nodeToNodeAngle src dst
-
         a' = if a < pi then a + (2 * pi) else a
         b' = if b < pi then b + (2 * pi) else b
         t' = if t < pi then t + (2 * pi) else t
-
         g = portGap portRadius / 4
-
         t''= if t' > a'- pi/2 - g then a - pi/2 - g else
-             if t' < b'- pi/2 + g then b - pi/2 + g else t --TODO: determine why the pi/2 offset is necessary
-        x' = portRadius * (-cos t'') + dst ^. x
-        y' = portRadius * (-sin t'') + dst ^. y
-    in  Position (Vector2 x' y')
+             if t' < b'- pi/2 + g then b - pi/2 + g else t
+        dstExpX = dst ^. x
+        dstExpY = dst ^. y
+        dstX = if isDstExpanded then dstExpX else portRadius * (-cos t'') + dst ^. x
+        dstY = if isDstExpanded then dstExpY else portRadius * (-sin t'') + dst ^. y
+    in  Position (Vector2 dstX dstY)
 
 
 getConnectionPosition :: OutPortRef -> InPortRef -> Command State (Maybe (Position, Position))
