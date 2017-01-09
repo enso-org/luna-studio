@@ -73,11 +73,13 @@ columns: 140
 #
 # No language extensions are enabled by default.
 language_extensions:
+  - BangPatterns
   - DefaultSignatures
   - FlexibleContexts
   - MultiParamTypeClasses
+  - QuasiQuotes
   - TemplateHaskell
+  - TupleSections
   - TypeFamilies
   - TypeOperators
-  - TupleSections
-  - QuasiQuotes
+  - ViewPatterns
