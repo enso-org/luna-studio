@@ -1,7 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Luna.Studio.React.View.Global where
 
-import qualified Data.Map.Lazy                as Map
 import           Data.Matrix                  (Matrix)
 import qualified Data.Matrix                  as Matrix
 import           Empire.API.Data.Port         (InPort (..), OutPort (..), PortId (..))
