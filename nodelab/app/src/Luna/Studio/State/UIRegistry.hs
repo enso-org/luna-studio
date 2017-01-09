@@ -37,7 +37,7 @@ import qualified Data.IntMap.Lazy             as IntMap
 import           Luna.Studio.Data.CtxDynamic
 import           Luna.Studio.Prelude          hiding (children, lookup)
 
-import           Luna.Studio.Commands.Command (Command)
+import           Luna.Studio.Action.Command (Command)
 import           Luna.Studio.Data.Aeson       (intMapToJSON)
 import           Object.Widget
 import           Object.Widget.Connection

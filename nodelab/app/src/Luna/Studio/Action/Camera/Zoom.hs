@@ -1,0 +1,70 @@
+module Luna.Studio.Action.Camera.Zoom
+     ( resetZoom
+     , zoomIn
+     , zoomOut
+     , startZoomDrag
+     , zoomDrag
+     , wheelZoom
+     ) where
+
+import           Data.Matrix                           (getElem, setElem)
+import           Luna.Studio.Action.Camera.Modify      (modifyCamera)
+import           Luna.Studio.Action.Camera.Screen      (getScreenCenter)
+import           Luna.Studio.Action.Command            (Command)
+import           Luna.Studio.Data.CameraTransformation (logicalToScreen, screenToLogical)
+import           Luna.Studio.Data.Matrix               (homothetyMatrix, invertedHomothetyMatrix)
+import           Luna.Studio.Data.Vector               (ScreenPosition, vector, x, y)
+import           Luna.Studio.Prelude
+import qualified Luna.Studio.React.Model.NodeEditor    as NodeEditor
+import qualified Luna.Studio.React.Store               as Store
+import qualified Luna.Studio.State.Camera              as Camera
+import           Luna.Studio.State.Global              (State)
+import qualified Luna.Studio.State.Global              as Global
+
+
+minCamFactor, maxCamFactor, dragZoomSpeed, wheelZoomSpeed, zoomFactorStep :: Double
+minCamFactor   = 0.2
+maxCamFactor   = 8
+dragZoomSpeed  = 512
+wheelZoomSpeed = 512
+zoomFactorStep = 1.1
+
+restrictFactor :: Double -> Double -> Double
+restrictFactor scale factor
+    | scale * factor < minCamFactor = minCamFactor / scale
+    | scale * factor > maxCamFactor = maxCamFactor / scale
+    | otherwise                     = factor
+
+zoomCamera :: ScreenPosition -> Double -> Command State ()
+zoomCamera zoomCenter factor = do
+    transformMatrix <- Global.withNodeEditor $ Store.use $ NodeEditor.screenTransform . logicalToScreen
+    let s = restrictFactor (getElem 1 1 transformMatrix) factor
+    modifyCamera (homothetyMatrix zoomCenter s) (invertedHomothetyMatrix zoomCenter s)
+
+zoomIn :: Command State ()
+zoomIn = getScreenCenter >>= flip zoomCamera zoomFactorStep
+
+zoomOut :: Command State ()
+zoomOut = getScreenCenter >>= flip zoomCamera (1/zoomFactorStep)
+
+startZoomDrag :: ScreenPosition -> Command State ()
+startZoomDrag pos = Global.cameraState ?= Camera.ZoomDrag pos pos
+
+zoomDrag :: ScreenPosition -> Command State ()
+zoomDrag actPos = do
+    mayState <- use Global.cameraState
+    withJust mayState $ \state -> case state of
+        Camera.ZoomDrag fixedPoint prevPos -> do
+            Global.cameraState ?= Camera.ZoomDrag fixedPoint actPos
+            let delta = actPos ^. vector - prevPos ^. vector
+                scale = 1 + (delta ^. x - delta ^. y) / dragZoomSpeed
+            zoomCamera fixedPoint scale
+        _ -> return ()
+
+resetZoom :: Command State ()
+resetZoom = Global.withNodeEditor $ Store.modifyM_ $ do
+    NodeEditor.screenTransform . logicalToScreen %= (setElem 1 (1,1) . setElem 1 (2,2))
+    NodeEditor.screenTransform . screenToLogical %= (setElem 1 (1,1) . setElem 1 (2,2))
+
+wheelZoom :: ScreenPosition -> Double -> Command State ()
+wheelZoom pos delta = zoomCamera pos (1 - delta / wheelZoomSpeed)

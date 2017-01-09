@@ -18,27 +18,27 @@ import qualified Event.Event                               as Event
 import qualified Event.Processors.Batch                    as BatchEventProcessor
 import qualified Event.Processors.CustomEvent              as CustomEventProcessor
 
-import qualified Luna.Studio.Action.App                    as App
-import qualified Luna.Studio.Action.Backend.Control        as Control
-import qualified Luna.Studio.Action.Backend.Graph          as Graph
-import qualified Luna.Studio.Action.Backend.ProjectManager as ProjectManager
-import qualified Luna.Studio.Action.Breadcrumbs            as Breadcrumbs
-import qualified Luna.Studio.Action.Camera                 as Camera
-import qualified Luna.Studio.Action.Clipboard              as Clipboard
-import qualified Luna.Studio.Action.CodeEditor             as CodeEditor
-import qualified Luna.Studio.Action.Collaboration          as Collaboration
-import qualified Luna.Studio.Action.Connect                as Connect
-import qualified Luna.Studio.Action.ConnectionPen          as ConnectionPen
-import qualified Luna.Studio.Action.Debug                  as Debug
-import qualified Luna.Studio.Action.Drag                   as Drag
-import qualified Luna.Studio.Action.MultiSelection         as MultiSelection
-import qualified Luna.Studio.Action.Navigation             as Navigation
-import qualified Luna.Studio.Action.Node                   as Node
-import qualified Luna.Studio.Action.Searcher               as Searcher
-import qualified Luna.Studio.Action.Tutorial               as Tutorial
-import qualified Luna.Studio.Action.Widget                 as Widget
+import qualified Luna.Studio.Handler.App                    as App
+import qualified Luna.Studio.Handler.Backend.Control        as Control
+import qualified Luna.Studio.Handler.Backend.Graph          as Graph
+import qualified Luna.Studio.Handler.Backend.ProjectManager as ProjectManager
+import qualified Luna.Studio.Handler.Breadcrumbs            as Breadcrumbs
+import qualified Luna.Studio.Handler.Camera                 as Camera
+import qualified Luna.Studio.Handler.Clipboard              as Clipboard
+import qualified Luna.Studio.Handler.CodeEditor             as CodeEditor
+import qualified Luna.Studio.Handler.Collaboration          as Collaboration
+import qualified Luna.Studio.Handler.Connect                as Connect
+import qualified Luna.Studio.Handler.ConnectionPen          as ConnectionPen
+import qualified Luna.Studio.Handler.Debug                  as Debug
+import qualified Luna.Studio.Handler.Drag                   as Drag
+import qualified Luna.Studio.Handler.MultiSelection         as MultiSelection
+import qualified Luna.Studio.Handler.Navigation             as Navigation
+import qualified Luna.Studio.Handler.Node                   as Node
+import qualified Luna.Studio.Handler.Searcher               as Searcher
+import qualified Luna.Studio.Handler.Tutorial               as Tutorial
+import qualified Luna.Studio.Handler.Widget                 as Widget
 
-import           Luna.Studio.Commands.Command              (Command, execCommand)
+import           Luna.Studio.Action.Command              (Command, execCommand)
 import           Luna.Studio.State.Global                  (State)
 import qualified Luna.Studio.State.Global                  as Global
 

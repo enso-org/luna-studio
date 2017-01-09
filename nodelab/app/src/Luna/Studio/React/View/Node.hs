@@ -7,6 +7,8 @@ import qualified Data.Text.Lazy                       as Text
 import           Empire.API.Data.Node                 (NodeId)
 import           Empire.API.Data.Port                 (InPort (..), PortId (..))
 import qualified Event.UI                             as UI
+import           Luna.Studio.Action.Geometry          (countSameTypePorts, isPortSingle)
+import           Luna.Studio.Data.Matrix              (transformTranslateToSvg)
 import           Luna.Studio.Data.Vector              (x, y)
 import           Luna.Studio.Prelude
 import qualified Luna.Studio.React.Event.Node         as Node
@@ -15,10 +17,9 @@ import qualified Luna.Studio.React.Model.Node         as Node
 import           Luna.Studio.React.Model.Port         (Port (..))
 import qualified Luna.Studio.React.Model.Port         as Port
 import           Luna.Studio.React.Store              (Ref, dispatch, dt)
-import           Luna.Studio.React.View.Global
 import           Luna.Studio.React.View.Port          (portExpanded_, port_)
 import           Luna.Studio.React.View.PortControl   (portControl_)
-import           Luna.Studio.React.View.Visualization (strValue, visualization_)
+import           Luna.Studio.React.View.Visualization (visualization_)
 import           React.Flux
 import qualified React.Flux                           as React
 
@@ -52,7 +53,7 @@ node ref = React.defineControllerView
                 , onMouseDown   $ \e m -> stopPropagation e : dispatch ref (UI.NodeEvent $ Node.MouseDown m nodeId)
                 , "className" $= (fromString $ "node" <> (if n ^. Node.isExpanded then " node--expanded" else " node--collapsed")
                                                       <> (if n ^. Node.isSelected then " node--selected" else []))
-                , "style"     @= Aeson.object [ "transform" Aeson..= (transformTranslate offsetX offsetY) ]
+                , "style"     @= Aeson.object [ "transform" Aeson..= (transformTranslateToSvg offsetX offsetY) ]
                 ] $ do
 
                 svg_ [ "key"     $= "viewbox"
@@ -123,6 +124,7 @@ node ref = React.defineControllerView
                     else do
                         makePorts ref $ filter (\port -> (port ^. Port.portId) /= InPortId Self) ports
                         makePorts ref $ filter (\port -> (port ^. Port.portId) == InPortId Self) ports
+
 
 
 node_ :: NodeId -> Ref Node -> ReactElementM ViewEventHandler ()

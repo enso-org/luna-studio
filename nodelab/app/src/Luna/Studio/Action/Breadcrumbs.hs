@@ -1,15 +1,16 @@
-module Luna.Studio.Action.Breadcrumbs where
+module Luna.Studio.Action.Breadcrumbs
+    ( set
+    ) where
 
-import           Event.Event                      (Event (UI))
-import           Event.UI                         (UIEvent (BreadcrumbsEvent))
-import qualified Luna.Studio.React.Event.Breadcrumbs          as Breadcrumbs
-import           Luna.Studio.Commands.Command        (Command)
-import qualified Luna.Studio.Commands.ProjectManager as ProjectManager
-import           Luna.Studio.State.Global            (State)
-import           Luna.Studio.Prelude
+import           Empire.API.Data.Breadcrumb (Breadcrumb (..), BreadcrumbItem, Named)
+import           Luna.Studio.Action.Command (Command)
+import           Luna.Studio.Prelude        hiding (group, set)
+import qualified Luna.Studio.React.Store    as Store
+import           Luna.Studio.State.Global   (State)
+import qualified Luna.Studio.State.Global   as Global
 
 
 
-toAction :: Event -> Maybe (Command State ())
-toAction (UI (BreadcrumbsEvent (Breadcrumbs.Enter bc))) = Just $ ProjectManager.enterBreadcrumbs bc
-toAction _   = Nothing
+set :: Breadcrumb (Named BreadcrumbItem)-> Command State ()
+set breadcrumbs = do
+    Global.withBreadcrumbs $ Store.modify_ $ const breadcrumbs

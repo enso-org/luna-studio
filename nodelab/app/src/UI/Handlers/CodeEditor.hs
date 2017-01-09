@@ -6,8 +6,8 @@ import           Data.JSString.Text              (lazyTextFromJSString)
 
 import           Event.Event                     (JSState)
 import           Event.Widget                    (Payload (..))
-import           Luna.Studio.Commands.Command    (Command)
-import qualified Luna.Studio.Commands.UIRegistry as UICmd
+import           Luna.Studio.Action.Command    (Command)
+import qualified Luna.Studio.Action.UIRegistry as UICmd
 import           Luna.Studio.State.Global        (inRegistry_)
 import qualified Luna.Studio.State.Global        as Global
 import           Object.Widget                   (UIHandlers, WidgetId, fromWidgetId, widgetCustom)
