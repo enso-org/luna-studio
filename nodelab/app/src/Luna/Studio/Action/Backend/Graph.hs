@@ -33,7 +33,7 @@ import           Luna.Studio.Commands.Camera           (autoZoom)
 import qualified Luna.Studio.Commands.CodeEditor       as CodeEditor
 import           Luna.Studio.Commands.Command          (Command)
 import           Luna.Studio.Commands.Graph.Connect    (localConnectNodes, updateConnectionsForNodes)
-import           Luna.Studio.Commands.Graph.Disconnect (localDisconnectAll)
+import           Luna.Studio.Commands.Graph.Disconnect (localDisconnect)
 import           Luna.Studio.Commands.Graph.Render     (renderGraph)
 import           Luna.Studio.Commands.Graph.Selection  (selectNodes)
 import qualified Luna.Studio.Commands.Node             as Node
@@ -109,7 +109,7 @@ toAction (Event.Batch ev) = Just $ case ev of
 
     NodesDisconnected update -> do
         whenM (isCurrentLocation $ update ^. Disconnect.location') $ do
-            localDisconnectAll $ [update ^. Disconnect.dst']
+            localDisconnect $ [update ^. Disconnect.dst']
 
     NodeMetaUpdated update -> do
         shouldProcess   <- isCurrentLocationAndGraphLoaded (update ^. UpdateNodeMeta.location')

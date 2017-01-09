@@ -1,6 +1,6 @@
 --TODO[react]:Rename module to sth more appropriate
 module Luna.Studio.Commands.Graph.Connect
-    ( batchConnectNodes
+    ( connectNodes
     , localConnectNodes
     , updateConnection
     , updateConnections
@@ -33,8 +33,8 @@ import qualified Luna.Studio.State.Global           as Global
 import qualified Luna.Studio.State.Graph            as Graph
 
 
-batchConnectNodes :: OutPortRef -> InPortRef -> Command Global.State ()
-batchConnectNodes src dst = BatchCmd.connectNodes src dst
+connectNodes :: OutPortRef -> InPortRef -> Command Global.State ()
+connectNodes src dst = BatchCmd.connectNodes src dst
 
 addConnectionRef :: ConnectionId -> Position -> Position -> Color -> Command Global.State ()
 addConnectionRef connId srcPos dstPos color = Global.withNodeEditor $ Store.modifyM_ $ do

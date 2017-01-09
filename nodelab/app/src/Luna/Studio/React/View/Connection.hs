@@ -10,9 +10,9 @@ import qualified Event.UI                           as UI
 import           Luna.Studio.Commands.Command       (Command)
 import           Luna.Studio.Commands.Graph         (getNode, getPort)
 import           Luna.Studio.Data.Color             (Color, toJSString)
-import           Luna.Studio.Data.Vector            --(Position, Vector2 (Vector2), x, y)
-import qualified Luna.Studio.Prelude                as Prelude
+import           Luna.Studio.Data.Vector
 import           Luna.Studio.Prelude
+import qualified Luna.Studio.Prelude                as Prelude
 import           Luna.Studio.React.Event.Connection (ModifiedEnd (Destination, Source))
 import qualified Luna.Studio.React.Event.Connection as Connection
 import           Luna.Studio.React.Model.Connection (Connection, CurrentConnection)
@@ -22,6 +22,8 @@ import qualified Luna.Studio.React.Model.Port       as Port
 import           Luna.Studio.React.Store            (Ref, dispatch, dt)
 import           Luna.Studio.React.View.Global
 import           Luna.Studio.State.Global           (State)
+import           React.Flux
+import qualified React.Flux                         as React
 
 
 name :: JSString
@@ -74,9 +76,8 @@ getConnectionPosition :: OutPortRef -> InPortRef -> Command State (Maybe (Positi
 getConnectionPosition srcPortRef dstPortRef = do
     maySrcNode <- getNode $ srcPortRef ^. PortRef.srcNodeId
     mayDstNode <- getNode $ dstPortRef ^. PortRef.dstNodeId
-    -- TODO[react]: Function getPort should work for InPortRef and OutPortRef as well
-    maySrcPort <- getPort $ OutPortRef' srcPortRef
-    mayDstPort <- getPort $ InPortRef'  dstPortRef
+    maySrcPort <- getPort srcPortRef
+    mayDstPort <- getPort dstPortRef
 
     case (maySrcNode, maySrcPort, mayDstNode, mayDstPort) of
         (Just srcNode, Just srcPort, Just dstNode, Just dstPort) -> do
@@ -92,8 +93,8 @@ getConnectionPosition srcPortRef dstPortRef = do
         _ -> return Nothing
 
 
-getCurrentConnectionSrcPosition :: AnyPortRef -> Position -> Command State (Maybe Position)
-getCurrentConnectionSrcPosition srcPortRef dstPos = do
+getConnectionSrcPosition :: AnyPortRef -> Position -> Command State (Maybe Position)
+getConnectionSrcPosition srcPortRef dstPos = do
     maySrcNode <- getNode $ srcPortRef ^. PortRef.nodeId
     maySrcPort <- getPort srcPortRef
 
@@ -107,14 +108,12 @@ getCurrentConnectionSrcPosition srcPortRef dstPos = do
         _ -> return Nothing
 
 
-getConnectionColor :: OutPortRef -> Command State (Maybe Color)
--- TODO[react]: Function getPort should work for InPortRef and OutPortRef as well
-getConnectionColor portRef = (fmap $ Prelude.view Port.color) <$> (getPort $ OutPortRef' portRef)
-
-
-getCurrentConnectionColor :: AnyPortRef -> Command State (Maybe Color)
-getCurrentConnectionColor portRef = (fmap $ Prelude.view Port.color) <$> (getPort portRef)
-
+class HasColor a where
+    getConnectionColor :: a -> Command State (Maybe Color)
+instance HasColor OutPortRef where
+    getConnectionColor = getConnectionColor . OutPortRef'
+instance HasColor AnyPortRef where
+    getConnectionColor portRef = (fmap $ Prelude.view Port.color) <$> (getPort portRef)
 
 connection :: Ref Connection -> ReactView ()
 connection connectionRef = React.defineControllerView

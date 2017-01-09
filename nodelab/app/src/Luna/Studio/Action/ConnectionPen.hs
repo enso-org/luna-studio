@@ -25,7 +25,7 @@ import qualified Luna.Studio.State.Global              as Global
 import qualified Luna.Studio.State.UIRegistry          as UIRegistry
 
 import           Luna.Studio.Commands.Command          (Command, performIO)
-import           Luna.Studio.Commands.Graph.Disconnect (disconnectAll)
+import           Luna.Studio.Commands.Graph.Disconnect (disconnect)
 import qualified Luna.Studio.State.ConnectionPen       as ConnectionPen
 
 import qualified Luna.Studio.Commands.Batch            as BatchCmd
@@ -105,7 +105,7 @@ toAction _                                               = Nothing
 --     connectionsMay <- sequence $ lookupConnection <$> widgets
 --     let connections = view (widget . UIConnection.connectionId) <$> catMaybes connectionsMay
 --     unless (null connections) $ do
---         disconnectAll connections
+--         disconnect connections
 --         GA.sendEvent GA.Disconnect
 --
 -- remdups               :: (Eq a) => [a] -> [a]

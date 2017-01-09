@@ -19,7 +19,7 @@ module UI.Handlers.Connection where
 -- import qualified Luna.Studio.React.Store                        as Store
 -- import           Luna.Studio.Commands.Command          (Command)
 -- import qualified Luna.Studio.Commands.Graph            as Graph
--- import           Luna.Studio.Commands.Graph.Disconnect (disconnectAll)
+-- import           Luna.Studio.Commands.Graph.Disconnect (disconnect)
 -- import qualified Luna.Studio.Commands.UIRegistry       as UICmd
 -- import           Luna.Studio.State.Connect             (Connecting (Connecting))
 -- import qualified Luna.Studio.State.Connect             as Connect
@@ -61,7 +61,7 @@ module UI.Handlers.Connection where
 --         Just srcPortRef <- preuse $ Global.graph . Graph.connectionsMap . ix connId . Connection.src
 --         Just port <- Graph.getPort $ PortRef.OutPortRef' srcPortRef
 --         Just nodeWidgetRef <- Global.getNode $ srcPortRef ^. PortRef.srcNodeId
---         disconnectAll [connId]
+--         disconnect [connId]
 --         sourceNodePos   <- view NodeModel.position <$> Store.get nodeWidgetRef
 --         let sourcePortAngle = port ^. PortModel.angleVector
 --         -- let coord = floor <$> sourceNodePos + shiftVec
@@ -73,7 +73,7 @@ module UI.Handlers.Connection where
 --         Just dstPortRef <- preuse $ Global.graph . Graph.connectionsMap . ix connId . Connection.dst
 --         Just port <- Graph.getPort $ PortRef.InPortRef' dstPortRef
 --         Just nodeWidgetRef <- Global.getNode $ dstPortRef ^. PortRef.dstNodeId
---         disconnectAll [connId]
+--         disconnect [connId]
 --         dstNodePos   <- view NodeModel.position <$> Store.get nodeWidgetRef
 --         let dstPortAngle = port ^. PortModel.angleVector
 --         -- let coord = floor <$> dstNodePos + shiftVec

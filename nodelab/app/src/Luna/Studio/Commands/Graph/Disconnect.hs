@@ -1,6 +1,6 @@
 module Luna.Studio.Commands.Graph.Disconnect
-     ( disconnectAll
-     , localDisconnectAll
+     ( disconnect
+     , localDisconnect
      ) where
 
 import           Luna.Studio.Prelude
@@ -17,21 +17,12 @@ import qualified Luna.Studio.State.Global           as Global
 import qualified Luna.Studio.State.Graph            as Graph
 
 
--- TODO[react]: Is "All" in name necessary?
-localDisconnectAll :: [ConnectionId] -> Command State ()
-localDisconnectAll connectionIds = do
+localDisconnect :: [ConnectionId] -> Command State ()
+localDisconnect connectionIds = do
     Global.withNodeEditor $ Store.modifyM_ $
         forM_ connectionIds $ \ connectionId ->
             NodeEditor.connections . at connectionId .= Nothing
-    Global.graph           %= Graph.removeConnections connectionIds
+    Global.graph %= Graph.removeConnections connectionIds
 
-connectionToRefs :: Connection -> (OutPortRef, InPortRef)
-connectionToRefs conn = (conn ^. Connection.src, conn ^. Connection.dst)
-
-disconnectAll :: [ConnectionId] -> Command State ()
-disconnectAll connectionIds = do
-    graph     <- use Global.graph
-    let conns = catMaybes $ Graph.lookUpConnection graph <$> connectionIds
-        refs  = connectionToRefs <$> conns
-    mapM_ BatchCmd.disconnectNodes (snd <$> refs)
-    localDisconnectAll connectionIds
+disconnect :: [ConnectionId] -> Command State ()
+disconnect = mapM_ BatchCmd.disconnectNodes
