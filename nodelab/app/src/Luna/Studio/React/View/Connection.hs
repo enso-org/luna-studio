@@ -4,12 +4,11 @@ module Luna.Studio.React.View.Connection where
 import qualified Data.Map.Lazy                      as Map
 import           React.Flux
 import qualified React.Flux                         as React
-import           Empire.API.Data.PortRef            (AnyPortRef (InPortRef', OutPortRef'), InPortRef, OutPortRef, toAnyPortRef)
+import           Empire.API.Data.PortRef            (AnyPortRef (InPortRef', OutPortRef'), InPortRef, OutPortRef)
 import qualified Empire.API.Data.PortRef            as PortRef
 import qualified Event.UI                           as UI
 import           Luna.Studio.Commands.Command       (Command)
 import           Luna.Studio.Commands.Graph         (getNode, getPort)
-import           Luna.Studio.Data.Angle             (Angle)
 import           Luna.Studio.Data.Color             (Color, toJSString)
 import           Luna.Studio.Data.Vector            --(Position, Vector2 (Vector2), x, y)
 import qualified Luna.Studio.Prelude                as Prelude
@@ -21,7 +20,6 @@ import qualified Luna.Studio.React.Model.Connection as Connection
 import qualified Luna.Studio.React.Model.Node       as Node
 import qualified Luna.Studio.React.Model.Port       as Port
 import           Luna.Studio.React.Store            (Ref, dispatch, dt)
-import qualified Luna.Studio.React.Store            as Store
 import           Luna.Studio.React.View.Global
 import           Luna.Studio.State.Global           (State)
 
@@ -121,11 +119,11 @@ getCurrentConnectionColor portRef = (fmap $ Prelude.view Port.color) <$> (getPor
 connection :: Ref Connection -> ReactView ()
 connection connectionRef = React.defineControllerView
     name connectionRef $ \connectionStore () -> do
-        let connection = connectionStore ^. dt
-            connId     = connection ^. Connection.connectionId
-            src        = connection ^. Connection.from
-            dst        = connection ^. Connection.to
-            color      = connection ^. Connection.color
+        let connection'= connectionStore ^. dt
+            connId     = connection' ^. Connection.connectionId
+            src        = connection' ^. Connection.from
+            dst        = connection' ^. Connection.to
+            color      = connection' ^. Connection.color
             srcX       = src ^. x
             srcY       = src ^. y
             dstX       = dst ^. x
@@ -164,10 +162,10 @@ connection_ inPortRef connectionRef = React.viewWithSKey (connection connectionR
 currentConnection :: Ref CurrentConnection -> ReactView ()
 currentConnection connectionRef = React.defineControllerView
     name connectionRef $ \connectionStore () -> do
-        let connection = connectionStore ^. dt
-            src        = connection ^. Connection.currentFrom
-            dst        = connection ^. Connection.currentTo
-            color      = connection ^. Connection.currentColor
+        let connection'= connectionStore ^. dt
+            src        = connection' ^. Connection.currentFrom
+            dst        = connection' ^. Connection.currentTo
+            color      = connection' ^. Connection.currentColor
             x1         = fromString $ showSvg $ src ^. x
             y1         = fromString $ showSvg $ src ^. y
             x2         = fromString $ showSvg $ dst ^. x
@@ -181,6 +179,7 @@ currentConnection connectionRef = React.defineControllerView
             , "stroke"      $= toJSString color
             , "strokeWidth" $= width
             ] mempty
+
 
 currentConnection_ :: Ref CurrentConnection -> ReactElementM ViewEventHandler ()
 currentConnection_ connectionRef = React.viewWithSKey (currentConnection connectionRef) "current-connection" () mempty
