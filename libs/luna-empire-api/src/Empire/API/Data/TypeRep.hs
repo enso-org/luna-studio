@@ -1,9 +1,11 @@
+{-# LANGUAGE DeriveAnyClass #-}
 module Empire.API.Data.TypeRep where
 
-import Prologue    hiding (intercalate, TypeRep)
+import           Prologue        hiding (TypeRep, intercalate)
 
-import Data.Binary (Binary)
-import Data.List   (intercalate)
+import           Control.DeepSeq (NFData)
+import           Data.Binary     (Binary)
+import           Data.List       (intercalate)
 
 data TypeRep = TCons String    [TypeRep]
              | TVar  String
@@ -11,7 +13,7 @@ data TypeRep = TCons String    [TypeRep]
              | TStar
              | TBlank
              | TAcc  String TypeRep
-             deriving (Show, Eq, Generic)
+             deriving (Show, Eq, Generic, NFData)
 
 instance Binary TypeRep
 

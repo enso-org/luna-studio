@@ -2,6 +2,7 @@
 module Luna.Studio.React.View.Port where
 
 import           Luna.Studio.Prelude
+import Control.DeepSeq (force)
 
 import           Empire.API.Data.Node               (NodeId)
 import           Empire.API.Data.Port               (InPort (..), OutPort (..), PortId (..))
@@ -23,8 +24,8 @@ name :: JSString
 name = "port"
 
 
-port :: Ref Node -> Int -> Bool -> ReactView Port
-port nodeRef numOfPorts isOnly = React.defineView name $ \p -> do
+port :: ReactView (Ref Node, Int, Bool, Port)
+port = React.defineView name $ \(nodeRef, numOfPorts, isOnly, p) -> do
     drawPort_ nodeRef p numOfPorts isOnly
 
 portExpanded :: Ref Node -> ReactView Port
@@ -33,7 +34,7 @@ portExpanded nodeRef = React.defineView name $ \p -> do
 
 
 port_ :: Ref Node -> Port -> Int -> Bool -> ReactElementM ViewEventHandler ()
-port_ ref p numOfPorts isOnly = React.viewWithSKey (port ref numOfPorts isOnly) (fromString $ show $ p ^. Port.portId) p mempty
+port_ !ref (force -> !p) !numOfPorts !isOnly = React.viewWithSKey port (fromString $ show $ p ^. Port.portId) (ref, numOfPorts, isOnly, p) mempty
 
 portExpanded_ :: Ref Node -> Port -> ReactElementM ViewEventHandler ()
 portExpanded_ ref p = React.viewWithSKey (portExpanded ref) (fromString $ show $ p ^. Port.portId) p mempty

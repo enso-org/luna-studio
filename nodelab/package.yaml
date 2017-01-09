@@ -26,6 +26,7 @@ default-extensions:
   - StandaloneDeriving
   - TemplateHaskell
   - TupleSections
+  - ViewPatterns
 
 ghc-options:
     -Wall

@@ -1,5 +1,6 @@
 module Luna.Studio.React.Model.Port where
 
+import           Control.DeepSeq
 import           Data.Aeson                (ToJSON)
 
 import           Empire.API.Data.Node      (NodeId)
@@ -20,6 +21,7 @@ data Port = Port { _portRef     :: AnyPortRef
 
 makeLenses ''Port
 instance ToJSON Port
+instance NFData Port
 
 portId :: Lens' Port API.PortId
 portId = port . API.portId

@@ -7,6 +7,7 @@ module Luna.Studio.React.View.Visualization
 )
 where
 
+import Control.DeepSeq (force)
 import           Control.Arrow                                  ((***))
 import           Data.List.Split                                (wordsBy)
 import qualified Data.Text.Lazy                                 as Text
@@ -43,7 +44,7 @@ visualization = React.defineView viewName $ \case
     NodeResult.Value _ valueReprs -> nodeValues_ valueReprs
 
 visualization_ :: NodeValue -> ReactElementM ViewEventHandler ()
-visualization_ v = React.view visualization v mempty
+visualization_ (force -> !v) = React.view visualization v mempty
 
 
 strValue :: Node -> String

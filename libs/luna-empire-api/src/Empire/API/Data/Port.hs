@@ -35,13 +35,13 @@ instance Ord OutPort where
   (Projection _) `compare` All            = GT
   (Projection a) `compare` (Projection b) = a `compare` b
 
-data PortState = NotConnected | Connected | WithDefault PortDefault deriving (Show, Eq, Generic)
+data PortState = NotConnected | Connected | WithDefault PortDefault deriving (Show, Eq, Generic, NFData)
 
 data Port = Port { _portId     :: PortId
                  , _name       :: String
                  , _valueType  :: ValueType
                  , _state      :: PortState
-                 } deriving (Show, Eq, Generic)
+                 } deriving (Show, Eq, Generic, NFData)
 
 makeLenses ''Port
 makePrisms ''PortState
