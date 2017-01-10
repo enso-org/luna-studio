@@ -236,16 +236,14 @@ connect = uncurry Connection
 
 filterNodes :: [NodeId] -> [Node] -> [Node]
 filterNodes nodesIds nodes = catMaybes p
-    where q x = List.find (\node -> node ^. Node.nodeId == x) nodes
+    where q nId = List.find (\node -> node ^. Node.nodeId == nId) nodes
           p   = map q nodesIds
 
--- FIXME[WD]: let in - > where ?
 filterConnections :: [(OutPortRef, InPortRef)] -> [NodeId] -> [(OutPortRef, InPortRef)]
 filterConnections connectionPorts nodesIds = concat p
-    where  q x = Prologue.filter (\port -> (((PortRef.OutPortRef' (fst port)) ^. PortRef.nodeId == x) || ( (PortRef.InPortRef' (snd port)) ^. PortRef.nodeId == x)) ) connectionPorts
+    where  q nId = Prologue.filter (\port -> (((PortRef.OutPortRef' (fst port)) ^. PortRef.nodeId == nId) || ( (PortRef.InPortRef' (snd port)) ^. PortRef.nodeId == nId)) ) connectionPorts
            p   = map q nodesIds
 
--- FIXME[WD]: wyrownyywanie ROWNA SIE!!!
 handleRemoveNodesUndo :: RemoveNodes.Response -> Maybe (AddSubgraph.Request, RemoveNodes.Request)
 handleRemoveNodesUndo (Response.Response _ guiID (RemoveNodes.Request location nodesIds) inv _) =
     withOk inv $ \(RemoveNodes.Inverse nodes connectionPorts) ->
