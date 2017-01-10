@@ -44,8 +44,7 @@ node ref = React.defineControllerView
             ports     = Map.elems $ n ^. Node.ports
             offsetX   = show (pos ^. x)
             offsetY   = show (pos ^. y)
-        in do
-            div_
+        in  div_
                 [ "key"       $= fromString (show nodeId)
                 , onClick       $ \_ m -> dispatch ref $ UI.NodeEvent $ Node.Select m nodeId
                 , onDoubleClick $ \_ _ -> dispatch ref $ UI.NodeEvent $ Node.Enter nodeId
