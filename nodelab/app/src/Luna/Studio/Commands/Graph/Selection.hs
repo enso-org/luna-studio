@@ -31,8 +31,6 @@ import qualified Luna.Studio.State.Global                    as Global
 import qualified Luna.Studio.State.UIRegistry                as UIRegistry
 
 
-
-
 toggleSelect :: NodeId -> Command Global.State ()
 toggleSelect nodeId = do
     mayNodeRef <- Global.getNode nodeId
