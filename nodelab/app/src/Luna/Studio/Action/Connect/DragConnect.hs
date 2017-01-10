@@ -15,7 +15,7 @@ import qualified JS.GoogleAnalytics                     as GA
 import           Luna.Studio.Action.Command             (Command)
 import           Luna.Studio.Action.Connect.Color       (getConnectionColor)
 import           Luna.Studio.Action.Connect.Helpers     (createCurrentConnection, toValidConnection)
-import           Luna.Studio.Action.Geometry.Connection (getConnectionSrcPosition)
+import           Luna.Studio.Action.Geometry.Connection (getCurrentConnectionPosition)
 import           Luna.Studio.Action.Graph.Connect       (connectNodes, localConnectNodes)
 import           Luna.Studio.Action.Graph.Disconnect    (removeConnections)
 import           Luna.Studio.Event.Mouse                (workspacePosition)
@@ -36,10 +36,10 @@ import           React.Flux                             (MouseEvent)
 startDragFromPort :: MouseEvent -> AnyPortRef -> Maybe Connection -> Command State ()
 startDragFromPort evt portRef modifiedConnection = do
     mousePos  <- workspacePosition evt
-    maySrcPos <- getConnectionSrcPosition portRef mousePos
+    maySrcPos <- getCurrentConnectionPosition portRef mousePos
     mayColor  <- getConnectionColor portRef
-    withJust ((,) <$> maySrcPos <*> mayColor) $ \(srcPos, color) -> do
-        createCurrentConnection portRef modifiedConnection srcPos mousePos color
+    withJust ((,) <$> maySrcPos <*> mayColor) $ \((srcPos, dstPos), color) -> do
+        createCurrentConnection portRef modifiedConnection srcPos dstPos color
 
 whileConnecting :: (Ref CurrentConnection -> Command State ()) -> Command State ()
 whileConnecting run = do
@@ -50,12 +50,12 @@ handleMove :: MouseEvent -> Ref CurrentConnection -> Command State ()
 handleMove evt connRef = do
     mousePos   <- workspacePosition evt
     srcPortRef <- view ConnectionModel.srcPortRef <$> Ref.get connRef
-    maySrcPos  <- getConnectionSrcPosition srcPortRef mousePos
+    maySrcPos  <- getCurrentConnectionPosition srcPortRef mousePos
     case maySrcPos of
-        Just pos -> flip Store.modifyM_ connRef $ do
-            ConnectionModel.currentTo .= mousePos
-            ConnectionModel.currentFrom .= pos
-        Nothing  -> stopDrag connRef
+        Just (srcPos, dstPos) -> flip Store.modifyM_ connRef $ do
+            ConnectionModel.currentTo   .= dstPos
+            ConnectionModel.currentFrom .= srcPos
+        Nothing               -> stopDrag connRef
 
 stopDrag :: Ref CurrentConnection -> Command State ()
 stopDrag connRef = do

@@ -1,10 +1,10 @@
 module Luna.Studio.Action.Geometry.Connection
     ( getConnectionPosition
-    , getConnectionSrcPosition
+    , getCurrentConnectionPosition
     ) where
 
 import qualified Data.Map.Lazy                         as Map
-import           Empire.API.Data.PortRef               (AnyPortRef, InPortRef, OutPortRef)
+import           Empire.API.Data.PortRef               (AnyPortRef (InPortRef', OutPortRef'), InPortRef, OutPortRef)
 import qualified Empire.API.Data.PortRef               as PortRef
 import           Luna.Studio.Action.Command            (Command)
 import           Luna.Studio.Action.Geometry.Constants (portRadius)
@@ -81,16 +81,21 @@ getConnectionPosition srcPortRef dstPortRef = do
         _ -> return Nothing
 
 
-getConnectionSrcPosition :: AnyPortRef -> Position -> Command State (Maybe Position)
-getConnectionSrcPosition srcPortRef dstPos = do
-    maySrcNode <- getNode $ srcPortRef ^. PortRef.nodeId
-    maySrcPort <- getPort srcPortRef
+getCurrentConnectionPosition :: AnyPortRef -> Position -> Command State (Maybe (Position, Position))
+getCurrentConnectionPosition portRef mousePos = do
+    mayNode <- getNode $ portRef ^. PortRef.nodeId
+    mayPort <- getPort portRef
 
-    case (maySrcNode, maySrcPort) of
-        (Just srcNode, Just srcPort) -> do
-            let srcPorts      = Map.elems $ srcNode ^. Node.ports
-                srcPos        = srcNode ^. Node.position
-                isSrcExpanded = srcNode ^. Node.isExpanded
-                srcConnPos    = connectionSrc srcPos dstPos isSrcExpanded False (getPortNumber srcPort) (countSameTypePorts srcPort srcPorts) (isPortSingle srcPort srcPorts)
-            return $ Just srcConnPos
+    case (mayNode, mayPort) of
+        (Just node, Just port) -> do
+            let ports      = Map.elems $ node ^. Node.ports
+                pos        = node ^. Node.position
+                isExpanded = node ^. Node.isExpanded
+                portNum    = getPortNumber port
+                numOfPorts = countSameTypePorts port ports
+                isSingle   = isPortSingle port ports
+                connPortPos = case portRef of
+                    OutPortRef' _ -> connectionSrc pos mousePos isExpanded False portNum numOfPorts isSingle
+                    InPortRef'  _ -> connectionDst mousePos pos isExpanded False portNum numOfPorts isSingle
+            return $ Just (connPortPos, mousePos)
         _ -> return Nothing
