@@ -35,7 +35,6 @@ connectionSrc src dst isSrcExpanded _             _   _          True =
         srcExpY = src ^. y
         srcX = if isSrcExpanded then srcExpX else portRadius * cos t + src ^. x
         srcY = if isSrcExpanded then srcExpY else portRadius * sin t + src ^. y
-
     in  Position (Vector2 srcX srcY)
 
 connectionSrc src dst isSrcExpanded isDstExpanded dstInputNum numOfDstInputs _    =
@@ -45,7 +44,6 @@ connectionSrc src dst isSrcExpanded isDstExpanded dstInputNum numOfDstInputs _  
         dstExpY = dst ^. y -- TODO: numOfInputs
         trueSrc = if isSrcExpanded then Position(Vector2 srcExpX srcExpY) else src
         trueDst = if isDstExpanded then Position(Vector2 dstExpX dstExpY) else dst
-
         a  = portAngleStop  dstInputNum numOfDstInputs portRadius
         b  = portAngleStart dstInputNum numOfDstInputs portRadius
         t  = nodeToNodeAngle trueSrc trueDst
@@ -55,10 +53,8 @@ connectionSrc src dst isSrcExpanded isDstExpanded dstInputNum numOfDstInputs _  
         g  = portGap portRadius / 4
         t''= if t' > a'- pi/2 - g then a - pi/2 - g else
              if t' < b'- pi/2 + g then b - pi/2 + g else t
-
         srcX = if isSrcExpanded then srcExpX else portRadius * cos t'' + src ^. x
         srcY = if isSrcExpanded then srcExpY else portRadius * sin t'' + src ^. y
-
     in  Position (Vector2 srcX srcY)
 
 
@@ -129,40 +125,56 @@ instance HasColor AnyPortRef where
 connection :: Ref Connection -> ReactView ()
 connection connectionRef = React.defineControllerView
     name connectionRef $ \connectionStore () -> do
-        let connection'= connectionStore ^. dt
-            connId     = connection' ^. Connection.connectionId
-            src        = connection' ^. Connection.from
-            dst        = connection' ^. Connection.to
-            color      = connection' ^. Connection.color
-            srcX       = src ^. x
-            srcY       = src ^. y
-            dstX       = dst ^. x
-            dstY       = dst ^. y
-            midX       = (srcX + dstX) / 2
-            midY       = (srcY + dstY) / 2
-
-            width      = fromString $ show connectionWidth
+        let connection' = connectionStore ^. dt
+            connId      = connection' ^. Connection.connectionId
+            src         = connection' ^. Connection.from
+            dst         = connection' ^. Connection.to
+            color       = connection' ^. Connection.color
+            srcX        = src ^. x
+            srcY        = src ^. y
+            dstX        = dst ^. x
+            dstY        = dst ^. y
+            midX        = (srcX + dstX) / 2
+            midY        = (srcY + dstY) / 2
+            width       = fromString $ show connectionWidth
+            widthSelect = fromString $ show $ connectionWidth * 4
         g_ [ "className" $= "connection" ] $ do
-            line_
-                [ onMouseDown $ \e m -> stopPropagation e : dispatch connectionRef (UI.ConnectionEvent $ Connection.ModifyConnection m connId Source)
-                , "className"   $= "connection__src"
-                , "x1"          $= (fromString $ showSvg srcX)
-                , "y1"          $= (fromString $ showSvg srcY)
-                , "x2"          $= (fromString $ showSvg midX)
-                , "y2"          $= (fromString $ showSvg midY)
-                , "stroke"      $= toJSString color
-                , "strokeWidth" $= width
-                ] mempty
-            line_
-                [ onMouseDown $ \e m -> stopPropagation e : dispatch connectionRef (UI.ConnectionEvent $ Connection.ModifyConnection m connId Destination)
-                , "className"   $= "connection__dst"
-                , "x1"          $= (fromString $ showSvg midX)
-                , "y1"          $= (fromString $ showSvg midY)
-                , "x2"          $= (fromString $ showSvg dstX)
-                , "y2"          $= (fromString $ showSvg dstY)
-                , "stroke"      $= toJSString color
-                , "strokeWidth" $= width
-                ] mempty
+            g_ [ "className" $= "connection__src" ] $ do
+                line_
+                    [ "x1"          $= (fromString $ showSvg srcX)
+                    , "y1"          $= (fromString $ showSvg srcY)
+                    , "x2"          $= (fromString $ showSvg midX)
+                    , "y2"          $= (fromString $ showSvg midY)
+                    , "stroke"      $= toJSString color
+                    , "strokeWidth" $= width
+                    ] mempty
+                line_
+                    [ onMouseDown $ \e m -> stopPropagation e : dispatch connectionRef (UI.ConnectionEvent $ Connection.ModifyConnection m connId Source)
+                    , "className"   $= "connection__select"
+                    , "x1"          $= (fromString $ showSvg srcX)
+                    , "y1"          $= (fromString $ showSvg srcY)
+                    , "x2"          $= (fromString $ showSvg midX)
+                    , "y2"          $= (fromString $ showSvg midY)
+                    , "strokeWidth" $= widthSelect
+                    ] mempty
+            g_ [ "className" $= "connection__dst" ] $ do
+                line_
+                    [ "x1"          $= (fromString $ showSvg midX)
+                    , "y1"          $= (fromString $ showSvg midY)
+                    , "x2"          $= (fromString $ showSvg dstX)
+                    , "y2"          $= (fromString $ showSvg dstY)
+                    , "stroke"      $= toJSString color
+                    , "strokeWidth" $= width
+                    ] mempty
+                line_
+                    [ onMouseDown $ \e m -> stopPropagation e : dispatch connectionRef (UI.ConnectionEvent $ Connection.ModifyConnection m connId Destination)
+                    , "className"   $= "connection__select"
+                    , "x1"          $= (fromString $ showSvg midX)
+                    , "y1"          $= (fromString $ showSvg midY)
+                    , "x2"          $= (fromString $ showSvg dstX)
+                    , "y2"          $= (fromString $ showSvg dstY)
+                    , "strokeWidth" $= widthSelect
+                    ] mempty
 
 
 connection_ :: InPortRef -> Ref Connection -> ReactElementM ViewEventHandler ()

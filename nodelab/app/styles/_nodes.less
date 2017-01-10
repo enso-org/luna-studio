@@ -34,7 +34,15 @@
 .connection__src,
 .connection__dst {
     transition: all 90ms linear;
+    &:hover * {
+        stroke: #fff;
+    }
 }
+.connection__select {
+    opacity: 0;
+    stroke-linecap: butt;
+}
+
 
 // node
 
