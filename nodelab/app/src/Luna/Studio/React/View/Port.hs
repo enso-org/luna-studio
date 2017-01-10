@@ -5,26 +5,27 @@ module Luna.Studio.React.View.Port where
 import           Control.DeepSeq                    (NFData, deepseq, force)
 import           Luna.Studio.Prelude
 
-import           Empire.API.Data.Node               (NodeId)
 import           Empire.API.Data.Port               (InPort (..), OutPort (..), PortId (..))
 import qualified Event.UI                           as UI
-import           Luna.Studio.Data.Angle             (Angle)
-import           Luna.Studio.Data.Color             (Color, toJSString)
+import           Luna.Studio.Action.Geometry        (lineHeight, nodeRadius, nodeRadius', portAngleStart, portAngleStop)
+import           Luna.Studio.Data.Color             (toJSString)
 import qualified Luna.Studio.React.Event.Connection as Connection
 import           Luna.Studio.React.Model.Node       (Node)
 import           Luna.Studio.React.Model.Port       (Port (..))
 import qualified Luna.Studio.React.Model.Port       as Port
 import           Luna.Studio.React.Store            (Ref, dispatch)
-import           Luna.Studio.React.View.Global
+import           Numeric                            (showFFloat)
 import           React.Flux                         hiding (view)
 import qualified React.Flux                         as React
-
 
 
 name :: JSString
 name = "port"
 
 data Props = Props !(Ref Node) !Int !Bool !Port deriving (Generic, NFData)
+
+showSvg :: Double -> String
+showSvg a = showFFloat (Just 4) a "" -- limit Double to two decimal numbers
 
 port :: ReactView Props
 port = React.defineView name $ \(Props ref numOfPorts isOnly p) ->

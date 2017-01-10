@@ -2,44 +2,44 @@
 
 module UI.Handlers.Node where
 
-import           Luna.Studio.Prelude                         hiding (stripPrefix)
+import           Luna.Studio.Prelude                hiding (stripPrefix)
 
-import           Control.Monad.Trans.State                   (get)
-import qualified Data.HashMap.Strict                         as HashMap
-import           Data.HMap.Lazy                              (HTMap, TypeKey (..))
-import qualified Data.Text.Lazy                              as Text
+import           Control.Monad.Trans.State          (get)
+import qualified Data.HashMap.Strict                as HashMap
+import           Data.HMap.Lazy                     (HTMap, TypeKey (..))
+import qualified Data.Text.Lazy                     as Text
 import           Luna.Studio.Data.Vector
 
-import           Object.Widget                               (CompositeWidget, KeyPressedHandler, ResizableWidget, UIHandlers, WidgetId,
-                                                              createWidget, keyDown, mouseOut, mouseOver, updateWidget)
+import           Object.Widget                      (CompositeWidget, KeyPressedHandler, ResizableWidget, UIHandlers, WidgetId,
+                                                     createWidget, keyDown, mouseOut, mouseOver, updateWidget)
 
-import           Luna.Studio.React.Model.Node                (Node)
-import qualified Luna.Studio.React.Model.Node                as Node
-import qualified Luna.Studio.React.Model.NodeEditor          as NodeEditor
-import           Luna.Studio.React.Store                     (Ref, WRef)
-import qualified Luna.Studio.React.Store                     as Store
+import           Luna.Studio.React.Model.Node       (Node)
+import qualified Luna.Studio.React.Model.Node       as Node
+import qualified Luna.Studio.React.Model.NodeEditor as NodeEditor
+import           Luna.Studio.React.Store            (Ref, WRef)
+import qualified Luna.Studio.React.Store            as Store
 
-import           Luna.Studio.Commands.Batch                  (cancelCollaborativeTouch, collaborativeTouch)
-import           Luna.Studio.Commands.Command                (Command)
-import           Luna.Studio.Commands.Graph.SelectionHistory (dropSelectionHistory, modifySelectionHistory)
-import qualified Luna.Studio.React.Model.Node                as Model
-import           Luna.Studio.State.Global                    (inRegistry)
-import qualified Luna.Studio.State.Global                    as Global
-import           Luna.Studio.State.UIRegistry                (addHandler)
-import qualified Luna.Studio.State.UIRegistry                as UIRegistry
-import qualified Object.Widget.CodeEditor                    as CodeEditor
-import qualified Object.Widget.Group                         as Group
-import qualified Object.Widget.Label                         as Label
-import qualified Object.Widget.TextBox                       as TextBox
+import           Luna.Studio.Action.Batch           (cancelCollaborativeTouch, collaborativeTouch)
+import           Luna.Studio.Action.Command         (Command)
+import           Luna.Studio.Action.Graph           (dropSelectionHistory, modifySelectionHistory)
+import qualified Luna.Studio.React.Model.Node       as Model
+import           Luna.Studio.State.Global           (inRegistry)
+import qualified Luna.Studio.State.Global           as Global
+import           Luna.Studio.State.UIRegistry       (addHandler)
+import qualified Luna.Studio.State.UIRegistry       as UIRegistry
+import qualified Object.Widget.CodeEditor           as CodeEditor
+import qualified Object.Widget.Group                as Group
+import qualified Object.Widget.Label                as Label
+import qualified Object.Widget.TextBox              as TextBox
 
-import qualified Style.Node                                  as Style
-import           UI.Generic                                  (whenChanged)
-import           UI.Handlers.Generic                         (ValueChangedHandler (..))
-import           UI.Widget.CodeEditor                        ()
-import           UI.Widget.Group                             ()
-import           UI.Widget.TextBox                           ()
+import qualified Style.Node                         as Style
+import           UI.Generic                         (whenChanged)
+import           UI.Handlers.Generic                (ValueChangedHandler (..))
+import           UI.Widget.CodeEditor               ()
+import           UI.Widget.Group                    ()
+import           UI.Widget.TextBox                  ()
 
-import           Empire.API.Data.Node                        (NodeId)
+import           Empire.API.Data.Node               (NodeId)
 
 
 

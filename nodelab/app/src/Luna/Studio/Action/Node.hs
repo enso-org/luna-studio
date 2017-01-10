@@ -1,60 +1,38 @@
-module Luna.Studio.Action.Node where
+{-# LANGUAGE OverloadedStrings #-}
+module Luna.Studio.Action.Node
+    ( addNode
+    , addDummyNode
+    , enter
+    , exit
+    , tryEnter
+    , expandSelectedNodes
+    , editExpression
+    , rename
+    , startEditName
+    , editName
+    , applyName
+    , discardName
+    , updateNodesMeta
+    , modifyNodeMeta
+    , registerNode
+    , removeSelectedNodes
+    , localRemoveNodes
+    , snap
+    , snapCoord
+    , updateNode
+    , updateNodeValue
+    , updateNodeProfilingData
+    , updateExpression
+    , visualizationsToggled
+    ) where
 
-import           React.Flux                           (KeyboardEvent, mouseCtrlKey, mouseMetaKey)
-
-import           Empire.API.Data.Node                 (NodeId)
-import           Event.Event                          (Event (UI))
-import           Event.UI                             (UIEvent (AppEvent, NodeEvent))
-import qualified Luna.Studio.Commands.Batch           as Batch
-import           Luna.Studio.Commands.Command         (Command)
-import           Luna.Studio.Commands.Graph.Selection (selectAll, toggleSelect, unselectAll)
-import qualified Luna.Studio.Commands.Node            as Node
-import           Luna.Studio.Commands.Node.Remove     as Node
-import qualified Luna.Studio.Commands.PortControl     as PortControl
-import qualified Luna.Studio.Event.Keys               as Keys
-import           Luna.Studio.Event.Mouse              (mousePosition)
-import           Luna.Studio.Prelude
-import qualified Luna.Studio.React.Event.App          as App
-import qualified Luna.Studio.React.Event.Node         as Node
-import           Luna.Studio.State.Global             (State)
-import qualified Luna.Studio.State.Global             as Global
-import qualified Luna.Studio.State.Graph              as Graph
-
-
-
-toAction :: Event -> Maybe (Command State ())
-toAction (UI (NodeEvent (Node.Enter            nodeId))) = Just $ mapM_ Node.tryEnter =<< preuse (Global.graph . Graph.nodesMap . ix nodeId)
-toAction (UI (NodeEvent (Node.EditExpression   nodeId))) = Just $ Node.editExpression nodeId
-toAction (UI (NodeEvent (Node.Select      kevt nodeId))) = Just $ when (mouseCtrlKey kevt || mouseMetaKey kevt) $ toggleSelect nodeId
-toAction (UI (NodeEvent (Node.DisplayResultChanged flag nodeId))) = Just $ Node.visualizationsToggled nodeId flag
-toAction (UI (NodeEvent (Node.NameEditStart    nodeId))) = Just $ Node.startEditName nodeId
-toAction (UI (NodeEvent (Node.NameKeyDown kevt nodeId))) = Just $ handleKeyNode kevt nodeId
-toAction (UI (NodeEvent (Node.NameChange   val nodeId))) = Just $ Node.editName nodeId val
-toAction (UI (NodeEvent (Node.PortEditString       portRef defaultValue))) = Just $ PortControl.setPortDefault portRef defaultValue
-toAction (UI (NodeEvent (Node.PortApplyString kevt portRef defaultValue))) = Just $ when (Keys.withoutMods kevt Keys.enter) $
-                                                                                        Batch.setDefaultValue portRef defaultValue
-toAction (UI (NodeEvent (Node.PortSetDefaultValue portRef defaultValue))) = Just $ Batch.setDefaultValue portRef defaultValue
---TODO[react]: Findout if we need workspacePosition here
-toAction (UI (NodeEvent (Node.PortInitSlider mevt portRef sliderInit)))   = Just $ PortControl.startMoveSlider portRef (mousePosition mevt) sliderInit
-toAction (UI (AppEvent  (App.KeyDown   kevt))) = Just $ handleKeyApp kevt
---TODO[react]: Findout if we need workspacePosition here
-toAction (UI (AppEvent  (App.MouseMove mevt))) = Just $ PortControl.moveSlider     $ mousePosition mevt
---TODO[react]: Findout if we need workspacePosition here
-toAction (UI (AppEvent  (App.MouseUp   mevt))) = Just $ PortControl.stopMoveSlider $ mousePosition mevt
-toAction _   = Nothing
-
-
-handleKeyNode :: KeyboardEvent -> NodeId -> Command State ()
-handleKeyNode kevt nodeId
-    | Keys.withoutMods kevt Keys.enter = Node.applyName   nodeId
-    | Keys.withoutMods kevt Keys.esc   = Node.discardName nodeId
-    | otherwise                        = return ()
-
-
-handleKeyApp :: KeyboardEvent -> Command State ()
-handleKeyApp kevt
-    | Keys.withCtrl    kevt Keys.a     = selectAll
-    | Keys.withoutMods kevt Keys.del   = Node.removeSelectedNodes
-    | Keys.withoutMods kevt Keys.esc   = unselectAll
-    | Keys.withoutMods kevt Keys.enter = Node.expandSelectedNodes
-    | otherwise                        = return ()
+import           Luna.Studio.Action.Node.Create        (addDummyNode, addNode, registerNode)
+import           Luna.Studio.Action.Node.Enter         (enter, exit, tryEnter)
+import           Luna.Studio.Action.Node.Expand        (expandSelectedNodes)
+import           Luna.Studio.Action.Node.Expression    (editExpression)
+import           Luna.Studio.Action.Node.Name          (applyName, discardName, editName, rename, startEditName)
+import           Luna.Studio.Action.Node.NodeMeta      (modifyNodeMeta, updateNodesMeta)
+import           Luna.Studio.Action.Node.Remove        (localRemoveNodes, removeSelectedNodes)
+import           Luna.Studio.Action.Node.Snap          (snap, snapCoord)
+import           Luna.Studio.Action.Node.Update        (updateExpression, updateNode, updateNodeProfilingData, updateNodeValue)
+import           Luna.Studio.Action.Node.Visualization (visualizationsToggled)

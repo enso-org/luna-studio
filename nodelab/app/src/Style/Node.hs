@@ -24,9 +24,6 @@ valueLabel = Label.Label position size align def where
     size     = Size (Vector2 100.0 20.0)
     align    = Label.Center
 
-
-
-
 plotSize :: Size
 plotSize = Size (Vector2 200.0 150.0)
 

@@ -43,7 +43,7 @@ import           Empire.API.Data.Port         (InPort, OutPort)
 import           Empire.API.Data.PortRef      (AnyPortRef, InPortRef, OutPortRef)
 import qualified Empire.API.Data.PortRef      as PortRef
 import qualified Empire.API.JSONInstances     ()
-import           Luna.Studio.Commands.Command (Command)
+import           Luna.Studio.Action.Command (Command)
 
 
 type NodesMap       = HashMap NodeId Node

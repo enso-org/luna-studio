@@ -12,7 +12,7 @@ import           Data.Text.Lazy            (pack)
 import           GHCJS.Nullable            (Nullable, maybeToNullable)
 import           Luna.Studio.Prelude
 
-import           Luna.Studio.Commands.Command (Command, performIO)
+import           Luna.Studio.Action.Command (Command, performIO)
 
 data ConnectType = Manual
                  | Pen

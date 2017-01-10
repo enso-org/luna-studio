@@ -13,8 +13,8 @@ import           Luna.Studio.Prelude          as P hiding (transform)
 import           React.Flux
 import           React.Flux.Store             (ReactStoreRef)
 
-import qualified Event.Event                  as E
-import           Luna.Studio.Commands.Command (Command)
+import qualified Event.Event                as E
+import           Luna.Studio.Action.Command  (Command)
 
 
 
