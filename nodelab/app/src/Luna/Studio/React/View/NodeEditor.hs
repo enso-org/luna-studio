@@ -9,16 +9,16 @@ import           React.Flux.Internal                   (el)
 
 import qualified Event.UI                              as UI
 import qualified Luna.Studio.Data.CameraTransformation as CameraTransformation
-import           Luna.Studio.Data.Vector
+import           Luna.Studio.Data.Matrix               (showTransformMatrixToSvg)
 import           Luna.Studio.Prelude                   hiding (transform)
 import qualified Luna.Studio.React.Event.NodeEditor    as NE
 import           Luna.Studio.React.Model.NodeEditor    (NodeEditor)
 import qualified Luna.Studio.React.Model.NodeEditor    as NodeEditor
 import           Luna.Studio.React.Store               (Ref, dispatch, dt)
 import           Luna.Studio.React.View.Connection     (connection_, currentConnection_)
-import           Luna.Studio.React.View.Global
 import           Luna.Studio.React.View.Node           (node_)
 import           Luna.Studio.React.View.SelectionBox   (selectionBox_)
+
 
 name :: JSString
 name = "node-editor"
@@ -29,7 +29,7 @@ nodeEditor ref = React.defineControllerView name ref $ \store () -> do
 
     let ne = store ^. dt
         transformMatrix = ne ^. NodeEditor.screenTransform . CameraTransformation.logicalToScreen
-        transform       = showTransformMatrix transformMatrix
+        transform       = showTransformMatrixToSvg transformMatrix
     div_
         [ "className" $= "graph"
         , "id"        $= "Graph"

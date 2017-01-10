@@ -17,7 +17,7 @@ import qualified Event.Keyboard               as Keyboard
 import           Event.Mouse                  (MouseButton)
 import qualified Event.Mouse                  as Mouse
 import           Event.Widget                 (Payload)
-import           Luna.Studio.Commands.Command (Command)
+import           Luna.Studio.Action.Command (Command)
 import           Object.UITypes
 -- import           Luna.Studio.State.Camera     (Camera)
 -- import qualified Luna.Studio.State.Camera     as Camera

@@ -44,3 +44,14 @@ invertedHomothetyMatrix pos k = Matrix.fromList 4 4 [ 1/k  , 0    , 0, 0
                                                     , -hX/k, -hY/k, 0, 1 ] where
     hX = (1 - k) * pos ^. x
     hY = (1 - k) * pos ^. y
+
+
+-- TODO[react]: Rename
+transformMatrixToSvg :: String -> String -> String -> String
+transformMatrixToSvg scale offsetX offsetY = "matrix(" <> scale <> " , 0, 0, " <> scale <> " , " <> offsetX <> " , " <> offsetY <> " )"
+
+transformTranslateToSvg :: String -> String ->  String
+transformTranslateToSvg offsetX offsetY = "matrix( 1 , 0, 0, 1, " <> offsetX <> " , " <> offsetY <> " )"
+
+showTransformMatrixToSvg :: Show a => Matrix a -> String
+showTransformMatrixToSvg matrix = (foldl (<>) "matrix3d(" $ intersperse ", " $ map show $ Matrix.toList matrix) <> ")"

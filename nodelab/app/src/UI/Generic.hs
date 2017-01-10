@@ -7,7 +7,7 @@ import           Luna.Studio.Data.Vector      (Position, Size, x, y)
 import           Luna.Studio.Prelude          hiding (children)
 
 import qualified Event.Mouse                  as Mouse
-import           Luna.Studio.Commands.Command (Command, performIO)
+import           Luna.Studio.Action.Command (Command, performIO)
 import qualified Luna.Studio.State.Global     as Global
 import qualified Luna.Studio.State.UIRegistry as UIRegistry
 import           Object.Widget                (DragState (..), IsDisplayObject, WidgetFile, WidgetId, children, objectId, widget,
