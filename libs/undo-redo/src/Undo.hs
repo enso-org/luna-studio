@@ -109,9 +109,9 @@ instance Eq UndoMessage where
 ----------------------
 
 data UndoState z = UndoState { _undo :: [UndoMessage]
-                           , _redo :: [UndoMessage]
-                           , _bus :: Env.BusEnv z
-                           }
+                             , _redo :: [UndoMessage]
+                             , _bus :: Env.BusEnv z
+                             }
 makeLenses ''UndoState
 
 
