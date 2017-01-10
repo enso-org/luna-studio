@@ -35,8 +35,8 @@ makePortsExpanded nodeRef ports = forM_ ports $ \port -> portExpanded_ nodeRef p
 
 node :: Ref Node -> ReactView ()
 node ref = React.defineControllerView
-    objName ref $ \nodeStore () -> do
-        let n         = nodeStore ^. dt
+    objName ref $ \store () -> do
+        let n         = store ^. dt
             nodeId    = n ^. Node.nodeId
             pos       = n ^. Node.position
             ports     = Map.elems $ n ^. Node.ports

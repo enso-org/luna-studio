@@ -1,7 +1,8 @@
+{-# LANGUAGE DeriveAnyClass    #-}
 {-# LANGUAGE OverloadedStrings #-}
 module Luna.Studio.React.View.Port where
 
-import           Control.DeepSeq                    (force)
+import           Control.DeepSeq                    (NFData, deepseq, force)
 import           Luna.Studio.Prelude
 
 import           Empire.API.Data.Node               (NodeId)
@@ -23,41 +24,35 @@ import qualified React.Flux                         as React
 name :: JSString
 name = "port"
 
+data Props = Props !(Ref Node) !Int !Bool !Port deriving (Generic, NFData)
 
-port :: ReactView (Ref Node, Int, Bool, Port)
-port = React.defineView name $ \(ref, numOfPorts, isOnly, p) -> do
-    drawPort_ ref p numOfPorts isOnly
+port :: ReactView Props
+port = React.defineView name $ \(Props ref numOfPorts isOnly p) ->
+    case p ^. Port.portId of
+        InPortId   Self          ->                portSelf_   ref p
+        OutPortId  All           -> if isOnly then portSingle_ ref p
+                                    else           portIO_     ref p 0 numOfPorts False
+        InPortId  (Arg        i) ->                portIO_     ref p i numOfPorts True
+        OutPortId (Projection i) ->                portIO_     ref p i numOfPorts False
 
 portExpanded :: ReactView (Ref Node, Port)
-portExpanded = React.defineView name $ \(ref, p) -> do
-    drawPortExpanded_ ref p
+portExpanded = React.defineView name $ \(ref, p) ->
+    case p ^. Port.portId of
+        InPortId   Self          -> portSelf_       ref p
+        OutPortId  All           -> portIOExpanded_ ref p 0 False
+        InPortId  (Arg        i) -> portIOExpanded_ ref p i True
+        OutPortId (Projection i) -> portIOExpanded_ ref p i False
 
 port_ :: Ref Node -> Port -> Int -> Bool -> ReactElementM ViewEventHandler ()
-port_ !ref (force -> !p) !numOfPorts !isOnly = React.viewWithSKey port (fromString $ show $ p ^. Port.portId) (ref, numOfPorts, isOnly, p) mempty
+port_ ref p numOfPorts isOnly = deepseq props $ React.viewWithSKey port (fromString $ show $ p ^. Port.portId) props mempty where
+    props = Props ref numOfPorts isOnly p
 
 portExpanded_ :: Ref Node -> Port -> ReactElementM ViewEventHandler ()
 portExpanded_ !ref (force -> !p) = React.viewWithSKey portExpanded (fromString $ show $ p ^. Port.portId) (ref, p) mempty
 
 
-drawPort_ :: Ref Node -> Port -> Int -> Bool -> ReactElementM ViewEventHandler ()
-drawPort_ ref port numOfPorts isOnly = do
-    case port ^. Port.portId of
-        InPortId   Self          ->                drawPortSelf_   ref port
-        OutPortId  All           -> if isOnly then drawPortSingle_ ref port
-                                    else           drawPortIO_     ref port 0 numOfPorts False
-        InPortId  (Arg        i) ->                drawPortIO_     ref port i numOfPorts True
-        OutPortId (Projection i) ->                drawPortIO_     ref port i numOfPorts False
-
-drawPortExpanded_ :: Ref Node -> Port -> ReactElementM ViewEventHandler ()
-drawPortExpanded_ ref port = do
-    case port ^. Port.portId of
-        InPortId   Self          -> drawPortSelf_       ref port
-        OutPortId  All           -> drawPortIOExpanded_ ref port 0 False
-        InPortId  (Arg        i) -> drawPortIOExpanded_ ref port i True
-        OutPortId (Projection i) -> drawPortIOExpanded_ ref port i False
-
-drawPortSelf_ :: Ref Node -> Port -> ReactElementM ViewEventHandler ()
-drawPortSelf_ ref port =
+portSelf_ :: Ref Node -> Port -> ReactElementM ViewEventHandler ()
+portSelf_ ref port =
     let portRef = port ^. Port.portRef
         color   = toJSString $ port ^. Port.color
         portId  = port ^. Port.portId
@@ -71,8 +66,8 @@ drawPortSelf_ ref port =
         , "stroke"    $= color
         ] mempty
 
-drawPortSingle_ :: Ref Node -> Port -> ReactElementM ViewEventHandler ()
-drawPortSingle_ ref port = do
+portSingle_ :: Ref Node -> Port -> ReactElementM ViewEventHandler ()
+portSingle_ ref port = do
 
     let portRef     = port ^. Port.portRef
         portId      = port ^. Port.portId
@@ -92,9 +87,8 @@ drawPortSingle_ ref port = do
         ] mempty
 
 
-drawPortIO_ :: Ref Node -> Port -> Int -> Int -> Bool -> ReactElementM ViewEventHandler ()
-drawPortIO_ ref port num numOfPorts isInput = do
-
+portIO_ :: Ref Node -> Port -> Int -> Int -> Bool -> ReactElementM ViewEventHandler ()
+portIO_ ref port num numOfPorts isInput = do
     let portRef = port ^. Port.portRef
         portId  = port ^. Port.portId
         color   = toJSString $ port ^. Port.color
@@ -136,8 +130,8 @@ drawPortIO_ ref port num numOfPorts isInput = do
         ] mempty
 
 
-drawPortIOExpanded_ :: Ref Node -> Port -> Int -> Bool -> ReactElementM ViewEventHandler ()
-drawPortIOExpanded_ ref port num isInput = do
+portIOExpanded_ :: Ref Node -> Port -> Int -> Bool -> ReactElementM ViewEventHandler ()
+portIOExpanded_ ref port num isInput = do
 
     let portRef = port ^. Port.portRef
         portId  = port ^. Port.portId
