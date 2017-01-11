@@ -17,6 +17,7 @@ import           Empire.API.Data.PortRef            (AnyPortRef (InPortRef', Out
 import qualified Empire.API.Data.PortRef            as PortRef
 import           Luna.Studio.Action.Command         (Command)
 import           Luna.Studio.Prelude
+import qualified Luna.Studio.React.Model.Connection as ConnectionModel
 import           Luna.Studio.React.Model.Node       (Node)
 import qualified Luna.Studio.React.Model.Node       as Node
 import qualified Luna.Studio.React.Model.Node       as Model
@@ -27,7 +28,6 @@ import qualified Luna.Studio.React.Store            as Store
 import           Luna.Studio.State.Global           (State)
 import qualified Luna.Studio.State.Global           as Global
 import qualified Luna.Studio.State.Graph            as Graph
-import qualified Object.Widget.Connection           as ConnectionModel
 
 
 
