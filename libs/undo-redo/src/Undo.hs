@@ -110,35 +110,105 @@ makeLenses ''UndoState
 -- === Utils === --
 
 -- FIXME[WD]: Undo -> History?
-newtype Undo a = Undo (StateT UndoState (ReaderT BusEndPoints (Bus.BusT)) a)
+newtype Undo a = Undo {runUndo :: StateT UndoState (ReaderT BusEndPoints (Bus.BusT)) a}
     deriving (Applicative, Functor, Monad, MonadState UndoState, MonadReader BusEndPoints, MonadIO, MonadThrow)
 
 
-runUndo :: BusEndPoints -> IO (Either Bus.Error ())
-runUndo endPoints = do
+
+run :: BusEndPoints -> IO (Either Bus.Error ())
+run endPoints = do
     Bus.runBus endPoints $ do
         Bus.subscribe "empire."
 
-        let Undo collect = do
-                msg <- receiveEvent
-                collectEvents msg
-            state = UndoState [] []
-        Bus.runBusT $ runReaderT (evalStateT (forever collect) state) endPoints
+        let state = UndoState [] []
+        Bus.runBusT $ runReaderT (evalStateT (forever (runUndo handleMassage)) state) endPoints
 
-receiveEvent :: Undo MessageFrame
-receiveEvent = do
+handleMassage :: Undo ()
+handleMassage = do
+    msgFrame <- receiveMessage
+    let msg     = msgFrame ^. MessageFrame.message
+        topic   = msg ^. Message.topic
+        content = msg ^. Message.message
+        Request.Request _ guiID (RedoRequest.Request _) = decode . fromStrict $ content
+
+    flushHelper $ show topic
+    flushHelper $ show guiID
+    case topic of
+        "empire.undo.request" -> do
+            flushHelper "doUndo"
+            req <- doUndo guiID
+            case req of
+                Just msg -> Undo $ lift $ lift $ Bus.BusT $ sendUndo msg
+                Nothing  -> return ()
+        "empire.redo.request" -> do
+            flushHelper "doRedo"
+
+            req <- doRedo guiID
+            case req of
+                Just msg -> Undo $ lift $ lift $ Bus.BusT $ sendRedo msg
+                Nothing  -> return ()
+        _ -> if (guiID /= Nothing) then collectedMessage topic content else return ()
+
+isEmpty :: ByteString -> Bool
+isEmpty msg = empty == msg
+
+receiveMessage :: Undo MessageFrame
+receiveMessage = do
     frame <- Undo $ lift $ lift $ Bus.BusT Bus.receive
     case frame of
         MessageFrame msg _ _ _ -> do
             let emptyMsg = isEmpty $ msg ^. Message.message
-            if emptyMsg then receiveEvent else return frame
+            if emptyMsg then receiveMessage else return frame
+
+compareId :: UUID -> UndoMessage -> Bool
+compareId guiID msg = case msg of UndoMessage x _ _ _ _ _ -> x == guiID
 
 
+
+doUndo :: MonadState UndoState m => Maybe UUID -> m (Maybe UndoMessage)
+doUndo guiID = do
+    let justId = fromJust guiID
+    h <- uses undo $ List.find (compareId justId)
+    case h of
+        -- FIXME: to jest MapM?
+        Just msg -> do redo %= (msg :)
+                       undo %= List.delete msg
+                       return $ Just msg
+        Nothing  -> return Nothing
+
+doRedo :: MonadState UndoState m => Maybe UUID -> m (Maybe UndoMessage)
+doRedo guiID = do
+    let justId = fromJust guiID
+    h <- uses redo $ List.find (compareId justId)
+    case h of
+        Just msg -> do undo %= (msg :)
+                       redo %= List.delete msg
+                       return $ Just msg
+        Nothing  -> return Nothing
+
+collectedMessage :: String -> ByteString -> Undo ()
+collectedMessage topic content = do
+    let handler   = Map.findWithDefault doNothing topic handlersMap
+        doNothing _ = return ()
+    void $ handler content
 
 -- FIXME[WD]: ActX -> X
 data Action = ActUndo
             | ActRedo
 
+
+sendUndo :: UndoMessage -> Bus.Bus ()
+sendUndo msg = sendMessage ActUndo msg
+
+sendRedo :: UndoMessage -> Bus.Bus ()
+sendRedo msg = sendMessage ActRedo msg
+
+sendMessage :: Action -> UndoMessage -> Bus.Bus ()
+sendMessage action msg = do
+    uuid <- liftIO $ UUID.nextRandom
+    void $ Bus.send Flag.Enable $ case action of
+        ActUndo -> case msg of UndoMessage _ _ tu u _ _ -> Message.Message tu $ toStrict $ Bin.encode $ Request.Request uuid Nothing u
+        ActRedo -> case msg of UndoMessage _ _ _ _ tr r -> Message.Message tr $ toStrict $ Bin.encode $ Request.Request uuid Nothing r
 
 
 type Handler z = ByteString -> Undo ()
@@ -197,6 +267,9 @@ flushHelper text = liftIO $ putStrLn text >> hFlush stdout
 --FIXME[WD]: String -> ?
 --FIXME[WD]: Sprobujmy nie uzywac tuplui
 
+data BusErrorException = BusErrorException deriving (Show)
+instance Exception BusErrorException
+
 makeHandler :: forall req inv res z. (Topic.MessageTopic (Response.Response req inv res), Binary (Response.Response req inv res),
             Topic.MessageTopic (Request.Request (UndoResponseRequest (Response.Response req inv res))), Binary (UndoResponseRequest (Response.Response req inv res)),
             Topic.MessageTopic (Request.Request (RedoResponseRequest (Response.Response req inv res))), Binary (RedoResponseRequest (Response.Response req inv res)))
@@ -204,7 +277,7 @@ makeHandler :: forall req inv res z. (Topic.MessageTopic (Response.Response req 
 makeHandler h =
     let process content = let response   = decode . fromStrict $ content
                               maybeGuiID = response ^. Response.guiID
-                              guiID      = fromJust maybeGuiID --fixme zrób case albo coś innego
+                              guiID      = fromJust maybeGuiID --FIXME zrób case albo coś innego
                               reqUUID    = response ^. Response.requestId
                           in case h response of
                               Nothing     -> throwM BusErrorException
@@ -227,7 +300,7 @@ handleAddNodeUndo (Response.Response _ _ (AddNode.Request location nodeType node
             redoMsg = AddNode.Request location nodeType nodeMeta connectTo $ Just (nodeId)
         in Just (undoMsg, redoMsg)
 
-handleAddSubgraphUndo :: AddSubgraph.Response -> Maybe (RemoveNodes.Request, AddSubgraph.Request)  --dodac result do pola addsubgraph response bo zwraca request z podmienionym id
+handleAddSubgraphUndo :: AddSubgraph.Response -> Maybe (RemoveNodes.Request, AddSubgraph.Request)
 handleAddSubgraphUndo (Response.Response _ _ (AddSubgraph.Request location nodes connections saveNodeIds) _ res ) =
     withOk res $ \idMapping ->
         case idMapping of
@@ -315,79 +388,3 @@ handleDisconnectUndo (Response.Response _ _ (Disconnect.Request location dst) in
         let undoMsg = Connect.Request location src dst
             redoMsg = Disconnect.Request location dst
         in Just (undoMsg, redoMsg)
-
-
-data BusErrorException = BusErrorException deriving (Show)
-instance Exception BusErrorException
-
-isEmpty :: ByteString -> Bool
-isEmpty msg = empty == msg
-
-
-collectEvents :: MessageFrame -> Undo ()
-collectEvents (MessageFrame msg _ _ _)  = do
-    let topic   = msg ^. Message.topic
-        content = msg ^. Message.message
-        Request.Request _ guiID (RedoRequest.Request _) = decode . fromStrict $ content
-
-    flushHelper $ show topic
-    flushHelper $ show guiID
-    case topic of
-        "empire.undo.request" -> do
-            flushHelper "doUndo"
-            req <- doUndo guiID
-            case req of
-                Just msg -> Undo $ lift $ lift $ Bus.BusT $ sendUndo msg
-                Nothing  -> return ()
-        "empire.redo.request" -> do
-            flushHelper "doRedo"
-
-            req <- doRedo guiID
-            case req of
-                Just msg -> Undo $ lift $ lift $ Bus.BusT $ sendRedo msg
-                Nothing  -> return ()
-        _ -> if (guiID /= Nothing) then collectedMessage topic content else return ()
-
-
-compareId :: UUID -> UndoMessage -> Bool
-compareId guiID msg = case msg of UndoMessage x _ _ _ _ _ -> x == guiID
-
-doUndo :: MonadState UndoState m => Maybe UUID -> m (Maybe UndoMessage)
-doUndo guiID = do
-    let justId = fromJust guiID
-    h <- uses undo $ List.find (compareId justId)
-    case h of
-        -- FIXME: to jest MapM?
-        Just msg -> do redo %= (msg :)
-                       undo %= List.delete msg
-                       return $ Just msg
-        Nothing  -> return Nothing
-
-doRedo :: MonadState UndoState m => Maybe UUID -> m (Maybe UndoMessage)
-doRedo guiID = do
-    let justId = fromJust guiID
-    h <- uses redo $ List.find (compareId justId)
-    case h of
-        Just msg -> do undo %= (msg :)
-                       redo %= List.delete msg
-                       return $ Just msg
-        Nothing  -> return Nothing
-
-collectedMessage :: String -> ByteString -> Undo ()
-collectedMessage topic content = do
-    let handler   = Map.findWithDefault doNothing topic handlersMap
-        doNothing _ = return ()
-    void $ handler content
-
-sendUndo :: UndoMessage -> Bus.Bus ()
-sendUndo msg = sendMessage ActUndo msg
-
-sendRedo :: UndoMessage -> Bus.Bus ()
-sendRedo msg = sendMessage ActRedo msg
-
-sendMessage :: Action -> UndoMessage -> Bus.Bus ()
-sendMessage action msg = do
-    uuid <- liftIO $ UUID.nextRandom
-    void $ Bus.send Flag.Enable $ case action of
-        ActUndo -> case msg of UndoMessage _ _ tu u _ _ -> Message.Message tu $ toStrict $ Bin.encode $ Request.Request uuid Nothing u
-        ActRedo -> case msg of UndoMessage _ _ _ _ tr r -> Message.Message tr $ toStrict $ Bin.encode $ Request.Request uuid Nothing r

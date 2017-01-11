@@ -24,7 +24,7 @@ import System.IO (stdout,hFlush)
 main :: IO ()
 main = do
     endPoints <- EP.clientFromConfig <$> Config.load
-    r <- Undo.runUndo endPoints
+    r <- Undo.run endPoints
     case r of
         Left err -> return ()
-        Right _  -> return () 
+        Right _  -> return ()
