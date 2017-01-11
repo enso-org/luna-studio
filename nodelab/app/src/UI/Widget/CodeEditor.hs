@@ -7,7 +7,7 @@ import           Luna.Studio.Data.Vector
 import           Luna.Studio.Prelude
 
 import qualified Data.JSString            ()
-import           Data.JSString.Text       (lazyTextToJSString)
+import           Data.JSString.Text       (textToJSString)
 import           GHCJS.Marshal.Pure       (PFromJSVal (..), PToJSVal (..))
 
 import           Object.UITypes
@@ -37,7 +37,7 @@ create oid model = do
     return codeEditor
 
 setCode :: Model.CodeEditor -> CodeEditor -> IO ()
-setCode model codeEditor = setCode' codeEditor $ lazyTextToJSString $ model ^. Model.value
+setCode model codeEditor = setCode' codeEditor $ textToJSString $ model ^. Model.value
 
 instance UIDisplayObject Model.CodeEditor where
     createUI parentId wid model = do

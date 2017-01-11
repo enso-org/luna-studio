@@ -3,8 +3,9 @@ module Empire.API.Data.Node where
 import           Data.Binary               (Binary)
 import           Data.Map.Lazy             (Map)
 import qualified Data.Map.Lazy             as Map
+import           Data.Text                 (Text)
 import           Data.UUID.Types           (UUID)
-import           Prologue
+import           Prologue                  hiding (Text)
 
 import           Empire.API.Data.NodeMeta  (NodeMeta)
 import qualified Empire.API.Data.NodeMeta  as NodeMeta

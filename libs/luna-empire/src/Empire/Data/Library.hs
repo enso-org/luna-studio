@@ -1,6 +1,6 @@
 module Empire.Data.Library where
 
-import qualified Data.Text.Lazy                 as Text
+import qualified Data.Text                      as Text
 import qualified Empire.API.Data.Graph          as API (Graph)
 import qualified Empire.API.Data.Library        as API
 import qualified Empire.API.Persistence.Library as Persistence

@@ -1,8 +1,10 @@
 {-# LANGUAGE TypeFamilies #-}
 module Luna.Studio.Data.Vector where
 
+import           Control.DeepSeq     (NFData)
 import           Data.Aeson          (ToJSON)
 import           Luna.Studio.Prelude
+
 --TODO[react]: Make this import possible
 -- import           Control.Lens.Utils  (makePfxLenses)
 import           Prologue            (wrapped')
@@ -57,6 +59,7 @@ makeLenses ''Vector2
 instance Dim1 (Vector2 a) where x = vector2_x
 instance Dim2 (Vector2 a) where y = vector2_y
 instance ToJSON a => ToJSON (Vector2 a)
+instance NFData a => NFData (Vector2 a)
 
 instance Default a => Default (Vector2 a) where
     def = Vector2 def def
@@ -135,7 +138,7 @@ scalarProduct vec k = vec & x *~ k & y *~ k
 
 -- === Definition === --
 
-newtype Position = Position (Vector2 Double) deriving (Eq, Show, Generic, Default)
+newtype Position = Position (Vector2 Double) deriving (Eq, Show, Generic, Default, NFData)
 makeWrapped ''Position
 
 
@@ -143,10 +146,10 @@ makeWrapped ''Position
 
 type instance VectorOf Position = Vector2 Double
 
-instance IsVector Position
-instance Dim1     Position
-instance Dim2     Position
-instance ToJSON   Position
+instance Dim1      Position
+instance Dim2      Position
+instance IsVector  Position
+instance ToJSON    Position
 
 instance IsList Position where
     type Item Position = Double

@@ -16,7 +16,6 @@ import           UI.Widget               (UIWidget)
 import qualified UI.Widget               as Widget
 
 import           Data.Aeson              (toJSON)
-import           GHCJS.Marshal           (toJSVal)
 
 
 newtype Graphics = Graphics JSVal deriving (PToJSVal, PFromJSVal)

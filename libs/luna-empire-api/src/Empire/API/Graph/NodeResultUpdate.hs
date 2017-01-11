@@ -3,7 +3,8 @@ module Empire.API.Graph.NodeResultUpdate where
 
 import           Control.DeepSeq               (NFData)
 import           Data.Binary                   (Binary)
-import           Prologue                      hiding (TypeRep)
+import           Data.Text                     (Text)
+import           Prologue                      hiding (Text, TypeRep)
 
 import qualified Empire.API.Data.DefaultValue  as DV (Value)
 import           Empire.API.Data.Error         (Error)

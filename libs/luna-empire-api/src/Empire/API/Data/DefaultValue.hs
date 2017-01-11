@@ -4,7 +4,8 @@ module Empire.API.Data.DefaultValue where
 
 import           Control.DeepSeq (NFData)
 import           Data.Binary     (Binary)
-import           Prologue
+import           Data.Text       (Text)
+import           Prologue        hiding (Text)
 
 import qualified Graphics.API    as G
 

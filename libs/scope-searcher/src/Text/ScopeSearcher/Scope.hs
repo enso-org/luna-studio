@@ -8,20 +8,20 @@ module Text.ScopeSearcher.Scope (
 
 import           Prelude
 
-import           Data.Monoid                                        ((<>))
-import qualified Data.Map                                           as Map
-import           Data.Default
 import           Control.Lens
-import           GHC.Exts                                           (sortWith)
+import           Data.Default
+import qualified Data.Map                       as Map
+import           Data.Monoid                    ((<>))
+import           GHC.Exts                       (sortWith)
 
-import           Data.Text.Lazy                                     (Text)
-import qualified Data.Text.Lazy                                     as Text
+import           Data.Text                      (Text)
+import qualified Data.Text                      as Text
 
-import           Text.ScopeSearcher.Searcher                        (Nameable, Weightable, Match(..), Submatch(..))
-import qualified Text.ScopeSearcher.Searcher                        as Searcher
+import           Text.ScopeSearcher.Searcher    (Match (..), Nameable, Submatch (..), Weightable)
+import qualified Text.ScopeSearcher.Searcher    as Searcher
 
-import           Text.ScopeSearcher.Item                            (Item(..), Items)
-import           Text.ScopeSearcher.QueryResult                     (QueryResult(..), Highlight(..))
+import           Text.ScopeSearcher.Item        (Item (..), Items)
+import           Text.ScopeSearcher.QueryResult (Highlight (..), QueryResult (..))
 
 type Path = [Text]
 

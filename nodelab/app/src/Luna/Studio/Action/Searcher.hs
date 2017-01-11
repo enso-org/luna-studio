@@ -3,7 +3,7 @@ module Luna.Studio.Action.Searcher where
 
 
 import qualified Data.Map                           as Map
-import qualified Data.Text.Lazy                     as Text
+import qualified Data.Text                          as Text
 import           Empire.API.Data.Node               (NodeId)
 import qualified Empire.API.Data.Node               as NodeAPI
 import qualified Empire.API.Data.Port               as Port

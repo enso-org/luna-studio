@@ -3,7 +3,7 @@ module Luna.Studio.React.View.Node where
 
 import qualified Data.Aeson                           as Aeson
 import qualified Data.Map.Lazy                        as Map
-import qualified Data.Text.Lazy                       as Text
+import qualified Data.Text                            as Text
 import           Empire.API.Data.Node                 (NodeId)
 import           Empire.API.Data.Port                 (InPort (..), PortId (..))
 import qualified Event.UI                             as UI
@@ -38,8 +38,8 @@ makePortsExpanded nodeRef ports = forM_ ports $ \port -> portExpanded_ nodeRef p
 
 node :: Ref Node -> ReactView ()
 node ref = React.defineControllerView
-    objName ref $ \nodeStore () ->
-        let n         = nodeStore ^. dt
+    objName ref $ \store () ->
+        let n         = store ^. dt
             nodeId    = n ^. Node.nodeId
             pos       = n ^. Node.position
             ports     = Map.elems $ n ^. Node.ports

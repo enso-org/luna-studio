@@ -1,14 +1,15 @@
-{-# LANGUAGE TypeSynonymInstances #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE TypeSynonymInstances  #-}
 module Empire.API.Project.ExportProject where
 
-import           Prologue
-import           Data.Binary           (Binary)
+import           Data.Binary             (Binary)
+import           Data.Text               (Text)
+import           Prologue                hiding (Text)
 
-import           Empire.API.Data.Project          (ProjectId, Project)
-import qualified Empire.API.Response             as Response
-import qualified Empire.API.Topic              as T
-import qualified Empire.API.Request            as R
+import           Empire.API.Data.Project (Project, ProjectId)
+import qualified Empire.API.Request      as R
+import qualified Empire.API.Response     as Response
+import qualified Empire.API.Topic        as T
 
 data Request = Request { _projectId :: ProjectId
                        } deriving (Generic, Show, Eq)

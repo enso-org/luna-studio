@@ -7,9 +7,9 @@ module JS.GoogleAnalytics
     , ConnectType (..)
     ) where
 
-import           Data.JSString.Text        (lazyTextToJSString)
-import           Data.Text.Lazy            (pack)
-import           GHCJS.Nullable            (Nullable, maybeToNullable)
+import           Data.JSString.Text         (textToJSString)
+import           Data.Text                  (pack)
+import           GHCJS.Nullable             (Nullable, maybeToNullable)
 import           Luna.Studio.Prelude
 
 import           Luna.Studio.Action.Command (Command, performIO)
@@ -66,7 +66,7 @@ foreign import javascript safe "ga('send', 'event', $1, $2, $3)" sendEvent' :: J
 sendEvent :: Event -> Command a ()
 sendEvent event = performIO $ sendEvent' cat' act' lab' val' where
         GAEvent cat act lab val = toGAEvent event
-        cat' = lazyTextToJSString cat
-        act' = lazyTextToJSString act
-        lab' = maybeToNullable $ lazyTextToJSString <$> lab
+        cat' = textToJSString cat
+        act' = textToJSString act
+        lab' = maybeToNullable $ textToJSString <$> lab
         val' = maybeToNullable val

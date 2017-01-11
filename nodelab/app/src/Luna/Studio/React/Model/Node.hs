@@ -1,11 +1,13 @@
+{-# LANGUAGE DeriveAnyClass    #-}
 {-# LANGUAGE OverloadedStrings #-}
 module Luna.Studio.React.Model.Node where
 
 import           Control.Arrow
+import           Control.DeepSeq                   (NFData)
 import           Data.Aeson                        (ToJSON)
 import           Data.Map.Lazy                     (Map)
 import qualified Data.Map.Lazy                     as Map
-import qualified Data.Text.Lazy                    as Text
+import qualified Data.Text                         as Text
 import           Data.Time.Clock                   (UTCTime)
 
 import qualified Empire.API.Data.Node              as NodeAPI
@@ -38,12 +40,12 @@ data Node = Node { _nodeId                :: NodeAPI.NodeId
                  , _visualizationsEnabled :: Bool
                  , _collaboration         :: Collaboration
                  , _execTime              :: Maybe Integer
-                 } deriving (Eq, Show, Typeable, Generic)
+                 } deriving (Eq, Show, Typeable, Generic, NFData)
 
 type CollaborationMap = Map ClientId UTCTime
 data Collaboration = Collaboration { _touch  :: Map ClientId (UTCTime, ColorId)
                                    , _modify :: CollaborationMap
-                                   } deriving (Eq, Show, Generic)
+                                   } deriving (Eq, Show, Generic, NFData)
 makeLenses ''Node
 makeLenses ''Collaboration
 

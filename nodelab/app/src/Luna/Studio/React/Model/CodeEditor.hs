@@ -7,7 +7,7 @@ import           Luna.Studio.Prelude
 data CodeEditor = CodeEditor
         { _visible :: Bool
         , _code   :: Text
-        }
+        } deriving (Show, Eq)
 
 makeLenses ''CodeEditor
 

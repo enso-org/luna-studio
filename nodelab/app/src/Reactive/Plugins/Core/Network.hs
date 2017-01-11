@@ -4,19 +4,19 @@ import           Luna.Studio.Prelude
 
 import           Control.Concurrent.MVar
 
-import           Control.Exception                         (catch)
-import           Data.DateTime                             (getCurrentTime)
-import           Data.Monoid                               (Last (..))
-import qualified Data.Text.Lazy                            as Text
-import           GHCJS.Prim                                (JSException)
+import           Control.Exception                          (catch)
+import           Data.DateTime                              (getCurrentTime)
+import           Data.Monoid                                (Last (..))
+import qualified Data.Text                                  as Text
+import           GHCJS.Prim                                 (JSException)
 
-import           Reactive.Handlers                         (AddHandler (..))
-import qualified Reactive.Handlers                         as Handlers
+import           Reactive.Handlers                          (AddHandler (..))
+import qualified Reactive.Handlers                          as Handlers
 
-import           Event.Event                               (Event)
-import qualified Event.Event                               as Event
-import qualified Event.Processors.Batch                    as BatchEventProcessor
-import qualified Event.Processors.CustomEvent              as CustomEventProcessor
+import           Event.Event                                (Event)
+import qualified Event.Event                                as Event
+import qualified Event.Processors.Batch                     as BatchEventProcessor
+import qualified Event.Processors.CustomEvent               as CustomEventProcessor
 
 import qualified Luna.Studio.Handler.App                    as App
 import qualified Luna.Studio.Handler.Backend.Control        as Control
@@ -38,14 +38,14 @@ import qualified Luna.Studio.Handler.Searcher               as Searcher
 import qualified Luna.Studio.Handler.Tutorial               as Tutorial
 import qualified Luna.Studio.Handler.Widget                 as Widget
 
-import           Luna.Studio.Action.Command              (Command, execCommand)
-import           Luna.Studio.State.Global                  (State)
-import qualified Luna.Studio.State.Global                  as Global
+import           Luna.Studio.Action.Command                 (Command, execCommand)
+import           Luna.Studio.State.Global                   (State)
+import qualified Luna.Studio.State.Global                   as Global
 
 import qualified JS.Debug
-import           JS.WebSocket                              (WebSocket)
+import           JS.WebSocket                               (WebSocket)
 
-import qualified Data.JSString                             as JSString
+import qualified Data.JSString                              as JSString
 
 
 displayProcessingTime :: Bool

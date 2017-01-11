@@ -19,12 +19,10 @@ import           Empire.API.Data.ValueType (ValueType (..))
 
 
 newtype Color = Color { fromColor :: Int }
-              deriving (Eq, Generic, Ord, Show)
+              deriving (Eq, Generic, Ord, Show, NFData)
 
 instance FromJSON Color
 instance ToJSON Color
-instance NFData Color
-
 
 
 data HSL a = HSL { _h :: a

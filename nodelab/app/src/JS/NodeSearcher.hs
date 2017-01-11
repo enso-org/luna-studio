@@ -5,14 +5,13 @@ module JS.NodeSearcher
     , TargetSearcher (..)
     ) where
 
-import           Data.JSString.Text             (lazyTextToJSString)
+import           Data.JSString.Text             (textToJSString)
 import           Luna.Studio.Data.Vector        (Position, x, y)
 import           Luna.Studio.Prelude
 
 import           Data.Aeson                     (toJSON)
 import           Empire.API.Data.Node           (NodeId)
 import           Empire.API.JSONInstances       ()
-import           GHCJS.Marshal                  (toJSVal)
 
 import           Text.ScopeSearcher.QueryResult (Highlight (..), QueryResult (..))
 
@@ -23,7 +22,7 @@ foreign import javascript safe "require('node_searcher').create($1, $2, $3, $4, 
 initNodeSearcher :: Text -> Maybe NodeId -> Position -> Bool -> IO ()
 initNodeSearcher expr nodeId pos command = do
     nodeId' <- toJSVal $ toJSON nodeId
-    initNodeSearcher' (lazyTextToJSString expr) nodeId' (pos ^. x) (pos ^. y) command
+    initNodeSearcher' (textToJSString expr) nodeId' (pos ^. x) (pos ^. y) command
 
 -- display results
 
@@ -52,7 +51,7 @@ displayQueryResult target qr@(QueryResult prefix name _fullname highlight tpe _)
     ary <- createJSArray
     mapM_ (pushHighlight ary) highlight
     let targetName = searcherResultName target qr
-    nodesearcher_add_result (lazyTextToJSString prefix) (lazyTextToJSString name) (lazyTextToJSString targetName) ary (lazyTextToJSString tpe)
+    nodesearcher_add_result (textToJSString prefix) (textToJSString name) (textToJSString targetName) ary (textToJSString tpe)
     nodesearcher_finish_result
 
 displayQueryResults :: TargetSearcher -> [QueryResult] -> IO ()
@@ -63,7 +62,7 @@ displayQueryResults target results = do
 displayTreeResult :: TargetSearcher -> QueryResult -> IO ()
 displayTreeResult target qr@(QueryResult prefix name _fullname _ tpe _) = do
     let targetName = searcherResultName target qr
-    nodesearcher_add_tree_result (lazyTextToJSString prefix) (lazyTextToJSString name) (lazyTextToJSString targetName) (lazyTextToJSString tpe)
+    nodesearcher_add_tree_result (textToJSString prefix) (textToJSString name) (textToJSString targetName) (textToJSString tpe)
 
 displayTreeResults :: TargetSearcher -> [QueryResult] -> IO ()
 displayTreeResults target results = forM_ results $ displayTreeResult target

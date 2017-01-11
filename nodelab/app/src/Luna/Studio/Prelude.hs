@@ -21,18 +21,19 @@ import           Data.List                   as X hiding (uncons, (++))
 import           Data.Maybe                  as X
 import           Data.Monoid                 as X (Monoid, mappend, mconcat, mempty, (<>))
 import           Data.String                 as X (IsString (fromString))
-import           Data.Text.Lazy              as X (Text)
+import           Data.Text                   as X (Text)
 import           Data.Traversable            as X (forM, mapM, sequenceA)
 import           Data.Typeable               as X (Typeable)
 import           Development.Placeholders    as X
 import           GHC.Exts                    as X (IsList, Item, fromList, fromListN, toList)
 import           GHC.Generics                as X (Generic)
+import           GHCJS.Marshal               as X (FromJSVal (..), ToJSVal (..))
 import           GHCJS.Types                 as X (JSVal)
 import           Luna.Studio.Utils.Instances ()
 import           Prelude                     hiding (print, putStr, putStrLn, (++), (.))
 import           Prologue                    as X (curry, foldlDef, fromJustM, ifElseId, lift2, lift3, mapOver, mapOverM, pprint, print,
-                                                   printLn, putStr, putStrLn, show', switch, uncurry, whenLeft, whenLeft', whenRight,
-                                                   whenRight', withJust, ($>), (++), toString)
+                                                   printLn, putStr, putStrLn, show', switch, toString, uncurry, whenLeft, whenLeft',
+                                                   whenRight, whenRight', withJust, ($>), (++))
 
 
 

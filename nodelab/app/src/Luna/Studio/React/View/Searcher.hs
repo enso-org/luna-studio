@@ -1,19 +1,19 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Luna.Studio.React.View.Searcher where
 
-import qualified Data.Aeson                     as Aeson
-import           Data.Text.Lazy                 (unpack)
+import qualified Data.Aeson                       as Aeson
+import           Data.Text                        (unpack)
 import           React.Flux
-import qualified React.Flux                     as React
+import qualified React.Flux                       as React
 
-import qualified Event.UI                       as UI
-import           Luna.Studio.React.Event.Searcher
-import           Luna.Studio.React.Store                    (Ref, dispatch, dt)
-import           Luna.Studio.React.Model.Searcher           (Searcher)
-import qualified Luna.Studio.React.Model.Searcher           as Searcher
-import qualified Text.ScopeSearcher.QueryResult as Result
-import           Luna.Studio.Prelude
+import qualified Event.UI                         as UI
 import           Luna.Studio.Data.Vector
+import           Luna.Studio.Prelude
+import           Luna.Studio.React.Event.Searcher
+import           Luna.Studio.React.Model.Searcher (Searcher)
+import qualified Luna.Studio.React.Model.Searcher as Searcher
+import           Luna.Studio.React.Store          (Ref, dispatch, dt)
+import qualified Text.ScopeSearcher.QueryResult   as Result
 
 
 name :: JSString

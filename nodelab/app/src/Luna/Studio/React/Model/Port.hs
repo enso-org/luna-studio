@@ -1,3 +1,4 @@
+{-# LANGUAGE DeriveAnyClass #-}
 module Luna.Studio.React.Model.Port where
 
 import           Control.DeepSeq
@@ -17,11 +18,10 @@ import           Luna.Studio.Prelude       hiding (set)
 data Port = Port { _portRef     :: AnyPortRef
                  , _port        :: API.Port
                  , _color       :: Color
-                 } deriving (Eq, Show, Typeable, Generic)
+                 } deriving (Eq, Show, Typeable, Generic, NFData)
 
 makeLenses ''Port
 instance ToJSON Port
-instance NFData Port
 
 portId :: Lens' Port API.PortId
 portId = port . API.portId

@@ -5,18 +5,18 @@ module Luna.Studio.Handler.Backend.Common
     ) where
 
 
-import qualified Data.Aeson                as JSON (ToJSON)
-import qualified Data.Text.Lazy            as Text
-import qualified Data.UUID.Types           as UUID (toString)
+import qualified Data.Aeson                 as JSON (ToJSON)
+import qualified Data.Text                  as Text
+import qualified Data.UUID.Types            as UUID (toString)
 import           Luna.Studio.Prelude
 
 import           Luna.Studio.Action.Command (Command, performIO)
 import           Luna.Studio.Action.UUID    (isOwnRequest, unregisterRequest)
-import           Luna.Studio.State.Global     (State)
+import           Luna.Studio.State.Global   (State)
 
-import qualified Empire.API.Response       as Response
-import qualified Empire.API.Topic          as Topic
-import qualified JS.Debug                  as Debug
+import qualified Empire.API.Response        as Response
+import qualified Empire.API.Topic           as Topic
+import qualified JS.Debug                   as Debug
 
 whenOk :: Response.Response req res -> (res -> Command State ()) -> Command State ()
 whenOk (Response.Response _ _ (Response.Ok    res)) handler = handler res
