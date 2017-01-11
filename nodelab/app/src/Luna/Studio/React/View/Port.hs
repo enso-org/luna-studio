@@ -113,31 +113,37 @@ portIO_ ref port num numOfPorts isInput = do
         stopPortArcX  r = r * sin(portAngleStop  num numOfPorts r * mod)
         stopPortArcY  r = r * cos(portAngleStop  num numOfPorts r * mod)
 
-        ax = show2 $ startPortArcX nodeRadius
-        ay = show2 $ startPortArcY nodeRadius
-        bx = show2 $ stopPortArcX  nodeRadius
-        by = show2 $ stopPortArcY  nodeRadius
-        cx = show2 $ stopPortArcX  nodeRadius'
-        cy = show2 $ stopPortArcY  nodeRadius'
-        dx = show2 $ startPortArcX nodeRadius'
-        dy = show2 $ startPortArcY nodeRadius'
-        r1 = show nodeRadius
-        r2 = show nodeRadius'
+        ax a = show2 $ startPortArcX $ nodeRadius  + a
+        ay a = show2 $ startPortArcY $ nodeRadius  + a
+        bx a = show2 $ stopPortArcX  $ nodeRadius  + a
+        by a = show2 $ stopPortArcY  $ nodeRadius  + a
+        cx a = show2 $ stopPortArcX  $ nodeRadius' - a
+        cy a = show2 $ stopPortArcY  $ nodeRadius' - a
+        dx a = show2 $ startPortArcX $ nodeRadius' - a
+        dy a = show2 $ startPortArcY $ nodeRadius' - a
+        r1 a = show2 $ nodeRadius  + a
+        r2 a = show2 $ nodeRadius' - a
+        svgPath a = fromString $ "M"  <> ax a <> " " <> ay a <>
+                                " A " <> r1 a <> " " <> r1 a <> " 1 0 " <> svgFlag1 <> " " <> bx a <> " " <> by a <>
+                                " L " <> cx a <> " " <> cy a <>
+                                " A " <> r2 a <> " " <> r2 a <> " 1 0 " <> svgFlag2 <> " " <> dx a <> " " <> dy a <>
+                                " Z"
 
-        svgPath = fromString $ "M"  <> ax <> " " <> ay <>
-                              " A " <> r1 <> " " <> r1 <> " 1 0 " <> svgFlag1 <> " " <> bx <> " " <> by <>
-                              " L " <> cx <> " " <> cy <>
-                              " A " <> r2 <> " " <> r2 <> " 1 0 " <> svgFlag2 <> " " <> dx <> " " <> dy <>
-                              " Z"
-    path_
-        [ onMouseDown $ \e m -> stopPropagation e : dispatch ref (UI.ConnectionEvent $ Connection.StartConnection m portRef)
-        , onMouseUp   $ \e m -> stopPropagation e : dispatch ref (UI.ConnectionEvent $ Connection.EndConnection   m portRef)
-        , "className" $= (fromString $ classes <> show (num+1))
-        , "key"       $= fromString (show portId)
-        , "fill"      $= color
-        , "stroke"    $= color
-        , "d"         $= svgPath
-        ] mempty
+    g_ [ "className" $= (fromString $ classes <> show (num+1)) ] $ do
+        path_
+            [ "className" $= "port__shape"
+            , "key"       $= (fromString (show portId) <> "a")
+            , "fill"      $= color
+            , "d"         $= svgPath 0
+            ] mempty
+        path_
+            [ onMouseDown $ \e m -> stopPropagation e : dispatch ref (UI.ConnectionEvent $ Connection.StartConnection m portRef)
+            , onMouseUp   $ \e m -> stopPropagation e : dispatch ref (UI.ConnectionEvent $ Connection.EndConnection   m portRef)
+            , "className" $= "port__select"
+            , "key"       $= (fromString (show portId) <> "b")
+            , "d"         $= svgPath 3
+            ] mempty
+
 
 
 portIOExpanded_ :: Ref Node -> Port -> Int -> Bool -> ReactElementM ViewEventHandler ()
