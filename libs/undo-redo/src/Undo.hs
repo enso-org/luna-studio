@@ -128,11 +128,14 @@ run' endPoints undo = do
         let state = UndoState [] []
         Bus.runBusT $ runStateT (runUndo undo) state
 
-handleMassage :: Undo ()
-handleMassage = do
+receiveAndHandleMessage :: Undo ()
+receiveAndHandleMessage = do
     msgFrame <- receiveMessage
-    let msg     = msgFrame ^. MessageFrame.message
-        topic   = msg ^. Message.topic
+    handleMessage $ msgFrame ^. MessageFrame.message
+
+handleMessage :: Message.Message -> Undo ()
+handleMessage msg = do
+    let topic   = msg ^. Message.topic
         content = msg ^. Message.message
         Request.Request _ guiID (RedoRequest.Request _) = decode . fromStrict $ content
 
