@@ -24,6 +24,7 @@ dependencies:
   - errors
   - ghc
   - uuid-types
+  - hspec
 
 default-extensions:
   - NoImplicitPrelude
