@@ -1,8 +1,11 @@
 {-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+
 
 module ZMQ.Bus.Trans where
 
 import           Control.Monad.IO.Class
+import           Control.Monad.Catch           (MonadThrow)
 
 import           Prologue
 import           ZMQ.Bus.Bus            (Bus)
@@ -26,3 +29,6 @@ instance Monad BusT where
 
 instance MonadIO BusT where
     liftIO a = BusT $ liftIO a
+
+instance MonadThrow BusT where
+    throwM e = BusT $ lift $ lift $ throwM e 
