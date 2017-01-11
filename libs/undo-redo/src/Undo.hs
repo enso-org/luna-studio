@@ -121,7 +121,7 @@ run endPoints = do
         Bus.subscribe "empire."
 
         let state = UndoState [] []
-        Bus.runBusT $ runReaderT (evalStateT (forever (runUndo handleMassage)) state) endPoints
+        Bus.runBusT $ runStateT (runUndo undo) state
 
 handleMassage :: Undo ()
 handleMassage = do
