@@ -4,6 +4,7 @@ module Luna.Studio.Action.Node.Expand
 
 import           Luna.Studio.Action.Command         (Command)
 import           Luna.Studio.Action.Graph.Selection (selectedNodes)
+import           Luna.Studio.Action.Graph.Update    (updateConnectionsForNodes)
 import           Luna.Studio.Prelude
 import qualified Luna.Studio.React.Model.Node       as Model
 import           Luna.Studio.React.Store            (widget)
@@ -17,5 +18,5 @@ expandSelectedNodes = do
     let allSelected = all (view $ widget . Model.isExpanded) sn
         update      = if allSelected then Model.isExpanded %~ not
                                      else Model.isExpanded .~ True
-    forM_ sn $
-        Store.modify_ update . _ref
+    forM_ sn $ Store.modify_ update . _ref
+    updateConnectionsForNodes $ map (view $ widget . Model.nodeId) sn

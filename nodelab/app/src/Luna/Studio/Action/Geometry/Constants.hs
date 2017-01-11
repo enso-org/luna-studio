@@ -1,7 +1,7 @@
 module Luna.Studio.Action.Geometry.Constants
     ( connectionWidth
     , lineHeight
-    -- , nodeExpandedWidth
+    , nodeExpandedWidth
     , nodeRadius
     , nodeRadius'
     , portRadius
@@ -15,9 +15,8 @@ connectionWidth = 2.6
 lineHeight :: Double
 lineHeight = 16
 
--- TODO[react]: Unused
 nodeExpandedWidth :: Double
-nodeExpandedWidth = 270
+nodeExpandedWidth = 224
 
 nodeRadius :: Double
 nodeRadius = 20
