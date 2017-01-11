@@ -2,16 +2,14 @@ module Luna.Studio.Handler.Connect
     ( toAction
     ) where
 
-import           Luna.Studio.Prelude
-
 import           Event.Event                        (Event (UI))
 import           Event.UI                           (UIEvent (AppEvent, ConnectionEvent))
+import           Luna.Studio.Action.Command         (Command)
+import           Luna.Studio.Action.Connect         (connectToPort, handleMove, modifyConnection, startDragFromPort, stopDrag,
+                                                     whileConnecting)
+import           Luna.Studio.Prelude
 import qualified Luna.Studio.React.Event.App        as App
 import qualified Luna.Studio.React.Event.Connection as Connection
-
-import           Luna.Studio.Action.Command       (Command)
-import           Luna.Studio.Action.Connect       (connectToPort, handleMove, modifyConnection, startDragFromPort, stopDrag,
-                                                     whileConnecting)
 import           Luna.Studio.State.Global           (State)
 
 

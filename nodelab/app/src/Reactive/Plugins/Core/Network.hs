@@ -76,7 +76,7 @@ actions =  [ App.toAction
         --    , Control.toAction
         --    , Widget.toAction
         --    , Collaboration.toAction
-        --    , ConnectionPen.toAction
+           , ConnectionPen.toAction
         --    , Tutorial.toAction
         --    , Clipboard.toAction
         --    , Debug.toAction
