@@ -70,30 +70,26 @@ portSelf_ ref port =
 portSingle_ :: Ref Node -> Port -> ReactElementM ViewEventHandler ()
 portSingle_ ref port = do
 
-    let portRef     = port ^. Port.portRef
-        portId      = port ^. Port.portId
-        color       = toJSString $ port ^. Port.color
-        r1          = show nodeRadius
-        r2          = show nodeRadius'
-        r1'         = show (nodeRadius  + 3)
-        r2'         = show (nodeRadius' - 3)
-        svgPath a b = fromString $ "M0 -" <> r1 <> " A " <> r1 <> " " <> r1 <> " 1 0 " <> show a <> " 0 "  <> r1 <>
-                                   " L0 " <> r2 <> " A " <> r2 <> " " <> r2 <> " 1 0 " <> show b <> " 0 -" <> r2 <> " Z "
-        svgPath' a b= fromString $ "M0 -" <> r1'<> " A " <> r1'<> " " <> r1'<> " 1 0 " <> show a <> " 0 "  <> r1'<>
-                                   " L0 " <> r2'<> " A " <> r2'<> " " <> r2'<> " 1 0 " <> show b <> " 0 -" <> r2'<> " Z "
+    let portRef = port ^. Port.portRef
+        portId  = port ^. Port.portId
+        color   = toJSString $ port ^. Port.color
+        r1 = show . (+) nodeRadius
+        r2 = show . (-) nodeRadius'
+        svgPath a b c = fromString $ "M0 -" <> r1 a <> " A " <> r1 a <> " " <> r1 a <> " 1 0 " <> show b <> " 0 "  <> r1 a <>
+                                    " L0 "  <> r2 a <> " A " <> r2 a <> " " <> r2 a <> " 1 0 " <> show c <> " 0 -" <> r2 a <> " Z "
     g_ [ "className" $= "port port--o--single" ] $ do
         path_
             [ "className" $= "port__shape"
             , "key"       $= (fromString (show portId) <> "a" )
             , "fill"      $= color
-            , "d"         $= (svgPath 0 1 <> svgPath 1 0)
+            , "d"         $= (svgPath 0 0 1 <> svgPath 0 1 0)
             ] mempty
         path_
             [ onMouseDown $ \e m -> stopPropagation e : dispatch ref (UI.ConnectionEvent $ Connection.StartConnection m portRef)
             , onMouseUp   $ \e m -> stopPropagation e : dispatch ref (UI.ConnectionEvent $ Connection.EndConnection   m portRef)
             , "className" $= "port__select"
             , "key"       $= (fromString (show portId ) <> "b")
-            , "d"         $= (svgPath' 0 1 <> svgPath' 1 0)
+            , "d"         $= (svgPath 3 0 1 <> svgPath 3 1 0)
             ] mempty
 
 
@@ -104,8 +100,8 @@ portIO_ ref port num numOfPorts isInput = do
         color   = toJSString $ port ^. Port.color
 
         classes  = if isInput then "port port--i port--i--" else "port port--o port--o--"
-        svgFlag1 = if isInput then "1" else "0"
-        svgFlag2 = if isInput then "0" else "1"
+        svgFlag1 = if isInput then "1"  else "0"
+        svgFlag2 = if isInput then "0"  else "1"
         mod      = if isInput then -1.0 else 1.0
 
         startPortArcX r = r * sin(portAngleStart num numOfPorts r * mod)
@@ -113,16 +109,16 @@ portIO_ ref port num numOfPorts isInput = do
         stopPortArcX  r = r * sin(portAngleStop  num numOfPorts r * mod)
         stopPortArcY  r = r * cos(portAngleStop  num numOfPorts r * mod)
 
-        ax a = show2 $ startPortArcX $ nodeRadius  + a
-        ay a = show2 $ startPortArcY $ nodeRadius  + a
-        bx a = show2 $ stopPortArcX  $ nodeRadius  + a
-        by a = show2 $ stopPortArcY  $ nodeRadius  + a
-        cx a = show2 $ stopPortArcX  $ nodeRadius' - a
-        cy a = show2 $ stopPortArcY  $ nodeRadius' - a
-        dx a = show2 $ startPortArcX $ nodeRadius' - a
-        dy a = show2 $ startPortArcY $ nodeRadius' - a
-        r1 a = show2 $ nodeRadius  + a
-        r2 a = show2 $ nodeRadius' - a
+        ax = show2 . startPortArcX . (+) nodeRadius
+        ay = show2 . startPortArcY . (+) nodeRadius
+        bx = show2 . stopPortArcX  . (+) nodeRadius
+        by = show2 . stopPortArcY  . (+) nodeRadius
+        cx = show2 . stopPortArcX  . (-) nodeRadius'
+        cy = show2 . stopPortArcY  . (-) nodeRadius'
+        dx = show2 . startPortArcX . (-) nodeRadius'
+        dy = show2 . startPortArcY . (-) nodeRadius'
+        r1 = show2 . (+) nodeRadius
+        r2 = show2 . (-) nodeRadius'
         svgPath a = fromString $ "M"  <> ax a <> " " <> ay a <>
                                 " A " <> r1 a <> " " <> r1 a <> " 1 0 " <> svgFlag1 <> " " <> bx a <> " " <> by a <>
                                 " L " <> cx a <> " " <> cy a <>
