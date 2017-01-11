@@ -118,11 +118,13 @@ newtype Undo a = Undo {runUndo :: StateT UndoState (Bus.BusT) a}
 
 
 
-run :: BusEndPoints -> IO (Either Bus.Error ())
-run endPoints = do
+run :: BusEndPoints -> IO (Either Bus.Error ((), UndoState))
+run endPoints = run' endPoints $ forever receiveAndHandleMessage
+
+run' :: BusEndPoints -> Undo a -> IO (Either Bus.Error (a, UndoState))
+run' endPoints undo = do
     Bus.runBus endPoints $ do
         Bus.subscribe "empire."
-
         let state = UndoState [] []
         Bus.runBusT $ runStateT (runUndo undo) state
 
