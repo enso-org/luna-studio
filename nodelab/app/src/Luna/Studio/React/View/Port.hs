@@ -150,17 +150,24 @@ portIOExpanded_ ref port num isInput = do
         color   = toJSString $ port ^. Port.color
         classes = if isInput then "port port--i port--i--" else "port port--o port--o--"
         n       = if isInput then 1 else 0
+        r       = show2 . (+3)
 
-    circle_
-        [ onMouseDown $ \e m -> stopPropagation e : dispatch ref (UI.ConnectionEvent $ Connection.StartConnection m portRef)
-        , onMouseUp   $ \e m -> stopPropagation e : dispatch ref (UI.ConnectionEvent $ Connection.EndConnection   m portRef)
-        , "className" $= fromString (classes <> show (num + 1) )
-        , "key"       $= fromString (show portId <> show num)
-        , "fill"      $= color
-        , "stroke"    $= color
-        , "r"         $= "3"
-        , "cy"        $= fromString (show2 $ lineHeight * fromIntegral (num + n) )
-        ] mempty
+    g_ [ "className" $= fromString (classes <> show (num + 1)) ] $ do
+        circle_
+            [ "className" $= "port__shape"
+            , "key"       $= fromString (show portId <> show num <> "a")
+            , "fill"      $= color
+            , "r"         $= fromString (r 0)
+            , "cy"        $= fromString (show2 $ lineHeight * fromIntegral (num + n) )
+            ] mempty
+        circle_
+            [ onMouseDown $ \e m -> stopPropagation e : dispatch ref (UI.ConnectionEvent $ Connection.StartConnection m portRef)
+            , onMouseUp   $ \e m -> stopPropagation e : dispatch ref (UI.ConnectionEvent $ Connection.EndConnection   m portRef)
+            , "className" $= "port__select"
+            , "key"       $= fromString (show portId <> show num <> "b")
+            , "r"         $= fromString (r 3)
+            , "cy"        $= fromString (show2 $ lineHeight * fromIntegral (num + n) )
+            ] mempty 
 
 
 --TODO[react] probably remove
