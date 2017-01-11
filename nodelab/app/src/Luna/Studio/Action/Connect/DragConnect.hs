@@ -22,6 +22,7 @@ import           Luna.Studio.Event.Mouse                (workspacePosition)
 import           Luna.Studio.Prelude
 import           Luna.Studio.React.Event.Connection     (ModifiedEnd (Destination, Source))
 import           Luna.Studio.React.Model.Connection     (CurrentConnection)
+import qualified Luna.Studio.React.Model.Connection     as ConnectionModel
 import qualified Luna.Studio.React.Model.NodeEditor     as NodeEditor
 import qualified Luna.Studio.React.Store                as Store
 import           Luna.Studio.React.Store.Ref            (Ref)
@@ -29,7 +30,6 @@ import qualified Luna.Studio.React.Store.Ref            as Ref
 import           Luna.Studio.State.Global               (State)
 import qualified Luna.Studio.State.Global               as Global
 import qualified Luna.Studio.State.Graph                as Graph
-import qualified Object.Widget.Connection               as ConnectionModel
 import           React.Flux                             (MouseEvent)
 
 

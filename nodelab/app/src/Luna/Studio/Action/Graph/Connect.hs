@@ -14,11 +14,11 @@ import           Luna.Studio.Action.Geometry.Connection (getConnectionPosition)
 import           Luna.Studio.Data.Color                 (Color)
 import           Luna.Studio.Data.Vector                (Position)
 import           Luna.Studio.Prelude
+import qualified Luna.Studio.React.Model.Connection     as ConnectionModel
 import qualified Luna.Studio.React.Model.NodeEditor     as NodeEditor
 import qualified Luna.Studio.React.Store                as Store
 import qualified Luna.Studio.State.Global               as Global
 import qualified Luna.Studio.State.Graph                as Graph
-import qualified Object.Widget.Connection               as ConnectionModel
 
 
 connectNodes :: OutPortRef -> InPortRef -> Command Global.State ()

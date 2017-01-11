@@ -26,21 +26,21 @@ module Luna.Studio.State.UIRegistry
     , LookupFor
     ) where
 
-import           Control.Arrow                (first)
-import qualified Control.Monad.State          as MState
-import           Control.Monad.Trans.RWS      (RWS)
-import qualified Control.Monad.Trans.RWS      as RWS
-import           Data.Aeson                   (ToJSON, object, toJSON)
-import           Data.HMap.Lazy               (HTMap)
-import qualified Data.HMap.Lazy               as HMap
-import qualified Data.IntMap.Lazy             as IntMap
+import           Control.Arrow                      (first)
+import qualified Control.Monad.State                as MState
+import           Control.Monad.Trans.RWS            (RWS)
+import qualified Control.Monad.Trans.RWS            as RWS
+import           Data.Aeson                         (ToJSON, object, toJSON)
+import           Data.HMap.Lazy                     (HTMap)
+import qualified Data.HMap.Lazy                     as HMap
+import qualified Data.IntMap.Lazy                   as IntMap
 import           Luna.Studio.Data.CtxDynamic
-import           Luna.Studio.Prelude          hiding (children, lookup)
+import           Luna.Studio.Prelude                hiding (children, lookup)
 
-import           Luna.Studio.Action.Command (Command)
-import           Luna.Studio.Data.Aeson       (intMapToJSON)
+import           Luna.Studio.Action.Command         (Command)
+import           Luna.Studio.Data.Aeson             (intMapToJSON)
+import           Luna.Studio.React.Model.Connection
 import           Object.Widget
-import           Object.Widget.Connection
 import           Object.Widget.Scene
 
 

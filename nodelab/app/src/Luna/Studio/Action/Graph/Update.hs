@@ -17,6 +17,7 @@ import           Luna.Studio.Action.Geometry.Connection (getConnectionPosition)
 import           Luna.Studio.Action.Graph.Connect       (localConnectNodes)
 import           Luna.Studio.Action.Graph.Lookup        (allNodes)
 import           Luna.Studio.Prelude
+import qualified Luna.Studio.React.Model.Connection     as ConnectionModel
 import qualified Luna.Studio.React.Model.Node           as Node
 import qualified Luna.Studio.React.Model.Node           as Model
 import           Luna.Studio.React.Store                (ref, widget)
@@ -24,7 +25,6 @@ import qualified Luna.Studio.React.Store                as Store
 import           Luna.Studio.State.Global               (State)
 import qualified Luna.Studio.State.Global               as Global
 import qualified Luna.Studio.State.Graph                as Graph
-import qualified Object.Widget.Connection               as ConnectionModel
 
 
 updateConnections :: Command Global.State ()

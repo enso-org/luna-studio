@@ -13,7 +13,7 @@ module UI.Handlers.Connection where
 -- import qualified Event.Mouse                        as Mouse
 -- import           Object.Widget                      (DragMoveHandler, UIHandlers, WidgetId, dragMove, mouseMove, mouseOut, mousePressed,
 --                                                      startPos)
--- import qualified Object.Widget.Connection           as Model
+-- import qualified Luna.Studio.React.Model.Connection           as Model
 -- import qualified Luna.Studio.React.Model.Node                 as NodeModel
 -- import qualified Luna.Studio.React.Model.Port                 as PortModel
 -- import qualified Luna.Studio.React.Store                        as Store
