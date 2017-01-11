@@ -326,7 +326,6 @@ runUndo endPoints = ZMQ.runZMQ $ do
         state = UndoState [] [] (Env.BusEnv subSocket pushSocket clientID 0)
     flip runReaderT endPoints $ evalStateT collect state
 
-
 data BusErrorException = BusErrorException deriving (Show)
 instance Exception BusErrorException
 
@@ -373,8 +372,7 @@ collectEvents (MessageFrame msg corId senderId lastFrm) myId push  = do
 
 
 compareId :: UUID -> UndoMessage -> Bool
-compareId guiID msg =
-    case msg of UndoMessage x _ _ _ _ _ -> x == guiID
+compareId guiID msg = case msg of UndoMessage x _ _ _ _ _ -> x == guiID
 
 doUndo :: MonadState (UndoState z) m => Maybe UUID -> m (Maybe UndoMessage)
 doUndo guiID = do
