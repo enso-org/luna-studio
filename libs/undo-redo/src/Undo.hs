@@ -110,8 +110,8 @@ makeLenses ''UndoState
 -- === Utils === --
 
 -- FIXME[WD]: Undo -> History?
-newtype Undo a = Undo {runUndo :: StateT UndoState (ReaderT BusEndPoints (Bus.BusT)) a}
-    deriving (Applicative, Functor, Monad, MonadState UndoState, MonadReader BusEndPoints, MonadIO, MonadThrow)
+newtype Undo a = Undo {runUndo :: StateT UndoState (Bus.BusT) a}
+    deriving (Applicative, Functor, Monad, MonadState UndoState, MonadIO, MonadThrow)
 
 
 
@@ -138,14 +138,14 @@ handleMassage = do
             flushHelper "doUndo"
             req <- doUndo guiID
             case req of
-                Just msg -> Undo $ lift $ lift $ Bus.BusT $ sendUndo msg
+                Just msg -> Undo $ lift $ Bus.BusT $ sendUndo msg
                 Nothing  -> return ()
         "empire.redo.request" -> do
             flushHelper "doRedo"
 
             req <- doRedo guiID
             case req of
-                Just msg -> Undo $ lift $ lift $ Bus.BusT $ sendRedo msg
+                Just msg -> Undo $ lift $ Bus.BusT $ sendRedo msg
                 Nothing  -> return ()
         _ -> if (guiID /= Nothing) then collectedMessage topic content else return ()
 
@@ -154,7 +154,7 @@ isEmpty msg = empty == msg
 
 receiveMessage :: Undo MessageFrame
 receiveMessage = do
-    frame <- Undo $ lift $ lift $ Bus.BusT Bus.receive
+    frame <- Undo $ lift $ Bus.BusT Bus.receive
     case frame of
         MessageFrame msg _ _ _ -> do
             let emptyMsg = isEmpty $ msg ^. Message.message
