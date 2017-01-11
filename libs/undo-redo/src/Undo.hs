@@ -85,6 +85,9 @@ data UndoMessage where
 
 instance Eq UndoMessage where
     (UndoMessage _ reqID1 _ _ _ _) == (UndoMessage _ reqID2 _ _ _ _) = (reqID1 == reqID2)
+instance Show UndoMessage where
+    show (UndoMessage guiID reqID topic1 _ topic2 _) =
+        "UndoMessage " ++ show guiID ++ " " ++ show reqID ++ " " ++ show topic1 ++ " " ++ show topic2
 
 -- FIXME[WD]: nie uzywajmy NIGDY exystencjali
 -- FIXME[WD]: uzywajmy lensow
