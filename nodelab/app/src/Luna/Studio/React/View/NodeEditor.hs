@@ -37,6 +37,9 @@ nodeEditor ref = React.defineControllerView name ref $ \store () -> do
         , onMouseDown $ \_ e   -> dispatch ref $ UI.NodeEditorEvent $ NE.MouseDown e
         , onWheel     $ \_ m w -> dispatch ref $ UI.NodeEditorEvent $ NE.Wheel m w
         ] $ do
+
+        -- TODO: div_ [ "className" $= "plane plane--visuals" ] …
+
         svg_
             [ "className" $= "plane plane-connections"
             , "style"     @= Aeson.object [ "transform" Aeson..= transform ]
@@ -76,6 +79,8 @@ nodeEditor ref = React.defineControllerView name ref $ \store () -> do
             , "style"     @= Aeson.object [ "transform" Aeson..= transform ]
             ] $ do
                 forM_ (store ^. dt . NodeEditor.nodes . to HashMap.toList) $ uncurry node_
+
+        -- TODO: canvas_ [ "className" $= "plane plane--canvas" ] …
 
 nodeEditor_ :: Ref NodeEditor -> ReactElementM ViewEventHandler ()
 nodeEditor_ ref = React.viewWithSKey (nodeEditor ref) name () mempty
