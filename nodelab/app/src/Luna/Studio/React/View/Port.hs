@@ -21,8 +21,8 @@ import qualified React.Flux                         as React
 name :: JSString
 name = "port"
 
-showSvg :: Double -> String
-showSvg a = showFFloat (Just 4) a "" -- limit Double to two decimal numbers
+show2 :: Double -> String
+show2 a = showFFloat (Just 4) a "" -- limit Double to two decimal numbers
 
 port :: ReactView (Ref Node, Int, Bool, Port)
 port = React.defineView name $ \(ref, numOfPorts, isOnly, p) ->
@@ -113,14 +113,14 @@ portIO_ ref port num numOfPorts isInput = do
         stopPortArcX  r = r * sin(portAngleStop  num numOfPorts r * mod)
         stopPortArcY  r = r * cos(portAngleStop  num numOfPorts r * mod)
 
-        ax = showSvg $ startPortArcX nodeRadius
-        ay = showSvg $ startPortArcY nodeRadius
-        bx = showSvg $ stopPortArcX  nodeRadius
-        by = showSvg $ stopPortArcY  nodeRadius
-        cx = showSvg $ stopPortArcX  nodeRadius'
-        cy = showSvg $ stopPortArcY  nodeRadius'
-        dx = showSvg $ startPortArcX nodeRadius'
-        dy = showSvg $ startPortArcY nodeRadius'
+        ax = show2 $ startPortArcX nodeRadius
+        ay = show2 $ startPortArcY nodeRadius
+        bx = show2 $ stopPortArcX  nodeRadius
+        by = show2 $ stopPortArcY  nodeRadius
+        cx = show2 $ stopPortArcX  nodeRadius'
+        cy = show2 $ stopPortArcY  nodeRadius'
+        dx = show2 $ startPortArcX nodeRadius'
+        dy = show2 $ startPortArcY nodeRadius'
         r1 = show nodeRadius
         r2 = show nodeRadius'
 
@@ -157,7 +157,7 @@ portIOExpanded_ ref port num isInput = do
         , "fill"      $= color
         , "stroke"    $= color
         , "r"         $= "3"
-        , "cy"        $= fromString (showSvg $ lineHeight * fromIntegral (num + n) )
+        , "cy"        $= fromString (show2 $ lineHeight * fromIntegral (num + n) )
         ] mempty
 
 

@@ -20,8 +20,8 @@ import qualified React.Flux                         as React
 name :: JSString
 name = "connection-editor"
 
-showSvg :: Double -> String
-showSvg a = showFFloat (Just 4) a "" -- limit Double to two decimal numbers
+show2 :: Double -> String
+show2 a = showFFloat (Just 4) a "" -- limit Double to two decimal numbers
 
 connection :: Ref Connection -> ReactView ()
 connection connectionRef = React.defineControllerView
@@ -42,38 +42,38 @@ connection connectionRef = React.defineControllerView
         g_ [ "className" $= "connection" ] $ do
             g_ [ "className" $= "connection__src" ] $ do
                 line_
-                    [ "x1"          $= (fromString $ showSvg srcX)
-                    , "y1"          $= (fromString $ showSvg srcY)
-                    , "x2"          $= (fromString $ showSvg midX)
-                    , "y2"          $= (fromString $ showSvg midY)
+                    [ "x1"          $= (fromString $ show2 srcX)
+                    , "y1"          $= (fromString $ show2 srcY)
+                    , "x2"          $= (fromString $ show2 midX)
+                    , "y2"          $= (fromString $ show2 midY)
                     , "stroke"      $= toJSString color
                     , "strokeWidth" $= width
                     ] mempty
                 line_
                     [ onMouseDown $ \e m -> stopPropagation e : dispatch connectionRef (UI.ConnectionEvent $ Connection.ModifyConnection m connId Source)
                     , "className"   $= "connection__select"
-                    , "x1"          $= (fromString $ showSvg srcX)
-                    , "y1"          $= (fromString $ showSvg srcY)
-                    , "x2"          $= (fromString $ showSvg midX)
-                    , "y2"          $= (fromString $ showSvg midY)
+                    , "x1"          $= (fromString $ show2 srcX)
+                    , "y1"          $= (fromString $ show2 srcY)
+                    , "x2"          $= (fromString $ show2 midX)
+                    , "y2"          $= (fromString $ show2 midY)
                     , "strokeWidth" $= widthSelect
                     ] mempty
             g_ [ "className" $= "connection__dst" ] $ do
                 line_
-                    [ "x1"          $= (fromString $ showSvg midX)
-                    , "y1"          $= (fromString $ showSvg midY)
-                    , "x2"          $= (fromString $ showSvg dstX)
-                    , "y2"          $= (fromString $ showSvg dstY)
+                    [ "x1"          $= (fromString $ show2 midX)
+                    , "y1"          $= (fromString $ show2 midY)
+                    , "x2"          $= (fromString $ show2 dstX)
+                    , "y2"          $= (fromString $ show2 dstY)
                     , "stroke"      $= toJSString color
                     , "strokeWidth" $= width
                     ] mempty
                 line_
                     [ onMouseDown $ \e m -> stopPropagation e : dispatch connectionRef (UI.ConnectionEvent $ Connection.ModifyConnection m connId Destination)
                     , "className"   $= "connection__select"
-                    , "x1"          $= (fromString $ showSvg midX)
-                    , "y1"          $= (fromString $ showSvg midY)
-                    , "x2"          $= (fromString $ showSvg dstX)
-                    , "y2"          $= (fromString $ showSvg dstY)
+                    , "x1"          $= (fromString $ show2 midX)
+                    , "y1"          $= (fromString $ show2 midY)
+                    , "x2"          $= (fromString $ show2 dstX)
+                    , "y2"          $= (fromString $ show2 dstY)
                     , "strokeWidth" $= widthSelect
                     ] mempty
 
@@ -89,10 +89,10 @@ currentConnection connectionRef = React.defineControllerView
             src        = connection' ^. Connection.currentFrom
             dst        = connection' ^. Connection.currentTo
             color      = connection' ^. Connection.currentColor
-            x1         = fromString $ showSvg $ src ^. x
-            y1         = fromString $ showSvg $ src ^. y
-            x2         = fromString $ showSvg $ dst ^. x
-            y2         = fromString $ showSvg $ dst ^. y
+            x1         = fromString $ show2 $ src ^. x
+            y1         = fromString $ show2 $ src ^. y
+            x2         = fromString $ show2 $ dst ^. x
+            y2         = fromString $ show2 $ dst ^. y
             width      = fromString $ show connectionWidth
         line_
             [ "x1"          $= x1
