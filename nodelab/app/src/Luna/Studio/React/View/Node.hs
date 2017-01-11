@@ -45,6 +45,9 @@ node ref = React.defineControllerView
             ports     = Map.elems $ n ^. Node.ports
             offsetX   = show (pos ^. x)
             offsetY   = show (pos ^. y)
+            nodeLimit = 10000::Int
+            zIndex    = 1::Int -- FIXME, Leszek!
+            z         = if n ^. Node.isExpanded then zIndex + nodeLimit else zIndex
         in  div_
                 [ "key"       $= fromString (show nodeId)
                 , onClick       $ \_ m -> dispatch ref $ UI.NodeEvent $ Node.Select m nodeId
@@ -52,7 +55,9 @@ node ref = React.defineControllerView
                 , onMouseDown   $ \e m -> stopPropagation e : dispatch ref (UI.NodeEvent $ Node.MouseDown m nodeId)
                 , "className" $= (fromString $ "node" <> (if n ^. Node.isExpanded then " node--expanded" else " node--collapsed")
                                                       <> (if n ^. Node.isSelected then " node--selected" else []))
-                , "style"     @= Aeson.object [ "transform" Aeson..= (transformTranslateToSvg offsetX offsetY) ]
+                , "style"     @= Aeson.object [ "transform" Aeson..= (transformTranslateToSvg offsetX offsetY)
+                                              , "z-index"   Aeson..= (show z)
+                                              ]
                 ] $ do
 
                 svg_ [ "key"     $= "viewbox"
