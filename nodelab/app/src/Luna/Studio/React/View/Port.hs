@@ -54,14 +54,18 @@ portSelf_ ref port =
         color   = toJSString $ port ^. Port.color
         portId  = port ^. Port.portId
     in
-    circle_
-        [ onMouseDown $ \e m -> stopPropagation e : dispatch ref (UI.ConnectionEvent $ Connection.StartConnection m portRef)
-        , onMouseUp   $ \e m -> stopPropagation e : dispatch ref (UI.ConnectionEvent $ Connection.EndConnection   m portRef)
-        , "className" $= "port port--self"
-        , "key"       $= fromString (show portId)
-        , "fill"      $= color
-        , "stroke"    $= color
-        ] mempty
+    g_ [ "className" $= "port port--self" ] $ do
+        circle_
+            [ "className" $= "port__shape"
+            , "key"       $= (fromString (show portId ) <> "a")
+            , "fill"      $= color
+            ] mempty
+        circle_
+            [ onMouseDown $ \e m -> stopPropagation e : dispatch ref (UI.ConnectionEvent $ Connection.StartConnection m portRef)
+            , onMouseUp   $ \e m -> stopPropagation e : dispatch ref (UI.ConnectionEvent $ Connection.EndConnection   m portRef)
+            , "className" $= "port__select"
+            , "key"       $= (fromString (show portId ) <> "b")
+            ] mempty
 
 portSingle_ :: Ref Node -> Port -> ReactElementM ViewEventHandler ()
 portSingle_ ref port = do
@@ -71,17 +75,26 @@ portSingle_ ref port = do
         color       = toJSString $ port ^. Port.color
         r1          = show nodeRadius
         r2          = show nodeRadius'
+        r1'         = show (nodeRadius  + 3)
+        r2'         = show (nodeRadius' - 3)
         svgPath a b = fromString $ "M0 -" <> r1 <> " A " <> r1 <> " " <> r1 <> " 1 0 " <> show a <> " 0 "  <> r1 <>
                                    " L0 " <> r2 <> " A " <> r2 <> " " <> r2 <> " 1 0 " <> show b <> " 0 -" <> r2 <> " Z "
-    path_
-        [ onMouseDown $ \e m -> stopPropagation e : dispatch ref (UI.ConnectionEvent $ Connection.StartConnection m portRef)
-        , onMouseUp   $ \e m -> stopPropagation e : dispatch ref (UI.ConnectionEvent $ Connection.EndConnection   m portRef)
-        , "className" $= "port port--o--single"
-        , "key"       $= fromString (show portId)
-        , "fill"      $= color
-        , "stroke"    $= color
-        , "d"         $= (svgPath 0 1 <> svgPath 1 0)
-        ] mempty
+        svgPath' a b= fromString $ "M0 -" <> r1'<> " A " <> r1'<> " " <> r1'<> " 1 0 " <> show a <> " 0 "  <> r1'<>
+                                   " L0 " <> r2'<> " A " <> r2'<> " " <> r2'<> " 1 0 " <> show b <> " 0 -" <> r2'<> " Z "
+    g_ [ "className" $= "port port--o--single" ] $ do
+        path_
+            [ "className" $= "port__shape"
+            , "key"       $= (fromString (show portId) <> "a" )
+            , "fill"      $= color
+            , "d"         $= (svgPath 0 1 <> svgPath 1 0)
+            ] mempty
+        path_
+            [ onMouseDown $ \e m -> stopPropagation e : dispatch ref (UI.ConnectionEvent $ Connection.StartConnection m portRef)
+            , onMouseUp   $ \e m -> stopPropagation e : dispatch ref (UI.ConnectionEvent $ Connection.EndConnection   m portRef)
+            , "className" $= "port__select"
+            , "key"       $= (fromString (show portId ) <> "b")
+            , "d"         $= (svgPath' 0 1 <> svgPath' 1 0)
+            ] mempty
 
 
 portIO_ :: Ref Node -> Port -> Int -> Int -> Bool -> ReactElementM ViewEventHandler ()

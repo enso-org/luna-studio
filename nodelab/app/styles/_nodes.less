@@ -50,10 +50,6 @@
     position: absolute;
     width:    10px;
     height:   10px;
-    .port--self {
-        r: 5;
-    }
-
 }
 .node--expanded {
     z-index: 10000;
@@ -70,13 +66,26 @@
 }
 
 .port {
-    stroke-width: 0px;
+    stroke-width: 0;
     &:hover {
-        stroke-width:    2px;
-        stroke-linecap:  round;
-        stroke-linejoin: round;
+        .port__shape {
+            fill: #fff !important;
+        }
+    }
+    .port__select {
 
     }
+}
+.port--self {
+    .port__shape {
+        r: 5;
+    }
+    .port__select {
+        r: 8;
+    }
+}
+.port__select {
+    opacity: 0;
 }
 
 
