@@ -3,7 +3,7 @@ module UI.Widget.Plots.Image where
 import           Luna.Studio.Data.Vector
 import           Luna.Studio.Prelude
 
-import           Data.JSString.Text        (lazyTextToJSString)
+import           Data.JSString.Text        (textToJSString)
 import           GHCJS.Marshal.Pure        (PFromJSVal (..), PToJSVal (..))
 
 import           Object.UITypes
@@ -26,7 +26,7 @@ foreign import javascript safe "$1.setData($2)"        setData' :: Image -> JSSt
 create :: WidgetId -> Model.Image -> IO Image
 create oid model = do
     plot <- create' (fromWidgetId oid) (model ^. Model.size . x) (model ^. Model.size . y)
-    setData' plot $ lazyTextToJSString $ model ^. Model.image
+    setData' plot $ textToJSString $ model ^. Model.image
     -- TODO[react]: Does not make sense anymore
     -- UI.setWidgetPosition (model ^. widgetPosition) plot
     return plot
@@ -40,7 +40,7 @@ instance UIDisplayObject Model.Image where
 
     updateUI wid _ model = do
         plot <- UI.lookup wid :: IO Image
-        setData' plot $ lazyTextToJSString $ model ^. Model.image
+        setData' plot $ textToJSString $ model ^. Model.image
 
 instance CompositeWidget Model.Image
 instance ResizableWidget Model.Image

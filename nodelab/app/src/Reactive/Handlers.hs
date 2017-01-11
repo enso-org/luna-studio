@@ -34,13 +34,12 @@ import qualified GHCJS.DOM.MouseEvent                   as MouseEvent
 import qualified GHCJS.DOM.UIEvent                      as UIEvent
 import qualified GHCJS.DOM.WheelEvent                   as WheelEvent
 import           GHCJS.DOM.Window                       (getInnerHeight, getInnerWidth, resize)
-import           GHCJS.Marshal                          (fromJSValUnchecked)
 import           GHCJS.Marshal.Pure                     (pFromJSVal)
 import           GHCJS.Prim                             (fromJSString)
 import qualified JavaScript.Array                       as JSArray
 
 import qualified Data.JSString                          as JSString
-import           Data.JSString.Text                     (lazyTextFromJSString)
+import           Data.JSString.Text                     (textFromJSString)
 import qualified Event.Clipboard                        as Clipboard
 import qualified Event.Connection                       as Connection
 import qualified Event.ConnectionPen                    as ConnectionPen
@@ -201,7 +200,7 @@ textEditorHandler :: AddHandler Event
 textEditorHandler  = AddHandler $ \h ->
     TextEditor.registerCallback $ \code -> do
         let codeStr = TextEditor.toJSString code
-        liftIO $ h $ TextEditor $ TextEditor.CodeModified $ lazyTextFromJSString codeStr
+        liftIO $ h $ TextEditor $ TextEditor.CodeModified $ textFromJSString codeStr
 
 customEventHandler :: AddHandler Event
 customEventHandler  = AddHandler $ \h -> do
@@ -225,4 +224,4 @@ pasteClipboardHandler :: AddHandler Event
 pasteClipboardHandler =
   AddHandler $ \h -> do
     Clipboard.registerPasteCallback $ \jsval ->
-      liftIO . h $ Clipboard $ Clipboard.Paste (lazyTextFromJSString $ pFromJSVal jsval)
+      liftIO . h $ Clipboard $ Clipboard.Paste (textFromJSString $ pFromJSVal jsval)

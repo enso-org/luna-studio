@@ -7,7 +7,7 @@ import           Luna.Studio.Prelude
 data CameraTransformation = CameraTransformation { _screenToLogical :: Matrix Double
                                                  , _logicalToScreen :: Matrix Double
                                                  , _lastInverse     :: Int
-                                                 }
+                                                 } deriving (Show, Eq)
 
 makeLenses ''CameraTransformation
 

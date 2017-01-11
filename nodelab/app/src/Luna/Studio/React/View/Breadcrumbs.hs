@@ -5,15 +5,15 @@ module Luna.Studio.React.View.Breadcrumbs (
     breadcrumbs_
 ) where
 
-import           Data.Text.Lazy          (unpack)
-import           React.Flux
-import qualified React.Flux              as React
+import           Data.Text                           (unpack)
 import           Luna.Studio.Prelude
+import           React.Flux
+import qualified React.Flux                          as React
 
-import qualified Event.UI                as UI
-import           Luna.Studio.React.Store             (Ref, dispatch, dt)
+import qualified Event.UI                            as UI
 import           Luna.Studio.React.Model.Breadcrumbs (Breadcrumbs)
 import qualified Luna.Studio.React.Model.Breadcrumbs as B
+import           Luna.Studio.React.Store             (Ref, dispatch, dt)
 
 
 

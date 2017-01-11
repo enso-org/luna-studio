@@ -3,18 +3,18 @@
 
 module Luna.Studio.React.Store.Ref where
 
-import           Control.Concurrent           (MVar)
-import           Control.DeepSeq              (NFData (..))
+import           Control.Concurrent         (MVar)
+import           Control.DeepSeq            (NFData (..))
 import           Control.Monad.Trans.Reader
-import           Control.Monad.Trans.State    hiding (get, modify)
-import qualified Control.Monad.Trans.State    as State
-import           Data.Tuple                   (swap)
-import           Luna.Studio.Prelude          as P hiding (transform)
+import           Control.Monad.Trans.State  hiding (get, modify)
+import qualified Control.Monad.Trans.State  as State
+import           Data.Tuple                 (swap)
+import           Luna.Studio.Prelude        as P hiding (transform)
 import           React.Flux
-import           React.Flux.Store             (ReactStoreRef)
+import           React.Flux.Store           (ReactStoreRef)
 
 import qualified Event.Event                as E
-import           Luna.Studio.Action.Command  (Command)
+import           Luna.Studio.Action.Command (Command)
 
 
 
@@ -30,10 +30,14 @@ data Store a = Store { _dt :: a
                      , _sendEvent :: SendEvent
                      } deriving (Generic, NFData)
 
+instance Eq a => Eq (Store a) where
+    s1 == s2 = _dt s1 == _dt s2
+
 type SendEventM = ReaderT SendEvent
 type StoreModifyM a m = StateT a (SendEventM m)--TODO newtype
 
-instance NFData (MVar a) where rnf !_ = ()
+instance Eq (ReactStore a) where _ == _ = True
+instance NFData (MVar a)   where rnf !_ = ()
 instance NFData a => NFData (ReactStoreRef a)
 instance NFData a => NFData (ReactStore a)
 

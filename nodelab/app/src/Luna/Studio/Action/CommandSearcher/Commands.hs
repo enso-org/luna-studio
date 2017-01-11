@@ -9,8 +9,8 @@ module Luna.Studio.Action.CommandSearcher.Commands where
 --     ) where
 --
 -- import qualified Data.Map                          as Map
--- import           Data.Text.Lazy                    (stripPrefix)
--- import qualified Data.Text.Lazy                    as Text
+-- import           Data.Text                    (stripPrefix)
+-- import qualified Data.Text                    as Text
 -- import qualified Empire.API.Data.Project           as Project
 -- import           Event.Event                       (JSState)
 -- import qualified JS.GoogleAnalytics                as GA

@@ -1,15 +1,15 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Luna.Studio.React.View.CodeEditor where
 
-import qualified Data.Aeson             as Aeson
-import           Data.Text.Lazy         (unpack)
-import           React.Flux
-import qualified React.Flux             as React
+import qualified Data.Aeson                         as Aeson
+import           Data.Text                          (unpack)
 import           Luna.Studio.Prelude
+import           React.Flux
+import qualified React.Flux                         as React
 
-import           Luna.Studio.React.Store            (Ref, dt)
 import           Luna.Studio.React.Model.CodeEditor (CodeEditor)
 import qualified Luna.Studio.React.Model.CodeEditor as CodeEditor
+import           Luna.Studio.React.Store            (Ref, dt)
 
 
 name :: JSString

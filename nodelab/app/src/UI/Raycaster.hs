@@ -4,7 +4,6 @@ import           Luna.Studio.Prelude
 
 import           Luna.Studio.Data.Vector
 
-import           GHCJS.Marshal           (fromJSVal)
 import           GHCJS.Marshal.Pure      (pFromJSVal)
 import           JavaScript.Array        (JSArray)
 import qualified JavaScript.Array        as JSArray

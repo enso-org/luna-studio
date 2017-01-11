@@ -18,6 +18,6 @@ data App = App { _breadcrumbs       :: Ref Breadcrumbs
                , _nodeEditor        :: Ref NodeEditor
                , _codeEditor        :: Ref CodeEditor
                , _searcher          :: Ref Searcher
-               }
+               } deriving (Eq)
 
 makeLenses ''App

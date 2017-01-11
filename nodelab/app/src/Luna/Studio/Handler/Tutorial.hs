@@ -3,7 +3,7 @@
 module Luna.Studio.Handler.Tutorial where
 
 import           Control.Monad.Trans.Maybe     (runMaybeT)
-import qualified Data.Text.Lazy                as Text
+import qualified Data.Text                     as Text
 import           Luna.Studio.Prelude
 
 import qualified Empire.API.Data.DefaultValue  as DefaultValue

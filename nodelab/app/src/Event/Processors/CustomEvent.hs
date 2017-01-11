@@ -1,14 +1,13 @@
 module Event.Processors.CustomEvent (process) where
 
-import           Control.Monad     (liftM)
-import           Data.Aeson        (fromJSON)
-import qualified Data.Aeson        as AE
-import           GHCJS.Marshal     (fromJSVal)
+import           Control.Monad       (liftM)
+import           Data.Aeson          (fromJSON)
+import qualified Data.Aeson          as AE
 import           Luna.Studio.Prelude
 
-import           Event.CustomEvent as CustomEvent
-import           Event.Debug       (Event (..))
-import qualified Event.Event       as Event
+import           Event.CustomEvent   as CustomEvent
+import           Event.Debug         (Event (..))
+import qualified Event.Event         as Event
 
 payloadToData :: (AE.FromJSON a) => String -> JSVal -> IO (Maybe a)
 payloadToData topic payload = do

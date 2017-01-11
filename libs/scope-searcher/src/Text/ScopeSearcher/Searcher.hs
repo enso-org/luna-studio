@@ -12,11 +12,11 @@ import           Prelude
 
 import           Control.Lens
 
-import           Data.Char                      (isAlphaNum, isUpper)
-import           Data.List                      (maximumBy, sort)
-import           Data.Maybe                     (mapMaybe)
-import           Data.Text.Lazy                 (Text)
-import qualified Data.Text.Lazy                 as Text
+import           Data.Char                (isAlphaNum, isUpper)
+import           Data.List                (maximumBy, sort)
+import           Data.Maybe               (mapMaybe)
+import           Data.Text                (Text)
+import qualified Data.Text                as Text
 
 import           Text.ScopeSearcher.Score
 

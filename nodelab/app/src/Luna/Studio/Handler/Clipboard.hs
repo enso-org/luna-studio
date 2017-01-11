@@ -5,7 +5,7 @@ module Luna.Studio.Handler.Clipboard where
 -- import           Data.ByteString.Lazy.Char8        (unpack)
 -- import qualified Data.HashMap.Strict               as HashMap
 -- import qualified Data.Set                          as Set
--- import           Data.Text.Lazy.Encoding           (encodeUtf8)
+-- import           Data.Text.Encoding           (encodeUtf8)
 -- import qualified Empire.API.Data.Connection        as Connection
 -- import           Empire.API.Data.Node              (Node)
 -- import qualified Empire.API.Data.Node              as Node

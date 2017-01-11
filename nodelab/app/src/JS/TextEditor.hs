@@ -16,7 +16,7 @@ import           Luna.Studio.Prelude
 foreign import javascript safe "textEditor.setText($1)" setText' :: JSString -> IO ()
 
 setText :: Text -> IO ()
-setText = setText' . lazyTextToJSString
+setText = setText' . textToJSString
 
 foreign import javascript safe "textEditor.callback = $1"
     registerCallback' :: Callback (JSVal -> IO ()) -> IO ()

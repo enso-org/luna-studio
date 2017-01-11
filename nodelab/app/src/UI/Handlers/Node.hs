@@ -7,7 +7,7 @@ import           Luna.Studio.Prelude                hiding (stripPrefix)
 import           Control.Monad.Trans.State          (get)
 import qualified Data.HashMap.Strict                as HashMap
 import           Data.HMap.Lazy                     (HTMap, TypeKey (..))
-import qualified Data.Text.Lazy                     as Text
+import qualified Data.Text                          as Text
 import           Luna.Studio.Data.Vector
 
 import           Object.Widget                      (CompositeWidget, KeyPressedHandler, ResizableWidget, UIHandlers, WidgetId,

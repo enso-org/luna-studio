@@ -146,10 +146,10 @@ makeWrapped ''Position
 
 type instance VectorOf Position = Vector2 Double
 
-instance IsVector Position
-instance Dim1     Position
-instance Dim2     Position
-instance ToJSON   Position
+instance Dim1      Position
+instance Dim2      Position
+instance IsVector  Position
+instance ToJSON    Position
 
 instance IsList Position where
     type Item Position = Double

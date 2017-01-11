@@ -2,7 +2,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Luna.Studio.React.View.Port where
 
-import           Control.DeepSeq                    (NFData, deepseq, force)
 import           Luna.Studio.Prelude
 
 import           Empire.API.Data.Port               (InPort (..), OutPort (..), PortId (..))
@@ -22,13 +21,11 @@ import qualified React.Flux                         as React
 name :: JSString
 name = "port"
 
-data Props = Props !(Ref Node) !Int !Bool !Port deriving (Generic, NFData)
-
 showSvg :: Double -> String
 showSvg a = showFFloat (Just 4) a "" -- limit Double to two decimal numbers
 
-port :: ReactView Props
-port = React.defineView name $ \(Props ref numOfPorts isOnly p) ->
+port :: ReactView (Ref Node, Int, Bool, Port)
+port = React.defineView name $ \(ref, numOfPorts, isOnly, p) ->
     case p ^. Port.portId of
         InPortId   Self          ->                portSelf_   ref p
         OutPortId  All           -> if isOnly then portSingle_ ref p
@@ -45,11 +42,10 @@ portExpanded = React.defineView name $ \(ref, p) ->
         OutPortId (Projection i) -> portIOExpanded_ ref p i False
 
 port_ :: Ref Node -> Port -> Int -> Bool -> ReactElementM ViewEventHandler ()
-port_ ref p numOfPorts isOnly = deepseq props $ React.viewWithSKey port (fromString $ show $ p ^. Port.portId) props mempty where
-    props = Props ref numOfPorts isOnly p
+port_ ref p numOfPorts isOnly = React.viewWithSKey port (fromString $ show $ p ^. Port.portId) (ref, numOfPorts, isOnly, p) mempty where
 
 portExpanded_ :: Ref Node -> Port -> ReactElementM ViewEventHandler ()
-portExpanded_ !ref (force -> !p) = React.viewWithSKey portExpanded (fromString $ show $ p ^. Port.portId) (ref, p) mempty
+portExpanded_ ref p = React.viewWithSKey portExpanded (fromString $ show $ p ^. Port.portId) (ref, p) mempty
 
 
 portSelf_ :: Ref Node -> Port -> ReactElementM ViewEventHandler ()

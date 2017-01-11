@@ -10,7 +10,7 @@ import           Data.UUID.Types             (UUID)
 import           Empire.API.Request          (Request (..))
 import qualified Empire.API.Topic            as Topic
 import           JS.WebSocket
-import           Luna.Studio.Prelude           hiding (Text)
+import           Luna.Studio.Prelude         hiding (Text)
 
 data ControlCode = ConnectionTakeover
                  | Welcome

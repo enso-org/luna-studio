@@ -7,7 +7,7 @@ import           Control.DeepSeq                   (NFData)
 import           Data.Aeson                        (ToJSON)
 import           Data.Map.Lazy                     (Map)
 import qualified Data.Map.Lazy                     as Map
-import qualified Data.Text.Lazy                    as Text
+import qualified Data.Text                         as Text
 import           Data.Time.Clock                   (UTCTime)
 
 import qualified Empire.API.Data.Node              as NodeAPI

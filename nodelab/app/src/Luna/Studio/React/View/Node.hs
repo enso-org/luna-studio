@@ -3,7 +3,7 @@ module Luna.Studio.React.View.Node where
 
 import qualified Data.Aeson                           as Aeson
 import qualified Data.Map.Lazy                        as Map
-import qualified Data.Text.Lazy                       as Text
+import qualified Data.Text                            as Text
 import           Empire.API.Data.Node                 (NodeId)
 import           Empire.API.Data.Port                 (InPort (..), PortId (..))
 import qualified Event.UI                             as UI

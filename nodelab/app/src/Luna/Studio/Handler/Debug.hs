@@ -8,18 +8,17 @@ module Luna.Studio.Handler.Debug
     ) where
 
 
-import           JS.Debug                  (cinfo, clog, lastEv, processedEvent, saveState, shouldExportState)
+import           JS.Debug                   (cinfo, clog, lastEv, processedEvent, saveState, shouldExportState)
 import           Luna.Studio.Prelude
 
-import qualified Event.Debug               as Debug
-import           Event.Event               (Event (..))
+import qualified Event.Debug                as Debug
+import           Event.Event                (Event (..))
 
-import           Control.Monad.State       hiding (state)
+import           Control.Monad.State        hiding (state)
 import           Luna.Studio.Action.Command (Command, performIO)
-import qualified Luna.Studio.State.Global     as Global
+import qualified Luna.Studio.State.Global   as Global
 
-import           Data.Aeson                (toJSON)
-import           GHCJS.Marshal             (toJSVal)
+import           Data.Aeson                 (toJSON)
 
 toAction :: Event -> Maybe (Command Global.State ())
 toAction (Debug Debug.GetState) = Just $ do

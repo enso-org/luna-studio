@@ -1,12 +1,12 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Luna.Studio.React.View.Visualization.DataFrame where
 
-import qualified Data.Text.Lazy                       as Text
+import qualified Data.Text                         as Text
 import           React.Flux
 
 import           Luna.Studio.Prelude
-import           Luna.Studio.React.Model.DataFrame    (DataFrame)
-import qualified Luna.Studio.React.Model.DataFrame    as DataFrame
+import           Luna.Studio.React.Model.DataFrame (DataFrame)
+import qualified Luna.Studio.React.Model.DataFrame as DataFrame
 
 
 

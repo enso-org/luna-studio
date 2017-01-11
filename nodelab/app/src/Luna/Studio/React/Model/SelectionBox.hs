@@ -9,7 +9,7 @@ data SelectionBox = SelectionBox
     { _visible :: Bool
     , _start   :: Position
     , _end     :: Position
-    } deriving (Show)
+    } deriving (Show, Eq)
 
 makeLenses ''SelectionBox
 
