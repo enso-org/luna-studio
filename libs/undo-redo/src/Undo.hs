@@ -29,7 +29,6 @@ import qualified Data.Binary                       as Bin
 import qualified Data.Text.Lazy                        as Text
 import qualified Data.List as List
 import qualified Data.Map.Strict                   as Map
-import           Data.Map.Strict                   (Map)
 import           Data.Maybe
 import qualified Data.Set                          as Set
 import           Data.UUID.Types                       (UUID)
@@ -45,10 +44,6 @@ import qualified Empire.API.Request                as Request
 import           Empire.API.Request                (Request (..))
 import qualified Empire.API.Graph.Undo             as UndoRequest
 import qualified Empire.API.Graph.Redo             as RedoRequest
-import           Empire.Env                        (Env)
-import qualified Empire.Env                        as Env
-import qualified Empire.Server.Graph               as Graph
-import           Empire.Server.Server              (sendToBus')
 
 import qualified ZMQ.Bus.Bus                       as Bus
 import qualified ZMQ.Bus.Data.Flag                 as Flag
@@ -57,7 +52,6 @@ import           ZMQ.Bus.Data.MessageFrame         (MessageFrame (MessageFrame))
 import           ZMQ.Bus.EndPoint                  (BusEndPoints)
 import qualified ZMQ.Bus.Trans                     as Bus
 import qualified ZMQ.Bus.Data.MessageFrame       as MessageFrame
-import qualified ZMQ.RPC.Client                  as Client
 import           Control.Error                   (ExceptT, hoistEither, runExceptT)
 
 import System.IO (stdout,hFlush)

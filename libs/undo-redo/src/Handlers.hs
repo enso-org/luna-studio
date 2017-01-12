@@ -20,7 +20,6 @@ import           Data.ByteString                   (ByteString, empty)
 import           Data.ByteString.Lazy              (toStrict,fromStrict)
 import           Data.Binary                       (Binary, decode)
 import qualified Data.Binary                       as Bin
-import qualified Data.Text.Lazy                        as Text
 import qualified Data.List as List
 import qualified Data.Map.Strict                   as Map
 import           Data.Map.Strict                   (Map)
