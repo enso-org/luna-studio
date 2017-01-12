@@ -98,8 +98,6 @@ instance Show UndoMessage where
 -- newtype RedoReq = RedoReq ByteString
 --
 
-
-
 ----------------------
 -- === Handlers === --
 ----------------------
@@ -109,13 +107,18 @@ data UndoState = UndoState { _undo    :: [UndoMessage]
                            , _history :: [UndoMessage]
                            }
 makeLenses ''UndoState
-
-
 -- === Utils === --
 
+-- FIXME[WD]: Undo -> History?
 newtype Undo a = Undo {runUndo :: StateT UndoState (Bus.BusT) a}
     deriving (Applicative, Functor, Monad, MonadState UndoState, MonadIO, MonadThrow)
 
+type Undo = Undo' Bus.BusT
+type UndoPure = Undo' IO
+
+lft :: UndoPure a -> Undo a
+lft act = Undo $ state $ runStateT actUndo
+    where actUndo = runUndo act
 
 
 run :: BusEndPoints -> IO (Either Bus.Error ((), UndoState))
@@ -133,7 +136,7 @@ receiveAndHandleMessage = do
     msgFrame <- receiveMessage
     handleMessage $ msgFrame ^. MessageFrame.message
 
-handleMessage :: Message.Message -> Undo ()
+handleMessage :: Message.Message -> UndoPure ()
 handleMessage msg = do
     let topic   = msg ^. Message.topic
         content = msg ^. Message.message
