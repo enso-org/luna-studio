@@ -104,15 +104,15 @@ instance Show UndoMessage where
 -- === Handlers === --
 ----------------------
 
-data UndoState = UndoState { _undo :: [UndoMessage]
-                            , _redo :: [UndoMessage]
-                            }
+data UndoState = UndoState { _undo    :: [UndoMessage]
+                           , _redo    :: [UndoMessage]
+                           , _history :: [UndoMessage]
+                           }
 makeLenses ''UndoState
 
 
 -- === Utils === --
 
--- FIXME[WD]: Undo -> History?
 newtype Undo a = Undo {runUndo :: StateT UndoState (Bus.BusT) a}
     deriving (Applicative, Functor, Monad, MonadState UndoState, MonadIO, MonadThrow)
 
@@ -125,7 +125,7 @@ run' :: BusEndPoints -> Undo a -> IO (Either Bus.Error (a, UndoState))
 run' endPoints undo = do
     Bus.runBus endPoints $ do
         Bus.subscribe "empire."
-        let state = UndoState [] []
+        let state = UndoState [] [] []
         Bus.runBusT $ runStateT (runUndo undo) state
 
 receiveAndHandleMessage :: Undo ()
@@ -143,14 +143,11 @@ handleMessage msg = do
     flushHelper $ show guiID
     case topic of
         "empire.undo.request" -> do
-            flushHelper "doUndo"
             req <- doUndo guiID
             case req of
                 Just msg -> Undo $ lift $ Bus.BusT $ sendUndo msg
                 Nothing  -> return ()
         "empire.redo.request" -> do
-            flushHelper "doRedo"
-
             req <- doRedo guiID
             case req of
                 Just msg -> Undo $ lift $ Bus.BusT $ sendRedo msg
@@ -181,6 +178,7 @@ doUndo guiID = do
         -- FIXME: to jest MapM?
         Just msg -> do redo %= (msg :)
                        undo %= List.delete msg
+                       history %= (msg :) --FIXME odwróć kolejność wiadomości undo-redo?
                        return $ Just msg
         Nothing  -> return Nothing
 
@@ -191,6 +189,7 @@ doRedo guiID = do
     case h of
         Just msg -> do undo %= (msg :)
                        redo %= List.delete msg
+                       history %= (msg :)
                        return $ Just msg
         Nothing  -> return Nothing
 
@@ -294,7 +293,10 @@ makeHandler h =
     -- FIXME[WD]: nie uzywamy undefined, nigdy
 
 handle :: (Binary a, Binary b) => GuiID -> ReqUUID -> Topic.Topic -> a -> Topic.Topic -> b -> Undo ()
-handle guiID reqUUID topicUndo undoReq topicRedo redoReq = undo %= (UndoMessage guiID reqUUID topicUndo undoReq topicRedo redoReq :)
+handle guiID reqUUID topicUndo undoReq topicRedo redoReq = do
+    undo    %= (UndoMessage guiID reqUUID topicUndo undoReq topicRedo redoReq :)
+    redo    .= []
+    history %= (UndoMessage guiID reqUUID topicUndo undoReq topicRedo redoReq :)
 
 withOk :: Response.Status a -> (a -> Maybe b) -> Maybe b
 withOk (Response.Error _) _ = Nothing
