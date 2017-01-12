@@ -51,15 +51,15 @@ node ref = React.defineControllerView
             z         = if n ^. Node.isExpanded then zIndex + nodeLimit else zIndex
 
         div_
-            [ "key"       $= fromString (show nodeId)
+            [ "key"         $= fromString (show nodeId)
             , onClick       $ \_ m -> dispatch ref $ UI.NodeEvent $ Node.Select m nodeId
             , onDoubleClick $ \_ _ -> dispatch ref $ UI.NodeEvent $ Node.Enter nodeId
             , onMouseDown   $ \e m -> stopPropagation e : dispatch ref (UI.NodeEvent $ Node.MouseDown m nodeId)
-            , "className" $= (fromString $ "node" <> (if n ^. Node.isExpanded then " node--expanded" else " node--collapsed")
-                                                  <> (if n ^. Node.isSelected then " node--selected" else []))
-            , "style"     @= Aeson.object [ "transform" Aeson..= (transformTranslateToSvg offsetX offsetY)
-                                          , "zIndex"   Aeson..= (show z)
-                                          ]
+            , "className"   $= (fromString $ "node" <> (if n ^. Node.isExpanded then " node--expanded" else " node--collapsed")
+                                                    <> (if n ^. Node.isSelected then " node--selected" else []))
+            , "style"       @= Aeson.object [ "transform" Aeson..= (transformTranslateToSvg offsetX offsetY)
+                                            , "zIndex"   Aeson..= (show z)
+                                            ]
             ] $ do
 
             svg_ [ "className" $= "node__selection-mark", "key" $= "selection-mark" ] $ rect_ def mempty
@@ -70,7 +70,7 @@ node ref = React.defineControllerView
                  , "className" $= "node__visuals"
                  ] $ forM_ (n ^. Node.value) visualization_
 
-            svg_ [ "key" $= "viewbox2"
+            svg_ [ "key" $= "essentials"
                  , "className" $= "node__essentials"
                  ] $ do
                 text_
