@@ -56,7 +56,7 @@ node ref = React.defineControllerView
                 , "className" $= (fromString $ "node" <> (if n ^. Node.isExpanded then " node--expanded" else " node--collapsed")
                                                       <> (if n ^. Node.isSelected then " node--selected" else []))
                 , "style"     @= Aeson.object [ "transform" Aeson..= (transformTranslateToSvg offsetX offsetY)
-                                              , "z-index"   Aeson..= (show z)
+                                              , "zIndex"   Aeson..= (show z)
                                               ]
                 ] $ do
 
