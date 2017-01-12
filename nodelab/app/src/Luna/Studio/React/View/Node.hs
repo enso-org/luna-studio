@@ -50,8 +50,8 @@ node ref = React.defineControllerView
             nodeId    = n ^. Node.nodeId
             pos       = n ^. Node.position
             nodePorts = Map.elems $ n ^. Node.ports
-            offsetX   = show (pos ^. x)
-            offsetY   = show (pos ^. y)
+            offsetX   = show $ pos ^. x
+            offsetY   = show $ pos ^. y
             nodeLimit = 10000::Int
             zIndex    = 1::Int -- FIXME, Leszek!
             z         = if n ^. Node.isExpanded then zIndex + nodeLimit else zIndex
@@ -60,31 +60,35 @@ node ref = React.defineControllerView
             , onClick       $ \_ m -> dispatch ref $ UI.NodeEvent $ Node.Select m nodeId
             , onDoubleClick $ \_ _ -> dispatch ref $ UI.NodeEvent $ Node.Enter nodeId
             , onMouseDown   $ handleMouseDown ref nodeId
-            , "className" $= (fromString $ "node" <> (if n ^. Node.isExpanded then " node--expanded" else " node--collapsed")
-                                                  <> (if n ^. Node.isSelected then " node--selected" else []))
-            , "style"     @= Aeson.object [ "transform" Aeson..= (transformTranslateToSvg offsetX offsetY)
-                                          , "zIndex"    Aeson..= (show z)
-                                          ]
+            , "className"   $= (fromString $ "node" <> (if n ^. Node.isExpanded then " node--expanded" else " node--collapsed")
+                                                    <> (if n ^. Node.isSelected then " node--selected" else []))
+            , "style"       @= Aeson.object [ "transform" Aeson..= (transformTranslateToSvg offsetX offsetY)
+                                            , "zIndex"    Aeson..= (show z)
+                                            ]
             ] $ do
 
-            svg_ [ "className" $= "node__selection-mark", "key" $= "selection-mark" ] $ rect_ def mempty
+            svg_
+                [ "className" $= "node__selection-mark"
+                , "key"       $= "selection-mark"
+                ] $ rect_ def mempty
 
             nodeProperties_ ref $ Properties.fromNode n
 
-            div_ [ "key"       $= "visualization"
-                 , "className" $= "node__visuals"
-                 ] $ forM_ (n ^. Node.value) visualization_
-
-            svg_ [ "key" $= "essentials"
-                 , "className" $= "node__essentials"
-                 ] $ do
+            div_
+                [ "key"       $= "visualization"
+                , "className" $= "node__visuals"
+                ] $ forM_ (n ^. Node.value) visualization_
+            svg_
+                [ "key"       $= "essentials"
+                , "className" $= "node__essentials"
+                ] $ do
                 text_
                     [ "key"         $= "name"
                     , onDoubleClick $ \e _ -> stopPropagation e : dispatch ref (UI.NodeEvent $ Node.EditExpression nodeId)
                     , "className"   $= "node__name"
                     , "y"           $= "-40"
                     ] $ elemString $ Text.unpack $ n ^. Node.expression
-                if n ^. Node.isExpanded then do
+                if  n ^. Node.isExpanded then do
                     ports         ref $ filter (\port -> (port ^. Port.portId) == InPortId Self) nodePorts
                     portsExpanded ref $ filter (\port -> (port ^. Port.portId) /= InPortId Self) nodePorts
                     portsExpanded ref $ filter (\port -> (port ^. Port.portId) /= InPortId Self) nodePorts
