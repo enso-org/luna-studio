@@ -10,6 +10,7 @@
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE ExistentialQuantification #-}
+{-# LANGUAGE PatternSynonyms #-}
 
 module Undo where
 
@@ -66,38 +67,36 @@ run endPoints = run' endPoints $ forever receiveAndHandleMessage
 run' :: BusEndPoints -> Undo a -> IO (Either Bus.Error (a, UndoState))
 run' endPoints undo = do
     Bus.runBus endPoints $ do
-        Bus.subscribe "empire."
+        Bus.subscribe "empire." --FIXME topic
         let state = UndoState [] [] []
         Bus.runBusT $ runStateT (runUndo undo) state
 
 receiveAndHandleMessage :: Undo ()
 receiveAndHandleMessage = do
     msgFrame <- receiveMessage
-    handleMessage $ msgFrame ^. MessageFrame.message
+    action <- lft $ handleMessage $ msgFrame ^. MessageFrame.message
+    case action of
+        Just msg -> lift $ Bus.BusT $ sendMessage msg
+        Nothing  -> return ()
 
-handleMessage :: Message.Message -> UndoPure ()
+pattern UndoRequestTopic <- "empire.undo.request"
+pattern RedoRequestTopic <- "empire.redo.request"
+
+handleMessage :: Message.Message -> UndoPure (Maybe Action)
 handleMessage msg = do
     let topic   = msg ^. Message.topic
         content = msg ^. Message.message
         Request.Request _ guiID (RedoRequest.Request _) = decode . fromStrict $ content
-
-    flushHelper $ show topic
-    flushHelper $ show guiID
     case topic of
-        "empire.undo.request" -> do
-            req <- doUndo guiID
-            case req of
-                Just msg -> Undo $ lift $ Bus.BusT $ sendUndo msg
-                Nothing  -> return ()
-        "empire.redo.request" -> do
-            req <- doRedo guiID
-            case req of
-                Just msg -> Undo $ lift $ Bus.BusT $ sendRedo msg
-                Nothing  -> return ()
-        _ -> if (guiID /= Nothing) then collectedMessage topic content else return ()
+        UndoRequestTopic -> doUndo guiID
+        RedoRequestTopic -> doRedo guiID
+        _ -> do
+            when (isJust guiID) $ runMessageHandler topic content
+            return Nothing
 
 isEmpty :: ByteString -> Bool
 isEmpty msg = empty == msg
+
 
 receiveMessage :: Undo MessageFrame
 receiveMessage = do
@@ -110,9 +109,12 @@ receiveMessage = do
 compareId :: UUID -> UndoMessage -> Bool
 compareId guiID msg = case msg of UndoMessage x _ _ _ _ _ -> x == guiID
 
+act :: Act -> UndoMessage -> Action
+act action undoMessage = case action of
+    ActUndo -> case undoMessage of (UndoMessage _ _ topicUndo msgUndo _ _) -> Action topicUndo msgUndo
+    ActRedo -> case undoMessage of (UndoMessage _ _ _ _ topicRedo msgRedo) -> Action topicRedo msgRedo
 
-
-doUndo :: MonadState UndoState m => Maybe UUID -> m (Maybe UndoMessage)
+doUndo :: MonadState UndoState m => Maybe UUID -> m (Maybe Action)
 doUndo guiID = do
     let justId = fromJust guiID
     h <- uses undo $ List.find (compareId justId)
@@ -121,10 +123,10 @@ doUndo guiID = do
         Just msg -> do redo %= (msg :)
                        undo %= List.delete msg
                        history %= (msg :) --FIXME odwróć kolejność wiadomości undo-redo?
-                       return $ Just msg
+                       return $ Just $ act ActUndo msg
         Nothing  -> return Nothing
 
-doRedo :: MonadState UndoState m => Maybe UUID -> m (Maybe UndoMessage)
+doRedo :: MonadState UndoState m => Maybe UUID -> m (Maybe Action)
 doRedo guiID = do
     let justId = fromJust guiID
     h <- uses redo $ List.find (compareId justId)
@@ -132,29 +134,18 @@ doRedo guiID = do
         Just msg -> do undo %= (msg :)
                        redo %= List.delete msg
                        history %= (msg :)
-                       return $ Just msg
+                       return $ Just $ act ActRedo msg
         Nothing  -> return Nothing
 
-collectedMessage :: String -> ByteString -> Undo ()
-collectedMessage topic content = do
+runMessageHandler :: String -> ByteString -> UndoPure ()
+runMessageHandler topic content = do
     let handler   = Map.findWithDefault doNothing topic handlersMap
         doNothing _ = return ()
     void $ handler content
 
--- FIXME[WD]: ActX -> X
-data Action = ActUndo
-            | ActRedo
 
-
-sendUndo :: UndoMessage -> Bus.Bus ()
-sendUndo msg = sendMessage ActUndo msg
-
-sendRedo :: UndoMessage -> Bus.Bus ()
-sendRedo msg = sendMessage ActRedo msg
-
-sendMessage :: Action -> UndoMessage -> Bus.Bus ()
-sendMessage action msg = do
+sendMessage :: Action -> Bus.Bus ()
+sendMessage action = do
     uuid <- liftIO $ UUID.nextRandom
     void $ Bus.send Flag.Enable $ case action of
-        ActUndo -> case msg of UndoMessage _ _ tu u _ _ -> Message.Message tu $ toStrict $ Bin.encode $ Request.Request uuid Nothing u
-        ActRedo -> case msg of UndoMessage _ _ _ _ tr r -> Message.Message tr $ toStrict $ Bin.encode $ Request.Request uuid Nothing r
+        Action topic msg -> Message.Message topic $ toStrict $ Bin.encode $ Request.Request uuid Nothing msg
