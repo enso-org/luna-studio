@@ -19,8 +19,7 @@ import UndoState
 import           Control.Exception                (Exception)
 import           Control.Exception.Safe           (MonadThrow, throwM)
 import           Control.Lens
-import           Control.Monad.Reader
-import           Control.Monad.State
+import           Control.Monad.State                hiding (when)
 import           Control.Monad.STM                 (atomically)
 import           Data.ByteString                   (ByteString, empty)
 import           Data.ByteString.Lazy              (toStrict,fromStrict)
