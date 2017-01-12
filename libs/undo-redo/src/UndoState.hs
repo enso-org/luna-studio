@@ -59,11 +59,11 @@ makeLenses ''UndoState
 -- === Utils === --
 
 
-newtype Undo' b a = Undo {runUndo :: StateT UndoState b a}
-    deriving (Applicative, Functor, Monad, MonadState UndoState, MonadIO, MonadThrow)
+newtype UndoT b a = Undo {runUndo :: StateT UndoState b a}
+    deriving (Applicative, Functor, Monad, MonadState UndoState, MonadIO, MonadThrow, MonadTrans)
 
-type Undo = Undo' Bus.BusT
-type UndoPure = Undo' IO
+type Undo = UndoT Bus.BusT
+type UndoPure = UndoT IO
 
 data Action where
     Action :: (Binary req) => Topic.Topic -> req -> Action
