@@ -13,6 +13,9 @@
 
 module Undo where
 
+import Handlers (handlersMap)
+import UndoState
+
 import           Control.Exception                (Exception)
 import           Control.Exception.Safe           (MonadThrow, throwM)
 import           Control.Lens
@@ -35,32 +38,13 @@ import Util as Util
 
 import           Data.UUID as UUID (nil)
 import           Data.UUID.V4 as UUID (nextRandom)
-import           Empire.API.Data.Connection        (Connection)
-import           Empire.API.Data.Connection        as Connection
-import           Empire.API.Data.GraphLocation     (GraphLocation)
-import           Empire.API.Data.Graph             (Graph)
-import           Empire.API.Data.Node              (Node, NodeId)
-import qualified Empire.API.Data.Node              as Node
-import           Empire.API.Data.NodeMeta          (NodeMeta)
-import           Empire.API.Data.PortRef (InPortRef, OutPortRef, dstNodeId, srcNodeId)
-import qualified Empire.API.Graph.AddNode          as AddNode
-import qualified Empire.API.Graph.AddSubgraph      as AddSubgraph
-import qualified Empire.API.Graph.Connect              as Connect
-import qualified Empire.API.Graph.Disconnect           as Disconnect
-import qualified Empire.API.Data.PortRef           as PortRef
-import qualified Empire.API.Graph.RemoveNodes      as RemoveNodes
-import qualified Empire.API.Graph.RenameNode       as RenameNode
-import qualified Empire.API.Graph.Undo             as UndoRequest
-import qualified Empire.API.Graph.Redo             as RedoRequest
-import qualified Empire.API.Graph.UpdateNodeExpression as UpdateNodeExpression
-import           Empire.API.Graph.UpdateNodeMeta   (SingleUpdate)
-import qualified Empire.API.Graph.UpdateNodeMeta   as UpdateNodeMeta
 import qualified Empire.API.Topic                  as Topic
 import           Empire.API.Response               (Response (..))
 import qualified Empire.API.Response               as Response
 import qualified Empire.API.Request                as Request
 import           Empire.API.Request                (Request (..))
-
+import qualified Empire.API.Graph.Undo             as UndoRequest
+import qualified Empire.API.Graph.Redo             as RedoRequest
 import           Empire.Env                        (Env)
 import qualified Empire.Env                        as Env
 import qualified Empire.Server.Graph               as Graph
@@ -78,47 +62,9 @@ import           Control.Error                   (ExceptT, hoistEither, runExcep
 
 import System.IO (stdout,hFlush)
 
-type GuiID   = UUID
-type ReqUUID = UUID
-data UndoMessage where
-    UndoMessage :: (Binary undoReq, Binary redoReq) => GuiID -> ReqUUID -> Topic.Topic -> undoReq -> Topic.Topic -> redoReq -> UndoMessage
 
-instance Eq UndoMessage where
-    (UndoMessage _ reqID1 _ _ _ _) == (UndoMessage _ reqID2 _ _ _ _) = (reqID1 == reqID2)
-instance Show UndoMessage where
-    show (UndoMessage guiID reqID topic1 _ topic2 _) =
-        "UndoMessage " ++ show guiID ++ " " ++ show reqID ++ " " ++ show topic1 ++ " " ++ show topic2
-
--- FIXME[WD]: nie uzywajmy NIGDY exystencjali
--- FIXME[WD]: uzywajmy lensow
--- data UndoMessage = forall undoReq redoReq. (Binary undoReq, Binary redoReq) => UndoMessage GuiID Topic.Topic undoReq Topic.Topic redoReq UndoMessage
---
--- data UndoMessage = UndoMessage GuiID Topic.Topic UndoReq Topic.Topic RedoReq UndoMessage
--- newtype UndoReq = UndoReq ByteString
--- newtype RedoReq = RedoReq ByteString
---
-
-----------------------
--- === Handlers === --
-----------------------
-
-data UndoState = UndoState { _undo    :: [UndoMessage]
-                           , _redo    :: [UndoMessage]
-                           , _history :: [UndoMessage]
-                           }
-makeLenses ''UndoState
--- === Utils === --
-
--- FIXME[WD]: Undo -> History?
-newtype Undo a = Undo {runUndo :: StateT UndoState (Bus.BusT) a}
-    deriving (Applicative, Functor, Monad, MonadState UndoState, MonadIO, MonadThrow)
-
-type Undo = Undo' Bus.BusT
-type UndoPure = Undo' IO
-
-lft :: UndoPure a -> Undo a
-lft act = Undo $ state $ runStateT actUndo
-    where actUndo = runUndo act
+lft :: forall a. UndoPure a -> Undo a
+lft act = Undo $ StateT $ \s -> liftIO $ runStateT (runUndo act) s
 
 
 run :: BusEndPoints -> IO (Either Bus.Error ((), UndoState))

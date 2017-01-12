@@ -12,6 +12,7 @@
 {-# LANGUAGE ExistentialQuantification #-}
 
 module Handlers where
+import UndoState
 
 import           Control.Exception                (Exception)
 import           Control.Exception.Safe           (MonadThrow, throwM)
