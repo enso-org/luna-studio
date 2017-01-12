@@ -22,7 +22,7 @@ name :: JSString
 name = "port"
 
 show2 :: Double -> String
-show2 a = showFFloat (Just 4) a "" -- limit Double to two decimal numbers
+show2 a = showFFloat (Just 2) a "" -- limit Double to two decimal numbers
 
 port :: ReactView (Ref Node, Int, Bool, Port)
 port = React.defineView name $ \(ref, numOfPorts, isOnly, p) ->
@@ -73,9 +73,9 @@ portSingle_ ref port = do
     let portRef = port ^. Port.portRef
         portId  = port ^. Port.portId
         color   = toJSString $ port ^. Port.color
-        r1 = show . (+) nodeRadius
-        r2 = show . (-) nodeRadius'
-        svgPath a b c = fromString $ "M0 -" <> r1 a <> " A " <> r1 a <> " " <> r1 a <> " 1 0 " <> show b <> " 0 "  <> r1 a <>
+        r1 = show2 . (+) nodeRadius
+        r2 = show2 . (-) nodeRadius'
+        svgPath a b c = fromString $ "M0 -" <> r1 a <> " A " <> r1 a <> " " <> r1 a <> " 0 0 " <> show b <> " 0 "  <> r1 a <>
                                     " L0 "  <> r2 a <> " A " <> r2 a <> " " <> r2 a <> " 1 0 " <> show c <> " 0 -" <> r2 a <> " Z "
     g_ [ "className" $= "port port--o--single" ] $ do
         path_
@@ -167,7 +167,7 @@ portIOExpanded_ ref port num isInput = do
             , "key"       $= fromString (show portId <> show num <> "b")
             , "r"         $= fromString (r 3)
             , "cy"        $= fromString (show2 $ lineHeight * fromIntegral (num + n) )
-            ] mempty 
+            ] mempty
 
 
 --TODO[react] probably remove

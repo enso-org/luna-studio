@@ -7,8 +7,8 @@
 
 .plane {
     position: absolute;
-    width:    10px;
-    height:   10px;
+    width:    1px;
+    height:   1px;
     overflow: inherit;
 }
 
@@ -18,8 +18,8 @@
         top:      0;
         left:     0;
         overflow: inherit;
-        width:    10px;
-        height:   10px;
+        width:    1px;
+        height:   1px;
     }
 }
 
@@ -33,7 +33,7 @@
 // FIXME – that need to be implemented in SVG
 .connection__src,
 .connection__dst {
-    transition: all 90ms linear;
+    transition: all @transitionSpeed linear;
     &:hover * {
         stroke: #fff;
     }
@@ -48,8 +48,8 @@
 
 .node {
     position: absolute;
-    width:    10px;
-    height:   10px;
+    width:    0;
+    height:   0;
 }
 .node--expanded {
     z-index: 10000;
@@ -91,10 +91,10 @@
 
 // selection mark
 
-.node__selection-mark {
+.node__selection-mark rect {
     fill:       none;
     stroke:     transparent;
-    transition: all 90ms ease-in-out;
+    transition: all @transitionSpeed ease-in-out;
     stroke:     @colorSelect;
     opacity:    0;
     x:         -20px;
@@ -106,13 +106,13 @@
 }
 
 .node--selected {
-    .node__selection-mark {
+    .node__selection-mark rect {
         opacity: 1;
     }
 }
 
 .node--selected {
-    .node__selection-mark {
+    .node__selection-mark rect {
         x:     -29.7px; // subpixel antialiasing tweak
         y:     -29.7px;
         width:  59.4px;
@@ -123,7 +123,7 @@
 }
 
 .node--expanded {
-    .node__selection-mark {
+    .node__selection-mark rect {
         x:      0px;
         y:     -20px;
         width:  224px;
@@ -132,7 +132,7 @@
         ry:     4px;
     }
     &.node--selected {
-        .node__selection-mark {
+        .node__selection-mark rect {
             x:     -9.7px;
             y:     -29.7px;
             width:  243.4px;
@@ -141,14 +141,14 @@
             ry:     12px;
         }
     }
-    .node__visualization {
+    .node__visuals {
         left: 0;
         top: -8px;
     }
     .port--o {
         animation-iteration-count: 0;
         animation-timing-function: ease-in-out;
-        animation-duration:        90ms;
+        animation-duration:        @transitionSpeed;
         animation-name:            outputExpanding;
         .port__shape,
         .port__select {
@@ -168,15 +168,15 @@
     color:         @colorTextUneditable;
     background:    @colorNodeBackground;
     box-shadow:    0 0 10px rgba(25,25,25,1);
-    line-height:   16px;
+    line-height:   @lineHeight;
     width:         1px;
     height:        32px;
     opacity:       0;
-    transition:    all 90ms ease-in-out;
+    transition:    all @transitionSpeed ease-in-out;
     top:          -20px;
     padding:       12px 12px 8px;
     position:      relative;
-    border-radius: 4px;
+    border-radius: @borderRadius;
     overflow:      hidden;
     .row {
         display:         flex;
@@ -189,7 +189,7 @@
 }
 
 .node__properties,
-.node__visualization {
+.node__visuals {
     font-size: 10px;
 }
 
@@ -201,11 +201,11 @@
     }
 }
 
-.node__visualization {
+.node__visuals {
     position: relative;
     left:    -30px;
     top:     -16px;
-    width: 224px;
+    width:    224px;
     table {
         border:          0;
         width:           100%;

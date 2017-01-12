@@ -21,7 +21,7 @@ name :: JSString
 name = "connection-editor"
 
 show2 :: Double -> String
-show2 a = showFFloat (Just 4) a "" -- limit Double to two decimal numbers
+show2 a = showFFloat (Just 2) a "" -- limit Double to two decimal numbers
 
 connection :: Ref Connection -> ReactView ()
 connection connectionRef = React.defineControllerView

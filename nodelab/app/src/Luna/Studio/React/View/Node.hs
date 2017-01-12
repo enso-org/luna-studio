@@ -39,7 +39,7 @@ makePortsExpanded nodeRef ports = forM_ ports $ \port -> portExpanded_ nodeRef p
 
 node :: Ref Node -> ReactView ()
 node ref = React.defineControllerView
-    objName ref $ \store () ->
+    objName ref $ \store () -> do
         let n         = store ^. dt
             nodeId    = n ^. Node.nodeId
             pos       = n ^. Node.position
@@ -49,45 +49,42 @@ node ref = React.defineControllerView
             nodeLimit = 10000::Int
             zIndex    = 1::Int -- FIXME, Leszek!
             z         = if n ^. Node.isExpanded then zIndex + nodeLimit else zIndex
-        in  div_
-                [ "key"       $= fromString (show nodeId)
-                , onClick       $ \_ m -> dispatch ref $ UI.NodeEvent $ Node.Select m nodeId
-                , onDoubleClick $ \_ _ -> dispatch ref $ UI.NodeEvent $ Node.Enter nodeId
-                , onMouseDown   $ \e m -> stopPropagation e : dispatch ref (UI.NodeEvent $ Node.MouseDown m nodeId)
-                , "className" $= (fromString $ "node" <> (if n ^. Node.isExpanded then " node--expanded" else " node--collapsed")
-                                                      <> (if n ^. Node.isSelected then " node--selected" else []))
-                , "style"     @= Aeson.object [ "transform" Aeson..= (transformTranslateToSvg offsetX offsetY)
-                                              , "zIndex"   Aeson..= (show z)
-                                              ]
-                ] $ do
+        div_
+            [ "key"       $= fromString (show nodeId)
+            , onClick       $ \_ m -> dispatch ref $ UI.NodeEvent $ Node.Select m nodeId
+            , onDoubleClick $ \_ _ -> dispatch ref $ UI.NodeEvent $ Node.Enter nodeId
+            , onMouseDown   $ \e m -> stopPropagation e : dispatch ref (UI.NodeEvent $ Node.MouseDown m nodeId)
+            , "className" $= (fromString $ "node" <> (if n ^. Node.isExpanded then " node--expanded" else " node--collapsed")
+                                                  <> (if n ^. Node.isSelected then " node--selected" else []))
+            , "style"     @= Aeson.object [ "transform" Aeson..= (transformTranslateToSvg offsetX offsetY)
+                                          , "zIndex"    Aeson..= (show z)
+                                          ]
+            ] $ do
 
-                svg_ [ "key"     $= "viewbox"
-                     , "viewBox" $= "0 0 10 10" ] $
-                    rect_ [ "key"       $= "selection-mark"
-                          , "className" $= "node__selection-mark" ] mempty
+            svg_ [ "className" $= "node__selection-mark", "key" $= "selection-mark" ] $ rect_ def mempty
 
-                nodeProperties_ ref $ Properties.fromNode n
+            nodeProperties_ ref $ Properties.fromNode n
 
-                div_ [ "key"       $= "visualization"
-                     , "className" $= "node__visualization"] $ do
-                    forM_ (n ^. Node.value) visualization_
+            div_ [ "key"       $= "visualization"
+                 , "className" $= "node__visuals"
+                 ] $ forM_ (n ^. Node.value) visualization_
 
-                svg_ [ "key" $= "viewbox2"
-                     , "viewBox" $= "0 0 10 10"] $ do
-                    text_
-                        [ "key"         $= "name"
-                        , onDoubleClick $ \e _ -> stopPropagation e : dispatch ref (UI.NodeEvent $ Node.EditExpression nodeId)
-                        , "className"   $= "node__name"
-                        , "y"           $= "-40"
-                        ] $ elemString $ Text.unpack $ n ^. Node.expression
-                    if n ^. Node.isExpanded then do
-                        makePorts ref $ filter (\port -> (port ^. Port.portId) == InPortId Self) ports
-                        makePortsExpanded ref $ filter (\port -> (port ^. Port.portId) /= InPortId Self) ports
-                        makePortsExpanded ref $ filter (\port -> (port ^. Port.portId) /= InPortId Self) ports
-                    else do
-                        makePorts ref $ filter (\port -> (port ^. Port.portId) /= InPortId Self) ports
-                        makePorts ref $ filter (\port -> (port ^. Port.portId) == InPortId Self) ports
-
+            svg_ [ "key" $= "viewbox2"
+                 , "className" $= "node__essentials"
+                 ] $ do
+                text_
+                    [ "key"         $= "name"
+                    , onDoubleClick $ \e _ -> stopPropagation e : dispatch ref (UI.NodeEvent $ Node.EditExpression nodeId)
+                    , "className"   $= "node__name"
+                    , "y"           $= "-40"
+                    ] $ elemString $ Text.unpack $ n ^. Node.expression
+                if n ^. Node.isExpanded then do
+                    makePorts ref $ filter (\port -> (port ^. Port.portId) == InPortId Self) ports
+                    makePortsExpanded ref $ filter (\port -> (port ^. Port.portId) /= InPortId Self) ports
+                    makePortsExpanded ref $ filter (\port -> (port ^. Port.portId) /= InPortId Self) ports
+                else do
+                    makePorts ref $ filter (\port -> (port ^. Port.portId) /= InPortId Self) ports
+                    makePorts ref $ filter (\port -> (port ^. Port.portId) == InPortId Self) ports
 
 
 node_ :: NodeId -> Ref Node -> ReactElementM ViewEventHandler ()
