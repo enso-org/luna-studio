@@ -5,9 +5,11 @@ module Luna.Studio.React.View.Port where
 import           Luna.Studio.Prelude
 
 import           Empire.API.Data.Port               (InPort (..), OutPort (..), PortId (..))
+import           Empire.API.Data.PortRef            (AnyPortRef)
 import qualified Event.UI                           as UI
 import           Luna.Studio.Action.Geometry        (lineHeight, nodeRadius, nodeRadius', portAngleStart, portAngleStop)
 import           Luna.Studio.Data.Color             (toJSString)
+import qualified Luna.Studio.Event.Mouse            as Mouse
 import qualified Luna.Studio.React.Event.Connection as Connection
 import           Luna.Studio.React.Model.Node       (Node)
 import           Luna.Studio.React.Model.Port       (Port (..))
@@ -23,6 +25,17 @@ name = "port"
 
 show2 :: Double -> String
 show2 a = showFFloat (Just 4) a "" -- limit Double to two decimal numbers
+
+handleMouseDown :: Ref Node -> AnyPortRef -> Event -> MouseEvent -> [SomeStoreAction]
+handleMouseDown ref portRef e m = do
+    if (Mouse.withoutMods m Mouse.leftButton) then
+        stopPropagation e : dispatch ref (UI.ConnectionEvent $ Connection.StartConnection m portRef)
+    else []
+
+handleMouseUp :: Ref Node -> AnyPortRef -> Event -> MouseEvent -> [SomeStoreAction]
+handleMouseUp ref portRef _e m = do
+    dispatch ref (UI.ConnectionEvent $ Connection.EndConnection m portRef)
+
 
 port :: ReactView (Ref Node, Int, Bool, Port)
 port = React.defineView name $ \(ref, numOfPorts, isOnly, p) ->
@@ -61,8 +74,8 @@ portSelf_ ref port =
             , "fill"      $= color
             ] mempty
         circle_
-            [ onMouseDown $ \e m -> stopPropagation e : dispatch ref (UI.ConnectionEvent $ Connection.StartConnection m portRef)
-            , onMouseUp   $ \e m -> stopPropagation e : dispatch ref (UI.ConnectionEvent $ Connection.EndConnection   m portRef)
+            [ onMouseDown $ handleMouseDown ref portRef
+            , onMouseUp   $ handleMouseUp   ref portRef
             , "className" $= "port__select"
             , "key"       $= (fromString (show portId ) <> "b")
             ] mempty
@@ -85,8 +98,8 @@ portSingle_ ref port = do
             , "d"         $= (svgPath 0 0 1 <> svgPath 0 1 0)
             ] mempty
         path_
-            [ onMouseDown $ \e m -> stopPropagation e : dispatch ref (UI.ConnectionEvent $ Connection.StartConnection m portRef)
-            , onMouseUp   $ \e m -> stopPropagation e : dispatch ref (UI.ConnectionEvent $ Connection.EndConnection   m portRef)
+            [ onMouseDown $ handleMouseDown ref portRef
+            , onMouseUp   $ handleMouseUp   ref portRef
             , "className" $= "port__select"
             , "key"       $= (fromString (show portId ) <> "b")
             , "d"         $= (svgPath 3 0 1 <> svgPath 3 1 0)
@@ -133,8 +146,8 @@ portIO_ ref port num numOfPorts isInput = do
             , "d"         $= svgPath 0
             ] mempty
         path_
-            [ onMouseDown $ \e m -> stopPropagation e : dispatch ref (UI.ConnectionEvent $ Connection.StartConnection m portRef)
-            , onMouseUp   $ \e m -> stopPropagation e : dispatch ref (UI.ConnectionEvent $ Connection.EndConnection   m portRef)
+            [ onMouseDown $ handleMouseDown ref portRef
+            , onMouseUp   $ handleMouseUp   ref portRef
             , "className" $= "port__select"
             , "key"       $= (fromString (show portId) <> "b")
             , "d"         $= svgPath 3
@@ -161,13 +174,13 @@ portIOExpanded_ ref port num isInput = do
             , "cy"        $= fromString (show2 $ lineHeight * fromIntegral (num + n) )
             ] mempty
         circle_
-            [ onMouseDown $ \e m -> stopPropagation e : dispatch ref (UI.ConnectionEvent $ Connection.StartConnection m portRef)
-            , onMouseUp   $ \e m -> stopPropagation e : dispatch ref (UI.ConnectionEvent $ Connection.EndConnection   m portRef)
+            [ onMouseDown $ handleMouseDown ref portRef
+            , onMouseUp   $ handleMouseUp   ref portRef
             , "className" $= "port__select"
             , "key"       $= fromString (show portId <> show num <> "b")
             , "r"         $= fromString (r 3)
             , "cy"        $= fromString (show2 $ lineHeight * fromIntegral (num + n) )
-            ] mempty 
+            ] mempty
 
 
 --TODO[react] probably remove
