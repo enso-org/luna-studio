@@ -10,6 +10,7 @@ import qualified Event.UI                               as UI
 import           Luna.Studio.Action.Geometry            (countSameTypePorts, isPortSingle)
 import           Luna.Studio.Data.Matrix                (transformTranslateToSvg)
 import           Luna.Studio.Data.Vector                (x, y)
+import qualified Luna.Studio.Event.Mouse                as Mouse
 import           Luna.Studio.Prelude
 import qualified Luna.Studio.React.Event.Node           as Node
 import           Luna.Studio.React.Model.Node           (Node)
@@ -28,6 +29,11 @@ import qualified React.Flux                             as React
 objName :: JSString
 objName = "node"
 
+handleMouseDown :: Ref Node -> NodeId -> Event -> MouseEvent -> [SomeStoreAction]
+handleMouseDown ref nodeId e m = do
+    if (Mouse.withoutMods m Mouse.leftButton) then
+        stopPropagation e : dispatch ref (UI.NodeEvent $ Node.MouseDown m nodeId)
+    else []
 
 ports :: Ref Node -> [Port] -> ReactElementM ViewEventHandler ()
 ports nodeRef ports = forM_ ports $ \port -> port_ nodeRef port (countSameTypePorts port ports) (isPortSingle port ports)
@@ -53,7 +59,7 @@ node ref = React.defineControllerView
                 [ "key"       $= fromString (show nodeId)
                 , onClick       $ \_ m -> dispatch ref $ UI.NodeEvent $ Node.Select m nodeId
                 , onDoubleClick $ \_ _ -> dispatch ref $ UI.NodeEvent $ Node.Enter nodeId
-                , onMouseDown   $ \e m -> stopPropagation e : dispatch ref (UI.NodeEvent $ Node.MouseDown m nodeId)
+                , onMouseDown   $ handleMouseDown ref nodeId
                 , "className" $= (fromString $ "node" <> (if n ^. Node.isExpanded then " node--expanded" else " node--collapsed")
                                                       <> (if n ^. Node.isSelected then " node--selected" else []))
                 , "style"     @= Aeson.object [ "transform" Aeson..= (transformTranslateToSvg offsetX offsetY)
