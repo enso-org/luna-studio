@@ -16,10 +16,6 @@ import UndoState
 
 import           Control.Exception                (Exception)
 import           Control.Exception.Safe           (MonadThrow, throwM)
-import           Control.Lens
-import           Control.Monad.Reader
-import           Control.Monad.State
-import           Control.Monad.STM                 (atomically)
 import           Data.ByteString                   (ByteString, empty)
 import           Data.ByteString.Lazy              (toStrict,fromStrict)
 import           Data.Binary                       (Binary, decode)
@@ -30,12 +26,9 @@ import qualified Data.Map.Strict                   as Map
 import           Data.Map.Strict                   (Map)
 import           Data.Maybe
 import qualified Data.Set                          as Set
-import           Data.UUID.Types                       (UUID)
 import           Prologue                          hiding (throwM)
-import Util as Util
 
 import           Data.UUID as UUID (nil)
-import           Data.UUID.V4 as UUID (nextRandom)
 import           Empire.API.Data.Connection        (Connection)
 import           Empire.API.Data.Connection        as Connection
 import           Empire.API.Data.GraphLocation     (GraphLocation)
@@ -61,21 +54,6 @@ import           Empire.API.Response               (Response (..))
 import qualified Empire.API.Response               as Response
 import qualified Empire.API.Request                as Request
 import           Empire.API.Request                (Request (..))
-
-import           Empire.Env                        (Env)
-import qualified Empire.Env                        as Env
-import qualified Empire.Server.Graph               as Graph
-import           Empire.Server.Server              (sendToBus')
-
-import qualified ZMQ.Bus.Bus                       as Bus
-import qualified ZMQ.Bus.Data.Flag                 as Flag
-import qualified ZMQ.Bus.Data.Message              as Message
-import           ZMQ.Bus.Data.MessageFrame         (MessageFrame (MessageFrame))
-import           ZMQ.Bus.EndPoint                  (BusEndPoints)
-import qualified ZMQ.Bus.Trans                     as Bus
-import qualified ZMQ.Bus.Data.MessageFrame       as MessageFrame
-import qualified ZMQ.RPC.Client                  as Client
-import           Control.Error                   (ExceptT, hoistEither, runExceptT)
 
 import System.IO (stdout,hFlush)
 
