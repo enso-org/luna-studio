@@ -1,4 +1,4 @@
-module Luna.Studio.Utils.Instances where
+module Luna.Studio.Prelude.Instances where
 
 import           Data.Aeson
 import           Data.Default             (Default (..))

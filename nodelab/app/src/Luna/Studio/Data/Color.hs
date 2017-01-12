@@ -17,7 +17,7 @@ import           Empire.API.Data.TypeRep   (TypeRep (..))
 import           Empire.API.Data.ValueType (ValueType (..))
 
 
-
+--TODO rename to PortColor
 newtype Color = Color { fromColor :: Int }
               deriving (Eq, Generic, Ord, Show, NFData)
 
@@ -45,6 +45,7 @@ toJSString :: Color -> JSString
 toJSString = hslToJSString . toHsl
 
 hslToJSString :: (Fractional a, Show a) => HSL a -> JSString
+--TODO use convert instead of fromString, everwhere
 hslToJSString hsl = fromString $ "hsl(" <> show ((hsl ^. h) * 360.0) <> ","
                                      <> show ((hsl ^. s) * 100.0) <> "%,"
                                      <> show ((hsl ^. l) * 100.0) <> "%)"
