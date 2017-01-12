@@ -14,7 +14,7 @@ import           Luna.Studio.Prelude
 import qualified Luna.Studio.React.Model.Node as Model
 import qualified Luna.Studio.React.Store      as Store
 import qualified Luna.Studio.React.View.App   as App
-import qualified Luna.Studio.React.View.Node  as Node
+import qualified Luna.Studio.React.View.NodeProperties  as NodeProperties
 import           Luna.Studio.State.Global     (State)
 import qualified Luna.Studio.State.Global     as Global
 import qualified Luna.Studio.State.Graph      as Graph
@@ -25,7 +25,7 @@ startEditName nodeId = do
     Global.withNode nodeId $ mapM_ $ Store.modifyM_ $ do
         name <- use Model.name
         Model.nameEdit ?= name
-    liftIO Node.focusNameLabel
+    liftIO NodeProperties.focusNameLabel
 
 editName :: NodeId -> Text -> Command State ()
 editName nodeId name =

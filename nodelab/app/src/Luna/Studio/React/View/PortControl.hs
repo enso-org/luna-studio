@@ -3,19 +3,17 @@ module Luna.Studio.React.View.PortControl
     ( portControl_
     ) where
 
-import qualified Data.Map.Lazy                as Map
-import           React.Flux
+import           React.Flux                   as React
 
 import qualified Empire.API.Data.DefaultValue as DefaultValue
 import           Empire.API.Data.Port         (InPort (..), InPort (..), OutPort (..), PortId (..))
 import qualified Empire.API.Data.Port         as PortAPI
-import           Empire.API.Data.PortRef      (AnyPortRef (..), portId', toAnyPortRef)
+import           Empire.API.Data.PortRef      (AnyPortRef (..), toAnyPortRef)
 import qualified Empire.API.Data.ValueType    as ValueType
 import qualified Event.UI                     as UI
 import           Luna.Studio.Prelude          hiding (group)
 import qualified Luna.Studio.React.Event.Node as Node
-import           Luna.Studio.React.Model.Node (Node)
-import qualified Luna.Studio.React.Model.Node as Node
+import           Luna.Studio.React.Model.Node (Node, NodeId)
 import           Luna.Studio.React.Model.Port (Port)
 import qualified Luna.Studio.React.Model.Port as Port
 import           Luna.Studio.React.Store      (Ref, dispatch)
@@ -23,27 +21,22 @@ import qualified Luna.Studio.State.Slider     as Slider
 
 
 
-isLiteral :: Getter Node Bool
-isLiteral = to $ isLiteral' where
-    isLiteral' node = not $ any isIn' portIds where
-        portIds = map portId' $ Map.keys $ node ^. Node.ports
-        isIn' :: PortId -> Bool
-        isIn' (OutPortId _) = False
-        isIn' (InPortId  _) = True
+portControl_ :: Ref Node -> NodeId -> Bool -> Port -> ReactElementM ViewEventHandler ()
+portControl_ ref nodeId isLiteral port = React.viewWithSKey portControl "portControl" (ref, nodeId, isLiteral, port) mempty
 
-
-portControl_ :: Ref Node -> Node -> Port -> ReactElementM ViewEventHandler ()
-portControl_ ref node port =
+portControl :: ReactView (Ref Node, NodeId, Bool, Port)
+portControl = React.defineView "portControl" $ \(ref, nodeId, isLiteral, port) ->
     let portRef = toAnyPortRef nodeId $ port ^. Port.portId
-        nodeId  = node ^. Node.nodeId
-    in
-    case port ^. Port.portId of
+    in case port ^. Port.portId of
         InPortId  (Arg _) -> inPortControl_ ref portRef port
-        OutPortId All     -> when (node ^. isLiteral) $ inPortControl_ ref portRef port
-        _ -> return ()
+        OutPortId All     -> when isLiteral $ inPortControl_ ref portRef port
+        _                 -> return ()
 
 inPortControl_ :: Ref Node -> AnyPortRef -> Port -> ReactElementM ViewEventHandler ()
-inPortControl_ ref portRef port = do
+inPortControl_ ref portRef port = React.viewWithSKey inPortControl "inPortControl" (ref, portRef, port) mempty
+
+inPortControl :: ReactView (Ref Node, AnyPortRef, Port)
+inPortControl = React.defineView "inPortControl" $ \(ref, portRef, port) ->
     div_ [ "key" $= fromString (show $ port ^. Port.portId)
          , "className" $= "row row--arg" ] $ do
         div_ [ "key"       $= "label"

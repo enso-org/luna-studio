@@ -1,6 +1,9 @@
 {-# LANGUAGE DeriveAnyClass    #-}
 {-# LANGUAGE OverloadedStrings #-}
-module Luna.Studio.React.Model.Node where
+module Luna.Studio.React.Model.Node (
+    module Luna.Studio.React.Model.Node,
+    NodeAPI.NodeId
+) where
 
 import           Control.Arrow
 import           Control.DeepSeq                   (NFData)
@@ -15,6 +18,7 @@ import qualified Empire.API.Data.NodeMeta          as MetaAPI
 import           Empire.API.Data.Port              (OutPort (..), PortId (..))
 import qualified Empire.API.Data.Port              as PortAPI
 import           Empire.API.Data.PortRef           (AnyPortRef)
+import           Empire.API.Data.PortRef           (portId')
 import           Empire.API.Graph.Collaboration    (ClientId)
 import           Empire.API.Graph.NodeResultUpdate (NodeValue)
 import           Luna.Studio.Data.Vector           (Position (Position), Vector2 (Vector2))
@@ -48,6 +52,14 @@ data Collaboration = Collaboration { _touch  :: Map ClientId (UTCTime, ColorId)
                                    } deriving (Eq, Show, Generic, NFData)
 makeLenses ''Node
 makeLenses ''Collaboration
+
+isLiteral :: Getter Node Bool
+isLiteral = to $ isLiteral' where
+    isLiteral' node = not $ any isIn' portIds where
+        portIds = map portId' $ Map.keys $ node ^. ports
+        isIn' :: PortId -> Bool
+        isIn' (OutPortId _) = False
+        isIn' (InPortId  _) = True
 
 instance ToJSON Node
 instance ToJSON Collaboration

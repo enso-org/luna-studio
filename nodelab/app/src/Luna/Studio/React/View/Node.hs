@@ -1,27 +1,28 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Luna.Studio.React.View.Node where
 
-import qualified Data.Aeson                           as Aeson
-import qualified Data.Map.Lazy                        as Map
-import qualified Data.Text                            as Text
-import           Empire.API.Data.Node                 (NodeId)
-import           Empire.API.Data.Port                 (InPort (..), PortId (..))
-import qualified Event.UI                             as UI
-import           Luna.Studio.Action.Geometry          (countSameTypePorts, isPortSingle)
-import           Luna.Studio.Data.Matrix              (transformTranslateToSvg)
-import           Luna.Studio.Data.Vector              (x, y)
+import qualified Data.Aeson                             as Aeson
+import qualified Data.Map.Lazy                          as Map
+import qualified Data.Text                              as Text
+import           Empire.API.Data.Node                   (NodeId)
+import           Empire.API.Data.Port                   (InPort (..), PortId (..))
+import qualified Event.UI                               as UI
+import           Luna.Studio.Action.Geometry            (countSameTypePorts, isPortSingle)
+import           Luna.Studio.Data.Matrix                (transformTranslateToSvg)
+import           Luna.Studio.Data.Vector                (x, y)
 import           Luna.Studio.Prelude
-import qualified Luna.Studio.React.Event.Node         as Node
-import           Luna.Studio.React.Model.Node         (Node)
-import qualified Luna.Studio.React.Model.Node         as Node
-import           Luna.Studio.React.Model.Port         (Port (..))
-import qualified Luna.Studio.React.Model.Port         as Port
-import           Luna.Studio.React.Store              (Ref, dispatch, dt)
-import           Luna.Studio.React.View.Port          (portExpanded_, port_)
-import           Luna.Studio.React.View.PortControl   (portControl_)
-import           Luna.Studio.React.View.Visualization (visualization_)
+import qualified Luna.Studio.React.Event.Node           as Node
+import           Luna.Studio.React.Model.Node           (Node)
+import qualified Luna.Studio.React.Model.Node           as Node
+import qualified Luna.Studio.React.Model.NodeProperties as Properties
+import           Luna.Studio.React.Model.Port           (Port (..))
+import qualified Luna.Studio.React.Model.Port           as Port
+import           Luna.Studio.React.Store                (Ref, dispatch, dt)
+import           Luna.Studio.React.View.NodeProperties  (nodeProperties_)
+import           Luna.Studio.React.View.Port            (portExpanded_, port_)
+import           Luna.Studio.React.View.Visualization   (visualization_)
 import           React.Flux
-import qualified React.Flux                           as React
+import qualified React.Flux                             as React
 
 
 objName :: JSString
@@ -65,49 +66,7 @@ node ref = React.defineControllerView
                     rect_ [ "key"       $= "selection-mark"
                           , "className" $= "node__selection-mark" ] mempty
 
-                div_ [ "key"       $= "properties"
-                     , "className" $= "node__properties" ] $ do
-                    div_
-                        [ "key"       $= "value"
-                        , "className" $= "row row--output-name"
-                        , onDoubleClick $ \_ _ -> dispatch ref $ UI.NodeEvent $ Node.NameEditStart nodeId
-                        ] $
-                        case n ^. Node.nameEdit of
-                            Just name ->
-                                input_
-                                    [ "key" $= "name-label"
-                                    , "id"  $= "focus-nameLabel"
-                                    , "value value--name" $= fromString (Text.unpack name)
-                                    , onMouseDown $ \e _ -> [stopPropagation e]
-                                    , onKeyDown   $ \e k ->  stopPropagation e : dispatch ref (UI.NodeEvent $ Node.NameKeyDown k nodeId)
-                                    , onChange    $ \e -> let val = target e "value" in dispatch ref $ UI.NodeEvent $ Node.NameChange (fromString val) nodeId
-                                    ]
-                            Nothing ->
-                                elemString $ fromString $ Text.unpack $ n ^. Node.name
-
-                    forM_ (n ^. Node.ports) $ portControl_ ref n
-
-                    div_ [ "key"       $= "display-results"
-                         , "className" $= "row" ] $ do
-                        div_ [ "key"       $= "label"
-                             , "className" $= "label" ] $ elemString "Display results"
-                        div_ [ "key"       $= "value"
-                             , "className" $= "value" ] $ do
-                            let val = n ^. Node.visualizationsEnabled
-                            button_
-                                [ "key" $= "button"
-                                , onClick $ \_ _ -> dispatch ref $ UI.NodeEvent $ Node.DisplayResultChanged (not val) nodeId
-                                ] $
-                                elemString $ fromString $ if val then "yes" else "no"
-                    div_ [ "key" $= "execution-time"
-                         , "className" $= "row" ] $ do
-                        withJust (n ^. Node.execTime) $ \execTime -> do
-                            div_ ["key"       $= "label"
-                                , "className" $= "label"] $
-                                elemString "Execution time"
-                            div_ ["key"       $= "value"
-                                , "className" $= "value"] $
-                                elemString $ show execTime <> " ms"
+                nodeProperties_ ref $ Properties.fromNode n
 
                 div_ [ "key"       $= "visualization"
                      , "className" $= "node__visualization"] $ do
@@ -133,6 +92,3 @@ node ref = React.defineControllerView
 
 node_ :: NodeId -> Ref Node -> ReactElementM ViewEventHandler ()
 node_ nodeId ref = React.viewWithSKey (node ref) (fromString $ show nodeId) () mempty
-
-
-foreign import javascript safe "document.getElementById('focus-nameLabel').focus()" focusNameLabel :: IO ()
