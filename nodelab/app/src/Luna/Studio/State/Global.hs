@@ -10,7 +10,7 @@ import           Data.Aeson                           (ToJSON, toJSON)
 import           Data.DateTime                        (DateTime)
 import           Data.Set                             (Set)
 import           Data.UUID.Types                      (UUID)
-import           Luna.Studio.Action.Command         (Command)
+import           Luna.Studio.Action.Command           (Command)
 import           System.Random                        (StdGen)
 import qualified System.Random                        as Random
 
@@ -46,6 +46,7 @@ import qualified Luna.Studio.State.UIRegistry         as UIRegistry
 foreign import javascript safe "{}" defJsState :: Event.JSState
 
 -- TODO[react]: Move all action states to ActionState
+-- TODO split to more states
 data State = State { _mousePos           :: Position
                    , _graph              :: Graph.State
                    , _cameraState        :: Maybe Camera.State

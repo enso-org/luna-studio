@@ -30,6 +30,15 @@ toAction (UI (NodeEditorEvent (NodeEditor.Wheel m w)))   = Just $ wheelZoom pos 
 toAction _                                               = Nothing
 
 
+-- TODO consider using state and below approach
+-- init = do
+--   registerAction $ \(UI (AppEvent (App.KeyDown   e))) -> handleKey e
+--   registerAction $ \(UI (AppEvent (App.KeyDown   e))) -> handleKey e
+--   registerAction $ \(UI (AppEvent (App.KeyDown   e))) -> handleKey e
+--   registerAction $ \(UI (AppEvent (App.KeyDown   e))) -> handleKey e
+--
+
+
 handleKey :: KeyboardEvent -> Command State ()
 handleKey evt
     | Keys.withCtrl         evt Keys.leftArrow  = panLeft

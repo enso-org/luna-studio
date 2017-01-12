@@ -29,21 +29,21 @@ objName :: JSString
 objName = "node"
 
 
-makePorts :: Ref Node -> [Port] -> ReactElementM ViewEventHandler ()
-makePorts nodeRef ports = forM_ ports $ \port -> port_ nodeRef port (countSameTypePorts port ports) (isPortSingle port ports)
+ports :: Ref Node -> [Port] -> ReactElementM ViewEventHandler ()
+ports nodeRef ports = forM_ ports $ \port -> port_ nodeRef port (countSameTypePorts port ports) (isPortSingle port ports)
 
 
-makePortsExpanded :: Ref Node -> [Port] -> ReactElementM ViewEventHandler ()
-makePortsExpanded nodeRef ports = forM_ ports $ \port -> portExpanded_ nodeRef port
+portsExpanded :: Ref Node -> [Port] -> ReactElementM ViewEventHandler ()
+portsExpanded nodeRef ports = forM_ ports $ \port -> portExpanded_ nodeRef port
 
-
+--TODO inline div and others
 node :: Ref Node -> ReactView ()
 node ref = React.defineControllerView
     objName ref $ \store () ->
         let n         = store ^. dt
             nodeId    = n ^. Node.nodeId
             pos       = n ^. Node.position
-            ports     = Map.elems $ n ^. Node.ports
+            nodePorts = Map.elems $ n ^. Node.ports
             offsetX   = show (pos ^. x)
             offsetY   = show (pos ^. y)
             nodeLimit = 10000::Int
@@ -81,12 +81,12 @@ node ref = React.defineControllerView
                         , "y"           $= "-40"
                         ] $ elemString $ Text.unpack $ n ^. Node.expression
                     if n ^. Node.isExpanded then do
-                        makePorts ref $ filter (\port -> (port ^. Port.portId) == InPortId Self) ports
-                        makePortsExpanded ref $ filter (\port -> (port ^. Port.portId) /= InPortId Self) ports
-                        makePortsExpanded ref $ filter (\port -> (port ^. Port.portId) /= InPortId Self) ports
+                        ports         ref $ filter (\port -> (port ^. Port.portId) == InPortId Self) nodePorts
+                        portsExpanded ref $ filter (\port -> (port ^. Port.portId) /= InPortId Self) nodePorts
+                        portsExpanded ref $ filter (\port -> (port ^. Port.portId) /= InPortId Self) nodePorts
                     else do
-                        makePorts ref $ filter (\port -> (port ^. Port.portId) /= InPortId Self) ports
-                        makePorts ref $ filter (\port -> (port ^. Port.portId) == InPortId Self) ports
+                        ports ref $ filter (\port -> (port ^. Port.portId) /= InPortId Self) nodePorts
+                        ports ref $ filter (\port -> (port ^. Port.portId) == InPortId Self) nodePorts
 
 
 

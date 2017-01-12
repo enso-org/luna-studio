@@ -17,6 +17,7 @@ import           Prologue            (wrapped')
 -- === Vector === --
 --------------------
 
+--TODO move to Data.Vector
 type family VectorOf a
 
 class IsVector a where
