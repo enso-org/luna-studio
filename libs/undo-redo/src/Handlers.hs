@@ -54,12 +54,11 @@ import qualified Empire.API.Response               as Response
 import qualified Empire.API.Request                as Request
 import           Empire.API.Request                (Request (..))
 
-import System.IO (stdout,hFlush)
 
-type Handler z = ByteString -> Undo ()
+type Handler = ByteString -> UndoPure ()
 
 -- FIXME[WD]: robisz newtype nad statem i mozliwosc rejestracji tych rzeczy z kazdewgo pliku
-handlersMap :: Map String (Handler z)
+handlersMap :: Map String (Handler)
 handlersMap = Map.fromList
     [ makeHandler handleAddSubgraphUndo
     , makeHandler handleAddNodeUndo
@@ -104,11 +103,7 @@ type family RedoResponseRequest t where
 -- type instance RedoResponseRequest Connect.Response              = Connect.Request
 -- type instance RedoResponseRequest Disconnect.Response           = Disconnect.Request
 
--- FIXME[WD]: nie uzywamy liftIO bo powinno byc juz zliftowane zaqwsze, jak nie jest to w biblitoece zl iftowac
-flushHelper :: MonadIO m => String -> m ()
-flushHelper text = liftIO $ putStrLn text >> hFlush stdout
 
---FIXME[WD]: Response.Response -> Response + jak sien ie da lub jakies dziwne -> phabricator dolacz wd
 --FIXME[WD]: String -> ?
 --FIXME[WD]: Sprobujmy nie uzywac tuplui
 
@@ -118,7 +113,7 @@ instance Exception BusErrorException
 makeHandler :: forall req inv res z. (Topic.MessageTopic (Response req inv res), Binary (Response req inv res),
             Topic.MessageTopic (Request (UndoResponseRequest (Response req inv res))), Binary (UndoResponseRequest (Response req inv res)),
             Topic.MessageTopic (Request (RedoResponseRequest (Response req inv res))), Binary (RedoResponseRequest (Response req inv res)))
-            => (Response req inv res -> Maybe (UndoRequests (Response req inv res))) -> (String, Handler z)
+            => (Response req inv res -> Maybe (UndoRequests (Response req inv res))) -> (String, Handler)
 makeHandler h =
     let process content = let response   = decode . fromStrict $ content
                               maybeGuiID = response ^. Response.guiID
@@ -126,15 +121,17 @@ makeHandler h =
                               reqUUID    = response ^. Response.requestId
                           in case h response of
                               Nothing     -> throwM BusErrorException
-                              Just (r, q) -> handle guiID reqUUID (Topic.topic (Request.Request UUID.nil Nothing r)) r (Topic.topic (Request.Request UUID.nil Nothing q)) q
+                              Just (r, q) -> do
+                                  let message = UndoMessage guiID reqUUID (Topic.topic (Request.Request UUID.nil Nothing r)) r (Topic.topic (Request.Request UUID.nil Nothing q)) q
+                                  handle message
     in (Topic.topic (undefined :: Response.Response req inv res), process)
     -- FIXME[WD]: nie uzywamy undefined, nigdy
 
-handle :: (Binary a, Binary b) => GuiID -> ReqUUID -> Topic.Topic -> a -> Topic.Topic -> b -> Undo ()
-handle guiID reqUUID topicUndo undoReq topicRedo redoReq = do
-    undo    %= (UndoMessage guiID reqUUID topicUndo undoReq topicRedo redoReq :)
+handle :: UndoMessage -> UndoPure ()
+handle message = do
+    undo    %= (message :)
     redo    .= []
-    history %= (UndoMessage guiID reqUUID topicUndo undoReq topicRedo redoReq :)
+    history %= (message :)
 
 withOk :: Response.Status a -> (a -> Maybe b) -> Maybe b
 withOk (Response.Error _) _ = Nothing
