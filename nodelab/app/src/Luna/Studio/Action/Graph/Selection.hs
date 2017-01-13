@@ -35,7 +35,7 @@ toggleSelect nodeId = do
     withJust mayNode $ \node -> do
         if node ^. Node.isSelected
             then do
-                Global.withNode nodeId $ Node.isSelected .= False
+                Global.modifyNode nodeId $ Node.isSelected .= False
                 selection <- map (view Node.nodeId) <$> selectedNodes
                 case selection of
                     [] -> dropSelectionHistory
@@ -45,7 +45,7 @@ toggleSelect nodeId = do
 unselectAll :: Command State ()
 unselectAll = do
     nodesToCancelTouch <- map (view Node.nodeId) <$> selectedNodes
-    Global.withNodeEditor $
+    Global.modifyNodeEditor $
         NodeEditor.nodes %= HashMap.map (Node.isSelected .~ False)
     cancelCollaborativeTouch nodesToCancelTouch
 
@@ -62,7 +62,7 @@ selectNodes nodeIds = unselectAll >> addToSelection nodeIds >>= modifySelectionH
 -- If your new selection should be added to history launch modifySelectionHistory with ids from result.
 addToSelection :: [NodeId] -> Command State [NodeId]
 addToSelection nodeIds = do
-    Global.withNodeEditor $ forM_ nodeIds $ \nodeId ->
+    Global.modifyNodeEditor $ forM_ nodeIds $ \nodeId ->
         NodeEditor.nodes . at nodeId %= fmap (Node.isSelected .~ True)
     focusSelectedNode
     collaborativeTouch nodeIds

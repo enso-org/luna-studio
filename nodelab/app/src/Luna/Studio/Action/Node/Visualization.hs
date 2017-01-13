@@ -15,4 +15,4 @@ import qualified Luna.Studio.State.Global         as Global
 visualizationsToggled :: NodeId -> Bool -> Command State ()
 visualizationsToggled nid val = do
     modifyNodeMeta nid $ NodeMeta.displayResult .~ val
-    Global.withNode nid $ Model.visualizationsEnabled .= val
+    Global.modifyNode nid $ Model.visualizationsEnabled .= val

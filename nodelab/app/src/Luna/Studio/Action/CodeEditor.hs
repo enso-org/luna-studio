@@ -16,12 +16,12 @@ import qualified Luna.Studio.State.Global           as Global
 
 setCode :: Text -> Command State ()
 setCode code =
-    Global.withCodeEditor $ CodeEditor.code .= code
+    Global.modifyCodeEditor $ CodeEditor.code .= code
 
 toggle :: Command Global.State ()
 toggle = do
     GA.sendEvent $ GA.ToggleText
-    Global.withCodeEditor $ CodeEditor.visible %= not
+    Global.modifyCodeEditor $ CodeEditor.visible %= not
     -- size <- use $ Global.camera . Camera.camera . Camera.windowSize --TODO[react] remove
     -- Camera.updateWindowSize size
 

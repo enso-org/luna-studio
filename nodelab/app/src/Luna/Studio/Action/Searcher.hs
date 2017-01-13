@@ -46,7 +46,7 @@ open = do
 openWith :: Maybe NodeId -> Position -> Command State ()
 openWith nodeId pos = do
     GA.sendEvent GA.NodeSearcher
-    Global.withSearcher $ do
+    Global.modifySearcher $ do
         Searcher.input    .= def
         Searcher.nodeId   .= nodeId
         Searcher.position .= pos
@@ -57,16 +57,16 @@ openWith nodeId pos = do
 
 close :: Command State ()
 close = do
-    Global.withSearcher $ Searcher.visible .= False
+    Global.modifySearcher $ Searcher.visible .= False
     liftIO App.focus
 
 moveDown :: Command State ()
-moveDown = Global.withSearcher $ do
+moveDown = Global.modifySearcher $ do
     items <- length <$> use Searcher.results
     Searcher.selected %= \p -> (p + 1) `mod` items
 
 moveUp :: Command State ()
-moveUp = Global.withSearcher $ do
+moveUp = Global.modifySearcher $ do
     items <- length <$> use Searcher.results
     Searcher.selected %= \p -> (p - 1) `mod` items
 
@@ -156,7 +156,7 @@ querySearch :: Text -> Command State ()
 querySearch query = do
     sd <- scopedData
     let items = Scope.searchInScope sd query
-    Global.withSearcher $ do
+    Global.modifySearcher $ do
         Searcher.input .= query
         s <- use Searcher.selected
         when (s >= length items) $

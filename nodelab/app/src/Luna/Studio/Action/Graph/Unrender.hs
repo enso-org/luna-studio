@@ -15,7 +15,7 @@ import qualified Luna.Studio.State.Global           as Global
 unrender :: Command State ()
 unrender = do
     Global.workspace . Workspace.isGraphLoaded .= False
-    Global.withApp $ do
+    Global.modifyApp $ do
         App.codeEditor .= def
         App.nodeEditor .= def
     Global.graph .= def

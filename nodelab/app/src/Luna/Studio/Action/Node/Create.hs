@@ -34,7 +34,7 @@ registerNode :: Node -> Command State Model.Node
 registerNode node = do
     let nodeModel = Model.fromNode node
         nodeId    = node ^. Node.nodeId
-    Global.withNodeEditor $ do
+    Global.modifyNodeEditor $ do
         NodeEditor.nodes . at nodeId ?= nodeModel
         return nodeModel
 

@@ -68,11 +68,11 @@ updateSelection start end = do
 
 drawSelectionBox :: Position -> Position -> Command State ()
 drawSelectionBox start end =
-    Global.withNodeEditor $
+    Global.modifyNodeEditor $
         NodeEditor.selectionBox .= SelectionBox True start end
 
 hideSelectionBox :: Command State ()
-hideSelectionBox = Global.withSelectionBox $ SelectionBox.visible .= False
+hideSelectionBox = Global.modifySelectionBox $ SelectionBox.visible .= False
 
 stopDrag :: Command State ()
 stopDrag = do

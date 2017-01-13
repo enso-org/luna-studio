@@ -13,4 +13,4 @@ import qualified Luna.Studio.React.Model.App          as App
 
 set :: Breadcrumb (Named BreadcrumbItem)-> Command State ()
 set breadcrumbs = do
-    Global.withApp $ App.breadcrumbs .= breadcrumbs
+    Global.modifyApp $ App.breadcrumbs .= breadcrumbs

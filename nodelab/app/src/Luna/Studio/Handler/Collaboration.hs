@@ -51,7 +51,7 @@ touchCurrentlySelected = do
 expireTouchedNodes :: Command State ()
 expireTouchedNodes = do
     currentTime <- use Global.lastEventTimestamp
-    Global.withNodeEditor $ do
+    Global.modifyNodeEditor $ do
         let update = (  NodeModel.collaboration . NodeModel.touch  %~ Map.filter (\(ts, _) -> DT.diffSeconds ts currentTime > 0))
                      . (NodeModel.collaboration . NodeModel.modify %~ Map.filter (\ ts     -> DT.diffSeconds ts currentTime > 0))
         NodeEditor.nodes %= HashMap.map update
@@ -66,7 +66,7 @@ toAction (Event.Batch ev) = Just $ case ev of
     CollaborationUpdate update -> do
         shouldProcess <- isCurrentLocationAndGraphLoaded (update ^. Collaboration.location)
         let clientId = update ^. Collaboration.clientId
-            touchNodes nodeIds setter = Global.withNodeEditor $
+            touchNodes nodeIds setter = Global.modifyNodeEditor $
                 forM_ nodeIds $ \nodeId ->
                     NodeEditor.nodes . at nodeId %= fmap setter
         myClientId   <- use Global.clientId

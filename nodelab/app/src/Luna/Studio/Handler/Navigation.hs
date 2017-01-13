@@ -203,11 +203,11 @@ changeSelection selectedNodes node = do
 
 unselectNodes :: [NodeId] -> Command State ()
 unselectNodes selectedNodeIds = do
-    Global.withNodeEditor $ forM_ selectedNodeIds $ \nodeId ->
+    Global.modifyNodeEditor $ forM_ selectedNodeIds $ \nodeId ->
         NodeEditor.nodes . at nodeId %= fmap (Model.isSelected .~ False)
     cancelCollaborativeTouch selectedNodeIds
 
 selectNode :: NodeId -> Command State ()
 selectNode nodeId = do
-    Global.withNode nodeId $ Model.isSelected .= True
+    Global.modifyNode nodeId $ Model.isSelected .= True
     collaborativeTouch [nodeId]

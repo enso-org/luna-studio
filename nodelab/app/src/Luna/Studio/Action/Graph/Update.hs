@@ -49,7 +49,7 @@ updateConnection connId = do
             mayPos <- getConnectionPosition src dst
             withJust mayPos $ \(from', to') -> do
                 mayColor <- getConnectionColor src
-                withJust mayColor $ \color -> Global.withConnection connId $ do
+                withJust mayColor $ \color -> Global.modifyConnection connId $ do
                     ConnectionModel.from      .= from'
                     ConnectionModel.to        .= to'
                     ConnectionModel.color     .= color
@@ -64,7 +64,7 @@ updateNodeZOrder = do
     nodes <- allNodes
     let sortedNodes = sortBy (comparing $ negate . (view Model.zPos)) nodes
         sortedIds  = view Node.nodeId <$> sortedNodes
-    Global.withNodeEditor $
+    Global.modifyNodeEditor $
         forM_ (zip sortedIds nats) $ \(nodeId, idx) -> do
             let newZPos = negate $ (fromIntegral idx) / 100.0
             NodeEditor.nodes . at nodeId %= fmap (Node.zPos .~ newZPos)

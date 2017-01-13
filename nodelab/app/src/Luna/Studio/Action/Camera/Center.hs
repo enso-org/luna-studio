@@ -33,7 +33,7 @@ centerGraph = do
                 shift        = padding + screenCenter ^. vector - scalarProduct (span ^. vector) 0.5 - leftTop ^. vector
                 factor       = min 1 $ min (screenSize ^. x / span ^. x) (screenSize ^. y / span ^. y)
 
-            Global.withNodeEditor $ do
+            Global.modifyNodeEditor $ do
                 NodeEditor.screenTransform . logicalToScreen .= multStd2 (translationMatrix shift) (homothetyMatrix screenCenter factor)
                 NodeEditor.screenTransform . screenToLogical .= multStd2 (invertedHomothetyMatrix screenCenter factor) (invertedTranslationMatrix shift)
                 NodeEditor.screenTransform . lastInverse     .= 2

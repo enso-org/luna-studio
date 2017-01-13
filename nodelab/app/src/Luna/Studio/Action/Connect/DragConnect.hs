@@ -49,21 +49,21 @@ handleMove evt conn = do
     let srcPortRef = conn ^. ConnectionModel.srcPortRef
     maySrcPos  <- getCurrentConnectionPosition srcPortRef mousePos
     case maySrcPos of
-        Just (srcPos, dstPos) -> Global.withCurrentConnection $ do
+        Just (srcPos, dstPos) -> Global.modifyCurrentConnection $ do
             ConnectionModel.currentTo   .= dstPos
             ConnectionModel.currentFrom .= srcPos
         Nothing               -> stopDrag conn
 
 stopDrag :: CurrentConnection -> Command State ()
 stopDrag conn = do
-    Global.withNodeEditor $ NodeEditor.currentConnection .= Nothing
+    Global.modifyNodeEditor $ NodeEditor.currentConnection .= Nothing
     let mayModifiedConnection = conn ^. ConnectionModel.modifiedConnection
     withJust mayModifiedConnection $ \modifiedConnection -> do
         removeConnections [modifiedConnection ^. Connection.dst]
 
 connectToPort :: AnyPortRef -> CurrentConnection -> Command State ()
 connectToPort dstPortRef conn = do
-    Global.withNodeEditor $ NodeEditor.currentConnection .= Nothing
+    Global.modifyNodeEditor $ NodeEditor.currentConnection .= Nothing
     let srcPortRef            = conn ^. ConnectionModel.srcPortRef
         mayModifiedConnection = conn ^. ConnectionModel.modifiedConnection
     withJust (toValidConnection srcPortRef dstPortRef) $ \(src, dst) -> case mayModifiedConnection of

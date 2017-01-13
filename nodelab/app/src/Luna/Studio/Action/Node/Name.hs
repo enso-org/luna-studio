@@ -21,18 +21,18 @@ import qualified Luna.Studio.State.Graph      as Graph
 
 startEditName :: NodeId -> Command State ()
 startEditName nodeId = do
-    Global.withNode nodeId $ do
+    Global.modifyNode nodeId $ do
         name <- use Model.name
         Model.nameEdit ?= name
     liftIO NodeProperties.focusNameLabel
 
 editName :: NodeId -> Text -> Command State ()
 editName nodeId name =
-    Global.withNode nodeId $ Model.nameEdit ?= name
+    Global.modifyNode nodeId $ Model.nameEdit ?= name
 
 applyName :: NodeId -> Command State ()
 applyName nodeId = do
-    mayName <- Global.withNode nodeId $ do
+    mayName <- Global.modifyNode nodeId $ do
         mayName <- use Model.nameEdit
         Model.nameEdit .= Nothing
         -- case ne of
@@ -44,10 +44,10 @@ applyName nodeId = do
 
 discardName :: NodeId -> Command State ()
 discardName nodeId = do
-    Global.withNode nodeId $ Model.nameEdit .= Nothing
+    Global.modifyNode nodeId $ Model.nameEdit .= Nothing
     liftIO App.focus
 
 rename :: NodeId -> Text -> Command State ()
 rename nodeId name = do
     Global.graph . Graph.nodesMap . ix nodeId . Node.name .= name
-    Global.withNode nodeId $ Model.name .= name
+    Global.modifyNode nodeId $ Model.name .= name

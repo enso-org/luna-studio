@@ -79,7 +79,7 @@ handleMove evt snapped = do
 
 moveNodes :: Map NodeId Position -> Command State ()
 moveNodes nodesPos = do
-    Global.withNodeEditor $ forM_ (Map.toList nodesPos) $ \(nodeId, pos) -> do
+    Global.modifyNodeEditor $ forM_ (Map.toList nodesPos) $ \(nodeId, pos) -> do
         NodeEditor.nodes . at nodeId %= fmap (Model.position .~ pos)
     updateConnectionsForNodes $ Map.keys nodesPos
 

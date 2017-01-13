@@ -19,7 +19,7 @@ import qualified Luna.Studio.State.Graph      as Graph
 updateNodeMeta' :: NodeId -> NodeMeta -> Command Global.State ()
 updateNodeMeta' nodeId meta = do
     Global.graph . Graph.nodesMap . ix nodeId . Node.nodeMeta .= meta
-    Global.withNode nodeId $ do
+    Global.modifyNode nodeId $ do
         NodeModel.visualizationsEnabled .= meta ^. NodeMeta.displayResult
         NodeModel.position .= Position (fromTuple $ meta ^. NodeMeta.position)
 

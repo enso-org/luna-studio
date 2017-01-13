@@ -24,7 +24,7 @@ connectNodes :: OutPortRef -> InPortRef -> Command Global.State ()
 connectNodes src dst = BatchCmd.connectNodes src dst
 
 addConnection :: ConnectionId -> Position -> Position -> Color -> Command Global.State ()
-addConnection connId srcPos dstPos color = Global.withNodeEditor $ do
+addConnection connId srcPos dstPos color = Global.modifyNodeEditor $ do
     let connection = ConnectionModel.Connection connId srcPos dstPos color
     NodeEditor.connections . at connId ?= connection
 

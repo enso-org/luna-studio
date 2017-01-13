@@ -62,7 +62,7 @@ zoomDrag actPos = do
         _ -> return ()
 
 resetZoom :: Command State ()
-resetZoom = Global.withNodeEditor $ do
+resetZoom = Global.modifyNodeEditor $ do
     NodeEditor.screenTransform . logicalToScreen %= (setElem 1 (1,1) . setElem 1 (2,2))
     NodeEditor.screenTransform . screenToLogical %= (setElem 1 (1,1) . setElem 1 (2,2))
 

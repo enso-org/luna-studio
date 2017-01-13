@@ -36,7 +36,7 @@ localRemoveNodes nodeIds = do
     danglingConns <- concat <$> forM nodeIds (uses Global.graph . Graph.connectionIdsContainingNode)
     localRemoveConnections danglingConns
     forM_ nodeIds $ \nodeId -> Global.graph %= Graph.removeNode nodeId
-    Global.withNodeEditor $
+    Global.modifyNodeEditor $
         forM_ nodeIds $ \nodeId ->
             NodeEditor.nodes . at nodeId .= Nothing
     when selectPrevious selectPreviousNodes

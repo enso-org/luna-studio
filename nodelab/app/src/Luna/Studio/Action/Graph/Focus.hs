@@ -25,7 +25,7 @@ focusNode node = do
     let sortedNodes = sortBy (comparing $ negate . (view Model.zPos)) nodes
         newOrderNodes = node : delete node sortedNodes
         newOrderIds  = view Model.nodeId <$> newOrderNodes
-    Global.withNodeEditor $
+    Global.modifyNodeEditor $
         forM_ (zip newOrderIds nats) $ \(nodeId, idx) -> do
             let newZPos = negate $ (fromIntegral idx) / 100.0
             NodeEditor.nodes . at nodeId %= fmap (Node.zPos .~ newZPos)

@@ -23,7 +23,7 @@ import qualified Luna.Studio.State.Slider     as Slider
 
 setPortDefault :: AnyPortRef -> DefaultValue.PortDefault -> Command State ()
 setPortDefault portRef defaultValue = do
-    Global.withNode (portRef ^. PortRef.nodeId) $
+    Global.modifyNode (portRef ^. PortRef.nodeId) $
         Node.ports . ix portRef . Port.state .= PortAPI.WithDefault defaultValue
 
 

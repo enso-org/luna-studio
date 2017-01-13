@@ -19,6 +19,6 @@ expandSelectedNodes = do
     let allSelected = all (view $ Node.isExpanded) sn
         update      = if allSelected then Node.isExpanded %~ not
                                      else Node.isExpanded .~ True
-    Global.withNodeEditor $ forM_ sn $ \node -> do
+    Global.modifyNodeEditor $ forM_ sn $ \node -> do
         NodeEditor.nodes . at (node ^. Node.nodeId) %= fmap update
     updateConnectionsForNodes $ map (view Node.nodeId) sn

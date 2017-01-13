@@ -16,7 +16,7 @@ import qualified Luna.Studio.State.Graph            as Graph
 
 localRemoveConnections :: [ConnectionId] -> Command State ()
 localRemoveConnections connectionIds = do
-    Global.withNodeEditor $
+    Global.modifyNodeEditor $
         forM_ connectionIds $ \ connectionId ->
             NodeEditor.connections . at connectionId .= Nothing
     Global.graph %= Graph.removeConnections connectionIds

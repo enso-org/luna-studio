@@ -14,7 +14,7 @@ import qualified Luna.Studio.State.Global              as Global
 
 
 modifyCamera :: Matrix Double -> Matrix Double -> Command State ()
-modifyCamera matrix invertedMatrix = Global.withNodeEditor $ do
+modifyCamera matrix invertedMatrix = Global.modifyNodeEditor $ do
     NodeEditor.screenTransform . logicalToScreen %= (flip multStd2 matrix)
     transformsSinceLastInverse <- use $ NodeEditor.screenTransform . lastInverse
     if transformsSinceLastInverse < 100
@@ -32,7 +32,7 @@ modifyCamera matrix invertedMatrix = Global.withNodeEditor $ do
         NodeEditor.screenTransform . lastInverse     += 1
 
 resetCamera :: Command State ()
-resetCamera = Global.withNodeEditor $ do
+resetCamera = Global.modifyNodeEditor $ do
     NodeEditor.screenTransform . logicalToScreen .= identity 4
     NodeEditor.screenTransform . screenToLogical .= identity 4
 

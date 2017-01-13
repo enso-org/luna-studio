@@ -21,7 +21,7 @@ createConnectionPen :: Mode -> MouseEvent -> Command State ()
 createConnectionPen mode evt = do
     pos <- workspacePosition evt
     let connectionPen = ConnectionPen mode [pos] Nothing
-    Global.withNodeEditor $
+    Global.modifyNodeEditor $
         NodeEditor.connectionPen ?= connectionPen
 
 startConnecting :: MouseEvent -> Command State ()
@@ -46,11 +46,11 @@ whileDisconnecting = whileConnectionPen Disconnecting
 handleMove :: MouseEvent -> ConnectionPen -> Command State ()
 handleMove evt connectionPenRef = do
     pos <- workspacePosition evt
-    Global.withConnectionPen $
+    Global.modifyConnectionPen $
         ConnectionPen.history %= (pos:)
 
 resetConnectionPen :: Command State ()
-resetConnectionPen = Global.withNodeEditor $
+resetConnectionPen = Global.modifyNodeEditor $
     NodeEditor.connectionPen .= Nothing
 
 

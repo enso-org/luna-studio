@@ -47,6 +47,6 @@ panDrag actPos = do
         _ -> return ()
 
 resetPan :: Command State ()
-resetPan = Global.withNodeEditor $ do
+resetPan = Global.modifyNodeEditor $ do
     NodeEditor.screenTransform . logicalToScreen %= (setElem 0 (4,1) . setElem 0 (4,2))
     NodeEditor.screenTransform . screenToLogical %= (setElem 0 (4,1) . setElem 0 (4,2))
