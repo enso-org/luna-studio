@@ -1,20 +1,20 @@
-resolver:
-  name: nbo-gui-20160520
-  location: https://bitbucket.org/NewByteOrder/stack-snapshots/raw/master/nbo-gui-20160520.yaml
+resolver: lts-7.2
+compiler: ghcjs-0.2.1.9007002_ghc-8.0.1
 compiler-check: match-exact
 setup-info:
   ghcjs:
     source:
-      ghcjs-0.2.0.20160517_ghc-7.10.3:
-        # FIXME: Maybe sth more appropriate than dupa.tar here?
-        url: "https://s3-eu-west-1.amazonaws.com/nbo-toolchain/ghcjs/ghcjs-0.2.0.20160517-dupa.tar.gz"
+      ghcjs-0.2.1.9007002_ghc-8.0.1:
+          url: http://ghcjs.tolysz.org/ghc-8.0-2016-10-01-lts-7.2-9007002.tar.gz
+          sha1: a41ae415328e2b257d40724d13d1386390c26322
+
 ghc-options:
   nodelab: -DGHCJS_BROWSER
 extra-deps:
-  - datetime-0.3.1
-  - loop-0.3.0
-  - matrix-0.3.5.0
-  - placeholders-0.1
+  # - datetime-0.3.1
+  # - loop-0.3.0
+  # - matrix-0.3.5.0
+  # - placeholders-0.1
 
 packages:
   - .
