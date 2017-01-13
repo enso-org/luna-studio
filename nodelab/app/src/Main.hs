@@ -25,31 +25,30 @@ module Main where
 
 -- http://www.network-science.de/ascii/
 
-import           Data.DateTime                  (getCurrentTime)
-import qualified Data.Set                       as Set
-import qualified React.Flux                     as React
-import           System.Random                  (newStdGen)
+import           Data.DateTime                        (getCurrentTime)
+import qualified Data.Set                             as Set
 import           Luna.Studio.Prelude
+import qualified React.Flux                           as React
+import           System.Random                        (newStdGen)
 
-import qualified Luna.Studio.Batch.Workspace                as Workspace
-import qualified Luna.Studio.Batch.Connector.Commands        as BatchCmd
 import           Control.Concurrent.MVar
-import qualified JS.GraphLocation               as GraphLocation
-import           JS.Tutorial                    (shouldRunTutorial)
-import           JS.Tutorial                    (showStep)
-import           JS.UUID                        (generateUUID)
-import           JS.WebSocket                   (WebSocket)
-import qualified Luna.Studio.React.Store                    as Store
-import qualified Luna.Studio.React.View.App                 as App
-import qualified Reactive.Plugins.Core.Network  as CoreNetwork
-import qualified Reactive.Plugins.Loader.Loader as Loader
-import           Luna.Studio.State.Global          (initialState)
-import qualified Luna.Studio.State.Global          as Global
+import qualified JS.GraphLocation                     as GraphLocation
+import           JS.Tutorial                          (shouldRunTutorial)
+import           JS.Tutorial                          (showStep)
+import           JS.UUID                              (generateUUID)
+import           JS.WebSocket                         (WebSocket)
+import qualified Luna.Studio.Batch.Connector.Commands as BatchCmd
+import qualified Luna.Studio.Batch.Workspace          as Workspace
+import qualified Luna.Studio.Engine                   as Engine
+import qualified Luna.Studio.React.Store              as Store
+import qualified Luna.Studio.React.View.App           as App
+import           Luna.Studio.State.Global             (initialState)
+import qualified Luna.Studio.State.Global             as Global
 
 
 
-runMainNetwork :: WebSocket -> IO ()
-runMainNetwork socket = do
+runApp :: WebSocket -> IO ()
+runApp socket = do
     lastLocation <- GraphLocation.loadLocation
     random <- newStdGen
     projectListRequestId <- generateUUID
@@ -60,7 +59,7 @@ runMainNetwork socket = do
     withJust tutorial $ \step -> showStep step
 
     mdo
-        appRef <- Store.createApp $ CoreNetwork.processEvent state
+        appRef <- Store.createApp $ Engine.processEvent state
         React.reactRender "nodelab-app" (App.app appRef) ()
 
         let initState = initialState initTime clientId random tutorial appRef
@@ -68,10 +67,10 @@ runMainNetwork socket = do
                       & Global.pendingRequests %~ Set.insert projectListRequestId
 
         state <- newMVar initState
-        CoreNetwork.makeNetworkDescription socket state
+        Engine.start socket state
 
     App.focus
     BatchCmd.listProjects projectListRequestId
 
 main :: IO ()
-main = Loader.withActiveConnection runMainNetwork
+main = Engine.withActiveConnection runApp

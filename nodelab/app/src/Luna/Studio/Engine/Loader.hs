@@ -1,10 +1,10 @@
-module Reactive.Plugins.Loader.Loader where
+module Luna.Studio.Engine.Loader where
 
+import           JS.Config           (getBackendAddress)
+import           JS.UI               (displayConnectionClosedMessage)
+import           JS.WebSocket        (WebSocket)
+import qualified JS.WebSocket        as WS
 import           Luna.Studio.Prelude
-import qualified JS.WebSocket      as WS
-import           JS.WebSocket      (WebSocket)
-import           JS.Config         (getBackendAddress)
-import           JS.UI             (displayConnectionClosedMessage)
 
 withActiveConnection :: (WebSocket -> IO ()) -> IO ()
 withActiveConnection action = do

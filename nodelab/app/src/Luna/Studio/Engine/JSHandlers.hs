@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module Reactive.Handlers
+module Luna.Studio.Engine.JSHandlers
     ( mouseDownHandler
     , mouseUpHandler
     , mouseMovedHandler

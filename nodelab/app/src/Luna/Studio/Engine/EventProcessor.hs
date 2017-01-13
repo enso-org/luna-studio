@@ -1,4 +1,4 @@
-module Reactive.Plugins.Core.Network where
+module Luna.Studio.Engine.EventProcessor where
 
 import           Luna.Studio.Prelude
 
@@ -10,8 +10,8 @@ import           Data.Monoid                                (Last (..))
 import qualified Data.Text                                  as Text
 import           GHCJS.Prim                                 (JSException)
 
-import           Reactive.Handlers                          (AddHandler (..))
-import qualified Reactive.Handlers                          as Handlers
+import           Luna.Studio.Engine.JSHandlers              (AddHandler (..))
+import qualified Luna.Studio.Engine.JSHandlers              as JSHandlers
 
 import           Event.Event                                (Event)
 import qualified Event.Event                                as Event
@@ -101,7 +101,7 @@ processEvent var ev = modifyMVar_ var $ \state -> do
         JS.Debug.error (Text.pack $ realEvent ^. Event.name) realEvent
         consoleTimeEnd $ (realEvent ^. Event.name) <> " show and force"
         consoleTimeStart (realEvent ^. Event.name)
-    jsState   <- Handlers.getJSState
+    jsState   <- JSHandlers.getJSState
     timestamp <- getCurrentTime
     let state' = state & Global.jsState .~ jsState
                        & Global.lastEventTimestamp .~ timestamp
@@ -111,24 +111,24 @@ processEvent var ev = modifyMVar_ var $ \state -> do
             consoleTimeEnd (realEvent ^. Event.name)
         return newState
 
-makeNetworkDescription :: WebSocket -> MVar State -> IO ()
-makeNetworkDescription conn state = do
-    let handlers = [ --Handlers.resizeHandler
-                --    , Handlers.mouseDownHandler
-                --    , Handlers.mouseUpHandler
-                --    , Handlers.mouseMovedHandler
-                --    , Handlers.mouseDblClickHandler
-                --    , Handlers.mouseWheelHandler
-                --    , Handlers.keyDownHandler
-                --    , Handlers.keyPressedHandler
-                --    , Handlers.keyUpHandler
-                    Handlers.webSocketHandler conn
-                --    , Handlers.connectionPenHandler
-                --    , Handlers.textEditorHandler
-                --    , Handlers.customEventHandler
-                --    , Handlers.copyClipboardHandler
-                --    , Handlers.cutClipboardHandler
-                --    , Handlers.pasteClipboardHandler
+start :: WebSocket -> MVar State -> IO ()
+start conn state = do
+    let handlers = [ --JSHandlers.resizeHandler
+                --    , JSHandlers.mouseDownHandler
+                --    , JSHandlers.mouseUpHandler
+                --    , JSHandlers.mouseMovedHandler
+                --    , JSHandlers.mouseDblClickHandler
+                --    , JSHandlers.mouseWheelHandler
+                --    , JSHandlers.keyDownHandler
+                --    , JSHandlers.keyPressedHandler
+                --    , JSHandlers.keyUpHandler
+                    JSHandlers.webSocketHandler conn
+                --    , JSHandlers.connectionPenHandler
+                --    , JSHandlers.textEditorHandler
+                --    , JSHandlers.customEventHandler
+                --    , JSHandlers.copyClipboardHandler
+                --    , JSHandlers.cutClipboardHandler
+                --    , JSHandlers.pasteClipboardHandler
                    ]
 
     let registerHandler (AddHandler rh) = rh (processEvent state)
