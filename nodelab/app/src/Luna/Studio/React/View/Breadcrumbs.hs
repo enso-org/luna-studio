@@ -10,10 +10,11 @@ import           Luna.Studio.Prelude
 import           React.Flux
 import qualified React.Flux                          as React
 
+import           Luna.Studio.React.Model.App        (App)
 import qualified Event.UI                            as UI
 import           Luna.Studio.React.Model.Breadcrumbs (Breadcrumbs)
 import qualified Luna.Studio.React.Model.Breadcrumbs as B
-import           Luna.Studio.React.Store             (Ref, dispatch, dt)
+import           Luna.Studio.React.Store             (Ref, dispatch)
 
 
 
@@ -21,11 +22,11 @@ name :: JSString
 name = "breadcrumbs"
 
 
-breadcrumbs :: Ref Breadcrumbs -> ReactView ()
-breadcrumbs ref = React.defineControllerView name ref $ \store () -> do
+breadcrumbs :: ReactView (Ref App, Breadcrumbs)
+breadcrumbs = React.defineView name $ \(ref, model) -> do
     div_ [ "className" $= name
          , "key"       $= name ] $ do
-        forM_ (zip [0..] $ inits $ store ^. dt . B.items) $ \(key, bc) -> do
+        forM_ (zip [0..] $ inits $ model ^. B.items) $ \(key, bc) -> do
             div_
                 [ "className" $= "breadcrumbs__item breadcrumbs__item--home"
                 , "key"       $= fromString (show key)
@@ -35,8 +36,8 @@ breadcrumbs ref = React.defineControllerView name ref $ \store () -> do
                     (item:_) -> elemString $ unpack $ item ^. B.name
 
 
-breadcrumbs_ :: Ref Breadcrumbs -> ReactElementM ViewEventHandler ()
-breadcrumbs_ ref = React.viewWithSKey (breadcrumbs ref) name () mempty
+breadcrumbs_ :: Ref App -> Breadcrumbs -> ReactElementM ViewEventHandler ()
+breadcrumbs_ ref model = React.viewWithSKey breadcrumbs name (ref, model) mempty
 
 unname :: [B.Named a] -> B.Breadcrumb a
 unname = B.Breadcrumb . map B._breadcrumb

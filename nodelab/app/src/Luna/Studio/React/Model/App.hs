@@ -10,14 +10,16 @@ import           Luna.Studio.React.Model.Breadcrumbs (Breadcrumbs)
 import           Luna.Studio.React.Model.CodeEditor  (CodeEditor)
 import           Luna.Studio.React.Model.NodeEditor  (NodeEditor)
 import           Luna.Studio.React.Model.Searcher    (Searcher)
-import           Luna.Studio.React.Store.Ref         (Ref)
 
 
 
-data App = App { _breadcrumbs       :: Ref Breadcrumbs
+data App = App { _breadcrumbs       :: Breadcrumbs
                , _nodeEditor        :: NodeEditor
                , _codeEditor        :: CodeEditor
                , _searcher          :: Searcher
                } deriving (Eq)
 
 makeLenses ''App
+
+instance Default App where
+    def = App def def def def

@@ -19,7 +19,7 @@ import qualified Event.Event                      as Event
 import           Luna.Studio.Action.Batch         (collaborativeTouch)
 import           Luna.Studio.Action.Collaboration (updateClient)
 import           Luna.Studio.Action.Command       (Command)
-import           Luna.Studio.Action.Graph         (allNodes, selectedNodes)
+import           Luna.Studio.Action.Graph         (selectedNodes)
 import           Luna.Studio.State.Collaboration  (ColorId)
 import           Luna.Studio.State.Global         (State)
 import qualified Luna.Studio.React.Model.NodeEditor     as NodeEditor
@@ -50,7 +50,6 @@ touchCurrentlySelected = do
 
 expireTouchedNodes :: Command State ()
 expireTouchedNodes = do
-    widgetIds   <- allNodes
     currentTime <- use Global.lastEventTimestamp
     Global.withNodeEditor $ do
         let update = (  NodeModel.collaboration . NodeModel.touch  %~ Map.filter (\(ts, _) -> DT.diffSeconds ts currentTime > 0))

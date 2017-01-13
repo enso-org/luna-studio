@@ -39,11 +39,11 @@ app ref = React.defineControllerView
                       , "key"       $= "main"] $ do
                      div_ [ "className" $= "graph-editor"
                           , "key"       $= "graph-editor" ] $ do
-                        nodeEditor_ ref (s ^. App.nodeEditor)
-                        breadcrumbs_ (s ^. App.breadcrumbs)
+                        nodeEditor_  ref $ s ^. App.nodeEditor
+                        breadcrumbs_ ref $ s ^. App.breadcrumbs
                         codeEditorToggle_ ref
-                        searcher_ ref (s ^. App.searcher)
-                     codeEditor_ (s ^. App.codeEditor)
+                        searcher_ ref $ s ^. App.searcher
+                     codeEditor_ $ s ^. App.codeEditor
 
 
 foreign import javascript safe "document.getElementById('focus-root').focus()" focus :: IO ()

@@ -26,6 +26,7 @@ import qualified Luna.Studio.React.Model.Node as Model
 import           Luna.Studio.State.Drag       (DragHistory (..))
 import qualified Luna.Studio.State.Drag       as Drag
 import           Luna.Studio.State.Global     (State)
+import qualified Luna.Studio.React.Model.NodeEditor as NodeEditor
 import qualified Luna.Studio.State.Global     as Global
 import qualified Luna.Studio.State.Graph      as Graph
 import           React.Flux                   (MouseEvent)
@@ -78,9 +79,8 @@ handleMove evt snapped = do
 
 moveNodes :: Map NodeId Position -> Command State ()
 moveNodes nodesPos = do
-    forM_ (Map.toList nodesPos) $ \(nodeId, pos) -> do
-        Global.withNode nodeId $
-            Model.position .= pos
+    Global.withNodeEditor $ forM_ (Map.toList nodesPos) $ \(nodeId, pos) -> do
+        NodeEditor.nodes . at nodeId %= fmap (Model.position .~ pos)
     updateConnectionsForNodes $ Map.keys nodesPos
 
 stopDrag :: MouseEvent -> Command State ()

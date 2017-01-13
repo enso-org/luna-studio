@@ -51,6 +51,7 @@ foreign import javascript safe "{}" defJsState :: Event.JSState
 -- TODO split to more states
 data State = State { _mousePos           :: Position
                    , _graph              :: Graph.State
+                   , _appDirty           :: Bool --TODO refactor
                    , _cameraState        :: Maybe Camera.State
                    , _multiSelection     :: MultiSelection.State
                    , _selectionHistory   :: [Set Node.NodeId]
@@ -83,14 +84,22 @@ makeLenses ''State
 
 
 withApp' :: (Ref App -> Command State r) -> Command State r
-withApp' action = action =<< use app
+withApp' action = do
+    appDirty .= True
+    action =<< use app
 
-with lens action = withApp' $ Store.modifyM' $ zoom lens action
+with lens action = withApp' $ Store.continueModify $ zoom lens action
 
 get' lens = withApp' $ return . view lens <=< Store.get
 
 withApp :: M.State App r -> Command State r
-withApp = withApp' . Store.modifyM'
+withApp action = withApp' $ Store.continueModify action
+
+renderIfNeeded :: Command State ()
+renderIfNeeded =
+    whenM (use appDirty) $ do
+        withApp' Store.commit
+        appDirty .= False
 
 withNodeEditor :: M.State NodeEditor r -> Command State r
 withNodeEditor = with App.nodeEditor
@@ -101,8 +110,8 @@ getNodeEditor = get' App.nodeEditor
 withCodeEditor :: M.State CodeEditor r -> Command State r
 withCodeEditor = with App.codeEditor
 
-withBreadcrumbs :: (Ref Breadcrumbs -> Command State r) -> Command State r
-withBreadcrumbs action = withApp' $ (action . view App.breadcrumbs) <=< Store.get
+withBreadcrumbs :: M.State Breadcrumbs r -> Command State r
+withBreadcrumbs = with App.breadcrumbs
 
 withSearcher :: M.State Searcher r -> Command State r
 withSearcher = with App.searcher
@@ -132,7 +141,7 @@ getConnection :: ConnectionId -> Command State (Maybe Connection)
 getConnection connectionId = get' (App.nodeEditor . NodeEditor.connections . at connectionId)
 
 initialState :: DateTime -> Collaboration.ClientId -> StdGen -> Maybe Int -> Ref App -> State
-initialState = State (Position (Vector2 200 200)) def Nothing def def def def def def def def def defJsState def def
+initialState = State (Position (Vector2 200 200)) def False Nothing def def def def def def def def def defJsState def def
 
 inRegistry :: Command UIRegistry.State a -> Command State a
 inRegistry = zoom uiRegistry

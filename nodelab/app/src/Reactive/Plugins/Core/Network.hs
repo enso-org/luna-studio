@@ -106,7 +106,7 @@ processEvent var ev = modifyMVar_ var $ \state -> do
     let state' = state & Global.jsState .~ jsState
                        & Global.lastEventTimestamp .~ timestamp
     flip catch (handleExcept state realEvent) $ do
-        newState <- execCommand (runCommands actions realEvent) state'
+        newState <- execCommand (runCommands actions realEvent >> Global.renderIfNeeded) state'
         when displayProcessingTime $
             consoleTimeEnd (realEvent ^. Event.name)
         return newState
