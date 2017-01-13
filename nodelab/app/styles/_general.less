@@ -36,11 +36,6 @@ body {
     overflow:    hidden;
 }
 
-.graph-editor {
-    flex:     2 auto;
-    position: relative;
-}
-
 .breadcrumbs {
     position:    absolute;
     top:         0;
@@ -55,6 +50,21 @@ body {
     float:        left;
     padding-left: 10px;
     cursor:       pointer;
+}
+
+.graph-editor {
+    flex:     2 auto;
+    position: relative;
+}
+
+.code-editor {
+    width:      30%;
+    background: rgb(30, 30, 30);
+    z-index:    10;
+}
+
+.code-editor--collapsed {
+    display: none;
 }
 
 .code-editor-toggle {
@@ -72,18 +82,30 @@ body {
 }
 
 .graph {
+    position: relative;
+    flex:     none;
+    overflow: inherit;
+    color:    @colorName;
     width:  100%;
     height: 100%;
 }
 
-.code-editor {
-    width:      30%;
-    background: rgb(30, 30, 30);
-    z-index:    10;
+.plane {
+    position: absolute;
+    width:    1px;
+    height:   1px;
+    overflow: inherit;
 }
 
-.code-editor--collapsed {
-    display: none;
+.plane--nodes {
+    svg {
+        position: absolute;
+        top:      0;
+        left:     0;
+        overflow: inherit;
+        width:    1px;
+        height:   1px;
+    }
 }
 
 .searcher {

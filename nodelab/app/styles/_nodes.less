@@ -1,35 +1,25 @@
-.graph {
-    position: relative;
-    flex:     none;
-    overflow: inherit;
-    color:    @colorName;
-}
+/////////////////////////////
+//        utilities        //
+/////////////////////////////
 
-.plane {
-    position: absolute;
-    width:    1px;
-    height:   1px;
-    overflow: inherit;
-}
-
-.plane--nodes {
-    svg {
-        position: absolute;
-        top:      0;
-        left:     0;
-        overflow: inherit;
-        width:    1px;
-        height:   1px;
-    }
+.blur {
+    backdrop-filter: blur(12px);
+    width:           100%;
+    height:          100%;
+    position:        absolute;
+    z-index:        -1;
 }
 
 
-// connection
+/////////////////////////////
+//       connections       //
+/////////////////////////////
 
 .connections {
     stroke-linecap:  round;
     stroke-linejoin: round;
 }
+
 // FIXME – that need to be implemented in SVG
 .connection__src,
 .connection__dst {
@@ -38,21 +28,21 @@
         stroke: #fff;
     }
 }
+
 .connection__select {
     opacity: 0;
     stroke-linecap: butt;
 }
 
 
-// node
+/////////////////////////////
+//          nodes          //
+/////////////////////////////
 
 .node {
     position: absolute;
     width:    0;
     height:   0;
-}
-.node--expanded {
-    z-index: 10000;
 }
 
 .node__name {
@@ -72,10 +62,8 @@
             fill: #fff !important;
         }
     }
-    .port__select {
-
-    }
 }
+
 .port--self {
     .port__shape {
         r: 5;
@@ -84,63 +72,18 @@
         r: 8;
     }
 }
+
 .port__select {
     opacity: 0;
 }
 
 
-// selection mark
-
-.node__selection-mark rect {
-    fill:       none;
-    stroke:     transparent;
-    transition: all @transitionSpeed ease-in-out;
-    stroke:     @colorSelect;
-    opacity:    0;
-    x:         -20px;
-    y:         -20px;
-    width:      40px;
-    height:     40px;
-    rx:         20px;
-    ry:         20px;
-}
-
-.node--selected {
-    .node__selection-mark rect {
-        opacity: 1;
-    }
-}
-
-.node--selected {
-    .node__selection-mark rect {
-        x:     -29.7px; // subpixel antialiasing tweak
-        y:     -29.7px;
-        width:  59.4px;
-        height: 59.4px;
-        rx:     30px;
-        ry:     30px;
-    }
-}
+/////////////////////////////
+//      node expanded      //
+/////////////////////////////
 
 .node--expanded {
-    .node__selection-mark rect {
-        x:      0px;
-        y:     -20px;
-        width:  224px;
-        height: 82px;
-        rx:     4px;
-        ry:     4px;
-    }
-    &.node--selected {
-        .node__selection-mark rect {
-            x:     -9.7px;
-            y:     -29.7px;
-            width:  243.4px;
-            height: 103.4px;
-            rx:     12px;
-            ry:     12px;
-        }
-    }
+    z-index: 10000;
     .node__visuals {
         left: 0;
         top: -8px;
@@ -157,12 +100,10 @@
     }
 }
 
-@keyframes outputExpanding {
-    from { cx:   0px }
-    to   { cx: 225px }
+.node__properties,
+.node__visuals {
+    font-size: 10px;
 }
-
-// node expanded
 
 .node__properties {
     color:         @colorTextUneditable;
@@ -188,12 +129,7 @@
     }
 }
 
-.node__properties,
-.node__visuals {
-    font-size: 10px;
-}
-
-.node--expanded {
+.node--expanded {  // FIXME: properties container should be removed from DOM for collapsed nodes
     .node__properties {
         height:  auto;
         width:   200px;
@@ -248,10 +184,53 @@
 }
 
 
-.blur {
-    backdrop-filter: blur(12px);
-    width:           100%;
-    height:          100%;
-    position:        absolute;
-    z-index:        -1;
+/////////////////////////////
+//     selection mark      //
+/////////////////////////////
+
+.node__selection-mark rect {
+    fill:       none;
+    stroke:     transparent;
+    transition: all @transitionSpeed ease-in-out;
+    stroke:     @colorSelect;
+    opacity:    0;
+    x:         -20px;
+    y:         -20px;
+    width:      40px;
+    height:     40px;
+    rx:         20px;
+    ry:         20px;
+}
+
+.node--selected {
+    .node__selection-mark rect {
+        opacity: 1;
+        x:      -29.7px; // subpixel antialiasing tweak
+        y:      -29.7px;
+        width:   59.4px;
+        height:  59.4px;
+        rx:      30px;
+        ry:      30px;
+    }
+}
+
+.node--expanded {
+    .node__selection-mark rect {
+        x:      0px;
+        y:     -20px;
+        width:  224px;
+        height: 82px;
+        rx:     4px;
+        ry:     4px;
+    }
+    &.node--selected {
+        .node__selection-mark rect {
+            x:     -9.7px;
+            y:     -29.7px;
+            width:  243.4px;
+            height: 103.4px;
+            rx:     12px;
+            ry:     12px;
+        }
+    }
 }
