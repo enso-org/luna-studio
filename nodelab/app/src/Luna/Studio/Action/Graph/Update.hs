@@ -14,14 +14,13 @@ import           Empire.API.Data.Node                   (NodeId)
 import           Luna.Studio.Action.Command             (Command)
 import           Luna.Studio.Action.Connect.Color       (getConnectionColor)
 import           Luna.Studio.Action.Geometry.Connection (getConnectionPosition)
+import qualified Luna.Studio.React.Model.NodeEditor as NodeEditor
 import           Luna.Studio.Action.Graph.Connect       (localConnectNodes)
 import           Luna.Studio.Action.Graph.Lookup        (allNodes)
 import           Luna.Studio.Prelude
 import qualified Luna.Studio.React.Model.Connection     as ConnectionModel
 import qualified Luna.Studio.React.Model.Node           as Node
 import qualified Luna.Studio.React.Model.Node           as Model
-import           Luna.Studio.React.Store                (ref, widget)
-import qualified Luna.Studio.React.Store                as Store
 import           Luna.Studio.State.Global               (State)
 import qualified Luna.Studio.State.Global               as Global
 import qualified Luna.Studio.State.Graph                as Graph
@@ -41,16 +40,16 @@ updateConnectionsForNodes nodeIds = do
 
 updateConnection :: ConnectionId -> Command Global.State ()
 updateConnection connId = do
-    mayConnectionRef <- Global.getConnection $ connId
+    mayConnectionModel <- Global.getConnection connId
     mayConnection    <- preuse $ Global.graph . Graph.connectionsMap . ix connId
-    case (mayConnectionRef, mayConnection) of
-        (Just connRef, Just conn) -> do
+    case (mayConnectionModel, mayConnection) of
+        (Just _, Just conn) -> do
             let src = conn ^. Connection.src
                 dst = conn ^. Connection.dst
             mayPos <- getConnectionPosition src dst
             withJust mayPos $ \(from', to') -> do
                 mayColor <- getConnectionColor src
-                withJust mayColor $ \color -> flip Store.modifyM_ connRef $ do
+                withJust mayColor $ \color -> Global.withConnection connId $ do
                     ConnectionModel.from      .= from'
                     ConnectionModel.to        .= to'
                     ConnectionModel.color     .= color
@@ -62,9 +61,10 @@ nats = [1..]
 
 updateNodeZOrder :: Command State ()
 updateNodeZOrder = do
-    nodes <- mapM Store.get' =<< allNodes
-    let sortedNodes = sortBy (comparing $ negate . (view $ widget . Model.zPos)) nodes
-        sortedRefs  = view ref <$> sortedNodes
-    forM_ (zip sortedRefs nats) $ \(nRef, idx) -> do
-        let newZPos = negate $ (fromIntegral idx) / 100.0
-        Store.modify_ (Node.zPos .~ newZPos) nRef
+    nodes <- allNodes
+    let sortedNodes = sortBy (comparing $ negate . (view Model.zPos)) nodes
+        sortedIds  = view Node.nodeId <$> sortedNodes
+    Global.withNodeEditor $
+        forM_ (zip sortedIds nats) $ \(nodeId, idx) -> do
+            let newZPos = negate $ (fromIntegral idx) / 100.0
+            NodeEditor.nodes . at nodeId %= fmap (Node.zPos .~ newZPos)

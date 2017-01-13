@@ -24,7 +24,6 @@ import           Luna.Studio.Action.Command    (Command, performIO)
 import           Luna.Studio.Action.Graph      (selectedNodes)
 import qualified Luna.Studio.Batch.Workspace   as Workspace
 import qualified Luna.Studio.React.Model.Node  as UINode
-import           Luna.Studio.React.Store       (widget)
 import qualified Luna.Studio.State.Global      as Global
 import qualified Luna.Studio.State.Graph       as Graph
 
@@ -117,8 +116,8 @@ andIsSelected :: Text -> Command Global.State () -> Command Global.State ()
 andIsSelected prefix action = do
     selected   <- selectedNodes
     case selected of
-            [wf]   -> do
-                let expr = wf ^. widget . UINode.expression
+            [node] -> do
+                let expr = node ^. UINode.expression
                     isPrefixOk = Text.isPrefixOf prefix expr
                 when isPrefixOk action
             []     -> return ()

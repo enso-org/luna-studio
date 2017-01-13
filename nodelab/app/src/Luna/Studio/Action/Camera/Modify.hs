@@ -9,13 +9,12 @@ import           Luna.Studio.Action.Command            (Command)
 import           Luna.Studio.Data.CameraTransformation (lastInverse, logicalToScreen, screenToLogical)
 import           Luna.Studio.Prelude
 import qualified Luna.Studio.React.Model.NodeEditor    as NodeEditor
-import qualified Luna.Studio.React.Store               as Store
 import           Luna.Studio.State.Global              (State)
 import qualified Luna.Studio.State.Global              as Global
 
 
 modifyCamera :: Matrix Double -> Matrix Double -> Command State ()
-modifyCamera matrix invertedMatrix = Global.withNodeEditor $ Store.modifyM_ $ do
+modifyCamera matrix invertedMatrix = Global.withNodeEditor $ do
     NodeEditor.screenTransform . logicalToScreen %= (flip multStd2 matrix)
     transformsSinceLastInverse <- use $ NodeEditor.screenTransform . lastInverse
     if transformsSinceLastInverse < 100
@@ -33,7 +32,7 @@ modifyCamera matrix invertedMatrix = Global.withNodeEditor $ Store.modifyM_ $ do
         NodeEditor.screenTransform . lastInverse     += 1
 
 resetCamera :: Command State ()
-resetCamera = Global.withNodeEditor $ Store.modifyM_ $ do
+resetCamera = Global.withNodeEditor $ do
     NodeEditor.screenTransform . logicalToScreen .= identity 4
     NodeEditor.screenTransform . screenToLogical .= identity 4
 

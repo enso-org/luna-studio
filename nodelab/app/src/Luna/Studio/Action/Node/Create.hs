@@ -14,8 +14,6 @@ import           Luna.Studio.Action.Graph.Focus     (focusNode)
 import           Luna.Studio.Prelude
 import qualified Luna.Studio.React.Model.Node       as Model
 import qualified Luna.Studio.React.Model.NodeEditor as NodeEditor
-import           Luna.Studio.React.Store            (Ref)
-import qualified Luna.Studio.React.Store            as Store
 import           Luna.Studio.State.Global           (State)
 import qualified Luna.Studio.State.Global           as Global
 import qualified Luna.Studio.State.Graph            as Graph
@@ -24,22 +22,21 @@ import qualified Luna.Studio.State.Graph            as Graph
 addNode :: Node -> Command State ()
 addNode node = do
     zoom Global.graph $ modify (Graph.addNode node)
-    nodeRef <- registerNode node
-    focusNode nodeRef
+    nodeModel <- registerNode node
+    focusNode nodeModel
 
 addDummyNode :: Node -> Command State ()
 addDummyNode dummyNode = do
     mayNode <- preuse $ Global.graph . Graph.nodesMap . ix (dummyNode ^. Node.nodeId)
     maybe (addNode dummyNode) (const $ return ()) mayNode
 
-registerNode :: Node -> Command State (Ref Model.Node)
+registerNode :: Node -> Command State Model.Node
 registerNode node = do
     let nodeModel = Model.fromNode node
         nodeId    = node ^. Node.nodeId
-    Global.withNodeEditor $ Store.modifyM $ do
-        ref <- lift $ Store.create nodeModel
-        NodeEditor.nodes . at nodeId ?= ref
-        return ref
+    Global.withNodeEditor $ do
+        NodeEditor.nodes . at nodeId ?= nodeModel
+        return nodeModel
 
 --TODO[react]
 -- nodeHandlers :: Node -> HTMap

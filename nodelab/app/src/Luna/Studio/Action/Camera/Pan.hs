@@ -16,7 +16,6 @@ import           Luna.Studio.Data.Matrix               (invertedTranslationMatri
 import           Luna.Studio.Data.Vector               (ScreenPosition, Vector2 (Vector2), vector)
 import           Luna.Studio.Prelude
 import qualified Luna.Studio.React.Model.NodeEditor    as NodeEditor
-import qualified Luna.Studio.React.Store               as Store
 import qualified Luna.Studio.State.Camera              as Camera
 import           Luna.Studio.State.Global              (State)
 import qualified Luna.Studio.State.Global              as Global
@@ -48,6 +47,6 @@ panDrag actPos = do
         _ -> return ()
 
 resetPan :: Command State ()
-resetPan = Global.withNodeEditor $ Store.modifyM_ $ do
+resetPan = Global.withNodeEditor $ do
     NodeEditor.screenTransform . logicalToScreen %= (setElem 0 (4,1) . setElem 0 (4,2))
     NodeEditor.screenTransform . screenToLogical %= (setElem 0 (4,1) . setElem 0 (4,2))

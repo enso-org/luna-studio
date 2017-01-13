@@ -9,16 +9,16 @@ import qualified React.Flux                         as React
 
 import           Luna.Studio.React.Model.CodeEditor (CodeEditor)
 import qualified Luna.Studio.React.Model.CodeEditor as CodeEditor
-import           Luna.Studio.React.Store            (Ref, dt)
+
 
 
 name :: JSString
 name = "code-editor"
 
 
-codeEditor :: Ref CodeEditor -> ReactView ()
-codeEditor ref = React.defineControllerView name ref $ \store () -> do
-    let isVisible = store ^. dt . CodeEditor.visible
+codeEditor :: ReactView CodeEditor
+codeEditor = React.defineView name $ \model -> do
+    let isVisible = model ^. CodeEditor.visible
         showFlag  = if isVisible then " code-editor--expanded" else " code-editor--collapsed"
         classes   = name <> showFlag
     div_
@@ -78,11 +78,11 @@ codeEditor ref = React.defineControllerView name ref $ \store () -> do
                             [ "key"       $= "active-line"
                             , "className" $= "ace_active-line"
                             , "style"     @= Aeson.object [ "padding" Aeson..= ("0 4px" ::String) ]
-                            ] $ do elemString $ unpack $ store ^. dt . CodeEditor.code
+                            ] $ do elemString $ unpack $ model ^. CodeEditor.code
 
 
-codeEditor_ :: Ref CodeEditor -> ReactElementM ViewEventHandler ()
-codeEditor_ ref = React.viewWithSKey (codeEditor ref) name () mempty
+codeEditor_ :: CodeEditor -> ReactElementM ViewEventHandler ()
+codeEditor_ model = React.viewWithSKey codeEditor name model mempty
 
 
 --TODO[react] remove

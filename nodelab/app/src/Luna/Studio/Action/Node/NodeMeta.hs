@@ -12,7 +12,6 @@ import           Luna.Studio.Action.Command   (Command)
 import           Luna.Studio.Data.Vector
 import           Luna.Studio.Prelude
 import qualified Luna.Studio.React.Model.Node as NodeModel
-import qualified Luna.Studio.React.Store      as Store
 import qualified Luna.Studio.State.Global     as Global
 import qualified Luna.Studio.State.Graph      as Graph
 
@@ -20,8 +19,7 @@ import qualified Luna.Studio.State.Graph      as Graph
 updateNodeMeta' :: NodeId -> NodeMeta -> Command Global.State ()
 updateNodeMeta' nodeId meta = do
     Global.graph . Graph.nodesMap . ix nodeId . Node.nodeMeta .= meta
-    nodeRef <- Global.getNode nodeId
-    withJust nodeRef $ Store.modifyM_ $ do
+    Global.withNode nodeId $ do
         NodeModel.visualizationsEnabled .= meta ^. NodeMeta.displayResult
         NodeModel.position .= Position (fromTuple $ meta ^. NodeMeta.position)
 

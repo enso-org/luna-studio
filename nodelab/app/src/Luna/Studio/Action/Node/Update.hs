@@ -21,7 +21,6 @@ import           Luna.Studio.Prelude
 import           Luna.Studio.React.Model.Node      (makePorts)
 import qualified Luna.Studio.React.Model.Node      as Model
 import           Luna.Studio.React.Model.Port      (portRef)
-import qualified Luna.Studio.React.Store           as Store
 import           Luna.Studio.State.Global          (State)
 import qualified Luna.Studio.State.Global          as Global
 import qualified Luna.Studio.State.Graph           as Graph
@@ -39,7 +38,7 @@ updateExistingNode :: Node -> Command State ()
 updateExistingNode node = do
     let nodeId  = node ^. Node.nodeId
     zoom Global.graph $ modify (Graph.addNode node)
-    Global.withNode nodeId $ mapM_ $ Store.modifyM_ $ do
+    Global.withNode nodeId $ do
         case node ^. Node.nodeType of
             Node.ExpressionNode expression -> Model.expression .= expression
             _                              -> return ()
@@ -50,14 +49,12 @@ updateExistingNode node = do
     updateConnectionsForNodes [nodeId]
 
 updateNodeValue :: NodeId -> NodeValue -> Command State ()
-updateNodeValue nid val =
-    Global.withNode nid $ mapM_ $ Store.modify_ $
-        Model.value ?~ val
+updateNodeValue nodeId val =
+    Global.withNode nodeId $ Model.value ?= val
 
 updateNodeProfilingData :: NodeId -> Integer -> Command State ()
 updateNodeProfilingData nodeId execTime =
-    Global.withNode nodeId $ mapM_ $ Store.modify_ $
-        Model.execTime ?~ execTime
+    Global.withNode nodeId $ Model.execTime ?= execTime
 
 updateExpression :: NodeId -> Text -> Command State ()
 updateExpression nodeId expr = do

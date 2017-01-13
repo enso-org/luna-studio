@@ -13,8 +13,9 @@ import           Luna.Studio.Data.Matrix               (showTransformMatrixToSvg
 import           Luna.Studio.Prelude                   hiding (transform)
 import qualified Luna.Studio.React.Event.NodeEditor    as NE
 import           Luna.Studio.React.Model.NodeEditor    (NodeEditor)
+import           Luna.Studio.React.Model.App    (App)
 import qualified Luna.Studio.React.Model.NodeEditor    as NodeEditor
-import           Luna.Studio.React.Store               (Ref, dispatch, dt)
+import           Luna.Studio.React.Store               (Ref, dispatch)
 import           Luna.Studio.React.View.Connection     (connection_, currentConnection_)
 import           Luna.Studio.React.View.Node           (node_)
 import           Luna.Studio.React.View.SelectionBox   (selectionBox_)
@@ -24,11 +25,9 @@ name :: JSString
 name = "node-editor"
 
 
-nodeEditor :: Ref NodeEditor -> ReactView ()
-nodeEditor ref = React.defineControllerView name ref $ \store () -> do
-
-    let ne = store ^. dt
-        transformMatrix = ne ^. NodeEditor.screenTransform . CameraTransformation.logicalToScreen
+nodeEditor :: ReactView (Ref App, NodeEditor)
+nodeEditor = React.defineView name $ \(ref, ne) -> do
+    let transformMatrix = ne ^. NodeEditor.screenTransform . CameraTransformation.logicalToScreen
         transform       = showTransformMatrixToSvg transformMatrix
     div_
         [ "className" $= "graph"
@@ -70,17 +69,17 @@ nodeEditor ref = React.defineControllerView name ref $ \store () -> do
 
             g_ [ "key"       $= "connections"
                , "className" $= "connections" ] $ do
-                forM_ (store ^. dt . NodeEditor.connections . to HashMap.toList) $ uncurry connection_
-                forM_ (store ^. dt . NodeEditor.currentConnection) $ \connectionRef -> currentConnection_ connectionRef
-                selectionBox_ (store ^. dt . NodeEditor.selectionBox)
+                forM_ (ne ^. NodeEditor.connections . to HashMap.toList) $ uncurry (connection_ ref)
+                forM_ (ne ^. NodeEditor.currentConnection) currentConnection_
+                selectionBox_ (ne ^. NodeEditor.selectionBox)
         div_
             [ "className" $= "plane plane--nodes"
             , "key"       $= "nodes"
             , "style"     @= Aeson.object [ "transform" Aeson..= transform ]
             ] $ do
-                forM_ (store ^. dt . NodeEditor.nodes . to HashMap.toList) $ uncurry node_
+                forM_ (ne ^. NodeEditor.nodes . to HashMap.elems) $ node_ ref
 
         -- TODO: canvas_ [ "className" $= "plane plane--canvas" ] …
 
-nodeEditor_ :: Ref NodeEditor -> ReactElementM ViewEventHandler ()
-nodeEditor_ ref = React.viewWithSKey (nodeEditor ref) name () mempty
+nodeEditor_ :: Ref App -> NodeEditor -> ReactElementM ViewEventHandler ()
+nodeEditor_ ref ne = React.viewWithSKey nodeEditor name (ref, ne) mempty

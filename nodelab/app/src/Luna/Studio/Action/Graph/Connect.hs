@@ -16,7 +16,6 @@ import           Luna.Studio.Data.Vector                (Position)
 import           Luna.Studio.Prelude
 import qualified Luna.Studio.React.Model.Connection     as ConnectionModel
 import qualified Luna.Studio.React.Model.NodeEditor     as NodeEditor
-import qualified Luna.Studio.React.Store                as Store
 import qualified Luna.Studio.State.Global               as Global
 import qualified Luna.Studio.State.Graph                as Graph
 
@@ -24,11 +23,10 @@ import qualified Luna.Studio.State.Graph                as Graph
 connectNodes :: OutPortRef -> InPortRef -> Command Global.State ()
 connectNodes src dst = BatchCmd.connectNodes src dst
 
-addConnectionRef :: ConnectionId -> Position -> Position -> Color -> Command Global.State ()
-addConnectionRef connId srcPos dstPos color = Global.withNodeEditor $ Store.modifyM_ $ do
+addConnection :: ConnectionId -> Position -> Position -> Color -> Command Global.State ()
+addConnection connId srcPos dstPos color = Global.withNodeEditor $ do
     let connection = ConnectionModel.Connection connId srcPos dstPos color
-    connectionRef <- lift $ Store.create connection
-    NodeEditor.connections . at connId ?= connectionRef
+    NodeEditor.connections . at connId ?= connection
 
 localConnectNodes :: OutPortRef -> InPortRef -> Command Global.State ConnectionId
 localConnectNodes src dst = do
@@ -39,5 +37,5 @@ localConnectNodes src dst = do
         mayPos   <- getConnectionPosition src dst
         mayColor <- getConnectionColor src
         withJust ((,) <$> mayPos <*> mayColor) $ \((srcPos, dstPos), color) -> do
-            addConnectionRef connectionId srcPos dstPos color
+            addConnection connectionId srcPos dstPos color
     return connectionId

@@ -8,7 +8,6 @@ import           React.Flux
 import qualified React.Flux                           as React
 
 import           Luna.Studio.React.Model.SelectionBox (SelectionBox, end, start, visible)
-import           Luna.Studio.React.Store              (Ref, dt)
 
 
 
@@ -16,15 +15,14 @@ name :: JSString
 name = "selection-box"
 
 
-selectionBox :: Ref SelectionBox -> ReactView ()
-selectionBox ref = React.defineControllerView name ref $ \store () -> do
-    let sb = store ^. dt
-        pos    = Position (Vector2 (min (sb ^. start . x) (sb ^. end . x)) (min (sb ^. start . y) (sb ^. end . y)))
-        width  = abs $ sb ^. start . x - sb ^. end . x
-        height = abs $ sb ^. start . y - sb ^. end . y
+selectionBox :: ReactView SelectionBox
+selectionBox = React.defineView name $ \model -> do
+    let pos    = Position (Vector2 (min (model ^. start . x) (model ^. end . x)) (min (model ^. start . y) (model ^. end . y)))
+        width  = abs $ model ^. start . x - model ^. end . x
+        height = abs $ model ^. start . y - model ^. end . y
         translate = fromString $ "translate(" <> show (pos ^. x) <> "," <> show (pos ^. y) <> ")"
 
-    when (sb ^. visible) $
+    when (model ^. visible) $
       rect_
           [ "width"     $= fromString (show width)
           , "height"    $= fromString (show height)
@@ -36,5 +34,5 @@ selectionBox ref = React.defineControllerView name ref $ \store () -> do
           , "transform" $= translate
           ] mempty
 
-selectionBox_ :: Ref SelectionBox -> ReactElementM ViewEventHandler ()
-selectionBox_ ref = React.viewWithSKey (selectionBox ref) name () mempty
+selectionBox_ :: SelectionBox -> ReactElementM ViewEventHandler ()
+selectionBox_ model = React.viewWithSKey selectionBox name model mempty

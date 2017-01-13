@@ -6,6 +6,7 @@ import           Data.Word                            (Word8)
 import           Luna.Studio.Data.Vector              (Position (Position), Vector2 (Vector2))
 import           Luna.Studio.Prelude
 
+import qualified Control.Monad.State                  as M
 import           Data.Aeson                           (ToJSON, toJSON)
 import           Data.DateTime                        (DateTime)
 import           Data.Set                             (Set)
@@ -24,9 +25,10 @@ import           Luna.Studio.React.Model.App          (App)
 import qualified Luna.Studio.React.Model.App          as App
 import           Luna.Studio.React.Model.Breadcrumbs  (Breadcrumbs)
 import           Luna.Studio.React.Model.CodeEditor   (CodeEditor)
-import           Luna.Studio.React.Model.Connection   (Connection)
+import           Luna.Studio.Data.ConnectionPen   (ConnectionPen)
 import           Luna.Studio.React.Model.Node         (Node)
 import           Luna.Studio.React.Model.NodeEditor   (NodeEditor)
+import           Luna.Studio.React.Model.Connection    (Connection, CurrentConnection)
 import qualified Luna.Studio.React.Model.NodeEditor   as NodeEditor
 import           Luna.Studio.React.Model.Searcher     (Searcher)
 import           Luna.Studio.React.Model.SelectionBox (SelectionBox)
@@ -79,36 +81,55 @@ instance ToJSON (Ref App) where
 
 makeLenses ''State
 
-withApp :: (Ref App -> Command State r) -> Command State r
-withApp action = action =<< use app
 
-withNodeEditor :: (Ref NodeEditor -> Command State r) -> Command State r
-withNodeEditor action = withApp $ (action . view App.nodeEditor) <=< Store.get
+withApp' :: (Ref App -> Command State r) -> Command State r
+withApp' action = action =<< use app
 
-withCodeEditor :: (Ref CodeEditor -> Command State r) -> Command State r
-withCodeEditor action = withApp $ (action . view App.codeEditor) <=< Store.get
+with lens action = withApp' $ Store.modifyM' $ zoom lens action
+
+get' lens = withApp' $ return . view lens <=< Store.get
+
+withApp :: M.State App r -> Command State r
+withApp = withApp' . Store.modifyM'
+
+withNodeEditor :: M.State NodeEditor r -> Command State r
+withNodeEditor = with App.nodeEditor
+
+getNodeEditor :: Command State NodeEditor
+getNodeEditor = get' App.nodeEditor
+
+withCodeEditor :: M.State CodeEditor r -> Command State r
+withCodeEditor = with App.codeEditor
 
 withBreadcrumbs :: (Ref Breadcrumbs -> Command State r) -> Command State r
-withBreadcrumbs action = withApp $ (action . view App.breadcrumbs) <=< Store.get
+withBreadcrumbs action = withApp' $ (action . view App.breadcrumbs) <=< Store.get
 
-withSearcher :: (Ref Searcher -> Command State r) -> Command State r
-withSearcher action = withApp $ (action . view App.searcher) <=< Store.get
+withSearcher :: M.State Searcher r -> Command State r
+withSearcher = with App.searcher
 
-withSelectionBox :: (Ref SelectionBox -> Command State r) -> Command State r
-withSelectionBox action = withNodeEditor $ (action . view NodeEditor.selectionBox) <=< Store.get
+getSearcher :: Command State Searcher
+getSearcher = get' App.searcher
 
-withNode :: NodeId -> (Maybe (Ref Node) -> Command State r) -> Command State r
-withNode nodeId action = withNodeEditor $ (action . view (NodeEditor.nodes . at nodeId)) <=< Store.get
+withSelectionBox :: M.State SelectionBox r -> Command State r
+withSelectionBox = with (App.nodeEditor . NodeEditor.selectionBox)
 
-getNode :: NodeId -> Command State (Maybe (Ref Node))
-getNode nodeId = withNode nodeId return
+withConnectionPen :: Monoid r => M.State ConnectionPen r -> Command State r
+withConnectionPen = with (App.nodeEditor . NodeEditor.connectionPen) . zoom traverse
 
-withConnection :: ConnectionId -> (Maybe (Ref Connection) -> Command State r) -> Command State r
-withConnection connectionId action =
-    withNodeEditor $ (action . view (NodeEditor.connections . at connectionId)) <=< Store.get
+withCurrentConnection :: Monoid r => M.State CurrentConnection r -> Command State r
+withCurrentConnection = with (App.nodeEditor . NodeEditor.currentConnection) . zoom traverse
 
-getConnection :: ConnectionId -> Command State (Maybe (Ref Connection))
-getConnection connectionId = withConnection connectionId return
+withNode :: Monoid r => NodeId -> M.State Node r -> Command State r
+withNode nodeId = with (App.nodeEditor . NodeEditor.nodes . at nodeId) . zoom traverse
+
+getNode :: NodeId -> Command State (Maybe Node)
+getNode nodeId = get' (App.nodeEditor . NodeEditor.nodes . at nodeId)
+
+withConnection :: Monoid r => ConnectionId -> M.State Connection r -> Command State r
+withConnection connectionId = with (App.nodeEditor . NodeEditor.connections . at connectionId) . zoom traverse
+
+getConnection :: ConnectionId -> Command State (Maybe Connection)
+getConnection connectionId = get' (App.nodeEditor . NodeEditor.connections . at connectionId)
 
 initialState :: DateTime -> Collaboration.ClientId -> StdGen -> Maybe Int -> Ref App -> State
 initialState = State (Position (Vector2 200 200)) def Nothing def def def def def def def def def defJsState def def

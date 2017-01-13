@@ -39,10 +39,10 @@ app ref = React.defineControllerView
                       , "key"       $= "main"] $ do
                      div_ [ "className" $= "graph-editor"
                           , "key"       $= "graph-editor" ] $ do
-                        nodeEditor_ (s ^. App.nodeEditor)
+                        nodeEditor_ ref (s ^. App.nodeEditor)
                         breadcrumbs_ (s ^. App.breadcrumbs)
-                        codeEditorToggle_ (s ^. App.codeEditor)
-                        searcher_ (s ^. App.searcher)
+                        codeEditorToggle_ ref
+                        searcher_ ref (s ^. App.searcher)
                      codeEditor_ (s ^. App.codeEditor)
 
 

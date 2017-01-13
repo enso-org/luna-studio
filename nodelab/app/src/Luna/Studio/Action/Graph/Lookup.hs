@@ -1,6 +1,6 @@
 module Luna.Studio.Action.Graph.Lookup
-    ( allNodes
-    , allNodes'
+    ( allNodeIds
+    , allNodes
     , getNode
     , getPort
     , getConnection
@@ -23,20 +23,17 @@ import qualified Luna.Studio.React.Model.Node       as Node
 import qualified Luna.Studio.React.Model.Node       as Model
 import qualified Luna.Studio.React.Model.NodeEditor as NodeEditor
 import qualified Luna.Studio.React.Model.Port       as PortModel
-import           Luna.Studio.React.Store            (Ref, WRef)
-import qualified Luna.Studio.React.Store            as Store
 import           Luna.Studio.State.Global           (State)
 import qualified Luna.Studio.State.Global           as Global
 import qualified Luna.Studio.State.Graph            as Graph
 
 
 
-allNodes :: Command State [Ref Node]
-allNodes = Global.withNodeEditor $
-    Store.use (NodeEditor.nodes . to HashMap.elems)
+allNodeIds :: Command State [NodeId]
+allNodeIds = map (view Node.nodeId) <$> allNodes
 
-allNodes' :: Command State [WRef Node]
-allNodes' = mapM Store.get' =<< allNodes
+allNodes :: Command State [Node]
+allNodes = view (NodeEditor.nodes . to HashMap.elems) <$> Global.getNodeEditor
 
 class HasPort a where
     getPort :: a -> Command State (Maybe PortModel.Port)
@@ -66,7 +63,7 @@ getGraphPortFromAnyPortRef portRef =
     preuse $ Global.graph . Graph.nodesMap . ix (portRef ^. PortRef.nodeId) . NodeAPI.ports . ix (portRef ^. PortRef.portId)
 
 getNode :: NodeId -> Command State (Maybe Model.Node)
-getNode nodeId = Global.withNode nodeId $ mapM Store.get
+getNode = Global.getNode
 
 getConnection :: ConnectionId -> Command State (Maybe ConnectionModel.Connection)
-getConnection connId = Global.withConnection connId $ mapM Store.get
+getConnection = Global.getConnection

@@ -12,7 +12,8 @@ import           Luna.Studio.Prelude
 import           Luna.Studio.React.Event.Searcher
 import           Luna.Studio.React.Model.Searcher (Searcher)
 import qualified Luna.Studio.React.Model.Searcher as Searcher
-import           Luna.Studio.React.Store          (Ref, dispatch, dt)
+import           Luna.Studio.React.Store          (Ref, dispatch)
+import           Luna.Studio.React.Model.App             (App)
 import qualified Text.ScopeSearcher.QueryResult   as Result
 
 
@@ -20,12 +21,10 @@ name :: JSString
 name = "searcher"
 
 
-searcher :: Ref Searcher -> ReactView ()
-searcher ref = React.defineControllerView
-    name ref $ \store () -> do
-        let s = store ^. dt
-            pos = s ^. Searcher.position
-        if s ^. Searcher.visible then do
+searcher :: ReactView (Ref App, Searcher)
+searcher  = React.defineView name $ \(ref, s) -> do
+        let pos = s ^. Searcher.position
+        if s ^. Searcher.visible then
             div_ [ "key"       $= name
                  , "className" $= name
                  , "style"     @= Aeson.object [ "top"  Aeson..= (show (pos ^. y) <> "px" :: String)
@@ -54,8 +53,8 @@ searcher ref = React.defineControllerView
           else div_ ["key" $= name ] mempty
 
 
-searcher_ :: Ref Searcher -> ReactElementM ViewEventHandler ()
-searcher_ ref = React.viewWithSKey (searcher ref) name () mempty
+searcher_ :: Ref App -> Searcher -> ReactElementM ViewEventHandler ()
+searcher_ ref model = React.viewWithSKey searcher name (ref, model) mempty
 
 
 foreign import javascript safe "document.getElementById('focus-searcher').focus()" focus :: IO ()
