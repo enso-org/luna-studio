@@ -1,18 +1,17 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Luna.Studio.React.View.Visualization.Graphics where
 
-import qualified Data.Text               as Text
-import           React.Flux              hiding (label_)
-
-import qualified Graphics.API            as GR
-import qualified Luna.Studio.Data.Shader as Shader
-import           Luna.Studio.Data.Vector hiding (normalize)
+import qualified Data.Text                             as Text
+import qualified Graphics.API                          as GR
+import qualified Luna.Studio.Data.Shader               as Shader
+import           Luna.Studio.Data.Vector               hiding (normalize)
+import           Luna.Studio.React.View.CommonElements (blurBackground_)
 import           Luna.Studio.Prelude
-import qualified Object.Widget.Graphics  as Graphics
-import qualified Object.Widget.Graphics  as G
-import qualified Object.Widget.Label     as Label
-import qualified Style.Layout            as Style
-
+import qualified Object.Widget.Graphics                as Graphics
+import qualified Object.Widget.Graphics                as G
+import qualified Object.Widget.Label                   as Label
+import           React.Flux                            hiding (label_)
+import qualified Style.Layout                          as Style
 
 
 graphics_ :: Int -> GR.Graphics -> ReactElementM ViewEventHandler ()
@@ -26,7 +25,7 @@ graphics_ visIx (GR.Graphics layers) = do
         labelAlign GR.Center = Label.Center
         labelAlign GR.Right  = Label.Right
     div_ ["className" $= "vis vis--graph"] $ do
-        div_ [ "className" $= "blur" ] mempty
+        blurBackground_
         svg_ $
             g_ [ "key" $= fromString (show visIx)] $ do
                 forM_ labels $ (label_ $ widget ^. G.size)
