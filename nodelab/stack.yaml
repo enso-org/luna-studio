@@ -43,7 +43,7 @@ packages:
     extra-dep: true
   - location:
       hg: https://remdezx@bitbucket.org/remdezx/react-flux
-      commit: b18158eb1ff837b071858dbf505fb4e7ec9b00db
+      commit: ce4f274837545ff9e3d891f64f4fb2a19de9d008
     extra-dep: true
   - location:
       git: 'https://bitbucket.org/NewByteOrder/visualization-api.git'

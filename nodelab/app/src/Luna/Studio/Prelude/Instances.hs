@@ -24,6 +24,12 @@ instance ToJSON   WheelEvent where
 instance FromJSON WheelEvent where
     parseJSON = $notImplemented
 
+instance ToJSON   TouchEvent where
+    toJSON _ = toJSON "(TouchEvent)"
+instance FromJSON TouchEvent where
+    parseJSON = $notImplemented
+
+
 instance ToJSON   Event where
     toJSON _ = toJSON "(Event)"
 instance FromJSON Event where

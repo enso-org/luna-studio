@@ -12,8 +12,8 @@ import qualified Luna.Studio.Data.CameraTransformation as CameraTransformation
 import           Luna.Studio.Data.Matrix               (showTransformMatrixToSvg)
 import           Luna.Studio.Prelude                   hiding (transform)
 import qualified Luna.Studio.React.Event.NodeEditor    as NE
+import           Luna.Studio.React.Model.App           (App)
 import           Luna.Studio.React.Model.NodeEditor    (NodeEditor)
-import           Luna.Studio.React.Model.App    (App)
 import qualified Luna.Studio.React.Model.NodeEditor    as NodeEditor
 import           Luna.Studio.React.Store               (Ref, dispatch)
 import           Luna.Studio.React.View.Connection     (connection_, currentConnection_)
