@@ -24,9 +24,6 @@ import           Luna.Studio.React.Event.Connection     (ModifiedEnd (Destinatio
 import           Luna.Studio.React.Model.Connection     (CurrentConnection)
 import qualified Luna.Studio.React.Model.Connection     as ConnectionModel
 import qualified Luna.Studio.React.Model.NodeEditor     as NodeEditor
-import qualified Luna.Studio.React.Store                as Store
-import           Luna.Studio.React.Store.Ref            (Ref)
-import qualified Luna.Studio.React.Store.Ref            as Ref
 import           Luna.Studio.State.Global               (State)
 import qualified Luna.Studio.State.Global               as Global
 import qualified Luna.Studio.State.Graph                as Graph
@@ -41,34 +38,34 @@ startDragFromPort evt portRef modifiedConnection = do
     withJust ((,) <$> maySrcPos <*> mayColor) $ \((srcPos, dstPos), color) -> do
         createCurrentConnection portRef modifiedConnection srcPos dstPos color
 
-whileConnecting :: (Ref CurrentConnection -> Command State ()) -> Command State ()
+whileConnecting :: (CurrentConnection -> Command State ()) -> Command State ()
 whileConnecting run = do
-    mayCurrentConnectionRef <- Global.withNodeEditor $ Store.use NodeEditor.currentConnection
-    withJust mayCurrentConnectionRef $ \currentConnectionRef -> run currentConnectionRef
+    mayCurrentConnection <- view NodeEditor.currentConnection <$> Global.getNodeEditor
+    withJust mayCurrentConnection run
 
-handleMove :: MouseEvent -> Ref CurrentConnection -> Command State ()
-handleMove evt connRef = do
+handleMove :: MouseEvent -> CurrentConnection -> Command State ()
+handleMove evt conn = do
     mousePos   <- workspacePosition evt
-    srcPortRef <- view ConnectionModel.srcPortRef <$> Ref.get connRef
+    let srcPortRef = conn ^. ConnectionModel.srcPortRef
     maySrcPos  <- getCurrentConnectionPosition srcPortRef mousePos
     case maySrcPos of
-        Just (srcPos, dstPos) -> flip Store.modifyM_ connRef $ do
+        Just (srcPos, dstPos) -> Global.modifyCurrentConnection $ do
             ConnectionModel.currentTo   .= dstPos
             ConnectionModel.currentFrom .= srcPos
-        Nothing               -> stopDrag connRef
+        Nothing               -> stopDrag conn
 
-stopDrag :: Ref CurrentConnection -> Command State ()
-stopDrag connRef = do
-    Global.withNodeEditor $ Store.modifyM_ $ NodeEditor.currentConnection .= Nothing
-    mayModifiedConnection <- view ConnectionModel.modifiedConnection <$> Ref.get connRef
-    withJust mayModifiedConnection $ \conn -> do
-        removeConnections [conn ^. Connection.dst]
+stopDrag :: CurrentConnection -> Command State ()
+stopDrag conn = do
+    Global.modifyNodeEditor $ NodeEditor.currentConnection .= Nothing
+    let mayModifiedConnection = conn ^. ConnectionModel.modifiedConnection
+    withJust mayModifiedConnection $ \modifiedConnection -> do
+        removeConnections [modifiedConnection ^. Connection.dst]
 
-connectToPort :: AnyPortRef -> Ref CurrentConnection -> Command State ()
-connectToPort dstPortRef connRef = do
-    Global.withNodeEditor $ Store.modifyM_ $ NodeEditor.currentConnection .= Nothing
-    srcPortRef <- view ConnectionModel.srcPortRef <$> Ref.get connRef
-    mayModifiedConnection <- view ConnectionModel.modifiedConnection <$> Ref.get connRef
+connectToPort :: AnyPortRef -> CurrentConnection -> Command State ()
+connectToPort dstPortRef conn = do
+    Global.modifyNodeEditor $ NodeEditor.currentConnection .= Nothing
+    let srcPortRef            = conn ^. ConnectionModel.srcPortRef
+        mayModifiedConnection = conn ^. ConnectionModel.modifiedConnection
     withJust (toValidConnection srcPortRef dstPortRef) $ \(src, dst) -> case mayModifiedConnection of
         Just prevConn -> do
             if src == prevConn ^. Connection.src && dst == prevConn ^. Connection.dst then

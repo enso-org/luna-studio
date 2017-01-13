@@ -1,9 +1,9 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Luna.Studio.Action.Searcher where
 
-
 import qualified Data.Map                           as Map
 import qualified Data.Text                          as Text
+
 import           Empire.API.Data.Node               (NodeId)
 import qualified Empire.API.Data.Node               as NodeAPI
 import qualified Empire.API.Data.Port               as Port
@@ -21,8 +21,6 @@ import           Luna.Studio.Data.Vector            (Position)
 import           Luna.Studio.Prelude
 import qualified Luna.Studio.React.Model.Node       as Node
 import qualified Luna.Studio.React.Model.Searcher   as Searcher
-import           Luna.Studio.React.Store            (widget)
-import qualified Luna.Studio.React.Store            as Store
 import qualified Luna.Studio.React.View.App         as App
 import qualified Luna.Studio.React.View.Searcher    as Searcher
 import           Luna.Studio.State.Global           (State)
@@ -31,6 +29,7 @@ import qualified Luna.Studio.State.Graph            as Graph
 import           Text.ScopeSearcher.Item            (Item (..), Items, _Group)
 import qualified Text.ScopeSearcher.QueryResult     as Result
 import qualified Text.ScopeSearcher.Scope           as Scope
+
 
 
 searcherData :: Command State Items
@@ -47,7 +46,7 @@ open = do
 openWith :: Maybe NodeId -> Position -> Command State ()
 openWith nodeId pos = do
     GA.sendEvent GA.NodeSearcher
-    Global.withSearcher $ Store.modifyM_ $ do
+    Global.modifySearcher $ do
         Searcher.input    .= def
         Searcher.nodeId   .= nodeId
         Searcher.position .= pos
@@ -58,22 +57,22 @@ openWith nodeId pos = do
 
 close :: Command State ()
 close = do
-    Global.withSearcher $ Store.modify_ $ Searcher.visible .~ False
+    Global.modifySearcher $ Searcher.visible .= False
     liftIO App.focus
 
 moveDown :: Command State ()
-moveDown = Global.withSearcher $ Store.modifyM_ $ do
+moveDown = Global.modifySearcher $ do
     items <- length <$> use Searcher.results
     Searcher.selected %= \p -> (p + 1) `mod` items
 
 moveUp :: Command State ()
-moveUp = Global.withSearcher $ Store.modifyM_ $ do
+moveUp = Global.modifySearcher $ do
     items <- length <$> use Searcher.results
     Searcher.selected %= \p -> (p - 1) `mod` items
 
 accept :: Command State ()
 accept = do
-    searcher <- Global.withSearcher $ Store.get
+    searcher <- Global.getSearcher
     pos <- translateToWorkspace (searcher ^. Searcher.position)
     let selected  = searcher ^. Searcher.selected
         mayNodeId = searcher ^. Searcher.nodeId
@@ -132,8 +131,8 @@ scopedData = do
     selected   <- selectedNodes
     mscope <- case selected of
             []     -> return Nothing
-            [wf]   -> do
-                let nodeId = wf ^. widget . Node.nodeId
+            [node]   -> do
+                let nodeId = node ^. Node.nodeId
                 mvt <- preuse $ Global.graph . Graph.nodesMap . ix nodeId . NodeAPI.ports . ix (Port.OutPortId Port.All) . Port.valueType
                 return $ case mvt of
                     Nothing -> Nothing
@@ -157,7 +156,7 @@ querySearch :: Text -> Command State ()
 querySearch query = do
     sd <- scopedData
     let items = Scope.searchInScope sd query
-    Global.withSearcher $ Store.modifyM_ $ do
+    Global.modifySearcher $ do
         Searcher.input .= query
         s <- use Searcher.selected
         when (s >= length items) $

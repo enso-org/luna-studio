@@ -13,7 +13,8 @@ import qualified Empire.API.Data.ValueType    as ValueType
 import qualified Event.UI                     as UI
 import           Luna.Studio.Prelude          hiding (group)
 import qualified Luna.Studio.React.Event.Node as Node
-import           Luna.Studio.React.Model.Node (Node, NodeId)
+import           Luna.Studio.React.Model.App (App)
+import           Luna.Studio.React.Model.Node (NodeId)
 import           Luna.Studio.React.Model.Port (Port)
 import qualified Luna.Studio.React.Model.Port as Port
 import           Luna.Studio.React.Store      (Ref, dispatch)
@@ -21,10 +22,10 @@ import qualified Luna.Studio.State.Slider     as Slider
 
 
 
-portControl_ :: Ref Node -> NodeId -> Bool -> Port -> ReactElementM ViewEventHandler ()
+portControl_ :: Ref App -> NodeId -> Bool -> Port -> ReactElementM ViewEventHandler ()
 portControl_ ref nodeId isLiteral port = React.viewWithSKey portControl "portControl" (ref, nodeId, isLiteral, port) mempty
 
-portControl :: ReactView (Ref Node, NodeId, Bool, Port)
+portControl :: ReactView (Ref App, NodeId, Bool, Port)
 portControl = React.defineView "portControl" $ \(ref, nodeId, isLiteral, port) ->
     let portRef = toAnyPortRef nodeId $ port ^. Port.portId
     in case port ^. Port.portId of
@@ -32,10 +33,10 @@ portControl = React.defineView "portControl" $ \(ref, nodeId, isLiteral, port) -
         OutPortId All     -> when isLiteral $ inPortControl_ ref portRef port
         _                 -> return ()
 
-inPortControl_ :: Ref Node -> AnyPortRef -> Port -> ReactElementM ViewEventHandler ()
+inPortControl_ :: Ref App -> AnyPortRef -> Port -> ReactElementM ViewEventHandler ()
 inPortControl_ ref portRef port = React.viewWithSKey inPortControl "inPortControl" (ref, portRef, port) mempty
 
-inPortControl :: ReactView (Ref Node, AnyPortRef, Port)
+inPortControl :: ReactView (Ref App, AnyPortRef, Port)
 inPortControl = React.defineView "inPortControl" $ \(ref, portRef, port) ->
     div_
         [ "key" $= fromString (show $ port ^. Port.portId)

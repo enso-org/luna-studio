@@ -5,12 +5,12 @@ module Luna.Studio.Action.Breadcrumbs
 import           Empire.API.Data.Breadcrumb (Breadcrumb (..), BreadcrumbItem, Named)
 import           Luna.Studio.Action.Command (Command)
 import           Luna.Studio.Prelude        hiding (group, set)
-import qualified Luna.Studio.React.Store    as Store
 import           Luna.Studio.State.Global   (State)
 import qualified Luna.Studio.State.Global   as Global
+import qualified Luna.Studio.React.Model.App          as App
 
 
 
 set :: Breadcrumb (Named BreadcrumbItem)-> Command State ()
 set breadcrumbs = do
-    Global.withBreadcrumbs $ Store.modify_ $ const breadcrumbs
+    Global.modifyApp $ App.breadcrumbs .= breadcrumbs

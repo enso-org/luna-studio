@@ -15,8 +15,7 @@ import           React.Flux
 import qualified Event.Event                        as Event
 import           Event.UI                           (UIEvent)
 import           Luna.Studio.Prelude                as P hiding (transform)
-import           Luna.Studio.React.Model.App        (App (App))
-import qualified Luna.Studio.React.Model.NodeEditor as NodeEditor
+import           Luna.Studio.React.Model.App        (App)
 import           Luna.Studio.React.Store.Ref        as X
 
 
@@ -39,4 +38,4 @@ create a = do
     create' se a
 
 createApp :: MonadIO m => SendEvent -> m (Ref App)
-createApp = runReaderT (create =<< (App <$> create def <*> (create =<< (NodeEditor.mk <$> create def)) <*> create def <*> create def))
+createApp = runReaderT $ create def

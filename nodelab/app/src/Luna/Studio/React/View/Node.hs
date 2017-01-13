@@ -9,6 +9,7 @@ import           Empire.API.Data.Port                   (InPort (..), PortId (..
 import qualified Event.UI                               as UI
 import           Luna.Studio.Action.Geometry            (countSameTypePorts, isPortSingle)
 import           Luna.Studio.Data.Matrix                (transformTranslateToSvg)
+import           Luna.Studio.React.Model.App    (App)
 import           Luna.Studio.Data.Vector                (x, y)
 import qualified Luna.Studio.Event.Mouse                as Mouse
 import           Luna.Studio.Prelude
@@ -18,7 +19,7 @@ import qualified Luna.Studio.React.Model.Node           as Node
 import qualified Luna.Studio.React.Model.NodeProperties as Properties
 import           Luna.Studio.React.Model.Port           (Port (..))
 import qualified Luna.Studio.React.Model.Port           as Port
-import           Luna.Studio.React.Store                (Ref, dispatch, dt)
+import           Luna.Studio.React.Store                (Ref, dispatch)
 import           Luna.Studio.React.View.NodeProperties  (nodeProperties_)
 import           Luna.Studio.React.View.Port            (portExpanded_, port_)
 import           Luna.Studio.React.View.Visualization   (visualization_)
@@ -29,25 +30,23 @@ import qualified React.Flux                             as React
 objName :: JSString
 objName = "node"
 
-handleMouseDown :: Ref Node -> NodeId -> Event -> MouseEvent -> [SomeStoreAction]
+handleMouseDown :: Ref App -> NodeId -> Event -> MouseEvent -> [SomeStoreAction]
 handleMouseDown ref nodeId e m = do
     if (Mouse.withoutMods m Mouse.leftButton) then
         stopPropagation e : dispatch ref (UI.NodeEvent $ Node.MouseDown m nodeId)
     else []
 
-ports :: Ref Node -> [Port] -> ReactElementM ViewEventHandler ()
+ports :: Ref App -> [Port] -> ReactElementM ViewEventHandler ()
 ports nodeRef ports = forM_ ports $ \port -> port_ nodeRef port (countSameTypePorts port ports) (isPortSingle port ports)
 
 
-portsExpanded :: Ref Node -> [Port] -> ReactElementM ViewEventHandler ()
+portsExpanded :: Ref App -> [Port] -> ReactElementM ViewEventHandler ()
 portsExpanded nodeRef ports = forM_ ports $ \port -> portExpanded_ nodeRef port
 
 --TODO inline div and others
-node :: Ref Node -> ReactView ()
-node ref = React.defineControllerView
-    objName ref $ \store () -> do
-        let n         = store ^. dt
-            nodeId    = n ^. Node.nodeId
+node :: ReactView (Ref App, Node)
+node = React.defineView objName $ \(ref, n) -> do
+        let nodeId    = n ^. Node.nodeId
             pos       = n ^. Node.position
             nodePorts = Map.elems $ n ^. Node.ports
             offsetX   = show $ pos ^. x
@@ -97,5 +96,5 @@ node ref = React.defineControllerView
                     ports ref $ filter (\port -> (port ^. Port.portId) == InPortId Self) nodePorts
 
 
-node_ :: NodeId -> Ref Node -> ReactElementM ViewEventHandler ()
-node_ nodeId ref = React.viewWithSKey (node ref) (fromString $ show nodeId) () mempty
+node_ :: Ref App -> Node -> ReactElementM ViewEventHandler ()
+node_ ref model = React.viewWithSKey node (fromString $ show $ model ^. Node.nodeId) (ref, model) mempty

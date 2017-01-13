@@ -23,11 +23,10 @@ import           Luna.Studio.Prelude
 import qualified Luna.Studio.React.Event.App  as App
 import qualified Luna.Studio.React.Event.Node as Node
 import qualified Luna.Studio.React.Model.Node as Model
-import           Luna.Studio.React.Store      (widget, _widget)
-import qualified Luna.Studio.React.Store      as Store
 import           Luna.Studio.State.Drag       (DragHistory (..))
 import qualified Luna.Studio.State.Drag       as Drag
 import           Luna.Studio.State.Global     (State)
+import qualified Luna.Studio.React.Model.NodeEditor as NodeEditor
 import qualified Luna.Studio.State.Global     as Global
 import qualified Luna.Studio.State.Graph      as Graph
 import           React.Flux                   (MouseEvent)
@@ -46,11 +45,11 @@ toAction _                                    = Nothing
 startDrag :: NodeId -> MouseEvent -> Bool -> Command State ()
 startDrag nodeId evt snapped = do
     coord <- workspacePosition evt
-    mayDraggedNodeRef <- Global.getNode nodeId
-    withJust mayDraggedNodeRef $ \draggedNodeRef -> do
-        isSelected <- view Model.isSelected <$> Store.get draggedNodeRef
+    mayNode <- Global.getNode nodeId
+    withJust mayNode $ \node -> do
+        let isSelected = node ^. Model.isSelected
         when (not isSelected) $ selectNodes [nodeId]
-        nodes <- map _widget <$> selectedNodes
+        nodes <- selectedNodes
         let nodesPos = Map.fromList $ (view Model.nodeId &&& view Model.position) <$> nodes
         if snapped
             then do
@@ -80,9 +79,8 @@ handleMove evt snapped = do
 
 moveNodes :: Map NodeId Position -> Command State ()
 moveNodes nodesPos = do
-    forM_ (Map.toList nodesPos) $ \(nodeId, pos) -> do
-        Global.withNode nodeId $ mapM_ $ Store.modify_ $
-            Model.position .~ pos
+    Global.modifyNodeEditor $ forM_ (Map.toList nodesPos) $ \(nodeId, pos) -> do
+        NodeEditor.nodes . at nodeId %= fmap (Model.position .~ pos)
     updateConnectionsForNodes $ Map.keys nodesPos
 
 stopDrag :: MouseEvent -> Command State ()
@@ -94,7 +92,7 @@ stopDrag evt = do
         if (start /= coord)
             then do
                 selected <- selectedNodes
-                let nodesToUpdate = (\w -> (w ^. widget . Model.nodeId, w ^. widget . Model.position)) <$> selected
+                let nodesToUpdate = (\n -> (n ^. Model.nodeId, n ^. Model.position)) <$> selected
                 updates <- forM nodesToUpdate $ \(wid, pos) -> do
                     Global.graph . Graph.nodesMap . ix wid . Node.position .= toTuple (pos ^. vector)
                     newMeta <- preuse $ Global.graph . Graph.nodesMap . ix wid . Node.nodeMeta

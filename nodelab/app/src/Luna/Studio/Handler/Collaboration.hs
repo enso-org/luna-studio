@@ -7,6 +7,7 @@ import           Luna.Studio.Prelude
 
 import qualified Data.DateTime                    as DT
 import qualified Data.Map.Lazy                    as Map
+import qualified Data.HashMap.Strict                    as HashMap
 import qualified Luna.Studio.Batch.Workspace      as Workspace
 
 import           Empire.API.Data.GraphLocation    (GraphLocation)
@@ -18,14 +19,13 @@ import qualified Event.Event                      as Event
 import           Luna.Studio.Action.Batch         (collaborativeTouch)
 import           Luna.Studio.Action.Collaboration (updateClient)
 import           Luna.Studio.Action.Command       (Command)
-import           Luna.Studio.Action.Graph         (allNodes, selectedNodes)
+import           Luna.Studio.Action.Graph         (selectedNodes)
 import           Luna.Studio.State.Collaboration  (ColorId)
 import           Luna.Studio.State.Global         (State)
+import qualified Luna.Studio.React.Model.NodeEditor     as NodeEditor
 import qualified Luna.Studio.State.Global         as Global
 
 import qualified Luna.Studio.React.Model.Node     as NodeModel
-import           Luna.Studio.React.Store          (widget)
-import qualified Luna.Studio.React.Store          as Store
 
 
 
@@ -45,16 +45,16 @@ isCurrentLocationAndGraphLoaded location = do
 touchCurrentlySelected :: Command State ()
 touchCurrentlySelected = do
     selected <- selectedNodes
-    let nodeIds = view (widget . NodeModel.nodeId) <$> selected
+    let nodeIds = view NodeModel.nodeId <$> selected
     collaborativeTouch nodeIds
 
 expireTouchedNodes :: Command State ()
 expireTouchedNodes = do
-    widgetIds   <- allNodes
     currentTime <- use Global.lastEventTimestamp
-    forM_ widgetIds $ Store.modify_ $
-        (  NodeModel.collaboration . NodeModel.touch  %~ Map.filter (\(ts, _) -> DT.diffSeconds ts currentTime > 0))
-        . (NodeModel.collaboration . NodeModel.modify %~ Map.filter (\ ts     -> DT.diffSeconds ts currentTime > 0))
+    Global.modifyNodeEditor $ do
+        let update = (  NodeModel.collaboration . NodeModel.touch  %~ Map.filter (\(ts, _) -> DT.diffSeconds ts currentTime > 0))
+                     . (NodeModel.collaboration . NodeModel.modify %~ Map.filter (\ ts     -> DT.diffSeconds ts currentTime > 0))
+        NodeEditor.nodes %= HashMap.map update
 
 everyNSeconds :: Integer -> Command State () -> Command State ()
 everyNSeconds interval action = do
@@ -66,17 +66,18 @@ toAction (Event.Batch ev) = Just $ case ev of
     CollaborationUpdate update -> do
         shouldProcess <- isCurrentLocationAndGraphLoaded (update ^. Collaboration.location)
         let clientId = update ^. Collaboration.clientId
-            touchNodes nodeIds setter = forM_ nodeIds $ \nodeId -> do
-                Global.withNode nodeId $ mapM_ $ Store.modify_ setter
+            touchNodes nodeIds setter = Global.modifyNodeEditor $
+                forM_ nodeIds $ \nodeId ->
+                    NodeEditor.nodes . at nodeId %= fmap setter
         myClientId   <- use Global.clientId
         currentTime  <- use Global.lastEventTimestamp
         when (shouldProcess && clientId /= myClientId) $ do
             clientColor <- updateClient clientId
             case update ^. Collaboration.event of
-                Collaboration.Touch       nodeIds -> touchNodes nodeIds $ NodeModel.collaboration . NodeModel.touch  . at clientId ?~ (DT.addSeconds (2 * refreshTime) currentTime, clientColor)
+                Collaboration.Touch       nodeIds -> touchNodes nodeIds $  NodeModel.collaboration . NodeModel.touch  . at clientId ?~ (DT.addSeconds (2 * refreshTime) currentTime, clientColor)
                 Collaboration.Modify      nodeIds -> touchNodes nodeIds $ (NodeModel.collaboration . NodeModel.modify . at clientId ?~ DT.addSeconds modifyTime currentTime)
                                                                         . (NodeModel.collaboration . NodeModel.touch  . at clientId %~ bumpTime (DT.addSeconds modifyTime currentTime) clientColor)
-                Collaboration.CancelTouch nodeIds -> touchNodes nodeIds $ NodeModel.collaboration . NodeModel.touch  . at clientId .~ Nothing
+                Collaboration.CancelTouch nodeIds -> touchNodes nodeIds $  NodeModel.collaboration . NodeModel.touch  . at clientId .~ Nothing
                 Collaboration.Refresh             -> touchCurrentlySelected
 
     _ -> return ()

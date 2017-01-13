@@ -11,7 +11,7 @@ import           Luna.Studio.Action.Geometry        (lineHeight, nodeRadius, nod
 import           Luna.Studio.Data.Color             (toJSString)
 import qualified Luna.Studio.Event.Mouse            as Mouse
 import qualified Luna.Studio.React.Event.Connection as Connection
-import           Luna.Studio.React.Model.Node       (Node)
+import           Luna.Studio.React.Model.App       (App)
 import           Luna.Studio.React.Model.Port       (Port (..))
 import qualified Luna.Studio.React.Model.Port       as Port
 import           Luna.Studio.React.Store            (Ref, dispatch)
@@ -26,18 +26,18 @@ name = "port"
 show2 :: Double -> String
 show2 a = showFFloat (Just 2) a "" -- limit Double to two decimal numbers
 
-handleMouseDown :: Ref Node -> AnyPortRef -> Event -> MouseEvent -> [SomeStoreAction]
+handleMouseDown :: Ref App -> AnyPortRef -> Event -> MouseEvent -> [SomeStoreAction]
 handleMouseDown ref portRef e m = do
     if (Mouse.withoutMods m Mouse.leftButton) then
         stopPropagation e : dispatch ref (UI.ConnectionEvent $ Connection.StartConnection m portRef)
     else []
 
-handleMouseUp :: Ref Node -> AnyPortRef -> Event -> MouseEvent -> [SomeStoreAction]
+handleMouseUp :: Ref App -> AnyPortRef -> Event -> MouseEvent -> [SomeStoreAction]
 handleMouseUp ref portRef _e m = do
     dispatch ref (UI.ConnectionEvent $ Connection.EndConnection m portRef)
 
 
-port :: ReactView (Ref Node, Int, Bool, Port)
+port :: ReactView (Ref App, Int, Bool, Port)
 port = React.defineView name $ \(ref, numOfPorts, isOnly, p) ->
     case p ^. Port.portId of
         InPortId   Self          ->                portSelf_   ref p
@@ -46,7 +46,7 @@ port = React.defineView name $ \(ref, numOfPorts, isOnly, p) ->
         InPortId  (Arg        i) ->                portIO_     ref p i numOfPorts True
         OutPortId (Projection i) ->                portIO_     ref p i numOfPorts False
 
-portExpanded :: ReactView (Ref Node, Port)
+portExpanded :: ReactView (Ref App, Port)
 portExpanded = React.defineView name $ \(ref, p) ->
     case p ^. Port.portId of
         InPortId   Self          -> portSelf_       ref p
@@ -54,14 +54,14 @@ portExpanded = React.defineView name $ \(ref, p) ->
         InPortId  (Arg        i) -> portIOExpanded_ ref p i True
         OutPortId (Projection i) -> portIOExpanded_ ref p i False
 
-port_ :: Ref Node -> Port -> Int -> Bool -> ReactElementM ViewEventHandler ()
+port_ :: Ref App -> Port -> Int -> Bool -> ReactElementM ViewEventHandler ()
 port_ ref p numOfPorts isOnly = React.viewWithSKey port (fromString $ show $ p ^. Port.portId) (ref, numOfPorts, isOnly, p) mempty where
 
-portExpanded_ :: Ref Node -> Port -> ReactElementM ViewEventHandler ()
+portExpanded_ :: Ref App -> Port -> ReactElementM ViewEventHandler ()
 portExpanded_ ref p = React.viewWithSKey portExpanded (fromString $ show $ p ^. Port.portId) (ref, p) mempty
 
 
-portSelf_ :: Ref Node -> Port -> ReactElementM ViewEventHandler ()
+portSelf_ :: Ref App -> Port -> ReactElementM ViewEventHandler ()
 portSelf_ ref port =
     let portRef = port ^. Port.portRef
         color   = toJSString $ port ^. Port.color
@@ -80,7 +80,7 @@ portSelf_ ref port =
             , "key"       $= (fromString (show portId ) <> "b")
             ] mempty
 
-portSingle_ :: Ref Node -> Port -> ReactElementM ViewEventHandler ()
+portSingle_ :: Ref App -> Port -> ReactElementM ViewEventHandler ()
 portSingle_ ref port = do
 
     let portRef = port ^. Port.portRef
@@ -106,7 +106,7 @@ portSingle_ ref port = do
             ] mempty
 
 
-portIO_ :: Ref Node -> Port -> Int -> Int -> Bool -> ReactElementM ViewEventHandler ()
+portIO_ :: Ref App -> Port -> Int -> Int -> Bool -> ReactElementM ViewEventHandler ()
 portIO_ ref port num numOfPorts isInput = do
     let portRef = port ^. Port.portRef
         portId  = port ^. Port.portId
@@ -155,7 +155,7 @@ portIO_ ref port num numOfPorts isInput = do
 
 
 
-portIOExpanded_ :: Ref Node -> Port -> Int -> Bool -> ReactElementM ViewEventHandler ()
+portIOExpanded_ :: Ref App -> Port -> Int -> Bool -> ReactElementM ViewEventHandler ()
 portIOExpanded_ ref port num isInput = do
 
     let portRef = port ^. Port.portRef

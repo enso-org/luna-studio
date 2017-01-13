@@ -13,7 +13,6 @@ import           Luna.Studio.Data.Vector               (Position (Position), Scr
                                                         x, y)
 import           Luna.Studio.Prelude
 import qualified Luna.Studio.React.Model.NodeEditor    as NodeEditor
-import qualified Luna.Studio.React.Store               as Store
 import           Luna.Studio.State.Global              (State)
 import qualified Luna.Studio.State.Global              as Global
 
@@ -31,7 +30,7 @@ getScreenSize = liftIO $ Size . fromTuple <$> ((,) <$> screenWidth <*> screenHei
 
 translateToWorkspace :: ScreenPosition -> Command State (Position)
 translateToWorkspace pos = do
-    transformMatrix <- Global.withNodeEditor $ Store.use $ NodeEditor.screenTransform . screenToLogical
+    transformMatrix <- view (NodeEditor.screenTransform . screenToLogical) <$> Global.getNodeEditor
     let posMatrix      = Matrix.fromList 1 4 [ pos ^. x, pos ^. y, 1, 1]
         posInWorkspace = multStd2 posMatrix transformMatrix
     return $ Position $ fromTuple (getElem 1 1 posInWorkspace, getElem 1 2 posInWorkspace)

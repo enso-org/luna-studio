@@ -5,7 +5,7 @@ import qualified Data.Text                              as Text
 import qualified Event.UI                               as UI
 import           Luna.Studio.Prelude
 import qualified Luna.Studio.React.Event.Node           as Node
-import           Luna.Studio.React.Model.Node           (Node)
+import           Luna.Studio.React.Model.App           (App)
 import           Luna.Studio.React.Model.NodeProperties (NodeProperties)
 import qualified Luna.Studio.React.Model.NodeProperties as Prop
 import           Luna.Studio.React.Store                (Ref, dispatch)
@@ -19,7 +19,7 @@ objName :: JSString
 objName = "node-properties"
 
 
-nodeProperties :: ReactView (Ref Node, NodeProperties)
+nodeProperties :: ReactView (Ref App, NodeProperties)
 nodeProperties = React.defineView objName $ \(ref, p) ->
     let nodeId = p ^. Prop.nodeId
     in  div_ [ "key"       $= "properties"
@@ -68,7 +68,7 @@ nodeProperties = React.defineView objName $ \(ref, p) ->
 
 
 
-nodeProperties_ :: Ref Node -> NodeProperties -> ReactElementM ViewEventHandler ()
+nodeProperties_ :: Ref App -> NodeProperties -> ReactElementM ViewEventHandler ()
 nodeProperties_ ref prop = React.viewWithSKey nodeProperties objName (ref, prop) mempty
 
 

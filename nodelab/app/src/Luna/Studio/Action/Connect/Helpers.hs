@@ -14,7 +14,6 @@ import           Luna.Studio.Data.Vector             (Position)
 import           Luna.Studio.Prelude
 import           Luna.Studio.React.Model.Connection  (CurrentConnection (CurrentConnection))
 import qualified Luna.Studio.React.Model.NodeEditor  as NodeEditor
-import qualified Luna.Studio.React.Store             as Store
 import           Luna.Studio.State.Global            (State)
 import qualified Luna.Studio.State.Global            as Global
 
@@ -23,9 +22,8 @@ createCurrentConnection :: AnyPortRef -> Maybe Connection -> Position -> Positio
 createCurrentConnection portRef modifiedConn srcPos dstPos color = do
     withJust modifiedConn $ \conn -> localRemoveConnections [conn ^. Connection.dst]
     let connection = CurrentConnection portRef modifiedConn srcPos dstPos color
-    Global.withNodeEditor $ Store.modifyM_ $ do
-        connectionRef <- lift $ Store.create connection
-        NodeEditor.currentConnection ?= connectionRef
+    Global.modifyNodeEditor $ do
+        NodeEditor.currentConnection ?= connection
 
 toValidConnection :: AnyPortRef -> AnyPortRef -> Maybe (OutPortRef, InPortRef)
 toValidConnection src' dst' = (normalize' src' dst') >>= toOtherNode where

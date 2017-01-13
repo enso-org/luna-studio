@@ -6,6 +6,7 @@ import           Data.Word                            (Word8)
 import           Luna.Studio.Data.Vector              (Position (Position), Vector2 (Vector2))
 import           Luna.Studio.Prelude
 
+import qualified Control.Monad.State                  as M
 import           Data.Aeson                           (ToJSON, toJSON)
 import           Data.DateTime                        (DateTime)
 import           Data.Set                             (Set)
@@ -24,9 +25,10 @@ import           Luna.Studio.React.Model.App          (App)
 import qualified Luna.Studio.React.Model.App          as App
 import           Luna.Studio.React.Model.Breadcrumbs  (Breadcrumbs)
 import           Luna.Studio.React.Model.CodeEditor   (CodeEditor)
-import           Luna.Studio.React.Model.Connection   (Connection)
+import           Luna.Studio.Data.ConnectionPen   (ConnectionPen)
 import           Luna.Studio.React.Model.Node         (Node)
 import           Luna.Studio.React.Model.NodeEditor   (NodeEditor)
+import           Luna.Studio.React.Model.Connection    (Connection, CurrentConnection)
 import qualified Luna.Studio.React.Model.NodeEditor   as NodeEditor
 import           Luna.Studio.React.Model.Searcher     (Searcher)
 import           Luna.Studio.React.Model.SelectionBox (SelectionBox)
@@ -39,7 +41,6 @@ import qualified Luna.Studio.State.Drag               as Drag
 import qualified Luna.Studio.State.Graph              as Graph
 import qualified Luna.Studio.State.MultiSelection     as MultiSelection
 import qualified Luna.Studio.State.Slider             as Slider
-import qualified Luna.Studio.State.UIRegistry         as UIRegistry
 
 
 
@@ -49,13 +50,13 @@ foreign import javascript safe "{}" defJsState :: Event.JSState
 -- TODO split to more states
 data State = State { _mousePos           :: Position
                    , _graph              :: Graph.State
+                   , _appDirty           :: Bool --TODO refactor
                    , _cameraState        :: Maybe Camera.State
                    , _multiSelection     :: MultiSelection.State
                    , _selectionHistory   :: [Set Node.NodeId]
                    , _drag               :: Drag.State
                    , _slider             :: Maybe Slider.State
                    -- TODO[react]: wyjebawszy
-                   , _uiRegistry         :: UIRegistry.State
                    , _connectionPen      :: ConnectionPen.State
                    , _workspace          :: Workspace
                    , _lastEvent          :: Maybe Event.Event
@@ -79,45 +80,68 @@ instance ToJSON (Ref App) where
 
 makeLenses ''State
 
+
 withApp :: (Ref App -> Command State r) -> Command State r
 withApp action = action =<< use app
 
-withNodeEditor :: (Ref NodeEditor -> Command State r) -> Command State r
-withNodeEditor action = withApp $ (action . view App.nodeEditor) <=< Store.get
+modify lens action = do
+    appDirty .= True
+    withApp $ Store.continueModify $ zoom lens action
 
-withCodeEditor :: (Ref CodeEditor -> Command State r) -> Command State r
-withCodeEditor action = withApp $ (action . view App.codeEditor) <=< Store.get
+get lens = withApp $ return . view lens <=< Store.get
 
-withBreadcrumbs :: (Ref Breadcrumbs -> Command State r) -> Command State r
-withBreadcrumbs action = withApp $ (action . view App.breadcrumbs) <=< Store.get
+modifyApp :: M.State App r -> Command State r
+modifyApp action = do
+    appDirty .= True
+    withApp $ Store.continueModify action
 
-withSearcher :: (Ref Searcher -> Command State r) -> Command State r
-withSearcher action = withApp $ (action . view App.searcher) <=< Store.get
+renderIfNeeded :: Command State ()
+renderIfNeeded =
+    whenM (use appDirty) $ do
+        withApp Store.commit
+        appDirty .= False
 
-withSelectionBox :: (Ref SelectionBox -> Command State r) -> Command State r
-withSelectionBox action = withNodeEditor $ (action . view NodeEditor.selectionBox) <=< Store.get
+modifyNodeEditor :: M.State NodeEditor r -> Command State r
+modifyNodeEditor = modify App.nodeEditor
 
-withNode :: NodeId -> (Maybe (Ref Node) -> Command State r) -> Command State r
-withNode nodeId action = withNodeEditor $ (action . view (NodeEditor.nodes . at nodeId)) <=< Store.get
+getNodeEditor :: Command State NodeEditor
+getNodeEditor = get App.nodeEditor
 
-getNode :: NodeId -> Command State (Maybe (Ref Node))
-getNode nodeId = withNode nodeId return
+modifyCodeEditor :: M.State CodeEditor r -> Command State r
+modifyCodeEditor = modify App.codeEditor
 
-withConnection :: ConnectionId -> (Maybe (Ref Connection) -> Command State r) -> Command State r
-withConnection connectionId action =
-    withNodeEditor $ (action . view (NodeEditor.connections . at connectionId)) <=< Store.get
+modifyBreadcrumbs :: M.State Breadcrumbs r -> Command State r
+modifyBreadcrumbs = modify App.breadcrumbs
 
-getConnection :: ConnectionId -> Command State (Maybe (Ref Connection))
-getConnection connectionId = withConnection connectionId return
+modifySearcher :: M.State Searcher r -> Command State r
+modifySearcher = modify App.searcher
+
+getSearcher :: Command State Searcher
+getSearcher = get App.searcher
+
+modifySelectionBox :: M.State SelectionBox r -> Command State r
+modifySelectionBox = modify (App.nodeEditor . NodeEditor.selectionBox)
+
+modifyConnectionPen :: Monoid r => M.State ConnectionPen r -> Command State r
+modifyConnectionPen = modify (App.nodeEditor . NodeEditor.connectionPen) . zoom traverse
+
+modifyCurrentConnection :: Monoid r => M.State CurrentConnection r -> Command State r
+modifyCurrentConnection = modify (App.nodeEditor . NodeEditor.currentConnection) . zoom traverse
+
+modifyNode :: Monoid r => NodeId -> M.State Node r -> Command State r
+modifyNode nodeId = modify (App.nodeEditor . NodeEditor.nodes . at nodeId) . zoom traverse
+
+getNode :: NodeId -> Command State (Maybe Node)
+getNode nodeId = get (App.nodeEditor . NodeEditor.nodes . at nodeId)
+
+modifyConnection :: Monoid r => ConnectionId -> M.State Connection r -> Command State r
+modifyConnection connectionId = modify (App.nodeEditor . NodeEditor.connections . at connectionId) . zoom traverse
+
+getConnection :: ConnectionId -> Command State (Maybe Connection)
+getConnection connectionId = get (App.nodeEditor . NodeEditor.connections . at connectionId)
 
 initialState :: DateTime -> Collaboration.ClientId -> StdGen -> Maybe Int -> Ref App -> State
-initialState = State (Position (Vector2 200 200)) def Nothing def def def def def def def def def defJsState def def
-
-inRegistry :: Command UIRegistry.State a -> Command State a
-inRegistry = zoom uiRegistry
-
-inRegistry_ :: Command UIRegistry.State a -> Command State ()
-inRegistry_ = void . zoom uiRegistry
+initialState = State (Position (Vector2 200 200)) def False def def def def def def def def def defJsState def def
 
 nextRandom :: Command State Word8
 nextRandom = do

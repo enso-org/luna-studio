@@ -16,10 +16,10 @@ import           Luna.Studio.Data.Matrix               (homothetyMatrix, inverte
 import           Luna.Studio.Data.Vector               (ScreenPosition, vector, x, y)
 import           Luna.Studio.Prelude
 import qualified Luna.Studio.React.Model.NodeEditor    as NodeEditor
-import qualified Luna.Studio.React.Store               as Store
 import qualified Luna.Studio.State.Camera              as Camera
 import           Luna.Studio.State.Global              (State)
 import qualified Luna.Studio.State.Global              as Global
+
 
 
 minCamFactor, maxCamFactor, dragZoomSpeed, wheelZoomSpeed, zoomFactorStep :: Double
@@ -37,7 +37,7 @@ restrictFactor scale factor
 
 zoomCamera :: ScreenPosition -> Double -> Command State ()
 zoomCamera zoomCenter factor = do
-    transformMatrix <- Global.withNodeEditor $ Store.use $ NodeEditor.screenTransform . logicalToScreen
+    transformMatrix <- view (NodeEditor.screenTransform . logicalToScreen) <$> Global.getNodeEditor
     let s = restrictFactor (getElem 1 1 transformMatrix) factor
     modifyCamera (homothetyMatrix zoomCenter s) (invertedHomothetyMatrix zoomCenter s)
 
@@ -62,7 +62,7 @@ zoomDrag actPos = do
         _ -> return ()
 
 resetZoom :: Command State ()
-resetZoom = Global.withNodeEditor $ Store.modifyM_ $ do
+resetZoom = Global.modifyNodeEditor $ do
     NodeEditor.screenTransform . logicalToScreen %= (setElem 1 (1,1) . setElem 1 (2,2))
     NodeEditor.screenTransform . screenToLogical %= (setElem 1 (1,1) . setElem 1 (2,2))
 

@@ -13,9 +13,6 @@ import qualified Luna.Studio.Data.ConnectionPen     as ConnectionPen
 import           Luna.Studio.Event.Mouse            (workspacePosition)
 import           Luna.Studio.Prelude
 import qualified Luna.Studio.React.Model.NodeEditor as NodeEditor
-import qualified Luna.Studio.React.Store            as Store
-import           Luna.Studio.React.Store.Ref        (Ref)
-import qualified Luna.Studio.React.Store.Ref        as Ref
 import           Luna.Studio.State.Global           (State)
 import qualified Luna.Studio.State.Global           as Global
 import           React.Flux                         (MouseEvent)
@@ -24,9 +21,8 @@ createConnectionPen :: Mode -> MouseEvent -> Command State ()
 createConnectionPen mode evt = do
     pos <- workspacePosition evt
     let connectionPen = ConnectionPen mode [pos] Nothing
-    Global.withNodeEditor $ Store.modifyM_ $ do
-        connectionPenRef <- lift $ Store.create connectionPen
-        NodeEditor.connectionPen ?= connectionPenRef
+    Global.modifyNodeEditor $
+        NodeEditor.connectionPen ?= connectionPen
 
 startConnecting :: MouseEvent -> Command State ()
 startConnecting = createConnectionPen Connecting
@@ -34,27 +30,27 @@ startConnecting = createConnectionPen Connecting
 startDisconnecting :: MouseEvent -> Command State ()
 startDisconnecting = createConnectionPen Disconnecting
 
-whileConnectionPen :: Mode -> (Ref ConnectionPen -> Command State ()) -> Command State ()
+whileConnectionPen :: Mode -> (ConnectionPen -> Command State ()) -> Command State ()
 whileConnectionPen mode run = do
-    mayConnectionPenRef <- Global.withNodeEditor $ Store.use NodeEditor.connectionPen
-    withJust mayConnectionPenRef $ \connectionPenRef -> do
-        modeInState <- view ConnectionPen.mode <$> Ref.get connectionPenRef
-        when (modeInState == mode) $ run connectionPenRef
+    mayConnectionPen <- view NodeEditor.connectionPen <$> Global.getNodeEditor
+    withJust mayConnectionPen $ \connectionPen -> do
+        let modeInState = connectionPen ^. ConnectionPen.mode
+        when (modeInState == mode) $ run connectionPen
 
-whileConnecting :: (Ref ConnectionPen -> Command State ()) -> Command State ()
+whileConnecting :: (ConnectionPen -> Command State ()) -> Command State ()
 whileConnecting = whileConnectionPen Connecting
 
-whileDisconnecting :: (Ref ConnectionPen -> Command State ()) -> Command State ()
+whileDisconnecting :: (ConnectionPen -> Command State ()) -> Command State ()
 whileDisconnecting = whileConnectionPen Disconnecting
 
-handleMove :: MouseEvent -> Ref ConnectionPen -> Command State ()
+handleMove :: MouseEvent -> ConnectionPen -> Command State ()
 handleMove evt connectionPenRef = do
     pos <- workspacePosition evt
-    flip Store.modifyM_ connectionPenRef $ do
+    Global.modifyConnectionPen $
         ConnectionPen.history %= (pos:)
 
 resetConnectionPen :: Command State ()
-resetConnectionPen = Global.withNodeEditor $ Store.modifyM_ $ do
+resetConnectionPen = Global.modifyNodeEditor $
     NodeEditor.connectionPen .= Nothing
 
 

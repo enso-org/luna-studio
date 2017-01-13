@@ -12,31 +12,31 @@ module Luna.Studio.Action.Graph.Selection
      ) where
 
 import qualified Data.Set                                  as Set
+import qualified Data.HashMap.Strict as HashMap
+
 import           Empire.API.Data.Node                      (NodeId)
 import           Luna.Studio.Action.Batch                  (cancelCollaborativeTouch, collaborativeTouch)
 import           Luna.Studio.Action.Command                (Command)
 import           Luna.Studio.Action.Graph.Focus            (focusSelectedNode)
-import           Luna.Studio.Action.Graph.Lookup           (allNodes, allNodes')
+import           Luna.Studio.Action.Graph.Lookup           (allNodes, allNodeIds)
 import           Luna.Studio.Action.Graph.SelectionHistory (dropSelectionHistory, modifySelectionHistory)
 import           Luna.Studio.Prelude
 import           Luna.Studio.React.Model.Node              (Node)
 import qualified Luna.Studio.React.Model.Node              as Node
-import           Luna.Studio.React.Store                   (WRef (..), widget)
-import qualified Luna.Studio.React.Store                   as Store
-import           Luna.Studio.State.Global                  (State, inRegistry)
+import           Luna.Studio.State.Global                  (State)
 import qualified Luna.Studio.State.Global                  as Global
-import qualified Luna.Studio.State.UIRegistry              as UIRegistry
+import qualified Luna.Studio.React.Model.NodeEditor  as NodeEditor
+
 
 
 toggleSelect :: NodeId -> Command Global.State ()
 toggleSelect nodeId = do
-    mayNodeRef <- Global.getNode nodeId
-    withJust mayNodeRef $ \nodeRef -> do
-        isSelected <- view Node.isSelected <$> Store.get nodeRef
-        if isSelected
+    mayNode <- Global.getNode nodeId
+    withJust mayNode $ \node -> do
+        if node ^. Node.isSelected
             then do
-                Store.modify_ (Node.isSelected .~ False) nodeRef
-                selection <- map (view $ widget . Node.nodeId) <$> selectedNodes
+                Global.modifyNode nodeId $ Node.isSelected .= False
+                selection <- map (view Node.nodeId) <$> selectedNodes
                 case selection of
                     [] -> dropSelectionHistory
                     _  -> modifySelectionHistory selection
@@ -44,22 +44,16 @@ toggleSelect nodeId = do
 
 unselectAll :: Command State ()
 unselectAll = do
-    refs <- allNodes
-    nodesToCancelTouch <- forM refs $
-        Store.modifyIf (view Node.isSelected) (\node ->
-            ( node & Node.isSelected .~ False
-            , Just $ node ^. Node.nodeId))
-            (const Nothing)
-    inRegistry $ UIRegistry.focusedWidget .= def
-    cancelCollaborativeTouch $ catMaybes nodesToCancelTouch
+    nodesToCancelTouch <- map (view Node.nodeId) <$> selectedNodes
+    Global.modifyNodeEditor $
+        NodeEditor.nodes %= HashMap.map (Node.isSelected .~ False)
+    cancelCollaborativeTouch nodesToCancelTouch
 
 unselectAllAndDropSelectionHistory :: Command State ()
 unselectAllAndDropSelectionHistory = unselectAll >> dropSelectionHistory
 
 selectAll :: Command State ()
-selectAll = do
-    widgets <- allNodes'
-    selectNodes $ (view $ widget . Node.nodeId) <$> widgets
+selectAll = allNodeIds >>= selectNodes
 
 selectNodes :: [NodeId] -> Command State ()
 selectNodes nodeIds = unselectAll >> addToSelection nodeIds >>= modifySelectionHistory
@@ -68,11 +62,11 @@ selectNodes nodeIds = unselectAll >> addToSelection nodeIds >>= modifySelectionH
 -- If your new selection should be added to history launch modifySelectionHistory with ids from result.
 addToSelection :: [NodeId] -> Command State [NodeId]
 addToSelection nodeIds = do
-    nodeRefs <- fmap catMaybes $ mapM Global.getNode nodeIds
-    forM_ nodeRefs $ Store.modify_ (Node.isSelected .~ True)
+    Global.modifyNodeEditor $ forM_ nodeIds $ \nodeId ->
+        NodeEditor.nodes . at nodeId %= fmap (Node.isSelected .~ True)
     focusSelectedNode
     collaborativeTouch nodeIds
-    map (^. widget . Node.nodeId) <$> selectedNodes
+    map (view Node.nodeId) <$> selectedNodes
 
 selectPreviousNodes :: Command State ()
 selectPreviousNodes = do
@@ -87,7 +81,7 @@ selectPreviousNodes = do
                 [] -> selectPreviousNodes
                 _  -> modifySelectionHistory selection
 
-selectedNodes :: Command State [WRef Node]
+selectedNodes :: Command State [Node]
 selectedNodes = do
-    widgets <- allNodes'
-    return $ filter (^. widget . Node.isSelected) widgets
+    nodes <- allNodes
+    return $ filter (^. Node.isSelected) nodes

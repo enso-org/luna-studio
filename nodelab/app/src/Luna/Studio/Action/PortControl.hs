@@ -16,7 +16,6 @@ import           Luna.Studio.Data.Vector      (Position, x)
 import           Luna.Studio.Prelude
 import qualified Luna.Studio.React.Model.Node as Node
 import qualified Luna.Studio.React.Model.Port as Port
-import qualified Luna.Studio.React.Store      as Store
 import           Luna.Studio.State.Global     (State)
 import qualified Luna.Studio.State.Global     as Global
 import qualified Luna.Studio.State.Slider     as Slider
@@ -24,8 +23,8 @@ import qualified Luna.Studio.State.Slider     as Slider
 
 setPortDefault :: AnyPortRef -> DefaultValue.PortDefault -> Command State ()
 setPortDefault portRef defaultValue = do
-    Global.withNode (portRef ^. PortRef.nodeId) $ mapM_ $ Store.modify_ $
-        Node.ports . ix portRef . Port.state .~ PortAPI.WithDefault defaultValue
+    Global.modifyNode (portRef ^. PortRef.nodeId) $
+        Node.ports . ix portRef . Port.state .= PortAPI.WithDefault defaultValue
 
 
 startMoveSlider :: AnyPortRef -> Position -> Slider.InitValue -> Command State ()

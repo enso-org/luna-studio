@@ -10,8 +10,9 @@ import           Luna.Studio.Prelude
 import           Luna.Studio.React.Event.Connection (ModifiedEnd (Destination, Source))
 import qualified Luna.Studio.React.Event.Connection as Connection
 import           Luna.Studio.React.Model.Connection (Connection, CurrentConnection)
+import           Luna.Studio.React.Model.App (App)
 import qualified Luna.Studio.React.Model.Connection as Connection
-import           Luna.Studio.React.Store            (Ref, dispatch, dt)
+import           Luna.Studio.React.Store            (Ref, dispatch)
 import           Numeric                            (showFFloat)
 import           React.Flux
 import qualified React.Flux                         as React
@@ -23,14 +24,12 @@ name = "connection-editor"
 show2 :: Double -> String
 show2 a = showFFloat (Just 2) a "" -- limit Double to two decimal numbers
 
-connection :: Ref Connection -> ReactView ()
-connection connectionRef = React.defineControllerView
-    name connectionRef $ \connectionStore () -> do
-        let connection' = connectionStore ^. dt
-            connId      = connection' ^. Connection.connectionId
-            src         = connection' ^. Connection.from
-            dst         = connection' ^. Connection.to
-            color       = connection' ^. Connection.color
+connection :: ReactView (Ref App, Connection)
+connection = React.defineView name $ \(ref, model) -> do
+        let connId      = model ^. Connection.connectionId
+            src         = model ^. Connection.from
+            dst         = model ^. Connection.to
+            color       = model ^. Connection.color
             srcX        = src ^. x
             srcY        = src ^. y
             dstX        = dst ^. x
@@ -50,7 +49,7 @@ connection connectionRef = React.defineControllerView
                     , "strokeWidth" $= width
                     ] mempty
                 line_
-                    [ onMouseDown $ \e m -> stopPropagation e : dispatch connectionRef (UI.ConnectionEvent $ Connection.ModifyConnection m connId Source)
+                    [ onMouseDown $ \e m -> stopPropagation e : dispatch ref (UI.ConnectionEvent $ Connection.ModifyConnection m connId Source)
                     , "className"   $= "connection__select"
                     , "x1"          $= (fromString $ show2 srcX)
                     , "y1"          $= (fromString $ show2 srcY)
@@ -68,7 +67,7 @@ connection connectionRef = React.defineControllerView
                     , "strokeWidth" $= width
                     ] mempty
                 line_
-                    [ onMouseDown $ \e m -> stopPropagation e : dispatch connectionRef (UI.ConnectionEvent $ Connection.ModifyConnection m connId Destination)
+                    [ onMouseDown $ \e m -> stopPropagation e : dispatch ref (UI.ConnectionEvent $ Connection.ModifyConnection m connId Destination)
                     , "className"   $= "connection__select"
                     , "x1"          $= (fromString $ show2 midX)
                     , "y1"          $= (fromString $ show2 midY)
@@ -78,17 +77,15 @@ connection connectionRef = React.defineControllerView
                     ] mempty
 
 
-connection_ :: InPortRef -> Ref Connection -> ReactElementM ViewEventHandler ()
-connection_ inPortRef connectionRef = React.viewWithSKey (connection connectionRef) (fromString $ show inPortRef) () mempty
+connection_ :: Ref App -> InPortRef -> Connection -> ReactElementM ViewEventHandler ()
+connection_ ref inPortRef model = React.viewWithSKey connection (fromString $ show inPortRef) (ref, model) mempty
 
 
-currentConnection :: Ref CurrentConnection -> ReactView ()
-currentConnection connectionRef = React.defineControllerView
-    name connectionRef $ \connectionStore () -> do
-        let connection'= connectionStore ^. dt
-            src        = connection' ^. Connection.currentFrom
-            dst        = connection' ^. Connection.currentTo
-            color      = connection' ^. Connection.currentColor
+currentConnection :: ReactView CurrentConnection
+currentConnection = React.defineView name $ \model -> do
+        let src        = model ^. Connection.currentFrom
+            dst        = model ^. Connection.currentTo
+            color      = model ^. Connection.currentColor
             x1         = fromString $ show2 $ src ^. x
             y1         = fromString $ show2 $ src ^. y
             x2         = fromString $ show2 $ dst ^. x
@@ -104,5 +101,5 @@ currentConnection connectionRef = React.defineControllerView
             ] mempty
 
 
-currentConnection_ :: Ref CurrentConnection -> ReactElementM ViewEventHandler ()
-currentConnection_ connectionRef = React.viewWithSKey (currentConnection connectionRef) "current-connection" () mempty
+currentConnection_ :: CurrentConnection -> ReactElementM ViewEventHandler ()
+currentConnection_ model = React.viewWithSKey currentConnection "current-connection" model mempty

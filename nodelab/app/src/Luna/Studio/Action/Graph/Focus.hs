@@ -10,25 +10,25 @@ import           Luna.Studio.Prelude
 import           Luna.Studio.React.Model.Node    (Node)
 import qualified Luna.Studio.React.Model.Node    as Node
 import qualified Luna.Studio.React.Model.Node    as Model
-import           Luna.Studio.React.Store         (Ref, ref, widget)
-import qualified Luna.Studio.React.Store         as Store
 import           Luna.Studio.State.Global        (State)
+import qualified Luna.Studio.React.Model.NodeEditor as NodeEditor
+import qualified Luna.Studio.State.Global               as Global
+
 
 
 nats :: [Integer]
 nats = [1..]
 
-focusNode :: Ref Node -> Command State ()
-focusNode nodeRef = do
-    node <- Store.get' nodeRef
-    nodes <- mapM Store.get' =<< allNodes
-    let sortedNodes = sortBy (comparing $ negate . (view $ widget . Model.zPos)) nodes
-        equalFst a b = a ^. widget == b ^. widget
-        newOrderNodes = node : deleteBy equalFst node sortedNodes
-        newOrderRefs  = view ref <$> newOrderNodes
-    forM_ (zip newOrderRefs nats) $ \(nRef, idx) -> do
-        let newZPos = negate $ (fromIntegral idx) / 100.0
-        Store.modify_ (Node.zPos .~ newZPos) nRef
+focusNode :: Node -> Command State ()
+focusNode node = do
+    nodes <- allNodes
+    let sortedNodes = sortBy (comparing $ negate . (view Model.zPos)) nodes
+        newOrderNodes = node : delete node sortedNodes
+        newOrderIds  = view Model.nodeId <$> newOrderNodes
+    Global.modifyNodeEditor $
+        forM_ (zip newOrderIds nats) $ \(nodeId, idx) -> do
+            let newZPos = negate $ (fromIntegral idx) / 100.0
+            NodeEditor.nodes . at nodeId %= fmap (Node.zPos .~ newZPos)
 
 focusSelectedNode :: Command State ()
 focusSelectedNode = do

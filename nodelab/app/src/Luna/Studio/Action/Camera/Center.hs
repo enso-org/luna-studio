@@ -14,7 +14,6 @@ import           Luna.Studio.Data.Vector               (Position (Position), Siz
                                                         scalarProduct, vector, x, y)
 import           Luna.Studio.Prelude
 import qualified Luna.Studio.React.Model.NodeEditor    as NodeEditor
-import qualified Luna.Studio.React.Store               as Store
 import           Luna.Studio.State.Global              (State)
 import qualified Luna.Studio.State.Global              as Global
 import qualified Luna.Studio.State.Graph               as Graph
@@ -34,7 +33,7 @@ centerGraph = do
                 shift        = padding + screenCenter ^. vector - scalarProduct (span ^. vector) 0.5 - leftTop ^. vector
                 factor       = min 1 $ min (screenSize ^. x / span ^. x) (screenSize ^. y / span ^. y)
 
-            Global.withNodeEditor $ Store.modifyM_ $ do
+            Global.modifyNodeEditor $ do
                 NodeEditor.screenTransform . logicalToScreen .= multStd2 (translationMatrix shift) (homothetyMatrix screenCenter factor)
                 NodeEditor.screenTransform . screenToLogical .= multStd2 (invertedHomothetyMatrix screenCenter factor) (invertedTranslationMatrix shift)
                 NodeEditor.screenTransform . lastInverse     .= 2

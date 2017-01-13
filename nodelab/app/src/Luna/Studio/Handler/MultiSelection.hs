@@ -15,11 +15,10 @@ import           Luna.Studio.Event.Mouse              (workspacePosition)
 import qualified Luna.Studio.Event.Mouse              as Mouse
 import qualified Luna.Studio.React.Event.App          as App
 import qualified Luna.Studio.React.Event.NodeEditor   as NodeEditor
+import qualified Luna.Studio.React.Model.NodeEditor   as NodeEditor
 import qualified Luna.Studio.React.Model.Node         as NodeModel
 import           Luna.Studio.React.Model.SelectionBox (SelectionBox (SelectionBox))
 import qualified Luna.Studio.React.Model.SelectionBox as SelectionBox
-import           Luna.Studio.React.Store              (widget)
-import qualified Luna.Studio.React.Store              as Store
 import           Luna.Studio.State.Global             (State)
 import qualified Luna.Studio.State.Global             as Global
 import qualified Luna.Studio.State.Graph              as Graph
@@ -68,11 +67,12 @@ updateSelection start end = do
     selectNodes nodeIds
 
 drawSelectionBox :: Position -> Position -> Command State ()
-drawSelectionBox start end = do
-    Global.withSelectionBox $ Store.modify_ $ const $ SelectionBox True start end
+drawSelectionBox start end =
+    Global.modifyNodeEditor $
+        NodeEditor.selectionBox .= SelectionBox True start end
 
 hideSelectionBox :: Command State ()
-hideSelectionBox = Global.withSelectionBox $ Store.modify_ $ SelectionBox.visible .~ False
+hideSelectionBox = Global.modifySelectionBox $ SelectionBox.visible .= False
 
 stopDrag :: Command State ()
 stopDrag = do
@@ -81,6 +81,5 @@ stopDrag = do
         Global.multiSelection . MultiSelection.history .= Nothing
         hideSelectionBox
         focusSelectedNode
-        selectedWidgets <- selectedNodes
-        let selectedNodesIds = map (^. widget . NodeModel.nodeId) selectedWidgets
+        selectedNodesIds <- map (^. NodeModel.nodeId) <$> selectedNodes
         modifySelectionHistory selectedNodesIds
