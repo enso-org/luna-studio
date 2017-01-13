@@ -86,7 +86,7 @@ node ref = React.defineControllerView
                     [ "key"         $= "name"
                     , onDoubleClick $ \e _ -> stopPropagation e : dispatch ref (UI.NodeEvent $ Node.EditExpression nodeId)
                     , "className"   $= "node__name"
-                    , "y"           $= "-40"
+                    , "y"           $= "-36"
                     ] $ elemString $ Text.unpack $ n ^. Node.expression
                 if  n ^. Node.isExpanded then do
                     ports         ref $ filter (\port -> (port ^. Port.portId) == InPortId Self) nodePorts
