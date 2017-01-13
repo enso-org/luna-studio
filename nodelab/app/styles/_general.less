@@ -1,24 +1,24 @@
-// resets
+/////////////////////////////
+//          resets         //
+/////////////////////////////
 
-* {
-    border:  none;
-    margin:  0;
-    padding: 0;
-}
 
-img {
-    display: block;
-}
+* { border: none; margin: 0; padding: 0; }
+img { display: block; }
+a { text-decoration: none; }
 
-a {
-    text-decoration: none;
-}
+// Tweak for using events on SVG elements
+svg * { pointer-events: all; }
 
-svg * {
-    pointer-events: all; // Tweak for using events on SVG elements
-}
+// "Turn off overscrolling in Chrome"
+html { overflow: hidden; height: 100%; }
+body { height: 100%; overflow: auto; }
 
-// basic styles
+
+/////////////////////////////
+//       basic styles      //
+/////////////////////////////
+
 
 body {
     font:        12px/15px @fontDefault;
@@ -72,28 +72,29 @@ body {
 }
 
 .graph {
-    width:    100%;
-    height:   100%;
+    width:  100%;
+    height: 100%;
 }
 
 .code-editor {
-    width: 30%;
+    width:      30%;
     background: rgb(30, 30, 30);
-    z-index: 10;
+    z-index:    10;
 }
+
 .code-editor--collapsed {
     display: none;
 }
 
 .searcher {
-    flex: none;
+    flex:     none;
     position: absolute;
     input {
-        line-height: 30px;
-        background: black;
+        line-height:   30px;
+        background:    black;
         border-radius: 3px;
-        color: #fff;
-        padding: 0 10px;
+        color:         #fff;
+        padding:       0 10px;
 
     }
 }
