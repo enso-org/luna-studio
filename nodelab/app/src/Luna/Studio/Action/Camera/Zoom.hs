@@ -13,7 +13,7 @@ import           Luna.Studio.Action.Camera.Screen      (getScreenCenter)
 import           Luna.Studio.Action.Command            (Command)
 import           Luna.Studio.Data.CameraTransformation (logicalToScreen, screenToLogical)
 import           Luna.Studio.Data.Matrix               (homothetyMatrix, invertedHomothetyMatrix)
-import           Luna.Studio.Data.Vector               (ScreenPosition, vector, x, y)
+import           Luna.Studio.Data.Vector               (ScreenPosition, Vector2, vector, x, y)
 import           Luna.Studio.Prelude
 import qualified Luna.Studio.React.Model.NodeEditor    as NodeEditor
 import qualified Luna.Studio.State.Camera              as Camera
@@ -26,7 +26,7 @@ minCamFactor, maxCamFactor, dragZoomSpeed, wheelZoomSpeed, zoomFactorStep :: Dou
 minCamFactor   = 0.2
 maxCamFactor   = 8
 dragZoomSpeed  = 512
-wheelZoomSpeed = 512
+wheelZoomSpeed = 64
 zoomFactorStep = 1.1
 
 restrictFactor :: Double -> Double -> Double
@@ -66,5 +66,6 @@ resetZoom = Global.modifyNodeEditor $ do
     NodeEditor.screenTransform . logicalToScreen %= (setElem 1 (1,1) . setElem 1 (2,2))
     NodeEditor.screenTransform . screenToLogical %= (setElem 1 (1,1) . setElem 1 (2,2))
 
-wheelZoom :: ScreenPosition -> Double -> Command State ()
-wheelZoom pos delta = zoomCamera pos (1 - delta / wheelZoomSpeed)
+wheelZoom :: ScreenPosition -> Vector2 Double -> Command State ()
+wheelZoom pos delta = zoomCamera pos delta' where
+    delta' = 1 + (delta ^. x + delta ^. y) / wheelZoomSpeed

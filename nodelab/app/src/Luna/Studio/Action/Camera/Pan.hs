@@ -4,6 +4,7 @@ module Luna.Studio.Action.Camera.Pan
      , panRight
      , panUp
      , panDown
+     , panCamera
      , startPanDrag
      , panDrag
      ) where

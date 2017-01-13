@@ -34,7 +34,8 @@ nodeEditor = React.defineView name $ \(ref, ne) -> do
         , "id"        $= "Graph"
         , "key"       $= "graph"
         , onMouseDown $ \_ e   -> dispatch ref $ UI.NodeEditorEvent $ NE.MouseDown e
-        , onWheel     $ \_ m w -> dispatch ref $ UI.NodeEditorEvent $ NE.Wheel m w
+        , onWheel     $ \e m w -> preventDefault e : dispatch ref (UI.NodeEditorEvent $ NE.Wheel m w)
+        , onScroll    $ \e     -> [preventDefault e]
         ] $ do
 
         -- TODO: div_ [ "className" $= "plane plane--visuals" ] …
