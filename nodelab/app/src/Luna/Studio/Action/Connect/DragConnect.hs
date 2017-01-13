@@ -2,11 +2,12 @@ module Luna.Studio.Action.Connect.DragConnect
     ( connectToPort
     , handleMove
     , modifyConnection
-    , startDragFromPort
+    , startOrModifyConnection
     , stopDrag
     , whileConnecting
     ) where
 
+import qualified Data.HashMap.Strict                    as HashMap
 import           Empire.API.Data.Connection             (Connection)
 import           Empire.API.Data.Connection             (ConnectionId)
 import qualified Empire.API.Data.Connection             as Connection
@@ -30,6 +31,15 @@ import qualified Luna.Studio.State.Graph                as Graph
 import           React.Flux                             (MouseEvent)
 
 
+startOrModifyConnection :: MouseEvent -> AnyPortRef -> Command State ()
+startOrModifyConnection evt anyPortRef = case anyPortRef of
+    InPortRef'  portRef -> do
+        portConnected <- HashMap.member portRef <$> (use $ Global.graph . Graph.connectionsMap)
+        if portConnected then
+            modifyConnection evt portRef Destination
+        else startDragFromPort evt anyPortRef Nothing
+    OutPortRef' _ -> startDragFromPort evt anyPortRef Nothing
+
 startDragFromPort :: MouseEvent -> AnyPortRef -> Maybe Connection -> Command State ()
 startDragFromPort evt portRef modifiedConnection = do
     mousePos  <- workspacePosition evt
@@ -37,6 +47,15 @@ startDragFromPort evt portRef modifiedConnection = do
     mayColor  <- getConnectionColor portRef
     withJust ((,) <$> maySrcPos <*> mayColor) $ \((srcPos, dstPos), color) -> do
         createCurrentConnection portRef modifiedConnection srcPos dstPos color
+
+modifyConnection :: MouseEvent -> ConnectionId -> ModifiedEnd -> Command State ()
+modifyConnection evt connId modifiedEnd = do
+    mayConn <- preuse $ Global.graph . Graph.connectionsMap . ix connId
+    withJust mayConn $ \conn -> do
+        let portRef = case modifiedEnd of
+                Source      -> InPortRef'  (conn ^. Connection.dst)
+                Destination -> OutPortRef' (conn ^. Connection.src)
+        startDragFromPort evt portRef $ Just conn
 
 whileConnecting :: (CurrentConnection -> Command State ()) -> Command State ()
 whileConnecting run = do
@@ -77,13 +96,3 @@ connectToPort dstPortRef conn = do
         _ -> do
             connectNodes src dst
             GA.sendEvent $ GA.Connect GA.Manual
-
-
-modifyConnection :: MouseEvent -> ConnectionId -> ModifiedEnd -> Command State ()
-modifyConnection evt connId modifiedEnd = do
-    mayConn <- preuse $ Global.graph . Graph.connectionsMap . ix connId
-    withJust mayConn $ \conn -> do
-        let portRef = case modifiedEnd of
-                Source      -> InPortRef'  (conn ^. Connection.dst)
-                Destination -> OutPortRef' (conn ^. Connection.src)
-        startDragFromPort evt portRef $ Just conn

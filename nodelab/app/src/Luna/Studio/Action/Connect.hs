@@ -2,10 +2,10 @@ module Luna.Studio.Action.Connect
     ( connectToPort
     , handleMove
     , modifyConnection
-    , startDragFromPort
+    , startOrModifyConnection
     , stopDrag
     , whileConnecting
     ) where
 
-import           Luna.Studio.Action.Connect.DragConnect (connectToPort, handleMove, modifyConnection, startDragFromPort, stopDrag,
+import           Luna.Studio.Action.Connect.DragConnect (connectToPort, handleMove, modifyConnection, startOrModifyConnection, stopDrag,
                                                          whileConnecting)
