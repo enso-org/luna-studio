@@ -16,7 +16,7 @@ lineHeight :: Double
 lineHeight = 16
 
 nodeExpandedWidth :: Double
-nodeExpandedWidth = 224
+nodeExpandedWidth = 160
 
 nodeRadius :: Double
 nodeRadius = 20

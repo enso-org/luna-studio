@@ -95,7 +95,7 @@
         animation-name:            outputExpanding;
         .port__shape,
         .port__select {
-            cx: 225px;
+            cx: @expandedNodeWidth;
         }
     }
 }
@@ -110,18 +110,18 @@
     background:    @colorNodeBackground;
     box-shadow:    0 0 10px rgba(25,25,25,1);
     line-height:   @lineHeight;
-    width:         1px;
-    height:        32px;
+    width:         0;
+    height:        40px;
     opacity:       0;
     transition:    all @transitionSpeed ease-in-out;
     top:          -20px;
-    padding:       12px 12px 8px;
+    padding:       12px @expandedNodePadding 8px;
     position:      relative;
     border-radius: @borderRadius;
     overflow:      hidden;
     .row {
         display:         flex;
-        width:           200px;
+        width:           @expandedNodeWidth - 2 * @expandedNodePadding;
         justify-content: space-between;
     }
     .row--output-name {
@@ -132,7 +132,7 @@
 .node--expanded {  // FIXME: properties container should be removed from DOM for collapsed nodes
     .node__properties {
         height:  auto;
-        width:   200px;
+        width:   @expandedNodeWidth - 2 * @expandedNodePadding;
         opacity: 1;
     }
 }
@@ -141,7 +141,7 @@
     position: relative;
     left:    -30px;
     top:     -16px;
-    width:    224px;
+    width:    @expandedNodeWidth;
     table {
         border:          0;
         width:           100%;
@@ -164,8 +164,8 @@
 
 .vis {
     position: relative;
-    width:    224px;
-    height:   200px;
+    width:    @expandedNodeWidth;
+    height:   @expandedNodeWidth - 2 * @expandedNodePadding;
     overflow: hidden;
     .scroll {
         overflow: scroll;
@@ -218,8 +218,8 @@
     .node__selection-mark rect {
         x:      0px;
         y:     -20px;
-        width:  224px;
-        height: 82px;
+        width:  @expandedNodeWidth;
+        height: 68px;
         rx:     4px;
         ry:     4px;
     }
@@ -227,8 +227,8 @@
         .node__selection-mark rect {
             x:     -9.7px;
             y:     -29.7px;
-            width:  243.4px;
-            height: 103.4px;
+            width:  @expandedNodeWidth + 19.4px;
+            height: 88px;
             rx:     12px;
             ry:     12px;
         }
