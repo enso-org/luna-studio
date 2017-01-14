@@ -26,9 +26,9 @@ show2 a = showFFloat (Just 2) a "" -- limit Double to two decimal numbers
 
 --TODO: move & refactor: the list is inversed
 mergeList :: [a] -> [a] -> [a]
-mergeList []      [] = []
-mergeList []      ys = ys
-mergeList xs      [] = xs
+mergeList [] [] = []
+mergeList [] ys = ys
+mergeList xs [] = xs
 mergeList (x:xs) ys = mergeList xs (x:ys)
 
 lineReact :: Position -> Position -> [PropertyOrHandler ViewEventHandler] -> ReactElementM ViewEventHandler ()
