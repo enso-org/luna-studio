@@ -4,13 +4,13 @@ module Luna.Studio.React.View.Connection where
 import           Empire.API.Data.PortRef            (InPortRef)
 import qualified Event.UI                           as UI
 import           Luna.Studio.Action.Geometry        (connectionWidth)
-import           Luna.Studio.Data.Color             (toJSString)
-import           Luna.Studio.Data.Vector            (x, y)
+import           Luna.Studio.Data.Color             (toJSString, Color)
+import           Luna.Studio.Data.Vector            (Position, x, y)
 import           Luna.Studio.Prelude
 import           Luna.Studio.React.Event.Connection (ModifiedEnd (Destination, Source))
 import qualified Luna.Studio.React.Event.Connection as Connection
 import           Luna.Studio.React.Model.Connection (Connection, CurrentConnection)
-import           Luna.Studio.React.Model.App (App)
+import           Luna.Studio.React.Model.App        (App)
 import qualified Luna.Studio.React.Model.Connection as Connection
 import           Luna.Studio.React.Store            (Ref, dispatch)
 import           Numeric                            (showFFloat)
@@ -23,6 +23,23 @@ name = "connection-editor"
 
 show2 :: Double -> String
 show2 a = showFFloat (Just 2) a "" -- limit Double to two decimal numbers
+
+
+--TODO: Why it does not work with [PropertyOrHandler handler0]
+mergeList :: [a] -> [a] -> [a]
+mergeList xs      [] = xs
+mergeList []      ys = ys
+mergeList []      [] = []
+mergeList (x: xs) ys = mergeList xs (x:ys)
+
+lineC :: Position -> Position -> [PropertyOrHandler handler] -> ReactElementM ViewEventHandler ()
+lineC src dst a = do
+    let b = [ "x1" $= (fromString $ show2 $ src ^. x)
+            , "y1" $= (fromString $ show2 $ src ^. y)
+            , "x2" $= (fromString $ show2 $ dst ^. x)
+            , "y2" $= (fromString $ show2 $ dst ^. y)
+            ]
+    line_ b mempty
 
 connection :: ReactView (Ref App, Connection)
 connection = React.defineView name $ \(ref, model) -> do
@@ -83,14 +100,14 @@ connection_ ref inPortRef model = React.viewWithSKey connection (fromString $ sh
 
 currentConnection :: ReactView CurrentConnection
 currentConnection = React.defineView name $ \model -> do
-        let src        = model ^. Connection.currentFrom
-            dst        = model ^. Connection.currentTo
-            color      = model ^. Connection.currentColor
-            x1         = fromString $ show2 $ src ^. x
-            y1         = fromString $ show2 $ src ^. y
-            x2         = fromString $ show2 $ dst ^. x
-            y2         = fromString $ show2 $ dst ^. y
-            width      = fromString $ show connectionWidth
+        let src   = model ^. Connection.currentFrom
+            dst   = model ^. Connection.currentTo
+            color = model ^. Connection.currentColor
+            x1    = fromString $ show2 $ src ^. x
+            y1    = fromString $ show2 $ src ^. y
+            x2    = fromString $ show2 $ dst ^. x
+            y2    = fromString $ show2 $ dst ^. y
+            width = fromString $ show connectionWidth
         line_
             [ "x1"          $= x1
             , "y1"          $= y1
