@@ -39,7 +39,7 @@ inPortControl_ ref portRef port = React.viewWithSKey inPortControl "inPortContro
 inPortControl :: ReactView (Ref App, AnyPortRef, Port)
 inPortControl = React.defineView "inPortControl" $ \(ref, portRef, port) ->
     div_
-        [ "key" $= fromString (show $ port ^. Port.portId)
+        [ "key"       $= fromString (show $ port ^. Port.portId)
         , "className" $= "row row--arg"
         ] $ do
         div_

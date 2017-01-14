@@ -5,7 +5,7 @@ import           Empire.API.Data.PortRef            (InPortRef)
 import qualified Event.UI                           as UI
 import           Luna.Studio.Action.Geometry        (connectionWidth)
 import           Luna.Studio.Data.Color             (toJSString, Color)
-import           Luna.Studio.Data.Vector            (Position, x, y)
+import           Luna.Studio.Data.Vector            (x, y, Position, averagePosition)
 import           Luna.Studio.Prelude
 import           Luna.Studio.React.Event.Connection (ModifiedEnd (Destination, Source))
 import qualified Luna.Studio.React.Event.Connection as Connection
@@ -25,74 +25,50 @@ show2 :: Double -> String
 show2 a = showFFloat (Just 2) a "" -- limit Double to two decimal numbers
 
 
---TODO: Why it does not work with [PropertyOrHandler handler0]
+--FIXME: Why it does not work with [PropertyOrHandler handler]
 mergeList :: [a] -> [a] -> [a]
 mergeList xs      [] = xs
 mergeList []      ys = ys
 mergeList []      [] = []
 mergeList (x: xs) ys = mergeList xs (x:ys)
 
-lineC :: Position -> Position -> [PropertyOrHandler handler] -> ReactElementM ViewEventHandler ()
-lineC src dst a = do
-    let b = [ "x1" $= (fromString $ show2 $ src ^. x)
+--FIXME: Position -> Position -> [PropertyOrHandler handler] -> ReactElementM ViewEventHandler ()
+lineReact :: Position -> Position -> Maybe Double -> Maybe Color -> Maybe (PropertyOrHandler ViewEventHandler) -> ReactElementM ViewEventHandler ()
+lineReact src dst mwidth mcolor mevent = do
+    let a = [ "x1" $= (fromString $ show2 $ src ^. x)
             , "y1" $= (fromString $ show2 $ src ^. y)
             , "x2" $= (fromString $ show2 $ dst ^. x)
             , "y2" $= (fromString $ show2 $ dst ^. y)
             ]
-    line_ b mempty
+        b = case mwidth of
+            Nothing      -> a
+            (Just width) -> ("strokeWidth" $= (fromString $ show width)):a
+        c = case mcolor of
+            Nothing      -> b
+            (Just color) -> ("stroke" $= (toJSString color)):b
+        d = case mevent of
+            Nothing      -> c
+            (Just event) -> (event):c
+    line_ d mempty
 
 connection :: ReactView (Ref App, Connection)
 connection = React.defineView name $ \(ref, model) -> do
         let connId      = model ^. Connection.connectionId
             src         = model ^. Connection.from
             dst         = model ^. Connection.to
+            mid         = averagePosition src dst
             color       = model ^. Connection.color
-            srcX        = src ^. x
-            srcY        = src ^. y
-            dstX        = dst ^. x
-            dstY        = dst ^. y
-            midX        = (srcX + dstX) / 2
-            midY        = (srcY + dstY) / 2
-            width       = fromString $ show connectionWidth
-            widthSelect = fromString $ show $ connectionWidth * 4
+            width       = connectionWidth
+            widthSelect = connectionWidth * 4
+            event1      = onMouseDown $ \e m -> stopPropagation e : dispatch ref (UI.ConnectionEvent $ Connection.ModifyConnection m connId Source)
+            event2      = onMouseDown $ \e m -> stopPropagation e : dispatch ref (UI.ConnectionEvent $ Connection.ModifyConnection m connId Destination)
         g_ [ "className" $= "connection" ] $ do
             g_ [ "className" $= "connection__src" ] $ do
-                line_
-                    [ "x1"          $= (fromString $ show2 srcX)
-                    , "y1"          $= (fromString $ show2 srcY)
-                    , "x2"          $= (fromString $ show2 midX)
-                    , "y2"          $= (fromString $ show2 midY)
-                    , "stroke"      $= toJSString color
-                    , "strokeWidth" $= width
-                    ] mempty
-                line_
-                    [ onMouseDown $ \e m -> stopPropagation e : dispatch ref (UI.ConnectionEvent $ Connection.ModifyConnection m connId Source)
-                    , "className"   $= "connection__select"
-                    , "x1"          $= (fromString $ show2 srcX)
-                    , "y1"          $= (fromString $ show2 srcY)
-                    , "x2"          $= (fromString $ show2 midX)
-                    , "y2"          $= (fromString $ show2 midY)
-                    , "strokeWidth" $= widthSelect
-                    ] mempty
+                lineReact src mid (Just width      ) (Just color) Nothing
+                lineReact src mid (Just widthSelect) Nothing      (Just event1)
             g_ [ "className" $= "connection__dst" ] $ do
-                line_
-                    [ "x1"          $= (fromString $ show2 midX)
-                    , "y1"          $= (fromString $ show2 midY)
-                    , "x2"          $= (fromString $ show2 dstX)
-                    , "y2"          $= (fromString $ show2 dstY)
-                    , "stroke"      $= toJSString color
-                    , "strokeWidth" $= width
-                    ] mempty
-                line_
-                    [ onMouseDown $ \e m -> stopPropagation e : dispatch ref (UI.ConnectionEvent $ Connection.ModifyConnection m connId Destination)
-                    , "className"   $= "connection__select"
-                    , "x1"          $= (fromString $ show2 midX)
-                    , "y1"          $= (fromString $ show2 midY)
-                    , "x2"          $= (fromString $ show2 dstX)
-                    , "y2"          $= (fromString $ show2 dstY)
-                    , "strokeWidth" $= widthSelect
-                    ] mempty
-
+                lineReact mid dst (Just width      ) (Just color) Nothing
+                lineReact mid dst (Just widthSelect) Nothing      (Just event2)
 
 connection_ :: Ref App -> InPortRef -> Connection -> ReactElementM ViewEventHandler ()
 connection_ ref inPortRef model = React.viewWithSKey connection (fromString $ show inPortRef) (ref, model) mempty
@@ -103,19 +79,8 @@ currentConnection = React.defineView name $ \model -> do
         let src   = model ^. Connection.currentFrom
             dst   = model ^. Connection.currentTo
             color = model ^. Connection.currentColor
-            x1    = fromString $ show2 $ src ^. x
-            y1    = fromString $ show2 $ src ^. y
-            x2    = fromString $ show2 $ dst ^. x
-            y2    = fromString $ show2 $ dst ^. y
-            width = fromString $ show connectionWidth
-        line_
-            [ "x1"          $= x1
-            , "y1"          $= y1
-            , "x2"          $= x2
-            , "y2"          $= y2
-            , "stroke"      $= toJSString color
-            , "strokeWidth" $= width
-            ] mempty
+            width = connectionWidth
+        lineReact src dst (Just width) (Just color) Nothing
 
 
 currentConnection_ :: CurrentConnection -> ReactElementM ViewEventHandler ()

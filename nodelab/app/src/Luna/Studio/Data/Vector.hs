@@ -160,6 +160,17 @@ instance IsList Position where
 
 -- === Functions === ---
 
+--TODO: [Position] -> Position
+averagePosition :: Position -> Position -> Position
+averagePosition a b =
+    let x1 = a ^. x
+        y1 = a ^. y
+        x2 = b ^. x
+        y2 = b ^. y
+        x3 = (x1 + x2) / 2
+        y3 = (y1 + y2) / 2
+    in Position (Vector2 x3 y3)
+
 move :: Position -> Vector2 Double -> Position
 move pos vec = pos & vector +~ vec
 
