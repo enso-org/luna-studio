@@ -101,9 +101,9 @@ getCurrentConnectionPosition portRef mousePos = do
                 isExpanded = node ^. Node.isExpanded
                 portNum    = getPortNumber port
                 numOfPorts = countSameTypePorts port ports
-                isSingle   = isPortSingle port ports
+                isSelf     = isPortSelf port
                 connPortPos = case portRef of
-                    OutPortRef' _ -> connectionSrc pos mousePos isExpanded False portNum numOfPorts isSingle
-                    InPortRef'  _ -> connectionDst mousePos pos isExpanded False portNum numOfPorts isSingle
+                    OutPortRef' _ -> connectionSrc pos      mousePos isExpanded False      portNum numOfPorts False
+                    InPortRef'  _ -> connectionDst mousePos pos      False      isExpanded portNum numOfPorts isSelf
             return $ Just (connPortPos, mousePos)
-        _ -> return Nothing
+        _                     -> return Nothing
