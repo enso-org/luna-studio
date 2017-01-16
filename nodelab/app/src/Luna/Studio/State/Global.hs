@@ -50,7 +50,7 @@ foreign import javascript safe "{}" defJsState :: Event.JSState
 -- TODO split to more states
 data State = State { _mousePos           :: Position
                    , _graph              :: Graph.State
-                   , _appDirty           :: Bool --TODO refactor
+                   , _renderNeeded       :: Bool --TODO refactor
                    , _cameraState        :: Maybe Camera.State
                    , _multiSelection     :: MultiSelection.State
                    , _selectionHistory   :: [Set Node.NodeId]
@@ -85,21 +85,21 @@ withApp :: (Ref App -> Command State r) -> Command State r
 withApp action = action =<< use app
 
 modify lens action = do
-    appDirty .= True
+    renderNeeded .= True
     withApp $ Store.continueModify $ zoom lens action
 
 get lens = withApp $ return . view lens <=< Store.get
 
 modifyApp :: M.State App r -> Command State r
 modifyApp action = do
-    appDirty .= True
+    renderNeeded .= True
     withApp $ Store.continueModify action
 
 renderIfNeeded :: Command State ()
 renderIfNeeded =
-    whenM (use appDirty) $ do
+    whenM (use renderNeeded) $ do
         withApp Store.commit
-        appDirty .= False
+        renderNeeded .= False
 
 modifyNodeEditor :: M.State NodeEditor r -> Command State r
 modifyNodeEditor = modify App.nodeEditor

@@ -45,10 +45,10 @@ runState' action store = (store & dt .~ newDt, ret) where
     (ret, newDt) = runState action $ store ^. dt
 
 continueModify :: Typeable s => State s r -> Ref s -> Command a r
-continueModify action = liftIO . flip modifyStore (return . runState' action)
+continueModify action = liftIO . flip modifyStoreNoCommit (return . runState' action)
 
 commit :: Typeable s => Ref s -> Command a ()
-commit _ = return () --commitStore
+commit = liftIO . storeCommit
 
 get :: Ref p -> Command s p
 get rf = _dt <$> liftIO (getStoreData rf)
