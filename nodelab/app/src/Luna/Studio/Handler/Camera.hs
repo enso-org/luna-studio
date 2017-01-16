@@ -1,4 +1,3 @@
-{-# LANGUAGE NamedFieldPuns #-}
 module Luna.Studio.Handler.Camera
     ( toAction
     ) where
@@ -17,7 +16,9 @@ import           Luna.Studio.Prelude
 import qualified Luna.Studio.React.Event.App        as App
 import qualified Luna.Studio.React.Event.NodeEditor as NodeEditor
 import           Luna.Studio.State.Global           (State)
+import           Luna.Studio.State.StatefulAction   (StatefulAction (continue))
 import           React.Flux                         (KeyboardEvent, MouseEvent, wheelDeltaX, wheelDeltaY)
+
 
 -- TODO[react]: Consider mac trackpad!!!
 toAction :: Event -> Maybe (Command State ())
@@ -67,8 +68,8 @@ handleMouseDown evt
 
 handleMouseMove :: MouseEvent -> Command State ()
 handleMouseMove evt
-    | Mouse.withoutMods evt Mouse.rightButton  = zoomDrag $ mousePosition evt
-    | Mouse.withoutMods evt Mouse.middleButton = panDrag  $ mousePosition evt
+    | Mouse.withoutMods evt Mouse.rightButton  = continue $ zoomDrag $ mousePosition evt
+    | Mouse.withoutMods evt Mouse.middleButton = continue $ panDrag  $ mousePosition evt
     | otherwise                                = return ()
 
 handleMouseWheel :: MouseEvent -> Vector2 Double -> Command State ()

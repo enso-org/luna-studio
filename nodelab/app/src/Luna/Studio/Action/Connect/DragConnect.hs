@@ -1,3 +1,4 @@
+{-# OPTIONS_GHC -fno-warn-orphans #-}
 module Luna.Studio.Action.Connect.DragConnect
     ( connectToPort
     , handleMove
@@ -25,11 +26,21 @@ import           Luna.Studio.React.Event.Connection     (ModifiedEnd (Destinatio
 import           Luna.Studio.React.Model.Connection     (CurrentConnection)
 import qualified Luna.Studio.React.Model.Connection     as ConnectionModel
 import qualified Luna.Studio.React.Model.NodeEditor     as NodeEditor
+import           Luna.Studio.State.Action               (Action (Connect))
+import qualified Luna.Studio.State.Connect              as Connect
 import           Luna.Studio.State.Global               (State)
 import qualified Luna.Studio.State.Global               as Global
 import qualified Luna.Studio.State.Graph                as Graph
+import           Luna.Studio.State.StatefulAction       (StatefulAction (exit, matchState, pack, start))
 import           React.Flux                             (MouseEvent)
 
+
+
+instance StatefulAction Connect.State where
+    matchState (Connect state) = Just state
+    matchState _ = Nothing
+    pack = Connect
+    exit _ = whileConnecting stopDrag
 
 startOrModifyConnection :: MouseEvent -> AnyPortRef -> Command State ()
 startOrModifyConnection evt anyPortRef = case anyPortRef of
@@ -42,6 +53,7 @@ startOrModifyConnection evt anyPortRef = case anyPortRef of
 
 startDragFromPort :: MouseEvent -> AnyPortRef -> Maybe Connection -> Command State ()
 startDragFromPort evt portRef modifiedConnection = do
+    start $ Connect.State
     mousePos  <- workspacePosition evt
     maySrcPos <- getCurrentConnectionPosition portRef mousePos
     mayColor  <- getConnectionColor portRef
@@ -76,6 +88,10 @@ handleMove evt conn = do
 stopDrag :: CurrentConnection -> Command State ()
 stopDrag conn = do
     Global.modifyNodeEditor $ NodeEditor.currentConnection .= Nothing
+    mayPerformedAction <- use $ Global.performedAction
+    withJust mayPerformedAction $ \performedAction -> case performedAction of
+        Connect _ -> Global.performedAction .= Nothing
+        _         -> return ()
     let mayModifiedConnection = conn ^. ConnectionModel.modifiedConnection
     withJust mayModifiedConnection $ \modifiedConnection -> do
         removeConnections [modifiedConnection ^. Connection.dst]
@@ -83,6 +99,10 @@ stopDrag conn = do
 connectToPort :: AnyPortRef -> CurrentConnection -> Command State ()
 connectToPort dstPortRef conn = do
     Global.modifyNodeEditor $ NodeEditor.currentConnection .= Nothing
+    mayPerformedAction <- use $ Global.performedAction
+    withJust mayPerformedAction $ \performedAction -> case performedAction of
+        Connect _ -> Global.performedAction .= Nothing
+        _         -> return ()
     let srcPortRef            = conn ^. ConnectionModel.srcPortRef
         mayModifiedConnection = conn ^. ConnectionModel.modifiedConnection
     withJust (toValidConnection srcPortRef dstPortRef) $ \(src, dst) -> case mayModifiedConnection of

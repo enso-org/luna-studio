@@ -6,12 +6,12 @@ import           Event.Event                      (Event)
 import           Event.Event                      (Event (UI))
 import           Event.UI                         (UIEvent (AppEvent))
 import           Luna.Studio.Action.Command       (Command)
-import           Luna.Studio.Action.ConnectionPen (handleMove, resetConnectionPen, startConnecting, startDisconnecting, whileConnecting,
-                                                   whileDisconnecting)
+import           Luna.Studio.Action.ConnectionPen (connectMove, disconnectMove, resetConnectionPen, startConnecting, startDisconnecting)
 import qualified Luna.Studio.Event.Mouse          as Mouse
 import           Luna.Studio.Prelude
 import qualified Luna.Studio.React.Event.App      as App
 import           Luna.Studio.State.Global         (State)
+import           Luna.Studio.State.StatefulAction (StatefulAction (continue))
 import           React.Flux                       (MouseEvent)
 
 
@@ -30,7 +30,7 @@ handleMouseDown evt
 
 handleMouseMove :: MouseEvent -> Command State ()
 handleMouseMove evt
-    | Mouse.withCtrl      evt Mouse.leftButton  = whileConnecting    $ handleMove evt
-    | Mouse.withCtrlShift evt Mouse.leftButton  = whileDisconnecting $ handleMove evt
-    | Mouse.withCtrl      evt Mouse.leftButton  = whileDisconnecting $ handleMove evt
-    | otherwise                                 = resetConnectionPen
+    | Mouse.withCtrl      evt Mouse.leftButton  = continue $ connectMove evt
+    | Mouse.withCtrlShift evt Mouse.leftButton  = continue $ disconnectMove evt
+    | Mouse.withCtrl      evt Mouse.leftButton  = continue $ disconnectMove evt
+    | otherwise                                 = return ()

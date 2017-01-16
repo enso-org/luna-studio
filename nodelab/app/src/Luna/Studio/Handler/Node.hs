@@ -1,23 +1,24 @@
 module Luna.Studio.Handler.Node where
 
-import           React.Flux                     (KeyboardEvent, mouseCtrlKey, mouseMetaKey)
+import           React.Flux                       (KeyboardEvent, mouseCtrlKey, mouseMetaKey)
 
-import           Empire.API.Data.Node           (NodeId)
-import           Event.Event                    (Event (UI))
-import           Event.UI                       (UIEvent (AppEvent, NodeEvent))
-import qualified Luna.Studio.Action.Batch       as Batch
-import           Luna.Studio.Action.Command     (Command)
-import           Luna.Studio.Action.Graph       (selectAll, toggleSelect, unselectAll)
-import qualified Luna.Studio.Action.Node        as Node
-import qualified Luna.Studio.Action.PortControl as PortControl
-import qualified Luna.Studio.Event.Keys         as Keys
-import           Luna.Studio.Event.Mouse        (mousePosition)
+import           Empire.API.Data.Node             (NodeId)
+import           Event.Event                      (Event (UI))
+import           Event.UI                         (UIEvent (AppEvent, NodeEvent))
+import qualified Luna.Studio.Action.Batch         as Batch
+import           Luna.Studio.Action.Command       (Command)
+import           Luna.Studio.Action.Graph         (selectAll, toggleSelect, unselectAll)
+import qualified Luna.Studio.Action.Node          as Node
+import qualified Luna.Studio.Action.PortControl   as PortControl
+import qualified Luna.Studio.Event.Keys           as Keys
+import           Luna.Studio.Event.Mouse          (mousePosition)
 import           Luna.Studio.Prelude
-import qualified Luna.Studio.React.Event.App    as App
-import qualified Luna.Studio.React.Event.Node   as Node
-import           Luna.Studio.State.Global       (State)
-import qualified Luna.Studio.State.Global       as Global
-import qualified Luna.Studio.State.Graph        as Graph
+import qualified Luna.Studio.React.Event.App      as App
+import qualified Luna.Studio.React.Event.Node     as Node
+import           Luna.Studio.State.Global         (State)
+import qualified Luna.Studio.State.Global         as Global
+import qualified Luna.Studio.State.Graph          as Graph
+import           Luna.Studio.State.StatefulAction (StatefulAction (continue))
 
 
 
@@ -37,9 +38,9 @@ toAction (UI (NodeEvent (Node.PortSetDefaultValue portRef defaultValue))) = Just
 toAction (UI (NodeEvent (Node.PortInitSlider mevt portRef sliderInit)))   = Just $ PortControl.startMoveSlider portRef (mousePosition mevt) sliderInit
 toAction (UI (AppEvent  (App.KeyDown   kevt))) = Just $ handleKeyApp kevt
 --TODO[react]: Findout if we need workspacePosition here
-toAction (UI (AppEvent  (App.MouseMove mevt))) = Just $ PortControl.moveSlider     $ mousePosition mevt
+toAction (UI (AppEvent  (App.MouseMove mevt))) = Just $ continue $ PortControl.moveSlider     $ mousePosition mevt
 --TODO[react]: Findout if we need workspacePosition here
-toAction (UI (AppEvent  (App.MouseUp   mevt))) = Just $ PortControl.stopMoveSlider $ mousePosition mevt
+toAction (UI (AppEvent  (App.MouseUp   mevt))) = Just $ continue $ PortControl.stopMoveSlider $ mousePosition mevt
 toAction _   = Nothing
 
 

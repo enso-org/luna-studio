@@ -25,22 +25,17 @@ import           Luna.Studio.React.Model.App          (App)
 import qualified Luna.Studio.React.Model.App          as App
 import           Luna.Studio.React.Model.Breadcrumbs  (Breadcrumbs)
 import           Luna.Studio.React.Model.CodeEditor   (CodeEditor)
-import           Luna.Studio.Data.ConnectionPen   (ConnectionPen)
+import           Luna.Studio.React.Model.Connection   (Connection, CurrentConnection)
 import           Luna.Studio.React.Model.Node         (Node)
 import           Luna.Studio.React.Model.NodeEditor   (NodeEditor)
-import           Luna.Studio.React.Model.Connection    (Connection, CurrentConnection)
 import qualified Luna.Studio.React.Model.NodeEditor   as NodeEditor
 import           Luna.Studio.React.Model.Searcher     (Searcher)
 import           Luna.Studio.React.Model.SelectionBox (SelectionBox)
 import           Luna.Studio.React.Store              (Ref)
 import qualified Luna.Studio.React.Store              as Store
-import qualified Luna.Studio.State.Camera             as Camera
+import           Luna.Studio.State.Action             (Action)
 import qualified Luna.Studio.State.Collaboration      as Collaboration
-import qualified Luna.Studio.State.ConnectionPen      as ConnectionPen
-import qualified Luna.Studio.State.Drag               as Drag
 import qualified Luna.Studio.State.Graph              as Graph
-import qualified Luna.Studio.State.MultiSelection     as MultiSelection
-import qualified Luna.Studio.State.Slider             as Slider
 
 
 
@@ -51,13 +46,9 @@ foreign import javascript safe "{}" defJsState :: Event.JSState
 data State = State { _mousePos           :: Position
                    , _graph              :: Graph.State
                    , _renderNeeded       :: Bool --TODO refactor
-                   , _cameraState        :: Maybe Camera.State
-                   , _multiSelection     :: MultiSelection.State
+                   , _performedAction    :: Maybe Action
                    , _selectionHistory   :: [Set Node.NodeId]
-                   , _drag               :: Drag.State
-                   , _slider             :: Maybe Slider.State
                    -- TODO[react]: wyjebawszy
-                   , _connectionPen      :: ConnectionPen.State
                    , _workspace          :: Workspace
                    , _lastEvent          :: Maybe Event.Event
                    , _eventNum           :: Int
@@ -122,9 +113,6 @@ getSearcher = get App.searcher
 modifySelectionBox :: M.State SelectionBox r -> Command State r
 modifySelectionBox = modify (App.nodeEditor . NodeEditor.selectionBox)
 
-modifyConnectionPen :: Monoid r => M.State ConnectionPen r -> Command State r
-modifyConnectionPen = modify (App.nodeEditor . NodeEditor.connectionPen) . zoom traverse
-
 modifyCurrentConnection :: Monoid r => M.State CurrentConnection r -> Command State r
 modifyCurrentConnection = modify (App.nodeEditor . NodeEditor.currentConnection) . zoom traverse
 
@@ -141,7 +129,7 @@ getConnection :: ConnectionId -> Command State (Maybe Connection)
 getConnection connectionId = get (App.nodeEditor . NodeEditor.connections . at connectionId)
 
 initialState :: DateTime -> Collaboration.ClientId -> StdGen -> Maybe Int -> Ref App -> State
-initialState = State (Position (Vector2 200 200)) def False def def def def def def def def def defJsState def def
+initialState = State (Position (Vector2 200 200)) def False def def def def def defJsState def def
 
 nextRandom :: Command State Word8
 nextRandom = do

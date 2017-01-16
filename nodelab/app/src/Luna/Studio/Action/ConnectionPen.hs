@@ -1,57 +1,62 @@
+{-# OPTIONS_GHC -fno-warn-orphans #-}
 module Luna.Studio.Action.ConnectionPen
     ( startConnecting
     , startDisconnecting
-    , whileConnecting
-    , whileDisconnecting
-    , handleMove
+    , connectMove
+    , disconnectMove
     , resetConnectionPen
     ) where
 
-import           Luna.Studio.Action.Command         (Command)
-import           Luna.Studio.Data.ConnectionPen     (ConnectionPen (ConnectionPen), Mode (Connecting, Disconnecting))
-import qualified Luna.Studio.Data.ConnectionPen     as ConnectionPen
-import           Luna.Studio.Event.Mouse            (workspacePosition)
+import           Luna.Studio.Action.Command       (Command)
+import           Luna.Studio.Event.Mouse          (workspacePosition)
 import           Luna.Studio.Prelude
-import qualified Luna.Studio.React.Model.NodeEditor as NodeEditor
-import           Luna.Studio.State.Global           (State)
-import qualified Luna.Studio.State.Global           as Global
-import           React.Flux                         (MouseEvent)
+import           Luna.Studio.State.Action         (Action (PenConnect, PenDisconnect))
+import           Luna.Studio.State.Global         (State)
+import qualified Luna.Studio.State.Global         as Global
+import qualified Luna.Studio.State.PenConnect     as PenConnect
+import qualified Luna.Studio.State.PenDisconnect  as PenDisconnect
+import           Luna.Studio.State.StatefulAction (StatefulAction (exit, matchState, pack, start, update))
+import           React.Flux                       (MouseEvent)
 
-createConnectionPen :: Mode -> MouseEvent -> Command State ()
-createConnectionPen mode evt = do
-    pos <- workspacePosition evt
-    let connectionPen = ConnectionPen mode [pos] Nothing
-    Global.modifyNodeEditor $
-        NodeEditor.connectionPen ?= connectionPen
+instance StatefulAction PenConnect.State where
+    matchState (PenConnect state) = Just state
+    matchState _ = Nothing
+    pack = PenConnect
+    exit _ = Global.performedAction .= Nothing
+
+instance StatefulAction PenDisconnect.State where
+    matchState (PenDisconnect state) = Just state
+    matchState _ = Nothing
+    pack = PenDisconnect
+    exit _ = Global.performedAction .= Nothing
 
 startConnecting :: MouseEvent -> Command State ()
-startConnecting = createConnectionPen Connecting
+startConnecting evt = do
+    pos <- workspacePosition evt
+    start $ PenConnect.State [pos] Nothing
 
 startDisconnecting :: MouseEvent -> Command State ()
-startDisconnecting = createConnectionPen Disconnecting
-
-whileConnectionPen :: Mode -> (ConnectionPen -> Command State ()) -> Command State ()
-whileConnectionPen mode run = do
-    mayConnectionPen <- view NodeEditor.connectionPen <$> Global.getNodeEditor
-    withJust mayConnectionPen $ \connectionPen -> do
-        let modeInState = connectionPen ^. ConnectionPen.mode
-        when (modeInState == mode) $ run connectionPen
-
-whileConnecting :: (ConnectionPen -> Command State ()) -> Command State ()
-whileConnecting = whileConnectionPen Connecting
-
-whileDisconnecting :: (ConnectionPen -> Command State ()) -> Command State ()
-whileDisconnecting = whileConnectionPen Disconnecting
-
-handleMove :: MouseEvent -> ConnectionPen -> Command State ()
-handleMove evt connectionPenRef = do
+startDisconnecting evt = do
     pos <- workspacePosition evt
-    Global.modifyConnectionPen $
-        ConnectionPen.history %= (pos:)
+    start $ PenDisconnect.State [pos] Nothing
+
+connectMove :: MouseEvent -> PenConnect.State -> Command State ()
+connectMove evt state = do
+    pos <- workspacePosition evt
+    update $ state & PenConnect.history %~ (pos:)
+
+disconnectMove :: MouseEvent -> PenDisconnect.State -> Command State ()
+disconnectMove evt state = do
+    pos <- workspacePosition evt
+    update $ state & PenDisconnect.history %~ (pos:)
 
 resetConnectionPen :: Command State ()
-resetConnectionPen = Global.modifyNodeEditor $
-    NodeEditor.connectionPen .= Nothing
+resetConnectionPen = do
+    mayPerformedAction <- use $ Global.performedAction
+    withJust mayPerformedAction $ \performedAction -> case performedAction of
+        PenConnect    _ -> Global.performedAction .= Nothing
+        PenDisconnect _ -> Global.performedAction .= Nothing
+        _               -> return ()
 
 
 

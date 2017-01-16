@@ -1,5 +1,3 @@
-{-# LANGUAGE NamedFieldPuns #-}
-
 module Luna.Studio.Action.Camera
      ( centerGraph
      , startPanDrag

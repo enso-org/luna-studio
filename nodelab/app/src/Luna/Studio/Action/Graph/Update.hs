@@ -14,13 +14,13 @@ import           Empire.API.Data.Node                   (NodeId)
 import           Luna.Studio.Action.Command             (Command)
 import           Luna.Studio.Action.Connect.Color       (getConnectionColor)
 import           Luna.Studio.Action.Geometry.Connection (getConnectionPosition)
-import qualified Luna.Studio.React.Model.NodeEditor as NodeEditor
 import           Luna.Studio.Action.Graph.Connect       (localConnectNodes)
 import           Luna.Studio.Action.Graph.Lookup        (allNodes)
 import           Luna.Studio.Prelude
 import qualified Luna.Studio.React.Model.Connection     as ConnectionModel
 import qualified Luna.Studio.React.Model.Node           as Node
 import qualified Luna.Studio.React.Model.Node           as Model
+import qualified Luna.Studio.React.Model.NodeEditor     as NodeEditor
 import           Luna.Studio.State.Global               (State)
 import qualified Luna.Studio.State.Global               as Global
 import qualified Luna.Studio.State.Graph                as Graph
@@ -29,7 +29,6 @@ import qualified Luna.Studio.State.Graph                as Graph
 updateConnections :: Command Global.State ()
 updateConnections = do
     connections <- uses (Global.graph . Graph.connectionsMap) Map.elems
-    print connections
     mapM_ updateConnection (map (view Connection.dst) connections)
 
 updateConnectionsForNodes :: [NodeId] -> Command Global.State ()

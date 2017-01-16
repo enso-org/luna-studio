@@ -1,3 +1,4 @@
+{-# OPTIONS_GHC -fno-warn-orphans #-}
 module Luna.Studio.Action.Camera.Pan
      ( resetPan
      , panLeft
@@ -10,17 +11,25 @@ module Luna.Studio.Action.Camera.Pan
      ) where
 
 import           Data.Matrix                           (setElem)
-import           Luna.Studio.Action.Camera.Modify      (modifyCamera)
+import           Luna.Studio.Action.Camera.Modify      (modifyCamera, resetCameraState)
 import           Luna.Studio.Action.Command            (Command)
 import           Luna.Studio.Data.CameraTransformation (logicalToScreen, screenToLogical)
 import           Luna.Studio.Data.Matrix               (invertedTranslationMatrix, translationMatrix)
 import           Luna.Studio.Data.Vector               (ScreenPosition, Vector2 (Vector2), vector)
 import           Luna.Studio.Prelude
 import qualified Luna.Studio.React.Model.NodeEditor    as NodeEditor
-import qualified Luna.Studio.State.Camera              as Camera
+import           Luna.Studio.State.Action              (Action (PanDrag))
 import           Luna.Studio.State.Global              (State)
 import qualified Luna.Studio.State.Global              as Global
+import qualified Luna.Studio.State.PanDrag             as PanDrag
+import           Luna.Studio.State.StatefulAction      (StatefulAction (exit, matchState, pack, start, update))
 
+
+instance StatefulAction PanDrag.State where
+    matchState (PanDrag state) = Just state
+    matchState _ = Nothing
+    pack = PanDrag
+    exit _ = resetCameraState
 
 panStep :: Double
 panStep = 50
@@ -35,17 +44,14 @@ panUp    = panCamera $ Vector2 0          (-panStep)
 panDown  = panCamera $ Vector2 0          panStep
 
 startPanDrag :: ScreenPosition -> Command State ()
-startPanDrag pos = Global.cameraState ?= Camera.PanDrag pos
+startPanDrag pos = start $ PanDrag.State pos
 
-panDrag :: ScreenPosition -> Command State ()
-panDrag actPos = do
-    mayState <- use Global.cameraState
-    withJust mayState $ \state -> case state of
-        Camera.PanDrag prevPos -> do
-            Global.cameraState ?= Camera.PanDrag actPos
-            let delta = actPos ^. vector - prevPos ^. vector
-            panCamera delta
-        _ -> return ()
+panDrag :: ScreenPosition -> PanDrag.State -> Command State ()
+panDrag actPos state = do
+    let prevPos = view PanDrag.previousPos state
+        delta = actPos ^. vector - prevPos ^. vector
+    update $ PanDrag.State actPos
+    panCamera delta
 
 resetPan :: Command State ()
 resetPan = Global.modifyNodeEditor $ do

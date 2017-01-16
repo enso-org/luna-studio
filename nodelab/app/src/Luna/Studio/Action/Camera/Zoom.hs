@@ -1,3 +1,4 @@
+{-# OPTIONS_GHC -fno-warn-orphans #-}
 module Luna.Studio.Action.Camera.Zoom
      ( resetZoom
      , zoomIn
@@ -8,7 +9,7 @@ module Luna.Studio.Action.Camera.Zoom
      ) where
 
 import           Data.Matrix                           (getElem, setElem)
-import           Luna.Studio.Action.Camera.Modify      (modifyCamera)
+import           Luna.Studio.Action.Camera.Modify      (modifyCamera, resetCameraState)
 import           Luna.Studio.Action.Camera.Screen      (getScreenCenter)
 import           Luna.Studio.Action.Command            (Command)
 import           Luna.Studio.Data.CameraTransformation (logicalToScreen, screenToLogical)
@@ -16,11 +17,18 @@ import           Luna.Studio.Data.Matrix               (homothetyMatrix, inverte
 import           Luna.Studio.Data.Vector               (ScreenPosition, Vector2, vector, x, y)
 import           Luna.Studio.Prelude
 import qualified Luna.Studio.React.Model.NodeEditor    as NodeEditor
-import qualified Luna.Studio.State.Camera              as Camera
+import           Luna.Studio.State.Action              (Action (ZoomDrag))
 import           Luna.Studio.State.Global              (State)
 import qualified Luna.Studio.State.Global              as Global
+import           Luna.Studio.State.StatefulAction      (StatefulAction (exit, matchState, pack, start, update))
+import qualified Luna.Studio.State.ZoomDrag            as ZoomDrag
 
 
+instance StatefulAction ZoomDrag.State where
+    matchState (ZoomDrag state) = Just state
+    matchState _ = Nothing
+    pack = ZoomDrag
+    exit _ = resetCameraState
 
 minCamFactor, maxCamFactor, dragZoomSpeed, wheelZoomSpeed, zoomFactorStep :: Double
 minCamFactor   = 0.2
@@ -48,18 +56,16 @@ zoomOut :: Command State ()
 zoomOut = getScreenCenter >>= flip zoomCamera (1/zoomFactorStep)
 
 startZoomDrag :: ScreenPosition -> Command State ()
-startZoomDrag pos = Global.cameraState ?= Camera.ZoomDrag pos pos
+startZoomDrag pos = start $ ZoomDrag.State pos pos
 
-zoomDrag :: ScreenPosition -> Command State ()
-zoomDrag actPos = do
-    mayState <- use Global.cameraState
-    withJust mayState $ \state -> case state of
-        Camera.ZoomDrag fixedPoint prevPos -> do
-            Global.cameraState ?= Camera.ZoomDrag fixedPoint actPos
-            let delta = actPos ^. vector - prevPos ^. vector
-                scale = 1 + (delta ^. x - delta ^. y) / dragZoomSpeed
-            zoomCamera fixedPoint scale
-        _ -> return ()
+zoomDrag :: ScreenPosition -> ZoomDrag.State -> Command State ()
+zoomDrag actPos state = do
+    let fixedPoint = view ZoomDrag.fixedPoint state
+        prevPos    = view ZoomDrag.previousPos state
+        delta = actPos ^. vector - prevPos ^. vector
+        scale = 1 + (delta ^. x - delta ^. y) / dragZoomSpeed
+    update $ ZoomDrag.State fixedPoint actPos
+    zoomCamera fixedPoint scale
 
 resetZoom :: Command State ()
 resetZoom = Global.modifyNodeEditor $ do
