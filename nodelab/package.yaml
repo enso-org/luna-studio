@@ -40,30 +40,20 @@ dependencies:
   - base64-bytestring
   - binary
   - bytestring
-  - constraints
   - containers
-  - convert
   - data-default
   - datetime
   - deepseq
-  - errors
-  - fgl
   - ghcjs-base
   - ghcjs-dom
   - ghcjs-prim
   - hashable
-  - hsprocessing
-  - language-glsl
   - lens
-  - lens-utils
   - luna-empire-api
   - luna-empire-api-json
   - matrix
-  - MissingH
   - mtl
   - placeholders
-  - pretty-show
-  - process
   - prologue
   - random
   - react-flux
@@ -74,7 +64,6 @@ dependencies:
   - transformers
   - unordered-containers
   - uuid-types
-  - vector
   - visualization-api
 
 executables:
