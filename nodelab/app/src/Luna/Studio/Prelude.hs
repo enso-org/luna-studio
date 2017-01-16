@@ -30,39 +30,11 @@ import           GHC.Generics                  as X (Generic)
 import           GHCJS.Marshal                 as X (FromJSVal (..), ToJSVal (..))
 import           GHCJS.Types                   as X (JSVal)
 import           Luna.Studio.Prelude.Instances ()
-import           Prelude                       hiding (print, putStr, putStrLn, (++), (.))
-import           Prologue                      as X (curry, foldlDef, fromJustM, ifElseId, lift2, lift3, mapOver, mapOverM, pprint, print,
-                                                     printLn, putStr, putStrLn, show', switch, toString, uncurry, whenLeft, whenLeft',
-                                                     whenRight, whenRight', withJust, ($>), (++))
+import           Prelude                       hiding (curry, print, putStr, putStrLn, uncurry, (++), (.))
+import           Prologue                      as X (curry, foldlDef, fromJustM, ifElseId, ifM, lift2, lift3, pprint, print, printLn,
+                                                     putStr, putStrLn, show', switch, toString, uncurry, unlessM, whenLeft, whenLeft',
+                                                     whenM, whenRight, whenRight', withJust, ($>), (++), (.), (.:), (.:.), (.::))
 
-
-
-infixr 9 .
-(.) :: Functor f => (a -> b) -> f a -> f b
-(.) = fmap
-
-(.:)  :: (x -> y) -> (a -> b -> x) -> a -> b -> y
-(.:)   = (.) . (.)
-
-(.:.) :: (x -> y) -> (a -> b -> c -> x) -> a -> b -> c -> y
-(.:.)  = (.) . (.) . (.)
-
-(.::) :: (x -> y) -> (a -> b -> c -> d -> x) -> a -> b -> c -> d -> y
-(.::)  = (.) . (.) . (.) . (.)
-
-ifM :: Monad m => m Bool -> m a -> m a -> m a
-ifM predicate a b = do bool <- predicate
-                       if bool then a else b
-
-whenM :: Monad m => m Bool -> m () -> m ()
-whenM predicate a = do
-    bool <- predicate
-    when bool a
-
-unlessM :: Monad m => m Bool -> m () -> m ()
-unlessM predicate a = do
-    bool <- predicate
-    unless bool a
 
 mjoin :: Monoid a => a -> [a] -> a
 mjoin delim l = mconcat (intersperse delim l)
