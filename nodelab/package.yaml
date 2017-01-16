@@ -35,7 +35,7 @@ ghc-options:
 # ACHTUNG! Zmieniasz tu - zmien w interactive
 #
 dependencies:
-  - "base >= 4.8 && < 4.9"
+  - "base >= 4.9 && < 4.10"
   - aeson
   - base64-bytestring
   - binary
