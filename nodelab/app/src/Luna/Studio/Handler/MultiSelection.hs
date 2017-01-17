@@ -18,5 +18,5 @@ toAction :: Event -> Maybe (Command State ())
 toAction (UI (NodeEditorEvent (NodeEditor.MouseDown evt))) = Just $ when shouldProceed $ startMultiSelection evt where
     shouldProceed = Mouse.withoutMods evt Mouse.leftButton
 toAction (UI (AppEvent        (App.MouseMove evt)))        = Just $ continue $ updateMultiSelection evt
-toAction (UI (AppEvent        (App.MouseUp   _  )))        = Just $ endMultiSelection
+toAction (UI (AppEvent        (App.MouseUp   _  )))        = Just $ continue $ endMultiSelection
 toAction _                                                 = Nothing

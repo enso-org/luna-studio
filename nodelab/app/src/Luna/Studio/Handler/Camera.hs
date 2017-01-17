@@ -5,8 +5,8 @@ module Luna.Studio.Handler.Camera
 import           Event.Event                        (Event (UI))
 import           Event.UI                           (UIEvent (AppEvent, NodeEditorEvent))
 import           Luna.Studio.Action.Camera          (centerGraph, panCamera, panDown, panDrag, panLeft, panRight, panUp, resetCamera,
-                                                     resetCameraState, resetPan, resetZoom, startPanDrag, startZoomDrag, wheelZoom,
-                                                     zoomDrag, zoomIn, zoomOut)
+                                                     resetPan, resetPanState, resetZoom, resetZoomState, startPanDrag, startZoomDrag,
+                                                     wheelZoom, zoomDrag, zoomIn, zoomOut)
 import           Luna.Studio.Action.Command         (Command)
 import           Luna.Studio.Data.Vector            (Vector2 (Vector2))
 import qualified Luna.Studio.Event.Keys             as Keys
@@ -25,7 +25,7 @@ toAction :: Event -> Maybe (Command State ())
 toAction (UI (AppEvent (App.KeyDown   e)))               = Just $ handleKey e
 toAction (UI (NodeEditorEvent (NodeEditor.MouseDown e))) = Just $ handleMouseDown e
 toAction (UI (AppEvent (App.MouseMove e)))               = Just $ handleMouseMove e
-toAction (UI (AppEvent (App.MouseUp   _)))               = Just   resetCameraState
+toAction (UI (AppEvent (App.MouseUp   _)))               = Just $ continue resetPanState >> continue resetZoomState
 toAction (UI (NodeEditorEvent (NodeEditor.Wheel m w)))   = Just $ handleMouseWheel m delta where
     deltaX = fromIntegral $ -(wheelDeltaX w)
     deltaY = fromIntegral $ -(wheelDeltaY w)

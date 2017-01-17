@@ -87,6 +87,4 @@ endDrag evt state = do
             updateConnectionsForNodes $ fst <$> nodesToUpdate
         else selectNodes [nodeId]
     mayPerformedAction <- use $ Global.performedAction
-    withJust mayPerformedAction $ \performedAction -> case performedAction of
-        Drag _ -> Global.performedAction .= Nothing
-        _      -> return ()
+    Global.performedAction .= Nothing

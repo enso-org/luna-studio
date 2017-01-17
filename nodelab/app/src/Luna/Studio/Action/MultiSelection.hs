@@ -29,7 +29,7 @@ instance StatefulAction MultiSelection.State where
     pack = MultiSelection
     matchState (MultiSelection state) = Just state
     matchState _ = Nothing
-    exit _ = endMultiSelection
+    exit = endMultiSelection
 
 startMultiSelection :: MouseEvent -> Command State ()
 startMultiSelection evt = do
@@ -68,13 +68,10 @@ drawSelectionBox start end =
 hideSelectionBox :: Command State ()
 hideSelectionBox = Global.modifySelectionBox $ SelectionBox.visible .= False
 
-endMultiSelection :: Command State ()
-endMultiSelection = do
-    mayPerformedAction <- use $ Global.performedAction
-    withJust mayPerformedAction $ \performedAction -> case performedAction of
-        MultiSelection _ -> Global.performedAction .= Nothing
-        _                -> return ()
+endMultiSelection :: MultiSelection.State -> Command State ()
+endMultiSelection _ = do
     hideSelectionBox
     focusSelectedNode
     selectedNodesIds <- map (^. NodeModel.nodeId) <$> selectedNodes
     modifySelectionHistory selectedNodesIds
+    Global.performedAction .= Nothing

@@ -1,7 +1,6 @@
 module Luna.Studio.Action.Camera.Modify
      ( modifyCamera
      , resetCamera
-     , resetCameraState
      ) where
 
 import           Data.Matrix                           (Matrix, identity, inverse, multStd2)
@@ -37,11 +36,3 @@ resetCamera :: Command State ()
 resetCamera = Global.modifyNodeEditor $ do
     NodeEditor.screenTransform . logicalToScreen .= identity 4
     NodeEditor.screenTransform . screenToLogical .= identity 4
-
-resetCameraState :: Command State ()
-resetCameraState = do
-    mayPerformedAction <- use $ Global.performedAction
-    withJust mayPerformedAction $ \performedAction -> case performedAction of
-        PanDrag  _ -> Global.performedAction .= Nothing
-        ZoomDrag _ -> Global.performedAction .= Nothing
-        _ -> return ()
