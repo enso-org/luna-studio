@@ -1,9 +1,6 @@
 module Luna.Studio.Prelude.Instances where
 
 import           Data.Aeson
-import           Data.Default             (Default (..))
-import           Data.Text                (Text)
-import qualified Data.Text                as Text
 import           Development.Placeholders
 import           React.Flux
 
@@ -34,5 +31,3 @@ instance ToJSON   Event where
     toJSON _ = toJSON "(Event)"
 instance FromJSON Event where
     parseJSON = $notImplemented
-
-instance Default Text where def = Text.empty

@@ -116,10 +116,10 @@ nudgeFromZero v = (sign v) * (0.1 + (abs v)) where
 negateSnd :: Num a => Vector2 a -> Vector2 a
 negateSnd (Vector2 x y) = Vector2 x (-y)
 
-fromTuple :: Num a => (a, a) -> Vector2 a
+fromTuple :: (a, a) -> Vector2 a
 fromTuple (a, b) = Vector2 a b
 
-toTuple :: Num a => Vector2 a -> (a, a)
+toTuple :: Vector2 a -> (a, a)
 toTuple (Vector2 a b) = (a, b)
 
 minMax :: Ord a => Vector2 a -> Vector2 a -> Vector2 a

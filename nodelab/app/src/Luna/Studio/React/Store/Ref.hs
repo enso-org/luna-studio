@@ -3,13 +3,10 @@
 
 module Luna.Studio.React.Store.Ref where
 
-import           Control.Concurrent         (MVar)
-import           Control.DeepSeq            (NFData (..))
+import           Control.DeepSeq            (NFData)
 import           Control.Monad.State        (runState)
 import           Control.Monad.Trans.Reader
 import           Control.Monad.Trans.State  hiding (get, modify)
-import qualified Control.Monad.Trans.State  as State
-import           Data.Tuple                 (swap)
 import           Luna.Studio.Prelude        as P hiding (transform)
 import           React.Flux
 import           React.Flux.Store           (ReactStoreRef)
@@ -34,7 +31,6 @@ type SendEventM = ReaderT SendEvent
 type StoreModifyM a m = StateT a (SendEventM m)--TODO newtype
 
 instance Eq (ReactStore a) where _ == _ = True
-instance NFData (MVar a)   where rnf !_ = ()
 instance NFData a => NFData (ReactStoreRef a)
 instance NFData a => NFData (ReactStore a)
 
