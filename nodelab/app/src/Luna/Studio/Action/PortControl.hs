@@ -53,9 +53,7 @@ stopMoveSlider currentPostion state = do
         portRef = state ^. Slider.portRef
     Batch.setDefaultValue portRef defaultValue
     mayPerformedAction <- use $ Global.performedAction
-    withJust mayPerformedAction $ \performedAction -> case performedAction of
-        Slider _ -> Global.performedAction .= Nothing
-        _        -> return ()
+    Global.performedAction .= Nothing
 
 newDefaultValue :: Position -> Slider.State -> DefaultValue.PortDefault
 newDefaultValue currentPostion slider =

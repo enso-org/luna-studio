@@ -88,10 +88,7 @@ handleMove evt conn = do
 stopDrag :: CurrentConnection -> Command State ()
 stopDrag conn = do
     Global.modifyNodeEditor $ NodeEditor.currentConnection .= Nothing
-    mayPerformedAction <- use $ Global.performedAction
-    withJust mayPerformedAction $ \performedAction -> case performedAction of
-        Connect _ -> Global.performedAction .= Nothing
-        _         -> return ()
+    Global.performedAction .= Nothing
     let mayModifiedConnection = conn ^. ConnectionModel.modifiedConnection
     withJust mayModifiedConnection $ \modifiedConnection -> do
         removeConnections [modifiedConnection ^. Connection.dst]
@@ -99,10 +96,7 @@ stopDrag conn = do
 connectToPort :: AnyPortRef -> CurrentConnection -> Command State ()
 connectToPort dstPortRef conn = do
     Global.modifyNodeEditor $ NodeEditor.currentConnection .= Nothing
-    mayPerformedAction <- use $ Global.performedAction
-    withJust mayPerformedAction $ \performedAction -> case performedAction of
-        Connect _ -> Global.performedAction .= Nothing
-        _         -> return ()
+    Global.performedAction .= Nothing
     let srcPortRef            = conn ^. ConnectionModel.srcPortRef
         mayModifiedConnection = conn ^. ConnectionModel.modifiedConnection
     withJust (toValidConnection srcPortRef dstPortRef) $ \(src, dst) -> case mayModifiedConnection of

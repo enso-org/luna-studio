@@ -6,7 +6,8 @@ import           Event.Event                      (Event)
 import           Event.Event                      (Event (UI))
 import           Event.UI                         (UIEvent (AppEvent))
 import           Luna.Studio.Action.Command       (Command)
-import           Luna.Studio.Action.ConnectionPen (connectMove, disconnectMove, resetConnectionPen, startConnecting, startDisconnecting)
+import           Luna.Studio.Action.ConnectionPen (connectMove, disconnectMove, resetPenConnectState, resetPenDisconnectState,
+                                                   startConnecting, startDisconnecting)
 import qualified Luna.Studio.Event.Mouse          as Mouse
 import           Luna.Studio.Prelude
 import qualified Luna.Studio.React.Event.App      as App
@@ -18,7 +19,7 @@ import           React.Flux                       (MouseEvent)
 toAction :: Event -> Maybe (Command State ())
 toAction (UI (AppEvent (App.MouseDown evt))) = Just $ handleMouseDown evt
 toAction (UI (AppEvent (App.MouseMove evt))) = Just $ handleMouseMove evt
-toAction (UI (AppEvent (App.MouseUp   _  ))) = Just $ resetConnectionPen
+toAction (UI (AppEvent (App.MouseUp   _  ))) = Just $ continue resetPenConnectState >> continue resetPenDisconnectState
 toAction _                                   = Nothing
 
 handleMouseDown :: MouseEvent -> Command State ()
