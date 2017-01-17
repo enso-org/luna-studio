@@ -3,7 +3,6 @@
 module Luna.Studio.React.View.Port where
 
 import           Luna.Studio.Prelude
-
 import           Empire.API.Data.Port               (InPort (..), OutPort (..), PortId (..))
 import           Empire.API.Data.PortRef            (AnyPortRef)
 import qualified Event.UI                           as UI
@@ -27,15 +26,14 @@ show2 :: Double -> String
 show2 a = showFFloat (Just 2) a "" -- limit Double to two decimal numbers
 
 handleMouseDown :: Ref App -> AnyPortRef -> Event -> MouseEvent -> [SomeStoreAction]
-handleMouseDown ref portRef e m = do
-    if (Mouse.withoutMods m Mouse.leftButton) then
-        stopPropagation e : dispatch ref (UI.ConnectionEvent $ Connection.StartConnection m portRef)
+handleMouseDown ref portRef e m =
+    if (Mouse.withoutMods m Mouse.leftButton)
+    then stopPropagation e : dispatch ref (UI.ConnectionEvent $ Connection.StartConnection m portRef)
     else []
 
 handleMouseUp :: Ref App -> AnyPortRef -> Event -> MouseEvent -> [SomeStoreAction]
-handleMouseUp ref portRef _e m = do
+handleMouseUp ref portRef _e m =
     dispatch ref (UI.ConnectionEvent $ Connection.EndConnection m portRef)
-
 
 port :: ReactView (Ref App, Int, Bool, Port)
 port = React.defineView name $ \(ref, numOfPorts, isOnly, p) ->
@@ -55,18 +53,18 @@ portExpanded = React.defineView name $ \(ref, p) ->
         OutPortId (Projection i) -> portIOExpanded_ ref p i False
 
 port_ :: Ref App -> Port -> Int -> Bool -> ReactElementM ViewEventHandler ()
-port_ ref p numOfPorts isOnly = React.viewWithSKey port (fromString $ show $ p ^. Port.portId) (ref, numOfPorts, isOnly, p) mempty where
+port_ ref p numOfPorts isOnly =
+    React.viewWithSKey port (fromString $ show $ p ^. Port.portId) (ref, numOfPorts, isOnly, p) mempty where
 
 portExpanded_ :: Ref App -> Port -> ReactElementM ViewEventHandler ()
-portExpanded_ ref p = React.viewWithSKey portExpanded (fromString $ show $ p ^. Port.portId) (ref, p) mempty
-
+portExpanded_ ref p =
+    React.viewWithSKey portExpanded (fromString $ show $ p ^. Port.portId) (ref, p) mempty
 
 portSelf_ :: Ref App -> Port -> ReactElementM ViewEventHandler ()
-portSelf_ ref port =
+portSelf_ ref port = do
     let portRef = port ^. Port.portRef
         color   = toJSString $ port ^. Port.color
         portId  = port ^. Port.portId
-    in
     g_ [ "className" $= "port port--self" ] $ do
         circle_
             [ "className" $= "port__shape"
@@ -82,7 +80,6 @@ portSelf_ ref port =
 
 portSingle_ :: Ref App -> Port -> ReactElementM ViewEventHandler ()
 portSingle_ ref port = do
-
     let portRef = port ^. Port.portRef
         portId  = port ^. Port.portId
         color   = toJSString $ port ^. Port.color
@@ -105,23 +102,19 @@ portSingle_ ref port = do
             , "d"         $= (svgPath 3 0 1 <> svgPath 3 1 0)
             ] mempty
 
-
 portIO_ :: Ref App -> Port -> Int -> Int -> Bool -> ReactElementM ViewEventHandler ()
 portIO_ ref port num numOfPorts isInput = do
     let portRef = port ^. Port.portRef
         portId  = port ^. Port.portId
         color   = toJSString $ port ^. Port.color
-
         classes  = if isInput then "port port--i port--i--" else "port port--o port--o--"
         svgFlag1 = if isInput then "1"  else "0"
         svgFlag2 = if isInput then "0"  else "1"
         mod      = if isInput then -1.0 else 1.0
-
         startPortArcX r = r * sin(portAngleStart num numOfPorts r * mod)
         startPortArcY r = r * cos(portAngleStart num numOfPorts r * mod)
         stopPortArcX  r = r * sin(portAngleStop  num numOfPorts r * mod)
         stopPortArcY  r = r * cos(portAngleStop  num numOfPorts r * mod)
-
         ax = show2 . startPortArcX . (+) nodeRadius
         ay = show2 . startPortArcY . (+) nodeRadius
         bx = show2 . stopPortArcX  . (+) nodeRadius
@@ -137,7 +130,6 @@ portIO_ ref port num numOfPorts isInput = do
                                 " L " <> cx a <> " " <> cy a <>
                                 " A " <> r2 a <> " " <> r2 a <> " 1 0 " <> svgFlag2 <> " " <> dx a <> " " <> dy a <>
                                 " Z"
-
     g_ [ "className" $= (fromString $ classes <> show (num+1)) ] $ do
         path_
             [ "className" $= "port__shape"
@@ -153,18 +145,14 @@ portIO_ ref port num numOfPorts isInput = do
             , "d"         $= svgPath 3
             ] mempty
 
-
-
 portIOExpanded_ :: Ref App -> Port -> Int -> Bool -> ReactElementM ViewEventHandler ()
 portIOExpanded_ ref port num isInput = do
-
     let portRef = port ^. Port.portRef
         portId  = port ^. Port.portId
         color   = toJSString $ port ^. Port.color
         classes = if isInput then "port port--i port--i--" else "port port--o port--o--"
         n       = if isInput then 1 else 0
         r       = show2 . (+3)
-
     g_ [ "className" $= fromString (classes <> show (num + 1)) ] $ do
         circle_
             [ "className" $= "port__shape"
@@ -181,7 +169,6 @@ portIOExpanded_ ref port num isInput = do
             , "r"         $= fromString (r 3)
             , "cy"        $= fromString (show2 $ lineHeight * fromIntegral (num + n) )
             ] mempty
-
 
 --TODO[react] probably remove
 -- displayPorts :: WidgetId -> Node -> Command Global.State ()
