@@ -10,19 +10,16 @@ import           Luna.Studio.React.Model.App (App)
 import           Luna.Studio.Prelude
 
 
-
 name :: JSString
 name = "code-editor-toggle"
 
-
 codeEditorToggle :: ReactView (Ref App)
 codeEditorToggle = React.defineView name $ \ref-> do
-    button_ [ "key"       $= name
-            , "className" $= name
-            , onClick $ \_ _ -> dispatch ref $ UI.CodeEditorEvent CodeEditor.ToggleCodeEditor
-            ] $ do
-        elemString $ []
-
+    button_
+        [ "key"       $= name
+        , "className" $= name
+        , onClick $ \_ _ -> dispatch ref $ UI.CodeEditorEvent CodeEditor.ToggleCodeEditor
+        ] $ elemString $ []
 
 codeEditorToggle_ :: Ref App -> ReactElementM ViewEventHandler ()
 codeEditorToggle_ ref = React.viewWithSKey codeEditorToggle name ref mempty

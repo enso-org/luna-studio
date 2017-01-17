@@ -42,33 +42,36 @@ lineReact src dst b = do
 
 connection :: ReactView (Ref App, Connection)
 connection = React.defineView name $ \(ref, model) -> do
-        let connId      = model ^. Connection.connectionId
-            src         = model ^. Connection.from
-            dst         = model ^. Connection.to
-            mid         = averagePosition src dst
-            color       = "stroke"      $= (toJSString $ model ^. Connection.color  )
-            width       = "strokeWidth" $= (fromString $ show2   connectionWidth    )
-            widthSelect = "strokeWidth" $= (fromString $ show2 $ connectionWidth * 4)
-            eventSrc    = onMouseDown $ \e m -> stopPropagation e : dispatch ref (UI.ConnectionEvent $ Connection.ModifyConnection m connId Source)
-            eventDst    = onMouseDown $ \e m -> stopPropagation e : dispatch ref (UI.ConnectionEvent $ Connection.ModifyConnection m connId Destination)
-        g_ [ "className" $= "connection" ] $ do
-            g_ [ "className" $= "connection__src" ] $ do
-                lineReact src mid [ width, color ]
-                lineReact src mid [ widthSelect, eventSrc ]
-            g_ [ "className" $= "connection__dst" ] $ do
-                lineReact mid dst [ width, color ]
-                lineReact mid dst [ widthSelect, eventDst ]
+    let connId      = model ^. Connection.connectionId
+        src         = model ^. Connection.from
+        dst         = model ^. Connection.to
+        mid         = averagePosition src dst
+        color       = "stroke"      $= (toJSString $ model ^. Connection.color  )
+        width       = "strokeWidth" $= (fromString $ show2   connectionWidth    )
+        widthSelect = "strokeWidth" $= (fromString $ show2 $ connectionWidth * 4)
+        eventSrc    = onMouseDown $ \e m -> stopPropagation e : dispatch ref (UI.ConnectionEvent $ Connection.ModifyConnection m connId Source)
+        eventDst    = onMouseDown $ \e m -> stopPropagation e : dispatch ref (UI.ConnectionEvent $ Connection.ModifyConnection m connId Destination)
+    g_
+        [ "className" $= "connection" ] $ do
+        g_
+            [ "className" $= "connection__src" ] $ do
+            lineReact src mid [ width, color ]
+            lineReact src mid [ widthSelect, eventSrc ]
+        g_
+            [ "className" $= "connection__dst" ] $ do
+            lineReact mid dst [ width, color ]
+            lineReact mid dst [ widthSelect, eventDst ]
 
 connection_ :: Ref App -> InPortRef -> Connection -> ReactElementM ViewEventHandler ()
 connection_ ref inPortRef model = React.viewWithSKey connection (fromString $ show inPortRef) (ref, model) mempty
 
 currentConnection :: ReactView CurrentConnection
 currentConnection = React.defineView name $ \model -> do
-        let src   = model ^. Connection.currentFrom
-            dst   = model ^. Connection.currentTo
-            color = "stroke"      $= (toJSString $ model ^. Connection.currentColor)
-            width = "strokeWidth" $= (fromString $ show2 connectionWidth           )
-        lineReact src dst [ width, color ]
+    let src   = model ^. Connection.currentFrom
+        dst   = model ^. Connection.currentTo
+        color = "stroke"      $= (toJSString $ model ^. Connection.currentColor)
+        width = "strokeWidth" $= (fromString $ show2 connectionWidth           )
+    lineReact src dst [ width, color ]
 
 currentConnection_ :: CurrentConnection -> ReactElementM ViewEventHandler ()
 currentConnection_ model = React.viewWithSKey currentConnection "current-connection" model mempty

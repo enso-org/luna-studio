@@ -37,12 +37,10 @@ handleMouseDown ref nodeId e m =
     else []
 
 ports :: Ref App -> [Port] -> ReactElementM ViewEventHandler ()
-ports nodeRef ports =
-    forM_ ports $ \port -> port_ nodeRef port (countSameTypePorts port ports) (isPortSingle port ports)
+ports nodeRef ports = forM_ ports $ \port -> port_ nodeRef port (countSameTypePorts port ports) (isPortSingle port ports)
 
 portsExpanded :: Ref App -> [Port] -> ReactElementM ViewEventHandler ()
-portsExpanded nodeRef ports =
-    forM_ ports $ \port -> portExpanded_ nodeRef port
+portsExpanded nodeRef ports = forM_ ports $ \port -> portExpanded_ nodeRef port
 
 --TODO inline div and others
 node :: ReactView (Ref App, Node)
@@ -62,9 +60,10 @@ node = React.defineView objName $ \(ref, n) -> do
         , onMouseDown   $ handleMouseDown ref nodeId
         , "className"   $= (fromString $ "node" <> (if n ^. Node.isExpanded then " node--expanded" else " node--collapsed")
                                                 <> (if n ^. Node.isSelected then " node--selected" else []))
-        , "style"       @= Aeson.object [ "transform" Aeson..= (transformTranslateToSvg offsetX offsetY)
-                                        , "zIndex"    Aeson..= (show z)
-                                        ]
+        , "style"       @= Aeson.object
+            [ "transform" Aeson..= (transformTranslateToSvg offsetX offsetY)
+            , "zIndex"    Aeson..= (show z)
+            ]
         ] $ do
         svg_
             [ "className" $= "node__selection-mark"
@@ -94,5 +93,4 @@ node = React.defineView objName $ \(ref, n) -> do
                 ports ref $ filter (\port -> (port ^. Port.portId) == InPortId Self) nodePorts
 
 node_ :: Ref App -> Node -> ReactElementM ViewEventHandler ()
-node_ ref model =
-    React.viewWithSKey node (fromString $ show $ model ^. Node.nodeId) (ref, model) mempty
+node_ ref model = React.viewWithSKey node (fromString $ show $ model ^. Node.nodeId) (ref, model) mempty

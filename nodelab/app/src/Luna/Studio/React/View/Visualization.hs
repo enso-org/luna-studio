@@ -12,7 +12,6 @@ import           Data.List.Split                                (wordsBy)
 import qualified Data.Text                                      as Text
 import           React.Flux                                     hiding (image_)
 import qualified React.Flux                                     as React
-
 import           Empire.API.Data.DefaultValue                   (Value (..))
 import qualified Empire.API.Data.DefaultValue                   as DefaultValue
 import qualified Empire.API.Data.Error                          as LunaError
@@ -32,10 +31,8 @@ import qualified Object.Widget.Plots.Image                      as Image
 import qualified Style.Layout                                   as Style
 
 
-
 viewName :: JSString
 viewName = "visualization"
-
 
 visualization :: ReactView NodeValue
 visualization = React.defineView viewName $ \case
@@ -44,7 +41,6 @@ visualization = React.defineView viewName $ \case
 
 visualization_ :: NodeValue -> ReactElementM ViewEventHandler ()
 visualization_ v = React.view visualization v mempty
-
 
 strValue :: Node -> String
 strValue n = Text.unpack $ case n ^. Node.value of
@@ -79,13 +75,13 @@ showErrorSep sep err = case err of
 nodeError_ :: LunaError.Error TypeRep -> ReactElementM ViewEventHandler ()
 nodeError_ err = do
     let message = wrapLines Style.errorMessageWrapMargin $ showErrorSep "\n" err
-    div_ [ "key"       $= "error"
-         , "className" $= "vis vis--error" ] $
-        elemString message
+    div_
+        [ "key"       $= "error"
+        , "className" $= "vis vis--error"
+        ] $ elemString message
 
 nodeValues_ :: [Value] -> ReactElementM ViewEventHandler ()
-nodeValues_ =
-    mapM_ (uncurry nodeValue_) . zip [0..]
+nodeValues_ = mapM_ (uncurry nodeValue_) . zip [0..]
 
 nodeValue_ :: Int -> Value -> ReactElementM ViewEventHandler ()
 nodeValue_ visIx = \case
@@ -101,9 +97,9 @@ nodeValue_ visIx = \case
     Lambda        str -> div_ $ elemString $ fromString $ normalize str
     Graphics       gr -> graphics_ visIx gr
     DataFrame    cols -> do
-        let heads = Text.pack <$> fst <$> cols
-            cols' = fmap DefaultValue.stringify <$> snd <$> cols
-            rows = transpose cols'
+        let heads  = Text.pack <$> fst <$> cols
+            cols'  = fmap DefaultValue.stringify <$> snd <$> cols
+            rows   = transpose cols'
             widget = DataFrame.create heads rows
         dataFrame_ visIx widget
     _ -> return ()

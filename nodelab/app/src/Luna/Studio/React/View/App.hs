@@ -5,7 +5,6 @@ module Luna.Studio.React.View.App where
 import           Luna.Studio.Prelude hiding (on)
 import           React.Flux
 import qualified React.Flux                              as React
-
 import qualified Event.UI                                as UI
 import qualified Luna.Studio.React.Event.App             as App
 import           Luna.Studio.React.Model.App             (App)
@@ -22,28 +21,31 @@ name :: JSString
 name = "app"
 
 app :: Ref App -> ReactView ()
-app ref = React.defineControllerView
-    name ref $ \store () -> do
-        let s = store ^. dt
-        div_ [ onKeyDown     $ \e k -> preventDefault e : dispatch ref (UI.AppEvent $ App.KeyDown k)
-             , onContextMenu $ \e _ -> [preventDefault e]
-             , onMouseDown   $ \_ m -> dispatch ref $ UI.AppEvent $ App.MouseDown m
-             , onMouseUp     $ \_ m -> dispatch ref $ UI.AppEvent $ App.MouseUp   m
-             , onMouseMove   $ \_ m -> dispatch ref $ UI.AppEvent $ App.MouseMove m
-             , "key"       $= "app"
-             , "id"        $= "focus-root"
-             , "tabIndex"  $= "-1"
-             , "className" $= "noselect"
-             ] $ do
-                 div_ [ "className" $= "main"
-                      , "key"       $= "main"] $ do
-                     div_ [ "className" $= "graph-editor"
-                          , "key"       $= "graph-editor" ] $ do
-                        nodeEditor_  ref $ s ^. App.nodeEditor
-                        breadcrumbs_ ref $ s ^. App.breadcrumbs
-                        codeEditorToggle_ ref
-                        searcher_ ref $ s ^. App.searcher
-                     codeEditor_ $ s ^. App.codeEditor
-
+app ref = React.defineControllerView name ref $ \store () -> do
+    let s = store ^. dt
+    div_
+        [ onKeyDown     $ \e k -> preventDefault e : dispatch ref (UI.AppEvent $ App.KeyDown k)
+        , onContextMenu $ \e _ -> [preventDefault e]
+        , onMouseDown   $ \_ m -> dispatch ref $ UI.AppEvent $ App.MouseDown m
+        , onMouseUp     $ \_ m -> dispatch ref $ UI.AppEvent $ App.MouseUp   m
+        , onMouseMove   $ \_ m -> dispatch ref $ UI.AppEvent $ App.MouseMove m
+        , "key"       $= "app"
+        , "id"        $= "focus-root"
+        , "tabIndex"  $= "-1"
+        , "className" $= "noselect"
+        ] $ do
+        div_
+            [ "className" $= "main"
+            , "key"       $= "main"
+            ] $ do
+            div_
+                [ "className" $= "graph-editor"
+                , "key"       $= "graph-editor"
+                ] $ do
+                nodeEditor_  ref $ s ^. App.nodeEditor
+                breadcrumbs_ ref $ s ^. App.breadcrumbs
+                codeEditorToggle_ ref
+                searcher_ ref $ s ^. App.searcher
+            codeEditor_ $ s ^. App.codeEditor
 
 foreign import javascript safe "document.getElementById('focus-root').focus()" focus :: IO ()

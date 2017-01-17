@@ -6,15 +6,12 @@ import           Data.Text                          (unpack)
 import           Luna.Studio.Prelude
 import           React.Flux
 import qualified React.Flux                         as React
-
 import           Luna.Studio.React.Model.CodeEditor (CodeEditor)
 import qualified Luna.Studio.React.Model.CodeEditor as CodeEditor
 
 
-
 name :: JSString
 name = "code-editor"
-
 
 codeEditor :: ReactView CodeEditor
 codeEditor = React.defineView name $ \model -> do
@@ -29,11 +26,13 @@ codeEditor = React.defineView name $ \model -> do
             [ "key"       $= "editor"
             , "id"        $= "editor"
             , "className" $= "ace_editor ace-twilight ace_dark"
-            , "style"     @= Aeson.object [ "color" Aeson..= ("#eee"::String) ]
+            , "style"     @= Aeson.object
+                [ "color" Aeson..= ("#eee"::String) ]
             ] $ do
             div_
                 [ "key"       $= "ace_gutter"
-                , "className" $= "ace_gutter" ] $ do
+                , "className" $= "ace_gutter"
+                ] $ do
                 div_
                     [ "key"       $= "ace_layer"
                     , "className" $= "ace_layer ace_gutter-layer ace_folding-enabled"
@@ -43,9 +42,11 @@ codeEditor = React.defineView name $ \model -> do
                         , "height"     Aeson..= ("807px"  ::String)
                         , "width"      Aeson..= ("41px"   ::String)
                         ]
-                    ] $ div_ [ "key"       $= "cell"
-                             , "className" $= "ace_gutter-cell" ] $
-                            elemString "1"
+                    ] $ do
+                    div_
+                        [ "key"       $= "cell"
+                        , "className" $= "ace_gutter-cell"
+                        ] $ elemString "1"
                 div_
                     [ "key"       $= "active-line"
                     , "className" $= "ace_gutter-active-line"
@@ -77,9 +78,9 @@ codeEditor = React.defineView name $ \model -> do
                         div_
                             [ "key"       $= "active-line"
                             , "className" $= "ace_active-line"
-                            , "style"     @= Aeson.object [ "padding" Aeson..= ("0 4px" ::String) ]
+                            , "style"     @= Aeson.object
+                                [ "padding" Aeson..= ("0 4px" ::String) ]
                             ] $ do elemString $ unpack $ model ^. CodeEditor.code
-
 
 codeEditor_ :: CodeEditor -> ReactElementM ViewEventHandler ()
 codeEditor_ model = React.viewWithSKey codeEditor name model mempty

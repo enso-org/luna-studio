@@ -5,7 +5,6 @@ import qualified Data.Aeson                       as Aeson
 import           Data.Text                        (unpack)
 import           React.Flux
 import qualified React.Flux                       as React
-
 import qualified Event.UI                         as UI
 import           Luna.Studio.Data.Vector
 import           Luna.Studio.Prelude
@@ -20,41 +19,46 @@ import qualified Text.ScopeSearcher.QueryResult   as Result
 name :: JSString
 name = "searcher"
 
-
 searcher :: ReactView (Ref App, Searcher)
 searcher  = React.defineView name $ \(ref, s) -> do
-        let pos = s ^. Searcher.position
-        if s ^. Searcher.visible then
-            div_ [ "key"       $= name
-                 , "className" $= name
-                 , "style"     @= Aeson.object [ "top"  Aeson..= (show (pos ^. y) <> "px" :: String)
-                                               , "left" Aeson..= (show (pos ^. x) <> "px" :: String)
-                                               ]
-                 ] $ do
-                    input_
-                        [ "key"   $= "input"
-                        , "id"    $= "focus-searcher"
-                        , "value" $= fromString (unpack $ s ^. Searcher.input)
-                        , onMouseDown $ \e _ -> [stopPropagation e]
-                        , onKeyDown   $ \e k ->  stopPropagation e : dispatch ref (UI.SearcherEvent $ KeyDown k)
-                        , onChange    $ \e -> let val = target e "value" in dispatch ref $ UI.SearcherEvent $ InputChanged $ fromString val
-                        ]
-                    div_ [ "key"       $= "results"
-                         , "className" $= "searcher-results"] $
-                        forM_ (zip (s ^. Searcher.results) [0..]) $ \(result, idx) ->
-                            div_ [ "key" $= fromString (show idx)
-                                 , "className" $= if idx == s ^. Searcher.selected then "result-selected" else "result"] $ do
-                                div_ ["key" $= "prefix"
-                                     ,"className" $= "result-prefix"] $
-                                    elemString $ fromString $ unpack (result ^. Result.prefix) <> "."
-                                div_ ["key" $= "name"
-                                     ,"className" $= "result-name"] $
-                                    elemString $ fromString $ unpack $ result ^. Result.name
-          else div_ ["key" $= name ] mempty
-
+    let pos = s ^. Searcher.position
+    if s ^. Searcher.visible then
+        div_
+            [ "key"       $= name
+            , "className" $= name
+            , "style"     @= Aeson.object
+                [ "top"  Aeson..= (show (pos ^. y) <> "px" :: String)
+                , "left" Aeson..= (show (pos ^. x) <> "px" :: String)
+                ]
+            ] $ do
+            input_
+                [ "key"   $= "input"
+                , "id"    $= "focus-searcher"
+                , "value" $= fromString (unpack $ s ^. Searcher.input)
+                , onMouseDown $ \e _ -> [stopPropagation e]
+                , onKeyDown   $ \e k ->  stopPropagation e : dispatch ref (UI.SearcherEvent $ KeyDown k)
+                , onChange    $ \e -> let val = target e "value" in dispatch ref $ UI.SearcherEvent $ InputChanged $ fromString val
+                ]
+            div_
+                [ "key"       $= "results"
+                , "className" $= "searcher-results"
+                ] $ do
+                forM_ (zip (s ^. Searcher.results) [0..]) $ \(result, idx) ->
+                    div_
+                        [ "key"       $= fromString (show idx)
+                        , "className" $= if idx == s ^. Searcher.selected then "result-selected" else "result"
+                        ] $ do
+                        div_
+                            ["key"       $= "prefix"
+                            ,"className" $= "result-prefix"
+                            ] $ elemString $ fromString $ unpack (result ^. Result.prefix) <> "."
+                        div_
+                            ["key" $= "name"
+                            ,"className" $= "result-name"
+                            ] $ elemString $ fromString $ unpack $ result ^. Result.name
+    else div_ ["key" $= name ] mempty
 
 searcher_ :: Ref App -> Searcher -> ReactElementM ViewEventHandler ()
 searcher_ ref model = React.viewWithSKey searcher name (ref, model) mempty
-
 
 foreign import javascript safe "document.getElementById('focus-searcher').focus()" focus :: IO ()

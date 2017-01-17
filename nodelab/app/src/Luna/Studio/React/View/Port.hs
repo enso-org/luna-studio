@@ -27,13 +27,12 @@ show2 a = showFFloat (Just 2) a "" -- limit Double to two decimal numbers
 
 handleMouseDown :: Ref App -> AnyPortRef -> Event -> MouseEvent -> [SomeStoreAction]
 handleMouseDown ref portRef e m =
-    if (Mouse.withoutMods m Mouse.leftButton)
-    then stopPropagation e : dispatch ref (UI.ConnectionEvent $ Connection.StartConnection m portRef)
+    if (Mouse.withoutMods m Mouse.leftButton) then
+        stopPropagation e : dispatch ref (UI.ConnectionEvent $ Connection.StartConnection m portRef)
     else []
 
 handleMouseUp :: Ref App -> AnyPortRef -> Event -> MouseEvent -> [SomeStoreAction]
-handleMouseUp ref portRef _e m =
-    dispatch ref (UI.ConnectionEvent $ Connection.EndConnection m portRef)
+handleMouseUp ref portRef _e m = dispatch ref (UI.ConnectionEvent $ Connection.EndConnection m portRef)
 
 port :: ReactView (Ref App, Int, Bool, Port)
 port = React.defineView name $ \(ref, numOfPorts, isOnly, p) ->
@@ -65,7 +64,8 @@ portSelf_ ref port = do
     let portRef = port ^. Port.portRef
         color   = toJSString $ port ^. Port.color
         portId  = port ^. Port.portId
-    g_ [ "className" $= "port port--self" ] $ do
+    g_
+        [ "className" $= "port port--self" ] $ do
         circle_
             [ "className" $= "port__shape"
             , "key"       $= (fromString (show portId ) <> "a")
@@ -130,7 +130,8 @@ portIO_ ref port num numOfPorts isInput = do
                                 " L " <> cx a <> " " <> cy a <>
                                 " A " <> r2 a <> " " <> r2 a <> " 1 0 " <> svgFlag2 <> " " <> dx a <> " " <> dy a <>
                                 " Z"
-    g_ [ "className" $= (fromString $ classes <> show (num+1)) ] $ do
+    g_
+        [ "className" $= (fromString $ classes <> show (num+1)) ] $ do
         path_
             [ "className" $= "port__shape"
             , "key"       $= (fromString (show portId) <> "a")
@@ -153,7 +154,8 @@ portIOExpanded_ ref port num isInput = do
         classes = if isInput then "port port--i port--i--" else "port port--o port--o--"
         n       = if isInput then 1 else 0
         r       = show2 . (+3)
-    g_ [ "className" $= fromString (classes <> show (num + 1)) ] $ do
+    g_
+        [ "className" $= fromString (classes <> show (num + 1)) ] $ do
         circle_
             [ "className" $= "port__shape"
             , "key"       $= fromString (show portId <> show num <> "a")
