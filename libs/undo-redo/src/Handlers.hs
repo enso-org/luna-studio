@@ -127,10 +127,13 @@ makeHandler h =
     in (Topic.topic (undefined :: Response.Response req inv res), process)
     -- FIXME[WD]: nie uzywamy undefined, nigdy
 
+compareMsgByUserId :: UndoMessage -> UndoMessage -> Bool
+compareMsgByUserId msg1 msg2 = case msg1 of UndoMessage user1 _ _ _ _ _ -> case msg2 of UndoMessage user2 _ _ _ _ _ -> user1 == user2
+
 handle :: UndoMessage -> UndoPure ()
 handle message = do
     undo    %= (message :)
-    redo    .= []
+    redo    %= List.deleteBy compareMsgByUserId message
     history %= (message :)
 
 withOk :: Response.Status a -> (a -> Maybe b) -> Maybe b
