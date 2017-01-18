@@ -10,9 +10,8 @@ import qualified Empire.API.Data.Port               as Port
 import qualified Empire.API.Data.TypeRep            as TypeRep
 import qualified Empire.API.Data.ValueType          as ValueType
 import qualified JS.GoogleAnalytics                 as GA
-import qualified JS.NodeSearcher                    as UI
 import           Luna.Studio.Action.Camera          (translateToWorkspace)
-import           Luna.Studio.Action.Command         (Command, performIO)
+import           Luna.Studio.Action.Command         (Command)
 import           Luna.Studio.Action.Graph.Selection (selectedNodes)
 import           Luna.Studio.Action.Node.Register   (registerNode)
 import qualified Luna.Studio.Action.Node.Update     as Node
@@ -164,14 +163,14 @@ querySearch query = do
             Searcher.selected .= length items - 1
         Searcher.results .= items
 
-queryTree :: Text -> Command State ()
-queryTree query = do
-    sd <- scopedData
-    let items = Scope.moduleItems sd query
-    performIO $ UI.displayTreeResults UI.NodeSearcher items
-
-openCommand :: Command State ()
-openCommand = do
-    GA.sendEvent GA.CommandSearcher
-    mousePos <- use Global.mousePos
-    performIO $ UI.initNodeSearcher "" Nothing mousePos True
+-- queryTree :: Text -> Command State ()
+-- queryTree query = do
+--     sd <- scopedData
+--     let items = Scope.moduleItems sd query
+--     performIO $ UI.displayTreeResults UI.NodeSearcher items
+--
+-- openCommand :: Command State ()
+-- openCommand = do
+--     GA.sendEvent GA.CommandSearcher
+--     mousePos <- use Global.mousePos
+--     performIO $ UI.initNodeSearcher "" Nothing mousePos True
