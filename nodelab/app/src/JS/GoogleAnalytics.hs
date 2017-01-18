@@ -33,7 +33,6 @@ data Event = BSOD Text -- sent directly from JS
            | CreateProject
            | SwitchProject
            | GAOptOut Bool
-           | OpenHelp
            | ToggleText
 
 data GAEvent = GAEvent { _category :: Text
@@ -58,7 +57,6 @@ toGAEvent ev = case ev of
     CreateProject       -> simpleEvent "Project"         "Create"
     SwitchProject       -> simpleEvent "Project"         "Switch"
     GAOptOut s          -> GAEvent     "Settings"        "GAOptOut"       (Just $ pack $ show s)  Nothing
-    OpenHelp            -> simpleEvent "UI"              "OpenHelp"
     ToggleText          -> simpleEvent "UI"              "ToggleText"
 
 foreign import javascript safe "ga('send', 'event', $1, $2, $3)" sendEvent' :: JSString -> JSString -> Nullable JSString -> Nullable Int -> IO ()

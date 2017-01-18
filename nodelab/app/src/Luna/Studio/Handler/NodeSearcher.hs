@@ -29,5 +29,4 @@ toAction :: Event -> Maybe (Command Global.State ())
 --
 -- toAction (Keyboard _ (Keyboard.Event Keyboard.Down '\t'   (KeyMods { _shift = False }))) = Just $ NS.openFresh
 -- toAction (Keyboard _ (Keyboard.Event Keyboard.Down '\191' (KeyMods False False False False))) = Just $ NS.openCommand -- 191 = /
--- toAction (Keyboard _ (Keyboard.Event Keyboard.Down '\191' (KeyMods True  False False False))) = Just $ CS.help
 toAction _ = Nothing

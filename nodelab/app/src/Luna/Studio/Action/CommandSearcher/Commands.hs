@@ -5,7 +5,6 @@ module Luna.Studio.Action.CommandSearcher.Commands where
 --     ( querySearchCmd
 --     , queryTreeCmd
 --     , runCommand
---     , help
 --     ) where
 --
 -- import qualified Data.Map                          as Map
@@ -44,7 +43,6 @@ module Luna.Studio.Action.CommandSearcher.Commands where
 --                                  else ("enableGoogleAnalytics", Element)
 --     return [ ("project",          Group projectCmd)
 --            , ("insert",           Element)
---            , ("help",             Element)
 --            , ("toggleTextEditor", Element)
 --            , ("settings",         Group settingsCmd)
 --            ]
@@ -63,13 +61,7 @@ module Luna.Studio.Action.CommandSearcher.Commands where
 --
 --
 --
--- help :: Command Global.State ()
--- help = do
---     GA.sendEvent $ GA.OpenHelp
---     performIO $ openHelp'
 --
---
--- foreign import javascript safe "$('.tutorial-box').show().focus()"    openHelp'  :: IO ()
 -- foreign import javascript safe "common.enableGA($1)"    enableGA' :: Bool -> IO ()
 -- foreign import javascript safe "$1.isGAEnabled()"       gaEnabled :: JSState -> Bool
 --
@@ -84,7 +76,6 @@ module Luna.Studio.Action.CommandSearcher.Commands where
 -- runCommand (stripPrefix "project.new "  -> Just name) = createProject name
 -- runCommand (stripPrefix "project.open." -> Just name) = openProject name
 -- runCommand "project.export"                           = exportCurrentProject
--- runCommand "help"                                     = help
 -- runCommand "insert"                                   = NS.openFresh
 -- runCommand "toggleTextEditor"                         = CodeEditor.toggle
 -- runCommand "settings.disableGoogleAnalytics"          = enableGA False

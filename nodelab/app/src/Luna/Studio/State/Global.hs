@@ -58,7 +58,6 @@ data State = State { _mousePos           :: Position
                    , _lastEventTimestamp :: DateTime
                    , _clientId           :: Collaboration.ClientId
                    , _random             :: StdGen
-                   , _tutorial           :: Maybe Int
                    , _app                :: Ref App
                    } deriving (Generic)
 
@@ -128,8 +127,8 @@ modifyConnection connectionId = modify (App.nodeEditor . NodeEditor.connections 
 getConnection :: ConnectionId -> Command State (Maybe Connection)
 getConnection connectionId = get (App.nodeEditor . NodeEditor.connections . at connectionId)
 
-initialState :: DateTime -> Collaboration.ClientId -> StdGen -> Maybe Int -> Ref App -> State
-initialState = State (Position (Vector2 200 200)) def False def def def def def defJsState def def
+mkState :: DateTime -> Collaboration.ClientId -> StdGen -> Ref App -> State
+mkState = State (Position (Vector2 200 200)) def False def def def def def defJsState def def
 
 nextRandom :: Command State Word8
 nextRandom = do

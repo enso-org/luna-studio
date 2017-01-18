@@ -35,7 +35,6 @@ import qualified Luna.Studio.Handler.MultiSelection         as MultiSelection
 import qualified Luna.Studio.Handler.Navigation             as Navigation
 import qualified Luna.Studio.Handler.Node                   as Node
 import qualified Luna.Studio.Handler.Searcher               as Searcher
-import qualified Luna.Studio.Handler.Tutorial               as Tutorial
 import qualified Luna.Studio.Handler.Widget                 as Widget
 
 import           Luna.Studio.Action.Command                 (Command, execCommand)
@@ -77,7 +76,6 @@ actions =  [ App.toAction
         --    , Widget.toAction
         --    , Collaboration.toAction
            , ConnectionPen.toAction
-        --    , Tutorial.toAction
         --    , Clipboard.toAction
         --    , Debug.toAction
            ]

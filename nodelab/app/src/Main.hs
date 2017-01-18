@@ -36,8 +36,6 @@ import qualified React.Flux                           as React
 import           System.Random                        (newStdGen)
 
 import qualified JS.GraphLocation                     as GraphLocation
-import           JS.Tutorial                          (shouldRunTutorial)
-import           JS.Tutorial                          (showStep)
 import           JS.UUID                              (generateUUID)
 import           JS.WebSocket                         (WebSocket)
 import qualified Luna.Studio.Batch.Connector.Commands as BatchCmd
@@ -45,7 +43,7 @@ import qualified Luna.Studio.Batch.Workspace          as Workspace
 import qualified Luna.Studio.Engine                   as Engine
 import qualified Luna.Studio.React.Store              as Store
 import qualified Luna.Studio.React.View.App           as App
-import           Luna.Studio.State.Global             (initialState)
+import           Luna.Studio.State.Global             (mkState)
 import qualified Luna.Studio.State.Global             as Global
 
 
@@ -58,15 +56,12 @@ runApp chan socket = do
     projectListRequestId <- generateUUID
     clientId             <- generateUUID
     initTime             <- getCurrentTime
-    tutorial'            <- shouldRunTutorial
-    let tutorial = if tutorial' then Just 0 else Nothing
-    withJust tutorial $ \step -> showStep step
 
     mdo
         appRef <- Store.createApp $ \e -> Chan.writeChan chan (Engine.processEvent state e)
         React.reactRender "nodelab-app" (App.app appRef) ()
 
-        let initState = initialState initTime clientId random tutorial appRef
+        let initState = mkState initTime clientId random appRef
                       & Global.workspace . Workspace.lastUILocation .~ lastLocation
                       & Global.pendingRequests %~ Set.insert projectListRequestId
 
