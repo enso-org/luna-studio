@@ -8,22 +8,21 @@ module Luna.Studio.React.Store
     , module X
 ) where
 
-import           Control.Concurrent
 import           Control.Monad.Trans.Reader
 import           React.Flux
 
-import qualified Event.Event                        as Event
-import           Event.UI                           (UIEvent)
-import           Luna.Studio.Prelude                as P hiding (transform)
-import           Luna.Studio.React.Model.App        (App)
-import           Luna.Studio.React.Store.Ref        as X
+import qualified Event.Event                 as Event
+import           Event.UI                    (UIEvent)
+import           Luna.Studio.Prelude         as P hiding (transform)
+import           Luna.Studio.React.Model.App (App)
+import           Luna.Studio.React.Store.Ref as X
 
 
 
 instance Typeable a => StoreData (Store a) where
     type StoreAction (Store a) = UIEvent
     transform event store = do
-        void $ forkIO $ (store ^. sendEvent) $ Event.UI event
+        store ^. sendEvent $ Event.UI event
         return $ store
 
 dispatch :: Typeable a => Ref a -> UIEvent -> [SomeStoreAction]

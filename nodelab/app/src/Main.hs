@@ -25,13 +25,16 @@ module Main where
 
 -- http://www.network-science.de/ascii/
 
+import           Control.Concurrent.Chan              (Chan)
+import qualified Control.Concurrent.Chan              as Chan
+import           Control.Concurrent.MVar
+import           Control.Monad                        (forever)
 import           Data.DateTime                        (getCurrentTime)
 import qualified Data.Set                             as Set
 import           Luna.Studio.Prelude
 import qualified React.Flux                           as React
 import           System.Random                        (newStdGen)
 
-import           Control.Concurrent.MVar
 import qualified JS.GraphLocation                     as GraphLocation
 import           JS.Tutorial                          (shouldRunTutorial)
 import           JS.Tutorial                          (showStep)
@@ -47,8 +50,9 @@ import qualified Luna.Studio.State.Global             as Global
 
 
 
-runApp :: WebSocket -> IO ()
-runApp socket = do
+
+runApp :: Chan (IO ()) -> WebSocket -> IO ()
+runApp chan socket = do
     lastLocation <- GraphLocation.loadLocation
     random <- newStdGen
     projectListRequestId <- generateUUID
@@ -59,7 +63,7 @@ runApp socket = do
     withJust tutorial $ \step -> showStep step
 
     mdo
-        appRef <- Store.createApp $ Engine.processEvent state
+        appRef <- Store.createApp $ \e -> Chan.writeChan chan (Engine.processEvent state e)
         React.reactRender "nodelab-app" (App.app appRef) ()
 
         let initState = initialState initTime clientId random tutorial appRef
@@ -73,4 +77,7 @@ runApp socket = do
     BatchCmd.listProjects projectListRequestId
 
 main :: IO ()
-main = Engine.withActiveConnection runApp
+main = do
+    chan <- Chan.newChan
+    Engine.withActiveConnection $ runApp chan
+    forever $ join $ Chan.readChan chan
