@@ -1,15 +1,5 @@
-{-# LANGUAGE FlexibleContexts          #-}
-{-# LANGUAGE ConstraintKinds           #-}
-{-# LANGUAGE TemplateHaskell   #-}
-{-# LANGUAGE RankNTypes #-}
-{-# LANGUAGE TypeFamilies #-}
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
-{-# LANGUAGE DeriveFunctor #-}
 {-# LANGUAGE GADTs #-}
-{-# LANGUAGE StandaloneDeriving #-}
-{-# LANGUAGE ExistentialQuantification #-}
 
 module UndoState where
 
