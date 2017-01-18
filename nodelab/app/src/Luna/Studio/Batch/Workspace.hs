@@ -13,7 +13,6 @@ import           Empire.API.Data.Library       (Library)
 import qualified Empire.API.Data.Library       as Library
 import           Empire.API.Data.Project       (Project, ProjectId)
 import qualified Empire.API.Data.Project       as Project
-import           Empire.API.JSONInstances      ()
 
 import           Text.ScopeSearcher.Item       (Items)
 

@@ -7,7 +7,6 @@ import           Control.DeepSeq            (NFData)
 import           Data.Aeson                 (FromJSON, ToJSON)
 
 import           Empire.API.Data.Breadcrumb (Breadcrumb, BreadcrumbItem)
-import           Empire.API.JSONInstances   ()
 import           Luna.Studio.Prelude
 
 

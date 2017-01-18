@@ -8,7 +8,6 @@ import           Empire.API.Data.Node      (NodeId)
 import qualified Empire.API.Data.Port      as API
 import           Empire.API.Data.PortRef   (AnyPortRef, toAnyPortRef)
 import           Empire.API.Data.ValueType (ValueType)
-import qualified Empire.API.JSONInstances  ()
 import           Luna.Studio.Data.Color    (Color)
 import           Luna.Studio.Data.Color    (colorPort)
 import           Luna.Studio.Prelude       hiding (set)

@@ -7,7 +7,7 @@ import           Empire.API.Data.PortRef    (AnyPortRef)
 import           Luna.Studio.Data.Color     (Color)
 import           Luna.Studio.Data.Vector    (Position)
 import           Luna.Studio.Prelude        hiding (from, set, to)
-import           Object.Widget              ()
+
 
 
 data Connection = Connection { _connectionId :: ConnectionId

@@ -2,6 +2,7 @@ module Luna.Studio.Prelude.Instances where
 
 import           Data.Aeson
 import           Development.Placeholders
+import           Empire.API.JSONInstances ()
 import           React.Flux
 
 

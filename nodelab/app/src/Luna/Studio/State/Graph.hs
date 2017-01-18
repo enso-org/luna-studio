@@ -25,24 +25,23 @@ module Luna.Studio.State.Graph
     , updateNodes
     ) where
 
-import           Luna.Studio.Prelude          hiding ((.=))
+import           Luna.Studio.Prelude        hiding ((.=))
 
-import           Data.Hashable                (Hashable)
-import           Data.HashMap.Strict          (HashMap)
-import qualified Data.HashMap.Strict          as HashMap
-import qualified Data.Map.Strict              as Map
-import qualified Data.Set                     as Set
-import           Data.UUID.Types              (UUID)
+import           Data.Hashable              (Hashable)
+import           Data.HashMap.Strict        (HashMap)
+import qualified Data.HashMap.Strict        as HashMap
+import qualified Data.Map.Strict            as Map
+import qualified Data.Set                   as Set
+import           Data.UUID.Types            (UUID)
 
-import           Data.Aeson                   hiding ((.:))
-import           Empire.API.Data.Connection   (Connection (..), ConnectionId)
-import qualified Empire.API.Data.Connection   as Connection
-import           Empire.API.Data.Node         (Node, NodeId)
-import qualified Empire.API.Data.Node         as Node
-import           Empire.API.Data.Port         (InPort, OutPort)
-import           Empire.API.Data.PortRef      (AnyPortRef, InPortRef, OutPortRef)
-import qualified Empire.API.Data.PortRef      as PortRef
-import qualified Empire.API.JSONInstances     ()
+import           Data.Aeson                 hiding ((.:))
+import           Empire.API.Data.Connection (Connection (..), ConnectionId)
+import qualified Empire.API.Data.Connection as Connection
+import           Empire.API.Data.Node       (Node, NodeId)
+import qualified Empire.API.Data.Node       as Node
+import           Empire.API.Data.Port       (InPort, OutPort)
+import           Empire.API.Data.PortRef    (AnyPortRef, InPortRef, OutPortRef)
+import qualified Empire.API.Data.PortRef    as PortRef
 import           Luna.Studio.Action.Command (Command)
 
 

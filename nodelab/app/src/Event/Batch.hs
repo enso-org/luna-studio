@@ -17,7 +17,6 @@ import qualified Empire.API.Graph.RemoveNodes          as RemoveNodes
 import qualified Empire.API.Graph.RenameNode           as RenameNode
 import qualified Empire.API.Graph.UpdateNodeExpression as UpdateNodeExpression
 import qualified Empire.API.Graph.UpdateNodeMeta       as UpdateNodeMeta
-import           Empire.API.JSONInstances              ()
 import qualified Empire.API.Project.CreateProject      as CreateProject
 import qualified Empire.API.Project.ExportProject      as ExportProject
 import qualified Empire.API.Project.ImportProject      as ImportProject

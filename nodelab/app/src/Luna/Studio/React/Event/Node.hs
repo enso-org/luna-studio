@@ -9,7 +9,6 @@ import           React.Flux                   (KeyboardEvent, MouseEvent)
 import           Empire.API.Data.DefaultValue (PortDefault)
 import           Empire.API.Data.Node         (NodeId)
 import           Empire.API.Data.PortRef      (AnyPortRef)
-import           Empire.API.JSONInstances     ()
 import           Luna.Studio.Prelude
 import qualified Luna.Studio.State.Slider     as Slider
 

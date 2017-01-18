@@ -8,8 +8,9 @@ import           React.Flux                 (MouseEvent)
 
 import           Empire.API.Data.Connection (ConnectionId)
 import           Empire.API.Data.PortRef    (AnyPortRef)
-import           Empire.API.JSONInstances   ()
 import           Luna.Studio.Prelude
+
+
 
 data ModifiedEnd = Source | Destination deriving (Eq, Generic, NFData, Show, Typeable)
 

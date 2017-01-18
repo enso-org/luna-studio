@@ -1,4 +1,4 @@
-module Object.Widget.Plots.Image where
+module Luna.Studio.React.Model.Image where
 
 import           Data.Aeson              (ToJSON)
 import           Luna.Studio.Data.Vector (Position, Size)

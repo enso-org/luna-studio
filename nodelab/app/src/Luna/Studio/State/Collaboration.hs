@@ -7,7 +7,7 @@ import           Data.Map.Lazy                  (Map)
 import           Luna.Studio.Prelude
 
 import           Empire.API.Graph.Collaboration (ClientId)
-import           Empire.API.JSONInstances       ()
+
 
 newtype ColorId = ColorId { unColorId :: Int } deriving (Eq, Show, Generic, NFData)
 

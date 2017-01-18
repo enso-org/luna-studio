@@ -1,13 +1,12 @@
 {-# LANGUAGE DeriveAnyClass #-}
 module Luna.Studio.State.Slider where
 
-import           Control.DeepSeq          (NFData)
-import           Data.Aeson               (FromJSON, ToJSON)
-import           Luna.Studio.Data.Vector  (Position)
+import           Control.DeepSeq         (NFData)
+import           Data.Aeson              (FromJSON, ToJSON)
+import           Luna.Studio.Data.Vector (Position)
 import           Luna.Studio.Prelude
 
-import           Empire.API.Data.PortRef  (AnyPortRef)
-import           Empire.API.JSONInstances ()
+import           Empire.API.Data.PortRef (AnyPortRef)
 
 
 

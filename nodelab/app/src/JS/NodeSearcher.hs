@@ -11,7 +11,6 @@ import           Luna.Studio.Prelude
 
 import           Data.Aeson                     (toJSON)
 import           Empire.API.Data.Node           (NodeId)
-import           Empire.API.JSONInstances       ()
 
 import           Text.ScopeSearcher.QueryResult (Highlight (..), QueryResult (..))
 

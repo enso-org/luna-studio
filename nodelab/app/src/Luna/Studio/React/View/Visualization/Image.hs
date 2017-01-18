@@ -2,7 +2,7 @@
 module Luna.Studio.React.View.Visualization.Image where
 
 import           Luna.Studio.Prelude
-import           Object.Widget.Plots.Image (Image)
+import           Luna.Studio.React.Model.Image (Image)
 import           React.Flux
 
 

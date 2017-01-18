@@ -10,8 +10,6 @@ where
 import           Control.Arrow                                  ((***))
 import           Data.List.Split                                (wordsBy)
 import qualified Data.Text                                      as Text
-import           React.Flux                                     hiding (image_)
-import qualified React.Flux                                     as React
 import           Empire.API.Data.DefaultValue                   (Value (..))
 import qualified Empire.API.Data.DefaultValue                   as DefaultValue
 import qualified Empire.API.Data.Error                          as LunaError
@@ -22,12 +20,14 @@ import           Luna.Studio.Data.Vector                        hiding (normaliz
 import           Luna.Studio.Prelude
 import           Luna.Studio.React.Model.DataFrame              (DataFrame)
 import qualified Luna.Studio.React.Model.DataFrame              as DataFrame
+import qualified Luna.Studio.React.Model.Image                  as Image
 import           Luna.Studio.React.Model.Node                   (Node)
 import qualified Luna.Studio.React.Model.Node                   as Node
 import           Luna.Studio.React.View.Visualization.DataFrame (dataFrame_)
 import           Luna.Studio.React.View.Visualization.Graphics  (graphics_)
 import           Luna.Studio.React.View.Visualization.Image     (image_)
-import qualified Object.Widget.Plots.Image                      as Image
+import           React.Flux                                     hiding (image_)
+import qualified React.Flux                                     as React
 import qualified Style.Layout                                   as Style
 
 

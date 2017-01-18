@@ -14,7 +14,7 @@ payloadToData topic payload = do
     d <- fromJSVal payload
     case d of
         Nothing -> return Nothing
-        Just v -> case (fromJSON v) of
+        Just v -> case fromJSON v of
             AE.Success v' -> return $ Just v'
             AE.Error msg -> do
                 putStrLn $ "Malformed JS data [" <> topic <> "]: " <> msg
@@ -23,8 +23,7 @@ payloadToData topic payload = do
 process :: Event.Event -> IO (Maybe Event.Event)
 process (Event.CustomEvent (CustomEvent.RawEvent topic payload)) = case topic of
     "debug.getState" -> return $ Just $ Event.Debug $ GetState
-    "nodesearcher"   -> (liftM Event.NodeSearcher) <$> payloadToData topic payload
+    "nodesearcher"   -> liftM Event.NodeSearcher <$> payloadToData topic payload
     "tick"           -> return $ Just $ Event.Tick
-    "widget"         -> (liftM Event.Widget) <$> payloadToData topic payload
-    _               -> return Nothing
+    _                -> return Nothing
 process _ = return Nothing

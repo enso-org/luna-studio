@@ -1,10 +1,10 @@
 module Event.NodeSearcher where
 
 
-import           Data.Aeson               (FromJSON, ToJSON)
+import           Data.Aeson           (FromJSON, ToJSON)
+import           Empire.API.Data.Node (NodeId)
 import           Luna.Studio.Prelude
-import           Empire.API.Data.Node     (NodeId)
-import           Empire.API.JSONInstances ()
+
 
 
 data Event = Query     Text
@@ -19,4 +19,3 @@ makeLenses ''Event
 
 instance ToJSON Event
 instance FromJSON Event
-
