@@ -51,13 +51,12 @@ import qualified Luna.Pass.Evaluation.Interpreter.Layer as Interpreter
 import           Luna.Pass.Evaluation.Interpreter.Value (Data, attachListener, toExceptIO, unsafeFromData)
 import qualified Luna.Pass.Evaluation.Interpreter.Value as Value
 
-import           Empire.Commands.Graphics          (fromMaterial)
 
 
 -- TODO: This might deserve rewriting to some more general solution
 import qualified Graphics.API                      as G
-import           Luna.Pass.Evaluation.Interpreter.Charts (autoScatterChartDouble, autoScatterChartDoubleTuple, autoScatterChartInt,
-                                                          autoScatterChartIntTuple)
+-- import           Luna.Pass.Evaluation.Interpreter.Charts (autoScatterChartDouble, autoScatterChartDoubleTuple, autoScatterChartInt,
+--                                                           autoScatterChartIntTuple)
 
 metaKey :: TypeKey NodeMeta
 metaKey = TypeKey
@@ -98,7 +97,7 @@ valueDecoderForType tp = do
             {-"Primitive"      -> return $ Just $ Graphics       $ fromPrimitive    v-}
             {-"Figure"         -> return $ Just $ Graphics       $ fromFigure       v-}
             {-"Material"       -> return $ Just $ Graphics       $ fromMaterial     v-}
-            "RGBColor"       -> return $ Just $ Graphics . fromMaterial . colorRGBToMaterial . unsafeFromData
+            {-"RGBColor"       -> return $ Just $ Graphics . fromMaterial . colorRGBToMaterial . unsafeFromData-}
             "Stream"         -> do
                 args <- ASTBuilder.unpackArguments as
                 case args of
@@ -186,7 +185,7 @@ stringBoolMapToStringStringMap :: [(String, Bool)] -> [(String, String)]
 stringBoolMapToStringStringMap = fmap (second show)
 
 colorRGBToMaterial :: Value.Color -> G.Material
-colorRGBToMaterial (Value.Color r g b) =  G.SolidColor r g b 1.0
+colorRGBToMaterial (Value.Color r g b) = G.Material [G.Diffuse $ G.Solid $ G.RGBA r g b 1.0]
 
 decoderForType :: ASTOp m => NodeRef -> m (Data -> (Text, [Value]))
 decoderForType tpRef = do
@@ -199,15 +198,16 @@ decorateValue :: Value -> (Text, [Value])
 decorateValue val = (name, values) where
     name   = nodeValueToText val
     values = case val of
-        IntList        list -> let list' = limit list in [IntList        list', Graphics $ autoScatterChartInt         gridMat mat figure scale shift list']
-        DoubleList     list -> let list' = limit list in [DoubleList     list', Graphics $ autoScatterChartDouble      gridMat mat figure scale shift list']
-        Histogram      list -> let list' = limit list in [Histogram      list', Graphics $ autoScatterChartIntTuple    gridMat mat figure scale shift list']
-        IntPairList    list -> let list' = limit list in [IntPairList    list', Graphics $ autoScatterChartIntTuple    gridMat mat figure scale shift list']
-        DoublePairList list -> let list' = limit list in [DoublePairList list', Graphics $ autoScatterChartDoubleTuple gridMat mat figure scale shift list']
+        --TODO use newer visualization-api
+        -- IntList        list -> let list' = limit list in [IntList        list', Graphics $ autoScatterChartInt         gridMat mat figure scale shift list']
+        -- DoubleList     list -> let list' = limit list in [DoubleList     list', Graphics $ autoScatterChartDouble      gridMat mat figure scale shift list']
+        -- Histogram      list -> let list' = limit list in [Histogram      list', Graphics $ autoScatterChartIntTuple    gridMat mat figure scale shift list']
+        -- IntPairList    list -> let list' = limit list in [IntPairList    list', Graphics $ autoScatterChartIntTuple    gridMat mat figure scale shift list']
+        -- DoublePairList list -> let list' = limit list in [DoublePairList list', Graphics $ autoScatterChartDoubleTuple gridMat mat figure scale shift list']
         _                   -> [val]
         where
-            gridMat    = G.SolidColor 0.25 0.25 0.25 1.0
-            mat        = G.SolidColor 0.2  0.5  0.7  1.0
+            gridMat    = G.RGBA 0.25 0.25 0.25 1.0
+            mat        = G.RGBA 0.2  0.5  0.7  1.0
             figure     = G.Circle 0.016
             scale      = 0.84
             shift      = 0.05

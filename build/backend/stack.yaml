@@ -20,7 +20,7 @@ packages:
 - {location: ../../tools/batch/plugins/luna-empire}
 - {location: ../../tools/batch/plugins/request-monitor}
 - extra-dep: true
-  location: {commit: 5d010b3314d28f65ba039b420191a1736b9064fc, git: 'https://bitbucket.org/NewByteOrder/luna.git'}
+  location: {commit: 4d1d85ade7f88614a80173296212785e2f1c56e5, git: 'https://bitbucket.org/NewByteOrder/luna.git'}
   subdirs: [compiler, core, parser]
 - extra-dep: true
   location: {commit: 9d451ec9eeb06d4e28bbd66915fe1698bae2f001, git: 'https://github.com/luna/container.git'}
@@ -63,5 +63,5 @@ packages:
 - extra-dep: true
   location: {commit: f7124ecbfa4ce8802e3c1431e54300188616fe64, git: 'https://github.com/luna/data-shell.git'}
 - extra-dep: true
-  location: {commit: ddfcd1e0372b93e947b380b911c123fe67227b21, git: 'https://bitbucket.org/NewByteOrder/visualization-api.git'}
+  location: {commit: 03b31eb5994a8d3ac9f70c3914360bf5263936db, git: 'https://github.com/luna/visualization-api.git'}
 resolver: lts-7.4

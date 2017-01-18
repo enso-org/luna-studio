@@ -82,6 +82,6 @@ packages:
       commit: 9165d1818d9ec0b0f030623282b80c2d654089ea
     extra-dep: true
   - location:
-      git: 'https://bitbucket.org/NewByteOrder/visualization-api.git'
-      commit: ddfcd1e0372b93e947b380b911c123fe67227b21
+      git: https://github.com/luna/visualization-api.git
+      commit: 03b31eb5994a8d3ac9f70c3914360bf5263936db
     extra-dep: true
