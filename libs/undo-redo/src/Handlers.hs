@@ -169,14 +169,15 @@ connect :: (OutPortRef, InPortRef) -> Connection
 connect = uncurry Connection
 
 filterNodes :: [NodeId] -> [Node] -> [Node]
-filterNodes nodesIds nodes = catMaybes p
-    where q nId = List.find (\node -> node ^. Node.nodeId == nId) nodes
-          p   = map q nodesIds
+filterNodes nodesIds nodes = catMaybes getNodes
+    where getNode nId = List.find (\node -> node ^. Node.nodeId == nId) nodes
+          getNodes    = map getNode nodesIds
 
 filterConnections :: [(OutPortRef, InPortRef)] -> [NodeId] -> [(OutPortRef, InPortRef)]
-filterConnections connectionPorts nodesIds = concat p
-    where  q nId = Prologue.filter (\port -> (((PortRef.OutPortRef' (fst port)) ^. PortRef.nodeId == nId) || ( (PortRef.InPortRef' (snd port)) ^. PortRef.nodeId == nId)) ) connectionPorts
-           p   = map q nodesIds
+filterConnections connectionPorts nodesIds = concat nodesConnections
+    where  nodeConnections nId = Prologue.filter (\port -> (((PortRef.OutPortRef' (fst port)) ^. PortRef.nodeId == nId)
+                                           || ((PortRef.InPortRef' (snd port)) ^. PortRef.nodeId == nId)) ) connectionPorts
+           nodesConnections    = map nodeConnections nodesIds
 
 handleRemoveNodesUndo :: RemoveNodes.Response -> Maybe (AddSubgraph.Request, RemoveNodes.Request)
 handleRemoveNodesUndo (Response.Response _ _ (RemoveNodes.Request location nodesIds) inv _) =
@@ -199,10 +200,10 @@ tupleUpdate :: Node -> SingleUpdate
 tupleUpdate node = (node ^. Node.nodeId, node ^. Node.nodeMeta)
 
 filterMeta :: [Node] -> [SingleUpdate] -> [SingleUpdate]
-filterMeta allNodes updates = map tupleUpdate p
+filterMeta allNodes updates = map tupleUpdate justNodes
     where  nodeIds = map fst updates
-           q x     = List.find (\node -> node ^. Node.nodeId == x) allNodes
-           p       = catMaybes $ map q nodeIds
+           findNode updatedId = List.find (\node -> node ^. Node.nodeId == updatedId) allNodes
+           justNodes          = catMaybes $ map findNode nodeIds
 
 handleUpdateNodeMetaUndo :: UpdateNodeMeta.Response -> Maybe (UpdateNodeMeta.Request, UpdateNodeMeta.Request)
 handleUpdateNodeMetaUndo (Response.Response _ _ (UpdateNodeMeta.Request location updates) inv _) =
