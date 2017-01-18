@@ -6,8 +6,8 @@
 module Handlers where
 import UndoState
 
-import           Control.Exception                (Exception)
-import           Control.Exception.Safe           (MonadThrow, throwM)
+import           Control.Exception                 (Exception)
+import           Control.Exception.Safe            (MonadThrow, throwM)
 import           Data.ByteString                   (ByteString, empty)
 import           Data.ByteString.Lazy              (toStrict,fromStrict)
 import           Data.Binary                       (Binary, decode)
@@ -27,11 +27,11 @@ import           Empire.API.Data.Graph             (Graph)
 import           Empire.API.Data.Node              (Node, NodeId)
 import qualified Empire.API.Data.Node              as Node
 import           Empire.API.Data.NodeMeta          (NodeMeta)
-import           Empire.API.Data.PortRef (InPortRef, OutPortRef, dstNodeId, srcNodeId)
+import           Empire.API.Data.PortRef           (InPortRef, OutPortRef, dstNodeId, srcNodeId)
 import qualified Empire.API.Graph.AddNode          as AddNode
 import qualified Empire.API.Graph.AddSubgraph      as AddSubgraph
-import qualified Empire.API.Graph.Connect              as Connect
-import qualified Empire.API.Graph.Disconnect           as Disconnect
+import qualified Empire.API.Graph.Connect          as Connect
+import qualified Empire.API.Graph.Disconnect       as Disconnect
 import qualified Empire.API.Data.PortRef           as PortRef
 import qualified Empire.API.Graph.RemoveNodes      as RemoveNodes
 import qualified Empire.API.Graph.RenameNode       as RenameNode
@@ -144,10 +144,10 @@ handleAddSubgraphUndo :: AddSubgraph.Response -> Maybe (RemoveNodes.Request, Add
 handleAddSubgraphUndo (Response.Response _ _ (AddSubgraph.Request location nodes connections saveNodeIds) _ res ) =
     withOk res $ \idMapping ->
         case idMapping of
-            Nothing -> let ids     = map (^. Node.nodeId) nodes
-                           undoMsg = RemoveNodes.Request location ids
-                           redoMsg = AddSubgraph.Request location nodes connections True
-                       in Just (undoMsg, redoMsg)
+            Nothing     -> let ids     = map (^. Node.nodeId) nodes
+                               undoMsg = RemoveNodes.Request location ids
+                               redoMsg = AddSubgraph.Request location nodes connections True
+                           in Just (undoMsg, redoMsg)
             Just idsMap -> let nodes'       = flip map nodes $ Node.nodeId %~ (idsMap Map.!)
                                connections' = map (\conn -> conn & Connection.src . PortRef.srcNodeId %~ (idsMap Map.!)
                                                                  & Connection.dst . PortRef.dstNodeId %~ (idsMap Map.!)
@@ -168,7 +168,7 @@ filterNodes nodesIds nodes = catMaybes getNodes
 filterConnections :: [(OutPortRef, InPortRef)] -> [NodeId] -> [(OutPortRef, InPortRef)]
 filterConnections connectionPorts nodesIds = concat nodesConnections
     where  nodeConnections nId = Prologue.filter (\port -> (((PortRef.OutPortRef' (fst port)) ^. PortRef.nodeId == nId)
-                                           || ((PortRef.InPortRef' (snd port)) ^. PortRef.nodeId == nId)) ) connectionPorts
+                                                        || ((PortRef.InPortRef' (snd port)) ^. PortRef.nodeId == nId))) connectionPorts
            nodesConnections    = map nodeConnections nodesIds
 
 handleRemoveNodesUndo :: RemoveNodes.Response -> Maybe (AddSubgraph.Request, RemoveNodes.Request)
@@ -208,14 +208,13 @@ handleUpdateNodeMetaUndo (Response.Response _ _ (UpdateNodeMeta.Request location
 handleRenameNodeUndo :: RenameNode.Response ->  Maybe (RenameNode.Request, RenameNode.Request)
 handleRenameNodeUndo (Response.Response _ _ (RenameNode.Request location nodeId name) inv res) =
     withOk inv $ \(RenameNode.Inverse namePrev) -> Just $ case namePrev of
-        Nothing -> let undoMsg = RenameNode.Request location nodeId "" -- FIXME [WD]: nie uzywamy literalow, nigdy - jak to node moze nie miec nazwy
-                       redoMsg = RenameNode.Request location nodeId name
-                   in (undoMsg, redoMsg)
+        Nothing      -> let undoMsg = RenameNode.Request location nodeId "" -- FIXME [WD]: nie uzywamy literalow, nigdy - jak to node moze nie miec nazwy
+                            redoMsg = RenameNode.Request location nodeId name
+                        in (undoMsg, redoMsg)
         Just nameOld -> let undoMsg = RenameNode.Request location nodeId nameOld
                             redoMsg = RenameNode.Request location nodeId name
                         in (undoMsg, redoMsg)
 
--- FIXME[WD]: hlint - na calym pliku
 handleConnectUndo :: Connect.Response -> Maybe (Disconnect.Request, Connect.Request)
 handleConnectUndo (Response.Response _ _ (Connect.Request location src dst) inv res) =
     withOk res . const $

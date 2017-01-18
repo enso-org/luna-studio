@@ -8,23 +8,23 @@ module Undo where
 import Handlers (handlersMap)
 import UndoState
 
-import           Control.Exception                (Exception)
-import           Control.Exception.Safe           (MonadThrow, throwM)
+import           Control.Exception                 (Exception)
+import           Control.Exception.Safe            (MonadThrow, throwM)
 import           Control.Lens
-import           Control.Monad.State                hiding (when)
+import           Control.Monad.State               hiding (when)
 import           Control.Monad.STM                 (atomically)
 import           Data.ByteString                   (ByteString, empty)
 import           Data.ByteString.Lazy              (toStrict,fromStrict)
 import           Data.Binary                       (Binary, decode)
 import qualified Data.Binary                       as Bin
-import qualified Data.Text.Lazy                        as Text
-import qualified Data.List as List
+import qualified Data.Text.Lazy                    as Text
+import qualified Data.List                         as List
 import qualified Data.Map.Strict                   as Map
 import           Data.Maybe
 import qualified Data.Set                          as Set
-import           Data.UUID.Types                       (UUID)
+import           Data.UUID.Types                   (UUID)
 import           Prologue                          hiding (throwM)
-import Util as Util
+import           Util                              as Util
 
 import           Data.UUID as UUID (nil)
 import           Data.UUID.V4 as UUID (nextRandom)
@@ -42,8 +42,8 @@ import qualified ZMQ.Bus.Data.Message              as Message
 import           ZMQ.Bus.Data.MessageFrame         (MessageFrame (MessageFrame))
 import           ZMQ.Bus.EndPoint                  (BusEndPoints)
 import qualified ZMQ.Bus.Trans                     as Bus
-import qualified ZMQ.Bus.Data.MessageFrame       as MessageFrame
-import           Control.Error                   (ExceptT, hoistEither, runExceptT)
+import qualified ZMQ.Bus.Data.MessageFrame         as MessageFrame
+import           Control.Error                     (ExceptT, hoistEither, runExceptT)
 
 import System.IO (stdout,hFlush)
 
