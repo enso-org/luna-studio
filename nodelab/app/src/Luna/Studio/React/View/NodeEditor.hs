@@ -6,7 +6,6 @@ import qualified Data.HashMap.Strict                   as HashMap
 import           React.Flux
 import qualified React.Flux                            as React
 import           React.Flux.Internal                   (el)
-
 import qualified Event.UI                              as UI
 import qualified Luna.Studio.Data.CameraTransformation as CameraTransformation
 import           Luna.Studio.Data.Matrix               (showTransformMatrixToSvg)
@@ -23,7 +22,6 @@ import           Luna.Studio.React.View.SelectionBox   (selectionBox_)
 
 name :: JSString
 name = "node-editor"
-
 
 nodeEditor :: ReactView (Ref App, NodeEditor)
 nodeEditor = React.defineView name $ \(ref, ne) -> do
@@ -45,9 +43,12 @@ nodeEditor = React.defineView name $ \(ref, ne) -> do
             , "style"     @= Aeson.object [ "transform" Aeson..= transform ]
             , "key"       $= "connections"
             ] $ do
-            defs_ ["key" $= "defs"] $ do
-                el "filter" [ "id" $= "textShadow"
-                            , "key" $= "textShadow" ] $ do
+            defs_
+                [ "key" $= "defs" ] $ do
+                el "filter"
+                    [ "id" $= "textShadow"
+                    , "key" $= "textShadow"
+                    ] $ do
                     el "feOffset"
                         [ "result" $= "offOut"
                         , "in"     $= "SourceAlpha"
@@ -67,9 +68,10 @@ nodeEditor = React.defineView name $ \(ref, ne) -> do
                         , "mode" $= "normal"
                         , "key"  $= "feBlend"
                         ] mempty
-
-            g_ [ "key"       $= "connections"
-               , "className" $= "connections" ] $ do
+            g_
+                [ "key"       $= "connections"
+                , "className" $= "connections"
+                ] $ do
                 forM_ (ne ^. NodeEditor.connections . to HashMap.toList) $ uncurry (connection_ ref)
                 forM_ (ne ^. NodeEditor.currentConnection) currentConnection_
                 selectionBox_ (ne ^. NodeEditor.selectionBox)
@@ -78,7 +80,7 @@ nodeEditor = React.defineView name $ \(ref, ne) -> do
             , "key"       $= "nodes"
             , "style"     @= Aeson.object [ "transform" Aeson..= transform ]
             ] $ do
-                forM_ (ne ^. NodeEditor.nodes . to HashMap.elems) $ node_ ref
+            forM_ (ne ^. NodeEditor.nodes . to HashMap.elems) $ node_ ref
 
         -- TODO: canvas_ [ "className" $= "plane plane--canvas" ] …
 

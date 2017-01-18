@@ -4,7 +4,8 @@ module Luna.Studio.Action.ConnectionPen
     , startDisconnecting
     , connectMove
     , disconnectMove
-    , resetConnectionPen
+    , resetPenConnectState
+    , resetPenDisconnectState
     ) where
 
 import           Luna.Studio.Action.Command       (Command)
@@ -50,14 +51,11 @@ disconnectMove evt state = do
     pos <- workspacePosition evt
     update $ state & PenDisconnect.history %~ (pos:)
 
-resetConnectionPen :: Command State ()
-resetConnectionPen = do
-    mayPerformedAction <- use $ Global.performedAction
-    withJust mayPerformedAction $ \performedAction -> case performedAction of
-        PenConnect    _ -> Global.performedAction .= Nothing
-        PenDisconnect _ -> Global.performedAction .= Nothing
-        _               -> return ()
+resetPenConnectState :: PenConnect.State -> Command State ()
+resetPenConnectState _ = Global.performedAction .= Nothing
 
+resetPenDisconnectState :: PenDisconnect.State -> Command State ()
+resetPenDisconnectState _ = Global.performedAction .= Nothing
 
 
 

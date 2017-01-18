@@ -8,7 +8,8 @@ module Luna.Studio.Action.Camera
      , panUp
      , panCamera
      , resetCamera
-     , resetCameraState
+     , resetPanState
+     , resetZoomState
      , resetPan
      , resetZoom
      , translateToWorkspace
@@ -20,7 +21,8 @@ module Luna.Studio.Action.Camera
      ) where
 
 import           Luna.Studio.Action.Camera.Center (centerGraph)
-import           Luna.Studio.Action.Camera.Modify (resetCamera, resetCameraState)
-import           Luna.Studio.Action.Camera.Pan    (panCamera, panDown, panDrag, panLeft, panRight, panUp, resetPan, startPanDrag)
+import           Luna.Studio.Action.Camera.Modify (resetCamera)
+import           Luna.Studio.Action.Camera.Pan    (panCamera, panDown, panDrag, panLeft, panRight, panUp, resetPan, resetPanState,
+                                                   startPanDrag)
 import           Luna.Studio.Action.Camera.Screen (translateToWorkspace)
-import           Luna.Studio.Action.Camera.Zoom   (resetZoom, startZoomDrag, wheelZoom, zoomDrag, zoomIn, zoomOut)
+import           Luna.Studio.Action.Camera.Zoom   (resetZoom, resetZoomState, startZoomDrag, wheelZoom, zoomDrag, zoomIn, zoomOut)

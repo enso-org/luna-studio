@@ -1,10 +1,13 @@
 // fonts
+
 @fontDefault:                   'Source Code Pro', monospace;
 @fontMonospace:                 @fontDefault;
 @fontWeight:                    100;
 @fontSize:                      9pt;
 
+
 // colors
+
 @backgroundColor:               #333;
 @inputBackground:               transparent;
 @dividerColor:                  #555;
@@ -14,11 +17,12 @@
 @focusColor:                    #FED546;
 @matchColor:                    @focusColor;
 @tutorialBackgroundColor:       #00885d;
-
 @commandBackground:             rgb(20%, 20%, 50%);
 @commandSelectedBackground:     lighten(@commandBackground, 30%, relative);
 
+
 // other variables
+
 @radiusNormal:                  3px;
 
 
@@ -71,7 +75,6 @@ tt, code, kbd, samp {
   z-index:101;
   -webkit-user-select: none;
   cursor: default;
-
 }
 
 #htmlcanvas-pan {
@@ -82,17 +85,21 @@ tt, code, kbd, samp {
   -webkit-user-select: none;
   cursor: default;
 }
+
 #htmlcanvas {
   position: absolute;
   -webkit-user-select: none;
   cursor: default;
 }
+
 #htmlcanvas > div {
   position:absolute;
 }
+
 #htmlcanvas > div > *{
   position: absolute;
 }
+
 #htmlcanvas > div input {
   background: #1a1a1a;
   border: 1px solid #888;
@@ -100,6 +107,7 @@ tt, code, kbd, samp {
   width: 40px;
   height:20px;
 }
+
 #htmlcanvas svg {
   background: white;
   border-radius: 5px;
@@ -145,6 +153,7 @@ tt, code, kbd, samp {
     top: 10px;
   }
 }
+
 #editor {
   height: 100%;
   width:100%;
@@ -152,6 +161,7 @@ tt, code, kbd, samp {
   font-family: @fontMonospace;
   bottom:0px;
 }
+
 #userInfo {
   position: fixed;
   top: 0;
@@ -173,7 +183,6 @@ tt, code, kbd, samp {
   background-color: #ccc;
 }
 
-
 #logo {
   position: fixed;
   bottom: 20px;
@@ -182,7 +191,6 @@ tt, code, kbd, samp {
   opacity: 0.2;
   z-index: 5;
 }
-
 
 .bpnFeedbackPopup {
   max-height: 80% !important;

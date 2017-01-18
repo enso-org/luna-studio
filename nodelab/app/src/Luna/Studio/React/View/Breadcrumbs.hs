@@ -9,23 +9,22 @@ import           Data.Text                           (unpack)
 import           Luna.Studio.Prelude
 import           React.Flux
 import qualified React.Flux                          as React
-
-import           Luna.Studio.React.Model.App        (App)
+import           Luna.Studio.React.Model.App         (App)
 import qualified Event.UI                            as UI
 import           Luna.Studio.React.Model.Breadcrumbs (Breadcrumbs)
 import qualified Luna.Studio.React.Model.Breadcrumbs as B
 import           Luna.Studio.React.Store             (Ref, dispatch)
 
 
-
 name :: JSString
 name = "breadcrumbs"
 
-
 breadcrumbs :: ReactView (Ref App, Breadcrumbs)
 breadcrumbs = React.defineView name $ \(ref, model) -> do
-    div_ [ "className" $= name
-         , "key"       $= name ] $ do
+    div_
+        [ "className" $= name
+        , "key"       $= name
+        ] $ do
         forM_ (zip [0..] $ inits $ model ^. B.items) $ \(key, bc) -> do
             div_
                 [ "className" $= "breadcrumbs__item breadcrumbs__item--home"
@@ -35,12 +34,12 @@ breadcrumbs = React.defineView name $ \(ref, model) -> do
                     []       -> elemString "default"
                     (item:_) -> elemString $ unpack $ item ^. B.name
 
-
 breadcrumbs_ :: Ref App -> Breadcrumbs -> ReactElementM ViewEventHandler ()
 breadcrumbs_ ref model = React.viewWithSKey breadcrumbs name (ref, model) mempty
 
 unname :: [B.Named a] -> B.Breadcrumb a
 unname = B.Breadcrumb . map B._breadcrumb
+
 
 --TODO[react]
 -- initBreadcrumb :: Command State ()

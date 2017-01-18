@@ -1,6 +1,7 @@
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 module Luna.Studio.Action.Camera.Zoom
      ( resetZoom
+     , resetZoomState
      , zoomIn
      , zoomOut
      , startZoomDrag
@@ -9,7 +10,7 @@ module Luna.Studio.Action.Camera.Zoom
      ) where
 
 import           Data.Matrix                           (getElem, setElem)
-import           Luna.Studio.Action.Camera.Modify      (modifyCamera, resetCameraState)
+import           Luna.Studio.Action.Camera.Modify      (modifyCamera)
 import           Luna.Studio.Action.Camera.Screen      (getScreenCenter)
 import           Luna.Studio.Action.Command            (Command)
 import           Luna.Studio.Data.CameraTransformation (logicalToScreen, screenToLogical)
@@ -20,7 +21,7 @@ import qualified Luna.Studio.React.Model.NodeEditor    as NodeEditor
 import           Luna.Studio.State.Action              (Action (ZoomDrag))
 import           Luna.Studio.State.Global              (State)
 import qualified Luna.Studio.State.Global              as Global
-import           Luna.Studio.State.StatefulAction      (StatefulAction (exit, matchState, pack, start, update))
+import           Luna.Studio.State.StatefulAction      (StatefulAction (continue, exit, matchState, pack, start, update))
 import qualified Luna.Studio.State.ZoomDrag            as ZoomDrag
 
 
@@ -28,7 +29,7 @@ instance StatefulAction ZoomDrag.State where
     matchState (ZoomDrag state) = Just state
     matchState _ = Nothing
     pack = ZoomDrag
-    exit _ = resetCameraState
+    exit = resetZoomState
 
 minCamFactor, maxCamFactor, dragZoomSpeed, wheelZoomSpeed, zoomFactorStep :: Double
 minCamFactor   = 0.2
@@ -75,3 +76,6 @@ resetZoom = Global.modifyNodeEditor $ do
 wheelZoom :: ScreenPosition -> Vector2 Double -> Command State ()
 wheelZoom pos delta = zoomCamera pos delta' where
     delta' = 1 + (delta ^. x + delta ^. y) / wheelZoomSpeed
+
+resetZoomState :: ZoomDrag.State -> Command State ()
+resetZoomState _ = Global.performedAction .= Nothing

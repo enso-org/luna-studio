@@ -31,14 +31,13 @@ objName :: JSString
 objName = "node"
 
 handleMouseDown :: Ref App -> NodeId -> Event -> MouseEvent -> [SomeStoreAction]
-handleMouseDown ref nodeId e m = do
-    if (Mouse.withoutMods m Mouse.leftButton) then
-        stopPropagation e : dispatch ref (UI.NodeEvent $ Node.MouseDown m nodeId)
+handleMouseDown ref nodeId e m =
+    if (Mouse.withoutMods m Mouse.leftButton)
+    then stopPropagation e : dispatch ref (UI.NodeEvent $ Node.MouseDown m nodeId)
     else []
 
 ports :: Ref App -> [Port] -> ReactElementM ViewEventHandler ()
 ports nodeRef ports = forM_ ports $ \port -> port_ nodeRef port (countSameTypePorts port ports) (isPortSingle port ports)
-
 
 portsExpanded :: Ref App -> [Port] -> ReactElementM ViewEventHandler ()
 portsExpanded nodeRef ports = forM_ ports $ \port -> portExpanded_ nodeRef port
@@ -46,55 +45,52 @@ portsExpanded nodeRef ports = forM_ ports $ \port -> portExpanded_ nodeRef port
 --TODO inline div and others
 node :: ReactView (Ref App, Node)
 node = React.defineView objName $ \(ref, n) -> do
-        let nodeId    = n ^. Node.nodeId
-            pos       = n ^. Node.position
-            nodePorts = Map.elems $ n ^. Node.ports
-            offsetX   = show $ pos ^. x
-            offsetY   = show $ pos ^. y
-            nodeLimit = 10000::Int
-            zIndex    = 1::Int -- FIXME, Leszek!
-            z         = if n ^. Node.isExpanded then zIndex + nodeLimit else zIndex
+    let nodeId    = n ^. Node.nodeId
+        pos       = n ^. Node.position
+        nodePorts = Map.elems $ n ^. Node.ports
+        offsetX   = show $ pos ^. x
+        offsetY   = show $ pos ^. y
+        nodeLimit = 10000::Int
+        zIndex    = 1::Int -- FIXME, Leszek!
+        z         = if n ^. Node.isExpanded then zIndex + nodeLimit else zIndex
+    div_
+        [ "key"         $= fromString (show nodeId)
+        , onClick       $ \_ m -> dispatch ref $ UI.NodeEvent $ Node.Select m nodeId
+        , onDoubleClick $ \_ _ -> dispatch ref $ UI.NodeEvent $ Node.Enter nodeId
+        , onMouseDown   $ handleMouseDown ref nodeId
+        , "className"   $= (fromString $ "node" <> (if n ^. Node.isExpanded then " node--expanded" else " node--collapsed")
+                                                <> (if n ^. Node.isSelected then " node--selected" else []))
+        , "style"       @= Aeson.object
+            [ "transform" Aeson..= (transformTranslateToSvg offsetX offsetY)
+            , "zIndex"    Aeson..= (show z)
+            ]
+        ] $ do
+        svg_
+            [ "className" $= "node__selection-mark"
+            , "key"       $= "selection-mark"
+            ] $ rect_ def mempty
+        nodeProperties_ ref $ Properties.fromNode n
         div_
-            [ "key"         $= fromString (show nodeId)
-            , onClick       $ \_ m -> dispatch ref $ UI.NodeEvent $ Node.Select m nodeId
-            , onDoubleClick $ \_ _ -> dispatch ref $ UI.NodeEvent $ Node.Enter nodeId
-            , onMouseDown   $ handleMouseDown ref nodeId
-            , "className"   $= (fromString $ "node" <> (if n ^. Node.isExpanded then " node--expanded" else " node--collapsed")
-                                                    <> (if n ^. Node.isSelected then " node--selected" else []))
-            , "style"       @= Aeson.object [ "transform" Aeson..= (transformTranslateToSvg offsetX offsetY)
-                                            , "zIndex"    Aeson..= (show z)
-                                            ]
+            [ "key"       $= "visualization"
+            , "className" $= "node__visuals"
+            ] $ forM_ (n ^. Node.value) visualization_
+        svg_
+            [ "key"       $= "essentials"
+            , "className" $= "node__essentials"
             ] $ do
-
-            svg_
-                [ "className" $= "node__selection-mark"
-                , "key"       $= "selection-mark"
-                ] $ rect_ def mempty
-
-            nodeProperties_ ref $ Properties.fromNode n
-
-            div_
-                [ "key"       $= "visualization"
-                , "className" $= "node__visuals"
-                ] $ forM_ (n ^. Node.value) visualization_
-            svg_
-                [ "key"       $= "essentials"
-                , "className" $= "node__essentials"
-                ] $ do
-                text_
-                    [ "key"         $= "name"
-                    , onDoubleClick $ \e _ -> stopPropagation e : dispatch ref (UI.NodeEvent $ Node.EditExpression nodeId)
-                    , "className"   $= "node__name"
-                    , "y"           $= "-36"
-                    ] $ elemString $ Text.unpack $ n ^. Node.expression
-                if  n ^. Node.isExpanded then do
-                    ports         ref $ filter (\port -> (port ^. Port.portId) == InPortId Self) nodePorts
-                    portsExpanded ref $ filter (\port -> (port ^. Port.portId) /= InPortId Self) nodePorts
-                    portsExpanded ref $ filter (\port -> (port ^. Port.portId) /= InPortId Self) nodePorts
-                else do
-                    ports ref $ filter (\port -> (port ^. Port.portId) /= InPortId Self) nodePorts
-                    ports ref $ filter (\port -> (port ^. Port.portId) == InPortId Self) nodePorts
-
+            text_
+                [ "key"         $= "name"
+                , onDoubleClick $ \e _ -> stopPropagation e : dispatch ref (UI.NodeEvent $ Node.EditExpression nodeId)
+                , "className"   $= "node__name"
+                , "y"           $= "-36"
+                ] $ elemString $ Text.unpack $ n ^. Node.expression
+            if  n ^. Node.isExpanded then do
+                ports         ref $ filter (\port -> (port ^. Port.portId) == InPortId Self) nodePorts
+                portsExpanded ref $ filter (\port -> (port ^. Port.portId) /= InPortId Self) nodePorts
+                portsExpanded ref $ filter (\port -> (port ^. Port.portId) /= InPortId Self) nodePorts
+            else do
+                ports ref $ filter (\port -> (port ^. Port.portId) /= InPortId Self) nodePorts
+                ports ref $ filter (\port -> (port ^. Port.portId) == InPortId Self) nodePorts
 
 node_ :: Ref App -> Node -> ReactElementM ViewEventHandler ()
 node_ ref model = React.viewWithSKey node (fromString $ show $ model ^. Node.nodeId) (ref, model) mempty
