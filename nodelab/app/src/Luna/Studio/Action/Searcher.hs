@@ -53,6 +53,7 @@ openWith nodeId pos = do
         Searcher.results  .= def
         Searcher.selected .= 0
         Searcher.visible  .= True
+    Global.renderIfNeeded
     liftIO Searcher.focus
 
 close :: Command State ()
