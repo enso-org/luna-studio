@@ -35,8 +35,7 @@ default-extensions:
 library:
     source-dirs: src
     ghc-options: -Wall -O2
-    # other-modules:
-    #     - Undo-redo
+    
 
 executables:
  undo-redo:

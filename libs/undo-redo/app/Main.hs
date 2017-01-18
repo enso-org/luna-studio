@@ -4,10 +4,6 @@ module Main where
 
 import           Prologue
 
-import           Cmd         (Cmd)
-import qualified Cmd         as Cmd
-import           Version
-
 import qualified System.Log.Options   as Opt
 import           System.Log.Options (help, long, metavar, short)
 import qualified Undo                 as Undo
