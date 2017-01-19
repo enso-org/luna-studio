@@ -1,1 +1,7 @@
-sed -f script/patch.sed app/env.ghcjs > atom/lib/gen/ghcjs-code.js
+GEN=atom/lib/gen
+rm -rf $GEN
+mkdir $GEN
+sed -f script/patch.sed app/env.ghcjs > $GEN/ghcjs-code.js
+cp app/js/* $GEN -r
+cp app/config.release.js $GEN
+cp app/config.debug.js $GEN

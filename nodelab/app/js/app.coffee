@@ -1,8 +1,8 @@
-$$              = require('common')
-config          = require('config')
+$$              = require('./common')
+config          = require('./config')
 brunch          = require('brunch')
-websocket       = require('websocket')
-GoogleAnalytics = require('GoogleAnalytics')
+websocket       = require('./websocket')
+GoogleAnalytics = require('./GoogleAnalytics')
 
 console.info 'Current version ' + brunch.env + ' ' + brunch.git_commit + ' build  ' + brunch.build_number
 console.info 'Build at ' + brunch.date
