@@ -1,0 +1,21 @@
+{
+  "name": "luna-studio",
+  "main": "./lib/main",
+  "version": "1.0.0",
+  "description": "Luna Studio in Atom.",
+  "activationCommands": {
+    "atom-workspace": ["luna-studio:open"]
+  },
+  "repository": "...",
+  "license": "AllRightsReserved",
+  "engines": {
+    "atom": ">0.170.0"
+  },
+  "dependencies": {
+    "atom-space-pen-views": "^2.0.3",
+    "sub-atom": "1.0.x",
+    "brunch": "1.8.5",
+    "jquery": "*",
+    "underscore" : "*"
+  }
+}

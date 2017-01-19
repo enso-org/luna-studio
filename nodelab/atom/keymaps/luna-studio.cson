@@ -1,0 +1,2 @@
+'atom-workspace atom-text-editor':
+  'ctrl-alt-k': 'luna-studio:open'
