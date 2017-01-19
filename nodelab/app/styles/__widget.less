@@ -1,3 +1,5 @@
+@import '_variables';
+
 input.widget {
   position:       absolute;
   background:     transparent;
@@ -23,15 +25,15 @@ div.text-widget, div.data-frame {
   padding:        10px;
   margin:         0;
   overflow:       auto;
-  .scrollbar(rgba(0,0,0,0.2),rgba(255,255,255,0.8), 8px);
+  // .scrollbar(rgba(0,0,0,0.2),rgba(255,255,255,0.8), 8px);
   word-wrap:      break-word;
   box-sizing:     border-box;
 }
 
-div.text-widget.monospace {
-  font-family: @fontMonospace;
-  white-space: pre;
-}
+// div.text-widget.monospace {
+//   font-family: @fontMonospace;
+//   white-space: pre;
+// }
 
 div.data-frame table {
   box-sizing:     border-box;

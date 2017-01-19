@@ -3,7 +3,14 @@ brunch build
 rm -rf $GEN
 mkdir $GEN
 cat vendor/uuid.js > $GEN/ghcjs-code.js
-sed -f script/patch.sed app/env.ghcjs > $GEN/ghcjs-code.js
+cat script/imports.js >> $GEN/ghcjs-code.js
+sed -f script/patch.sed app/env.ghcjs >> $GEN/ghcjs-code.js
 cp app/js/* $GEN -r
 cp app/config.release.js $GEN
 cp app/config.debug.js $GEN
+
+STYLES=atom/styles
+rm -rf $STYLES
+mkdir $STYLES
+cp app/styles/* $STYLES -r
+mv $STYLES/style.less $STYLES/styles.less

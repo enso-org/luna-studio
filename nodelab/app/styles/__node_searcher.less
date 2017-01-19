@@ -1,3 +1,5 @@
+@import '_variables';
+
 .columnColors(@amount, @backgroundColor, @selectedBackground) {
   color: darken(@itemColor, @amount, relative);
 
@@ -43,35 +45,35 @@
   flex-wrap: nowrap;
 
   // colors
-  .column {
-    border-right: 2px solid @dividerColor;
-    .columnColors(20%, @backgroundColor, @selectedBackground);
-    ul {
-      .scrollbar(darken(@backgroundColor, 20%, relative), darken(@backgroundColor, 20%, relative), 8px);
-    }
-    &.current {
-      .columnColors(0%, @backgroundColor, @selectedBackground);
-      ul {
-        .scrollbar(@backgroundColor, @nsColor, 8px);
-      }
-    }
-  }
+  // .column {
+  //   border-right: 2px solid @dividerColor;
+  //   .columnColors(20%, @backgroundColor, @selectedBackground);
+  //   ul {
+  //     .scrollbar(darken(@backgroundColor, 20%, relative), darken(@backgroundColor, 20%, relative), 8px);
+  //   }
+  //   &.current {
+  //     .columnColors(0%, @backgroundColor, @selectedBackground);
+  //     ul {
+  //       .scrollbar(@backgroundColor, @nsColor, 8px);
+  //     }
+  //   }
+  // }
 
   // colors
 
-  &.command .column {
-    border-right: 2px solid @dividerColor;
-    .columnColors(20%, @commandBackground, @commandSelectedBackground);
-    ul {
-      .scrollbar(darken(@commandBackground, 20%, relative), darken(@commandBackground, 20%, relative), 8px);
-    }
-    &.current {
-      .columnColors(0%, @commandBackground, @commandSelectedBackground);
-      ul {
-        .scrollbar(@commandBackground, @nsColor, 8px);
-      }
-    }
-  }
+  // &.command .column {
+  //   border-right: 2px solid @dividerColor;
+  //   .columnColors(20%, @commandBackground, @commandSelectedBackground);
+  //   ul {
+  //     .scrollbar(darken(@commandBackground, 20%, relative), darken(@commandBackground, 20%, relative), 8px);
+  //   }
+  //   &.current {
+  //     .columnColors(0%, @commandBackground, @commandSelectedBackground);
+  //     ul {
+  //       .scrollbar(@commandBackground, @nsColor, 8px);
+  //     }
+  //   }
+  // }
 
   // layout
 
@@ -130,11 +132,11 @@
     margin: 0;
   }
 
-  &, input.query {
-    font-family: @fontMonospace;
-    font-weight: @fontWeight;
-    font-size: @fontSize;
-  }
+  // &, input.query {
+  //   font-family: @fontMonospace;
+  //   font-weight: @fontWeight;
+  //   font-size: @fontSize;
+  // }
 
   input.query {
     padding: 5px 0px;

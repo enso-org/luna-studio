@@ -16,6 +16,8 @@
     "sub-atom": "1.0.x",
     "brunch": "1.8.5",
     "jquery": "*",
+    "react" : "*",
+    "react-dom" : "*",
     "underscore" : "*"
   }
 }

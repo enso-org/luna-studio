@@ -5,4 +5,7 @@ module.exports =
 class LunaStudioTabView extends View
 
   @content: ->
-    @h1 "Welcome to Luna Studio"
+    @div
+      id: 'nodelab-app'
+      =>
+        @h1 "Welcome to Luna Studio"
