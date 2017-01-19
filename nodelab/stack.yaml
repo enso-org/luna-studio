@@ -16,7 +16,6 @@ extra-deps:
   - ghcjs-dom-0.7.0.4
   - ghcjs-dom-jsffi-0.7.0.4
 
-
 packages:
   - .
   - location: ../libs/luna-empire-api

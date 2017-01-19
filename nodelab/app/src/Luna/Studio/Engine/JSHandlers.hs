@@ -2,10 +2,7 @@
 
 module Luna.Studio.Engine.JSHandlers
     ( AddHandler(..)
-    , getJSState
-    , resizeHandler
     , webSocketHandler
-    , textEditorHandler
     , customEventHandler
     , copyClipboardHandler
     , cutClipboardHandler
@@ -14,9 +11,6 @@ module Luna.Studio.Engine.JSHandlers
 
 import           Luna.Studio.Prelude                    hiding (on)
 
-import           GHCJS.DOM                              (currentWindow)
-import qualified GHCJS.DOM.EventM                       as EventM
-import           GHCJS.DOM.Window                       (getInnerHeight, getInnerWidth, resize)
 import           GHCJS.Marshal.Pure                     (pFromJSVal)
 import           GHCJS.Prim                             (fromJSString)
 
@@ -26,26 +20,13 @@ import qualified Event.Clipboard                        as Clipboard
 import qualified Event.Connection                       as Connection
 import qualified Event.CustomEvent                      as CustomEvent
 import           Event.Event
-import qualified Event.TextEditor                       as TextEditor
-import qualified Event.Window                           as Window
 import qualified JS.Clipboard                           as Clipboard
 import qualified JS.CustomEvent                         as CustomEvent
-import qualified JS.TextEditor                          as TextEditor
 import qualified JS.WebSocket                           as WebSocket
 import qualified Luna.Studio.Batch.Connector.Connection as Connection
 
 
 data AddHandler a = AddHandler ((a -> IO ()) -> IO (IO ()))
-
-foreign import javascript safe "require('common')" getJSState :: IO JSState
-
-resizeHandler :: AddHandler Event
-resizeHandler = AddHandler $ \h -> do
-    window <- fromJust <$> currentWindow
-    window `EventM.on` resize $ liftIO $ do
-        width  <- getInnerWidth  window
-        height <- getInnerHeight window
-        h $ Window $ Window.Resized width height
 
 webSocketHandler :: WebSocket.WebSocket -> AddHandler Event
 webSocketHandler conn = AddHandler $ \h -> do
@@ -62,12 +43,6 @@ webSocketHandler conn = AddHandler $ \h -> do
         h $ Connection $ Connection.Closed code
     WebSocket.onError conn $
         h $ Connection Connection.Error
-
-textEditorHandler :: AddHandler Event
-textEditorHandler  = AddHandler $ \h ->
-    TextEditor.registerCallback $ \code -> do
-        let codeStr = TextEditor.toJSString code
-        liftIO $ h $ TextEditor $ TextEditor.CodeModified $ textFromJSString codeStr
 
 customEventHandler :: AddHandler Event
 customEventHandler  = AddHandler $ \h -> do

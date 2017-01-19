@@ -35,7 +35,6 @@ import qualified Luna.Studio.Handler.MultiSelection         as MultiSelection
 import qualified Luna.Studio.Handler.Navigation             as Navigation
 import qualified Luna.Studio.Handler.Node                   as Node
 import qualified Luna.Studio.Handler.Searcher               as Searcher
-import qualified Luna.Studio.Handler.Widget                 as Widget
 
 import           Luna.Studio.Action.Command                 (Command, execCommand)
 import           Luna.Studio.State.Global                   (State)
@@ -61,8 +60,14 @@ consoleTimeEnd   = consoleTimeEnd'   . JSString.pack
 actions :: [Event -> Maybe (Command State ())]
 actions =  [ App.toAction
            , Breadcrumbs.toAction
+           , Camera.toAction
            , CodeEditor.toAction
+           , Collaboration.toAction
            , Connect.toAction
+           , ConnectionPen.toAction
+           , Control.toAction
+           , Debug.toAction
+           , Debug.toActionEv
            , Drag.toAction
            , Graph.toAction
            , MultiSelection.toAction
@@ -70,14 +75,7 @@ actions =  [ App.toAction
            , Node.toAction
            , ProjectManager.toAction
            , Searcher.toAction
-           , Camera.toAction
-        --Debug.toActionEv
-        --    , Control.toAction
-        --    , Widget.toAction
-        --    , Collaboration.toAction
-           , ConnectionPen.toAction
-        --    , Clipboard.toAction
-        --    , Debug.toAction
+           --    , Clipboard.toAction
            ]
 
 runCommands :: [Event -> Maybe (Command State ())] -> Event -> Command State ()
@@ -99,10 +97,8 @@ processEvent var ev = modifyMVar_ var $ \state -> do
         JS.Debug.error (Text.pack $ realEvent ^. Event.name) realEvent
         consoleTimeEnd $ (realEvent ^. Event.name) <> " show and force"
         consoleTimeStart (realEvent ^. Event.name)
-    jsState   <- JSHandlers.getJSState
     timestamp <- getCurrentTime
-    let state' = state & Global.jsState .~ jsState
-                       & Global.lastEventTimestamp .~ timestamp
+    let state' = state & Global.lastEventTimestamp .~ timestamp
     flip catch (handleExcept state realEvent) $ do
         newState <- execCommand (runCommands actions realEvent >> Global.renderIfNeeded) state'
         when displayProcessingTime $
@@ -111,26 +107,9 @@ processEvent var ev = modifyMVar_ var $ \state -> do
 
 start :: WebSocket -> MVar State -> IO ()
 start conn state = do
-    let handlers = [ --JSHandlers.resizeHandler
-                --    , JSHandlers.mouseDownHandler
-                --    , JSHandlers.mouseUpHandler
-                --    , JSHandlers.mouseMovedHandler
-                --    , JSHandlers.mouseDblClickHandler
-                --    , JSHandlers.mouseWheelHandler
-                --    , JSHandlers.keyDownHandler
-                --    , JSHandlers.keyPressedHandler
-                --    , JSHandlers.keyUpHandler
-                    JSHandlers.webSocketHandler conn
-                --    , JSHandlers.connectionPenHandler
-                --    , JSHandlers.textEditorHandler
-                --    , JSHandlers.customEventHandler
-                --    , JSHandlers.copyClipboardHandler
-                --    , JSHandlers.cutClipboardHandler
-                --    , JSHandlers.pasteClipboardHandler
+    let handlers = [ JSHandlers.webSocketHandler conn
                    ]
-
-    let registerHandler (AddHandler rh) = rh (processEvent state)
-
+        registerHandler (AddHandler rh) = rh (processEvent state)
     sequence_ $ registerHandler <$> handlers
 
 handleExcept :: State -> Event -> JSException -> IO State

@@ -1,7 +1,0 @@
-uniform int objectMap;
-uniform vec3 objectId;
-
-void main() {
-  if(objectMap == 0) discard;
-  gl_FragColor = vec4(objectId, float(objectMap));
-}

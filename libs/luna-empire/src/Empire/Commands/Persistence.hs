@@ -42,6 +42,8 @@ import qualified Empire.Utils.IdGen              as IdGen
 import qualified Data.Aeson                      as JSON
 import qualified Data.Aeson.Encode.Pretty        as JSON
 
+import           Empire.API.JSONInstances        ()
+
 import qualified System.Log.MLogger              as Logger
 
 logger :: Logger.Logger

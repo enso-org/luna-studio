@@ -39,8 +39,6 @@ import qualified Luna.Studio.State.Graph              as Graph
 
 
 
-foreign import javascript safe "{}" defJsState :: Event.JSState
-
 -- TODO[react]: Move all action states to ActionState
 -- TODO split to more states
 data State = State { _mousePos           :: Position
@@ -52,7 +50,6 @@ data State = State { _mousePos           :: Position
                    , _workspace          :: Workspace
                    , _lastEvent          :: Maybe Event.Event
                    , _eventNum           :: Int
-                   , _jsState            :: Event.JSState
                    , _collaboration      :: Collaboration.State
                    , _pendingRequests    :: Set UUID
                    , _lastEventTimestamp :: DateTime
@@ -128,7 +125,7 @@ getConnection :: ConnectionId -> Command State (Maybe Connection)
 getConnection connectionId = get (App.nodeEditor . NodeEditor.connections . at connectionId)
 
 mkState :: DateTime -> Collaboration.ClientId -> StdGen -> Ref App -> State
-mkState = State (Position (Vector2 200 200)) def False def def def def def defJsState def def
+mkState = State (Position (Vector2 200 200)) def False def def def def def def def
 
 nextRandom :: Command State Word8
 nextRandom = do
