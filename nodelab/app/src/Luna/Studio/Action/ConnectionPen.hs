@@ -4,58 +4,69 @@ module Luna.Studio.Action.ConnectionPen
     , startDisconnecting
     , connectMove
     , disconnectMove
-    , resetPenConnectState
-    , resetPenDisconnectState
+    , stopConnecting
+    , stopDisconnecting
     ) where
 
-import           Luna.Studio.Action.Command       (Command)
-import           Luna.Studio.Event.Mouse          (workspacePosition)
+import qualified Data.Map                   as Map
+import           Luna.Studio.Action.Command (Command)
+import           Luna.Studio.Event.Mouse    (workspacePosition)
 import           Luna.Studio.Prelude
-import           Luna.Studio.State.Action         (Action (PenConnect, PenDisconnect))
-import           Luna.Studio.State.Global         (State)
-import qualified Luna.Studio.State.Global         as Global
-import qualified Luna.Studio.State.PenConnect     as PenConnect
-import qualified Luna.Studio.State.PenDisconnect  as PenDisconnect
-import           Luna.Studio.State.StatefulAction (StatefulAction (exit, matchState, pack, start, update))
-import           React.Flux                       (MouseEvent)
+import           Luna.Studio.State.Action   (Action (begin, continue, end, update), PenConnect (PenConnect), PenDisconnect (PenDisconnect),
+                                             fromSomeAction, penConnectAction, penDisconnectAction, someAction)
+import qualified Luna.Studio.State.Action   as Action
+import           Luna.Studio.State.Global   (State)
+import qualified Luna.Studio.State.Global   as Global
+import           React.Flux                 (MouseEvent)
 
-instance StatefulAction PenConnect.State where
-    matchState (PenConnect state) = Just state
-    matchState _ = Nothing
-    pack = PenConnect
-    exit _ = Global.performedAction .= Nothing
 
-instance StatefulAction PenDisconnect.State where
-    matchState (PenDisconnect state) = Just state
-    matchState _ = Nothing
-    pack = PenDisconnect
-    exit _ = Global.performedAction .= Nothing
+instance Action (Command State) PenConnect where
+    begin a = do
+        currentOverlappingActions <- Global.getCurrentOverlappingActions penConnectAction
+        mapM_ end currentOverlappingActions
+        update a
+    continue run = do
+        maySomeAction <- preuse $ Global.currentActions . ix penConnectAction
+        withJust (join $ fromSomeAction <$> maySomeAction) $ run
+    update a = Global.currentActions . at penConnectAction ?= someAction a
+    end = stopConnecting
+
+instance Action (Command State) PenDisconnect where
+    begin a = do
+        currentOverlappingActions <- Global.getCurrentOverlappingActions penDisconnectAction
+        mapM_ end currentOverlappingActions
+        update a
+    continue run = do
+        maySomeAction <- preuse $ Global.currentActions . ix penDisconnectAction
+        withJust (join $ fromSomeAction <$> maySomeAction) $ run
+    update a = Global.currentActions . at penDisconnectAction ?= someAction a
+    end = stopDisconnecting
 
 startConnecting :: MouseEvent -> Command State ()
 startConnecting evt = do
     pos <- workspacePosition evt
-    start $ PenConnect.State [pos] Nothing
+    begin $ PenConnect [pos] Nothing
 
 startDisconnecting :: MouseEvent -> Command State ()
 startDisconnecting evt = do
     pos <- workspacePosition evt
-    start $ PenDisconnect.State [pos] Nothing
+    begin $ PenDisconnect [pos] Nothing
 
-connectMove :: MouseEvent -> PenConnect.State -> Command State ()
+connectMove :: MouseEvent -> PenConnect -> Command State ()
 connectMove evt state = do
     pos <- workspacePosition evt
-    update $ state & PenConnect.history %~ (pos:)
+    update $ state & Action.penConnectHistory %~ (pos:)
 
-disconnectMove :: MouseEvent -> PenDisconnect.State -> Command State ()
+disconnectMove :: MouseEvent -> PenDisconnect -> Command State ()
 disconnectMove evt state = do
     pos <- workspacePosition evt
-    update $ state & PenDisconnect.history %~ (pos:)
+    update $ state & Action.penDisconnectHistory %~ (pos:)
 
-resetPenConnectState :: PenConnect.State -> Command State ()
-resetPenConnectState _ = Global.performedAction .= Nothing
+stopConnecting :: PenConnect -> Command State ()
+stopConnecting _ = Global.currentActions %= Map.delete penConnectAction
 
-resetPenDisconnectState :: PenDisconnect.State -> Command State ()
-resetPenDisconnectState _ = Global.performedAction .= Nothing
+stopDisconnecting :: PenDisconnect -> Command State ()
+stopDisconnecting _ = Global.currentActions %= Map.delete penDisconnectAction
 
 
 

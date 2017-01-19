@@ -3,9 +3,6 @@ module Luna.Studio.React.View.NodeEditor where
 
 import qualified Data.Aeson                            as Aeson
 import qualified Data.HashMap.Strict                   as HashMap
-import           React.Flux
-import qualified React.Flux                            as React
-import           React.Flux.Internal                   (el)
 import qualified Event.UI                              as UI
 import qualified Luna.Studio.Data.CameraTransformation as CameraTransformation
 import           Luna.Studio.Data.Matrix               (showTransformMatrixToSvg)
@@ -18,6 +15,9 @@ import           Luna.Studio.React.Store               (Ref, dispatch)
 import           Luna.Studio.React.View.Connection     (connection_, currentConnection_)
 import           Luna.Studio.React.View.Node           (node_)
 import           Luna.Studio.React.View.SelectionBox   (selectionBox_)
+import           React.Flux
+import qualified React.Flux                            as React
+import           React.Flux.Internal                   (el)
 
 
 name :: JSString
@@ -74,7 +74,7 @@ nodeEditor = React.defineView name $ \(ref, ne) -> do
                 ] $ do
                 forM_ (ne ^. NodeEditor.connections . to HashMap.toList) $ uncurry (connection_ ref)
                 forM_ (ne ^. NodeEditor.currentConnection) currentConnection_
-                selectionBox_ (ne ^. NodeEditor.selectionBox)
+                forM_ (ne ^. NodeEditor.selectionBox) selectionBox_
         div_
             [ "className" $= "plane plane--nodes"
             , "key"       $= "nodes"

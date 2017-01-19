@@ -1,7 +1,7 @@
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 module Luna.Studio.Action.Camera.Zoom
      ( resetZoom
-     , resetZoomState
+     , stopZoomDrag
      , zoomIn
      , zoomOut
      , startZoomDrag
@@ -9,6 +9,7 @@ module Luna.Studio.Action.Camera.Zoom
      , wheelZoom
      ) where
 
+import qualified Data.Map                              as Map
 import           Data.Matrix                           (getElem, setElem)
 import           Data.Position                         (ScreenPosition, Vector2, vector, x, y)
 import           Luna.Studio.Action.Camera.Modify      (modifyCamera)
@@ -18,18 +19,22 @@ import           Luna.Studio.Data.CameraTransformation (logicalToScreen, screenT
 import           Luna.Studio.Data.Matrix               (homothetyMatrix, invertedHomothetyMatrix)
 import           Luna.Studio.Prelude
 import qualified Luna.Studio.React.Model.NodeEditor    as NodeEditor
-import           Luna.Studio.State.Action              (Action (ZoomDrag))
+import           Luna.Studio.State.Action              (Action (begin, continue, end, update), ZoomDrag (ZoomDrag), fromSomeAction,
+                                                        someAction, zoomDragAction)
+import qualified Luna.Studio.State.Action              as Action
 import           Luna.Studio.State.Global              (State)
 import qualified Luna.Studio.State.Global              as Global
-import           Luna.Studio.State.StatefulAction      (StatefulAction (exit, matchState, pack, start, update))
-import qualified Luna.Studio.State.ZoomDrag            as ZoomDrag
 
-
-instance StatefulAction ZoomDrag.State where
-    matchState (ZoomDrag state) = Just state
-    matchState _ = Nothing
-    pack = ZoomDrag
-    exit = resetZoomState
+instance Action (Command State) ZoomDrag where
+    begin a = do
+        currentOverlappingActions <- Global.getCurrentOverlappingActions zoomDragAction
+        mapM_ end currentOverlappingActions
+        update a
+    continue run = do
+        maySomeAction <- preuse $ Global.currentActions . ix zoomDragAction
+        withJust (join $ fromSomeAction <$> maySomeAction) $ run
+    update a = Global.currentActions . at zoomDragAction ?= someAction a
+    end = stopZoomDrag
 
 minCamFactor, maxCamFactor, dragZoomSpeed, wheelZoomSpeed, zoomFactorStep :: Double
 minCamFactor   = 0.2
@@ -57,15 +62,15 @@ zoomOut :: Command State ()
 zoomOut = getScreenCenter >>= flip zoomCamera (1/zoomFactorStep)
 
 startZoomDrag :: ScreenPosition -> Command State ()
-startZoomDrag pos = start $ ZoomDrag.State pos pos
+startZoomDrag pos = begin $ ZoomDrag pos pos
 
-zoomDrag :: ScreenPosition -> ZoomDrag.State -> Command State ()
+zoomDrag :: ScreenPosition -> ZoomDrag -> Command State ()
 zoomDrag actPos state = do
-    let fixedPoint = view ZoomDrag.fixedPoint state
-        prevPos    = view ZoomDrag.previousPos state
-        delta = actPos ^. vector - prevPos ^. vector
-        scale = 1 + (delta ^. x - delta ^. y) / dragZoomSpeed
-    update $ ZoomDrag.State fixedPoint actPos
+    let fixedPoint = view Action.zoomDragFixedPoint  state
+        prevPos    = view Action.zoomDragPreviousPos state
+        delta      = actPos ^. vector - prevPos ^. vector
+        scale      = 1 + (delta ^. x - delta ^. y) / dragZoomSpeed
+    update $ ZoomDrag fixedPoint actPos
     zoomCamera fixedPoint scale
 
 resetZoom :: Command State ()
@@ -77,5 +82,5 @@ wheelZoom :: ScreenPosition -> Vector2 Double -> Command State ()
 wheelZoom pos delta = zoomCamera pos delta' where
     delta' = 1 + (delta ^. x + delta ^. y) / wheelZoomSpeed
 
-resetZoomState :: ZoomDrag.State -> Command State ()
-resetZoomState _ = Global.performedAction .= Nothing
+stopZoomDrag :: ZoomDrag -> Command State ()
+stopZoomDrag _ = Global.currentActions %= Map.delete zoomDragAction

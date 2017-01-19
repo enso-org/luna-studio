@@ -12,7 +12,6 @@ import           Luna.Studio.State.Global              (State)
 import qualified Luna.Studio.State.Global              as Global
 
 
-
 modifyCamera :: Matrix Double -> Matrix Double -> Command State ()
 modifyCamera matrix invertedMatrix = Global.modifyNodeEditor $ do
     NodeEditor.screenTransform . logicalToScreen %= (flip multStd2 matrix)

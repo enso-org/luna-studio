@@ -16,9 +16,8 @@ import           Luna.Studio.React.Model.Node (NodeId)
 import           Luna.Studio.React.Model.Port (Port)
 import qualified Luna.Studio.React.Model.Port as Port
 import           Luna.Studio.React.Store      (Ref, dispatch)
-import qualified Luna.Studio.State.Slider     as Slider
+import qualified Luna.Studio.State.Action     as Action
 import           React.Flux                   as React
-
 
 
 portControl_ :: Ref App -> NodeId -> Bool -> Port -> ReactElementM ViewEventHandler ()
@@ -71,15 +70,15 @@ inPortControl = React.defineView "inPortControl" $ \(ref, portRef, port) ->
                     div_
                         [ "className" $= "horizontal-slider"
                         --TODO[react]: +1 with Q and up key, -1 with W and down key, edit on double click
-                        , onMouseDown $ \e m -> stopPropagation e : dispatch ref (UI.NodeEvent $ Node.PortInitSlider m portRef $ Slider.Discrete value)
-                        ] $ elemString $ show value
+                        , onMouseDown $ \e m -> stopPropagation e : dispatch ref (UI.NodeEvent $ Node.PortInitSlider m portRef $ Action.Discrete value)
+                        ] $ elemString $ fromString $ show value
                 ValueType.ContinuousNumber -> do
                     let value = fromMaybe 0.0 $ defVal ^? DefaultValue._Constant . DefaultValue._DoubleValue
                     div_
                         [ "className" $= "horizontal-slider"
                         --TODO[react]: +1 with Q and up key, -1 with W and down key, edit on double click
-                        , onMouseDown $ \e m -> stopPropagation e : dispatch ref (UI.NodeEvent $ Node.PortInitSlider m portRef $ Slider.Continous value)
-                        ] $ elemString $ show value
+                        , onMouseDown $ \e m -> stopPropagation e : dispatch ref (UI.NodeEvent $ Node.PortInitSlider m portRef $ Action.Continous value)
+                        ] $ elemString $ fromString $ show value
                 ValueType.String -> do
                     let value = fromMaybe "" $ defVal ^? DefaultValue._Constant . DefaultValue._StringValue
                         defaultValue val = DefaultValue.Constant $ DefaultValue.StringValue val

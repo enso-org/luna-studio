@@ -2,9 +2,10 @@
 module Luna.Studio.Action.MultiSelection
     ( startMultiSelection
     , updateMultiSelection
-    , endMultiSelection
+    , stopMultiSelection
     ) where
 
+import qualified Data.Map                             as Map
 import           Data.Position                        (Position (Position), Vector2 (Vector2), fromTuple, x, y)
 import           Empire.API.Data.Node                 (Node)
 import qualified Empire.API.Data.Node                 as Node
@@ -15,35 +16,37 @@ import           Luna.Studio.Prelude
 import qualified Luna.Studio.React.Model.Node         as NodeModel
 import qualified Luna.Studio.React.Model.NodeEditor   as NodeEditor
 import           Luna.Studio.React.Model.SelectionBox (SelectionBox (SelectionBox))
-import qualified Luna.Studio.React.Model.SelectionBox as SelectionBox
-import           Luna.Studio.State.Action             (Action (MultiSelection))
+import           Luna.Studio.State.Action             (Action (begin, continue, end, update), MultiSelection (MultiSelection),
+                                                       fromSomeAction, multiSelectionAction, someAction)
+import qualified Luna.Studio.State.Action             as Action
 import           Luna.Studio.State.Global             (State)
 import qualified Luna.Studio.State.Global             as Global
 import qualified Luna.Studio.State.Graph              as Graph
-import qualified Luna.Studio.State.MultiSelection     as MultiSelection
-import           Luna.Studio.State.StatefulAction     (StatefulAction (exit, matchState, pack, start, update))
 import           React.Flux                           (MouseEvent)
 
-
-instance StatefulAction MultiSelection.State where
-    pack = MultiSelection
-    matchState (MultiSelection state) = Just state
-    matchState _ = Nothing
-    exit = endMultiSelection
+instance Action (Command State) MultiSelection where
+    begin a = do
+        currentOverlappingActions <- Global.getCurrentOverlappingActions multiSelectionAction
+        mapM_ end currentOverlappingActions
+        update a
+    continue run = do
+        maySomeAction <- preuse $ Global.currentActions . ix multiSelectionAction
+        withJust (join $ fromSomeAction <$> maySomeAction) $ run
+    update a = Global.currentActions . at multiSelectionAction ?= someAction a
+    end = stopMultiSelection
 
 startMultiSelection :: MouseEvent -> Command State ()
 startMultiSelection evt = do
     unselectAll
     coord <- workspacePosition evt
-    start $ MultiSelection.State coord coord
+    begin $ MultiSelection coord
 
-updateMultiSelection :: MouseEvent -> MultiSelection.State -> Command State ()
+updateMultiSelection :: MouseEvent -> MultiSelection -> Command State ()
 updateMultiSelection evt state = do
-    let startPos = view MultiSelection.dragStartPos state
+    let startPos = view Action.multiSelecectionStartPos state
     coord <- workspacePosition evt
-    update $ MultiSelection.State startPos coord
+    Global.modifyNodeEditor $ NodeEditor.selectionBox .= Just (SelectionBox startPos coord)
     updateSelection startPos coord
-    drawSelectionBox startPos coord
 
 inRect :: Position -> Position -> Node -> Bool
 inRect leftTop rightBottom node = pos ^. x >= leftTop ^. x
@@ -59,19 +62,10 @@ updateSelection start end = do
     nodeIds <- map Node._nodeId . filter (inRect leftTop rightBottom) <$> use (Global.graph . Graph.nodes)
     selectNodes nodeIds
 
-drawSelectionBox :: Position -> Position -> Command State ()
-drawSelectionBox start end =
-    Global.modifyNodeEditor $
-        NodeEditor.selectionBox .= SelectionBox True start end
-
-
-hideSelectionBox :: Command State ()
-hideSelectionBox = Global.modifySelectionBox $ SelectionBox.visible .= False
-
-endMultiSelection :: MultiSelection.State -> Command State ()
-endMultiSelection _ = do
-    hideSelectionBox
+stopMultiSelection :: MultiSelection -> Command State ()
+stopMultiSelection _ = do
+    Global.modifyNodeEditor $ NodeEditor.selectionBox .= Nothing
+    Global.currentActions %= Map.delete multiSelectionAction
     focusSelectedNode
     selectedNodesIds <- map (^. NodeModel.nodeId) <$> selectedNodes
     modifySelectionHistory selectedNodesIds
-    Global.performedAction .= Nothing

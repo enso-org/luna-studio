@@ -4,7 +4,7 @@ module Luna.Studio.React.View.SelectionBox where
 import qualified Data.Aeson                           as Aeson
 import           Data.Position                        (Position (Position), Vector2 (Vector2), x, y)
 import           Luna.Studio.Prelude
-import           Luna.Studio.React.Model.SelectionBox (SelectionBox, end, start, visible)
+import           Luna.Studio.React.Model.SelectionBox (SelectionBox, end, start)
 import           React.Flux
 import qualified React.Flux                           as React
 
@@ -18,17 +18,16 @@ selectionBox = React.defineView name $ \model -> do
         width     = abs $ model ^. start . x - model ^. end . x
         height    = abs $ model ^. start . y - model ^. end . y
         translate = fromString $ "translate(" <> show (pos ^. x) <> "," <> show (pos ^. y) <> ")"
-    when (model ^. visible) $
-        rect_
-            [ "width"     $= fromString (show width)
-            , "height"    $= fromString (show height)
-            , "style"     @= Aeson.object
-                [ "strokeWidth"  Aeson..= ("3" :: String)
-                , "stroke"       Aeson..= ("rgb(255,255,255)" :: String)
-                , "opacity"      Aeson..= ("0.2" :: String)
-                ]
-            , "transform" $= translate
-            ] mempty
+    rect_
+        [ "width"     $= fromString (show width)
+        , "height"    $= fromString (show height)
+        , "style"     @= Aeson.object
+            [ "strokeWidth"  Aeson..= ("3" :: String)
+            , "stroke"       Aeson..= ("rgb(255,255,255)" :: String)
+            , "opacity"      Aeson..= ("0.2" :: String)
+            ]
+        , "transform" $= translate
+        ] mempty
 
 selectionBox_ :: SelectionBox -> ReactElementM ViewEventHandler ()
 selectionBox_ model = React.viewWithSKey selectionBox name model mempty

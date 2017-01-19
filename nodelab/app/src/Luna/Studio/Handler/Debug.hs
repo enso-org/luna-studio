@@ -21,21 +21,22 @@ import qualified Luna.Studio.State.Global   as Global
 import           Data.Aeson                 (toJSON)
 
 toAction :: Event -> Maybe (Command Global.State ())
-toAction (Debug Debug.GetState) = Just $ do
-    state <- get
-    let json = toJSON state
-    performIO $ do
-        val <- toJSVal json
-        clog val
-        saveState val
-toAction _ev = Just $ do
-    -- logBatch ev
-    when shouldExportState $ do
-        state <- get
-        let json = toJSON state
-        performIO $ do
-            val <- toJSVal json
-            saveState val
+-- toAction (Debug Debug.GetState) = Just $ do
+--     state <- get
+--     let json = toJSON state
+--     performIO $ do
+--         val <- toJSVal json
+--         clog val
+--         saveState val
+-- toAction _ev = Just $ do
+--     -- logBatch ev
+--     when shouldExportState $ do
+--         state <- get
+--         let json = toJSON state
+--         performIO $ do
+--             val <- toJSVal json
+--             saveState val
+toAction _ = Nothing
 
 toActionEv :: Event -> Maybe (Command Global.State ())
 toActionEv ev = Just $ do

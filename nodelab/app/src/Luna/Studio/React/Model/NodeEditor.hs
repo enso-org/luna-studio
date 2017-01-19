@@ -16,7 +16,7 @@ data NodeEditor = NodeEditor { _screenTransform   :: CameraTransformation
                              , _nodes             :: HashMap NodeId    Node
                              , _connections       :: HashMap InPortRef Connection
                              , _currentConnection :: Maybe CurrentConnection
-                             , _selectionBox      :: SelectionBox
+                             , _selectionBox      :: Maybe SelectionBox
                              } deriving (Eq)
 
 makeLenses ''NodeEditor
