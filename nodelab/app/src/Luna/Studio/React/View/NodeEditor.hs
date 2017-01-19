@@ -81,8 +81,11 @@ nodeEditor = React.defineView name $ \(ref, ne) -> do
             , "style"     @= Aeson.object [ "transform" Aeson..= transform ]
             ] $ do
             forM_ (ne ^. NodeEditor.nodes . to HashMap.elems) $ node_ ref
+        canvas_
+            [ "className" $= "plane plane--canvas hide"
+            , "key"       $= "canvas"
+            ] $ mempty
 
-        -- TODO: canvas_ [ "className" $= "plane plane--canvas" ] …
 
 nodeEditor_ :: Ref App -> NodeEditor -> ReactElementM ViewEventHandler ()
 nodeEditor_ ref ne = React.viewWithSKey nodeEditor name (ref, ne) mempty

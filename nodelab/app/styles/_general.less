@@ -14,6 +14,13 @@ svg * { pointer-events: all; }
 html { overflow: hidden; height: 100%; }
 body { height: 100%; overflow: auto; }
 
+/////////////////////////////
+//        utilities        //
+/////////////////////////////
+
+.hide {
+    display: none;
+}
 
 /////////////////////////////
 //       basic styles      //
@@ -23,6 +30,7 @@ body {
     font:        12px/15px @fontDefault;
     background:  @colorBackground;
     font-weight: 300;
+    font-variant-ligatures: contextual;
 }
 
 .main {
@@ -105,6 +113,10 @@ body {
         width:    1px;
         height:   1px;
     }
+}
+.plane--canvas {
+    height: 100%;
+    width:  100%;
 }
 
 .searcher {
