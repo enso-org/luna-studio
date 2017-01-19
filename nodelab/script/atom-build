@@ -12,5 +12,4 @@ cp app/config.debug.js $GEN
 STYLES=atom/styles
 rm -rf $STYLES
 mkdir $STYLES
-cp app/styles/* $STYLES -r
-mv $STYLES/style.less $STYLES/styles.less
+cp www/stylesheets/app.css $STYLES/styles.css
