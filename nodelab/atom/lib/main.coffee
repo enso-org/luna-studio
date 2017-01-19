@@ -6,8 +6,8 @@ module.exports =
   activate: ->
     @subs = new SubAtom
     @subs.add atom.commands.add 'atom-workspace', 'luna-studio:open': ->
-      atom.workspace.getActivePane().activateItem new LunaStudioTab "Luna Studio!!!"
-      # require "./ghcjs-code.js"
+      atom.workspace.getActivePane().activateItem new LunaStudioTab "Luna Studio"
+      require "./gen/ghcjs-code.js"
 
 
   deactivate: ->

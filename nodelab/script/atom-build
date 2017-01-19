@@ -1,0 +1,1 @@
+sed -f script/patch.sed app/env.ghcjs > atom/lib/gen/ghcjs-code.js
