@@ -1,5 +1,5 @@
 {-# LANGUAGE TypeFamilies #-}
-module Luna.Studio.Data.Vector where
+module Data.Vector where
 
 import           Control.DeepSeq     (NFData)
 import           Data.Aeson          (ToJSON)
@@ -17,7 +17,6 @@ import           Prologue            (wrapped')
 -- === Vector === --
 --------------------
 
---TODO move to Data.Vector
 type family VectorOf a
 
 class IsVector a where
@@ -130,125 +129,3 @@ maxMin (Vector2 a b) (Vector2 a' b') = Vector2 (max a a') (min b b')
 
 scalarProduct :: Num a => Vector2 a -> a -> Vector2 a
 scalarProduct vec k = vec & x *~ k & y *~ k
-
-
-
------------------------
--- === Position === ---
------------------------
-
--- === Definition === --
-
-newtype Position = Position (Vector2 Double) deriving (Eq, Show, Generic, Default, NFData)
-makeWrapped ''Position
-
-
--- === Instances === --
-
-type instance VectorOf Position = Vector2 Double
-
-instance Dim1      Position
-instance Dim2      Position
-instance IsVector  Position
-instance ToJSON    Position
-
-instance IsList Position where
-    type Item Position = Double
-    fromList l = Position (fromList l)
-    toList   p = [p ^. x, p ^. y]
-
-
--- === Functions === ---
-
---TODO: [Position] -> Position
-averagePosition :: Position -> Position -> Position
-averagePosition a b =
-    let ax = (a ^. x + b ^. x) / 2
-        ay = (a ^. y + b ^. y) / 2
-    in Position (Vector2 ax ay)
-
-move :: Position -> Vector2 Double -> Position
-move pos vec = pos & vector +~ vec
-
-rescale :: Position -> Double -> Position
-rescale pos factor = pos & vector %~ (flip scalarProduct factor)
-
-leftTopPoint :: [Position] -> Maybe (Position)
-leftTopPoint []        = Nothing
-leftTopPoint positions = Just $ Position (Vector2 (minimum $ view x <$> positions) (minimum $ view y <$> positions))
-
-rightBottomPoint :: [Position] -> Maybe (Position)
-rightBottomPoint []        = Nothing
-rightBottomPoint positions = Just $ Position (Vector2 (maximum $ view x <$> positions) (maximum $ view y <$> positions))
-
-minimumRectangle :: [Position] -> Maybe (Position, Position)
-minimumRectangle positions = (,) <$> (leftTopPoint positions) <*> (rightBottomPoint positions)
-
--- TODO[react]: Possible solution to differ Mouse Position and Graph Position
--- makeClassy  ''Position
--- class HasPosition a where
---     position :: Lens' a Position
---
--- instance HasPosition Position where
---     position = id
---
--- data Screen
--- data Graph
--- data Node
--- data Vis
---
---
--- newtype Coord t = Coord Position deriving (Eq, Show, Generic, Default)
--- makeWrapped ''Coord
---
---
--- rebase :: Coord t -> Coord t'
--- rebase = rewrapped
---
--- instance HasPosition (Coord t) where
---     position = unwrap'
---
--- instance HasVector (Coord t) where
---     vector = position . vector
---
--- instance Dim1 (Coord t)
--- instance Dim2 (Coord t)
---
--- Coord Screen
--- Coord Graph
--- Coord Node
-
-
-
--------------------
--- === Size === ---
--------------------
-
--- === Definition === --
-
-newtype Size = Size (Vector2 Double) deriving (Eq, Show, Generic, Default)
-makeWrapped ''Size
-
-
--- === Instances === --
-
-type instance VectorOf Size = Vector2 Double
-
-instance IsVector Size
-instance Dim1 Size
-instance Dim2 Size
-instance ToJSON Size
-
-instance IsList Size where
-    type Item Size = Double
-    fromList l = Size (fromList l)
-    toList   p = [p ^. x, p ^. y]
-
-
-
------------------------------
--- === ScreenPosition === ---
------------------------------
-
--- TODO[react]: Introduce sth else instead of simplest alias
-type ScreenPosition = Position

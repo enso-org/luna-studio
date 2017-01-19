@@ -3,13 +3,13 @@ module Luna.Studio.Action.Node.NodeMeta
     , modifyNodeMeta
     ) where
 
+import           Data.Position
 import           Empire.API.Data.Node         (NodeId)
 import qualified Empire.API.Data.Node         as Node
 import           Empire.API.Data.NodeMeta     (NodeMeta (..))
 import qualified Empire.API.Data.NodeMeta     as NodeMeta
 import qualified Luna.Studio.Action.Batch     as BatchCmd
 import           Luna.Studio.Action.Command   (Command)
-import           Luna.Studio.Data.Vector
 import           Luna.Studio.Prelude
 import qualified Luna.Studio.React.Model.Node as NodeModel
 import qualified Luna.Studio.State.Global     as Global

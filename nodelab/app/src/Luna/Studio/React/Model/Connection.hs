@@ -1,11 +1,11 @@
 module Luna.Studio.React.Model.Connection where
 
 import           Data.Aeson                 (ToJSON)
+import           Data.Position              (Position)
 import           Empire.API.Data.Connection (ConnectionId)
 import qualified Empire.API.Data.Connection as Empire
 import           Empire.API.Data.PortRef    (AnyPortRef)
 import           Luna.Studio.Data.Color     (Color)
-import           Luna.Studio.Data.Vector    (Position)
 import           Luna.Studio.Prelude        hiding (from, set, to)
 
 

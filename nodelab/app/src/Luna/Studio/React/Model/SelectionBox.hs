@@ -1,6 +1,6 @@
 module Luna.Studio.React.Model.SelectionBox where
 
-import           Luna.Studio.Data.Vector
+import           Data.Position       (Position)
 import           Luna.Studio.Prelude
 
 

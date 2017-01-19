@@ -3,9 +3,9 @@ module Luna.Studio.Action.Node.Snap
     , snapCoord
     ) where
 
-import           Luna.Studio.Data.Vector (Position, x, y)
+import           Data.Position       (Position, x, y)
 import           Luna.Studio.Prelude
-import           Style.Layout            (gridSize)
+import           Style.Layout        (gridSize)
 
 
 snapCoord :: Double -> Double

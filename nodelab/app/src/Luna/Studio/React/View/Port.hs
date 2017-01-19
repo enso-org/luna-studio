@@ -2,15 +2,15 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Luna.Studio.React.View.Port where
 
-import           Luna.Studio.Prelude
 import           Empire.API.Data.Port               (InPort (..), OutPort (..), PortId (..))
 import           Empire.API.Data.PortRef            (AnyPortRef)
 import qualified Event.UI                           as UI
 import           Luna.Studio.Action.Geometry        (lineHeight, nodeRadius, nodeRadius', portAngleStart, portAngleStop)
 import           Luna.Studio.Data.Color             (toJSString)
 import qualified Luna.Studio.Event.Mouse            as Mouse
+import           Luna.Studio.Prelude
 import qualified Luna.Studio.React.Event.Connection as Connection
-import           Luna.Studio.React.Model.App       (App)
+import           Luna.Studio.React.Model.App        (App)
 import           Luna.Studio.React.Model.Port       (Port (..))
 import qualified Luna.Studio.React.Model.Port       as Port
 import           Luna.Studio.React.Store            (Ref, dispatch)
@@ -53,11 +53,11 @@ portExpanded = React.defineView name $ \(ref, p) ->
 
 port_ :: Ref App -> Port -> Int -> Bool -> ReactElementM ViewEventHandler ()
 port_ ref p numOfPorts isOnly =
-    React.viewWithSKey port (fromString $ show $ p ^. Port.portId) (ref, numOfPorts, isOnly, p) mempty where
+    React.viewWithSKey port (jsShow $ p ^. Port.portId) (ref, numOfPorts, isOnly, p) mempty where
 
 portExpanded_ :: Ref App -> Port -> ReactElementM ViewEventHandler ()
 portExpanded_ ref p =
-    React.viewWithSKey portExpanded (fromString $ show $ p ^. Port.portId) (ref, p) mempty
+    React.viewWithSKey portExpanded (jsShow $ p ^. Port.portId) (ref, p) mempty
 
 portSelf_ :: Ref App -> Port -> ReactElementM ViewEventHandler ()
 portSelf_ ref port = do

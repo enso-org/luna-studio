@@ -3,7 +3,7 @@ module Luna.Studio.State.Slider where
 
 import           Control.DeepSeq         (NFData)
 import           Data.Aeson              (FromJSON, ToJSON)
-import           Luna.Studio.Data.Vector (Position)
+import           Data.Position           (Position)
 import           Luna.Studio.Prelude
 
 import           Empire.API.Data.PortRef (AnyPortRef)

@@ -9,7 +9,6 @@ import           Control.Monad.Trans.Reader
 import           Control.Monad.Trans.State  hiding (get, modify)
 import           Luna.Studio.Prelude        as P hiding (transform)
 import           React.Flux
-import           React.Flux.Store           (ReactStoreRef)
 
 import qualified Event.Event                as E
 import           Luna.Studio.Action.Command (Command)
@@ -29,10 +28,6 @@ instance Eq a => Eq (Store a) where
 
 type SendEventM = ReaderT SendEvent
 type StoreModifyM a m = StateT a (SendEventM m)--TODO newtype
-
-instance Eq (ReactStore a) where _ == _ = True
-instance NFData a => NFData (ReactStoreRef a)
-instance NFData a => NFData (ReactStore a)
 
 makeLenses ''Store
 

@@ -1,8 +1,8 @@
 module Luna.Studio.Data.Matrix where
 
-import           Data.Matrix             (Matrix)
-import qualified Data.Matrix             as Matrix
-import           Luna.Studio.Data.Vector (Position, Vector2, x, y)
+import           Data.Matrix         (Matrix)
+import qualified Data.Matrix         as Matrix
+import           Data.Position       (Position, Vector2, x, y)
 import           Luna.Studio.Prelude
 
 translationMatrix :: Vector2 Double -> Matrix Double

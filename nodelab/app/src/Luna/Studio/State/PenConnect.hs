@@ -1,8 +1,8 @@
 module Luna.Studio.State.PenConnect where
 
-import           Data.Aeson              (ToJSON)
-import           Empire.API.Data.Node    (NodeId)
-import           Luna.Studio.Data.Vector (Position)
+import           Data.Aeson           (ToJSON)
+import           Data.Position        (Position)
+import           Empire.API.Data.Node (NodeId)
 import           Luna.Studio.Prelude
 
 

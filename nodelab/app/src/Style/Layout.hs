@@ -2,7 +2,8 @@
 
 module Style.Layout where
 
-import           Luna.Studio.Data.Vector (Position (Position), Size (Size), Vector2 (Vector2))
+import           Data.Position       (Position (Position), Vector2 (Vector2))
+import           Data.Size           (Size (Size))
 import           Luna.Studio.Prelude
 
 import           Style.Types

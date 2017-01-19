@@ -2,13 +2,13 @@ module Luna.Studio.Handler.Camera
     ( toAction
     ) where
 
+import           Data.Vector                        (Vector2 (Vector2))
 import           Event.Event                        (Event (UI))
 import           Event.UI                           (UIEvent (AppEvent, NodeEditorEvent))
 import           Luna.Studio.Action.Camera          (centerGraph, panCamera, panDown, panDrag, panLeft, panRight, panUp, resetCamera,
                                                      resetPan, resetPanState, resetZoom, resetZoomState, startPanDrag, startZoomDrag,
                                                      wheelZoom, zoomDrag, zoomIn, zoomOut)
 import           Luna.Studio.Action.Command         (Command)
-import           Luna.Studio.Data.Vector            (Vector2 (Vector2))
 import qualified Luna.Studio.Event.Keys             as Keys
 import           Luna.Studio.Event.Mouse            (mousePosition)
 import qualified Luna.Studio.Event.Mouse            as Mouse

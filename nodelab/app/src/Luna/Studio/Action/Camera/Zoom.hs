@@ -10,18 +10,18 @@ module Luna.Studio.Action.Camera.Zoom
      ) where
 
 import           Data.Matrix                           (getElem, setElem)
+import           Data.Position                         (ScreenPosition, Vector2, vector, x, y)
 import           Luna.Studio.Action.Camera.Modify      (modifyCamera)
 import           Luna.Studio.Action.Camera.Screen      (getScreenCenter)
 import           Luna.Studio.Action.Command            (Command)
 import           Luna.Studio.Data.CameraTransformation (logicalToScreen, screenToLogical)
 import           Luna.Studio.Data.Matrix               (homothetyMatrix, invertedHomothetyMatrix)
-import           Luna.Studio.Data.Vector               (ScreenPosition, Vector2, vector, x, y)
 import           Luna.Studio.Prelude
 import qualified Luna.Studio.React.Model.NodeEditor    as NodeEditor
 import           Luna.Studio.State.Action              (Action (ZoomDrag))
 import           Luna.Studio.State.Global              (State)
 import qualified Luna.Studio.State.Global              as Global
-import           Luna.Studio.State.StatefulAction      (StatefulAction (continue, exit, matchState, pack, start, update))
+import           Luna.Studio.State.StatefulAction      (StatefulAction (exit, matchState, pack, start, update))
 import qualified Luna.Studio.State.ZoomDrag            as ZoomDrag
 
 

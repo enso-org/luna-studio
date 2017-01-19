@@ -41,6 +41,7 @@ dependencies:
   - binary
   - bytestring
   - containers
+  - convert
   - data-default
   - datetime
   - deepseq

@@ -7,10 +7,11 @@ module Luna.Studio.Action.Camera.Screen
 
 import           Data.Matrix                           (getElem, multStd2)
 import qualified Data.Matrix                           as Matrix
+import           Data.Position                         (Position (Position), ScreenPosition)
+import           Data.Size                             (Size (Size))
+import           Data.Vector                           (fromTuple, scalarProduct, vector, x, y)
 import           Luna.Studio.Action.Command            (Command)
 import           Luna.Studio.Data.CameraTransformation (screenToLogical)
-import           Luna.Studio.Data.Vector               (Position (Position), ScreenPosition, Size (Size), fromTuple, scalarProduct, vector,
-                                                        x, y)
 import           Luna.Studio.Prelude
 import qualified Luna.Studio.React.Model.NodeEditor    as NodeEditor
 import           Luna.Studio.State.Global              (State)

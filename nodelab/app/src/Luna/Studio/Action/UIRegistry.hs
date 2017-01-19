@@ -33,9 +33,9 @@ module Luna.Studio.Action.UIRegistry
 
 import           Data.HMap.Lazy               (HTMap, TypeKey (..))
 import qualified Data.HMap.Lazy               as HMap
+import           Data.Vector
 import qualified JS.Cursor                    as Cursor
 import           Luna.Studio.Action.Command   (Command, performIO)
-import           Luna.Studio.Data.Vector
 import           Luna.Studio.Prelude          hiding (children, lookup)
 import qualified Luna.Studio.State.Global     as Global
 import qualified Luna.Studio.State.UIRegistry as UIRegistry

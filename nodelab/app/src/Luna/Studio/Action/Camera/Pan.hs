@@ -12,18 +12,18 @@ module Luna.Studio.Action.Camera.Pan
      ) where
 
 import           Data.Matrix                           (setElem)
+import           Data.Position                         (ScreenPosition, Vector2 (Vector2), vector)
 import           Luna.Studio.Action.Camera.Modify      (modifyCamera)
 import           Luna.Studio.Action.Command            (Command)
 import           Luna.Studio.Data.CameraTransformation (logicalToScreen, screenToLogical)
 import           Luna.Studio.Data.Matrix               (invertedTranslationMatrix, translationMatrix)
-import           Luna.Studio.Data.Vector               (ScreenPosition, Vector2 (Vector2), vector)
 import           Luna.Studio.Prelude
 import qualified Luna.Studio.React.Model.NodeEditor    as NodeEditor
 import           Luna.Studio.State.Action              (Action (PanDrag))
 import           Luna.Studio.State.Global              (State)
 import qualified Luna.Studio.State.Global              as Global
 import qualified Luna.Studio.State.PanDrag             as PanDrag
-import           Luna.Studio.State.StatefulAction      (StatefulAction (continue, exit, matchState, pack, start, update))
+import           Luna.Studio.State.StatefulAction      (StatefulAction (exit, matchState, pack, start, update))
 
 
 instance StatefulAction PanDrag.State where

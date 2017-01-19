@@ -5,6 +5,7 @@ module Luna.Studio.Action.Graph.Connect
     ) where
 
 
+import           Data.Position                          (Position)
 import           Empire.API.Data.Connection             (ConnectionId)
 import           Empire.API.Data.PortRef                (InPortRef, OutPortRef)
 import qualified Luna.Studio.Action.Batch               as BatchCmd
@@ -12,7 +13,6 @@ import           Luna.Studio.Action.Command             (Command)
 import           Luna.Studio.Action.Connect.Color       (getConnectionColor)
 import           Luna.Studio.Action.Geometry.Connection (getConnectionPosition)
 import           Luna.Studio.Data.Color                 (Color)
-import           Luna.Studio.Data.Vector                (Position)
 import           Luna.Studio.Prelude
 import qualified Luna.Studio.React.Model.Connection     as ConnectionModel
 import qualified Luna.Studio.React.Model.NodeEditor     as NodeEditor

@@ -3,6 +3,7 @@ module Luna.Studio.Action.Connect.Helpers
     , toValidConnection
     ) where
 
+import           Data.Position                       (Position)
 import           Empire.API.Data.Connection          (Connection)
 import qualified Empire.API.Data.Connection          as Connection
 import           Empire.API.Data.PortRef             (AnyPortRef (InPortRef', OutPortRef'), InPortRef, OutPortRef)
@@ -10,7 +11,6 @@ import qualified Empire.API.Data.PortRef             as PortRef
 import           Luna.Studio.Action.Command          (Command)
 import           Luna.Studio.Action.Graph.Disconnect (localRemoveConnections)
 import           Luna.Studio.Data.Color              (Color)
-import           Luna.Studio.Data.Vector             (Position)
 import           Luna.Studio.Prelude
 import           Luna.Studio.React.Model.Connection  (CurrentConnection (CurrentConnection))
 import qualified Luna.Studio.React.Model.NodeEditor  as NodeEditor

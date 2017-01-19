@@ -1,7 +1,8 @@
 module Luna.Studio.React.Model.Image where
 
-import           Data.Aeson              (ToJSON)
-import           Luna.Studio.Data.Vector (Position, Size)
+import           Data.Aeson          (ToJSON)
+import           Data.Position       (Position)
+import           Data.Size           (Size)
 import           Luna.Studio.Prelude
 
 

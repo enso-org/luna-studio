@@ -27,46 +27,22 @@ module Luna.Studio.State.Graph
 
 import           Luna.Studio.Prelude        hiding ((.=))
 
-import           Data.Hashable              (Hashable)
 import           Data.HashMap.Strict        (HashMap)
 import qualified Data.HashMap.Strict        as HashMap
-import qualified Data.Map.Strict            as Map
 import qualified Data.Set                   as Set
-import           Data.UUID.Types            (UUID)
 
 import           Data.Aeson                 hiding ((.:))
 import           Empire.API.Data.Connection (Connection (..), ConnectionId)
 import qualified Empire.API.Data.Connection as Connection
 import           Empire.API.Data.Node       (Node, NodeId)
 import qualified Empire.API.Data.Node       as Node
-import           Empire.API.Data.Port       (InPort, OutPort)
-import           Empire.API.Data.PortRef    (AnyPortRef, InPortRef, OutPortRef)
+import           Empire.API.Data.PortRef    (InPortRef, OutPortRef)
 import qualified Empire.API.Data.PortRef    as PortRef
 import           Luna.Studio.Action.Command (Command)
 
 
 type NodesMap       = HashMap NodeId Node
 type ConnectionsMap = HashMap ConnectionId Connection
-
-
-instance (ToJSON b) => ToJSON (HashMap UUID b) where
-    toJSON = toJSON . Map.fromList . HashMap.toList
-    {-# INLINE toJSON #-}
-
-instance (ToJSON b) => ToJSON  (HashMap AnyPortRef b) where
-    toJSON = toJSON . Map.fromList . HashMap.toList
-    {-# INLINE toJSON #-}
-
-instance (ToJSON b) => ToJSON  (HashMap InPortRef b) where
-    toJSON = toJSON . Map.fromList . HashMap.toList
-    {-# INLINE toJSON #-}
-
-instance Default (HashMap a b) where def = HashMap.empty
-instance Hashable InPort
-instance Hashable OutPort
-instance Hashable InPortRef
-instance Hashable OutPortRef
-instance Hashable AnyPortRef
 
 data State = State { _nodesMap             :: NodesMap
                    , _connectionsMap       :: ConnectionsMap

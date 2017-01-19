@@ -7,4 +7,4 @@ import           React.Flux
 
 
 image_ :: Int -> Image -> ReactElementM ViewEventHandler ()
-image_ _visIx df = div_ $ elemString $ fromString $ show df
+image_ _visIx df = div_ $ elemString $ show df

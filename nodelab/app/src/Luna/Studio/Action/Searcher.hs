@@ -4,6 +4,7 @@ module Luna.Studio.Action.Searcher where
 import qualified Data.Map                           as Map
 import qualified Data.Text                          as Text
 
+import           Data.Position                      (Position)
 import           Empire.API.Data.Node               (NodeId)
 import qualified Empire.API.Data.Node               as NodeAPI
 import qualified Empire.API.Data.Port               as Port
@@ -16,7 +17,6 @@ import           Luna.Studio.Action.Graph.Selection (selectedNodes)
 import           Luna.Studio.Action.Node.Register   (registerNode)
 import qualified Luna.Studio.Action.Node.Update     as Node
 import qualified Luna.Studio.Batch.Workspace        as Workspace
-import           Luna.Studio.Data.Vector            (Position)
 import           Luna.Studio.Prelude
 import qualified Luna.Studio.React.Model.Node       as Node
 import qualified Luna.Studio.React.Model.Searcher   as Searcher

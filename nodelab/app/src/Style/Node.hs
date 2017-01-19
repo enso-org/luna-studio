@@ -1,11 +1,12 @@
 module Style.Node where
 
-import           Luna.Studio.Data.Vector (Position (Position), Size (Size), Vector2 (Vector2), x, y)
+import           Data.Position       (Position (Position), Vector2 (Vector2), x, y)
+import           Data.Size           (Size (Size))
 import           Luna.Studio.Prelude
 
 import           Style.Types
 
-import qualified Object.Widget.Label     as Label
+import qualified Object.Widget.Label as Label
 
 nodeRadius :: Double
 nodeRadius = 25.0

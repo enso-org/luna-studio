@@ -5,11 +5,11 @@ module Luna.Studio.Action.MultiSelection
     , endMultiSelection
     ) where
 
+import           Data.Position                        (Position (Position), Vector2 (Vector2), fromTuple, x, y)
 import           Empire.API.Data.Node                 (Node)
 import qualified Empire.API.Data.Node                 as Node
 import           Luna.Studio.Action.Command           (Command)
 import           Luna.Studio.Action.Graph             (focusSelectedNode, modifySelectionHistory, selectNodes, selectedNodes, unselectAll)
-import           Luna.Studio.Data.Vector              (Position (Position), Vector2 (Vector2), fromTuple, x, y)
 import           Luna.Studio.Event.Mouse              (workspacePosition)
 import           Luna.Studio.Prelude
 import qualified Luna.Studio.React.Model.Node         as NodeModel

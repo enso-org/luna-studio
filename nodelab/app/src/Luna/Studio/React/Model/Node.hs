@@ -13,6 +13,7 @@ import qualified Data.Map.Lazy                     as Map
 import qualified Data.Text                         as Text
 import           Data.Time.Clock                   (UTCTime)
 
+import           Data.Position                     (Position (Position), Vector2 (Vector2))
 import qualified Empire.API.Data.Node              as NodeAPI
 import qualified Empire.API.Data.NodeMeta          as MetaAPI
 import           Empire.API.Data.Port              (OutPort (..), PortId (..))
@@ -21,7 +22,6 @@ import           Empire.API.Data.PortRef           (AnyPortRef)
 import           Empire.API.Data.PortRef           (portId')
 import           Empire.API.Graph.Collaboration    (ClientId)
 import           Empire.API.Graph.NodeResultUpdate (NodeValue)
-import           Luna.Studio.Data.Vector           (Position (Position), Vector2 (Vector2))
 import           Luna.Studio.Prelude               hiding (set)
 import           Luna.Studio.React.Model.Port      (Port)
 import qualified Luna.Studio.React.Model.Port      as Port

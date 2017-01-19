@@ -1,11 +1,11 @@
 module Luna.Studio.State.Drag where
 
-import           Data.Aeson              (ToJSON)
-import           Data.Map                (Map)
-import           Luna.Studio.Data.Vector (Position)
+import           Data.Aeson           (ToJSON)
+import           Data.Map             (Map)
+import           Data.Position        (Position)
 import           Luna.Studio.Prelude
 
-import           Empire.API.Data.Node    (NodeId)
+import           Empire.API.Data.Node (NodeId)
 
 
 data State = State { _dragStartPos  :: Position

@@ -3,7 +3,7 @@
 module Luna.Studio.Action.Sandbox where
 --TODO[react]
 -- import           Luna.Studio.Prelude
--- import           Luna.Studio.Data.Vector
+-- import           Data.Vector
 --
 -- import           Event.Event                     (Event (..))
 -- import qualified Event.Keyboard                  as Keyboard

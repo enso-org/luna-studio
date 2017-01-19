@@ -2,8 +2,8 @@
 
 module Luna.Studio.State.Global where
 
+import           Data.Position                        (Position (Position), Vector2 (Vector2))
 import           Data.Word                            (Word8)
-import           Luna.Studio.Data.Vector              (Position (Position), Vector2 (Vector2))
 import           Luna.Studio.Prelude
 
 import qualified Control.Monad.State                  as M

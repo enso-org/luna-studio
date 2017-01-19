@@ -1,30 +1,30 @@
 module Luna.Studio.Handler.Navigation where
 
-import qualified Data.HashMap.Strict          as HashMap
+import qualified Data.HashMap.Strict                as HashMap
 
-import           Luna.Studio.Data.Vector      (Position (Position), lengthSquared, magnitude, vector, x, y)
+import           Data.Position                      (Position (Position), lengthSquared, magnitude, vector, x, y)
 import           Luna.Studio.Prelude
 
-import           React.Flux                   (KeyboardEvent)
+import           React.Flux                         (KeyboardEvent)
 
-import qualified Empire.API.Data.Connection   as C
-import           Empire.API.Data.Node         (NodeId)
-import qualified Empire.API.Data.Port         as P
-import qualified Empire.API.Data.PortRef      as R
-import           Event.Event                  (Event (UI))
-import           Event.UI                     (UIEvent (AppEvent))
-import           Luna.Studio.Action.Batch   (cancelCollaborativeTouch, collaborativeTouch)
-import           Luna.Studio.Action.Command (Command)
-import           Luna.Studio.Action.Graph   (allNodes)
-import qualified Luna.Studio.Event.Keys       as Keys
-import qualified Luna.Studio.React.Event.App  as App
-import           Luna.Studio.React.Model.Node (Node)
-import qualified Luna.Studio.React.Model.Node as Node
-import qualified Luna.Studio.React.Model.Node as Model
-import           Luna.Studio.State.Global     (State)
-import qualified Luna.Studio.State.Global     as Global
-import qualified Luna.Studio.State.Graph      as Graph
+import qualified Empire.API.Data.Connection         as C
+import           Empire.API.Data.Node               (NodeId)
+import qualified Empire.API.Data.Port               as P
+import qualified Empire.API.Data.PortRef            as R
+import           Event.Event                        (Event (UI))
+import           Event.UI                           (UIEvent (AppEvent))
+import           Luna.Studio.Action.Batch           (cancelCollaborativeTouch, collaborativeTouch)
+import           Luna.Studio.Action.Command         (Command)
+import           Luna.Studio.Action.Graph           (allNodes)
+import qualified Luna.Studio.Event.Keys             as Keys
+import qualified Luna.Studio.React.Event.App        as App
+import           Luna.Studio.React.Model.Node       (Node)
+import qualified Luna.Studio.React.Model.Node       as Node
+import qualified Luna.Studio.React.Model.Node       as Model
 import qualified Luna.Studio.React.Model.NodeEditor as NodeEditor
+import           Luna.Studio.State.Global           (State)
+import qualified Luna.Studio.State.Global           as Global
+import qualified Luna.Studio.State.Graph            as Graph
 
 
 

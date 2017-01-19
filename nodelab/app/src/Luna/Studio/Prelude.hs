@@ -31,10 +31,13 @@ import           GHCJS.Marshal                 as X (FromJSVal (..), ToJSVal (..
 import           GHCJS.Types                   as X (JSVal)
 import           Luna.Studio.Prelude.Instances ()
 import           Prelude                       hiding (curry, print, putStr, putStrLn, uncurry, (++), (.))
-import           Prologue                      as X (curry, foldlDef, fromJustM, ifElseId, ifM, lift2, lift3, pprint, print, printLn,
-                                                     putStr, putStrLn, show', switch, toString, uncurry, unlessM, whenLeft, whenLeft',
-                                                     whenM, whenRight, whenRight', withJust, ($>), (++), (.), (.:), (.:.), (.::))
+import           Prologue                      as X (convert, curry, foldlDef, fromJustM, ifElseId, ifM, lift2, lift3, pprint, print,
+                                                     printLn, putStr, putStrLn, show', switch, toString, uncurry, unlessM, whenLeft,
+                                                     whenLeft', whenM, whenRight, whenRight', withJust, ($>), (++), (.), (.:), (.:.), (.::))
 
 
 mjoin :: Monoid a => a -> [a] -> a
 mjoin delim l = mconcat (intersperse delim l)
+
+jsShow :: Show a => a -> JSString
+jsShow = convert . show

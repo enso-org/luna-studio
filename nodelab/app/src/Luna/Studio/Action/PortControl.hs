@@ -7,13 +7,13 @@ module Luna.Studio.Action.PortControl
     , setPortDefault
     ) where
 
+import           Data.Position                    (Position, x)
 import qualified Empire.API.Data.DefaultValue     as DefaultValue
 import qualified Empire.API.Data.Port             as PortAPI
 import           Empire.API.Data.PortRef          (AnyPortRef)
 import qualified Empire.API.Data.PortRef          as PortRef
 import qualified Luna.Studio.Action.Batch         as Batch
 import           Luna.Studio.Action.Command       (Command)
-import           Luna.Studio.Data.Vector          (Position, x)
 import           Luna.Studio.Prelude
 import qualified Luna.Studio.React.Model.Node     as Node
 import qualified Luna.Studio.React.Model.Port     as Port

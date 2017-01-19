@@ -2,11 +2,11 @@
 module Luna.Studio.React.View.SelectionBox where
 
 import qualified Data.Aeson                           as Aeson
-import           Luna.Studio.Data.Vector              (Position (Position), Vector2 (Vector2), x, y)
+import           Data.Position                        (Position (Position), Vector2 (Vector2), x, y)
 import           Luna.Studio.Prelude
+import           Luna.Studio.React.Model.SelectionBox (SelectionBox, end, start, visible)
 import           React.Flux
 import qualified React.Flux                           as React
-import           Luna.Studio.React.Model.SelectionBox (SelectionBox, end, start, visible)
 
 
 name :: JSString

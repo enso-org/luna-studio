@@ -1,7 +1,7 @@
 module Luna.Studio.React.Model.Searcher where
 
+import           Data.Position                  (Position)
 import           Empire.API.Data.Node           (NodeId)
-import           Luna.Studio.Data.Vector        (Position)
 import           Luna.Studio.Prelude
 
 import           Text.ScopeSearcher.QueryResult (QueryResult)

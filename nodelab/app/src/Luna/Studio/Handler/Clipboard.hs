@@ -27,7 +27,7 @@ module Luna.Studio.Handler.Clipboard where
 -- import qualified Luna.Studio.State.Graph              as Graph
 -- import           Luna.Studio.State.GraphSkeleton      as GraphSkeleton
 -- import           Luna.Studio.Prelude
--- import           Luna.Studio.Data.Vector                      (Vector2 (..))
+-- import           Data.Vector                      (Vector2 (..))
 --
 --
 -- foreign import javascript safe "clipboard.copy($1)" copyStringToClipboard :: JSString -> IO ()

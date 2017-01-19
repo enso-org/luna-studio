@@ -8,13 +8,13 @@ module Luna.Studio.Action.Drag
 import           Control.Arrow
 import           Data.Map                           (Map)
 import qualified Data.Map                           as Map
+import           Data.Position                      (Position, move, toTuple, vector)
 import           Empire.API.Data.Node               (NodeId)
 import qualified Empire.API.Data.Node               as Node
 import qualified Luna.Studio.Action.Batch           as BatchCmd
 import           Luna.Studio.Action.Command         (Command)
 import           Luna.Studio.Action.Graph           (selectNodes, selectedNodes, updateConnectionsForNodes)
 import           Luna.Studio.Action.Node            (snap)
-import           Luna.Studio.Data.Vector            (Position, move, toTuple, vector)
 import           Luna.Studio.Event.Mouse            (workspacePosition)
 import           Luna.Studio.Prelude
 import qualified Luna.Studio.React.Model.Node       as Model

@@ -20,7 +20,7 @@ module Luna.Studio.Action.CommandSearcher.Commands where
 -- import           Luna.Studio.Action.NodeSearcher   as NS
 -- import           Luna.Studio.Action.ProjectManager (loadProject)
 -- import qualified Luna.Studio.Batch.Workspace       as Workspace
--- import           Luna.Studio.Data.Vector
+-- import           Data.Vector
 -- import           Luna.Studio.Prelude               hiding (Item, stripPrefix)
 -- import qualified Luna.Studio.State.Global          as Global
 -- import           Text.ScopeSearcher.Item           (Item (..))

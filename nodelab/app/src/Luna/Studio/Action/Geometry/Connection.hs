@@ -4,15 +4,15 @@ module Luna.Studio.Action.Geometry.Connection
     ) where
 
 import qualified Data.Map.Lazy                         as Map
+import           Data.Position                         (Position (Position), Vector2 (Vector2), x, y)
 import           Empire.API.Data.PortRef               (AnyPortRef (InPortRef', OutPortRef'), InPortRef, OutPortRef)
 import qualified Empire.API.Data.PortRef               as PortRef
 import           Luna.Studio.Action.Command            (Command)
-import           Luna.Studio.Action.Geometry.Constants (portRadius, nodeExpandedWidth, lineHeight)
+import           Luna.Studio.Action.Geometry.Constants (lineHeight, nodeExpandedWidth, portRadius)
 import           Luna.Studio.Action.Geometry.Node      (nodeToNodeAngle)
 import           Luna.Studio.Action.Geometry.Port      (IsSelf, IsSingle, countSameTypePorts, getPortNumber, isPortSelf, isPortSingle,
                                                         portAngleStart, portAngleStop, portGap)
 import           Luna.Studio.Action.Graph.Lookup       (getNode, getPort)
-import           Luna.Studio.Data.Vector               (Position (Position), Vector2 (Vector2), x, y)
 import           Luna.Studio.Prelude
 import qualified Luna.Studio.React.Model.Node          as Node
 import           Luna.Studio.State.Global              (State)

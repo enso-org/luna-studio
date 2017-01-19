@@ -9,6 +9,7 @@ where
 
 import           Control.Arrow                                  ((***))
 import           Data.List.Split                                (wordsBy)
+import           Data.Size                                      (Size (Size), Vector2 (Vector2))
 import qualified Data.Text                                      as Text
 import           Empire.API.Data.DefaultValue                   (Value (..))
 import qualified Empire.API.Data.DefaultValue                   as DefaultValue
@@ -16,7 +17,6 @@ import qualified Empire.API.Data.Error                          as LunaError
 import           Empire.API.Data.TypeRep                        (TypeRep)
 import           Empire.API.Graph.NodeResultUpdate              (NodeValue)
 import qualified Empire.API.Graph.NodeResultUpdate              as NodeResult
-import           Luna.Studio.Data.Vector                        hiding (normalize)
 import           Luna.Studio.Prelude
 import           Luna.Studio.React.Model.DataFrame              (DataFrame)
 import qualified Luna.Studio.React.Model.DataFrame              as DataFrame

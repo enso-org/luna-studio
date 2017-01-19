@@ -4,16 +4,16 @@ module Luna.Studio.React.View.Node where
 import qualified Data.Aeson                             as Aeson
 import qualified Data.Map.Lazy                          as Map
 import qualified Data.Text                              as Text
+import           Data.Vector                            (x, y)
 import           Empire.API.Data.Node                   (NodeId)
 import           Empire.API.Data.Port                   (InPort (..), PortId (..))
 import qualified Event.UI                               as UI
 import           Luna.Studio.Action.Geometry            (countSameTypePorts, isPortSingle)
 import           Luna.Studio.Data.Matrix                (transformTranslateToSvg)
-import           Luna.Studio.React.Model.App    (App)
-import           Luna.Studio.Data.Vector                (x, y)
 import qualified Luna.Studio.Event.Mouse                as Mouse
 import           Luna.Studio.Prelude
 import qualified Luna.Studio.React.Event.Node           as Node
+import           Luna.Studio.React.Model.App            (App)
 import           Luna.Studio.React.Model.Node           (Node)
 import qualified Luna.Studio.React.Model.Node           as Node
 import qualified Luna.Studio.React.Model.NodeProperties as Properties
@@ -87,10 +87,9 @@ node = React.defineView objName $ \(ref, n) -> do
             if  n ^. Node.isExpanded then do
                 ports         ref $ filter (\port -> (port ^. Port.portId) == InPortId Self) nodePorts
                 portsExpanded ref $ filter (\port -> (port ^. Port.portId) /= InPortId Self) nodePorts
-                portsExpanded ref $ filter (\port -> (port ^. Port.portId) /= InPortId Self) nodePorts
             else do
                 ports ref $ filter (\port -> (port ^. Port.portId) /= InPortId Self) nodePorts
                 ports ref $ filter (\port -> (port ^. Port.portId) == InPortId Self) nodePorts
 
 node_ :: Ref App -> Node -> ReactElementM ViewEventHandler ()
-node_ ref model = React.viewWithSKey node (fromString $ show $ model ^. Node.nodeId) (ref, model) mempty
+node_ ref model = React.viewWithSKey node (jsShow $ model ^. Node.nodeId) (ref, model) mempty

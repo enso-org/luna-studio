@@ -2,8 +2,8 @@ module Luna.Studio.Action.Geometry.Node
     ( nodeToNodeAngle
     ) where
 
-import           Luna.Studio.Data.Angle  (Angle)
-import           Luna.Studio.Data.Vector (Position, x, y)
+import           Data.Position          (Position, x, y)
+import           Luna.Studio.Data.Angle (Angle)
 import           Luna.Studio.Prelude
 
 
