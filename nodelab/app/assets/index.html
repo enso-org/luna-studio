@@ -1,25 +1,33 @@
 <!DOCTYPE html>
 
-<meta charset="utf-8">
-<title>Luna</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-<link href="/font/hasklig/hasklig.css" rel="stylesheet">
-<link href="/stylesheets/app.css" rel="stylesheet" type="text/css">
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <title>Luna</title>
 
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <link href="https://fonts.googleapis.com/css?family=Source+Code+Pro:200,300,400,500,600,700,900" rel="stylesheet">
+  <link href="/font/dejavusansmono_book/stylesheet.css" rel="stylesheet">
+  <link href="/font/roboto/roboto-fontface.css" rel="stylesheet">
+  <link href="/stylesheets/app.css" rel="stylesheet" type="text/css">
+ </head>
 
-<div id="nodelab-app">
-    <div id="spinner" class="spinner-wave">
-        <div></div>
-        <div></div>
-        <div></div>
-        <div></div>
-        <div></div>
-    </div>
-</div>
-<script type="text/javascript" src="/javascripts/vendor.js" ></script>
-<script type="text/javascript" src="/javascripts/ghcjs.js"></script>
-<script type="text/javascript" src="/javascripts/app.js"></script>
-<script type="text/javascript">
+<body>
+  <div id="nodelab-app">
+      <div id="spinner" class="spinner-wave">
+          <div></div>
+          <div></div>
+          <div></div>
+          <div></div>
+          <div></div>
+      </div>
+  </div>
+  <script type="text/javascript" src="/javascripts/vendor.js" ></script>
+  <script type="text/javascript" src="/javascripts/ghcjs.js"></script>
+  <script type="text/javascript" src="/javascripts/app.js"></script>
+  <script type="text/javascript">
     window.resourcesPath = "";
     require('app').start();
-</script>
+  </script>
+</body>
+</html>

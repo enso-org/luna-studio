@@ -1,0 +1,12 @@
+@font-face {
+    font-family: 'dejavu_sans_monobold';
+    src: url('DejaVuSansMono-Bold-webfont.eot');
+    src: url('DejaVuSansMono-Bold-webfont.eot?#iefix') format('embedded-opentype'),
+         url('DejaVuSansMono-Bold-webfont.woff') format('woff'),
+         url('DejaVuSansMono-Bold-webfont.ttf') format('truetype'),
+         url('DejaVuSansMono-Bold-webfont.svg#dejavu_sans_monobold') format('svg');
+    font-weight: normal;
+    font-style: normal;
+
+}
+
