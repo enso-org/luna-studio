@@ -53,13 +53,13 @@ withBus act = Undo $ StateT $ \s -> liftIO $ runStateT (runUndo act) s
 
 
 run :: BusEndPoints -> IO (Either Bus.Error ((), UndoState))
-run endPoints = run' endPoints $ forever receiveAndHandleMessage
+run endPoints = let state = UndoState [] [] []
+                in run' endPoints state $ forever receiveAndHandleMessage
 
-run' :: BusEndPoints -> Undo a -> IO (Either Bus.Error (a, UndoState))
-run' endPoints undo = do
+run' :: BusEndPoints -> UndoState -> Undo a -> IO (Either Bus.Error (a, UndoState))
+run' endPoints state undo = do
     Bus.runBus endPoints $ do
         Bus.subscribe "empire." --FIXME topic
-        let state = UndoState [] [] []
         Bus.runBusT $ runStateT (runUndo undo) state
 
 receiveAndHandleMessage :: Undo ()
