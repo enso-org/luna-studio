@@ -99,8 +99,8 @@ type family RedoResponseRequest t where
 --FIXME[WD]: String -> ?
 --FIXME[WD]: Sprobujmy nie uzywac tuplui
 
-data BusErrorException = BusErrorException deriving (Show)
-instance Exception BusErrorException
+data ResponseErrorException = ResponseErrorException deriving (Show)
+instance Exception ResponseErrorException
 
 makeHandler :: forall req inv res z. (Topic.MessageTopic (Response req inv res), Binary (Response req inv res),
             Topic.MessageTopic (Request (UndoResponseRequest (Response req inv res))), Binary (UndoResponseRequest (Response req inv res)),
