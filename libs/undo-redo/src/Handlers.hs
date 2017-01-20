@@ -112,7 +112,7 @@ makeHandler h =
                               reqUUID    = response ^. Response.requestId
                           in case maybeGuiID of
                               Just guiID -> case h response of
-                                                  Nothing     -> throwM BusErrorException
+                                                  Nothing     -> throwM ResponseErrorException
                                                   Just (r, q) -> do
                                                       let message = UndoMessage guiID reqUUID (Topic.topic (Request.Request UUID.nil Nothing r)) r (Topic.topic (Request.Request UUID.nil Nothing q)) q
                                                       handle message
