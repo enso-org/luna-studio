@@ -97,7 +97,7 @@ receiveMessage = do
             let emptyMsg = isEmpty $ msg ^. Message.message
             if emptyMsg then receiveMessage else return frame
 
-compareId :: UUID -> UndoMessage -> Bool
+compareId :: GuiID -> UndoMessage -> Bool
 compareId guiID msg = case msg of UndoMessage x _ _ _ _ _ -> x == guiID
 
 act :: Act -> UndoMessage -> Action
