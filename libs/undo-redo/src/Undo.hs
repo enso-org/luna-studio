@@ -77,12 +77,19 @@ handleMessage :: Message.Message -> UndoPure (Maybe Action)
 handleMessage msg = do
     let topic   = msg ^. Message.topic
         content = msg ^. Message.message
-        Request.Request _ guiID (RedoRequest.Request _) = decode . fromStrict $ content
     case topic of
-        UndoRequestTopic -> doUndo guiID
-        RedoRequestTopic -> doRedo guiID
+        UndoRequestTopic -> do
+            let Request.Request _ undoGuiID (UndoRequest.Request _) = decode . fromStrict $ content
+            case undoGuiID of
+                Just guiID -> doUndo guiID
+                Nothing    -> return Nothing
+        RedoRequestTopic -> do
+            let Request.Request _ redoGuiID (RedoRequest.Request _) = decode . fromStrict $ content
+            case redoGuiID of
+                Just guiID -> doRedo guiID
+                Nothing    -> return Nothing
         _ -> do
-            when (isJust guiID) $ runMessageHandler topic content
+            runMessageHandler topic content
             return Nothing
 
 isEmpty :: ByteString -> Bool
@@ -107,8 +114,7 @@ act action undoMessage = case action of
 
 doUndo :: MonadState UndoState m => Maybe UUID -> m (Maybe Action)
 doUndo guiID = do
-    let justId = fromJust guiID
-    h <- uses undo $ List.find (compareId justId)
+    h <- uses undo $ List.find (compareId guiID)
     case h of
         -- FIXME: to jest MapM?
         Just msg -> do redo %= (msg :)
@@ -119,8 +125,7 @@ doUndo guiID = do
 
 doRedo :: MonadState UndoState m => Maybe UUID -> m (Maybe Action)
 doRedo guiID = do
-    let justId = fromJust guiID
-    h <- uses redo $ List.find (compareId justId)
+    h <- uses redo $ List.find (compareId guiID)
     case h of
         Just msg -> do undo %= (msg :)
                        redo %= List.delete msg
