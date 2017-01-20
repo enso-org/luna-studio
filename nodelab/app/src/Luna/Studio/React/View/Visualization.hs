@@ -28,11 +28,15 @@ import           Luna.Studio.React.View.Visualization.Graphics  (graphics_)
 import           Luna.Studio.React.View.Visualization.Image     (image_)
 import           React.Flux                                     hiding (image_)
 import qualified React.Flux                                     as React
-import qualified Style.Layout                                   as Style
-
 
 viewName :: JSString
 viewName = "visualization"
+
+errorMessageWrapMargin :: Int
+errorMessageWrapMargin = 30
+
+errorLen :: Int
+errorLen = 40
 
 visualization :: ReactView NodeValue
 visualization = React.defineView viewName $ \case
@@ -48,9 +52,6 @@ strValue n = Text.unpack $ case n ^. Node.value of
     Just (NodeResult.Value value []) -> value
     Just (NodeResult.Value value _ ) -> value
     Just (NodeResult.Error msg     ) -> limitString errorLen (Text.pack $ showError msg)
-
-errorLen :: Int
-errorLen = 40
 
 limitString :: Int -> Text -> Text
 limitString limit str | Text.length str > limit64 = Text.take limit64 str <> "…"
@@ -74,7 +75,7 @@ showErrorSep sep err = case err of
 
 nodeError_ :: LunaError.Error TypeRep -> ReactElementM ViewEventHandler ()
 nodeError_ err = do
-    let message = wrapLines Style.errorMessageWrapMargin $ showErrorSep "\n" err
+    let message = wrapLines errorMessageWrapMargin $ showErrorSep "\n" err
     div_
         [ "key"       $= "error"
         , "className" $= "vis vis--error"

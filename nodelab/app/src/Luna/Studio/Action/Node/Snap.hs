@@ -5,8 +5,9 @@ module Luna.Studio.Action.Node.Snap
 
 import           Data.Position       (Position, x, y)
 import           Luna.Studio.Prelude
-import           Style.Layout        (gridSize)
 
+gridSize :: Int
+gridSize = 16
 
 snapCoord :: Double -> Double
 snapCoord p = fromIntegral . (* gridSize) . round $ p / fromIntegral gridSize
