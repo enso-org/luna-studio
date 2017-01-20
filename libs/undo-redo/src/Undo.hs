@@ -48,8 +48,8 @@ import           Control.Error                     (ExceptT, hoistEither, runExc
 import System.IO (stdout,hFlush)
 
 
-lft :: forall a. UndoPure a -> Undo a
-lft act = Undo $ StateT $ \s -> liftIO $ runStateT (runUndo act) s
+withBus :: forall a. UndoPure a -> Undo a
+withBus act = Undo $ StateT $ \s -> liftIO $ runStateT (runUndo act) s
 
 
 run :: BusEndPoints -> IO (Either Bus.Error ((), UndoState))
@@ -65,7 +65,7 @@ run' endPoints undo = do
 receiveAndHandleMessage :: Undo ()
 receiveAndHandleMessage = do
     msgFrame <- receiveMessage
-    action <- lft $ handleMessage $ msgFrame ^. MessageFrame.message
+    action <- withBus $ handleMessage $ msgFrame ^. MessageFrame.message
     case action of
         Just msg -> lift $ Bus.BusT $ sendMessage msg
         Nothing  -> return ()
