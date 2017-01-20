@@ -1,4 +1,5 @@
 @import '_variables';
+
 /////////////////////////////
 //          resets         //
 /////////////////////////////
@@ -27,11 +28,15 @@ body { height: 100%; overflow: auto; }
 /////////////////////////////
 
 body {
-    font:        12px/15px @fontDefault;
-    background:  @colorBackground;
-    font-weight: 300;
-    font-variant-ligatures: contextual;
+    font:         12px/15px @fontDefault;
+    background:   @colorBackground;
+    font-weight:  300;
+    font-variant -ligatures: contextual;
 }
+
+/////////////////////////////
+//          layout         //
+/////////////////////////////
 
 .main {
     display:     flex;
@@ -64,37 +69,13 @@ body {
     position: relative;
 }
 
-.code-editor {
-    width:      30%;
-    background: rgb(30, 30, 30);
-    z-index:    10;
-}
-
-.code-editor--collapsed {
-    display: none;
-}
-
-.code-editor-toggle {
-    position:      absolute;
-    right:         5px;
-    top:           50%;
-    margin-top:   -20px;
-    flex:          none;
-    width:         5px;
-    height:        40px;
-    background:    #282828;
-    overflow:      hidden;
-    cursor:        pointer;
-    border-radius: 3px;
-}
-
 .graph {
     position: relative;
     flex:     none;
     overflow: inherit;
     color:    @colorName;
-    width:  100%;
-    height: 100%;
+    width:    100%;
+    height:   100%;
 }
 
 .plane {
@@ -119,15 +100,32 @@ body {
     width:  100%;
 }
 
-.searcher {
-    flex:     none;
-    position: absolute;
-    input {
-        line-height:   30px;
-        background:    black;
-        border-radius: 3px;
-        color:         #fff;
-        padding:       0 10px;
+/////////////////////////////
+//           TODO          //
+/////////////////////////////
 
-    }
+// Probably to remove after the Atom integration
+
+.code-editor {
+    width:      30%;
+    background: rgb(30, 30, 30);
+    z-index:    10;
+}
+
+.code-editor--collapsed {
+    display: none;
+}
+
+.code-editor-toggle {
+    position:      absolute;
+    right:         5px;
+    top:           50%;
+    margin-top:   -20px;
+    flex:          none;
+    width:         5px;
+    height:        40px;
+    background:    #282828;
+    overflow:      hidden;
+    cursor:        pointer;
+    border-radius: 3px;
 }
