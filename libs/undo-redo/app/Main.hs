@@ -21,6 +21,4 @@ main :: IO ()
 main = do
     endPoints <- EP.clientFromConfig <$> Config.load
     r <- Undo.run endPoints
-    case r of
-        Left err -> return ()
-        Right _  -> return ()
+    return ()
