@@ -109,13 +109,14 @@ makeHandler :: forall req inv res z. (Topic.MessageTopic (Response req inv res),
 makeHandler h =
     let process content = let response   = decode . fromStrict $ content
                               maybeGuiID = response ^. Response.guiID
-                              guiID      = fromJust maybeGuiID --FIXME zrób case albo coś innego
                               reqUUID    = response ^. Response.requestId
-                          in case h response of
-                              Nothing     -> throwM BusErrorException
-                              Just (r, q) -> do
-                                  let message = UndoMessage guiID reqUUID (Topic.topic (Request.Request UUID.nil Nothing r)) r (Topic.topic (Request.Request UUID.nil Nothing q)) q
-                                  handle message
+                          in case maybeGuiID of
+                              Just guiID -> case h response of
+                                                  Nothing     -> throwM BusErrorException
+                                                  Just (r, q) -> do
+                                                      let message = UndoMessage guiID reqUUID (Topic.topic (Request.Request UUID.nil Nothing r)) r (Topic.topic (Request.Request UUID.nil Nothing q)) q
+                                                      handle message
+                              Nothing -> return ()
     in (Topic.topic (undefined :: Response.Response req inv res), process)
     -- FIXME[WD]: nie uzywamy undefined, nigdy
 
