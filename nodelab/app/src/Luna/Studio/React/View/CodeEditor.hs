@@ -75,12 +75,13 @@ codeEditor = React.defineView name $ \model -> do
                         [ "key"       $= "content"
                         , "className" $= "ace_layer ace_text-layer" ]
                         $ do
-                        div_
-                            [ "key"       $= "active-line"
-                            , "className" $= "ace_active-line"
-                            , "style"     @= Aeson.object
-                                [ "padding" Aeson..= ("0 4px" ::String) ]
-                            ] $ do elemString $ unpack $ model ^. CodeEditor.code
+                        forM_ (zip [1..] $ lines $ unpack $ model ^. CodeEditor.code) $ \(i, line) ->
+                            div_
+                                [ "key"       $= jsShow i
+                                , "className" $= "ace_active-line"
+                                , "style"     @= Aeson.object
+                                    [ "padding" Aeson..= ("0 4px" ::String) ]
+                                ] $ do elemString line
 
 codeEditor_ :: CodeEditor -> ReactElementM ViewEventHandler ()
 codeEditor_ model = React.viewWithSKey codeEditor name model mempty
