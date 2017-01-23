@@ -28,7 +28,6 @@ module Main where
 import           Control.Concurrent.Chan              (Chan)
 import qualified Control.Concurrent.Chan              as Chan
 import           Control.Concurrent.MVar
-import           Control.Monad                        (forever)
 import           Data.DateTime                        (getCurrentTime)
 import qualified Data.Set                             as Set
 import           Luna.Studio.Prelude
@@ -58,7 +57,7 @@ runApp chan socket = do
     initTime             <- getCurrentTime
 
     mdo
-        appRef <- Store.createApp $ \e -> Chan.writeChan chan (Engine.processEvent state e)
+        appRef <- Store.createApp $ Engine.scheduleEvent chan state
         React.reactRender "nodelab-app" (App.app appRef) ()
 
         let initState = mkState initTime clientId random appRef
@@ -66,7 +65,7 @@ runApp chan socket = do
                       & Global.pendingRequests %~ Set.insert projectListRequestId
 
         state <- newMVar initState
-        Engine.start socket state chan
+        Engine.connectEventSources socket chan state
 
     App.focus
     BatchCmd.listProjects projectListRequestId
@@ -75,4 +74,4 @@ main :: IO ()
 main = do
     chan <- Chan.newChan
     Engine.withActiveConnection $ runApp chan
-    forever $ join $ Chan.readChan chan
+    Engine.startLoop chan
