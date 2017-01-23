@@ -14,6 +14,7 @@ import           Luna.Studio.Prelude
 data Event = MouseDown  MouseEvent
            | MouseMove  MouseEvent
            | MouseUp    MouseEvent
+           | Click      MouseEvent
            | KeyDown    KeyboardEvent
             deriving (Show, Generic, NFData, Typeable)
 

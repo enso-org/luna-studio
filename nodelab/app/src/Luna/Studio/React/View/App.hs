@@ -29,6 +29,7 @@ app ref = React.defineControllerView name ref $ \store () -> do
         , onMouseDown   $ \_ m -> dispatch ref $ UI.AppEvent $ App.MouseDown m
         , onMouseUp     $ \_ m -> dispatch ref $ UI.AppEvent $ App.MouseUp   m
         , onMouseMove   $ \_ m -> dispatch ref $ UI.AppEvent $ App.MouseMove m
+        , onClick       $ \_ m -> dispatch ref $ UI.AppEvent $ App.Click     m
         , "key"       $= "app"
         , "id"        $= "focus-root"
         , "tabIndex"  $= "-1"

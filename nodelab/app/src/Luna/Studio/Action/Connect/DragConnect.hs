@@ -1,109 +1,57 @@
 {-# OPTIONS_GHC -fno-warn-orphans #-}
+{-# LANGUAGE TypeApplications #-}
 module Luna.Studio.Action.Connect.DragConnect
-    ( connectToPort
-    , handleMove
-    , modifyConnection
-    , startOrModifyConnection
-    , stopConnecting
-    , whileConnecting
+    ( startDragConnect
+    , dragModifyConnection
+    , handleDragConnectMouseUp
+    , dragConnectToPort
     ) where
 
-import qualified Data.HashMap.Strict                    as HashMap
-import           Empire.API.Data.Connection             (Connection)
-import           Empire.API.Data.Connection             (ConnectionId)
-import qualified Empire.API.Data.Connection             as Connection
-import           Empire.API.Data.PortRef                (AnyPortRef (InPortRef', OutPortRef'))
-import qualified JS.GoogleAnalytics                     as GA
-import           Luna.Studio.Action.Command             (Command)
-import           Luna.Studio.Action.Connect.Color       (getConnectionColor)
-import           Luna.Studio.Action.Connect.Helpers     (createCurrentConnection, toValidConnection)
-import           Luna.Studio.Action.Geometry.Connection (getCurrentConnectionPosition)
-import           Luna.Studio.Action.Graph.Connect       (connectNodes, localConnectNodes)
-import           Luna.Studio.Action.Graph.Disconnect    (removeConnections)
-import           Luna.Studio.Event.Mouse                (workspacePosition)
+import           Empire.API.Data.Connection              (ConnectionId)
+import           Empire.API.Data.PortRef                 (AnyPortRef)
+import           Luna.Studio.Action.Command              (Command)
+import           Luna.Studio.Action.Connect.ClickConnect ()
+import           Luna.Studio.Action.Connect.Connect      (connectToPort, modifyConnection, startOrModifyConnection, stopConnecting,
+                                                          whileConnecting)
+import           Luna.Studio.Event.Mouse                 (mousePosition)
 import           Luna.Studio.Prelude
-import           Luna.Studio.React.Event.Connection     (ModifiedEnd (Destination, Source))
-import           Luna.Studio.React.Model.Connection     (CurrentConnection)
-import qualified Luna.Studio.React.Model.Connection     as ConnectionModel
-import qualified Luna.Studio.React.Model.NodeEditor     as NodeEditor
-import           Luna.Studio.State.Action               (Action (begin, continue, end, update), Connect (Connect), connectAction)
-import           Luna.Studio.State.Global               (State, beginActionWithKey, continueActionWithKey, removeActionFromState,
-                                                         updateActionWithKey)
-import qualified Luna.Studio.State.Global               as Global
-import qualified Luna.Studio.State.Graph                as Graph
-import           React.Flux                             (MouseEvent)
+import           Luna.Studio.React.Event.Connection      (ModifiedEnd)
+import           Luna.Studio.State.Action                (Action (begin, continue, end, update), ClickConnect (ClickConnect),
+                                                          DragConnect (DragConnect), clickConnectAction, dragConnectAction)
+import qualified Luna.Studio.State.Action                as Action
+import           Luna.Studio.State.Global                (State, beginActionWithKey, checkAction, continueActionWithKey,
+                                                          removeActionFromState, updateActionWithKey)
+import           React.Flux                              (MouseEvent)
 
-instance Action (Command State) Connect where
-    begin    = beginActionWithKey    connectAction
-    continue = continueActionWithKey connectAction
-    update   = updateActionWithKey   connectAction
-    end _    = whileConnecting stopConnecting >> removeActionFromState connectAction
 
-startOrModifyConnection :: MouseEvent -> AnyPortRef -> Command State ()
-startOrModifyConnection evt anyPortRef = case anyPortRef of
-    InPortRef'  portRef -> do
-        portConnected <- HashMap.member portRef <$> (use $ Global.graph . Graph.connectionsMap)
-        if portConnected then
-            modifyConnection evt portRef Destination
-        else startDragFromPort evt anyPortRef Nothing
-    OutPortRef' _ -> startDragFromPort evt anyPortRef Nothing
+instance Action (Command State) DragConnect where
+    begin    = beginActionWithKey    dragConnectAction
+    continue = continueActionWithKey dragConnectAction
+    update   = updateActionWithKey   dragConnectAction
+    end      = stopDragConnect
 
-startDragFromPort :: MouseEvent -> AnyPortRef -> Maybe Connection -> Command State ()
-startDragFromPort evt portRef modifiedConnection = do
-    begin $ Connect
-    mousePos  <- workspacePosition evt
-    maySrcPos <- getCurrentConnectionPosition portRef mousePos
-    mayColor  <- getConnectionColor portRef
-    withJust ((,) <$> maySrcPos <*> mayColor) $ \((srcPos, dstPos), color) -> do
-        createCurrentConnection portRef modifiedConnection srcPos dstPos color
+startDragConnect :: MouseEvent -> AnyPortRef -> Command State ()
+startDragConnect evt portRef = whenM (isNothing <$> checkAction @ClickConnect) $ do
+    begin (DragConnect (mousePosition evt)) >> startOrModifyConnection evt portRef
 
-modifyConnection :: MouseEvent -> ConnectionId -> ModifiedEnd -> Command State ()
-modifyConnection evt connId modifiedEnd = do
-    mayConn <- preuse $ Global.graph . Graph.connectionsMap . ix connId
-    withJust mayConn $ \conn -> do
-        let portRef = case modifiedEnd of
-                Source      -> InPortRef'  (conn ^. Connection.dst)
-                Destination -> OutPortRef' (conn ^. Connection.src)
-        startDragFromPort evt portRef $ Just conn
+dragModifyConnection :: MouseEvent -> ConnectionId -> ModifiedEnd -> Command State ()
+dragModifyConnection evt connId modifiedEnd = do
+    begin (DragConnect (mousePosition evt))
+    modifyConnection evt connId modifiedEnd
 
-whileConnecting :: (CurrentConnection -> Command State ()) -> Command State ()
-whileConnecting run = do
-    mayCurrentConnection <- view NodeEditor.currentConnection <$> Global.getNodeEditor
-    withJust mayCurrentConnection run
+dragConnectToPort :: AnyPortRef -> DragConnect -> Command State ()
+dragConnectToPort portRef _ = do
+    removeActionFromState dragConnectAction
+    whileConnecting $ connectToPort portRef
 
-handleMove :: MouseEvent -> CurrentConnection -> Command State ()
-handleMove evt conn = do
-    mousePos   <- workspacePosition evt
-    let srcPortRef = conn ^. ConnectionModel.srcPortRef
-    maySrcPos  <- getCurrentConnectionPosition srcPortRef mousePos
-    case maySrcPos of
-        Just (srcPos, dstPos) -> Global.modifyCurrentConnection $ do
-            ConnectionModel.currentTo   .= dstPos
-            ConnectionModel.currentFrom .= srcPos
-        Nothing               -> stopConnecting conn
+handleDragConnectMouseUp :: MouseEvent -> DragConnect -> Command State ()
+handleDragConnectMouseUp evt state = do
+    if (mousePosition evt == state ^. Action.dragConnectStartPos) then do
+        removeActionFromState dragConnectAction
+        updateActionWithKey clickConnectAction ClickConnect
+    else stopDragConnect state
 
-stopConnecting :: CurrentConnection -> Command State ()
-stopConnecting conn = do
-    removeActionFromState connectAction
-    Global.modifyNodeEditor $ NodeEditor.currentConnection .= Nothing
-    let mayModifiedConnection = conn ^. ConnectionModel.modifiedConnection
-    withJust mayModifiedConnection $ \modifiedConnection -> do
-        removeConnections [modifiedConnection ^. Connection.dst]
-
-connectToPort :: AnyPortRef -> CurrentConnection -> Command State ()
-connectToPort dstPortRef conn = do
-    removeActionFromState connectAction
-    Global.modifyNodeEditor $ NodeEditor.currentConnection .= Nothing
-    let srcPortRef            = conn ^. ConnectionModel.srcPortRef
-        mayModifiedConnection = conn ^. ConnectionModel.modifiedConnection
-    withJust (toValidConnection srcPortRef dstPortRef) $ \(src, dst) -> case mayModifiedConnection of
-        Just prevConn -> do
-            if src == prevConn ^. Connection.src && dst == prevConn ^. Connection.dst then
-                void $ localConnectNodes src dst
-            else do
-                removeConnections [prevConn ^. Connection.dst]
-                connectNodes src dst
-                GA.sendEvent $ GA.Connect GA.Manual
-        _ -> do
-            connectNodes src dst
-            GA.sendEvent $ GA.Connect GA.Manual
+stopDragConnect :: DragConnect -> Command State ()
+stopDragConnect _ = do
+    removeActionFromState dragConnectAction
+    whileConnecting $ stopConnecting

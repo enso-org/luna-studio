@@ -13,6 +13,7 @@ import           Empire.API.Data.Node    (NodeId)
 import           Empire.API.Data.PortRef (AnyPortRef)
 import           Luna.Studio.Prelude
 
+
 data Drag = Drag { _dragStartPos :: Position
                  , _dragNodeId :: NodeId
                  , _dragNodesStartPos :: Map NodeId (Position)
@@ -72,12 +73,22 @@ data PenDisconnect = PenDisconnect { _penDisconnectHistory         :: [Position]
 makeLenses ''PenDisconnect
 instance ToJSON PenDisconnect
 
-data Connect = Connect deriving (Eq, Generic, Show, Typeable)
+data DragConnect = DragConnect { _dragConnectStartPos :: ScreenPosition
+                               } deriving (Eq, Generic, Show, Typeable)
 
-makeLenses ''Connect
-instance ToJSON Connect
+makeLenses ''DragConnect
+instance ToJSON DragConnect
 
-data SomeAction m = forall a. (Action m a) => SomeAction Dynamic a deriving (Typeable)
+data ClickConnect = ClickConnect deriving (Eq, Generic, Show, Typeable)
+
+makeLenses ''ClickConnect
+instance ToJSON ClickConnect
+
+
+data SomeAction m = forall a. (Action m a, Show a) => SomeAction Dynamic a deriving (Typeable)
+
+instance Show (SomeAction m) where
+    show (SomeAction _ a) = show a
 
 
 class Monad m => Action m a where
@@ -88,11 +99,11 @@ class Monad m => Action m a where
 
 instance Monad m => Action m (SomeAction m) where
     begin  (SomeAction _ a) = begin a
-    continue f = return ()
+    continue _              = return ()
     update (SomeAction _ a) = update a
     end    (SomeAction _ a) = end a
 
-someAction :: (Action m a, Typeable a) => a -> SomeAction m
+someAction :: (Show a, Action m a, Typeable a) => a -> SomeAction m
 someAction a = SomeAction (toDyn a) a
 
 fromSomeAction :: Typeable a => SomeAction m -> Maybe a
@@ -101,7 +112,7 @@ fromSomeAction (SomeAction d _) = fromDynamic d
 
 newtype ActionRep = ActionRep TypeRep deriving (Show, Eq, Ord)
 
-dragAction, multiSelectionAction, panDragAction, zoomDragAction, sliderDragAction, penConnectAction, penDisconnectAction, connectAction :: ActionRep
+dragAction, multiSelectionAction, panDragAction, zoomDragAction, sliderDragAction, penConnectAction, penDisconnectAction, dragConnectAction, clickConnectAction :: ActionRep
 dragAction           = ActionRep (typeOf Drag)
 multiSelectionAction = ActionRep (typeOf MultiSelection)
 panDragAction        = ActionRep (typeOf PanDrag)
@@ -109,7 +120,8 @@ zoomDragAction       = ActionRep (typeOf ZoomDrag)
 sliderDragAction     = ActionRep (typeOf SliderDrag)
 penConnectAction     = ActionRep (typeOf PenConnect)
 penDisconnectAction  = ActionRep (typeOf PenDisconnect)
-connectAction        = ActionRep (typeOf Connect)
+dragConnectAction    = ActionRep (typeOf DragConnect)
+clickConnectAction   = ActionRep (typeOf ClickConnect)
 
 overlappingActions :: [Set ActionRep]
 overlappingActions = [ Set.fromList [ dragAction
@@ -117,7 +129,8 @@ overlappingActions = [ Set.fromList [ dragAction
                                     , sliderDragAction
                                     , penConnectAction
                                     , penDisconnectAction
-                                    , connectAction
+                                    , dragConnectAction
+                                    , clickConnectAction
                                     ]
                      , Set.fromList [ panDragAction
                                     , zoomDragAction

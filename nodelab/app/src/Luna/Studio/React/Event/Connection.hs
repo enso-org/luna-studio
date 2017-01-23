@@ -20,6 +20,7 @@ instance FromJSON ModifiedEnd
 data Event = StartConnection  MouseEvent AnyPortRef
            | EndConnection    MouseEvent AnyPortRef
            | ModifyConnection MouseEvent ConnectionId ModifiedEnd
+           | Click            MouseEvent AnyPortRef
             deriving (Show, Generic, NFData, Typeable)
 
 instance ToJSON   Event

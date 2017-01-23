@@ -1,4 +1,6 @@
 {-# OPTIONS_GHC -fno-warn-orphans #-}
+{-# LANGUAGE AllowAmbiguousTypes #-}
+{-# LANGUAGE TypeApplications    #-}
 module Luna.Studio.State.Global where
 
 import qualified Control.Monad.State                  as M
@@ -134,12 +136,12 @@ nextRandom = do
     random .= rnd
     return val
 
-checkSomeAction :: Typeable a => Proxy a -> Command State (Maybe (SomeAction (Command State)))
-checkSomeAction proxy = Map.lookup (ActionRep (typeRep proxy)) <$> use currentActions
+checkSomeAction :: forall a. Typeable a => Command State (Maybe (SomeAction (Command State)))
+checkSomeAction = Map.lookup (ActionRep (typeRep (Proxy @a))) <$> use currentActions
 
 checkAction :: forall a. Typeable a => Command State (Maybe a)
 checkAction = do
-    someAction' <- checkSomeAction (Proxy :: Proxy a)
+    someAction' <- checkSomeAction @a
     return $ join $ fromSomeAction <$> someAction'
 
 checkIfActionPerfoming :: Typeable a => a -> Command State Bool
@@ -167,7 +169,7 @@ continueActionWithKey key run = do
     maySomeAction <- use $ currentActions . at key
     mapM_ run $ maySomeAction >>= fromSomeAction
 
-updateActionWithKey :: (Typeable a, Action (Command State) a) => ActionRep -> a -> Command State ()
+updateActionWithKey :: (Show a, Typeable a, Action (Command State) a) => ActionRep -> a -> Command State ()
 updateActionWithKey key action = currentActions . at key ?= someAction action
 
 removeActionFromState :: ActionRep -> Command State ()

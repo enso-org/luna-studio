@@ -1,11 +1,15 @@
 module Luna.Studio.Action.Connect
-    ( connectToPort
+    ( startDragConnect
+    , handleClickConnect
+    , dragModifyConnection
     , handleMove
-    , modifyConnection
-    , startOrModifyConnection
-    , stopConnecting
     , whileConnecting
+    , stopClickConnect
+    , handleDragConnectMouseUp
+    , dragConnectToPort
     ) where
 
-import           Luna.Studio.Action.Connect.DragConnect (connectToPort, handleMove, modifyConnection, startOrModifyConnection,
-                                                         stopConnecting, whileConnecting)
+import           Luna.Studio.Action.Connect.ClickConnect (handleClickConnect, stopClickConnect)
+import           Luna.Studio.Action.Connect.Connect      (handleMove, whileConnecting)
+import           Luna.Studio.Action.Connect.DragConnect  (dragConnectToPort, dragModifyConnection, handleDragConnectMouseUp,
+                                                          startDragConnect)

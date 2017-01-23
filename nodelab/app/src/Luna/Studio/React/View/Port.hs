@@ -31,6 +31,12 @@ handleMouseDown ref portRef e m =
         stopPropagation e : dispatch ref (UI.ConnectionEvent $ Connection.StartConnection m portRef)
     else []
 
+handleClick :: Ref App -> AnyPortRef -> Event -> MouseEvent -> [SomeStoreAction]
+handleClick ref portRef e m =
+    if (Mouse.withoutMods m Mouse.leftButton) then
+        stopPropagation e : dispatch ref (UI.ConnectionEvent $ Connection.Click m portRef)
+    else []
+
 handleMouseUp :: Ref App -> AnyPortRef -> Event -> MouseEvent -> [SomeStoreAction]
 handleMouseUp ref portRef _e m = dispatch ref (UI.ConnectionEvent $ Connection.EndConnection m portRef)
 
@@ -74,6 +80,7 @@ portSelf_ ref port = do
         circle_
             [ onMouseDown $ handleMouseDown ref portRef
             , onMouseUp   $ handleMouseUp   ref portRef
+            , onClick     $ handleClick     ref portRef
             , "className" $= "port__select"
             , "key"       $= (fromString (show portId ) <> "b")
             ] mempty
@@ -97,6 +104,7 @@ portSingle_ ref port = do
         path_
             [ onMouseDown $ handleMouseDown ref portRef
             , onMouseUp   $ handleMouseUp   ref portRef
+            , onClick     $ handleClick     ref portRef
             , "className" $= "port__select"
             , "key"       $= (fromString (show portId ) <> "b")
             , "d"         $= (svgPath 3 0 1 <> svgPath 3 1 0)
@@ -141,6 +149,7 @@ portIO_ ref port num numOfPorts isInput = do
         path_
             [ onMouseDown $ handleMouseDown ref portRef
             , onMouseUp   $ handleMouseUp   ref portRef
+            , onClick     $ handleClick     ref portRef
             , "className" $= "port__select"
             , "key"       $= (fromString (show portId) <> "b")
             , "d"         $= svgPath 3
@@ -166,6 +175,7 @@ portIOExpanded_ ref port num isInput = do
         circle_
             [ onMouseDown $ handleMouseDown ref portRef
             , onMouseUp   $ handleMouseUp   ref portRef
+            , onClick     $ handleClick     ref portRef
             , "className" $= "port__select"
             , "key"       $= fromString (show portId <> show num <> "b")
             , "r"         $= fromString (r 3)
