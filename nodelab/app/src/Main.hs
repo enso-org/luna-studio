@@ -66,7 +66,7 @@ runApp chan socket = do
                       & Global.pendingRequests %~ Set.insert projectListRequestId
 
         state <- newMVar initState
-        Engine.start socket state
+        Engine.start socket state chan
 
     App.focus
     BatchCmd.listProjects projectListRequestId

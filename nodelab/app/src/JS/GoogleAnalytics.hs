@@ -62,9 +62,10 @@ toGAEvent ev = case ev of
 foreign import javascript safe "ga('send', 'event', $1, $2, $3)" sendEvent' :: JSString -> JSString -> Nullable JSString -> Nullable Int -> IO ()
 
 sendEvent :: Event -> Command a ()
-sendEvent event = performIO $ sendEvent' cat' act' lab' val' where
-        GAEvent cat act lab val = toGAEvent event
-        cat' = textToJSString cat
-        act' = textToJSString act
-        lab' = maybeToNullable $ textToJSString <$> lab
-        val' = maybeToNullable val
+sendEvent = const $ return () --TODO it appears to conflict with Atom
+-- sendEvent event = performIO $ sendEvent' cat' act' lab' val' where
+--         GAEvent cat act lab val = toGAEvent event
+--         cat' = textToJSString cat
+--         act' = textToJSString act
+--         lab' = maybeToNullable $ textToJSString <$> lab
+--         val' = maybeToNullable val

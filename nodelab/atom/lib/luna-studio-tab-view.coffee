@@ -8,4 +8,4 @@ class LunaStudioTabView extends View
     @div
       id: 'nodelab-app'
       =>
-        @h1 "Welcome to Luna Studio"
+        @h1 "Loading ..."

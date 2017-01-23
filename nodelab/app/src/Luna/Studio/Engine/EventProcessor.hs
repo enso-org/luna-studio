@@ -4,6 +4,8 @@ import           Luna.Studio.Prelude
 
 import           Control.Concurrent.MVar
 
+import           Control.Concurrent.Chan                    (Chan)
+import qualified Control.Concurrent.Chan                    as Chan
 import           Control.Exception                          (catch)
 import           Data.DateTime                              (getCurrentTime)
 import           Data.Monoid                                (Last (..))
@@ -19,6 +21,7 @@ import qualified Event.Processors.Batch                     as BatchEventProcess
 import qualified Event.Processors.CustomEvent               as CustomEventProcessor
 
 import qualified Luna.Studio.Handler.App                    as App
+import qualified Luna.Studio.Handler.Atom                   as Atom
 import qualified Luna.Studio.Handler.Backend.Control        as Control
 import qualified Luna.Studio.Handler.Backend.Graph          as Graph
 import qualified Luna.Studio.Handler.Backend.ProjectManager as ProjectManager
@@ -75,6 +78,7 @@ actions =  [ App.toAction
            , Node.toAction
            , ProjectManager.toAction
            , Searcher.toAction
+           , Atom.toAction
            --    , Clipboard.toAction
            ]
 
@@ -105,11 +109,12 @@ processEvent var ev = modifyMVar_ var $ \state -> do
             consoleTimeEnd (realEvent ^. Event.name)
         return newState
 
-start :: WebSocket -> MVar State -> IO ()
-start conn state = do
+start :: WebSocket -> MVar State -> Chan (IO ()) -> IO ()
+start conn state chan = do
     let handlers = [ JSHandlers.webSocketHandler conn
+                   , JSHandlers.atomHandler
                    ]
-        registerHandler (AddHandler rh) = rh (processEvent state)
+        registerHandler (AddHandler rh) = rh (Chan.writeChan chan . processEvent state)
     sequence_ $ registerHandler <$> handlers
 
 handleExcept :: State -> Event -> JSException -> IO State
