@@ -52,13 +52,13 @@ steps:
       remove_redundant: true
 
   # Align the types in record declarations
-  # - records: {}
+  - records: {}
 
   # Replace tabs by spaces. This is disabled by default.
-  # - tabs:
-  #     # Number of spaces to use for each tab. Default: 8, as specified by the
-  #     # Haskell report.
-  #     spaces: 8
+  - tabs:
+      # Number of spaces to use for each tab. Default: 8, as specified by the
+      # Haskell report.
+      spaces: 8
 
   # Remove trailing whitespace
   - trailing_whitespace: {}
@@ -74,13 +74,25 @@ columns: 140
 # No language extensions are enabled by default.
 language_extensions:
   - BangPatterns
+  - CApiFFI
+  - ConstraintKinds
   - DefaultSignatures
+  - DeriveDataTypeable
+  - DeriveFoldable
+  - DeriveFunctor
+  - DeriveGeneric
+  - DeriveTraversable
+  - DoAndIfThenElse
   - FlexibleContexts
+  - FlexibleInstances
+  - GeneralizedNewtypeDeriving
+  - JavaScriptFFI
+  - LambdaCase
   - MultiParamTypeClasses
+  - NoImplicitPrelude
   - QuasiQuotes
+  - RankNTypes
+  - ScopedTypeVariables
+  - StandaloneDeriving
   - TemplateHaskell
   - TupleSections
-  - TypeFamilies
-  - TypeOperators
-  - ViewPatterns
-  - RankNTypes
