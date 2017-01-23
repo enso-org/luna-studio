@@ -18,28 +18,21 @@ import           Luna.Studio.Action.Command   (Command)
 import           Luna.Studio.Prelude
 import qualified Luna.Studio.React.Model.Node as Node
 import qualified Luna.Studio.React.Model.Port as Port
-import           Luna.Studio.State.Action     (Action (begin, continue, end, update), InitValue, SliderDrag (SliderDrag), fromSomeAction,
-                                               sliderDragAction, someAction)
+import           Luna.Studio.State.Action     (Action (begin, continue, end, update), InitValue, SliderDrag (SliderDrag), sliderDragAction)
 import qualified Luna.Studio.State.Action     as Action
-import           Luna.Studio.State.Global     (State)
+import           Luna.Studio.State.Global     (State, beginActionWithKey, continueActionWithKey, removeActionFromState, updateActionWithKey)
 import qualified Luna.Studio.State.Global     as Global
 
 instance Action (Command State) SliderDrag where
-    begin a = do
-        currentOverlappingActions <- Global.getCurrentOverlappingActions sliderDragAction
-        mapM_ end currentOverlappingActions
-        update a
-    continue run = do
-        maySomeAction <- preuse $ Global.currentActions . ix sliderDragAction
-        withJust (join $ fromSomeAction <$> maySomeAction) $ run
-    update a = Global.currentActions . at sliderDragAction ?= someAction a
+    begin    = beginActionWithKey    sliderDragAction
+    continue = continueActionWithKey sliderDragAction
+    update   = updateActionWithKey   sliderDragAction
     end a = do
+        removeActionFromState sliderDragAction
         let portRef = a ^. Action.sliderDragPortRef
         mayDefValue <- getPortDefault portRef
         withJust mayDefValue $ Batch.setDefaultValue portRef
         liftIO setDefaultCursor
-        Global.currentActions %= Map.delete sliderDragAction
-
 
 
 setPortDefault :: AnyPortRef -> DefaultValue.PortDefault -> Command State ()
@@ -50,13 +43,8 @@ setPortDefault portRef defaultValue = do
 getPortDefault :: AnyPortRef -> Command State (Maybe DefaultValue.PortDefault)
 getPortDefault portRef = do
     mayNode <- Global.getNode (portRef ^. PortRef.nodeId)
-    case mayNode of
-        Just node -> do
-            let mayPort = Map.lookup portRef (node ^. Node.ports)
-            case (view Port.state <$> mayPort) of
-                Just (PortAPI.WithDefault portDef) -> return $ Just portDef
-                _ -> return Nothing
-        Nothing -> return Nothing
+    let mayPort = mayNode >>= (Map.lookup portRef . view Node.ports)
+    return $ mayPort ^? _Just . Port.state . PortAPI._WithDefault
 
 startMoveSlider :: AnyPortRef -> Position -> InitValue -> Command State ()
 startMoveSlider portRef initPos startVal = do
@@ -71,11 +59,11 @@ moveSlider currentPostion state = do
 
 stopMoveSlider :: Position -> SliderDrag -> Command State ()
 stopMoveSlider currentPostion state = do
+    removeActionFromState sliderDragAction
     liftIO setDefaultCursor
     let defaultValue = newDefaultValue currentPostion state
         portRef = state ^. Action.sliderDragPortRef
     Batch.setDefaultValue portRef defaultValue
-    Global.currentActions %= Map.delete sliderDragAction
 
 newDefaultValue :: Position -> SliderDrag -> DefaultValue.PortDefault
 newDefaultValue currentPostion slider =

@@ -72,9 +72,9 @@ nodeEditor = React.defineView name $ \(ref, ne) -> do
                 [ "key"       $= "connections"
                 , "className" $= "connections"
                 ] $ do
-                forM_ (ne ^. NodeEditor.connections . to HashMap.toList) $ uncurry (connection_ ref)
-                forM_ (ne ^. NodeEditor.currentConnection) currentConnection_
-                forM_ (ne ^. NodeEditor.selectionBox) selectionBox_
+                mapM_ (uncurry (connection_ ref)) $ ne ^. NodeEditor.connections . to HashMap.toList
+                mapM_ currentConnection_ $ ne ^. NodeEditor.currentConnection
+                mapM_ selectionBox_ $ ne ^. NodeEditor.selectionBox
         div_
             [ "className" $= "plane plane--nodes"
             , "key"       $= "nodes"

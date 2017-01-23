@@ -19,25 +19,19 @@ import           Luna.Studio.Event.Mouse            (workspacePosition)
 import           Luna.Studio.Prelude
 import qualified Luna.Studio.React.Model.Node       as Model
 import qualified Luna.Studio.React.Model.NodeEditor as NodeEditor
-import           Luna.Studio.State.Action           (Action (begin, continue, end, update), Drag (Drag), dragAction, fromSomeAction,
-                                                     someAction)
+import           Luna.Studio.State.Action           (Action (begin, continue, end, update), Drag (Drag), dragAction)
 import qualified Luna.Studio.State.Action           as Action
-import           Luna.Studio.State.Global           (State)
+import           Luna.Studio.State.Global           (State, beginActionWithKey, continueActionWithKey, removeActionFromState,
+                                                     updateActionWithKey)
 import qualified Luna.Studio.State.Global           as Global
 import qualified Luna.Studio.State.Graph            as Graph
 import           React.Flux                         (MouseEvent)
 
 instance Action (Command State) Drag where
-    begin a = do
-        currentOverlappingActions <- Global.getCurrentOverlappingActions dragAction
-        mapM_ end currentOverlappingActions
-        update a
-    continue run = do
-        maySomeAction <- preuse $ Global.currentActions . ix dragAction
-        withJust (join $ fromSomeAction <$> maySomeAction) $ run
-    update a = Global.currentActions . at dragAction ?= someAction a
-    end _ = updateMovedNodes >> Global.currentActions %= Map.delete dragAction
-
+    begin    = beginActionWithKey    dragAction
+    continue = continueActionWithKey dragAction
+    update   = updateActionWithKey   dragAction
+    end _    = updateMovedNodes >> removeActionFromState dragAction
 
 startDrag :: NodeId -> MouseEvent -> Bool -> Command State ()
 startDrag nodeId evt snapped = do
@@ -79,7 +73,7 @@ moveNodes nodesPos = do
 updateMovedNodes :: Command State ()
 updateMovedNodes = do
     selected <- selectedNodes
-    let nodesToUpdate = (\n -> (n ^. Model.nodeId, n ^. Model.position)) <$> selected
+    let nodesToUpdate = (view Model.nodeId &&& view Model.position) <$> selected
     updates <- forM nodesToUpdate $ \(wid, pos) -> do
         Global.graph . Graph.nodesMap . ix wid . Node.position .= toTuple (pos ^. vector)
         newMeta <- preuse $ Global.graph . Graph.nodesMap . ix wid . Node.nodeMeta
@@ -90,10 +84,10 @@ updateMovedNodes = do
 
 stopDrag :: MouseEvent -> Drag ->  Command State ()
 stopDrag evt state = do
+    removeActionFromState dragAction
     coord <- workspacePosition evt
     let startPos = view Action.dragStartPos state
         nodeId   = view Action.dragNodeId   state
     if (startPos /= coord) then
         updateMovedNodes
     else selectNodes [nodeId]
-    Global.currentActions %= Map.delete dragAction

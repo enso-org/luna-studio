@@ -8,39 +8,27 @@ module Luna.Studio.Action.ConnectionPen
     , stopDisconnecting
     ) where
 
-import qualified Data.Map                   as Map
 import           Luna.Studio.Action.Command (Command)
 import           Luna.Studio.Event.Mouse    (workspacePosition)
 import           Luna.Studio.Prelude
 import           Luna.Studio.State.Action   (Action (begin, continue, end, update), PenConnect (PenConnect), PenDisconnect (PenDisconnect),
-                                             fromSomeAction, penConnectAction, penDisconnectAction, someAction)
+                                             penConnectAction, penDisconnectAction)
 import qualified Luna.Studio.State.Action   as Action
-import           Luna.Studio.State.Global   (State)
-import qualified Luna.Studio.State.Global   as Global
+import           Luna.Studio.State.Global   (State, beginActionWithKey, continueActionWithKey, removeActionFromState, updateActionWithKey)
 import           React.Flux                 (MouseEvent)
 
 
 instance Action (Command State) PenConnect where
-    begin a = do
-        currentOverlappingActions <- Global.getCurrentOverlappingActions penConnectAction
-        mapM_ end currentOverlappingActions
-        update a
-    continue run = do
-        maySomeAction <- preuse $ Global.currentActions . ix penConnectAction
-        withJust (join $ fromSomeAction <$> maySomeAction) $ run
-    update a = Global.currentActions . at penConnectAction ?= someAction a
-    end = stopConnecting
+    begin    = beginActionWithKey    penConnectAction
+    continue = continueActionWithKey penConnectAction
+    update   = updateActionWithKey   penConnectAction
+    end _    = removeActionFromState penConnectAction
 
 instance Action (Command State) PenDisconnect where
-    begin a = do
-        currentOverlappingActions <- Global.getCurrentOverlappingActions penDisconnectAction
-        mapM_ end currentOverlappingActions
-        update a
-    continue run = do
-        maySomeAction <- preuse $ Global.currentActions . ix penDisconnectAction
-        withJust (join $ fromSomeAction <$> maySomeAction) $ run
-    update a = Global.currentActions . at penDisconnectAction ?= someAction a
-    end = stopDisconnecting
+    begin    = beginActionWithKey    penDisconnectAction
+    continue = continueActionWithKey penDisconnectAction
+    update   = updateActionWithKey   penDisconnectAction
+    end _    = removeActionFromState penDisconnectAction
 
 startConnecting :: MouseEvent -> Command State ()
 startConnecting evt = do
@@ -63,10 +51,10 @@ disconnectMove evt state = do
     update $ state & Action.penDisconnectHistory %~ (pos:)
 
 stopConnecting :: PenConnect -> Command State ()
-stopConnecting _ = Global.currentActions %= Map.delete penConnectAction
+stopConnecting _ = removeActionFromState penConnectAction
 
 stopDisconnecting :: PenDisconnect -> Command State ()
-stopDisconnecting _ = Global.currentActions %= Map.delete penDisconnectAction
+stopDisconnecting _ = removeActionFromState penDisconnectAction
 
 
 

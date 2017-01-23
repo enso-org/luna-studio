@@ -33,7 +33,8 @@ import           Luna.Studio.React.Model.Searcher     (Searcher)
 import           Luna.Studio.React.Model.SelectionBox (SelectionBox)
 import           Luna.Studio.React.Store              (Ref)
 import qualified Luna.Studio.React.Store              as Store
-import           Luna.Studio.State.Action             (ActionRep (ActionRep), SomeAction, fromSomeAction, overlappingActions)
+import           Luna.Studio.State.Action             (Action (end, update), ActionRep (ActionRep), SomeAction, fromSomeAction,
+                                                       overlappingActions, someAction)
 import qualified Luna.Studio.State.Collaboration      as Collaboration
 import qualified Luna.Studio.State.Graph              as Graph
 import           System.Random                        (StdGen)
@@ -64,7 +65,6 @@ instance ToJSON StdGen where
     toJSON _ = toJSON "(random-generator)"
 instance ToJSON (Ref App) where
     toJSON _ = toJSON "(Ref App)"
-
 
 makeLenses ''State
 
@@ -139,8 +139,8 @@ checkSomeAction proxy = Map.lookup (ActionRep (typeRep proxy)) <$> use currentAc
 
 checkAction :: forall a. Typeable a => Command State (Maybe a)
 checkAction = do
-    someAction <- checkSomeAction (Proxy :: Proxy a)
-    return $ join $ fromSomeAction <$> someAction
+    someAction' <- checkSomeAction (Proxy :: Proxy a)
+    return $ join $ fromSomeAction <$> someAction'
 
 checkIfActionPerfoming :: Typeable a => a -> Command State Bool
 checkIfActionPerfoming a = Map.member (ActionRep (typeOf a)) <$> (use currentActions)
@@ -155,3 +155,20 @@ getCurrentOverlappingActions a = do
         overlappingActionReps = filter (checkOverlap a) <$> runningActions
     ca <- use currentActions
     catMaybes <$> map (flip Map.lookup ca) <$> overlappingActionReps
+
+beginActionWithKey :: Action (Command State) a => ActionRep -> a -> Command State ()
+beginActionWithKey key action = do
+    currentOverlappingActions <- getCurrentOverlappingActions key
+    mapM_ end currentOverlappingActions
+    update action
+
+continueActionWithKey :: (Typeable a, Action (Command State) a) => ActionRep -> (a -> Command State ()) -> Command State ()
+continueActionWithKey key run = do
+    maySomeAction <- use $ currentActions . at key
+    mapM_ run $ maySomeAction >>= fromSomeAction
+
+updateActionWithKey :: (Typeable a, Action (Command State) a) => ActionRep -> a -> Command State ()
+updateActionWithKey key action = currentActions . at key ?= someAction action
+
+removeActionFromState :: ActionRep -> Command State ()
+removeActionFromState key = currentActions %= Map.delete key
