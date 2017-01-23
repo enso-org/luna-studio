@@ -52,7 +52,7 @@ steps:
       remove_redundant: true
 
   # Align the types in record declarations
-  - records: {}
+  # - records: {}
 
   # Replace tabs by spaces. This is disabled by default.
   - tabs:
