@@ -9,7 +9,6 @@ module Luna.Studio.Action.Camera.Zoom
      , wheelZoom
      ) where
 
-import qualified Data.Map                              as Map
 import           Data.Matrix                           (getElem, setElem)
 import           Data.Position                         (ScreenPosition, Vector2, vector, x, y)
 import           Luna.Studio.Action.Camera.Modify      (modifyCamera)
@@ -19,22 +18,18 @@ import           Luna.Studio.Data.CameraTransformation (logicalToScreen, screenT
 import           Luna.Studio.Data.Matrix               (homothetyMatrix, invertedHomothetyMatrix)
 import           Luna.Studio.Prelude
 import qualified Luna.Studio.React.Model.NodeEditor    as NodeEditor
-import           Luna.Studio.State.Action              (Action (begin, continue, end, update), ZoomDrag (ZoomDrag), fromSomeAction,
-                                                        someAction, zoomDragAction)
+import           Luna.Studio.State.Action              (Action (begin, continue, end, update), ZoomDrag (ZoomDrag), zoomDragAction)
 import qualified Luna.Studio.State.Action              as Action
-import           Luna.Studio.State.Global              (State)
+import           Luna.Studio.State.Global              (State, beginActionWithKey, continueActionWithKey, removeActionFromState,
+                                                        updateActionWithKey)
 import qualified Luna.Studio.State.Global              as Global
 
+
 instance Action (Command State) ZoomDrag where
-    begin a = do
-        currentOverlappingActions <- Global.getCurrentOverlappingActions zoomDragAction
-        mapM_ end currentOverlappingActions
-        update a
-    continue run = do
-        maySomeAction <- preuse $ Global.currentActions . ix zoomDragAction
-        withJust (join $ fromSomeAction <$> maySomeAction) $ run
-    update a = Global.currentActions . at zoomDragAction ?= someAction a
-    end = stopZoomDrag
+    begin    = beginActionWithKey    zoomDragAction
+    continue = continueActionWithKey zoomDragAction
+    update   = updateActionWithKey   zoomDragAction
+    end _    = removeActionFromState zoomDragAction
 
 minCamFactor, maxCamFactor, dragZoomSpeed, wheelZoomSpeed, zoomFactorStep :: Double
 minCamFactor   = 0.2
@@ -83,4 +78,4 @@ wheelZoom pos delta = zoomCamera pos delta' where
     delta' = 1 + (delta ^. x + delta ^. y) / wheelZoomSpeed
 
 stopZoomDrag :: ZoomDrag -> Command State ()
-stopZoomDrag _ = Global.currentActions %= Map.delete zoomDragAction
+stopZoomDrag _ = removeActionFromState zoomDragAction

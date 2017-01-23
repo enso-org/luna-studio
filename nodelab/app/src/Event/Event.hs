@@ -2,6 +2,7 @@ module Event.Event where
 
 import           Data.Aeson          (ToJSON)
 
+import           Event.Atom          (AtomEvent)
 import qualified Event.Batch         as Batch
 import qualified Event.Clipboard     as Clipboard
 import qualified Event.Connection    as Connection
@@ -19,6 +20,7 @@ data Event = Init
            | CustomEvent             CustomEvent.Event
            | Debug                         Debug.Event
            | Tick
+           | Atom                            AtomEvent
            | UI                                UIEvent
            deriving (Generic, Show)
 
@@ -30,12 +32,4 @@ instance Default Event where
 instance ToJSON Event
 
 name :: Getter Event String
-name = to $ \n -> case n of
-    Batch         _   -> "Batch"
-    Clipboard     _   -> "Clipboard"
-    Connection    _   -> "Connection"
-    CustomEvent   _   -> "CustomEvent"
-    Debug         _   -> "Debug"
-    Init              -> "Init"
-    Tick              -> "Tick"
-    UI            _   -> "UI"
+name = to $ head . words . show

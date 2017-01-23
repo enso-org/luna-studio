@@ -11,7 +11,6 @@ module Luna.Studio.Action.Camera.Pan
      , panDrag
      ) where
 
-import qualified Data.Map                              as Map
 import           Data.Matrix                           (setElem)
 import           Data.Position                         (ScreenPosition, Vector2 (Vector2), vector)
 import           Luna.Studio.Action.Camera.Modify      (modifyCamera)
@@ -20,24 +19,18 @@ import           Luna.Studio.Data.CameraTransformation (logicalToScreen, screenT
 import           Luna.Studio.Data.Matrix               (invertedTranslationMatrix, translationMatrix)
 import           Luna.Studio.Prelude
 import qualified Luna.Studio.React.Model.NodeEditor    as NodeEditor
-import           Luna.Studio.State.Action              (Action (begin, continue, end, update), PanDrag (PanDrag), fromSomeAction,
-                                                        panDragAction, someAction)
+import           Luna.Studio.State.Action              (Action (begin, continue, end, update), PanDrag (PanDrag), panDragAction)
 import qualified Luna.Studio.State.Action              as Action
-import           Luna.Studio.State.Global              (State)
+import           Luna.Studio.State.Global              (State, beginActionWithKey, continueActionWithKey, removeActionFromState,
+                                                        updateActionWithKey)
 import qualified Luna.Studio.State.Global              as Global
 
 
 instance Action (Command State) PanDrag where
-    begin a = do
-        currentOverlappingActions <- Global.getCurrentOverlappingActions panDragAction
-        mapM_ end currentOverlappingActions
-        update a
-    continue run = do
-        maySomeAction <- preuse $ Global.currentActions . ix panDragAction
-        withJust (join $ fromSomeAction <$> maySomeAction) $ run
-    update a = Global.currentActions . at panDragAction ?= someAction a
-    end = stopPanDrag
-
+    begin    = beginActionWithKey    panDragAction
+    continue = continueActionWithKey panDragAction
+    update   = updateActionWithKey   panDragAction
+    end _    = removeActionFromState panDragAction
 
 panStep :: Double
 panStep = 50
@@ -67,4 +60,4 @@ resetPan = Global.modifyNodeEditor $ do
     NodeEditor.screenTransform . screenToLogical %= (setElem 0 (4,1) . setElem 0 (4,2))
 
 stopPanDrag :: PanDrag -> Command State ()
-stopPanDrag _ = Global.currentActions %= Map.delete panDragAction
+stopPanDrag _ = removeActionFromState panDragAction

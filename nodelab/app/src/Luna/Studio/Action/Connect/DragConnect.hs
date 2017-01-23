@@ -9,7 +9,6 @@ module Luna.Studio.Action.Connect.DragConnect
     ) where
 
 import qualified Data.HashMap.Strict                    as HashMap
-import qualified Data.Map                               as Map
 import           Empire.API.Data.Connection             (Connection)
 import           Empire.API.Data.Connection             (ConnectionId)
 import qualified Empire.API.Data.Connection             as Connection
@@ -27,23 +26,18 @@ import           Luna.Studio.React.Event.Connection     (ModifiedEnd (Destinatio
 import           Luna.Studio.React.Model.Connection     (CurrentConnection)
 import qualified Luna.Studio.React.Model.Connection     as ConnectionModel
 import qualified Luna.Studio.React.Model.NodeEditor     as NodeEditor
-import           Luna.Studio.State.Action               (Action (begin, continue, end, update), Connect (Connect), connectAction,
-                                                         fromSomeAction, someAction)
-import           Luna.Studio.State.Global               (State)
+import           Luna.Studio.State.Action               (Action (begin, continue, end, update), Connect (Connect), connectAction)
+import           Luna.Studio.State.Global               (State, beginActionWithKey, continueActionWithKey, removeActionFromState,
+                                                         updateActionWithKey)
 import qualified Luna.Studio.State.Global               as Global
 import qualified Luna.Studio.State.Graph                as Graph
 import           React.Flux                             (MouseEvent)
 
 instance Action (Command State) Connect where
-    begin a = do
-        currentOverlappingActions <- Global.getCurrentOverlappingActions connectAction
-        mapM_ end currentOverlappingActions
-        update a
-    continue run = do
-        maySomeAction <- preuse $ Global.currentActions . ix connectAction
-        withJust (join $ fromSomeAction <$> maySomeAction) $ run
-    update a = Global.currentActions . at connectAction ?= someAction a
-    end _ = whileConnecting stopConnecting >> Global.currentActions %= Map.delete connectAction
+    begin    = beginActionWithKey    connectAction
+    continue = continueActionWithKey connectAction
+    update   = updateActionWithKey   connectAction
+    end _    = whileConnecting stopConnecting >> removeActionFromState connectAction
 
 startOrModifyConnection :: MouseEvent -> AnyPortRef -> Command State ()
 startOrModifyConnection evt anyPortRef = case anyPortRef of
@@ -90,7 +84,7 @@ handleMove evt conn = do
 
 stopConnecting :: CurrentConnection -> Command State ()
 stopConnecting conn = do
-    Global.currentActions %= Map.delete connectAction
+    removeActionFromState connectAction
     Global.modifyNodeEditor $ NodeEditor.currentConnection .= Nothing
     let mayModifiedConnection = conn ^. ConnectionModel.modifiedConnection
     withJust mayModifiedConnection $ \modifiedConnection -> do
@@ -98,8 +92,8 @@ stopConnecting conn = do
 
 connectToPort :: AnyPortRef -> CurrentConnection -> Command State ()
 connectToPort dstPortRef conn = do
+    removeActionFromState connectAction
     Global.modifyNodeEditor $ NodeEditor.currentConnection .= Nothing
-    Global.currentActions %= Map.delete connectAction
     let srcPortRef            = conn ^. ConnectionModel.srcPortRef
         mayModifiedConnection = conn ^. ConnectionModel.modifiedConnection
     withJust (toValidConnection srcPortRef dstPortRef) $ \(src, dst) -> case mayModifiedConnection of

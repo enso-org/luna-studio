@@ -80,14 +80,15 @@ instance ToJSON Connect
 data SomeAction m = forall a. (Action m a) => SomeAction Dynamic a deriving (Typeable)
 
 
-class Action m a where
+class Monad m => Action m a where
     begin :: a -> m ()
     continue :: (a -> m ()) -> m ()
     update :: a -> m ()
     end :: a -> m ()
 
-instance Action m (SomeAction m) where
+instance Monad m => Action m (SomeAction m) where
     begin  (SomeAction _ a) = begin a
+    continue f = return ()
     update (SomeAction _ a) = update a
     end    (SomeAction _ a) = end a
 

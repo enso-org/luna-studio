@@ -2,6 +2,7 @@ $$              = require('./common')
 config          = require('./config')
 brunch          = require('brunch')
 websocket       = require('./websocket')
+atomCallback    = require('./atom-callback')
 GoogleAnalytics = require('./GoogleAnalytics')
 
 console.info 'Current version ' + brunch.env + ' ' + brunch.git_commit + ' build  ' + brunch.build_number
@@ -16,7 +17,7 @@ start = ->
     else
       window.already_initialized = true
       GoogleAnalytics.startGA()
-      require('env')()
+      require('env')().start()
 
 module.exports =
   start: start

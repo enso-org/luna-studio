@@ -5,7 +5,6 @@ module Luna.Studio.Action.MultiSelection
     , stopMultiSelection
     ) where
 
-import qualified Data.Map                             as Map
 import           Data.Position                        (Position (Position), Vector2 (Vector2), fromTuple, x, y)
 import           Empire.API.Data.Node                 (Node)
 import qualified Empire.API.Data.Node                 as Node
@@ -17,23 +16,19 @@ import qualified Luna.Studio.React.Model.Node         as NodeModel
 import qualified Luna.Studio.React.Model.NodeEditor   as NodeEditor
 import           Luna.Studio.React.Model.SelectionBox (SelectionBox (SelectionBox))
 import           Luna.Studio.State.Action             (Action (begin, continue, end, update), MultiSelection (MultiSelection),
-                                                       fromSomeAction, multiSelectionAction, someAction)
+                                                       multiSelectionAction)
 import qualified Luna.Studio.State.Action             as Action
-import           Luna.Studio.State.Global             (State)
+import           Luna.Studio.State.Global             (State, beginActionWithKey, continueActionWithKey, removeActionFromState,
+                                                       updateActionWithKey)
 import qualified Luna.Studio.State.Global             as Global
 import qualified Luna.Studio.State.Graph              as Graph
 import           React.Flux                           (MouseEvent)
 
 instance Action (Command State) MultiSelection where
-    begin a = do
-        currentOverlappingActions <- Global.getCurrentOverlappingActions multiSelectionAction
-        mapM_ end currentOverlappingActions
-        update a
-    continue run = do
-        maySomeAction <- preuse $ Global.currentActions . ix multiSelectionAction
-        withJust (join $ fromSomeAction <$> maySomeAction) $ run
-    update a = Global.currentActions . at multiSelectionAction ?= someAction a
-    end = stopMultiSelection
+    begin    = beginActionWithKey    multiSelectionAction
+    continue = continueActionWithKey multiSelectionAction
+    update   = updateActionWithKey   multiSelectionAction
+    end      = stopMultiSelection
 
 startMultiSelection :: MouseEvent -> Command State ()
 startMultiSelection evt = do
@@ -64,8 +59,8 @@ updateSelection start end = do
 
 stopMultiSelection :: MultiSelection -> Command State ()
 stopMultiSelection _ = do
+    removeActionFromState multiSelectionAction
     Global.modifyNodeEditor $ NodeEditor.selectionBox .= Nothing
-    Global.currentActions %= Map.delete multiSelectionAction
     focusSelectedNode
     selectedNodesIds <- map (^. NodeModel.nodeId) <$> selectedNodes
     modifySelectionHistory selectedNodesIds

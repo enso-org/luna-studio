@@ -1,24 +1,27 @@
 module Luna.Studio.Engine.EventProcessor where
 
-import           Luna.Studio.Prelude
-
+import           Control.Concurrent.Chan                    (Chan)
+import qualified Control.Concurrent.Chan                    as Chan
 import           Control.Concurrent.MVar
-
 import           Control.Exception                          (catch)
+import           Control.Monad                              (forever)
 import           Data.DateTime                              (getCurrentTime)
+import qualified Data.JSString                              as JSString
 import           Data.Monoid                                (Last (..))
 import qualified Data.Text                                  as Text
 import           GHCJS.Prim                                 (JSException)
-
-import           Luna.Studio.Engine.JSHandlers              (AddHandler (..))
-import qualified Luna.Studio.Engine.JSHandlers              as JSHandlers
 
 import           Event.Event                                (Event)
 import qualified Event.Event                                as Event
 import qualified Event.Processors.Batch                     as BatchEventProcessor
 import qualified Event.Processors.CustomEvent               as CustomEventProcessor
-
+import qualified JS.Debug
+import           JS.WebSocket                               (WebSocket)
+import           Luna.Studio.Action.Command                 (Command, execCommand)
+import           Luna.Studio.Engine.JSHandlers              (AddHandler (..))
+import qualified Luna.Studio.Engine.JSHandlers              as JSHandlers
 import qualified Luna.Studio.Handler.App                    as App
+import qualified Luna.Studio.Handler.Atom                   as Atom
 import qualified Luna.Studio.Handler.Backend.Control        as Control
 import qualified Luna.Studio.Handler.Backend.Graph          as Graph
 import qualified Luna.Studio.Handler.Backend.ProjectManager as ProjectManager
@@ -35,15 +38,10 @@ import qualified Luna.Studio.Handler.MultiSelection         as MultiSelection
 import qualified Luna.Studio.Handler.Navigation             as Navigation
 import qualified Luna.Studio.Handler.Node                   as Node
 import qualified Luna.Studio.Handler.Searcher               as Searcher
-
-import           Luna.Studio.Action.Command                 (Command, execCommand)
+import           Luna.Studio.Prelude
 import           Luna.Studio.State.Global                   (State)
 import qualified Luna.Studio.State.Global                   as Global
 
-import qualified JS.Debug
-import           JS.WebSocket                               (WebSocket)
-
-import qualified Data.JSString                              as JSString
 
 
 displayProcessingTime :: Bool
@@ -75,6 +73,7 @@ actions =  [ App.toAction
            , Node.toAction
            , ProjectManager.toAction
            , Searcher.toAction
+           , Atom.toAction
            --    , Clipboard.toAction
            ]
 
@@ -85,7 +84,6 @@ preprocessEvent :: Event -> IO Event
 preprocessEvent ev = do
     let batchEvent = BatchEventProcessor.process  ev
     customEvent   <- CustomEventProcessor.process ev
-
     return $ fromMaybe ev $ getLast $ Last batchEvent <> Last customEvent
 
 processEvent :: MVar State -> Event -> IO ()
@@ -105,14 +103,21 @@ processEvent var ev = modifyMVar_ var $ \state -> do
             consoleTimeEnd (realEvent ^. Event.name)
         return newState
 
-start :: WebSocket -> MVar State -> IO ()
-start conn state = do
+connectEventSources :: WebSocket ->  Chan (IO ()) -> MVar State -> IO ()
+connectEventSources conn chan state = do
     let handlers = [ JSHandlers.webSocketHandler conn
+                   , JSHandlers.atomHandler
                    ]
-        registerHandler (AddHandler rh) = rh (processEvent state)
-    sequence_ $ registerHandler <$> handlers
+        mkSource (AddHandler rh) = rh $ scheduleEvent chan state
+    sequence_ $ mkSource <$> handlers
 
 handleExcept :: State -> Event -> JSException -> IO State
 handleExcept oldState event except = do
     putStrLn $ "JavaScriptException: " <> show except <> "\n\nwhile processing: " <> show event
     return oldState
+
+scheduleEvent :: Chan (IO ()) -> MVar State -> Event -> IO ()
+scheduleEvent chan = Chan.writeChan chan .: processEvent
+
+startLoop :: Chan (IO ()) -> IO ()
+startLoop = forever . join . Chan.readChan

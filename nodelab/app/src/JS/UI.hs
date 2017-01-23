@@ -7,4 +7,4 @@ module JS.UI
 
 import           Luna.Studio.Prelude
 
-foreign import javascript safe "require('BSOD').connectionClosed()" displayConnectionClosedMessage :: IO ()
+foreign import javascript safe "require('./BSOD').connectionClosed()" displayConnectionClosedMessage :: IO ()
