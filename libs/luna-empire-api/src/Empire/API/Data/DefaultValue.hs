@@ -1,9 +1,13 @@
+{-# LANGUAGE DeriveAnyClass #-}
+
 module Empire.API.Data.DefaultValue where
 
-import           Data.Binary          (Binary)
-import           Prologue
+import           Control.DeepSeq (NFData)
+import           Data.Binary     (Binary)
+import           Data.Text       (Text)
+import           Prologue        hiding (Text)
 
-import qualified Graphics.API      as G
+import qualified Graphics.API    as G
 
 
 data Value = IntValue        Int
@@ -32,11 +36,11 @@ data Value = IntValue        Int
            | StringMaybeList [Maybe String]
            | StringStringMap [(String, String)]
 
-           | Graphics        G.Graphics
+           | Graphics        G.Geometry
            | Lambda          String
-           deriving (Generic, Show, Eq)
+           deriving (Generic, Show, Eq, NFData)
 
-data PortDefault = Expression String | Constant Value deriving (Generic, Show, Eq)
+data PortDefault = Expression String | Constant Value deriving (Generic, Show, Eq, NFData)
 
 instance Binary Value
 instance Binary PortDefault

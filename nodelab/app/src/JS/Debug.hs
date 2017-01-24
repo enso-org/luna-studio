@@ -1,9 +1,8 @@
 module JS.Debug where
 
-import           Data.Aeson         (ToJSON, toJSON)
-import           Data.JSString.Text (lazyTextToJSString)
-import           GHCJS.Marshal      (toJSVal)
-import           Utils.PreludePlus
+import           Data.Aeson          (ToJSON, toJSON)
+import           Data.JSString.Text  (textToJSString)
+import           Luna.Studio.Prelude
 
 foreign import javascript safe "window.state  = $1"         saveState :: JSVal -> IO ()
 foreign import javascript safe "window.lastEv = $1"         lastEv    :: JSVal -> IO ()
@@ -15,6 +14,6 @@ foreign import javascript safe "window.processedEvents.push($1)" processedEvent 
 
 error :: (ToJSON o) => Text -> o -> IO ()
 error msg o = do
-    let msg' = lazyTextToJSString msg
+    let msg' = textToJSString msg
     o' <- toJSVal $ toJSON o
     error' msg' o'

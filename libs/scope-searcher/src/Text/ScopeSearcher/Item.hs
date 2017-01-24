@@ -4,7 +4,7 @@ import           Control.Lens
 import           Data.Aeson.Types (FromJSON, ToJSON, toJSON)
 import           Data.Binary      (Binary)
 import           Data.Map.Lazy    as Map
-import           Data.Text.Lazy   (Text)
+import           Data.Text        (Text)
 import           GHC.Generics     (Generic)
 
 

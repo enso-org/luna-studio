@@ -1,0 +1,4 @@
+./script/atom-build
+cd atom
+apm install .
+apm link .

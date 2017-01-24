@@ -15,10 +15,8 @@
   "dependencies": {
     "clipboard.js": "^0.3.1",
     "clipboard": "^1.5.12",
-    "d3": "~3.5.6",
     "jquery": "~2.1.4",
-    "malihu-custom-scrollbar-plugin": "~3.0.9",
-    "three.js": "https://github.com/mrdoob/three.js/raw/020a0ffbde7c11aa70002676d09199f1b384dbca/build/three.min.js",
+    "react": "^15.3.2",
     "underscore": "~1.8.3"
   }
 }

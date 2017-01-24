@@ -13,7 +13,7 @@ appCrashed = (pat) ->
   while i < arguments.length
     str = str.replace(/%s/, arguments[i])
     i++
-  console.error 'Haskell crashed', str
+  console.error 'App crashed with error:', str
   $('body').append require('templates/bsod')(message: str)
   ga 'send', 'event', 'Diagnostic', 'BSOD', str
 

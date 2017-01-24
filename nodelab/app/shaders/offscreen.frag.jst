@@ -1,8 +1,0 @@
-uniform sampler2D map;
-varying vec2 luv;
-uniform int objectMap;
-uniform vec3 objectId;
-
-void main() {
-    gl_FragColor = float(objectMap) * vec4(objectId, 1.0) + float(1 - objectMap) * texture2D(map, vec2(luv.x, 1.0 - luv.y));
-}

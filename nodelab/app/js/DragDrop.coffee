@@ -1,5 +1,5 @@
-$$  = require 'common'
-app = require 'app'
+$$  = require './common'
+app = require './app'
 
 initDragDrop = ->
   $($$.canvas2D).on 'dragover',  (ev) -> ev.preventDefault()

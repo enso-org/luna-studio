@@ -17,6 +17,7 @@ ghcjs  -package-db $(stack path --snapshot-pkg-db) \
        -package ghcjs-dom \
        -package text \
        -package transformers \
+       -package matrix \
        -package mtl \
        -package lens \
        -package containers \

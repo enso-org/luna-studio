@@ -1,6 +1,6 @@
-$$     = require 'common'
+$$     = require './common'
 brunch = require 'brunch'
-config = require 'config'
+config = require './config'
 
 startGA = ->
   enabled = $$.isGAEnabled()
@@ -23,4 +23,3 @@ startGA = ->
     window.ga = ->
 
 module.exports.startGA = startGA
-

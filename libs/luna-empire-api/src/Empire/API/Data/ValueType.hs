@@ -1,18 +1,21 @@
+{-# LANGUAGE DeriveAnyClass    #-}
 {-# LANGUAGE DeriveGeneric     #-}
 {-# LANGUAGE OverloadedStrings #-}
 
 module Empire.API.Data.ValueType where
 
+import           Control.DeepSeq         (NFData)
 import           Data.Binary             (Binary)
 import           Data.Hashable           (Hashable)
+import           Data.Text               (Text)
 import qualified Data.Text               as Text
-import           Prologue                hiding (TypeRep)
+import           Prologue                hiding (Text, TypeRep)
 
 import           Empire.API.Data.TypeRep (TypeRep (..))
 
 
 
-data ValueType = AnyType | TypeIdent TypeRep deriving (Show, Eq, Generic)
+data ValueType = AnyType | TypeIdent TypeRep deriving (Show, Eq, Generic, NFData)
 
 data ValueTypeEnum = DiscreteNumber
                    | ContinuousNumber

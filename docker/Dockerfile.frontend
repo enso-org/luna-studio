@@ -2,7 +2,7 @@ FROM alpine
 MAINTAINER kamil.figiela@luna-lang.org
 
 RUN    apk update \
-    && apk add s6 nginx  \
+    && apk add s6 nginx mercurial g++ \
     && adduser -u 82 -D -S -G www-data www-data
 
 COPY docker/s6/frontend /etc/s6/frontend
