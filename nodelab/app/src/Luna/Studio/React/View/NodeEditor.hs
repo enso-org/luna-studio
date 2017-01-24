@@ -80,7 +80,7 @@ nodeEditor = React.defineView name $ \(ref, ne) -> do
             , "key"       $= "nodes"
             , "style"     @= Aeson.object [ "transform" Aeson..= transform ]
             ] $ do
-            forM_ (ne ^. NodeEditor.nodes . to HashMap.elems) $ node_ ref
+            forM_ (ne ^. NodeEditor.nodes . to HashMap.elems) $ flip (node_ ref) transformMatrix
         canvas_
             [ "className" $= "plane plane--canvas hide"
             , "key"       $= "canvas"

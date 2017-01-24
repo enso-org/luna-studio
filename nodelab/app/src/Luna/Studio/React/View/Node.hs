@@ -8,7 +8,9 @@ import           Data.Vector                            (x, y)
 import           Empire.API.Data.Node                   (NodeId)
 import           Empire.API.Data.Port                   (InPort (..), PortId (..))
 import           Luna.Studio.Action.Geometry            (countSameTypePorts, isPortSingle)
+import qualified Luna.Studio.Data.CameraTransformation  as CameraTransformation
 import           Luna.Studio.Data.Matrix                (transformTranslateToSvg)
+import           Data.Matrix                            (Matrix,(!))
 import qualified Luna.Studio.Event.Mouse                as Mouse
 import qualified Luna.Studio.Event.UI                   as UI
 import           Luna.Studio.Prelude
@@ -16,6 +18,8 @@ import qualified Luna.Studio.React.Event.Node           as Node
 import           Luna.Studio.React.Model.App            (App)
 import           Luna.Studio.React.Model.Node           (Node)
 import qualified Luna.Studio.React.Model.Node           as Node
+import           Luna.Studio.React.Model.NodeEditor     (NodeEditor)
+import qualified Luna.Studio.React.Model.NodeEditor     as NodeEditor
 import qualified Luna.Studio.React.Model.NodeProperties as Properties
 import           Luna.Studio.React.Model.Port           (Port (..))
 import qualified Luna.Studio.React.Model.Port           as Port
@@ -43,16 +47,18 @@ portsExpanded :: Ref App -> [Port] -> ReactElementM ViewEventHandler ()
 portsExpanded nodeRef ports = forM_ ports $ \port -> portExpanded_ nodeRef port
 
 --TODO inline div and others
-node :: ReactView (Ref App, Node)
-node = React.defineView objName $ \(ref, n) -> do
-    let nodeId    = n ^. Node.nodeId
-        pos       = n ^. Node.position
-        nodePorts = Map.elems $ n ^. Node.ports
-        offsetX   = show $ pos ^. x
-        offsetY   = show $ pos ^. y
-        nodeLimit = 10000::Int
-        zIndex    = 1::Int -- FIXME, Leszek!
-        z         = if n ^. Node.isExpanded then zIndex + nodeLimit else zIndex
+node :: ReactView (Ref App, Node, Matrix Double)
+node = React.defineView objName $ \(ref, n, camTransform ) -> do
+    let nodeId     = n ^. Node.nodeId
+        pos        = n ^. Node.position
+        nodePorts  = Map.elems $ n ^. Node.ports
+        offsetX    = show $ pos ^. x
+        offsetY    = show $ pos ^. y
+        nodeLimit  = 10000::Int
+        zIndex     = 1::Int -- FIXME – set order of nodes
+        z          = if n ^. Node.isExpanded then zIndex + nodeLimit else zIndex
+        zoomFactor = camTransform ! (1, 1)
+        fontSize   = show $ 12/zoomFactor
     div_
         [ "key"         $= fromString (show nodeId)
         , onClick       $ \_ m -> dispatch ref $ UI.NodeEvent $ Node.Select m nodeId
@@ -83,6 +89,9 @@ node = React.defineView objName $ \(ref, n) -> do
                 , onDoubleClick $ \e _ -> stopPropagation e : dispatch ref (UI.NodeEvent $ Node.EditExpression nodeId)
                 , "className"   $= "node__name"
                 , "y"           $= "-36"
+                , "style"       @= Aeson.object
+                    [ "fontSize" Aeson..= (fontSize)
+                    ]
                 ] $ elemString $ Text.unpack $ n ^. Node.expression
             if  n ^. Node.isExpanded then do
                 ports         ref $ filter (\port -> (port ^. Port.portId) == InPortId Self) nodePorts
@@ -91,5 +100,5 @@ node = React.defineView objName $ \(ref, n) -> do
                 ports ref $ filter (\port -> (port ^. Port.portId) /= InPortId Self) nodePorts
                 ports ref $ filter (\port -> (port ^. Port.portId) == InPortId Self) nodePorts
 
-node_ :: Ref App -> Node -> ReactElementM ViewEventHandler ()
-node_ ref model = React.viewWithSKey node (jsShow $ model ^. Node.nodeId) (ref, model) mempty
+node_ :: Ref App -> Node -> Matrix Double -> ReactElementM ViewEventHandler ()
+node_ ref model camTransform  = React.viewWithSKey node (jsShow $ model ^. Node.nodeId) (ref, model, camTransform ) mempty
