@@ -53,5 +53,10 @@ transformMatrixToSvg scale offsetX offsetY = "matrix(" <> scale <> " , 0, 0, " <
 transformTranslateToSvg :: String -> String ->  String
 transformTranslateToSvg offsetX offsetY = "matrix( 1 , 0, 0, 1, " <> offsetX <> " , " <> offsetY <> " )"
 
-showTransformMatrixToSvg :: Show a => Matrix a -> String
-showTransformMatrixToSvg matrix = (foldl (<>) "matrix3d(" $ intersperse ", " $ map show $ Matrix.toList matrix) <> ")"
+showTransformMatrixToSvg :: Matrix Double -> String
+showTransformMatrixToSvg matrix =
+    let mx1 = Matrix.toList matrix
+        nx  = fromIntegral $ round $ mx1!!12
+        ny  = fromIntegral $ round $ mx1!!13
+        mx2 = (take 12 mx1) ++ nx:ny:(drop 14 mx1)
+    in (foldl (<>) "matrix3d(" $ intersperse ", " $ map show $ mx2) <> ")"
