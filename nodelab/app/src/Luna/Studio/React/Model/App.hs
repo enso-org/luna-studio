@@ -16,7 +16,7 @@ import           Luna.Studio.React.Model.Searcher    (Searcher)
 data App = App { _breadcrumbs       :: Breadcrumbs
                , _nodeEditor        :: NodeEditor
                , _codeEditor        :: CodeEditor
-               , _searcher          :: Searcher
+               , _searcher          :: Maybe Searcher
                } deriving (Eq)
 
 makeLenses ''App

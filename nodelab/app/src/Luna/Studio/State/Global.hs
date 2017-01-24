@@ -103,10 +103,10 @@ modifyCodeEditor = modify App.codeEditor
 modifyBreadcrumbs :: M.State Breadcrumbs r -> Command State r
 modifyBreadcrumbs = modify App.breadcrumbs
 
-modifySearcher :: M.State Searcher r -> Command State r
-modifySearcher = modify App.searcher
+modifySearcher :: Monoid r => M.State Searcher r -> Command State r
+modifySearcher = modify App.searcher . zoom traverse
 
-getSearcher :: Command State Searcher
+getSearcher :: Command State (Maybe Searcher)
 getSearcher = get App.searcher
 
 modifySelectionBox :: Monoid r => M.State SelectionBox r -> Command State r

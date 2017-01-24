@@ -1,3 +1,4 @@
+{-# OPTIONS_GHC -fno-warn-orphans #-}
 {-# LANGUAGE OverloadedStrings #-}
 module Luna.Studio.Action.Searcher where
 
@@ -18,17 +19,26 @@ import           Luna.Studio.Action.Node.Register   (registerNode)
 import qualified Luna.Studio.Action.Node.Update     as Node
 import qualified Luna.Studio.Batch.Workspace        as Workspace
 import           Luna.Studio.Prelude
+import qualified Luna.Studio.React.Model.App        as App
 import qualified Luna.Studio.React.Model.Node       as Node
 import qualified Luna.Studio.React.Model.Searcher   as Searcher
 import qualified Luna.Studio.React.View.App         as App
 import qualified Luna.Studio.React.View.Searcher    as Searcher
+import           Luna.Studio.State.Action           (Action (begin, continue, end, update), Searcher (Searcher), searcherAction)
 import           Luna.Studio.State.Global           (State)
+import           Luna.Studio.State.Global           (beginActionWithKey, continueActionWithKey, removeActionFromState, updateActionWithKey)
 import qualified Luna.Studio.State.Global           as Global
 import qualified Luna.Studio.State.Graph            as Graph
 import           Text.ScopeSearcher.Item            (Item (..), Items, _Group)
 import qualified Text.ScopeSearcher.QueryResult     as Result
 import qualified Text.ScopeSearcher.Scope           as Scope
 
+
+instance Action (Command State) Searcher where
+    begin    = beginActionWithKey    searcherAction
+    continue = continueActionWithKey searcherAction
+    update   = updateActionWithKey   searcherAction
+    end      = close
 
 
 searcherData :: Command State Items
@@ -44,52 +54,49 @@ open = do
 
 openWith :: Maybe NodeId -> Position -> Command State ()
 openWith nodeId pos = do
+    begin Searcher
     GA.sendEvent GA.NodeSearcher
-    Global.modifySearcher $ do
-        Searcher.input    .= def
-        Searcher.nodeId   .= nodeId
-        Searcher.position .= pos
-        Searcher.results  .= def
-        Searcher.selected .= 0
-        Searcher.visible  .= True
+    Global.modifyApp $ App.searcher ?= Searcher.Searcher pos 0 def def nodeId
     Global.renderIfNeeded
     liftIO Searcher.focus
 
-close :: Command State ()
-close = do
-    Global.modifySearcher $ Searcher.visible .= False
+close :: Searcher -> Command State ()
+close _ = do
+    Global.modifyApp $ App.searcher .= Nothing
+    removeActionFromState searcherAction
     liftIO App.focus
 
-moveDown :: Command State ()
-moveDown = Global.modifySearcher $ do
+moveDown :: Searcher -> Command State ()
+moveDown _ = Global.modifySearcher $ do
     items <- length <$> use Searcher.results
     Searcher.selected %= \p -> (p + 1) `mod` items
 
-moveUp :: Command State ()
-moveUp = Global.modifySearcher $ do
+moveUp :: Searcher -> Command State ()
+moveUp _ = Global.modifySearcher $ do
     items <- length <$> use Searcher.results
     Searcher.selected %= \p -> (p - 1) `mod` items
 
-accept :: Command State ()
-accept = do
-    searcher <- Global.getSearcher
-    pos <- translateToWorkspace (searcher ^. Searcher.position)
-    let selected  = searcher ^. Searcher.selected
-        mayNodeId = searcher ^. Searcher.nodeId
-        -- pos       = searcher ^. Searcher.position
-        mayResult = listToMaybe $ drop selected $ searcher ^. Searcher.results
-        expression = case mayResult of
-            Just result -> result ^. Result.name
-            Nothing -> searcher ^. Searcher.input
-    case mayNodeId of
-        Nothing -> registerNode pos expression
-        Just nodeId-> Node.updateExpression nodeId expression
-    close
+accept :: Searcher -> Command State ()
+accept action = do
+    maySearcher <- Global.getSearcher
+    withJust maySearcher $ \searcher -> do
+        pos <- translateToWorkspace (searcher ^. Searcher.position)
+        let selected  = searcher ^. Searcher.selected
+            mayNodeId = searcher ^. Searcher.nodeId
+            -- pos       = searcher ^. Searcher.position
+            mayResult = listToMaybe $ drop selected $ searcher ^. Searcher.results
+            expression = case mayResult of
+                Just result -> result ^. Result.name
+                Nothing -> searcher ^. Searcher.input
+        case mayNodeId of
+            Nothing -> registerNode pos expression
+            Just nodeId-> Node.updateExpression nodeId expression
+    close action
 
 openEdit :: Text -> NodeId -> Position -> Command State ()
 openEdit expr nodeId pos = do
     openWith (Just nodeId) pos
-    querySearch expr
+    continue $ querySearch expr
 
 -- position :: Command State (Position, Position)
 -- position = do
@@ -152,8 +159,8 @@ scopedData = do
             return overallScope
 
 
-querySearch :: Text -> Command State ()
-querySearch query = do
+querySearch :: Text -> Searcher -> Command State ()
+querySearch query _ = do
     sd <- scopedData
     let items = Scope.searchInScope sd query
     Global.modifySearcher $ do

@@ -46,7 +46,7 @@ app ref = React.defineControllerView name ref $ \store () -> do
                 nodeEditor_  ref $ s ^. App.nodeEditor
                 breadcrumbs_ ref $ s ^. App.breadcrumbs
                 codeEditorToggle_ ref
-                searcher_ ref $ s ^. App.searcher
+                mapM_ (searcher_ ref) $ s ^. App.searcher
             codeEditor_ $ s ^. App.codeEditor
 
 foreign import javascript safe "document.getElementById('focus-root').focus()" focus :: IO ()

@@ -10,8 +10,7 @@ import           Text.ScopeSearcher.QueryResult (QueryResult)
 
 
 data Searcher = Searcher
-      { _visible     :: Bool
-      , _position    :: Position
+      { _position    :: Position
       , _selected    :: Int
       , _input       :: Text
       , _results     :: [QueryResult]
@@ -21,4 +20,4 @@ data Searcher = Searcher
 makeLenses ''Searcher
 
 instance Default Searcher where
-    def = Searcher False def def def def def
+    def = Searcher def def def def def
