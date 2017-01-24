@@ -16,17 +16,17 @@ import           Luna.Studio.Action.Command (Command)
 import qualified Luna.Studio.State.Global   as Global
 --
 --TODO[react]
-toAction :: Event -> Maybe (Command Global.State ())
--- toAction (NodeSearcher (NodeSearcher.Query  expr)) = Just $ NS.querySearch expr
--- toAction (NodeSearcher (NodeSearcher.Tree   expr)) = Just $ NS.queryTree expr
--- toAction (NodeSearcher (NodeSearcher.Create expr nodeIdMay)) = case nodeIdMay of
+handle :: Event -> Maybe (Command Global.State ())
+-- handle (NodeSearcher (NodeSearcher.Query  expr)) = Just $ NS.querySearch expr
+-- handle (NodeSearcher (NodeSearcher.Tree   expr)) = Just $ NS.queryTree expr
+-- handle (NodeSearcher (NodeSearcher.Create expr nodeIdMay)) = case nodeIdMay of
 --     Just nodeId -> Just $ updateExpression nodeId expr
 --     -- Nothing     -> Just $ registerNode expr --TODO[react]
 --
--- toAction (NodeSearcher (NodeSearcher.QueryCmd  expr)) = Just $ CS.querySearchCmd expr
--- toAction (NodeSearcher (NodeSearcher.TreeCmd   expr)) = Just $ CS.queryTreeCmd expr
--- toAction (NodeSearcher (NodeSearcher.CreateCmd expr _)) = Just $ CS.runCommand expr
+-- handle (NodeSearcher (NodeSearcher.QueryCmd  expr)) = Just $ CS.querySearchCmd expr
+-- handle (NodeSearcher (NodeSearcher.TreeCmd   expr)) = Just $ CS.queryTreeCmd expr
+-- handle (NodeSearcher (NodeSearcher.CreateCmd expr _)) = Just $ CS.runCommand expr
 --
--- toAction (Keyboard _ (Keyboard.Event Keyboard.Down '\t'   (KeyMods { _shift = False }))) = Just $ NS.openFresh
--- toAction (Keyboard _ (Keyboard.Event Keyboard.Down '\191' (KeyMods False False False False))) = Just $ NS.openCommand -- 191 = /
-toAction _ = Nothing
+-- handle (Keyboard _ (Keyboard.Event Keyboard.Down '\t'   (KeyMods { _shift = False }))) = Just $ NS.openFresh
+-- handle (Keyboard _ (Keyboard.Event Keyboard.Down '\191' (KeyMods False False False False))) = Just $ NS.openCommand -- 191 = /
+handle _ = Nothing

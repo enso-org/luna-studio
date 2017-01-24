@@ -1,5 +1,5 @@
 module Luna.Studio.Handler.Camera
-    ( toAction
+    ( handle
     ) where
 
 import           Data.Vector                        (Vector2 (Vector2))
@@ -23,16 +23,16 @@ import           Luna.Studio.State.Global           (State)
 
 
 -- TODO[react]: Consider mac trackpad!!!
-toAction :: Event -> Maybe (Command State ())
-toAction (Shortcut shortcut)                             = Just $ handleShortcut shortcut
-toAction (UI (NodeEditorEvent (NodeEditor.MouseDown e))) = Just $ handleMouseDown e
-toAction (UI (AppEvent (App.MouseMove e)))               = Just $ handleMouseMove e
-toAction (UI (AppEvent (App.MouseUp   _)))               = Just $ continue stopPanDrag >> continue stopZoomDrag
-toAction (UI (NodeEditorEvent (NodeEditor.Wheel m w)))   = Just $ handleMouseWheel m delta where
+handle :: Event -> Maybe (Command State ())
+handle (Shortcut shortcut)                             = Just $ handleShortcut shortcut
+handle (UI (NodeEditorEvent (NodeEditor.MouseDown e))) = Just $ handleMouseDown e
+handle (UI (AppEvent (App.MouseMove e)))               = Just $ handleMouseMove e
+handle (UI (AppEvent (App.MouseUp   _)))               = Just $ continue stopPanDrag >> continue stopZoomDrag
+handle (UI (NodeEditorEvent (NodeEditor.Wheel m w)))   = Just $ handleMouseWheel m delta where
     deltaX = fromIntegral $ -(wheelDeltaX w)
     deltaY = fromIntegral $ -(wheelDeltaY w)
     delta  = Vector2 deltaX deltaY
-toAction _                                               = Nothing
+handle _                                               = Nothing
 
 
 -- TODO consider using state and below approach

@@ -1,5 +1,5 @@
 module Luna.Studio.Handler.App
-    ( toAction
+    ( handle
     ) where
 
 import           Luna.Studio.Prelude
@@ -13,6 +13,6 @@ import qualified Luna.Studio.State.Global    as Global
 
 
 
-toAction :: Event -> Maybe (Command Global.State ())
-toAction (UI (AppEvent (App.MouseMove evt))) = Just $ Global.mousePos .= mousePosition evt
-toAction _                                   = Nothing
+handle :: Event -> Maybe (Command Global.State ())
+handle (UI (AppEvent (App.MouseMove evt))) = Just $ Global.mousePos .= mousePosition evt
+handle _                                   = Nothing

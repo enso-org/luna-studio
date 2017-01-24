@@ -32,12 +32,12 @@ module Luna.Studio.Handler.Clipboard where
 --
 -- foreign import javascript safe "clipboard.copy($1)" copyStringToClipboard :: JSString -> IO ()
 --
--- toAction :: Event -> Maybe (Command State ())
+-- handle :: Event -> Maybe (Command State ())
 -- -- TODO(LJK): Bind to event copy and cut instead of keyboard shortcut
--- toAction (Keyboard _ (Keyboard.Event Keyboard.Down 'C' (KeyMods False True False False))) = Just $ copySelectionToClipboard
--- toAction (Keyboard _ (Keyboard.Event Keyboard.Down 'X' (KeyMods False True False False))) = Just $ cutSelectionToClipboard
--- toAction (Clipboard (Clipboard.Paste clipboardData)) = Just $ pasteFromClipboard clipboardData
--- toAction _ = Nothing
+-- handle (Keyboard _ (Keyboard.Event Keyboard.Down 'C' (KeyMods False True False False))) = Just $ copySelectionToClipboard
+-- handle (Keyboard _ (Keyboard.Event Keyboard.Down 'X' (KeyMods False True False False))) = Just $ cutSelectionToClipboard
+-- handle (Clipboard (Clipboard.Paste clipboardData)) = Just $ pasteFromClipboard clipboardData
+-- handle _ = Nothing
 --
 -- copySelectionToClipboard :: Command State ()
 -- copySelectionToClipboard = do

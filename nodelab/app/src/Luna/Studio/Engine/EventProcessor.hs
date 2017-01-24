@@ -55,23 +55,23 @@ consoleTimeStart = consoleTimeStart' . JSString.pack
 consoleTimeEnd   = consoleTimeEnd'   . JSString.pack
 
 actions :: [Event -> Maybe (Command State ())]
-actions =  [ App.toAction
-           , Breadcrumbs.toAction
-           , Camera.toAction
-           , CodeEditor.toAction
-           , Collaboration.toAction
-           , Connect.toAction
-           , ConnectionPen.toAction
-           , Control.toAction
-           , Debug.toAction
-           , Debug.toActionEv
-           , Graph.toAction
-           , MultiSelection.toAction
-           , Navigation.toAction
-           , Node.toAction
-           , ProjectManager.toAction
-           , Searcher.toAction
-           --    , Clipboard.toAction
+actions =  [ App.handle
+           , Breadcrumbs.handle
+           , Camera.handle
+           , CodeEditor.handle
+           , Collaboration.handle
+           , Connect.handle
+           , ConnectionPen.handle
+           , Control.handle
+           , Debug.handle
+           , Debug.handleEv
+           , Graph.handle
+           , MultiSelection.handle
+           , Navigation.handle
+           , Node.handle
+           , ProjectManager.handle
+           , Searcher.handle
+           --    , Clipboard.handle
            ]
 
 runCommands :: [Event -> Maybe (Command State ())] -> Event -> Command State ()

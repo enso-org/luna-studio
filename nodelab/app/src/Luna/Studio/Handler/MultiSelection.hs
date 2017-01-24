@@ -1,5 +1,5 @@
 module Luna.Studio.Handler.MultiSelection
-    ( toAction
+    ( handle
     ) where
 
 import           Luna.Studio.Action.Command         (Command)
@@ -14,9 +14,9 @@ import           Luna.Studio.State.Action           (Action (continue))
 import           Luna.Studio.State.Global           (State)
 
 
-toAction :: Event -> Maybe (Command State ())
-toAction (UI (NodeEditorEvent (NodeEditor.MouseDown evt))) = Just $ when shouldProceed $ startMultiSelection evt where
+handle :: Event -> Maybe (Command State ())
+handle (UI (NodeEditorEvent (NodeEditor.MouseDown evt))) = Just $ when shouldProceed $ startMultiSelection evt where
     shouldProceed = Mouse.withoutMods evt Mouse.leftButton
-toAction (UI (AppEvent        (App.MouseMove evt)))        = Just $ continue $ updateMultiSelection evt
-toAction (UI (AppEvent        (App.MouseUp   _  )))        = Just $ continue $ stopMultiSelection
-toAction _                                                 = Nothing
+handle (UI (AppEvent        (App.MouseMove evt)))        = Just $ continue $ updateMultiSelection evt
+handle (UI (AppEvent        (App.MouseUp   _  )))        = Just $ continue $ stopMultiSelection
+handle _                                                 = Nothing

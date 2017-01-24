@@ -35,8 +35,8 @@ module Luna.Studio.Action.Sandbox where
 -- f1 = '\112'
 -- f2 = '\113'
 --
--- toAction :: Event -> Maybe (Command Global.State ())
--- toAction (Keyboard _ (Keyboard.Event Keyboard.Down '\112' _)) = Just $ Global.inRegistry $ do
+-- handle :: Event -> Maybe (Command Global.State ())
+-- handle (Keyboard _ (Keyboard.Event Keyboard.Down '\112' _)) = Just $ Global.inRegistry $ do
 --     performIO $ putStrLn "show sandbox"
 --     let groupWidget = Group.create
 --     parent <- UICmd.register sceneGraphId groupWidget (Layout.verticalLayoutHandler 5.0)
@@ -57,7 +57,7 @@ module Luna.Studio.Action.Sandbox where
 --     -- register $ List.createList 200 "List" values $ AnyLunaValue (-1 :: Int)
 --     return ()
 --
--- toAction (Keyboard _ (Keyboard.Event Keyboard.Down '\116' _)) = Just $ Global.inRegistry $ do
+-- handle (Keyboard _ (Keyboard.Event Keyboard.Down '\116' _)) = Just $ Global.inRegistry $ do
 --     performIO $ putStrLn "show sandbox"
 --     let groupWidget = Group.create
 --     parent'       <- UICmd.register sceneGraphId groupWidget (Layout.horizontalLayoutHandler 5.0)
@@ -95,7 +95,7 @@ module Luna.Studio.Action.Sandbox where
 --         ) mempty
 --
 --     return ()
--- toAction (Keyboard _ (Keyboard.Event Keyboard.Down '\115' _)) = Just $ Global.inRegistry $ do
+-- handle (Keyboard _ (Keyboard.Event Keyboard.Down '\115' _)) = Just $ Global.inRegistry $ do
 --     performIO $ putStrLn "show sandbox"
 --     performIO $ putStrLn "show sandbox"
 --     let groupWidget = Group.create
@@ -114,6 +114,6 @@ module Luna.Studio.Action.Sandbox where
 --
 --     return ()
 --
--- toAction (Keyboard _ (Keyboard.Event Keyboard.Down '\113' _)) = Just BatchCmd.dumpGraphViz
+-- handle (Keyboard _ (Keyboard.Event Keyboard.Down '\113' _)) = Just BatchCmd.dumpGraphViz
 --
--- toAction _  = Nothing
+-- handle _  = Nothing

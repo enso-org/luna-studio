@@ -24,9 +24,9 @@ import qualified Luna.Studio.State.Graph            as Graph
 
 
 
-toAction :: Event -> Maybe (Command State ())
-toAction (Shortcut shortcut) = Just $ handleShortcut shortcut
-toAction _ = Nothing
+handle :: Event -> Maybe (Command State ())
+handle (Shortcut shortcut) = Just $ handleShortcut shortcut
+handle _ = Nothing
 
 handleShortcut :: ShortcutEvent -> Command State ()
 handleShortcut = \case

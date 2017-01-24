@@ -15,11 +15,11 @@ import           Luna.Studio.State.Action         (Action (continue))
 import           Luna.Studio.State.Global         (State)
 
 
-toAction :: Event -> Maybe (Command State ())
-toAction (Shortcut shortcut) = Just $ handleShortcut shortcut
-toAction (UI (AppEvent (App.MouseDown _))) = Just $ continue $ Searcher.close
-toAction (UI (SearcherEvent (Searcher.InputChanged input))) = Just $ continue $ Searcher.querySearch input
-toAction _ = Nothing
+handle :: Event -> Maybe (Command State ())
+handle (Shortcut shortcut) = Just $ handleShortcut shortcut
+handle (UI (AppEvent (App.MouseDown _))) = Just $ continue $ Searcher.close
+handle (UI (SearcherEvent (Searcher.InputChanged input))) = Just $ continue $ Searcher.querySearch input
+handle _ = Nothing
 
 handleShortcut :: ShortcutEvent -> Command State ()
 handleShortcut = \case

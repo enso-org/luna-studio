@@ -1,5 +1,5 @@
 module Luna.Studio.Handler.Backend.Graph
-    ( toAction
+    ( handle
     ) where
 
 
@@ -53,8 +53,8 @@ isCurrentLocationAndGraphLoaded location = do
     igl <- use $ Global.workspace . Workspace.isGraphLoaded
     return $ icl && igl
 
-toAction :: Event.Event -> Maybe (Command State ())
-toAction (Event.Batch ev) = Just $ case ev of
+handle :: Event.Event -> Maybe (Command State ())
+handle (Event.Batch ev) = Just $ case ev of
     ProgramFetched response -> handleResponse response $ \_ result -> do
         let location = response ^. Response.request . GetProgram.location
         isGraphLoaded  <- use $ Global.workspace . Workspace.isGraphLoaded
@@ -160,4 +160,4 @@ toAction (Event.Batch ev) = Just $ case ev of
     UpdateNodeExpressionResponse response -> handleResponse response doNothing
 
     _ -> return ()
-toAction _ = Nothing
+handle _ = Nothing
