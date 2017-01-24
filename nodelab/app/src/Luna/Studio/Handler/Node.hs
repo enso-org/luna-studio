@@ -8,10 +8,11 @@ import           Luna.Studio.Action.Command     (Command)
 import           Luna.Studio.Action.Graph       (selectAll, toggleSelect, unselectAll)
 import qualified Luna.Studio.Action.Node        as Node
 import qualified Luna.Studio.Action.PortControl as PortControl
-import           Luna.Studio.Event.Event        (Event (UI))
+import           Luna.Studio.Event.Event        (Event (Shortcut, UI))
 import qualified Luna.Studio.Event.Keys         as Keys
 import           Luna.Studio.Event.Mouse        (mousePosition)
 import qualified Luna.Studio.Event.Mouse        as Mouse
+import           Luna.Studio.Event.Shortcut     (ShortcutEvent (..))
 import           Luna.Studio.Event.UI           (UIEvent (AppEvent, NodeEvent))
 import           Luna.Studio.Prelude
 import qualified Luna.Studio.React.Event.App    as App
@@ -24,6 +25,7 @@ import qualified Luna.Studio.State.Graph        as Graph
 
 
 toAction :: Event -> Maybe (Command State ())
+toAction (Shortcut shortcut)                             = Just $ handleShortcut shortcut
 toAction (UI (NodeEvent (Node.MouseDown evt nodeId))) = Just $ when shouldProceed $ Node.startNodeDrag nodeId evt shouldSnap  where
     shouldProceed = Mouse.withoutMods evt Mouse.leftButton || Mouse.withShift evt Mouse.leftButton
     shouldSnap    = Mouse.withoutMods evt Mouse.leftButton
@@ -40,7 +42,6 @@ toAction (UI (NodeEvent (Node.PortApplyString kevt portRef defaultValue))) = Jus
 toAction (UI (NodeEvent (Node.PortSetDefaultValue portRef defaultValue))) = Just $ Batch.setDefaultValue portRef defaultValue
 --TODO[react]: Findout if we need workspacePosition here
 toAction (UI (NodeEvent (Node.PortInitSlider mevt portRef sliderInit)))   = Just $ PortControl.startMoveSlider portRef (mousePosition mevt) sliderInit
-toAction (UI (AppEvent  (App.KeyDown   kevt))) = Just $ handleKeyApp kevt
 --TODO[react]: Findout if we need workspacePosition here
 toAction (UI (AppEvent  (App.MouseMove mevt))) = Just $ (continue $ PortControl.moveSlider $ mousePosition mevt) >> (continue $ Node.nodeDrag mevt shouldSnap) where
     shouldSnap = Mouse.withoutMods mevt Mouse.leftButton
@@ -56,10 +57,10 @@ handleKeyNode kevt nodeId
     | otherwise                        = return ()
 
 
-handleKeyApp :: KeyboardEvent -> Command State ()
-handleKeyApp kevt
-    | Keys.withCtrl    kevt Keys.a     = selectAll
-    | Keys.withoutMods kevt Keys.del   = Node.removeSelectedNodes
-    | Keys.withoutMods kevt Keys.esc   = unselectAll
-    | Keys.withoutMods kevt Keys.enter = Node.expandSelectedNodes
-    | otherwise                        = return ()
+handleShortcut :: ShortcutEvent -> Command State ()
+handleShortcut = \case
+    SelectAll           -> selectAll
+    RemoveSelectedNodes -> Node.removeSelectedNodes
+    UnselectAll         -> unselectAll
+    ExpandSelectedNodes -> Node.expandSelectedNodes
+    _                   -> return ()

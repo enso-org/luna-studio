@@ -2,12 +2,12 @@ module Luna.Studio.Event.Event where
 
 import           Data.Aeson                    (ToJSON)
 
-import           Luna.Studio.Event.Atom        (AtomEvent)
 import qualified Luna.Studio.Event.Batch       as Batch
 import qualified Luna.Studio.Event.Clipboard   as Clipboard
 import qualified Luna.Studio.Event.Connection  as Connection
 import qualified Luna.Studio.Event.CustomEvent as CustomEvent
 import qualified Luna.Studio.Event.Debug       as Debug
+import           Luna.Studio.Event.Shortcut    (ShortcutEvent)
 import           Luna.Studio.Event.UI          (UIEvent)
 import           Luna.Studio.Prelude
 
@@ -20,7 +20,7 @@ data Event = Init
            | CustomEvent             CustomEvent.Event
            | Debug                         Debug.Event
            | Tick
-           | Atom                            AtomEvent
+           | Shortcut                    ShortcutEvent
            | UI                                UIEvent
            deriving (Generic, Show)
 

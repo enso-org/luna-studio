@@ -32,7 +32,7 @@ data AddHandler a = AddHandler ((a -> IO ()) -> IO (IO ()))
 
 atomHandler :: AddHandler Event
 atomHandler = AddHandler $ \h -> do
-    Atom.onEvent $ h . Atom
+    Atom.onEvent $ h . Shortcut
 
 webSocketHandler :: WebSocket.WebSocket -> AddHandler Event
 webSocketHandler conn = AddHandler $ \h -> do

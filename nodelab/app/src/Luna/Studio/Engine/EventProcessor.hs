@@ -18,10 +18,10 @@ import           Luna.Studio.Engine.JSHandlers              (AddHandler (..))
 import qualified Luna.Studio.Engine.JSHandlers              as JSHandlers
 import           Luna.Studio.Event.Event                    (Event)
 import qualified Luna.Studio.Event.Event                    as Event
-import qualified Luna.Studio.Event.Preprocessor.Batch       as BatchEventProcessor
-import qualified Luna.Studio.Event.Preprocessor.CustomEvent as CustomEventProcessor
+import qualified Luna.Studio.Event.Preprocessor.Batch       as BatchEventPreprocessor
+import qualified Luna.Studio.Event.Preprocessor.CustomEvent as CustomEventPreprocessor
+import qualified Luna.Studio.Event.Preprocessor.Shortcut    as ShortcutEventPreprocessor
 import qualified Luna.Studio.Handler.App                    as App
-import qualified Luna.Studio.Handler.Atom                   as Atom
 import qualified Luna.Studio.Handler.Backend.Control        as Control
 import qualified Luna.Studio.Handler.Backend.Graph          as Graph
 import qualified Luna.Studio.Handler.Backend.ProjectManager as ProjectManager
@@ -71,7 +71,6 @@ actions =  [ App.toAction
            , Node.toAction
            , ProjectManager.toAction
            , Searcher.toAction
-           , Atom.toAction
            --    , Clipboard.toAction
            ]
 
@@ -80,9 +79,10 @@ runCommands cmds event = sequence_ . catMaybes $ fmap ($ event) cmds
 
 preprocessEvent :: Event -> IO Event
 preprocessEvent ev = do
-    let batchEvent = BatchEventProcessor.process  ev
-    customEvent   <- CustomEventProcessor.process ev
-    return $ fromMaybe ev $ getLast $ Last batchEvent <> Last customEvent
+    let batchEvent    = BatchEventPreprocessor.process ev
+        shortcutEvent = ShortcutEventPreprocessor.process ev
+    customEvent   <- CustomEventPreprocessor.process ev
+    return $ fromMaybe ev $ getLast $ Last batchEvent <> Last customEvent <> Last shortcutEvent
 
 processEvent :: MVar State -> Event -> IO ()
 processEvent var ev = modifyMVar_ var $ \state -> do
