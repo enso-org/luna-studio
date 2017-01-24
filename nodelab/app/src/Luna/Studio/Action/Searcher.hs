@@ -69,12 +69,14 @@ close _ = do
 moveDown :: Searcher -> Command State ()
 moveDown _ = Global.modifySearcher $ do
     items <- length <$> use Searcher.results
-    Searcher.selected %= \p -> (p + 1) `mod` items
+    unless (items == 0) $
+        Searcher.selected %= \p -> (p + 1) `mod` items
 
 moveUp :: Searcher -> Command State ()
 moveUp _ = Global.modifySearcher $ do
     items <- length <$> use Searcher.results
-    Searcher.selected %= \p -> (p - 1) `mod` items
+    unless (items == 0) $
+        Searcher.selected %= \p -> (p - 1) `mod` items
 
 accept :: Searcher -> Command State ()
 accept action = do
