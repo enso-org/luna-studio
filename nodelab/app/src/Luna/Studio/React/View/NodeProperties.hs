@@ -2,7 +2,7 @@
 module Luna.Studio.React.View.NodeProperties where
 
 import qualified Data.Text                              as Text
-import qualified Event.UI                               as UI
+import qualified Luna.Studio.Event.UI                   as UI
 import           Luna.Studio.Prelude
 import qualified Luna.Studio.React.Event.Node           as Node
 import           Luna.Studio.React.Model.App            (App)

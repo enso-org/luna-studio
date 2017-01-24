@@ -11,12 +11,12 @@ import qualified Empire.API.Data.Connection         as C
 import           Empire.API.Data.Node               (NodeId)
 import qualified Empire.API.Data.Port               as P
 import qualified Empire.API.Data.PortRef            as R
-import           Event.Event                        (Event (UI))
-import           Event.UI                           (UIEvent (AppEvent))
 import           Luna.Studio.Action.Batch           (cancelCollaborativeTouch, collaborativeTouch)
 import           Luna.Studio.Action.Command         (Command)
 import           Luna.Studio.Action.Graph           (allNodes)
+import           Luna.Studio.Event.Event            (Event (UI))
 import qualified Luna.Studio.Event.Keys             as Keys
+import           Luna.Studio.Event.UI               (UIEvent (AppEvent))
 import qualified Luna.Studio.React.Event.App        as App
 import           Luna.Studio.React.Model.Node       (Node)
 import qualified Luna.Studio.React.Model.Node       as Node

@@ -2,11 +2,11 @@ module Luna.Studio.Handler.MultiSelection
     ( toAction
     ) where
 
-import           Event.Event                        (Event (UI))
-import           Event.UI                           (UIEvent (AppEvent, NodeEditorEvent))
 import           Luna.Studio.Action.Command         (Command)
 import           Luna.Studio.Action.MultiSelection  (startMultiSelection, stopMultiSelection, updateMultiSelection)
+import           Luna.Studio.Event.Event            (Event (UI))
 import qualified Luna.Studio.Event.Mouse            as Mouse
+import           Luna.Studio.Event.UI               (UIEvent (AppEvent, NodeEditorEvent))
 import           Luna.Studio.Prelude
 import qualified Luna.Studio.React.Event.App        as App
 import qualified Luna.Studio.React.Event.NodeEditor as NodeEditor

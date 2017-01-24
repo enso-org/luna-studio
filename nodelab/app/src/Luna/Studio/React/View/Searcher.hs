@@ -4,15 +4,16 @@ module Luna.Studio.React.View.Searcher where
 import qualified Data.Aeson                       as Aeson
 import           Data.Text                        (unpack)
 import           Data.Vector
-import qualified Event.UI                         as UI
+import           React.Flux
+import qualified React.Flux                       as React
+
+import qualified Luna.Studio.Event.UI             as UI
 import           Luna.Studio.Prelude
 import           Luna.Studio.React.Event.Searcher
 import           Luna.Studio.React.Model.App      (App)
 import           Luna.Studio.React.Model.Searcher (Searcher)
 import qualified Luna.Studio.React.Model.Searcher as Searcher
 import           Luna.Studio.React.Store          (Ref, dispatch)
-import           React.Flux
-import qualified React.Flux                       as React
 import qualified Text.ScopeSearcher.QueryResult   as Result
 
 
@@ -36,7 +37,7 @@ searcher  = React.defineView name $ \(ref, s) -> do
                 , "id"    $= "focus-searcher"
                 , "value" $= fromString (unpack $ s ^. Searcher.input)
                 , onMouseDown $ \e _ -> [stopPropagation e]
-                , onKeyDown   $ \e k ->  stopPropagation e : dispatch ref (UI.SearcherEvent $ KeyDown k)
+                , onKeyDown   $ \e k -> stopPropagation e : dispatch ref (UI.SearcherEvent $ KeyDown k)
                 , onChange    $ \e -> let val = target e "value" in dispatch ref $ UI.SearcherEvent $ InputChanged $ fromString val
                 ]
             div_

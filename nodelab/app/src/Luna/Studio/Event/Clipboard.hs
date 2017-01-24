@@ -1,6 +1,6 @@
-module Event.Clipboard where
+module Luna.Studio.Event.Clipboard where
 
-import           Data.Aeson        (ToJSON)
+import           Data.Aeson          (ToJSON)
 import           Luna.Studio.Prelude
 
 

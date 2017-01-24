@@ -11,15 +11,15 @@ import           Data.Monoid                                (Last (..))
 import qualified Data.Text                                  as Text
 import           GHCJS.Prim                                 (JSException)
 
-import           Event.Event                                (Event)
-import qualified Event.Event                                as Event
-import qualified Event.Processors.Batch                     as BatchEventProcessor
-import qualified Event.Processors.CustomEvent               as CustomEventProcessor
 import qualified JS.Debug
 import           JS.WebSocket                               (WebSocket)
 import           Luna.Studio.Action.Command                 (Command, execCommand)
 import           Luna.Studio.Engine.JSHandlers              (AddHandler (..))
 import qualified Luna.Studio.Engine.JSHandlers              as JSHandlers
+import           Luna.Studio.Event.Event                    (Event)
+import qualified Luna.Studio.Event.Event                    as Event
+import qualified Luna.Studio.Event.Preprocessor.Batch       as BatchEventProcessor
+import qualified Luna.Studio.Event.Preprocessor.CustomEvent as CustomEventProcessor
 import qualified Luna.Studio.Handler.App                    as App
 import qualified Luna.Studio.Handler.Atom                   as Atom
 import qualified Luna.Studio.Handler.Backend.Control        as Control

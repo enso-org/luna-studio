@@ -17,24 +17,22 @@ import           GHCJS.Prim                             (fromJSString)
 
 import qualified Data.JSString                          as JSString
 import           Data.JSString.Text                     (textFromJSString)
-import qualified Event.Atom                             as Atom
-import qualified Event.Clipboard                        as Clipboard
-import qualified Event.Connection                       as Connection
-import qualified Event.CustomEvent                      as CustomEvent
-import           Event.Event
 import qualified JS.Atom                                as Atom
 import qualified JS.Clipboard                           as Clipboard
 import qualified JS.CustomEvent                         as CustomEvent
 import qualified JS.WebSocket                           as WebSocket
 import qualified Luna.Studio.Batch.Connector.Connection as Connection
+import qualified Luna.Studio.Event.Clipboard            as Clipboard
+import qualified Luna.Studio.Event.Connection           as Connection
+import qualified Luna.Studio.Event.CustomEvent          as CustomEvent
+import           Luna.Studio.Event.Event
 
 
 data AddHandler a = AddHandler ((a -> IO ()) -> IO (IO ()))
 
 atomHandler :: AddHandler Event
 atomHandler = AddHandler $ \h -> do
-    Atom.onEvent $ \arg -> h (Atom Atom.Event)
-
+    Atom.onEvent $ h . Atom
 
 webSocketHandler :: WebSocket.WebSocket -> AddHandler Event
 webSocketHandler conn = AddHandler $ \h -> do

@@ -1,16 +1,16 @@
 {-# LANGUAGE Rank2Types #-}
-module Event.Processors.Batch (process) where
+module Luna.Studio.Event.Preprocessor.Batch (process) where
 
-import           Data.Binary                (Binary, decode)
-import           Data.ByteString.Lazy.Char8 (ByteString)
-import qualified Data.Map.Lazy              as Map
-import           Luna.Studio.Prelude          hiding (cons)
+import           Data.Binary                            (Binary, decode)
+import           Data.ByteString.Lazy.Char8             (ByteString)
+import qualified Data.Map.Lazy                          as Map
+import           Luna.Studio.Prelude                    hiding (cons)
 
-import           Luna.Studio.Batch.Connector.Connection  (ControlCode (ConnectionTakeover, Welcome), WebMessage (ControlMessage, WebMessage))
-import qualified Empire.API.Topic           as Topic
-import           Event.Batch                as Batch
-import           Event.Connection           as Connection
-import qualified Event.Event                as Event
+import qualified Empire.API.Topic                       as Topic
+import           Luna.Studio.Batch.Connector.Connection (ControlCode (ConnectionTakeover, Welcome), WebMessage (ControlMessage, WebMessage))
+import           Luna.Studio.Event.Batch                as Batch
+import           Luna.Studio.Event.Connection           as Connection
+import qualified Luna.Studio.Event.Event                as Event
 
 
 process :: Event.Event -> Maybe Event.Event

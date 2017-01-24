@@ -1,7 +1,7 @@
-module Event.Debug where
+module Luna.Studio.Event.Debug where
 
 
-import           Data.Aeson        (ToJSON)
+import           Data.Aeson          (ToJSON)
 import           Luna.Studio.Prelude
 
 

@@ -1,12 +1,12 @@
-module Event.Processors.CustomEvent (process) where
+module Luna.Studio.Event.Preprocessor.CustomEvent (process) where
 
-import           Data.Aeson          (fromJSON)
-import qualified Data.Aeson          as AE
+import           Data.Aeson                    (fromJSON)
+import qualified Data.Aeson                    as AE
 import           Luna.Studio.Prelude
 
-import           Event.CustomEvent   as CustomEvent
-import           Event.Debug         (Event (..))
-import qualified Event.Event         as Event
+import           Luna.Studio.Event.CustomEvent as CustomEvent
+import           Luna.Studio.Event.Debug       (Event (..))
+import qualified Luna.Studio.Event.Event       as Event
 
 
 

@@ -1,8 +1,8 @@
-module Event.Connection where
+module Luna.Studio.Event.Connection where
 
-import Luna.Studio.Prelude
-import Luna.Studio.Batch.Connector.Connection (WebMessage)
-import Data.Aeson (ToJSON, toJSON)
+import           Data.Aeson                             (ToJSON, toJSON)
+import           Luna.Studio.Batch.Connector.Connection (WebMessage)
+import           Luna.Studio.Prelude
 
 data Event = Message { _message :: WebMessage }
            | Opened

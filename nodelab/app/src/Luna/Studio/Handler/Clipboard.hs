@@ -11,8 +11,8 @@ module Luna.Studio.Handler.Clipboard where
 -- import qualified Empire.API.Data.Node              as Node
 -- import qualified Empire.API.Data.NodeMeta          as NodeMeta
 -- import qualified Empire.API.Data.PortRef           as PortRef
--- import qualified Event.Clipboard                   as Clipboard
--- import           Event.Event                       (Event (..))
+-- import qualified Luna.Studio.Event.Clipboard                   as Clipboard
+-- import           Luna.Studio.Event.Event                       (Event (..))
 -- import           Event.Keyboard                    (KeyMods (..))
 -- import qualified Event.Keyboard                    as Keyboard
 -- import qualified Luna.Studio.React.Model.Node                as UINode

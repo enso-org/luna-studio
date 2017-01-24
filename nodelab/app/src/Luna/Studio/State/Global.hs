@@ -19,7 +19,7 @@ import           Empire.API.Data.Connection           (ConnectionId)
 import           Empire.API.Data.Node                 (NodeId)
 import qualified Empire.API.Data.Node                 as Node
 import qualified Empire.API.Graph.Collaboration       as Collaboration
-import qualified Event.Event                          as Event
+import qualified Luna.Studio.Event.Event                          as Event
 import           Luna.Studio.Action.Command           (Command)
 import           Luna.Studio.Batch.Workspace
 import           Luna.Studio.Prelude

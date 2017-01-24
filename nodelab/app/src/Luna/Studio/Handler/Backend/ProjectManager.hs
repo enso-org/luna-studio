@@ -15,14 +15,14 @@ import qualified Empire.API.Project.ExportProject   as ExportProject
 import qualified Empire.API.Project.ImportProject   as ImportProject
 import qualified Empire.API.Project.ListProjects    as ListProjects
 
-import qualified Event.Batch                        as Batch
-import qualified Event.CustomEvent                  as CustomEvent
-import           Event.Event                        (Event (Batch, CustomEvent))
 import           JS.DownloadFile                    (downloadFile)
 import qualified Luna.Studio.Action.Batch           as BatchCmd (importProject)
 import           Luna.Studio.Action.Command         (Command, performIO)
 import           Luna.Studio.Action.ProjectManager  (loadGraph, loadProject)
 import qualified Luna.Studio.Batch.Workspace        as Workspace
+import qualified Luna.Studio.Event.Batch            as Batch
+import qualified Luna.Studio.Event.CustomEvent      as CustomEvent
+import           Luna.Studio.Event.Event            (Event (Batch, CustomEvent))
 import           Luna.Studio.Handler.Backend.Common (handleResponse)
 import           Luna.Studio.State.Global           (State)
 import qualified Luna.Studio.State.Global           as Global

@@ -4,12 +4,12 @@ module Luna.Studio.Handler.App
 
 import           Luna.Studio.Prelude
 
-import           Event.Event
-import           Event.UI                     (UIEvent (AppEvent))
-import           Luna.Studio.Action.Command (Command)
-import           Luna.Studio.Event.Mouse      (mousePosition)
-import qualified Luna.Studio.React.Event.App  as App
-import qualified Luna.Studio.State.Global     as Global
+import           Luna.Studio.Action.Command  (Command)
+import           Luna.Studio.Event.Event
+import           Luna.Studio.Event.Mouse     (mousePosition)
+import           Luna.Studio.Event.UI        (UIEvent (AppEvent))
+import qualified Luna.Studio.React.Event.App as App
+import qualified Luna.Studio.State.Global    as Global
 
 
 

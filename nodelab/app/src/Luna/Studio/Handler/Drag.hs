@@ -2,11 +2,11 @@ module Luna.Studio.Handler.Drag
     ( toAction
     ) where
 
-import           Event.Event                  (Event (UI))
-import           Event.UI                     (UIEvent (AppEvent, NodeEvent))
 import           Luna.Studio.Action.Command   (Command)
 import           Luna.Studio.Action.Drag      (drag, startDrag, stopDrag)
+import           Luna.Studio.Event.Event      (Event (UI))
 import qualified Luna.Studio.Event.Mouse      as Mouse
+import           Luna.Studio.Event.UI         (UIEvent (AppEvent, NodeEvent))
 import           Luna.Studio.Prelude
 import qualified Luna.Studio.React.Event.App  as App
 import qualified Luna.Studio.React.Event.Node as Node

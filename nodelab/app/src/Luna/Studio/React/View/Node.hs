@@ -7,10 +7,10 @@ import qualified Data.Text                              as Text
 import           Data.Vector                            (x, y)
 import           Empire.API.Data.Node                   (NodeId)
 import           Empire.API.Data.Port                   (InPort (..), PortId (..))
-import qualified Event.UI                               as UI
 import           Luna.Studio.Action.Geometry            (countSameTypePorts, isPortSingle)
 import           Luna.Studio.Data.Matrix                (transformTranslateToSvg)
 import qualified Luna.Studio.Event.Mouse                as Mouse
+import qualified Luna.Studio.Event.UI                   as UI
 import           Luna.Studio.Prelude
 import qualified Luna.Studio.React.Event.Node           as Node
 import           Luna.Studio.React.Model.App            (App)

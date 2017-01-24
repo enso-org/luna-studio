@@ -1,13 +1,13 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Luna.Studio.React.View.CodeEditorToggle where
 
-import qualified Event.UI               as UI
-import qualified Luna.Studio.React.Event.CodeEditor as CodeEditor
-import           React.Flux
-import qualified React.Flux             as React
-import           Luna.Studio.React.Store            (Ref, dispatch)
-import           Luna.Studio.React.Model.App (App)
+import qualified Luna.Studio.Event.UI               as UI
 import           Luna.Studio.Prelude
+import qualified Luna.Studio.React.Event.CodeEditor as CodeEditor
+import           Luna.Studio.React.Model.App        (App)
+import           Luna.Studio.React.Store            (Ref, dispatch)
+import           React.Flux
+import qualified React.Flux                         as React
 
 
 name :: JSString

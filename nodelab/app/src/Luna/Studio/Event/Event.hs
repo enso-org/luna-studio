@@ -1,14 +1,14 @@
-module Event.Event where
+module Luna.Studio.Event.Event where
 
-import           Data.Aeson          (ToJSON)
+import           Data.Aeson                    (ToJSON)
 
-import           Event.Atom          (AtomEvent)
-import qualified Event.Batch         as Batch
-import qualified Event.Clipboard     as Clipboard
-import qualified Event.Connection    as Connection
-import qualified Event.CustomEvent   as CustomEvent
-import qualified Event.Debug         as Debug
-import           Event.UI            (UIEvent)
+import           Luna.Studio.Event.Atom        (AtomEvent)
+import qualified Luna.Studio.Event.Batch       as Batch
+import qualified Luna.Studio.Event.Clipboard   as Clipboard
+import qualified Luna.Studio.Event.Connection  as Connection
+import qualified Luna.Studio.Event.CustomEvent as CustomEvent
+import qualified Luna.Studio.Event.Debug       as Debug
+import           Luna.Studio.Event.UI          (UIEvent)
 import           Luna.Studio.Prelude
 
 

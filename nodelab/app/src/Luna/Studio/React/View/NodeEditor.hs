@@ -3,9 +3,9 @@ module Luna.Studio.React.View.NodeEditor where
 
 import qualified Data.Aeson                            as Aeson
 import qualified Data.HashMap.Strict                   as HashMap
-import qualified Event.UI                              as UI
 import qualified Luna.Studio.Data.CameraTransformation as CameraTransformation
 import           Luna.Studio.Data.Matrix               (showTransformMatrixToSvg)
+import qualified Luna.Studio.Event.UI                  as UI
 import           Luna.Studio.Prelude                   hiding (transform)
 import qualified Luna.Studio.React.Event.NodeEditor    as NE
 import           Luna.Studio.React.Model.App           (App)

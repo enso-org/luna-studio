@@ -4,10 +4,10 @@ module Luna.Studio.React.View.Port where
 
 import           Empire.API.Data.Port               (InPort (..), OutPort (..), PortId (..))
 import           Empire.API.Data.PortRef            (AnyPortRef)
-import qualified Event.UI                           as UI
 import           Luna.Studio.Action.Geometry        (lineHeight, nodeRadius, nodeRadius', portAngleStart, portAngleStop)
 import           Luna.Studio.Data.Color             (toJSString)
 import qualified Luna.Studio.Event.Mouse            as Mouse
+import qualified Luna.Studio.Event.UI               as UI
 import           Luna.Studio.Prelude
 import qualified Luna.Studio.React.Event.Connection as Connection
 import           Luna.Studio.React.Model.App        (App)

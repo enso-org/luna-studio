@@ -1,4 +1,4 @@
-module Event.Batch where
+module Luna.Studio.Event.Batch where
 
 import           Luna.Studio.Prelude
 

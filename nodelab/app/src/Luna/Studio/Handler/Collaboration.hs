@@ -5,27 +5,27 @@ module Luna.Studio.Handler.Collaboration
 
 import           Luna.Studio.Prelude
 
-import qualified Data.DateTime                    as DT
-import qualified Data.Map.Lazy                    as Map
-import qualified Data.HashMap.Strict                    as HashMap
-import qualified Luna.Studio.Batch.Workspace      as Workspace
+import qualified Data.DateTime                      as DT
+import qualified Data.HashMap.Strict                as HashMap
+import qualified Data.Map.Lazy                      as Map
+import qualified Luna.Studio.Batch.Workspace        as Workspace
 
-import           Empire.API.Data.GraphLocation    (GraphLocation)
-import qualified Empire.API.Graph.Collaboration   as Collaboration
+import           Empire.API.Data.GraphLocation      (GraphLocation)
+import qualified Empire.API.Graph.Collaboration     as Collaboration
 
-import           Event.Batch                      (Event (..))
-import qualified Event.Event                      as Event
+import           Luna.Studio.Event.Batch            (Event (..))
+import qualified Luna.Studio.Event.Event            as Event
 
-import           Luna.Studio.Action.Batch         (collaborativeTouch)
-import           Luna.Studio.Action.Collaboration (updateClient)
-import           Luna.Studio.Action.Command       (Command)
-import           Luna.Studio.Action.Graph         (selectedNodes)
-import           Luna.Studio.State.Collaboration  (ColorId)
-import           Luna.Studio.State.Global         (State)
-import qualified Luna.Studio.React.Model.NodeEditor     as NodeEditor
-import qualified Luna.Studio.State.Global         as Global
+import           Luna.Studio.Action.Batch           (collaborativeTouch)
+import           Luna.Studio.Action.Collaboration   (updateClient)
+import           Luna.Studio.Action.Command         (Command)
+import           Luna.Studio.Action.Graph           (selectedNodes)
+import qualified Luna.Studio.React.Model.NodeEditor as NodeEditor
+import           Luna.Studio.State.Collaboration    (ColorId)
+import           Luna.Studio.State.Global           (State)
+import qualified Luna.Studio.State.Global           as Global
 
-import qualified Luna.Studio.React.Model.Node     as NodeModel
+import qualified Luna.Studio.React.Model.Node       as NodeModel
 
 
 

@@ -10,8 +10,8 @@ import           Control.Monad.Trans.State  hiding (get, modify)
 import           Luna.Studio.Prelude        as P hiding (transform)
 import           React.Flux
 
-import qualified Event.Event                as E
 import           Luna.Studio.Action.Command (Command)
+import qualified Luna.Studio.Event.Event    as E
 
 
 

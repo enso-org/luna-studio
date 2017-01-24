@@ -2,13 +2,13 @@ module Luna.Studio.Handler.ConnectionPen
     ( toAction
     ) where
 
-import           Event.Event                      (Event)
-import           Event.Event                      (Event (UI))
-import           Event.UI                         (UIEvent (AppEvent))
 import           Luna.Studio.Action.Command       (Command)
 import           Luna.Studio.Action.ConnectionPen (connectMove, disconnectMove, startConnecting, startDisconnecting, stopConnecting,
                                                    stopDisconnecting)
+import           Luna.Studio.Event.Event          (Event)
+import           Luna.Studio.Event.Event          (Event (UI))
 import qualified Luna.Studio.Event.Mouse          as Mouse
+import           Luna.Studio.Event.UI             (UIEvent (AppEvent))
 import           Luna.Studio.Prelude
 import qualified Luna.Studio.React.Event.App      as App
 import           Luna.Studio.State.Action         (Action (continue))

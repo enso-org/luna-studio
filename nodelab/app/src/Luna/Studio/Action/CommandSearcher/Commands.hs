@@ -11,7 +11,7 @@ module Luna.Studio.Action.CommandSearcher.Commands where
 -- import           Data.Text                    (stripPrefix)
 -- import qualified Data.Text                    as Text
 -- import qualified Empire.API.Data.Project           as Project
--- import           Event.Event                       (JSState)
+-- import           Luna.Studio.Event.Event                       (JSState)
 -- import qualified JS.GoogleAnalytics                as GA
 -- import qualified JS.NodeSearcher                   as UI
 -- import qualified Luna.Studio.Action.Batch          as BatchCmd

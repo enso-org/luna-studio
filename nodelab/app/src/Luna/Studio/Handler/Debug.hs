@@ -11,8 +11,8 @@ module Luna.Studio.Handler.Debug
 import           JS.Debug                   (cinfo, clog, lastEv, processedEvent, saveState, shouldExportState)
 import           Luna.Studio.Prelude
 
-import qualified Event.Debug                as Debug
-import           Event.Event                (Event (..))
+import qualified Luna.Studio.Event.Debug    as Debug
+import           Luna.Studio.Event.Event    (Event (..))
 
 import           Control.Monad.State        hiding (state)
 import           Luna.Studio.Action.Command (Command, performIO)

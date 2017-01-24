@@ -11,8 +11,8 @@ module Luna.Studio.React.Store
 import           Control.Monad.Trans.Reader
 import           React.Flux
 
-import qualified Event.Event                 as Event
-import           Event.UI                    (UIEvent)
+import qualified Luna.Studio.Event.Event     as Event
+import           Luna.Studio.Event.UI        (UIEvent)
 import           Luna.Studio.Prelude         as P hiding (transform)
 import           Luna.Studio.React.Model.App (App)
 import           Luna.Studio.React.Store.Ref as X

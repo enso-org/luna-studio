@@ -2,10 +2,8 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Luna.Studio.React.View.App where
 
-import           Luna.Studio.Prelude hiding (on)
-import           React.Flux
-import qualified React.Flux                              as React
-import qualified Event.UI                                as UI
+import qualified Luna.Studio.Event.UI                    as UI
+import           Luna.Studio.Prelude                     hiding (on)
 import qualified Luna.Studio.React.Event.App             as App
 import           Luna.Studio.React.Model.App             (App)
 import qualified Luna.Studio.React.Model.App             as App
@@ -15,6 +13,8 @@ import           Luna.Studio.React.View.CodeEditor       (codeEditor_)
 import           Luna.Studio.React.View.CodeEditorToggle (codeEditorToggle_)
 import           Luna.Studio.React.View.NodeEditor       (nodeEditor_)
 import           Luna.Studio.React.View.Searcher         (searcher_)
+import           React.Flux
+import qualified React.Flux                              as React
 
 
 name :: JSString
@@ -33,7 +33,7 @@ app ref = React.defineControllerView name ref $ \store () -> do
         , "key"       $= "app"
         , "id"        $= "focus-root"
         , "tabIndex"  $= "-1"
-        , "className" $= "noselect"
+        , "className" $= "luna-studio"
         ] $ do
         div_
             [ "className" $= "main"

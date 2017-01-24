@@ -8,7 +8,7 @@ import           Empire.API.Data.Port         (InPort (..), InPort (..), OutPort
 import qualified Empire.API.Data.Port         as PortAPI
 import           Empire.API.Data.PortRef      (AnyPortRef (..), toAnyPortRef)
 import qualified Empire.API.Data.ValueType    as ValueType
-import qualified Event.UI                     as UI
+import qualified Luna.Studio.Event.UI         as UI
 import           Luna.Studio.Prelude          hiding (group)
 import qualified Luna.Studio.React.Event.Node as Node
 import           Luna.Studio.React.Model.App  (App)

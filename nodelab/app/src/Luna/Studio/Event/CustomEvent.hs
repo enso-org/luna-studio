@@ -1,7 +1,7 @@
-module Event.CustomEvent where
+module Luna.Studio.Event.CustomEvent where
 
 
-import           Data.Aeson        (ToJSON, toJSON)
+import           Data.Aeson          (ToJSON, toJSON)
 import           Luna.Studio.Prelude
 
 

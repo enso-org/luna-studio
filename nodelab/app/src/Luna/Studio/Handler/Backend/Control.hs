@@ -4,11 +4,11 @@ module Luna.Studio.Handler.Backend.Control
 
 import           Luna.Studio.Prelude
 
-import qualified Event.Batch                      as Batch
-import           Event.Event                      (Event (Batch))
+import qualified Luna.Studio.Event.Batch    as Batch
+import           Luna.Studio.Event.Event    (Event (Batch))
 
-import           Luna.Studio.Action.Command        (Command)
-import           Luna.Studio.State.Global            (State)
+import           Luna.Studio.Action.Command (Command)
+import           Luna.Studio.State.Global   (State)
 
 toAction :: Event -> Maybe (Command State ())
 toAction (Batch (Batch.EmpireStarted _)) = Just $ do

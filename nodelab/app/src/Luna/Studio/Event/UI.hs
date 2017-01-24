@@ -1,5 +1,5 @@
 {-# LANGUAGE DeriveAnyClass #-}
-module Event.UI where
+module Luna.Studio.Event.UI where
 
 import           Control.DeepSeq                     (NFData)
 import           Data.Aeson                          (FromJSON, ToJSON)

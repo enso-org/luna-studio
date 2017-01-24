@@ -5,7 +5,7 @@ module Luna.Studio.Action.Sandbox where
 -- import           Luna.Studio.Prelude
 -- import           Data.Vector
 --
--- import           Event.Event                     (Event (..))
+-- import           Luna.Studio.Event.Event                     (Event (..))
 -- import qualified Event.Keyboard                  as Keyboard
 -- import           Luna.Studio.Action.Command       (Command, performIO)
 -- import qualified Luna.Studio.State.Global           as Global

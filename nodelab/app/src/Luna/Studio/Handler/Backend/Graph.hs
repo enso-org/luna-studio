@@ -24,8 +24,8 @@ import qualified Empire.API.Graph.RenameNode         as RenameNode
 import qualified Empire.API.Graph.UpdateNodeMeta     as UpdateNodeMeta
 import qualified Empire.API.Response                 as Response
 
-import           Event.Batch                         (Event (..))
-import qualified Event.Event                         as Event
+import           Luna.Studio.Event.Batch             (Event (..))
+import qualified Luna.Studio.Event.Event             as Event
 
 import           Luna.Studio.Action.Batch            (collaborativeModify, requestCollaborationRefresh)
 import           Luna.Studio.Action.Camera           (centerGraph)

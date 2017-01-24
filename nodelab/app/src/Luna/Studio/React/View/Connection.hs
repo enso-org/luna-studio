@@ -3,9 +3,9 @@ module Luna.Studio.React.View.Connection where
 
 import           Data.Position                      (Position, averagePosition, x, y)
 import           Empire.API.Data.PortRef            (InPortRef)
-import qualified Event.UI                           as UI
 import           Luna.Studio.Action.Geometry        (connectionWidth)
 import           Luna.Studio.Data.Color             (toJSString)
+import qualified Luna.Studio.Event.UI               as UI
 import           Luna.Studio.Prelude
 import           Luna.Studio.React.Event.Connection (ModifiedEnd (Destination, Source))
 import qualified Luna.Studio.React.Event.Connection as Connection

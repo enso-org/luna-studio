@@ -1,2 +1,10 @@
-'atom-workspace atom-text-editor':
+'atom-workspace':
   'ctrl-alt-k': 'luna-studio:open'
+'.luna-studio':
+  'h':      'luna-studio:auto-zoom'
+  'delete': 'luna-studio:delete'
+  'tab':    'luna-studio:open-searcher'
+  'ctrl-a': 'luna-studio:select-all'
+'.luna-studio .searcher':
+  'enter':  'luna-studio:accept'
+  'esc':    'luna-studio:cancel'
