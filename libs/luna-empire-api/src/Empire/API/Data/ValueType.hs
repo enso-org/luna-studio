@@ -14,9 +14,6 @@ import           Prologue                hiding (Text, TypeRep)
 import           Empire.API.Data.TypeRep (TypeRep (..))
 
 
-
-data ValueType = AnyType | TypeIdent TypeRep deriving (Show, Eq, Generic, NFData)
-
 data ValueTypeEnum = DiscreteNumber
                    | ContinuousNumber
                    | String
@@ -24,12 +21,10 @@ data ValueTypeEnum = DiscreteNumber
                    | Other
                    deriving (Show, Eq, Enum, Generic)
 
-instance Binary ValueType
 instance Binary ValueTypeEnum
-makeLenses ''ValueType
 
-toEnum' :: ValueType -> ValueTypeEnum
-toEnum' (TypeIdent (TCons name _)) = case name of
+toEnum' :: TypeRep -> ValueTypeEnum
+toEnum' (TCons name _) = case name of
   "Int"    -> DiscreteNumber
   "Long"   -> DiscreteNumber
   "Float"  -> ContinuousNumber
@@ -39,10 +34,8 @@ toEnum' (TypeIdent (TCons name _)) = case name of
   _        -> Other
 toEnum' _ = Other
 
-toEnum :: Getter ValueType ValueTypeEnum
+toEnum :: Getter TypeRep ValueTypeEnum
 toEnum = to toEnum'
 
-toText :: Getter ValueType Text
-toText = to $ \v -> case v of
-    AnyType     -> "*"
-    TypeIdent a -> convert a
+toText :: Getter TypeRep Text.Text
+toText = to (Text.pack . toString)

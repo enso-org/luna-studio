@@ -11,53 +11,43 @@ tests:
     spec:
         main: Spec.hs
         source-dirs: test
+        ghc-options: -Wno-unused-do-bind -threaded -with-rtsopts=-N4
         dependencies:
             - luna-empire
             - hspec
+            - QuickCheck
             - reflection
 
-ghc-options: -Wall -Wno-unused-do-bind
+ghc-options: -Wall
 
 dependencies:
     - aeson
     - aeson-pretty
     - base
     - bytestring
-    - container
-    - data-construction
-    - data-layer
-    - data-prop
-    - directory
-    - either
-    - fgl
+    - containers
+    - convert
+    - data-default
+    - exceptions
     - filepath
-    - ghc-prim
+    - lens
     - luna
     - luna-empire-api
     - luna-empire-api-json
-    - luna-parser
-    - lunac
     - m-logger
-    - MissingH
     - mtl
+    - open-browser
     - prologue
     - split
     - stm
     - text
-    - transformers
-    - typelevel
     - uuid
     - visualization-api
-    - zmq-bus
-    - zmq-bus-config
 
 default-extensions:
-    - DeriveFunctor
-    - DeriveTraversable
     - FlexibleContexts
     - FlexibleInstances
     - MultiParamTypeClasses
     - NoImplicitPrelude
-    - RankNTypes
     - TemplateHaskell
     - TypeFamilies

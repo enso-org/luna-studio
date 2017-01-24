@@ -5,13 +5,13 @@ import           Data.Map.Lazy             (Map)
 import qualified Data.Map.Lazy             as Map
 import           Data.Text                 (Text)
 import           Data.UUID.Types           (UUID)
-import           Prologue                  hiding (Text)
+import           Data.Text.Lazy            (Text)
+import           Prologue hiding (Text)
 
 import           Empire.API.Data.NodeMeta  (NodeMeta)
 import qualified Empire.API.Data.NodeMeta  as NodeMeta
 import           Empire.API.Data.Port      (Port, PortId)
 import qualified Empire.API.Data.Port      as Port
-import           Empire.API.Data.ValueType (ValueType (..))
 
 
 type NodeId = UUID

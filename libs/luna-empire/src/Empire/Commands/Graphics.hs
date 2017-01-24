@@ -10,7 +10,8 @@ module Empire.Commands.Graphics
     -- , fromMaterial
     ) where
 
-import           Prologue
+import           Data.Convert (convert)
+import           Empire.Prelude
 
 import           Graphics.API
 

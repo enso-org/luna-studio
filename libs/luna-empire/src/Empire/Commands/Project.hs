@@ -4,10 +4,10 @@ module Empire.Commands.Project
     , createProject
     ) where
 
-import           Control.Monad.Error     (throwError)
+import           Control.Monad.Except    (throwError)
 import           Control.Monad.Reader
 import           Control.Monad.State
-import           Prologue
+import           Empire.Prelude
 
 import           Empire.API.Data.Project (ProjectId)
 import           Empire.Data.Project     (Project)

@@ -1,4 +1,6 @@
-{-# LANGUAGE DeriveAnyClass #-}
+{-# LANGUAGE DeriveAnyClass   #-}
+{-# LANGUAGE RankNTypes       #-}
+{-# LANGUAGE TypeApplications #-}
 
 module EmpireUtils (
       runEmp
@@ -14,6 +16,7 @@ module EmpireUtils (
     , mkUUID
     , withChannels
     , emptyGraphLocation
+    , astNull
     ) where
 
 import           Control.Concurrent.STM        (atomically)
@@ -28,9 +31,12 @@ import           Empire.API.Data.Node          (Node, NodeId, NodeType(..), node
 import qualified Empire.Commands.Graph         as Graph (getNodes)
 import           Empire.Commands.Library       (createLibrary, listLibraries, withLibrary)
 import           Empire.Commands.Project       (createProject, listProjects)
-import           Empire.Data.Graph             (Graph)
+import           Empire.Data.AST               ()
+import           Empire.Data.Graph             (AST, ASTState(..), Graph)
 import qualified Empire.Data.Library           as Library (body)
 import           Empire.Empire                 (CommunicationEnv(..), Env, Error, Empire, InterpreterEnv(..), runEmpire)
+import           Luna.IR                       (IR'(IR), EXPR, LINK')
+import           Luna.IR.Internal.LayerStore   (LayerStoreBase(LayerStore))
 import           Prologue                      hiding (mapping, toList, (|>))
 import           Data.Reflection               (Given(..), give)
 
@@ -97,3 +103,11 @@ emptyGraphLocation = GraphLocation nil 0 $ Breadcrumb []
 
 mkUUID :: IO UUID
 mkUUID = nextRandom
+
+astNull :: AST -> Bool
+astNull (ASTState (IR m) _) =
+    let Just exprMap = m ^. at (typeRep' @EXPR)
+        LayerStore _ freeExpr _ = exprMap
+        Just linkMap = m ^. at (typeRep' @(LINK' EXPR))
+        LayerStore _ freeLink _ = linkMap
+    in  0 `elem` freeExpr && 0 `elem` freeLink

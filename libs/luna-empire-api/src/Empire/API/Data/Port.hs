@@ -2,12 +2,11 @@
 
 module Empire.API.Data.Port where
 
-import           Control.DeepSeq              (NFData)
-import           Data.Binary                  (Binary)
-import           Prologue
+import Prologue                     hiding (TypeRep)
+import Data.Binary                  (Binary)
 
-import           Empire.API.Data.DefaultValue (PortDefault)
-import           Empire.API.Data.ValueType    (ValueType)
+import Empire.API.Data.DefaultValue (PortDefault)
+import Empire.API.Data.TypeRep      (TypeRep)
 
 data InPort  = Self | Arg Int        deriving (Generic, Show, Eq, Read, NFData)
 data OutPort = All  | Projection Int deriving (Generic, Show, Eq, Read, NFData)
@@ -39,7 +38,7 @@ data PortState = NotConnected | Connected | WithDefault PortDefault deriving (Sh
 
 data Port = Port { _portId     :: PortId
                  , _name       :: String
-                 , _valueType  :: ValueType
+                 , _valueType  :: TypeRep
                  , _state      :: PortState
                  } deriving (Show, Eq, Generic, NFData)
 

@@ -21,7 +21,7 @@ import           Data.Traversable                      (forM)
 import           Data.UUID.Types                       (UUID)
 import qualified Data.UUID.Types                       as UUID
 import qualified Data.UUID.V4                          as UUID
-import           Prologue                              hiding (Item)
+import           Prologue                              hiding (Text, Item)
 
 import           Empire.API.Data.Breadcrumb            (Breadcrumb (..))
 import           Empire.API.Data.Connection            as Connection

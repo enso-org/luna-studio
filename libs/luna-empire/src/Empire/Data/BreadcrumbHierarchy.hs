@@ -9,7 +9,7 @@ module Empire.Data.BreadcrumbHierarchy (
     , topLevelIDs
     ) where
 
-import           Prologue hiding (at)
+import           Empire.Prelude hiding (at)
 
 import           Data.List (delete, filter, find)
 import           Data.Tree

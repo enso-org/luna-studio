@@ -1,25 +1,57 @@
-{-# LANGUAGE DataKinds     #-}
-{-# LANGUAGE TypeOperators #-}
+{-# LANGUAGE ExistentialQuantification #-}
 
 module Empire.Data.AST where
 
-import           Prologue
+import           Empire.Prelude
 
-import Data.Container.Class                       (usedIxes)
-import Old.Data.Graph                                 (Node, Link, Ref, Edge, Cluster, nodeStore)
-import Old.Luna.Syntax.Model.Network.Builder.Term (NetGraph, NetNode, NetLayers, NetCluster)
-import Old.Luna.Runtime.Dynamics                  (Static)
-import Old.Luna.Syntax.Model.Network.Term         (Draft)
+import           Control.Monad.State (StateT)
+import           Data.Typeable       (cast)
+import           Empire.Data.Layers  (attachEmpireLayers, registerEmpireLayers)
 
-type ASTNode       = NetNode
-type ASTEdge       = Link ASTNode
-type AST           = NetGraph
+import           Luna.IR            (AnyExpr, AnyExprLink, IR, IRBuilder,
+                                     evalIRBuilder', evalPassManager', snapshot,
+                                     runRegs)
+import qualified Luna.Pass.Manager  as Pass (State)
+import qualified Luna.Pass.Manager  as PassManager (get)
 
-type NodeRef       = Ref Node ASTNode
-type EdgeRef       = Ref Edge ASTEdge
-type ClusRef       = Ref Cluster NetCluster
+import           System.Log         (Logger, DropLogger, dropLogs)
 
-type UncoveredNode = Draft Static NetLayers
 
-astNull :: AST -> Bool
-astNull ast = ast ^. _Wrapped . nodeStore . to usedIxes == [0]
+type NodeRef       = AnyExpr
+type EdgeRef       = AnyExprLink
+
+data SomeASTException = forall e. Exception e => SomeASTException e
+
+instance Show SomeASTException where
+    show (SomeASTException e) = show e
+
+instance Exception SomeASTException
+
+astExceptionToException :: Exception e => e -> SomeException
+astExceptionToException = toException . SomeASTException
+
+astExceptionFromException :: Exception e => SomeException -> Maybe e
+astExceptionFromException x = do
+    SomeASTException a <- fromException x
+    cast a
+
+data NotUnifyException = NotUnifyException NodeRef
+    deriving (Show)
+
+instance Exception NotUnifyException where
+    toException = astExceptionToException
+    fromException = astExceptionFromException
+
+data NotLambdaException = NotLambdaException NodeRef
+    deriving (Show)
+
+instance Exception NotLambdaException where
+    toException = astExceptionToException
+    fromException = astExceptionFromException
+
+data NotAppException = NotAppException NodeRef
+    deriving (Show)
+
+instance Exception NotAppException where
+    toException = astExceptionToException
+    fromException = astExceptionFromException

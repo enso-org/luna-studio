@@ -2,15 +2,12 @@ module Empire.Commands.Breadcrumb (
       withBreadcrumb
       ) where
 
-import           Prologue                   hiding (at, toList)
+import           Empire.Prelude
 
 import           Control.Monad.Except       (throwError)
-import           Control.Monad.Reader
-import           Control.Monad.State
+import           Control.Monad.Reader       (ask)
+import           Control.Monad.State        (get, put)
 import           Data.Coerce                (coerce)
-import           Data.Foldable
-import           Data.List                  (find, delete)
-import           Data.Tree
 
 import           Empire.Data.BreadcrumbHierarchy (navigateTo, replaceAt)
 import qualified Empire.Data.Graph          as Graph
@@ -22,7 +19,7 @@ import           Empire.API.Data.Node       (NodeId)
 import           Empire.API.Data.Project    (ProjectId)
 
 import           Empire.Commands.Library    (withLibrary)
-import           Empire.Empire              (Command, Empire, empire, runEmpire)
+import           Empire.Empire              (Command, Empire, runEmpire)
 
 withBreadcrumb :: ProjectId -> LibraryId -> Breadcrumb BreadcrumbItem -> Command Graph.Graph a -> Empire a
 withBreadcrumb pid lid breadcrumb act = withLibrary pid lid $

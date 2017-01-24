@@ -115,8 +115,6 @@ instance FromJSON Port.PortState
 instance ToJSON TypeRep.TypeRep
 instance FromJSON TypeRep.TypeRep
 
-instance ToJSON ValueType.ValueType
-instance FromJSON ValueType.ValueType
 instance ToJSON ValueType.ValueTypeEnum
 
 instance ToJSON PortRef.AnyPortRef

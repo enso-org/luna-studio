@@ -1,39 +1,35 @@
-{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE LambdaCase #-}
 
-module Empire.ASTOps.Remove where
+module Empire.ASTOps.Remove (
+    removeArg
+  , removeSubtree
+  ) where
 
-import           Prologue                      hiding ((#))
-import           Data.Construction             (destruct)
-import           Data.Container                (size)
-import           Old.Data.Prop                 ((#))
-import           Data.Layer_OLD.Cover_OLD      (uncover, covered)
-import           Old.Data.Graph                    (Inputs (..), Succs (..))
-import           Old.Data.Direction                (source)
-import           Data.List                     (nub)
+import           Empire.Prelude
 
-import           Empire.ASTOp                  (ASTOp)
-import           Empire.Data.AST               (NodeRef)
+import           Empire.Data.AST          (NodeRef, NotAppException(..))
+import           Empire.ASTOp             (ASTOp)
 
-import qualified Old.Luna.Syntax.Model.Network.Builder as Builder
-import           Old.Luna.Syntax.Model.Network.Builder (Type (..))
+import           Luna.IR.Expr.Combinators (deleteSubtree)
+import           Luna.IR.Expr.Term.Uni
+import           Luna.IR.Function (arg)
+import           Luna.IR.Function.Argument (Arg(..))
+import           Luna.IR (match)
+import qualified Luna.IR as IR
 
-removeNode :: ASTOp m => NodeRef -> m ()
-removeNode ref = do
-    void $ destruct ref
+removeSubtree :: ASTOp m => NodeRef -> m ()
+removeSubtree ref = deleteSubtree ref
 
-safeRemove :: ASTOp m => NodeRef -> m ()
-safeRemove ref = do
-    refCount <- getRefCount ref
-    if refCount > 0
-        then return ()
-        else performSafeRemoval ref
-
-getRefCount :: ASTOp m => NodeRef -> m Int
-getRefCount ref = (size . (# Succs)) <$> Builder.read ref
-
-performSafeRemoval :: ASTOp m => NodeRef -> m ()
-performSafeRemoval ref = do
-    node <- Builder.read ref
-    toRemove <- fmap nub $ mapM (Builder.follow source) $ uncover node # Inputs
-    removeNode ref
-    mapM_ safeRemove toRemove
+-- | Creates new App node with Blank inserted at specified position
+removeArg :: ASTOp m => NodeRef -> Int -> m NodeRef
+removeArg expr i = match expr $ \case
+    App a (Arg _ c) -> do
+        nextApp <- IR.source a
+        if i == 0 then do
+            b  <- IR.blank
+            IR.generalize <$> IR.app nextApp (arg b)
+        else do
+            d <- IR.source c
+            f <- removeArg nextApp (i - 1)
+            IR.generalize <$> IR.app f (arg d)
+    _       -> throwM $ NotAppException expr

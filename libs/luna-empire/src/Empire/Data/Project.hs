@@ -7,7 +7,7 @@ import qualified Empire.API.Persistence.Library as Persistence
 import qualified Empire.API.Persistence.Project as Persistence
 import           Empire.Data.Library            (Library)
 import qualified Empire.Data.Library            as Library
-import           Prologue
+import           Empire.Prelude
 
 data Project = Project { _name     :: String
                        , _libs     :: IntMap Library

@@ -2,9 +2,9 @@
 {-# LANGUAGE TypeSynonymInstances  #-}
 module Empire.API.Project.ExportProject where
 
-import           Data.Binary             (Binary)
-import           Data.Text               (Text)
-import           Prologue                hiding (Text)
+import           Prologue hiding (Text)
+import           Data.Binary           (Binary)
+import           Data.Text.Lazy        (Text)
 
 import           Empire.API.Data.Project (Project, ProjectId)
 import qualified Empire.API.Request      as R

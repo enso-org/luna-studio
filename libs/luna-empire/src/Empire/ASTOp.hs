@@ -1,60 +1,83 @@
 {-# LANGUAGE ConstraintKinds      #-}
-{-# LANGUAGE FlexibleContexts     #-}
+{-# LANGUAGE DataKinds            #-}
 {-# LANGUAGE TypeOperators        #-}
 {-# LANGUAGE UndecidableInstances #-}
 
-module Empire.ASTOp where
+module Empire.ASTOp (
+    ASTOp
+  , runASTOp
+  ) where
 
-import           Prologue                                hiding (Cons, Curry, Num)
+import           Empire.Prelude
 
-import           Control.Monad.Error                     (ErrorT, MonadError, runErrorT)
-import           Data.Construction                       (Destructor, Unregister)
-import           Old.Data.Graph.Builder                      (MonadBuilder)
-import           Old.Data.Graph.Builders                     (Connectible)
-import           Old.Data.Graph.Model.Events                 (ELEMENT (..))
-import           Empire.Data.AST                         (AST, EdgeRef, NodeRef)
-import           Empire.Empire                           (Command, Error, empire)
-import qualified Old.Luna.Syntax.Model.Network.Builder.Class as Builder
-import           Old.Luna.Syntax.Model.Network.Builder.Term  (NetworkBuilderT, TermBuilder_OLD, runNetworkBuilderT)
-import           Luna.IR.Layer.Loc                      (LocationT, MonadLocation)
-import qualified Luna.IR.Layer.Loc                      as Location
-import           Old.Luna.Syntax.Term.Class              (Acc, App, Blank, Cons, Curry, Lam, Match, Unify, Var)
-import qualified Old.Luna.Syntax.Term.Expr.Lit           as Lit
-import           Type.Inference
+import           Control.Monad.State  (StateT, runStateT, get, put)
+import           Control.Monad.Except (throwError)
+import           Empire.Data.Graph    (ASTState(..), Graph)
+import qualified Empire.Data.Graph    as Graph (ast)
+import           Empire.Data.Layers   (Marker, Meta,
+                                      InputsLayer, TypeLayer, TCData)
+import           Empire.Empire        (Command)
 
-type ASTOp m = ( MonadIO m
-               , MonadFix m
-               , MonadError Error m
-               , Destructor m NodeRef
-               , Unregister m EdgeRef
-               , MonadBuilder AST m
-               , MonadLocation m
-               , TermBuilder_OLD Blank      m NodeRef
-               , TermBuilder_OLD Lit.Number m NodeRef
-               , TermBuilder_OLD Lit.String m NodeRef
-               , TermBuilder_OLD Acc        m NodeRef
-               , TermBuilder_OLD App        m NodeRef
-               , TermBuilder_OLD Match      m NodeRef
-               , TermBuilder_OLD Var        m NodeRef
-               , TermBuilder_OLD Unify      m NodeRef
-               , TermBuilder_OLD Cons       m NodeRef
-               , TermBuilder_OLD Curry      m NodeRef
-               , TermBuilder_OLD Lam        m NodeRef
-               , Connectible NodeRef NodeRef m
-               )
+import           Data.Event           (Emitters, type (//))
+import           Luna.IR              (Abstract, Accessibles, IRBuilder, IRMonad,
+                                       ExprNet, ExprLinkNet, ExprLinkLayers, ExprLayers,
+                                       Model, UID, NEW, DELETE, LINK', EXPR,
+                                       evalIRBuilder, evalPassManager, snapshot)
+import           Luna.IR.Layer.Succs  (Succs)
+import           Luna.Pass            (Inputs, Outputs, Preserves, Events)
+import qualified Luna.Pass            as Pass (SubPass, eval')
+import qualified Luna.Pass.Manager    as Pass (PassManager, get)
+import           Luna.Pass.Evaluation.Interpreter.Layer (InterpreterData)
 
-runBuilder :: NetworkBuilderT AST m (KnownTypeT ELEMENT NodeRef n) => Builder.NetworkBuilderT m a -> AST -> n (a, AST)
-runBuilder cmd ast = runInferenceT ELEMENT (Proxy :: Proxy NodeRef)
-                   $ runNetworkBuilderT ast
-                   $ Builder.runNetworkBuilderT cmd
+import           System.Log (Logger, DropLogger, dropLogs)
 
-runGraph :: (Monad n, NetworkBuilderT AST m (LocationT (KnownTypeT ELEMENT NodeRef n))) => Builder.NetworkBuilderT (ErrorT Error m) a -> AST -> n (Either Error a, AST)
-runGraph cmd g = runInferenceT ELEMENT (Proxy :: Proxy NodeRef)
-               $ flip Location.evalT Nothing
-               $ runNetworkBuilderT g
-               $ runErrorT
-               $ Builder.runNetworkBuilderT
-               $ cmd
 
-runASTOp :: NetworkBuilderT AST m (LocationT (KnownTypeT ELEMENT NodeRef IO)) => Builder.NetworkBuilderT (ErrorT Error m) a -> Command AST a
-runASTOp = empire . const . runGraph
+type ASTOp m = (MonadThrow m, IRMonad m,
+                MonadIO m,
+                MonadState Graph m,
+                Emitters m EmpireEmitters,
+                Accessibles m EmpireAccessibles)
+
+type EmpireAccessibles = '[ExprNet, ExprLinkNet] <>
+          ExprLayers     '[Model,
+                           Marker,
+                           Meta,
+                           InputsLayer,
+                           Succs,
+                           InterpreterData,
+                           TCData,
+                           TypeLayer,
+                           UID] <>
+          ExprLinkLayers '[Model,
+                           UID]
+
+type EmpireEmitters = '[NEW // LINK' EXPR,
+                        NEW // EXPR,
+                        DELETE // LINK' EXPR,
+                        DELETE // EXPR]
+
+data EmpirePass
+type instance Abstract  EmpirePass = EmpirePass
+type instance Inputs    EmpirePass = EmpireAccessibles
+type instance Outputs   EmpirePass = EmpireAccessibles
+type instance Events    EmpirePass = EmpireEmitters
+type instance Preserves EmpirePass = '[]
+
+runASTOp :: Pass.SubPass EmpirePass (Pass.PassManager (IRBuilder (Logger DropLogger (StateT Graph IO)))) a
+         -> Command Graph a
+runASTOp pass = do
+    g <- get
+    ASTState currentStateIR currentStatePass <- use Graph.ast
+    let evalIR = flip runStateT g
+               . dropLogs
+               . flip evalIRBuilder currentStateIR
+               . flip evalPassManager currentStatePass
+    ((a, (st, passSt)), newG) <- liftIO $ evalIR $ do
+        a      <- Pass.eval' pass
+        st     <- snapshot
+        passSt <- Pass.get
+        return (a, (st, passSt))
+    put $ newG & Graph.ast .~ ASTState st passSt
+    case a of
+        Left err -> throwError $ "pass internal error: " ++ show err
+        Right res -> return res

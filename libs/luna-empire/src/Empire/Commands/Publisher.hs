@@ -8,7 +8,7 @@ import           Empire.API.Data.GraphLocation     (GraphLocation)
 import           Empire.API.Data.Node              (Node, NodeId)
 import           Empire.Data.Graph                 (Graph)
 import           Empire.Empire
-import           Prologue
+import           Empire.Prelude
 
 import qualified Empire.API.Graph.NodeResultUpdate as NodeResult
 import qualified Empire.API.Graph.NodesUpdate      as Node

@@ -1,73 +1,87 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module Empire.ASTOps.Parse where
+module Empire.ASTOps.Parse (
+    parseExpr
+  , parsePortDefault
+  ) where
 
-import           Prologue
+import           Empire.Prelude
 
-import           Control.Monad.Except         (throwError)
+import           Data.Char                    (isLetter)
 import           Data.List.Split              (splitOn)
-import           Data.List                    (partition)
+import           Data.List                    (partition, takeWhile)
+import           Data.Ratio                   (approxRational)
+import qualified Data.Text.Lazy               as Text
+import           Text.Read                    (readMaybe)
 
-import           Empire.Data.AST              (NodeRef)
+import           Empire.Data.AST              (NodeRef, astExceptionToException,
+                                               astExceptionFromException)
+import           Empire.ASTOps.Builder        (buildAccessors, lams)
 import           Empire.ASTOp                 (ASTOp)
-import           Empire.ASTOps.Builder        (applyAccessors)
-import           Empire.ASTOps.Remove         (safeRemove)
 
 import           Empire.API.Data.DefaultValue (PortDefault (..), Value (..))
 
-import qualified Old.Luna.Syntax.Model.Network.Builder as Builder
+import qualified Luna.IR.Function as IR (arg)
+import qualified Luna.IR as IR
 
-import qualified Luna.Parser.Parser as Parser
-import qualified Luna.Parser.State  as Parser
-import qualified Luna.Parser.Term   as Term
-
-parseExpr :: ASTOp m => String -> m (Maybe Text, NodeRef)
+parseExpr :: ASTOp m => String -> m (Maybe Text.Text, NodeRef)
 parseExpr s = do
-    lamRes <- tryParseLambda s
-    case lamRes of
-        (name, Just l)  -> return (name, l)
-        _               -> case parsed of
-            Left d          -> throwError $ "Parser error: " <> show d
-            Right (bldr, _) -> do
-                r     <- bldr
-                fixed <- applyAccessors r
-                when (fixed /= r) $ safeRemove r
-                return (Nothing, fixed)
-          where
-          operatorHotFix = replace "_.+" "_.op+"
-                         . replace "_.*" "_.op*"
-                         . replace "_./" "_.op/"
-                         . replace "_.-" "_.op-"
-                         . replace "_.^" "_.op^"
-                         $ s
-          parsed = Parser.parseString operatorHotFix $ Parser.parseGen Term.partial Parser.defState
+  lamRes <- tryParseLambda s
+  accs <- tryParseAccessors s
+  case lamRes of
+      (name, Just l)  -> return (name, l)
+      _               -> case (readMaybe s :: Maybe Int) of
+          Just i -> do
+              i' <- IR.generalize <$> IR.integer i
+              return (Nothing, i')
+          _      -> case accs of
+              Just ref -> return (Nothing, ref)
+              _ -> case takeWhile isLetter s of
+                  [] -> $notImplemented
+                  v -> IR.strVar v >>= \v' -> return (Nothing, IR.generalize v')
 
-tryParseLambda :: ASTOp m => String -> m (Maybe Text, Maybe NodeRef)
+tryParseAccessors :: ASTOp m => String -> m (Maybe NodeRef)
+tryParseAccessors s = case splitOn "." s of
+    []  -> return Nothing
+    [_a] -> return Nothing
+    (var:accs) -> do
+        v <- IR.generalize <$> IR.strVar var
+        node <- buildAccessors v accs
+        return $ Just node
+
+tryParseLambda :: ASTOp m => String -> m (Maybe Text.Text, Maybe NodeRef)
 tryParseLambda s = case words s of
     ("def" : name : _) -> do
-        v <- Builder.var $ fromString "in0"
-        lam <- Builder.lam [Builder.arg v] v
-        return (Just (convert name), Just lam)
+        v <- IR.strVar "in0"
+        lam <- IR.generalize <$> IR.lam (IR.arg v) v
+        return (Just (Text.pack name), Just lam)
     ["->"] -> do
-        v <- Builder.var $ fromString "arg0"
-        lam <- Builder.lam [Builder.arg v] v
+        v <- IR.strVar "arg0"
+        lam <- IR.generalize <$> IR.lam (IR.arg v) v
         return $ (Nothing, Just lam)
     ("->" : rest) -> do
         let (as, body) = partition ((== '$') . head) rest
         let args = fmap (drop 1) as
-        argRefs <- mapM (Builder.var . fromString) args
+        argRefs <- mapM IR.strVar args
         (_, bodyRef) <- parseExpr $ unwords body
-        let arg = Builder.arg <$> argRefs
-        lam <- Builder.lam arg bodyRef
+        lam <- lams (map IR.generalize argRefs) bodyRef
         return $ (Nothing, Just lam)
     _ -> return (Nothing, Nothing)
 
+data PortDefaultNotConstructibleException = PortDefaultNotConstructibleException PortDefault
+    deriving Show
+
+instance Exception PortDefaultNotConstructibleException where
+    toException = astExceptionToException
+    fromException = astExceptionFromException
+
 parsePortDefault :: ASTOp m => PortDefault -> m NodeRef
 parsePortDefault (Expression expr)          = snd <$> parseExpr expr
-parsePortDefault (Constant (IntValue i))    = Builder.int $ fromIntegral i
-parsePortDefault (Constant (StringValue s)) = Builder.str s
-parsePortDefault (Constant (DoubleValue d)) = Builder.double d
-parsePortDefault (Constant (BoolValue b))   = Builder.cons (fromString $ show b) []
-
-replace :: String -> String -> String -> String
-replace word with = intercalate with . splitOn word
+parsePortDefault (Constant (IntValue i))    = IR.generalize <$> IR.integer i
+parsePortDefault (Constant (StringValue s)) = IR.generalize <$> IR.string s
+parsePortDefault (Constant (DoubleValue d)) = IR.generalize <$> IR.rational (approxRational d 0.1)
+parsePortDefault (Constant (RationalValue r)) = IR.generalize <$> IR.rational r
+parsePortDefault (Constant (BoolValue b))   = do
+    bool' <- IR.string $ show b
+    IR.generalize <$> IR.cons bool'
+parsePortDefault d = throwM $ PortDefaultNotConstructibleException d

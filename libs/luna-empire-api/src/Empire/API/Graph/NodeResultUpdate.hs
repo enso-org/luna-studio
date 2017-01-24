@@ -1,7 +1,7 @@
 {-# LANGUAGE DeriveAnyClass #-}
 module Empire.API.Graph.NodeResultUpdate where
 
-import           Control.DeepSeq               (NFData)
+import           Prologue                      hiding (TypeRep, Text)
 import           Data.Binary                   (Binary)
 import           Data.Text                     (Text)
 import           Prologue                      hiding (Text, TypeRep)

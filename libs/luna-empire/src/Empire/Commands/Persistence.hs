@@ -7,41 +7,40 @@ module Empire.Commands.Persistence
     , exportProject
     ) where
 
-import           Control.Monad.Except            (catchError, throwError)
+import           Control.Monad.Except            (throwError)
 import           Control.Monad.Reader
 import           Control.Monad.State
-import qualified Data.ByteString.Lazy            as BS (ByteString, putStrLn, readFile, writeFile)
+import qualified Data.ByteString.Lazy            as BS (ByteString, readFile, writeFile)
 import qualified Data.IntMap                     as IntMap
-import           Data.Maybe                      (fromMaybe)
+import           Data.String                     (fromString)
+import           Data.Text.Lazy                  (Text)
 import qualified Data.UUID                       as UUID
 import qualified Data.UUID.V4                    as UUID
-import           Prologue
+import           Empire.Prelude
 import           System.FilePath                 (takeBaseName)
 
-import           Empire.Data.Library             (Library)
 import qualified Empire.Data.Library             as Library
 import           Empire.Data.Project             (Project)
 import qualified Empire.Data.Project             as Project
 
 import qualified Empire.API.Data.Graph           as G
 import           Empire.API.Data.GraphLocation   (GraphLocation (..))
-import           Empire.API.Data.Library         (LibraryId)
 import           Empire.API.Data.Project         (ProjectId)
 import qualified Empire.API.Persistence.Envelope as E
 import qualified Empire.API.Persistence.Library  as L
 import qualified Empire.API.Persistence.Project  as P
 
+import           Empire.ASTOp                    (runASTOp)
 import qualified Empire.Commands.Graph           as Graph
 import           Empire.Commands.GraphBuilder    (buildGraph)
 import           Empire.Commands.Library         (createLibrary, listLibraries, withLibrary)
 import           Empire.Commands.Project         (createProject, withProject)
-import           Empire.Empire                   (Command, Empire)
-import qualified Empire.Empire                   as Empire
-import qualified Empire.Utils.IdGen              as IdGen
+import           Empire.Empire                   (Empire)
 
 import qualified Data.Aeson                      as JSON
 import qualified Data.Aeson.Encode.Pretty        as JSON
 
+import           Data.Text.Lazy.Encoding         (decodeUtf8, encodeUtf8)
 import           Empire.API.JSONInstances        ()
 
 import qualified System.Log.MLogger              as Logger
@@ -58,7 +57,7 @@ toPersistentProject pid = do
     return $ Project.toPersistent proj
 
   libs' <- forM (libs) $ \(lid, lib) -> do
-    graph <- withLibrary pid lid . zoom Library.body $ buildGraph
+    graph <- withLibrary pid lid . zoom Library.body $ runASTOp buildGraph
     return $ (lid, Library.toPersistent lib graph)
 
   return $ almostProject $ IntMap.fromList libs'
@@ -96,8 +95,8 @@ createProjectFromPersistent maybePid p = do
       let graph = lib ^. L.graph
           nodes = graph ^. G.nodes
           connections = graph ^. G.connections
-      mapM Graph.addPersistentNode nodes
-      mapM (uncurry Graph.connectPersistent) connections
+      runASTOp $ mapM_ Graph.addPersistentNode nodes
+      runASTOp $ mapM (uncurry Graph.connectPersistent) connections
   project <- withProject pid (get >>= return)
   return (pid, project)
 
@@ -111,8 +110,8 @@ loadProject path = do
         maybeProjId = UUID.fromString basename
     case proj of
       Nothing   -> throwError $ "Cannot read JSON from " <> path
-      Just proj -> do
-        (pid, _) <- createProjectFromPersistent maybeProjId proj
+      Just proj' -> do
+        (pid, _) <- createProjectFromPersistent maybeProjId proj'
         return pid
 
 
@@ -124,13 +123,14 @@ importProject bytes = do
     let proj = readProject $ convert bytes
     case proj of
       Nothing   -> throwError $ "Cannot decode JSON"
-      Just proj -> createProjectFromPersistent (Just projectId) proj
+      Just proj' -> createProjectFromPersistent (Just projectId) proj'
 
 exportProject :: ProjectId -> Empire Text
 exportProject pid = do
   project <- toPersistentProject pid
   return $ convert $ serialize $ E.pack project
 
+defaultProjectName, defaultLibraryName, defaultLibraryPath :: String
 defaultProjectName = "default"
 defaultLibraryName = "Main"
 defaultLibraryPath = "Main.luna"
