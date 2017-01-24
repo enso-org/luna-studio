@@ -11,6 +11,7 @@ import qualified Luna.Studio.Action.PortControl as PortControl
 import           Luna.Studio.Event.Event        (Event (UI))
 import qualified Luna.Studio.Event.Keys         as Keys
 import           Luna.Studio.Event.Mouse        (mousePosition)
+import qualified Luna.Studio.Event.Mouse        as Mouse
 import           Luna.Studio.Event.UI           (UIEvent (AppEvent, NodeEvent))
 import           Luna.Studio.Prelude
 import qualified Luna.Studio.React.Event.App    as App
@@ -23,6 +24,9 @@ import qualified Luna.Studio.State.Graph        as Graph
 
 
 toAction :: Event -> Maybe (Command State ())
+toAction (UI (NodeEvent (Node.MouseDown evt nodeId))) = Just $ when shouldProceed $ Node.startNodeDrag nodeId evt shouldSnap  where
+    shouldProceed = Mouse.withoutMods evt Mouse.leftButton || Mouse.withShift evt Mouse.leftButton
+    shouldSnap    = Mouse.withoutMods evt Mouse.leftButton
 toAction (UI (NodeEvent (Node.Enter            nodeId))) = Just $ mapM_ Node.tryEnter =<< preuse (Global.graph . Graph.nodesMap . ix nodeId)
 toAction (UI (NodeEvent (Node.EditExpression   nodeId))) = Just $ Node.editExpression nodeId
 toAction (UI (NodeEvent (Node.Select      kevt nodeId))) = Just $ when (mouseCtrlKey kevt || mouseMetaKey kevt) $ toggleSelect nodeId
@@ -38,9 +42,10 @@ toAction (UI (NodeEvent (Node.PortSetDefaultValue portRef defaultValue))) = Just
 toAction (UI (NodeEvent (Node.PortInitSlider mevt portRef sliderInit)))   = Just $ PortControl.startMoveSlider portRef (mousePosition mevt) sliderInit
 toAction (UI (AppEvent  (App.KeyDown   kevt))) = Just $ handleKeyApp kevt
 --TODO[react]: Findout if we need workspacePosition here
-toAction (UI (AppEvent  (App.MouseMove mevt))) = Just $ continue $ PortControl.moveSlider     $ mousePosition mevt
+toAction (UI (AppEvent  (App.MouseMove mevt))) = Just $ (continue $ PortControl.moveSlider $ mousePosition mevt) >> (continue $ Node.nodeDrag mevt shouldSnap) where
+    shouldSnap = Mouse.withoutMods mevt Mouse.leftButton
 --TODO[react]: Findout if we need workspacePosition here
-toAction (UI (AppEvent  (App.MouseUp   mevt))) = Just $ continue $ PortControl.stopMoveSlider $ mousePosition mevt
+toAction (UI (AppEvent  (App.MouseUp   mevt))) = Just $ (continue $ PortControl.stopMoveSlider $ mousePosition mevt) >> (continue $ Node.stopNodeDrag mevt)
 toAction _   = Nothing
 
 

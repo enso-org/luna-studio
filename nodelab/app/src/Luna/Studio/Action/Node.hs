@@ -24,9 +24,13 @@ module Luna.Studio.Action.Node
     , updateNodeProfilingData
     , updateExpression
     , visualizationsToggled
+    , startNodeDrag
+    , nodeDrag
+    , stopNodeDrag
     ) where
 
 import           Luna.Studio.Action.Node.Create        (addDummyNode, addNode, registerNode)
+import           Luna.Studio.Action.Node.Drag          (nodeDrag, startNodeDrag, stopNodeDrag)
 import           Luna.Studio.Action.Node.Enter         (enter, exit, tryEnter)
 import           Luna.Studio.Action.Node.Expand        (expandSelectedNodes)
 import           Luna.Studio.Action.Node.Expression    (editExpression)

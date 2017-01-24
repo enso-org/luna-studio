@@ -33,7 +33,6 @@ import qualified Luna.Studio.Handler.Collaboration          as Collaboration
 import qualified Luna.Studio.Handler.Connect                as Connect
 import qualified Luna.Studio.Handler.ConnectionPen          as ConnectionPen
 import qualified Luna.Studio.Handler.Debug                  as Debug
-import qualified Luna.Studio.Handler.Drag                   as Drag
 import qualified Luna.Studio.Handler.MultiSelection         as MultiSelection
 import qualified Luna.Studio.Handler.Navigation             as Navigation
 import qualified Luna.Studio.Handler.Node                   as Node
@@ -66,7 +65,6 @@ actions =  [ App.toAction
            , Control.toAction
            , Debug.toAction
            , Debug.toActionEv
-           , Drag.toAction
            , Graph.toAction
            , MultiSelection.toAction
            , Navigation.toAction

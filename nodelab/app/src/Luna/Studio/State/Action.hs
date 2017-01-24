@@ -14,15 +14,15 @@ import           Empire.API.Data.PortRef (AnyPortRef)
 import           Luna.Studio.Prelude
 
 
-data Drag = Drag { _dragStartPos :: Position
-                 , _dragNodeId :: NodeId
-                 , _dragNodesStartPos :: Map NodeId (Position)
-                 } deriving (Eq, Show, Generic, Typeable)
+data NodeDrag = NodeDrag { _nodeDragStartPos      :: Position
+                         , _nodeDragNodeId        :: NodeId
+                         , _nodeDragNodesStartPos :: Map NodeId (Position)
+                         } deriving (Eq, Show, Generic, Typeable)
 
-makeLenses ''Drag
-instance ToJSON Drag
+makeLenses ''NodeDrag
+instance ToJSON NodeDrag
 
-data MultiSelection = MultiSelection { _multiSelecectionStartPos   :: Position
+data MultiSelection = MultiSelection { _multiSelecectionStartPos :: Position
                                      } deriving (Eq, Show, Generic, Typeable)
 
 makeLenses ''MultiSelection
@@ -48,8 +48,8 @@ data SliderDrag = SliderDrag { _sliderDragPortRef   :: AnyPortRef
                              } deriving (Eq, Show, Generic, Typeable)
 
 data InitValue = Discrete  Int
-              | Continous Double
-              deriving (Eq, Show, Generic, NFData, Typeable)
+               | Continous Double
+               deriving (Eq, Show, Generic, NFData, Typeable)
 
 
 makeLenses ''InitValue
@@ -112,8 +112,8 @@ fromSomeAction (SomeAction d _) = fromDynamic d
 
 newtype ActionRep = ActionRep TypeRep deriving (Show, Eq, Ord)
 
-dragAction, multiSelectionAction, panDragAction, zoomDragAction, sliderDragAction, penConnectAction, penDisconnectAction, dragConnectAction, clickConnectAction :: ActionRep
-dragAction           = ActionRep (typeOf Drag)
+nodeDragAction, multiSelectionAction, panDragAction, zoomDragAction, sliderDragAction, penConnectAction, penDisconnectAction, dragConnectAction, clickConnectAction :: ActionRep
+nodeDragAction       = ActionRep (typeOf NodeDrag)
 multiSelectionAction = ActionRep (typeOf MultiSelection)
 panDragAction        = ActionRep (typeOf PanDrag)
 zoomDragAction       = ActionRep (typeOf ZoomDrag)
@@ -124,7 +124,7 @@ dragConnectAction    = ActionRep (typeOf DragConnect)
 clickConnectAction   = ActionRep (typeOf ClickConnect)
 
 overlappingActions :: [Set ActionRep]
-overlappingActions = [ Set.fromList [ dragAction
+overlappingActions = [ Set.fromList [ nodeDragAction
                                     , multiSelectionAction
                                     , sliderDragAction
                                     , penConnectAction
@@ -136,78 +136,3 @@ overlappingActions = [ Set.fromList [ dragAction
                                     , zoomDragAction
                                     ]
                      ]
-
-
-
-
-
-
--- type family StateOf a
---
--- data Drag
--- data MultiSelection
--- data PanDrag
--- data ZoomDrag
--- data Slider
--- data PenConnect
--- data PenDisconnect
--- data Connect
---
--- connect = typeOf Connect
--- multiSelection = typeOf MultiSelection
---
--- type instance StateOf Drag           = Drag.State
--- type instance StateOf MultiSelection = MultiSelection.State
--- type instance StateOf PanDrag        = PanDrag.State
--- type instance StateOf ZoomDrag       = ZoomDrag.State
--- type instance StateOf Slider         = Slider.State
--- type instance StateOf PenConnect     = PenConnect.State
--- type instance StateOf PenDisconnect  = PenDisconnect.State
--- type instance StateOf Connect        = Connect.State
---
---
--- newtype Action a = Action (StateOf a)
--- makeWrapped ''Action
---
--- newtype SomeAction = SomeAction Dynamic (Command State ())
---
--- someAction :: Action a -> SomeAction
--- someAction a = SomeAction (toDynamic a) (exit $ unwrap' a)
---
--- fromSomeAction :: SomeAction -> Maybe (Action a)
--- fromSomeAction (SomeAction d _) = fromDynamic d
---
--- data GlobalState = GlobalState { _currentActions :: Map TypeRep SomeAction
---                                }
---
---
--- checkSomeAction :: forall a. GlobalState -> Maybe SomeAction
--- checkSomeAction s = Map.lookup (typeRep (Proxy :: Proxy a)) (s ^. currentAction)
---
--- checkAction :: GlobalState -> Maybe (Action a)
--- checkAction s = join $ fromSomeAction <$> checkSomeAction s
---
--- checkIfActionPerfoming :: GlobalState -> a -> Bool
--- checkIfActionPerfoming s a = Map.member (typeOf a) (s ^. currentAction)
---
--- -- checkIfActionPerfoming Drag
---
---
--- ------------- Grupy akcji wykluczajacych sie
---
--- noOverlappingActions :: [Set TypeRep]
--- noOverlappingActions = [Set.fromList [connect, multiSelect]]
---
--- runningActions :: GlobalState -> [TypeRep]
--- runningActions = ...
---
--- czymozemyAkcje :: GlobalState -> a ->
--- czymozemyAkcje s a = (typeOf a,) <$> all ... where
---     all = runningActions s
---
---
---
--- 1) do osobnego pliku
--- 2) ten plik kompiluje sie
--- 3) do global state nowe pole
--- ...

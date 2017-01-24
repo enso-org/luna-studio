@@ -1,8 +1,8 @@
 {-# OPTIONS_GHC -fno-warn-orphans #-}
-module Luna.Studio.Action.Drag
-    ( startDrag
-    , drag
-    , stopDrag
+module Luna.Studio.Action.Node.Drag
+    ( startNodeDrag
+    , nodeDrag
+    , stopNodeDrag
     ) where
 
 import           Control.Arrow
@@ -14,12 +14,12 @@ import qualified Empire.API.Data.Node               as Node
 import qualified Luna.Studio.Action.Batch           as BatchCmd
 import           Luna.Studio.Action.Command         (Command)
 import           Luna.Studio.Action.Graph           (selectNodes, selectedNodes, updateConnectionsForNodes)
-import           Luna.Studio.Action.Node            (snap)
+import           Luna.Studio.Action.Node.Snap       (snap)
 import           Luna.Studio.Event.Mouse            (workspacePosition)
 import           Luna.Studio.Prelude
 import qualified Luna.Studio.React.Model.Node       as Model
 import qualified Luna.Studio.React.Model.NodeEditor as NodeEditor
-import           Luna.Studio.State.Action           (Action (begin, continue, end, update), Drag (Drag), dragAction)
+import           Luna.Studio.State.Action           (Action (begin, continue, end, update), NodeDrag (NodeDrag), nodeDragAction)
 import qualified Luna.Studio.State.Action           as Action
 import           Luna.Studio.State.Global           (State, beginActionWithKey, continueActionWithKey, removeActionFromState,
                                                      updateActionWithKey)
@@ -27,14 +27,14 @@ import qualified Luna.Studio.State.Global           as Global
 import qualified Luna.Studio.State.Graph            as Graph
 import           React.Flux                         (MouseEvent)
 
-instance Action (Command State) Drag where
-    begin    = beginActionWithKey    dragAction
-    continue = continueActionWithKey dragAction
-    update   = updateActionWithKey   dragAction
-    end _    = updateMovedNodes >> removeActionFromState dragAction
+instance Action (Command State) NodeDrag where
+    begin    = beginActionWithKey    nodeDragAction
+    continue = continueActionWithKey nodeDragAction
+    update   = updateActionWithKey   nodeDragAction
+    end _    = updateMovedNodes >> removeActionFromState nodeDragAction
 
-startDrag :: NodeId -> MouseEvent -> Bool -> Command State ()
-startDrag nodeId evt snapped = do
+startNodeDrag :: NodeId -> MouseEvent -> Bool -> Command State ()
+startNodeDrag nodeId evt snapped = do
     coord <- workspacePosition evt
     mayNode <- Global.getNode nodeId
     withJust mayNode $ \node -> do
@@ -45,16 +45,16 @@ startDrag nodeId evt snapped = do
         if snapped
             then do
                 let snappedNodes = Map.map snap nodesPos
-                begin $ Drag coord nodeId snappedNodes
+                begin $ NodeDrag coord nodeId snappedNodes
                 moveNodes snappedNodes
-            else begin $ Drag coord nodeId nodesPos
+            else begin $ NodeDrag coord nodeId nodesPos
 
-drag :: MouseEvent -> Bool -> Drag -> Command State ()
-drag evt snapped state = do
+nodeDrag :: MouseEvent -> Bool -> NodeDrag -> Command State ()
+nodeDrag evt snapped state = do
     coord <- workspacePosition evt
-    let mouseStartPos = view Action.dragStartPos      state
-        draggedNodeId = view Action.dragNodeId        state
-        nodesStartPos = view Action.dragNodesStartPos state
+    let mouseStartPos = view Action.nodeDragStartPos      state
+        draggedNodeId = view Action.nodeDragNodeId        state
+        nodesStartPos = view Action.nodeDragNodesStartPos state
         delta = coord ^. vector - mouseStartPos ^. vector
         shift' = if snapped then
                      case Map.lookup draggedNodeId nodesStartPos of
@@ -82,12 +82,12 @@ updateMovedNodes = do
     updateConnectionsForNodes $ fst <$> nodesToUpdate
 
 
-stopDrag :: MouseEvent -> Drag ->  Command State ()
-stopDrag evt state = do
-    removeActionFromState dragAction
+stopNodeDrag :: MouseEvent -> NodeDrag ->  Command State ()
+stopNodeDrag evt state = do
+    removeActionFromState nodeDragAction
     coord <- workspacePosition evt
-    let startPos = view Action.dragStartPos state
-        nodeId   = view Action.dragNodeId   state
+    let startPos = view Action.nodeDragStartPos state
+        nodeId   = view Action.nodeDragNodeId   state
     if (startPos /= coord) then
         updateMovedNodes
     else selectNodes [nodeId]
