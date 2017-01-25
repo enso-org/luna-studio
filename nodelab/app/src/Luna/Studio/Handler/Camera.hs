@@ -61,18 +61,18 @@ handleShortcut = \case
 
 handleMouseDown :: MouseEvent -> Command State ()
 handleMouseDown evt
-    | Mouse.withoutMods evt Mouse.rightButton  = startZoomDrag $ mousePosition evt
-    | Mouse.withoutMods evt Mouse.middleButton = startPanDrag  $ mousePosition evt
+    | Mouse.withoutMods evt Mouse.rightButton  = startZoomDrag =<< mousePosition evt
+    | Mouse.withoutMods evt Mouse.middleButton = startPanDrag  =<< mousePosition evt
     | otherwise                                = return ()
 
 handleMouseMove :: MouseEvent -> Command State ()
 handleMouseMove evt
-    | Mouse.withoutMods evt Mouse.rightButton  = continue $ zoomDrag $ mousePosition evt
-    | Mouse.withoutMods evt Mouse.middleButton = continue $ panDrag  $ mousePosition evt
+    | Mouse.withoutMods evt Mouse.rightButton  = continue . zoomDrag =<< mousePosition evt
+    | Mouse.withoutMods evt Mouse.middleButton = continue . panDrag  =<< mousePosition evt
     | otherwise                                = return ()
 
 handleMouseWheel :: MouseEvent -> Vector2 Double -> Command State ()
-handleMouseWheel m delta
-    | Mouse.withoutMods m Mouse.leftButton = panCamera delta
-    | Mouse.withCtrl    m Mouse.leftButton = wheelZoom (mousePosition m) delta
+handleMouseWheel evt delta
+    | Mouse.withoutMods evt Mouse.leftButton = panCamera delta
+    | Mouse.withCtrl    evt Mouse.leftButton = flip wheelZoom delta =<< mousePosition evt
     | otherwise                            = return ()

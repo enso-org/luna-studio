@@ -14,5 +14,5 @@ import qualified Luna.Studio.State.Global    as Global
 
 
 handle :: Event -> Maybe (Command Global.State ())
-handle (UI (AppEvent (App.MouseMove evt))) = Just $ Global.mousePos .= mousePosition evt
+handle (UI (AppEvent (App.MouseMove evt))) = Just $ Global.mousePos <~ mousePosition evt
 handle _                                   = Nothing
