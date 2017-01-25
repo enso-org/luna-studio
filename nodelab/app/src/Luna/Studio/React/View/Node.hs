@@ -64,8 +64,8 @@ node = React.defineView objName $ \(ref, n, camTransform ) -> do
         , onClick       $ \_ m -> dispatch ref $ UI.NodeEvent $ Node.Select m nodeId
         , onDoubleClick $ \_ _ -> dispatch ref $ UI.NodeEvent $ Node.Enter nodeId
         , onMouseDown   $ handleMouseDown ref nodeId
-        , "className"   $= (fromString $ "node" <> (if n ^. Node.isExpanded then " node--expanded" else " node--collapsed")
-                                                <> (if n ^. Node.isSelected then " node--selected" else []))
+        , "className"   $= (fromString $ "node noselect " <> (if n ^. Node.isExpanded then " node--expanded" else " node--collapsed")
+                                                          <> (if n ^. Node.isSelected then " node--selected" else []))
         , "style"       @= Aeson.object
             [ "transform" Aeson..= (transformTranslateToSvg offsetX offsetY)
             , "zIndex"    Aeson..= (show z)

@@ -17,7 +17,7 @@ codeEditor :: ReactView CodeEditor
 codeEditor = React.defineView name $ \model -> do
     let isVisible = model ^. CodeEditor.visible
         showFlag  = if isVisible then " code-editor--expanded" else " code-editor--collapsed"
-        classes   = name <> showFlag
+        classes   = name <> " noselect" <> showFlag
     div_
         [ "key"       $= name
         , "className" $= classes

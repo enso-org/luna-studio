@@ -22,8 +22,8 @@ name = "breadcrumbs"
 breadcrumbs :: ReactView (Ref App, Breadcrumbs)
 breadcrumbs = React.defineView name $ \(ref, model) -> do
     div_
-        [ "className" $= name
-        , "key"       $= name
+        [ "className" $= (name <> " noselect")
+        , "key"       $=  name
         ] $ do
         forM_ (zip [0..] $ inits $ model ^. B.items) $ \(key, bc) -> do
             div_

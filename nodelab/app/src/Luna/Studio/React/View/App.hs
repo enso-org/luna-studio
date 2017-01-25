@@ -24,12 +24,15 @@ app :: Ref App -> ReactView ()
 app ref = React.defineControllerView name ref $ \store () -> do
     let s = store ^. dt
     div_
-        [ onKeyDown     $ \e k -> preventDefault e : dispatch ref (UI.AppEvent $ App.KeyDown k)
+        [ onKeyDown     $ \e k -> dispatch ref (UI.AppEvent $ App.KeyDown k)
         , onContextMenu $ \e _ -> [preventDefault e]
         , onMouseDown   $ \_ m -> dispatch ref $ UI.AppEvent $ App.MouseDown m
         , onMouseUp     $ \_ m -> dispatch ref $ UI.AppEvent $ App.MouseUp   m
         , onMouseMove   $ \_ m -> dispatch ref $ UI.AppEvent $ App.MouseMove m
         , onClick       $ \_ m -> dispatch ref $ UI.AppEvent $ App.Click     m
+        , on "onPaste"  $ \e   -> dispatch ref $ UI.AppEvent $ App.Copy e
+        , on "onCut"    $ \e   -> dispatch ref $ UI.AppEvent $ App.Copy e
+        , on "onCopy"   $ \e   -> dispatch ref $ UI.AppEvent $ App.Copy e
         , "key"       $= "app"
         , "id"        $= "focus-root"
         , "tabIndex"  $= "-1"
