@@ -33,8 +33,8 @@ import           Control.Monad.State           hiding (when)
 import           Data.Coerce                   (coerce)
 import           Data.List                     (sort)
 import qualified Data.Map                      as Map
-import           Data.Text.Lazy                (Text)
-import qualified Data.Text.Lazy                as Text
+import           Data.Text                     (Text)
+import qualified Data.Text                     as Text
 import qualified Data.UUID                     as UUID
 import qualified Data.UUID.V4                  as UUID (nextRandom)
 import           Empire.Prelude
@@ -265,7 +265,8 @@ renameNode loc nid name = withTC loc False $ runASTOp $ do
 
 dumpGraphViz :: GraphLocation -> Empire ()
 dumpGraphViz loc = withGraph loc $ do
-    runASTOp $ AST.dumpGraphViz "gui_dump"
+    -- runASTOp $ AST.dumpGraphViz "gui_dump"
+    return ()
 
 typecheck :: GraphLocation -> Empire ()
 typecheck loc = withGraph loc $ runTC loc False

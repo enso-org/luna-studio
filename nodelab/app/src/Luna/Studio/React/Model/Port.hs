@@ -7,7 +7,7 @@ import           Data.Aeson                (ToJSON)
 import           Empire.API.Data.Node      (NodeId)
 import qualified Empire.API.Data.Port      as API
 import           Empire.API.Data.PortRef   (AnyPortRef, toAnyPortRef)
-import           Empire.API.Data.ValueType (ValueType)
+import           Empire.API.Data.TypeRep   (TypeRep)
 import           Luna.Studio.Data.Color    (Color)
 import           Luna.Studio.Data.Color    (colorPort)
 import           Luna.Studio.Prelude       hiding (set)
@@ -28,7 +28,7 @@ portId = port . API.portId
 name :: Lens' Port String
 name = port . API.name
 
-valueType :: Lens' Port ValueType
+valueType :: Lens' Port TypeRep
 valueType = port . API.valueType
 
 state :: Lens' Port API.PortState

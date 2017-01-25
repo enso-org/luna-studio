@@ -1,7 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Luna.Studio.Data.Color
     ( colorPort
-    , vtToColor
+    , tpRepToColor
     , Color (..)
     , toJSString
     ) where
@@ -14,7 +14,6 @@ import           Luna.Studio.Prelude
 import           Empire.API.Data.Port      (Port)
 import qualified Empire.API.Data.Port      as Port
 import           Empire.API.Data.TypeRep   (TypeRep (..))
-import           Empire.API.Data.ValueType (ValueType (..))
 
 
 --TODO rename to PortColor
@@ -70,9 +69,5 @@ tpRepToColor (TLam as out) = ensureRange . hashMany $ out : as
 tpRepToColor (TVar _n) = 9
 tpRepToColor _ = 0
 
-vtToColor :: ValueType -> Color
-vtToColor (TypeIdent t) = Color $ tpRepToColor t
-vtToColor _ = Color 0
-
 colorPort :: Port -> Color
-colorPort port = vtToColor $ port ^. Port.valueType
+colorPort port = Color $ tpRepToColor $ port ^. Port.valueType

@@ -1,7 +1,7 @@
 module Empire.Utils.TextResult where
 
 import           Empire.Prelude
-import qualified Data.Text.Lazy               as Text
+import qualified Data.Text                    as Text
 
 import           Empire.API.Data.DefaultValue (Value (..))
 

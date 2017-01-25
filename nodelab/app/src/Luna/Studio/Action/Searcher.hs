@@ -9,7 +9,6 @@ import           Empire.API.Data.Node               (NodeId)
 import qualified Empire.API.Data.Node               as NodeAPI
 import qualified Empire.API.Data.Port               as Port
 import qualified Empire.API.Data.TypeRep            as TypeRep
-import qualified Empire.API.Data.ValueType          as ValueType
 import qualified JS.GoogleAnalytics                 as GA
 import           Luna.Studio.Action.Camera          (translateToWorkspace)
 import           Luna.Studio.Action.Command         (Command)
@@ -136,9 +135,8 @@ scopedData = do
                 mvt <- preuse $ Global.graph . Graph.nodesMap . ix nodeId . NodeAPI.ports . ix (Port.OutPortId Port.All) . Port.valueType
                 return $ case mvt of
                     Nothing -> Nothing
-                    Just vt -> case vt of
-                        ValueType.TypeIdent (TypeRep.TCons ti _) -> Just $ Text.pack ti
-                        _ -> Nothing
+                    Just (TypeRep.TCons ti _) -> Just $ Text.pack ti
+                    Just _ -> Nothing
             (_:_) -> return Nothing
     case mscope of
         Nothing -> return completeData

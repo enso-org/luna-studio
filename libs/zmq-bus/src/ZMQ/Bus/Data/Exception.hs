@@ -5,7 +5,7 @@
 
 module ZMQ.Bus.Data.Exception where
 
-import           Prologue
+import           Prologue hiding (Exception)
 
 
 

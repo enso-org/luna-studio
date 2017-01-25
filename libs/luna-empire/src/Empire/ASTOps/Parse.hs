@@ -11,7 +11,7 @@ import           Data.Char                    (isLetter)
 import           Data.List.Split              (splitOn)
 import           Data.List                    (partition, takeWhile)
 import           Data.Ratio                   (approxRational)
-import qualified Data.Text.Lazy               as Text
+import qualified Data.Text                    as Text
 import           Text.Read                    (readMaybe)
 
 import           Empire.Data.AST              (NodeRef, astExceptionToException,
@@ -83,5 +83,5 @@ parsePortDefault (Constant (DoubleValue d)) = IR.generalize <$> IR.rational (app
 parsePortDefault (Constant (RationalValue r)) = IR.generalize <$> IR.rational r
 parsePortDefault (Constant (BoolValue b))   = do
     bool' <- IR.string $ show b
-    IR.generalize <$> IR.cons bool'
+    IR.generalize <$> IR.cons_ bool'
 parsePortDefault d = throwM $ PortDefaultNotConstructibleException d

@@ -5,8 +5,7 @@ import           Data.Map.Lazy             (Map)
 import qualified Data.Map.Lazy             as Map
 import           Data.Text                 (Text)
 import           Data.UUID.Types           (UUID)
-import           Data.Text.Lazy            (Text)
-import           Prologue hiding (Text)
+import           Prologue
 
 import           Empire.API.Data.NodeMeta  (NodeMeta)
 import qualified Empire.API.Data.NodeMeta  as NodeMeta

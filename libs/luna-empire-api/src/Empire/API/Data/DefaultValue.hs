@@ -4,7 +4,7 @@ module Empire.API.Data.DefaultValue where
 
 import           Control.DeepSeq (NFData)
 import           Data.Binary     (Binary)
-import           Data.Text       (Text)
+import           Data.Text       (Text, pack)
 import           Prologue        hiding (Text)
 
 import qualified Graphics.API    as G
@@ -48,5 +48,5 @@ instance Binary PortDefault
 makePrisms ''Value
 makePrisms ''PortDefault
 
-stringify :: Value -> Text.Text
-stringify = Text.pack . show
+stringify :: Value -> Text
+stringify = pack . show

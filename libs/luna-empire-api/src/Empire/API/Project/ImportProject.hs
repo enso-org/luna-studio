@@ -3,8 +3,7 @@
 module Empire.API.Project.ImportProject where
 
 import           Data.Binary            (Binary)
-import           Data.Text.Lazy         (Text)
-import           Prologue hiding (Text)
+import           Prologue
 
 import           Empire.API.Data.Project (Project, ProjectId)
 import qualified Empire.API.Request      as R

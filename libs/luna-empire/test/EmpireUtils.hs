@@ -35,8 +35,10 @@ import           Empire.Data.AST               ()
 import           Empire.Data.Graph             (AST, ASTState(..), Graph)
 import qualified Empire.Data.Library           as Library (body)
 import           Empire.Empire                 (CommunicationEnv(..), Env, Error, Empire, InterpreterEnv(..), runEmpire)
-import           Luna.IR                       (IR'(IR), EXPR, LINK')
-import           Luna.IR.Internal.LayerStore   (LayerStoreBase(LayerStore))
+import           Data.TypeDesc
+import           Data.Graph.Class              (ElemRepMapGraph(..))
+import           Data.ManagedVectorMap
+import           Luna.IR                       (AnyExpr, Link')
 import           Prologue                      hiding (mapping, toList, (|>))
 import           Data.Reflection               (Given(..), give)
 
@@ -105,9 +107,9 @@ mkUUID :: IO UUID
 mkUUID = nextRandom
 
 astNull :: AST -> Bool
-astNull (ASTState (IR m) _) =
-    let Just exprMap = m ^. at (typeRep' @EXPR)
-        LayerStore _ freeExpr _ = exprMap
-        Just linkMap = m ^. at (typeRep' @(LINK' EXPR))
-        LayerStore _ freeLink _ = linkMap
+astNull (ASTState (ElemRepMapGraph m) _) =
+    let Just exprMap = m ^. at (getTypeDesc @AnyExpr)
+        ManagedMap _ freeExpr _ = exprMap
+        Just linkMap = m ^. at (getTypeDesc @(Link' AnyExpr))
+        ManagedMap _ freeLink _ = linkMap
     in  0 `elem` freeExpr && 0 `elem` freeLink

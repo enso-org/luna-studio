@@ -117,18 +117,10 @@ loadProject path = do
 
 
 importProject :: Text -> Empire (ProjectId, Project)
-importProject bytes = do
-    logger Logger.info $ "Importing project"
-    projectId <- liftIO $ UUID.nextRandom
-    let proj = readProject $ convert bytes
-    case proj of
-      Nothing   -> throwError $ "Cannot decode JSON"
-      Just proj' -> createProjectFromPersistent (Just projectId) proj'
+importProject bytes = $notImplemented
 
 exportProject :: ProjectId -> Empire Text
-exportProject pid = do
-  project <- toPersistentProject pid
-  return $ convert $ serialize $ E.pack project
+exportProject pid = $notImplemented
 
 defaultProjectName, defaultLibraryName, defaultLibraryPath :: String
 defaultProjectName = "default"

@@ -7,8 +7,7 @@ import           Data.Text            (Text)
 import           Prologue             hiding (Text)
 
 import           Empire.API.Data.Node (NodeId)
-import           Data.Text.Lazy (Text)
-import           Prologue hiding (Text)
+import           Prologue
 
 
 

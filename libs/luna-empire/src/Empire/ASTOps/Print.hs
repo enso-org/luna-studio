@@ -9,6 +9,7 @@ module Empire.ASTOps.Print (
   ) where
 
 import           Empire.Prelude
+import           Control.Monad            ((<=<))
 import           Data.List                (dropWhileEnd, delete)
 import           Data.Char                (isAlpha)
 
@@ -20,15 +21,17 @@ import qualified Empire.ASTOps.Deconstruct as ASTDeconstruct
 import           Empire.API.Data.Node      (NodeId)
 import           Empire.API.Data.TypeRep   (TypeRep (..))
 import           Luna.IR.Expr.Term.Uni
+import           Luna.IR.Function.Argument (Arg(..))
 import           Luna.IR (match)
 import qualified Luna.IR as IR
 
 
 getTypeRep :: ASTOp m => NodeRef -> m TypeRep
 getTypeRep tp = match tp $ \case
-    Cons n -> do
-        name <- ASTRead.getName n
-        return $ TCons name []
+    Cons n args -> do
+        name    <- ASTRead.getName n
+        argReps <- mapM (getTypeRep <=< IR.source) $ map (\(Arg _ n) -> n) args
+        return $ TCons name argReps
     Lam _as out -> do
         args   <- ASTDeconstruct.extractArguments tp
         argReps <- mapM getTypeRep args
@@ -122,7 +125,7 @@ printExpression' suppressNodes paren node = do
         IR.Rational r -> pure $ show r
         IR.Integer  i -> pure $ show i
         IR.String s -> return $ show s
-        Cons n -> ASTRead.getName n
+        Cons n _ -> ASTRead.getName n
         _ -> return ""
 
 printExpression :: ASTOp m => NodeRef -> m String

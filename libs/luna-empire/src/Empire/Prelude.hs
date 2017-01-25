@@ -18,6 +18,7 @@ module Empire.Prelude (
     , MonadIO
     , MonadState
     , MonadThrow
+    , MonadTrans(..)
     , notImplemented
     , module Prelude
     , Proxy(..)
@@ -38,6 +39,7 @@ import Control.Lens.Operators
 import Control.Monad (when)
 import Control.Monad.State.Class (MonadState)
 import Control.Monad.Catch (MonadThrow, throwM)
+import Control.Monad.Trans.Class (MonadTrans(..))
 import Control.Monad.IO.Class (MonadIO, liftIO)
 import Data.Default (Default, def)
 import Data.Monoid ((<>))
