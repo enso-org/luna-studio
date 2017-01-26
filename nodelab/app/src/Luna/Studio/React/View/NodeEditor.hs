@@ -35,9 +35,6 @@ nodeEditor = React.defineView name $ \(ref, ne) -> do
         , onWheel     $ \e m w -> preventDefault e : dispatch ref (UI.NodeEditorEvent $ NE.Wheel m w)
         , onScroll    $ \e     -> [preventDefault e]
         ] $ do
-
-        -- TODO: div_ [ "className" $= "plane plane--visuals" ] …
-
         svg_
             [ "className" $= "plane plane-connections"
             , "style"     @= Aeson.object [ "transform" Aeson..= transform ]
@@ -80,12 +77,11 @@ nodeEditor = React.defineView name $ \(ref, ne) -> do
             , "key"       $= "nodes"
             , "style"     @= Aeson.object [ "transform" Aeson..= transform ]
             ] $ do
-            forM_ (ne ^. NodeEditor.nodes . to HashMap.elems) $ flip (node_ ref) transformMatrix
+            forM_ (ne ^. NodeEditor.nodes . to HashMap.elems) (node_ ref)
         canvas_
             [ "className" $= "plane plane--canvas hide"
             , "key"       $= "canvas"
             ] $ mempty
-
 
 nodeEditor_ :: Ref App -> NodeEditor -> ReactElementM ViewEventHandler ()
 nodeEditor_ ref ne = React.viewWithSKey nodeEditor name (ref, ne) mempty
