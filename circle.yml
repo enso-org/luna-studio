@@ -11,7 +11,7 @@ dependencies:
         - sudo mv /tmp/stack-1.3.0-linux-x86_64/stack /usr/bin
     override:
         - stack build --stack-yaml=build/backend/stack.yaml --only-dependencies --test --fast -j2
-        - npm install -g brunch@1.8.5
+        - npm install -g brunch@1.8.5 bower
         - cd nodelab && stack build --only-dependencies --install-ghc --test --fast -j1
         - cd nodelab && npm install
         - cd nodelab && bower install --allow-root
