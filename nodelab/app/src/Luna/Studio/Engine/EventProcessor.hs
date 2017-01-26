@@ -58,6 +58,7 @@ actions :: [Event -> Maybe (Command State ())]
 actions =  [ App.handle
            , Breadcrumbs.handle
            , Camera.handle
+           , Clipboard.handle
            , CodeEditor.handle
            , Collaboration.handle
            , Connect.handle
@@ -71,7 +72,6 @@ actions =  [ App.handle
            , Node.handle
            , ProjectManager.handle
            , Searcher.handle
-           --    , Clipboard.handle
            ]
 
 runCommands :: [Event -> Maybe (Command State ())] -> Event -> Command State ()

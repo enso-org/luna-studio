@@ -1,9 +1,9 @@
 {-# LANGUAGE DeriveAnyClass #-}
 module Luna.Studio.Event.Shortcut where
 
-import           Control.DeepSeq     (NFData)
 import           Data.Aeson          (FromJSON, ToJSON)
 import           Luna.Studio.Prelude
+
 
 
 data ShortcutEvent = Accept
@@ -20,6 +20,10 @@ data ShortcutEvent = Accept
                    | ResetZoom
                    | ZoomIn
                    | ZoomOut
+                   -- Clipboard
+                   | Copy
+                   | Cut
+                   | Paste String
                    -- navigation
                    | GoPrev
                    | GoNext

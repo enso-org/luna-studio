@@ -13,6 +13,7 @@
     "tests"
   ],
   "dependencies": {
+    "clipboard.js": "^0.3.2",
     "jquery": "~2.1.4",
     "react": "^15.3.2",
     "underscore": "~1.8.3"
