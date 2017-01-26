@@ -80,8 +80,8 @@ handleSegment seg@(_, segEnd) = do
         update $ action & Action.penDisconnectLastVisitedNode     ?~ nodeId
                         & Action.penDisconnectNextNodeRestriction .~ Nothing
 
-disconnectProcessSegment :: CurveSegment -> PenDisconnect -> Command State ()
-disconnectProcessSegment seg state = do
+disconnectProcessSegment :: CurveSegment -> Command State ()
+disconnectProcessSegment seg = do
     let beg = seg ^. Curve.segmentBegin
         end = seg ^. Curve.segmentEnd
         numOfPoints = round $ distance beg end
@@ -96,11 +96,11 @@ disconnectMove evt timestamp state = do
     update state'
     Global.modifyNodeEditor $ NodeEditor.connectionPen . _Just . ConnectionPen.path .= curveToSvgPath curve
     when ((length $ curve ^. Curve.segments) > 1 && (head $ curve ^. Curve.segments) ^. Curve.approved) $ do
-        disconnectProcessSegment (head $ drop 1 $ curve ^. Curve.segments) state'
+        disconnectProcessSegment $ head $ drop 1 $ curve ^. Curve.segments
 
 stopDisconnecting :: PenDisconnect -> Command State ()
 stopDisconnecting state = do
     let curve = state ^. Action.penDisconnectCurve . Curve.segments
-    disconnectProcessSegment (head curve) state
+    disconnectProcessSegment $ head curve
     removeActionFromState penDisconnectAction
     Global.modifyNodeEditor $ NodeEditor.connectionPen .= Nothing

@@ -32,7 +32,7 @@ getPointOnCurveSegment curveSegment t = Position result where
     beg    = curveSegment ^. segmentBegin . vector
     cP     = curveSegment ^. controlPoint . vector
     end    = curveSegment ^. segmentEnd . vector
-    result = scalarProduct beg ((1 - t) ^ 2) + scalarProduct cP (2 * (1 - t) * t) + scalarProduct end (t ^ 2)
+    result = scalarProduct beg ((1 - t) * (1 - t)) + scalarProduct cP (2 * (1 - t) * t) + scalarProduct end (t * t)
 
 
 getPointsOnCurveSegment :: CurveSegment -> Int -> [Position]

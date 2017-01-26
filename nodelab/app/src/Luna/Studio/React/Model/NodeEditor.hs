@@ -12,8 +12,6 @@ import           Luna.Studio.React.Model.ConnectionPen (ConnectionPen)
 import           Luna.Studio.React.Model.Node          (Node)
 import           Luna.Studio.React.Model.SelectionBox  (SelectionBox)
 
-import           Data.Position                         (Position)
-
 
 data NodeEditor = NodeEditor { _screenTransform   :: CameraTransformation
                              , _nodes             :: HashMap NodeId    Node

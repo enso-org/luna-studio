@@ -8,6 +8,7 @@ import qualified React.Flux                              as React
 import           Data.Timestamp                          (Timestamp (Timestamp))
 import qualified JS.Clipboard                            as Clipboard
 import           JS.Scene                                (appId)
+import qualified JS.UI                                   as UI
 import           Luna.Studio.Event.Event                 (Event (Shortcut))
 import qualified Luna.Studio.Event.Shortcut              as Shortcut
 import qualified Luna.Studio.Event.UI                    as UI
