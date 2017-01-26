@@ -6,13 +6,14 @@ module EmpireSpec (spec) where
 import           Data.Foldable                 (toList)
 import           Data.List                     (find, stripPrefix)
 import qualified Data.Map                      as Map
+import           Empire.API.Data.DefaultValue  (PortDefault(Expression))
 import qualified Empire.API.Data.Graph         as Graph
 import           Empire.API.Data.GraphLocation (GraphLocation(..))
 import qualified Empire.API.Data.Node          as Node (NodeType(ExpressionNode), canEnter,
                                                         expression, name, nodeId, nodeType, ports)
 import qualified Empire.API.Data.Port          as Port
 import           Empire.API.Data.PortRef       (InPortRef (..), OutPortRef (..))
-import           Empire.API.Data.TypeRep       (TypeRep(TCons))
+import           Empire.API.Data.TypeRep       (TypeRep(TCons, TStar))
 import           Empire.ASTOp                  (runASTOp)
 import qualified Empire.ASTOps.Deconstruct     as ASTDeconstruct
 import qualified Empire.ASTOps.Parse           as Parser
@@ -307,3 +308,36 @@ spec = around withChannels $ parallel $ do
             withResult res $ \(reference, (node, accs)) -> do
                 node `shouldBe` Just reference
                 accs `shouldBe` ["baz"]
+    describe "show ports on not-yet-typechecked nodes" $ do
+        it "shows one input port on +" $ \env -> do
+            u1 <- mkUUID
+            res <- evalEmp env $ do
+                Graph.addNode top u1 "-> $a $b a + b" def
+                Graph.getNodes top
+            withResult res $ \[plus] -> do
+                let inputPorts = Map.elems $ Map.filter Port.isInputPort $ plus ^. Node.ports
+                inputPorts `shouldBe` [Port.Port (Port.InPortId (Port.Arg 0)) "arg 0" TStar Port.NotConnected]
+        it "shows self & one input port on succ" $ \env -> do
+            u1 <- mkUUID
+            res <- evalEmp env $ do
+                Graph.addNode top u1 "succ" def
+                Graph.getNodes top
+            withResult res $ \[succ] -> do
+                let inputPorts = Map.elems $ Map.filter Port.isInputPort $ succ ^. Node.ports
+                inputPorts `shouldMatchList` [
+                      Port.Port (Port.InPortId Port.Self)     "self" TStar (Port.WithDefault (Expression "succ"))
+                    , Port.Port (Port.InPortId (Port.Arg 0)) "arg 0" TStar (Port.NotConnected)
+                    ]
+        it "connects to input port on +" $ \env -> do
+            u1 <- mkUUID
+            u2 <- mkUUID
+            res <- evalEmp env $ do
+                Graph.addNode top u1 "-> $a $b a + b" def
+                Graph.addNode top u2 "1" def
+                Graph.getNodes top
+                Graph.connect top (OutPortRef u2 Port.All) (InPortRef u1 (Port.Arg 0))
+                Graph.getNodes top
+            withResult res $ \nodes -> do
+                let Just plus = find (\a -> view Node.nodeId a == u1) nodes
+                    inputPorts = Map.elems $ Map.filter Port.isInputPort $ plus ^. Node.ports
+                print plus

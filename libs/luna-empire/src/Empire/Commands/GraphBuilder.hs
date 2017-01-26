@@ -177,20 +177,26 @@ extractPortInfo node = do
     match node $ \case
         App f _args -> do
             unpacked       <- ASTDeconstruct.extractArguments node
+            liftIO $ print unpacked
             portStates     <- mapM getPortState unpacked
             tp    <- do
                 f' <- IR.source f
                 foo <- IR.readLayer @TypeLayer f'
                 IR.source foo
             types <- extractArgTypes tp
+            liftIO $ print (types, portStates)
             return (types, portStates)
         Lam _as o -> do
             args     <- ASTDeconstruct.extractArguments node
+            liftIO $ print args
             areBlank <- mapM ASTRead.isBlank args
             isApp    <- ASTRead.isApp =<< IR.source o
             if and areBlank && isApp
-                then extractPortInfo =<< IR.source o
+                then do
+                    liftIO $ putStrLn "foo"
+                    extractPortInfo =<< IR.source o
                 else do
+                    liftIO $ putStrLn "bar"
                     tpRef <- IR.source =<< IR.readLayer @TypeLayer node
                     types <- extractArgTypes tpRef
                     return (types, [])
@@ -201,10 +207,11 @@ extractPortInfo node = do
 
 buildArgPorts :: ASTOp m => NodeRef -> m [Port]
 buildArgPorts ref = do
-    (types, states) <- extractPortInfo ref
+    foo@(types, states) <- extractPortInfo ref
+    liftIO $ print foo
     let psCons = zipWith3  Port
                           (InPortId . Arg <$> [(0::Int)..]) (("arg " <>) . show <$> [(0::Int)..])
-                          (types ++ replicate (length states - length types) TStar)
+                          (types ++ replicate (length states - length types + 1) TStar)
     return $ zipWith ($) psCons (states ++ repeat NotConnected)
 
 buildSelfPort' :: ASTOp m => Bool -> NodeRef -> m (Maybe Port)
