@@ -1,19 +1,19 @@
 module Empire.API.Library.ListLibraries where
 
-import           Prologue
 import           Data.Binary             (Binary)
+import           Prologue
 
+import           Empire.API.Data.Library (Library, LibraryId)
 import           Empire.API.Data.Project (ProjectId)
-import           Empire.API.Data.Library (LibraryId, Library)
-import qualified Empire.API.Response             as Response
-import qualified Empire.API.Topic              as T
-import qualified Empire.API.Request            as R
+import qualified Empire.API.Request      as R
+import qualified Empire.API.Response     as Response
+import qualified Empire.API.Topic        as T
 
 data Request = Request { _projectId :: ProjectId
-                       } deriving (Generic, Show, Eq)
+                       } deriving (Generic, Eq, NFData, Show)
 
 data Result = Result { _libraries :: [(LibraryId, Library)]
-                     } deriving (Generic, Show, Eq)
+                     } deriving (Generic, Eq, NFData, Show)
 
 type Response = Response.Response Request Result
 instance Response.ResponseResult Request Result

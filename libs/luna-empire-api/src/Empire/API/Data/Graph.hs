@@ -10,7 +10,7 @@ import           Empire.API.Data.PortRef (InPortRef, OutPortRef)
 
 data Graph = Graph { _nodes       :: [Node]
                    , _connections :: [(OutPortRef, InPortRef)]
-                   } deriving (Show, Eq, Generic)
+                   } deriving (Generic, Eq, NFData, Show)
 
 makeLenses ''Graph
 instance Binary Graph

@@ -1,16 +1,16 @@
 module Empire.API.Data.GraphLocation where
 
-import           Prologue
 import           Data.Binary                (Binary)
+import           Prologue
 
-import           Empire.API.Data.Project    (ProjectId)
-import           Empire.API.Data.Library    (LibraryId)
 import           Empire.API.Data.Breadcrumb (Breadcrumb, BreadcrumbItem)
+import           Empire.API.Data.Library    (LibraryId)
+import           Empire.API.Data.Project    (ProjectId)
 
 data GraphLocation = GraphLocation { _projectId  :: ProjectId
                                    , _libraryId  :: LibraryId
                                    , _breadcrumb :: Breadcrumb BreadcrumbItem
-                                   } deriving (Show, Eq, Generic)
+                                   } deriving (Generic, Eq, NFData, Show)
 
 makeLenses ''GraphLocation
 

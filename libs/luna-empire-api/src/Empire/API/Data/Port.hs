@@ -1,5 +1,3 @@
-{-# LANGUAGE DeriveAnyClass #-}
-
 module Empire.API.Data.Port where
 
 import           Control.DeepSeq              (NFData)
