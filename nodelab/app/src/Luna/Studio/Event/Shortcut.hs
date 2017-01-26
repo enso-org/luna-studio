@@ -23,7 +23,7 @@ data ShortcutEvent = Accept
                    -- Clipboard
                    | Copy
                    | Cut
-                   | Paste String
+                   | Paste Text
                    -- navigation
                    | GoPrev
                    | GoNext

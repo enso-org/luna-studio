@@ -3,7 +3,6 @@
 module Luna.Studio.Action.Searcher where
 
 import qualified Data.Map                           as Map
-import qualified Data.Text                          as Text
 
 import           Data.Position                      (Position)
 import           Empire.API.Data.Node               (NodeId)

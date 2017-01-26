@@ -55,10 +55,10 @@ instance FromJSON Event where
 -- ======= GHCJS ===============================================================
 
 instance Convertible Text JSString where
-    convert = fromString . convert
+    convert = JSString.pack . convert
 
 instance Convertible JSString Text where
-    convert = convert . toString
+    convert = convert . JSString.unpack
 
 instance Convertible String JSString where
     convert = JSString.pack
