@@ -15,11 +15,10 @@ import           Data.ByteString.Lazy              (fromStrict, toStrict)
 import qualified Data.ByteString.Lazy              as BS
 import           Data.Map.Strict                   (Map)
 import qualified Data.Map.Strict                   as Map
-import           Data.Text.Lazy                    (Text)
 import qualified Data.UUID                         as UUID
 import qualified Data.UUID.V4                      as UUID
 import           Prelude                           (error, undefined)
-import           Prologue                          hiding (Text)
+import           Prologue
 import           Text.Groom                        (groom)
 
 import qualified Empire.API.Control.EmpireStarted  as EmpireStarted

@@ -13,7 +13,7 @@ import           Control.Monad.State
 import qualified Data.ByteString.Lazy            as BS (ByteString, readFile, writeFile)
 import qualified Data.IntMap                     as IntMap
 import           Data.String                     (fromString)
-import           Data.Text.Lazy                  (Text)
+import           Data.Text                       (Text)
 import qualified Data.UUID                       as UUID
 import qualified Data.UUID.V4                    as UUID
 import           Empire.Prelude
