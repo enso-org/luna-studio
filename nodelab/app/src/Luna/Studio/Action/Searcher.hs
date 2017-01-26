@@ -3,7 +3,6 @@
 module Luna.Studio.Action.Searcher where
 
 import qualified Data.Map                           as Map
-import qualified Data.Text                          as Text
 
 import           Data.Position                      (Position)
 import           Empire.API.Data.Node               (NodeId)
@@ -50,7 +49,7 @@ open = do
   -- let offset = Vector2 0 (floor $ -40.0 * factor)
   -- (nsPos', nsPos) <- ensureNSVisible
     openWith def =<< use Global.mousePos
-    -- performIO $ UI.initNodeSearcher "" Nothing (nsPos + offset) False
+    -- liftIO $ UI.initNodeSearcher "" Nothing (nsPos + offset) False
 
 openWith :: Maybe NodeId -> Position -> Command State ()
 openWith nodeId pos = do
@@ -146,7 +145,7 @@ scopedData = do
                 return $ case mvt of
                     Nothing -> Nothing
                     Just vt -> case vt of
-                        ValueType.TypeIdent (TypeRep.TCons ti _) -> Just $ Text.pack ti
+                        ValueType.TypeIdent (TypeRep.TCons ti _) -> Just $ convert ti
                         _ -> Nothing
             (_:_) -> return Nothing
     case mscope of
@@ -176,10 +175,10 @@ querySearch query _ = do
 -- queryTree query = do
 --     sd <- scopedData
 --     let items = Scope.moduleItems sd query
---     performIO $ UI.displayTreeResults UI.NodeSearcher items
+--     liftIO $ UI.displayTreeResults UI.NodeSearcher items
 --
 -- openCommand :: Command State ()
 -- openCommand = do
 --     GA.sendEvent GA.CommandSearcher
 --     mousePos <- use Global.mousePos
---     performIO $ UI.initNodeSearcher "" Nothing mousePos True
+--     liftIO $ UI.initNodeSearcher "" Nothing mousePos True

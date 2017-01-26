@@ -37,13 +37,13 @@ inPortControl_ ref portRef port = React.viewWithSKey inPortControl "inPortContro
 inPortControl :: ReactView (Ref App, AnyPortRef, Port)
 inPortControl = React.defineView "inPortControl" $ \(ref, portRef, port) ->
     div_
-        [ "key"       $= fromString (show $ port ^. Port.portId)
+        [ "key"       $= convert (show $ port ^. Port.portId)
         , "className" $= "row row--arg"
         ] $ do
         div_
             [ "key"       $= "label"
             , "className" $= "label"
-            ] $ elemString $ fromString $ port ^. Port.name
+            ] $ elemString $ port ^. Port.name
         div_
             [ "key"       $= "value"
             , "className" $= "value"
@@ -51,7 +51,7 @@ inPortControl = React.defineView "inPortControl" $ \(ref, portRef, port) ->
             case port ^. Port.state of
             PortAPI.NotConnected -> do
                 case port ^. Port.valueType . ValueType.toEnum of
-                    ValueType.Other -> elemString $ fromString $ "(other)"
+                    ValueType.Other -> elemString "(other)"
                     _               -> do
                         let zeroValue    = case port ^. Port.valueType . ValueType.toEnum of
                                 ValueType.DiscreteNumber   -> DefaultValue.IntValue    def
@@ -63,7 +63,7 @@ inPortControl = React.defineView "inPortControl" $ \(ref, portRef, port) ->
                         button_
                             [ onClick $ \_ _ -> dispatch ref $ UI.NodeEvent $ Node.PortSetDefaultValue portRef defaultValue
                             ] $ elemString "not set"
-            PortAPI.Connected -> elemString $ fromString $ "(connected)"
+            PortAPI.Connected -> elemString "(connected)"
             PortAPI.WithDefault defVal -> void $ case port ^. Port.valueType . ValueType.toEnum of
                 ValueType.DiscreteNumber -> do
                     let value = fromMaybe 0 $ defVal ^? DefaultValue._Constant . DefaultValue._IntValue
@@ -71,20 +71,20 @@ inPortControl = React.defineView "inPortControl" $ \(ref, portRef, port) ->
                         [ "className" $= "horizontal-slider"
                         --TODO[react]: +1 with Q and up key, -1 with W and down key, edit on double click
                         , onMouseDown $ \e m -> stopPropagation e : dispatch ref (UI.NodeEvent $ Node.PortInitSlider m portRef $ Action.Discrete value)
-                        ] $ elemString $ fromString $ show value
+                        ] $ elemString $ show value
                 ValueType.ContinuousNumber -> do
                     let value = fromMaybe 0.0 $ defVal ^? DefaultValue._Constant . DefaultValue._DoubleValue
                     div_
                         [ "className" $= "horizontal-slider"
                         --TODO[react]: +1 with Q and up key, -1 with W and down key, edit on double click
                         , onMouseDown $ \e m -> stopPropagation e : dispatch ref (UI.NodeEvent $ Node.PortInitSlider m portRef $ Action.Continous value)
-                        ] $ elemString $ fromString $ show value
+                        ] $ elemString $ show value
                 ValueType.String -> do
                     let value = fromMaybe "" $ defVal ^? DefaultValue._Constant . DefaultValue._StringValue
                         defaultValue val = DefaultValue.Constant $ DefaultValue.StringValue val
                     input_
                         [ "id" $= "focus-portcontrol"
-                        , "value" $= fromString value
+                        , "value" $= convert value
                         , onMouseDown $ \e _ -> [stopPropagation e]
                         , onKeyDown   $ \e k -> let val = target e "value" in stopPropagation e : dispatch ref (UI.NodeEvent $ Node.PortApplyString k portRef $ defaultValue val)
                         , onChange    $ \e   -> let val = target e "value" in dispatch ref $ UI.NodeEvent $ Node.PortEditString portRef $ defaultValue val
@@ -96,4 +96,4 @@ inPortControl = React.defineView "inPortControl" $ \(ref, portRef, port) ->
                         [ onClick $ \_ _ -> dispatch ref $ UI.NodeEvent $ Node.PortSetDefaultValue portRef $ defaultValue
                         ] $ elemString $ show value
                 ValueType.Other ->
-                    elemString $ fromString $ "(other)"
+                    elemString "(other)"

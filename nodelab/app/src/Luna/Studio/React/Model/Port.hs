@@ -1,7 +1,6 @@
 {-# LANGUAGE DeriveAnyClass #-}
 module Luna.Studio.React.Model.Port where
 
-import           Control.DeepSeq
 import           Data.Aeson                (ToJSON)
 
 import           Empire.API.Data.Node      (NodeId)

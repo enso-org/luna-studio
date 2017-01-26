@@ -3,7 +3,6 @@
 
 module Luna.Studio.React.Event.NodeEditor where
 
-import           Control.DeepSeq     (NFData)
 import           Data.Aeson          (FromJSON, ToJSON)
 import           React.Flux          (MouseEvent, WheelEvent)
 

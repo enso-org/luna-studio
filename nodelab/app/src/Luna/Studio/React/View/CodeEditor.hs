@@ -2,12 +2,10 @@
 module Luna.Studio.React.View.CodeEditor where
 
 import qualified Data.Aeson                         as Aeson
-import           Data.Text                          (unpack)
 import           Luna.Studio.Prelude
-import           React.Flux
-import qualified React.Flux                         as React
 import           Luna.Studio.React.Model.CodeEditor (CodeEditor)
 import qualified Luna.Studio.React.Model.CodeEditor as CodeEditor
+import           React.Flux                         as React
 
 
 name :: JSString
@@ -17,7 +15,7 @@ codeEditor :: ReactView CodeEditor
 codeEditor = React.defineView name $ \model -> do
     let isVisible = model ^. CodeEditor.visible
         showFlag  = if isVisible then " code-editor--expanded" else " code-editor--collapsed"
-        classes   = name <> showFlag
+        classes   = name <> " noselect" <> showFlag
     div_
         [ "key"       $= name
         , "className" $= classes
@@ -75,7 +73,7 @@ codeEditor = React.defineView name $ \model -> do
                         [ "key"       $= "content"
                         , "className" $= "ace_layer ace_text-layer" ]
                         $ do
-                        forM_ (zip [1..] $ lines $ unpack $ model ^. CodeEditor.code) $ \(i, line) ->
+                        forM_ (zip [1..] $ lines $ convert $ model ^. CodeEditor.code) $ \(i, line) ->
                             div_
                                 [ "key"       $= jsShow i
                                 , "className" $= "ace_active-line"
@@ -99,9 +97,9 @@ codeEditor_ model = React.viewWithSKey codeEditor name model mempty
 -- relayoutTextEditor :: Vector2 Int -> Command Global.State Int
 -- relayoutTextEditor screenSize = do
 --     visible <- use $ Global.uiElements . UIElements.textEditorVisible
---     performIO $ UI.setVisible visible
+--     liftIO $ UI.setVisible visible
 --     let width = (floor $ (0.3 :: Double) * (fromIntegral $ screenSize ^. x))
---     performIO $ UI.setWidth width
+--     liftIO $ UI.setWidth width
 --
 --     return $ if visible then width else 0
 --

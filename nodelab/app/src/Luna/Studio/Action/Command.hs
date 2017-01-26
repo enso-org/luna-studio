@@ -17,20 +17,17 @@ instance Zoom (Command s) (Command t) s t where
 command :: (a -> (IO (), a)) -> Command a ()
 command f = do
     (action, st) <- gets f
-    performIO action
+    liftIO action
     put st
 
 pureCommand :: (a -> a) -> Command a ()
 pureCommand = modify
 
 ioCommand :: (a -> IO ()) -> Command a ()
-ioCommand f = gets f >>= performIO
+ioCommand f = gets f >>= liftIO
 
 runCommand :: Command a b -> a -> IO (b, a)
 runCommand cmd st = runStateT (unCommand cmd) st
 
 execCommand :: Command a b -> a -> IO a
 execCommand cmd st = snd <$> runCommand cmd st
-
-performIO :: IO () -> Command a ()
-performIO = liftIO

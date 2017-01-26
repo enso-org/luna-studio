@@ -1,11 +1,11 @@
 module Empire.API.Data.NodeMeta where
 
-import Prologue
-import Data.Binary          (Binary)
+import           Data.Binary (Binary)
+import           Prologue
 
 data NodeMeta = NodeMeta { _position      :: (Double, Double)
                          , _displayResult :: Bool
-                         } deriving (Generic, Show, Eq, Ord)
+                         } deriving (Eq, Generic, NFData, Ord, Show)
 
 makeLenses ''NodeMeta
 

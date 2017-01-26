@@ -65,7 +65,7 @@ foreign import javascript safe "$1.connect($2)"
     connect' :: WebSocket -> JSString -> IO ()
 
 connect :: WebSocket -> String -> IO ()
-connect ws addr = connect' ws $ pack addr
+connect ws addr = connect' ws $ convert addr
 
 onOpen :: WebSocket -> IO () -> IO (IO ())
 onOpen ws callback = do

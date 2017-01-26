@@ -13,7 +13,7 @@ import           Empire.API.Data.PortRef (InPortRef, OutPortRef, dstNodeId, srcN
 type ConnectionId = InPortRef
 data Connection = Connection { _src :: OutPortRef
                              , _dst :: InPortRef
-                             } deriving (Show, Eq, Generic)
+                             } deriving (Generic, Eq, NFData, Show)
 
 makeLenses ''Connection
 instance Binary Connection

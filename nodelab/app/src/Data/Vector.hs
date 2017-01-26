@@ -1,7 +1,6 @@
 {-# LANGUAGE TypeFamilies #-}
 module Data.Vector where
 
-import           Control.DeepSeq     (NFData)
 import           Data.Aeson          (ToJSON)
 import           Luna.Studio.Prelude
 

@@ -6,7 +6,6 @@ module Luna.Studio.Data.Color
     , toJSString
     ) where
 
-import           Control.DeepSeq
 import           Data.Aeson                (FromJSON, ToJSON)
 import           Data.Hashable             (hash)
 import           Luna.Studio.Prelude
@@ -45,8 +44,7 @@ toJSString :: Color -> JSString
 toJSString = hslToJSString . toHsl
 
 hslToJSString :: (Fractional a, Show a) => HSL a -> JSString
---TODO use convert instead of fromString, everwhere
-hslToJSString hsl = fromString $ "hsl(" <> show ((hsl ^. h) * 360.0) <> ","
+hslToJSString hsl = convert $ "hsl(" <> show ((hsl ^. h) * 360.0) <> ","
                                      <> show ((hsl ^. s) * 100.0) <> "%,"
                                      <> show ((hsl ^. l) * 100.0) <> "%)"
 

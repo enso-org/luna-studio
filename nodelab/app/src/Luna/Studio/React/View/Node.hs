@@ -17,7 +17,6 @@ import           Luna.Studio.React.Model.App            (App)
 import           Luna.Studio.React.Model.Node           (Node)
 import qualified Luna.Studio.React.Model.Node           as Node
 import qualified Luna.Studio.React.Model.NodeProperties as Properties
-import           Luna.Studio.React.Model.Port           (Port (..))
 import qualified Luna.Studio.React.Model.Port           as Port
 import           Luna.Studio.React.Store                (Ref, dispatch)
 import           Luna.Studio.React.View.NodeProperties  (nodeProperties_)
