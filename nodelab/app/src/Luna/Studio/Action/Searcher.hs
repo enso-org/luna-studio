@@ -146,7 +146,7 @@ scopedData = do
                 return $ case mvt of
                     Nothing -> Nothing
                     Just vt -> case vt of
-                        ValueType.TypeIdent (TypeRep.TCons ti _) -> Just $ Text.pack ti
+                        ValueType.TypeIdent (TypeRep.TCons ti _) -> Just $ convert ti
                         _ -> Nothing
             (_:_) -> return Nothing
     case mscope of

@@ -74,7 +74,7 @@ portSelf_ ref port = do
         [ "className" $= "port port--self" ] $ do
         circle_
             [ "className" $= "port__shape"
-            , "key"       $= (fromString (show portId ) <> "a")
+            , "key"       $= (convert (show portId ) <> "a")
             , "fill"      $= color
             ] mempty
         circle_
@@ -82,7 +82,7 @@ portSelf_ ref port = do
             , onMouseUp   $ handleMouseUp   ref portRef
             , onClick     $ handleClick     ref portRef
             , "className" $= "port__select"
-            , "key"       $= (fromString (show portId ) <> "b")
+            , "key"       $= (convert (show portId ) <> "b")
             ] mempty
 
 portSingle_ :: Ref App -> Port -> ReactElementM ViewEventHandler ()
@@ -92,12 +92,12 @@ portSingle_ ref port = do
         color   = toJSString $ port ^. Port.color
         r1 = show2 . (+) nodeRadius
         r2 = show2 . (-) nodeRadius'
-        svgPath a b c = fromString $ "M0 -" <> r1 a <> " A " <> r1 a <> " " <> r1 a <> " 0 0 " <> show b <> " 0 "  <> r1 a <>
+        svgPath a b c = convert $ "M0 -" <> r1 a <> " A " <> r1 a <> " " <> r1 a <> " 0 0 " <> show b <> " 0 "  <> r1 a <>
                                     " L0 "  <> r2 a <> " A " <> r2 a <> " " <> r2 a <> " 1 0 " <> show c <> " 0 -" <> r2 a <> " Z "
     g_ [ "className" $= "port port--o--single" ] $ do
         path_
             [ "className" $= "port__shape"
-            , "key"       $= (fromString (show portId) <> "a" )
+            , "key"       $= (convert (show portId) <> "a" )
             , "fill"      $= color
             , "d"         $= (svgPath 0 0 1 <> svgPath 0 1 0)
             ] mempty
@@ -106,7 +106,7 @@ portSingle_ ref port = do
             , onMouseUp   $ handleMouseUp   ref portRef
             , onClick     $ handleClick     ref portRef
             , "className" $= "port__select"
-            , "key"       $= (fromString (show portId ) <> "b")
+            , "key"       $= (convert (show portId ) <> "b")
             , "d"         $= (svgPath 3 0 1 <> svgPath 3 1 0)
             ] mempty
 
@@ -133,16 +133,16 @@ portIO_ ref port num numOfPorts isInput = do
         dy = show2 . startPortArcY . (-) nodeRadius'
         r1 = show2 . (+) nodeRadius
         r2 = show2 . (-) nodeRadius'
-        svgPath a = fromString $ "M"  <> ax a <> " " <> ay a <>
+        svgPath a = convert $ "M"  <> ax a <> " " <> ay a <>
                                 " A " <> r1 a <> " " <> r1 a <> " 1 0 " <> svgFlag1 <> " " <> bx a <> " " <> by a <>
                                 " L " <> cx a <> " " <> cy a <>
                                 " A " <> r2 a <> " " <> r2 a <> " 1 0 " <> svgFlag2 <> " " <> dx a <> " " <> dy a <>
                                 " Z"
     g_
-        [ "className" $= (fromString $ classes <> show (num+1)) ] $ do
+        [ "className" $= (convert $ classes <> show (num+1)) ] $ do
         path_
             [ "className" $= "port__shape"
-            , "key"       $= (fromString (show portId) <> "a")
+            , "key"       $= (convert (show portId) <> "a")
             , "fill"      $= color
             , "d"         $= svgPath 0
             ] mempty
@@ -151,7 +151,7 @@ portIO_ ref port num numOfPorts isInput = do
             , onMouseUp   $ handleMouseUp   ref portRef
             , onClick     $ handleClick     ref portRef
             , "className" $= "port__select"
-            , "key"       $= (fromString (show portId) <> "b")
+            , "key"       $= (convert (show portId) <> "b")
             , "d"         $= svgPath 3
             ] mempty
 
@@ -164,22 +164,22 @@ portIOExpanded_ ref port num isInput = do
         n       = if isInput then 1 else 0
         r       = show2 . (+3)
     g_
-        [ "className" $= fromString (classes <> show (num + 1)) ] $ do
+        [ "className" $= convert (classes <> show (num + 1)) ] $ do
         circle_
             [ "className" $= "port__shape"
-            , "key"       $= fromString (show portId <> show num <> "a")
+            , "key"       $= convert (show portId <> show num <> "a")
             , "fill"      $= color
-            , "r"         $= fromString (r 0)
-            , "cy"        $= fromString (show2 $ lineHeight * fromIntegral (num + n) )
+            , "r"         $= convert (r 0)
+            , "cy"        $= convert (show2 $ lineHeight * fromIntegral (num + n) )
             ] mempty
         circle_
             [ onMouseDown $ handleMouseDown ref portRef
             , onMouseUp   $ handleMouseUp   ref portRef
             , onClick     $ handleClick     ref portRef
             , "className" $= "port__select"
-            , "key"       $= fromString (show portId <> show num <> "b")
-            , "r"         $= fromString (r 3)
-            , "cy"        $= fromString (show2 $ lineHeight * fromIntegral (num + n) )
+            , "key"       $= convert (show portId <> show num <> "b")
+            , "r"         $= convert (r 3)
+            , "cy"        $= convert (show2 $ lineHeight * fromIntegral (num + n) )
             ] mempty
 
 --TODO[react] probably remove
@@ -220,7 +220,7 @@ portIOExpanded_ ref port num isInput = do
 --             InPortId  _ -> Label.Right
 --             OutPortId _ -> Label.Left
 --         label = Label.create (Vector2 360 15) text & Label.alignment .~ align
---         text  = (Text.pack $ port ^. Port.name) <> " :: " <> portType
+--         text  = (convert $ port ^. Port.name) <> " :: " <> portType
 --         portType = port ^. Port.valueType . ValueType.toText
 --     UICmd.register_ parent label def
 --

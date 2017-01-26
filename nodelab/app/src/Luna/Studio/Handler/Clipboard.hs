@@ -40,7 +40,7 @@ copySelectionToClipboard = do
     nodeIds <- map (view UINode.nodeId) <$> selectedNodes
     graph   <- use Global.graph
     let subgraph = separateSubgraph nodeIds graph
-    liftIO $ copyStringToClipboard $ fromString $ unpack $ encode subgraph
+    liftIO $ copyStringToClipboard $ convert $ unpack $ encode subgraph
 
 cutSelectionToClipboard :: Command State()
 cutSelectionToClipboard = copySelectionToClipboard >> removeSelectedNodes

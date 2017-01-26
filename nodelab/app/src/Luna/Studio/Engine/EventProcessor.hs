@@ -6,9 +6,7 @@ import           Control.Concurrent.MVar
 import           Control.Exception                          (catch)
 import           Control.Monad                              (forever)
 import           Data.DateTime                              (getCurrentTime)
-import qualified Data.JSString                              as JSString
 import           Data.Monoid                                (Last (..))
-import qualified Data.Text                                  as Text
 import           GHCJS.Prim                                 (JSException)
 
 import qualified JS.Debug
@@ -46,13 +44,13 @@ import qualified Luna.Studio.State.Global                   as Global
 displayProcessingTime :: Bool
 displayProcessingTime = False
 
-foreign import javascript safe "console.time($1);"    consoleTimeStart' :: JSString.JSString -> IO ()
-foreign import javascript safe "console.timeEnd($1);" consoleTimeEnd'   :: JSString.JSString -> IO ()
+foreign import javascript safe "console.time($1);"    consoleTimeStart' :: JSString -> IO ()
+foreign import javascript safe "console.timeEnd($1);" consoleTimeEnd'   :: JSString -> IO ()
 
 
 consoleTimeStart, consoleTimeEnd :: String -> IO ()
-consoleTimeStart = consoleTimeStart' . JSString.pack
-consoleTimeEnd   = consoleTimeEnd'   . JSString.pack
+consoleTimeStart = consoleTimeStart' . convert
+consoleTimeEnd   = consoleTimeEnd'   . convert
 
 actions :: [Event -> Maybe (Command State ())]
 actions =  [ App.handle
@@ -90,7 +88,7 @@ processEvent var ev = modifyMVar_ var $ \state -> do
     when displayProcessingTime $ do
         consoleTimeStart $ (realEvent ^. Event.name) <>" show and force"
         --putStrLn . show . length $ show realEvent
-        JS.Debug.error (Text.pack $ realEvent ^. Event.name) realEvent
+        JS.Debug.error (convert $ realEvent ^. Event.name) realEvent
         consoleTimeEnd $ (realEvent ^. Event.name) <> " show and force"
         consoleTimeStart (realEvent ^. Event.name)
     timestamp <- getCurrentTime

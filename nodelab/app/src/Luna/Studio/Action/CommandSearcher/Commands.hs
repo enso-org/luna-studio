@@ -31,7 +31,7 @@ module Luna.Studio.Action.CommandSearcher.Commands where
 -- commands = do
 --     projects <- uses (Global.workspace . Workspace.projects) Map.elems
 --     gaState  <- uses Global.jsState gaEnabled
---     let projectToItem p = (name, Element) where name = Text.pack $ p ^. Project.name
+--     let projectToItem p = (name, Element) where name = convert $ p ^. Project.name
 --         projectList = Map.fromList $ projectToItem <$> projects
 --         projectCmd  = Map.fromList [ ("new",    Element)
 --                                    , ("export", Element)
@@ -54,7 +54,7 @@ module Luna.Studio.Action.CommandSearcher.Commands where
 -- openProject :: Text -> Command Global.State ()
 -- openProject name = do
 --     projs <- use $ Global.workspace . Workspace.projects
---     let mayProject = find (\(_,p) -> p ^. Project.name == (Text.unpack name)) (Map.toList projs)
+--     let mayProject = find (\(_,p) -> p ^. Project.name == (convert name)) (Map.toList projs)
 --     case mayProject of
 --         Just (projectId, _) -> loadProject projectId
 --         Nothing             -> liftIO $ putStrLn "Project not found"
@@ -80,7 +80,7 @@ module Luna.Studio.Action.CommandSearcher.Commands where
 -- runCommand "toggleTextEditor"                         = CodeEditor.toggle
 -- runCommand "settings.disableGoogleAnalytics"          = enableGA False
 -- runCommand "settings.enableGoogleAnalytics"           = enableGA True
--- runCommand cmd                                        = liftIO $ putStrLn $ "Unknown command " <> (Text.unpack cmd)
+-- runCommand cmd                                        = liftIO $ putStrLn $ "Unknown command " <> (convert cmd)
 --
 -- querySearchCmd :: Text -> Command Global.State ()
 -- querySearchCmd query = do

@@ -8,6 +8,7 @@ import           Data.Hashable            (Hashable)
 import           Data.HashMap.Strict      (HashMap)
 import qualified Data.HashMap.Strict      as HashMap
 import           Data.JSString            (JSString)
+import qualified Data.JSString            as JSString
 import qualified Data.Map.Strict          as Map
 import           Data.String              (fromString)
 import           Development.Placeholders
@@ -53,8 +54,17 @@ instance FromJSON Event where
 
 -- ======= GHCJS ===============================================================
 
+instance Convertible Text JSString where
+    convert = fromString . convert
+
+instance Convertible JSString Text where
+    convert = convert . toString
+
 instance Convertible String JSString where
-    convert = fromString
+    convert = JSString.pack
+
+instance Convertible JSString String where
+    convert = JSString.unpack
 
 instance ToJSON b => ToJSON (HashMap UUID b) where
     toJSON = toJSON . Map.fromList . HashMap.toList

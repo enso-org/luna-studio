@@ -8,7 +8,6 @@ module JS.GoogleAnalytics
     ) where
 
 import           Data.JSString.Text         (textToJSString)
-import           Data.Text                  (pack)
 import           GHCJS.Nullable             (Nullable, maybeToNullable)
 import           Luna.Studio.Prelude
 
@@ -48,15 +47,15 @@ toGAEvent :: Event -> GAEvent
 toGAEvent ev = case ev of
     BSOD message        -> GAEvent     "Diagnostic"      "BSOD"           (Just message) Nothing
     ConnectionLost      -> simpleEvent "Diagnostic"      "ConnectionLost"
-    AddNode tpe         -> GAEvent     "Graph"           "AddNode"        (Just $ pack $ show tpe) Nothing
-    RemoveNode n        -> GAEvent     "Graph"           "RemoveNode"     (Just $ pack $ show n)   Nothing
-    Connect tpe         -> GAEvent     "Graph"           "Connect"        (Just $ pack $ show tpe) Nothing
+    AddNode tpe         -> GAEvent     "Graph"           "AddNode"        (Just $ convert $ show tpe) Nothing
+    RemoveNode n        -> GAEvent     "Graph"           "RemoveNode"     (Just $ convert $ show n)   Nothing
+    Connect tpe         -> GAEvent     "Graph"           "Connect"        (Just $ convert $ show tpe) Nothing
     Disconnect          -> simpleEvent "Graph"           "Disconnect"
     NodeSearcher        -> simpleEvent "NodeSearcher"    "Open"
     CommandSearcher     -> simpleEvent "CommandSearcher" "Open"
     CreateProject       -> simpleEvent "Project"         "Create"
     SwitchProject       -> simpleEvent "Project"         "Switch"
-    GAOptOut s          -> GAEvent     "Settings"        "GAOptOut"       (Just $ pack $ show s)  Nothing
+    GAOptOut s          -> GAEvent     "Settings"        "GAOptOut"       (Just $ convert $ show s)  Nothing
     ToggleText          -> simpleEvent "UI"              "ToggleText"
 
 foreign import javascript safe "ga('send', 'event', $1, $2, $3)" sendEvent' :: JSString -> JSString -> Nullable JSString -> Nullable Int -> IO ()

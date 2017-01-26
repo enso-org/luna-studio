@@ -3,7 +3,6 @@ module Luna.Studio.Handler.Backend.ProjectManager
     ) where
 
 import qualified Data.Map.Lazy                      as Map
-import qualified Data.Text                          as Text
 import qualified Data.UUID.Types                    as UUID
 import           GHCJS.Marshal.Pure                 (pFromJSVal)
 import           Luna.Studio.Prelude
@@ -46,7 +45,7 @@ handle (Batch (Batch.ProjectCreated response)) = Just $ handleResponse response 
 handle (Batch (Batch.ProjectCreatedUpdate (CreateProject.Update projectId project))) = Just $ Global.workspace . Workspace.projects . at projectId ?= project
 
 handle (Batch (Batch.ProjectExported response)) = Just $ do
-    handleResponse response $ \(ExportProject.Request uuid) (ExportProject.Result projectData) -> liftIO $ downloadFile (Text.pack $ UUID.toString uuid <> ".lproj") projectData
+    handleResponse response $ \(ExportProject.Request uuid) (ExportProject.Result projectData) -> liftIO $ downloadFile (convert $ UUID.toString uuid <> ".lproj") projectData
 
 handle (Batch (Batch.ProjectImported response)) = Just $ do
     handleResponse response $ \_ (ImportProject.Result projectId project) -> do
@@ -55,5 +54,5 @@ handle (Batch (Batch.ProjectImported response)) = Just $ do
 
 handle (CustomEvent (CustomEvent.RawEvent "file.import" jsVal)) = Just $ do
     let projectData = pFromJSVal jsVal :: String
-    BatchCmd.importProject $ Text.pack projectData
+    BatchCmd.importProject $ convert projectData
 handle _ = Nothing

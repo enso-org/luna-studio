@@ -3,14 +3,12 @@ module Luna.Studio.React.View.Node where
 
 import qualified Data.Aeson                             as Aeson
 import qualified Data.Map.Lazy                          as Map
-import qualified Data.Text                              as Text
+import           Data.Matrix                            (Matrix, (!))
 import           Data.Vector                            (x, y)
 import           Empire.API.Data.Node                   (NodeId)
 import           Empire.API.Data.Port                   (InPort (..), PortId (..))
 import           Luna.Studio.Action.Geometry            (countSameTypePorts, isPortSingle)
-import qualified Luna.Studio.Data.CameraTransformation  as CameraTransformation
 import           Luna.Studio.Data.Matrix                (transformTranslateToSvg)
-import           Data.Matrix                            (Matrix,(!))
 import qualified Luna.Studio.Event.Mouse                as Mouse
 import qualified Luna.Studio.Event.UI                   as UI
 import           Luna.Studio.Prelude
@@ -18,8 +16,6 @@ import qualified Luna.Studio.React.Event.Node           as Node
 import           Luna.Studio.React.Model.App            (App)
 import           Luna.Studio.React.Model.Node           (Node)
 import qualified Luna.Studio.React.Model.Node           as Node
-import           Luna.Studio.React.Model.NodeEditor     (NodeEditor)
-import qualified Luna.Studio.React.Model.NodeEditor     as NodeEditor
 import qualified Luna.Studio.React.Model.NodeProperties as Properties
 import           Luna.Studio.React.Model.Port           (Port (..))
 import qualified Luna.Studio.React.Model.Port           as Port
@@ -60,12 +56,12 @@ node = React.defineView objName $ \(ref, n, camTransform ) -> do
         zoomFactor = camTransform ! (1, 1)
         fontSize   = show $ 12/zoomFactor
     div_
-        [ "key"         $= fromString (show nodeId)
+        [ "key"         $= convert (show nodeId)
         , onClick       $ \_ m -> dispatch ref $ UI.NodeEvent $ Node.Select m nodeId
         , onDoubleClick $ \_ _ -> dispatch ref $ UI.NodeEvent $ Node.Enter nodeId
         , onMouseDown   $ handleMouseDown ref nodeId
-        , "className"   $= (fromString $ "node noselect " <> (if n ^. Node.isExpanded then " node--expanded" else " node--collapsed")
-                                                          <> (if n ^. Node.isSelected then " node--selected" else []))
+        , "className"   $= (convert $ "node noselect " <> (if n ^. Node.isExpanded then " node--expanded" else " node--collapsed")
+                                                       <> (if n ^. Node.isSelected then " node--selected" else []))
         , "style"       @= Aeson.object
             [ "transform" Aeson..= (transformTranslateToSvg offsetX offsetY)
             , "zIndex"    Aeson..= (show z)
@@ -92,7 +88,7 @@ node = React.defineView objName $ \(ref, n, camTransform ) -> do
                 , "style"       @= Aeson.object
                     [ "fontSize" Aeson..= (fontSize)
                     ]
-                ] $ elemString $ Text.unpack $ n ^. Node.expression
+                ] $ elemString $ convert $ n ^. Node.expression
             if  n ^. Node.isExpanded then do
                 ports         ref $ filter (\port -> (port ^. Port.portId) == InPortId Self) nodePorts
                 portsExpanded ref $ filter (\port -> (port ^. Port.portId) /= InPortId Self) nodePorts
