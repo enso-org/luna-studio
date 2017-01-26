@@ -14,7 +14,6 @@ loc = do
                   , LitE (IntegerL $ toInteger pos)
                   ]
 
-
 moduleName :: Q Exp
 moduleName = do
     Loc _ _ modName _ _ <- location
