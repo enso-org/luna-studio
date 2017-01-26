@@ -17,7 +17,7 @@ import qualified Empire.API.Project.ListProjects    as ListProjects
 
 import           JS.DownloadFile                    (downloadFile)
 import qualified Luna.Studio.Action.Batch           as BatchCmd (importProject)
-import           Luna.Studio.Action.Command         (Command, performIO)
+import           Luna.Studio.Action.Command         (Command)
 import           Luna.Studio.Action.ProjectManager  (loadGraph, loadProject)
 import qualified Luna.Studio.Batch.Workspace        as Workspace
 import qualified Luna.Studio.Event.Batch            as Batch
@@ -46,7 +46,7 @@ handle (Batch (Batch.ProjectCreated response)) = Just $ handleResponse response 
 handle (Batch (Batch.ProjectCreatedUpdate (CreateProject.Update projectId project))) = Just $ Global.workspace . Workspace.projects . at projectId ?= project
 
 handle (Batch (Batch.ProjectExported response)) = Just $ do
-    handleResponse response $ \(ExportProject.Request uuid) (ExportProject.Result projectData) -> performIO $ downloadFile (Text.pack $ UUID.toString uuid <> ".lproj") projectData
+    handleResponse response $ \(ExportProject.Request uuid) (ExportProject.Result projectData) -> liftIO $ downloadFile (Text.pack $ UUID.toString uuid <> ".lproj") projectData
 
 handle (Batch (Batch.ProjectImported response)) = Just $ do
     handleResponse response $ \_ (ImportProject.Result projectId project) -> do

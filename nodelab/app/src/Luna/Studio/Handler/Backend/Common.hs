@@ -10,7 +10,7 @@ import qualified Data.Text                  as Text
 import qualified Data.UUID.Types            as UUID (toString)
 import           Luna.Studio.Prelude
 
-import           Luna.Studio.Action.Command (Command, performIO)
+import           Luna.Studio.Action.Command (Command)
 import           Luna.Studio.Action.UUID    (isOwnRequest, unregisterRequest)
 import           Luna.Studio.State.Global   (State)
 
@@ -28,7 +28,7 @@ handleResponse resp@(Response.Response uuid req status) success =
         unregisterRequest uuid
         case status of
             Response.Ok result -> success req result
-            Response.Error str -> performIO $ Debug.error (Text.pack $ Topic.topic resp <> " [" <> UUID.toString uuid <> "] " <> str) req
+            Response.Error str -> liftIO $ Debug.error (Text.pack $ Topic.topic resp <> " [" <> UUID.toString uuid <> "] " <> str) req
 
 doNothing :: a -> b -> Command State ()
 doNothing _ _ = return ()

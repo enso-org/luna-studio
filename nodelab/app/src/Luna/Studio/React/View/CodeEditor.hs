@@ -4,10 +4,10 @@ module Luna.Studio.React.View.CodeEditor where
 import qualified Data.Aeson                         as Aeson
 import           Data.Text                          (unpack)
 import           Luna.Studio.Prelude
-import           React.Flux
-import qualified React.Flux                         as React
 import           Luna.Studio.React.Model.CodeEditor (CodeEditor)
 import qualified Luna.Studio.React.Model.CodeEditor as CodeEditor
+import           React.Flux
+import qualified React.Flux                         as React
 
 
 name :: JSString
@@ -99,9 +99,9 @@ codeEditor_ model = React.viewWithSKey codeEditor name model mempty
 -- relayoutTextEditor :: Vector2 Int -> Command Global.State Int
 -- relayoutTextEditor screenSize = do
 --     visible <- use $ Global.uiElements . UIElements.textEditorVisible
---     performIO $ UI.setVisible visible
+--     liftIO $ UI.setVisible visible
 --     let width = (floor $ (0.3 :: Double) * (fromIntegral $ screenSize ^. x))
---     performIO $ UI.setWidth width
+--     liftIO $ UI.setWidth width
 --
 --     return $ if visible then width else 0
 --

@@ -6,7 +6,6 @@ module Luna.Studio.React.Model.Node (
 ) where
 
 import           Control.Arrow
-import           Control.DeepSeq                   (NFData)
 import           Data.Aeson                        (ToJSON)
 import           Data.Map.Lazy                     (Map)
 import qualified Data.Map.Lazy                     as Map

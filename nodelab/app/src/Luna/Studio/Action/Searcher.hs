@@ -50,7 +50,7 @@ open = do
   -- let offset = Vector2 0 (floor $ -40.0 * factor)
   -- (nsPos', nsPos) <- ensureNSVisible
     openWith def =<< use Global.mousePos
-    -- performIO $ UI.initNodeSearcher "" Nothing (nsPos + offset) False
+    -- liftIO $ UI.initNodeSearcher "" Nothing (nsPos + offset) False
 
 openWith :: Maybe NodeId -> Position -> Command State ()
 openWith nodeId pos = do
@@ -176,10 +176,10 @@ querySearch query _ = do
 -- queryTree query = do
 --     sd <- scopedData
 --     let items = Scope.moduleItems sd query
---     performIO $ UI.displayTreeResults UI.NodeSearcher items
+--     liftIO $ UI.displayTreeResults UI.NodeSearcher items
 --
 -- openCommand :: Command State ()
 -- openCommand = do
 --     GA.sendEvent GA.CommandSearcher
 --     mousePos <- use Global.mousePos
---     performIO $ UI.initNodeSearcher "" Nothing mousePos True
+--     liftIO $ UI.initNodeSearcher "" Nothing mousePos True

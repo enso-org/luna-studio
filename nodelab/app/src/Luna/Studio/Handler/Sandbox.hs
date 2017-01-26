@@ -7,7 +7,7 @@ module Luna.Studio.Action.Sandbox where
 --
 -- import           Luna.Studio.Event.Event                     (Event (..))
 -- import qualified Event.Keyboard                  as Keyboard
--- import           Luna.Studio.Action.Command       (Command, performIO)
+-- import           Luna.Studio.Action.Command       (Command, liftIO)
 -- import qualified Luna.Studio.State.Global           as Global
 --
 -- import qualified Luna.Studio.Action.UIRegistry    as UICmd
@@ -37,7 +37,7 @@ module Luna.Studio.Action.Sandbox where
 --
 -- handle :: Event -> Maybe (Command Global.State ())
 -- handle (Keyboard _ (Keyboard.Event Keyboard.Down '\112' _)) = Just $ Global.inRegistry $ do
---     performIO $ putStrLn "show sandbox"
+--     liftIO $ putStrLn "show sandbox"
 --     let groupWidget = Group.create
 --     parent <- UICmd.register sceneGraphId groupWidget (Layout.verticalLayoutHandler 5.0)
 --     let register w = UICmd.register_ parent w def
@@ -58,7 +58,7 @@ module Luna.Studio.Action.Sandbox where
 --     return ()
 --
 -- handle (Keyboard _ (Keyboard.Event Keyboard.Down '\116' _)) = Just $ Global.inRegistry $ do
---     performIO $ putStrLn "show sandbox"
+--     liftIO $ putStrLn "show sandbox"
 --     let groupWidget = Group.create
 --     parent'       <- UICmd.register sceneGraphId groupWidget (Layout.horizontalLayoutHandler 5.0)
 --     parent        <- UICmd.register parent'      groupWidget (Layout.verticalLayoutHandler 5.0)
@@ -96,8 +96,8 @@ module Luna.Studio.Action.Sandbox where
 --
 --     return ()
 -- handle (Keyboard _ (Keyboard.Event Keyboard.Down '\115' _)) = Just $ Global.inRegistry $ do
---     performIO $ putStrLn "show sandbox"
---     performIO $ putStrLn "show sandbox"
+--     liftIO $ putStrLn "show sandbox"
+--     liftIO $ putStrLn "show sandbox"
 --     let groupWidget = Group.create
 --     parent <- UICmd.register sceneGraphId groupWidget (Layout.verticalLayoutHandler 5.0)
 --

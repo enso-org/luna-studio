@@ -5,7 +5,6 @@ module Data.Position
     )
 where
 
-import           Control.DeepSeq     (NFData)
 import           Data.Aeson          (ToJSON)
 import           Data.Vector         as X
 import           Luna.Studio.Prelude

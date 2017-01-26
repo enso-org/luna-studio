@@ -12,7 +12,7 @@ import           Data.Text                  (pack)
 import           GHCJS.Nullable             (Nullable, maybeToNullable)
 import           Luna.Studio.Prelude
 
-import           Luna.Studio.Action.Command (Command, performIO)
+import           Luna.Studio.Action.Command (Command)
 
 data ConnectType = Manual
                  | Pen
@@ -63,7 +63,7 @@ foreign import javascript safe "ga('send', 'event', $1, $2, $3)" sendEvent' :: J
 
 sendEvent :: Event -> Command a ()
 sendEvent = const $ return () --TODO it appears to conflict with Atom
--- sendEvent event = performIO $ sendEvent' cat' act' lab' val' where
+-- sendEvent event = liftIO $ sendEvent' cat' act' lab' val' where
 --         GAEvent cat act lab val = toGAEvent event
 --         cat' = textToJSString cat
 --         act' = textToJSString act

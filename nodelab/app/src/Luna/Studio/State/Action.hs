@@ -1,8 +1,6 @@
-{-# LANGUAGE DeriveAnyClass            #-}
 {-# LANGUAGE ExistentialQuantification #-}
 module Luna.Studio.State.Action where
 
-import           Control.DeepSeq         (NFData)
 import           Data.Aeson              (FromJSON, ToJSON)
 import           Data.Dynamic
 import           Data.Map                (Map)
@@ -49,8 +47,9 @@ data SliderDrag = SliderDrag { _sliderDragPortRef   :: AnyPortRef
 
 data InitValue = Discrete  Int
                | Continous Double
-               deriving (Eq, Show, Generic, NFData, Typeable)
+               deriving (Eq, Show, Generic, Typeable)
 
+instance NFData InitValue
 
 makeLenses ''InitValue
 makeLenses ''SliderDrag

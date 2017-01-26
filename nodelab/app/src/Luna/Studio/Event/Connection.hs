@@ -1,3 +1,4 @@
+{-# LANGUAGE DeriveAnyClass #-}
 module Luna.Studio.Event.Connection where
 
 import           Data.Aeson                             (ToJSON, toJSON)
@@ -8,7 +9,7 @@ data Event = Message { _message :: WebMessage }
            | Opened
            | Closed  { _code :: Int }
            | Error
-             deriving (Eq, Show, Typeable, Generic)
+             deriving (Eq, Generic, NFData, Show, Typeable)
 
 makeLenses ''Event
 

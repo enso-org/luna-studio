@@ -1,7 +1,6 @@
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 module Luna.Studio.Prelude.Instances where
 
-import           Control.DeepSeq          (NFData)
 import           Data.Aeson
 import           Data.Convert             (Convertible (convert))
 import           Data.Default             (Default (def))
@@ -13,7 +12,7 @@ import qualified Data.Map.Strict          as Map
 import           Data.String              (fromString)
 import           Development.Placeholders
 import           Empire.API.JSONInstances ()
-import           Prelude
+import           Prologue
 import           React.Flux
 import           React.Flux.Store         (ReactStoreRef)
 

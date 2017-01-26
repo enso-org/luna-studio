@@ -3,7 +3,6 @@
 
 module Luna.Studio.React.Store.Ref where
 
-import           Control.DeepSeq            (NFData)
 import           Control.Monad.State        (runState)
 import           Control.Monad.Trans.Reader
 import           Control.Monad.Trans.State  hiding (get, modify)

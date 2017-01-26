@@ -35,7 +35,7 @@ import           Data.HMap.Lazy               (HTMap, TypeKey (..))
 import qualified Data.HMap.Lazy               as HMap
 import           Data.Vector
 import qualified JS.Cursor                    as Cursor
-import           Luna.Studio.Action.Command   (Command, performIO)
+import           Luna.Studio.Action.Command   (Command, liftIO)
 import           Luna.Studio.Prelude          hiding (children, lookup)
 import qualified Luna.Studio.State.Global     as Global
 import qualified Luna.Studio.State.UIRegistry as UIRegistry
@@ -49,7 +49,7 @@ import qualified UI.Generic                   as UI
 register :: (CompositeWidget a, Widget.DisplayObjectClass a) => WidgetId -> a -> HTMap -> Command UIRegistry.State WidgetId
 register parentId model handlers = do
     file <- UIRegistry.registerM parentId model handlers
-    performIO $ Widget.createUI parentId (file ^. objectId) model
+    liftIO $ Widget.createUI parentId (file ^. objectId) model
     createWidget (file ^. objectId) model
     triggerChildrenResized parentId
     return (file ^. objectId)
@@ -57,7 +57,7 @@ register parentId model handlers = do
 registerIx :: (CompositeWidget a, Widget.DisplayObjectClass a) => Int -> WidgetId -> a -> HTMap -> Command UIRegistry.State WidgetId
 registerIx i parentId model handlers = do
     file <- UIRegistry.registerIxM i parentId model handlers
-    performIO $ Widget.createUI parentId (file ^. objectId) model
+    liftIO $ Widget.createUI parentId (file ^. objectId) model
     createWidget (file ^. objectId) model
     triggerChildrenResized parentId
     return (file ^. objectId)
@@ -75,7 +75,7 @@ update widgetId fun = do
         Just oldWidget -> do
             newWidget  <- UIRegistry.updateWidgetM widgetId fun
             when ((oldWidget ^. widget) /= newWidget) $ do
-                performIO $ Widget.updateUI widgetId (oldWidget ^. widget) newWidget
+                liftIO $ Widget.updateUI widgetId (oldWidget ^. widget) newWidget
                 updateWidget widgetId (oldWidget ^. widget) newWidget
             return newWidget
 
@@ -89,7 +89,7 @@ tryUpdate widgetId fun = do
         Just oldWidget -> do
             newWidget  <- UIRegistry.updateWidgetM widgetId fun
             when ((oldWidget ^. widget) /= newWidget) $ do
-                performIO $ Widget.updateUI widgetId (oldWidget ^. widget) newWidget
+                liftIO $ Widget.updateUI widgetId (oldWidget ^. widget) newWidget
                 updateWidget widgetId (oldWidget ^. widget) newWidget
             return True
 
@@ -197,8 +197,8 @@ removeWidget widgetId = do
     -- widgetOver <- use $ UIRegistry.widgetOver
     widgets <- UIRegistry.unregisterM widgetId
     --TODO[react] remove
-    -- when (elem widgetId widgets) $ performIO $ Cursor.setCursor Cursor.Normal
-    forM_ widgets $ performIO . UI.removeWidget . fromWidgetId
+    -- when (elem widgetId widgets) $ liftIO $ Cursor.setCursor Cursor.Normal
+    forM_ widgets $ liftIO . UI.removeWidget . fromWidgetId
     triggerChildrenResized parentId
 
 newtype LostFocus = LostFocus (WidgetId -> Command Global.State ())

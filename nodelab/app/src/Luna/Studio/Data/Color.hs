@@ -6,7 +6,6 @@ module Luna.Studio.Data.Color
     , toJSString
     ) where
 
-import           Control.DeepSeq
 import           Data.Aeson                (FromJSON, ToJSON)
 import           Data.Hashable             (hash)
 import           Luna.Studio.Prelude

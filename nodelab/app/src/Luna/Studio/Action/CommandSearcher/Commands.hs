@@ -16,7 +16,7 @@ module Luna.Studio.Action.CommandSearcher.Commands where
 -- import qualified JS.NodeSearcher                   as UI
 -- import qualified Luna.Studio.Action.Batch          as BatchCmd
 -- import qualified Luna.Studio.Action.CodeEditor     as CodeEditor
--- import           Luna.Studio.Action.Command        (Command, performIO)
+-- import           Luna.Studio.Action.Command        (Command, liftIO)
 -- import           Luna.Studio.Action.NodeSearcher   as NS
 -- import           Luna.Studio.Action.ProjectManager (loadProject)
 -- import qualified Luna.Studio.Batch.Workspace       as Workspace
@@ -57,7 +57,7 @@ module Luna.Studio.Action.CommandSearcher.Commands where
 --     let mayProject = find (\(_,p) -> p ^. Project.name == (Text.unpack name)) (Map.toList projs)
 --     case mayProject of
 --         Just (projectId, _) -> loadProject projectId
---         Nothing             -> performIO $ putStrLn "Project not found"
+--         Nothing             -> liftIO $ putStrLn "Project not found"
 --
 --
 --
@@ -68,11 +68,11 @@ module Luna.Studio.Action.CommandSearcher.Commands where
 -- enableGA :: Bool -> Command a ()
 -- enableGA val = do
 --     GA.sendEvent $ GA.GAOptOut val
---     performIO $ enableGA' val
+--     liftIO $ enableGA' val
 --
 --
 -- runCommand :: Text -> Command Global.State ()
--- runCommand "project.new"                              = performIO $ UI.initNodeSearcher "project.new untitled" Nothing (Vector2 200 200) True
+-- runCommand "project.new"                              = liftIO $ UI.initNodeSearcher "project.new untitled" Nothing (Vector2 200 200) True
 -- runCommand (stripPrefix "project.new "  -> Just name) = createProject name
 -- runCommand (stripPrefix "project.open." -> Just name) = openProject name
 -- runCommand "project.export"                           = exportCurrentProject
@@ -80,21 +80,21 @@ module Luna.Studio.Action.CommandSearcher.Commands where
 -- runCommand "toggleTextEditor"                         = CodeEditor.toggle
 -- runCommand "settings.disableGoogleAnalytics"          = enableGA False
 -- runCommand "settings.enableGoogleAnalytics"           = enableGA True
--- runCommand cmd                                        = performIO $ putStrLn $ "Unknown command " <> (Text.unpack cmd)
+-- runCommand cmd                                        = liftIO $ putStrLn $ "Unknown command " <> (Text.unpack cmd)
 --
 -- querySearchCmd :: Text -> Command Global.State ()
 -- querySearchCmd query = do
 --     sd <- commands
 --     let sd'   = Map.fromList sd
 --         items = Scope.searchInScope sd' query
---     performIO $ UI.displayQueryResults UI.CommandSearcher items
+--     liftIO $ UI.displayQueryResults UI.CommandSearcher items
 --
 -- queryTreeCmd :: Text -> Command Global.State ()
 -- queryTreeCmd query = do
 --     sd <- commands
 --     let sd'   = Map.fromList sd
 --         items = Scope.moduleItems sd' query
---     performIO $ UI.displayTreeResults UI.CommandSearcher items
+--     liftIO $ UI.displayTreeResults UI.CommandSearcher items
 --
 --
 -- exportCurrentProject :: Command Global.State ()

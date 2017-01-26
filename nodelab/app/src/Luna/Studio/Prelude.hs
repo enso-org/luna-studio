@@ -31,8 +31,8 @@ import           GHCJS.Marshal                 as X (FromJSVal (..), ToJSVal (..
 import           GHCJS.Types                   as X (JSVal)
 import           Luna.Studio.Prelude.Instances ()
 import           Prelude                       hiding (curry, print, putStr, putStrLn, uncurry, (++), (.))
-import           Prologue                      as X (convert, curry, foldlDef, fromJustM, ifElseId, ifM, lift2, lift3, pprint, print,
-                                                     printLn, putStr, putStrLn, show', switch, toString, uncurry, unlessM, whenLeft,
+import           Prologue                      as X (NFData, convert, curry, foldlDef, fromJustM, ifElseId, ifM, lift2, lift3, pprint,
+                                                     print, printLn, putStr, putStrLn, show', switch, toString, uncurry, unlessM, whenLeft,
                                                      whenLeft', whenM, whenRight, whenRight', withJust, ($>), (++), (.), (.:), (.:.), (.::))
 
 

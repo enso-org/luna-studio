@@ -1,6 +1,5 @@
 module Luna.Studio.State.Collaboration where
 
-import           Control.DeepSeq                (NFData)
 import           Data.Aeson                     (ToJSON)
 import           Data.DateTime                  (DateTime)
 import           Data.Map.Lazy                  (Map)

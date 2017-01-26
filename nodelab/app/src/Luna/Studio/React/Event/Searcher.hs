@@ -3,9 +3,8 @@
 
 module Luna.Studio.React.Event.Searcher where
 
-import           Control.DeepSeq   (NFData)
-import           Data.Aeson        (FromJSON, ToJSON)
-import           React.Flux        (KeyboardEvent)
+import           Data.Aeson          (FromJSON, ToJSON)
+import           React.Flux          (KeyboardEvent)
 
 import           Luna.Studio.Prelude
 

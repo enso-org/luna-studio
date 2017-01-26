@@ -13,7 +13,6 @@ import           GHCJS.Marshal.Pure                     (pFromJSVal)
 import           GHCJS.Prim                             (fromJSString)
 
 import qualified Data.JSString                          as JSString
-import           Data.JSString.Text                     (textFromJSString)
 import qualified JS.Atom                                as Atom
 import qualified JS.CustomEvent                         as CustomEvent
 import qualified JS.WebSocket                           as WebSocket
