@@ -27,7 +27,7 @@ breadcrumbs = React.defineView name $ \(ref, model) -> do
         forM_ (zip [0..] $ inits $ model ^. B.items) $ \(key, bc) -> do
             div_
                 [ "className" $= "breadcrumbs__item breadcrumbs__item--home"
-                , "key"       $= convert (show key)
+                , "key"       $= jsShow key
                 , onClick $ \_ _ -> dispatch ref $ UI.BreadcrumbsEvent $ B.Enter $ unname bc
                 ] $ case reverse bc of
                     []       -> elemString "default"

@@ -21,7 +21,7 @@ import           React.Flux                   as React
 
 
 portControl_ :: Ref App -> NodeId -> Bool -> Port -> ReactElementM ViewEventHandler ()
-portControl_ ref nodeId isLiteral port = React.viewWithSKey portControl (convert $ show $ port ^. Port.portId) (ref, nodeId, isLiteral, port) mempty
+portControl_ ref nodeId isLiteral port = React.viewWithSKey portControl (jsShow $ port ^. Port.portId) (ref, nodeId, isLiteral, port) mempty
 
 portControl :: ReactView (Ref App, NodeId, Bool, Port)
 portControl = React.defineView "portControl" $ \(ref, nodeId, isLiteral, port) ->
@@ -37,7 +37,7 @@ inPortControl_ ref portRef port = React.viewWithSKey inPortControl "inPortContro
 inPortControl :: ReactView (Ref App, AnyPortRef, Port)
 inPortControl = React.defineView "inPortControl" $ \(ref, portRef, port) ->
     div_
-        [ "key"       $= convert (show $ port ^. Port.portId)
+        [ "key"       $= jsShow (port ^. Port.portId)
         , "className" $= "row row--arg"
         ] $ do
         div_

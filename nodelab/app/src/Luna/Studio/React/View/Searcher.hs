@@ -44,7 +44,7 @@ searcher  = React.defineView name $ \(ref, s) -> do
             ] $ do
             forM_ (zip (s ^. Searcher.results) [0..]) $ \(result, idx) ->
                 div_
-                    [ "key"       $= convert (show idx)
+                    [ "key"       $= jsShow idx
                     , "className" $= if idx == s ^. Searcher.selected then "result-selected" else "result"
                     ] $ do
                     div_
