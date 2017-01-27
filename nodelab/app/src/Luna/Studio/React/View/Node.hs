@@ -48,7 +48,7 @@ node = React.defineView objName $ \(ref, n) -> do
         z         = if n ^. Node.isExpanded then zIndex + nodeLimit else zIndex
     div_
         [ "key"       $= fromString (show nodeId)
-        , "className" $= "node-root"
+        , "className" $= "node-root noselect"
         , "style"     @= Aeson.object [ "zIndex" Aeson..= (show z) ]
         ] $ do
         div_
