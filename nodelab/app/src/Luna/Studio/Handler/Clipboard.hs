@@ -28,12 +28,12 @@ import           Luna.Studio.State.GraphSkeleton as GraphSkeleton
 
 
 handle :: Event -> Maybe (Command State ())
--- handle (Shortcut (Shortcut.Paste cbd)) = Just $ print cbd >> pasteFromClipboard (convert cbd)
--- handle (Shortcut  Shortcut.Copy      ) = Just $ print "copy" >> copySelectionToClipboard
--- handle (Shortcut  Shortcut.Cut       ) = Just $ print "cut" >> cutSelectionToClipboard
+handle (Shortcut (Shortcut.Paste cbd)) = Just $ pasteFromClipboard cbd
+handle (Shortcut  Shortcut.Copy      ) = Just copySelectionToClipboard
+handle (Shortcut  Shortcut.Cut       ) = Just cutSelectionToClipboard
 handle _ = Nothing
 
-foreign import javascript safe "clipboard.copy($1)" copyStringToClipboard :: JSString -> IO ()
+foreign import javascript safe "copyToClipboard($1)" copyStringToClipboard :: JSString -> IO ()
 
 copySelectionToClipboard :: Command State ()
 copySelectionToClipboard = do
