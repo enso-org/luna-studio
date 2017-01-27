@@ -1,6 +1,7 @@
 'atom-workspace':
   'ctrl-alt-k': 'luna-studio:open'
 '.luna-studio':
+  # camera
   'ctrl-left'        : 'luna-studio:pan-left'             # PanLeft
   'ctrl-right'       : 'luna-studio:pan-right'            # PanRight
   'ctrl-up'          : 'luna-studio:pan-up'               # PanUp
@@ -13,7 +14,7 @@
   'ctrl-shift-0'     : 'luna-studio:reset-pan'            # ResetPan
   'ctrl-alt-shift-0' : 'luna-studio:reset-camera'         # ResetCamera
   'h'                : 'luna-studio:center-graph'         # CenterGraph
-    # navigation
+  # navigation
   'shift-left'       : 'luna-studio:go-prev'              # GoPrev
   'shift-right'      : 'luna-studio:go-next'              # GoNext
   'left'             : 'luna-studio:go-left'              # GoLeft
@@ -24,12 +25,12 @@
   'ctrl-shift-up'    : 'luna-studio:go-cone-up'           # GoConeUp
   'ctrl-shift-right' : 'luna-studio:go-cone-right'        # GoConeRight
   'ctrl-shift-down'  : 'luna-studio:go-cone-down'         # GoConeDown
-    # nodes
+  # nodes
   'ctrl-a'          : 'luna-studio:select-all'            # SelectAll
   'delete'          : 'luna-studio:remove-selected-nodes' # RemoveSelectedNodes
   'esc'             : 'luna-studio:unselect-sll'          # UnselectAll
   'enter'           : 'luna-studio:expand-selected-nodes' # ExpandSelectedNodes
-    # searcher
+  # searcher
   'tab'             : 'luna-studio:searcher-open'         # SearcherOpen
 
 '.searcher':

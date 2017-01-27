@@ -33,7 +33,7 @@ handle (Shortcut  Shortcut.Copy      ) = Just copySelectionToClipboard
 handle (Shortcut  Shortcut.Cut       ) = Just cutSelectionToClipboard
 handle _ = Nothing
 
-foreign import javascript safe "copyToClipboard($1)" copyStringToClipboard :: JSString -> IO ()
+foreign import javascript unsafe "copyToClipboard($1)" copyStringToClipboard :: JSString -> IO ()
 
 copySelectionToClipboard :: Command State ()
 copySelectionToClipboard = do
