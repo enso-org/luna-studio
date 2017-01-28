@@ -3,9 +3,6 @@
   "main": "./lib/main",
   "version": "1.0.0",
   "description": "Luna Studio in Atom.",
-  "activationCommands": {
-    "atom-workspace": ["luna-studio:open"]
-  },
   "repository": "...",
   "license": "AllRightsReserved",
   "engines": {

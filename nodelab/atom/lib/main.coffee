@@ -3,9 +3,13 @@ LunaStudioTab = require './luna-studio-tab'
 SubAtom       = require 'sub-atom'
 c             = require "./gen/ghcjs-code.js"
 code = c()
+path = require 'path'
 
 module.exports =
   activate: ->
+    atom.workspace.addOpener (uri) ->
+        if path.extname(uri) is '.luna'
+            return new LunaStudioTab(uri, code)
     @subs = new SubAtom
     @subs.add atom.commands.add 'atom-workspace', 'luna-studio:open': ->
       atom.workspace.getActivePane().activateItem new LunaStudioTab "Luna Studio"
