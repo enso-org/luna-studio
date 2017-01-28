@@ -10,6 +10,8 @@
     height:          100%;
     position:        absolute;
     z-index:        -1;
+    top:             0;
+    left:            0;
 }
 
 /////////////////////////////
@@ -97,6 +99,24 @@
             cx: @expandedNodeWidth;
         }
     }
+    .node__properties {
+        height:        auto;
+        width:         @expandedNodeWidth - 2 * @expandedNodePadding;
+        opacity:       1;
+        padding:       12px @expandedNodePadding 8px;
+        border-radius: @borderRadius;
+        left:          0;
+        .row, .blur {
+            opacity: 1;
+        }
+        .blur {
+            display: block;
+            background: rgba(255,255,255,.02);
+        }
+    }
+    .selection {
+        border-radius: 1px;
+    }
 }
 
 .node__properties,
@@ -106,18 +126,24 @@
 
 .node__properties {
     color:         @colorTextUneditable;
-    background:    @colorNodeBackground;
-    box-shadow:    0 0 10px rgba(25,25,25,1);
+    //background:    @colorNodeBackground;
+    //box-shadow:    0 0 10px rgba(25,25,25,1);
     line-height:   @lineHeight;
-    width:         0;
+    width:         40px;
     height:        40px;
-    opacity:       0;
+    opacity:       1;
     transition:    all @transitionSpeed ease-in-out;
     top:          -20px;
-    padding:       12px @expandedNodePadding 8px;
+    left:         -20px;
     position:      relative;
-    border-radius: @borderRadius;
-    overflow:      hidden;
+    border-radius: 20px;
+    //overflow:      hidden;
+    .row, .blur {
+        opacity: 0;
+    }
+    .blur {
+      display: none;
+    }
     .row {
         display:         flex;
         width:           @expandedNodeWidth - 2 * @expandedNodePadding;
@@ -125,14 +151,6 @@
     }
     .row--output-name {
         justify-content: flex-end;
-    }
-}
-
-.node--expanded {  // FIXME: properties container should be removed from DOM for collapsed nodes
-    .node__properties {
-        height:  auto;
-        width:   @expandedNodeWidth - 2 * @expandedNodePadding;
-        opacity: 1;
     }
 }
 
@@ -168,7 +186,7 @@
     overflow: hidden;
     .scroll {
         overflow: scroll;
-        height: 100%;
+        height:   100%;
     }
 }
 .vis--graph {
@@ -187,49 +205,30 @@
 //     selection mark      //
 /////////////////////////////
 
-.node__selection-mark rect {
-    fill:       none;
-    stroke:     transparent;
-    transition: all @transitionSpeed ease-in-out;
-    stroke:     @colorSelect;
-    opacity:    0;
-    x:         -20px;
-    y:         -20px;
-    width:      40px;
-    height:     40px;
-    rx:         20px;
-    ry:         20px;
+.selection {
+    width:        ~"calc(100% + 2px)";
+    height:       ~"calc(100% + 2px)";
+    border:        1px solid orange;
+    left:         -1px;
+    top:          -1px;
+    position:      absolute;
+    border-radius: 34px;
+    transition:    all @transitionSpeed ease-in-out;
+    opacity:       0;
 }
 
 .node--selected {
-    .node__selection-mark rect {
-        opacity: 1;
-        x:      -29.7px; // subpixel antialiasing tweak
-        y:      -29.7px;
-        width:   59.4px;
-        height:  59.4px;
-        rx:      30px;
-        ry:      30px;
+    .selection {
+        width:        ~"calc(100% + 20px)";
+        height:       ~"calc(100% + 20px)";
+        border:        1px solid orange;
+        left:         -11px;
+        top:          -11px;
+        opacity:       1;
     }
-}
-
-.node--expanded {
-    .node__selection-mark rect {
-        x:      0px;
-        y:     -20px;
-        width:  @expandedNodeWidth;
-        height: 68px;
-        rx:     4px;
-        ry:     4px;
-    }
-    &.node--selected {
-        .node__selection-mark rect {
-            x:     -9.7px;
-            y:     -29.7px;
-            width:  @expandedNodeWidth + 19.4px;
-            height: 88px;
-            rx:     12px;
-            ry:     12px;
+    &.node--expanded {
+        .selection {
+            border-radius: 10px;
         }
     }
 }

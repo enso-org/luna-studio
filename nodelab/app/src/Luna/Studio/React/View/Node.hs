@@ -66,10 +66,10 @@ node = React.defineView objName $ \(ref, n) -> do
                     [ "transform" Aeson..= (transformTranslateToSvg offsetX offsetY)
                     ]
                 ] $ do
-                svg_
-                    [ "className" $= "node__selection-mark"
-                    , "key"       $= "selection-mark"
-                    ] $ rect_ def mempty
+                --svg_
+                --    [ "className" $= "node__selection-mark"
+                --    , "key"       $= "selection-mark"
+                --    ] $ rect_ def mempty
                 nodeProperties_ ref $ Properties.fromNode n
                 div_
                     [ "key"       $= "visualization"

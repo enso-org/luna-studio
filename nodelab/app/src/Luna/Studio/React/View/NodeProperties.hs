@@ -8,7 +8,7 @@ import           Luna.Studio.React.Model.App            (App)
 import           Luna.Studio.React.Model.NodeProperties (NodeProperties)
 import qualified Luna.Studio.React.Model.NodeProperties as Prop
 import           Luna.Studio.React.Store                (Ref, dispatch)
-import           Luna.Studio.React.View.CommonElements  (blurBackground_)
+import           Luna.Studio.React.View.CommonElements  (blurBackground_, selectionMark_)
 import           Luna.Studio.React.View.PortControl     (portControl_)
 import           React.Flux
 import qualified React.Flux                             as React
@@ -24,6 +24,7 @@ nodeProperties = React.defineView objName $ \(ref, p) -> do
         [ "key"       $= "properties"
         , "className" $= "node__properties"
         ] $ do
+        selectionMark_
         blurBackground_
         div_
             [ "key"       $= "value"
