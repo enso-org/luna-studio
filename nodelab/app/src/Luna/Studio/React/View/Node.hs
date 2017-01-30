@@ -43,7 +43,7 @@ node = React.defineView objName $ \(ref, n) -> do
         ports p   = forM_ p $ \port -> port_ ref port (countSameTypePorts port p) (isPortSingle port p)
         offsetX   = show $ pos ^. x
         offsetY   = show $ pos ^. y
-        nodeLimit = 10000
+        nodeLimit = 10000::Int
         zIndex    = n ^. Node.zPos
         z         = if n ^. Node.isExpanded then zIndex + nodeLimit else zIndex
     div_
