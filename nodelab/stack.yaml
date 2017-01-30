@@ -73,8 +73,8 @@ packages:
       commit: 773179796be933097e3c1468c16307f8015e6a1d
     extra-dep: true
   - location:
-      hg: https://remdezx@bitbucket.org/remdezx/react-flux
-      commit: 3e5b45e70415a5f8ea6aea547f5dadfe717ee78e
+      git: https://github.com/luna/react-flux
+      commit: ad94b1f2e4bc87b81853ff746b64c59b3eae7f09
     extra-dep: true
   - location:
       git: https://github.com/luna/typelevel.git
