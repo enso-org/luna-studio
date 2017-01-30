@@ -12,8 +12,7 @@ module.exports =
             return new LunaStudioTab(uri, code)
     @subs = new SubAtom
     @subs.add atom.commands.add 'atom-workspace', 'luna-studio:open': ->
-      atom.workspace.getActivePane().activateItem new LunaStudioTab "Luna Studio"
-      code.start()
+      atom.workspace.getActivePane().activateItem new LunaStudioTab("untitled", code)
     # camera
     @subs.add atom.commands.add '.luna-studio', 'luna-studio:pan-left':              -> code.pushEvent("PanLeft")
     @subs.add atom.commands.add '.luna-studio', 'luna-studio:pan-right':             -> code.pushEvent("PanRight")
