@@ -3,6 +3,7 @@ module Luna.Studio.React.View.NodeEditor where
 
 import qualified Data.Aeson                            as Aeson
 import qualified Data.HashMap.Strict                   as HashMap
+import qualified Data.Text                             as Text
 import qualified Luna.Studio.Data.CameraTransformation as CameraTransformation
 import           Luna.Studio.Data.Matrix               (showTransformMatrixToSvg)
 import qualified Luna.Studio.Event.UI                  as UI
@@ -35,6 +36,10 @@ nodeEditor = React.defineView name $ \(ref, ne) -> do
         , onWheel     $ \e m w -> preventDefault e : dispatch ref (UI.NodeEditorEvent $ NE.Wheel m w)
         , onScroll    $ \e     -> [preventDefault e]
         ] $ do
+        style_
+            [ "id" $= "cameraTransform" ] $ do
+                elemString $ Text.unpack $ ".transform   { color: red }"
+                elemString $ Text.unpack $ ".transform3d { color: red }"
         svg_
             [ "className" $= "plane plane-connections"
             , "style"     @= Aeson.object [ "transform" Aeson..= transform ]
