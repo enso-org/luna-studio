@@ -74,6 +74,8 @@ addToSelection nodeIds = do
     focusNodes nodeIds
     collaborativeTouch nodeIds
 
+-- Please be aware that this function modifies selection without changing selection history.
+-- If your new selection should be added to history launch modifySelectionHistory with ids from result.
 removeFromSelection :: [NodeId] -> Command State ()
 removeFromSelection nodeIds = do
     Global.modifyNodeEditor $ forM_ nodeIds $ \nodeId ->

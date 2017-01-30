@@ -62,5 +62,4 @@ stopMultiSelection _ = do
     removeActionFromState multiSelectionAction
     Global.modifyNodeEditor $ NodeEditor.selectionBox .= Nothing
     nodeIds <- selectedNodeIds
-    focusNodes nodeIds
     modifySelectionHistory nodeIds
