@@ -30,7 +30,7 @@ import           Luna.Studio.State.Collaboration   (ColorId)
 data Node = Node { _nodeId                :: NodeAPI.NodeId
                  , _ports                 :: Map AnyPortRef Port
                  , _position              :: Position
-                 , _zPos                  :: Double
+                 , _zPos                  :: Int
                  , _expression            :: Text
                  , _code                  :: Maybe Text
                  , _name                  :: Text
@@ -66,7 +66,7 @@ instance Default Collaboration where
     def = Collaboration def def
 
 makeNode :: NodeAPI.NodeId -> Map AnyPortRef Port -> Position -> Text -> Maybe Text -> Text -> Maybe Text -> Bool -> Node
-makeNode nid ports' pos expr code' name' tpe' vis = Node nid ports' pos 0.0 expr code' name' def def tpe' False False vis def Nothing
+makeNode nid ports' pos expr code' name' tpe' vis = Node nid ports' pos def expr code' name' def def tpe' False False vis def Nothing
 
 makePorts :: NodeAPI.Node -> [Port]
 makePorts node = Port.fromPorts (node ^. NodeAPI.nodeId) (Map.elems $ node ^. NodeAPI.ports)

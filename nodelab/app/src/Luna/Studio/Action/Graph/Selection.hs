@@ -11,21 +11,21 @@ module Luna.Studio.Action.Graph.Selection
      , unselectAllAndDropSelectionHistory
      ) where
 
+import qualified Data.HashMap.Strict                       as HashMap
 import qualified Data.Set                                  as Set
-import qualified Data.HashMap.Strict as HashMap
 
 import           Empire.API.Data.Node                      (NodeId)
 import           Luna.Studio.Action.Batch                  (cancelCollaborativeTouch, collaborativeTouch)
 import           Luna.Studio.Action.Command                (Command)
-import           Luna.Studio.Action.Graph.Focus            (focusSelectedNode)
-import           Luna.Studio.Action.Graph.Lookup           (allNodes, allNodeIds)
+import           Luna.Studio.Action.Graph.Focus            (focusNodes)
+import           Luna.Studio.Action.Graph.Lookup           (allNodeIds, allNodes)
 import           Luna.Studio.Action.Graph.SelectionHistory (dropSelectionHistory, modifySelectionHistory)
 import           Luna.Studio.Prelude
 import           Luna.Studio.React.Model.Node              (Node)
 import qualified Luna.Studio.React.Model.Node              as Node
+import qualified Luna.Studio.React.Model.NodeEditor        as NodeEditor
 import           Luna.Studio.State.Global                  (State)
 import qualified Luna.Studio.State.Global                  as Global
-import qualified Luna.Studio.React.Model.NodeEditor  as NodeEditor
 
 
 
@@ -64,7 +64,7 @@ addToSelection :: [NodeId] -> Command State [NodeId]
 addToSelection nodeIds = do
     Global.modifyNodeEditor $ forM_ nodeIds $ \nodeId ->
         NodeEditor.nodes . at nodeId %= fmap (Node.isSelected .~ True)
-    focusSelectedNode
+    focusNodes nodeIds
     collaborativeTouch nodeIds
     map (view Node.nodeId) <$> selectedNodes
 

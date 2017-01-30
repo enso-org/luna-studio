@@ -23,7 +23,7 @@ addNode :: Node -> Command State ()
 addNode node = do
     zoom Global.graph $ modify (Graph.addNode node)
     nodeModel <- registerNode node
-    focusNode nodeModel
+    focusNode $ nodeModel ^. Model.nodeId
 
 addDummyNode :: Node -> Command State ()
 addDummyNode dummyNode = do

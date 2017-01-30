@@ -51,6 +51,7 @@ data State = State { _mousePos           :: Position
                    , _renderNeeded       :: Bool --TODO refactor
                    , _currentActions     :: Map ActionRep (SomeAction (Command State))
                    , _selectionHistory   :: [Set Node.NodeId]
+                   , _topZIndex          :: Int
                    -- TODO[react]: wyjebawszy
                    , _workspace          :: Workspace
                    , _lastEvent          :: Maybe Event.Event
@@ -128,7 +129,7 @@ getConnection :: ConnectionId -> Command State (Maybe Connection)
 getConnection connectionId = get (App.nodeEditor . NodeEditor.connections . at connectionId)
 
 mkState :: DateTime -> Collaboration.ClientId -> StdGen -> Ref App -> State
-mkState = State (Position (Vector2 200 200)) def False def def def def def def def
+mkState = State (Position (Vector2 200 200)) def False def def def def def def def def
 
 nextRandom :: Command State Word8
 nextRandom = do

@@ -2,7 +2,7 @@ module Luna.Studio.Action.Graph
     ( allNodes
     , allNodeIds
     , focusNode
-    , focusSelectedNode
+    , focusNodes
     , getConnection
     , getNode
     , getPort
@@ -12,8 +12,8 @@ module Luna.Studio.Action.Graph
     , removeConnections
     , renderGraph
     , selectAll
-    , selectNodes
     , selectedNodes
+    , selectNodes
     , toggleSelect
     , unselectAll
     , updateConnection
@@ -24,11 +24,9 @@ module Luna.Studio.Action.Graph
 
 import           Luna.Studio.Action.Graph.Connect          (localConnectNodes)
 import           Luna.Studio.Action.Graph.Disconnect       (localRemoveConnections, removeConnections)
-import           Luna.Studio.Action.Graph.Focus            (focusNode)
-import           Luna.Studio.Action.Graph.Focus            (focusSelectedNode)
-import           Luna.Studio.Action.Graph.Lookup           (allNodes, allNodeIds, getConnection, getNode, getPort)
+import           Luna.Studio.Action.Graph.Focus            (focusNode, focusNodes, updateNodeZOrder)
+import           Luna.Studio.Action.Graph.Lookup           (allNodeIds, allNodes, getConnection, getNode, getPort)
 import           Luna.Studio.Action.Graph.Render           (renderGraph)
 import           Luna.Studio.Action.Graph.Selection        (selectAll, selectNodes, selectedNodes, toggleSelect, unselectAll)
 import           Luna.Studio.Action.Graph.SelectionHistory (modifySelectionHistory)
-import           Luna.Studio.Action.Graph.Update           (updateConnection, updateConnections, updateConnectionsForNodes,
-                                                            updateNodeZOrder)
+import           Luna.Studio.Action.Graph.Update           (updateConnection, updateConnections, updateConnectionsForNodes)
