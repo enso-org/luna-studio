@@ -1,8 +1,9 @@
 module Empire.API.Graph.AddNode where
 
 import           Data.Binary                   (Binary)
+import           Data.Text                     (Text)
 import qualified Data.Text                     as Text
-import           Prologue
+import           Prologue                      hiding (Text)
 
 import           Empire.API.Data.GraphLocation (GraphLocation)
 import           Empire.API.Data.Node          (Node, NodeId)

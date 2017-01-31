@@ -1,4 +1,4 @@
-DragDrop = require('DragDrop')
+DragDrop = require('./DragDrop')
 
 module.exports =
   initializeEvents: ->

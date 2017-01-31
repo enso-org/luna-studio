@@ -1,7 +1,8 @@
 module Empire.API.Graph.CodeUpdate where
 
-import           Prologue
 import           Data.Binary                   (Binary)
+import           Data.Text                     (Text)
+import           Prologue                      hiding (Text)
 
 import           Empire.API.Data.GraphLocation (GraphLocation)
 import           Empire.API.Data.Node          (Node)

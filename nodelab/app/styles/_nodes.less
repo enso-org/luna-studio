@@ -1,0 +1,235 @@
+@import '_variables';
+
+/////////////////////////////
+//        utilities        //
+/////////////////////////////
+
+.blur {
+    backdrop-filter: blur(12px);
+    width:           100%;
+    height:          100%;
+    position:        absolute;
+    z-index:        -1;
+}
+
+/////////////////////////////
+//       connections       //
+/////////////////////////////
+
+.connections {
+    stroke-linecap:  round;
+    stroke-linejoin: round;
+}
+
+// FIXME – that need to be implemented in SVG
+.connection__src,
+.connection__dst {
+    transition: all @transitionSpeed linear;
+    &:hover * {
+        stroke: #fff;
+    }
+    line + line {
+        opacity: 0;
+        stroke-linecap: butt;
+    }
+}
+
+/////////////////////////////
+//          nodes          //
+/////////////////////////////
+
+.node {
+    position: absolute;
+    width:    0;
+    height:   0;
+}
+
+.node__name {
+    fill:        @colorName;
+    text-anchor: middle;
+    font-weight: 300;
+    filter:      "url(#textShadow)";
+    &::selection {
+        background: none;
+    }
+}
+
+.port {
+    stroke-width: 0;
+    &:hover {
+        .port__shape {
+            fill: #fff !important;
+        }
+    }
+}
+
+.port--self {
+    .port__shape {
+        r: 5;
+    }
+    .port__select {
+        r: 8;
+    }
+}
+
+.port__select {
+    opacity: 0;
+}
+
+
+/////////////////////////////
+//      node expanded      //
+/////////////////////////////
+
+.node--expanded {
+    z-index: 10000;
+    .node__visuals {
+        left: 0;
+        top: -8px;
+    }
+    .port--o {
+        animation-iteration-count: 0;
+        animation-timing-function: ease-in-out;
+        animation-duration:        @transitionSpeed;
+        animation-name:            outputExpanding;
+        .port__shape,
+        .port__select {
+            cx: @expandedNodeWidth;
+        }
+    }
+}
+
+.node__properties,
+.node__visuals {
+    font-size: 10px;
+}
+
+.node__properties {
+    color:         @colorTextUneditable;
+    background:    @colorNodeBackground;
+    box-shadow:    0 0 10px rgba(25,25,25,1);
+    line-height:   @lineHeight;
+    width:         0;
+    height:        40px;
+    opacity:       0;
+    transition:    all @transitionSpeed ease-in-out;
+    top:          -20px;
+    padding:       12px @expandedNodePadding 8px;
+    position:      relative;
+    border-radius: @borderRadius;
+    overflow:      hidden;
+    .row {
+        display:         flex;
+        width:           @expandedNodeWidth - 2 * @expandedNodePadding;
+        justify-content: space-between;
+    }
+    .row--output-name {
+        justify-content: flex-end;
+    }
+}
+
+.node--expanded {  // FIXME: properties container should be removed from DOM for collapsed nodes
+    .node__properties {
+        height:  auto;
+        width:   @expandedNodeWidth - 2 * @expandedNodePadding;
+        opacity: 1;
+    }
+}
+
+.node__visuals {
+    position: relative;
+    left:    -30px;
+    top:     -16px;
+    width:    @expandedNodeWidth;
+    table {
+        border:          0;
+        width:           100%;
+        text-align:      left;
+        border-collapse: collapse;
+    }
+    td, th {
+        line-height: 20px;
+        padding:     0 12px;
+    }
+    th {
+        border-bottom: 2px solid rgba(255,255,255,.02);
+    }
+    tr {
+        &:nth-child(even) {
+            background: rgba(255,255,255,.0)
+        }
+    }
+}
+
+.vis {
+    position: relative;
+    width:    @expandedNodeWidth;
+    height:   @expandedNodeWidth - 2 * @expandedNodePadding;
+    overflow: hidden;
+    .scroll {
+        overflow: scroll;
+        height: 100%;
+    }
+}
+.vis--graph {
+    position: relative;
+    svg {
+        position: relative;
+        top:      15px;
+        left:    -5px;
+        fill:     #666;
+        overflow: initial;
+    }
+}
+
+
+/////////////////////////////
+//     selection mark      //
+/////////////////////////////
+
+.node__selection-mark rect {
+    fill:       none;
+    stroke:     transparent;
+    transition: all @transitionSpeed ease-in-out;
+    stroke:     @colorSelect;
+    opacity:    0;
+    x:         -20px;
+    y:         -20px;
+    width:      40px;
+    height:     40px;
+    rx:         20px;
+    ry:         20px;
+}
+
+.node--selected {
+    .node__selection-mark rect {
+        opacity: 1;
+        x:      -29.7px; // subpixel antialiasing tweak
+        y:      -29.7px;
+        width:   59.4px;
+        height:  59.4px;
+        rx:      30px;
+        ry:      30px;
+    }
+}
+
+.node--expanded {
+    .node__selection-mark rect {
+        x:      0px;
+        y:     -20px;
+        width:  @expandedNodeWidth;
+        height: 68px;
+        rx:     4px;
+        ry:     4px;
+    }
+    &.node--selected {
+        .node__selection-mark rect {
+            x:     -9.7px;
+            y:     -29.7px;
+            width:  @expandedNodeWidth + 19.4px;
+            height: 88px;
+            rx:     12px;
+            ry:     12px;
+        }
+    }
+}

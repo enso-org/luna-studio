@@ -1,18 +1,21 @@
+{-# LANGUAGE DeriveAnyClass #-}
+
 module Empire.API.Data.Port where
 
-import Prologue
-import Data.Binary                  (Binary)
+import           Control.DeepSeq              (NFData)
+import           Data.Binary                  (Binary)
+import           Prologue
 
-import Empire.API.Data.DefaultValue (PortDefault)
-import Empire.API.Data.ValueType    (ValueType)
+import           Empire.API.Data.DefaultValue (PortDefault)
+import           Empire.API.Data.ValueType    (ValueType)
 
-data InPort  = Self | Arg Int        deriving (Generic, Show, Eq, Read)
-data OutPort = All  | Projection Int deriving (Generic, Show, Eq, Read)
+data InPort  = Self | Arg Int        deriving (Generic, Show, Eq, Read, NFData)
+data OutPort = All  | Projection Int deriving (Generic, Show, Eq, Read, NFData)
 
 instance Binary InPort
 instance Binary OutPort
 
-data PortId = InPortId InPort | OutPortId OutPort deriving (Generic, Show, Read, Eq)
+data PortId = InPortId InPort | OutPortId OutPort deriving (Generic, Show, Read, Eq, NFData)
 
 instance Ord PortId where
   (InPortId  _) `compare` (OutPortId _) = LT
@@ -32,18 +35,16 @@ instance Ord OutPort where
   (Projection _) `compare` All            = GT
   (Projection a) `compare` (Projection b) = a `compare` b
 
-data PortState = NotConnected | Connected | WithDefault PortDefault deriving (Show, Eq, Generic)
+data PortState = NotConnected | Connected | WithDefault PortDefault deriving (Show, Eq, Generic, NFData)
 
 data Port = Port { _portId     :: PortId
                  , _name       :: String
                  , _valueType  :: ValueType
                  , _state      :: PortState
-                 } deriving (Show, Eq, Generic)
+                 } deriving (Show, Eq, Generic, NFData)
 
 makeLenses ''Port
 makePrisms ''PortState
 instance Binary PortId
 instance Binary Port
 instance Binary PortState
-
-

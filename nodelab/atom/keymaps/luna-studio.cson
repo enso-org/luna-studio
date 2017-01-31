@@ -1,0 +1,40 @@
+'atom-workspace':
+  'ctrl-alt-k': 'luna-studio:open'
+'.luna-studio':
+  'ctrl-left'        : 'luna-studio:pan-left'             # PanLeft
+  'ctrl-right'       : 'luna-studio:pan-right'            # PanRight
+  'ctrl-up'          : 'luna-studio:pan-up'               # PanUp
+  'ctrl-down'        : 'luna-studio:pan-down'             # PanDown
+  'ctrl-+'           : 'luna-studio:zoom-in'              # ZoomIn
+  'ctrl-shift-+'     : 'luna-studio:zoom-in'              # ZoomIn
+  'ctrl--'           : 'luna-studio:zoom-out'             # ZoomOut
+  'ctrl-shift--'     : 'luna-studio:zoom-out'             # ZoomOut
+  'ctrl-0'           : 'luna-studio:reset-zoom'           # ResetZoom
+  'ctrl-shift-0'     : 'luna-studio:reset-pan'            # ResetPan
+  'ctrl-alt-shift-0' : 'luna-studio:reset-camera'         # ResetCamera
+  'h'                : 'luna-studio:center-graph'         # CenterGraph
+    # navigation
+  'shift-left'       : 'luna-studio:go-prev'              # GoPrev
+  'shift-right'      : 'luna-studio:go-next'              # GoNext
+  'left'             : 'luna-studio:go-left'              # GoLeft
+  'up'               : 'luna-studio:go-up'                # GoUp
+  'right'            : 'luna-studio:go-right'             # GoRight
+  'down'             : 'luna-studio:go-down'              # GoDown
+  'ctrl-shift-left'  : 'luna-studio:go-cone-left'         # GoConeLeft
+  'ctrl-shift-up'    : 'luna-studio:go-cone-up'           # GoConeUp
+  'ctrl-shift-right' : 'luna-studio:go-cone-right'        # GoConeRight
+  'ctrl-shift-down'  : 'luna-studio:go-cone-down'         # GoConeDown
+    # nodes
+  'ctrl-a'          : 'luna-studio:select-all'            # SelectAll
+  'delete'          : 'luna-studio:remove-selected-nodes' # RemoveSelectedNodes
+  'esc'             : 'luna-studio:unselect-sll'          # UnselectAll
+  'enter'           : 'luna-studio:expand-selected-nodes' # ExpandSelectedNodes
+    # searcher
+  'tab'             : 'luna-studio:searcher-open'         # SearcherOpen
+
+'.searcher':
+  'enter'     : 'luna-studio:searcher-accept'             # SearcherAccept
+  'tab'       : 'luna-studio:searcher-close'              # SearcherClose
+  'esc'       : 'luna-studio:searcher-close'              # SearcherClose
+  'down'      : 'luna-studio:searcher-move-down'          # SearcherMoveDown
+  'up'        : 'luna-studio:searcher-move-up'            # SearcherMoveUp

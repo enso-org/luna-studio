@@ -8,7 +8,7 @@ ENV LC_ALL en_US.UTF-8
 COPY env/config /etc/nodelab/config
 
 RUN    apk update \
-    && apk add zeromq s6 nginx gmp \
+    && apk add zeromq s6 nginx gmp mercurial g++ \
     && ln -s /userdata/projects /etc/nodelab/projects \
     && adduser -u 82 -D -S -G www-data www-data
 

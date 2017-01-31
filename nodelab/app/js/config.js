@@ -1,20 +1,28 @@
 "use strict";
 
-var release = require('config.release');
+var release = require('./config.release');
 var brunch = require('brunch');
 var config;
-var customEvent = require('CustomEvent').customEvent;
+var customEvent = require('./CustomEvent').customEvent;
 
+try {
+  var u = require('underscore');
+} catch (e) {
+  var u = _;
+}
 function defaultBackend() {
-    var l = window.location;
-    return ((l.protocol === "https:") ? "wss://" : "ws://") + l.hostname + (((l.port !== 80) && (l.port !== 443)) ? ":" + l.port : "") + "/ws";
+  // var l = window.location;
+  // if(typeof(l) != 'undefined')
+  //   return ((l.protocol === "https:") ? "wss://" : "ws://") + l.hostname + (((l.port !== 80) && (l.port !== 443)) ? ":" + l.port : "") + "/ws";
+  // else
+    return "ws://localhost:8088";
 }
 
 if (brunch.env !== "production") {
   var local = {};
-  var debug = require('config.debug');
+  var debug = require('./config.debug');
   try {
-    local   = require('config.local');
+    local   = require('./config.local');
   } catch (e) {
     // no local overrides, skipping.
   }
@@ -31,7 +39,7 @@ if (brunch.env !== "production") {
   }
   browser.backendAddress = localStorage.getItem("backendAddress") || defaultBackend();
 
-  config = _({}).defaults(browser, local, debug, release);
+  config = u({}).defaults(browser, local, debug, release);
 
   console.info("Backend address is " + browser.backendAddress);
 

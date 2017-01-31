@@ -1,14 +1,17 @@
 module Empire.API.Graph.UpdateNodeExpression where
 
 import           Data.Binary                   (Binary)
-import           Prologue
+import           Data.Text                     (Text)
+import           Prologue                      hiding (Text)
 
 import           Empire.API.Data.GraphLocation (GraphLocation)
 import           Empire.API.Data.Node          (NodeId, Node)
 import qualified Empire.API.Response           as Response
+
 import qualified Empire.API.Graph.Request      as G
-import qualified Empire.API.Topic              as T
 import qualified Empire.API.Request            as R
+import qualified Empire.API.Response           as Response
+import qualified Empire.API.Topic              as T
 
 data Request = Request { _location   :: GraphLocation
                        , _nodeId     :: NodeId

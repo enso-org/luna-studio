@@ -7,12 +7,12 @@ module JS.GoogleAnalytics
     , ConnectType (..)
     ) where
 
-import           Data.JSString.Text        (lazyTextToJSString)
-import           Data.Text.Lazy            (pack)
-import           GHCJS.Nullable            (Nullable, maybeToNullable)
-import           Utils.PreludePlus
+import           Data.JSString.Text         (textToJSString)
+import           Data.Text                  (pack)
+import           GHCJS.Nullable             (Nullable, maybeToNullable)
+import           Luna.Studio.Prelude
 
-import           Reactive.Commands.Command (Command, performIO)
+import           Luna.Studio.Action.Command (Command, performIO)
 
 data ConnectType = Manual
                  | Pen
@@ -33,7 +33,6 @@ data Event = BSOD Text -- sent directly from JS
            | CreateProject
            | SwitchProject
            | GAOptOut Bool
-           | OpenHelp
            | ToggleText
 
 data GAEvent = GAEvent { _category :: Text
@@ -58,15 +57,15 @@ toGAEvent ev = case ev of
     CreateProject       -> simpleEvent "Project"         "Create"
     SwitchProject       -> simpleEvent "Project"         "Switch"
     GAOptOut s          -> GAEvent     "Settings"        "GAOptOut"       (Just $ pack $ show s)  Nothing
-    OpenHelp            -> simpleEvent "UI"              "OpenHelp"
     ToggleText          -> simpleEvent "UI"              "ToggleText"
 
 foreign import javascript safe "ga('send', 'event', $1, $2, $3)" sendEvent' :: JSString -> JSString -> Nullable JSString -> Nullable Int -> IO ()
 
 sendEvent :: Event -> Command a ()
-sendEvent event = performIO $ sendEvent' cat' act' lab' val' where
-        GAEvent cat act lab val = toGAEvent event
-        cat' = lazyTextToJSString cat
-        act' = lazyTextToJSString act
-        lab' = maybeToNullable $ lazyTextToJSString <$> lab
-        val' = maybeToNullable val
+sendEvent = const $ return () --TODO it appears to conflict with Atom
+-- sendEvent event = performIO $ sendEvent' cat' act' lab' val' where
+--         GAEvent cat act lab val = toGAEvent event
+--         cat' = textToJSString cat
+--         act' = textToJSString act
+--         lab' = maybeToNullable $ textToJSString <$> lab
+--         val' = maybeToNullable val

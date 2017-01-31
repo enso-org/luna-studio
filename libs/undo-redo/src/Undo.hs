@@ -112,7 +112,7 @@ act action undoMessage = case action of
     ActUndo -> case undoMessage of (UndoMessage _ _ topicUndo msgUndo _ _) -> Action topicUndo msgUndo
     ActRedo -> case undoMessage of (UndoMessage _ _ _ _ topicRedo msgRedo) -> Action topicRedo msgRedo
 
-doUndo :: MonadState UndoState m => Maybe UUID -> m (Maybe Action)
+doUndo :: MonadState UndoState m => UUID -> m (Maybe Action)
 doUndo guiID = do
     h <- uses undo $ List.find (compareId guiID)
     case h of
@@ -123,7 +123,7 @@ doUndo guiID = do
                        return $ Just $ act ActUndo msg
         Nothing  -> return Nothing
 
-doRedo :: MonadState UndoState m => Maybe UUID -> m (Maybe Action)
+doRedo :: MonadState UndoState m => UUID -> m (Maybe Action)
 doRedo guiID = do
     h <- uses redo $ List.find (compareId guiID)
     case h of

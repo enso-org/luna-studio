@@ -5,8 +5,8 @@ module Main where
 import           Control.Monad                  (when)
 import           Data.Default
 import           Data.Monoid                    ((<>))
-import           Data.Text.Lazy                 (Text)
-import qualified Data.Text.Lazy                 as Text
+import           Data.Text                      (Text)
+import qualified Data.Text                      as Text
 import           System.Exit
 
 import           Test.Framework                 hiding (Test)

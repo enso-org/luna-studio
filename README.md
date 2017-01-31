@@ -68,6 +68,9 @@ $ brunch watch --server # or serve $REPO_DIR/nodelab/www using any HTTP server
 
 If You have experienced problems like: ```Oops. Connection to the server was closed. Please reload page to reconnect again.``` open browser console and ```setBackendAddress("ws://localhost:8088")``` and reload browser.
 
+FIXME: The current setting may not work until you install `ghc` globally. It happens on OS X El Capitan, so in that case:
+```brew install ghc```
+
 ### Building Docker images
 
 Push to `docker/TAG` branch to build docker image and upload it to `lunalang/luna:TAG` at Docker Hub.

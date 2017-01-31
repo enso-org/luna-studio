@@ -25,42 +25,39 @@ default-extensions:
   - ScopedTypeVariables
   - StandaloneDeriving
   - TemplateHaskell
+  - TupleSections
+  - ViewPatterns
 
 ghc-options:
-    -Wall
+    -Wall -O2
 
 #
 # ACHTUNG! Zmieniasz tu - zmien w interactive
 #
 dependencies:
-  - "base >= 4.8 && < 4.9"
+  - "base >= 4.9 && < 4.10"
   - aeson
   - base64-bytestring
   - binary
   - bytestring
-  - constraints
   - containers
   - convert
   - data-default
   - datetime
-  - errors
-  - fgl
+  - deepseq
   - ghcjs-base
   - ghcjs-dom
   - ghcjs-prim
   - hashable
-  - hsprocessing
-  - language-glsl
   - lens
   - luna-empire-api
   - luna-empire-api-json
-  - MissingH
+  - matrix
   - mtl
   - placeholders
-  - pretty-show
-  - process
   - prologue
   - random
+  - react-flux
   - scope-searcher
   - split
   - text
@@ -68,7 +65,6 @@ dependencies:
   - transformers
   - unordered-containers
   - uuid-types
-  - vector
   - visualization-api
 
 executables:

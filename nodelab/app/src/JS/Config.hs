@@ -4,7 +4,7 @@
 module JS.Config (getBackendAddress) where
 
 import           Data.JSString     (unpack)
-import           Utils.PreludePlus
+import           Luna.Studio.Prelude
 
 
 foreign import javascript safe "config.backendAddress"

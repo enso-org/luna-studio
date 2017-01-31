@@ -2,23 +2,23 @@
 
 module Main where
 
-import           System.IO
 import           Control.Lens
-import           Control.Monad               (forM_, when)
-import           Control.Monad.State         (evalStateT, StateT, liftIO, get, put, modify)
+import           Control.Monad                  (forM_, when)
+import           Control.Monad.State            (StateT, evalStateT, get, liftIO, modify, put)
 import           Data.Default
-import           Data.Monoid                 ((<>))
-import           Data.Text.Lazy              (Text)
-import qualified Data.Text.Lazy              as Text
-import           Text.Show.Pretty
+import           Data.Monoid                    ((<>))
+import           Data.Text                      (Text)
+import qualified Data.Text                      as Text
 import           System.Console.ANSI
+import           System.IO
+import           Text.Show.Pretty
 
 import           Text.ScopeSearcher.Item
 import           Text.ScopeSearcher.QueryResult
-import qualified Text.ScopeSearcher.Scope    as Scope
-import qualified Text.ScopeSearcher.Searcher as Searcher
+import qualified Text.ScopeSearcher.Scope       as Scope
+import qualified Text.ScopeSearcher.Searcher    as Searcher
 
-import qualified Mock.Mix                    as Mock
+import qualified Mock.Mix                       as Mock
 
 data Env = Env { _debug       :: Bool
                , _includePath :: Bool

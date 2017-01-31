@@ -1,3 +1,4 @@
+{-# LANGUAGE RecursiveDo #-}
 module Main where
 
 
@@ -24,54 +25,53 @@ module Main where
 
 -- http://www.network-science.de/ascii/
 
-import           Data.DateTime                     (getCurrentTime)
-import qualified Data.Set                          as Set
-import           System.Random                     (newStdGen)
-import           Utils.PreludePlus
-
-import qualified Batch.Workspace                   as Workspace
-import qualified BatchConnector.Commands           as BatchCmd
+import           Control.Concurrent.Chan              (Chan)
+import qualified Control.Concurrent.Chan              as Chan
 import           Control.Concurrent.MVar
-import qualified JS.GraphLocation                  as GraphLocation
-import           JS.Tutorial                       (shouldRunTutorial)
-import           JS.Tutorial                       (showStep)
-import           JS.UI                             (initializeGl, initializeHelp, render, triggerWindowResize)
-import           JS.UUID                           (generateUUID)
-import           JS.WebSocket                      (WebSocket)
-import           Reactive.Commands.Command         (execCommand)
-import qualified Reactive.Plugins.Core.Action.Init as Init
-import qualified Reactive.Plugins.Core.Network     as CoreNetwork
-import qualified Reactive.Plugins.Loader.Loader    as Loader
-import           Reactive.State.Global             (initialState)
-import qualified Reactive.State.Global             as Global
+import           Data.DateTime                        (getCurrentTime)
+import qualified Data.Set                             as Set
+import           Luna.Studio.Prelude
+import qualified React.Flux                           as React
+import           System.Random                        (newStdGen)
 
-runMainNetwork :: WebSocket -> IO ()
-runMainNetwork socket = do
-    initializeGl
-    initializeHelp
-    render
+import qualified JS.GraphLocation                     as GraphLocation
+import           JS.UUID                              (generateUUID)
+import           JS.WebSocket                         (WebSocket)
+import qualified Luna.Studio.Batch.Connector.Commands as BatchCmd
+import qualified Luna.Studio.Batch.Workspace          as Workspace
+import qualified Luna.Studio.Engine                   as Engine
+import qualified Luna.Studio.React.Store              as Store
+import qualified Luna.Studio.React.View.App           as App
+import           Luna.Studio.State.Global             (mkState)
+import qualified Luna.Studio.State.Global             as Global
 
+
+
+
+runApp :: Chan (IO ()) -> WebSocket -> IO ()
+runApp chan socket = do
     lastLocation <- GraphLocation.loadLocation
-
     random <- newStdGen
     projectListRequestId <- generateUUID
     clientId             <- generateUUID
     initTime             <- getCurrentTime
-    tutorial'            <- shouldRunTutorial
-    let tutorial = if tutorial' then Just 0 else Nothing
 
-    withJust tutorial $ \step -> showStep step
+    mdo
+        appRef <- Store.createApp $ Engine.scheduleEvent chan state
+        React.reactRender "nodelab-app" (App.app appRef) ()
 
+        let initState = mkState initTime clientId random appRef
+                      & Global.workspace . Workspace.lastUILocation .~ lastLocation
+                      & Global.pendingRequests %~ Set.insert projectListRequestId
 
-    let initState = initialState initTime clientId random tutorial & Global.workspace . Workspace.lastUILocation .~ lastLocation
-                                                                   & Global.pendingRequests %~ Set.insert projectListRequestId
-    initState' <- execCommand Init.initialize initState
+        state <- newMVar initState
+        Engine.connectEventSources socket chan state
 
-    state <- newMVar initState'
-    CoreNetwork.makeNetworkDescription socket state
-    triggerWindowResize
-
+    App.focus
     BatchCmd.listProjects projectListRequestId $ Just clientId
 
 main :: IO ()
-main = Loader.withActiveConnection runMainNetwork
+main = do
+    chan <- Chan.newChan
+    Engine.withActiveConnection $ runApp chan
+    Engine.startLoop chan

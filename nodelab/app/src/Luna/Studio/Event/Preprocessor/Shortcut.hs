@@ -1,0 +1,64 @@
+module Luna.Studio.Event.Preprocessor.Shortcut (process) where
+
+import           React.Flux                       (KeyboardEvent)
+
+import           Luna.Studio.Event.Event          (Event (Shortcut, UI))
+import qualified Luna.Studio.Event.Keys           as Keys
+import           Luna.Studio.Event.Shortcut       (ShortcutEvent (..))
+import           Luna.Studio.Event.UI             (UIEvent (AppEvent, SearcherEvent))
+import           Luna.Studio.Prelude
+import qualified Luna.Studio.React.Event.App      as App
+import qualified Luna.Studio.React.Event.Searcher as Searcher
+
+
+
+process :: Event -> Maybe Event
+process (UI (AppEvent      (App.KeyDown      e))) = Shortcut <$> handleKeyApp e
+process (UI (SearcherEvent (Searcher.KeyDown e))) = Shortcut <$> handleKeySearcher e
+process _ = Nothing
+
+handleKeyApp :: KeyboardEvent -> Maybe ShortcutEvent
+handleKeyApp evt
+    -- camera
+    | Keys.withCtrl         evt Keys.leftArrow  = Just PanLeft
+    | Keys.withCtrl         evt Keys.rightArrow = Just PanRight
+    | Keys.withCtrl         evt Keys.upArrow    = Just PanUp
+    | Keys.withCtrl         evt Keys.downArrow  = Just PanDown
+    | Keys.withCtrl         evt Keys.plus       = Just ZoomIn
+    | Keys.withCtrlShift    evt Keys.plus       = Just ZoomIn
+    | Keys.withCtrl         evt Keys.minus      = Just ZoomOut
+    | Keys.withCtrlShift    evt Keys.minus      = Just ZoomOut
+    | Keys.withCtrl         evt Keys.zero       = Just ResetZoom
+    | Keys.withCtrlShift    evt Keys.zero       = Just ResetPan
+    | Keys.withCtrlAltShift evt Keys.zero       = Just ResetCamera
+    | Keys.withCtrlShift    evt Keys.zero       = Just CenterGraph
+    | Keys.withoutMods      evt Keys.h          = Just CenterGraph
+    -- navigation
+    | Keys.withShift        evt Keys.leftArrow  = Just GoPrev
+    | Keys.withShift        evt Keys.rightArrow = Just GoNext
+    | Keys.withoutMods      evt Keys.leftArrow  = Just GoLeft
+    | Keys.withoutMods      evt Keys.upArrow    = Just GoUp
+    | Keys.withoutMods      evt Keys.rightArrow = Just GoRight
+    | Keys.withoutMods      evt Keys.downArrow  = Just GoDown
+    | Keys.withCtrlShift    evt Keys.leftArrow  = Just GoConeLeft
+    | Keys.withCtrlShift    evt Keys.upArrow    = Just GoConeUp
+    | Keys.withCtrlShift    evt Keys.rightArrow = Just GoConeRight
+    | Keys.withCtrlShift    evt Keys.downArrow  = Just GoConeDown
+    -- nodes
+    | Keys.withCtrl         evt Keys.a          = Just SelectAll
+    | Keys.withoutMods      evt Keys.del        = Just RemoveSelectedNodes
+    | Keys.withoutMods      evt Keys.esc        = Just UnselectAll
+    | Keys.withoutMods      evt Keys.enter      = Just ExpandSelectedNodes
+    -- searcher
+    | Keys.withoutMods evt Keys.tab             = Just SearcherOpen
+    --
+    | otherwise                                 = Nothing
+
+handleKeySearcher :: KeyboardEvent -> Maybe ShortcutEvent
+handleKeySearcher evt
+    | Keys.withoutMods evt Keys.enter     = Just SearcherAccept
+    | Keys.withoutMods evt Keys.tab       = Just SearcherClose
+    | Keys.withoutMods evt Keys.esc       = Just SearcherClose
+    | Keys.withoutMods evt Keys.downArrow = Just SearcherMoveDown
+    | Keys.withoutMods evt Keys.upArrow   = Just SearcherMoveUp
+    | otherwise                           = Nothing
