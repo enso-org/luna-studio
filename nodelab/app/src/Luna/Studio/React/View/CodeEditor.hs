@@ -83,29 +83,3 @@ codeEditor = React.defineView name $ \model -> do
 
 codeEditor_ :: CodeEditor -> ReactElementM ViewEventHandler ()
 codeEditor_ model = React.viewWithSKey codeEditor name model mempty
-
-
---TODO[react] remove
--- resizeTextEditorToggle :: Vector2 Int -> Command State ()
--- resizeTextEditorToggle screenSize = do
---     toggleId <- use $ Global.uiElements . UIElements.textEditorToggle
---     inRegistry $ do
---         let width = Style.textEditorToggle ^. Button.size . x
---         UICmd.moveX  toggleId $ (fromIntegral $ screenSize ^. x) - width
---         UICmd.resize toggleId $ Vector2 width (fromIntegral $ screenSize ^. y)
---
--- relayoutTextEditor :: Vector2 Int -> Command Global.State Int
--- relayoutTextEditor screenSize = do
---     visible <- use $ Global.uiElements . UIElements.textEditorVisible
---     liftIO $ UI.setVisible visible
---     let width = (floor $ (0.3 :: Double) * (fromIntegral $ screenSize ^. x))
---     liftIO $ UI.setWidth width
---
---     return $ if visible then width else 0
---
--- initTextEditor :: Command State ()
--- initTextEditor = do
---     let toggle = Style.textEditorToggle
---     toggleId <- inRegistry $ UICmd.register sceneInterfaceId toggle $ addHandler (Button.ClickedHandler $ const $ toggleText) mempty
---
---     Global.uiElements . UIElements.textEditorToggle .= toggleId

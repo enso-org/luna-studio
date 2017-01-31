@@ -4,8 +4,6 @@ module Data.Vector where
 import           Data.Aeson          (ToJSON)
 import           Luna.Studio.Prelude
 
---TODO[react]: Make this import possible
--- import           Control.Lens.Utils  (makePfxLenses)
 import           Prologue            (wrapped')
 
 
@@ -106,10 +104,6 @@ shift :: (Double -> Double) -> Double -> Double
 shift f x' = if x' < shiftConst then 0.0
                                 else f (x' - shiftConst)
     where shiftConst = 0.1
-
-nudgeFromZero :: Double -> Double
-nudgeFromZero v = (sign v) * (0.1 + (abs v)) where
-    sign v = if v == 0.0 then 1 else signum v
 
 negateSnd :: Num a => Vector2 a -> Vector2 a
 negateSnd (Vector2 x y) = Vector2 x (-y)

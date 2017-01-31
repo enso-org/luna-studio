@@ -37,8 +37,3 @@ registerNode node = do
     Global.modifyNodeEditor $ do
         NodeEditor.nodes . at nodeId ?= nodeModel
         return nodeModel
-
---TODO[react]
--- nodeHandlers :: Node -> HTMap
--- nodeHandlers node = addHandler (UINode.ChangeInputNodeTypeHandler   $ \_ nodeId name -> BatchCmd.setInputNodeType nodeId name)
---                   $ addHandler (UINode.CodeChangedHandler           codeChanged)

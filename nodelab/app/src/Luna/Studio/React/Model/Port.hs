@@ -39,24 +39,3 @@ fromPorts nodeId ports = fromPort nodeId <$> ports where
 fromPort :: NodeId -> API.Port -> Port
 fromPort nodeId port = Port portRef' port (colorPort port) where
     portRef' = toAnyPortRef nodeId $ port ^. API.portId
-
--- TODO[react]: Should be removed
--- angle :: Getter Port Double
--- angle = to (toAngle . view angleVector )
---
---
--- angleToDimVec :: Double -> Vector2 Double
--- angleToDimVec angle' = (/ 10.0) <$> Vector2 (cos angle') (-sin angle')
---
--- angleToDimVec' :: Double -> Vector2 Double
--- angleToDimVec' angle' = (/ 10.0) <$> Vector2 (-cos angle') (-sin angle')
---
--- defaultAngle :: Int -> PortId -> Vector2 Double
--- defaultAngle numPorts (OutPortId All)                  = angleToDimVec' pi where
--- defaultAngle numPorts (OutPortId (Projection portNum)) = angleToDimVec' angle' where
---     angle' = delta * (fromIntegral portNum) + delta / 2.0 + pi / 2.0
---     delta  = pi / (fromIntegral numPorts)
--- defaultAngle _        (InPortId (Self))                = angleToDimVec 0.0
--- defaultAngle numPorts (InPortId (Arg portNum))         = angleToDimVec angle' where
---     angle' = delta * (fromIntegral portNum) + delta / 2.0 + pi / 2.0
---     delta  = pi / (fromIntegral numPorts)
