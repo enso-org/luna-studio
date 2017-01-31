@@ -19,7 +19,7 @@ data ValueTypeEnum = DiscreteNumber
                    | String
                    | Bool
                    | Other
-                   deriving (Show, Eq, Enum, Generic)
+                   deriving (Eq, Enum, Generic, Show)
 
 instance Binary ValueTypeEnum
 

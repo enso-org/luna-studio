@@ -23,7 +23,7 @@ addNode :: Node -> Command State ()
 addNode node = do
     zoom Global.graph $ modify (Graph.addNode node)
     nodeModel <- registerNode node
-    focusNode nodeModel
+    focusNode $ nodeModel ^. Model.nodeId
 
 addDummyNode :: Node -> Command State ()
 addDummyNode dummyNode = do
@@ -37,8 +37,3 @@ registerNode node = do
     Global.modifyNodeEditor $ do
         NodeEditor.nodes . at nodeId ?= nodeModel
         return nodeModel
-
---TODO[react]
--- nodeHandlers :: Node -> HTMap
--- nodeHandlers node = addHandler (UINode.ChangeInputNodeTypeHandler   $ \_ nodeId name -> BatchCmd.setInputNodeType nodeId name)
---                   $ addHandler (UINode.CodeChangedHandler           codeChanged)

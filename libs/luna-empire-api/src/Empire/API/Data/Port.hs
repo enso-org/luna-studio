@@ -1,5 +1,3 @@
-{-# LANGUAGE DeriveAnyClass #-}
-
 module Empire.API.Data.Port where
 
 import Prologue                     hiding (TypeRep)
@@ -47,3 +45,8 @@ makePrisms ''PortState
 instance Binary PortId
 instance Binary Port
 instance Binary PortState
+
+isInputPort :: Port -> Bool
+isInputPort port = case port ^. portId of
+    InPortId _ -> True
+    _          -> False

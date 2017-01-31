@@ -9,9 +9,8 @@ import qualified JS.GoogleAnalytics                  as GA
 import qualified Luna.Studio.Action.Batch            as BatchCmd
 import           Luna.Studio.Action.Command          (Command)
 import           Luna.Studio.Action.Graph.Disconnect (localRemoveConnections)
-import           Luna.Studio.Action.Graph.Selection  (selectPreviousNodes, selectedNodes)
+import           Luna.Studio.Action.Graph.Selection  (selectPreviousNodes, selectedNodeIds)
 import           Luna.Studio.Prelude
-import qualified Luna.Studio.React.Model.Node        as NodeModel
 import qualified Luna.Studio.React.Model.NodeEditor  as NodeEditor
 import           Luna.Studio.State.Global            (State)
 import qualified Luna.Studio.State.Global            as Global
@@ -20,8 +19,7 @@ import qualified Luna.Studio.State.Graph             as Graph
 
 removeSelectedNodes :: Command State ()
 removeSelectedNodes = do
-    selected <- selectedNodes
-    performRemoval $ view NodeModel.nodeId <$> selected
+    performRemoval =<< selectedNodeIds
     selectPreviousNodes
 
 performRemoval :: [NodeId] -> Command State ()
@@ -31,8 +29,8 @@ performRemoval nodeIds = do
 
 localRemoveNodes :: [NodeId] -> Command State ()
 localRemoveNodes nodeIds = do
-    selectedNodesIds <- map (view NodeModel.nodeId) <$> selectedNodes
-    let selectPrevious =  Set.isSubsetOf (Set.fromList selectedNodesIds) $ Set.fromList nodeIds
+    selectedIds <- selectedNodeIds
+    let selectPrevious =  Set.isSubsetOf (Set.fromList selectedIds) $ Set.fromList nodeIds
     danglingConns <- concat <$> forM nodeIds (uses Global.graph . Graph.connectionIdsContainingNode)
     localRemoveConnections danglingConns
     forM_ nodeIds $ \nodeId -> Global.graph %= Graph.removeNode nodeId

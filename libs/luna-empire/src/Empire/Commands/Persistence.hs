@@ -13,7 +13,7 @@ import           Control.Monad.State
 import qualified Data.ByteString.Lazy            as BS (ByteString, readFile, writeFile)
 import qualified Data.IntMap                     as IntMap
 import           Data.String                     (fromString)
-import           Data.Text.Lazy                  (Text)
+import           Data.Text                       (Text)
 import qualified Data.UUID                       as UUID
 import qualified Data.UUID.V4                    as UUID
 import           Empire.Prelude
@@ -117,18 +117,10 @@ loadProject path = do
 
 
 importProject :: Text -> Empire (ProjectId, Project)
-importProject bytes = do
-    logger Logger.info $ "Importing project"
-    projectId <- liftIO $ UUID.nextRandom
-    let proj = readProject $ convert bytes
-    case proj of
-      Nothing   -> throwError $ "Cannot decode JSON"
-      Just proj' -> createProjectFromPersistent (Just projectId) proj'
+importProject bytes = $notImplemented
 
 exportProject :: ProjectId -> Empire Text
-exportProject pid = do
-  project <- toPersistentProject pid
-  return $ convert $ serialize $ E.pack project
+exportProject pid = $notImplemented
 
 defaultProjectName, defaultLibraryName, defaultLibraryPath :: String
 defaultProjectName = "default"

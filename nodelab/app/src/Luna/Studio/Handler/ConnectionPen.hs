@@ -1,5 +1,5 @@
 module Luna.Studio.Handler.ConnectionPen
-    ( toAction
+    ( handle
     ) where
 
 import           Luna.Studio.Action.Command       (Command)
@@ -16,11 +16,11 @@ import           Luna.Studio.State.Global         (State)
 import           React.Flux                       (MouseEvent)
 
 
-toAction :: Event -> Maybe (Command State ())
-toAction (UI (AppEvent (App.MouseDown evt))) = Just $ handleMouseDown evt
-toAction (UI (AppEvent (App.MouseMove evt))) = Just $ handleMouseMove evt
-toAction (UI (AppEvent (App.MouseUp   _  ))) = Just $ continue stopConnecting >> continue stopDisconnecting
-toAction _                                   = Nothing
+handle :: Event -> Maybe (Command State ())
+handle (UI (AppEvent (App.MouseDown evt))) = Just $ handleMouseDown evt
+handle (UI (AppEvent (App.MouseMove evt))) = Just $ handleMouseMove evt
+handle (UI (AppEvent (App.MouseUp   _  ))) = Just $ continue stopConnecting >> continue stopDisconnecting
+handle _                                   = Nothing
 
 handleMouseDown :: MouseEvent -> Command State ()
 handleMouseDown evt

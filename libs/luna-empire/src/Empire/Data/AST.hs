@@ -6,9 +6,8 @@ import           Empire.Prelude
 
 import           Control.Monad.State (StateT)
 import           Data.Typeable       (cast)
-import           Empire.Data.Layers  (attachEmpireLayers, registerEmpireLayers)
 
-import           Luna.IR            (AnyExpr, AnyExprLink, IR, IRBuilder,
+import           Luna.IR            (SomeExpr, SomeExprLink, IR, IRBuilder,
                                      evalIRBuilder', evalPassManager', snapshot,
                                      runRegs)
 import qualified Luna.Pass.Manager  as Pass (State)
@@ -17,8 +16,8 @@ import qualified Luna.Pass.Manager  as PassManager (get)
 import           System.Log         (Logger, DropLogger, dropLogs)
 
 
-type NodeRef       = AnyExpr
-type EdgeRef       = AnyExprLink
+type NodeRef       = SomeExpr
+type EdgeRef       = SomeExprLink
 
 data SomeASTException = forall e. Exception e => SomeASTException e
 

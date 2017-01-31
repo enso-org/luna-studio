@@ -33,8 +33,8 @@ import           Control.Monad.State           hiding (when)
 import           Data.Coerce                   (coerce)
 import           Data.List                     (sort)
 import qualified Data.Map                      as Map
-import           Data.Text.Lazy                (Text)
-import qualified Data.Text.Lazy                as Text
+import           Data.Text                     (Text)
+import qualified Data.Text                     as Text
 import qualified Data.UUID                     as UUID
 import qualified Data.UUID.V4                  as UUID (nextRandom)
 import           Empire.Prelude
@@ -203,7 +203,19 @@ connectPersistent (OutPortRef srcNodeId srcPort) (InPortRef dstNodeId dstPort) =
         Arg num -> makeApp srcNodeId dstNodeId num inputPos
 
 connectNoTC :: GraphLocation -> OutPortRef -> InPortRef -> Command Graph ()
-connectNoTC _loc outPort inPort = runASTOp $ connectPersistent outPort inPort
+connectNoTC loc outPort inPort@(InPortRef nid _) = do
+    nodeToUpdate <- runASTOp $ do
+        connectPersistent outPort inPort
+
+        -- if input port is not an edge, send update to gui
+        edges <- GraphBuilder.getEdgePortMapping
+        case edges of
+            Just (input, output) -> do
+                if (nid /= input && nid /= output) then Just <$> GraphBuilder.buildNode nid
+                                                   else return Nothing
+            _ -> Just <$> GraphBuilder.buildNode nid
+    forM_ nodeToUpdate $ Publisher.notifyNodeUpdate loc
+    return ()
 
 setDefaultValue :: GraphLocation -> AnyPortRef -> PortDefault -> Empire ()
 setDefaultValue loc portRef val = withTC loc False $ runASTOp $ setDefaultValue' portRef val
@@ -265,7 +277,8 @@ renameNode loc nid name = withTC loc False $ runASTOp $ do
 
 dumpGraphViz :: GraphLocation -> Empire ()
 dumpGraphViz loc = withGraph loc $ do
-    runASTOp $ AST.dumpGraphViz "gui_dump"
+    -- runASTOp $ AST.dumpGraphViz "gui_dump"
+    return ()
 
 typecheck :: GraphLocation -> Empire ()
 typecheck loc = withGraph loc $ runTC loc False

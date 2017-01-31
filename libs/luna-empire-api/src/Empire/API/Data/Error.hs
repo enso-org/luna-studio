@@ -1,4 +1,3 @@
-{-# LANGUAGE DeriveAnyClass #-}
 module Empire.API.Data.Error where
 
 import           Control.DeepSeq (NFData)

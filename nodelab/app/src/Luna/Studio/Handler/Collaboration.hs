@@ -1,5 +1,5 @@
 module Luna.Studio.Handler.Collaboration
-    ( toAction
+    ( handle
     ) where
 
 
@@ -61,8 +61,8 @@ everyNSeconds interval action = do
     currentTime  <- use Global.lastEventTimestamp
     when (DT.toSeconds currentTime `mod` interval == 0) action
 
-toAction :: Event.Event -> Maybe (Command State ())
-toAction (Event.Batch ev) = Just $ case ev of
+handle :: Event.Event -> Maybe (Command State ())
+handle (Event.Batch ev) = Just $ case ev of
     CollaborationUpdate update -> do
         shouldProcess <- isCurrentLocationAndGraphLoaded (update ^. Collaboration.location)
         let clientId = update ^. Collaboration.clientId
@@ -82,11 +82,11 @@ toAction (Event.Batch ev) = Just $ case ev of
 
     _ -> return ()
 
-toAction Event.Tick = Just $ do
+handle Event.Tick = Just $ do
     expireTouchedNodes
     everyNSeconds refreshTime touchCurrentlySelected
 
-toAction _ = Nothing
+handle _ = Nothing
 
 bumpTime :: DT.DateTime -> ColorId -> Maybe (DT.DateTime, ColorId) -> Maybe (DT.DateTime, ColorId)
 bumpTime time color (Just (time', _)) = Just (max time time', color)

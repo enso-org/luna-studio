@@ -52,7 +52,7 @@ replaceTargetNode :: ASTOp m => NodeRef -> NodeRef -> m ()
 replaceTargetNode matchNode newTarget = do
     match matchNode $ \case
         Unify _l r -> do
-            IR.changeSource (IR.generalize r) newTarget
+            IR.changeSource r newTarget
         _ -> throwM $ NotUnifyException matchNode
 
 rewireNode :: ASTOp m => NodeId -> NodeRef -> m ()

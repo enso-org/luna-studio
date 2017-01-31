@@ -7,7 +7,7 @@ cat vendor/uuid.js >> $GEN/ghcjs-code.js
 cat script/imports.js >> $GEN/ghcjs-code.js
 sed -f script/patch.sed app/env.ghcjs >> $GEN/ghcjs-code.js
 echo "});" >> $GEN/ghcjs-code.js
-cp app/js/* $GEN -r
+cp -r app/js/* $GEN
 cp app/config.release.js $GEN
 cp app/config.debug.js $GEN
 

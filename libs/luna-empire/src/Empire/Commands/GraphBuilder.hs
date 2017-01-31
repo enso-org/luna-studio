@@ -20,8 +20,8 @@ import           Control.Monad.State               hiding (when)
 import qualified Data.List                         as List
 import qualified Data.Map                          as Map
 import           Data.Maybe                        (catMaybes, fromJust, fromMaybe, maybeToList)
-import           Data.Text.Lazy                    (Text)
-import qualified Data.Text.Lazy                    as Text
+import           Data.Text                         (Text)
+import qualified Data.Text                         as Text
 import qualified Data.UUID.V4                      as UUID (nextRandom)
 
 import           Empire.API.Data.Breadcrumb        (Breadcrumb(..), BreadcrumbItem, Named(..))
@@ -54,10 +54,10 @@ import           Luna.IR (match)
 import qualified Luna.IR as IR
 import           Luna.IR.Expr.Term.Uni
 
-nameBreadcrumb :: ASTOp m => BreadcrumbItem -> m (Named BreadcrumbItem)
-nameBreadcrumb item@(Breadcrumb.Lambda nid) = do
-    name <- getNodeName nid
-    return $ Named (fromMaybe "" name) item
+nameBreadcrumb :: Monad m => BreadcrumbItem -> m (Named BreadcrumbItem)
+nameBreadcrumb item@(Breadcrumb.Lambda nid) = $notImplemented -- do
+    -- name <- getNodeName nid
+    -- return $ Named (fromMaybe "" name) item
 
 decodeBreadcrumbs :: Breadcrumb BreadcrumbItem -> Command Graph (Breadcrumb (Named BreadcrumbItem))
 decodeBreadcrumbs (Breadcrumb items) = fmap Breadcrumb $ runASTOp $ forM items nameBreadcrumb
@@ -153,7 +153,7 @@ getPortState node = do
         (IR.String s)   -> return . WithDefault . Constant . StringValue $ s
         IR.Integer i    -> return $ WithDefault $ Constant $ IntValue $ fromIntegral i
         IR.Rational r   -> return $ WithDefault $ Constant $ RationalValue r
-        (Cons n) -> do
+        Cons n _ -> do
             name <- ASTRead.getName n
             case name of
                 "False" -> return . WithDefault . Constant . BoolValue $ False
@@ -189,7 +189,8 @@ extractPortInfo node = do
             areBlank <- mapM ASTRead.isBlank args
             isApp    <- ASTRead.isApp =<< IR.source o
             if and areBlank && isApp
-                then extractPortInfo =<< IR.source o
+                then do
+                    extractPortInfo =<< IR.source o
                 else do
                     tpRef <- IR.source =<< IR.readLayer @TypeLayer node
                     types <- extractArgTypes tpRef
@@ -204,7 +205,7 @@ buildArgPorts ref = do
     (types, states) <- extractPortInfo ref
     let psCons = zipWith3  Port
                           (InPortId . Arg <$> [(0::Int)..]) (("arg " <>) . show <$> [(0::Int)..])
-                          (types ++ replicate (length states - length types) TStar)
+                          (types ++ replicate (length states - length types + 1) TStar)
     return $ zipWith ($) psCons (states ++ repeat NotConnected)
 
 buildSelfPort' :: ASTOp m => Bool -> NodeRef -> m (Maybe Port)

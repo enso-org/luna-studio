@@ -41,6 +41,8 @@ dependencies:
     - split
     - stm
     - text
+    - transformers
+    - typelevel
     - uuid
     - visualization-api
 

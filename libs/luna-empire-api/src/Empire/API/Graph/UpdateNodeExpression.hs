@@ -1,8 +1,7 @@
 module Empire.API.Graph.UpdateNodeExpression where
 
 import           Data.Binary                   (Binary)
-import           Data.Text                     (Text)
-import           Prologue                      hiding (Text)
+import           Prologue
 
 import           Empire.API.Data.GraphLocation (GraphLocation)
 import           Empire.API.Data.Node          (NodeId)
@@ -13,8 +12,8 @@ import qualified Empire.API.Topic              as T
 
 data Request = Request { _location   :: GraphLocation
                        , _nodeId     :: NodeId
-                       , _expression :: Text.Text
-                       } deriving (Generic, Show, Eq)
+                       , _expression :: Text
+                       } deriving (Generic, Eq, NFData, Show)
 
 type Response = Response.SimpleResponse Request
 instance Response.ResponseResult Request ()

@@ -1,37 +1,44 @@
 module Luna.Studio.Action.Graph.Focus
     ( focusNode
-    , focusSelectedNode
+    , focusNodes
+    , updateNodeZOrder
     ) where
 
-import           Data.Ord                        (comparing)
-import           Luna.Studio.Action.Command      (Command)
-import           Luna.Studio.Action.Graph.Lookup (allNodes)
+import           Data.Ord                           (comparing)
+import           Luna.Studio.Action.Command         (Command)
+import           Luna.Studio.Action.Graph.Lookup    (allNodes)
 import           Luna.Studio.Prelude
-import           Luna.Studio.React.Model.Node    (Node)
-import qualified Luna.Studio.React.Model.Node    as Node
-import qualified Luna.Studio.React.Model.Node    as Model
-import           Luna.Studio.State.Global        (State)
+import           Luna.Studio.React.Model.Node       (Node, NodeId)
+import qualified Luna.Studio.React.Model.Node       as Node
+import qualified Luna.Studio.React.Model.Node       as Model
 import qualified Luna.Studio.React.Model.NodeEditor as NodeEditor
-import qualified Luna.Studio.State.Global               as Global
+import           Luna.Studio.State.Global           (State)
+import qualified Luna.Studio.State.Global           as Global
 
 
 
-nats :: [Integer]
-nats = [1..]
+focusNode :: NodeId -> Command State ()
+focusNode = focusNodes . return
 
-focusNode :: Node -> Command State ()
-focusNode node = do
-    nodes <- allNodes
-    let sortedNodes = sortBy (comparing $ negate . (view Model.zPos)) nodes
-        newOrderNodes = node : delete node sortedNodes
-        newOrderIds  = view Model.nodeId <$> newOrderNodes
+focusNodes :: [NodeId] -> Command State ()
+focusNodes nodeIds = do
+    topZIndex <- use Global.topZIndex
+    let newTopZIndex = topZIndex + length nodeIds
+        zIndexes = [topZIndex..newTopZIndex]
     Global.modifyNodeEditor $
-        forM_ (zip newOrderIds nats) $ \(nodeId, idx) -> do
-            let newZPos = negate $ (fromIntegral idx) / 100.0
+        forM_ (zip nodeIds zIndexes) $ \(nodeId, idx) -> do
+            let newZPos = fromIntegral idx
             NodeEditor.nodes . at nodeId %= fmap (Node.zPos .~ newZPos)
+    Global.topZIndex .= newTopZIndex
 
-focusSelectedNode :: Command State ()
-focusSelectedNode = do
-    return () --TODO[react]
-    -- widgets <- selectedNodes
-    -- inRegistry $ UIRegistry.focusedWidget .= (view ref <$> widgets ^? ix 0)
+sortNodes :: [Node] -> [Node]
+sortNodes = sortBy (comparing $ view Model.zPos)
+
+sortNodes' :: [Node] -> [NodeId]
+sortNodes' = map (view Model.nodeId) . sortNodes
+
+updateNodeZOrder :: Command State ()
+updateNodeZOrder = do
+    Global.topZIndex .= def
+    sortedNodeIds <- sortNodes' <$> allNodes
+    focusNodes sortedNodeIds

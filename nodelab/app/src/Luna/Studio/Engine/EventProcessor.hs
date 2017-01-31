@@ -6,9 +6,7 @@ import           Control.Concurrent.MVar
 import           Control.Exception                          (catch)
 import           Control.Monad                              (forever)
 import           Data.DateTime                              (getCurrentTime)
-import qualified Data.JSString                              as JSString
 import           Data.Monoid                                (Last (..))
-import qualified Data.Text                                  as Text
 import           GHCJS.Prim                                 (JSException)
 
 import qualified JS.Debug
@@ -18,10 +16,10 @@ import           Luna.Studio.Engine.JSHandlers              (AddHandler (..))
 import qualified Luna.Studio.Engine.JSHandlers              as JSHandlers
 import           Luna.Studio.Event.Event                    (Event)
 import qualified Luna.Studio.Event.Event                    as Event
-import qualified Luna.Studio.Event.Preprocessor.Batch       as BatchEventProcessor
-import qualified Luna.Studio.Event.Preprocessor.CustomEvent as CustomEventProcessor
+import qualified Luna.Studio.Event.Preprocessor.Batch       as BatchEventPreprocessor
+import qualified Luna.Studio.Event.Preprocessor.CustomEvent as CustomEventPreprocessor
+import qualified Luna.Studio.Event.Preprocessor.Shortcut    as ShortcutEventPreprocessor
 import qualified Luna.Studio.Handler.App                    as App
-import qualified Luna.Studio.Handler.Atom                   as Atom
 import qualified Luna.Studio.Handler.Backend.Control        as Control
 import qualified Luna.Studio.Handler.Backend.Graph          as Graph
 import qualified Luna.Studio.Handler.Backend.ProjectManager as ProjectManager
@@ -46,33 +44,32 @@ import qualified Luna.Studio.State.Global                   as Global
 displayProcessingTime :: Bool
 displayProcessingTime = False
 
-foreign import javascript safe "console.time($1);"    consoleTimeStart' :: JSString.JSString -> IO ()
-foreign import javascript safe "console.timeEnd($1);" consoleTimeEnd'   :: JSString.JSString -> IO ()
+foreign import javascript safe "console.time($1);"    consoleTimeStart' :: JSString -> IO ()
+foreign import javascript safe "console.timeEnd($1);" consoleTimeEnd'   :: JSString -> IO ()
 
 
 consoleTimeStart, consoleTimeEnd :: String -> IO ()
-consoleTimeStart = consoleTimeStart' . JSString.pack
-consoleTimeEnd   = consoleTimeEnd'   . JSString.pack
+consoleTimeStart = consoleTimeStart' . convert
+consoleTimeEnd   = consoleTimeEnd'   . convert
 
 actions :: [Event -> Maybe (Command State ())]
-actions =  [ App.toAction
-           , Breadcrumbs.toAction
-           , Camera.toAction
-           , CodeEditor.toAction
-           , Collaboration.toAction
-           , Connect.toAction
-           , ConnectionPen.toAction
-           , Control.toAction
-           , Debug.toAction
-           , Debug.toActionEv
-           , Graph.toAction
-           , MultiSelection.toAction
-           , Navigation.toAction
-           , Node.toAction
-           , ProjectManager.toAction
-           , Searcher.toAction
-           , Atom.toAction
-           --    , Clipboard.toAction
+actions =  [ App.handle
+           , Breadcrumbs.handle
+           , Camera.handle
+           , Clipboard.handle
+           , CodeEditor.handle
+           , Collaboration.handle
+           , Connect.handle
+           , ConnectionPen.handle
+           , Control.handle
+           , Debug.handle
+           , Debug.handleEv
+           , Graph.handle
+           , MultiSelection.handle
+           , Navigation.handle
+           , Node.handle
+           , ProjectManager.handle
+           , Searcher.handle
            ]
 
 runCommands :: [Event -> Maybe (Command State ())] -> Event -> Command State ()
@@ -80,9 +77,10 @@ runCommands cmds event = sequence_ . catMaybes $ fmap ($ event) cmds
 
 preprocessEvent :: Event -> IO Event
 preprocessEvent ev = do
-    let batchEvent = BatchEventProcessor.process  ev
-    customEvent   <- CustomEventProcessor.process ev
-    return $ fromMaybe ev $ getLast $ Last batchEvent <> Last customEvent
+    let batchEvent    = BatchEventPreprocessor.process ev
+        shortcutEvent = ShortcutEventPreprocessor.process ev
+    customEvent   <- CustomEventPreprocessor.process ev
+    return $ fromMaybe ev $ getLast $ Last batchEvent <> Last customEvent <> Last shortcutEvent
 
 processEvent :: MVar State -> Event -> IO ()
 processEvent var ev = modifyMVar_ var $ \state -> do
@@ -90,7 +88,7 @@ processEvent var ev = modifyMVar_ var $ \state -> do
     when displayProcessingTime $ do
         consoleTimeStart $ (realEvent ^. Event.name) <>" show and force"
         --putStrLn . show . length $ show realEvent
-        JS.Debug.error (Text.pack $ realEvent ^. Event.name) realEvent
+        JS.Debug.error (convert $ realEvent ^. Event.name) realEvent
         consoleTimeEnd $ (realEvent ^. Event.name) <> " show and force"
         consoleTimeStart (realEvent ^. Event.name)
     timestamp <- getCurrentTime

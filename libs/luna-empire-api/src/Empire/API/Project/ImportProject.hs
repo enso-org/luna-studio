@@ -3,8 +3,7 @@
 module Empire.API.Project.ImportProject where
 
 import           Data.Binary            (Binary)
-import           Data.Text.Lazy         (Text)
-import           Prologue hiding (Text)
+import           Prologue
 
 import           Empire.API.Data.Project (Project, ProjectId)
 import qualified Empire.API.Request      as R
@@ -12,11 +11,11 @@ import qualified Empire.API.Response     as Response
 import qualified Empire.API.Topic        as T
 
 data Request = Request { _projectData :: Text
-                       } deriving (Generic, Show, Eq)
+                       } deriving (Generic, Eq, NFData, Show)
 
 data Result = Result   { _projectId :: ProjectId
                        , _project   :: Project
-                       } deriving (Generic, Show, Eq)
+                       } deriving (Generic, Eq, NFData, Show)
 
 type Response = Response.Response Request Result
 instance Response.ResponseResult Request Result

@@ -56,7 +56,7 @@ getNodeId node = coerce <$> IR.readLayer @Marker node
 getVarName :: ASTOp m => NodeRef -> m String
 getVarName node = match node $ \case
     Var n -> getName n
-    Cons n -> getName n
+    Cons n _ -> getName n
 
 getName :: ASTOp m => EdgeRef -> m String
 getName node = do

@@ -1,19 +1,19 @@
-{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE FlexibleContexts       #-}
+{-# LANGUAGE FlexibleInstances      #-}
 {-# LANGUAGE FunctionalDependencies #-}
-{-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE MultiParamTypeClasses  #-}
 module Empire.API.Response where
 
 import           Prologue
 
-import           Data.Binary (Binary)
-import           Data.UUID.Types (UUID)
-import           Empire.API.Topic (MessageTopic)
-import           Empire.API.Request (Request(..))
+import           Data.Binary        (Binary)
+import           Data.UUID.Types    (UUID)
+import           Empire.API.Request (Request (..))
+import           Empire.API.Topic   (MessageTopic)
 
 data Status a = Ok    { _resultData  :: a }
               | Error { _message     :: String }
-              deriving (Generic, Show, Eq)
+              deriving (Eq, Generic, NFData, Show)
 
 instance (Binary a) => Binary (Status a)
 makeLenses ''Status
@@ -23,7 +23,7 @@ data Response req res = Response { _requestId :: UUID
                                  , _request  :: req
                                  , _status   :: Status res
                                  }
-                      deriving (Generic, Show, Eq)
+                      deriving (Eq, Generic, NFData, Show)
 
 type SimpleResponse req = Response req ()
 

@@ -2,7 +2,6 @@ module Luna.Studio.Batch.Connector.Commands where
 
 import           Luna.Studio.Prelude
 
-import qualified Data.Text                              as Text
 import           Data.UUID.Types                        (UUID)
 
 import           Luna.Studio.Batch.Connector.Connection (sendRequest, sendUpdate)
@@ -50,15 +49,15 @@ addSubgraph :: [Node] -> [Connection] -> Workspace -> UUID -> IO ()
 addSubgraph nodes connections workspace uuid = sendRequest uuid $ (withLibrary workspace AddSubgraph.Request) nodes connections
 
 createProject :: Text -> UUID -> IO ()
-createProject name uuid = sendRequest uuid $ CreateProject.Request $ Text.unpack name
+createProject name uuid = sendRequest uuid $ CreateProject.Request $ convert name
 
 listProjects :: UUID -> IO ()
 listProjects uuid = sendRequest uuid ListProjects.Request
 
 createLibrary :: Text -> Text -> Workspace -> UUID -> IO ()
 createLibrary name path workspace uuid = sendRequest uuid $ CreateLibrary.Request (workspace ^. Workspace.currentLocation . GraphLocation.projectId)
-                                                                                  (Just $ Text.unpack name)
-                                                                                  (Text.unpack path)
+                                                                                  (Just $ convert name)
+                                                                                  (convert path)
 listLibraries :: ProjectId -> UUID -> IO ()
 listLibraries projectId uuid = sendRequest uuid $ ListLibraries.Request projectId
 
@@ -90,7 +89,7 @@ setDefaultValue :: AnyPortRef -> DefaultValue.PortDefault -> Workspace -> UUID -
 setDefaultValue portRef val workspace uuid = sendRequest uuid $ (withLibrary workspace SetDefaultValue.Request) portRef val
 
 setInputNodeType :: NodeId -> Text -> Workspace -> UUID -> IO ()
-setInputNodeType nodeId tpe workspace uuid = sendRequest uuid $ (withLibrary workspace SetInputNodeType.Request) nodeId (Text.unpack tpe)
+setInputNodeType nodeId tpe workspace uuid = sendRequest uuid $ (withLibrary workspace SetInputNodeType.Request) nodeId (convert tpe)
 
 requestCollaborationRefresh :: Collaboration.ClientId -> Workspace -> IO ()
 requestCollaborationRefresh clientId workspace = sendUpdate $ (withLibrary workspace Collaboration.Update) clientId  $ Collaboration.Refresh

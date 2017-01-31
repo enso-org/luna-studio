@@ -25,6 +25,7 @@ dependencies:
   - visualization-api
 
 default-extensions:
+  - DeriveAnyClass
   - DeriveGeneric
   - FlexibleInstances
   - MultiParamTypeClasses

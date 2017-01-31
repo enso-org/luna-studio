@@ -1,12 +1,11 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Luna.Studio.Data.Color
     ( colorPort
-    , vtToColor
+    , tpRepToColor
     , Color (..)
     , toJSString
     ) where
 
-import           Control.DeepSeq
 import           Data.Aeson                (FromJSON, ToJSON)
 import           Data.Hashable             (hash)
 import           Luna.Studio.Prelude
@@ -14,7 +13,6 @@ import           Luna.Studio.Prelude
 import           Empire.API.Data.Port      (Port)
 import qualified Empire.API.Data.Port      as Port
 import           Empire.API.Data.TypeRep   (TypeRep (..))
-import           Empire.API.Data.ValueType (ValueType (..))
 
 
 --TODO rename to PortColor
@@ -45,8 +43,7 @@ toJSString :: Color -> JSString
 toJSString = hslToJSString . toHsl
 
 hslToJSString :: (Fractional a, Show a) => HSL a -> JSString
---TODO use convert instead of fromString, everwhere
-hslToJSString hsl = fromString $ "hsl(" <> show ((hsl ^. h) * 360.0) <> ","
+hslToJSString hsl = convert $ "hsl(" <> show ((hsl ^. h) * 360.0) <> ","
                                      <> show ((hsl ^. s) * 100.0) <> "%,"
                                      <> show ((hsl ^. l) * 100.0) <> "%)"
 
@@ -70,9 +67,5 @@ tpRepToColor (TLam as out) = ensureRange . hashMany $ out : as
 tpRepToColor (TVar _n) = 9
 tpRepToColor _ = 0
 
-vtToColor :: ValueType -> Color
-vtToColor (TypeIdent t) = Color $ tpRepToColor t
-vtToColor _ = Color 0
-
 colorPort :: Port -> Color
-colorPort port = vtToColor $ port ^. Port.valueType
+colorPort port = Color $ tpRepToColor $ port ^. Port.valueType

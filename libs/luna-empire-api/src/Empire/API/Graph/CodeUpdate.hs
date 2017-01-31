@@ -11,7 +11,7 @@ import qualified Empire.API.Topic              as T
 
 data Update = Update { _location :: GraphLocation
                      , _code     :: Text
-                     } deriving (Generic, Show, Eq)
+                     } deriving (Generic, Eq, NFData, Show)
 
 makeLenses ''Update
 

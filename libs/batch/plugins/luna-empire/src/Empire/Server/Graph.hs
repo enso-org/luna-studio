@@ -21,7 +21,7 @@ import           Data.Traversable                      (forM)
 import           Data.UUID.Types                       (UUID)
 import qualified Data.UUID.Types                       as UUID
 import qualified Data.UUID.V4                          as UUID
-import           Prologue                              hiding (Text, Item)
+import           Prologue                              hiding (Item)
 
 import           Empire.API.Data.Breadcrumb            (Breadcrumb (..))
 import           Empire.API.Data.Connection            as Connection
@@ -34,7 +34,6 @@ import qualified Empire.API.Data.NodeSearcher          as NS
 import           Empire.API.Data.Port                  (InPort (..), OutPort (..), Port (..), PortId (..), PortState (..))
 import           Empire.API.Data.PortRef               (InPortRef (..), OutPortRef (..))
 import           Empire.API.Data.PortRef               as PortRef
-import           Empire.API.Data.ValueType             (ValueType (..))
 import qualified Empire.API.Graph.AddNode              as AddNode
 import qualified Empire.API.Graph.AddSubgraph          as AddSubgraph
 import qualified Empire.API.Graph.CodeUpdate           as CodeUpdate

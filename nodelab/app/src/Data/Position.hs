@@ -5,7 +5,6 @@ module Data.Position
     )
 where
 
-import           Control.DeepSeq     (NFData)
 import           Data.Aeson          (ToJSON)
 import           Data.Vector         as X
 import           Luna.Studio.Prelude
@@ -15,7 +14,7 @@ import           Luna.Studio.Prelude
 
 -- === Definition === --
 
-newtype Position = Position (Vector2 Double) deriving (Eq, Show, Generic, Default, NFData)
+newtype Position = Position (Vector2 Double) deriving (Eq, Show, Generic, Default, NFData, Num)
 makeWrapped ''Position
 
 

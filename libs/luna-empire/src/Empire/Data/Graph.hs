@@ -25,14 +25,15 @@ import           Empire.Prelude
 
 import           Empire.Data.AST                   (NodeRef)
 import           Control.Monad.State (MonadState(..), StateT, evalStateT, lift)
-import           Empire.Data.Layers  (attachEmpireLayers, registerEmpireLayers)
+import           Empire.Data.Layers  (attachEmpireLayers)
 
-import           Luna.IR            (IR, IRBuilder, evalIRBuilder', evalPassManager',
-                                     snapshot, runRegs)
-import qualified Luna.Pass.Manager  as Pass (State)
-import qualified Luna.Pass.Manager  as PassManager (PassManager, get)
+import           Control.Monad.Raise (MonadException(..))
+import           Luna.IR             (IR, IRBuilder, evalIRBuilder', evalPassManager',
+                                      snapshot, runRefCache, runRegs)
+import qualified Luna.Pass.Manager   as Pass (RefState)
+import qualified Luna.Pass.Manager   as PassManager (PassManager, RefCache, get)
 
-import           System.Log         (Logger, DropLogger, dropLogs)
+import           System.Log          (Logger, DropLogger, dropLogs)
 
 data Graph = Graph { _ast                   :: AST
                    , _nodeMapping           :: Map NodeId NodeIDTarget
@@ -57,22 +58,24 @@ defaultGraph = do
     return $ Graph ast' Map.empty BC.empty Map.empty 0 Nothing
 
 type AST           = ASTState
-data ASTState = ASTState IR (Pass.State (IRBuilder (Logger DropLogger (StateT Graph IO))))
+data ASTState = ASTState IR (Pass.RefState (PassManager.PassManager (IRBuilder (PassManager.RefCache (Logger DropLogger (StateT Graph IO))))))
 
 instance Show ASTState where
     show _ = "AST"
 
-instance MonadState Graph (PassManager.PassManager (IRBuilder (Logger DropLogger (StateT Graph IO)))) where
-    get = (lift . lift . lift) get
-    put = (lift . lift . lift) . put
-    state = (lift . lift . lift) . state
+instance MonadState Graph (PassManager.PassManager (IRBuilder (PassManager.RefCache (Logger DropLogger (StateT Graph IO))))) where
+    get = (lift . lift . lift . lift) get
+    put = (lift . lift . lift . lift) . put
+    state = (lift . lift . lift . lift) . state
+
+instance Exception e => MonadException e IO where
+    raise = throwM
 
 defaultAST :: IO AST
 defaultAST = mdo
     let g = Graph ast Map.empty BC.empty Map.empty 0 Nothing
-    ast <- flip evalStateT g $ dropLogs $ evalIRBuilder' $ evalPassManager' $ do
+    ast <- flip evalStateT g $ dropLogs $ runRefCache $ evalIRBuilder' $ evalPassManager' $ do
         runRegs
-        registerEmpireLayers
         attachEmpireLayers
         st <- snapshot
         pass <- PassManager.get

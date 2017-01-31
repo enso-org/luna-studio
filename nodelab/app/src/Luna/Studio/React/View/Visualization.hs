@@ -47,11 +47,11 @@ visualization_ :: NodeValue -> ReactElementM ViewEventHandler ()
 visualization_ v = React.view visualization v mempty
 
 strValue :: Node -> String
-strValue n = Text.unpack $ case n ^. Node.value of
+strValue n = convert $ case n ^. Node.value of
     Nothing -> ""
     Just (NodeResult.Value value []) -> value
     Just (NodeResult.Value value _ ) -> value
-    Just (NodeResult.Error msg     ) -> limitString errorLen (Text.pack $ showError msg)
+    Just (NodeResult.Error msg     ) -> limitString errorLen (convert $ showError msg)
 
 limitString :: Int -> Text -> Text
 limitString limit str | Text.length str > limit64 = Text.take limit64 str <> "…"
@@ -86,19 +86,19 @@ nodeValues_ = mapM_ (uncurry nodeValue_) . zip [0..]
 
 nodeValue_ :: Int -> Value -> ReactElementM ViewEventHandler ()
 nodeValue_ visIx = \case
-    StringList      v -> dataFrame_ visIx $ listTable $ Text.pack <$> v
-    IntList         v -> dataFrame_ visIx $ listTable $ Text.pack . show <$> v
-    DoubleList      v -> dataFrame_ visIx $ listTable $ Text.pack . show <$> v
-    StringMaybeList v -> dataFrame_ visIx $ listTable $ Text.pack . show <$> v
-    StringStringMap v -> dataFrame_ visIx $ listTablePairs $ (mapTuple Text.pack) <$> v
-    IntPairList     v -> dataFrame_ visIx $ listTablePairs $ mapTuple (Text.pack . show) <$> v
-    DoublePairList  v -> dataFrame_ visIx $ listTablePairs $ mapTuple (Text.pack . show) <$> v
-    Image     url w h -> image_ visIx $ Image.create (Size (Vector2 w h)) $ Text.pack url
-    StringValue   str -> div_ $ elemString $ fromString $ normalize str
-    Lambda        str -> div_ $ elemString $ fromString $ normalize str
+    StringList      v -> dataFrame_ visIx $ listTable $ convert <$> v
+    IntList         v -> dataFrame_ visIx $ listTable $ convert . show <$> v
+    DoubleList      v -> dataFrame_ visIx $ listTable $ convert . show <$> v
+    StringMaybeList v -> dataFrame_ visIx $ listTable $ convert . show <$> v
+    StringStringMap v -> dataFrame_ visIx $ listTablePairs $ (mapTuple convert) <$> v
+    IntPairList     v -> dataFrame_ visIx $ listTablePairs $ mapTuple (convert . show) <$> v
+    DoublePairList  v -> dataFrame_ visIx $ listTablePairs $ mapTuple (convert . show) <$> v
+    Image     url w h -> image_ visIx $ Image.create (Size (Vector2 w h)) $ convert url
+    StringValue   str -> div_ $ elemString $ normalize str
+    Lambda        str -> div_ $ elemString $ normalize str
     Graphics       gr -> graphics_ visIx gr
     DataFrame    cols -> do
-        let heads  = Text.pack <$> fst <$> cols
+        let heads  = convert <$> fst <$> cols
             cols'  = fmap DefaultValue.stringify <$> snd <$> cols
             rows   = transpose cols'
             widget = DataFrame.create heads rows
@@ -108,7 +108,7 @@ nodeValue_ visIx = \case
 listTable :: [Text] -> DataFrame
 listTable col = DataFrame.create ["Index", "Value"] rows where
     nats = [1..] :: [Integer]
-    idxs = Text.pack . show <$> take (length col) nats
+    idxs = convert . show <$> take (length col) nats
     cols = [idxs, col]
     rows = transpose cols
 

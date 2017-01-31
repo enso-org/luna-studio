@@ -19,11 +19,8 @@ import           System.Log.MLogger.Location as X
 
 type Logger    = forall m. MonadIO m => forall t. (t -> String -> m ()) -> t -> m ()
 
-
-
 getLogger :: String -> Logger
 getLogger name action msg = action msg name
-
 
 log :: MonadIO m => Priority -> String -> String -> m ()
 log pri msg name = liftIO $ do
@@ -45,63 +42,40 @@ log pri msg name = liftIO $ do
               HSLogger.rootLoggerName : joinComp (StringUtils.split "." n) []
 
         parentLoggers [] = return []
-        parentLoggers n =
+        parentLoggers n = do
             let pname = (head . drop 1 . reverse . componentsOfName) n
-                in
-                do parent <- HSLogger.getLogger pname
-                   next <- parentLoggers pname
-                   return (parent : next)
+            parent <- HSLogger.getLogger pname
+            next <- parentLoggers pname
+            return (parent : next)
 
         getLoggerPriority :: String -> IO Priority
-        getLoggerPriority n =
-            do l <- HSLogger.getLogger n
-               pl <- parentLoggers n
-               case Maybe.mapMaybe HSLogger.getLevel (l : pl) of
-                 [] -> return HSLogger.DEBUG
-                 (x:_) -> return x
+        getLoggerPriority n = do
+            l <- HSLogger.getLogger n
+            pl <- parentLoggers n
+            case Maybe.mapMaybe HSLogger.getLevel (l : pl) of
+                [] -> return HSLogger.DEBUG
+                (x:_) -> return x
 
     lpri <- getLoggerPriority name
-
     when (pri >= lpri) $ ANSI.hSetSGR stderr sgr
-
     HSLogger.logM name pri msg
-
     when (pri >= lpri) $ ANSI.hSetSGR stderr []
 
-
-trace :: MonadIO m => String -> String -> m ()
-trace = log DEBUG
-
-
-debug :: MonadIO m => String -> String -> m ()
-debug = log DEBUG
-
-
-info :: MonadIO m => String -> String -> m ()
-info = log INFO
-
-
-warning :: MonadIO m => String -> String -> m ()
-warning = log WARNING
-
-
-error :: MonadIO m => String -> String -> m ()
-error = log ERROR
-
-
-critical :: MonadIO m => String -> String -> m ()
+trace, debug, info, warning, error, critical :: MonadIO m => String -> String -> m ()
+trace    = log DEBUG
+debug    = log DEBUG
+info     = log INFO
+warning  = log WARNING
+error    = log ERROR
 critical = log CRITICAL
-
 
 criticalFail :: MonadIO m => String -> String -> m b
 criticalFail msg name = do
     log CRITICAL msg name
     fail msg
 
-
 setLevel :: MonadIO m => Priority -> String -> m ()
 setLevel lvl name = liftIO $ HSLogger.updateGlobalLogger name (HSLogger.setLevel lvl)
-
 
 setIntLevel :: Int -> String -> IO ()
 setIntLevel lvl = setLevel nlvl where

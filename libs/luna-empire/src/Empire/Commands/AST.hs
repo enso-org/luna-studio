@@ -13,8 +13,8 @@ import           Control.Monad.State
 import qualified Data.Aeson                        as Aeson
 import qualified Data.ByteString.Lazy.Char8        as BS.C8
 import           Data.Maybe                        (catMaybes, fromMaybe)
-import           Data.Text.Lazy                    (Text)
-import qualified Data.Text.Lazy                    as Text
+import           Data.Text                         (Text)
+import qualified Data.Text                         as Text
 import           Empire.Prelude
 
 import           Empire.API.Data.DefaultValue      (Value (..))
@@ -46,7 +46,6 @@ import qualified Luna.Pass.Evaluation.Interpreter.Layer as Interpreter
 import           Luna.Pass.Evaluation.Interpreter.Value (Data, attachListener, toExceptIO, unsafeFromData)
 import qualified Luna.Pass.Evaluation.Interpreter.Value as Value
 
-import           Empire.Commands.Graphics          (fromMaterial)
 import           Web.Browser                       (openBrowser)
 
 -- TODO: This might deserve rewriting to some more general solution
@@ -58,7 +57,7 @@ import qualified Graphics.API                      as G
 addNode :: ASTOp m => NodeId -> String -> String -> m (NodeRef, NodeRef)
 addNode nid name expr = do
     (exprName, ref) <- Parser.parseExpr expr
-    let name' = fromMaybe name $ fmap convert exprName
+    let name' = fromMaybe name $ fmap Text.unpack exprName
     (,) <$> pure ref <*> ASTBuilder.makeNodeRep (NodeMarker nid) name' ref
 
 limit :: [a] -> [a]
@@ -71,7 +70,8 @@ data ValueDecoderRep = ConsRep String
 
 valueDecoderRep :: ASTOp m => NodeRef -> m (Maybe ValueDecoderRep)
 valueDecoderRep node = match node $ \case
-    Cons n -> do
+    -- FIXME, use this second parameter
+    Cons n _ -> do
         name <- ASTRead.getName n
         return $ Just $ ConsRep name
     App tc (Arg _ typ) -> do
@@ -106,39 +106,39 @@ concreteValueDecoder rep = case rep of
           {-"Primitive"      -> Just $ Graphics       $ fromPrimitive    v-}
           {-"Figure"         -> Just $ Graphics       $ fromFigure       v-}
           {-"Material"       -> Just $ Graphics       $ fromMaterial     v-}
-          "RGBColor"       -> Just $ Graphics . fromMaterial . colorRGBToMaterial . unsafeFromData
+          -- "RGBColor"       -> Just $ Graphics . fromMaterial . colorRGBToMaterial . unsafeFromData
           _                -> Nothing
-    AppRep (ConsRep "Stream") param -> concreteValueDecoder param
-    AppRep (ConsRep "Maybe") param -> case param of
-        ConsRep name -> case name of
-            "Int"    -> Just $ IntMaybe    . unsafeFromData
-            "Double" -> Just $ DoubleMaybe . unsafeFromData
-            "Bool"   -> Just $ BoolMaybe   . unsafeFromData
-            "String" -> Just $ StringMaybe . unsafeFromData
-            _        -> Nothing
-        _ -> Nothing
-    AppRep (ConsRep "List") param -> case param of
-        ConsRep name -> case name of
-            "Int"    -> Just $ IntList    . unsafeFromData
-            "Double" -> Just $ DoubleList . unsafeFromData
-            "Bool"   -> Just $ BoolList   . unsafeFromData
-            "String" -> Just $ StringList . unsafeFromData
-            _        -> Nothing
-        AppRep (ConsRep "Maybe") param' -> case param' of
-            ConsRep name -> case name of
-                "Int"    -> Just $ StringMaybeList . intMaybeListToStringMaybeList    . unsafeFromData
-                "Double" -> Just $ StringMaybeList . doubleMaybeListToStringMaybeList . unsafeFromData
-                "Bool"   -> Just $ StringMaybeList . boolMaybeListToStringMaybeList   . unsafeFromData
-                "String" -> Just $ StringMaybeList . unsafeFromData
-                _ -> Nothing
-            _ -> Nothing
-        _ -> Nothing
-    AppRep (ConsRep "Map") (AppRep (ConsRep "String") (ConsRep param)) -> case param of
-        "Int"    -> Just $ StringStringMap . stringIntMapToStringStringMap    . unsafeFromData
-        "Double" -> Just $ StringStringMap . stringDoubleMapToStringStringMap . unsafeFromData
-        "Bool"   -> Just $ StringStringMap . stringBoolMapToStringStringMap   . unsafeFromData
-        "String" -> Just $ StringStringMap . unsafeFromData
-        _        -> Nothing
+    -- AppRep (ConsRep "Stream") param -> concreteValueDecoder param
+    -- AppRep (ConsRep "Maybe") param -> case param of
+    --     ConsRep name -> case name of
+    --         "Int"    -> Just $ IntMaybe    . unsafeFromData
+    --         "Double" -> Just $ DoubleMaybe . unsafeFromData
+    --         "Bool"   -> Just $ BoolMaybe   . unsafeFromData
+    --         "String" -> Just $ StringMaybe . unsafeFromData
+    --         _        -> Nothing
+    --     _ -> Nothing
+    -- AppRep (ConsRep "List") param -> case param of
+    --     ConsRep name -> case name of
+    --         "Int"    -> Just $ IntList    . unsafeFromData
+    --         "Double" -> Just $ DoubleList . unsafeFromData
+    --         "Bool"   -> Just $ BoolList   . unsafeFromData
+    --         "String" -> Just $ StringList . unsafeFromData
+    --         _        -> Nothing
+    --     AppRep (ConsRep "Maybe") param' -> case param' of
+    --         ConsRep name -> case name of
+    --             "Int"    -> Just $ StringMaybeList . intMaybeListToStringMaybeList    . unsafeFromData
+    --             "Double" -> Just $ StringMaybeList . doubleMaybeListToStringMaybeList . unsafeFromData
+    --             "Bool"   -> Just $ StringMaybeList . boolMaybeListToStringMaybeList   . unsafeFromData
+    --             "String" -> Just $ StringMaybeList . unsafeFromData
+    --             _ -> Nothing
+    --         _ -> Nothing
+    --     _ -> Nothing
+    -- AppRep (ConsRep "Map") (AppRep (ConsRep "String") (ConsRep param)) -> case param of
+    --     "Int"    -> Just $ StringStringMap . stringIntMapToStringStringMap    . unsafeFromData
+    --     "Double" -> Just $ StringStringMap . stringDoubleMapToStringStringMap . unsafeFromData
+    --     "Bool"   -> Just $ StringStringMap . stringBoolMapToStringStringMap   . unsafeFromData
+    --     "String" -> Just $ StringStringMap . unsafeFromData
+    --     _        -> Nothing
     _ -> Nothing
 
 
@@ -211,7 +211,7 @@ getNodeValue node = do
             case val' of
                 Left  s -> return $ Left s
                 Right v' -> match tpNode $ \case
-                    Cons n -> do
+                    Cons n _ -> do
                         name <- ASTRead.getName n
                         case name of
                             "Stream"  -> return $ Right $ Listener $ \f -> attachListener (unsafeFromData v') (f . decoder)
@@ -268,6 +268,7 @@ isTrivialLambda node = match node $ \case
 
 dumpGraphViz :: ASTOp m => String -> m ()
 dumpGraphViz name = do
-    ((), diff) <- Vis.newRunDiffT $ Vis.snapshot name
-    let vis = BS.C8.unpack $ Aeson.encode $ diff
-    void $ liftIO $ openBrowser $ "http://localhost:8000?cfg=" <> vis
+    return ()
+    -- ((), diff) <- Vis.newRunDiffT $ Vis.snapshot name
+    -- let vis = BS.C8.unpack $ Aeson.encode $ diff
+    -- void $ liftIO $ openBrowser $ "http://localhost:8000?cfg=" <> vis

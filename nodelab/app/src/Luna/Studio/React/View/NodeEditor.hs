@@ -3,6 +3,7 @@ module Luna.Studio.React.View.NodeEditor where
 
 import qualified Data.Aeson                            as Aeson
 import qualified Data.HashMap.Strict                   as HashMap
+import qualified Data.Text                             as Text
 import qualified Luna.Studio.Data.CameraTransformation as CameraTransformation
 import           Luna.Studio.Data.Matrix               (showTransformMatrixToSvg)
 import qualified Luna.Studio.Event.UI                  as UI
@@ -35,9 +36,10 @@ nodeEditor = React.defineView name $ \(ref, ne) -> do
         , onWheel     $ \e m w -> preventDefault e : dispatch ref (UI.NodeEditorEvent $ NE.Wheel m w)
         , onScroll    $ \e     -> [preventDefault e]
         ] $ do
-
-        -- TODO: div_ [ "className" $= "plane plane--visuals" ] …
-
+        style_
+            [ "id" $= "cameraTransform" ] $ do
+                elemString $ Text.unpack $ ".transform   { color: red }"
+                elemString $ Text.unpack $ ".transform3d { color: red }"
         svg_
             [ "className" $= "plane plane-connections"
             , "style"     @= Aeson.object [ "transform" Aeson..= transform ]
@@ -80,12 +82,11 @@ nodeEditor = React.defineView name $ \(ref, ne) -> do
             , "key"       $= "nodes"
             , "style"     @= Aeson.object [ "transform" Aeson..= transform ]
             ] $ do
-            forM_ (ne ^. NodeEditor.nodes . to HashMap.elems) $ node_ ref
+            forM_ (ne ^. NodeEditor.nodes . to HashMap.elems) (node_ ref)
         canvas_
             [ "className" $= "plane plane--canvas hide"
             , "key"       $= "canvas"
             ] $ mempty
-
 
 nodeEditor_ :: Ref App -> NodeEditor -> ReactElementM ViewEventHandler ()
 nodeEditor_ ref ne = React.viewWithSKey nodeEditor name (ref, ne) mempty

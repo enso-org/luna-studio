@@ -5,8 +5,6 @@ import qualified Data.HashMap.Strict                as HashMap
 import           Data.Position                      (Position (Position), lengthSquared, magnitude, vector, x, y)
 import           Luna.Studio.Prelude
 
-import           React.Flux                         (KeyboardEvent)
-
 import qualified Empire.API.Data.Connection         as C
 import           Empire.API.Data.Node               (NodeId)
 import qualified Empire.API.Data.Port               as P
@@ -14,10 +12,8 @@ import qualified Empire.API.Data.PortRef            as R
 import           Luna.Studio.Action.Batch           (cancelCollaborativeTouch, collaborativeTouch)
 import           Luna.Studio.Action.Command         (Command)
 import           Luna.Studio.Action.Graph           (allNodes)
-import           Luna.Studio.Event.Event            (Event (UI))
-import qualified Luna.Studio.Event.Keys             as Keys
-import           Luna.Studio.Event.UI               (UIEvent (AppEvent))
-import qualified Luna.Studio.React.Event.App        as App
+import           Luna.Studio.Event.Event            (Event (Shortcut))
+import           Luna.Studio.Event.Shortcut         (ShortcutEvent (..))
 import           Luna.Studio.React.Model.Node       (Node)
 import qualified Luna.Studio.React.Model.Node       as Node
 import qualified Luna.Studio.React.Model.Node       as Model
@@ -28,23 +24,23 @@ import qualified Luna.Studio.State.Graph            as Graph
 
 
 
-toAction :: Event -> Maybe (Command State ())
-toAction (UI (AppEvent (App.KeyDown e))) = Just $ handleKey e
-toAction _ = Nothing
+handle :: Event -> Maybe (Command State ())
+handle (Shortcut shortcut) = Just $ handleShortcut shortcut
+handle _ = Nothing
 
-handleKey :: KeyboardEvent -> Command State ()
-handleKey evt
-    | Keys.withShift     evt Keys.leftArrow  = goPrev
-    | Keys.withShift     evt Keys.rightArrow = goNext
-    | Keys.withoutMods   evt Keys.leftArrow  = goLeft
-    | Keys.withoutMods   evt Keys.upArrow    = goUp
-    | Keys.withoutMods   evt Keys.rightArrow = goRight
-    | Keys.withoutMods   evt Keys.downArrow  = goDown
-    | Keys.withCtrlShift evt Keys.leftArrow  = goConeLeft
-    | Keys.withCtrlShift evt Keys.upArrow    = goConeUp
-    | Keys.withCtrlShift evt Keys.rightArrow = goConeRight
-    | Keys.withCtrlShift evt Keys.downArrow  = goConeDown
-    | otherwise                              = return ()
+handleShortcut :: ShortcutEvent -> Command State ()
+handleShortcut = \case
+    GoConeDown  -> goConeDown
+    GoConeLeft  -> goConeLeft
+    GoConeRight -> goConeRight
+    GoConeUp    -> goConeUp
+    GoDown      -> goDown
+    GoLeft      -> goLeft
+    GoNext      -> goNext
+    GoPrev      -> goPrev
+    GoRight     -> goRight
+    GoUp        -> goUp
+    _           -> return ()
 
 goPrev :: Command State ()
 goPrev = do

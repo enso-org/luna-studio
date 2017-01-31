@@ -15,7 +15,7 @@ import qualified Empire.API.Topic              as T
 data Request = Request { _location    :: GraphLocation
                        , _nodes       :: [Node]
                        , _connections :: [Connection]
-                       } deriving (Generic, Show, Eq)
+                       } deriving (Generic, Eq, NFData, Show)
 
 type Response = Response.SimpleResponse Request
 instance Response.ResponseResult Request ()

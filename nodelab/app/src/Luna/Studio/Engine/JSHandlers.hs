@@ -3,10 +3,7 @@
 module Luna.Studio.Engine.JSHandlers
     ( AddHandler(..)
     , atomHandler
-    , copyClipboardHandler
     , customEventHandler
-    , cutClipboardHandler
-    , pasteClipboardHandler
     , webSocketHandler
     ) where
 
@@ -15,14 +12,10 @@ import           Luna.Studio.Prelude                    hiding (on)
 import           GHCJS.Marshal.Pure                     (pFromJSVal)
 import           GHCJS.Prim                             (fromJSString)
 
-import qualified Data.JSString                          as JSString
-import           Data.JSString.Text                     (textFromJSString)
 import qualified JS.Atom                                as Atom
-import qualified JS.Clipboard                           as Clipboard
 import qualified JS.CustomEvent                         as CustomEvent
 import qualified JS.WebSocket                           as WebSocket
 import qualified Luna.Studio.Batch.Connector.Connection as Connection
-import qualified Luna.Studio.Event.Clipboard            as Clipboard
 import qualified Luna.Studio.Event.Connection           as Connection
 import qualified Luna.Studio.Event.CustomEvent          as CustomEvent
 import           Luna.Studio.Event.Event
@@ -32,7 +25,7 @@ data AddHandler a = AddHandler ((a -> IO ()) -> IO (IO ()))
 
 atomHandler :: AddHandler Event
 atomHandler = AddHandler $ \h -> do
-    Atom.onEvent $ h . Atom
+    Atom.onEvent $ h . Shortcut
 
 webSocketHandler :: WebSocket.WebSocket -> AddHandler Event
 webSocketHandler conn = AddHandler $ \h -> do
@@ -54,22 +47,4 @@ customEventHandler :: AddHandler Event
 customEventHandler  = AddHandler $ \h -> do
     CustomEvent.initializeEvents
     CustomEvent.registerCallback $ \topic payload ->
-        liftIO $ h $ CustomEvent $ CustomEvent.RawEvent (JSString.unpack $ pFromJSVal topic) payload
-
-copyClipboardHandler :: AddHandler Event
-copyClipboardHandler =
-  AddHandler $ \h -> do
-    Clipboard.registerCopyCallback $ \_ ->
-      liftIO . h $ Clipboard $ Clipboard.Copy
-
-cutClipboardHandler :: AddHandler Event
-cutClipboardHandler =
-  AddHandler $ \h -> do
-    Clipboard.registerCutCallback $ \_ ->
-      liftIO . h $ Clipboard $ Clipboard.Cut
-
-pasteClipboardHandler :: AddHandler Event
-pasteClipboardHandler =
-  AddHandler $ \h -> do
-    Clipboard.registerPasteCallback $ \jsval ->
-      liftIO . h $ Clipboard $ Clipboard.Paste (textFromJSString $ pFromJSVal jsval)
+        liftIO $ h $ CustomEvent $ CustomEvent.RawEvent (pFromJSVal topic) payload
