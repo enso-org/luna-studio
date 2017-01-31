@@ -1,13 +1,13 @@
 module Empire.API.Persistence.Envelope where
 
-import Prologue
+import           Prologue
 
-import Data.Binary (Binary)
-import Empire.API.Persistence.Project (Project)
+import           Data.Binary                    (Binary)
+import           Empire.API.Persistence.Project (Project)
 
 data Envelope = Envelope { _version :: Int
                          , _project :: Project
-                         } deriving (Show, Eq, Generic)
+                         } deriving (Generic, Eq, NFData, Show)
 
 makeLenses ''Envelope
 

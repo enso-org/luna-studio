@@ -96,3 +96,4 @@ language_extensions:
   - StandaloneDeriving
   - TemplateHaskell
   - TupleSections
+  - TypeApplications

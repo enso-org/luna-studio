@@ -65,15 +65,15 @@ stopDisconnecting _ = removeActionFromState penDisconnectAction
 
 
 
--- toAction (Mouse _ (Mouse.Event Mouse.Pressed  pos Mouse.LeftButton  (KeyMods False True False False) _)) = Just $ startConnecting pos
--- toAction (Mouse _ (Mouse.Event Mouse.Pressed  pos Mouse.LeftButton  (KeyMods True  True False False) _)) = Just $ startDisconnecting pos
--- toAction (Mouse _ (Mouse.Event Mouse.Pressed  pos Mouse.RightButton (KeyMods False True False False) _)) = Just $ startDisconnecting pos
--- toAction (Mouse _ (Mouse.Event Mouse.Moved    pos Mouse.LeftButton  _ _)) = Just $ whileDrawing $ handleMove pos
--- toAction (Mouse _ (Mouse.Event Mouse.Moved    pos Mouse.RightButton _ _)) = Just $ whileDrawing $ handleMove pos
--- toAction (Mouse _ (Mouse.Event Mouse.Moved    _   Mouse.NoButton    _ _)) = Just stopDrag
--- toAction (Mouse _ (Mouse.Event Mouse.Released _   Mouse.LeftButton  _ _)) = Just stopDrag
--- toAction (Mouse _ (Mouse.Event Mouse.Released _   Mouse.RightButton _ _)) = Just stopDrag
--- toAction (ConnectionPen (ConnectionPen.Segment widgets)) = Just $ whileDrawing $ handleAction widgets
+-- handle (Mouse _ (Mouse.Event Mouse.Pressed  pos Mouse.LeftButton  (KeyMods False True False False) _)) = Just $ startConnecting pos
+-- handle (Mouse _ (Mouse.Event Mouse.Pressed  pos Mouse.LeftButton  (KeyMods True  True False False) _)) = Just $ startDisconnecting pos
+-- handle (Mouse _ (Mouse.Event Mouse.Pressed  pos Mouse.RightButton (KeyMods False True False False) _)) = Just $ startDisconnecting pos
+-- handle (Mouse _ (Mouse.Event Mouse.Moved    pos Mouse.LeftButton  _ _)) = Just $ whileDrawing $ handleMove pos
+-- handle (Mouse _ (Mouse.Event Mouse.Moved    pos Mouse.RightButton _ _)) = Just $ whileDrawing $ handleMove pos
+-- handle (Mouse _ (Mouse.Event Mouse.Moved    _   Mouse.NoButton    _ _)) = Just stopDrag
+-- handle (Mouse _ (Mouse.Event Mouse.Released _   Mouse.LeftButton  _ _)) = Just stopDrag
+-- handle (Mouse _ (Mouse.Event Mouse.Released _   Mouse.RightButton _ _)) = Just stopDrag
+-- handle (ConnectionPen (ConnectionPen.Segment widgets)) = Just $ whileDrawing $ handleAction widgets
 
 -- startConnecting :: Vector2 Int -> Command State ()
 -- startConnecting coord = do

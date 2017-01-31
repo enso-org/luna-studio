@@ -1,19 +1,19 @@
 module Empire.API.Graph.Connect where
 
-import           Prologue
 import           Data.Binary                   (Binary)
+import           Prologue
 
 import           Empire.API.Data.GraphLocation (GraphLocation)
-import           Empire.API.Data.PortRef       (OutPortRef(..), InPortRef(..))
-import qualified Empire.API.Response             as Response
+import           Empire.API.Data.PortRef       (InPortRef (..), OutPortRef (..))
 import qualified Empire.API.Graph.Request      as G
-import qualified Empire.API.Topic              as T
 import qualified Empire.API.Request            as R
+import qualified Empire.API.Response           as Response
+import qualified Empire.API.Topic              as T
 
 data Request = Request { _location  :: GraphLocation
                        , _src       :: OutPortRef
                        , _dst       :: InPortRef
-                       } deriving (Generic, Show, Eq)
+                       } deriving (Generic, Eq, NFData, Show)
 
 type Response = Response.SimpleResponse Request
 instance Response.ResponseResult Request ()
@@ -21,7 +21,7 @@ instance Response.ResponseResult Request ()
 data Update  = Update  { _location'  :: GraphLocation
                        , _src'       :: OutPortRef
                        , _dst'       :: InPortRef
-                       } deriving (Generic, Show, Eq)
+                       } deriving (Generic, Eq, NFData, Show)
 
 
 makeLenses ''Request

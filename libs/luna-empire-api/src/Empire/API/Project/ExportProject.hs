@@ -11,10 +11,10 @@ import qualified Empire.API.Response     as Response
 import qualified Empire.API.Topic        as T
 
 data Request = Request { _projectId :: ProjectId
-                       } deriving (Generic, Show, Eq)
+                       } deriving (Generic, Eq, NFData, Show)
 
 data Result = Result   { _projectData :: Text
-                       } deriving (Generic, Show, Eq)
+                       } deriving (Generic, Eq, NFData, Show)
 
 type Response = Response.Response Request Result
 instance Response.ResponseResult Request Result

@@ -1,4 +1,3 @@
-{-# LANGUAGE DeriveAnyClass #-}
 module Empire.API.Data.TypeRep where
 
 import           Prologue        hiding (Text, TypeRep, intercalate)

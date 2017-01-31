@@ -22,8 +22,8 @@ import qualified React.Flux                         as React
 name :: JSString
 name = "port"
 
-show2 :: Double -> String
-show2 a = showFFloat (Just 2) a "" -- limit Double to two decimal numbers
+jsShow2 :: Double -> JSString
+jsShow2 a = convert $ showFFloat (Just 2) a "" -- limit Double to two decimal numbers
 
 handleMouseDown :: Ref App -> AnyPortRef -> Event -> MouseEvent -> [SomeStoreAction]
 handleMouseDown ref portRef e m =
@@ -74,7 +74,7 @@ portSelf_ ref port = do
         [ "className" $= "port port--self" ] $ do
         circle_
             [ "className" $= "port__shape"
-            , "key"       $= (fromString (show portId ) <> "a")
+            , "key"       $= (jsShow portId <> "a")
             , "fill"      $= color
             ] mempty
         circle_
@@ -82,7 +82,7 @@ portSelf_ ref port = do
             , onMouseUp   $ handleMouseUp   ref portRef
             , onClick     $ handleClick     ref portRef
             , "className" $= "port__select"
-            , "key"       $= (fromString (show portId ) <> "b")
+            , "key"       $= (jsShow portId <> "b")
             ] mempty
 
 portSingle_ :: Ref App -> Port -> ReactElementM ViewEventHandler ()
@@ -90,14 +90,14 @@ portSingle_ ref port = do
     let portRef = port ^. Port.portRef
         portId  = port ^. Port.portId
         color   = toJSString $ port ^. Port.color
-        r1 = show2 . (+) nodeRadius
-        r2 = show2 . (-) nodeRadius'
-        svgPath a b c = fromString $ "M0 -" <> r1 a <> " A " <> r1 a <> " " <> r1 a <> " 0 0 " <> show b <> " 0 "  <> r1 a <>
-                                    " L0 "  <> r2 a <> " A " <> r2 a <> " " <> r2 a <> " 1 0 " <> show c <> " 0 -" <> r2 a <> " Z "
+        r1 = jsShow2 . (+) nodeRadius
+        r2 = jsShow2 . (-) nodeRadius'
+        svgPath a b c = "M0 -" <> r1 a <> " A " <> r1 a <> " " <> r1 a <> " 0 0 " <> jsShow b <> " 0 "  <> r1 a <>
+                        " L0 "  <> r2 a <> " A " <> r2 a <> " " <> r2 a <> " 1 0 " <> jsShow c <> " 0 -" <> r2 a <> " Z "
     g_ [ "className" $= "port port--o--single" ] $ do
         path_
             [ "className" $= "port__shape"
-            , "key"       $= (fromString (show portId) <> "a" )
+            , "key"       $= (jsShow portId <> "a" )
             , "fill"      $= color
             , "d"         $= (svgPath 0 0 1 <> svgPath 0 1 0)
             ] mempty
@@ -106,7 +106,7 @@ portSingle_ ref port = do
             , onMouseUp   $ handleMouseUp   ref portRef
             , onClick     $ handleClick     ref portRef
             , "className" $= "port__select"
-            , "key"       $= (fromString (show portId ) <> "b")
+            , "key"       $= (jsShow portId <> "b")
             , "d"         $= (svgPath 3 0 1 <> svgPath 3 1 0)
             ] mempty
 
@@ -123,26 +123,26 @@ portIO_ ref port num numOfPorts isInput = do
         startPortArcY r = r * cos(portAngleStart num numOfPorts r * mod)
         stopPortArcX  r = r * sin(portAngleStop  num numOfPorts r * mod)
         stopPortArcY  r = r * cos(portAngleStop  num numOfPorts r * mod)
-        ax = show2 . startPortArcX . (+) nodeRadius
-        ay = show2 . startPortArcY . (+) nodeRadius
-        bx = show2 . stopPortArcX  . (+) nodeRadius
-        by = show2 . stopPortArcY  . (+) nodeRadius
-        cx = show2 . stopPortArcX  . (-) nodeRadius'
-        cy = show2 . stopPortArcY  . (-) nodeRadius'
-        dx = show2 . startPortArcX . (-) nodeRadius'
-        dy = show2 . startPortArcY . (-) nodeRadius'
-        r1 = show2 . (+) nodeRadius
-        r2 = show2 . (-) nodeRadius'
-        svgPath a = fromString $ "M"  <> ax a <> " " <> ay a <>
-                                " A " <> r1 a <> " " <> r1 a <> " 1 0 " <> svgFlag1 <> " " <> bx a <> " " <> by a <>
-                                " L " <> cx a <> " " <> cy a <>
-                                " A " <> r2 a <> " " <> r2 a <> " 1 0 " <> svgFlag2 <> " " <> dx a <> " " <> dy a <>
-                                " Z"
+        ax = jsShow2 . startPortArcX . (+) nodeRadius
+        ay = jsShow2 . startPortArcY . (+) nodeRadius
+        bx = jsShow2 . stopPortArcX  . (+) nodeRadius
+        by = jsShow2 . stopPortArcY  . (+) nodeRadius
+        cx = jsShow2 . stopPortArcX  . (-) nodeRadius'
+        cy = jsShow2 . stopPortArcY  . (-) nodeRadius'
+        dx = jsShow2 . startPortArcX . (-) nodeRadius'
+        dy = jsShow2 . startPortArcY . (-) nodeRadius'
+        r1 = jsShow2 . (+) nodeRadius
+        r2 = jsShow2 . (-) nodeRadius'
+        svgPath a = "M"  <> ax a <> " " <> ay a <>
+                    " A " <> r1 a <> " " <> r1 a <> " 1 0 " <> svgFlag1 <> " " <> bx a <> " " <> by a <>
+                    " L " <> cx a <> " " <> cy a <>
+                    " A " <> r2 a <> " " <> r2 a <> " 1 0 " <> svgFlag2 <> " " <> dx a <> " " <> dy a <>
+                    " Z"
     g_
-        [ "className" $= (fromString $ classes <> show (num+1)) ] $ do
+        [ "className" $= (convert $ classes <> show (num+1)) ] $ do
         path_
             [ "className" $= "port__shape"
-            , "key"       $= (fromString (show portId) <> "a")
+            , "key"       $= (jsShow portId <> "a")
             , "fill"      $= color
             , "d"         $= svgPath 0
             ] mempty
@@ -151,7 +151,7 @@ portIO_ ref port num numOfPorts isInput = do
             , onMouseUp   $ handleMouseUp   ref portRef
             , onClick     $ handleClick     ref portRef
             , "className" $= "port__select"
-            , "key"       $= (fromString (show portId) <> "b")
+            , "key"       $= (jsShow portId <> "b")
             , "d"         $= svgPath 3
             ] mempty
 
@@ -162,75 +162,22 @@ portIOExpanded_ ref port num isInput = do
         color   = toJSString $ port ^. Port.color
         classes = if isInput then "port port--i port--i--" else "port port--o port--o--"
         n       = if isInput then 1 else 0
-        r       = show2 . (+3)
+        r       = jsShow2 . (+3)
     g_
-        [ "className" $= fromString (classes <> show (num + 1)) ] $ do
+        [ "className" $= convert (classes <> show (num + 1)) ] $ do
         circle_
             [ "className" $= "port__shape"
-            , "key"       $= fromString (show portId <> show num <> "a")
+            , "key"       $= (jsShow portId <> jsShow num <> "a")
             , "fill"      $= color
-            , "r"         $= fromString (r 0)
-            , "cy"        $= fromString (show2 $ lineHeight * fromIntegral (num + n) )
+            , "r"         $= r 0
+            , "cy"        $= jsShow2 (lineHeight * fromIntegral (num + n) )
             ] mempty
         circle_
             [ onMouseDown $ handleMouseDown ref portRef
             , onMouseUp   $ handleMouseUp   ref portRef
             , onClick     $ handleClick     ref portRef
             , "className" $= "port__select"
-            , "key"       $= fromString (show portId <> show num <> "b")
-            , "r"         $= fromString (r 3)
-            , "cy"        $= fromString (show2 $ lineHeight * fromIntegral (num + n) )
+            , "key"       $= (jsShow portId <> jsShow num <> "b")
+            , "r"         $= r 3
+            , "cy"        $= jsShow2 (lineHeight * fromIntegral (num + n) )
             ] mempty
-
---TODO[react] probably remove
--- displayPorts :: WidgetId -> Node -> Command Global.State ()
--- displayPorts wid node = do
---         portGroup <- inRegistry $ UICmd.get wid $ Model.elements . Model.portGroup
---         oldPorts  <- inRegistry $ UICmd.children portGroup
---         oldPortWidgets <- forM oldPorts $ \wid' -> inRegistry $ (UICmd.lookup wid')
---         let portRefs = (view PortModel.portRef) <$> oldPortWidgets
---         forM_ portRefs $ \wid' -> Global.graph . Graph.portWidgetsMap . at wid' .= Nothing
---         inRegistry $ mapM_ UICmd.removeWidget oldPorts
---
---         groupId      <- inRegistry $ Node.portControlsGroupId wid
---         portControls <- inRegistry $ UICmd.children groupId
---         inRegistry $ mapM_ UICmd.removeWidget portControls
---
---         inLabelsGroupId <- inRegistry $ Node.inLabelsGroupId wid
---         inLabels        <- inRegistry $ UICmd.children inLabelsGroupId
---         inRegistry $ mapM_ UICmd.removeWidget inLabels
---
---         outLabelsGroupId <- inRegistry $ Node.outLabelsGroupId wid
---         outLabels        <- inRegistry $ UICmd.children outLabelsGroupId
---         inRegistry $ mapM_ UICmd.removeWidget outLabels
---
---         forM_ (makePorts node    ) $ \p -> do
---             portWidgetId <- inRegistry $ UICmd.register portGroup p def
---             Global.graph . Graph.portWidgetsMap . at (p ^. PortModel.portRef) ?= portWidgetId
---         inRegistry $ forM_ (node ^. Node.ports) $ makePortControl groupId node
---         inRegistry $ forM_ (node ^. Node.ports) $ \p -> case p ^. Port.portId of
---             InPortId  Self -> return ()
---             InPortId  _    -> makePortLabel inLabelsGroupId  p
---             OutPortId _    -> makePortLabel outLabelsGroupId p
-
---TODO[react] probably remove
--- makePortLabel :: WidgetId -> Port -> Command UIRegistry.State ()
--- makePortLabel parent port = do
---     let align = case port ^. Port.portId of
---             InPortId  _ -> Label.Right
---             OutPortId _ -> Label.Left
---         label = Label.create (Vector2 360 15) text & Label.alignment .~ align
---         text  = (Text.pack $ port ^. Port.name) <> " :: " <> portType
---         portType = port ^. Port.valueType . ValueType.toText
---     UICmd.register_ parent label def
---
--- TODO[react]: handle this:
--- onMouseOver, onMouseOut :: WidgetId -> Command Global.State ()
--- onMouseOver wid = inRegistry $ do
---     UICmd.update_ wid $ Model.highlight .~ True
---     nodeId <- toNodeId wid
---     Node.showHidePortLabels True nodeId
--- onMouseOut  wid = inRegistry $ do
---     UICmd.update_ wid $ Model.highlight .~ False
---     nodeId <- toNodeId wid
---     Node.showHidePortLabels False nodeId

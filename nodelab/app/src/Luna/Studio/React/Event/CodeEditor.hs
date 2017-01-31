@@ -3,8 +3,7 @@
 
 module Luna.Studio.React.Event.CodeEditor where
 
-import           Control.DeepSeq   (NFData)
-import           Data.Aeson        (FromJSON, ToJSON)
+import           Data.Aeson          (FromJSON, ToJSON)
 
 import           Luna.Studio.Prelude
 

@@ -10,6 +10,6 @@ import           Luna.Studio.State.Global           (State)
 
 
 
-toAction :: Event -> Maybe (Command State ())
-toAction (UI (CodeEditorEvent CodeEditor.ToggleCodeEditor)) = Just $ CodeEditor.toggle
-toAction _   = Nothing
+handle :: Event -> Maybe (Command State ())
+handle (UI (CodeEditorEvent CodeEditor.ToggleCodeEditor)) = Just $ CodeEditor.toggle
+handle _   = Nothing

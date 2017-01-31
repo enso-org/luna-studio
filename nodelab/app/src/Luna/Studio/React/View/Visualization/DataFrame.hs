@@ -1,32 +1,37 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Luna.Studio.React.View.Visualization.DataFrame where
 
-import qualified Data.Text                         as Text
-import           React.Flux
 import           Luna.Studio.Prelude
 import           Luna.Studio.React.Model.DataFrame (DataFrame)
 import qualified Luna.Studio.React.Model.DataFrame as DataFrame
+import           React.Flux
 
 
 dataFrame_ :: Int -> DataFrame -> ReactElementM ViewEventHandler ()
 dataFrame_ visIx df =
     div_
-        [ "key" $= fromString (show visIx)
+        [ "key" $= jsShow visIx
         , "className" $= "vis vis--table"
         ] $ do
         div_
-            [ "className" $= "blur" ] mempty
-        table_ $ do
-            thead_ $ do
-                tr_ $ forM_ (df ^. DataFrame.headers) $
-                    th_ .
-                        elemString . fromString . Text.unpack
+            [ "key"       $= "blur"
+            , "className" $= "blur" ] mempty
+        table_ [ "key" $= "table" ] $
+            thead_ $
+                tr_ $ forM_ (keyed $ df ^. DataFrame.headers) $ \(i, header) ->
+                    th_ [ "key" $= jsShow i ].
+                        elemString $ convert header
         div_
-            [ "className" $= "scroll"
-            ] $ do
+            [ "key"       $= "scroll"
+            , "className" $= "scroll"
+            , onWheel     $ \e _ _ -> [stopPropagation e]
+            ] $
             table_ $
                 tbody_ $
-                    forM_ (df ^. DataFrame.rows) $ \row ->
-                        tr_ $ forM_ row $
-                            td_ .
-                                elemString . fromString . Text.unpack
+                    forM_ (keyed $ df ^. DataFrame.rows) $ \(ri, row) ->
+                        tr_ [ "key" $= jsShow ri ]$ forM_ (keyed row) $ \(di, d) ->
+                            td_ [ "key" $= jsShow di ] $
+                                elemString $ convert d
+
+keyed :: [a] -> [(Int, a)]
+keyed = zip [0..]

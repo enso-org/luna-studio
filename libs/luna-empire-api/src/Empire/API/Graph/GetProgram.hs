@@ -13,13 +13,13 @@ import qualified Empire.API.Response           as Response
 import qualified Empire.API.Topic              as T
 
 data Request = Request { _location :: GraphLocation
-                       } deriving (Generic, Show, Eq)
+                       } deriving (Generic, Eq, NFData, Show)
 
 data Result  = Result  { _graph            :: Graph
                        , _code             :: Text
                        , _breadcrumb       :: Breadcrumb (Named BreadcrumbItem)
                        , _nodeSearcherData :: Items
-                       } deriving (Generic, Show, Eq)
+                       } deriving (Generic, Eq, NFData, Show)
 
 type Response = Response.Response Request Result
 instance Response.ResponseResult Request Result

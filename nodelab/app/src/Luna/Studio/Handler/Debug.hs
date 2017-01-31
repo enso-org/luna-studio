@@ -3,8 +3,8 @@
 {-# LANGUAGE OverloadedStrings #-}
 
 module Luna.Studio.Handler.Debug
-    ( toAction
-    , toActionEv
+    ( handle
+    , handleEv
     ) where
 
 
@@ -15,42 +15,42 @@ import qualified Luna.Studio.Event.Debug    as Debug
 import           Luna.Studio.Event.Event    (Event (..))
 
 import           Control.Monad.State        hiding (state)
-import           Luna.Studio.Action.Command (Command, performIO)
+import           Luna.Studio.Action.Command (Command)
 import qualified Luna.Studio.State.Global   as Global
 
 import           Data.Aeson                 (toJSON)
 
-toAction :: Event -> Maybe (Command Global.State ())
--- toAction (Debug Debug.GetState) = Just $ do
+handle :: Event -> Maybe (Command Global.State ())
+-- handle (Debug Debug.GetState) = Just $ do
 --     state <- get
 --     let json = toJSON state
---     performIO $ do
+--     liftIO $ do
 --         val <- toJSVal json
 --         clog val
 --         saveState val
--- toAction _ev = Just $ do
+-- handle _ev = Just $ do
 --     -- logBatch ev
 --     when shouldExportState $ do
 --         state <- get
 --         let json = toJSON state
---         performIO $ do
+--         liftIO $ do
 --             val <- toJSVal json
 --             saveState val
-toAction _ = Nothing
+handle _ = Nothing
 
-toActionEv :: Event -> Maybe (Command Global.State ())
-toActionEv ev = Just $ do
+handleEv :: Event -> Maybe (Command Global.State ())
+handleEv ev = Just $ do
     -- Global.lastEvent ?= ev
     -- Global.eventNum  += 1
     when shouldExportState $ do
         evN <- use $ Global.eventNum
-        performIO $ do
+        liftIO $ do
             processedEvent evN
             val <- toJSVal $ toJSON ev
             lastEv val
 
 logBatch :: Event -> Command Global.State ()
-logBatch (Batch e) = performIO $ do
+logBatch (Batch e) = liftIO $ do
     val <- toJSVal $ toJSON e
     cinfo val
 logBatch _ = return ()

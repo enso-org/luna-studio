@@ -2,7 +2,7 @@ module Luna.Studio.Event.Mouse where
 
 
 import           Data.Position              (Position (Position), Vector2 (Vector2))
-import           Luna.Studio.Action.Camera  (translateToWorkspace)
+import           Luna.Studio.Action.Camera  (getWorkspacePos, translateToWorkspace)
 import           Luna.Studio.Action.Command (Command)
 import           Luna.Studio.Prelude
 import           Luna.Studio.State.Global   (State)
@@ -12,11 +12,14 @@ import           React.Flux                 (MouseEvent (MouseEvent), mousePageX
 -- import           Data.Typeable
 
 
-workspacePosition :: MouseEvent -> Command State (Position)
-workspacePosition = translateToWorkspace . mousePosition
+workspacePosition :: MouseEvent -> Command State Position
+workspacePosition = translateToWorkspace <=< mousePosition
 
-mousePosition :: MouseEvent -> Position
-mousePosition e = Position (Vector2 (fromIntegral $ mousePageX e) (fromIntegral $ mousePageY e))
+mousePosition :: MonadIO m => MouseEvent -> m Position
+mousePosition e = do
+    workspacePos <- getWorkspacePos
+    let pagePos = Position (Vector2 (fromIntegral $ mousePageX e) (fromIntegral $ mousePageY e))
+    return $ pagePos - workspacePos
 
 leftButton :: Int
 leftButton = 0

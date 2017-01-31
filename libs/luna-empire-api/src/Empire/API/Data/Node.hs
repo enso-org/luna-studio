@@ -24,7 +24,7 @@ data NodeType = ExpressionNode  { _expression :: Text }
               | OutputNode      { _outputIx   :: Int  }
               | FunctionNode    { _functionType :: FunctionType }
               | ModuleNode
-              deriving (Show, Eq, Generic)
+              deriving (Generic, Eq, NFData, Show)
 
 data Node = Node { _nodeId   :: NodeId
                  , _name     :: Text
@@ -33,7 +33,7 @@ data Node = Node { _nodeId   :: NodeId
                  , _ports    :: Map PortId Port
                  , _nodeMeta :: NodeMeta
                  , _code     :: Maybe Text
-                 } deriving (Generic, Typeable, Show, Eq)
+                 } deriving (Generic, Eq, NFData, Show, Typeable)
 
 makeLenses ''Node
 makeLenses ''NodeType

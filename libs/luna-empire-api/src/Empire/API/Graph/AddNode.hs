@@ -1,9 +1,7 @@
 module Empire.API.Graph.AddNode where
 
 import           Data.Binary                   (Binary)
-import           Data.Text                     (Text)
-import qualified Data.Text                     as Text
-import           Prologue                      hiding (Text)
+import           Prologue
 
 import           Empire.API.Data.GraphLocation (GraphLocation)
 import           Empire.API.Data.Node          (Node, NodeId)
@@ -13,13 +11,13 @@ import qualified Empire.API.Request            as R
 import qualified Empire.API.Response           as Response
 import qualified Empire.API.Topic              as T
 
-data NodeType = ExpressionNode { _expression :: Text.Text } deriving (Generic, Show, Eq)
+data NodeType = ExpressionNode { _expression :: Text } deriving (Generic, Eq, NFData, Show)
 
 data Request = Request { _location  :: GraphLocation
                        , _nodeType  :: NodeType
                        , _nodeMeta  :: NodeMeta
                        , _connectTo :: Maybe NodeId
-                       } deriving (Generic, Show, Eq)
+                       } deriving (Generic, Eq, NFData, Show)
 type Result = Node
 
 type Response = Response.Response Request Result
@@ -27,7 +25,7 @@ instance Response.ResponseResult Request Result
 
 data Update = Update { _location'  :: GraphLocation
                      , _node'      :: Node
-                     } deriving (Generic, Show, Eq)
+                     } deriving (Generic, Eq, NFData, Show)
 
 makeLenses ''Request
 makeLenses ''Update

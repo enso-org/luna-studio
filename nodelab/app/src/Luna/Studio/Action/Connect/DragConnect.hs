@@ -32,11 +32,13 @@ instance Action (Command State) DragConnect where
 
 startDragConnect :: MouseEvent -> AnyPortRef -> Command State ()
 startDragConnect evt portRef = whenM (isNothing <$> checkAction @ClickConnect) $ do
-    begin (DragConnect (mousePosition evt)) >> startOrModifyConnection evt portRef
+    mousePos <- mousePosition evt
+    begin (DragConnect mousePos) >> startOrModifyConnection evt portRef
 
 dragModifyConnection :: MouseEvent -> ConnectionId -> ModifiedEnd -> Command State ()
 dragModifyConnection evt connId modifiedEnd = do
-    begin (DragConnect (mousePosition evt))
+    mousePos <- mousePosition evt
+    begin (DragConnect mousePos)
     modifyConnection evt connId modifiedEnd
 
 dragConnectToPort :: AnyPortRef -> DragConnect -> Command State ()
@@ -46,7 +48,8 @@ dragConnectToPort portRef _ = do
 
 handleDragConnectMouseUp :: MouseEvent -> DragConnect -> Command State ()
 handleDragConnectMouseUp evt state = do
-    if (mousePosition evt == state ^. Action.dragConnectStartPos) then do
+    mousePos <- mousePosition evt
+    if (mousePos == state ^. Action.dragConnectStartPos) then do
         removeActionFromState dragConnectAction
         updateActionWithKey clickConnectAction ClickConnect
     else stopDragConnect state

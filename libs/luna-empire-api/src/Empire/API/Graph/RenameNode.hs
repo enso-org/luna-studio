@@ -13,7 +13,7 @@ import qualified Empire.API.Topic              as T
 data Request = Request { _location :: GraphLocation
                        , _nodeId   :: NodeId
                        , _name     :: Text
-                       } deriving (Generic, Show, Eq)
+                       } deriving (Generic, Eq, NFData, Show)
 
 type Response = Response.SimpleResponse Request
 instance Response.ResponseResult Request ()
@@ -21,7 +21,7 @@ instance Response.ResponseResult Request ()
 data Update   = Update { _location' :: GraphLocation
                        , _nodeId'   :: NodeId
                        , _name'     :: Text
-                       } deriving (Generic, Show, Eq)
+                       } deriving (Generic, Eq, NFData, Show)
 
 
 makeLenses ''Request

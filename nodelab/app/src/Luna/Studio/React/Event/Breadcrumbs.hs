@@ -3,7 +3,6 @@
 
 module Luna.Studio.React.Event.Breadcrumbs where
 
-import           Control.DeepSeq            (NFData)
 import           Data.Aeson                 (FromJSON, ToJSON)
 
 import           Empire.API.Data.Breadcrumb (Breadcrumb, BreadcrumbItem)

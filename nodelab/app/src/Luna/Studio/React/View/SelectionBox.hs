@@ -17,10 +17,10 @@ selectionBox = React.defineView name $ \model -> do
     let pos       = Position (Vector2 (min (model ^. start . x) (model ^. end . x)) (min (model ^. start . y) (model ^. end . y)))
         width     = abs $ model ^. start . x - model ^. end . x
         height    = abs $ model ^. start . y - model ^. end . y
-        translate = fromString $ "translate(" <> show (pos ^. x) <> "," <> show (pos ^. y) <> ")"
+        translate = "translate(" <> jsShow (pos ^. x) <> "," <> jsShow (pos ^. y) <> ")"
     rect_
-        [ "width"     $= fromString (show width)
-        , "height"    $= fromString (show height)
+        [ "width"     $= jsShow width
+        , "height"    $= jsShow height
         , "style"     @= Aeson.object
             [ "strokeWidth"  Aeson..= ("3" :: String)
             , "stroke"       Aeson..= ("rgb(255,255,255)" :: String)

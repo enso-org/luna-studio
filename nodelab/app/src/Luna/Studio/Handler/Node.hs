@@ -8,10 +8,11 @@ import           Luna.Studio.Action.Command     (Command)
 import           Luna.Studio.Action.Graph       (selectAll, toggleSelect, unselectAll)
 import qualified Luna.Studio.Action.Node        as Node
 import qualified Luna.Studio.Action.PortControl as PortControl
-import           Luna.Studio.Event.Event        (Event (UI))
+import           Luna.Studio.Event.Event        (Event (Shortcut, UI))
 import qualified Luna.Studio.Event.Keys         as Keys
 import           Luna.Studio.Event.Mouse        (mousePosition)
 import qualified Luna.Studio.Event.Mouse        as Mouse
+import           Luna.Studio.Event.Shortcut     (ShortcutEvent (..))
 import           Luna.Studio.Event.UI           (UIEvent (AppEvent, NodeEvent))
 import           Luna.Studio.Prelude
 import qualified Luna.Studio.React.Event.App    as App
@@ -23,30 +24,38 @@ import qualified Luna.Studio.State.Graph        as Graph
 
 
 
-toAction :: Event -> Maybe (Command State ())
-toAction (UI (NodeEvent (Node.MouseDown evt nodeId))) = Just $ when shouldProceed $ Node.startNodeDrag nodeId evt shouldSnap  where
+handle :: Event -> Maybe (Command State ())
+handle (Shortcut shortcut)                             = Just $ handleShortcut shortcut
+handle (UI (NodeEvent (Node.MouseDown evt nodeId))) = Just $ when shouldProceed $ Node.startNodeDrag nodeId evt shouldSnap  where
     shouldProceed = Mouse.withoutMods evt Mouse.leftButton || Mouse.withShift evt Mouse.leftButton
     shouldSnap    = Mouse.withoutMods evt Mouse.leftButton
-toAction (UI (NodeEvent (Node.Enter            nodeId))) = Just $ mapM_ Node.tryEnter =<< preuse (Global.graph . Graph.nodesMap . ix nodeId)
-toAction (UI (NodeEvent (Node.EditExpression   nodeId))) = Just $ Node.editExpression nodeId
-toAction (UI (NodeEvent (Node.Select      kevt nodeId))) = Just $ when (mouseCtrlKey kevt || mouseMetaKey kevt) $ toggleSelect nodeId
-toAction (UI (NodeEvent (Node.DisplayResultChanged flag nodeId))) = Just $ Node.visualizationsToggled nodeId flag
-toAction (UI (NodeEvent (Node.NameEditStart    nodeId))) = Just $ Node.startEditName nodeId
-toAction (UI (NodeEvent (Node.NameKeyDown kevt nodeId))) = Just $ handleKeyNode kevt nodeId
-toAction (UI (NodeEvent (Node.NameChange   val nodeId))) = Just $ Node.editName nodeId val
-toAction (UI (NodeEvent (Node.PortEditString       portRef defaultValue))) = Just $ PortControl.setPortDefault portRef defaultValue
-toAction (UI (NodeEvent (Node.PortApplyString kevt portRef defaultValue))) = Just $ when (Keys.withoutMods kevt Keys.enter) $
+handle (UI (NodeEvent (Node.Enter            nodeId))) = Just $ mapM_ Node.tryEnter =<< preuse (Global.graph . Graph.nodesMap . ix nodeId)
+handle (UI (NodeEvent (Node.EditExpression   nodeId))) = Just $ Node.editExpression nodeId
+handle (UI (NodeEvent (Node.Select      kevt nodeId))) = Just $ when (mouseCtrlKey kevt || mouseMetaKey kevt) $ toggleSelect nodeId
+handle (UI (NodeEvent (Node.DisplayResultChanged flag nodeId))) = Just $ Node.visualizationsToggled nodeId flag
+handle (UI (NodeEvent (Node.NameEditStart    nodeId))) = Just $ Node.startEditName nodeId
+handle (UI (NodeEvent (Node.NameKeyDown kevt nodeId))) = Just $ handleKeyNode kevt nodeId
+handle (UI (NodeEvent (Node.NameChange   val nodeId))) = Just $ Node.editName nodeId val
+handle (UI (NodeEvent (Node.PortEditString       portRef defaultValue))) = Just $ PortControl.setPortDefault portRef defaultValue
+handle (UI (NodeEvent (Node.PortApplyString kevt portRef defaultValue))) = Just $ when (Keys.withoutMods kevt Keys.enter) $
                                                                                         Batch.setDefaultValue portRef defaultValue
-toAction (UI (NodeEvent (Node.PortSetDefaultValue portRef defaultValue))) = Just $ Batch.setDefaultValue portRef defaultValue
+handle (UI (NodeEvent (Node.PortSetDefaultValue portRef defaultValue))) = Just $ Batch.setDefaultValue portRef defaultValue
 --TODO[react]: Findout if we need workspacePosition here
-toAction (UI (NodeEvent (Node.PortInitSlider mevt portRef sliderInit)))   = Just $ PortControl.startMoveSlider portRef (mousePosition mevt) sliderInit
-toAction (UI (AppEvent  (App.KeyDown   kevt))) = Just $ handleKeyApp kevt
+handle (UI (NodeEvent (Node.PortInitSlider mevt portRef sliderInit)))   = Just $ do
+    mousePos <- mousePosition mevt
+    PortControl.startMoveSlider portRef mousePos sliderInit
 --TODO[react]: Findout if we need workspacePosition here
-toAction (UI (AppEvent  (App.MouseMove mevt))) = Just $ (continue $ PortControl.moveSlider $ mousePosition mevt) >> (continue $ Node.nodeDrag mevt shouldSnap) where
-    shouldSnap = Mouse.withoutMods mevt Mouse.leftButton
+handle (UI (AppEvent  (App.MouseMove mevt))) = Just $ do
+    mousePos <- mousePosition mevt
+    continue $ PortControl.moveSlider mousePos
+    let shouldSnap = Mouse.withoutMods mevt Mouse.leftButton
+    continue $ Node.nodeDrag mevt shouldSnap
 --TODO[react]: Findout if we need workspacePosition here
-toAction (UI (AppEvent  (App.MouseUp   mevt))) = Just $ (continue $ PortControl.stopMoveSlider $ mousePosition mevt) >> (continue $ Node.stopNodeDrag mevt)
-toAction _   = Nothing
+handle (UI (AppEvent  (App.MouseUp   mevt))) = Just $ do
+    mousePos <- mousePosition mevt
+    continue $ PortControl.stopMoveSlider mousePos
+    continue $ Node.stopNodeDrag mevt
+handle _   = Nothing
 
 
 handleKeyNode :: KeyboardEvent -> NodeId -> Command State ()
@@ -56,10 +65,10 @@ handleKeyNode kevt nodeId
     | otherwise                        = return ()
 
 
-handleKeyApp :: KeyboardEvent -> Command State ()
-handleKeyApp kevt
-    | Keys.withCtrl    kevt Keys.a     = selectAll
-    | Keys.withoutMods kevt Keys.del   = Node.removeSelectedNodes
-    | Keys.withoutMods kevt Keys.esc   = unselectAll
-    | Keys.withoutMods kevt Keys.enter = Node.expandSelectedNodes
-    | otherwise                        = return ()
+handleShortcut :: ShortcutEvent -> Command State ()
+handleShortcut = \case
+    SelectAll           -> selectAll
+    RemoveSelectedNodes -> Node.removeSelectedNodes
+    UnselectAll         -> unselectAll
+    ExpandSelectedNodes -> Node.expandSelectedNodes
+    _                   -> return ()

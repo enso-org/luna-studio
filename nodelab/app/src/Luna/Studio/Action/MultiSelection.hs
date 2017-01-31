@@ -9,7 +9,7 @@ import           Data.Position                        (Position (Position), Vect
 import           Empire.API.Data.Node                 (Node)
 import qualified Empire.API.Data.Node                 as Node
 import           Luna.Studio.Action.Command           (Command)
-import           Luna.Studio.Action.Graph             (focusSelectedNode, modifySelectionHistory, selectNodes, selectedNodes, unselectAll)
+import           Luna.Studio.Action.Graph             (focusNodes, modifySelectionHistory, selectNodes, selectedNodeIds, unselectAll)
 import           Luna.Studio.Event.Mouse              (workspacePosition)
 import           Luna.Studio.Prelude
 import qualified Luna.Studio.React.Model.Node         as NodeModel
@@ -61,6 +61,5 @@ stopMultiSelection :: MultiSelection -> Command State ()
 stopMultiSelection _ = do
     removeActionFromState multiSelectionAction
     Global.modifyNodeEditor $ NodeEditor.selectionBox .= Nothing
-    focusSelectedNode
-    selectedNodesIds <- map (^. NodeModel.nodeId) <$> selectedNodes
-    modifySelectionHistory selectedNodesIds
+    nodeIds <- selectedNodeIds
+    modifySelectionHistory nodeIds

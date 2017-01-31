@@ -1,5 +1,3 @@
-{-# LANGUAGE DeriveAnyClass #-}
-
 module Empire.API.Data.DefaultValue where
 
 import           Control.DeepSeq (NFData)
@@ -38,9 +36,9 @@ data Value = IntValue        Int
 
            | Graphics        G.Geometry
            | Lambda          String
-           deriving (Generic, Show, Eq, NFData)
+           deriving (Generic, Eq, NFData, Show)
 
-data PortDefault = Expression String | Constant Value deriving (Generic, Show, Eq, NFData)
+data PortDefault = Expression String | Constant Value deriving (Generic, Eq, NFData, Show)
 
 instance Binary Value
 instance Binary PortDefault

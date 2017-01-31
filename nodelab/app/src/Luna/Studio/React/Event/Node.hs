@@ -2,7 +2,6 @@
 
 module Luna.Studio.React.Event.Node where
 
-import           Control.DeepSeq              (NFData)
 import           Data.Aeson                   (FromJSON, ToJSON)
 import           React.Flux                   (KeyboardEvent, MouseEvent)
 

@@ -4,6 +4,7 @@ module Luna.Studio.Action.Graph.Selection
      , modifySelectionHistory
      , selectAll
      , selectedNodes
+     , selectedNodeIds
      , selectNodes
      , selectPreviousNodes
      , toggleSelect
@@ -11,21 +12,21 @@ module Luna.Studio.Action.Graph.Selection
      , unselectAllAndDropSelectionHistory
      ) where
 
+import qualified Data.HashMap.Strict                       as HashMap
 import qualified Data.Set                                  as Set
-import qualified Data.HashMap.Strict as HashMap
 
 import           Empire.API.Data.Node                      (NodeId)
 import           Luna.Studio.Action.Batch                  (cancelCollaborativeTouch, collaborativeTouch)
 import           Luna.Studio.Action.Command                (Command)
-import           Luna.Studio.Action.Graph.Focus            (focusSelectedNode)
-import           Luna.Studio.Action.Graph.Lookup           (allNodes, allNodeIds)
+import           Luna.Studio.Action.Graph.Focus            (focusNodes)
+import           Luna.Studio.Action.Graph.Lookup           (allNodeIds, allNodes)
 import           Luna.Studio.Action.Graph.SelectionHistory (dropSelectionHistory, modifySelectionHistory)
 import           Luna.Studio.Prelude
 import           Luna.Studio.React.Model.Node              (Node)
 import qualified Luna.Studio.React.Model.Node              as Node
+import qualified Luna.Studio.React.Model.NodeEditor        as NodeEditor
 import           Luna.Studio.State.Global                  (State)
 import qualified Luna.Studio.State.Global                  as Global
-import qualified Luna.Studio.React.Model.NodeEditor  as NodeEditor
 
 
 
@@ -36,7 +37,7 @@ toggleSelect nodeId = do
         if node ^. Node.isSelected
             then do
                 Global.modifyNode nodeId $ Node.isSelected .= False
-                selection <- map (view Node.nodeId) <$> selectedNodes
+                selection <- selectedNodeIds
                 case selection of
                     [] -> dropSelectionHistory
                     _  -> modifySelectionHistory selection
@@ -44,7 +45,7 @@ toggleSelect nodeId = do
 
 unselectAll :: Command State ()
 unselectAll = do
-    nodesToCancelTouch <- map (view Node.nodeId) <$> selectedNodes
+    nodesToCancelTouch <- selectedNodeIds
     Global.modifyNodeEditor $
         NodeEditor.nodes %= HashMap.map (Node.isSelected .~ False)
     cancelCollaborativeTouch nodesToCancelTouch
@@ -56,17 +57,30 @@ selectAll :: Command State ()
 selectAll = allNodeIds >>= selectNodes
 
 selectNodes :: [NodeId] -> Command State ()
-selectNodes nodeIds = unselectAll >> addToSelection nodeIds >>= modifySelectionHistory
+selectNodes nodeIds = do
+    alreadySelected <- selectedNodeIds
+    let nodesToSelect = nodeIds \\ alreadySelected
+        nodesToUnselect = alreadySelected \\ nodeIds
+    addToSelection nodesToSelect
+    removeFromSelection nodesToUnselect
+    modifySelectionHistory nodeIds
 
 -- Please be aware that this function modifies selection without changing selection history.
 -- If your new selection should be added to history launch modifySelectionHistory with ids from result.
-addToSelection :: [NodeId] -> Command State [NodeId]
+addToSelection :: [NodeId] -> Command State ()
 addToSelection nodeIds = do
     Global.modifyNodeEditor $ forM_ nodeIds $ \nodeId ->
         NodeEditor.nodes . at nodeId %= fmap (Node.isSelected .~ True)
-    focusSelectedNode
+    focusNodes nodeIds
     collaborativeTouch nodeIds
-    map (view Node.nodeId) <$> selectedNodes
+
+-- Please be aware that this function modifies selection without changing selection history.
+-- If your new selection should be added to history launch modifySelectionHistory with ids from result.
+removeFromSelection :: [NodeId] -> Command State ()
+removeFromSelection nodeIds = do
+    Global.modifyNodeEditor $ forM_ nodeIds $ \nodeId ->
+        NodeEditor.nodes . at nodeId %= fmap (Node.isSelected .~ False)
+    cancelCollaborativeTouch nodeIds
 
 selectPreviousNodes :: Command State ()
 selectPreviousNodes = do
@@ -76,12 +90,15 @@ selectPreviousNodes = do
         Just nodeIdsSet -> do
             Global.selectionHistory %= drop 1
             unselectAll
-            selection <- addToSelection $ Set.toList nodeIdsSet
-            case selection of
-                [] -> selectPreviousNodes
-                _  -> modifySelectionHistory selection
+            addToSelection $ Set.toList nodeIdsSet
+            selectedNodeIds >>= \case
+                []        -> selectPreviousNodes
+                selection -> modifySelectionHistory selection
 
 selectedNodes :: Command State [Node]
 selectedNodes = do
     nodes <- allNodes
     return $ filter (^. Node.isSelected) nodes
+
+selectedNodeIds :: Command State [NodeId]
+selectedNodeIds = map (view Node.nodeId) <$> selectedNodes

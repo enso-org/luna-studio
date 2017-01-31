@@ -1,5 +1,7 @@
+{-# LANGUAGE DeriveAnyClass #-}
 module Luna.Studio.Event.Batch where
 
+import           Data.Aeson                            (ToJSON)
 import           Luna.Studio.Prelude
 
 import qualified Empire.API.Control.EmpireStarted      as EmpireStarted
@@ -22,7 +24,6 @@ import qualified Empire.API.Project.ExportProject      as ExportProject
 import qualified Empire.API.Project.ImportProject      as ImportProject
 import qualified Empire.API.Project.ListProjects       as ListProjects
 
-import           Data.Aeson                            (ToJSON)
 
 data Event = UnknownEvent String
            | AddNodeResponse                           AddNode.Response
@@ -53,6 +54,6 @@ data Event = UnknownEvent String
            | EmpireStarted                       EmpireStarted.Status
            | ConnectionDropped
            | ConnectionOpened
-           deriving (Eq, Show, Generic)
+           deriving (Eq, Show, Generic, NFData)
 
 instance ToJSON Event

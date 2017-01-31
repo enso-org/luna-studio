@@ -1,8 +1,6 @@
-{-# LANGUAGE DeriveAnyClass            #-}
 {-# LANGUAGE ExistentialQuantification #-}
 module Luna.Studio.State.Action where
 
-import           Control.DeepSeq         (NFData)
 import           Data.Aeson              (FromJSON, ToJSON)
 import           Data.Dynamic
 import           Data.Map                (Map)
@@ -49,8 +47,9 @@ data SliderDrag = SliderDrag { _sliderDragPortRef   :: AnyPortRef
 
 data InitValue = Discrete  Int
                | Continous Double
-               deriving (Eq, Show, Generic, NFData, Typeable)
+               deriving (Eq, Show, Generic, Typeable)
 
+instance NFData InitValue
 
 makeLenses ''InitValue
 makeLenses ''SliderDrag
@@ -84,6 +83,11 @@ data ClickConnect = ClickConnect deriving (Eq, Generic, Show, Typeable)
 makeLenses ''ClickConnect
 instance ToJSON ClickConnect
 
+data Searcher = Searcher deriving (Eq, Generic, Show, Typeable)
+
+makeLenses ''Searcher
+instance ToJSON Searcher
+
 
 data SomeAction m = forall a. (Action m a, Show a) => SomeAction Dynamic a deriving (Typeable)
 
@@ -112,7 +116,7 @@ fromSomeAction (SomeAction d _) = fromDynamic d
 
 newtype ActionRep = ActionRep TypeRep deriving (Show, Eq, Ord)
 
-nodeDragAction, multiSelectionAction, panDragAction, zoomDragAction, sliderDragAction, penConnectAction, penDisconnectAction, dragConnectAction, clickConnectAction :: ActionRep
+nodeDragAction, multiSelectionAction, panDragAction, zoomDragAction, sliderDragAction, penConnectAction, penDisconnectAction, dragConnectAction, clickConnectAction, searcherAction :: ActionRep
 nodeDragAction       = ActionRep (typeOf NodeDrag)
 multiSelectionAction = ActionRep (typeOf MultiSelection)
 panDragAction        = ActionRep (typeOf PanDrag)
@@ -122,6 +126,7 @@ penConnectAction     = ActionRep (typeOf PenConnect)
 penDisconnectAction  = ActionRep (typeOf PenDisconnect)
 dragConnectAction    = ActionRep (typeOf DragConnect)
 clickConnectAction   = ActionRep (typeOf ClickConnect)
+searcherAction       = ActionRep (typeOf Searcher)
 
 overlappingActions :: [Set ActionRep]
 overlappingActions = [ Set.fromList [ nodeDragAction
@@ -131,6 +136,7 @@ overlappingActions = [ Set.fromList [ nodeDragAction
                                     , penDisconnectAction
                                     , dragConnectAction
                                     , clickConnectAction
+                                    , searcherAction
                                     ]
                      , Set.fromList [ panDragAction
                                     , zoomDragAction
