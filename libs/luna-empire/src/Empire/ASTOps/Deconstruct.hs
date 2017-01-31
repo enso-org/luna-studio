@@ -22,9 +22,15 @@ deconstructApp :: ASTOp m => NodeRef -> m (NodeRef, [NodeRef])
 deconstructApp app' = match app' $ \case
     App a _ -> do
         unpackedArgs <- extractArguments app'
-        target <- IR.source a
-        return (target, unpackedArgs)
+        target <- extractFun app'
+        return (target, reverse unpackedArgs)
     _ -> throwM $ NotAppException app'
+
+extractFun :: ASTOp m => NodeRef -> m NodeRef
+extractFun app = match app $ \case
+    App a _ -> do
+        extractFun =<< IR.source a
+    _ -> return app
 
 extractArguments :: ASTOp m => NodeRef -> m [NodeRef]
 extractArguments expr = match expr $ \case

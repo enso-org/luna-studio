@@ -189,7 +189,8 @@ extractPortInfo node = do
             areBlank <- mapM ASTRead.isBlank args
             isApp    <- ASTRead.isApp =<< IR.source o
             if and areBlank && isApp
-                then extractPortInfo =<< IR.source o
+                then do
+                    extractPortInfo =<< IR.source o
                 else do
                     tpRef <- IR.source =<< IR.readLayer @TypeLayer node
                     types <- extractArgTypes tpRef
@@ -204,7 +205,7 @@ buildArgPorts ref = do
     (types, states) <- extractPortInfo ref
     let psCons = zipWith3  Port
                           (InPortId . Arg <$> [(0::Int)..]) (("arg " <>) . show <$> [(0::Int)..])
-                          (types ++ replicate (length states - length types) TStar)
+                          (types ++ replicate (length states - length types + 1) TStar)
     return $ zipWith ($) psCons (states ++ repeat NotConnected)
 
 buildSelfPort' :: ASTOp m => Bool -> NodeRef -> m (Maybe Port)

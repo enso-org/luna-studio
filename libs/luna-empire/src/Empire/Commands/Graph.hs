@@ -203,7 +203,19 @@ connectPersistent (OutPortRef srcNodeId srcPort) (InPortRef dstNodeId dstPort) =
         Arg num -> makeApp srcNodeId dstNodeId num inputPos
 
 connectNoTC :: GraphLocation -> OutPortRef -> InPortRef -> Command Graph ()
-connectNoTC _loc outPort inPort = runASTOp $ connectPersistent outPort inPort
+connectNoTC loc outPort inPort@(InPortRef nid _) = do
+    nodeToUpdate <- runASTOp $ do
+        connectPersistent outPort inPort
+
+        -- if input port is not an edge, send update to gui
+        edges <- GraphBuilder.getEdgePortMapping
+        case edges of
+            Just (input, output) -> do
+                if (nid /= input && nid /= output) then Just <$> GraphBuilder.buildNode nid
+                                                   else return Nothing
+            _ -> Just <$> GraphBuilder.buildNode nid
+    forM_ nodeToUpdate $ Publisher.notifyNodeUpdate loc
+    return ()
 
 setDefaultValue :: GraphLocation -> AnyPortRef -> PortDefault -> Empire ()
 setDefaultValue loc portRef val = withTC loc False $ runASTOp $ setDefaultValue' portRef val

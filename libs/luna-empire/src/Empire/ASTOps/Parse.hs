@@ -37,7 +37,7 @@ parseExpr s = do
           _      -> case accs of
               Just ref -> return (Nothing, ref)
               _ -> case takeWhile isLetter s of
-                  [] -> $notImplemented
+                  [] -> IR.integer (0::Int) >>= \v' -> return (Nothing, IR.generalize v')
                   v -> IR.strVar v >>= \v' -> return (Nothing, IR.generalize v')
 
 tryParseAccessors :: ASTOp m => String -> m (Maybe NodeRef)
