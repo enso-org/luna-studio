@@ -150,9 +150,8 @@ getPortState :: ASTOp m => NodeRef -> m PortState
 getPortState node = do
     isConnected <- ASTRead.isGraphNode node
     if isConnected then return Connected else match node $ \case
-        (IR.String s)   -> return . WithDefault . Constant . StringValue $ s
-        IR.Integer i    -> return $ WithDefault $ Constant $ IntValue $ fromIntegral i
-        IR.Rational r   -> return $ WithDefault $ Constant $ RationalValue r
+        IR.String s     -> return . WithDefault . Constant . StringValue   s
+        IR.Number i     -> return $ WithDefault $ Constant $ RationalValue i
         Cons n _ -> do
             name <- ASTRead.getName n
             case name of

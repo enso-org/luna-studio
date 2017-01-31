@@ -27,17 +27,11 @@ import qualified Empire.Commands.Publisher         as Publisher
 
 
 
-getNodeValueReprs :: NodeId -> Command Graph (Either String AST.ValueRep)
+getNodeValueReprs :: NodeId -> Command Graph (Either String a)
 getNodeValueReprs nid = runASTOp $ do
     nodeRef <- GraphUtils.getASTPointer nid
     metaMay <- AST.readMeta nodeRef
-    case metaMay of
-        Just meta -> if meta ^. NodeMeta.displayResult
-            then do
-                valRef <- GraphUtils.getASTVar nid
-                AST.getNodeValue valRef
-            else   return $ Right $ AST.PlainVal ("", [])
-        Nothing -> return $ Right $ AST.PlainVal ("", [])
+    $notImplemented
 
 collect :: Monad m => a -> m ()
 collect _ = return ()
@@ -106,19 +100,7 @@ updateValues loc = do
         noErrors <- isNothing <$> uses errorsCache (Map.lookup nid)
         when noErrors $ do
             val <- zoom graph $ getNodeValueReprs nid
-            case val of
-                Left err -> reportError loc nid $ Just $ APIError.RuntimeError err
-                Right v  -> case v of
-                        AST.PlainVal (name, val') -> do
-                            cached <- uses valuesCache $ Map.lookup nid
-                            when (cached /= Just val') $ do
-                                Publisher.notifyResultUpdate loc nid (NodeResult.Value name val') 100
-                                valuesCache %= Map.insert nid val'
-                        AST.Listener lst -> do
-                            commEnv <- ask
-                            destructor <- liftIO $ lst $ \(name, val') -> void $ runEmpire commEnv () $ Publisher.notifyResultUpdate loc nid (NodeResult.Value name val') 100
-                            destructors %= (destructor :)
-
+            $notImplemented
 
 flushCache :: Command InterpreterEnv ()
 flushCache = do

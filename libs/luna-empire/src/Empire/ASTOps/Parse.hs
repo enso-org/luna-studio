@@ -21,7 +21,6 @@ import           Empire.ASTOp                 (ASTOp)
 
 import           Empire.API.Data.DefaultValue (PortDefault (..), Value (..))
 
-import qualified Luna.IR.Function as IR (arg)
 import qualified Luna.IR as IR
 
 parseExpr :: ASTOp m => String -> m (Maybe Text.Text, NodeRef)
@@ -32,12 +31,12 @@ parseExpr s = do
       (name, Just l)  -> return (name, l)
       _               -> case (readMaybe s :: Maybe Int) of
           Just i -> do
-              i' <- IR.generalize <$> IR.integer i
+              i' <- IR.generalize <$> IR.number (fromIntegral i)
               return (Nothing, i')
           _      -> case accs of
               Just ref -> return (Nothing, ref)
               _ -> case takeWhile isLetter s of
-                  [] -> IR.integer (0::Int) >>= \v' -> return (Nothing, IR.generalize v')
+                  [] -> IR.number 0 >>= \v' -> return (Nothing, IR.generalize v')
                   v -> IR.strVar v >>= \v' -> return (Nothing, IR.generalize v')
 
 tryParseAccessors :: ASTOp m => String -> m (Maybe NodeRef)
@@ -53,11 +52,11 @@ tryParseLambda :: ASTOp m => String -> m (Maybe Text.Text, Maybe NodeRef)
 tryParseLambda s = case words s of
     ("def" : name : _) -> do
         v <- IR.strVar "in0"
-        lam <- IR.generalize <$> IR.lam (IR.arg v) v
+        lam <- IR.generalize <$> IR.lam v v
         return (Just (Text.pack name), Just lam)
     ["->"] -> do
         v <- IR.strVar "arg0"
-        lam <- IR.generalize <$> IR.lam (IR.arg v) v
+        lam <- IR.generalize <$> IR.lam v v
         return $ (Nothing, Just lam)
     ("->" : rest) -> do
         let (as, body) = partition ((== '$') . head) rest
@@ -77,10 +76,10 @@ instance Exception PortDefaultNotConstructibleException where
 
 parsePortDefault :: ASTOp m => PortDefault -> m NodeRef
 parsePortDefault (Expression expr)          = snd <$> parseExpr expr
-parsePortDefault (Constant (IntValue i))    = IR.generalize <$> IR.integer i
+parsePortDefault (Constant (IntValue i))    = IR.generalize <$> IR.number (fromIntegral i)
 parsePortDefault (Constant (StringValue s)) = IR.generalize <$> IR.string s
-parsePortDefault (Constant (DoubleValue d)) = IR.generalize <$> IR.rational (approxRational d 0.1)
-parsePortDefault (Constant (RationalValue r)) = IR.generalize <$> IR.rational r
+parsePortDefault (Constant (DoubleValue d)) = IR.generalize <$> IR.number (approxRational d 0.1)
+parsePortDefault (Constant (RationalValue r)) = IR.generalize <$> IR.number r
 parsePortDefault (Constant (BoolValue b))   = do
     bool' <- IR.string $ show b
     IR.generalize <$> IR.cons_ bool'

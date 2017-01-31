@@ -12,7 +12,7 @@ import           Data.ByteString        (ByteString)
 import           Data.ByteString.Lazy   (fromStrict, toStrict)
 import           System.ZMQ4.Monadic    (ZMQ)
 
-import           Prologue               hiding (error)
+import           Prologue               hiding (error, trace)
 import           System.Log.MLogger
 import           ZMQ.RPC.Handler        (RPCHandler)
 import           ZMQ.RPC.Response       (Response)

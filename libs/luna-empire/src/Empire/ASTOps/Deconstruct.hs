@@ -13,7 +13,6 @@ import qualified Empire.ASTOps.Read                 as Read
 import           Empire.Data.AST                    (NodeRef, NotAppException(..))
 
 import           Luna.IR.Expr.Term.Uni
-import qualified Luna.IR.Function.Argument as Arg
 import           Luna.IR (match)
 import qualified Luna.IR as IR
 
@@ -34,12 +33,12 @@ extractFun app = match app $ \case
 
 extractArguments :: ASTOp m => NodeRef -> m [NodeRef]
 extractArguments expr = match expr $ \case
-    App a (Arg.Arg _ b) -> do
+    App a b -> do
         nextApp <- IR.source a
         args    <- extractArguments nextApp
         arg'    <- IR.source b
         return $ arg' : args
-    Lam (Arg.Arg _ b) a -> do
+    Lam b a -> do
         nextLam <- IR.source a
         args    <- extractArguments nextLam
         arg'    <- IR.source b

@@ -16,7 +16,6 @@ dependencies:
   - luna-empire
   - luna-empire-api
   - luna-empire-api-json
-  - lunac
   - m-logger
   - mtl
   - optparse-applicative

@@ -61,7 +61,6 @@ import           Empire.Env                            (Env)
 import qualified Empire.Env                            as Env
 import           Empire.Server.Server                  (errorMessage, replyFail, replyOk, replyResult, sendToBus')
 import           Empire.Utils.TextResult               (nodeValueToText)
-import qualified StdLibMock
 import qualified System.Log.MLogger                    as Logger
 import           ZMQ.Bus.Trans                         (BusT (..))
 
@@ -223,10 +222,10 @@ handleSetDefaultValue = modifyGraphOk action success where
     success _ _ = return ()
 
 stdlibFunctions :: [String]
-stdlibFunctions = filter (not . elem '.') StdLibMock.symbolsNames
+stdlibFunctions = ["mockFunction"]
 
 stdlibMethods :: [String]
-stdlibMethods = filter (elem '.') StdLibMock.symbolsNames
+stdlibMethods = ["mockMethod"]
 
 handleGetProgram :: Request GetProgram.Request -> StateT Env BusT ()
 handleGetProgram = modifyGraph action success where
@@ -255,7 +254,7 @@ handleTypecheck req@(Request _ request) = do
 
 mockNSData :: NS.Items
 mockNSData = Map.fromList $ functionsList <> modulesList where
-    nodeSearcherSymbols = filter (not . flip elem StdLibMock.experimental) StdLibMock.symbolsNames
+    nodeSearcherSymbols = ["mockNodeSearcherSymbol"]
     (methods, functions) = partition (elem '.') nodeSearcherSymbols
     functionsList = functionEntry <$> functions
     functionEntry function = (convert function, NS.Element)

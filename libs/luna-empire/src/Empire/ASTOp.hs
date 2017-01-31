@@ -26,7 +26,6 @@ import           Luna.IR.Layer.Succs  (Succs)
 import           Luna.Pass            (Inputs, Outputs, Preserves, Events)
 import qualified Luna.Pass            as Pass (SubPass, eval')
 import qualified Luna.Pass.Manager    as Pass (PassManager, RefCache, get)
-import           Luna.Pass.Evaluation.Interpreter.Layer (InterpreterData)
 
 import           System.Log (Logger, DropLogger, dropLogs)
 
@@ -44,7 +43,6 @@ type EmpireLayers = '[AnyExpr // Model, AnyExprLink // Model,
                       AnyExpr // Meta,
                       AnyExpr // InputsLayer,
                       AnyExpr // Succs,
-                      AnyExpr // InterpreterData,
                       AnyExpr // TCData,
                       AnyExpr // TypeLayer,
                       AnyExpr // UID, AnyExprLink // UID]

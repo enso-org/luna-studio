@@ -40,9 +40,6 @@ import           Empire.Data.Layers                 (NodeMarker(..), Marker)
 
 import qualified Luna.IR.Expr.Combinators as IRExpr
 import Luna.IR.Expr.Term.Uni
-import Luna.IR.Function (arg)
-import           Luna.IR.Function.Argument (Arg)
-import qualified Luna.IR.Function.Argument as Arg
 import           Luna.IR (match)
 import qualified Luna.IR as IR
 

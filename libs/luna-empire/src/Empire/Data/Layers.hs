@@ -28,7 +28,6 @@ import           Data.TypeDesc
 import           Luna.IR                  hiding (String)
 import qualified Luna.IR.Layer.Type       as IR (Type)
 import           Luna.Pass
-import           Luna.Pass.Evaluation.Interpreter.Layer (InterpreterData, InterpreterLayer)
 import           Luna.Pass.Manager        (PassManager)
 import           Luna.Pass.Sugar.Construction
 import           Luna.Pass.Sugar.TH       (makePass)
@@ -73,21 +72,13 @@ initTcData :: Req m '[Editor // Layer // AnyExpr // TCData] => Listener New (Exp
 initTcData = listener $ \(t, _) -> writeLayer @TCData (TCDataMock []) t
 makePass 'initTcData
 
-type instance LayerData InterpreterData t = InterpreterLayer
-
-initInterpreterData :: Req m '[Editor // Layer // AnyExpr // InterpreterData] => Listener New (Expr l) m
-initInterpreterData = listener $ \(t, _) -> writeLayer @InterpreterData def t
-makePass 'initInterpreterData
-
 attachEmpireLayers :: (MonadPassManager m, Throws IRError m) => m ()
 attachEmpireLayers = do
     addExprEventListener @Meta initMetaPass
     addExprEventListener @Marker initNodeMarkerPass
     addExprEventListener @InputsLayer initInputsLayerPass
-    addExprEventListener @InterpreterData initInterpreterDataPass
     addExprEventListener @TCData initTcDataPass
     attachLayer 10 (getTypeDesc @Meta)  (getTypeDesc @AnyExpr)
     attachLayer 10 (getTypeDesc @Marker) (getTypeDesc @AnyExpr)
     attachLayer 10 (getTypeDesc @InputsLayer) (getTypeDesc @AnyExpr)
-    attachLayer 10 (getTypeDesc @InterpreterData) (getTypeDesc @AnyExpr)
     attachLayer 10 (getTypeDesc @TCData) (getTypeDesc @AnyExpr)
