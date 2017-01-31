@@ -54,10 +54,10 @@ import           Luna.IR (match)
 import qualified Luna.IR as IR
 import           Luna.IR.Expr.Term.Uni
 
-nameBreadcrumb :: Monad m => BreadcrumbItem -> m (Named BreadcrumbItem)
-nameBreadcrumb item@(Breadcrumb.Lambda nid) = $notImplemented -- do
-    -- name <- getNodeName nid
-    -- return $ Named (fromMaybe "" name) item
+nameBreadcrumb :: ASTOp m => BreadcrumbItem -> m (Named BreadcrumbItem)
+nameBreadcrumb item@(Breadcrumb.Lambda nid) = do
+    name <- getNodeName nid
+    return $ Named (fromMaybe "" name) item
 
 decodeBreadcrumbs :: Breadcrumb BreadcrumbItem -> Command Graph (Breadcrumb (Named BreadcrumbItem))
 decodeBreadcrumbs (Breadcrumb items) = fmap Breadcrumb $ runASTOp $ forM items nameBreadcrumb
