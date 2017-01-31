@@ -340,4 +340,44 @@ spec = around withChannels $ parallel $ do
             withResult res $ \nodes -> do
                 let Just plus = find (\a -> view Node.nodeId a == u1) nodes
                     inputPorts = Map.elems $ Map.filter Port.isInputPort $ plus ^. Node.ports
-                print plus
+                inputPorts `shouldSatisfy` ((== 3) . length)
+        it "connects to more than one port" $ \env -> do
+            u1 <- mkUUID
+            u2 <- mkUUID
+            u3 <- mkUUID
+            res <- evalEmp env $ do
+                Graph.addNode top u1 "func" def
+                Graph.addNode top u2 "1" def
+                Graph.addNode top u3 "2" def
+                Graph.connect top (OutPortRef u2 Port.All) (InPortRef u1 (Port.Arg 0))
+                Graph.connect top (OutPortRef u3 Port.All) (InPortRef u1 (Port.Arg 1))
+                Graph.withGraph top $ runASTOp $ GraphBuilder.buildNode u1
+            withResult res $ \n -> do
+                let inputPorts = Map.elems $ Map.filter Port.isInputPort $ n ^. Node.ports
+                inputPorts `shouldSatisfy` ((== 4) . length)
+        it "connects five nodes to func" $ \env -> do
+            u1 <- mkUUID
+            u2 <- mkUUID
+            u3 <- mkUUID
+            u4 <- mkUUID
+            u5 <- mkUUID
+            u6 <- mkUUID
+            u7 <- mkUUID
+            res <- evalEmp env $ do
+                Graph.addNode top u1 "func" def
+                Graph.addNode top u2 "1" def
+                Graph.addNode top u3 "2" def
+                Graph.addNode top u4 "3" def
+                Graph.addNode top u5 "4" def
+                Graph.addNode top u6 "5" def
+                Graph.addNode top u7 "6" def
+                Graph.connect top (OutPortRef u2 Port.All) (InPortRef u1 (Port.Arg 0))
+                Graph.connect top (OutPortRef u3 Port.All) (InPortRef u1 (Port.Arg 1))
+                Graph.connect top (OutPortRef u4 Port.All) (InPortRef u1 (Port.Arg 2))
+                Graph.connect top (OutPortRef u5 Port.All) (InPortRef u1 (Port.Arg 3))
+                Graph.connect top (OutPortRef u6 Port.All) (InPortRef u1 (Port.Arg 4))
+                Graph.connect top (OutPortRef u7 Port.All) (InPortRef u1 (Port.Arg 5))
+                Graph.withGraph top $ runASTOp $ GraphBuilder.buildNode u1
+            withResult res $ \n -> do
+                let inputPorts = Map.elems $ Map.filter Port.isInputPort $ n ^. Node.ports
+                inputPorts `shouldSatisfy` ((== 8) . length)
