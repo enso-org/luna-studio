@@ -2,7 +2,7 @@ extra-deps: [ghc-session-0.1.2.0, error-util-0.0.1.1, cond-0.4.1.1, ghc-mtl-1.2.
   serialport-0.4.7, aeson-1.0.2.1]
 ghc-options: {'*': -DFastCompilation -threaded -O -fconstraint-solver-iterations=100}
 local-bin-path: ../../dist/bin
-compiler: ghc-8.0.2
+
 packages:
 - {extra-dep: false, location: ../../libs/luna-empire}
 - {extra-dep: true, location: ../../libs/batch/plugins/luna-empire}
