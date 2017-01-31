@@ -10,7 +10,7 @@ dependencies:
         - curl -L https://github.com/commercialhaskell/stack/releases/download/v1.3.0/stack-1.3.0-linux-x86_64.tar.gz | tar zx -C /tmp
         - sudo mv /tmp/stack-1.3.0-linux-x86_64/stack /usr/bin
     override:
-        - stack build --stack-yaml=build/backend/stack.yaml --only-dependencies --test --fast -j2
+        - stack build --stack-yaml=build/backend/stack.yaml --only-dependencies --install-ghc --test --fast -j2
         - npm install -g brunch@1.8.5 bower
         - cd nodelab && stack build --only-dependencies --install-ghc --test --fast -j1
         - cd nodelab && npm install
