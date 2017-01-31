@@ -74,7 +74,7 @@ node = React.defineView objName $ \(ref, n) -> do
                 div_
                     [ "key"       $= "visualization"
                     , "className" $= "node__visuals"
-                    ] $ forM_ (n ^. Node.value) visualization_
+                    ] $ forM_ (n ^. Node.value) $ visualization_ ref nodeId def
                 svg_
                     [ "key"       $= "essentials"
                     , "className" $= "node__essentials"
