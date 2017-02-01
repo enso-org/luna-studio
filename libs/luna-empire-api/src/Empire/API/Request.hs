@@ -6,7 +6,7 @@ import           Data.Binary (Binary)
 import qualified Empire.API.Topic as T
 
 data Request a = Request { _requestId :: UUID
-                         , _guiID  :: Maybe UUID
+                         , _guiID     :: Maybe UUID
                          , _request   :: a
                          } deriving (Show, Eq, Generic)
 
