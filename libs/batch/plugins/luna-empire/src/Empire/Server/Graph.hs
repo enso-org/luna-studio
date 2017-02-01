@@ -139,23 +139,23 @@ generateNodeId = UUID.nextRandom
 addExpressionNode :: GraphLocation -> Text -> NodeMeta -> Maybe NodeId -> Maybe NodeId -> Empire Node
 addExpressionNode location expression nodeMeta connectTo nodeId =
     case nodeId of
-        Just nodeId -> do
+        Just nId -> do
             case parseExpr expression of
                 Expression expression -> do
-                    Graph.addNodeCondTC (isNothing connectTo) location nodeId expression nodeMeta
+                    Graph.addNodeCondTC (isNothing connectTo) location nId expression nodeMeta
                 Function (Just name) -> do
-                    Graph.addNodeCondTC False location nodeId (Text.append "def " name) nodeMeta
+                    Graph.addNodeCondTC False location nId (Text.append "def " name) nodeMeta
                 Module   name -> throwError "Module Nodes not yet supported"
                 Input    name -> throwError "Input Nodes not yet supported"
                 Output   name -> throwError "Output Nodes not yet supported"
         Nothing -> do
             case parseExpr expression of
                 Expression expression -> do
-                    nodeId <- liftIO generateNodeId
-                    Graph.addNodeCondTC (isNothing connectTo) location nodeId expression nodeMeta
+                    nId <- liftIO generateNodeId
+                    Graph.addNodeCondTC (isNothing connectTo) location nId expression nodeMeta
                 Function (Just name) -> do
-                    nodeId <- liftIO generateNodeId
-                    Graph.addNodeCondTC False location nodeId (Text.append "def " name) nodeMeta
+                    nId <- liftIO generateNodeId
+                    Graph.addNodeCondTC False location nId (Text.append "def " name) nodeMeta
                 Module   name -> throwError "Module Nodes not yet supported"
                 Input    name -> throwError "Input Nodes not yet supported"
                 Output   name -> throwError "Output Nodes not yet supported"
