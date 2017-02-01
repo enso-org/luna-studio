@@ -17,7 +17,7 @@ data Request = Request { _location :: GraphLocation
                        , _nodeIds  :: [NodeId]
                        } deriving (Generic, Eq, NFData, Show)
 
-data Inverse = Inverse { _nodes :: [Node]
+data Inverse = Inverse { _nodes       :: [Node]
                        , _connections :: [(OutPortRef, InPortRef)]
                        } deriving (Generic, Show, Eq, NFData)
 
