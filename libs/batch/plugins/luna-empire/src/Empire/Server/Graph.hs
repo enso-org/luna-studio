@@ -194,8 +194,8 @@ handleRemoveNodes = modifyGraphOk action success where
     action  (RemoveNodes.Request location nodeIds) = do
         allNodes    <- Graph.withGraph location buildNodes
         connections <- Graph.withGraph location buildConnections
-        let inverse = RemoveNodes.Inverse allNodes connections
-        (,) <$> pure inverse <*> Graph.removeNodes location nodeIds
+        let inv = RemoveNodes.Inverse allNodes connections
+        (inv,) <$> Graph.removeNodes location nodeIds
     success (RemoveNodes.Request location nodeIds) _ result = sendToBus' $ RemoveNodes.Update location nodeIds
 
 handleUpdateNodeExpression :: Request UpdateNodeExpression.Request -> StateT Env BusT ()-- fixme [SB] returns Result with no new informations and change node expression has addNode+removeNodes
@@ -203,9 +203,9 @@ handleUpdateNodeExpression = modifyGraph action success where
     action (UpdateNodeExpression.Request location nodeId expression) = do
         oldExpr <- Graph.withGraph location $ $notImplemented -- GraphUtils.getASTTarget nodeId >>= Print.printNodeExpression
         let newNodeId = nodeId
-            inverse = UpdateNodeExpression.Inverse (Text.pack oldExpr)
+            inv = UpdateNodeExpression.Inverse (Text.pack oldExpr)
             res = Graph.updateNodeExpression location nodeId newNodeId expression
-        (,) <$> pure inverse <*> res
+        (inv,) <$> res
     success request@(Request _ _ req@(UpdateNodeExpression.Request location nodeId expression)) _ nodeMay = do
         withJust nodeMay $ \node -> do
             sendToBus' $ AddNode.Update location node
@@ -217,15 +217,15 @@ handleUpdateNodeMeta = modifyGraphOk action success where
         allNodes <- Graph.withGraph location buildNodes
         let inv = UpdateNodeMeta.Inverse allNodes
             res = forM_ updates $ uncurry $ Graph.updateNodeMeta location
-        (,) <$> pure inv <*> res
+        (inv,) <$> res
     success (UpdateNodeMeta.Request location updates) _ result = sendToBus' $ UpdateNodeMeta.Update location updates
 
 handleRenameNode :: Request RenameNode.Request -> StateT Env BusT ()
 handleRenameNode = modifyGraphOk action success where
     action  (RenameNode.Request location nodeId name) = do
         oldName <- Graph.withGraph location $ getNodeName nodeId
-        let inverse = RenameNode.Inverse oldName
-        (,) <$> pure inverse <*> Graph.renameNode location nodeId name
+        let inv = RenameNode.Inverse oldName
+        (inv,) <$> Graph.renameNode location nodeId name
     success (RenameNode.Request location nodeId name) _ result = sendToBus' $ RenameNode.Update location nodeId name
 
 handleConnect :: Request Connect.Request -> StateT Env BusT ()
@@ -240,8 +240,8 @@ handleDisconnect :: Request Disconnect.Request -> StateT Env BusT ()
 handleDisconnect = modifyGraphOk action success where
     action  (Disconnect.Request location dst) = do
         connection <- Graph.withGraph location buildConnections
-        let inverse = Disconnect.Inverse $ fst $ head connection
-        (,) <$> pure inverse <*> Graph.disconnect location dst
+        let inv = Disconnect.Inverse $ fst $ head connection
+        (inv,) <$> Graph.disconnect location dst
     success (Disconnect.Request location dst) _ result = sendToBus' $ Disconnect.Update location dst
 
 handleSetDefaultValue :: Request SetDefaultValue.Request -> StateT Env BusT ()
