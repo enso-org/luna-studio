@@ -15,7 +15,7 @@ import           GHCJS.Prim                             (fromJSString)
 import qualified JS.Atom                                as Atom
 import qualified JS.CustomEvent                         as CustomEvent
 import qualified JS.WebSocket                           as WebSocket
-import qualified Luna.Studio.Batch.Connector.Connection as Connection
+import qualified Luna.Studio.Batch.Connector.Connection as BatchConnection
 import qualified Luna.Studio.Event.Connection           as Connection
 import qualified Luna.Studio.Event.CustomEvent          as CustomEvent
 import           Luna.Studio.Event.Event
@@ -35,8 +35,8 @@ webSocketHandler conn = AddHandler $ \h -> do
         payloadJS <- WebSocket.getData event
         let payload = fromJSString payloadJS
         -- liftIO $ putStrLn $ "payload len " <> show (length payload)
-        let frame = Connection.deserialize payload
-        mapM_ (h . Connection . Connection.Message) $ frame ^. Connection.messages
+        let frame = BatchConnection.deserialize payload
+        mapM_ (h . Connection . Connection.Message) $ frame ^. BatchConnection.messages
     void $ WebSocket.onClose conn $ \event -> do
         code <- WebSocket.getCode event
         h $ Connection $ Connection.Closed code
