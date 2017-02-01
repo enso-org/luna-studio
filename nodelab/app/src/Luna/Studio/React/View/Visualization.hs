@@ -9,6 +9,7 @@ module Luna.Studio.React.View.Visualization
 where
 
 import           Control.Arrow                                  ((***))
+import qualified Data.Aeson                                     as Aeson
 import           Data.List.Split                                (wordsBy)
 import           Data.Position                                  (Position)
 import           Data.Size                                      (Size (Size), Vector2 (Vector2))
@@ -22,6 +23,7 @@ import qualified Empire.API.Data.Error                          as LunaError
 import           Empire.API.Data.TypeRep                        (TypeRep)
 import           Empire.API.Graph.NodeResultUpdate              (NodeValue)
 import qualified Empire.API.Graph.NodeResultUpdate              as NodeResult
+import           Luna.Studio.Data.Matrix                        (transformTranslateToSvg)
 import qualified Luna.Studio.Event.UI                           as UI
 import           Luna.Studio.Prelude
 import qualified Luna.Studio.React.Event.Visualization          as Visualization
@@ -106,7 +108,11 @@ nodeValue_ :: Ref App -> NodeId -> Maybe Position -> Int -> Value -> ReactElemen
 nodeValue_ ref nodeId mayPos visIx value = do
     let isPinned = isJust mayPos
         event = if isPinned then Visualization.Unpin else Visualization.Pin
-    div_ $ do
+        translatedDiv_ = case mayPos of
+            Just pos -> div_ [ "style" @= Aeson.object
+                                [ "transform" Aeson..= transformTranslateToSvg pos ] ]
+            Nothing -> div_
+    translatedDiv_ $ do
         button_ [ onClick $ \_ _ -> dispatch ref $ UI.VisualizationEvent $ event nodeId visIx ] $
             elemString $ if isPinned then "unpin" else "pin"
         case value of

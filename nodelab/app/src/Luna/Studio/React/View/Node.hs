@@ -4,7 +4,6 @@ module Luna.Studio.React.View.Node where
 import qualified Data.Aeson                             as Aeson
 import qualified Data.Map.Lazy                          as Map
 import qualified Data.Text                              as Text
-import           Data.Vector                            (x, y)
 import           Empire.API.Data.Node                   (NodeId)
 import           Empire.API.Data.Port                   (InPort (..), PortId (..))
 import           Luna.Studio.Action.Geometry            (countSameTypePorts, isPortSingle)
@@ -41,8 +40,6 @@ node = React.defineView objName $ \(ref, n) -> do
         pos       = n ^. Node.position
         nodePorts = Map.elems $ n ^. Node.ports
         ports p   = forM_ p $ \port -> port_ ref port (countSameTypePorts port p) (isPortSingle port p)
-        offsetX   = show $ pos ^. x
-        offsetY   = show $ pos ^. y
         nodeLimit = 10000::Int
         zIndex    = n ^. Node.zPos
         z         = if n ^. Node.isExpanded then zIndex + nodeLimit else zIndex
@@ -63,7 +60,7 @@ node = React.defineView objName $ \(ref, n) -> do
                 , "className"   $= (fromString $ "node" <> (if n ^. Node.isExpanded then " node--expanded" else " node--collapsed")
                                                         <> (if n ^. Node.isSelected then " node--selected" else []))
                 , "style"       @= Aeson.object
-                    [ "transform" Aeson..= (transformTranslateToSvg offsetX offsetY)
+                    [ "transform" Aeson..= transformTranslateToSvg pos
                     ]
                 ] $ do
                 --svg_
@@ -94,7 +91,7 @@ node = React.defineView objName $ \(ref, n) -> do
                 , onClick       $ \_ m -> dispatch ref $ UI.NodeEvent $ Node.Select m nodeId
                 , onDoubleClick $ \_ _ -> dispatch ref $ UI.NodeEvent $ Node.Enter nodeId
                 , onMouseDown   $ handleMouseDown ref nodeId
-                , "style"       @= Aeson.object [ "transform" Aeson..= (transformTranslateToSvg offsetX offsetY) ]
+                , "style"       @= Aeson.object [ "transform" Aeson..= transformTranslateToSvg pos ]
                 , "className"   $= (fromString $ "node" <> (if n ^. Node.isExpanded then " node--expanded" else " node--collapsed")
                                                         <> (if n ^. Node.isSelected then " node--selected" else []))
                 ] $ do
