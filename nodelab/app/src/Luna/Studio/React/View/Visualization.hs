@@ -46,7 +46,7 @@ viewName :: JSString
 viewName = "visualization"
 
 pinnedVisualization_ :: Ref App -> NodeEditor -> (NodeId, Int) -> Position -> ReactElementM ViewEventHandler ()
-pinnedVisualization_ ref ne (nodeId, visIx) position =
+pinnedVisualization_ ref ne (nodeId, _) position =
     withJust (ne ^. NodeEditor.nodes . at nodeId) $ \node ->
         withJust (node ^. Node.value) $
             visualization_ ref nodeId $ Just position
@@ -56,6 +56,7 @@ visualization_ ref nodeId mayPos v = React.view visualization (ref, nodeId, mayP
 
 visualization :: ReactView (Ref App, NodeId, Maybe Position, NodeValue)
 visualization = React.defineView viewName $ \(ref, nodeId, mayPos, nodeValue) ->
+    div_ [ "className" $= "noselect" ] $
         case nodeValue of
             NodeResult.Error msg          -> nodeError_ msg
             NodeResult.Value _ valueReprs -> nodeValues_ ref nodeId mayPos valueReprs
@@ -109,10 +110,15 @@ nodeValue_ ref nodeId mayPos visIx value = do
     let isPinned = isJust mayPos
         event = if isPinned then Visualization.Unpin else Visualization.Pin
         translatedDiv_ = case mayPos of
-            Just pos -> div_ [ "style" @= Aeson.object
-                                [ "transform" Aeson..= transformTranslateToSvg pos ] ]
+            Just pos -> div_ [ "className" $= "node-trans node-root noselect node__visuals"
+                             , "style" @= Aeson.object
+                                [ "zIndex"    Aeson..= show 1000
+                                , "transform" Aeson..= transformTranslateToSvg pos ] ]
             Nothing -> div_
     translatedDiv_ $ do
+        when isPinned $
+            button_ [ onMouseDown $ \e m -> stopPropagation e : dispatch ref (UI.VisualizationEvent $ Visualization.MouseDown m nodeId visIx)] $
+                elemString "move"
         button_ [ onClick $ \_ _ -> dispatch ref $ UI.VisualizationEvent $ event nodeId visIx ] $
             elemString $ if isPinned then "unpin" else "pin"
         case value of

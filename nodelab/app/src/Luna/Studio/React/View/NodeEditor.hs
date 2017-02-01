@@ -88,8 +88,8 @@ nodeEditor = React.defineView name $ \(ref, ne) -> do
             , "style"     @= Aeson.object [ "transform" Aeson..= transform ]
             ] $ do
             forM_ (ne ^. NodeEditor.nodes . to HashMap.elems) (node_ ref)
+            forM_ (ne ^. NodeEditor.visualizations . to HashMap.toList) $ uncurry $ pinnedVisualization_ ref ne
         canvas_
             [ "className" $= "plane plane--canvas hide"
             , "key"       $= "canvas"
             ] $ mempty
-        forM_ (ne ^. NodeEditor.visualizations . to HashMap.toList) $ uncurry $ pinnedVisualization_ ref ne
