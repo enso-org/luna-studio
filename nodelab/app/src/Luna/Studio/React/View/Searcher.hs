@@ -24,7 +24,7 @@ searcher  = React.defineView name $ \(ref, s) -> do
     let pos = s ^. Searcher.position
     div_
         [ "key"       $= name
-        , "className" $= "luna-" <> name
+        , "className" $= ("luna-" <> name)
         , "style"     @= Aeson.object
             [ "top"  Aeson..= (show (pos ^. y) <> "px" :: String)
             , "left" Aeson..= (show (pos ^. x) <> "px" :: String)
