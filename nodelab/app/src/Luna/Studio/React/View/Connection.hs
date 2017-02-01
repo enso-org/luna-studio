@@ -54,15 +54,16 @@ connection = React.defineView name $ \(ref, model) -> do
     g_
         [ "className" $= "luna-connection"
         , "key"       $= "connection"] $ do
+        line src dst [ width, color ]
         g_
             [ "className" $= "luna-connection__src"
             , "key"       $= "src" ] $ do
-            line src mid [ width, color, "key" $= "1" ]
+            line src mid [ width, "key" $= "1" ]
             line src mid [ widthSelect, eventSrc, "key" $= "2" ]
         g_
             [ "className" $= "luna-connection__dst"
             , "key" $= "dst" ] $ do
-            line mid dst [ width, color, "key" $= "1" ]
+            line mid dst [ width, "key" $= "1" ]
             line mid dst [ widthSelect, eventDst, "key" $= "2" ]
 
 connection_ :: Ref App -> InPortRef -> Connection -> ReactElementM ViewEventHandler ()

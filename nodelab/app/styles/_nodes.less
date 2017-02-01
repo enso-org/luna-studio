@@ -1,6 +1,5 @@
 @import '_variables';
 
-
 /////////////////////////////
 //        utilities        //
 /////////////////////////////
@@ -15,7 +14,6 @@
     left:            0;
 }
 
-
 /////////////////////////////
 //       connections       //
 /////////////////////////////
@@ -28,16 +26,14 @@
 // FIXME – that need to be implemented in SVG
 .luna-connection__src,
 .luna-connection__dst {
-    transition: all @transitionSpeed linear;
-    &:hover * {
+    &:hover :first-child {
         stroke: #fff;
     }
-    line + line {
-        opacity: 0;
+    line {
+        opacity:        1;
         stroke-linecap: butt;
     }
 }
-
 
 /////////////////////////////
 //          nodes          //
@@ -85,7 +81,6 @@
     opacity: 0;
 }
 
-
 /////////////////////////////
 //      node expanded      //
 /////////////////////////////
@@ -118,7 +113,7 @@
         }
         .luna-blur {
             display: block;
-            background: rgba(255,255,255,.03);
+            background:    rgba(255,255,255,.03);
             border-radius: @borderRadius;
         }
     }
@@ -208,7 +203,6 @@
         overflow: initial;
     }
 }
-
 
 /////////////////////////////
 //     selection mark      //
