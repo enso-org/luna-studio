@@ -44,11 +44,11 @@ app ref = React.defineControllerView name ref $ \store () -> do
         , "className" $= "luna-studio"
         ] $ do
         div_
-            [ "className" $= "main"
+            [ "className" $= "luna-main"
             , "key"       $= "main"
             ] $ do
             div_
-                [ "className" $= "graph-editor"
+                [ "className" $= "luna-graph-editor"
                 , "key"       $= "graph-editor"
                 ] $ do
                 nodeEditor_  ref $ s ^. App.nodeEditor

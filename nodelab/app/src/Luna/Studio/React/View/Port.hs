@@ -71,9 +71,9 @@ portSelf_ ref port = do
         color   = toJSString $ port ^. Port.color
         portId  = port ^. Port.portId
     g_
-        [ "className" $= "port port--self" ] $ do
+        [ "className" $= "luna-port luna-port--self" ] $ do
         circle_
-            [ "className" $= "port__shape"
+            [ "className" $= "luna-port__shape"
             , "key"       $= (jsShow portId <> "a")
             , "fill"      $= color
             ] mempty
@@ -81,7 +81,7 @@ portSelf_ ref port = do
             [ onMouseDown $ handleMouseDown ref portRef
             , onMouseUp   $ handleMouseUp   ref portRef
             , onClick     $ handleClick     ref portRef
-            , "className" $= "port__select"
+            , "className" $= "luna-port__select"
             , "key"       $= (jsShow portId <> "b")
             ] mempty
 
@@ -94,9 +94,9 @@ portSingle_ ref port = do
         r2 = jsShow2 . (-) nodeRadius'
         svgPath a b c = "M0 -" <> r1 a <> " A " <> r1 a <> " " <> r1 a <> " 0 0 " <> jsShow b <> " 0 "  <> r1 a <>
                         " L0 "  <> r2 a <> " A " <> r2 a <> " " <> r2 a <> " 1 0 " <> jsShow c <> " 0 -" <> r2 a <> " Z "
-    g_ [ "className" $= "port port--o--single" ] $ do
+    g_ [ "className" $= "luna-port luna-port--o--single" ] $ do
         path_
-            [ "className" $= "port__shape"
+            [ "className" $= "luna-port__shape"
             , "key"       $= (jsShow portId <> "a" )
             , "fill"      $= color
             , "d"         $= (svgPath 0 0 1 <> svgPath 0 1 0)
@@ -105,7 +105,7 @@ portSingle_ ref port = do
             [ onMouseDown $ handleMouseDown ref portRef
             , onMouseUp   $ handleMouseUp   ref portRef
             , onClick     $ handleClick     ref portRef
-            , "className" $= "port__select"
+            , "className" $= "luna-port__select"
             , "key"       $= (jsShow portId <> "b")
             , "d"         $= (svgPath 3 0 1 <> svgPath 3 1 0)
             ] mempty
@@ -115,7 +115,7 @@ portIO_ ref port num numOfPorts isInput = do
     let portRef = port ^. Port.portRef
         portId  = port ^. Port.portId
         color   = toJSString $ port ^. Port.color
-        classes  = if isInput then "port port--i port--i--" else "port port--o port--o--"
+        classes  = if isInput then "luna-port luna-port--i luna-port--i--" else "luna-port luna-port--o luna-port--o--"
         svgFlag1 = if isInput then "1"  else "0"
         svgFlag2 = if isInput then "0"  else "1"
         mod      = if isInput then -1.0 else 1.0
@@ -141,7 +141,7 @@ portIO_ ref port num numOfPorts isInput = do
     g_
         [ "className" $= (convert $ classes <> show (num+1)) ] $ do
         path_
-            [ "className" $= "port__shape"
+            [ "className" $= "luna-port__shape"
             , "key"       $= (jsShow portId <> "a")
             , "fill"      $= color
             , "d"         $= svgPath 0
@@ -150,7 +150,7 @@ portIO_ ref port num numOfPorts isInput = do
             [ onMouseDown $ handleMouseDown ref portRef
             , onMouseUp   $ handleMouseUp   ref portRef
             , onClick     $ handleClick     ref portRef
-            , "className" $= "port__select"
+            , "className" $= "luna-port__select"
             , "key"       $= (jsShow portId <> "b")
             , "d"         $= svgPath 3
             ] mempty
@@ -160,13 +160,13 @@ portIOExpanded_ ref port num isInput = do
     let portRef = port ^. Port.portRef
         portId  = port ^. Port.portId
         color   = toJSString $ port ^. Port.color
-        classes = if isInput then "port port--i port--i--" else "port port--o port--o--"
+        classes = if isInput then "luna-port luna-port--i luna-port--i--" else "luna-port luna-port--o luna-port--o--"
         n       = if isInput then 1 else 0
         r       = jsShow2 . (+3)
     g_
         [ "className" $= convert (classes <> show (num + 1)) ] $ do
         circle_
-            [ "className" $= "port__shape"
+            [ "className" $= "luna-port__shape"
             , "key"       $= (jsShow portId <> jsShow num <> "a")
             , "fill"      $= color
             , "r"         $= r 0
@@ -176,7 +176,7 @@ portIOExpanded_ ref port num isInput = do
             [ onMouseDown $ handleMouseDown ref portRef
             , onMouseUp   $ handleMouseUp   ref portRef
             , onClick     $ handleClick     ref portRef
-            , "className" $= "port__select"
+            , "className" $= "luna-port__select"
             , "key"       $= (jsShow portId <> jsShow num <> "b")
             , "r"         $= r 3
             , "cy"        $= jsShow2 (lineHeight * fromIntegral (num + n) )

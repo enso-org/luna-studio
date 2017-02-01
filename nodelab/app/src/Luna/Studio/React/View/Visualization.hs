@@ -78,7 +78,7 @@ nodeError_ err = do
     let message = wrapLines errorMessageWrapMargin $ showErrorSep "\n" err
     div_
         [ "key"       $= "error"
-        , "className" $= "vis vis--error"
+        , "className" $= "luna-vis luna-vis--error"
         ] $ elemString message
 
 nodeValues_ :: [Value] -> ReactElementM ViewEventHandler ()

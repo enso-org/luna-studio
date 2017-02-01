@@ -29,7 +29,7 @@ nodeEditor = React.defineView name $ \(ref, ne) -> do
     let transformMatrix = ne ^. NodeEditor.screenTransform . CameraTransformation.logicalToScreen
         transform       = showTransformMatrixToSvg transformMatrix
     div_
-        [ "className" $= "graph"
+        [ "className" $= "luna-graph"
         , "id"        $= "Graph"
         , "key"       $= "graph"
         , onMouseDown $ \_ e   -> dispatch ref $ UI.NodeEditorEvent $ NE.MouseDown e
@@ -38,17 +38,17 @@ nodeEditor = React.defineView name $ \(ref, ne) -> do
         ] $ do
         style_
             [ "id" $= "cameraTransform" ] $ do
-                elemString $ Text.unpack $ ".transform   { color: red }"
-                elemString $ Text.unpack $ ".transform3d { color: red }"
+                elemString $ Text.unpack $ ".node-trans { transform: … }"
+                elemString $ Text.unpack $ ".name-trans { transform: … }"
         svg_
-            [ "className" $= "plane plane-connections"
+            [ "className" $= "luna-plane luna-plane-connections"
             , "style"     @= Aeson.object [ "transform" Aeson..= transform ]
             , "key"       $= "connections"
             ] $ do
             defs_
                 [ "key" $= "defs" ] $ do
                 el "filter"
-                    [ "id" $= "textShadow"
+                    [ "id"  $= "textShadow"
                     , "key" $= "textShadow"
                     ] $ do
                     el "feOffset"
@@ -72,19 +72,19 @@ nodeEditor = React.defineView name $ \(ref, ne) -> do
                         ] mempty
             g_
                 [ "key"       $= "connections"
-                , "className" $= "connections"
+                , "className" $= "luna-connections"
                 ] $ do
                 mapM_ (uncurry (connection_ ref)) $ ne ^. NodeEditor.connections . to HashMap.toList
                 mapM_ currentConnection_ $ ne ^. NodeEditor.currentConnection
                 mapM_ selectionBox_ $ ne ^. NodeEditor.selectionBox
         div_
-            [ "className" $= "plane plane--nodes"
+            [ "className" $= "luna-plane luna-plane--nodes"
             , "key"       $= "nodes"
             , "style"     @= Aeson.object [ "transform" Aeson..= transform ]
             ] $ do
             forM_ (ne ^. NodeEditor.nodes . to HashMap.elems) (node_ ref)
         canvas_
-            [ "className" $= "plane plane--canvas hide"
+            [ "className" $= "luna-plane plane--canvas luna-hide"
             , "key"       $= "canvas"
             ] $ mempty
 

@@ -21,12 +21,12 @@ name = "breadcrumbs"
 breadcrumbs :: ReactView (Ref App, Breadcrumbs)
 breadcrumbs = React.defineView name $ \(ref, model) -> do
     div_
-        [ "className" $= (name <> " noselect")
+        [ "className" $= (name <> "luna-noselect")
         , "key"       $=  name
         ] $ do
         forM_ (zip [0..] $ inits $ model ^. B.items) $ \(key, bc) -> do
             div_
-                [ "className" $= "breadcrumbs__item breadcrumbs__item--home"
+                [ "className" $= "luna-breadcrumbs__item luna-breadcrumbs__item--home"
                 , "key"       $= jsShow key
                 , onClick $ \_ _ -> dispatch ref $ UI.BreadcrumbsEvent $ B.Enter $ unname bc
                 ] $ case reverse bc of

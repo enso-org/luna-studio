@@ -11,13 +11,14 @@ import qualified React.Flux                         as React
 
 
 name :: JSString
-name = "code-editor-toggle"
+name = "luna-code-editor-toggle"
 
 codeEditorToggle :: ReactView (Ref App)
 codeEditorToggle = React.defineView name $ \ref-> do
+    let classes = "luna-" <> name
     button_
         [ "key"       $= name
-        , "className" $= name
+        , "className" $= classes
         , onClick $ \_ _ -> dispatch ref $ UI.CodeEditorEvent CodeEditor.ToggleCodeEditor
         ] $ elemString $ []
 

@@ -19,7 +19,7 @@ body { height: 100%; overflow: auto; }
 //        utilities        //
 /////////////////////////////
 
-.hide {
+.luna-hide {
     display: none;
 }
 
@@ -38,7 +38,7 @@ body {
 //          layout         //
 /////////////////////////////
 
-.main {
+.luna-main {
     display:     flex;
     align-items: stretch;
     width:       100%;
@@ -48,7 +48,7 @@ body {
     overflow:    hidden;
 }
 
-.breadcrumbs {
+.luna-breadcrumbs {
     position:    absolute;
     top:         0;
     left:        0;
@@ -58,18 +58,18 @@ body {
     color:       @colorText;
 }
 
-.breadcrumbs__item {
+.luna-breadcrumbs__item {
     float:        left;
     padding-left: 10px;
     cursor:       pointer;
 }
 
-.graph-editor {
+.luna-graph-editor {
     flex:     2 auto;
     position: relative;
 }
 
-.graph {
+.luna-graph {
     position: relative;
     flex:     none;
     overflow: inherit;
@@ -78,14 +78,14 @@ body {
     height:   100%;
 }
 
-.plane {
+.luna-plane {
     position: absolute;
     width:    1px;
     height:   1px;
     overflow: inherit;
 }
 
-.plane--nodes {
+.luna-plane--nodes {
     svg {
         position: absolute;
         top:      0;
@@ -95,7 +95,7 @@ body {
         height:   1px;
     }
 }
-.plane--canvas {
+.luna-plane--canvas {
     height: 100%;
     width:  100%;
 }
@@ -106,17 +106,17 @@ body {
 
 // Probably to remove after the Atom integration
 
-.code-editor {
+.luna-code-editor {
     width:      30%;
     background: rgb(30, 30, 30);
     z-index:    10;
 }
 
-.code-editor--collapsed {
+.luna-code-editor--collapsed {
     display: none;
 }
 
-.code-editor-toggle {
+.luna-code-editor-toggle {
     position:      absolute;
     right:         5px;
     top:           50%;
