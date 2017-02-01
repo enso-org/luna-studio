@@ -9,7 +9,6 @@ module.exports =
   activate: ->
     atom.workspace.addOpener (uri) ->
         if path.extname(uri) is '.luna'
-            console.log(code)
             return new LunaStudioTab(uri, code)
     @subs = new SubAtom
     @subs.add atom.commands.add 'atom-workspace', 'luna-studio:open': ->

@@ -6,6 +6,6 @@ class LunaStudioTabView extends View
 
   @content: ->
     @div
-      id: 'luna-studio-mount'
+      id: 'mount-point'
       =>
         @h1 "Loading ..."
