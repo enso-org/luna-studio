@@ -10,7 +10,7 @@ import           Empire.Data.Graph          (ast)
 
 import           Prologue                   hiding ((|>))
 
-import           Test.Hspec (Spec, around, describe, it,
+import           Test.Hspec (Spec, around, describe, it, xit,
                              shouldBe, shouldMatchList)
 
 import EmpireUtils
@@ -19,7 +19,7 @@ import EmpireUtils
 spec :: Spec
 spec = around withChannels $ do
     describe "pretty-printer" $ do
-        it "ignores nodes outside lambda while pretty-printing code inside it" $ \env -> do
+        xit "ignores nodes outside lambda while pretty-printing code inside it" $ \env -> do
             u1 <- mkUUID
             u2 <- mkUUID
             u3 <- mkUUID
@@ -36,7 +36,7 @@ spec = around withChannels $ do
             withResult res $ \(topCode, lambdaCode) -> do
                 lines topCode `shouldMatchList` ["node3 = 4", "node2 = 3", "foo = -> $in0 in0"]
                 lines lambdaCode `shouldMatchList` ["def foo in0:", "    node5 = 6", "    node4 = 5", "    in0"]
-        it "properly pretty-prints functions" $ \env -> do
+        xit "properly pretty-prints functions" $ \env -> do
             u1 <- mkUUID
             res <- evalEmp env $ do
                 Graph.addNode top u1 "-> $a $b a + b" def

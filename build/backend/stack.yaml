@@ -1,7 +1,8 @@
 compiler: ghc-8.0.2
 compiler-check: match-exact
 extra-deps: [ghc-session-0.1.2.0, error-util-0.0.1.1, cond-0.4.1.1, ghc-mtl-1.2.1.0,
-serialport-0.4.7, aeson-1.0.2.1, megaparsec-5.1.2, hspec-megaparsec-0.3.0]
+serialport-0.4.7, aeson-1.0.2.1, megaparsec-5.1.2, hspec-megaparsec-0.3.0, hspec-2.4.1,
+hspec-core-2.4.1, hspec-discover-2.4.1, hspec-expectations-0.8.2]
 ghc-options: {'*': -threaded -fconstraint-solver-iterations=100 }
 local-bin-path: ../../dist/bin
 packages:
