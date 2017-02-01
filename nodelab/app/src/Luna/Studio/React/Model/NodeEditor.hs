@@ -1,7 +1,8 @@
+{-# LANGUAGE DeriveAnyClass #-}
 module Luna.Studio.React.Model.NodeEditor where
 
 import           Data.HashMap.Strict                   (HashMap)
-import qualified Data.HashMap.Strict                   as HashMap
+import           Data.Position                         (Position)
 import           Empire.API.Data.Node                  (NodeId)
 import           Empire.API.Data.PortRef               (InPortRef)
 import           Luna.Studio.Data.CameraTransformation (CameraTransformation)
@@ -17,9 +18,7 @@ data NodeEditor = NodeEditor { _screenTransform   :: CameraTransformation
                              , _connections       :: HashMap InPortRef Connection
                              , _currentConnection :: Maybe CurrentConnection
                              , _selectionBox      :: Maybe SelectionBox
-                             } deriving (Eq)
+                             , _visualizations    :: HashMap (NodeId, Int) Position
+                             } deriving (Default, Eq, Generic)
 
 makeLenses ''NodeEditor
-
-instance Default NodeEditor where
-    def = NodeEditor def HashMap.empty HashMap.empty Nothing def

@@ -50,8 +50,12 @@ invertedHomothetyMatrix pos k = Matrix.fromList 4 4 [ 1/k  , 0    , 0, 0
 transformMatrixToSvg :: String -> String -> String -> String
 transformMatrixToSvg scale offsetX offsetY = "matrix(" <> scale <> " , 0, 0, " <> scale <> " , " <> offsetX <> " , " <> offsetY <> " )"
 
-transformTranslateToSvg :: String -> String ->  String
-transformTranslateToSvg offsetX offsetY = "matrix( 1 , 0, 0, 1, " <> offsetX <> " , " <> offsetY <> " )"
+transformTranslateToSvg :: Position ->  String
+transformTranslateToSvg position = "matrix( 1 , 0, 0, 1, " <> offsetX <> " , " <> offsetY <> " )"
+    where
+      offsetX = show $ position ^. x
+      offsetY = show $ position ^. y
+
 
 showTransformMatrixToSvg :: Matrix Double -> String
 showTransformMatrixToSvg matrix =

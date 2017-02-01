@@ -41,7 +41,8 @@ import qualified Luna.Studio.State.Collaboration      as Collaboration
 import qualified Luna.Studio.State.Graph              as Graph
 import           System.Random                        (StdGen)
 import qualified System.Random                        as Random
-
+import qualified JS.Scene as Scene
+import JS.Scene (Scene)
 
 -- TODO[react]: Move all action states to ActionState
 -- TODO split to more states
@@ -52,6 +53,7 @@ data State = State { _mousePos           :: Position
                    , _currentActions     :: Map ActionRep (SomeAction (Command State))
                    , _selectionHistory   :: [Set Node.NodeId]
                    , _topZIndex          :: Int
+                   , _scene              :: Scene
                    -- TODO[react]: wyjebawszy
                    , _workspace          :: Workspace
                    , _lastEvent          :: Maybe Event.Event
@@ -90,6 +92,7 @@ renderIfNeeded :: Command State ()
 renderIfNeeded =
     whenM (use renderNeeded) $ do
         withApp Store.commit
+        updateScene
         renderNeeded .= False
 
 modifyNodeEditor :: M.State NodeEditor r -> Command State r
@@ -129,7 +132,7 @@ getConnection :: ConnectionId -> Command State (Maybe Connection)
 getConnection connectionId = get (App.nodeEditor . NodeEditor.connections . at connectionId)
 
 mkState :: DateTime -> Collaboration.ClientId -> StdGen -> Ref App -> State
-mkState = State (Position (Vector2 200 200)) def False def def def def def def def def
+mkState = State (Position (Vector2 200 200)) def False def def def def def def def def def
 
 nextRandom :: Command State Word8
 nextRandom = do
@@ -175,3 +178,6 @@ updateActionWithKey key action = currentActions . at key ?= someAction action
 
 removeActionFromState :: ActionRep -> Command State ()
 removeActionFromState key = currentActions %= Map.delete key
+
+updateScene :: Command State ()
+updateScene = scene <~ Scene.get

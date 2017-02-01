@@ -15,7 +15,7 @@ import           React.Flux                 (MouseEvent (MouseEvent), mousePageX
 workspacePosition :: MouseEvent -> Command State Position
 workspacePosition = translateToWorkspace <=< mousePosition
 
-mousePosition :: MonadIO m => MouseEvent -> m Position
+mousePosition :: MouseEvent -> Command State Position
 mousePosition e = do
     workspacePos <- getWorkspacePos
     let pagePos = Position (Vector2 (fromIntegral $ mousePageX e) (fromIntegral $ mousePageY e))
