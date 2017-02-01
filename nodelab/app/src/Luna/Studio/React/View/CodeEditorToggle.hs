@@ -11,7 +11,7 @@ import qualified React.Flux                         as React
 
 
 name :: JSString
-name = "luna-code-editor-toggle"
+name = "code-editor-toggle"
 
 codeEditorToggle :: ReactView (Ref App)
 codeEditorToggle = React.defineView name $ \ref-> do

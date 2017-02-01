@@ -32,7 +32,7 @@ runApp chan socket = do
     initTime             <- getCurrentTime
     mdo
         appRef <- Store.createApp $ Engine.scheduleEvent chan state
-        React.reactRender "nodelab-app" (App.app appRef) ()
+        React.reactRender "luna-studio-mount" (App.app appRef) ()
         let initState = mkState initTime clientId random appRef
                       & Global.workspace . Workspace.lastUILocation .~ lastLocation
                       & Global.pendingRequests %~ Set.insert projectListRequestId
