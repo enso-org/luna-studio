@@ -10,7 +10,7 @@ import qualified Empire.API.Graph.Request      as G
 import qualified Empire.API.Request            as R
 import qualified Empire.API.Response           as Response
 import qualified Empire.API.Topic              as T
-import qualified Data.Map                      as Map
+import qualified Data.Map                      (Map)
 
 
 
@@ -20,7 +20,7 @@ data Request = Request { _location    :: GraphLocation
                        , _saveNodeIds :: Bool
                        } deriving (Generic, Eq, NFData, Show)
 
-type Result = Maybe (Map.Map NodeId NodeId)
+type Result = Maybe (Map NodeId NodeId)
 
 
 type Response = Response.Response Request () Result
