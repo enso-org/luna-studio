@@ -11,7 +11,7 @@ import qualified Empire.API.Request            as R
 
 data UndoRequest  = UndoRequest deriving (Generic, Show, Eq, NFData)
 
-data Request = Request {_request  :: UndoRequest
+data Request = Request { _request :: UndoRequest
                        } deriving (Generic, Show, Eq, NFData)
 
 makeLenses ''UndoRequest
