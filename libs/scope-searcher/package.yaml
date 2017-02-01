@@ -7,23 +7,24 @@ ghc-options: -threaded
 
 dependencies:
     - base
-    - text
     - containers
-    - lens
     - data-default
+    - deepseq
+    - lens
+    - text
 
 library:
     source-dirs: src
     default-extensions:
+        - DeriveGeneric
         - FlexibleContexts
         - TemplateHaskell
-        - DeriveGeneric
     ghc-options:
-        - -Wall
         - -O2
+        - -Wall
     dependencies:
-        - binary
         - aeson
+        - binary
 
 executables:
   scope-searcher-exe:
@@ -38,22 +39,22 @@ executables:
         - -rtsopts
         - -with-rtsopts=-N
     dependencies:
+        - ansi-terminal
         - mtl
         - pretty-show
-        - ansi-terminal
         - scope-searcher
 
 tests:
   scope-searcher-test:
     main: Main.hs
     source-dirs:
-        - test
         - data
+        - test
     ghc-options:
         - -rtsopts
         - -with-rtsopts=-N
     dependencies:
-        - scope-searcher
         - HUnit
+        - scope-searcher
         - test-framework
         - test-framework-hunit

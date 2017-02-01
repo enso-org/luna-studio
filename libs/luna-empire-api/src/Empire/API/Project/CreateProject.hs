@@ -1,21 +1,21 @@
-{-# LANGUAGE TypeSynonymInstances #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE TypeSynonymInstances  #-}
 module Empire.API.Project.CreateProject where
 
+import           Data.Binary             (Binary)
 import           Prologue
-import           Data.Binary                   (Binary)
 
-import           Empire.API.Data.Project       (ProjectId, Project)
-import qualified Empire.API.Response           as Response
-import qualified Empire.API.Topic              as T
-import qualified Empire.API.Request            as R
+import           Empire.API.Data.Project (Project, ProjectId)
+import qualified Empire.API.Request      as R
+import qualified Empire.API.Response     as Response
+import qualified Empire.API.Topic        as T
 
 data Request = Request { _name :: String
-                       } deriving (Generic, Show, Eq)
+                       } deriving (Generic, Eq, NFData, Show)
 
 data Result = Result   { _projectId :: ProjectId
                        , _project   :: Project
-                       } deriving (Generic, Show, Eq)
+                       } deriving (Generic, Eq, NFData, Show)
 
 
 type Response = Response.Response Request () Result
@@ -23,7 +23,7 @@ instance Response.ResponseResult Request () Result
 
 data Update = Update { _projectId' :: ProjectId
                      , _project'   :: Project
-                     } deriving (Generic, Show, Eq)
+                     } deriving (Generic, Eq, NFData, Show)
 
 makeLenses ''Request
 makeLenses ''Result

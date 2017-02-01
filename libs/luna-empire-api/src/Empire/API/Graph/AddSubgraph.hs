@@ -18,7 +18,7 @@ data Request = Request { _location    :: GraphLocation
                        , _nodes       :: [Node]
                        , _connections :: [Connection]
                        , _saveNodeIds :: Bool
-                       } deriving (Generic, Show, Eq)
+                       } deriving (Generic, Eq, NFData, Show)
 
 type Result = Maybe (Map.Map NodeId NodeId)
 

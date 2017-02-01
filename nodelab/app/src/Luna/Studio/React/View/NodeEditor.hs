@@ -3,6 +3,11 @@ module Luna.Studio.React.View.NodeEditor where
 
 import qualified Data.Aeson                            as Aeson
 import qualified Data.HashMap.Strict                   as HashMap
+import qualified Data.Text                             as Text
+import           React.Flux
+import qualified React.Flux                            as React
+import           React.Flux.Internal                   (el)
+
 import qualified Luna.Studio.Data.CameraTransformation as CameraTransformation
 import           Luna.Studio.Data.Matrix               (showTransformMatrixToSvg)
 import qualified Luna.Studio.Event.UI                  as UI
@@ -15,13 +20,14 @@ import           Luna.Studio.React.Store               (Ref, dispatch)
 import           Luna.Studio.React.View.Connection     (connection_, currentConnection_)
 import           Luna.Studio.React.View.Node           (node_)
 import           Luna.Studio.React.View.SelectionBox   (selectionBox_)
-import           React.Flux
-import qualified React.Flux                            as React
-import           React.Flux.Internal                   (el)
+import           Luna.Studio.React.View.Visualization  (pinnedVisualization_)
 
 
 name :: JSString
 name = "node-editor"
+
+nodeEditor_ :: Ref App -> NodeEditor -> ReactElementM ViewEventHandler ()
+nodeEditor_ ref ne = React.viewWithSKey nodeEditor name (ref, ne) mempty
 
 nodeEditor :: ReactView (Ref App, NodeEditor)
 nodeEditor = React.defineView name $ \(ref, ne) -> do
@@ -35,9 +41,10 @@ nodeEditor = React.defineView name $ \(ref, ne) -> do
         , onWheel     $ \e m w -> preventDefault e : dispatch ref (UI.NodeEditorEvent $ NE.Wheel m w)
         , onScroll    $ \e     -> [preventDefault e]
         ] $ do
-
-        -- TODO: div_ [ "className" $= "plane plane--visuals" ] …
-
+        style_
+            [ "id" $= "cameraTransform" ] $ do
+                elemString $ Text.unpack $ ".transform   { color: red }"
+                elemString $ Text.unpack $ ".transform3d { color: red }"
         svg_
             [ "className" $= "plane plane-connections"
             , "style"     @= Aeson.object [ "transform" Aeson..= transform ]
@@ -80,12 +87,9 @@ nodeEditor = React.defineView name $ \(ref, ne) -> do
             , "key"       $= "nodes"
             , "style"     @= Aeson.object [ "transform" Aeson..= transform ]
             ] $ do
-            forM_ (ne ^. NodeEditor.nodes . to HashMap.elems) $ flip (node_ ref) transformMatrix
+            forM_ (ne ^. NodeEditor.nodes . to HashMap.elems) (node_ ref)
         canvas_
             [ "className" $= "plane plane--canvas hide"
             , "key"       $= "canvas"
             ] $ mempty
-
-
-nodeEditor_ :: Ref App -> NodeEditor -> ReactElementM ViewEventHandler ()
-nodeEditor_ ref ne = React.viewWithSKey nodeEditor name (ref, ne) mempty
+        forM_ (ne ^. NodeEditor.visualizations . to HashMap.toList) $ uncurry $ pinnedVisualization_ ref ne

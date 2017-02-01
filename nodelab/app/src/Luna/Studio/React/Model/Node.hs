@@ -6,11 +6,9 @@ module Luna.Studio.React.Model.Node (
 ) where
 
 import           Control.Arrow
-import           Control.DeepSeq                   (NFData)
 import           Data.Aeson                        (ToJSON)
 import           Data.Map.Lazy                     (Map)
 import qualified Data.Map.Lazy                     as Map
-import qualified Data.Text                         as Text
 import           Data.Time.Clock                   (UTCTime)
 
 import           Data.Position                     (Position (Position), Vector2 (Vector2))
@@ -32,7 +30,7 @@ import           Luna.Studio.State.Collaboration   (ColorId)
 data Node = Node { _nodeId                :: NodeAPI.NodeId
                  , _ports                 :: Map AnyPortRef Port
                  , _position              :: Position
-                 , _zPos                  :: Double
+                 , _zPos                  :: Int
                  , _expression            :: Text
                  , _code                  :: Maybe Text
                  , _name                  :: Text
@@ -68,7 +66,7 @@ instance Default Collaboration where
     def = Collaboration def def
 
 makeNode :: NodeAPI.NodeId -> Map AnyPortRef Port -> Position -> Text -> Maybe Text -> Text -> Maybe Text -> Bool -> Node
-makeNode nid ports' pos expr code' name' tpe' vis = Node nid ports' pos 0.0 expr code' name' def def tpe' False False vis def Nothing
+makeNode nid ports' pos expr code' name' tpe' vis = Node nid ports' pos def expr code' name' def def tpe' False False vis def Nothing
 
 makePorts :: NodeAPI.Node -> [Port]
 makePorts node = Port.fromPorts (node ^. NodeAPI.nodeId) (Map.elems $ node ^. NodeAPI.ports)
@@ -83,10 +81,10 @@ fromNode n = let position' = Position (uncurry Vector2 $ n ^. NodeAPI.nodeMeta ^
     in
     case n ^. NodeAPI.nodeType of
         NodeAPI.ExpressionNode expression' ->  makeNode nodeId' ports' position' expression' code' name' Nothing vis
-        NodeAPI.InputNode inputIx          ->  makeNode nodeId' ports' position' (Text.pack $ "Input " <> show inputIx) code' name' (Just tpe') vis where
-            tpe' = Text.pack $ fromMaybe "?" $ show <$> n ^? NodeAPI.ports . ix (OutPortId All) . PortAPI.valueType
-        NodeAPI.OutputNode outputIx        ->  makeNode nodeId' ports' position' (Text.pack $ "Output " <> show outputIx) code' name' Nothing vis
+        NodeAPI.InputNode inputIx          ->  makeNode nodeId' ports' position' (convert $ "Input " <> show inputIx) code' name' (Just tpe') vis where
+            tpe' = convert $ fromMaybe "?" $ show <$> n ^? NodeAPI.ports . ix (OutPortId All) . PortAPI.valueType
+        NodeAPI.OutputNode outputIx        ->  makeNode nodeId' ports' position' (convert $ "Output " <> show outputIx) code' name' Nothing vis
         NodeAPI.ModuleNode                 ->  makeNode nodeId' ports' position' "Module"    code' name' Nothing vis
-        NodeAPI.FunctionNode tpeSig        -> (makeNode nodeId' ports' position' "Function"  code' name' Nothing vis) -- & value .~ (Text.pack $ intercalate " -> " tpeSig) --TODO[react]
+        NodeAPI.FunctionNode tpeSig        -> (makeNode nodeId' ports' position' "Function"  code' name' Nothing vis) -- & value .~ (convert $ intercalate " -> " tpeSig) --TODO[react]
         NodeAPI.InputEdge                  ->  makeNode nodeId' ports' position' "Input"     code' name' Nothing vis
         NodeAPI.OutputEdge                 ->  makeNode nodeId' ports' position' "Output"    code' name' Nothing vis

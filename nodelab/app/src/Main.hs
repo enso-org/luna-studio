@@ -1,30 +1,6 @@
 {-# LANGUAGE RecursiveDo #-}
 module Main where
 
-
---      _|      _|
---      _|_|    _|    _|_|    _|      _|      _|
---      _|  _|  _|  _|_|_|_|  _|      _|      _|
---      _|    _|_|  _|          _|  _|  _|  _|
---      _|      _|    _|_|_|      _|      _|
-
---      _|_|_|                _|
---      _|    _|  _|    _|  _|_|_|_|    _|_|
---      _|_|_|    _|    _|    _|      _|_|_|_|
---      _|    _|  _|    _|    _|      _|
---      _|_|_|      _|_|_|      _|_|    _|_|_|
---                      _|
---                  _|_|
-
---        _|_|                    _|
---      _|    _|  _|  _|_|    _|_|_|    _|_|    _|  _|_|
---      _|    _|  _|_|      _|    _|  _|_|_|_|  _|_|
---      _|    _|  _|        _|    _|  _|        _|
---        _|_|    _|          _|_|_|    _|_|_|  _|
-
-
--- http://www.network-science.de/ascii/
-
 import           Control.Concurrent.Chan              (Chan)
 import qualified Control.Concurrent.Chan              as Chan
 import           Control.Concurrent.MVar
@@ -47,7 +23,6 @@ import qualified Luna.Studio.State.Global             as Global
 
 
 
-
 runApp :: Chan (IO ()) -> WebSocket -> IO ()
 runApp chan socket = do
     lastLocation <- GraphLocation.loadLocation
@@ -55,18 +30,14 @@ runApp chan socket = do
     projectListRequestId <- generateUUID
     clientId             <- generateUUID
     initTime             <- getCurrentTime
-
     mdo
         appRef <- Store.createApp $ Engine.scheduleEvent chan state
         React.reactRender "nodelab-app" (App.app appRef) ()
-
         let initState = mkState initTime clientId random appRef
                       & Global.workspace . Workspace.lastUILocation .~ lastLocation
                       & Global.pendingRequests %~ Set.insert projectListRequestId
-
         state <- newMVar initState
         Engine.connectEventSources socket chan state
-
     App.focus
     BatchCmd.listProjects projectListRequestId $ Just clientId
 

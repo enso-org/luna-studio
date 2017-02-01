@@ -15,7 +15,7 @@ import           Empire.API.Data.Project           (ProjectId)
 import qualified JS.GraphLocation                  as JS
 import qualified Luna.Studio.Action.Batch          as BatchCmd
 import qualified Luna.Studio.Action.Breadcrumbs    as Breadcrumbs
-import           Luna.Studio.Action.Command        (Command, performIO)
+import           Luna.Studio.Action.Command        (Command)
 import           Luna.Studio.Action.Graph.Unrender (unrender)
 import qualified Luna.Studio.Batch.Workspace       as Workspace
 import           Luna.Studio.State.Global          (State)
@@ -51,4 +51,4 @@ enterBreadcrumbs newBc = do
 saveCurrentLocation :: Command State ()
 saveCurrentLocation = do
     workspace <- use $ Global.workspace
-    performIO $ JS.saveLocation $ workspace ^. Workspace.uiGraphLocation
+    liftIO $ JS.saveLocation $ workspace ^. Workspace.uiGraphLocation

@@ -1,3 +1,4 @@
+{-# LANGUAGE DeriveAnyClass #-}
 module Luna.Studio.Batch.Connector.Connection where
 
 import           Data.Binary                 (Binary)
@@ -14,7 +15,7 @@ import           Luna.Studio.Prelude         hiding (Text)
 
 data ControlCode = ConnectionTakeover
                  | Welcome
-                 deriving (Eq, Show, Generic)
+                 deriving (Eq, Generic, NFData, Show)
 
 instance Binary.Binary ControlCode
 
@@ -22,7 +23,7 @@ data WebMessage = WebMessage { _topic   :: String
                              , _message :: ByteString
                              }
                 | ControlMessage ControlCode
-                deriving (Eq, Show, Generic)
+                deriving (Eq, Generic, NFData, Show)
 
 makeLenses ''WebMessage
 instance Binary.Binary WebMessage

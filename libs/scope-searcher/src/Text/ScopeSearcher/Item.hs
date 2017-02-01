@@ -1,5 +1,7 @@
+{-# LANGUAGE DeriveAnyClass #-}
 module Text.ScopeSearcher.Item where
 
+import           Control.DeepSeq  (NFData)
 import           Control.Lens
 import           Data.Aeson.Types (FromJSON, ToJSON, toJSON)
 import           Data.Binary      (Binary)
@@ -12,7 +14,7 @@ type Items = Map Text Item
 
 data Item = Element
           | Group   { _items :: Items }
-          deriving (Show, Eq, Generic)
+          deriving (Show, Eq, Generic, NFData)
 
 instance Binary Item
 

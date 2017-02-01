@@ -16,10 +16,10 @@ import qualified Empire.API.Topic              as T
 data Request = Request { _location   :: GraphLocation
                        , _nodeId     :: NodeId
                        , _expression :: Text
-                       } deriving (Generic, Show, Eq)
+                       } deriving (Generic, Eq, NFData, Show)
 
 data Inverse = Inverse { _expressionPrev :: Text
-                       } deriving (Generic, Show, Eq)
+                       } deriving (Generic, Show, Eq, NFData)
 
 type Result = Maybe Node
 

@@ -3,11 +3,11 @@ module Empire.API.Graph.Collaboration where
 import           Data.Binary                   (Binary)
 import           Prologue
 
+import           Data.UUID.Types               (UUID)
 import           Empire.API.Data.GraphLocation (GraphLocation)
 import           Empire.API.Data.Node          (NodeId)
-import qualified Empire.API.Topic              as T
 import qualified Empire.API.Request            as R
-import           Data.UUID.Types (UUID)
+import qualified Empire.API.Topic              as T
 
 type ClientId = UUID
 
@@ -15,12 +15,12 @@ data Event = Modify      [NodeId]
            | Touch       [NodeId]
            | CancelTouch [NodeId]
            | Refresh
-           deriving (Generic, Show, Eq)
+           deriving (Generic, Eq, NFData, Show)
 
 data Update   = Update { _location  :: GraphLocation
                        , _clientId  :: ClientId
                        , _event     :: Event
-                       } deriving (Generic, Show, Eq)
+                       } deriving (Generic, Eq, NFData, Show)
 
 
 makeLenses ''Update

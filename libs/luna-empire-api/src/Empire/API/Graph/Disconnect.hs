@@ -9,22 +9,23 @@ import           Empire.API.Data.Port          (InPort, OutPort)
 import           Empire.API.Data.PortRef       (InPortRef (..), OutPortRef (..))
 import qualified Empire.API.Response           as Response
 import qualified Empire.API.Graph.Request      as G
-import qualified Empire.API.Topic              as T
 import qualified Empire.API.Request            as R
+import qualified Empire.API.Response           as Response
+import qualified Empire.API.Topic              as T
 
 data Request = Request { _location :: GraphLocation
                        , _dst      :: InPortRef
-                       } deriving (Generic, Show, Eq)
+                       } deriving (Generic, Eq, NFData, Show)
 
 data Inverse = Inverse { _src :: OutPortRef
-                       } deriving (Generic, Show, Eq)
+                       } deriving (Generic, Show, Eq, NFData)
 
 type Response = Response.SimpleResponse Request Inverse
 instance Response.ResponseResult Request Inverse ()
 
 data Update = Update   { _location' :: GraphLocation
                        , _dst'      :: InPortRef
-                       } deriving (Generic, Show, Eq)
+                       } deriving (Generic, Eq, NFData, Show)
 
 
 makeLenses ''Request

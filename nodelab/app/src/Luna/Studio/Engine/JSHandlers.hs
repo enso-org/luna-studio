@@ -12,8 +12,6 @@ import           Luna.Studio.Prelude                    hiding (on)
 import           GHCJS.Marshal.Pure                     (pFromJSVal)
 import           GHCJS.Prim                             (fromJSString)
 
-import qualified Data.JSString                          as JSString
-import           Data.JSString.Text                     (textFromJSString)
 import qualified JS.Atom                                as Atom
 import qualified JS.CustomEvent                         as CustomEvent
 import qualified JS.WebSocket                           as WebSocket
@@ -49,4 +47,4 @@ customEventHandler :: AddHandler Event
 customEventHandler  = AddHandler $ \h -> do
     CustomEvent.initializeEvents
     CustomEvent.registerCallback $ \topic payload ->
-        liftIO $ h $ CustomEvent $ CustomEvent.RawEvent (JSString.unpack $ pFromJSVal topic) payload
+        liftIO $ h $ CustomEvent $ CustomEvent.RawEvent (pFromJSVal topic) payload

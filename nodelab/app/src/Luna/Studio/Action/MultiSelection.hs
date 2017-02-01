@@ -6,13 +6,14 @@ module Luna.Studio.Action.MultiSelection
     ) where
 
 import           Data.Position                        (Position (Position), Vector2 (Vector2), fromTuple, x, y)
+import           React.Flux                           (MouseEvent)
+
 import           Empire.API.Data.Node                 (Node)
 import qualified Empire.API.Data.Node                 as Node
 import           Luna.Studio.Action.Command           (Command)
-import           Luna.Studio.Action.Graph             (focusSelectedNode, modifySelectionHistory, selectNodes, selectedNodes, unselectAll)
+import           Luna.Studio.Action.Graph             (modifySelectionHistory, selectNodes, selectedNodeIds, unselectAll)
 import           Luna.Studio.Event.Mouse              (workspacePosition)
 import           Luna.Studio.Prelude
-import qualified Luna.Studio.React.Model.Node         as NodeModel
 import qualified Luna.Studio.React.Model.NodeEditor   as NodeEditor
 import           Luna.Studio.React.Model.SelectionBox (SelectionBox (SelectionBox))
 import           Luna.Studio.State.Action             (Action (begin, continue, end, update), MultiSelection (MultiSelection),
@@ -22,7 +23,7 @@ import           Luna.Studio.State.Global             (State, beginActionWithKey
                                                        updateActionWithKey)
 import qualified Luna.Studio.State.Global             as Global
 import qualified Luna.Studio.State.Graph              as Graph
-import           React.Flux                           (MouseEvent)
+
 
 instance Action (Command State) MultiSelection where
     begin    = beginActionWithKey    multiSelectionAction
@@ -61,6 +62,5 @@ stopMultiSelection :: MultiSelection -> Command State ()
 stopMultiSelection _ = do
     removeActionFromState multiSelectionAction
     Global.modifyNodeEditor $ NodeEditor.selectionBox .= Nothing
-    focusSelectedNode
-    selectedNodesIds <- map (^. NodeModel.nodeId) <$> selectedNodes
-    modifySelectionHistory selectedNodesIds
+    nodeIds <- selectedNodeIds
+    modifySelectionHistory nodeIds

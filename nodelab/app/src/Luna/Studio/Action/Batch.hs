@@ -8,7 +8,7 @@ import           Empire.API.Data.NodeMeta             (NodeMeta)
 import           Empire.API.Data.PortRef              (AnyPortRef (..), InPortRef (..), OutPortRef (..))
 import qualified Empire.API.Data.PortRef              as PortRef (dstNodeId, nodeId)
 import           Empire.API.Data.Project              (ProjectId)
-import           Luna.Studio.Action.Command           (Command, performIO)
+import           Luna.Studio.Action.Command           (Command)
 import           Luna.Studio.Action.UUID              (registerRequest)
 import qualified Luna.Studio.Batch.Connector.Commands as BatchCmd
 import           Luna.Studio.Batch.Workspace          (Workspace)
@@ -21,18 +21,18 @@ withWorkspace act = do
     uuid       <- registerRequest
     guiID      <- use $ clientId
     workspace' <- use workspace
-    performIO $ act workspace' uuid $ Just guiID
+    liftIO $ act workspace' uuid $ Just guiID
 
 withWorkspace' :: (Workspace -> IO ()) -> Command State ()
 withWorkspace' act = do
     workspace' <- use workspace
-    performIO $ act workspace'
+    liftIO $ act workspace'
 
 withUUID :: (UUID -> Maybe UUID -> IO ()) -> Command State ()
 withUUID act = do
     uuid  <- registerRequest
     guiID <- use $ clientId
-    performIO $ act uuid $ Just guiID
+    liftIO $ act uuid $ Just guiID
 
 addNode :: Text -> NodeMeta -> Maybe NodeId -> Command State ()
 addNode = withWorkspace .:. BatchCmd.addNode

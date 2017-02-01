@@ -14,10 +14,10 @@ import qualified Empire.API.Topic              as T
 data Request = Request { _location :: GraphLocation
                        , _nodeId   :: NodeId
                        , _newCode  :: Text
-                       } deriving (Generic, Show, Eq)
+                       } deriving (Generic, Eq, NFData, Show)
 
 data Inverse = Inverse {_oldCode ::Text
-                        } deriving (Generic, Show, Eq)
+                        } deriving (Generic, Show, Eq, NFData)
 
 type Response = Response.SimpleResponse Request Inverse
 instance Response.ResponseResult Request Inverse ()

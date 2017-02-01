@@ -2,20 +2,24 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Luna.Studio.React.View.App where
 
+import           React.Flux                              hiding (Event)
+import qualified React.Flux                              as React
+import           React.Flux.Internal                     (HandlerArg (HandlerArg))
+import           System.IO.Unsafe                        (unsafePerformIO)
+
+import           Luna.Studio.Event.Event                 (Event (Shortcut))
+import qualified Luna.Studio.Event.Shortcut              as Shortcut
 import qualified Luna.Studio.Event.UI                    as UI
 import           Luna.Studio.Prelude                     hiding (on)
 import qualified Luna.Studio.React.Event.App             as App
 import           Luna.Studio.React.Model.App             (App)
 import qualified Luna.Studio.React.Model.App             as App
-import           Luna.Studio.React.Store                 (Ref, dispatch, dt)
+import           Luna.Studio.React.Store                 (Ref, dispatch, dispatch', dt)
 import           Luna.Studio.React.View.Breadcrumbs      (breadcrumbs_)
 import           Luna.Studio.React.View.CodeEditor       (codeEditor_)
 import           Luna.Studio.React.View.CodeEditorToggle (codeEditorToggle_)
 import           Luna.Studio.React.View.NodeEditor       (nodeEditor_)
 import           Luna.Studio.React.View.Searcher         (searcher_)
-import           React.Flux
-import qualified React.Flux                              as React
-
 
 name :: JSString
 name = "app"
@@ -30,9 +34,10 @@ app ref = React.defineControllerView name ref $ \store () -> do
         , onMouseUp     $ \_ m -> dispatch ref $ UI.AppEvent $ App.MouseUp   m
         , onMouseMove   $ \_ m -> dispatch ref $ UI.AppEvent $ App.MouseMove m
         , onClick       $ \_ m -> dispatch ref $ UI.AppEvent $ App.Click     m
-        , on "onPaste"  $ \e   -> dispatch ref $ UI.AppEvent $ App.Copy e
-        , on "onCut"    $ \e   -> dispatch ref $ UI.AppEvent $ App.Copy e
-        , on "onCopy"   $ \e   -> dispatch ref $ UI.AppEvent $ App.Copy e
+        , on "onPaste"  $ \e   -> let val = getClipboardData (evtHandlerArg e)
+                                  in dispatch' ref $ Shortcut $ Shortcut.Paste val
+        , on "onCut"    $ \e   -> dispatch' ref $ Shortcut   Shortcut.Cut
+        , on "onCopy"   $ \e   -> dispatch' ref $ Shortcut   Shortcut.Copy
         , "key"       $= "app"
         , "id"        $= "focus-root"
         , "tabIndex"  $= "-1"
@@ -53,3 +58,8 @@ app ref = React.defineControllerView name ref $ \store () -> do
             codeEditor_ $ s ^. App.codeEditor
 
 foreign import javascript safe "document.getElementById('focus-root').focus()" focus :: IO ()
+
+foreign import javascript safe "$1.clipboardData.getData('Text')" getClipboardData' :: HandlerArg -> IO JSString
+
+getClipboardData :: HandlerArg -> Text
+getClipboardData = unsafePerformIO . fmap convert . getClipboardData'

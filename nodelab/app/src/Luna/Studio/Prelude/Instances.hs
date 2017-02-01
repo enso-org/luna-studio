@@ -1,7 +1,6 @@
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 module Luna.Studio.Prelude.Instances where
 
-import           Control.DeepSeq          (NFData)
 import           Data.Aeson
 import           Data.Convert             (Convertible (convert))
 import           Data.Default             (Default (def))
@@ -9,11 +8,12 @@ import           Data.Hashable            (Hashable)
 import           Data.HashMap.Strict      (HashMap)
 import qualified Data.HashMap.Strict      as HashMap
 import           Data.JSString            (JSString)
+import qualified Data.JSString            as JSString
 import qualified Data.Map.Strict          as Map
 import           Data.String              (fromString)
 import           Development.Placeholders
 import           Empire.API.JSONInstances ()
-import           Prelude
+import           Prologue
 import           React.Flux
 import           React.Flux.Store         (ReactStoreRef)
 
@@ -54,8 +54,17 @@ instance FromJSON Event where
 
 -- ======= GHCJS ===============================================================
 
+instance Convertible Text JSString where
+    convert = JSString.pack . convert
+
+instance Convertible JSString Text where
+    convert = convert . JSString.unpack
+
 instance Convertible String JSString where
-    convert = fromString
+    convert = JSString.pack
+
+instance Convertible JSString String where
+    convert = JSString.unpack
 
 instance ToJSON b => ToJSON (HashMap UUID b) where
     toJSON = toJSON . Map.fromList . HashMap.toList

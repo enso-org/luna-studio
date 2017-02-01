@@ -6,9 +6,7 @@ import           Control.Concurrent.MVar
 import           Control.Exception                          (catch)
 import           Control.Monad                              (forever)
 import           Data.DateTime                              (getCurrentTime)
-import qualified Data.JSString                              as JSString
 import           Data.Monoid                                (Last (..))
-import qualified Data.Text                                  as Text
 import           GHCJS.Prim                                 (JSException)
 
 import qualified JS.Debug
@@ -37,6 +35,7 @@ import qualified Luna.Studio.Handler.MultiSelection         as MultiSelection
 import qualified Luna.Studio.Handler.Navigation             as Navigation
 import qualified Luna.Studio.Handler.Node                   as Node
 import qualified Luna.Studio.Handler.Searcher               as Searcher
+import qualified Luna.Studio.Handler.Visualization          as Visualization
 import           Luna.Studio.Prelude
 import           Luna.Studio.State.Global                   (State)
 import qualified Luna.Studio.State.Global                   as Global
@@ -46,18 +45,19 @@ import qualified Luna.Studio.State.Global                   as Global
 displayProcessingTime :: Bool
 displayProcessingTime = False
 
-foreign import javascript safe "console.time($1);"    consoleTimeStart' :: JSString.JSString -> IO ()
-foreign import javascript safe "console.timeEnd($1);" consoleTimeEnd'   :: JSString.JSString -> IO ()
+foreign import javascript safe "console.time($1);"    consoleTimeStart' :: JSString -> IO ()
+foreign import javascript safe "console.timeEnd($1);" consoleTimeEnd'   :: JSString -> IO ()
 
 
 consoleTimeStart, consoleTimeEnd :: String -> IO ()
-consoleTimeStart = consoleTimeStart' . JSString.pack
-consoleTimeEnd   = consoleTimeEnd'   . JSString.pack
+consoleTimeStart = consoleTimeStart' . convert
+consoleTimeEnd   = consoleTimeEnd'   . convert
 
 actions :: [Event -> Maybe (Command State ())]
 actions =  [ App.handle
            , Breadcrumbs.handle
            , Camera.handle
+           , Clipboard.handle
            , CodeEditor.handle
            , Collaboration.handle
            , Connect.handle
@@ -71,7 +71,7 @@ actions =  [ App.handle
            , Node.handle
            , ProjectManager.handle
            , Searcher.handle
-           --    , Clipboard.handle
+           , Visualization.handle
            ]
 
 runCommands :: [Event -> Maybe (Command State ())] -> Event -> Command State ()
@@ -90,7 +90,7 @@ processEvent var ev = modifyMVar_ var $ \state -> do
     when displayProcessingTime $ do
         consoleTimeStart $ (realEvent ^. Event.name) <>" show and force"
         --putStrLn . show . length $ show realEvent
-        JS.Debug.error (Text.pack $ realEvent ^. Event.name) realEvent
+        JS.Debug.error (convert $ realEvent ^. Event.name) realEvent
         consoleTimeEnd $ (realEvent ^. Event.name) <> " show and force"
         consoleTimeStart (realEvent ^. Event.name)
     timestamp <- getCurrentTime

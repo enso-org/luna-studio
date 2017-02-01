@@ -13,14 +13,14 @@ import qualified Empire.API.Request            as R
 import qualified Empire.API.Response           as Response
 import qualified Empire.API.Topic              as T
 
-data NodeType = ExpressionNode { _expression :: Text } deriving (Generic, Show, Eq)
+data NodeType = ExpressionNode { _expression :: Text } deriving (Generic, Eq, NFData, Show)
 
 data Request = Request { _location  :: GraphLocation
                        , _nodeType  :: NodeType
                        , _nodeMeta  :: NodeMeta
                        , _connectTo :: Maybe NodeId
                        , _nodeId    :: Maybe NodeId
-                       } deriving (Generic, Show, Eq)
+                       } deriving (Generic, Eq, NFData, Show)
 type Result = Node
 
 type Response = Response.Response Request () Result
@@ -28,7 +28,7 @@ instance Response.ResponseResult Request () Result
 
 data Update = Update { _location'  :: GraphLocation
                      , _node'      :: Node
-                     } deriving (Generic, Show, Eq)
+                     } deriving (Generic, Eq, NFData, Show)
 
 makeLenses ''Request
 makeLenses ''Update

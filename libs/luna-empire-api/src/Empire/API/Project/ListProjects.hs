@@ -10,13 +10,13 @@ import qualified Empire.API.Request      as R
 import qualified Empire.API.Response     as Response
 import qualified Empire.API.Topic        as T
 
-data Request = Request deriving (Generic, Show, Eq)
+data Request = Request deriving (Generic, Eq, NFData, Show)
 
 data Result  = Result { _projects :: [(ProjectId, Project)]
-                      } deriving (Generic, Show, Eq)
+                      } deriving (Generic, Eq, NFData, Show)
 
 data Update  = Update { _projects' :: [(ProjectId, Project)]
-                      } deriving (Generic, Show, Eq)
+                      } deriving (Generic, Eq, NFData, Show)
 
 type Response = Response.Response Request () Result
 instance Response.ResponseResult Request () Result

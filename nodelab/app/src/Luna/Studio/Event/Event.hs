@@ -1,3 +1,4 @@
+{-# LANGUAGE DeriveAnyClass #-}
 module Luna.Studio.Event.Event where
 
 import           Data.Aeson                    (ToJSON)
@@ -20,7 +21,7 @@ data Event = Init
            | Tick
            | Shortcut                    ShortcutEvent
            | UI                                UIEvent
-           deriving (Generic, Show)
+           deriving (Generic, Show, NFData)
 
 makeLenses ''Event
 

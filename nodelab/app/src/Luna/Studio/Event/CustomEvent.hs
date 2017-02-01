@@ -1,11 +1,11 @@
+{-# LANGUAGE DeriveAnyClass #-}
 module Luna.Studio.Event.CustomEvent where
-
 
 import           Data.Aeson          (ToJSON, toJSON)
 import           Luna.Studio.Prelude
 
 
-data Event = RawEvent String JSVal deriving (Generic)
+data Event = RawEvent String JSVal deriving (Generic, NFData)
 
 makeLenses ''Event
 

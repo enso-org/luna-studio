@@ -1,5 +1,7 @@
+{-# LANGUAGE DeriveAnyClass #-}
 module Luna.Studio.Event.Batch where
 
+import           Data.Aeson                            (ToJSON)
 import           Luna.Studio.Prelude
 
 import qualified Empire.API.Control.EmpireStarted      as EmpireStarted
@@ -22,22 +24,24 @@ import qualified Empire.API.Project.ExportProject      as ExportProject
 import qualified Empire.API.Project.ImportProject      as ImportProject
 import qualified Empire.API.Project.ListProjects       as ListProjects
 
-import           Data.Aeson                            (ToJSON)
 
 data Event = UnknownEvent String
            | AddNodeResponse                           AddNode.Response
            | NodeAdded                                 AddNode.Update
+           | RemoveNodesInverse                    RemoveNodes.Inverse
            | RemoveNodesResponse                   RemoveNodes.Response
            | NodesRemoved                          RemoveNodes.Update
            | ProgramFetched                         GetProgram.Response
            | NodesConnected                            Connect.Update
            | ConnectResponse                           Connect.Response
            | NodesDisconnected                      Disconnect.Update
+           | DisconnectInverse                      Disconnect.Inverse
            | DisconnectResponse                     Disconnect.Response
            | NodeMetaUpdated                    UpdateNodeMeta.Update
            | NodeMetaInverse                    UpdateNodeMeta.Inverse
            | NodeMetaResponse                   UpdateNodeMeta.Response
            | NodeRenamed                            RenameNode.Update
+           | NodeRenameInverse                     RenameNode.Inverse
            | NodeRenameResponse                     RenameNode.Response
            | NodesUpdated                          NodesUpdate.Update
            | UpdateNodeExpressionResponse UpdateNodeExpression.Response
@@ -54,6 +58,6 @@ data Event = UnknownEvent String
            | EmpireStarted                       EmpireStarted.Status
            | ConnectionDropped
            | ConnectionOpened
-           deriving (Eq, Show, Generic)
+           deriving (Eq, Show, Generic, NFData)
 
 instance ToJSON Event

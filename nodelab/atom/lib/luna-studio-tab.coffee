@@ -1,9 +1,11 @@
-
+path = require 'path'
 LunaStudioTabView = require './luna-studio-tab-view'
+
 
 module.exports =
 class LunaStudioTab
-  constructor: (@tabTitle) ->
+  constructor: (@uri, @code) ->
+      @code.start()
 
-  getTitle:     -> @tabTitle
+  getTitle:     -> path.basename(@uri)
   getViewClass: -> LunaStudioTabView

@@ -1,4 +1,3 @@
-{-# LANGUAGE DeriveAnyClass #-}
 module Empire.API.Graph.NodeResultUpdate where
 
 import           Control.DeepSeq               (NFData)
@@ -19,7 +18,7 @@ data Update = Update { _location  :: GraphLocation
                      , _nodeId    :: NodeId
                      , _value     :: NodeValue
                      , _execTime  :: Integer
-                     } deriving (Generic, Show, Eq)
+                     } deriving (Generic, Eq, NFData, Show)
 
 makeLenses ''Update
 

@@ -9,10 +9,10 @@ import qualified Empire.API.Topic              as T
 import qualified Empire.API.Response           as Response
 import qualified Empire.API.Request            as R
 
-data UndoRequest  = UndoRequest deriving (Generic, Show, Eq)
+data UndoRequest  = UndoRequest deriving (Generic, Show, Eq, NFData)
 
 data Request = Request {_request  :: UndoRequest
-                       } deriving (Generic, Show, Eq)
+                       } deriving (Generic, Show, Eq, NFData)
 
 makeLenses ''UndoRequest
 makeLenses ''Request
