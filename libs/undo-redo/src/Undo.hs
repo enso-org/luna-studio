@@ -45,9 +45,6 @@ import qualified ZMQ.Bus.Trans                     as Bus
 import qualified ZMQ.Bus.Data.MessageFrame         as MessageFrame
 import           Control.Error                     (ExceptT, hoistEither, runExceptT)
 
-import System.IO (stdout,hFlush)
-
-
 withBus :: forall a. UndoPure a -> Undo a
 withBus act = Undo $ StateT $ \s -> liftIO $ runStateT (runUndo act) s
 
