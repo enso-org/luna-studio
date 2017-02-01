@@ -1,4 +1,4 @@
 [submodule "scripts"]
 	path = scripts
-	url = git@bitbucket.org:NewByteOrder/workflow.git
+	url = git@github.com:luna/workflow.git
 	branch = master
