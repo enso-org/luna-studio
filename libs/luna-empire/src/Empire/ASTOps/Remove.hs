@@ -9,6 +9,7 @@ import           Empire.Prelude
 
 import           Empire.Data.AST          (NodeRef, NotAppException(..))
 import           Empire.ASTOp             (ASTOp)
+import           Empire.ASTOps.Read       (isBlank)
 
 import           Luna.IR.Expr.Combinators (deleteSubtree)
 import           Luna.IR.Expr.Term.Uni
@@ -20,14 +21,24 @@ removeSubtree ref = deleteSubtree ref
 
 -- | Creates new App node with Blank inserted at specified position
 removeArg :: ASTOp m => NodeRef -> Int -> m NodeRef
-removeArg expr i = match expr $ \case
+removeArg expr i = do
+    removed <- match expr $ \case
+        App a c -> do
+            nextApp <- IR.source a
+            if i == 0 then do
+                b  <- IR.blank
+                IR.generalize <$> IR.app nextApp b
+            else do
+                d <- IR.source c
+                f <- removeArg nextApp (i - 1)
+                IR.generalize <$> IR.app f d
+        _       -> throwM $ NotAppException expr
+    removeTrailingBlanks removed
+
+removeTrailingBlanks :: ASTOp m => NodeRef -> m NodeRef
+removeTrailingBlanks expr = match expr $ \case
     App a c -> do
-        nextApp <- IR.source a
-        if i == 0 then do
-            b  <- IR.blank
-            IR.generalize <$> IR.app nextApp b
-        else do
-            d <- IR.source c
-            f <- removeArg nextApp (i - 1)
-            IR.generalize <$> IR.app f d
-    _       -> throwM $ NotAppException expr
+        argBlank <- isBlank =<< IR.source c
+        if argBlank then removeTrailingBlanks =<< IR.source a
+                    else return expr
+    _ -> return expr

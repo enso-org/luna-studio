@@ -21,7 +21,7 @@ import qualified Empire.ASTOps.Read            as ASTRead
 import qualified Empire.Commands.AST           as AST (isTrivialLambda)
 import qualified Empire.Commands.Graph         as Graph (addNode, connect, getGraph, getNodes,
                                                          getConnections, removeNodes, withGraph,
-                                                         renameNode)
+                                                         renameNode, disconnect)
 import qualified Empire.Commands.GraphBuilder  as GraphBuilder
 import           Empire.Commands.Library       (withLibrary)
 import qualified Empire.Commands.Typecheck     as Typecheck (run)
@@ -381,3 +381,15 @@ spec = around withChannels $ parallel $ do
             withResult res $ \n -> do
                 let inputPorts = Map.elems $ Map.filter Port.isInputPort $ n ^. Node.ports
                 inputPorts `shouldSatisfy` ((== 8) . length)
+        it "removes empty port on disconnect" $ \env -> do
+            u1 <- mkUUID
+            u2 <- mkUUID
+            res <- evalEmp env $ do
+                Graph.addNode top u1 "func" def
+                Graph.addNode top u2 "1" def
+                Graph.connect top (OutPortRef u2 Port.All) (InPortRef u1 (Port.Arg 0))
+                Graph.disconnect top (InPortRef u1 (Port.Arg 0))
+                Graph.withGraph top $ runASTOp $ GraphBuilder.buildNode u1
+            withResult res $ \n -> do
+              let inputPorts = Map.elems $ Map.filter Port.isInputPort $ n ^. Node.ports
+              inputPorts `shouldSatisfy` ((== 2) . length)
