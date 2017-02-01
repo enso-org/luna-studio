@@ -9,7 +9,10 @@ img { display: block; }
 a { text-decoration: none; }
 
 // Tweak for using events on SVG elements
-svg * { pointer-events: all; }
+svg * {
+  pointer-events: all;
+  transition: all 100ms;
+}
 
 // "Turn off overscrolling in Chrome"
 html { overflow: hidden; height: 100%; }

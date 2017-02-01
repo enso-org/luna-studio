@@ -26,6 +26,10 @@
 // FIXME – that need to be implemented in SVG
 .luna-connection__src,
 .luna-connection__dst {
+    :first-child {
+        stroke: rgba(255,255,255,0);
+        transition: stroke 200ms;
+    }
     &:hover :first-child {
         stroke: #fff;
     }
