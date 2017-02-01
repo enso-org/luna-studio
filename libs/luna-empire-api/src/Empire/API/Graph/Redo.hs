@@ -11,7 +11,7 @@ import qualified Empire.API.Request            as R
 
 data RedoRequest = RedoRequest deriving (Generic, Show, Eq)
 
-data Request = Request {_request  :: RedoRequest
+data Request = Request { _request :: RedoRequest
                        } deriving (Generic, Show, Eq)
 
 makeLenses ''RedoRequest
