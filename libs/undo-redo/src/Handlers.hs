@@ -121,7 +121,7 @@ handleAddNodeUndo (Response.Response _ _ (AddNode.Request location nodeType node
     withOk res $ \node ->
         let nodeId  = node ^. Node.nodeId
             undoMsg = RemoveNodes.Request location [nodeId]
-            redoMsg = AddNode.Request location nodeType nodeMeta connectTo $ Just (nodeId)
+            redoMsg = AddNode.Request location nodeType nodeMeta connectTo $ Just nodeId
         in Just (undoMsg, redoMsg)
 
 handleAddSubgraphUndo :: AddSubgraph.Response -> Maybe (RemoveNodes.Request, AddSubgraph.Request)
