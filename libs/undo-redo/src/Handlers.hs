@@ -110,13 +110,12 @@ makeHandler h =
     let process content = let response   = decode . fromStrict $ content
                               maybeGuiID = response ^. Response.guiID
                               reqUUID    = response ^. Response.requestId
-                          in case maybeGuiID of
-                              Just guiID -> case h response of
-                                                  Nothing     -> throwM ResponseErrorException
-                                                  Just (r, q) -> do
-                                                      let message = UndoMessage guiID reqUUID (Topic.topic (Request.Request UUID.nil Nothing r)) r (Topic.topic (Request.Request UUID.nil Nothing q)) q
-                                                      handle message
-                              Nothing -> return ()
+                          in forM_ maybeGuiID $ \guiId -> do
+                              case h response of
+                                      Nothing     -> throwM ResponseErrorException
+                                      Just (r, q) -> do
+                                          let message = UndoMessage guiId reqUUID (Topic.topic (Request.Request UUID.nil Nothing r)) r (Topic.topic (Request.Request UUID.nil Nothing q)) q
+                                          handle message
     in (Topic.topic (undefined :: Response.Response req inv res), process)
     -- FIXME[WD]: nie uzywamy undefined, nigdy
 
