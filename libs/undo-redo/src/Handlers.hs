@@ -152,7 +152,7 @@ filterNodes nodesIds nodes = catMaybes getNodes
 filterConnections :: [(OutPortRef, InPortRef)] -> [NodeId] -> [(OutPortRef, InPortRef)]
 filterConnections connectionPorts nodesIds = concat nodesConnections
     where  nodeConnections nId = Prologue.filter (\(outPort, inPort) -> outPort ^. PortRef.srcNodeId == nId
-                                                        || inPort ^. PortRef.dstNodeId == nId) connectionPorts
+                                                                     || inPort  ^. PortRef.dstNodeId == nId) connectionPorts
            nodesConnections    = map nodeConnections nodesIds
 
 handleRemoveNodesUndo :: RemoveNodes.Response -> Maybe (AddSubgraph.Request, RemoveNodes.Request)
