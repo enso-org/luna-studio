@@ -20,7 +20,7 @@ makeLenses ''Status
 makePrisms ''Status
 
 data Response req inv res = Response { _requestId :: UUID
-                                     , _guiID  :: Maybe UUID
+                                     , _guiID     :: Maybe UUID
                                      , _request   :: req
                                      , _inverse   :: Status inv
                                      , _status    :: Status res
