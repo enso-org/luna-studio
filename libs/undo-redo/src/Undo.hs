@@ -111,24 +111,21 @@ act action undoMessage = case action of
 
 doUndo :: MonadState UndoState m => UUID -> m (Maybe Action)
 doUndo guiID = do
-    h <- uses undo $ List.find (compareId guiID)
-    case h of
-        -- FIXME: to jest MapM?
-        Just msg -> do redo %= (msg :)
-                       undo %= List.delete msg
-                       history %= (msg :) --FIXME odwróć kolejność wiadomości undo-redo?
-                       return $ Just $ act ActUndo msg
-        Nothing  -> return Nothing
+    maybeMsg <- uses undo $ List.find (compareId guiID)
+    forM maybeMsg $ \msg -> do
+        redo %= (msg :)
+        undo %= List.delete msg
+        history %= (msg :) --FIXME odwróć kolejność wiadomości undo-redo?
+        return $ act ActUndo msg
 
 doRedo :: MonadState UndoState m => UUID -> m (Maybe Action)
 doRedo guiID = do
-    h <- uses redo $ List.find (compareId guiID)
-    case h of
-        Just msg -> do undo %= (msg :)
-                       redo %= List.delete msg
-                       history %= (msg :)
-                       return $ Just $ act ActRedo msg
-        Nothing  -> return Nothing
+    maybeMsg <- uses redo $ List.find (compareId guiID)
+    forM maybeMsg $ \msg -> do
+        undo %= (msg :)
+        redo %= List.delete msg
+        history %= (msg :)
+        return $ act ActRedo msg
 
 runMessageHandler :: String -> ByteString -> UndoPure ()
 runMessageHandler topic content = do
