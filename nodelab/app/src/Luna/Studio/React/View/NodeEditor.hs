@@ -4,6 +4,10 @@ module Luna.Studio.React.View.NodeEditor where
 import qualified Data.Aeson                            as Aeson
 import qualified Data.HashMap.Strict                   as HashMap
 import qualified Data.Text                             as Text
+import           React.Flux
+import qualified React.Flux                            as React
+import           React.Flux.Internal                   (el)
+
 import qualified Luna.Studio.Data.CameraTransformation as CameraTransformation
 import           Luna.Studio.Data.Matrix               (showTransformMatrixToSvg)
 import qualified Luna.Studio.Event.UI                  as UI
@@ -16,20 +20,21 @@ import           Luna.Studio.React.Store               (Ref, dispatch)
 import           Luna.Studio.React.View.Connection     (connection_, currentConnection_)
 import           Luna.Studio.React.View.Node           (node_)
 import           Luna.Studio.React.View.SelectionBox   (selectionBox_)
-import           React.Flux
-import qualified React.Flux                            as React
-import           React.Flux.Internal                   (el)
+import           Luna.Studio.React.View.Visualization  (pinnedVisualization_)
 
 
 name :: JSString
 name = "node-editor"
+
+nodeEditor_ :: Ref App -> NodeEditor -> ReactElementM ViewEventHandler ()
+nodeEditor_ ref ne = React.viewWithSKey nodeEditor name (ref, ne) mempty
 
 nodeEditor :: ReactView (Ref App, NodeEditor)
 nodeEditor = React.defineView name $ \(ref, ne) -> do
     let transformMatrix = ne ^. NodeEditor.screenTransform . CameraTransformation.logicalToScreen
         transform       = showTransformMatrixToSvg transformMatrix
     div_
-        [ "className" $= "graph"
+        [ "className" $= "luna-graph"
         , "id"        $= "Graph"
         , "key"       $= "graph"
         , onMouseDown $ \_ e   -> dispatch ref $ UI.NodeEditorEvent $ NE.MouseDown e
@@ -38,17 +43,17 @@ nodeEditor = React.defineView name $ \(ref, ne) -> do
         ] $ do
         style_
             [ "id" $= "cameraTransform" ] $ do
-                elemString $ Text.unpack $ ".transform   { color: red }"
-                elemString $ Text.unpack $ ".transform3d { color: red }"
+                elemString $ Text.unpack $ ".node-trans { transform: … }"
+                elemString $ Text.unpack $ ".name-trans { transform: … }"
         svg_
-            [ "className" $= "plane plane-connections"
+            [ "className" $= "luna-plane luna-plane-connections"
             , "style"     @= Aeson.object [ "transform" Aeson..= transform ]
             , "key"       $= "connections"
             ] $ do
             defs_
                 [ "key" $= "defs" ] $ do
                 el "filter"
-                    [ "id" $= "textShadow"
+                    [ "id"  $= "textShadow"
                     , "key" $= "textShadow"
                     ] $ do
                     el "feOffset"
@@ -72,21 +77,19 @@ nodeEditor = React.defineView name $ \(ref, ne) -> do
                         ] mempty
             g_
                 [ "key"       $= "connections"
-                , "className" $= "connections"
+                , "className" $= "luna-connections"
                 ] $ do
                 mapM_ (uncurry (connection_ ref)) $ ne ^. NodeEditor.connections . to HashMap.toList
                 mapM_ currentConnection_ $ ne ^. NodeEditor.currentConnection
                 mapM_ selectionBox_ $ ne ^. NodeEditor.selectionBox
         div_
-            [ "className" $= "plane plane--nodes"
+            [ "className" $= "luna-plane luna-plane--nodes"
             , "key"       $= "nodes"
             , "style"     @= Aeson.object [ "transform" Aeson..= transform ]
             ] $ do
             forM_ (ne ^. NodeEditor.nodes . to HashMap.elems) (node_ ref)
+            forM_ (ne ^. NodeEditor.visualizations . to HashMap.toList) $ uncurry $ pinnedVisualization_ ref ne
         canvas_
-            [ "className" $= "plane plane--canvas hide"
+            [ "className" $= "luna-plane plane--canvas luna-hide"
             , "key"       $= "canvas"
             ] $ mempty
-
-nodeEditor_ :: Ref App -> NodeEditor -> ReactElementM ViewEventHandler ()
-nodeEditor_ ref ne = React.viewWithSKey nodeEditor name (ref, ne) mempty

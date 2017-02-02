@@ -88,6 +88,13 @@ data Searcher = Searcher deriving (Eq, Generic, Show, Typeable)
 makeLenses ''Searcher
 instance ToJSON Searcher
 
+data VisualizationDrag = VisualizationDrag
+    { _visNodeId :: NodeId
+    , _visIdx    :: Int
+    } deriving (Eq, Show, Generic, Typeable)
+
+makeLenses ''VisualizationDrag
+instance ToJSON VisualizationDrag
 
 data SomeAction m = forall a. (Action m a, Show a) => SomeAction Dynamic a deriving (Typeable)
 
@@ -116,27 +123,29 @@ fromSomeAction (SomeAction d _) = fromDynamic d
 
 newtype ActionRep = ActionRep TypeRep deriving (Show, Eq, Ord)
 
-nodeDragAction, multiSelectionAction, panDragAction, zoomDragAction, sliderDragAction, penConnectAction, penDisconnectAction, dragConnectAction, clickConnectAction, searcherAction :: ActionRep
-nodeDragAction       = ActionRep (typeOf NodeDrag)
-multiSelectionAction = ActionRep (typeOf MultiSelection)
-panDragAction        = ActionRep (typeOf PanDrag)
-zoomDragAction       = ActionRep (typeOf ZoomDrag)
-sliderDragAction     = ActionRep (typeOf SliderDrag)
-penConnectAction     = ActionRep (typeOf PenConnect)
-penDisconnectAction  = ActionRep (typeOf PenDisconnect)
-dragConnectAction    = ActionRep (typeOf DragConnect)
-clickConnectAction   = ActionRep (typeOf ClickConnect)
-searcherAction       = ActionRep (typeOf Searcher)
+nodeDragAction, multiSelectionAction, visualizationDragAction, panDragAction, zoomDragAction, sliderDragAction, penConnectAction, penDisconnectAction, dragConnectAction, clickConnectAction, searcherAction :: ActionRep
+nodeDragAction          = ActionRep (typeOf NodeDrag)
+multiSelectionAction    = ActionRep (typeOf MultiSelection)
+panDragAction           = ActionRep (typeOf PanDrag)
+zoomDragAction          = ActionRep (typeOf ZoomDrag)
+sliderDragAction        = ActionRep (typeOf SliderDrag)
+penConnectAction        = ActionRep (typeOf PenConnect)
+penDisconnectAction     = ActionRep (typeOf PenDisconnect)
+dragConnectAction       = ActionRep (typeOf DragConnect)
+clickConnectAction      = ActionRep (typeOf ClickConnect)
+searcherAction          = ActionRep (typeOf Searcher)
+visualizationDragAction = ActionRep (typeOf VisualizationDrag)
 
 overlappingActions :: [Set ActionRep]
-overlappingActions = [ Set.fromList [ nodeDragAction
+overlappingActions = [ Set.fromList [ clickConnectAction
+                                    , dragConnectAction
                                     , multiSelectionAction
-                                    , sliderDragAction
+                                    , nodeDragAction
                                     , penConnectAction
                                     , penDisconnectAction
-                                    , dragConnectAction
-                                    , clickConnectAction
                                     , searcherAction
+                                    , sliderDragAction
+                                    , visualizationDragAction
                                     ]
                      , Set.fromList [ panDragAction
                                     , zoomDragAction

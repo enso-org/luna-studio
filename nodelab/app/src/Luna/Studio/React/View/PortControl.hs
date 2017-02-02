@@ -38,15 +38,15 @@ inPortControl :: ReactView (Ref App, AnyPortRef, Port)
 inPortControl = React.defineView "inPortControl" $ \(ref, portRef, port) ->
     div_
         [ "key"       $= jsShow (port ^. Port.portId)
-        , "className" $= "row row--arg"
+        , "className" $= "luna-row luna-row--arg"
         ] $ do
         div_
             [ "key"       $= "label"
-            , "className" $= "label"
+            , "className" $= "luna-label"
             ] $ elemString $ port ^. Port.name
         div_
             [ "key"       $= "value"
-            , "className" $= "value"
+            , "className" $= "luna-value"
             ] $
             case port ^. Port.state of
             PortAPI.NotConnected -> do
@@ -68,14 +68,14 @@ inPortControl = React.defineView "inPortControl" $ \(ref, portRef, port) ->
                 ValueType.DiscreteNumber -> do
                     let value = fromMaybe 0 $ defVal ^? DefaultValue._Constant . DefaultValue._IntValue
                     div_
-                        [ "className" $= "horizontal-slider"
+                        [ "className" $= "luna-horizontal-slider"
                         --TODO[react]: +1 with Q and up key, -1 with W and down key, edit on double click
                         , onMouseDown $ \e m -> stopPropagation e : dispatch ref (UI.NodeEvent $ Node.PortInitSlider m portRef $ Action.Discrete value)
                         ] $ elemString $ show value
                 ValueType.ContinuousNumber -> do
                     let value = fromMaybe 0.0 $ defVal ^? DefaultValue._Constant . DefaultValue._DoubleValue
                     div_
-                        [ "className" $= "horizontal-slider"
+                        [ "className" $= "luna-horizontal-slider"
                         --TODO[react]: +1 with Q and up key, -1 with W and down key, edit on double click
                         , onMouseDown $ \e m -> stopPropagation e : dispatch ref (UI.NodeEvent $ Node.PortInitSlider m portRef $ Action.Continous value)
                         ] $ elemString $ show value

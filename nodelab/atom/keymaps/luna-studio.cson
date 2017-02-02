@@ -33,7 +33,7 @@
   # searcher
   'tab'             : 'luna-studio:searcher-open'         # SearcherOpen
 
-'.searcher':
+'.luna-searcher':
   'enter'     : 'luna-studio:searcher-accept'             # SearcherAccept
   'tab'       : 'luna-studio:searcher-close'              # SearcherClose
   'esc'       : 'luna-studio:searcher-close'              # SearcherClose

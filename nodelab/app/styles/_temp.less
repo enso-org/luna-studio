@@ -19,8 +19,8 @@
     font-weight: 300 !important;
 }
 
-// http://stackoverflow.com/questions/826782/how-to-disable-text-selection-highlighting-using-css
-.noselect {
+// http://stackoverflow.luna-com/questions/826782/how-to-disable-text-selection-highlighting-using-css
+.luna-noselect {
     -webkit-touch-callout: none; /* iOS Safari */
       -webkit-user-select: none; /* Chrome/Safari/Opera */
        -khtml-user-select: none; /* Konqueror */
@@ -29,33 +29,33 @@
               user-select: none; /* Non-prefixed version, currently not supported by any browser */
 }
 
-.horizontal-slider {
+.luna-horizontal-slider {
     cursor:col-resize;
 }
 
-.searcher-results {
+.luna-searcher-results {
     overflow: hidden;
-    .result-selected {
+    .luna-result-selected {
         overflow:   hidden;
         background: @colorSelect;
     }
-    .result {
+    .luna-result {
         overflow: hidden;
     }
-    .result-prefix {
+    .luna-result-prefix {
         width:      100px;
         display:    block;
         float:      left;
         text-align: right;
     }
-    .result-name {
+    .luna-result-name {
         width:       100px;
         margin-left: 4px;
         float:       left;
     }
 }
 
-.message-container {
+.luna-message-container {
     position:   fixed;
     top:        0;
     bottom:     0;
@@ -64,7 +64,7 @@
     background: rgba(0, 0, 255, 0.8);
     z-index:    9999;
     color:      #fff;
-    .msg {
+    .luna-msg {
         position:    absolute;
         top:         50%;
         margin-top: -40px;
@@ -78,29 +78,29 @@
     }
 }
 
-.message-container svg {
+.luna-message-container svg {
     width:        100px;
     height:       100px;
     float:        left;
     margin-right: 20px;
 }
 
-.node-expanded {
+.luna-node-expanded {
     width: 240px;
     color: @colorName;
-    .properties {
+    .luna-properties {
         width:         inherit;
         color:         white;
         overflow:      hidden;
         background:    #333;
         padding:       7px;
         border-radius: 10px;
-        .label {
+        .luna-label {
             float:    left;
             width:    120px;
             overflow: hidden;
         }
-        .value {
+        .luna-value {
             overflow:   hidden;
             width:      120px;
             text-align: right;
@@ -109,7 +109,7 @@
     }
 }
 
-.scrollbar(@backgroundColor, @slider, @radius) {
+.luna-scrollbar(@backgroundColor, @slider, @radius) {
     &::-webkit-scrollbar {
         -webkit-appearance: none;
     }

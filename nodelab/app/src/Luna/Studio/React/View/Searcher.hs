@@ -24,7 +24,7 @@ searcher  = React.defineView name $ \(ref, s) -> do
     let pos = s ^. Searcher.position
     div_
         [ "key"       $= name
-        , "className" $= name
+        , "className" $= ("luna-" <> name)
         , "style"     @= Aeson.object
             [ "top"  Aeson..= (show (pos ^. y) <> "px" :: String)
             , "left" Aeson..= (show (pos ^. x) <> "px" :: String)
@@ -40,20 +40,20 @@ searcher  = React.defineView name $ \(ref, s) -> do
             ]
         div_
             [ "key"       $= "results"
-            , "className" $= "searcher-results"
+            , "className" $= "luna-searcher-results"
             ] $ do
             forM_ (zip (s ^. Searcher.results) [0..]) $ \(result, idx) ->
                 div_
                     [ "key"       $= jsShow idx
-                    , "className" $= if idx == s ^. Searcher.selected then "result-selected" else "result"
+                    , "className" $= if idx == s ^. Searcher.selected then "luna-result-selected" else "luna-result"
                     ] $ do
                     div_
                         ["key"       $= "prefix"
-                        ,"className" $= "result-prefix"
+                        ,"className" $= "luna-result-prefix"
                         ] $ elemString $ convert (result ^. Result.prefix) <> "."
                     div_
                         ["key" $= "name"
-                        ,"className" $= "result-name"
+                        ,"className" $= "luna-result-name"
                         ] $ elemString $ convert $ result ^. Result.name
 
 searcher_ :: Ref App -> Searcher -> ReactElementM ViewEventHandler ()

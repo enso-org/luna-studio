@@ -46,10 +46,10 @@ module.exports =
     @subs.add atom.commands.add '.luna-studio', 'luna-studio:expand-selected-nodes': -> code.pushEvent("ExpandSelectedNodes")
     # searcher
     @subs.add atom.commands.add '.luna-studio', 'luna-studio:searcher-open':         -> code.pushEvent("SearcherOpen")
-    @subs.add atom.commands.add '.searcher',    'luna-studio:searcher-accept':       -> code.pushEvent("SearcherAccept")
-    @subs.add atom.commands.add '.searcher',    'luna-studio:searcher-close':        -> code.pushEvent("SearcherClose")
-    @subs.add atom.commands.add '.searcher',    'luna-studio:searcher-move-down':    -> code.pushEvent("SearcherMoveDown")
-    @subs.add atom.commands.add '.searcher',    'luna-studio:searcher-move-up':      -> code.pushEvent("SearcherMoveUp")
+    @subs.add atom.commands.add '.luna-searcher', 'luna-studio:searcher-accept':     -> code.pushEvent("SearcherAccept")
+    @subs.add atom.commands.add '.luna-searcher', 'luna-studio:searcher-close':      -> code.pushEvent("SearcherClose")
+    @subs.add atom.commands.add '.luna-searcher', 'luna-studio:searcher-move-down':  -> code.pushEvent("SearcherMoveDown")
+    @subs.add atom.commands.add '.luna-searcher', 'luna-studio:searcher-move-up':    -> code.pushEvent("SearcherMoveUp")
 
   deactivate: ->
     @subs.dispose()

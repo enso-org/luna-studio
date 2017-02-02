@@ -52,17 +52,18 @@ connection = React.defineView name $ \(ref, model) -> do
         eventSrc    = onMouseDown $ \e m -> stopPropagation e : dispatch ref (UI.ConnectionEvent $ Connection.ModifyConnection m connId Source)
         eventDst    = onMouseDown $ \e m -> stopPropagation e : dispatch ref (UI.ConnectionEvent $ Connection.ModifyConnection m connId Destination)
     g_
-        [ "className" $= "connection"
+        [ "className" $= "luna-connection"
         , "key"       $= "connection"] $ do
+        line src dst [ width, color ]
         g_
-            [ "className" $= "connection__src"
+            [ "className" $= "luna-connection__src"
             , "key"       $= "src" ] $ do
-            line src mid [ width, color, "key" $= "1" ]
+            line src mid [ width, "key" $= "1" ]
             line src mid [ widthSelect, eventSrc, "key" $= "2" ]
         g_
-            [ "className" $= "connection__dst"
+            [ "className" $= "luna-connection__dst"
             , "key" $= "dst" ] $ do
-            line mid dst [ width, color, "key" $= "1" ]
+            line mid dst [ width, "key" $= "1" ]
             line mid dst [ widthSelect, eventDst, "key" $= "2" ]
 
 connection_ :: Ref App -> InPortRef -> Connection -> ReactElementM ViewEventHandler ()

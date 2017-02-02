@@ -35,6 +35,7 @@ import qualified Luna.Studio.Handler.MultiSelection         as MultiSelection
 import qualified Luna.Studio.Handler.Navigation             as Navigation
 import qualified Luna.Studio.Handler.Node                   as Node
 import qualified Luna.Studio.Handler.Searcher               as Searcher
+import qualified Luna.Studio.Handler.Visualization          as Visualization
 import           Luna.Studio.Prelude
 import           Luna.Studio.State.Global                   (State)
 import qualified Luna.Studio.State.Global                   as Global
@@ -70,6 +71,7 @@ actions =  [ App.handle
            , Node.handle
            , ProjectManager.handle
            , Searcher.handle
+           , Visualization.handle
            ]
 
 runCommands :: [Event -> Maybe (Command State ())] -> Event -> Command State ()

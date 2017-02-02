@@ -5,6 +5,7 @@ serialport-0.4.7, aeson-1.0.2.1, megaparsec-5.1.2, hspec-megaparsec-0.3.0, hspec
 hspec-core-2.4.1, hspec-discover-2.4.1, hspec-expectations-0.8.2]
 ghc-options: {'*': -threaded -fconstraint-solver-iterations=100 }
 local-bin-path: ../../dist/bin
+
 packages:
 - {extra-dep: false, location: ../../libs/luna-empire}
 - {extra-dep: true, location: ../../libs/batch/plugins/luna-empire}

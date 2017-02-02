@@ -11,11 +11,11 @@ dataFrame_ :: Int -> DataFrame -> ReactElementM ViewEventHandler ()
 dataFrame_ visIx df =
     div_
         [ "key" $= jsShow visIx
-        , "className" $= "vis vis--table"
+        , "className" $= "luna-vis luna-vis--table"
         ] $ do
         div_
             [ "key"       $= "blur"
-            , "className" $= "blur" ] mempty
+            , "className" $= "luna-blur" ] mempty
         table_ [ "key" $= "table" ] $
             thead_ $
                 tr_ $ forM_ (keyed $ df ^. DataFrame.headers) $ \(i, header) ->
@@ -23,7 +23,7 @@ dataFrame_ visIx df =
                         elemString $ convert header
         div_
             [ "key"       $= "scroll"
-            , "className" $= "scroll"
+            , "className" $= "luna-scroll"
             , onWheel     $ \e _ _ -> [stopPropagation e]
             ] $
             table_ $

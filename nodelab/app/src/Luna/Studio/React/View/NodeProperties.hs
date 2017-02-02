@@ -22,13 +22,13 @@ nodeProperties = React.defineView objName $ \(ref, p) -> do
     let nodeId = p ^. Prop.nodeId
     div_
         [ "key"       $= "properties"
-        , "className" $= "node__properties"
+        , "className" $= "luna-node__properties"
         ] $ do
         selectionMark_
         blurBackground_
         div_
             [ "key"       $= "value"
-            , "className" $= "row row--output-name"
+            , "className" $= "luna-row luna-row--output-name"
             , onDoubleClick $ \_ _ -> dispatch ref $ UI.NodeEvent $ Node.NameEditStart nodeId
             ] $ do
             case (p ^. Prop.nameEdit) of
@@ -46,15 +46,15 @@ nodeProperties = React.defineView objName $ \(ref, p) -> do
         forM_ (p ^. Prop.ports) $ portControl_ ref nodeId (p ^. Prop.isLiteral)
         div_
             [ "key"       $= "display-results"
-            , "className" $= "row"
+            , "className" $= "luna-row"
             ] $ do
             div_
                 [ "key"       $= "label"
-                , "className" $= "label"
+                , "className" $= "luna-label"
                 ] $ elemString "Display results"
             div_
                 [ "key"       $= "value"
-                , "className" $= "value"
+                , "className" $= "luna-value"
                 ] $ do
                 let val = p ^. Prop.visualizationsEnabled
                 button_
@@ -63,16 +63,16 @@ nodeProperties = React.defineView objName $ \(ref, p) -> do
                     ] $ elemString $ if val then "yes" else "no"
         div_
             [ "key" $= "execution-time"
-            , "className" $= "row"
+            , "className" $= "luna-row"
             ] $ do
             withJust (p ^. Prop.execTime) $ \execTime -> do
                 div_
                     ["key"       $= "label"
-                    , "className" $= "label"
+                    , "className" $= "luna-label"
                     ] $ elemString "Execution time"
                 div_
                     ["key"       $= "value"
-                    , "className" $= "value"
+                    , "className" $= "luna-value"
                     ] $ elemString $ show execTime <> " ms"
 
 nodeProperties_ :: Ref App -> NodeProperties -> ReactElementM ViewEventHandler ()
