@@ -101,8 +101,8 @@ receiveMessage = do
             let emptyMsg = isEmpty $ msg ^. Message.message
             if emptyMsg then receiveMessage else return frame
 
-compareId :: GuiID -> UndoMessage -> Bool
-compareId guiID msg = case msg of UndoMessage x _ _ _ _ _ -> x == guiID
+checkGuiId :: GuiID -> UndoMessage -> Bool
+checkGuiId guiID msg = case msg of UndoMessage x _ _ _ _ _ -> x == guiID
 
 act :: Act -> UndoMessage -> Action
 act action undoMessage = case action of
@@ -111,7 +111,7 @@ act action undoMessage = case action of
 
 doUndo :: MonadState UndoState m => UUID -> m (Maybe Action)
 doUndo guiID = do
-    maybeMsg <- uses undo $ List.find (compareId guiID)
+    maybeMsg <- uses undo $ List.find (checkGuiId guiID)
     forM maybeMsg $ \msg -> do
         redo %= (msg :)
         undo %= List.delete msg
@@ -120,7 +120,7 @@ doUndo guiID = do
 
 doRedo :: MonadState UndoState m => UUID -> m (Maybe Action)
 doRedo guiID = do
-    maybeMsg <- uses redo $ List.find (compareId guiID)
+    maybeMsg <- uses redo $ List.find (checkGuiId guiID)
     forM maybeMsg $ \msg -> do
         undo %= (msg :)
         redo %= List.delete msg
