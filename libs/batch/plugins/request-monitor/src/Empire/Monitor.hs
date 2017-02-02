@@ -52,10 +52,9 @@ run endPoints projectRoot timeout script = do
     logger Logger.info $ "Working directory: " <> dir
     Bus.runBus endPoints $ do
         let formatted = True
-            topics = defaultTopics
-        logger Logger.info $ "Subscribing to topics: " <> show topics
+        logger Logger.info $ "Subscribing to topics: " <> show defaultTopics
         logger Logger.info $ (Utils.display formatted) endPoints
-        mapM_ Bus.subscribe topics
+        mapM_ Bus.subscribe defaultTopics
         Bus.runBusT $ evalStateT (runBus timeout script) def
 
 runBus :: Integer -> FilePath -> StateT MonitorEnv BusT ()
