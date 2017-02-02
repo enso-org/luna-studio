@@ -13,7 +13,7 @@ import           Control.Exception.Safe            (MonadThrow, throwM)
 import           Control.Lens
 import           Control.Monad.State               hiding (when)
 import           Control.Monad.STM                 (atomically)
-import           Data.ByteString                   (ByteString, empty)
+import           Data.ByteString                   (ByteString, null)
 import           Data.ByteString.Lazy              (toStrict,fromStrict)
 import           Data.Binary                       (Binary, decode)
 import qualified Data.Binary                       as Bin
@@ -23,7 +23,7 @@ import qualified Data.Map.Strict                   as Map
 import           Data.Maybe
 import qualified Data.Set                          as Set
 import           Data.UUID.Types                   (UUID)
-import           Prologue                          hiding (throwM)
+import           Prologue                          hiding (throwM, null)
 import           Util                              as Util
 
 import           Data.UUID as UUID (nil)
@@ -89,16 +89,12 @@ handleMessage msg = do
             runMessageHandler topic content
             return Nothing
 
-isEmpty :: ByteString -> Bool
-isEmpty msg = empty == msg
-
-
 receiveMessage :: Undo MessageFrame
 receiveMessage = do
     frame <- Undo $ lift $ Bus.BusT Bus.receive
     case frame of
         MessageFrame msg _ _ _ -> do
-            let emptyMsg = isEmpty $ msg ^. Message.message
+            let emptyMsg = null $ msg ^. Message.message
             if emptyMsg then receiveMessage else return frame
 
 checkGuiId :: GuiID -> UndoMessage -> Bool
