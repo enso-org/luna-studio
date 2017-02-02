@@ -138,7 +138,7 @@ generateNodeId = UUID.nextRandom
 addSubgraph :: GraphLocation -> [Node] -> [Connection] -> Bool -> Empire (Maybe (Map.Map NodeId NodeId))
 addSubgraph loc nodes conns saveIds = withTC loc False $ do
 
-    newIds <- liftIO $ mapM (const generateNodeId) nodes
+    newIds <- liftIO $ replicateM (length nodes) generateNodeId
     if saveIds then do
         forM_ nodes $ \n -> case n ^. Node.nodeType of
             Node.ExpressionNode expr -> void $ addNodeNoTC loc (n ^. Node.nodeId) expr (n ^. Node.nodeMeta)
