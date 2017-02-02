@@ -45,6 +45,8 @@ import qualified ZMQ.Bus.Trans                     as Bus
 import qualified ZMQ.Bus.Data.MessageFrame         as MessageFrame
 import           Control.Error                     (ExceptT, hoistEither, runExceptT)
 
+topic = "empire."
+
 withBus :: forall a. UndoPure a -> Undo a
 withBus act = Undo $ StateT $ \s -> liftIO $ runStateT (runUndo act) s
 
@@ -57,7 +59,7 @@ run endPoints = do
 run' :: BusEndPoints -> UndoState -> Undo a -> IO (Either Bus.Error (a, UndoState))
 run' endPoints state undo = do
     Bus.runBus endPoints $ do
-        Bus.subscribe "empire." --FIXME topic
+        Bus.subscribe topic
         Bus.runBusT $ runStateT (runUndo undo) state
 
 receiveAndHandleMessage :: Undo ()
