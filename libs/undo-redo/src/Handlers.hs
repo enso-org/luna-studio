@@ -149,9 +149,9 @@ handleAddSubgraphUndo (Response.Response _ _ (AddSubgraph.Request location nodes
                                redoMsg = AddSubgraph.Request location nodes connections True
                            in Just (undoMsg, redoMsg)
             Just idsMap -> let nodes'       = flip map nodes $ Node.nodeId %~ (idsMap Map.!)
-                               connections' = map (\conn -> conn & Connection.src . PortRef.srcNodeId %~ (idsMap Map.!)
-                                                                 & Connection.dst . PortRef.dstNodeId %~ (idsMap Map.!)
-                                                                 ) connections
+                               connections' = map ((Connection.src . PortRef.srcNodeId %~ (idsMap Map.!))
+                                                 . (Connection.dst . PortRef.dstNodeId %~ (idsMap Map.!))
+                                                  ) connections
                                ids'    = map (^. Node.nodeId) nodes'
                                undoMsg = RemoveNodes.Request location ids'
                                redoMsg = AddSubgraph.Request location nodes' connections' True
