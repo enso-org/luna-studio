@@ -214,7 +214,7 @@ spec = around withChannels $ parallel $ do
                         _               -> False
                     lambdaNodes = filter isLambdaNode mapping
                 lambdaNodes `shouldSatisfy` (not . null)
-        xit "puts + inside plus lambda" $ \env -> do
+        it "puts + inside plus lambda" $ \env -> do
             u1 <- mkUUID
             res <- evalEmp env $ do
                 let loc' = top |> u1

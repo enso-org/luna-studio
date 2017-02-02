@@ -60,6 +60,7 @@ getName node = do
     str <- IR.source node
     match str $ \case
         IR.String s -> return s
+        Var n -> getVarName str
 
 rightMatchOperand :: ASTOp m => NodeRef -> m EdgeRef
 rightMatchOperand node = match node $ \case

@@ -1,4 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 
 module Empire.ASTOps.Parse (
     parseExpr
@@ -17,27 +18,29 @@ import           Text.Read                    (readMaybe)
 import           Empire.Data.AST              (NodeRef, astExceptionToException,
                                                astExceptionFromException)
 import           Empire.ASTOps.Builder        (buildAccessors, lams)
-import           Empire.ASTOp                 (ASTOp)
+import           Empire.ASTOp                 (ASTOp, EmpirePass)
 
 import           Empire.API.Data.DefaultValue (PortDefault (..), Value (..))
 
 import qualified Luna.IR as IR
+import qualified Luna.Pass as Pass
+import qualified Luna.Passes.Transform.Parsing.Parsing as Parsing
+import qualified Luna.Passes.Transform.Parsing.OffsetParser as OffsetParser
+import qualified Luna.Passes.Transform.Parsing.Parser as Parser
+import qualified Data.SpanTree as SpanTree
+import qualified Text.Megaparsec as Megaparsec
 
 parseExpr :: ASTOp m => String -> m (Maybe Text.Text, NodeRef)
 parseExpr s = do
   lamRes <- tryParseLambda s
-  accs <- tryParseAccessors s
+  parsed <- liftIO $ Parsing.testParse (OffsetParser.evalOffsetParserT $ SpanTree.evalSpanBuilderT (Parsing.testMe <* Megaparsec.eof)) s
   case lamRes of
       (name, Just l)  -> return (name, l)
-      _               -> case (readMaybe s :: Maybe Int) of
-          Just i -> do
-              i' <- IR.generalize <$> IR.number (fromIntegral i)
-              return (Nothing, i')
-          _      -> case accs of
-              Just ref -> return (Nothing, ref)
-              _ -> case takeWhile isLetter s of
-                  [] -> IR.number 0 >>= \v' -> return (Nothing, IR.generalize v')
-                  v -> IR.strVar v >>= \v' -> return (Nothing, IR.generalize v')
+      _               -> case parsed of
+          Right (Parser.IRBuilder x) -> do
+              x' <- x
+              return (Nothing, x')
+          _      -> IR.number 0 >>= \v' -> return (Nothing, IR.generalize v')
 
 tryParseAccessors :: ASTOp m => String -> m (Maybe NodeRef)
 tryParseAccessors s = case splitOn "." s of

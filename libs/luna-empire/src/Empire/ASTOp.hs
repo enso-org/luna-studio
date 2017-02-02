@@ -5,6 +5,7 @@
 
 module Empire.ASTOp (
     ASTOp
+  , EmpirePass
   , runASTOp
   ) where
 
@@ -28,14 +29,17 @@ import qualified Luna.Pass            as Pass (SubPass, eval')
 import qualified Luna.Pass.Manager    as Pass (PassManager, RefCache, get)
 
 import           System.Log (Logger, DropLogger, dropLogs)
-
+import qualified Luna.Passes.Transform.Parsing.CodeSpan as CodeSpan
+import qualified Luna.Passes.Transform.Parsing.Parser   as Parser
+import qualified Data.SpanTree as SpanTree
 
 type ASTOp m = (MonadThrow m, MonadPassManager m,
                 MonadIO m,
                 MonadState Graph m,
                 Emitters EmpireEmitters m,
                 Editors Net '[AnyExpr, AnyExprLink] m,
-                Editors Layer EmpireLayers m)
+                Editors Layer EmpireLayers m,
+                Parser.IRSpanTreeBuilding m)
 
 
 type EmpireLayers = '[AnyExpr // Model, AnyExprLink // Model,
@@ -45,7 +49,9 @@ type EmpireLayers = '[AnyExpr // Model, AnyExprLink // Model,
                       AnyExpr // Succs,
                       AnyExpr // TCData,
                       AnyExpr // TypeLayer,
-                      AnyExpr // UID, AnyExprLink // UID]
+                      AnyExpr // UID, AnyExprLink // UID,
+                      AnyExpr // CodeSpan.CodeSpan,
+                      AnyExpr // Parser.Parser]
 
 type EmpireEmitters = '[New // AnyExpr, New // AnyExprLink,
                         Import // AnyExpr, Import // AnyExprLink,
@@ -77,7 +83,7 @@ instance MonadPassManager m => MonadRefLookup Layer (Pass.SubPass pass m) where
 instance MonadPassManager m => MonadRefLookup Attr (Pass.SubPass pass m) where
     uncheckedLookupRef = lift . uncheckedLookupRef
 
-runASTOp :: Pass.SubPass EmpirePass (Pass.PassManager (IRBuilder (Pass.RefCache (Logger DropLogger (StateT Graph IO))))) a
+runASTOp :: Pass.SubPass EmpirePass (Pass.PassManager (IRBuilder (Parser.IRSpanTreeBuilder (Pass.RefCache (Logger DropLogger (StateT Graph IO)))))) a
          -> Command Graph a
 runASTOp pass = do
     g <- get
@@ -85,6 +91,7 @@ runASTOp pass = do
     let evalIR = flip runStateT g
                . dropLogs
                . runRefCache
+               . (\a -> SpanTree.runTreeBuilder a >>= \(foo, _) -> return foo)
                . flip evalIRBuilder currentStateIR
                . flip evalPassManager currentStatePass
     ((a, (st, passSt)), newG) <- liftIO $ evalIR $ do

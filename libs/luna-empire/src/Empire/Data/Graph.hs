@@ -1,4 +1,7 @@
 {-# LANGUAGE RecursiveDo #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE StandaloneDeriving #-}
+{-# LANGUAGE TypeApplications #-}
 
 module Empire.Data.Graph (
     Graph(..)
@@ -28,12 +31,17 @@ import           Control.Monad.State (MonadState(..), StateT, evalStateT, lift)
 import           Empire.Data.Layers  (attachEmpireLayers)
 
 import           Control.Monad.Raise (MonadException(..))
-import           Luna.IR             (IR, IRBuilder, evalIRBuilder', evalPassManager',
-                                      snapshot, runRefCache, runRegs)
+import           Luna.IR             (IR, IRBuilder, AnyExpr, evalIRBuilder', evalPassManager',
+                                      attachLayer, snapshot, runRefCache, runRegs)
 import qualified Luna.Pass.Manager   as Pass (RefState)
 import qualified Luna.Pass.Manager   as PassManager (PassManager, RefCache, get)
+import qualified Luna.Passes.Transform.Parsing.Parser   as Parser
+import qualified Luna.Passes.Transform.Parsing.Parsing ()
+import qualified Luna.Passes.Transform.Parsing.CodeSpan as CodeSpan
+import qualified Data.SpanTree as SpanTree
+import           Data.TypeDesc (getTypeDesc)
 
-import           System.Log          (Logger, DropLogger, dropLogs)
+import           System.Log          (Logger, MonadLogging(..), DropLogger, dropLogs)
 
 data Graph = Graph { _ast                   :: AST
                    , _nodeMapping           :: Map NodeId NodeIDTarget
@@ -57,25 +65,31 @@ defaultGraph = do
     ast' <- defaultAST
     return $ Graph ast' Map.empty BC.empty Map.empty 0 Nothing
 
-type AST           = ASTState
-data ASTState = ASTState IR (Pass.RefState (PassManager.PassManager (IRBuilder (PassManager.RefCache (Logger DropLogger (StateT Graph IO))))))
+type AST      = ASTState
+data ASTState = ASTState IR (Pass.RefState (PassManager.PassManager (IRBuilder (Parser.IRSpanTreeBuilder (PassManager.RefCache (Logger DropLogger (StateT Graph IO)))))))
 
 instance Show ASTState where
     show _ = "AST"
 
-instance MonadState Graph (PassManager.PassManager (IRBuilder (PassManager.RefCache (Logger DropLogger (StateT Graph IO))))) where
-    get = (lift . lift . lift . lift) get
-    put = (lift . lift . lift . lift) . put
-    state = (lift . lift . lift . lift) . state
+instance MonadState Graph (PassManager.PassManager (IRBuilder (Parser.IRSpanTreeBuilder (PassManager.RefCache (Logger DropLogger (StateT Graph IO)))))) where
+    get   = (lift . lift . lift . lift . lift) get
+    put   = (lift . lift . lift . lift . lift) . put
+    state = (lift . lift . lift . lift . lift) . state
 
 instance Exception e => MonadException e IO where
     raise = throwM
 
+deriving instance MonadThrow m => MonadThrow (SpanTree.TreeBuilder s v m)
+
 defaultAST :: IO AST
 defaultAST = mdo
     let g = Graph ast Map.empty BC.empty Map.empty 0 Nothing
-    ast <- flip evalStateT g $ dropLogs $ runRefCache $ evalIRBuilder' $ evalPassManager' $ do
+    ast <- flip evalStateT g $ dropLogs $ runRefCache $ (\a -> SpanTree.runTreeBuilder a >>= \(foo, _) -> return foo) $ evalIRBuilder' $ evalPassManager' $ do
         runRegs
+        CodeSpan.init
+        attachLayer 5 (getTypeDesc @CodeSpan.CodeSpan) (getTypeDesc @AnyExpr)
+        Parser.init
+        attachLayer 5 (getTypeDesc @Parser.Parser) (getTypeDesc @AnyExpr)
         attachEmpireLayers
         st <- snapshot
         pass <- PassManager.get

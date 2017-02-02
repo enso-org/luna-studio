@@ -35,6 +35,7 @@ dependencies:
     - luna-empire-api
     - luna-empire-api-json
     - m-logger
+    - megaparsec
     - mtl
     - open-browser
     - prologue
