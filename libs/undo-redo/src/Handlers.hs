@@ -189,15 +189,17 @@ handleUpdateNodeMetaUndo (Response.Response _ _ (UpdateNodeMeta.Request location
         redoMsg  = UpdateNodeMeta.Request location updates
     in Just (undoMsg, redoMsg)
 
+emptyName = ""
+
 handleRenameNodeUndo :: RenameNode.Response ->  Maybe (RenameNode.Request, RenameNode.Request)
 handleRenameNodeUndo (Response.Response _ _ (RenameNode.Request location nodeId name) inv res) =
-    withOk inv $ \(RenameNode.Inverse namePrev) -> Just $ case namePrev of
-        Nothing      -> let undoMsg = RenameNode.Request location nodeId "" -- FIXME [WD]: nie uzywamy literalow, nigdy - jak to node moze nie miec nazwy
-                            redoMsg = RenameNode.Request location nodeId name
-                        in (undoMsg, redoMsg)
-        Just nameOld -> let undoMsg = RenameNode.Request location nodeId nameOld
-                            redoMsg = RenameNode.Request location nodeId name
-                        in (undoMsg, redoMsg)
+    withOk inv $ \(RenameNode.Inverse namePrev) -> do
+        namePrev' <- case namePrev of
+            Just nameOld -> pure nameOld
+            Nothing      -> pure emptyName
+        let undoMsg = RenameNode.Request location nodeId namePrev'
+            redoMsg = RenameNode.Request location nodeId name
+        Just (undoMsg, redoMsg)
 
 handleConnectUndo :: Connect.Response -> Maybe (Disconnect.Request, Connect.Request)
 handleConnectUndo (Response.Response _ _ (Connect.Request location src dst) inv res) =
