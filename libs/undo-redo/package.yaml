@@ -5,43 +5,43 @@ maintainer:         New Byte Order <contact@newbyteorder.com>
 
 dependencies:
   - base
-  - binary
-  - zmq-bus-config
-  - zmq-bus
-  - lens
-  - mtl
-  - bytestring
-  - prologue
-  - container
-  - luna-empire-api
   - batch-lib-luna-empire
-  - stm
-  - safe-exceptions
-  - text
-  - uuid
-  - zeromq4-haskell
-  - zmq-rpc
+  - binary
+  - bytestring
+  - container
   - errors
   - ghc
-  - uuid-types
   - hspec
+  - lens
+  - luna-empire-api
+  - mtl
+  - prologue
+  - safe-exceptions
+  - stm
+  - text
+  - uuid
+  - uuid-types
+  - zeromq4-haskell
+  - zmq-bus
+  - zmq-bus-config
+  - zmq-rpc
 
 default-extensions:
-  - NoImplicitPrelude
   - DeriveGeneric
-  - TemplateHaskell
   - MultiParamTypeClasses
+  - NoImplicitPrelude
+  - TemplateHaskell
 
 library:
     source-dirs: src
     ghc-options: -Wall -O2
-    
+
 
 executables:
  undo-redo:
    dependencies:
-     - undo-redo
      - m-logger
+     - undo-redo
 
 
    source-dirs: app
@@ -53,5 +53,5 @@ tests:
        main: Spec.hs
        source-dirs: test
        dependencies:
-           - undo-redo
            - hspec
+           - undo-redo
