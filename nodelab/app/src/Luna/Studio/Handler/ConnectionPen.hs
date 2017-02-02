@@ -2,6 +2,7 @@ module Luna.Studio.Handler.ConnectionPen
     ( handle
     ) where
 
+import           Data.Timestamp                   (Timestamp)
 import           Luna.Studio.Action.Command       (Command)
 import           Luna.Studio.Action.ConnectionPen (connectMove, disconnectMove, startConnecting, startDisconnecting, stopConnecting,
                                                    stopDisconnecting)
@@ -17,21 +18,14 @@ import           React.Flux                       (MouseEvent)
 
 
 handle :: Event -> Maybe (Command State ())
-handle (UI (AppEvent (App.MouseDown evt))) = Just $ handleMouseDown evt
-handle (UI (AppEvent (App.MouseMove evt))) = Just $ handleMouseMove evt
-handle (UI (AppEvent (App.MouseUp   _  ))) = Just $ continue stopConnecting >> continue stopDisconnecting
-handle _                                   = Nothing
+handle (UI (AppEvent (App.MouseDown evt timestamp))) = Just $ handleMouseDown evt timestamp
+handle (UI (AppEvent (App.MouseMove evt timestamp))) = Just $ (continue $ connectMove evt timestamp) >> (continue $ disconnectMove evt timestamp)
+handle (UI (AppEvent (App.MouseUp   _)))             = Just $ continue stopConnecting >> continue stopDisconnecting
+handle _                                             = Nothing
 
-handleMouseDown :: MouseEvent -> Command State ()
-handleMouseDown evt
-    | Mouse.withCtrl      evt Mouse.leftButton  = startConnecting    evt
-    | Mouse.withCtrlShift evt Mouse.leftButton  = startDisconnecting evt
-    | Mouse.withCtrl      evt Mouse.rightButton = startDisconnecting evt
-    | otherwise                                 = return ()
-
-handleMouseMove :: MouseEvent -> Command State ()
-handleMouseMove evt
-    | Mouse.withCtrl      evt Mouse.leftButton  = continue $ connectMove evt
-    | Mouse.withCtrlShift evt Mouse.leftButton  = continue $ disconnectMove evt
-    | Mouse.withCtrl      evt Mouse.leftButton  = continue $ disconnectMove evt
+handleMouseDown :: MouseEvent -> Timestamp -> Command State ()
+handleMouseDown evt timestamp
+    | Mouse.withCtrl      evt Mouse.leftButton  = startConnecting    evt timestamp
+    | Mouse.withCtrlShift evt Mouse.leftButton  = startDisconnecting evt timestamp
+    | Mouse.withCtrl      evt Mouse.rightButton = startDisconnecting evt timestamp
     | otherwise                                 = return ()

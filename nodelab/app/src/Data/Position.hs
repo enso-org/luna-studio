@@ -59,6 +59,12 @@ rightBottomPoint positions = Just $ Position (Vector2 (maximum $ view x <$> posi
 minimumRectangle :: [Position] -> Maybe (Position, Position)
 minimumRectangle positions = (,) <$> (leftTopPoint positions) <*> (rightBottomPoint positions)
 
+distance :: Position -> Position -> Double
+distance p0 p1 = magnitude (p0 ^. vector - p1 ^. vector)
+
+distanceSquared :: Position -> Position -> Double
+distanceSquared p0 p1 = lengthSquared (p0 ^. vector - p1 ^. vector)
+
 -- TODO[react]: Possible solution to differ Mouse Position and Graph Position
 -- makeClassy  ''Position
 -- class HasPosition a where

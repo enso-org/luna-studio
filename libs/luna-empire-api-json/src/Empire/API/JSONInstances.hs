@@ -145,6 +145,7 @@ instance ToJSON AddNode.Update
 
 instance ToJSON AddSubgraph.Request
 
+instance ToJSON Connect.Connection
 instance ToJSON Connect.Request
 instance ToJSON Connect.Update
 

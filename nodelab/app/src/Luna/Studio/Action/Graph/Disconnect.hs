@@ -1,16 +1,22 @@
 module Luna.Studio.Action.Graph.Disconnect
      ( localRemoveConnections
      , removeConnections
+     , removeConnectionsBetweenNodes
      ) where
 
 import           Luna.Studio.Prelude
 
+import qualified Data.HashMap.Strict                as HashMap
 import           Empire.API.Data.Connection         (ConnectionId)
+import           Empire.API.Data.Connection         (Connection)
+import qualified Empire.API.Data.Connection         as Connection
+import           Empire.API.Data.Node               (NodeId)
 import qualified Luna.Studio.Action.Batch           as BatchCmd
 import           Luna.Studio.Action.Command         (Command)
 import qualified Luna.Studio.React.Model.NodeEditor as NodeEditor
 import           Luna.Studio.State.Global           (State)
 import qualified Luna.Studio.State.Global           as Global
+import           Luna.Studio.State.Graph            (connectionToNodeIds)
 import qualified Luna.Studio.State.Graph            as Graph
 
 
@@ -23,3 +29,10 @@ localRemoveConnections connectionIds = do
 
 removeConnections :: [ConnectionId] -> Command State ()
 removeConnections = mapM_ BatchCmd.disconnectNodes
+
+removeConnectionsBetweenNodes :: NodeId -> NodeId -> Command State ()
+removeConnectionsBetweenNodes n1 n2 = do
+    connMap <- use $ Global.graph . Graph.connectionsMap . to HashMap.elems
+    let shouldRemove :: Connection -> Bool
+        shouldRemove conn = elem (connectionToNodeIds conn) [(n1, n2), (n2, n1)]
+    removeConnections $ map (view Connection.dst) $ filter shouldRemove connMap

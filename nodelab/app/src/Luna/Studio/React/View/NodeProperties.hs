@@ -25,7 +25,8 @@ nodeProperties = React.defineView objName $ \(ref, p) -> do
     let nodeId = p ^. Prop.nodeId
     div_
         [ "key"       $= "properties"
-        , "className" $= "luna-node__properties"
+        , "className" $= "node__properties"
+        , "id"        $= ("node-" <> fromString (show nodeId))
         ] $ do
         selectionMark_
         blurBackground_

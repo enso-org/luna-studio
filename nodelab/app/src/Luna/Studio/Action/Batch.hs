@@ -68,6 +68,11 @@ setCode = withWorkspace .:  BatchCmd.setCode
 removeNodes :: [NodeId] -> Command State ()
 removeNodes = withWorkspace . BatchCmd.removeNodes
 
+autoconnect :: NodeId -> NodeId -> Command State ()
+autoconnect src dst = do
+    collaborativeModify [dst]
+    withWorkspace $ BatchCmd.autoconnect src dst
+
 connectNodes :: OutPortRef -> InPortRef -> Command State ()
 connectNodes src dst = do
     collaborativeModify [dst ^. PortRef.dstNodeId]

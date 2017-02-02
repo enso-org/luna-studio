@@ -79,8 +79,11 @@ setCode nid newCode w uuid = sendRequest uuid $ withLibrary w SetCode.Request ni
 removeNodes :: [NodeId] -> Workspace -> UUID ->  IO ()
 removeNodes nodeIds workspace uuid = sendRequest uuid $ withLibrary workspace RemoveNodes.Request nodeIds
 
+autoconnect :: NodeId -> NodeId -> Workspace -> UUID -> IO ()
+autoconnect src dst workspace uuid = sendRequest uuid $ (withLibrary workspace Connect.Request) $ Connect.NodeConnection src dst
+
 connectNodes :: OutPortRef -> InPortRef -> Workspace -> UUID -> IO ()
-connectNodes src dst workspace uuid = sendRequest uuid $ (withLibrary workspace Connect.Request) src dst
+connectNodes src dst workspace uuid = sendRequest uuid $ (withLibrary workspace Connect.Request) $ Connect.PortConnection src dst
 
 disconnectNodes :: InPortRef -> Workspace -> UUID -> IO ()
 disconnectNodes dst workspace uuid = sendRequest uuid $ withLibrary workspace Disconnect.Request dst

@@ -45,7 +45,7 @@ handle (UI (NodeEvent (Node.PortInitSlider mevt portRef sliderInit)))   = Just $
     mousePos <- mousePosition mevt
     PortControl.startMoveSlider portRef mousePos sliderInit
 --TODO[react]: Findout if we need workspacePosition here
-handle (UI (AppEvent  (App.MouseMove mevt))) = Just $ do
+handle (UI (AppEvent  (App.MouseMove mevt _))) = Just $ do
     mousePos <- mousePosition mevt
     continue $ PortControl.moveSlider mousePos
     let shouldSnap = Mouse.withoutMods mevt Mouse.leftButton

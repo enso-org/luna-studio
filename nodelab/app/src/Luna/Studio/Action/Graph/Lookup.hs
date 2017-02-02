@@ -1,6 +1,7 @@
 module Luna.Studio.Action.Graph.Lookup
     ( allNodeIds
     , allNodes
+    , allConnectionModels
     , getNode
     , getPort
     , getConnection
@@ -17,6 +18,7 @@ import           Empire.API.Data.PortRef            (AnyPortRef (InPortRef', Out
 import qualified Empire.API.Data.PortRef            as PortRef
 import           Luna.Studio.Action.Command         (Command)
 import           Luna.Studio.Prelude
+import           Luna.Studio.React.Model.Connection (Connection)
 import qualified Luna.Studio.React.Model.Connection as ConnectionModel
 import           Luna.Studio.React.Model.Node       (Node)
 import qualified Luna.Studio.React.Model.Node       as Node
@@ -34,6 +36,9 @@ allNodeIds = map (view Node.nodeId) <$> allNodes
 
 allNodes :: Command State [Node]
 allNodes = view (NodeEditor.nodes . to HashMap.elems) <$> Global.getNodeEditor
+
+allConnectionModels :: Command State [Connection]
+allConnectionModels = view (NodeEditor.connections . to HashMap.elems) <$> Global.getNodeEditor
 
 class HasPort a where
     getPort :: a -> Command State (Maybe PortModel.Port)

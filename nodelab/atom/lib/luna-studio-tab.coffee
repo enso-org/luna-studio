@@ -11,6 +11,7 @@ class LunaStudioTab extends View
 
   @content: ->
     mountPoint = "luna-studio-mount" + uniqueTabNo
+    mountPoint = "mount-point" + uniqueTabNo
     uniqueTabNo = uniqueTabNo + 1
     @div
       id: mountPoint

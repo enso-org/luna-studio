@@ -5,10 +5,9 @@ module Luna.Studio.React.View.App where
 import           React.Flux                              hiding (Event)
 import qualified React.Flux                              as React
 
+import           Data.Timestamp                          (Timestamp (Timestamp))
 import qualified JS.Clipboard                            as Clipboard
-import qualified JS.Config                               as Config
 import           JS.Scene                                (appId)
-import qualified JS.UI                                   as UI
 import           Luna.Studio.Event.Event                 (Event (Shortcut))
 import qualified Luna.Studio.Event.Shortcut              as Shortcut
 import qualified Luna.Studio.Event.UI                    as UI
@@ -33,9 +32,9 @@ app ref = React.defineControllerView name ref $ \store () -> do
     div_
         [ onKeyDown     $ \_ k -> dispatch ref (UI.AppEvent $ App.KeyDown k)
         , onContextMenu $ \e _ -> [preventDefault e]
-        , onMouseDown   $ \_ m -> dispatch ref $ UI.AppEvent $ App.MouseDown m
+        , onMouseDown   $ \e m -> dispatch ref $ UI.AppEvent $ App.MouseDown m (Timestamp (evtTimestamp e))
         , onMouseUp     $ \_ m -> dispatch ref $ UI.AppEvent $ App.MouseUp   m
-        , onMouseMove   $ \_ m -> dispatch ref $ UI.AppEvent $ App.MouseMove m
+        , onMouseMove   $ \e m -> dispatch ref $ UI.AppEvent $ App.MouseMove m (Timestamp (evtTimestamp e))
         , onClick       $ \_ m -> dispatch ref $ UI.AppEvent $ App.Click     m
         , on "onPaste"  $ \e   -> let val = Clipboard.getClipboardData (evtHandlerArg e)
                                   in dispatch' ref $ Shortcut $ Shortcut.Paste val

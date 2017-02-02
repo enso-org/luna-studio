@@ -2,6 +2,7 @@
 module Luna.Studio.State.Action where
 
 import           Data.Aeson              (FromJSON, ToJSON)
+import           Data.Curve              (Curve)
 import           Data.Dynamic
 import           Data.Map                (Map)
 import           Data.Position           (Position, ScreenPosition)
@@ -58,15 +59,16 @@ instance ToJSON SliderDrag
 instance ToJSON InitValue
 instance FromJSON InitValue
 
-data PenConnect = PenConnect { _penConnectHistory         :: [Position]
+data PenConnect = PenConnect { _penConnectCurve           :: Curve
                              , _penConnectLastVisitedNode :: Maybe NodeId
                              } deriving (Eq, Generic, Show, Typeable)
 
 makeLenses ''PenConnect
 instance ToJSON PenConnect
 
-data PenDisconnect = PenDisconnect { _penDisconnectHistory         :: [Position]
-                                   , _penDisconnectLastVisitedNode :: Maybe NodeId
+data PenDisconnect = PenDisconnect { _penDisconnectCurve                :: Curve
+                                   , _penDisconnectLastVisitedNode      :: Maybe NodeId
+                                   , _penDisconnectNextNodeRestriction :: Maybe NodeId
                                    } deriving (Eq, Generic, Show, Typeable)
 
 makeLenses ''PenDisconnect

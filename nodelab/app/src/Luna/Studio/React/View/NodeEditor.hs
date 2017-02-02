@@ -19,9 +19,11 @@ import           Luna.Studio.React.Model.NodeEditor    (NodeEditor)
 import qualified Luna.Studio.React.Model.NodeEditor    as NodeEditor
 import           Luna.Studio.React.Store               (Ref, dispatch)
 import           Luna.Studio.React.View.Connection     (connection_, currentConnection_)
+import           Luna.Studio.React.View.ConnectionPen  (connectionPen_)
 import           Luna.Studio.React.View.Node           (node_)
 import           Luna.Studio.React.View.SelectionBox   (selectionBox_)
 import           Luna.Studio.React.View.Visualization  (pinnedVisualization_)
+
 
 name :: JSString
 name = "node-editor"
@@ -82,6 +84,8 @@ nodeEditor = React.defineView name $ \(ref, ne) -> do
                 mapM_ (uncurry (connection_ ref)) $ ne ^. NodeEditor.connections . to HashMap.toList
                 mapM_ currentConnection_ $ ne ^. NodeEditor.currentConnection
                 mapM_ selectionBox_ $ ne ^. NodeEditor.selectionBox
+                mapM_ connectionPen_ $ ne ^. NodeEditor.connectionPen
+
         div_
             [ "className" $= "luna-plane luna-plane--nodes"
             , "key"       $= "nodes"

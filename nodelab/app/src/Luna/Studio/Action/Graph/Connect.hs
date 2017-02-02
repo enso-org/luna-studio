@@ -24,18 +24,18 @@ connectNodes :: OutPortRef -> InPortRef -> Command Global.State ()
 connectNodes src dst = BatchCmd.connectNodes src dst
 
 addConnection :: ConnectionId -> Position -> Position -> Color -> Command Global.State ()
-addConnection connId srcPos dstPos color = Global.modifyNodeEditor $ do
+addConnection connId srcPos dstPos color = do
+    mayConn <- view (NodeEditor.connections . at connId) <$> Global.getNodeEditor
     let connection = ConnectionModel.Connection connId srcPos dstPos color
-    NodeEditor.connections . at connId ?= connection
+    when (isNothing mayConn || (fromJust mayConn /= connection)) $ Global.modifyNodeEditor $ do
+        NodeEditor.connections . at connId ?= connection
 
 localConnectNodes :: OutPortRef -> InPortRef -> Command Global.State ConnectionId
 localConnectNodes src dst = do
     connectionId <- zoom Global.graph $ Graph.addConnection src dst
     prevConn <- Global.getConnection $ connectionId
-    let newConnection = not $ isJust prevConn
-    when newConnection $ do
-        mayPos   <- getConnectionPosition src dst
-        mayColor <- getConnectionColor src
-        withJust ((,) <$> mayPos <*> mayColor) $ \((srcPos, dstPos), color) -> do
-            addConnection connectionId srcPos dstPos color
+    mayPos   <- getConnectionPosition src dst
+    mayColor <- getConnectionColor src
+    withJust ((,) <$> mayPos <*> mayColor) $ \((srcPos, dstPos), color) -> do
+        addConnection connectionId srcPos dstPos color
     return connectionId

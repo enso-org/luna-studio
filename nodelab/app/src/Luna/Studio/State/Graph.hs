@@ -10,6 +10,7 @@ module Luna.Studio.State.Graph
     , connectionsContainingNodes
     , connectionsMap
     , connectionsToNodes
+    , connectionToNodeIds
     , connectionsToNodesIds
     , getConnectionNodeIds
     , getConnections
