@@ -50,8 +50,9 @@ withBus act = Undo $ StateT $ \s -> liftIO $ runStateT (runUndo act) s
 
 
 run :: BusEndPoints -> IO (Either Bus.Error ((), UndoState))
-run endPoints = let state = UndoState [] [] []
-                in run' endPoints state $ forever receiveAndHandleMessage
+run endPoints = do
+    let state = UndoState [] [] []
+    run' endPoints state $ forever receiveAndHandleMessage
 
 run' :: BusEndPoints -> UndoState -> Undo a -> IO (Either Bus.Error (a, UndoState))
 run' endPoints state undo = do
