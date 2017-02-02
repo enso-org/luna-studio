@@ -57,8 +57,7 @@ run endPoints = do
     run' endPoints state $ forever receiveAndHandleMessage
 
 run' :: BusEndPoints -> UndoState -> Undo a -> IO (Either Bus.Error (a, UndoState))
-run' endPoints state undo = do
-    Bus.runBus endPoints $ do
+run' endPoints state undo = Bus.runBus endPoints $ do
         Bus.subscribe topic
         Bus.runBusT $ runStateT (runUndo undo) state
 
