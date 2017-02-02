@@ -6,7 +6,6 @@ module JS.Atom
     , mountPoint
     ) where
 
-
 import           GHCJS.Foreign.Callback
 import           GHCJS.Marshal.Pure         (pFromJSVal)
 import           Luna.Studio.Event.Shortcut (ShortcutEvent)
