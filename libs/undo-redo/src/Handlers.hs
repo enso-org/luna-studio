@@ -49,7 +49,6 @@ import           Empire.API.Request                (Request (..))
 
 type Handler = ByteString -> UndoPure ()
 
--- FIXME[WD]: robisz newtype nad statem i mozliwosc rejestracji tych rzeczy z kazdewgo pliku
 handlersMap :: Map String (Handler)
 handlersMap = Map.fromList
     [ makeHandler handleAddSubgraphUndo
@@ -64,7 +63,6 @@ handlersMap = Map.fromList
 
 type UndoRequests a = (UndoResponseRequest a, RedoResponseRequest a)
 
--- FIXME[WD]: rozdielenie odpowiedzialnosci - poszczegolne implementacje do odpowiednich plikow
 type family UndoResponseRequest t where
     UndoResponseRequest AddNode.Response              = RemoveNodes.Request
     UndoResponseRequest AddSubgraph.Response          = RemoveNodes.Request
@@ -84,20 +82,6 @@ type family RedoResponseRequest t where
     RedoResponseRequest RenameNode.Response           = RenameNode.Request
     RedoResponseRequest Connect.Response              = Connect.Request
     RedoResponseRequest Disconnect.Response           = Disconnect.Request
---FIXME
--- type family RedoResponseRequest t
--- type instance RedoResponseRequest AddNode.Response              = AddNode.Request
--- type instance RedoResponseRequest AddSubgraph.Response          = AddSubgraph.Request
--- type instance RedoResponseRequest RemoveNodes.Response          = RemoveNodes.Request
--- type instance RedoResponseRequest UpdateNodeExpression.Response = UpdateNodeExpression.Request
--- type instance RedoResponseRequest UpdateNodeMeta.Response       = UpdateNodeMeta.Request
--- type instance RedoResponseRequest RenameNode.Response           = RenameNode.Request
--- type instance RedoResponseRequest Connect.Response              = Connect.Request
--- type instance RedoResponseRequest Disconnect.Response           = Disconnect.Request
-
-
---FIXME[WD]: String -> ?
---FIXME[WD]: Sprobujmy nie uzywac tuplui
 
 data ResponseErrorException = ResponseErrorException deriving (Show)
 instance Exception ResponseErrorException
