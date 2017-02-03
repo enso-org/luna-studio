@@ -8,6 +8,7 @@ import           React.Flux
 import qualified React.Flux                            as React
 import           React.Flux.Internal                   (el)
 
+import           JS.Scene                              (sceneId)
 import qualified Luna.Studio.Data.CameraTransformation as CameraTransformation
 import           Luna.Studio.Data.Matrix               (showTransformMatrixToSvg)
 import qualified Luna.Studio.Event.UI                  as UI
@@ -22,7 +23,6 @@ import           Luna.Studio.React.View.Node           (node_)
 import           Luna.Studio.React.View.SelectionBox   (selectionBox_)
 import           Luna.Studio.React.View.Visualization  (pinnedVisualization_)
 
-
 name :: JSString
 name = "node-editor"
 
@@ -35,7 +35,7 @@ nodeEditor = React.defineView name $ \(ref, ne) -> do
         transform       = showTransformMatrixToSvg transformMatrix
     div_
         [ "className" $= "luna-graph"
-        , "id"        $= "Graph"
+        , "id"        $= sceneId
         , "key"       $= "graph"
         , onMouseDown $ \_ e   -> dispatch ref $ UI.NodeEditorEvent $ NE.MouseDown e
         , onWheel     $ \e m w -> preventDefault e : dispatch ref (UI.NodeEditorEvent $ NE.Wheel m w)
