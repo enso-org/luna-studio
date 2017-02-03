@@ -7,6 +7,7 @@ import qualified React.Flux                              as React
 
 import qualified JS.Clipboard                            as Clipboard
 import qualified JS.Config                               as Config
+import           JS.Scene                                (appId)
 import qualified JS.UI                                   as UI
 import           Luna.Studio.Event.Event                 (Event (Shortcut))
 import qualified Luna.Studio.Event.Shortcut              as Shortcut
@@ -26,9 +27,6 @@ import           Luna.Studio.React.View.Searcher         (searcher_)
 name :: JSString
 name = "app"
 
-rootId :: JSString
-rootId = Config.prefix "focus-root"
-
 app :: Ref App -> ReactView ()
 app ref = React.defineControllerView name ref $ \store () -> do
     let s = store ^. dt
@@ -44,7 +42,7 @@ app ref = React.defineControllerView name ref $ \store () -> do
         , on "onCut"    $ \_   -> dispatch' ref $ Shortcut   Shortcut.Cut
         , on "onCopy"   $ \_   -> dispatch' ref $ Shortcut   Shortcut.Copy
         , "key"       $= "app"
-        , "id"        $= rootId
+        , "id"        $= appId
         , "tabIndex"  $= "-1"
         , "className" $= "luna-studio"
         ] $ do
@@ -63,4 +61,4 @@ app ref = React.defineControllerView name ref $ \store () -> do
             codeEditor_ $ s ^. App.codeEditor
 
 focus :: IO ()
-focus = UI.focus rootId
+focus = UI.focus appId

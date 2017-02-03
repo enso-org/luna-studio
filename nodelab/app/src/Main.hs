@@ -23,7 +23,6 @@ import           Luna.Studio.State.Global             (mkState)
 import qualified Luna.Studio.State.Global             as Global
 
 
-
 runApp :: Chan (IO ()) -> WebSocket -> IO ()
 runApp chan socket = do
     lastLocation <- GraphLocation.loadLocation

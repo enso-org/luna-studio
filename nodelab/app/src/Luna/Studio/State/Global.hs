@@ -92,7 +92,6 @@ renderIfNeeded :: Command State ()
 renderIfNeeded =
     whenM (use renderNeeded) $ do
         withApp Store.commit
-        updateScene
         renderNeeded .= False
 
 modifyNodeEditor :: M.State NodeEditor r -> Command State r

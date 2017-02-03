@@ -4,6 +4,7 @@ module Luna.Studio.Engine.JSHandlers
     ( AddHandler(..)
     , atomHandler
     , customEventHandler
+    , sceneResizeHandler
     , webSocketHandler
     ) where
 
@@ -14,11 +15,15 @@ import           GHCJS.Prim                             (fromJSString)
 
 import qualified JS.Atom                                as Atom
 import qualified JS.CustomEvent                         as CustomEvent
+import qualified JS.Scene                               as Scene
 import qualified JS.WebSocket                           as WebSocket
 import qualified Luna.Studio.Batch.Connector.Connection as Connection
 import qualified Luna.Studio.Event.Connection           as Connection
 import qualified Luna.Studio.Event.CustomEvent          as CustomEvent
 import           Luna.Studio.Event.Event
+import           Luna.Studio.Event.Event                (Event (UI))
+import           Luna.Studio.Event.UI                   (UIEvent (AppEvent))
+import qualified Luna.Studio.React.Event.App            as App
 
 
 data AddHandler a = AddHandler ((a -> IO ()) -> IO (IO ()))
@@ -26,6 +31,10 @@ data AddHandler a = AddHandler ((a -> IO ()) -> IO (IO ()))
 atomHandler :: AddHandler Event
 atomHandler = AddHandler $ \h -> do
     Atom.onEvent $ h . Shortcut
+
+sceneResizeHandler :: AddHandler Event
+sceneResizeHandler = AddHandler $ \h -> do
+    Scene.onSceneResize $ h $ UI $ AppEvent $ App.Resize
 
 webSocketHandler :: WebSocket.WebSocket -> AddHandler Event
 webSocketHandler conn = AddHandler $ \h -> do

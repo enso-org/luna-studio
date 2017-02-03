@@ -105,6 +105,7 @@ connectEventSources :: WebSocket ->  Chan (IO ()) -> MVar State -> IO ()
 connectEventSources conn chan state = do
     let handlers = [ JSHandlers.webSocketHandler conn
                    , JSHandlers.atomHandler
+                   , JSHandlers.sceneResizeHandler
                    ]
         mkSource (AddHandler rh) = rh $ scheduleEvent chan state
     sequence_ $ mkSource <$> handlers

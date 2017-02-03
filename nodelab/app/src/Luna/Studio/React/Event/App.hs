@@ -15,6 +15,7 @@ data Event = MouseDown  MouseEvent
            | MouseUp    MouseEvent
            | Click      MouseEvent
            | KeyDown    KeyboardEvent
+           | Resize
             deriving (Show, Generic, NFData, Typeable)
 
 instance ToJSON   Event

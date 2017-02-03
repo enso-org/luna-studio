@@ -2,9 +2,10 @@
 {-# LANGUAGE OverloadedStrings #-}
 module JS.Scene where
 
-import           Data.Position       (Position (Position), Vector2 (Vector2))
-import           Data.Size           (Size (Size))
-import qualified JS.Config           as Config
+import           Data.Position          (Position (Position), Vector2 (Vector2))
+import           Data.Size              (Size (Size))
+import           GHCJS.Foreign.Callback
+import qualified JS.Config              as Config
 import           Luna.Studio.Prelude
 
 
@@ -18,11 +19,20 @@ makeLenses ''Scene
 sceneId :: JSString
 sceneId = Config.prefix "Graph"
 
+appId :: JSString
+appId = Config.prefix "focus-app"
 
 foreign import javascript safe "document.getElementById($1).offsetWidth"  elementWidth  :: JSString -> IO Double
 foreign import javascript safe "document.getElementById($1).offsetHeight" elementHeight :: JSString -> IO Double
 foreign import javascript safe "document.getElementById($1).getBoundingClientRect().left" elementLeft :: JSString -> IO Double
 foreign import javascript safe "document.getElementById($1).getBoundingClientRect().top"  elementTop  :: JSString -> IO Double
+foreign import javascript safe "new ResizeObserver($2).observe(document.getElementById($1))" onResize' :: JSString -> Callback (IO ()) -> IO ()
+
+onSceneResize :: IO () -> IO (IO ())
+onSceneResize handler = do
+    callback <- asyncCallback handler
+    onResize' appId callback
+    return $ releaseCallback callback
 
 sceneWidth, sceneHeight, sceneLeft, sceneTop :: MonadIO m => m Double
 sceneWidth  = liftIO $ elementWidth  sceneId
