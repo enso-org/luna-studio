@@ -11,6 +11,12 @@ a = 65
 h :: Int
 h = 72
 
+y :: Int
+y = 89
+
+z :: Int
+z = 90
+
 plus :: Int
 plus = 187
 

@@ -28,7 +28,7 @@
   # nodes
   'ctrl-a'          : 'luna-studio:select-all'            # SelectAll
   'delete'          : 'luna-studio:remove-selected-nodes' # RemoveSelectedNodes
-  'esc'             : 'luna-studio:unselect-sll'          # UnselectAll
+  'esc'             : 'luna-studio:unselect-all'          # UnselectAll
   'enter'           : 'luna-studio:expand-selected-nodes' # ExpandSelectedNodes
   # searcher
   'tab'             : 'luna-studio:searcher-open'         # SearcherOpen

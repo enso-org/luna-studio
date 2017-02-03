@@ -39,7 +39,7 @@ import qualified Luna.Studio.Handler.Visualization          as Visualization
 import           Luna.Studio.Prelude
 import           Luna.Studio.State.Global                   (State)
 import qualified Luna.Studio.State.Global                   as Global
-
+import qualified Luna.Studio.Handler.Undo as Undo
 
 
 displayProcessingTime :: Bool
@@ -69,6 +69,7 @@ actions =  [ App.handle
            , MultiSelection.handle
            , Navigation.handle
            , Node.handle
+           , Undo.handle
            , ProjectManager.handle
            , Searcher.handle
            , Visualization.handle

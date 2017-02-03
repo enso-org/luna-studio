@@ -42,7 +42,7 @@ module.exports =
     # nodes
     @subs.add atom.commands.add '.luna-studio', 'luna-studio:select-all':            -> code.pushEvent("SelectAll")
     @subs.add atom.commands.add '.luna-studio', 'luna-studio:remove-selected-nodes': -> code.pushEvent("RemoveSelectedNodes")
-    @subs.add atom.commands.add '.luna-studio', 'luna-studio:unselect-sll':          -> code.pushEvent("UnselectAll")
+    @subs.add atom.commands.add '.luna-studio', 'luna-studio:unselect-all':          -> code.pushEvent("UnselectAll")
     @subs.add atom.commands.add '.luna-studio', 'luna-studio:expand-selected-nodes': -> code.pushEvent("ExpandSelectedNodes")
     # searcher
     @subs.add atom.commands.add '.luna-studio', 'luna-studio:searcher-open':         -> code.pushEvent("SearcherOpen")
@@ -50,6 +50,9 @@ module.exports =
     @subs.add atom.commands.add '.searcher',    'luna-studio:searcher-close':        -> code.pushEvent("SearcherClose")
     @subs.add atom.commands.add '.searcher',    'luna-studio:searcher-move-down':    -> code.pushEvent("SearcherMoveDown")
     @subs.add atom.commands.add '.searcher',    'luna-studio:searcher-move-up':      -> code.pushEvent("SearcherMoveUp")
+    # undo/redo
+    @subs.add atom.commands.add '.luna-studio', 'core:undo':                         -> code.pushEvent("Undo")
+    @subs.add atom.commands.add '.luna-studio', 'core:redo':                         -> code.pushEvent("Redo")
 
   deactivate: ->
     @subs.dispose()

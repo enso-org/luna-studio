@@ -51,6 +51,10 @@ handleKeyApp evt
     | Keys.withoutMods      evt Keys.enter      = Just ExpandSelectedNodes
     -- searcher
     | Keys.withoutMods evt Keys.tab             = Just SearcherOpen
+    -- undo / redo
+    | Keys.withCtrl         evt Keys.z          = Just Undo
+    | Keys.withCtrl         evt Keys.y          = Just Redo
+    | Keys.withCtrlShift    evt Keys.z          = Just Redo
     --
     | otherwise                                 = Nothing
 
