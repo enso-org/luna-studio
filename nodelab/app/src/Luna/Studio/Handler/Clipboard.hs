@@ -12,6 +12,7 @@ import           Empire.API.Data.Node            (Node)
 import qualified Empire.API.Data.Node            as Node
 import qualified Empire.API.Data.NodeMeta        as NodeMeta
 import qualified Empire.API.Data.PortRef         as PortRef
+import qualified JS.Clipboard                    as JS (copyStringToClipboard)
 import           Luna.Studio.Action.Batch        (addSubgraph)
 import qualified Luna.Studio.Action.Camera       as Camera
 import           Luna.Studio.Action.Command      (Command)
@@ -33,14 +34,12 @@ handle (Shortcut  Shortcut.Copy      ) = Just copySelectionToClipboard
 handle (Shortcut  Shortcut.Cut       ) = Just cutSelectionToClipboard
 handle _ = Nothing
 
-foreign import javascript unsafe "copyToClipboard($1)" copyStringToClipboard :: JSString -> IO ()
-
 copySelectionToClipboard :: Command State ()
 copySelectionToClipboard = do
     nodeIds <- map (view UINode.nodeId) <$> selectedNodes
     graph   <- use Global.graph
     let subgraph = separateSubgraph nodeIds graph
-    liftIO $ copyStringToClipboard $ convert $ unpack $ encode subgraph
+    liftIO $ JS.copyStringToClipboard $ convert $ unpack $ encode subgraph
 
 cutSelectionToClipboard :: Command State()
 cutSelectionToClipboard = copySelectionToClipboard >> removeSelectedNodes

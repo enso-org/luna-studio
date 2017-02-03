@@ -1,6 +1,11 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Luna.Studio.React.View.NodeProperties where
 
+import qualified JS.Config                              as Config
+import qualified JS.UI                                  as UI
+import           React.Flux
+import qualified React.Flux                             as React
+
 import qualified Luna.Studio.Event.UI                   as UI
 import           Luna.Studio.Prelude
 import qualified Luna.Studio.React.Event.Node           as Node
@@ -10,8 +15,6 @@ import qualified Luna.Studio.React.Model.NodeProperties as Prop
 import           Luna.Studio.React.Store                (Ref, dispatch)
 import           Luna.Studio.React.View.CommonElements  (blurBackground_, selectionMark_)
 import           Luna.Studio.React.View.PortControl     (portControl_)
-import           React.Flux
-import qualified React.Flux                             as React
 
 
 objName :: JSString
@@ -35,7 +38,7 @@ nodeProperties = React.defineView objName $ \(ref, p) -> do
                 Just name ->
                     input_
                         [ "key" $= "name-label"
-                        , "id"  $= "focus-nameLabel"
+                        , "id"  $= nameLabelId
                         , "value value--name" $= convert name
                         , onMouseDown $ \e _ -> [stopPropagation e]
                         , onKeyDown   $ \e k ->  stopPropagation e : dispatch ref (UI.NodeEvent $ Node.NameKeyDown k nodeId)
@@ -78,4 +81,8 @@ nodeProperties = React.defineView objName $ \(ref, p) -> do
 nodeProperties_ :: Ref App -> NodeProperties -> ReactElementM ViewEventHandler ()
 nodeProperties_ ref prop = React.viewWithSKey nodeProperties objName (ref, prop) mempty
 
-foreign import javascript safe "document.getElementById('focus-nameLabel').focus()" focusNameLabel :: IO ()
+nameLabelId :: JSString
+nameLabelId = Config.prefix "focus-nameLabel"
+
+focusNameLabel :: IO ()
+focusNameLabel = UI.focus nameLabelId

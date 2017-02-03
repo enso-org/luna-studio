@@ -9,10 +9,12 @@ module Luna.Studio.Action.PortControl
 
 import qualified Data.Map                     as Map
 import           Data.Position                (Position, x)
+
 import qualified Empire.API.Data.DefaultValue as DefaultValue
 import qualified Empire.API.Data.Port         as PortAPI
 import           Empire.API.Data.PortRef      (AnyPortRef)
 import qualified Empire.API.Data.PortRef      as PortRef
+import qualified JS.UI                        as UI
 import qualified Luna.Studio.Action.Batch     as Batch
 import           Luna.Studio.Action.Command   (Command)
 import           Luna.Studio.Prelude
@@ -23,6 +25,7 @@ import qualified Luna.Studio.State.Action     as Action
 import           Luna.Studio.State.Global     (State, beginActionWithKey, continueActionWithKey, removeActionFromState, updateActionWithKey)
 import qualified Luna.Studio.State.Global     as Global
 
+
 instance Action (Command State) SliderDrag where
     begin    = beginActionWithKey    sliderDragAction
     continue = continueActionWithKey sliderDragAction
@@ -32,7 +35,7 @@ instance Action (Command State) SliderDrag where
         let portRef = a ^. Action.sliderDragPortRef
         mayDefValue <- getPortDefault portRef
         withJust mayDefValue $ Batch.setDefaultValue portRef
-        liftIO setDefaultCursor
+        UI.setDefaultCursor
 
 
 setPortDefault :: AnyPortRef -> DefaultValue.PortDefault -> Command State ()
@@ -49,7 +52,7 @@ getPortDefault portRef = do
 startMoveSlider :: AnyPortRef -> Position -> InitValue -> Command State ()
 startMoveSlider portRef initPos startVal = do
     begin $ SliderDrag portRef initPos startVal
-    liftIO setMovingCursor
+    UI.setMovingCursor
 
 moveSlider :: Position -> SliderDrag -> Command State ()
 moveSlider currentPostion state = do
@@ -60,7 +63,7 @@ moveSlider currentPostion state = do
 stopMoveSlider :: Position -> SliderDrag -> Command State ()
 stopMoveSlider currentPostion state = do
     removeActionFromState sliderDragAction
-    liftIO setDefaultCursor
+    UI.setDefaultCursor
     let defaultValue = newDefaultValue currentPostion state
         portRef = state ^. Action.sliderDragPortRef
     Batch.setDefaultValue portRef defaultValue
@@ -71,6 +74,3 @@ newDefaultValue currentPostion slider =
     in DefaultValue.Constant $ case slider ^. Action.sliderDragInitValue of
           Action.Discrete  val -> DefaultValue.IntValue    $ val + round delta
           Action.Continous val -> DefaultValue.DoubleValue $ val + delta
-
-foreign import javascript safe "document.body.style.cursor = \"auto\";" setDefaultCursor :: IO ()
-foreign import javascript safe "document.body.style.cursor = \"col-resize\";" setMovingCursor :: IO ()

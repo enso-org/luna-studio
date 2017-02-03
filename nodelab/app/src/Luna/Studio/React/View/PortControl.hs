@@ -3,11 +3,14 @@ module Luna.Studio.React.View.PortControl
     ( portControl_
     ) where
 
+import           React.Flux                   as React
+
 import qualified Empire.API.Data.DefaultValue as DefaultValue
 import           Empire.API.Data.Port         (InPort (..), InPort (..), OutPort (..), PortId (..))
 import qualified Empire.API.Data.Port         as PortAPI
 import           Empire.API.Data.PortRef      (AnyPortRef (..), toAnyPortRef)
 import qualified Empire.API.Data.ValueType    as ValueType
+import qualified JS.Config                    as Config
 import qualified Luna.Studio.Event.UI         as UI
 import           Luna.Studio.Prelude          hiding (group)
 import qualified Luna.Studio.React.Event.Node as Node
@@ -17,7 +20,6 @@ import           Luna.Studio.React.Model.Port (Port)
 import qualified Luna.Studio.React.Model.Port as Port
 import           Luna.Studio.React.Store      (Ref, dispatch)
 import qualified Luna.Studio.State.Action     as Action
-import           React.Flux                   as React
 
 
 portControl_ :: Ref App -> NodeId -> Bool -> Port -> ReactElementM ViewEventHandler ()
@@ -30,6 +32,9 @@ portControl = React.defineView "portControl" $ \(ref, nodeId, isLiteral, port) -
         InPortId  (Arg _) -> inPortControl_ ref portRef port
         OutPortId All     -> when isLiteral $ inPortControl_ ref portRef port
         _                 -> return ()
+
+portControlId :: JSString
+portControlId = Config.prefix "focus-portcontrol"
 
 inPortControl_ :: Ref App -> AnyPortRef -> Port -> ReactElementM ViewEventHandler ()
 inPortControl_ ref portRef port = React.viewWithSKey inPortControl "inPortControl" (ref, portRef, port) mempty
@@ -83,7 +88,7 @@ inPortControl = React.defineView "inPortControl" $ \(ref, portRef, port) ->
                     let value = fromMaybe "" $ defVal ^? DefaultValue._Constant . DefaultValue._StringValue
                         defaultValue val = DefaultValue.Constant $ DefaultValue.StringValue val
                     input_
-                        [ "id" $= "focus-portcontrol"
+                        [ "id" $= portControlId
                         , "value" $= convert value
                         , onMouseDown $ \e _ -> [stopPropagation e]
                         , onKeyDown   $ \e k -> let val = target e "value" in stopPropagation e : dispatch ref (UI.NodeEvent $ Node.PortApplyString k portRef $ defaultValue val)

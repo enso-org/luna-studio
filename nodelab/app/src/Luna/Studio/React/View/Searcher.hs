@@ -6,6 +6,8 @@ import           Data.Vector
 import           React.Flux
 import qualified React.Flux                       as React
 
+import qualified JS.Config                        as Config
+import qualified JS.UI                            as UI
 import qualified Luna.Studio.Event.UI             as UI
 import           Luna.Studio.Prelude
 import           Luna.Studio.React.Event.Searcher
@@ -32,7 +34,7 @@ searcher  = React.defineView name $ \(ref, s) -> do
         ] $ do
         input_
             [ "key"   $= "input"
-            , "id"    $= "focus-searcher"
+            , "id"    $= searcherId
             , "value" $= convert (s ^. Searcher.input)
             , onMouseDown $ \e _ -> [stopPropagation e]
             , onKeyDown   $ \e k -> stopPropagation e : dispatch ref (UI.SearcherEvent $ KeyDown k)
@@ -59,4 +61,8 @@ searcher  = React.defineView name $ \(ref, s) -> do
 searcher_ :: Ref App -> Searcher -> ReactElementM ViewEventHandler ()
 searcher_ ref model = React.viewWithSKey searcher name (ref, model) mempty
 
-foreign import javascript safe "document.getElementById('focus-searcher').focus()" focus :: IO ()
+searcherId :: JSString
+searcherId = Config.prefix "focus-searcher"
+
+focus :: IO ()
+focus = UI.focus searcherId
