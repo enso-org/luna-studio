@@ -30,6 +30,14 @@ import qualified Luna.Passes.Transform.Parsing.Parser as Parser
 import qualified Data.SpanTree as SpanTree
 import qualified Text.Megaparsec as Megaparsec
 
+data ParserException e = ParserException e
+    deriving (Show)
+
+instance Exception e => Exception (ParserException e) where
+    toException = astExceptionToException
+    fromException = astExceptionFromException
+    displayException (ParserException e) = "ParserException (" ++ displayException e ++ ")"
+
 parseExpr :: ASTOp m => String -> m (Maybe Text.Text, NodeRef)
 parseExpr s = do
   lamRes <- tryParseLambda s
@@ -40,7 +48,7 @@ parseExpr s = do
           Right (Parser.IRBuilder x) -> do
               x' <- x
               return (Nothing, x')
-          _      -> IR.number 0 >>= \v' -> return (Nothing, IR.generalize v')
+          Left err -> throwM $ ParserException err
 
 tryParseAccessors :: ASTOp m => String -> m (Maybe NodeRef)
 tryParseAccessors s = case splitOn "." s of

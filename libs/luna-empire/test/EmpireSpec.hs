@@ -31,7 +31,8 @@ import           Empire.Empire                 (InterpreterEnv(..))
 import           Prologue                      hiding (mapping, toList, (|>))
 
 import           Test.Hspec (Spec, around, describe, expectationFailure, it, parallel,
-                             shouldBe, shouldContain, shouldSatisfy, shouldMatchList, xit)
+                             shouldBe, shouldContain, shouldSatisfy, shouldMatchList,
+                             shouldStartWith, xit)
 
 import           EmpireUtils
 
@@ -393,3 +394,10 @@ spec = around withChannels $ parallel $ do
             withResult res $ \n -> do
               let inputPorts = Map.elems $ Map.filter Port.isInputPort $ n ^. Node.ports
               inputPorts `shouldSatisfy` ((== 2) . length)
+    describe "parser sanity" $ do
+        it "shows error on parse error" $ \env -> do
+            u1 <- mkUUID
+            res <- evalEmp env $ Graph.addNode top u1 "a+" def
+            case res of
+                Right _ -> expectationFailure "should throw exception"
+                Left err -> err `shouldStartWith` "ParserException"

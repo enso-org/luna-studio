@@ -24,7 +24,8 @@ data SomeASTException = forall e. Exception e => SomeASTException e
 instance Show SomeASTException where
     show (SomeASTException e) = show e
 
-instance Exception SomeASTException
+instance Exception SomeASTException where
+    displayException (SomeASTException e) = displayException e
 
 astExceptionToException :: Exception e => e -> SomeException
 astExceptionToException = toException . SomeASTException
