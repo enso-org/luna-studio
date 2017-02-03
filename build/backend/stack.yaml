@@ -24,7 +24,7 @@ packages:
 - {location: ../../tools/batch/plugins/luna-empire}
 - {location: ../../tools/batch/plugins/request-monitor}
 - extra-dep: true
-  location: {commit: 2203352f95d18dbbda33898a6b90f45187a011be, git: 'git@github.com:luna/luna.git'}
+  location: {commit: c1e728f31dc07175fc97d0ed8c594f1de97e91a2, git: 'git@github.com:luna/luna.git'}
   subdirs: [compiler, core, parser]
 - extra-dep: true
   location: {commit: 9d451ec9eeb06d4e28bbd66915fe1698bae2f001, git: 'https://github.com/luna/container.git'}
@@ -49,7 +49,7 @@ packages:
 - extra-dep: true
   location: {commit: 5dc5b731a4313e44d55677ed6b9f38456feb2d56, git: 'https://github.com/luna/impossible.git'}
 - extra-dep: true
-  location: {commit: d87d2c997c71f7d1d3ef3f814178fa0ccc5bde9f, git: 'https://github.com/luna/lens-utils.git'}
+  location: {commit: b032cc837c7d35e8d4d01f5769c0fc0e8f4faff9, git: 'https://github.com/luna/lens-utils.git'}
 - extra-dep: true
   location: {commit: 53538017ad47a0a473233577595d8ac6e3eae9a0, git: 'https://github.com/luna/poly-control.git'}
 - extra-dep: true

@@ -25,10 +25,7 @@ import           Empire.API.Data.DefaultValue (PortDefault (..), Value (..))
 import qualified Luna.IR as IR
 import qualified Luna.Pass as Pass
 import qualified Luna.Passes.Transform.Parsing.Parsing as Parsing
-import qualified Luna.Passes.Transform.Parsing.OffsetParser as OffsetParser
 import qualified Luna.Passes.Transform.Parsing.Parser as Parser
-import qualified Data.SpanTree as SpanTree
-import qualified Text.Megaparsec as Megaparsec
 
 data ParserException e = ParserException e
     deriving (Show)
@@ -41,7 +38,7 @@ instance Exception e => Exception (ParserException e) where
 parseExpr :: ASTOp m => String -> m (Maybe Text.Text, NodeRef)
 parseExpr s = do
   lamRes <- tryParseLambda s
-  parsed <- liftIO $ Parsing.testParse (OffsetParser.evalOffsetParserT $ SpanTree.evalSpanBuilderT (Parsing.testMe <* Megaparsec.eof)) s
+  parsed <- pure $ Parsing.runParser Parsing.expr s
   case lamRes of
       (name, Just l)  -> return (name, l)
       _               -> case parsed of
@@ -49,15 +46,6 @@ parseExpr s = do
               x' <- x
               return (Nothing, x')
           Left err -> throwM $ ParserException err
-
-tryParseAccessors :: ASTOp m => String -> m (Maybe NodeRef)
-tryParseAccessors s = case splitOn "." s of
-    []  -> return Nothing
-    [_a] -> return Nothing
-    (var:accs) -> do
-        v <- IR.generalize <$> IR.strVar var
-        node <- buildAccessors v accs
-        return $ Just node
 
 tryParseLambda :: ASTOp m => String -> m (Maybe Text.Text, Maybe NodeRef)
 tryParseLambda s = case words s of
