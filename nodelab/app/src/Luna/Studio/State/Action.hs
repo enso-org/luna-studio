@@ -93,6 +93,7 @@ instance ToJSON Searcher
 data VisualizationDrag = VisualizationDrag
     { _visNodeId :: NodeId
     , _visIdx    :: Int
+    , _visPos    :: Position
     } deriving (Eq, Show, Generic, Typeable)
 
 makeLenses ''VisualizationDrag

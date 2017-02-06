@@ -1,7 +1,7 @@
 {-# LANGUAGE TypeFamilies #-}
 module Data.Vector where
 
-import           Data.Aeson          (ToJSON)
+import           Data.Aeson          (FromJSON, ToJSON)
 import           Luna.Studio.Prelude
 
 import           Prologue            (wrapped')
@@ -55,8 +55,9 @@ makeLenses ''Vector2
 
 instance Dim1 (Vector2 a) where x = vector2_x
 instance Dim2 (Vector2 a) where y = vector2_y
-instance ToJSON a => ToJSON (Vector2 a)
+instance FromJSON a => FromJSON (Vector2 a)
 instance NFData a => NFData (Vector2 a)
+instance ToJSON a => ToJSON (Vector2 a)
 
 instance Default a => Default (Vector2 a) where
     def = Vector2 def def
