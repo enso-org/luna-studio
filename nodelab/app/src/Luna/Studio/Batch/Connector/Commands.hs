@@ -5,8 +5,7 @@ import           Luna.Studio.Prelude
 import qualified Data.Text                              as Text
 import           Data.UUID.Types                        (UUID)
 
-import           Luna.Studio.Batch.Connector.Connection (sendRequest, sendUpdate, Message (..))
-import qualified Luna.Studio.Batch.Connector.Connection as BatchConnector
+import           Luna.Studio.Batch.Connector.Connection (Message (..), sendRequest, sendUpdate)
 import           Luna.Studio.Batch.Workspace            (Workspace)
 import qualified Luna.Studio.Batch.Workspace            as Workspace
 
@@ -26,13 +25,13 @@ import qualified Empire.API.Graph.Connect               as Connect
 import qualified Empire.API.Graph.Disconnect            as Disconnect
 import qualified Empire.API.Graph.DumpGraphViz          as DumpGraphViz
 import qualified Empire.API.Graph.GetProgram            as GetProgram
+import qualified Empire.API.Graph.Redo                  as Redo
 import qualified Empire.API.Graph.RemoveNodes           as RemoveNodes
 import qualified Empire.API.Graph.RenameNode            as RenameNode
 import qualified Empire.API.Graph.SetCode               as SetCode
 import qualified Empire.API.Graph.SetDefaultValue       as SetDefaultValue
 import qualified Empire.API.Graph.SetInputNodeType      as SetInputNodeType
 import qualified Empire.API.Graph.Undo                  as Undo
-import qualified Empire.API.Graph.Redo                  as Redo
 import qualified Empire.API.Graph.UpdateNodeExpression  as UpdateNodeExpression
 import qualified Empire.API.Graph.UpdateNodeMeta        as UpdateNodeMeta
 import qualified Empire.API.Library.CreateLibrary       as CreateLibrary

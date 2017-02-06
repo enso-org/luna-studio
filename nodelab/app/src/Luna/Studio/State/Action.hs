@@ -154,3 +154,15 @@ overlappingActions = [ Set.fromList [ clickConnectAction
                                     , zoomDragAction
                                     ]
                      ]
+
+actionsBlockingPortHighlight :: Set ActionRep
+actionsBlockingPortHighlight = Set.fromList [ multiSelectionAction
+                                            , nodeDragAction
+                                            , penConnectAction
+                                            , penDisconnectAction
+                                            , searcherAction
+                                            , sliderDragAction
+                                            , visualizationDragAction
+                                            , panDragAction
+                                            , zoomDragAction
+                                            ]

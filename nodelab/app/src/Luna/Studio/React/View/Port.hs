@@ -10,6 +10,7 @@ import qualified Luna.Studio.Event.Mouse            as Mouse
 import qualified Luna.Studio.Event.UI               as UI
 import           Luna.Studio.Prelude
 import qualified Luna.Studio.React.Event.Connection as Connection
+import qualified Luna.Studio.React.Event.Port       as Port
 import           Luna.Studio.React.Model.App        (App)
 import           Luna.Studio.React.Model.Port       (Port (..))
 import qualified Luna.Studio.React.Model.Port       as Port
@@ -40,6 +41,13 @@ handleClick ref portRef e m =
 handleMouseUp :: Ref App -> AnyPortRef -> Event -> MouseEvent -> [SomeStoreAction]
 handleMouseUp ref portRef _e m = dispatch ref (UI.ConnectionEvent $ Connection.EndConnection m portRef)
 
+handleMouseEnter :: Ref App -> AnyPortRef -> Event -> MouseEvent -> [SomeStoreAction]
+handleMouseEnter ref portRef _e _m = dispatch ref (UI.PortEvent $ Port.MouseEnter portRef)
+
+handleMouseLeave :: Ref App -> AnyPortRef -> Event -> MouseEvent -> [SomeStoreAction]
+handleMouseLeave ref portRef _e _m = dispatch ref (UI.PortEvent $ Port.MouseLeave portRef)
+
+
 port :: ReactView (Ref App, Int, Bool, Port)
 port = React.defineView name $ \(ref, numOfPorts, isOnly, p) ->
     case p ^. Port.portId of
@@ -67,35 +75,41 @@ portExpanded_ ref p =
 
 portSelf_ :: Ref App -> Port -> ReactElementM ViewEventHandler ()
 portSelf_ ref p = do
-    let portRef = p ^. Port.portRef
-        color   = toJSString $ p ^. Port.color
-        portId  = p ^. Port.portId
+    let portRef   = p ^. Port.portRef
+        color     = toJSString $ p ^. Port.color
+        portId    = p ^. Port.portId
+        highlight = if p ^. Port.highlight then " luna-hover" else ""
+        className = fromString $ "luna-port luna-port--self" <> highlight
     g_
-        [ "className" $= "luna-port luna-port--self" ] $ do
+        [ "className" $= className ] $ do
         circle_
             [ "className" $= "luna-port__shape"
             , "key"       $= (jsShow portId <> "a")
             , "fill"      $= color
             ] mempty
         circle_
-            [ onClick     $ handleClick     ref portRef
-            , onMouseUp   $ handleMouseUp   ref portRef
-            , "className" $= "luna-port__select"
-            , "key"       $= (jsShow portId <> "b")
+            [ onClick      $ handleClick      ref portRef
+            , onMouseUp    $ handleMouseUp    ref portRef
+            , onMouseEnter $ handleMouseEnter ref portRef
+            , onMouseLeave $ handleMouseLeave ref portRef
+            , "className"  $= "luna-port__select"
+            , "key"        $= (jsShow portId <> "b")
             ] mempty
 
 portSingle_ :: Ref App -> Port -> ReactElementM ViewEventHandler ()
 portSingle_ ref p = do
-    let portRef = p ^. Port.portRef
-        portId  = p ^. Port.portId
-        color   = toJSString $ p ^. Port.color
+    let portRef   = p ^. Port.portRef
+        portId    = p ^. Port.portId
+        color     = toJSString $ p ^. Port.color
+        highlight = if p ^. Port.highlight then " luna-hover" else ""
+        className = fromString $ "luna-port luna-port--o--single" <> highlight
         r1, r2 :: Double -> JSString
         r1 = jsShow2 . (+) nodeRadius
         r2 = jsShow2 . (-) nodeRadius'
         svgPath :: Double -> Integer -> Integer -> JSString
         svgPath a b c = "M0 -" <> r1 a <> " A " <> r1 a <> " " <> r1 a <> " 0 0 " <> jsShow b <> " 0 "  <> r1 a <>
                         " L0 "  <> r2 a <> " A " <> r2 a <> " " <> r2 a <> " 1 0 " <> jsShow c <> " 0 -" <> r2 a <> " Z "
-    g_ [ "className" $= "luna-port luna-port--o--single" ] $ do
+    g_ [ "className" $= className ] $ do
         path_
             [ "className" $= "luna-port__shape"
             , "key"       $= (jsShow portId <> "a" )
@@ -103,9 +117,11 @@ portSingle_ ref p = do
             , "d"         $= (svgPath 0 0 1 <> svgPath 0 1 0)
             ] mempty
         path_
-            [ onMouseDown $ handleMouseDown ref portRef
-            , onMouseUp   $ handleMouseUp   ref portRef
-            , onClick     $ handleClick     ref portRef
+            [ onMouseDown  $ handleMouseDown  ref portRef
+            , onMouseUp    $ handleMouseUp    ref portRef
+            , onClick      $ handleClick      ref portRef
+            , onMouseEnter $ handleMouseEnter ref portRef
+            , onMouseLeave $ handleMouseLeave ref portRef
             , "className" $= "luna-port__select"
             , "key"       $= (jsShow portId <> "b")
             , "d"         $= (svgPath 3 0 1 <> svgPath 3 1 0)
@@ -113,13 +129,15 @@ portSingle_ ref p = do
 
 portIO_ :: Ref App -> Port -> Int -> Int -> Bool -> ReactElementM ViewEventHandler ()
 portIO_ ref p num numOfPorts isInput = do
-    let portRef = p ^. Port.portRef
-        portId  = p ^. Port.portId
-        color   = toJSString $ p ^. Port.color
-        classes  = if isInput then "luna-port luna-port--i luna-port--i--" else "luna-port luna-port--o luna-port--o--"
-        svgFlag1 = if isInput then "1"  else "0"
-        svgFlag2 = if isInput then "0"  else "1"
-        mode     = if isInput then -1.0 else 1.0
+    let portRef   = p ^. Port.portRef
+        portId    = p ^. Port.portId
+        color     = toJSString $ p ^. Port.color
+        highlight = if p ^. Port.highlight then " luna-hover" else ""
+        classes   = if isInput then "luna-port luna-port--i luna-port--i--" else "luna-port luna-port--o luna-port--o--"
+        className = fromString $ classes <> show (num+1) <> highlight
+        svgFlag1  = if isInput then "1"  else "0"
+        svgFlag2  = if isInput then "0"  else "1"
+        mode      = if isInput then -1.0 else 1.0
         startPortArcX r = r * sin(portAngleStart num numOfPorts r * mode)
         startPortArcY r = r * cos(portAngleStart num numOfPorts r * mode)
         stopPortArcX  r = r * sin(portAngleStop  num numOfPorts r * mode)
@@ -140,7 +158,7 @@ portIO_ ref p num numOfPorts isInput = do
                     " A " <> r2 a <> " " <> r2 a <> " 1 0 " <> svgFlag2 <> " " <> dx a <> " " <> dy a <>
                     " Z"
     g_
-        [ "className" $= convert (classes <> show (num+1)) ] $ do
+        [ "className" $= className ] $ do
         path_
             [ "className" $= "luna-port__shape"
             , "key"       $= (jsShow portId <> "a")
@@ -148,9 +166,11 @@ portIO_ ref p num numOfPorts isInput = do
             , "d"         $= svgPath 0
             ] mempty
         path_
-            [ onMouseDown $ handleMouseDown ref portRef
-            , onMouseUp   $ handleMouseUp   ref portRef
-            , onClick     $ handleClick     ref portRef
+            [ onMouseDown  $ handleMouseDown  ref portRef
+            , onMouseUp    $ handleMouseUp    ref portRef
+            , onClick      $ handleClick      ref portRef
+            , onMouseEnter $ handleMouseEnter ref portRef
+            , onMouseLeave $ handleMouseLeave ref portRef
             , "className" $= "luna-port__select"
             , "key"       $= (jsShow portId <> "b")
             , "d"         $= svgPath 3
@@ -158,14 +178,16 @@ portIO_ ref p num numOfPorts isInput = do
 
 portIOExpanded_ :: Ref App -> Port -> Int -> Bool -> ReactElementM ViewEventHandler ()
 portIOExpanded_ ref p num isInput = do
-    let portRef = p ^. Port.portRef
-        portId  = p ^. Port.portId
-        color   = toJSString $ p ^. Port.color
-        classes = if isInput then "luna-port luna-port--i luna-port--i--" else "luna-port luna-port--o luna-port--o--"
-        n       = if isInput then 1 else 0
-        r       = jsShow2 . (+3)
+    let portRef   = p ^. Port.portRef
+        portId    = p ^. Port.portId
+        color     = toJSString $ p ^. Port.color
+        highlight = if p ^. Port.highlight then " luna-hover" else ""
+        classes   = if isInput then "luna-port luna-port--i luna-port--i--" else "luna-port luna-port--o luna-port--o--"
+        className = fromString $ classes <> show (num + 1) <> highlight
+        n         = if isInput then 1 else 0
+        r         = jsShow2 . (+3)
     g_
-        [ "className" $= convert (classes <> show (num + 1)) ] $ do
+        [ "className" $= className ] $ do
         circle_
             [ "className" $= "luna-port__shape"
             , "key"       $= (jsShow portId <> jsShow num <> "a")
@@ -174,9 +196,11 @@ portIOExpanded_ ref p num isInput = do
             , "cy"        $= jsShow2 (lineHeight * fromIntegral (num + n) )
             ] mempty
         circle_
-            [ onMouseDown $ handleMouseDown ref portRef
-            , onMouseUp   $ handleMouseUp   ref portRef
-            , onClick     $ handleClick     ref portRef
+            [ onMouseDown  $ handleMouseDown  ref portRef
+            , onMouseUp    $ handleMouseUp    ref portRef
+            , onClick      $ handleClick      ref portRef
+            , onMouseEnter $ handleMouseEnter ref portRef
+            , onMouseLeave $ handleMouseLeave ref portRef
             , "className" $= "luna-port__select"
             , "key"       $= (jsShow portId <> jsShow num <> "b")
             , "r"         $= r 3
