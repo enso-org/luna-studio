@@ -43,7 +43,7 @@ import qualified Empire.API.Graph.Undo as Undo
 
 import           Empire.API.Request as Request
 
-import Undo (run', handleMessage, withBus, flushHelper, compareId)
+import Undo (run', handleMessage, withBus, checkGuiId)
 import UndoState (UndoState (..), Undo (..), UndoMessage (..))
 
 
@@ -69,7 +69,6 @@ spec = describe "Undo-Redo for single user" $ do
             topic = "empire.graph.node.add.response"
             state = UndoState [] [] []
             mockEndpoints = BusEndPoints "tcp://127.0.0.1:30530" "tcp://127.0.0.1:30531" "tcp://127.0.0.1:30532"
-        flushHelper $ show guiID
         Right (_, state1) <- run' mockEndpoints state $ withBus $ handleMessage $ Message.Message topic $ toStrict $ encode response
         case state1 of UndoState undo redo history -> do
                                                         undo `shouldSatisfy` ((== 1) . length)
@@ -88,9 +87,7 @@ spec = describe "Undo-Redo for single user" $ do
         Right (_, state1) <- run' mockEndpoints state $ withBus $ handleMessage $ Message.Message topic $ toStrict $ encode response
         case state1 of UndoState undo redo history -> do
                                                         let msg = head undo
-                                                        flushHelper $ show msg
-                                                        flushHelper $ show guiID
-                                                        List.find (compareId guiID) undo `shouldBe` (Just msg)
+                                                        List.find (checkGuiId guiID) undo `shouldBe` (Just msg)
 
     it "undo request -> proper message is returned, undo list shorter by 1 and redo list longer" $ do
         graphLocation <- generateGraphLocation
@@ -104,7 +101,6 @@ spec = describe "Undo-Redo for single user" $ do
             state = UndoState [] [] []
             undoReq = Request.Request reqID2 (Just guiID) (Undo.Request Undo.UndoRequest)
             mockEndpoints = BusEndPoints "tcp://127.0.0.1:30530" "tcp://127.0.0.1:30531" "tcp://127.0.0.1:30532"
-        flushHelper $ show guiID
         Right (_, state1) <- run' mockEndpoints state $ withBus $ handleMessage $ Message.Message topic $ toStrict $ encode response
         Right (_, state2) <- run' mockEndpoints state1 $ withBus $ handleMessage $ Message.Message "empire.undo.request" $ toStrict $ encode undoReq
         case state2 of UndoState undo redo history -> do
@@ -126,7 +122,6 @@ spec = describe "Undo-Redo for single user" $ do
             state = UndoState [] [] []
             undoReq = Request.Request reqID3 (Just guiID) (Undo.Request Undo.UndoRequest)
             mockEndpoints = BusEndPoints "tcp://127.0.0.1:30530" "tcp://127.0.0.1:30531" "tcp://127.0.0.1:30532"
-        flushHelper $ show guiID
         Right (_, state1) <- run' mockEndpoints state $ withBus $ handleMessage $ Message.Message topic $ toStrict $ encode response1
         Right (_, state2) <- run' mockEndpoints state1 $ withBus $ handleMessage $ Message.Message topic $ toStrict $ encode response2
         Right (_, state3) <- run' mockEndpoints state2 $ withBus $ handleMessage $ Message.Message "empire.undo.request" $ toStrict $ encode undoReq
@@ -152,7 +147,6 @@ spec = describe "Undo-Redo for single user" $ do
             undoReq1 = Request.Request reqID3 (Just guiID) (Undo.Request Undo.UndoRequest)
             undoReq2 = Request.Request reqID4 (Just guiID) (Undo.Request Undo.UndoRequest)
             mockEndpoints = BusEndPoints "tcp://127.0.0.1:30530" "tcp://127.0.0.1:30531" "tcp://127.0.0.1:30532"
-        flushHelper $ show guiID
         Right (_, state1) <- run' mockEndpoints state $ withBus $ handleMessage $ Message.Message topic $ toStrict $ encode response1
         Right (_, state2) <- run' mockEndpoints state1 $ withBus $ handleMessage $ Message.Message topic $ toStrict $ encode response2
         Right (_, state3) <- run' mockEndpoints state2 $ withBus $ handleMessage $ Message.Message "empire.undo.request" $ toStrict $ encode undoReq1
@@ -178,15 +172,11 @@ spec = describe "Undo-Redo for single user" $ do
             undoReq = Request.Request reqID3 (Just guiID) (Undo.Request Undo.UndoRequest)
             redoReq = Request.Request reqID4 (Just guiID) (Redo.Request Redo.RedoRequest)
             mockEndpoints = BusEndPoints "tcp://127.0.0.1:30530" "tcp://127.0.0.1:30531" "tcp://127.0.0.1:30532"
-        flushHelper $ show guiID
         Right (_, state1) <- run' mockEndpoints state $ withBus $ handleMessage $ Message.Message topic $ toStrict $ encode response1
         Right (_, state2) <- run' mockEndpoints state1 $ withBus $ handleMessage $ Message.Message topic $ toStrict $ encode response2
         Right (_, state3) <- run' mockEndpoints state2 $ withBus $ handleMessage $ Message.Message "empire.undo.request" $ toStrict $ encode undoReq
         Right (_, state4) <- run' mockEndpoints state3 $ withBus $ handleMessage $ Message.Message "empire.redo.request" $ toStrict $ encode redoReq
         case state4 of UndoState undo redo history -> do
-                                                        flushHelper $ show undo
-                                                        flushHelper $ show redo
-                                                        flushHelper $ show history
                                                         undo `shouldSatisfy` ((== 2) . length)
                                                         redo `shouldSatisfy` ((== 0) . length)
                                                         history `shouldSatisfy` ((== 4) . length)
@@ -210,15 +200,11 @@ spec = describe "Undo-Redo for single user" $ do
             state = UndoState [] [] []
             undoReq = Request.Request reqID4 (Just guiID) (Undo.Request Undo.UndoRequest)
             mockEndpoints = BusEndPoints "tcp://127.0.0.1:30530" "tcp://127.0.0.1:30531" "tcp://127.0.0.1:30532"
-        flushHelper $ show guiID
         Right (_, state1) <- run' mockEndpoints state $ withBus $ handleMessage $ Message.Message topic $ toStrict $ encode response1
         Right (_, state2) <- run' mockEndpoints state1 $ withBus $ handleMessage $ Message.Message topic $ toStrict $ encode response2
         Right (_, state3) <- run' mockEndpoints state2 $ withBus $ handleMessage $ Message.Message "empire.undo.request" $ toStrict $ encode undoReq
         Right (_, state4) <- run' mockEndpoints state3 $ withBus $ handleMessage $ Message.Message topic $ toStrict $ encode response3
         case state4 of UndoState undo redo history -> do
-                                                        flushHelper $ show undo
-                                                        flushHelper $ show redo
-                                                        flushHelper $ show history
                                                         undo `shouldSatisfy` ((== 2) . length)
                                                         redo `shouldSatisfy` ((== 0) . length)
                                                         history `shouldSatisfy` ((== 4) . length)
@@ -242,15 +228,11 @@ spec = describe "Undo-Redo for single user" $ do
             state = UndoState [] [] []
             undoReq = Request.Request reqID4 (Just guiID) (Undo.Request Undo.UndoRequest)
             mockEndpoints = BusEndPoints "tcp://127.0.0.1:30530" "tcp://127.0.0.1:30531" "tcp://127.0.0.1:30532"
-        flushHelper $ show guiID
         Right (_, state1) <- run' mockEndpoints state $ withBus $ handleMessage $ Message.Message topic $ toStrict $ encode response1
         Right (_, state2) <- run' mockEndpoints state1 $ withBus $ handleMessage $ Message.Message topic $ toStrict $ encode response2
         Right (_, state3) <- run' mockEndpoints state2 $ withBus $ handleMessage $ Message.Message "empire.undo.request" $ toStrict $ encode undoReq
         Right (_, state4) <- run' mockEndpoints state3 $ withBus $ handleMessage $ Message.Message topic $ toStrict $ encode response3
         case state4 of UndoState undo redo history -> do
-                                                        flushHelper $ show undo
-                                                        flushHelper $ show redo
-                                                        flushHelper $ show history
                                                         undo `shouldSatisfy` ((== 1) . length)
                                                         redo `shouldSatisfy` ((== 1) . length)
                                                         history `shouldSatisfy` ((== 3) . length)

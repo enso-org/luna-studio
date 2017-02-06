@@ -202,15 +202,15 @@ handleRenameNodeUndo (Response.Response _ _ (RenameNode.Request location nodeId 
         Just (undoMsg, redoMsg)
 
 handleConnectUndo :: Connect.Response -> Maybe (Disconnect.Request, Connect.Request)
-handleConnectUndo (Response.Response _ _ (Connect.Request location src dst) inv res) =
+handleConnectUndo (Response.Response _ _ (Connect.Request location (Connect.PortConnection src dst)) inv res) =
     withOk res . const $
         let undoMsg = Disconnect.Request location dst
-            redoMsg = Connect.Request location src dst
+            redoMsg = Connect.Request location $ Connect.PortConnection src dst
         in Just (undoMsg, redoMsg)
 
 handleDisconnectUndo :: Disconnect.Response -> Maybe (Connect.Request, Disconnect.Request)
 handleDisconnectUndo (Response.Response _ _ (Disconnect.Request location dst) inv res) =
     withOk inv $ \(Disconnect.Inverse src) ->
-        let undoMsg = Connect.Request location src dst
+        let undoMsg = Connect.Request location $ Connect.PortConnection src dst
             redoMsg = Disconnect.Request location dst
         in Just (undoMsg, redoMsg)

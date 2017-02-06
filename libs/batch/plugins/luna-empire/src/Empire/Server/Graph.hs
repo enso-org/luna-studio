@@ -228,8 +228,8 @@ handleConnectReq :: Bool -> Request Connect.Request -> StateT Env BusT ()
 handleConnectReq doTC = modifyGraphOk (mtuple action) success where
     action  (Connect.Request location (Connect.PortConnection src dst)) = Graph.connectCondTC doTC location src dst
     action  (Connect.Request location (Connect.NodeConnection src dst)) = Graph.connectCondTC doTC location (OutPortRef src All) (InPortRef dst Self)
-    success (Connect.Request location (Connect.PortConnection src dst)) result = sendToBus' $ Connect.Update location src dst
-    success (Connect.Request location (Connect.NodeConnection src dst)) result = sendToBus' $ Connect.Update location (OutPortRef src All) (InPortRef dst Self)
+    success (Connect.Request location (Connect.PortConnection src dst)) _ result = sendToBus' $ Connect.Update location src dst
+    success (Connect.Request location (Connect.NodeConnection src dst)) _ result = sendToBus' $ Connect.Update location (OutPortRef src All) (InPortRef dst Self)
 
 handleDisconnect :: Request Disconnect.Request -> StateT Env BusT ()
 handleDisconnect = modifyGraphOk action success where
