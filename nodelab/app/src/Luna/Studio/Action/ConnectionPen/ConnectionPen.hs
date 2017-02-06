@@ -49,7 +49,7 @@ connectProcessSegment seg state = do
         numOfPoints = round $ distance beg end
         points = getPointsOnCurveSegment seg numOfPoints
     intersectedNodes <- catMaybes <$> mapM getNodeAtPosition (beg:points)
-    when (not $ null intersectedNodes) $ do
+    unless (null intersectedNodes) $ do
         let uniqueIntersectedNodes = map head $ group intersectedNodes
         let nodesToConnect = case state ^. Action.penConnectLastVisitedNode of
                 Just nodeId -> zip (nodeId : uniqueIntersectedNodes) uniqueIntersectedNodes
@@ -64,13 +64,13 @@ connectMove evt timestamp state = do
         state' = state & Action.penConnectCurve .~ curve
     update state'
     Global.modifyNodeEditor $ NodeEditor.connectionPen . _Just . ConnectionPen.path .= curveToSvgPath curve
-    when ((length $ curve ^. Curve.segments) > 1 && (head $ curve ^. Curve.segments) ^. Curve.approved) $ do
+    when (length (curve ^. Curve.segments) > 1 && head (curve ^. Curve.segments) ^. Curve.approved) $
         connectProcessSegment (head $ drop 1 $ curve ^. Curve.segments) state'
 
 stopConnecting :: PenConnect -> Command State ()
 stopConnecting state = do
     let curve = state ^. Action.penConnectCurve
-    when (not $ (head $ curve ^. Curve.segments) ^. Curve.approved) $ do
+    unless ((head $ curve ^. Curve.segments) ^. Curve.approved) $
         connectProcessSegment (head $ curve ^. Curve.segments) state
     removeActionFromState penConnectAction
     Global.modifyNodeEditor $ NodeEditor.connectionPen .= Nothing

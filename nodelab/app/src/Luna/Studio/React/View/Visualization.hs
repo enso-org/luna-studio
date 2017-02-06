@@ -123,8 +123,8 @@ nodeValue_ ref nodeId mayPos visIx value = do
             elemString $ if isPinned then "unpin" else "pin"
         case value of
             DataFrame    cols -> do
-                let heads  = convert <$> fst <$> cols
-                    cols'  = fmap DefaultValue.stringify <$> snd <$> cols
+                let heads  = convert . fst <$> cols
+                    cols'  = fmap DefaultValue.stringify . snd <$> cols
                     rows   = transpose cols'
                     widget = DataFrame.create heads rows
                 dataFrame_ visIx widget
@@ -141,7 +141,7 @@ nodeValue_ ref nodeId mayPos visIx value = do
             RationalValue   v -> strDiv $ show v
             StringList      v -> dataFrame_ visIx $ listTable $ convert <$> v
             StringMaybeList v -> dataFrame_ visIx $ listTable $ convert . show <$> v
-            StringStringMap v -> dataFrame_ visIx $ listTablePairs $ (mapTuple convert) <$> v
+            StringStringMap v -> dataFrame_ visIx $ listTablePairs $ mapTuple convert <$> v
             StringValue   str -> strDiv str
             _ -> return ()
     where

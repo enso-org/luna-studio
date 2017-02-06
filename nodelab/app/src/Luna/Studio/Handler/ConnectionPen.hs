@@ -6,8 +6,7 @@ import           Data.Timestamp                   (Timestamp)
 import           Luna.Studio.Action.Command       (Command)
 import           Luna.Studio.Action.ConnectionPen (connectMove, disconnectMove, startConnecting, startDisconnecting, stopConnecting,
                                                    stopDisconnecting)
-import           Luna.Studio.Event.Event          (Event)
-import           Luna.Studio.Event.Event          (Event (UI))
+import           Luna.Studio.Event.Event          (Event, Event (UI))
 import qualified Luna.Studio.Event.Mouse          as Mouse
 import           Luna.Studio.Event.UI             (UIEvent (AppEvent))
 import           Luna.Studio.Prelude
@@ -19,7 +18,7 @@ import           React.Flux                       (MouseEvent)
 
 handle :: Event -> Maybe (Command State ())
 handle (UI (AppEvent (App.MouseDown evt timestamp))) = Just $ handleMouseDown evt timestamp
-handle (UI (AppEvent (App.MouseMove evt timestamp))) = Just $ (continue $ connectMove evt timestamp) >> (continue $ disconnectMove evt timestamp)
+handle (UI (AppEvent (App.MouseMove evt timestamp))) = Just $ continue (connectMove evt timestamp) >> continue (disconnectMove evt timestamp)
 handle (UI (AppEvent (App.MouseUp   _)))             = Just $ continue stopConnecting >> continue stopDisconnecting
 handle _                                             = Nothing
 

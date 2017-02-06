@@ -31,7 +31,7 @@ objName = "node"
 
 handleMouseDown :: Ref App -> NodeId -> Event -> MouseEvent -> [SomeStoreAction]
 handleMouseDown ref nodeId e m =
-    if (Mouse.withoutMods m Mouse.leftButton)
+    if Mouse.withoutMods m Mouse.leftButton
     then stopPropagation e : dispatch ref (UI.NodeEvent $ Node.MouseDown m nodeId)
     else []
 
@@ -47,12 +47,12 @@ node = React.defineView objName $ \(ref, n) -> do
     div_
         [ "key"       $= fromString (show nodeId)
         , "className" $= "luna-node-root luna-noselect"
-        , "style"     @= Aeson.object [ "zIndex" Aeson..= (show z) ]
+        , "style"     @= Aeson.object [ "zIndex" Aeson..= show z ]
         ] $ do
         div_
             [ "key"       $= "nodeTrans"
             , "className" $= "luna-node-trans"
-            ] $ do
+            ] $
             div_
                 [ "key"         $= "nodeBodyRoot"
                 , onClick       $ \_ m -> dispatch ref $ UI.NodeEvent $ Node.Select m nodeId
@@ -87,7 +87,7 @@ node = React.defineView objName $ \(ref, n) -> do
         div_
             [ "key"       $= "nameTrans"
             , "className" $= "luna-name-trans"
-            ] $ do
+            ] $
             div_
                 [ "key"         $= "nameRoot"
                 , onClick       $ \_ m -> dispatch ref $ UI.NodeEvent $ Node.Select m nodeId

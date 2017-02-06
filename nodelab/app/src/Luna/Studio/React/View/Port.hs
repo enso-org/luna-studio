@@ -27,13 +27,13 @@ jsShow2 a = convert $ showFFloat (Just 2) a "" -- limit Double to two decimal nu
 
 handleMouseDown :: Ref App -> AnyPortRef -> Event -> MouseEvent -> [SomeStoreAction]
 handleMouseDown ref portRef e m =
-    if (Mouse.withoutMods m Mouse.leftButton) then
+    if Mouse.withoutMods m Mouse.leftButton then
         stopPropagation e : dispatch ref (UI.ConnectionEvent $ Connection.StartConnection m portRef)
     else []
 
 handleClick :: Ref App -> AnyPortRef -> Event -> MouseEvent -> [SomeStoreAction]
 handleClick ref portRef e m =
-    if (Mouse.withoutMods m Mouse.leftButton) then
+    if Mouse.withoutMods m Mouse.leftButton then
         stopPropagation e : dispatch ref (UI.ConnectionEvent $ Connection.Click m portRef)
     else []
 
@@ -139,7 +139,7 @@ portIO_ ref port num numOfPorts isInput = do
                     " A " <> r2 a <> " " <> r2 a <> " 1 0 " <> svgFlag2 <> " " <> dx a <> " " <> dy a <>
                     " Z"
     g_
-        [ "className" $= (convert $ classes <> show (num+1)) ] $ do
+        [ "className" $= convert (classes <> show (num+1)) ] $ do
         path_
             [ "className" $= "luna-port__shape"
             , "key"       $= (jsShow portId <> "a")

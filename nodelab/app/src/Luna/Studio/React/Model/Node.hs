@@ -16,8 +16,7 @@ import qualified Empire.API.Data.Node              as NodeAPI
 import qualified Empire.API.Data.NodeMeta          as MetaAPI
 import           Empire.API.Data.Port              (OutPort (..), PortId (..))
 import qualified Empire.API.Data.Port              as PortAPI
-import           Empire.API.Data.PortRef           (AnyPortRef)
-import           Empire.API.Data.PortRef           (portId')
+import           Empire.API.Data.PortRef           (AnyPortRef, portId')
 import           Empire.API.Graph.Collaboration    (ClientId)
 import           Empire.API.Graph.NodeResultUpdate (NodeValue)
 import           Luna.Studio.Prelude               hiding (set)
@@ -52,7 +51,7 @@ makeLenses ''Node
 makeLenses ''Collaboration
 
 isLiteral :: Getter Node Bool
-isLiteral = to $ isLiteral' where
+isLiteral = to isLiteral' where
     isLiteral' node = not $ any isIn' portIds where
         portIds = map portId' $ Map.keys $ node ^. ports
         isIn' :: PortId -> Bool
@@ -85,6 +84,6 @@ fromNode n = let position' = Position (uncurry Vector2 $ n ^. NodeAPI.nodeMeta ^
             tpe' = convert $ fromMaybe "?" $ show <$> n ^? NodeAPI.ports . ix (OutPortId All) . PortAPI.valueType
         NodeAPI.OutputNode outputIx        ->  makeNode nodeId' ports' position' (convert $ "Output " <> show outputIx) code' name' Nothing vis
         NodeAPI.ModuleNode                 ->  makeNode nodeId' ports' position' "Module"    code' name' Nothing vis
-        NodeAPI.FunctionNode tpeSig        -> (makeNode nodeId' ports' position' "Function"  code' name' Nothing vis) -- & value .~ (convert $ intercalate " -> " tpeSig) --TODO[react]
+        NodeAPI.FunctionNode tpeSig        -> makeNode nodeId' ports' position' "Function"  code' name' Nothing vis -- & value .~ (convert $ intercalate " -> " tpeSig) --TODO[react]
         NodeAPI.InputEdge                  ->  makeNode nodeId' ports' position' "Input"     code' name' Nothing vis
         NodeAPI.OutputEdge                 ->  makeNode nodeId' ports' position' "Output"    code' name' Nothing vis

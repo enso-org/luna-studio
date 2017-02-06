@@ -24,7 +24,7 @@ instance Typeable a => StoreData (Store a) where
     type StoreAction (Store a) = Event
     transform event store = do
         store ^. sendEvent $ event
-        return $ store
+        return store
 
 dispatch :: Typeable a => Ref a -> UIEvent -> [SomeStoreAction]
 dispatch s = dispatch' s . Event.UI

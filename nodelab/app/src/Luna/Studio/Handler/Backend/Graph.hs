@@ -78,7 +78,7 @@ handle (Event.Batch ev) = Just $ case ev of
         shouldProcess   <- isCurrentLocationAndGraphLoaded loc
         correctLocation <- isCurrentLocation loc
         shouldSelect    <- isOwnRequest uuid
-        handleResponse response $ \_ node -> do
+        handleResponse response $ \_ node ->
             when (shouldProcess && correctLocation) $ do
                 addDummyNode node
                 let nodeId = node ^. Node.nodeId
@@ -99,12 +99,12 @@ handle (Event.Batch ev) = Just $ case ev of
                 selectNodes nodeIds
         handleResponse response doNothing
 
-    NodesConnected update -> do
-        whenM (isCurrentLocation $ update ^. Connect.location') $ do
+    NodesConnected update ->
+        whenM (isCurrentLocation $ update ^. Connect.location') $
             void $ localConnectNodes (update ^. Connect.src') (update ^. Connect.dst')
 
-    NodesDisconnected update -> do
-        whenM (isCurrentLocation $ update ^. Disconnect.location') $ do
+    NodesDisconnected update ->
+        whenM (isCurrentLocation $ update ^. Disconnect.location') $
             localRemoveConnections $ [update ^. Disconnect.dst']
 
     NodeMetaUpdated update -> do

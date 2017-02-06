@@ -43,7 +43,7 @@ updateExistingNode node = do
             Node.ExpressionNode expression -> Model.expression .= expression
             _                              -> return ()
         Model.code  .= (node ^. Node.code)
-        Model.ports .= (Map.fromList $ map (view portRef &&& id) $ makePorts node)
+        Model.ports .= Map.fromList (map (view portRef &&& id) $ makePorts node)
         -- TODO: obsluzyc to ze moga zniknac polaczenia
         -- Comment[LJK]: Is this real issue???
     updateConnectionsForNodes [nodeId]
@@ -57,5 +57,5 @@ updateNodeProfilingData nodeId execTime =
     Global.modifyNode nodeId $ Model.execTime ?= execTime
 
 updateExpression :: NodeId -> Text -> Command State ()
-updateExpression nodeId expr = do
+updateExpression nodeId expr =
     BatchCmd.updateNodeExpression nodeId expr

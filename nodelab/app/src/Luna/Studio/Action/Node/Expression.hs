@@ -19,4 +19,4 @@ editExpression nodeId = do
     nodeMay <- Global.getNode nodeId
     withJust exprMay $ \expr -> withJust nodeMay $ \node -> do
         let pos = node ^. Model.position
-        Searcher.openEdit expr nodeId $ pos
+        Searcher.openEdit expr nodeId pos

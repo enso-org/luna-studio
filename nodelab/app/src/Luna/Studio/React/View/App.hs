@@ -45,7 +45,7 @@ app ref = React.defineControllerView name ref $ \store () -> do
         , "id"        $= appId
         , "tabIndex"  $= "-1"
         , "className" $= "luna-studio"
-        ] $ do
+        ] $
         div_
             [ "className" $= "luna-main"
             , "key"       $= "main"

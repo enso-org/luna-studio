@@ -22,13 +22,13 @@ import qualified Luna.Studio.State.Graph                as Graph
 updateConnections :: Command Global.State ()
 updateConnections = do
     connections <- uses (Global.graph . Graph.connectionsMap) Map.elems
-    mapM_ updateConnection (map (view Connection.dst) connections)
+    mapM_ (updateConnection . (view Connection.dst)) connections
 
 updateConnectionsForNodes :: [NodeId] -> Command Global.State ()
 updateConnectionsForNodes nodeIds = do
     graph <- use Global.graph
     let connectionsToUpdate = Graph.connectionsContainingNodes nodeIds graph
-    mapM_ updateConnection (map (view Connection.dst) connectionsToUpdate)
+    mapM_ (updateConnection . (view Connection.dst)) connectionsToUpdate
 
 updateConnection :: ConnectionId -> Command Global.State ()
 updateConnection connId = do

@@ -39,7 +39,7 @@ instance Action (Command State) SliderDrag where
 
 
 setPortDefault :: AnyPortRef -> DefaultValue.PortDefault -> Command State ()
-setPortDefault portRef defaultValue = do
+setPortDefault portRef defaultValue =
     Global.modifyNode (portRef ^. PortRef.nodeId) $
         Node.ports . ix portRef . Port.state .= PortAPI.WithDefault defaultValue
 

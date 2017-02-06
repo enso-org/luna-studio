@@ -19,8 +19,8 @@ import qualified Luna.Studio.State.Graph          as Graph
 
 fastAddNodes :: [Node] -> Command State ()
 fastAddNodes nodes = do
-    let nodeIds = (view Node.nodeId) <$> nodes
-    Global.graph . Graph.nodesMap .= (HashMap.fromList $ nodeIds `zip` nodes)
+    let nodeIds = view Node.nodeId <$> nodes
+    Global.graph . Graph.nodesMap .= HashMap.fromList (nodeIds `zip` nodes)
     mapM_ registerNode nodes
 
 renderGraph :: [Node] -> [(OutPortRef, InPortRef)] -> Command State ()

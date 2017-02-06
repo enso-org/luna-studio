@@ -14,8 +14,7 @@ import           Empire.API.Data.Connection                  (Connection)
 import           Luna.Studio.Action.Command                  (Command)
 import           Luna.Studio.Action.ConnectionPen.SmoothLine (addPointToCurve, beginCurve, curveToSvgPath)
 import           Luna.Studio.Action.Geometry.ConnectionPen   (getConnectionsIntersectingSegment, getNodeAtPosition)
-import           Luna.Studio.Action.Graph.Disconnect         (removeConnections)
-import           Luna.Studio.Action.Graph.Disconnect         (removeConnectionsBetweenNodes)
+import           Luna.Studio.Action.Graph.Disconnect         (removeConnections, removeConnectionsBetweenNodes)
 import           Luna.Studio.Data.Color                      (Color (Color))
 import           Luna.Studio.Event.Mouse                     (workspacePosition)
 import           Luna.Studio.Prelude
@@ -95,7 +94,7 @@ disconnectMove evt timestamp state = do
         state'   = state & Action.penDisconnectCurve .~ curve
     update state'
     Global.modifyNodeEditor $ NodeEditor.connectionPen . _Just . ConnectionPen.path .= curveToSvgPath curve
-    when ((length $ curve ^. Curve.segments) > 1 && (head $ curve ^. Curve.segments) ^. Curve.approved) $ do
+    when (length (curve ^. Curve.segments) > 1 && head (curve ^. Curve.segments) ^. Curve.approved) $
         disconnectProcessSegment $ head $ drop 1 $ curve ^. Curve.segments
 
 stopDisconnecting :: PenDisconnect -> Command State ()

@@ -15,7 +15,7 @@ import           Luna.Studio.Prelude
 
 data NodeDrag = NodeDrag { _nodeDragStartPos      :: Position
                          , _nodeDragNodeId        :: NodeId
-                         , _nodeDragNodesStartPos :: Map NodeId (Position)
+                         , _nodeDragNodesStartPos :: Map NodeId Position
                          } deriving (Eq, Show, Generic, Typeable)
 
 makeLenses ''NodeDrag
