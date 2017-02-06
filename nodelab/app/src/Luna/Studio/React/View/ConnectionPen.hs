@@ -1,9 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Luna.Studio.React.View.ConnectionPen where
 
-import           Data.Curve                            (Curve, CurveSegment)
-import qualified Data.Curve                            as Curve
-import           Data.Position                         (Position, x, y)
 import           Luna.Studio.Data.Color                (toJSString)
 import           Luna.Studio.Prelude
 import           Luna.Studio.React.Model.ConnectionPen (ConnectionPen)

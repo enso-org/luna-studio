@@ -60,7 +60,7 @@ transformTranslateToSvg position = "matrix( 1 , 0, 0, 1, " <> offsetX <> " , " <
 showTransformMatrixToSvg :: Matrix Double -> String
 showTransformMatrixToSvg matrix =
     let mx1 = Matrix.toList matrix
-        nx  = fromIntegral $ round $ mx1!!12
-        ny  = fromIntegral $ round $ mx1!!13
+        nx  = fromIntegral ((round $ mx1!!12) :: Integer)
+        ny  = fromIntegral ((round $ mx1!!13) :: Integer)
         mx2 = take 12 mx1 ++ nx:ny:drop 14 mx1
     in foldl (<>) "matrix3d(" (intersperse ", " $ map show mx2) <> ")"

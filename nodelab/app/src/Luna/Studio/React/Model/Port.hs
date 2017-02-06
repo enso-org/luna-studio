@@ -36,5 +36,5 @@ fromPorts :: NodeId -> [API.Port] -> [Port]
 fromPorts nodeId ports = fromPort nodeId <$> ports where
 
 fromPort :: NodeId -> API.Port -> Port
-fromPort nodeId port = Port portRef' port (colorPort port) where
-    portRef' = toAnyPortRef nodeId $ port ^. API.portId
+fromPort nodeId p = Port portRef' p (colorPort p) where
+    portRef' = toAnyPortRef nodeId $ p ^. API.portId

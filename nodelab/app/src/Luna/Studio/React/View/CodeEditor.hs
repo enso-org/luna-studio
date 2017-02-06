@@ -73,7 +73,7 @@ codeEditor = React.defineView name $ \model -> do
                         [ "key"       $= "content"
                         , "className" $= "ace_layer ace_text-layer" ]
                         $ do
-                        forM_ (zip [1..] $ lines $ convert $ model ^. CodeEditor.code) $ \(i, line) ->
+                        forM_ (zip [(1 :: Integer)..] $ lines $ convert $ model ^. CodeEditor.code) $ \(i, line) ->
                             div_
                                 [ "key"       $= jsShow i
                                 , "className" $= "ace_active-line"

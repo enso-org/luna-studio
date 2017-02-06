@@ -4,7 +4,7 @@ module Luna.Studio.React.View.NodeEditor where
 import qualified Data.Aeson                            as Aeson
 import qualified Data.HashMap.Strict                   as HashMap
 import qualified Data.Text                             as Text
-import           React.Flux
+import           React.Flux                            hiding (transform)
 import qualified React.Flux                            as React
 import           React.Flux.Internal                   (el)
 

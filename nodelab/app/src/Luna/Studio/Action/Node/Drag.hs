@@ -20,8 +20,8 @@ import           Luna.Studio.Event.Mouse            (workspacePosition)
 import           Luna.Studio.Prelude
 import qualified Luna.Studio.React.Model.Node       as Model
 import qualified Luna.Studio.React.Model.NodeEditor as NodeEditor
-import           Luna.Studio.State.Action           (Action (begin, continue, end, update), ClickConnect (ClickConnect),
-                                                     NodeDrag (NodeDrag), nodeDragAction)
+import           Luna.Studio.State.Action           (Action (begin, continue, end, update), ClickConnect, NodeDrag (NodeDrag),
+                                                     nodeDragAction)
 import qualified Luna.Studio.State.Action           as Action
 import           Luna.Studio.State.Global           (State, beginActionWithKey, checkAction, continueActionWithKey, removeActionFromState,
                                                      updateActionWithKey)

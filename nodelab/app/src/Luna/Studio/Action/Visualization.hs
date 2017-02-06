@@ -1,3 +1,4 @@
+{-# OPTIONS_GHC -fno-warn-orphans #-}
 module Luna.Studio.Action.Visualization
 ( pin
 , unpin

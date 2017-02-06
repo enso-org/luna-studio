@@ -112,7 +112,7 @@ nodeValue_ ref nodeId mayPos visIx value = do
         translatedDiv_ = case mayPos of
             Just pos -> div_ [ "className" $= "luna-node-trans luna-node-root luna-noselect luna-node__visuals"
                              , "style" @= Aeson.object
-                                [ "zIndex"    Aeson..= show 1000
+                                [ "zIndex"    Aeson..= show (1000 :: Integer)
                                 , "transform" Aeson..= transformTranslateToSvg pos ] ]
             Nothing -> div_
     translatedDiv_ $ do

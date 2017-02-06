@@ -76,8 +76,8 @@ instance IsList (Vector2 a) where
     toList   vec   = [vec ^. x, vec ^. y]
 
 instance Applicative Vector2 where
-    pure v                          = Vector2 v v
-    (Vector2 f g) <*> (Vector2 x y) = Vector2 (f x) (g y)
+    pure v                            = Vector2 v v
+    (Vector2 f g) <*> (Vector2 x' y') = Vector2 (f x') (g y')
 
 instance Monoid a => Monoid (Vector2 a) where
     mempty                                    = Vector2 mempty mempty
@@ -97,7 +97,7 @@ normalize (Vector2 x' y') = Vector2 (x' / len) (y' / len) where len = sqrt $ x' 
 
 explode :: Vector2 Double -> Vector2 Double
 explode (Vector2 x' y') = Vector2 (fact * x') (fact * y') where
-    fact  = shift (\x' -> 1.0 / (x' ** 4)) lenSq
+    fact  = shift (\x'' -> 1.0 / (x'' ** 4)) lenSq
     lenSq = x' * x' + y' * y'
 
 shift :: (Double -> Double) -> Double -> Double
@@ -106,7 +106,7 @@ shift f x' = if x' < shiftConst then 0.0
     where shiftConst = 0.1
 
 negateSnd :: Num a => Vector2 a -> Vector2 a
-negateSnd (Vector2 x y) = Vector2 x (-y)
+negateSnd (Vector2 x' y') = Vector2 x' (-y')
 
 fromTuple :: (a, a) -> Vector2 a
 fromTuple (a, b) = Vector2 a b
