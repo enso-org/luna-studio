@@ -43,10 +43,10 @@ withLibrary :: Workspace -> (GraphLocation -> a) -> a
 withLibrary w f = f (w ^. Workspace.currentLocation)
 
 addNode :: Text -> NodeMeta -> Maybe NodeId -> Workspace -> UUID -> IO ()
-addNode expression meta connectTo workspace uuid = sendRequest uuid $ (withLibrary workspace AddNode.Request) (AddNode.ExpressionNode expression) meta connectTo
+addNode expression meta connectTo workspace uuid = sendRequest uuid $ withLibrary workspace AddNode.Request (AddNode.ExpressionNode expression) meta connectTo
 
 addSubgraph :: [Node] -> [Connection] -> Workspace -> UUID -> IO ()
-addSubgraph nodes connections workspace uuid = sendRequest uuid $ (withLibrary workspace AddSubgraph.Request) nodes connections
+addSubgraph nodes connections workspace uuid = sendRequest uuid $ withLibrary workspace AddSubgraph.Request nodes connections
 
 createProject :: Text -> UUID -> IO ()
 createProject name uuid = sendRequest uuid $ CreateProject.Request $ convert name
@@ -80,31 +80,31 @@ removeNodes :: [NodeId] -> Workspace -> UUID ->  IO ()
 removeNodes nodeIds workspace uuid = sendRequest uuid $ withLibrary workspace RemoveNodes.Request nodeIds
 
 autoconnect :: NodeId -> NodeId -> Workspace -> UUID -> IO ()
-autoconnect src dst workspace uuid = sendRequest uuid $ (withLibrary workspace Connect.Request) $ Connect.NodeConnection src dst
+autoconnect src dst workspace uuid = sendRequest uuid $ withLibrary workspace Connect.Request $ Connect.NodeConnection src dst
 
 connectNodes :: OutPortRef -> InPortRef -> Workspace -> UUID -> IO ()
-connectNodes src dst workspace uuid = sendRequest uuid $ (withLibrary workspace Connect.Request) $ Connect.PortConnection src dst
+connectNodes src dst workspace uuid = sendRequest uuid $ withLibrary workspace Connect.Request $ Connect.PortConnection src dst
 
 disconnectNodes :: InPortRef -> Workspace -> UUID -> IO ()
 disconnectNodes dst workspace uuid = sendRequest uuid $ withLibrary workspace Disconnect.Request dst
 
 setDefaultValue :: AnyPortRef -> DefaultValue.PortDefault -> Workspace -> UUID -> IO ()
-setDefaultValue portRef val workspace uuid = sendRequest uuid $ (withLibrary workspace SetDefaultValue.Request) portRef val
+setDefaultValue portRef val workspace uuid = sendRequest uuid $ withLibrary workspace SetDefaultValue.Request portRef val
 
 setInputNodeType :: NodeId -> Text -> Workspace -> UUID -> IO ()
-setInputNodeType nodeId tpe workspace uuid = sendRequest uuid $ (withLibrary workspace SetInputNodeType.Request) nodeId (convert tpe)
+setInputNodeType nodeId tpe workspace uuid = sendRequest uuid $ withLibrary workspace SetInputNodeType.Request nodeId (convert tpe)
 
 requestCollaborationRefresh :: Collaboration.ClientId -> Workspace -> IO ()
-requestCollaborationRefresh clientId workspace = sendUpdate $ (withLibrary workspace Collaboration.Update) clientId  $ Collaboration.Refresh
+requestCollaborationRefresh clientId workspace = sendUpdate $ withLibrary workspace Collaboration.Update clientId Collaboration.Refresh
 
 collaborativeTouch :: Collaboration.ClientId ->[NodeId] -> Workspace -> IO ()
-collaborativeTouch clientId ids workspace = sendUpdate $ (withLibrary workspace Collaboration.Update) clientId  $ Collaboration.Touch ids
+collaborativeTouch clientId ids workspace = sendUpdate $ withLibrary workspace Collaboration.Update clientId  $ Collaboration.Touch ids
 
 collaborativeModify :: Collaboration.ClientId ->[NodeId] -> Workspace -> IO ()
-collaborativeModify clientId ids workspace = sendUpdate $ (withLibrary workspace Collaboration.Update) clientId  $ Collaboration.Modify ids
+collaborativeModify clientId ids workspace = sendUpdate $ withLibrary workspace Collaboration.Update clientId  $ Collaboration.Modify ids
 
 cancelCollaborativeTouch :: Collaboration.ClientId -> [NodeId] -> Workspace -> IO ()
-cancelCollaborativeTouch clientId ids workspace = sendUpdate $ (withLibrary workspace Collaboration.Update) clientId $ Collaboration.CancelTouch ids
+cancelCollaborativeTouch clientId ids workspace = sendUpdate $ withLibrary workspace Collaboration.Update clientId $ Collaboration.CancelTouch ids
 
 exportProject :: ProjectId -> UUID -> IO ()
 exportProject pid uuid = sendRequest uuid $ ExportProject.Request pid

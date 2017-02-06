@@ -1,7 +1,6 @@
 {-# LANGUAGE ConstraintKinds       #-}
 {-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE GADTs                 #-}
-{-# LANGUAGE KindSignatures        #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE RankNTypes            #-}
 {-# LANGUAGE ScopedTypeVariables   #-}
@@ -10,8 +9,8 @@
 module Luna.Studio.Data.CtxDynamic where
 
 import           Data.Dynamic
-import           Unsafe.Coerce
 import           Luna.Studio.Prelude
+import           Unsafe.Coerce
 
 data CtxDynamic ctx where
     CtxDynamic :: ctx a => TypeRep -> a -> CtxDynamic ctx

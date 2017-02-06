@@ -9,8 +9,7 @@ module Luna.Studio.Action.Connect.Connect
     ) where
 
 import qualified Data.HashMap.Strict                    as HashMap
-import           Empire.API.Data.Connection             (Connection)
-import           Empire.API.Data.Connection             (ConnectionId)
+import           Empire.API.Data.Connection             (Connection, ConnectionId)
 import qualified Empire.API.Data.Connection             as Connection
 import           Empire.API.Data.PortRef                (AnyPortRef (InPortRef', OutPortRef'))
 import qualified JS.GoogleAnalytics                     as GA
@@ -35,7 +34,7 @@ import           React.Flux                             (MouseEvent)
 startOrModifyConnection :: MouseEvent -> AnyPortRef -> Command State ()
 startOrModifyConnection evt anyPortRef = case anyPortRef of
     InPortRef'  portRef -> do
-        portConnected <- HashMap.member portRef <$> (use $ Global.graph . Graph.connectionsMap)
+        portConnected <- HashMap.member portRef <$> use (Global.graph . Graph.connectionsMap)
         if portConnected then
             modifyConnection evt portRef Destination
         else startConnectionFromPort evt anyPortRef Nothing
@@ -46,7 +45,7 @@ startConnectionFromPort evt portRef modifiedConnection = do
     mousePos  <- workspacePosition evt
     maySrcPos <- getCurrentConnectionPosition portRef mousePos
     mayColor  <- getConnectionColor portRef
-    withJust ((,) <$> maySrcPos <*> mayColor) $ \((srcPos, dstPos), color) -> do
+    withJust ((,) <$> maySrcPos <*> mayColor) $ \((srcPos, dstPos), color) ->
         createCurrentConnection portRef modifiedConnection srcPos dstPos color
 
 modifyConnection :: MouseEvent -> ConnectionId -> ModifiedEnd -> Command State ()
@@ -78,7 +77,7 @@ stopConnecting :: CurrentConnection -> Command State ()
 stopConnecting conn = do
     Global.modifyNodeEditor $ NodeEditor.currentConnection .= Nothing
     let mayModifiedConnection = conn ^. ConnectionModel.modifiedConnection
-    withJust mayModifiedConnection $ \modifiedConnection -> do
+    withJust mayModifiedConnection $ \modifiedConnection ->
         removeConnections [modifiedConnection ^. Connection.dst]
 
 connectToPort :: AnyPortRef -> CurrentConnection -> Command State ()
@@ -87,7 +86,7 @@ connectToPort dstPortRef conn = do
     let srcPortRef            = conn ^. ConnectionModel.srcPortRef
         mayModifiedConnection = conn ^. ConnectionModel.modifiedConnection
     withJust (toValidConnection srcPortRef dstPortRef) $ \(src, dst) -> case mayModifiedConnection of
-        Just prevConn -> do
+        Just prevConn ->
             if src == prevConn ^. Connection.src && dst == prevConn ^. Connection.dst then
                 void $ localConnectNodes src dst
             else do

@@ -18,5 +18,5 @@ handle :: Event -> Maybe (Command State ())
 handle (UI (NodeEditorEvent (NodeEditor.MouseDown evt)))   = Just $ when shouldProceed $ startMultiSelection evt where
     shouldProceed = Mouse.withoutMods evt Mouse.leftButton
 handle (UI (AppEvent        (App.MouseMove evt _)))        = Just $ continue $ updateMultiSelection evt
-handle (UI (AppEvent        (App.MouseUp   _)))            = Just $ continue $ stopMultiSelection
+handle (UI (AppEvent        (App.MouseUp   _)))            = Just $ continue   stopMultiSelection
 handle _                                                   = Nothing

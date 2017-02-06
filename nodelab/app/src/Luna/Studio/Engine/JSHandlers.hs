@@ -20,8 +20,7 @@ import qualified JS.WebSocket                           as WebSocket
 import qualified Luna.Studio.Batch.Connector.Connection as Connection
 import qualified Luna.Studio.Event.Connection           as Connection
 import qualified Luna.Studio.Event.CustomEvent          as CustomEvent
-import           Luna.Studio.Event.Event
-import           Luna.Studio.Event.Event                (Event (UI))
+import           Luna.Studio.Event.Event                (Event (Connection, CustomEvent, Shortcut, UI))
 import           Luna.Studio.Event.UI                   (UIEvent (AppEvent))
 import qualified Luna.Studio.React.Event.App            as App
 
@@ -29,12 +28,12 @@ import qualified Luna.Studio.React.Event.App            as App
 data AddHandler a = AddHandler ((a -> IO ()) -> IO (IO ()))
 
 atomHandler :: AddHandler Event
-atomHandler = AddHandler $ \h -> do
+atomHandler = AddHandler $ \h ->
     Atom.onEvent $ h . Shortcut
 
 sceneResizeHandler :: AddHandler Event
-sceneResizeHandler = AddHandler $ \h -> do
-    Scene.onSceneResize $ h $ UI $ AppEvent $ App.Resize
+sceneResizeHandler = AddHandler $ \h ->
+    Scene.onSceneResize $ h $ UI $ AppEvent App.Resize
 
 webSocketHandler :: WebSocket.WebSocket -> AddHandler Event
 webSocketHandler conn = AddHandler $ \h -> do

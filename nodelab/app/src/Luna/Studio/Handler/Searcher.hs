@@ -17,7 +17,7 @@ import           Luna.Studio.State.Global         (State)
 
 handle :: Event -> Maybe (Command State ())
 handle (Shortcut shortcut)                                = Just $ handleShortcut shortcut
-handle (UI (AppEvent (App.MouseDown _ _)))                = Just $ continue $ Searcher.close
+handle (UI (AppEvent (App.MouseDown _ _)))                = Just $ continue   Searcher.close
 handle (UI (SearcherEvent (Searcher.InputChanged input))) = Just $ continue $ Searcher.querySearch input
 handle _                                                  = Nothing
 

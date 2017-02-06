@@ -38,5 +38,5 @@ getPointOnCurveSegment curveSegment t = Position result where
 getPointsOnCurveSegment :: CurveSegment -> Int -> [Position]
 getPointsOnCurveSegment _ 0 = []
 getPointsOnCurveSegment curveSegment numOfPoints = map (getPointOnCurveSegment curveSegment) ts where
-    t  = 1 / (fromIntegral $ numOfPoints + 1)
+    t  = 1 / fromIntegral (numOfPoints + 1)
     ts = map ((*t) . fromIntegral) [1..numOfPoints]

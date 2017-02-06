@@ -7,4 +7,4 @@ import qualified Data.Text           as Text
 import           Luna.Studio.Prelude hiding ((.=))
 
 intMapToJSON :: ToJSON a => IntMap a -> Value
-intMapToJSON intmap = object $ (\(k, v) -> (convert $ show k) .= (toJSON v)) <$> IntMap.toList intmap
+intMapToJSON intmap = object $ (\(k, v) -> convert (show k) .= toJSON v) <$> IntMap.toList intmap

@@ -46,18 +46,18 @@ move :: Position -> Vector2 Double -> Position
 move pos vec = pos & vector +~ vec
 
 rescale :: Position -> Double -> Position
-rescale pos factor = pos & vector %~ (flip scalarProduct factor)
+rescale pos factor = pos & vector %~ flip scalarProduct factor
 
-leftTopPoint :: [Position] -> Maybe (Position)
+leftTopPoint :: [Position] -> Maybe Position
 leftTopPoint []        = Nothing
 leftTopPoint positions = Just $ Position (Vector2 (minimum $ view x <$> positions) (minimum $ view y <$> positions))
 
-rightBottomPoint :: [Position] -> Maybe (Position)
+rightBottomPoint :: [Position] -> Maybe Position
 rightBottomPoint []        = Nothing
 rightBottomPoint positions = Just $ Position (Vector2 (maximum $ view x <$> positions) (maximum $ view y <$> positions))
 
 minimumRectangle :: [Position] -> Maybe (Position, Position)
-minimumRectangle positions = (,) <$> (leftTopPoint positions) <*> (rightBottomPoint positions)
+minimumRectangle positions = (,) <$> leftTopPoint positions <*> rightBottomPoint positions
 
 distance :: Position -> Position -> Double
 distance p0 p1 = magnitude (p0 ^. vector - p1 ^. vector)

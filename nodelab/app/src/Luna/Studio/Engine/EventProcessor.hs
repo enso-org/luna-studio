@@ -95,7 +95,7 @@ processEvent var ev = modifyMVar_ var $ \state -> do
         consoleTimeStart (realEvent ^. Event.name)
     timestamp <- getCurrentTime
     let state' = state & Global.lastEventTimestamp .~ timestamp
-    flip catch (handleExcept state realEvent) $ do
+    handle (handleExcept state realEvent) $ do
         newState <- execCommand (runCommands actions realEvent >> Global.renderIfNeeded) state'
         when displayProcessingTime $
             consoleTimeEnd (realEvent ^. Event.name)

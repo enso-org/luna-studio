@@ -25,7 +25,7 @@ instance Action (Command State) ClickConnect where
 handleClickConnect :: MouseEvent -> AnyPortRef -> Command State ()
 handleClickConnect evt portRef = do
     mayClickConnect <- checkAction @ClickConnect
-    if (isJust mayClickConnect) then
+    if isJust mayClickConnect then
         continue $ clickConnectToPort portRef
     else begin ClickConnect >> startOrModifyConnection evt portRef
 
