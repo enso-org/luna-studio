@@ -40,7 +40,7 @@ codeEditor = React.defineView name $ \model -> do
                         , "height"     Aeson..= ("807px"  ::String)
                         , "width"      Aeson..= ("41px"   ::String)
                         ]
-                    ] $ do
+                    ] $
                     div_
                         [ "key"       $= "cell"
                         , "className" $= "ace_gutter-cell"
@@ -58,7 +58,7 @@ codeEditor = React.defineView name $ \model -> do
                     , "right"  Aeson..= ("0"   ::String)
                     , "bottom" Aeson..= ("0"   ::String)
                     ]
-                ] $ do
+                ] $
                 div_
                     [ "key"       $= "content"
                     , "className" $= "ace_content"
@@ -68,18 +68,18 @@ codeEditor = React.defineView name $ \model -> do
                         , "height"      Aeson..= ("663px"::String)
                         , "marginLeft"  Aeson..= ("0"    ::String)
                         ]
-                    ] $ do
+                    ] $
                     div_
                         [ "key"       $= "content"
                         , "className" $= "ace_layer ace_text-layer" ]
-                        $ do
+                        $
                         forM_ (zip [(1 :: Integer)..] $ lines $ convert $ model ^. CodeEditor.code) $ \(i, line) ->
                             div_
                                 [ "key"       $= jsShow i
                                 , "className" $= "ace_active-line"
                                 , "style"     @= Aeson.object
                                     [ "padding" Aeson..= ("0 4px" ::String) ]
-                                ] $ do elemString line
+                                ] $ elemString line
 
 codeEditor_ :: CodeEditor -> ReactElementM ViewEventHandler ()
 codeEditor_ model = React.viewWithSKey codeEditor name model mempty

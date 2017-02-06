@@ -47,7 +47,7 @@ startDrag nodeId visIx position evt = do
     moveTo evt nodeId visIx position
 
 drag :: MouseEvent -> VisualizationDrag -> Command State ()
-drag evt (VisualizationDrag nodeId visIx position) = do
+drag evt (VisualizationDrag nodeId visIx position) =
     moveTo evt nodeId visIx position
 
 stopDrag :: MouseEvent -> VisualizationDrag ->  Command State ()

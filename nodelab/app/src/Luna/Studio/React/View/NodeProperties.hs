@@ -64,7 +64,7 @@ nodeProperties = React.defineView objName $ \(ref, p) -> do
         div_
             [ "key" $= "execution-time"
             , "className" $= "luna-row"
-            ] $ do
+            ] $
             withJust (p ^. Prop.execTime) $ \execTime -> do
                 div_
                     ["key"       $= "label"

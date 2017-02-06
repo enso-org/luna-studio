@@ -105,7 +105,7 @@ handle (Event.Batch ev) = Just $ case ev of
 
     NodesDisconnected update ->
         whenM (isCurrentLocation $ update ^. Disconnect.location') $
-            localRemoveConnections $ [update ^. Disconnect.dst']
+            localRemoveConnections [update ^. Disconnect.dst']
 
     NodeMetaUpdated update -> do
         shouldProcess   <- isCurrentLocationAndGraphLoaded (update ^. UpdateNodeMeta.location')

@@ -12,4 +12,4 @@ makeLenses ''DataFrame
 instance ToJSON DataFrame
 
 create :: [Text] -> [[Text]] -> DataFrame
-create h v = DataFrame h v
+create = DataFrame

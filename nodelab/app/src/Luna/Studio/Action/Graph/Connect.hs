@@ -21,7 +21,7 @@ import qualified Luna.Studio.State.Graph                as Graph
 
 
 connectNodes :: OutPortRef -> InPortRef -> Command Global.State ()
-connectNodes src dst = BatchCmd.connectNodes src dst
+connectNodes = BatchCmd.connectNodes
 
 addConnection :: ConnectionId -> Position -> Position -> Color -> Command Global.State ()
 addConnection connId srcPos dstPos color = do

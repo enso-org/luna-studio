@@ -58,8 +58,8 @@ node = React.defineView objName $ \(ref, n) -> do
                 , onClick       $ \_ m -> dispatch ref $ UI.NodeEvent $ Node.Select m nodeId
                 , onDoubleClick $ \_ _ -> dispatch ref $ UI.NodeEvent $ Node.Enter nodeId
                 , onMouseDown   $ handleMouseDown ref nodeId
-                , "className"   $= (fromString $ "luna-node" <> (if n ^. Node.isExpanded then " luna-node--expanded" else " luna-node--collapsed")
-                                                             <> (if n ^. Node.isSelected then " luna-node--selected" else []))
+                , "className"   $= fromString ("luna-node" <> (if n ^. Node.isExpanded then " luna-node--expanded" else " luna-node--collapsed")
+                                                           <> (if n ^. Node.isSelected then " luna-node--selected" else []))
                 , "style"       @= Aeson.object
                     [ "transform" Aeson..= transformTranslateToSvg pos
                     ]
@@ -83,10 +83,10 @@ node = React.defineView objName $ \(ref, n) -> do
                 svg_
                     [ "key"       $= "essentials"
                     , "className" $= "luna-node__essentials"
-                    ] $ do
+                    ] $
                     if  n ^. Node.isExpanded then do
                         ports $ filter (\port -> (port ^. Port.portId) == InPortId Self) nodePorts
-                        forM_  (filter (\port -> (port ^. Port.portId) /= InPortId Self) nodePorts) (\port -> portExpanded_ ref port)
+                        forM_  (filter (\port -> (port ^. Port.portId) /= InPortId Self) nodePorts) $ portExpanded_ ref
                     else do
                         ports $ filter (\port -> (port ^. Port.portId) /= InPortId Self) nodePorts
                         ports $ filter (\port -> (port ^. Port.portId) == InPortId Self) nodePorts
@@ -100,11 +100,11 @@ node = React.defineView objName $ \(ref, n) -> do
                 , onDoubleClick $ \_ _ -> dispatch ref $ UI.NodeEvent $ Node.Enter nodeId
                 , onMouseDown   $ handleMouseDown ref nodeId
                 , "style"       @= Aeson.object [ "transform" Aeson..= transformTranslateToSvg pos ]
-                , "className"   $= (fromString $ "luna-node" <> (if n ^. Node.isExpanded then " luna-node--expanded" else " luna-node--collapsed")
-                                                             <> (if n ^. Node.isSelected then " luna-node--selected" else []))
-                ] $ do
+                , "className"   $= fromString ("luna-node" <> (if n ^. Node.isExpanded then " luna-node--expanded" else " luna-node--collapsed")
+                                                           <> (if n ^. Node.isSelected then " luna-node--selected" else []))
+                ] $
                 svg_
-                    [ "key" $= "name" ] $ do
+                    [ "key" $= "name" ] $
                     text_
                         [ "key"         $= "nameText"
                         , onDoubleClick $ \e _ -> stopPropagation e : dispatch ref (UI.NodeEvent $ Node.EditExpression nodeId)

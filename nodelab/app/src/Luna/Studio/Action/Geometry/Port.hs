@@ -53,10 +53,10 @@ countOutput port = case port ^. Port.portId of
     _           -> 0
 
 countInputs :: [Port] -> Int
-countInputs  ports = foldl (\acc p -> acc + countInput  p) 0 ports
+countInputs = foldl (\acc p -> acc + countInput  p) 0
 
 countOutputs :: [Port] -> Int
-countOutputs ports = foldl (\acc p -> acc + countOutput p) 0 ports
+countOutputs = foldl (\acc p -> acc + countOutput p) 0
 
 countPorts :: [Port] -> Int
 countPorts ports = countInputs ports + countOutputs ports

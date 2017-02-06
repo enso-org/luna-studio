@@ -34,7 +34,7 @@ state :: Lens' Port API.PortState
 state = port . API.state
 
 fromPorts :: NodeId -> [API.Port] -> [Port]
-fromPorts nodeId ports = fromPort nodeId <$> ports where
+fromPorts nodeId ports = fromPort nodeId <$> ports
 
 fromPort :: NodeId -> API.Port -> Port
 fromPort nodeId p = Port portRef' p (colorPort p) False where

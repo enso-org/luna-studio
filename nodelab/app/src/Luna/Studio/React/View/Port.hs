@@ -67,7 +67,7 @@ portExpanded = React.defineView name $ \(ref, p) ->
 
 port_ :: Ref App -> Port -> Int -> Bool -> ReactElementM ViewEventHandler ()
 port_ ref p numOfPorts isOnly =
-    React.viewWithSKey port (jsShow $ p ^. Port.portId) (ref, numOfPorts, isOnly, p) mempty where
+    React.viewWithSKey port (jsShow $ p ^. Port.portId) (ref, numOfPorts, isOnly, p) mempty
 
 portExpanded_ :: Ref App -> Port -> ReactElementM ViewEventHandler ()
 portExpanded_ ref p =

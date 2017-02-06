@@ -26,5 +26,4 @@ toggle = do
     -- Camera.updateWindowSize size
 
 codeChanged :: NodeId -> Text -> Command State ()
-codeChanged nodeId newCode =
-    BatchCmd.setCode nodeId newCode
+codeChanged =BatchCmd.setCode
