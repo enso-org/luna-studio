@@ -19,7 +19,7 @@ dependencies:
     cache_directories:
         - "~/.stack"
         - "~/.ghcjs"
-        - ".stack-work"
+        - "build/backend/.stack-work"
         - "nodelab/.stack-work"
 
 compile:
