@@ -23,7 +23,7 @@ payloadToData topic payload = do
 
 process :: Event.Event -> IO (Maybe Event.Event)
 process (Event.CustomEvent (CustomEvent.RawEvent topic payload)) = case topic of
-    "debug.getState" -> return $ Just $ Event.Debug $ GetState
-    "tick"           -> return $ Just $ Event.Tick
+    "debug.getState" -> return $ Just $ Event.Debug GetState
+    "tick"           -> return $ Just Event.Tick
     _                -> return Nothing
 process _ = return Nothing

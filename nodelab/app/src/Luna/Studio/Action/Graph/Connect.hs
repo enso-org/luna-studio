@@ -27,15 +27,15 @@ addConnection :: ConnectionId -> Position -> Position -> Color -> Command Global
 addConnection connId srcPos dstPos color = do
     mayConn <- view (NodeEditor.connections . at connId) <$> Global.getNodeEditor
     let connection = ConnectionModel.Connection connId srcPos dstPos color
-    when (isNothing mayConn || (fromJust mayConn /= connection)) $ Global.modifyNodeEditor $ do
+    when (isNothing mayConn || (fromJust mayConn /= connection)) $ Global.modifyNodeEditor $
         NodeEditor.connections . at connId ?= connection
 
 localConnectNodes :: OutPortRef -> InPortRef -> Command Global.State ConnectionId
 localConnectNodes src dst = do
     connectionId <- zoom Global.graph $ Graph.addConnection src dst
-    prevConn <- Global.getConnection $ connectionId
+    prevConn <- Global.getConnection connectionId
     mayPos   <- getConnectionPosition src dst
     mayColor <- getConnectionColor src
-    withJust ((,) <$> mayPos <*> mayColor) $ \((srcPos, dstPos), color) -> do
+    withJust ((,) <$> mayPos <*> mayColor) $ \((srcPos, dstPos), color) ->
         addConnection connectionId srcPos dstPos color
     return connectionId

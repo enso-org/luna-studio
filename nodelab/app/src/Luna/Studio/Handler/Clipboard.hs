@@ -53,8 +53,8 @@ pasteFromClipboard clipboardData = do
           nodes       = view GraphSkeleton.nodesList skeleton
           connections = filter (\conn -> Set.member (conn ^. Connection.src . PortRef.srcNodeId) graphNodesIds) $ view GraphSkeleton.connectionsList skeleton
       workspacePos <- Camera.translateToWorkspace =<< use Global.mousePos
-      let shiftX = workspacePos ^. x - (minimum $ map (^. Node.nodeMeta . NodeMeta.position . _1) nodes)
-          shiftY = workspacePos ^. y - (minimum $ map (^. Node.nodeMeta . NodeMeta.position . _2) nodes)
+      let shiftX = workspacePos ^. x - minimum (map (^. Node.nodeMeta . NodeMeta.position . _1) nodes)
+          shiftY = workspacePos ^. y - minimum (map (^. Node.nodeMeta . NodeMeta.position . _2) nodes)
           shiftNodeX :: Node -> Node
           shiftNodeX = Node.nodeMeta . NodeMeta.position . _1 %~ snapCoord . (+shiftX)
           shiftNodeY :: Node -> Node

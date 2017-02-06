@@ -45,15 +45,15 @@ nodeEditor = React.defineView name $ \(ref, ne) -> do
         ] $ do
         style_
             [ "id" $= "cameraTransform" ] $ do
-                elemString $ Text.unpack $ ".node-trans { transform: … }"
-                elemString $ Text.unpack $ ".name-trans { transform: … }"
+                elemString $ Text.unpack ".node-trans { transform: … }"
+                elemString $ Text.unpack ".name-trans { transform: … }"
         svg_
             [ "className" $= "luna-plane luna-plane-connections"
             , "style"     @= Aeson.object [ "transform" Aeson..= transform ]
             , "key"       $= "connections"
             ] $ do
             defs_
-                [ "key" $= "defs" ] $ do
+                [ "key" $= "defs" ] $
                 el "filter"
                     [ "id"  $= "textShadow"
                     , "key" $= "textShadow"
@@ -96,4 +96,4 @@ nodeEditor = React.defineView name $ \(ref, ne) -> do
         canvas_
             [ "className" $= "luna-plane plane--canvas luna-hide"
             , "key"       $= "canvas"
-            ] $ mempty
+            ] mempty

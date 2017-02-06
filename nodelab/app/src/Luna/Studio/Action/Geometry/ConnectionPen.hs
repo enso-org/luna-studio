@@ -62,7 +62,7 @@ intersectLineLine (p1, p2) (p3, p4) = do
         Just (Position (Vector2 (numx / den) (numy / den)))
 
 doesSegmentsIntersects :: (Position, Position) -> (Position, Position) -> Command State Bool
-doesSegmentsIntersects seg1@(beg1, end1) seg2@(beg2, end2) = do
+doesSegmentsIntersects seg1@(beg1, end1) seg2@(beg2, end2) =
     case intersectLineLine seg1 seg2 of
         Nothing -> do
             let isBeg1OnSeg2 = distanceSquared beg1 beg2 + distanceSquared beg1 end2 == distanceSquared beg2 end2
@@ -88,7 +88,7 @@ isPointInCircle :: Position -> (Position, Double) -> Bool
 isPointInCircle p (circleCenter, radius) = distanceSquared p circleCenter <= radius ^ (2 :: Integer)
 
 isPointInNode :: Position -> Node -> Command State Bool
-isPointInNode p node = do
+isPointInNode p node =
     if node ^. Model.isExpanded then do
         let nodeId = node ^. Model.nodeId
         left        <- liftIO $ expandedNodeLeft   $ fromString $ "node-" <> show nodeId
@@ -105,10 +105,10 @@ getNodeAtPosition p = do
     nodes <- allNodes >>= filterM (isPointInNode p)
     if null nodes then
         return Nothing
-    else return $ Just $ (maximumBy (\node1 node2 -> compare (node1 ^. Model.zPos) (node2 ^. Model.zPos)) nodes) ^. Model.nodeId
+    else return $ Just $ maximumBy (\node1 node2 -> compare (node1 ^. Model.zPos) (node2 ^. Model.zPos)) nodes ^. Model.nodeId
 
 getConnectionsIntersectingSegment :: (Position, Position) -> Command State [ConnectionId]
 getConnectionsIntersectingSegment seg = do
     connections <- allConnectionModels
     toRemove    <- filterM (\conn -> doesSegmentsIntersects seg (conn ^. Model.from, conn ^. Model.to)) connections
-    return $ map (view Model.connectionId) $ toRemove
+    return $ map (view Model.connectionId) toRemove

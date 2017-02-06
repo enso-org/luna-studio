@@ -43,7 +43,7 @@ searcher  = React.defineView name $ \(ref, s) -> do
         div_
             [ "key"       $= "results"
             , "className" $= "luna-searcher-results"
-            ] $ do
+            ] $
             forM_ (zip (s ^. Searcher.results) [0..]) $ \(result, idx) ->
                 div_
                     [ "key"       $= jsShow idx

@@ -19,12 +19,12 @@ name :: JSString
 name = "breadcrumbs"
 
 breadcrumbs :: ReactView (Ref App, Breadcrumbs)
-breadcrumbs = React.defineView name $ \(ref, model) -> do
+breadcrumbs = React.defineView name $ \(ref, model) ->
     div_
         [ "className" $= (name <> "luna-noselect")
         , "key"       $=  name
-        ] $ do
-        forM_ (zip [0..] $ inits $ model ^. B.items) $ \(key, bc) -> do
+        ] $
+        forM_ (zip [0..] $ inits $ model ^. B.items) $ \(key, bc) ->
             div_
                 [ "className" $= "luna-breadcrumbs__item luna-breadcrumbs__item--home"
                 , "key"       $= jsShow key

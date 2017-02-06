@@ -34,7 +34,7 @@ nodeProperties = React.defineView objName $ \(ref, p) -> do
             [ "key"       $= "value"
             , "className" $= "luna-row luna-row--output-name"
             , onDoubleClick $ \_ _ -> dispatch ref $ UI.NodeEvent $ Node.NameEditStart nodeId
-            ] $ do
+            ] $
             case (p ^. Prop.nameEdit) of
                 Just name ->
                     input_
@@ -68,7 +68,7 @@ nodeProperties = React.defineView objName $ \(ref, p) -> do
         div_
             [ "key" $= "execution-time"
             , "className" $= "luna-row"
-            ] $ do
+            ] $
             withJust (p ^. Prop.execTime) $ \execTime -> do
                 div_
                     ["key"       $= "label"

@@ -20,11 +20,11 @@ setCode code =
 
 toggle :: Command Global.State ()
 toggle = do
-    GA.sendEvent $ GA.ToggleText
+    GA.sendEvent GA.ToggleText
     Global.modifyCodeEditor $ CodeEditor.visible %= not
     -- size <- use $ Global.camera . Camera.camera . Camera.windowSize --TODO[react] remove
     -- Camera.updateWindowSize size
 
 codeChanged :: NodeId -> Text -> Command State ()
-codeChanged nodeId newCode = do
+codeChanged nodeId newCode =
     BatchCmd.setCode nodeId newCode

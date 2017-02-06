@@ -54,7 +54,7 @@ inPortControl = React.defineView "inPortControl" $ \(ref, portRef, port) ->
             , "className" $= "luna-value"
             ] $
             case port ^. Port.state of
-            PortAPI.NotConnected -> do
+            PortAPI.NotConnected ->
                 case port ^. Port.valueType . ValueType.toEnum of
                     ValueType.Other -> elemString "(other)"
                     _               -> do
