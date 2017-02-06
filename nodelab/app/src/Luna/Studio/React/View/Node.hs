@@ -18,6 +18,7 @@ import qualified Luna.Studio.React.Model.Node           as Node
 import qualified Luna.Studio.React.Model.NodeProperties as Properties
 import qualified Luna.Studio.React.Model.Port           as Port
 import           Luna.Studio.React.Store                (Ref, dispatch)
+import           Luna.Studio.React.View.CommonElements  (selectionMark_)
 import           Luna.Studio.React.View.NodeProperties  (nodeProperties_)
 import           Luna.Studio.React.View.Port            (portExpanded_, port_)
 import           Luna.Studio.React.View.Visualization   (visualization_)
@@ -63,11 +64,12 @@ node = React.defineView objName $ \(ref, n) -> do
                     [ "transform" Aeson..= transformTranslateToSvg pos
                     ]
                 ] $ do
-                --svg_
-                --    [ "className" $= "luna-node__selection-mark"
-                --    , "key"       $= "selection-mark"
-                --    ] $ rect_ def mempty
-                nodeProperties_ ref $ Properties.fromNode n
+                div_
+                    [ "key"       $= "main"
+                    , "className" $= "luna-node__main"
+                    ] $ do
+                    selectionMark_
+                    nodeProperties_ ref $ Properties.fromNode n
                 div_
                     [ "key"       $= "visualization"
                     , "className" $= "luna-node__visuals"
