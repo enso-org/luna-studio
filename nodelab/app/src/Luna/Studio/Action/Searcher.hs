@@ -23,8 +23,8 @@ import qualified Luna.Studio.React.Model.Searcher   as Searcher
 import qualified Luna.Studio.React.View.App         as App
 import qualified Luna.Studio.React.View.Searcher    as Searcher
 import           Luna.Studio.State.Action           (Action (begin, continue, end, update), Searcher (Searcher), searcherAction)
-import           Luna.Studio.State.Global           (State)
-import           Luna.Studio.State.Global           (beginActionWithKey, continueActionWithKey, removeActionFromState, updateActionWithKey)
+import           Luna.Studio.State.Global           (State, beginActionWithKey, continueActionWithKey, removeActionFromState,
+                                                     updateActionWithKey)
 import qualified Luna.Studio.State.Global           as Global
 import qualified Luna.Studio.State.Graph            as Graph
 import           Text.ScopeSearcher.Item            (Item (..), Items, _Group)
@@ -43,10 +43,7 @@ searcherData :: Command State Items
 searcherData = use $ Global.workspace . Workspace.nodeSearcherData
 
 open :: Command State ()
-open = do
-  -- factor <- use $ Global.camera . Camera.camera . Camera.factor
-  -- let offset = Vector2 0 (floor $ -40.0 * factor)
-  -- (nsPos', nsPos) <- ensureNSVisible
+open =
     openWith def =<< use Global.mousePos
     -- liftIO $ UI.initNodeSearcher "" Nothing (nsPos + offset) False
 

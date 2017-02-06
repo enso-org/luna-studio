@@ -1,13 +1,10 @@
-{-# LANGUAGE   GADTs #-}
-{-# LANGUAGE   DeriveDataTypeable #-}
-{-# LANGUAGE   ScopedTypeVariables #-}
-
-
+{-# LANGUAGE GADTs               #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 
 module Data.Type.Hide where
 
-import Prelude hiding (lookup)
-import Unsafe.Coerce
+import           Prelude       hiding (lookup)
+import           Unsafe.Coerce
 
 class HideType a c where
     hideType   :: a -> c
@@ -22,5 +19,3 @@ instance Show Simple where
 instance HideType a Simple where
     hideType              = Simple
     revealType (Simple x) = unsafeCoerce x
-
-

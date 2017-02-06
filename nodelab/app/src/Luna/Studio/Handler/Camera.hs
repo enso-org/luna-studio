@@ -26,7 +26,7 @@ import           Luna.Studio.State.Global           (State)
 handle :: Event -> Maybe (Command State ())
 handle (Shortcut shortcut)                             = Just $ handleShortcut shortcut
 handle (UI (NodeEditorEvent (NodeEditor.MouseDown e))) = Just $ handleMouseDown e
-handle (UI (AppEvent (App.MouseMove e)))               = Just $ handleMouseMove e
+handle (UI (AppEvent (App.MouseMove e _)))             = Just $ handleMouseMove e
 handle (UI (AppEvent (App.MouseUp   _)))               = Just $ continue stopPanDrag >> continue stopZoomDrag
 handle (UI (NodeEditorEvent (NodeEditor.Wheel m w)))   = Just $ handleMouseWheel m delta where
     deltaX = fromIntegral $ -(wheelDeltaX w)

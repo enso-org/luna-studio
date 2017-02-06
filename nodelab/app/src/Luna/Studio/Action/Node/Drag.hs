@@ -39,7 +39,7 @@ startNodeDrag nodeId evt snapped = do
     mayNode <- Global.getNode nodeId
     withJust mayNode $ \node -> do
         let isSelected = node ^. Model.isSelected
-        when (not isSelected) $ selectNodes [nodeId]
+        unless isSelected $ selectNodes [nodeId]
         nodes <- selectedNodes
         let nodesPos = Map.fromList $ (view Model.nodeId &&& view Model.position) <$> nodes
         if snapped
@@ -58,7 +58,7 @@ nodeDrag evt snapped state = do
         delta = coord ^. vector - mouseStartPos ^. vector
         shift' = if snapped then
                      case Map.lookup draggedNodeId nodesStartPos of
-                         Just pos -> do
+                         Just pos ->
                              snap (move pos delta) ^. vector - pos ^. vector
                          Nothing  -> delta
                  else delta
@@ -66,7 +66,7 @@ nodeDrag evt snapped state = do
 
 moveNodes :: Map NodeId Position -> Command State ()
 moveNodes nodesPos = do
-    Global.modifyNodeEditor $ forM_ (Map.toList nodesPos) $ \(nodeId, pos) -> do
+    Global.modifyNodeEditor $ forM_ (Map.toList nodesPos) $ \(nodeId, pos) ->
         NodeEditor.nodes . at nodeId %= fmap (Model.position .~ pos)
     updateConnectionsForNodes $ Map.keys nodesPos
 
@@ -88,6 +88,6 @@ stopNodeDrag evt state = do
     coord <- workspacePosition evt
     let startPos = view Action.nodeDragStartPos state
         nodeId   = view Action.nodeDragNodeId   state
-    if (startPos /= coord) then
+    if startPos /= coord then
         updateMovedNodes
     else selectNodes [nodeId]

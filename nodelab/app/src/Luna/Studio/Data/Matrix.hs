@@ -62,5 +62,5 @@ showTransformMatrixToSvg matrix =
     let mx1 = Matrix.toList matrix
         nx  = fromIntegral $ round $ mx1!!12
         ny  = fromIntegral $ round $ mx1!!13
-        mx2 = (take 12 mx1) ++ nx:ny:(drop 14 mx1)
-    in (foldl (<>) "matrix3d(" $ intersperse ", " $ map show $ mx2) <> ")"
+        mx2 = take 12 mx1 ++ nx:ny:drop 14 mx1
+    in foldl (<>) "matrix3d(" (intersperse ", " $ map show mx2) <> ")"

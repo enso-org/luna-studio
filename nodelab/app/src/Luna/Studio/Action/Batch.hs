@@ -68,6 +68,11 @@ setCode = withWorkspace .:  BatchCmd.setCode
 removeNodes :: [NodeId] -> Command State ()
 removeNodes = withWorkspace . BatchCmd.removeNodes
 
+autoconnect :: NodeId -> NodeId -> Command State ()
+autoconnect src dst = do
+    collaborativeModify [dst]
+    withWorkspace $ BatchCmd.autoconnect src dst
+
 connectNodes :: OutPortRef -> InPortRef -> Command State ()
 connectNodes src dst = do
     collaborativeModify [dst ^. PortRef.dstNodeId]
@@ -88,22 +93,22 @@ setInputNodeType = withWorkspace .: BatchCmd.setInputNodeType
 
 requestCollaborationRefresh :: Command State ()
 requestCollaborationRefresh = do
-    clId <- use $ clientId
+    clId <- use clientId
     withWorkspace' $ BatchCmd.requestCollaborationRefresh clId
 
 collaborativeTouch :: [NodeId] -> Command State ()
-collaborativeTouch nodeIds = when (length nodeIds > 0) $ do
-    clId <- use $ clientId
+collaborativeTouch nodeIds = unless (null nodeIds) $ do
+    clId <- use clientId
     withWorkspace' $ BatchCmd.collaborativeTouch clId nodeIds
 
 collaborativeModify :: [NodeId] -> Command State ()
-collaborativeModify nodeIds = when (length nodeIds > 0) $ do
-    clId <- use $ clientId
+collaborativeModify nodeIds = unless (null nodeIds) $ do
+    clId <- use clientId
     withWorkspace' $ BatchCmd.collaborativeModify clId nodeIds
 
 cancelCollaborativeTouch :: [NodeId] -> Command State ()
-cancelCollaborativeTouch nodeIds = when (length nodeIds > 0) $ do
-    clId <- use $ clientId
+cancelCollaborativeTouch nodeIds = unless (null nodeIds) $ do
+    clId <- use clientId
     withWorkspace' $ BatchCmd.cancelCollaborativeTouch clId nodeIds
 
 exportProject :: ProjectId -> Command State ()

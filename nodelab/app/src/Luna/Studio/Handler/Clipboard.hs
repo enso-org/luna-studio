@@ -12,6 +12,7 @@ import           Empire.API.Data.Node            (Node)
 import qualified Empire.API.Data.Node            as Node
 import qualified Empire.API.Data.NodeMeta        as NodeMeta
 import qualified Empire.API.Data.PortRef         as PortRef
+import qualified JS.Clipboard                    as JS (copyStringToClipboard)
 import           Luna.Studio.Action.Batch        (addSubgraph)
 import qualified Luna.Studio.Action.Camera       as Camera
 import           Luna.Studio.Action.Command      (Command)
@@ -33,14 +34,12 @@ handle (Shortcut  Shortcut.Copy      ) = Just copySelectionToClipboard
 handle (Shortcut  Shortcut.Cut       ) = Just cutSelectionToClipboard
 handle _ = Nothing
 
-foreign import javascript unsafe "copyToClipboard($1)" copyStringToClipboard :: JSString -> IO ()
-
 copySelectionToClipboard :: Command State ()
 copySelectionToClipboard = do
     nodeIds <- map (view UINode.nodeId) <$> selectedNodes
     graph   <- use Global.graph
     let subgraph = separateSubgraph nodeIds graph
-    liftIO $ copyStringToClipboard $ convert $ unpack $ encode subgraph
+    liftIO $ JS.copyStringToClipboard $ convert $ unpack $ encode subgraph
 
 cutSelectionToClipboard :: Command State()
 cutSelectionToClipboard = copySelectionToClipboard >> removeSelectedNodes
@@ -54,8 +53,8 @@ pasteFromClipboard clipboardData = do
           nodes       = view GraphSkeleton.nodesList skeleton
           connections = filter (\conn -> Set.member (conn ^. Connection.src . PortRef.srcNodeId) graphNodesIds) $ view GraphSkeleton.connectionsList skeleton
       workspacePos <- Camera.translateToWorkspace =<< use Global.mousePos
-      let shiftX = workspacePos ^. x - (minimum $ map (^. Node.nodeMeta . NodeMeta.position . _1) nodes)
-          shiftY = workspacePos ^. y - (minimum $ map (^. Node.nodeMeta . NodeMeta.position . _2) nodes)
+      let shiftX = workspacePos ^. x - minimum (map (^. Node.nodeMeta . NodeMeta.position . _1) nodes)
+          shiftY = workspacePos ^. y - minimum (map (^. Node.nodeMeta . NodeMeta.position . _2) nodes)
           shiftNodeX :: Node -> Node
           shiftNodeX = Node.nodeMeta . NodeMeta.position . _1 %~ snapCoord . (+shiftX)
           shiftNodeY :: Node -> Node

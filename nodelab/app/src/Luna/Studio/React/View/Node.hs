@@ -18,6 +18,7 @@ import qualified Luna.Studio.React.Model.Node           as Node
 import qualified Luna.Studio.React.Model.NodeProperties as Properties
 import qualified Luna.Studio.React.Model.Port           as Port
 import           Luna.Studio.React.Store                (Ref, dispatch)
+import           Luna.Studio.React.View.CommonElements  (selectionMark_)
 import           Luna.Studio.React.View.NodeProperties  (nodeProperties_)
 import           Luna.Studio.React.View.Port            (portExpanded_, port_)
 import           Luna.Studio.React.View.Visualization   (visualization_)
@@ -30,7 +31,7 @@ objName = "node"
 
 handleMouseDown :: Ref App -> NodeId -> Event -> MouseEvent -> [SomeStoreAction]
 handleMouseDown ref nodeId e m =
-    if (Mouse.withoutMods m Mouse.leftButton)
+    if Mouse.withoutMods m Mouse.leftButton
     then stopPropagation e : dispatch ref (UI.NodeEvent $ Node.MouseDown m nodeId)
     else []
 
@@ -46,12 +47,12 @@ node = React.defineView objName $ \(ref, n) -> do
     div_
         [ "key"       $= fromString (show nodeId)
         , "className" $= "luna-node-root luna-noselect"
-        , "style"     @= Aeson.object [ "zIndex" Aeson..= (show z) ]
+        , "style"     @= Aeson.object [ "zIndex" Aeson..= show z ]
         ] $ do
         div_
             [ "key"       $= "nodeTrans"
             , "className" $= "luna-node-trans"
-            ] $ do
+            ] $
             div_
                 [ "key"         $= "nodeBodyRoot"
                 , onClick       $ \_ m -> dispatch ref $ UI.NodeEvent $ Node.Select m nodeId
@@ -63,11 +64,12 @@ node = React.defineView objName $ \(ref, n) -> do
                     [ "transform" Aeson..= transformTranslateToSvg pos
                     ]
                 ] $ do
-                --svg_
-                --    [ "className" $= "luna-node__selection-mark"
-                --    , "key"       $= "selection-mark"
-                --    ] $ rect_ def mempty
-                nodeProperties_ ref $ Properties.fromNode n
+                div_
+                    [ "key"       $= "main"
+                    , "className" $= "luna-node__main"
+                    ] $ do
+                    selectionMark_
+                    nodeProperties_ ref $ Properties.fromNode n
                 div_
                     [ "key"       $= "visualization"
                     , "className" $= "luna-node__visuals"
@@ -85,7 +87,7 @@ node = React.defineView objName $ \(ref, n) -> do
         div_
             [ "key"       $= "nameTrans"
             , "className" $= "luna-name-trans"
-            ] $ do
+            ] $
             div_
                 [ "key"         $= "nameRoot"
                 , onClick       $ \_ m -> dispatch ref $ UI.NodeEvent $ Node.Select m nodeId

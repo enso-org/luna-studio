@@ -10,7 +10,7 @@ import           Luna.Studio.Prelude
 import qualified React.Flux                           as React
 import           System.Random                        (newStdGen)
 
-import qualified JS.Atom                              as Atom
+import qualified JS.Config                            as Config
 import qualified JS.GraphLocation                     as GraphLocation
 import           JS.UUID                              (generateUUID)
 import           JS.WebSocket                         (WebSocket)
@@ -23,10 +23,8 @@ import           Luna.Studio.State.Global             (mkState)
 import qualified Luna.Studio.State.Global             as Global
 
 
-
 runApp :: Chan (IO ()) -> WebSocket -> IO ()
 runApp chan socket = do
-    mountPoint   <- fromMaybe "luna-studio-mount" <$> Atom.mountPoint
     lastLocation <- GraphLocation.loadLocation
     random       <- newStdGen
     projectListRequestId <- generateUUID
@@ -34,7 +32,7 @@ runApp chan socket = do
     initTime             <- getCurrentTime
     mdo
         appRef <- Store.createApp $ Engine.scheduleEvent chan state
-        React.reactRender mountPoint (App.app appRef) ()
+        React.reactRender Config.mountPoint (App.app appRef) ()
         let initState = mkState initTime clientId random appRef
                       & Global.workspace . Workspace.lastUILocation .~ lastLocation
                       & Global.pendingRequests %~ Set.insert projectListRequestId

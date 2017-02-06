@@ -41,8 +41,10 @@ connectionSrc src dst isSrcExpanded isDstExpanded dstInputNum numOfDstInputs _  
         b' = if b < pi then b + (2 * pi) else b
         t' = if t < pi then t + (2 * pi) else t
         g  = portGap portRadius / 4
-        t''= if t' > a'- pi/2 - g then a - pi/2 - g else
-             if t' < b'- pi/2 + g then b - pi/2 + g else t
+        t''
+          | t' > a' - pi / 2 - g = a - pi / 2 - g
+          | t' < b' - pi / 2 + g = b - pi / 2 + g
+          | otherwise            = t
         srcX = if isSrcExpanded then srcExpX else portRadius * cos t'' + src ^. x
         srcY = if isSrcExpanded then srcExpY else portRadius * sin t'' + src ^. y
     in  Position (Vector2 srcX srcY)
@@ -59,8 +61,9 @@ connectionDst src dst isSrcExpanded isDstExpanded num numOfPorts _    =
         b'  = if b < pi then b + (2 * pi) else b
         t'  = if t < pi then t + (2 * pi) else t
         g   = portGap portRadius / 4
-        t'' = if t' > a'- pi/2 - g then a - pi/2 - g else
-              if t' < b'- pi/2 + g then b - pi/2 + g else t
+        t'' | t' > a'- pi/2 - g = a - pi/2 - g
+            | t' < b'- pi/2 + g = b - pi/2 + g
+            | otherwise = t
         dstExpX = dst ^. x
         dstExpY = dst ^. y + lineHeight * (fromIntegral num + 1)
         dstX = if isDstExpanded then dstExpX else portRadius * (-cos t'') + dst ^. x

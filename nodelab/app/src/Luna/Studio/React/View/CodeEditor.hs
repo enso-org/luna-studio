@@ -19,7 +19,7 @@ codeEditor = React.defineView name $ \model -> do
     div_
         [ "key"       $= name
         , "className" $= classes
-        ] $ do
+        ] $
         div_
             [ "key"       $= "editor"
             , "id"        $= "editor"

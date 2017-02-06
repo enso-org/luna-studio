@@ -1,0 +1,21 @@
+@import '_variables';
+
+/////////////////////////////
+//        animation        //
+/////////////////////////////
+
+.luna-blur,
+.luna-node__main,
+.luna-node__properties,
+.luna-node__properties-crop {
+    transition: all @transitionSpeed ease-out;
+}
+
+.luna-selection {
+    transition: all           @selectionSpeed  ease-out,
+                border-radius @transitionSpeed ease-out;
+}
+.luna-graph svg * {
+    transition: stroke @colorSpeed ease-out,
+                fill   @colorSpeed ease-out;
+}

@@ -10,6 +10,7 @@ module Luna.Studio.State.Graph
     , connectionsContainingNodes
     , connectionsMap
     , connectionsToNodes
+    , connectionToNodeIds
     , connectionsToNodesIds
     , getConnectionNodeIds
     , getConnections
@@ -119,12 +120,12 @@ connectionsContainingNode nid state = filter (containsNode nid) $ getConnections
 
 connectionsContainingNodes :: [NodeId] -> State -> [Connection]
 connectionsContainingNodes nodeIds state = let nodeIdsSet = Set.fromList nodeIds
-    in flip filter (getConnections state) $ \conn -> (
-        (Set.member (conn ^. Connection.src . PortRef.srcNodeId) nodeIdsSet) ||
-        (Set.member (conn ^. Connection.dst . PortRef.dstNodeId) nodeIdsSet))
+    in flip filter (getConnections state) $ \conn ->
+        Set.member (conn ^. Connection.src . PortRef.srcNodeId) nodeIdsSet ||
+        Set.member (conn ^. Connection.dst . PortRef.dstNodeId) nodeIdsSet
 
 connectionsToNodes :: Set.Set NodeId -> State -> [Connection]
-connectionsToNodes nodeIds state = filter ((flip Set.member nodeIds) . (view $ Connection.dst . PortRef.dstNodeId)) $ getConnections state
+connectionsToNodes nodeIds state = filter (flip Set.member nodeIds . view (Connection.dst . PortRef.dstNodeId)) $ getConnections state
 
 connectionIdsContainingNode :: NodeId -> State -> [ConnectionId]
 connectionIdsContainingNode nid state = view Connection.connectionId <$> connectionsContainingNode nid state

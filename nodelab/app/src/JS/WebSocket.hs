@@ -26,7 +26,7 @@ instance IsJSVal WebSocket
 instance IsJSVal WSMessageEvent
 
 foreign import javascript safe "$1.data"
-    getData :: WSMessageEvent -> IO (JSVal)
+    getData :: WSMessageEvent -> IO JSVal
 
 foreign import javascript safe "$1.code"
     getCode :: WSClosedEvent -> IO Int

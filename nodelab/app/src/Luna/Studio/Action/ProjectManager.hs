@@ -50,5 +50,5 @@ enterBreadcrumbs newBc = do
 
 saveCurrentLocation :: Command State ()
 saveCurrentLocation = do
-    workspace <- use $ Global.workspace
+    workspace <- use Global.workspace
     liftIO $ JS.saveLocation $ workspace ^. Workspace.uiGraphLocation

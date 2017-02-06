@@ -16,4 +16,4 @@ class HasColor a where
 instance HasColor OutPortRef where
     getConnectionColor = getConnectionColor . OutPortRef'
 instance HasColor AnyPortRef where
-    getConnectionColor portRef = (fmap $ view Port.color) <$> (getPort portRef)
+    getConnectionColor portRef = fmap (view Port.color) <$> getPort portRef

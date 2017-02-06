@@ -146,7 +146,7 @@ connectNodes :: GraphLocation -> Text -> NodeId -> NodeId -> StateT Env BusT ()
 connectNodes location expr dstNodeId srcNodeId = do
     let exprCall = head $ splitOneOf " ." $ Text.unpack expr
         inPort = if exprCall `elem` stdlibFunctions then Arg 0 else Self
-        connectRequest = Request UUID.nil $ Connect.Request location (OutPortRef srcNodeId All) (InPortRef dstNodeId inPort)
+        connectRequest = Request UUID.nil $ Connect.Request location (Connect.PortConnection (OutPortRef srcNodeId All) (InPortRef dstNodeId inPort))
     handleConnectReq False connectRequest -- TODO: refactor (we should not call handlers from handlers)
     forceTC location
 
@@ -206,10 +206,13 @@ handleRenameNode = modifyGraphOk action success where
 handleConnect :: Request Connect.Request -> StateT Env BusT ()
 handleConnect = handleConnectReq True
 
+-- TODO: Response for this request needs more info in case of NodeConnection for undo/redo
 handleConnectReq :: Bool -> Request Connect.Request -> StateT Env BusT ()
 handleConnectReq doTC = modifyGraphOk action success where
-    action  (Connect.Request location src dst) = Graph.connectCondTC doTC location src dst
-    success (Connect.Request location src dst) result = sendToBus' $ Connect.Update location src dst
+    action  (Connect.Request location (Connect.PortConnection src dst)) = Graph.connectCondTC doTC location src dst
+    action  (Connect.Request location (Connect.NodeConnection src dst)) = Graph.connectCondTC doTC location (OutPortRef src All) (InPortRef dst Self)
+    success (Connect.Request location (Connect.PortConnection src dst)) result = sendToBus' $ Connect.Update location src dst
+    success (Connect.Request location (Connect.NodeConnection src dst)) result = sendToBus' $ Connect.Update location (OutPortRef src All) (InPortRef dst Self)
 
 handleDisconnect :: Request Disconnect.Request -> StateT Env BusT ()
 handleDisconnect = modifyGraphOk action success where

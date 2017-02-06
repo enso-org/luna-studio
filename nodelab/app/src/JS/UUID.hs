@@ -7,4 +7,4 @@ import qualified Data.UUID.Types     as UUID
 foreign import javascript safe "generateUUID()" generateUUID' :: IO JSString
 
 generateUUID :: IO UUID.UUID
-generateUUID = generateUUID' >>= return . fromJust . UUID.fromString . convert
+generateUUID = fromJust . UUID.fromString . convert <$> generateUUID'

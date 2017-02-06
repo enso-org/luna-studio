@@ -1,0 +1,1 @@
+find app/src -name '*.hs' -exec hlint {} \;

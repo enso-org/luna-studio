@@ -10,6 +10,7 @@ class LunaStudioTab extends View
       @code.start(@uri, mountPoint)
 
   @content: ->
+    mountPoint = "luna-studio-mount" + uniqueTabNo
     mountPoint = "mount-point" + uniqueTabNo
     uniqueTabNo = uniqueTabNo + 1
     @div

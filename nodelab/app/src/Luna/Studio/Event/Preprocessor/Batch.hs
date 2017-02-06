@@ -17,7 +17,7 @@ process :: Event.Event -> Maybe Event.Event
 process (Event.Connection (Message msg)) = Just $ Event.Batch $ processMessage msg
 process _                                = Nothing
 
-handle :: forall a. (Binary a, Topic.MessageTopic a) => (a -> Batch.Event) -> (String, (ByteString -> Batch.Event))
+handle :: forall a. (Binary a, Topic.MessageTopic a) => (a -> Batch.Event) -> (String, ByteString -> Batch.Event)
 handle cons = (Topic.topic (undefined :: a), cons . decode)
 
 handlers :: Map.Map String (ByteString -> Batch.Event)

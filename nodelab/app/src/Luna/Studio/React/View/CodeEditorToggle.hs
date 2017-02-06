@@ -20,7 +20,7 @@ codeEditorToggle = React.defineView name $ \ref-> do
         [ "key"       $= name
         , "className" $= classes
         , onClick $ \_ _ -> dispatch ref $ UI.CodeEditorEvent CodeEditor.ToggleCodeEditor
-        ] $ elemString $ []
+        ] $ elemString []
 
 codeEditorToggle_ :: Ref App -> ReactElementM ViewEventHandler ()
 codeEditorToggle_ ref = React.viewWithSKey codeEditorToggle name ref mempty

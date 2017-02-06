@@ -3,7 +3,7 @@ module Luna.Studio.Engine.EventProcessor where
 import           Control.Concurrent.Chan                    (Chan)
 import qualified Control.Concurrent.Chan                    as Chan
 import           Control.Concurrent.MVar
-import           Control.Exception                          (catch)
+import           Control.Exception                          (handle)
 import           Control.Monad                              (forever)
 import           Data.DateTime                              (getCurrentTime)
 import           Data.Monoid                                (Last (..))
@@ -95,7 +95,7 @@ processEvent var ev = modifyMVar_ var $ \state -> do
         consoleTimeStart (realEvent ^. Event.name)
     timestamp <- getCurrentTime
     let state' = state & Global.lastEventTimestamp .~ timestamp
-    flip catch (handleExcept state realEvent) $ do
+    handle (handleExcept state realEvent) $ do
         newState <- execCommand (runCommands actions realEvent >> Global.renderIfNeeded) state'
         when displayProcessingTime $
             consoleTimeEnd (realEvent ^. Event.name)
@@ -105,6 +105,7 @@ connectEventSources :: WebSocket ->  Chan (IO ()) -> MVar State -> IO ()
 connectEventSources conn chan state = do
     let handlers = [ JSHandlers.webSocketHandler conn
                    , JSHandlers.atomHandler
+                   , JSHandlers.sceneResizeHandler
                    ]
         mkSource (AddHandler rh) = rh $ scheduleEvent chan state
     sequence_ $ mkSource <$> handlers

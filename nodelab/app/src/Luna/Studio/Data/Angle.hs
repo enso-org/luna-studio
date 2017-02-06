@@ -27,12 +27,12 @@ boundedAngle centralAngle' count src dst = angle where
         2 -> 0.7
         3 -> 0.6
         _ -> 0.5
-    span' = pi / (fromIntegral count) / 2.0 * mult
+    span' = pi / fromIntegral count / 2.0 * mult
     centralAngle = centralAngle'
     minAngle = centralAngle - span'
     maxAngle = centralAngle + span'
     connAngle = toAngle $ (dst ^. vector) - (src ^. vector)
-    diffAngle = (normAngle $ (centralAngle' - connAngle + pi)) - pi
+    diffAngle = normAngle (centralAngle' - connAngle + pi) - pi
     angle
         | diffAngle < (-span') = maxAngle
         | diffAngle > span'    = minAngle

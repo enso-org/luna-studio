@@ -33,10 +33,10 @@ mergeList (x1:xs) ys = mergeList xs (x1:ys)
 
 line :: Position -> Position -> [PropertyOrHandler ViewEventHandler] -> ReactElementM ViewEventHandler ()
 line src dst b = do
-    let a = [ "x1" $= (show2 $ src ^. x)
-            , "y1" $= (show2 $ src ^. y)
-            , "x2" $= (show2 $ dst ^. x)
-            , "y2" $= (show2 $ dst ^. y)
+    let a = [ "x1" $= show2 (src ^. x)
+            , "y1" $= show2 (src ^. y)
+            , "x2" $= show2 (dst ^. x)
+            , "y2" $= show2 (dst ^. y)
             ]
     line_ (mergeList a b) mempty
 
@@ -46,9 +46,9 @@ connection = React.defineView name $ \(ref, model) -> do
         src         = model ^. Connection.from
         dst         = model ^. Connection.to
         mid         = averagePosition src dst
-        color       = "stroke"      $= (toJSString $ model ^. Connection.color  )
-        width       = "strokeWidth" $= (show2   connectionWidth    )
-        widthSelect = "strokeWidth" $= (show2 $ connectionWidth * 4)
+        color       = "stroke"      $= toJSString (model ^. Connection.color)
+        width       = "strokeWidth" $= show2   connectionWidth
+        widthSelect = "strokeWidth" $= show2 (connectionWidth * 4)
         eventSrc    = onMouseDown $ \e m -> stopPropagation e : dispatch ref (UI.ConnectionEvent $ Connection.ModifyConnection m connId Source)
         eventDst    = onMouseDown $ \e m -> stopPropagation e : dispatch ref (UI.ConnectionEvent $ Connection.ModifyConnection m connId Destination)
     g_
@@ -73,8 +73,8 @@ currentConnection :: ReactView CurrentConnection
 currentConnection = React.defineView name $ \model -> do
     let src   = model ^. Connection.currentFrom
         dst   = model ^. Connection.currentTo
-        color = "stroke"      $= (toJSString $ model ^. Connection.currentColor)
-        width = "strokeWidth" $= (show2 connectionWidth           )
+        color = "stroke"      $= toJSString (model ^. Connection.currentColor)
+        width = "strokeWidth" $= show2 connectionWidth
     line src dst [ width, color ]
 
 currentConnection_ :: CurrentConnection -> ReactElementM ViewEventHandler ()

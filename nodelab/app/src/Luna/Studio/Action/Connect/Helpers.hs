@@ -22,11 +22,11 @@ createCurrentConnection :: AnyPortRef -> Maybe Connection -> Position -> Positio
 createCurrentConnection portRef modifiedConn srcPos dstPos color = do
     withJust modifiedConn $ \conn -> localRemoveConnections [conn ^. Connection.dst]
     let connection = CurrentConnection portRef modifiedConn srcPos dstPos color
-    Global.modifyNodeEditor $ do
+    Global.modifyNodeEditor $
         NodeEditor.currentConnection ?= connection
 
 toValidConnection :: AnyPortRef -> AnyPortRef -> Maybe (OutPortRef, InPortRef)
-toValidConnection src' dst' = (normalize' src' dst') >>= toOtherNode where
+toValidConnection src' dst' = normalize' src' dst' >>= toOtherNode where
     normalize' (OutPortRef' a) (InPortRef' b) = Just (a, b)
     normalize' (InPortRef' a) (OutPortRef' b) = Just (b, a)
     normalize' _ _ = Nothing

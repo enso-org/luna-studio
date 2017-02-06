@@ -22,11 +22,11 @@ updateClient clId = do
             Collaboration.knownClients . ix clId . Collaboration.lastSeen .= currentTime
             return $ currentData ^. Collaboration.colorId
         Nothing          -> do
-            clients <- use $ Collaboration.knownClients
-            let colors = Collaboration.unColorId <$> (view Collaboration.colorId) <$> Map.elems clients
+            clients <- use Collaboration.knownClients
+            let colors = Collaboration.unColorId . view Collaboration.colorId <$> Map.elems clients
                 nextColor = case colors of
                     [] -> 0
-                    _  -> (maximum colors) + 1
+                    _  -> maximum colors + 1
                 nextColor' = Collaboration.ColorId nextColor
-            Collaboration.knownClients . at clId ?= (Collaboration.Client currentTime nextColor')
+            Collaboration.knownClients . at clId ?= Collaboration.Client currentTime nextColor'
             return nextColor'

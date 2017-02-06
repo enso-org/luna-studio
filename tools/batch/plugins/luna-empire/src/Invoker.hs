@@ -143,7 +143,7 @@ updateNodeMeta :: EP.BusEndPoints -> GraphLocation -> NodeId -> Double -> Double
 updateNodeMeta endPoints graphLocation nodeId x y req = sendToBus endPoints $ UpdateNodeMeta.Request graphLocation [(nodeId, NodeMeta.NodeMeta (x, y) req)]
 
 connect :: EP.BusEndPoints -> GraphLocation -> NodeId -> OutPort -> NodeId -> InPort -> IO ()
-connect endPoints graphLocation srcNodeId outPort dstNodeId inPort = sendToBus endPoints $ Connect.Request graphLocation (OutPortRef srcNodeId outPort) (InPortRef dstNodeId inPort)
+connect endPoints graphLocation srcNodeId outPort dstNodeId inPort = sendToBus endPoints $ Connect.Request graphLocation (Connect.PortConnection (OutPortRef srcNodeId outPort) (InPortRef dstNodeId inPort))
 
 disconnect :: EP.BusEndPoints -> GraphLocation -> NodeId -> InPort -> IO ()
 disconnect endPoints graphLocation  dstNodeId inPort = sendToBus endPoints $ Disconnect.Request graphLocation (InPortRef dstNodeId inPort)

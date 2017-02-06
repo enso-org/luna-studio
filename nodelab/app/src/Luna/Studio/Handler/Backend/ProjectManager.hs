@@ -33,7 +33,7 @@ handle (Batch (Batch.ProjectList response)) = Just $ handleResponse response $ \
 
     lastLocation <- use $ Global.workspace . Workspace.lastUILocation
     let fallbackLocation  = GraphLocation.GraphLocation (fromMaybe (error "No projects found") $ projects ^? ix 0 . _1) 0 (Breadcrumb [])
-        lastGraphLocation = lastLocation >>= (Workspace.fromUIGraphLocation projectsMap)
+        lastGraphLocation = lastLocation >>= Workspace.fromUIGraphLocation projectsMap
     Global.workspace . Workspace.currentLocation .= fromMaybe fallbackLocation lastGraphLocation
     loc <- use $ Global.workspace . Workspace.currentLocation
     loadGraph loc
@@ -44,10 +44,10 @@ handle (Batch (Batch.ProjectCreated response)) = Just $ handleResponse response 
 
 handle (Batch (Batch.ProjectCreatedUpdate (CreateProject.Update projectId project))) = Just $ Global.workspace . Workspace.projects . at projectId ?= project
 
-handle (Batch (Batch.ProjectExported response)) = Just $ do
+handle (Batch (Batch.ProjectExported response)) = Just $
     handleResponse response $ \(ExportProject.Request uuid) (ExportProject.Result projectData) -> liftIO $ downloadFile (convert $ UUID.toString uuid <> ".lproj") projectData
 
-handle (Batch (Batch.ProjectImported response)) = Just $ do
+handle (Batch (Batch.ProjectImported response)) = Just $
     handleResponse response $ \_ (ImportProject.Result projectId project) -> do
         Global.workspace . Workspace.projects . at projectId ?= project
         loadProject projectId
