@@ -21,8 +21,8 @@ data Result = Result   { _libraryId :: LibraryId
                        , _library   :: Library
                        } deriving (Generic, Eq, NFData, Show)
 
-type Response = Response.Response Request Result
-instance Response.ResponseResult Request Result
+type Response = Response.Response Request () Result
+instance Response.ResponseResult Request () Result
 
 data Update = Update   { _libraryId' :: LibraryId
                        , _library'   :: Library

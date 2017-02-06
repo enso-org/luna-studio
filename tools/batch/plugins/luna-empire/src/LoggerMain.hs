@@ -15,8 +15,8 @@ import qualified System.Log.Options as Opt
 import qualified ZMQ.Bus.Config     as Config
 import qualified ZMQ.Bus.EndPoint   as EP
 
-defaultTopic :: String
-defaultTopic = "empire."
+defaultTopics :: [String]
+defaultTopics = ["empire."]
 
 rootLogger :: Logger
 rootLogger = getLogger ""
@@ -45,7 +45,7 @@ run cmd = case cmd of
         rootLogger setIntLevel $ Cmd.verbose cmd
         endPoints <- EP.clientFromConfig <$> Config.load
         let topics = if List.null $ Cmd.topics cmd
-                        then [defaultTopic]
+                        then defaultTopics
                         else Cmd.topics cmd
             formatted = Cmd.formatted cmd
         r <- Logger.run endPoints topics formatted

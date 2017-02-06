@@ -16,8 +16,11 @@ data Request = Request { _location :: GraphLocation
                        , _name     :: Text
                        } deriving (Generic, Eq, NFData, Show)
 
-type Response = Response.SimpleResponse Request
-instance Response.ResponseResult Request ()
+data Inverse = Inverse { _namePrev :: Maybe Text
+                       } deriving (Generic, Show, Eq, NFData)
+
+type Response = Response.SimpleResponse Request Inverse
+instance Response.ResponseResult Request Inverse ()
 
 data Update   = Update { _location' :: GraphLocation
                        , _nodeId'   :: NodeId
@@ -27,8 +30,10 @@ data Update   = Update { _location' :: GraphLocation
 
 makeLenses ''Request
 makeLenses ''Update
+makeLenses ''Inverse
 instance Binary Request
 instance Binary Update
+instance Binary Inverse
 instance G.GraphRequest Request where location = location
 
 topicPrefix = "empire.graph.node.rename"

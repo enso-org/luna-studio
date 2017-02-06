@@ -3,8 +3,11 @@ module Empire.API.Graph.RemoveNodes where
 import           Data.Binary                   (Binary)
 import           Prologue
 
+import           Empire.API.Data.Connection    (Connection)
 import           Empire.API.Data.GraphLocation (GraphLocation)
-import           Empire.API.Data.Node          (NodeId)
+import           Empire.API.Data.Node          (NodeId, Node)
+import           Empire.API.Data.PortRef       (OutPortRef(..), InPortRef(..))
+import qualified Empire.API.Response           as Response
 import qualified Empire.API.Graph.Request      as G
 import qualified Empire.API.Request            as R
 import qualified Empire.API.Response           as Response
@@ -14,18 +17,24 @@ data Request = Request { _location :: GraphLocation
                        , _nodeIds  :: [NodeId]
                        } deriving (Generic, Eq, NFData, Show)
 
-type Response = Response.SimpleResponse Request
-instance Response.ResponseResult Request ()
+data Inverse = Inverse { _nodes       :: [Node]
+                       , _connections :: [(OutPortRef, InPortRef)]
+                       } deriving (Generic, Show, Eq, NFData)
+
+type Response = Response.SimpleResponse Request Inverse
+instance Response.ResponseResult Request Inverse ()
 
 data Update  = Update  { _location' :: GraphLocation
                        , _nodeIds'  :: [NodeId]
                        } deriving (Generic, Eq, NFData, Show)
 
-
 makeLenses ''Request
-instance Binary Request
 makeLenses ''Update
+makeLenses ''Inverse
+instance Binary Request
 instance Binary Update
+instance Binary Inverse
+
 instance G.GraphRequest Request where location = location
 
 topicPrefix = "empire.graph.node.remove"

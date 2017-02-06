@@ -8,6 +8,7 @@ import qualified Data.Binary                      as Bin
 import qualified Data.ByteString                  as ByteString
 import qualified Data.ByteString.Char8            as Char8 (pack)
 import           Data.ByteString.Lazy             (fromStrict, toStrict)
+import qualified Data.Text                        as Text
 import qualified Data.UUID.V4                     as UUID
 import qualified Empire.API.Data.Breadcrumb       as Breadcrumb
 import           Empire.API.Data.DefaultValue     (PortDefault (Constant), Value (DoubleValue))
@@ -66,7 +67,8 @@ main = do
         expr      <- args `getArgOrExit` argument "expression"
         x         <- args `getArgOrExit` argument "x"
         y         <- args `getArgOrExit` argument "y"
-        addNode endPoints (toGraphLocation pid lid) expr (read x) (read y)
+        nodeId    <- args `getArgOrExit` argument "nodeId"
+        addNode endPoints (toGraphLocation pid lid) expr (read x) (read y) (read nodeId)
     when (args `isPresent` command "removeNode") $ do
         pid       <- args `getArgOrExit` argument "pid"
         lid       <- args `getArgOrExit` argument "lid"
@@ -130,11 +132,11 @@ main = do
 sendToBus :: (Topic.MessageTopic (Request a), Bin.Binary a) => EP.BusEndPoints -> a -> IO ()
 sendToBus endPoints msg = do
   uuid <- UUID.nextRandom
-  let msg' = Request uuid msg
+  let msg' = Request uuid Nothing msg
   void $ Bus.runBus endPoints $ Bus.send Flag.Enable $ Message.Message (Topic.topic msg') $ toStrict . Bin.encode $ msg'
 
-addNode :: EP.BusEndPoints -> GraphLocation -> String -> Double -> Double -> IO ()
-addNode endPoints graphLocation expression x y = sendToBus endPoints $ AddNode.Request graphLocation (AddNode.ExpressionNode $ convert expression) (NodeMeta.NodeMeta (x, y) True) Nothing
+addNode :: EP.BusEndPoints -> GraphLocation -> String -> Double -> Double -> NodeId -> IO ()
+addNode endPoints graphLocation expression x y nodeId = sendToBus endPoints $ AddNode.Request graphLocation (AddNode.ExpressionNode $ Text.pack expression) (NodeMeta.NodeMeta (x, y) True) Nothing Nothing
 
 removeNode :: EP.BusEndPoints -> GraphLocation -> NodeId -> IO ()
 removeNode endPoints graphLocation nodeId = sendToBus endPoints $ RemoveNodes.Request graphLocation [nodeId]

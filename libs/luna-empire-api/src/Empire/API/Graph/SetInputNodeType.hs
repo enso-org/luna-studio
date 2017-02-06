@@ -15,8 +15,8 @@ data Request = Request { _location :: GraphLocation
                        , _tpe      :: String
                        } deriving (Generic, Eq, NFData, Show)
 
-type Response = Response.SimpleResponse Request
-instance Response.ResponseResult Request ()
+type Response = Response.SimpleResponse Request ()
+instance Response.ResponseResult Request () ()
 
 makeLenses ''Request
 

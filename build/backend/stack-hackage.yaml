@@ -8,6 +8,7 @@ packages:
 - ../../libs/luna/typechecker
 - ../../libs/m-logger
 - ../../libs/scope-searcher
+- ../../libs/undo-redo
 - ../../libs/ws-connector
 - ../../libs/zmq-bus
 - ../../libs/zmq-bus-config

@@ -150,20 +150,25 @@ instance ToJSON Connect.Request
 instance ToJSON Connect.Update
 
 instance ToJSON Disconnect.Request
+instance ToJSON Disconnect.Inverse
 instance ToJSON Disconnect.Update
 
 instance ToJSON RemoveNodes.Request
+instance ToJSON RemoveNodes.Inverse
 instance ToJSON RemoveNodes.Update
 
 instance ToJSON RenameNode.Request
+instance ToJSON RenameNode.Inverse
 instance ToJSON RenameNode.Update
 
 instance ToJSON UpdateNodeMeta.Request
+instance ToJSON UpdateNodeMeta.Inverse
 instance ToJSON UpdateNodeMeta.Update
 
 instance ToJSON NodesUpdate.Update
 
 instance ToJSON UpdateNodeExpression.Request
+instance ToJSON UpdateNodeExpression.Inverse
 
 instance ToJSON NodeResultUpdate.Update
 instance ToJSON NodeResultUpdate.NodeValue
@@ -202,7 +207,7 @@ instance ToJSON ImportProject.Request
 instance ToJSON ImportProject.Result
 
 
-instance (ToJSON req, ToJSON res) => ToJSON (Response.Response req res)
+instance (ToJSON req, ToJSON res, ToJSON inv) => ToJSON (Response.Response req inv res)
 instance (ToJSON payload) => ToJSON (Response.Status payload)
 
 instance ToJSON NodeSearcherUpdate.Update

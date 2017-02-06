@@ -22,7 +22,7 @@ logger = Logger.getLogger $(Logger.moduleName)
 
 
 handleCreateLibrary :: Request CreateLibrary.Request -> StateT Env BusT ()
-handleCreateLibrary req@(Request _ request) = do
+handleCreateLibrary req@(Request _ _ request) = do
     currentEmpireEnv <- use Env.empireEnv
     empireNotifEnv   <- use Env.empireNotif
     (result, newEmpireEnv) <- liftIO $ Empire.runEmpire empireNotifEnv currentEmpireEnv $ Library.createLibrary
@@ -33,11 +33,11 @@ handleCreateLibrary req@(Request _ request) = do
         Left err -> replyFail logger err req
         Right (libraryId, library) -> do
             Env.empireEnv .= newEmpireEnv
-            replyResult req $ CreateLibrary.Result libraryId $ DataLibrary.toAPI library
+            replyResult req () $ CreateLibrary.Result libraryId $ DataLibrary.toAPI library
             sendToBus' $ CreateLibrary.Update libraryId $ DataLibrary.toAPI library
 
 handleListLibraries :: Request ListLibraries.Request -> StateT Env BusT ()
-handleListLibraries req@(Request _ request) = do
+handleListLibraries req@(Request _ _ request) = do
     currentEmpireEnv <- use Env.empireEnv
     empireNotifEnv   <- use Env.empireNotif
     (result, newEmpireEnv) <- liftIO $ Empire.runEmpire empireNotifEnv currentEmpireEnv $ Library.listLibraries
@@ -46,4 +46,4 @@ handleListLibraries req@(Request _ request) = do
         Left err -> replyFail logger err req
         Right librariesList -> do
             Env.empireEnv .= newEmpireEnv
-            replyResult req $ ListLibraries.Result $ (_2 %~ DataLibrary.toAPI) <$> librariesList
+            replyResult req () $ ListLibraries.Result $ (_2 %~ DataLibrary.toAPI) <$> librariesList

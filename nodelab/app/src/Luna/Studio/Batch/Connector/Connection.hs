@@ -28,6 +28,13 @@ data WebMessage = WebMessage { _topic   :: String
 makeLenses ''WebMessage
 instance Binary.Binary WebMessage
 
+data Message a = Message { _reqUUID :: UUID
+                         , _guiID   :: Maybe UUID
+                         , _request :: a }
+                         deriving (Generic, Show)
+
+instance (Binary a) => Binary (Message a)
+
 data Frame = Frame { _messages :: [WebMessage] } deriving (Show, Generic)
 
 makeLenses ''Frame
@@ -47,17 +54,17 @@ sendMessages msgs = do
 sendMessage :: WebMessage -> IO ()
 sendMessage msg = sendMessages [msg]
 
-makeMessage :: (Topic.MessageTopic (Request a), Binary a) => UUID -> a -> WebMessage
-makeMessage uuid body = let body' = Request uuid body in WebMessage (Topic.topic body') (Binary.encode body')
+makeMessage :: (Topic.MessageTopic (Request a), Binary a) => Message a -> WebMessage
+makeMessage (Message uuid guiID body) = let body' = Request uuid guiID body in WebMessage (Topic.topic body') (Binary.encode body')
 
 makeMessage' :: (Topic.MessageTopic a, Binary a) => a -> WebMessage
 makeMessage' body = let body' = body in WebMessage (Topic.topic body') (Binary.encode body')
 
-sendRequest :: (Topic.MessageTopic (Request a), Binary a) => UUID -> a -> IO ()
-sendRequest = sendMessage .: makeMessage
+sendRequest :: (Topic.MessageTopic (Request a), Binary a) => Message a -> IO ()
+sendRequest = sendMessage . makeMessage
 
 sendUpdate :: (Topic.MessageTopic a, Binary a) => a -> IO ()
 sendUpdate = sendMessage . makeMessage'
 
-sendRequests :: (Topic.MessageTopic (Request a), Binary a) => [(UUID, a)] -> IO ()
-sendRequests msgs = sendMessages $ uncurry makeMessage <$> msgs
+sendRequests :: (Topic.MessageTopic (Request a), Binary a) => [Message a] -> IO ()
+sendRequests msgs = sendMessages $ makeMessage <$> msgs

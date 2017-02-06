@@ -16,21 +16,23 @@ import           Luna.Studio.Prelude
 import           Luna.Studio.State.Global             (State, clientId, workspace)
 
 
-withWorkspace :: (Workspace -> UUID -> IO ()) -> Command State ()
+withWorkspace :: (Workspace -> UUID -> Maybe UUID -> IO ()) -> Command State ()
 withWorkspace act = do
-    uuid      <- registerRequest
+    uuid       <- registerRequest
+    guiID      <- use $ clientId
     workspace' <- use workspace
-    liftIO $ act workspace' uuid
+    liftIO $ act workspace' uuid $ Just guiID
 
 withWorkspace' :: (Workspace -> IO ()) -> Command State ()
 withWorkspace' act = do
     workspace' <- use workspace
     liftIO $ act workspace'
 
-withUUID :: (UUID -> IO ()) -> Command State ()
+withUUID :: (UUID -> Maybe UUID -> IO ()) -> Command State ()
 withUUID act = do
-    uuid <- registerRequest
-    liftIO $ act uuid
+    uuid  <- registerRequest
+    guiID <- use $ clientId
+    liftIO $ act uuid $ Just guiID
 
 addNode :: Text -> NodeMeta -> Maybe NodeId -> Command State ()
 addNode = withWorkspace .:. BatchCmd.addNode
@@ -119,3 +121,9 @@ importProject = withUUID . BatchCmd.importProject
 
 dumpGraphViz :: Command State ()
 dumpGraphViz = withWorkspace BatchCmd.dumpGraphViz
+
+requestRedo :: Command State ()
+requestRedo = withUUID BatchCmd.requestRedo
+
+requestUndo :: Command State ()
+requestUndo = withUUID BatchCmd.requestUndo

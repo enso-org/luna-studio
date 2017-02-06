@@ -16,12 +16,12 @@ import qualified Empire.API.Response        as Response
 import qualified Empire.API.Topic           as Topic
 import qualified JS.Debug                   as Debug
 
-whenOk :: Response.Response req res -> (res -> Command State ()) -> Command State ()
-whenOk (Response.Response _ _ (Response.Ok    res)) handler = handler res
-whenOk (Response.Response _ _ (Response.Error _  )) _       = return ()
+whenOk :: Response.Response req inv res -> (res -> Command State ()) -> Command State ()
+whenOk (Response.Response _ _ _ _ (Response.Ok    res)) handler = handler res
+whenOk (Response.Response _ _ _ _ (Response.Error _  )) _       = return ()
 
-handleResponse :: (Topic.MessageTopic (Response.Response req res), JSON.ToJSON req) => Response.Response req res -> (req -> res -> Command State ()) -> Command State ()
-handleResponse resp@(Response.Response uuid req status) success =
+handleResponse :: (Topic.MessageTopic (Response.Response req inv res), JSON.ToJSON req) => Response.Response req inv res -> (req -> res -> Command State ()) -> Command State ()
+handleResponse resp@(Response.Response uuid guiID req inv status) success =
     whenM (isOwnRequest uuid) $ do
         unregisterRequest uuid
         case status of

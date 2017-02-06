@@ -46,6 +46,7 @@ import qualified Empire.Data.Graph               as Graph
 import qualified Empire.Data.Library             as Library
 
 import           Empire.API.Data.Breadcrumb      as Breadcrumb (Breadcrumb(..), Named, BreadcrumbItem(..))
+import qualified Empire.API.Data.Connection      as Connection
 import           Empire.API.Data.Connection      (Connection (..))
 import           Empire.API.Data.DefaultValue    (PortDefault (Constant), Value (..))
 import qualified Empire.API.Data.Graph           as APIGraph
@@ -131,12 +132,34 @@ addPersistentNode n = case n ^. Node.nodeType of
                 _ -> return ()
             _ -> return ()
 
-addSubgraph :: GraphLocation -> [Node] -> [Connection] -> Empire ()
-addSubgraph loc nodes conns = withTC loc False $ do
-    forM_ nodes $ \n -> case n ^. Node.nodeType of
-        Node.ExpressionNode expr -> void $ addNodeNoTC loc (n ^. Node.nodeId) expr (n ^. Node.nodeMeta)
-        _ -> return ()
-    forM_ conns $ \(Connection src dst) -> connectNoTC loc src dst
+generateNodeId :: IO NodeId
+generateNodeId = UUID.nextRandom
+
+addSubgraph :: GraphLocation -> [Node] -> [Connection] -> Bool -> Empire (Maybe (Map.Map NodeId NodeId))
+addSubgraph loc nodes conns saveIds = withTC loc False $ do
+
+    newIds <- liftIO $ replicateM (length nodes) generateNodeId
+    if saveIds then do
+        forM_ nodes $ \n -> case n ^. Node.nodeType of
+            Node.ExpressionNode expr -> void $ addNodeNoTC loc (n ^. Node.nodeId) expr (n ^. Node.nodeMeta)
+            _ -> return ()
+        forM_ conns $ \(Connection src dst) -> connectNoTC loc src dst
+        return Nothing
+
+    else do
+        let
+            idMapping' = Map.fromList $ flip zip newIds $ flip map nodes $ view Node.nodeId
+            connectionsSrcs = map (^. Connection.src . PortRef.srcNodeId) conns
+            idMapping = Map.union idMapping' $ Map.fromList (zip connectionsSrcs connectionsSrcs)
+            nodes' = flip map nodes $ Node.nodeId %~ (idMapping Map.!)
+            connections' = map (\conn -> conn & Connection.src . PortRef.srcNodeId %~ (idMapping Map.!)
+                                              & Connection.dst . PortRef.dstNodeId %~ (idMapping Map.!)
+                               ) conns
+        forM_ nodes' $ \n -> case n ^. Node.nodeType of
+            Node.ExpressionNode expr -> void $ addNodeNoTC loc (n ^. Node.nodeId) expr (n ^. Node.nodeMeta)
+            _ -> return ()
+        forM_ connections' $ \(Connection src dst) -> connectNoTC loc src dst
+        return $ Just idMapping
 
 descendInto :: GraphLocation -> NodeId -> GraphLocation
 descendInto (GraphLocation pid lid breadcrumb) nid = GraphLocation pid lid breadcrumb'

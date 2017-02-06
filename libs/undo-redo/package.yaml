@@ -1,0 +1,57 @@
+name:               undo-redo
+version:            0.1.0.0
+author:             New Byte Order <contact@newbyteorder.com>
+maintainer:         New Byte Order <contact@newbyteorder.com>
+
+dependencies:
+  - base
+  - batch-lib-luna-empire
+  - binary
+  - bytestring
+  - container
+  - errors
+  - ghc
+  - hspec
+  - lens
+  - luna-empire-api
+  - mtl
+  - prologue
+  - safe-exceptions
+  - stm
+  - text
+  - uuid
+  - uuid-types
+  - zeromq4-haskell
+  - zmq-bus
+  - zmq-bus-config
+  - zmq-rpc
+
+default-extensions:
+  - DeriveGeneric
+  - MultiParamTypeClasses
+  - NoImplicitPrelude
+  - TemplateHaskell
+
+library:
+    source-dirs: src
+    ghc-options: -Wall -O2
+
+
+executables:
+ undo-redo:
+   dependencies:
+     - m-logger
+     - undo-redo
+
+
+   source-dirs: app
+   main:        Main.hs
+   ghc-options: -Wall -O2 -threaded
+
+tests:
+   spec:
+       main: Spec.hs
+       source-dirs: test
+       dependencies:
+           - hspec
+           - undo-redo
