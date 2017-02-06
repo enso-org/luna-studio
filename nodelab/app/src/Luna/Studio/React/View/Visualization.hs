@@ -45,8 +45,8 @@ import           Luna.Studio.React.View.Visualization.Image     (image_)
 viewName :: JSString
 viewName = "visualization"
 
-pinnedVisualization_ :: Ref App -> NodeEditor -> (NodeId, Int) -> Position -> ReactElementM ViewEventHandler ()
-pinnedVisualization_ ref ne (nodeId, _) position =
+pinnedVisualization_ :: Ref App -> NodeEditor -> (NodeId, Int, Position) -> ReactElementM ViewEventHandler ()
+pinnedVisualization_ ref ne (nodeId, _, position) =
     withJust (ne ^. NodeEditor.nodes . at nodeId) $ \node ->
         withJust (node ^. Node.value) $
             visualization_ ref nodeId $ Just position
@@ -108,16 +108,19 @@ nodeValues_ ref nodeId mayPos = mapM_ (uncurry $ nodeValue_ ref nodeId mayPos) .
 nodeValue_ :: Ref App -> NodeId -> Maybe Position -> Int -> Value -> ReactElementM ViewEventHandler ()
 nodeValue_ ref nodeId mayPos visIx value = do
     let isPinned = isJust mayPos
-        event = if isPinned then Visualization.Unpin else Visualization.Pin
+        event = case mayPos of
+            Just pos -> \n v -> Visualization.Unpin n v pos
+            Nothing  -> Visualization.Pin
         translatedDiv_ = case mayPos of
-            Just pos -> div_ [ "className" $= "luna-node-trans luna-node-root luna-noselect luna-node__visuals"
+            Just pos -> div_ [ "className" $= "luna-node-trans luna-noselect luna-node-root"
                              , "style" @= Aeson.object
                                 [ "zIndex"    Aeson..= show (1000 :: Integer)
                                 , "transform" Aeson..= transformTranslateToSvg pos ] ]
+                         . div_ [ "className" $= "luna-node__visuals" ]
             Nothing -> div_
     translatedDiv_ $ do
-        when isPinned $
-            button_ [ onMouseDown $ \e m -> stopPropagation e : dispatch ref (UI.VisualizationEvent $ Visualization.MouseDown m nodeId visIx)] $
+        withJust mayPos $ \pos ->
+            button_ [ onMouseDown $ \e m -> stopPropagation e : dispatch ref (UI.VisualizationEvent $ Visualization.MouseDown m nodeId visIx pos)] $
                 elemString "move"
         button_ [ onClick $ \_ _ -> dispatch ref $ UI.VisualizationEvent $ event nodeId visIx ] $
             elemString $ if isPinned then "unpin" else "pin"

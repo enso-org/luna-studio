@@ -9,6 +9,7 @@ module Luna.Studio.Action.Visualization
 
 import           React.Flux                         (MouseEvent)
 
+import           Data.Position                      (Position)
 import           Empire.API.Data.Node               (NodeId)
 import           Luna.Studio.Action.Command         (Command)
 import           Luna.Studio.Event.Mouse            (workspacePosition)
@@ -27,12 +28,12 @@ pin nodeId visIx = do
     mayNode <- Global.getNode nodeId
     withJust mayNode $ \node ->
         Global.modifyNodeEditor $
-            NodeEditor.visualizations . at (nodeId, visIx) ?= node ^. Node.position
+            NodeEditor.visualizations %= ((nodeId, visIx, node ^. Node.position) :)
 
-unpin :: NodeId -> Int -> Command State ()
-unpin nodeId visIx =
+unpin :: NodeId -> Int -> Position -> Command State ()
+unpin nodeId visIx position =
     Global.modifyNodeEditor $
-        NodeEditor.visualizations . at (nodeId, visIx) .= def
+        NodeEditor.visualizations %= delete (nodeId, visIx, position)
 
 instance Action (Command State) VisualizationDrag where
     begin    = beginActionWithKey    visualizationDragAction
@@ -40,22 +41,24 @@ instance Action (Command State) VisualizationDrag where
     update   = updateActionWithKey   visualizationDragAction
     end _    = removeActionFromState visualizationDragAction
 
-startDrag :: NodeId -> Int -> MouseEvent -> Command State ()
-startDrag nodeId visIx evt = do
-    begin $ VisualizationDrag nodeId visIx
-    moveTo evt nodeId visIx
+startDrag :: NodeId -> Int -> Position -> MouseEvent -> Command State ()
+startDrag nodeId visIx position evt = do
+    begin $ VisualizationDrag nodeId visIx position
+    moveTo evt nodeId visIx position
 
 drag :: MouseEvent -> VisualizationDrag -> Command State ()
-drag evt (VisualizationDrag nodeId visIx) =
-    moveTo evt nodeId visIx
+drag evt (VisualizationDrag nodeId visIx position) = do
+    moveTo evt nodeId visIx position
 
 stopDrag :: MouseEvent -> VisualizationDrag ->  Command State ()
-stopDrag evt (VisualizationDrag nodeId visIx) = do
+stopDrag evt (VisualizationDrag nodeId visIx position) = do
+    moveTo evt nodeId visIx position
     removeActionFromState visualizationDragAction
-    moveTo evt nodeId visIx
 
-moveTo :: MouseEvent -> NodeId -> Int -> Command State ()
-moveTo evt nodeId visIx = do
+moveTo :: MouseEvent -> NodeId -> Int -> Position -> Command State ()
+moveTo evt nodeId visIx oldPos = do
     position <- workspacePosition evt
-    Global.modifyNodeEditor $
-        NodeEditor.visualizations . at (nodeId, visIx) ?= position
+    update $ VisualizationDrag nodeId visIx position
+    Global.modifyNodeEditor $ do
+        NodeEditor.visualizations %= delete (nodeId, visIx, oldPos)
+        NodeEditor.visualizations %= ((nodeId, visIx, position) :)
