@@ -66,10 +66,10 @@ portExpanded_ ref p =
     React.viewWithSKey portExpanded (jsShow $ p ^. Port.portId) (ref, p) mempty
 
 portSelf_ :: Ref App -> Port -> ReactElementM ViewEventHandler ()
-portSelf_ ref port = do
-    let portRef = port ^. Port.portRef
-        color   = toJSString $ port ^. Port.color
-        portId  = port ^. Port.portId
+portSelf_ ref p = do
+    let portRef = p ^. Port.portRef
+        color   = toJSString $ p ^. Port.color
+        portId  = p ^. Port.portId
     g_
         [ "className" $= "luna-port luna-port--self" ] $ do
         circle_
@@ -78,20 +78,21 @@ portSelf_ ref port = do
             , "fill"      $= color
             ] mempty
         circle_
-            [ onMouseDown $ handleMouseDown ref portRef
+            [ onClick     $ handleClick     ref portRef
             , onMouseUp   $ handleMouseUp   ref portRef
-            , onClick     $ handleClick     ref portRef
             , "className" $= "luna-port__select"
             , "key"       $= (jsShow portId <> "b")
             ] mempty
 
 portSingle_ :: Ref App -> Port -> ReactElementM ViewEventHandler ()
-portSingle_ ref port = do
-    let portRef = port ^. Port.portRef
-        portId  = port ^. Port.portId
-        color   = toJSString $ port ^. Port.color
+portSingle_ ref p = do
+    let portRef = p ^. Port.portRef
+        portId  = p ^. Port.portId
+        color   = toJSString $ p ^. Port.color
+        r1, r2 :: Double -> JSString
         r1 = jsShow2 . (+) nodeRadius
         r2 = jsShow2 . (-) nodeRadius'
+        svgPath :: Double -> Integer -> Integer -> JSString
         svgPath a b c = "M0 -" <> r1 a <> " A " <> r1 a <> " " <> r1 a <> " 0 0 " <> jsShow b <> " 0 "  <> r1 a <>
                         " L0 "  <> r2 a <> " A " <> r2 a <> " " <> r2 a <> " 1 0 " <> jsShow c <> " 0 -" <> r2 a <> " Z "
     g_ [ "className" $= "luna-port luna-port--o--single" ] $ do
@@ -111,18 +112,18 @@ portSingle_ ref port = do
             ] mempty
 
 portIO_ :: Ref App -> Port -> Int -> Int -> Bool -> ReactElementM ViewEventHandler ()
-portIO_ ref port num numOfPorts isInput = do
-    let portRef = port ^. Port.portRef
-        portId  = port ^. Port.portId
-        color   = toJSString $ port ^. Port.color
+portIO_ ref p num numOfPorts isInput = do
+    let portRef = p ^. Port.portRef
+        portId  = p ^. Port.portId
+        color   = toJSString $ p ^. Port.color
         classes  = if isInput then "luna-port luna-port--i luna-port--i--" else "luna-port luna-port--o luna-port--o--"
         svgFlag1 = if isInput then "1"  else "0"
         svgFlag2 = if isInput then "0"  else "1"
-        mod      = if isInput then -1.0 else 1.0
-        startPortArcX r = r * sin(portAngleStart num numOfPorts r * mod)
-        startPortArcY r = r * cos(portAngleStart num numOfPorts r * mod)
-        stopPortArcX  r = r * sin(portAngleStop  num numOfPorts r * mod)
-        stopPortArcY  r = r * cos(portAngleStop  num numOfPorts r * mod)
+        mode     = if isInput then -1.0 else 1.0
+        startPortArcX r = r * sin(portAngleStart num numOfPorts r * mode)
+        startPortArcY r = r * cos(portAngleStart num numOfPorts r * mode)
+        stopPortArcX  r = r * sin(portAngleStop  num numOfPorts r * mode)
+        stopPortArcY  r = r * cos(portAngleStop  num numOfPorts r * mode)
         ax = jsShow2 . startPortArcX . (+) nodeRadius
         ay = jsShow2 . startPortArcY . (+) nodeRadius
         bx = jsShow2 . stopPortArcX  . (+) nodeRadius
@@ -156,10 +157,10 @@ portIO_ ref port num numOfPorts isInput = do
             ] mempty
 
 portIOExpanded_ :: Ref App -> Port -> Int -> Bool -> ReactElementM ViewEventHandler ()
-portIOExpanded_ ref port num isInput = do
-    let portRef = port ^. Port.portRef
-        portId  = port ^. Port.portId
-        color   = toJSString $ port ^. Port.color
+portIOExpanded_ ref p num isInput = do
+    let portRef = p ^. Port.portRef
+        portId  = p ^. Port.portId
+        color   = toJSString $ p ^. Port.color
         classes = if isInput then "luna-port luna-port--i luna-port--i--" else "luna-port luna-port--o luna-port--o--"
         n       = if isInput then 1 else 0
         r       = jsShow2 . (+3)
