@@ -3,7 +3,7 @@ module Luna.Studio.Engine.EventProcessor where
 import           Control.Concurrent.Chan                    (Chan)
 import qualified Control.Concurrent.Chan                    as Chan
 import           Control.Concurrent.MVar
-import           Control.Exception                          (catch)
+import           Control.Exception                          (catch,handle)
 import           Control.Monad                              (forever)
 import           Data.DateTime                              (getCurrentTime)
 import           Data.Monoid                                (Last (..))
