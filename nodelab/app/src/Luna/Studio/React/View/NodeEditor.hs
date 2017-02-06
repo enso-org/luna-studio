@@ -44,7 +44,9 @@ nodeEditor = React.defineView name $ \(ref, ne) -> do
         , onScroll    $ \e     -> [preventDefault e]
         ] $ do
         style_
-            [ "id" $= "cameraTransform" ] $ do
+            [ "id"  $= "cameraTransform"
+            , "key" $= "cameraTransform"
+            ] $ do
                 elemString $ Text.unpack ".node-trans { transform: … }"
                 elemString $ Text.unpack ".name-trans { transform: … }"
         svg_

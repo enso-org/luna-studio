@@ -179,4 +179,4 @@ removeActionFromState :: ActionRep -> Command State ()
 removeActionFromState key = currentActions %= Map.delete key
 
 updateScene :: Command State ()
-updateScene = scene <~ Scene.get
+updateScene = Scene.get >>= mapM_ (assign scene)

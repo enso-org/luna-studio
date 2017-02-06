@@ -15,4 +15,4 @@ foreign import javascript safe "$1.clipboardData.getData('Text')" getClipboardDa
 getClipboardData :: HandlerArg -> Text
 getClipboardData = unsafePerformIO . fmap convert . getClipboardData'
 
-foreign import javascript unsafe "copyToClipboard($1)" copyStringToClipboard :: JSString -> IO ()
+foreign import javascript safe "copyToClipboard($1)" copyStringToClipboard :: JSString -> IO ()
