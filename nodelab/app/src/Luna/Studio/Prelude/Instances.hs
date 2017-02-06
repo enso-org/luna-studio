@@ -10,7 +10,6 @@ import qualified Data.HashMap.Strict      as HashMap
 import           Data.JSString            (JSString)
 import qualified Data.JSString            as JSString
 import qualified Data.Map.Strict          as Map
-import           Data.String              (fromString)
 import           Development.Placeholders
 import           Empire.API.JSONInstances ()
 import           Prologue

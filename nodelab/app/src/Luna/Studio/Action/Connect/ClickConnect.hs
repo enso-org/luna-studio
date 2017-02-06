@@ -6,7 +6,8 @@ module Luna.Studio.Action.Connect.ClickConnect
     , clickConnectToPort
     ) where
 
-import           Empire.API.Data.PortRef            (AnyPortRef)
+import           Empire.API.Data.Port               (InPort (Self), PortId (InPortId))
+import           Empire.API.Data.PortRef            (AnyPortRef, portId')
 import           Luna.Studio.Action.Command         (Command)
 import           Luna.Studio.Action.Connect.Connect (connectToPort, startOrModifyConnection, stopConnecting, whileConnecting)
 import           Luna.Studio.Prelude
@@ -27,7 +28,9 @@ handleClickConnect evt portRef = do
     mayClickConnect <- checkAction @ClickConnect
     if isJust mayClickConnect then
         continue $ clickConnectToPort portRef
-    else begin ClickConnect >> startOrModifyConnection evt portRef
+    else case portId' portRef of
+        InPortId Self -> return ()
+        _             -> begin ClickConnect >> startOrModifyConnection evt portRef
 
 clickConnectToPort :: AnyPortRef -> ClickConnect -> Command State ()
 clickConnectToPort portRef _ = do

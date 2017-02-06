@@ -33,7 +33,6 @@ addConnection connId srcPos dstPos color = do
 localConnectNodes :: OutPortRef -> InPortRef -> Command Global.State ConnectionId
 localConnectNodes src dst = do
     connectionId <- zoom Global.graph $ Graph.addConnection src dst
-    prevConn <- Global.getConnection connectionId
     mayPos   <- getConnectionPosition src dst
     mayColor <- getConnectionColor src
     withJust ((,) <$> mayPos <*> mayColor) $ \((srcPos, dstPos), color) ->

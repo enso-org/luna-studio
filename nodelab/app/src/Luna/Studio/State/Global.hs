@@ -3,6 +3,7 @@
 {-# LANGUAGE TypeApplications    #-}
 module Luna.Studio.State.Global where
 
+import           Control.Lens.Internal.Zoom           (Focusing)
 import qualified Control.Monad.State                  as M
 import           Data.Aeson                           (ToJSON, toJSON)
 import           Data.DateTime                        (DateTime)
@@ -19,10 +20,12 @@ import           Empire.API.Data.Connection           (ConnectionId)
 import           Empire.API.Data.Node                 (NodeId)
 import qualified Empire.API.Data.Node                 as Node
 import qualified Empire.API.Graph.Collaboration       as Collaboration
-import qualified Luna.Studio.Event.Event                          as Event
+import           JS.Scene                             (Scene)
+import qualified JS.Scene                             as Scene
 import           Luna.Studio.Action.Command           (Command)
 import           Luna.Studio.Batch.Workspace
-import           Luna.Studio.Prelude
+import qualified Luna.Studio.Event.Event              as Event
+import           Luna.Studio.Prelude                  hiding (lens)
 import           Luna.Studio.React.Model.App          (App)
 import qualified Luna.Studio.React.Model.App          as App
 import           Luna.Studio.React.Model.Breadcrumbs  (Breadcrumbs)
@@ -41,8 +44,6 @@ import qualified Luna.Studio.State.Collaboration      as Collaboration
 import qualified Luna.Studio.State.Graph              as Graph
 import           System.Random                        (StdGen)
 import qualified System.Random                        as Random
-import qualified JS.Scene as Scene
-import JS.Scene (Scene)
 
 -- TODO[react]: Move all action states to ActionState
 -- TODO split to more states
@@ -77,10 +78,12 @@ makeLenses ''State
 withApp :: (Ref App -> Command State r) -> Command State r
 withApp action = action =<< use app
 
+modify :: forall b s. LensLike' (Focusing Identity b) App s -> M.StateT s Identity b -> Command State b
 modify lens action = do
     renderNeeded .= True
     withApp $ Store.continueModify $ zoom lens action
 
+get :: forall r. Getting r App r -> Command State r
 get lens = withApp $ return . view lens <=< Store.get
 
 modifyApp :: M.State App r -> Command State r
@@ -179,4 +182,4 @@ removeActionFromState :: ActionRep -> Command State ()
 removeActionFromState key = currentActions %= Map.delete key
 
 updateScene :: Command State ()
-updateScene = scene <~ Scene.get
+updateScene = Scene.get >>= mapM_ (assign scene)

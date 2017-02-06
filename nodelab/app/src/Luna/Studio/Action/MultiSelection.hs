@@ -52,9 +52,9 @@ inRect leftTop rightBottom node = pos ^. x >= leftTop ^. x
     where pos = Position (fromTuple $ node ^. Node.position)
 
 updateSelection :: Position -> Position -> Command State ()
-updateSelection start end = do
-    let leftTop     = Position (Vector2 (min (start ^. x) (end ^. x)) (max (start ^. y) (end ^. y)))
-        rightBottom = Position (Vector2 (max (start ^. x) (end ^. x)) (min (start ^. y) (end ^. y)))
+updateSelection start act = do
+    let leftTop     = Position (Vector2 (min (start ^. x) (act ^. x)) (max (start ^. y) (act ^. y)))
+        rightBottom = Position (Vector2 (max (start ^. x) (act ^. x)) (min (start ^. y) (act ^. y)))
     nodeIds <- map Node._nodeId . filter (inRect leftTop rightBottom) <$> use (Global.graph . Graph.nodes)
     selectNodes nodeIds
 

@@ -2,11 +2,15 @@
 {-# LANGUAGE OverloadedStrings #-}
 module JS.Scene where
 
+import           Control.Exception      (handle)
 import           Data.Position          (Position (Position), Vector2 (Vector2))
 import           Data.Size              (Size (Size))
 import           GHCJS.Foreign.Callback
+import           GHCJS.Types            (JSException (JSException))
+
 import qualified JS.Config              as Config
 import           Luna.Studio.Prelude
+
 
 
 data Scene = Scene
@@ -20,7 +24,7 @@ sceneId :: JSString
 sceneId = Config.prefix "Graph"
 
 appId :: JSString
-appId = Config.prefix "focus-app"
+appId = Config.prefix "app"
 
 foreign import javascript safe "document.getElementById($1).offsetWidth"  elementWidth  :: JSString -> IO Double
 foreign import javascript safe "document.getElementById($1).offsetHeight" elementHeight :: JSString -> IO Double
@@ -40,6 +44,7 @@ sceneHeight = liftIO $ elementHeight sceneId
 sceneLeft   = liftIO $ elementLeft   sceneId
 sceneTop    = liftIO $ elementTop    sceneId
 
-get :: MonadIO m => m Scene
-get = Scene <$> (Position .: Vector2 <$> sceneLeft <*> sceneTop)
-            <*> (Size .: Vector2 <$> sceneWidth <*> sceneHeight)
+get :: MonadIO m => m (Maybe Scene)
+get = liftIO . handle (\JSException {} -> return Nothing) $
+    Just .: Scene <$> (Position .: Vector2 <$> sceneLeft <*> sceneTop)
+                  <*> (Size .: Vector2 <$> sceneWidth <*> sceneHeight)
