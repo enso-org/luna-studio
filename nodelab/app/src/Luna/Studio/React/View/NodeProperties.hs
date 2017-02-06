@@ -37,7 +37,7 @@ nodeProperties = React.defineView objName $ \(ref, p) -> do
                 [ "key"       $= "value"
                 , "className" $= "luna-row luna-row--output-name"
                 , onDoubleClick $ \_ _ -> dispatch ref $ UI.NodeEvent $ Node.NameEditStart nodeId
-                ] $ do
+                ] $
                 case (p ^. Prop.nameEdit) of
                     Just name ->
                         input_

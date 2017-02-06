@@ -98,7 +98,7 @@ isPointInNode p node =
         leftTop     <- translateToWorkspace $ Position (Vector2 left  top)
         rightBottom <- translateToWorkspace $ Position (Vector2 right bottom)
         return $ isPointInRect p (leftTop, rightBottom)
-    else return $ isPointInCircle p ((node ^. Model.position), nodeRadius)
+    else return $ isPointInCircle p (node ^. Model.position, nodeRadius)
 
 getNodeAtPosition :: Position -> Command State (Maybe NodeId)
 getNodeAtPosition p = do

@@ -43,7 +43,7 @@ handleEv ev = Just $
     -- Global.lastEvent ?= ev
     -- Global.eventNum  += 1
     when shouldExportState $ do
-        evN <- use $ Global.eventNum
+        evN <- use Global.eventNum
         liftIO $ do
             processedEvent evN
             val <- toJSVal $ toJSON ev

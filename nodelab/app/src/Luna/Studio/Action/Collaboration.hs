@@ -23,7 +23,7 @@ updateClient clId = do
             return $ currentData ^. Collaboration.colorId
         Nothing          -> do
             clients <- use Collaboration.knownClients
-            let colors = Collaboration.unColorId . (view Collaboration.colorId) <$> Map.elems clients
+            let colors = Collaboration.unColorId . view Collaboration.colorId <$> Map.elems clients
                 nextColor = case colors of
                     [] -> 0
                     _  -> maximum colors + 1

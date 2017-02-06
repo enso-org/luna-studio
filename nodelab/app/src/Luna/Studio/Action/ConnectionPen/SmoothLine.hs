@@ -38,7 +38,7 @@ curveToSvgPath curve = do
 addSegmentToCurve :: Curve -> Position -> Timestamp -> Maybe Double -> Double -> Curve
 addSegmentToCurve curve controlPoint timestamp mayVelocity minLengthToApprove = do
     let approvedSegments = dropWhile (not . view Curve.approved) $ curve ^. Curve.segments
-    if (null $ curve ^. Curve.segments) || null approvedSegments then
+    if null (curve ^. Curve.segments) || null approvedSegments then
         Curve [CurveSegment controlPoint controlPoint controlPoint True] (Just timestamp) mayVelocity
     else do
         let (lastSegment : unchangableSegments) = approvedSegments
@@ -53,7 +53,7 @@ getCurrentVelocity :: Timestamp -> Timestamp -> Position -> Position -> Maybe Do
 getCurrentVelocity prevTimestamp currentTimestamp prevPos currentPos mayLastVelocity = do
     let timeDiff = fromIntegral $ unwrap currentTimestamp - unwrap prevTimestamp
         dist     = distance prevPos currentPos
-    if fingerDragSmoothing && (isJust mayLastVelocity) then do
+    if fingerDragSmoothing && isJust mayLastVelocity then do
         let lastVelocity = fromJust mayLastVelocity
             acceleration = (fingerDragSmoothingCoef * (dist / timeDiff - lastVelocity))
                          / (fingerDragSmoothingStrength * timeDiff + 1 - fingerDragSmoothingStrength)
@@ -62,13 +62,13 @@ getCurrentVelocity prevTimestamp currentTimestamp prevPos currentPos mayLastVelo
 
 addPointToCurve :: Position -> Timestamp -> Curve -> Curve
 addPointToCurve pos timestamp curve =
-    if ((isNothing $ curve ^. Curve.lastUpdate) || (null $ curve ^. Curve.segments)) then
+    if isNothing (curve ^. Curve.lastUpdate) || null (curve ^. Curve.segments) then
         addSegmentToCurve curve pos timestamp Nothing 0
     else do
         let prevTimestamp   = fromJust $ curve ^. Curve.lastUpdate
             lastPoint       = view Curve.controlPoint $ head $ curve ^. Curve.segments
             currentVelocity = getCurrentVelocity prevTimestamp timestamp lastPoint pos (curve ^. Curve.lastVelocity)
-            minLengthToApprove = min maxSmoothSeg $ max minSmoothSeg $ smoothCoef * (sqrt currentVelocity)
+            minLengthToApprove = min maxSmoothSeg $ max minSmoothSeg $ smoothCoef * sqrt currentVelocity
         addSegmentToCurve curve pos timestamp (Just currentVelocity) minLengthToApprove
 
 beginCurve :: Position -> Timestamp -> Curve

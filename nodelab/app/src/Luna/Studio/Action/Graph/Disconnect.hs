@@ -33,5 +33,5 @@ removeConnectionsBetweenNodes :: NodeId -> NodeId -> Command State ()
 removeConnectionsBetweenNodes n1 n2 = do
     connMap <- use $ Global.graph . Graph.connectionsMap . to HashMap.elems
     let shouldRemove :: Connection -> Bool
-        shouldRemove conn = (connectionToNodeIds conn) `elem` [(n1, n2), (n2, n1)]
+        shouldRemove conn = connectionToNodeIds conn `elem` [(n1, n2), (n2, n1)]
     removeConnections $ map (view Connection.dst) $ filter shouldRemove connMap

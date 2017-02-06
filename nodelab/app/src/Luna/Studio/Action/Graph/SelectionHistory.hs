@@ -24,5 +24,5 @@ modifySelectionHistory nodeIds = do
     case maybeSelection of
         Nothing        -> Global.selectionHistory .= [nodeIdsSet]
         Just selection -> when (nodeIdsSet /= selection) $
-            Global.selectionHistory %= (take historyMaxLength) . (nodeIdsSet :)
+            Global.selectionHistory %= take historyMaxLength . (nodeIdsSet :)
     when (Set.null nodeIdsSet) dropSelectionHistory

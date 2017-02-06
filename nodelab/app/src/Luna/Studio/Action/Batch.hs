@@ -97,17 +97,17 @@ requestCollaborationRefresh = do
     withWorkspace' $ BatchCmd.requestCollaborationRefresh clId
 
 collaborativeTouch :: [NodeId] -> Command State ()
-collaborativeTouch nodeIds = when (not (null nodeIds)) $ do
+collaborativeTouch nodeIds = unless (null nodeIds) $ do
     clId <- use clientId
     withWorkspace' $ BatchCmd.collaborativeTouch clId nodeIds
 
 collaborativeModify :: [NodeId] -> Command State ()
-collaborativeModify nodeIds = when (not (null nodeIds)) $ do
+collaborativeModify nodeIds = unless (null nodeIds) $ do
     clId <- use clientId
     withWorkspace' $ BatchCmd.collaborativeModify clId nodeIds
 
 cancelCollaborativeTouch :: [NodeId] -> Command State ()
-cancelCollaborativeTouch nodeIds = when (not (null nodeIds)) $ do
+cancelCollaborativeTouch nodeIds = unless (null nodeIds) $ do
     clId <- use clientId
     withWorkspace' $ BatchCmd.cancelCollaborativeTouch clId nodeIds
 
