@@ -392,8 +392,53 @@ spec = around withChannels $ parallel $ do
                 Graph.disconnect top (InPortRef u1 (Port.Arg 0))
                 Graph.withGraph top $ runASTOp $ GraphBuilder.buildNode u1
             withResult res $ \n -> do
-              let inputPorts = Map.elems $ Map.filter Port.isInputPort $ n ^. Node.ports
-              inputPorts `shouldSatisfy` ((== 2) . length)
+                let inputPorts = Map.elems $ Map.filter Port.isInputPort $ n ^. Node.ports
+                inputPorts `shouldMatchList` [
+                      Port.Port (Port.InPortId Port.Self)    "self"  TStar (Port.WithDefault (Expression "func"))
+                    , Port.Port (Port.InPortId (Port.Arg 0)) "arg 0" TStar Port.NotConnected
+                    ]
+        it "disconnect first connection when two nodes connected" $ \env -> do
+            u1 <- mkUUID
+            u2 <- mkUUID
+            u3 <- mkUUID
+            res <- evalEmp env $ do
+                Graph.addNode top u1 "first" def
+                Graph.addNode top u2 "second" def
+                Graph.addNode top u3 "func" def
+                Graph.connect top (OutPortRef u1 Port.All) (InPortRef u3 (Port.Arg 0))
+                Graph.connect top (OutPortRef u2 Port.All) (InPortRef u3 (Port.Arg 1))
+                Graph.disconnect top (InPortRef u3 (Port.Arg 0))
+                Graph.withGraph top $ runASTOp $ GraphBuilder.buildNode u3
+            withResult res $ \n -> do
+                let inputPorts = Map.elems $ Map.filter Port.isInputPort $ n ^. Node.ports
+                inputPorts `shouldMatchList` [
+                      Port.Port (Port.InPortId Port.Self)    "self"  TStar (Port.WithDefault (Expression "func"))
+                    , Port.Port (Port.InPortId (Port.Arg 0)) "arg 0" TStar Port.NotConnected
+                    , Port.Port (Port.InPortId (Port.Arg 1)) "arg 1" TStar Port.Connected
+                    ]
+        it "disconnects first connection when three connected" $ \env -> do
+            u1 <- mkUUID
+            u2 <- mkUUID
+            u3 <- mkUUID
+            u4 <- mkUUID
+            res <- evalEmp env $ do
+                Graph.addNode top u1 "first" def
+                Graph.addNode top u2 "second" def
+                Graph.addNode top u3 "third" def
+                Graph.addNode top u4 "func" def
+                Graph.connect top (OutPortRef u1 Port.All) (InPortRef u4 (Port.Arg 0))
+                Graph.connect top (OutPortRef u2 Port.All) (InPortRef u4 (Port.Arg 1))
+                Graph.connect top (OutPortRef u3 Port.All) (InPortRef u4 (Port.Arg 2))
+                Graph.disconnect top (InPortRef u4 (Port.Arg 0))
+                Graph.withGraph top $ runASTOp $ GraphBuilder.buildNode u4
+            withResult res $ \n -> do
+                let inputPorts = Map.elems $ Map.filter Port.isInputPort $ n ^. Node.ports
+                inputPorts `shouldMatchList` [
+                      Port.Port (Port.InPortId Port.Self)    "self"  TStar (Port.WithDefault (Expression "func"))
+                    , Port.Port (Port.InPortId (Port.Arg 0)) "arg 0" TStar Port.NotConnected
+                    , Port.Port (Port.InPortId (Port.Arg 1)) "arg 1" TStar Port.Connected
+                    , Port.Port (Port.InPortId (Port.Arg 2)) "arg 2" TStar Port.Connected
+                    ]
     describe "parser sanity" $ do
         it "shows error on parse error" $ \env -> do
             u1 <- mkUUID

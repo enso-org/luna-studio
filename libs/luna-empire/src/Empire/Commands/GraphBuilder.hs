@@ -202,9 +202,11 @@ extractPortInfo node = do
 buildArgPorts :: ASTOp m => NodeRef -> m [Port]
 buildArgPorts ref = do
     (types, states) <- extractPortInfo ref
-    let psCons = zipWith3  Port
+    let additionalEmptyPort = if NotConnected `elem` states then 0 else 1
+        portsTypes = types ++ replicate (length states - length types + additionalEmptyPort) TStar
+        psCons = zipWith3  Port
                           (InPortId . Arg <$> [(0::Int)..]) (("arg " <>) . show <$> [(0::Int)..])
-                          (types ++ replicate (length states - length types + 1) TStar)
+                          portsTypes
     return $ zipWith ($) psCons (states ++ repeat NotConnected)
 
 buildSelfPort' :: ASTOp m => Bool -> NodeRef -> m (Maybe Port)

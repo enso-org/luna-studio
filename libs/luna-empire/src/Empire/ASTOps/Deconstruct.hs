@@ -22,7 +22,7 @@ deconstructApp app' = match app' $ \case
     App a _ -> do
         unpackedArgs <- extractArguments app'
         target <- extractFun app'
-        return (target, reverse unpackedArgs)
+        return (target, unpackedArgs)
     _ -> throwM $ NotAppException app'
 
 extractFun :: ASTOp m => NodeRef -> m NodeRef
@@ -33,14 +33,20 @@ extractFun app = match app $ \case
 
 extractArguments :: ASTOp m => NodeRef -> m [NodeRef]
 extractArguments expr = match expr $ \case
+    App{} -> reverse <$> extractArguments' expr
+    Lam{} -> extractArguments' expr
+    _ -> return []
+
+extractArguments' :: ASTOp m => NodeRef -> m [NodeRef]
+extractArguments' expr = match expr $ \case
     App a b -> do
         nextApp <- IR.source a
-        args    <- extractArguments nextApp
+        args    <- extractArguments' nextApp
         arg'    <- IR.source b
         return $ arg' : args
     Lam b a -> do
         nextLam <- IR.source a
-        args    <- extractArguments nextLam
+        args    <- extractArguments' nextLam
         arg'    <- IR.source b
         return $ arg' : args
     _       -> return []
