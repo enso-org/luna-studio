@@ -18,7 +18,7 @@ import qualified Luna.Studio.React.Model.Node           as Node
 import qualified Luna.Studio.React.Model.NodeProperties as Properties
 import qualified Luna.Studio.React.Model.Port           as Port
 import           Luna.Studio.React.Store                (Ref, dispatch)
-import           Luna.Studio.React.View.CommonElements  (selectionMark_)
+import           Luna.Studio.React.View.CommonElements  (blurBackground_,selectionMark_)
 import           Luna.Studio.React.View.NodeProperties  (nodeProperties_)
 import           Luna.Studio.React.View.Port            (portExpanded_, port_)
 import           Luna.Studio.React.View.Visualization   (visualization_)
@@ -69,7 +69,13 @@ node = React.defineView objName $ \(ref, n) -> do
                     , "className" $= "luna-node__main"
                     ] $ do
                     selectionMark_
-                    nodeProperties_ ref $ Properties.fromNode n
+                    div_
+                        [ "key"       $= "properties-crop"
+                        , "className" $= "luna-node__properties-crop"
+                        , "id"        $= ("node-" <> fromString (show nodeId))
+                        ] $ do
+                        blurBackground_
+                        if n ^. Node.isExpanded then (nodeProperties_ ref $ Properties.fromNode n) else ""
                 div_
                     [ "key"       $= "visualization"
                     , "className" $= "luna-node__visuals"
