@@ -53,6 +53,9 @@ instance FromJSON Event where
 
 -- ======= GHCJS ===============================================================
 
+instance Default JSString where
+    def = JSString.empty
+
 instance Convertible Text JSString where
     convert = JSString.pack . convert
 

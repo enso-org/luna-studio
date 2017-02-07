@@ -16,6 +16,7 @@ import           GHCJS.Prim                             (fromJSString)
 import qualified JS.Atom                                as Atom
 import qualified JS.CustomEvent                         as CustomEvent
 import qualified JS.Scene                               as Scene
+import qualified JS.UI                                  as UI
 import qualified JS.WebSocket                           as WebSocket
 import qualified Luna.Studio.Batch.Connector.Connection as BatchConnection
 import qualified Luna.Studio.Event.Connection           as Connection
@@ -29,7 +30,9 @@ data AddHandler a = AddHandler ((a -> IO ()) -> IO (IO ()))
 
 atomHandler :: AddHandler Event
 atomHandler = AddHandler $ \h ->
-    Atom.onEvent $ h . Shortcut
+    Atom.onEvent $
+        whenM UI.isFocusInApp .
+            h . Shortcut
 
 sceneResizeHandler :: AddHandler Event
 sceneResizeHandler = AddHandler $ \h ->

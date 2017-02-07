@@ -16,7 +16,7 @@ import           Luna.Studio.Prelude
 data Scene = Scene
         { _position :: Position
         , _size     :: Size
-        } deriving (Default, Generic, Show)
+        } deriving (Default, Eq, Generic, Show)
 
 makeLenses ''Scene
 

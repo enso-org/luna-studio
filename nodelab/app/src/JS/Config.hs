@@ -1,11 +1,20 @@
 {-# LANGUAGE JavaScriptFFI     #-}
 {-# LANGUAGE OverloadedStrings #-}
 
-module JS.Config (getBackendAddress, openedFile, mountPoint, prefix) where
+module JS.Config
+  ( getBackendAddress
+  , isPrefixed
+  , mountPoint
+  , openedFile
+  , prefix
+  ) where
 
+import qualified Data.JSString       as JSString
+import qualified Data.List           as List
 import           GHCJS.Marshal.Pure  (pFromJSVal)
 import           Luna.Studio.Prelude
 import           System.IO.Unsafe    (unsafePerformIO)
+
 
 
 foreign import javascript safe "config.backendAddress"
@@ -27,3 +36,6 @@ mountPoint = unsafePerformIO $ fromMaybe "luna-studio-mount" . pFromJSVal <$> mo
 
 prefix :: JSString -> JSString
 prefix name = convert mountPoint <> "-" <> name
+
+isPrefixed :: JSString -> Bool
+isPrefixed = List.isPrefixOf (convert $ prefix def) . JSString.unpack
