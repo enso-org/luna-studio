@@ -175,7 +175,7 @@ handleAddNode = modifyGraph (mtuple action) success where
 handleAddSubgraph :: Request AddSubgraph.Request -> StateT Env BusT ()
 handleAddSubgraph = modifyGraph (mtuple action) success where
     action (AddSubgraph.Request location nodes connections saveNodeIds) = Graph.addSubgraph location nodes connections saveNodeIds
-    success request@(Request _ _ req@(AddSubgraph.Request location nodes connections saveNodeIds)) _ idMap   = do
+    success request@(Request _ _ req@(AddSubgraph.Request location nodes connections saveNodeIds)) _ idMap = do
         replyResult request () idMap
 
 handleRemoveNodes :: Request RemoveNodes.Request -> StateT Env BusT ()
