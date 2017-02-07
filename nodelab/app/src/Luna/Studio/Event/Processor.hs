@@ -1,4 +1,4 @@
-module Luna.Studio.Engine.EventProcessor where
+module Luna.Studio.Event.Processor where
 
 import           Control.Concurrent.Chan                    (Chan)
 import qualified Control.Concurrent.Chan                    as Chan
@@ -12,13 +12,13 @@ import           GHCJS.Prim                                 (JSException)
 import qualified JS.Debug
 import           JS.WebSocket                               (WebSocket)
 import           Luna.Studio.Action.Command                 (Command, execCommand)
-import           Luna.Studio.Engine.JSHandlers              (AddHandler (..))
-import qualified Luna.Studio.Engine.JSHandlers              as JSHandlers
 import           Luna.Studio.Event.Event                    (Event)
 import qualified Luna.Studio.Event.Event                    as Event
 import qualified Luna.Studio.Event.Preprocessor.Batch       as BatchEventPreprocessor
 import qualified Luna.Studio.Event.Preprocessor.CustomEvent as CustomEventPreprocessor
 import qualified Luna.Studio.Event.Preprocessor.Shortcut    as ShortcutEventPreprocessor
+import           Luna.Studio.Event.Source                   (AddHandler (..))
+import qualified Luna.Studio.Event.Source                   as JSHandlers
 import qualified Luna.Studio.Handler.App                    as App
 import qualified Luna.Studio.Handler.Backend.Control        as Control
 import qualified Luna.Studio.Handler.Backend.Graph          as Graph
@@ -36,11 +36,11 @@ import qualified Luna.Studio.Handler.Navigation             as Navigation
 import qualified Luna.Studio.Handler.Node                   as Node
 import qualified Luna.Studio.Handler.Port                   as Port
 import qualified Luna.Studio.Handler.Searcher               as Searcher
+import qualified Luna.Studio.Handler.Undo                   as Undo
 import qualified Luna.Studio.Handler.Visualization          as Visualization
 import           Luna.Studio.Prelude
 import           Luna.Studio.State.Global                   (State)
 import qualified Luna.Studio.State.Global                   as Global
-import qualified Luna.Studio.Handler.Undo as Undo
 
 
 displayProcessingTime :: Bool

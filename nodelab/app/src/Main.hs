@@ -16,7 +16,7 @@ import           JS.UUID                              (generateUUID)
 import           JS.WebSocket                         (WebSocket)
 import qualified Luna.Studio.Batch.Connector.Commands as BatchCmd
 import qualified Luna.Studio.Batch.Workspace          as Workspace
-import qualified Luna.Studio.Engine                   as Engine
+import qualified Luna.Studio.Event.Engine             as Engine
 import qualified Luna.Studio.React.Store              as Store
 import qualified Luna.Studio.React.View.App           as App
 import           Luna.Studio.State.Global             (mkState)

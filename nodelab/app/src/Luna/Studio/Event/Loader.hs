@@ -1,4 +1,4 @@
-module Luna.Studio.Engine.Loader where
+module Luna.Studio.Event.Loader where
 
 import           JS.Config           (getBackendAddress)
 import           JS.UI               (displayConnectionClosedMessage)
