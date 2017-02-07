@@ -5,11 +5,14 @@
 {-# LANGUAGE ViewPatterns        #-}
 
 module Empire.Commands.GraphBuilder (
-    buildNode
+    buildConnections
+  , buildNode
+  , buildNodes
   , buildEdgeNodes
   , buildGraph
   , decodeBreadcrumbs
   , getEdgePortMapping
+  , getNodeName
   , nodeConnectedToOutput
   ) where
 

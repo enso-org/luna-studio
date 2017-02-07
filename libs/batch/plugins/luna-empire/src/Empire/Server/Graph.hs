@@ -28,6 +28,7 @@ import           Empire.API.Data.Breadcrumb            (Breadcrumb (..))
 import           Empire.API.Data.Connection            as Connection
 import           Empire.API.Data.DefaultValue          (Value (..))
 import           Empire.API.Data.GraphLocation         (GraphLocation)
+import           Empire.API.Data.Graph                 (Graph (..))
 import           Empire.API.Data.Node                  (Node (..), NodeId)
 import qualified Empire.API.Data.Node                  as Node
 import           Empire.API.Data.NodeMeta              (NodeMeta)
@@ -54,9 +55,10 @@ import qualified Empire.API.Graph.UpdateNodeMeta       as UpdateNodeMeta
 import           Empire.API.Request                    (Request (..))
 import qualified Empire.API.Response                   as Response
 import qualified Empire.API.Topic                      as Topic
+import           Empire.ASTOp                          (runASTOp)
 import qualified Empire.ASTOps.Print                   as Print
 import qualified Empire.Commands.Graph                 as Graph
-import           Empire.Commands.GraphBuilder          (buildNodes, getNodeName, buildConnections)
+import           Empire.Commands.GraphBuilder          (buildNodes, getNodeName, buildConnections, buildGraph)
 import qualified Empire.Commands.Persistence           as Persistence
 import           Empire.Empire                         (Empire)
 import qualified Empire.Empire                         as Empire
@@ -181,8 +183,7 @@ handleAddSubgraph = modifyGraph (mtuple action) success where
 handleRemoveNodes :: Request RemoveNodes.Request -> StateT Env BusT ()
 handleRemoveNodes = modifyGraphOk action success where
     action  (RemoveNodes.Request location nodeIds) = do
-        allNodes    <- Graph.withGraph location buildNodes
-        connections <- Graph.withGraph location buildConnections
+        Graph allNodes connections <- Graph.withGraph location $ runASTOp buildGraph
         let inv = RemoveNodes.Inverse allNodes connections
         (inv,) <$> Graph.removeNodes location nodeIds
     success (RemoveNodes.Request location nodeIds) _ result = sendToBus' $ RemoveNodes.Update location nodeIds
@@ -203,7 +204,7 @@ handleUpdateNodeExpression = modifyGraph action success where
 handleUpdateNodeMeta :: Request UpdateNodeMeta.Request -> StateT Env BusT ()
 handleUpdateNodeMeta = modifyGraphOk action success where
     action  (UpdateNodeMeta.Request location updates) = do
-        allNodes <- Graph.withGraph location buildNodes
+        allNodes <- Graph.withGraph location $ runASTOp buildNodes
         let inv = UpdateNodeMeta.Inverse allNodes
             res = forM_ updates $ uncurry $ Graph.updateNodeMeta location
         (inv,) <$> res
@@ -212,7 +213,7 @@ handleUpdateNodeMeta = modifyGraphOk action success where
 handleRenameNode :: Request RenameNode.Request -> StateT Env BusT ()
 handleRenameNode = modifyGraphOk action success where
     action  (RenameNode.Request location nodeId name) = do
-        oldName <- Graph.withGraph location $ getNodeName nodeId
+        oldName <- Graph.withGraph location $ runASTOp $ getNodeName nodeId
         let inv = RenameNode.Inverse oldName
         (inv,) <$> Graph.renameNode location nodeId name
     success (RenameNode.Request location nodeId name) _ result = sendToBus' $ RenameNode.Update location nodeId name
@@ -231,7 +232,7 @@ handleConnectReq doTC = modifyGraphOk (mtuple action) success where
 handleDisconnect :: Request Disconnect.Request -> StateT Env BusT ()
 handleDisconnect = modifyGraphOk action success where
     action  (Disconnect.Request location dst) = do
-        connection <- Graph.withGraph location buildConnections
+        connection <- Graph.withGraph location $ runASTOp buildConnections
         let inv = Disconnect.Inverse $ fst $ head connection
         (inv,) <$> Graph.disconnect location dst
     success (Disconnect.Request location dst) _ result = sendToBus' $ Disconnect.Update location dst
