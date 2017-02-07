@@ -40,7 +40,7 @@ navigateToGraph location = do
     when (currentLocation /= location) $ loadGraph location
 
 setCurrentBreadcrumb :: Breadcrumb (Named BreadcrumbItem) -> Command State ()
-setCurrentBreadcrumb breadcrumbs = Breadcrumbs.set breadcrumbs
+setCurrentBreadcrumb = Breadcrumbs.set
 
 enterBreadcrumbs :: Breadcrumb BreadcrumbItem -> Command State ()
 enterBreadcrumbs newBc = do

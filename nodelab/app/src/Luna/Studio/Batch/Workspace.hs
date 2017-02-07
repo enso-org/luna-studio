@@ -41,10 +41,10 @@ currentProject' w = fromMaybe err $ w ^? projects . ix pid where
     pid = w ^. currentLocation . GraphLocation.projectId
     err = error $ "Invalid project id: " <> show pid
 
-currentProject :: Getter Workspace Project
+currentProject :: Contravariant f => (Project -> f Project) -> Workspace -> f Workspace
 currentProject = to currentProject'
 
-currentProjectId :: Getter Workspace ProjectId
+currentProjectId :: Functor f => (ProjectId -> f ProjectId) -> Workspace -> f Workspace
 currentProjectId = currentLocation . GraphLocation.projectId
 
 currentLibrary' :: Workspace -> Library
@@ -53,7 +53,7 @@ currentLibrary' w = fromMaybe err $ project ^? Project.libs . ix lid where
     project = w ^. currentProject
     err = error "Invalid library id"
 
-currentLibrary :: Getter Workspace Library
+currentLibrary :: Contravariant f => (Library -> f Library) -> Workspace -> f Workspace
 currentLibrary = to currentLibrary'
 
 
@@ -67,7 +67,7 @@ uiGraphLocation' w = UIGraphLocation project library breadcrumb' where
     project     = w ^. currentProjectId
     library     = w ^. currentLibrary  . Library.path
 
-uiGraphLocation :: Getter Workspace UIGraphLocation
+uiGraphLocation :: Contravariant f => (UIGraphLocation -> f UIGraphLocation) -> Workspace -> f Workspace
 uiGraphLocation = to uiGraphLocation'
 
 fromUIGraphLocation :: Map ProjectId Project -> UIGraphLocation -> Maybe GraphLocation

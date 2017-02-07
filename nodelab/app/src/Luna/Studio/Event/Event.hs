@@ -30,5 +30,5 @@ instance Default Event where
 
 instance ToJSON Event
 
-name :: Getter Event String
+name :: Contravariant f => (String -> f String) -> Event -> f Event
 name = to $ head . words . show

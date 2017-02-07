@@ -17,11 +17,12 @@ data Request = Request { _location  :: GraphLocation
                        , _nodeType  :: NodeType
                        , _nodeMeta  :: NodeMeta
                        , _connectTo :: Maybe NodeId
+                       , _nodeId    :: Maybe NodeId
                        } deriving (Generic, Eq, NFData, Show)
 type Result = Node
 
-type Response = Response.Response Request Result
-instance Response.ResponseResult Request Result
+type Response = Response.Response Request () Result
+instance Response.ResponseResult Request () Result
 
 data Update = Update { _location'  :: GraphLocation
                      , _node'      :: Node

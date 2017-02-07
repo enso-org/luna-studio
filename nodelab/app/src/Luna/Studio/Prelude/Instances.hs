@@ -10,7 +10,6 @@ import qualified Data.HashMap.Strict      as HashMap
 import           Data.JSString            (JSString)
 import qualified Data.JSString            as JSString
 import qualified Data.Map.Strict          as Map
-import           Data.String              (fromString)
 import           Development.Placeholders
 import           Empire.API.JSONInstances ()
 import           Prologue
@@ -53,6 +52,9 @@ instance FromJSON Event where
     parseJSON = $notImplemented
 
 -- ======= GHCJS ===============================================================
+
+instance Default JSString where
+    def = JSString.empty
 
 instance Convertible Text JSString where
     convert = JSString.pack . convert

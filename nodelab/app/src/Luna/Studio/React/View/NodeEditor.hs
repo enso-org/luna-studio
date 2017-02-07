@@ -4,7 +4,7 @@ module Luna.Studio.React.View.NodeEditor where
 import qualified Data.Aeson                            as Aeson
 import qualified Data.HashMap.Strict                   as HashMap
 import qualified Data.Text                             as Text
-import           React.Flux
+import           React.Flux                            hiding (transform)
 import qualified React.Flux                            as React
 import           React.Flux.Internal                   (el)
 
@@ -44,7 +44,9 @@ nodeEditor = React.defineView name $ \(ref, ne) -> do
         , onScroll    $ \e     -> [preventDefault e]
         ] $ do
         style_
-            [ "id" $= "cameraTransform" ] $ do
+            [ "id"  $= "cameraTransform"
+            , "key" $= "cameraTransform"
+            ] $ do
                 elemString $ Text.unpack ".node-trans { transform: … }"
                 elemString $ Text.unpack ".name-trans { transform: … }"
         svg_
@@ -92,7 +94,7 @@ nodeEditor = React.defineView name $ \(ref, ne) -> do
             , "style"     @= Aeson.object [ "transform" Aeson..= transform ]
             ] $ do
             forM_ (ne ^. NodeEditor.nodes . to HashMap.elems) (node_ ref)
-            forM_ (ne ^. NodeEditor.visualizations . to HashMap.toList) $ uncurry $ pinnedVisualization_ ref ne
+            forM_ (ne ^. NodeEditor.visualizations) $ pinnedVisualization_ ref ne
         canvas_
             [ "className" $= "luna-plane plane--canvas luna-hide"
             , "key"       $= "canvas"

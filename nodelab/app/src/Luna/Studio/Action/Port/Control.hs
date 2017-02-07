@@ -1,6 +1,6 @@
 {-# LANGUAGE JavaScriptFFI #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
-module Luna.Studio.Action.PortControl
+module Luna.Studio.Action.Port.Control
     ( startMoveSlider
     , moveSlider
     , stopMoveSlider

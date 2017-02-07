@@ -7,8 +7,7 @@ module JS.GoogleAnalytics
     , ConnectType (..)
     ) where
 
-import           Data.JSString.Text         (textToJSString)
-import           GHCJS.Nullable             (Nullable, maybeToNullable)
+import           GHCJS.Nullable             (Nullable)
 import           Luna.Studio.Prelude
 
 import           Luna.Studio.Action.Command (Command)

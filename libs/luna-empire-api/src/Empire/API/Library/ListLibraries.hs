@@ -15,14 +15,17 @@ data Request = Request { _projectId :: ProjectId
 data Result = Result { _libraries :: [(LibraryId, Library)]
                      } deriving (Generic, Eq, NFData, Show)
 
-type Response = Response.Response Request Result
-instance Response.ResponseResult Request Result
+-- data Inverse = Maybe ()
+
+type Response = Response.Response Request () Result
+instance Response.ResponseResult Request () Result
 
 makeLenses ''Request
 makeLenses ''Result
 
 instance Binary Request
 instance Binary Result
+
 
 topicPrefix = "empire.library.list"
 instance T.MessageTopic (R.Request Request)  where topic _ = topicPrefix <> T.request

@@ -93,6 +93,7 @@ instance ToJSON Searcher
 data VisualizationDrag = VisualizationDrag
     { _visNodeId :: NodeId
     , _visIdx    :: Int
+    , _visPos    :: Position
     } deriving (Eq, Show, Generic, Typeable)
 
 makeLenses ''VisualizationDrag
@@ -153,3 +154,15 @@ overlappingActions = [ Set.fromList [ clickConnectAction
                                     , zoomDragAction
                                     ]
                      ]
+
+actionsBlockingPortHighlight :: Set ActionRep
+actionsBlockingPortHighlight = Set.fromList [ multiSelectionAction
+                                            , nodeDragAction
+                                            , penConnectAction
+                                            , penDisconnectAction
+                                            , searcherAction
+                                            , sliderDragAction
+                                            , visualizationDragAction
+                                            , panDragAction
+                                            , zoomDragAction
+                                            ]

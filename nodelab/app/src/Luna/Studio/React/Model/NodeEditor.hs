@@ -19,7 +19,7 @@ data NodeEditor = NodeEditor { _screenTransform   :: CameraTransformation
                              , _currentConnection :: Maybe CurrentConnection
                              , _connectionPen     :: Maybe ConnectionPen
                              , _selectionBox      :: Maybe SelectionBox
-                             , _visualizations    :: HashMap (NodeId, Int) Position
+                             , _visualizations    :: [(NodeId, Int, Position)]
                              } deriving (Default, Eq, Generic)
 
 makeLenses ''NodeEditor

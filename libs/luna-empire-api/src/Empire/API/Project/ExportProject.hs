@@ -16,8 +16,9 @@ data Request = Request { _projectId :: ProjectId
 data Result = Result   { _projectData :: Text
                        } deriving (Generic, Eq, NFData, Show)
 
-type Response = Response.Response Request Result
-instance Response.ResponseResult Request Result
+
+type Response = Response.Response Request () Result
+instance Response.ResponseResult Request () Result
 
 makeLenses ''Request
 makeLenses ''Result

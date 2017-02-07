@@ -57,5 +57,4 @@ updateNodeProfilingData nodeId execTime =
     Global.modifyNode nodeId $ Model.execTime ?= execTime
 
 updateExpression :: NodeId -> Text -> Command State ()
-updateExpression nodeId expr =
-    BatchCmd.updateNodeExpression nodeId expr
+updateExpression = BatchCmd.updateNodeExpression

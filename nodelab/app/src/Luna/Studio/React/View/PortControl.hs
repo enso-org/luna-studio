@@ -98,7 +98,7 @@ inPortControl = React.defineView "inPortControl" $ \(ref, portRef, port) ->
                     let value = fromMaybe True $ defVal ^? DefaultValue._Constant . DefaultValue._BoolValue
                         defaultValue = DefaultValue.Constant $ DefaultValue.BoolValue $ not value
                     button_
-                        [ onClick $ \_ _ -> dispatch ref $ UI.NodeEvent $ Node.PortSetDefaultValue portRef $ defaultValue
+                        [ onClick $ \_ _ -> dispatch ref $ UI.NodeEvent $ Node.PortSetDefaultValue portRef defaultValue
                         ] $ elemString $ show value
                 ValueType.Other ->
                     elemString "(other)"

@@ -24,8 +24,7 @@ updateNodeMeta nodeId meta = do
         NodeModel.position .= Position (fromTuple $ meta ^. NodeMeta.position)
 
 updateNodesMeta :: [(NodeId, NodeMeta)] -> Command Global.State ()
-updateNodesMeta updates =
-    mapM_ (uncurry updateNodeMeta) updates
+updateNodesMeta = mapM_ (uncurry updateNodeMeta)
 
 modifyNodeMeta :: NodeId -> (NodeMeta -> NodeMeta) -> Command Global.State ()
 modifyNodeMeta nid setter = do

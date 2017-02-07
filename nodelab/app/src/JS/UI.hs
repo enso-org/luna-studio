@@ -7,8 +7,10 @@ module JS.UI
     , setCursor
     , setDefaultCursor
     , setMovingCursor
+    , isFocusInApp
     ) where
 
+import qualified JS.Config           as Config
 import           Luna.Studio.Prelude
 
 foreign import javascript safe "require('./BSOD').connectionClosed()" displayConnectionClosedMessage :: IO ()
@@ -16,6 +18,11 @@ foreign import javascript safe "require('./BSOD').connectionClosed()" displayCon
 foreign import javascript safe "document.getElementById($1).focus()" focus :: JSString -> IO ()
 
 foreign import javascript safe "document.body.style.cursor = \"$1\";" setCursor' :: JSString -> IO ()
+
+foreign import javascript safe "document.activeElement.id" getFocus :: IO JSString
+
+isFocusInApp :: IO Bool
+isFocusInApp = Config.isPrefixed <$> getFocus
 
 setCursor :: MonadIO m => JSString -> m ()
 setCursor = liftIO . setCursor'

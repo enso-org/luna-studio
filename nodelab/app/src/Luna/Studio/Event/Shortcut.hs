@@ -46,6 +46,9 @@ data ShortcutEvent = Accept
                    | SearcherMoveDown
                    | SearcherMoveUp
                    | SearcherOpen
+                   -- undo/redo
+                   | Undo
+                   | Redo
                    deriving (Read, Show, Generic, NFData, Typeable)
 
 instance ToJSON   ShortcutEvent

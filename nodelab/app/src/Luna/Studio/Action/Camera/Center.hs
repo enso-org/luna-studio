@@ -13,7 +13,7 @@ import           Luna.Studio.Action.Command            (Command)
 import           Luna.Studio.Data.CameraTransformation (lastInverse, logicalToScreen, screenToLogical)
 import           Luna.Studio.Data.Matrix               (homothetyMatrix, invertedHomothetyMatrix, invertedTranslationMatrix,
                                                         translationMatrix)
-import           Luna.Studio.Prelude
+import           Luna.Studio.Prelude                   hiding (span)
 import qualified Luna.Studio.React.Model.NodeEditor    as NodeEditor
 import           Luna.Studio.State.Global              (State)
 import qualified Luna.Studio.State.Global              as Global

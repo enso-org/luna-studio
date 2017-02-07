@@ -16,11 +16,16 @@ data Request = Request { _location :: GraphLocation
                        , _newCode  :: Text
                        } deriving (Generic, Eq, NFData, Show)
 
-type Response = Response.SimpleResponse Request
-instance Response.ResponseResult Request ()
+data Inverse = Inverse { _oldCode ::Text
+                       } deriving (Generic, Eq, NFData, Show)
+
+type Response = Response.SimpleResponse Request Inverse
+instance Response.ResponseResult Request Inverse ()
 
 makeLenses ''Request
+makeLenses ''Inverse
 instance Binary Request
+instance Binary Inverse
 instance G.GraphRequest Request where location = location
 
 topicPrefix = "empire.graph.node.setCode"

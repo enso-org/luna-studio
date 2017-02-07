@@ -81,11 +81,11 @@ handleSegment seg@(_, segEnd) = do
 
 disconnectProcessSegment :: CurveSegment -> Command State ()
 disconnectProcessSegment seg = do
-    let beg = seg ^. Curve.segmentBegin
-        end = seg ^. Curve.segmentEnd
-        numOfPoints = round $ distance beg end
+    let segBeg = seg ^. Curve.segmentBegin
+        segEnd = seg ^. Curve.segmentEnd
+        numOfPoints = round $ distance segBeg segEnd
         points = getPointsOnCurveSegment seg numOfPoints
-    mapM_ handleSegment $ zip (beg:points) (points ++ [end])
+    mapM_ handleSegment $ zip (segBeg:points) (points ++ [segEnd])
 
 disconnectMove :: MouseEvent -> Timestamp -> PenDisconnect -> Command State ()
 disconnectMove evt timestamp state = do

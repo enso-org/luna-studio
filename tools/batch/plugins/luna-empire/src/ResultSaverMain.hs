@@ -24,8 +24,8 @@ import qualified System.Log.Options             as Opt
 import qualified ZMQ.Bus.Config                 as Config
 import qualified ZMQ.Bus.EndPoint               as EP
 
-defaultTopic :: String
-defaultTopic = "empire."
+defaultTopics :: [String]
+defaultTopics = ["empire."]
 
 logger :: Logger
 logger = getLogger $moduleName

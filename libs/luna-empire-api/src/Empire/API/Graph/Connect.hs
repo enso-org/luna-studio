@@ -26,8 +26,8 @@ data Request = Request { _location  :: GraphLocation
                        , _conn      :: Connection
                        } deriving (Generic, Eq, NFData, Show)
 
-type Response = Response.SimpleResponse Request
-instance Response.ResponseResult Request ()
+type Response = Response.SimpleResponse Request ()
+instance Response.ResponseResult Request () ()
 
 data Update  = Update  { _location'  :: GraphLocation
                        , _src'       :: OutPortRef

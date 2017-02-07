@@ -5,7 +5,7 @@ module Data.Position
     )
 where
 
-import           Data.Aeson          (ToJSON)
+import           Data.Aeson          (FromJSON, ToJSON)
 import           Data.Vector         as X
 import           Luna.Studio.Prelude
 -----------------------
@@ -24,6 +24,7 @@ type instance VectorOf Position = Vector2 Double
 
 instance Dim1      Position
 instance Dim2      Position
+instance FromJSON  Position
 instance IsVector  Position
 instance ToJSON    Position
 

@@ -21,8 +21,8 @@ data Result  = Result  { _graph            :: Graph
                        , _nodeSearcherData :: Items
                        } deriving (Generic, Eq, NFData, Show)
 
-type Response = Response.Response Request Result
-instance Response.ResponseResult Request Result
+type Response = Response.Response Request () Result
+instance Response.ResponseResult Request () Result
 
 makeLenses ''Request
 makeLenses ''Result

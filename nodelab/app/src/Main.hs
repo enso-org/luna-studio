@@ -39,7 +39,7 @@ runApp chan socket = do
         state <- newMVar initState
         Engine.connectEventSources socket chan state
     App.focus
-    BatchCmd.listProjects projectListRequestId
+    BatchCmd.listProjects projectListRequestId $ Just clientId
 
 main :: IO ()
 main = do

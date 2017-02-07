@@ -28,16 +28,20 @@ import qualified Empire.API.Project.ListProjects       as ListProjects
 data Event = UnknownEvent String
            | AddNodeResponse                           AddNode.Response
            | NodeAdded                                 AddNode.Update
+           | RemoveNodesInverse                    RemoveNodes.Inverse
            | RemoveNodesResponse                   RemoveNodes.Response
            | NodesRemoved                          RemoveNodes.Update
            | ProgramFetched                         GetProgram.Response
            | NodesConnected                            Connect.Update
            | ConnectResponse                           Connect.Response
            | NodesDisconnected                      Disconnect.Update
+           | DisconnectInverse                      Disconnect.Inverse
            | DisconnectResponse                     Disconnect.Response
            | NodeMetaUpdated                    UpdateNodeMeta.Update
+           | NodeMetaInverse                    UpdateNodeMeta.Inverse
            | NodeMetaResponse                   UpdateNodeMeta.Response
            | NodeRenamed                            RenameNode.Update
+           | NodeRenameInverse                     RenameNode.Inverse
            | NodeRenameResponse                     RenameNode.Response
            | NodesUpdated                          NodesUpdate.Update
            | UpdateNodeExpressionResponse UpdateNodeExpression.Response

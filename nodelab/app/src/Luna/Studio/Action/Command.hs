@@ -27,7 +27,7 @@ ioCommand :: (a -> IO ()) -> Command a ()
 ioCommand f = gets f >>= liftIO
 
 runCommand :: Command a b -> a -> IO (b, a)
-runCommand cmd st = runStateT (unCommand cmd) st
+runCommand cmd = runStateT $ unCommand cmd
 
 execCommand :: Command a b -> a -> IO a
 execCommand cmd st = snd <$> runCommand cmd st

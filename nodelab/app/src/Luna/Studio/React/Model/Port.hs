@@ -15,6 +15,7 @@ import           Luna.Studio.Prelude       hiding (set)
 data Port = Port { _portRef     :: AnyPortRef
                  , _port        :: API.Port
                  , _color       :: Color
+                 , _highlight   :: Bool
                  } deriving (Eq, Show, Typeable, Generic, NFData)
 
 makeLenses ''Port
@@ -33,8 +34,8 @@ state :: Lens' Port API.PortState
 state = port . API.state
 
 fromPorts :: NodeId -> [API.Port] -> [Port]
-fromPorts nodeId ports = fromPort nodeId <$> ports where
+fromPorts nodeId ports = fromPort nodeId <$> ports
 
 fromPort :: NodeId -> API.Port -> Port
-fromPort nodeId port = Port portRef' port (colorPort port) where
-    portRef' = toAnyPortRef nodeId $ port ^. API.portId
+fromPort nodeId p = Port portRef' p (colorPort p) False where
+    portRef' = toAnyPortRef nodeId $ p ^. API.portId

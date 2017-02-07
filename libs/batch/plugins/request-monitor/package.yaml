@@ -34,6 +34,8 @@ dependencies:
   - zeromq4-haskell >= 0.4
   - zmq-bus
   - zmq-bus-config
+  - undo-redo
+
 
 default-extensions:
   - NoImplicitPrelude

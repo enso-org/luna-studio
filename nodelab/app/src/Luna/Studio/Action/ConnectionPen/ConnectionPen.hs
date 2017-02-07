@@ -44,11 +44,11 @@ startConnecting evt timestamp = do
 
 connectProcessSegment :: CurveSegment -> PenConnect -> Command State ()
 connectProcessSegment seg state = do
-    let beg = seg ^. Curve.segmentBegin
-        end = seg ^. Curve.segmentEnd
-        numOfPoints = round $ distance beg end
+    let segBeg = seg ^. Curve.segmentBegin
+        segEnd = seg ^. Curve.segmentEnd
+        numOfPoints = round $ distance segBeg segEnd
         points = getPointsOnCurveSegment seg numOfPoints
-    intersectedNodes <- catMaybes <$> mapM getNodeAtPosition (beg:points)
+    intersectedNodes <- catMaybes <$> mapM getNodeAtPosition (segBeg:points)
     unless (null intersectedNodes) $ do
         let uniqueIntersectedNodes = map head $ group intersectedNodes
         let nodesToConnect = case state ^. Action.penConnectLastVisitedNode of

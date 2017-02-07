@@ -34,12 +34,13 @@ import qualified Luna.Studio.Handler.Debug                  as Debug
 import qualified Luna.Studio.Handler.MultiSelection         as MultiSelection
 import qualified Luna.Studio.Handler.Navigation             as Navigation
 import qualified Luna.Studio.Handler.Node                   as Node
+import qualified Luna.Studio.Handler.Port                   as Port
 import qualified Luna.Studio.Handler.Searcher               as Searcher
 import qualified Luna.Studio.Handler.Visualization          as Visualization
 import           Luna.Studio.Prelude
 import           Luna.Studio.State.Global                   (State)
 import qualified Luna.Studio.State.Global                   as Global
-
+import qualified Luna.Studio.Handler.Undo as Undo
 
 
 displayProcessingTime :: Bool
@@ -69,6 +70,8 @@ actions =  [ App.handle
            , MultiSelection.handle
            , Navigation.handle
            , Node.handle
+           , Port.handle
+           , Undo.handle
            , ProjectManager.handle
            , Searcher.handle
            , Visualization.handle

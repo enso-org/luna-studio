@@ -33,7 +33,7 @@ import qualified Luna.Studio.State.Global                  as Global
 toggleSelect :: NodeId -> Command Global.State ()
 toggleSelect nodeId = do
     mayNode <- Global.getNode nodeId
-    withJust mayNode $ \node -> do
+    withJust mayNode $ \node ->
         if node ^. Node.isSelected
             then do
                 Global.modifyNode nodeId $ Node.isSelected .= False
@@ -41,7 +41,7 @@ toggleSelect nodeId = do
                 case selection of
                     [] -> dropSelectionHistory
                     _  -> modifySelectionHistory selection
-            else addToSelection [nodeId] >> return ()
+            else addToSelection [nodeId]
 
 unselectAll :: Command State ()
 unselectAll = do
