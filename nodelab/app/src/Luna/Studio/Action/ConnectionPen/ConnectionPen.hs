@@ -13,6 +13,7 @@ import           Luna.Studio.Action.Batch                    (autoconnect)
 import           Luna.Studio.Action.Command                  (Command)
 import           Luna.Studio.Action.ConnectionPen.SmoothLine (addPointToCurve, beginCurve, curveToSvgPath)
 import           Luna.Studio.Action.Geometry.ConnectionPen   (getNodeAtPosition)
+import           Luna.Studio.Action.Port.Self                (removeIdleSelfPorts, showAllSelfPorts)
 import           Luna.Studio.Data.Color                      (Color (Color))
 import           Luna.Studio.Event.Mouse                     (workspacePosition)
 import           Luna.Studio.Prelude
@@ -37,6 +38,7 @@ instance Action (Command State) PenConnect where
 
 startConnecting :: MouseEvent -> Timestamp -> Command State ()
 startConnecting evt timestamp = do
+    showAllSelfPorts
     pos <- workspacePosition evt
     let curve = beginCurve pos timestamp
     begin $ PenConnect curve Nothing
@@ -74,3 +76,4 @@ stopConnecting state = do
         connectProcessSegment (head $ curve ^. Curve.segments) state
     removeActionFromState penConnectAction
     Global.modifyNodeEditor $ NodeEditor.connectionPen .= Nothing
+    removeIdleSelfPorts

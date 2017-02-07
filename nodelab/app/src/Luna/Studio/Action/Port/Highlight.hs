@@ -29,13 +29,5 @@ setHighlight portRef highlight = do
                               || node ^. NodeModel.isExpanded
                               || elem clickConnectAction actions
                               || elem dragConnectAction  actions ))
-        print highlight
-        print notBlocked
-        print $ portRef ^. PortRef.portId /= InPortId Self
-        print $ node ^. NodeModel.isExpanded
-        print $ elem clickConnectAction actions
-        print $ elem dragConnectAction actions
-        print shouldProceed
-
         when shouldProceed $ Global.modifyNode nodeId $
             NodeModel.ports . ix portRef . PortModel.highlight .= highlight

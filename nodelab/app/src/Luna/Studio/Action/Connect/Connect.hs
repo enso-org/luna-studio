@@ -19,6 +19,7 @@ import           Luna.Studio.Action.Connect.Helpers     (createCurrentConnection
 import           Luna.Studio.Action.Geometry.Connection (getCurrentConnectionPosition)
 import           Luna.Studio.Action.Graph.Connect       (connectNodes, localConnectNodes)
 import           Luna.Studio.Action.Graph.Disconnect    (removeConnections)
+import           Luna.Studio.Action.Port.Self           (removeIdleSelfPorts, showAllSelfPorts)
 import           Luna.Studio.Event.Mouse                (workspacePosition)
 import           Luna.Studio.Prelude
 import           Luna.Studio.React.Event.Connection     (ModifiedEnd (Destination, Source))
@@ -42,6 +43,7 @@ startOrModifyConnection evt anyPortRef = case anyPortRef of
 
 startConnectionFromPort :: MouseEvent -> AnyPortRef -> Maybe Connection -> Command State ()
 startConnectionFromPort evt portRef modifiedConnection = do
+    showAllSelfPorts
     mousePos  <- workspacePosition evt
     maySrcPos <- getCurrentConnectionPosition portRef mousePos
     mayColor  <- getConnectionColor portRef
@@ -79,6 +81,7 @@ stopConnecting conn = do
     let mayModifiedConnection = conn ^. ConnectionModel.modifiedConnection
     withJust mayModifiedConnection $ \modifiedConnection ->
         removeConnections [modifiedConnection ^. Connection.dst]
+    removeIdleSelfPorts
 
 connectToPort :: AnyPortRef -> CurrentConnection -> Command State ()
 connectToPort dstPortRef conn = do
@@ -96,3 +99,4 @@ connectToPort dstPortRef conn = do
         _ -> do
             connectNodes src dst
             GA.sendEvent $ GA.Connect GA.Manual
+    removeIdleSelfPorts
