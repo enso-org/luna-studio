@@ -3,11 +3,14 @@ module Luna.Studio.React.View.Node where
 
 import qualified Data.Aeson                             as Aeson
 import qualified Data.Map.Lazy                          as Map
+import           Data.Matrix                            as Matrix
+import           Data.Matrix                            (Matrix)
+import           Data.Position                          (x, y)
 import qualified Data.Text                              as Text
 import           Empire.API.Data.Node                   (NodeId)
 import           Empire.API.Data.Port                   (InPort (..), PortId (..))
 import           Luna.Studio.Action.Geometry            (countSameTypePorts, isPortSingle)
-import           Luna.Studio.Data.Matrix                (transformTranslateToSvg)
+import           Luna.Studio.Data.Matrix                (translatePropertyValue2)
 import qualified Luna.Studio.Event.Mouse                as Mouse
 import qualified Luna.Studio.Event.UI                   as UI
 import           Luna.Studio.Prelude
@@ -40,7 +43,7 @@ node = React.defineView objName $ \(ref, n) -> do
     let nodeId    = n ^. Node.nodeId
         pos       = n ^. Node.position
         nodePorts = Map.elems $ n ^. Node.ports
-        ports p   = forM_ p $ \port -> port_ ref port (countSameTypePorts port p) (isPortSingle port p)
+        ports p   = forM_ p $ \port -> port_ ref port (countSameTypePorts port p) $ isPortSingle port p
         nodeLimit = 10000::Int
         zIndex    = n ^. Node.zPos
         z         = if n ^. Node.isExpanded then zIndex + nodeLimit else zIndex
@@ -62,7 +65,7 @@ node = React.defineView objName $ \(ref, n) -> do
                 , "className"   $= (fromString $ "luna-node" <> (if n ^. Node.isExpanded then " luna-node--expanded" else " luna-node--collapsed")
                                                              <> (if n ^. Node.isSelected then " luna-node--selected" else []))
                 , "style"       @= Aeson.object
-                    [ "transform" Aeson..= transformTranslateToSvg pos
+                    [ "transform" Aeson..= translatePropertyValue2 pos
                     ]
                 ] $ do
                 div_
@@ -86,7 +89,7 @@ node = React.defineView objName $ \(ref, n) -> do
                     ] $ do
                     if  n ^. Node.isExpanded then do
                         ports $ filter (\port -> (port ^. Port.portId) == InPortId Self) nodePorts
-                        forM_  (filter (\port -> (port ^. Port.portId) /= InPortId Self) nodePorts) (\port -> portExpanded_ ref port)
+                        forM_  (filter (\port -> (port ^. Port.portId) /= InPortId Self) nodePorts) $ \port -> portExpanded_ ref port
                     else do
                         ports $ filter (\port -> (port ^. Port.portId) /= InPortId Self) nodePorts
                         ports $ filter (\port -> (port ^. Port.portId) == InPortId Self) nodePorts
@@ -99,9 +102,8 @@ node = React.defineView objName $ \(ref, n) -> do
                 , onClick       $ \_ m -> dispatch ref $ UI.NodeEvent $ Node.Select m nodeId
                 , onDoubleClick $ \_ _ -> dispatch ref $ UI.NodeEvent $ Node.Enter nodeId
                 , onMouseDown   $ handleMouseDown ref nodeId
-                , "style"       @= Aeson.object [ "transform" Aeson..= transformTranslateToSvg pos ]
-                , "className"   $= (fromString $ "luna-node" <> (if n ^. Node.isExpanded then " luna-node--expanded" else " luna-node--collapsed")
-                                                             <> (if n ^. Node.isSelected then " luna-node--selected" else []))
+                , "className"   $= (fromString $ "luna-node" <> if n ^. Node.isExpanded then " luna-node--expanded" else " luna-node--collapsed"
+                                                             <> if n ^. Node.isSelected then " luna-node--selected" else [])
                 ] $ do
                 svg_
                     [ "key" $= "name" ] $ do
@@ -109,23 +111,19 @@ node = React.defineView objName $ \(ref, n) -> do
                         [ "key"         $= "nameText"
                         , onDoubleClick $ \e _ -> stopPropagation e : dispatch ref (UI.NodeEvent $ Node.EditExpression nodeId)
                         , "className"   $= "luna-node__name"
-                        , "y"           $= "-36"
                         ] $ elemString $ Text.unpack $ n ^. Node.expression
 
 node_ :: Ref App -> Node -> ReactElementM ViewEventHandler ()
 node_ ref model = React.viewWithSKey node (jsShow $ model ^. Node.nodeId) (ref, model) mempty
 
-nodeStyles :: ReactView (Node)
-nodeStyles = React.defineView objName $ \(n) -> do
-    let nodeId    = n ^. Node.nodeId
-        pos       = n ^. Node.position
-        nodeLimit = 10000::Int
-        zIndex    = n ^. Node.zPos
-        z         = if n ^. Node.isExpanded then zIndex + nodeLimit else zIndex
-    div_
-        [ "key" $= fromString (show nodeId)
-        , "id"  $= ("#node-" <> fromString (show nodeId))
-        ] mempty
-
-nodeStyles_ :: Node -> ReactElementM ViewEventHandler ()
-nodeStyles_ model = React.viewWithSKey nodeStyles (jsShow $ model ^. Node.nodeId) (model) mempty
+nodeDynamicStyles_ :: Matrix Double -> Node -> ReactElementM ViewEventHandler ()
+nodeDynamicStyles_ camera n = do
+    let nodeId = show $ n ^. Node.nodeId
+        posX   = n ^. Node.position ^. x
+        posY   = n ^. Node.position ^. y - 36
+        camX   = (Matrix.toList camera)!!12
+        camY   = (Matrix.toList camera)!!13
+        scale  = (Matrix.toList camera)!!0
+        nx     = show $ round $ camX + (scale * posX)
+        ny     = show $ round $ camY + (scale * posY)
+    elemString $ "#node-" <> nodeId <> " .luna-name-trans { transform: translate(" <> nx <> "px, " <> ny <> "px) }"

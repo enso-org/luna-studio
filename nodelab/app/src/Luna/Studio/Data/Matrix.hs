@@ -5,6 +5,7 @@ import qualified Data.Matrix         as Matrix
 import           Data.Position       (Position, Vector2, x, y)
 import           Luna.Studio.Prelude
 
+
 translationMatrix :: Vector2 Double -> Matrix Double
 translationMatrix vec = Matrix.fromList 4 4 [ 1       , 0       , 0, 0
                                             , 0       , 1       , 0, 0
@@ -45,31 +46,21 @@ invertedHomothetyMatrix pos k = Matrix.fromList 4 4 [ 1/k  , 0    , 0, 0
     hX = (1 - k) * pos ^. x
     hY = (1 - k) * pos ^. y
 
+translatePropertyValue :: Matrix Double -> String
+translatePropertyValue matrix = "translate(" <> nx <> "px, " <> ny <> "px)"
+    where mx = Matrix.toList matrix
+          s  = mx!!0 :: Double
+          nx = show $ round $ s * mx!!12
+          ny = show $ round $ s * mx!!13
 
--- TODO[react]: Rename
-transformMatrixToSvg :: String -> String -> String -> String
-transformMatrixToSvg scale offsetX offsetY = "matrix(" <> scale <> " , 0, 0, " <> scale <> " , " <> offsetX <> " , " <> offsetY <> " )"
+translatePropertyValue2 :: Position ->  String
+translatePropertyValue2 position = "translate(" <> nx <> "px, " <> ny <> "px)"
+    where nx = show $ position ^. x
+          ny = show $ position ^. y
 
-transformTranslateToSvg :: Position ->  String
-transformTranslateToSvg position = "matrix( 1 , 0, 0, 1, " <> offsetX <> " , " <> offsetY <> " )"
-    where
-      offsetX = show $ position ^. x
-      offsetY = show $ position ^. y
-
-
-showMatrix3dHTMLValue :: Matrix Double -> String
-showMatrix3dHTMLValue matrix =
-    let mx1 = Matrix.toList matrix
-        nx  = fromIntegral ((round $ mx1!!12) :: Integer)
-        ny  = fromIntegral ((round $ mx1!!13) :: Integer)
-        mx2 = take 12 mx1 ++ nx:ny:drop 14 mx1
-    in foldl (<>) "matrix3d(" (intersperse ", " $ map show mx2) <> ")"
-
-
-showTranslateHTMLValue :: Matrix Double -> String
-showTranslateHTMLValue matrix =
-    let mx1 = Matrix.toList matrix
-        s   = mx1!!0 :: Double
-        nx  = show $ fromIntegral ((round $ s * mx1!!12) :: Integer)
-        ny  = show $ fromIntegral ((round $ s * mx1!!13) :: Integer)
-    in "translate(" <> nx <> "px, " <> ny <> "px)"
+matrix3dPropertyValue :: Matrix Double -> String
+matrix3dPropertyValue matrix = foldl (<>) "matrix3d(" (intersperse ", " $ map show mx2) <> ")"
+    where mx1 = Matrix.toList matrix
+          nx  = fromIntegral $ round $ mx1!!12
+          ny  = fromIntegral $ round $ mx1!!13
+          mx2 = take 12 mx1 ++ nx:ny:drop 14 mx1
