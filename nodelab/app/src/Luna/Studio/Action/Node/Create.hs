@@ -11,6 +11,7 @@ import           Empire.API.Data.Node               (Node)
 import qualified Empire.API.Data.Node               as Node
 import           Luna.Studio.Action.Command         (Command)
 import           Luna.Studio.Action.Graph.Focus     (focusNode)
+import           Luna.Studio.Action.Port.Self       (removeSelfIfNeeded)
 import           Luna.Studio.Prelude
 import qualified Luna.Studio.React.Model.Node       as Model
 import qualified Luna.Studio.React.Model.NodeEditor as NodeEditor
@@ -32,8 +33,8 @@ addDummyNode dummyNode = do
 
 registerNode :: Node -> Command State Model.Node
 registerNode node = do
-    let nodeModel = Model.fromNode node
-        nodeId    = node ^. Node.nodeId
+    let nodeId    = node ^. Node.nodeId
+    nodeModel <- removeSelfIfNeeded $ Model.fromNode node
     Global.modifyNodeEditor $ do
         NodeEditor.nodes . at nodeId ?= nodeModel
-        return nodeModel
+    return nodeModel

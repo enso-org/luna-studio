@@ -9,6 +9,7 @@ import qualified Empire.API.Project.CreateProject as CreateProject
 import qualified Empire.API.Project.ExportProject as ExportProject
 import qualified Empire.API.Project.ImportProject as ImportProject
 import qualified Empire.API.Project.ListProjects  as ListProjects
+import qualified Empire.API.Project.OpenProject   as OpenProject
 import           Empire.API.Request               (Request (..))
 import qualified Empire.Commands.Library          as Library
 import qualified Empire.Commands.Persistence      as Persistence
@@ -23,6 +24,26 @@ import           ZMQ.Bus.Trans                    (BusT (..))
 
 logger :: Logger.Logger
 logger = Logger.getLogger $(Logger.moduleName)
+
+
+
+handleOpenProject :: Request OpenProject.Request -> StateT Env BusT ()
+handleOpenProject req@(Request _ _ request) = do
+    --TODO implement open project
+    currentEmpireEnv <- use Env.empireEnv
+    empireNotifEnv   <- use Env.empireNotif
+    (result, newEmpireEnv) <- liftIO $ Empire.runEmpire empireNotifEnv currentEmpireEnv $ do
+      (projectId, project) <- Project.createProject Nothing (request ^. OpenProject.path)
+      (libraryId, library) <- Library.createLibrary projectId (Just "Main") "Main.luna"
+
+      let project' = project & DataProject.libs . at libraryId ?~ library
+      return (projectId, project')
+    case result of
+        Left err -> replyFail logger err req
+        Right (projectId, project) -> do
+            Env.empireEnv .= newEmpireEnv
+            replyResult req () $ OpenProject.Result projectId $ DataProject.toAPI project
+            sendToBus' $ OpenProject.Update projectId $ DataProject.toAPI project
 
 
 handleCreateProject :: Request CreateProject.Request -> StateT Env BusT ()

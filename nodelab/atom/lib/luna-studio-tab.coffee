@@ -7,6 +7,7 @@ module.exports =
 class LunaStudioTab extends View
   mountPoint = ""
   initialize: (@uri, @code) ->
+      @on 'contextmenu', -> false
       @code.start(@uri, mountPoint)
 
   @content: ->

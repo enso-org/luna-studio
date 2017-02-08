@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module Luna.Studio.Engine.JSHandlers
+module Luna.Studio.Event.Source
     ( AddHandler(..)
     , atomHandler
     , customEventHandler

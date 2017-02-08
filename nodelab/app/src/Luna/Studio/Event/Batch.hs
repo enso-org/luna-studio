@@ -23,6 +23,7 @@ import qualified Empire.API.Project.CreateProject      as CreateProject
 import qualified Empire.API.Project.ExportProject      as ExportProject
 import qualified Empire.API.Project.ImportProject      as ImportProject
 import qualified Empire.API.Project.ListProjects       as ListProjects
+import qualified Empire.API.Project.OpenProject        as OpenProject
 
 
 data Event = UnknownEvent String
@@ -51,6 +52,8 @@ data Event = UnknownEvent String
            | ProjectList                          ListProjects.Response
            | ProjectCreated                      CreateProject.Response
            | ProjectCreatedUpdate                CreateProject.Update
+           | ProjectOpened                         OpenProject.Response
+           | ProjectOpenedUpdate                   OpenProject.Update
            | ProjectExported                     ExportProject.Response
            | ProjectImported                     ImportProject.Response
            | NodeSearcherUpdated            NodeSearcherUpdate.Update

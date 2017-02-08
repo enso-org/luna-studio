@@ -43,7 +43,6 @@ import           Luna.Studio.State.Global            (State)
 import qualified Luna.Studio.State.Global            as Global
 
 
-
 isCurrentLocation :: GraphLocation -> Command State Bool
 isCurrentLocation location = uses (Global.workspace . Workspace.currentLocation) (== location)
 

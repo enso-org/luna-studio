@@ -13,6 +13,7 @@ import qualified Empire.API.Project.CreateProject   as CreateProject
 import qualified Empire.API.Project.ExportProject   as ExportProject
 import qualified Empire.API.Project.ImportProject   as ImportProject
 import qualified Empire.API.Project.ListProjects    as ListProjects
+import qualified Empire.API.Project.OpenProject     as OpenProject
 
 import           JS.DownloadFile                    (downloadFile)
 import qualified Luna.Studio.Action.Batch           as BatchCmd (importProject)
@@ -37,6 +38,12 @@ handle (Batch (Batch.ProjectList response)) = Just $ handleResponse response $ \
     Global.workspace . Workspace.currentLocation .= fromMaybe fallbackLocation lastGraphLocation
     loc <- use $ Global.workspace . Workspace.currentLocation
     loadGraph loc
+
+handle (Batch (Batch.ProjectOpened response)) = Just $ handleResponse response $ \_ (OpenProject.Result projectId project) -> do
+    Global.workspace . Workspace.projects . at projectId ?= project
+    loadProject projectId
+
+handle (Batch (Batch.ProjectOpenedUpdate (OpenProject.Update projectId project))) = Just $ Global.workspace . Workspace.projects . at projectId ?= project
 
 handle (Batch (Batch.ProjectCreated response)) = Just $ handleResponse response $ \_ (CreateProject.Result projectId project) -> do
     Global.workspace . Workspace.projects . at projectId ?= project

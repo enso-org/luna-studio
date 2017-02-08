@@ -15,7 +15,7 @@ import           Luna.Studio.State.Global           (State)
 
 
 handle :: Event -> Maybe (Command State ())
-handle (UI (ConnectionEvent (Connection.StartConnection evt portRef)))     = Just $ startDragConnect  evt portRef
+handle (UI (ConnectionEvent (Connection.StartConnection evt portRef)))     = Just $ startDragConnect   evt portRef
 handle (UI (ConnectionEvent (Connection.Click evt portRef)))               = Just $ handleClickConnect evt portRef
 handle (UI (AppEvent (App.MouseMove evt _)))                               = Just $ whileConnecting $ handleMove evt
 handle (UI (AppEvent (App.MouseUp   evt  )))                               = Just $ continue $ handleDragConnectMouseUp evt

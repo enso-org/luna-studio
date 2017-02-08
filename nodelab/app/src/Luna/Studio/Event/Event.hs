@@ -25,9 +25,6 @@ data Event = Init
 
 makeLenses ''Event
 
-instance Default Event where
-    def = Init
-
 instance ToJSON Event
 
 name :: Contravariant f => (String -> f String) -> Event -> f Event
