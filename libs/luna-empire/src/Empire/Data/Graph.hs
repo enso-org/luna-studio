@@ -15,6 +15,8 @@ module Empire.Data.Graph (
   , getAnyRef
   , defaultGraph
 
+  , withVis
+
   , AST
   , ASTState(..)
   ) where
@@ -43,6 +45,15 @@ import           Data.TypeDesc (getTypeDesc)
 
 import           System.Log          (Logger, MonadLogging(..), DropLogger, dropLogs)
 
+import qualified Luna.IR.Repr.Vis           as Vis
+import           Control.Monad              (void)
+import           Data.Aeson                 (encode)
+import qualified Data.ByteString.Lazy.Char8 as ByteString
+import           Data.Maybe                 (isJust)
+import           System.Environment         (lookupEnv)
+import           Web.Browser                (openBrowser)
+
+
 data Graph = Graph { _ast                   :: AST
                    , _nodeMapping           :: Map NodeId NodeIDTarget
                    , _breadcrumbHierarchy   :: BreadcrumbHierarchy
@@ -66,12 +77,12 @@ defaultGraph = do
     return $ Graph ast' Map.empty BC.empty Map.empty 0 Nothing
 
 type AST      = ASTState
-data ASTState = ASTState IR (Pass.RefState (PassManager.PassManager (IRBuilder (Parser.IRSpanTreeBuilder (PassManager.RefCache (Logger DropLogger (StateT Graph IO)))))))
+data ASTState = ASTState IR (Pass.RefState (PassManager.PassManager (IRBuilder (Parser.IRSpanTreeBuilder (PassManager.RefCache (Logger DropLogger (Vis.VisStateT (StateT Graph IO))))))))
 
 instance Show ASTState where
     show _ = "AST"
 
-instance MonadState Graph (PassManager.PassManager (IRBuilder (Parser.IRSpanTreeBuilder (PassManager.RefCache (Logger DropLogger (StateT Graph IO)))))) where
+instance MonadState Graph (PassManager.PassManager (IRBuilder (Parser.IRSpanTreeBuilder (PassManager.RefCache (Logger DropLogger (Vis.VisStateT (StateT Graph IO))))))) where
     get   = (lift . lift . lift . lift . lift) get
     put   = (lift . lift . lift . lift . lift) . put
     state = (lift . lift . lift . lift . lift) . state
@@ -81,10 +92,18 @@ instance Exception e => MonadException e IO where
 
 deriving instance MonadThrow m => MonadThrow (SpanTree.TreeBuilder s v m)
 
+withVis :: MonadIO m => Vis.VisStateT m a -> m a
+withVis m = do
+    (p, vis) <- Vis.newRunDiffT m
+    let cfg = ByteString.unpack $ encode vis
+    showVis <- liftIO $ lookupEnv "DEBUGVIS"
+    if isJust showVis then void $ liftIO $ openBrowser $ "http://localhost:8000?cfg=" <> cfg else return ()
+    return p
+
 defaultAST :: IO AST
 defaultAST = mdo
     let g = Graph ast Map.empty BC.empty Map.empty 0 Nothing
-    ast <- flip evalStateT g $ dropLogs $ runRefCache $ (\a -> SpanTree.runTreeBuilder a >>= \(foo, _) -> return foo) $ evalIRBuilder' $ evalPassManager' $ do
+    ast <- flip evalStateT g $ withVis $ dropLogs $ runRefCache $ (\a -> SpanTree.runTreeBuilder a >>= \(foo, _) -> return foo) $ evalIRBuilder' $ evalPassManager' $ do
         runRegs
         CodeSpan.init
         attachLayer 5 (getTypeDesc @CodeSpan.CodeSpan) (getTypeDesc @AnyExpr)

@@ -2,6 +2,7 @@
 {-# LANGUAGE DataKinds            #-}
 {-# LANGUAGE TypeOperators        #-}
 {-# LANGUAGE UndecidableInstances #-}
+{-# LANGUAGE TypeApplications     #-}
 
 module Empire.ASTOp (
     ASTOp
@@ -13,7 +14,7 @@ import           Empire.Prelude
 
 import           Control.Monad.State  (StateT, runStateT, get, put)
 import           Control.Monad.Except (throwError)
-import           Empire.Data.Graph    (ASTState(..), Graph)
+import           Empire.Data.Graph    (ASTState(..), Graph, withVis)
 import qualified Empire.Data.Graph    as Graph (ast)
 import           Empire.Data.Layers   (Marker, Meta,
                                       InputsLayer, TypeLayer, TCData)
@@ -33,6 +34,8 @@ import qualified Luna.Passes.Transform.Parsing.CodeSpan as CodeSpan
 import qualified Luna.Passes.Transform.Parsing.Parser   as Parser
 import qualified Data.SpanTree as SpanTree
 
+import qualified Luna.IR.Repr.Vis           as Vis
+
 type ASTOp m = (MonadThrow m, MonadPassManager m,
                 MonadIO m,
                 MonadState Graph m,
@@ -50,6 +53,7 @@ type EmpireLayers = '[AnyExpr // Model, AnyExprLink // Model,
                       AnyExpr // TCData,
                       AnyExpr // TypeLayer,
                       AnyExpr // UID, AnyExprLink // UID,
+                      AnyExpr // Redirect,
                       AnyExpr // CodeSpan.CodeSpan,
                       AnyExpr // Parser.Parser]
 
@@ -83,12 +87,13 @@ instance MonadPassManager m => MonadRefLookup Layer (Pass.SubPass pass m) where
 instance MonadPassManager m => MonadRefLookup Attr (Pass.SubPass pass m) where
     uncheckedLookupRef = lift . uncheckedLookupRef
 
-runASTOp :: Pass.SubPass EmpirePass (Pass.PassManager (IRBuilder (Parser.IRSpanTreeBuilder (Pass.RefCache (Logger DropLogger (StateT Graph IO)))))) a
+runASTOp :: Pass.SubPass EmpirePass (Pass.PassManager (IRBuilder (Parser.IRSpanTreeBuilder (Pass.RefCache (Logger DropLogger (Vis.VisStateT (StateT Graph IO))))))) a
          -> Command Graph a
 runASTOp pass = do
     g <- get
     ASTState currentStateIR currentStatePass <- use Graph.ast
     let evalIR = flip runStateT g
+               . withVis
                . dropLogs
                . runRefCache
                . (\a -> SpanTree.runTreeBuilder a >>= \(foo, _) -> return foo)
@@ -96,6 +101,7 @@ runASTOp pass = do
                . flip evalPassManager currentStatePass
     ((a, (st, passSt)), newG) <- liftIO $ evalIR $ do
         a      <- Pass.eval' pass
+        Pass.eval' @EmpirePass $ Vis.snapshot "foo"
         st     <- snapshot
         passSt <- Pass.get
         return (a, (st, passSt))
