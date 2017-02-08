@@ -36,9 +36,10 @@ handlersMap = Map.fromList
     , makeHandler Graph.handleDumpGraphViz
     , makeHandler Graph.handleTypecheck
     , makeHandler Project.handleCreateProject
-    , makeHandler Project.handleListProjects
     , makeHandler Project.handleExportProject
     , makeHandler Project.handleImportProject
+    , makeHandler Project.handleListProjects
+    , makeHandler Project.handleOpenProject
     , makeHandler Library.handleCreateLibrary
     , makeHandler Library.handleListLibraries
     ]

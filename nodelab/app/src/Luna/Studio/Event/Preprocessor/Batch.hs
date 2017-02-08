@@ -40,6 +40,8 @@ handlers = Map.fromList [ handle NodeAdded
                         , handle ProjectList
                         , handle ProjectCreated
                         , handle ProjectCreatedUpdate
+                        , handle ProjectOpened
+                        , handle ProjectOpenedUpdate
                         , handle ProjectExported
                         , handle ProjectImported
                         , handle NodeRenamed

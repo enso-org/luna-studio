@@ -52,6 +52,7 @@ import           Empire.API.Project.CreateProject      as CreateProject
 import           Empire.API.Project.ExportProject      as ExportProject
 import           Empire.API.Project.ImportProject      as ImportProject
 import           Empire.API.Project.ListProjects       as ListProjects
+import           Empire.API.Project.OpenProject        as OpenProject
 import           Empire.API.Request                    as Request
 import           Empire.API.Response                   as Response
 
@@ -195,6 +196,10 @@ instance ToJSON ListLibraries.Result
 instance ToJSON CreateProject.Request
 instance ToJSON CreateProject.Result
 instance ToJSON CreateProject.Update
+
+instance ToJSON OpenProject.Request
+instance ToJSON OpenProject.Result
+instance ToJSON OpenProject.Update
 
 instance ToJSON ListProjects.Request
 instance ToJSON ListProjects.Result

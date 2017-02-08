@@ -40,6 +40,7 @@ import qualified Empire.API.Project.CreateProject       as CreateProject
 import qualified Empire.API.Project.ExportProject       as ExportProject
 import qualified Empire.API.Project.ImportProject       as ImportProject
 import qualified Empire.API.Project.ListProjects        as ListProjects
+import qualified Empire.API.Project.OpenProject         as OpenProject
 
 
 withLibrary :: Workspace -> (GraphLocation -> a) -> a
@@ -59,6 +60,9 @@ addSubgraph' nodes connections workspace uuid guiID saveNodeIds = sendRequest $ 
 
 createProject :: Text -> UUID -> Maybe UUID -> IO ()
 createProject name uuid guiID = sendRequest $ Message uuid guiID $ CreateProject.Request $ Text.unpack name
+
+openProject :: FilePath -> UUID -> Maybe UUID -> IO ()
+openProject path uuid guiID = sendRequest $ Message uuid guiID $ OpenProject.Request path
 
 listProjects :: UUID -> Maybe UUID -> IO ()
 listProjects uuid guiID = sendRequest $ Message uuid guiID ListProjects.Request
