@@ -10,10 +10,11 @@ import           Luna.Studio.Event.Mouse     (mousePosition)
 import           Luna.Studio.Event.UI        (UIEvent (AppEvent))
 import qualified Luna.Studio.React.Event.App as App
 import qualified Luna.Studio.State.Global    as Global
-
+import qualified Luna.Studio.Action.Batch as Batch
 
 
 handle :: Event -> Maybe (Command Global.State ())
 handle (UI (AppEvent (App.MouseMove evt _))) = Just $ Global.mousePos <~ mousePosition evt
 handle (UI (AppEvent  App.Resize          )) = Just   Global.updateScene
+handle  Init                                 = Just   Batch.listProjects
 handle _                                     = Nothing

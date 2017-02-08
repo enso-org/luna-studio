@@ -121,5 +121,8 @@ handleExcept oldState event except = do
 scheduleEvent :: Chan (IO ()) -> MVar State -> Event -> IO ()
 scheduleEvent chan = Chan.writeChan chan .: processEvent
 
+scheduleInit :: Chan (IO ()) -> MVar State -> IO ()
+scheduleInit chan state = scheduleEvent chan state Event.Init
+
 startLoop :: Chan (IO ()) -> IO ()
 startLoop = forever . join . Chan.readChan

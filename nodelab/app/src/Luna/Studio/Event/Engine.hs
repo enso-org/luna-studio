@@ -3,4 +3,4 @@ module Luna.Studio.Event.Engine
     ) where
 
 import           Luna.Studio.Event.Loader    as X (withActiveConnection)
-import           Luna.Studio.Event.Processor as X (connectEventSources, scheduleEvent, startLoop)
+import           Luna.Studio.Event.Processor as X (connectEventSources, scheduleEvent, scheduleInit, startLoop)
