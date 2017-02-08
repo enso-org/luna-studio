@@ -46,7 +46,7 @@ node = React.defineView objName $ \(ref, n) -> do
         z         = if n ^. Node.isExpanded then zIndex + nodeLimit else zIndex
     div_
         [ "key"       $= fromString (show nodeId)
-        , "className" $= "luna-node-root luna-noselect"
+        , "className" $= "luna-node-root"
         , "style"     @= Aeson.object [ "zIndex" Aeson..= show z ]
         ] $ do
         div_
@@ -107,7 +107,7 @@ node = React.defineView objName $ \(ref, n) -> do
                     text_
                         [ "key"         $= "nameText"
                         , onDoubleClick $ \e _ -> stopPropagation e : dispatch ref (UI.NodeEvent $ Node.EditExpression nodeId)
-                        , "className"   $= "luna-node__name"
+                        , "className"   $= "luna-node__name luna-noselect"
                         , "y"           $= "-36"
                         ] $ elemString $ Text.unpack $ n ^. Node.expression
 
