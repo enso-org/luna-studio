@@ -18,7 +18,7 @@ import qualified Luna.Studio.React.Model.Node           as Node
 import qualified Luna.Studio.React.Model.NodeProperties as Properties
 import qualified Luna.Studio.React.Model.Port           as Port
 import           Luna.Studio.React.Store                (Ref, dispatch)
-import           Luna.Studio.React.View.CommonElements  (blurBackground_, selectionMark_)
+import           Luna.Studio.React.View.CommonElements  (blurBackground_,selectionMark_)
 import           Luna.Studio.React.View.NodeProperties  (nodeProperties_)
 import           Luna.Studio.React.View.Port            (portExpanded_, port_)
 import           Luna.Studio.React.View.Visualization   (visualization_)
@@ -59,8 +59,8 @@ node = React.defineView objName $ \(ref, n) -> do
                 , onClick       $ \_ m -> dispatch ref $ UI.NodeEvent $ Node.Select m nodeId
                 , onDoubleClick $ \_ _ -> dispatch ref $ UI.NodeEvent $ Node.Enter nodeId
                 , onMouseDown   $ handleMouseDown ref nodeId
-                , "className"   $= fromString ("luna-node" <> (if n ^. Node.isExpanded then " luna-node--expanded" else " luna-node--collapsed")
-                                                           <> (if n ^. Node.isSelected then " luna-node--selected" else []))
+                , "className"   $= (fromString $ "luna-node" <> (if n ^. Node.isExpanded then " luna-node--expanded" else " luna-node--collapsed")
+                                                             <> (if n ^. Node.isSelected then " luna-node--selected" else []))
                 , "style"       @= Aeson.object
                     [ "transform" Aeson..= transformTranslateToSvg pos
                     ]
@@ -83,12 +83,13 @@ node = React.defineView objName $ \(ref, n) -> do
                 svg_
                     [ "key"       $= "essentials"
                     , "className" $= "luna-node__essentials"
-                    ] $
+                    ] $ do
                     if  n ^. Node.isExpanded then do
-                        forM_  (filter (\port -> (port ^. Port.portId) == InPortId Self) nodePorts) $ portExpanded_ ref
-                        forM_  (filter (\port -> (port ^. Port.portId) /= InPortId Self) nodePorts) $ portExpanded_ ref
+                        ports $ filter (\port -> (port ^. Port.portId) == InPortId Self) nodePorts
+                        forM_  (filter (\port -> (port ^. Port.portId) /= InPortId Self) nodePorts) (\port -> portExpanded_ ref port)
                     else do
-                        ports nodePorts
+                        ports $ filter (\port -> (port ^. Port.portId) /= InPortId Self) nodePorts
+                        ports $ filter (\port -> (port ^. Port.portId) == InPortId Self) nodePorts
         div_
             [ "key"       $= "nameTrans"
             , "className" $= "luna-name-trans"
@@ -99,11 +100,11 @@ node = React.defineView objName $ \(ref, n) -> do
                 , onDoubleClick $ \_ _ -> dispatch ref $ UI.NodeEvent $ Node.Enter nodeId
                 , onMouseDown   $ handleMouseDown ref nodeId
                 , "style"       @= Aeson.object [ "transform" Aeson..= transformTranslateToSvg pos ]
-                , "className"   $= fromString ("luna-node" <> (if n ^. Node.isExpanded then " luna-node--expanded" else " luna-node--collapsed")
-                                                           <> (if n ^. Node.isSelected then " luna-node--selected" else []))
-                ] $
+                , "className"   $= (fromString $ "luna-node" <> (if n ^. Node.isExpanded then " luna-node--expanded" else " luna-node--collapsed")
+                                                             <> (if n ^. Node.isSelected then " luna-node--selected" else []))
+                ] $ do
                 svg_
-                    [ "key" $= "name" ] $
+                    [ "key" $= "name" ] $ do
                     text_
                         [ "key"         $= "nameText"
                         , onDoubleClick $ \e _ -> stopPropagation e : dispatch ref (UI.NodeEvent $ Node.EditExpression nodeId)

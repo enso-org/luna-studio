@@ -57,10 +57,19 @@ transformTranslateToSvg position = "matrix( 1 , 0, 0, 1, " <> offsetX <> " , " <
       offsetY = show $ position ^. y
 
 
-showTransformMatrixToSvg :: Matrix Double -> String
-showTransformMatrixToSvg matrix =
+showMatrix3dHTMLValue :: Matrix Double -> String
+showMatrix3dHTMLValue matrix =
     let mx1 = Matrix.toList matrix
         nx  = fromIntegral ((round $ mx1!!12) :: Integer)
         ny  = fromIntegral ((round $ mx1!!13) :: Integer)
         mx2 = take 12 mx1 ++ nx:ny:drop 14 mx1
     in foldl (<>) "matrix3d(" (intersperse ", " $ map show mx2) <> ")"
+
+
+showTranslateHTMLValue :: Matrix Double -> String
+showTranslateHTMLValue matrix =
+    let mx1 = Matrix.toList matrix
+        s   = mx1!!0 :: Double
+        nx  = show $ fromIntegral ((round $ s * mx1!!12) :: Integer)
+        ny  = show $ fromIntegral ((round $ s * mx1!!13) :: Integer)
+    in "translate(" <> nx <> "px, " <> ny <> "px)"

@@ -10,7 +10,7 @@ import           React.Flux.Internal                   (el)
 
 import           JS.Scene                              (sceneId)
 import qualified Luna.Studio.Data.CameraTransformation as CameraTransformation
-import           Luna.Studio.Data.Matrix               (showTransformMatrixToSvg)
+import           Luna.Studio.Data.Matrix               (showMatrix3dHTMLValue, showTranslateHTMLValue)
 import qualified Luna.Studio.Event.UI                  as UI
 import           Luna.Studio.Prelude                   hiding (transform)
 import qualified Luna.Studio.React.Event.NodeEditor    as NE
@@ -20,7 +20,7 @@ import qualified Luna.Studio.React.Model.NodeEditor    as NodeEditor
 import           Luna.Studio.React.Store               (Ref, dispatch)
 import           Luna.Studio.React.View.Connection     (connection_, currentConnection_)
 import           Luna.Studio.React.View.ConnectionPen  (connectionPen_)
-import           Luna.Studio.React.View.Node           (node_)
+import           Luna.Studio.React.View.Node           (node_,nodeStyles_)
 import           Luna.Studio.React.View.SelectionBox   (selectionBox_)
 import           Luna.Studio.React.View.Visualization  (pinnedVisualization_)
 
@@ -34,7 +34,8 @@ nodeEditor_ ref ne = React.viewWithSKey nodeEditor name (ref, ne) mempty
 nodeEditor :: ReactView (Ref App, NodeEditor)
 nodeEditor = React.defineView name $ \(ref, ne) -> do
     let transformMatrix = ne ^. NodeEditor.screenTransform . CameraTransformation.logicalToScreen
-        transform       = showTransformMatrixToSvg transformMatrix
+        transform       = showMatrix3dHTMLValue  transformMatrix
+        translate       = showTranslateHTMLValue transformMatrix
     div_
         [ "className" $= "luna-graph"
         , "id"        $= sceneId
@@ -47,11 +48,11 @@ nodeEditor = React.defineView name $ \(ref, ne) -> do
             [ "id"  $= "cameraTransform"
             , "key" $= "cameraTransform"
             ] $ do
-                elemString $ Text.unpack ".node-trans { transform: … }"
-                elemString $ Text.unpack ".name-trans { transform: … }"
+                elemString $ Text.unpack ".luna-node-trans { transform: " <> transform <> " }"
+                elemString $ Text.unpack ".luna-name-trans { transform: " <> transform <> " }"
+                forM_ (ne ^. NodeEditor.nodes . to HashMap.elems) (nodeStyles_ ref)
         svg_
-            [ "className" $= "luna-plane luna-plane-connections"
-            , "style"     @= Aeson.object [ "transform" Aeson..= transform ]
+            [ "className" $= "luna-plane luna-plane-connections luna-node-trans"
             , "key"       $= "connections"
             ] $ do
             defs_
@@ -91,7 +92,6 @@ nodeEditor = React.defineView name $ \(ref, ne) -> do
         div_
             [ "className" $= "luna-plane luna-plane--nodes"
             , "key"       $= "nodes"
-            , "style"     @= Aeson.object [ "transform" Aeson..= transform ]
             ] $ do
             forM_ (ne ^. NodeEditor.nodes . to HashMap.elems) (node_ ref)
             forM_ (ne ^. NodeEditor.visualizations) $ pinnedVisualization_ ref ne
