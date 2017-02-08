@@ -1,15 +1,16 @@
 {-# LANGUAGE JavaScriptFFI #-}
 
 module JS.WebSocket (WebSocket
-                    , onOpen
-                    , onMessage
+                    , connect
+                    , getCode
+                    , getData
+                    , getWebSocket
+                    , isOpen
                     , onClose
                     , onError
-                    , getWebSocket
-                    , connect
+                    , onMessage
+                    , onOpen
                     , send
-                    , getData
-                    , getCode
                     ) where
 
 import           Data.JSString
@@ -33,6 +34,9 @@ foreign import javascript safe "$1.code"
 
 foreign import javascript safe "app.websocket"
     getWebSocket :: IO WebSocket
+
+foreign import javascript safe "$1.isOpen()"
+    isOpen :: WebSocket -> IO Bool
 
 foreign import javascript safe "$1.onOpen($2)"
     onOpen' :: WebSocket -> Callback (IO ()) -> IO ()

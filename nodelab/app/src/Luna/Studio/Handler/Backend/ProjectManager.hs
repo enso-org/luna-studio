@@ -43,6 +43,8 @@ handle (Batch (Batch.ProjectOpened response)) = Just $ handleResponse response $
     Global.workspace . Workspace.projects . at projectId ?= project
     loadProject projectId
 
+handle (Batch (Batch.ProjectOpenedUpdate (OpenProject.Update projectId project))) = Just $ Global.workspace . Workspace.projects . at projectId ?= project
+
 handle (Batch (Batch.ProjectCreated response)) = Just $ handleResponse response $ \_ (CreateProject.Result projectId project) -> do
     Global.workspace . Workspace.projects . at projectId ?= project
     loadProject projectId

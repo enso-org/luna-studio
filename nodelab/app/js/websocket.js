@@ -30,7 +30,7 @@ var mockSocket = function () {
 
 module.exports = function () {
   var connection = mockSocket();
-
+  var isConnOpen = false;
   var listeners = {
     onOpen: [],
     onMessage: [],
@@ -54,7 +54,11 @@ module.exports = function () {
   };
 
   return {
+    isOpen: function () {
+      return isConnOpen;
+    },
     onOpen: function (listener) {
+      isConnOpen = true;
       listeners.onOpen.push(listener);
       connection.addEventListener("open", listener);
     },
