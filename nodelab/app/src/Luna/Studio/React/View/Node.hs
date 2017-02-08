@@ -126,4 +126,5 @@ nodeDynamicStyles_ camera n = do
         scale  = (Matrix.toList camera)!!0
         nx     = show $ round $ camX + (scale * posX)
         ny     = show $ round $ camY + (scale * posY)
-    elemString $ "#node-" <> nodeId <> " .luna-name-trans { transform: translate(" <> nx <> "px, " <> ny <> "px) }"
+    elemString $ "#node-" <> nodeId <> " .luna-name-trans { transform: translate(" <> nx <> "px, " <> ny <> "px)"
+               <> if scale > 1 then "; font-size: " <> show (12 * scale) <> "px }" else " }"
