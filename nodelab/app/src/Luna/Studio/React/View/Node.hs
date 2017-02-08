@@ -46,6 +46,7 @@ node = React.defineView objName $ \(ref, n) -> do
         z         = if n ^. Node.isExpanded then zIndex + nodeLimit else zIndex
     div_
         [ "key"       $= fromString (show nodeId)
+        , "id"        $= ("node-" <> fromString (show nodeId))
         , "className" $= "luna-node-root luna-noselect"
         , "style"     @= Aeson.object [ "zIndex" Aeson..= show z ]
         ] $ do
@@ -72,7 +73,6 @@ node = React.defineView objName $ \(ref, n) -> do
                     div_
                         [ "key"       $= "properties-crop"
                         , "className" $= "luna-node__properties-crop"
-                        , "id"        $= ("node-" <> fromString (show nodeId))
                         ] $ do
                         blurBackground_
                         if n ^. Node.isExpanded then (nodeProperties_ ref $ Properties.fromNode n) else ""
@@ -113,3 +113,18 @@ node = React.defineView objName $ \(ref, n) -> do
 
 node_ :: Ref App -> Node -> ReactElementM ViewEventHandler ()
 node_ ref model = React.viewWithSKey node (jsShow $ model ^. Node.nodeId) (ref, model) mempty
+
+nodeStyles :: ReactView (Node)
+nodeStyles = React.defineView objName $ \(n) -> do
+    let nodeId    = n ^. Node.nodeId
+        pos       = n ^. Node.position
+        nodeLimit = 10000::Int
+        zIndex    = n ^. Node.zPos
+        z         = if n ^. Node.isExpanded then zIndex + nodeLimit else zIndex
+    div_
+        [ "key" $= fromString (show nodeId)
+        , "id"  $= ("#node-" <> fromString (show nodeId))
+        ] mempty
+
+nodeStyles_ :: Node -> ReactElementM ViewEventHandler ()
+nodeStyles_ model = React.viewWithSKey nodeStyles (jsShow $ model ^. Node.nodeId) (model) mempty
