@@ -56,7 +56,7 @@ visualization_ ref nodeId mayPos v = React.view visualization (ref, nodeId, mayP
 
 visualization :: ReactView (Ref App, NodeId, Maybe Position, NodeValue)
 visualization = React.defineView viewName $ \(ref, nodeId, mayPos, nodeValue) ->
-    div_ [ "className" $= "noselect" ] $
+    div_ [ "className" $= "luna-noselect" ] $
         case nodeValue of
             NodeResult.Error msg          -> nodeError_ msg
             NodeResult.Value _ valueReprs -> nodeValues_ ref nodeId mayPos valueReprs

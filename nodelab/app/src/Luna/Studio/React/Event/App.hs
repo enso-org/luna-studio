@@ -16,6 +16,7 @@ data Event = MouseDown  MouseEvent Timestamp
            | MouseUp    MouseEvent
            | Click      MouseEvent
            | KeyDown    KeyboardEvent
+           | MouseLeave
            | Resize
             deriving (Show, Generic, NFData, Typeable)
 

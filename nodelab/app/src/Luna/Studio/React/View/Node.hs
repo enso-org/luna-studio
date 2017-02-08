@@ -104,13 +104,13 @@ node = React.defineView objName $ \(ref, n) -> do
                 , onMouseDown   $ handleMouseDown ref nodeId
                 , "className"   $= (fromString $ "luna-node" <> if n ^. Node.isExpanded then " luna-node--expanded" else " luna-node--collapsed"
                                                              <> if n ^. Node.isSelected then " luna-node--selected" else [])
-                ] $ do
+                ] $
                 svg_
-                    [ "key" $= "name" ] $ do
+                    [ "key" $= "name" ] $
                     text_
                         [ "key"         $= "nameText"
                         , onDoubleClick $ \e _ -> stopPropagation e : dispatch ref (UI.NodeEvent $ Node.EditExpression nodeId)
-                        , "className"   $= "luna-node__name"
+                        , "className"   $= "luna-node__name luna-noselect"
                         ] $ elemString $ Text.unpack $ n ^. Node.expression
 
 node_ :: Ref App -> Node -> ReactElementM ViewEventHandler ()
