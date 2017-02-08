@@ -1,4 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE TypeApplications  #-}
 
 module Empire.Commands.Typecheck where
 
@@ -18,13 +19,20 @@ import           Empire.API.Data.GraphLocation     (GraphLocation (..))
 import qualified Empire.API.Graph.NodeResultUpdate as NodeResult
 import qualified Empire.API.Data.Error             as APIError
 import           Empire.API.Data.TypeRep           (TypeRep)
-import           Empire.ASTOp                      (runASTOp)
+import           Empire.ASTOp                      (EmpirePass, runASTOp)
 import           Empire.Empire
 import qualified Empire.Commands.AST               as AST
 import qualified Empire.Commands.GraphUtils        as GraphUtils
 import qualified Empire.Commands.GraphBuilder      as GraphBuilder
 import qualified Empire.Commands.Publisher         as Publisher
 
+import qualified Luna.IR                            as IR
+import qualified Luna.IR.Expr.Combinators           as IR
+import           Luna.IR.Imports                    (Imports(..))
+import           Luna.IR.Module.Definition          (Module(..))
+import qualified Luna.IR.Function.Definition        as IR.Function
+import           Luna.Pass                          (SubPass)
+import qualified Luna.Passes.Typechecking.Typecheck as Typecheck
 
 
 getNodeValueReprs :: NodeId -> Command Graph (Either String a)
@@ -39,11 +47,29 @@ collect _ = return ()
     {-st <- TypeCheckState.get-}
     {-putStrLn $ "State is: " <> show st-}
 
+typed :: (IR.MonadRef m, IR.MonadPassManager m, IR.Generalizable' (IR.Expr l) (IR.Expr (IR.Sub IR.Type t)), IR.Generalizable' (IR.Sub IR.Type t) IR.Bottom) => SubPass EmpirePass m (IR.Expr t) -> IR.Expr l -> SubPass EmpirePass m (IR.Expr t)
+typed me t = do
+   e <- me
+   oldTp <- IR.readLayer @IR.Type e >>= IR.source
+   IR.reconnectLayer @IR.Type t e
+   IR.deleteSubtree oldTp
+   return e
+
 runTC :: Command Graph ()
 runTC = do
     allNodeIds <- uses Graph.nodeMapping $ Map.keys
-    _roots <- runASTOp $ mapM GraphUtils.getASTPointer allNodeIds
-    $notImplemented
+    runASTOp $ do
+        roots <- mapM GraphUtils.getASTPointer allNodeIds
+        mockImports <- do
+            id' <- do
+                tvar <- IR.strCons_ @IR.Draft "Int"
+                tp   <- IR.lam tvar tvar
+                bl   <- IR.blank `typed` tvar
+                l    <- IR.lam bl bl `typed` tp
+                IR.Function.compile $ IR.generalize l
+            let m = Module Map.empty $ Map.singleton "id" id'
+            return $ Imports $ Map.singleton "Stdlib" m
+        Typecheck.typecheck mockImports $ map IR.unsafeGeneralize roots
     return ()
 
 runInterpreter :: Command Graph ()
@@ -112,5 +138,5 @@ run :: GraphLocation -> Command InterpreterEnv ()
 run loc = do
     zoom graph runTC
     updateNodes loc
-    zoom graph runInterpreter
-    updateValues loc
+    -- zoom graph runInterpreter
+    -- updateValues loc

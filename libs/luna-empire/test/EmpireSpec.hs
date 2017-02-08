@@ -172,7 +172,7 @@ spec = around withChannels $ parallel $ do
                     Just _ -> return ()
                     _      -> expectationFailure err
                 Right _  -> expectationFailure "should throw"
-        xit "properly typechecks input nodes" $ \env -> do
+        it "properly typechecks input nodes" $ \env -> do
             u1 <- mkUUID
             (res, st) <- runEmp env $ do
                 Graph.addNode top u1 "-> $a $b a + b" def
@@ -188,7 +188,7 @@ spec = around withChannels $ parallel $ do
                         ports' = toList $ input ^. Node.ports
                         types = map (view Port.valueType) ports'
                     types `shouldMatchList` [TCons "Int" [], TCons "Int" []]
-        xit "properly typechecks output nodes" $ \env -> do
+        it "properly typechecks output nodes" $ \env -> do
             u1 <- mkUUID
             (res, st) <- runEmp env $ do
                 Graph.addNode top u1 "-> $a $b a + b" def
@@ -204,6 +204,27 @@ spec = around withChannels $ parallel $ do
                         ports' = toList $ output' ^. Node.ports
                         types = map (view Port.valueType) ports'
                     types `shouldBe` [TCons "Int" []]
+        it "properly typechecks edges inside mock id" $ \env -> do
+            u1 <- mkUUID
+            (res, st) <- runEmp env $ do
+                Graph.addNode top u1 "id" def
+                let GraphLocation pid lid _ = top
+                withLibrary pid lid (use Library.body)
+            withResult res $ \g -> do
+                (_, (extractGraph -> g')) <- runEmpire env (InterpreterEnv def def def g def) $
+                    Typecheck.run emptyGraphLocation
+                (res'',_) <- runEmp' env st g' $ do
+                    Graph.getNodes $ top |> u1
+                withResult res'' $ \nodes' -> do
+                    print nodes'
+                    let Just input' = find ((== "inputEdge") . view Node.name) nodes'
+                        inputPorts' = toList $ input' ^. Node.ports
+                        inputType = map (view Port.valueType) inputPorts'
+                    let Just output' = find ((== "outputEdge") . view Node.name) nodes'
+                        outputPorts' = toList $ output' ^. Node.ports
+                        outputType = map (view Port.valueType) outputPorts'
+                    inputType  `shouldBe` [TCons "Int" []]
+                    outputType `shouldBe` [TCons "Int" []]
         it "adds lambda nodeid to node mapping" $ \env -> do
             u1 <- mkUUID
             res <- evalEmp env $ do
