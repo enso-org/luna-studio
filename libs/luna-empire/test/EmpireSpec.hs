@@ -216,7 +216,6 @@ spec = around withChannels $ parallel $ do
                 (res'',_) <- runEmp' env st g' $ do
                     Graph.getNodes $ top |> u1
                 withResult res'' $ \nodes' -> do
-                    print nodes'
                     let Just input' = find ((== "inputEdge") . view Node.name) nodes'
                         inputPorts' = toList $ input' ^. Node.ports
                         inputType = map (view Port.valueType) inputPorts'
