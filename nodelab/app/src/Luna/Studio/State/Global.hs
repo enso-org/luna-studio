@@ -181,5 +181,8 @@ updateActionWithKey key action = currentActions . at key ?= someAction action
 removeActionFromState :: ActionRep -> Command State ()
 removeActionFromState key = currentActions %= Map.delete key
 
+endAll :: Command State ()
+endAll = mapM_ end =<< use currentActions
+
 updateScene :: Command State ()
 updateScene = Scene.get >>= mapM_ (\s -> unless (s == def) $ scene .= s)
