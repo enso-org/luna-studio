@@ -23,9 +23,11 @@ handle _                                                  = Nothing
 
 handleShortcut :: ShortcutEvent -> Command State ()
 handleShortcut = \case
-    SearcherAccept   -> continue Searcher.accept
-    SearcherClose    -> continue Searcher.close
-    SearcherMoveDown -> continue Searcher.moveDown
-    SearcherMoveUp   -> continue Searcher.moveUp
-    SearcherOpen     -> Searcher.open
-    _                -> return ()
+    SearcherAccept    -> continue Searcher.accept
+    SearcherClose     -> continue Searcher.close
+    SearcherMoveDown  -> continue Searcher.moveDown
+    SearcherMoveLeft  -> continue Searcher.rollback
+    SearcherMoveRight -> continue Searcher.proceed
+    SearcherMoveUp    -> continue Searcher.moveUp
+    SearcherOpen      -> Searcher.open
+    _                 -> return ()

@@ -66,9 +66,10 @@ handleKeyApp evt
 
 handleKeySearcher :: KeyboardEvent -> Maybe ShortcutEvent
 handleKeySearcher evt
-    | Keys.withoutMods evt Keys.enter     = Just SearcherAccept
-    | Keys.withoutMods evt Keys.tab       = Just SearcherClose
-    | Keys.withoutMods evt Keys.esc       = Just SearcherClose
+    | Keys.withoutMods evt Keys.backspace = Just SearcherMoveLeft
     | Keys.withoutMods evt Keys.downArrow = Just SearcherMoveDown
+    | Keys.withoutMods evt Keys.enter     = Just SearcherAccept
+    | Keys.withoutMods evt Keys.esc       = Just SearcherClose
+    | Keys.withoutMods evt Keys.tab       = Just SearcherMoveRight
     | Keys.withoutMods evt Keys.upArrow   = Just SearcherMoveUp
     | otherwise                           = Nothing
