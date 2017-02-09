@@ -14,7 +14,7 @@ import           Luna.Studio.Prelude
 data Event = MouseDown  MouseEvent Timestamp
            | MouseMove  MouseEvent Timestamp
            | MouseUp    MouseEvent
-           | Click      MouseEvent
+           | Click
            | KeyDown    KeyboardEvent
            | MouseLeave
            | Resize

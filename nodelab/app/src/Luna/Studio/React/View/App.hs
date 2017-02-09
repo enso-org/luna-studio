@@ -36,7 +36,7 @@ app ref = React.defineControllerView name ref $ \store () -> do
         , onMouseDown   $ \e m -> dispatch ref $ UI.AppEvent $ App.MouseDown m (Timestamp (evtTimestamp e))
         , onMouseUp     $ \_ m -> dispatch ref $ UI.AppEvent $ App.MouseUp   m
         , onMouseMove   $ \e m -> dispatch ref $ UI.AppEvent $ App.MouseMove m (Timestamp (evtTimestamp e))
-        , onClick       $ \_ m -> dispatch ref $ UI.AppEvent $ App.Click     m
+        , onClick       $ \_ _ -> dispatch ref $ UI.AppEvent $ App.Click
         , onMouseLeave  $ \_ _ -> dispatch ref $ UI.AppEvent   App.MouseLeave
         , on "onPaste"  $ \e   -> let val = Clipboard.getClipboardData (evtHandlerArg e)
                                   in dispatch' ref $ Shortcut $ Shortcut.Paste val

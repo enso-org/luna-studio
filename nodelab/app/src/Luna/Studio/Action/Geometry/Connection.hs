@@ -1,22 +1,25 @@
 module Luna.Studio.Action.Geometry.Connection
-    ( getConnectionPosition
-    , getCurrentConnectionPosition
+    ( createConnectionModel
+    , createCurrentConnectionModel
     ) where
 
 import qualified Data.Map.Lazy                         as Map
 import           Data.Position                         (Position (Position), Vector2 (Vector2), x, y)
-import           Empire.API.Data.PortRef               (AnyPortRef (InPortRef', OutPortRef'), InPortRef, OutPortRef)
+import           Empire.API.Data.Connection            (Connection)
+import qualified Empire.API.Data.Connection            as Connection
+import           Empire.API.Data.PortRef               (AnyPortRef (InPortRef', OutPortRef'))
 import qualified Empire.API.Data.PortRef               as PortRef
 import           Luna.Studio.Action.Command            (Command)
 import           Luna.Studio.Action.Geometry.Constants (lineHeight, nodeExpandedWidth, portRadius)
 import           Luna.Studio.Action.Geometry.Node      (nodeToNodeAngle)
 import           Luna.Studio.Action.Geometry.Port      (IsSelf, IsSingle, countSameTypePorts, getPortNumber, isPortSelf, isPortSingle,
                                                         portAngleStart, portAngleStop, portGap)
-import           Luna.Studio.Action.Graph.Lookup       (getNode, getPort)
+import           Luna.Studio.Action.Graph.Lookup       (getPort)
 import           Luna.Studio.Prelude
+import qualified Luna.Studio.React.Model.Connection    as Model
 import qualified Luna.Studio.React.Model.Node          as Node
-import           Luna.Studio.State.Global              (State)
-
+import qualified Luna.Studio.React.Model.Port          as Port
+import           Luna.Studio.State.Global              (State, getNode)
 
 connectionSrc :: Position -> Position -> Bool -> Bool -> Int -> Int -> IsSingle -> Position
 connectionSrc src dst isSrcExpanded _             _   _          True =
@@ -71,8 +74,10 @@ connectionDst src dst isSrcExpanded isDstExpanded num numOfPorts _    =
     in  Position (Vector2 dstX dstY)
 
 
-getConnectionPosition :: OutPortRef -> InPortRef -> Command State (Maybe (Position, Position))
-getConnectionPosition srcPortRef dstPortRef = do
+createConnectionModel :: Connection -> Command State (Maybe Model.Connection)
+createConnectionModel connection = do
+    let srcPortRef = connection ^. Connection.src
+        dstPortRef = connection ^. Connection.dst
     maySrcNode <- getNode $ srcPortRef ^. PortRef.srcNodeId
     mayDstNode <- getNode $ dstPortRef ^. PortRef.dstNodeId
     maySrcPort <- getPort srcPortRef
@@ -88,25 +93,28 @@ getConnectionPosition srcPortRef dstPortRef = do
                 isDstExpanded = dstNode ^. Node.isExpanded
                 srcConnPos    = connectionSrc srcPos dstPos isSrcExpanded isDstExpanded (getPortNumber srcPort) (countSameTypePorts srcPort srcPorts) (isPortSingle srcPort srcPorts)
                 dstConnPos    = connectionDst srcPos dstPos isSrcExpanded isDstExpanded (getPortNumber dstPort) (countSameTypePorts dstPort dstPorts) (isPortSelf dstPort)
-            return $ Just (srcConnPos, dstConnPos)
+                color         = srcPort ^. Port.color
+            return $ Just (Model.Connection dstPortRef srcConnPos dstConnPos color)
         _ -> return Nothing
 
 
-getCurrentConnectionPosition :: AnyPortRef -> Position -> Command State (Maybe (Position, Position))
-getCurrentConnectionPosition portRef mousePos = do
+createCurrentConnectionModel :: AnyPortRef -> Position -> Command State (Maybe Model.CurrentConnection)
+createCurrentConnectionModel portRef mousePos = do
     mayNode <- getNode $ portRef ^. PortRef.nodeId
     mayPort <- getPort portRef
 
     case (mayNode, mayPort) of
         (Just node, Just port) -> do
-            let ports      = Map.elems $ node ^. Node.ports
-                pos        = node ^. Node.position
-                isExpanded = node ^. Node.isExpanded
-                portNum    = getPortNumber port
-                numOfPorts = countSameTypePorts port ports
-                isSelf     = isPortSelf port
+            let ports       = Map.elems $ node ^. Node.ports
+                pos         = node ^. Node.position
+                isExpanded  = node ^. Node.isExpanded
+                portNum     = getPortNumber port
+                numOfPorts  = countSameTypePorts port ports
+                isSelf      = isPortSelf port
+                isSingle    = isPortSingle port ports
                 connPortPos = case portRef of
-                    OutPortRef' _ -> connectionSrc pos      mousePos isExpanded False      portNum numOfPorts False
+                    OutPortRef' _ -> connectionSrc pos      mousePos isExpanded False      portNum numOfPorts isSingle
                     InPortRef'  _ -> connectionDst mousePos pos      False      isExpanded portNum numOfPorts isSelf
-            return $ Just (connPortPos, mousePos)
-        _                     -> return Nothing
+                color       = port ^. Port.color
+            return $ Just (Model.CurrentConnection connPortPos mousePos color)
+        _ -> return Nothing
