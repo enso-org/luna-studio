@@ -24,7 +24,7 @@ nodeProperties = React.defineView objName $ \(ref, p) -> do
     let nodeId = p ^. Prop.nodeId
     div_
         [ "key"       $= "properties"
-        , "className" $= "luna-node__properties"
+        , "className" $= "luna-node__properties luna-noselect"
         ] $ do
         div_
             [ "key"       $= "value"

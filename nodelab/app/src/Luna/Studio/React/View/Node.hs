@@ -50,7 +50,7 @@ node = React.defineView objName $ \(ref, n) -> do
     div_
         [ "key"       $= fromString (show nodeId)
         , "id"        $= ("node-" <> fromString (show nodeId))
-        , "className" $= "luna-node-root luna-noselect"
+        , "className" $= "luna-node-root"
         , "style"     @= Aeson.object [ "zIndex" Aeson..= show z ]
         ] $ do
         div_
