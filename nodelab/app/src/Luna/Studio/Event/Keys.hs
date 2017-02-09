@@ -5,50 +5,25 @@ import           Luna.Studio.Prelude
 import           React.Flux          (KeyboardEvent (KeyboardEvent))
 
 
-a :: Int
-a = 65
-
-h :: Int
-h = 72
-
-y :: Int
-y = 89
-
-z :: Int
-z = 90
-
-plus :: Int
-plus = 187
-
-minus :: Int
-minus = 189
-
-zero :: Int
-zero = 48
-
-del :: Int
-del = 46
-
-tab :: Int
-tab = 9
-
-enter :: Int
+backspace, tab, enter, esc, leftArrow, upArrow, rightArrow, downArrow, del :: Int
+backspace = 8
+tab   = 9
 enter = 13
-
-esc :: Int
-esc = 27
-
-leftArrow :: Int
-leftArrow = 37
-
-upArrow :: Int
-upArrow = 38
-
-rightArrow :: Int
+esc   = 27
+leftArrow  = 37
+upArrow    = 38
 rightArrow = 39
+downArrow  = 40
+del   = 46
+zero  = 48
 
-downArrow :: Int
-downArrow = 40
+zero, a, h, y, z, plus, minus :: Int
+a = 65
+h = 72
+y = 89
+z = 90
+plus  = 187
+minus = 189
 
 withoutMods :: KeyboardEvent -> Int -> Bool
 withoutMods (KeyboardEvent False _ False _ _ keyCode _ _ False _ False _) key = keyCode == key
