@@ -37,17 +37,12 @@ instance Show UndoMessage where
 -- newtype RedoReq = RedoReq ByteString
 --
 
-----------------------
--- === Handlers === --
-----------------------
 
 data UndoState = UndoState { _undo    :: [UndoMessage]
                            , _redo    :: [UndoMessage]
                            , _history :: [UndoMessage]
                            }
 makeLenses ''UndoState
--- === Utils === --
-
 
 newtype UndoT b a = Undo {runUndo :: StateT UndoState b a}
     deriving (Applicative, Functor, Monad, MonadState UndoState, MonadIO, MonadThrow, MonadTrans)

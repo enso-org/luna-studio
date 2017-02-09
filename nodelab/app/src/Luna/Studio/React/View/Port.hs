@@ -2,22 +2,21 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Luna.Studio.React.View.Port where
 
-import           Empire.API.Data.Port               (InPort (..), OutPort (..), PortId (..))
-import           Empire.API.Data.PortRef            (AnyPortRef)
-import           Luna.Studio.Action.Geometry        (lineHeight, nodeRadius, nodeRadius', portAngleStart, portAngleStop)
-import           Luna.Studio.Data.Color             (toJSString)
-import qualified Luna.Studio.Event.Mouse            as Mouse
-import qualified Luna.Studio.Event.UI               as UI
+import           Empire.API.Data.Port         (InPort (..), OutPort (..), PortId (..))
+import           Empire.API.Data.PortRef      (AnyPortRef)
+import           Luna.Studio.Action.Geometry  (lineHeight, nodeRadius, nodeRadius', portAngleStart, portAngleStop)
+import           Luna.Studio.Data.Color       (toJSString)
+import qualified Luna.Studio.Event.Mouse      as Mouse
+import qualified Luna.Studio.Event.UI         as UI
 import           Luna.Studio.Prelude
-import qualified Luna.Studio.React.Event.Connection as Connection
-import qualified Luna.Studio.React.Event.Port       as Port
-import           Luna.Studio.React.Model.App        (App)
-import           Luna.Studio.React.Model.Port       (Port (..))
-import qualified Luna.Studio.React.Model.Port       as Port
-import           Luna.Studio.React.Store            (Ref, dispatch)
-import           Numeric                            (showFFloat)
-import           React.Flux                         hiding (view)
-import qualified React.Flux                         as React
+import qualified Luna.Studio.React.Event.Port as Port
+import           Luna.Studio.React.Model.App  (App)
+import           Luna.Studio.React.Model.Port (Port (..))
+import qualified Luna.Studio.React.Model.Port as Port
+import           Luna.Studio.React.Store      (Ref, dispatch)
+import           Numeric                      (showFFloat)
+import           React.Flux                   hiding (view)
+import qualified React.Flux                   as React
 
 
 name :: JSString
@@ -32,23 +31,23 @@ jsShow2 a = convert $ showFFloat (Just 2) a "" -- limit Double to two decimal nu
 handleMouseDown :: Ref App -> AnyPortRef -> Event -> MouseEvent -> [SomeStoreAction]
 handleMouseDown ref portRef e m =
     if Mouse.withoutMods m Mouse.leftButton then
-        stopPropagation e : dispatch ref (UI.ConnectionEvent $ Connection.StartConnection m portRef)
+        stopPropagation e : dispatch ref (UI.PortEvent $ Port.MouseDown m portRef)
     else []
 
 handleClick :: Ref App -> AnyPortRef -> Event -> MouseEvent -> [SomeStoreAction]
 handleClick ref portRef e m =
     if Mouse.withoutMods m Mouse.leftButton then
-        stopPropagation e : dispatch ref (UI.ConnectionEvent $ Connection.Click m portRef)
+        stopPropagation e : dispatch ref (UI.PortEvent $ Port.Click m portRef)
     else []
 
 handleMouseUp :: Ref App -> AnyPortRef -> Event -> MouseEvent -> [SomeStoreAction]
-handleMouseUp ref portRef _e m = dispatch ref (UI.ConnectionEvent $ Connection.EndConnection m portRef)
+handleMouseUp ref portRef _ _ = dispatch ref (UI.PortEvent $ Port.MouseUp portRef)
 
 handleMouseEnter :: Ref App -> AnyPortRef -> Event -> MouseEvent -> [SomeStoreAction]
-handleMouseEnter ref portRef _e _m = dispatch ref (UI.PortEvent $ Port.MouseEnter portRef)
+handleMouseEnter ref portRef _ _ = dispatch ref (UI.PortEvent $ Port.MouseEnter portRef)
 
 handleMouseLeave :: Ref App -> AnyPortRef -> Event -> MouseEvent -> [SomeStoreAction]
-handleMouseLeave ref portRef _e _m = dispatch ref (UI.PortEvent $ Port.MouseLeave portRef)
+handleMouseLeave ref portRef _ _ = dispatch ref (UI.PortEvent $ Port.MouseLeave portRef)
 
 
 port :: ReactView (Ref App, Int, Bool, Port)
@@ -77,9 +76,10 @@ portExpanded_ ref p =
     React.viewWithSKey portExpanded (jsShow $ p ^. Port.portId) (ref, p) mempty
 
 handlers :: Ref App -> AnyPortRef -> Bool -> [PropertyOrHandler [SomeStoreAction]]
-handlers ref portRef isCollapsedSelf = (if isCollapsedSelf then id else ((onMouseDown $ handleMouseDown ref portRef):))
-    [ onClick      $ handleClick      ref portRef
+handlers ref portRef isCollapsedSelf = (if isCollapsedSelf then id else id) -- ((onMouseDown $ handleMouseDown ref portRef):))
+    [ onMouseDown $ handleMouseDown ref portRef
     , onMouseUp    $ handleMouseUp    ref portRef
+    , onClick      $ handleClick      ref portRef
     , onMouseEnter $ handleMouseEnter ref portRef
     , onMouseLeave $ handleMouseLeave ref portRef
     ]

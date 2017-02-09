@@ -37,7 +37,6 @@ import           Empire.API.Data.Connection (Connection (..), ConnectionId)
 import qualified Empire.API.Data.Connection as Connection
 import           Empire.API.Data.Node       (Node, NodeId)
 import qualified Empire.API.Data.Node       as Node
-import           Empire.API.Data.PortRef    (InPortRef, OutPortRef)
 import qualified Empire.API.Data.PortRef    as PortRef
 import           Luna.Studio.Action.Command (Command)
 
@@ -91,10 +90,9 @@ removeNode :: NodeId -> State -> State
 removeNode remNodeId state = state & nodesMap . at remNodeId .~ Nothing
 
 -- TODO[react]: Consider ConnectionId as new type
-addConnection :: OutPortRef -> InPortRef -> Command State ConnectionId
-addConnection sourcePortRef destPortRef = do
-    connectionsMap . at destPortRef ?= Connection sourcePortRef destPortRef
-    return destPortRef
+addConnection :: Connection -> Command State ConnectionId
+addConnection conn = connectionsMap . at connId ?= conn >> return connId where
+    connId = conn ^. Connection.dst
 
 removeConnections :: [ConnectionId] -> State -> State
 removeConnections connIds state = foldr removeConnection state connIds

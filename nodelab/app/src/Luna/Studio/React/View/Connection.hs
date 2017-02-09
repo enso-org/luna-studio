@@ -49,8 +49,8 @@ connection = React.defineView name $ \(ref, model) -> do
         color       = "stroke"      $= toJSString (model ^. Connection.color)
         width       = "strokeWidth" $= show2   connectionWidth
         widthSelect = "strokeWidth" $= show2 (connectionWidth * 4)
-        eventSrc    = onMouseDown $ \e m -> stopPropagation e : dispatch ref (UI.ConnectionEvent $ Connection.ModifyConnection m connId Source)
-        eventDst    = onMouseDown $ \e m -> stopPropagation e : dispatch ref (UI.ConnectionEvent $ Connection.ModifyConnection m connId Destination)
+        eventSrc    = onMouseDown $ \e m -> stopPropagation e : dispatch ref (UI.ConnectionEvent $ Connection.MouseDown m connId Source)
+        eventDst    = onMouseDown $ \e m -> stopPropagation e : dispatch ref (UI.ConnectionEvent $ Connection.MouseDown m connId Destination)
     g_
         [ "className" $= "luna-connection"
         , "key"       $= "connection"] $ do

@@ -21,7 +21,7 @@ import qualified Luna.Studio.React.Model.Node           as Node
 import qualified Luna.Studio.React.Model.NodeProperties as Properties
 import qualified Luna.Studio.React.Model.Port           as Port
 import           Luna.Studio.React.Store                (Ref, dispatch)
-import           Luna.Studio.React.View.CommonElements  (blurBackground_,selectionMark_)
+import           Luna.Studio.React.View.CommonElements  (blurBackground_, selectionMark_)
 import           Luna.Studio.React.View.NodeProperties  (nodeProperties_)
 import           Luna.Studio.React.View.Port            (portExpanded_, port_)
 import           Luna.Studio.React.View.Visualization   (visualization_)
@@ -124,7 +124,7 @@ nodeDynamicStyles_ camera n = do
         camX   = (Matrix.toList camera)!!12
         camY   = (Matrix.toList camera)!!13
         scale  = (Matrix.toList camera)!!0
-        nx     = show $ round $ camX + (scale * posX)
-        ny     = show $ round $ camY + (scale * posY)
+        nx     = show $ (round $ camX + (scale * posX) :: Integer)
+        ny     = show $ (round $ camY + (scale * posY) :: Integer)
     elemString $ "#node-" <> nodeId <> " .luna-name-trans { transform: translate(" <> nx <> "px, " <> ny <> "px)"
                           <> if scale > 1 then "; font-size: " <> show (12 * scale) <> "px }" else " }"

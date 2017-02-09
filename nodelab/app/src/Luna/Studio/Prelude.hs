@@ -32,8 +32,8 @@ import           GHCJS.Types                   as X (JSVal)
 import           Luna.Studio.Prelude.Instances ()
 import           Prelude                       hiding (curry, print, putStr, putStrLn, uncurry, (++), (.))
 import           Prologue                      as X (NFData, convert, curry, foldlDef, fromJustM, ifElseId, ifM, lift2, lift3, pprint,
-                                                     putStr, show', switch, toString, uncurry, unlessM, whenLeft,
-                                                     whenLeft', whenM, whenRight, whenRight', withJust, ($>), (++), (.), (.:), (.:.), (.::))
+                                                     putStr, show', switch, toString, uncurry, unlessM, whenLeft, whenLeft', whenM,
+                                                     whenRight, whenRight', withJust, ($>), (++), (.), (.:), (.:.), (.::))
 
 foreign import javascript safe "console.log($1)" consoleLog :: JSString -> IO ()
 
@@ -51,3 +51,8 @@ mjoin delim l = mconcat (intersperse delim l)
 
 jsShow :: Show a => a -> JSString
 jsShow = convert . show
+
+withJustM :: Monad m => m (Maybe a) -> (a -> m ()) -> m ()
+withJustM mMayVal action = do
+    mayVal <- mMayVal
+    withJust mayVal action
