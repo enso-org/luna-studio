@@ -57,7 +57,8 @@ import qualified Empire.API.Response                   as Response
 import qualified Empire.API.Topic                      as Topic
 import qualified Empire.ASTOps.Print                   as Print
 import qualified Empire.Commands.Graph                 as Graph
-import           Empire.Commands.GraphBuilder          (buildNodes, getNodeName, buildConnections)
+import           Empire.Commands.GraphBuilder          (buildConnections, buildNodes, getNodeName)
+import qualified Empire.Commands.GraphUtils            as GraphUtils
 import qualified Empire.Commands.Persistence           as Persistence
 import           Empire.Empire                         (Empire)
 import qualified Empire.Empire                         as Empire
@@ -65,7 +66,6 @@ import           Empire.Env                            (Env)
 import qualified Empire.Env                            as Env
 import           Empire.Server.Server                  (errorMessage, replyFail, replyOk, replyResult, sendToBus')
 import           Empire.Utils.TextResult               (nodeValueToText)
-import qualified Empire.Commands.GraphUtils            as GraphUtils
 import qualified StdLibMock
 import qualified System.Log.MLogger                    as Logger
 import           ZMQ.Bus.Trans                         (BusT (..))
@@ -156,7 +156,7 @@ connectNodes :: GraphLocation -> Text -> NodeId -> NodeId -> StateT Env BusT ()
 connectNodes location expr dstNodeId srcNodeId = do
     let exprCall = head $ splitOneOf " ." $ Text.unpack expr
         inPort = if exprCall `elem` stdlibFunctions then Arg 0 else Self
-        connectRequest = Request UUID.nil Nothing $ Connect.Request location (Connect.PortConnection (OutPortRef srcNodeId All) (InPortRef dstNodeId inPort))
+        connectRequest = Request UUID.nil Nothing $ Connect.Request location (Connect.PortConnect (OutPortRef srcNodeId All) (InPortRef dstNodeId inPort))
     handleConnectReq False connectRequest -- TODO: refactor (we should not call handlers from handlers)
     forceTC location
 
@@ -225,11 +225,10 @@ handleConnect = handleConnectReq True
 
 -- TODO: Response for this request needs more info in case of NodeConnection for undo/redo
 handleConnectReq :: Bool -> Request Connect.Request -> StateT Env BusT ()
-handleConnectReq doTC = modifyGraphOk (mtuple action) success where
-    action  (Connect.Request location (Connect.PortConnection src dst)) = Graph.connectCondTC doTC location src dst
-    action  (Connect.Request location (Connect.NodeConnection src dst)) = Graph.connectCondTC doTC location (OutPortRef src All) (InPortRef dst Self)
-    success (Connect.Request location (Connect.PortConnection src dst)) _ result = sendToBus' $ Connect.Update location src dst
-    success (Connect.Request location (Connect.NodeConnection src dst)) _ result = sendToBus' $ Connect.Update location (OutPortRef src All) (InPortRef dst Self)
+handleConnectReq doTC = modifyGraph (mtuple action) success where
+    action  (Connect.Request location (Connect.PortConnect src dst)) = Graph.connectCondTC doTC location src dst
+    action  (Connect.Request location (Connect.NodeConnect src dst)) = Graph.connectCondTC doTC location (OutPortRef src All) (InPortRef dst Self)
+    success request@(Request _ _ (Connect.Request location _)) _ result = replyResult request () result >> sendToBus' (Connect.Update location result)
 
 handleDisconnect :: Request Disconnect.Request -> StateT Env BusT ()
 handleDisconnect = modifyGraphOk action success where

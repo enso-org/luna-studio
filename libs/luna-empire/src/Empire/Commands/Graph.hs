@@ -26,55 +26,55 @@ module Empire.Commands.Graph
     , withGraph
     ) where
 
-import           Control.Monad                 (forM, forM_)
-import           Control.Monad.Except          (throwError)
-import           Control.Monad.State           hiding (when)
-import           Data.Coerce                   (coerce)
-import           Data.IntMap                   (IntMap)
-import qualified Data.IntMap                   as IntMap
-import           Data.List                     as List (last, sort)
-import qualified Data.Map                      as Map
-import           Data.Maybe                    (catMaybes)
-import           Data.Traversable              (forM)
-import qualified Data.UUID                     as UUID
-import qualified Data.UUID.V4                  as UUID (nextRandom)
+import           Control.Monad                         (forM, forM_)
+import           Control.Monad.Except                  (throwError)
+import           Control.Monad.State                   hiding (when)
+import           Data.Coerce                           (coerce)
+import           Data.IntMap                           (IntMap)
+import qualified Data.IntMap                           as IntMap
+import           Data.List                             as List (last, sort)
+import qualified Data.Map                              as Map
+import           Data.Maybe                            (catMaybes)
+import           Data.Traversable                      (forM)
+import qualified Data.UUID                             as UUID
+import qualified Data.UUID.V4                          as UUID (nextRandom)
 import           Prologue
 
-import           Empire.Data.BreadcrumbHierarchy (addID, addWithLeafs, removeID, topLevelIDs)
-import           Empire.Data.Graph               (Graph)
-import qualified Empire.Data.Graph               as Graph
-import qualified Empire.Data.Library             as Library
+import           Empire.Data.BreadcrumbHierarchy       (addID, addWithLeafs, removeID, topLevelIDs)
+import           Empire.Data.Graph                     (Graph)
+import qualified Empire.Data.Graph                     as Graph
+import qualified Empire.Data.Library                   as Library
 
-import           Empire.API.Data.Breadcrumb      as Breadcrumb (Breadcrumb(..), Named, BreadcrumbItem(..))
-import qualified Empire.API.Data.Connection      as Connection
-import           Empire.API.Data.Connection      (Connection (..))
-import           Empire.API.Data.DefaultValue    (PortDefault (Constant), Value (..))
-import qualified Empire.API.Data.Graph           as APIGraph
-import           Empire.API.Data.GraphLocation   (GraphLocation (..))
-import qualified Empire.API.Data.GraphLocation   as GraphLocation
-import           Empire.API.Data.Library         (LibraryId)
-import           Empire.API.Data.Node            (Node (..), NodeId)
-import qualified Empire.API.Data.Node            as Node
-import           Empire.API.Data.NodeMeta        (NodeMeta)
-import qualified Empire.API.Data.NodeMeta        as NodeMeta
-import           Empire.API.Data.Port            (InPort (..), OutPort (..), PortId (..))
-import qualified Empire.API.Data.Port            as Port (PortState (..), state)
-import           Empire.API.Data.PortRef         (AnyPortRef (..), InPortRef (..), OutPortRef (..))
-import qualified Empire.API.Data.PortRef         as PortRef
-import           Empire.API.Data.Project         (ProjectId)
-import qualified Old.Luna.Syntax.Model.Network.Builder  as Builder
-import qualified Data.HMap.Lazy                     as HMap
-import           Empire.Data.NodeMarker             (NodeMarker(..), nodeMarkerKey)
-import           Old.Data.Prop                      (prop, ( # ))
-import Empire.ASTOp (runASTOp)
+import qualified Data.HMap.Lazy                        as HMap
+import           Empire.API.Data.Breadcrumb            as Breadcrumb (Breadcrumb (..), BreadcrumbItem (..), Named)
+import           Empire.API.Data.Connection            (Connection (..))
+import qualified Empire.API.Data.Connection            as Connection
+import           Empire.API.Data.DefaultValue          (PortDefault (Constant), Value (..))
+import qualified Empire.API.Data.Graph                 as APIGraph
+import           Empire.API.Data.GraphLocation         (GraphLocation (..))
+import qualified Empire.API.Data.GraphLocation         as GraphLocation
+import           Empire.API.Data.Library               (LibraryId)
+import           Empire.API.Data.Node                  (Node (..), NodeId)
+import qualified Empire.API.Data.Node                  as Node
+import           Empire.API.Data.NodeMeta              (NodeMeta)
+import qualified Empire.API.Data.NodeMeta              as NodeMeta
+import           Empire.API.Data.Port                  (InPort (..), OutPort (..), PortId (..))
+import qualified Empire.API.Data.Port                  as Port (PortState (..), state)
+import           Empire.API.Data.PortRef               (AnyPortRef (..), InPortRef (..), OutPortRef (..))
+import qualified Empire.API.Data.PortRef               as PortRef
+import           Empire.API.Data.Project               (ProjectId)
+import           Empire.ASTOp                          (runASTOp)
+import           Empire.Data.NodeMarker                (NodeMarker (..), nodeMarkerKey)
+import           Old.Data.Prop                         (prop, ( # ))
+import qualified Old.Luna.Syntax.Model.Network.Builder as Builder
 
-import           Debug.Trace                     (trace)
-import qualified Empire.Commands.AST             as AST
-import           Empire.Commands.Breadcrumb      (withBreadcrumb)
-import qualified Empire.Commands.GraphBuilder    as GraphBuilder
-import qualified Empire.Commands.GraphUtils      as GraphUtils
-import           Empire.Commands.Library         (withLibrary)
-import qualified Empire.Commands.Publisher       as Publisher
+import           Debug.Trace                           (trace)
+import qualified Empire.Commands.AST                   as AST
+import           Empire.Commands.Breadcrumb            (withBreadcrumb)
+import qualified Empire.Commands.GraphBuilder          as GraphBuilder
+import qualified Empire.Commands.GraphUtils            as GraphUtils
+import           Empire.Commands.Library               (withLibrary)
+import qualified Empire.Commands.Publisher             as Publisher
 import           Empire.Empire
 
 generateNodeName :: Command Graph String
@@ -206,25 +206,28 @@ updateNodeMeta loc nodeId newMeta = withGraph loc $ do
         triggerTC :: NodeMeta -> NodeMeta -> Bool
         triggerTC oldMeta newMeta = oldMeta ^. NodeMeta.displayResult /= newMeta ^. NodeMeta.displayResult
 
-connectCondTC :: Bool -> GraphLocation -> OutPortRef -> InPortRef -> Empire ()
+connectCondTC :: Bool -> GraphLocation -> OutPortRef -> InPortRef -> Empire Connection
 connectCondTC doTC loc outPort inPort = withGraph loc $ do
-    connectNoTC loc outPort inPort
+    result <- connectNoTC loc outPort inPort
     when doTC $ runTC loc False
+    return result
 
-connect :: GraphLocation -> OutPortRef -> InPortRef -> Empire ()
+connect :: GraphLocation -> OutPortRef -> InPortRef -> Empire Connection
 connect loc outPort inPort = withTC loc False $ connectNoTC loc outPort inPort
 
-connectPersistent :: OutPortRef -> InPortRef -> Command Graph ()
-connectPersistent (OutPortRef srcNodeId srcPort) (InPortRef dstNodeId dstPort) = do
+connectPersistent :: OutPortRef -> InPortRef -> Command Graph Connection
+connectPersistent src@(OutPortRef srcNodeId srcPort) dst@(InPortRef dstNodeId dstPort) = do
     let inputPos = case srcPort of
             All            -> 0   -- FIXME: do not equalise All with Projection 0
             Projection int -> int
     case dstPort of
         Self    -> makeAcc srcNodeId dstNodeId inputPos
         Arg num -> makeApp srcNodeId dstNodeId num inputPos
+    return $ Connection src dst
 
-connectNoTC :: GraphLocation -> OutPortRef -> InPortRef -> Command Graph ()
-connectNoTC loc outPort@(OutPortRef srcNodeId srcPort) inPort@(InPortRef dstNodeId dstPort) = connectPersistent outPort inPort
+connectNoTC :: GraphLocation -> OutPortRef -> InPortRef -> Command Graph Connection
+connectNoTC loc outPort@(OutPortRef srcNodeId srcPort) inPort@(InPortRef dstNodeId dstPort) =
+    connectPersistent outPort inPort
 
 setDefaultValue :: GraphLocation -> AnyPortRef -> PortDefault -> Empire ()
 setDefaultValue loc portRef val = withTC loc False $ setDefaultValue' portRef val

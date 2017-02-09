@@ -33,8 +33,8 @@ import           Luna.Studio.Action.Batch            (collaborativeModify, reque
 import           Luna.Studio.Action.Camera           (centerGraph)
 import qualified Luna.Studio.Action.CodeEditor       as CodeEditor
 import           Luna.Studio.Action.Command          (Command)
-import           Luna.Studio.Action.Graph            (localAddConnection, localConnectNodes, localRemoveConnections, renderGraph,
-                                                      selectNodes, updateConnectionsForNodes)
+import           Luna.Studio.Action.Graph            (localAddConnection, localRemoveConnections, renderGraph, selectNodes,
+                                                      updateConnectionsForNodes)
 import           Luna.Studio.Action.Node             (addDummyNode, localRemoveNodes, updateNode, updateNodeProfilingData, updateNodeValue,
                                                       updateNodesMeta)
 import qualified Luna.Studio.Action.Node             as Node
@@ -107,8 +107,8 @@ handle (Event.Batch ev) = Just $ case ev of
             Nothing     -> handleSubgraph nodes connections
 
     NodesConnected update ->
-        whenM (isCurrentLocation $ update ^. Connect.location') $
-            void $ localConnectNodes (update ^. Connect.src') (update ^. Connect.dst')
+        whenM (isCurrentLocation $ update ^. Connect.location') $ void $
+            localAddConnection $ update ^. Connect.connection'
 
     NodesDisconnected update ->
         whenM (isCurrentLocation $ update ^. Disconnect.location') $
