@@ -2,48 +2,48 @@
 
 ## Requirements
 
+### Common
+
 * [Stack](http://haskellstack.org/)
+
+### For backend
+
+* pkg-config (```brew install pkg-config```, not required on Windows)
+* ZeroMQ (```brew install zmq```, for Windows download zmq.zip)
+
+### For frontend
+
 * [NodeJS](http://nodejs.org/)
 * [Supervisord](http://supervisord.org/)
 * [Bower](https://bower.io)
 * [Brunch](http://brunch.io) v.1.8.5 (```npm install -g brunch@1.8.5```)
-* ```brew install pkg-config```
-* ```brew install zmq```
-* ```brew install mercurial```
-* ```stack install happy```
-* ```stack install hsc2hs```
+* `happy`, `hsc2hs` - ```$ cd ~ && stack install happy hsc2hs```
 
 
-## Setup
+## Building backend
+
+0. On Windows, unpack zmq.zip to c:\zmq and modify (or create) environment variables:
+  * append c:\zmq\include to CPATH (equivalently, pass `--extra-include-dirs=c:\zmq\include` to stack)
+  * append c:\zmq\lib to LIBRARY_PATH (equivalently, pass `--extra-lib-dirs=c:\zmq\lib` to stack)
+  * append c:\zmq\bin to PATH
 
 ```shell
-$ git clone git@bitbucket.org:NewByteOrder/new_byte_order.git
-$ cd new_byte_order
-$ git submodule update --init
+$ git clone git@github.com:luna/luna-studio.git
+$ cd luna-studio
 $ REPO_DIR=`pwd`
 $ cd $REPO_DIR/build/backend
-$ stack setup # installs ghc
-$ cd $REPO_DIR/nodelab
-$ stack setup # installs ghcjs
+$ stack build --copy-bins --fast --install-ghc
 ```
 
-## Building
+## Building frontend
 
-### Code generation & deps installation
+Currently not tested on Windows
 
 ```shell
 $ cd $REPO_DIR/nodelab
 $ npm install
 $ bower install --allow-root
-```
-
-### Backend & GUI
-
-```shell
-$ cd $REPO_DIR/build/backend
-$ stack build --copy-bins --fast
-$ cd $REPO_DIR/nodelab
-$ brunch build # -e production -- for production build
+$ brunch build # -P -- for production build
 ```
 
 ## Running
@@ -58,7 +58,6 @@ $ supervisorctl restart all # to restart everyting
 $ supervisorctl tail -f logger # to tail logger output (see supervisord manual for more)
 ```
 
-
 ### GUI
 
 ```shell
@@ -66,25 +65,9 @@ $ cd $REPO_DIR/nodelab
 $ brunch watch --server # or serve $REPO_DIR/nodelab/www using any HTTP server
 ```
 
-If You have experienced problems like: ```Oops. Connection to the server was closed. Please reload page to reconnect again.``` open browser console and ```setBackendAddress("ws://localhost:8088")``` and reload browser.
+## Known problems
 
-FIXME: The current setting may not work until you install `ghc` globally. It happens on OS X El Capitan, so in that case:
-```brew install ghc```
+* If you have experienced problems like: ```Oops. Connection to the server was closed. Please reload page to reconnect again.``` open browser console and ```setBackendAddress("ws://localhost:8088")``` and reload browser.
 
-### Building Docker images
-
-Push to `docker/TAG` branch to build docker image and upload it to `lunalang/luna:TAG` at Docker Hub.
-
-## Utility scripts
-
-### `upload_backend.sh`
-
-TODO
-
-### `nodelab/upload_dist.sh`
-
-TODO
-
-### `scripts/*`
-
-TODO
+*  Building frontend may currently not work until you install `ghc` globally. It happens on OS X El Capitan, so in that case:
+```brew install ghc```. This issue is caused by `happy` package - see https://github.com/commercialhaskell/stack/issues/1258 for more information.
