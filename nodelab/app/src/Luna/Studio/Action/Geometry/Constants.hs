@@ -7,22 +7,16 @@ module Luna.Studio.Action.Geometry.Constants
     , portRadius
     ) where
 
-import           Luna.Studio.Prelude
+import Luna.Studio.Prelude
 
-connectionWidth :: Double
-connectionWidth = 2.6
+grid, connectionWidth, lineHeight, nodeExpandedWidth, nodeRadius, nodeRadius', portRadius :: Double
 
-lineHeight :: Double
-lineHeight = 16
+grid = 16
 
-nodeExpandedWidth :: Double
+connectionWidth   = 2.6
+lineHeight        = grid
 nodeExpandedWidth = 160
 
-nodeRadius :: Double
-nodeRadius = 20
-
-nodeRadius' :: Double
+nodeRadius  = 20
 nodeRadius' = nodeRadius - connectionWidth
-
-portRadius :: Double
 portRadius  = nodeRadius - connectionWidth/2
