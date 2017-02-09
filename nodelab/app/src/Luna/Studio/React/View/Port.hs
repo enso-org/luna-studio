@@ -23,6 +23,9 @@ import qualified React.Flux                         as React
 name :: JSString
 name = "port"
 
+selectAreaWidth :: Double
+selectAreaWidth = 8
+
 jsShow2 :: Double -> JSString
 jsShow2 a = convert $ showFFloat (Just 2) a "" -- limit Double to two decimal numbers
 
@@ -88,17 +91,20 @@ portSelf_ ref p isNodeCollapsed = do
         portId    = p ^. Port.portId
         highlight = if p ^. Port.highlight then " luna-hover" else ""
         className = fromString $ "luna-port luna-port--self" <> highlight
+        r         = 5
     g_
         [ "className" $= className ] $ do
         circle_
             [ "className" $= "luna-port__shape"
             , "key"       $= (jsShow portId <> "a")
             , "fill"      $= color
+            , "r"         $= (fromString $ show r)
             ] mempty
         circle_
             ( handlers ref portRef isNodeCollapsed ++
               [ "className"  $= "luna-port__select"
               , "key"        $= (jsShow portId <> "b")
+              , "r"          $= (fromString $ show $ r + selectAreaWidth)
               ]
             ) mempty
 
@@ -109,12 +115,12 @@ portSingle_ ref p = do
         color     = toJSString $ p ^. Port.color
         highlight = if p ^. Port.highlight then " luna-hover" else ""
         className = fromString $ "luna-port luna-port--o--single" <> highlight
-        r1, r2 :: Double -> JSString
+        r1 :: Double -> JSString
         r1 = jsShow2 . (+) nodeRadius
-        r2 = jsShow2 . (-) nodeRadius'
+        r2 = jsShow2 nodeRadius'
         svgPath :: Double -> Integer -> Integer -> JSString
         svgPath a b c = "M0 -" <> r1 a <> " A " <> r1 a <> " " <> r1 a <> " 0 0 " <> jsShow b <> " 0 "  <> r1 a <>
-                        " L0 " <> r2 a <> " A " <> r2 a <> " " <> r2 a <> " 1 0 " <> jsShow c <> " 0 -" <> r2 a <> " Z "
+                        " L0 " <> r2   <> " A " <> r2   <> " " <> r2   <> " 1 0 " <> jsShow c <> " 0 -" <> r2   <> " Z "
     g_ [ "className" $= className ] $ do
         path_
             [ "className" $= "luna-port__shape"
@@ -126,7 +132,7 @@ portSingle_ ref p = do
             ( handlers ref portRef False ++
               [ "className" $= "luna-port__select"
               , "key"       $= (jsShow portId <> "b")
-              , "d"         $= (svgPath 3 0 1 <> svgPath 3 1 0)
+              , "d"         $= (svgPath selectAreaWidth 0 1 <> svgPath selectAreaWidth 1 0)
               ]
             ) mempty
 
@@ -149,17 +155,17 @@ portIO_ ref p num numOfPorts isInput = do
         ay = jsShow2 . startPortArcY . (+) nodeRadius
         bx = jsShow2 . stopPortArcX  . (+) nodeRadius
         by = jsShow2 . stopPortArcY  . (+) nodeRadius
-        cx = jsShow2 . stopPortArcX  . (-) nodeRadius'
-        cy = jsShow2 . stopPortArcY  . (-) nodeRadius'
-        dx = jsShow2 . startPortArcX . (-) nodeRadius'
-        dy = jsShow2 . startPortArcY . (-) nodeRadius'
+        cx = jsShow2 $ stopPortArcX  nodeRadius'
+        cy = jsShow2 $ stopPortArcY  nodeRadius'
+        dx = jsShow2 $ startPortArcX nodeRadius'
+        dy = jsShow2 $ startPortArcY nodeRadius'
         r1 = jsShow2 . (+) nodeRadius
-        r2 = jsShow2 . (-) nodeRadius'
+        r2 = jsShow2 nodeRadius'
         svgPath a = "M"  <> ax a <> " " <> ay a <>
-                    " A " <> r1 a <> " " <> r1 a <> " 1 0 " <> svgFlag1 <> " " <> bx a <> " " <> by a <>
-                    " L " <> cx a <> " " <> cy a <>
-                    " A " <> r2 a <> " " <> r2 a <> " 1 0 " <> svgFlag2 <> " " <> dx a <> " " <> dy a <>
-                    " Z"
+                   " A " <> r1 a <> " " <> r1 a <> " 0 0 " <> svgFlag1 <> " " <> bx a <> " " <> by a <>
+                   " L " <> cx   <> " " <> cy   <>
+                   " A " <> r2   <> " " <> r2   <> " 0 0 " <> svgFlag2 <> " " <> dx   <> " " <> dy   <>
+                   " Z"
     g_
         [ "className" $= className ] $ do
         path_
@@ -172,7 +178,7 @@ portIO_ ref p num numOfPorts isInput = do
             ( handlers ref portRef False ++
               [ "className" $= "luna-port__select"
               , "key"       $= (jsShow portId <> "b")
-              , "d"         $= svgPath 3
+              , "d"         $= svgPath selectAreaWidth
               ]
             ) mempty
 
@@ -185,21 +191,20 @@ portIOExpanded_ ref p num isInput = do
         classes   = if isInput then "luna-port luna-port--i luna-port--i--" else "luna-port luna-port--o luna-port--o--"
         className = fromString $ classes <> show (num + 1) <> highlight
         n         = if isInput then 1 else 0
-        r         = jsShow2 . (+3)
     g_
         [ "className" $= className ] $ do
         circle_
             [ "className" $= "luna-port__shape"
             , "key"       $= (jsShow portId <> jsShow num <> "a")
             , "fill"      $= color
-            , "r"         $= r 0
+            , "r"         $= jsShow2 3
             , "cy"        $= jsShow2 (lineHeight * fromIntegral (num + n) )
             ] mempty
         circle_
             ( handlers ref portRef False ++
               [ "className" $= "luna-port__select"
               , "key"       $= (jsShow portId <> jsShow num <> "b")
-              , "r"         $= r 3
+              , "r"         $= jsShow2 (lineHeight/1.5)
               , "cy"        $= jsShow2 (lineHeight * fromIntegral (num + n) )
               ]
             ) mempty
