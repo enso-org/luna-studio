@@ -104,7 +104,7 @@ portSelf_ ref p isNodeCollapsed = do
             ( handlers ref portRef isNodeCollapsed ++
               [ "className"  $= "luna-port__select"
               , "key"        $= (jsShow portId <> "b")
-              , "r"          $= (fromString $ show $ r + selectAreaWidth)
+              , "r"          $= (fromString $ show $ r + lineHeight/2)
               ]
             ) mempty
 
@@ -120,7 +120,7 @@ portSingle_ ref p = do
         r2 = jsShow2 nodeRadius'
         svgPath :: Double -> Integer -> Integer -> JSString
         svgPath a b c = "M0 -" <> r1 a <> " A " <> r1 a <> " " <> r1 a <> " 0 0 " <> jsShow b <> " 0 "  <> r1 a <>
-                        " L0 " <> r2   <> " A " <> r2   <> " " <> r2   <> " 1 0 " <> jsShow c <> " 0 -" <> r2   <> " Z "
+                       " L0 "  <> r2   <> " A " <> r2   <> " " <> r2   <> " 1 0 " <> jsShow c <> " 0 -" <> r2   <> " Z "
     g_ [ "className" $= className ] $ do
         path_
             [ "className" $= "luna-port__shape"
@@ -132,7 +132,7 @@ portSingle_ ref p = do
             ( handlers ref portRef False ++
               [ "className" $= "luna-port__select"
               , "key"       $= (jsShow portId <> "b")
-              , "d"         $= (svgPath selectAreaWidth 0 1 <> svgPath selectAreaWidth 1 0)
+              , "d"         $= (svgPath lineHeight 0 1 <> svgPath lineHeight 1 0)
               ]
             ) mempty
 
@@ -178,7 +178,7 @@ portIO_ ref p num numOfPorts isInput = do
             ( handlers ref portRef False ++
               [ "className" $= "luna-port__select"
               , "key"       $= (jsShow portId <> "b")
-              , "d"         $= svgPath selectAreaWidth
+              , "d"         $= svgPath lineHeight
               ]
             ) mempty
 
