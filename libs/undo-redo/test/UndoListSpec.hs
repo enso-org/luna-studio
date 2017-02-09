@@ -59,6 +59,7 @@ generateNode = do
 
 spec :: Spec
 spec = describe "Undo-Redo for single user" $ do
+    let state = UndoState [] [] []
     it "adds record to undo list when proper request is coming" $ do
         graphLocation <- generateGraphLocation
         reqID <- UUID.nextRandom
@@ -67,7 +68,6 @@ spec = describe "Undo-Redo for single user" $ do
 
         let response = Response.Response reqID (Just guiID) (AddNode.Request graphLocation (ExpressionNode "3") def Nothing Nothing) (Response.Ok ()) (Response.Ok node)
             topic = "empire.graph.node.add.response"
-            state = UndoState [] [] []
         (_, state1) <- run' state $ handleMessage $ Message.Message topic $ toStrict $ encode response
         case state1 of UndoState undo redo history -> do
                                                         undo `shouldSatisfy` ((== 1) . length)
@@ -81,7 +81,6 @@ spec = describe "Undo-Redo for single user" $ do
 
         let response = Response.Response reqID (Just guiID) (AddNode.Request graphLocation (ExpressionNode "3") def Nothing Nothing) (Response.Ok ()) (Response.Ok node)
             topic = "empire.graph.node.add.response"
-            state = UndoState [] [] []
         (_, state1) <- run' state $ handleMessage $ Message.Message topic $ toStrict $ encode response
         case state1 of UndoState undo redo history -> do
                                                         let msg = head undo
@@ -96,13 +95,13 @@ spec = describe "Undo-Redo for single user" $ do
 
         let response = Response.Response reqID1 (Just guiID) (AddNode.Request graphLocation (ExpressionNode "3") def Nothing Nothing) (Response.Ok ()) (Response.Ok node)
             topic = Topic.topic response
-            state = UndoState [] [] []
+
             undoReq = Request.Request reqID2 (Just guiID) (Undo.Request Undo.UndoRequest)
-        (_, state1) <- run' state $ handleMessage $ Message.Message topic $ toStrict $ encode response
-        (_, state2) <- run' state1 $ handleMessage $ Message.Message "empire.undo.request" $ toStrict $ encode undoReq
-        case state2 of UndoState undo redo history -> do
-                                                        undo `shouldSatisfy` ((== 0) . length)
-                                                        redo `shouldSatisfy` ((== 1) . length)
+        (_, UndoState undo redo _) <- run' state $ do
+            handleMessage $ Message.Message topic $ toStrict $ encode response
+            handleMessage $ Message.Message "empire.undo.request" $ toStrict $ encode undoReq
+        undo `shouldSatisfy` null
+        redo `shouldSatisfy` ((== 1) . length)
 
     it "2 requests + undo" $ do
         graphLocation <- generateGraphLocation
@@ -116,15 +115,14 @@ spec = describe "Undo-Redo for single user" $ do
         let response1 = Response.Response reqID1 (Just guiID) (AddNode.Request graphLocation (ExpressionNode "3") def Nothing Nothing) (Response.Ok ()) (Response.Ok node1)
             response2 = Response.Response reqID2 (Just guiID) (AddNode.Request graphLocation (ExpressionNode "3") def Nothing Nothing) (Response.Ok ()) (Response.Ok node2)
             topic = Topic.topic response1
-            state = UndoState [] [] []
             undoReq = Request.Request reqID3 (Just guiID) (Undo.Request Undo.UndoRequest)
-        (_, state1) <- run' state $ handleMessage $ Message.Message topic $ toStrict $ encode response1
-        (_, state2) <- run' state1 $ handleMessage $ Message.Message topic $ toStrict $ encode response2
-        (_, state3) <- run' state2 $ handleMessage $ Message.Message "empire.undo.request" $ toStrict $ encode undoReq
-        case state3 of UndoState undo redo history -> do
-                                                        undo `shouldSatisfy` ((== 1) . length)
-                                                        redo `shouldSatisfy` ((== 1) . length)
-                                                        history `shouldSatisfy` ((== 3) . length)
+        (_, UndoState undo redo history) <- run' state $ do
+            handleMessage $ Message.Message topic $ toStrict $ encode response1
+            handleMessage $ Message.Message topic $ toStrict $ encode response2
+            handleMessage $ Message.Message "empire.undo.request" $ toStrict $ encode undoReq
+        undo `shouldSatisfy` ((== 1) . length)
+        redo `shouldSatisfy` ((== 1) . length)
+        history `shouldSatisfy` ((== 3) . length)
 
     it "2 requests + 2 x undo" $ do
         graphLocation <- generateGraphLocation
@@ -139,17 +137,17 @@ spec = describe "Undo-Redo for single user" $ do
         let response1 = Response.Response reqID1 (Just guiID) (AddNode.Request graphLocation (ExpressionNode "3") def Nothing Nothing) (Response.Ok ()) (Response.Ok node1)
             response2 = Response.Response reqID2 (Just guiID) (AddNode.Request graphLocation (ExpressionNode "3") def Nothing Nothing) (Response.Ok ()) (Response.Ok node2)
             topic = Topic.topic response1
-            state = UndoState [] [] []
             undoReq1 = Request.Request reqID3 (Just guiID) (Undo.Request Undo.UndoRequest)
             undoReq2 = Request.Request reqID4 (Just guiID) (Undo.Request Undo.UndoRequest)
-        (_, state1) <- run' state $ handleMessage $ Message.Message topic $ toStrict $ encode response1
-        (_, state2) <- run' state1 $ handleMessage $ Message.Message topic $ toStrict $ encode response2
-        (_, state3) <- run' state2 $ handleMessage $ Message.Message "empire.undo.request" $ toStrict $ encode undoReq1
-        (_, state4) <- run' state3 $ handleMessage $ Message.Message "empire.undo.request" $ toStrict $ encode undoReq2
-        case state4 of UndoState undo redo history -> do
-                                                        undo `shouldSatisfy` ((== 0) . length)
-                                                        redo `shouldSatisfy` ((== 2) . length)
-                                                        history `shouldSatisfy` ((== 4) . length)
+        (_, UndoState undo redo history) <- run' state $ do
+            handleMessage $ Message.Message topic $ toStrict $ encode response1
+            handleMessage $ Message.Message topic $ toStrict $ encode response2
+            handleMessage $ Message.Message "empire.undo.request" $ toStrict $ encode undoReq1
+            handleMessage $ Message.Message "empire.undo.request" $ toStrict $ encode undoReq2
+        undo `shouldSatisfy` null
+        redo `shouldSatisfy` ((== 2) . length)
+        history `shouldSatisfy` ((== 4) . length)
+
     it "2 requests + undo + redo" $ do
         graphLocation <- generateGraphLocation
         reqID1 <- UUID.nextRandom
@@ -163,17 +161,16 @@ spec = describe "Undo-Redo for single user" $ do
         let response1 = Response.Response reqID1 (Just guiID) (AddNode.Request graphLocation (ExpressionNode "3") def Nothing Nothing) (Response.Ok ()) (Response.Ok node1)
             response2 = Response.Response reqID2 (Just guiID) (AddNode.Request graphLocation (ExpressionNode "3") def Nothing Nothing) (Response.Ok ()) (Response.Ok node2)
             topic = Topic.topic response1
-            state = UndoState [] [] []
             undoReq = Request.Request reqID3 (Just guiID) (Undo.Request Undo.UndoRequest)
             redoReq = Request.Request reqID4 (Just guiID) (Redo.Request Redo.RedoRequest)
-        (_, state1) <- run' state $ handleMessage $ Message.Message topic $ toStrict $ encode response1
-        (_, state2) <- run' state1 $ handleMessage $ Message.Message topic $ toStrict $ encode response2
-        (_, state3) <- run' state2 $ handleMessage $ Message.Message "empire.undo.request" $ toStrict $ encode undoReq
-        (_, state4) <- run' state3 $ handleMessage $ Message.Message "empire.redo.request" $ toStrict $ encode redoReq
-        case state4 of UndoState undo redo history -> do
-                                                        undo `shouldSatisfy` ((== 2) . length)
-                                                        redo `shouldSatisfy` ((== 0) . length)
-                                                        history `shouldSatisfy` ((== 4) . length)
+        (_,  UndoState undo redo history) <- run' state $ do
+            handleMessage $ Message.Message topic $ toStrict $ encode response1
+            handleMessage $ Message.Message topic $ toStrict $ encode response2
+            handleMessage $ Message.Message "empire.undo.request" $ toStrict $ encode undoReq
+            handleMessage $ Message.Message "empire.redo.request" $ toStrict $ encode redoReq
+        undo `shouldSatisfy` ((== 2) . length)
+        redo `shouldSatisfy` null
+        history `shouldSatisfy` ((== 4) . length)
 
 
     it "2 requests + undo + req" $ do
@@ -191,16 +188,15 @@ spec = describe "Undo-Redo for single user" $ do
             response2 = Response.Response reqID2 (Just guiID) (AddNode.Request graphLocation (ExpressionNode "3") def Nothing Nothing) (Response.Ok ()) (Response.Ok node2)
             response3 = Response.Response reqID3 (Just guiID) (AddNode.Request graphLocation (ExpressionNode "3") def Nothing Nothing) (Response.Ok ()) (Response.Ok node3)
             topic = Topic.topic response1
-            state = UndoState [] [] []
             undoReq = Request.Request reqID4 (Just guiID) (Undo.Request Undo.UndoRequest)
-        (_, state1) <- run' state $ handleMessage $ Message.Message topic $ toStrict $ encode response1
-        (_, state2) <- run' state1 $ handleMessage $ Message.Message topic $ toStrict $ encode response2
-        (_, state3) <- run' state2 $ handleMessage $ Message.Message "empire.undo.request" $ toStrict $ encode undoReq
-        (_, state4) <- run' state3 $ handleMessage $ Message.Message topic $ toStrict $ encode response3
-        case state4 of UndoState undo redo history -> do
-                                                        undo `shouldSatisfy` ((== 2) . length)
-                                                        redo `shouldSatisfy` ((== 0) . length)
-                                                        history `shouldSatisfy` ((== 4) . length)
+        (_, UndoState undo redo history) <- run' state $ do
+            handleMessage $ Message.Message topic $ toStrict $ encode response1
+            handleMessage $ Message.Message topic $ toStrict $ encode response2
+            handleMessage $ Message.Message "empire.undo.request" $ toStrict $ encode undoReq
+            handleMessage $ Message.Message topic $ toStrict $ encode response3
+        undo `shouldSatisfy` ((== 2) . length)
+        redo `shouldSatisfy` null
+        history `shouldSatisfy` ((== 4) . length)
 
 
     it "2 requests + undo + not gui req" $ do
@@ -218,13 +214,12 @@ spec = describe "Undo-Redo for single user" $ do
             response2 = Response.Response reqID2 (Just guiID) (AddNode.Request graphLocation (ExpressionNode "3") def Nothing Nothing) (Response.Ok ()) (Response.Ok node2)
             response3 = Response.Response reqID3 (Nothing) (AddNode.Request graphLocation (ExpressionNode "3") def Nothing Nothing) (Response.Ok ()) (Response.Ok node3)
             topic = Topic.topic response1
-            state = UndoState [] [] []
             undoReq = Request.Request reqID4 (Just guiID) (Undo.Request Undo.UndoRequest)
-        (_, state1) <- run' state $ handleMessage $ Message.Message topic $ toStrict $ encode response1
-        (_, state2) <- run' state1 $ handleMessage $ Message.Message topic $ toStrict $ encode response2
-        (_, state3) <- run' state2 $ handleMessage $ Message.Message "empire.undo.request" $ toStrict $ encode undoReq
-        (_, state4) <- run' state3 $ handleMessage $ Message.Message topic $ toStrict $ encode response3
-        case state4 of UndoState undo redo history -> do
-                                                        undo `shouldSatisfy` ((== 1) . length)
-                                                        redo `shouldSatisfy` ((== 1) . length)
-                                                        history `shouldSatisfy` ((== 3) . length)
+        (_, UndoState undo redo history) <- run' state $ do
+            handleMessage $ Message.Message topic $ toStrict $ encode response1
+            handleMessage $ Message.Message topic $ toStrict $ encode response2
+            handleMessage $ Message.Message "empire.undo.request" $ toStrict $ encode undoReq
+            handleMessage $ Message.Message topic $ toStrict $ encode response3
+        undo `shouldSatisfy` ((== 1) . length)
+        redo `shouldSatisfy` ((== 1) . length)
+        history `shouldSatisfy` ((== 3) . length)
