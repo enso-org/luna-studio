@@ -89,7 +89,7 @@ handleExportProject :: Request ExportProject.Request -> StateT Env BusT ()
 handleExportProject req@(Request _ _ (ExportProject.Request projectId)) = do
     currentEmpireEnv <- use Env.empireEnv
     empireNotifEnv   <- use Env.empireNotif
-    (result, newEmpireEnv) <- liftIO $ Empire.runEmpire empireNotifEnv currentEmpireEnv $ Persistence.exportProject projectId
+    (result, _) <- liftIO $ Empire.runEmpire empireNotifEnv currentEmpireEnv $ Persistence.exportProject projectId
     case result of
         Left err -> replyFail logger err req
         Right projectData -> do

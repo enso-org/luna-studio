@@ -13,7 +13,7 @@ import qualified Empire.Data.Library              as DataLibrary
 import qualified Empire.Empire                    as Empire
 import           Empire.Env                       (Env)
 import qualified Empire.Env                       as Env
-import           Empire.Server.Server             (errorMessage, replyFail, replyResult, sendToBus')
+import           Empire.Server.Server             (replyFail, replyResult, sendToBus')
 import qualified System.Log.MLogger               as Logger
 import           ZMQ.Bus.Trans                    (BusT (..))
 
