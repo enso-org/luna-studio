@@ -3,13 +3,15 @@ module Luna.Studio.Action.Node.Expand
     ) where
 
 import           Luna.Studio.Action.Command         (Command)
+import           Luna.Studio.Action.Connect         ()
 import           Luna.Studio.Action.Graph.Selection (selectedNodes)
 import           Luna.Studio.Action.Graph.Update    (updateConnectionsForNodes)
 import           Luna.Studio.Action.Port.Self       (addPortSelfIfExists, removeSelfIfNeeded)
 import           Luna.Studio.Prelude
 import qualified Luna.Studio.React.Model.Node       as Node
 import qualified Luna.Studio.React.Model.NodeEditor as NodeEditor
-import           Luna.Studio.State.Global           (State)
+import           Luna.Studio.State.Action           (connectAction)
+import           Luna.Studio.State.Global           (State, checkAction)
 import qualified Luna.Studio.State.Global           as Global
 
 
@@ -21,7 +23,7 @@ expandSelectedNodes = do
         let newNode = node & Node.isExpanded .~ if allExpanded then False else True
         if newNode ^. Node.isExpanded then
             addPortSelfIfExists newNode
-        else removeSelfIfNeeded newNode
+        else checkAction connectAction >>= removeSelfIfNeeded newNode
     Global.modifyNodeEditor $ forM_ updatedNodes $ \node ->
         NodeEditor.nodes . at (node ^. Node.nodeId) ?= node
     updateConnectionsForNodes $ map (view Node.nodeId) updatedNodes

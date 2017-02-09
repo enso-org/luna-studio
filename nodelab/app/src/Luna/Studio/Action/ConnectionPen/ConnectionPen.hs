@@ -76,4 +76,4 @@ stopConnecting state = do
         connectProcessSegment (head $ curve ^. Curve.segments) state
     removeActionFromState penConnectAction
     Global.modifyNodeEditor $ NodeEditor.connectionPen .= Nothing
-    removeIdleSelfPorts
+    removeIdleSelfPorts Nothing

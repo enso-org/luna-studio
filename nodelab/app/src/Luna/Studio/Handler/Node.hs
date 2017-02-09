@@ -26,7 +26,7 @@ import qualified Luna.Studio.State.Graph      as Graph
 
 handle :: Event -> Maybe (Command State ())
 handle (Shortcut shortcut)                             = Just $ handleShortcut shortcut
-handle (UI (NodeEvent (Node.MouseDown evt nodeId))) = Just $ when shouldProceed $ Node.startNodeDrag nodeId evt shouldSnap  where
+handle (UI (NodeEvent (Node.MouseDown evt nodeId))) = Just $ when shouldProceed $ Node.startNodeDrag evt nodeId shouldSnap  where
     shouldProceed = Mouse.withoutMods evt Mouse.leftButton || Mouse.withShift evt Mouse.leftButton
     shouldSnap    = Mouse.withoutMods evt Mouse.leftButton
 handle (UI (NodeEvent (Node.Enter            nodeId))) = Just $ mapM_ Node.tryEnter =<< preuse (Global.graph . Graph.nodesMap . ix nodeId)

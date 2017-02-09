@@ -7,7 +7,6 @@ import           Control.Lens.Internal.Zoom           (Focusing)
 import qualified Control.Monad.State                  as M
 import           Data.Aeson                           (ToJSON, toJSON)
 import           Data.DateTime                        (DateTime)
-import           Data.Dynamic
 import           Data.Map                             (Map)
 import qualified Data.Map                             as Map
 import           Data.Position                        (Position (Position))
@@ -38,8 +37,8 @@ import           Luna.Studio.React.Model.Searcher     (Searcher)
 import           Luna.Studio.React.Model.SelectionBox (SelectionBox)
 import           Luna.Studio.React.Store              (Ref)
 import qualified Luna.Studio.React.Store              as Store
-import           Luna.Studio.State.Action             (Action (end, update), ActionRep (ActionRep), SomeAction, fromSomeAction,
-                                                       overlappingActions, someAction)
+import           Luna.Studio.State.Action             (Action (end, update), ActionRep, SomeAction, fromSomeAction, overlappingActions,
+                                                       someAction)
 import qualified Luna.Studio.State.Collaboration      as Collaboration
 import qualified Luna.Studio.State.Graph              as Graph
 import           System.Random                        (StdGen)
@@ -142,16 +141,16 @@ nextRandom = do
     random .= rnd
     return val
 
-checkSomeAction :: forall a. Typeable a => Command State (Maybe (SomeAction (Command State)))
-checkSomeAction = Map.lookup (ActionRep (typeRep (Proxy @a))) <$> use currentActions
+checkSomeAction :: ActionRep -> Command State (Maybe (SomeAction (Command State)))
+checkSomeAction actionRep = Map.lookup actionRep <$> use currentActions
 
-checkAction :: forall a. Typeable a => Command State (Maybe a)
-checkAction = do
-    someAction' <- checkSomeAction @a
-    return $ join $ fromSomeAction <$> someAction'
+checkAction :: Action (Command State) a => ActionRep -> Command State (Maybe a)
+checkAction actionRep = do
+    maySomeAction <- checkSomeAction actionRep
+    return $ join $ fromSomeAction <$> maySomeAction
 
-checkIfActionPerfoming :: Typeable a => a -> Command State Bool
-checkIfActionPerfoming a = Map.member (ActionRep (typeOf a)) <$> (use currentActions)
+checkIfActionPerfoming :: ActionRep -> Command State Bool
+checkIfActionPerfoming actionRep = Map.member actionRep <$> use currentActions
 
 runningActions :: Command State [ActionRep]
 runningActions = Map.keys <$> use currentActions
@@ -170,12 +169,12 @@ beginActionWithKey key action = do
     mapM_ end currentOverlappingActions
     update action
 
-continueActionWithKey :: (Typeable a, Action (Command State) a) => ActionRep -> (a -> Command State ()) -> Command State ()
+continueActionWithKey :: Action (Command State) a => ActionRep -> (a -> Command State ()) -> Command State ()
 continueActionWithKey key run = do
     maySomeAction <- use $ currentActions . at key
     mapM_ run $ maySomeAction >>= fromSomeAction
 
-updateActionWithKey :: (Show a, Typeable a, Action (Command State) a) => ActionRep -> a -> Command State ()
+updateActionWithKey :: Action (Command State) a => ActionRep -> a -> Command State ()
 updateActionWithKey key action = currentActions . at key ?= someAction action
 
 removeActionFromState :: ActionRep -> Command State ()
