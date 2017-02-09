@@ -46,6 +46,8 @@ data ShortcutEvent = Accept
                    | SearcherMoveDown
                    | SearcherMoveUp
                    | SearcherOpen
+                   | SearcherMoveRight
+                   | SearcherMoveLeft
                    -- undo/redo
                    | Undo
                    | Redo
