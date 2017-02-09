@@ -1,16 +1,15 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Luna.Studio.React.View.NodeEditor where
 
-import qualified Data.Aeson                            as Aeson
+
 import qualified Data.HashMap.Strict                   as HashMap
-import qualified Data.Text                             as Text
 import           React.Flux                            hiding (transform)
 import qualified React.Flux                            as React
 import           React.Flux.Internal                   (el)
 
 import           JS.Scene                              (sceneId)
 import qualified Luna.Studio.Data.CameraTransformation as CameraTransformation
-import           Luna.Studio.Data.Matrix               (showTransformMatrixToSvg)
+import           Luna.Studio.Data.Matrix               (matrix3dPropertyValue)
 import qualified Luna.Studio.Event.UI                  as UI
 import           Luna.Studio.Prelude                   hiding (transform)
 import qualified Luna.Studio.React.Event.NodeEditor    as NE
@@ -20,7 +19,7 @@ import qualified Luna.Studio.React.Model.NodeEditor    as NodeEditor
 import           Luna.Studio.React.Store               (Ref, dispatch)
 import           Luna.Studio.React.View.Connection     (connection_, currentConnection_)
 import           Luna.Studio.React.View.ConnectionPen  (connectionPen_)
-import           Luna.Studio.React.View.Node           (node_)
+import           Luna.Studio.React.View.Node           (node_,nodeDynamicStyles_)
 import           Luna.Studio.React.View.SelectionBox   (selectionBox_)
 import           Luna.Studio.React.View.Visualization  (pinnedVisualization_)
 
@@ -33,8 +32,7 @@ nodeEditor_ ref ne = React.viewWithSKey nodeEditor name (ref, ne) mempty
 
 nodeEditor :: ReactView (Ref App, NodeEditor)
 nodeEditor = React.defineView name $ \(ref, ne) -> do
-    let transformMatrix = ne ^. NodeEditor.screenTransform . CameraTransformation.logicalToScreen
-        transform       = showTransformMatrixToSvg transformMatrix
+    let camera = ne ^. NodeEditor.screenTransform . CameraTransformation.logicalToScreen
     div_
         [ "className" $= "luna-graph"
         , "id"        $= sceneId
@@ -43,15 +41,11 @@ nodeEditor = React.defineView name $ \(ref, ne) -> do
         , onWheel     $ \e m w -> preventDefault e : dispatch ref (UI.NodeEditorEvent $ NE.Wheel m w)
         , onScroll    $ \e     -> [preventDefault e]
         ] $ do
-        style_
-            [ "id"  $= "cameraTransform"
-            , "key" $= "cameraTransform"
-            ] $ do
-                elemString $ Text.unpack ".node-trans { transform: … }"
-                elemString $ Text.unpack ".name-trans { transform: … }"
+        style_ [] $ do
+            elemString $ ".luna-node-trans { transform: " <> matrix3dPropertyValue camera <> " }"
+            forM_ (ne ^. NodeEditor.nodes . to HashMap.elems) $ nodeDynamicStyles_ camera
         svg_
-            [ "className" $= "luna-plane luna-plane-connections"
-            , "style"     @= Aeson.object [ "transform" Aeson..= transform ]
+            [ "className" $= "luna-plane luna-plane-connections luna-node-trans"
             , "key"       $= "connections"
             ] $ do
             defs_
@@ -84,17 +78,15 @@ nodeEditor = React.defineView name $ \(ref, ne) -> do
                 , "className" $= "luna-connections"
                 ] $ do
                 mapM_ (uncurry (connection_ ref)) $ ne ^. NodeEditor.connections . to HashMap.toList
-                mapM_ currentConnection_ $ ne ^. NodeEditor.currentConnection
-                mapM_ selectionBox_ $ ne ^. NodeEditor.selectionBox
-                mapM_ connectionPen_ $ ne ^. NodeEditor.connectionPen
-
+                mapM_ currentConnection_          $ ne ^. NodeEditor.currentConnection
+                mapM_ selectionBox_               $ ne ^. NodeEditor.selectionBox
+                mapM_ connectionPen_              $ ne ^. NodeEditor.connectionPen
         div_
             [ "className" $= "luna-plane luna-plane--nodes"
             , "key"       $= "nodes"
-            , "style"     @= Aeson.object [ "transform" Aeson..= transform ]
             ] $ do
-            forM_ (ne ^. NodeEditor.nodes . to HashMap.elems) (node_ ref)
-            forM_ (ne ^. NodeEditor.visualizations) $ pinnedVisualization_ ref ne
+            forM_ (ne ^. NodeEditor.nodes . to HashMap.elems) $ node_ ref
+            forM_ (ne ^. NodeEditor.visualizations)           $ pinnedVisualization_ ref ne
         canvas_
             [ "className" $= "luna-plane plane--canvas luna-hide"
             , "key"       $= "canvas"

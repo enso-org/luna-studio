@@ -23,7 +23,7 @@ import qualified Empire.API.Data.Error                          as LunaError
 import           Empire.API.Data.TypeRep                        (TypeRep)
 import           Empire.API.Graph.NodeResultUpdate              (NodeValue)
 import qualified Empire.API.Graph.NodeResultUpdate              as NodeResult
-import           Luna.Studio.Data.Matrix                        (transformTranslateToSvg)
+import           Luna.Studio.Data.Matrix                        (translatePropertyValue2)
 import qualified Luna.Studio.Event.UI                           as UI
 import           Luna.Studio.Prelude
 import qualified Luna.Studio.React.Event.Visualization          as Visualization
@@ -56,7 +56,7 @@ visualization_ ref nodeId mayPos v = React.view visualization (ref, nodeId, mayP
 
 visualization :: ReactView (Ref App, NodeId, Maybe Position, NodeValue)
 visualization = React.defineView viewName $ \(ref, nodeId, mayPos, nodeValue) ->
-    div_ [ "className" $= "noselect" ] $
+    div_ [ "className" $= "luna-noselect" ] $
         case nodeValue of
             NodeResult.Error msg          -> nodeError_ msg
             NodeResult.Value _ valueReprs -> nodeValues_ ref nodeId mayPos valueReprs
@@ -115,7 +115,7 @@ nodeValue_ ref nodeId mayPos visIx value = do
             Just pos -> div_ [ "className" $= "luna-node-trans luna-noselect luna-node-root"
                              , "style" @= Aeson.object
                                 [ "zIndex"    Aeson..= show (1000 :: Integer)
-                                , "transform" Aeson..= transformTranslateToSvg pos ] ]
+                                , "transform" Aeson..= translatePropertyValue2 pos ] ]
                          . div_ [ "className" $= "luna-node__visuals" ]
             Nothing -> div_
     translatedDiv_ $ do

@@ -81,8 +81,6 @@ handlers ref portRef isCollapsedSelf = (if isCollapsedSelf then id else ((onMous
     , onMouseLeave $ handleMouseLeave ref portRef
     ]
 
-
-
 portSelf_ :: Ref App -> Port -> Bool -> ReactElementM ViewEventHandler ()
 portSelf_ ref p isNodeCollapsed = do
     let portRef   = p ^. Port.portRef
@@ -116,7 +114,7 @@ portSingle_ ref p = do
         r2 = jsShow2 . (-) nodeRadius'
         svgPath :: Double -> Integer -> Integer -> JSString
         svgPath a b c = "M0 -" <> r1 a <> " A " <> r1 a <> " " <> r1 a <> " 0 0 " <> jsShow b <> " 0 "  <> r1 a <>
-                        " L0 "  <> r2 a <> " A " <> r2 a <> " " <> r2 a <> " 1 0 " <> jsShow c <> " 0 -" <> r2 a <> " Z "
+                        " L0 " <> r2 a <> " A " <> r2 a <> " " <> r2 a <> " 1 0 " <> jsShow c <> " 0 -" <> r2 a <> " Z "
     g_ [ "className" $= className ] $ do
         path_
             [ "className" $= "luna-port__shape"

@@ -2,6 +2,7 @@ module Luna.Studio.Handler.Backend.Graph
     ( handle
     ) where
 
+import qualified Data.Map                            as Map
 
 import qualified Luna.Studio.Batch.Workspace         as Workspace
 import           Luna.Studio.Prelude
@@ -10,10 +11,12 @@ import qualified Empire.API.Data.Connection          as Connection
 import qualified Empire.API.Data.Graph               as Graph
 import           Empire.API.Data.GraphLocation       (GraphLocation (..))
 import qualified Empire.API.Data.Node                as Node
+import qualified Empire.API.Data.PortRef             as PortRef
 import qualified Empire.API.Graph.AddNode            as AddNode
 import qualified Empire.API.Graph.AddSubgraph        as AddSubgraph
 import qualified Empire.API.Graph.CodeUpdate         as CodeUpdate
 import qualified Empire.API.Graph.Connect            as Connect
+import qualified Empire.API.Data.Connection          as Connection
 import qualified Empire.API.Graph.Disconnect         as Disconnect
 import qualified Empire.API.Graph.GetProgram         as GetProgram
 import qualified Empire.API.Graph.NodeResultUpdate   as NodeResultUpdate
@@ -73,7 +76,7 @@ handle (Event.Batch ev) = Just $ case ev of
             Global.workspace . Workspace.isGraphLoaded .= True
             requestCollaborationRefresh
 
-    AddNodeResponse response@(Response.Response uuid guiID (AddNode.Request loc _ _ _ _) _ _) -> do
+    AddNodeResponse response@(Response.Response uuid _ (AddNode.Request loc _ _ _ _) _ _) -> do
         shouldProcess   <- isCurrentLocationAndGraphLoaded loc
         correctLocation <- isCurrentLocation loc
         shouldSelect    <- isOwnRequest uuid
@@ -84,19 +87,26 @@ handle (Event.Batch ev) = Just $ case ev of
                 collaborativeModify [nodeId]
                 when shouldSelect $ selectNodes [nodeId]
 
-    AddSubgraphResponse response@(Response.Response uuid guiID (AddSubgraph.Request loc nodes connections _) _ _) -> do
+    AddSubgraphResponse response@(Response.Response uuid _ (AddSubgraph.Request loc nodes connections _) _ (Response.Ok idsMaybeMap)) -> do
         shouldProcess   <- isCurrentLocationAndGraphLoaded loc
         correctLocation <- isCurrentLocation loc
-        when (shouldProcess && correctLocation) $ do
-            mapM_ addDummyNode nodes
-            -- TODO[react]: Find out if we need this
-            forM_ connections $ \conn -> localConnectNodes (conn ^. Connection.src) (conn ^. Connection.dst)
-            -- mapM_ updateConnection connectionIds
-            whenM (isOwnRequest uuid) $ do
-                let nodeIds = map (^. Node.nodeId) nodes
-                collaborativeModify nodeIds
-                selectNodes nodeIds
-        handleResponse response doNothing
+        let handleSubgraph nodes connections = when (shouldProcess && correctLocation) $ do
+                mapM_ addDummyNode nodes
+                connectionIds <- forM connections $ \conn -> localConnectNodes (conn ^. Connection.src) (conn ^. Connection.dst)
+                -- mapM_ updateConnection connectionIds
+                whenM (isOwnRequest uuid) $ do
+                    let nodeIds = map (^. Node.nodeId) nodes
+                    collaborativeModify nodeIds
+                    selectNodes nodeIds
+                handleResponse response doNothing
+        case idsMaybeMap of
+            Just idsMap -> do
+                let nodes'       = flip map nodes $ Node.nodeId %~ (idsMap Map.!)
+                    connections' = map (\conn -> conn & Connection.src . PortRef.srcNodeId %~ (idsMap Map.!)
+                                                      & Connection.dst . PortRef.dstNodeId %~ (idsMap Map.!)
+                                       ) connections
+                handleSubgraph nodes' connections'
+            Nothing     -> handleSubgraph nodes connections
 
     NodesConnected update ->
         whenM (isCurrentLocation $ update ^. Connect.location') $

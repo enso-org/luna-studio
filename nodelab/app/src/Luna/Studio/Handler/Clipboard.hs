@@ -47,19 +47,16 @@ cutSelectionToClipboard = copySelectionToClipboard >> removeSelectedNodes
 pasteFromClipboard :: Text -> Command State ()
 pasteFromClipboard clipboardData = do
   let maybeSkeleton = decode $ convert $ encodeUtf8 clipboardData :: Maybe GraphSkeleton
-  when (isJust maybeSkeleton) $ do
+  forM_ maybeSkeleton $ \skeleton -> do
       graphNodesIds <- Set.fromList . HashMap.keys <$> use (Global.graph . Graph.nodesMap)
-      let skeleton    = fromJust maybeSkeleton
-          nodes       = view GraphSkeleton.nodesList skeleton
-          connections = filter (\conn -> Set.member (conn ^. Connection.src . PortRef.srcNodeId) graphNodesIds) $ view GraphSkeleton.connectionsList skeleton
+      let nodes       = skeleton ^. GraphSkeleton.nodesList
+          connections = filter (\conn -> Set.member (conn ^. Connection.src . PortRef.srcNodeId) graphNodesIds) $ skeleton ^. GraphSkeleton.connectionsList
       workspacePos <- Camera.translateToWorkspace =<< use Global.mousePos
       let shiftX = workspacePos ^. x - minimum (map (^. Node.nodeMeta . NodeMeta.position . _1) nodes)
           shiftY = workspacePos ^. y - minimum (map (^. Node.nodeMeta . NodeMeta.position . _2) nodes)
-          shiftNodeX :: Node -> Node
+          shiftNode, shiftNodeX, shiftNodeY :: Node -> Node
           shiftNodeX = Node.nodeMeta . NodeMeta.position . _1 %~ snapCoord . (+shiftX)
-          shiftNodeY :: Node -> Node
           shiftNodeY = Node.nodeMeta . NodeMeta.position . _2 %~ snapCoord . (+shiftY)
-          shiftNode :: Node -> Node
           shiftNode = shiftNodeY . shiftNodeX
           nodes' = map shiftNode nodes
       addSubgraph nodes' connections
