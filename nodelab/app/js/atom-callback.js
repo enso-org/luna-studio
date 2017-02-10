@@ -9,9 +9,18 @@ module.exports = function () {
 
   var listeners = {
     onEvent: [],
+    codeListener: [],
   };
 
   return {
+    codeListener: function (listener) {
+      listeners.codeListener.push(listener);
+    },
+    pushCode: function(data) {
+      listeners.codeListener.forEach(function(listener) {
+        listener(data);
+      });
+    },
     onEvent: function (listener) {
       listeners.onEvent.push(listener);
     },
