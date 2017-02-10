@@ -10,8 +10,8 @@ module.exports =
     atom.workspace.addOpener (uri) ->
         if path.extname(uri) is '.luna'
             return new LunaStudioTab(uri, code)
+
     @subs = new SubAtom
-    @subs.add atom.commands.add 'atom-workspace', 'luna-studio:open': ->
     atom.workspace.getActivePane().activateItem new LunaStudioTab("untitled", code)
     atom.workspace.open().then (editor) ->
         setCode = (diff) ->
