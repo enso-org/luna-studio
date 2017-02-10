@@ -9,7 +9,7 @@
 ### For backend
 
 * pkg-config (```brew install pkg-config```, not required on Windows)
-* ZeroMQ (```brew install zmq```, for Windows download zmq.zip)
+* ZeroMQ (```brew install zmq```, for Windows download [zmq.zip](https://s3-eu-west-1.amazonaws.com/luna-zmq-win/zmq.zip))
 
 ### For frontend
 
@@ -22,7 +22,7 @@
 
 ## Building backend
 
-0. On Windows, unpack zmq.zip to c:\zmq and modify (or create) environment variables:
+0. On Windows, unpack [zmq.zip](https://s3-eu-west-1.amazonaws.com/luna-zmq-win/zmq.zip) to c:\zmq and modify (or create) environment variables:
   * append c:\zmq\include to CPATH (equivalently, pass `--extra-include-dirs=c:\zmq\include` to stack)
   * append c:\zmq\lib to LIBRARY_PATH (equivalently, pass `--extra-lib-dirs=c:\zmq\lib` to stack)
   * append c:\zmq\bin to PATH
