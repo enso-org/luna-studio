@@ -10,6 +10,7 @@ import qualified JS.Clipboard                            as Clipboard
 import           JS.Scene                                (appId)
 import qualified JS.UI                                   as UI
 import           Luna.Studio.Event.Event                 (Event (Shortcut))
+import           Luna.Studio.Event.Preprocessor.Shortcut (isEventHandled)
 import qualified Luna.Studio.Event.Shortcut              as Shortcut
 import qualified Luna.Studio.Event.UI                    as UI
 import           Luna.Studio.Prelude                     hiding (on)
@@ -27,11 +28,15 @@ import           Luna.Studio.React.View.Searcher         (searcher_)
 name :: JSString
 name = "app"
 
+handleKeyDown :: Ref App -> React.Event -> KeyboardEvent -> [SomeStoreAction]
+handleKeyDown ref e k = mayStopPropagation $ dispatch ref (UI.AppEvent $ App.KeyDown k) where
+    mayStopPropagation = if isEventHandled k then (preventDefault e :) else id
+
 app :: Ref App -> ReactView ()
 app ref = React.defineControllerView name ref $ \store () -> do
     let s = store ^. dt
     div_
-        [ onKeyDown     $ \_ k -> dispatch ref (UI.AppEvent $ App.KeyDown k)
+        [ onKeyDown     $ handleKeyDown ref
         , onContextMenu $ \e _ -> [preventDefault e]
         , onMouseDown   $ \e m -> dispatch ref $ UI.AppEvent $ App.MouseDown m (Timestamp (evtTimestamp e))
         , onMouseUp     $ \_ m -> dispatch ref $ UI.AppEvent $ App.MouseUp   m
