@@ -6,6 +6,7 @@ module Luna.Studio.Action.CodeEditor
 
 import           Empire.API.Data.Node               (NodeId)
 import qualified JS.GoogleAnalytics                 as GA
+import           JS.Atom                            (pushCode)
 import qualified Luna.Studio.Action.Batch           as BatchCmd
 import           Luna.Studio.Action.Command         (Command)
 import           Luna.Studio.Prelude
@@ -15,7 +16,8 @@ import qualified Luna.Studio.State.Global           as Global
 
 
 setCode :: Text -> Command State ()
-setCode code =
+setCode code = do
+    liftIO . pushCode . convert . toString $ code
     Global.modifyCodeEditor $ CodeEditor.code .= code
 
 toggle :: Command Global.State ()
