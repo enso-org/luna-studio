@@ -11,12 +11,13 @@ import           Empire.API.Data.Node               (Node)
 import qualified Empire.API.Data.Node               as Node
 import           Luna.Studio.Action.Command         (Command)
 import           Luna.Studio.Action.Connect         ()
+import           Luna.Studio.Action.ConnectionPen   ()
 import           Luna.Studio.Action.Graph.Focus     (focusNode)
-import           Luna.Studio.Action.Port.Self       (removeSelfIfNeeded)
+import           Luna.Studio.Action.Port.Self       (showOrHideSelfPort)
 import           Luna.Studio.Prelude
 import qualified Luna.Studio.React.Model.Node       as Model
 import qualified Luna.Studio.React.Model.NodeEditor as NodeEditor
-import           Luna.Studio.State.Action           (connectAction)
+import           Luna.Studio.State.Action           (connectAction, penConnectAction)
 import           Luna.Studio.State.Global           (State, checkAction)
 import qualified Luna.Studio.State.Global           as Global
 import qualified Luna.Studio.State.Graph            as Graph
@@ -35,8 +36,8 @@ addDummyNode dummyNode = do
 registerNode :: Node -> Command State Model.Node
 registerNode node = do
     let nodeId    = node ^. Node.nodeId
-    mayAction <- checkAction connectAction
-    nodeModel <- removeSelfIfNeeded (Model.fromNode node) mayAction
-    Global.modifyNodeEditor $ do
-        NodeEditor.nodes . at nodeId ?= nodeModel
+    mayConnect    <- checkAction connectAction
+    mayPenConnect <- checkAction penConnectAction
+    nodeModel     <- showOrHideSelfPort mayConnect mayPenConnect $ Model.fromNode node
+    Global.modifyNodeEditor $ NodeEditor.nodes . at nodeId ?= nodeModel
     return nodeModel

@@ -24,7 +24,7 @@ import           Luna.Studio.Action.Geometry.Connection (createConnectionModel, 
 import           Luna.Studio.Action.Graph.Connect       (connectNodes)
 import           Luna.Studio.Action.Graph.Disconnect    (removeConnections)
 import           Luna.Studio.Action.Node.Drag           (startNodeDrag)
-import           Luna.Studio.Action.Port.Self           (removeIdleSelfPorts, showAllSelfPorts)
+import           Luna.Studio.Action.Port.Self           (showOrHideAllSelfPorts)
 import           Luna.Studio.Event.Mouse                (workspacePosition)
 import           Luna.Studio.Prelude
 import           Luna.Studio.React.Event.Connection     (ModifiedEnd (Destination, Source))
@@ -81,15 +81,14 @@ startConnecting evt anyPortRef mayModifiedConnId connectMode = do
             _                      -> do
                 mayCurrentConnectionModel <- createCurrentConnectionModel anyPortRef mousePos
                 when (isJust mayCurrentConnectionModel) $ do
+                    let action = Action.Connect mousePos anyPortRef Nothing connectMode
                     withJust mayModifiedConnId $ removeConnections . replicate 1
-                    begin $ Action.Connect mousePos anyPortRef Nothing connectMode
+                    begin action
+                    showOrHideAllSelfPorts (Just action) Nothing
                     Global.modifyNodeEditor $ do
                         withJust mayModifiedConnId $ \connId ->
                             NodeEditor.connections . at connId .= Nothing
                         NodeEditor.currentConnection .= mayCurrentConnectionModel
-                    case anyPortRef of
-                        OutPortRef' _ -> showAllSelfPorts
-                        _             -> return ()
 
 handleMove :: MouseEvent -> Connect -> Command State ()
 handleMove evt action = when (isNothing $ action ^. Action.connectSnappedPort) $ do
@@ -124,8 +123,8 @@ handleMouseUp evt action = when (action ^. Action.connectMode == DragConnect) $ 
 stopConnecting :: Connect -> Command State ()
 stopConnecting _ = do
     Global.modifyNodeEditor $ NodeEditor.currentConnection .= Nothing
+    showOrHideAllSelfPorts Nothing Nothing
     removeActionFromState connectAction
-    removeIdleSelfPorts Nothing
 
 connectToPort :: AnyPortRef -> Connect -> Command State ()
 connectToPort dst action = do

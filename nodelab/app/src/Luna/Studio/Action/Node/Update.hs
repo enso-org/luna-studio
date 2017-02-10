@@ -17,15 +17,16 @@ import           Empire.API.Graph.NodeResultUpdate  (NodeValue)
 import qualified Luna.Studio.Action.Batch           as BatchCmd
 import           Luna.Studio.Action.Command         (Command)
 import           Luna.Studio.Action.Connect         ()
+import           Luna.Studio.Action.ConnectionPen   ()
 import           Luna.Studio.Action.Graph.Update    (updateConnectionsForNodes)
 import           Luna.Studio.Action.Node.Create     (addNode)
-import           Luna.Studio.Action.Port.Self       (removeSelfIfNeeded)
+import           Luna.Studio.Action.Port.Self       (showOrHideSelfPort)
 import           Luna.Studio.Prelude
 import           Luna.Studio.React.Model.Node       (makePorts)
 import qualified Luna.Studio.React.Model.Node       as Model
 import qualified Luna.Studio.React.Model.NodeEditor as NodeEditor
 import           Luna.Studio.React.Model.Port       (portRef)
-import           Luna.Studio.State.Action           (connectAction)
+import           Luna.Studio.State.Action           (connectAction, penConnectAction)
 import           Luna.Studio.State.Global           (State, checkAction)
 import qualified Luna.Studio.State.Global           as Global
 import qualified Luna.Studio.State.Graph            as Graph
@@ -54,17 +55,18 @@ updateExistingNode node = do
     let nodeId  = node ^. Node.nodeId
     updateConnectionsForNodes [nodeId]
     zoom Global.graph $ modify (Graph.addNode node)
-    mayModel  <- Global.getNode nodeId
-    mayAction <- checkAction connectAction
+    mayModel      <- Global.getNode nodeId
+    mayConnect    <- checkAction connectAction
+    mayPenConnect <- checkAction penConnectAction
     withJust mayModel $ \model -> do
         let ports = Map.fromList (map (view portRef &&& id) $ makePorts node)
             code  = node ^. Node.code
             expr  = case node ^. Node.nodeType of
                 Node.ExpressionNode expression -> expression
                 _                              -> model ^. Model.expression
-        newModel <- flip removeSelfIfNeeded mayAction $ model & Model.ports      .~ ports
-                                                              & Model.code       .~ code
-                                                              & Model.expression .~ expr
+        newModel <- showOrHideSelfPort mayConnect mayPenConnect $ model & Model.ports      .~ ports
+                                                                        & Model.code       .~ code
+                                                                        & Model.expression .~ expr
         Global.modifyNodeEditor $ NodeEditor.nodes . at nodeId ?= newModel
 
 updateNodeValue :: NodeId -> NodeValue -> Command State ()
