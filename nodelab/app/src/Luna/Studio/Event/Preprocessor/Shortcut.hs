@@ -1,4 +1,7 @@
-module Luna.Studio.Event.Preprocessor.Shortcut (process) where
+module Luna.Studio.Event.Preprocessor.Shortcut
+    ( process
+    , isEventHandled
+    ) where
 
 import           React.Flux                       (KeyboardEvent)
 
@@ -16,6 +19,9 @@ process :: Event -> Maybe Event
 process (UI (AppEvent      (App.KeyDown      e))) = Shortcut <$> handleKeyApp e
 process (UI (SearcherEvent (Searcher.KeyDown e))) = Shortcut <$> handleKeySearcher e
 process _ = Nothing
+
+isEventHandled :: KeyboardEvent -> Bool
+isEventHandled = isJust . handleKeyApp
 
 handleKeyApp :: KeyboardEvent -> Maybe ShortcutEvent
 handleKeyApp evt
