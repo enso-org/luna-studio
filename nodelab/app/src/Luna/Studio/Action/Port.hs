@@ -7,9 +7,10 @@ module Luna.Studio.Action.Port
     , setPortDefault
     , handleMouseEnter
     , handleMouseLeave
-    , removeSelfIfNeeded
+    , showOrHideSelfPort
+    , showOrHideAllSelfPorts
     ) where
 
 import           Luna.Studio.Action.Port.Control   (moveSlider, setPortDefault, startMoveSlider, stopMoveSlider)
 import           Luna.Studio.Action.Port.Highlight (handleMouseEnter, handleMouseLeave)
-import           Luna.Studio.Action.Port.Self      (removeSelfIfNeeded)
+import           Luna.Studio.Action.Port.Self      (showOrHideAllSelfPorts, showOrHideSelfPort)

@@ -53,7 +53,7 @@ handleMouseLeave ref portRef _ _ = dispatch ref (UI.PortEvent $ Port.MouseLeave 
 port :: ReactView (Ref App, Int, Bool, Port)
 port = React.defineView name $ \(ref, numOfPorts, isOnly, p) ->
     case p ^. Port.portId of
-        InPortId   Self          ->                portSelf_   ref p True
+        InPortId   Self          ->                portSelf_   ref p
         OutPortId  All           -> if isOnly then portSingle_ ref p
                                     else           portIO_     ref p 0 numOfPorts False
         InPortId  (Arg        i) ->                portIO_     ref p i numOfPorts True
@@ -62,7 +62,7 @@ port = React.defineView name $ \(ref, numOfPorts, isOnly, p) ->
 portExpanded :: ReactView (Ref App, Port)
 portExpanded = React.defineView name $ \(ref, p) ->
     case p ^. Port.portId of
-        InPortId   Self          -> portSelf_       ref p False
+        InPortId   Self          -> portSelf_       ref p
         OutPortId  All           -> portIOExpanded_ ref p 0 False
         InPortId  (Arg        i) -> portIOExpanded_ ref p i True
         OutPortId (Projection i) -> portIOExpanded_ ref p i False
@@ -75,38 +75,51 @@ portExpanded_ :: Ref App -> Port -> ReactElementM ViewEventHandler ()
 portExpanded_ ref p =
     React.viewWithSKey portExpanded (jsShow $ p ^. Port.portId) (ref, p) mempty
 
-handlers :: Ref App -> AnyPortRef -> Bool -> [PropertyOrHandler [SomeStoreAction]]
-handlers ref portRef isCollapsedSelf = (if isCollapsedSelf then id else id) -- ((onMouseDown $ handleMouseDown ref portRef):))
-    [ onMouseDown $ handleMouseDown ref portRef
-    , onMouseUp    $ handleMouseUp    ref portRef
-    , onClick      $ handleClick      ref portRef
-    , onMouseEnter $ handleMouseEnter ref portRef
-    , onMouseLeave $ handleMouseLeave ref portRef
-    ]
+handlers :: Ref App -> AnyPortRef -> [PropertyOrHandler [SomeStoreAction]]
+handlers ref portRef = [ onMouseDown $ handleMouseDown ref portRef
+                       , onMouseUp    $ handleMouseUp    ref portRef
+                       , onClick      $ handleClick      ref portRef
+                       , onMouseEnter $ handleMouseEnter ref portRef
+                       , onMouseLeave $ handleMouseLeave ref portRef
+                       ]
 
-portSelf_ :: Ref App -> Port -> Bool -> ReactElementM ViewEventHandler ()
-portSelf_ ref p isNodeCollapsed = do
+portSelf_ :: Ref App -> Port -> ReactElementM ViewEventHandler ()
+portSelf_ ref p = do
     let portRef   = p ^. Port.portRef
         color     = toJSString $ p ^. Port.color
         portId    = p ^. Port.portId
         highlight = if p ^. Port.highlight then " luna-hover" else ""
+        visible   = p ^. Port.visible
         className = fromString $ "luna-port luna-port--self" <> highlight
         r         = 5
-    g_
-        [ "className" $= className ] $ do
-        circle_
-            [ "className" $= "luna-port__shape"
-            , "key"       $= (jsShow portId <> "a")
-            , "fill"      $= color
-            , "r"         $= (fromString $ show r)
-            ] mempty
-        circle_
-            ( handlers ref portRef isNodeCollapsed ++
-              [ "className"  $= "luna-port__select"
-              , "key"        $= (jsShow portId <> "b")
-              , "r"          $= (fromString $ show $ r + lineHeight/2)
-              ]
-            ) mempty
+    if visible then
+        g_
+            [ "className" $= className ] $ do
+            circle_
+                [ "className" $= "luna-port__shape"
+                , "key"       $= (jsShow portId <> "a")
+                , "fill"      $= color
+                , "r"         $= (fromString $ show r)
+                ] mempty
+            circle_
+                ( handlers ref portRef ++
+                  [ "className"  $= "luna-port__select"
+                  , "key"        $= (jsShow portId <> "b")
+                  , "r"          $= (fromString $ show $ r + lineHeight/2)
+                  ]
+                ) mempty
+    else g_
+            [ "className" $= className ] $ do
+            circle_
+                [ "className"    $= "luna-port__shape invisible"
+                , "key"          $= (jsShow portId <> "a")
+                , "fill-opacity" $= (fromString $ show (1 :: Int))
+                ] mempty
+            circle_
+                [ "className"      $= "luna-port__select invisible"
+                  , "key"          $= (jsShow portId <> "b")
+                  , "fill-opacity" $= (fromString $ show (1 :: Int))
+                  ] mempty
 
 portSingle_ :: Ref App -> Port -> ReactElementM ViewEventHandler ()
 portSingle_ ref p = do
@@ -129,7 +142,7 @@ portSingle_ ref p = do
             , "d"         $= (svgPath 0 0 1 <> svgPath 0 1 0)
             ] mempty
         path_
-            ( handlers ref portRef False ++
+            ( handlers ref portRef ++
               [ "className" $= "luna-port__select"
               , "key"       $= (jsShow portId <> "b")
               , "d"         $= (svgPath lineHeight 0 1 <> svgPath lineHeight 1 0)
@@ -175,7 +188,7 @@ portIO_ ref p num numOfPorts isInput = do
             , "d"         $= svgPath 0
             ] mempty
         path_
-            ( handlers ref portRef False ++
+            ( handlers ref portRef ++
               [ "className" $= "luna-port__select"
               , "key"       $= (jsShow portId <> "b")
               , "d"         $= svgPath lineHeight
@@ -201,7 +214,7 @@ portIOExpanded_ ref p num isInput = do
             , "cy"        $= jsShow2 (lineHeight * fromIntegral (num + n) )
             ] mempty
         circle_
-            ( handlers ref portRef False ++
+            ( handlers ref portRef ++
               [ "className" $= "luna-port__select"
               , "key"       $= (jsShow portId <> jsShow num <> "b")
               , "r"         $= jsShow2 (lineHeight/1.5)

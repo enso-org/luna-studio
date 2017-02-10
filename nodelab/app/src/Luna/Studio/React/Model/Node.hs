@@ -27,6 +27,7 @@ import           Luna.Studio.State.Collaboration   (ColorId)
 
 
 data Node = Node { _nodeId                :: NodeAPI.NodeId
+                 -- TODO: We require to much as key to this map. PortId is enough.
                  , _ports                 :: Map AnyPortRef Port
                  , _position              :: Position
                  , _zPos                  :: Int
