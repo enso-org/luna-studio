@@ -13,7 +13,7 @@ import qualified Empire.API.Data.Node          as Node (NodeType(ExpressionNode)
                                                         expression, name, nodeId, nodeType, ports)
 import qualified Empire.API.Data.Port          as Port
 import           Empire.API.Data.PortRef       (InPortRef (..), OutPortRef (..))
-import           Empire.API.Data.TypeRep       (TypeRep(TCons, TStar))
+import           Empire.API.Data.TypeRep       (TypeRep(TCons, TStar, TLam, TVar))
 import           Empire.ASTOp                  (runASTOp)
 import qualified Empire.ASTOps.Deconstruct     as ASTDeconstruct
 import qualified Empire.ASTOps.Parse           as Parser
@@ -38,7 +38,7 @@ import           EmpireUtils
 
 
 spec :: Spec
-spec = around withChannels $ parallel $ do
+spec = around withChannels $ id $ do
     describe "luna-empire" $ do
         it "descends into `def foo` and asserts two edges inside" $ \env -> do
             u1 <- mkUUID
@@ -207,7 +207,7 @@ spec = around withChannels $ parallel $ do
         it "properly typechecks edges inside mock id" $ \env -> do
             u1 <- mkUUID
             (res, st) <- runEmp env $ do
-                Graph.addNode top u1 "id" def
+                Graph.addNode top u1 "idInt" def
                 let GraphLocation pid lid _ = top
                 withLibrary pid lid (use Library.body)
             withResult res $ \g -> do
@@ -224,6 +224,29 @@ spec = around withChannels $ parallel $ do
                         outputType = map (view Port.valueType) outputPorts'
                     inputType  `shouldBe` [TCons "Int" []]
                     outputType `shouldBe` [TCons "Int" []]
+        it "properly typechecks second id in `mock id -> mock id`" $ \env -> do
+            u1 <- mkUUID
+            u2 <- mkUUID
+            (res, st) <- runEmp env $ do
+                Graph.addNode top u1 "id" def
+                Graph.addNode top u2 "id" def
+                Graph.connect top (OutPortRef u1 Port.All) (InPortRef u2 (Port.Arg 0))
+                let GraphLocation pid lid _ = top
+                withLibrary pid lid (use Library.body)
+            withResult res $ \g -> do
+                (_, (extractGraph -> g')) <- runEmpire env (InterpreterEnv def def def g def) $
+                    Typecheck.run emptyGraphLocation
+                (res'',_) <- runEmp' env st g' $ do
+                    Graph.withGraph top $ runASTOp $ (,) <$> GraphBuilder.buildNode u1 <*> GraphBuilder.buildNode u2
+                withResult res'' $ \(n1, n2) -> do
+                    let inputPorts = Map.elems $ Map.filter Port.isInputPort $ n2 ^. Node.ports
+                    inputPorts `shouldMatchList` [
+                          Port.Port (Port.InPortId (Port.Arg 0)) "arg 0" (TLam [TVar "a"] (TVar "a")) Port.Connected
+                        ]
+                    let outputPorts = Map.elems $ Map.filter Port.isOutputPort $ n1 ^. Node.ports
+                    outputPorts `shouldMatchList` [
+                          Port.Port (Port.OutPortId Port.All) "Output" (TLam [TVar "a"] (TVar "a")) (Port.WithDefault (Expression "_"))
+                        ]
         it "adds lambda nodeid to node mapping" $ \env -> do
             u1 <- mkUUID
             res <- evalEmp env $ do

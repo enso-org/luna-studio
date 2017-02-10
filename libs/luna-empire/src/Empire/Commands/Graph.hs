@@ -237,7 +237,8 @@ connectNoTC loc outPort inPort@(InPortRef nid _) = do
                 if (nid /= input && nid /= output) then Just <$> GraphBuilder.buildNode nid
                                                    else return Nothing
             _ -> Just <$> GraphBuilder.buildNode nid
-    forM_ nodeToUpdate $ Publisher.notifyNodeUpdate loc
+    forM_ nodeToUpdate $ \n -> do
+        Publisher.notifyNodeUpdate loc n
     return ()
 
 setDefaultValue :: GraphLocation -> AnyPortRef -> PortDefault -> Empire ()

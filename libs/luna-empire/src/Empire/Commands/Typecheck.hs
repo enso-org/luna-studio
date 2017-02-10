@@ -61,13 +61,19 @@ runTC = do
     runASTOp $ do
         roots <- mapM GraphUtils.getASTPointer allNodeIds
         mockImports <- do
-            id' <- do
+            idInt' <- do
                 tvar <- IR.strCons_ @IR.Draft "Int"
                 tp   <- IR.lam tvar tvar
                 bl   <- IR.blank `typed` tvar
                 l    <- IR.lam bl bl `typed` tp
                 IR.Function.compile $ IR.generalize l
-            let m = Module Map.empty $ Map.singleton "id" id'
+            id' <- do
+                tvar <- IR.strVar "a"
+                tp   <- IR.lam tvar tvar
+                bl   <- IR.blank `typed` tvar
+                l    <- IR.lam bl bl `typed` tp
+                IR.Function.compile $ IR.generalize l
+            let m = Module Map.empty $ Map.fromList [("idInt", idInt'), ("id", id')]
             return $ Imports $ Map.singleton "Stdlib" m
         Typecheck.typecheck mockImports $ map IR.unsafeGeneralize roots
     return ()

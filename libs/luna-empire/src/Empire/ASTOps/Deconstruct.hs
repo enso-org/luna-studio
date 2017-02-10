@@ -31,22 +31,26 @@ extractFun app = match app $ \case
         extractFun =<< IR.source a
     _ -> return app
 
+data ExtractFilter = FApp | FLam
+
 extractArguments :: ASTOp m => NodeRef -> m [NodeRef]
 extractArguments expr = match expr $ \case
-    App{} -> reverse <$> extractArguments' expr
-    Lam{} -> extractArguments' expr
+    App{} -> reverse <$> extractArguments' FApp expr
+    Lam{} -> extractArguments' FLam expr
     _ -> return []
 
-extractArguments' :: ASTOp m => NodeRef -> m [NodeRef]
-extractArguments' expr = match expr $ \case
+extractArguments' :: ASTOp m => ExtractFilter -> NodeRef -> m [NodeRef]
+extractArguments' FApp expr = match expr $ \case
     App a b -> do
         nextApp <- IR.source a
-        args    <- extractArguments' nextApp
+        args    <- extractArguments' FApp nextApp
         arg'    <- IR.source b
         return $ arg' : args
+    _       -> return []
+extractArguments' FLam expr = match expr $ \case
     Lam b a -> do
         nextLam <- IR.source a
-        args    <- extractArguments' nextLam
+        args    <- extractArguments' FLam nextLam
         arg'    <- IR.source b
         return $ arg' : args
     _       -> return []

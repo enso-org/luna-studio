@@ -50,3 +50,6 @@ isInputPort :: Port -> Bool
 isInputPort port = case port ^. portId of
     InPortId _ -> True
     _          -> False
+
+isOutputPort :: Port -> Bool
+isOutputPort = not . isInputPort

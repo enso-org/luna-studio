@@ -168,10 +168,8 @@ extractArgTypes :: ASTOp m => NodeRef -> m [TypeRep]
 extractArgTypes node = do
     match node $ \case
         Lam _args out -> do
-            unpacked <- ASTDeconstruct.extractArguments node
-            as     <- mapM Print.getTypeRep unpacked
-            tailAs <- IR.source out >>= extractArgTypes
-            return $ as ++ tailAs
+            as   <- mapM Print.getTypeRep [node]
+            return as
         _ -> return []
 
 extractPortInfo :: ASTOp m => NodeRef -> m ([TypeRep], [PortState])
@@ -181,8 +179,7 @@ extractPortInfo node = do
             unpacked       <- ASTDeconstruct.extractArguments node
             portStates     <- mapM getPortState unpacked
             tp    <- do
-                f' <- IR.source f
-                foo <- IR.readLayer @TypeLayer f'
+                foo <- IR.readLayer @TypeLayer node
                 IR.source foo
             types <- extractArgTypes tp
             return (types, portStates)
@@ -205,7 +202,8 @@ extractPortInfo node = do
 buildArgPorts :: ASTOp m => NodeRef -> m [Port]
 buildArgPorts ref = do
     (types, states) <- extractPortInfo ref
-    let additionalEmptyPort = if NotConnected `elem` states then 0 else 1
+    let additionalEmptyPort = if (not.null) types then 0
+                              else if NotConnected `elem` states then 0 else 1
         portsTypes = types ++ replicate (length states - length types + additionalEmptyPort) TStar
         psCons = zipWith3  Port
                           (InPortId . Arg <$> [(0::Int)..]) (("arg " <>) . show <$> [(0::Int)..])
@@ -266,7 +264,7 @@ buildInputEdge nid = do
         [] -> do
             numberOfArguments <- length <$> (extractArgTypes ref)
             return $ replicate numberOfArguments TStar
-        _ -> return types
+        [TLam types' _] -> return types'
     let nameGen = fmap (\i -> "input" ++ show i) [(0::Int)..]
         inputEdges = zipWith3 (\n t i -> Port (OutPortId $ Projection i) n t Port.NotConnected) nameGen argTypes [(0::Int)..]
     return $
