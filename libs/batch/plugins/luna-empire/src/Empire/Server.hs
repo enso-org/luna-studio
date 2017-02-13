@@ -115,6 +115,7 @@ startAsyncUpdateWorker asyncChan = forever $ do
     update <- liftIO $ atomically $ readTChan asyncChan
     case update of
         NodesUpdate      up -> Server.sendToBus' up
+        TypecheckerUpdate up -> Server.sendToBus' up
         ResultUpdate     up -> Server.sendToBus' up
         ConnectionUpdate up -> Server.sendToBus' up
 

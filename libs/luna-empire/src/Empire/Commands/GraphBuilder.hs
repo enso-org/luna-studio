@@ -7,6 +7,7 @@
 module Empire.Commands.GraphBuilder (
     buildConnections
   , buildNode
+  , buildNodeTypecheckUpdate
   , buildNodes
   , buildEdgeNodes
   , buildGraph
@@ -138,6 +139,15 @@ buildNode nid = do
     let code    = Nothing -- Just $ Text.pack expr
         portMap = Map.fromList $ flip fmap ports $ \p@(Port id' _ _ _) -> (id', p)
     return $ API.Node nid name (API.ExpressionNode $ Text.pack expr) canEnter portMap (fromMaybe def meta) code
+
+buildNodeTypecheckUpdate :: ASTOp m => NodeId -> m API.NodeTypecheckerUpdate
+buildNodeTypecheckUpdate nid = do
+  root   <- GraphUtils.getASTPointer nid
+  match' <- ASTRead.isMatch root
+  ref    <- if match' then GraphUtils.getASTTarget nid else return root
+  ports  <- buildPorts ref
+  let portMap = Map.fromList $ flip fmap ports $ \p@(Port id' _ _ _) -> (id', p)
+  return $ API.NodeTypecheckerUpdate nid portMap
 
 getNodeName :: ASTOp m => NodeId -> m (Maybe Text)
 getNodeName nid = do

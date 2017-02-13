@@ -21,6 +21,7 @@ import qualified Empire.API.Graph.Disconnect         as Disconnect
 import qualified Empire.API.Graph.GetProgram         as GetProgram
 import qualified Empire.API.Graph.NodeResultUpdate   as NodeResultUpdate
 import qualified Empire.API.Graph.NodeSearcherUpdate as NodeSearcherUpdate
+import qualified Empire.API.Graph.NodeTypecheckerUpdate as NodeTCUpdate
 import qualified Empire.API.Graph.NodesUpdate        as NodesUpdate
 import qualified Empire.API.Graph.RemoveNodes        as RemoveNodes
 import qualified Empire.API.Graph.RenameNode         as RenameNode
@@ -37,7 +38,7 @@ import           Luna.Studio.Action.Command          (Command)
 import           Luna.Studio.Action.Graph            (localConnectNodes, localRemoveConnections, renderGraph, selectNodes,
                                                       updateConnectionsForNodes)
 import           Luna.Studio.Action.Node             (addDummyNode, localRemoveNodes, updateNode, updateNodeProfilingData, updateNodeValue,
-                                                      updateNodesMeta)
+                                                      updateNodesMeta, typecheckNode)
 import qualified Luna.Studio.Action.Node             as Node
 import           Luna.Studio.Action.ProjectManager   (setCurrentBreadcrumb)
 import           Luna.Studio.Action.UUID             (isOwnRequest)
@@ -132,6 +133,11 @@ handle (Event.Batch ev) = Just $ case ev of
         shouldProcess <- isCurrentLocationAndGraphLoaded (update ^. NodesUpdate.location)
         correctLocation <- isCurrentLocation (update ^. NodesUpdate.location)
         when (shouldProcess && correctLocation) $ mapM_ updateNode $ update ^. NodesUpdate.nodes
+
+    NodeTypechecked update -> do
+      shouldProcess <- isCurrentLocationAndGraphLoaded (update ^. NodeTCUpdate.location)
+      correctLocation <- isCurrentLocation (update ^. NodeTCUpdate.location)
+      when (shouldProcess && correctLocation) $ typecheckNode $ update ^. NodeTCUpdate.node
 
     NodeRenamed update -> do
         shouldProcess <- isCurrentLocationAndGraphLoaded (update ^. RenameNode.location')

@@ -5,18 +5,24 @@ import           Control.Monad.Reader
 import           Control.Monad.STM                 (atomically)
 import           Empire.API.Data.AsyncUpdate       (AsyncUpdate (..))
 import           Empire.API.Data.GraphLocation     (GraphLocation)
-import           Empire.API.Data.Node              (Node, NodeId)
+import           Empire.API.Data.Node              (Node, NodeId, NodeTypecheckerUpdate)
 import           Empire.Data.Graph                 (Graph)
 import           Empire.Empire
 import           Empire.Prelude
 
-import qualified Empire.API.Graph.NodeResultUpdate as NodeResult
-import qualified Empire.API.Graph.NodesUpdate      as Node
+import qualified Empire.API.Graph.NodeResultUpdate      as NodeResult
+import qualified Empire.API.Graph.NodeTypecheckerUpdate as NodeTCUpdate
+import qualified Empire.API.Graph.NodesUpdate           as Node
 
 notifyNodeUpdate :: GraphLocation -> Node -> Command s ()
 notifyNodeUpdate loc n = do
     chan <- asks $ view updatesChan
     liftIO $ atomically $ writeTChan chan $ NodesUpdate $ Node.Update loc [n]
+
+notifyNodeTypecheck :: GraphLocation -> NodeTypecheckerUpdate -> Command s ()
+notifyNodeTypecheck loc n = do
+    chan <- asks $ view updatesChan
+    liftIO $ atomically $ writeTChan chan $ TypecheckerUpdate $ NodeTCUpdate.Update loc n
 
 notifyResultUpdate :: GraphLocation -> NodeId -> NodeResult.NodeValue -> Integer -> Command s ()
 notifyResultUpdate loc nid v t = do

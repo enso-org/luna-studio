@@ -20,6 +20,7 @@ module Luna.Studio.Action.Node
     , snap
     , snapCoord
     , updateNode
+    , typecheckNode
     , updateNodeValue
     , updateNodeProfilingData
     , updateExpression
@@ -38,5 +39,5 @@ import           Luna.Studio.Action.Node.Name          (applyName, discardName, 
 import           Luna.Studio.Action.Node.NodeMeta      (modifyNodeMeta, updateNodesMeta)
 import           Luna.Studio.Action.Node.Remove        (localRemoveNodes, removeSelectedNodes)
 import           Luna.Studio.Action.Node.Snap          (snap, snapCoord)
-import           Luna.Studio.Action.Node.Update        (updateExpression, updateNode, updateNodeProfilingData, updateNodeValue)
+import           Luna.Studio.Action.Node.Update        (updateExpression, updateNode, typecheckNode, updateNodeProfilingData, updateNodeValue)
 import           Luna.Studio.Action.Node.Visualization (visualizationsToggled)

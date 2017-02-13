@@ -35,12 +35,19 @@ data Node = Node { _nodeId   :: NodeId
                  , _code     :: Maybe Text
                  } deriving (Generic, Eq, NFData, Show, Typeable)
 
+data NodeTypecheckerUpdate = NodeTypecheckerUpdate {
+      _tcNodeId :: NodeId
+    , _tcPorts  :: Map PortId Port
+    } deriving (Generic, Eq, NFData, Show, Typeable)
+
 makeLenses ''Node
 makeLenses ''NodeType
 makePrisms ''NodeType
+makeLenses ''NodeTypecheckerUpdate
 
 position :: Lens' Node (Double, Double)
 position = nodeMeta . NodeMeta.position
 
 instance Binary Node
 instance Binary NodeType
+instance Binary NodeTypecheckerUpdate

@@ -7,6 +7,7 @@ type Topic = String
 class MessageTopic a where
   topic :: a -> Topic
 
-request  = ".request"
-response = ".response"
-update   = ".update"
+request   = ".request"
+response  = ".response"
+update    = ".update"
+typecheck = ".typecheck"

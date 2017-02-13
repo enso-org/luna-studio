@@ -36,6 +36,7 @@ import           Empire.API.Graph.Disconnect           as Disconnect
 import           Empire.API.Graph.GetProgram           as GetProgram
 import           Empire.API.Graph.NodeResultUpdate     as NodeResultUpdate
 import           Empire.API.Graph.NodeSearcherUpdate   as NodeSearcherUpdate
+import           Empire.API.Graph.NodeTypecheckerUpdate as NodeTypecheckerUpdate
 import           Empire.API.Graph.NodesUpdate          as NodesUpdate
 import           Empire.API.Graph.RemoveNodes          as RemoveNodes
 import           Empire.API.Graph.RenameNode           as RenameNode
@@ -74,6 +75,8 @@ instance ToJSON Node.Node
 instance FromJSON Node.Node
 instance ToJSON Node.NodeType
 instance FromJSON Node.NodeType
+instance ToJSON Node.NodeTypecheckerUpdate
+instance FromJSON Node.NodeTypecheckerUpdate
 
 instance ToJSON NodeMeta.NodeMeta
 instance FromJSON NodeMeta.NodeMeta
@@ -171,6 +174,8 @@ instance ToJSON UpdateNodeExpression.Inverse
 
 instance ToJSON NodeResultUpdate.Update
 instance ToJSON NodeResultUpdate.NodeValue
+
+instance ToJSON NodeTypecheckerUpdate.Update
 
 instance ToJSON CodeUpdate.Update
 

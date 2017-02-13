@@ -32,6 +32,7 @@ handlers = Map.fromList [ handle NodeAdded
                         , handle NodeMetaUpdated
                         , handle NodeMetaResponse
                         , handle NodesUpdated
+                        , handle NodeTypechecked
                         , handle ProgramFetched
                         , handle CodeUpdated
                         , handle NodeResultUpdated

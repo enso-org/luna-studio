@@ -2,6 +2,7 @@
 
 module Luna.Studio.Action.Node.Update
     ( updateNode
+    , typecheckNode
     , updateNodeValue
     , updateNodeProfilingData
     , updateExpression
@@ -10,7 +11,7 @@ module Luna.Studio.Action.Node.Update
 import           Control.Arrow                      ((&&&))
 import           Control.Monad.State                (modify)
 import qualified Data.Map.Lazy                      as Map
-import           Empire.API.Data.Node               (Node, NodeId)
+import           Empire.API.Data.Node               (Node, NodeId, NodeTypecheckerUpdate)
 import qualified Empire.API.Data.Node               as Node
 import           Empire.API.Graph.NodeResultUpdate  (NodeValue)
 import qualified Luna.Studio.Action.Batch           as BatchCmd
@@ -35,6 +36,17 @@ updateNode node = do
     case inGraph of
         Just _existingNode -> updateExistingNode node
         Nothing            -> addNode            node
+
+typecheckNode :: NodeTypecheckerUpdate -> Command State ()
+typecheckNode node = do
+    let nodeId = node ^. Node.tcNodeId
+    inGraph <- preuse $ Global.graph . Graph.nodesMap . ix nodeId
+    case inGraph of
+        Just existingNode  -> do
+            let updatedNode = existingNode & Node.ports .~ (node ^. Node.tcPorts)
+            updateExistingNode updatedNode
+        -- typecheck non-existing node?
+        Nothing            -> return ()
 
 updateExistingNode :: Node -> Command State ()
 updateExistingNode node = do

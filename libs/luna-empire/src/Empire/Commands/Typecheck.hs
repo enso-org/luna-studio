@@ -109,11 +109,12 @@ updateNodes loc = do
             AST.getError ref
         reportError loc nid err
 
-        rep <- zoom graph $ runASTOp $ GraphBuilder.buildNode nid
-        cached <- uses nodesCache $ Map.lookup nid
-        when (cached /= Just rep) $ do
-            Publisher.notifyNodeUpdate loc rep
-            nodesCache %= Map.insert nid rep
+        rep <- zoom graph $ runASTOp $ GraphBuilder.buildNodeTypecheckUpdate nid
+        Publisher.notifyNodeTypecheck loc rep
+        -- FIXME[MM]: use cache? maybe it's not required any more
+        -- cached <- uses nodesCache $ Map.lookup nid
+        -- when (cached /= Just rep) $ do
+            -- nodesCache %= Map.insert nid rep
     edgeNodes  <- zoom graph $ runASTOp $ GraphBuilder.buildEdgeNodes
     forM_ edgeNodes $ \edges -> forM_ edges $ \rep -> do
         let nid = rep ^. nodeId
