@@ -37,10 +37,7 @@ appAny :: ASTOp m => NodeRef -> NodeRef -> m NodeRef
 appAny = fmap IR.generalize .: IR.app
 
 lams :: ASTOp m => [NodeRef] -> NodeRef -> m NodeRef
-lams args output = IR.unsafeRelayout <$> foldM f (IR.unsafeRelayout seed) (IR.unsafeRelayout <$> rest)
-    where
-        f arg' lam' = lamAny arg' lam'
-        (seed : rest) = args ++ [output]
+lams args output = IR.unsafeRelayout <$> foldM (flip lamAny) (IR.unsafeRelayout output) (IR.unsafeRelayout <$> reverse args)
 
 lamAny :: ASTOp m => NodeRef -> NodeRef -> m NodeRef
 lamAny a b = fmap IR.generalize $ IR.lam a b

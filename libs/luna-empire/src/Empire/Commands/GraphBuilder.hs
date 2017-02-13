@@ -182,6 +182,17 @@ extractArgTypes node = do
             return as
         _ -> return []
 
+extractArgNames :: ASTOp m => NodeRef -> m [String]
+extractArgNames node = do
+    match node $ \case
+        Lam{} -> do
+            args <- ASTDeconstruct.extractArguments node
+            names <- mapM ASTRead.getVarName args
+            return names
+        -- App is Lam that has some args applied
+        App f _a -> extractArgNames =<< IR.source f
+        _ -> return []
+
 extractPortInfo :: ASTOp m => NodeRef -> m ([TypeRep], [PortState])
 extractPortInfo node = do
     match node $ \case
@@ -212,11 +223,14 @@ extractPortInfo node = do
 buildArgPorts :: ASTOp m => NodeRef -> m [Port]
 buildArgPorts ref = do
     (types, states) <- extractPortInfo ref
+    names <- extractArgNames ref
     let additionalEmptyPort = if (not.null) types then 0
                               else if NotConnected `elem` states then 0 else 1
         portsTypes = types ++ replicate (length states - length types + additionalEmptyPort) TStar
-        psCons = zipWith3  Port
-                          (InPortId . Arg <$> [(0::Int)..]) (("arg " <>) . show <$> [(0::Int)..])
+        namesGen = names ++ drop (length names) (("arg " ++) . show <$> [(0::Int)..])
+        psCons = zipWith3 Port
+                          (InPortId . Arg <$> [(0::Int)..])
+                          namesGen
                           portsTypes
     return $ zipWith ($) psCons (states ++ repeat NotConnected)
 

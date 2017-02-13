@@ -64,14 +64,14 @@ runTC = do
             idInt' <- do
                 tvar <- IR.strCons_ @IR.Draft "Int"
                 tp   <- IR.lam tvar tvar
-                bl   <- IR.blank `typed` tvar
-                l    <- IR.lam bl bl `typed` tp
+                v    <- IR.strVar "in" `typed` tvar
+                l    <- IR.lam v v `typed` tp
                 IR.Function.compile $ IR.generalize l
             id' <- do
                 tvar <- IR.strVar "a"
                 tp   <- IR.lam tvar tvar
-                bl   <- IR.blank `typed` tvar
-                l    <- IR.lam bl bl `typed` tp
+                v    <- IR.strVar "in" `typed` tvar
+                l    <- IR.lam v v `typed` tp
                 IR.Function.compile $ IR.generalize l
             let m = Module Map.empty $ Map.fromList [("idInt", idInt'), ("id", id')]
             return $ Imports $ Map.singleton "Stdlib" m
