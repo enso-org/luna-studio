@@ -77,38 +77,34 @@ moveUp _ = Global.modifySearcher $ do
     unless (items == 0) $
         Searcher.selected %= \p -> (p - 1) `mod` items
 
-proceed :: Searcher -> Command State ()
-proceed = close
-    -- withJustM Global.getSearcher $ \searcher ->
-    --     searcher ^. Searcher.selectedExpression
-    --         Left (Just command) ->
-            -- Searcher.Command   -> parseAction
+proceed :: (Event -> IO ()) -> Searcher -> Command State ()
+proceed scheduleEvent action = withJustM Global.getSearcher $ \searcher ->
+    case searcher ^. Searcher.mode of
+        Searcher.Command -> accept scheduleEvent action
+        Searcher.Node    -> close action
 
 rollback :: Searcher -> Command State ()
 rollback _ = do
     withJustM Global.getSearcher $ \searcher -> do
-        case searcher ^. Searcher.mode of
-            Searcher.Command -> return ()
-            Searcher.Node    -> Global.modifySearcher $ do
-                if Text.null $ searcher ^. Searcher.input then do
-                    Searcher.selected .= def
-                    Searcher.mode  .= Searcher.Command
-                    Searcher.input    .= def
-                else
-                    Searcher.input %= Text.init
+       when (Text.null (searcher ^. Searcher.input)
+         && Searcher.Node == (searcher ^. Searcher.mode)) $
+            Global.modifySearcher $ do
+                Searcher.selected .= def
+                Searcher.mode     .= Searcher.Command
+                Searcher.input    .= def
 
 accept :: (Event -> IO ()) -> Searcher -> Command State ()
 accept scheduleEvent action = do
     withJustM Global.getSearcher $ \searcher -> do
         let expression = searcher ^. Searcher.selectedExpression
         case searcher ^. Searcher.mode of
-            Searcher.Command -> execCommand scheduleEvent $ convert expression
+            Searcher.Command -> execCommand action scheduleEvent $ convert expression
             Searcher.Node -> do
                 pos <- translateToWorkspace (searcher ^. Searcher.position)
                 case searcher ^. Searcher.nodeId of
                     Nothing -> registerNode pos expression
                     Just nodeId-> Node.updateExpression nodeId expression
-    close action
+                close action
 
 openEdit :: Text -> NodeId -> Position -> Command State ()
 openEdit expr nodeId pos = do
@@ -148,11 +144,18 @@ allCommands = Map.fromList $ (,Element) . convert <$> (commands <> otherCommands
     commands = show <$> [(minBound :: Shortcut.Command) ..]
     otherCommands = show <$> [(minBound :: OtherCommands)]
 
-execCommand :: (Event -> IO ()) -> String -> Command State ()
-execCommand scheduleEvent expression = case readMaybe expression of
-    Just command -> liftIO $ scheduleEvent $ Shortcut $ Shortcut.Event command def
-    Nothing -> return ()
-
+execCommand :: Searcher -> (Event -> IO ()) -> String -> Command State ()
+execCommand action scheduleEvent expression = case readMaybe expression of
+    Just command -> do
+        liftIO $ scheduleEvent $ Shortcut $ Shortcut.Event command def
+        close action
+    Nothing -> case readMaybe expression of
+        Just AddNode -> Global.modifySearcher $ do
+            Searcher.selected .= def
+            Searcher.mode     .= Searcher.Node
+            Searcher.input    .= def
+            Searcher.results  .= def
+        Nothing -> return ()
 
 querySearch :: Text -> Searcher -> Command State ()
 querySearch query _ = do
