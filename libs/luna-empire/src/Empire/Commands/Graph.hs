@@ -399,21 +399,29 @@ makeApp src dst pos inputPos = do
     let (connectToInputEdge, connectToOutputEdge) = case edges of
             Nothing           -> (False, False)
             Just (input, out) -> (input == src, out == dst)
-    if | connectToOutputEdge -> do
-        Just lambda <- use Graph.insideNode
-        srcAst <- GraphUtils.getASTVar    src
-        dstAst <- GraphUtils.getASTTarget lambda
-        newNodeRef <- ASTModify.redirectLambdaOutput dstAst srcAst
-        GraphUtils.rewireNode lambda newNodeRef
-       | connectToInputEdge -> do
-        Just lambda  <- use Graph.insideNode
-        lambda' <- GraphUtils.getASTTarget lambda
-        srcAst  <- AST.getLambdaInputRef lambda' inputPos
-        dstAst  <- GraphUtils.getASTTarget dst
-        newNodeRef <- ASTBuilder.applyFunction dstAst srcAst pos
-        GraphUtils.rewireNode dst newNodeRef
-       | otherwise -> do
-        srcAst <- GraphUtils.getASTVar    src
-        dstAst <- GraphUtils.getASTTarget dst
-        newNodeRef <- ASTBuilder.applyFunction dstAst srcAst pos
-        GraphUtils.rewireNode dst newNodeRef
+    case (connectToInputEdge, connectToOutputEdge) of
+        (True, True) -> do
+            Just lambda <- use Graph.insideNode
+            lambda' <- GraphUtils.getASTTarget lambda
+            srcAst <- AST.getLambdaInputRef lambda' inputPos
+            dstAst <- GraphUtils.getASTTarget lambda
+            newNodeRef <- ASTModify.redirectLambdaOutput dstAst srcAst
+            GraphUtils.rewireNode lambda newNodeRef
+        (False, True) -> do
+            Just lambda <- use Graph.insideNode
+            srcAst <- GraphUtils.getASTVar    src
+            dstAst <- GraphUtils.getASTTarget lambda
+            newNodeRef <- ASTModify.redirectLambdaOutput dstAst srcAst
+            GraphUtils.rewireNode lambda newNodeRef
+        (True, False) -> do
+            Just lambda  <- use Graph.insideNode
+            lambda' <- GraphUtils.getASTTarget lambda
+            srcAst  <- AST.getLambdaInputRef lambda' inputPos
+            dstAst  <- GraphUtils.getASTTarget dst
+            newNodeRef <- ASTBuilder.applyFunction dstAst srcAst pos
+            GraphUtils.rewireNode dst newNodeRef
+        (False, False) -> do
+            srcAst <- GraphUtils.getASTVar    src
+            dstAst <- GraphUtils.getASTTarget dst
+            newNodeRef <- ASTBuilder.applyFunction dstAst srcAst pos
+            GraphUtils.rewireNode dst newNodeRef

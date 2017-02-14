@@ -74,6 +74,19 @@ spec = around withChannels $ id $ do
             withResult res $ \(conn, connections) -> do
                 connections `shouldSatisfy` ((== 1) . length)
                 head connections `shouldBe` conn
+        it "connects input with output edge" $ \env -> do
+            u1 <- mkUUID
+            res <- evalEmp env $ do
+                Graph.addNode top u1 "def foo" def
+                let loc' = top |> u1
+                Just (input, output) <- Graph.withGraph loc' $ runASTOp GraphBuilder.getEdgePortMapping
+                Graph.disconnect loc' (InPortRef output (Port.Arg 0))
+                let referenceConnection = (OutPortRef input (Port.Projection 0), InPortRef output (Port.Arg 0))
+                uncurry (Graph.connect loc') referenceConnection
+                connections <- Graph.getConnections loc'
+                return (referenceConnection, connections)
+            withResult res $ \(ref, connections) -> do
+                connections `shouldMatchList` [ref]
         it "connects input edge to succ (Self)" $ \env -> do
             u1 <- mkUUID
             u2 <- mkUUID
