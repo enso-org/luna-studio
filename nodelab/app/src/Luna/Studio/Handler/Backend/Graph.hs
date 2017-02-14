@@ -2,49 +2,48 @@ module Luna.Studio.Handler.Backend.Graph
     ( handle
     ) where
 
-import qualified Data.Map                            as Map
+import qualified Data.Map                               as Map
 
-import qualified Luna.Studio.Batch.Workspace         as Workspace
+import qualified Luna.Studio.Batch.Workspace            as Workspace
 import           Luna.Studio.Prelude
 
-import qualified Empire.API.Data.Connection          as Connection
-import qualified Empire.API.Data.Graph               as Graph
-import           Empire.API.Data.GraphLocation       (GraphLocation (..))
-import qualified Empire.API.Data.Node                as Node
-import qualified Empire.API.Data.PortRef             as PortRef
-import qualified Empire.API.Graph.AddNode            as AddNode
-import qualified Empire.API.Graph.AddSubgraph        as AddSubgraph
-import qualified Empire.API.Graph.CodeUpdate         as CodeUpdate
-import qualified Empire.API.Graph.Connect            as Connect
-import qualified Empire.API.Data.Connection          as Connection
-import qualified Empire.API.Graph.Disconnect         as Disconnect
-import qualified Empire.API.Graph.GetProgram         as GetProgram
-import qualified Empire.API.Graph.NodeResultUpdate   as NodeResultUpdate
-import qualified Empire.API.Graph.NodeSearcherUpdate as NodeSearcherUpdate
+import qualified Empire.API.Data.Connection             as Connection
+import qualified Empire.API.Data.Graph                  as Graph
+import           Empire.API.Data.GraphLocation          (GraphLocation (..))
+import qualified Empire.API.Data.Node                   as Node
+import qualified Empire.API.Data.PortRef                as PortRef
+import qualified Empire.API.Graph.AddNode               as AddNode
+import qualified Empire.API.Graph.AddSubgraph           as AddSubgraph
+import qualified Empire.API.Graph.CodeUpdate            as CodeUpdate
+import qualified Empire.API.Graph.Connect               as Connect
+import qualified Empire.API.Graph.Disconnect            as Disconnect
+import qualified Empire.API.Graph.GetProgram            as GetProgram
+import qualified Empire.API.Graph.NodeResultUpdate      as NodeResultUpdate
+import qualified Empire.API.Graph.NodeSearcherUpdate    as NodeSearcherUpdate
+import qualified Empire.API.Graph.NodesUpdate           as NodesUpdate
 import qualified Empire.API.Graph.NodeTypecheckerUpdate as NodeTCUpdate
-import qualified Empire.API.Graph.NodesUpdate        as NodesUpdate
-import qualified Empire.API.Graph.RemoveNodes        as RemoveNodes
-import qualified Empire.API.Graph.RenameNode         as RenameNode
-import qualified Empire.API.Graph.UpdateNodeMeta     as UpdateNodeMeta
-import qualified Empire.API.Response                 as Response
+import qualified Empire.API.Graph.RemoveNodes           as RemoveNodes
+import qualified Empire.API.Graph.RenameNode            as RenameNode
+import qualified Empire.API.Graph.UpdateNodeMeta        as UpdateNodeMeta
+import qualified Empire.API.Response                    as Response
 
-import           Luna.Studio.Event.Batch             (Event (..))
-import qualified Luna.Studio.Event.Event             as Event
+import           Luna.Studio.Event.Batch                (Event (..))
+import qualified Luna.Studio.Event.Event                as Event
 
-import           Luna.Studio.Action.Batch            (collaborativeModify, requestCollaborationRefresh)
-import           Luna.Studio.Action.Camera           (centerGraph)
-import qualified Luna.Studio.Action.CodeEditor       as CodeEditor
-import           Luna.Studio.Action.Command          (Command)
-import           Luna.Studio.Action.Graph            (localConnectNodes, localRemoveConnections, renderGraph, selectNodes,
-                                                      updateConnectionsForNodes)
-import           Luna.Studio.Action.Node             (addDummyNode, localRemoveNodes, updateNode, updateNodeProfilingData, updateNodeValue,
-                                                      updateNodesMeta, typecheckNode)
-import qualified Luna.Studio.Action.Node             as Node
-import           Luna.Studio.Action.ProjectManager   (setCurrentBreadcrumb)
-import           Luna.Studio.Action.UUID             (isOwnRequest)
-import           Luna.Studio.Handler.Backend.Common  (doNothing, handleResponse)
-import           Luna.Studio.State.Global            (State)
-import qualified Luna.Studio.State.Global            as Global
+import           Luna.Studio.Action.Batch               (collaborativeModify, requestCollaborationRefresh)
+import           Luna.Studio.Action.Camera              (centerGraph)
+import qualified Luna.Studio.Action.CodeEditor          as CodeEditor
+import           Luna.Studio.Action.Command             (Command)
+import           Luna.Studio.Action.Graph               (localAddConnection, localRemoveConnections, renderGraph, selectNodes,
+                                                         updateConnectionsForNodes)
+import           Luna.Studio.Action.Node                (addDummyNode, localRemoveNodes, typecheckNode, updateNode, updateNodeProfilingData,
+                                                         updateNodeValue, updateNodesMeta)
+import qualified Luna.Studio.Action.Node                as Node
+import           Luna.Studio.Action.ProjectManager      (setCurrentBreadcrumb)
+import           Luna.Studio.Action.UUID                (isOwnRequest)
+import           Luna.Studio.Handler.Backend.Common     (doNothing, handleResponse)
+import           Luna.Studio.State.Global               (State)
+import qualified Luna.Studio.State.Global               as Global
 
 
 isCurrentLocation :: GraphLocation -> Command State Bool
@@ -91,12 +90,11 @@ handle (Event.Batch ev) = Just $ case ev of
     AddSubgraphResponse response@(Response.Response uuid _ (AddSubgraph.Request loc nodes connections _) _ (Response.Ok idsMaybeMap)) -> do
         shouldProcess   <- isCurrentLocationAndGraphLoaded loc
         correctLocation <- isCurrentLocation loc
-        let handleSubgraph nodes connections = when (shouldProcess && correctLocation) $ do
-                mapM_ addDummyNode nodes
-                connectionIds <- forM connections $ \conn -> localConnectNodes (conn ^. Connection.src) (conn ^. Connection.dst)
-                -- mapM_ updateConnection connectionIds
+        let handleSubgraph nodes' connections' = when (shouldProcess && correctLocation) $ do
+                mapM_ addDummyNode nodes'
+                mapM_ localAddConnection connections'
                 whenM (isOwnRequest uuid) $ do
-                    let nodeIds = map (^. Node.nodeId) nodes
+                    let nodeIds = map (^. Node.nodeId) nodes'
                     collaborativeModify nodeIds
                     selectNodes nodeIds
                 handleResponse response doNothing
@@ -110,8 +108,8 @@ handle (Event.Batch ev) = Just $ case ev of
             Nothing     -> handleSubgraph nodes connections
 
     NodesConnected update ->
-        whenM (isCurrentLocation $ update ^. Connect.location') $
-            void $ localConnectNodes (update ^. Connect.src') (update ^. Connect.dst')
+        whenM (isCurrentLocation $ update ^. Connect.location') $ void $
+            localAddConnection $ update ^. Connect.connection'
 
     NodesDisconnected update ->
         whenM (isCurrentLocation $ update ^. Disconnect.location') $
@@ -155,6 +153,7 @@ handle (Event.Batch ev) = Just $ case ev of
         when (shouldProcess && correctLocation) $ do
             updateNodeValue         (update ^. NodeResultUpdate.nodeId) (update ^. NodeResultUpdate.value)
             updateNodeProfilingData (update ^. NodeResultUpdate.nodeId) (update ^. NodeResultUpdate.execTime)
+            updateConnectionsForNodes [update ^. NodeResultUpdate.nodeId]
 
     NodeSearcherUpdated update -> do
         shouldProcess <- isCurrentLocationAndGraphLoaded (update ^. NodeSearcherUpdate.location)

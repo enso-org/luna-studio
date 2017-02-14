@@ -74,16 +74,17 @@ data PenDisconnect = PenDisconnect { _penDisconnectCurve                :: Curve
 makeLenses ''PenDisconnect
 instance ToJSON PenDisconnect
 
-data DragConnect = DragConnect { _dragConnectStartPos :: ScreenPosition
-                               } deriving (Eq, Generic, Show, Typeable)
+data ConnectMode = DragConnect | ClickConnect deriving (Eq, Generic, Show, Typeable)
+instance ToJSON ConnectMode
 
-makeLenses ''DragConnect
-instance ToJSON DragConnect
+data Connect = Connect { _connectStartPos       :: Position
+                       , _connectSourcePort     :: AnyPortRef
+                       , _connectSnappedPort    :: Maybe AnyPortRef
+                       , _connectMode           :: ConnectMode
+                       } deriving (Eq, Generic, Show, Typeable)
 
-data ClickConnect = ClickConnect deriving (Eq, Generic, Show, Typeable)
-
-makeLenses ''ClickConnect
-instance ToJSON ClickConnect
+makeLenses ''Connect
+instance ToJSON Connect
 
 data Searcher = Searcher deriving (Eq, Generic, Show, Typeable)
 
@@ -99,25 +100,25 @@ data VisualizationDrag = VisualizationDrag
 makeLenses ''VisualizationDrag
 instance ToJSON VisualizationDrag
 
-data SomeAction m = forall a. (Action m a, Show a) => SomeAction Dynamic a deriving (Typeable)
+data SomeAction m = forall a. (Action m a, Show a, Typeable a) => SomeAction Dynamic a deriving (Typeable)
 
 instance Show (SomeAction m) where
     show (SomeAction _ a) = show a
 
 
-class Monad m => Action m a where
+class (Typeable a, Show a, Monad m) => Action m a where
     begin :: a -> m ()
     continue :: (a -> m ()) -> m ()
     update :: a -> m ()
     end :: a -> m ()
 
-instance Monad m => Action m (SomeAction m) where
+instance (Typeable m, Monad m) => Action m (SomeAction m) where
     begin  (SomeAction _ a) = begin a
     continue _              = return ()
     update (SomeAction _ a) = update a
     end    (SomeAction _ a) = end a
 
-someAction :: (Show a, Action m a, Typeable a) => a -> SomeAction m
+someAction :: Action m a => a -> SomeAction m
 someAction a = SomeAction (toDyn a) a
 
 fromSomeAction :: Typeable a => SomeAction m -> Maybe a
@@ -126,7 +127,7 @@ fromSomeAction (SomeAction d _) = fromDynamic d
 
 newtype ActionRep = ActionRep TypeRep deriving (Show, Eq, Ord)
 
-nodeDragAction, multiSelectionAction, visualizationDragAction, panDragAction, zoomDragAction, sliderDragAction, penConnectAction, penDisconnectAction, dragConnectAction, clickConnectAction, searcherAction :: ActionRep
+nodeDragAction, multiSelectionAction, visualizationDragAction, panDragAction, zoomDragAction, sliderDragAction, penConnectAction, penDisconnectAction, connectAction, searcherAction :: ActionRep
 nodeDragAction          = ActionRep (typeOf NodeDrag)
 multiSelectionAction    = ActionRep (typeOf MultiSelection)
 panDragAction           = ActionRep (typeOf PanDrag)
@@ -134,14 +135,12 @@ zoomDragAction          = ActionRep (typeOf ZoomDrag)
 sliderDragAction        = ActionRep (typeOf SliderDrag)
 penConnectAction        = ActionRep (typeOf PenConnect)
 penDisconnectAction     = ActionRep (typeOf PenDisconnect)
-dragConnectAction       = ActionRep (typeOf DragConnect)
-clickConnectAction      = ActionRep (typeOf ClickConnect)
+connectAction           = ActionRep (typeOf Connect)
 searcherAction          = ActionRep (typeOf Searcher)
 visualizationDragAction = ActionRep (typeOf VisualizationDrag)
 
 overlappingActions :: [Set ActionRep]
-overlappingActions = [ Set.fromList [ clickConnectAction
-                                    , dragConnectAction
+overlappingActions = [ Set.fromList [ connectAction
                                     , multiSelectionAction
                                     , nodeDragAction
                                     , penConnectAction

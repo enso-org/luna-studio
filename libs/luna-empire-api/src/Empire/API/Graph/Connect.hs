@@ -3,6 +3,7 @@ module Empire.API.Graph.Connect where
 import           Data.Binary                   (Binary)
 import           Prologue
 
+import           Empire.API.Data.Connection    (Connection)
 import           Empire.API.Data.GraphLocation (GraphLocation)
 import           Empire.API.Data.Node          (NodeId)
 import           Empire.API.Data.PortRef       (InPortRef (..), OutPortRef (..))
@@ -12,28 +13,29 @@ import qualified Empire.API.Response           as Response
 import qualified Empire.API.Topic              as T
 
 
-data Connection = PortConnection { _srcPortRef :: OutPortRef
-                                 , _dstPortRef :: InPortRef
-                                 }
-                | NodeConnection { _srcNodeId  :: NodeId
-                                 , _dstNodeId  :: NodeId
-                                 } deriving (Generic, Eq, NFData, Show)
+data Connect = PortConnect { _srcPortRef :: OutPortRef
+                           , _dstPortRef :: InPortRef
+                           }
+             | NodeConnect { _srcNodeId  :: NodeId
+                           , _dstNodeId  :: NodeId
+                           } deriving (Generic, Eq, NFData, Show)
 
-makeLenses ''Connection
-instance Binary Connection
+makeLenses ''Connect
+instance Binary Connect
 
-data Request = Request { _location  :: GraphLocation
-                       , _conn      :: Connection
+data Request = Request { _location :: GraphLocation
+                       , _connect  :: Connect
                        } deriving (Generic, Eq, NFData, Show)
 
-type Response = Response.SimpleResponse Request ()
-instance Response.ResponseResult Request () ()
 
-data Update  = Update  { _location'  :: GraphLocation
-                       , _src'       :: OutPortRef
-                       , _dst'       :: InPortRef
+data Update  = Update  { _location'   :: GraphLocation
+                       , _connection' :: Connection
                        } deriving (Generic, Eq, NFData, Show)
 
+type Result = Connection
+
+type Response = Response.Response Request () Result
+instance Response.ResponseResult Request () Result
 
 makeLenses ''Request
 makeLenses ''Update

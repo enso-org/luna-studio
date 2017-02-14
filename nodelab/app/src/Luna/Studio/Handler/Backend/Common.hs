@@ -21,7 +21,7 @@ whenOk (Response.Response _ _ _ _ (Response.Ok    res)) handler = handler res
 whenOk (Response.Response _ _ _ _ (Response.Error _  )) _       = return ()
 
 handleResponse :: (Topic.MessageTopic (Response.Response req inv res), JSON.ToJSON req) => Response.Response req inv res -> (req -> res -> Command State ()) -> Command State ()
-handleResponse resp@(Response.Response uuid guiID req inv status) success =
+handleResponse resp@(Response.Response uuid _ req _ status) success =
     whenM (isOwnRequest uuid) $ do
         unregisterRequest uuid
         case status of

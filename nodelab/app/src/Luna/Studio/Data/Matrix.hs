@@ -50,8 +50,8 @@ translatePropertyValue :: Matrix Double -> String
 translatePropertyValue matrix = "translate(" <> nx <> "px, " <> ny <> "px)"
     where mx = Matrix.toList matrix
           s  = mx!!0 :: Double
-          nx = show $ round $ s * mx!!12
-          ny = show $ round $ s * mx!!13
+          nx = show (round $ s * mx!!12 :: Integer)
+          ny = show (round $ s * mx!!13 :: Integer)
 
 translatePropertyValue2 :: Position ->  String
 translatePropertyValue2 position = "translate(" <> nx <> "px, " <> ny <> "px)"
@@ -61,6 +61,6 @@ translatePropertyValue2 position = "translate(" <> nx <> "px, " <> ny <> "px)"
 matrix3dPropertyValue :: Matrix Double -> String
 matrix3dPropertyValue matrix = foldl (<>) "matrix3d(" (intersperse ", " $ map show mx2) <> ")"
     where mx1 = Matrix.toList matrix
-          nx  = fromIntegral $ round $ mx1!!12
-          ny  = fromIntegral $ round $ mx1!!13
+          nx  = fromIntegral (round $ mx1!!12 :: Integer)
+          ny  = fromIntegral (round $ mx1!!13 :: Integer)
           mx2 = take 12 mx1 ++ nx:ny:drop 14 mx1

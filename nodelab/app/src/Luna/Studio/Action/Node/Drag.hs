@@ -14,20 +14,21 @@ import           Empire.API.Data.Node               (NodeId)
 import qualified Empire.API.Data.Node               as Node
 import qualified Luna.Studio.Action.Batch           as BatchCmd
 import           Luna.Studio.Action.Command         (Command)
-import           Luna.Studio.Action.Graph           (selectNodes, selectedNodes, updateConnectionsForNodes)
+import           Luna.Studio.Action.Graph.Selection (selectNodes, selectedNodes)
+import           Luna.Studio.Action.Graph.Update    (updateConnectionsForNodes)
 import           Luna.Studio.Action.Node.Snap       (snap)
 import           Luna.Studio.Event.Mouse            (workspacePosition)
 import           Luna.Studio.Prelude
 import qualified Luna.Studio.React.Model.Node       as Model
 import qualified Luna.Studio.React.Model.NodeEditor as NodeEditor
-import           Luna.Studio.State.Action           (Action (begin, continue, end, update), ClickConnect, NodeDrag (NodeDrag),
-                                                     nodeDragAction)
+import           Luna.Studio.State.Action           (Action (begin, continue, end, update), NodeDrag (NodeDrag), nodeDragAction)
 import qualified Luna.Studio.State.Action           as Action
-import           Luna.Studio.State.Global           (State, beginActionWithKey, checkAction, continueActionWithKey, removeActionFromState,
+import           Luna.Studio.State.Global           (State, beginActionWithKey, continueActionWithKey, removeActionFromState,
                                                      updateActionWithKey)
 import qualified Luna.Studio.State.Global           as Global
 import qualified Luna.Studio.State.Graph            as Graph
 import           React.Flux                         (MouseEvent)
+
 
 instance Action (Command State) NodeDrag where
     begin    = beginActionWithKey    nodeDragAction
@@ -35,23 +36,21 @@ instance Action (Command State) NodeDrag where
     update   = updateActionWithKey   nodeDragAction
     end _    = updateMovedNodes >> removeActionFromState nodeDragAction
 
-startNodeDrag :: NodeId -> MouseEvent -> Bool -> Command State ()
-startNodeDrag nodeId evt snapped = do
-    mayClickConnect <- checkAction @ClickConnect
-    when (isNothing mayClickConnect) $ do
-        coord <- workspacePosition evt
-        mayNode <- Global.getNode nodeId
-        withJust mayNode $ \node -> do
-            let isSelected = node ^. Model.isSelected
-            unless isSelected $ selectNodes [nodeId]
-            nodes <- selectedNodes
-            let nodesPos = Map.fromList $ (view Model.nodeId &&& view Model.position) <$> nodes
-            if snapped
-                then do
-                    let snappedNodes = Map.map snap nodesPos
-                    begin $ NodeDrag coord nodeId snappedNodes
-                    moveNodes snappedNodes
-                else begin $ NodeDrag coord nodeId nodesPos
+startNodeDrag :: MouseEvent -> NodeId -> Bool -> Command State ()
+startNodeDrag evt nodeId snapped = do
+    coord <- workspacePosition evt
+    mayNode <- Global.getNode nodeId
+    withJust mayNode $ \node -> do
+        let isSelected = node ^. Model.isSelected
+        unless isSelected $ selectNodes [nodeId]
+        nodes <- selectedNodes
+        let nodesPos = Map.fromList $ (view Model.nodeId &&& view Model.position) <$> nodes
+        if snapped
+            then do
+                let snappedNodes = Map.map snap nodesPos
+                begin $ NodeDrag coord nodeId snappedNodes
+                moveNodes snappedNodes
+            else begin $ NodeDrag coord nodeId nodesPos
 
 nodeDrag :: MouseEvent -> Bool -> NodeDrag -> Command State ()
 nodeDrag evt snapped state = do

@@ -10,9 +10,13 @@ module.exports =
     atom.workspace.addOpener (uri) ->
         if path.extname(uri) is '.luna'
             return new LunaStudioTab(uri, code)
+
     @subs = new SubAtom
-    @subs.add atom.commands.add 'atom-workspace', 'luna-studio:open': ->
-      atom.workspace.getActivePane().activateItem new LunaStudioTab("untitled", code)
+    atom.workspace.getActivePane().activateItem new LunaStudioTab("untitled", code)
+    atom.workspace.open().then (editor) ->
+        setCode = (diff) ->
+             editor.setText (diff)
+        code.codeListener setCode
     # camera
     @subs.add atom.commands.add '.luna-studio', 'luna-studio:pan-left':              -> code.pushEvent("PanLeft")
     @subs.add atom.commands.add '.luna-studio', 'luna-studio:pan-right':             -> code.pushEvent("PanRight")
