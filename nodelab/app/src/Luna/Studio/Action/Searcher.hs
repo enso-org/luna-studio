@@ -4,6 +4,7 @@ module Luna.Studio.Action.Searcher where
 
 import qualified Data.Map                           as Map
 import qualified Data.Text                          as Text
+import           Text.Read                          (readMaybe)
 
 import           Data.Position                      (Position)
 import           Empire.API.Data.Node               (NodeId)
@@ -18,6 +19,8 @@ import           Luna.Studio.Action.Graph.Selection (selectedNodes)
 import           Luna.Studio.Action.Node.Register   (registerNode)
 import qualified Luna.Studio.Action.Node.Update     as Node
 import qualified Luna.Studio.Batch.Workspace        as Workspace
+import           Luna.Studio.Event.Event            (Event (Shortcut))
+import qualified Luna.Studio.Event.Shortcut         as Shortcut
 import           Luna.Studio.Prelude
 import qualified Luna.Studio.React.Model.App        as App
 import qualified Luna.Studio.React.Model.Node       as Node
@@ -32,13 +35,15 @@ import qualified Luna.Studio.State.Graph            as Graph
 import           Text.ScopeSearcher.Item            (Item (..), Items, _Group)
 import qualified Text.ScopeSearcher.Scope           as Scope
 
-
 instance Action (Command State) Searcher where
     begin    = beginActionWithKey    searcherAction
     continue = continueActionWithKey searcherAction
     update   = updateActionWithKey   searcherAction
     end      = close
 
+
+data OtherCommands = AddNode
+                   deriving (Bounded, Enum, Eq, Generic, Read, Show)
 
 searcherData :: Command State Items
 searcherData = use $ Global.workspace . Workspace.nodeSearcherData
@@ -50,7 +55,7 @@ openWith :: Maybe NodeId -> Position -> Command State ()
 openWith nodeId pos = do
     begin Searcher
     GA.sendEvent GA.NodeSearcher
-    Global.modifyApp $ App.searcher ?= Searcher.Searcher pos 0 (Searcher.Node def) def def nodeId
+    Global.modifyApp $ App.searcher ?= Searcher.Searcher pos 0 Searcher.Node def def nodeId
     Global.renderIfNeeded
     liftIO Searcher.focus
 
@@ -73,42 +78,36 @@ moveUp _ = Global.modifySearcher $ do
         Searcher.selected %= \p -> (p - 1) `mod` items
 
 proceed :: Searcher -> Command State ()
-proceed _ = do
-    withJustM Global.getSearcher $ \searcher ->
-        case searcher ^. Searcher.context of
-            -- Searcher.Command   -> parseCommand
-            Searcher.Node prev -> Global.modifySearcher $ do
-                let expression = searcher ^. Searcher.selectedExpression
-                Searcher.context  .= Searcher.Node (expression : prev)
-                Searcher.input    .= def
-                Searcher.selected .= def
+proceed = close
+    -- withJustM Global.getSearcher $ \searcher ->
+    --     searcher ^. Searcher.selectedExpression
+    --         Left (Just command) ->
+            -- Searcher.Command   -> parseAction
 
 rollback :: Searcher -> Command State ()
 rollback _ = do
     withJustM Global.getSearcher $ \searcher -> do
-        case searcher ^. Searcher.context of
+        case searcher ^. Searcher.mode of
             Searcher.Command -> return ()
-            Searcher.Node prev -> Global.modifySearcher $ do
+            Searcher.Node    -> Global.modifySearcher $ do
                 if Text.null $ searcher ^. Searcher.input then do
                     Searcher.selected .= def
-                    case prev of
-                        [] -> do
-                            Searcher.context  .= Searcher.Command
-                            Searcher.input    .= def
-                        (h:t) -> do
-                            Searcher.context  .= Searcher.Node t
-                            Searcher.input    .= h
+                    Searcher.mode  .= Searcher.Command
+                    Searcher.input    .= def
                 else
                     Searcher.input %= Text.init
 
-accept :: Searcher -> Command State ()
-accept action = do
+accept :: (Event -> IO ()) -> Searcher -> Command State ()
+accept scheduleEvent action = do
     withJustM Global.getSearcher $ \searcher -> do
-        pos <- translateToWorkspace (searcher ^. Searcher.position)
         let expression = searcher ^. Searcher.selectedExpression
-        case searcher ^. Searcher.nodeId of
-            Nothing -> registerNode pos expression
-            Just nodeId-> Node.updateExpression nodeId expression
+        case searcher ^. Searcher.mode of
+            Searcher.Command -> execCommand scheduleEvent $ convert expression
+            Searcher.Node -> do
+                pos <- translateToWorkspace (searcher ^. Searcher.position)
+                case searcher ^. Searcher.nodeId of
+                    Nothing -> registerNode pos expression
+                    Just nodeId-> Node.updateExpression nodeId expression
     close action
 
 openEdit :: Text -> NodeId -> Position -> Command State ()
@@ -119,8 +118,8 @@ openEdit expr nodeId pos = do
 globalFunctions :: Items -> Items
 globalFunctions = Map.filter (== Element)
 
-scopedData :: Command State Items
-scopedData = do
+nodesData :: Command State Items
+nodesData = do
     completeData <- searcherData
     selected   <- selectedNodes
     mscope <- case selected of
@@ -144,14 +143,27 @@ scopedData = do
                 overallScope = Map.union scopefuns gf
             return overallScope
 
+allCommands :: Items
+allCommands = Map.fromList $ (,Element) . convert <$> (commands <> otherCommands) where
+    commands = show <$> [(minBound :: Shortcut.Command) ..]
+    otherCommands = show <$> [(minBound :: OtherCommands)]
+
+execCommand :: (Event -> IO ()) -> String -> Command State ()
+execCommand scheduleEvent expression = case readMaybe expression of
+    Just command -> liftIO $ scheduleEvent $ Shortcut $ Shortcut.Event command def
+    Nothing -> return ()
+
 
 querySearch :: Text -> Searcher -> Command State ()
 querySearch query _ = do
-    sd <- scopedData
-    let items = Scope.searchInScope sd query
-    Global.modifySearcher $ do
-        Searcher.input .= query
-        s <- use Searcher.selected
-        when (s >= length items) $
-            Searcher.selected .= length items - 1
-        Searcher.results .= items
+    withJustM Global.getSearcher $ \searcher -> do
+        scopedData <- case searcher ^. Searcher.mode of
+            Searcher.Node    -> nodesData
+            Searcher.Command -> return allCommands
+        let items = Scope.searchInScope scopedData query
+        Global.modifySearcher $ do
+            Searcher.input .= query
+            s <- use Searcher.selected
+            when (s >= length items) $
+                Searcher.selected .= length items - 1
+            Searcher.results .= items

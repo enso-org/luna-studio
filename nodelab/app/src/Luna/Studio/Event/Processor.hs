@@ -1,10 +1,7 @@
 module Luna.Studio.Event.Processor where
 
-import           Control.Concurrent.Chan                    (Chan)
-import qualified Control.Concurrent.Chan                    as Chan
 import           Control.Concurrent.MVar
 import           Control.Exception                          (handle)
-import           Control.Monad                              (forever)
 import           Data.DateTime                              (getCurrentTime)
 import           Data.Monoid                                (Last (..))
 import           GHCJS.Prim                                 (JSException)
@@ -14,6 +11,8 @@ import           JS.WebSocket                               (WebSocket)
 import           Luna.Studio.Action.Command                 (Command, execCommand)
 import           Luna.Studio.Event.Event                    (Event)
 import qualified Luna.Studio.Event.Event                    as Event
+import           Luna.Studio.Event.Loop                     (LoopRef)
+import qualified Luna.Studio.Event.Loop                     as Loop
 import qualified Luna.Studio.Event.Preprocessor.Batch       as BatchEventPreprocessor
 import qualified Luna.Studio.Event.Preprocessor.CustomEvent as CustomEventPreprocessor
 import qualified Luna.Studio.Event.Preprocessor.Shortcut    as ShortcutEventPreprocessor
@@ -54,28 +53,29 @@ consoleTimeStart, consoleTimeEnd :: String -> IO ()
 consoleTimeStart = consoleTimeStart' . convert
 consoleTimeEnd   = consoleTimeEnd'   . convert
 
-actions :: [Event -> Maybe (Command State ())]
-actions =  [ App.handle
-           , Breadcrumbs.handle
-           , Camera.handle
-           , Clipboard.handle
-           , CodeEditor.handle
-           , Collaboration.handle
-           , Connect.handle
-           , ConnectionPen.handle
-           , Control.handle
-           , Debug.handle
-           , Debug.handleEv
-           , Graph.handle
-           , MultiSelection.handle
-           , Navigation.handle
-           , Node.handle
-           , Port.handle
-           , Undo.handle
-           , ProjectManager.handle
-           , Searcher.handle
-           , Visualization.handle
-           ]
+actions :: LoopRef -> [Event -> Maybe (Command State ())]
+actions loop =
+    [ App.handle
+    , Breadcrumbs.handle
+    , Camera.handle
+    , Clipboard.handle
+    , CodeEditor.handle
+    , Collaboration.handle
+    , Connect.handle
+    , ConnectionPen.handle
+    , Control.handle
+    , Debug.handle
+    , Debug.handleEv
+    , Graph.handle
+    , MultiSelection.handle
+    , Navigation.handle
+    , Node.handle
+    , Port.handle
+    , Undo.handle
+    , ProjectManager.handle
+    , Searcher.handle (scheduleEvent loop)
+    , Visualization.handle
+    ]
 
 runCommands :: [Event -> Maybe (Command State ())] -> Event -> Command State ()
 runCommands cmds event = sequence_ . catMaybes $ fmap ($ event) cmds
@@ -87,8 +87,8 @@ preprocessEvent ev = do
     customEvent   <- CustomEventPreprocessor.process ev
     return $ fromMaybe ev $ getLast $ Last batchEvent <> Last customEvent <> Last shortcutEvent
 
-processEvent :: MVar State -> Event -> IO ()
-processEvent var ev = modifyMVar_ var $ \state -> do
+processEvent :: LoopRef -> Event -> IO ()
+processEvent loop ev = modifyMVar_ (loop ^. Loop.state) $ \state -> do
     realEvent <- preprocessEvent ev
     when displayProcessingTime $ do
         consoleTimeStart $ (realEvent ^. Event.name) <>" show and force"
@@ -99,18 +99,18 @@ processEvent var ev = modifyMVar_ var $ \state -> do
     timestamp <- getCurrentTime
     let state' = state & Global.lastEventTimestamp .~ timestamp
     handle (handleExcept state realEvent) $ do
-        newState <- execCommand (runCommands actions realEvent >> Global.renderIfNeeded) state'
+        newState <- execCommand (runCommands (actions loop) realEvent >> Global.renderIfNeeded) state'
         when displayProcessingTime $
             consoleTimeEnd (realEvent ^. Event.name)
         return newState
 
-connectEventSources :: WebSocket ->  Chan (IO ()) -> MVar State -> IO ()
-connectEventSources conn chan state = do
+connectEventSources :: WebSocket -> LoopRef -> IO ()
+connectEventSources conn loop = do
     let handlers = [ JSHandlers.webSocketHandler conn
                    , JSHandlers.atomHandler
                    , JSHandlers.sceneResizeHandler
                    ]
-        mkSource (AddHandler rh) = rh $ scheduleEvent chan state
+        mkSource (AddHandler rh) = rh $ scheduleEvent loop
     sequence_ $ mkSource <$> handlers
 
 handleExcept :: State -> Event -> JSException -> IO State
@@ -118,11 +118,9 @@ handleExcept oldState event except = do
     putStrLn $ "JavaScriptException: " <> show except <> "\n\nwhile processing: " <> show event
     return oldState
 
-scheduleEvent :: Chan (IO ()) -> MVar State -> Event -> IO ()
-scheduleEvent chan = Chan.writeChan chan .: processEvent
 
-scheduleInit :: Chan (IO ()) -> MVar State -> IO ()
-scheduleInit chan state = scheduleEvent chan state Event.Init
+scheduleEvent :: LoopRef -> Event -> IO ()
+scheduleEvent loop = Loop.schedule loop . processEvent loop
 
-startLoop :: Chan (IO ()) -> IO ()
-startLoop = forever . join . Chan.readChan
+scheduleInit :: LoopRef -> IO ()
+scheduleInit loop = scheduleEvent loop Event.Init
