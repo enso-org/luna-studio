@@ -13,7 +13,7 @@ import           Luna.Studio.Action.Batch           (cancelCollaborativeTouch, c
 import           Luna.Studio.Action.Command         (Command)
 import           Luna.Studio.Action.Graph           (allNodes)
 import           Luna.Studio.Event.Event            (Event (Shortcut))
-import           Luna.Studio.Event.Shortcut         (ShortcutEvent (..))
+import qualified Luna.Studio.Event.Shortcut         as Shortcut
 import           Luna.Studio.React.Model.Node       (Node)
 import qualified Luna.Studio.React.Model.Node       as Node
 import qualified Luna.Studio.React.Model.Node       as Model
@@ -25,22 +25,22 @@ import qualified Luna.Studio.State.Graph            as Graph
 
 
 handle :: Event -> Maybe (Command State ())
-handle (Shortcut shortcut) = Just $ handleShortcut shortcut
+handle (Shortcut (Shortcut.Event command _)) = Just $ handleCommand command
 handle _ = Nothing
 
-handleShortcut :: ShortcutEvent -> Command State ()
-handleShortcut = \case
-    GoConeDown  -> goConeDown
-    GoConeLeft  -> goConeLeft
-    GoConeRight -> goConeRight
-    GoConeUp    -> goConeUp
-    GoDown      -> goDown
-    GoLeft      -> goLeft
-    GoNext      -> goNext
-    GoPrev      -> goPrev
-    GoRight     -> goRight
-    GoUp        -> goUp
-    _           -> return ()
+handleCommand :: Shortcut.Command -> Command State ()
+handleCommand = \case
+    Shortcut.GoConeDown  -> goConeDown
+    Shortcut.GoConeLeft  -> goConeLeft
+    Shortcut.GoConeRight -> goConeRight
+    Shortcut.GoConeUp    -> goConeUp
+    Shortcut.GoDown      -> goDown
+    Shortcut.GoLeft      -> goLeft
+    Shortcut.GoNext      -> goNext
+    Shortcut.GoPrev      -> goPrev
+    Shortcut.GoRight     -> goRight
+    Shortcut.GoUp        -> goUp
+    _                    -> return ()
 
 goPrev :: Command State ()
 goPrev = do

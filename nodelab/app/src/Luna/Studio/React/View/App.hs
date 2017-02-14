@@ -44,9 +44,9 @@ app ref = React.defineControllerView name ref $ \store () -> do
         , onClick       $ \_ _ -> dispatch ref $ UI.AppEvent $ App.Click
         , onMouseLeave  $ \_ _ -> dispatch ref $ UI.AppEvent   App.MouseLeave
         , on "onPaste"  $ \e   -> let val = Clipboard.getClipboardData (evtHandlerArg e)
-                                  in dispatch' ref $ Shortcut $ Shortcut.Paste val
-        , on "onCut"    $ \_   -> dispatch' ref $ Shortcut   Shortcut.Cut
-        , on "onCopy"   $ \_   -> dispatch' ref $ Shortcut   Shortcut.Copy
+                                  in dispatch' ref $ Shortcut $ Shortcut.Event Shortcut.Paste $ Just val
+        , on "onCut"    $ \_   -> dispatch' ref $ Shortcut $ Shortcut.Event Shortcut.Cut def
+        , on "onCopy"   $ \_   -> dispatch' ref $ Shortcut $ Shortcut.Event Shortcut.Copy def
         , "key"       $= "app"
         , "id"        $= appId
         , "tabIndex"  $= "-1"

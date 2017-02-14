@@ -2,20 +2,19 @@ module Luna.Studio.React.Model.Searcher where
 
 import           Data.Position                  (Position)
 import           Empire.API.Data.Node           (NodeId)
-import           Luna.Studio.Prelude            hiding (Context)
-
+import           Luna.Studio.Prelude
 import           Text.ScopeSearcher.QueryResult (QueryResult)
 import qualified Text.ScopeSearcher.QueryResult as Result
 
 
-data Context = Command
-             | Node [Text]
-             deriving (Eq, Generic, Show)
+data Mode = Command
+          | Node
+          deriving (Eq, Generic, Show)
 
 data Searcher = Searcher
       { _position    :: Position
       , _selected    :: Int
-      , _context     :: Context
+      , _mode        :: Mode
       , _input       :: Text
       , _results     :: [QueryResult]
       , _nodeId      :: Maybe NodeId
@@ -23,11 +22,11 @@ data Searcher = Searcher
 
 makeLenses ''Searcher
 
-mkDef :: Context -> Searcher
-mkDef ctx = Searcher def def ctx def def def
+mkDef :: Mode -> Searcher
+mkDef mode' = Searcher def def mode' def def def
 
 defNode, defCommand :: Searcher
-defNode    = mkDef $ Node def
+defNode    = mkDef Node
 defCommand = mkDef Command
 
 selectedExpression :: Contravariant f => (Text -> f Text) -> Searcher -> f Searcher

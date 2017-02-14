@@ -32,7 +32,7 @@ searcher  = React.defineView name $ \(ref, s) -> do
             , "left" Aeson..= (show (pos ^. x) <> "px" :: String)
             ]
         ] $ do
-        div_ $ elemString $ show $ s ^. Searcher.context
+        div_ $ elemString $ show $ s ^. Searcher.mode
         input_
             [ "key"   $= "input"
             , "id"    $= searcherId

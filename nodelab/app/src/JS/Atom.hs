@@ -9,6 +9,7 @@ module JS.Atom
 import           GHCJS.Foreign.Callback
 import           GHCJS.Marshal.Pure         (pFromJSVal)
 import           Luna.Studio.Event.Shortcut (ShortcutEvent)
+import qualified Luna.Studio.Event.Shortcut as Shortcut
 import           Luna.Studio.Prelude
 
 
@@ -24,6 +25,6 @@ foreign import javascript safe "$1.unOnEvent()"
 
 onEvent :: (ShortcutEvent -> IO ()) -> IO (IO ())
 onEvent callback = do
-    wrappedCallback <- syncCallback1 ContinueAsync $ callback . read . pFromJSVal
+    wrappedCallback <- syncCallback1 ContinueAsync $ callback . Shortcut.fromString . pFromJSVal
     onEvent' wrappedCallback
     return $ unOnEvent' wrappedCallback >> releaseCallback wrappedCallback
