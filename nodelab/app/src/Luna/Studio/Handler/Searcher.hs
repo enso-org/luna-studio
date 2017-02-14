@@ -27,7 +27,7 @@ handleCommand scheduleEvent = \case
     Shortcut.SearcherClose     -> continue Searcher.close
     Shortcut.SearcherMoveDown  -> continue Searcher.moveDown
     Shortcut.SearcherMoveLeft  -> continue Searcher.rollback
-    Shortcut.SearcherMoveRight -> continue Searcher.proceed
+    Shortcut.SearcherMoveRight -> continue $ Searcher.proceed scheduleEvent
     Shortcut.SearcherMoveUp    -> continue Searcher.moveUp
     Shortcut.SearcherOpen      -> Searcher.open
     _                          -> return ()
