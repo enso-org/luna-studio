@@ -5,10 +5,13 @@ module Empire.Commands.Graph
     ( addNode
     , addNodeCondTC
     , addPersistentNode
+    , addPort
     , addSubgraph
     , removeNodes
+    , removePort
     , updateNodeExpression
     , updateNodeMeta
+    , updatePort
     , connect
     , connectPersistent
     , connectCondTC
@@ -31,7 +34,7 @@ module Empire.Commands.Graph
 import           Control.Monad                 (forM, forM_)
 import           Control.Monad.State           hiding (when)
 import           Data.Coerce                   (coerce)
-import           Data.List                     (sort)
+import           Data.List                     (sort, sortOn)
 import qualified Data.Map                      as Map
 import           Data.Text                     (Text)
 import qualified Data.Text                     as Text
@@ -132,6 +135,17 @@ addPersistentNode n = case n ^. Node.nodeType of
                 _ -> return ()
             _ -> return ()
 
+addPort :: GraphLocation -> NodeId -> Empire AnyPortRef
+addPort loc nid = withGraph loc $ runASTOp $ do
+    Just lambda <- use Graph.insideNode
+    ref <- GraphUtils.getASTTarget lambda
+    newRef <- ASTModify.addLambdaArg ref
+    GraphUtils.rewireNode lambda newRef
+    inputEdge <- GraphBuilder.buildInputEdge nid
+    let argPorts = inputEdge ^. Node.ports
+    let lastPortIndex = length argPorts - 1
+    return $ OutPortRef' (OutPortRef nid (Projection lastPortIndex))
+
 generateNodeId :: IO NodeId
 generateNodeId = UUID.nextRandom
 
@@ -183,6 +197,9 @@ removeNodeNoTC nodeId = do
     Graph.nodeMapping %= Map.delete nodeId
     Graph.breadcrumbHierarchy %= removeID nodeId
 
+removePort :: GraphLocation -> AnyPortRef -> Empire ()
+removePort = $notImplemented
+
 updateNodeExpression :: GraphLocation -> NodeId -> NodeId -> Text -> Empire (Maybe Node)
 updateNodeExpression loc nodeId newNodeId expr = do
     metaMay <- withGraph loc $ runASTOp $ do
@@ -207,6 +224,9 @@ updateNodeMeta loc nodeId newMeta = withGraph loc $ do
     where
         triggerTC :: NodeMeta -> NodeMeta -> Bool
         triggerTC oldMeta' newMeta' = oldMeta' ^. NodeMeta.displayResult /= newMeta' ^. NodeMeta.displayResult
+
+updatePort :: GraphLocation -> AnyPortRef -> Either Int String -> Empire AnyPortRef
+updatePort = $notImplemented
 
 connectCondTC :: Bool -> GraphLocation -> OutPortRef -> InPortRef -> Empire ()
 connectCondTC doTC loc outPort inPort = withGraph loc $ do

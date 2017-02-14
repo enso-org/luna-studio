@@ -54,6 +54,7 @@ getVarName :: ASTOp m => NodeRef -> m String
 getVarName node = match node $ \case
     Var n -> getName n
     Cons n _ -> getName n
+    Blank{} -> return "_"
 
 getName :: ASTOp m => EdgeRef -> m String
 getName node = do

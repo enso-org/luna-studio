@@ -11,6 +11,7 @@ module Empire.ASTOps.Modify (
   , renameVar
   , rewireNode
   , setLambdaOutputToBlank
+  , addLambdaArg
   ) where
 
 import           Empire.Prelude
@@ -30,6 +31,15 @@ import           Luna.IR (match)
 import qualified Luna.IR as IR
 
 
+
+addLambdaArg :: ASTOp m => NodeRef -> m NodeRef
+addLambdaArg lambda = match lambda $ \case
+    Lam _args out -> do
+        args <- ASTDeconstruct.extractArguments lambda
+        b <- IR.generalize <$> IR.blank
+        out' <- ASTRead.getLambdaOutputRef lambda
+        ASTBuilder.lams (args ++ [b]) out'
+    _ -> throwM $ NotLambdaException lambda
 
 redirectLambdaOutput :: ASTOp m => NodeRef -> NodeRef -> m NodeRef
 redirectLambdaOutput lambda newOutputRef = do

@@ -11,6 +11,7 @@ module Empire.Commands.GraphBuilder (
   , buildNodes
   , buildEdgeNodes
   , buildGraph
+  , buildInputEdge
   , decodeBreadcrumbs
   , getEdgePortMapping
   , getNodeName
@@ -220,14 +221,21 @@ extractPortInfo node = do
             types <- extractArgTypes tpRef
             return (types, [])
 
+there'sLambdaSomewhereThere :: ASTOp m => NodeRef -> m Bool
+there'sLambdaSomewhereThere node = match node $ \case
+    App f arg -> there'sLambdaSomewhereThere =<< IR.source f
+    Lam{} -> return True
+    _ -> return False
+
 buildArgPorts :: ASTOp m => NodeRef -> m [Port]
 buildArgPorts ref = do
     (types, states) <- extractPortInfo ref
     names <- extractArgNames ref
-    let additionalEmptyPort = if (not.null) types then 0
+    lambdaSomewhere <- there'sLambdaSomewhereThere ref
+    let additionalEmptyPort = if (not.null) types || lambdaSomewhere then 0
                               else if NotConnected `elem` states then 0 else 1
-        portsTypes = types ++ replicate (length states - length types + additionalEmptyPort) TStar
-        namesGen = names ++ drop (length names) (("arg " ++) . show <$> [(0::Int)..])
+        portsTypes = types ++ replicate (max (length names) (length states) - length types + additionalEmptyPort) TStar
+        namesGen = names ++ drop (length names) (("arg" ++) . show <$> [(0::Int)..])
         psCons = zipWith3 Port
                           (InPortId . Arg <$> [(0::Int)..])
                           namesGen
@@ -284,12 +292,13 @@ buildInputEdge nid = do
     Just lastb <- use Graph.insideNode
     ref   <- GraphUtils.getASTTarget lastb
     (types, _states) <- extractPortInfo ref
+    names <- extractArgNames ref
     argTypes <- case types of
         [] -> do
-            numberOfArguments <- length <$> (extractArgTypes ref)
+            numberOfArguments <- length <$> (ASTDeconstruct.extractArguments ref)
             return $ replicate numberOfArguments TStar
         [TLam types' _] -> return types'
-    let nameGen = fmap (\i -> "input" ++ show i) [(0::Int)..]
+    let nameGen = names ++ drop (length names) (fmap (\i -> "arg" ++ show i) [(0::Int)..])
         inputEdges = zipWith3 (\n t i -> Port (OutPortId $ Projection i) n t Port.NotConnected) nameGen argTypes [(0::Int)..]
     return $
         API.Node nid

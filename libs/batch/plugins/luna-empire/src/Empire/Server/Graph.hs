@@ -37,6 +37,7 @@ import           Empire.API.Data.Port                  (InPort (..), OutPort (..
 import           Empire.API.Data.PortRef               (InPortRef (..), OutPortRef (..))
 import           Empire.API.Data.PortRef               as PortRef
 import qualified Empire.API.Graph.AddNode              as AddNode
+import qualified Empire.API.Graph.AddPort              as AddPort
 import qualified Empire.API.Graph.AddSubgraph          as AddSubgraph
 import qualified Empire.API.Graph.CodeUpdate           as CodeUpdate
 import qualified Empire.API.Graph.Connect              as Connect
@@ -47,11 +48,13 @@ import qualified Empire.API.Graph.NodeResultUpdate     as NodeResultUpdate
 import qualified Empire.API.Graph.NodesUpdate          as NodesUpdate
 import qualified Empire.API.Graph.RemoveNodes          as RemoveNodes
 import qualified Empire.API.Graph.RenameNode           as RenameNode
+import qualified Empire.API.Graph.RemovePort           as RemovePort
 import qualified Empire.API.Graph.Request              as G
 import qualified Empire.API.Graph.SetDefaultValue      as SetDefaultValue
 import qualified Empire.API.Graph.TypeCheck            as TypeCheck
 import qualified Empire.API.Graph.UpdateNodeExpression as UpdateNodeExpression
 import qualified Empire.API.Graph.UpdateNodeMeta       as UpdateNodeMeta
+import qualified Empire.API.Graph.UpdatePort           as UpdatePort
 import           Empire.API.Request                    (Request (..))
 import qualified Empire.API.Response                   as Response
 import qualified Empire.API.Topic                      as Topic
@@ -174,6 +177,12 @@ handleAddNode = modifyGraph (mtuple action) success where
         case nodeType of
             AddNode.ExpressionNode expr -> withJust connectTo $ connectNodes location expr (node ^. Node.nodeId)
 
+handleAddPort :: Request AddPort.Request -> StateT Env BusT ()
+handleAddPort = modifyGraph (mtuple action) success where
+    action (AddPort.Request location nodeId) = Graph.addPort location nodeId
+    success request@(Request _ _ req@(AddPort.Request location nodeId)) _ portRef = do
+        replyResult request () portRef
+
 handleAddSubgraph :: Request AddSubgraph.Request -> StateT Env BusT ()
 handleAddSubgraph = modifyGraph (mtuple action) success where
     action (AddSubgraph.Request location nodes connections saveNodeIds) = Graph.addSubgraph location nodes connections saveNodeIds
@@ -210,6 +219,12 @@ handleUpdateNodeMeta = modifyGraphOk action success where
         (inv,) <$> res
     success (UpdateNodeMeta.Request location updates) _ result = sendToBus' $ UpdateNodeMeta.Update location updates
 
+handleUpdatePort :: Request UpdatePort.Request -> StateT Env BusT ()
+handleUpdatePort = modifyGraph (mtuple action) success where
+    action (UpdatePort.Request location portRef update) = Graph.updatePort location portRef update
+    success request@(Request _ _ req@(UpdatePort.Request location portRef update)) _ newPortRef = do
+        replyResult request () newPortRef
+
 handleRenameNode :: Request RenameNode.Request -> StateT Env BusT ()
 handleRenameNode = modifyGraphOk action success where
     action  (RenameNode.Request location nodeId name) = do
@@ -217,6 +232,11 @@ handleRenameNode = modifyGraphOk action success where
         let inv = RenameNode.Inverse oldName
         (inv,) <$> Graph.renameNode location nodeId name
     success (RenameNode.Request location nodeId name) _ result = sendToBus' $ RenameNode.Update location nodeId name
+
+handleRemovePort :: Request RemovePort.Request -> StateT Env BusT ()
+handleRemovePort = modifyGraphOk (mtuple action) success where
+    action (RemovePort.Request location portRef) = Graph.removePort location portRef
+    success (RemovePort.Request location portRef) _ _ = $notImplemented
 
 handleConnect :: Request Connect.Request -> StateT Env BusT ()
 handleConnect = handleConnectReq True
