@@ -14,16 +14,17 @@ import qualified Luna.Studio.Event.UI                  as UI
 import           Luna.Studio.Prelude                   hiding (transform)
 import qualified Luna.Studio.React.Event.NodeEditor    as NE
 import           Luna.Studio.React.Model.App           (App)
+import           Luna.Studio.React.Model.Node          (isEdge)
 import           Luna.Studio.React.Model.NodeEditor    (NodeEditor)
 import qualified Luna.Studio.React.Model.NodeEditor    as NodeEditor
 import           Luna.Studio.React.Store               (Ref, dispatch)
 import           Luna.Studio.React.View.Connection     (connection_, currentConnection_)
 import           Luna.Studio.React.View.ConnectionPen  (connectionPen_)
-import           Luna.Studio.React.View.Node           (node_,nodeDynamicStyles_)
+import           Luna.Studio.React.View.Node           (nodeDynamicStyles_, node_)
+import           Luna.Studio.React.View.Port           (portSidebar_)
 import           Luna.Studio.React.View.SelectionBox   (selectionBox_)
 import           Luna.Studio.React.View.Visualization  (pinnedVisualization_)
 
-import           Luna.Studio.React.View.Port           (portSidebar_)
 
 name :: JSString
 name = "node-editor"
@@ -33,7 +34,8 @@ nodeEditor_ ref ne = React.viewWithSKey nodeEditor name (ref, ne) mempty
 
 nodeEditor :: ReactView (Ref App, NodeEditor)
 nodeEditor = React.defineView name $ \(ref, ne) -> do
-    let camera = ne ^. NodeEditor.screenTransform . CameraTransformation.logicalToScreen
+    let camera         = ne ^. NodeEditor.screenTransform . CameraTransformation.logicalToScreen
+        (edges, nodes) = partition isEdge $ ne ^. NodeEditor.nodes . to HashMap.elems
     div_
         [ "className" $= "luna-graph"
         , "id"        $= sceneId
@@ -44,7 +46,7 @@ nodeEditor = React.defineView name $ \(ref, ne) -> do
         ] $ do
         style_ [] $ do
             elemString $ ".luna-node-trans { transform: " <> matrix3dPropertyValue camera <> " }"
-            forM_ (ne ^. NodeEditor.nodes . to HashMap.elems) $ nodeDynamicStyles_ camera
+            forM_ nodes $ nodeDynamicStyles_ camera
         svg_
             [ "className" $= "luna-plane luna-plane-connections luna-node-trans"
             , "key"       $= "connections"
@@ -86,10 +88,9 @@ nodeEditor = React.defineView name $ \(ref, ne) -> do
             [ "className" $= "luna-plane luna-plane--nodes"
             , "key"       $= "nodes"
             ] $ do
-            forM_ (ne ^. NodeEditor.nodes . to HashMap.elems) $ node_ ref
-            forM_ (ne ^. NodeEditor.visualizations)           $ pinnedVisualization_ ref ne
-        -- portSidebar_ True
-        -- portSidebar_ False
+            forM_ nodes                             $ node_ ref
+            forM_ (ne ^. NodeEditor.visualizations) $ pinnedVisualization_ ref ne
+        forM_ edges $ portSidebar_ ref
         canvas_
             [ "className" $= "luna-plane plane--canvas luna-hide"
             , "key"       $= "canvas"

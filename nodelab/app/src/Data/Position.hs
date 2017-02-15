@@ -43,8 +43,8 @@ averagePosition a b =
         ay = (a ^. y + b ^. y) / 2
     in Position (Vector2 ax ay)
 
-move :: Position -> Vector2 Double -> Position
-move pos vec = pos & vector +~ vec
+move :: Vector2 Double -> Position -> Position
+move vec pos = pos & vector +~ vec
 
 rescale :: Position -> Double -> Position
 rescale pos factor = pos & vector %~ flip scalarProduct factor

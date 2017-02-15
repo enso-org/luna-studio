@@ -2,15 +2,19 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Luna.Studio.React.View.Port where
 
+import qualified Data.Map.Lazy                as Map
 import           Empire.API.Data.Port         (InPort (..), OutPort (..), PortId (..))
 import           Empire.API.Data.PortRef      (AnyPortRef)
-import           Luna.Studio.Action.Geometry  (lineHeight, nodeRadius, nodeRadius', portAngleStart, portAngleStop)
+import           Luna.Studio.Action.Geometry  (getPortNumber, isPortInput, lineHeight, nodeRadius, nodeRadius', portAngleStart,
+                                               portAngleStop)
 import           Luna.Studio.Data.Color       (toJSString)
 import qualified Luna.Studio.Event.Mouse      as Mouse
 import qualified Luna.Studio.Event.UI         as UI
 import           Luna.Studio.Prelude
 import qualified Luna.Studio.React.Event.Port as Port
 import           Luna.Studio.React.Model.App  (App)
+import           Luna.Studio.React.Model.Node (Node, isEdge, isInputEdge)
+import qualified Luna.Studio.React.Model.Node as Node
 import           Luna.Studio.React.Model.Port (Port (..))
 import qualified Luna.Studio.React.Model.Port as Port
 import           Luna.Studio.React.Store      (Ref, dispatch)
@@ -55,17 +59,14 @@ port = React.defineView name $ \(ref, numOfPorts, isOnly, p) ->
     case p ^. Port.portId of
         InPortId   Self          ->                portSelf_   ref p
         OutPortId  All           -> if isOnly then portSingle_ ref p
-                                    else           portIO_     ref p 0 numOfPorts False
-        InPortId  (Arg        i) ->                portIO_     ref p i numOfPorts True
-        OutPortId (Projection i) ->                portIO_     ref p i numOfPorts False
+                                    else           portIO_     ref p numOfPorts
+        _                        ->                portIO_     ref p numOfPorts
 
 portExpanded :: ReactView (Ref App, Port)
 portExpanded = React.defineView name $ \(ref, p) ->
     case p ^. Port.portId of
         InPortId   Self          -> portSelf_       ref p
-        OutPortId  All           -> portIOExpanded_ ref p 0 False
-        InPortId  (Arg        i) -> portIOExpanded_ ref p i True
-        OutPortId (Projection i) -> portIOExpanded_ ref p i False
+        _                        -> portIOExpanded_ ref p
 
 port_ :: Ref App -> Port -> Int -> Bool -> ReactElementM ViewEventHandler ()
 port_ ref p numOfPorts isOnly =
@@ -113,12 +114,12 @@ portSelf_ ref p = do
             circle_
                 [ "className"    $= "luna-port__shape invisible"
                 , "key"          $= (jsShow portId <> "a")
-                , "fill-opacity" $= (fromString $ show (1 :: Int))
+                , "fillOpacity" $= (fromString $ show (1 :: Int))
                 ] mempty
             circle_
                 [ "className"      $= "luna-port__select invisible"
                   , "key"          $= (jsShow portId <> "b")
-                  , "fill-opacity" $= (fromString $ show (1 :: Int))
+                  , "fillOpacity" $= (fromString $ show (1 :: Int))
                   ] mempty
 
 portSingle_ :: Ref App -> Port -> ReactElementM ViewEventHandler ()
@@ -149,10 +150,12 @@ portSingle_ ref p = do
               ]
             ) mempty
 
-portIO_ :: Ref App -> Port -> Int -> Int -> Bool -> ReactElementM ViewEventHandler ()
-portIO_ ref p num numOfPorts isInput = do
+portIO_ :: Ref App -> Port -> Int -> ReactElementM ViewEventHandler ()
+portIO_ ref p numOfPorts = do
     let portRef   = p ^. Port.portRef
         portId    = p ^. Port.portId
+        isInput   = isPortInput p
+        num       = getPortNumber p
         color     = toJSString $ p ^. Port.color
         highlight = if p ^. Port.highlight then " luna-hover" else ""
         classes   = if isInput then "luna-port luna-port--i luna-port--i--" else "luna-port luna-port--o luna-port--o--"
@@ -195,10 +198,12 @@ portIO_ ref p num numOfPorts isInput = do
               ]
             ) mempty
 
-portIOExpanded_ :: Ref App -> Port -> Int -> Bool -> ReactElementM ViewEventHandler ()
-portIOExpanded_ ref p num isInput = do
+portIOExpanded_ :: Ref App -> Port -> ReactElementM ViewEventHandler ()
+portIOExpanded_ ref p = if p ^. Port.portId == InPortId Self then portSelf_ ref p else do
     let portRef   = p ^. Port.portRef
         portId    = p ^. Port.portId
+        isInput   = isPortInput p
+        num       = getPortNumber p
         color     = toJSString $ p ^. Port.color
         highlight = if p ^. Port.highlight then " luna-hover" else ""
         classes   = if isInput then "luna-port luna-port--i luna-port--i--" else "luna-port luna-port--o luna-port--o--"
@@ -222,49 +227,15 @@ portIOExpanded_ ref p num isInput = do
               ]
             ) mempty
 
-portSidebar_ :: Bool -> ReactElementM ViewEventHandler ()
-portSidebar_ isInput = do
-    let classes = "luna-port-sidebar luna-port-sidebar" <> if isInput then "--i" else "--o"
-        key     = "portSidebar" <> if isInput then "Inputs" else "Outputs"
+portSidebar_ :: Ref App -> Node -> ReactElementM ViewEventHandler ()
+portSidebar_ ref node = when (isEdge node) $ do
+    let classes = "luna-port-sidebar luna-port-sidebar" <> if isInputEdge node then "--i" else "--o"
+        key     = "portSidebar" <> if isInputEdge node then "Inputs" else "Outputs"
+        ports   = node ^. Node.ports . to Map.elems
     div_
         [ "className" $= classes
         , "key"       $= key
         ] $
         svg_ [] $ do
             -- placeholder of HTML generated by portIOExpanded_ ""
-            if isInput then do
-                g_
-                    [ "className" $= "luna-port luna-port--self" ] $ do
-                    circle_
-                        [ "className" $= "luna-port__shape"
-                        , "fill"      $= "orange"
-                        , "r"         $= "5"
-                        ] mempty
-                    circle_
-                        [ "className" $= "luna-port__select"
-                        , "r"         $= "13"
-                        ] mempty
-                g_
-                    [ "className" $= "luna-port luna-port--i" ] $ do
-                    circle_
-                        [ "className" $= "luna-port__shape"
-                        , "fill"      $= "orange"
-                        , "r"         $= "3"
-                        , "cy"        $= "16"
-                        ] mempty
-                    circle_
-                        [ "className" $= "luna-port__select"
-                        , "r"         $= "10.67"
-                        , "cy"        $= "16"
-                        ] mempty
-            else g_
-                    [ "className" $= "luna-port luna-port--o" ] $ do
-                        circle_
-                            [ "className" $= "luna-port__shape"
-                            , "fill"      $= "blue"
-                            , "r"         $= "3"
-                            ] mempty
-                        circle_
-                            [ "className" $= "luna-port__select"
-                            , "r"         $= "10.67"
-                            ] mempty
+            forM_ ports $ portIOExpanded_ ref

@@ -28,7 +28,7 @@ allNodeIds :: Command State [NodeId]
 allNodeIds = map (view Node.nodeId) <$> allNodes
 
 allNodes :: Command State [Node]
-allNodes = view (NodeEditor.nodes . to HashMap.elems) <$> Global.getNodeEditor
+allNodes = filter (not . Node.isEdge) <$> view (NodeEditor.nodes . to HashMap.elems) <$> Global.getNodeEditor
 
 allConnectionModels :: Command State [Connection]
 allConnectionModels = view (NodeEditor.connections . to HashMap.elems) <$> Global.getNodeEditor

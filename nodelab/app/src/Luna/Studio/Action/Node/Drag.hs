@@ -62,10 +62,10 @@ nodeDrag evt snapped state = do
         shift' = if snapped then
                      case Map.lookup draggedNodeId nodesStartPos of
                          Just pos ->
-                             snap (move pos delta) ^. vector - pos ^. vector
+                             snap (move delta pos) ^. vector - pos ^. vector
                          Nothing  -> delta
                  else delta
-    moveNodes $ Map.map (flip move shift') nodesStartPos
+    moveNodes $ Map.map (move shift') nodesStartPos
 
 moveNodes :: Map NodeId Position -> Command State ()
 moveNodes nodesPos = do

@@ -1,10 +1,9 @@
 module Luna.Studio.Action.Geometry.Port
-    ( IsSelf
-    , IsSingle
-    , countSameTypePorts
+    ( countSameTypePorts
     , getPortNumber
     , isPortSelf
     , isPortSingle
+    , isPortInput
     , portAngleStart
     , portAngleStop
     , portGap
@@ -17,9 +16,6 @@ import           Luna.Studio.Prelude
 import           Luna.Studio.React.Model.Port          (Port)
 import qualified Luna.Studio.React.Model.Port          as Port
 
-
-type IsSingle = Bool
-type IsSelf   = Bool
 
 portGap :: Double -> Angle
 portGap r = 0.2 * nodeRadius / r -- to avoid gap narrowing
@@ -81,3 +77,8 @@ isPortSelf :: Port -> Bool
 isPortSelf port = case port ^. Port.portId of
     InPortId Self -> True
     _             -> False
+
+isPortInput :: Port -> Bool
+isPortInput p = case p ^. Port.portId of
+    InPortId _ -> True
+    _          -> False

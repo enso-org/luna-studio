@@ -4,13 +4,15 @@ module Luna.Studio.Action.Camera.Screen
      , getScreenSize
      , getWorkspacePos
      , translateToWorkspace
+     , getScreenLeftCenter
+     , getScreenRightCenter
      ) where
 
 import           Data.Matrix                           (getElem, multStd2)
 import qualified Data.Matrix                           as Matrix
 import           Data.Position                         (Position (Position), ScreenPosition)
 import           Data.Size                             (Size)
-import           Data.Vector                           (fromTuple, scalarProduct, vector, x, y)
+import           Data.Vector                           (Vector2 (Vector2), fromTuple, scalarProduct, vector, x, y)
 import qualified JS.Scene                              as Scene
 import           Luna.Studio.Action.Command            (Command)
 import           Luna.Studio.Data.CameraTransformation (screenToLogical)
@@ -29,6 +31,18 @@ getScreenCenter = getScreenCenterFromSize <$> getScreenSize
 
 getScreenCenterFromSize :: Size -> ScreenPosition
 getScreenCenterFromSize = Position . flip scalarProduct 0.5 . view vector
+
+getScreenLeftCenter :: Command State ScreenPosition
+getScreenLeftCenter = getScreenLeftCenterFromSize <$> getScreenSize
+
+getScreenLeftCenterFromSize :: Size -> ScreenPosition
+getScreenLeftCenterFromSize s = Position (Vector2 0 (s ^. y / 2))
+
+getScreenRightCenter :: Command State ScreenPosition
+getScreenRightCenter = getScreenRightCenterFromSize <$> getScreenSize
+
+getScreenRightCenterFromSize :: Size -> ScreenPosition
+getScreenRightCenterFromSize s = Position (Vector2 (s ^. x) (s ^. y / 2))
 
 getScreenSize :: Command State Size
 getScreenSize = use $ Global.scene . Scene.size

@@ -10,7 +10,6 @@ import           Data.Position                      (Position)
 import           Empire.API.Data.Node               (NodeId)
 import qualified Empire.API.Data.Node               as NodeAPI
 import qualified Empire.API.Data.Port               as Port
-import qualified Empire.API.Data.TypeRep            as TypeRep
 import qualified JS.GoogleAnalytics                 as GA
 import           Luna.Studio.Action.Camera          (translateToWorkspace)
 import           Luna.Studio.Action.Command         (Command)

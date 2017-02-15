@@ -5,15 +5,15 @@ module Luna.Studio.Action.MultiSelection
     , stopMultiSelection
     ) where
 
-import           Data.Position                        (Position (Position), Vector2 (Vector2), fromTuple, x, y)
+import           Data.Position                        (Position (Position), Vector2 (Vector2), x, y)
 import           React.Flux                           (MouseEvent)
 
-import           Empire.API.Data.Node                 (Node)
-import qualified Empire.API.Data.Node                 as Node
 import           Luna.Studio.Action.Command           (Command)
-import           Luna.Studio.Action.Graph             (modifySelectionHistory, selectNodes, selectedNodeIds, unselectAll)
+import           Luna.Studio.Action.Graph             (allNodes, modifySelectionHistory, selectNodes, selectedNodeIds, unselectAll)
 import           Luna.Studio.Event.Mouse              (workspacePosition)
 import           Luna.Studio.Prelude
+import           Luna.Studio.React.Model.Node         (Node)
+import qualified Luna.Studio.React.Model.Node         as Node
 import qualified Luna.Studio.React.Model.NodeEditor   as NodeEditor
 import           Luna.Studio.React.Model.SelectionBox (SelectionBox (SelectionBox))
 import           Luna.Studio.State.Action             (Action (begin, continue, end, update), MultiSelection (MultiSelection),
@@ -22,7 +22,6 @@ import qualified Luna.Studio.State.Action             as Action
 import           Luna.Studio.State.Global             (State, beginActionWithKey, continueActionWithKey, removeActionFromState,
                                                        updateActionWithKey)
 import qualified Luna.Studio.State.Global             as Global
-import qualified Luna.Studio.State.Graph              as Graph
 
 
 instance Action (Command State) MultiSelection where
@@ -49,13 +48,13 @@ inRect leftTop rightBottom node = pos ^. x >= leftTop ^. x
                                && pos ^. x <= rightBottom ^. x
                                && pos ^. y <= leftTop ^. y
                                && pos ^. y >= rightBottom ^. y
-    where pos = Position (fromTuple $ node ^. Node.position)
+    where pos = node ^. Node.position
 
 updateSelection :: Position -> Position -> Command State ()
 updateSelection start act = do
     let leftTop     = Position (Vector2 (min (start ^. x) (act ^. x)) (max (start ^. y) (act ^. y)))
         rightBottom = Position (Vector2 (max (start ^. x) (act ^. x)) (min (start ^. y) (act ^. y)))
-    nodeIds <- map Node._nodeId . filter (inRect leftTop rightBottom) <$> use (Global.graph . Graph.nodes)
+    nodeIds <- map Node._nodeId . filter (inRect leftTop rightBottom) <$> allNodes
     selectNodes nodeIds
 
 stopMultiSelection :: MultiSelection -> Command State ()
