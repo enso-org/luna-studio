@@ -16,7 +16,6 @@ import qualified Empire.API.Graph.AddNode            as AddNode
 import qualified Empire.API.Graph.AddSubgraph        as AddSubgraph
 import qualified Empire.API.Graph.CodeUpdate         as CodeUpdate
 import qualified Empire.API.Graph.Connect            as Connect
-import qualified Empire.API.Data.Connection          as Connection
 import qualified Empire.API.Graph.Disconnect         as Disconnect
 import qualified Empire.API.Graph.GetProgram         as GetProgram
 import qualified Empire.API.Graph.NodeResultUpdate   as NodeResultUpdate
@@ -35,7 +34,7 @@ import           Luna.Studio.Action.Batch            (collaborativeModify, reque
 import           Luna.Studio.Action.Camera           (centerGraph)
 import qualified Luna.Studio.Action.CodeEditor       as CodeEditor
 import           Luna.Studio.Action.Command          (Command)
-import           Luna.Studio.Action.Graph            (localConnectNodes, localRemoveConnections, renderGraph, selectNodes,
+import           Luna.Studio.Action.Graph            (localAddConnection, localRemoveConnections, renderGraph, selectNodes,
                                                       updateConnectionsForNodes)
 import           Luna.Studio.Action.Node             (addDummyNode, localRemoveNodes, updateNode, updateNodeProfilingData, updateNodeValue,
                                                       updateNodesMeta, typecheckNode)
@@ -91,12 +90,11 @@ handle (Event.Batch ev) = Just $ case ev of
     AddSubgraphResponse response@(Response.Response uuid _ (AddSubgraph.Request loc nodes connections _) _ (Response.Ok idsMaybeMap)) -> do
         shouldProcess   <- isCurrentLocationAndGraphLoaded loc
         correctLocation <- isCurrentLocation loc
-        let handleSubgraph nodes connections = when (shouldProcess && correctLocation) $ do
-                mapM_ addDummyNode nodes
-                connectionIds <- forM connections $ \conn -> localConnectNodes (conn ^. Connection.src) (conn ^. Connection.dst)
-                -- mapM_ updateConnection connectionIds
+        let handleSubgraph nodes' connections' = when (shouldProcess && correctLocation) $ do
+                mapM_ addDummyNode nodes'
+                mapM_ localAddConnection connections'
                 whenM (isOwnRequest uuid) $ do
-                    let nodeIds = map (^. Node.nodeId) nodes
+                    let nodeIds = map (^. Node.nodeId) nodes'
                     collaborativeModify nodeIds
                     selectNodes nodeIds
                 handleResponse response doNothing
@@ -110,8 +108,8 @@ handle (Event.Batch ev) = Just $ case ev of
             Nothing     -> handleSubgraph nodes connections
 
     NodesConnected update ->
-        whenM (isCurrentLocation $ update ^. Connect.location') $
-            void $ localConnectNodes (update ^. Connect.src') (update ^. Connect.dst')
+        whenM (isCurrentLocation $ update ^. Connect.location') $ void $
+            localAddConnection $ update ^. Connect.connection'
 
     NodesDisconnected update ->
         whenM (isCurrentLocation $ update ^. Disconnect.location') $
@@ -155,6 +153,7 @@ handle (Event.Batch ev) = Just $ case ev of
         when (shouldProcess && correctLocation) $ do
             updateNodeValue         (update ^. NodeResultUpdate.nodeId) (update ^. NodeResultUpdate.value)
             updateNodeProfilingData (update ^. NodeResultUpdate.nodeId) (update ^. NodeResultUpdate.execTime)
+            updateConnectionsForNodes [update ^. NodeResultUpdate.nodeId]
 
     NodeSearcherUpdated update -> do
         shouldProcess <- isCurrentLocationAndGraphLoaded (update ^. NodeSearcherUpdate.location)

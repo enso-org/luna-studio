@@ -1,50 +1,50 @@
-{-# LANGUAGE FlexibleContexts          #-}
-{-# LANGUAGE TypeFamilies #-}
-{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE FlexibleContexts    #-}
+{-# LANGUAGE OverloadedStrings   #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TypeFamilies        #-}
 
 module Handlers where
-import UndoState
+import           UndoState
 
-import           Control.Exception                 (Exception)
-import           Control.Exception.Safe            (MonadThrow, throwM)
-import           Data.ByteString                   (ByteString, empty)
-import           Data.ByteString.Lazy              (toStrict,fromStrict)
-import           Data.Binary                       (Binary, decode)
-import qualified Data.Binary                       as Bin
-import qualified Data.List as List
-import qualified Data.Map.Strict                   as Map
-import           Data.Map.Strict                   (Map)
+import           Control.Exception                     (Exception)
+import           Control.Exception.Safe                (MonadThrow, throwM)
+import           Data.Binary                           (Binary, decode)
+import qualified Data.Binary                           as Bin
+import           Data.ByteString                       (ByteString, empty)
+import           Data.ByteString.Lazy                  (fromStrict, toStrict)
+import qualified Data.List                             as List
+import           Data.Map.Strict                       (Map)
+import qualified Data.Map.Strict                       as Map
 import           Data.Maybe
-import qualified Data.Set                          as Set
-import           Prologue                          hiding (throwM)
+import qualified Data.Set                              as Set
+import           Prologue                              hiding (throwM)
 
-import           Data.UUID as UUID (nil)
-import           Empire.API.Data.Connection        (Connection)
-import           Empire.API.Data.Connection        as Connection
-import           Empire.API.Data.GraphLocation     (GraphLocation)
-import           Empire.API.Data.Graph             (Graph)
-import           Empire.API.Data.Node              (Node, NodeId)
-import qualified Empire.API.Data.Node              as Node
-import           Empire.API.Data.NodeMeta          (NodeMeta)
-import           Empire.API.Data.PortRef           (InPortRef, OutPortRef, dstNodeId, srcNodeId)
-import qualified Empire.API.Graph.AddNode          as AddNode
-import qualified Empire.API.Graph.AddSubgraph      as AddSubgraph
-import qualified Empire.API.Graph.Connect          as Connect
-import qualified Empire.API.Graph.Disconnect       as Disconnect
-import qualified Empire.API.Data.PortRef           as PortRef
-import qualified Empire.API.Graph.RemoveNodes      as RemoveNodes
-import qualified Empire.API.Graph.RenameNode       as RenameNode
-import qualified Empire.API.Graph.Undo             as UndoRequest
-import qualified Empire.API.Graph.Redo             as RedoRequest
+import           Data.UUID                             as UUID (nil)
+import           Empire.API.Data.Connection            (Connection)
+import           Empire.API.Data.Connection            as Connection
+import           Empire.API.Data.Graph                 (Graph)
+import           Empire.API.Data.GraphLocation         (GraphLocation)
+import           Empire.API.Data.Node                  (Node, NodeId)
+import qualified Empire.API.Data.Node                  as Node
+import           Empire.API.Data.NodeMeta              (NodeMeta)
+import           Empire.API.Data.PortRef               (InPortRef, OutPortRef, dstNodeId, srcNodeId)
+import qualified Empire.API.Data.PortRef               as PortRef
+import qualified Empire.API.Graph.AddNode              as AddNode
+import qualified Empire.API.Graph.AddSubgraph          as AddSubgraph
+import qualified Empire.API.Graph.Connect              as Connect
+import qualified Empire.API.Graph.Disconnect           as Disconnect
+import qualified Empire.API.Graph.Redo                 as RedoRequest
+import qualified Empire.API.Graph.RemoveNodes          as RemoveNodes
+import qualified Empire.API.Graph.RenameNode           as RenameNode
+import qualified Empire.API.Graph.Undo                 as UndoRequest
 import qualified Empire.API.Graph.UpdateNodeExpression as UpdateNodeExpression
-import           Empire.API.Graph.UpdateNodeMeta   (SingleUpdate)
-import qualified Empire.API.Graph.UpdateNodeMeta   as UpdateNodeMeta
-import qualified Empire.API.Topic                  as Topic
-import           Empire.API.Response               (Response (..))
-import qualified Empire.API.Response               as Response
-import qualified Empire.API.Request                as Request
-import           Empire.API.Request                (Request (..))
+import           Empire.API.Graph.UpdateNodeMeta       (SingleUpdate)
+import qualified Empire.API.Graph.UpdateNodeMeta       as UpdateNodeMeta
+import           Empire.API.Request                    (Request (..))
+import qualified Empire.API.Request                    as Request
+import           Empire.API.Response                   (Response (..))
+import qualified Empire.API.Response                   as Response
+import qualified Empire.API.Topic                      as Topic
 
 
 type Handler = ByteString -> UndoPure ()
@@ -202,15 +202,15 @@ handleRenameNodeUndo (Response.Response _ _ (RenameNode.Request location nodeId 
         Just (undoMsg, redoMsg)
 
 handleConnectUndo :: Connect.Response -> Maybe (Disconnect.Request, Connect.Request)
-handleConnectUndo (Response.Response _ _ (Connect.Request location (Connect.PortConnection src dst)) inv res) =
+handleConnectUndo (Response.Response _ _ (Connect.Request location (Connect.PortConnect src dst)) inv res) =
     withOk res . const $
         let undoMsg = Disconnect.Request location dst
-            redoMsg = Connect.Request location $ Connect.PortConnection src dst
+            redoMsg = Connect.Request location $ Connect.PortConnect src dst
         in Just (undoMsg, redoMsg)
 
 handleDisconnectUndo :: Disconnect.Response -> Maybe (Connect.Request, Disconnect.Request)
 handleDisconnectUndo (Response.Response _ _ (Disconnect.Request location dst) inv res) =
     withOk inv $ \(Disconnect.Inverse src) ->
-        let undoMsg = Connect.Request location $ Connect.PortConnection src dst
+        let undoMsg = Connect.Request location $ Connect.PortConnect src dst
             redoMsg = Disconnect.Request location dst
         in Just (undoMsg, redoMsg)

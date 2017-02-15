@@ -17,7 +17,6 @@ import qualified Empire.API.Topic             as Topic
 import           Empire.Env                   (Env)
 import qualified Empire.Env                   as Env
 import qualified System.Log.MLogger           as Logger
-import qualified ZMQ.Bus.Bus                  as Bus
 import qualified ZMQ.Bus.Data.Message         as Message
 import           ZMQ.Bus.Trans                (BusT (..))
 
@@ -29,15 +28,15 @@ sendToBus topic bin = do
 sendToBus' :: (MessageTopic a, Binary a) => a -> StateT Env BusT ()
 sendToBus' msg = sendToBus (Topic.topic msg) msg
 
-replyFail :: forall a b c. (Binary a, Response.ResponseResult a b c) => Logger.Logger -> String -> Request a -> StateT Env BusT ()
+replyFail :: forall a b c. Response.ResponseResult a b c => Logger.Logger -> String -> Request a -> StateT Env BusT ()
 replyFail logger errMsg req = do
   logger Logger.error $ formatErrorMessage req errMsg
   sendToBus' $ Response.error req errMsg
 
-replyOk :: forall a b c. (Binary a, Binary b, Response.ResponseResult a b (), MessageTopic (Response.Response a b ())) => Request a -> b -> StateT Env BusT ()
+replyOk :: forall a b. Response.ResponseResult a b () => Request a -> b -> StateT Env BusT ()
 replyOk req inv = sendToBus' $ Response.ok req inv
 
-replyResult :: forall a b c. (Binary a, Binary b, Binary c, Response.ResponseResult a b c) => Request a -> b -> c -> StateT Env BusT ()
+replyResult :: forall a b c. Response.ResponseResult a b c => Request a -> b -> c -> StateT Env BusT ()
 replyResult req inv res = sendToBus' $ Response.result req inv res
 
 errorMessage :: String

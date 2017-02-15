@@ -16,28 +16,36 @@ import           Luna.Studio.React.Model.Searcher (Searcher)
 import qualified Luna.Studio.React.Model.Searcher as Searcher
 import           Luna.Studio.React.Store          (Ref, dispatch)
 import qualified Text.ScopeSearcher.QueryResult   as Result
-
+import qualified Luna.Studio.Event.Keys as Keys
 
 name :: JSString
 name = "searcher"
 
+preventTabDefault :: React.Event -> KeyboardEvent -> [SomeStoreAction] -> [SomeStoreAction]
+preventTabDefault e k r = if Keys.withoutMods k Keys.tab then preventDefault e : r else r
+
 searcher :: ReactView (Ref App, Searcher)
 searcher  = React.defineView name $ \(ref, s) -> do
     let pos = s ^. Searcher.position
+        mode = s ^. Searcher.mode
+        className = "luna-" <> case mode of
+            Searcher.Node    -> "node-" <> name
+            Searcher.Command -> "command-" <> name
     div_
         [ "key"       $= name
-        , "className" $= ("luna-" <> name)
+        , "className" $= className
         , "style"     @= Aeson.object
             [ "top"  Aeson..= (show (pos ^. y) <> "px" :: String)
             , "left" Aeson..= (show (pos ^. x) <> "px" :: String)
             ]
         ] $ do
+        div_ $ elemString $ show $ mode
         input_
             [ "key"   $= "input"
             , "id"    $= searcherId
             , "value" $= convert (s ^. Searcher.input)
             , onMouseDown $ \e _ -> [stopPropagation e]
-            , onKeyDown   $ \e k -> stopPropagation e : dispatch ref (UI.SearcherEvent $ KeyDown k)
+            , onKeyDown   $ \e k -> preventTabDefault e k $ stopPropagation e : dispatch ref (UI.SearcherEvent $ KeyDown k)
             , onChange    $ \e -> let val = target e "value" in dispatch ref $ UI.SearcherEvent $ InputChanged val
             ]
         div_
@@ -49,10 +57,11 @@ searcher  = React.defineView name $ \(ref, s) -> do
                     [ "key"       $= jsShow idx
                     , "className" $= if idx == s ^. Searcher.selected then "luna-result-selected" else "luna-result"
                     ] $ do
-                    div_
-                        ["key"       $= "prefix"
-                        ,"className" $= "luna-result-prefix"
-                        ] $ elemString $ convert (result ^. Result.prefix) <> "."
+                    when (mode == Searcher.Node) $
+                        div_
+                            ["key"       $= "prefix"
+                            ,"className" $= "luna-result-prefix"
+                            ] $ elemString $ convert (result ^. Result.prefix) <> "."
                     div_
                         ["key" $= "name"
                         ,"className" $= "luna-result-name"

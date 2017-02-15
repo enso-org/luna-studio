@@ -1,10 +1,14 @@
-module Luna.Studio.Event.Preprocessor.Shortcut (process) where
+module Luna.Studio.Event.Preprocessor.Shortcut
+    ( process
+    , isEventHandled
+    ) where
 
 import           React.Flux                       (KeyboardEvent)
 
 import           Luna.Studio.Event.Event          (Event (Shortcut, UI))
 import qualified Luna.Studio.Event.Keys           as Keys
-import           Luna.Studio.Event.Shortcut       (ShortcutEvent (..))
+import           Luna.Studio.Event.Shortcut       (Command (..))
+import qualified Luna.Studio.Event.Shortcut       as Shortcut
 import           Luna.Studio.Event.UI             (UIEvent (AppEvent, SearcherEvent))
 import           Luna.Studio.Prelude
 import qualified Luna.Studio.React.Event.App      as App
@@ -13,11 +17,14 @@ import qualified Luna.Studio.React.Event.Searcher as Searcher
 
 
 process :: Event -> Maybe Event
-process (UI (AppEvent      (App.KeyDown      e))) = Shortcut <$> handleKeyApp e
-process (UI (SearcherEvent (Searcher.KeyDown e))) = Shortcut <$> handleKeySearcher e
+process (UI (AppEvent      (App.KeyDown      e))) = Shortcut . flip Shortcut.Event def <$> handleKeyApp e
+process (UI (SearcherEvent (Searcher.KeyDown e))) = Shortcut . flip Shortcut.Event def <$> handleKeySearcher e
 process _ = Nothing
 
-handleKeyApp :: KeyboardEvent -> Maybe ShortcutEvent
+isEventHandled :: KeyboardEvent -> Bool
+isEventHandled = isJust . handleKeyApp
+
+handleKeyApp :: KeyboardEvent -> Maybe Command
 handleKeyApp evt
     -- camera
     | Keys.withCtrl         evt Keys.leftArrow  = Just PanLeft
@@ -58,11 +65,12 @@ handleKeyApp evt
     --
     | otherwise                                 = Nothing
 
-handleKeySearcher :: KeyboardEvent -> Maybe ShortcutEvent
+handleKeySearcher :: KeyboardEvent -> Maybe Command
 handleKeySearcher evt
-    | Keys.withoutMods evt Keys.enter     = Just SearcherAccept
-    | Keys.withoutMods evt Keys.tab       = Just SearcherClose
-    | Keys.withoutMods evt Keys.esc       = Just SearcherClose
+    | Keys.withoutMods evt Keys.backspace = Just SearcherMoveLeft
     | Keys.withoutMods evt Keys.downArrow = Just SearcherMoveDown
+    | Keys.withoutMods evt Keys.enter     = Just SearcherAccept
+    | Keys.withoutMods evt Keys.esc       = Just SearcherClose
+    | Keys.withoutMods evt Keys.tab       = Just SearcherMoveRight
     | Keys.withoutMods evt Keys.upArrow   = Just SearcherMoveUp
     | otherwise                           = Nothing

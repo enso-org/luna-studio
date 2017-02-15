@@ -3,11 +3,9 @@
 module Luna.Studio.React.Event.Connection where
 
 import           Data.Aeson                 (FromJSON, ToJSON)
-import           React.Flux                 (MouseEvent)
-
 import           Empire.API.Data.Connection (ConnectionId)
-import           Empire.API.Data.PortRef    (AnyPortRef)
 import           Luna.Studio.Prelude
+import           React.Flux                 (MouseEvent)
 
 
 
@@ -16,11 +14,7 @@ data ModifiedEnd = Source | Destination deriving (Eq, Generic, NFData, Show, Typ
 instance ToJSON   ModifiedEnd
 instance FromJSON ModifiedEnd
 
-data Event = StartConnection  MouseEvent AnyPortRef
-           | EndConnection    MouseEvent AnyPortRef
-           | ModifyConnection MouseEvent ConnectionId ModifiedEnd
-           | Click            MouseEvent AnyPortRef
-            deriving (Show, Generic, NFData, Typeable)
+data Event = MouseDown MouseEvent ConnectionId ModifiedEnd deriving (Show, Generic, NFData, Typeable)
 
 instance ToJSON   Event
 instance FromJSON Event

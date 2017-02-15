@@ -1,5 +1,3 @@
-'atom-workspace':
-  'ctrl-alt-k': 'luna-studio:open'
 '.luna-studio':
   # camera
   'ctrl-left'        : 'luna-studio:pan-left'             # PanLeft

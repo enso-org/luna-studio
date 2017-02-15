@@ -29,9 +29,9 @@ import           Luna.Studio.State.GraphSkeleton as GraphSkeleton
 
 
 handle :: Event -> Maybe (Command State ())
-handle (Shortcut (Shortcut.Paste cbd)) = Just $ pasteFromClipboard cbd
-handle (Shortcut  Shortcut.Copy      ) = Just copySelectionToClipboard
-handle (Shortcut  Shortcut.Cut       ) = Just cutSelectionToClipboard
+handle (Shortcut (Shortcut.Event Shortcut.Paste (Just cbd))) = Just $ pasteFromClipboard cbd
+handle (Shortcut (Shortcut.Event Shortcut.Copy   _        )) = Just copySelectionToClipboard
+handle (Shortcut (Shortcut.Event Shortcut.Cut    _        )) = Just cutSelectionToClipboard
 handle _ = Nothing
 
 copySelectionToClipboard :: Command State ()

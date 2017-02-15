@@ -12,7 +12,7 @@ import           Luna.Studio.Event.Event      (Event (Shortcut, UI))
 import qualified Luna.Studio.Event.Keys       as Keys
 import           Luna.Studio.Event.Mouse      (mousePosition)
 import qualified Luna.Studio.Event.Mouse      as Mouse
-import           Luna.Studio.Event.Shortcut   (ShortcutEvent (..))
+import qualified Luna.Studio.Event.Shortcut   as Shortcut
 import           Luna.Studio.Event.UI         (UIEvent (AppEvent, NodeEvent))
 import           Luna.Studio.Prelude
 import qualified Luna.Studio.React.Event.App  as App
@@ -25,8 +25,8 @@ import qualified Luna.Studio.State.Graph      as Graph
 
 
 handle :: Event -> Maybe (Command State ())
-handle (Shortcut shortcut)                             = Just $ handleShortcut shortcut
-handle (UI (NodeEvent (Node.MouseDown evt nodeId))) = Just $ when shouldProceed $ Node.startNodeDrag nodeId evt shouldSnap  where
+handle (Shortcut (Shortcut.Event command _))        = Just $ handleCommand command
+handle (UI (NodeEvent (Node.MouseDown evt nodeId))) = Just $ when shouldProceed $ Node.startNodeDrag evt nodeId shouldSnap  where
     shouldProceed = Mouse.withoutMods evt Mouse.leftButton || Mouse.withShift evt Mouse.leftButton
     shouldSnap    = Mouse.withoutMods evt Mouse.leftButton
 handle (UI (NodeEvent (Node.Enter            nodeId))) = Just $ mapM_ Node.tryEnter =<< preuse (Global.graph . Graph.nodesMap . ix nodeId)
@@ -65,10 +65,10 @@ handleKeyNode kevt nodeId
     | otherwise                        = return ()
 
 
-handleShortcut :: ShortcutEvent -> Command State ()
-handleShortcut = \case
-    SelectAll           -> selectAll
-    RemoveSelectedNodes -> Node.removeSelectedNodes
-    UnselectAll         -> unselectAll
-    ExpandSelectedNodes -> Node.expandSelectedNodes
-    _                   -> return ()
+handleCommand :: Shortcut.Command -> Command State ()
+handleCommand = \case
+    Shortcut.SelectAll           -> selectAll
+    Shortcut.RemoveSelectedNodes -> Node.removeSelectedNodes
+    Shortcut.UnselectAll         -> unselectAll
+    Shortcut.ExpandSelectedNodes -> Node.expandSelectedNodes
+    _                            -> return ()

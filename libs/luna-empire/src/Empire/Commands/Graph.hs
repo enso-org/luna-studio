@@ -1,5 +1,6 @@
 {-# LANGUAGE MultiWayIf       #-}
 {-# LANGUAGE TypeApplications #-}
+{-# LANGUAGE TupleSections    #-}
 
 module Empire.Commands.Graph
     ( addNode
@@ -228,38 +229,41 @@ updateNodeMeta loc nodeId newMeta = withGraph loc $ do
 updatePort :: GraphLocation -> AnyPortRef -> Either Int String -> Empire AnyPortRef
 updatePort = $notImplemented
 
-connectCondTC :: Bool -> GraphLocation -> OutPortRef -> InPortRef -> Empire ()
+connectCondTC :: Bool -> GraphLocation -> OutPortRef -> InPortRef -> Empire Connection
 connectCondTC doTC loc outPort inPort = withGraph loc $ do
-    connectNoTC loc outPort inPort
+    result <- connectNoTC loc outPort inPort
     when doTC $ runTC loc False
+    return result
 
-connect :: GraphLocation -> OutPortRef -> InPortRef -> Empire ()
+connect :: GraphLocation -> OutPortRef -> InPortRef -> Empire Connection
 connect loc outPort inPort = withTC loc False $ connectNoTC loc outPort inPort
 
-connectPersistent :: ASTOp m => OutPortRef -> InPortRef -> m ()
-connectPersistent (OutPortRef srcNodeId srcPort) (InPortRef dstNodeId dstPort) = do
+connectPersistent :: ASTOp m => OutPortRef -> InPortRef -> m Connection
+connectPersistent src@(OutPortRef srcNodeId srcPort) dst@(InPortRef dstNodeId dstPort) = do
     let inputPos = case srcPort of
             All            -> 0   -- FIXME: do not equalise All with Projection 0
             Projection int -> int
     case dstPort of
         Self    -> makeAcc srcNodeId dstNodeId inputPos
         Arg num -> makeApp srcNodeId dstNodeId num inputPos
+    return $ Connection src dst
 
-connectNoTC :: GraphLocation -> OutPortRef -> InPortRef -> Command Graph ()
+connectNoTC :: GraphLocation -> OutPortRef -> InPortRef -> Command Graph Connection
 connectNoTC loc outPort inPort@(InPortRef nid _) = do
-    nodeToUpdate <- runASTOp $ do
-        connectPersistent outPort inPort
+    (connection, nodeToUpdate) <- runASTOp $ do
+        connection <- connectPersistent outPort inPort
 
         -- if input port is not an edge, send update to gui
         edges <- GraphBuilder.getEdgePortMapping
-        case edges of
-            Just (input, output) -> do
-                if (nid /= input && nid /= output) then Just <$> GraphBuilder.buildNode nid
-                                                   else return Nothing
-            _ -> Just <$> GraphBuilder.buildNode nid
+        let nodeToUpdate = case edges of
+                Just (input, output) -> do
+                    if (nid /= input && nid /= output) then Just <$> GraphBuilder.buildNode nid
+                                                       else return Nothing
+                _ -> Just <$> GraphBuilder.buildNode nid
+        (connection,) <$> nodeToUpdate
     forM_ nodeToUpdate $ \n -> do
         Publisher.notifyNodeUpdate loc n
-    return ()
+    return connection
 
 setDefaultValue :: GraphLocation -> AnyPortRef -> PortDefault -> Empire ()
 setDefaultValue loc portRef val = withTC loc False $ runASTOp $ setDefaultValue' portRef val

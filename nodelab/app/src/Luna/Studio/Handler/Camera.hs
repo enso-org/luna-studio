@@ -12,7 +12,7 @@ import           Luna.Studio.Action.Command         (Command)
 import           Luna.Studio.Event.Event            (Event (Shortcut, UI))
 import           Luna.Studio.Event.Mouse            (mousePosition)
 import qualified Luna.Studio.Event.Mouse            as Mouse
-import           Luna.Studio.Event.Shortcut         (ShortcutEvent (..))
+import qualified Luna.Studio.Event.Shortcut         as Shortcut
 import           Luna.Studio.Event.UI               (UIEvent (AppEvent, NodeEditorEvent))
 import           Luna.Studio.Prelude
 import qualified Luna.Studio.React.Event.App        as App
@@ -24,7 +24,7 @@ import           Luna.Studio.State.Global           (State)
 
 -- TODO[react]: Consider mac trackpad!!!
 handle :: Event -> Maybe (Command State ())
-handle (Shortcut shortcut)                             = Just $ handleShortcut shortcut
+handle (Shortcut (Shortcut.Event command _))           = Just $ handleCommand command
 handle (UI (NodeEditorEvent (NodeEditor.MouseDown e))) = Just $ handleMouseDown e
 handle (UI (AppEvent (App.MouseMove e _)))             = Just $ handleMouseMove e
 handle (UI (AppEvent (App.MouseUp   _)))               = Just $ continue stopPanDrag >> continue stopZoomDrag
@@ -44,19 +44,19 @@ handle _                                               = Nothing
 --
 
 
-handleShortcut :: ShortcutEvent -> Command State ()
-handleShortcut = \case
-    CenterGraph -> centerGraph
-    PanDown     -> panDown
-    PanLeft     -> panLeft
-    PanRight    -> panRight
-    PanUp       -> panUp
-    ResetCamera -> resetCamera
-    ResetPan    -> resetPan >> centerGraph
-    ResetZoom   -> resetZoom
-    ZoomIn      -> zoomIn
-    ZoomOut     -> zoomOut
-    _           -> return ()
+handleCommand :: Shortcut.Command -> Command State ()
+handleCommand = \case
+    Shortcut.CenterGraph -> centerGraph
+    Shortcut.PanDown     -> panDown
+    Shortcut.PanLeft     -> panLeft
+    Shortcut.PanRight    -> panRight
+    Shortcut.PanUp       -> panUp
+    Shortcut.ResetCamera -> resetCamera
+    Shortcut.ResetPan    -> resetPan >> centerGraph
+    Shortcut.ResetZoom   -> resetZoom
+    Shortcut.ZoomIn      -> zoomIn
+    Shortcut.ZoomOut     -> zoomOut
+    _                    -> return ()
 
 
 handleMouseDown :: MouseEvent -> Command State ()

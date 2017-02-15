@@ -87,10 +87,10 @@ renameNode :: NodeId -> Text -> Workspace -> UUID -> Maybe UUID -> IO ()
 renameNode nid name w uuid guiID = sendRequest $ Message uuid guiID $ withLibrary w RenameNode.Request nid name
 
 autoconnect :: NodeId -> NodeId -> Workspace -> UUID -> Maybe UUID -> IO ()
-autoconnect src dst workspace uuid guiID = sendRequest $ Message uuid guiID $ withLibrary workspace Connect.Request $ Connect.NodeConnection src dst
+autoconnect src dst workspace uuid guiID = sendRequest $ Message uuid guiID $ withLibrary workspace Connect.Request $ Connect.NodeConnect src dst
 
 connectNodes :: OutPortRef -> InPortRef -> Workspace -> UUID -> Maybe UUID -> IO ()
-connectNodes src dst workspace uuid guiID = sendRequest $ Message uuid guiID $ withLibrary workspace Connect.Request $ Connect.PortConnection src dst
+connectNodes src dst workspace uuid guiID = sendRequest $ Message uuid guiID $ withLibrary workspace Connect.Request $ Connect.PortConnect src dst
 
 
 disconnectNodes :: InPortRef -> Workspace -> UUID -> Maybe UUID -> IO ()

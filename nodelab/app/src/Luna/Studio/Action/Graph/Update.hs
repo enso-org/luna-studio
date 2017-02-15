@@ -10,11 +10,9 @@ import           Empire.API.Data.Connection             (ConnectionId)
 import qualified Empire.API.Data.Connection             as Connection
 import           Empire.API.Data.Node                   (NodeId)
 import           Luna.Studio.Action.Command             (Command)
-import           Luna.Studio.Action.Connect.Color       (getConnectionColor)
-import           Luna.Studio.Action.Geometry.Connection (getConnectionPosition)
-import           Luna.Studio.Action.Graph.Connect       (localConnectNodes)
+import           Luna.Studio.Action.Geometry.Connection (createConnectionModel)
 import           Luna.Studio.Prelude
-import qualified Luna.Studio.React.Model.Connection     as ConnectionModel
+import qualified Luna.Studio.React.Model.NodeEditor     as NodeEditor
 import qualified Luna.Studio.State.Global               as Global
 import qualified Luna.Studio.State.Graph                as Graph
 
@@ -32,18 +30,9 @@ updateConnectionsForNodes nodeIds = do
 
 updateConnection :: ConnectionId -> Command Global.State ()
 updateConnection connId = do
-    mayConnectionModel <- Global.getConnection connId
-    mayConnection    <- preuse $ Global.graph . Graph.connectionsMap . ix connId
-    case (mayConnectionModel, mayConnection) of
-        (Just _, Just conn) -> do
-            let src = conn ^. Connection.src
-                dst = conn ^. Connection.dst
-            mayPos <- getConnectionPosition src dst
-            withJust mayPos $ \(from', to') -> do
-                mayColor <- getConnectionColor src
-                withJust mayColor $ \color -> Global.modifyConnection connId $ do
-                    ConnectionModel.from      .= from'
-                    ConnectionModel.to        .= to'
-                    ConnectionModel.color     .= color
-        (Nothing, Just conn) -> void $ localConnectNodes (conn ^. Connection.src) (conn ^. Connection.dst)
-        _ -> return ()
+    mayConnection <- preuse $ Global.graph . Graph.connectionsMap . ix connId
+    withJust mayConnection $ \conn -> do
+        mayConnectionModel <- createConnectionModel conn
+        mayConnToUpdate    <- Global.getConnection connId
+        when (mayConnectionModel /= mayConnToUpdate) $
+            Global.modifyNodeEditor $ NodeEditor.connections . at connId .= mayConnectionModel
