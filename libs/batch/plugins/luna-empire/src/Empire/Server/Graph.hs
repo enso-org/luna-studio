@@ -36,6 +36,7 @@ import qualified Empire.API.Data.NodeSearcher          as NS
 import           Empire.API.Data.Port                  (InPort (..), OutPort (..), Port (..), PortId (..), PortState (..))
 import           Empire.API.Data.PortRef               (InPortRef (..), OutPortRef (..))
 import           Empire.API.Data.PortRef               as PortRef
+import           Empire.API.Data.TypeRep               (TypeRep (TStar))
 import qualified Empire.API.Graph.AddNode              as AddNode
 import qualified Empire.API.Graph.AddSubgraph          as AddSubgraph
 import qualified Empire.API.Graph.CodeUpdate           as CodeUpdate
@@ -274,16 +275,21 @@ handleTypecheck req@(Request _ _ request) = do
         Right _  -> Env.empireEnv .= newEmpireEnv
     return ()
 
-mockNSData :: NS.Items
+mockNSData :: NS.Items Node
 mockNSData = Map.fromList $ functionsList <> modulesList where
     nodeSearcherSymbols = ["mockNodeSearcherSymbol"]
     (methods, functions) = partition (elem '.') nodeSearcherSymbols
     functionsList = functionEntry <$> functions
-    functionEntry function = (convert function, NS.Element)
+    functionEntry function = (convert function, NS.Element $ mockNode "mockNode")
     modulesMethodsMap = foldl updateModulesMethodsMap Map.empty methods
     updateModulesMethodsMap map el = Map.insert moduleName methodNames map where
         (moduleName, dotMethodName) = break (== '.') el
         methodName = tail dotMethodName
         methodNames = methodName : (fromMaybe [] $ Map.lookup moduleName map)
     modulesList = (uncurry moduleEntry) <$> Map.toList modulesMethodsMap
-    moduleEntry moduleName methodList = (convert moduleName, NS.Group $ Map.fromList $ functionEntry <$> methodList)
+    moduleEntry moduleName methodList = (convert moduleName, NS.Group (Map.fromList $ functionEntry <$> methodList) $ mockNode "mockGroupNode")
+    mockNode name = Node (fromJust $ UUID.fromString "094f9784-3f07-40a1-84df-f9cf08679a27") name (Node.ExpressionNode name) False def def def
+    mockPorts = Map.fromList [ (InPortId  Self  , Port (InPortId  Self)    "self" TStar NotConnected)
+                             , (InPortId (Arg 0), Port (InPortId (Arg 0)) "arg 0" TStar NotConnected)
+                             , (OutPortId All   , Port (OutPortId All)   "Output" TStar NotConnected)
+                             ]

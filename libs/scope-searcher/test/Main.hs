@@ -27,7 +27,7 @@ import qualified Mock.Mix                       as Mock
 assertMsg :: String -> String -> Int -> String
 assertMsg query sugg ind = "'" <> sugg <> "' should be " <> show ind <> " on suggestions list for '" <> query <> "' query"
 
-prepareTest :: String -> ([QueryResult], String -> Int -> String)
+prepareTest :: String -> ([QueryResult ()], String -> Int -> String)
 prepareTest query = (Scope.searchInScope Mock.items $ Text.pack query, assertMsg query)
 
 assertMatch :: String -> QueryResult -> QueryResult -> Assertion

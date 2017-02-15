@@ -2,156 +2,154 @@
 
 module Mock.Mix where
 
-import qualified Data.Map                    as Map
+import qualified Data.Map                as Map
 import           Text.ScopeSearcher.Item
 
 items = _items group
 
-group  = Group $ Map.fromList  [
-         ("id"             , Element)
-       , ("const"          , Element)
-       , ("app"            , Element)
-       , ("comp"           , Element)
-       , ("flip"           , Element)
-       , ("empty"          , Element)
-       , ("singleton"      , Element)
-       , ("switch"         , Element)
-       , ("readFile"       , Element)
-       , ("mean"           , Element)
-       , ("differences"    , Element)
-       , ("histogram"      , Element)
-       , ("primes"         , Element)
+mkElement name = (name, Element ())
+mkGroup name list = (name, Group list ())
+
+group  = Group (Map.fromList  [
+         mkElement "id"
+       , mkElement "const"
+       , mkElement "app"
+       , mkElement "comp"
+       , mkElement "flip"
+       , mkElement "empty"
+       , mkElement "singleton"
+       , mkElement "switch"
+       , mkElement "readFile"
+       , mkElement "mean"
+       , mkElement "differences"
+       , mkElement "histogram"
+       , mkElement "primes"
 -- purely for testing
-       , ("filter"         , Element)
-       , ("moaBurger"      , Element)
-       , ("MapOverAny"     , Element)
+       , mkElement "filter"
+       , mkElement "moaBurger"
+       , mkElement "MapOverAny"
 -- !purely for testing
-       , ("List"           , Group $ Map.fromList [
-                                             ("+"          , Element)
-                                           , ("append"     , Element)
-                                           , ("prepend"    , Element)
-                                           , ("length"     , Element)
-                                           , ("reverse"    , Element)
-                                           , ("take"       , Element)
-                                           , ("drop"       , Element)
-                                           , ("sort"       , Element)
+       , mkGroup "List"   $ Map.fromList [ mkElement "+"
+                                         , mkElement "append"
+                                         , mkElement "prepend"
+                                         , mkElement "length"
+                                         , mkElement "reverse"
+                                         , mkElement "take"
+                                         , mkElement "drop"
+                                         , mkElement "sort"
 
-                                           , ("fold"       , Element)
-                                           , ("map"        , Element)
-                                           , ("zip"        , Element)
-                                           , ("filter"     , Element)
-                                           ])
-       , ("Int"            , Group $ Map.fromList [
-                                             ("=="         , Element)
-                                           , ("/="         , Element)
-                                           , ("<"          , Element)
-                                           , ("<="         , Element)
-                                           , (">"          , Element)
-                                           , (">="         , Element)
-                                           , ("min"        , Element)
-                                           , ("max"        , Element)
+                                         , mkElement "fold"
+                                         , mkElement "map"
+                                         , mkElement "zip"
+                                         , mkElement "filter"
+                                         ]
+       , mkGroup "Int"    $ Map.fromList [ mkElement "=="
+                                         , mkElement "/="
+                                         , mkElement "<"
+                                         , mkElement "<="
+                                         , mkElement ">"
+                                         , mkElement ">="
+                                         , mkElement "min"
+                                         , mkElement "max"
 
-                                           , ("+"          , Element)
-                                           , ("*"          , Element)
-                                           , ("-"          , Element)
-                                           , ("/"          , Element)
-                                           , ("%"          , Element)
-                                           , ("^"          , Element)
+                                         , mkElement "+"
+                                         , mkElement "*"
+                                         , mkElement "-"
+                                         , mkElement "/"
+                                         , mkElement "%"
+                                         , mkElement "^"
 
-                                           , ("negate"     , Element)
-                                           , ("abs"        , Element)
-                                           , ("signum"     , Element)
+                                         , mkElement "negate"
+                                         , mkElement "abs"
+                                         , mkElement "signum"
 
-                                           , ("pred"       , Element)
-                                           , ("succ"       , Element)
-                                           , ("even"       , Element)
-                                           , ("odd"        , Element)
+                                         , mkElement "pred"
+                                         , mkElement "succ"
+                                         , mkElement "even"
+                                         , mkElement "odd"
 
-                                           , ("gcd"        , Element)
-                                           , ("lcm"        , Element)
+                                         , mkElement "gcd"
+                                         , mkElement "lcm"
 
-                                           , ("times"      , Element)
-                                           , ("upto"       , Element)
+                                         , mkElement "times"
+                                         , mkElement "upto"
 
-                                           , ("toDouble"   , Element)
-                                           , ("toString"   , Element)
-                                           ])
-       , ("Double"         , Group $ Map.fromList [
-                                             ("=="         , Element)
-                                           , ("/="         , Element)
-                                           , ("<"          , Element)
-                                           , ("<="         , Element)
-                                           , (">"          , Element)
-                                           , (">="         , Element)
-                                           , ("min"        , Element)
-                                           , ("max"        , Element)
+                                         , mkElement "toDouble"
+                                         , mkElement "toString"
+                                         ]
+       , mkGroup "Double" $ Map.fromList [ mkElement "=="
+                                         , mkElement "/="
+                                         , mkElement "<"
+                                         , mkElement "<="
+                                         , mkElement ">"
+                                         , mkElement ">="
+                                         , mkElement "min"
+                                         , mkElement "max"
 
-                                           , ("+"          , Element)
-                                           , ("*"          , Element)
-                                           , ("-"          , Element)
-                                           , ("/"          , Element)
-                                           , ("**"         , Element)
+                                         , mkElement "+"
+                                         , mkElement "*"
+                                         , mkElement "-"
+                                         , mkElement "/"
+                                         , mkElement "**"
 
-                                           , ("negate"     , Element)
-                                           , ("abs"        , Element)
-                                           , ("signum"     , Element)
+                                         , mkElement "negate"
+                                         , mkElement "abs"
+                                         , mkElement "signum"
 
-                                           , ("round"      , Element)
-                                           , ("ceiling"    , Element)
-                                           , ("floor"      , Element)
+                                         , mkElement "round"
+                                         , mkElement "ceiling"
+                                         , mkElement "floor"
 
-                                           , ("exp"        , Element)
-                                           , ("log"        , Element)
-                                           , ("sqrt"       , Element)
+                                         , mkElement "exp"
+                                         , mkElement "log"
+                                         , mkElement "sqrt"
 
-                                           , ("sin"        , Element)
-                                           , ("cos"        , Element)
-                                           , ("tan"        , Element)
-                                           , ("asin"       , Element)
-                                           , ("acos"       , Element)
-                                           , ("atan"       , Element)
-                                           , ("sinh"       , Element)
-                                           , ("cosh"       , Element)
-                                           , ("tanh"       , Element)
-                                           , ("asinh"      , Element)
-                                           , ("acosh"      , Element)
-                                           , ("atanh"      , Element)
+                                         , mkElement "sin"
+                                         , mkElement "cos"
+                                         , mkElement "tan"
+                                         , mkElement "asin"
+                                         , mkElement "acos"
+                                         , mkElement "atan"
+                                         , mkElement "sinh"
+                                         , mkElement "cosh"
+                                         , mkElement "tanh"
+                                         , mkElement "asinh"
+                                         , mkElement "acosh"
+                                         , mkElement "atanh"
 
-                                           , ("toString"   , Element)
-                                           ])
-       , ("Bool",            Group $ Map.fromList [
-                                             ("=="         , Element)
-                                           , ("/="         , Element)
-                                           , ("<"          , Element)
-                                           , ("<="         , Element)
-                                           , (">"          , Element)
-                                           , (">="         , Element)
-                                           , ("min"        , Element)
-                                           , ("max"        , Element)
+                                         , mkElement "toString"
+                                         ]
+       , mkGroup "Bool"   $ Map.fromList [ mkElement "=="
+                                         , mkElement "/="
+                                         , mkElement "<"
+                                         , mkElement "<="
+                                         , mkElement ">"
+                                         , mkElement ">="
+                                         , mkElement "min"
+                                         , mkElement "max"
 
-                                           , ("&&"         , Element)
-                                           , ("||"         , Element)
-                                           , ("not"        , Element)
+                                         , mkElement "&&"
+                                         , mkElement "||"
+                                         , mkElement "not"
 
-                                           , ("toString"   , Element)
-                                           ])
-       , ("String"         , Group $ Map.fromList [
-                                             ("=="         , Element)
-                                           , ("/="         , Element)
-                                           , ("<"          , Element)
-                                           , ("<="         , Element)
-                                           , (">"          , Element)
-                                           , (">="         , Element)
-                                           , ("min"        , Element)
-                                           , ("max"        , Element)
-                                           , ("+"          , Element)
-                                           , ("length"     , Element)
-                                           , ("reverse"    , Element)
-                                           , ("take"       , Element)
-                                           , ("drop"       , Element)
-                                           , ("words"      , Element)
-                                           , ("lines"      , Element)
-                                           , ("join"       , Element)
-                                           , ("toString"   , Element)
-                                           ])
-       ]
+                                         , mkElement "toString"
+                                         ]
+       , mkGroup "String" $ Map.fromList [ mkElement "=="
+                                         , mkElement "/="
+                                         , mkElement "<"
+                                         , mkElement "<="
+                                         , mkElement ">"
+                                         , mkElement ">="
+                                         , mkElement "min"
+                                         , mkElement "max"
+                                         , mkElement "+"
+                                         , mkElement "length"
+                                         , mkElement "reverse"
+                                         , mkElement "take"
+                                         , mkElement "drop"
+                                         , mkElement "words"
+                                         , mkElement "lines"
+                                         , mkElement "join"
+                                         , mkElement "toString"
+                                         ]
+       ]) ()
