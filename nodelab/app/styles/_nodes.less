@@ -175,6 +175,7 @@
         height:   100%;
     }
 }
+
 .luna-vis--graph {
     position: relative;
     svg {
@@ -184,4 +185,33 @@
         fill:     #666;
         overflow: initial;
     }
+}
+
+/////////////////////////////
+//       port sidebar      //
+/////////////////////////////
+
+.luna-port-sidebar {
+    position:        relative;
+    width:           16px;
+    height:          100%;
+    display:         flex;
+    flex-direction:  column;
+    justify-content: center;
+    overflow:        inherit;
+    background: #333;
+    svg {
+        overflow: inherit;
+        height:   1px;
+        position: relative;
+    }
+}
+
+.luna-port-sidebar--i {
+    float:      left;
+    svg { left: 16px }
+}
+
+.luna-port-sidebar--o {
+    float:      right;
 }
