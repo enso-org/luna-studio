@@ -45,7 +45,7 @@ exports.config =
     ghcjs:
       placeholder:  'app/env.ghcjs'
       projectName:  cabalProjectName
-      buildCommand: 'stack build --install-ghc --fast -j1'
+      buildCommand: 'stack build --install-ghc'
       clearScreen:  false
       interactive:  false
       ghciCommand:  "./interactive"
