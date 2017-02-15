@@ -11,7 +11,6 @@ import           Empire.API.Data.GraphLocation (GraphLocation (..))
 import qualified Empire.API.Data.GraphLocation as GraphLocation
 import           Empire.API.Data.Library       (Library)
 import qualified Empire.API.Data.Library       as Library
-import           Empire.API.Data.Node          (Node)
 import           Empire.API.Data.Project       (Project, ProjectId)
 import qualified Empire.API.Data.Project       as Project
 
@@ -27,7 +26,7 @@ data Workspace = Workspace { _projects         :: Map ProjectId Project
                            , _currentLocation  :: GraphLocation
                            , _lastUILocation   :: Maybe UIGraphLocation
                            , _isGraphLoaded    :: Bool
-                           , _nodeSearcherData :: Items Node
+                           , _nodeSearcherData :: Items
                            } deriving (Show, Eq, Generic)
 
 instance ToJSON Workspace
