@@ -58,10 +58,10 @@ connectionToNodeIds :: Connection -> (NodeId, NodeId)
 connectionToNodeIds conn = ( conn ^. Connection.src . PortRef.srcNodeId
                            , conn ^. Connection.dst . PortRef.dstNodeId)
 
-nodes :: Contravariant f => ([Node] -> f [Node]) -> State -> f State
+nodes :: Getter State [Node]
 nodes = to getNodes
 
-connections :: Contravariant f => ([Connection] -> f [Connection]) -> State -> f State
+connections :: Getter State [Connection]
 connections = to getConnections
 
 getNodes :: State -> [Node]

@@ -1,4 +1,5 @@
 {-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE RankNTypes #-}
 
 module Luna.Studio.Prelude (
     module Luna.Studio.Prelude,
@@ -7,7 +8,7 @@ module Luna.Studio.Prelude (
 ) where
 
 import           Control.Applicative           as X
-import           Control.Lens                  as X
+import           Control.Lens                  as X hiding (Getter)
 import           Control.Monad                 as X (MonadPlus, join, mplus, mzero, unless, void, when, (<=<), (>=>))
 import           Control.Monad.IO.Class        as X (MonadIO, liftIO)
 import           Control.Monad.Trans           as X (MonadTrans, lift)
@@ -56,3 +57,5 @@ withJustM :: Monad m => m (Maybe a) -> (a -> m ()) -> m ()
 withJustM mMayVal action = do
     mayVal <- mMayVal
     withJust mayVal action
+
+type Getter a b = forall f. Contravariant f => (b -> f b) -> a -> f a

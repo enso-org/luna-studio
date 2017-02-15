@@ -51,7 +51,7 @@ data Collaboration = Collaboration { _touch  :: Map ClientId (UTCTime, ColorId)
 makeLenses ''Node
 makeLenses ''Collaboration
 
-isLiteral :: Contravariant f => (Bool -> f Bool) -> Node -> f Node
+isLiteral :: Getter Node Bool
 isLiteral = to isLiteral' where
     isLiteral' node = not $ any isIn' portIds where
         portIds = map portId' $ Map.keys $ node ^. ports
