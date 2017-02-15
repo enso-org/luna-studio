@@ -23,6 +23,7 @@ import           Luna.Studio.React.View.Node           (node_,nodeDynamicStyles_
 import           Luna.Studio.React.View.SelectionBox   (selectionBox_)
 import           Luna.Studio.React.View.Visualization  (pinnedVisualization_)
 
+import           Luna.Studio.React.View.Port           (portSidebar_)
 
 name :: JSString
 name = "node-editor"
@@ -87,6 +88,8 @@ nodeEditor = React.defineView name $ \(ref, ne) -> do
             ] $ do
             forM_ (ne ^. NodeEditor.nodes . to HashMap.elems) $ node_ ref
             forM_ (ne ^. NodeEditor.visualizations)           $ pinnedVisualization_ ref ne
+        -- portSidebar_ True
+        -- portSidebar_ False
         canvas_
             [ "className" $= "luna-plane plane--canvas luna-hide"
             , "key"       $= "canvas"
