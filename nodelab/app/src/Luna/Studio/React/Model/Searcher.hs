@@ -29,7 +29,7 @@ defNode, defCommand :: Searcher
 defNode    = mkDef Node
 defCommand = mkDef Command
 
-selectedExpression :: Contravariant f => (Text -> f Text) -> Searcher -> f Searcher
+selectedExpression :: Getter Searcher Text
 selectedExpression = to getExpression where
     getExpression searcher = expression where
         selected'  = searcher ^. selected
