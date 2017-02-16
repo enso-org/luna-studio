@@ -136,15 +136,14 @@ addPersistentNode n = case n ^. Node.nodeType of
                 _ -> return ()
             _ -> return ()
 
-addPort :: GraphLocation -> NodeId -> Empire AnyPortRef
+addPort :: GraphLocation -> NodeId -> Empire Node
 addPort loc nid = withGraph loc $ runASTOp $ do
     Just lambda <- use Graph.insideNode
     ref <- GraphUtils.getASTTarget lambda
     ASTModify.addLambdaArg ref
+    -- TODO[MM]: This should match for any node. Now it ignores node and replace it by InputEdge.
     inputEdge <- GraphBuilder.buildConnections >>= \c -> GraphBuilder.buildInputEdge c nid
-    let argPorts = inputEdge ^. Node.ports
-    let lastPortIndex = length argPorts - 1
-    return $ OutPortRef' (OutPortRef nid (Projection lastPortIndex))
+    return inputEdge
 
 generateNodeId :: IO NodeId
 generateNodeId = UUID.nextRandom

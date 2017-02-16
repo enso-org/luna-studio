@@ -4,8 +4,7 @@ import           Data.Binary                   (Binary)
 import           Prologue
 
 import           Empire.API.Data.GraphLocation (GraphLocation)
-import           Empire.API.Data.Node          (NodeId)
-import           Empire.API.Data.PortRef       (AnyPortRef)
+import           Empire.API.Data.Node          (Node, NodeId)
 import qualified Empire.API.Graph.Request      as G
 import qualified Empire.API.Request            as R
 import qualified Empire.API.Response           as Response
@@ -17,7 +16,8 @@ data Request = Request { _location    :: GraphLocation
                        , _nodeId      :: NodeId
                        } deriving (Generic, Eq, NFData, Show)
 
-type Result = AnyPortRef
+--TODO[MM]: Remove Node as Response Result. We don't use it
+type Result = Node
 
 
 type Response = Response.Response Request () Result

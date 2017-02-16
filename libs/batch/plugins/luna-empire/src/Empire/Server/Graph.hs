@@ -27,8 +27,8 @@ import           Prologue                              hiding (Item)
 import           Empire.API.Data.Breadcrumb            (Breadcrumb (..))
 import           Empire.API.Data.Connection            as Connection
 import           Empire.API.Data.DefaultValue          (Value (..))
-import           Empire.API.Data.GraphLocation         (GraphLocation)
 import           Empire.API.Data.Graph                 (Graph (..))
+import           Empire.API.Data.GraphLocation         (GraphLocation)
 import           Empire.API.Data.Node                  (Node (..), NodeId)
 import qualified Empire.API.Data.Node                  as Node
 import           Empire.API.Data.NodeMeta              (NodeMeta)
@@ -47,8 +47,8 @@ import qualified Empire.API.Graph.GetProgram           as GetProgram
 import qualified Empire.API.Graph.NodeResultUpdate     as NodeResultUpdate
 import qualified Empire.API.Graph.NodesUpdate          as NodesUpdate
 import qualified Empire.API.Graph.RemoveNodes          as RemoveNodes
-import qualified Empire.API.Graph.RenameNode           as RenameNode
 import qualified Empire.API.Graph.RemovePort           as RemovePort
+import qualified Empire.API.Graph.RenameNode           as RenameNode
 import qualified Empire.API.Graph.Request              as G
 import qualified Empire.API.Graph.SetDefaultValue      as SetDefaultValue
 import qualified Empire.API.Graph.TypeCheck            as TypeCheck
@@ -61,7 +61,7 @@ import qualified Empire.API.Topic                      as Topic
 import           Empire.ASTOp                          (runASTOp)
 import qualified Empire.ASTOps.Print                   as Print
 import qualified Empire.Commands.Graph                 as Graph
-import           Empire.Commands.GraphBuilder          (buildNodes, getNodeName, buildConnections, buildGraph)
+import           Empire.Commands.GraphBuilder          (buildConnections, buildGraph, buildNodes, getNodeName)
 import qualified Empire.Commands.Persistence           as Persistence
 import           Empire.Empire                         (Empire)
 import qualified Empire.Empire                         as Empire
@@ -180,8 +180,7 @@ handleAddNode = modifyGraph (mtuple action) success where
 handleAddPort :: Request AddPort.Request -> StateT Env BusT ()
 handleAddPort = modifyGraph (mtuple action) success where
     action (AddPort.Request location nodeId) = Graph.addPort location nodeId
-    success request@(Request _ _ req@(AddPort.Request location nodeId)) _ portRef = do
-        replyResult request () portRef
+    success request@(Request _ _ req@(AddPort.Request location nodeId)) _ node = replyResult request () node >> sendToBus' (NodesUpdate.Update location [node])
 
 handleAddSubgraph :: Request AddSubgraph.Request -> StateT Env BusT ()
 handleAddSubgraph = modifyGraph (mtuple action) success where

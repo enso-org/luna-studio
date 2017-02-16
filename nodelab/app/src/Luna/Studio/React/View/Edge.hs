@@ -1,0 +1,38 @@
+{-# LANGUAGE OverloadedStrings #-}
+{-# OPTIONS_GHC -fno-warn-type-defaults #-}
+module Luna.Studio.React.View.Edge (
+    edgeSidebar_,
+) where
+
+import qualified Data.Map.Lazy                as Map
+import qualified Luna.Studio.Event.UI         as UI
+import           Luna.Studio.Prelude
+import qualified Luna.Studio.React.Event.Edge as Edge
+import           Luna.Studio.React.Model.App  (App)
+import           Luna.Studio.React.Model.Node (Node, isEdge, isInputEdge)
+import qualified Luna.Studio.React.Model.Node as Node
+import           Luna.Studio.React.Store      (Ref, dispatch)
+import           Luna.Studio.React.View.Port  (portIOExpanded_)
+import           React.Flux
+
+
+name :: Node -> String
+name node = "edgeSidebar" <> if isInputEdge node then "Inputs" else "Outputs"
+
+sendAddPortEvent :: Ref App -> Node -> [SomeStoreAction]
+sendAddPortEvent ref node = dispatch ref (UI.EdgeEvent $ Edge.AddPort (node ^. Node.nodeId))
+
+edgeSidebar_ :: Ref App -> Node -> ReactElementM ViewEventHandler ()
+edgeSidebar_ ref node = when (isEdge node) $ do
+    let classes = "luna-edge-sidebar luna-edge-sidebar" <> if isInputEdge node then "--i" else "--o" <> " luna-noselect"
+        ports   = node ^. Node.ports . to Map.elems
+    div_
+        [ "className" $= classes
+        , "key"       $= (fromString $ name node)
+        ] $ do
+        svg_ [] $ forM_ ports $ portIOExpanded_ ref
+        div_
+            [ "className" $= "luna-edge__buton luna-edge__button--add"
+            , "key"       $= (fromString $ name node <> "AddButton")
+            , onClick $ \e _ -> stopPropagation e : sendAddPortEvent ref node
+            ] $ elemString "Add"

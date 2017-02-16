@@ -19,6 +19,7 @@ import           Empire.API.Data.PortRef                (AnyPortRef (..), InPort
 import           Empire.API.Data.Project                (ProjectId)
 
 import qualified Empire.API.Graph.AddNode               as AddNode
+import qualified Empire.API.Graph.AddPort               as AddPort
 import qualified Empire.API.Graph.AddSubgraph           as AddSubgraph
 import qualified Empire.API.Graph.Collaboration         as Collaboration
 import qualified Empire.API.Graph.Connect               as Connect
@@ -51,6 +52,9 @@ addNode' maybeNodeId expression meta connectTo workspace uuid guiID = sendReques
 
 addNode :: Text -> NodeMeta -> Maybe NodeId -> Workspace -> UUID -> Maybe UUID -> IO ()
 addNode expression meta connectTo workspace uuid guiID = addNode' Nothing expression meta connectTo workspace uuid guiID
+
+addPort :: NodeId -> Workspace -> UUID -> Maybe UUID -> IO ()
+addPort nodeId workspace uuid guiID = sendRequest $ Message uuid guiID $ (withLibrary workspace AddPort.Request) nodeId
 
 addSubgraph :: [Node] -> [Connection] -> Workspace -> UUID -> Maybe UUID -> IO ()
 addSubgraph nodes connections workspace uuid guiID = addSubgraph' nodes connections workspace uuid guiID False
@@ -91,7 +95,6 @@ autoconnect src dst workspace uuid guiID = sendRequest $ Message uuid guiID $ wi
 
 connectNodes :: OutPortRef -> InPortRef -> Workspace -> UUID -> Maybe UUID -> IO ()
 connectNodes src dst workspace uuid guiID = sendRequest $ Message uuid guiID $ withLibrary workspace Connect.Request $ Connect.PortConnect src dst
-
 
 disconnectNodes :: InPortRef -> Workspace -> UUID -> Maybe UUID -> IO ()
 disconnectNodes dst workspace uuid guiID = sendRequest $ Message uuid guiID $ withLibrary workspace Disconnect.Request dst
