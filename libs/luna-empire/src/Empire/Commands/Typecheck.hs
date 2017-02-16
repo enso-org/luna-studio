@@ -115,7 +115,7 @@ updateNodes loc = do
         -- cached <- uses nodesCache $ Map.lookup nid
         -- when (cached /= Just rep) $ do
             -- nodesCache %= Map.insert nid rep
-    edgeNodes  <- zoom graph $ runASTOp $ GraphBuilder.buildEdgeNodes
+    edgeNodes  <- zoom graph $ runASTOp $ GraphBuilder.buildConnections >>= \c -> GraphBuilder.buildEdgeNodes c
     forM_ edgeNodes $ \edges -> forM_ edges $ \rep -> do
         let nid = rep ^. nodeId
         cached <- uses nodesCache $ Map.lookup nid

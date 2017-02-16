@@ -85,23 +85,26 @@ throwIfCannotEnter = do
 buildGraph :: ASTOp m => m API.Graph
 buildGraph = do
     throwIfCannotEnter
-    API.Graph <$> buildNodes <*> buildConnections
+    connections <- buildConnections
+    nodes <- buildNodes
+    edges <- buildEdgeNodes connections
+    let allNodes = nodes ++ case edges of
+            Just (input, output) -> [input, output]
+            _                    -> []
+    return $ API.Graph allNodes connections
 
 buildNodes :: ASTOp m => m [API.Node]
 buildNodes = do
     allNodeIds <- uses Graph.breadcrumbHierarchy topLevelIDs
-    edges <- buildEdgeNodes
     nodes <- mapM buildNode allNodeIds
-    return $ nodes ++ case edges of
-        Just (inputEdge, outputEdge) -> [inputEdge, outputEdge]
-        _                            -> []
+    return nodes
 
 type EdgeNodes = (API.Node, API.Node)
 
-buildEdgeNodes :: ASTOp m => m (Maybe EdgeNodes)
-buildEdgeNodes = getEdgePortMapping >>= \p -> case p of
+buildEdgeNodes :: ASTOp m => [(OutPortRef, InPortRef)] -> m (Maybe EdgeNodes)
+buildEdgeNodes connections = getEdgePortMapping >>= \p -> case p of
     Just (inputPort, outputPort) -> do
-        inputEdge  <- buildInputEdge inputPort
+        inputEdge  <- buildInputEdge connections inputPort
         outputEdge <- buildOutputEdge outputPort
         return $ Just (inputEdge, outputEdge)
     _ -> return Nothing
@@ -287,11 +290,16 @@ buildConnections = do
     let foo = maybeToList $ join outputEdgeConnections
     return $ foo ++ concat connections
 
-buildInputEdge :: ASTOp m => NodeId -> m API.Node
-buildInputEdge nid = do
+buildInputEdge :: ASTOp m => [(OutPortRef, InPortRef)] -> NodeId -> m API.Node
+buildInputEdge connections nid = do
     Just lastb <- use Graph.insideNode
     ref   <- GraphUtils.getASTTarget lastb
     (types, _states) <- extractPortInfo ref
+    let connectedPorts = map (\(OutPortRef _ (Projection p)) -> p)
+               $ map fst
+               $ filter (\(OutPortRef refNid p,_) -> nid == refNid)
+               $ connections
+        states = map (\i -> if i `elem` connectedPorts then Connected else NotConnected) [(0::Int)..]
     names <- extractArgNames ref
     argTypes <- case types of
         [] -> do
@@ -299,7 +307,7 @@ buildInputEdge nid = do
             return $ replicate numberOfArguments TStar
         [TLam types' _] -> return types'
     let nameGen = names ++ drop (length names) (fmap (\i -> "arg" ++ show i) [(0::Int)..])
-        inputEdges = zipWith3 (\n t i -> Port (OutPortId $ Projection i) n t Port.NotConnected) nameGen argTypes [(0::Int)..]
+        inputEdges = List.zipWith4 (\n t state i -> Port (OutPortId $ Projection i) n t state) nameGen argTypes states [(0::Int)..]
     return $
         API.Node nid
             "inputEdge"
@@ -330,8 +338,8 @@ buildOutputEdge nid = do
 getLambdaInputArgNumber :: ASTOp m => NodeRef -> m (Maybe Int)
 getLambdaInputArgNumber lambda = do
     match lambda $ \case
-        Lam _args out -> do
-            out' <- IR.source out
+        Lam _arg _body -> do
+            out' <- ASTRead.getLambdaOutputRef lambda
             (out' `List.elemIndex`) <$> ASTDeconstruct.extractArguments lambda
         _ -> return Nothing
 
@@ -370,12 +378,12 @@ nodeConnectedToOutput = do
                 _           -> return Nothing
 
 
-resolveInputNodeId :: ASTOp m => Maybe (NodeId, NodeId) -> [NodeRef] -> NodeRef -> m (Maybe NodeId)
+resolveInputNodeId :: ASTOp m => Maybe (NodeId, NodeId) -> [NodeRef] -> NodeRef -> m (Maybe Int, Maybe NodeId)
 resolveInputNodeId edgeNodes lambdaArgs ref = do
     nodeId <- ASTRead.getNodeId ref
-    case List.find (== ref) lambdaArgs of
-        Just _ -> return $ fmap fst edgeNodes
-        _      -> return nodeId
+    case List.findIndex (== ref) lambdaArgs of
+        Just i -> return (Just i, fmap fst edgeNodes)
+        _      -> return (Nothing, nodeId)
 
 getOuterLambdaArguments :: ASTOp m => m [NodeRef]
 getOuterLambdaArguments = do
@@ -395,14 +403,18 @@ getNodeInputs edgeNodes nodeId = do
     selfMay     <- ASTRead.getSelfNodeRef ref
     lambdaArgs  <- getOuterLambdaArguments
     selfNodeMay <- case selfMay of
-        Just self -> resolveInputNodeId edgeNodes lambdaArgs self
+        Just self -> fmap snd $ resolveInputNodeId edgeNodes lambdaArgs self
         Nothing   -> return Nothing
     let selfConnMay = (,) <$> (OutPortRef <$> selfNodeMay <*> Just All)
                           <*> (Just $ InPortRef nodeId Self)
 
     args       <- ASTDeconstruct.extractArguments ref
     nodeMays   <- mapM (resolveInputNodeId edgeNodes lambdaArgs) args
-    let withInd  = zip nodeMays [0..]
-        onlyExt  = catMaybes $ (\(n, i) -> (,) <$> n <*> Just i) <$> withInd
-        conns    = flip fmap onlyExt $ \(n, i) -> (OutPortRef n All, InPortRef nodeId (Arg i))
+    let withInd  = zipWith (\(outPortIndex, nodeId) index -> (outPortIndex, nodeId, index)) nodeMays [0..]
+        hasNodeId (outIndex, Just nodeId, index) = Just (outIndex, nodeId, index)
+        hasNodeId _ = Nothing
+        onlyExt  = catMaybes $ map hasNodeId withInd
+        outIndexToProjection Nothing = All
+        outIndexToProjection (Just i) = Projection i
+        conns    = flip map onlyExt $ \((outIndexToProjection -> proj), n, i) -> (OutPortRef n proj, InPortRef nodeId (Arg i))
     return $ maybeToList selfConnMay ++ conns

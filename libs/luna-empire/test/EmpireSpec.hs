@@ -12,7 +12,7 @@ import           Empire.API.Data.GraphLocation (GraphLocation(..))
 import qualified Empire.API.Data.Node          as Node (NodeType(ExpressionNode), canEnter,
                                                         expression, name, nodeId, nodeType, ports)
 import qualified Empire.API.Data.Port          as Port
-import           Empire.API.Data.PortRef       (InPortRef (..), OutPortRef (..))
+import           Empire.API.Data.PortRef       (InPortRef (..), OutPortRef (..), AnyPortRef(..))
 import           Empire.API.Data.TypeRep       (TypeRep(TCons, TStar, TLam, TVar))
 import           Empire.ASTOp                  (runASTOp)
 import qualified Empire.ASTOps.Deconstruct     as ASTDeconstruct
@@ -21,7 +21,7 @@ import qualified Empire.ASTOps.Read            as ASTRead
 import qualified Empire.Commands.AST           as AST (isTrivialLambda)
 import qualified Empire.Commands.Graph         as Graph (addNode, connect, getGraph, getNodes,
                                                          getConnections, removeNodes, withGraph,
-                                                         renameNode, disconnect, addPort)
+                                                         renameNode, disconnect, addPort, removePort)
 import qualified Empire.Commands.GraphBuilder  as GraphBuilder
 import           Empire.Commands.Library       (withLibrary)
 import qualified Empire.Commands.Typecheck     as Typecheck (run)
@@ -110,7 +110,7 @@ spec = around withChannels $ id $ do
                 Graph.addNode top u1 "def foo" def
                 Graph.addNode loc' u2 "succ" def
                 Just (input, _) <- Graph.withGraph loc' $ runASTOp GraphBuilder.getEdgePortMapping
-                let referenceConnection = (OutPortRef input Port.All, InPortRef u2 (Port.Arg 0))
+                let referenceConnection = (OutPortRef input (Port.Projection 0), InPortRef u2 (Port.Arg 0))
                 uncurry (Graph.connect loc') referenceConnection
                 connections <- Graph.getConnections loc'
                 return (referenceConnection, connections)
@@ -523,20 +523,23 @@ spec = around withChannels $ id $ do
                 Right _ -> expectationFailure "should throw exception"
                 Left err -> err `shouldStartWith` "ParserException"
     describe "port manipulation" $ do
+        let buildInputEdge' loc nid = Graph.withGraph loc $ runASTOp $ GraphBuilder.buildConnections >>= \c -> GraphBuilder.buildInputEdge c nid
         it "adds port" $ \env -> do
             u1 <- mkUUID
             res <- evalEmp env $ do
                 Graph.addNode top u1 "def foo" def
                 let loc' = top |> u1
-                Just (input, _) <- Graph.withGraph loc' $ runASTOp GraphBuilder.getEdgePortMapping
+                Just (input, output) <- Graph.withGraph loc' $ runASTOp GraphBuilder.getEdgePortMapping
                 Graph.addPort loc' input
-                inputEdge <- Graph.withGraph loc' $ runASTOp $ GraphBuilder.buildInputEdge input
+                inputEdge <- buildInputEdge' loc' input
                 defFoo <- Graph.withGraph top $ runASTOp $ GraphBuilder.buildNode u1
-                return (inputEdge, defFoo)
-            withResult res $ \(inputEdge, defFoo) -> do
+                connections <- Graph.getConnections loc'
+                let referenceConnection = (OutPortRef input (Port.Projection 0), InPortRef output (Port.Arg 0))
+                return (inputEdge, defFoo, connections, referenceConnection)
+            withResult res $ \(inputEdge, defFoo, connections, referenceConnection) -> do
                 let outputPorts = Map.elems $ Map.filter Port.isOutputPort $ inputEdge ^. Node.ports
                 outputPorts `shouldMatchList` [
-                      Port.Port (Port.OutPortId (Port.Projection 0)) "arg0" TStar Port.NotConnected
+                      Port.Port (Port.OutPortId (Port.Projection 0)) "arg0" TStar Port.Connected
                     , Port.Port (Port.OutPortId (Port.Projection 1)) "_" TStar Port.NotConnected
                     ]
                 let inputPorts = Map.elems $ Map.filter Port.isInputPort $ defFoo ^. Node.ports
@@ -544,6 +547,7 @@ spec = around withChannels $ id $ do
                       Port.Port (Port.InPortId (Port.Arg 0)) "arg0" TStar Port.NotConnected
                     , Port.Port (Port.InPortId (Port.Arg 1)) "_" TStar Port.NotConnected
                     ]
+                connections `shouldMatchList` [referenceConnection]
         it "adds two ports" $ \env -> do
             u1 <- mkUUID
             res <- evalEmp env $ do
@@ -552,13 +556,13 @@ spec = around withChannels $ id $ do
                 Just (input, _) <- Graph.withGraph loc' $ runASTOp GraphBuilder.getEdgePortMapping
                 Graph.addPort loc' input
                 Graph.addPort loc' input
-                inputEdge <- Graph.withGraph loc' $ runASTOp $ GraphBuilder.buildInputEdge input
+                inputEdge <- buildInputEdge' loc' input
                 defFoo <- Graph.withGraph top $ runASTOp $ GraphBuilder.buildNode u1
                 return (inputEdge, defFoo)
             withResult res $ \(inputEdge, defFoo) -> do
                 let outputPorts = Map.elems $ Map.filter Port.isOutputPort $ inputEdge ^. Node.ports
                 outputPorts `shouldMatchList` [
-                      Port.Port (Port.OutPortId (Port.Projection 0)) "arg0" TStar Port.NotConnected
+                      Port.Port (Port.OutPortId (Port.Projection 0)) "arg0" TStar Port.Connected
                     , Port.Port (Port.OutPortId (Port.Projection 1)) "_" TStar Port.NotConnected
                     , Port.Port (Port.OutPortId (Port.Projection 2)) "_" TStar Port.NotConnected
                     ]
@@ -575,7 +579,7 @@ spec = around withChannels $ id $ do
                 let loc' = top |> u1
                 Just (input, _) <- Graph.withGraph loc' $ runASTOp GraphBuilder.getEdgePortMapping
                 Graph.addPort loc' input
-                inputEdge <- Graph.withGraph loc' $ runASTOp $ GraphBuilder.buildInputEdge input
+                inputEdge <- buildInputEdge' loc' input
                 defFoo <- Graph.withGraph top $ runASTOp $ GraphBuilder.buildNode u1
                 return (inputEdge, defFoo)
             withResult res $ \(inputEdge, defFoo) -> do
@@ -613,3 +617,84 @@ spec = around withChannels $ id $ do
                 connections `shouldMatchList` [
                       (OutPortRef u2 Port.All, InPortRef u1 (Port.Arg 1))
                     ]
+        it "removes port" $ \env -> do
+            u1 <- mkUUID
+            res <- evalEmp env $ do
+                Graph.addNode top u1 "-> $a $b a" def
+                let loc' = top |> u1
+                Just (input, _) <- Graph.withGraph loc' $ runASTOp GraphBuilder.getEdgePortMapping
+                Graph.removePort loc' (OutPortRef' (OutPortRef input (Port.Projection 1)))
+                inputEdge <- buildInputEdge' loc' input
+                defFoo <- Graph.withGraph top $ runASTOp $ GraphBuilder.buildNode u1
+                return (inputEdge, defFoo)
+            withResult res $ \(inputEdge, node) -> do
+                let outputPorts = Map.elems $ Map.filter Port.isOutputPort $ inputEdge ^. Node.ports
+                outputPorts `shouldMatchList` [
+                      Port.Port (Port.OutPortId (Port.Projection 0)) "a" TStar Port.NotConnected
+                    ]
+                let inputPorts = Map.elems $ Map.filter Port.isInputPort $ node ^. Node.ports
+                inputPorts `shouldMatchList` [
+                      Port.Port (Port.InPortId (Port.Arg 0)) "a" TStar Port.NotConnected
+                    ]
+        it "connects to added port inside lambda" $ \env -> do
+            u1 <- mkUUID
+            u2 <- mkUUID
+            res <- evalEmp env $ do
+                Graph.addNode top u1 "def foo" def
+                let loc' = top |> u1
+                Graph.addNode loc' u2 "func" def
+                Just (input, output) <- Graph.withGraph loc' $ runASTOp GraphBuilder.getEdgePortMapping
+                Graph.addPort loc' input
+                Graph.connect loc' (OutPortRef input (Port.Projection 1)) (InPortRef u2 (Port.Arg 0))
+                inputEdge <- buildInputEdge' loc' input
+                connections <- Graph.getConnections loc'
+                let referenceConnections = [
+                        (OutPortRef input (Port.Projection 0), InPortRef output (Port.Arg 0))
+                      , (OutPortRef input (Port.Projection 1), InPortRef u2 (Port.Arg 0))
+                      ]
+                return (inputEdge, connections, referenceConnections)
+            withResult res $ \(inputEdge, connections, referenceConnections) -> do
+                let outputPorts = Map.elems $ Map.filter Port.isOutputPort $ inputEdge ^. Node.ports
+                outputPorts `shouldMatchList` [
+                      Port.Port (Port.OutPortId (Port.Projection 0)) "arg0" TStar Port.Connected
+                    , Port.Port (Port.OutPortId (Port.Projection 1)) "_"    TStar Port.Connected
+                    ]
+                connections `shouldMatchList` referenceConnections
+        it "does not allow to remove All port" $ \env -> do
+            u1 <- mkUUID
+            res <- evalEmp env $ do
+                Graph.addNode top u1 "def foo" def
+                let loc' = top |> u1
+                Just (input, _) <- Graph.withGraph loc' $ runASTOp GraphBuilder.getEdgePortMapping
+                Graph.removePort loc' (OutPortRef' (OutPortRef input Port.All))
+            case res of
+                Right _ -> expectationFailure "should throw exception"
+                Left err -> err `shouldStartWith` "CannotRemovePortException"
+        it "removes port that is connected inside lambda" $ \env -> do
+            u1 <- mkUUID
+            u2 <- mkUUID
+            res <- evalEmp env $ do
+                Graph.addNode top u1 "def foo" def
+                let loc' = top |> u1
+                Graph.addNode loc' u2 "func" def
+                Just (input, output) <- Graph.withGraph loc' $ runASTOp GraphBuilder.getEdgePortMapping
+                Graph.addPort loc' input
+                Graph.connect loc' (OutPortRef input (Port.Projection 1)) (InPortRef u2 (Port.Arg 0))
+                Graph.removePort loc' (OutPortRef' (OutPortRef input (Port.Projection 1)))
+                inputEdge <- buildInputEdge' loc' input
+                defFoo <- Graph.withGraph top $ runASTOp $ GraphBuilder.buildNode u1
+                connections <- Graph.getConnections loc'
+                nodeIds <- (map (^. Node.nodeId)) <$> (Graph.withGraph loc' $ runASTOp $ GraphBuilder.buildNodes)
+                let referenceConnections = [(OutPortRef input (Port.Projection 0), InPortRef output (Port.Arg 0))]
+                return (inputEdge, defFoo, connections, referenceConnections, nodeIds)
+            withResult res $ \(inputEdge, node, connections, referenceConnections, nodeIds) -> do
+                let outputPorts = Map.elems $ Map.filter Port.isOutputPort $ inputEdge ^. Node.ports
+                outputPorts `shouldMatchList` [
+                      Port.Port (Port.OutPortId (Port.Projection 0)) "arg0" TStar Port.Connected
+                    ]
+                let inputPorts = Map.elems $ Map.filter Port.isInputPort $ node ^. Node.ports
+                inputPorts `shouldMatchList` [
+                      Port.Port (Port.InPortId (Port.Arg 0)) "arg0" TStar Port.NotConnected
+                    ]
+                connections `shouldMatchList` referenceConnections
+                nodeIds `shouldMatchList` [u2]

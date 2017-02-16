@@ -12,33 +12,67 @@ module Empire.ASTOps.Modify (
   , rewireNode
   , setLambdaOutputToBlank
   , addLambdaArg
+  , removeLambdaArg
   ) where
+
+import           Control.Lens (folded, ifiltered)
 
 import           Empire.Prelude
 
 import           Empire.API.Data.Node               (NodeId)
+import qualified Empire.API.Data.Port               as Port
 import           Empire.ASTOp                       (ASTOp)
 import qualified Empire.ASTOps.Builder              as ASTBuilder
 import qualified Empire.ASTOps.Deconstruct          as ASTDeconstruct
 import qualified Empire.ASTOps.Read                 as ASTRead
 import qualified Empire.ASTOps.Remove               as ASTRemove
 import           Empire.Data.AST                    (NodeRef, NotLambdaException(..),
-                                                     NotUnifyException(..))
+                                                     NotUnifyException(..), astExceptionToException,
+                                                     astExceptionFromException)
 
 import qualified Luna.IR.Expr.Combinators as IR (changeSource)
 import           Luna.IR.Expr.Term.Uni
+import           Luna.IR.Expr.Term.Named (Term(Sym_Lam))
 import           Luna.IR (match)
 import qualified Luna.IR as IR
 
 
 
-addLambdaArg :: ASTOp m => NodeRef -> m NodeRef
+addLambdaArg :: ASTOp m => NodeRef -> m ()
 addLambdaArg lambda = match lambda $ \case
-    Lam _args out -> do
-        args <- ASTDeconstruct.extractArguments lambda
-        b <- IR.generalize <$> IR.blank
+    Lam _arg _body -> do
         out' <- ASTRead.getLambdaOutputRef lambda
-        ASTBuilder.lams (args ++ [b]) out'
+        addLambdaArg' lambda out'
+    _ -> throwM $ NotLambdaException lambda
+
+addLambdaArg' :: ASTOp m => NodeRef -> NodeRef -> m ()
+addLambdaArg' lambda out = match lambda $ \case
+    Lam _arg body -> do
+        body' <- IR.source body
+        if body' == out then do
+            b <- IR.blank
+            l <- IR.lam b out
+            IR.changeSource body $ IR.generalize l
+        else do
+            addLambdaArg' body' out
+    _ -> throwM $ NotLambdaException lambda
+
+data CannotRemovePortException = CannotRemovePortException
+    deriving Show
+
+instance Exception CannotRemovePortException where
+    toException = astExceptionToException
+    fromException = astExceptionFromException
+
+removeLambdaArg :: ASTOp m => NodeRef -> Port.PortId -> m NodeRef
+removeLambdaArg _      Port.InPortId{} = throwM $ CannotRemovePortException
+removeLambdaArg _      (Port.OutPortId Port.All) = throwM $ CannotRemovePortException
+removeLambdaArg lambda (Port.OutPortId (Port.Projection port)) = match lambda $ \case
+    Lam _arg _body -> do
+        args <- ASTDeconstruct.extractArguments lambda
+        out  <- ASTRead.getLambdaOutputRef lambda
+        let newArgs = args ^.. folded . ifiltered (\i _ -> i /= port)
+        ASTBuilder.lams newArgs out
     _ -> throwM $ NotLambdaException lambda
 
 redirectLambdaOutput :: ASTOp m => NodeRef -> NodeRef -> m NodeRef

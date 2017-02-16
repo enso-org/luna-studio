@@ -140,9 +140,8 @@ addPort :: GraphLocation -> NodeId -> Empire AnyPortRef
 addPort loc nid = withGraph loc $ runASTOp $ do
     Just lambda <- use Graph.insideNode
     ref <- GraphUtils.getASTTarget lambda
-    newRef <- ASTModify.addLambdaArg ref
-    GraphUtils.rewireNode lambda newRef
-    inputEdge <- GraphBuilder.buildInputEdge nid
+    ASTModify.addLambdaArg ref
+    inputEdge <- GraphBuilder.buildConnections >>= \c -> GraphBuilder.buildInputEdge c nid
     let argPorts = inputEdge ^. Node.ports
     let lastPortIndex = length argPorts - 1
     return $ OutPortRef' (OutPortRef nid (Projection lastPortIndex))
@@ -199,7 +198,17 @@ removeNodeNoTC nodeId = do
     Graph.breadcrumbHierarchy %= removeID nodeId
 
 removePort :: GraphLocation -> AnyPortRef -> Empire ()
-removePort = $notImplemented
+removePort loc portRef = withGraph loc $ runASTOp $ do
+    let nodeId = portRef ^. PortRef.nodeId
+    Just lambda <- use Graph.insideNode
+    ref <- GraphUtils.getASTTarget lambda
+    edges <- GraphBuilder.getEdgePortMapping
+    newRef <- case edges of
+        Just (input, _output) -> do
+            if nodeId == input then ASTModify.removeLambdaArg ref $ portRef ^. PortRef.portId
+                               else return ref
+        _ -> return ref
+    when (ref /= newRef) $ GraphUtils.rewireNode lambda newRef
 
 updateNodeExpression :: GraphLocation -> NodeId -> NodeId -> Text -> Empire (Maybe Node)
 updateNodeExpression loc nodeId newNodeId expr = do
