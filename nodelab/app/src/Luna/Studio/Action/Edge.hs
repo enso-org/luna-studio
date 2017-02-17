@@ -28,7 +28,7 @@ restoreConnect evt portDrag = do
     continue $ Connect.handleMove evt
 
 removePort :: PortDrag -> Command State ()
-removePort portDrag = print "remove" >> Batch.removePort (portDrag ^. Action.portDragPortRef) >> end portDrag
+removePort portDrag = Batch.removePort (portDrag ^. Action.portDragPortRef) >> end portDrag
 
 addPort :: NodeId -> Command State ()
-addPort n = print "ADD" >> Batch.addPort n
+addPort n = Batch.addPort n
