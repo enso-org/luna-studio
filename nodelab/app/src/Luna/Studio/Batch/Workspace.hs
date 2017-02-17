@@ -10,8 +10,8 @@ import           Empire.API.Data.Breadcrumb    (Breadcrumb (..), BreadcrumbItem)
 import           Empire.API.Data.GraphLocation (GraphLocation (..))
 import qualified Empire.API.Data.GraphLocation as GraphLocation
 import           Empire.API.Data.Library       (Library)
+import           Empire.API.Data.Node       (Node)
 import qualified Empire.API.Data.Library       as Library
-import           Empire.API.Data.Node          (Node)
 import           Empire.API.Data.Project       (Project, ProjectId)
 import qualified Empire.API.Data.Project       as Project
 

@@ -60,6 +60,7 @@ import           Empire.ASTOp                          (runASTOp)
 import qualified Empire.ASTOps.Print                   as Print
 import qualified Empire.Commands.Graph                 as Graph
 import           Empire.Commands.GraphBuilder          (buildConnections, buildGraph, buildNodes, getNodeName)
+import qualified Empire.Commands.GraphUtils            as GraphUtils
 import qualified Empire.Commands.Persistence           as Persistence
 import           Empire.Empire                         (Empire)
 import qualified Empire.Empire                         as Empire

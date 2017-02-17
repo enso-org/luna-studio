@@ -9,6 +9,7 @@ import           Data.Position                          (x, y)
 import qualified Data.Text                              as Text
 import           Empire.API.Data.Node                   (NodeId)
 import           Empire.API.Data.Port                   (InPort (..), PortId (..))
+import qualified JS.Config                              as Config
 import           Luna.Studio.Action.Geometry            (countSameTypePorts, isPortSingle)
 import           Luna.Studio.Data.Matrix                (translatePropertyValue2)
 import qualified Luna.Studio.Event.Mouse                as Mouse
@@ -32,6 +33,9 @@ import qualified React.Flux                             as React
 objName :: JSString
 objName = "node"
 
+nodePrefix :: JSString
+nodePrefix = Config.prefix "node-"
+
 handleMouseDown :: Ref App -> NodeId -> Event -> MouseEvent -> [SomeStoreAction]
 handleMouseDown ref nodeId e m =
     if Mouse.withoutMods m Mouse.leftButton
@@ -48,8 +52,8 @@ node = React.defineView objName $ \(ref, n) -> do
         zIndex    = n ^. Node.zPos
         z         = if n ^. Node.isExpanded then zIndex + nodeLimit else zIndex
     div_
-        [ "key"       $= fromString (show nodeId)
-        , "id"        $= ("node-" <> fromString (show nodeId))
+        [ "key"       $= (nodePrefix <> fromString (show nodeId))
+        , "id"        $= (nodePrefix <> fromString (show nodeId))
         , "className" $= "luna-node-root"
         , "style"     @= Aeson.object [ "zIndex" Aeson..= show z ]
         ] $ do
@@ -126,5 +130,5 @@ nodeDynamicStyles_ camera n = do
         scale  = (Matrix.toList camera)!!0
         nx     = show (round $ camX + (scale * posX) :: Integer)
         ny     = show (round $ camY + (scale * posY) :: Integer)
-    elemString $ "#node-" <> nodeId <> " .luna-name-trans { transform: translate(" <> nx <> "px, " <> ny <> "px)"
-                          <> if scale > 1 then "; font-size: " <> show (12 * scale) <> "px }" else " }"
+    elemString $ "#" <> Config.mountPoint <> "-node-" <> fromString nodeId <> " .luna-name-trans { transform: translate(" <> nx <> "px, " <> ny <> "px)"
+                     <> if scale > 1 then "; font-size: " <> show (12 * scale) <> "px }" else " }"
