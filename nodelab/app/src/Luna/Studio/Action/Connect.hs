@@ -6,6 +6,7 @@ module Luna.Studio.Action.Connect
     , handleClick
     , handleMove
     , handleMouseUp
+    , startConnecting
     , stopConnecting
     , handlePortMouseUp
     , snapToPort
@@ -13,6 +14,7 @@ module Luna.Studio.Action.Connect
     ) where
 
 import qualified Data.HashMap.Strict                    as HashMap
+import           Data.Position                          (Position)
 import           Empire.API.Data.Connection             (ConnectionId, toValidConnection)
 import qualified Empire.API.Data.Connection             as Connection
 import           Empire.API.Data.Port                   (InPort (Self), PortId (InPortId))
@@ -31,8 +33,7 @@ import           Luna.Studio.React.Event.Connection     (ModifiedEnd (Destinatio
 import           Luna.Studio.React.Model.Connection     (toCurrentConnection)
 import qualified Luna.Studio.React.Model.Node           as Model
 import qualified Luna.Studio.React.Model.NodeEditor     as NodeEditor
-import           Luna.Studio.State.Action               (Action (begin, continue, update), Connect, ConnectMode (ClickConnect, DragConnect),
-                                                         connectAction)
+import           Luna.Studio.State.Action               (Action (begin, continue, update), Connect, Mode (Click, Drag), connectAction)
 import qualified Luna.Studio.State.Action               as Action
 import           Luna.Studio.State.Global               (State, beginActionWithKey, checkAction, continueActionWithKey,
                                                          removeActionFromState, updateActionWithKey)
@@ -50,8 +51,9 @@ instance Action (Command State) Connect where
 handlePortMouseDown :: MouseEvent -> AnyPortRef -> Command State ()
 handlePortMouseDown evt anyPortRef = do
     mayAction <- checkAction connectAction
-    when (Just ClickConnect /= (view Action.connectMode <$> mayAction)) $
-        startConnecting evt anyPortRef Nothing DragConnect
+    when (Just Click /= (view Action.connectMode <$> mayAction)) $ do
+        mousePos <- workspacePosition evt
+        startConnecting mousePos anyPortRef Nothing Drag
 
 handleConnectionMouseDown :: MouseEvent -> ConnectionId -> ModifiedEnd -> Command State ()
 handleConnectionMouseDown evt connId modifiedEnd = do
@@ -60,28 +62,30 @@ handleConnectionMouseDown evt connId modifiedEnd = do
         let portRef = case modifiedEnd of
                 Destination -> OutPortRef' (connection ^. Connection.src)
                 Source      -> InPortRef'  (connection ^. Connection.dst)
-        startConnecting evt portRef (Just connId) DragConnect
+        mousePos <- workspacePosition evt
+        startConnecting mousePos portRef (Just connId) Drag
 
 handleClick :: MouseEvent -> AnyPortRef -> Command State ()
 handleClick evt anyPortRef = do
     mayAction <- checkAction connectAction
-    if (Just ClickConnect == (view Action.connectMode <$> mayAction)) then
+    if (Just Click == (view Action.connectMode <$> mayAction)) then
         continue $ connectToPort anyPortRef
-    else startConnecting evt anyPortRef Nothing ClickConnect
+    else do
+        mousePos <- workspacePosition evt
+        startConnecting mousePos anyPortRef Nothing Click
 
-startConnecting :: MouseEvent -> AnyPortRef -> Maybe ConnectionId -> ConnectMode -> Command State ()
-startConnecting evt anyPortRef mayModifiedConnId connectMode = do
+startConnecting :: Position -> AnyPortRef -> Maybe ConnectionId -> Mode -> Command State ()
+startConnecting mousePos anyPortRef mayModifiedConnId connectMode = do
     let nodeId = anyPortRef ^. PortRef.nodeId
         portId = anyPortRef ^. PortRef.portId
-    mousePos <- workspacePosition evt
     mayNode <- Global.getNode nodeId
     withJust mayNode $ \node -> do
         case (portId, node ^. Model.isExpanded) of
-            (InPortId Self, False) -> when (connectMode == DragConnect) $ startNodeDrag evt nodeId True
+            (InPortId Self, False) -> when (connectMode == Drag) $ startNodeDrag mousePos nodeId True
             _                      -> do
                 mayCurrentConnectionModel <- createCurrentConnectionModel anyPortRef mousePos
                 when (isJust mayCurrentConnectionModel) $ do
-                    let action = Action.Connect mousePos anyPortRef Nothing connectMode
+                    let action = Action.Connect mousePos anyPortRef (isJust mayModifiedConnId) Nothing connectMode
                     withJust mayModifiedConnId $ removeConnections . replicate 1
                     begin action
                     showOrHideAllSelfPorts (Just action) Nothing
@@ -98,7 +102,7 @@ handleMove evt action = when (isNothing $ action ^. Action.connectSnappedPort) $
     when (isNothing mayCurrentConnectionModel) $ stopConnecting action
 
 handlePortMouseUp :: AnyPortRef -> Connect -> Command State ()
-handlePortMouseUp portRef action = when (action ^. Action.connectMode == DragConnect) $
+handlePortMouseUp portRef action = when (action ^. Action.connectMode == Drag) $
     connectToPort portRef action
 
 snapToPort :: AnyPortRef -> Connect -> Command State ()
@@ -114,10 +118,10 @@ cancelSnapToPort portRef action = when (Just portRef == action ^. Action.connect
     update $ action & Action.connectSnappedPort .~ Nothing
 
 handleMouseUp :: MouseEvent -> Connect -> Command State ()
-handleMouseUp evt action = when (action ^. Action.connectMode == DragConnect) $ do
+handleMouseUp evt action = when (action ^. Action.connectMode == Drag) $ do
     mousePos <- workspacePosition evt
     if (mousePos == action ^. Action.connectStartPos) then
-        update $ action & Action.connectMode .~ ClickConnect
+        update $ action & Action.connectMode .~ Click
     else stopConnecting action
 
 stopConnecting :: Connect -> Command State ()

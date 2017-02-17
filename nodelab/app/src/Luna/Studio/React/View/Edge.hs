@@ -29,10 +29,19 @@ edgeSidebar_ ref node = when (isEdge node) $ do
     div_
         [ "className" $= classes
         , "key"       $= (fromString $ name node)
+        , onMouseDown $ \e _ -> [stopPropagation e]
+        , onMouseMove $ \e m -> stopPropagation e : (dispatch ref $ UI.EdgeEvent $ Edge.MouseMove m)
         ] $ do
         svg_ [] $ forM_ ports $ portIOExpanded_ ref
         div_
             [ "className" $= "luna-edge__buton luna-edge__button--add"
             , "key"       $= (fromString $ name node <> "AddButton")
+            , onMouseDown $ \e _ -> [stopPropagation e]
             , onClick $ \e _ -> stopPropagation e : sendAddPortEvent ref node
             ] $ elemString "Add"
+        div_
+            [ "className" $= "luna-edge__buton luna-edge__button--remove"
+            , "key"       $= (fromString $ name node <> "RemoveButton")
+            , onMouseDown $ \e _ -> [stopPropagation e]
+            , onMouseUp   $ \_ _ -> dispatch ref $ UI.EdgeEvent $ Edge.RemovePort
+            ] $ elemString "Remove"

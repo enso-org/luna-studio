@@ -74,17 +74,26 @@ data PenDisconnect = PenDisconnect { _penDisconnectCurve                :: Curve
 makeLenses ''PenDisconnect
 instance ToJSON PenDisconnect
 
-data ConnectMode = DragConnect | ClickConnect deriving (Eq, Generic, Show, Typeable)
-instance ToJSON ConnectMode
+data Mode = Drag | Click deriving (Eq, Generic, Show, Typeable)
+instance ToJSON Mode
 
 data Connect = Connect { _connectStartPos       :: Position
                        , _connectSourcePort     :: AnyPortRef
+                       , _connectIsConnModified :: Bool
                        , _connectSnappedPort    :: Maybe AnyPortRef
-                       , _connectMode           :: ConnectMode
+                       , _connectMode           :: Mode
                        } deriving (Eq, Generic, Show, Typeable)
 
 makeLenses ''Connect
 instance ToJSON Connect
+
+data PortDrag = PortDrag { _portDragStartPos :: Position
+                         , _portDragPortRef  :: AnyPortRef
+                         , _portDragMode     :: Mode
+                         } deriving (Eq, Generic, Show, Typeable)
+
+makeLenses ''PortDrag
+instance ToJSON PortDrag
 
 data Searcher = Searcher deriving (Eq, Generic, Show, Typeable)
 
@@ -127,7 +136,7 @@ fromSomeAction (SomeAction d _) = fromDynamic d
 
 newtype ActionRep = ActionRep TypeRep deriving (Show, Eq, Ord)
 
-nodeDragAction, multiSelectionAction, visualizationDragAction, panDragAction, zoomDragAction, sliderDragAction, penConnectAction, penDisconnectAction, connectAction, searcherAction :: ActionRep
+nodeDragAction, multiSelectionAction, visualizationDragAction, panDragAction, zoomDragAction, sliderDragAction, penConnectAction, penDisconnectAction, connectAction, portDragAction, searcherAction :: ActionRep
 nodeDragAction          = ActionRep (typeOf NodeDrag)
 multiSelectionAction    = ActionRep (typeOf MultiSelection)
 panDragAction           = ActionRep (typeOf PanDrag)
@@ -136,6 +145,7 @@ sliderDragAction        = ActionRep (typeOf SliderDrag)
 penConnectAction        = ActionRep (typeOf PenConnect)
 penDisconnectAction     = ActionRep (typeOf PenDisconnect)
 connectAction           = ActionRep (typeOf Connect)
+portDragAction          = ActionRep (typeOf PortDrag)
 searcherAction          = ActionRep (typeOf Searcher)
 visualizationDragAction = ActionRep (typeOf VisualizationDrag)
 
@@ -148,9 +158,11 @@ overlappingActions = [ Set.fromList [ connectAction
                                     , searcherAction
                                     , sliderDragAction
                                     , visualizationDragAction
+                                    , portDragAction
                                     ]
                      , Set.fromList [ panDragAction
                                     , zoomDragAction
+                                    , portDragAction
                                     ]
                      ]
 
@@ -164,4 +176,5 @@ actionsBlockingPortHighlight = Set.fromList [ multiSelectionAction
                                             , visualizationDragAction
                                             , panDragAction
                                             , zoomDragAction
+                                            , portDragAction
                                             ]

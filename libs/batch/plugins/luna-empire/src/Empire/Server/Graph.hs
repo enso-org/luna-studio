@@ -232,10 +232,12 @@ handleRenameNode = modifyGraphOk action success where
         (inv,) <$> Graph.renameNode location nodeId name
     success (RenameNode.Request location nodeId name) _ result = sendToBus' $ RenameNode.Update location nodeId name
 
+
 handleRemovePort :: Request RemovePort.Request -> StateT Env BusT ()
-handleRemovePort = modifyGraphOk (mtuple action) success where
+handleRemovePort = modifyGraph (mtuple action) success where
     action (RemovePort.Request location portRef) = Graph.removePort location portRef
-    success (RemovePort.Request location portRef) _ _ = $notImplemented
+    success request@(Request _ _ req@(RemovePort.Request location portRef)) _ node = replyResult request () node >> sendToBus' (NodesUpdate.Update location [node])
+
 
 handleConnect :: Request Connect.Request -> StateT Env BusT ()
 handleConnect = handleConnectReq True

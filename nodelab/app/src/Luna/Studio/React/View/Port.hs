@@ -74,7 +74,7 @@ portExpanded_ ref p =
     React.viewWithSKey portExpanded (jsShow $ p ^. Port.portId) (ref, p) mempty
 
 handlers :: Ref App -> AnyPortRef -> [PropertyOrHandler [SomeStoreAction]]
-handlers ref portRef = [ onMouseDown $ handleMouseDown ref portRef
+handlers ref portRef = [ onMouseDown  $ handleMouseDown ref portRef
                        , onMouseUp    $ handleMouseUp    ref portRef
                        , onClick      $ handleClick      ref portRef
                        , onMouseEnter $ handleMouseEnter ref portRef

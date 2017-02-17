@@ -196,7 +196,7 @@ removeNodeNoTC nodeId = do
     Graph.nodeMapping %= Map.delete nodeId
     Graph.breadcrumbHierarchy %= removeID nodeId
 
-removePort :: GraphLocation -> AnyPortRef -> Empire ()
+removePort :: GraphLocation -> AnyPortRef -> Empire Node
 removePort loc portRef = withGraph loc $ runASTOp $ do
     let nodeId = portRef ^. PortRef.nodeId
     Just lambda <- use Graph.insideNode
@@ -208,6 +208,9 @@ removePort loc portRef = withGraph loc $ runASTOp $ do
                                else return ref
         _ -> return ref
     when (ref /= newRef) $ GraphUtils.rewireNode lambda newRef
+    GraphBuilder.buildNode nodeId
+
+
 
 updateNodeExpression :: GraphLocation -> NodeId -> NodeId -> Text -> Empire (Maybe Node)
 updateNodeExpression loc nodeId newNodeId expr = do

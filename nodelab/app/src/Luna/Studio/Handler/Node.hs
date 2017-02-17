@@ -10,7 +10,7 @@ import qualified Luna.Studio.Action.Node      as Node
 import qualified Luna.Studio.Action.Port      as PortControl
 import           Luna.Studio.Event.Event      (Event (Shortcut, UI))
 import qualified Luna.Studio.Event.Keys       as Keys
-import           Luna.Studio.Event.Mouse      (mousePosition)
+import           Luna.Studio.Event.Mouse      (mousePosition, workspacePosition)
 import qualified Luna.Studio.Event.Mouse      as Mouse
 import qualified Luna.Studio.Event.Shortcut   as Shortcut
 import           Luna.Studio.Event.UI         (UIEvent (AppEvent, NodeEvent))
@@ -23,12 +23,13 @@ import qualified Luna.Studio.State.Global     as Global
 import qualified Luna.Studio.State.Graph      as Graph
 
 
-
 handle :: Event -> Maybe (Command State ())
 handle (Shortcut (Shortcut.Event command _))        = Just $ handleCommand command
-handle (UI (NodeEvent (Node.MouseDown evt nodeId))) = Just $ when shouldProceed $ Node.startNodeDrag evt nodeId shouldSnap  where
-    shouldProceed = Mouse.withoutMods evt Mouse.leftButton || Mouse.withShift evt Mouse.leftButton
-    shouldSnap    = Mouse.withoutMods evt Mouse.leftButton
+handle (UI (NodeEvent (Node.MouseDown evt nodeId))) = Just $ do
+    let shouldProceed = Mouse.withoutMods evt Mouse.leftButton || Mouse.withShift evt Mouse.leftButton
+        shouldSnap = Mouse.withoutMods evt Mouse.leftButton
+    pos <- workspacePosition evt
+    when shouldProceed $ Node.startNodeDrag pos nodeId shouldSnap
 handle (UI (NodeEvent (Node.Enter            nodeId))) = Just $ mapM_ Node.tryEnter =<< preuse (Global.graph . Graph.nodesMap . ix nodeId)
 handle (UI (NodeEvent (Node.EditExpression   nodeId))) = Just $ Node.editExpression nodeId
 handle (UI (NodeEvent (Node.Select      kevt nodeId))) = Just $ when (mouseCtrlKey kevt || mouseMetaKey kevt) $ toggleSelect nodeId

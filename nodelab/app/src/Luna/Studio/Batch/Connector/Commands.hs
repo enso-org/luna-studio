@@ -28,6 +28,7 @@ import qualified Empire.API.Graph.DumpGraphViz          as DumpGraphViz
 import qualified Empire.API.Graph.GetProgram            as GetProgram
 import qualified Empire.API.Graph.Redo                  as Redo
 import qualified Empire.API.Graph.RemoveNodes           as RemoveNodes
+import qualified Empire.API.Graph.RemovePort            as RemovePort
 import qualified Empire.API.Graph.RenameNode            as RenameNode
 import qualified Empire.API.Graph.SetCode               as SetCode
 import qualified Empire.API.Graph.SetDefaultValue       as SetDefaultValue
@@ -104,6 +105,9 @@ setCode nid newCode w uuid guiID = sendRequest $ Message uuid guiID $ withLibrar
 
 removeNodes :: [NodeId] -> Workspace -> UUID -> Maybe UUID ->  IO ()
 removeNodes nodeIds workspace uuid guiID = sendRequest $ Message uuid guiID $ withLibrary workspace RemoveNodes.Request nodeIds
+
+removePort :: AnyPortRef -> Workspace -> UUID -> Maybe UUID -> IO ()
+removePort portRef workspace uuid guiID = sendRequest $ Message uuid guiID $ (withLibrary workspace RemovePort.Request) portRef
 
 setDefaultValue :: AnyPortRef -> DefaultValue.PortDefault -> Workspace -> UUID -> Maybe UUID -> IO ()
 setDefaultValue portRef val workspace uuid guiID = sendRequest $ Message uuid guiID $ withLibrary workspace SetDefaultValue.Request portRef val

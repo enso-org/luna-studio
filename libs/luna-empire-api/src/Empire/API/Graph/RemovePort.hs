@@ -3,14 +3,15 @@ module Empire.API.Graph.RemovePort where
 import           Data.Binary                   (Binary)
 import           Prologue
 
+import           Data.Map                      (Map (..))
 import           Empire.API.Data.Connection    (Connection)
 import           Empire.API.Data.GraphLocation (GraphLocation)
+import           Empire.API.Data.Node          (Node)
 import           Empire.API.Data.PortRef       (AnyPortRef)
 import qualified Empire.API.Graph.Request      as G
 import qualified Empire.API.Request            as R
 import qualified Empire.API.Response           as Response
 import qualified Empire.API.Topic              as T
-import           Data.Map                      (Map (..))
 
 
 
@@ -18,7 +19,8 @@ data Request = Request { _location    :: GraphLocation
                        , _anyPortRef  :: AnyPortRef
                        } deriving (Generic, Eq, NFData, Show)
 
-type Result = ()
+--TODO[MM]: Remove Node as Response Result. We don't use it
+type Result = Node
 
 type Response = Response.Response Request () Result
 instance Response.ResponseResult Request () Result

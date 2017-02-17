@@ -36,9 +36,8 @@ instance Action (Command State) NodeDrag where
     update   = updateActionWithKey   nodeDragAction
     end _    = updateMovedNodes >> removeActionFromState nodeDragAction
 
-startNodeDrag :: MouseEvent -> NodeId -> Bool -> Command State ()
-startNodeDrag evt nodeId snapped = do
-    coord <- workspacePosition evt
+startNodeDrag :: Position -> NodeId -> Bool -> Command State ()
+startNodeDrag coord nodeId snapped = do
     mayNode <- Global.getNode nodeId
     withJust mayNode $ \node -> do
         let isSelected = node ^. Model.isSelected
