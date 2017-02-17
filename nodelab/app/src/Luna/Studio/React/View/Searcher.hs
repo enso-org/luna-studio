@@ -2,6 +2,7 @@
 module Luna.Studio.React.View.Searcher where
 
 import qualified Data.Aeson                       as Aeson
+import           Data.Position                    (Position (Position), Vector2 (Vector2))
 import           Data.Vector
 import           React.Flux
 import qualified React.Flux                       as React
@@ -17,7 +18,7 @@ import qualified Luna.Studio.React.Model.Node     as Node
 import           Luna.Studio.React.Model.Searcher (Searcher)
 import qualified Luna.Studio.React.Model.Searcher as Searcher
 import           Luna.Studio.React.Store          (Ref, dispatch)
-import           Luna.Studio.React.View.Node      (node_)
+import           Luna.Studio.React.View.NodeBody  (nodeBody_)
 import qualified Text.ScopeSearcher.QueryResult   as Result
 
 name :: JSString
@@ -28,7 +29,9 @@ preventTabDefault e k r = if Keys.withoutMods k Keys.tab then preventDefault e :
 
 searcher :: ReactView (Ref App, Searcher)
 searcher  = React.defineView name $ \(ref, s) -> do
-    let pos = s ^. Searcher.position
+    let pos  = s ^. Searcher.position
+        widgetPos = pos -- - Position (Vector2 50 50)
+        nodePos   = Position (Vector2 0 0)
         mode = s ^. Searcher.mode
         nodePreview = Node.fromNode <$> s ^. Searcher.selectedNode
         className = "luna-" <> name <> " luna-" <> case mode of
@@ -38,10 +41,12 @@ searcher  = React.defineView name $ \(ref, s) -> do
         [ "key"       $= name
         , "className" $= className
         , "style"     @= Aeson.object
-            [ "top"  Aeson..= (show (pos ^. y) <> "px" :: String)
-            , "left" Aeson..= (show (pos ^. x) <> "px" :: String)
+            [ "top"  Aeson..= (show (widgetPos ^. y) <> "px" :: String)
+            , "left" Aeson..= (show (widgetPos ^. x) <> "px" :: String)
             ]
         ] $ do
+        withJust nodePreview $ nodeBody_ ref . (Node.position .~ nodePos)
+                                            --  . (Node.isExpanded .~ True)
         input_
             [ "key"   $= "input"
             , "id"    $= searcherId
@@ -50,7 +55,6 @@ searcher  = React.defineView name $ \(ref, s) -> do
             , onKeyDown   $ \e k -> preventTabDefault e k $ stopPropagation e : dispatch ref (UI.SearcherEvent $ KeyDown k)
             , onChange    $ \e -> let val = target e "value" in dispatch ref $ UI.SearcherEvent $ InputChanged val
             ]
-        withJust nodePreview $ node_ ref
         div_
             [ "key"       $= "results"
             , "className" $= "luna-searcher-results"
