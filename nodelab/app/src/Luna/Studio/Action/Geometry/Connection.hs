@@ -62,12 +62,12 @@ connectionDst src dst isSrcExpanded isDstExpanded num numOfSameTypePorts isSelf 
 --TODO: Find out real position of port
 getInputEdgePortPosition :: Int -> Command State Position
 getInputEdgePortPosition portNumber =
-    move (Vector2 grid (portNumber' * grid)) <$> getScreenLeftCenter >>= translateToWorkspace where
+    move (Vector2 (2 * grid) (portNumber' * grid)) <$> getScreenLeftCenter >>= translateToWorkspace where
         portNumber' = fromIntegral portNumber
 
 getOutputEdgePortPosition :: Int -> Bool -> Command State Position
 getOutputEdgePortPosition portNumber isSelf =
-    move (Vector2 (-grid) (portNumber' * grid)) <$> getScreenRightCenter >>= translateToWorkspace where
+    move (Vector2 (-2 * grid) (portNumber' * grid)) <$> getScreenRightCenter >>= translateToWorkspace where
         portNumber' = fromIntegral $ if isSelf then 0 else  portNumber + 1
 
 getConnectionPosition :: Node -> Port -> Node -> Port -> Command State (Position, Position)
