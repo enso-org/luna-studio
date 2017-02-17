@@ -14,6 +14,17 @@ module.exports =
                 setCode = (diff) ->
                      @buffer.setText (diff)
                 code.codeListener setCode
+                listenToBufferChanges: ->
+                  @buffer.onDidChange(event) =>
+                    if !(event.newText is "\n") and (event.newText.length is 0)
+                      changeType = 'deletion'
+                      event = {oldRange: event.oldRange}
+                    else if event.oldRange.containsRange(event.newRange) or event.newRange.containsRange(event.oldRange)
+                      changeType = 'substitution'
+                      event = {oldRange: event.oldRange, newRange: event.newRange, newText: event.newText}
+                    else
+                      changeType = 'insertion'
+                      event = {newRange: event.newRange, newText: event.newText}
             atom.workspace.getActivePane().activateItem new LunaStudioTab(uri, code)
 
     @subs = new SubAtom
