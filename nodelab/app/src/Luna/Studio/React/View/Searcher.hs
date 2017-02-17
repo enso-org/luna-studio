@@ -60,7 +60,7 @@ searcher  = React.defineView name $ \(ref, s) -> do
             , "className" $= "luna-searcher-results"
             ] $
             case s ^. Searcher.mode of
-                Searcher.Command results -> forM_ (zip results [0..]) $ \(result, idx) ->
+                Searcher.Command results -> forM_ (keyed results) $ \(idx, result) ->
                     div_
                         [ "key"       $= jsShow idx
                         , "className" $= if idx == s ^. Searcher.selected then "luna-result-selected" else "luna-result"
@@ -69,7 +69,7 @@ searcher  = React.defineView name $ \(ref, s) -> do
                             ["key" $= "name"
                             ,"className" $= "luna-result-name"
                             ] $ elemString $ convert $ result ^. Result.name
-                Searcher.Node results -> forM_ (zip results [0..]) $ \(result, idx) ->
+                Searcher.Node results -> forM_ (keyed results) $ \(idx, result) ->
                     div_
                         [ "key"       $= jsShow idx
                         , "className" $= if idx == s ^. Searcher.selected then "luna-result-selected" else "luna-result"

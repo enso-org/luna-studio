@@ -103,7 +103,7 @@ nodeError_ err = do
         ] $ elemString message
 
 nodeValues_ :: Ref App -> NodeId -> Maybe Position -> [Value] -> ReactElementM ViewEventHandler ()
-nodeValues_ ref nodeId mayPos = mapM_ (uncurry $ nodeValue_ ref nodeId mayPos) . zip [0..]
+nodeValues_ ref nodeId mayPos = mapM_ (uncurry $ nodeValue_ ref nodeId mayPos) . keyed
 
 nodeValue_ :: Ref App -> NodeId -> Maybe Position -> Int -> Value -> ReactElementM ViewEventHandler ()
 nodeValue_ ref nodeId mayPos visIx value = do

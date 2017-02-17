@@ -32,6 +32,3 @@ dataFrame_ visIx df =
                         tr_ [ "key" $= jsShow ri ]$ forM_ (keyed row) $ \(di, d) ->
                             td_ [ "key" $= jsShow di ] $
                                 elemString $ convert d
-
-keyed :: [a] -> [(Int, a)]
-keyed = zip [0..]

@@ -57,3 +57,6 @@ withJustM :: Monad m => m (Maybe a) -> (a -> m ()) -> m ()
 withJustM mMayVal action = do
     mayVal <- mMayVal
     withJust mayVal action
+
+keyed :: [a] -> [(Int, a)]
+keyed = zip [0..]
