@@ -26,7 +26,7 @@
   # nodes
   'ctrl-a'          : 'luna-studio:select-all'            # SelectAll
   'delete'          : 'luna-studio:remove-selected-nodes' # RemoveSelectedNodes
-  'esc'             : 'luna-studio:unselect-all'          # UnselectAll
+  'escape'          : 'luna-studio:unselect-all'          # UnselectAll
   'enter'           : 'luna-studio:expand-selected-nodes' # ExpandSelectedNodes
   # searcher
   'tab'             : 'luna-studio:searcher-open'         # SearcherOpen
@@ -34,6 +34,6 @@
 '.luna-searcher':
   'enter'     : 'luna-studio:searcher-accept'             # SearcherAccept
   'tab'       : 'luna-studio:searcher-close'              # SearcherClose
-  'esc'       : 'luna-studio:searcher-close'              # SearcherClose
+  'escape'    : 'luna-studio:searcher-close'              # SearcherClose
   'down'      : 'luna-studio:searcher-move-down'          # SearcherMoveDown
   'up'        : 'luna-studio:searcher-move-up'            # SearcherMoveUp

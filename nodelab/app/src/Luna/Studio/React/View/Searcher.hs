@@ -28,7 +28,7 @@ searcher :: ReactView (Ref App, Searcher)
 searcher  = React.defineView name $ \(ref, s) -> do
     let pos = s ^. Searcher.position
         mode = s ^. Searcher.mode
-        className = "luna-" <> case mode of
+        className = "luna-" <> name <> " luna-" <> case mode of
             Searcher.Node    -> "node-" <> name
             Searcher.Command -> "command-" <> name
     div_
