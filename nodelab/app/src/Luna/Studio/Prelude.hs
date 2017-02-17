@@ -60,3 +60,6 @@ withJustM mMayVal action = do
 
 keyed :: [a] -> [(Int, a)]
 keyed = zip [0..]
+
+forKeyed_ :: Monad m => [a] -> ((Int, a) -> m ()) -> m ()
+forKeyed_ = forM_ . keyed

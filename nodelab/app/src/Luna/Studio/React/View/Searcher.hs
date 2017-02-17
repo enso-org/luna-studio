@@ -60,7 +60,7 @@ searcher  = React.defineView name $ \(ref, s) -> do
             , "className" $= "luna-searcher-results"
             ] $
             case s ^. Searcher.mode of
-                Searcher.Command results -> forM_ (keyed results) $ \(idx, result) ->
+                Searcher.Command results -> forKeyed_ results $ \(idx, result) ->
                     div_
                         [ "key"       $= jsShow idx
                         , "className" $= if idx == s ^. Searcher.selected then "luna-result-selected" else "luna-result"
@@ -69,7 +69,7 @@ searcher  = React.defineView name $ \(ref, s) -> do
                             ["key" $= "name"
                             ,"className" $= "luna-result-name"
                             ] $ elemString $ convert $ result ^. Result.name
-                Searcher.Node results -> forM_ (keyed results) $ \(idx, result) ->
+                Searcher.Node results -> forKeyed_ results $ \(idx, result) ->
                     div_
                         [ "key"       $= jsShow idx
                         , "className" $= if idx == s ^. Searcher.selected then "luna-result-selected" else "luna-result"
@@ -88,6 +88,12 @@ searcher_ ref model = React.viewWithSKey searcher name (ref, model) mempty
 
 searcherId :: JSString
 searcherId = Config.prefix "focus-searcher"
+
+selection :: MonadIO m => m (Int, Int)
+selection = liftIO $ (,) <$> selectionStart searcherId <*> selectionEnd searcherId
+
+foreign import javascript safe "document.getElementById($1).selectionStart" selectionStart :: JSString -> IO Int
+foreign import javascript safe "document.getElementById($1).selectionEnd"   selectionEnd   :: JSString -> IO Int
 
 focus :: IO ()
 focus = UI.focus searcherId

@@ -18,7 +18,7 @@ dataFrame_ visIx df =
             , "className" $= "luna-blur" ] mempty
         table_ [ "key" $= "table" ] $
             thead_ $
-                tr_ $ forM_ (keyed $ df ^. DataFrame.headers) $ \(i, header) ->
+                tr_ $ forKeyed_ (df ^. DataFrame.headers) $ \(i, header) ->
                     th_ [ "key" $= jsShow i ].
                         elemString $ convert header
         div_
@@ -28,7 +28,7 @@ dataFrame_ visIx df =
             ] $
             table_ $
                 tbody_ $
-                    forM_ (keyed $ df ^. DataFrame.rows) $ \(ri, row) ->
-                        tr_ [ "key" $= jsShow ri ]$ forM_ (keyed row) $ \(di, d) ->
+                    forKeyed_ (df ^. DataFrame.rows) $ \(ri, row) ->
+                        tr_ [ "key" $= jsShow ri ]$ forKeyed_ row $ \(di, d) ->
                             td_ [ "key" $= jsShow di ] $
                                 elemString $ convert d
