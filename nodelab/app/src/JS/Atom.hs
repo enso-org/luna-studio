@@ -3,7 +3,7 @@
 module JS.Atom
     ( onEvent
     , pushCode
-    , subscribeCodeListenerBackend
+    -- , subscribeEventListenerInternal
     ) where
 
 
