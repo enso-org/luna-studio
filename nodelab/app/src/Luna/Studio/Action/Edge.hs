@@ -31,4 +31,4 @@ removePort :: PortDrag -> Command State ()
 removePort portDrag = Batch.removePort (portDrag ^. Action.portDragPortRef) >> end portDrag
 
 addPort :: NodeId -> Command State ()
-addPort n = Batch.addPort n
+addPort = Batch.addPort

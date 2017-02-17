@@ -25,7 +25,7 @@ import           Luna.Studio.Prelude
 import           Luna.Studio.React.Model.Node       (makePorts)
 import qualified Luna.Studio.React.Model.Node       as Model
 import qualified Luna.Studio.React.Model.NodeEditor as NodeEditor
-import           Luna.Studio.React.Model.Port       (portRef)
+import           Luna.Studio.React.Model.Port       (portId)
 import           Luna.Studio.State.Action           (connectAction, penConnectAction)
 import           Luna.Studio.State.Global           (State, checkAction)
 import qualified Luna.Studio.State.Global           as Global
@@ -59,7 +59,7 @@ updateExistingNode node = do
     mayConnect    <- checkAction connectAction
     mayPenConnect <- checkAction penConnectAction
     withJust mayModel $ \model -> do
-        let ports = Map.fromList (map (view portRef &&& id) $ makePorts node)
+        let ports = Map.fromList (map (view portId &&& id) $ makePorts node)
             code  = node ^. Node.code
             expr  = case node ^. Node.nodeType of
                 Node.ExpressionNode expression -> expression

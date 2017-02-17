@@ -49,4 +49,4 @@ instance HasPort AnyPortRef where
 getPortFromAnyPortRef :: AnyPortRef -> Command State (Maybe PortModel.Port)
 getPortFromAnyPortRef portRef = runMaybeT $ do
     Just node <- lift $ Global.getNode $ portRef ^. PortRef.nodeId
-    fromJustM $ node ^? Node.ports . ix portRef
+    fromJustM $ node ^? Node.ports . ix (portRef ^. PortRef.portId)

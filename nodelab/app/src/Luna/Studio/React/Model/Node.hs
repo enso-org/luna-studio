@@ -16,7 +16,6 @@ import           Empire.API.Data.Node              (NodeType)
 import qualified Empire.API.Data.Node              as NodeAPI
 import qualified Empire.API.Data.NodeMeta          as MetaAPI
 import           Empire.API.Data.Port              (PortId (..))
-import           Empire.API.Data.PortRef           (AnyPortRef, portId')
 import           Empire.API.Graph.Collaboration    (ClientId)
 import           Empire.API.Graph.NodeResultUpdate (NodeValue)
 import           Luna.Studio.Prelude               hiding (set)
@@ -27,8 +26,7 @@ import           Luna.Studio.State.Collaboration   (ColorId)
 
 
 data Node = Node { _nodeId                :: NodeAPI.NodeId
-                 -- TODO: We require to much as key to this map. PortId is enough.
-                 , _ports                 :: Map AnyPortRef Port
+                 , _ports                 :: Map PortId Port
                  , _position              :: Position
                  , _zPos                  :: Int
                  , _expression            :: Text
@@ -54,7 +52,7 @@ makeLenses ''Collaboration
 isLiteral :: Contravariant f => (Bool -> f Bool) -> Node -> f Node
 isLiteral = to isLiteral' where
     isLiteral' node = not $ any isIn' portIds where
-        portIds = map portId' $ Map.keys $ node ^. ports
+        portIds = Map.keys $ node ^. ports
         isIn' :: PortId -> Bool
         isIn' (OutPortId _) = False
         isIn' (InPortId  _) = True
@@ -65,7 +63,7 @@ instance ToJSON Collaboration
 instance Default Collaboration where
     def = Collaboration def def
 
-makeNode :: NodeAPI.NodeId -> Map AnyPortRef Port -> Position -> Text -> Maybe Text -> Text -> NodeType -> Bool -> Node
+makeNode :: NodeAPI.NodeId -> Map PortId Port -> Position -> Text -> Maybe Text -> Text -> NodeType -> Bool -> Node
 makeNode nid ports' pos expr code' name' tpe' vis = Node nid ports' pos def expr code' name' def def tpe' False False vis def Nothing
 
 makePorts :: NodeAPI.Node -> [Port]
@@ -79,7 +77,7 @@ fromNode n = makeNode nodeId' ports' position' expression' code' name' nodeType'
     vis         = n ^. NodeAPI.nodeMeta . MetaAPI.displayResult
     code'       = n ^. NodeAPI.code
     nodeType'   = n ^. NodeAPI.nodeType
-    ports'      = Map.fromList $ map (view Port.portRef &&& id) $ makePorts n
+    ports'      = Map.fromList $ map (view Port.portId &&& id) $ makePorts n
     expression' = case n ^. NodeAPI.nodeType of
         NodeAPI.ExpressionNode expr     -> expr
         NodeAPI.InputNode      inputIx  -> convert $ "Input " <> show inputIx

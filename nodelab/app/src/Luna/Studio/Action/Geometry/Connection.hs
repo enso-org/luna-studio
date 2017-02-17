@@ -82,13 +82,23 @@ getConnectionPosition srcNode srcPort dstNode dstPort = do
         dstPorts   = Map.elems $ dstNode ^. Node.ports
         numOfSrcOutPorts = countSameTypePorts srcPort srcPorts
         numOfDstInPorts  = countSameTypePorts dstPort dstPorts
-    srcConnPos <- if isInputEdge srcNode then
-            getInputEdgePortPosition srcPortNum
-        else return $ connectionSrc srcPos dstPos isSrcExp isDstExp srcPortNum numOfSrcOutPorts $ isPortSingle srcPort srcPorts
-    dstConnPos <- if isOutputEdge dstNode then
-            getOutputEdgePortPosition dstPortNum $ isPortSelf dstPort
-        else return $ connectionDst srcPos dstPos isSrcExp isDstExp dstPortNum numOfDstInPorts $ isPortSelf dstPort
-    return (srcConnPos, dstConnPos)
+    if isInputEdge srcNode && isOutputEdge dstNode then do
+        srcConnPos <- getInputEdgePortPosition srcPortNum
+        dstConnPos <- getOutputEdgePortPosition dstPortNum $ isPortSelf dstPort
+        return (srcConnPos, dstConnPos)
+    else if isInputEdge srcNode then do
+        srcConnPos <- getInputEdgePortPosition srcPortNum
+        dstConnPos <- getCurrentConnectionSrcPosition dstNode dstPort srcConnPos
+        return (srcConnPos, dstConnPos)
+    else if isOutputEdge dstNode then do
+        dstConnPos <- getOutputEdgePortPosition dstPortNum $ isPortSelf dstPort
+        srcConnPos <- getCurrentConnectionSrcPosition srcNode srcPort dstConnPos
+        return (srcConnPos, dstConnPos)
+    else do
+        let srcConnPos = connectionSrc srcPos dstPos isSrcExp isDstExp srcPortNum numOfSrcOutPorts $ isPortSingle srcPort srcPorts
+            dstConnPos = connectionDst srcPos dstPos isSrcExp isDstExp dstPortNum numOfDstInPorts $ isPortSelf dstPort
+        return (srcConnPos, dstConnPos)
+
 
 getCurrentConnectionSrcPosition :: Node -> Port -> Position -> Command State Position
 getCurrentConnectionSrcPosition node port mousePos = if isInputEdge node then

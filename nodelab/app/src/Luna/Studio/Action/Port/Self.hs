@@ -21,16 +21,16 @@ import qualified Luna.Studio.State.Global           as Global
 showOrHideSelfPort :: Maybe Connect -> Maybe PenConnect -> Node -> Command State Node
 showOrHideSelfPort mayConnect mayPenConnect node = do
     let nodeId                = node ^. Model.nodeId
-        selfPortRef           = toAnyPortRef nodeId (InPortId Self)
+        portId                = InPortId Self
         connectToSelfPossible = isJust $ join $
-            mapM (toValidConnection selfPortRef) $ view Action.connectSourcePort <$> mayConnect
+            mapM (toValidConnection $ toAnyPortRef nodeId portId) $ view Action.connectSourcePort <$> mayConnect
     isConnected <- isJust <$> getConnection (InPortRef nodeId Self)
     if ( isJust mayPenConnect
       || connectToSelfPossible
       || node ^. Model.isExpanded
       || isConnected ) then
-         return $ node & Model.ports . at selfPortRef . _Just . Model.visible .~ True
-    else return $ node & Model.ports . at selfPortRef . _Just . Model.visible .~ False
+         return $ node & Model.ports . at portId . _Just . Model.visible .~ True
+    else return $ node & Model.ports . at portId . _Just . Model.visible .~ False
 
 showOrHideAllSelfPorts :: Maybe Connect -> Maybe PenConnect -> Command State ()
 showOrHideAllSelfPorts mayConnect mayPenConnect = do

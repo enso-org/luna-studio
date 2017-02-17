@@ -8,8 +8,8 @@ module Luna.Studio.Action.Graph.Connect
 
 import           Empire.API.Data.Connection             (Connection (Connection), ConnectionId)
 import qualified Empire.API.Data.Connection             as Connection
-import           Empire.API.Data.Port                   (InPort (Self))
-import           Empire.API.Data.PortRef                (AnyPortRef (InPortRef'), InPortRef, OutPortRef)
+import           Empire.API.Data.Port                   (InPort (Self), PortId (InPortId))
+import           Empire.API.Data.PortRef                (InPortRef, OutPortRef)
 import qualified Empire.API.Data.PortRef                as PortRef
 import qualified Luna.Studio.Action.Batch               as BatchCmd
 import           Luna.Studio.Action.Command             (Command)
@@ -33,10 +33,10 @@ localAddConnection :: Connection -> Command Global.State ConnectionId
 localAddConnection connection = do
     connectionId <- zoom Global.graph $ Graph.addConnection connection
     when (connection ^. Connection.dst . PortRef.dstPortId == Self) $ do
-        let nodeId  = connectionId ^. PortRef.dstNodeId
-        let portRef = InPortRef' (connection ^. Connection.dst)
+        let nodeId = connectionId ^. PortRef.dstNodeId
+        let portId = InPortId (connection ^. Connection.dst . PortRef.dstPortId)
         Global.modifyNodeEditor $
-            NodeEditor.nodes . at nodeId . _Just . Model.ports . at portRef . _Just . Model.visible .= True
+            NodeEditor.nodes . at nodeId . _Just . Model.ports . at portId . _Just . Model.visible .= True
     mayConn <- view (NodeEditor.connections . at connectionId) <$> Global.getNodeEditor
     mayConnectionModel <- createConnectionModel connection
     when (mayConnectionModel /= mayConn) $ do
