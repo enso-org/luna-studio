@@ -67,5 +67,5 @@ instance FromJSON ShortcutEvent
 
 fromString :: String -> ShortcutEvent
 fromString str = result where
-    (commandStr, argStr) = List.partition (== ' ') str
+    (commandStr, argStr) = List.break (== ' ') str & _2 %~ drop 1
     result = Event (read commandStr) $ if null argStr then Nothing else Just $ convert argStr
