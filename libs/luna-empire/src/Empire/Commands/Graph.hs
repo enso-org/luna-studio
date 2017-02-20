@@ -211,7 +211,8 @@ removePort loc portRef = withGraph loc $ runASTOp $ do
                                else return ref
         _ -> return ref
     when (ref /= newRef) $ GraphUtils.rewireNode lambda newRef
-    GraphBuilder.buildNode nodeId
+    -- TODO[MM]: This should match for any node. Now it ignores node and replace it by InputEdge.
+    GraphBuilder.buildConnections >>= \c -> GraphBuilder.buildInputEdge c nodeId
 
 
 
