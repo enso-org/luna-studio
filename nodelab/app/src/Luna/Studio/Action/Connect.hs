@@ -109,7 +109,6 @@ snapToPort :: AnyPortRef -> Connect -> Command State ()
 snapToPort portRef action =
     withJust (toValidConnection (action ^. Action.connectSourcePort) portRef) $ \conn -> do
         mayConnModel <- createConnectionModel conn
-        print mayConnModel
         withJust mayConnModel $ \connModel -> do
             update $ action & Action.connectSnappedPort ?~ portRef
             Global.modifyNodeEditor $ NodeEditor.currentConnection ?= toCurrentConnection connModel

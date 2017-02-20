@@ -32,11 +32,12 @@ edgeSidebar_ :: Ref App -> Node -> ReactElementM ViewEventHandler ()
 edgeSidebar_ ref node = when (isEdge node) $ do
     let classes = "luna-edge-sidebar luna-edge-sidebar" <> if isInputEdge node then "--i" else "--o" <> " luna-noselect"
         ports   = node ^. Node.ports . to Map.elems
+        nodeId  = node ^. Node.nodeId
     div_
         [ "className" $= classes
         , "key"       $= (fromString $ name node)
         , onMouseDown $ \e _ -> [stopPropagation e]
-        , onMouseMove $ \e m -> stopPropagation e : (dispatch ref $ UI.EdgeEvent $ Edge.MouseMove m)
+        , onMouseMove $ \e m -> stopPropagation e : (dispatch ref $ UI.EdgeEvent $ Edge.MouseMove m nodeId)
         ] $ do
         svg_ [] $ forM_ ports $ edgePort_ ref node
         when (isInputEdge node) $ do

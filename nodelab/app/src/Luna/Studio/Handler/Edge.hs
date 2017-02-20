@@ -12,9 +12,9 @@ import           Luna.Studio.State.Global     (State)
 
 
 handle :: Event -> Maybe (Command State ())
-handle (UI (EdgeEvent (Edge.MouseMove  evt)))    = Just $ handleMove evt
-handle (UI (EdgeEvent (Edge.RemovePort)))        = Just $ continue removePort
-handle (UI (EdgeEvent (Edge.AddPort    nodeId))) = Just $ addPort nodeId
-handle (UI (AppEvent  (App.MouseMove   evt _)))  = Just $ continue $ restoreConnect evt
-handle (UI (AppEvent  (App.MouseUp     _)))      = Just $ continue $ endPortDrag
-handle _                                         = Nothing
+handle (UI (EdgeEvent (Edge.MouseMove  evt nodeId))) = Just $ handleMove evt nodeId
+handle (UI (EdgeEvent (Edge.RemovePort)))            = Just $ continue removePort
+handle (UI (EdgeEvent (Edge.AddPort    nodeId)))     = Just $ addPort nodeId
+handle (UI (AppEvent  (App.MouseMove   evt _)))      = Just $ continue $ restoreConnect evt
+handle (UI (AppEvent  (App.MouseUp     _)))          = Just $ continue $ endPortDrag
+handle _                                             = Nothing

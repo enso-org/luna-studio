@@ -13,7 +13,7 @@ import qualified Luna.Studio.Action.Batch           as Batch
 import           Luna.Studio.Action.Command         (Command)
 import qualified Luna.Studio.Action.Connect         as Connect
 import           Luna.Studio.Action.Graph.Lookup    (getPort)
-import           Luna.Studio.Event.Mouse            (workspacePosition)
+import           Luna.Studio.Event.Mouse            (mousePosition, workspacePosition)
 import           Luna.Studio.Prelude
 import qualified Luna.Studio.React.Model.Node       as Node
 import qualified Luna.Studio.React.Model.NodeEditor as NodeEditor
@@ -33,13 +33,15 @@ instance Action (Command State) PortDrag where
     update   = updateActionWithKey   portDragAction
     end      = endPortDrag
 
-handleMove :: MouseEvent -> Command State ()
-handleMove evt = do
-    continue $ connectOrPortDrag evt
+handleMove :: MouseEvent -> NodeId -> Command State ()
+handleMove evt nodeId = do
+    continue $ connectOrPortDrag evt nodeId
     continue $ moveDraggedPort   evt
 
-connectOrPortDrag :: MouseEvent -> Connect -> Command State ()
-connectOrPortDrag evt connect = if (connect ^. Action.connectIsConnModified) then
+connectOrPortDrag :: MouseEvent -> NodeId -> Connect -> Command State ()
+connectOrPortDrag evt nodeId connect =
+    if ( connect ^. Action.connectIsConnModified
+      || connect ^. Action.connectSourcePort . PortRef.nodeId /= nodeId) then
          continue $ Connect.handleMove evt
     else begin $ PortDrag (connect ^. Action.connectStartPos) (connect ^. Action.connectSourcePort) (connect ^. Action.connectMode)
 
@@ -47,7 +49,7 @@ moveDraggedPort :: MouseEvent -> PortDrag -> Command State ()
 moveDraggedPort evt portDrag = do
     let nodeId = portDrag ^. Action.portDragPortRef . PortRef.nodeId
         portId = portDrag ^. Action.portDragPortRef . PortRef.portId
-    mousePos       <- workspacePosition evt
+    mousePos       <- mousePosition evt
     mayDraggedPort <- getPort $ portDrag ^. Action.portDragPortRef
     withJust mayDraggedPort $ \draggedPort -> Global.modifyNodeEditor $ do
         NodeEditor.draggedPort ?= DraggedPort draggedPort mousePos
