@@ -87,8 +87,8 @@ edgeDraggedPort_ :: Ref App -> DraggedPort -> ReactElementM ViewEventHandler ()
 edgeDraggedPort_ _ref draggedPort = do
     let color = toJSString $ draggedPort ^. Port.draggedPort . Port.color
         pos   = draggedPort ^. Port.position
-    g_
-        [ "className" $= "luna-port luna-hover" ] $ do
+    svg_
+        [ "className" $= "luna-port luna-port--dragged luna-hover" ] $ do
         circle_
             [ "className" $= "luna-port__shape"
             , "key"       $= "draggedPort"
