@@ -24,7 +24,6 @@ handle _  _                                                 = Nothing
 handleCommand :: (Event -> IO ()) -> Shortcut.Command -> Command State ()
 handleCommand scheduleEvent = \case
     Shortcut.SearcherAccept    -> continue $ Searcher.accept scheduleEvent
-    Shortcut.SearcherClose     -> continue Searcher.close
     Shortcut.SearcherMoveDown  -> continue Searcher.moveDown
     Shortcut.SearcherMoveLeft  -> continue Searcher.rollback
     Shortcut.SearcherMoveRight -> continue $ Searcher.proceed scheduleEvent

@@ -6,8 +6,7 @@ import qualified Data.List           as List
 import           Luna.Studio.Prelude
 
 
-data Command = Accept
-             | Cancel
+data Command = Cancel
              | OpenSearcher
              -- camera
              | CenterGraph
@@ -38,11 +37,9 @@ data Command = Accept
              -- node
              | SelectAll
              | RemoveSelectedNodes
-             | UnselectAll
              | ExpandSelectedNodes
              -- searcher
              | SearcherAccept
-             | SearcherClose
              | SearcherMoveDown
              | SearcherMoveUp
              | SearcherOpen

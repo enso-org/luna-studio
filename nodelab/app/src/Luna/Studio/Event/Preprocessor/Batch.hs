@@ -47,7 +47,7 @@ handlers = Map.fromList [ handle NodeAdded
                         , handle ProjectImported
                         , handle NodeRenamed
                         , handle UpdateNodeExpressionResponse
-                        , handle NodeSearcherUpdated
+                        , handle NodeSearchResponse
                         , handle EmpireStarted
                         ]
 

@@ -45,6 +45,7 @@ import qualified Empire.API.Graph.Disconnect           as Disconnect
 import qualified Empire.API.Graph.DumpGraphViz         as DumpGraphViz
 import qualified Empire.API.Graph.GetProgram           as GetProgram
 import qualified Empire.API.Graph.NodeResultUpdate     as NodeResultUpdate
+import qualified Empire.API.Graph.NodeSearch           as NodeSearch
 import qualified Empire.API.Graph.NodesUpdate          as NodesUpdate
 import qualified Empire.API.Graph.RemoveNodes          as RemoveNodes
 import qualified Empire.API.Graph.RenameNode           as RenameNode
@@ -256,6 +257,12 @@ handleGetProgram = modifyGraph (mtuple action) success where
         code <-  Graph.getCode location
         crumb <- Graph.decodeLocation location
         return $ GetProgram.Result graph (Text.pack code) crumb mockNSData
+    success req _ res = replyResult req () res
+
+handleNodeSearch :: Request NodeSearch.Request -> StateT Env BusT ()
+handleNodeSearch = modifyGraph (mtuple action) success where
+    action (NodeSearch.Request query cursor location) = do
+        return $ NodeSearch.Result mockNSData
     success req _ res = replyResult req () res
 
 handleDumpGraphViz :: Request DumpGraphViz.Request -> StateT Env BusT ()

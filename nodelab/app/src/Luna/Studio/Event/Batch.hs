@@ -1,7 +1,7 @@
 {-# LANGUAGE DeriveAnyClass #-}
 module Luna.Studio.Event.Batch where
 
-import           Data.Aeson                            (ToJSON)
+import           Data.Aeson                             (ToJSON)
 import           Luna.Studio.Prelude
 
 import qualified Empire.API.Control.EmpireStarted       as EmpireStarted
@@ -13,9 +13,9 @@ import qualified Empire.API.Graph.Connect               as Connect
 import qualified Empire.API.Graph.Disconnect            as Disconnect
 import qualified Empire.API.Graph.GetProgram            as GetProgram
 import qualified Empire.API.Graph.NodeResultUpdate      as NodeResultUpdate
-import qualified Empire.API.Graph.NodeSearcherUpdate    as NodeSearcherUpdate
-import qualified Empire.API.Graph.NodeTypecheckerUpdate as NodeTCUpdate
+import qualified Empire.API.Graph.NodeSearch            as NodeSearch
 import qualified Empire.API.Graph.NodesUpdate           as NodesUpdate
+import qualified Empire.API.Graph.NodeTypecheckerUpdate as NodeTCUpdate
 import qualified Empire.API.Graph.RemoveNodes           as RemoveNodes
 import qualified Empire.API.Graph.RenameNode            as RenameNode
 import qualified Empire.API.Graph.UpdateNodeExpression  as UpdateNodeExpression
@@ -29,40 +29,40 @@ import qualified Empire.API.Project.OpenProject         as OpenProject
 
 data Event = UnknownEvent String
            | AddNodeResponse                           AddNode.Response
-           | NodeAdded                                 AddNode.Update
-           | RemoveNodesInverse                    RemoveNodes.Inverse
-           | RemoveNodesResponse                   RemoveNodes.Response
-           | NodesRemoved                          RemoveNodes.Update
-           | ProgramFetched                         GetProgram.Response
-           | NodesConnected                            Connect.Update
+           | AddSubgraphResponse                   AddSubgraph.Response
+           | CodeUpdated                            CodeUpdate.Update
+           | CollaborationUpdate                 Collaboration.Update
+           | ConnectionDropped
+           | ConnectionOpened
            | ConnectResponse                           Connect.Response
-           | NodesDisconnected                      Disconnect.Update
            | DisconnectInverse                      Disconnect.Inverse
            | DisconnectResponse                     Disconnect.Response
-           | NodeMetaUpdated                    UpdateNodeMeta.Update
+           | EmpireStarted                       EmpireStarted.Status
+           | NodeAdded                                 AddNode.Update
            | NodeMetaInverse                    UpdateNodeMeta.Inverse
            | NodeMetaResponse                   UpdateNodeMeta.Response
+           | NodeMetaUpdated                    UpdateNodeMeta.Update
            | NodeRenamed                            RenameNode.Update
            | NodeRenameInverse                     RenameNode.Inverse
            | NodeRenameResponse                     RenameNode.Response
+           | NodeResultUpdated                NodeResultUpdate.Update
+           | NodesConnected                            Connect.Update
+           | NodesDisconnected                      Disconnect.Update
+           | NodeSearchResponse                     NodeSearch.Response
+           | NodesRemoved                          RemoveNodes.Update
            | NodesUpdated                          NodesUpdate.Update
            | NodeTypechecked                      NodeTCUpdate.Update
-           | UpdateNodeExpressionResponse UpdateNodeExpression.Response
-           | CodeUpdated                            CodeUpdate.Update
-           | NodeResultUpdated                NodeResultUpdate.Update
-           | AddSubgraphResponse                   AddSubgraph.Response
-           | ProjectList                          ListProjects.Response
+           | ProgramFetched                         GetProgram.Response
            | ProjectCreated                      CreateProject.Response
            | ProjectCreatedUpdate                CreateProject.Update
-           | ProjectOpened                         OpenProject.Response
-           | ProjectOpenedUpdate                   OpenProject.Update
            | ProjectExported                     ExportProject.Response
            | ProjectImported                     ImportProject.Response
-           | NodeSearcherUpdated            NodeSearcherUpdate.Update
-           | CollaborationUpdate                 Collaboration.Update
-           | EmpireStarted                       EmpireStarted.Status
-           | ConnectionDropped
-           | ConnectionOpened
+           | ProjectList                          ListProjects.Response
+           | ProjectOpened                         OpenProject.Response
+           | ProjectOpenedUpdate                   OpenProject.Update
+           | RemoveNodesInverse                    RemoveNodes.Inverse
+           | RemoveNodesResponse                   RemoveNodes.Response
+           | UpdateNodeExpressionResponse UpdateNodeExpression.Response
            deriving (Eq, Show, Generic, NFData)
 
 instance ToJSON Event
