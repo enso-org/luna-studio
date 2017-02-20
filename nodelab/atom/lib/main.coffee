@@ -11,9 +11,6 @@ module.exports =
         if path.extname(uri) is '.luna'
             atom.workspace.open().then (@editor) ->
                 @buffer = @editor.buffer
-                setCode = (diff) ->
-                     @buffer.setText (diff)
-                code.codeListener setCode
                 listenToBufferChanges = ->
                   @buffer.onDidChange(event) =>
                     if !(event.newText is "\n") and (event.newText.length is 0)
@@ -29,7 +26,25 @@ module.exports =
                       event : {newRange: event.newRange, newText: event.newText}
                       cursor : @buffer.getCursorBufferPosition()
                 code.pushInternalEvent listenToBufferChanges
+                changeBuffer = (data) ->
+                  if data.event.newRange then newRange = Range.fromObject(data.event.newRange)
+                  if data.event.oldRange then oldRange = Range.fromObject(data.event.oldRange)
+                  if data.event.newText then newText = data.event.newText
+
+                  switch data.changeType
+                    when 'deletion'
+                      @buffer.delete oldRange
+                      actionArea = oldRange.start
+                    when 'substitution'
+                       @buffer.setTextInBufferRange oldRange, newText
+                       actionArea = oldRange.start
+                    else
+                      @buffer.insert newRange.start, newText
+                      actionArea = newRange.start
+                code.codeListener changeBuffer
+
             atom.workspace.getActivePane().activateItem new LunaStudioTab(uri, code)
+
 
     @subs = new SubAtom
     @subs.add atom.commands.add '.luna-studio', 'luna-studio:cancel':                -> code.pushEvent("Cancel")
