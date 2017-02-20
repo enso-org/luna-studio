@@ -16,6 +16,7 @@ module Empire.ASTOps.Modify (
   ) where
 
 import           Control.Lens (folded, ifiltered)
+import           Data.List    (find)
 
 import           Empire.Prelude
 
@@ -41,20 +42,27 @@ import qualified Luna.IR as IR
 addLambdaArg :: ASTOp m => NodeRef -> m ()
 addLambdaArg lambda = match lambda $ \case
     Lam _arg _body -> do
-        out' <- ASTRead.getLambdaOutputRef lambda
-        addLambdaArg' lambda out'
+        out'  <- ASTRead.getLambdaOutputRef lambda
+        addLambdaArg' [] lambda out'
     _ -> throwM $ NotLambdaException lambda
 
-addLambdaArg' :: ASTOp m => NodeRef -> NodeRef -> m ()
-addLambdaArg' lambda out = match lambda $ \case
+allWords :: [String]
+allWords = drop 1 $ allWords' where
+    allWords' = fmap reverse $ "" : (flip (:) <$> allWords' <*> ['a' .. 'z'])
+
+addLambdaArg' :: ASTOp m => [String] -> NodeRef -> NodeRef -> m ()
+addLambdaArg' boundNames lambda out = match lambda $ \case
     Lam _arg body -> do
-        body' <- IR.source body
+        argNames <- ASTRead.getPatternNames =<< IR.source _arg
+        let newBoundNames = argNames ++ boundNames
+        body'    <- IR.source body
         if body' == out then do
-            b <- IR.blank
-            l <- IR.lam b out
+            let Just argName = find (not . flip elem newBoundNames) allWords
+            v <- IR.strVar argName
+            l <- IR.lam v out
             IR.changeSource body $ IR.generalize l
         else do
-            addLambdaArg' body' out
+            addLambdaArg' newBoundNames body' out
     _ -> throwM $ NotLambdaException lambda
 
 data CannotRemovePortException = CannotRemovePortException
