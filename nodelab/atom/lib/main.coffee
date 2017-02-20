@@ -14,17 +14,21 @@ module.exports =
                 setCode = (diff) ->
                      @buffer.setText (diff)
                 code.codeListener setCode
-                listenToBufferChanges: ->
+                listenToBufferChanges = ->
                   @buffer.onDidChange(event) =>
                     if !(event.newText is "\n") and (event.newText.length is 0)
-                      changeType = 'deletion'
-                      event = {oldRange: event.oldRange}
+                      changeType : 'deletion'
+                      event : {oldRange: event.oldRange}
+                      cursor : @buffer.getCursorBufferPosition()
                     else if event.oldRange.containsRange(event.newRange) or event.newRange.containsRange(event.oldRange)
-                      changeType = 'substitution'
-                      event = {oldRange: event.oldRange, newRange: event.newRange, newText: event.newText}
+                      changeType : 'substitution'
+                      event : {oldRange: event.oldRange, newRange: event.newRange, newText: event.newText}
+                      cursor : @buffer.getCursorBufferPosition()
                     else
-                      changeType = 'insertion'
-                      event = {newRange: event.newRange, newText: event.newText}
+                      changeType : 'insertion'
+                      event : {newRange: event.newRange, newText: event.newText}
+                      cursor : @buffer.getCursorBufferPosition()
+                code.pushInternalEvent listenToBufferChanges
             atom.workspace.getActivePane().activateItem new LunaStudioTab(uri, code)
 
     @subs = new SubAtom
