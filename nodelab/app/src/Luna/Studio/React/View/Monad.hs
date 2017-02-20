@@ -23,11 +23,12 @@ nodeToMonadPoint node = Position (Vector2 x' y')
           y' = (node ^. Node.position ^. y) + a
 
 monadPolyline_ :: [Position] -> ReactElementM ViewEventHandler ()
-monadPolyline_ a = do
+monadPolyline_ [] = mempty
+monadPolyline_ a  = do
     let key     = "monad"
         classes = "luna-monad"
-        start   = Position (Vector2 (-7000) 0) -- FIXME (head a) ^. y
-        end     = Position (Vector2   7000  0) -- FIXME (last a) ^. y
+        start   = Position (Vector2 (-7000) ((head a) ^. y))
+        end     = Position (Vector2   7000  ((last a) ^. y))
         a'      = start:a++[end]
         points  = fromString $ unwords $ map (\n -> show (n ^. x) <> "," <> show (n ^. y)) a'
     polyline_
