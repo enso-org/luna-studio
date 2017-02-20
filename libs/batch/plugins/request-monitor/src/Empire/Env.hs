@@ -15,7 +15,6 @@ import qualified Empire.API.Data.DefaultValue      as DefaultValue
 import           Empire.API.Data.GraphLocation     (GraphLocation (..))
 import           Empire.API.Data.Node              (Node, NodeId)
 import           Empire.API.Data.Project           (ProjectId)
-import qualified Empire.API.Graph.GetProgram       as GetProgram
 import qualified Empire.API.Graph.NodeResultUpdate as NodeResultUpdate
 import           Empire.Data.Graph                 (Graph)
 import qualified Empire.Empire                     as Empire

@@ -7,8 +7,7 @@ import           Data.Vector
 import           React.Flux
 import qualified React.Flux                       as React
 
-import qualified JS.Config                        as Config
-import qualified JS.UI                            as UI
+import           JS.Searcher                      (searcherId)
 import qualified Luna.Studio.Event.Keys           as Keys
 import qualified Luna.Studio.Event.UI             as UI
 import           Luna.Studio.Prelude
@@ -20,6 +19,7 @@ import qualified Luna.Studio.React.Model.Searcher as Searcher
 import           Luna.Studio.React.Store          (Ref, dispatch)
 import           Luna.Studio.React.View.NodeBody  (nodeBody_)
 import qualified Text.ScopeSearcher.QueryResult   as Result
+
 
 name :: JSString
 name = "searcher"
@@ -85,15 +85,3 @@ searcher  = React.defineView name $ \(ref, s) -> do
 
 searcher_ :: Ref App -> Searcher -> ReactElementM ViewEventHandler ()
 searcher_ ref model = React.viewWithSKey searcher name (ref, model) mempty
-
-searcherId :: JSString
-searcherId = Config.prefix "focus-searcher"
-
-selection :: MonadIO m => m (Int, Int)
-selection = liftIO $ (,) <$> selectionStart searcherId <*> selectionEnd searcherId
-
-foreign import javascript safe "document.getElementById($1).selectionStart" selectionStart :: JSString -> IO Int
-foreign import javascript safe "document.getElementById($1).selectionEnd"   selectionEnd   :: JSString -> IO Int
-
-focus :: IO ()
-focus = UI.focus searcherId

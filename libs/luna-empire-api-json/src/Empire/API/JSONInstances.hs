@@ -35,7 +35,7 @@ import           Empire.API.Graph.Connect               as Connect
 import           Empire.API.Graph.Disconnect            as Disconnect
 import           Empire.API.Graph.GetProgram            as GetProgram
 import           Empire.API.Graph.NodeResultUpdate      as NodeResultUpdate
-import           Empire.API.Graph.NodeSearcherUpdate    as NodeSearcherUpdate
+import           Empire.API.Graph.NodeSearch            as NodeSearch
 import           Empire.API.Graph.NodesUpdate           as NodesUpdate
 import           Empire.API.Graph.NodeTypecheckerUpdate as NodeTypecheckerUpdate
 import           Empire.API.Graph.RemoveNodes           as RemoveNodes
@@ -182,6 +182,9 @@ instance ToJSON CodeUpdate.Update
 instance ToJSON GetProgram.Request
 instance ToJSON GetProgram.Result
 
+instance ToJSON NodeSearch.Request
+instance ToJSON NodeSearch.Result
+
 instance ToJSON SetDefaultValue.Request
 
 instance ToJSON SetInputNodeType.Request
@@ -217,8 +220,6 @@ instance ToJSON ImportProject.Result
 
 instance (ToJSON req, ToJSON res, ToJSON inv) => ToJSON (Response.Response req inv res)
 instance (ToJSON payload) => ToJSON (Response.Status payload)
-
-instance ToJSON NodeSearcherUpdate.Update
 
 instance ToJSON EmpireStarted.Status
 

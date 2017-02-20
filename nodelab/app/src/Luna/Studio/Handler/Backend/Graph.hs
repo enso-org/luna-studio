@@ -19,7 +19,7 @@ import qualified Empire.API.Graph.Connect               as Connect
 import qualified Empire.API.Graph.Disconnect            as Disconnect
 import qualified Empire.API.Graph.GetProgram            as GetProgram
 import qualified Empire.API.Graph.NodeResultUpdate      as NodeResultUpdate
-import qualified Empire.API.Graph.NodeSearcherUpdate    as NodeSearcherUpdate
+import qualified Empire.API.Graph.NodeSearch            as NodeSearch
 import qualified Empire.API.Graph.NodesUpdate           as NodesUpdate
 import qualified Empire.API.Graph.NodeTypecheckerUpdate as NodeTCUpdate
 import qualified Empire.API.Graph.RemoveNodes           as RemoveNodes
@@ -40,6 +40,7 @@ import           Luna.Studio.Action.Node                (addDummyNode, localRemo
                                                          updateNodeValue, updateNodesMeta)
 import qualified Luna.Studio.Action.Node                as Node
 import           Luna.Studio.Action.ProjectManager      (setCurrentBreadcrumb)
+import qualified Luna.Studio.Action.Searcher            as Searcher
 import           Luna.Studio.Action.UUID                (isOwnRequest)
 import           Luna.Studio.Handler.Backend.Common     (doNothing, handleResponse)
 import           Luna.Studio.State.Global               (State)
@@ -155,10 +156,12 @@ handle (Event.Batch ev) = Just $ case ev of
             updateNodeProfilingData (update ^. NodeResultUpdate.nodeId) (update ^. NodeResultUpdate.execTime)
             updateConnectionsForNodes [update ^. NodeResultUpdate.nodeId]
 
-    NodeSearcherUpdated update -> do
-        shouldProcess <- isCurrentLocationAndGraphLoaded (update ^. NodeSearcherUpdate.location)
-        correctLocation <- isCurrentLocation (update ^. NodeSearcherUpdate.location)
-        when (shouldProcess && correctLocation) $ Global.workspace . Workspace.nodeSearcherData .= update ^. NodeSearcherUpdate.nodeSearcherData
+    NodeSearchResponse response -> handleResponse response $ \request result -> do
+        shouldProcess <- isCurrentLocationAndGraphLoaded (request ^. NodeSearch.location)
+        correctLocation <- isCurrentLocation (request ^. NodeSearch.location)
+        when (shouldProcess && correctLocation) $ do
+            Global.workspace . Workspace.nodeSearcherData .= result ^. NodeSearch.nodeSearcherData
+            Searcher.updateHints
 
     CodeUpdated update -> do
         shouldProcess <- isCurrentLocationAndGraphLoaded (update ^. CodeUpdate.location)
