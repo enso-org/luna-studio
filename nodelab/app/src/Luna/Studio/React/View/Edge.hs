@@ -39,21 +39,22 @@ edgeSidebar_ ref node = when (isEdge node) $ do
         , onMouseMove $ \e m -> stopPropagation e : (dispatch ref $ UI.EdgeEvent $ Edge.MouseMove m)
         ] $ do
         svg_ [] $ forM_ ports $ edgePort_ ref node
-        div_
-            [ "className" $= "luna-edge__buton luna-edge__button--add"
-            , "key"       $= (fromString $ name node <> "AddButton")
-            , onMouseDown $ \e _ -> [stopPropagation e]
-            , onClick $ \e _ -> stopPropagation e : sendAddPortEvent ref node
-            ] $ elemString "Add"
-        div_
-            [ "className" $= "luna-edge__buton luna-edge__button--remove"
-            , "key"       $= (fromString $ name node <> "RemoveButton")
-            , onMouseDown $ \e _ -> [stopPropagation e]
-            , onMouseUp   $ \_ _ -> dispatch ref $ UI.EdgeEvent $ Edge.RemovePort
-            ] $ elemString "Remove"
+        when (isInputEdge node) $ do
+            div_
+                [ "className" $= "luna-edge__buton luna-edge__button--add"
+                , "key"       $= (fromString $ name node <> "AddButton")
+                , onMouseDown $ \e _ -> [stopPropagation e]
+                , onClick $ \e _ -> stopPropagation e : sendAddPortEvent ref node
+                ] $ elemString "Add"
+            div_
+                [ "className" $= "luna-edge__buton luna-edge__button--remove"
+                , "key"       $= (fromString $ name node <> "RemoveButton")
+                , onMouseDown $ \e _ -> [stopPropagation e]
+                , onMouseUp   $ \_ _ -> dispatch ref $ UI.EdgeEvent $ Edge.RemovePort
+                ] $ elemString "Remove"
 
 edgePort_ :: Ref App -> Node -> Port -> ReactElementM ViewEventHandler ()
-edgePort_ ref _n p = do
+edgePort_ ref _n p = when (p ^. Port.visible) $ do
     let portRef   = p ^. Port.portRef
         portId    = p ^. Port.portId
         isInput   = isPortInput p

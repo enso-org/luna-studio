@@ -8,14 +8,17 @@ module Luna.Studio.Action.Edge
     ) where
 
 import           Empire.API.Data.Node               (NodeId)
+import qualified Empire.API.Data.PortRef            as PortRef
 import qualified Luna.Studio.Action.Batch           as Batch
 import           Luna.Studio.Action.Command         (Command)
 import qualified Luna.Studio.Action.Connect         as Connect
 import           Luna.Studio.Action.Graph.Lookup    (getPort)
 import           Luna.Studio.Event.Mouse            (workspacePosition)
 import           Luna.Studio.Prelude
+import qualified Luna.Studio.React.Model.Node       as Node
 import qualified Luna.Studio.React.Model.NodeEditor as NodeEditor
 import           Luna.Studio.React.Model.Port       (DraggedPort (DraggedPort))
+import qualified Luna.Studio.React.Model.Port       as Port
 import           Luna.Studio.State.Action           (Action (begin, continue, end, update), Connect, PortDrag (PortDrag), portDragAction)
 import qualified Luna.Studio.State.Action           as Action
 import           Luna.Studio.State.Global           (State, beginActionWithKey, continueActionWithKey, removeActionFromState,
@@ -42,10 +45,13 @@ connectOrPortDrag evt connect = if (connect ^. Action.connectIsConnModified) the
 
 moveDraggedPort :: MouseEvent -> PortDrag -> Command State ()
 moveDraggedPort evt portDrag = do
+    let nodeId = portDrag ^. Action.portDragPortRef . PortRef.nodeId
+        portId = portDrag ^. Action.portDragPortRef . PortRef.portId
     mousePos       <- workspacePosition evt
     mayDraggedPort <- getPort $ portDrag ^. Action.portDragPortRef
-    withJust mayDraggedPort $ \draggedPort -> Global.modifyNodeEditor $
+    withJust mayDraggedPort $ \draggedPort -> Global.modifyNodeEditor $ do
         NodeEditor.draggedPort ?= DraggedPort draggedPort mousePos
+        NodeEditor.nodes . at nodeId . _Just . Node.ports . at portId . _Just . Port.visible .= False
 
 restoreConnect :: MouseEvent -> PortDrag -> Command State ()
 restoreConnect evt portDrag = do
@@ -59,6 +65,11 @@ addPort :: NodeId -> Command State ()
 addPort = Batch.addPort
 
 endPortDrag :: PortDrag -> Command State ()
-endPortDrag _ = do
-    Global.modifyNodeEditor $ NodeEditor.draggedPort .= Nothing
+endPortDrag portDrag = do
+    let nodeId = portDrag ^. Action.portDragPortRef . PortRef.nodeId
+        portId = portDrag ^. Action.portDragPortRef . PortRef.portId
+    Global.modifyNodeEditor $ do
+        NodeEditor.draggedPort .= Nothing
+        NodeEditor.nodes . at nodeId . _Just . Node.ports . at portId . _Just . Port.visible   .= True
+        NodeEditor.nodes . at nodeId . _Just . Node.ports . at portId . _Just . Port.highlight .= False
     removeActionFromState portDragAction
