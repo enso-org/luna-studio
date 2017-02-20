@@ -25,6 +25,7 @@
   'ctrl-shift-down'  : 'luna-studio:go-cone-down'         # GoConeDown
   # nodes
   'ctrl-a'          : 'luna-studio:select-all'            # SelectAll
+  'backspace'       : 'luna-studio:remove-selected-nodes' # RemoveSelectedNodes
   'delete'          : 'luna-studio:remove-selected-nodes' # RemoveSelectedNodes
   'escape'          : 'luna-studio:unselect-all'          # UnselectAll
   'enter'           : 'luna-studio:expand-selected-nodes' # ExpandSelectedNodes

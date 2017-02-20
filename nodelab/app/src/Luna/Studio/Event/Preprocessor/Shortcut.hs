@@ -53,6 +53,7 @@ handleKeyApp evt
     | Keys.withCtrlShift    evt Keys.downArrow  = Just GoConeDown
     -- nodes
     | Keys.withCtrl         evt Keys.a          = Just SelectAll
+    | Keys.withoutMods      evt Keys.backspace  = Just RemoveSelectedNodes
     | Keys.withoutMods      evt Keys.del        = Just RemoveSelectedNodes
     | Keys.withoutMods      evt Keys.esc        = Just UnselectAll
     | Keys.withoutMods      evt Keys.enter      = Just ExpandSelectedNodes
