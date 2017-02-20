@@ -66,6 +66,12 @@ distance p0 p1 = magnitude (p0 ^. vector - p1 ^. vector)
 distanceSquared :: Position -> Position -> Double
 distanceSquared p0 p1 = lengthSquared (p0 ^. vector - p1 ^. vector)
 
+getX :: Position -> Double
+getX (Position (Vector2 x _)) = x
+
+getY :: Position -> Double
+getY (Position (Vector2 _ y)) = y
+
 -- TODO[react]: Possible solution to differ Mouse Position and Graph Position
 -- makeClassy  ''Position
 -- class HasPosition a where

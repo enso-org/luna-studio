@@ -33,7 +33,7 @@ nodeEditor_ ref ne = React.viewWithSKey nodeEditor name (ref, ne) mempty
 nodeEditor :: ReactView (Ref App, NodeEditor)
 nodeEditor = React.defineView name $ \(ref, ne) -> do
     let camera = ne ^. NodeEditor.screenTransform . CameraTransformation.logicalToScreen
-        m = map nodeToMonadPoint $ ne ^. NodeEditor.nodes . to HashMap.elems
+        monad1 = map nodeToMonadPoint $ ne ^. NodeEditor.nodes . to HashMap.elems
     div_
         [ "className" $= "luna-graph"
         , "id"        $= sceneId
@@ -48,7 +48,7 @@ nodeEditor = React.defineView name $ \(ref, ne) -> do
         svg_
             [ "className" $= "luna-plane luna-plane--monads luna-node-trans"
             , "key"       $= "monads"
-            ] $ monadPolyline_ m
+            ] $ monadPolyline_ monad1
         svg_
             [ "className" $= "luna-plane luna-plane-connections luna-node-trans"
             , "key"       $= "connections"

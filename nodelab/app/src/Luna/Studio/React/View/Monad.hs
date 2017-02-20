@@ -1,7 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Luna.Studio.React.View.Monad where
 
-import           Data.Position                   (Position(Position), Vector2(Vector2), x, y)
+import           Data.Position                   (Position(Position), Vector2(Vector2), x, y, getY)
 import           Luna.Studio.Prelude
 import           Luna.Studio.React.Model.Node    (Node)
 import qualified Luna.Studio.React.Model.Node    as Node
@@ -26,8 +26,8 @@ monadPolyline_ :: [Position] -> ReactElementM ViewEventHandler ()
 monadPolyline_ a = do
     let key     = "monad"
         classes = "luna-monad"
-        start   = Position (Vector2 (-7000) 0)
-        end     = Position (Vector2   7000  0)
+        start   = Position (Vector2 (-7000) 0) -- FIXME getY $ head a
+        end     = Position (Vector2   7000  0) -- FIXME getY $ last a
         b       = start:a++[end]
         points  = fromString $ unwords $ (\n -> show (n ^. x) <> "," <> show (n ^. y)) <$> b
     polyline_
