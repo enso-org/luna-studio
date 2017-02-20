@@ -28,6 +28,7 @@ module.exports =
             atom.workspace.getActivePane().activateItem new LunaStudioTab(uri, code)
 
     @subs = new SubAtom
+    @subs.add atom.commands.add '.luna-studio', 'luna-studio:cancel':                -> code.pushEvent("Cancel")
     # camera
     @subs.add atom.commands.add '.luna-studio', 'luna-studio:pan-left':              -> code.pushEvent("PanLeft")
     @subs.add atom.commands.add '.luna-studio', 'luna-studio:pan-right':             -> code.pushEvent("PanRight")
@@ -57,12 +58,10 @@ module.exports =
     # nodes
     @subs.add atom.commands.add '.luna-studio', 'luna-studio:select-all':            -> code.pushEvent("SelectAll")
     @subs.add atom.commands.add '.luna-studio', 'luna-studio:remove-selected-nodes': -> code.pushEvent("RemoveSelectedNodes")
-    @subs.add atom.commands.add '.luna-studio', 'luna-studio:unselect-all':          -> code.pushEvent("UnselectAll")
     @subs.add atom.commands.add '.luna-studio', 'luna-studio:expand-selected-nodes': -> code.pushEvent("ExpandSelectedNodes")
     # searcher
     @subs.add atom.commands.add '.luna-studio', 'luna-studio:searcher-open':         -> code.pushEvent("SearcherOpen")
     @subs.add atom.commands.add '.luna-searcher', 'luna-studio:searcher-accept':     -> code.pushEvent("SearcherAccept")
-    @subs.add atom.commands.add '.luna-searcher', 'luna-studio:searcher-close':      -> code.pushEvent("SearcherClose")
     @subs.add atom.commands.add '.luna-searcher', 'luna-studio:searcher-move-down':  -> code.pushEvent("SearcherMoveDown")
     @subs.add atom.commands.add '.luna-searcher', 'luna-studio:searcher-move-up':    -> code.pushEvent("SearcherMoveUp")
     # undo/redo
