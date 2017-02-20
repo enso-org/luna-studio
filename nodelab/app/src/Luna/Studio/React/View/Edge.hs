@@ -5,6 +5,7 @@ module Luna.Studio.React.View.Edge
     , edgeDraggedPort_
     ) where
 
+import qualified Data.Aeson                   as Aeson
 import qualified Data.Map.Lazy                as Map
 import           Data.Position                (x, y)
 import           Luna.Studio.Action.Geometry  (getPortNumber, isPortInput, lineHeight)
@@ -88,12 +89,14 @@ edgeDraggedPort_ _ref draggedPort = do
     let color = toJSString $ draggedPort ^. Port.draggedPort . Port.color
         pos   = draggedPort ^. Port.position
     svg_
-        [ "className" $= "luna-port luna-port--dragged luna-hover" ] $ do
+        [ "className" $= "luna-port luna-port--dragged luna-hover"
+        , "style"     @= Aeson.object [ "transform" Aeson..= ( "translate(" <> show (pos ^. x) <> "px, " <> show (pos ^. y) <> "px)" ) ]
+        ] $ do
         circle_
             [ "className" $= "luna-port__shape"
             , "key"       $= "draggedPort"
             , "fill"      $= color
             , "r"         $= jsShow2 3
-            , "cx"        $= fromString (show $ pos ^. x)
-            , "cy"        $= fromString (show $ pos ^. y)
+--            , "cx"        $= fromString (show $ pos ^. x)
+--            , "cy"        $= fromString (show $ pos ^. y)
             ] mempty
