@@ -43,6 +43,7 @@ import qualified Data.UUID                     as UUID
 import qualified Data.UUID.V4                  as UUID (nextRandom)
 import           Empire.Prelude
 
+import           Empire.Data.AST                 (NotInputEdgeException (..))
 import           Empire.Data.BreadcrumbHierarchy (addID, addWithLeafs, removeID, topLevelIDs)
 import           Empire.Data.Graph               (Graph)
 import qualified Empire.Data.Graph               as Graph
@@ -139,7 +140,9 @@ addPersistentNode n = case n ^. Node.nodeType of
 addPort :: GraphLocation -> NodeId -> Empire Node
 addPort loc nid = withGraph loc $ runASTOp $ do
     Just lambda <- use Graph.insideNode
-    ref <- GraphUtils.getASTTarget lambda
+    ref   <- GraphUtils.getASTTarget lambda
+    edges <- GraphBuilder.getEdgePortMapping
+    when ((fst <$> edges) /= Just nid) $ throwM NotInputEdgeException
     ASTModify.addLambdaArg ref
     -- TODO[MM]: This should match for any node. Now it ignores node and replace it by InputEdge.
     inputEdge <- GraphBuilder.buildConnections >>= \c -> GraphBuilder.buildInputEdge c nid
