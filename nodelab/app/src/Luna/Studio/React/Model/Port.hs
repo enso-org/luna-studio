@@ -1,14 +1,15 @@
 {-# LANGUAGE DeriveAnyClass #-}
 module Luna.Studio.React.Model.Port where
 
-import           Data.Aeson                (ToJSON)
+import           Data.Aeson              (ToJSON)
+import           Data.Position           (Position)
 
-import           Empire.API.Data.Node      (NodeId)
-import qualified Empire.API.Data.Port      as API
-import           Empire.API.Data.PortRef   (AnyPortRef, toAnyPortRef)
-import           Empire.API.Data.TypeRep   (TypeRep)
-import           Luna.Studio.Data.Color    (Color, colorPort)
-import           Luna.Studio.Prelude       hiding (set)
+import           Empire.API.Data.Node    (NodeId)
+import qualified Empire.API.Data.Port    as API
+import           Empire.API.Data.PortRef (AnyPortRef, toAnyPortRef)
+import           Empire.API.Data.TypeRep (TypeRep)
+import           Luna.Studio.Data.Color  (Color, colorPort)
+import           Luna.Studio.Prelude     hiding (set)
 
 
 
@@ -21,6 +22,13 @@ data Port = Port { _portRef     :: AnyPortRef
 
 makeLenses ''Port
 instance ToJSON Port
+
+data DraggedPort = DraggedPort { _draggedPort :: Port
+                               , _position    :: Position
+                               } deriving (Eq, Show, Typeable, Generic, NFData)
+
+makeLenses ''DraggedPort
+instance ToJSON DraggedPort
 
 portId :: Lens' Port API.PortId
 portId = port . API.portId

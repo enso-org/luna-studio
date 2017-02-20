@@ -1,26 +1,25 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# OPTIONS_GHC -fno-warn-type-defaults #-}
-module Luna.Studio.React.View.Edge (
-    edgeSidebar_,
-) where
+module Luna.Studio.React.View.Edge
+    ( edgeSidebar_
+    , edgeDraggedPort_
+    ) where
 
 import qualified Data.Map.Lazy                as Map
+import           Data.Position                (x, y)
+import           Luna.Studio.Action.Geometry  (getPortNumber, isPortInput, lineHeight)
+import           Luna.Studio.Data.Color       (toJSString)
 import qualified Luna.Studio.Event.UI         as UI
 import           Luna.Studio.Prelude
 import qualified Luna.Studio.React.Event.Edge as Edge
 import           Luna.Studio.React.Model.App  (App)
 import           Luna.Studio.React.Model.Node (Node, isEdge, isInputEdge)
 import qualified Luna.Studio.React.Model.Node as Node
-import           Luna.Studio.React.Model.Port (Port (..))
+import           Luna.Studio.React.Model.Port (DraggedPort, Port (..))
 import qualified Luna.Studio.React.Model.Port as Port
 import           Luna.Studio.React.Store      (Ref, dispatch)
 import           Luna.Studio.React.View.Port  (handlers, jsShow2)
 import           React.Flux
-
-import           Luna.Studio.Data.Color       (toJSString)
-
-import           Luna.Studio.Action.Geometry  (getPortNumber, isPortInput, lineHeight, nodeRadius, nodeRadius', portAngleStart,
-                                               portAngleStop)
 
 
 name :: Node -> String
@@ -54,7 +53,7 @@ edgeSidebar_ ref node = when (isEdge node) $ do
             ] $ elemString "Remove"
 
 edgePort_ :: Ref App -> Node -> Port -> ReactElementM ViewEventHandler ()
-edgePort_ ref n p = do
+edgePort_ ref _n p = do
     let portRef   = p ^. Port.portRef
         portId    = p ^. Port.portId
         isInput   = isPortInput p
@@ -63,7 +62,7 @@ edgePort_ ref n p = do
         highlight = if p ^. Port.highlight then " luna-hover" else ""
         classes   = if isInput then "luna-port luna-port--i luna-port--i--" else "luna-port luna-port--o luna-port--o--"
         className = fromString $ classes <> show (num + 1) <> highlight
-        n         = if isInput then 1 else 0
+        k         = if isInput then 1 else 0
     g_
         [ "className" $= className ] $ do
         circle_
@@ -71,13 +70,28 @@ edgePort_ ref n p = do
             , "key"       $= (jsShow portId <> jsShow num <> "a")
             , "fill"      $= color
             , "r"         $= jsShow2 3
-            , "cy"        $= jsShow2 (lineHeight * fromIntegral (num + n) )
+            , "cy"        $= jsShow2 (lineHeight * fromIntegral (num + k) )
             ] mempty
         circle_
             ( handlers ref portRef ++
               [ "className" $= "luna-port__select"
               , "key"       $= (jsShow portId <> jsShow num <> "b")
               , "r"         $= jsShow2 (lineHeight/1.5)
-              , "cy"        $= jsShow2 (lineHeight * fromIntegral (num + n) )
+              , "cy"        $= jsShow2 (lineHeight * fromIntegral (num + k) )
               ]
             ) mempty
+
+edgeDraggedPort_ :: Ref App -> DraggedPort -> ReactElementM ViewEventHandler ()
+edgeDraggedPort_ _ref draggedPort = do
+    let color = toJSString $ draggedPort ^. Port.draggedPort . Port.color
+        pos   = draggedPort ^. Port.position
+    g_
+        [ "className" $= "luna-port luna-hover" ] $ do
+        circle_
+            [ "className" $= "luna-port__shape"
+            , "key"       $= "draggedPort"
+            , "fill"      $= color
+            , "r"         $= jsShow2 3
+            , "cx"        $= fromString (show $ pos ^. x)
+            , "cy"        $= fromString (show $ pos ^. y)
+            ] mempty

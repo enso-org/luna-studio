@@ -10,6 +10,7 @@ import           Luna.Studio.Prelude
 import           Luna.Studio.React.Model.Connection    (Connection, CurrentConnection)
 import           Luna.Studio.React.Model.ConnectionPen (ConnectionPen)
 import           Luna.Studio.React.Model.Node          (Node)
+import           Luna.Studio.React.Model.Port          (DraggedPort)
 import           Luna.Studio.React.Model.SelectionBox  (SelectionBox)
 
 
@@ -20,6 +21,7 @@ data NodeEditor = NodeEditor { _screenTransform   :: CameraTransformation
                              , _connectionPen     :: Maybe ConnectionPen
                              , _selectionBox      :: Maybe SelectionBox
                              , _visualizations    :: [(NodeId, Int, Position)]
+                             , _draggedPort       :: Maybe DraggedPort
                              } deriving (Default, Eq, Generic)
 
 makeLenses ''NodeEditor

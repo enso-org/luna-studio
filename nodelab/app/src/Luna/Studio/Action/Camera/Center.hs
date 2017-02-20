@@ -10,6 +10,7 @@ import qualified Empire.API.Data.Node                  as Node
 import           Luna.Studio.Action.Camera.Modify      (resetCamera)
 import           Luna.Studio.Action.Camera.Screen      (getScreenCenterFromSize, getScreenSize)
 import           Luna.Studio.Action.Command            (Command)
+import           Luna.Studio.Action.Graph.Update       (updateConnectionsForEdges)
 import           Luna.Studio.Data.CameraTransformation (lastInverse, logicalToScreen, screenToLogical)
 import           Luna.Studio.Data.Matrix               (homothetyMatrix, invertedHomothetyMatrix, invertedTranslationMatrix,
                                                         translationMatrix)
@@ -38,4 +39,5 @@ centerGraph = do
                 NodeEditor.screenTransform . logicalToScreen .= multStd2 (translationMatrix shift) (homothetyMatrix screenCenter factor)
                 NodeEditor.screenTransform . screenToLogical .= multStd2 (invertedHomothetyMatrix screenCenter factor) (invertedTranslationMatrix shift)
                 NodeEditor.screenTransform . lastInverse     .= 2
+            updateConnectionsForEdges
         Nothing -> resetCamera
