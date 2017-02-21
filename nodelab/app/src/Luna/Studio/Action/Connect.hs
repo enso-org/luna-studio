@@ -1,16 +1,15 @@
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 {-# LANGUAGE TypeApplications #-}
 module Luna.Studio.Action.Connect
-    ( handlePortMouseDown
-    , handleConnectionMouseDown
-    , handleClick
+    ( handleConnectionMouseDown
     , handleMove
     , handleMouseUp
-    , startConnecting
-    , stopConnecting
     , handlePortMouseUp
+    , startConnecting
     , snapToPort
     , cancelSnapToPort
+    , connectToPort
+    , stopConnecting
     ) where
 
 import qualified Data.HashMap.Strict                    as HashMap
@@ -35,8 +34,8 @@ import qualified Luna.Studio.React.Model.Node           as Model
 import qualified Luna.Studio.React.Model.NodeEditor     as NodeEditor
 import           Luna.Studio.State.Action               (Action (begin, continue, update), Connect, Mode (Click, Drag), connectAction)
 import qualified Luna.Studio.State.Action               as Action
-import           Luna.Studio.State.Global               (State, beginActionWithKey, checkAction, continueActionWithKey,
-                                                         removeActionFromState, updateActionWithKey)
+import           Luna.Studio.State.Global               (State, beginActionWithKey, continueActionWithKey, removeActionFromState,
+                                                         updateActionWithKey)
 import qualified Luna.Studio.State.Global               as Global
 import qualified Luna.Studio.State.Graph                as Graph
 import           React.Flux                             (MouseEvent)
@@ -48,12 +47,6 @@ instance Action (Command State) Connect where
     update   = updateActionWithKey   connectAction
     end      = stopConnecting
 
-handlePortMouseDown :: MouseEvent -> AnyPortRef -> Command State ()
-handlePortMouseDown evt anyPortRef = do
-    mayAction <- checkAction connectAction
-    when (Just Click /= (view Action.connectMode <$> mayAction)) $ do
-        mousePos <- workspacePosition evt
-        startConnecting mousePos anyPortRef Nothing Drag
 
 handleConnectionMouseDown :: MouseEvent -> ConnectionId -> ModifiedEnd -> Command State ()
 handleConnectionMouseDown evt connId modifiedEnd = do
@@ -64,15 +57,6 @@ handleConnectionMouseDown evt connId modifiedEnd = do
                 Source      -> InPortRef'  (connection ^. Connection.dst)
         mousePos <- workspacePosition evt
         startConnecting mousePos portRef (Just connId) Drag
-
-handleClick :: MouseEvent -> AnyPortRef -> Command State ()
-handleClick evt anyPortRef = do
-    mayAction <- checkAction connectAction
-    if (Just Click == (view Action.connectMode <$> mayAction)) then
-        continue $ connectToPort anyPortRef
-    else do
-        mousePos <- workspacePosition evt
-        startConnecting mousePos anyPortRef Nothing Click
 
 startConnecting :: Position -> AnyPortRef -> Maybe ConnectionId -> Mode -> Command State ()
 startConnecting mousePos anyPortRef mayModifiedConnId connectMode = do

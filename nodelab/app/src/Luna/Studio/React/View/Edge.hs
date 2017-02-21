@@ -38,7 +38,8 @@ edgeSidebar_ ref mayDraggedPort node = when (isEdge node) $ do
         [ "className" $= classes
         , "key"       $= (fromString $ name node)
         , onMouseDown $ \e _ -> [stopPropagation e]
-        , onMouseMove $ \e m -> stopPropagation e : (dispatch ref $ UI.EdgeEvent $ Edge.MouseMove m nodeId)
+        , onMouseEnter $ \_ m -> dispatch ref $ UI.EdgeEvent $ Edge.MouseEnter m nodeId
+        , onMouseLeave $ \_ m -> dispatch ref $ UI.EdgeEvent $ Edge.MouseLeave m
         ] $ do
         svg_ [] $ forM_ ports $ edgePort_ ref node
         when (isInputEdge node) $ if (isNothing mayDraggedPort) then
@@ -52,7 +53,7 @@ edgeSidebar_ ref mayDraggedPort node = when (isEdge node) $ do
                     [ "className" $= "luna-edge__buton luna-edge__button--remove"
                     , "key"       $= (fromString $ name node <> "RemoveButton")
                     , onMouseDown $ \e _ -> [stopPropagation e]
-                    , onMouseUp   $ \_ _ -> dispatch ref $ UI.EdgeEvent $ Edge.RemovePort
+                    , onMouseUp   $ \e _ -> stopPropagation e : (dispatch ref $ UI.EdgeEvent $ Edge.RemovePort)
                     ] $ elemString "Remove"
         withJust mayDraggedPort $ \draggedPort ->
             when (draggedPort ^. Port.draggedPort . Port.portRef . PortRef.nodeId == nodeId) $
