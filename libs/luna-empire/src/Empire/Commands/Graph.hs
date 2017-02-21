@@ -9,6 +9,7 @@ module Empire.Commands.Graph
     , addPort
     , addSubgraph
     , removeNodes
+    , movePort
     , removePort
     , updateNodeExpression
     , updateNodeMeta
@@ -208,13 +209,24 @@ removePort loc portRef = withGraph loc $ runASTOp $ do
     newRef <- case edges of
         Just (input, _output) -> do
             if nodeId == input then ASTModify.removeLambdaArg ref $ portRef ^. PortRef.portId
-                               else return ref
+                               else throwM NotInputEdgeException
         _ -> return ref
     when (ref /= newRef) $ GraphUtils.rewireNode lambda newRef
-    -- TODO[MM]: This should match for any node. Now it ignores node and replace it by InputEdge.
     GraphBuilder.buildConnections >>= \c -> GraphBuilder.buildInputEdge c nodeId
 
-
+movePort :: GraphLocation -> AnyPortRef -> Int -> Empire Node
+movePort loc portRef newPosition = withGraph loc $ runASTOp $ do
+    let nodeId = portRef ^. PortRef.nodeId
+    Just lambda <- use Graph.insideNode
+    ref         <- GraphUtils.getASTTarget lambda
+    edges       <- GraphBuilder.getEdgePortMapping
+    newRef      <- case edges of
+        Just (input, _) -> do
+            if nodeId == input then ASTModify.moveLambdaArg ref (portRef ^. PortRef.portId) newPosition
+                               else throwM NotInputEdgeException
+        _ -> throwM NotInputEdgeException
+    when (ref /= newRef) $ GraphUtils.rewireNode lambda newRef
+    GraphBuilder.buildConnections >>= \c -> GraphBuilder.buildInputEdge c nodeId
 
 updateNodeExpression :: GraphLocation -> NodeId -> NodeId -> Text -> Empire (Maybe Node)
 updateNodeExpression loc nodeId newNodeId expr = do

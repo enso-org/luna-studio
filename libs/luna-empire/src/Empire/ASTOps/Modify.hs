@@ -12,6 +12,7 @@ module Empire.ASTOps.Modify (
   , rewireNode
   , setLambdaOutputToBlank
   , addLambdaArg
+  , moveLambdaArg
   , removeLambdaArg
   ) where
 
@@ -80,6 +81,25 @@ removeLambdaArg lambda (Port.OutPortId (Port.Projection port)) = match lambda $ 
         args <- ASTDeconstruct.extractArguments lambda
         out  <- ASTRead.getLambdaOutputRef lambda
         let newArgs = args ^.. folded . ifiltered (\i _ -> i /= port)
+        ASTBuilder.lams newArgs out
+    _ -> throwM $ NotLambdaException lambda
+
+shiftPosition :: Int -> Int -> [a] -> [a]
+shiftPosition from to lst = uncurry (insertAt to) $ getAndRemove from lst where
+    insertAt 0 e l        = e : l
+    insertAt i e (x : xs) = x : insertAt (i - 1) e xs
+
+    getAndRemove 0 (x : xs) = (x, xs)
+    getAndRemove i (x : xs) = let (r, rs) = getAndRemove (i - 1) xs in (r, x : rs)
+
+moveLambdaArg :: ASTOp m => NodeRef -> Port.PortId -> Int -> m NodeRef
+moveLambdaArg _ Port.InPortId{}           _ = throwM $ CannotRemovePortException
+moveLambdaArg _ (Port.OutPortId Port.All) _ = throwM $ CannotRemovePortException
+moveLambdaArg lambda (Port.OutPortId (Port.Projection port)) newPosition = match lambda $ \case
+    Lam _ _ -> do
+        args <- ASTDeconstruct.extractArguments lambda
+        out  <- ASTRead.getLambdaOutputRef      lambda
+        let newArgs = shiftPosition port newPosition args
         ASTBuilder.lams newArgs out
     _ -> throwM $ NotLambdaException lambda
 
