@@ -18,7 +18,7 @@ import qualified Empire.API.Data.NodeMeta          as NodeMeta
 import           Empire.API.Data.GraphLocation     (GraphLocation (..))
 import qualified Empire.API.Graph.NodeResultUpdate as NodeResult
 import qualified Empire.API.Data.Error             as APIError
-import           Empire.API.Data.TypeRep           (TypeRep(TVar))
+import           Empire.API.Data.TypeRep           (TypeRep(TCons))
 import           Empire.ASTOp                      (EmpirePass, runASTOp)
 import           Empire.Empire
 import qualified Empire.Commands.AST               as AST
@@ -126,8 +126,8 @@ updateNodes loc = do
 updateMonads :: GraphLocation -> Command InterpreterEnv ()
 updateMonads loc = do
     allNodeIds <- uses (graph . Graph.breadcrumbHierarchy) topLevelIDs
-    let monad1 = (TVar "MonadMock1", sort allNodeIds) --FIXME[pm] provide real data
-        monad2 = (TVar "MonadMock2", allNodeIds)
+    let monad1 = (TCons "MonadMock1" [], sort allNodeIds) --FIXME[pm] provide real data
+        monad2 = (TCons "MonadMock2" [], allNodeIds)
     Publisher.notifyMonadsUpdate loc [monad1, monad2]
 
 updateValues :: GraphLocation -> Command InterpreterEnv ()

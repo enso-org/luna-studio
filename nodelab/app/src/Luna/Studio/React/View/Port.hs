@@ -5,7 +5,6 @@ module Luna.Studio.React.View.Port where
 import           Empire.API.Data.Port         (InPort (..), OutPort (..), PortId (..))
 import           Empire.API.Data.PortRef      (AnyPortRef)
 import           Luna.Studio.Action.Geometry  (lineHeight, nodeRadius, nodeRadius', portAngleStart, portAngleStop)
-import           Luna.Studio.Data.Color       (toJSString)
 import qualified Luna.Studio.Event.Mouse      as Mouse
 import qualified Luna.Studio.Event.UI         as UI
 import           Luna.Studio.Prelude
@@ -86,7 +85,7 @@ handlers ref portRef = [ onMouseDown $ handleMouseDown ref portRef
 portSelf_ :: Ref App -> Port -> ReactElementM ViewEventHandler ()
 portSelf_ ref p = do
     let portRef   = p ^. Port.portRef
-        color     = toJSString $ p ^. Port.color
+        color     = convert $ p ^. Port.color
         portId    = p ^. Port.portId
         highlight = if p ^. Port.highlight then " luna-hover" else ""
         visible   = p ^. Port.visible
@@ -125,7 +124,7 @@ portSingle_ :: Ref App -> Port -> ReactElementM ViewEventHandler ()
 portSingle_ ref p = do
     let portRef   = p ^. Port.portRef
         portId    = p ^. Port.portId
-        color     = toJSString $ p ^. Port.color
+        color     = convert $ p ^. Port.color
         highlight = if p ^. Port.highlight then " luna-hover" else ""
         className = fromString $ "luna-port luna-port--o--single" <> highlight
         r1 :: Double -> JSString
@@ -153,7 +152,7 @@ portIO_ :: Ref App -> Port -> Int -> Int -> Bool -> ReactElementM ViewEventHandl
 portIO_ ref p num numOfPorts isInput = do
     let portRef   = p ^. Port.portRef
         portId    = p ^. Port.portId
-        color     = toJSString $ p ^. Port.color
+        color     = convert $ p ^. Port.color
         highlight = if p ^. Port.highlight then " luna-hover" else ""
         classes   = if isInput then "luna-port luna-port--i luna-port--i--" else "luna-port luna-port--o luna-port--o--"
         className = fromString $ classes <> show (num+1) <> highlight
@@ -199,7 +198,7 @@ portIOExpanded_ :: Ref App -> Port -> Int -> Bool -> ReactElementM ViewEventHand
 portIOExpanded_ ref p num isInput = do
     let portRef   = p ^. Port.portRef
         portId    = p ^. Port.portId
-        color     = toJSString $ p ^. Port.color
+        color     = convert $ p ^. Port.color
         highlight = if p ^. Port.highlight then " luna-hover" else ""
         classes   = if isInput then "luna-port luna-port--i luna-port--i--" else "luna-port luna-port--o luna-port--o--"
         className = fromString $ classes <> show (num + 1) <> highlight

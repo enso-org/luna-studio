@@ -3,6 +3,7 @@ module Luna.Studio.React.View.Monad where
 
 import           Data.Position                (Position (Position), Vector2 (Vector2), x, y)
 import           Empire.API.Data.TypeRep      (TypeRep)
+import qualified Luna.Studio.Data.Color       as Color
 import           Luna.Studio.Prelude
 import           Luna.Studio.React.Model.Node (Node)
 import qualified Luna.Studio.React.Model.Node as Node
@@ -23,8 +24,8 @@ nodeToMonadPoint num allMonads node = Position (Vector2 x' y')
 
 monad :: ReactView (TypeRep, [Position])
 monad = React.defineView objName $ \case
-    (_, []) -> mempty
-    (_, a ) -> do
+    (_ , []) -> mempty
+    (tr, a ) -> do
         let classes = "luna-monad"
             start   = Position (Vector2 (-7000) ((head a) ^. y))
             end     = Position (Vector2   7000  ((last a) ^. y))
@@ -33,6 +34,7 @@ monad = React.defineView objName $ \case
         polyline_
             [ "className" $= classes
             , "points"    $= points
+            , "stroke"    $= convert (Color.l .~ 0.2 $ Color.toHsl $ Color.fromType tr)
             ] mempty
 
 monad_ :: Int -> (Int, (TypeRep, [Node])) -> ReactElementM ViewEventHandler ()

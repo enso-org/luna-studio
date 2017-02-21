@@ -4,7 +4,6 @@ module Luna.Studio.React.View.Connection where
 import           Data.Position                      (Position, averagePosition, x, y)
 import           Empire.API.Data.PortRef            (InPortRef)
 import           Luna.Studio.Action.Geometry        (connectionWidth)
-import           Luna.Studio.Data.Color             (toJSString)
 import qualified Luna.Studio.Event.UI               as UI
 import           Luna.Studio.Prelude
 import           Luna.Studio.React.Event.Connection (ModifiedEnd (Destination, Source))
@@ -14,8 +13,7 @@ import           Luna.Studio.React.Model.Connection (Connection, CurrentConnecti
 import qualified Luna.Studio.React.Model.Connection as Connection
 import           Luna.Studio.React.Store            (Ref, dispatch)
 import           Numeric                            (showFFloat)
-import           React.Flux
-import qualified React.Flux                         as React
+import           React.Flux                         as React
 
 
 name :: JSString
@@ -46,8 +44,8 @@ connection = React.defineView name $ \(ref, model) -> do
         src         = model ^. Connection.from
         dst         = model ^. Connection.to
         mid         = averagePosition src dst
-        color       = "stroke"      $= toJSString (model ^. Connection.color)
-        width       = "strokeWidth" $= show2   connectionWidth
+        color       = "stroke"      $= convert (model ^. Connection.color)
+        width       = "strokeWidth" $= show2  connectionWidth
         widthSelect = "strokeWidth" $= show2 (connectionWidth * 4)
         eventSrc    = onMouseDown $ \e m -> stopPropagation e : dispatch ref (UI.ConnectionEvent $ Connection.MouseDown m connId Source)
         eventDst    = onMouseDown $ \e m -> stopPropagation e : dispatch ref (UI.ConnectionEvent $ Connection.MouseDown m connId Destination)
@@ -73,7 +71,7 @@ currentConnection :: ReactView CurrentConnection
 currentConnection = React.defineView name $ \model -> do
     let src   = model ^. Connection.currentFrom
         dst   = model ^. Connection.currentTo
-        color = "stroke"      $= toJSString (model ^. Connection.currentColor)
+        color = "stroke"      $= convert (model ^. Connection.currentColor)
         width = "strokeWidth" $= show2 connectionWidth
     line src dst [ width, color ]
 

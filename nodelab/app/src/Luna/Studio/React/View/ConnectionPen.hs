@@ -1,7 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Luna.Studio.React.View.ConnectionPen where
 
-import           Luna.Studio.Data.Color                (toJSString)
 import           Luna.Studio.Prelude
 import           Luna.Studio.React.Model.ConnectionPen (ConnectionPen)
 import qualified Luna.Studio.React.Model.ConnectionPen as ConnectionPen
@@ -18,9 +17,9 @@ connectionPen = React.defineView name $ \model -> do
     path_
         [ "className"    $= "connectionPen"
         , "key"          $= "connectionPen"
-        , "d"            $= fromString path
+        , "d"            $= convert path
         , "fill"         $= "transparent"
-        , "stroke"       $= toJSString color
+        , "stroke"       $= convert color
         , "strokeWidth"  $= "2"
         ] mempty
 

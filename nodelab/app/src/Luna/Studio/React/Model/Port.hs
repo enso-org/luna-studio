@@ -1,14 +1,15 @@
 {-# LANGUAGE DeriveAnyClass #-}
 module Luna.Studio.React.Model.Port where
 
-import           Data.Aeson                (ToJSON)
+import           Data.Aeson              (ToJSON)
 
-import           Empire.API.Data.Node      (NodeId)
-import qualified Empire.API.Data.Port      as API
-import           Empire.API.Data.PortRef   (AnyPortRef, toAnyPortRef)
-import           Empire.API.Data.TypeRep   (TypeRep)
-import           Luna.Studio.Data.Color    (Color, colorPort)
-import           Luna.Studio.Prelude       hiding (set)
+import           Empire.API.Data.Node    (NodeId)
+import qualified Empire.API.Data.Port    as API
+import           Empire.API.Data.PortRef (AnyPortRef, toAnyPortRef)
+import           Empire.API.Data.TypeRep (TypeRep)
+import           Luna.Studio.Data.Color  (Color)
+import qualified Luna.Studio.Data.Color  as Color
+import           Luna.Studio.Prelude     hiding (set)
 
 
 
@@ -38,5 +39,5 @@ fromPorts :: NodeId -> [API.Port] -> [Port]
 fromPorts nodeId ports = fromPort nodeId <$> ports
 
 fromPort :: NodeId -> API.Port -> Port
-fromPort nodeId p = Port portRef' p (colorPort p) False True where
+fromPort nodeId p = Port portRef' p (Color.fromPort p) False True where
     portRef' = toAnyPortRef nodeId $ p ^. API.portId
