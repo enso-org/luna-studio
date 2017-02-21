@@ -14,6 +14,7 @@ module Empire.ASTOps.Modify (
   , addLambdaArg
   , moveLambdaArg
   , removeLambdaArg
+  , renameLambdaArg
   ) where
 
 import           Control.Lens (folded, ifiltered)
@@ -102,6 +103,16 @@ moveLambdaArg lambda (Port.OutPortId (Port.Projection port)) newPosition = match
         let newArgs = shiftPosition port newPosition args
         ASTBuilder.lams newArgs out
     _ -> throwM $ NotLambdaException lambda
+
+renameLambdaArg :: ASTOp m => NodeRef -> Port.PortId -> String -> m ()
+renameLambdaArg _   Port.InPortId{}           _ = throwM CannotRemovePortException
+renameLambdaArg _   (Port.OutPortId Port.All) _ = throwM CannotRemovePortException
+renameLambdaArg lam (Port.OutPortId (Port.Projection port)) newName = match lam $ \case
+    Lam _ _ -> do
+        args <- ASTDeconstruct.extractArguments lam
+        let arg = args !! port
+        renameVar arg newName
+    _ -> throwM $ NotLambdaException lam
 
 redirectLambdaOutput :: ASTOp m => NodeRef -> NodeRef -> m NodeRef
 redirectLambdaOutput lambda newOutputRef = do

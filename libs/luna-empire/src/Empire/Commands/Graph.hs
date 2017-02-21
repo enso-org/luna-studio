@@ -11,6 +11,7 @@ module Empire.Commands.Graph
     , removeNodes
     , movePort
     , removePort
+    , renamePort
     , updateNodeExpression
     , updateNodeMeta
     , updatePort
@@ -226,6 +227,19 @@ movePort loc portRef newPosition = withGraph loc $ runASTOp $ do
                                else throwM NotInputEdgeException
         _ -> throwM NotInputEdgeException
     when (ref /= newRef) $ GraphUtils.rewireNode lambda newRef
+    GraphBuilder.buildConnections >>= \c -> GraphBuilder.buildInputEdge c nodeId
+
+renamePort :: GraphLocation -> AnyPortRef -> String -> Empire Node
+renamePort loc portRef newName = withGraph loc $ runASTOp $ do
+    let nodeId = portRef ^. PortRef.nodeId
+    Just lambda <- use Graph.insideNode
+    ref         <- GraphUtils.getASTTarget lambda
+    edges       <- GraphBuilder.getEdgePortMapping
+    newRef      <- case edges of
+        Just (input, _) -> do
+            if nodeId == input then ASTModify.renameLambdaArg ref (portRef ^. PortRef.portId) newName
+                               else throwM NotInputEdgeException
+        _ -> throwM NotInputEdgeException
     GraphBuilder.buildConnections >>= \c -> GraphBuilder.buildInputEdge c nodeId
 
 updateNodeExpression :: GraphLocation -> NodeId -> NodeId -> Text -> Empire (Maybe Node)

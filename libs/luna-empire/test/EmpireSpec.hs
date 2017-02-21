@@ -21,7 +21,7 @@ import qualified Empire.ASTOps.Read            as ASTRead
 import qualified Empire.Commands.AST           as AST (isTrivialLambda)
 import qualified Empire.Commands.Graph         as Graph (addNode, connect, getGraph, getNodes,
                                                          getConnections, removeNodes, withGraph,
-                                                         renameNode, disconnect, addPort, movePort, removePort)
+                                                         renameNode, disconnect, addPort, movePort, removePort, renamePort)
 import qualified Empire.Commands.GraphBuilder  as GraphBuilder
 import           Empire.Commands.Library       (withLibrary)
 import qualified Empire.Commands.Typecheck     as Typecheck (run)
@@ -636,6 +636,21 @@ spec = around withChannels $ parallel $ do
                 inputPorts `shouldMatchList` [
                       Port.Port (Port.InPortId (Port.Arg 0)) "a" TStar Port.NotConnected
                     ]
+        it "renames port" $ \env -> do
+            u1 <- mkUUID
+            res <- evalEmp env $ do
+                Graph.addNode top u1 "-> $a $b a" def
+                let loc' = top |> u1
+                Just (input, _) <- Graph.withGraph loc' $ runASTOp GraphBuilder.getEdgePortMapping
+                Graph.renamePort loc' (OutPortRef' (OutPortRef input (Port.Projection 0))) "foo"
+                Graph.renamePort loc' (OutPortRef' (OutPortRef input (Port.Projection 1))) "bar"
+                inputEdge <- buildInputEdge' loc' input
+                return inputEdge
+            withResult res $ \inputEdge -> do
+                let outputPorts = Map.elems $ Map.filter Port.isOutputPort $ inputEdge ^. Node.ports
+                outputPorts `shouldMatchList` [ Port.Port (Port.OutPortId (Port.Projection 0)) "foo" TStar Port.NotConnected
+                                              , Port.Port (Port.OutPortId (Port.Projection 1)) "bar" TStar Port.NotConnected
+                                              ]
         it "changes ports order" $ \env -> do
             u1 <- mkUUID
             res <- evalEmp env $ do
