@@ -5,7 +5,6 @@ module Luna.Studio.React.View.Edge
     , edgeDraggedPort_
     ) where
 
-import qualified Data.Aeson                   as Aeson
 import qualified Data.Map.Lazy                as Map
 import           Data.Position                (x, y)
 import qualified Empire.API.Data.PortRef      as PortRef
@@ -20,7 +19,7 @@ import           Luna.Studio.React.Model.Port (DraggedPort, Port (..))
 import qualified Luna.Studio.React.Model.Port as Port
 import           Luna.Studio.React.Store      (Ref, dispatch)
 import           Luna.Studio.React.View.Port  (handlers, jsShow2)
-import           React.Flux
+import           React.Flux                   hiding (view)
 
 
 name :: Node -> String
@@ -34,6 +33,9 @@ edgeSidebar_ ref mayDraggedPort node = when (isEdge node) $ do
     let classes = "luna-edge-sidebar luna-edge-sidebar" <> if isInputEdge node then "--i" else "--o"
         ports   = node ^. Node.ports . to Map.elems
         nodeId  = node ^. Node.nodeId
+        isPortDragged = Just nodeId == (view ( Port.draggedPort
+                                             . Port.portRef
+                                             . PortRef.nodeId) <$> mayDraggedPort)
     div_
         [ "className" $= classes
         , "key"       $= (fromString $ name node)
@@ -41,36 +43,46 @@ edgeSidebar_ ref mayDraggedPort node = when (isEdge node) $ do
         , onMouseEnter $ \_ m -> dispatch ref $ UI.EdgeEvent $ Edge.MouseEnter m nodeId
         , onMouseLeave $ \_ m -> dispatch ref $ UI.EdgeEvent $ Edge.MouseLeave m
         ] $ do
-        svg_ [] $ forM_ ports $ edgePort_ ref node
-        when (isInputEdge node) $ if (isNothing mayDraggedPort) then
+        svg_ [] $ forM_ ports $ edgePort_ ref (if isPortDragged then mayDraggedPort else Nothing) node
+        when (isInputEdge node) $ if isPortDragged then do
                 div_
+                    [ "className" $= "luna-edge__buton luna-edge__button--remove luna-noselect"
+                    , "key"       $= (fromString $ name node <> "RemoveButton")
+                    , onMouseUp   $ \e _ -> stopPropagation e : (dispatch ref $ UI.EdgeEvent $ Edge.RemovePort)
+                    ] $ elemString "Remove"
+                withJust mayDraggedPort $ edgeDraggedPort_ ref
+            else div_
                     [ "className" $= "luna-edge__buton luna-edge__button--add luna-noselect"
                     , "key"       $= (fromString $ name node <> "AddButton")
                     , onMouseDown $ \e _ -> [stopPropagation e]
                     , onClick $ \e _ -> stopPropagation e : sendAddPortEvent ref node
                     ] $ elemString "Add"
-            else div_
-                    [ "className" $= "luna-edge__buton luna-edge__button--remove luna-noselect"
-                    , "key"       $= (fromString $ name node <> "RemoveButton")
-                    , onMouseDown $ \e _ -> [stopPropagation e]
-                    , onMouseUp   $ \e _ -> stopPropagation e : (dispatch ref $ UI.EdgeEvent $ Edge.RemovePort)
-                    ] $ elemString "Remove"
-        withJust mayDraggedPort $ \draggedPort ->
-            when (draggedPort ^. Port.draggedPort . Port.portRef . PortRef.nodeId == nodeId) $
-                edgeDraggedPort_ ref draggedPort
+
+--TODO[LJK]: Decide what should happend when port is far away
+getPortYPos :: Maybe DraggedPort -> Port -> Double
+getPortYPos mayDraggedPort p = do
+    let num = getPortNumber p
+        originalYPos = lineHeight * fromIntegral (num + if isPortInput p then 1 else 0)
+    case mayDraggedPort of
+        Nothing          -> originalYPos
+        Just draggedPort -> do
+            let draggedPortYPos = draggedPort ^. Port.position . y
+                draggedPortNum  = getPortNumber $ draggedPort ^. Port.draggedPort
+                shift1          = if originalYPos < draggedPortYPos then 0 else lineHeight
+                shift2          = if num < draggedPortNum then 0 else (-lineHeight)
+            originalYPos + shift1 + shift2
 
 
-edgePort_ :: Ref App -> Node -> Port -> ReactElementM ViewEventHandler ()
-edgePort_ ref _n p = when (p ^. Port.visible) $ do
+edgePort_ :: Ref App -> Maybe DraggedPort -> Node -> Port -> ReactElementM ViewEventHandler ()
+edgePort_ ref mayDraggedPort _n p = when (p ^. Port.visible) $ do
     let portRef   = p ^. Port.portRef
         portId    = p ^. Port.portId
-        isInput   = isPortInput p
-        num       = getPortNumber p
         color     = convert $ p ^. Port.color
+        num       = getPortNumber p
         highlight = if p ^. Port.highlight then " luna-hover" else ""
-        classes   = if isInput then "luna-port luna-port--i luna-port--i--" else "luna-port luna-port--o luna-port--o--"
+        classes   = if isPortInput p then "luna-port luna-port--i luna-port--i--" else "luna-port luna-port--o luna-port--o--"
         className = fromString $ classes <> show (num + 1) <> highlight
-        k         = if isInput then 1 else 0
+        yPos      = getPortYPos mayDraggedPort p
     g_
         [ "className" $= className ] $ do
         circle_
@@ -78,14 +90,14 @@ edgePort_ ref _n p = when (p ^. Port.visible) $ do
             , "key"       $= (jsShow portId <> jsShow num <> "a")
             , "fill"      $= color
             , "r"         $= jsShow2 3
-            , "cy"        $= jsShow2 (lineHeight * fromIntegral (num + k) )
+            , "cy"        $= jsShow2 yPos
             ] mempty
         circle_
             ( handlers ref portRef ++
               [ "className" $= "luna-port__select"
               , "key"       $= (jsShow portId <> jsShow num <> "b")
               , "r"         $= jsShow2 (lineHeight/1.5)
-              , "cy"        $= jsShow2 (lineHeight * fromIntegral (num + k) )
+              , "cy"        $= jsShow2 yPos
               ]
             ) mempty
 
@@ -95,13 +107,13 @@ edgeDraggedPort_ _ref draggedPort = do
         pos   = draggedPort ^. Port.position
     svg_
         [ "className" $= "luna-port luna-port--dragged luna-hover"
-        , "style"     @= Aeson.object [ "transform" Aeson..= ( "translate(" <> show (pos ^. x) <> "px, " <> show (pos ^. y) <> "px)" ) ]
+        -- , "style"     @= Aeson.object [ "transform" Aeson..= ( "translate(" <> show (pos ^. x) <> "px, " <> show (pos ^. y) <> "px)" ) ]
         ] $ do
         circle_
             [ "className" $= "luna-port__shape"
             , "key"       $= "draggedPort"
             , "fill"      $= color
             , "r"         $= jsShow2 3
---            , "cx"        $= fromString (show $ pos ^. x)
---            , "cy"        $= fromString (show $ pos ^. y)
+            , "cx"        $= jsShow2 (pos ^. x)
+            , "cy"        $= jsShow2 (pos ^. y)
             ] mempty

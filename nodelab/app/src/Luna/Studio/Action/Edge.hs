@@ -10,9 +10,13 @@ module Luna.Studio.Action.Edge
     , addPort
     ) where
 
+import           Data.Position                      (Position, ScreenPosition, move)
+import           Data.Size                          (y)
+import           Data.Vector                        (Vector2 (Vector2))
 import           Empire.API.Data.Node               (NodeId)
 import           Empire.API.Data.PortRef            (AnyPortRef)
 import qualified Empire.API.Data.PortRef            as PortRef
+import qualified JS.Scene                           as Scene
 import qualified Luna.Studio.Action.Batch           as Batch
 import           Luna.Studio.Action.Command         (Command)
 import qualified Luna.Studio.Action.Connect         as Connect
@@ -38,6 +42,12 @@ instance Action (Command State) PortDrag where
     update   = updateActionWithKey   portDragAction
     end      = stopPortDrag
 
+--TODO[LJK]: Make this work correctly
+getDraggedPortPositionInSidebar :: ScreenPosition -> Command State Position
+getDraggedPortPositionInSidebar mousePos = do
+    sceneHeight <- use $ Global.scene . Scene.size . y
+    return $ move (Vector2 0 (-sceneHeight/2)) mousePos
+
 
 startPortDrag :: MouseEvent -> AnyPortRef -> Mode -> Command State ()
 startPortDrag evt portRef mode = do
@@ -46,9 +56,10 @@ startPortDrag evt portRef mode = do
         let nodeId = portRef ^. PortRef.nodeId
             portId = portRef ^. PortRef.portId
         mousePos <- mousePosition evt
+        draggedPortPos <- getDraggedPortPositionInSidebar mousePos
         begin $ PortDrag mousePos portRef mode
         Global.modifyNodeEditor $ do
-            NodeEditor.draggedPort ?= DraggedPort draggedPort mousePos
+            NodeEditor.draggedPort ?= DraggedPort draggedPort draggedPortPos
             NodeEditor.nodes . at nodeId . _Just . Node.ports . at portId . _Just . Port.visible .= False
 
 handleMouseUp :: MouseEvent -> PortDrag -> Command State ()
@@ -64,9 +75,10 @@ handleMove evt portDrag = do
     let nodeId = portDrag ^. Action.portDragPortRef . PortRef.nodeId
         portId = portDrag ^. Action.portDragPortRef . PortRef.portId
     mousePos       <- mousePosition evt
+    draggedPortPos <- getDraggedPortPositionInSidebar mousePos
     mayDraggedPort <- getPort $ portDrag ^. Action.portDragPortRef
     withJust mayDraggedPort $ \draggedPort -> Global.modifyNodeEditor $ do
-        NodeEditor.draggedPort ?= DraggedPort draggedPort mousePos
+        NodeEditor.draggedPort ?= DraggedPort draggedPort draggedPortPos
         NodeEditor.nodes . at nodeId . _Just . Node.ports . at portId . _Just . Port.visible .= False
 
 stopPortDrag :: PortDrag -> Command State ()
