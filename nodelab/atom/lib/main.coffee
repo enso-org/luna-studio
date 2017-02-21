@@ -42,6 +42,10 @@ module.exports =
                       @buffer.insert newRange.start, newText
                       actionArea = newRange.start
                 code.codeListener changeBuffer
+            handleNotification = (error) ->
+              atom.notifications.addError(error)
+            code.notificationListener handleNotification
+
 
             atom.workspace.getActivePane().activateItem new LunaStudioTab(uri, code)
 
@@ -79,6 +83,7 @@ module.exports =
     @subs.add atom.commands.add '.luna-studio', 'luna-studio:remove-selected-nodes': -> code.pushEvent("RemoveSelectedNodes")
     @subs.add atom.commands.add '.luna-studio', 'luna-studio:expand-selected-nodes': -> code.pushEvent("ExpandSelectedNodes")
     @subs.add atom.commands.add '.luna-studio', 'luna-studio:edit-selected-nodes':   -> code.pushEvent("EditSelectedNodes")
+
     # searcher
     @subs.add atom.commands.add '.luna-studio', 'luna-studio:searcher-open':         -> code.pushEvent("SearcherOpen")
     @subs.add atom.commands.add '.luna-searcher', 'luna-studio:searcher-accept':     -> code.pushEvent("SearcherAccept")
