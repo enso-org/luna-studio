@@ -112,12 +112,12 @@ portSelf_ ref p = do
             circle_
                 [ "className"    $= "luna-port__shape invisible"
                 , "key"          $= (jsShow portId <> "a")
-                , "fill-opacity" $= (fromString $ show (1 :: Int))
+                , "fillOpacity" $= (fromString $ show (1 :: Int))
                 ] mempty
             circle_
                 [ "className"      $= "luna-port__select invisible"
                   , "key"          $= (jsShow portId <> "b")
-                  , "fill-opacity" $= (fromString $ show (1 :: Int))
+                  , "fillOpacity" $= (fromString $ show (1 :: Int))
                   ] mempty
 
 portSingle_ :: Ref App -> Port -> ReactElementM ViewEventHandler ()
