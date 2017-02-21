@@ -9,14 +9,26 @@ module.exports =
   activate: ->
     atom.workspace.addOpener (uri) ->
         if path.extname(uri) is '.luna'
-            return new LunaStudioTab(uri, code)
+            atom.workspace.open().then (@editor) ->
+                @buffer = @editor.buffer
+                setCode = (diff) ->
+                     @buffer.setText (diff)
+                code.codeListener setCode
+                listenToBufferChanges: ->
+                  @buffer.onDidChange(event) =>
+                    if !(event.newText is "\n") and (event.newText.length is 0)
+                      changeType = 'deletion'
+                      event = {oldRange: event.oldRange}
+                    else if event.oldRange.containsRange(event.newRange) or event.newRange.containsRange(event.oldRange)
+                      changeType = 'substitution'
+                      event = {oldRange: event.oldRange, newRange: event.newRange, newText: event.newText}
+                    else
+                      changeType = 'insertion'
+                      event = {newRange: event.newRange, newText: event.newText}
+            atom.workspace.getActivePane().activateItem new LunaStudioTab(uri, code)
 
     @subs = new SubAtom
-    atom.workspace.getActivePane().activateItem new LunaStudioTab("untitled", code)
-    atom.workspace.open().then (editor) ->
-        setCode = (diff) ->
-             editor.setText (diff)
-        code.codeListener setCode
+    @subs.add atom.commands.add '.luna-studio', 'luna-studio:cancel':                -> code.pushEvent("Cancel")
     # camera
     @subs.add atom.commands.add '.luna-studio', 'luna-studio:pan-left':              -> code.pushEvent("PanLeft")
     @subs.add atom.commands.add '.luna-studio', 'luna-studio:pan-right':             -> code.pushEvent("PanRight")
@@ -46,12 +58,10 @@ module.exports =
     # nodes
     @subs.add atom.commands.add '.luna-studio', 'luna-studio:select-all':            -> code.pushEvent("SelectAll")
     @subs.add atom.commands.add '.luna-studio', 'luna-studio:remove-selected-nodes': -> code.pushEvent("RemoveSelectedNodes")
-    @subs.add atom.commands.add '.luna-studio', 'luna-studio:unselect-all':          -> code.pushEvent("UnselectAll")
     @subs.add atom.commands.add '.luna-studio', 'luna-studio:expand-selected-nodes': -> code.pushEvent("ExpandSelectedNodes")
     # searcher
     @subs.add atom.commands.add '.luna-studio', 'luna-studio:searcher-open':         -> code.pushEvent("SearcherOpen")
     @subs.add atom.commands.add '.luna-searcher', 'luna-studio:searcher-accept':     -> code.pushEvent("SearcherAccept")
-    @subs.add atom.commands.add '.luna-searcher', 'luna-studio:searcher-close':      -> code.pushEvent("SearcherClose")
     @subs.add atom.commands.add '.luna-searcher', 'luna-studio:searcher-move-down':  -> code.pushEvent("SearcherMoveDown")
     @subs.add atom.commands.add '.luna-searcher', 'luna-studio:searcher-move-up':    -> code.pushEvent("SearcherMoveUp")
     # undo/redo

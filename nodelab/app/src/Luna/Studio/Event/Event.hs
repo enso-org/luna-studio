@@ -27,5 +27,5 @@ makeLenses ''Event
 
 instance ToJSON Event
 
-name :: Contravariant f => (String -> f String) -> Event -> f Event
+name :: Getter Event String
 name = to $ head . words . show

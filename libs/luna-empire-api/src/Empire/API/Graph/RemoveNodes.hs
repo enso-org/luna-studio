@@ -1,17 +1,18 @@
 module Empire.API.Graph.RemoveNodes where
 
 import           Data.Binary                   (Binary)
-import           Prologue
+import           Prologue                      hiding (TypeRep)
 
 import           Empire.API.Data.Connection    (Connection)
 import           Empire.API.Data.GraphLocation (GraphLocation)
-import           Empire.API.Data.Node          (NodeId, Node)
-import           Empire.API.Data.PortRef       (OutPortRef(..), InPortRef(..))
-import qualified Empire.API.Response           as Response
+import           Empire.API.Data.Node          (Node, NodeId)
+import           Empire.API.Data.PortRef       (InPortRef (..), OutPortRef (..))
+import           Empire.API.Data.TypeRep       (TypeRep)
 import qualified Empire.API.Graph.Request      as G
 import qualified Empire.API.Request            as R
 import qualified Empire.API.Response           as Response
 import qualified Empire.API.Topic              as T
+
 
 data Request = Request { _location :: GraphLocation
                        , _nodeIds  :: [NodeId]

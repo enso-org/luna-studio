@@ -1,4 +1,5 @@
 {-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE RankNTypes #-}
 
 module Luna.Studio.Prelude (
     module Luna.Studio.Prelude,
@@ -56,3 +57,9 @@ withJustM :: Monad m => m (Maybe a) -> (a -> m ()) -> m ()
 withJustM mMayVal action = do
     mayVal <- mMayVal
     withJust mayVal action
+
+keyed :: [a] -> [(Int, a)]
+keyed = zip [0..]
+
+forKeyed_ :: Monad m => [a] -> ((Int, a) -> m ()) -> m ()
+forKeyed_ = forM_ . keyed

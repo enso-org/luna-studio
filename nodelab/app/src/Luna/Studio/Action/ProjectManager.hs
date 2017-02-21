@@ -8,18 +8,18 @@ module Luna.Studio.Action.ProjectManager
 
 import           Luna.Studio.Prelude
 
-import           Empire.API.Data.Breadcrumb        (Breadcrumb (..), BreadcrumbItem, Named)
-import           Empire.API.Data.GraphLocation     (GraphLocation (..))
-import qualified Empire.API.Data.GraphLocation     as GraphLocation
-import           Empire.API.Data.Project           (ProjectId)
-import qualified JS.GraphLocation                  as JS
-import qualified Luna.Studio.Action.Batch          as BatchCmd
-import qualified Luna.Studio.Action.Breadcrumbs    as Breadcrumbs
-import           Luna.Studio.Action.Command        (Command)
-import           Luna.Studio.Action.Graph.Unrender (unrender)
-import qualified Luna.Studio.Batch.Workspace       as Workspace
-import           Luna.Studio.State.Global          (State)
-import qualified Luna.Studio.State.Global          as Global
+import           Empire.API.Data.Breadcrumb       (Breadcrumb (..), BreadcrumbItem, Named)
+import           Empire.API.Data.GraphLocation    (GraphLocation (..))
+import qualified Empire.API.Data.GraphLocation    as GraphLocation
+import           Empire.API.Data.Project          (ProjectId)
+import qualified JS.GraphLocation                 as JS
+import qualified Luna.Studio.Action.Batch         as BatchCmd
+import qualified Luna.Studio.Action.Breadcrumbs   as Breadcrumbs
+import           Luna.Studio.Action.Command       (Command)
+import           Luna.Studio.Action.Graph.Destroy (destroyGraph)
+import qualified Luna.Studio.Batch.Workspace      as Workspace
+import           Luna.Studio.State.Global         (State)
+import qualified Luna.Studio.State.Global         as Global
 
 
 loadProject :: ProjectId -> Command State ()
@@ -29,7 +29,7 @@ loadProject projId = do
 
 loadGraph :: GraphLocation -> Command State ()
 loadGraph location = do
-    unrender
+    destroyGraph
     Global.workspace . Workspace.currentLocation .= location
     saveCurrentLocation
     BatchCmd.getProgram

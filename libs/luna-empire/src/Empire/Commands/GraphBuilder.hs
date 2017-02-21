@@ -42,7 +42,7 @@ import qualified Empire.API.Data.Node              as API
 import           Empire.API.Data.Port              (InPort (..), OutPort (..), Port (..), PortId (..), PortState (..))
 import qualified Empire.API.Data.Port              as Port
 import           Empire.API.Data.PortRef           (InPortRef (..), OutPortRef (..))
-import           Empire.API.Data.TypeRep           (TypeRep(TLam, TStar))
+import           Empire.API.Data.TypeRep           (TypeRep(TLam, TStar, TCons))
 
 import           Empire.ASTOp                      (ASTOp, runASTOp)
 import qualified Empire.ASTOps.Deconstruct         as ASTDeconstruct
@@ -91,13 +91,20 @@ buildGraph = do
     let allNodes = nodes ++ case edges of
             Just (input, output) -> [input, output]
             _                    -> []
-    return $ API.Graph allNodes connections
+    API.Graph allNodes connections <$> buildMonads
 
 buildNodes :: ASTOp m => m [API.Node]
 buildNodes = do
     allNodeIds <- uses Graph.breadcrumbHierarchy topLevelIDs
     nodes <- mapM buildNode allNodeIds
     return nodes
+
+buildMonads :: ASTOp m => m [(TypeRep, [API.NodeId])]
+buildMonads = do
+    allNodeIds <- uses Graph.breadcrumbHierarchy topLevelIDs
+    let monad1 = (TCons "MonadMock1" [], List.sort allNodeIds) --FIXME[pm] provide real data
+        monad2 = (TCons "MonadMock2" [], allNodeIds)
+    return [monad1, monad2]
 
 type EdgeNodes = (API.Node, API.Node)
 

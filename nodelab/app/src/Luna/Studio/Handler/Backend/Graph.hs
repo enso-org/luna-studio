@@ -18,8 +18,9 @@ import qualified Empire.API.Graph.CodeUpdate            as CodeUpdate
 import qualified Empire.API.Graph.Connect               as Connect
 import qualified Empire.API.Graph.Disconnect            as Disconnect
 import qualified Empire.API.Graph.GetProgram            as GetProgram
+import qualified Empire.API.Graph.MonadsUpdate          as MonadsUpdate
 import qualified Empire.API.Graph.NodeResultUpdate      as NodeResultUpdate
-import qualified Empire.API.Graph.NodeSearcherUpdate    as NodeSearcherUpdate
+import qualified Empire.API.Graph.NodeSearch            as NodeSearch
 import qualified Empire.API.Graph.NodesUpdate           as NodesUpdate
 import qualified Empire.API.Graph.NodeTypecheckerUpdate as NodeTCUpdate
 import qualified Empire.API.Graph.RemoveNodes           as RemoveNodes
@@ -34,12 +35,13 @@ import           Luna.Studio.Action.Batch               (collaborativeModify, re
 import           Luna.Studio.Action.Camera              (centerGraph)
 import qualified Luna.Studio.Action.CodeEditor          as CodeEditor
 import           Luna.Studio.Action.Command             (Command)
-import           Luna.Studio.Action.Graph               (localAddConnection, localRemoveConnections, renderGraph, selectNodes,
-                                                         updateConnectionsForNodes)
+import           Luna.Studio.Action.Graph               (createGraph, localAddConnection, localRemoveConnections, selectNodes,
+                                                         updateConnectionsForNodes, updateMonads)
 import           Luna.Studio.Action.Node                (addDummyNode, localRemoveNodes, typecheckNode, updateNode, updateNodeProfilingData,
                                                          updateNodeValue, updateNodesMeta)
 import qualified Luna.Studio.Action.Node                as Node
 import           Luna.Studio.Action.ProjectManager      (setCurrentBreadcrumb)
+import qualified Luna.Studio.Action.Searcher            as Searcher
 import           Luna.Studio.Action.UUID                (isOwnRequest)
 import           Luna.Studio.Handler.Backend.Common     (doNothing, handleResponse)
 import           Luna.Studio.State.Global               (State)
@@ -64,13 +66,14 @@ handle (Event.Batch ev) = Just $ case ev of
         when (isGoodLocation && not isGraphLoaded) $ do
             let nodes       = result ^. GetProgram.graph . Graph.nodes
                 connections = result ^. GetProgram.graph . Graph.connections
+                monads      = result ^. GetProgram.graph . Graph.monads
                 code        = result ^. GetProgram.code
                 nsData      = result ^. GetProgram.nodeSearcherData
                 breadcrumb  = result ^. GetProgram.breadcrumb
 
             Global.workspace . Workspace.nodeSearcherData .= nsData
             setCurrentBreadcrumb breadcrumb
-            renderGraph nodes connections
+            createGraph nodes connections monads
             centerGraph
             CodeEditor.setCode code
             Global.workspace . Workspace.isGraphLoaded .= True
@@ -132,6 +135,11 @@ handle (Event.Batch ev) = Just $ case ev of
         correctLocation <- isCurrentLocation (update ^. NodesUpdate.location)
         when (shouldProcess && correctLocation) $ mapM_ updateNode $ update ^. NodesUpdate.nodes
 
+    MonadsUpdated update -> do
+        shouldProcess <- isCurrentLocationAndGraphLoaded (update ^. MonadsUpdate.location)
+        correctLocation <- isCurrentLocation (update ^. MonadsUpdate.location)
+        when (shouldProcess && correctLocation) $ updateMonads $ update ^. MonadsUpdate.monads
+
     NodeTypechecked update -> do
       shouldProcess <- isCurrentLocationAndGraphLoaded (update ^. NodeTCUpdate.location)
       correctLocation <- isCurrentLocation (update ^. NodeTCUpdate.location)
@@ -155,10 +163,12 @@ handle (Event.Batch ev) = Just $ case ev of
             updateNodeProfilingData (update ^. NodeResultUpdate.nodeId) (update ^. NodeResultUpdate.execTime)
             updateConnectionsForNodes [update ^. NodeResultUpdate.nodeId]
 
-    NodeSearcherUpdated update -> do
-        shouldProcess <- isCurrentLocationAndGraphLoaded (update ^. NodeSearcherUpdate.location)
-        correctLocation <- isCurrentLocation (update ^. NodeSearcherUpdate.location)
-        when (shouldProcess && correctLocation) $ Global.workspace . Workspace.nodeSearcherData .= update ^. NodeSearcherUpdate.nodeSearcherData
+    NodeSearchResponse response -> handleResponse response $ \request result -> do
+        shouldProcess <- isCurrentLocationAndGraphLoaded (request ^. NodeSearch.location)
+        correctLocation <- isCurrentLocation (request ^. NodeSearch.location)
+        when (shouldProcess && correctLocation) $ do
+            Global.workspace . Workspace.nodeSearcherData .= result ^. NodeSearch.nodeSearcherData
+            Searcher.updateHints
 
     CodeUpdated update -> do
         shouldProcess <- isCurrentLocationAndGraphLoaded (update ^. CodeUpdate.location)

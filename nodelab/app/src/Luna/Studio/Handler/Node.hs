@@ -70,6 +70,6 @@ handleCommand :: Shortcut.Command -> Command State ()
 handleCommand = \case
     Shortcut.SelectAll           -> selectAll
     Shortcut.RemoveSelectedNodes -> Node.removeSelectedNodes
-    Shortcut.UnselectAll         -> unselectAll
+    Shortcut.Cancel              -> unselectAll
     Shortcut.ExpandSelectedNodes -> Node.expandSelectedNodes
     _                            -> return ()

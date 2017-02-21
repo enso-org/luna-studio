@@ -10,7 +10,6 @@ import qualified Data.Map.Lazy                as Map
 import           Data.Position                (x, y)
 import qualified Empire.API.Data.PortRef      as PortRef
 import           Luna.Studio.Action.Geometry  (getPortNumber, isPortInput, lineHeight)
-import           Luna.Studio.Data.Color       (toJSString)
 import qualified Luna.Studio.Event.UI         as UI
 import           Luna.Studio.Prelude
 import qualified Luna.Studio.React.Event.Edge as Edge
@@ -66,7 +65,7 @@ edgePort_ ref _n p = when (p ^. Port.visible) $ do
         portId    = p ^. Port.portId
         isInput   = isPortInput p
         num       = getPortNumber p
-        color     = toJSString $ p ^. Port.color
+        color     = convert $ p ^. Port.color
         highlight = if p ^. Port.highlight then " luna-hover" else ""
         classes   = if isInput then "luna-port luna-port--i luna-port--i--" else "luna-port luna-port--o luna-port--o--"
         className = fromString $ classes <> show (num + 1) <> highlight
@@ -91,7 +90,7 @@ edgePort_ ref _n p = when (p ^. Port.visible) $ do
 
 edgeDraggedPort_ :: Ref App -> DraggedPort -> ReactElementM ViewEventHandler ()
 edgeDraggedPort_ _ref draggedPort = do
-    let color = toJSString $ draggedPort ^. Port.draggedPort . Port.color
+    let color = convert $ draggedPort ^. Port.draggedPort . Port.color
         pos   = draggedPort ^. Port.position
     svg_
         [ "className" $= "luna-port luna-port--dragged luna-hover"

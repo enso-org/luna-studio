@@ -1,14 +1,16 @@
-module Luna.Studio.Action.Graph.Render
-    ( renderGraph
+module Luna.Studio.Action.Graph.Create
+    ( createGraph
     ) where
 
 import qualified Data.HashMap.Lazy                as HashMap
-import           Empire.API.Data.Node             (Node)
+import           Empire.API.Data.Node             (Node, NodeId)
 import qualified Empire.API.Data.Node             as Node
 import           Empire.API.Data.PortRef          (InPortRef, OutPortRef)
+import           Empire.API.Data.TypeRep          (TypeRep)
 import           Luna.Studio.Action.Command       (Command)
 import           Luna.Studio.Action.Graph.Connect (localConnectNodes)
 import           Luna.Studio.Action.Graph.Focus   (updateNodeZOrder)
+import           Luna.Studio.Action.Graph.Update  (updateMonads)
 import           Luna.Studio.Action.Node.Create   (registerNode)
 import           Luna.Studio.Prelude
 import           Luna.Studio.State.Global         (State)
@@ -23,8 +25,9 @@ fastAddNodes nodes = do
     Global.graph . Graph.nodesMap .= HashMap.fromList (nodeIds `zip` nodes)
     mapM_ registerNode nodes
 
-renderGraph :: [Node] -> [(OutPortRef, InPortRef)] -> Command State ()
-renderGraph nodes connections = do
+createGraph :: [Node] -> [(OutPortRef, InPortRef)] -> [(TypeRep, [NodeId])] -> Command State ()
+createGraph nodes connections monads = do
     fastAddNodes nodes
     mapM_ (uncurry localConnectNodes) connections
+    updateMonads monads
     updateNodeZOrder

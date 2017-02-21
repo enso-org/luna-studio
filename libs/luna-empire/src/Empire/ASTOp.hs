@@ -13,19 +13,17 @@ module Empire.ASTOp (
 import           Empire.Prelude
 
 import           Control.Monad.State  (StateT, runStateT, get, put)
-import           Control.Monad.Except (throwError)
 import           Empire.Data.Graph    (ASTState(..), Graph, withVis)
 import qualified Empire.Data.Graph    as Graph (ast)
 import           Empire.Data.Layers   (Marker, Meta,
                                       InputsLayer, TypeLayer, TCData)
 import           Empire.Empire        (Command)
 
-import           Control.Monad.Raise  (tryAll)
 import           Data.Event           (Emitters, type (//))
 import           Data.Graph.Class     (MonadRefLookup(..), Net)
 import           Luna.IR              hiding (get, put)
 import           Luna.IR.Layer.Succs  (Succs)
-import           Luna.Pass            (Inputs, Outputs, Preserves, Events)
+import           Luna.Pass            (Inputs, Outputs, Preserves)
 import qualified Luna.Pass            as Pass (SubPass, eval')
 import qualified Luna.Pass.Manager    as Pass (PassManager, RefCache, get)
 

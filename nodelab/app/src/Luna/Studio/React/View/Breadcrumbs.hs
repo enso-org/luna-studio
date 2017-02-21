@@ -24,7 +24,7 @@ breadcrumbs = React.defineView name $ \(ref, model) ->
         [ "className" $= ("luna-" <> name <> " luna-noselect")
         , "key"       $=  name
         ] $
-        forM_ (zip [0..] $ inits $ model ^. B.items) $ \(key, bc) ->
+        forKeyed_ (inits $ model ^. B.items) $ \(key, bc) ->
             div_
                 [ "className" $= "luna-breadcrumbs__item luna-breadcrumbs__item--home"
                 , "key"       $= jsShow key

@@ -97,8 +97,8 @@ showQueryResults debug searchText = do
     forM_ suggestions showQueryResult
     showLine
 
-showQueryResult :: QueryResult -> IO ()
-showQueryResult (QueryResult prefix name fullname highlights tpe score) = do
+showQueryResult :: QueryResult () -> IO ()
+showQueryResult (QueryResult prefix name fullname highlights tpe score _) = do
     let nameString = Text.unpack name
     -- let nameString = Text.unpack fullname
     withColor Dull Blue putStr $ fillRight moduleWidth $ (Text.unpack prefix) <> " "

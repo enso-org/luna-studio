@@ -26,6 +26,7 @@ isEventHandled = isJust . handleKeyApp
 
 handleKeyApp :: KeyboardEvent -> Maybe Command
 handleKeyApp evt
+    | Keys.withoutMods      evt Keys.esc        = Just Cancel
     -- camera
     | Keys.withCtrl         evt Keys.leftArrow  = Just PanLeft
     | Keys.withCtrl         evt Keys.rightArrow = Just PanRight
@@ -53,8 +54,8 @@ handleKeyApp evt
     | Keys.withCtrlShift    evt Keys.downArrow  = Just GoConeDown
     -- nodes
     | Keys.withCtrl         evt Keys.a          = Just SelectAll
+    | Keys.withoutMods      evt Keys.backspace  = Just RemoveSelectedNodes
     | Keys.withoutMods      evt Keys.del        = Just RemoveSelectedNodes
-    | Keys.withoutMods      evt Keys.esc        = Just UnselectAll
     | Keys.withoutMods      evt Keys.enter      = Just ExpandSelectedNodes
     -- searcher
     | Keys.withoutMods evt Keys.tab             = Just SearcherOpen
@@ -67,10 +68,10 @@ handleKeyApp evt
 
 handleKeySearcher :: KeyboardEvent -> Maybe Command
 handleKeySearcher evt
+    | Keys.withoutMods evt Keys.esc       = Just Cancel
     | Keys.withoutMods evt Keys.backspace = Just SearcherMoveLeft
     | Keys.withoutMods evt Keys.downArrow = Just SearcherMoveDown
     | Keys.withoutMods evt Keys.enter     = Just SearcherAccept
-    | Keys.withoutMods evt Keys.esc       = Just SearcherClose
     | Keys.withoutMods evt Keys.tab       = Just SearcherMoveRight
     | Keys.withoutMods evt Keys.upArrow   = Just SearcherMoveUp
     | otherwise                           = Nothing

@@ -3,10 +3,7 @@ module Luna.Studio.React.View.NodeEditor where
 
 
 import qualified Data.HashMap.Strict                   as HashMap
-import           React.Flux                            hiding (transform)
-import qualified React.Flux                            as React
-import           React.Flux.Internal                   (el)
-
+import           Data.Maybe                            (mapMaybe)
 import           JS.Scene                              (sceneId)
 import qualified Luna.Studio.Data.CameraTransformation as CameraTransformation
 import           Luna.Studio.Data.Matrix               (matrix3dPropertyValue)
@@ -20,10 +17,14 @@ import qualified Luna.Studio.React.Model.NodeEditor    as NodeEditor
 import           Luna.Studio.React.Store               (Ref, dispatch)
 import           Luna.Studio.React.View.Connection     (connection_, currentConnection_)
 import           Luna.Studio.React.View.ConnectionPen  (connectionPen_)
-import           Luna.Studio.React.View.Edge           (edgeSidebar_)
+import           Luna.Studio.React.View.Monad          (monad_)
+import           Luna.Studio.React.View.Edge          (edgeSidebar_)
 import           Luna.Studio.React.View.Node           (nodeDynamicStyles_, node_)
 import           Luna.Studio.React.View.SelectionBox   (selectionBox_)
 import           Luna.Studio.React.View.Visualization  (pinnedVisualization_)
+import           React.Flux                            hiding (transform)
+import qualified React.Flux                            as React
+import           React.Flux.Internal                   (el)
 
 
 name :: JSString
@@ -36,6 +37,8 @@ nodeEditor :: ReactView (Ref App, NodeEditor)
 nodeEditor = React.defineView name $ \(ref, ne) -> do
     let camera         = ne ^. NodeEditor.screenTransform . CameraTransformation.logicalToScreen
         (edges, nodes) = partition isEdge $ ne ^. NodeEditor.nodes . to HashMap.elems
+        lookupNode = _2 %~ mapMaybe (flip HashMap.lookup $ ne ^. NodeEditor.nodes)
+        monads = map lookupNode $ ne ^. NodeEditor.monads
     div_
         [ "className" $= "luna-graph"
         , "id"        $= sceneId
@@ -47,6 +50,10 @@ nodeEditor = React.defineView name $ \(ref, ne) -> do
         style_ [] $ do
             elemString $ ".luna-node-trans { transform: " <> matrix3dPropertyValue camera <> " }"
             forM_ nodes $ nodeDynamicStyles_ camera
+        svg_
+            [ "className" $= "luna-plane luna-plane--monads luna-node-trans"
+            , "key"       $= "monads"
+            ] $ forKeyed_ monads $ monad_ (length monads)
         svg_
             [ "className" $= "luna-plane luna-plane-connections luna-node-trans"
             , "key"       $= "connections"

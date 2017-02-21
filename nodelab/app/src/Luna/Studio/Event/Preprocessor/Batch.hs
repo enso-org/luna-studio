@@ -33,6 +33,7 @@ handlers = Map.fromList [ handle NodeAdded
                         , handle NodeMetaUpdated
                         , handle NodeMetaResponse
                         , handle NodesUpdated
+                        , handle MonadsUpdated
                         , handle NodeTypechecked
                         , handle ProgramFetched
                         , handle CodeUpdated
@@ -48,7 +49,7 @@ handlers = Map.fromList [ handle NodeAdded
                         , handle ProjectImported
                         , handle NodeRenamed
                         , handle UpdateNodeExpressionResponse
-                        , handle NodeSearcherUpdated
+                        , handle NodeSearchResponse
                         , handle EmpireStarted
                         ]
 

@@ -34,17 +34,22 @@ handlersMap = Map.fromList
     , makeHandler Graph.handleRenameNode
     , makeHandler Graph.handleConnect
     , makeHandler Graph.handleDisconnect
-    , makeHandler Graph.handleSetDefaultValue
-    , makeHandler Graph.handleGetProgram
     , makeHandler Graph.handleDumpGraphViz
+    , makeHandler Graph.handleGetProgram
+    , makeHandler Graph.handleNodeSearch
+    , makeHandler Graph.handleRemoveNodes
+    , makeHandler Graph.handleRenameNode
+    , makeHandler Graph.handleSetDefaultValue
     , makeHandler Graph.handleTypecheck
+    , makeHandler Graph.handleUpdateNodeExpression
+    , makeHandler Graph.handleUpdateNodeMeta
+    , makeHandler Library.handleCreateLibrary
+    , makeHandler Library.handleListLibraries
     , makeHandler Project.handleCreateProject
     , makeHandler Project.handleExportProject
     , makeHandler Project.handleImportProject
     , makeHandler Project.handleListProjects
     , makeHandler Project.handleOpenProject
-    , makeHandler Library.handleCreateLibrary
-    , makeHandler Library.handleListLibraries
     ]
 
 makeHandler :: forall a. (Topic.MessageTopic a, Bin.Binary a) => (a -> StateT Env BusT ()) -> (String, Handler)

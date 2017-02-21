@@ -1,21 +1,24 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Luna.Studio.Data.Color
-    ( colorPort
-    , tpRepToColor
+    ( fromPort
     , Color (..)
-    , toJSString
+    , fromType
+    , h
+    , l
+    , s
+    , toHsl
     ) where
 
-import           Data.Aeson                (FromJSON, ToJSON)
-import           Data.Hashable             (hash)
+import           Data.Aeson              (FromJSON, ToJSON)
+import           Data.Convert            (Convertible (convert))
+import           Data.Hashable           (hash)
 import           Luna.Studio.Prelude
 
-import           Empire.API.Data.Port      (Port)
-import qualified Empire.API.Data.Port      as Port
-import           Empire.API.Data.TypeRep   (TypeRep (..))
+import           Empire.API.Data.Port    (Port)
+import qualified Empire.API.Data.Port    as Port
+import           Empire.API.Data.TypeRep (TypeRep (..))
 
 
---TODO rename to PortColor
 newtype Color = Color { fromColor :: Int }
               deriving (Eq, Generic, Ord, Show, NFData)
 
@@ -39,13 +42,13 @@ toHsl (Color i) = HSL (hue * 2.0 * pi) 0.6 0.5
         steps = 16.0
         delta = 1.0 / steps
 
-toJSString :: Color -> JSString
-toJSString = hslToJSString . toHsl
+instance Convertible Color JSString where
+    convert = convert . toHsl
 
-hslToJSString :: (Fractional a, Show a) => HSL a -> JSString
-hslToJSString hsl = convert $ "hsl(" <> show ((hsl ^. h) * 360.0) <> ","
-                                     <> show ((hsl ^. s) * 100.0) <> "%,"
-                                     <> show ((hsl ^. l) * 100.0) <> "%)"
+instance (Fractional a, Show a) => Convertible (HSL a) JSString where
+    convert hsl = convert $ "hsl(" <> show ((hsl ^. h) * 360.0) <> ","
+                                   <> show ((hsl ^. s) * 100.0) <> "%,"
+                                   <> show ((hsl ^. l) * 100.0) <> "%)"
 
 hashMany :: [TypeRep] -> Int
 hashMany as = sum $ zipWith (*) powers (tpRepToColor <$> as) where
@@ -67,5 +70,8 @@ tpRepToColor (TLam as out) = ensureRange . hashMany $ out : as
 tpRepToColor (TVar _n) = 9
 tpRepToColor _ = 0
 
-colorPort :: Port -> Color
-colorPort port = Color $ tpRepToColor $ port ^. Port.valueType
+fromType :: TypeRep -> Color
+fromType = Color . tpRepToColor
+
+fromPort :: Port -> Color
+fromPort port = fromType $ port ^. Port.valueType

@@ -99,6 +99,9 @@ setDefaultValue portRef value = do
 setInputNodeType :: NodeId -> Text -> Command State ()
 setInputNodeType = withWorkspace .: BatchCmd.setInputNodeType
 
+nodeSearch :: Text -> (Int, Int) -> Command State ()
+nodeSearch = withWorkspace .: BatchCmd.nodeSearch
+
 requestCollaborationRefresh :: Command State ()
 requestCollaborationRefresh = do
     clId <- use clientId

@@ -26,6 +26,7 @@ import qualified Empire.API.Graph.Connect               as Connect
 import qualified Empire.API.Graph.Disconnect            as Disconnect
 import qualified Empire.API.Graph.DumpGraphViz          as DumpGraphViz
 import qualified Empire.API.Graph.GetProgram            as GetProgram
+import qualified Empire.API.Graph.NodeSearch            as NodeSearch
 import qualified Empire.API.Graph.Redo                  as Redo
 import qualified Empire.API.Graph.RemoveNodes           as RemoveNodes
 import qualified Empire.API.Graph.RemovePort            as RemovePort
@@ -81,6 +82,9 @@ listLibraries projectId uuid guiID = sendRequest $ Message uuid guiID $ ListLibr
 
 getProgram :: Workspace -> UUID -> Maybe UUID -> IO ()
 getProgram workspace uuid guiID = sendRequest $ Message uuid guiID $ withLibrary workspace GetProgram.Request
+
+nodeSearch :: Text -> (Int, Int) -> Workspace -> UUID -> Maybe UUID -> IO ()
+nodeSearch query cursor workspace uuid guiID = sendRequest $ Message uuid guiID $ withLibrary workspace $ NodeSearch.Request query cursor
 
 updateNodeExpression :: NodeId -> Text -> Workspace -> UUID -> Maybe UUID -> IO ()
 updateNodeExpression nodeId expression workspace uuid guiID = sendRequest $ Message uuid guiID $ withLibrary workspace UpdateNodeExpression.Request nodeId expression
