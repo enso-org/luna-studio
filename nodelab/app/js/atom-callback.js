@@ -10,6 +10,7 @@ module.exports = function () {
   var listeners = {
     onEvent: [],
     codeListener: [],
+    notificationListener: [],
     eventListenerInternal: [],
   };
 
@@ -19,6 +20,14 @@ module.exports = function () {
     },
     pushCode: function(data) {
       listeners.codeListener.forEach(function(listener) {
+        listener(data);
+      });
+    },
+    notificationListener: function (listener) {
+      listeners.notificationListener.push(listener);
+    },
+    pushNotification: function (data) {
+      listeners.notificationListener.forEach(function (listener) {
         listener(data);
       });
     },
