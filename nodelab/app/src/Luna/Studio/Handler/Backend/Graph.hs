@@ -34,7 +34,7 @@ import           Luna.Studio.Action.Batch               (collaborativeModify, re
 import           Luna.Studio.Action.Camera              (centerGraph)
 import qualified Luna.Studio.Action.CodeEditor          as CodeEditor
 import           Luna.Studio.Action.Command             (Command)
-import           Luna.Studio.Action.Graph               (localAddConnection, localRemoveConnections, renderGraph, selectNodes,
+import           Luna.Studio.Action.Graph               (createGraph, localAddConnection, localRemoveConnections, selectNodes,
                                                          updateConnectionsForNodes)
 import           Luna.Studio.Action.Node                (addDummyNode, localRemoveNodes, typecheckNode, updateNode, updateNodeProfilingData,
                                                          updateNodeValue, updateNodesMeta)
@@ -65,13 +65,14 @@ handle (Event.Batch ev) = Just $ case ev of
         when (isGoodLocation && not isGraphLoaded) $ do
             let nodes       = result ^. GetProgram.graph . Graph.nodes
                 connections = result ^. GetProgram.graph . Graph.connections
+                monads      = result ^. GetProgram.graph . Graph.monads
                 code        = result ^. GetProgram.code
                 nsData      = result ^. GetProgram.nodeSearcherData
                 breadcrumb  = result ^. GetProgram.breadcrumb
 
             Global.workspace . Workspace.nodeSearcherData .= nsData
             setCurrentBreadcrumb breadcrumb
-            renderGraph nodes connections
+            createGraph nodes connections monads
             centerGraph
             CodeEditor.setCode code
             Global.workspace . Workspace.isGraphLoaded .= True

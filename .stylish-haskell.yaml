@@ -83,6 +83,7 @@ language_extensions:
   - DeriveGeneric
   - DeriveTraversable
   - DoAndIfThenElse
+  - ExplicitNamespaces
   - FlexibleContexts
   - FlexibleInstances
   - GeneralizedNewtypeDeriving
@@ -97,3 +98,4 @@ language_extensions:
   - TemplateHaskell
   - TupleSections
   - TypeApplications
+  - TypeFamilies

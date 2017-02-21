@@ -186,7 +186,7 @@ handleAddSubgraph = modifyGraph (mtuple action) success where
 handleRemoveNodes :: Request RemoveNodes.Request -> StateT Env BusT ()
 handleRemoveNodes = modifyGraphOk action success where
     action  (RemoveNodes.Request location nodeIds) = do
-        Graph allNodes connections <- Graph.withGraph location $ runASTOp buildGraph
+        Graph allNodes connections monads <- Graph.withGraph location $ runASTOp buildGraph
         let inv = RemoveNodes.Inverse allNodes connections
         (inv,) <$> Graph.removeNodes location nodeIds
     success (RemoveNodes.Request location nodeIds) _ result = sendToBus' $ RemoveNodes.Update location nodeIds
@@ -285,7 +285,7 @@ handleTypecheck req@(Request _ _ request) = do
 
 mockNSData :: NS.Items Node
 mockNSData = Map.fromList $ functionsList <> modulesList where
-    nodeSearcherSymbols = ["mockNodeSearcherSymbol"]
+    nodeSearcherSymbols = words "mockNode1 mockNode2 mockNode3 mockNode4"
     (methods, functions) = partition (elem '.') nodeSearcherSymbols
     functionsList = functionEntry <$> functions
     functionEntry function = (convert function, NS.Element $ mockNode "mockNode")

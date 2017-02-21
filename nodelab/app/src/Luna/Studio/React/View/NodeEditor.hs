@@ -3,9 +3,7 @@ module Luna.Studio.React.View.NodeEditor where
 
 
 import qualified Data.HashMap.Strict                   as HashMap
-import           React.Flux                            hiding (transform)
-import qualified React.Flux                            as React
-import           React.Flux.Internal                   (el)
+import           Data.Maybe                            (mapMaybe)
 import           JS.Scene                              (sceneId)
 import qualified Luna.Studio.Data.CameraTransformation as CameraTransformation
 import           Luna.Studio.Data.Matrix               (matrix3dPropertyValue)
@@ -18,11 +16,14 @@ import qualified Luna.Studio.React.Model.NodeEditor    as NodeEditor
 import           Luna.Studio.React.Store               (Ref, dispatch)
 import           Luna.Studio.React.View.Connection     (connection_, currentConnection_)
 import           Luna.Studio.React.View.ConnectionPen  (connectionPen_)
-import           Luna.Studio.React.View.Monad          (nodeToMonadPoint, monadPolyline_)
-import           Luna.Studio.React.View.Node           (node_,nodeDynamicStyles_)
+import           Luna.Studio.React.View.Monad          (monad_)
+import           Luna.Studio.React.View.Node           (nodeDynamicStyles_, node_)
 import           Luna.Studio.React.View.SelectionBox   (selectionBox_)
 import           Luna.Studio.React.View.Visualization  (pinnedVisualization_)
-import           Luna.Studio.React.View.Port           (portSidebar_)
+import           React.Flux                            hiding (transform)
+import qualified React.Flux                            as React
+import           React.Flux.Internal                   (el)
+
 
 name :: JSString
 name = "node-editor"
@@ -33,7 +34,9 @@ nodeEditor_ ref ne = React.viewWithSKey nodeEditor name (ref, ne) mempty
 nodeEditor :: ReactView (Ref App, NodeEditor)
 nodeEditor = React.defineView name $ \(ref, ne) -> do
     let camera = ne ^. NodeEditor.screenTransform . CameraTransformation.logicalToScreen
-        monad1 = map nodeToMonadPoint $ ne ^. NodeEditor.nodes . to HashMap.elems
+        nodes  = ne ^. NodeEditor.nodes
+        lookupNode = _2 %~ mapMaybe (flip HashMap.lookup nodes)
+        monads = map lookupNode $ ne ^. NodeEditor.monads
     div_
         [ "className" $= "luna-graph"
         , "id"        $= sceneId
@@ -48,7 +51,7 @@ nodeEditor = React.defineView name $ \(ref, ne) -> do
         svg_
             [ "className" $= "luna-plane luna-plane--monads luna-node-trans"
             , "key"       $= "monads"
-            ] $ monadPolyline_ monad1
+            ] $ forKeyed_ monads $ monad_ (length monads)
         svg_
             [ "className" $= "luna-plane luna-plane-connections luna-node-trans"
             , "key"       $= "connections"
@@ -90,7 +93,7 @@ nodeEditor = React.defineView name $ \(ref, ne) -> do
             [ "className" $= "luna-plane luna-plane--nodes"
             , "key"       $= "nodes"
             ] $ do
-            forM_ (ne ^. NodeEditor.nodes . to HashMap.elems) $ node_ ref
+            forM_ (HashMap.elems nodes) $ node_ ref
             forM_ (ne ^. NodeEditor.visualizations)           $ pinnedVisualization_ ref ne
         canvas_
             [ "className" $= "luna-plane plane--canvas luna-hide"
