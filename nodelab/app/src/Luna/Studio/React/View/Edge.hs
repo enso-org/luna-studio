@@ -68,7 +68,7 @@ getPortYPos mayDraggedPort p = do
         Just draggedPort -> do
             let draggedPortYPos = draggedPort ^. Port.position . y
                 draggedPortNum  = getPortNumber $ draggedPort ^. Port.draggedPort
-                shift1          = if originalYPos < draggedPortYPos then 0 else lineHeight
+                shift1          = if originalYPos < draggedPortYPos + lineHeight / 2 then 0 else lineHeight
                 shift2          = if num < draggedPortNum then 0 else (-lineHeight)
             originalYPos + shift1 + shift2
 
