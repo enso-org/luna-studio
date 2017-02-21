@@ -8,6 +8,7 @@ module Luna.Studio.React.View.Edge
 import qualified Data.Aeson                   as Aeson
 import qualified Data.Map.Lazy                as Map
 import           Data.Position                (x, y)
+import qualified Empire.API.Data.PortRef      as PortRef
 import           Luna.Studio.Action.Geometry  (getPortNumber, isPortInput, lineHeight)
 import           Luna.Studio.Data.Color       (toJSString)
 import qualified Luna.Studio.Event.UI         as UI
@@ -29,8 +30,8 @@ name node = "edgeSidebar" <> if isInputEdge node then "Inputs" else "Outputs"
 sendAddPortEvent :: Ref App -> Node -> [SomeStoreAction]
 sendAddPortEvent ref node = dispatch ref (UI.EdgeEvent $ Edge.AddPort (node ^. Node.nodeId))
 
-edgeSidebar_ :: Ref App -> Node -> ReactElementM ViewEventHandler ()
-edgeSidebar_ ref node = when (isEdge node) $ do
+edgeSidebar_ :: Ref App -> Maybe DraggedPort -> Node -> ReactElementM ViewEventHandler ()
+edgeSidebar_ ref mayDraggedPort node = when (isEdge node) $ do
     let classes = "luna-edge-sidebar luna-edge-sidebar" <> if isInputEdge node then "--i" else "--o" <> " luna-noselect"
         ports   = node ^. Node.ports . to Map.elems
         nodeId  = node ^. Node.nodeId
@@ -54,6 +55,10 @@ edgeSidebar_ ref node = when (isEdge node) $ do
                 , onMouseDown $ \e _ -> [stopPropagation e]
                 , onMouseUp   $ \_ _ -> dispatch ref $ UI.EdgeEvent $ Edge.RemovePort
                 ] $ elemString "Remove"
+        withJust mayDraggedPort $ \draggedPort ->
+            when (draggedPort ^. Port.draggedPort . Port.portRef . PortRef.nodeId == nodeId) $
+                edgeDraggedPort_ ref draggedPort
+
 
 edgePort_ :: Ref App -> Node -> Port -> ReactElementM ViewEventHandler ()
 edgePort_ ref _n p = when (p ^. Port.visible) $ do

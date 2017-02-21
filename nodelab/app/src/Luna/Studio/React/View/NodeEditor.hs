@@ -20,7 +20,7 @@ import qualified Luna.Studio.React.Model.NodeEditor    as NodeEditor
 import           Luna.Studio.React.Store               (Ref, dispatch)
 import           Luna.Studio.React.View.Connection     (connection_, currentConnection_)
 import           Luna.Studio.React.View.ConnectionPen  (connectionPen_)
-import           Luna.Studio.React.View.Edge           (edgeDraggedPort_, edgeSidebar_)
+import           Luna.Studio.React.View.Edge           (edgeSidebar_)
 import           Luna.Studio.React.View.Node           (nodeDynamicStyles_, node_)
 import           Luna.Studio.React.View.SelectionBox   (selectionBox_)
 import           Luna.Studio.React.View.Visualization  (pinnedVisualization_)
@@ -90,8 +90,7 @@ nodeEditor = React.defineView name $ \(ref, ne) -> do
             ] $ do
             forM_ nodes                             $ node_ ref
             forM_ (ne ^. NodeEditor.visualizations) $ pinnedVisualization_ ref ne
-        forM_ edges $ edgeSidebar_ ref
-        mapM_ (edgeDraggedPort_ ref) $ ne ^. NodeEditor.draggedPort
+        forM_ edges $ edgeSidebar_ ref (ne ^. NodeEditor.draggedPort)
         canvas_
             [ "className" $= "luna-plane plane--canvas luna-hide"
             , "key"       $= "canvas"
