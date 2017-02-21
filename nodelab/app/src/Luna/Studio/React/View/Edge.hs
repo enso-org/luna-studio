@@ -42,19 +42,19 @@ edgeSidebar_ ref mayDraggedPort node = when (isEdge node) $ do
         , onMouseMove $ \e m -> stopPropagation e : (dispatch ref $ UI.EdgeEvent $ Edge.MouseMove m nodeId)
         ] $ do
         svg_ [] $ forM_ ports $ edgePort_ ref node
-        when (isInputEdge node) $ do
-            div_
-                [ "className" $= "luna-edge__buton luna-edge__button--add"
-                , "key"       $= (fromString $ name node <> "AddButton")
-                , onMouseDown $ \e _ -> [stopPropagation e]
-                , onClick $ \e _ -> stopPropagation e : sendAddPortEvent ref node
-                ] $ elemString "Add"
-            div_
-                [ "className" $= "luna-edge__buton luna-edge__button--remove"
-                , "key"       $= (fromString $ name node <> "RemoveButton")
-                , onMouseDown $ \e _ -> [stopPropagation e]
-                , onMouseUp   $ \_ _ -> dispatch ref $ UI.EdgeEvent $ Edge.RemovePort
-                ] $ elemString "Remove"
+        when (isInputEdge node) $ if (isNothing mayDraggedPort) then
+                div_
+                    [ "className" $= "luna-edge__buton luna-edge__button--add"
+                    , "key"       $= (fromString $ name node <> "AddButton")
+                    , onMouseDown $ \e _ -> [stopPropagation e]
+                    , onClick $ \e _ -> stopPropagation e : sendAddPortEvent ref node
+                    ] $ elemString "Add"
+            else div_
+                    [ "className" $= "luna-edge__buton luna-edge__button--remove"
+                    , "key"       $= (fromString $ name node <> "RemoveButton")
+                    , onMouseDown $ \e _ -> [stopPropagation e]
+                    , onMouseUp   $ \_ _ -> dispatch ref $ UI.EdgeEvent $ Edge.RemovePort
+                    ] $ elemString "Remove"
         withJust mayDraggedPort $ \draggedPort ->
             when (draggedPort ^. Port.draggedPort . Port.portRef . PortRef.nodeId == nodeId) $
                 edgeDraggedPort_ ref draggedPort
