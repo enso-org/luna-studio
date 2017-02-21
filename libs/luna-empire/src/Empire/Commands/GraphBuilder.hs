@@ -98,7 +98,7 @@ buildNodes = do
 buildMonads :: ASTOp m => m [(TypeRep, [API.NodeId])]
 buildMonads = do
     allNodeIds <- uses Graph.breadcrumbHierarchy topLevelIDs
-    let monad1 = (TVar "MonadMock1", List.sort allNodeIds)
+    let monad1 = (TVar "MonadMock1", List.sort allNodeIds) --FIXME[pm] provide real data
         monad2 = (TVar "MonadMock2", allNodeIds)
     return [monad1, monad2]
 

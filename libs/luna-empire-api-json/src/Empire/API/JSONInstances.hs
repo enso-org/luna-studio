@@ -34,6 +34,7 @@ import           Empire.API.Graph.Collaboration         as Collaboration
 import           Empire.API.Graph.Connect               as Connect
 import           Empire.API.Graph.Disconnect            as Disconnect
 import           Empire.API.Graph.GetProgram            as GetProgram
+import           Empire.API.Graph.MonadsUpdate          as MonadsUpdate
 import           Empire.API.Graph.NodeResultUpdate      as NodeResultUpdate
 import           Empire.API.Graph.NodeSearch            as NodeSearch
 import           Empire.API.Graph.NodesUpdate           as NodesUpdate
@@ -168,6 +169,8 @@ instance ToJSON UpdateNodeMeta.Inverse
 instance ToJSON UpdateNodeMeta.Update
 
 instance ToJSON NodesUpdate.Update
+
+instance ToJSON MonadsUpdate.Update
 
 instance ToJSON UpdateNodeExpression.Request
 instance ToJSON UpdateNodeExpression.Inverse

@@ -12,6 +12,7 @@ import qualified Empire.API.Graph.Collaboration         as Collaboration
 import qualified Empire.API.Graph.Connect               as Connect
 import qualified Empire.API.Graph.Disconnect            as Disconnect
 import qualified Empire.API.Graph.GetProgram            as GetProgram
+import qualified Empire.API.Graph.MonadsUpdate          as MonadsUpdate
 import qualified Empire.API.Graph.NodeResultUpdate      as NodeResultUpdate
 import qualified Empire.API.Graph.NodeSearch            as NodeSearch
 import qualified Empire.API.Graph.NodesUpdate           as NodesUpdate
@@ -51,6 +52,7 @@ data Event = UnknownEvent String
            | NodeSearchResponse                     NodeSearch.Response
            | NodesRemoved                          RemoveNodes.Update
            | NodesUpdated                          NodesUpdate.Update
+           | MonadsUpdated                        MonadsUpdate.Update
            | NodeTypechecked                      NodeTCUpdate.Update
            | ProgramFetched                         GetProgram.Response
            | ProjectCreated                      CreateProject.Response

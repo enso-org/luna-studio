@@ -18,6 +18,7 @@ import qualified Empire.API.Graph.CodeUpdate            as CodeUpdate
 import qualified Empire.API.Graph.Connect               as Connect
 import qualified Empire.API.Graph.Disconnect            as Disconnect
 import qualified Empire.API.Graph.GetProgram            as GetProgram
+import qualified Empire.API.Graph.MonadsUpdate          as MonadsUpdate
 import qualified Empire.API.Graph.NodeResultUpdate      as NodeResultUpdate
 import qualified Empire.API.Graph.NodeSearch            as NodeSearch
 import qualified Empire.API.Graph.NodesUpdate           as NodesUpdate
@@ -35,7 +36,7 @@ import           Luna.Studio.Action.Camera              (centerGraph)
 import qualified Luna.Studio.Action.CodeEditor          as CodeEditor
 import           Luna.Studio.Action.Command             (Command)
 import           Luna.Studio.Action.Graph               (createGraph, localAddConnection, localRemoveConnections, selectNodes,
-                                                         updateConnectionsForNodes)
+                                                         updateConnectionsForNodes, updateMonads)
 import           Luna.Studio.Action.Node                (addDummyNode, localRemoveNodes, typecheckNode, updateNode, updateNodeProfilingData,
                                                          updateNodeValue, updateNodesMeta)
 import qualified Luna.Studio.Action.Node                as Node
@@ -133,6 +134,11 @@ handle (Event.Batch ev) = Just $ case ev of
         shouldProcess <- isCurrentLocationAndGraphLoaded (update ^. NodesUpdate.location)
         correctLocation <- isCurrentLocation (update ^. NodesUpdate.location)
         when (shouldProcess && correctLocation) $ mapM_ updateNode $ update ^. NodesUpdate.nodes
+
+    MonadsUpdated update -> do
+        shouldProcess <- isCurrentLocationAndGraphLoaded (update ^. MonadsUpdate.location)
+        correctLocation <- isCurrentLocation (update ^. MonadsUpdate.location)
+        when (shouldProcess && correctLocation) $ updateMonads $ update ^. MonadsUpdate.monads
 
     NodeTypechecked update -> do
       shouldProcess <- isCurrentLocationAndGraphLoaded (update ^. NodeTCUpdate.location)
