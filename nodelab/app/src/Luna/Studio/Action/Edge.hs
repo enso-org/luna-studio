@@ -39,11 +39,14 @@ handleMove evt nodeId = do
     continue $ moveDraggedPort   evt
 
 connectOrPortDrag :: MouseEvent -> NodeId -> Connect -> Command State ()
-connectOrPortDrag evt nodeId connect =
-    if ( connect ^. Action.connectIsConnModified
-      || connect ^. Action.connectSourcePort . PortRef.nodeId /= nodeId) then
-         continue $ Connect.handleMove evt
-    else begin $ PortDrag (connect ^. Action.connectStartPos) (connect ^. Action.connectSourcePort) (connect ^. Action.connectMode)
+connectOrPortDrag evt nodeId connect = do
+    mayNode <- Global.getNode nodeId
+    withJust mayNode $ \node ->
+        if ( connect ^. Action.connectIsConnModified
+          || connect ^. Action.connectSourcePort . PortRef.nodeId /= nodeId
+          || (not $ Node.isInputEdge node)) then
+             continue $ Connect.handleMove evt
+        else begin $ PortDrag (connect ^. Action.connectStartPos) (connect ^. Action.connectSourcePort) (connect ^. Action.connectMode)
 
 moveDraggedPort :: MouseEvent -> PortDrag -> Command State ()
 moveDraggedPort evt portDrag = do
