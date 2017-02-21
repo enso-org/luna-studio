@@ -45,6 +45,7 @@ import qualified Empire.API.Graph.Connect              as Connect
 import qualified Empire.API.Graph.Disconnect           as Disconnect
 import qualified Empire.API.Graph.DumpGraphViz         as DumpGraphViz
 import qualified Empire.API.Graph.GetProgram           as GetProgram
+import qualified Empire.API.Graph.MovePort             as MovePort
 import qualified Empire.API.Graph.NodeResultUpdate     as NodeResultUpdate
 import qualified Empire.API.Graph.NodeSearch           as NodeSearch
 import qualified Empire.API.Graph.NodesUpdate          as NodesUpdate
@@ -235,6 +236,10 @@ handleRenameNode = modifyGraphOk action success where
         (inv,) <$> Graph.renameNode location nodeId name
     success (RenameNode.Request location nodeId name) _ result = sendToBus' $ RenameNode.Update location nodeId name
 
+handleMovePort :: Request MovePort.Request -> StateT Env BusT ()
+handleMovePort = modifyGraph (mtuple action) success where
+    action (MovePort.Request location portRef newPos) = Graph.movePort location portRef newPos
+    success request@(Request _ _ req@(MovePort.Request location portRef newPos)) _ node = replyResult request () node >> sendToBus' (NodesUpdate.Update location [node])
 
 handleRemovePort :: Request RemovePort.Request -> StateT Env BusT ()
 handleRemovePort = modifyGraph (mtuple action) success where

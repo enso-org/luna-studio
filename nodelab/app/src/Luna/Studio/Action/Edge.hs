@@ -1,4 +1,5 @@
 {-# OPTIONS_GHC -fno-warn-orphans #-}
+{-# LANGUAGE TupleSections #-}
 module Luna.Studio.Action.Edge
     ( startPortDrag
     , restoreConnect
@@ -10,19 +11,24 @@ module Luna.Studio.Action.Edge
     , addPort
     ) where
 
+
+import qualified Data.Map.Lazy                      as Map
 import           Data.Position                      (Position, ScreenPosition, move)
 import           Data.Size                          (y)
 import           Data.Vector                        (Vector2 (Vector2))
 import           Empire.API.Data.Node               (NodeId)
+import           Empire.API.Data.Port               (OutPort (Projection), PortId (OutPortId))
 import           Empire.API.Data.PortRef            (AnyPortRef)
 import qualified Empire.API.Data.PortRef            as PortRef
 import qualified JS.Scene                           as Scene
 import qualified Luna.Studio.Action.Batch           as Batch
 import           Luna.Studio.Action.Command         (Command)
 import qualified Luna.Studio.Action.Connect         as Connect
+import           Luna.Studio.Action.Geometry        (lineHeight)
 import           Luna.Studio.Action.Graph.Lookup    (getPort)
 import           Luna.Studio.Event.Mouse            (mousePosition)
 import           Luna.Studio.Prelude
+import           Luna.Studio.React.Model.Node       (isOutputEdge)
 import qualified Luna.Studio.React.Model.Node       as Node
 import qualified Luna.Studio.React.Model.NodeEditor as NodeEditor
 import           Luna.Studio.React.Model.Port       (DraggedPort (DraggedPort))
@@ -81,10 +87,29 @@ handleMove evt portDrag = do
         NodeEditor.draggedPort ?= DraggedPort draggedPort draggedPortPos
         NodeEditor.nodes . at nodeId . _Just . Node.ports . at portId . _Just . Port.visible .= False
 
+movePort :: AnyPortRef -> Command State ()
+movePort portRef = do
+    mayNode <- Global.getNode $ portRef ^. PortRef.nodeId
+    mayDraggedPort <- view NodeEditor.draggedPort <$> Global.getNodeEditor
+    withJust ((,) <$> mayNode <*> mayDraggedPort) $ \(node, draggedPort) -> do
+        let newPos' = (round $ draggedPort ^. Port.positionInSidebar . y / lineHeight) - if isOutputEdge node then 1 else 0
+            --TODO[LJK]: Handle this better
+            portsIds = flip filter (node ^. Node.ports . to Map.keys) $ \portId -> case portId of
+                OutPortId (Projection _) -> True
+                _                        -> False
+            newPos = max 0 $ min newPos' $ length portsIds - 1
+        case portRef ^. PortRef.portId of
+            OutPortId (Projection pos) -> if pos /= newPos then
+                    Batch.movePort portRef newPos
+                else return ()
+            _ -> Batch.movePort portRef newPos
+
 stopPortDrag :: PortDrag -> Command State ()
 stopPortDrag portDrag = do
-    let nodeId = portDrag ^. Action.portDragPortRef . PortRef.nodeId
-        portId = portDrag ^. Action.portDragPortRef . PortRef.portId
+    let portRef = portDrag ^. Action.portDragPortRef
+        nodeId  = portRef ^. PortRef.nodeId
+        portId  = portRef ^. PortRef.portId
+    movePort portRef
     Global.modifyNodeEditor $ do
         NodeEditor.draggedPort .= Nothing
         NodeEditor.nodes . at nodeId . _Just . Node.ports . at portId . _Just . Port.visible   .= True

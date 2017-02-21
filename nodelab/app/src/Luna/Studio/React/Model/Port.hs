@@ -24,8 +24,8 @@ data Port = Port { _portRef     :: AnyPortRef
 makeLenses ''Port
 instance ToJSON Port
 
-data DraggedPort = DraggedPort { _draggedPort :: Port
-                               , _position    :: Position
+data DraggedPort = DraggedPort { _draggedPort       :: Port
+                               , _positionInSidebar :: Position
                                } deriving (Eq, Show, Typeable, Generic, NFData)
 
 makeLenses ''DraggedPort

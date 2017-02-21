@@ -66,10 +66,11 @@ getPortYPos mayDraggedPort p = do
     case mayDraggedPort of
         Nothing          -> originalYPos
         Just draggedPort -> do
-            let draggedPortYPos = draggedPort ^. Port.position . y
+            let draggedPortYPos = draggedPort ^. Port.positionInSidebar . y
                 draggedPortNum  = getPortNumber $ draggedPort ^. Port.draggedPort
-                shift1          = if originalYPos < draggedPortYPos + lineHeight / 2 then 0 else lineHeight
-                shift2          = if num < draggedPortNum then 0 else (-lineHeight)
+                shift1          = if num < draggedPortNum then 0 else (-lineHeight)
+                shift2          = if originalYPos + shift1 < draggedPortYPos - lineHeight / 2 then 0 else lineHeight
+
             originalYPos + shift1 + shift2
 
 
@@ -104,7 +105,7 @@ edgePort_ ref mayDraggedPort _n p = when (p ^. Port.visible) $ do
 edgeDraggedPort_ :: Ref App -> DraggedPort -> ReactElementM ViewEventHandler ()
 edgeDraggedPort_ _ref draggedPort = do
     let color = convert $ draggedPort ^. Port.draggedPort . Port.color
-        pos   = draggedPort ^. Port.position
+        pos   = draggedPort ^. Port.positionInSidebar
     svg_
         [ "className" $= "luna-port luna-port--dragged luna-hover"
         -- , "style"     @= Aeson.object [ "transform" Aeson..= ( "translate(" <> show (pos ^. x) <> "px, " <> show (pos ^. y) <> "px)" ) ]
