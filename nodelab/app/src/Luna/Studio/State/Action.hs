@@ -77,7 +77,7 @@ instance ToJSON PenDisconnect
 data Mode = Drag | Click deriving (Eq, Generic, Show, Typeable)
 instance ToJSON Mode
 
-data Connect = Connect { _connectStartPos       :: Position
+data Connect = Connect { _connectStartPos       :: ScreenPosition
                        , _connectSourcePort     :: AnyPortRef
                        , _connectIsConnModified :: Bool
                        , _connectSnappedPort    :: Maybe AnyPortRef
@@ -87,7 +87,7 @@ data Connect = Connect { _connectStartPos       :: Position
 makeLenses ''Connect
 instance ToJSON Connect
 
-data PortDrag = PortDrag { _portDragStartPos :: Position
+data PortDrag = PortDrag { _portDragStartPos :: ScreenPosition
                          , _portDragPortRef  :: AnyPortRef
                          , _portDragMode     :: Mode
                          } deriving (Eq, Generic, Show, Typeable)

@@ -13,20 +13,21 @@ module Luna.Studio.Action.Connect
     ) where
 
 import qualified Data.HashMap.Strict                    as HashMap
-import           Data.Position                          (Position)
+import           Data.Position                          (ScreenPosition)
 import           Empire.API.Data.Connection             (ConnectionId, toValidConnection)
 import qualified Empire.API.Data.Connection             as Connection
 import           Empire.API.Data.Port                   (InPort (Self), PortId (InPortId))
 import           Empire.API.Data.PortRef                (AnyPortRef (InPortRef', OutPortRef'))
 import qualified Empire.API.Data.PortRef                as PortRef
 import qualified JS.GoogleAnalytics                     as GA
+import           Luna.Studio.Action.Camera.Screen       (translateToWorkspace)
 import           Luna.Studio.Action.Command             (Command)
 import           Luna.Studio.Action.Geometry.Connection (createConnectionModel, createCurrentConnectionModel)
 import           Luna.Studio.Action.Graph.Connect       (connectNodes)
 import           Luna.Studio.Action.Graph.Disconnect    (removeConnections)
 import           Luna.Studio.Action.Node.Drag           (startNodeDrag)
 import           Luna.Studio.Action.Port.Self           (showOrHideAllSelfPorts)
-import           Luna.Studio.Event.Mouse                (workspacePosition)
+import           Luna.Studio.Event.Mouse                (mousePosition, workspacePosition)
 import           Luna.Studio.Prelude
 import           Luna.Studio.React.Event.Connection     (ModifiedEnd (Destination, Source))
 import           Luna.Studio.React.Model.Connection     (toCurrentConnection)
@@ -55,21 +56,22 @@ handleConnectionMouseDown evt connId modifiedEnd = do
         let portRef = case modifiedEnd of
                 Destination -> OutPortRef' (connection ^. Connection.src)
                 Source      -> InPortRef'  (connection ^. Connection.dst)
-        mousePos <- workspacePosition evt
+        mousePos <- mousePosition evt
         startConnecting mousePos portRef (Just connId) Drag
 
-startConnecting :: Position -> AnyPortRef -> Maybe ConnectionId -> Mode -> Command State ()
-startConnecting mousePos anyPortRef mayModifiedConnId connectMode = do
+startConnecting :: ScreenPosition -> AnyPortRef -> Maybe ConnectionId -> Mode -> Command State ()
+startConnecting screenMousePos anyPortRef mayModifiedConnId connectMode = do
     let nodeId = anyPortRef ^. PortRef.nodeId
         portId = anyPortRef ^. PortRef.portId
-    mayNode <- Global.getNode nodeId
+    mousePos <- translateToWorkspace screenMousePos
+    mayNode  <- Global.getNode nodeId
     withJust mayNode $ \node -> do
         case (portId, node ^. Model.isExpanded) of
             (InPortId Self, False) -> when (connectMode == Drag) $ startNodeDrag mousePos nodeId True
             _                      -> do
                 mayCurrentConnectionModel <- createCurrentConnectionModel anyPortRef mousePos
                 when (isJust mayCurrentConnectionModel) $ do
-                    let action = Action.Connect mousePos anyPortRef (isJust mayModifiedConnId) Nothing connectMode
+                    let action = Action.Connect screenMousePos anyPortRef (isJust mayModifiedConnId) Nothing connectMode
                     withJust mayModifiedConnId $ removeConnections . replicate 1
                     begin action
                     showOrHideAllSelfPorts (Just action) Nothing
@@ -103,7 +105,7 @@ cancelSnapToPort portRef action = when (Just portRef == action ^. Action.connect
 
 handleMouseUp :: MouseEvent -> Connect -> Command State ()
 handleMouseUp evt action = when (action ^. Action.connectMode == Drag) $ do
-    mousePos <- workspacePosition evt
+    mousePos <- mousePosition evt
     if (mousePos == action ^. Action.connectStartPos) then
         update $ action & Action.connectMode .~ Click
     else stopConnecting action

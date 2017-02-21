@@ -8,7 +8,7 @@ import qualified Empire.API.Data.PortRef      as PortRef
 import           Luna.Studio.Action.Command   (Command)
 import           Luna.Studio.Action.Connect   (connectToPort, startConnecting)
 import           Luna.Studio.Action.Edge      (startPortDrag)
-import           Luna.Studio.Event.Mouse      (workspacePosition)
+import           Luna.Studio.Event.Mouse      (mousePosition)
 import           Luna.Studio.Prelude
 import           Luna.Studio.React.Model.Node (isInputEdge)
 import           Luna.Studio.State.Action     (Action (continue), Mode (Click, Drag), connectAction, portDragAction)
@@ -29,7 +29,6 @@ handleMouseDown evt portRef = do
 handleClick :: MouseEvent -> AnyPortRef -> Command State ()
 handleClick evt portRef = do
     mayConnect <- checkAction connectAction
-    print mayConnect
     if (Just Click == (view Action.connectMode <$> mayConnect)) then
             continue $ connectToPort portRef
         else startPortDragOrConnect evt portRef Click
@@ -40,5 +39,5 @@ startPortDragOrConnect evt portRef mode = do
     withJust mayNode $ \node -> if (isInputEdge node) then
             startPortDrag evt portRef mode
         else do
-            mousePos <- workspacePosition evt
+            mousePos <- mousePosition evt
             startConnecting mousePos portRef Nothing mode
