@@ -3,6 +3,7 @@
 module JS.Atom
     ( onEvent
     , pushCode
+    , pushNotification
     -- , subscribeEventListenerInternal
     ) where
 
@@ -15,6 +16,9 @@ import           Luna.Studio.Event.Internal (InternalEvent)
 import           Luna.Studio.Event.Internal as Internal
 import           Luna.Studio.Prelude
 
+
+foreign import javascript safe "atomCallback.pushNotification($1)"
+  pushNotification :: JSString -> IO ()
 
 foreign import javascript safe "atomCallback.pushCode($1)"
     pushCode :: JSString -> IO ()
