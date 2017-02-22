@@ -13,7 +13,7 @@ module Luna.Studio.Action.Connect
     ) where
 
 import qualified Data.HashMap.Strict                    as HashMap
-import           Data.Position                          (ScreenPosition)
+import           Data.ScreenPosition                    (ScreenPosition)
 import           Empire.API.Data.Connection             (ConnectionId, toValidConnection)
 import qualified Empire.API.Data.Connection             as Connection
 import           Empire.API.Data.Port                   (InPort (Self), PortId (InPortId))

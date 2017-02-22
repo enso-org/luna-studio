@@ -1,6 +1,6 @@
 module Luna.Studio.React.Model.Searcher where
 
-import           Data.Position                  (Position)
+import           Data.ScreenPosition            (ScreenPosition)
 import           Empire.API.Data.Node           (Node, NodeId)
 import           Luna.Studio.Prelude
 import           Text.ScopeSearcher.QueryResult (QueryResult)
@@ -12,7 +12,7 @@ data Mode = Command [QueryResult ()]
           deriving (Eq, Generic, Show)
 
 data Searcher = Searcher
-      { _position    :: Position
+      { _position    :: ScreenPosition
       , _selected    :: Int
       , _mode        :: Mode
       , _input       :: Text

@@ -9,7 +9,7 @@ import           Data.Aeson                           (ToJSON, toJSON)
 import           Data.DateTime                        (DateTime)
 import           Data.Map                             (Map)
 import qualified Data.Map                             as Map
-import           Data.Position                        (Position (Position))
+import           Data.ScreenPosition                  (ScreenPosition (ScreenPosition))
 import           Data.Set                             (Set)
 import qualified Data.Set                             as Set
 import           Data.UUID.Types                      (UUID)
@@ -47,7 +47,7 @@ import qualified System.Random                        as Random
 -- TODO[react]: Move all action states to ActionState
 -- TODO split to more states
 -- TODO: Reconsider our design. @wdanilo says that we shouldn't use MonadState at all
-data State = State { _mousePos           :: Position
+data State = State { _mousePos           :: ScreenPosition
                    , _graph              :: Graph.State
                    , _renderNeeded       :: Bool --TODO refactor
                    , _currentActions     :: Map ActionRep (SomeAction (Command State))
@@ -133,7 +133,7 @@ getConnection :: ConnectionId -> Command State (Maybe Connection)
 getConnection connectionId = get (App.nodeEditor . NodeEditor.connections . at connectionId)
 
 mkState :: DateTime -> Collaboration.ClientId -> StdGen -> Ref App -> State
-mkState = State (Position (Vector2 200 200)) def False def def def def def def def def def
+mkState = State (ScreenPosition (Vector2 200 200)) def False def def def def def def def def def
 
 nextRandom :: Command State Word8
 nextRandom = do

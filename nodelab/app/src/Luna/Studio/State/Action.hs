@@ -5,7 +5,8 @@ import           Data.Aeson              (FromJSON, ToJSON)
 import           Data.Curve              (Curve)
 import           Data.Dynamic
 import           Data.Map                (Map)
-import           Data.Position           (Position, ScreenPosition)
+import           Data.Position           (Position)
+import           Data.ScreenPosition     (ScreenPosition)
 import           Data.Set                (Set)
 import qualified Data.Set                as Set
 import           Empire.API.Data.Node    (NodeId)
@@ -33,7 +34,7 @@ data PanDrag = PanDrag { _panDragPreviousPos :: ScreenPosition
 makeLenses ''PanDrag
 instance ToJSON PanDrag
 
-data ZoomDrag = ZoomDrag { _zoomDragFixedPoint  :: Position
+data ZoomDrag = ZoomDrag { _zoomDragFixedPoint  :: ScreenPosition
                          , _zoomDragPreviousPos :: ScreenPosition
                          } deriving (Eq, Show, Generic, Typeable)
 
@@ -42,7 +43,7 @@ instance ToJSON ZoomDrag
 
 
 data SliderDrag = SliderDrag { _sliderDragPortRef   :: AnyPortRef
-                             , _sliderDragStartPos  :: Position
+                             , _sliderDragStartPos  :: ScreenPosition
                              , _sliderDragInitValue :: InitValue
                              } deriving (Eq, Show, Generic, Typeable)
 

@@ -13,7 +13,8 @@ module Luna.Studio.Action.Edge
 
 
 import qualified Data.Map.Lazy                      as Map
-import           Data.Position                      (Position, ScreenPosition, move)
+import           Data.Position                      (Position (Position), move)
+import           Data.ScreenPosition                (ScreenPosition, fromScreenPosition)
 import           Data.Size                          (y)
 import           Data.Vector                        (Vector2 (Vector2))
 import           Empire.API.Data.Node               (NodeId)
@@ -52,7 +53,7 @@ instance Action (Command State) PortDrag where
 getDraggedPortPositionInSidebar :: ScreenPosition -> Command State Position
 getDraggedPortPositionInSidebar mousePos = do
     sceneHeight <- use $ Global.scene . Scene.size . y
-    return $ move (Vector2 0 (-sceneHeight/2)) mousePos
+    return $ move (Vector2 0 (-sceneHeight/2)) $ Position $ fromScreenPosition mousePos
 
 
 startPortDrag :: MouseEvent -> AnyPortRef -> Mode -> Command State ()

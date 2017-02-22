@@ -10,7 +10,7 @@ module Luna.Studio.Action.Camera.Zoom
      ) where
 
 import           Data.Matrix                           (getElem, setElem)
-import           Data.Position                         (ScreenPosition, Vector2, vector, x, y)
+import           Data.ScreenPosition                   (ScreenPosition, Vector2, vector, x, y)
 import           Luna.Studio.Action.Camera.Modify      (modifyCamera)
 import           Luna.Studio.Action.Camera.Screen      (getScreenCenter)
 import           Luna.Studio.Action.Command            (Command)
