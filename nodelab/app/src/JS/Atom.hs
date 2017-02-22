@@ -18,7 +18,7 @@ import           Luna.Studio.Prelude
 
 
 foreign import javascript safe "atomCallback.pushNotification($1)"
-  pushNotification :: JSString -> IO ()
+  pushNotification' :: JSVal -> IO ()
 
 foreign import javascript safe "atomCallback.pushCode($1)"
     pushCode :: JSString -> IO ()
