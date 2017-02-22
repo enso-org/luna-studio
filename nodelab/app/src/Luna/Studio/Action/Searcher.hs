@@ -7,7 +7,7 @@ import           Data.Monoid                        (All (All), getAll)
 import qualified Data.Text                          as Text
 import           Text.Read                          (readMaybe)
 
-import           Data.Position                      (Position)
+import           Data.Position                      (Position, x)
 import           Empire.API.Data.Node               (NodeId)
 import qualified Empire.API.Data.Node               as NodeAPI
 import qualified Empire.API.Data.Port               as Port
@@ -50,11 +50,17 @@ data OtherCommands = AddNode
 open :: Command State ()
 open = openWith def =<< use Global.mousePos
 
+positionDelta :: Double
+positionDelta = 100
+
 openWith :: Maybe NodeId -> Position -> Command State ()
 openWith nodeId pos = do
+    pos' <- (fmap Node._position <$> selectedNodes) >>= return . \case
+          [nodePosition] -> if isNothing nodeId then nodePosition & x %~ (+positionDelta) else pos
+          _              -> pos
     begin Searcher
     GA.sendEvent GA.NodeSearcher
-    Global.modifyApp $ App.searcher ?= Searcher.Searcher pos 0 (Searcher.Node def) def nodeId
+    Global.modifyApp $ App.searcher ?= Searcher.Searcher pos' 0 (Searcher.Node def) def nodeId
     Global.renderIfNeeded
     liftIO Searcher.focus
 
