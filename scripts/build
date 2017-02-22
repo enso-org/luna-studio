@@ -1,0 +1,73 @@
+#!/usr/bin/env python3
+
+import argparse
+import os
+import subprocess
+import re
+import sys
+from   utils.colors import print_info
+
+parser = argparse.ArgumentParser(description='Luna development build runner')
+parser.add_argument('path'             , nargs = 1          , help='Target path.')
+parser.add_argument('-n', '--nightly'  , action="store_true", help='Use the nightly build configuration')
+parser.add_argument('-d', '--develop'  , action="store_true", help='Use the develop build configuration')
+parser.add_argument('-r', '--release'  , action="store_true", help='Use the release build configuration')
+parser.add_argument('-O'               , nargs = "?"        , const='def', help='Optimization flag, valid values are -O0, -O1, -O2 and -O (defaults to O1)')
+parser.add_argument('-v', '--verbose'  , action="store_true", help='Verbose output and build logs')
+parser.add_argument('--bench'          , action="store_true", help='enable benchmarks')
+parser.add_argument('--test'           , action="store_true", help='enable tests')
+
+def main():
+    args = parser.parse_args()
+    args.path = args.path[0]
+
+    if not args.O:
+        args.O = '0'
+    elif args.O == 'def':
+        args.O = ''
+
+
+    twd = args.path
+    os.chdir(twd)
+
+    os.makedirs("bin", exist_ok=True)
+
+
+    if args.nightly:
+        stackConf = "stack.yaml"
+        workdir   = '.stack-work'
+        optLvl    = 0
+    elif args.develop:
+        stackConf = "stack-develop.yaml"
+        workdir   = '.stack-work'
+        optLvl    = 0
+    elif args.release:
+        stackConf = "stack.yaml"
+        workdir   = '.stack-work'
+        optLvl    = 2
+    else :
+        stackConf = "stack.yaml"
+        workdir   = '.stack-work'
+        optLvl    = 1
+
+    print_info ("Building using the '%s' stack config" % stackConf)
+
+    sys.stdout.flush()
+    sys.stderr.flush()
+
+    opts = ['stack', '--work-dir', workdir, '--stack-yaml', stackConf, 'build', '--copy-bins']
+    if args.bench:
+        opts.append('--bench')
+        opts.append('--no-run-benchmarks')
+    if args.test:
+        opts.append('--test')
+    opts += ['--ghc-options', '-O%s' % args.O]
+    if args.verbose: opts += ['--ghc-options', '-dshow-passes']
+
+    ret_code = subprocess.call(opts)
+
+    print_info ("Stack finished with %d" % ret_code)
+
+    sys.exit(ret_code)
+
+main ()

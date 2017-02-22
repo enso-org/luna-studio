@@ -1,0 +1,7 @@
+#!/bin/bash
+for dir in ./*; do
+    if [ -d "$dir/.git" ]; then
+        cd "$dir" && pwd && git pull;
+        cd ..
+    fi
+done

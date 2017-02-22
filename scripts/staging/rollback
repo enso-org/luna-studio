@@ -1,0 +1,23 @@
+#!/bin/sh
+set -e
+set -x
+
+if [ "$#" -ne 1 ]
+then
+  echo "Rollback drone build"
+  echo "Usage: rollback (build-number)"
+  exit 1
+fi
+
+BUILD_NUMBER=$1
+
+echo "Rolling back to build #$BUILD_NUMBER..."
+
+SRC=lunalang/luna:b$1
+DST=lunalang/luna:latest
+
+docker pull $SRC
+docker tag -f $SRC $DST
+docker push $DST1
+
+echo "Finished, successfully!"

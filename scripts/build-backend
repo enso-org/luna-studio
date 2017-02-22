@@ -1,0 +1,8 @@
+#!/bin/zsh
+set -e
+GIT_ROOT=$(git rev-parse --show-toplevel)
+
+pushd
+cd $GIT_ROOT/build/backend
+stack build --copy-bins --fast
+popd

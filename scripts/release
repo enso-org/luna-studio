@@ -1,0 +1,317 @@
+#!/usr/bin/env python2.7
+
+import argparse
+import os
+import subprocess
+from   utils.glob2 import glob
+import re
+from   getpass     import getpass
+import yaml
+
+parser = argparse.ArgumentParser(description='Process some integers.')
+parser.add_argument('paths'            , nargs='+'          , help='Libraries paths.')
+parser.add_argument('--no-hackage'     , action="store_true", help='Do not upload to hackage.')
+parser.add_argument('-m', '--msg'      , nargs="?"          , help='Unified commit message.')
+parser.add_argument('--upload-missing' , action="store_true", help='Try uploading missing packages to hackage.')
+parser.add_argument('--ask'            , action="store_true", help='Be more verbose before making any action.')
+parser.add_argument('--update-stack-conf' , nargs="+"            , help='Update stack yaml config file.')
+
+
+
+
+#
+# def readConf(cabalPath):
+#     with open(cabalPath, 'r') as file:
+#         conf = file.read()
+#     prog  = re.compile(r'(?P<header>^version:\W+)(?P<version>.*$)', re.MULTILINE)
+#     match = prog.search(conf)
+#     if not match:
+#         raise Exception ('Error when parsing cabal file')
+#     vstr    = match.group('version')
+#     version = parseVersion(vstr)
+#     if not version:
+#         print "ERROR: cannot parse the package version: '%s'" % vstr
+#         raise
+#     return (version, conf, match)
+
+# def checkStatus(version):
+#     v = showVersion(version)
+#     name = '.status'
+#     if not os.path.exists(name):
+#         print "Status file does not exists, creating new one."
+#         open(name, 'a').close()
+#     with open(name, 'r') as f:
+#         stat = f.read()
+#     if stat != v:
+#         print "The last registered status is for version '" + stat + "', but a newer version found '" + v
+#         return False
+#     else:
+#         return True
+
+# def updateStatus(version):
+#     v    = showVersion(version)
+#     name = '.status'
+#     print "Updating the status to version '" + v + "'"
+#     with open(name, 'w') as f:
+#         stat = f.write(v)
+
+
+def checkPublic():
+    return os.path.exists(".public")
+
+def simpleRepl(definp=None):
+    msg = " [" + definp + " -> ok]" if definp else "[ok]"
+    while True:
+        commands = ["ok", "next"]
+        definp = "git add -A"
+        inp = raw_input("Action {%s, <cmd>}" % (", ".join(commands)) + msg + ": ")
+        if not inp: inp = None
+        if inp in commands: break
+        try:
+            execInp = definp if not inp else inp
+            out = subprocess.check_output(execInp, shell=True)
+            print out
+            if not inp: break
+        except:
+            print "Error occurred, continuing."
+
+
+def parseVersion(v):
+    try:
+        return [int(i) for i in v.split('.')]
+    except:
+        return None
+
+
+def loadYaml (path):
+    with open(path, 'r') as f:
+        conf = yaml.load(f)
+    return conf
+
+def writeYaml (path, conf):
+    with open(path, 'w') as file:
+        file.write(yaml.dump(conf))
+
+def askNewVersion(version):
+    defNewVersion = version[:-1] + [version[-1] + 1]
+    while True:
+        newVersion = defaultInput("New package version (current: %s) [%s]: " % (showVersion(version), showVersion(defNewVersion)), showVersion(defNewVersion))
+        if not (parseVersion (newVersion)):
+            print "Incorrect version '%s'"
+            continue
+        break
+    return newVersion
+
+def main():
+    args = parser.parse_args()
+
+
+    root = os.getcwd ()
+
+
+    if not args.no_hackage:
+        username = raw_input("Hackage username: ")
+        if not username:
+            print "No username given, disabling hackage upload"
+            args.no_hackage = True
+        else:
+            password = nonEmptyPass ("Hackage password: ")
+
+    for path in args.paths:
+        print "--- %s ---" % path
+
+        path = os.path.abspath(path)
+        os.chdir(path)
+        projectPaths = glob (path + "/**/package.yaml")
+
+        total = len(projectPaths)
+        for i in range(total):
+            projectConfPath = projectPaths[i]
+            libPath         = os.path.dirname(projectConfPath)
+            cfg             = loadYaml (projectConfPath)
+            version         = parseVersion(cfg['version'])
+            # (version, conf, match) = readConf(projectConfPath)
+            print "\n[%s/%s] >> " % (i + 1, total) + libPath + " (" + showVersion(version) + ")"
+            os.chdir(libPath)
+            if not checkPublic():
+                print "Library is not public, skipping."
+                continue
+            try:
+                status = subprocess.check_output("git status --porcelain", shell=True)
+            except subprocess.CalledProcessError:
+                print "It seems the library is not a git repository, aborting."
+                return 1
+
+
+            if (not status): # and checkStatus(version)) :
+                print "Everything up to date."
+                if not args.upload_missing: continue
+
+            else:
+                if not status:
+                    print "It seems that git is up to date, but previous run of the script was not successful."
+                    print "Trying again ..."
+                else:
+                    print "Git status:"
+                    print status
+
+                simpleRepl()
+
+                newVersion = askNewVersion(version)
+
+                print "Updating project.yaml configuration"
+                cfg['version'] = newVersion
+                writeYaml(projectConfPath, cfg)
+
+                # tracking new config
+                subprocess.check_output("git add %s" % projectConfPath, shell=True)
+
+                simpleRepl("git add -A")
+
+                if checkAsk (args, 'Commit changes?'):
+                    print "Commiting changes."
+                    msg = ''
+                    while not msg:
+                        pfix = '' if not args.msg else '[%s]' % args.msg
+                        msg = raw_input("Commit message%s: " % pfix)
+                        if not msg and args.msg: msg = args.msg
+                    subprocess.check_output('git commit -m "%s"' % msg, shell=True)
+
+                if checkAsk (args, 'Pull changes?'):
+                    print "Pulling changes"
+                    try:
+                        subprocess.check_output('git pull', shell=True)
+                    except subprocess.CalledProcessError as e:
+                        print "\n** ERROR **\n"
+                        print e.output
+                        simpleRepl()
+
+
+
+            if status:
+                if checkAsk (args, 'Push the repository?'):
+                    print "Pushing the repository"
+                    try:
+                        subprocess.check_output('git push', shell=True)
+                    except subprocess.CalledProcessError as e:
+                        print "\n** ERROR **\n"
+                        print e.output
+                        print "\nEnabling recovery shell access:"
+                        simpleRepl()
+
+
+            if ask ('Upload to hackage?'):
+                if (status or args.upload_missing) and not args.no_hackage:
+                    while True:
+                        print "Generating sdist"
+                        try:
+                            sdist = subprocess.check_output('stack sdist --pvp-bounds lower', stderr=subprocess.STDOUT, shell=True)
+                            break
+                        except subprocess.CalledProcessError as e:
+                            print "\n** ERROR **\n"
+                            print e.output
+                            print "\nEnabling recovery shell access:"
+                            simpleRepl()
+                            # todo - go back to pushing repo
+
+                    sdistPath = sdist.split()[-1]
+
+                    print "Uploading to Hackage"
+                    sdist = subprocess.check_output('cabal upload -u%s -p%s %s' % (username, password, sdistPath), shell=True)
+                    print sdist
+            #updateStatus(version)
+
+    os.chdir(root)
+
+    if args.update_stack_conf:
+        yamlPaths = args.update_stack_conf
+        print "Updating the yaml configuration files:"
+        for path in yamlPaths:
+            print "  - " + path
+
+        for yamlPath in yamlPaths:
+
+            with open(yamlPath, 'r') as stream:
+                conf = yaml.load(stream)
+
+            libRefs = {}
+            for path in args.paths:
+                path = os.path.abspath(path)
+                projectConfs = glob (path + "/**/package.yaml")
+                projectPaths = [os.path.dirname(p) for p in projectConfs]
+                for path in projectPaths:
+                    cwd = os.getcwd()
+                    os.chdir(path)
+                    (libName, _) = os.path.splitext(os.path.basename(path) )
+                    try:
+                        headRef = subprocess.check_output("git rev-parse HEAD", shell=True)
+                        headRef = headRef.strip()
+                    except subprocess.CalledProcessError:
+                        print "It seems the library is not a git repository, aborting."
+                        return 1
+                    libRefs[libName] = headRef
+                    os.chdir(cwd)
+
+            diffs   = []
+            pkgs = conf['packages']
+            for pkg in pkgs:
+                loc = pkg['location']
+                if isinstance(loc, dict):
+                    gitloc = loc['git']
+                    (pkgname,_) = os.path.splitext(gitloc.split('/')[-1])
+                    if pkgname in libRefs:
+                        ref = libRefs[pkgname]
+                        if loc['commit'] != ref:
+                            diffs.append(pkgname)
+                        loc['commit'] = ref
+                    else:
+                        print "Skipping %s" % pkgname
+
+            print "Following packages were found with obsolete references:"
+            for pkg in diffs:
+                print "  - " + pkg
+
+            print "Writing new configuration"
+            with open(yamlPath, 'w') as file:
+                file.write(yaml.dump(conf))
+
+    print "DONE!"
+
+
+def showVersion(v): return ".".join([str(i) for i in v])
+
+def nonEmptyInput(s):
+    out = ''
+    inp = raw_input(s)
+    if not inp:
+        print "Input cannot be empty!"
+        return nonEmptyInput(s)
+    return inp
+
+def nonEmptyPass(s):
+    out = ''
+    inp = getpass(s)
+    if not inp:
+        print "Password cannot be empty!"
+        return nonEmptyPass(s)
+    return inp
+
+def defaultInput(s, d):
+    inp = raw_input(s)
+    if not inp: return d
+    return inp
+
+
+def checkAsk(args, s):
+    if args.ask:
+        ask(s)
+    return True
+
+def ask(s):
+    while True:
+        out = raw_input(s + ' [N/y]')
+        if not out: out = 'N'
+        if out == 'n' or out == 'N': return False
+        if out == 'y' or out == 'Y': return True
+
+main ()

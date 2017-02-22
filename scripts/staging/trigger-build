@@ -1,0 +1,2 @@
+#!/bin/sh
+git push origin master:master master:docker/staging
