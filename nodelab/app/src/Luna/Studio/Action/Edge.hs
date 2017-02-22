@@ -18,7 +18,7 @@ import           Data.ScreenPosition                (ScreenPosition, fromScreenP
 import           Data.Size                          (y)
 import           Data.Vector                        (Vector2 (Vector2))
 import           Empire.API.Data.Node               (NodeId)
-import           Empire.API.Data.Port               (OutPort (Projection), PortId (OutPortId))
+import           Empire.API.Data.Port               (InPort (Arg), OutPort (Projection), PortId (InPortId, OutPortId))
 import           Empire.API.Data.PortRef            (AnyPortRef)
 import qualified Empire.API.Data.PortRef            as PortRef
 import qualified JS.Scene                           as Scene
@@ -29,7 +29,7 @@ import           Luna.Studio.Action.Geometry        (lineHeight)
 import           Luna.Studio.Action.Graph.Lookup    (getPort)
 import           Luna.Studio.Event.Mouse            (mousePosition)
 import           Luna.Studio.Prelude
-import           Luna.Studio.React.Model.Node       (isOutputEdge)
+import           Luna.Studio.React.Model.Node       (isOutputEdge, isInputEdge, Node)
 import qualified Luna.Studio.React.Model.Node       as Node
 import qualified Luna.Studio.React.Model.NodeEditor as NodeEditor
 import           Luna.Studio.React.Model.Port       (DraggedPort (DraggedPort))
@@ -75,7 +75,7 @@ handleMouseUp evt portDrag = do
     if ( portDrag ^. Action.portDragMode == Drag
       && mousePos == portDrag ^. Action.portDragStartPos ) then
         update $ portDrag & Action.portDragMode .~ Click
-    else end portDrag
+    else movePort (portDrag ^. Action.portDragPortRef) >> end portDrag
 
 handleMove :: MouseEvent -> PortDrag -> Command State ()
 handleMove evt portDrag = do
@@ -88,29 +88,37 @@ handleMove evt portDrag = do
         NodeEditor.draggedPort ?= DraggedPort draggedPort draggedPortPos
         NodeEditor.nodes . at nodeId . _Just . Node.ports . at portId . _Just . Port.visible .= False
 
+getNumOfProjectionsOrArgs :: Node -> Int
+getNumOfProjectionsOrArgs node =
+    length $ flip filter (node ^. Node.ports . to Map.keys) $ \portId ->
+        if isInputEdge node then
+            case portId of
+                OutPortId (Projection _) -> True
+                _                        -> False
+            else case portId of
+                InPortId (Arg _) -> True
+                _                -> False
+
 movePort :: AnyPortRef -> Command State ()
 movePort portRef = do
     mayNode <- Global.getNode $ portRef ^. PortRef.nodeId
     mayDraggedPort <- view NodeEditor.draggedPort <$> Global.getNodeEditor
     withJust ((,) <$> mayNode <*> mayDraggedPort) $ \(node, draggedPort) -> do
         let newPos' = (round $ draggedPort ^. Port.positionInSidebar . y / lineHeight) - if isOutputEdge node then 1 else 0
-            --TODO[LJK]: Handle this better
-            portsIds = flip filter (node ^. Node.ports . to Map.keys) $ \portId -> case portId of
-                OutPortId (Projection _) -> True
-                _                        -> False
-            newPos = max 0 $ min newPos' $ length portsIds - 1
+            numOfPorts = getNumOfProjectionsOrArgs node
+            newPos = max 0 $ min newPos' $ numOfPorts - 1
         case portRef ^. PortRef.portId of
-            OutPortId (Projection pos) -> if pos /= newPos then
-                    Batch.movePort portRef newPos
-                else return ()
-            _ -> Batch.movePort portRef newPos
+            OutPortId (Projection pos) -> when (pos /= newPos) $
+                Batch.movePort portRef newPos
+            InPortId  (Arg pos)        -> when (pos /= newPos) $
+                Batch.movePort portRef newPos
+            _ -> return ()
 
 stopPortDrag :: PortDrag -> Command State ()
 stopPortDrag portDrag = do
     let portRef = portDrag ^. Action.portDragPortRef
         nodeId  = portRef ^. PortRef.nodeId
         portId  = portRef ^. PortRef.portId
-    movePort portRef
     Global.modifyNodeEditor $ do
         NodeEditor.draggedPort .= Nothing
         NodeEditor.nodes . at nodeId . _Just . Node.ports . at portId . _Just . Port.visible   .= True
