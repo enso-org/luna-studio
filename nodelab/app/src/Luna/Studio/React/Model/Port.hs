@@ -2,6 +2,7 @@
 module Luna.Studio.React.Model.Port where
 
 import           Data.Aeson              (ToJSON)
+import           Data.Position           (Position)
 
 import           Empire.API.Data.Node    (NodeId)
 import qualified Empire.API.Data.Port    as API
@@ -22,6 +23,13 @@ data Port = Port { _portRef     :: AnyPortRef
 
 makeLenses ''Port
 instance ToJSON Port
+
+data DraggedPort = DraggedPort { _draggedPort       :: Port
+                               , _positionInSidebar :: Position
+                               } deriving (Eq, Show, Typeable, Generic, NFData)
+
+makeLenses ''DraggedPort
+instance ToJSON DraggedPort
 
 portId :: Lens' Port API.PortId
 portId = port . API.portId

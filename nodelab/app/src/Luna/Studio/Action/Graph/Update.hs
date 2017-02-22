@@ -2,6 +2,7 @@ module Luna.Studio.Action.Graph.Update
     ( updateConnections
     , updateConnection
     , updateConnectionsForNodes
+    , updateConnectionsForEdges
     , updateMonads
     ) where
 
@@ -13,7 +14,9 @@ import           Empire.API.Data.Node                   (NodeId)
 import           Empire.API.Data.TypeRep                (TypeRep)
 import           Luna.Studio.Action.Command             (Command)
 import           Luna.Studio.Action.Geometry.Connection (createConnectionModel)
+import           Luna.Studio.Action.Graph.Lookup        (edgeNodes)
 import           Luna.Studio.Prelude
+import qualified Luna.Studio.React.Model.Node           as Node
 import qualified Luna.Studio.React.Model.NodeEditor     as NodeEditor
 import           Luna.Studio.State.Global               (State)
 import qualified Luna.Studio.State.Global               as Global
@@ -39,6 +42,9 @@ updateConnection connId = do
         mayConnToUpdate    <- Global.getConnection connId
         when (mayConnectionModel /= mayConnToUpdate) $
             Global.modifyNodeEditor $ NodeEditor.connections . at connId .= mayConnectionModel
+
+updateConnectionsForEdges :: Command Global.State ()
+updateConnectionsForEdges = edgeNodes >>= updateConnectionsForNodes . map (view Node.nodeId)
 
 updateMonads :: [(TypeRep, [NodeId])] -> Command State ()
 updateMonads monads =

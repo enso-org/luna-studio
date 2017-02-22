@@ -55,3 +55,9 @@ data NotAppException = NotAppException NodeRef
 instance Exception NotAppException where
     toException = astExceptionToException
     fromException = astExceptionFromException
+
+data NotInputEdgeException = NotInputEdgeException deriving (Show)
+
+instance Exception NotInputEdgeException where
+    toException   = astExceptionToException
+    fromException = astExceptionFromException

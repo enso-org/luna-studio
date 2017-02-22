@@ -1,78 +1,119 @@
+{-# LANGUAGE MultiWayIf #-}
 module Luna.Studio.Action.Geometry.Connection
     ( createConnectionModel
     , createCurrentConnectionModel
     ) where
 
 import qualified Data.Map.Lazy                         as Map
-import           Data.Position                         (Position (Position), Vector2 (Vector2), x, y)
+import           Data.Position                         (Position, Vector2 (Vector2), move)
 import           Empire.API.Data.Connection            (Connection)
 import qualified Empire.API.Data.Connection            as Connection
 import           Empire.API.Data.PortRef               (AnyPortRef (InPortRef', OutPortRef'))
 import qualified Empire.API.Data.PortRef               as PortRef
+import           Luna.Studio.Action.Camera.Screen      (getScreenLeftCenter, getScreenRightCenter, getScreenRightCenter,
+                                                        translateToWorkspace)
 import           Luna.Studio.Action.Command            (Command)
-import           Luna.Studio.Action.Geometry.Constants (lineHeight, nodeExpandedWidth, portRadius)
+import           Luna.Studio.Action.Geometry.Constants (grid, lineHeight, nodeExpandedWidth, portRadius)
 import           Luna.Studio.Action.Geometry.Node      (nodeToNodeAngle)
-import           Luna.Studio.Action.Geometry.Port      (IsSelf, IsSingle, countSameTypePorts, getPortNumber, isPortSelf, isPortSingle,
-                                                        portAngleStart, portAngleStop, portGap)
+import           Luna.Studio.Action.Geometry.Port      (countSameTypePorts, getPortNumber, isPortSelf, isPortSingle, portAngleStart,
+                                                        portAngleStop, portGap)
 import           Luna.Studio.Action.Graph.Lookup       (getPort)
 import           Luna.Studio.Prelude
 import qualified Luna.Studio.React.Model.Connection    as Model
+import           Luna.Studio.React.Model.Node          (Node, isInputEdge, isOutputEdge)
 import qualified Luna.Studio.React.Model.Node          as Node
+import           Luna.Studio.React.Model.Port          (Port)
 import qualified Luna.Studio.React.Model.Port          as Port
 import           Luna.Studio.State.Global              (State, getNode)
 
-connectionSrc :: Position -> Position -> Bool -> Bool -> Int -> Int -> IsSingle -> Position
-connectionSrc src dst isSrcExpanded _             _   _          True =
-    let t  = nodeToNodeAngle src dst
-        srcExpX = src ^. x + nodeExpandedWidth
-        srcExpY = src ^. y
-        srcX = if isSrcExpanded then srcExpX else portRadius * cos t + src ^. x
-        srcY = if isSrcExpanded then srcExpY else portRadius * sin t + src ^. y
-    in  Position (Vector2 srcX srcY)
 
-connectionSrc src dst isSrcExpanded isDstExpanded dstInputNum numOfDstInputs _    =
-    let srcExpX = src ^. x + nodeExpandedWidth
-        srcExpY = src ^. y
-        dstExpX = dst ^. x
-        dstExpY = dst ^. y -- TODO: numOfInputs
-        trueSrc = if isSrcExpanded then Position(Vector2 srcExpX srcExpY) else src
-        trueDst = if isDstExpanded then Position(Vector2 dstExpX dstExpY) else dst
-        a  = portAngleStop  dstInputNum numOfDstInputs portRadius
-        b  = portAngleStart dstInputNum numOfDstInputs portRadius
-        t  = nodeToNodeAngle trueSrc trueDst
+getConnectionAngle :: Position -> Position -> Int -> Int -> Double
+getConnectionAngle srcPos dstPos num numOfSameTypePorts =
+    if      t' > a' - pi / 2 - g then a - pi / 2 - g
+    else if t' < b' - pi / 2 + g then b - pi / 2 + g
+    else t where
+        a  = portAngleStop  num numOfSameTypePorts portRadius
+        b  = portAngleStart num numOfSameTypePorts portRadius
+        t  = nodeToNodeAngle srcPos dstPos
         a' = if a < pi then a + (2 * pi) else a
         b' = if b < pi then b + (2 * pi) else b
         t' = if t < pi then t + (2 * pi) else t
         g  = portGap portRadius / 4
-        t''
-          | t' > a' - pi / 2 - g = a - pi / 2 - g
-          | t' < b' - pi / 2 + g = b - pi / 2 + g
-          | otherwise            = t
-        srcX = if isSrcExpanded then srcExpX else portRadius * cos t'' + src ^. x
-        srcY = if isSrcExpanded then srcExpY else portRadius * sin t'' + src ^. y
-    in  Position (Vector2 srcX srcY)
+
+-- TODO[JK]: dst numOfInputs
+connectionSrc :: Position -> Position -> Bool -> Bool -> Int -> Int -> Bool -> Position
+connectionSrc src dst isSrcExpanded _isDstExpanded num numOfSameTypePorts isSingle =
+    if isSrcExpanded then
+         move (Vector2 nodeExpandedWidth 0) src
+    else move (Vector2 (portRadius * cos t) (portRadius * sin t)) src where
+        t = if isSingle then
+                 nodeToNodeAngle src dst
+            else getConnectionAngle src dst num numOfSameTypePorts
+
+connectionDst :: Position -> Position -> Bool -> Bool -> Int -> Int -> Bool -> Position
+connectionDst src dst isSrcExpanded isDstExpanded num numOfSameTypePorts isSelf =
+    if isSelf then dst
+    else if isDstExpanded then
+         move (Vector2 0 (lineHeight * (fromIntegral num + 1))) dst
+    else move (Vector2 (portRadius * (-cos t)) (portRadius * (-sin t))) dst where
+        src' = if isSrcExpanded then move (Vector2 nodeExpandedWidth 0) src else src
+        t    = getConnectionAngle src' dst num numOfSameTypePorts
+
+--TODO: Find out real position of port
+getInputEdgePortPosition :: Int -> Command State Position
+getInputEdgePortPosition portNumber =
+    move (Vector2 (2 * grid) (portNumber' * grid)) <$> getScreenLeftCenter >>= translateToWorkspace where
+        portNumber' = fromIntegral portNumber
+
+getOutputEdgePortPosition :: Int -> Bool -> Command State Position
+getOutputEdgePortPosition portNumber isSelf =
+    move (Vector2 (-2 * grid) (portNumber' * grid)) <$> getScreenRightCenter >>= translateToWorkspace where
+        portNumber' = fromIntegral $ if isSelf then 0 else  portNumber + 1
+
+getConnectionPosition :: Node -> Port -> Node -> Port -> Command State (Position, Position)
+getConnectionPosition srcNode srcPort dstNode dstPort = do
+    let srcPos     = srcNode ^. Node.position
+        dstPos     = dstNode ^. Node.position
+        isSrcExp   = srcNode ^. Node.isExpanded
+        isDstExp   = dstNode ^. Node.isExpanded
+        srcPortNum = getPortNumber srcPort
+        dstPortNum = getPortNumber dstPort
+        srcPorts   = Map.elems $ srcNode ^. Node.ports
+        dstPorts   = Map.elems $ dstNode ^. Node.ports
+        numOfSrcOutPorts = countSameTypePorts srcPort srcPorts
+        numOfDstInPorts  = countSameTypePorts dstPort dstPorts
+    if isInputEdge srcNode && isOutputEdge dstNode then do
+        srcConnPos <- getInputEdgePortPosition srcPortNum
+        dstConnPos <- getOutputEdgePortPosition dstPortNum $ isPortSelf dstPort
+        return (srcConnPos, dstConnPos)
+    else if isInputEdge srcNode then do
+        srcConnPos <- getInputEdgePortPosition srcPortNum
+        dstConnPos <- getCurrentConnectionSrcPosition dstNode dstPort srcConnPos
+        return (srcConnPos, dstConnPos)
+    else if isOutputEdge dstNode then do
+        dstConnPos <- getOutputEdgePortPosition dstPortNum $ isPortSelf dstPort
+        srcConnPos <- getCurrentConnectionSrcPosition srcNode srcPort dstConnPos
+        return (srcConnPos, dstConnPos)
+    else do
+        let srcConnPos = connectionSrc srcPos dstPos isSrcExp isDstExp srcPortNum numOfSrcOutPorts $ isPortSingle srcPort srcPorts
+            dstConnPos = connectionDst srcPos dstPos isSrcExp isDstExp dstPortNum numOfDstInPorts $ isPortSelf dstPort
+        return (srcConnPos, dstConnPos)
 
 
-connectionDst :: Position -> Position -> Bool -> Bool -> Int -> Int -> IsSelf -> Position
-connectionDst _   dst _             _             _   _          True = dst
-connectionDst src dst isSrcExpanded isDstExpanded num numOfPorts _    =
-    let a   = portAngleStop  num numOfPorts portRadius
-        b   = portAngleStart num numOfPorts portRadius
-        src'= if isSrcExpanded then Position (Vector2 (src ^. x + nodeExpandedWidth) (src ^. y)) else src
-        t   = nodeToNodeAngle src' dst
-        a'  = if a < pi then a + (2 * pi) else a
-        b'  = if b < pi then b + (2 * pi) else b
-        t'  = if t < pi then t + (2 * pi) else t
-        g   = portGap portRadius / 4
-        t'' | t' > a'- pi/2 - g = a - pi/2 - g
-            | t' < b'- pi/2 + g = b - pi/2 + g
-            | otherwise = t
-        dstExpX = dst ^. x
-        dstExpY = dst ^. y + lineHeight * (fromIntegral num + 1)
-        dstX = if isDstExpanded then dstExpX else portRadius * (-cos t'') + dst ^. x
-        dstY = if isDstExpanded then dstExpY else portRadius * (-sin t'') + dst ^. y
-    in  Position (Vector2 dstX dstY)
-
+getCurrentConnectionSrcPosition :: Node -> Port -> Position -> Command State Position
+getCurrentConnectionSrcPosition node port mousePos = if isInputEdge node then
+        getInputEdgePortPosition  portNum
+    else if isOutputEdge node then
+        getOutputEdgePortPosition portNum $ isPortSelf port
+    else return $ case port ^. Port.portRef of
+        OutPortRef' _ -> connectionSrc pos mousePos isExp False portNum numOfSameTypePorts $ isPortSingle port ports
+        InPortRef'  _ -> connectionDst mousePos pos False isExp portNum numOfSameTypePorts $ isPortSelf port
+    where
+        pos                = node ^. Node.position
+        isExp              = node ^. Node.isExpanded
+        portNum            = getPortNumber port
+        ports              = Map.elems $ node ^. Node.ports
+        numOfSameTypePorts = countSameTypePorts port ports
 
 createConnectionModel :: Connection -> Command State (Maybe Model.Connection)
 createConnectionModel connection = do
@@ -85,18 +126,10 @@ createConnectionModel connection = do
 
     case (maySrcNode, maySrcPort, mayDstNode, mayDstPort) of
         (Just srcNode, Just srcPort, Just dstNode, Just dstPort) -> do
-            let srcPorts      = Map.elems $ srcNode ^. Node.ports
-                dstPorts      = Map.elems $ dstNode ^. Node.ports
-                srcPos        = srcNode ^. Node.position
-                dstPos        = dstNode ^. Node.position
-                isSrcExpanded = srcNode ^. Node.isExpanded
-                isDstExpanded = dstNode ^. Node.isExpanded
-                srcConnPos    = connectionSrc srcPos dstPos isSrcExpanded isDstExpanded (getPortNumber srcPort) (countSameTypePorts srcPort srcPorts) (isPortSingle srcPort srcPorts)
-                dstConnPos    = connectionDst srcPos dstPos isSrcExpanded isDstExpanded (getPortNumber dstPort) (countSameTypePorts dstPort dstPorts) (isPortSelf dstPort)
-                color         = srcPort ^. Port.color
-            return $ Just (Model.Connection dstPortRef srcConnPos dstConnPos color)
+            (srcPos, dstPos) <- getConnectionPosition srcNode srcPort dstNode dstPort
+            let color = srcPort ^. Port.color
+            return $ Just (Model.Connection dstPortRef srcPos dstPos color)
         _ -> return Nothing
-
 
 createCurrentConnectionModel :: AnyPortRef -> Position -> Command State (Maybe Model.CurrentConnection)
 createCurrentConnectionModel portRef mousePos = do
@@ -105,16 +138,7 @@ createCurrentConnectionModel portRef mousePos = do
 
     case (mayNode, mayPort) of
         (Just node, Just port) -> do
-            let ports       = Map.elems $ node ^. Node.ports
-                pos         = node ^. Node.position
-                isExpanded  = node ^. Node.isExpanded
-                portNum     = getPortNumber port
-                numOfPorts  = countSameTypePorts port ports
-                isSelf      = isPortSelf port
-                isSingle    = isPortSingle port ports
-                connPortPos = case portRef of
-                    OutPortRef' _ -> connectionSrc pos      mousePos isExpanded False      portNum numOfPorts isSingle
-                    InPortRef'  _ -> connectionDst mousePos pos      False      isExpanded portNum numOfPorts isSelf
-                color       = port ^. Port.color
+            connPortPos <- getCurrentConnectionSrcPosition node port mousePos
+            let color = port ^. Port.color
             return $ Just (Model.CurrentConnection connPortPos mousePos color)
         _ -> return Nothing

@@ -41,12 +41,12 @@ instance Action (Command State) SliderDrag where
 setPortDefault :: AnyPortRef -> DefaultValue.PortDefault -> Command State ()
 setPortDefault portRef defaultValue =
     Global.modifyNode (portRef ^. PortRef.nodeId) $
-        Node.ports . ix portRef . Port.state .= PortAPI.WithDefault defaultValue
+        Node.ports . ix (portRef ^. PortRef.portId) . Port.state .= PortAPI.WithDefault defaultValue
 
 getPortDefault :: AnyPortRef -> Command State (Maybe DefaultValue.PortDefault)
 getPortDefault portRef = do
     mayNode <- Global.getNode (portRef ^. PortRef.nodeId)
-    let mayPort = mayNode >>= (Map.lookup portRef . view Node.ports)
+    let mayPort = mayNode >>= (Map.lookup (portRef ^. PortRef.portId) . view Node.ports)
     return $ mayPort ^? _Just . Port.state . PortAPI._WithDefault
 
 startMoveSlider :: AnyPortRef -> Position -> InitValue -> Command State ()

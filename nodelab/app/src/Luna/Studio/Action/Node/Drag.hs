@@ -36,9 +36,8 @@ instance Action (Command State) NodeDrag where
     update   = updateActionWithKey   nodeDragAction
     end _    = updateMovedNodes >> removeActionFromState nodeDragAction
 
-startNodeDrag :: MouseEvent -> NodeId -> Bool -> Command State ()
-startNodeDrag evt nodeId snapped = do
-    coord <- workspacePosition evt
+startNodeDrag :: Position -> NodeId -> Bool -> Command State ()
+startNodeDrag coord nodeId snapped = do
     mayNode <- Global.getNode nodeId
     withJust mayNode $ \node -> do
         let isSelected = node ^. Model.isSelected
@@ -62,10 +61,10 @@ nodeDrag evt snapped state = do
         shift' = if snapped then
                      case Map.lookup draggedNodeId nodesStartPos of
                          Just pos ->
-                             snap (move pos delta) ^. vector - pos ^. vector
+                             snap (move delta pos) ^. vector - pos ^. vector
                          Nothing  -> delta
                  else delta
-    moveNodes $ Map.map (flip move shift') nodesStartPos
+    moveNodes $ Map.map (move shift') nodesStartPos
 
 moveNodes :: Map NodeId Position -> Command State ()
 moveNodes nodesPos = do

@@ -5,9 +5,10 @@ module Luna.Studio.Action.Geometry.Constants
     , nodeRadius
     , nodeRadius'
     , portRadius
+    , grid
     ) where
 
-import Luna.Studio.Prelude
+import           Luna.Studio.Prelude
 
 grid, connectionWidth, lineHeight, nodeExpandedWidth, nodeRadius, nodeRadius', portRadius :: Double
 

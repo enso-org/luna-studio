@@ -23,6 +23,7 @@ handle cons = (Topic.topic (undefined :: a), cons . decode)
 handlers :: Map.Map String (ByteString -> Batch.Event)
 handlers = Map.fromList [ handle NodeAdded
                         , handle AddNodeResponse
+                        , handle AddPortResponse
                         , handle NodesRemoved
                         , handle RemoveNodesResponse
                         , handle NodesConnected

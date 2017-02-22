@@ -188,12 +188,12 @@
 }
 
 /////////////////////////////
-//       port sidebar      //
+//       edge sidebar      //
 /////////////////////////////
 
-.luna-port-sidebar {
+.luna-edge-sidebar {
     position:        relative;
-    width:           16px;
+    width:           32px;
     height:          100%;
     display:         flex;
     flex-direction:  column;
@@ -207,22 +207,43 @@
     }
 }
 
-.luna-port-sidebar--i {
+.luna-edge-sidebar--i {
     float:      left;
-    svg { left: 16px }
+    svg { left: 32px }
 }
 
-.luna-port-sidebar--o {
+.luna-edge-sidebar--o {
     float:      right;
 }
 
+.luna-edge__button--add {
+    position: fixed;
+    bottom: 10px;
+}
+
+.luna-edge__button--remove {
+    position: fixed;
+    bottom: 10px;
+}
+
+.luna-port--dragged,
+.luna-edge-sidebar .luna-port--dragged {
+    fill:     white;
+    width:    1px;
+    height:   1px;
+    z-index:  1000000;
+    overflow: inherit;
+    top: 0;
+    left: 0;
+    draggable: true;
+}
+
 /////////////////////////////
-//       port sidebar      //
+//       monad             //
 /////////////////////////////
 
 .luna-monad {
     stroke-width:    20px;
     fill:            none;
     stroke-linejoin: round;
-
 }

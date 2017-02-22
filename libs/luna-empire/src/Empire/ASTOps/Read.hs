@@ -21,6 +21,7 @@ module Empire.ASTOps.Read (
   , getASTTarget
   , getASTVar
   , getLambdaOutputRef
+  , getPatternNames
   , getSelfNodeRef
   , canEnterNode
   , rhsIsLambda
@@ -50,10 +51,20 @@ isGraphNode = fmap isJust . getNodeId
 getNodeId :: ASTOp m => NodeRef -> m (Maybe NodeId)
 getNodeId node = coerce <$> IR.readLayer @Marker node
 
+getPatternNames :: ASTOp m => NodeRef -> m [String]
+getPatternNames node = match node $ \case
+    Var n     -> (:[]) <$> getName n
+    Cons _ as -> do
+        args  <- mapM IR.source as
+        names <- mapM getPatternNames args
+        return $ concat names
+    Blank{}   -> return ["_"]
+
 getVarName :: ASTOp m => NodeRef -> m String
 getVarName node = match node $ \case
     Var n -> getName n
     Cons n _ -> getName n
+    Blank{} -> return "_"
 
 getName :: ASTOp m => EdgeRef -> m String
 getName node = do

@@ -8,6 +8,7 @@ import qualified Luna.Studio.React.Event.App           as App
 import qualified Luna.Studio.React.Event.Breadcrumbs   as Breadcrumbs
 import qualified Luna.Studio.React.Event.CodeEditor    as CodeEditor
 import qualified Luna.Studio.React.Event.Connection    as Connection
+import qualified Luna.Studio.React.Event.Edge          as Edge
 import qualified Luna.Studio.React.Event.Node          as Node
 import qualified Luna.Studio.React.Event.NodeEditor    as NodeEditor
 import qualified Luna.Studio.React.Event.Port          as Port
@@ -19,6 +20,7 @@ data UIEvent = AppEvent           App.Event
              | BreadcrumbsEvent   Breadcrumbs.Event
              | CodeEditorEvent    CodeEditor.Event
              | ConnectionEvent    Connection.Event
+             | EdgeEvent          Edge.Event
              | NodeEditorEvent    NodeEditor.Event
              | NodeEvent          Node.Event
              | PortEvent          Port.Event
