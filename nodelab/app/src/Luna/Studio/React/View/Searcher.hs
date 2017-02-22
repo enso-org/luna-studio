@@ -2,6 +2,8 @@
 module Luna.Studio.React.View.Searcher where
 
 import qualified Data.Aeson                       as Aeson
+import           Data.Matrix                      as Matrix
+import           Data.Matrix                      (Matrix)
 import           Data.Position                    (Position (Position), Vector2 (Vector2))
 import           Data.Vector
 import           React.Flux
@@ -17,6 +19,7 @@ import qualified Luna.Studio.React.Model.Node     as Node
 import           Luna.Studio.React.Model.Searcher (Searcher)
 import qualified Luna.Studio.React.Model.Searcher as Searcher
 import           Luna.Studio.React.Store          (Ref, dispatch)
+import           Luna.Studio.React.View.Node      (expressionPosition)
 import           Luna.Studio.React.View.NodeBody  (nodeBody_)
 import qualified Text.ScopeSearcher.QueryResult   as Result
 
@@ -27,26 +30,23 @@ name = "searcher"
 preventTabDefault :: React.Event -> KeyboardEvent -> [SomeStoreAction] -> [SomeStoreAction]
 preventTabDefault e k r = if Keys.withoutMods k Keys.tab then preventDefault e : r else r
 
-searcher :: ReactView (Ref App, Searcher)
-searcher  = React.defineView name $ \(ref, s) -> do
-    let pos  = s ^. Searcher.position
-        widgetPos = pos -- - Position (Vector2 50 50)
+searcher :: ReactView (Ref App, Searcher, Matrix Double)
+searcher =  React.defineView name $ \(ref, s, camera) -> do
+    let pos       = expressionPosition camera (s ^. Searcher.position)
         nodePos   = Position (Vector2 0 0)
-        mode = s ^. Searcher.mode
-        nodePreview = Node.fromNode <$> s ^. Searcher.selectedNode
+        mode      = s ^. Searcher.mode
+        nodePrev  = Node.fromNode <$> s ^. Searcher.selectedNode
         className = "luna-" <> name <> " luna-" <> case mode of
-            Searcher.Node    { } -> "node-" <> name
-            Searcher.Command { } -> "command-" <> name
+                                                        Searcher.Node    { } -> "node-"    <> name
+                                                        Searcher.Command { } -> "command-" <> name
     div_
         [ "key"       $= name
         , "className" $= className
         , "style"     @= Aeson.object
-            [ "top"  Aeson..= (show (widgetPos ^. y) <> "px" :: String)
-            , "left" Aeson..= (show (widgetPos ^. x) <> "px" :: String)
-            ]
+            [ "transform" Aeson..= ("translate(" <> show (pos ^. x) <> "px, " <> show (pos ^. y) <> "px)" :: String) ]
         ] $ do
-        withJust nodePreview $ nodeBody_ ref . (Node.position .~ nodePos)
-                                            --  . (Node.isExpanded .~ True)
+        withJust nodePrev $ nodeBody_ ref . (Node.position .~ nodePos)
+                                         --  . (Node.isExpanded .~ True)
         input_
             [ "key"   $= "input"
             , "id"    $= searcherId
@@ -83,5 +83,5 @@ searcher  = React.defineView name $ \(ref, s) -> do
                             ,"className" $= "luna-result-name"
                             ] $ elemString $ convert $ result ^. Result.name
 
-searcher_ :: Ref App -> Searcher -> ReactElementM ViewEventHandler ()
-searcher_ ref model = React.viewWithSKey searcher name (ref, model) mempty
+searcher_ :: Ref App -> Searcher -> Matrix Double -> ReactElementM ViewEventHandler ()
+searcher_ ref model camera = React.viewWithSKey searcher name (ref, model, camera) mempty

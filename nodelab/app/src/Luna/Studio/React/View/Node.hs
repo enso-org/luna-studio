@@ -1,24 +1,25 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Luna.Studio.React.View.Node where
 
-import qualified Data.Aeson                      as Aeson
-import           Data.Matrix                     as Matrix
-import           Data.Matrix                     (Matrix)
-import           Data.Position                   (x, y)
-import qualified Data.Text                       as Text
-import           Empire.API.Data.Node            (NodeId)
-import qualified JS.Config                       as Config
-import qualified Luna.Studio.Event.Mouse         as Mouse
-import qualified Luna.Studio.Event.UI            as UI
+import qualified Data.Aeson                            as Aeson
+import           Data.Matrix                           as Matrix
+import           Data.Matrix                           (Matrix)
+import           Data.Position                         (Position(Position),Vector2(Vector2),x, y)
+import qualified Data.Text                             as Text
+import           Empire.API.Data.Node                  (NodeId)
+import qualified JS.Config                             as Config
+import           Luna.Studio.Action.Geometry.Constants (fontSize)
+import qualified Luna.Studio.Event.Mouse               as Mouse
+import qualified Luna.Studio.Event.UI                  as UI
 import           Luna.Studio.Prelude
-import qualified Luna.Studio.React.Event.Node    as Node
-import           Luna.Studio.React.Model.App     (App)
-import           Luna.Studio.React.Model.Node    (Node)
-import qualified Luna.Studio.React.Model.Node    as Node
-import           Luna.Studio.React.Store         (Ref, dispatch)
-import           Luna.Studio.React.View.NodeBody (nodeBody_)
+import qualified Luna.Studio.React.Event.Node          as Node
+import           Luna.Studio.React.Model.App           (App)
+import           Luna.Studio.React.Model.Node          (Node)
+import qualified Luna.Studio.React.Model.Node          as Node
+import           Luna.Studio.React.Store               (Ref, dispatch)
+import           Luna.Studio.React.View.NodeBody       (nodeBody_)
 import           React.Flux
-import qualified React.Flux                      as React
+import qualified React.Flux                            as React
 
 
 objName :: JSString
@@ -75,13 +76,19 @@ node_ ref model = React.viewWithSKey node (jsShow $ model ^. Node.nodeId) (ref, 
 
 nodeDynamicStyles_ :: Matrix Double -> Node -> ReactElementM ViewEventHandler ()
 nodeDynamicStyles_ camera n = do
-    let nodeId = show $ n ^. Node.nodeId
-        posX   = n ^. Node.position ^. x
-        posY   = n ^. Node.position ^. y - 36
-        camX   = (Matrix.toList camera)!!12
-        camY   = (Matrix.toList camera)!!13
+    let nodeId = n ^. Node.nodeId
+        pos    = expressionPosition camera (n ^. Node.position)
         scale  = (Matrix.toList camera)!!0
-        nx     = show (round $ camX + (scale * posX) :: Integer)
-        ny     = show (round $ camY + (scale * posY) :: Integer)
-    elemString $ "#" <> Config.mountPoint <> "-node-" <> fromString nodeId <> " .luna-name-trans { transform: translate(" <> nx <> "px, " <> ny <> "px)"
-                     <> if scale > 1 then "; font-size: " <> show (12 * scale) <> "px }" else " }"
+    elemString $ "#" <> Config.mountPoint <> "-node-" <> fromString (show nodeId)
+                     <> " .luna-name-trans { transform: translate(" <> show (pos ^. x) <> "px, " <> show (pos ^. y) <> "px)"
+                     <> if scale > 1 then "; font-size: " <> show (fontSize * scale) <> "px }" else " }"
+
+expressionPosition :: Matrix Double -> Position -> Position
+expressionPosition camera n = Position (Vector2 x' y')
+    where posX  = n ^. x
+          posY  = n ^. y - 36
+          camX  = (Matrix.toList camera)!!12
+          camY  = (Matrix.toList camera)!!13
+          scale = (Matrix.toList camera)!!0
+          x'    = fromInteger (round $ camX + (scale * posX) :: Integer)
+          y'    = fromInteger (round $ camY + (scale * posY) :: Integer)

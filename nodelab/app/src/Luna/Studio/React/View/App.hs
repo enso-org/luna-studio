@@ -22,7 +22,6 @@ import           Luna.Studio.React.View.Breadcrumbs      (breadcrumbs_)
 import           Luna.Studio.React.View.CodeEditor       (codeEditor_)
 import           Luna.Studio.React.View.CodeEditorToggle (codeEditorToggle_)
 import           Luna.Studio.React.View.NodeEditor       (nodeEditor_)
-import           Luna.Studio.React.View.Searcher         (searcher_)
 
 
 name :: JSString
@@ -63,7 +62,6 @@ app ref = React.defineControllerView name ref $ \store () -> do
                 nodeEditor_  ref $ s ^. App.nodeEditor
                 breadcrumbs_ ref $ s ^. App.breadcrumbs
                 codeEditorToggle_ ref
-                mapM_ (searcher_ ref) $ s ^. App.searcher
             codeEditor_ $ s ^. App.codeEditor
 
 focus :: IO ()
