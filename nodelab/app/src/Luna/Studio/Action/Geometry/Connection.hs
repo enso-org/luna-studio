@@ -13,7 +13,7 @@ import qualified Empire.API.Data.PortRef               as PortRef
 import           Luna.Studio.Action.Camera.Screen      (getScreenLeftCenter, getScreenRightCenter, getScreenRightCenter,
                                                         translateToWorkspace)
 import           Luna.Studio.Action.Command            (Command)
-import           Luna.Studio.Action.Geometry.Constants (grid, lineHeight, nodeExpandedWidth, portRadius)
+import           Luna.Studio.Action.Geometry.Constants (gridSize, lineHeight, nodeExpandedWidth, portRadius)
 import           Luna.Studio.Action.Geometry.Node      (nodeToNodeAngle)
 import           Luna.Studio.Action.Geometry.Port      (countSameTypePorts, getPortNumber, isPortSelf, isPortSingle, portAngleStart,
                                                         portAngleStop, portGap)
@@ -62,12 +62,12 @@ connectionDst src dst isSrcExpanded isDstExpanded num numOfSameTypePorts isSelf 
 --TODO: Find out real position of port
 getInputEdgePortPosition :: Int -> Command State Position
 getInputEdgePortPosition portNumber =
-    move (Vector2 (2 * grid) (portNumber' * grid)) <$> (translateToWorkspace =<< getScreenLeftCenter) where
+    move (Vector2 (2 * gridSize) (portNumber' * gridSize)) <$> (translateToWorkspace =<< getScreenLeftCenter) where
         portNumber' = fromIntegral portNumber
 
 getOutputEdgePortPosition :: Int -> Bool -> Command State Position
 getOutputEdgePortPosition portNumber isSelf =
-    move (Vector2 (-2 * grid) (portNumber' * grid)) <$> (translateToWorkspace =<< getScreenRightCenter) where
+    move (Vector2 (-2 * gridSize) (portNumber' * gridSize)) <$> (translateToWorkspace =<< getScreenRightCenter) where
         portNumber' = fromIntegral $ if isSelf then 0 else  portNumber + 1
 
 getConnectionPosition :: Node -> Port -> Node -> Port -> Command State (Position, Position)
