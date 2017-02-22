@@ -3,6 +3,7 @@ module Luna.Studio.Handler.Backend.Control
     ) where
 
 import           JS.Atom (pushNotification)
+import           Luna.Studio.Error.Error
 
 import           Luna.Studio.Prelude
 
@@ -16,7 +17,7 @@ import           Luna.Studio.State.Global   (State)
 
 handle :: Event -> Maybe (Command State ())
 handle (Batch (Batch.EmpireStarted _)) = Just $
-    liftIO $ pushNotification . convert $ "Server crashed."
+    liftIO $ pushNotification $ Notification Error "Server crashed."
     -- error "Server crashed." -- could have done that more politely, but… let it crash
 
 handle _ = Nothing

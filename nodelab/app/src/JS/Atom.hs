@@ -6,10 +6,10 @@ module JS.Atom
     , pushNotification
     -- , subscribeEventListenerInternal
     ) where
-
-
+import GHCJS.Types (JSVal)
 import           GHCJS.Foreign.Callback
-import           GHCJS.Marshal.Pure         (pFromJSVal)
+import           GHCJS.Marshal.Pure         (pFromJSVal, pToJSVal)
+import           Luna.Studio.Error.Error
 import           Luna.Studio.Event.Shortcut (ShortcutEvent)
 import qualified Luna.Studio.Event.Shortcut as Shortcut
 import           Luna.Studio.Event.Internal (InternalEvent)
@@ -41,8 +41,5 @@ onEvent callback = do
     onEvent' wrappedCallback
     return $ unOnEvent' wrappedCallback >> releaseCallback wrappedCallback
 
--- subscribeEventListenerInternal :: (InternalEvent -> IO ()) -> IO (IO ())
--- subscribeEventListenerInternal callback = do
---     wrappedCallback <- syncCallback1 ContinueAsync $ callback . fromJSVal
---     subscribeEventListenerInternal' wrappedCallback
---     return $ unsubscribeEventListenerInternal' wrappedCallback >> releaseCallback wrappedCallback
+pushNotification :: Notification -> IO ()
+pushNotification = pushNotification' . pToJSVal
