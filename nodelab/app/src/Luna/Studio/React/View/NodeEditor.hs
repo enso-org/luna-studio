@@ -17,8 +17,8 @@ import qualified Luna.Studio.React.Model.NodeEditor    as NodeEditor
 import           Luna.Studio.React.Store               (Ref, dispatch)
 import           Luna.Studio.React.View.Connection     (connection_, currentConnection_)
 import           Luna.Studio.React.View.ConnectionPen  (connectionPen_)
+import           Luna.Studio.React.View.Edge           (edgeSidebar_)
 import           Luna.Studio.React.View.Monad          (monad_)
-import           Luna.Studio.React.View.Edge          (edgeSidebar_)
 import           Luna.Studio.React.View.Node           (nodeDynamicStyles_, node_)
 import           Luna.Studio.React.View.SelectionBox   (selectionBox_)
 import           Luna.Studio.React.View.Visualization  (pinnedVisualization_)
@@ -40,12 +40,13 @@ nodeEditor = React.defineView name $ \(ref, ne) -> do
         lookupNode = _2 %~ mapMaybe (flip HashMap.lookup $ ne ^. NodeEditor.nodes)
         monads = map lookupNode $ ne ^. NodeEditor.monads
     div_
-        [ "className" $= "luna-graph"
-        , "id"        $= sceneId
-        , "key"       $= "graph"
-        , onMouseDown $ \_ e   -> dispatch ref $ UI.NodeEditorEvent $ NE.MouseDown e
-        , onWheel     $ \e m w -> preventDefault e : dispatch ref (UI.NodeEditorEvent $ NE.Wheel m w)
-        , onScroll    $ \e     -> [preventDefault e]
+        [ "className"   $= "luna-graph"
+        , "id"          $= sceneId
+        , "key"         $= "graph"
+        , onContextMenu $ \_ _   -> dispatch ref $ UI.NodeEditorEvent NE.ContextMenu
+        , onMouseDown   $ \_ e   -> dispatch ref $ UI.NodeEditorEvent $ NE.MouseDown e
+        , onWheel       $ \e m w -> preventDefault e : dispatch ref (UI.NodeEditorEvent $ NE.Wheel m w)
+        , onScroll      $ \e     -> [preventDefault e]
         ] $ do
         style_
             [ "key" $= "style" ] $ do
