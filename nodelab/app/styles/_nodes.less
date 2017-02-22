@@ -229,13 +229,15 @@
 .luna-port--dragged,
 .luna-edge-sidebar .luna-port--dragged {
     fill:     white;
-    width:    1px;
-    height:   1px;
+    background-color: white;
+    border-radius: 3px;
+    width:    6px;
+    height:   6px;
     z-index:  1000000;
     overflow: inherit;
-    top: 0;
-    left: 0;
-    draggable: true;
+    margin-left: -3px;
+    margin-top:  -6px;
+    pointer-events: none;
 }
 
 /////////////////////////////
