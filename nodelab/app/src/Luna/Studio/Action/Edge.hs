@@ -2,9 +2,8 @@
 {-# LANGUAGE TupleSections #-}
 module Luna.Studio.Action.Edge
     ( startPortDrag
-    , restoreConnect
-    , restorePortDrag
-    , handleMove
+    , handleAppMove
+    , handleEdgeMove
     , handleMouseUp
     , stopPortDrag
     , removePort
@@ -29,7 +28,7 @@ import           Luna.Studio.Action.Geometry        (lineHeight)
 import           Luna.Studio.Action.Graph.Lookup    (getPort)
 import           Luna.Studio.Event.Mouse            (mousePosition)
 import           Luna.Studio.Prelude
-import           Luna.Studio.React.Model.Node       (isOutputEdge, isInputEdge, Node)
+import           Luna.Studio.React.Model.Node       (Node, isInputEdge, isOutputEdge)
 import qualified Luna.Studio.React.Model.Node       as Node
 import qualified Luna.Studio.React.Model.NodeEditor as NodeEditor
 import           Luna.Studio.React.Model.Port       (DraggedPort (DraggedPort))
@@ -76,6 +75,16 @@ handleMouseUp evt portDrag = do
       && mousePos == portDrag ^. Action.portDragStartPos ) then
         update $ portDrag & Action.portDragMode .~ Click
     else movePort (portDrag ^. Action.portDragPortRef) >> end portDrag
+
+handleEdgeMove :: MouseEvent -> NodeId -> Command State ()
+handleEdgeMove evt nodeId = do
+    continue $ restorePortDrag nodeId
+    continue $ handleMove evt
+
+handleAppMove :: MouseEvent -> Command State ()
+handleAppMove evt = do
+    continue $ restoreConnect
+    continue $ Connect.handleMove evt
 
 handleMove :: MouseEvent -> PortDrag -> Command State ()
 handleMove evt portDrag = do
@@ -125,16 +134,13 @@ stopPortDrag portDrag = do
         NodeEditor.nodes . at nodeId . _Just . Node.ports . at portId . _Just . Port.highlight .= False
     removeActionFromState portDragAction
 
-
-restoreConnect :: MouseEvent -> PortDrag -> Command State ()
-restoreConnect evt portDrag = do
+restoreConnect :: PortDrag -> Command State ()
+restoreConnect portDrag =
     Connect.startConnecting (portDrag ^. Action.portDragStartPos) (portDrag ^. Action.portDragPortRef) Nothing (portDrag ^. Action.portDragMode)
-    continue $ Connect.handleMove evt
 
-restorePortDrag :: MouseEvent -> NodeId -> Connect -> Command State ()
-restorePortDrag evt nodeId connect = when (connect ^. Action.connectSourcePort . PortRef.nodeId == nodeId) $ do
+restorePortDrag :: NodeId -> Connect -> Command State ()
+restorePortDrag nodeId connect = when (connect ^. Action.connectSourcePort . PortRef.nodeId == nodeId) $ do
     begin $ PortDrag (connect ^. Action.connectStartPos) (connect ^. Action.connectSourcePort) (connect ^. Action.connectMode)
-    continue $ handleMove evt
 
 removePort :: PortDrag -> Command State ()
 removePort portDrag = Batch.removePort (portDrag ^. Action.portDragPortRef) >> end portDrag

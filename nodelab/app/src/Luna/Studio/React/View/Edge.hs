@@ -5,7 +5,7 @@ module Luna.Studio.React.View.Edge
     , edgeDraggedPort_
     ) where
 
-import qualified Data.Aeson                      as Aeson
+import qualified Data.Aeson                   as Aeson
 import qualified Data.Map.Lazy                as Map
 import           Data.Position                (x, y)
 import qualified Empire.API.Data.PortRef      as PortRef
@@ -41,8 +41,7 @@ edgeSidebar_ ref mayDraggedPort node = when (isEdge node) $ do
         [ "className" $= classes
         , "key"       $= (fromString $ name node)
         , onMouseDown $ \e _ -> [stopPropagation e]
-        , onMouseEnter $ \_ m -> dispatch ref $ UI.EdgeEvent $ Edge.MouseEnter m nodeId
-        , onMouseLeave $ \_ m -> dispatch ref $ UI.EdgeEvent $ Edge.MouseLeave m
+        , onMouseMove $ \e m -> stopPropagation e : (dispatch ref $ UI.EdgeEvent $ Edge.MouseMove m nodeId)
         ] $ do
         svg_ [] $ forM_ ports $ edgePort_ ref (if isPortDragged then mayDraggedPort else Nothing) node
         when (isInputEdge node) $ if isPortDragged then do
@@ -168,8 +167,7 @@ edgeDraggedPort_ _ref draggedPort = do
 --         [ "className" $= classes
 --         , "key"       $= name node
 --         , onMouseDown $ \e _ -> [stopPropagation e]
---         , onMouseEnter $ \_ m -> dispatch ref $ UI.EdgeEvent $ Edge.MouseEnter m nodeId
---         , onMouseLeave $ \_ m -> dispatch ref $ UI.EdgeEvent $ Edge.MouseLeave m
+--         , onMouseMove $ \e m -> stopPropagation e : (dispatch ref $ UI.EdgeEvent $ Edge.MouseMove m nodeId)
 --         ] $ do
 --         svg_ [] $ forM_ ports $ edgePort_ ref $ if isPortDragged then mayDraggedPort else Nothing
 --         when (isInputEdge node) $ if isPortDragged then do
@@ -195,15 +193,14 @@ edgeDraggedPort_ _ref draggedPort = do
 -- getPortYPos mayDraggedPort p = do
 --     let num = getPortNumber p
 --         originalYPos = lineHeight * fromIntegral (num + if isPortInput p then 1 else 0)
---     originalYPos
---     -- case mayDraggedPort of
---     --     Nothing          -> originalYPos
---     --     Just draggedPort -> do
---     --         let draggedPortYPos = draggedPort ^. Port.positionInSidebar . y
---     --             draggedPortNum  = getPortNumber $ draggedPort ^. Port.draggedPort
---     --             shift1          = if num < draggedPortNum then 0 else (-lineHeight)
---     --             shift2          = if originalYPos + shift1 < draggedPortYPos - lineHeight / 2 then 0 else lineHeight
---     --         originalYPos + shift1 + shift2
+--     case mayDraggedPort of
+--         Nothing          -> originalYPos
+--         Just draggedPort -> do
+--             let draggedPortYPos = draggedPort ^. Port.positionInSidebar . y
+--                 draggedPortNum  = getPortNumber $ draggedPort ^. Port.draggedPort
+--                 shift1          = if num < draggedPortNum then 0 else (-lineHeight)
+--                 shift2          = if originalYPos + shift1 < draggedPortYPos - lineHeight / 2 then 0 else lineHeight
+--             originalYPos + shift1 + shift2
 --
 -- edgePort :: ReactView (Ref App, Maybe DraggedPort, Port)
 -- edgePort = React.defineView portName $ \(ref, mayDraggedPort, p) -> do
@@ -237,7 +234,7 @@ edgeDraggedPort_ _ref draggedPort = do
 -- edgePort_ ref mayDraggedPort p = when (p ^. Port.visible) $
 --     React.viewWithSKey edgePort (jsShow $ p ^. Port.portId) (ref, mayDraggedPort, p) mempty
 --
---TODO[JK]: Style this correctly
+-- -- TODO[JK]: Style this correctly
 -- edgeDraggedPort :: ReactView DraggedPort
 -- edgeDraggedPort = React.defineView portName $ \draggedPort -> do
 --     let pos   = draggedPort ^. Port.positionInSidebar
@@ -247,14 +244,7 @@ edgeDraggedPort_ _ref draggedPort = do
 --         [ "className" $= "luna-port luna-port--dragged luna-hover luna-port__shape"
 --         , "style"     @= Aeson.object [ "transform" Aeson..= ( "translate(" <> show (pos ^. x) <> "px, " <> show (pos ^. y) <> "px)" ) ]
 --         ] $ mempty
---         -- circle_
---         --     [ "className" $= "luna-port__shape"
---         --     , "key"       $= "draggedPort"
---         --     , "fill"      $= color
---         --     , "r"         $= jsShow2 3
---         --     , "cx"        $= jsShow2 (pos ^. x)
---         --     , "cy"        $= jsShow2 (pos ^. y)
---         --     ] mempty
+--
 --
 -- edgeDraggedPort_ :: DraggedPort -> ReactElementM ViewEventHandler ()
 -- edgeDraggedPort_ draggedPort = React.viewWithSKey edgeDraggedPort "draggedPort" draggedPort mempty
