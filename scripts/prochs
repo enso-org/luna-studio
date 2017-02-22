@@ -1,0 +1,132 @@
+#!/usr/bin/env python2.7
+
+from utils.glob2 import glob
+import re
+from subprocess import call, Popen, PIPE
+from utils.colors import print_info, print_warning, print_error, format_info
+import sys
+import os
+from utils.path import write_if_changed
+import argparse
+import pyre
+
+def fatal():
+    print_error ("ERROR")
+    sys.exit(1)
+
+def try_call(cmd):
+    if call(cmd, shell=True): fatal()
+
+def get_progress(i, total):
+    i = str(i)
+    total = str(total)
+    i += ' ' * (len(total) - len(i))
+    return format_info("[%s / %s]" % (i, total))
+
+def startswithAny(s, prefixes):
+    for prefix in prefixes:
+        if s.startswith(prefix):
+            return True
+    return False
+
+def getTrackedFiles():
+    (paths, err) = Popen('git ls-files', stdout=PIPE, stderr=PIPE, shell=True).communicate()
+    paths = paths.split('\n')
+    return paths
+
+def getChangedTrackedFiles():
+    (paths, err) = Popen('git status --porcelain', stdout=PIPE, stderr=PIPE, shell=True).communicate()
+    paths = paths.split('\n')
+    paths = [file[3:] for file in paths if (len(file) > 0 and file[0] != 'D')]
+    paths = [path.split(' -> ')[-1] for path in paths]
+    return paths
+
+def style(args):
+    path_prefixes = ['libs', 'tools', 'nodelab']
+
+    (out, err) = Popen('stylish-haskell --version', stdout=PIPE, stderr=PIPE, shell=True).communicate()
+    if not out:
+        print_error ("It seems 'stylish-haskell' is not installed")
+        print_error ("Please run 'cabal install stylish-haskell' and try again")
+        fatal()
+
+    # search for files
+    print_info('Search paths: %s' % path_prefixes)
+    if args.STYLE_ALL:
+        print_info('Styling all git tracked haskell files')
+        paths = getTrackedFiles()
+    else:
+        print_info('Styling only changed files in git repository. To style all files use "all" option.')
+        paths = getChangedTrackedFiles()
+
+    paths = [file for file in paths if file[-3:] == '.hs']
+
+    # filter paths with prefixes
+    paths = [path for path in paths if startswithAny(path, path_prefixes)]
+
+    # style files
+    total = len(paths)
+    print_info ("Styling %s files" % total)
+    for i in range(total):
+        path = paths[i]
+        print "%s %s" % (get_progress(i+1, total), path)
+        (out, err) = Popen('stylish-haskell %s' % path, stdout=PIPE, stderr=PIPE, shell=True).communicate()
+        if err:
+            print_error(err)
+        else:
+            write_if_changed(path, out)
+
+
+def replaceModName(s, newname):
+    name = r'''[\w'.]+'''
+    pat  = re.compile(r'(?P<head>module\s+)(?P<name>{name})(?P<exportlist>\s*(\((.|\n)+\)\s*)?)(?P<tail>where)'.format(**locals()), re.MULTILINE)
+    def process(match):
+        return match.group('head') + newname + match.group('exportlist') + match.group('tail')
+    return pat.sub(process, s)
+
+def modrename(args):
+    oldPath = args.OLDPATH
+    newPath = args.NEWPATH
+    paths = glob("./**/*.hs")
+    total = len(paths)
+    print_info ("Checking %s file(s)" % total)
+    for path in paths:
+        with open(path, 'r') as file:
+            txt = file.read()
+        newtxt = pyre.run(oldPath, newPath, txt)
+        if txt != newtxt:
+            if args.pretend:
+                print_info ("Obsolete file %s" % path)
+            else:
+                print_info ("Updating file %s" % path)
+                with open(path, 'w+') as file:
+                    file.write(newtxt)
+
+def removeExt(name):
+    return os.path.splitext(name)[0]
+
+def dropUnless(lst, f):
+    out = []
+    ok = False
+    for el in lst:
+        if not ok and f(el): ok = True
+        if ok: out.append(el)
+    return out
+
+# def
+
+def main():
+    parser = argparse.ArgumentParser(description='Development Environment Initializer')
+    subparsers = parser.add_subparsers()
+    parser_style     = subparsers.add_parser('style')
+    parser_style.add_argument('-a', '--all', dest='STYLE_ALL', action='store_true' , help = 'Style all files, not only new git tracked ones')
+    parser_style.set_defaults(func=style)
+    parser_modrename = subparsers.add_parser('modrename')
+    parser_modrename.add_argument('OLDPATH')
+    parser_modrename.add_argument('NEWPATH')
+    parser_modrename.add_argument('-p', '--pretend', action='store_true')
+    parser_modrename.set_defaults(func=modrename)
+    args = parser.parse_args()
+    args.func(args)
+
+main()

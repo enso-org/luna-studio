@@ -1,0 +1,74 @@
+#!/usr/bin/env python3
+
+import os
+import sys
+import subprocess
+
+lunaOrgRepos = [
+  'algebraic',
+  'container',
+  'convert',
+  'data-base',
+  'data-construction',
+  'data-default',
+  'data-layer',
+  'data-member',
+  'data-pool',
+  'data-repr',
+  'data-result',
+  'data-rtuple',
+  'data-shell',
+  'dependent-state',
+  'functor-utils',
+  'haskell-logger',
+  'hsprocessing',
+  'impossible',
+  'jsaddle',
+  'lens-utils',
+  'poly-control',
+  'prologue',
+  'type-cache',
+  'typelevel'
+]
+
+bitbucketRepos = [
+  'visualization-api',
+  'autolayout'
+]
+
+lunaOrgRepoBase = 'https://github.com/luna/{0}.git'
+bitbucketRepoBase = 'https://bitbucket.org/NewByteOrder/{0}.git'
+
+libDir = 'libs'
+
+def main():
+    os.makedirs(libDir, exist_ok=True)
+    os.chdir(libDir)
+    cloneOrUpdateRepos(lunaOrgRepos,   lunaOrgRepoBase)
+    cloneOrUpdateRepos(bitbucketRepos, bitbucketRepoBase)
+    os.chdir('..')
+
+def cloneOrUpdateRepos(reposList, repoBase):
+  for repo in reposList:
+      print('Processing ' + libDir + '/' + repo)
+      if os.path.isdir(repo):
+          updateRepo(repo)
+      else:
+          cloneRepo(repo, repoBase)
+
+def cloneRepo(repo, base):
+    args = ['git', 'clone', base.format(repo)]
+    retCode = subprocess.call(args)
+    if retCode != 0:
+        sys.exit(retCode)
+
+def updateRepo(repo):
+    os.chdir(repo)
+    print('Updating {0}'.format(repo))
+    args = ['git', 'pull']
+    retCode = subprocess.call(args)
+    if retCode != 0:
+        sys.exit(retCode)
+    os.chdir('..')
+
+main ()
