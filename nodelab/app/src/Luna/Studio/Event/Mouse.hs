@@ -1,7 +1,7 @@
 module Luna.Studio.Event.Mouse where
 
-
-import           Data.Position              (Position (Position), Vector2 (Vector2))
+import           Data.Position              (Position, Vector2 (Vector2))
+import           Data.ScreenPosition        (ScreenPosition (ScreenPosition))
 import           Luna.Studio.Action.Camera  (getWorkspacePos, translateToWorkspace)
 import           Luna.Studio.Action.Command (Command)
 import           Luna.Studio.Prelude
@@ -15,10 +15,10 @@ import           React.Flux                 (MouseEvent (MouseEvent), mousePageX
 workspacePosition :: MouseEvent -> Command State Position
 workspacePosition = translateToWorkspace <=< mousePosition
 
-mousePosition :: MouseEvent -> Command State Position
+mousePosition :: MouseEvent -> Command State ScreenPosition
 mousePosition e = do
     workspacePos <- getWorkspacePos
-    let pagePos = Position (Vector2 (fromIntegral $ mousePageX e) (fromIntegral $ mousePageY e))
+    let pagePos = ScreenPosition (Vector2 (fromIntegral $ mousePageX e) (fromIntegral $ mousePageY e))
     return $ pagePos - workspacePos
 
 leftButton :: Int

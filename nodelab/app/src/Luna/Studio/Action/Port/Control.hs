@@ -8,7 +8,7 @@ module Luna.Studio.Action.Port.Control
     ) where
 
 import qualified Data.Map                     as Map
-import           Data.Position                (Position, x)
+import           Data.ScreenPosition          (ScreenPosition, x)
 
 import qualified Empire.API.Data.DefaultValue as DefaultValue
 import qualified Empire.API.Data.Port         as PortAPI
@@ -41,26 +41,26 @@ instance Action (Command State) SliderDrag where
 setPortDefault :: AnyPortRef -> DefaultValue.PortDefault -> Command State ()
 setPortDefault portRef defaultValue =
     Global.modifyNode (portRef ^. PortRef.nodeId) $
-        Node.ports . ix portRef . Port.state .= PortAPI.WithDefault defaultValue
+        Node.ports . ix (portRef ^. PortRef.portId) . Port.state .= PortAPI.WithDefault defaultValue
 
 getPortDefault :: AnyPortRef -> Command State (Maybe DefaultValue.PortDefault)
 getPortDefault portRef = do
     mayNode <- Global.getNode (portRef ^. PortRef.nodeId)
-    let mayPort = mayNode >>= (Map.lookup portRef . view Node.ports)
+    let mayPort = mayNode >>= (Map.lookup (portRef ^. PortRef.portId) . view Node.ports)
     return $ mayPort ^? _Just . Port.state . PortAPI._WithDefault
 
-startMoveSlider :: AnyPortRef -> Position -> InitValue -> Command State ()
+startMoveSlider :: AnyPortRef -> ScreenPosition -> InitValue -> Command State ()
 startMoveSlider portRef initPos startVal = do
     begin $ SliderDrag portRef initPos startVal
     UI.setMovingCursor
 
-moveSlider :: Position -> SliderDrag -> Command State ()
+moveSlider :: ScreenPosition -> SliderDrag -> Command State ()
 moveSlider currentPostion state = do
     let defaultValue = newDefaultValue currentPostion state
         portRef = state ^. Action.sliderDragPortRef
     setPortDefault portRef defaultValue
 
-stopMoveSlider :: Position -> SliderDrag -> Command State ()
+stopMoveSlider :: ScreenPosition -> SliderDrag -> Command State ()
 stopMoveSlider currentPostion state = do
     removeActionFromState sliderDragAction
     UI.setDefaultCursor
@@ -68,7 +68,7 @@ stopMoveSlider currentPostion state = do
         portRef = state ^. Action.sliderDragPortRef
     Batch.setDefaultValue portRef defaultValue
 
-newDefaultValue :: Position -> SliderDrag -> DefaultValue.PortDefault
+newDefaultValue :: ScreenPosition -> SliderDrag -> DefaultValue.PortDefault
 newDefaultValue currentPostion slider =
     let delta = currentPostion ^. x - slider ^. Action.sliderDragStartPos . x
     in DefaultValue.Constant $ case slider ^. Action.sliderDragInitValue of

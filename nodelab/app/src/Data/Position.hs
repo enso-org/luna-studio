@@ -14,7 +14,7 @@ import           Luna.Studio.Prelude
 
 -- === Definition === --
 
-newtype Position = Position (Vector2 Double) deriving (Eq, Show, Generic, Default, NFData, Num)
+newtype Position = Position { fromPosition :: Vector2 Double } deriving (Eq, Show, Generic, Default, NFData, Num)
 makeWrapped ''Position
 
 
@@ -43,8 +43,8 @@ averagePosition a b =
         ay = (a ^. y + b ^. y) / 2
     in Position (Vector2 ax ay)
 
-move :: Position -> Vector2 Double -> Position
-move pos vec = pos & vector +~ vec
+move :: Vector2 Double -> Position -> Position
+move vec pos = pos & vector +~ vec
 
 rescale :: Position -> Double -> Position
 rescale pos factor = pos & vector %~ flip scalarProduct factor
@@ -99,11 +99,3 @@ distanceSquared p0 p1 = lengthSquared (p0 ^. vector - p1 ^. vector)
 -- Coord Screen
 -- Coord Graph
 -- Coord Node
-
-
------------------------------
--- === ScreenPosition === ---
------------------------------
-
--- TODO[react]: Introduce sth else instead of simplest alias
-type ScreenPosition = Position

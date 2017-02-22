@@ -8,13 +8,14 @@ import qualified Data.Text                          as Text
 import           Text.Read                          (readMaybe)
 
 import           Data.Position                      (Position)
+import           Data.ScreenPosition                (ScreenPosition, x)
 import           Empire.API.Data.Node               (NodeId)
 import qualified Empire.API.Data.Node               as NodeAPI
 import qualified Empire.API.Data.Port               as Port
 import qualified JS.GoogleAnalytics                 as GA
 import qualified JS.Searcher                        as Searcher
 import qualified Luna.Studio.Action.Batch           as Batch
-import           Luna.Studio.Action.Camera          (translateToWorkspace)
+import           Luna.Studio.Action.Camera          (translateToScreen, translateToWorkspace)
 import           Luna.Studio.Action.Command         (Command)
 import           Luna.Studio.Action.Graph.Selection (selectedNodes)
 import           Luna.Studio.Action.Node.Register   (registerNode)
@@ -50,11 +51,17 @@ data OtherCommands = AddNode
 open :: Command State ()
 open = openWith def =<< use Global.mousePos
 
-openWith :: Maybe NodeId -> Position -> Command State ()
+positionDelta :: Double
+positionDelta = 100
+
+openWith :: Maybe NodeId -> ScreenPosition -> Command State ()
 openWith nodeId pos = do
+    pos' <- (fmap Node._position <$> selectedNodes) >>= \case
+          [nodePosition] -> if isNothing nodeId then (x %~ (+positionDelta)) <$> translateToScreen nodePosition else return pos
+          _              -> return pos
     begin Searcher
     GA.sendEvent GA.NodeSearcher
-    Global.modifyApp $ App.searcher ?= Searcher.Searcher pos 0 (Searcher.Node def) def nodeId
+    Global.modifyApp $ App.searcher ?= Searcher.Searcher pos' 0 (Searcher.Node def) def nodeId
     Global.renderIfNeeded
     liftIO Searcher.focus
 
@@ -108,7 +115,7 @@ accept scheduleEvent action = do
 
 openEdit :: Text -> NodeId -> Position -> Command State ()
 openEdit expr nodeId pos = do
-    openWith (Just nodeId) pos
+    openWith (Just nodeId) =<< translateToScreen pos
     continue $ querySearch expr
 
 globalFunctions :: Items a -> Items a

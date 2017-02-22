@@ -5,6 +5,7 @@ module Luna.Studio.Action.Geometry.ConnectionPen
 
 import           Control.Monad                         (filterM)
 import           Data.Position                         (Position (Position), distanceSquared, x, y)
+import           Data.ScreenPosition                   (ScreenPosition (ScreenPosition))
 import           Data.Vector                           (Vector2 (Vector2))
 import           Empire.API.Data.Connection            (ConnectionId)
 import           Empire.API.Data.Node                  (NodeId)
@@ -95,8 +96,8 @@ isPointInNode p node =
         right       <- liftIO $ expandedNodeRight  $ fromString $ "node-" <> show nodeId
         top         <- liftIO $ expandedNodeTop    $ fromString $ "node-" <> show nodeId
         bottom      <- liftIO $ expandedNodeBottom $ fromString $ "node-" <> show nodeId
-        leftTop     <- translateToWorkspace $ Position (Vector2 left  top)
-        rightBottom <- translateToWorkspace $ Position (Vector2 right bottom)
+        leftTop     <- translateToWorkspace $ ScreenPosition (Vector2 left  top)
+        rightBottom <- translateToWorkspace $ ScreenPosition (Vector2 right bottom)
         return $ isPointInRect p (leftTop, rightBottom)
     else return $ isPointInCircle p (node ^. Model.position, nodeRadius)
 

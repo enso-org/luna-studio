@@ -25,7 +25,7 @@ dependencies:
 compile:
     override:
         - stack build --stack-yaml build/backend/stack.yaml --copy-bins --fast --no-run-tests --no-run-benchmarks -j2
-        - cd nodelab && brunch build
+        - cd nodelab && brunch build && tar -cvf frontend.zip www && mv frontend.zip $CIRCLE_ARTIFACTS
 test:
     override:
         - stack build --stack-yaml build/backend/stack.yaml --fast --test

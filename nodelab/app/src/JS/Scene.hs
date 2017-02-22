@@ -3,7 +3,7 @@
 module JS.Scene where
 
 import           Control.Exception      (handle)
-import           Data.Position          (Position (Position), Vector2 (Vector2))
+import           Data.ScreenPosition    (ScreenPosition (ScreenPosition), Vector2 (Vector2))
 import           Data.Size              (Size (Size))
 import           GHCJS.Foreign.Callback
 import           GHCJS.Types            (JSException (JSException))
@@ -14,7 +14,7 @@ import           Luna.Studio.Prelude
 
 
 data Scene = Scene
-        { _position :: Position
+        { _position :: ScreenPosition
         , _size     :: Size
         } deriving (Default, Eq, Generic, Show)
 
@@ -46,5 +46,5 @@ sceneTop    = liftIO $ elementTop    sceneId
 
 get :: MonadIO m => m (Maybe Scene)
 get = liftIO . handle (\JSException {} -> return Nothing) $
-    Just .: Scene <$> (Position .: Vector2 <$> sceneLeft <*> sceneTop)
+    Just .: Scene <$> (ScreenPosition .: Vector2 <$> sceneLeft <*> sceneTop)
                   <*> (Size .: Vector2 <$> sceneWidth <*> sceneHeight)

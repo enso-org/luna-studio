@@ -1,15 +1,21 @@
 {-# LANGUAGE MultiWayIf       #-}
 {-# LANGUAGE TupleSections    #-}
 {-# LANGUAGE TypeApplications #-}
+{-# LANGUAGE TupleSections    #-}
 
 module Empire.Commands.Graph
     ( addNode
     , addNodeCondTC
     , addPersistentNode
+    , addPort
     , addSubgraph
     , removeNodes
+    , movePort
+    , removePort
+    , renamePort
     , updateNodeExpression
     , updateNodeMeta
+    , updatePort
     , connect
     , connectPersistent
     , connectCondTC
@@ -32,7 +38,7 @@ module Empire.Commands.Graph
 import           Control.Monad                 (forM, forM_)
 import           Control.Monad.State           hiding (when)
 import           Data.Coerce                   (coerce)
-import           Data.List                     (sort)
+import           Data.List                     (sort, sortOn)
 import qualified Data.Map                      as Map
 import           Data.Text                     (Text)
 import qualified Data.Text                     as Text
@@ -40,6 +46,7 @@ import qualified Data.UUID                     as UUID
 import qualified Data.UUID.V4                  as UUID (nextRandom)
 import           Empire.Prelude
 
+import           Empire.Data.AST                 (NotInputEdgeException (..))
 import           Empire.Data.BreadcrumbHierarchy (addID, addWithLeafs, removeID, topLevelIDs)
 import           Empire.Data.Graph               (Graph)
 import qualified Empire.Data.Graph               as Graph
@@ -133,6 +140,17 @@ addPersistentNode n = case n ^. Node.nodeType of
                 _ -> return ()
             _ -> return ()
 
+addPort :: GraphLocation -> NodeId -> Empire Node
+addPort loc nid = withGraph loc $ runASTOp $ do
+    Just lambda <- use Graph.insideNode
+    ref   <- GraphUtils.getASTTarget lambda
+    edges <- GraphBuilder.getEdgePortMapping
+    when ((fst <$> edges) /= Just nid) $ throwM NotInputEdgeException
+    ASTModify.addLambdaArg ref
+    -- TODO[MM]: This should match for any node. Now it ignores node and replace it by InputEdge.
+    inputEdge <- GraphBuilder.buildConnections >>= \c -> GraphBuilder.buildInputEdge c nid
+    return inputEdge
+
 generateNodeId :: IO NodeId
 generateNodeId = UUID.nextRandom
 
@@ -184,6 +202,47 @@ removeNodeNoTC nodeId = do
     Graph.nodeMapping %= Map.delete nodeId
     Graph.breadcrumbHierarchy %= removeID nodeId
 
+removePort :: GraphLocation -> AnyPortRef -> Empire Node
+removePort loc portRef = withGraph loc $ runASTOp $ do
+    let nodeId = portRef ^. PortRef.nodeId
+    Just lambda <- use Graph.insideNode
+    ref <- GraphUtils.getASTTarget lambda
+    edges <- GraphBuilder.getEdgePortMapping
+    newRef <- case edges of
+        Just (input, _output) -> do
+            if nodeId == input then ASTModify.removeLambdaArg ref $ portRef ^. PortRef.portId
+                               else throwM NotInputEdgeException
+        _ -> return ref
+    when (ref /= newRef) $ GraphUtils.rewireNode lambda newRef
+    GraphBuilder.buildConnections >>= \c -> GraphBuilder.buildInputEdge c nodeId
+
+movePort :: GraphLocation -> AnyPortRef -> Int -> Empire Node
+movePort loc portRef newPosition = withGraph loc $ runASTOp $ do
+    let nodeId = portRef ^. PortRef.nodeId
+    Just lambda <- use Graph.insideNode
+    ref         <- GraphUtils.getASTTarget lambda
+    edges       <- GraphBuilder.getEdgePortMapping
+    newRef      <- case edges of
+        Just (input, _) -> do
+            if nodeId == input then ASTModify.moveLambdaArg ref (portRef ^. PortRef.portId) newPosition
+                               else throwM NotInputEdgeException
+        _ -> throwM NotInputEdgeException
+    when (ref /= newRef) $ GraphUtils.rewireNode lambda newRef
+    GraphBuilder.buildConnections >>= \c -> GraphBuilder.buildInputEdge c nodeId
+
+renamePort :: GraphLocation -> AnyPortRef -> String -> Empire Node
+renamePort loc portRef newName = withGraph loc $ runASTOp $ do
+    let nodeId = portRef ^. PortRef.nodeId
+    Just lambda <- use Graph.insideNode
+    ref         <- GraphUtils.getASTTarget lambda
+    edges       <- GraphBuilder.getEdgePortMapping
+    newRef      <- case edges of
+        Just (input, _) -> do
+            if nodeId == input then ASTModify.renameLambdaArg ref (portRef ^. PortRef.portId) newName
+                               else throwM NotInputEdgeException
+        _ -> throwM NotInputEdgeException
+    GraphBuilder.buildConnections >>= \c -> GraphBuilder.buildInputEdge c nodeId
+
 updateNodeExpression :: GraphLocation -> NodeId -> NodeId -> Text -> Empire (Maybe Node)
 updateNodeExpression loc nodeId newNodeId expr = do
     metaMay <- withGraph loc $ runASTOp $ do
@@ -208,6 +267,9 @@ updateNodeMeta loc nodeId newMeta = withGraph loc $ do
     where
         triggerTC :: NodeMeta -> NodeMeta -> Bool
         triggerTC oldMeta' newMeta' = oldMeta' ^. NodeMeta.displayResult /= newMeta' ^. NodeMeta.displayResult
+
+updatePort :: GraphLocation -> AnyPortRef -> Either Int String -> Empire AnyPortRef
+updatePort = $notImplemented
 
 connectCondTC :: Bool -> GraphLocation -> OutPortRef -> InPortRef -> Empire Connection
 connectCondTC doTC loc outPort inPort = withGraph loc $ do

@@ -50,7 +50,7 @@ parseExpr s = do
 tryParseLambda :: ASTOp m => String -> m (Maybe Text.Text, Maybe NodeRef)
 tryParseLambda s = case words s of
     ("def" : name : _) -> do
-        v <- IR.strVar "in0"
+        v <- IR.strVar "arg0"
         lam <- IR.generalize <$> IR.lam v v
         return (Just (Text.pack name), Just lam)
     ["->"] -> do

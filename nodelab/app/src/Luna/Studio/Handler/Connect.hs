@@ -3,8 +3,8 @@ module Luna.Studio.Handler.Connect
     ) where
 
 import           Luna.Studio.Action.Command         (Command)
-import           Luna.Studio.Action.Connect         (cancelSnapToPort, handleClick, handleConnectionMouseDown, handleMouseUp, handleMove,
-                                                     handlePortMouseDown, handlePortMouseUp, snapToPort, stopConnecting)
+import           Luna.Studio.Action.Connect         (cancelSnapToPort, handleConnectionMouseDown, handleMouseUp, handleMove,
+                                                     handlePortMouseUp, snapToPort, stopConnecting)
 import           Luna.Studio.Event.Event            (Event (UI))
 import           Luna.Studio.Event.UI               (UIEvent (AppEvent, ConnectionEvent, PortEvent))
 import           Luna.Studio.Prelude
@@ -16,9 +16,7 @@ import           Luna.Studio.State.Global           (State)
 
 
 handle :: Event -> Maybe (Command State ())
-handle (UI (PortEvent       (Port.MouseDown       evt portRef   ))) = Just $ handlePortMouseDown       evt portRef
 handle (UI (ConnectionEvent (Connection.MouseDown evt connId end))) = Just $ handleConnectionMouseDown evt connId end
-handle (UI (PortEvent       (Port.Click           evt portRef   ))) = Just $ handleClick               evt portRef
 handle (UI (AppEvent        (App.MouseMove        evt _         ))) = Just $ continue $ handleMove evt
 handle (UI (AppEvent        (App.MouseUp          evt           ))) = Just $ continue $ handleMouseUp evt
 handle (UI (AppEvent        (App.Click                          ))) = Just $ continue   stopConnecting

@@ -37,6 +37,9 @@ withUUID act = do
 addNode :: Text -> NodeMeta -> Maybe NodeId -> Command State ()
 addNode = withWorkspace .:. BatchCmd.addNode
 
+addPort :: NodeId -> Command State ()
+addPort = withWorkspace . BatchCmd.addPort
+
 addSubgraph :: [Node] -> [Connection] -> Command State ()
 addSubgraph = withWorkspace .: BatchCmd.addSubgraph
 
@@ -69,6 +72,12 @@ setCode = withWorkspace .:  BatchCmd.setCode
 
 removeNodes :: [NodeId] -> Command State ()
 removeNodes = withWorkspace . BatchCmd.removeNodes
+
+movePort :: AnyPortRef -> Int -> Command State ()
+movePort = withWorkspace .: BatchCmd.movePort
+
+removePort :: AnyPortRef -> Command State ()
+removePort = withWorkspace . BatchCmd.removePort
 
 autoconnect :: NodeId -> NodeId -> Command State ()
 autoconnect src dst = do

@@ -19,15 +19,18 @@ import           Empire.API.Data.PortRef                (AnyPortRef (..), InPort
 import           Empire.API.Data.Project                (ProjectId)
 
 import qualified Empire.API.Graph.AddNode               as AddNode
+import qualified Empire.API.Graph.AddPort               as AddPort
 import qualified Empire.API.Graph.AddSubgraph           as AddSubgraph
 import qualified Empire.API.Graph.Collaboration         as Collaboration
 import qualified Empire.API.Graph.Connect               as Connect
 import qualified Empire.API.Graph.Disconnect            as Disconnect
 import qualified Empire.API.Graph.DumpGraphViz          as DumpGraphViz
 import qualified Empire.API.Graph.GetProgram            as GetProgram
+import qualified Empire.API.Graph.MovePort              as MovePort
 import qualified Empire.API.Graph.NodeSearch            as NodeSearch
 import qualified Empire.API.Graph.Redo                  as Redo
 import qualified Empire.API.Graph.RemoveNodes           as RemoveNodes
+import qualified Empire.API.Graph.RemovePort            as RemovePort
 import qualified Empire.API.Graph.RenameNode            as RenameNode
 import qualified Empire.API.Graph.SetCode               as SetCode
 import qualified Empire.API.Graph.SetDefaultValue       as SetDefaultValue
@@ -52,6 +55,9 @@ addNode' maybeNodeId expression meta connectTo workspace uuid guiID = sendReques
 
 addNode :: Text -> NodeMeta -> Maybe NodeId -> Workspace -> UUID -> Maybe UUID -> IO ()
 addNode expression meta connectTo workspace uuid guiID = addNode' Nothing expression meta connectTo workspace uuid guiID
+
+addPort :: NodeId -> Workspace -> UUID -> Maybe UUID -> IO ()
+addPort nodeId workspace uuid guiID = sendRequest $ Message uuid guiID $ (withLibrary workspace AddPort.Request) nodeId
 
 addSubgraph :: [Node] -> [Connection] -> Workspace -> UUID -> Maybe UUID -> IO ()
 addSubgraph nodes connections workspace uuid guiID = addSubgraph' nodes connections workspace uuid guiID False
@@ -96,7 +102,6 @@ autoconnect src dst workspace uuid guiID = sendRequest $ Message uuid guiID $ wi
 connectNodes :: OutPortRef -> InPortRef -> Workspace -> UUID -> Maybe UUID -> IO ()
 connectNodes src dst workspace uuid guiID = sendRequest $ Message uuid guiID $ withLibrary workspace Connect.Request $ Connect.PortConnect src dst
 
-
 disconnectNodes :: InPortRef -> Workspace -> UUID -> Maybe UUID -> IO ()
 disconnectNodes dst workspace uuid guiID = sendRequest $ Message uuid guiID $ withLibrary workspace Disconnect.Request dst
 
@@ -105,6 +110,12 @@ setCode nid newCode w uuid guiID = sendRequest $ Message uuid guiID $ withLibrar
 
 removeNodes :: [NodeId] -> Workspace -> UUID -> Maybe UUID ->  IO ()
 removeNodes nodeIds workspace uuid guiID = sendRequest $ Message uuid guiID $ withLibrary workspace RemoveNodes.Request nodeIds
+
+movePort :: AnyPortRef -> Int -> Workspace -> UUID -> Maybe UUID -> IO ()
+movePort portRef newPos workspace uuid guiID = sendRequest $ Message uuid guiID $ (withLibrary workspace MovePort.Request) portRef newPos
+
+removePort :: AnyPortRef -> Workspace -> UUID -> Maybe UUID -> IO ()
+removePort portRef workspace uuid guiID = sendRequest $ Message uuid guiID $ (withLibrary workspace RemovePort.Request) portRef
 
 setDefaultValue :: AnyPortRef -> DefaultValue.PortDefault -> Workspace -> UUID -> Maybe UUID -> IO ()
 setDefaultValue portRef val workspace uuid guiID = sendRequest $ Message uuid guiID $ withLibrary workspace SetDefaultValue.Request portRef val

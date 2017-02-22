@@ -12,11 +12,10 @@ import qualified Data.Map.Lazy                     as Map
 import           Data.Time.Clock                   (UTCTime)
 
 import           Data.Position                     (Position (Position), Vector2 (Vector2))
+import           Empire.API.Data.Node              (NodeType)
 import qualified Empire.API.Data.Node              as NodeAPI
 import qualified Empire.API.Data.NodeMeta          as MetaAPI
-import           Empire.API.Data.Port              (OutPort (..), PortId (..))
-import qualified Empire.API.Data.Port              as PortAPI
-import           Empire.API.Data.PortRef           (AnyPortRef, portId')
+import           Empire.API.Data.Port              (PortId (..))
 import           Empire.API.Graph.Collaboration    (ClientId)
 import           Empire.API.Graph.NodeResultUpdate (NodeValue)
 import           Luna.Studio.Prelude               hiding (set)
@@ -27,8 +26,7 @@ import           Luna.Studio.State.Collaboration   (ColorId)
 
 
 data Node = Node { _nodeId                :: NodeAPI.NodeId
-                 -- TODO: We require to much as key to this map. PortId is enough.
-                 , _ports                 :: Map AnyPortRef Port
+                 , _ports                 :: Map PortId Port
                  , _position              :: Position
                  , _zPos                  :: Int
                  , _expression            :: Text
@@ -36,7 +34,7 @@ data Node = Node { _nodeId                :: NodeAPI.NodeId
                  , _name                  :: Text
                  , _nameEdit              :: Maybe Text
                  , _value                 :: Maybe NodeValue
-                 , _tpe                   :: Maybe Text
+                 , _nodeType              :: NodeType
                  , _isExpanded            :: Bool
                  , _isSelected            :: Bool
                  , _visualizationsEnabled :: Bool
@@ -54,7 +52,7 @@ makeLenses ''Collaboration
 isLiteral :: Getter Node Bool
 isLiteral = to isLiteral' where
     isLiteral' node = not $ any isIn' portIds where
-        portIds = map portId' $ Map.keys $ node ^. ports
+        portIds = Map.keys $ node ^. ports
         isIn' :: PortId -> Bool
         isIn' (OutPortId _) = False
         isIn' (InPortId  _) = True
@@ -65,26 +63,36 @@ instance ToJSON Collaboration
 instance Default Collaboration where
     def = Collaboration def def
 
-makeNode :: NodeAPI.NodeId -> Map AnyPortRef Port -> Position -> Text -> Maybe Text -> Text -> Maybe Text -> Bool -> Node
+makeNode :: NodeAPI.NodeId -> Map PortId Port -> Position -> Text -> Maybe Text -> Text -> NodeType -> Bool -> Node
 makeNode nid ports' pos expr code' name' tpe' vis = Node nid ports' pos def expr code' name' def def tpe' False False vis def Nothing
 
 makePorts :: NodeAPI.Node -> [Port]
 makePorts node = Port.fromPorts (node ^. NodeAPI.nodeId) (Map.elems $ node ^. NodeAPI.ports)
 
 fromNode :: NodeAPI.Node -> Node
-fromNode n = let position' = Position (uncurry Vector2 $ n ^. NodeAPI.nodeMeta ^. MetaAPI.position)
-                 nodeId'   = n ^. NodeAPI.nodeId
-                 name'     = n ^. NodeAPI.name
-                 vis       = n ^. NodeAPI.nodeMeta . MetaAPI.displayResult
-                 code'     = n ^. NodeAPI.code
-                 ports'    = Map.fromList $ map (view Port.portRef &&& id) $ makePorts n
-    in
-    case n ^. NodeAPI.nodeType of
-        NodeAPI.ExpressionNode expression' ->  makeNode nodeId' ports' position' expression' code' name' Nothing vis
-        NodeAPI.InputNode inputIx          ->  makeNode nodeId' ports' position' (convert $ "Input " <> show inputIx) code' name' (Just tpe') vis where
-            tpe' = convert $ fromMaybe "?" $ show <$> n ^? NodeAPI.ports . ix (OutPortId All) . PortAPI.valueType
-        NodeAPI.OutputNode outputIx        ->  makeNode nodeId' ports' position' (convert $ "Output " <> show outputIx) code' name' Nothing vis
-        NodeAPI.ModuleNode                 ->  makeNode nodeId' ports' position' "Module"    code' name' Nothing vis
-        NodeAPI.FunctionNode _tpeSig       -> makeNode nodeId' ports' position' "Function"  code' name' Nothing vis -- & value .~ (convert $ intercalate " -> " tpeSig) --TODO[react]
-        NodeAPI.InputEdge                  ->  makeNode nodeId' ports' position' "Input"     code' name' Nothing vis
-        NodeAPI.OutputEdge                 ->  makeNode nodeId' ports' position' "Output"    code' name' Nothing vis
+fromNode n = makeNode nodeId' ports' position' expression' code' name' nodeType' vis where
+    position' = Position (uncurry Vector2 $ n ^. NodeAPI.nodeMeta ^. MetaAPI.position)
+    nodeId'     = n ^. NodeAPI.nodeId
+    name'       = n ^. NodeAPI.name
+    vis         = n ^. NodeAPI.nodeMeta . MetaAPI.displayResult
+    code'       = n ^. NodeAPI.code
+    nodeType'   = n ^. NodeAPI.nodeType
+    ports'      = Map.fromList $ map (view Port.portId &&& id) $ makePorts n
+    expression' = case n ^. NodeAPI.nodeType of
+        NodeAPI.ExpressionNode expr     -> expr
+        NodeAPI.InputNode      inputIx  -> convert $ "Input " <> show inputIx
+        NodeAPI.OutputNode     outputIx -> convert $ "Output " <> show outputIx
+        NodeAPI.ModuleNode              -> "Module"
+        NodeAPI.FunctionNode _          -> "Function" -- & value .~ (convert $ intercalate " -> " tpeSig) --TODO[react]
+        NodeAPI.InputEdge               -> "Input"
+        NodeAPI.OutputEdge              -> "Output"
+
+
+isEdge :: Node -> Bool
+isEdge node = isInputEdge node || isOutputEdge node
+
+isInputEdge :: Node -> Bool
+isInputEdge node = node ^. nodeType == NodeAPI.InputEdge
+
+isOutputEdge :: Node -> Bool
+isOutputEdge node = node ^. nodeType == NodeAPI.OutputEdge

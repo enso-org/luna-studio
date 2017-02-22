@@ -3,6 +3,7 @@ module Luna.Studio.Data.Matrix where
 import           Data.Matrix         (Matrix)
 import qualified Data.Matrix         as Matrix
 import           Data.Position       (Position, Vector2, x, y)
+import           Data.ScreenPosition (ScreenPosition)
 import           Luna.Studio.Prelude
 
 
@@ -30,7 +31,7 @@ invertedScaleMatrix k = Matrix.fromList 4 4 [ 1/k, 0  , 0, 0
                                             , 0  , 0  , 1, 0
                                             , 0  , 0  , 0, 1 ]
 
-homothetyMatrix :: Position -> Double -> Matrix Double
+homothetyMatrix :: ScreenPosition -> Double -> Matrix Double
 homothetyMatrix pos k = Matrix.fromList 4 4 [ k , 0 , 0, 0
                                             , 0 , k , 0, 0
                                             , 0 , 0 , 1, 0
@@ -38,7 +39,7 @@ homothetyMatrix pos k = Matrix.fromList 4 4 [ k , 0 , 0, 0
     hX = (1 - k) * pos ^. x
     hY = (1 - k) * pos ^. y
 
-invertedHomothetyMatrix :: Position -> Double -> Matrix Double
+invertedHomothetyMatrix :: ScreenPosition -> Double -> Matrix Double
 invertedHomothetyMatrix pos k = Matrix.fromList 4 4 [ 1/k  , 0    , 0, 0
                                                     , 0    , 1/k  , 0, 0
                                                     , 0    , 0    , 1, 0

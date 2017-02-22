@@ -22,21 +22,21 @@ import qualified Luna.Studio.State.Global     as Global
 
 handleMouseEnter :: AnyPortRef -> Command State ()
 handleMouseEnter portRef = do
-    let nodeId  = portRef ^. PortRef.nodeId
+    let nodeId = portRef ^. PortRef.nodeId
+    let portId = portRef ^. PortRef.portId
     mayNode <- getNode nodeId
     withJust mayNode $ \node -> do
         mayConnectAction <- checkAction connectAction
         case (view Action.connectSourcePort <$> mayConnectAction) of
             Just src -> when (isJust $ toValidConnection src portRef) $ Global.modifyNode nodeId $
-                NodeModel.ports . ix portRef . PortModel.highlight .= True
+                NodeModel.ports . ix portId . PortModel.highlight .= True
             Nothing  -> do
                 actions <- Set.fromList <$> runningActions
                 let notBlocked = Set.null (Set.intersection actions actionsBlockingPortHighlight)
-                    highlight  = notBlocked && ( portRef ^. PortRef.portId /= InPortId Self
-                                                 || node ^. NodeModel.isExpanded )
+                    highlight  = notBlocked && (portId /= InPortId Self || node ^. NodeModel.isExpanded)
                 Global.modifyNode nodeId $
-                    NodeModel.ports . ix portRef . PortModel.highlight .= highlight
+                    NodeModel.ports . ix portId . PortModel.highlight .= highlight
 
 handleMouseLeave :: AnyPortRef -> Command State ()
 handleMouseLeave portRef = Global.modifyNode (portRef ^. PortRef.nodeId) $
-    NodeModel.ports. ix portRef . PortModel.highlight .= False
+    NodeModel.ports. ix (portRef ^. PortRef.portId) . PortModel.highlight .= False

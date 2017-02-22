@@ -28,6 +28,7 @@ import           Empire.API.Data.Project                as Project
 import           Empire.API.Data.TypeRep                as TypeRep
 import           Empire.API.Data.ValueType              as ValueType
 import           Empire.API.Graph.AddNode               as AddNode
+import           Empire.API.Graph.AddPort               as AddPort
 import           Empire.API.Graph.AddSubgraph           as AddSubgraph
 import           Empire.API.Graph.CodeUpdate            as CodeUpdate
 import           Empire.API.Graph.Collaboration         as Collaboration
@@ -145,6 +146,8 @@ instance ToJSON t => ToJSON (Error.Error t)
 instance ToJSON AddNode.NodeType
 instance ToJSON AddNode.Request
 instance ToJSON AddNode.Update
+
+instance ToJSON AddPort.Request
 
 instance ToJSON AddSubgraph.Request
 

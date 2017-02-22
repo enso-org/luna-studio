@@ -176,11 +176,12 @@ handle (Event.Batch ev) = Just $ case ev of
         when (shouldProcess && correctLocation) $ CodeEditor.setCode $ update ^. CodeUpdate.code
 
     -- CollaborationUpdate update -> -- handled in Collaboration.hs
-    RemoveNodesResponse          response -> handleResponse response doNothing
+    AddPortResponse              response -> handleResponse response doNothing
     ConnectResponse              response -> handleResponse response doNothing
     DisconnectResponse           response -> handleResponse response doNothing
     NodeMetaResponse             response -> handleResponse response doNothing
     NodeRenameResponse           response -> handleResponse response doNothing
+    RemoveNodesResponse          response -> handleResponse response doNothing
     UpdateNodeExpressionResponse response -> handleResponse response doNothing
 
     _ -> return ()

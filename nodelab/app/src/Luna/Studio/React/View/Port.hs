@@ -4,7 +4,8 @@ module Luna.Studio.React.View.Port where
 
 import           Empire.API.Data.Port         (InPort (..), OutPort (..), PortId (..))
 import           Empire.API.Data.PortRef      (AnyPortRef)
-import           Luna.Studio.Action.Geometry  (lineHeight, nodeRadius, nodeRadius', portAngleStart, portAngleStop)
+import           Luna.Studio.Action.Geometry  (getPortNumber, isPortInput, lineHeight, nodeRadius, nodeRadius', portAngleStart,
+                                               portAngleStop)
 import qualified Luna.Studio.Event.Mouse      as Mouse
 import qualified Luna.Studio.Event.UI         as UI
 import           Luna.Studio.Prelude
@@ -54,17 +55,14 @@ port = React.defineView name $ \(ref, numOfPorts, isOnly, p) ->
     case p ^. Port.portId of
         InPortId   Self          ->                portSelf_   ref p
         OutPortId  All           -> if isOnly then portSingle_ ref p
-                                    else           portIO_     ref p 0 numOfPorts False
-        InPortId  (Arg        i) ->                portIO_     ref p i numOfPorts True
-        OutPortId (Projection i) ->                portIO_     ref p i numOfPorts False
+                                    else           portIO_     ref p numOfPorts
+        _                        ->                portIO_     ref p numOfPorts
 
 portExpanded :: ReactView (Ref App, Port)
 portExpanded = React.defineView name $ \(ref, p) ->
     case p ^. Port.portId of
         InPortId   Self          -> portSelf_       ref p
-        OutPortId  All           -> portIOExpanded_ ref p 0 False
-        InPortId  (Arg        i) -> portIOExpanded_ ref p i True
-        OutPortId (Projection i) -> portIOExpanded_ ref p i False
+        _                        -> portIOExpanded_ ref p
 
 port_ :: Ref App -> Port -> Int -> Bool -> ReactElementM ViewEventHandler ()
 port_ ref p numOfPorts isOnly =
@@ -75,7 +73,7 @@ portExpanded_ ref p =
     React.viewWithSKey portExpanded (jsShow $ p ^. Port.portId) (ref, p) mempty
 
 handlers :: Ref App -> AnyPortRef -> [PropertyOrHandler [SomeStoreAction]]
-handlers ref portRef = [ onMouseDown $ handleMouseDown ref portRef
+handlers ref portRef = [ onMouseDown  $ handleMouseDown ref portRef
                        , onMouseUp    $ handleMouseUp    ref portRef
                        , onClick      $ handleClick      ref portRef
                        , onMouseEnter $ handleMouseEnter ref portRef
@@ -148,10 +146,12 @@ portSingle_ ref p = do
               ]
             ) mempty
 
-portIO_ :: Ref App -> Port -> Int -> Int -> Bool -> ReactElementM ViewEventHandler ()
-portIO_ ref p num numOfPorts isInput = do
+portIO_ :: Ref App -> Port -> Int -> ReactElementM ViewEventHandler ()
+portIO_ ref p numOfPorts = do
     let portRef   = p ^. Port.portRef
         portId    = p ^. Port.portId
+        isInput   = isPortInput p
+        num       = getPortNumber p
         color     = convert $ p ^. Port.color
         highlight = if p ^. Port.highlight then " luna-hover" else ""
         classes   = if isInput then "luna-port luna-port--i luna-port--i--" else "luna-port luna-port--o luna-port--o--"
@@ -194,10 +194,12 @@ portIO_ ref p num numOfPorts isInput = do
               ]
             ) mempty
 
-portIOExpanded_ :: Ref App -> Port -> Int -> Bool -> ReactElementM ViewEventHandler ()
-portIOExpanded_ ref p num isInput = do
+portIOExpanded_ :: Ref App -> Port -> ReactElementM ViewEventHandler ()
+portIOExpanded_ ref p = if p ^. Port.portId == InPortId Self then portSelf_ ref p else do
     let portRef   = p ^. Port.portRef
         portId    = p ^. Port.portId
+        isInput   = isPortInput p
+        num       = getPortNumber p
         color     = convert $ p ^. Port.color
         highlight = if p ^. Port.highlight then " luna-hover" else ""
         classes   = if isInput then "luna-port luna-port--i luna-port--i--" else "luna-port luna-port--o luna-port--o--"

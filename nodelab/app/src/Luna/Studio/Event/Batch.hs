@@ -6,6 +6,7 @@ import           Luna.Studio.Prelude
 
 import qualified Empire.API.Control.EmpireStarted       as EmpireStarted
 import qualified Empire.API.Graph.AddNode               as AddNode
+import qualified Empire.API.Graph.AddPort               as AddPort
 import qualified Empire.API.Graph.AddSubgraph           as AddSubgraph
 import qualified Empire.API.Graph.CodeUpdate            as CodeUpdate
 import qualified Empire.API.Graph.Collaboration         as Collaboration
@@ -30,6 +31,7 @@ import qualified Empire.API.Project.OpenProject         as OpenProject
 
 data Event = UnknownEvent String
            | AddNodeResponse                           AddNode.Response
+           | AddPortResponse                           AddPort.Response
            | AddSubgraphResponse                   AddSubgraph.Response
            | CodeUpdated                            CodeUpdate.Update
            | CollaborationUpdate                 Collaboration.Update
@@ -39,6 +41,7 @@ data Event = UnknownEvent String
            | DisconnectInverse                      Disconnect.Inverse
            | DisconnectResponse                     Disconnect.Response
            | EmpireStarted                       EmpireStarted.Status
+           | MonadsUpdated                        MonadsUpdate.Update
            | NodeAdded                                 AddNode.Update
            | NodeMetaInverse                    UpdateNodeMeta.Inverse
            | NodeMetaResponse                   UpdateNodeMeta.Response
@@ -52,7 +55,6 @@ data Event = UnknownEvent String
            | NodeSearchResponse                     NodeSearch.Response
            | NodesRemoved                          RemoveNodes.Update
            | NodesUpdated                          NodesUpdate.Update
-           | MonadsUpdated                        MonadsUpdate.Update
            | NodeTypechecked                      NodeTCUpdate.Update
            | ProgramFetched                         GetProgram.Response
            | ProjectCreated                      CreateProject.Response

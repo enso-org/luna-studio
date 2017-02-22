@@ -7,7 +7,10 @@ module Luna.Studio.Action.Geometry
     , portAngleStop
     , countSameTypePorts
     , isPortSingle
+    , isPortInput
+    , getPortNumber
     ) where
 
 import           Luna.Studio.Action.Geometry.Constants (connectionWidth, lineHeight, nodeRadius, nodeRadius')
-import           Luna.Studio.Action.Geometry.Port      (countSameTypePorts, isPortSingle, portAngleStart, portAngleStop)
+import           Luna.Studio.Action.Geometry.Port      (countSameTypePorts, getPortNumber, isPortInput, isPortSingle, portAngleStart,
+                                                        portAngleStop)

@@ -2,6 +2,7 @@
 module Luna.Studio.Action.Graph.Lookup
     ( allNodeIds
     , allNodes
+    , edgeNodes
     , allConnectionModels
     , getPort
     ) where
@@ -28,7 +29,10 @@ allNodeIds :: Command State [NodeId]
 allNodeIds = map (view Node.nodeId) <$> allNodes
 
 allNodes :: Command State [Node]
-allNodes = view (NodeEditor.nodes . to HashMap.elems) <$> Global.getNodeEditor
+allNodes = filter (not . Node.isEdge) <$> view (NodeEditor.nodes . to HashMap.elems) <$> Global.getNodeEditor
+
+edgeNodes :: Command State [Node]
+edgeNodes = filter Node.isEdge <$> view (NodeEditor.nodes . to HashMap.elems) <$> Global.getNodeEditor
 
 allConnectionModels :: Command State [Connection]
 allConnectionModels = view (NodeEditor.connections . to HashMap.elems) <$> Global.getNodeEditor
@@ -45,4 +49,4 @@ instance HasPort AnyPortRef where
 getPortFromAnyPortRef :: AnyPortRef -> Command State (Maybe PortModel.Port)
 getPortFromAnyPortRef portRef = runMaybeT $ do
     Just node <- lift $ Global.getNode $ portRef ^. PortRef.nodeId
-    fromJustM $ node ^? Node.ports . ix portRef
+    fromJustM $ node ^? Node.ports . ix (portRef ^. PortRef.portId)

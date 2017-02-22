@@ -10,7 +10,8 @@ import           Luna.Studio.Prelude
 
 
 
-data Event = MouseDown  MouseEvent
+data Event = ContextMenu
+           | MouseDown  MouseEvent
            | Wheel      MouseEvent WheelEvent
             deriving (Show, Generic, NFData, Typeable)
 

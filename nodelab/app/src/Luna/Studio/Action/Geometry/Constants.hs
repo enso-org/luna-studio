@@ -1,6 +1,6 @@
 module Luna.Studio.Action.Geometry.Constants where
 
-import Luna.Studio.Prelude
+import           Luna.Studio.Prelude
 
 gridSize, fontSize, lineHeight, connectionWidth, nodeRadius, nodeRadius', portRadius, nodeExpandedWidth :: Double
 
