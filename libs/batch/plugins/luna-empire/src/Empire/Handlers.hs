@@ -28,9 +28,9 @@ handlersMap = Map.fromList
     , makeHandler Graph.handleAddSubgraph
     , makeHandler Graph.handleRemoveNodes
     , makeHandler Graph.handleRemovePort
+    , makeHandler Graph.handleMovePort
     , makeHandler Graph.handleUpdateNodeExpression
     , makeHandler Graph.handleUpdateNodeMeta
-    , makeHandler Graph.handleUpdatePort
     , makeHandler Graph.handleRenameNode
     , makeHandler Graph.handleConnect
     , makeHandler Graph.handleDisconnect

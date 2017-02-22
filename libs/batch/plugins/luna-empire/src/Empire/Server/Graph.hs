@@ -222,12 +222,6 @@ handleUpdateNodeMeta = modifyGraphOk action success where
         (inv,) <$> res
     success (UpdateNodeMeta.Request location updates) _ result = sendToBus' $ UpdateNodeMeta.Update location updates
 
-handleUpdatePort :: Request UpdatePort.Request -> StateT Env BusT ()
-handleUpdatePort = modifyGraph (mtuple action) success where
-    action (UpdatePort.Request location portRef update) = Graph.updatePort location portRef update
-    success request@(Request _ _ req@(UpdatePort.Request location portRef update)) _ newPortRef = do
-        replyResult request () newPortRef
-
 handleRenameNode :: Request RenameNode.Request -> StateT Env BusT ()
 handleRenameNode = modifyGraphOk action success where
     action  (RenameNode.Request location nodeId name) = do
