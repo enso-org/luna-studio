@@ -9,13 +9,12 @@ import           Control.Monad (foldM)
 import           Empire.Prelude
 
 import           Empire.Data.AST           (NodeRef, NotAppException(..))
-import           Empire.ASTOp              (ASTOp)
+import           Empire.ASTOp              (ASTOp, match)
 import           Empire.ASTOps.Deconstruct (deconstructApp)
 import           Empire.ASTOps.Read        (isBlank)
 
 import           Luna.IR.Expr.Combinators (deleteSubtree)
 import           Luna.IR.Expr.Term.Uni
-import           Luna.IR (match)
 import qualified Luna.IR as IR
 
 removeSubtree :: ASTOp m => NodeRef -> m ()

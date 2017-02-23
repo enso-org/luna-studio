@@ -16,7 +16,7 @@ import           Control.Monad                      (foldM, replicateM)
 import           Data.Maybe                         (isNothing)
 import           Empire.Prelude
 
-import           Empire.ASTOp                       (ASTOp)
+import           Empire.ASTOp                       (ASTOp, match)
 import           Empire.ASTOps.Deconstruct          (deconstructApp, extractArguments, dumpAccessors)
 import           Empire.ASTOps.Remove               (removeSubtree)
 import           Empire.Data.AST                    (NodeRef, astExceptionFromException,
@@ -24,7 +24,6 @@ import           Empire.Data.AST                    (NodeRef, astExceptionFromEx
 import           Empire.Data.Layers                 (NodeMarker(..), Marker)
 
 import           Luna.IR.Expr.Term.Uni
-import           Luna.IR (match)
 import qualified Luna.IR as IR
 
 

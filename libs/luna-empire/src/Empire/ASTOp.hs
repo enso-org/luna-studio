@@ -1,13 +1,15 @@
-{-# LANGUAGE ConstraintKinds      #-}
-{-# LANGUAGE DataKinds            #-}
-{-# LANGUAGE TypeOperators        #-}
-{-# LANGUAGE UndecidableInstances #-}
-{-# LANGUAGE TypeApplications     #-}
+{-# LANGUAGE ConstraintKinds           #-}
+{-# LANGUAGE DataKinds                 #-}
+{-# LANGUAGE NoMonomorphismRestriction #-}
+{-# LANGUAGE TypeOperators             #-}
+{-# LANGUAGE UndecidableInstances      #-}
+{-# LANGUAGE TypeApplications          #-}
 
 module Empire.ASTOp (
     ASTOp
   , EmpirePass
   , runASTOp
+  , match
   ) where
 
 import           Empire.Prelude
@@ -21,7 +23,7 @@ import           Empire.Empire        (Command)
 
 import           Data.Event           (Emitters, type (//))
 import           Data.Graph.Class     (MonadRefLookup(..), Net)
-import           Luna.IR              hiding (get, put)
+import           Luna.IR              hiding (get, put, match)
 import           Luna.IR.Layer.Succs  (Succs)
 import           Luna.Pass            (Inputs, Outputs, Preserves)
 import qualified Luna.Pass            as Pass (SubPass, eval')
@@ -84,6 +86,8 @@ instance MonadPassManager m => MonadRefLookup Layer (Pass.SubPass pass m) where
 
 instance MonadPassManager m => MonadRefLookup Attr (Pass.SubPass pass m) where
     uncheckedLookupRef = lift . uncheckedLookupRef
+
+match = matchExpr
 
 runASTOp :: Pass.SubPass EmpirePass (Pass.PassManager (IRBuilder (Parser.IRSpanTreeBuilder (Pass.RefCache (Logger DropLogger (Vis.VisStateT (StateT Graph IO))))))) a
          -> Command Graph a

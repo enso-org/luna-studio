@@ -13,7 +13,7 @@ import           Control.Monad            ((<=<))
 import           Data.List                (dropWhileEnd, delete)
 import           Data.Char                (isAlpha)
 
-import           Empire.ASTOp              (ASTOp)
+import           Empire.ASTOp              (ASTOp, match)
 import           Empire.Data.AST           (NodeRef)
 import qualified Empire.ASTOps.Builder     as ASTBuilder
 import qualified Empire.ASTOps.Read        as ASTRead
@@ -21,7 +21,6 @@ import qualified Empire.ASTOps.Deconstruct as ASTDeconstruct
 import           Empire.API.Data.Node      (NodeId)
 import           Empire.API.Data.TypeRep   (TypeRep (..))
 import           Luna.IR.Expr.Term.Uni
-import           Luna.IR (match)
 import qualified Luna.IR as IR
 
 

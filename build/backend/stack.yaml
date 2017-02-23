@@ -1,8 +1,6 @@
-compiler: ghc-8.0.2
-compiler-check: match-exact
+resolver: lts-8.2
 extra-deps: [ghc-session-0.1.2.0, error-util-0.0.1.1, cond-0.4.1.1, ghc-mtl-1.2.1.0,
-serialport-0.4.7, aeson-1.0.2.1, megaparsec-5.1.2, hspec-megaparsec-0.3.0, hspec-2.4.1,
-hspec-core-2.4.1, hspec-discover-2.4.1, hspec-expectations-0.8.2]
+serialport-0.4.7]
 ghc-options: {'*': -threaded -fconstraint-solver-iterations=100 }
 local-bin-path: ../../dist/bin
 
@@ -26,7 +24,7 @@ packages:
 - {location: ../../tools/batch/plugins/luna-empire}
 - {location: ../../tools/batch/plugins/request-monitor}
 - extra-dep: true
-  location: {commit: 8c398b4037162b9d71e5e747e12ad9fada48a090, git: 'git@github.com:luna/luna.git'}
+  location: {commit: 82651024bc76a965359d1879619f2f94ff6b81f9, git: 'git@github.com:luna/luna.git'}
   subdirs: [core]
 - extra-dep: true
   location: {commit: 9d451ec9eeb06d4e28bbd66915fe1698bae2f001, git: 'https://github.com/luna/container.git'}
@@ -70,4 +68,3 @@ packages:
   location: {commit: f7124ecbfa4ce8802e3c1431e54300188616fe64, git: 'https://github.com/luna/data-shell.git'}
 - extra-dep: true
   location: {commit: 03b31eb5994a8d3ac9f70c3914360bf5263936db, git: 'git@github.com:luna/visualization-api.git'}
-resolver: lts-7.16
