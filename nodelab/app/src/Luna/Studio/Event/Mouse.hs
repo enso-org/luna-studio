@@ -17,9 +17,11 @@ workspacePosition = translateToWorkspace <=< mousePosition
 
 mousePosition :: MouseEvent -> Command State ScreenPosition
 mousePosition e = do
-    workspacePos <- getWorkspacePos
+    mayWorkspacePos <- getWorkspacePos
     let pagePos = ScreenPosition (Vector2 (fromIntegral $ mousePageX e) (fromIntegral $ mousePageY e))
-    return $ pagePos - workspacePos
+    case mayWorkspacePos of
+        Just workspacePos -> return $ pagePos - workspacePos
+        Nothing -> return pagePos
 
 leftButton :: Int
 leftButton = 0

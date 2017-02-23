@@ -5,8 +5,8 @@ module Luna.Studio.Action.CodeEditor
     ) where
 
 import           Empire.API.Data.Node               (NodeId)
-import qualified JS.GoogleAnalytics                 as GA
 import           JS.Atom                            (pushCode)
+import qualified JS.GoogleAnalytics                 as GA
 import qualified Luna.Studio.Action.Batch           as BatchCmd
 import           Luna.Studio.Action.Command         (Command)
 import           Luna.Studio.Prelude

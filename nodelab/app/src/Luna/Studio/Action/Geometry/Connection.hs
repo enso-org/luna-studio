@@ -6,12 +6,13 @@ module Luna.Studio.Action.Geometry.Connection
 
 import qualified Data.Map.Lazy                         as Map
 import           Data.Position                         (Position, Vector2 (Vector2), move)
+import           Data.ScreenPosition                   (ScreenPosition (ScreenPosition), x, y)
 import           Empire.API.Data.Connection            (Connection)
 import qualified Empire.API.Data.Connection            as Connection
 import           Empire.API.Data.PortRef               (AnyPortRef (InPortRef', OutPortRef'))
 import qualified Empire.API.Data.PortRef               as PortRef
-import           Luna.Studio.Action.Camera.Screen      (getScreenLeftCenter, getScreenRightCenter, getScreenRightCenter,
-                                                        translateToWorkspace)
+import qualified JS.Scene                              as Scene
+import           Luna.Studio.Action.Camera.Screen      (getInputSidebar, getOutputSidebar, translateToWorkspace)
 import           Luna.Studio.Action.Command            (Command)
 import           Luna.Studio.Action.Geometry.Constants (grid, lineHeight, nodeExpandedWidth, portRadius)
 import           Luna.Studio.Action.Geometry.Node      (nodeToNodeAngle)
@@ -59,18 +60,27 @@ connectionDst src dst isSrcExpanded isDstExpanded num numOfSameTypePorts isSelf 
         src' = if isSrcExpanded then move (Vector2 nodeExpandedWidth 0) src else src
         t    = getConnectionAngle src' dst num numOfSameTypePorts
 
---TODO: Find out real position of port
-getInputEdgePortPosition :: Int -> Command State Position
-getInputEdgePortPosition portNumber =
-    move (Vector2 (2 * grid) (portNumber' * grid)) <$> (translateToWorkspace =<< getScreenLeftCenter) where
-        portNumber' = fromIntegral portNumber
+getInputEdgePortPosition :: Int -> Command State (Maybe Position)
+getInputEdgePortPosition portNumber = getInputSidebar >>= \mayInputSidebar ->
+    case mayInputSidebar of
+        Just inputSidebar -> fmap Just $ translateToWorkspace (ScreenPosition $ Vector2 posX posY) where
+            pos = inputSidebar ^. Scene.inputSidebarPosition
+            siz = inputSidebar ^. Scene.inputSidebarSize
+            posX = pos ^. x + siz ^. x
+            posY = (fromIntegral portNumber) * grid + pos ^. y + siz ^. y / 2
+        Nothing -> return Nothing
 
-getOutputEdgePortPosition :: Int -> Bool -> Command State Position
-getOutputEdgePortPosition portNumber isSelf =
-    move (Vector2 (-2 * grid) (portNumber' * grid)) <$> (translateToWorkspace =<< getScreenRightCenter) where
-        portNumber' = fromIntegral $ if isSelf then 0 else  portNumber + 1
+getOutputEdgePortPosition :: Int -> Bool -> Command State (Maybe Position)
+getOutputEdgePortPosition portNumber isSelf = getOutputSidebar >>= \mayOutputSidebar ->
+    case mayOutputSidebar of
+        Just outputSidebar -> fmap Just $ translateToWorkspace (ScreenPosition $ Vector2 posX posY) where
+            pos = outputSidebar ^. Scene.outputSidebarPosition
+            siz = outputSidebar ^. Scene.outputSidebarSize
+            posX = pos ^. x
+            posY = (fromIntegral $ if isSelf then 0 else  portNumber + 1) * grid + pos ^. y + siz ^. y / 2
+        Nothing -> return Nothing
 
-getConnectionPosition :: Node -> Port -> Node -> Port -> Command State (Position, Position)
+getConnectionPosition :: Node -> Port -> Node -> Port -> Command State (Maybe (Position, Position))
 getConnectionPosition srcNode srcPort dstNode dstPort = do
     let srcPos     = srcNode ^. Node.position
         dstPos     = dstNode ^. Node.position
@@ -83,29 +93,33 @@ getConnectionPosition srcNode srcPort dstNode dstPort = do
         numOfSrcOutPorts = countSameTypePorts srcPort srcPorts
         numOfDstInPorts  = countSameTypePorts dstPort dstPorts
     if isInputEdge srcNode && isOutputEdge dstNode then do
-        srcConnPos <- getInputEdgePortPosition srcPortNum
-        dstConnPos <- getOutputEdgePortPosition dstPortNum $ isPortSelf dstPort
-        return (srcConnPos, dstConnPos)
+        maySrcConnPos <- getInputEdgePortPosition srcPortNum
+        mayDstConnPos <- getOutputEdgePortPosition dstPortNum $ isPortSelf dstPort
+        return $ (,) <$> maySrcConnPos <*> mayDstConnPos
     else if isInputEdge srcNode then do
-        srcConnPos <- getInputEdgePortPosition srcPortNum
-        dstConnPos <- getCurrentConnectionSrcPosition dstNode dstPort srcConnPos
-        return (srcConnPos, dstConnPos)
+        maySrcConnPos <- getInputEdgePortPosition srcPortNum
+        mayDstConnPos <- case maySrcConnPos of
+            Just srcConnPos -> getCurrentConnectionSrcPosition dstNode dstPort srcConnPos
+            Nothing         -> return Nothing
+        return $ (,) <$> maySrcConnPos <*> mayDstConnPos
     else if isOutputEdge dstNode then do
-        dstConnPos <- getOutputEdgePortPosition dstPortNum $ isPortSelf dstPort
-        srcConnPos <- getCurrentConnectionSrcPosition srcNode srcPort dstConnPos
-        return (srcConnPos, dstConnPos)
+        mayDstConnPos <- getOutputEdgePortPosition dstPortNum $ isPortSelf dstPort
+        maySrcConnPos <- case mayDstConnPos of
+            Just dstConnPos -> getCurrentConnectionSrcPosition srcNode srcPort dstConnPos
+            Nothing -> return Nothing
+        return $ (,) <$> maySrcConnPos <*> mayDstConnPos
     else do
         let srcConnPos = connectionSrc srcPos dstPos isSrcExp isDstExp srcPortNum numOfSrcOutPorts $ isPortSingle srcPort srcPorts
             dstConnPos = connectionDst srcPos dstPos isSrcExp isDstExp dstPortNum numOfDstInPorts $ isPortSelf dstPort
-        return (srcConnPos, dstConnPos)
+        return $ Just (srcConnPos, dstConnPos)
 
 
-getCurrentConnectionSrcPosition :: Node -> Port -> Position -> Command State Position
+getCurrentConnectionSrcPosition :: Node -> Port -> Position -> Command State (Maybe Position)
 getCurrentConnectionSrcPosition node port mousePos = if isInputEdge node then
         getInputEdgePortPosition  portNum
     else if isOutputEdge node then
         getOutputEdgePortPosition portNum $ isPortSelf port
-    else return $ case port ^. Port.portRef of
+    else return $ Just $ case port ^. Port.portRef of
         OutPortRef' _ -> connectionSrc pos mousePos isExp False portNum numOfSameTypePorts $ isPortSingle port ports
         InPortRef'  _ -> connectionDst mousePos pos False isExp portNum numOfSameTypePorts $ isPortSelf port
     where
@@ -126,9 +140,10 @@ createConnectionModel connection = do
 
     case (maySrcNode, maySrcPort, mayDstNode, mayDstPort) of
         (Just srcNode, Just srcPort, Just dstNode, Just dstPort) -> do
-            (srcPos, dstPos) <- getConnectionPosition srcNode srcPort dstNode dstPort
-            let color = srcPort ^. Port.color
-            return $ Just (Model.Connection dstPortRef srcPos dstPos color)
+            mayConnPos <- getConnectionPosition srcNode srcPort dstNode dstPort
+            case mayConnPos of
+                Just (srcPos, dstPos) -> return $ Just (Model.Connection dstPortRef srcPos dstPos (srcPort ^. Port.color))
+                Nothing -> return Nothing
         _ -> return Nothing
 
 createCurrentConnectionModel :: AnyPortRef -> Position -> Command State (Maybe Model.CurrentConnection)
@@ -138,7 +153,8 @@ createCurrentConnectionModel portRef mousePos = do
 
     case (mayNode, mayPort) of
         (Just node, Just port) -> do
-            connPortPos <- getCurrentConnectionSrcPosition node port mousePos
-            let color = port ^. Port.color
-            return $ Just (Model.CurrentConnection connPortPos mousePos color)
+            mayConnPortPos <- getCurrentConnectionSrcPosition node port mousePos
+            case mayConnPortPos of
+                Just connPortPos -> return $ Just (Model.CurrentConnection connPortPos mousePos (port ^. Port.color))
+                Nothing -> return Nothing
         _ -> return Nothing

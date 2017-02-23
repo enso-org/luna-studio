@@ -51,10 +51,10 @@ zoomCamera zoomCenter factor = do
     modifyCamera (homothetyMatrix zoomCenter s) (invertedHomothetyMatrix zoomCenter s)
 
 zoomIn :: Command State ()
-zoomIn = getScreenCenter >>= flip zoomCamera zoomFactorStep
+zoomIn = getScreenCenter >>= \mayCenter -> (withJust mayCenter $ flip zoomCamera zoomFactorStep)
 
 zoomOut :: Command State ()
-zoomOut = getScreenCenter >>= flip zoomCamera (1/zoomFactorStep)
+zoomOut = getScreenCenter >>= \mayCenter -> (withJust mayCenter $ flip zoomCamera (1/zoomFactorStep))
 
 startZoomDrag :: ScreenPosition -> Command State ()
 startZoomDrag pos = begin $ ZoomDrag pos pos

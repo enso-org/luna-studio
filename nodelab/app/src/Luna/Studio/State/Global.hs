@@ -20,7 +20,6 @@ import           Empire.API.Data.Node                 (NodeId)
 import qualified Empire.API.Data.Node                 as Node
 import qualified Empire.API.Graph.Collaboration       as Collaboration
 import           JS.Scene                             (Scene)
-import qualified JS.Scene                             as Scene
 import           Luna.Studio.Action.Command           (Command)
 import           Luna.Studio.Batch.Workspace
 import qualified Luna.Studio.Event.Event              as Event
@@ -53,7 +52,7 @@ data State = State { _mousePos           :: ScreenPosition
                    , _currentActions     :: Map ActionRep (SomeAction (Command State))
                    , _selectionHistory   :: [Set Node.NodeId]
                    , _topZIndex          :: Int
-                   , _scene              :: Scene
+                   , _scene              :: Maybe Scene
                    -- TODO[react]: wyjebawszy
                    , _workspace          :: Workspace
                    , _lastEvent          :: Maybe Event.Event
@@ -182,6 +181,3 @@ removeActionFromState key = currentActions %= Map.delete key
 
 endAll :: Command State ()
 endAll = mapM_ end =<< use currentActions
-
-updateScene :: Command State ()
-updateScene = Scene.get >>= mapM_ (\s -> unless (s == def) $ scene .= s)
