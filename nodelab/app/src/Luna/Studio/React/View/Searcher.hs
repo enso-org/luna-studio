@@ -2,7 +2,6 @@
 module Luna.Studio.React.View.Searcher where
 
 import qualified Data.Aeson                       as Aeson
-import           Data.Matrix                      as Matrix
 import           Data.Matrix                      (Matrix)
 import           Data.Position                    (Position (Position), Vector2 (Vector2))
 import           Data.Vector
@@ -30,8 +29,8 @@ name = "searcher"
 preventTabDefault :: React.Event -> KeyboardEvent -> [SomeStoreAction] -> [SomeStoreAction]
 preventTabDefault e k r = if Keys.withoutMods k Keys.tab then preventDefault e : r else r
 
-searcher :: ReactView (Ref App, Searcher, Matrix Double)
-searcher =  React.defineView name $ \(ref, s, camera) -> do
+searcher :: ReactView (Ref App, Matrix Double, Searcher)
+searcher =  React.defineView name $ \(ref, camera, s) -> do
     let pos       = expressionPosition camera (s ^. Searcher.position)
         nodePos   = Position (Vector2 0 0)
         mode      = s ^. Searcher.mode
@@ -83,5 +82,5 @@ searcher =  React.defineView name $ \(ref, s, camera) -> do
                             ,"className" $= "luna-result-name"
                             ] $ elemString $ convert $ result ^. Result.name
 
-searcher_ :: Ref App -> Searcher -> Matrix Double -> ReactElementM ViewEventHandler ()
-searcher_ ref model camera = React.viewWithSKey searcher name (ref, model, camera) mempty
+searcher_ :: Ref App -> Matrix Double -> Searcher -> ReactElementM ViewEventHandler ()
+searcher_ ref camera model = React.viewWithSKey searcher name (ref, camera, model) mempty

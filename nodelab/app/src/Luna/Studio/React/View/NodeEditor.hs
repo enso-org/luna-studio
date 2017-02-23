@@ -20,6 +20,7 @@ import           Luna.Studio.React.View.ConnectionPen  (connectionPen_)
 import           Luna.Studio.React.View.Edge           (edgeSidebar_)
 import           Luna.Studio.React.View.Monad          (monad_)
 import           Luna.Studio.React.View.Node           (nodeDynamicStyles_, node_)
+import           Luna.Studio.React.View.Searcher       (searcher_)
 import           Luna.Studio.React.View.SelectionBox   (selectionBox_)
 import           Luna.Studio.React.View.Visualization  (pinnedVisualization_)
 import           React.Flux                            hiding (transform)
@@ -100,6 +101,7 @@ nodeEditor = React.defineView name $ \(ref, ne) -> do
             forM_ nodes                             $ node_ ref
             forM_ (ne ^. NodeEditor.visualizations) $ pinnedVisualization_ ref ne
         forM_ edges $ edgeSidebar_ ref (ne ^. NodeEditor.draggedPort)
+        mapM_ (searcher_ ref camera) $ ne ^. NodeEditor.searcher
         canvas_
             [ "className" $= "luna-plane plane--canvas luna-hide"
             , "key"       $= "canvas"

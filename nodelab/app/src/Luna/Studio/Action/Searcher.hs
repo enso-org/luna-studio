@@ -24,8 +24,8 @@ import qualified Luna.Studio.Batch.Workspace        as Workspace
 import           Luna.Studio.Event.Event            (Event (Shortcut))
 import qualified Luna.Studio.Event.Shortcut         as Shortcut
 import           Luna.Studio.Prelude
-import qualified Luna.Studio.React.Model.App        as App
 import qualified Luna.Studio.React.Model.Node       as Node
+import qualified Luna.Studio.React.Model.NodeEditor as NodeEditor
 import qualified Luna.Studio.React.Model.Searcher   as Searcher
 import qualified Luna.Studio.React.View.App         as App
 import           Luna.Studio.State.Action           (Action (begin, continue, end, update), Searcher (Searcher), searcherAction)
@@ -57,17 +57,17 @@ positionDelta = 100
 openWith :: Maybe NodeId -> ScreenPosition -> Command State ()
 openWith nodeId pos = do
     pos' <- (fmap Node._position <$> selectedNodes) >>= \case
-          [nodePosition] -> if isNothing nodeId then (x %~ (+positionDelta)) <$> translateToScreen nodePosition else return pos
-          _              -> return pos
+          [nodePosition] -> if isNothing nodeId then return $ nodePosition & x %~ (+positionDelta) else translateToWorkspace pos
+          _              -> translateToWorkspace pos
     begin Searcher
     GA.sendEvent GA.NodeSearcher
-    Global.modifyApp $ App.searcher ?= Searcher.Searcher pos' 0 (Searcher.Node def) def nodeId
+    Global.modifyNodeEditor $ NodeEditor.searcher ?= Searcher.Searcher pos' 0 (Searcher.Node def) def nodeId
     Global.renderIfNeeded
     liftIO Searcher.focus
 
 close :: Searcher -> Command State ()
 close _ = do
-    Global.modifyApp $ App.searcher .= Nothing
+    Global.modifyNodeEditor $ NodeEditor.searcher .= Nothing
     removeActionFromState searcherAction
     liftIO App.focus
 
@@ -105,9 +105,8 @@ accept scheduleEvent action = do
     withJustM Global.getSearcher $ \searcher -> do
         let expression = searcher ^. Searcher.selectedExpression
         if searcher ^. Searcher.isNode then do
-            pos <- translateToWorkspace (searcher ^. Searcher.position)
             case searcher ^. Searcher.nodeId of
-                Nothing -> registerNode pos expression
+                Nothing -> registerNode (searcher ^. Searcher.position) expression
                 Just nodeId-> Node.updateExpression nodeId expression
             close action
         else
