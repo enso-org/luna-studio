@@ -27,14 +27,17 @@ import           Empire.API.Data.GraphLocation         (GraphLocation)
 import           Empire.API.Data.Node                  (Node, NodeId)
 import qualified Empire.API.Data.Node                  as Node
 import           Empire.API.Data.NodeMeta              (NodeMeta)
-import           Empire.API.Data.PortRef               (InPortRef, OutPortRef, dstNodeId, srcNodeId)
+import qualified Empire.API.Data.Port                  as Port
+import           Empire.API.Data.PortRef               (AnyPortRef(OutPortRef'), InPortRef, OutPortRef(..), dstNodeId, srcNodeId)
 import qualified Empire.API.Data.PortRef               as PortRef
 import qualified Empire.API.Graph.AddNode              as AddNode
+import qualified Empire.API.Graph.AddPort              as AddPort
 import qualified Empire.API.Graph.AddSubgraph          as AddSubgraph
 import qualified Empire.API.Graph.Connect              as Connect
 import qualified Empire.API.Graph.Disconnect           as Disconnect
 import qualified Empire.API.Graph.Redo                 as RedoRequest
 import qualified Empire.API.Graph.RemoveNodes          as RemoveNodes
+import qualified Empire.API.Graph.RemovePort           as RemovePort
 import qualified Empire.API.Graph.RenameNode           as RenameNode
 import qualified Empire.API.Graph.Undo                 as UndoRequest
 import qualified Empire.API.Graph.UpdateNodeExpression as UpdateNodeExpression
@@ -59,6 +62,7 @@ handlersMap = Map.fromList
     , makeHandler handleRenameNodeUndo
     , makeHandler handleConnectUndo
     , makeHandler handleDisconnectUndo
+    , makeHandler handleAddPortUndo
     ]
 
 type UndoRequests a = (UndoResponseRequest a, RedoResponseRequest a)
@@ -72,6 +76,7 @@ type family UndoResponseRequest t where
     UndoResponseRequest RenameNode.Response           = RenameNode.Request
     UndoResponseRequest Connect.Response              = Disconnect.Request
     UndoResponseRequest Disconnect.Response           = Connect.Request
+    UndoResponseRequest AddPort.Response              = RemovePort.Request
 
 type family RedoResponseRequest t where
     RedoResponseRequest AddNode.Response              = AddNode.Request
@@ -82,6 +87,7 @@ type family RedoResponseRequest t where
     RedoResponseRequest RenameNode.Response           = RenameNode.Request
     RedoResponseRequest Connect.Response              = Connect.Request
     RedoResponseRequest Disconnect.Response           = Disconnect.Request
+    RedoResponseRequest AddPort.Response              = AddPort.Request
 
 data ResponseErrorException = ResponseErrorException deriving (Show)
 instance Exception ResponseErrorException
@@ -213,4 +219,12 @@ handleDisconnectUndo (Response.Response _ _ (Disconnect.Request location dst) in
     withOk inv $ \(Disconnect.Inverse src) ->
         let undoMsg = Connect.Request location $ Connect.PortConnect src dst
             redoMsg = Disconnect.Request location dst
+        in Just (undoMsg, redoMsg)
+
+handleAddPortUndo :: AddPort.Response -> Maybe (RemovePort.Request, AddPort.Request)
+handleAddPortUndo (Response.Response _ _ req@(AddPort.Request location nodeId) _inv res) =
+    withOk res $ \node ->
+        let Port.OutPortId newlyAddedPort = view Port.portId $ last $ Map.elems $ Map.filter Port.isOutputPort $ node ^. Node.ports
+            undoMsg = RemovePort.Request location $ OutPortRef' $ OutPortRef nodeId newlyAddedPort
+            redoMsg = req
         in Just (undoMsg, redoMsg)
