@@ -1,26 +1,23 @@
 module Luna.Studio.Handler.Navigation where
 
-import qualified Data.HashMap.Strict                as HashMap
+import qualified Data.HashMap.Strict          as HashMap
 
-import           Data.Position                      (Position (Position), lengthSquared, magnitude, vector, x, y)
+import           Data.Position                (Position (Position), lengthSquared, magnitude, vector, x, y)
 import           Luna.Studio.Prelude
 
-import qualified Empire.API.Data.Connection         as C
-import           Empire.API.Data.Node               (NodeId)
-import qualified Empire.API.Data.Port               as P
-import qualified Empire.API.Data.PortRef            as R
-import           Luna.Studio.Action.Batch           (cancelCollaborativeTouch, collaborativeTouch)
-import           Luna.Studio.Action.Command         (Command)
-import           Luna.Studio.Action.Graph           (allNodes)
-import           Luna.Studio.Event.Event            (Event (Shortcut))
-import qualified Luna.Studio.Event.Shortcut         as Shortcut
-import           Luna.Studio.React.Model.Node       (Node)
-import qualified Luna.Studio.React.Model.Node       as Node
-import qualified Luna.Studio.React.Model.Node       as Model
-import qualified Luna.Studio.React.Model.NodeEditor as NodeEditor
-import           Luna.Studio.State.Global           (State)
-import qualified Luna.Studio.State.Global           as Global
-import qualified Luna.Studio.State.Graph            as Graph
+import qualified Empire.API.Data.Connection   as C
+import           Empire.API.Data.Node         (NodeId)
+import qualified Empire.API.Data.Port         as P
+import qualified Empire.API.Data.PortRef      as R
+import           Luna.Studio.Action.Command   (Command)
+import qualified Luna.Studio.Action.Graph     as Graph
+import           Luna.Studio.Event.Event      (Event (Shortcut))
+import qualified Luna.Studio.Event.Shortcut   as Shortcut
+import           Luna.Studio.React.Model.Node (Node)
+import qualified Luna.Studio.React.Model.Node as Node
+import           Luna.Studio.State.Global     (State)
+import qualified Luna.Studio.State.Global     as Global
+import qualified Luna.Studio.State.Graph      as Graph
 
 
 
@@ -44,33 +41,30 @@ handleCommand = \case
 
 goPrev :: Command State ()
 goPrev = do
-    nodes <- allNodes
-    let selectedNodes = findSelected nodes
-        selectedIds   = view Model.nodeId <$> selectedNodes
+    selectedNodes <- Graph.selectedNodes
     unless (null selectedNodes) $ do
         let nodeSrc = findLeftMost selectedNodes
-            nodeId = nodeSrc ^. Model.nodeId
+            nodeId = nodeSrc ^. Node.nodeId
             inPortRefSelf      = R.InPortRef nodeId P.Self
             inPortRefFirstPort = R.InPortRef nodeId $ P.Arg 0
         prevSelfNodeIdMay <- preuse $ Global.graph . Graph.connectionsMap . ix inPortRefSelf . C.src . R.srcNodeId
         case prevSelfNodeIdMay of
-            Just prevSelfNodeId -> goToNodeId selectedIds prevSelfNodeId
+            Just prevSelfNodeId -> Graph.selectNodes [prevSelfNodeId]
             Nothing -> do
                 prevFirstPortNodeIdMay <- preuse $ Global.graph . Graph.connectionsMap . ix inPortRefFirstPort . C.src . R.srcNodeId
-                withJust prevFirstPortNodeIdMay $ goToNodeId selectedIds
+                withJust prevFirstPortNodeIdMay $ Graph.selectNodes . return
 
 goNext :: Command State ()
 goNext = do
-    nodes <- allNodes
-    let selectedNodes = findSelected nodes
+    selectedNodes <- Graph.selectedNodes
     unless (null selectedNodes) $ do
         let nodeSrc = findRightMost selectedNodes
-            nodeId = nodeSrc ^. Model.nodeId
+            nodeId = nodeSrc ^. Node.nodeId
         nextNodeIds <- getDstNodeIds nodeId
         nextNodes <- catMaybes <$> mapM Global.getNode nextNodeIds
         unless (null nextNodes) $ do
             let nextNode = findUpMost nextNodes
-            changeSelection (view Model.nodeId <$> selectedNodes) $ nextNode ^. Model.nodeId
+            Graph.selectNodes [nextNode ^. Node.nodeId]
 
 getDstNodeIds :: NodeId -> Command State [NodeId]
 getDstNodeIds nodeId = do
@@ -79,9 +73,6 @@ getDstNodeIds nodeId = do
     return $ (^. C.dst . R.dstNodeId) <$> connections
     where
         matchNodeId conn = conn ^. C.src . R.srcNodeId == nodeId
-
-goToNodeId :: [NodeId] -> NodeId -> Command State ()
-goToNodeId = changeSelection
 
 goRight, goLeft, goDown, goUp :: Command State ()
 goRight = go findRightMost findNodesOnRightSide findNearestRight
@@ -94,15 +85,14 @@ go :: ([Node] -> Node) ->
       (Position -> [Node] -> Node) ->
       Command State ()
 go findMost findNodesOnSide findNearest = do
-    nodes <- allNodes
-    let selectedNodes = findSelected nodes
+    nodes         <- Graph.allNodes
+    selectedNodes <- Graph.selectedNodes
     unless (null selectedNodes) $ do
         let nodeSrc = findMost selectedNodes
-            pos = nodeSrc ^. Model.position
+            pos = nodeSrc ^. Node.position
             nodesSide = findNodesOnSide pos nodes
         unless (null nodesSide) $ do
-            let nearest = findNearest pos nodesSide ^. Model.nodeId
-            changeSelection (view Model.nodeId <$> selectedNodes) nearest
+            Graph.selectNodes [findNearest pos nodesSide ^. Node.nodeId]
 
 closenestPow :: Double
 closenestPow = 2.5
@@ -121,7 +111,7 @@ findNearestUp    pos = maximumBy (compare `on` closenest pos axisDistanceUp)
 
 closenest :: Position -> (Position -> Double) -> Node -> Double
 closenest pos axisDistance node = axisDist / (dist ** closenestPow) where
-    pos' = node ^. Model.position
+    pos' = node ^. Node.position
     vect = pos' ^. vector - pos ^. vector
     dist = magnitude vect
     axisDist = axisDistance (Position vect)
@@ -137,29 +127,28 @@ goCone :: ([Node] -> Node) ->
           (Position -> [Node] -> [Node]) ->
           Command State ()
 goCone findMost findNodesInCone findNodesOnSide = do
-    nodes <- allNodes
-    let selectedNodes = findSelected nodes
-        selectedIds   = view Model.nodeId <$> selectedNodes
+    nodes         <- Graph.allNodes
+    selectedNodes <- Graph.selectedNodes
     unless (null selectedNodes) $ do
         let nodeSrc = findMost selectedNodes
-            pos = nodeSrc ^. Model.position
+            pos = nodeSrc ^. Node.position
             nodesCone = findNodesInCone pos nodes
             nodesSide = findNodesOnSide pos nodes
         if not $ null nodesCone
-            then                           changeSelection selectedIds $ findNearestNode pos nodesCone ^. Model.nodeId
-            else unless (null nodesSide) $ changeSelection selectedIds $ findNearestNode pos nodesSide ^. Model.nodeId
+            then                           Graph.selectNodes [findNearestNode pos nodesCone ^. Node.nodeId]
+            else unless (null nodesSide) $ Graph.selectNodes [findNearestNode pos nodesSide ^. Node.nodeId]
 
 findRightMost, findLeftMost, findDownMost, findUpMost :: [Node] -> Node
-findRightMost = maximumBy (compare `on` (^. Model.position . x))
-findLeftMost  = minimumBy (compare `on` (^. Model.position . x))
-findDownMost  = maximumBy (compare `on` (^. Model.position . y))
-findUpMost    = minimumBy (compare `on` (^. Model.position . y))
+findRightMost = maximumBy (compare `on` (^. Node.position . x))
+findLeftMost  = minimumBy (compare `on` (^. Node.position . x))
+findDownMost  = maximumBy (compare `on` (^. Node.position . y))
+findUpMost    = minimumBy (compare `on` (^. Node.position . y))
 
 findNodesOnRightSide, findNodesOnLeftSide, findNodesOnDownSide, findNodesOnUpSide :: Position -> [Node] -> [Node]
-findNodesOnRightSide pos = filter $ \node -> node ^. Model.position . x > pos ^. x
-findNodesOnLeftSide  pos = filter $ \node -> node ^. Model.position . x < pos ^. x
-findNodesOnDownSide  pos = filter $ \node -> node ^. Model.position . y > pos ^. y
-findNodesOnUpSide    pos = filter $ \node -> node ^. Model.position . y < pos ^. y
+findNodesOnRightSide pos = filter $ \node -> node ^. Node.position . x > pos ^. x
+findNodesOnLeftSide  pos = filter $ \node -> node ^. Node.position . x < pos ^. x
+findNodesOnDownSide  pos = filter $ \node -> node ^. Node.position . y > pos ^. y
+findNodesOnUpSide    pos = filter $ \node -> node ^. Node.position . y < pos ^. y
 
 findNodesOnRight, findNodesOnLeft, findNodesOnDown, findNodesOnUp :: Position -> [Node] -> [Node]
 findNodesOnRight = filter . isOnRight
@@ -178,32 +167,13 @@ skip _ _ = True
 
 isInCone :: (Double -> Double -> Bool) -> (Double -> Double -> Bool) -> (Double -> Double -> Bool) -> Position -> Node -> Bool
 isInCone cmpDXZero cmpDYZero cmpDims pos node = dx `cmpDXZero` 0.0 && dy `cmpDYZero` 0.0 && abs dx `cmpDims` abs dy where
-    nodePos = node ^. Model.position
+    nodePos = node ^. Node.position
     dx = nodePos ^. x - pos ^. x
     dy = nodePos ^. y - pos ^. y
-
-findSelected :: [Node] -> [Node]
-findSelected = filter $ view Node.isSelected
 
 findNearestNode :: Position -> [Node] -> Node
 findNearestNode pos = minimumBy (compare `on` distance pos)
 
 distance :: Position -> Node -> Double
 distance pos node = lengthSquared (wpos ^. vector - pos ^. vector) where
-    wpos = node ^. Model.position
-
-changeSelection :: [NodeId] -> NodeId -> Command State ()
-changeSelection selectedNodes node = do
-    unselectNodes selectedNodes
-    selectNode node
-
-unselectNodes :: [NodeId] -> Command State ()
-unselectNodes selectedNodeIds = do
-    Global.modifyNodeEditor $ forM_ selectedNodeIds $ \nodeId ->
-        NodeEditor.nodes . at nodeId %= fmap (Model.isSelected .~ False)
-    cancelCollaborativeTouch selectedNodeIds
-
-selectNode :: NodeId -> Command State ()
-selectNode nodeId = do
-    Global.modifyNode nodeId $ Model.isSelected .= True
-    collaborativeTouch [nodeId]
+    wpos = node ^. Node.position
