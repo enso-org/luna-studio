@@ -45,10 +45,39 @@ module.exports =
 
             handleNotification = (lvl, error) ->
               if lvl == 0
-                atom.notifications.addFatalError(error)
+                notification = atom.notifications.addFatalError(error,
+                dismissable: true,
+                buttons: [
+                    {
+                      text: 'Copy to clipboard',
+                      onDidClick: ->
+                        atom.clipboard.read()
+                        notification.dismiss()
+                      }
+                  ])
               else if lvl == 1
-                atom.notifications.addError(error)
-              else atom.notifications.addWarning(error)
+                notification = atom.notifications.addError(error,
+                dismissable: true,
+                description: "pięknyrozwinięty string",
+                buttons: [
+                    {
+                      text: 'Copy to clipboard',
+                      onDidClick: ->
+                        atom.clipboard.write(error)
+                        notification.dismiss()
+                      }
+                    ]
+                  )
+              else notification = atom.notifications.addWarning(error,
+              dismissable: true,
+              buttons: [
+                  {
+                    text: 'Copy to clipboard',
+                    onDidClick: ->
+                      atom.clipboard.read()
+                      notification.dismiss()
+                    }
+                ])
             code.notificationListener handleNotification
 
 
