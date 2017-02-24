@@ -22,14 +22,14 @@ packages:
 - {location: ../../tools/batch/plugins/luna-empire}
 - {location: ../../tools/batch/plugins/request-monitor}
 - extra-dep: true
-  location: {commit: 8a1c241fb6f5a92c7669deff1cb3e6eeeaf1594d, git: 'git@github.com:luna/luna.git'}
+  location: {commit: 7a49540a06bffb7ddc89a94adbbeda94894019ab, git: 'git@github.com:luna/luna.git'}
   subdirs: [core]
 - extra-dep: true
-  location: {commit: 37701cbee057a36186628a808faa1129a679b7c8, git: 'https://github.com/luna/container.git'}
+  location: {commit: 9d451ec9eeb06d4e28bbd66915fe1698bae2f001, git: 'https://github.com/luna/container.git'}
 - extra-dep: true
   location: {commit: 6b9f0f6ec43e83c88f28e0fe051ac74516c35605, git: 'https://github.com/luna/data-pool.git'}
 - extra-dep: true
-  location: {commit: fa2155bed99c14a0c7fea6b266c941af6716ff43, git: 'https://github.com/luna/convert.git'}
+  location: {commit: dff8a288b0a5124d3b3ed994250df814b818de4d, git: 'https://github.com/luna/convert.git'}
 - extra-dep: true
   location: {commit: 23a039debfd51a9b7f46b5e106feb30839960e37, git: 'https://github.com/luna/data-base.git'}
 - extra-dep: true
@@ -41,17 +41,17 @@ packages:
 - extra-dep: true
   location: {commit: 604145037427b944050f1959bcdffc375328f72c, git: 'https://github.com/luna/data-result.git'}
 - extra-dep: true
-  location: {commit: a326bbde198cc430ae04b0711c30abf3422d704c, git: 'https://github.com/luna/dependent-state.git'}
+  location: {commit: 62dca5524c1fadb19339b8257809d6c872b5f82d, git: 'https://github.com/luna/dependent-state.git'}
 - extra-dep: true
   location: {commit: 624c09ea0b1360d514e0bd681b6a0b6c16d28c6a, git: 'https://github.com/luna/functor-utils.git'}
 - extra-dep: true
   location: {commit: 5dc5b731a4313e44d55677ed6b9f38456feb2d56, git: 'https://github.com/luna/impossible.git'}
 - extra-dep: true
-  location: {commit: 834aa7e4e258dcce0ada28ab04d9c199ab8592df, git: 'https://github.com/luna/lens-utils.git'}
+  location: {commit: b032cc837c7d35e8d4d01f5769c0fc0e8f4faff9, git: 'https://github.com/luna/lens-utils.git'}
 - extra-dep: true
   location: {commit: 53538017ad47a0a473233577595d8ac6e3eae9a0, git: 'https://github.com/luna/poly-control.git'}
 - extra-dep: true
-  location: {commit: 1d649660bf50653937b90a62134d20bf9beff982, git: 'https://github.com/luna/prologue.git'}
+  location: {commit: 371cb277e5bf1a794a3b0e6dd616278cf8f64aef, git: 'https://github.com/luna/prologue.git'}
 - extra-dep: true
   location: {commit: 7c9eab45f65ab98290282e11d19e39401830ab9c, git: 'https://github.com/luna/type-cache.git'}
 - extra-dep: true
@@ -65,5 +65,7 @@ packages:
 - extra-dep: true
   location: {commit: f7124ecbfa4ce8802e3c1431e54300188616fe64, git: 'https://github.com/luna/data-shell.git'}
 - extra-dep: true
-  location: {commit: af5a618f5813ac639a6760836a6d6fa7ef5af1da, git: 'git@github.com:luna/visualization-api.git'}
+  location: {commit: 03b31eb5994a8d3ac9f70c3914360bf5263936db, git: 'git@github.com:luna/visualization-api.git'}
+- extra-dep: true
+  location: {commit: 9e8a519858edc51b249aaa508c15df8b40f4669e, git: 'https://github.com/luna/monoid'}
 resolver: lts-8.2
