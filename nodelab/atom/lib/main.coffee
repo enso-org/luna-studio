@@ -9,8 +9,12 @@ module.exports =
   activate: ->
     atom.workspace.addOpener (uri) ->
         if path.extname(uri) is '.luna'
-            handleNotification = (error) ->
-              atom.notifications.addError(error)
+            handleNotification = (lvl, error) ->
+              if lvl == 0
+                atom.notifications.addFatalError(error)
+              else if lvl == 1
+                atom.notifications.addError(error)
+              else atom.notifications.addWarning(error)
             code.notificationListener handleNotification
 
 
