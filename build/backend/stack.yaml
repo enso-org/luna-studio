@@ -22,7 +22,7 @@ packages:
 - {location: ../../tools/batch/plugins/luna-empire}
 - {location: ../../tools/batch/plugins/request-monitor}
 - extra-dep: true
-  location: {commit: 82651024bc76a965359d1879619f2f94ff6b81f9, git: 'git@github.com:luna/luna.git'}
+  location: {commit: 8a1c241fb6f5a92c7669deff1cb3e6eeeaf1594d, git: 'git@github.com:luna/luna.git'}
   subdirs: [core]
 - extra-dep: true
   location: {commit: 37701cbee057a36186628a808faa1129a679b7c8, git: 'https://github.com/luna/container.git'}

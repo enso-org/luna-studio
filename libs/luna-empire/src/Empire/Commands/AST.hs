@@ -147,9 +147,9 @@ getLambdaInputRef node pos = do
 
 isTrivialLambda :: ASTOp m => NodeRef -> m Bool
 isTrivialLambda node = match node $ \case
-    Lam _args out -> do
+    Lam{} -> do
         args <- ASTDeconstruct.extractArguments node
-        out' <- IR.source out
+        out' <- ASTRead.getLambdaOutputRef node
         return $ out' `elem` args
     _ -> throwM $ NotLambdaException node
 

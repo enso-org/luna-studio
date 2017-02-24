@@ -303,6 +303,15 @@ spec = around withChannels $ parallel $ do
             withResult res $ \(endAst, mapping) -> do
                 mapping `shouldSatisfy` Map.null
                 endAst `shouldSatisfy` astNull
+        it "removes `def foo`" $ \env -> do
+            u1 <- mkUUID
+            res <- evalEmp env $ do
+                Graph.addNode top u1 "def foo" def
+                Graph.removeNodes top [u1]
+                Graph.withGraph top $ (,) <$> use ast <*> use nodeMapping
+            withResult res $ \(endAst, mapping) -> do
+                mapping `shouldSatisfy` Map.null
+                endAst `shouldSatisfy` astNull
         it "RHS of `def foo` is Lam" $ \env -> do
             u1 <- mkUUID
             res <- evalEmp env $ do
