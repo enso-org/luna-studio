@@ -76,12 +76,12 @@ makeLenses ''State
 withApp :: (Ref App -> Command State r) -> Command State r
 withApp action = action =<< use app
 
-modify :: forall b s. LensLike' (Focusing Identity b) App s -> M.StateT s Identity b -> Command State b
+modify :: LensLike' (Focusing Identity b) App s -> M.StateT s Identity b -> Command State b
 modify lens action = do
     renderNeeded .= True
     withApp $ Store.continueModify $ zoom lens action
 
-get :: forall r. Getting r App r -> Command State r
+get :: Getting r App r -> Command State r
 get lens = withApp $ return . view lens <=< Store.get
 
 modifyApp :: M.State App r -> Command State r
