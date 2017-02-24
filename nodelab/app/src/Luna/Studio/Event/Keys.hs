@@ -5,11 +5,12 @@ import           Luna.Studio.Prelude
 import           React.Flux          (KeyboardEvent (KeyboardEvent))
 
 
-backspace, tab, enter, esc, leftArrow, upArrow, rightArrow, downArrow, del :: Int
+backspace, tab, enter, esc, space, leftArrow, upArrow, rightArrow, downArrow, del :: Int
 backspace = 8
 tab   = 9
 enter = 13
 esc   = 27
+space = 32
 leftArrow  = 37
 upArrow    = 38
 rightArrow = 39

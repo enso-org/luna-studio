@@ -1,5 +1,5 @@
-module Luna.Studio.Action.Node.Expand
-    ( expandSelectedNodes
+module Luna.Studio.Action.Node.Mode
+    ( selectedToggleMode
     ) where
 
 import           Luna.Studio.Action.Command         (Command)
@@ -16,12 +16,12 @@ import           Luna.Studio.State.Global           (State, checkAction)
 import qualified Luna.Studio.State.Global           as Global
 
 
-expandSelectedNodes :: Command State ()
-expandSelectedNodes = do
+selectedToggleMode :: Node.Mode -> Command State ()
+selectedToggleMode newMode = do
     sn <- selectedNodes
     let allExpanded = all (view Node.isExpanded) sn
     updatedNodes <- forM sn $ \node -> do
-        let newNode = node & Node.isExpanded .~ if allExpanded then False else True
+        let newNode = node & Node.mode .~ if allExpanded then def else newMode
         mayConnect    <- checkAction connectAction
         mayPenConnect <- checkAction penConnectAction
         showOrHideSelfPort mayConnect mayPenConnect newNode

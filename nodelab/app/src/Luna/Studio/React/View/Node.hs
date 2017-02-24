@@ -5,7 +5,6 @@ import qualified Data.Aeson                      as Aeson
 import           Data.Matrix                     as Matrix
 import           Data.Matrix                     (Matrix)
 import           Data.Position                   (x, y)
-import qualified Data.Text                       as Text
 import           Empire.API.Data.Node            (NodeId)
 import qualified JS.Config                       as Config
 import qualified Luna.Studio.Event.Mouse         as Mouse
@@ -68,7 +67,7 @@ node = React.defineView objName $ \(ref, n) -> do
                         [ "key"         $= "nameText"
                         , onDoubleClick $ \e _ -> stopPropagation e : dispatch ref (UI.NodeEvent $ Node.EditExpression nodeId)
                         , "className"   $= "luna-node__name luna-noselect"
-                        ] $ elemString $ Text.unpack $ n ^. Node.expression
+                        ] $ elemString $ convert $ n ^. Node.expression
 
 node_ :: Ref App -> Node -> ReactElementM ViewEventHandler ()
 node_ ref model = React.viewWithSKey node (jsShow $ model ^. Node.nodeId) (ref, model) mempty

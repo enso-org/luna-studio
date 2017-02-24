@@ -17,6 +17,7 @@ import           Luna.Studio.Event.UI         (UIEvent (AppEvent, NodeEvent))
 import           Luna.Studio.Prelude
 import qualified Luna.Studio.React.Event.App  as App
 import qualified Luna.Studio.React.Event.Node as Node
+import qualified Luna.Studio.React.Model.Node as Node
 import           Luna.Studio.State.Action     (Action (continue))
 import           Luna.Studio.State.Global     (State)
 import qualified Luna.Studio.State.Global     as Global
@@ -71,5 +72,6 @@ handleCommand = \case
     Shortcut.SelectAll           -> selectAll
     Shortcut.RemoveSelectedNodes -> Node.removeSelectedNodes
     Shortcut.Cancel              -> unselectAll
-    Shortcut.ExpandSelectedNodes -> Node.expandSelectedNodes
+    Shortcut.ExpandSelectedNodes -> Node.selectedToggleMode Node.Expanded
+    Shortcut.EditSelectedNodes   -> Node.selectedToggleMode Node.Editor
     _                            -> return ()
