@@ -17,8 +17,8 @@ import           Luna.Studio.Event.Internal as Internal
 import           Luna.Studio.Prelude
 
 
-foreign import javascript safe "atomCallback.pushNotification($1)"
-  pushNotification' :: JSVal -> IO ()
+foreign import javascript safe "atomCallback.pushNotification($1, $2)"
+  pushNotification' :: Int -> JSString -> IO ()
 
 foreign import javascript safe "atomCallback.pushCode($1)"
     pushCode :: JSString -> IO ()
@@ -42,4 +42,7 @@ onEvent callback = do
     return $ unOnEvent' wrappedCallback >> releaseCallback wrappedCallback
 
 pushNotification :: Notification -> IO ()
-pushNotification = pushNotification' . pToJSVal
+pushNotification  = do
+    num <- (^. notificationType)
+    msg <- (^. notificationMsg)
+    return $ pushNotification' (fromEnum num) (convert msg)
