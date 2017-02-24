@@ -14,7 +14,7 @@ import qualified Empire.API.Data.PortRef               as PortRef
 import qualified JS.Scene                              as Scene
 import           Luna.Studio.Action.Camera.Screen      (getInputSidebar, getOutputSidebar, translateToWorkspace)
 import           Luna.Studio.Action.Command            (Command)
-import           Luna.Studio.Action.Geometry.Constants (grid, lineHeight, nodeExpandedWidth, portRadius)
+import           Luna.Studio.Action.Geometry.Constants (gridSize, lineHeight, nodeExpandedWidth, portRadius)
 import           Luna.Studio.Action.Geometry.Node      (nodeToNodeAngle)
 import           Luna.Studio.Action.Geometry.Port      (countSameTypePorts, getPortNumber, isPortSelf, isPortSingle, portAngleStart,
                                                         portAngleStop, portGap)
@@ -67,7 +67,7 @@ getInputEdgePortPosition portNumber = getInputSidebar >>= \mayInputSidebar ->
             pos = inputSidebar ^. Scene.inputSidebarPosition
             siz = inputSidebar ^. Scene.inputSidebarSize
             posX = pos ^. x + siz ^. x
-            posY = (fromIntegral portNumber) * grid + pos ^. y + siz ^. y / 2
+            posY = (fromIntegral portNumber) * gridSize + pos ^. y + siz ^. y / 2
         Nothing -> return Nothing
 
 getOutputEdgePortPosition :: Int -> Bool -> Command State (Maybe Position)
@@ -77,7 +77,7 @@ getOutputEdgePortPosition portNumber isSelf = getOutputSidebar >>= \mayOutputSid
             pos = outputSidebar ^. Scene.outputSidebarPosition
             siz = outputSidebar ^. Scene.outputSidebarSize
             posX = pos ^. x
-            posY = (fromIntegral $ if isSelf then 0 else  portNumber + 1) * grid + pos ^. y + siz ^. y / 2
+            posY = (fromIntegral $ if isSelf then 0 else  portNumber + 1) * gridSize + pos ^. y + siz ^. y / 2
         Nothing -> return Nothing
 
 getConnectionPosition :: Node -> Port -> Node -> Port -> Command State (Maybe (Position, Position))

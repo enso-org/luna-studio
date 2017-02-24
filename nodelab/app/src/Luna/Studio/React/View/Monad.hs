@@ -1,20 +1,21 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Luna.Studio.React.View.Monad where
 
-import           Data.Position                (Position (Position), Vector2 (Vector2), x, y)
-import           Empire.API.Data.TypeRep      (TypeRep)
-import qualified Luna.Studio.Data.Color       as Color
+import           Data.Position                         (Position (Position), Vector2 (Vector2), x, y)
+import           Empire.API.Data.TypeRep               (TypeRep)
+import           Luna.Studio.Action.Geometry.Constants (gridSize)
+import qualified Luna.Studio.Data.Color                as Color
 import           Luna.Studio.Prelude
-import           Luna.Studio.React.Model.Node (Node)
-import qualified Luna.Studio.React.Model.Node as Node
-import           React.Flux                   as React
+import           Luna.Studio.React.Model.Node          (Node)
+import qualified Luna.Studio.React.Model.Node          as Node
+import           React.Flux                            as React
 
 
 objName :: JSString
 objName = "monad"
 
 monadPadding :: Double
-monadPadding = 30
+monadPadding = 2 * gridSize
 
 nodeToMonadPoint :: Int -> Int -> Node -> Position
 nodeToMonadPoint num allMonads node = Position (Vector2 x' y')
@@ -34,7 +35,7 @@ monad = React.defineView objName $ \case
         polyline_
             [ "className" $= classes
             , "points"    $= points
-            , "stroke"    $= convert (Color.l .~ 0.2 $ Color.toHsl $ Color.fromType tr)
+            , "stroke"    $= convert (Color.l .~ 0.18 $ Color.toHsl $ Color.fromType tr)
             ] mempty
 
 monad_ :: Int -> (Int, (TypeRep, [Node])) -> ReactElementM ViewEventHandler ()
