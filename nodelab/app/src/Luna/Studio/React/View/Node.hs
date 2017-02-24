@@ -73,13 +73,8 @@ node = React.defineView objName $ \(ref, n) -> do
                     text_
                         [ "key"         $= "nameText"
                         , onDoubleClick $ \e _ -> stopPropagation e : dispatch ref (UI.NodeEvent $ Node.EditExpression nodeId)
-<<<<<<< HEAD
-                        , "className"   $= (lunaPrefix objName <> "__name " <> stylePrefix "noselect")
-                        ] $ elemString $ Text.unpack $ n ^. Node.expression
-=======
-                        , "className"   $= "luna-node__name luna-noselect"
+                        , "className"   $= (lunaPrefix objName <> "__name " <> lunaPrefix "noselect")
                         ] $ elemString $ convert $ n ^. Node.expression
->>>>>>> d89c1adb6fb803c48f9fb64a3d85dd7143920126
 
 node_ :: Ref App -> Node -> ReactElementM ViewEventHandler ()
 node_ ref model = React.viewWithSKey node (jsShow $ model ^. Node.nodeId) (ref, model) mempty
