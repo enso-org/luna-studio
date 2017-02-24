@@ -24,7 +24,6 @@ import qualified Luna.Studio.React.Model.Port      as Port
 import           Luna.Studio.State.Collaboration   (ColorId)
 
 
-
 data Node = Node { _nodeId                :: NodeAPI.NodeId
                  , _ports                 :: Map PortId Port
                  , _position              :: Position
@@ -35,19 +34,29 @@ data Node = Node { _nodeId                :: NodeAPI.NodeId
                  , _nameEdit              :: Maybe Text
                  , _value                 :: Maybe NodeValue
                  , _nodeType              :: NodeType
-                 , _isExpanded            :: Bool
+                 , _mode                  :: Mode
                  , _isSelected            :: Bool
                  , _visualizationsEnabled :: Bool
                  , _collaboration         :: Collaboration
                  , _execTime              :: Maybe Integer
-                 } deriving (Eq, Show, Typeable, Generic, NFData)
+                 } deriving (Eq, Generic, NFData, Show)
 
-type CollaborationMap = Map ClientId UTCTime
+data Mode = Collapsed
+          | Expanded
+          | Editor
+          deriving (Eq, Generic, NFData, Show)
+
 data Collaboration = Collaboration { _touch  :: Map ClientId (UTCTime, ColorId)
-                                   , _modify :: CollaborationMap
-                                   } deriving (Eq, Show, Generic, NFData)
+                                   , _modify :: Map ClientId  UTCTime
+                                   } deriving (Default, Eq, Generic, NFData, Show)
 makeLenses ''Node
 makeLenses ''Collaboration
+
+instance Default Mode where def = Collapsed
+
+isExpanded :: Getter Node Bool
+isExpanded = to isExpanded' where
+    isExpanded' node = node ^. mode == Expanded
 
 isLiteral :: Getter Node Bool
 isLiteral = to isLiteral' where
@@ -57,14 +66,8 @@ isLiteral = to isLiteral' where
         isIn' (OutPortId _) = False
         isIn' (InPortId  _) = True
 
-instance ToJSON Node
-instance ToJSON Collaboration
-
-instance Default Collaboration where
-    def = Collaboration def def
-
 makeNode :: NodeAPI.NodeId -> Map PortId Port -> Position -> Text -> Maybe Text -> Text -> NodeType -> Bool -> Node
-makeNode nid ports' pos expr code' name' tpe' vis = Node nid ports' pos def expr code' name' def def tpe' False False vis def Nothing
+makeNode nid ports' pos expr code' name' tpe' vis = Node nid ports' pos def expr code' name' def def tpe' def False vis def Nothing
 
 makePorts :: NodeAPI.Node -> [Port]
 makePorts node = Port.fromPorts (node ^. NodeAPI.nodeId) (Map.elems $ node ^. NodeAPI.ports)

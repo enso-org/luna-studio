@@ -29,6 +29,7 @@
   'backspace'       : 'luna-studio:remove-selected-nodes' # RemoveSelectedNodes
   'delete'          : 'luna-studio:remove-selected-nodes' # RemoveSelectedNodes
   'enter'           : 'luna-studio:expand-selected-nodes' # ExpandSelectedNodes
+  'space'           : 'luna-studio:edit-selected-nodes'   # EditSelectedNodes
   # searcher
   'tab'             : 'luna-studio:searcher-open'         # SearcherOpen
 
