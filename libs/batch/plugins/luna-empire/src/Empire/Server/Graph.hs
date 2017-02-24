@@ -238,7 +238,7 @@ handleMovePort = modifyGraph (mtuple action) success where
 handleRemovePort :: Request RemovePort.Request -> StateT Env BusT ()
 handleRemovePort = modifyGraph (mtuple action) success where
     action (RemovePort.Request location portRef) = Graph.removePort location portRef
-    success request@(Request _ _ req@(RemovePort.Request location portRef)) _ node = replyResult request () node >> sendToBus' (NodesUpdate.Update location [node])
+    success request@(Request _ _ req@(RemovePort.Request location portRef)) _ node = replyResult request () node
 
 
 handleConnect :: Request Connect.Request -> StateT Env BusT ()

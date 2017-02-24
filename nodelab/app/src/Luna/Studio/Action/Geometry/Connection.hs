@@ -1,7 +1,10 @@
+
 {-# LANGUAGE MultiWayIf #-}
 module Luna.Studio.Action.Geometry.Connection
     ( createConnectionModel
     , createCurrentConnectionModel
+    , getOutputEdgePortPosition
+    , getInputEdgePortPosition
     ) where
 
 import qualified Data.Map.Lazy                         as Map
@@ -139,11 +142,13 @@ createConnectionModel connection = do
     mayDstPort <- getPort dstPortRef
 
     case (maySrcNode, maySrcPort, mayDstNode, mayDstPort) of
-        (Just srcNode, Just srcPort, Just dstNode, Just dstPort) -> do
-            mayConnPos <- getConnectionPosition srcNode srcPort dstNode dstPort
-            case mayConnPos of
-                Just (srcPos, dstPos) -> return $ Just (Model.Connection dstPortRef srcPos dstPos (srcPort ^. Port.color))
-                Nothing -> return Nothing
+        (Just srcNode, Just srcPort, Just dstNode, Just dstPort) ->
+            if srcPort ^. Port.visible && dstPort ^. Port.visible then do
+                    mayConnPos <- getConnectionPosition srcNode srcPort dstNode dstPort
+                    case mayConnPos of
+                        Just (srcPos, dstPos) -> return $ Just (Model.Connection dstPortRef srcPos dstPos (srcPort ^. Port.color))
+                        Nothing -> return Nothing
+                else return Nothing
         _ -> return Nothing
 
 createCurrentConnectionModel :: AnyPortRef -> Position -> Command State (Maybe Model.CurrentConnection)

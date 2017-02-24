@@ -83,10 +83,10 @@ get = liftIO . handle (\JSException {} -> return Nothing) $ do
     inputSSiz  <- handle (\JSException {} -> return Nothing) $ Just <$> (Size .: Vector2 <$> inputSidebarWidth <*> inputSidebarHeight)
     outputSPos <- handle (\JSException {} -> return Nothing) $ Just <$> (ScreenPosition .: Vector2 <$> outputSidebarLeft <*> outputSidebarTop)
     outputSSiz <- handle (\JSException {} -> return Nothing) $ Just <$> (Size .: Vector2 <$> outputSidebarWidth <*> outputSidebarHeight)
-    let inputSidebar = if isJust inputSPos && isJust inputSSiz then
+    let inputSidebar' = if isJust inputSPos && isJust inputSSiz then
                 Just $ InputSidebar (fromJust inputSPos) (fromJust inputSSiz)
             else Nothing
-        outputSidebar = if isJust outputSPos && isJust outputSSiz then
+        outputSidebar' = if isJust outputSPos && isJust outputSSiz then
                 Just $ OutputSidebar (fromJust outputSPos) (fromJust outputSSiz)
             else Nothing
-    return $ Just $ Scene scenePos sceneSiz inputSidebar outputSidebar
+    return $ Just $ Scene scenePos sceneSiz inputSidebar' outputSidebar'

@@ -14,11 +14,13 @@ import qualified Empire.API.Graph.Connect               as Connect
 import qualified Empire.API.Graph.Disconnect            as Disconnect
 import qualified Empire.API.Graph.GetProgram            as GetProgram
 import qualified Empire.API.Graph.MonadsUpdate          as MonadsUpdate
+import qualified Empire.API.Graph.MovePort              as MovePort
 import qualified Empire.API.Graph.NodeResultUpdate      as NodeResultUpdate
 import qualified Empire.API.Graph.NodeSearch            as NodeSearch
 import qualified Empire.API.Graph.NodesUpdate           as NodesUpdate
 import qualified Empire.API.Graph.NodeTypecheckerUpdate as NodeTCUpdate
 import qualified Empire.API.Graph.RemoveNodes           as RemoveNodes
+import qualified Empire.API.Graph.RemovePort            as RemovePort
 import qualified Empire.API.Graph.RenameNode            as RenameNode
 import qualified Empire.API.Graph.UpdateNodeExpression  as UpdateNodeExpression
 import qualified Empire.API.Graph.UpdateNodeMeta        as UpdateNodeMeta
@@ -32,6 +34,8 @@ import qualified Empire.API.Project.OpenProject         as OpenProject
 data Event = UnknownEvent String
            | AddNodeResponse                           AddNode.Response
            | AddPortResponse                           AddPort.Response
+           | RemovePortResponse                     RemovePort.Response
+           | MovePortResponse                         MovePort.Response
            | AddSubgraphResponse                   AddSubgraph.Response
            | CodeUpdated                            CodeUpdate.Update
            | CollaborationUpdate                 Collaboration.Update

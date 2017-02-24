@@ -36,8 +36,8 @@ handleClick evt portRef = do
 startPortDragOrConnect :: MouseEvent -> AnyPortRef -> Mode -> Command State ()
 startPortDragOrConnect evt portRef mode = do
     mayNode <- Global.getNode $ portRef ^. PortRef.nodeId
-    withJust mayNode $ \node -> if (isInputEdge node) then
-            startPortDrag evt portRef mode
-        else do
-            mousePos <- mousePosition evt
-            startConnecting mousePos portRef Nothing mode
+    withJust mayNode $ \node -> do
+        mousePos <- mousePosition evt
+        if (isInputEdge node) then
+             startPortDrag   mousePos portRef         mode
+        else startConnecting mousePos portRef Nothing mode

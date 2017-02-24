@@ -36,11 +36,13 @@ import           Empire.API.Graph.Connect               as Connect
 import           Empire.API.Graph.Disconnect            as Disconnect
 import           Empire.API.Graph.GetProgram            as GetProgram
 import           Empire.API.Graph.MonadsUpdate          as MonadsUpdate
+import           Empire.API.Graph.MovePort              as MovePort
 import           Empire.API.Graph.NodeResultUpdate      as NodeResultUpdate
 import           Empire.API.Graph.NodeSearch            as NodeSearch
 import           Empire.API.Graph.NodesUpdate           as NodesUpdate
 import           Empire.API.Graph.NodeTypecheckerUpdate as NodeTypecheckerUpdate
 import           Empire.API.Graph.RemoveNodes           as RemoveNodes
+import           Empire.API.Graph.RemovePort            as RemovePort
 import           Empire.API.Graph.RenameNode            as RenameNode
 import           Empire.API.Graph.SetDefaultValue       as SetDefaultValue
 import           Empire.API.Graph.SetInputNodeType      as SetInputNodeType
@@ -148,6 +150,10 @@ instance ToJSON AddNode.Request
 instance ToJSON AddNode.Update
 
 instance ToJSON AddPort.Request
+
+instance ToJSON RemovePort.Request
+
+instance ToJSON MovePort.Request
 
 instance ToJSON AddSubgraph.Request
 
