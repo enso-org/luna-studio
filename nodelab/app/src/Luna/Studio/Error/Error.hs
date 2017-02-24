@@ -6,8 +6,8 @@ import GHCJS.Types (JSVal)
 import           GHCJS.Marshal.Pure (PToJSVal (..))
 import           Luna.Studio.Prelude
 
-data NotificationType = Error
-                      | FatalError
+data NotificationType = FatalError
+                      | Error
                       | Warning
                       deriving (Bounded, Eq, Enum, Generic, NFData, Read, Show, Typeable)
 

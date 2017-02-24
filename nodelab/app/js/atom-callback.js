@@ -26,9 +26,9 @@ module.exports = function () {
     notificationListener: function (listener) {
       listeners.notificationListener.push(listener);
     },
-    pushNotification: function (data) {
+    pushNotification: function (data1, data2) {
       listeners.notificationListener.forEach(function (listener) {
-        listener(data);
+        listener(data1, data2);
       });
     },
     subscribeEventListenerInternal: function(listener) {
