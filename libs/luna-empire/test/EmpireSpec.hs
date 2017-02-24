@@ -527,10 +527,18 @@ spec = around withChannels $ parallel $ do
     describe "parser sanity" $ do
         it "shows error on parse error" $ \env -> do
             u1 <- mkUUID
-            res <- evalEmp env $ Graph.addNode top u1 "a+" def
+            res <- evalEmp env $ Graph.addNode top u1 ")()#%&&@^#&$....1foo0x3r2" def
             case res of
                 Right _ -> expectationFailure "should throw exception"
                 Left err -> err `shouldStartWith` "ParserException"
+        it "parses 123" $ \env -> do
+            u1 <- mkUUID
+            res <- evalEmp env $ Graph.addNode top u1 "123" def
+            withResult res $ \s' -> s' ^. Node.nodeType `shouldBe` Node.ExpressionNode "123"
+        it "parses \"foo\"" $ \env -> do
+            u1 <- mkUUID
+            res <- evalEmp env $ Graph.addNode top u1 "\"foo\"" def
+            withResult res $ \s' -> s' ^. Node.nodeType `shouldBe` Node.ExpressionNode "\"foo\""
     describe "port manipulation" $ do
         let buildInputEdge' loc nid = Graph.withGraph loc $ runASTOp $ GraphBuilder.buildConnections >>= \c -> GraphBuilder.buildInputEdge c nid
         it "adds port" $ \env -> do

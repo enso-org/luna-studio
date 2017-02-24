@@ -77,8 +77,8 @@ parsePortDefault :: ASTOp m => PortDefault -> m NodeRef
 parsePortDefault (Expression expr)          = snd <$> parseExpr expr
 parsePortDefault (Constant (IntValue i))    = IR.generalize <$> IR.number (fromIntegral i)
 parsePortDefault (Constant (StringValue s)) = IR.generalize <$> IR.string s
-parsePortDefault (Constant (DoubleValue d)) = IR.generalize <$> IR.number (approxRational d 0.1)
-parsePortDefault (Constant (RationalValue r)) = IR.generalize <$> IR.number r
+parsePortDefault (Constant (DoubleValue d)) = $notImplemented
+parsePortDefault (Constant (RationalValue r)) = $notImplemented
 parsePortDefault (Constant (BoolValue b))   = do
     bool' <- IR.string $ show b
     IR.generalize <$> IR.cons_ bool'

@@ -57,6 +57,7 @@ handleKeyApp evt
     | Keys.withoutMods      evt Keys.backspace  = Just RemoveSelectedNodes
     | Keys.withoutMods      evt Keys.del        = Just RemoveSelectedNodes
     | Keys.withoutMods      evt Keys.enter      = Just ExpandSelectedNodes
+    | Keys.withoutMods      evt Keys.space      = Just EditSelectedNodes
     -- searcher
     | Keys.withoutMods evt Keys.tab             = Just SearcherOpen
     -- undo / redo

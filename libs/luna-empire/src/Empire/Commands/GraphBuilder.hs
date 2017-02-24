@@ -174,7 +174,7 @@ getPortState node = do
     isConnected <- ASTRead.isGraphNode node
     if isConnected then return Connected else match node $ \case
         IR.String s     -> return . WithDefault . Constant . StringValue $ s
-        IR.Number i     -> return $ WithDefault $ Constant $ RationalValue i
+        IR.Number i     -> return $ WithDefault $ Constant $ RationalValue 0 -- FIXME[MM]: put the number here
         Cons n _ -> do
             name <- ASTRead.getName n
             case name of
