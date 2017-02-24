@@ -44,7 +44,7 @@ import qualified Empire.API.Data.Port              as Port
 import           Empire.API.Data.PortRef           (InPortRef (..), OutPortRef (..))
 import           Empire.API.Data.TypeRep           (TypeRep(TLam, TStar, TCons))
 
-import           Empire.ASTOp                      (ASTOp, runASTOp)
+import           Empire.ASTOp                      (ASTOp, match, runASTOp)
 import qualified Empire.ASTOps.Deconstruct         as ASTDeconstruct
 import qualified Empire.ASTOps.Print               as Print
 import qualified Empire.ASTOps.Read                as ASTRead
@@ -55,7 +55,6 @@ import           Empire.Data.AST                   (NodeRef, astExceptionToExcep
 import           Empire.Data.Layers                (TypeLayer)
 import           Empire.Empire
 
-import           Luna.IR (match)
 import qualified Luna.IR as IR
 import           Luna.IR.Expr.Term.Uni
 

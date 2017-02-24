@@ -32,7 +32,7 @@ import           Data.Maybe                         (isJust)
 import           Empire.Prelude
 
 import           Empire.API.Data.Node               (NodeId)
-import           Empire.ASTOp                       (ASTOp)
+import           Empire.ASTOp                       (ASTOp, match)
 import           Empire.Data.AST                    (NodeRef, EdgeRef, NotUnifyException(..),
                                                      NotLambdaException(..),
                                                      astExceptionFromException, astExceptionToException)
@@ -40,8 +40,7 @@ import qualified Empire.Data.Graph                  as Graph
 import           Empire.Data.Layers                 (NodeMarker(..), Marker)
 
 import qualified Luna.IR.Expr.Combinators as IRExpr
-import Luna.IR.Expr.Term.Uni
-import           Luna.IR (match)
+import           Luna.IR.Expr.Term.Uni
 import qualified Luna.IR as IR
 
 

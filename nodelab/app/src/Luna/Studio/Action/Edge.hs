@@ -14,14 +14,15 @@ module Luna.Studio.Action.Edge
 import qualified Data.Map.Lazy                      as Map
 import           Data.Position                      (Position (Position), move)
 import           Data.ScreenPosition                (ScreenPosition, fromScreenPosition)
-import           Data.Size                          (y)
-import           Data.Vector                        (Vector2 (Vector2))
+import           Data.Size                          (x, y)
+import           Data.Vector                        (Vector2 (Vector2), scalarProduct)
 import           Empire.API.Data.Node               (NodeId)
 import           Empire.API.Data.Port               (InPort (Arg), OutPort (Projection), PortId (InPortId, OutPortId))
 import           Empire.API.Data.PortRef            (AnyPortRef)
 import qualified Empire.API.Data.PortRef            as PortRef
-import qualified JS.Scene                           as Scene
 import qualified Luna.Studio.Action.Batch           as Batch
+import           Luna.Studio.Action.Camera.Screen   (getInputSidebarPosition, getInputSidebarSize, getOutputSidebarPosition,
+                                                     getOutputSidebarSize)
 import           Luna.Studio.Action.Command         (Command)
 import qualified Luna.Studio.Action.Connect         as Connect
 import           Luna.Studio.Action.Geometry        (lineHeight)
@@ -36,11 +37,10 @@ import qualified Luna.Studio.React.Model.Port       as Port
 import           Luna.Studio.State.Action           (Action (begin, continue, end, update), Connect, Mode (Click, Drag),
                                                      PortDrag (PortDrag), portDragAction)
 import qualified Luna.Studio.State.Action           as Action
-import           Luna.Studio.State.Global           (State, beginActionWithKey, continueActionWithKey, removeActionFromState,
+import           Luna.Studio.State.Global           (State, beginActionWithKey, continueActionWithKey, getNode, removeActionFromState,
                                                      updateActionWithKey)
 import qualified Luna.Studio.State.Global           as Global
 import           React.Flux                         (MouseEvent)
-
 
 instance Action (Command State) PortDrag where
     begin    = beginActionWithKey    portDragAction
@@ -48,25 +48,32 @@ instance Action (Command State) PortDrag where
     update   = updateActionWithKey   portDragAction
     end      = stopPortDrag
 
---TODO[LJK]: Make this work correctly
-getDraggedPortPositionInSidebar :: ScreenPosition -> Command State Position
-getDraggedPortPositionInSidebar mousePos = do
-    sceneHeight <- use $ Global.scene . Scene.size . y
-    return $ move (Vector2 0 (-sceneHeight/2)) $ Position $ fromScreenPosition mousePos
+
+getDraggedPortPositionInSidebar :: ScreenPosition -> Node -> Command State (Maybe Position)
+getDraggedPortPositionInSidebar mousePos node = do
+    maySidebarPos  <- if isInputEdge node then getInputSidebarPosition else getOutputSidebarPosition
+    maySidebarSize <- if isInputEdge node then getInputSidebarSize     else getOutputSidebarSize
+    case (,) <$> maySidebarSize <*> maySidebarPos of
+        Just (sidebarSize, sidebarPos) -> do
+            let shift = flip scalarProduct (-1) $ Vector2 (sidebarPos ^. x) (sidebarPos ^. y + sidebarSize ^. y / 2)
+            return $ Just $ move shift $ Position $ fromScreenPosition mousePos
+        Nothing -> return Nothing
 
 
 startPortDrag :: MouseEvent -> AnyPortRef -> Mode -> Command State ()
 startPortDrag evt portRef mode = do
     mayDraggedPort <- getPort portRef
-    withJust mayDraggedPort $ \draggedPort -> do
+    mayNode        <- getNode $ portRef ^. PortRef.nodeId
+    withJust ((,) <$> mayDraggedPort <*> mayNode) $ \(draggedPort, node) -> do
         let nodeId = portRef ^. PortRef.nodeId
             portId = portRef ^. PortRef.portId
         mousePos <- mousePosition evt
-        draggedPortPos <- getDraggedPortPositionInSidebar mousePos
-        begin $ PortDrag mousePos portRef mode
-        Global.modifyNodeEditor $ do
-            NodeEditor.draggedPort ?= DraggedPort draggedPort draggedPortPos
-            NodeEditor.nodes . at nodeId . _Just . Node.ports . at portId . _Just . Port.visible .= False
+        mayDraggedPortPos <- getDraggedPortPositionInSidebar mousePos node
+        withJust mayDraggedPortPos $ \draggedPortPos -> do
+            begin $ PortDrag mousePos portRef mode
+            Global.modifyNodeEditor $ do
+                NodeEditor.draggedPort ?= DraggedPort draggedPort draggedPortPos
+                NodeEditor.nodes . at nodeId . _Just . Node.ports . at portId . _Just . Port.visible .= False
 
 handleMouseUp :: MouseEvent -> PortDrag -> Command State ()
 handleMouseUp evt portDrag = do
@@ -90,12 +97,16 @@ handleMove :: MouseEvent -> PortDrag -> Command State ()
 handleMove evt portDrag = do
     let nodeId = portDrag ^. Action.portDragPortRef . PortRef.nodeId
         portId = portDrag ^. Action.portDragPortRef . PortRef.portId
-    mousePos       <- mousePosition evt
-    draggedPortPos <- getDraggedPortPositionInSidebar mousePos
     mayDraggedPort <- getPort $ portDrag ^. Action.portDragPortRef
-    withJust mayDraggedPort $ \draggedPort -> Global.modifyNodeEditor $ do
-        NodeEditor.draggedPort ?= DraggedPort draggedPort draggedPortPos
-        NodeEditor.nodes . at nodeId . _Just . Node.ports . at portId . _Just . Port.visible .= False
+    mayNode        <- getNode $ portDrag ^. Action.portDragPortRef . PortRef.nodeId
+    withJust ((,) <$> mayDraggedPort <*> mayNode) $ \(draggedPort, node) -> do
+        mousePos       <- mousePosition evt
+        mayDraggedPortPos <- getDraggedPortPositionInSidebar mousePos node
+        case mayDraggedPortPos of
+            Just draggedPortPos -> Global.modifyNodeEditor $ do
+                NodeEditor.draggedPort ?= DraggedPort draggedPort draggedPortPos
+                NodeEditor.nodes . at nodeId . _Just . Node.ports . at portId . _Just . Port.visible .= False
+            Nothing -> end portDrag
 
 getNumOfProjectionsOrArgs :: Node -> Int
 getNumOfProjectionsOrArgs node =

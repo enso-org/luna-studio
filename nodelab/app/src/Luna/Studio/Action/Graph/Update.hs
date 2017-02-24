@@ -4,6 +4,7 @@ module Luna.Studio.Action.Graph.Update
     , updateConnectionsForNodes
     , updateConnectionsForEdges
     , updateMonads
+    , updateScene
     ) where
 
 
@@ -12,6 +13,7 @@ import           Empire.API.Data.Connection             (ConnectionId)
 import qualified Empire.API.Data.Connection             as Connection
 import           Empire.API.Data.Node                   (NodeId)
 import           Empire.API.Data.TypeRep                (TypeRep)
+import           Luna.Studio.Action.Camera.Screen       (updateSceneOnly)
 import           Luna.Studio.Action.Command             (Command)
 import           Luna.Studio.Action.Geometry.Connection (createConnectionModel)
 import           Luna.Studio.Action.Graph.Lookup        (edgeNodes)
@@ -49,3 +51,6 @@ updateConnectionsForEdges = edgeNodes >>= updateConnectionsForNodes . map (view 
 updateMonads :: [(TypeRep, [NodeId])] -> Command State ()
 updateMonads monads =
     Global.modifyNodeEditor $ NodeEditor.monads .= monads
+
+updateScene :: Command State ()
+updateScene = updateSceneOnly >> updateConnectionsForEdges

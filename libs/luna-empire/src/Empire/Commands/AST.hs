@@ -26,7 +26,7 @@ import           Empire.Data.AST                   (NodeRef, NotLambdaException(
 import           Empire.Data.Layers                (Meta, NodeMarker(..), TCData, TCError(..),
                                                     TypeLayer, InputsLayer, tcErrors)
 
-import           Empire.ASTOp                      (ASTOp)
+import           Empire.ASTOp                      (ASTOp, match)
 import qualified Empire.ASTOps.Builder             as ASTBuilder
 import qualified Empire.ASTOps.Deconstruct         as ASTDeconstruct
 import qualified Empire.ASTOps.Parse               as Parser
@@ -35,7 +35,6 @@ import qualified Empire.ASTOps.Read                as ASTRead
 
 import           Empire.Utils.TextResult           (nodeValueToText)
 
-import           Luna.IR (match)
 import qualified Luna.IR as IR
 import           Luna.IR.Expr.Term.Uni
 import qualified Luna.IR.Repr.Vis as Vis
@@ -148,9 +147,9 @@ getLambdaInputRef node pos = do
 
 isTrivialLambda :: ASTOp m => NodeRef -> m Bool
 isTrivialLambda node = match node $ \case
-    Lam _args out -> do
+    Lam{} -> do
         args <- ASTDeconstruct.extractArguments node
-        out' <- IR.source out
+        out' <- ASTRead.getLambdaOutputRef node
         return $ out' `elem` args
     _ -> throwM $ NotLambdaException node
 

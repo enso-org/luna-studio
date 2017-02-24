@@ -29,15 +29,16 @@ centerGraph = do
     nodes <- use $ Global.graph . Graph.nodes
     case minimumRectangle $ map (Position . fromTuple) $ view Node.position <$> nodes of
         Just (leftTop, rightBottom) -> do
-            screenSize <- getScreenSize
-            let screenCenter = getScreenCenterFromSize screenSize
-                span         = Size (rightBottom ^. vector - leftTop ^. vector + scalarProduct padding 2)
-                shift        = padding + screenCenter ^. vector - scalarProduct (span ^. vector) 0.5 - leftTop ^. vector
-                factor       = min 1 $ min (screenSize ^. x / span ^. x) (screenSize ^. y / span ^. y)
+            mayScreenSize <- getScreenSize
+            withJust mayScreenSize $ \screenSize -> do
+                let screenCenter = getScreenCenterFromSize screenSize
+                    span         = Size (rightBottom ^. vector - leftTop ^. vector + scalarProduct padding 2)
+                    shift        = padding + screenCenter ^. vector - scalarProduct (span ^. vector) 0.5 - leftTop ^. vector
+                    factor       = min 1 $ min (screenSize ^. x / span ^. x) (screenSize ^. y / span ^. y)
 
-            Global.modifyNodeEditor $ do
-                NodeEditor.screenTransform . logicalToScreen .= multStd2 (translationMatrix shift) (homothetyMatrix screenCenter factor)
-                NodeEditor.screenTransform . screenToLogical .= multStd2 (invertedHomothetyMatrix screenCenter factor) (invertedTranslationMatrix shift)
-                NodeEditor.screenTransform . lastInverse     .= 2
-            updateConnectionsForEdges
+                Global.modifyNodeEditor $ do
+                    NodeEditor.screenTransform . logicalToScreen .= multStd2 (translationMatrix shift) (homothetyMatrix screenCenter factor)
+                    NodeEditor.screenTransform . screenToLogical .= multStd2 (invertedHomothetyMatrix screenCenter factor) (invertedTranslationMatrix shift)
+                    NodeEditor.screenTransform . lastInverse     .= 2
+                updateConnectionsForEdges
         Nothing -> resetCamera

@@ -24,7 +24,7 @@ import           Empire.Prelude
 
 import           Empire.API.Data.Node               (NodeId)
 import qualified Empire.API.Data.Port               as Port
-import           Empire.ASTOp                       (ASTOp)
+import           Empire.ASTOp                       (ASTOp, match)
 import qualified Empire.ASTOps.Builder              as ASTBuilder
 import qualified Empire.ASTOps.Deconstruct          as ASTDeconstruct
 import qualified Empire.ASTOps.Read                 as ASTRead
@@ -36,7 +36,6 @@ import           Empire.Data.AST                    (NodeRef, NotLambdaException
 import qualified Luna.IR.Expr.Combinators as IR (changeSource)
 import           Luna.IR.Expr.Term.Uni
 import           Luna.IR.Expr.Term.Named (Term(Sym_Lam))
-import           Luna.IR (match)
 import qualified Luna.IR as IR
 
 

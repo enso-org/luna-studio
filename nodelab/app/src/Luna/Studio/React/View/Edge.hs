@@ -9,6 +9,7 @@ import qualified Data.Aeson                   as Aeson
 import qualified Data.Map.Lazy                as Map
 import           Data.Position                (x, y)
 import qualified Empire.API.Data.PortRef      as PortRef
+import           JS.Scene                     (inputSidebarId, outputSidebarId)
 import           Luna.Studio.Action.Geometry  (getPortNumber, isPortInput, lineHeight)
 import qualified Luna.Studio.Event.UI         as UI
 import           Luna.Studio.Prelude
@@ -23,7 +24,7 @@ import           Luna.Studio.React.View.Port  (handlers, jsShow2)
 import           React.Flux                   hiding (view)
 
 
-name :: Node -> String
+name :: Node -> JSString
 name node = "edgeSidebar" <> if isInputEdge node then "Inputs" else "Outputs"
 
 sendAddPortEvent :: Ref App -> Node -> [SomeStoreAction]
@@ -39,7 +40,8 @@ edgeSidebar_ ref mayDraggedPort node = when (isEdge node) $ do
                                              . PortRef.nodeId) <$> mayDraggedPort)
     div_
         [ "className" $= classes
-        , "key"       $= (fromString $ name node)
+        , "key"       $= name node
+        , "id"        $= if isInputEdge node then inputSidebarId else outputSidebarId
         , onMouseDown $ \e _ -> [stopPropagation e]
         , onMouseMove $ \e m -> stopPropagation e : (dispatch ref $ UI.EdgeEvent $ Edge.MouseMove m nodeId)
         ] $ do
@@ -47,13 +49,13 @@ edgeSidebar_ ref mayDraggedPort node = when (isEdge node) $ do
         when (isInputEdge node) $ if isPortDragged then do
                 div_
                     [ "className" $= "luna-edge__buton luna-edge__button--remove luna-noselect"
-                    , "key"       $= (fromString $ name node <> "RemoveButton")
+                    , "key"       $= (name node <> "RemoveButton")
                     , onMouseUp   $ \e _ -> stopPropagation e : (dispatch ref $ UI.EdgeEvent $ Edge.RemovePort)
                     ] $ elemString "Remove"
                 withJust mayDraggedPort $ edgeDraggedPort_ ref
             else div_
                     [ "className" $= "luna-edge__buton luna-edge__button--add luna-noselect"
-                    , "key"       $= (fromString $ name node <> "AddButton")
+                    , "key"       $= (name node <> "AddButton")
                     , onMouseDown $ \e _ -> [stopPropagation e]
                     , onClick $ \e _ -> stopPropagation e : sendAddPortEvent ref node
                     ] $ elemString "Add"
