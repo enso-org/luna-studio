@@ -67,7 +67,7 @@ getInputEdgePortPosition portNumber = getInputSidebar >>= \mayInputSidebar ->
             pos = inputSidebar ^. Scene.inputSidebarPosition
             siz = inputSidebar ^. Scene.inputSidebarSize
             posX = pos ^. x + siz ^. x
-            posY = (fromIntegral portNumber) * grid + pos ^. y + siz ^. y / 2
+            posY = (fromIntegral portNumber) * gridSize + pos ^. y + siz ^. y / 2
         Nothing -> return Nothing
 
 getOutputEdgePortPosition :: Int -> Bool -> Command State (Maybe Position)
@@ -77,7 +77,7 @@ getOutputEdgePortPosition portNumber isSelf = getOutputSidebar >>= \mayOutputSid
             pos = outputSidebar ^. Scene.outputSidebarPosition
             siz = outputSidebar ^. Scene.outputSidebarSize
             posX = pos ^. x
-            posY = (fromIntegral $ if isSelf then 0 else  portNumber + 1) * grid + pos ^. y + siz ^. y / 2
+            posY = (fromIntegral $ if isSelf then 0 else  portNumber + 1) * gridSize + pos ^. y + siz ^. y / 2
         Nothing -> return Nothing
 
 getConnectionPosition :: Node -> Port -> Node -> Port -> Command State (Maybe (Position, Position))

@@ -2,28 +2,22 @@
 //         searcher        //
 /////////////////////////////
 
-.luna-node-searcher {
-    flex:     none;
+.luna-searcher {
     position: absolute;
-    input {
-        line-height:   30px;
-        background:    black;
-        border-radius: 3px;
-        color:         #fff;
-        padding:       0 10px;
-
-    }
+    z-index: 100000000;
 }
-
-.luna-command-searcher {
-    flex:     none;
-    position: absolute;
-    input {
-        line-height:   30px;
-        background:    blue;
-        border-radius: 3px;
-        color:         #fff;
-        padding:       0 10px;
-
+.luna-searcher__input {
+    font-weight:   300;
+    text-align:    center;
+    font-family:   @fontDefault;
+    font-size:     12px;
+    line-height:   12px;
+    height:        12px;
+    background:    @colorBackground;
+    color:         #fff;
+    transform:     translate(-50%, calc(-50% - 55px));
+    overflow:      inherit;
+    &:focus {
+        outline: 0;
     }
 }

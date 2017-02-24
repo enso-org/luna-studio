@@ -18,6 +18,7 @@ import           Luna.Studio.React.Model.Node          (Node)
 import qualified Luna.Studio.React.Model.Node          as Node
 import           Luna.Studio.React.Store               (Ref, dispatch)
 import           Luna.Studio.React.View.NodeBody       (nodeBody_)
+import           Luna.Studio.React.View.Style          (lunaPrefix)
 import           React.Flux
 import qualified React.Flux                            as React
 
@@ -27,6 +28,9 @@ objName = "node"
 
 nodePrefix :: JSString
 nodePrefix = Config.prefix "node-"
+
+stylePrefix :: JSString -> JSString
+stylePrefix = (<>) $ lunaPrefix objName <> "-"
 
 handleMouseDown :: Ref App -> NodeId -> Event -> MouseEvent -> [SomeStoreAction]
 handleMouseDown ref nodeId e m =
@@ -43,12 +47,12 @@ node = React.defineView objName $ \(ref, n) -> do
     div_
         [ "key"       $= (nodePrefix <> fromString (show nodeId))
         , "id"        $= (nodePrefix <> fromString (show nodeId))
-        , "className" $= "luna-node-root"
+        , "className" $= stylePrefix "root"
         , "style"     @= Aeson.object [ "zIndex" Aeson..= show z ]
         ] $ do
         div_
             [ "key"       $= "nodeTrans"
-            , "className" $= "luna-node-trans"
+            , "className" $= stylePrefix "trans"
             ] $
             nodeBody_ ref n
         div_
@@ -60,15 +64,15 @@ node = React.defineView objName $ \(ref, n) -> do
                 , onClick       $ \_ m -> dispatch ref $ UI.NodeEvent $ Node.Select m nodeId
                 , onDoubleClick $ \_ _ -> dispatch ref $ UI.NodeEvent $ Node.Enter nodeId
                 , onMouseDown   $ handleMouseDown ref nodeId
-                , "className"   $= (fromString $ "luna-node" <> if n ^. Node.isExpanded then " luna-node--expanded" else " luna-node--collapsed"
-                                                             <> if n ^. Node.isSelected then " luna-node--selected" else [])
+                , "className"   $= (lunaPrefix objName <> if n ^. Node.isExpanded then " " <> lunaPrefix objName <> "--expanded" else " " <> lunaPrefix objName <> "--collapsed"
+                                                       <> if n ^. Node.isSelected then " " <> lunaPrefix objName <> "--selected" else "")
                 ] $
                 svg_
                     [ "key" $= "name" ] $
                     text_
                         [ "key"         $= "nameText"
                         , onDoubleClick $ \e _ -> stopPropagation e : dispatch ref (UI.NodeEvent $ Node.EditExpression nodeId)
-                        , "className"   $= "luna-node__name luna-noselect"
+                        , "className"   $= (lunaPrefix objName <> "__name " <> stylePrefix "noselect")
                         ] $ elemString $ Text.unpack $ n ^. Node.expression
 
 node_ :: Ref App -> Node -> ReactElementM ViewEventHandler ()

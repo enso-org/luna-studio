@@ -22,6 +22,7 @@ import           Luna.Studio.React.View.Breadcrumbs      (breadcrumbs_)
 import           Luna.Studio.React.View.CodeEditor       (codeEditor_)
 import           Luna.Studio.React.View.CodeEditorToggle (codeEditorToggle_)
 import           Luna.Studio.React.View.NodeEditor       (nodeEditor_)
+import           Luna.Studio.React.View.Style            (lunaPrefix)
 
 
 name :: JSString
@@ -49,14 +50,14 @@ app ref = React.defineControllerView name ref $ \store () -> do
         , "key"       $= "app"
         , "id"        $= appId
         , "tabIndex"  $= "-1"
-        , "className" $= "luna-studio"
+        , "className" $= lunaPrefix "studio"
         ] $
         div_
-            [ "className" $= "luna-main"
+            [ "className" $= lunaPrefix "main"
             , "key"       $= "main"
             ] $ do
             div_
-                [ "className" $= "luna-graph-editor"
+                [ "className" $= lunaPrefix "graph-editor"
                 , "key"       $= "graph-editor"
                 ] $ do
                 nodeEditor_  ref $ s ^. App.nodeEditor
