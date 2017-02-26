@@ -21,7 +21,8 @@ import qualified Empire.ASTOps.Read            as ASTRead
 import qualified Empire.Commands.AST           as AST (isTrivialLambda)
 import qualified Empire.Commands.Graph         as Graph (addNode, connect, getGraph, getNodes,
                                                          getConnections, removeNodes, withGraph,
-                                                         renameNode, disconnect, addPort, movePort, removePort, renamePort)
+                                                         renameNode, disconnect, addPort, movePort,
+                                                         removePort, renamePort, updateNodeExpression)
 import qualified Empire.Commands.GraphBuilder  as GraphBuilder
 import           Empire.Commands.Library       (withLibrary)
 import qualified Empire.Commands.Typecheck     as Typecheck (run)
@@ -331,6 +332,15 @@ spec = around withChannels $ parallel $ do
                 Graph.renameNode top u1 "bar"
                 Graph.getNodes top
             withResult res $ \nodes -> head nodes ^. Node.name `shouldBe` "bar"
+        it "changes node expression" $ \env -> do
+            u1 <- mkUUID
+            u2 <- mkUUID
+            res <- evalEmp env $ do
+                Graph.addNode top u1 "123" def
+                Graph.updateNodeExpression top u1 u2 "456"
+            withResult res $ \(Just node) -> do
+                node ^. Node.nodeType `shouldBe` Node.ExpressionNode "456"
+                node ^. Node.nodeId `shouldBe` u2
     describe "dumpAccessors" $ do
         it "foo.bar" $ \env -> do
             u1 <- mkUUID

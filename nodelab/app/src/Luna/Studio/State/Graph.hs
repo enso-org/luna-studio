@@ -7,6 +7,7 @@ module Luna.Studio.State.Graph
     , connectionIdsContainingNode
     , connections
     , connectionsContainingNode
+    , connectionsContainingPort
     , connectionsContainingNodes
     , connectionsMap
     , connectionsToNodes
@@ -37,6 +38,7 @@ import           Empire.API.Data.Connection (Connection (..), ConnectionId)
 import qualified Empire.API.Data.Connection as Connection
 import           Empire.API.Data.Node       (Node, NodeId)
 import qualified Empire.API.Data.Node       as Node
+import           Empire.API.Data.PortRef    (AnyPortRef (InPortRef', OutPortRef'))
 import qualified Empire.API.Data.PortRef    as PortRef
 import           Luna.Studio.Action.Command (Command)
 
@@ -115,6 +117,22 @@ endsWithNode nid conn = conn ^. Connection.dst . PortRef.dstNodeId == nid
 
 connectionsContainingNode :: NodeId -> State -> [Connection]
 connectionsContainingNode nid state = filter (containsNode nid) $ getConnections state
+
+startsWithPort :: AnyPortRef -> Connection -> Bool
+startsWithPort portRef conn = case portRef of
+    OutPortRef' outPortRef -> conn ^. Connection.src == outPortRef
+    _ -> False
+
+endsWithPort :: AnyPortRef -> Connection -> Bool
+endsWithPort portRef conn = case portRef of
+    InPortRef' inPortRef -> conn ^. Connection.dst == inPortRef
+    _ -> False
+
+containsPort :: AnyPortRef -> Connection -> Bool
+containsPort portRef conn = startsWithPort portRef conn || endsWithPort portRef conn
+
+connectionsContainingPort :: AnyPortRef -> State -> [Connection]
+connectionsContainingPort portRef state = filter (containsPort portRef) $ getConnections state
 
 connectionsContainingNodes :: [NodeId] -> State -> [Connection]
 connectionsContainingNodes nodeIds state = let nodeIdsSet = Set.fromList nodeIds

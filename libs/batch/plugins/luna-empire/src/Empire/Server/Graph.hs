@@ -203,7 +203,7 @@ handleRemoveNodes = modifyGraphOk action success where
 handleUpdateNodeExpression :: Request UpdateNodeExpression.Request -> StateT Env BusT ()-- fixme [SB] returns Result with no new informations and change node expression has addNode+removeNodes
 handleUpdateNodeExpression = modifyGraph action success where
     action (UpdateNodeExpression.Request location nodeId expression) = do
-        oldExpr <- Graph.withGraph location $ $notImplemented -- GraphUtils.getASTTarget nodeId >>= Print.printNodeExpression
+        oldExpr <- Graph.withGraph location $ runASTOp $ GraphUtils.getASTTarget nodeId >>= Print.printNodeExpression
         let newNodeId = nodeId
             inv = UpdateNodeExpression.Inverse (Text.pack oldExpr)
             res = Graph.updateNodeExpression location nodeId newNodeId expression
@@ -238,7 +238,7 @@ handleMovePort = modifyGraph (mtuple action) success where
 handleRemovePort :: Request RemovePort.Request -> StateT Env BusT ()
 handleRemovePort = modifyGraph (mtuple action) success where
     action (RemovePort.Request location portRef) = Graph.removePort location portRef
-    success request@(Request _ _ req@(RemovePort.Request location portRef)) _ node = replyResult request () node >> sendToBus' (NodesUpdate.Update location [node])
+    success request@(Request _ _ req@(RemovePort.Request location portRef)) _ node = replyResult request () node
 
 
 handleConnect :: Request Connect.Request -> StateT Env BusT ()

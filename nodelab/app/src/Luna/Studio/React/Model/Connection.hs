@@ -30,3 +30,9 @@ toCurrentConnection conn = CurrentConnection src dst col where
     src = conn ^. from
     dst = conn ^. to
     col = conn ^. color
+
+toConnection :: ConnectionId -> CurrentConnection -> Connection
+toConnection connId conn = Connection connId src dst col where
+    src = conn ^. currentFrom
+    dst = conn ^. currentTo
+    col = conn ^. currentColor

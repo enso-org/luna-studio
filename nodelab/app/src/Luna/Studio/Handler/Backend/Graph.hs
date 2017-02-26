@@ -11,6 +11,7 @@ import qualified Empire.API.Data.Connection             as Connection
 import qualified Empire.API.Data.Graph                  as Graph
 import           Empire.API.Data.GraphLocation          (GraphLocation (..))
 import qualified Empire.API.Data.Node                   as Node
+import           Empire.API.Data.Port                   (InPort (Arg), OutPort (Projection), PortId (InPortId, OutPortId))
 import qualified Empire.API.Data.PortRef                as PortRef
 import qualified Empire.API.Graph.AddNode               as AddNode
 import qualified Empire.API.Graph.AddSubgraph           as AddSubgraph
@@ -24,6 +25,7 @@ import qualified Empire.API.Graph.NodeSearch            as NodeSearch
 import qualified Empire.API.Graph.NodesUpdate           as NodesUpdate
 import qualified Empire.API.Graph.NodeTypecheckerUpdate as NodeTCUpdate
 import qualified Empire.API.Graph.RemoveNodes           as RemoveNodes
+import qualified Empire.API.Graph.RemovePort            as RemovePort
 import qualified Empire.API.Graph.RenameNode            as RenameNode
 import qualified Empire.API.Graph.UpdateNodeMeta        as UpdateNodeMeta
 import qualified Empire.API.Response                    as Response
@@ -36,7 +38,7 @@ import           Luna.Studio.Action.Camera              (centerGraph)
 import qualified Luna.Studio.Action.CodeEditor          as CodeEditor
 import           Luna.Studio.Action.Command             (Command)
 import           Luna.Studio.Action.Graph               (createGraph, localAddConnection, localRemoveConnections, selectNodes,
-                                                         updateConnectionsForNodes, updateMonads)
+                                                         updateConnectionsForEdges, updateConnectionsForNodes, updateMonads)
 import           Luna.Studio.Action.Node                (addDummyNode, localRemoveNodes, typecheckNode, updateNode, updateNodeProfilingData,
                                                          updateNodeValue, updateNodesMeta)
 import qualified Luna.Studio.Action.Node                as Node
@@ -46,6 +48,7 @@ import           Luna.Studio.Action.UUID                (isOwnRequest)
 import           Luna.Studio.Handler.Backend.Common     (doNothing, handleResponse)
 import           Luna.Studio.State.Global               (State)
 import qualified Luna.Studio.State.Global               as Global
+import qualified Luna.Studio.State.Graph                as StateGraph
 
 
 isCurrentLocation :: GraphLocation -> Command State Bool
@@ -175,8 +178,43 @@ handle (Event.Batch ev) = Just $ case ev of
         correctLocation <- isCurrentLocation (update ^. CodeUpdate.location)
         when (shouldProcess && correctLocation) $ CodeEditor.setCode $ update ^. CodeUpdate.code
 
+    RemovePortResponse response -> handleResponse response $ \request result -> do
+        print "NO JESTEM"
+        shouldProcess <- isCurrentLocationAndGraphLoaded (request ^. RemovePort.location)
+        correctLocation <- isCurrentLocation (request ^. RemovePort.location)
+        when (shouldProcess && correctLocation) $ do
+            let portRef = request ^. RemovePort.anyPortRef
+                nodeId  = portRef ^. PortRef.nodeId
+                portId  = portRef ^. PortRef.portId
+            updateNode result
+            graph <- use Global.graph
+            localRemoveConnections $ map (view Connection.dst) $ StateGraph.connectionsContainingPort portRef graph
+            let shouldUpdate = case portRef ^. PortRef.portId of
+                    InPortId  (Arg _)        -> True
+                    OutPortId (Projection _) -> True
+                    _                        -> False
+            when shouldUpdate $ do
+                graph' <- use Global.graph
+                let connectionsToUpdate = StateGraph.connectionsContainingNodes [nodeId] graph'
+                forM_ connectionsToUpdate $ \conn -> do
+                    let src = conn ^. Connection.src
+                    let dst = conn ^. Connection.dst
+                    if src ^. PortRef.srcNodeId == nodeId then case (src ^. PortRef.srcPortId, portId) of
+                            (Projection num, OutPortId (Projection num')) -> when (num > num') $ do
+                                Global.graph . StateGraph.connectionsMap . at dst ?=
+                                    (conn & Connection.src . PortRef.srcPortId .~ Projection (num - 1))
+                            _ -> return ()
+                        else case (dst ^. PortRef.dstPortId, portId) of
+                            (Arg num, InPortId (Arg num')) -> when (num > num') $ do
+                                Global.graph . StateGraph.connectionsMap . at dst .= Nothing
+                                let newConn = conn & Connection.src . PortRef.srcPortId .~ Projection (num - 1)
+                                Global.graph . StateGraph.connectionsMap . at (newConn ^. Connection.dst) ?= newConn
+                            _ -> return ()
+                updateConnectionsForEdges
+
     -- CollaborationUpdate update -> -- handled in Collaboration.hs
     AddPortResponse              response -> handleResponse response doNothing
+    MovePortResponse             response -> handleResponse response doNothing
     ConnectResponse              response -> handleResponse response doNothing
     DisconnectResponse           response -> handleResponse response doNothing
     NodeMetaResponse             response -> handleResponse response doNothing

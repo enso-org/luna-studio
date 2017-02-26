@@ -19,6 +19,7 @@ module Luna.Studio.Action.Graph
     , updateConnection
     , updateConnections
     , updateConnectionsForNodes
+    , updateConnectionsForEdges
     , updateMonads
     , updateNodeZOrder
     ) where
@@ -31,4 +32,5 @@ import           Luna.Studio.Action.Graph.Lookup           (allNodeIds, allNodes
 import           Luna.Studio.Action.Graph.Selection        (selectAll, selectNodes, selectedNodeIds, selectedNodes, toggleSelect,
                                                             unselectAll)
 import           Luna.Studio.Action.Graph.SelectionHistory (modifySelectionHistory)
-import           Luna.Studio.Action.Graph.Update           (updateConnection, updateConnections, updateConnectionsForNodes, updateMonads)
+import           Luna.Studio.Action.Graph.Update           (updateConnection, updateConnections, updateConnectionsForEdges,
+                                                            updateConnectionsForNodes, updateMonads)

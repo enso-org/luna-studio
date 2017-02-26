@@ -24,6 +24,8 @@ handlers :: Map.Map String (ByteString -> Batch.Event)
 handlers = Map.fromList [ handle NodeAdded
                         , handle AddNodeResponse
                         , handle AddPortResponse
+                        , handle RemovePortResponse
+                        , handle MovePortResponse
                         , handle NodesRemoved
                         , handle RemoveNodesResponse
                         , handle NodesConnected

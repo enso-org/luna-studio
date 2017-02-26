@@ -10,6 +10,7 @@ import           Data.ScreenPosition     (ScreenPosition)
 import           Data.Set                (Set)
 import qualified Data.Set                as Set
 import           Empire.API.Data.Node    (NodeId)
+import           Empire.API.Data.Port    (PortId)
 import           Empire.API.Data.PortRef (AnyPortRef)
 import           Luna.Studio.Prelude
 
@@ -88,9 +89,10 @@ data Connect = Connect { _connectStartPos       :: ScreenPosition
 makeLenses ''Connect
 instance ToJSON Connect
 
-data PortDrag = PortDrag { _portDragStartPos :: ScreenPosition
-                         , _portDragPortRef  :: AnyPortRef
-                         , _portDragMode     :: Mode
+data PortDrag = PortDrag { _portDragStartPos    :: ScreenPosition
+                         , _portDragPortRef     :: AnyPortRef
+                         , _portDragPortMapping :: Map PortId PortId
+                         , _portDragMode        :: Mode
                          } deriving (Eq, Generic, Show, Typeable)
 
 makeLenses ''PortDrag
