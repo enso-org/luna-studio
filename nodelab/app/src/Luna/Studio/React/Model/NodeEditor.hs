@@ -16,16 +16,17 @@ import           Luna.Studio.React.Model.Searcher      (Searcher)
 import           Luna.Studio.React.Model.SelectionBox  (SelectionBox)
 
 
-data NodeEditor = NodeEditor { _screenTransform   :: CameraTransformation
-                             , _nodes             :: HashMap NodeId    Node
-                             , _monads            :: [(TypeRep, [NodeId])]
-                             , _connections       :: HashMap InPortRef Connection
-                             , _currentConnection :: Maybe CurrentConnection
-                             , _connectionPen     :: Maybe ConnectionPen
-                             , _selectionBox      :: Maybe SelectionBox
-                             , _searcher          :: Maybe Searcher
-                             , _visualizations    :: [(NodeId, Int, Position)]
-                             , _draggedPort       :: Maybe DraggedPort
+data NodeEditor = NodeEditor { _screenTransform     :: CameraTransformation
+                             , _nodes               :: HashMap NodeId    Node
+                             , _monads              :: [(TypeRep, [NodeId])]
+                             , _connections         :: HashMap InPortRef Connection
+                             , _currentConnection   :: Maybe CurrentConnection
+                             , _portDragConnections :: HashMap InPortRef Connection
+                             , _connectionPen       :: Maybe ConnectionPen
+                             , _selectionBox        :: Maybe SelectionBox
+                             , _searcher            :: Maybe Searcher
+                             , _visualizations      :: [(NodeId, Int, Position)]
+                             , _draggedPort         :: Maybe DraggedPort
                              } deriving (Default, Eq, Generic)
 
 makeLenses ''NodeEditor

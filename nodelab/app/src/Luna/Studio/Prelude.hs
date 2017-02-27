@@ -7,11 +7,13 @@ module Luna.Studio.Prelude (
     module X
 ) where
 
+
 import           Control.Applicative           as X
 import           Control.Lens                  as X
 import           Control.Monad                 as X (MonadPlus, join, mplus, mzero, unless, void, when, (<=<), (>=>))
 import           Control.Monad.IO.Class        as X (MonadIO, liftIO)
 import           Control.Monad.Trans           as X (MonadTrans, lift)
+import qualified Control.Monad.Trans.Maybe     as MaybeT
 import           Data.Char                     as X
 import           Data.Default                  as X
 import           Data.Either                   as X (isLeft, isRight)
@@ -63,3 +65,11 @@ keyed = zip [0..]
 
 forKeyed_ :: Monad m => [a] -> ((Int, a) -> m ()) -> m ()
 forKeyed_ = forM_ . keyed
+
+-- | From Control.Errors. Analogous to 'Just' and equivalent to 'return'
+just :: (Monad m) => a -> MaybeT.MaybeT m a
+just a = MaybeT.MaybeT (return (Just a))
+
+-- | From Control.Errors. Analogous to 'Nothing' and equivalent to 'mzero'
+nothing :: (Monad m) => MaybeT.MaybeT m a
+nothing = MaybeT.MaybeT (return Nothing)

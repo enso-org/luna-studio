@@ -1,4 +1,6 @@
 {-# OPTIONS_GHC -fno-warn-orphans #-}
+{-# LANGUAGE MultiWayIf #-}
+{-# LANGUAGE RankNTypes #-}
 module Luna.Studio.Action.Edge
     ( startPortDrag
     , handleAppMove
@@ -10,6 +12,7 @@ module Luna.Studio.Action.Edge
     ) where
 
 import           Control.Arrow
+import           Control.Monad.Trans.Maybe              (MaybeT (MaybeT), runMaybeT)
 import qualified Data.HashMap.Strict                    as HashMap
 import           Data.Map.Lazy                          (Map)
 import qualified Data.Map.Lazy                          as Map
@@ -20,7 +23,8 @@ import           Data.Vector                            (Vector2 (Vector2), scal
 import qualified Empire.API.Data.Connection             as ConnectionAPI
 import           Empire.API.Data.Node                   (NodeId)
 import qualified Empire.API.Data.Node                   as NodeAPI
-import           Empire.API.Data.Port                   (InPort (Arg, Self), OutPort (All, Projection), PortId (InPortId, OutPortId))
+import           Empire.API.Data.Port                   (InPort (Arg, Self), OutPort (All, Projection), PortId (InPortId, OutPortId),
+                                                         _InPortId, _OutPortId)
 import qualified Empire.API.Data.Port                   as PortAPI
 import           Empire.API.Data.PortRef                (AnyPortRef (InPortRef', OutPortRef'), toAnyPortRef)
 import qualified Empire.API.Data.PortRef                as PortRef
@@ -116,7 +120,9 @@ stopPortDrag :: PortDrag -> Command State ()
 stopPortDrag portDrag = do
     let portRef = portDrag ^. Action.portDragPortRef
         nodeId  = portRef ^. PortRef.nodeId
-    Global.modifyNodeEditor $ NodeEditor.draggedPort .= Nothing
+    Global.modifyNodeEditor $ do
+        NodeEditor.draggedPort         .= Nothing
+        NodeEditor.portDragConnections .= def
     mayNode <- use $ Global.graph . Graph.nodesMap . at nodeId
     withJust mayNode $ \node -> Global.modifyNodeEditor $ NodeEditor.nodes . at nodeId ?= fromNode node
     updateConnectionsForEdges
@@ -139,14 +145,11 @@ addPort = Batch.addPort
 
 
 getDraggedPortPositionInSidebar :: ScreenPosition -> Node -> Command State (Maybe Position)
-getDraggedPortPositionInSidebar mousePos node = do
-    maySidebarPos  <- if isInputEdge node then getInputSidebarPosition else getOutputSidebarPosition
-    maySidebarSize <- if isInputEdge node then getInputSidebarSize     else getOutputSidebarSize
-    case (,) <$> maySidebarSize <*> maySidebarPos of
-        Just (sidebarSize, sidebarPos) -> do
-            let shift = flip scalarProduct (-1) $ Vector2 (sidebarPos ^. x) (sidebarPos ^. y + sidebarSize ^. y / 2)
-            return $ Just $ move shift $ Position $ fromScreenPosition mousePos
-        Nothing -> return Nothing
+getDraggedPortPositionInSidebar mousePos node = runMaybeT $ do
+    sidebarPos  <- MaybeT $ if isInputEdge node then getInputSidebarPosition else getOutputSidebarPosition
+    sidebarSize <- MaybeT $ if isInputEdge node then getInputSidebarSize     else getOutputSidebarSize
+    let shift = flip scalarProduct (-1) $ Vector2 (sidebarPos ^. x) (sidebarPos ^. y + sidebarSize ^. y / 2)
+    return $ move shift $ Position $ fromScreenPosition mousePos
 
 updateConnectionsForPort :: PortDrag -> AnyPortRef -> Command State ()
 updateConnectionsForPort portDrag portRef = do
@@ -154,20 +157,18 @@ updateConnectionsForPort portDrag portRef = do
     let portMapping = portDrag ^. Action.portDragPortMapping
         connectionsToUpdate = Graph.connectionsContainingPort portRef graph
     forM_ connectionsToUpdate $ \conn -> do
-            let mayNewConn = case portRef of
-                    InPortRef' _ -> do
-                        let mayNewDstPortId = Map.lookup (portRef ^. PortRef.portId) portMapping
-                        case mayNewDstPortId of
-                            Just (InPortId newDstPort) -> Just $ conn & ConnectionAPI.dst . PortRef.dstPortId .~ newDstPort
-                            _                          -> Nothing
-                    OutPortRef' _ -> do
-                        let mayNewSrcPortId = Map.lookup (portRef ^. PortRef.portId) portMapping
-                        case mayNewSrcPortId of
-                            Just (OutPortId newSrcPort) -> Just $ conn & ConnectionAPI.src . PortRef.srcPortId .~ newSrcPort
-                            _                           -> Nothing
-            withJust mayNewConn $ \newConn -> do
-                mayConnectionModel <- createConnectionModel newConn
-                Global.modifyNodeEditor $ NodeEditor.connections . at (newConn ^. ConnectionAPI.dst) .= mayConnectionModel
+        let mayNewConn = case portRef of
+                InPortRef' _ -> do
+                    newDstPortId <- Map.lookup (portRef ^. PortRef.portId) portMapping
+                    newDstPort   <- newDstPortId ^? _InPortId
+                    return $ conn & ConnectionAPI.dst . PortRef.dstPortId .~ newDstPort
+                OutPortRef' _ -> do
+                    newSrcPortId <- Map.lookup (portRef ^. PortRef.portId) portMapping
+                    newSrcPort   <- newSrcPortId ^? _OutPortId
+                    return $ conn & ConnectionAPI.src . PortRef.srcPortId .~ newSrcPort
+        withJust mayNewConn $ \newConn -> do
+            mayConnectionModel <- createConnectionModel newConn
+            Global.modifyNodeEditor $ NodeEditor.connections . at (newConn ^. ConnectionAPI.dst) .= mayConnectionModel
 
 
 updateConnectionsForDraggedPort :: AnyPortRef -> Position -> Command State ()
@@ -182,9 +183,11 @@ updateConnectionsForDraggedPort portRef pos = do
         mayPortColor <- (fmap . fmap) (view Port.color) $ getPort portRef
         withJust ((,) <$> mayConnModel <*> mayPortColor) $ \(connModel', portColor) -> do
             let connModel = case portRef of
-                    InPortRef'  _ -> connModel' & Connection.color .~ portColor
-                    OutPortRef' _ -> connModel'
-            Global.modifyNodeEditor $ NodeEditor.connections . at connId ?= connModel
+                    OutPortRef' _ -> connModel' & Connection.color .~ portColor
+                    InPortRef'  _ -> connModel'
+            Global.modifyNodeEditor $ do
+                NodeEditor.connections         . at connId .= Nothing
+                NodeEditor.portDragConnections . at connId ?= connModel
 
 getPortPositionToCompare :: PortId -> Position -> PortDrag -> Command State (Maybe Position)
 getPortPositionToCompare portId mousePos portDrag = do
@@ -207,36 +210,20 @@ getPortPositionToCompare portId mousePos portDrag = do
                     else (fmap . fmap) (move (Vector2 0 (-lineHeight))) orgPos where
                         orgPos = getInputEdgePortPosition num
 
-comparePorts :: (PortId, Position) -> (PortId, Position) -> Ordering
-comparePorts (portId1, pos1) (portId2, pos2) = case (portId1, portId2) of
+comparePortsByNewPositionInNode :: (PortId, Position) -> (PortId, Position) -> Ordering
+comparePortsByNewPositionInNode (portId1, pos1) (portId2, pos2) = case (portId1, portId2) of
     ((InPortId (Arg _))        , (InPortId (Arg _)))         -> compare (pos1 ^. y) (pos2 ^. y)
     ((OutPortId (Projection _)), (OutPortId (Projection _))) -> compare (pos1 ^. y) (pos2 ^. y)
     _ -> compare portId1 portId2
 
-reorderPortsInNode :: Node -> Map PortId PortId -> Command State (Maybe Node)
-reorderPortsInNode node portMapping = do
-    let ports = node ^. Node.ports . to Map.elems
-        mayNewPorts = sequence $ flip map ports $ \port ->
-            case Map.lookup (port ^. Port.portId) portMapping of
-                Nothing    -> Nothing
-                Just newId -> Just $ port & Port.portId .~ newId
-    case mayNewPorts of
-        Nothing       -> return Nothing
-        Just newPorts -> return $ Just $ node & Node.ports .~ portsMap where
-            portsMap = Map.fromList $ map (view Port.portId &&& id) newPorts
-
--- TODO: This function matches almost exactly reorderPortsInNode. Should be refactored.
-reorderPortsInAPINode :: NodeAPI.Node -> Map PortId PortId -> Command State (Maybe NodeAPI.Node)
-reorderPortsInAPINode node portMapping = do
-    let ports = node ^. NodeAPI.ports . to Map.elems
-        mayNewPorts = sequence $ flip map ports $ \port ->
-            case Map.lookup (port ^. PortAPI.portId) portMapping of
-                Nothing    -> Nothing
-                Just newId -> Just $ port & PortAPI.portId .~ newId
-    case mayNewPorts of
-        Nothing       -> return Nothing
-        Just newPorts -> return $ Just $ node & NodeAPI.ports .~ portsMap where
-            portsMap = Map.fromList $ map (view PortAPI.portId &&& id) newPorts
+-- reorderPortsInNode :: Node -> Map PortId PortId -> Maybe Node
+reorderPortsInNode :: forall n p . Lens' n (Map PortId p) -> Lens' p PortId -> n -> Map PortId PortId -> Maybe n
+reorderPortsInNode ports portId node portMapping = do
+    let ports' = node ^. ports . to Map.elems
+    newPorts <- forM ports' $ \port -> do
+            newId <- Map.lookup (port ^. portId) portMapping
+            return $ port & portId .~ newId
+    return $ node & ports .~ (Map.fromList $ map (view portId &&& id) newPorts)
 
 localReorderPorts :: Position -> Node -> PortDrag -> Command State ()
 localReorderPorts mousePos originalNode portDrag = do
@@ -247,10 +234,9 @@ localReorderPorts mousePos originalNode portDrag = do
     case mayPortsWithPos of
         Nothing -> end portDrag
         Just portsWithPos -> do
-            let newOrder   = map fst $ sortBy comparePorts portsWithPos
+            let newOrder   = map fst $ sortBy comparePortsByNewPositionInNode portsWithPos
                 newMapping = Map.fromList $ zip newOrder portsIds
-            mayUpdatedNode <- reorderPortsInNode originalNode newMapping
-            case mayUpdatedNode of
+            case reorderPortsInNode Node.ports Port.portId originalNode newMapping of
                 Nothing          -> end portDrag
                 Just updatedNode -> do
                     Global.modifyNodeEditor $ NodeEditor.nodes . at nodeId ?= updatedNode
@@ -275,22 +261,20 @@ confirmReorder portDrag = do
         case (,) <$> mayOldNode <*> mayPortNewPos of
             Nothing   -> end portDrag
             Just (node', num) -> do
-                mayNode <- reorderPortsInAPINode node' portMapping
-                let connectionsToUpdate   = Graph.connectionsContainingNode nodeId graph
-                    mayUpdatedConnections = sequence $ flip map connectionsToUpdate $ \conn -> do
-                        if conn ^. ConnectionAPI.src . PortRef.srcNodeId == nodeId then do
-                            let connPortId       = OutPortId (conn ^. ConnectionAPI.src . PortRef.srcPortId)
-                                mayNewConnPortId = Map.lookup connPortId portMapping
-                            case mayNewConnPortId of
-                                Just (OutPortId newPort) -> Just $ conn & ConnectionAPI.src . PortRef.srcPortId .~ newPort
-                                _                        -> Nothing
-                        else if conn ^. ConnectionAPI.dst . PortRef.dstNodeId == nodeId then do
-                            let connPortId       = InPortId (conn ^. ConnectionAPI.dst . PortRef.dstPortId)
-                                mayNewConnPortId = Map.lookup connPortId portMapping
-                            case mayNewConnPortId of
-                                Just (InPortId newPort) -> Just $ conn & ConnectionAPI.dst . PortRef.dstPortId .~ newPort
-                                _                       -> Nothing
-                        else Nothing
+                let mayNode = reorderPortsInNode NodeAPI.ports PortAPI.portId node' portMapping
+                    connectionsToUpdate   = Graph.connectionsContainingNode nodeId graph
+                    mayUpdatedConnections = forM connectionsToUpdate $ \conn -> do
+                        if | conn ^. ConnectionAPI.src . PortRef.srcNodeId == nodeId -> do
+                                let connPortId = OutPortId (conn ^. ConnectionAPI.src . PortRef.srcPortId)
+                                newConnPortId <- Map.lookup connPortId portMapping
+                                newPort       <- newConnPortId ^? _OutPortId
+                                return $ conn & ConnectionAPI.src . PortRef.srcPortId .~ newPort
+                           | conn ^. ConnectionAPI.dst . PortRef.dstNodeId == nodeId -> do
+                               let connPortId = InPortId (conn ^. ConnectionAPI.dst . PortRef.dstPortId)
+                               newConnPortId <- Map.lookup connPortId portMapping
+                               newPort <- newConnPortId ^? _InPortId
+                               return $ conn & ConnectionAPI.dst . PortRef.dstPortId .~ newPort
+                           | otherwise -> Nothing
                 case (,) <$> mayNode <*> mayUpdatedConnections of
                     Nothing                 -> end portDrag
                     Just (node, updatedConnections) -> do

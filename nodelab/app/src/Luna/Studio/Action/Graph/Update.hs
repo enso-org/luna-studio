@@ -38,10 +38,8 @@ updateConnectionsForNodes nodeIds = do
 
 updateConnection :: ConnectionId -> Command State ()
 updateConnection connId = do
-    mayConnection  <- preuse $ Global.graph . Graph.connectionsMap . ix connId
-    mayConnModel <- case mayConnection of
-        Just conn -> createConnectionModel conn
-        Nothing   -> return Nothing
+    mayConnection <- preuse $ Global.graph . Graph.connectionsMap . ix connId
+    mayConnModel  <- join <$> mapM createConnectionModel mayConnection
     Global.modifyNodeEditor $ NodeEditor.connections . at connId .= mayConnModel
 
 updateConnectionsForEdges :: Command Global.State ()

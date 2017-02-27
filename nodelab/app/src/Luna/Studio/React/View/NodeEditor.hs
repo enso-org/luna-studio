@@ -89,6 +89,7 @@ nodeEditor = React.defineView name $ \(ref, ne) -> do
                 , "className" $= "luna-connections"
                 ] $ do
                 mapM_ (uncurry (connection_ ref)) $ ne ^. NodeEditor.connections . to HashMap.toList
+                mapM_ (uncurry (connection_ ref)) $ ne ^. NodeEditor.portDragConnections . to HashMap.toList
                 mapM_ currentConnection_          $ ne ^. NodeEditor.currentConnection
                 mapM_ selectionBox_               $ ne ^. NodeEditor.selectionBox
                 mapM_ connectionPen_              $ ne ^. NodeEditor.connectionPen

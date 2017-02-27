@@ -26,13 +26,7 @@ makeLenses ''CurrentConnection
 instance ToJSON CurrentConnection
 
 toCurrentConnection :: Connection -> CurrentConnection
-toCurrentConnection conn = CurrentConnection src dst col where
-    src = conn ^. from
-    dst = conn ^. to
-    col = conn ^. color
+toCurrentConnection = CurrentConnection <$> view from <*> view to <*> view color
 
 toConnection :: ConnectionId -> CurrentConnection -> Connection
-toConnection connId conn = Connection connId src dst col where
-    src = conn ^. currentFrom
-    dst = conn ^. currentTo
-    col = conn ^. currentColor
+toConnection connId = Connection connId <$> view currentFrom <*> view currentTo <*> view currentColor

@@ -84,19 +84,16 @@ handle (Event.Batch ev) = Just $ case ev of
 
     AddNodeResponse response@(Response.Response uuid _ (AddNode.Request loc _ _ _ _) _ _) -> do
         shouldProcess   <- isCurrentLocationAndGraphLoaded loc
-        correctLocation <- isCurrentLocation loc
         shouldSelect    <- isOwnRequest uuid
-        handleResponse response $ \_ node ->
-            when (shouldProcess && correctLocation) $ do
-                addDummyNode node
-                let nodeId = node ^. Node.nodeId
-                collaborativeModify [nodeId]
-                when shouldSelect $ selectNodes [nodeId]
+        handleResponse response $ \_ node -> when shouldProcess $ do
+            addDummyNode node
+            let nodeId = node ^. Node.nodeId
+            collaborativeModify [nodeId]
+            when shouldSelect $ selectNodes [nodeId]
 
     AddSubgraphResponse response@(Response.Response uuid _ (AddSubgraph.Request loc nodes connections _) _ (Response.Ok idsMaybeMap)) -> do
         shouldProcess   <- isCurrentLocationAndGraphLoaded loc
-        correctLocation <- isCurrentLocation loc
-        let handleSubgraph nodes' connections' = when (shouldProcess && correctLocation) $ do
+        let handleSubgraph nodes' connections' = when shouldProcess $ do
                 mapM_ addDummyNode nodes'
                 mapM_ localAddConnection connections'
                 whenM (isOwnRequest uuid) $ do
@@ -123,66 +120,54 @@ handle (Event.Batch ev) = Just $ case ev of
 
     NodeMetaUpdated update -> do
         shouldProcess   <- isCurrentLocationAndGraphLoaded (update ^. UpdateNodeMeta.location')
-        correctLocation <- isCurrentLocation (update ^. UpdateNodeMeta.location')
-        when (shouldProcess && correctLocation) $ do
+        when shouldProcess $ do
             updateNodesMeta (update ^. UpdateNodeMeta.updates')
             updateConnectionsForNodes $ fst <$> (update ^. UpdateNodeMeta.updates')
 
     NodeAdded update -> do
         shouldProcess <- isCurrentLocationAndGraphLoaded (update ^. AddNode.location')
-        correctLocation <- isCurrentLocation (update ^. AddNode.location')
-        when (shouldProcess && correctLocation) $ addDummyNode (update ^. AddNode.node')
+        when shouldProcess $ addDummyNode (update ^. AddNode.node')
 
     NodesUpdated update -> do
         shouldProcess <- isCurrentLocationAndGraphLoaded (update ^. NodesUpdate.location)
-        correctLocation <- isCurrentLocation (update ^. NodesUpdate.location)
-        when (shouldProcess && correctLocation) $ mapM_ updateNode $ update ^. NodesUpdate.nodes
+        when shouldProcess $ mapM_ updateNode $ update ^. NodesUpdate.nodes
 
     MonadsUpdated update -> do
         shouldProcess <- isCurrentLocationAndGraphLoaded (update ^. MonadsUpdate.location)
-        correctLocation <- isCurrentLocation (update ^. MonadsUpdate.location)
-        when (shouldProcess && correctLocation) $ updateMonads $ update ^. MonadsUpdate.monads
+        when shouldProcess $ updateMonads $ update ^. MonadsUpdate.monads
 
     NodeTypechecked update -> do
       shouldProcess <- isCurrentLocationAndGraphLoaded (update ^. NodeTCUpdate.location)
-      correctLocation <- isCurrentLocation (update ^. NodeTCUpdate.location)
-      when (shouldProcess && correctLocation) $ typecheckNode $ update ^. NodeTCUpdate.node
+      when shouldProcess $ typecheckNode $ update ^. NodeTCUpdate.node
 
     NodeRenamed update -> do
         shouldProcess <- isCurrentLocationAndGraphLoaded (update ^. RenameNode.location')
-        correctLocation <- isCurrentLocation (update ^. RenameNode.location')
-        when (shouldProcess && correctLocation) $ Node.rename (update ^. RenameNode.nodeId') (update ^. RenameNode.name')
+        when shouldProcess $ Node.rename (update ^. RenameNode.nodeId') (update ^. RenameNode.name')
 
     NodesRemoved update -> do
         shouldProcess <- isCurrentLocationAndGraphLoaded (update ^. RemoveNodes.location')
-        correctLocation <- isCurrentLocation (update ^. RemoveNodes.location')
-        when (shouldProcess && correctLocation) $ localRemoveNodes $ update ^. RemoveNodes.nodeIds'
+        when shouldProcess $ localRemoveNodes $ update ^. RemoveNodes.nodeIds'
 
     NodeResultUpdated update -> do
         shouldProcess <- isCurrentLocationAndGraphLoaded (update ^. NodeResultUpdate.location)
-        correctLocation <- isCurrentLocation (update ^. NodeResultUpdate.location)
-        when (shouldProcess && correctLocation) $ do
+        when shouldProcess $ do
             updateNodeValue         (update ^. NodeResultUpdate.nodeId) (update ^. NodeResultUpdate.value)
             updateNodeProfilingData (update ^. NodeResultUpdate.nodeId) (update ^. NodeResultUpdate.execTime)
             updateConnectionsForNodes [update ^. NodeResultUpdate.nodeId]
 
     NodeSearchResponse response -> handleResponse response $ \request result -> do
         shouldProcess <- isCurrentLocationAndGraphLoaded (request ^. NodeSearch.location)
-        correctLocation <- isCurrentLocation (request ^. NodeSearch.location)
-        when (shouldProcess && correctLocation) $ do
+        when shouldProcess $ do
             Global.workspace . Workspace.nodeSearcherData .= result ^. NodeSearch.nodeSearcherData
             Searcher.updateHints
 
     CodeUpdated update -> do
         shouldProcess <- isCurrentLocationAndGraphLoaded (update ^. CodeUpdate.location)
-        correctLocation <- isCurrentLocation (update ^. CodeUpdate.location)
-        when (shouldProcess && correctLocation) $ CodeEditor.setCode $ update ^. CodeUpdate.code
+        when shouldProcess $ CodeEditor.setCode $ update ^. CodeUpdate.code
 
     RemovePortResponse response -> handleResponse response $ \request result -> do
-        print "NO JESTEM"
         shouldProcess <- isCurrentLocationAndGraphLoaded (request ^. RemovePort.location)
-        correctLocation <- isCurrentLocation (request ^. RemovePort.location)
-        when (shouldProcess && correctLocation) $ do
+        when shouldProcess $ do
             let portRef = request ^. RemovePort.anyPortRef
                 nodeId  = portRef ^. PortRef.nodeId
                 portId  = portRef ^. PortRef.portId
