@@ -5,8 +5,7 @@ module Luna.Studio.React.View.Node where
 import qualified Data.Aeson                            as Aeson
 import           Data.Matrix                           as Matrix
 import           Data.Matrix                           (Matrix)
-import           Data.Position                         (Position(Position),Vector2(Vector2),x, y)
-import qualified Data.Text                             as Text
+import           Data.Position                         (Position(Position), Vector2(Vector2), x, y)
 import           Empire.API.Data.Node                  (NodeId)
 import qualified JS.Config                             as Config
 import           Luna.Studio.Action.Geometry.Constants (fontSize)
@@ -24,14 +23,11 @@ import           React.Flux
 import qualified React.Flux                            as React
 
 
-objName :: JSString
-objName = "node"
+name :: JSString
+name = "node"
 
 nodePrefix :: JSString
 nodePrefix = Config.prefix "node-"
-
-stylePrefix :: JSString -> JSString
-stylePrefix = (<>) $ lunaPrefix objName <> "-"
 
 handleMouseDown :: Ref App -> NodeId -> Event -> MouseEvent -> [SomeStoreAction]
 handleMouseDown ref nodeId e m =
@@ -40,7 +36,7 @@ handleMouseDown ref nodeId e m =
     else []
 
 node :: ReactView (Ref App, Node)
-node = React.defineView objName $ \(ref, n) -> do
+node = React.defineView name $ \(ref, n) -> do
     let nodeId    = n ^. Node.nodeId
         nodeLimit = 10000::Int
         zIndex    = n ^. Node.zPos
@@ -48,32 +44,32 @@ node = React.defineView objName $ \(ref, n) -> do
     div_
         [ "key"       $= (nodePrefix <> fromString (show nodeId))
         , "id"        $= (nodePrefix <> fromString (show nodeId))
-        , "className" $= stylePrefix "root"
+        , "className" $= lunaPrefix "node-root"
         , "style"     @= Aeson.object [ "zIndex" Aeson..= show z ]
         ] $ do
         div_
             [ "key"       $= "nodeTrans"
-            , "className" $= stylePrefix "trans"
+            , "className" $= lunaPrefix "node-trans"
             ] $
             nodeBody_ ref n
         div_
             [ "key"       $= "nameTrans"
-            , "className" $= "luna-name-trans"
+            , "className" $= lunaPrefix "name-trans"
             ] $
             div_
                 [ "key"         $= "nameRoot"
                 , onClick       $ \_ m -> dispatch ref $ UI.NodeEvent $ Node.Select m nodeId
                 , onDoubleClick $ \_ _ -> dispatch ref $ UI.NodeEvent $ Node.Enter nodeId
                 , onMouseDown   $ handleMouseDown ref nodeId
-                , "className"   $= (lunaPrefix objName <> if n ^. Node.isExpanded then " " <> lunaPrefix objName <> "--expanded" else " " <> lunaPrefix objName <> "--collapsed"
-                                                       <> if n ^. Node.isSelected then " " <> lunaPrefix objName <> "--selected" else "")
+                , "className"   $= (lunaPrefix name <> if n ^. Node.isExpanded then " " <> lunaPrefix name <> "--expanded" else " " <> lunaPrefix name <> "--collapsed"
+                                                    <> if n ^. Node.isSelected then " " <> lunaPrefix name <> "--selected" else "")
                 ] $
                 svg_
                     [ "key" $= "name" ] $
                     text_
                         [ "key"         $= "nameText"
                         , onDoubleClick $ \e _ -> stopPropagation e : dispatch ref (UI.NodeEvent $ Node.EditExpression nodeId)
-                        , "className"   $= (lunaPrefix objName <> "__name " <> lunaPrefix "noselect")
+                        , "className"   $= (lunaPrefix name <> "__name " <> lunaPrefix "noselect")
                         ] $ elemString $ convert $ n ^. Node.expression
 
 node_ :: Ref App -> Node -> ReactElementM ViewEventHandler ()

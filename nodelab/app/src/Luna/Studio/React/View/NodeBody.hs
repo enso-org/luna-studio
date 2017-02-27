@@ -47,9 +47,7 @@ nodeBody = React.defineView objName $ \(ref, n) -> do
         , onMouseDown   $ handleMouseDown ref nodeId
         , "className"   $= (fromString $ "luna-node" <> (if n ^. Node.isExpanded then " luna-node--expanded" else " luna-node--collapsed")
                                                      <> (if n ^. Node.isSelected then " luna-node--selected" else []))
-        , "style"       @= Aeson.object
-            [ "transform" Aeson..= translatePropertyValue2 pos
-            ]
+        , "style"       @= Aeson.object [ "transform" Aeson..= translatePropertyValue2 pos ]
         ] $ do
         div_
             [ "key"       $= "main"

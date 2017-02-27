@@ -96,8 +96,8 @@ nodeEditor = React.defineView name $ \(ref, ne) -> do
             ] $ do
             forM_ (HashMap.elems nodes) $ node_ ref
             forM_ (ne ^. NodeEditor.visualizations) $ pinnedVisualization_ ref ne
+            mapM_ (searcher_ ref camera) $ ne ^. NodeEditor.searcher
         canvas_
             [ "className" $= "luna-plane plane--canvas luna-hide"
             , "key"       $= "canvas"
             ] mempty
-        mapM_ (searcher_ ref camera) $ ne ^. NodeEditor.searcher
