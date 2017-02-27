@@ -401,6 +401,10 @@ getOuterLambdaArguments = do
             return lambdaArgs
         _ -> return []
 
+outIndexToProjection :: Maybe Int -> OutPort
+outIndexToProjection Nothing = All
+outIndexToProjection (Just i) = Projection i
+
 getNodeInputs :: ASTOp m => Maybe (NodeId, NodeId) -> NodeId -> m [(OutPortRef, InPortRef)]
 getNodeInputs edgeNodes nodeId = do
     root        <- GraphUtils.getASTPointer nodeId
@@ -411,7 +415,10 @@ getNodeInputs edgeNodes nodeId = do
     selfNodeMay <- case selfMay of
         Just self -> fmap snd $ resolveInputNodeId edgeNodes lambdaArgs self
         Nothing   -> return Nothing
-    let selfConnMay = (,) <$> (OutPortRef <$> selfNodeMay <*> Just All)
+    let projection  = case selfMay of
+            Just self -> Just $ outIndexToProjection $ List.findIndex (== self) lambdaArgs
+            Nothing   -> Nothing
+    let selfConnMay = (,) <$> (OutPortRef <$> selfNodeMay <*> projection)
                           <*> (Just $ InPortRef nodeId Self)
 
     args       <- ASTDeconstruct.extractArguments ref
@@ -420,7 +427,5 @@ getNodeInputs edgeNodes nodeId = do
         hasNodeId (outIndex, Just nodeId, index) = Just (outIndex, nodeId, index)
         hasNodeId _ = Nothing
         onlyExt  = catMaybes $ map hasNodeId withInd
-        outIndexToProjection Nothing = All
-        outIndexToProjection (Just i) = Projection i
         conns    = flip map onlyExt $ \((outIndexToProjection -> proj), n, i) -> (OutPortRef n proj, InPortRef nodeId (Arg i))
     return $ maybeToList selfConnMay ++ conns

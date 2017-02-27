@@ -96,7 +96,7 @@ spec = around withChannels $ parallel $ do
                 let loc' = top |> u1
                 Graph.addNode loc' u2 "succ" def
                 Just (input, _) <- Graph.withGraph loc' $ runASTOp GraphBuilder.getEdgePortMapping
-                let referenceConnection = (OutPortRef input Port.All, InPortRef u2 Port.Self)
+                let referenceConnection = (OutPortRef input (Port.Projection 0), InPortRef u2 Port.Self)
                 uncurry (Graph.connect loc') referenceConnection
                 connections <- Graph.getConnections loc'
                 return (referenceConnection, connections)
@@ -758,3 +758,21 @@ spec = around withChannels $ parallel $ do
                     ]
                 connections `shouldMatchList` referenceConnections
                 nodeIds `shouldMatchList` [u2]
+        it "can build input edge after connecting input edge to self" $ \env -> do
+            u1 <- mkUUID
+            u2 <- mkUUID
+            res <- evalEmp env $ do
+                Graph.addNode top u1 "def foo" def
+                let loc' = top |> u1
+                Just (input, output) <- Graph.withGraph loc' $ runASTOp GraphBuilder.getEdgePortMapping
+                Graph.addPort loc' input
+                Graph.addNode loc' u2 "succ" def
+                Graph.connect loc' (OutPortRef input (Port.Projection 1)) (InPortRef u2 Port.Self)
+                inputEdge <- buildInputEdge' loc' input
+                return inputEdge
+            withResult res $ \inputEdge -> do
+              let outputPorts = Map.elems $ Map.filter Port.isOutputPort $ inputEdge ^. Node.ports
+              outputPorts `shouldMatchList` [
+                    Port.Port (Port.OutPortId (Port.Projection 0)) "arg0" TStar Port.Connected
+                  , Port.Port (Port.OutPortId (Port.Projection 1)) "a"    TStar Port.Connected
+                  ]
