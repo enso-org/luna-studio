@@ -11,20 +11,21 @@ module.exports =
         if path.extname(uri) is '.luna'
             handleNotification = (lvl, error) ->
               if lvl == 0
-                notification = atom.notifications.addFatalError(error,
+                notification = atom.notifications.addFatalError("Fatal Error",
                 dismissable: true,
+                description: error,
                 buttons: [
                     {
                       text: 'Copy to clipboard',
                       onDidClick: ->
-                        atom.clipboard.read()
+                        atom.clipboard.write(error)
                         notification.dismiss()
                       }
                   ])
               else if lvl == 1
-                notification = atom.notifications.addError(error,
+                notification = atom.notifications.addError("Error",
                 dismissable: true,
-                description: "pięknyrozwinięty string",
+                description: error,
                 buttons: [
                     {
                       text: 'Copy to clipboard',
@@ -34,16 +35,17 @@ module.exports =
                       }
                     ]
                   )
-              else notification = atom.notifications.addWarning(error,
-              dismissable: true,
-              buttons: [
-                  {
-                    text: 'Copy to clipboard',
-                    onDidClick: ->
-                      atom.clipboard.read()
-                      notification.dismiss()
-                    }
-                ])
+              else notification = atom.notifications.addWarning("Warning",
+                  dismissable: true,
+                  description: error,
+                  buttons: [
+                      {
+                        text: 'Copy to clipboard',
+                        onDidClick: ->
+                          atom.clipboard.write(error)
+                          notification.dismiss()
+                        }
+                    ])
             code.notificationListener handleNotification
 
 
