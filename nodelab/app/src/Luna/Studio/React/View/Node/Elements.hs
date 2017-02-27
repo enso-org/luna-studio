@@ -1,5 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
-module Luna.Studio.React.View.CommonElements where
+module Luna.Studio.React.View.Node.Elements where
 
 import           Luna.Studio.Prelude
 import           React.Flux

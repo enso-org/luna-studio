@@ -20,7 +20,7 @@ import           Luna.Studio.React.Model.Searcher (Searcher)
 import qualified Luna.Studio.React.Model.Searcher as Searcher
 import           Luna.Studio.React.Store          (Ref, dispatch)
 import           Luna.Studio.React.View.Node      (expressionPosition)
-import           Luna.Studio.React.View.NodeBody  (nodeBody_)
+import           Luna.Studio.React.View.Node.Body (nodeBody_)
 import           Luna.Studio.React.View.Style     (lunaPrefix)
 import qualified Text.ScopeSearcher.QueryResult   as Result
 
@@ -90,6 +90,6 @@ searcher =  React.defineView name $ \(ref, camera, s) -> do
                                 ,"className" $= lunaPrefix "searcher__results__item__name"
                                 ] $ do
                                     elemString $ convert $ result ^. Result.name
-                                    
+
 searcher_ :: Ref App -> Matrix Double -> Searcher -> ReactElementM ViewEventHandler ()
 searcher_ ref camera model = React.viewWithSKey searcher name (ref, camera, model) mempty

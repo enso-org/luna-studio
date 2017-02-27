@@ -17,7 +17,7 @@ import           Luna.Studio.React.Model.App           (App)
 import           Luna.Studio.React.Model.Node          (Node)
 import qualified Luna.Studio.React.Model.Node          as Node
 import           Luna.Studio.React.Store               (Ref, dispatch)
-import           Luna.Studio.React.View.NodeBody       (nodeBody_)
+import           Luna.Studio.React.View.Node.Body      (nodeBody_)
 import           Luna.Studio.React.View.Style          (lunaPrefix)
 import           React.Flux
 import qualified React.Flux                            as React

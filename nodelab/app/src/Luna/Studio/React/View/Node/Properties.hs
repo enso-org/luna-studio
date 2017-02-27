@@ -1,5 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
-module Luna.Studio.React.View.NodeProperties where
+module Luna.Studio.React.View.Node.Properties where
 
 import qualified JS.Config                              as Config
 import qualified JS.UI                                  as UI

@@ -1,5 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
-module Luna.Studio.React.View.NodeBody where
+module Luna.Studio.React.View.Node.Body where
 
 import qualified Data.Aeson                             as Aeson
 import qualified Data.Map.Lazy                          as Map
@@ -17,8 +17,8 @@ import qualified Luna.Studio.React.Model.Node           as Node
 import qualified Luna.Studio.React.Model.NodeProperties as Properties
 import qualified Luna.Studio.React.Model.Port           as Port
 import           Luna.Studio.React.Store                (Ref, dispatch)
-import           Luna.Studio.React.View.CommonElements  (blurBackground_, selectionMark_)
-import           Luna.Studio.React.View.NodeProperties  (nodeProperties_)
+import           Luna.Studio.React.View.Node.Elements  (blurBackground_, selectionMark_)
+import           Luna.Studio.React.View.Node.Properties  (nodeProperties_)
 import           Luna.Studio.React.View.Port            (portExpanded_, port_)
 import           Luna.Studio.React.View.Visualization   (visualization_)
 import           React.Flux
@@ -63,7 +63,8 @@ nodeBody = React.defineView objName $ \(ref, n) -> do
                     Node.Collapsed -> ""
                     Node.Expanded -> nodeProperties_ ref $ Properties.fromNode n
                     Node.Editor   -> textarea_
-                        [ onKeyDown $ \e _ -> [stopPropagation e]
+                        [ onKeyDown   $ \e _ -> [stopPropagation e]
+                        , onMouseDown $ \e _ -> [stopPropagation e]
                         , onChange  $ dispatch ref . UI.NodeEvent . Node.SetCode nodeId . (`target` "value")
                         ] $ elemString $ convert $ fromMaybe def $ n ^. Node.code
         div_
