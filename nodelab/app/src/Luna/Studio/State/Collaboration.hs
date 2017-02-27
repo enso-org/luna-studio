@@ -1,4 +1,3 @@
-{-# LANGUAGE DeriveAnyClass #-}
 module Luna.Studio.State.Collaboration where
 
 import           Data.Aeson                     (ToJSON)
@@ -18,8 +17,8 @@ data Client = Client { _lastSeen :: DateTime
                      , _colorId  :: ColorId
                      } deriving (Eq, Show, Generic)
 
-data State = State { _knownClients :: Map ClientId Client
-                   } deriving (Default, Eq, Generic, Show)
+newtype State = State { _knownClients :: Map ClientId Client
+                      } deriving (Default, Eq, Generic, Show)
 
 makeLenses ''State
 makeLenses ''Client
