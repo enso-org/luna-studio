@@ -15,7 +15,7 @@ data Request = Request { _location :: GraphLocation
                        , _newCode  :: Text
                        } deriving (Generic, Eq, NFData, Show)
 
-data Inverse = Inverse { _oldCode :: Maybe Text
+data Inverse = Inverse { _oldCode :: Text
                        } deriving (Generic, Show, Eq, NFData)
 
 type Response = Response.SimpleResponse Request Inverse
@@ -35,7 +35,7 @@ instance Binary Update
 instance Binary Inverse
 instance G.GraphRequest Request where location = location
 
-topicPrefix = "empire.graph.node.rename"
+topicPrefix = "empire.graph.node.setcode"
 instance T.MessageTopic (R.Request Request)  where topic _ = topicPrefix <> T.request
 instance T.MessageTopic Response where topic _ = topicPrefix <> T.response
 instance T.MessageTopic Update   where topic _ = topicPrefix <> T.update

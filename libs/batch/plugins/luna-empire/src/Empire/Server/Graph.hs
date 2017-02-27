@@ -235,7 +235,7 @@ handleSetCode :: Request SetCode.Request -> StateT Env BusT ()
 handleSetCode = modifyGraphOk action success where --FIXME[pm] implement this!
     action  (SetCode.Request location nodeId code) = do
         oldCode <- Graph.withGraph location $ runASTOp $ getNodeName nodeId
-        let inv = SetCode.Inverse oldCode
+        let inv = SetCode.Inverse $ fromMaybe def oldCode
         Graph.updateNodeExpression location nodeId nodeId code
         return (inv,())
     success (SetCode.Request location nodeId code) _ result = sendToBus' $ SetCode.Update location nodeId code

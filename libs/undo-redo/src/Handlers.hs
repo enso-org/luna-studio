@@ -214,10 +214,7 @@ handleRenameNodeUndo (Response.Response _ _ (RenameNode.Request location nodeId 
 handleSetCodeUndo :: SetCode.Response ->  Maybe (SetCode.Request, SetCode.Request)
 handleSetCodeUndo (Response.Response _ _ (SetCode.Request location nodeId code) inv res) =
     withOk inv $ \(SetCode.Inverse codePrev) -> do
-        codePrev' <- case codePrev of
-            Just codeOld -> pure codeOld
-            Nothing      -> pure emptyName
-        let undoMsg = SetCode.Request location nodeId codePrev'
+        let undoMsg = SetCode.Request location nodeId codePrev
             redoMsg = SetCode.Request location nodeId code
         Just (undoMsg, redoMsg)
 
