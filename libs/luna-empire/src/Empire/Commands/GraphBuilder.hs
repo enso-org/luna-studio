@@ -146,7 +146,7 @@ buildNode nid = do
     name     <- fromMaybe "" <$> getNodeName nid
     canEnter <- ASTRead.canEnterNode nid
     ports <- buildPorts ref
-    let code    = Nothing -- Just $ Text.pack expr
+    let code    = Just $ Text.pack expr
         portMap = Map.fromList $ flip fmap ports $ \p@(Port id' _ _ _) -> (id', p)
     return $ API.Node nid name (API.ExpressionNode $ Text.pack expr) canEnter portMap (fromMaybe def meta) code
 

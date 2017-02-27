@@ -33,7 +33,7 @@ handleMouseEnter portRef = do
             Nothing  -> do
                 actions <- Set.fromList <$> runningActions
                 let notBlocked = Set.null (Set.intersection actions actionsBlockingPortHighlight)
-                    highlight  = notBlocked && (portId /= InPortId Self || node ^. NodeModel.isExpanded)
+                    highlight  = notBlocked && (portId /= InPortId Self || not (node ^. NodeModel.isCollapsed))
                 Global.modifyNode nodeId $
                     NodeModel.ports . ix portId . PortModel.highlight .= highlight
 

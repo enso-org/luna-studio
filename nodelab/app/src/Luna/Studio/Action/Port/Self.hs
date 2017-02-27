@@ -27,7 +27,7 @@ showOrHideSelfPort mayConnect mayPenConnect node = do
     isConnected <- isJust <$> getConnection (InPortRef nodeId Self)
     if ( isJust mayPenConnect
       || connectToSelfPossible
-      || node ^. Model.isExpanded
+      || not (node ^. Model.isCollapsed)
       || isConnected ) then
          return $ node & Model.ports . at portId . _Just . Model.visible .~ True
     else return $ node & Model.ports . at portId . _Just . Model.visible .~ False

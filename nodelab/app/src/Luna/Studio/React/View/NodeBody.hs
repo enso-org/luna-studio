@@ -45,7 +45,7 @@ nodeBody = React.defineView objName $ \(ref, n) -> do
         , onClick       $ \_ m -> dispatch ref $ UI.NodeEvent $ Node.Select m nodeId
         , onDoubleClick $ \_ _ -> dispatch ref $ UI.NodeEvent $ Node.Enter nodeId
         , onMouseDown   $ handleMouseDown ref nodeId
-        , "className"   $= (fromString $ "luna-node" <> (if n ^. Node.isExpanded then " luna-node--expanded" else " luna-node--collapsed")
+        , "className"   $= (fromString $ "luna-node" <> (if n ^. Node.isCollapsed then " luna-node--collapsed" else " luna-node--expanded")
                                                      <> (if n ^. Node.isSelected then " luna-node--selected" else []))
         , "style"       @= Aeson.object [ "transform" Aeson..= translatePropertyValue2 pos ]
         ] $ do
@@ -59,7 +59,10 @@ nodeBody = React.defineView objName $ \(ref, n) -> do
                 , "className" $= "luna-node__properties-crop"
                 ] $ do
                 blurBackground_
-                if n ^. Node.isExpanded then (nodeProperties_ ref $ Properties.fromNode n) else ""
+                case n ^. Node.mode of
+                    Node.Collapsed -> ""
+                    Node.Expanded -> nodeProperties_ ref $ Properties.fromNode n
+                    Node.Editor   -> div_ $ elemString $ convert $ fromMaybe def $ n ^. Node.code
         div_
             [ "key"       $= "visualization"
             , "className" $= "luna-node__visuals"
@@ -68,12 +71,12 @@ nodeBody = React.defineView objName $ \(ref, n) -> do
             [ "key"       $= "essentials"
             , "className" $= "luna-node__essentials"
             ] $ do
-            if  n ^. Node.isExpanded then do
-                ports $ filter (\port -> (port ^. Port.portId) == InPortId Self) nodePorts
-                forM_  (filter (\port -> (port ^. Port.portId) /= InPortId Self) nodePorts) $ \port -> portExpanded_ ref port
-            else do
+            if  n ^. Node.isCollapsed then do
                 ports $ filter (\port -> (port ^. Port.portId) /= InPortId Self) nodePorts
                 ports $ filter (\port -> (port ^. Port.portId) == InPortId Self) nodePorts
+            else do
+                ports $ filter (\port -> (port ^. Port.portId) == InPortId Self) nodePorts
+                forM_  (filter (\port -> (port ^. Port.portId) /= InPortId Self) nodePorts) $ \port -> portExpanded_ ref port
 
 nodeBody_ :: Ref App -> Node -> ReactElementM ViewEventHandler ()
 nodeBody_ ref model = React.viewWithSKey nodeBody objName (ref, model) mempty

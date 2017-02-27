@@ -66,7 +66,7 @@ startConnecting screenMousePos anyPortRef mayModifiedConnId connectMode = do
     mousePos <- translateToWorkspace screenMousePos
     mayNode  <- Global.getNode nodeId
     withJust mayNode $ \node -> do
-        case (portId, node ^. Model.isExpanded) of
+        case (portId, not $ node ^. Model.isCollapsed) of
             (InPortId Self, False) -> when (connectMode == Drag) $ startNodeDrag mousePos nodeId True
             _                      -> do
                 mayCurrentConnectionModel <- createCurrentConnectionModel anyPortRef mousePos

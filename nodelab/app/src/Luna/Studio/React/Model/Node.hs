@@ -1,12 +1,12 @@
 {-# LANGUAGE DeriveAnyClass    #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RankNTypes        #-}
 module Luna.Studio.React.Model.Node (
     module Luna.Studio.React.Model.Node,
     NodeAPI.NodeId
 ) where
 
 import           Control.Arrow
-import           Data.Aeson                        (ToJSON)
 import           Data.Map.Lazy                     (Map)
 import qualified Data.Map.Lazy                     as Map
 import           Data.Time.Clock                   (UTCTime)
@@ -54,9 +54,15 @@ makeLenses ''Collaboration
 
 instance Default Mode where def = Collapsed
 
+isMode :: Mode -> Getter Node Bool
+isMode mode' = to isMode' where
+    isMode' node = node ^. mode == mode'
+
 isExpanded :: Getter Node Bool
-isExpanded = to isExpanded' where
-    isExpanded' node = node ^. mode == Expanded
+isExpanded = isMode Expanded
+
+isCollapsed :: Getter Node Bool
+isCollapsed = isMode Collapsed
 
 isLiteral :: Getter Node Bool
 isLiteral = to isLiteral' where

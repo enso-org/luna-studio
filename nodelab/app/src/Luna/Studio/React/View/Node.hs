@@ -5,7 +5,7 @@ module Luna.Studio.React.View.Node where
 import qualified Data.Aeson                            as Aeson
 import           Data.Matrix                           as Matrix
 import           Data.Matrix                           (Matrix)
-import           Data.Position                         (Position(Position), Vector2(Vector2), x, y)
+import           Data.Position                         (Position (Position), Vector2 (Vector2), x, y)
 import           Empire.API.Data.Node                  (NodeId)
 import qualified JS.Config                             as Config
 import           Luna.Studio.Action.Geometry.Constants (fontSize)
@@ -40,7 +40,7 @@ node = React.defineView name $ \(ref, n) -> do
     let nodeId    = n ^. Node.nodeId
         nodeLimit = 10000::Int
         zIndex    = n ^. Node.zPos
-        z         = if n ^. Node.isExpanded then zIndex + nodeLimit else zIndex
+        z         = if n ^. Node.isCollapsed then zIndex else zIndex + nodeLimit
     div_
         [ "key"       $= (nodePrefix <> fromString (show nodeId))
         , "id"        $= (nodePrefix <> fromString (show nodeId))
@@ -61,7 +61,7 @@ node = React.defineView name $ \(ref, n) -> do
                 , onClick       $ \_ m -> dispatch ref $ UI.NodeEvent $ Node.Select m nodeId
                 , onDoubleClick $ \_ _ -> dispatch ref $ UI.NodeEvent $ Node.Enter nodeId
                 , onMouseDown   $ handleMouseDown ref nodeId
-                , "className"   $= (lunaPrefix name <> if n ^. Node.isExpanded then " " <> lunaPrefix name <> "--expanded" else " " <> lunaPrefix name <> "--collapsed"
+                , "className"   $= (lunaPrefix name <> if n ^. Node.isCollapsed then " " <> lunaPrefix name <> "--collapsed" else " " <> lunaPrefix name <> "--expanded"
                                                     <> if n ^. Node.isSelected then " " <> lunaPrefix name <> "--selected" else "")
                 ] $
                 svg_

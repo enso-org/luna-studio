@@ -87,8 +87,8 @@ getConnectionPosition :: Node -> Port -> Node -> Port -> Command State (Maybe (P
 getConnectionPosition srcNode srcPort dstNode dstPort = do
     let srcPos     = srcNode ^. Node.position
         dstPos     = dstNode ^. Node.position
-        isSrcExp   = srcNode ^. Node.isExpanded
-        isDstExp   = dstNode ^. Node.isExpanded
+        isSrcExp   = not $ srcNode ^. Node.isCollapsed
+        isDstExp   = not $ dstNode ^. Node.isCollapsed
         srcPortNum = getPortNumber srcPort
         dstPortNum = getPortNumber dstPort
         srcPorts   = Map.elems $ srcNode ^. Node.ports
@@ -127,7 +127,7 @@ getCurrentConnectionSrcPosition node port mousePos = if isInputEdge node then
         InPortRef'  _ -> connectionDst mousePos pos False isExp portNum numOfSameTypePorts $ isPortSelf port
     where
         pos                = node ^. Node.position
-        isExp              = node ^. Node.isExpanded
+        isExp              = not $ node ^. Node.isCollapsed
         portNum            = getPortNumber port
         ports              = Map.elems $ node ^. Node.ports
         numOfSameTypePorts = countSameTypePorts port ports

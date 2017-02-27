@@ -90,7 +90,9 @@ isPointInCircle p (circleCenter, radius) = distanceSquared p circleCenter <= rad
 
 isPointInNode :: Position -> Node -> Command State Bool
 isPointInNode p node =
-    if node ^. Model.isExpanded then do
+    if node ^. Model.isCollapsed then
+        return $ isPointInCircle p (node ^. Model.position, nodeRadius)
+    else do
         let nodeId = node ^. Model.nodeId
         left        <- liftIO $ expandedNodeLeft   $ fromString $ "node-" <> show nodeId
         right       <- liftIO $ expandedNodeRight  $ fromString $ "node-" <> show nodeId
@@ -99,7 +101,6 @@ isPointInNode p node =
         leftTop     <- translateToWorkspace $ ScreenPosition (Vector2 left  top)
         rightBottom <- translateToWorkspace $ ScreenPosition (Vector2 right bottom)
         return $ isPointInRect p (leftTop, rightBottom)
-    else return $ isPointInCircle p (node ^. Model.position, nodeRadius)
 
 getNodeAtPosition :: Position -> Command State (Maybe NodeId)
 getNodeAtPosition p = do
