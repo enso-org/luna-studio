@@ -145,7 +145,7 @@ buildNode nid = do
     meta     <- AST.readMeta root
     name     <- fromMaybe "" <$> getNodeName nid
     canEnter <- ASTRead.canEnterNode nid
-    ports <- buildPorts ref
+    ports    <- buildPorts ref
     let code    = Just $ Text.pack expr
         portMap = Map.fromList $ flip fmap ports $ \p@(Port id' _ _ _) -> (id', p)
     return $ API.Node nid name (API.ExpressionNode $ Text.pack expr) canEnter portMap (fromMaybe def meta) code
@@ -262,7 +262,7 @@ buildSelfPort' seenAcc node = do
         (Acc t _)  -> IR.source t >>= buildSelfPort' True
         (App t _)  -> IR.source t >>= buildSelfPort' seenAcc
         Lam _as o -> do
-            args <- ASTDeconstruct.extractArguments node
+            args     <- ASTDeconstruct.extractArguments node
             areBlank <- mapM ASTRead.isBlank args
             if and areBlank
                 then IR.source o >>= buildSelfPort' seenAcc

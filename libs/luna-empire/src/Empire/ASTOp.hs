@@ -1,13 +1,15 @@
 {-# LANGUAGE ConstraintKinds           #-}
 {-# LANGUAGE DataKinds                 #-}
 {-# LANGUAGE NoMonomorphismRestriction #-}
+{-# LANGUAGE ScopedTypeVariables       #-}
+{-# LANGUAGE TypeApplications          #-}
 {-# LANGUAGE TypeOperators             #-}
 {-# LANGUAGE UndecidableInstances      #-}
-{-# LANGUAGE TypeApplications          #-}
 
 module Empire.ASTOp (
     ASTOp
   , EmpirePass
+  , runAliasAnalysis
   , runASTOp
   , match
   ) where
@@ -15,24 +17,29 @@ module Empire.ASTOp (
 import           Empire.Prelude
 
 import           Control.Monad.State  (StateT, runStateT, get, put)
+import qualified Data.Map             as Map
 import           Empire.Data.Graph    (ASTState(..), Graph, withVis)
-import qualified Empire.Data.Graph    as Graph (ast)
+import qualified Empire.Data.Graph    as Graph (ast, nodeMapping, getAnyRef)
 import           Empire.Data.Layers   (Marker, Meta,
                                       InputsLayer, TypeLayer, TCData)
 import           Empire.Empire        (Command)
 
 import           Data.Event           (Emitters, type (//))
 import           Data.Graph.Class     (MonadRefLookup(..), Net)
+import           Data.TypeDesc        (getTypeDesc)
 import           Luna.IR              hiding (get, put, match)
 import           Luna.IR.Layer.Succs  (Succs)
-import           Luna.Pass            (Inputs, Outputs, Preserves)
+import           Luna.Pass            (Inputs, Outputs, Preserves, KnownPass)
 import qualified Luna.Pass            as Pass (SubPass, eval')
-import qualified Luna.Pass.Manager    as Pass (PassManager, RefCache, get)
+import qualified Luna.Pass.Manager    as Pass (PassManager, RefCache, get, setAttr)
 
-import           System.Log (Logger, DropLogger, dropLogs)
-import qualified Luna.Passes.Transform.Parsing.CodeSpan as CodeSpan
-import qualified Luna.Passes.Transform.Parsing.Parser   as Parser
-import qualified Data.SpanTree as SpanTree
+import           System.Log                                 (Logger, DropLogger, dropLogs)
+import           Luna.Passes.Data.ExprRoots                 (ExprRoots(..))
+import           Luna.Passes.Resolution.Data.UnresolvedVars (UnresolvedVars(..))
+import qualified Luna.Passes.Resolution.AliasAnalysis       as AliasAnalysis
+import qualified Luna.Passes.Transform.Parsing.CodeSpan     as CodeSpan
+import qualified Luna.Passes.Transform.Parsing.Parser       as Parser
+import qualified Data.SpanTree                              as SpanTree
 
 import qualified Luna.IR.Repr.Vis           as Vis
 
@@ -91,7 +98,21 @@ match = matchExpr
 
 runASTOp :: Pass.SubPass EmpirePass (Pass.PassManager (IRBuilder (Parser.IRSpanTreeBuilder (Pass.RefCache (Logger DropLogger (Vis.VisStateT (StateT Graph IO))))))) a
          -> Command Graph a
-runASTOp pass = do
+runASTOp pass = runPass (return ()) pass
+
+runAliasAnalysis :: Command Graph ()
+runAliasAnalysis = do
+    roots <- uses Graph.nodeMapping $ map Graph.getAnyRef . Map.elems
+    let inits = do
+            Pass.setAttr (getTypeDesc @UnresolvedVars) $ UnresolvedVars
+            Pass.setAttr (getTypeDesc @ExprRoots) $ ExprRoots $ map unsafeGeneralize roots
+    runPass inits AliasAnalysis.runAliasAnalysis
+
+runPass :: forall b a pass. KnownPass pass
+        => Pass.PassManager (IRBuilder (Parser.IRSpanTreeBuilder (Pass.RefCache (Logger DropLogger (Vis.VisStateT (StateT Graph IO)))))) b
+        -> Pass.SubPass pass (Pass.PassManager (IRBuilder (Parser.IRSpanTreeBuilder (Pass.RefCache (Logger DropLogger (Vis.VisStateT (StateT Graph IO))))))) a
+        -> Command Graph a
+runPass inits pass = do
     g <- get
     ASTState currentStateIR currentStatePass <- use Graph.ast
     let evalIR = flip runStateT g
@@ -102,13 +123,11 @@ runASTOp pass = do
                . flip evalIRBuilder currentStateIR
                . flip evalPassManager currentStatePass
     ((a, (st, passSt)), newG) <- liftIO $ evalIR $ do
-        a      <- Pass.eval' pass
+        inits
+        a      <- Pass.eval' @pass pass
         Pass.eval' @EmpirePass $ Vis.snapshot "foo"
         st     <- snapshot
         passSt <- Pass.get
         return (a, (st, passSt))
     put $ newG & Graph.ast .~ ASTState st passSt
     return a
-    -- case a of
-    --     Left err -> throwError $ "pass internal error: " ++ show err
-    --     Right res -> return _

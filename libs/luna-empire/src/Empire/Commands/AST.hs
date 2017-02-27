@@ -143,7 +143,7 @@ getLambdaInputRef :: ASTOp m => NodeRef -> Int -> m NodeRef
 getLambdaInputRef node pos = do
     match node $ \case
         Lam _args _out -> (!! pos) <$> ASTDeconstruct.extractArguments node
-        _ -> throwM $ NotLambdaException node
+        _              -> throwM $ NotLambdaException node
 
 isTrivialLambda :: ASTOp m => NodeRef -> m Bool
 isTrivialLambda node = match node $ \case

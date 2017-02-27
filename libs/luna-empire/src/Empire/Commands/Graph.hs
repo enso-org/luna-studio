@@ -66,7 +66,7 @@ import           Empire.API.Data.Port            (InPort (..), OutPort (..), Por
 import qualified Empire.API.Data.Port            as Port (PortState (..), state)
 import           Empire.API.Data.PortRef         (AnyPortRef (..), InPortRef (..), OutPortRef (..))
 import qualified Empire.API.Data.PortRef         as PortRef
-import           Empire.ASTOp                    (ASTOp, runASTOp)
+import           Empire.ASTOp                    (ASTOp, runASTOp, runAliasAnalysis)
 
 import qualified Empire.ASTOps.Builder           as ASTBuilder
 import qualified Empire.ASTOps.Modify            as ASTModify
@@ -118,6 +118,7 @@ addNodeNoTC loc uuid expr meta = do
             IR.writeLayer @Marker (Just $ NodeMarker lambdaUUID) lambdaOutput
         else Graph.breadcrumbHierarchy %= addID (node ^. Node.nodeId)
         return node
+    runAliasAnalysis
     Publisher.notifyNodeUpdate loc node
     return node
 
