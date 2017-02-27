@@ -62,15 +62,15 @@ runTC = do
         roots <- mapM GraphUtils.getASTPointer allNodeIds
         mockImports <- do
             idInt' <- do
-                tvar <- IR.strCons_ @IR.Draft "Int"
+                tvar <- IR.cons_ @IR.Draft "Int"
                 tp   <- IR.lam tvar tvar
-                v    <- IR.strVar "in" `typed` tvar
+                v    <- IR.var "in" `typed` tvar
                 l    <- IR.lam v v `typed` tp
                 IR.Function.compile $ IR.generalize l
             id' <- do
-                tvar <- IR.strVar "a"
+                tvar <- IR.var "a"
                 tp   <- IR.lam tvar tvar
-                v    <- IR.strVar "in" `typed` tvar
+                v    <- IR.var "in" `typed` tvar
                 l    <- IR.lam v v `typed` tp
                 IR.Function.compile $ IR.generalize l
             let m = Module Map.empty $ Map.fromList [("idInt", idInt'), ("id", id')]
@@ -80,12 +80,12 @@ runTC = do
 
 runInterpreter :: Command Graph ()
 runInterpreter = runASTOp $ do
-    _ast        <- use Graph.ast
+    _ast       <- use Graph.ast
     allNodes   <- uses Graph.breadcrumbHierarchy topLevelIDs
     refs       <- mapM GraphUtils.getASTPointer allNodes
     metas      <- mapM AST.readMeta refs
     let sorted = fmap snd $ sort $ zip metas allNodes
-    _evals      <- mapM GraphUtils.getASTVar sorted
+    _evals     <- mapM GraphUtils.getASTVar sorted
     newAst     <- liftIO $ fmap snd $ $notImplemented
     Graph.ast .= newAst
     return ()

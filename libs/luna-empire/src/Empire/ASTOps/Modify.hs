@@ -1,5 +1,6 @@
 {-# LANGUAGE LambdaCase          #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TypeApplications    #-}
 
 {-| This module contains operations that output modified nodes.
     These functions use reading, deconstructing and building APIs.
@@ -33,7 +34,7 @@ import           Empire.Data.AST                    (NodeRef, NotLambdaException
                                                      NotUnifyException(..), astExceptionToException,
                                                      astExceptionFromException)
 
-import qualified Luna.IR.Expr.Combinators as IR (changeSource)
+import qualified Luna.IR.Expr.Combinators as IR (changeSource, narrowAtom)
 import           Luna.IR.Expr.Term.Uni
 import           Luna.IR.Expr.Term.Named (Term(Sym_Lam))
 import qualified Luna.IR as IR
@@ -59,7 +60,7 @@ addLambdaArg' boundNames lambda out = match lambda $ \case
         body'    <- IR.source body
         if body' == out then do
             let Just argName = find (not . flip elem newBoundNames) allWords
-            v <- IR.strVar argName
+            v <- IR.var $ stringToName argName
             l <- IR.lam v out
             IR.changeSource body $ IR.generalize l
         else do
@@ -145,7 +146,6 @@ rewireNode nodeId newTarget = do
     ASTRemove.removeSubtree oldTarget
 
 renameVar :: ASTOp m => NodeRef -> String -> m ()
-renameVar vref name = match vref $ \case
-    Var n -> do
-        (var :: IR.Expr (IR.E IR.String)) <- IR.unsafeGeneralize <$> IR.source n
-        IR.modifyExprTerm var $ IR.lit .~ name
+renameVar vref name = do
+    var <- IR.narrowAtom @IR.Var vref
+    mapM_ (flip IR.modifyExprTerm $ IR.name .~ (stringToName name)) var

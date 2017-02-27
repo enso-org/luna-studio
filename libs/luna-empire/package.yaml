@@ -31,7 +31,7 @@ dependencies:
     - exceptions
     - filepath
     - lens
-    - luna
+    - luna-core
     - luna-empire-api
     - luna-empire-api-json
     - m-logger

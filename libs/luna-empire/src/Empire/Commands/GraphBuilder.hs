@@ -176,7 +176,7 @@ getPortState node = do
         IR.String s     -> return . WithDefault . Constant . StringValue $ s
         IR.Number i     -> return $ WithDefault $ Constant $ RationalValue 0 -- FIXME[MM]: put the number here
         Cons n _ -> do
-            name <- ASTRead.getName n
+            name <- pure $ nameToString n
             case name of
                 "False" -> return . WithDefault . Constant . BoolValue $ False
                 "True"  -> return . WithDefault . Constant . BoolValue $ True
@@ -259,7 +259,7 @@ buildSelfPort' seenAcc node = do
             return . Just $ Port (InPortId Self) "self" tpRep portState
 
     match node $ \case
-        (Acc _ t)  -> IR.source t >>= buildSelfPort' True
+        (Acc t _)  -> IR.source t >>= buildSelfPort' True
         (App t _)  -> IR.source t >>= buildSelfPort' seenAcc
         Lam _as o -> do
             args <- ASTDeconstruct.extractArguments node

@@ -50,19 +50,19 @@ parseExpr s = do
 tryParseLambda :: ASTOp m => String -> m (Maybe Text.Text, Maybe NodeRef)
 tryParseLambda s = case words s of
     ("def" : name : _) -> do
-        v <- IR.strVar "arg0"
+        v <- IR.var "arg0"
         lam <- IR.generalize <$> IR.lam v v
         return (Just (Text.pack name), Just lam)
     ["->"] -> do
-        v <- IR.strVar "arg0"
+        v <- IR.var "arg0"
         lam <- IR.generalize <$> IR.lam v v
         return $ (Nothing, Just lam)
     ("->" : rest) -> do
         let (as, body) = partition ((== '$') . head) rest
         let args = fmap (drop 1) as
-        argRefs <- mapM IR.strVar args
+        argRefs <- mapM (IR.var' . stringToName) args
         (_, bodyRef) <- parseExpr $ unwords body
-        lam <- lams (map IR.generalize argRefs) bodyRef
+        lam <- lams argRefs bodyRef
         return $ (Nothing, Just lam)
     _ -> return (Nothing, Nothing)
 
@@ -74,12 +74,10 @@ instance Exception PortDefaultNotConstructibleException where
     fromException = astExceptionFromException
 
 parsePortDefault :: ASTOp m => PortDefault -> m NodeRef
-parsePortDefault (Expression expr)          = snd <$> parseExpr expr
-parsePortDefault (Constant (IntValue i))    = IR.generalize <$> IR.number (fromIntegral i)
-parsePortDefault (Constant (StringValue s)) = IR.generalize <$> IR.string s
-parsePortDefault (Constant (DoubleValue d)) = $notImplemented
+parsePortDefault (Expression expr)            = snd <$> parseExpr expr
+parsePortDefault (Constant (IntValue i))      = IR.generalize <$> IR.number (fromIntegral i)
+parsePortDefault (Constant (StringValue s))   = IR.generalize <$> IR.string s
+parsePortDefault (Constant (DoubleValue d))   = $notImplemented
 parsePortDefault (Constant (RationalValue r)) = $notImplemented
-parsePortDefault (Constant (BoolValue b))   = do
-    bool' <- IR.string $ show b
-    IR.generalize <$> IR.cons_ bool'
+parsePortDefault (Constant (BoolValue b))     = IR.generalize <$> IR.cons_ (stringToName $ show b)
 parsePortDefault d = throwM $ PortDefaultNotConstructibleException d

@@ -62,16 +62,16 @@ dumpAccessors' firstApp node = do
     match node $ \case
         Var n -> do
             isNode <- Read.isGraphNode node
-            name <- Read.getName n
+            name <- Read.getVarName node
             if isNode
                 then return (Just node, [])
                 else return (Nothing, [name])
         App t a -> do
             target <- IR.source t
             dumpAccessors' False target
-        Acc n t -> do
+        Acc t n -> do
             target <- IR.source t
-            name <- Read.getName n
+            let name = nameToString n
             (tgt, names) <- dumpAccessors' False target
             return (tgt, names ++ [name])
         _ -> return (Just node, [])

@@ -76,7 +76,7 @@ reapply funRef args = do
     apps fun args
 
 buildAccessors :: ASTOp m => NodeRef -> [String] -> m NodeRef
-buildAccessors = foldM $ \t n -> IR.generalize <$> IR.strAcc n t
+buildAccessors = foldM $ \t n -> IR.acc' t (stringToName n)
 
 data SelfPortNotExistantException = SelfPortNotExistantException NodeRef
     deriving (Show)
@@ -108,12 +108,12 @@ removeAccessor ref = do
     case names of
         []     -> throwM $ SelfPortNotConnectedException ref
         n : ns -> do
-            v   <- IR.generalize <$> IR.strVar n
+            v   <- IR.var' $ stringToName n
             acc <- buildAccessors v ns
             if null args then return acc else reapply acc args
 
 makeNodeRep :: ASTOp m => NodeMarker -> String -> NodeRef -> m NodeRef
 makeNodeRep marker name node = do
-    (nameVar :: NodeRef) <- IR.generalize <$> IR.strVar name
+    nameVar <- IR.var' $ stringToName name
     IR.writeLayer @Marker (Just marker) nameVar
     IR.generalize <$> IR.unify nameVar node

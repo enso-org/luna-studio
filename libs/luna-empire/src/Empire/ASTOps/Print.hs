@@ -27,7 +27,7 @@ import qualified Luna.IR as IR
 getTypeRep :: ASTOp m => NodeRef -> m TypeRep
 getTypeRep tp = match tp $ \case
     Cons n args -> do
-        name    <- ASTRead.getName n
+        name    <- pure $ nameToString n
         argReps <- mapM (getTypeRep <=< IR.source) args
         return $ TCons name argReps
     Lam _as out -> do
@@ -35,12 +35,12 @@ getTypeRep tp = match tp $ \case
         argReps <- mapM getTypeRep args
         outRep <- getTypeRep =<< IR.source out
         return $ TLam argReps outRep
-    Acc n t -> do
-        name <- ASTRead.getName n
+    Acc t n -> do
+        name <- pure $ nameToString n
         rep <- IR.source t >>= getTypeRep
         return $ TAcc name rep
     Var n -> do
-        name <- ASTRead.getName n
+        name <- pure $ nameToString n
         return $ TVar $ delete '#' name
     Star -> return TStar
     _ -> return TBlank
@@ -105,11 +105,11 @@ printExpression' suppressNodes paren node = do
             rightRep <- IR.source r >>= recur paren
             return $ leftRep ++ " = " ++ rightRep
         Var n -> do
-            name <- ASTRead.getName n
+            name   <- pure $ nameToString n
             isNode <- ASTRead.isGraphNode node
             return $ if isNode && suppressNodes then "_" else name
-        Acc n t -> do
-            name <- ASTRead.getName n
+        Acc t n -> do
+            name   <- pure $ nameToString n
             target <- IR.source t
             match target $ \case
                 Blank -> return $ "_." <> name
@@ -122,7 +122,7 @@ printExpression' suppressNodes paren node = do
         Blank -> return "_"
         IR.Number n -> pure $ show n
         IR.String s -> return $ show s
-        Cons n _ -> ASTRead.getName n
+        Cons n _ -> pure $ nameToString n
         _ -> return ""
 
 printExpression :: ASTOp m => NodeRef -> m String

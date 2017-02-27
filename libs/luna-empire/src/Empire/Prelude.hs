@@ -19,9 +19,11 @@ module Empire.Prelude (
     , MonadState
     , MonadThrow
     , MonadTrans(..)
+    , nameToString
     , notImplemented
     , module Prelude
     , Proxy(..)
+    , stringToName
     , throwM
     , typeRep
     , typeRep'
@@ -47,3 +49,12 @@ import Data.Proxy (Proxy(..))
 import Data.Typeable (typeRep)
 import Prologue (notImplemented, typeRep', (.:), (.:.), type (<>))
 import Prelude
+
+import qualified Luna.IR.Name as IR
+import qualified Data.Convert as Convert
+
+nameToString :: IR.Name -> String
+nameToString = Convert.convert
+
+stringToName :: String -> IR.Name
+stringToName = Convert.convert

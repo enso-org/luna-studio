@@ -12,7 +12,6 @@ module Empire.ASTOps.Read (
     isGraphNode
   , getNodeId
   , getVarName
-  , getName
   , isApp
   , isBlank
   , isLambda
@@ -52,7 +51,7 @@ getNodeId node = coerce <$> IR.readLayer @Marker node
 
 getPatternNames :: ASTOp m => NodeRef -> m [String]
 getPatternNames node = match node $ \case
-    Var n     -> (:[]) <$> getName n
+    Var n     -> return [nameToString n]
     Cons _ as -> do
         args  <- mapM IR.source as
         names <- mapM getPatternNames args
@@ -61,16 +60,9 @@ getPatternNames node = match node $ \case
 
 getVarName :: ASTOp m => NodeRef -> m String
 getVarName node = match node $ \case
-    Var n -> getName n
-    Cons n _ -> getName n
-    Blank{} -> return "_"
-
-getName :: ASTOp m => EdgeRef -> m String
-getName node = do
-    str <- IR.source node
-    match str $ \case
-        IR.String s -> return s
-        Var n -> getVarName str
+    Var n    -> return $ nameToString n
+    Cons n _ -> return $ nameToString n
+    Blank{}  -> return "_"
 
 rightMatchOperand :: ASTOp m => NodeRef -> m EdgeRef
 rightMatchOperand node = match node $ \case
@@ -116,7 +108,7 @@ getSelfNodeRef = getSelfNodeRef' False
 
 getSelfNodeRef' :: ASTOp m => Bool -> NodeRef -> m (Maybe NodeRef)
 getSelfNodeRef' seenAcc node = match node $ \case
-    Acc _ t -> IR.source t >>= getSelfNodeRef' True
+    Acc t _ -> IR.source t >>= getSelfNodeRef' True
     App t _ -> IR.source t >>= getSelfNodeRef' seenAcc
     _       -> return $ if seenAcc then Just node else Nothing
 

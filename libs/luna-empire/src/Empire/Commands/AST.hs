@@ -65,12 +65,12 @@ valueDecoderRep :: ASTOp m => NodeRef -> m (Maybe ValueDecoderRep)
 valueDecoderRep node = match node $ \case
     -- FIXME, use this second parameter
     Cons n _ -> do
-        name <- ASTRead.getName n
+        name <- pure $ nameToString n
         return $ Just $ ConsRep name
     App tc typ -> do
-        tc' <- IR.source tc
-        typ' <- IR.source typ
-        tcRep <- valueDecoderRep tc'
+        tc'    <- IR.source tc
+        typ'   <- IR.source typ
+        tcRep  <- valueDecoderRep tc'
         typRep <- valueDecoderRep typ'
         case tcRep of
             Just r -> case typRep of
