@@ -1,35 +1,37 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Luna.Studio.Action.Node
-    ( addNode
-    , addDummyNode
-    , enter
-    , exit
-    , tryEnter
-    , selectedToggleMode
-    , editExpression
-    , rename
-    , startEditName
-    , editName
+    ( addDummyNode
+    , addNode
     , applyName
     , discardName
-    , updateNodesMeta
+    , editExpression
+    , editName
+    , enter
+    , exit
+    , localRemoveNodes
     , modifyNodeMeta
+    , nodeDrag
     , registerNode
     , removeSelectedNodes
-    , localRemoveNodes
+    , rename
+    , selectedToggleMode
+    , setCode
     , snap
     , snapCoord
-    , updateNode
-    , typecheckNode
-    , updateNodeValue
-    , updateNodeProfilingData
-    , updateExpression
-    , visualizationsToggled
+    , startEditName
     , startNodeDrag
-    , nodeDrag
     , stopNodeDrag
+    , tryEnter
+    , typecheckNode
+    , updateExpression
+    , updateNode
+    , updateNodeProfilingData
+    , updateNodesMeta
+    , updateNodeValue
+    , visualizationsToggled
     ) where
 
+import           Luna.Studio.Action.Node.Code          (setCode)
 import           Luna.Studio.Action.Node.Create        (addDummyNode, addNode, registerNode)
 import           Luna.Studio.Action.Node.Drag          (nodeDrag, startNodeDrag, stopNodeDrag)
 import           Luna.Studio.Action.Node.Enter         (enter, exit, tryEnter)

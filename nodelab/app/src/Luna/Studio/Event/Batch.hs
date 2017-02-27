@@ -22,6 +22,7 @@ import qualified Empire.API.Graph.NodeTypecheckerUpdate as NodeTCUpdate
 import qualified Empire.API.Graph.RemoveNodes           as RemoveNodes
 import qualified Empire.API.Graph.RemovePort            as RemovePort
 import qualified Empire.API.Graph.RenameNode            as RenameNode
+import qualified Empire.API.Graph.SetCode               as SetCode
 import qualified Empire.API.Graph.UpdateNodeExpression  as UpdateNodeExpression
 import qualified Empire.API.Graph.UpdateNodeMeta        as UpdateNodeMeta
 import qualified Empire.API.Project.CreateProject       as CreateProject
@@ -34,8 +35,6 @@ import qualified Empire.API.Project.OpenProject         as OpenProject
 data Event = UnknownEvent String
            | AddNodeResponse                           AddNode.Response
            | AddPortResponse                           AddPort.Response
-           | RemovePortResponse                     RemovePort.Response
-           | MovePortResponse                         MovePort.Response
            | AddSubgraphResponse                   AddSubgraph.Response
            | CodeUpdated                            CodeUpdate.Update
            | CollaborationUpdate                 Collaboration.Update
@@ -46,12 +45,14 @@ data Event = UnknownEvent String
            | DisconnectResponse                     Disconnect.Response
            | EmpireStarted                       EmpireStarted.Status
            | MonadsUpdated                        MonadsUpdate.Update
+           | MovePortResponse                         MovePort.Response
            | NodeAdded                                 AddNode.Update
+           | NodeCodeSet                               SetCode.Update
            | NodeMetaInverse                    UpdateNodeMeta.Inverse
            | NodeMetaResponse                   UpdateNodeMeta.Response
            | NodeMetaUpdated                    UpdateNodeMeta.Update
            | NodeRenamed                            RenameNode.Update
-           | NodeRenameInverse                     RenameNode.Inverse
+           | NodeRenameInverse                      RenameNode.Inverse
            | NodeRenameResponse                     RenameNode.Response
            | NodeResultUpdated                NodeResultUpdate.Update
            | NodesConnected                            Connect.Update
@@ -70,6 +71,7 @@ data Event = UnknownEvent String
            | ProjectOpenedUpdate                   OpenProject.Update
            | RemoveNodesInverse                    RemoveNodes.Inverse
            | RemoveNodesResponse                   RemoveNodes.Response
+           | RemovePortResponse                     RemovePort.Response
            | UpdateNodeExpressionResponse UpdateNodeExpression.Response
            deriving (Eq, Show, Generic, NFData)
 

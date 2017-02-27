@@ -26,19 +26,16 @@ handlersMap = Map.fromList
     [ makeHandler Graph.handleAddNode
     , makeHandler Graph.handleAddPort
     , makeHandler Graph.handleAddSubgraph
-    , makeHandler Graph.handleRemoveNodes
-    , makeHandler Graph.handleRemovePort
-    , makeHandler Graph.handleMovePort
-    , makeHandler Graph.handleUpdateNodeExpression
-    , makeHandler Graph.handleUpdateNodeMeta
-    , makeHandler Graph.handleRenameNode
     , makeHandler Graph.handleConnect
     , makeHandler Graph.handleDisconnect
     , makeHandler Graph.handleDumpGraphViz
     , makeHandler Graph.handleGetProgram
+    , makeHandler Graph.handleMovePort
     , makeHandler Graph.handleNodeSearch
     , makeHandler Graph.handleRemoveNodes
+    , makeHandler Graph.handleRemovePort
     , makeHandler Graph.handleRenameNode
+    , makeHandler Graph.handleSetCode
     , makeHandler Graph.handleSetDefaultValue
     , makeHandler Graph.handleTypecheck
     , makeHandler Graph.handleUpdateNodeExpression

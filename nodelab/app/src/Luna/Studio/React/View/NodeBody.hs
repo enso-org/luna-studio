@@ -18,7 +18,6 @@ import qualified Luna.Studio.React.Model.NodeProperties as Properties
 import qualified Luna.Studio.React.Model.Port           as Port
 import           Luna.Studio.React.Store                (Ref, dispatch)
 import           Luna.Studio.React.View.CommonElements  (blurBackground_, selectionMark_)
-import           Luna.Studio.React.View.Field           (field_)
 import           Luna.Studio.React.View.NodeProperties  (nodeProperties_)
 import           Luna.Studio.React.View.Port            (portExpanded_, port_)
 import           Luna.Studio.React.View.Visualization   (visualization_)
@@ -63,7 +62,10 @@ nodeBody = React.defineView objName $ \(ref, n) -> do
                 case n ^. Node.mode of
                     Node.Collapsed -> ""
                     Node.Expanded -> nodeProperties_ ref $ Properties.fromNode n
-                    Node.Editor   -> field_ ref "editor" True $ fromMaybe def $ n ^. Node.code
+                    Node.Editor   -> textarea_
+                        [ onKeyDown $ \e _ -> [stopPropagation e]
+                        , onChange  $ dispatch ref . UI.NodeEvent . Node.SetCode nodeId . (`target` "value")
+                        ] $ elemString $ convert $ fromMaybe def $ n ^. Node.code
         div_
             [ "key"       $= "visualization"
             , "className" $= "luna-node__visuals"

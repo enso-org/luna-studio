@@ -27,6 +27,7 @@ import qualified Empire.API.Graph.NodeTypecheckerUpdate as NodeTCUpdate
 import qualified Empire.API.Graph.RemoveNodes           as RemoveNodes
 import qualified Empire.API.Graph.RemovePort            as RemovePort
 import qualified Empire.API.Graph.RenameNode            as RenameNode
+import qualified Empire.API.Graph.SetCode               as SetCode
 import qualified Empire.API.Graph.UpdateNodeMeta        as UpdateNodeMeta
 import qualified Empire.API.Response                    as Response
 
@@ -143,6 +144,11 @@ handle (Event.Batch ev) = Just $ case ev of
     NodeRenamed update -> do
         shouldProcess <- isCurrentLocationAndGraphLoaded (update ^. RenameNode.location')
         when shouldProcess $ Node.rename (update ^. RenameNode.nodeId') (update ^. RenameNode.name')
+
+    NodeCodeSet update -> do
+        shouldProcess <- isCurrentLocationAndGraphLoaded (update ^. SetCode.location')
+        correctLocation <- isCurrentLocation (update ^. SetCode.location')
+        when (shouldProcess && correctLocation) $ Node.setCode (update ^. SetCode.nodeId') (update ^. SetCode.code')
 
     NodesRemoved update -> do
         shouldProcess <- isCurrentLocationAndGraphLoaded (update ^. RemoveNodes.location')

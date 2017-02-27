@@ -42,17 +42,15 @@ handle (UI (NodeEvent (Node.PortEditString       portRef defaultValue))) = Just 
 handle (UI (NodeEvent (Node.PortApplyString kevt portRef defaultValue))) = Just $ when (Keys.withoutMods kevt Keys.enter) $
                                                                                         Batch.setDefaultValue portRef defaultValue
 handle (UI (NodeEvent (Node.PortSetDefaultValue portRef defaultValue))) = Just $ Batch.setDefaultValue portRef defaultValue
---TODO[react]: Findout if we need workspacePosition here
 handle (UI (NodeEvent (Node.PortInitSlider mevt portRef sliderInit)))   = Just $ do
     mousePos <- mousePosition mevt
     PortControl.startMoveSlider portRef mousePos sliderInit
---TODO[react]: Findout if we need workspacePosition here
+handle (UI (NodeEvent (Node.SetCode nodeId code))) = Just $ Batch.setCode nodeId code
 handle (UI (AppEvent  (App.MouseMove mevt _))) = Just $ do
     mousePos <- mousePosition mevt
     continue $ PortControl.moveSlider mousePos
     let shouldSnap = Mouse.withoutMods mevt Mouse.leftButton
     continue $ Node.nodeDrag mevt shouldSnap
---TODO[react]: Findout if we need workspacePosition here
 handle (UI (AppEvent  (App.MouseUp   mevt))) = Just $ do
     mousePos <- mousePosition mevt
     continue $ PortControl.stopMoveSlider mousePos

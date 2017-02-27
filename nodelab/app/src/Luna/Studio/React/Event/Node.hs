@@ -18,6 +18,7 @@ data Event = DisplayResultChanged Bool          NodeId
            | Enter                              NodeId
            | MouseDown            MouseEvent    NodeId
            | Select               MouseEvent    NodeId
+           | SetCode                            NodeId Text
            | NameEditStart                      NodeId
            | NameKeyDown          KeyboardEvent NodeId
            | NameChange           Text          NodeId

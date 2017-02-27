@@ -28,7 +28,7 @@ import           Empire.API.Data.Node                  (Node, NodeId)
 import qualified Empire.API.Data.Node                  as Node
 import           Empire.API.Data.NodeMeta              (NodeMeta)
 import qualified Empire.API.Data.Port                  as Port
-import           Empire.API.Data.PortRef               (AnyPortRef(OutPortRef'), InPortRef, OutPortRef(..), dstNodeId, srcNodeId)
+import           Empire.API.Data.PortRef               (AnyPortRef (OutPortRef'), InPortRef, OutPortRef (..), dstNodeId, srcNodeId)
 import qualified Empire.API.Data.PortRef               as PortRef
 import qualified Empire.API.Graph.AddNode              as AddNode
 import qualified Empire.API.Graph.AddPort              as AddPort
@@ -39,6 +39,7 @@ import qualified Empire.API.Graph.Redo                 as RedoRequest
 import qualified Empire.API.Graph.RemoveNodes          as RemoveNodes
 import qualified Empire.API.Graph.RemovePort           as RemovePort
 import qualified Empire.API.Graph.RenameNode           as RenameNode
+import qualified Empire.API.Graph.SetCode              as SetCode
 import qualified Empire.API.Graph.Undo                 as UndoRequest
 import qualified Empire.API.Graph.UpdateNodeExpression as UpdateNodeExpression
 import           Empire.API.Graph.UpdateNodeMeta       (SingleUpdate)
@@ -54,40 +55,43 @@ type Handler = ByteString -> UndoPure ()
 
 handlersMap :: Map String (Handler)
 handlersMap = Map.fromList
-    [ makeHandler handleAddSubgraphUndo
-    , makeHandler handleAddNodeUndo
-    , makeHandler handleRemoveNodesUndo
-    , makeHandler handleUpdateNodeExpressionUndo
-    , makeHandler handleUpdateNodeMetaUndo
-    , makeHandler handleRenameNodeUndo
+    [ makeHandler handleAddNodeUndo
+    , makeHandler handleAddPortUndo
+    , makeHandler handleAddSubgraphUndo
     , makeHandler handleConnectUndo
     , makeHandler handleDisconnectUndo
-    , makeHandler handleAddPortUndo
+    , makeHandler handleRemoveNodesUndo
+    , makeHandler handleRenameNodeUndo
+    , makeHandler handleSetCodeUndo
+    , makeHandler handleUpdateNodeExpressionUndo
+    , makeHandler handleUpdateNodeMetaUndo
     ]
 
 type UndoRequests a = (UndoResponseRequest a, RedoResponseRequest a)
 
 type family UndoResponseRequest t where
     UndoResponseRequest AddNode.Response              = RemoveNodes.Request
+    UndoResponseRequest AddPort.Response              = RemovePort.Request
     UndoResponseRequest AddSubgraph.Response          = RemoveNodes.Request
-    UndoResponseRequest RemoveNodes.Response          = AddSubgraph.Request
-    UndoResponseRequest UpdateNodeExpression.Response = UpdateNodeExpression.Request
-    UndoResponseRequest UpdateNodeMeta.Response       = UpdateNodeMeta.Request
-    UndoResponseRequest RenameNode.Response           = RenameNode.Request
     UndoResponseRequest Connect.Response              = Disconnect.Request
     UndoResponseRequest Disconnect.Response           = Connect.Request
-    UndoResponseRequest AddPort.Response              = RemovePort.Request
+    UndoResponseRequest RemoveNodes.Response          = AddSubgraph.Request
+    UndoResponseRequest RenameNode.Response           = RenameNode.Request
+    UndoResponseRequest SetCode.Response              = SetCode.Request
+    UndoResponseRequest UpdateNodeExpression.Response = UpdateNodeExpression.Request
+    UndoResponseRequest UpdateNodeMeta.Response       = UpdateNodeMeta.Request
 
 type family RedoResponseRequest t where
     RedoResponseRequest AddNode.Response              = AddNode.Request
+    RedoResponseRequest AddPort.Response              = AddPort.Request
     RedoResponseRequest AddSubgraph.Response          = AddSubgraph.Request
-    RedoResponseRequest RemoveNodes.Response          = RemoveNodes.Request
-    RedoResponseRequest UpdateNodeExpression.Response = UpdateNodeExpression.Request
-    RedoResponseRequest UpdateNodeMeta.Response       = UpdateNodeMeta.Request
-    RedoResponseRequest RenameNode.Response           = RenameNode.Request
     RedoResponseRequest Connect.Response              = Connect.Request
     RedoResponseRequest Disconnect.Response           = Disconnect.Request
-    RedoResponseRequest AddPort.Response              = AddPort.Request
+    RedoResponseRequest RemoveNodes.Response          = RemoveNodes.Request
+    RedoResponseRequest RenameNode.Response           = RenameNode.Request
+    RedoResponseRequest SetCode.Response              = SetCode.Request
+    RedoResponseRequest UpdateNodeExpression.Response = UpdateNodeExpression.Request
+    RedoResponseRequest UpdateNodeMeta.Response       = UpdateNodeMeta.Request
 
 data ResponseErrorException = ResponseErrorException deriving (Show)
 instance Exception ResponseErrorException
@@ -205,6 +209,16 @@ handleRenameNodeUndo (Response.Response _ _ (RenameNode.Request location nodeId 
             Nothing      -> pure emptyName
         let undoMsg = RenameNode.Request location nodeId namePrev'
             redoMsg = RenameNode.Request location nodeId name
+        Just (undoMsg, redoMsg)
+
+handleSetCodeUndo :: SetCode.Response ->  Maybe (SetCode.Request, SetCode.Request)
+handleSetCodeUndo (Response.Response _ _ (SetCode.Request location nodeId code) inv res) =
+    withOk inv $ \(SetCode.Inverse codePrev) -> do
+        codePrev' <- case codePrev of
+            Just codeOld -> pure codeOld
+            Nothing      -> pure emptyName
+        let undoMsg = SetCode.Request location nodeId codePrev'
+            redoMsg = SetCode.Request location nodeId code
         Just (undoMsg, redoMsg)
 
 handleConnectUndo :: Connect.Response -> Maybe (Disconnect.Request, Connect.Request)
