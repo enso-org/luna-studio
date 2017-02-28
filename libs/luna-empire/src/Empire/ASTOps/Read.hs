@@ -19,6 +19,7 @@ module Empire.ASTOps.Read (
   , getASTPointer
   , getASTTarget
   , getASTVar
+  , getVarNode
   , getLambdaOutputRef
   , getPatternNames
   , getSelfNodeRef

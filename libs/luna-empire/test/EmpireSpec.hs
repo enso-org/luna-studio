@@ -11,6 +11,7 @@ import qualified Empire.API.Data.Graph         as Graph
 import           Empire.API.Data.GraphLocation (GraphLocation(..))
 import qualified Empire.API.Data.Node          as Node (NodeType(ExpressionNode), canEnter,
                                                         expression, name, nodeId, nodeType, ports)
+import           Empire.API.Data.NodeMeta      (NodeMeta(..))
 import qualified Empire.API.Data.Port          as Port
 import           Empire.API.Data.PortRef       (InPortRef (..), OutPortRef (..), AnyPortRef(..))
 import           Empire.API.Data.TypeRep       (TypeRep(TCons, TStar, TLam, TVar))
@@ -23,7 +24,8 @@ import qualified Empire.Commands.AST           as AST (isTrivialLambda)
 import qualified Empire.Commands.Graph         as Graph (addNode, connect, getGraph, getNodes,
                                                          getConnections, removeNodes, withGraph,
                                                          renameNode, disconnect, addPort, movePort,
-                                                         removePort, renamePort, updateNodeExpression)
+                                                         removePort, renamePort, updateNodeExpression,
+                                                         getNodeIdSequence, updateNodeMeta)
 import qualified Empire.Commands.GraphBuilder  as GraphBuilder
 import           Empire.Commands.Library       (withLibrary)
 import qualified Empire.Commands.Typecheck     as Typecheck (run)
@@ -40,7 +42,7 @@ import           EmpireUtils
 
 
 spec :: Spec
-spec = around withChannels $ parallel $ do
+spec = around withChannels $ id $ do
     describe "luna-empire" $ do
         it "descends into `def foo` and asserts two edges inside" $ \env -> do
             u1 <- mkUUID
@@ -819,3 +821,59 @@ spec = around withChannels $ parallel $ do
                     Port.Port (Port.OutPortId (Port.Projection 0)) "arg0" TStar Port.Connected
                   , Port.Port (Port.OutPortId (Port.Projection 1)) "a"    TStar Port.Connected
                   ]
+    describe "node sequence" $ do
+        it "adds one node to sequence" $ \env -> do
+            u1 <- mkUUID
+            res <- evalEmp env $ do
+                Graph.addNode top u1 "1" def
+                Graph.getNodeIdSequence top
+            withResult res $ \nodeSeq -> do
+                nodeSeq `shouldMatchList` [Just u1]
+        it "adds three nodes in line" $ \env -> do
+            u1 <- mkUUID
+            u2 <- mkUUID
+            u3 <- mkUUID
+            res <- evalEmp env $ do
+                Graph.addNode top u1 "1" $ NodeMeta (10, 10) False
+                Graph.addNode top u2 "2" $ NodeMeta (10, 20) False
+                Graph.addNode top u3 "3" $ NodeMeta (10, 30) False
+                Graph.getNodeIdSequence top
+            withResult res $ \nodeSeq -> do
+                nodeSeq `shouldMatchList` [Just u1, Just u2, Just u3]
+        it "adds three nodes in reverse order" $ \env -> do
+            u1 <- mkUUID
+            u2 <- mkUUID
+            u3 <- mkUUID
+            res <- evalEmp env $ do
+                Graph.addNode top u1 "1" $ NodeMeta (10, 30) False
+                Graph.addNode top u2 "2" $ NodeMeta (10, 20) False
+                Graph.addNode top u3 "3" $ NodeMeta (10, 10) False
+                Graph.getNodeIdSequence top
+            withResult res $ \nodeSeq -> do
+                nodeSeq `shouldMatchList` [Just u3, Just u2, Just u1]
+        it "updates sequence after node removal" $ \env -> do
+            u1 <- mkUUID
+            u2 <- mkUUID
+            u3 <- mkUUID
+            res <- evalEmp env $ do
+                Graph.addNode top u1 "1" $ NodeMeta (10, 30) False
+                Graph.addNode top u2 "2" $ NodeMeta (10, 20) False
+                Graph.addNode top u3 "3" $ NodeMeta (10, 10) False
+                Graph.removeNodes top [u2]
+                Graph.getNodeIdSequence top
+            withResult res $ \nodeSeq -> do
+                nodeSeq `shouldMatchList` [Just u3, Just u1]
+        it "updates sequence after node meta update" $ \env -> do
+            u1 <- mkUUID
+            u2 <- mkUUID
+            u3 <- mkUUID
+            res <- evalEmp env $ do
+                Graph.addNode top u1 "1" $ NodeMeta (10, 10) False
+                Graph.addNode top u2 "2" $ NodeMeta (10, 20) False
+                Graph.addNode top u3 "3" $ NodeMeta (10, 30) False
+                Graph.updateNodeMeta top u3 $ NodeMeta (10, 10) False
+                Graph.updateNodeMeta top u2 $ NodeMeta (20, 30) False
+                Graph.updateNodeMeta top u1 $ NodeMeta (30, 20) False
+                Graph.getNodeIdSequence top
+            withResult res $ \nodeSeq -> do
+                nodeSeq `shouldMatchList` [Just u3, Just u2, Just u1]

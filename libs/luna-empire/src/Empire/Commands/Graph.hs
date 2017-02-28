@@ -33,8 +33,10 @@ module Empire.Commands.Graph
     , typecheck
     , withTC
     , withGraph
+    , getNodeIdSequence
     ) where
 
+import           Control.Lens                  (sans)
 import           Control.Monad                 (forM, forM_)
 import           Control.Monad.State           hiding (when)
 import           Data.Coerce                   (coerce)
@@ -46,7 +48,7 @@ import qualified Data.UUID                     as UUID
 import qualified Data.UUID.V4                  as UUID (nextRandom)
 import           Empire.Prelude
 
-import           Empire.Data.AST                 (NotInputEdgeException (..))
+import           Empire.Data.AST                 (NodeRef, NotInputEdgeException (..))
 import           Empire.Data.BreadcrumbHierarchy (addID, addWithLeafs, removeID, topLevelIDs)
 import           Empire.Data.Graph               (Graph)
 import qualified Empire.Data.Graph               as Graph
@@ -118,10 +120,30 @@ addNodeNoTC loc uuid expr meta = do
                 (if outputIsOneOfTheInputs then [] else [lambdaUUID])
             IR.writeLayer @Marker (Just $ NodeMarker lambdaUUID) lambdaOutput
         else Graph.breadcrumbHierarchy %= addID (node ^. Node.nodeId)
+        updateNodeSequence loc
         return node
     runAliasAnalysis
     Publisher.notifyNodeUpdate loc node
     return node
+
+updateNodeSequence :: ASTOp m => GraphLocation -> m ()
+updateNodeSequence loc@(GraphLocation _ _ breadcrumb) = do
+    allNodes   <- uses Graph.breadcrumbHierarchy topLevelIDs
+    sortedRefs <- AST.sortByPosition allNodes
+    newSeq     <- AST.makeSeq sortedRefs
+    Graph.breadcrumbSeq . at breadcrumb .= newSeq
+
+getNodeSequence :: ASTOp m => GraphLocation -> m [NodeRef]
+getNodeSequence loc@(GraphLocation _ _ breadcrumb) = do
+    nodeSeq <- uses Graph.breadcrumbSeq $ view (at breadcrumb)
+    case nodeSeq of
+        Just node -> AST.readSeq node
+        _         -> return []
+
+getNodeIdSequence :: GraphLocation -> Empire [Maybe NodeId]
+getNodeIdSequence loc = withGraph loc $ runASTOp $ do
+    nodeSeq <- getNodeSequence loc
+    mapM (ASTRead.getVarNode >=> ASTRead.getNodeId) nodeSeq
 
 addPersistentNode :: ASTOp m => Node -> m NodeId
 addPersistentNode n = case n ^. Node.nodeType of
@@ -193,7 +215,9 @@ removeNodes loc nodeIds = do
         children <- withTC (loc `descendInto` nodeId) False $ do
             uses Graph.breadcrumbHierarchy topLevelIDs
         removeNodes (loc `descendInto` nodeId) children
-    withTC loc False $ runASTOp $ forM_ nodeIds removeNodeNoTC
+    withTC loc False $ runASTOp $ do
+        forM_ nodeIds removeNodeNoTC
+        when (not . null $ nodeIds) $ updateNodeSequence loc
 
 removeNodeNoTC :: ASTOp m => NodeId -> m ()
 removeNodeNoTC nodeId = do
@@ -266,6 +290,7 @@ updateNodeMeta loc nodeId newMeta = withGraph loc $ do
         doTCMay <- forM oldMetaMay $ \oldMeta ->
             return $ triggerTC oldMeta newMeta
         AST.writeMeta ref newMeta
+        updateNodeSequence loc
         return doTCMay
     forM_ doTCMay $ \doTC ->
         when doTC $ runTC loc False
