@@ -20,7 +20,7 @@ data Request = Request { _location   :: GraphLocation
 data Inverse = Inverse { _expressionPrev :: Text
                        } deriving (Generic, Show, Eq, NFData)
 
-type Result = Maybe Node
+type Result = Node
 
 type Response = Response.Response Request Inverse Result
 instance Response.ResponseResult Request Inverse Result

@@ -356,13 +356,36 @@ spec = around withChannels $ parallel $ do
                 connections `shouldMatchList` [(OutPortRef u1 Port.All, InPortRef u2 (Port.Arg 0))]
         it "changes node expression" $ \env -> do
             u1 <- mkUUID
-            u2 <- mkUUID
             res <- evalEmp env $ do
                 Graph.addNode top u1 "123" def
-                Graph.updateNodeExpression top u1 u2 "456"
-            withResult res $ \(Just node) -> do
+                node  <- Graph.updateNodeExpression top u1 "456"
+                nodes <- Graph.getNodes top
+                return (node, nodes)
+            withResult res $ \(node, nodes) -> do
                 node ^. Node.nodeType `shouldBe` Node.ExpressionNode "456"
-                node ^. Node.nodeId `shouldBe` u2
+                node ^. Node.nodeId `shouldBe` u1
+                nodes `shouldSatisfy` ((== 1) . length)
+        it "changes expression to lambda" $ \env -> do
+            u1 <- mkUUID
+            res <- evalEmp env $ do
+                Graph.addNode top u1 "1" def
+                node  <- Graph.updateNodeExpression top u1 "-> $a a"
+                nodes <- Graph.getNodes top
+                return (node, nodes)
+            withResult res $ \(node, nodes) -> do
+                node ^. Node.nodeType `shouldBe` Node.ExpressionNode "-> $a a"
+                node ^. Node.nodeId `shouldBe` u1
+                node ^. Node.canEnter `shouldBe` True
+                nodes `shouldSatisfy` ((== 1) . length)
+        it "changes node name when new expression is def name" $ \env -> do
+            u1 <- mkUUID
+            res <- evalEmp env $ do
+                Graph.addNode top u1 "1" def
+                Graph.updateNodeExpression top u1 "def foo"
+            withResult res $ \node -> do
+                node ^. Node.name `shouldBe` "foo"
+                node ^. Node.nodeType `shouldBe` Node.ExpressionNode "-> $arg0 arg0"
+                node ^. Node.canEnter `shouldBe` True
     describe "dumpAccessors" $ do
         it "foo.bar" $ \env -> do
             u1 <- mkUUID
