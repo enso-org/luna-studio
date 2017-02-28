@@ -22,8 +22,11 @@ field ph = React.defineView name $ \(ref, mode, content) -> case mode of
     MultiLine -> textarea_ ph $ elemString $ convert content
     Single    -> input_ ("value" $= convert content : ph)
 
-field_ :: [PropertyOrHandler ViewEventHandler] -> Mode -> Ref App -> JSString -> Text -> ReactElementM ViewEventHandler ()
-field_ ph mode ref key  content = React.viewWithSKey (field ph) key (ref, mode, content) mempty
+field_ :: Mode -> [PropertyOrHandler ViewEventHandler] -> Ref App -> JSString -> Text -> ReactElementM ViewEventHandler ()
+field_ mode ph ref key  content = React.viewWithSKey (field ph) key (ref, mode, content) mempty
 
 multilineField_ :: [PropertyOrHandler ViewEventHandler] -> Ref App -> JSString -> Text -> ReactElementM ViewEventHandler ()
 multilineField_ = field_ MultiLine
+
+singleField_ :: [PropertyOrHandler ViewEventHandler] -> Ref App -> JSString -> Text -> ReactElementM ViewEventHandler ()
+singleField_ = field_ Single

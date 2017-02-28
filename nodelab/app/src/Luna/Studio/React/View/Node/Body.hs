@@ -17,6 +17,7 @@ import qualified Luna.Studio.React.Model.Node           as Node
 import qualified Luna.Studio.React.Model.NodeProperties as Properties
 import qualified Luna.Studio.React.Model.Port           as Port
 import           Luna.Studio.React.Store                (Ref, dispatch)
+import           Luna.Studio.React.View.Field           (multilineField_)
 import           Luna.Studio.React.View.Node.Elements   (blurBackground_, selectionMark_)
 import           Luna.Studio.React.View.Node.Properties (nodeProperties_)
 import           Luna.Studio.React.View.Port            (portExpanded_, port_)
@@ -63,7 +64,7 @@ nodeBody = React.defineView objName $ \(ref, n) -> do
                 case n ^. Node.mode of
                     Node.Collapsed -> ""
                     Node.Expanded -> nodeProperties_ ref $ Properties.fromNode n
-                    Node.Editor   -> textarea_
+                    Node.Editor   -> multilineField_
                         [ onKeyDown   $ \e _ -> [stopPropagation e]
                         , onMouseDown $ \e _ -> [stopPropagation e]
                         , onChange  $ dispatch ref . UI.NodeEvent . Node.SetCode nodeId . (`target` "value")
