@@ -25,7 +25,7 @@ import           Luna.Studio.React.View.Style           (lunaPrefix)
 import           Luna.Studio.React.View.Visualization   (visualization_)
 import           React.Flux
 import qualified React.Flux                             as React
-
+import qualified Luna.Studio.React.Model.Field as Field
 
 objName :: JSString
 objName = "node-body"
@@ -64,11 +64,10 @@ nodeBody = React.defineView objName $ \(ref, n) -> do
                 case n ^. Node.mode of
                     Node.Collapsed -> ""
                     Node.Expanded -> nodeProperties_ ref $ Properties.fromNode n
-                    Node.Editor   -> multilineField_
-                        [ onKeyDown   $ \e _ -> [stopPropagation e]
-                        , onMouseDown $ \e _ -> [stopPropagation e]
-                        , onChange  $ dispatch ref . UI.NodeEvent . Node.SetCode nodeId . (`target` "value")
-                        ] ref "editor" $ fromMaybe def $ n ^. Node.code
+                    Node.Editor   -> multilineField_ [] "editor"
+                        $ Field.mk ref (fromMaybe def $ n ^. Node.code)
+                        & Field.onCancel .~ Just (UI.NodeEvent . Node.SetCode nodeId)
+
         div_
             [ "key"       $= "visualization"
             , "className" $= lunaPrefix "node__visuals"
