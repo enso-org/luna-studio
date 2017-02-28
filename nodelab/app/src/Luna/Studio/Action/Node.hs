@@ -8,9 +8,10 @@ module Luna.Studio.Action.Node
     , editName
     , enter
     , exit
+    , handleNodeDragMouseUp
     , localRemoveNodes
     , modifyNodeMeta
-    , nodeDrag
+    , nodesDrag
     , registerNode
     , removeSelectedNodes
     , rename
@@ -20,7 +21,6 @@ module Luna.Studio.Action.Node
     , snapCoord
     , startEditName
     , startNodeDrag
-    , stopNodeDrag
     , tryEnter
     , typecheckNode
     , updateExpression
@@ -33,7 +33,7 @@ module Luna.Studio.Action.Node
 
 import           Luna.Studio.Action.Node.Code          (setCode)
 import           Luna.Studio.Action.Node.Create        (addDummyNode, addNode, registerNode)
-import           Luna.Studio.Action.Node.Drag          (nodeDrag, startNodeDrag, stopNodeDrag)
+import           Luna.Studio.Action.Node.Drag          (handleNodeDragMouseUp, nodesDrag, startNodeDrag)
 import           Luna.Studio.Action.Node.Enter         (enter, exit, tryEnter)
 import           Luna.Studio.Action.Node.Expression    (editExpression)
 import           Luna.Studio.Action.Node.Mode          (selectedToggleMode)

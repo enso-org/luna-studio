@@ -50,11 +50,11 @@ handle (UI (AppEvent  (App.MouseMove mevt _))) = Just $ do
     mousePos <- mousePosition mevt
     continue $ PortControl.moveSlider mousePos
     let shouldSnap = Mouse.withoutMods mevt Mouse.leftButton
-    continue $ Node.nodeDrag mevt shouldSnap
+    continue $ Node.nodesDrag mevt shouldSnap
 handle (UI (AppEvent  (App.MouseUp   mevt))) = Just $ do
     mousePos <- mousePosition mevt
     continue $ PortControl.stopMoveSlider mousePos
-    continue $ Node.stopNodeDrag mevt
+    continue $ Node.handleNodeDragMouseUp mevt
 handle _   = Nothing
 
 
