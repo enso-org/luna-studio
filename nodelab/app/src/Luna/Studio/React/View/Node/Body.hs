@@ -68,7 +68,7 @@ nodeBody = React.defineView objName $ \(ref, n) -> do
                         [ onKeyDown   $ \e _ -> [stopPropagation e]
                         , onMouseDown $ \e _ -> [stopPropagation e]
                         , onChange  $ dispatch ref . UI.NodeEvent . Node.SetCode nodeId . (`target` "value")
-                        ] $ elemString $ convert $ fromMaybe def $ n ^. Node.code
+                        ] ref "editor" $ fromMaybe def $ n ^. Node.code
         div_
             [ "key"       $= "visualization"
             , "className" $= lunaPrefix "node__visuals"
