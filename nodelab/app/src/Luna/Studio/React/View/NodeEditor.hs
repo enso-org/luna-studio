@@ -48,7 +48,7 @@ nodeEditor = React.defineView name $ \(ref, ne) -> do
         , onWheel     $ \e m w -> preventDefault e : dispatch ref (UI.NodeEditorEvent $ NE.Wheel m w)
         , onScroll    $ \e     -> [preventDefault e]
         ] $ do
-        style_ [] $ do
+        style_ [ "key" $= "style" ] $ do
             elemString $ ".luna-node-trans { transform: " <> matrix3dPropertyValue camera <> " }"
             forM_ (ne ^. NodeEditor.nodes . to HashMap.elems) $ nodeDynamicStyles_ camera
         svg_

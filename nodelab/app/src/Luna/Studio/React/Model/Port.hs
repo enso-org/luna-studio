@@ -19,6 +19,7 @@ data Port = Port { _portRef     :: AnyPortRef
                  , _color       :: Color
                  , _highlight   :: Bool
                  , _visible     :: Bool
+                 , _isEdited    :: Bool
                  } deriving (Eq, Show, Typeable, Generic, NFData)
 
 makeLenses ''Port
@@ -47,5 +48,5 @@ fromPorts :: NodeId -> [API.Port] -> [Port]
 fromPorts nodeId ports = fromPort nodeId <$> ports
 
 fromPort :: NodeId -> API.Port -> Port
-fromPort nodeId p = Port portRef' p (Color.fromPort p) False True where
+fromPort nodeId p = Port portRef' p (Color.fromPort p) False True False where
     portRef' = toAnyPortRef nodeId $ p ^. API.portId

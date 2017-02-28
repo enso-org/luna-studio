@@ -9,6 +9,8 @@ module Luna.Studio.Action.Edge
     , stopPortDrag
     , removePort
     , addPort
+    , portNameSet
+    , portNameEdit
     ) where
 
 import           Control.Arrow
@@ -47,6 +49,7 @@ import qualified Luna.Studio.React.Model.Node           as Node
 import qualified Luna.Studio.React.Model.NodeEditor     as NodeEditor
 import           Luna.Studio.React.Model.Port           (DraggedPort (DraggedPort))
 import qualified Luna.Studio.React.Model.Port           as Port
+import qualified Luna.Studio.React.View.Edge            as Edge
 import           Luna.Studio.State.Action               (Action (begin, continue, end, update), Connect, Mode (Click, Drag),
                                                          PortDrag (PortDrag), portDragAction)
 import qualified Luna.Studio.State.Action               as Action
@@ -62,6 +65,19 @@ instance Action (Command State) PortDrag where
     continue = continueActionWithKey portDragAction
     update   = updateActionWithKey   portDragAction
     end      = stopPortDrag
+
+portNameSet :: AnyPortRef -> Text -> Command State ()
+portNameSet portRef name = $(todo "ask backend to rename port")
+
+portNameEdit :: AnyPortRef -> Bool -> Command State ()
+portNameEdit portRef isEdited = do
+    Global.modifyNodeEditor $ do
+        let nodeId = portRef ^. PortRef.nodeId
+            portId = portRef ^. PortRef.portId
+        NodeEditor.nodes . at nodeId . _Just . Node.ports . at portId . _Just . Port.isEdited .= isEdited
+    when isEdited $ do
+        Global.renderIfNeeded
+        liftIO Edge.focusPortLabel
 
 startPortDrag :: ScreenPosition -> AnyPortRef -> Mode -> Command State ()
 startPortDrag mousePos portRef mode = do
