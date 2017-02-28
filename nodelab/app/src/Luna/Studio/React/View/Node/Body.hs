@@ -46,7 +46,7 @@ nodeBody = React.defineView objName $ \(ref, n) -> do
         , onClick       $ \_ m -> dispatch ref $ UI.NodeEvent $ Node.Select m nodeId
         , onDoubleClick $ \_ _ -> dispatch ref $ UI.NodeEvent $ Node.Enter nodeId
         , onMouseDown   $ handleMouseDown ref nodeId
-        , "className"   $= (lunaPrefix "node " <> (if n ^. Node.isCollapsed then lunaPrefix "node--collapsed" else lunaPrefix "node--expanded")
+        , "className"   $= (lunaPrefix "node " <> (if n ^. Node.isCollapsed then lunaPrefix "node--collapsed " else lunaPrefix "node--expanded ")
                                                <> (if n ^. Node.isSelected  then lunaPrefix "node--selected"  else ""))
         , "style"       @= Aeson.object [ "transform" Aeson..= translatePropertyValue2 pos ]
         ] $ do
