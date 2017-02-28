@@ -10,10 +10,12 @@ import qualified Luna.Studio.Event.UI                   as UI
 import           Luna.Studio.Prelude
 import qualified Luna.Studio.React.Event.Node           as Node
 import           Luna.Studio.React.Model.App            (App)
+import           qualified Luna.Studio.React.Model.Field            as Field
 import           Luna.Studio.React.Model.NodeProperties (NodeProperties)
 import qualified Luna.Studio.React.Model.NodeProperties as Prop
 import           Luna.Studio.React.Store                (Ref, dispatch)
 import           Luna.Studio.React.View.PortControl     (portControl_)
+import           Luna.Studio.React.View.Field     (singleField_)
 
 
 objName :: JSString
@@ -33,14 +35,11 @@ nodeProperties = React.defineView objName $ \(ref, p) -> do
             ] $
             case p ^. Prop.nameEdit of
                 Just name ->
-                    input_
-                        [ "key" $= "name-label"
-                        , "id"  $= "focus-nameLabel"
-                        , "value value--name" $= convert name
-                        , onMouseDown $ \e _ -> [stopPropagation e]
-                        , onKeyDown   $ \e k ->  stopPropagation e : dispatch ref (UI.NodeEvent $ Node.NameKeyDown k nodeId)
-                        , onChange    $ \e -> let val = target e "value" in dispatch ref $ UI.NodeEvent $ Node.NameChange (fromString val) nodeId
-                        ]
+                    singleField_ ["id"  $= nameLabelId] "name-label"
+                        $ Field.mk ref name
+                        & Field.onCancel .~ Just (const $ UI.NodeEvent $ Node.NameDiscard nodeId)
+                        & Field.onAccept .~ Just (const $ UI.NodeEvent $ Node.NameApply nodeId)
+                        & Field.onEdit   .~ Just (UI.NodeEvent . flip Node.NameChange nodeId)
                 Nothing ->
                     elemString $ convert $ p ^. Prop.name
         forM_ (p ^. Prop.ports) $ portControl_ ref nodeId (p ^. Prop.isLiteral)

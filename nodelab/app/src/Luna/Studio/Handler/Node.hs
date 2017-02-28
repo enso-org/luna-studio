@@ -1,8 +1,7 @@
 module Luna.Studio.Handler.Node where
 
-import           React.Flux                   (KeyboardEvent, mouseCtrlKey, mouseMetaKey)
+import           React.Flux                   (mouseCtrlKey, mouseMetaKey)
 
-import           Empire.API.Data.Node         (NodeId)
 import qualified Luna.Studio.Action.Batch     as Batch
 import           Luna.Studio.Action.Command   (Command)
 import           Luna.Studio.Action.Graph     (selectAll, toggleSelect, unselectAll)
@@ -36,7 +35,8 @@ handle (UI (NodeEvent (Node.EditExpression   nodeId))) = Just $ Node.editExpress
 handle (UI (NodeEvent (Node.Select      kevt nodeId))) = Just $ when (mouseCtrlKey kevt || mouseMetaKey kevt) $ toggleSelect nodeId
 handle (UI (NodeEvent (Node.DisplayResultChanged flag nodeId))) = Just $ Node.visualizationsToggled nodeId flag
 handle (UI (NodeEvent (Node.NameEditStart    nodeId))) = Just $ Node.startEditName nodeId
-handle (UI (NodeEvent (Node.NameKeyDown kevt nodeId))) = Just $ handleKeyNode kevt nodeId
+handle (UI (NodeEvent (Node.NameApply        nodeId))) = Just $ Node.applyName   nodeId
+handle (UI (NodeEvent (Node.NameDiscard      nodeId))) = Just $ Node.discardName nodeId
 handle (UI (NodeEvent (Node.NameChange   val nodeId))) = Just $ Node.editName nodeId val
 handle (UI (NodeEvent (Node.PortEditString       portRef defaultValue))) = Just $ PortControl.setPortDefault portRef defaultValue
 handle (UI (NodeEvent (Node.PortApplyString kevt portRef defaultValue))) = Just $ when (Keys.withoutMods kevt Keys.enter) $
@@ -56,13 +56,6 @@ handle (UI (AppEvent  (App.MouseUp   mevt))) = Just $ do
     continue $ PortControl.stopMoveSlider mousePos
     continue $ Node.stopNodeDrag mevt
 handle _   = Nothing
-
-
-handleKeyNode :: KeyboardEvent -> NodeId -> Command State ()
-handleKeyNode kevt nodeId
-    | Keys.withoutMods kevt Keys.enter = Node.applyName   nodeId
-    | Keys.withoutMods kevt Keys.esc   = Node.discardName nodeId
-    | otherwise                        = return ()
 
 
 handleCommand :: Shortcut.Command -> Command State ()
