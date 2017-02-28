@@ -17,6 +17,7 @@ import           Empire.API.Data.TypeRep       (TypeRep(TCons, TStar, TLam, TVar
 import           Empire.ASTOp                  (runASTOp)
 import qualified Empire.ASTOps.Deconstruct     as ASTDeconstruct
 import qualified Empire.ASTOps.Parse           as Parser
+import           Empire.ASTOps.Print           (printExpression)
 import qualified Empire.ASTOps.Read            as ASTRead
 import qualified Empire.Commands.AST           as AST (isTrivialLambda)
 import qualified Empire.Commands.Graph         as Graph (addNode, connect, getGraph, getNodes,
@@ -334,6 +335,25 @@ spec = around withChannels $ parallel $ do
                 Graph.renameNode top u1 "bar"
                 Graph.getNodes top
             withResult res $ \nodes -> head nodes ^. Node.name `shouldBe` "bar"
+        it "retains connection after node rename" $ \env -> do
+            u1 <- mkUUID
+            u2 <- mkUUID
+            res <- evalEmp env $ do
+                Graph.addNode top u1 "4" def
+                Graph.addNode top u2 "id node1" def
+                Graph.renameNode top u1 "node5"
+                graph <- Graph.getGraph top
+                expression <- Graph.withGraph top $ runASTOp $ do
+                    target <- ASTRead.getASTTarget u2
+                    printExpression target
+                return (graph, expression)
+            withResult res $ \(graph, expression) -> do
+                let nodes = graph ^. Graph.nodes
+                    Just four = find (\n -> n ^. Node.nodeId == u1) nodes
+                four ^. Node.name `shouldBe` "node5"
+                expression `shouldBe` "id node5"
+                let connections = graph ^. Graph.connections
+                connections `shouldMatchList` [(OutPortRef u1 Port.All, InPortRef u2 (Port.Arg 0))]
         it "changes node expression" $ \env -> do
             u1 <- mkUUID
             u2 <- mkUUID

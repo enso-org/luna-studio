@@ -374,9 +374,11 @@ decodeLocation :: GraphLocation -> Empire (Breadcrumb (Named BreadcrumbItem))
 decodeLocation loc@(GraphLocation _ _ crumbs) = withGraph loc $ GraphBuilder.decodeBreadcrumbs crumbs
 
 renameNode :: GraphLocation -> NodeId -> Text -> Empire ()
-renameNode loc nid name = withTC loc False $ runASTOp $ do
-    vref <- GraphUtils.getASTVar nid
-    ASTModify.renameVar vref (Text.unpack name)
+renameNode loc nid name = withTC loc False $ do
+    runASTOp $ do
+        vref <- GraphUtils.getASTVar nid
+        ASTModify.renameVar vref (Text.unpack name)
+    runAliasAnalysis
 
 dumpGraphViz :: GraphLocation -> Empire ()
 dumpGraphViz loc = withGraph loc $ do
