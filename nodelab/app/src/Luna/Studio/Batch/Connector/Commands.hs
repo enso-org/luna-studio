@@ -32,6 +32,7 @@ import qualified Empire.API.Graph.Redo                  as Redo
 import qualified Empire.API.Graph.RemoveNodes           as RemoveNodes
 import qualified Empire.API.Graph.RemovePort            as RemovePort
 import qualified Empire.API.Graph.RenameNode            as RenameNode
+import qualified Empire.API.Graph.RenamePort            as RenamePort
 import qualified Empire.API.Graph.SetCode               as SetCode
 import qualified Empire.API.Graph.SetDefaultValue       as SetDefaultValue
 import qualified Empire.API.Graph.SetInputNodeType      as SetInputNodeType
@@ -110,6 +111,9 @@ setCode nid newCode w uuid guiID = sendRequest $ Message uuid guiID $ withLibrar
 
 removeNodes :: [NodeId] -> Workspace -> UUID -> Maybe UUID ->  IO ()
 removeNodes nodeIds workspace uuid guiID = sendRequest $ Message uuid guiID $ withLibrary workspace RemoveNodes.Request nodeIds
+
+renamePort :: AnyPortRef -> String -> Workspace -> UUID -> Maybe UUID -> IO ()
+renamePort portRef name w uuid guiID = sendRequest $ Message uuid guiID $ withLibrary w RenamePort.Request portRef name
 
 movePort :: AnyPortRef -> Int -> Workspace -> UUID -> Maybe UUID -> IO ()
 movePort portRef newPos workspace uuid guiID = sendRequest $ Message uuid guiID $ (withLibrary workspace MovePort.Request) portRef newPos

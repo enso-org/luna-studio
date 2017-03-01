@@ -9,7 +9,7 @@ module Luna.Studio.Action.Edge
     , stopPortDrag
     , removePort
     , addPort
-    , portNameSet
+    , portRename
     , portNameEdit
     ) where
 
@@ -66,8 +66,11 @@ instance Action (Command State) PortDrag where
     update   = updateActionWithKey   portDragAction
     end      = stopPortDrag
 
-portNameSet :: AnyPortRef -> Text -> Command State ()
-portNameSet portRef name = $(todo "ask backend to rename port")
+portRename :: AnyPortRef -> String -> Command State ()
+portRename portRef name = Global.modifyNodeEditor $ do
+    let nodeId = portRef ^. PortRef.nodeId
+        portId = portRef ^. PortRef.portId
+    NodeEditor.nodes . at nodeId . _Just . Node.ports . at portId . _Just . Port.name .= name
 
 portNameEdit :: AnyPortRef -> Bool -> Command State ()
 portNameEdit portRef isEdited = do

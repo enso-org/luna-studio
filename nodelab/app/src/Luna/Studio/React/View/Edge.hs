@@ -80,7 +80,7 @@ edgePort_ ref p = when (p ^. Port.visible) $ do
             singleField_ ["id" $= portLabelId] (jsShow portId)
                 $ Field.mk ref (convert $ p ^. Port.name)
                 & Field.onCancel .~ Just (const $ UI.EdgeEvent $ Edge.PortNameDiscard portRef)
-                & Field.onAccept .~ Just (UI.EdgeEvent . Edge.PortNameApply portRef)
+                & Field.onAccept .~ Just (UI.EdgeEvent . Edge.PortNameApply portRef . convert)
         else
             div_ [ "className" $= Style.prefix "noselect"
                  , onDoubleClick $ \_ _ -> dispatch ref $ UI.EdgeEvent $ Edge.PortNameStartEdit portRef

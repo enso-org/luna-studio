@@ -27,6 +27,7 @@ import qualified Empire.API.Graph.NodeTypecheckerUpdate as NodeTCUpdate
 import qualified Empire.API.Graph.RemoveNodes           as RemoveNodes
 import qualified Empire.API.Graph.RemovePort            as RemovePort
 import qualified Empire.API.Graph.RenameNode            as RenameNode
+import qualified Empire.API.Graph.RenamePort            as RenamePort
 import qualified Empire.API.Graph.SetCode               as SetCode
 import qualified Empire.API.Graph.UpdateNodeMeta        as UpdateNodeMeta
 import qualified Empire.API.Response                    as Response
@@ -38,6 +39,7 @@ import           Luna.Studio.Action.Batch               (collaborativeModify, re
 import           Luna.Studio.Action.Camera              (centerGraph)
 import qualified Luna.Studio.Action.CodeEditor          as CodeEditor
 import           Luna.Studio.Action.Command             (Command)
+import qualified Luna.Studio.Action.Edge                as Edge
 import           Luna.Studio.Action.Graph               (createGraph, localAddConnection, localRemoveConnections, selectNodes,
                                                          updateConnectionsForEdges, updateConnectionsForNodes, updateMonads)
 import           Luna.Studio.Action.Node                (addDummyNode, localRemoveNodes, typecheckNode, updateNode, updateNodeProfilingData,
@@ -144,6 +146,10 @@ handle (Event.Batch ev) = Just $ case ev of
     NodeRenamed update -> do
         shouldProcess <- isCurrentLocationAndGraphLoaded (update ^. RenameNode.location')
         when shouldProcess $ Node.rename (update ^. RenameNode.nodeId') (update ^. RenameNode.name')
+
+    PortRenamed update -> do
+        shouldProcess <- isCurrentLocationAndGraphLoaded (update ^. RenamePort.location')
+        when shouldProcess $ Edge.portRename (update ^. RenamePort.portRef') (update ^. RenamePort.name')
 
     NodeCodeSet update -> do
         shouldProcess <- isCurrentLocationAndGraphLoaded (update ^. SetCode.location')

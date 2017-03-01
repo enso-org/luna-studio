@@ -44,6 +44,7 @@ import           Empire.API.Graph.NodeTypecheckerUpdate as NodeTypecheckerUpdate
 import           Empire.API.Graph.RemoveNodes           as RemoveNodes
 import           Empire.API.Graph.RemovePort            as RemovePort
 import           Empire.API.Graph.RenameNode            as RenameNode
+import           Empire.API.Graph.RenamePort            as RenamePort
 import           Empire.API.Graph.SetCode               as SetCode
 import           Empire.API.Graph.SetDefaultValue       as SetDefaultValue
 import           Empire.API.Graph.SetInputNodeType      as SetInputNodeType
@@ -173,6 +174,10 @@ instance ToJSON RemoveNodes.Update
 instance ToJSON RenameNode.Request
 instance ToJSON RenameNode.Inverse
 instance ToJSON RenameNode.Update
+
+instance ToJSON RenamePort.Request
+instance ToJSON RenamePort.Inverse
+instance ToJSON RenamePort.Update
 
 instance ToJSON SetCode.Request
 instance ToJSON SetCode.Inverse

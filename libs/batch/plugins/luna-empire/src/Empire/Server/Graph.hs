@@ -52,6 +52,7 @@ import qualified Empire.API.Graph.NodesUpdate          as NodesUpdate
 import qualified Empire.API.Graph.RemoveNodes          as RemoveNodes
 import qualified Empire.API.Graph.RemovePort           as RemovePort
 import qualified Empire.API.Graph.RenameNode           as RenameNode
+import qualified Empire.API.Graph.RenamePort           as RenamePort
 import qualified Empire.API.Graph.Request              as G
 import qualified Empire.API.Graph.SetCode              as SetCode
 import qualified Empire.API.Graph.SetDefaultValue      as SetDefaultValue
@@ -242,6 +243,16 @@ handleMovePort :: Request MovePort.Request -> StateT Env BusT ()
 handleMovePort = modifyGraph (mtuple action) success where
     action (MovePort.Request location portRef newPos) = Graph.movePort location portRef newPos
     success request@(Request _ _ req@(MovePort.Request location portRef newPos)) _ node = replyResult request () node >> sendToBus' (NodesUpdate.Update location [node])
+
+
+handleRenamePort :: Request RenamePort.Request -> StateT Env BusT ()
+handleRenamePort = modifyGraphOk action success where --FIXME[pm] implement this!
+    action  (RenamePort.Request location portRef name) = do
+        let oldName = "oldname" --FIXME
+        let inv = RenamePort.Inverse oldName
+        void $ Graph.renamePort location portRef name
+        return (inv,())
+    success (RenamePort.Request location portRef name) _ result = sendToBus' $ RenamePort.Update location portRef name
 
 handleRemovePort :: Request RemovePort.Request -> StateT Env BusT ()
 handleRemovePort = modifyGraph (mtuple action) success where

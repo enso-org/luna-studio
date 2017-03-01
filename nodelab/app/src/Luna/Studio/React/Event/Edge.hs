@@ -14,7 +14,7 @@ import           React.Flux              (MouseEvent)
 data Event = AddPort       NodeId
            | MouseMove     MouseEvent NodeId
            | RemovePort
-           | PortNameApply     AnyPortRef Text
+           | PortNameApply     AnyPortRef String
            | PortNameDiscard   AnyPortRef
            | PortNameStartEdit AnyPortRef
             deriving (Show, Generic, NFData, Typeable)

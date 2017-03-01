@@ -35,6 +35,7 @@ handlersMap = Map.fromList
     , makeHandler Graph.handleRemoveNodes
     , makeHandler Graph.handleRemovePort
     , makeHandler Graph.handleRenameNode
+    , makeHandler Graph.handleRenamePort
     , makeHandler Graph.handleSetCode
     , makeHandler Graph.handleSetDefaultValue
     , makeHandler Graph.handleTypecheck

@@ -73,6 +73,9 @@ setCode = withWorkspace .:  BatchCmd.setCode
 removeNodes :: [NodeId] -> Command State ()
 removeNodes = withWorkspace . BatchCmd.removeNodes
 
+renamePort :: AnyPortRef -> String -> Command State ()
+renamePort = withWorkspace .: BatchCmd.renamePort
+
 movePort :: AnyPortRef -> Int -> Command State ()
 movePort = withWorkspace .: BatchCmd.movePort
 
