@@ -25,7 +25,8 @@ import qualified Empire.Commands.Graph         as Graph (addNode, connect, getGr
                                                          getConnections, removeNodes, withGraph,
                                                          renameNode, disconnect, addPort, movePort,
                                                          removePort, renamePort, updateNodeExpression,
-                                                         getNodeIdSequence, updateNodeMeta)
+                                                         getNodeIdSequence, updateNodeMeta,
+                                                         getSeqNodeIdInsideLambda)
 import qualified Empire.Commands.GraphBuilder  as GraphBuilder
 import           Empire.Commands.Library       (withLibrary)
 import qualified Empire.Commands.Typecheck     as Typecheck (run)
@@ -828,7 +829,7 @@ spec = around withChannels $ id $ do
                 Graph.addNode top u1 "1" def
                 Graph.getNodeIdSequence top
             withResult res $ \nodeSeq -> do
-                nodeSeq `shouldMatchList` [Just u1]
+                nodeSeq `shouldMatchList` [u1]
         it "adds three nodes in line" $ \env -> do
             u1 <- mkUUID
             u2 <- mkUUID
@@ -839,7 +840,7 @@ spec = around withChannels $ id $ do
                 Graph.addNode top u3 "3" $ NodeMeta (10, 30) False
                 Graph.getNodeIdSequence top
             withResult res $ \nodeSeq -> do
-                nodeSeq `shouldMatchList` [Just u1, Just u2, Just u3]
+                nodeSeq `shouldMatchList` [u1, u2, u3]
         it "adds three nodes in reverse order" $ \env -> do
             u1 <- mkUUID
             u2 <- mkUUID
@@ -850,7 +851,7 @@ spec = around withChannels $ id $ do
                 Graph.addNode top u3 "3" $ NodeMeta (10, 10) False
                 Graph.getNodeIdSequence top
             withResult res $ \nodeSeq -> do
-                nodeSeq `shouldMatchList` [Just u3, Just u2, Just u1]
+                nodeSeq `shouldMatchList` [u3, u2, u1]
         it "updates sequence after node removal" $ \env -> do
             u1 <- mkUUID
             u2 <- mkUUID
@@ -862,7 +863,7 @@ spec = around withChannels $ id $ do
                 Graph.removeNodes top [u2]
                 Graph.getNodeIdSequence top
             withResult res $ \nodeSeq -> do
-                nodeSeq `shouldMatchList` [Just u3, Just u1]
+                nodeSeq `shouldMatchList` [u3, u1]
         it "updates sequence after node meta update" $ \env -> do
             u1 <- mkUUID
             u2 <- mkUUID
@@ -876,4 +877,40 @@ spec = around withChannels $ id $ do
                 Graph.updateNodeMeta top u1 $ NodeMeta (30, 20) False
                 Graph.getNodeIdSequence top
             withResult res $ \nodeSeq -> do
-                nodeSeq `shouldMatchList` [Just u3, Just u2, Just u1]
+                nodeSeq `shouldMatchList` [u3, u2, u1]
+        it "adds one node inside lambda" $ \env -> do
+            u1 <- mkUUID
+            u2 <- mkUUID
+            res <- evalEmp env $ do
+                Graph.addNode top u1 "def foo" def
+                let loc = top |> u1
+                Graph.addNode loc u2 "4" def
+                (,) <$> Graph.getNodeIdSequence loc <*> Graph.getSeqNodeIdInsideLambda loc
+            withResult res $ \(idSeq, lamIdSeq) -> do
+                idSeq    `shouldBe` [u2]
+                lamIdSeq `shouldBe` [u2]
+        it "adds two nodes inside" $ \env -> do
+            u1 <- mkUUID
+            u2 <- mkUUID
+            u3 <- mkUUID
+            res <- evalEmp env $ do
+                Graph.addNode top u1 "def foo" def
+                let loc = top |> u1
+                Graph.addNode loc u2 "4" $ NodeMeta (10, 10) False
+                Graph.addNode loc u3 "6" $ NodeMeta (10, 20) False
+                (,) <$> Graph.getNodeIdSequence loc <*> Graph.getSeqNodeIdInsideLambda loc
+            withResult res $ \(idSeq, lamIdSeq) -> do
+                idSeq    `shouldBe` [u2, u3]
+                lamIdSeq `shouldBe` [u2, u3]
+        it "adds one node inside and removes it" $ \env -> do
+            u1 <- mkUUID
+            u2 <- mkUUID
+            res <- evalEmp env $ do
+                Graph.addNode top u1 "-> $a a" def
+                let loc = top |> u1
+                Graph.addNode loc u2 "1" def
+                Graph.removeNodes loc [u2]
+                (,) <$> Graph.getNodeIdSequence loc <*> Graph.getSeqNodeIdInsideLambda loc
+            withResult res $ \(idSeq, lamIdSeq) -> do
+                idSeq    `shouldBe` []
+                lamIdSeq `shouldBe` []

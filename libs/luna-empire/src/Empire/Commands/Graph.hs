@@ -1,7 +1,10 @@
-{-# LANGUAGE MultiWayIf       #-}
-{-# LANGUAGE TupleSections    #-}
-{-# LANGUAGE TypeApplications #-}
-{-# LANGUAGE TupleSections    #-}
+{-# LANGUAGE LambdaCase          #-}
+{-# LANGUAGE MultiWayIf          #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE StandaloneDeriving  #-}
+{-# LANGUAGE TupleSections       #-}
+{-# LANGUAGE TypeApplications    #-}
+{-# LANGUAGE TupleSections       #-}
 
 module Empire.Commands.Graph
     ( addNode
@@ -34,21 +37,23 @@ module Empire.Commands.Graph
     , withTC
     , withGraph
     , getNodeIdSequence
+    , getSeqNodeIdInsideLambda
     ) where
 
-import           Control.Lens                  (sans)
 import           Control.Monad                 (forM, forM_)
+import           Control.Monad.Catch           (MonadCatch(..))
 import           Control.Monad.State           hiding (when)
 import           Data.Coerce                   (coerce)
 import           Data.List                     (sort, sortOn)
 import qualified Data.Map                      as Map
+import           Data.Maybe                    (catMaybes)
 import           Data.Text                     (Text)
 import qualified Data.Text                     as Text
 import qualified Data.UUID                     as UUID
 import qualified Data.UUID.V4                  as UUID (nextRandom)
 import           Empire.Prelude
 
-import           Empire.Data.AST                 (NodeRef, NotInputEdgeException (..))
+import           Empire.Data.AST                 (NodeRef, NotInputEdgeException (..), NotUnifyException)
 import           Empire.Data.BreadcrumbHierarchy (addID, addWithLeafs, removeID, topLevelIDs)
 import           Empire.Data.Graph               (Graph)
 import qualified Empire.Data.Graph               as Graph
@@ -84,7 +89,7 @@ import qualified Empire.Commands.Publisher       as Publisher
 import           Empire.Empire
 
 import qualified Luna.IR                  as IR
-import qualified Luna.IR.Expr.Combinators as IR (deleteSubtree, replaceNode)
+import qualified Luna.IR.Expr.Combinators as IR (changeSource, deleteSubtree, replaceNode)
 
 generateNodeName :: ASTOp m => m String
 generateNodeName = do
@@ -133,6 +138,26 @@ updateNodeSequence loc@(GraphLocation _ _ breadcrumb) = do
     newSeq     <- AST.makeSeq sortedRefs
     Graph.breadcrumbSeq . at breadcrumb .= newSeq
 
+    lambda <- use Graph.insideNode
+    forM_ lambda $ \outerLambdaNode -> do
+        outerLambda <- ASTRead.getASTTarget outerLambdaNode
+        outerBody   <- ASTRead.getLambdaBodyRef outerLambda
+        case newSeq of
+            Just s -> case outerBody of
+                Just body -> do
+                    Just oldSeq <- ASTRead.getLambdaSeqRef outerLambda
+                    IR.matchExpr oldSeq $ \case
+                        IR.Seq l r -> IR.changeSource l s
+                _         -> do
+                    output     <- ASTRead.getLambdaOutputRef outerLambda
+                    body       <- IR.generalize <$> IR.seq s output
+                    outputLink <- ASTRead.getLambdaOutputLink outerLambda
+                    IR.changeSource outputLink body
+            _      -> do
+                output         <- ASTRead.getLambdaOutputRef outerLambda
+                firstNonLambda <- ASTRead.getFirstNonLambdaRef outerLambda
+                IR.replaceNode firstNonLambda output
+
 getNodeSequence :: ASTOp m => GraphLocation -> m [NodeRef]
 getNodeSequence loc@(GraphLocation _ _ breadcrumb) = do
     nodeSeq <- uses Graph.breadcrumbSeq $ view (at breadcrumb)
@@ -140,10 +165,28 @@ getNodeSequence loc@(GraphLocation _ _ breadcrumb) = do
         Just node -> AST.readSeq node
         _         -> return []
 
-getNodeIdSequence :: GraphLocation -> Empire [Maybe NodeId]
+nodeIdInsideLambda :: ASTOp m => NodeRef -> m (Maybe NodeId)
+nodeIdInsideLambda node = (ASTRead.getVarNode node >>= ASTRead.getNodeId) `catch`
+    (\(e :: NotUnifyException) -> return Nothing)
+
+getNodeIdSequence :: GraphLocation -> Empire [NodeId]
 getNodeIdSequence loc = withGraph loc $ runASTOp $ do
     nodeSeq <- getNodeSequence loc
-    mapM (ASTRead.getVarNode >=> ASTRead.getNodeId) nodeSeq
+    catMaybes <$> mapM nodeIdInsideLambda nodeSeq
+
+getSeqNodeIdInsideLambda :: GraphLocation -> Empire [NodeId]
+getSeqNodeIdInsideLambda loc = withGraph loc $ runASTOp $ do
+    lambda <- use Graph.insideNode
+    case lambda of
+        Just l -> do
+            outerLambda <- ASTRead.getASTTarget l
+            body        <- ASTRead.getLambdaBodyRef outerLambda
+            case body of
+                Just b -> do
+                    nodeSeq <- AST.readSeq b
+                    catMaybes <$> mapM nodeIdInsideLambda nodeSeq
+                _      -> return []
+        _      -> return []
 
 addPersistentNode :: ASTOp m => Node -> m NodeId
 addPersistentNode n = case n ^. Node.nodeType of
