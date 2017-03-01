@@ -205,14 +205,12 @@ handleUpdateNodeExpression :: Request UpdateNodeExpression.Request -> StateT Env
 handleUpdateNodeExpression = modifyGraph action success where
     action (UpdateNodeExpression.Request location nodeId expression) = do
         oldExpr <- Graph.withGraph location $ runASTOp $ GraphUtils.getASTTarget nodeId >>= Print.printNodeExpression
-        let newNodeId = nodeId
-            inv = UpdateNodeExpression.Inverse (Text.pack oldExpr)
-            res = Graph.updateNodeExpression location nodeId newNodeId expression
+        let inv = UpdateNodeExpression.Inverse (Text.pack oldExpr)
+            res = Graph.updateNodeExpression location nodeId expression
         (inv,) <$> res
-    success request@(Request _ _ req@(UpdateNodeExpression.Request location nodeId expression)) _ nodeMay = do
-        withJust nodeMay $ \node -> do
-            sendToBus' $ AddNode.Update location node
-            sendToBus' $ RemoveNodes.Update location [nodeId]
+    success request@(Request _ _ req@(UpdateNodeExpression.Request location nodeId expression)) _ node = do
+        sendToBus' $ AddNode.Update location node
+        sendToBus' $ RemoveNodes.Update location [nodeId]
 
 handleUpdateNodeMeta :: Request UpdateNodeMeta.Request -> StateT Env BusT ()
 handleUpdateNodeMeta = modifyGraphOk action success where
@@ -236,7 +234,7 @@ handleSetCode = modifyGraphOk action success where --FIXME[pm] implement this!
     action  (SetCode.Request location nodeId code) = do
         oldCode <- Graph.withGraph location $ runASTOp $ getNodeName nodeId
         let inv = SetCode.Inverse $ fromMaybe def oldCode
-        Graph.updateNodeExpression location nodeId nodeId code
+        Graph.updateNodeExpression location nodeId code
         return (inv,())
     success (SetCode.Request location nodeId code) _ result = sendToBus' $ SetCode.Update location nodeId code
 

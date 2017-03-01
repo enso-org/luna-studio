@@ -17,6 +17,7 @@ import           Empire.API.Data.TypeRep       (TypeRep(TCons, TStar, TLam, TVar
 import           Empire.ASTOp                  (runASTOp)
 import qualified Empire.ASTOps.Deconstruct     as ASTDeconstruct
 import qualified Empire.ASTOps.Parse           as Parser
+import           Empire.ASTOps.Print           (printExpression)
 import qualified Empire.ASTOps.Read            as ASTRead
 import qualified Empire.Commands.AST           as AST (isTrivialLambda)
 import qualified Empire.Commands.Graph         as Graph (addNode, connect, getGraph, getNodes,
@@ -334,15 +335,57 @@ spec = around withChannels $ parallel $ do
                 Graph.renameNode top u1 "bar"
                 Graph.getNodes top
             withResult res $ \nodes -> head nodes ^. Node.name `shouldBe` "bar"
-        it "changes node expression" $ \env -> do
+        it "retains connection after node rename" $ \env -> do
             u1 <- mkUUID
             u2 <- mkUUID
             res <- evalEmp env $ do
+                Graph.addNode top u1 "4" def
+                Graph.addNode top u2 "id node1" def
+                Graph.renameNode top u1 "node5"
+                graph <- Graph.getGraph top
+                expression <- Graph.withGraph top $ runASTOp $ do
+                    target <- ASTRead.getASTTarget u2
+                    printExpression target
+                return (graph, expression)
+            withResult res $ \(graph, expression) -> do
+                let nodes = graph ^. Graph.nodes
+                    Just four = find (\n -> n ^. Node.nodeId == u1) nodes
+                four ^. Node.name `shouldBe` "node5"
+                expression `shouldBe` "id node5"
+                let connections = graph ^. Graph.connections
+                connections `shouldMatchList` [(OutPortRef u1 Port.All, InPortRef u2 (Port.Arg 0))]
+        it "changes node expression" $ \env -> do
+            u1 <- mkUUID
+            res <- evalEmp env $ do
                 Graph.addNode top u1 "123" def
-                Graph.updateNodeExpression top u1 u2 "456"
-            withResult res $ \(Just node) -> do
+                node  <- Graph.updateNodeExpression top u1 "456"
+                nodes <- Graph.getNodes top
+                return (node, nodes)
+            withResult res $ \(node, nodes) -> do
                 node ^. Node.nodeType `shouldBe` Node.ExpressionNode "456"
-                node ^. Node.nodeId `shouldBe` u2
+                node ^. Node.nodeId `shouldBe` u1
+                nodes `shouldSatisfy` ((== 1) . length)
+        it "changes expression to lambda" $ \env -> do
+            u1 <- mkUUID
+            res <- evalEmp env $ do
+                Graph.addNode top u1 "1" def
+                node  <- Graph.updateNodeExpression top u1 "-> $a a"
+                nodes <- Graph.getNodes top
+                return (node, nodes)
+            withResult res $ \(node, nodes) -> do
+                node ^. Node.nodeType `shouldBe` Node.ExpressionNode "-> $a a"
+                node ^. Node.nodeId `shouldBe` u1
+                node ^. Node.canEnter `shouldBe` True
+                nodes `shouldSatisfy` ((== 1) . length)
+        it "changes node name when new expression is def name" $ \env -> do
+            u1 <- mkUUID
+            res <- evalEmp env $ do
+                Graph.addNode top u1 "1" def
+                Graph.updateNodeExpression top u1 "def foo"
+            withResult res $ \node -> do
+                node ^. Node.name `shouldBe` "foo"
+                node ^. Node.nodeType `shouldBe` Node.ExpressionNode "-> $arg0 arg0"
+                node ^. Node.canEnter `shouldBe` True
     describe "dumpAccessors" $ do
         it "foo.bar" $ \env -> do
             u1 <- mkUUID

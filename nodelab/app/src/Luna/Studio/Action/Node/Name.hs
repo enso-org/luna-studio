@@ -24,6 +24,7 @@ startEditName nodeId = do
     Global.modifyNode nodeId $ do
         name <- use Model.name
         Model.nameEdit ?= name
+    Global.renderIfNeeded
     liftIO NodeProperties.focusNameLabel
 
 editName :: NodeId -> Text -> Command State ()

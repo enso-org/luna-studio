@@ -1,19 +1,22 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Luna.Studio.React.View.Node.Properties where
 
-import qualified JS.Config                              as Config
-import qualified JS.UI                                  as UI
+import qualified JS.Config                               as Config
+import qualified JS.UI                                   as UI
 import           React.Flux
-import qualified React.Flux                             as React
-import qualified Luna.Studio.Event.UI                   as UI
+import qualified React.Flux                              as React
+import qualified Luna.Studio.Event.UI                    as UI
 import           Luna.Studio.Prelude
-import qualified Luna.Studio.React.Event.Node           as Node
+import qualified Luna.Studio.React.Event.Node            as Node
 import           Luna.Studio.React.Model.App            (App)
-import           Luna.Studio.React.Model.NodeProperties (NodeProperties)
-import qualified Luna.Studio.React.Model.NodeProperties as Prop
-import qualified Luna.Studio.React.View.Style           as Style
-import           Luna.Studio.React.Store                (Ref, dispatch)
-import           Luna.Studio.React.View.PortControl     (portControl_)
+import           qualified Luna.Studio.React.Model.Field s Field
+import           Luna.Studio.React.Model.NodeProperties  (NodeProperties)
+import qualified Luna.Studio.React.Model.NodeProperties  as Prop
+import qualified Luna.Studio.React.View.Style            as Style
+import           Luna.Studio.React.Store                 (Ref, dispatch)
+import           Luna.Studio.React.View.PortControl      (portControl_)
+import           Luna.Studio.React.View.Field            (singleField_)
+import qualified Luna.Studio.React.View.Style            as Style
 
 objName :: JSString
 objName = "node-properties"
@@ -23,23 +26,20 @@ nodeProperties = React.defineView objName $ \(ref, p) -> do
     let nodeId = p ^. Prop.nodeId
     div_
         [ "key"       $= "properties"
-        , "className" $= Style.prefixFromList ["node__properties", "noselect"]
+        , "className" $= Style.prefixFromList [ "node__properties", "noselect" ]
         ] $ do
         div_
             [ "key"       $= "value"
             , "className" $= Style.prefixFromList [ "row", "row--output-name" ]
             , onDoubleClick $ \_ _ -> dispatch ref $ UI.NodeEvent $ Node.NameEditStart nodeId
             ] $
-            case (p ^. Prop.nameEdit) of
+            case p ^. Prop.nameEdit of
                 Just name ->
-                    input_
-                        [ "key" $= "name-label"
-                        , "id"  $= "focus-nameLabel"
-                        , Style.prefixFromList [ "value", "value--name" ] $= convert name
-                        , onMouseDown $ \e _ -> [stopPropagation e]
-                        , onKeyDown   $ \e k ->  stopPropagation e : dispatch ref (UI.NodeEvent $ Node.NameKeyDown k nodeId)
-                        , onChange    $ \e -> let val = target e "value" in dispatch ref $ UI.NodeEvent $ Node.NameChange (fromString val) nodeId
-                        ]
+                    singleField_ ["id"  $= nameLabelId] "name-label"
+                        $ Field.mk ref name
+                        & Field.onCancel .~ Just (const $ UI.NodeEvent $ Node.NameDiscard nodeId)
+                        & Field.onAccept .~ Just (const $ UI.NodeEvent $ Node.NameApply nodeId)
+                        & Field.onEdit   .~ Just (UI.NodeEvent . flip Node.NameChange nodeId)
                 Nothing ->
                     elemString $ convert $ p ^. Prop.name
         forM_ (p ^. Prop.ports) $ portControl_ ref nodeId (p ^. Prop.isLiteral)

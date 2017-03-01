@@ -35,8 +35,7 @@ localAddConnection connection = do
     when (connection ^. Connection.dst . PortRef.dstPortId == Self) $ do
         let nodeId = connectionId ^. PortRef.dstNodeId
         let portId = InPortId (connection ^. Connection.dst . PortRef.dstPortId)
-        Global.modifyNodeEditor $
-            NodeEditor.nodes . at nodeId . _Just . Model.ports . at portId . _Just . Model.visible .= True
+        Global.modifyNode nodeId $ Model.ports . at portId . _Just . Model.visible .= True
     mayConn <- view (NodeEditor.connections . at connectionId) <$> Global.getNodeEditor
     mayConnectionModel <- createConnectionModel connection
     when (mayConnectionModel /= mayConn) $ do

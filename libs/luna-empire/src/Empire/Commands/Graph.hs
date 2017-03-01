@@ -81,7 +81,8 @@ import qualified Empire.Commands.GraphUtils      as GraphUtils
 import qualified Empire.Commands.Publisher       as Publisher
 import           Empire.Empire
 
-import qualified Luna.IR as IR
+import qualified Luna.IR                  as IR
+import qualified Luna.IR.Expr.Combinators as IR (deleteSubtree, replaceNode)
 
 generateNodeName :: ASTOp m => m String
 generateNodeName = do
@@ -244,15 +245,18 @@ renamePort loc portRef newName = withGraph loc $ runASTOp $ do
         _ -> throwM NotInputEdgeException
     GraphBuilder.buildConnections >>= \c -> GraphBuilder.buildInputEdge c nodeId
 
-updateNodeExpression :: GraphLocation -> NodeId -> NodeId -> Text -> Empire (Maybe Node)
-updateNodeExpression loc nodeId newNodeId expr = do
-    metaMay <- withGraph loc $ runASTOp $ do
-        ref <- GraphUtils.getASTPointer nodeId
-        AST.readMeta ref
-    forM metaMay $ \meta ->
-        withTC loc False $ do
-            runASTOp $ removeNodeNoTC nodeId
-            addNodeNoTC loc newNodeId expr meta
+updateNodeExpression :: GraphLocation -> NodeId -> Text -> Empire Node
+updateNodeExpression loc nodeId expr = withTC loc False $ do
+    runASTOp $ do
+        (exprName, ref) <- ASTParse.parseExpr $ Text.unpack expr
+        target <- ASTRead.getASTTarget nodeId
+        IR.replaceNode target ref
+        IR.deleteSubtree target
+        forM exprName $ \newName -> renameNodeGraph loc nodeId newName
+    runAliasAnalysis
+    node <- runASTOp $ GraphBuilder.buildNode nodeId
+    Publisher.notifyNodeUpdate loc node
+    return node
 
 updateNodeMeta :: GraphLocation -> NodeId -> NodeMeta -> Empire ()
 updateNodeMeta loc nodeId newMeta = withGraph loc $ do
@@ -374,7 +378,12 @@ decodeLocation :: GraphLocation -> Empire (Breadcrumb (Named BreadcrumbItem))
 decodeLocation loc@(GraphLocation _ _ crumbs) = withGraph loc $ GraphBuilder.decodeBreadcrumbs crumbs
 
 renameNode :: GraphLocation -> NodeId -> Text -> Empire ()
-renameNode loc nid name = withTC loc False $ runASTOp $ do
+renameNode loc nid name = withTC loc False $ do
+    runASTOp $ renameNodeGraph loc nid name
+    runAliasAnalysis
+
+renameNodeGraph :: ASTOp m => GraphLocation -> NodeId -> Text -> m ()
+renameNodeGraph loc nid name = do
     vref <- GraphUtils.getASTVar nid
     ASTModify.renameVar vref (Text.unpack name)
 

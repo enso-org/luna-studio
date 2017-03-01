@@ -78,13 +78,13 @@ startConnecting screenMousePos anyPortRef mayModifiedConnId connectMode = do
                     Global.modifyNodeEditor $ do
                         withJust mayModifiedConnId $ \connId ->
                             NodeEditor.connections . at connId .= Nothing
-                        NodeEditor.currentConnection .= mayCurrentConnectionModel
+                        NodeEditor.currentConnections .= maybeToList mayCurrentConnectionModel
 
 handleMove :: MouseEvent -> Connect -> Command State ()
 handleMove evt action = when (isNothing $ action ^. Action.connectSnappedPort) $ do
     mousePos                  <- workspacePosition evt
     mayCurrentConnectionModel <- createCurrentConnectionModel (action ^. Action.connectSourcePort) mousePos
-    Global.modifyNodeEditor $ NodeEditor.currentConnection .= mayCurrentConnectionModel
+    Global.modifyNodeEditor $ NodeEditor.currentConnections .= maybeToList mayCurrentConnectionModel
     when (isNothing mayCurrentConnectionModel) $ stopConnecting action
 
 handlePortMouseUp :: AnyPortRef -> Connect -> Command State ()
@@ -97,7 +97,7 @@ snapToPort portRef action =
         mayConnModel <- createConnectionModel conn
         withJust mayConnModel $ \connModel -> do
             update $ action & Action.connectSnappedPort ?~ portRef
-            Global.modifyNodeEditor $ NodeEditor.currentConnection ?= toCurrentConnection connModel
+            Global.modifyNodeEditor $ NodeEditor.currentConnections .= [toCurrentConnection connModel]
 
 cancelSnapToPort :: AnyPortRef -> Connect -> Command State ()
 cancelSnapToPort portRef action = when (Just portRef == action ^. Action.connectSnappedPort) $
@@ -112,7 +112,7 @@ handleMouseUp evt action = when (action ^. Action.connectMode == Drag) $ do
 
 stopConnecting :: Connect -> Command State ()
 stopConnecting _ = do
-    Global.modifyNodeEditor $ NodeEditor.currentConnection .= Nothing
+    Global.modifyNodeEditor $ NodeEditor.currentConnections .= def
     showOrHideAllSelfPorts Nothing Nothing
     removeActionFromState connectAction
 

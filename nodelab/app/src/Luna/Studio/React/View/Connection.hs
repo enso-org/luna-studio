@@ -76,5 +76,5 @@ currentConnection = React.defineView name $ \model -> do
         width = "strokeWidth" $= show2 connectionWidth
     line src dst [ width, color ]
 
-currentConnection_ :: CurrentConnection -> ReactElementM ViewEventHandler ()
-currentConnection_ model = React.viewWithSKey currentConnection "current-connection" model mempty
+currentConnection_ :: Int -> CurrentConnection -> ReactElementM ViewEventHandler ()
+currentConnection_ key model = React.viewWithSKey currentConnection (fromString $ "current-connection" <> show key) model mempty

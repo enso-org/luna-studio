@@ -17,15 +17,16 @@ data Event = DisplayResultChanged Bool          NodeId
            | EditExpression                     NodeId
            | Enter                              NodeId
            | MouseDown            MouseEvent    NodeId
-           | Select               MouseEvent    NodeId
-           | SetCode                            NodeId Text
-           | NameEditStart                      NodeId
-           | NameKeyDown          KeyboardEvent NodeId
+           | NameApply                          NodeId
            | NameChange           Text          NodeId
-           | PortSetDefaultValue                AnyPortRef PortDefault
+           | NameDiscard                        NodeId
+           | NameEditStart                      NodeId
            | PortApplyString      KeyboardEvent AnyPortRef PortDefault
            | PortEditString                     AnyPortRef PortDefault
            | PortInitSlider          MouseEvent AnyPortRef Action.InitValue
+           | PortSetDefaultValue                AnyPortRef PortDefault
+           | Select               MouseEvent    NodeId
+           | SetCode                            NodeId Text
             deriving (Show, Generic, NFData, Typeable)
 
 instance ToJSON   Event

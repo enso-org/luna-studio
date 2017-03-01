@@ -47,7 +47,7 @@ nodeEditor = React.defineView name $ \(ref, ne) -> do
         , onWheel     $ \e m w -> preventDefault e : dispatch ref (UI.NodeEditorEvent $ NE.Wheel m w)
         , onScroll    $ \e     -> [preventDefault e]
         ] $ do
-        style_ [] $ do
+        style_ [ "key" $= "style" ] $ do
             elemString $ ".luna-node-trans { transform: " <> matrix3dPropertyValue camera <> " }"
             forM_ (ne ^. NodeEditor.nodes . to HashMap.elems) $ nodeDynamicStyles_ camera
         svg_
@@ -62,11 +62,11 @@ nodeEditor = React.defineView name $ \(ref, ne) -> do
                 [ "key"       $= "connections"
                 , "className" $= Style.prefix "connections"
                 ] $ do
-                mapM_ (uncurry (connection_ ref)) $ ne ^. NodeEditor.connections . to HashMap.toList
-                mapM_ (uncurry (connection_ ref)) $ ne ^. NodeEditor.portDragConnections . to HashMap.toList
-                mapM_ currentConnection_          $ ne ^. NodeEditor.currentConnection
-                mapM_ selectionBox_               $ ne ^. NodeEditor.selectionBox
-                mapM_ connectionPen_              $ ne ^. NodeEditor.connectionPen
+                mapM_ (uncurry (connection_ ref))  $ ne ^. NodeEditor.connections . to HashMap.toList
+                mapM_ (uncurry (connection_ ref))  $ ne ^. NodeEditor.portDragConnections . to HashMap.toList
+                mapM_ (uncurry currentConnection_) $ keyed $ ne ^. NodeEditor.currentConnections
+                mapM_ selectionBox_                $ ne ^. NodeEditor.selectionBox
+                mapM_ connectionPen_               $ ne ^. NodeEditor.connectionPen
         div_
             [ "className" $= Style.prefixFromList [ "plane", "plane--nodes" ]
             , "key"       $= "nodes"

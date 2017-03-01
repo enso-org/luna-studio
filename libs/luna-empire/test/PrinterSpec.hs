@@ -19,7 +19,7 @@ import EmpireUtils
 spec :: Spec
 spec = around withChannels $ do
     describe "pretty-printer" $ do
-        xit "ignores nodes outside lambda while pretty-printing code inside it" $ \env -> do
+        it "ignores nodes outside lambda while pretty-printing code inside it" $ \env -> do
             u1 <- mkUUID
             u2 <- mkUUID
             u3 <- mkUUID

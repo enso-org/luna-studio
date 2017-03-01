@@ -17,6 +17,7 @@ import qualified Luna.Studio.React.Model.Node           as Node
 import qualified Luna.Studio.React.Model.NodeProperties as Properties
 import qualified Luna.Studio.React.Model.Port           as Port
 import           Luna.Studio.React.Store                (Ref, dispatch)
+import           Luna.Studio.React.View.Field           (multilineField_)
 import           Luna.Studio.React.View.Node.Elements   (blurBackground_, selectionMark_)
 import           Luna.Studio.React.View.Node.Properties (nodeProperties_)
 import           Luna.Studio.React.View.Port            (portExpanded_, port_)
@@ -24,7 +25,7 @@ import qualified Luna.Studio.React.View.Style           as Style
 import           Luna.Studio.React.View.Visualization   (visualization_)
 import           React.Flux
 import qualified React.Flux                             as React
-
+import qualified Luna.Studio.React.Model.Field as Field
 
 objName :: JSString
 objName = "node-body"
@@ -63,11 +64,10 @@ nodeBody = React.defineView objName $ \(ref, n) -> do
                 case n ^. Node.mode of
                     Node.Collapsed -> ""
                     Node.Expanded -> nodeProperties_ ref $ Properties.fromNode n
-                    Node.Editor   -> textarea_
-                        [ onKeyDown   $ \e _ -> [stopPropagation e]
-                        , onMouseDown $ \e _ -> [stopPropagation e]
-                        , onChange  $ dispatch ref . UI.NodeEvent . Node.SetCode nodeId . (`target` "value")
-                        ] $ elemString $ convert $ fromMaybe def $ n ^. Node.code
+                    Node.Editor   -> multilineField_ [] "editor"
+                        $ Field.mk ref (fromMaybe def $ n ^. Node.code)
+                        & Field.onCancel .~ Just (UI.NodeEvent . Node.SetCode nodeId)
+
         div_
             [ "key"       $= "visualization"
             , "className" $= Style.prefix "node__visuals"
