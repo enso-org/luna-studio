@@ -4,7 +4,7 @@ module Luna.Studio.Action.Graph
     , focusNode
     , focusNodes
     , getPort
-    , localConnectNodes
+    , localConnect
     , localAddConnection
     , localRemoveConnections
     , modifySelectionHistory
@@ -24,7 +24,7 @@ module Luna.Studio.Action.Graph
     , updateNodeZOrder
     ) where
 
-import           Luna.Studio.Action.Graph.Connect          (localAddConnection, localConnectNodes)
+import           Luna.Studio.Action.Graph.Connect          (localAddConnection, localConnect)
 import           Luna.Studio.Action.Graph.Create           (createGraph)
 import           Luna.Studio.Action.Graph.Disconnect       (localRemoveConnections, removeConnections)
 import           Luna.Studio.Action.Graph.Focus            (focusNode, focusNodes, updateNodeZOrder)

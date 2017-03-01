@@ -97,14 +97,11 @@ updateNodeMeta updates workspace uuid guiID = sendRequest $ Message uuid guiID $
 renameNode :: NodeId -> Text -> Workspace -> UUID -> Maybe UUID -> IO ()
 renameNode nid name w uuid guiID = sendRequest $ Message uuid guiID $ withLibrary w RenameNode.Request nid name
 
-autoconnect :: NodeId -> NodeId -> Workspace -> UUID -> Maybe UUID -> IO ()
-autoconnect src dst workspace uuid guiID = sendRequest $ Message uuid guiID $ withLibrary workspace Connect.Request $ Connect.NodeConnect src dst
+connect :: Either OutPortRef NodeId -> Either InPortRef NodeId -> Workspace -> UUID -> Maybe UUID -> IO ()
+connect src dst workspace uuid guiID = sendRequest $ Message uuid guiID $ withLibrary workspace Connect.Request src dst
 
-connectNodes :: OutPortRef -> InPortRef -> Workspace -> UUID -> Maybe UUID -> IO ()
-connectNodes src dst workspace uuid guiID = sendRequest $ Message uuid guiID $ withLibrary workspace Connect.Request $ Connect.PortConnect src dst
-
-disconnectNodes :: InPortRef -> Workspace -> UUID -> Maybe UUID -> IO ()
-disconnectNodes dst workspace uuid guiID = sendRequest $ Message uuid guiID $ withLibrary workspace Disconnect.Request dst
+disconnect :: InPortRef -> Workspace -> UUID -> Maybe UUID -> IO ()
+disconnect dst workspace uuid guiID = sendRequest $ Message uuid guiID $ withLibrary workspace Disconnect.Request dst
 
 setCode :: NodeId -> Text -> Workspace -> UUID -> Maybe UUID -> IO ()
 setCode nid newCode w uuid guiID = sendRequest $ Message uuid guiID $ withLibrary w SetCode.Request nid newCode

@@ -23,7 +23,7 @@ import qualified JS.GoogleAnalytics                     as GA
 import           Luna.Studio.Action.Camera.Screen       (translateToWorkspace)
 import           Luna.Studio.Action.Command             (Command)
 import           Luna.Studio.Action.Geometry.Connection (createConnectionModel, createCurrentConnectionModel)
-import           Luna.Studio.Action.Graph.Connect       (connectNodes)
+import           Luna.Studio.Action.Graph.Connect       (connect)
 import           Luna.Studio.Action.Graph.Disconnect    (removeConnections)
 import           Luna.Studio.Action.Node.Drag           (startNodeDrag)
 import           Luna.Studio.Action.Port.Self           (showOrHideAllSelfPorts)
@@ -119,6 +119,6 @@ stopConnecting _ = do
 connectToPort :: AnyPortRef -> Connect -> Command State ()
 connectToPort dst action = do
     withJust (toValidConnection dst $ action ^. Action.connectSourcePort) $ \newConn -> do
-        connectNodes (newConn ^. Connection.src) (newConn ^. Connection.dst)
+        connect (Left $ newConn ^. Connection.src) (Left $ newConn ^. Connection.dst)
         GA.sendEvent $ GA.Connect GA.Manual
     stopConnecting action

@@ -8,7 +8,7 @@ import qualified Empire.API.Data.Node             as Node
 import           Empire.API.Data.PortRef          (InPortRef, OutPortRef)
 import           Empire.API.Data.TypeRep          (TypeRep)
 import           Luna.Studio.Action.Command       (Command)
-import           Luna.Studio.Action.Graph.Connect (localConnectNodes)
+import           Luna.Studio.Action.Graph.Connect (localConnect)
 import           Luna.Studio.Action.Graph.Focus   (updateNodeZOrder)
 import           Luna.Studio.Action.Graph.Update  (updateMonads)
 import           Luna.Studio.Action.Node.Create   (registerNode)
@@ -28,6 +28,6 @@ fastAddNodes nodes = do
 createGraph :: [Node] -> [(OutPortRef, InPortRef)] -> [(TypeRep, [NodeId])] -> Command State ()
 createGraph nodes connections monads = do
     fastAddNodes nodes
-    mapM_ (uncurry localConnectNodes) connections
+    mapM_ (uncurry localConnect) connections
     updateMonads monads
     updateNodeZOrder

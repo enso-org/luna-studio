@@ -27,7 +27,7 @@ localRemoveConnections connectionIds = do
     Global.graph %= Graph.removeConnections connectionIds
 
 removeConnections :: [ConnectionId] -> Command State ()
-removeConnections = mapM_ BatchCmd.disconnectNodes
+removeConnections = mapM_ BatchCmd.disconnect
 
 removeConnectionsBetweenNodes :: NodeId -> NodeId -> Command State ()
 removeConnectionsBetweenNodes n1 n2 = do

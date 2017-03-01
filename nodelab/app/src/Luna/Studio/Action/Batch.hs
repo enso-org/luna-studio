@@ -82,20 +82,18 @@ movePort = withWorkspace .: BatchCmd.movePort
 removePort :: AnyPortRef -> Command State ()
 removePort = withWorkspace . BatchCmd.removePort
 
-autoconnect :: NodeId -> NodeId -> Command State ()
-autoconnect src dst = do
-    collaborativeModify [dst]
-    withWorkspace $ BatchCmd.autoconnect src dst
+connect :: Either OutPortRef NodeId -> Either InPortRef NodeId -> Command State ()
+connect src dst = do
+    let nodeId = case dst of
+            Left portRef  -> portRef ^. PortRef.dstNodeId
+            Right nodeId' -> nodeId'
+    collaborativeModify [nodeId]
+    withWorkspace $ BatchCmd.connect src dst where
 
-connectNodes :: OutPortRef -> InPortRef -> Command State ()
-connectNodes src dst = do
+disconnect :: InPortRef -> Command State ()
+disconnect dst = do
     collaborativeModify [dst ^. PortRef.dstNodeId]
-    withWorkspace $ BatchCmd.connectNodes src dst
-
-disconnectNodes :: InPortRef -> Command State ()
-disconnectNodes dst = do
-    collaborativeModify [dst ^. PortRef.dstNodeId]
-    withWorkspace $ BatchCmd.disconnectNodes dst
+    withWorkspace $ BatchCmd.disconnect dst
 
 setDefaultValue :: AnyPortRef -> DefaultValue.PortDefault -> Command State ()
 setDefaultValue portRef value = do

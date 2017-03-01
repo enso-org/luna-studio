@@ -159,7 +159,6 @@ instance ToJSON MovePort.Request
 
 instance ToJSON AddSubgraph.Request
 
-instance ToJSON Connect.Connect
 instance ToJSON Connect.Request
 instance ToJSON Connect.Update
 

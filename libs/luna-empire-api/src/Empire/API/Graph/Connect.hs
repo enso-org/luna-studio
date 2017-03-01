@@ -13,18 +13,9 @@ import qualified Empire.API.Response           as Response
 import qualified Empire.API.Topic              as T
 
 
-data Connect = PortConnect { _srcPortRef :: OutPortRef
-                           , _dstPortRef :: InPortRef
-                           }
-             | NodeConnect { _srcNodeId  :: NodeId
-                           , _dstNodeId  :: NodeId
-                           } deriving (Generic, Eq, NFData, Show)
-
-makeLenses ''Connect
-instance Binary Connect
-
 data Request = Request { _location :: GraphLocation
-                       , _connect  :: Connect
+                       , _src      :: Either OutPortRef NodeId
+                       , _dst      :: Either InPortRef  NodeId
                        } deriving (Generic, Eq, NFData, Show)
 
 

@@ -232,16 +232,15 @@ handleSetCodeUndo (Response.Response _ _ (SetCode.Request location nodeId code) 
         Just (undoMsg, redoMsg)
 
 handleConnectUndo :: Connect.Response -> Maybe (Disconnect.Request, Connect.Request)
-handleConnectUndo (Response.Response _ _ (Connect.Request location (Connect.PortConnect src dst)) inv res) =
+handleConnectUndo (Response.Response _ _ redoMsg@(Connect.Request location (Left src) (Left dst)) inv res) =
     withOk res . const $
         let undoMsg = Disconnect.Request location dst
-            redoMsg = Connect.Request location $ Connect.PortConnect src dst
         in Just (undoMsg, redoMsg)
 
 handleDisconnectUndo :: Disconnect.Response -> Maybe (Connect.Request, Disconnect.Request)
 handleDisconnectUndo (Response.Response _ _ (Disconnect.Request location dst) inv res) =
     withOk inv $ \(Disconnect.Inverse src) ->
-        let undoMsg = Connect.Request location $ Connect.PortConnect src dst
+        let undoMsg = Connect.Request location (Left src) (Left dst)
             redoMsg = Disconnect.Request location dst
         in Just (undoMsg, redoMsg)
 

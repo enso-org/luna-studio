@@ -16,12 +16,11 @@ import           Empire.API.Data.Node                   (NodeId)
 import qualified Empire.API.Data.Node                   as Node
 import           Empire.API.Data.Port                   (InPort (Self), OutPort (All), PortId (InPortId))
 import           Empire.API.Data.PortRef                (InPortRef (InPortRef), OutPortRef (OutPortRef))
-import qualified Empire.API.Data.PortRef                as PortRef
-import           Luna.Studio.Action.Batch               (autoconnect)
 import qualified Luna.Studio.Action.Batch               as BatchCmd
 import           Luna.Studio.Action.Command             (Command)
 import           Luna.Studio.Action.Geometry.Connection (createConnectionModel)
 import           Luna.Studio.Action.Geometry.Node       (getIntersectingConnections)
+import           Luna.Studio.Action.Graph.Connect       (connect)
 import           Luna.Studio.Action.Graph.Selection     (selectNodes, selectedNodes)
 import           Luna.Studio.Action.Graph.Update        (updateConnectionsForNodes)
 import           Luna.Studio.Action.Node.Snap           (snap)
@@ -133,8 +132,8 @@ handleNodeDragMouseUp evt nodeDrag = do
         withJust (nodeDrag ^. Action.nodeDragSnappedConn) $ \connId -> do
             mayConn <- use $ Global.graph . Graph.connectionsMap . at connId
             withJust mayConn $ \conn -> do
-                autoconnect (conn ^. Connection.src . PortRef.srcNodeId) nodeId
-                autoconnect nodeId (conn ^. Connection.dst . PortRef.dstNodeId)
+                connect (Left $ conn ^. Connection.src) $ Right nodeId
+                connect (Right nodeId)                  $ Left $ conn ^. Connection.dst
     continue stopNodeDrag
 
 

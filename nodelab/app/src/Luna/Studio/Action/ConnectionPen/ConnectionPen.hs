@@ -9,10 +9,10 @@ import           Data.Curve                                  (CurveSegment, getP
 import qualified Data.Curve                                  as Curve
 import           Data.Position                               (distance)
 import           Data.Timestamp                              (Timestamp)
-import           Luna.Studio.Action.Batch                    (autoconnect)
 import           Luna.Studio.Action.Command                  (Command)
 import           Luna.Studio.Action.ConnectionPen.SmoothLine (addPointToCurve, beginCurve, curveToSvgPath)
 import           Luna.Studio.Action.Geometry.ConnectionPen   (getNodeAtPosition)
+import           Luna.Studio.Action.Graph.Connect            (connect)
 import           Luna.Studio.Action.Port.Self                (showOrHideAllSelfPorts)
 import           Luna.Studio.Data.Color                      (Color (Color))
 import           Luna.Studio.Event.Mouse                     (workspacePosition)
@@ -57,7 +57,7 @@ connectProcessSegment seg state = do
         let nodesToConnect = case state ^. Action.penConnectLastVisitedNode of
                 Just nodeId -> zip (nodeId : uniqueIntersectedNodes) uniqueIntersectedNodes
                 Nothing     -> zip uniqueIntersectedNodes $ tail uniqueIntersectedNodes
-        mapM_ (\(id1, id2) -> when (id1 /= id2) $ autoconnect id1 id2) nodesToConnect
+        mapM_ (\(id1, id2) -> when (id1 /= id2) $ connect (Right id1) (Right id2)) nodesToConnect
         update $ state & Action.penConnectLastVisitedNode ?~ last uniqueIntersectedNodes
 
 connectMove :: MouseEvent -> Timestamp -> PenConnect -> Command State ()

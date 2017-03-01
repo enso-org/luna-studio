@@ -163,7 +163,7 @@ connectNodes :: GraphLocation -> Text -> NodeId -> NodeId -> StateT Env BusT ()
 connectNodes location expr dstNodeId srcNodeId = do
     let exprCall = head $ splitOneOf " ." $ Text.unpack expr
         inPort = if exprCall `elem` stdlibFunctions then Arg 0 else Self
-        connectRequest = Request UUID.nil Nothing $ Connect.Request location (Connect.PortConnect (OutPortRef srcNodeId All) (InPortRef dstNodeId inPort))
+        connectRequest = Request UUID.nil Nothing $ Connect.Request location (Left $ OutPortRef srcNodeId All) (Left $ InPortRef dstNodeId inPort)
     handleConnectReq False connectRequest -- TODO: refactor (we should not call handlers from handlers)
     forceTC location
 
@@ -265,9 +265,14 @@ handleConnect = handleConnectReq True
 -- TODO: Response for this request needs more info in case of NodeConnection for undo/redo
 handleConnectReq :: Bool -> Request Connect.Request -> StateT Env BusT ()
 handleConnectReq doTC = modifyGraph (mtuple action) success where
-    action  (Connect.Request location (Connect.PortConnect src dst)) = Graph.connectCondTC doTC location src dst
-    action  (Connect.Request location (Connect.NodeConnect src dst)) = Graph.connectCondTC doTC location (OutPortRef src All) (InPortRef dst Self)
-    success request@(Request _ _ (Connect.Request location _)) _ result = replyResult request () result >> sendToBus' (Connect.Update location result)
+    getSrcPort src = case src of
+        Left portRef -> portRef
+        Right nodeId -> OutPortRef nodeId All
+    getDstPort dst = case dst of
+        Left portRef -> portRef
+        Right nodeId -> InPortRef nodeId Self
+    action  (Connect.Request location src dst) = Graph.connectCondTC doTC location (getSrcPort src) (getDstPort dst)
+    success request@(Request _ _ (Connect.Request location _ _)) _ result = replyResult request () result >> sendToBus' (Connect.Update location result)
 
 handleDisconnect :: Request Disconnect.Request -> StateT Env BusT ()
 handleDisconnect = modifyGraphOk action success where

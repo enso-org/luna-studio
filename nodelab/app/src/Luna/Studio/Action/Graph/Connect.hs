@@ -1,13 +1,14 @@
 --TODO[react]:Rename module to sth more appropriate
 module Luna.Studio.Action.Graph.Connect
-    ( connectNodes
-    , localConnectNodes
+    ( connect
+    , localConnect
     , localAddConnection
     ) where
 
 
 import           Empire.API.Data.Connection             (Connection (Connection), ConnectionId)
 import qualified Empire.API.Data.Connection             as Connection
+import           Empire.API.Data.Node                   (NodeId)
 import           Empire.API.Data.Port                   (InPort (Self), PortId (InPortId))
 import           Empire.API.Data.PortRef                (InPortRef, OutPortRef)
 import qualified Empire.API.Data.PortRef                as PortRef
@@ -23,11 +24,11 @@ import qualified Luna.Studio.State.Graph                as Graph
 
 
 
-connectNodes :: OutPortRef -> InPortRef -> Command Global.State ()
-connectNodes = BatchCmd.connectNodes
+connect :: Either OutPortRef NodeId -> Either InPortRef NodeId -> Command Global.State ()
+connect = BatchCmd.connect
 
-localConnectNodes :: OutPortRef -> InPortRef -> Command Global.State ConnectionId
-localConnectNodes src dst = localAddConnection $ Connection src dst
+localConnect :: OutPortRef -> InPortRef -> Command Global.State ConnectionId
+localConnect src dst = localAddConnection $ Connection src dst
 
 localAddConnection :: Connection -> Command Global.State ConnectionId
 localAddConnection connection = do
