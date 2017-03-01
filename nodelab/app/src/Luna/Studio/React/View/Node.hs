@@ -31,7 +31,7 @@ nodePrefix = Config.prefix "node-"
 
 handleMouseDown :: Ref App -> NodeId -> Event -> MouseEvent -> [SomeStoreAction]
 handleMouseDown ref nodeId e m =
-    if Mouse.withoutMods m Mouse.leftButton
+    if Mouse.withoutMods m Mouse.leftButton || Mouse.withShift m Mouse.leftButton
     then stopPropagation e : dispatch ref (UI.NodeEvent $ Node.MouseDown m nodeId)
     else []
 
@@ -46,6 +46,7 @@ node = React.defineView name $ \(ref, n) -> do
         , "id"        $= (nodePrefix <> fromString (show nodeId))
         , "className" $= Style.prefix "node-root"
         , "style"     @= Aeson.object [ "zIndex" Aeson..= show z ]
+        , onMouseDown   $ handleMouseDown ref nodeId
         ] $ do
         div_
             [ "key"       $= "nodeTrans"
@@ -60,7 +61,6 @@ node = React.defineView name $ \(ref, n) -> do
                 [ "key"         $= "nameRoot"
                 , onClick       $ \_ m -> dispatch ref $ UI.NodeEvent $ Node.Select m nodeId
                 , onDoubleClick $ \_ _ -> dispatch ref $ UI.NodeEvent $ Node.Enter nodeId
-                , onMouseDown   $ handleMouseDown ref nodeId
                 , "className"   $= Style.prefixFromList ( [ "node" , (if n ^. Node.isCollapsed then "node--collapsed" else "node--expanded") ]
                                                           ++ (if n ^. Node.isSelected  then ["node--selected"]  else []) )
                 ] $

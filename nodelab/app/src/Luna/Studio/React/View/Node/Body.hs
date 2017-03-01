@@ -3,15 +3,14 @@ module Luna.Studio.React.View.Node.Body where
 
 import qualified Data.Aeson                             as Aeson
 import qualified Data.Map.Lazy                          as Map
-import           Empire.API.Data.Node                   (NodeId)
 import           Empire.API.Data.Port                   (InPort (..), PortId (..))
 import           Luna.Studio.Action.Geometry            (countSameTypePorts, isPortSingle)
 import           Luna.Studio.Data.Matrix                (translatePropertyValue2)
-import qualified Luna.Studio.Event.Mouse                as Mouse
 import qualified Luna.Studio.Event.UI                   as UI
 import           Luna.Studio.Prelude
 import qualified Luna.Studio.React.Event.Node           as Node
 import           Luna.Studio.React.Model.App            (App)
+import qualified Luna.Studio.React.Model.Field          as Field
 import           Luna.Studio.React.Model.Node           (Node)
 import qualified Luna.Studio.React.Model.Node           as Node
 import qualified Luna.Studio.React.Model.NodeProperties as Properties
@@ -25,16 +24,9 @@ import qualified Luna.Studio.React.View.Style           as Style
 import           Luna.Studio.React.View.Visualization   (visualization_)
 import           React.Flux
 import qualified React.Flux                             as React
-import qualified Luna.Studio.React.Model.Field as Field
 
 objName :: JSString
 objName = "node-body"
-
-handleMouseDown :: Ref App -> NodeId -> Event -> MouseEvent -> [SomeStoreAction]
-handleMouseDown ref nodeId e m =
-    if Mouse.withoutMods m Mouse.leftButton
-    then stopPropagation e : dispatch ref (UI.NodeEvent $ Node.MouseDown m nodeId)
-    else []
 
 nodeBody :: ReactView (Ref App, Node)
 nodeBody = React.defineView objName $ \(ref, n) -> do
@@ -46,7 +38,6 @@ nodeBody = React.defineView objName $ \(ref, n) -> do
         [ "key"         $= "nodeBodyRoot"
         , onClick       $ \_ m -> dispatch ref $ UI.NodeEvent $ Node.Select m nodeId
         , onDoubleClick $ \_ _ -> dispatch ref $ UI.NodeEvent $ Node.Enter nodeId
-        , onMouseDown   $ handleMouseDown ref nodeId
         , "className"   $= Style.prefixFromList ([ "node", if n ^. Node.isCollapsed then "node--collapsed" else "node--expanded" ]
                                                 ++ (if n ^. Node.isSelected  then ["node--selected"]  else []))
         , "style"       @= Aeson.object [ "transform" Aeson..= translatePropertyValue2 pos ]
