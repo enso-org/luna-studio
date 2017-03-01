@@ -14,7 +14,6 @@ import           Luna.Studio.Action.Geometry.Constants (nodeRadius)
 import           Luna.Studio.Data.Angle                (Angle)
 import           Luna.Studio.Prelude
 import qualified Luna.Studio.React.Model.Connection    as Connection
-import qualified Luna.Studio.React.Model.Node          as Node
 import           Luna.Studio.State.Global              (State)
 import qualified Luna.Studio.State.Global              as Global
 import qualified Luna.Studio.State.Graph               as Graph
