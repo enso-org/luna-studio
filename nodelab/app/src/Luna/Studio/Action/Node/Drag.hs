@@ -87,21 +87,21 @@ snapConnectionsForNodes :: Position -> [NodeId] -> Command State ()
 snapConnectionsForNodes mousePos nodeIds = when (length nodeIds == 1) $ forM_ nodeIds $ \nodeId -> do
     mayNode <- Global.getNode nodeId
     withJust mayNode $ \node -> do
-        let nodePos = if node ^. Model.mode == Model.Expanded then mousePos else node ^. Model.position
-        connIds <- getIntersectingConnections nodeId nodePos
-        if length connIds == 1 then forM_ connIds $ \connId -> do
-            let selfPortRef = InPortRef  nodeId Self
-                outPortRef  = OutPortRef nodeId All
-            mayConn       <- use $ Global.graph . Graph.connectionsMap . at connId
-            Global.modifyNode nodeId $ Model.ports . at (InPortId Self) . _Just . Port.visible .= True
-            mayConnModel1 <- fmap join $ mapM createConnectionModel $ flip Connection selfPortRef <$> view Connection.src <$> mayConn
-            mayConnModel2 <- fmap join $ mapM createConnectionModel $      Connection outPortRef  <$> view Connection.dst <$> mayConn
-            case (,) <$> mayConnModel1 <*> mayConnModel2 of
-                Just (connModel1, connModel2) -> do
-                    Global.modifyNodeEditor $ NodeEditor.currentConnections .= map toCurrentConnection [connModel1, connModel2]
-                    continue $ \nodeDrag -> update $ nodeDrag & Action.nodeDragSnappedConn ?~ connId
-                _ -> continue clearSnappedConnection
-        else continue clearSnappedConnection
+        mayConnId <- getIntersectingConnections node mousePos
+        case mayConnId of
+            Just connId -> do
+                let selfPortRef = InPortRef  nodeId Self
+                    outPortRef  = OutPortRef nodeId All
+                mayConn       <- use $ Global.graph . Graph.connectionsMap . at connId
+                Global.modifyNode nodeId $ Model.ports . at (InPortId Self) . _Just . Port.visible .= True
+                mayConnModel1 <- fmap join $ mapM createConnectionModel $ flip Connection selfPortRef <$> view Connection.src <$> mayConn
+                mayConnModel2 <- fmap join $ mapM createConnectionModel $      Connection outPortRef  <$> view Connection.dst <$> mayConn
+                case (,) <$> mayConnModel1 <*> mayConnModel2 of
+                    Just (connModel1, connModel2) -> do
+                        Global.modifyNodeEditor $ NodeEditor.currentConnections .= map toCurrentConnection [connModel1, connModel2]
+                        continue $ \nodeDrag -> update $ nodeDrag & Action.nodeDragSnappedConn ?~ connId
+                    _ -> continue clearSnappedConnection
+            _ -> continue clearSnappedConnection
 
 moveNodes :: Map NodeId Position -> Command State ()
 moveNodes nodesPos = do

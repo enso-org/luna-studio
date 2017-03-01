@@ -3,7 +3,7 @@ module Luna.Studio.Action.Geometry.Node
     , getIntersectingConnections
     ) where
 
-import           Control.Monad                         (filterM)
+import           Control.Monad.Trans.Maybe             (MaybeT (MaybeT), runMaybeT)
 import qualified Data.HashMap.Strict                   as HashMap
 import           Data.Position                         (Position, distanceSquared, move, vector, x, y)
 import           Data.Vector                           (dotV, scalarProduct)
@@ -14,6 +14,8 @@ import           Luna.Studio.Action.Geometry.Constants (nodeRadius)
 import           Luna.Studio.Data.Angle                (Angle)
 import           Luna.Studio.Prelude
 import qualified Luna.Studio.React.Model.Connection    as Connection
+import           Luna.Studio.React.Model.Node          (Node)
+import qualified Luna.Studio.React.Model.Node          as Node
 import           Luna.Studio.State.Global              (State)
 import qualified Luna.Studio.State.Global              as Global
 import qualified Luna.Studio.State.Graph               as Graph
@@ -29,27 +31,29 @@ nodeToNodeAngle src dst =
         then atan ((srcY - dstY) / (srcX - dstX))
         else atan ((srcY - dstY) / (srcX - dstX)) + pi
 
-getIntersectingConnections :: NodeId -> Position -> Command State [ConnectionId]
-getIntersectingConnections nodeId pos = filterM (doesIntersect nodeId pos) =<<
-    (use $ Global.graph . Graph.connectionsMap . to HashMap.keys)
+getIntersectingConnections :: Node -> Position -> Command State (Maybe ConnectionId)
+getIntersectingConnections node mousePos = do
+    let nodeId       = node ^. Node.nodeId
+        posToCompare = if node ^. Node.mode == Node.Collapsed then node ^. Node.position else mousePos
+    connIds             <- use $ Global.graph . Graph.connectionsMap . to HashMap.keys
+    intersecingConnIds' <- forM connIds $ distSqFromMouseIfIntersect nodeId posToCompare mousePos
+    let intersecingConnIds = catMaybes intersecingConnIds'
+    return $ if null intersecingConnIds then Nothing else
+        Just $ fst $ minimumBy (\(_, distSq1) (_, distSq2) -> compare distSq1 distSq2) intersecingConnIds
 
-
-doesIntersect :: NodeId -> Position -> ConnectionId -> Command State Bool
-doesIntersect nodeId nodePos connId = do
+distSqFromMouseIfIntersect :: NodeId -> Position -> Position -> ConnectionId -> Command State (Maybe (ConnectionId, Double))
+distSqFromMouseIfIntersect nodeId nodePos mousePos connId = do
     nodeConnsIds <- Graph.connectionIdsContainingNode nodeId <$> use Global.graph
-    if elem connId nodeConnsIds then
-        return False
-    else do
-        mayConn <- Global.getConnection connId
-        return $ case mayConn of
-            Just conn -> do
-                let srcPos  = conn ^. Connection.from
-                    dstPos  = conn ^. Connection.to
-                    proj    = closestPointOnLine (srcPos, dstPos) nodePos
-                    u       = closestPointOnLineParam (srcPos, dstPos) nodePos
-
-                if u < 0 || u > 1 || distanceSquared proj nodePos > nodeRadius ^ (2 :: Integer) then False else True
-            _ -> False
+    if elem connId nodeConnsIds then return Nothing
+    else runMaybeT $ do
+        conn <- MaybeT $ Global.getConnection connId
+        let srcPos  = conn ^. Connection.from
+            dstPos  = conn ^. Connection.to
+            proj    = closestPointOnLine (srcPos, dstPos) nodePos
+            u       = closestPointOnLineParam (srcPos, dstPos) nodePos
+        if u < 0 || u > 1 || distanceSquared proj nodePos > nodeRadius ^ (2 :: Integer) then
+            nothing
+        else return $ (connId, distanceSquared proj mousePos)
 
 
 -- | From Graphics.Gloss.Geometry.Line
