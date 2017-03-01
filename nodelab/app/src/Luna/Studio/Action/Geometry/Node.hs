@@ -36,13 +36,13 @@ getIntersectingConnections node mousePos = do
     let nodeId       = node ^. Node.nodeId
         posToCompare = if node ^. Node.mode == Node.Collapsed then node ^. Node.position else mousePos
     connIds             <- use $ Global.graph . Graph.connectionsMap . to HashMap.keys
-    intersecingConnIds' <- forM connIds $ distSqFromMouseIfIntersect nodeId posToCompare mousePos
+    intersecingConnIds' <- forM connIds $ distSqFromMouseIfIntersect nodeId posToCompare
     let intersecingConnIds = catMaybes intersecingConnIds'
     return $ if null intersecingConnIds then Nothing else
         Just $ fst $ minimumBy (\(_, distSq1) (_, distSq2) -> compare distSq1 distSq2) intersecingConnIds
 
-distSqFromMouseIfIntersect :: NodeId -> Position -> Position -> ConnectionId -> Command State (Maybe (ConnectionId, Double))
-distSqFromMouseIfIntersect nodeId nodePos mousePos connId = do
+distSqFromMouseIfIntersect :: NodeId -> Position -> ConnectionId -> Command State (Maybe (ConnectionId, Double))
+distSqFromMouseIfIntersect nodeId nodePos connId = do
     nodeConnsIds <- Graph.connectionIdsContainingNode nodeId <$> use Global.graph
     if elem connId nodeConnsIds then return Nothing
     else runMaybeT $ do
@@ -51,9 +51,10 @@ distSqFromMouseIfIntersect nodeId nodePos mousePos connId = do
             dstPos  = conn ^. Connection.to
             proj    = closestPointOnLine (srcPos, dstPos) nodePos
             u       = closestPointOnLineParam (srcPos, dstPos) nodePos
-        if u < 0 || u > 1 || distanceSquared proj nodePos > nodeRadius ^ (2 :: Integer) then
+            distSq  = distanceSquared proj nodePos
+        if u < 0 || u > 1 || distSq > nodeRadius ^ (2 :: Integer) then
             nothing
-        else return $ (connId, distanceSquared proj mousePos)
+        else return $ (connId, distSq)
 
 
 -- | From Graphics.Gloss.Geometry.Line
