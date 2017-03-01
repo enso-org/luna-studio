@@ -17,6 +17,7 @@ import qualified Luna.Studio.React.View.Style           as Style
 import           React.Flux
 import qualified React.Flux                             as React
 
+
 objName :: JSString
 objName = "node-properties"
 

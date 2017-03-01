@@ -35,7 +35,7 @@ monad = React.defineView objName $ \case
         polyline_
             [ "className" $= Style.prefix "monad"
             , "points"    $= points
-            , "stroke"    $= convert (Color.s .~ 0.28 $ Color.l .~ 0.140 $ Color.toHsl $ Color.fromType tr)
+            , "stroke"    $= convert (Color.buildLCH $ Color.fromType tr)
             ] mempty
 
 monad_ :: Int -> (Int, (TypeRep, [Node])) -> ReactElementM ViewEventHandler ()

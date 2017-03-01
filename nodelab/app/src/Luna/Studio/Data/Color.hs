@@ -6,10 +6,12 @@ module Luna.Studio.Data.Color
     , h
     , l
     , s
-    , toHsl
+    , buildLCH
+    , buildHsl
     ) where
 
 import           Data.Aeson              (FromJSON, ToJSON)
+import qualified Data.Color              as Color
 import           Data.Convert            (Convertible (convert))
 import           Data.Hashable           (hash)
 import           Luna.Studio.Prelude
@@ -17,7 +19,6 @@ import           Luna.Studio.Prelude
 import           Empire.API.Data.Port    (Port)
 import qualified Empire.API.Data.Port    as Port
 import           Empire.API.Data.TypeRep (TypeRep (..))
-
 
 newtype Color = Color { fromColor :: Int }
               deriving (Eq, Generic, Ord, Show, NFData)
@@ -33,17 +34,30 @@ data HSL a = HSL { _h :: a
 
 makeLenses ''HSL
 
-toHsl :: Color -> HSL Float
-toHsl (Color 0) = HSL 0.0 0.0 0.5
-toHsl (Color i) = HSL (hue * 2.0 * pi) 0.6 0.5
+buildHsl :: Color -> HSL Float
+buildHsl (Color 0) = HSL 0.0 0.0 0.5
+buildHsl (Color i) = HSL (hue * 2.0 * pi) 0.6 0.5
     where
         hue = start + delta * (fromIntegral i - 1)
         start = 90.6 / (2 * pi)
         steps = 16.0
         delta = 1.0 / steps
 
+buildLCH :: Color -> Color.LCH
+buildLCH (Color i) = Color.LCH (fromIntegral i) 50.0 70.0 255.0
+
+instance Convertible Color.LCH JSString where
+    convert = convert . Color.lch2rgb
+
 instance Convertible Color JSString where
-    convert = convert . toHsl
+    convert = convert . buildLCH
+
+instance Convertible Color.RGB JSString where
+    convert (Color.RGB r g b a) = convert $ "rgba(" <> show (round r :: Int)
+                                             <> "," <> show (round g :: Int)
+                                             <> "," <> show (round b :: Int)
+                                             <> "," <> show (round a :: Int)
+                                             <> ")"
 
 instance (Fractional a, Show a) => Convertible (HSL a) JSString where
     convert hsl = convert $ "hsl(" <> show ((hsl ^. h) * 360.0) <> ","
