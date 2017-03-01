@@ -27,7 +27,7 @@ handle :: Event -> Maybe (Command State ())
 handle (Shortcut (Shortcut.Event command _))        = Just $ handleCommand command
 handle (UI (NodeEvent (Node.MouseDown evt nodeId))) = Just $ do
     let shouldProceed = Mouse.withoutMods evt Mouse.leftButton || Mouse.withShift evt Mouse.leftButton
-        shouldSnap = Mouse.withoutMods evt Mouse.leftButton
+        shouldSnap    = Mouse.withoutMods evt Mouse.leftButton
     pos <- workspacePosition evt
     when shouldProceed $ Node.startNodeDrag pos nodeId shouldSnap
 handle (UI (NodeEvent (Node.Enter            nodeId))) = Just $ mapM_ Node.tryEnter =<< preuse (Global.graph . Graph.nodesMap . ix nodeId)

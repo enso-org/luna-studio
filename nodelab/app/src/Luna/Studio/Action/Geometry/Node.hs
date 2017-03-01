@@ -30,23 +30,21 @@ nodeToNodeAngle src dst =
         then atan ((srcY - dstY) / (srcX - dstX))
         else atan ((srcY - dstY) / (srcX - dstX)) + pi
 
-getIntersectingConnections :: NodeId -> Command State [ConnectionId]
-getIntersectingConnections nodeId = filterM (doesIntersect nodeId) =<<
+getIntersectingConnections :: NodeId -> Position -> Command State [ConnectionId]
+getIntersectingConnections nodeId pos = filterM (doesIntersect nodeId pos) =<<
     (use $ Global.graph . Graph.connectionsMap . to HashMap.keys)
 
 
-doesIntersect :: NodeId -> ConnectionId -> Command State Bool
-doesIntersect nodeId connId = do
+doesIntersect :: NodeId -> Position -> ConnectionId -> Command State Bool
+doesIntersect nodeId nodePos connId = do
     nodeConnsIds <- Graph.connectionIdsContainingNode nodeId <$> use Global.graph
     if elem connId nodeConnsIds then
         return False
     else do
-        mayNode <- Global.getNode       nodeId
         mayConn <- Global.getConnection connId
-        return $ case (,) <$> mayNode <*> mayConn of
-            Just (node, conn) -> do
-                let nodePos = node ^. Node.position
-                    srcPos  = conn ^. Connection.from
+        return $ case mayConn of
+            Just conn -> do
+                let srcPos  = conn ^. Connection.from
                     dstPos  = conn ^. Connection.to
                     proj    = closestPointOnLine (srcPos, dstPos) nodePos
                     u       = closestPointOnLineParam (srcPos, dstPos) nodePos
