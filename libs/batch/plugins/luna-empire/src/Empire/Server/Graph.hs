@@ -59,7 +59,6 @@ import qualified Empire.API.Graph.SetDefaultValue      as SetDefaultValue
 import qualified Empire.API.Graph.TypeCheck            as TypeCheck
 import qualified Empire.API.Graph.UpdateNodeExpression as UpdateNodeExpression
 import qualified Empire.API.Graph.UpdateNodeMeta       as UpdateNodeMeta
-import qualified Empire.API.Graph.UpdatePort           as UpdatePort
 import           Empire.API.Request                    (Request (..))
 import qualified Empire.API.Response                   as Response
 import qualified Empire.API.Topic                      as Topic
