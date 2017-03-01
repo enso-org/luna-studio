@@ -8,8 +8,8 @@ import qualified React.Flux                              as React
 import qualified Luna.Studio.Event.UI                    as UI
 import           Luna.Studio.Prelude
 import qualified Luna.Studio.React.Event.Node            as Node
-import           Luna.Studio.React.Model.App            (App)
-import           qualified Luna.Studio.React.Model.Field s Field
+import           Luna.Studio.React.Model.App             (App)
+import qualified Luna.Studio.React.Model.Field           as Field
 import           Luna.Studio.React.Model.NodeProperties  (NodeProperties)
 import qualified Luna.Studio.React.Model.NodeProperties  as Prop
 import qualified Luna.Studio.React.View.Style            as Style
