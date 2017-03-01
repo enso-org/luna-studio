@@ -22,11 +22,10 @@ import           Luna.Studio.React.View.Monad          (monad_)
 import           Luna.Studio.React.View.Node           (nodeDynamicStyles_, node_)
 import           Luna.Studio.React.View.Searcher       (searcher_)
 import           Luna.Studio.React.View.SelectionBox   (selectionBox_)
+import qualified Luna.Studio.React.View.Style          as Style
 import           Luna.Studio.React.View.Visualization  (pinnedVisualization_)
 import           React.Flux                            hiding (transform)
 import qualified React.Flux                            as React
-import           React.Flux.Internal                   (el)
-
 
 name :: JSString
 name = "node-editor"
@@ -41,7 +40,7 @@ nodeEditor = React.defineView name $ \(ref, ne) -> do
         lookupNode     = _2 %~ mapMaybe (flip HashMap.lookup $ ne ^. NodeEditor.nodes)
         monads         = map lookupNode $ ne ^. NodeEditor.monads
     div_
-        [ "className" $= "luna-graph"
+        [ "className" $= Style.prefix "graph"
         , "id"        $= sceneId
         , "key"       $= "graph"
         , onMouseDown $ \_ e   -> dispatch ref $ UI.NodeEditorEvent $ NE.MouseDown e
@@ -52,41 +51,16 @@ nodeEditor = React.defineView name $ \(ref, ne) -> do
             elemString $ ".luna-node-trans { transform: " <> matrix3dPropertyValue camera <> " }"
             forM_ (ne ^. NodeEditor.nodes . to HashMap.elems) $ nodeDynamicStyles_ camera
         svg_
-            [ "className" $= "luna-plane luna-plane--monads luna-node-trans"
+            [ "className" $= Style.prefixFromList [ "plane", "plane--monads", "node-trans" ]
             , "key"       $= "monads"
             ] $ forKeyed_ monads $ monad_ (length monads)
         svg_
-            [ "className" $= "luna-plane luna-plane-connections luna-node-trans"
+            [ "className" $= Style.prefixFromList [ "plane", "plane-connections", "node-trans" ]
             , "key"       $= "connections"
-            ] $ do
-            defs_
-                [ "key" $= "defs" ] $
-                el "filter"
-                    [ "id"  $= "textShadow"
-                    , "key" $= "textShadow"
-                    ] $ do
-                    el "feOffset"
-                        [ "result" $= "offOut"
-                        , "in"     $= "SourceAlpha"
-                        , "dx"     $= "0"
-                        , "dy"     $= "0"
-                        , "key"    $= "feOffset"
-                        ] mempty
-                    el "feGaussianBlur"
-                        [ "result"       $= "blurOut"
-                        , "in"           $= "offOut"
-                        , "stdDeviation" $= "2"
-                        , "key"          $= "feGaussianBlur"
-                        ] mempty
-                    el "feBlend"
-                        [ "in"   $= "SourceGraphic"
-                        , "in2"  $= "blurOut"
-                        , "mode" $= "normal"
-                        , "key"  $= "feBlend"
-                        ] mempty
+            ] $
             g_
                 [ "key"       $= "connections"
-                , "className" $= "luna-connections"
+                , "className" $= Style.prefix "connections"
                 ] $ do
                 mapM_ (uncurry (connection_ ref)) $ ne ^. NodeEditor.connections . to HashMap.toList
                 mapM_ (uncurry (connection_ ref)) $ ne ^. NodeEditor.portDragConnections . to HashMap.toList
@@ -94,7 +68,7 @@ nodeEditor = React.defineView name $ \(ref, ne) -> do
                 mapM_ selectionBox_               $ ne ^. NodeEditor.selectionBox
                 mapM_ connectionPen_              $ ne ^. NodeEditor.connectionPen
         div_
-            [ "className" $= "luna-plane luna-plane--nodes"
+            [ "className" $= Style.prefixFromList [ "plane", "plane--nodes" ]
             , "key"       $= "nodes"
             ] $ do
             forM_ nodes $ node_ ref
@@ -102,6 +76,6 @@ nodeEditor = React.defineView name $ \(ref, ne) -> do
             mapM_ (searcher_ ref camera) $ ne ^. NodeEditor.searcher
         forM_ edges $ edgeSidebar_ ref (ne ^. NodeEditor.draggedPort)
         canvas_
-            [ "className" $= "luna-plane plane--canvas luna-hide"
+            [ "className" $= Style.prefixFromList [ "plane", "plane--canvas", "hide" ]
             , "key"       $= "canvas"
             ] mempty

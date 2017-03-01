@@ -5,6 +5,7 @@ import qualified Data.Aeson                         as Aeson
 import           Luna.Studio.Prelude
 import           Luna.Studio.React.Model.CodeEditor (CodeEditor)
 import qualified Luna.Studio.React.Model.CodeEditor as CodeEditor
+import qualified Luna.Studio.React.View.Style       as Style
 import           React.Flux                         as React
 
 
@@ -14,11 +15,13 @@ name = "code-editor"
 codeEditor :: ReactView CodeEditor
 codeEditor = React.defineView name $ \model -> do
     let isVisible = model ^. CodeEditor.visible
-        showFlag  = if isVisible then " luna-code-editor--expanded" else " luna-code-editor--collapsed"
-        classes   = "luna-" <> name <> " luna-noselect" <> showFlag
+        classes   = [ "code-editor"
+                    , "noselect"
+                    , if isVisible then "code-editor--expanded" else "code-editor--collapsed"
+                    ]
     div_
         [ "key"       $= name
-        , "className" $= classes
+        , "className" $= Style.prefixFromList classes
         ] $
         div_
             [ "key"       $= "editor"

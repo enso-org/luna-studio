@@ -36,6 +36,7 @@ import qualified Luna.Studio.React.Model.Node                   as Node
 import           Luna.Studio.React.Model.NodeEditor             (NodeEditor)
 import qualified Luna.Studio.React.Model.NodeEditor             as NodeEditor
 import           Luna.Studio.React.Store                        (Ref, dispatch)
+import qualified Luna.Studio.React.View.Style                   as Style
 import           Luna.Studio.React.View.Visualization.DataFrame (dataFrame_)
 import           Luna.Studio.React.View.Visualization.Graphics  (graphics_)
 import           Luna.Studio.React.View.Visualization.Image     (image_)
@@ -56,7 +57,7 @@ visualization_ ref nodeId mayPos v = React.view visualization (ref, nodeId, mayP
 
 visualization :: ReactView (Ref App, NodeId, Maybe Position, NodeValue)
 visualization = React.defineView viewName $ \(ref, nodeId, mayPos, nodeValue) ->
-    div_ [ "className" $= "luna-noselect" ] $
+    div_ [ "className" $= Style.prefix "noselect" ] $
         case nodeValue of
             NodeResult.Error msg          -> nodeError_ msg
             NodeResult.Value _ valueReprs -> nodeValues_ ref nodeId mayPos valueReprs
@@ -99,7 +100,7 @@ nodeError_ err = do
     let message = wrapLines errorMessageWrapMargin $ showErrorSep "\n" err
     div_
         [ "key"       $= "error"
-        , "className" $= "luna-vis luna-vis--error"
+        , "className" $= Style.prefixFromList [ "vis", "vis--error" ]
         ] $ elemString message
 
 nodeValues_ :: Ref App -> NodeId -> Maybe Position -> [Value] -> ReactElementM ViewEventHandler ()
@@ -112,11 +113,11 @@ nodeValue_ ref nodeId mayPos visIx value = do
             Just pos -> \n v -> Visualization.Unpin n v pos
             Nothing  -> Visualization.Pin
         translatedDiv_ = case mayPos of
-            Just pos -> div_ [ "className" $= "luna-node-trans luna-noselect luna-node-root"
+            Just pos -> div_ [ "className" $= Style.prefixFromList [ "node-trans", "noselect", "node-root" ]
                              , "style" @= Aeson.object
                                 [ "zIndex"    Aeson..= show (1000 :: Integer)
                                 , "transform" Aeson..= translatePropertyValue2 pos ] ]
-                         . div_ [ "className" $= "luna-node__visuals" ]
+                         . div_ [ "className" $= Style.prefix "node__visuals" ]
             Nothing -> div_
     translatedDiv_ $ do
         withJust mayPos $ \pos ->

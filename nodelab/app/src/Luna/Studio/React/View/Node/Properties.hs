@@ -5,16 +5,15 @@ import qualified JS.Config                              as Config
 import qualified JS.UI                                  as UI
 import           React.Flux
 import qualified React.Flux                             as React
-
 import qualified Luna.Studio.Event.UI                   as UI
 import           Luna.Studio.Prelude
 import qualified Luna.Studio.React.Event.Node           as Node
 import           Luna.Studio.React.Model.App            (App)
 import           Luna.Studio.React.Model.NodeProperties (NodeProperties)
 import qualified Luna.Studio.React.Model.NodeProperties as Prop
+import qualified Luna.Studio.React.View.Style           as Style
 import           Luna.Studio.React.Store                (Ref, dispatch)
 import           Luna.Studio.React.View.PortControl     (portControl_)
-
 
 objName :: JSString
 objName = "node-properties"
@@ -24,11 +23,11 @@ nodeProperties = React.defineView objName $ \(ref, p) -> do
     let nodeId = p ^. Prop.nodeId
     div_
         [ "key"       $= "properties"
-        , "className" $= "luna-node__properties luna-noselect"
+        , "className" $= Style.prefixFromList ["node__properties", "noselect"]
         ] $ do
         div_
             [ "key"       $= "value"
-            , "className" $= "luna-row luna-row--output-name"
+            , "className" $= Style.prefixFromList [ "row", "row--output-name" ]
             , onDoubleClick $ \_ _ -> dispatch ref $ UI.NodeEvent $ Node.NameEditStart nodeId
             ] $
             case (p ^. Prop.nameEdit) of
@@ -36,7 +35,7 @@ nodeProperties = React.defineView objName $ \(ref, p) -> do
                     input_
                         [ "key" $= "name-label"
                         , "id"  $= "focus-nameLabel"
-                        , "value value--name" $= convert name
+                        , Style.prefixFromList [ "value", "value--name" ] $= convert name
                         , onMouseDown $ \e _ -> [stopPropagation e]
                         , onKeyDown   $ \e k ->  stopPropagation e : dispatch ref (UI.NodeEvent $ Node.NameKeyDown k nodeId)
                         , onChange    $ \e -> let val = target e "value" in dispatch ref $ UI.NodeEvent $ Node.NameChange (fromString val) nodeId
@@ -46,15 +45,15 @@ nodeProperties = React.defineView objName $ \(ref, p) -> do
         forM_ (p ^. Prop.ports) $ portControl_ ref nodeId (p ^. Prop.isLiteral)
         div_
             [ "key"       $= "display-results"
-            , "className" $= "luna-row"
+            , "className" $= Style.prefix "row"
             ] $ do
             div_
                 [ "key"       $= "label"
-                , "className" $= "luna-label"
+                , "className" $= Style.prefix "label"
                 ] $ elemString "Display results"
             div_
                 [ "key"       $= "value"
-                , "className" $= "luna-value"
+                , "className" $= Style.prefix "value"
                 ] $ do
                 let val = p ^. Prop.visualizationsEnabled
                 button_
@@ -63,16 +62,16 @@ nodeProperties = React.defineView objName $ \(ref, p) -> do
                     ] $ elemString $ if val then "yes" else "no"
         div_
             [ "key" $= "execution-time"
-            , "className" $= "luna-row"
+            , "className" $= Style.prefix "row"
             ] $
             withJust (p ^. Prop.execTime) $ \execTime -> do
                 div_
                     ["key"       $= "label"
-                    , "className" $= "luna-label"
+                    , "className" $= Style.prefix "label"
                     ] $ elemString "Execution time"
                 div_
                     ["key"       $= "value"
-                    , "className" $= "luna-value"
+                    , "className" $= Style.prefix "value"
                     ] $ elemString $ show execTime <> " ms"
 
 

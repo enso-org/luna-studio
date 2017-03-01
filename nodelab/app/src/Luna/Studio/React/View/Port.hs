@@ -14,6 +14,7 @@ import           Luna.Studio.React.Model.App  (App)
 import           Luna.Studio.React.Model.Port (Port (..))
 import qualified Luna.Studio.React.Model.Port as Port
 import           Luna.Studio.React.Store      (Ref, dispatch)
+import qualified Luna.Studio.React.View.Style as Style
 import           Numeric                      (showFFloat)
 import           React.Flux                   hiding (view)
 import qualified React.Flux                   as React
@@ -73,7 +74,7 @@ portExpanded_ ref p =
     React.viewWithSKey portExpanded (jsShow $ p ^. Port.portId) (ref, p) mempty
 
 handlers :: Ref App -> AnyPortRef -> [PropertyOrHandler [SomeStoreAction]]
-handlers ref portRef = [ onMouseDown  $ handleMouseDown ref portRef
+handlers ref portRef = [ onMouseDown  $ handleMouseDown  ref portRef
                        , onMouseUp    $ handleMouseUp    ref portRef
                        , onClick      $ handleClick      ref portRef
                        , onMouseEnter $ handleMouseEnter ref portRef
@@ -85,22 +86,22 @@ portSelf_ ref p = do
     let portRef   = p ^. Port.portRef
         color     = convert $ p ^. Port.color
         portId    = p ^. Port.portId
-        highlight = if p ^. Port.highlight then " luna-hover" else ""
+        highlight = if p ^. Port.highlight then ["hover"] else []
         visible   = p ^. Port.visible
-        className = fromString $ "luna-port luna-port--self" <> highlight
+        className = Style.prefixFromList $ [ "port", "port--self" ] ++ highlight
         r         = 5
     if visible then
         g_
             [ "className" $= className ] $ do
             circle_
-                [ "className" $= "luna-port__shape"
+                [ "className" $= Style.prefix "port__shape"
                 , "key"       $= (jsShow portId <> "a")
                 , "fill"      $= color
                 , "r"         $= (fromString $ show r)
                 ] mempty
             circle_
                 ( handlers ref portRef ++
-                  [ "className"  $= "luna-port__select"
+                  [ "className"  $= Style.prefix "port__select"
                   , "key"        $= (jsShow portId <> "b")
                   , "r"          $= (fromString $ show $ r + lineHeight/2)
                   ]
@@ -108,13 +109,13 @@ portSelf_ ref p = do
     else g_
             [ "className" $= className ] $ do
             circle_
-                [ "className"    $= "luna-port__shape invisible"
-                , "key"          $= (jsShow portId <> "a")
+                [ "className"   $= Style.prefixFromList [ "port__shape", "invisible" ]
+                , "key"         $= (jsShow portId <> "a")
                 , "fillOpacity" $= (fromString $ show (1 :: Int))
                 ] mempty
             circle_
-                [ "className"      $= "luna-port__select invisible"
-                  , "key"          $= (jsShow portId <> "b")
+                [ "className"     $= Style.prefixFromList [ "port__select", "invisible" ]
+                  , "key"         $= (jsShow portId <> "b")
                   , "fillOpacity" $= (fromString $ show (1 :: Int))
                   ] mempty
 
@@ -123,8 +124,8 @@ portSingle_ ref p = do
     let portRef   = p ^. Port.portRef
         portId    = p ^. Port.portId
         color     = convert $ p ^. Port.color
-        highlight = if p ^. Port.highlight then " luna-hover" else ""
-        className = fromString $ "luna-port luna-port--o--single" <> highlight
+        highlight = if p ^. Port.highlight then ["hover"] else []
+        className = Style.prefixFromList $ [ "port", "port--o--single" ] ++ highlight
         r1 :: Double -> JSString
         r1 = jsShow2 . (+) nodeRadius
         r2 = jsShow2 nodeRadius'
@@ -133,14 +134,14 @@ portSingle_ ref p = do
                        " L0 "  <> r2   <> " A " <> r2   <> " " <> r2   <> " 1 0 " <> jsShow c <> " 0 -" <> r2   <> " Z "
     g_ [ "className" $= className ] $ do
         path_
-            [ "className" $= "luna-port__shape"
+            [ "className" $= Style.prefix "port__shape"
             , "key"       $= (jsShow portId <> "a" )
             , "fill"      $= color
             , "d"         $= (svgPath 0 0 1 <> svgPath 0 1 0)
             ] mempty
         path_
             ( handlers ref portRef ++
-              [ "className" $= "luna-port__select"
+              [ "className" $= Style.prefix "port__select"
               , "key"       $= (jsShow portId <> "b")
               , "d"         $= (svgPath lineHeight 0 1 <> svgPath lineHeight 1 0)
               ]
@@ -153,9 +154,9 @@ portIO_ ref p numOfPorts = do
         isInput   = isPortInput p
         num       = getPortNumber p
         color     = convert $ p ^. Port.color
-        highlight = if p ^. Port.highlight then " luna-hover" else ""
-        classes   = if isInput then "luna-port luna-port--i luna-port--i--" else "luna-port luna-port--o luna-port--o--"
-        className = fromString $ classes <> show (num+1) <> highlight
+        highlight = if p ^. Port.highlight then ["hover"] else []
+        classes   = if isInput then [ "port", "port--i", "port--i--" <> show (num + 1)] ++ highlight
+                               else [ "port", "port--o", "port--o--" <> show (num + 1)] ++ highlight
         svgFlag1  = if isInput then "1"  else "0"
         svgFlag2  = if isInput then "0"  else "1"
         mode      = if isInput then -1.0 else 1.0
@@ -179,16 +180,17 @@ portIO_ ref p numOfPorts = do
                    " A " <> r2   <> " " <> r2   <> " 0 0 " <> svgFlag2 <> " " <> dx   <> " " <> dy   <>
                    " Z"
     g_
-        [ "className" $= className ] $ do
+        [ "className" $= Style.prefixFromList classes
+        ] $ do
         path_
-            [ "className" $= "luna-port__shape"
+            [ "className" $= Style.prefix "port__shape"
             , "key"       $= (jsShow portId <> "a")
             , "fill"      $= color
             , "d"         $= svgPath 0
             ] mempty
         path_
             ( handlers ref portRef ++
-              [ "className" $= "luna-port__select"
+              [ "className" $= Style.prefix "port__select"
               , "key"       $= (jsShow portId <> "b")
               , "d"         $= svgPath lineHeight
               ]
@@ -201,71 +203,74 @@ portIOExpanded_ ref p = if p ^. Port.portId == InPortId Self then portSelf_ ref 
         isInput   = isPortInput p
         num       = getPortNumber p
         color     = convert $ p ^. Port.color
-        highlight = if p ^. Port.highlight then " luna-hover" else ""
-        classes   = if isInput then "luna-port luna-port--i luna-port--i--" else "luna-port luna-port--o luna-port--o--"
-        className = fromString $ classes <> show (num + 1) <> highlight
+        highlight = if p ^. Port.highlight then ["hover"] else []
+        classes   = if isInput then [ "port", "port--i", "port--i--" <> show (num + 1)] ++ highlight
+                               else [ "port", "port--o", "port--o--" <> show (num + 1)] ++ highlight
         n         = if isInput then 1 else 0
     g_
-        [ "className" $= className ] $ do
+        [ "className" $= Style.prefixFromList classes
+        ] $ do
         circle_
-            [ "className" $= "luna-port__shape"
+            [ "className" $= Style.prefix "port__shape"
             , "key"       $= (jsShow portId <> jsShow num <> "a")
             , "fill"      $= color
             , "r"         $= jsShow2 3
-            , "cy"        $= jsShow2 (lineHeight * fromIntegral (num + n) )
+            , "cy"        $= jsShow2 (lineHeight * fromIntegral (num + n))
             ] mempty
         circle_
             ( handlers ref portRef ++
-              [ "className" $= "luna-port__select"
+              [ "className" $= Style.prefix "port__select"
               , "key"       $= (jsShow portId <> jsShow num <> "b")
               , "r"         $= jsShow2 (lineHeight/1.5)
-              , "cy"        $= jsShow2 (lineHeight * fromIntegral (num + n) )
+              , "cy"        $= jsShow2 (lineHeight * fromIntegral (num + n))
               ]
             ) mempty
 
 portSidebar_ :: Bool -> ReactElementM ViewEventHandler ()
 portSidebar_ isInput = do
-    let classes = "luna-port-sidebar luna-port-sidebar" <> if isInput then "--i" else "--o"
+    let classes = Style.prefixFromList [ "port-sidebar", if isInput then "port-sidebar--i" else "port-sidebar--o" ]
         key     = "portSidebar" <> if isInput then "Inputs" else "Outputs"
     div_
         [ "className" $= classes
         , "key"       $= key
         ] $
         svg_ [] $ do
-            -- placeholder of HTML generated by portIOExpanded_ ""
             if isInput then do
                 g_
-                    [ "className" $= "luna-port luna-port--self" ] $ do
+                    [ "className" $= Style.prefixFromList [ "port", "port--self" ]
+                    ] $ do
                     circle_
-                        [ "className" $= "luna-port__shape"
+                        [ "className" $= Style.prefix "port__shape"
                         , "fill"      $= "orange"
                         , "r"         $= "5"
                         ] mempty
                     circle_
-                        [ "className" $= "luna-port__select"
+                        [ "className" $= Style.prefix "port__select"
                         , "r"         $= "13"
                         ] mempty
                 g_
-                    [ "className" $= "luna-port luna-port--i" ] $ do
+                    [ "className" $= Style.prefixFromList [ "port", "port--i" ]
+                    ] $ do
                     circle_
-                        [ "className" $= "luna-port__shape"
+                        [ "className" $= Style.prefix "port__shape"
                         , "fill"      $= "orange"
                         , "r"         $= "3"
                         , "cy"        $= "16"
                         ] mempty
                     circle_
-                        [ "className" $= "luna-port__select"
+                        [ "className" $= Style.prefix "port__select"
                         , "r"         $= "10.67"
                         , "cy"        $= "16"
                         ] mempty
             else g_
-                    [ "className" $= "luna-port luna-port--o" ] $ do
+                    [ "className" $= Style.prefixFromList [ "port", "port--o" ]
+                    ] $ do
                         circle_
-                            [ "className" $= "luna-port__shape"
+                            [ "className" $= Style.prefix "port__shape"
                             , "fill"      $= "blue"
                             , "r"         $= "3"
                             ] mempty
                         circle_
-                            [ "className" $= "luna-port__select"
+                            [ "className" $= Style.prefix "port__select"
                             , "r"         $= "10.67"
                             ] mempty

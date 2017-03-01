@@ -8,6 +8,7 @@ import qualified Luna.Studio.Data.Color                as Color
 import           Luna.Studio.Prelude
 import           Luna.Studio.React.Model.Node          (Node)
 import qualified Luna.Studio.React.Model.Node          as Node
+import qualified Luna.Studio.React.View.Style          as Style
 import           React.Flux                            as React
 
 
@@ -27,15 +28,14 @@ monad :: ReactView (TypeRep, [Position])
 monad = React.defineView objName $ \case
     (_ , []) -> mempty
     (tr, a ) -> do
-        let classes = "luna-monad"
-            start   = Position (Vector2 (-7000) ((head a) ^. y))
+        let start   = Position (Vector2 (-7000) ((head a) ^. y))
             end     = Position (Vector2   7000  ((last a) ^. y))
             a'      = start:a++[end]
             points  = fromString $ unwords $ map (\n -> show (n ^. x) <> "," <> show (n ^. y)) a'
         polyline_
-            [ "className" $= classes
+            [ "className" $= Style.prefix "monad"
             , "points"    $= points
-            , "stroke"    $= convert (Color.l .~ 0.18 $ Color.toHsl $ Color.fromType tr)
+            , "stroke"    $= convert (Color.s .~ 0.28 $ Color.l .~ 0.140 $ Color.toHsl $ Color.fromType tr)
             ] mempty
 
 monad_ :: Int -> (Int, (TypeRep, [Node])) -> ReactElementM ViewEventHandler ()

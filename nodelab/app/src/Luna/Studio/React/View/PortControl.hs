@@ -19,7 +19,9 @@ import           Luna.Studio.React.Model.Node (NodeId)
 import           Luna.Studio.React.Model.Port (Port)
 import qualified Luna.Studio.React.Model.Port as Port
 import           Luna.Studio.React.Store      (Ref, dispatch)
+import qualified Luna.Studio.React.View.Style as Style
 import qualified Luna.Studio.State.Action     as Action
+
 
 
 portControl_ :: Ref App -> NodeId -> Bool -> Port -> ReactElementM ViewEventHandler ()
@@ -43,15 +45,15 @@ inPortControl :: ReactView (Ref App, AnyPortRef, Port)
 inPortControl = React.defineView "inPortControl" $ \(ref, portRef, port) ->
     div_
         [ "key"       $= jsShow (port ^. Port.portId)
-        , "className" $= "luna-row luna-row--arg"
+        , "className" $= Style.prefixFromList [ "row", "row--arg" ]
         ] $ do
         div_
             [ "key"       $= "label"
-            , "className" $= "luna-label"
+            , "className" $= Style.prefix "label"
             ] $ elemString $ port ^. Port.name
         div_
             [ "key"       $= "value"
-            , "className" $= "luna-value"
+            , "className" $= Style.prefix "value"
             ] $
             case port ^. Port.state of
             PortAPI.NotConnected ->
@@ -73,14 +75,14 @@ inPortControl = React.defineView "inPortControl" $ \(ref, portRef, port) ->
                 ValueType.DiscreteNumber -> do
                     let value = fromMaybe 0 $ defVal ^? DefaultValue._Constant . DefaultValue._IntValue
                     div_
-                        [ "className" $= "luna-horizontal-slider"
+                        [ "className" $= Style.prefix "horizontal-slider"
                         --TODO[react]: +1 with Q and up key, -1 with W and down key, edit on double click
                         , onMouseDown $ \e m -> stopPropagation e : dispatch ref (UI.NodeEvent $ Node.PortInitSlider m portRef $ Action.Discrete value)
                         ] $ elemString $ show value
                 ValueType.ContinuousNumber -> do
                     let value = fromMaybe 0.0 $ defVal ^? DefaultValue._Constant . DefaultValue._DoubleValue
                     div_
-                        [ "className" $= "luna-horizontal-slider"
+                        [ "className" $= Style.prefix "horizontal-slider"
                         --TODO[react]: +1 with Q and up key, -1 with W and down key, edit on double click
                         , onMouseDown $ \e m -> stopPropagation e : dispatch ref (UI.NodeEvent $ Node.PortInitSlider m portRef $ Action.Continous value)
                         ] $ elemString $ show value

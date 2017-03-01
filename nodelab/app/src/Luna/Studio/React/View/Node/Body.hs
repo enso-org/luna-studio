@@ -20,7 +20,7 @@ import           Luna.Studio.React.Store                (Ref, dispatch)
 import           Luna.Studio.React.View.Node.Elements   (blurBackground_, selectionMark_)
 import           Luna.Studio.React.View.Node.Properties (nodeProperties_)
 import           Luna.Studio.React.View.Port            (portExpanded_, port_)
-import           Luna.Studio.React.View.Style           (lunaPrefix)
+import qualified Luna.Studio.React.View.Style           as Style
 import           Luna.Studio.React.View.Visualization   (visualization_)
 import           React.Flux
 import qualified React.Flux                             as React
@@ -46,18 +46,18 @@ nodeBody = React.defineView objName $ \(ref, n) -> do
         , onClick       $ \_ m -> dispatch ref $ UI.NodeEvent $ Node.Select m nodeId
         , onDoubleClick $ \_ _ -> dispatch ref $ UI.NodeEvent $ Node.Enter nodeId
         , onMouseDown   $ handleMouseDown ref nodeId
-        , "className"   $= (lunaPrefix "node " <> (if n ^. Node.isCollapsed then lunaPrefix "node--collapsed " else lunaPrefix "node--expanded ")
-                                               <> (if n ^. Node.isSelected  then lunaPrefix "node--selected"  else ""))
+        , "className"   $= Style.prefixFromList ([ "node", if n ^. Node.isCollapsed then "node--collapsed" else "node--expanded" ]
+                                                ++ (if n ^. Node.isSelected  then ["node--selected"]  else []))
         , "style"       @= Aeson.object [ "transform" Aeson..= translatePropertyValue2 pos ]
         ] $ do
         div_
             [ "key"       $= "main"
-            , "className" $= lunaPrefix "node__main"
+            , "className" $= Style.prefix "node__main"
             ] $ do
             selectionMark_
             div_
                 [ "key"       $= "properties-crop"
-                , "className" $= lunaPrefix "node__properties-crop"
+                , "className" $= Style.prefix "node__properties-crop"
                 ] $ do
                 blurBackground_
                 case n ^. Node.mode of
@@ -70,11 +70,11 @@ nodeBody = React.defineView objName $ \(ref, n) -> do
                         ] $ elemString $ convert $ fromMaybe def $ n ^. Node.code
         div_
             [ "key"       $= "visualization"
-            , "className" $= lunaPrefix "node__visuals"
+            , "className" $= Style.prefix "node__visuals"
             ] $ forM_ (n ^. Node.value) $ visualization_ ref nodeId def
         svg_
             [ "key"       $= "essentials"
-            , "className" $= lunaPrefix "node__essentials"
+            , "className" $= Style.prefix "node__essentials"
             ] $ do
             if  n ^. Node.isCollapsed then do
                 ports $ filter (\port -> (port ^. Port.portId) /= InPortId Self) nodePorts

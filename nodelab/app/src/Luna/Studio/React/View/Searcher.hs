@@ -21,7 +21,7 @@ import qualified Luna.Studio.React.Model.Searcher as Searcher
 import           Luna.Studio.React.Store          (Ref, dispatch)
 import           Luna.Studio.React.View.Node      (expressionPosition)
 import           Luna.Studio.React.View.Node.Body (nodeBody_)
-import           Luna.Studio.React.View.Style     (lunaPrefix)
+import qualified Luna.Studio.React.View.Style     as Style
 import qualified Text.ScopeSearcher.QueryResult   as Result
 
 
@@ -37,25 +37,25 @@ searcher =  React.defineView name $ \(ref, camera, s) -> do
         nodePos   = s ^. Searcher.position
         mode      = s ^. Searcher.mode
         nodePrev  = Node.fromNode <$> s ^. Searcher.selectedNode
-        className = lunaPrefix "node-root " <> lunaPrefix (case mode of
-                                                                Searcher.Node    { } -> "searcher"
-                                                                Searcher.Command { } -> "searcher " <> lunaPrefix "searcher--command")
+        className = Style.prefixFromList ( "node-root" : (case mode of
+                                                          Searcher.Node    { } -> [ "searcher" ]
+                                                          Searcher.Command { } -> [ "searcher", "searcher--command" ]))
     div_
         [ "key"       $= name
         , "className" $= className
         ] $ do
         div_
             [ "key"       $= "nodeTrans"
-            , "className" $= lunaPrefix "node-trans"
+            , "className" $= Style.prefix "node-trans"
             ] $ withJust nodePrev $ nodeBody_ ref . (Node.position .~ nodePos) -- . (Node.isExpanded .~ True)
         div_
             [ "key"       $= "nameTrans"
-            , "className" $= lunaPrefix "name-trans"
+            , "className" $= Style.prefix "name-trans"
             , "style"     @= Aeson.object [ "transform" Aeson..= ("translate(" <> show (pos ^. x) <> "px, " <> show (pos ^. y) <> "px)" :: String) ]
             ] $ do
             input_
                 [ "key"       $= "searchInput"
-                , "className" $= lunaPrefix "searcher__input"
+                , "className" $= Style.prefix "searcher__input"
                 , "id"        $= searcherId
                 , "value"     $= convert (s ^. Searcher.input)
                 , onMouseDown $ \e _ -> [stopPropagation e]
@@ -64,32 +64,32 @@ searcher =  React.defineView name $ \(ref, camera, s) -> do
                 ]
             div_
                 [ "key"       $= "searcherResults"
-                , "className" $= lunaPrefix "searcher__results"
-                ] $
+                , "className" $= Style.prefix "searcher__results"
+                ] $ do
+                let resultClasses i = Style.prefixFromList ( "searcher__results__item" : (if i == s ^. Searcher.selected then [ "searcher__results__item--selected" ] else []))
                 case s ^. Searcher.mode of
                     Searcher.Command results -> forKeyed_ results $ \(idx, result) ->
                         div_
                             [ "key"       $= jsShow idx
-                            , "className" $= (lunaPrefix "searcher__results__item" <> if idx == s ^. Searcher.selected then " " <> lunaPrefix "searcher__results__item--selected" else "")
+                            , "className" $= resultClasses idx
                             ] $
                             div_
-                                ["key" $= "name"
-                                ,"className" $= (lunaPrefix "searcher__result__item__name")
+                                [ "key" $= "name"
+                                , "className" $= Style.prefix "searcher__result__item__name"
                                 ] $ elemString $ convert $ result ^. Result.name
                     Searcher.Node results -> forKeyed_ results $ \(idx, result) ->
                         div_
                             [ "key"       $= jsShow idx
-                            , "className" $= (lunaPrefix "searcher__results__item" <> if idx == s ^. Searcher.selected then " " <> lunaPrefix "searcher__results__item--selected" else "")
+                            , "className" $= resultClasses idx
                             ] $ do
                             div_
                                 ["key"       $= "prefix"
-                                ,"className" $= lunaPrefix "searcher__results__item__prefix"
+                                ,"className" $= Style.prefix "searcher__results__item__prefix"
                                 ] $ elemString $ convert (result ^. Result.prefix) <> "."
                             div_
                                 ["key" $= "name"
-                                ,"className" $= lunaPrefix "searcher__results__item__name"
-                                ] $ do
-                                    elemString $ convert $ result ^. Result.name
+                                ,"className" $= Style.prefix "searcher__results__item__name"
+                                ] $ elemString $ convert $ result ^. Result.name
 
 searcher_ :: Ref App -> Matrix Double -> Searcher -> ReactElementM ViewEventHandler ()
 searcher_ ref camera model = React.viewWithSKey searcher name (ref, camera, model) mempty
