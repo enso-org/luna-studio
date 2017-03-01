@@ -12,9 +12,15 @@
 }
 
 .luna-selection {
-    transition: all           @selectionSpeed  ease-out,
+    transition: left          @selectionSpeed  ease-out,
+                top           @selectionSpeed  ease-out,
+                width         @selectionSpeed  ease-out,
+                height        @selectionSpeed  ease-out,
+                opacity       @selectionSpeed  ease-out,
+                box-shadow    0ms              linear,
                 border-radius @transitionSpeed ease-out;
 }
+
 .luna-graph svg * {
     transition: stroke @colorSpeed ease-out,
                 fill   @colorSpeed ease-out;

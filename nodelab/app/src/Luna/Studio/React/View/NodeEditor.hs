@@ -3,6 +3,7 @@ module Luna.Studio.React.View.NodeEditor where
 
 
 import qualified Data.HashMap.Strict                   as HashMap
+import qualified Data.Matrix                           as Matrix
 import           Data.Maybe                            (mapMaybe)
 import           JS.Scene                              (sceneId)
 import qualified Luna.Studio.Data.CameraTransformation as CameraTransformation
@@ -39,6 +40,7 @@ nodeEditor = React.defineView name $ \(ref, ne) -> do
         (edges, nodes) = partition isEdge $ ne ^. NodeEditor.nodes . to HashMap.elems
         lookupNode     = _2 %~ mapMaybe (flip HashMap.lookup $ ne ^. NodeEditor.nodes)
         monads         = map lookupNode $ ne ^. NodeEditor.monads
+        scale          = (Matrix.toList camera)!!0 :: Double
     div_
         [ "className" $= Style.prefix "graph"
         , "id"        $= sceneId
@@ -48,6 +50,7 @@ nodeEditor = React.defineView name $ \(ref, ne) -> do
         , onScroll    $ \e     -> [preventDefault e]
         ] $ do
         style_ [ "key" $= "style" ] $ do
+            elemString $ ".luna-selection  { box-shadow: 0 0 0 " <> show (0.52/(scale**1.5)) <> "px orange !important }"
             elemString $ ".luna-node-trans { transform: " <> matrix3dPropertyValue camera <> " }"
             forM_ (ne ^. NodeEditor.nodes . to HashMap.elems) $ nodeDynamicStyles_ camera
         svg_
