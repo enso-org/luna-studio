@@ -25,7 +25,6 @@ module Empire.Data.Graph (
 import           Data.Map.Lazy                     (Map)
 import qualified Data.Map                          as Map (empty)
 import           Empire.API.Data.Node              (NodeId)
-import           Empire.API.Data.Breadcrumb        (Breadcrumb, BreadcrumbItem)
 import           Empire.Data.BreadcrumbHierarchy   (BreadcrumbHierarchy)
 import qualified Empire.Data.BreadcrumbHierarchy   as BC (empty)
 import           Empire.Prelude
@@ -45,7 +44,7 @@ import qualified Luna.Passes.Transform.Parsing.CodeSpan as CodeSpan
 import qualified Data.SpanTree                          as SpanTree
 import           Data.TypeDesc                          (getTypeDesc)
 
-import           System.Log                             (Logger, MonadLogging(..), DropLogger, dropLogs)
+import           System.Log                             (Logger, DropLogger, dropLogs)
 
 import qualified Luna.IR.Repr.Vis           as Vis
 import           Control.Monad              (void)

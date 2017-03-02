@@ -42,7 +42,7 @@ import           EmpireUtils
 
 
 spec :: Spec
-spec = around withChannels $ id $ do
+spec = around withChannels $ parallel $ do
     describe "luna-empire" $ do
         it "descends into `def foo` and asserts two edges inside" $ \env -> do
             u1 <- mkUUID
@@ -448,8 +448,8 @@ spec = around withChannels $ id $ do
             res <- evalEmp env $ do
                 Graph.addNode top u1 "succ" def
                 Graph.getNodes top
-            withResult res $ \[succ] -> do
-                let inputPorts = Map.elems $ Map.filter Port.isInputPort $ succ ^. Node.ports
+            withResult res $ \[succ'] -> do
+                let inputPorts = Map.elems $ Map.filter Port.isInputPort $ succ' ^. Node.ports
                 inputPorts `shouldMatchList` [
                       Port.Port (Port.InPortId Port.Self)    "self" TStar (Port.WithDefault (Expression "succ"))
                     , Port.Port (Port.InPortId (Port.Arg 0)) "arg0" TStar (Port.NotConnected)
@@ -809,7 +809,7 @@ spec = around withChannels $ id $ do
             res <- evalEmp env $ do
                 Graph.addNode top u1 "def foo" def
                 let loc' = top |> u1
-                Just (input, output) <- Graph.withGraph loc' $ runASTOp GraphBuilder.getEdgePortMapping
+                Just (input, _) <- Graph.withGraph loc' $ runASTOp GraphBuilder.getEdgePortMapping
                 Graph.addPort loc' input
                 Graph.addNode loc' u2 "succ" def
                 Graph.connect loc' (OutPortRef input (Port.Projection 1)) (InPortRef u2 Port.Self)

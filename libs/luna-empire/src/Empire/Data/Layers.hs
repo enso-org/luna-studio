@@ -28,7 +28,6 @@ import           Data.TypeDesc
 import           Luna.IR                  hiding (String)
 import qualified Luna.IR.Layer.Type       as IR (Type)
 import           Luna.Pass
-import           Luna.Pass.Manager        (PassManager)
 import           Luna.Pass.Sugar.Construction
 import           Luna.Pass.Sugar.TH       (makePass)
 import           Type.Any

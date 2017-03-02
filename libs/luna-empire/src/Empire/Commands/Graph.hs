@@ -43,7 +43,7 @@ import           Control.Monad                 (forM, forM_)
 import           Control.Monad.Catch           (MonadCatch(..))
 import           Control.Monad.State           hiding (when)
 import           Data.Coerce                   (coerce)
-import           Data.List                     (sort, sortOn)
+import           Data.List                     (sort)
 import qualified Data.Map                      as Map
 import           Data.Maybe                    (catMaybes)
 import           Data.Text                     (Text)
@@ -151,11 +151,11 @@ updateGraphSeq newSeq = do
             output      <- ASTRead.getLambdaOutputRef outerLambda
             case newSeq of
                 Just s -> case outerBody of
-                    Just body -> do
+                    Just _body -> do
                         oldSeq <- ASTRead.getLambdaSeqRef outerLambda
                         forM_ oldSeq $ flip IR.matchExpr $ \case
-                            IR.Seq l r -> IR.changeSource l s
-                    _         -> do
+                            IR.Seq l _r -> IR.changeSource l s
+                    _          -> do
                         body       <- IR.generalize <$> IR.seq s output
                         outputLink <- ASTRead.getLambdaOutputLink outerLambda
                         IR.changeSource outputLink body
@@ -166,7 +166,7 @@ updateGraphSeq newSeq = do
 
 nodeIdInsideLambda :: ASTOp m => NodeRef -> m (Maybe NodeId)
 nodeIdInsideLambda node = (ASTRead.getVarNode node >>= ASTRead.getNodeId) `catch`
-    (\(e :: NotUnifyException) -> return Nothing)
+    (\(_e :: NotUnifyException) -> return Nothing)
 
 getNodeIdSequence :: GraphLocation -> Empire [NodeId]
 getNodeIdSequence loc = withGraph loc $ runASTOp $ do
@@ -297,7 +297,7 @@ renamePort loc portRef newName = withGraph loc $ runASTOp $ do
     Just lambda <- use Graph.insideNode
     ref         <- GraphUtils.getASTTarget lambda
     edges       <- GraphBuilder.getEdgePortMapping
-    newRef      <- case edges of
+    _newRef     <- case edges of
         Just (input, _) -> do
             if nodeId == input then ASTModify.renameLambdaArg ref (portRef ^. PortRef.portId) newName
                                else throwM NotInputEdgeException
@@ -311,7 +311,7 @@ updateNodeExpression loc nodeId expr = withTC loc False $ do
         target <- ASTRead.getASTTarget nodeId
         IR.replaceNode target ref
         IR.deleteSubtree target
-        forM exprName $ \newName -> renameNodeGraph loc nodeId newName
+        forM_ exprName $ \newName -> renameNodeGraph nodeId newName
     runAliasAnalysis
     node <- runASTOp $ GraphBuilder.buildNode nodeId
     Publisher.notifyNodeUpdate loc node
@@ -439,11 +439,11 @@ decodeLocation loc@(GraphLocation _ _ crumbs) = withGraph loc $ GraphBuilder.dec
 
 renameNode :: GraphLocation -> NodeId -> Text -> Empire ()
 renameNode loc nid name = withTC loc False $ do
-    runASTOp $ renameNodeGraph loc nid name
+    runASTOp $ renameNodeGraph nid name
     runAliasAnalysis
 
-renameNodeGraph :: ASTOp m => GraphLocation -> NodeId -> Text -> m ()
-renameNodeGraph loc nid name = do
+renameNodeGraph :: ASTOp m => NodeId -> Text -> m ()
+renameNodeGraph nid name = do
     vref <- GraphUtils.getASTVar nid
     ASTModify.renameVar vref (Text.unpack name)
 

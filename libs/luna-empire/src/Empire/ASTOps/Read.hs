@@ -132,7 +132,7 @@ getLambdaSeqRef' firstLam node = match node $ \case
     Lam _ next -> do
         nextLam <- IR.source next
         getLambdaSeqRef' True nextLam
-    Seq l r   -> if firstLam then return $ Just node else throwM $ NotLambdaException node
+    Seq{}     -> if firstLam then return $ Just node else throwM $ NotLambdaException node
     _         -> if firstLam then return Nothing     else throwM $ NotLambdaException node
 
 getLambdaOutputRef :: ASTOp m => NodeRef -> m NodeRef
@@ -149,7 +149,7 @@ getLambdaOutputLink' firstLam node = match node $ \case
             Lam{} -> getLambdaOutputLink' True nextLam
             Seq{} -> getLambdaOutputLink' True nextLam
             _     -> return next
-    Seq l r   -> if firstLam then return r else throwM $ NotLambdaException node
+    Seq _l r  -> if firstLam then return r else throwM $ NotLambdaException node
 
 getFirstNonLambdaRef :: ASTOp m => NodeRef -> m NodeRef
 getFirstNonLambdaRef = getFirstNonLambdaRef' False
