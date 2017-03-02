@@ -124,36 +124,42 @@ addNodeNoTC loc uuid expr meta = do
                 (if outputIsOneOfTheInputs then [] else [lambdaUUID])
             IR.writeLayer @Marker (Just $ NodeMarker lambdaUUID) lambdaOutput
         else Graph.breadcrumbHierarchy %= addID (node ^. Node.nodeId)
-        updateNodeSequence loc
+        updateNodeSequence
         return node
     runAliasAnalysis
     Publisher.notifyNodeUpdate loc node
     return node
 
-updateNodeSequence :: ASTOp m => GraphLocation -> m ()
-updateNodeSequence loc = do
-    allNodes   <- uses Graph.breadcrumbHierarchy topLevelIDs
-    sortedRefs <- AST.sortByPosition allNodes
-    newSeq     <- AST.makeSeq sortedRefs
+updateNodeSequence :: ASTOp m => m ()
+updateNodeSequence = do
+    newSeq <- makeCurrentSeq
+    updateGraphSeq newSeq
 
+makeCurrentSeq :: ASTOp m => m (Maybe NodeRef)
+makeCurrentSeq = do
+  allNodes   <- uses Graph.breadcrumbHierarchy topLevelIDs
+  sortedRefs <- AST.sortByPosition allNodes
+  AST.makeSeq sortedRefs
+
+updateGraphSeq :: ASTOp m => Maybe NodeRef -> m ()
+updateGraphSeq newSeq = do
     lambda <- use Graph.insideNode
     case lambda of
         Just outerLambdaNode -> do
             outerLambda <- ASTRead.getASTTarget outerLambdaNode
             outerBody   <- ASTRead.getLambdaBodyRef outerLambda
+            output      <- ASTRead.getLambdaOutputRef outerLambda
             case newSeq of
                 Just s -> case outerBody of
                     Just body -> do
-                        Just oldSeq <- ASTRead.getLambdaSeqRef outerLambda
-                        IR.matchExpr oldSeq $ \case
+                        oldSeq <- ASTRead.getLambdaSeqRef outerLambda
+                        forM_ oldSeq $ flip IR.matchExpr $ \case
                             IR.Seq l r -> IR.changeSource l s
                     _         -> do
-                        output     <- ASTRead.getLambdaOutputRef outerLambda
                         body       <- IR.generalize <$> IR.seq s output
                         outputLink <- ASTRead.getLambdaOutputLink outerLambda
                         IR.changeSource outputLink body
                 _      -> do
-                    output         <- ASTRead.getLambdaOutputRef outerLambda
                     firstNonLambda <- ASTRead.getFirstNonLambdaRef outerLambda
                     IR.replaceNode firstNonLambda output
         Nothing              -> Graph.topLevelSeq .= newSeq
@@ -164,23 +170,15 @@ nodeIdInsideLambda node = (ASTRead.getVarNode node >>= ASTRead.getNodeId) `catch
 
 getNodeIdSequence :: GraphLocation -> Empire [NodeId]
 getNodeIdSequence loc = withGraph loc $ runASTOp $ do
-    lambda <- use Graph.insideNode
-    case lambda of
-        Just l -> do
-            outerLambda <- ASTRead.getASTTarget l
-            body        <- ASTRead.getLambdaBodyRef outerLambda
-            case body of
-                Just b -> do
-                    nodeSeq <- AST.readSeq b
-                    catMaybes <$> mapM nodeIdInsideLambda nodeSeq
-                _      -> return []
-        _      -> do
-            topLevelSeq <- use Graph.topLevelSeq
-            case topLevelSeq of
-                Just s -> do
-                  nodeSeq <- AST.readSeq s
-                  catMaybes <$> mapM nodeIdInsideLambda nodeSeq
-                _      -> return []
+    lambda  <- use Graph.insideNode
+    nodeSeq <- do
+        bodySeq <- case lambda of
+            Just l -> ASTRead.getASTTarget l >>= ASTRead.getLambdaBodyRef
+            _      -> use Graph.topLevelSeq
+        case bodySeq of
+          Just b -> AST.readSeq b
+          _      -> return []
+    catMaybes <$> mapM nodeIdInsideLambda nodeSeq
 
 addPersistentNode :: ASTOp m => Node -> m NodeId
 addPersistentNode n = case n ^. Node.nodeType of
@@ -254,7 +252,7 @@ removeNodes loc nodeIds = do
         removeNodes (loc `descendInto` nodeId) children
     withTC loc False $ runASTOp $ do
         forM_ nodeIds removeNodeNoTC
-        when (not . null $ nodeIds) $ updateNodeSequence loc
+        when (not . null $ nodeIds) $ updateNodeSequence
 
 removeNodeNoTC :: ASTOp m => NodeId -> m ()
 removeNodeNoTC nodeId = do
@@ -327,7 +325,7 @@ updateNodeMeta loc nodeId newMeta = withGraph loc $ do
         doTCMay <- forM oldMetaMay $ \oldMeta ->
             return $ triggerTC oldMeta newMeta
         AST.writeMeta ref newMeta
-        updateNodeSequence loc
+        updateNodeSequence
         return doTCMay
     forM_ doTCMay $ \doTC ->
         when doTC $ runTC loc False
