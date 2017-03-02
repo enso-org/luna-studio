@@ -18,7 +18,7 @@ lab_t2 = 0.12841855
 lab_t3 = 0.00885645
 
 deg2rad :: Float -> Float
-deg2rad x = x * pi / 180
+deg2rad x = x * pi / 180.0
 
 limit :: Float -> Float -> Float -> Float
 limit x l h
@@ -59,4 +59,6 @@ lab_xyz t
   | otherwise  = lab_t2 * (t - lab_t0)
 
 xyz_rgb :: Float -> Float
-xyz_rgb r = 255 * if r <= 0.00304 then 12.92 * r else 1.055 * (r ** (1 / 2.4)) - 0.055
+xyz_rgb r = 255 * if r <= 0.00304
+    then 12.92 * r
+    else 1.055 * (r ** (1 / 2.4)) - 0.055

@@ -13,6 +13,7 @@ module Luna.Studio.Data.Color
 import           Data.Aeson              (FromJSON, ToJSON)
 import qualified Data.Color              as Color
 import           Data.Convert            (Convertible (convert))
+import           Data.Fixed              (mod')
 import           Data.Hashable           (hash)
 import           Luna.Studio.Prelude
 
@@ -44,7 +45,11 @@ buildHsl (Color i) = HSL (hue * 2.0 * pi) 0.6 0.5
         delta = 1.0 / steps
 
 buildLCH :: Color -> Color.LCH
-buildLCH (Color i) = Color.LCH (fromIntegral i) 50.0 70.0 255.0
+buildLCH (Color 0) = Color.LCH 50  0 0 255
+buildLCH (Color i) = Color.LCH 30 45 h 255 where
+    h = (start + delta * (fromIntegral i - 1)) `mod'` 360
+    start = 100.7
+    delta = 256/pi
 
 instance Convertible Color.LCH JSString where
     convert = convert . Color.lch2rgb
