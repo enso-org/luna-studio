@@ -31,7 +31,7 @@ import           React.Flux                    hiding (view)
 
 
 name :: Node -> JSString
-name node = "edgeSidebar" <> if isInputEdge node then "Inputs" else "Outputs"
+name node = "edgePorts" <> if isInputEdge node then "Inputs" else "Outputs"
 
 sendAddPortEvent :: Ref App -> Node -> [SomeStoreAction]
 sendAddPortEvent ref node = dispatch ref (UI.EdgeEvent $ Edge.AddPort (node ^. Node.nodeId))
@@ -44,26 +44,30 @@ edgeSidebar_ ref mayDraggedPort node = when (isEdge node) $ do
                                              . Port.portRef
                                              . PortRef.nodeId) <$> mayDraggedPort)
     div_
-        [ "className" $= Style.prefixFromList [ "edge-sidebar", if isInputEdge node then "edge-sidebar--i" else "edge-sidebar--o" ]
-        , "key"       $= name node
+        [ "key"       $= name node
         , "id"        $= if isInputEdge node then inputSidebarId else outputSidebarId
+        , "className" $= Style.prefixFromList [ "edgeports", if isInputEdge node then "edgeports--i" else "edgeports--o" ]
         , onMouseDown $ \e _ -> [stopPropagation e]
         , onMouseMove $ \e m -> stopPropagation e : (dispatch ref $ UI.EdgeEvent $ Edge.MouseMove m nodeId)
         ] $ do
-        forM_ ports $ edgePort_ ref
-        when (isInputEdge node) $ if isPortDragged then do
-                div_
-                    [ "className" $= Style.prefixFromList [ "edge__buton", "edge__button--remove", "noselect" ]
-                    , "key"       $= (name node <> "RemoveButton")
-                    , onMouseUp   $ \e _ -> stopPropagation e : (dispatch ref $ UI.EdgeEvent $ Edge.RemovePort)
-                    ] $ elemString "Remove"
-                withJust mayDraggedPort $ edgeDraggedPort_ ref
-            else div_
-                    [ "className" $= Style.prefixFromList [ "edge__buton", "edge__button--add", "noselect" ]
-                    , "key"       $= (name node <> "AddButton")
-                    , onMouseDown $ \e _ -> [stopPropagation e]
-                    , onClick $ \e _ -> stopPropagation e : sendAddPortEvent ref node
-                    ] $ elemString "Add"
+        div_
+            [ "key"       $= "EdgePortsBody"
+            , "className" $= Style.prefixFromList [ "edgeports__body" ]
+            ] $ do
+            forM_ ports $ edgePort_ ref
+            when (isInputEdge node) $ if isPortDragged then do
+                    div_
+                        [ "className" $= Style.prefixFromList [ "edgeports__btn", "edgeports__btn--remove", "noselect" ]
+                        , "key"       $= (name node <> "RemoveButton")
+                        , onMouseUp   $ \e _ -> stopPropagation e : (dispatch ref $ UI.EdgeEvent $ Edge.RemovePort)
+                        ] $ elemString "Remove"
+                    withJust mayDraggedPort $ edgeDraggedPort_ ref
+                else div_
+                        [ "className" $= Style.prefixFromList [ "edgeports__btn", "edgeports__btn--add", "noselect" ]
+                        , "key"       $= (name node <> "AddButton")
+                        , onMouseDown $ \e _ -> [stopPropagation e]
+                        , onClick $ \e _ -> stopPropagation e : sendAddPortEvent ref node
+                        ] $ elemString "Add"
 
 edgePort_ :: Ref App -> Port -> ReactElementM ViewEventHandler ()
 edgePort_ ref p = when (p ^. Port.visible) $ do
@@ -71,37 +75,38 @@ edgePort_ ref p = when (p ^. Port.visible) $ do
         portId    = p ^. Port.portId
         color     = convert $ p ^. Port.color
         num       = getPortNumber p
-        highlight = if p ^. Port.highlight then ["hover"] else []
-        classes   = if isPortInput p then [ "port", "port--i", "port--i--" <> show (num + 1)] ++ highlight
-                                     else [ "port", "port--o", "port--o--" <> show (num + 1)] ++ highlight
+        highlight = if p ^. Port.highlight then [ "hover" ] else []
+        classes   = if isPortInput p then [ "port", "edgeport", "edgeport--o", "edgeport--o--" <> show (num + 1) ] ++ highlight
+                                     else [ "port", "edgeport", "edgeport--i", "edgeport--i--" <> show (num + 1) ] ++ highlight
         yPos      = lineHeight * fromIntegral (num + if isPortInput p then 1 else 0)
-    div_ $ do
+    div_
+        [ "key"       $= ( jsShow portId <> "-port-" <> jsShow num )
+        , "className" $= Style.prefixFromList classes
+        ] $ do
         if p ^. Port.isEdited then
-            singleField_ ["id" $= portLabelId] (jsShow portId)
+            singleField_ [ "id" $= portLabelId ] (jsShow portId)
                 $ Field.mk ref (convert $ p ^. Port.name)
                 & Field.onCancel .~ Just (const $ UI.EdgeEvent $ Edge.PortNameDiscard portRef)
                 & Field.onAccept .~ Just (UI.EdgeEvent . Edge.PortNameApply portRef . convert)
         else
-            div_ [ "className" $= Style.prefix "noselect"
+            div_ [ "className" $= Style.prefix "edgeport__name"
                  , onDoubleClick $ \_ _ -> dispatch ref $ UI.EdgeEvent $ Edge.PortNameStartEdit portRef
                  ] $
                 elemString $ p ^. Port.name
-        svg_ [] . g_
-            [ "className" $= Style.prefixFromList classes
+        svg_
+            [ "className" $= Style.prefix "edgeport__svg"
             ] $ do
             circle_
                 [ "className" $= Style.prefix "port__shape"
                 , "key"       $= (jsShow portId <> jsShow num <> "a")
                 , "fill"      $= color
                 , "r"         $= jsShow2 3
-                , "cy"        $= jsShow2 yPos
                 ] mempty
             circle_
                 ( handlers ref portRef ++
                   [ "className" $= Style.prefix "port__select"
                   , "key"       $= (jsShow portId <> jsShow num <> "b")
                   , "r"         $= jsShow2 (lineHeight/1.5)
-                  , "cy"        $= jsShow2 yPos
                   ]
                 ) mempty
 
@@ -111,7 +116,7 @@ edgeDraggedPort_ _ref draggedPort = do
     let pos   = draggedPort ^. Port.positionInSidebar
         -- color = convert $ draggedPort ^. Port.draggedPort . Port.color
     div_
-        [ "className" $= Style.prefixFromList [ "port", "port--dragged", "port__shape", "hover" ]
+        [ "className" $= Style.prefixFromList [ "edgeport", "edgeport--dragged", "edgeport__shape", "hover" ]
         , "style"     @= Aeson.object [ "transform" Aeson..= ( "translate(" <> show (pos ^. x) <> "px, " <> show (pos ^. y) <> "px)" ) ]
         ] $ mempty
 

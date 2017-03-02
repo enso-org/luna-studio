@@ -1,0 +1,106 @@
+/////////////////////////////
+//        sideports        //
+/////////////////////////////
+
+@edgeNameMargin: 42px;
+
+.luna-edgeports {
+    display:         flex;
+    justify-content: center;
+    flex-direction:  column;
+    height:          100%;
+    position:        absolute;
+    width:           0;
+}
+
+.luna-edgeports__body {
+    background:     #333;
+    display:        flex;
+    flex-direction: column;
+    position:       absolute;
+    width:          2*@gridSize;
+    margin-top:    -50%;
+    padding:        @gridSize/2 0;
+    border-radius:  0 @borderRadius @borderRadius 0;
+}
+
+.luna-edgeports__btn--add {
+    position: fixed;
+    bottom:   10px;
+}
+
+.luna-edgeports__btn--remove {
+    position: fixed;
+    bottom:   10px;
+}
+
+.luna-edgeports--i {
+    .luna-edgeport__name {
+        left: @edgeNameMargin;
+    }
+    .luna-edgeport__svg {
+        left: 32px;
+    }
+}
+
+.luna-edgeports--o {
+    right: 0;
+    .luna-edgeports__body {
+        border-radius: @borderRadius 0 0 @borderRadius;
+        right:         0;
+    }
+    .luna-edgeport__name {
+        left:  inherit;
+        right: @edgeNameMargin;
+    }
+}
+
+.luna-edgeports:hover {
+    .luna-edgeport__name {
+        color:       darken(@colorText, 20%);
+        text-shadow: 0 0 2px black;
+        width:       auto;
+        opacity:     1;
+    }
+}
+
+.luna-edgeport {
+    height:   @gridSize;
+    position: relative;
+    &:hover {
+        .luna-edgeport__name {
+            color: @colorText;
+        }
+        .luna-port__shape {
+            fill: #fff !important;
+        }
+    }
+}
+
+.luna-edgeport__name {
+    position: absolute;
+    width:    0;
+    opacity:  0;
+    overflow: hidden;
+}
+
+.luna-edgeport__svg {
+    top:      50%;
+    height:   1px;
+    width:    1px;
+    overflow: inherit;
+    position: absolute;
+}
+
+.luna-edgeport--dragged {
+    fill:             white;
+    background-color: white;
+    border-radius:    3px;
+    width:            6px;
+    height:           6px;
+    z-index:          1000000;
+    overflow:         inherit;
+    margin-left:     -3px;
+    margin-top:      -6px;
+    pointer-events:   none;
+}
