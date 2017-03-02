@@ -1,23 +1,25 @@
 {-# LANGUAGE ExistentialQuantification #-}
 module Luna.Studio.State.Action where
 
-import           Data.Aeson              (FromJSON, ToJSON)
-import           Data.Curve              (Curve)
+import           Data.Aeson                 (FromJSON, ToJSON)
+import           Data.Curve                 (Curve)
 import           Data.Dynamic
-import           Data.Map                (Map)
-import           Data.Position           (Position)
-import           Data.ScreenPosition     (ScreenPosition)
-import           Data.Set                (Set)
-import qualified Data.Set                as Set
-import           Empire.API.Data.Node    (NodeId)
-import           Empire.API.Data.Port    (PortId)
-import           Empire.API.Data.PortRef (AnyPortRef)
+import           Data.Map                   (Map)
+import           Data.Position              (Position)
+import           Data.ScreenPosition        (ScreenPosition)
+import           Data.Set                   (Set)
+import qualified Data.Set                   as Set
+import           Empire.API.Data.Connection (ConnectionId)
+import           Empire.API.Data.Node       (NodeId)
+import           Empire.API.Data.Port       (PortId)
+import           Empire.API.Data.PortRef    (AnyPortRef)
 import           Luna.Studio.Prelude
 
 
 data NodeDrag = NodeDrag { _nodeDragStartPos      :: Position
                          , _nodeDragNodeId        :: NodeId
                          , _nodeDragNodesStartPos :: Map NodeId Position
+                         , _nodeDragSnappedConn   :: Maybe ConnectionId
                          } deriving (Eq, Show, Generic, Typeable)
 
 makeLenses ''NodeDrag

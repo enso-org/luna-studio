@@ -116,8 +116,8 @@ getSearcher = get (App.nodeEditor . NodeEditor.searcher)
 modifySelectionBox :: Monoid r => M.State SelectionBox r -> Command State r
 modifySelectionBox = modify (App.nodeEditor . NodeEditor.selectionBox) . zoom traverse
 
-modifyCurrentConnection :: Monoid r => M.State CurrentConnection r -> Command State r
-modifyCurrentConnection = modify (App.nodeEditor . NodeEditor.currentConnection) . zoom traverse
+modifyCurrentConnections :: Monoid r => M.State CurrentConnection r -> Command State r
+modifyCurrentConnections = modify (App.nodeEditor . NodeEditor.currentConnections) . zoom traverse
 
 modifyNode :: Monoid r => NodeId -> M.State Node r -> Command State r
 modifyNode nodeId = modify (App.nodeEditor . NodeEditor.nodes . at nodeId) . zoom traverse

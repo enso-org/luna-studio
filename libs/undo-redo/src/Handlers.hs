@@ -4,6 +4,7 @@
 {-# LANGUAGE TypeFamilies        #-}
 
 module Handlers where
+
 import           UndoState
 
 import           Control.Exception                     (Exception)
@@ -39,6 +40,7 @@ import qualified Empire.API.Graph.Redo                 as RedoRequest
 import qualified Empire.API.Graph.RemoveNodes          as RemoveNodes
 import qualified Empire.API.Graph.RemovePort           as RemovePort
 import qualified Empire.API.Graph.RenameNode           as RenameNode
+import qualified Empire.API.Graph.RenamePort           as RenamePort
 import qualified Empire.API.Graph.SetCode              as SetCode
 import qualified Empire.API.Graph.Undo                 as UndoRequest
 import qualified Empire.API.Graph.UpdateNodeExpression as UpdateNodeExpression
@@ -62,6 +64,7 @@ handlersMap = Map.fromList
     , makeHandler handleDisconnectUndo
     , makeHandler handleRemoveNodesUndo
     , makeHandler handleRenameNodeUndo
+    , makeHandler handleRenamePortUndo
     , makeHandler handleSetCodeUndo
     , makeHandler handleUpdateNodeExpressionUndo
     , makeHandler handleUpdateNodeMetaUndo
@@ -77,6 +80,7 @@ type family UndoResponseRequest t where
     UndoResponseRequest Disconnect.Response           = Connect.Request
     UndoResponseRequest RemoveNodes.Response          = AddSubgraph.Request
     UndoResponseRequest RenameNode.Response           = RenameNode.Request
+    UndoResponseRequest RenamePort.Response           = RenamePort.Request
     UndoResponseRequest SetCode.Response              = SetCode.Request
     UndoResponseRequest UpdateNodeExpression.Response = UpdateNodeExpression.Request
     UndoResponseRequest UpdateNodeMeta.Response       = UpdateNodeMeta.Request
@@ -89,6 +93,7 @@ type family RedoResponseRequest t where
     RedoResponseRequest Disconnect.Response           = Disconnect.Request
     RedoResponseRequest RemoveNodes.Response          = RemoveNodes.Request
     RedoResponseRequest RenameNode.Response           = RenameNode.Request
+    RedoResponseRequest RenamePort.Response           = RenamePort.Request
     RedoResponseRequest SetCode.Response              = SetCode.Request
     RedoResponseRequest UpdateNodeExpression.Response = UpdateNodeExpression.Request
     RedoResponseRequest UpdateNodeMeta.Response       = UpdateNodeMeta.Request
@@ -211,6 +216,14 @@ handleRenameNodeUndo (Response.Response _ _ (RenameNode.Request location nodeId 
             redoMsg = RenameNode.Request location nodeId name
         Just (undoMsg, redoMsg)
 
+
+handleRenamePortUndo :: RenamePort.Response ->  Maybe (RenamePort.Request, RenamePort.Request)
+handleRenamePortUndo (Response.Response _ _ (RenamePort.Request location portRef name) inv res) =
+    withOk inv $ \(RenamePort.Inverse namePrev) -> do
+        let undoMsg = RenamePort.Request location portRef namePrev
+            redoMsg = RenamePort.Request location portRef name
+        Just (undoMsg, redoMsg)
+
 handleSetCodeUndo :: SetCode.Response ->  Maybe (SetCode.Request, SetCode.Request)
 handleSetCodeUndo (Response.Response _ _ (SetCode.Request location nodeId code) inv res) =
     withOk inv $ \(SetCode.Inverse codePrev) -> do
@@ -219,16 +232,15 @@ handleSetCodeUndo (Response.Response _ _ (SetCode.Request location nodeId code) 
         Just (undoMsg, redoMsg)
 
 handleConnectUndo :: Connect.Response -> Maybe (Disconnect.Request, Connect.Request)
-handleConnectUndo (Response.Response _ _ (Connect.Request location (Connect.PortConnect src dst)) inv res) =
+handleConnectUndo (Response.Response _ _ redoMsg@(Connect.Request location (Left src) (Left dst)) inv res) =
     withOk res . const $
         let undoMsg = Disconnect.Request location dst
-            redoMsg = Connect.Request location $ Connect.PortConnect src dst
         in Just (undoMsg, redoMsg)
 
 handleDisconnectUndo :: Disconnect.Response -> Maybe (Connect.Request, Disconnect.Request)
 handleDisconnectUndo (Response.Response _ _ (Disconnect.Request location dst) inv res) =
     withOk inv $ \(Disconnect.Inverse src) ->
-        let undoMsg = Connect.Request location $ Connect.PortConnect src dst
+        let undoMsg = Connect.Request location (Left src) (Left dst)
             redoMsg = Disconnect.Request location dst
         in Just (undoMsg, redoMsg)
 

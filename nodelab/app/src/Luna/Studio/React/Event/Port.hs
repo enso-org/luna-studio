@@ -9,11 +9,11 @@ import           React.Flux              (MouseEvent)
 
 
 
-data Event = MouseDown       MouseEvent AnyPortRef
-           | MouseUp         AnyPortRef
-           | Click           MouseEvent AnyPortRef
-           | MouseEnter      AnyPortRef
-           | MouseLeave      AnyPortRef
+data Event = Click         MouseEvent AnyPortRef
+           | MouseDown     MouseEvent AnyPortRef
+           | MouseEnter    AnyPortRef
+           | MouseLeave    AnyPortRef
+           | MouseUp       AnyPortRef
            deriving (Show, Generic, NFData, Typeable)
 
 instance ToJSON   Event

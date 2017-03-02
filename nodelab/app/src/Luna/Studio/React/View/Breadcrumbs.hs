@@ -11,6 +11,7 @@ import           Luna.Studio.React.Model.App         (App)
 import           Luna.Studio.React.Model.Breadcrumbs (Breadcrumbs)
 import qualified Luna.Studio.React.Model.Breadcrumbs as B
 import           Luna.Studio.React.Store             (Ref, dispatch)
+import qualified Luna.Studio.React.View.Style       as Style
 import           React.Flux
 import qualified React.Flux                          as React
 
@@ -21,12 +22,12 @@ name = "breadcrumbs"
 breadcrumbs :: ReactView (Ref App, Breadcrumbs)
 breadcrumbs = React.defineView name $ \(ref, model) ->
     div_
-        [ "className" $= ("luna-" <> name <> " luna-noselect")
+        [ "className" $= Style.prefixFromList [ "breadcrumbs", "noselect" ]
         , "key"       $=  name
         ] $
         forKeyed_ (inits $ model ^. B.items) $ \(key, bc) ->
             div_
-                [ "className" $= "luna-breadcrumbs__item luna-breadcrumbs__item--home"
+                [ "className" $= Style.prefixFromList ["breadcrumbs__item", "breadcrumbs__item--home"]
                 , "key"       $= jsShow key
                 , onClick $ \_ _ -> dispatch ref $ UI.BreadcrumbsEvent $ B.Enter $ unname bc
                 ] $ case reverse bc of

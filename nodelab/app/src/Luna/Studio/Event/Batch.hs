@@ -22,6 +22,7 @@ import qualified Empire.API.Graph.NodeTypecheckerUpdate as NodeTCUpdate
 import qualified Empire.API.Graph.RemoveNodes           as RemoveNodes
 import qualified Empire.API.Graph.RemovePort            as RemovePort
 import qualified Empire.API.Graph.RenameNode            as RenameNode
+import qualified Empire.API.Graph.RenamePort            as RenamePort
 import qualified Empire.API.Graph.SetCode               as SetCode
 import qualified Empire.API.Graph.UpdateNodeExpression  as UpdateNodeExpression
 import qualified Empire.API.Graph.UpdateNodeMeta        as UpdateNodeMeta
@@ -52,7 +53,7 @@ data Event = UnknownEvent String
            | NodeMetaResponse                   UpdateNodeMeta.Response
            | NodeMetaUpdated                    UpdateNodeMeta.Update
            | NodeRenamed                            RenameNode.Update
-           | NodeRenameInverse                      RenameNode.Inverse
+           | PortRenamed                            RenamePort.Update
            | NodeRenameResponse                     RenameNode.Response
            | NodeResultUpdated                NodeResultUpdate.Update
            | NodesConnected                            Connect.Update

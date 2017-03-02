@@ -20,7 +20,7 @@ data NodeEditor = NodeEditor { _screenTransform     :: CameraTransformation
                              , _nodes               :: HashMap NodeId    Node
                              , _monads              :: [(TypeRep, [NodeId])]
                              , _connections         :: HashMap InPortRef Connection
-                             , _currentConnection   :: Maybe CurrentConnection
+                             , _currentConnections  :: [CurrentConnection]
                              , _portDragConnections :: HashMap InPortRef Connection
                              , _connectionPen       :: Maybe ConnectionPen
                              , _selectionBox        :: Maybe SelectionBox

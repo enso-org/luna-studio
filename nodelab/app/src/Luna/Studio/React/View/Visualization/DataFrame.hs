@@ -4,6 +4,7 @@ module Luna.Studio.React.View.Visualization.DataFrame where
 import           Luna.Studio.Prelude
 import           Luna.Studio.React.Model.DataFrame (DataFrame)
 import qualified Luna.Studio.React.Model.DataFrame as DataFrame
+import qualified Luna.Studio.React.View.Style      as Style
 import           React.Flux
 
 
@@ -11,11 +12,12 @@ dataFrame_ :: Int -> DataFrame -> ReactElementM ViewEventHandler ()
 dataFrame_ visIx df =
     div_
         [ "key" $= jsShow visIx
-        , "className" $= "luna-vis luna-vis--table"
+        , "className" $= Style.prefixFromList ["vis", "vis--table"]
         ] $ do
         div_
             [ "key"       $= "blur"
-            , "className" $= "luna-blur" ] mempty
+            , "className" $= Style.prefix "blur"
+            ] mempty
         table_ [ "key" $= "table" ] $
             thead_ $
                 tr_ $ forKeyed_ (df ^. DataFrame.headers) $ \(i, header) ->
@@ -23,7 +25,7 @@ dataFrame_ visIx df =
                         elemString $ convert header
         div_
             [ "key"       $= "scroll"
-            , "className" $= "luna-scroll"
+            , "className" $= Style.prefix "scroll"
             , onWheel     $ \e _ _ -> [stopPropagation e]
             ] $
             table_ $

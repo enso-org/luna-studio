@@ -2,32 +2,41 @@
 {-# LANGUAGE TypeApplications #-}
 module Luna.Studio.Action.Node.Drag
     ( startNodeDrag
-    , nodeDrag
-    , stopNodeDrag
+    , nodesDrag
+    , handleNodeDragMouseUp
     ) where
 
 import           Control.Arrow
-import           Data.Map                           (Map)
-import qualified Data.Map                           as Map
-import           Data.Position                      (Position, move, toTuple, vector)
-import           Empire.API.Data.Node               (NodeId)
-import qualified Empire.API.Data.Node               as Node
-import qualified Luna.Studio.Action.Batch           as BatchCmd
-import           Luna.Studio.Action.Command         (Command)
-import           Luna.Studio.Action.Graph.Selection (selectNodes, selectedNodes)
-import           Luna.Studio.Action.Graph.Update    (updateConnectionsForNodes)
-import           Luna.Studio.Action.Node.Snap       (snap)
-import           Luna.Studio.Event.Mouse            (workspacePosition)
+import           Data.Map                               (Map)
+import qualified Data.Map                               as Map
+import           Data.Position                          (Position, move, toTuple, vector)
+import           Empire.API.Data.Connection             (Connection (Connection))
+import qualified Empire.API.Data.Connection             as Connection
+import           Empire.API.Data.Node                   (NodeId)
+import qualified Empire.API.Data.Node                   as Node
+import           Empire.API.Data.Port                   (InPort (Self), OutPort (All), PortId (InPortId))
+import           Empire.API.Data.PortRef                (InPortRef (InPortRef), OutPortRef (OutPortRef))
+import qualified Luna.Studio.Action.Batch               as BatchCmd
+import           Luna.Studio.Action.Command             (Command)
+import           Luna.Studio.Action.Geometry.Connection (createConnectionModel)
+import           Luna.Studio.Action.Geometry.Node       (getIntersectingConnections)
+import           Luna.Studio.Action.Graph.Connect       (connect)
+import           Luna.Studio.Action.Graph.Selection     (selectNodes, selectedNodes)
+import           Luna.Studio.Action.Graph.Update        (updateConnectionsForNodes)
+import           Luna.Studio.Action.Node.Snap           (snap)
+import           Luna.Studio.Event.Mouse                (workspacePosition)
 import           Luna.Studio.Prelude
-import qualified Luna.Studio.React.Model.Node       as Model
-import qualified Luna.Studio.React.Model.NodeEditor as NodeEditor
-import           Luna.Studio.State.Action           (Action (begin, continue, end, update), NodeDrag (NodeDrag), nodeDragAction)
-import qualified Luna.Studio.State.Action           as Action
-import           Luna.Studio.State.Global           (State, beginActionWithKey, continueActionWithKey, removeActionFromState,
-                                                     updateActionWithKey)
-import qualified Luna.Studio.State.Global           as Global
-import qualified Luna.Studio.State.Graph            as Graph
-import           React.Flux                         (MouseEvent)
+import           Luna.Studio.React.Model.Connection     (toCurrentConnection)
+import qualified Luna.Studio.React.Model.Node           as Model
+import qualified Luna.Studio.React.Model.NodeEditor     as NodeEditor
+import           Luna.Studio.React.Model.Port           as Port
+import           Luna.Studio.State.Action               (Action (begin, continue, end, update), NodeDrag (NodeDrag), nodeDragAction)
+import qualified Luna.Studio.State.Action               as Action
+import           Luna.Studio.State.Global               (State, beginActionWithKey, continueActionWithKey, removeActionFromState,
+                                                         updateActionWithKey)
+import qualified Luna.Studio.State.Global               as Global
+import qualified Luna.Studio.State.Graph                as Graph
+import           React.Flux                             (MouseEvent)
 
 
 instance Action (Command State) NodeDrag where
@@ -44,27 +53,55 @@ startNodeDrag coord nodeId snapped = do
         unless isSelected $ selectNodes [nodeId]
         nodes <- selectedNodes
         let nodesPos = Map.fromList $ (view Model.nodeId &&& view Model.position) <$> nodes
-        if snapped
-            then do
-                let snappedNodes = Map.map snap nodesPos
-                begin $ NodeDrag coord nodeId snappedNodes
-                moveNodes snappedNodes
-            else begin $ NodeDrag coord nodeId nodesPos
+        if snapped then do
+            let snappedNodes = Map.map snap nodesPos
+            begin $ NodeDrag coord nodeId snappedNodes Nothing
+            moveNodes snappedNodes
+        else begin $ NodeDrag coord nodeId nodesPos Nothing
 
-nodeDrag :: MouseEvent -> Bool -> NodeDrag -> Command State ()
-nodeDrag evt snapped state = do
+nodesDrag :: MouseEvent -> Bool -> NodeDrag -> Command State ()
+nodesDrag evt snapped nodeDrag = do
     coord <- workspacePosition evt
-    let mouseStartPos = view Action.nodeDragStartPos      state
-        draggedNodeId = view Action.nodeDragNodeId        state
-        nodesStartPos = view Action.nodeDragNodesStartPos state
+    let mouseStartPos = view Action.nodeDragStartPos      nodeDrag
+        draggedNodeId = view Action.nodeDragNodeId        nodeDrag
+        nodesStartPos = view Action.nodeDragNodesStartPos nodeDrag
         delta = coord ^. vector - mouseStartPos ^. vector
-        shift' = if snapped then
+        shift' = if snapped then do
                      case Map.lookup draggedNodeId nodesStartPos of
-                         Just pos ->
-                             snap (move delta pos) ^. vector - pos ^. vector
+                         Just pos -> snap (move delta pos) ^. vector - pos ^. vector
                          Nothing  -> delta
                  else delta
     moveNodes $ Map.map (move shift') nodesStartPos
+    snapConnectionsForNodes coord $ Map.keys nodesStartPos
+
+clearSnappedConnection :: NodeDrag -> Command State ()
+clearSnappedConnection nodeDrag = do
+    let nodeId = nodeDrag ^. Action.nodeDragNodeId
+    Global.modifyNodeEditor $ NodeEditor.currentConnections .= def
+    whenM (isNothing <$> Global.getConnection (InPortRef nodeId Self)) $
+        Global.modifyNode nodeId $ Model.ports . at (InPortId Self) . _Just . Port.visible .= False
+    continue $ \nodeDrag' -> do
+        update $ nodeDrag' & Action.nodeDragSnappedConn .~ Nothing
+
+snapConnectionsForNodes :: Position -> [NodeId] -> Command State ()
+snapConnectionsForNodes mousePos nodeIds = when (length nodeIds == 1) $ forM_ nodeIds $ \nodeId -> do
+    mayNode <- Global.getNode nodeId
+    withJust mayNode $ \node -> do
+        mayConnId <- getIntersectingConnections node mousePos
+        case mayConnId of
+            Just connId -> do
+                let selfPortRef = InPortRef  nodeId Self
+                    outPortRef  = OutPortRef nodeId All
+                mayConn       <- use $ Global.graph . Graph.connectionsMap . at connId
+                Global.modifyNode nodeId $ Model.ports . at (InPortId Self) . _Just . Port.visible .= True
+                mayConnModel1 <- fmap join $ mapM createConnectionModel $ flip Connection selfPortRef <$> view Connection.src <$> mayConn
+                mayConnModel2 <- fmap join $ mapM createConnectionModel $      Connection outPortRef  <$> view Connection.dst <$> mayConn
+                case (,) <$> mayConnModel1 <*> mayConnModel2 of
+                    Just (connModel1, connModel2) -> do
+                        Global.modifyNodeEditor $ NodeEditor.currentConnections .= map toCurrentConnection [connModel1, connModel2]
+                        continue $ \nodeDrag -> update $ nodeDrag & Action.nodeDragSnappedConn ?~ connId
+                    _ -> continue clearSnappedConnection
+            _ -> continue clearSnappedConnection
 
 moveNodes :: Map NodeId Position -> Command State ()
 moveNodes nodesPos = do
@@ -83,13 +120,24 @@ updateMovedNodes = do
     BatchCmd.updateNodeMeta $ catMaybes updates
     updateConnectionsForNodes $ fst <$> nodesToUpdate
 
-
-stopNodeDrag :: MouseEvent -> NodeDrag ->  Command State ()
-stopNodeDrag evt state = do
-    removeActionFromState nodeDragAction
+handleNodeDragMouseUp :: MouseEvent -> NodeDrag -> Command State ()
+handleNodeDragMouseUp evt nodeDrag = do
     coord <- workspacePosition evt
-    let startPos = view Action.nodeDragStartPos state
-        nodeId   = view Action.nodeDragNodeId   state
-    if startPos /= coord then
+    let startPos = view Action.nodeDragStartPos nodeDrag
+        nodeId   = view Action.nodeDragNodeId   nodeDrag
+    if startPos == coord then
+        selectNodes [nodeId]
+    else do
         updateMovedNodes
-    else selectNodes [nodeId]
+        withJust (nodeDrag ^. Action.nodeDragSnappedConn) $ \connId -> do
+            mayConn <- use $ Global.graph . Graph.connectionsMap . at connId
+            withJust mayConn $ \conn -> do
+                connect (Left $ conn ^. Connection.src) $ Right nodeId
+                connect (Right nodeId)                  $ Left $ conn ^. Connection.dst
+    continue stopNodeDrag
+
+
+stopNodeDrag :: NodeDrag -> Command State ()
+stopNodeDrag nodeDrag = do
+    clearSnappedConnection nodeDrag
+    removeActionFromState nodeDragAction

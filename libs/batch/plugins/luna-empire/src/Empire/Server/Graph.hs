@@ -52,13 +52,13 @@ import qualified Empire.API.Graph.NodesUpdate          as NodesUpdate
 import qualified Empire.API.Graph.RemoveNodes          as RemoveNodes
 import qualified Empire.API.Graph.RemovePort           as RemovePort
 import qualified Empire.API.Graph.RenameNode           as RenameNode
+import qualified Empire.API.Graph.RenamePort           as RenamePort
 import qualified Empire.API.Graph.Request              as G
 import qualified Empire.API.Graph.SetCode              as SetCode
 import qualified Empire.API.Graph.SetDefaultValue      as SetDefaultValue
 import qualified Empire.API.Graph.TypeCheck            as TypeCheck
 import qualified Empire.API.Graph.UpdateNodeExpression as UpdateNodeExpression
 import qualified Empire.API.Graph.UpdateNodeMeta       as UpdateNodeMeta
-import qualified Empire.API.Graph.UpdatePort           as UpdatePort
 import           Empire.API.Request                    (Request (..))
 import qualified Empire.API.Response                   as Response
 import qualified Empire.API.Topic                      as Topic
@@ -163,7 +163,7 @@ connectNodes :: GraphLocation -> Text -> NodeId -> NodeId -> StateT Env BusT ()
 connectNodes location expr dstNodeId srcNodeId = do
     let exprCall = head $ splitOneOf " ." $ Text.unpack expr
         inPort = if exprCall `elem` stdlibFunctions then Arg 0 else Self
-        connectRequest = Request UUID.nil Nothing $ Connect.Request location (Connect.PortConnect (OutPortRef srcNodeId All) (InPortRef dstNodeId inPort))
+        connectRequest = Request UUID.nil Nothing $ Connect.Request location (Left $ OutPortRef srcNodeId All) (Left $ InPortRef dstNodeId inPort)
     handleConnectReq False connectRequest -- TODO: refactor (we should not call handlers from handlers)
     forceTC location
 
@@ -243,6 +243,16 @@ handleMovePort = modifyGraph (mtuple action) success where
     action (MovePort.Request location portRef newPos) = Graph.movePort location portRef newPos
     success request@(Request _ _ req@(MovePort.Request location portRef newPos)) _ node = replyResult request () node >> sendToBus' (NodesUpdate.Update location [node])
 
+
+handleRenamePort :: Request RenamePort.Request -> StateT Env BusT ()
+handleRenamePort = modifyGraphOk action success where --FIXME[pm] implement this!
+    action  (RenamePort.Request location portRef name) = do
+        let oldName = "oldname" --FIXME
+        let inv = RenamePort.Inverse oldName
+        void $ Graph.renamePort location portRef name
+        return (inv,())
+    success (RenamePort.Request location portRef name) _ result = sendToBus' $ RenamePort.Update location portRef name
+
 handleRemovePort :: Request RemovePort.Request -> StateT Env BusT ()
 handleRemovePort = modifyGraph (mtuple action) success where
     action (RemovePort.Request location portRef) = Graph.removePort location portRef
@@ -255,9 +265,14 @@ handleConnect = handleConnectReq True
 -- TODO: Response for this request needs more info in case of NodeConnection for undo/redo
 handleConnectReq :: Bool -> Request Connect.Request -> StateT Env BusT ()
 handleConnectReq doTC = modifyGraph (mtuple action) success where
-    action  (Connect.Request location (Connect.PortConnect src dst)) = Graph.connectCondTC doTC location src dst
-    action  (Connect.Request location (Connect.NodeConnect src dst)) = Graph.connectCondTC doTC location (OutPortRef src All) (InPortRef dst Self)
-    success request@(Request _ _ (Connect.Request location _)) _ result = replyResult request () result >> sendToBus' (Connect.Update location result)
+    getSrcPort src = case src of
+        Left portRef -> portRef
+        Right nodeId -> OutPortRef nodeId All
+    getDstPort dst = case dst of
+        Left portRef -> portRef
+        Right nodeId -> InPortRef nodeId Self
+    action  (Connect.Request location src dst) = Graph.connectCondTC doTC location (getSrcPort src) (getDstPort dst)
+    success request@(Request _ _ (Connect.Request location _ _)) _ result = replyResult request () result >> sendToBus' (Connect.Update location result)
 
 handleDisconnect :: Request Disconnect.Request -> StateT Env BusT ()
 handleDisconnect = modifyGraphOk action success where

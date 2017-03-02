@@ -6,16 +6,13 @@
 
 .luna-blur {
     backdrop-filter: blur(0);
-    background:      rgba(255,255,255,.0);
+    background:      rgba(255,255,255,0);
     width:           100%;
     height:          100%;
     position:        absolute;
     z-index:        -1;
     top:             0;
     left:            0;
-}
-.luna-node--expanded .luna-blur {
-    backdrop-filter: blur(12px);
 }
 
 /////////////////////////////
@@ -77,8 +74,9 @@
         left:   0;
     }
     .luna-blur {
-        background:    rgba(255,255,255,.02);
-        border-radius: @borderRadius;
+        backdrop-filter: blur(12px);
+        background:      rgba(70,70,70,.1);
+        border-radius:   @borderRadius;
     }
     .luna-node__properties-crop {
         max-height: 110px;
@@ -127,7 +125,7 @@
     overflow:      hidden;
     padding:       12px @expandedNodePadding 8px (@expandedNodePadding + 20px);
     .luna-blur {
-      border-radius: 20px;
+        border-radius: 20px;
     }
     .luna-row {
         display:         flex;
@@ -213,35 +211,35 @@
 }
 
 .luna-edge-sidebar--o {
-    float:      right;
+    float: right;
 }
 
 .luna-edge__button--add {
     position: fixed;
-    bottom: 10px;
+    bottom:   10px;
 }
 
 .luna-edge__button--remove {
     position: fixed;
-    bottom: 10px;
+    bottom:   10px;
 }
 
 .luna-port--dragged,
 .luna-edge-sidebar .luna-port--dragged {
-    fill:     white;
+    fill:             white;
     background-color: white;
-    border-radius: 3px;
-    width:    6px;
-    height:   6px;
-    z-index:  1000000;
-    overflow: inherit;
-    margin-left: -3px;
-    margin-top:  -6px;
-    pointer-events: none;
+    border-radius:    3px;
+    width:            6px;
+    height:           6px;
+    z-index:          1000000;
+    overflow:         inherit;
+    margin-left:     -3px;
+    margin-top:      -6px;
+    pointer-events:   none;
 }
 
 /////////////////////////////
-//       monad             //
+//          monad          //
 /////////////////////////////
 
 .luna-monad {

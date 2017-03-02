@@ -2,10 +2,11 @@
 module Luna.Studio.React.View.Field where
 
 import           Luna.Studio.Prelude
-import           Luna.Studio.React.Model.App (App)
-import           Luna.Studio.React.Store     (Ref, dispatch)
+import           Luna.Studio.React.Store      (dispatch)
 import           React.Flux
-import qualified React.Flux                  as React
+import qualified React.Flux                    as React
+import qualified Luna.Studio.Event.Keys        as Keys
+import           Luna.Studio.React.Model.Field
 
 
 name :: JSString
@@ -16,17 +17,44 @@ data Mode = Disabled
           | MultiLine
           deriving (Eq)
 
-field :: [PropertyOrHandler ViewEventHandler] -> ReactView (Ref App, Mode, Text)
-field ph = React.defineView name $ \(ref, mode, content) -> case mode of
-    Disabled  -> div_ $ elemString $ convert content
-    MultiLine -> textarea_ ph $ elemString $ convert content
-    Single    -> input_ ("value" $= convert content : ph)
+handleKeys :: Field -> Event -> KeyboardEvent -> [SomeStoreAction]
+handleKeys model e k
+  | Keys.withoutMods k Keys.esc   = mayDispatch $ model ^. onCancel
+  | Keys.withoutMods k Keys.enter = mayDispatch $ model ^. onAccept
+  | otherwise                     = [stop]
+  where
+      stop = stopPropagation e
+      mayDispatch = maybe [stop] (\ev -> stop: dispatch (model ^. ref) (ev $ target e "value"))
 
-field_ :: Mode -> [PropertyOrHandler ViewEventHandler] -> Ref App -> JSString -> Text -> ReactElementM ViewEventHandler ()
-field_ mode ph ref key  content = React.viewWithSKey (field ph) key (ref, mode, content) mempty
+handleChange :: Field -> [PropertyOrHandler [SomeStoreAction]] -> [PropertyOrHandler [SomeStoreAction]]
+handleChange model = case model ^. onEdit of
+    Just ev -> (onChange (dispatch (model ^. ref) . ev . (`target` "value")) :)
+    Nothing -> id
 
-multilineField_ :: [PropertyOrHandler ViewEventHandler] -> Ref App -> JSString -> Text -> ReactElementM ViewEventHandler ()
+
+handleBlur :: Field -> [PropertyOrHandler [SomeStoreAction]] -> [PropertyOrHandler [SomeStoreAction]]
+handleBlur model = case model ^. onCancel of
+    Just ev -> ((onBlur $ \e _ -> dispatch (model ^. ref) $ ev $ target e "value") :)
+    Nothing -> id
+
+field :: [PropertyOrHandler ViewEventHandler] -> ReactView (Mode, Field)
+field ph' = React.defineView name $ \(mode, model) -> let
+    editPh = handleChange model
+           $ handleBlur model
+           $ onKeyDown   (\e k -> handleKeys model e k)
+           : onMouseDown (\e _ -> [stopPropagation e])
+           : (if isJust (model ^. onEdit) then "value" else "defaultValue") $= convert (model ^. content)
+           : ph'
+    in case mode of
+        Disabled  -> div_ $ elemString $ convert $ model ^. content
+        MultiLine -> textarea_ editPh mempty
+        Single    -> input_ editPh
+
+field_ :: Mode -> [PropertyOrHandler ViewEventHandler] -> JSString -> Field -> ReactElementM ViewEventHandler ()
+field_ mode ph key model = React.viewWithSKey (field ph) key (mode, model) mempty
+
+multilineField_ :: [PropertyOrHandler ViewEventHandler] -> JSString -> Field -> ReactElementM ViewEventHandler ()
 multilineField_ = field_ MultiLine
 
-singleField_ :: [PropertyOrHandler ViewEventHandler] -> Ref App -> JSString -> Text -> ReactElementM ViewEventHandler ()
+singleField_ :: [PropertyOrHandler ViewEventHandler] -> JSString -> Field -> ReactElementM ViewEventHandler ()
 singleField_ = field_ Single

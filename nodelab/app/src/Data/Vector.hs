@@ -106,6 +106,9 @@ shift f x' = if x' < shiftConst then 0.0
                                 else f (x' - shiftConst)
     where shiftConst = 0.1
 
+dotV :: Num a => Vector2 a -> Vector2 a-> a
+dotV (Vector2 x1 x2) (Vector2 y1 y2) = x1 * y1 + x2 * y2
+
 negateSnd :: Num a => Vector2 a -> Vector2 a
 negateSnd (Vector2 x' y') = Vector2 x' (-y')
 
