@@ -19,13 +19,19 @@ module Empire.ASTOps.Read (
   , getASTPointer
   , getASTTarget
   , getASTVar
+  , getVarNode
+  , getLambdaBodyRef
+  , getFirstNonLambdaRef
+  , getLambdaOutputLink
   , getLambdaOutputRef
+  , getLambdaSeqRef
   , getPatternNames
   , getSelfNodeRef
   , canEnterNode
   , rhsIsLambda
   ) where
 
+import           Control.Monad                      ((>=>), forM)
 import           Data.Coerce                        (coerce)
 import           Data.Maybe                         (isJust)
 import           Empire.Prelude
@@ -112,14 +118,47 @@ getSelfNodeRef' seenAcc node = match node $ \case
     App t _ -> IR.source t >>= getSelfNodeRef' seenAcc
     _       -> return $ if seenAcc then Just node else Nothing
 
-getLambdaOutputRef :: ASTOp m => NodeRef -> m NodeRef
-getLambdaOutputRef = getLambdaOutputRef' False
+getLambdaBodyRef :: ASTOp m => NodeRef -> m (Maybe NodeRef)
+getLambdaBodyRef lam = do
+    seqRef <- getLambdaSeqRef lam
+    forM seqRef $ flip match $ \case
+        Seq l _r -> IR.source l
 
-getLambdaOutputRef' :: ASTOp m => Bool -> NodeRef -> m NodeRef
-getLambdaOutputRef' firstLam node = match node $ \case
-    Lam _ out -> do
-        nextLam <- IR.source out
-        getLambdaOutputRef' True nextLam
+getLambdaSeqRef :: ASTOp m => NodeRef -> m (Maybe NodeRef)
+getLambdaSeqRef = getLambdaSeqRef' False
+
+getLambdaSeqRef' :: ASTOp m => Bool -> NodeRef -> m (Maybe NodeRef)
+getLambdaSeqRef' firstLam node = match node $ \case
+    Lam _ next -> do
+        nextLam <- IR.source next
+        getLambdaSeqRef' True nextLam
+    Seq{}     -> if firstLam then return $ Just node else throwM $ NotLambdaException node
+    _         -> if firstLam then return Nothing     else throwM $ NotLambdaException node
+
+getLambdaOutputRef :: ASTOp m => NodeRef -> m NodeRef
+getLambdaOutputRef = getLambdaOutputLink >=> IR.source
+
+getLambdaOutputLink :: ASTOp m => NodeRef -> m EdgeRef
+getLambdaOutputLink = getLambdaOutputLink' False
+
+getLambdaOutputLink' :: ASTOp m => Bool -> NodeRef -> m EdgeRef
+getLambdaOutputLink' firstLam node = match node $ \case
+    Lam _ next -> do
+        nextLam <- IR.source next
+        match nextLam $ \case
+            Lam{} -> getLambdaOutputLink' True nextLam
+            Seq{} -> getLambdaOutputLink' True nextLam
+            _     -> return next
+    Seq _l r  -> if firstLam then return r else throwM $ NotLambdaException node
+
+getFirstNonLambdaRef :: ASTOp m => NodeRef -> m NodeRef
+getFirstNonLambdaRef = getFirstNonLambdaRef' False
+
+getFirstNonLambdaRef' :: ASTOp m => Bool -> NodeRef -> m NodeRef
+getFirstNonLambdaRef' firstLam node = match node $ \case
+    Lam _ next -> do
+        nextLam <- IR.source next
+        getFirstNonLambdaRef' True nextLam
     _         -> if firstLam then return node else throwM $ NotLambdaException node
 
 isApp :: ASTOp m => NodeRef -> m Bool

@@ -9,6 +9,7 @@ module Empire.Data.Graph (
   , nodeMapping
   , breadcrumbHierarchy
   , breadcrumbPortMapping
+  , topLevelSeq
   , lastNameId
   , insideNode
   , NodeIDTarget(MatchNode, AnonymousNode)
@@ -29,21 +30,21 @@ import qualified Empire.Data.BreadcrumbHierarchy   as BC (empty)
 import           Empire.Prelude
 
 import           Empire.Data.AST                   (NodeRef)
-import           Control.Monad.State (MonadState(..), StateT, evalStateT, lift)
-import           Empire.Data.Layers  (attachEmpireLayers)
+import           Control.Monad.State               (MonadState(..), StateT, evalStateT, lift)
+import           Empire.Data.Layers                (attachEmpireLayers)
 
-import           Control.Monad.Raise (MonadException(..))
-import           Luna.IR             (IR, IRBuilder, AnyExpr, evalIRBuilder', evalPassManager',
-                                      attachLayer, snapshot, runRefCache, runRegs)
-import qualified Luna.Pass.Manager   as Pass (RefState)
-import qualified Luna.Pass.Manager   as PassManager (PassManager, RefCache, get)
+import           Control.Monad.Raise                    (MonadException(..))
+import           Luna.IR                                (IR, IRBuilder, AnyExpr, evalIRBuilder', evalPassManager',
+                                                         attachLayer, snapshot, runRefCache, runRegs)
+import qualified Luna.Pass.Manager                      as Pass (RefState)
+import qualified Luna.Pass.Manager                      as PassManager (PassManager, RefCache, get)
 import qualified Luna.Passes.Transform.Parsing.Parser   as Parser
-import qualified Luna.Passes.Transform.Parsing.Parsing ()
+import qualified Luna.Passes.Transform.Parsing.Parsing  ()
 import qualified Luna.Passes.Transform.Parsing.CodeSpan as CodeSpan
-import qualified Data.SpanTree as SpanTree
-import           Data.TypeDesc (getTypeDesc)
+import qualified Data.SpanTree                          as SpanTree
+import           Data.TypeDesc                          (getTypeDesc)
 
-import           System.Log          (Logger, MonadLogging(..), DropLogger, dropLogs)
+import           System.Log                             (Logger, DropLogger, dropLogs)
 
 import qualified Luna.IR.Repr.Vis           as Vis
 import           Control.Monad              (void)
@@ -58,6 +59,7 @@ data Graph = Graph { _ast                   :: AST
                    , _nodeMapping           :: Map NodeId NodeIDTarget
                    , _breadcrumbHierarchy   :: BreadcrumbHierarchy
                    , _breadcrumbPortMapping :: Map NodeId (NodeId, NodeId)
+                   , _topLevelSeq           :: Maybe NodeRef
                    , _lastNameId            :: Integer
                    , _insideNode            :: Maybe NodeId
                    } deriving Show
@@ -74,7 +76,7 @@ getAnyRef (AnonymousNode ref) = ref
 defaultGraph :: IO Graph
 defaultGraph = do
     ast' <- defaultAST
-    return $ Graph ast' Map.empty BC.empty Map.empty 0 Nothing
+    return $ Graph ast' Map.empty BC.empty Map.empty Nothing 0 Nothing
 
 type AST      = ASTState
 data ASTState = ASTState IR (Pass.RefState (PassManager.PassManager (IRBuilder (Parser.IRSpanTreeBuilder (PassManager.RefCache (Logger DropLogger (Vis.VisStateT (StateT Graph IO))))))))
@@ -102,7 +104,7 @@ withVis m = do
 
 defaultAST :: IO AST
 defaultAST = mdo
-    let g = Graph ast Map.empty BC.empty Map.empty 0 Nothing
+    let g = Graph ast Map.empty BC.empty Map.empty Nothing 0 Nothing
     ast <- flip evalStateT g $ withVis $ dropLogs $ runRefCache $ (\a -> SpanTree.runTreeBuilder a >>= \(foo, _) -> return foo) $ evalIRBuilder' $ evalPassManager' $ do
         runRegs
         CodeSpan.init

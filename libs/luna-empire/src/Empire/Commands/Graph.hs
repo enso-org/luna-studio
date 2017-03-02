@@ -1,7 +1,10 @@
-{-# LANGUAGE MultiWayIf       #-}
-{-# LANGUAGE TupleSections    #-}
-{-# LANGUAGE TypeApplications #-}
-{-# LANGUAGE TupleSections    #-}
+{-# LANGUAGE LambdaCase          #-}
+{-# LANGUAGE MultiWayIf          #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE StandaloneDeriving  #-}
+{-# LANGUAGE TupleSections       #-}
+{-# LANGUAGE TypeApplications    #-}
+{-# LANGUAGE TupleSections       #-}
 
 module Empire.Commands.Graph
     ( addNode
@@ -33,20 +36,23 @@ module Empire.Commands.Graph
     , typecheck
     , withTC
     , withGraph
+    , getNodeIdSequence
     ) where
 
 import           Control.Monad                 (forM, forM_)
+import           Control.Monad.Catch           (MonadCatch(..))
 import           Control.Monad.State           hiding (when)
 import           Data.Coerce                   (coerce)
-import           Data.List                     (sort, sortOn)
+import           Data.List                     (sort)
 import qualified Data.Map                      as Map
+import           Data.Maybe                    (catMaybes)
 import           Data.Text                     (Text)
 import qualified Data.Text                     as Text
 import qualified Data.UUID                     as UUID
 import qualified Data.UUID.V4                  as UUID (nextRandom)
 import           Empire.Prelude
 
-import           Empire.Data.AST                 (NotInputEdgeException (..))
+import           Empire.Data.AST                 (NodeRef, NotInputEdgeException (..), NotUnifyException)
 import           Empire.Data.BreadcrumbHierarchy (addID, addWithLeafs, removeID, topLevelIDs)
 import           Empire.Data.Graph               (Graph)
 import qualified Empire.Data.Graph               as Graph
@@ -82,7 +88,7 @@ import qualified Empire.Commands.Publisher       as Publisher
 import           Empire.Empire
 
 import qualified Luna.IR                  as IR
-import qualified Luna.IR.Expr.Combinators as IR (deleteSubtree, replaceNode)
+import qualified Luna.IR.Expr.Combinators as IR (changeSource, deleteSubtree, replaceNode)
 
 generateNodeName :: ASTOp m => m String
 generateNodeName = do
@@ -118,10 +124,61 @@ addNodeNoTC loc uuid expr meta = do
                 (if outputIsOneOfTheInputs then [] else [lambdaUUID])
             IR.writeLayer @Marker (Just $ NodeMarker lambdaUUID) lambdaOutput
         else Graph.breadcrumbHierarchy %= addID (node ^. Node.nodeId)
+        updateNodeSequence
         return node
     runAliasAnalysis
     Publisher.notifyNodeUpdate loc node
     return node
+
+updateNodeSequence :: ASTOp m => m ()
+updateNodeSequence = do
+    newSeq <- makeCurrentSeq
+    updateGraphSeq newSeq
+
+makeCurrentSeq :: ASTOp m => m (Maybe NodeRef)
+makeCurrentSeq = do
+  allNodes   <- uses Graph.breadcrumbHierarchy topLevelIDs
+  sortedRefs <- AST.sortByPosition allNodes
+  AST.makeSeq sortedRefs
+
+updateGraphSeq :: ASTOp m => Maybe NodeRef -> m ()
+updateGraphSeq newSeq = do
+    lambda <- use Graph.insideNode
+    case lambda of
+        Just outerLambdaNode -> do
+            outerLambda <- ASTRead.getASTTarget outerLambdaNode
+            outerBody   <- ASTRead.getLambdaBodyRef outerLambda
+            output      <- ASTRead.getLambdaOutputRef outerLambda
+            case newSeq of
+                Just s -> case outerBody of
+                    Just _body -> do
+                        oldSeq <- ASTRead.getLambdaSeqRef outerLambda
+                        forM_ oldSeq $ flip IR.matchExpr $ \case
+                            IR.Seq l _r -> IR.changeSource l s
+                    _          -> do
+                        body       <- IR.generalize <$> IR.seq s output
+                        outputLink <- ASTRead.getLambdaOutputLink outerLambda
+                        IR.changeSource outputLink body
+                _      -> do
+                    firstNonLambda <- ASTRead.getFirstNonLambdaRef outerLambda
+                    IR.replaceNode firstNonLambda output
+        Nothing              -> Graph.topLevelSeq .= newSeq
+
+nodeIdInsideLambda :: ASTOp m => NodeRef -> m (Maybe NodeId)
+nodeIdInsideLambda node = (ASTRead.getVarNode node >>= ASTRead.getNodeId) `catch`
+    (\(_e :: NotUnifyException) -> return Nothing)
+
+getNodeIdSequence :: GraphLocation -> Empire [NodeId]
+getNodeIdSequence loc = withGraph loc $ runASTOp $ do
+    lambda  <- use Graph.insideNode
+    nodeSeq <- do
+        bodySeq <- case lambda of
+            Just l -> ASTRead.getASTTarget l >>= ASTRead.getLambdaBodyRef
+            _      -> use Graph.topLevelSeq
+        case bodySeq of
+          Just b -> AST.readSeq b
+          _      -> return []
+    catMaybes <$> mapM nodeIdInsideLambda nodeSeq
 
 addPersistentNode :: ASTOp m => Node -> m NodeId
 addPersistentNode n = case n ^. Node.nodeType of
@@ -193,7 +250,9 @@ removeNodes loc nodeIds = do
         children <- withTC (loc `descendInto` nodeId) False $ do
             uses Graph.breadcrumbHierarchy topLevelIDs
         removeNodes (loc `descendInto` nodeId) children
-    withTC loc False $ runASTOp $ forM_ nodeIds removeNodeNoTC
+    withTC loc False $ runASTOp $ do
+        forM_ nodeIds removeNodeNoTC
+        when (not . null $ nodeIds) $ updateNodeSequence
 
 removeNodeNoTC :: ASTOp m => NodeId -> m ()
 removeNodeNoTC nodeId = do
@@ -238,7 +297,7 @@ renamePort loc portRef newName = withGraph loc $ runASTOp $ do
     Just lambda <- use Graph.insideNode
     ref         <- GraphUtils.getASTTarget lambda
     edges       <- GraphBuilder.getEdgePortMapping
-    newRef      <- case edges of
+    _newRef     <- case edges of
         Just (input, _) -> do
             if nodeId == input then ASTModify.renameLambdaArg ref (portRef ^. PortRef.portId) newName
                                else throwM NotInputEdgeException
@@ -252,7 +311,7 @@ updateNodeExpression loc nodeId expr = withTC loc False $ do
         target <- ASTRead.getASTTarget nodeId
         IR.replaceNode target ref
         IR.deleteSubtree target
-        forM exprName $ \newName -> renameNodeGraph loc nodeId newName
+        forM_ exprName $ \newName -> renameNodeGraph nodeId newName
     runAliasAnalysis
     node <- runASTOp $ GraphBuilder.buildNode nodeId
     Publisher.notifyNodeUpdate loc node
@@ -266,6 +325,7 @@ updateNodeMeta loc nodeId newMeta = withGraph loc $ do
         doTCMay <- forM oldMetaMay $ \oldMeta ->
             return $ triggerTC oldMeta newMeta
         AST.writeMeta ref newMeta
+        updateNodeSequence
         return doTCMay
     forM_ doTCMay $ \doTC ->
         when doTC $ runTC loc False
@@ -379,11 +439,11 @@ decodeLocation loc@(GraphLocation _ _ crumbs) = withGraph loc $ GraphBuilder.dec
 
 renameNode :: GraphLocation -> NodeId -> Text -> Empire ()
 renameNode loc nid name = withTC loc False $ do
-    runASTOp $ renameNodeGraph loc nid name
+    runASTOp $ renameNodeGraph nid name
     runAliasAnalysis
 
-renameNodeGraph :: ASTOp m => GraphLocation -> NodeId -> Text -> m ()
-renameNodeGraph loc nid name = do
+renameNodeGraph :: ASTOp m => NodeId -> Text -> m ()
+renameNodeGraph nid name = do
     vref <- GraphUtils.getASTVar nid
     ASTModify.renameVar vref (Text.unpack name)
 

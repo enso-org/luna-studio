@@ -8,16 +8,13 @@
 module Empire.Commands.AST where
 
 import           Control.Arrow                     (second)
-import           Control.Monad.Except              (runExceptT)
 import           Control.Monad.State
-import qualified Data.Aeson                        as Aeson
-import qualified Data.ByteString.Lazy.Char8        as BS.C8
+import           Data.Function                     (on)
+import           Data.List                         (sortBy)
 import           Data.Maybe                        (catMaybes, fromMaybe)
-import           Data.Text                         (Text)
 import qualified Data.Text                         as Text
 import           Empire.Prelude
 
-import           Empire.API.Data.DefaultValue      (Value (..))
 import qualified Empire.API.Data.Error             as APIError
 import           Empire.API.Data.Node              (NodeId)
 import           Empire.API.Data.NodeMeta          (NodeMeta)
@@ -109,6 +106,33 @@ getNodeValue node = do
 readMeta :: ASTOp m => NodeRef -> m (Maybe NodeMeta)
 readMeta ref = IR.readLayer @Meta ref
 
+writeMeta :: ASTOp m => NodeRef -> NodeMeta -> m ()
+writeMeta ref newMeta = IR.writeLayer @Meta (Just newMeta) ref
+
+sortByPosition :: ASTOp m => [NodeId] -> m [NodeRef]
+sortByPosition nodeIds = do
+    refs  <- mapM ASTRead.getASTPointer nodeIds
+    metas <- mapM readMeta refs
+    let refsAndMetas = zip refs metas
+        sorted       = sortBy (compare `on` snd) refsAndMetas
+    return $ map (^. _1) sorted
+
+makeSeq :: ASTOp m => [NodeRef] -> m (Maybe NodeRef)
+makeSeq []     = return Nothing
+makeSeq [node] = return $ Just node
+makeSeq (n:ns) = Just <$> foldM f n ns
+    where
+        f :: ASTOp m => NodeRef -> NodeRef -> m NodeRef
+        f l r = IR.generalize <$> IR.seq l r
+
+readSeq :: ASTOp m => NodeRef -> m [NodeRef]
+readSeq node = match node $ \case
+    Seq l r -> do
+        previous  <- IR.source l >>= readSeq
+        rightmost <- IR.source r
+        return (previous ++ [rightmost])
+    _       -> return [node]
+
 tryHead :: [a] -> Maybe a
 tryHead [] = Nothing
 tryHead (a:_) = Just a
@@ -135,9 +159,6 @@ reprError tcErr = case tcErr of
         match uniNode $ \case
             Unify l r -> APIError.TypeError <$> (Printer.getTypeRep =<< IR.source l) <*> (Printer.getTypeRep =<< IR.source r)
             _         -> throwM $ NotUnifyException uniNode
-
-writeMeta :: ASTOp m => NodeRef -> NodeMeta -> m ()
-writeMeta ref newMeta = IR.writeLayer @Meta (Just newMeta) ref
 
 getLambdaInputRef :: ASTOp m => NodeRef -> Int -> m NodeRef
 getLambdaInputRef node pos = do

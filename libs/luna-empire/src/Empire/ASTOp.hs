@@ -1,10 +1,12 @@
-{-# LANGUAGE ConstraintKinds           #-}
-{-# LANGUAGE DataKinds                 #-}
-{-# LANGUAGE NoMonomorphismRestriction #-}
-{-# LANGUAGE ScopedTypeVariables       #-}
-{-# LANGUAGE TypeApplications          #-}
-{-# LANGUAGE TypeOperators             #-}
-{-# LANGUAGE UndecidableInstances      #-}
+{-# LANGUAGE ConstraintKinds            #-}
+{-# LANGUAGE DataKinds                  #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE NoMonomorphismRestriction  #-}
+{-# LANGUAGE ScopedTypeVariables        #-}
+{-# LANGUAGE StandaloneDeriving         #-}
+{-# LANGUAGE TypeApplications           #-}
+{-# LANGUAGE TypeOperators              #-}
+{-# LANGUAGE UndecidableInstances       #-}
 
 module Empire.ASTOp (
     ASTOp
@@ -16,6 +18,7 @@ module Empire.ASTOp (
 
 import           Empire.Prelude
 
+import           Control.Monad.Catch  (MonadCatch(..))
 import           Control.Monad.State  (StateT, runStateT, get, put)
 import qualified Data.Map             as Map
 import           Empire.Data.Graph    (ASTState(..), Graph, withVis)
@@ -43,7 +46,9 @@ import qualified Data.SpanTree                              as SpanTree
 
 import qualified Luna.IR.Repr.Vis           as Vis
 
-type ASTOp m = (MonadThrow m, MonadPassManager m,
+type ASTOp m = (MonadThrow m,
+                MonadCatch m,
+                MonadPassManager m,
                 MonadIO m,
                 MonadState Graph m,
                 Emitters EmpireEmitters m,
@@ -95,6 +100,11 @@ instance MonadPassManager m => MonadRefLookup Attr (Pass.SubPass pass m) where
     uncheckedLookupRef = lift . uncheckedLookupRef
 
 match = matchExpr
+
+deriving instance MonadCatch m => MonadCatch (Pass.PassManager m)
+deriving instance MonadCatch m => MonadCatch (IRBuilder m)
+deriving instance MonadCatch m => MonadCatch (RefCache m)
+deriving instance MonadCatch m => MonadCatch (SpanTree.TreeBuilder k t m)
 
 runASTOp :: Pass.SubPass EmpirePass (Pass.PassManager (IRBuilder (Parser.IRSpanTreeBuilder (Pass.RefCache (Logger DropLogger (Vis.VisStateT (StateT Graph IO))))))) a
          -> Command Graph a

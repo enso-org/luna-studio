@@ -15,7 +15,6 @@ import qualified Data.IntMap                     as IntMap
 import           Data.String                     (fromString)
 import           Data.Text                       (Text)
 import qualified Data.UUID                       as UUID
-import qualified Data.UUID.V4                    as UUID
 import           Empire.Prelude
 import           System.FilePath                 (takeBaseName)
 
@@ -40,7 +39,6 @@ import           Empire.Empire                   (Empire)
 import qualified Data.Aeson                      as JSON
 import qualified Data.Aeson.Encode.Pretty        as JSON
 
-import           Data.Text.Lazy.Encoding         (decodeUtf8, encodeUtf8)
 import           Empire.API.JSONInstances        ()
 
 import qualified System.Log.MLogger              as Logger

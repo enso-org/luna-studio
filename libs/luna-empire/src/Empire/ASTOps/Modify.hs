@@ -44,7 +44,7 @@ import qualified Luna.IR as IR
 addLambdaArg :: ASTOp m => NodeRef -> m ()
 addLambdaArg lambda = match lambda $ \case
     Lam _arg _body -> do
-        out'  <- ASTRead.getLambdaOutputRef lambda
+        out'  <- ASTRead.getFirstNonLambdaRef lambda
         addLambdaArg' [] lambda out'
     _ -> throwM $ NotLambdaException lambda
 
@@ -80,7 +80,7 @@ removeLambdaArg _      (Port.OutPortId Port.All) = throwM $ CannotRemovePortExce
 removeLambdaArg lambda (Port.OutPortId (Port.Projection port)) = match lambda $ \case
     Lam _arg _body -> do
         args <- ASTDeconstruct.extractArguments lambda
-        out  <- ASTRead.getLambdaOutputRef lambda
+        out  <- ASTRead.getFirstNonLambdaRef lambda
         let newArgs = args ^.. folded . ifiltered (\i _ -> i /= port)
         ASTBuilder.lams newArgs out
     _ -> throwM $ NotLambdaException lambda

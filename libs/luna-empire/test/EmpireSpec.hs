@@ -11,6 +11,7 @@ import qualified Empire.API.Data.Graph         as Graph
 import           Empire.API.Data.GraphLocation (GraphLocation(..))
 import qualified Empire.API.Data.Node          as Node (NodeType(ExpressionNode), canEnter,
                                                         expression, name, nodeId, nodeType, ports)
+import           Empire.API.Data.NodeMeta      (NodeMeta(..))
 import qualified Empire.API.Data.Port          as Port
 import           Empire.API.Data.PortRef       (InPortRef (..), OutPortRef (..), AnyPortRef(..))
 import           Empire.API.Data.TypeRep       (TypeRep(TCons, TStar, TLam, TVar))
@@ -23,7 +24,8 @@ import qualified Empire.Commands.AST           as AST (isTrivialLambda)
 import qualified Empire.Commands.Graph         as Graph (addNode, connect, getGraph, getNodes,
                                                          getConnections, removeNodes, withGraph,
                                                          renameNode, disconnect, addPort, movePort,
-                                                         removePort, renamePort, updateNodeExpression)
+                                                         removePort, renamePort, updateNodeExpression,
+                                                         getNodeIdSequence, updateNodeMeta)
 import qualified Empire.Commands.GraphBuilder  as GraphBuilder
 import           Empire.Commands.Library       (withLibrary)
 import qualified Empire.Commands.Typecheck     as Typecheck (run)
@@ -59,7 +61,7 @@ spec = around withChannels $ parallel $ do
                 Graph.addNode top u1 "def foo" def
             withResult res $ \node -> do
                 node ^. Node.name `shouldBe` "foo"
-                node ^. Node.nodeType `shouldBe` Node.ExpressionNode "-> $arg0 arg0"
+                node ^. Node.nodeType `shouldBe` Node.ExpressionNode "-> $a a"
                 node ^. Node.canEnter `shouldBe` True
         it "makes connection to output edge" $ \env -> do
             u1 <- mkUUID
@@ -384,7 +386,7 @@ spec = around withChannels $ parallel $ do
                 Graph.updateNodeExpression top u1 "def foo"
             withResult res $ \node -> do
                 node ^. Node.name `shouldBe` "foo"
-                node ^. Node.nodeType `shouldBe` Node.ExpressionNode "-> $arg0 arg0"
+                node ^. Node.nodeType `shouldBe` Node.ExpressionNode "-> $a a"
                 node ^. Node.canEnter `shouldBe` True
     describe "dumpAccessors" $ do
         it "foo.bar" $ \env -> do
@@ -446,8 +448,8 @@ spec = around withChannels $ parallel $ do
             res <- evalEmp env $ do
                 Graph.addNode top u1 "succ" def
                 Graph.getNodes top
-            withResult res $ \[succ] -> do
-                let inputPorts = Map.elems $ Map.filter Port.isInputPort $ succ ^. Node.ports
+            withResult res $ \[succ'] -> do
+                let inputPorts = Map.elems $ Map.filter Port.isInputPort $ succ' ^. Node.ports
                 inputPorts `shouldMatchList` [
                       Port.Port (Port.InPortId Port.Self)    "self" TStar (Port.WithDefault (Expression "succ"))
                     , Port.Port (Port.InPortId (Port.Arg 0)) "arg0" TStar (Port.NotConnected)
@@ -611,13 +613,13 @@ spec = around withChannels $ parallel $ do
             withResult res $ \(inputEdge, defFoo, connections, referenceConnection) -> do
                 let outputPorts = Map.elems $ Map.filter Port.isOutputPort $ inputEdge ^. Node.ports
                 outputPorts `shouldMatchList` [
-                      Port.Port (Port.OutPortId (Port.Projection 0)) "arg0" TStar Port.Connected
-                    , Port.Port (Port.OutPortId (Port.Projection 1)) "a" TStar Port.NotConnected
+                      Port.Port (Port.OutPortId (Port.Projection 0)) "a" TStar Port.Connected
+                    , Port.Port (Port.OutPortId (Port.Projection 1)) "b" TStar Port.NotConnected
                     ]
                 let inputPorts = Map.elems $ Map.filter Port.isInputPort $ defFoo ^. Node.ports
                 inputPorts `shouldMatchList` [
-                      Port.Port (Port.InPortId (Port.Arg 0)) "arg0" TStar Port.NotConnected
-                    , Port.Port (Port.InPortId (Port.Arg 1)) "a" TStar Port.NotConnected
+                      Port.Port (Port.InPortId (Port.Arg 0)) "a" TStar Port.NotConnected
+                    , Port.Port (Port.InPortId (Port.Arg 1)) "b" TStar Port.NotConnected
                     ]
                 connections `shouldMatchList` [referenceConnection]
         it "adds two ports" $ \env -> do
@@ -634,15 +636,15 @@ spec = around withChannels $ parallel $ do
             withResult res $ \(inputEdge, defFoo) -> do
                 let outputPorts = Map.elems $ Map.filter Port.isOutputPort $ inputEdge ^. Node.ports
                 outputPorts `shouldMatchList` [
-                      Port.Port (Port.OutPortId (Port.Projection 0)) "arg0" TStar Port.Connected
-                    , Port.Port (Port.OutPortId (Port.Projection 1)) "a" TStar Port.NotConnected
-                    , Port.Port (Port.OutPortId (Port.Projection 2)) "b" TStar Port.NotConnected
+                      Port.Port (Port.OutPortId (Port.Projection 0)) "a" TStar Port.Connected
+                    , Port.Port (Port.OutPortId (Port.Projection 1)) "b" TStar Port.NotConnected
+                    , Port.Port (Port.OutPortId (Port.Projection 2)) "c" TStar Port.NotConnected
                     ]
                 let inputPorts = Map.elems $ Map.filter Port.isInputPort $ defFoo ^. Node.ports
                 inputPorts `shouldMatchList` [
-                      Port.Port (Port.InPortId (Port.Arg 0)) "arg0" TStar Port.NotConnected
-                    , Port.Port (Port.InPortId (Port.Arg 1)) "a" TStar Port.NotConnected
-                    , Port.Port (Port.InPortId (Port.Arg 2)) "b" TStar Port.NotConnected
+                      Port.Port (Port.InPortId (Port.Arg 0)) "a" TStar Port.NotConnected
+                    , Port.Port (Port.InPortId (Port.Arg 1)) "b" TStar Port.NotConnected
+                    , Port.Port (Port.InPortId (Port.Arg 2)) "c" TStar Port.NotConnected
                     ]
         it "adds port on literal lambda" $ \env -> do
             u1 <- mkUUID
@@ -683,8 +685,8 @@ spec = around withChannels $ parallel $ do
             withResult res $ \(node, connections) -> do
                 let inputPorts = Map.elems $ Map.filter Port.isInputPort $ node ^. Node.ports
                 inputPorts `shouldMatchList` [
-                      Port.Port (Port.InPortId (Port.Arg 0)) "arg0" TStar Port.NotConnected
-                    , Port.Port (Port.InPortId (Port.Arg 1)) "a"    TStar Port.Connected
+                      Port.Port (Port.InPortId (Port.Arg 0)) "a" TStar Port.NotConnected
+                    , Port.Port (Port.InPortId (Port.Arg 1)) "b" TStar Port.Connected
                     ]
                 connections `shouldMatchList` [
                       (OutPortRef u2 Port.All, InPortRef u1 (Port.Arg 1))
@@ -759,8 +761,8 @@ spec = around withChannels $ parallel $ do
             withResult res $ \(inputEdge, connections, referenceConnections) -> do
                 let outputPorts = Map.elems $ Map.filter Port.isOutputPort $ inputEdge ^. Node.ports
                 outputPorts `shouldMatchList` [
-                      Port.Port (Port.OutPortId (Port.Projection 0)) "arg0" TStar Port.Connected
-                    , Port.Port (Port.OutPortId (Port.Projection 1)) "a"    TStar Port.Connected
+                      Port.Port (Port.OutPortId (Port.Projection 0)) "a" TStar Port.Connected
+                    , Port.Port (Port.OutPortId (Port.Projection 1)) "b" TStar Port.Connected
                     ]
                 connections `shouldMatchList` referenceConnections
         it "does not allow to remove All port" $ \env -> do
@@ -793,11 +795,11 @@ spec = around withChannels $ parallel $ do
             withResult res $ \(inputEdge, node, connections, referenceConnections, nodeIds) -> do
                 let outputPorts = Map.elems $ Map.filter Port.isOutputPort $ inputEdge ^. Node.ports
                 outputPorts `shouldMatchList` [
-                      Port.Port (Port.OutPortId (Port.Projection 0)) "arg0" TStar Port.Connected
+                      Port.Port (Port.OutPortId (Port.Projection 0)) "a" TStar Port.Connected
                     ]
                 let inputPorts = Map.elems $ Map.filter Port.isInputPort $ node ^. Node.ports
                 inputPorts `shouldMatchList` [
-                      Port.Port (Port.InPortId (Port.Arg 0)) "arg0" TStar Port.NotConnected
+                      Port.Port (Port.InPortId (Port.Arg 0)) "a" TStar Port.NotConnected
                     ]
                 connections `shouldMatchList` referenceConnections
                 nodeIds `shouldMatchList` [u2]
@@ -807,7 +809,7 @@ spec = around withChannels $ parallel $ do
             res <- evalEmp env $ do
                 Graph.addNode top u1 "def foo" def
                 let loc' = top |> u1
-                Just (input, output) <- Graph.withGraph loc' $ runASTOp GraphBuilder.getEdgePortMapping
+                Just (input, _) <- Graph.withGraph loc' $ runASTOp GraphBuilder.getEdgePortMapping
                 Graph.addPort loc' input
                 Graph.addNode loc' u2 "succ" def
                 Graph.connect loc' (OutPortRef input (Port.Projection 1)) (InPortRef u2 Port.Self)
@@ -816,6 +818,95 @@ spec = around withChannels $ parallel $ do
             withResult res $ \inputEdge -> do
               let outputPorts = Map.elems $ Map.filter Port.isOutputPort $ inputEdge ^. Node.ports
               outputPorts `shouldMatchList` [
-                    Port.Port (Port.OutPortId (Port.Projection 0)) "arg0" TStar Port.Connected
-                  , Port.Port (Port.OutPortId (Port.Projection 1)) "a"    TStar Port.Connected
+                    Port.Port (Port.OutPortId (Port.Projection 0)) "a" TStar Port.Connected
+                  , Port.Port (Port.OutPortId (Port.Projection 1)) "b" TStar Port.Connected
                   ]
+    describe "node sequence" $ do
+        it "adds one node to sequence" $ \env -> do
+            u1 <- mkUUID
+            res <- evalEmp env $ do
+                Graph.addNode top u1 "1" def
+                Graph.getNodeIdSequence top
+            withResult res $ \nodeSeq -> do
+                nodeSeq `shouldMatchList` [u1]
+        it "adds three nodes in line" $ \env -> do
+            u1 <- mkUUID
+            u2 <- mkUUID
+            u3 <- mkUUID
+            res <- evalEmp env $ do
+                Graph.addNode top u1 "1" $ NodeMeta (10, 10) False
+                Graph.addNode top u2 "2" $ NodeMeta (10, 20) False
+                Graph.addNode top u3 "3" $ NodeMeta (10, 30) False
+                Graph.getNodeIdSequence top
+            withResult res $ \nodeSeq -> do
+                nodeSeq `shouldMatchList` [u1, u2, u3]
+        it "adds three nodes in reverse order" $ \env -> do
+            u1 <- mkUUID
+            u2 <- mkUUID
+            u3 <- mkUUID
+            res <- evalEmp env $ do
+                Graph.addNode top u1 "1" $ NodeMeta (10, 30) False
+                Graph.addNode top u2 "2" $ NodeMeta (10, 20) False
+                Graph.addNode top u3 "3" $ NodeMeta (10, 10) False
+                Graph.getNodeIdSequence top
+            withResult res $ \nodeSeq -> do
+                nodeSeq `shouldMatchList` [u3, u2, u1]
+        it "updates sequence after node removal" $ \env -> do
+            u1 <- mkUUID
+            u2 <- mkUUID
+            u3 <- mkUUID
+            res <- evalEmp env $ do
+                Graph.addNode top u1 "1" $ NodeMeta (10, 30) False
+                Graph.addNode top u2 "2" $ NodeMeta (10, 20) False
+                Graph.addNode top u3 "3" $ NodeMeta (10, 10) False
+                Graph.removeNodes top [u2]
+                Graph.getNodeIdSequence top
+            withResult res $ \nodeSeq -> do
+                nodeSeq `shouldMatchList` [u3, u1]
+        it "updates sequence after node meta update" $ \env -> do
+            u1 <- mkUUID
+            u2 <- mkUUID
+            u3 <- mkUUID
+            res <- evalEmp env $ do
+                Graph.addNode top u1 "1" $ NodeMeta (10, 10) False
+                Graph.addNode top u2 "2" $ NodeMeta (10, 20) False
+                Graph.addNode top u3 "3" $ NodeMeta (10, 30) False
+                Graph.updateNodeMeta top u3 $ NodeMeta (10, 10) False
+                Graph.updateNodeMeta top u2 $ NodeMeta (20, 30) False
+                Graph.updateNodeMeta top u1 $ NodeMeta (30, 20) False
+                Graph.getNodeIdSequence top
+            withResult res $ \nodeSeq -> do
+                nodeSeq `shouldMatchList` [u3, u2, u1]
+        it "adds one node inside lambda" $ \env -> do
+            u1 <- mkUUID
+            u2 <- mkUUID
+            res <- evalEmp env $ do
+                Graph.addNode top u1 "def foo" def
+                let loc = top |> u1
+                Graph.addNode loc u2 "4" def
+                Graph.getNodeIdSequence loc
+            withResult res $ \idSeq -> do
+                idSeq    `shouldBe` [u2]
+        it "adds two nodes inside" $ \env -> do
+            u1 <- mkUUID
+            u2 <- mkUUID
+            u3 <- mkUUID
+            res <- evalEmp env $ do
+                Graph.addNode top u1 "def foo" def
+                let loc = top |> u1
+                Graph.addNode loc u2 "4" $ NodeMeta (10, 10) False
+                Graph.addNode loc u3 "6" $ NodeMeta (10, 20) False
+                Graph.getNodeIdSequence loc
+            withResult res $ \idSeq -> do
+                idSeq    `shouldBe` [u2, u3]
+        it "adds one node inside and removes it" $ \env -> do
+            u1 <- mkUUID
+            u2 <- mkUUID
+            res <- evalEmp env $ do
+                Graph.addNode top u1 "-> $a a" def
+                let loc = top |> u1
+                Graph.addNode loc u2 "1" def
+                Graph.removeNodes loc [u2]
+                Graph.getNodeIdSequence loc
+            withResult res $ \idSeq -> do
+                idSeq    `shouldBe` []

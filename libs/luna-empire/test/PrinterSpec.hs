@@ -6,7 +6,6 @@ import qualified Empire.Commands.Graph      as Graph
 import qualified Empire.Commands.GraphUtils as GraphUtils
 import           Empire.ASTOp               (runASTOp)
 import           Empire.ASTOps.Print        (printNodeExpression)
-import           Empire.Data.Graph          (ast)
 
 import           Prologue                   hiding ((|>))
 
@@ -34,8 +33,8 @@ spec = around withChannels $ do
                 Graph.addNode loc' u5 "6" def
                 (,) <$> Graph.getCode top <*> Graph.getCode loc'
             withResult res $ \(topCode, lambdaCode) -> do
-                lines topCode `shouldMatchList` ["node3 = 4", "node2 = 3", "foo = -> $arg0 arg0"]
-                lines lambdaCode `shouldMatchList` ["def foo arg0:", "    node5 = 6", "    node4 = 5", "    arg0"]
+                lines topCode `shouldMatchList` ["node3 = 4", "node2 = 3", "foo = -> $a a"]
+                lines lambdaCode `shouldMatchList` ["def foo a:", "    node5 = 6", "    node4 = 5", "    a"]
         xit "properly pretty-prints functions" $ \env -> do
             u1 <- mkUUID
             res <- evalEmp env $ do
@@ -49,7 +48,7 @@ spec = around withChannels $ do
               Graph.addNode top u1 "def foo" def
               Graph.getCode (top |> u1)
           withResult res $ \pprCode -> do
-              lines pprCode `shouldMatchList` ["def foo arg0:", "    arg0"]
+              lines pprCode `shouldMatchList` ["def foo a:", "    a"]
         it "prints node name for `def foo`" $ \env -> do
             u1 <- mkUUID
             res <- evalEmp env $ do
@@ -57,4 +56,4 @@ spec = around withChannels $ do
                 Graph.withGraph top $ do
                     target <- runASTOp $ GraphUtils.getASTTarget u1
                     runASTOp $ printNodeExpression target
-            withResult res $ \expr -> expr `shouldBe` "-> $arg0 arg0"
+            withResult res $ \expr -> expr `shouldBe` "-> $a a"

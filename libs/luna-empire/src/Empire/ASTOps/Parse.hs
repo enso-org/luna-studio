@@ -8,22 +8,17 @@ module Empire.ASTOps.Parse (
 
 import           Empire.Prelude
 
-import           Data.Char                    (isLetter)
-import           Data.List.Split              (splitOn)
-import           Data.List                    (partition, takeWhile)
-import           Data.Ratio                   (approxRational)
+import           Data.List                    (partition)
 import qualified Data.Text                    as Text
-import           Text.Read                    (readMaybe)
 
 import           Empire.Data.AST              (NodeRef, astExceptionToException,
                                                astExceptionFromException)
-import           Empire.ASTOps.Builder        (buildAccessors, lams)
-import           Empire.ASTOp                 (ASTOp, EmpirePass)
+import           Empire.ASTOps.Builder        (lams)
+import           Empire.ASTOp                 (ASTOp)
 
 import           Empire.API.Data.DefaultValue (PortDefault (..), Value (..))
 
 import qualified Luna.IR as IR
-import qualified Luna.Pass as Pass
 import qualified Luna.Passes.Transform.Parsing.Parsing as Parsing
 import qualified Luna.Passes.Transform.Parsing.Parser as Parser
 
@@ -50,11 +45,11 @@ parseExpr s = do
 tryParseLambda :: ASTOp m => String -> m (Maybe Text.Text, Maybe NodeRef)
 tryParseLambda s = case words s of
     ("def" : name : _) -> do
-        v <- IR.var "arg0"
+        v <- IR.var "a"
         lam <- IR.generalize <$> IR.lam v v
         return (Just (Text.pack name), Just lam)
     ["->"] -> do
-        v <- IR.var "arg0"
+        v <- IR.var "a"
         lam <- IR.generalize <$> IR.lam v v
         return $ (Nothing, Just lam)
     ("->" : rest) -> do

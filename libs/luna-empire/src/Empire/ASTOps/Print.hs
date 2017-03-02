@@ -64,10 +64,9 @@ printFunctionArguments lam = match lam $ \case
         mapM printExpression args'
 
 printReturnValue :: ASTOp m => NodeRef -> m String
-printReturnValue lam = match lam $ \case
-    Lam _ out -> do
-        out' <- IR.source out
-        printExpression out'
+printReturnValue lam = do
+    out' <- ASTRead.getLambdaOutputRef lam
+    printExpression out'
 
 printFunctionHeader :: ASTOp m => NodeRef -> m String
 printFunctionHeader function = match function $ \case
@@ -92,10 +91,10 @@ printExpression' suppressNodes paren node = do
                         _ -> return funExpr
 
     match node $ \case
-        Lam _as o -> do
+        Lam{} -> do
             args    <- ASTDeconstruct.extractArguments node
             argReps <- mapM (printExpression' False False) args
-            out     <- IR.source o
+            out     <- ASTRead.getLambdaOutputRef node
             sugared <- and <$> mapM ASTRead.isBlank args
             repr    <- printExpression' False sugared out
             let bindsRep = if sugared then "" else "-> " ++ unwords (('$' :) <$> argReps) ++ " "
