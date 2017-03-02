@@ -37,7 +37,6 @@ module Empire.Commands.Graph
     , withTC
     , withGraph
     , getNodeIdSequence
-    , getSeqNodeIdInsideLambda
     ) where
 
 import           Control.Monad                 (forM, forM_)
@@ -132,38 +131,32 @@ addNodeNoTC loc uuid expr meta = do
     return node
 
 updateNodeSequence :: ASTOp m => GraphLocation -> m ()
-updateNodeSequence loc@(GraphLocation _ _ breadcrumb) = do
+updateNodeSequence loc = do
     allNodes   <- uses Graph.breadcrumbHierarchy topLevelIDs
     sortedRefs <- AST.sortByPosition allNodes
     newSeq     <- AST.makeSeq sortedRefs
-    Graph.breadcrumbSeq . at breadcrumb .= newSeq
 
     lambda <- use Graph.insideNode
-    forM_ lambda $ \outerLambdaNode -> do
-        outerLambda <- ASTRead.getASTTarget outerLambdaNode
-        outerBody   <- ASTRead.getLambdaBodyRef outerLambda
-        case newSeq of
-            Just s -> case outerBody of
-                Just body -> do
-                    Just oldSeq <- ASTRead.getLambdaSeqRef outerLambda
-                    IR.matchExpr oldSeq $ \case
-                        IR.Seq l r -> IR.changeSource l s
-                _         -> do
-                    output     <- ASTRead.getLambdaOutputRef outerLambda
-                    body       <- IR.generalize <$> IR.seq s output
-                    outputLink <- ASTRead.getLambdaOutputLink outerLambda
-                    IR.changeSource outputLink body
-            _      -> do
-                output         <- ASTRead.getLambdaOutputRef outerLambda
-                firstNonLambda <- ASTRead.getFirstNonLambdaRef outerLambda
-                IR.replaceNode firstNonLambda output
-
-getNodeSequence :: ASTOp m => GraphLocation -> m [NodeRef]
-getNodeSequence loc@(GraphLocation _ _ breadcrumb) = do
-    nodeSeq <- uses Graph.breadcrumbSeq $ view (at breadcrumb)
-    case nodeSeq of
-        Just node -> AST.readSeq node
-        _         -> return []
+    case lambda of
+        Just outerLambdaNode -> do
+            outerLambda <- ASTRead.getASTTarget outerLambdaNode
+            outerBody   <- ASTRead.getLambdaBodyRef outerLambda
+            case newSeq of
+                Just s -> case outerBody of
+                    Just body -> do
+                        Just oldSeq <- ASTRead.getLambdaSeqRef outerLambda
+                        IR.matchExpr oldSeq $ \case
+                            IR.Seq l r -> IR.changeSource l s
+                    _         -> do
+                        output     <- ASTRead.getLambdaOutputRef outerLambda
+                        body       <- IR.generalize <$> IR.seq s output
+                        outputLink <- ASTRead.getLambdaOutputLink outerLambda
+                        IR.changeSource outputLink body
+                _      -> do
+                    output         <- ASTRead.getLambdaOutputRef outerLambda
+                    firstNonLambda <- ASTRead.getFirstNonLambdaRef outerLambda
+                    IR.replaceNode firstNonLambda output
+        Nothing              -> Graph.topLevelSeq .= newSeq
 
 nodeIdInsideLambda :: ASTOp m => NodeRef -> m (Maybe NodeId)
 nodeIdInsideLambda node = (ASTRead.getVarNode node >>= ASTRead.getNodeId) `catch`
@@ -171,11 +164,6 @@ nodeIdInsideLambda node = (ASTRead.getVarNode node >>= ASTRead.getNodeId) `catch
 
 getNodeIdSequence :: GraphLocation -> Empire [NodeId]
 getNodeIdSequence loc = withGraph loc $ runASTOp $ do
-    nodeSeq <- getNodeSequence loc
-    catMaybes <$> mapM nodeIdInsideLambda nodeSeq
-
-getSeqNodeIdInsideLambda :: GraphLocation -> Empire [NodeId]
-getSeqNodeIdInsideLambda loc = withGraph loc $ runASTOp $ do
     lambda <- use Graph.insideNode
     case lambda of
         Just l -> do
@@ -186,7 +174,13 @@ getSeqNodeIdInsideLambda loc = withGraph loc $ runASTOp $ do
                     nodeSeq <- AST.readSeq b
                     catMaybes <$> mapM nodeIdInsideLambda nodeSeq
                 _      -> return []
-        _      -> return []
+        _      -> do
+            topLevelSeq <- use Graph.topLevelSeq
+            case topLevelSeq of
+                Just s -> do
+                  nodeSeq <- AST.readSeq s
+                  catMaybes <$> mapM nodeIdInsideLambda nodeSeq
+                _      -> return []
 
 addPersistentNode :: ASTOp m => Node -> m NodeId
 addPersistentNode n = case n ^. Node.nodeType of

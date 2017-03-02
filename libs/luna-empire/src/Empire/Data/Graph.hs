@@ -9,7 +9,7 @@ module Empire.Data.Graph (
   , nodeMapping
   , breadcrumbHierarchy
   , breadcrumbPortMapping
-  , breadcrumbSeq
+  , topLevelSeq
   , lastNameId
   , insideNode
   , NodeIDTarget(MatchNode, AnonymousNode)
@@ -60,7 +60,7 @@ data Graph = Graph { _ast                   :: AST
                    , _nodeMapping           :: Map NodeId NodeIDTarget
                    , _breadcrumbHierarchy   :: BreadcrumbHierarchy
                    , _breadcrumbPortMapping :: Map NodeId (NodeId, NodeId)
-                   , _breadcrumbSeq         :: Map (Breadcrumb BreadcrumbItem) NodeRef
+                   , _topLevelSeq           :: Maybe NodeRef
                    , _lastNameId            :: Integer
                    , _insideNode            :: Maybe NodeId
                    } deriving Show
@@ -77,7 +77,7 @@ getAnyRef (AnonymousNode ref) = ref
 defaultGraph :: IO Graph
 defaultGraph = do
     ast' <- defaultAST
-    return $ Graph ast' Map.empty BC.empty Map.empty Map.empty 0 Nothing
+    return $ Graph ast' Map.empty BC.empty Map.empty Nothing 0 Nothing
 
 type AST      = ASTState
 data ASTState = ASTState IR (Pass.RefState (PassManager.PassManager (IRBuilder (Parser.IRSpanTreeBuilder (PassManager.RefCache (Logger DropLogger (Vis.VisStateT (StateT Graph IO))))))))
@@ -105,7 +105,7 @@ withVis m = do
 
 defaultAST :: IO AST
 defaultAST = mdo
-    let g = Graph ast Map.empty BC.empty Map.empty Map.empty 0 Nothing
+    let g = Graph ast Map.empty BC.empty Map.empty Nothing 0 Nothing
     ast <- flip evalStateT g $ withVis $ dropLogs $ runRefCache $ (\a -> SpanTree.runTreeBuilder a >>= \(foo, _) -> return foo) $ evalIRBuilder' $ evalPassManager' $ do
         runRegs
         CodeSpan.init

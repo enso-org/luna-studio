@@ -25,8 +25,7 @@ import qualified Empire.Commands.Graph         as Graph (addNode, connect, getGr
                                                          getConnections, removeNodes, withGraph,
                                                          renameNode, disconnect, addPort, movePort,
                                                          removePort, renamePort, updateNodeExpression,
-                                                         getNodeIdSequence, updateNodeMeta,
-                                                         getSeqNodeIdInsideLambda)
+                                                         getNodeIdSequence, updateNodeMeta)
 import qualified Empire.Commands.GraphBuilder  as GraphBuilder
 import           Empire.Commands.Library       (withLibrary)
 import qualified Empire.Commands.Typecheck     as Typecheck (run)
@@ -885,10 +884,9 @@ spec = around withChannels $ id $ do
                 Graph.addNode top u1 "def foo" def
                 let loc = top |> u1
                 Graph.addNode loc u2 "4" def
-                (,) <$> Graph.getNodeIdSequence loc <*> Graph.getSeqNodeIdInsideLambda loc
-            withResult res $ \(idSeq, lamIdSeq) -> do
+                Graph.getNodeIdSequence loc
+            withResult res $ \idSeq -> do
                 idSeq    `shouldBe` [u2]
-                lamIdSeq `shouldBe` [u2]
         it "adds two nodes inside" $ \env -> do
             u1 <- mkUUID
             u2 <- mkUUID
@@ -898,10 +896,9 @@ spec = around withChannels $ id $ do
                 let loc = top |> u1
                 Graph.addNode loc u2 "4" $ NodeMeta (10, 10) False
                 Graph.addNode loc u3 "6" $ NodeMeta (10, 20) False
-                (,) <$> Graph.getNodeIdSequence loc <*> Graph.getSeqNodeIdInsideLambda loc
-            withResult res $ \(idSeq, lamIdSeq) -> do
+                Graph.getNodeIdSequence loc
+            withResult res $ \idSeq -> do
                 idSeq    `shouldBe` [u2, u3]
-                lamIdSeq `shouldBe` [u2, u3]
         it "adds one node inside and removes it" $ \env -> do
             u1 <- mkUUID
             u2 <- mkUUID
@@ -910,7 +907,6 @@ spec = around withChannels $ id $ do
                 let loc = top |> u1
                 Graph.addNode loc u2 "1" def
                 Graph.removeNodes loc [u2]
-                (,) <$> Graph.getNodeIdSequence loc <*> Graph.getSeqNodeIdInsideLambda loc
-            withResult res $ \(idSeq, lamIdSeq) -> do
+                Graph.getNodeIdSequence loc
+            withResult res $ \idSeq -> do
                 idSeq    `shouldBe` []
-                lamIdSeq `shouldBe` []
