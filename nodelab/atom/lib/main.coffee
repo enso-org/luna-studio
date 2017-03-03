@@ -5,50 +5,27 @@ c             = require "./gen/ghcjs-code.js"
 code = c()
 path = require 'path'
 
+
 module.exports =
   activate: ->
     atom.workspace.addOpener (uri) ->
         if path.extname(uri) is '.luna'
-            handleNotification = (lvl, error) ->
-              if lvl == 0
-                notification = atom.notifications.addFatalError("Fatal Error",
-                dismissable: true,
-                description: error,
-                buttons: [
-                    {
-                      text: 'Copy to clipboard',
-                      onDidClick: ->
-                        atom.clipboard.write(error)
-                        notification.dismiss()
-                      }
-                  ])
-              else if lvl == 1
-                notification = atom.notifications.addError("Error",
-                dismissable: true,
-                description: error,
-                buttons: [
-                    {
-                      text: 'Copy to clipboard',
-                      onDidClick: ->
-                        atom.clipboard.write(error)
-                        notification.dismiss()
-                      }
-                    ]
-                  )
-              else notification = atom.notifications.addWarning("Warning",
-                  dismissable: true,
-                  description: error,
-                  buttons: [
-                      {
-                        text: 'Copy to clipboard',
-                        onDidClick: ->
-                          atom.clipboard.write(error)
-                          notification.dismiss()
-                        }
-                    ])
-            code.notificationListener handleNotification
-
-
+            atom.workspace.open().then (@editor) ->
+                @buffer = @editor.buffer
+                setCode = (diff) ->
+                     @buffer.setText (diff)
+                code.codeListener setCode
+                listenToBufferChanges: ->
+                  @buffer.onDidChange(event) =>
+                    if !(event.newText is "\n") and (event.newText.length is 0)
+                      changeType = 'deletion'
+                      event = {oldRange: event.oldRange}
+                    else if event.oldRange.containsRange(event.newRange) or event.newRange.containsRange(event.oldRange)
+                      changeType = 'substitution'
+                      event = {oldRange: event.oldRange, newRange: event.newRange, newText: event.newText}
+                    else
+                      changeType = 'insertion'
+                      event = {newRange: event.newRange, newText: event.newText}
             atom.workspace.getActivePane().activateItem new LunaStudioTab(uri, code)
 
 
