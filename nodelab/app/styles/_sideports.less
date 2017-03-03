@@ -18,7 +18,7 @@
         cursor:   pointer;
         position: absolute;
         &:hover {
-            opacity: 0.2;
+            opacity: .2;
         }
     }
 }
@@ -37,6 +37,7 @@
 .luna-edgeports__btn--add {
     position: fixed;
     bottom:   10px;
+    left: 0;
 }
 
 .luna-edgeports__btn--remove {
@@ -96,17 +97,54 @@
         .luna-port__shape {
             fill: #fff !important;
         }
-        .luna-icon {
+        .luna-icon--drag,
+        .luna-icon--minus {
             opacity: .1;
             &:hover {
                 opacity: .5;
             }
         }
     }
+    .luna-icon--plus {
+        top: -8px;
+        opacity: 0;
+        &:hover {
+            opacity: .5;
+            & ~.luna-icon {
+                rect { opacity: 0 !important; }
+            }
+            & + .luna-icon {
+                border-top: 1px solid #fff;
+                top:-1px;
+            }
+            & ~.luna-edgeport__svg .luna-port__shape {
+                fill: rgb(119, 119, 119) !important;
+            }
+            & ~.luna-edgeport__name {
+                color: darken(@colorText, 30%) !important;
+            }
+        }
+    }
+}
+.luna-edgeports {
+    .luna-icon--plus--first {
+        opacity: 1;
+        bottom: 0;
+        //background: #2a2a2a;
+        border-radius: 100px;
+        rect { fill: darken(#fff, 78%) }
+        &:hover {
+            opacity: 1;
+            rect { fill: darken(#fff, 40%) }
+        }
+    }
+}
+.luna-edgeports--i {
     .luna-icon--drag  { right: 5px  }
     .luna-icon--minus { right: 19px }
     .luna-icon--plus  { right: 33px }
 }
+
 .luna-edgeports--o {
     .luna-icon--drag  { left: 5px  }
     .luna-icon--minus { left: 19px }

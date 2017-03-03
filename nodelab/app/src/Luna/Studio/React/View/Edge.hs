@@ -63,12 +63,16 @@ edgeSidebar_ ref mayDraggedPort node = when (isEdge node) $ do
                         , onMouseUp   $ \e _ -> stopPropagation e : (dispatch ref $ UI.EdgeEvent $ Edge.RemovePort)
                         ] $ elemString "Remove"
                     withJust mayDraggedPort $ edgeDraggedPort_ ref
-                else div_
-                        [ "className" $= Style.prefixFromList [ "edgeports__btn", "edgeports__btn--add", "noselect" ]
+                else svg_
+                        [ "className" $= Style.prefixFromList [ "icon", "icon--plus", "icon--plus--first" ]
+                        , "width"     $= "16"
+                        , "height"    $= "16"
                         , "key"       $= (name node <> "AddButton")
                         , onMouseDown $ \e _ -> [stopPropagation e]
                         , onClick $ \e _ -> stopPropagation e : sendAddPortEvent ref node
-                        ] $ elemString "Add"
+                        ] $ do
+                        plainRect 10 2 3 7
+                        plainRect 2 10 7 3
 
 edgePort_ :: Ref App -> Port -> ReactElementM ViewEventHandler ()
 edgePort_ ref p = when (p ^. Port.visible) $ do
@@ -83,16 +87,26 @@ edgePort_ ref p = when (p ^. Port.visible) $ do
         [ "key"       $= ( jsShow portId <> "-port-" <> jsShow num )
         , "className" $= Style.prefixFromList classes
         ] $ do
-        if p ^. Port.isEdited then
-            singleField_ [ "id" $= portLabelId ] (jsShow portId)
-                $ Field.mk ref (convert $ p ^. Port.name)
-                & Field.onCancel .~ Just (const $ UI.EdgeEvent $ Edge.PortNameDiscard portRef)
-                & Field.onAccept .~ Just (UI.EdgeEvent . Edge.PortNameApply portRef . convert)
-        else
-            div_ [ "className" $= Style.prefix "edgeport__name"
-                 , onDoubleClick $ \_ _ -> dispatch ref $ UI.EdgeEvent $ Edge.PortNameStartEdit portRef
-                 ] $
-                elemString $ p ^. Port.name
+        svg_
+            [ "className" $= Style.prefixFromList [ "icon", "icon--plus" ]
+            , "width"     $= "16"
+            , "height"    $= "16"
+            ] $ do
+            plainRect 10 2 3 7
+            plainRect 2 10 7 3
+        svg_
+            [ "className" $= Style.prefixFromList [ "icon", "icon--drag" ]
+            , "width"     $= "16"
+            , "height"    $= "16"
+            ] $ do
+            plainRect 10 2 3 3
+            plainRect 10 2 3 7
+            plainRect 10 2 3 11
+        svg_
+            [ "className" $= Style.prefixFromList [ "icon", "icon--minus" ]
+            , "width"     $= "16"
+            , "height"    $= "16"
+            ] $ plainRect 10 2 3 7
         svg_
             [ "className" $= Style.prefix "edgeport__svg"
             ] $ do
@@ -108,26 +122,17 @@ edgePort_ ref p = when (p ^. Port.visible) $ do
                   , "key"       $= (jsShow portId <> jsShow num <> "b")
                   , "r"         $= jsShow2 (lineHeight/1.5)
                   ] ) mempty
-        svg_
-            [ "className" $= Style.prefixFromList [ "icon", "icon--drag" ]
-            , "width"     $= "16"
-            , "height"    $= "16"
-            ] $ do
-            plainRect 10 2 3 3
-            plainRect 10 2 3 7
-            plainRect 10 2 3 11
-        svg_
-            [ "className" $= Style.prefixFromList [ "icon", "icon--minus" ]
-            , "width"     $= "16"
-            , "height"    $= "16"
-            ] $ plainRect 10 2 3 7
-        svg_
-            [ "className" $= Style.prefixFromList [ "icon", "icon--plus" ]
-            , "width"     $= "16"
-            , "height"    $= "16"
-            ] $ do
-            plainRect 10 2 3 7
-            plainRect 2 10 7 3
+        if p ^. Port.isEdited then
+            singleField_ [ "id" $= portLabelId ] (jsShow portId)
+                $ Field.mk ref (convert $ p ^. Port.name)
+                & Field.onCancel .~ Just (const $ UI.EdgeEvent $ Edge.PortNameDiscard portRef)
+                & Field.onAccept .~ Just (UI.EdgeEvent . Edge.PortNameApply portRef . convert)
+        else
+            div_ [ "className" $= Style.prefix "edgeport__name"
+                 , onDoubleClick $ \_ _ -> dispatch ref $ UI.EdgeEvent $ Edge.PortNameStartEdit portRef
+                 ] $ elemString $ p ^. Port.name
+
+
 
 edgeDraggedPort_ :: Ref App -> DraggedPort -> ReactElementM ViewEventHandler ()
 edgeDraggedPort_ _ref draggedPort = do
@@ -135,8 +140,8 @@ edgeDraggedPort_ _ref draggedPort = do
         -- color = convert $ draggedPort ^. Port.draggedPort . Port.color
     div_
         [ "className" $= Style.prefixFromList [ "port", "edgeport", "edgeport--dragged", "hover" ]
-        , "style"     @= Aeson.object [ "left" Aeson..= ( show (pos ^. x) <> "px" )
-                                      , "top"  Aeson..= ( show (pos ^. y) <> "px" ) ]
+        , "style"     @= Aeson.object [ "top"  Aeson..= ( show (pos ^. y) <> "px" ) ]
+                                    --, "left" Aeson..= ( show (pos ^. x) <> "px" ) ]
         ] $ do
         div_ [ "className" $= Style.prefix "edgeport__name" ] $ elemString $ "arg666"
         svg_
