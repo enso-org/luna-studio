@@ -10,11 +10,7 @@ module.exports = function () {
   var listeners = {
     onEvent: [],
     codeListener: [],
-<<<<<<< HEAD
-    notificationListener: [],
     eventListenerInternal: [],
-=======
->>>>>>> bcc0734c72737428ea536ef635232f5ae83d564b
   };
 
   return {
@@ -26,15 +22,6 @@ module.exports = function () {
         listener(data);
       });
     },
-<<<<<<< HEAD
-    notificationListener: function (listener) {
-      listeners.notificationListener.push(listener);
-    },
-    pushNotification: function (data1, data2) {
-      listeners.notificationListener.forEach(function (listener) {
-        listener(data1, data2);
-      });
-=======
     pushNotification: function (lvl, error) {
       if (typeof atom == 'undefined')
       {
@@ -87,7 +74,6 @@ module.exports = function () {
             });
           }
       }
->>>>>>> bcc0734c72737428ea536ef635232f5ae83d564b
     },
     subscribeEventListenerInternal: function(listener) {
       listeners.eventListenerInternal.push(listener);
