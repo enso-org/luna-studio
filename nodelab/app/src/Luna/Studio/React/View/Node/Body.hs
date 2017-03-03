@@ -17,7 +17,7 @@ import qualified Luna.Studio.React.Model.NodeProperties as Properties
 import qualified Luna.Studio.React.Model.Port           as Port
 import           Luna.Studio.React.Store                (Ref, dispatch)
 import           Luna.Studio.React.View.Field           (multilineField_)
-import           Luna.Studio.React.View.Node.Elements   (blurBackground_, selectionMark_)
+import           Luna.Studio.React.View.Style           (blurBackground_, selectionMark_)
 import           Luna.Studio.React.View.Node.Properties (nodeProperties_)
 import           Luna.Studio.React.View.Port            (portExpanded_, port_)
 import qualified Luna.Studio.React.View.Style           as Style

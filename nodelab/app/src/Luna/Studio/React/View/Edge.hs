@@ -27,6 +27,7 @@ import           Luna.Studio.React.Store       (Ref, dispatch)
 import           Luna.Studio.React.View.Field  (singleField_)
 import           Luna.Studio.React.View.Port   (handlers, jsShow2)
 import qualified Luna.Studio.React.View.Style  as Style
+import           Luna.Studio.React.View.Style  (plainRect)
 import           React.Flux                    hiding (view)
 
 
@@ -78,7 +79,6 @@ edgePort_ ref p = when (p ^. Port.visible) $ do
         highlight = if p ^. Port.highlight then [ "hover" ] else []
         classes   = if isPortInput p then [ "port", "edgeport", "edgeport--o", "edgeport--o--" <> show (num + 1) ] ++ highlight
                                      else [ "port", "edgeport", "edgeport--i", "edgeport--i--" <> show (num + 1) ] ++ highlight
-        yPos      = lineHeight * fromIntegral (num + if isPortInput p then 1 else 0)
     div_
         [ "key"       $= ( jsShow portId <> "-port-" <> jsShow num )
         , "className" $= Style.prefixFromList classes
@@ -107,25 +107,50 @@ edgePort_ ref p = when (p ^. Port.visible) $ do
                   [ "className" $= Style.prefix "port__select"
                   , "key"       $= (jsShow portId <> jsShow num <> "b")
                   , "r"         $= jsShow2 (lineHeight/1.5)
-                  ]
-                ) mempty
+                  ] ) mempty
+        svg_
+            [ "className" $= Style.prefixFromList [ "icon", "icon--drag" ]
+            , "width"     $= "16"
+            , "height"    $= "16"
+            ] $ do
+            plainRect 10 2 3 3
+            plainRect 10 2 3 7
+            plainRect 10 2 3 11
+        svg_
+            [ "className" $= Style.prefixFromList [ "icon", "icon--minus" ]
+            , "width"     $= "16"
+            , "height"    $= "16"
+            ] $ plainRect 10 2 3 7
+        svg_
+            [ "className" $= Style.prefixFromList [ "icon", "icon--plus" ]
+            , "width"     $= "16"
+            , "height"    $= "16"
+            ] $ do
+            plainRect 10 2 3 7
+            plainRect 2 10 7 3
 
---TODO[JK]: Style this correctly
 edgeDraggedPort_ :: Ref App -> DraggedPort -> ReactElementM ViewEventHandler ()
 edgeDraggedPort_ _ref draggedPort = do
     let pos   = draggedPort ^. Port.positionInSidebar
         -- color = convert $ draggedPort ^. Port.draggedPort . Port.color
     div_
-        [ "className" $= Style.prefixFromList [ "edgeport", "edgeport--dragged", "edgeport__shape", "hover" ]
-        , "style"     @= Aeson.object [ "transform" Aeson..= ( "translate(" <> show (pos ^. x) <> "px, " <> show (pos ^. y) <> "px)" ) ]
-        ] $ mempty
+        [ "className" $= Style.prefixFromList [ "port", "edgeport", "edgeport--dragged", "hover" ]
+        , "style"     @= Aeson.object [ "left" Aeson..= ( show (pos ^. x) <> "px" )
+                                      , "top"  Aeson..= ( show (pos ^. y) <> "px" ) ]
+        ] $ do
+        div_ [ "className" $= Style.prefix "edgeport__name" ] $ elemString $ "arg666"
+        svg_
+            [ "className" $= Style.prefix "edgeport__svg" ] $
+            circle_
+                [ "className" $= Style.prefix "port__shape"
+                , "r"         $= jsShow2 3
+                ] mempty
 
 portLabelId :: JSString
 portLabelId = Config.prefix "focus-portLabel"
 
 focusPortLabel :: IO ()
 focusPortLabel = UI.focus portLabelId
-
 
 -- TODO[PM]: Findout why MouseEnter and MouseLeave does not work correctly
 -- {-# LANGUAGE OverloadedStrings #-}

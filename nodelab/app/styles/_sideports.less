@@ -2,7 +2,8 @@
 //        sideports        //
 /////////////////////////////
 
-@edgeNameMargin: 42px;
+@edgeportsWidth: 48px;
+@edgeNameMargin: @edgeportsWidth + 4px;
 
 .luna-edgeports {
     display:         flex;
@@ -11,6 +12,15 @@
     height:          100%;
     position:        absolute;
     width:           0;
+    .luna-icon {
+        fill:     #fff;
+        opacity:  0;
+        cursor:   pointer;
+        position: absolute;
+        &:hover {
+            opacity: 0.2;
+        }
+    }
 }
 
 .luna-edgeports__body {
@@ -18,7 +28,7 @@
     display:        flex;
     flex-direction: column;
     position:       absolute;
-    width:          2*@gridSize;
+    width:          @edgeportsWidth;
     margin-top:    -50%;
     padding:        @gridSize/2 0;
     border-radius:  0 @borderRadius @borderRadius 0;
@@ -39,12 +49,11 @@
         left: @edgeNameMargin;
     }
     .luna-edgeport__svg {
-        left: 32px;
+        left: @edgeportsWidth;
     }
 }
 
 .luna-edgeports--o {
-    right: 0;
     .luna-edgeports__body {
         border-radius: @borderRadius 0 0 @borderRadius;
         right:         0;
@@ -52,6 +61,19 @@
     .luna-edgeport__name {
         left:  inherit;
         right: @edgeNameMargin;
+    }
+}
+
+.luna-edgeports--i {
+    left: -32px;
+    &:hover {
+        left: 0;
+    }
+}
+.luna-edgeports--o {
+    right: -32px;
+    &:hover {
+        right: 0;
     }
 }
 
@@ -74,14 +96,29 @@
         .luna-port__shape {
             fill: #fff !important;
         }
+        .luna-icon {
+            opacity: .1;
+            &:hover {
+                opacity: .5;
+            }
+        }
     }
+    .luna-icon--drag  { right: 4px  }
+    .luna-icon--minus { right: 18px }
+    .luna-icon--plus  { right: 32px }
+}
+.luna-edgeports--o {
+    .luna-icon--drag  { left: 4px  }
+    .luna-icon--minus { left: 18px }
+    .luna-icon--plus  { left: 32px }
 }
 
 .luna-edgeport__name {
-    position: absolute;
-    width:    0;
-    opacity:  0;
-    overflow: hidden;
+    position:    absolute;
+    width:       0;
+    opacity:     0;
+    overflow:    hidden;
+    white-space: nowrap;
 }
 
 .luna-edgeport__svg {
@@ -93,14 +130,6 @@
 }
 
 .luna-edgeport--dragged {
-    fill:             white;
-    background-color: white;
-    border-radius:    3px;
-    width:            6px;
-    height:           6px;
-    z-index:          1000000;
-    overflow:         inherit;
-    margin-left:     -3px;
-    margin-top:      -6px;
-    pointer-events:   none;
+    background: red;
+    width:      0;
 }
