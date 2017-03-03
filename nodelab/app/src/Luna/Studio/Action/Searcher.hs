@@ -75,13 +75,13 @@ moveDown :: Searcher -> Command State ()
 moveDown _ = Global.modifySearcher $ do
     items <- use Searcher.resultsLength
     unless (items == 0) $
-        Searcher.selected %= \p -> (p + 1) `mod` items
+        Searcher.selected %= \p -> (p - 1) `mod` (items + 1)
 
 moveUp :: Searcher -> Command State ()
 moveUp _ = Global.modifySearcher $ do
     items <- use Searcher.resultsLength
     unless (items == 0) $
-        Searcher.selected %= \p -> (p - 1) `mod` items
+        Searcher.selected %= \p -> (p + 1) `mod` (items + 1)
 
 proceed :: (Event -> IO ()) -> Searcher -> Command State ()
 proceed scheduleEvent action = withJustM Global.getSearcher $ \searcher ->
@@ -158,6 +158,9 @@ execCommand action scheduleEvent expression = case readMaybe expression of
             Searcher.input    .= def
         Nothing -> return ()
 
+selectInput :: Searcher -> Command State ()
+selectInput _ = Global.modifySearcher $ Searcher.selected .= 0
+
 querySearch :: Text -> Searcher -> Command State ()
 querySearch query _ = do
     selection <- Searcher.selection
@@ -169,8 +172,7 @@ querySearch query _ = do
         else do
             selected <- use Searcher.selected
             let items = Scope.searchInScope allCommands query
-            when (selected >= length items) $
-                Searcher.selected .= length items - 1
+            Searcher.selected .= min 1 (length items)
             Searcher.mode .= Searcher.Command items
         return $ All isNode
     when (getAll isNode) $ Batch.nodeSearch query selection
@@ -183,6 +185,5 @@ updateHints = do
             selected <- use Searcher.selected
             query    <- use Searcher.input
             let items = Scope.searchInScope nodesData' query
-            when (selected >= length items) $
-                Searcher.selected .= length items - 1
+            Searcher.selected .= min 1 (length items)
             Searcher.mode .= Searcher.Node items

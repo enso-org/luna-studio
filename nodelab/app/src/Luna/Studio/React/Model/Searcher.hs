@@ -32,18 +32,20 @@ selectedExpression :: Getter Searcher Text
 selectedExpression = to getExpression where
     getExpression searcher = expression where
         selected'  = searcher ^. selected
-        mayResult = listToMaybe $ drop selected' $ case searcher ^. mode of
-            Command results -> Result._name <$> results
-            Node    results -> Result._name <$> results
+        mayResult = if selected' == 0 then Just $ searcher ^. input else
+            listToMaybe $ drop (selected' - 1) $ case searcher ^. mode of
+                Command results -> Result._name <$> results
+                Node    results -> Result._name <$> results
         expression = fromMaybe (searcher ^. input) mayResult
 
 selectedNode :: Getter Searcher (Maybe Node)
 selectedNode = to getNode where
     getNode searcher = mayNode where
         selected' = searcher ^. selected
-        mayNode   = listToMaybe $ drop selected' $ case searcher ^. mode of
-            Node results -> Result._element <$> results
-            _            -> def
+        mayNode   = if selected' == 0 then Nothing else
+            listToMaybe $ drop (selected' - 1) $ case searcher ^. mode of
+                Node results -> Result._element <$> results
+                _            -> def
 
 resultsLength :: Getter Searcher Int
 resultsLength = to getLength where

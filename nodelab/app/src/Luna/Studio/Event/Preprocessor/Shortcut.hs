@@ -73,6 +73,7 @@ handleKeySearcher evt
     | Keys.withoutMods evt Keys.backspace = Just SearcherMoveLeft
     | Keys.withoutMods evt Keys.downArrow = Just SearcherMoveDown
     | Keys.withoutMods evt Keys.enter     = Just SearcherAccept
+    | Keys.withCtrl    evt Keys.enter     = Just SearcherAcceptInput
     | Keys.withoutMods evt Keys.tab       = Just SearcherMoveRight
     | Keys.withoutMods evt Keys.upArrow   = Just SearcherMoveUp
     | otherwise                           = Nothing

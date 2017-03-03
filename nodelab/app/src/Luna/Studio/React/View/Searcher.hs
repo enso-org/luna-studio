@@ -66,7 +66,7 @@ searcher =  React.defineView name $ \(ref, camera, s) -> do
                 [ "key"       $= "searcherResults"
                 , "className" $= Style.prefix "searcher__results"
                 ] $ do
-                let resultClasses i = Style.prefixFromList ( "searcher__results__item" : (if i == s ^. Searcher.selected then [ "searcher__results__item--selected" ] else []))
+                let resultClasses i = Style.prefixFromList ( "searcher__results__item" : (if i + 1 == s ^. Searcher.selected then [ "searcher__results__item--selected" ] else []))
                 case s ^. Searcher.mode of
                     Searcher.Command results -> forKeyed_ results $ \(idx, result) ->
                         div_

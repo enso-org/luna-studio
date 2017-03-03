@@ -41,6 +41,7 @@ data Command = Cancel
              | EditSelectedNodes
              -- searcher
              | SearcherAccept
+             | SearcherAcceptInput
              | SearcherMoveDown
              | SearcherMoveUp
              | SearcherOpen
