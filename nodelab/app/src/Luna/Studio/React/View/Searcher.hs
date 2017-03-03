@@ -60,13 +60,15 @@ searcher =  React.defineView name $ \(ref, camera, s) -> do
             [ "key"       $= "nameTrans"
             , "className" $= Style.prefix "name-trans"
             , "style"     @= Aeson.object [ "transform" Aeson..= ("translate(" <> show (pos ^. x) <> "px, " <> show (pos ^. y) <> "px)" :: String) ]
+            , onMouseDown $ \e _ -> [stopPropagation e]
+            , onMouseUp   $ \e _ -> [stopPropagation e]
+            , onClick     $ \e _ -> [stopPropagation e]
             ] $ do
             input_
                 [ "key"       $= "searchInput"
                 , "className" $= Style.prefix "searcher__input"
                 , "id"        $= searcherId
                 , "value"     $= convert (s ^. Searcher.input)
-                , onMouseDown $ \e _ -> [stopPropagation e]
                 , onKeyDown   $ handleKeyDown ref
                 , onChange    $ \e -> let val = target e "value" in dispatch ref $ UI.SearcherEvent $ InputChanged val
                 ]
@@ -80,6 +82,7 @@ searcher =  React.defineView name $ \(ref, camera, s) -> do
                         div_
                             [ "key"       $= jsShow idx
                             , "className" $= resultClasses idx
+                            , onClick     $ \e _ -> stopPropagation e : (dispatch ref $ UI.SearcherEvent $ AcceptEntry (idx + 1))
                             ] $
                             div_
                                 [ "key" $= "name"
@@ -89,6 +92,7 @@ searcher =  React.defineView name $ \(ref, camera, s) -> do
                         div_
                             [ "key"       $= jsShow idx
                             , "className" $= resultClasses idx
+                            , onClick     $ \e _ -> stopPropagation e : (dispatch ref $ UI.SearcherEvent $ AcceptEntry (idx + 1))
                             ] $ do
                             div_
                                 ["key"       $= "prefix"
