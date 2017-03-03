@@ -15,9 +15,9 @@
 
 * [NodeJS](http://nodejs.org/)
 * [Supervisord](http://supervisord.org/)
-* [Bower](https://bower.io)
+* [Bower](https://bower.io) (```npm install -g bower```)
 * [Brunch](http://brunch.io) v.1.8.5 (```npm install -g brunch@1.8.5```)
-* `happy`, `hsc2hs` - ```$ cd ~ && stack install happy hsc2hs```
+* `happy`, `hsc2hs`, `hscolour` - ```$ cd ~ && stack install happy hsc2hs hscolour```
 
 
 ## Building backend
