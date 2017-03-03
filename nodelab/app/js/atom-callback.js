@@ -10,8 +10,11 @@ module.exports = function () {
   var listeners = {
     onEvent: [],
     codeListener: [],
+<<<<<<< HEAD
     notificationListener: [],
     eventListenerInternal: [],
+=======
+>>>>>>> bcc0734c72737428ea536ef635232f5ae83d564b
   };
 
   return {
@@ -23,6 +26,7 @@ module.exports = function () {
         listener(data);
       });
     },
+<<<<<<< HEAD
     notificationListener: function (listener) {
       listeners.notificationListener.push(listener);
     },
@@ -30,6 +34,60 @@ module.exports = function () {
       listeners.notificationListener.forEach(function (listener) {
         listener(data1, data2);
       });
+=======
+    pushNotification: function (lvl, error) {
+      if (typeof atom == 'undefined')
+      {
+          console.log(error);
+      }
+      else
+      {
+          var notification;
+          if (lvl === 0) {
+            notification = atom.notifications.addFatalError("Fatal Error", {
+              dismissable: true,
+              description: error,
+              buttons: [
+                {
+                  text: 'Copy to clipboard',
+                  onDidClick: function() {
+                    atom.clipboard.write(error);
+                    return notification.dismiss();
+                  }
+                }
+              ]
+            });
+          } else if (lvl === 1) {
+            notification = atom.notifications.addError("Error", {
+              dismissable: true,
+              description: error,
+              buttons: [
+                {
+                  text: 'Copy to clipboard',
+                  onDidClick: function() {
+                    atom.clipboard.write(error);
+                    return notification.dismiss();
+                  }
+                }
+              ]
+            });
+          } else {
+            notification = atom.notifications.addWarning("Warning", {
+              dismissable: true,
+              description: error,
+              buttons: [
+                {
+                  text: 'Copy to clipboard',
+                  onDidClick: function() {
+                    atom.clipboard.write(error);
+                    return notification.dismiss();
+                  }
+                }
+              ]
+            });
+          }
+      }
+>>>>>>> bcc0734c72737428ea536ef635232f5ae83d564b
     },
     subscribeEventListenerInternal: function(listener) {
       listeners.eventListenerInternal.push(listener);
