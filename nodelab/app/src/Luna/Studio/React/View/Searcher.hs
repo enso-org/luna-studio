@@ -28,8 +28,11 @@ import qualified Text.ScopeSearcher.QueryResult   as Result
 name :: JSString
 name = "searcher"
 
-preventTabDefault :: React.Event -> KeyboardEvent -> [SomeStoreAction] -> [SomeStoreAction]
-preventTabDefault e k r = if Keys.withoutMods k Keys.tab then preventDefault e : r else r
+preventCollidingDefault :: React.Event -> KeyboardEvent -> [SomeStoreAction] -> [SomeStoreAction]
+preventCollidingDefault e k r =
+    if Keys.withoutMods k Keys.tab || Keys.withoutMods k Keys.upArrow || Keys.withoutMods k Keys.downArrow then
+        preventDefault e : r
+    else r
 
 searcher :: ReactView (Ref App, Matrix Double, Searcher)
 searcher =  React.defineView name $ \(ref, camera, s) -> do
@@ -59,7 +62,7 @@ searcher =  React.defineView name $ \(ref, camera, s) -> do
                 , "id"        $= searcherId
                 , "value"     $= convert (s ^. Searcher.input)
                 , onMouseDown $ \e _ -> [stopPropagation e]
-                , onKeyDown   $ \e k -> preventTabDefault e k $ stopPropagation e : dispatch ref (UI.SearcherEvent $ KeyDown k)
+                , onKeyDown   $ \e k -> preventCollidingDefault e k $ stopPropagation e : dispatch ref (UI.SearcherEvent $ KeyDown k)
                 , onChange    $ \e -> let val = target e "value" in dispatch ref $ UI.SearcherEvent $ InputChanged val
                 ]
             div_
