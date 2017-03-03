@@ -13,12 +13,12 @@ import           Luna.Studio.Event.UI             (UIEvent (AppEvent, SearcherEv
 import           Luna.Studio.Prelude
 import qualified Luna.Studio.React.Event.App      as App
 import qualified Luna.Studio.React.Event.Searcher as Searcher
-
+import qualified React.Flux                       as React
 
 
 process :: Event -> Maybe Event
 process (UI (AppEvent      (App.KeyDown      e))) = Shortcut . flip Shortcut.Event def <$> handleKeyApp e
-process (UI (SearcherEvent (Searcher.KeyDown e))) = Shortcut . flip Shortcut.Event def <$> handleKeySearcher e
+process (UI (SearcherEvent (Searcher.KeyDown e))) = UI . SearcherEvent <$> handleKeySearcher e
 process _ = Nothing
 
 isEventHandled :: KeyboardEvent -> Bool
@@ -67,13 +67,13 @@ handleKeyApp evt
     --
     | otherwise                                 = Nothing
 
-handleKeySearcher :: KeyboardEvent -> Maybe Command
+handleKeySearcher :: KeyboardEvent -> Maybe Searcher.Event
 handleKeySearcher evt
-    | Keys.withoutMods evt Keys.esc       = Just Cancel
-    | Keys.withoutMods evt Keys.backspace = Just SearcherMoveLeft
-    | Keys.withoutMods evt Keys.downArrow = Just SearcherMoveDown
-    | Keys.withoutMods evt Keys.enter     = Just SearcherAccept
-    | Keys.withCtrl    evt Keys.enter     = Just SearcherAcceptInput
-    | Keys.withoutMods evt Keys.tab       = Just SearcherMoveRight
-    | Keys.withoutMods evt Keys.upArrow   = Just SearcherMoveUp
-    | otherwise                           = Nothing
+    | Keys.withoutMods   evt Keys.backspace = Just   Searcher.MoveLeft
+    | Keys.withoutMods   evt Keys.downArrow = Just   Searcher.MoveDown
+    | Keys.withoutMods   evt Keys.enter     = Just   Searcher.Accept
+    | Keys.withCtrl      evt Keys.enter     = Just   Searcher.AcceptInput
+    | Keys.digitWithCtrl evt                = Just $ Searcher.AcceptEntry $ (React.keyCode evt) - Keys.zero
+    | Keys.withoutMods   evt Keys.tab       = Just   Searcher.MoveRight
+    | Keys.withoutMods   evt Keys.upArrow   = Just   Searcher.MoveUp
+    | otherwise                             = Nothing

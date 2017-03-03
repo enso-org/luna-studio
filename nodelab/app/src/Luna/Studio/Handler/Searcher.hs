@@ -17,19 +17,20 @@ import           Luna.Studio.State.Global           (State)
 
 
 handle :: (Event -> IO ()) -> Event -> Maybe (Command State ())
-handle scheduleEvent (Shortcut (Shortcut.Event command _))  = Just $ handleCommand scheduleEvent command
-handle _ (UI (NodeEditorEvent NodeEditor.ContextMenu))      = Just   Searcher.open
-handle _ (UI (AppEvent (App.MouseDown _ _)))                = Just $ continue   Searcher.close
-handle _ (UI (SearcherEvent (Searcher.InputChanged input))) = Just $ continue $ Searcher.querySearch input
-handle _  _                                                 = Nothing
+handle _ (Shortcut (Shortcut.Event Shortcut.SearcherOpen _)) = Just   Searcher.open
+handle _ (UI (NodeEditorEvent NodeEditor.ContextMenu))       = Just   Searcher.open
+handle scheduleEvent (UI (SearcherEvent evt))                = Just $ handleEvent scheduleEvent evt
+handle _ (UI (AppEvent (App.MouseDown _ _)))                 = Just $ continue Searcher.close
+handle _ _                                                   = Nothing
 
-handleCommand :: (Event -> IO ()) -> Shortcut.Command -> Command State ()
-handleCommand scheduleEvent = \case
-    Shortcut.SearcherAccept      -> continue $ Searcher.accept scheduleEvent
-    Shortcut.SearcherAcceptInput -> (continue $ Searcher.selectInput) >> (continue $ Searcher.accept scheduleEvent)
-    Shortcut.SearcherMoveDown    -> continue Searcher.moveDown
-    Shortcut.SearcherMoveLeft    -> continue Searcher.rollback
-    Shortcut.SearcherMoveRight   -> continue $ Searcher.proceed scheduleEvent
-    Shortcut.SearcherMoveUp      -> continue Searcher.moveUp
-    Shortcut.SearcherOpen        -> Searcher.open
-    _                            -> return ()
+handleEvent :: (Event -> IO ()) -> Searcher.Event -> Command State ()
+handleEvent scheduleEvent = \case
+    Searcher.InputChanged input -> continue $ Searcher.querySearch input
+    Searcher.Accept             -> continue $ Searcher.accept scheduleEvent
+    Searcher.AcceptInput        -> continue $ Searcher.acceptEntry scheduleEvent 0
+    Searcher.AcceptEntry  i     -> continue $ Searcher.acceptEntry scheduleEvent i
+    Searcher.MoveDown           -> continue Searcher.moveDown
+    Searcher.MoveLeft           -> continue Searcher.rollback
+    Searcher.MoveRight          -> continue $ Searcher.proceed scheduleEvent
+    Searcher.MoveUp             -> continue Searcher.moveUp
+    _                           -> return ()

@@ -11,6 +11,13 @@ import           Luna.Studio.Prelude
 
 
 data Event = InputChanged Text
+           | Accept
+           | AcceptInput
+           | AcceptEntry Int
+           | MoveDown
+           | MoveUp
+           | MoveRight
+           | MoveLeft
            | KeyDown KeyboardEvent
             deriving (Show, Generic, NFData, Typeable)
 

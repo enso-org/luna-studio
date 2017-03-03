@@ -40,13 +40,7 @@ data Command = Cancel
              | ExpandSelectedNodes
              | EditSelectedNodes
              -- searcher
-             | SearcherAccept
-             | SearcherAcceptInput
-             | SearcherMoveDown
-             | SearcherMoveUp
              | SearcherOpen
-             | SearcherMoveRight
-             | SearcherMoveLeft
              -- undo/redo
              | Undo
              | Redo

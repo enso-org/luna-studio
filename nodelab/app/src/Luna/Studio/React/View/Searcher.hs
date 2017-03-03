@@ -13,6 +13,7 @@ import           JS.Searcher                      (searcherId)
 import qualified Luna.Studio.Event.Keys           as Keys
 import qualified Luna.Studio.Event.UI             as UI
 import           Luna.Studio.Prelude
+import qualified Luna.Studio.React.Event.App      as App
 import           Luna.Studio.React.Event.Searcher
 import           Luna.Studio.React.Model.App      (App)
 import qualified Luna.Studio.React.Model.Node     as Node
@@ -28,11 +29,15 @@ import qualified Text.ScopeSearcher.QueryResult   as Result
 name :: JSString
 name = "searcher"
 
-preventCollidingDefault :: React.Event -> KeyboardEvent -> [SomeStoreAction] -> [SomeStoreAction]
-preventCollidingDefault e k r =
-    if Keys.withoutMods k Keys.tab || Keys.withoutMods k Keys.upArrow || Keys.withoutMods k Keys.downArrow then
-        preventDefault e : r
-    else r
+handleKeyDown :: Ref App -> React.Event -> KeyboardEvent -> [SomeStoreAction]
+handleKeyDown ref e k = prevent ++ (stopPropagation e : dispatch') where
+    prevent   = if Keys.withoutMods k Keys.tab
+                || Keys.withoutMods k Keys.upArrow
+                || Keys.withoutMods k Keys.downArrow
+                || Keys.digitWithCtrl k then [preventDefault e] else []
+    dispatch' = dispatch ref $ if Keys.withoutMods k Keys.esc then
+            UI.AppEvent $ App.KeyDown k
+        else UI.SearcherEvent $ KeyDown k
 
 searcher :: ReactView (Ref App, Matrix Double, Searcher)
 searcher =  React.defineView name $ \(ref, camera, s) -> do
@@ -62,7 +67,7 @@ searcher =  React.defineView name $ \(ref, camera, s) -> do
                 , "id"        $= searcherId
                 , "value"     $= convert (s ^. Searcher.input)
                 , onMouseDown $ \e _ -> [stopPropagation e]
-                , onKeyDown   $ \e k -> preventCollidingDefault e k $ stopPropagation e : dispatch ref (UI.SearcherEvent $ KeyDown k)
+                , onKeyDown   $ handleKeyDown ref
                 , onChange    $ \e -> let val = target e "value" in dispatch ref $ UI.SearcherEvent $ InputChanged val
                 ]
             div_

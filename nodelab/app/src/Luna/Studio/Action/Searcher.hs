@@ -158,8 +158,12 @@ execCommand action scheduleEvent expression = case readMaybe expression of
             Searcher.input    .= def
         Nothing -> return ()
 
-selectInput :: Searcher -> Command State ()
-selectInput _ = Global.modifySearcher $ Searcher.selected .= 0
+acceptEntry :: (Event -> IO ()) -> Int -> Searcher -> Command State ()
+acceptEntry scheduleEvent entryNum searcher = do
+    mayItemsLength <- (fmap . fmap) (view Searcher.resultsLength) $ Global.getSearcher
+    withJust mayItemsLength $ \itemsLength -> when (itemsLength >= entryNum) $ do
+        Global.modifySearcher $ Searcher.selected .= entryNum
+        accept scheduleEvent searcher
 
 querySearch :: Text -> Searcher -> Command State ()
 querySearch query _ = do
