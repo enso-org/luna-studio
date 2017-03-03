@@ -1,3 +1,4 @@
+
 {-# LANGUAGE DeriveAnyClass #-}
 
 module Luna.Studio.Error.Error where
