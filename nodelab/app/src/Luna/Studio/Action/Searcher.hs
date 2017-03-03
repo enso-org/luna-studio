@@ -83,13 +83,6 @@ moveUp _ = Global.modifySearcher $ do
     unless (items == 0) $
         Searcher.selected %= \p -> (p + 1) `mod` (items + 1)
 
-proceed :: (Event -> IO ()) -> Searcher -> Command State ()
-proceed scheduleEvent action = withJustM Global.getSearcher $ \searcher ->
-    if searcher ^. Searcher.isNode then
-        close action
-    else
-        accept scheduleEvent action
-
 rollback :: Searcher -> Command State ()
 rollback _ = do
     withJustM Global.getSearcher $ \searcher -> do
@@ -165,6 +158,11 @@ acceptEntry scheduleEvent entryNum searcher = do
         Global.modifySearcher $ Searcher.selected .= entryNum
         accept scheduleEvent searcher
 
+substituteInputWithEntry :: Searcher -> Command State ()
+substituteInputWithEntry _ = Global.modifySearcher $ do
+    newInput <- use Searcher.selectedExpression
+    Searcher.input .= newInput
+
 querySearch :: Text -> Searcher -> Command State ()
 querySearch query _ = do
     selection <- Searcher.selection
@@ -174,7 +172,6 @@ querySearch query _ = do
         if isNode then
             Searcher.mode .= Searcher.Node def
         else do
-            selected <- use Searcher.selected
             let items = Scope.searchInScope allCommands query
             Searcher.selected .= min 1 (length items)
             Searcher.mode .= Searcher.Command items
@@ -186,7 +183,6 @@ updateHints = do
     nodesData' <- nodesData
     Global.modifySearcher $
         whenM (use Searcher.isNode) $ do
-            selected <- use Searcher.selected
             query    <- use Searcher.input
             let items = Scope.searchInScope nodesData' query
             Searcher.selected .= min 1 (length items)

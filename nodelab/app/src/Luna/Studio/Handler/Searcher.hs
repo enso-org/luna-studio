@@ -29,8 +29,8 @@ handleEvent scheduleEvent = \case
     Searcher.Accept             -> continue $ Searcher.accept scheduleEvent
     Searcher.AcceptInput        -> continue $ Searcher.acceptEntry scheduleEvent 0
     Searcher.AcceptEntry  i     -> continue $ Searcher.acceptEntry scheduleEvent i
+    Searcher.EditEntry          -> continue $ Searcher.substituteInputWithEntry
     Searcher.MoveDown           -> continue Searcher.moveDown
     Searcher.MoveLeft           -> continue Searcher.rollback
-    Searcher.MoveRight          -> continue $ Searcher.proceed scheduleEvent
     Searcher.MoveUp             -> continue Searcher.moveUp
     _                           -> return ()

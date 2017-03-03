@@ -14,6 +14,7 @@ data Event = InputChanged Text
            | Accept
            | AcceptInput
            | AcceptEntry Int
+           | EditEntry
            | MoveDown
            | MoveUp
            | MoveRight
