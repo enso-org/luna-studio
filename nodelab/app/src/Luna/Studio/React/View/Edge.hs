@@ -56,23 +56,21 @@ edgeSidebar_ ref mayDraggedPort node = when (isEdge node) $ do
             , "className" $= Style.prefixFromList [ "edgeports__body" ]
             ] $ do
             forM_ ports $ edgePort_ ref
-            when (isInputEdge node) $ if isPortDragged then do
-                    div_
-                        [ "className" $= Style.prefixFromList [ "edgeports__btn", "edgeports__btn--remove", "noselect" ]
-                        , "key"       $= (name node <> "RemoveButton")
-                        , onMouseUp   $ \e _ -> stopPropagation e : (dispatch ref $ UI.EdgeEvent $ Edge.RemovePort)
-                        ] $ elemString "Remove"
-                    withJust mayDraggedPort $ edgeDraggedPort_ ref
-                else svg_
-                        [ "className" $= Style.prefixFromList [ "icon", "icon--plus", "icon--plus--first" ]
-                        , "width"     $= "16"
-                        , "height"    $= "16"
-                        , "key"       $= (name node <> "AddButton")
-                        , onMouseDown $ \e _ -> [stopPropagation e]
-                        , onClick $ \e _ -> stopPropagation e : sendAddPortEvent ref node
-                        ] $ do
-                        plainRect 10 2 3 7
-                        plainRect 2 10 7 3
+            div_
+                [ "className" $= Style.prefix "edgeports__edit" ] $ do
+                when (isInputEdge node) $ if isPortDragged then do
+                        div_
+                            [ "className" $= Style.prefixFromList [ "edge__buton", "edge__button--remove", "noselect" ]
+                            , "key"       $= (name node <> "RemoveButton")
+                            , onMouseUp   $ \e _ -> stopPropagation e : (dispatch ref $ UI.EdgeEvent $ Edge.RemovePort)
+                            ] $ elemString "Remove"
+                        withJust mayDraggedPort $ edgeDraggedPort_ ref
+                    else div_
+                            [ "className" $= Style.prefixFromList [ "edge__buton", "edge__button--add", "noselect" ]
+                            , "key"       $= (name node <> "AddButton")
+                            , onMouseDown $ \e _ -> [stopPropagation e]
+                            , onClick $ \e _ -> stopPropagation e : sendAddPortEvent ref node
+                            ] $ elemString "Add"
 
 edgePort_ :: Ref App -> Port -> ReactElementM ViewEventHandler ()
 edgePort_ ref p = when (p ^. Port.visible) $ do
@@ -95,7 +93,6 @@ edgePort_ ref p = when (p ^. Port.visible) $ do
                 ] $ do
                 plainRect 10 2 3 7
                 plainRect 2 10 7 3
-
         svg_
             [ "className" $= Style.prefix "edgeport__svg"
             ] $ do
