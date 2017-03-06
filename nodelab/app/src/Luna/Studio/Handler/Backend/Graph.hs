@@ -35,6 +35,8 @@ import qualified Empire.API.Response                    as Response
 import           Luna.Studio.Event.Batch                (Event (..))
 import qualified Luna.Studio.Event.Event                as Event
 
+import           Luna.Studio.Action.Graph.AddNode       (localAddNode, localUpdateNode)
+
 import           Luna.Studio.Action.Batch               (collaborativeModify, requestCollaborationRefresh)
 import           Luna.Studio.Action.Camera              (centerGraph)
 import qualified Luna.Studio.Action.CodeEditor          as CodeEditor
@@ -42,8 +44,8 @@ import           Luna.Studio.Action.Command             (Command)
 import qualified Luna.Studio.Action.Edge                as Edge
 import           Luna.Studio.Action.Graph               (createGraph, localAddConnection, localRemoveConnections, selectNodes,
                                                          updateConnectionsForEdges, updateConnectionsForNodes, updateMonads)
-import           Luna.Studio.Action.Node                (addDummyNode, localRemoveNodes, typecheckNode, updateNode, updateNodeProfilingData,
-                                                         updateNodeValue, updateNodesMeta)
+import           Luna.Studio.Action.Node                (localRemoveNodes, typecheckNode, updateNodeProfilingData, updateNodeValue,
+                                                         updateNodesMeta)
 import qualified Luna.Studio.Action.Node                as Node
 import           Luna.Studio.Action.ProjectManager      (setCurrentBreadcrumb)
 import qualified Luna.Studio.Action.Searcher            as Searcher
@@ -89,7 +91,7 @@ handle (Event.Batch ev) = Just $ case ev of
         shouldProcess   <- isCurrentLocationAndGraphLoaded loc
         shouldSelect    <- isOwnRequest uuid
         handleResponse response $ \_ node -> when shouldProcess $ do
-            addDummyNode node
+            localAddNode node
             let nodeId = node ^. Node.nodeId
             collaborativeModify [nodeId]
             when shouldSelect $ selectNodes [nodeId]
@@ -97,7 +99,7 @@ handle (Event.Batch ev) = Just $ case ev of
     AddSubgraphResponse response@(Response.Response uuid _ (AddSubgraph.Request loc nodes connections _) _ (Response.Ok idsMaybeMap)) -> do
         shouldProcess   <- isCurrentLocationAndGraphLoaded loc
         let handleSubgraph nodes' connections' = when shouldProcess $ do
-                mapM_ addDummyNode nodes'
+                mapM_ localAddNode nodes'
                 mapM_ localAddConnection connections'
                 whenM (isOwnRequest uuid) $ do
                     let nodeIds = map (^. Node.nodeId) nodes'
@@ -129,11 +131,11 @@ handle (Event.Batch ev) = Just $ case ev of
 
     NodeAdded update -> do
         shouldProcess <- isCurrentLocationAndGraphLoaded (update ^. AddNode.location')
-        when shouldProcess $ addDummyNode (update ^. AddNode.node')
+        when shouldProcess $ localAddNode (update ^. AddNode.node')
 
     NodesUpdated update -> do
         shouldProcess <- isCurrentLocationAndGraphLoaded (update ^. NodesUpdate.location)
-        when shouldProcess $ mapM_ updateNode $ update ^. NodesUpdate.nodes
+        when shouldProcess $ mapM_ localUpdateNode $ update ^. NodesUpdate.nodes
 
     MonadsUpdated update -> do
         shouldProcess <- isCurrentLocationAndGraphLoaded (update ^. MonadsUpdate.location)
@@ -183,7 +185,7 @@ handle (Event.Batch ev) = Just $ case ev of
             let portRef = request ^. RemovePort.anyPortRef
                 nodeId  = portRef ^. PortRef.nodeId
                 portId  = portRef ^. PortRef.portId
-            updateNode result
+            localUpdateNode result
             graph <- use Global.graph
             localRemoveConnections $ map (view Connection.dst) $ StateGraph.connectionsContainingPort portRef graph
             let shouldUpdate = case portRef ^. PortRef.portId of
@@ -216,7 +218,7 @@ handle (Event.Batch ev) = Just $ case ev of
     DisconnectResponse           response -> handleResponse response doNothing
     NodeMetaResponse             response -> handleResponse response doNothing
     NodeRenameResponse           response -> handleResponse response doNothing
-    RemoveNodesResponse          response -> handleResponse response doNothing
+    RemoveNodesResponse          response -> print response >> handleResponse response doNothing
     UpdateNodeExpressionResponse response -> handleResponse response doNothing
 
     _ -> return ()

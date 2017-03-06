@@ -34,8 +34,8 @@ withUUID act = do
     guiID <- use $ clientId
     liftIO $ act uuid $ Just guiID
 
-addNode :: Text -> NodeMeta -> Maybe NodeId -> Command State ()
-addNode = withWorkspace .:. BatchCmd.addNode
+addNode :: NodeId -> Text -> NodeMeta -> Maybe NodeId -> Command State ()
+addNode = withWorkspace .:: BatchCmd.addNode
 
 addPort :: NodeId -> Command State ()
 addPort = withWorkspace . BatchCmd.addPort

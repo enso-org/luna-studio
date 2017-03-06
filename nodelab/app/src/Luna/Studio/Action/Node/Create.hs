@@ -1,9 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Luna.Studio.Action.Node.Create
-    ( addNode
-    , addDummyNode
-    , registerNode
-    ) where
+    () where
 
 import           Control.Monad.State                (modify)
 
@@ -22,22 +19,22 @@ import           Luna.Studio.State.Global           (State, checkAction)
 import qualified Luna.Studio.State.Global           as Global
 import qualified Luna.Studio.State.Graph            as Graph
 
-addNode :: Node -> Command State ()
-addNode node = do
-    zoom Global.graph $ modify (Graph.addNode node)
-    nodeModel <- registerNode node
-    focusNode $ nodeModel ^. Model.nodeId
-
-addDummyNode :: Node -> Command State ()
-addDummyNode dummyNode = do
-    mayNode <- preuse $ Global.graph . Graph.nodesMap . ix (dummyNode ^. Node.nodeId)
-    maybe (addNode dummyNode) (const $ return ()) mayNode
-
-registerNode :: Node -> Command State Model.Node
-registerNode node = do
-    let nodeId    = node ^. Node.nodeId
-    mayConnect    <- checkAction connectAction
-    mayPenConnect <- checkAction penConnectAction
-    nodeModel     <- showOrHideSelfPort mayConnect mayPenConnect $ Model.fromNode node
-    Global.modifyNodeEditor $ NodeEditor.nodes . at nodeId ?= nodeModel
-    return nodeModel
+-- addNode :: Node -> Command State ()
+-- addNode node = do
+--     zoom Global.graph $ modify (Graph.addNode node)
+--     nodeModel <- registerNode node
+--     focusNode $ nodeModel ^. Model.nodeId
+--
+-- addDummyNode :: Node -> Command State ()
+-- addDummyNode dummyNode = do
+--     mayNode <- preuse $ Global.graph . Graph.nodesMap . ix (dummyNode ^. Node.nodeId)
+--     maybe (addNode dummyNode) (const $ return ()) mayNode
+--
+-- registerNode :: Node -> Command State Model.Node
+-- registerNode node = do
+--     let nodeId    = node ^. Node.nodeId
+--     mayConnect    <- checkAction connectAction
+--     mayPenConnect <- checkAction penConnectAction
+--     nodeModel     <- showOrHideSelfPort mayConnect mayPenConnect $ Model.fromNode node
+--     Global.modifyNodeEditor $ NodeEditor.nodes . at nodeId ?= nodeModel
+--     return nodeModel

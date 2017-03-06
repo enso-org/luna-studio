@@ -1,8 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Luna.Studio.Action.Node
-    ( addDummyNode
-    , addNode
-    , applyName
+    ( applyName
     , discardName
     , editExpression
     , editName
@@ -12,7 +10,6 @@ module Luna.Studio.Action.Node
     , localRemoveNodes
     , modifyNodeMeta
     , nodesDrag
-    , registerNode
     , removeSelectedNodes
     , rename
     , selectedToggleMode
@@ -24,7 +21,6 @@ module Luna.Studio.Action.Node
     , tryEnter
     , typecheckNode
     , updateExpression
-    , updateNode
     , updateNodeProfilingData
     , updateNodesMeta
     , updateNodeValue
@@ -32,7 +28,7 @@ module Luna.Studio.Action.Node
     ) where
 
 import           Luna.Studio.Action.Node.Code          (setCode)
-import           Luna.Studio.Action.Node.Create        (addDummyNode, addNode, registerNode)
+-- import           Luna.Studio.Action.Node.Create        (addDummyNode, addNode, registerNode)
 import           Luna.Studio.Action.Node.Drag          (handleNodeDragMouseUp, nodesDrag, startNodeDrag)
 import           Luna.Studio.Action.Node.Enter         (enter, exit, tryEnter)
 import           Luna.Studio.Action.Node.Expression    (editExpression)
@@ -41,6 +37,5 @@ import           Luna.Studio.Action.Node.Name          (applyName, discardName, 
 import           Luna.Studio.Action.Node.NodeMeta      (modifyNodeMeta, updateNodesMeta)
 import           Luna.Studio.Action.Node.Remove        (localRemoveNodes, removeSelectedNodes)
 import           Luna.Studio.Action.Node.Snap          (snap, snapCoord)
-import           Luna.Studio.Action.Node.Update        (typecheckNode, updateExpression, updateNode, updateNodeProfilingData,
-                                                        updateNodeValue)
+import           Luna.Studio.Action.Node.Update        (typecheckNode, updateExpression, updateNodeProfilingData, updateNodeValue)
 import           Luna.Studio.Action.Node.Visualization (visualizationsToggled)

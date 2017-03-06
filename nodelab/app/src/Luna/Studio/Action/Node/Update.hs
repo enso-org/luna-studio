@@ -1,8 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 
 module Luna.Studio.Action.Node.Update
-    ( updateNode
-    , typecheckNode
+    ( typecheckNode
     , updateNodeValue
     , updateNodeProfilingData
     , updateExpression
@@ -19,7 +18,7 @@ import           Luna.Studio.Action.Command         (Command)
 import           Luna.Studio.Action.Connect         ()
 import           Luna.Studio.Action.ConnectionPen   ()
 import           Luna.Studio.Action.Graph.Update    (updateConnectionsForNodes)
-import           Luna.Studio.Action.Node.Create     (addNode)
+-- import           Luna.Studio.Action.Node.Create     (addNode)
 import           Luna.Studio.Action.Port.Self       (showOrHideSelfPort)
 import           Luna.Studio.Prelude
 import           Luna.Studio.React.Model.Node       (makePorts)
@@ -31,13 +30,15 @@ import           Luna.Studio.State.Global           (State, checkAction)
 import qualified Luna.Studio.State.Global           as Global
 import qualified Luna.Studio.State.Graph            as Graph
 
-updateNode :: Node -> Command State ()
-updateNode node = do
-    let nodeId  = node ^. Node.nodeId
-    inGraph <- preuse $ Global.graph . Graph.nodesMap . ix nodeId
-    case inGraph of
-        Just _existingNode -> updateExistingNode node
-        Nothing            -> addNode            node
+import           Luna.Studio.Action.Graph.AddNode   (localUpdateNode)
+
+-- updateNode :: Node -> Command State ()
+-- updateNode node = do
+--     let nodeId  = node ^. Node.nodeId
+--     inGraph <- preuse $ Global.graph . Graph.nodesMap . ix nodeId
+--     case inGraph of
+--         Just _existingNode -> updateExistingNode node
+--         Nothing            -> addNode            node
 
 typecheckNode :: NodeTypecheckerUpdate -> Command State ()
 typecheckNode node = do
@@ -46,28 +47,28 @@ typecheckNode node = do
     case inGraph of
         Just existingNode  -> do
             let updatedNode = existingNode & Node.ports .~ (node ^. Node.tcPorts)
-            updateExistingNode updatedNode
+            localUpdateNode updatedNode
         -- typecheck non-existing node?
         Nothing            -> return ()
 
-updateExistingNode :: Node -> Command State ()
-updateExistingNode node = do
-    let nodeId  = node ^. Node.nodeId
-    updateConnectionsForNodes [nodeId]
-    zoom Global.graph $ modify (Graph.addNode node)
-    mayModel      <- Global.getNode nodeId
-    mayConnect    <- checkAction connectAction
-    mayPenConnect <- checkAction penConnectAction
-    withJust mayModel $ \model -> do
-        let ports = Map.fromList (map (view portId &&& id) $ makePorts node)
-            code  = node ^. Node.code
-            expr  = case node ^. Node.nodeType of
-                Node.ExpressionNode expression -> expression
-                _                              -> model ^. Model.expression
-        newModel <- showOrHideSelfPort mayConnect mayPenConnect $ model & Model.ports      .~ ports
-                                                                        & Model.code       .~ code
-                                                                        & Model.expression .~ expr
-        Global.modifyNodeEditor $ NodeEditor.nodes . at nodeId ?= newModel
+-- updateExistingNode :: Node -> Command State ()
+-- updateExistingNode node = do
+--     let nodeId  = node ^. Node.nodeId
+--     updateConnectionsForNodes [nodeId]
+--     zoom Global.graph $ modify (Graph.addNode node)
+--     mayModel      <- Global.getNode nodeId
+--     mayConnect    <- checkAction connectAction
+--     mayPenConnect <- checkAction penConnectAction
+--     withJust mayModel $ \model -> do
+--         let ports = Map.fromList (map (view portId &&& id) $ makePorts node)
+--             code  = node ^. Node.code
+--             expr  = case node ^. Node.nodeType of
+--                 Node.ExpressionNode expression -> expression
+--                 _                              -> model ^. Model.expression
+--         newModel <- showOrHideSelfPort mayConnect mayPenConnect $ model & Model.ports      .~ ports
+--                                                                         & Model.code       .~ code
+--                                                                         & Model.expression .~ expr
+--         Global.modifyNodeEditor $ NodeEditor.nodes . at nodeId ?= newModel
 
 updateNodeValue :: NodeId -> NodeValue -> Command State ()
 updateNodeValue nodeId val =

@@ -64,11 +64,11 @@ main = do
     when (args `isPresent` command "addNode") $ do
         pid       <- args `getArgOrExit` argument "pid"
         lid       <- args `getArgOrExit` argument "lid"
+        nodeId    <- args `getArgOrExit` argument "nodeId"
         expr      <- args `getArgOrExit` argument "expression"
         x         <- args `getArgOrExit` argument "x"
         y         <- args `getArgOrExit` argument "y"
-        nodeId    <- args `getArgOrExit` argument "nodeId"
-        addNode endPoints (toGraphLocation pid lid) expr (read x) (read y) (read nodeId)
+        addNode endPoints (toGraphLocation pid lid) (read nodeId) expr (read x) (read y)
     when (args `isPresent` command "removeNode") $ do
         pid       <- args `getArgOrExit` argument "pid"
         lid       <- args `getArgOrExit` argument "lid"
@@ -135,8 +135,8 @@ sendToBus endPoints msg = do
   let msg' = Request uuid Nothing msg
   void $ Bus.runBus endPoints $ Bus.send Flag.Enable $ Message.Message (Topic.topic msg') $ toStrict . Bin.encode $ msg'
 
-addNode :: EP.BusEndPoints -> GraphLocation -> String -> Double -> Double -> NodeId -> IO ()
-addNode endPoints graphLocation expression x y nodeId = sendToBus endPoints $ AddNode.Request graphLocation (AddNode.ExpressionNode $ Text.pack expression) (NodeMeta.NodeMeta (x, y) True) Nothing Nothing
+addNode :: EP.BusEndPoints -> GraphLocation -> NodeId -> String -> Double -> Double -> IO ()
+addNode endPoints graphLocation nodeId expression x y = sendToBus endPoints $ AddNode.Request graphLocation nodeId (Text.pack expression) (NodeMeta.NodeMeta (x, y) True) Nothing
 
 removeNode :: EP.BusEndPoints -> GraphLocation -> NodeId -> IO ()
 removeNode endPoints graphLocation nodeId = sendToBus endPoints $ RemoveNodes.Request graphLocation [nodeId]

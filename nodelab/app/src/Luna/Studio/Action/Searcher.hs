@@ -18,7 +18,8 @@ import qualified Luna.Studio.Action.Batch           as Batch
 import           Luna.Studio.Action.Camera          (translateToScreen, translateToWorkspace)
 import           Luna.Studio.Action.Command         (Command)
 import           Luna.Studio.Action.Graph.Selection (selectedNodes)
-import           Luna.Studio.Action.Node.Register   (registerNode)
+-- import           Luna.Studio.Action.Node.Register   (registerNode)
+import           Luna.Studio.Action.Graph.AddNode   (addNode)
 import qualified Luna.Studio.Action.Node.Update     as Node
 import qualified Luna.Studio.Batch.Workspace        as Workspace
 import           Luna.Studio.Event.Event            (Event (Shortcut))
@@ -105,7 +106,7 @@ accept scheduleEvent action = do
         let expression = searcher ^. Searcher.selectedExpression
         if searcher ^. Searcher.isNode then do
             case searcher ^. Searcher.nodeId of
-                Nothing -> registerNode (searcher ^. Searcher.position) expression
+                Nothing -> addNode (searcher ^. Searcher.position) expression
                 Just nodeId-> Node.updateExpression nodeId expression
             close action
         else

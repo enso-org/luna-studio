@@ -143,17 +143,13 @@ modifyGraphOk action success = modifyGraph action (\req@(Request uuid guiID requ
 generateNodeId :: IO NodeId
 generateNodeId = UUID.nextRandom
 
-addExpressionNode :: GraphLocation -> Text -> NodeMeta -> Maybe NodeId -> Maybe NodeId -> Empire Node
-addExpressionNode location expression nodeMeta connectTo nodeId = do
-    nId <- case nodeId of
-        Nothing      -> liftIO generateNodeId
-        Just nodeId' -> pure nodeId'
-
+addExpressionNode :: GraphLocation -> NodeId -> Text -> NodeMeta -> Maybe NodeId -> Empire Node
+addExpressionNode location nodeId expression nodeMeta connectTo = do
     case parseExpr expression of
         Expression expression -> do
-            Graph.addNodeCondTC (isNothing connectTo) location nId expression nodeMeta
+            Graph.addNodeCondTC (isNothing connectTo) location nodeId expression nodeMeta
         Function (Just name) -> do
-            Graph.addNodeCondTC False location nId (Text.append "def " name) nodeMeta
+            Graph.addNodeCondTC False location nodeId (Text.append "def " name) nodeMeta
         Module   name -> throwError "Module Nodes not yet supported"
         Input    name -> throwError "Input Nodes not yet supported"
         Output   name -> throwError "Output Nodes not yet supported"
@@ -174,13 +170,12 @@ mtuple f a = f a >>= \b -> pure ((),b)
 
 handleAddNode :: Request AddNode.Request -> StateT Env BusT ()
 handleAddNode = modifyGraph (mtuple action) success where
-    action (AddNode.Request location nodeType nodeMeta connectTo nodeId) = case nodeType of
-        AddNode.ExpressionNode expression -> addExpressionNode location expression nodeMeta connectTo nodeId
-    success request@(Request _ _ req@(AddNode.Request location nodeType nodeMeta connectTo nodeId)) _ node = do
+    action (AddNode.Request location nodeId expression nodeMeta connectTo) = addExpressionNode location nodeId expression nodeMeta connectTo
+    success request@(Request _ _ req@(AddNode.Request location nodeId expression nodeMeta connectTo)) _ node = do
         replyResult request () node
+        --TODO: This is not necesarry - other GUI clients should handle response
         sendToBus' $ AddNode.Update location node
-        case nodeType of
-            AddNode.ExpressionNode expr -> withJust connectTo $ connectNodes location expr (node ^. Node.nodeId)
+        withJust connectTo $ connectNodes location expression nodeId
 
 handleAddPort :: Request AddPort.Request -> StateT Env BusT ()
 handleAddPort = modifyGraph (mtuple action) success where

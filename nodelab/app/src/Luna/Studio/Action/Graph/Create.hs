@@ -11,23 +11,24 @@ import           Luna.Studio.Action.Command       (Command)
 import           Luna.Studio.Action.Graph.Connect (localConnect)
 import           Luna.Studio.Action.Graph.Focus   (updateNodeZOrder)
 import           Luna.Studio.Action.Graph.Update  (updateMonads)
-import           Luna.Studio.Action.Node.Create   (registerNode)
+-- import           Luna.Studio.Action.Node.Create   (registerNode)
 import           Luna.Studio.Prelude
 import           Luna.Studio.State.Global         (State)
 import qualified Luna.Studio.State.Global         as Global
 import qualified Luna.Studio.State.Graph          as Graph
 
+import           Luna.Studio.Action.Graph.AddNode (localAddNode)
 
 
-fastAddNodes :: [Node] -> Command State ()
-fastAddNodes nodes = do
-    let nodeIds = view Node.nodeId <$> nodes
-    Global.graph . Graph.nodesMap .= HashMap.fromList (nodeIds `zip` nodes)
-    mapM_ registerNode nodes
+-- fastAddNodes :: [Node] -> Command State ()
+-- fastAddNodes nodes = do
+--     let nodeIds = view Node.nodeId <$> nodes
+--     Global.graph . Graph.nodesMap .= HashMap.fromList (nodeIds `zip` nodes)
+--     mapM_ localAddNode nodes
 
 createGraph :: [Node] -> [(OutPortRef, InPortRef)] -> [(TypeRep, [NodeId])] -> Command State ()
 createGraph nodes connections monads = do
-    fastAddNodes nodes
+    mapM_ localAddNode nodes
     mapM_ (uncurry localConnect) connections
     updateMonads monads
     updateNodeZOrder

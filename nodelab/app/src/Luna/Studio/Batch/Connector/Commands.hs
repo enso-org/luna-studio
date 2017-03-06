@@ -13,7 +13,7 @@ import           Empire.API.Data.Connection             (Connection)
 import qualified Empire.API.Data.DefaultValue           as DefaultValue
 import           Empire.API.Data.GraphLocation          (GraphLocation)
 import qualified Empire.API.Data.GraphLocation          as GraphLocation
-import           Empire.API.Data.Node                   (Node, NodeId)
+import           Empire.API.Data.Node                   (Node, NodeId, NodeType)
 import           Empire.API.Data.NodeMeta               (NodeMeta)
 import           Empire.API.Data.PortRef                (AnyPortRef (..), InPortRef (..), OutPortRef (..))
 import           Empire.API.Data.Project                (ProjectId)
@@ -51,11 +51,8 @@ import qualified Empire.API.Project.OpenProject         as OpenProject
 withLibrary :: Workspace -> (GraphLocation -> a) -> a
 withLibrary w f = f (w ^. Workspace.currentLocation)
 
-addNode' :: Maybe NodeId -> Text -> NodeMeta -> Maybe NodeId -> Workspace -> UUID -> Maybe UUID -> IO ()
-addNode' maybeNodeId expression meta connectTo workspace uuid guiID = sendRequest $ Message uuid guiID $ (withLibrary workspace AddNode.Request) (AddNode.ExpressionNode expression) meta connectTo maybeNodeId
-
-addNode :: Text -> NodeMeta -> Maybe NodeId -> Workspace -> UUID -> Maybe UUID -> IO ()
-addNode expression meta connectTo workspace uuid guiID = addNode' Nothing expression meta connectTo workspace uuid guiID
+addNode :: NodeId -> Text -> NodeMeta -> Maybe NodeId -> Workspace -> UUID -> Maybe UUID -> IO ()
+addNode nodeId expression meta connectTo workspace uuid guiID = sendRequest $ Message uuid guiID $ (withLibrary workspace AddNode.Request) nodeId expression meta connectTo
 
 addPort :: NodeId -> Workspace -> UUID -> Maybe UUID -> IO ()
 addPort nodeId workspace uuid guiID = sendRequest $ Message uuid guiID $ (withLibrary workspace AddPort.Request) nodeId

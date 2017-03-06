@@ -11,13 +11,11 @@ import qualified Empire.API.Request            as R
 import qualified Empire.API.Response           as Response
 import qualified Empire.API.Topic              as T
 
-data NodeType = ExpressionNode { _expression :: Text } deriving (Generic, Eq, NFData, Show)
-
-data Request = Request { _location  :: GraphLocation
-                       , _nodeType  :: NodeType
-                       , _nodeMeta  :: NodeMeta
-                       , _connectTo :: Maybe NodeId
-                       , _nodeId    :: Maybe NodeId
+data Request = Request { _location   :: GraphLocation
+                       , _nodeId     :: NodeId
+                       , _expression :: Text
+                       , _nodeMeta   :: NodeMeta
+                       , _connectTo  :: Maybe NodeId
                        } deriving (Generic, Eq, NFData, Show)
 type Result = Node
 
@@ -31,7 +29,6 @@ data Update = Update { _location'  :: GraphLocation
 makeLenses ''Request
 makeLenses ''Update
 
-instance Binary NodeType
 instance Binary Request
 instance Binary Update
 
