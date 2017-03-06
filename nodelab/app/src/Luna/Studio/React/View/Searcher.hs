@@ -30,11 +30,11 @@ name :: JSString
 name = "searcher"
 
 handleKeyDown :: Ref App -> React.Event -> KeyboardEvent -> [SomeStoreAction]
-handleKeyDown ref e k = prevent ++ (stopPropagation e : dispatch') where
+handleKeyDown ref e k = prevent $ stopPropagation e : dispatch' where
     prevent   = if Keys.withoutMods k Keys.tab
                 || Keys.withoutMods k Keys.upArrow
                 || Keys.withoutMods k Keys.downArrow
-                || Keys.digitWithCtrl k then [preventDefault e] else []
+                || Keys.digitWithCtrl k then (preventDefault e :) else id
     dispatch' = dispatch ref $ if Keys.withoutMods k Keys.esc then
             UI.AppEvent $ App.KeyDown k
         else UI.SearcherEvent $ KeyDown k
@@ -70,6 +70,7 @@ searcher =  React.defineView name $ \(ref, camera, s) -> do
                 , "id"        $= searcherId
                 , "value"     $= convert (s ^. Searcher.input)
                 , onKeyDown   $ handleKeyDown ref
+                , onKeyUp     $ \_ k -> dispatch ref $ UI.SearcherEvent $ KeyUp k
                 , onChange    $ \e -> let val = target e "value" in dispatch ref $ UI.SearcherEvent $ InputChanged val
                 ]
             div_

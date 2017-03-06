@@ -12,17 +12,18 @@ data Mode = Command [QueryResult ()]
           deriving (Eq, Generic, Show)
 
 data Searcher = Searcher
-      { _position    :: Position
-      , _selected    :: Int
-      , _mode        :: Mode
-      , _input       :: Text
-      , _nodeId      :: Maybe NodeId
+      { _position      :: Position
+      , _selected      :: Int
+      , _mode          :: Mode
+      , _input         :: Text
+      , _nodeId        :: Maybe NodeId
+      , _rollbackReady :: Bool
       } deriving (Eq, Generic, Show)
 
 makeLenses ''Searcher
 
 mkDef :: Mode -> Searcher
-mkDef mode' = Searcher def def mode' def def
+mkDef mode' = Searcher def def mode' def def False
 
 defNode, defCommand :: Searcher
 defNode    = mkDef $ Node def

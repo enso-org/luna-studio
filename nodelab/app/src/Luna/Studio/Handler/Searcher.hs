@@ -7,6 +7,7 @@ import           Luna.Studio.Prelude
 import           Luna.Studio.Action.Command         (Command)
 import qualified Luna.Studio.Action.Searcher        as Searcher
 import           Luna.Studio.Event.Event            (Event (Shortcut, UI))
+import qualified Luna.Studio.Event.Keys             as Keys
 import qualified Luna.Studio.Event.Shortcut         as Shortcut
 import           Luna.Studio.Event.UI               (UIEvent (AppEvent, NodeEditorEvent, SearcherEvent))
 import qualified Luna.Studio.React.Event.App        as App
@@ -31,6 +32,8 @@ handleEvent scheduleEvent = \case
     Searcher.AcceptEntry  i     -> continue $ Searcher.acceptEntry scheduleEvent i
     Searcher.EditEntry          -> continue $ Searcher.substituteInputWithEntry
     Searcher.MoveDown           -> continue Searcher.moveDown
-    Searcher.MoveLeft           -> continue Searcher.rollback
+    Searcher.KeyUp k            -> when (Keys.withoutMods k Keys.backspace) $
+                                      continue Searcher.enableRollback
+    Searcher.MoveLeft           -> continue Searcher.tryRollback
     Searcher.MoveUp             -> continue Searcher.moveUp
     _                           -> return ()
