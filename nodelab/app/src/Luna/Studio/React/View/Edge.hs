@@ -87,7 +87,7 @@ edgePort_ ref p = when (p ^. Port.visible) $ do
         [ "key"       $= ( jsShow portId <> "-port-" <> jsShow num )
         , "className" $= Style.prefixFromList classes
         ] $ do
-        if isPortInput p
+        if isPortInput p 
             then do
                 svg_
                     [ "className" $= Style.prefixFromList [ "icon", "icon--plus" ]
