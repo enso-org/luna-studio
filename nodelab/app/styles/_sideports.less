@@ -73,9 +73,6 @@
 }
 .luna-edgeports--o {
     right: -32px;
-    &:hover {
-        right: 0;
-    }
 }
 
 .luna-edgeports:hover {
@@ -98,7 +95,7 @@
             fill: #fff !important;
         }
         .luna-icon--drag,
-        .luna-icon--minus {
+        .luna-icon--remove {
             opacity: .1;
             &:hover {
                 opacity: .5;
@@ -113,7 +110,7 @@
             & ~.luna-icon {
                 rect { opacity: 0 !important; }
             }
-            & + .luna-icon {
+            & +.luna-icon {
                 border-top: 1px solid #fff;
                 top:-1px;
             }
@@ -140,15 +137,15 @@
     }
 }
 .luna-edgeports--i {
-    .luna-icon--drag  { right: 5px  }
-    .luna-icon--minus { right: 19px }
-    .luna-icon--plus  { right: 33px }
+    .luna-icon--drag   { right: 5px  }
+    .luna-icon--remove { right: 19px }
+    .luna-icon--plus   { right: 33px }
 }
 
 .luna-edgeports--o {
-    .luna-icon--drag  { left: 5px  }
-    .luna-icon--minus { left: 19px }
-    .luna-icon--plus  { left: 33px }
+    .luna-icon--drag   { left: 5px  }
+    .luna-icon--remove { left: 19px }
+    .luna-icon--plus   { left: 33px }
 }
 
 .luna-edgeport__name {
@@ -170,4 +167,9 @@
 .luna-edgeport--dragged {
     background: red;
     width:      0;
+}
+
+.luna-icon--remove g {
+    transform-origin: 50% 50%;
+    transform:        rotate(45deg);
 }
