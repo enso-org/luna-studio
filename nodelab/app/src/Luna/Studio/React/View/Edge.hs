@@ -87,32 +87,14 @@ edgePort_ ref p = when (p ^. Port.visible) $ do
         [ "key"       $= ( jsShow portId <> "-port-" <> jsShow num )
         , "className" $= Style.prefixFromList classes
         ] $ do
-        if isPortInput p == False
-            then do
-                svg_
-                    [ "className" $= Style.prefixFromList [ "icon", "icon--plus" ]
-                    , "width"     $= "16"
-                    , "height"    $= "16"
-                    ] $ do
-                    plainRect 10 2 3 7
-                    plainRect 2 10 7 3
-                svg_
-                    [ "className" $= Style.prefixFromList [ "icon", "icon--drag" ]
-                    , "width"     $= "16"
-                    , "height"    $= "16"
-                    ] $ do
-                    plainRect 10 2 3 3
-                    plainRect 10 2 3 7
-                    plainRect 10 2 3 11
-                svg_
-                    [ "className" $= Style.prefixFromList [ "icon", "icon--remove" ]
-                    , "width"     $= "16"
-                    , "height"    $= "16"
-                    ] $ do
-                    g_ [] $ do
-                        plainRect 10 2 3 7
-                        plainRect 2 10 7 3
-            else return ()
+        if isPortInput p then return () else
+            svg_
+                [ "className" $= Style.prefixFromList [ "icon", "icon--plus" ]
+                , "width"     $= "16"
+                , "height"    $= "16"
+                ] $ do
+                plainRect 10 2 3 7
+                plainRect 2 10 7 3
 
         svg_
             [ "className" $= Style.prefix "edgeport__svg"

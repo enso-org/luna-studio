@@ -2,7 +2,7 @@
 //        sideports        //
 /////////////////////////////
 
-@edgeportsWidth: 50px;
+@edgeportsWidth: @gridSize;
 @edgeNameMargin: @edgeportsWidth + 8px;
 
 .luna-edgeports {
@@ -37,12 +37,42 @@
 .luna-edgeports__btn--add {
     position: fixed;
     bottom:   10px;
-    left: 0;
+    left:     0;
 }
 
 .luna-edgeports__btn--remove {
     position: fixed;
     bottom:   10px;
+}
+
+.luna-edgeports--i {
+    .luna-icon--remove { right: 5px }
+    .luna-icon--plus   { right: 19px }
+}
+
+.luna-edgeports--o {
+    .luna-icon--remove { left: 5px }
+    .luna-icon--plus   { left: 19px }
+}
+
+.luna-edgeport__name {
+    color:       darken(@colorText, 30%);
+    position:    absolute;
+    white-space: nowrap;
+    text-shadow: 0 0 2px black;
+}
+
+.luna-edgeport__svg {
+    top:      50%;
+    height:   1px;
+    width:    1px;
+    overflow: inherit;
+    position: absolute;
+}
+
+.luna-icon--remove g {
+    transform-origin: 8px;
+    transform:        rotate(45deg);
 }
 
 .luna-edgeports--i {
@@ -55,6 +85,7 @@
 }
 
 .luna-edgeports--o {
+    right: 0;
     .luna-edgeports__body {
         border-radius: @borderRadius 0 0 @borderRadius;
         right:         0;
@@ -62,25 +93,6 @@
     .luna-edgeport__name {
         left:  inherit;
         right: @edgeNameMargin;
-    }
-}
-
-.luna-edgeports--i {
-    left: -32px;
-    &:hover {
-        left: 0;
-    }
-}
-.luna-edgeports--o {
-    right: -32px;
-}
-
-.luna-edgeports:hover {
-    .luna-edgeport__name {
-        color:       darken(@colorText, 30%);
-        text-shadow: 0 0 2px black;
-        width:       auto;
-        opacity:     1;
     }
 }
 
@@ -94,7 +106,6 @@
         .luna-port__shape {
             fill: #fff !important;
         }
-        .luna-icon--drag,
         .luna-icon--remove {
             opacity: .1;
             &:hover {
@@ -112,7 +123,7 @@
             }
             & +.luna-icon {
                 border-top: 1px solid #fff;
-                top:-1px;
+                top:       -1px;
             }
             & ~.luna-edgeport__svg .luna-port__shape {
                 fill: rgb(119, 119, 119) !important;
@@ -136,41 +147,4 @@
             rect { fill: darken(#fff, 40%) }
         }
     }
-}
-.luna-edgeports--i {
-    .luna-icon--drag   { right: 5px  }
-    .luna-icon--remove { right: 19px }
-    .luna-icon--plus   { right: 33px }
-}
-
-.luna-edgeports--o {
-    .luna-icon--drag   { left: 5px  }
-    .luna-icon--remove { left: 19px }
-    .luna-icon--plus   { left: 33px }
-}
-
-.luna-edgeport__name {
-    position:    absolute;
-    width:       0;
-    opacity:     0;
-    overflow:    hidden;
-    white-space: nowrap;
-}
-
-.luna-edgeport__svg {
-    top:      50%;
-    height:   1px;
-    width:    1px;
-    overflow: inherit;
-    position: absolute;
-}
-
-.luna-edgeport--dragged {
-    background: red;
-    width:      0;
-}
-
-.luna-icon--remove g {
-    transform-origin: 8px;
-    transform:        rotate(45deg);
 }
