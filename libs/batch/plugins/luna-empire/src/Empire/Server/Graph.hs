@@ -177,10 +177,11 @@ handleAddNode = modifyGraph (mtuple action) success where
         sendToBus' $ AddNode.Update location node
         withJust connectTo $ connectNodes location expression nodeId
 
+--TODO[MM]: Allow add port to any position
 handleAddPort :: Request AddPort.Request -> StateT Env BusT ()
 handleAddPort = modifyGraph (mtuple action) success where
-    action (AddPort.Request location nodeId) = Graph.addPort location nodeId
-    success request@(Request _ _ req@(AddPort.Request location nodeId)) _ node = replyResult request () node >> sendToBus' (NodesUpdate.Update location [node])
+    action (AddPort.Request location nodeId pos) = Graph.addPort location nodeId
+    success request@(Request _ _ req@(AddPort.Request location nodeId pos)) _ node = replyResult request () node >> sendToBus' (NodesUpdate.Update location [node])
 
 handleAddSubgraph :: Request AddSubgraph.Request -> StateT Env BusT ()
 handleAddSubgraph = modifyGraph (mtuple action) success where

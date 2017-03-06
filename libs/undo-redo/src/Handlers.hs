@@ -244,8 +244,9 @@ handleDisconnectUndo (Response.Response _ _ (Disconnect.Request location dst) in
             redoMsg = Disconnect.Request location dst
         in Just (undoMsg, redoMsg)
 
+--TODO[SB]: Handle add port for any position
 handleAddPortUndo :: AddPort.Response -> Maybe (RemovePort.Request, AddPort.Request)
-handleAddPortUndo (Response.Response _ _ req@(AddPort.Request location nodeId) _inv res) =
+handleAddPortUndo (Response.Response _ _ req@(AddPort.Request location nodeId pos) _inv res) =
     withOk res $ \node ->
         let Port.OutPortId newlyAddedPort = view Port.portId $ last $ Map.elems $ Map.filter Port.isOutputPort $ node ^. Node.ports
             undoMsg = RemovePort.Request location $ OutPortRef' $ OutPortRef nodeId newlyAddedPort

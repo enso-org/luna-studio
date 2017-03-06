@@ -37,8 +37,8 @@ withUUID act = do
 addNode :: NodeId -> Text -> NodeMeta -> Maybe NodeId -> Command State ()
 addNode = withWorkspace .:: BatchCmd.addNode
 
-addPort :: NodeId -> Command State ()
-addPort = withWorkspace . BatchCmd.addPort
+addPort :: NodeId -> Int -> Command State ()
+addPort = withWorkspace .: BatchCmd.addPort
 
 addSubgraph :: [Node] -> [Connection] -> Command State ()
 addSubgraph = withWorkspace .: BatchCmd.addSubgraph

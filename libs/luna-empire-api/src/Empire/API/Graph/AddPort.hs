@@ -14,6 +14,7 @@ import qualified Empire.API.Topic              as T
 
 data Request = Request { _location    :: GraphLocation
                        , _nodeId      :: NodeId
+                       , _position    :: Int
                        } deriving (Generic, Eq, NFData, Show)
 
 --TODO[MM]: Remove Node as Response Result. We don't use it

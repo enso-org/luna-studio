@@ -38,6 +38,7 @@ import qualified Luna.Studio.Action.Connect             as Connect
 import           Luna.Studio.Action.Geometry            (lineHeight)
 import           Luna.Studio.Action.Geometry.Connection (createConnectionModel, createCurrentConnectionModel, getInputEdgePortPosition,
                                                          getOutputEdgePortPosition)
+import qualified Luna.Studio.Action.Graph.AddPort       as AddPort
 import           Luna.Studio.Action.Graph.Lookup        (getPort)
 import           Luna.Studio.Action.Graph.Update        (updateConnectionsForEdges)
 import           Luna.Studio.Event.Mouse                (mousePosition, workspacePosition)
@@ -158,8 +159,9 @@ restorePortDrag nodeId connect = when (connect ^. Action.connectSourcePort . Por
 removePort :: PortDrag -> Command State ()
 removePort portDrag = Batch.removePort (portDrag ^. Action.portDragPortRef) >> end portDrag
 
+--TODO[LJK]: Pass correct position here
 addPort :: NodeId -> Command State ()
-addPort = Batch.addPort
+addPort nodeId = AddPort.addPort nodeId 0
 
 
 

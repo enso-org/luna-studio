@@ -13,7 +13,7 @@ import           Empire.API.Data.Connection             (Connection)
 import qualified Empire.API.Data.DefaultValue           as DefaultValue
 import           Empire.API.Data.GraphLocation          (GraphLocation)
 import qualified Empire.API.Data.GraphLocation          as GraphLocation
-import           Empire.API.Data.Node                   (Node, NodeId, NodeType)
+import           Empire.API.Data.Node                   (Node, NodeId)
 import           Empire.API.Data.NodeMeta               (NodeMeta)
 import           Empire.API.Data.PortRef                (AnyPortRef (..), InPortRef (..), OutPortRef (..))
 import           Empire.API.Data.Project                (ProjectId)
@@ -54,8 +54,8 @@ withLibrary w f = f (w ^. Workspace.currentLocation)
 addNode :: NodeId -> Text -> NodeMeta -> Maybe NodeId -> Workspace -> UUID -> Maybe UUID -> IO ()
 addNode nodeId expression meta connectTo workspace uuid guiID = sendRequest $ Message uuid guiID $ (withLibrary workspace AddNode.Request) nodeId expression meta connectTo
 
-addPort :: NodeId -> Workspace -> UUID -> Maybe UUID -> IO ()
-addPort nodeId workspace uuid guiID = sendRequest $ Message uuid guiID $ (withLibrary workspace AddPort.Request) nodeId
+addPort :: NodeId -> Int -> Workspace -> UUID -> Maybe UUID -> IO ()
+addPort nodeId pos workspace uuid guiID = sendRequest $ Message uuid guiID $ (withLibrary workspace AddPort.Request) nodeId pos
 
 addSubgraph :: [Node] -> [Connection] -> Workspace -> UUID -> Maybe UUID -> IO ()
 addSubgraph nodes connections workspace uuid guiID = addSubgraph' nodes connections workspace uuid guiID False
