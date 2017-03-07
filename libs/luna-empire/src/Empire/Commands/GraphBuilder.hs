@@ -24,7 +24,7 @@ import           Control.Monad.State               hiding (when)
 
 import qualified Data.List                         as List
 import qualified Data.Map                          as Map
-import           Data.Maybe                        (catMaybes, fromJust, fromMaybe, maybeToList)
+import           Data.Maybe                        (catMaybes, isJust, fromJust, fromMaybe, maybeToList)
 import           Data.Text                         (Text)
 import qualified Data.Text                         as Text
 import qualified Data.UUID.V4                      as UUID (nextRandom)
@@ -56,6 +56,7 @@ import           Empire.Data.Layers                (TypeLayer)
 import           Empire.Empire
 
 import qualified Luna.IR as IR
+import qualified Luna.IR.Expr.Combinators as IR
 import           Luna.IR.Expr.Term.Uni
 
 nameBreadcrumb :: ASTOp m => BreadcrumbItem -> m (Named BreadcrumbItem)
@@ -195,24 +196,28 @@ extractArgTypes node = do
 extractArgNames :: ASTOp m => NodeRef -> m [String]
 extractArgNames node = do
     match node $ \case
-        Lam{} -> do
-            args <- ASTDeconstruct.extractArguments node
+        Lam{}    -> do
+            args  <- ASTDeconstruct.extractArguments node
             names <- mapM ASTRead.getVarName args
             return names
         -- App is Lam that has some args applied
         App f _a -> extractArgNames =<< IR.source f
+        Cons{}   -> do
+            args  <- ASTDeconstruct.extractArguments node
+            names <- mapM ASTRead.getVarName args
+            return names
         _ -> return []
 
 extractPortInfo :: ASTOp m => NodeRef -> m ([TypeRep], [PortState])
 extractPortInfo node = do
     match node $ \case
         App f _args -> do
-            unpacked       <- ASTDeconstruct.extractArguments node
-            portStates     <- mapM getPortState unpacked
-            tp    <- do
+            unpacked   <- ASTDeconstruct.extractArguments node
+            portStates <- mapM getPortState unpacked
+            tp         <- do
                 foo <- IR.readLayer @TypeLayer node
                 IR.source foo
-            types <- extractArgTypes tp
+            types      <- extractArgTypes tp
             return (types, portStates)
         Lam _as o -> do
             args     <- ASTDeconstruct.extractArguments node
@@ -225,6 +230,11 @@ extractPortInfo node = do
                     tpRef <- IR.source =<< IR.readLayer @TypeLayer node
                     types <- extractArgTypes tpRef
                     return (types, [])
+        Cons n _args -> do
+            args       <- ASTDeconstruct.extractArguments node
+            portStates <- mapM getPortState args
+            types      <- IR.readLayer @TypeLayer node >>= IR.source >>= extractArgTypes
+            return (types, portStates)
         _ -> do
             tpRef <- IR.source =<< IR.readLayer @TypeLayer node
             types <- extractArgTypes tpRef
@@ -241,7 +251,8 @@ buildArgPorts ref = do
     (types, states) <- extractPortInfo ref
     names <- extractArgNames ref
     lambdaSomewhere <- there'sLambdaSomewhereThere ref
-    let additionalEmptyPort = if (not.null) types || lambdaSomewhere then 0
+    isCons <- isJust <$> IR.narrowAtom @IR.Cons ref
+    let additionalEmptyPort = if (not.null) types || lambdaSomewhere || isCons then 0
                               else if NotConnected `elem` states then 0 else 1
         portsTypes = types ++ replicate (max (length names) (length states) - length types + additionalEmptyPort) TStar
         namesGen = names ++ drop (length names) (("arg" ++) . show <$> [(0::Int)..])

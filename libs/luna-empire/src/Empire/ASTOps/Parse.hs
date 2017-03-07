@@ -8,6 +8,7 @@ module Empire.ASTOps.Parse (
 
 import           Empire.Prelude
 
+import           Data.Char                    (isUpper)
 import           Data.List                    (partition)
 import qualified Data.Text                    as Text
 
@@ -32,15 +33,26 @@ instance Exception e => Exception (ParserException e) where
 
 parseExpr :: ASTOp m => String -> m (Maybe Text.Text, NodeRef)
 parseExpr s = do
-  lamRes <- tryParseLambda s
-  parsed <- pure $ Parsing.runParser Parsing.expr s
+  lamRes  <- tryParseLambda s
+  parsed  <- pure $ Parsing.runParser Parsing.expr s
+  pattern <- tryParsePattern s
   case lamRes of
       (name, Just l)  -> return (name, l)
-      _               -> case parsed of
-          Right (Parser.IRBuilder x) -> do
-              x' <- x
-              return (Nothing, x')
-          Left err -> throwM $ ParserException err
+      _               -> case pattern of
+          Just p -> return (Nothing, p)
+          _      -> case parsed of
+              Right (Parser.IRBuilder x) -> do
+                  x' <- x
+                  return (Nothing, x')
+              Left err -> throwM $ ParserException err
+
+tryParsePattern :: ASTOp m => String -> m (Maybe NodeRef)
+tryParsePattern s = case words s of
+    (cons : args) | isUpper (head cons) -> do
+        argRefs <- mapM (IR.var' . stringToName) args
+        consRef <- IR.cons (stringToName cons) argRefs
+        return $ Just $ IR.generalize consRef
+    _ -> return Nothing
 
 tryParseLambda :: ASTOp m => String -> m (Maybe Text.Text, Maybe NodeRef)
 tryParseLambda s = case words s of

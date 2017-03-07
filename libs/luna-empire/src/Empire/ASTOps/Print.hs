@@ -15,7 +15,6 @@ import           Data.Char                (isAlpha)
 
 import           Empire.ASTOp              (ASTOp, match)
 import           Empire.Data.AST           (NodeRef)
-import qualified Empire.ASTOps.Builder     as ASTBuilder
 import qualified Empire.ASTOps.Read        as ASTRead
 import qualified Empire.ASTOps.Deconstruct as ASTDeconstruct
 import           Empire.API.Data.Node      (NodeId)
@@ -121,7 +120,9 @@ printExpression' suppressNodes paren node = do
         Blank -> return "_"
         IR.Number n -> pure $ show n
         IR.String s -> return $ show s
-        Cons n _ -> pure $ nameToString n
+        Cons n args -> do
+            argsNames <- mapM (printExpression' False False <=< IR.source) args
+            return $ nameToString n ++ " " ++ unwords argsNames
         _ -> return ""
 
 printExpression :: ASTOp m => NodeRef -> m String

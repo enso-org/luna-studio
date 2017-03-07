@@ -34,9 +34,10 @@ data ExtractFilter = FApp | FLam
 
 extractArguments :: ASTOp m => NodeRef -> m [NodeRef]
 extractArguments expr = match expr $ \case
-    App{} -> reverse <$> extractArguments' FApp expr
-    Lam{} -> extractArguments' FLam expr
-    _ -> return []
+    App{}       -> reverse <$> extractArguments' FApp expr
+    Lam{}       -> extractArguments' FLam expr
+    Cons _ args -> mapM IR.source args
+    _           -> return []
 
 extractArguments' :: ASTOp m => ExtractFilter -> NodeRef -> m [NodeRef]
 extractArguments' FApp expr = match expr $ \case
