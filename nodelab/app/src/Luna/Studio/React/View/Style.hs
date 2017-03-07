@@ -30,3 +30,6 @@ plainRect w h x y =
           , "x"      $= fromString (show x)
           , "y"      $= fromString (show y)
           ] mempty
+
+plainPath :: JSString -> JSString -> ReactElementM ViewEventHandler ()
+plainPath c d = path_ [ "className" $= c, "d" $= d ] mempty

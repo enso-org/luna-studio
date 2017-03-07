@@ -27,7 +27,7 @@ import           Luna.Studio.React.Store       (Ref, dispatch)
 import           Luna.Studio.React.View.Field  (singleField_)
 import           Luna.Studio.React.View.Port   (handlers, jsShow2)
 import qualified Luna.Studio.React.View.Style  as Style
-import           Luna.Studio.React.View.Style  (plainRect)
+import           Luna.Studio.React.View.Style  (plainPath, plainRect)
 import           React.Flux                    hiding (view)
 
 
@@ -47,7 +47,7 @@ edgeSidebar_ ref mayDraggedPort node = when (isEdge node) $ do
     div_
         [ "key"       $= name node
         , "id"        $= if isInputEdge node then inputSidebarId else outputSidebarId
-        , "className" $= Style.prefixFromList [ "edgeports", if isInputEdge node then "edgeports--i" else "edgeports--o" ]
+        , "className" $= Style.prefixFromList [ "edgeports", "edgeports--editmode", if isInputEdge node then "edgeports--i" else "edgeports--o" ]
         , onMouseDown $ \e _ -> [stopPropagation e]
         , onMouseMove $ \e m -> stopPropagation e : (dispatch ref $ UI.EdgeEvent $ Edge.MouseMove m nodeId)
         ] $ do
@@ -91,8 +91,8 @@ edgePort_ ref p = when (p ^. Port.visible) $ do
                 , "width"     $= "16"
                 , "height"    $= "16"
                 ] $ do
-                plainRect 10 2 3 7
-                plainRect 2 10 7 3
+                plainPath "class11" "M10.3524512,13.6661446 C11.9308073,15.040015 13.7955904,16 16,16 C20.418278,16 24,12.418278 24,8 C24,3.581722 20.418278,0 16,0 C13.8118086,0 11.9281638,0.929978941 10.3844772,2.30211225 C5.05877654,7.01206446 1.77063785,7.45902777 -1.49011612e-08,8 C1.77063785,8.56772327 4.98865645,8.997262 10.3524512,13.6661446 Z"
+                plainPath "class12" "M15,7 L10,7 L10,9 L15,9 L15,14 L17,14 L17,9 L22,9 L22,7 L17,7 L17,2 L15,2 L15,7 Z"
         svg_
             [ "className" $= Style.prefix "edgeport__svg"
             ] $ do
