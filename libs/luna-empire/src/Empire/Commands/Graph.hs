@@ -45,14 +45,15 @@ import           Control.Monad.State           hiding (when)
 import           Data.Coerce                   (coerce)
 import           Data.List                     (sort)
 import qualified Data.Map                      as Map
-import           Data.Maybe                    (catMaybes)
+import           Data.Maybe                    (catMaybes, isJust)
 import           Data.Text                     (Text)
 import qualified Data.Text                     as Text
 import qualified Data.UUID                     as UUID
 import qualified Data.UUID.V4                  as UUID (nextRandom)
 import           Empire.Prelude
 
-import           Empire.Data.AST                 (NodeRef, NotInputEdgeException (..), NotUnifyException)
+import           Empire.Data.AST                 (NodeRef, NotInputEdgeException (..), NotUnifyException,
+                                                  astExceptionFromException, astExceptionToException)
 import           Empire.Data.BreadcrumbHierarchy (addID, addWithLeafs, removeID, topLevelIDs)
 import           Empire.Data.Graph               (Graph)
 import qualified Empire.Data.Graph               as Graph
@@ -69,7 +70,7 @@ import qualified Empire.API.Data.Node            as Node
 import           Empire.API.Data.NodeMeta        (NodeMeta)
 import qualified Empire.API.Data.NodeMeta        as NodeMeta
 import           Empire.API.Data.Port            (InPort (..), OutPort (..), PortId (..))
-import qualified Empire.API.Data.Port            as Port (PortState (..), state)
+import qualified Empire.API.Data.Port            as Port
 import           Empire.API.Data.PortRef         (AnyPortRef (..), InPortRef (..), OutPortRef (..))
 import qualified Empire.API.Data.PortRef         as PortRef
 import           Empire.ASTOp                    (ASTOp, runASTOp, runAliasAnalysis)
@@ -88,7 +89,7 @@ import qualified Empire.Commands.Publisher       as Publisher
 import           Empire.Empire
 
 import qualified Luna.IR                  as IR
-import qualified Luna.IR.Expr.Combinators as IR (changeSource, deleteSubtree, replaceNode)
+import qualified Luna.IR.Expr.Combinators as IR (changeSource, deleteSubtree, narrowAtom, replaceNode)
 
 generateNodeName :: ASTOp m => m String
 generateNodeName = do
@@ -223,7 +224,7 @@ addSubgraph loc nodes conns saveIds = withTC loc False $ do
         forM_ nodes $ \n -> case n ^. Node.nodeType of
             Node.ExpressionNode expr -> void $ addNodeNoTC loc (n ^. Node.nodeId) expr (n ^. Node.nodeMeta)
             _ -> return ()
-        forM_ conns $ \(Connection src dst) -> connectNoTC loc src dst
+        forM_ conns $ \(Connection src dst) -> connectNoTC loc src (InPortRef' dst)
         return Nothing
 
     else do
@@ -238,7 +239,7 @@ addSubgraph loc nodes conns saveIds = withTC loc False $ do
         forM_ nodes' $ \n -> case n ^. Node.nodeType of
             Node.ExpressionNode expr -> void $ addNodeNoTC loc (n ^. Node.nodeId) expr (n ^. Node.nodeMeta)
             _ -> return ()
-        forM_ connections' $ \(Connection src dst) -> connectNoTC loc src dst
+        forM_ connections' $ \(Connection src dst) -> connectNoTC loc src (InPortRef' dst)
         return $ Just idMapping
 
 descendInto :: GraphLocation -> NodeId -> GraphLocation
@@ -351,17 +352,17 @@ updateNodeMeta loc nodeId newMeta = withGraph loc $ do
 updatePort :: GraphLocation -> AnyPortRef -> Either Int String -> Empire AnyPortRef
 updatePort = $notImplemented
 
-connectCondTC :: Bool -> GraphLocation -> OutPortRef -> InPortRef -> Empire Connection
-connectCondTC doTC loc outPort inPort = withGraph loc $ do
-    result <- connectNoTC loc outPort inPort
+connectCondTC :: Bool -> GraphLocation -> OutPortRef -> AnyPortRef -> Empire Connection
+connectCondTC doTC loc outPort anyPort = withGraph loc $ do
+    result <- connectNoTC loc outPort anyPort
     when doTC $ runTC loc False
     return result
 
-connect :: GraphLocation -> OutPortRef -> InPortRef -> Empire Connection
-connect loc outPort inPort = withTC loc False $ connectNoTC loc outPort inPort
+connect :: GraphLocation -> OutPortRef -> AnyPortRef -> Empire Connection
+connect loc outPort anyPort = withTC loc False $ connectNoTC loc outPort anyPort
 
-connectPersistent :: ASTOp m => OutPortRef -> InPortRef -> m Connection
-connectPersistent src@(OutPortRef srcNodeId srcPort) dst@(InPortRef dstNodeId dstPort) = do
+connectPersistent :: ASTOp m => OutPortRef -> AnyPortRef -> m Connection
+connectPersistent src@(OutPortRef srcNodeId srcPort) (InPortRef' dst@(InPortRef dstNodeId dstPort)) = do
     let inputPos = case srcPort of
             All            -> 0   -- FIXME: do not equalise All with Projection 0
             Projection int -> int
@@ -369,14 +370,39 @@ connectPersistent src@(OutPortRef srcNodeId srcPort) dst@(InPortRef dstNodeId ds
         Self    -> makeAcc srcNodeId dstNodeId inputPos
         Arg num -> makeApp srcNodeId dstNodeId num inputPos
     return $ Connection src dst
+connectPersistent src@(OutPortRef srcNodeId srcPort) (OutPortRef' dst@(OutPortRef dstNodeId dstPort)) = do
+    case dstPort of
+        All          -> connectToPattern srcNodeId dstNodeId
+        Projection _ -> $notImplemented
 
-connectNoTC :: GraphLocation -> OutPortRef -> InPortRef -> Command Graph Connection
-connectNoTC loc outPort inPort@(InPortRef nid _) = do
+data CannotConnectException = CannotConnectException NodeId NodeId
+    deriving Show
+
+instance Exception CannotConnectException where
+    toException = astExceptionToException
+    fromException = astExceptionFromException
+
+connectToPattern :: ASTOp m => NodeId -> NodeId -> m Connection
+connectToPattern src dst = do
+    cons         <- ASTRead.getASTTarget dst
+    dstIsPattern <- isJust <$> IR.narrowAtom @IR.Cons cons
+    when (not dstIsPattern) $ throwM $ CannotConnectException src dst
+
+    ASTModify.rewireNodeName dst cons
+
+    value        <- ASTRead.getASTVar src
+    ASTModify.rewireNode dst value
+
+    return $ Connection (OutPortRef src Port.All) (InPortRef dst (Port.Arg 0))
+
+connectNoTC :: GraphLocation -> OutPortRef -> AnyPortRef -> Command Graph Connection
+connectNoTC loc outPort anyPort = do
     (connection, nodeToUpdate) <- runASTOp $ do
-        connection <- connectPersistent outPort inPort
+        connection <- connectPersistent outPort anyPort
 
         -- if input port is not an edge, send update to gui
         edges <- GraphBuilder.getEdgePortMapping
+        let nid = PortRef.nodeId' anyPort
         let nodeToUpdate = case edges of
                 Just (input, output) -> do
                     if (nid /= input && nid /= output) then Just <$> GraphBuilder.buildNode nid

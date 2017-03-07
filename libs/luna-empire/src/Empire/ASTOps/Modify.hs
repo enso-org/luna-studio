@@ -11,6 +11,7 @@ module Empire.ASTOps.Modify (
     redirectLambdaOutput
   , renameVar
   , rewireNode
+  , rewireNodeName
   , setLambdaOutputToBlank
   , addLambdaArg
   , moveLambdaArg
@@ -138,12 +139,26 @@ replaceTargetNode matchNode newTarget = do
             IR.changeSource r newTarget
         _ -> throwM $ NotUnifyException matchNode
 
+replaceVarNode :: ASTOp m => NodeRef -> NodeRef -> m ()
+replaceVarNode matchNode newVar = do
+    match matchNode $ \case
+        Unify l _r -> do
+            IR.changeSource l newVar
+        _ -> throwM $ NotUnifyException matchNode
+
 rewireNode :: ASTOp m => NodeId -> NodeRef -> m ()
 rewireNode nodeId newTarget = do
     matchNode <- ASTRead.getASTPointer nodeId
     oldTarget <- ASTRead.getASTTarget  nodeId
     replaceTargetNode matchNode newTarget
     ASTRemove.removeSubtree oldTarget
+
+rewireNodeName :: ASTOp m => NodeId -> NodeRef -> m ()
+rewireNodeName nodeId newVar = do
+    matchNode <- ASTRead.getASTPointer nodeId
+    oldVar    <- ASTRead.getASTVar  nodeId
+    replaceVarNode matchNode newVar
+    ASTRemove.removeSubtree oldVar
 
 renameVar :: ASTOp m => NodeRef -> String -> m ()
 renameVar vref name = do

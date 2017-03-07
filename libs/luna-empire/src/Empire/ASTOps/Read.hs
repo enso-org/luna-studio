@@ -19,6 +19,7 @@ module Empire.ASTOps.Read (
   , getASTPointer
   , getASTTarget
   , getASTVar
+  , getTargetNode
   , getVarNode
   , getLambdaBodyRef
   , getFirstNonLambdaRef
@@ -29,6 +30,7 @@ module Empire.ASTOps.Read (
   , getSelfNodeRef
   , canEnterNode
   , rhsIsLambda
+  , varIsPatternMatch
   ) where
 
 import           Control.Monad                      ((>=>), forM)
@@ -172,6 +174,14 @@ isLambda expr = isJust <$> IRExpr.narrowAtom @IR.Lam expr
 
 isMatch :: ASTOp m => NodeRef -> m Bool
 isMatch expr = isJust <$> IRExpr.narrowAtom @IR.Unify expr
+
+isCons :: ASTOp m => NodeRef -> m Bool
+isCons expr = isJust <$> IRExpr.narrowAtom @IR.Cons expr
+
+varIsPatternMatch :: ASTOp m => NodeRef -> m Bool
+varIsPatternMatch expr = do
+    var <- getVarNode expr
+    isCons var
 
 rhsIsLambda :: ASTOp m => NodeId -> m Bool
 rhsIsLambda nid = do

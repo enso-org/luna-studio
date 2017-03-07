@@ -17,6 +17,7 @@ module EmpireUtils (
     , withChannels
     , emptyGraphLocation
     , astNull
+    , connectToInput
     ) where
 
 import           Control.Concurrent.STM        (atomically)
@@ -26,9 +27,11 @@ import           Data.Coerce                   (coerce)
 import           Data.UUID                     (UUID, nil)
 import           Data.UUID.V4                  (nextRandom)
 import           Empire.API.Data.Breadcrumb    (Breadcrumb(..), BreadcrumbItem(Lambda))
+import           Empire.API.Data.Connection    (Connection)
 import           Empire.API.Data.GraphLocation (GraphLocation(..))
+import           Empire.API.Data.PortRef       (AnyPortRef(InPortRef'), InPortRef, OutPortRef)
 import           Empire.API.Data.Node          (Node, NodeId, NodeType(..), nodeId, nodeType)
-import qualified Empire.Commands.Graph         as Graph (getNodes)
+import qualified Empire.Commands.Graph         as Graph (connect, getNodes)
 import           Empire.Commands.Library       (createLibrary, listLibraries, withLibrary)
 import           Empire.Commands.Project       (createProject, listProjects)
 import           Empire.Data.AST               ()
@@ -113,3 +116,6 @@ astNull (ASTState (ElemRepMapGraph m) _) =
         Just linkMap = m ^. at (getTypeDesc @(Link' AnyExpr))
         ManagedMap _ freeLink _ = linkMap
     in  0 `elem` freeExpr && 0 `elem` freeLink
+
+connectToInput :: GraphLocation -> OutPortRef -> InPortRef -> Empire Connection
+connectToInput loc outPort inPort = Graph.connect loc outPort (InPortRef' inPort)

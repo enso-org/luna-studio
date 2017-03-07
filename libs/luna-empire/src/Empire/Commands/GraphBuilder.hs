@@ -146,7 +146,7 @@ buildNode nid = do
     meta     <- AST.readMeta root
     name     <- fromMaybe "" <$> getNodeName nid
     canEnter <- ASTRead.canEnterNode nid
-    ports    <- buildPorts ref
+    ports    <- buildPorts root
     let code    = Just $ Text.pack expr
         portMap = Map.fromList $ flip fmap ports $ \p@(Port id' _ _ _) -> (id', p)
     return $ API.Node nid name (API.ExpressionNode $ Text.pack expr) canEnter portMap (fromMaybe def meta) code
@@ -166,7 +166,9 @@ getNodeName nid = do
     match' <- ASTRead.isMatch root
     if match' then do
         vnode <- GraphUtils.getASTVar nid
-        name <- ASTRead.getVarName vnode
+        name <- match vnode $ \case
+            Var{}  -> ASTRead.getVarName vnode
+            Cons{} -> Print.printNodeExpression vnode
         return $ Just (Text.pack name)
     else return Nothing
 
@@ -291,12 +293,38 @@ followTypeRep ref = do
     Print.getTypeRep tp
 
 buildPorts :: ASTOp m => NodeRef -> m [Port]
-buildPorts ref = do
+buildPorts node = do
+    isMatch  <- ASTRead.isMatch node
+    flipNode <- if isMatch then ASTRead.varIsPatternMatch node else return False
+    ref      <- if isMatch then if flipNode then ASTRead.getVarNode node else ASTRead.getTargetNode node
+                           else return node
     selfPort <- maybeToList <$> buildSelfPort ref
     argPorts <- buildArgPorts ref
     tpRep    <- followTypeRep ref
     outState <- getPortState ref
-    return $ selfPort ++ argPorts ++ [Port (OutPortId All) "Output" tpRep outState]
+    let ports = selfPort ++ argPorts ++ [Port (OutPortId All) "Output" tpRep outState]
+    return $ if flipNode then flipPorts ports else ports
+
+data SelfPortFlipException = SelfPortFlipException
+    deriving Show
+
+instance Exception SelfPortFlipException where
+    fromException = astExceptionFromException
+    toException   = astExceptionToException
+
+flipPorts :: [Port] -> [Port]
+flipPorts = map flipPort
+    where
+        flipPort (Port portId portName portType portState) =
+            Port (flipPortId portId) (flipPortName portName) portType portState
+
+        flipPortId (OutPortId All)            = InPortId  (Arg 0)
+        flipPortId (OutPortId (Projection i)) = InPortId  (Arg i)
+        flipPortId (InPortId  (Arg i))        = OutPortId (Projection i)
+        flipPortId (InPortId  Self)           = error "flipPortId: cannot flip self"
+
+        flipPortName "Output" = "Input"
+        flipPortName name     = name
 
 buildConnections :: ASTOp m => m [(OutPortRef, InPortRef)]
 buildConnections = do
@@ -421,22 +449,32 @@ getNodeInputs edgeNodes nodeId = do
     root        <- GraphUtils.getASTPointer nodeId
     match'      <- ASTRead.isMatch root
     ref         <- if match' then GraphUtils.getASTTarget nodeId else return root
-    selfMay     <- ASTRead.getSelfNodeRef ref
-    lambdaArgs  <- getOuterLambdaArguments
-    selfNodeMay <- case selfMay of
-        Just self -> fmap snd $ resolveInputNodeId edgeNodes lambdaArgs self
-        Nothing   -> return Nothing
-    let projection  = case selfMay of
-            Just self -> Just $ outIndexToProjection $ List.findIndex (== self) lambdaArgs
-            Nothing   -> Nothing
-    let selfConnMay = (,) <$> (OutPortRef <$> selfNodeMay <*> projection)
-                          <*> (Just $ InPortRef nodeId Self)
+    isPattern   <- if match' then ASTRead.varIsPatternMatch root else return False
+    pattern     <- if isPattern then Just <$> GraphUtils.getASTVar nodeId
+                                else return Nothing
+    case pattern of
+        Just _p -> do
+            nodeBeingMatched <- GraphUtils.getASTTarget nodeId >>= ASTRead.getNodeId
+            case nodeBeingMatched of
+                Just id' -> return [(OutPortRef id' Port.All, InPortRef nodeId (Port.Arg 0))]
+                _        -> return []
+        _       -> do
+            selfMay     <- ASTRead.getSelfNodeRef ref
+            lambdaArgs  <- getOuterLambdaArguments
+            selfNodeMay <- case selfMay of
+                Just self -> fmap snd $ resolveInputNodeId edgeNodes lambdaArgs self
+                Nothing   -> return Nothing
+            let projection  = case selfMay of
+                    Just self -> Just $ outIndexToProjection $ List.findIndex (== self) lambdaArgs
+                    Nothing   -> Nothing
+            let selfConnMay = (,) <$> (OutPortRef <$> selfNodeMay <*> projection)
+                                  <*> (Just $ InPortRef nodeId Self)
 
-    args     <- ASTDeconstruct.extractArguments ref
-    nodeMays <- mapM (resolveInputNodeId edgeNodes lambdaArgs) args
-    let withInd  = zipWith (\(outPortIndex, nodeId) index -> (outPortIndex, nodeId, index)) nodeMays [0..]
-        hasNodeId (outIndex, Just nodeId, index) = Just (outIndex, nodeId, index)
-        hasNodeId _ = Nothing
-        onlyExt  = catMaybes $ map hasNodeId withInd
-        conns    = flip map onlyExt $ \((outIndexToProjection -> proj), n, i) -> (OutPortRef n proj, InPortRef nodeId (Arg i))
-    return $ maybeToList selfConnMay ++ conns
+            args     <- ASTDeconstruct.extractArguments ref
+            nodeMays <- mapM (resolveInputNodeId edgeNodes lambdaArgs) args
+            let withInd  = zipWith (\(outPortIndex, nodeId) index -> (outPortIndex, nodeId, index)) nodeMays [0..]
+                hasNodeId (outIndex, Just nodeId, index) = Just (outIndex, nodeId, index)
+                hasNodeId _ = Nothing
+                onlyExt  = catMaybes $ map hasNodeId withInd
+                conns    = flip map onlyExt $ \((outIndexToProjection -> proj), n, i) -> (OutPortRef n proj, InPortRef nodeId (Arg i))
+            return $ maybeToList selfConnMay ++ conns
