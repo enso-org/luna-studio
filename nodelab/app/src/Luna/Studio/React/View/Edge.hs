@@ -87,12 +87,14 @@ edgePort_ ref p = when (p ^. Port.visible) $ do
         ] $ do
         if isPortInput p then return () else
             svg_
-                [ "className" $= Style.prefixFromList [ "icon", "icon--plus" ]
-                , "width"     $= "16"
+                [ "className" $= Style.prefixFromList [ "edgeport__svg", "port-add-inbetween" ]
+                , "width"     $= "24"
                 , "height"    $= "16"
                 ] $ do
-                plainPath "class11" "M10.3524512,13.6661446 C11.9308073,15.040015 13.7955904,16 16,16 C20.418278,16 24,12.418278 24,8 C24,3.581722 20.418278,0 16,0 C13.8118086,0 11.9281638,0.929978941 10.3844772,2.30211225 C5.05877654,7.01206446 1.77063785,7.45902777 -1.49011612e-08,8 C1.77063785,8.56772327 4.98865645,8.997262 10.3524512,13.6661446 Z"
-                plainPath "class12" "M15,7 L10,7 L10,9 L15,9 L15,14 L17,14 L17,9 L22,9 L22,7 L17,7 L17,2 L15,2 L15,7 Z"
+                plainPath (Style.prefix "port-add-inbetween__droplet") "M10.3524512,13.6661446 C11.9308073,15.040015 13.7955904,16 16,16 C20.418278,16 24,12.418278 24,8 C24,3.581722 20.418278,0 16,0 C13.8118086,0 11.9281638,0.929978941 10.3844772,2.30211225 C5.05877654,7.01206446 1.77063785,7.45902777 -1.49011612e-08,8 C1.77063785,8.56772327 4.98865645,8.997262 10.3524512,13.6661446 Z"
+                g_ [ "className" $= Style.prefix "port-add-inbetween__plus" ] $ do
+                    plainRect 2 8 (-1) (-4)
+                    plainRect 8 2 (-4) (-1)
         svg_
             [ "className" $= Style.prefix "edgeport__svg"
             ] $ do
@@ -102,12 +104,16 @@ edgePort_ ref p = when (p ^. Port.visible) $ do
                 , "fill"      $= color
                 , "r"         $= jsShow2 3
                 ] mempty
+            g_ [ "className" $= Style.prefix "port__plus" ] $ do
+                  plainRect 2 8 (-1) (-4)
+                  plainRect 8 2 (-4) (-1)
             circle_
                 ( handlers ref portRef ++
                   [ "className" $= Style.prefix "port__select"
                   , "key"       $= (jsShow portId <> jsShow num <> "b")
                   , "r"         $= jsShow2 (lineHeight/1.5)
                   ] ) mempty
+
         if p ^. Port.isEdited then
             singleField_ [ "id" $= portLabelId ] (jsShow portId)
                 $ Field.mk ref (convert $ p ^. Port.name)
