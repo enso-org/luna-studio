@@ -215,31 +215,13 @@ addPort loc nid = withGraph loc $ runASTOp $ do
 generateNodeId :: IO NodeId
 generateNodeId = UUID.nextRandom
 
-addSubgraph :: GraphLocation -> [Node] -> [Connection] -> Bool -> Empire (Maybe (Map.Map NodeId NodeId))
-addSubgraph loc nodes conns saveIds = withTC loc False $ do
-
-    newIds <- liftIO $ replicateM (length nodes) generateNodeId
-    if saveIds then do
-        forM_ nodes $ \n -> case n ^. Node.nodeType of
-            Node.ExpressionNode expr -> void $ addNodeNoTC loc (n ^. Node.nodeId) expr (n ^. Node.nodeMeta)
-            _ -> return ()
-        forM_ conns $ \(Connection src dst) -> connectNoTC loc src dst
-        return Nothing
-
-    else do
-        let
-            idMapping' = Map.fromList $ flip zip newIds $ flip map nodes $ view Node.nodeId
-            connectionsSrcs = map (^. Connection.src . PortRef.srcNodeId) conns
-            idMapping = Map.union idMapping' $ Map.fromList (zip connectionsSrcs connectionsSrcs)
-            nodes' = flip map nodes $ Node.nodeId %~ (idMapping Map.!)
-            connections' = map (\conn -> conn & Connection.src . PortRef.srcNodeId %~ (idMapping Map.!)
-                                              & Connection.dst . PortRef.dstNodeId %~ (idMapping Map.!)
-                               ) conns
-        forM_ nodes' $ \n -> case n ^. Node.nodeType of
-            Node.ExpressionNode expr -> void $ addNodeNoTC loc (n ^. Node.nodeId) expr (n ^. Node.nodeMeta)
-            _ -> return ()
-        forM_ connections' $ \(Connection src dst) -> connectNoTC loc src dst
-        return $ Just idMapping
+addSubgraph :: GraphLocation -> [Node] -> [Connection] -> Empire ([Node])
+addSubgraph loc nodes conns = withTC loc False $ do
+    newNodes <- fmap catMaybes $ forM nodes $ \n -> case n ^. Node.nodeType of
+        Node.ExpressionNode expr -> Just <$> addNodeNoTC loc (n ^. Node.nodeId) expr (n ^. Node.nodeMeta)
+        _ -> return Nothing
+    forM_ conns $ \(Connection src dst) -> connectNoTC loc src dst
+    return newNodes
 
 descendInto :: GraphLocation -> NodeId -> GraphLocation
 descendInto (GraphLocation pid lid breadcrumb) nid = GraphLocation pid lid breadcrumb'

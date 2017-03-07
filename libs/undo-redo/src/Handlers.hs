@@ -140,21 +140,12 @@ handleAddNodeUndo (Response.Response _ _ (AddNode.Request location nodeType node
         in Just (undoMsg, redoMsg)
 
 handleAddSubgraphUndo :: AddSubgraph.Response -> Maybe (RemoveNodes.Request, AddSubgraph.Request)
-handleAddSubgraphUndo (Response.Response _ _ (AddSubgraph.Request location nodes connections saveNodeIds) _ res ) =
-    withOk res $ \idMapping ->
-        case idMapping of
-            Nothing     -> let ids     = map (^. Node.nodeId) nodes
-                               undoMsg = RemoveNodes.Request location ids
-                               redoMsg = AddSubgraph.Request location nodes connections True
-                           in Just (undoMsg, redoMsg)
-            Just idsMap -> let nodes'       = flip map nodes $ Node.nodeId %~ (idsMap Map.!)
-                               connections' = map ((Connection.src . PortRef.srcNodeId %~ (idsMap Map.!))
-                                                 . (Connection.dst . PortRef.dstNodeId %~ (idsMap Map.!))
-                                                  ) connections
-                               ids'    = map (^. Node.nodeId) nodes'
-                               undoMsg = RemoveNodes.Request location ids'
-                               redoMsg = AddSubgraph.Request location nodes' connections' True
-                           in Just (undoMsg, redoMsg)
+handleAddSubgraphUndo (Response.Response _ _ (AddSubgraph.Request location nodes connections) _ res) =
+    withOk res $ const $ Just (undoMsg, redoMsg) where
+        ids     = map (view Node.nodeId) nodes
+        undoMsg = RemoveNodes.Request location ids
+        redoMsg = AddSubgraph.Request location nodes connections
+
 
 connect :: (OutPortRef, InPortRef) -> Connection
 connect = uncurry Connection
@@ -176,7 +167,7 @@ handleRemoveNodesUndo (Response.Response _ _ (RemoveNodes.Request location nodes
         let deletedNodes        = filterNodes nodesIds nodes
             deletedConnections  = filterConnections connectionPorts nodesIds
             connections         = connect <$> deletedConnections
-            undoMsg             = AddSubgraph.Request location deletedNodes connections True -- FIXME [WD]: nie uzywamy literalow, nigdy
+            undoMsg             = AddSubgraph.Request location deletedNodes connections -- FIXME [WD]: nie uzywamy literalow, nigdy
             redoMsg             = RemoveNodes.Request location nodesIds
         in Just (undoMsg, redoMsg)
 

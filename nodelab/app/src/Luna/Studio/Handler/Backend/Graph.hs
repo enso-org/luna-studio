@@ -96,24 +96,10 @@ handle (Event.Batch ev) = Just $ case ev of
             collaborativeModify [nodeId]
             when shouldSelect $ selectNodes [nodeId]
 
-    AddSubgraphResponse response@(Response.Response uuid _ (AddSubgraph.Request loc nodes connections _) _ (Response.Ok idsMaybeMap)) -> do
-        shouldProcess   <- isCurrentLocationAndGraphLoaded loc
-        let handleSubgraph nodes' connections' = when shouldProcess $ do
-                mapM_ localAddNode nodes'
-                mapM_ localAddConnection connections'
-                whenM (isOwnRequest uuid) $ do
-                    let nodeIds = map (^. Node.nodeId) nodes'
-                    collaborativeModify nodeIds
-                    selectNodes nodeIds
-                handleResponse response doNothing
-        case idsMaybeMap of
-            Just idsMap -> do
-                let nodes'       = flip map nodes $ Node.nodeId %~ (idsMap Map.!)
-                    connections' = map (\conn -> conn & Connection.src . PortRef.srcNodeId %~ (idsMap Map.!)
-                                                      & Connection.dst . PortRef.dstNodeId %~ (idsMap Map.!)
-                                       ) connections
-                handleSubgraph nodes' connections'
-            Nothing     -> handleSubgraph nodes connections
+    AddSubgraphResponse response@(Response.Response uuid _ (AddSubgraph.Request loc nodes connections) _ (Response.Ok newNodes)) -> do
+        shouldProcess <- isCurrentLocationAndGraphLoaded loc
+        --TODO[LJK]: Implement this correctly
+        return ()
 
     NodesConnected update ->
         whenM (isCurrentLocation $ update ^. Connect.location') $ void $

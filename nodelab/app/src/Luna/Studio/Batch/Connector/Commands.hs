@@ -58,10 +58,7 @@ addPort :: NodeId -> Int -> Workspace -> UUID -> Maybe UUID -> IO ()
 addPort nodeId pos workspace uuid guiID = sendRequest $ Message uuid guiID $ (withLibrary workspace AddPort.Request) nodeId pos
 
 addSubgraph :: [Node] -> [Connection] -> Workspace -> UUID -> Maybe UUID -> IO ()
-addSubgraph nodes connections workspace uuid guiID = addSubgraph' nodes connections workspace uuid guiID False
-
-addSubgraph' :: [Node] -> [Connection] -> Workspace -> UUID -> Maybe UUID -> Bool -> IO ()
-addSubgraph' nodes connections workspace uuid guiID saveNodeIds = sendRequest $ Message uuid guiID $ (withLibrary workspace AddSubgraph.Request) nodes connections saveNodeIds
+addSubgraph nodes connections workspace uuid guiID = sendRequest $ Message uuid guiID $ (withLibrary workspace AddSubgraph.Request) nodes connections
 
 createProject :: Text -> UUID -> Maybe UUID -> IO ()
 createProject name uuid guiID = sendRequest $ Message uuid guiID $ CreateProject.Request $ Text.unpack name
