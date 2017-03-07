@@ -87,14 +87,15 @@ edgePort_ ref p = when (p ^. Port.visible) $ do
         ] $ do
         if isPortInput p then return () else
             svg_
-                [ "className" $= Style.prefixFromList [ "edgeport__svg", "port-add-inbetween" ]
-                , "width"     $= "24"
-                , "height"    $= "16"
-                ] $ do
-                plainPath (Style.prefix "port-add-inbetween__droplet") "M10.3524512,13.6661446 C11.9308073,15.040015 13.7955904,16 16,16 C20.418278,16 24,12.418278 24,8 C24,3.581722 20.418278,0 16,0 C13.8118086,0 11.9281638,0.929978941 10.3844772,2.30211225 C5.05877654,7.01206446 1.77063785,7.45902777 -1.49011612e-08,8 C1.77063785,8.56772327 4.98865645,8.997262 10.3524512,13.6661446 Z"
-                g_ [ "className" $= Style.prefix "port-add-inbetween__plus" ] $ do
-                    plainRect 2 8 (-1) (-4)
-                    plainRect 8 2 (-4) (-1)
+                [ "className" $= Style.prefixFromList [ "edgeport__svg", "edgeport__svg--inbetween" ]
+                ] $
+                g_ [ "className" $= Style.prefix "port-add-inbetween" ] $ do
+                    plainPath (Style.prefix "port-add-inbetween__droplet") "M10.0749836,12.9509892 C11.4541267,14.1514559 13.0835452,14.9902759 15.0097241,14.9902759 C18.8703469,14.9902759 22,11.8606228 22,8 C22,4.13937722 18.8703469,1.0097241 15.0097241,1.0097241 C13.0977164,1.0097241 11.4518168,1.82232527 10.1029674,3.02127407 C5.44945277,7.13675725 4.06697429,7.99999996 1.05578798,7.99999996 C4.06697429,7.99999996 5.38818292,8.87139207 10.0749836,12.9509892 Z"
+                    g_ [ "className" $= Style.prefix "port-add-inbetween__plus" ] $ do
+                        plainRect 2 8 (-1) (-4)
+                        plainRect 8 2 (-4) (-1)
+                    plainPath (Style.prefix "port-add-inbetween__selectable") "M10.1721147,16 L20.0599444,16 C20.9489883,15.3357391 24.0000003,12.851512 24.0000003,7.99513769 C24.0000003,3.13876343 21.0022204,0.657157362 20.0599444,0 L10.1721147,0 C8.03256731,2.06688666 5.13907748,7.99513769 1.04850417,7.99513791 C5.13907748,7.99513769 8.03256731,14.0403185 10.1721147,16 Z"
+
         svg_
             [ "className" $= Style.prefix "edgeport__svg"
             ] $ do
