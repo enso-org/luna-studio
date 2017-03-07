@@ -421,8 +421,8 @@ getNodeInputs edgeNodes nodeId = do
     let selfConnMay = (,) <$> (OutPortRef <$> selfNodeMay <*> projection)
                           <*> (Just $ InPortRef nodeId Self)
 
-    args       <- ASTDeconstruct.extractArguments ref
-    nodeMays   <- mapM (resolveInputNodeId edgeNodes lambdaArgs) args
+    args     <- ASTDeconstruct.extractArguments ref
+    nodeMays <- mapM (resolveInputNodeId edgeNodes lambdaArgs) args
     let withInd  = zipWith (\(outPortIndex, nodeId) index -> (outPortIndex, nodeId, index)) nodeMays [0..]
         hasNodeId (outIndex, Just nodeId, index) = Just (outIndex, nodeId, index)
         hasNodeId _ = Nothing

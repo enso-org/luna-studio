@@ -108,12 +108,15 @@ addNode loc uuid expr meta = withTC loc False $ addNodeNoTC loc uuid expr meta
 
 addNodeNoTC :: GraphLocation -> NodeId -> Text -> NodeMeta -> Command Graph Node
 addNodeNoTC loc uuid expr meta = do
-    node <- runASTOp $ do
+    (parsedRef, refNode) <- runASTOp $ do
         newNodeName <- generateNodeName
-        (parsedRef, refNode) <- AST.addNode uuid newNodeName (Text.unpack expr)
+        parsedNode <- AST.addNode uuid newNodeName (Text.unpack expr)
+        Graph.nodeMapping . at uuid ?= Graph.MatchNode (parsedNode ^. _2)
+        return parsedNode
+    runAliasAnalysis
+    node <- runASTOp $ do
         parsedIsLambda <- ASTRead.isLambda parsedRef
         AST.writeMeta refNode meta
-        Graph.nodeMapping . at uuid ?= Graph.MatchNode refNode
         node <- GraphBuilder.buildNode uuid
         if parsedIsLambda then do
             lambdaUUID <- liftIO $ UUID.nextRandom
@@ -126,7 +129,6 @@ addNodeNoTC loc uuid expr meta = do
         else Graph.breadcrumbHierarchy %= addID (node ^. Node.nodeId)
         updateNodeSequence
         return node
-    runAliasAnalysis
     Publisher.notifyNodeUpdate loc node
     return node
 
@@ -306,13 +308,26 @@ renamePort loc portRef newName = withGraph loc $ runASTOp $ do
 
 updateNodeExpression :: GraphLocation -> NodeId -> Text -> Empire Node
 updateNodeExpression loc nodeId expr = withTC loc False $ do
-    runASTOp $ do
-        (exprName, ref) <- ASTParse.parseExpr $ Text.unpack expr
-        target <- ASTRead.getASTTarget nodeId
-        IR.replaceNode target ref
+    parsedExpr <- runASTOp $ do
+        (exprName, parsedExpr) <- ASTParse.parseExpr $ Text.unpack expr
+        target                 <- ASTRead.getASTTarget nodeId
+        IR.replaceNode target parsedExpr
         IR.deleteSubtree target
         forM_ exprName $ \newName -> renameNodeGraph nodeId newName
+        return parsedExpr
     runAliasAnalysis
+    runASTOp $ do
+        parsedIsLambda <- ASTRead.isLambda parsedExpr
+        when parsedIsLambda $ do
+            lambdaUUID             <- liftIO $ UUID.nextRandom
+            lambdaOutput           <- ASTRead.getLambdaOutputRef parsedExpr
+            outputIsOneOfTheInputs <- AST.isTrivialLambda parsedExpr
+            when (not outputIsOneOfTheInputs) $ do
+                Graph.nodeMapping . at lambdaUUID ?= Graph.AnonymousNode lambdaOutput
+                Graph.breadcrumbHierarchy %= removeID nodeId
+                Graph.breadcrumbHierarchy %= addWithLeafs nodeId [lambdaUUID]
+            IR.writeLayer @Marker (Just $ NodeMarker lambdaUUID) lambdaOutput
+        updateNodeSequence
     node <- runASTOp $ GraphBuilder.buildNode nodeId
     Publisher.notifyNodeUpdate loc node
     return node

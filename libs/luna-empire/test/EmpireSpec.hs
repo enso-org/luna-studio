@@ -388,6 +388,18 @@ spec = around withChannels $ parallel $ do
                 node ^. Node.name `shouldBe` "foo"
                 node ^. Node.nodeType `shouldBe` Node.ExpressionNode "-> $a a"
                 node ^. Node.canEnter `shouldBe` True
+        it "changes expression to lambda with node inside" $ \env -> do
+            u1 <- mkUUID
+            res <- evalEmp env $ do
+                Graph.addNode top u1 "1" def
+                Graph.updateNodeExpression top u1 "-> $a $b a + b"
+                Graph.getGraph (top |> u1)
+            withResult res $ \graph -> do
+                let Graph.Graph nodes connections _ = graph
+                excludeEdges nodes `shouldSatisfy` ((== 1) . length)
+                -- fix when printer prints it properly
+                head nodes `shouldSatisfy` (\a -> a ^. Node.nodeType . Node.expression == "(+ a) a b")
+                connections `shouldSatisfy` ((== 3) . length)
     describe "dumpAccessors" $ do
         it "foo.bar" $ \env -> do
             u1 <- mkUUID
@@ -655,8 +667,9 @@ spec = around withChannels $ parallel $ do
                 Graph.addPort loc' input
                 inputEdge <- buildInputEdge' loc' input
                 defFoo <- Graph.withGraph top $ runASTOp $ GraphBuilder.buildNode u1
-                return (inputEdge, defFoo)
-            withResult res $ \(inputEdge, defFoo) -> do
+                connections <- Graph.getConnections loc'
+                return (inputEdge, defFoo, connections)
+            withResult res $ \(inputEdge, defFoo, connections) -> do
                 let outputPorts = Map.elems $ Map.filter Port.isOutputPort $ inputEdge ^. Node.ports
                 outputPorts `shouldMatchList` [
                       Port.Port (Port.OutPortId (Port.Projection 0)) "a" TStar Port.Connected
@@ -669,6 +682,7 @@ spec = around withChannels $ parallel $ do
                     , Port.Port (Port.InPortId (Port.Arg 1)) "b" TStar Port.NotConnected
                     , Port.Port (Port.InPortId (Port.Arg 2)) "c" TStar Port.NotConnected
                     ]
+                connections `shouldSatisfy` ((== 3) . length)
         it "connects to added port" $ \env -> do
             u1 <- mkUUID
             u2 <- mkUUID
