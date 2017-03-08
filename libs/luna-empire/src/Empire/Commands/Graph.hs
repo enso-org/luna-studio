@@ -1,5 +1,6 @@
 {-# LANGUAGE LambdaCase          #-}
 {-# LANGUAGE MultiWayIf          #-}
+{-# LANGUAGE OverloadedStrings   #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE StandaloneDeriving  #-}
 {-# LANGUAGE TupleSections       #-}
@@ -523,10 +524,15 @@ getOutEdges nodeId = do
     return $ view _2 <$> filtered
 
 disconnectPort :: ASTOp m => InPortRef -> m ()
-disconnectPort (InPortRef dstNodeId dstPort) =
-    case dstPort of
-        Self    -> unAcc dstNodeId
-        Arg num -> unApp dstNodeId num
+disconnectPort (InPortRef dstNodeId dstPort) = do
+    isPatternMatch <- ASTRead.nodeIsPatternMatch dstNodeId
+    if isPatternMatch then do
+        blank <- IR.generalize <$> IR.cons_ "Nothing"
+        ASTModify.rewireNode dstNodeId blank
+                      else do
+        case dstPort of
+          Self    -> unAcc dstNodeId
+          Arg num -> unApp dstNodeId num
 
 unAcc :: ASTOp m => NodeId -> m ()
 unAcc nodeId = do

@@ -1,5 +1,6 @@
-{-# LANGUAGE LambdaCase       #-}
-{-# LANGUAGE TypeApplications #-}
+{-# LANGUAGE LambdaCase          #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TypeApplications    #-}
 
 {-|
 
@@ -31,9 +32,11 @@ module Empire.ASTOps.Read (
   , canEnterNode
   , rhsIsLambda
   , varIsPatternMatch
+  , nodeIsPatternMatch
   ) where
 
 import           Control.Monad                      ((>=>), forM)
+import           Control.Monad.Catch                (Handler(..), catches)
 import           Data.Coerce                        (coerce)
 import           Data.Maybe                         (isJust)
 import           Empire.Prelude
@@ -177,6 +180,14 @@ isMatch expr = isJust <$> IRExpr.narrowAtom @IR.Unify expr
 
 isCons :: ASTOp m => NodeRef -> m Bool
 isCons expr = isJust <$> IRExpr.narrowAtom @IR.Cons expr
+
+nodeIsPatternMatch :: ASTOp m => NodeId -> m Bool
+nodeIsPatternMatch nid = (do
+    root <- getASTPointer nid
+    varIsPatternMatch root) `catches` [
+          Handler (\(e :: NotUnifyException)         -> return False)
+        , Handler (\(e :: NodeDoesNotExistException) -> return False)
+        ]
 
 varIsPatternMatch :: ASTOp m => NodeRef -> m Bool
 varIsPatternMatch expr = do

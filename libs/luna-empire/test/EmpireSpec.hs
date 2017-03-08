@@ -42,7 +42,7 @@ import           EmpireUtils
 
 
 spec :: Spec
-spec = around withChannels $ id $ do
+spec = around withChannels $ parallel $ do
     describe "luna-empire" $ do
         it "descends into `def foo` and asserts two edges inside" $ \env -> do
             u1 <- mkUUID
@@ -938,3 +938,33 @@ spec = around withChannels $ id $ do
                     ]
                 isPatternMatch `shouldBe` True
                 connections `shouldMatchList` [(OutPortRef u1 Port.All, InPortRef u2 (Port.Arg 0))]
+        it "disconnects pattern match" $ \env -> do
+            u1 <- mkUUID
+            u2 <- mkUUID
+            res <- evalEmp env $ do
+                Graph.addNode top u1 "myVec" def
+                Graph.addNode top u2 "Vector x y z" def
+                Graph.connect top (OutPortRef u1 Port.All) (OutPortRef' (OutPortRef u2 Port.All))
+                Graph.disconnect top (InPortRef u2 (Port.Arg 0))
+
+                Graph.withGraph top $ runASTOp $
+                    (,,,) <$> GraphBuilder.buildNode u1
+                          <*> GraphBuilder.buildNode u2
+                          <*> GraphBuilder.buildConnections
+                          <*> (ASTRead.getASTPointer u2 >>= ASTRead.varIsPatternMatch)
+            withResult res $ \(myVec, pattern, connections, isPatternMatch) -> do
+                myVec   ^. Node.name `shouldBe` "node1"
+                pattern ^. Node.name `shouldBe` "Vector x y z"
+                pattern ^. Node.nodeType `shouldBe` Node.ExpressionNode "Nothing"
+                let outputPorts = Map.elems $ Map.filter Port.isOutputPort $ pattern ^. Node.ports
+                outputPorts `shouldMatchList` [
+                      Port.Port (Port.OutPortId (Port.Projection 0)) "x" TStar (Port.WithDefault (Expression "x"))
+                    , Port.Port (Port.OutPortId (Port.Projection 1)) "y" TStar (Port.WithDefault (Expression "y"))
+                    , Port.Port (Port.OutPortId (Port.Projection 2)) "z" TStar (Port.WithDefault (Expression "z"))
+                    ]
+                let inputPorts = Map.elems $ Map.filter Port.isInputPort $ pattern ^. Node.ports
+                inputPorts `shouldMatchList` [
+                      Port.Port (Port.InPortId (Port.Arg 0)) "Input" TStar (Port.WithDefault (Expression "Vector x y z"))
+                    ]
+                isPatternMatch `shouldBe` True
+                connections `shouldMatchList` []
