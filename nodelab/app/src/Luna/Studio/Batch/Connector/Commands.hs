@@ -35,7 +35,6 @@ import qualified Empire.API.Graph.RenameNode            as RenameNode
 import qualified Empire.API.Graph.RenamePort            as RenamePort
 import qualified Empire.API.Graph.SetCode               as SetCode
 import qualified Empire.API.Graph.SetDefaultValue       as SetDefaultValue
-import qualified Empire.API.Graph.SetInputNodeType      as SetInputNodeType
 import qualified Empire.API.Graph.Undo                  as Undo
 import qualified Empire.API.Graph.UpdateNodeExpression  as UpdateNodeExpression
 import qualified Empire.API.Graph.UpdateNodeMeta        as UpdateNodeMeta
@@ -115,8 +114,9 @@ removePort portRef workspace uuid guiID = sendRequest $ Message uuid guiID $ (wi
 setDefaultValue :: AnyPortRef -> DefaultValue.PortDefault -> Workspace -> UUID -> Maybe UUID -> IO ()
 setDefaultValue portRef val workspace uuid guiID = sendRequest $ Message uuid guiID $ withLibrary workspace SetDefaultValue.Request portRef val
 
-setInputNodeType :: NodeId -> Text -> Workspace -> UUID -> Maybe UUID -> IO ()
-setInputNodeType nodeId tpe workspace uuid guiID = sendRequest $ Message uuid guiID $ withLibrary workspace SetInputNodeType.Request nodeId (convert tpe)
+-- TODO[LJK, PM]: Probably remove
+-- setInputNodeType :: NodeId -> Text -> Workspace -> UUID -> Maybe UUID -> IO ()
+-- setInputNodeType nodeId tpe workspace uuid guiID = sendRequest $ Message uuid guiID $ withLibrary workspace SetInputNodeType.Request nodeId (convert tpe)
 
 requestCollaborationRefresh :: Collaboration.ClientId -> Workspace -> IO ()
 requestCollaborationRefresh clientId workspace = sendUpdate $ withLibrary workspace Collaboration.Update clientId Collaboration.Refresh

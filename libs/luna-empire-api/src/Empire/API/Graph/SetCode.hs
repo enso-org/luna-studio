@@ -15,7 +15,7 @@ data Request = Request { _location :: GraphLocation
                        , _newCode  :: Text
                        } deriving (Generic, Eq, NFData, Show)
 
-data Inverse = Inverse { _oldCode :: Text
+data Inverse = Inverse { _prevCode :: Text
                        } deriving (Generic, Show, Eq, NFData)
 
 type Response = Response.SimpleResponse Request Inverse

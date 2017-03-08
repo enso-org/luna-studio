@@ -190,8 +190,8 @@ handleAddNode = modifyGraph inverse action success where
 handleAddPort :: Request AddPort.Request -> StateT Env BusT ()
 handleAddPort = modifyGraph inverse action success where
     inverse                                                           = const $ return ()
-    action (AddPort.Request location nodeId pos)                      = Graph.addPort location nodeId --FIXME[MM]: pass this arg when possible
-    success req@(Request _ _ (AddPort.Request location _ _)) inv node = replyResult req inv node >> sendToBus' (NodesUpdate.Update location [node])
+    action (AddPort.Request location portRef)                         = Graph.addPort location $ portRef ^. PortRef.nodeId --FIXME we should pass whole portRef here
+    success req@(Request _ _ (AddPort.Request location _)) inv node   = replyResult req inv node >> sendToBus' (NodesUpdate.Update location [node])
 
 handleAddSubgraph :: Request AddSubgraph.Request -> StateT Env BusT ()
 handleAddSubgraph = modifyGraph inverse action success where
@@ -253,7 +253,7 @@ handleSetCode = modifyGraphOk inverse action success where --FIXME[pm] implement
 handleMovePort :: Request MovePort.Request -> StateT Env BusT ()
 handleMovePort = modifyGraph inverse action success where
     inverse                                                            = const $ return ()
-    action (MovePort.Request location portRef newPos)                  = Graph.movePort location portRef newPos
+    action (MovePort.Request location portRef newPortRef)              = Graph.movePort location portRef newPortRef
     success req@(Request _ _ (MovePort.Request location _ _)) inv node =
         replyResult req inv node >> sendToBus' (NodesUpdate.Update location [node])
 
@@ -299,7 +299,8 @@ handleDisconnect = modifyGraphOk inverse action success where
 
 handleSetDefaultValue :: Request SetDefaultValue.Request -> StateT Env BusT ()
 handleSetDefaultValue = modifyGraphOk inverse action success where
-    inverse                                                        = const $ return ()
+    -- TODO[MM]: Get old defaultValue for inverse
+    inverse                                                        = $notImplemented
     action (SetDefaultValue.Request location portRef defaultValue) = Graph.setDefaultValue location portRef defaultValue
     success _ _ _                                                  = return ()
 

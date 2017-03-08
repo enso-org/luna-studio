@@ -15,7 +15,7 @@ data Request = Request { _location :: GraphLocation
                        , _name     :: String
                        } deriving (Generic, Eq, NFData, Show)
 
-data Inverse = Inverse { _namePrev :: String
+data Inverse = Inverse { _prevName :: String
                        } deriving (Generic, Show, Eq, NFData)
 
 type Response = Response.SimpleResponse Request Inverse

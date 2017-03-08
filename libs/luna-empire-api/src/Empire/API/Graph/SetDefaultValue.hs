@@ -17,13 +17,19 @@ data Request = Request { _location     :: GraphLocation
                        , _defaultValue :: PortDefault
                        } deriving (Generic, Eq, NFData, Show)
 
+data Inverse = Inverse { _prevDefaultValue :: PortDefault
+                       } deriving (Generic, Eq, NFData, Show)
 
-type Response = Response.SimpleResponse Request ()
-instance Response.ResponseResult Request () ()
+
+type Response = Response.SimpleResponse Request Inverse
+instance Response.ResponseResult Request Inverse ()
 
 makeLenses ''Request
 instance Binary Request
 instance G.GraphRequest Request where location = location
+
+makeLenses ''Inverse
+instance Binary Inverse
 
 topicPrefix = "empire.graph.node.defaultValue"
 instance T.MessageTopic (R.Request Request)  where topic _ = topicPrefix <> T.request

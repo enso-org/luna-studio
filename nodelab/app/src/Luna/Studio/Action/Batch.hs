@@ -100,8 +100,9 @@ setDefaultValue portRef value = do
     collaborativeModify [portRef ^. PortRef.nodeId]
     withWorkspace $ BatchCmd.setDefaultValue portRef value
 
-setInputNodeType :: NodeId -> Text -> Command State ()
-setInputNodeType = withWorkspace .: BatchCmd.setInputNodeType
+-- TODO[LJK, PM]: Probably remove
+-- setInputNodeType :: NodeId -> Text -> Command State ()
+-- setInputNodeType = withWorkspace .: BatchCmd.setInputNodeType
 
 nodeSearch :: Text -> (Int, Int) -> Command State ()
 nodeSearch = withWorkspace .: BatchCmd.nodeSearch

@@ -36,12 +36,14 @@ import qualified Empire.API.Graph.AddPort              as AddPort
 import qualified Empire.API.Graph.AddSubgraph          as AddSubgraph
 import qualified Empire.API.Graph.Connect              as Connect
 import qualified Empire.API.Graph.Disconnect           as Disconnect
+import qualified Empire.API.Graph.MovePort             as MovePort
 import qualified Empire.API.Graph.Redo                 as RedoRequest
 import qualified Empire.API.Graph.RemoveNodes          as RemoveNodes
 import qualified Empire.API.Graph.RemovePort           as RemovePort
 import qualified Empire.API.Graph.RenameNode           as RenameNode
 import qualified Empire.API.Graph.RenamePort           as RenamePort
 import qualified Empire.API.Graph.SetCode              as SetCode
+import qualified Empire.API.Graph.SetDefaultValue      as SetDefaultValue
 import qualified Empire.API.Graph.Undo                 as UndoRequest
 import qualified Empire.API.Graph.UpdateNodeExpression as UpdateNodeExpression
 import           Empire.API.Graph.UpdateNodeMeta       (SingleUpdate)
@@ -58,14 +60,17 @@ type Handler = ByteString -> UndoPure ()
 handlersMap :: Map String (Handler)
 handlersMap = Map.fromList
     [ makeHandler handleAddNodeUndo
-    -- , makeHandler handleAddPortUndo
+    , makeHandler handleAddPortUndo
     , makeHandler handleAddSubgraphUndo
     , makeHandler handleConnectUndo
     , makeHandler handleDisconnectUndo
+    , makeHandler handleMovePortUndo
     , makeHandler handleRemoveNodesUndo
+    , makeHandler handleRemovePortUndo
     , makeHandler handleRenameNodeUndo
     , makeHandler handleRenamePortUndo
     , makeHandler handleSetCodeUndo
+    , makeHandler handleSetDefaultValueUndo
     , makeHandler handleUpdateNodeExpressionUndo
     , makeHandler handleUpdateNodeMetaUndo
     ]
@@ -78,10 +83,13 @@ type family UndoResponseRequest t where
     UndoResponseRequest AddSubgraph.Response          = RemoveNodes.Request
     UndoResponseRequest Connect.Response              = Disconnect.Request
     UndoResponseRequest Disconnect.Response           = Connect.Request
+    UndoResponseRequest MovePort.Response             = MovePort.Request
     UndoResponseRequest RemoveNodes.Response          = AddSubgraph.Request
+    UndoResponseRequest RemovePort.Response           = AddPort.Request
     UndoResponseRequest RenameNode.Response           = RenameNode.Request
     UndoResponseRequest RenamePort.Response           = RenamePort.Request
     UndoResponseRequest SetCode.Response              = SetCode.Request
+    UndoResponseRequest SetDefaultValue.Response      = SetDefaultValue.Request
     UndoResponseRequest UpdateNodeExpression.Response = UpdateNodeExpression.Request
     UndoResponseRequest UpdateNodeMeta.Response       = UpdateNodeMeta.Request
 
@@ -91,10 +99,13 @@ type family RedoResponseRequest t where
     RedoResponseRequest AddSubgraph.Response          = AddSubgraph.Request
     RedoResponseRequest Connect.Response              = Connect.Request
     RedoResponseRequest Disconnect.Response           = Disconnect.Request
+    RedoResponseRequest MovePort.Response             = MovePort.Request
     RedoResponseRequest RemoveNodes.Response          = RemoveNodes.Request
+    RedoResponseRequest RemovePort.Response           = RemovePort.Request
     RedoResponseRequest RenameNode.Response           = RenameNode.Request
     RedoResponseRequest RenamePort.Response           = RenamePort.Request
     RedoResponseRequest SetCode.Response              = SetCode.Request
+    RedoResponseRequest SetDefaultValue.Response      = SetDefaultValue.Request
     RedoResponseRequest UpdateNodeExpression.Response = UpdateNodeExpression.Request
     RedoResponseRequest UpdateNodeMeta.Response       = UpdateNodeMeta.Request
 
@@ -136,8 +147,19 @@ guiRevertAddNode :: AddNode.Request -> RemoveNodes.Request
 guiRevertAddNode = getUndoAddNode
 
 handleAddNodeUndo :: AddNode.Response -> Maybe (RemoveNodes.Request, AddNode.Request)
-handleAddNodeUndo (Response.Response _ _ req@(AddNode.Request _ _ _ _ _) _ (Response.Ok _)) =
+handleAddNodeUndo (Response.Response _ _ req _ (Response.Ok _)) =
     Just (getUndoAddNode req, req)
+
+
+getUndoAddPort :: AddPort.Request -> RemovePort.Request
+getUndoAddPort (AddPort.Request location portRef) =
+    RemovePort.Request location portRef
+
+guiRevertAddPort :: AddPort.Request -> RemovePort.Request
+guiRevertAddPort = getUndoAddPort
+
+handleAddPortUndo :: AddPort.Response -> Maybe (RemovePort.Request, AddPort.Request)
+handleAddPortUndo (Response.Response _ _ req _ (Response.Ok _)) = Just (getUndoAddPort req, req)
 
 
 getUndoAddSubgraph :: AddSubgraph.Request -> RemoveNodes.Request
@@ -148,80 +170,8 @@ guiRevertAddSubgraph :: AddSubgraph.Request -> RemoveNodes.Request
 guiRevertAddSubgraph = getUndoAddSubgraph
 
 handleAddSubgraphUndo :: AddSubgraph.Response -> Maybe (RemoveNodes.Request, AddSubgraph.Request)
-handleAddSubgraphUndo (Response.Response _ _ req@(AddSubgraph.Request _ _ _) _ (Response.Ok _)) =
+handleAddSubgraphUndo (Response.Response _ _ req _ (Response.Ok _)) =
     Just (getUndoAddSubgraph req, req)
-
-
-getUndoRemoveNodes :: RemoveNodes.Request -> RemoveNodes.Inverse -> AddSubgraph.Request
-getUndoRemoveNodes (RemoveNodes.Request location _) (RemoveNodes.Inverse nodes conns) =
-    AddSubgraph.Request location nodes $ map (uncurry Connection) conns
-
-guiRevertRemoveNodes :: RemoveNodes.Request -> RemoveNodes.Inverse -> AddSubgraph.Request
-guiRevertRemoveNodes = getUndoRemoveNodes
-
-handleRemoveNodesUndo :: RemoveNodes.Response -> Maybe (AddSubgraph.Request, RemoveNodes.Request)
-handleRemoveNodesUndo (Response.Response _ _ req@(RemoveNodes.Request _ _) (Response.Ok inv) (Response.Ok _)) =
-    Just (getUndoRemoveNodes req inv, req)
-
-
-getUndoUpdateNodeExpression :: UpdateNodeExpression.Request -> UpdateNodeExpression.Inverse -> UpdateNodeExpression.Request
-getUndoUpdateNodeExpression (UpdateNodeExpression.Request location nodeId _) (UpdateNodeExpression.Inverse prevExpr) =
-    UpdateNodeExpression.Request location nodeId prevExpr
-
-guiRevertUpdateNodeExpression :: UpdateNodeExpression.Request -> UpdateNodeExpression.Inverse -> UpdateNodeExpression.Request
-guiRevertUpdateNodeExpression = getUndoUpdateNodeExpression
-
-handleUpdateNodeExpressionUndo :: UpdateNodeExpression.Response -> Maybe ( UpdateNodeExpression.Request,  UpdateNodeExpression.Request)
-handleUpdateNodeExpressionUndo (Response.Response _ _ req@(UpdateNodeExpression.Request _ _ _) (Response.Ok inv) (Response.Ok _)) =
-    Just (getUndoUpdateNodeExpression req inv, req)
-
-
-getUndoUpdateNodeMeta :: UpdateNodeMeta.Request -> UpdateNodeMeta.Inverse -> UpdateNodeMeta.Request
-getUndoUpdateNodeMeta (UpdateNodeMeta.Request location _) (UpdateNodeMeta.Inverse prevMeta) =
-    UpdateNodeMeta.Request location prevMeta
-
-guiRevertUpdateNodeMeta :: UpdateNodeMeta.Request -> UpdateNodeMeta.Inverse -> UpdateNodeMeta.Request
-guiRevertUpdateNodeMeta = getUndoUpdateNodeMeta
-
-handleUpdateNodeMetaUndo :: UpdateNodeMeta.Response -> Maybe (UpdateNodeMeta.Request, UpdateNodeMeta.Request)
-handleUpdateNodeMetaUndo (Response.Response _ _ req@(UpdateNodeMeta.Request _ _) (Response.Ok inv) (Response.Ok _)) =
-    Just (getUndoUpdateNodeMeta req inv, req)
-
-
-getUndoRenameNode :: RenameNode.Request -> RenameNode.Inverse -> RenameNode.Request
-getUndoRenameNode (RenameNode.Request location nodeId _) (RenameNode.Inverse prevName) =
-    RenameNode.Request location nodeId prevName
-
-guiRevertRenameNode :: RenameNode.Request -> RenameNode.Inverse -> RenameNode.Request
-guiRevertRenameNode = getUndoRenameNode
-
-handleRenameNodeUndo :: RenameNode.Response -> Maybe (RenameNode.Request, RenameNode.Request)
-handleRenameNodeUndo (Response.Response _ _ req@(RenameNode.Request _ _ _) (Response.Ok inv) (Response.Ok _)) =
-    Just (getUndoRenameNode req inv, req)
-
-
-getUndoRenamePort :: RenamePort.Request -> RenamePort.Inverse -> RenamePort.Request
-getUndoRenamePort (RenamePort.Request location portRef _) (RenamePort.Inverse prevName) =
-    RenamePort.Request location portRef prevName
-
-guiRevertRenamePort :: RenamePort.Request -> RenamePort.Inverse -> RenamePort.Request
-guiRevertRenamePort = getUndoRenamePort
-
-handleRenamePortUndo :: RenamePort.Response -> Maybe (RenamePort.Request, RenamePort.Request)
-handleRenamePortUndo (Response.Response _ _ req@(RenamePort.Request _ _ _) (Response.Ok inv) (Response.Ok _)) =
-    Just (getUndoRenamePort req inv, req)
-
-
-getUndoSetCode :: SetCode.Request -> SetCode.Inverse -> SetCode.Request
-getUndoSetCode (SetCode.Request location nodeId _) (SetCode.Inverse prevCode) =
-    SetCode.Request location nodeId prevCode
-
-guiRevertSetCode :: SetCode.Request -> SetCode.Inverse -> SetCode.Request
-guiRevertSetCode = getUndoSetCode
-
-handleSetCodeUndo :: SetCode.Response -> Maybe (SetCode.Request, SetCode.Request)
-handleSetCodeUndo (Response.Response _ _ req@(SetCode.Request _ _ _) (Response.Ok inv) (Response.Ok _)) =
-    Just (getUndoSetCode req inv, req)
 
 
 getUndoConnect :: Connect.Request -> Connect.Result -> Disconnect.Request
@@ -233,7 +183,7 @@ guiRevertConnect (Connect.Request location _ (Left dst)) = Just $ Disconnect.Req
 guiRevertConnect _ = Nothing
 
 handleConnectUndo :: Connect.Response -> Maybe (Disconnect.Request, Connect.Request)
-handleConnectUndo (Response.Response _ _ req@(Connect.Request _ _ _) _ (Response.Ok res)) =
+handleConnectUndo (Response.Response _ _ req _ (Response.Ok res)) =
     Just (getUndoConnect req res, req)
 
 
@@ -245,5 +195,113 @@ guiRevertDisconnect :: Disconnect.Request -> Disconnect.Inverse -> Connect.Reque
 guiRevertDisconnect = getUndoDisconnect
 
 handleDisconnectUndo :: Disconnect.Response -> Maybe (Connect.Request, Disconnect.Request)
-handleDisconnectUndo (Response.Response _ _ req@(Disconnect.Request _ _) (Response.Ok inv) (Response.Ok _)) =
+handleDisconnectUndo (Response.Response _ _ req (Response.Ok inv) (Response.Ok _)) =
     Just (getUndoDisconnect req inv, req)
+
+
+getUndoMovePort :: MovePort.Request -> MovePort.Request
+getUndoMovePort (MovePort.Request location oldPortRef newPortRef) =
+    MovePort.Request location newPortRef oldPortRef
+
+guiRevertMovePort :: MovePort.Request -> MovePort.Request
+guiRevertMovePort = getUndoMovePort
+
+handleMovePortUndo :: MovePort.Response -> Maybe (MovePort.Request, MovePort.Request)
+handleMovePortUndo (Response.Response _ _ req _ (Response.Ok _)) =
+    Just (getUndoMovePort req, req)
+
+
+getUndoRemoveNodes :: RemoveNodes.Request -> RemoveNodes.Inverse -> AddSubgraph.Request
+getUndoRemoveNodes (RemoveNodes.Request location _) (RemoveNodes.Inverse nodes conns) =
+    AddSubgraph.Request location nodes $ map (uncurry Connection) conns
+
+guiRevertRemoveNodes :: RemoveNodes.Request -> RemoveNodes.Inverse -> AddSubgraph.Request
+guiRevertRemoveNodes = getUndoRemoveNodes
+
+handleRemoveNodesUndo :: RemoveNodes.Response -> Maybe (AddSubgraph.Request, RemoveNodes.Request)
+handleRemoveNodesUndo (Response.Response _ _ req (Response.Ok inv) (Response.Ok _)) =
+    Just (getUndoRemoveNodes req inv, req)
+
+
+--TODO[LJK/SB]: Preserve connections
+getUndoRemovePort :: RemovePort.Request -> AddPort.Request
+getUndoRemovePort (RemovePort.Request location portRef) =
+    AddPort.Request location portRef
+
+guiRevertRemovePort :: RemovePort.Request -> AddPort.Request
+guiRevertRemovePort = getUndoRemovePort
+
+handleRemovePortUndo :: RemovePort.Response -> Maybe (AddPort.Request, RemovePort.Request)
+handleRemovePortUndo (Response.Response _ _ req _ (Response.Ok _)) = Just (getUndoRemovePort req, req)
+
+
+getUndoRenameNode :: RenameNode.Request -> RenameNode.Inverse -> RenameNode.Request
+getUndoRenameNode (RenameNode.Request location nodeId _) (RenameNode.Inverse prevName) =
+    RenameNode.Request location nodeId prevName
+
+guiRevertRenameNode :: RenameNode.Request -> RenameNode.Inverse -> RenameNode.Request
+guiRevertRenameNode = getUndoRenameNode
+
+handleRenameNodeUndo :: RenameNode.Response -> Maybe (RenameNode.Request, RenameNode.Request)
+handleRenameNodeUndo (Response.Response _ _ req (Response.Ok inv) (Response.Ok _)) =
+    Just (getUndoRenameNode req inv, req)
+
+
+getUndoRenamePort :: RenamePort.Request -> RenamePort.Inverse -> RenamePort.Request
+getUndoRenamePort (RenamePort.Request location portRef _) (RenamePort.Inverse prevName) =
+    RenamePort.Request location portRef prevName
+
+guiRevertRenamePort :: RenamePort.Request -> RenamePort.Inverse -> RenamePort.Request
+guiRevertRenamePort = getUndoRenamePort
+
+handleRenamePortUndo :: RenamePort.Response -> Maybe (RenamePort.Request, RenamePort.Request)
+handleRenamePortUndo (Response.Response _ _ req (Response.Ok inv) (Response.Ok _)) =
+    Just (getUndoRenamePort req inv, req)
+
+
+getUndoSetCode :: SetCode.Request -> SetCode.Inverse -> SetCode.Request
+getUndoSetCode (SetCode.Request location nodeId _) (SetCode.Inverse prevCode) =
+    SetCode.Request location nodeId prevCode
+
+guiRevertSetCode :: SetCode.Request -> SetCode.Inverse -> SetCode.Request
+guiRevertSetCode = getUndoSetCode
+
+handleSetCodeUndo :: SetCode.Response -> Maybe (SetCode.Request, SetCode.Request)
+handleSetCodeUndo (Response.Response _ _ req (Response.Ok inv) (Response.Ok _)) =
+    Just (getUndoSetCode req inv, req)
+
+
+getUndoSetDefaultValue :: SetDefaultValue.Request -> SetDefaultValue.Inverse -> SetDefaultValue.Request
+getUndoSetDefaultValue (SetDefaultValue.Request location portRef _) (SetDefaultValue.Inverse prevDefaultValue) =
+    SetDefaultValue.Request location portRef prevDefaultValue
+
+guiRevertSetDefaultValue :: SetDefaultValue.Request -> SetDefaultValue.Inverse -> SetDefaultValue.Request
+guiRevertSetDefaultValue = getUndoSetDefaultValue
+
+handleSetDefaultValueUndo :: SetDefaultValue.Response -> Maybe (SetDefaultValue.Request, SetDefaultValue.Request)
+handleSetDefaultValueUndo (Response.Response _ _ req (Response.Ok inv) (Response.Ok _)) =
+    Just (getUndoSetDefaultValue req inv, req)
+
+
+getUndoUpdateNodeExpression :: UpdateNodeExpression.Request -> UpdateNodeExpression.Inverse -> UpdateNodeExpression.Request
+getUndoUpdateNodeExpression (UpdateNodeExpression.Request location nodeId _) (UpdateNodeExpression.Inverse prevExpr) =
+    UpdateNodeExpression.Request location nodeId prevExpr
+
+guiRevertUpdateNodeExpression :: UpdateNodeExpression.Request -> UpdateNodeExpression.Inverse -> UpdateNodeExpression.Request
+guiRevertUpdateNodeExpression = getUndoUpdateNodeExpression
+
+handleUpdateNodeExpressionUndo :: UpdateNodeExpression.Response -> Maybe ( UpdateNodeExpression.Request,  UpdateNodeExpression.Request)
+handleUpdateNodeExpressionUndo (Response.Response _ _ req (Response.Ok inv) (Response.Ok _)) =
+    Just (getUndoUpdateNodeExpression req inv, req)
+
+
+getUndoUpdateNodeMeta :: UpdateNodeMeta.Request -> UpdateNodeMeta.Inverse -> UpdateNodeMeta.Request
+getUndoUpdateNodeMeta (UpdateNodeMeta.Request location _) (UpdateNodeMeta.Inverse prevMeta) =
+    UpdateNodeMeta.Request location prevMeta
+
+guiRevertUpdateNodeMeta :: UpdateNodeMeta.Request -> UpdateNodeMeta.Inverse -> UpdateNodeMeta.Request
+guiRevertUpdateNodeMeta = getUndoUpdateNodeMeta
+
+handleUpdateNodeMetaUndo :: UpdateNodeMeta.Response -> Maybe (UpdateNodeMeta.Request, UpdateNodeMeta.Request)
+handleUpdateNodeMetaUndo (Response.Response _ _ req (Response.Ok inv) (Response.Ok _)) =
+    Just (getUndoUpdateNodeMeta req inv, req)

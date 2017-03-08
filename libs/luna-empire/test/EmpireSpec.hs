@@ -1,42 +1,38 @@
-{-# LANGUAGE OverloadedStrings     #-}
-{-# LANGUAGE ViewPatterns          #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE ViewPatterns      #-}
 
 module EmpireSpec (spec) where
 
 import           Data.Foldable                 (toList)
 import           Data.List                     (find, stripPrefix)
 import qualified Data.Map                      as Map
-import           Empire.API.Data.DefaultValue  (PortDefault(Expression))
+import           Empire.API.Data.DefaultValue  (PortDefault (Expression))
 import qualified Empire.API.Data.Graph         as Graph
-import           Empire.API.Data.GraphLocation (GraphLocation(..))
-import qualified Empire.API.Data.Node          as Node (NodeType(ExpressionNode), canEnter,
-                                                        expression, name, nodeId, nodeType, ports)
-import           Empire.API.Data.NodeMeta      (NodeMeta(..))
+import           Empire.API.Data.GraphLocation (GraphLocation (..))
+import qualified Empire.API.Data.Node          as Node (NodeType (ExpressionNode), canEnter, expression, name, nodeId, nodeType, ports)
+import           Empire.API.Data.NodeMeta      (NodeMeta (..))
 import qualified Empire.API.Data.Port          as Port
-import           Empire.API.Data.PortRef       (InPortRef (..), OutPortRef (..), AnyPortRef(..))
-import           Empire.API.Data.TypeRep       (TypeRep(TCons, TStar, TLam, TVar))
+import           Empire.API.Data.PortRef       (AnyPortRef (..), InPortRef (..), OutPortRef (..))
+import           Empire.API.Data.TypeRep       (TypeRep (TCons, TLam, TStar, TVar))
 import           Empire.ASTOp                  (runASTOp)
 import qualified Empire.ASTOps.Deconstruct     as ASTDeconstruct
 import qualified Empire.ASTOps.Parse           as Parser
 import           Empire.ASTOps.Print           (printExpression)
 import qualified Empire.ASTOps.Read            as ASTRead
 import qualified Empire.Commands.AST           as AST (isTrivialLambda)
-import qualified Empire.Commands.Graph         as Graph (addNode, connect, getGraph, getNodes,
-                                                         getConnections, removeNodes, withGraph,
-                                                         renameNode, disconnect, addPort, movePort,
-                                                         removePort, renamePort, updateNodeExpression,
-                                                         getNodeIdSequence, updateNodeMeta)
+import qualified Empire.Commands.Graph         as Graph (addNode, addPort, connect, disconnect, getConnections, getGraph, getNodeIdSequence,
+                                                         getNodes, movePort, removeNodes, removePort, renameNode, renamePort,
+                                                         updateNodeExpression, updateNodeMeta, withGraph)
 import qualified Empire.Commands.GraphBuilder  as GraphBuilder
 import           Empire.Commands.Library       (withLibrary)
 import qualified Empire.Commands.Typecheck     as Typecheck (run)
-import           Empire.Data.Graph             (NodeIDTarget(..), ast, nodeMapping)
+import           Empire.Data.Graph             (NodeIDTarget (..), ast, nodeMapping)
 import qualified Empire.Data.Library           as Library (body)
-import           Empire.Empire                 (InterpreterEnv(..))
+import           Empire.Empire                 (InterpreterEnv (..))
 import           Prologue                      hiding (mapping, toList, (|>))
 
-import           Test.Hspec (Spec, around, describe, expectationFailure, it, parallel,
-                             shouldBe, shouldContain, shouldSatisfy, shouldMatchList,
-                             shouldStartWith, xit, xdescribe)
+import           Test.Hspec                    (Spec, around, describe, expectationFailure, it, parallel, shouldBe, shouldContain,
+                                                shouldMatchList, shouldSatisfy, shouldStartWith, xdescribe, xit)
 
 import           EmpireUtils
 
@@ -745,7 +741,7 @@ spec = around withChannels $ parallel $ do
                 Graph.addNode top u1 "-> $a $b $c $d a" def
                 let loc' = top |> u1
                 Just (input, _) <- Graph.withGraph loc' $ runASTOp GraphBuilder.getEdgePortMapping
-                Graph.movePort loc' (OutPortRef' (OutPortRef input (Port.Projection 0))) 2
+                Graph.movePort loc' (OutPortRef' (OutPortRef input (Port.Projection 0))) (OutPortRef' (OutPortRef input (Port.Projection 2)))
                 inputEdge <- buildInputEdge' loc' input
                 return inputEdge
             withResult res $ \inputEdge -> do

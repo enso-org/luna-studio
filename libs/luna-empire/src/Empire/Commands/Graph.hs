@@ -201,7 +201,7 @@ addPersistentNode n = case n ^. Node.nodeType of
                 _ -> return ()
             _ -> return ()
 
---TODO[MM]: Allow add port at any position
+--TODO[MM]: Replace NodeId with AnyPortRef and allow to add at any position
 addPort :: GraphLocation -> NodeId -> Empire Node
 addPort loc nid = withGraph loc $ runASTOp $ do
     Just lambda <- use Graph.insideNode
@@ -261,9 +261,15 @@ removePort loc portRef = withGraph loc $ runASTOp $ do
     when (ref /= newRef) $ GraphUtils.rewireNode lambda newRef
     GraphBuilder.buildConnections >>= \c -> GraphBuilder.buildInputEdge c nodeId
 
-movePort :: GraphLocation -> AnyPortRef -> Int -> Empire Node
-movePort loc portRef newPosition = withGraph loc $ runASTOp $ do
-    let nodeId = portRef ^. PortRef.nodeId
+movePort :: GraphLocation -> AnyPortRef -> AnyPortRef -> Empire Node
+movePort loc portRef newPortRef = withGraph loc $ runASTOp $ do
+    --TODO[MM]: Find out how to handle it with AnyPortRef instead of Int and check if nodeIds in portRefs are matching
+    let newPosition = case newPortRef ^. PortRef.portId of
+            InPortId  Self           -> $notImplemented
+            OutPortId All            -> $notImplemented
+            InPortId  (Arg i)        -> i
+            OutPortId (Projection i) -> i
+        nodeId = portRef ^. PortRef.nodeId
     Just lambda <- use Graph.insideNode
     ref         <- GraphUtils.getASTTarget lambda
     edges       <- GraphBuilder.getEdgePortMapping
