@@ -7,7 +7,8 @@
 .luna-blur,
 .luna-node__main,
 .luna-node__properties,
-.luna-node__properties-crop {
+.luna-node__properties-crop,
+.luna-port__shape {
     transition: all @transitionSpeed ease-out;
 }
 
@@ -33,11 +34,16 @@
 }
 
 .luna-edgeport__name {
-    transition: opacity 200ms ease-out;
+    transition: opacity 200ms ease-out,
+                left    100ms ease-out;
 }
 .luna-edgeports {
     transition: left  100ms ease-out,
                 right 100ms ease-out;
+}
+.luna-edit-icon {
+    transition: opacity 100ms ease-out,
+                bottom  100ms ease-out;
 }
 
 .luna-port-add-inbetween__shape {
