@@ -56,21 +56,27 @@ edgeSidebar_ ref mayDraggedPort node = when (isEdge node) $ do
             , "className" $= Style.prefixFromList [ "edgeports__body" ]
             ] $ do
             forM_ ports $ edgePort_ ref
-            div_
-                [ "className" $= Style.prefix "edgeports__edit" ] $ do
-                when (isInputEdge node) $ if isPortDragged then do
-                        div_
-                            [ "className" $= Style.prefixFromList [ "edge__buton", "edge__button--remove", "noselect" ]
-                            , "key"       $= (name node <> "RemoveButton")
-                            , onMouseUp   $ \e _ -> stopPropagation e : (dispatch ref $ UI.EdgeEvent $ Edge.RemovePort)
-                            ] $ elemString "Remove"
-                        withJust mayDraggedPort $ edgeDraggedPort_ ref
-                    else div_
-                            [ "className" $= Style.prefixFromList [ "edge__buton", "edge__button--add", "noselect" ]
-                            , "key"       $= (name node <> "AddButton")
-                            , onMouseDown $ \e _ -> [stopPropagation e]
-                            , onClick $ \e _ -> stopPropagation e : sendAddPortEvent ref node
-                            ] $ elemString "Add"
+            if isInputEdge node then do
+                svg_
+                    [ "className" $= Style.prefixFromList [ "edgeport__svg", "edgeport__svg--addbutton" ]
+                    , "key"       $= (name node <> "AddButton")
+                    , onMouseDown $ \e _ -> [stopPropagation e]
+                    , onClick $ \e _ -> stopPropagation e : sendAddPortEvent ref node
+                    ] $ do
+                    circle_
+                        [ "className" $= Style.prefix "port__shape"
+                        , "key"       $= jsShow "addButtonShape"
+                        , "r"         $= jsShow2 3
+                        ] mempty
+                    g_ [ "className" $= Style.prefix "port__plus" ] $ do
+                          plainRect 2 8 (-1) (-4)
+                          plainRect 8 2 (-4) (-1)
+                    circle_
+                        [ "className" $= Style.prefix "port__select"
+                        , "key"       $= jsShow "addButtonSelect"
+                        , "r"         $= jsShow2 (lineHeight/1.5)
+                        ] mempty
+            else return ()
 
 edgePort_ :: Ref App -> Port -> ReactElementM ViewEventHandler ()
 edgePort_ ref p = when (p ^. Port.visible) $ do
@@ -90,12 +96,12 @@ edgePort_ ref p = when (p ^. Port.visible) $ do
                 [ "className" $= Style.prefixFromList [ "edgeport__svg", "edgeport__svg--inbetween" ]
                 ] $
                 g_ [ "className" $= Style.prefix "port-add-inbetween" ] $ do
-                    plainPath (Style.prefix "port-add-inbetween__droplet") "M10.0749836,12.9509892 C11.4541267,14.1514559 13.0835452,14.9902759 15.0097241,14.9902759 C18.8703469,14.9902759 22,11.8606228 22,8 C22,4.13937722 18.8703469,1.0097241 15.0097241,1.0097241 C13.0977164,1.0097241 11.4518168,1.82232527 10.1029674,3.02127407 C5.44945277,7.13675725 4.06697429,7.99999996 1.05578798,7.99999996 C4.06697429,7.99999996 5.38818292,8.87139207 10.0749836,12.9509892 Z"
-                    g_ [ "className" $= Style.prefix "port-add-inbetween__plus" ] $ do
-                        plainRect 2 8 (-1) (-4)
-                        plainRect 8 2 (-4) (-1)
-                    plainPath (Style.prefix "port-add-inbetween__selectable") "M10.1721147,16 L20.0599444,16 C20.9489883,15.3357391 24.0000003,12.851512 24.0000003,7.99513769 C24.0000003,3.13876343 21.0022204,0.657157362 20.0599444,0 L10.1721147,0 C8.03256731,2.06688666 5.13907748,7.99513769 1.04850417,7.99513791 C5.13907748,7.99513769 8.03256731,14.0403185 10.1721147,16 Z"
-
+                    g_ [ "className" $= Style.prefix "port-add-inbetween__shape" ] $ do
+                        plainPath (Style.prefix "port-add-inbetween__droplet") "M10.0749836,12.9509892 C11.4541267,14.1514559 13.0835452,14.9902759 15.0097241,14.9902759 C18.8703469,14.9902759 22,11.8606228 22,8 C22,4.13937722 18.8703469,1.0097241 15.0097241,1.0097241 C13.0977164,1.0097241 11.4518168,1.82232527 10.1029674,3.02127407 C5.44945277,7.13675725 4.06697429,7.99999996 1.05578798,7.99999996 C4.06697429,7.99999996 5.38818292,8.87139207 10.0749836,12.9509892 Z"
+                        g_ [ "className" $= Style.prefix "port-add-inbetween__plus" ] $ do
+                            plainRect 2 8 (-1) (-4)
+                            plainRect 8 2 (-4) (-1)
+                    plainPath (Style.prefix "port-add-inbetween__selectable") "M 20 0 A 10 10 0 0 1 20 16 L 10 16 A 10 10 0 0 1 10 0 Z"
         svg_
             [ "className" $= Style.prefix "edgeport__svg"
             ] $ do
@@ -134,7 +140,6 @@ edgeDraggedPort_ _ref draggedPort = do
     div_
         [ "className" $= Style.prefixFromList [ "port", "edgeport", "edgeport--dragged", "hover" ]
         , "style"     @= Aeson.object [ "top"  Aeson..= ( show (pos ^. y) <> "px" ) ]
-                                    --, "left" Aeson..= ( show (pos ^. x) <> "px" ) ]
         ] $ do
         div_ [ "className" $= Style.prefix "edgeport__name" ] $ elemString $ "arg666"
         svg_

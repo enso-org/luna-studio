@@ -78,34 +78,35 @@
 }
 
 .luna-edgeports__edit {
-    display: none;
+    display:  none;
     left:     0;
     bottom:  -10px;
     position: absolute;
-    cursor: pointer;
+    cursor:   pointer;
 }
 
-.luna-port__plus {
-    fill: none;
+.luna-edgeport .luna-port__plus {
     transform: rotate(45deg);
 }
 
 .luna-edgeport__svg--inbetween {
     position: absolute;
-    left: 15px;
-    top: -8px;
-    z-index: 10000;
+    left:     24px !important;
+    top:      0px;
+    z-index:  10000;
 }
 
-.luna-port-add-inbetween__droplet {
-    fill: green;
+.luna-port-add-inbetween {
+    transform: translate(-8px,-8px);
     opacity: 0;
 }
 
+.luna-port-add-inbetween__droplet {
+    fill: #fff;
+}
+
 .luna-port-add-inbetween:hover {
-    .luna-port-add-inbetween__droplet {
-        opacity: 1;
-    }
+    opacity: 1;
 }
 
 .luna-port-add-inbetween__plus {
@@ -113,8 +114,20 @@
     fill: @colorBackground;
 }
 
+.luna-port-add-inbetween__shape {
+    transform: scale(0.1);
+    transform-origin: 3px 8px;
+}
+
+.luna-port-add-inbetween:hover {
+    .luna-port-add-inbetween__shape {
+        transform: scale(1);
+    }
+}
+
 .luna-port-add-inbetween__selectable {
     opacity: 0;
+    d:       path("M 20 -0.5 A 10 10 0 0 1 20 16.5 L 11 16.5 A 10 10 0 0 1 10 0 Z");
 }
 
 .luna-edgeports--editmode {
@@ -123,6 +136,13 @@
     }
     .luna-port__plus {
         fill: @colorBackground;
+    }
+    .luna-edgeport__svg {
+        &:hover {
+            .luna-port__shape {
+                r: 7px;
+            }
+        }
     }
 }
 
@@ -133,6 +153,19 @@
         }
         .luna-port__shape {
             fill: #fff !important;
+        }
+    }
+}
+
+.luna-edgeport__svg--addbutton {
+    top:        inherit;
+    bottom:     0;
+    .luna-port__shape {
+        fill: #444;
+    }
+    &:hover {
+        .luna-port__shape {
+            fill: #fff;
         }
     }
 }
