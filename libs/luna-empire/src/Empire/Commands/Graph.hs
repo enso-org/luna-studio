@@ -201,6 +201,7 @@ addPersistentNode n = case n ^. Node.nodeType of
                 _ -> return ()
             _ -> return ()
 
+--TODO[MM]: Allow add port at any position
 addPort :: GraphLocation -> NodeId -> Empire Node
 addPort loc nid = withGraph loc $ runASTOp $ do
     Just lambda <- use Graph.insideNode
@@ -208,7 +209,6 @@ addPort loc nid = withGraph loc $ runASTOp $ do
     edges <- GraphBuilder.getEdgePortMapping
     when ((fst <$> edges) /= Just nid) $ throwM NotInputEdgeException
     ASTModify.addLambdaArg ref
-    -- TODO[MM]: This should match for any node. Now it ignores node and replace it by InputEdge.
     inputEdge <- GraphBuilder.buildConnections >>= \c -> GraphBuilder.buildInputEdge c nid
     return inputEdge
 

@@ -11,6 +11,7 @@ import qualified Empire.API.Project.ImportProject as ImportProject
 import qualified Empire.API.Project.ListProjects  as ListProjects
 import qualified Empire.API.Project.OpenProject   as OpenProject
 import           Empire.API.Request               (Request (..))
+import qualified Empire.API.Response              as Response
 import qualified Empire.Commands.Library          as Library
 import qualified Empire.Commands.Persistence      as Persistence
 import qualified Empire.Commands.Project          as Project
@@ -39,7 +40,7 @@ handleOpenProject req@(Request _ _ request) = do
       let project' = project & DataProject.libs . at libraryId ?~ library
       return (projectId, project')
     case result of
-        Left err -> replyFail logger err req
+        Left err -> replyFail logger err req (Response.Error err)
         Right (projectId, project) -> do
             Env.empireEnv .= newEmpireEnv
             replyResult req () $ OpenProject.Result projectId $ DataProject.toAPI project
@@ -57,7 +58,7 @@ handleCreateProject req@(Request _ _ request) = do
       let project' = project & DataProject.libs . at libraryId ?~ library
       return (projectId, project')
     case result of
-        Left err -> replyFail logger err req
+        Left err -> replyFail logger err req (Response.Error err)
         Right (projectId, project) -> do
             Env.empireEnv .= newEmpireEnv
             replyResult req () $ CreateProject.Result projectId $ DataProject.toAPI project
@@ -69,7 +70,7 @@ handleListProjects req = do
     empireNotifEnv   <- use Env.empireNotif
     (result, newEmpireEnv) <- liftIO $ Empire.runEmpire empireNotifEnv currentEmpireEnv $ Project.listProjects
     case result of
-        Left err -> replyFail logger err req
+        Left err -> replyFail logger err req (Response.Error err)
         Right projectList -> do
             Env.empireEnv .= newEmpireEnv
             replyResult req () $ ListProjects.Result $ (_2 %~ DataProject.toAPI) <$> projectList
@@ -91,7 +92,7 @@ handleExportProject req@(Request _ _ (ExportProject.Request projectId)) = do
     empireNotifEnv   <- use Env.empireNotif
     (result, _) <- liftIO $ Empire.runEmpire empireNotifEnv currentEmpireEnv $ Persistence.exportProject projectId
     case result of
-        Left err -> replyFail logger err req
+        Left err -> replyFail logger err req (Response.Error err)
         Right projectData -> do
             replyResult req () $ ExportProject.Result projectData
 
@@ -101,7 +102,7 @@ handleImportProject req@(Request _ _ (ImportProject.Request projectData)) = do
     empireNotifEnv   <- use Env.empireNotif
     (result, newEmpireEnv) <- liftIO $ Empire.runEmpire empireNotifEnv currentEmpireEnv $ Persistence.importProject projectData
     case result of
-        Left err -> replyFail logger err req
+        Left err -> replyFail logger err req (Response.Error err)
         Right (projectId, project) -> do
             Env.empireEnv .= newEmpireEnv
             replyResult req () $ ImportProject.Result projectId $ DataProject.toAPI project

@@ -8,6 +8,7 @@ import           Control.Monad.State              (StateT)
 import qualified Empire.API.Library.CreateLibrary as CreateLibrary
 import qualified Empire.API.Library.ListLibraries as ListLibraries
 import           Empire.API.Request               (Request (..))
+import qualified Empire.API.Response              as Response
 import qualified Empire.Commands.Library          as Library
 import qualified Empire.Data.Library              as DataLibrary
 import qualified Empire.Empire                    as Empire
@@ -30,7 +31,7 @@ handleCreateLibrary req@(Request _ _ request) = do
         (request ^. CreateLibrary.libraryName)
         (fromString $ request ^. CreateLibrary.path)
     case result of
-        Left err -> replyFail logger err req
+        Left err -> replyFail logger err req (Response.Error err)
         Right (libraryId, library) -> do
             Env.empireEnv .= newEmpireEnv
             replyResult req () $ CreateLibrary.Result libraryId $ DataLibrary.toAPI library
@@ -43,7 +44,7 @@ handleListLibraries req@(Request _ _ request) = do
     (result, newEmpireEnv) <- liftIO $ Empire.runEmpire empireNotifEnv currentEmpireEnv $ Library.listLibraries
         (request ^. ListLibraries.projectId)
     case result of
-        Left err -> replyFail logger err req
+        Left err -> replyFail logger err req (Response.Error err)
         Right librariesList -> do
             Env.empireEnv .= newEmpireEnv
             replyResult req () $ ListLibraries.Result $ (_2 %~ DataLibrary.toAPI) <$> librariesList

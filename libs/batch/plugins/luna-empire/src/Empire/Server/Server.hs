@@ -28,10 +28,10 @@ sendToBus topic bin = do
 sendToBus' :: (MessageTopic a, Binary a) => a -> StateT Env BusT ()
 sendToBus' msg = sendToBus (Topic.topic msg) msg
 
-replyFail :: forall a b c. Response.ResponseResult a b c => Logger.Logger -> String -> Request a -> StateT Env BusT ()
-replyFail logger errMsg req = do
+replyFail :: forall a b c. Response.ResponseResult a b c => Logger.Logger -> String -> Request a -> Response.Status b -> StateT Env BusT ()
+replyFail logger errMsg req inv = do
   logger Logger.error $ formatErrorMessage req errMsg
-  sendToBus' $ Response.error req errMsg
+  sendToBus' $ Response.error req inv errMsg
 
 replyOk :: forall a b. Response.ResponseResult a b () => Request a -> b -> StateT Env BusT ()
 replyOk req inv = sendToBus' $ Response.ok req inv

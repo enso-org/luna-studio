@@ -58,7 +58,7 @@ type Handler = ByteString -> UndoPure ()
 handlersMap :: Map String (Handler)
 handlersMap = Map.fromList
     [ makeHandler handleAddNodeUndo
-    , makeHandler handleAddPortUndo
+    -- , makeHandler handleAddPortUndo
     , makeHandler handleAddSubgraphUndo
     , makeHandler handleConnectUndo
     , makeHandler handleDisconnectUndo
@@ -127,119 +127,123 @@ handle message = do
     redo    %= List.deleteBy compareMsgByUserId message
     history %= (message :)
 
-withOk :: Response.Status a -> (a -> Maybe b) -> Maybe b
-withOk (Response.Error _) _ = Nothing
-withOk (Response.Ok a)    f = f a
+
+getUndoAddNode :: AddNode.Request -> RemoveNodes.Request
+getUndoAddNode (AddNode.Request location nodeId _ _ _) =
+    RemoveNodes.Request location [nodeId]
+
+guiRevertAddNode :: AddNode.Request -> RemoveNodes.Request
+guiRevertAddNode = getUndoAddNode
 
 handleAddNodeUndo :: AddNode.Response -> Maybe (RemoveNodes.Request, AddNode.Request)
-handleAddNodeUndo (Response.Response _ _ (AddNode.Request location nodeType nodeMeta connectTo _) _ res) =
-    withOk res $ \node ->
-        let nodeId  = node ^. Node.nodeId
-            undoMsg = RemoveNodes.Request location [nodeId]
-            redoMsg = AddNode.Request location nodeType nodeMeta connectTo $ Just nodeId
-        in Just (undoMsg, redoMsg)
+handleAddNodeUndo (Response.Response _ _ req@(AddNode.Request _ _ _ _ _) _ (Response.Ok _)) =
+    Just (getUndoAddNode req, req)
+
+
+getUndoAddSubgraph :: AddSubgraph.Request -> RemoveNodes.Request
+getUndoAddSubgraph (AddSubgraph.Request location nodes conns) =
+    RemoveNodes.Request location $ map (view Node.nodeId) nodes
+
+guiRevertAddSubgraph :: AddSubgraph.Request -> RemoveNodes.Request
+guiRevertAddSubgraph = getUndoAddSubgraph
 
 handleAddSubgraphUndo :: AddSubgraph.Response -> Maybe (RemoveNodes.Request, AddSubgraph.Request)
-handleAddSubgraphUndo (Response.Response _ _ (AddSubgraph.Request location nodes connections) _ res) =
-    withOk res $ const $ Just (undoMsg, redoMsg) where
-        ids     = map (view Node.nodeId) nodes
-        undoMsg = RemoveNodes.Request location ids
-        redoMsg = AddSubgraph.Request location nodes connections
+handleAddSubgraphUndo (Response.Response _ _ req@(AddSubgraph.Request _ _ _) _ (Response.Ok _)) =
+    Just (getUndoAddSubgraph req, req)
 
 
-connect :: (OutPortRef, InPortRef) -> Connection
-connect = uncurry Connection
+getUndoRemoveNodes :: RemoveNodes.Request -> RemoveNodes.Inverse -> AddSubgraph.Request
+getUndoRemoveNodes (RemoveNodes.Request location _) (RemoveNodes.Inverse nodes conns) =
+    AddSubgraph.Request location nodes $ map (uncurry Connection) conns
 
-filterNodes :: [NodeId] -> [Node] -> [Node]
-filterNodes nodesIds nodes = catMaybes getNodes
-    where getNode nId = List.find (\node -> node ^. Node.nodeId == nId) nodes
-          getNodes    = map getNode nodesIds
-
-filterConnections :: [(OutPortRef, InPortRef)] -> [NodeId] -> [(OutPortRef, InPortRef)]
-filterConnections connectionPorts nodesIds = concat nodesConnections
-    where  nodeConnections nId = Prologue.filter (\(outPort, inPort) -> outPort ^. PortRef.srcNodeId == nId
-                                                                     || inPort  ^. PortRef.dstNodeId == nId) connectionPorts
-           nodesConnections    = map nodeConnections nodesIds
+guiRevertRemoveNodes :: RemoveNodes.Request -> RemoveNodes.Inverse -> AddSubgraph.Request
+guiRevertRemoveNodes = getUndoRemoveNodes
 
 handleRemoveNodesUndo :: RemoveNodes.Response -> Maybe (AddSubgraph.Request, RemoveNodes.Request)
-handleRemoveNodesUndo (Response.Response _ _ (RemoveNodes.Request location nodesIds) inv _) =
-    withOk inv $ \(RemoveNodes.Inverse nodes connectionPorts) ->
-        let deletedNodes        = filterNodes nodesIds nodes
-            deletedConnections  = filterConnections connectionPorts nodesIds
-            connections         = connect <$> deletedConnections
-            undoMsg             = AddSubgraph.Request location deletedNodes connections -- FIXME [WD]: nie uzywamy literalow, nigdy
-            redoMsg             = RemoveNodes.Request location nodesIds
-        in Just (undoMsg, redoMsg)
+handleRemoveNodesUndo (Response.Response _ _ req@(RemoveNodes.Request _ _) (Response.Ok inv) (Response.Ok _)) =
+    Just (getUndoRemoveNodes req inv, req)
+
+
+getUndoUpdateNodeExpression :: UpdateNodeExpression.Request -> UpdateNodeExpression.Inverse -> UpdateNodeExpression.Request
+getUndoUpdateNodeExpression (UpdateNodeExpression.Request location nodeId _) (UpdateNodeExpression.Inverse prevExpr) =
+    UpdateNodeExpression.Request location nodeId prevExpr
+
+guiRevertUpdateNodeExpression :: UpdateNodeExpression.Request -> UpdateNodeExpression.Inverse -> UpdateNodeExpression.Request
+guiRevertUpdateNodeExpression = getUndoUpdateNodeExpression
 
 handleUpdateNodeExpressionUndo :: UpdateNodeExpression.Response -> Maybe ( UpdateNodeExpression.Request,  UpdateNodeExpression.Request)
-handleUpdateNodeExpressionUndo (Response.Response _ _ (UpdateNodeExpression.Request location nodeId expression) inv res) =
-    withOk inv $ \(UpdateNodeExpression.Inverse oldExpr) ->
-        let undoMsg = UpdateNodeExpression.Request location nodeId oldExpr
-            redoMsg = UpdateNodeExpression.Request location nodeId expression
-        in Just (undoMsg, redoMsg)
+handleUpdateNodeExpressionUndo (Response.Response _ _ req@(UpdateNodeExpression.Request _ _ _) (Response.Ok inv) (Response.Ok _)) =
+    Just (getUndoUpdateNodeExpression req inv, req)
 
-tupleUpdate :: Node -> SingleUpdate
-tupleUpdate node = (node ^. Node.nodeId, node ^. Node.nodeMeta)
 
-filterMeta :: [Node] -> [SingleUpdate] -> [SingleUpdate]
-filterMeta allNodes updates = map tupleUpdate justNodes
-    where  nodeIds = map fst updates
-           findNode updatedId = List.find (\node -> node ^. Node.nodeId == updatedId) allNodes
-           justNodes          = catMaybes $ map findNode nodeIds
+getUndoUpdateNodeMeta :: UpdateNodeMeta.Request -> UpdateNodeMeta.Inverse -> UpdateNodeMeta.Request
+getUndoUpdateNodeMeta (UpdateNodeMeta.Request location _) (UpdateNodeMeta.Inverse prevMeta) =
+    UpdateNodeMeta.Request location prevMeta
+
+guiRevertUpdateNodeMeta :: UpdateNodeMeta.Request -> UpdateNodeMeta.Inverse -> UpdateNodeMeta.Request
+guiRevertUpdateNodeMeta = getUndoUpdateNodeMeta
 
 handleUpdateNodeMetaUndo :: UpdateNodeMeta.Response -> Maybe (UpdateNodeMeta.Request, UpdateNodeMeta.Request)
-handleUpdateNodeMetaUndo (Response.Response _ _ (UpdateNodeMeta.Request location updates) inv _) =
-    withOk inv $ \(UpdateNodeMeta.Inverse nodes) ->
-    let prevMeta = filterMeta nodes updates
-        undoMsg  = UpdateNodeMeta.Request location prevMeta
-        redoMsg  = UpdateNodeMeta.Request location updates
-    in Just (undoMsg, redoMsg)
-
-emptyName = ""
-
-handleRenameNodeUndo :: RenameNode.Response ->  Maybe (RenameNode.Request, RenameNode.Request)
-handleRenameNodeUndo (Response.Response _ _ (RenameNode.Request location nodeId name) inv res) =
-    withOk inv $ \(RenameNode.Inverse namePrev) -> do
-        namePrev' <- case namePrev of
-            Just nameOld -> pure nameOld
-            Nothing      -> pure emptyName
-        let undoMsg = RenameNode.Request location nodeId namePrev'
-            redoMsg = RenameNode.Request location nodeId name
-        Just (undoMsg, redoMsg)
+handleUpdateNodeMetaUndo (Response.Response _ _ req@(UpdateNodeMeta.Request _ _) (Response.Ok inv) (Response.Ok _)) =
+    Just (getUndoUpdateNodeMeta req inv, req)
 
 
-handleRenamePortUndo :: RenamePort.Response ->  Maybe (RenamePort.Request, RenamePort.Request)
-handleRenamePortUndo (Response.Response _ _ (RenamePort.Request location portRef name) inv res) =
-    withOk inv $ \(RenamePort.Inverse namePrev) -> do
-        let undoMsg = RenamePort.Request location portRef namePrev
-            redoMsg = RenamePort.Request location portRef name
-        Just (undoMsg, redoMsg)
+getUndoRenameNode :: RenameNode.Request -> RenameNode.Inverse -> RenameNode.Request
+getUndoRenameNode (RenameNode.Request location nodeId _) (RenameNode.Inverse prevName) =
+    RenameNode.Request location nodeId prevName
 
-handleSetCodeUndo :: SetCode.Response ->  Maybe (SetCode.Request, SetCode.Request)
-handleSetCodeUndo (Response.Response _ _ (SetCode.Request location nodeId code) inv res) =
-    withOk inv $ \(SetCode.Inverse codePrev) -> do
-        let undoMsg = SetCode.Request location nodeId codePrev
-            redoMsg = SetCode.Request location nodeId code
-        Just (undoMsg, redoMsg)
+guiRevertRenameNode :: RenameNode.Request -> RenameNode.Inverse -> RenameNode.Request
+guiRevertRenameNode = getUndoRenameNode
+
+handleRenameNodeUndo :: RenameNode.Response -> Maybe (RenameNode.Request, RenameNode.Request)
+handleRenameNodeUndo (Response.Response _ _ req@(RenameNode.Request _ _ _) (Response.Ok inv) (Response.Ok _)) =
+    Just (getUndoRenameNode req inv, req)
+
+
+getUndoRenamePort :: RenamePort.Request -> RenamePort.Inverse -> RenamePort.Request
+getUndoRenamePort (RenamePort.Request location portRef _) (RenamePort.Inverse prevName) =
+    RenamePort.Request location portRef prevName
+
+guiRevertRenamePort :: RenamePort.Request -> RenamePort.Inverse -> RenamePort.Request
+guiRevertRenamePort = getUndoRenamePort
+
+handleRenamePortUndo :: RenamePort.Response -> Maybe (RenamePort.Request, RenamePort.Request)
+handleRenamePortUndo (Response.Response _ _ req@(RenamePort.Request _ _ _) (Response.Ok inv) (Response.Ok _)) =
+    Just (getUndoRenamePort req inv, req)
+
+
+getUndoSetCode :: SetCode.Request -> SetCode.Inverse -> SetCode.Request
+getUndoSetCode (SetCode.Request location nodeId _) (SetCode.Inverse prevCode) =
+    SetCode.Request location nodeId prevCode
+
+guiRevertSetCode :: SetCode.Request -> SetCode.Inverse -> SetCode.Request
+guiRevertSetCode = getUndoSetCode
+
+handleSetCodeUndo :: SetCode.Response -> Maybe (SetCode.Request, SetCode.Request)
+handleSetCodeUndo (Response.Response _ _ req@(SetCode.Request _ _ _) (Response.Ok inv) (Response.Ok _)) =
+    Just (getUndoSetCode req inv, req)
+
+
+getUndoConnect :: Connect.Request -> Connect.Result -> Disconnect.Request
+getUndoConnect (Connect.Request location _ _) conn =
+    Disconnect.Request location $ conn ^. Connection.dst
+
+guiRevertConnect :: Connect.Request -> Maybe Disconnect.Request
+guiRevertConnect (Connect.Request location _ (Left dst)) = Just $ Disconnect.Request location dst
+guiRevertConnect _ = Nothing
 
 handleConnectUndo :: Connect.Response -> Maybe (Disconnect.Request, Connect.Request)
-handleConnectUndo (Response.Response _ _ redoMsg@(Connect.Request location (Left src) (Left dst)) inv res) =
-    withOk res . const $
-        let undoMsg = Disconnect.Request location dst
-        in Just (undoMsg, redoMsg)
+handleConnectUndo (Response.Response _ _ req@(Connect.Request _ _ _) _ (Response.Ok res)) =
+    Just (getUndoConnect req res, req)
+
+
+getUndoDisconnect :: Disconnect.Request -> Disconnect.Inverse -> Connect.Request
+getUndoDisconnect (Disconnect.Request location dst) (Disconnect.Inverse src) =
+    Connect.Request location (Left src) (Left dst)
+
+guiRevertDisconnect :: Disconnect.Request -> Disconnect.Inverse -> Connect.Request
+guiRevertDisconnect = getUndoDisconnect
 
 handleDisconnectUndo :: Disconnect.Response -> Maybe (Connect.Request, Disconnect.Request)
-handleDisconnectUndo (Response.Response _ _ (Disconnect.Request location dst) inv res) =
-    withOk inv $ \(Disconnect.Inverse src) ->
-        let undoMsg = Connect.Request location (Left src) (Left dst)
-            redoMsg = Disconnect.Request location dst
-        in Just (undoMsg, redoMsg)
-
---TODO[SB]: Handle add port for any position
-handleAddPortUndo :: AddPort.Response -> Maybe (RemovePort.Request, AddPort.Request)
-handleAddPortUndo (Response.Response _ _ req@(AddPort.Request location nodeId pos) _inv res) =
-    withOk res $ \node ->
-        let Port.OutPortId newlyAddedPort = view Port.portId $ last $ Map.elems $ Map.filter Port.isOutputPort $ node ^. Node.ports
-            undoMsg = RemovePort.Request location $ OutPortRef' $ OutPortRef nodeId newlyAddedPort
-            redoMsg = req
-        in Just (undoMsg, redoMsg)
+handleDisconnectUndo (Response.Response _ _ req@(Disconnect.Request _ _) (Response.Ok inv) (Response.Ok _)) =
+    Just (getUndoDisconnect req inv, req)

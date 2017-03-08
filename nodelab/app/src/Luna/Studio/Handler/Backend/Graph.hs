@@ -201,7 +201,7 @@ handle (Event.Batch ev) = Just $ case ev of
     AddPortResponse              response -> handleResponse response doNothing
     MovePortResponse             response -> handleResponse response doNothing
     ConnectResponse              response -> handleResponse response doNothing
-    DisconnectResponse           response -> handleResponse response doNothing
+    DisconnectResponse           response -> print response >> handleResponse response doNothing
     NodeMetaResponse             response -> handleResponse response doNothing
     NodeRenameResponse           response -> handleResponse response doNothing
     RemoveNodesResponse          response -> print response >> handleResponse response doNothing
