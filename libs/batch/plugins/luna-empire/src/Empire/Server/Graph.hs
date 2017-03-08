@@ -178,8 +178,7 @@ mtuple :: (Monad m, Applicative m)=>(a -> m b) -> a -> m ((), b)
 mtuple f a = f a >>= \b -> pure ((),b)
 
 handleAddNode :: Request AddNode.Request -> StateT Env BusT ()
-handleAddNode = modifyGraph inverse action success where
-    inverse                                                                = const $ return ()
+handleAddNode = modifyGraph defInverse action success where
     action (AddNode.Request location nodeId expression nodeMeta connectTo) = addExpressionNode location nodeId expression nodeMeta connectTo
     success req@(Request _ _ (AddNode.Request location nodeId expression _ connectTo)) inv node = do
         replyResult req inv node
@@ -188,14 +187,12 @@ handleAddNode = modifyGraph inverse action success where
         withJust connectTo $ connectNodes location expression nodeId
 
 handleAddPort :: Request AddPort.Request -> StateT Env BusT ()
-handleAddPort = modifyGraph inverse action success where
-    inverse                                                           = const $ return ()
-    action (AddPort.Request location portRef)                         = Graph.addPort location $ portRef ^. PortRef.nodeId --FIXME we should pass whole portRef here
-    success req@(Request _ _ (AddPort.Request location _)) inv node   = replyResult req inv node >> sendToBus' (NodesUpdate.Update location [node])
+handleAddPort = modifyGraphOk defInverse action success where
+    action  (AddPort.Request location portRef) = void $ Graph.addPort location $ portRef ^. PortRef.nodeId --FIXME we should pass whole portRef here
+    success _ _ _                              = return ()
 
 handleAddSubgraph :: Request AddSubgraph.Request -> StateT Env BusT ()
-handleAddSubgraph = modifyGraph inverse action success where
-    inverse                                                 = const $ return ()
+handleAddSubgraph = modifyGraph defInverse action success where
     action (AddSubgraph.Request location nodes connections) = Graph.addSubgraph location nodes connections
     success req inv addedNodes                              = replyResult req inv addedNodes
 
@@ -251,12 +248,9 @@ handleSetCode = modifyGraphOk inverse action success where --FIXME[pm] implement
     success (SetCode.Request location nodeId code) _ _ = sendToBus' $ SetCode.Update location nodeId code
 
 handleMovePort :: Request MovePort.Request -> StateT Env BusT ()
-handleMovePort = modifyGraph inverse action success where
-    inverse                                                            = const $ return ()
-    action (MovePort.Request location portRef newPortRef)              = Graph.movePort location portRef newPortRef
-    success req@(Request _ _ (MovePort.Request location _ _)) inv node =
-        replyResult req inv node >> sendToBus' (NodesUpdate.Update location [node])
-
+handleMovePort = modifyGraphOk defInverse action success where
+    action (MovePort.Request location portRef newPortRef) = void $ Graph.movePort location portRef newPortRef
+    success _ _ _                                         = return ()
 
 handleRenamePort :: Request RenamePort.Request -> StateT Env BusT ()
 handleRenamePort = modifyGraphOk inverse action success where --FIXME[pm] implement this!
@@ -267,25 +261,22 @@ handleRenamePort = modifyGraphOk inverse action success where --FIXME[pm] implem
     success (RenamePort.Request location portRef name) _ _ = sendToBus' $ RenamePort.Update location portRef name
 
 handleRemovePort :: Request RemovePort.Request -> StateT Env BusT ()
-handleRemovePort = modifyGraph inverse action success where
-    inverse                                      = const $ return ()
-    action (RemovePort.Request location portRef) = Graph.removePort location portRef
-    success req inv node                         = replyResult req inv node
-
+handleRemovePort = modifyGraphOk defInverse action success where
+    action (RemovePort.Request location portRef) = void $ Graph.removePort location portRef
+    success _ _ _                                = return ()
 
 handleConnect :: Request Connect.Request -> StateT Env BusT ()
 handleConnect = handleConnectReq True
 
 -- TODO: Response for this request needs more info in case of NodeConnection for undo/redo
 handleConnectReq :: Bool -> Request Connect.Request -> StateT Env BusT ()
-handleConnectReq doTC = modifyGraph inverse action success where
+handleConnectReq doTC = modifyGraph defInverse action success where
     getSrcPort src = case src of
         Left portRef -> portRef
         Right nodeId -> OutPortRef nodeId All
     getDstPort dst = case dst of
         Left portRef -> portRef
         Right nodeId -> InPortRef nodeId Self
-    inverse                                                                 = const $ return ()
     action  (Connect.Request location src dst)                              = Graph.connectCondTC doTC location (getSrcPort src) (getDstPort dst)
     success request@(Request _ _ (Connect.Request location _ _)) inv result = replyResult request inv result >> sendToBus' (Connect.Update location result)
 
@@ -311,8 +302,7 @@ stdlibMethods :: [String]
 stdlibMethods = ["mockMethod"]
 
 handleGetProgram :: Request GetProgram.Request -> StateT Env BusT ()
-handleGetProgram = modifyGraph inverse action success where
-    inverse                              = const $ return ()
+handleGetProgram = modifyGraph defInverse action success where
     action (GetProgram.Request location) = do
         graph <- Graph.getGraph location
         code <-  Graph.getCode location
@@ -321,8 +311,7 @@ handleGetProgram = modifyGraph inverse action success where
     success req inv res                  = replyResult req inv res
 
 handleNodeSearch :: Request NodeSearch.Request -> StateT Env BusT ()
-handleNodeSearch = modifyGraph inverse action success where
-    inverse                                           = const $ return ()
+handleNodeSearch = modifyGraph defInverse action success where
     action (NodeSearch.Request query cursor location) = return $ NodeSearch.Result mockNSData
     success req inv res                               = replyResult req inv res
 

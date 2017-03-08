@@ -17,12 +17,8 @@ data Request = Request { _location    :: GraphLocation
                        , _anyPortRef  :: AnyPortRef
                        } deriving (Generic, Eq, NFData, Show)
 
---TODO[MM]: Remove Node as Response Result. We don't use it
-type Result = Node
-
-
-type Response = Response.Response Request () Result
-instance Response.ResponseResult Request () Result
+type Response = Response.SimpleResponse Request ()
+instance Response.ResponseResult Request () ()
 
 makeLenses ''Request
 instance Binary Request
