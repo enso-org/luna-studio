@@ -159,9 +159,8 @@ restorePortDrag nodeId connect = when (connect ^. Action.connectSourcePort . Por
 removePort :: PortDrag -> Command State ()
 removePort portDrag = Batch.removePort (portDrag ^. Action.portDragPortRef) >> end portDrag
 
---TODO[LJK]: Pass correct position here
-addPort :: NodeId -> Command State ()
-addPort nodeId = AddPort.addPort nodeId 0
+addPort :: AnyPortRef -> Command State ()
+addPort = AddPort.addPort
 
 
 
@@ -306,4 +305,4 @@ confirmReorder portDrag = do
                             Global.graph . Graph.connectionsMap . at (conn ^. ConnectionAPI.dst) ?= conn
                         Global.modifyNodeEditor $ NodeEditor.nodes . at nodeId ?= fromNode node
                         updateConnectionsForEdges
-                        Batch.movePort portRef num
+                        Batch.movePort portRef $notImplemented

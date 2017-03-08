@@ -12,13 +12,14 @@ import qualified Empire.API.Response           as Response
 import qualified Empire.API.Topic              as T
 
 
-
 data Request = Request { _location    :: GraphLocation
                        , _anyPortRef  :: AnyPortRef
                        } deriving (Generic, Eq, NFData, Show)
 
-type Response = Response.SimpleResponse Request ()
-instance Response.ResponseResult Request () ()
+type Result = Node
+
+type Response = Response.Response Request () Result
+instance Response.ResponseResult Request () Result
 
 makeLenses ''Request
 instance Binary Request

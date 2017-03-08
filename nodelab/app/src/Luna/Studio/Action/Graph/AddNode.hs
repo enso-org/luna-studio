@@ -7,12 +7,13 @@ import           Data.Vector                        (toTuple)
 import           Empire.API.Data.Node               (Node (Node), NodeType (ExpressionNode))
 import qualified Empire.API.Data.Node               as Node
 import qualified Empire.API.Data.NodeMeta           as NodeMeta
+import qualified Empire.API.Graph.AddNode           as AddNode
 import qualified Luna.Studio.Action.Batch           as Batch
 import           Luna.Studio.Action.Command         (Command)
 import           Luna.Studio.Action.Connect         ()
 import           Luna.Studio.Action.ConnectionPen   ()
 import           Luna.Studio.Action.Graph.Focus     (focusNode)
-import           Luna.Studio.Action.Graph.Selection (selectedNodes)
+import           Luna.Studio.Action.Graph.Selection (selectNodes, selectedNodes)
 import           Luna.Studio.Action.Graph.Update    (updateConnectionsForNodes)
 import           Luna.Studio.Action.Node.Snap       (snap)
 import           Luna.Studio.Action.Port.Self       (showOrHideSelfPort)
@@ -36,8 +37,9 @@ addNode nodePos expression = do
                  Just $ (head selected) ^. Model.nodeId
             else Nothing
         node     = Node nodeId def nodeType False def nodeMeta def
-    Batch.addNode nodeId expression nodeMeta connectTo
     localAddNode node
+    selectNodes [node ^. Node.nodeId]
+    Batch.addNode nodeId expression nodeMeta connectTo
     -- TODO: Is this even used???
     -- GA.sendEvent $ GA.AddNode $ if isJust connectTo then GA.AutoConnect else GA.Simple
 
@@ -46,7 +48,7 @@ localAddNode node = localUpdateNode node >> focusNode (node ^. Node.nodeId)
 
 localUpdateNode :: Node -> Command State ()
 localUpdateNode node = do
-    zoom Global.graph $ modify (Graph.addNode node)
+    zoom Global.graph $ modify $ Graph.addNode node
     mayConnect    <- checkAction connectAction
     mayPenConnect <- checkAction penConnectAction
     nodeModel     <- showOrHideSelfPort mayConnect mayPenConnect $ Model.fromNode node

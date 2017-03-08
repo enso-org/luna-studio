@@ -3,6 +3,7 @@ module Luna.Studio.Action.Graph.Connect
     ( connect
     , localConnect
     , localAddConnection
+    , localUpdateConnection
     ) where
 
 
@@ -37,8 +38,9 @@ localAddConnection connection = do
         let nodeId = connectionId ^. PortRef.dstNodeId
         let portId = InPortId (connection ^. Connection.dst . PortRef.dstPortId)
         Global.modifyNode nodeId $ Model.ports . at portId . _Just . Model.visible .= True
-    mayConn <- view (NodeEditor.connections . at connectionId) <$> Global.getNodeEditor
     mayConnectionModel <- createConnectionModel connection
-    when (mayConnectionModel /= mayConn) $ do
-        Global.modifyNodeEditor $ NodeEditor.connections . at connectionId .= mayConnectionModel
+    Global.modifyNodeEditor $ NodeEditor.connections . at connectionId .= mayConnectionModel
     return connectionId
+
+localUpdateConnection :: Connection -> Command Global.State ()
+localUpdateConnection = void . localAddConnection

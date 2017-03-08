@@ -53,8 +53,8 @@ withLibrary w f = f (w ^. Workspace.currentLocation)
 addNode :: NodeId -> Text -> NodeMeta -> Maybe NodeId -> Workspace -> UUID -> Maybe UUID -> IO ()
 addNode nodeId expression meta connectTo workspace uuid guiID = sendRequest $ Message uuid guiID $ (withLibrary workspace AddNode.Request) nodeId expression meta connectTo
 
-addPort :: NodeId -> Int -> Workspace -> UUID -> Maybe UUID -> IO ()
-addPort nodeId pos workspace uuid guiID = sendRequest $ Message uuid guiID $ (withLibrary workspace AddPort.Request) nodeId pos
+addPort :: AnyPortRef -> Workspace -> UUID -> Maybe UUID -> IO ()
+addPort portRef workspace uuid guiID = sendRequest $ Message uuid guiID $ (withLibrary workspace AddPort.Request) portRef
 
 addSubgraph :: [Node] -> [Connection] -> Workspace -> UUID -> Maybe UUID -> IO ()
 addSubgraph nodes connections workspace uuid guiID = sendRequest $ Message uuid guiID $ (withLibrary workspace AddSubgraph.Request) nodes connections
@@ -105,8 +105,8 @@ removeNodes nodeIds workspace uuid guiID = sendRequest $ Message uuid guiID $ wi
 renamePort :: AnyPortRef -> String -> Workspace -> UUID -> Maybe UUID -> IO ()
 renamePort portRef name w uuid guiID = sendRequest $ Message uuid guiID $ withLibrary w RenamePort.Request portRef name
 
-movePort :: AnyPortRef -> Int -> Workspace -> UUID -> Maybe UUID -> IO ()
-movePort portRef newPos workspace uuid guiID = sendRequest $ Message uuid guiID $ (withLibrary workspace MovePort.Request) portRef newPos
+movePort :: AnyPortRef -> AnyPortRef -> Workspace -> UUID -> Maybe UUID -> IO ()
+movePort portRef newPortRef workspace uuid guiID = sendRequest $ Message uuid guiID $ (withLibrary workspace MovePort.Request) portRef newPortRef
 
 removePort :: AnyPortRef -> Workspace -> UUID -> Maybe UUID -> IO ()
 removePort portRef workspace uuid guiID = sendRequest $ Message uuid guiID $ (withLibrary workspace RemovePort.Request) portRef

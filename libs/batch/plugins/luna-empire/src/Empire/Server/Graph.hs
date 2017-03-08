@@ -125,9 +125,9 @@ forceTC location = do
 
 modifyGraph :: forall req inv res d. (G.GraphRequest req, Response.ResponseResult req inv res ) => (req -> Empire inv) -> (req -> Empire res) -> (Request req -> inv -> res -> StateT Env BusT ()) -> Request req -> StateT Env BusT ()
 modifyGraph inverse action success req@(Request uuid guiID request) = do
-    currentEmpireEnv       <- use Env.empireEnv
-    empireNotifEnv         <- use Env.empireNotif
-    (inv'  , _)            <- liftIO $ Empire.runEmpire empireNotifEnv currentEmpireEnv $ inverse request
+    currentEmpireEnv <- use Env.empireEnv
+    empireNotifEnv   <- use Env.empireNotif
+    (inv', _)        <- liftIO $ Empire.runEmpire empireNotifEnv currentEmpireEnv $ inverse request
     case inv' of
         Left err  -> replyFail logger err req (Response.Error err)
         Right inv -> do
@@ -187,9 +187,9 @@ handleAddNode = modifyGraph defInverse action success where
         withJust connectTo $ connectNodes location expression nodeId
 
 handleAddPort :: Request AddPort.Request -> StateT Env BusT ()
-handleAddPort = modifyGraphOk defInverse action success where
-    action  (AddPort.Request location portRef) = void $ Graph.addPort location $ portRef ^. PortRef.nodeId --FIXME we should pass whole portRef here
-    success _ _ _                              = return ()
+handleAddPort = modifyGraph defInverse action success where
+    action  (AddPort.Request location portRef) = Graph.addPort location $ portRef ^. PortRef.nodeId --FIXME we should pass whole portRef here
+    success req inv node                       = replyResult req inv node
 
 handleAddSubgraph :: Request AddSubgraph.Request -> StateT Env BusT ()
 handleAddSubgraph = modifyGraph defInverse action success where
