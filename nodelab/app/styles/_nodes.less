@@ -62,10 +62,20 @@
         left: 0;
         top: -8px;
     }
+    .luna-port {
+        position: relative;
+    }
+    .luna-port__type {
+        fill:        #fff;
+        text-anchor: end;
+    }
     .luna-port--o {
         .luna-port__shape,
         .luna-port__select {
             cx: @expandedNodeWidth;
+        }
+        .luna-port__type {
+            text-anchor: start;
         }
     }
     .luna-node__main {
