@@ -49,6 +49,8 @@ data Event = UnknownEvent String
            | EmpireStarted                       EmpireStarted.Status
            | MonadsUpdate                         MonadsUpdate.Update
            | MovePortResponse                         MovePort.Response
+           | NodeResultUpdate                 NodeResultUpdate.Update
+           | NodeSearchResponse                     NodeSearch.Response
 
            | RemoveConnectionResponse         RemoveConnection.Response
            | RemoveConnectionUpdate           RemoveConnection.Update
@@ -60,8 +62,6 @@ data Event = UnknownEvent String
            | NodeRenamed                            RenameNode.Update
            | PortRenamed                            RenamePort.Update
            | NodeRenameResponse                     RenameNode.Response
-           | NodeResultUpdated                NodeResultUpdate.Update
-           | NodeSearchResponse                     NodeSearch.Response
            | NodesRemoved                          RemoveNodes.Update
            | NodesUpdated                          NodesUpdate.Update
            | NodeTypechecked                      NodeTCUpdate.Update

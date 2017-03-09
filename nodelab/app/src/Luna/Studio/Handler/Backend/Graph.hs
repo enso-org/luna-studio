@@ -45,6 +45,7 @@ import           Luna.Studio.Action.Graph.AddSubgraph   (localAddSubgraph)
 import           Luna.Studio.Action.Graph.CodeUpdate    (updateCode)
 import           Luna.Studio.Action.Graph.Collaboration (bumpTime, modifyTime, refreshTime, touchCurrentlySelected, updateClient)
 import           Luna.Studio.Action.Graph.MovePort      (localMovePort)
+import           Luna.Studio.Action.Graph.NodeSearch    (updateHints)
 import           Luna.Studio.Action.Graph.Revert        (isCurrentLocation, isCurrentLocationAndGraphLoaded, revertAddNode, revertAddPort,
                                                          revertAddSubgraph, revertConnect, revertMovePort, revertRemoveConnection)
 import           Luna.Studio.Action.Node                (localRemoveNodes, typecheckNode, updateNodeProfilingData, updateNodeValue,
@@ -172,7 +173,7 @@ handle (Event.Batch ev) = Just $ case ev of
     DumpGraphVizResponse response -> handleResponse response doNothing doNothing
 
     MonadsUpdate update -> do
-        shouldProcess <- isCurrentLocationAndGraphLoaded (update ^. MonadsUpdate.location)
+        shouldProcess <- isCurrentLocationAndGraphLoaded $ update ^. MonadsUpdate.location
         when shouldProcess $ updateMonads $ update ^. MonadsUpdate.monads
 
     MovePortResponse response -> handleResponse response success failure where
@@ -189,6 +190,14 @@ handle (Event.Batch ev) = Just $ case ev of
                 if ownRequest then
                     localUpdateNode node
                 else void $ localMovePort portRef newPortRef
+
+    NodeResultUpdate update -> do
+        shouldProcess <- isCurrentLocationAndGraphLoaded $ update ^. NodeResultUpdate.location
+        when shouldProcess $ do
+            let nodeId = update ^. NodeResultUpdate.nodeId
+            updateNodeValue           nodeId $ update ^. NodeResultUpdate.value
+            updateNodeProfilingData   nodeId $ update ^. NodeResultUpdate.execTime
+            updateConnectionsForNodes [nodeId]
 
     RemoveConnectionResponse response -> handleResponse response success failure where
         requestId          = response ^. Response.requestId
@@ -208,6 +217,16 @@ handle (Event.Batch ev) = Just $ case ev of
     RemoveConnectionUpdate update -> do
         shouldProcess <- isCurrentLocationAndGraphLoaded  $ update ^. RemoveConnection.location'
         when shouldProcess $ void $ localRemoveConnection $ update ^. RemoveConnection.connId'
+
+    NodeSearchResponse response -> handleResponse response success doNothing where
+        requestId      = response ^. Response.requestId
+        location       = response ^. Response.request . NodeSearch.location
+        success result = do
+            shouldProcess <- isCurrentLocationAndGraphLoaded location
+            ownRequest    <- isOwnRequest requestId
+            when (ownRequest && shouldProcess) $
+                updateHints $ result ^. NodeSearch.nodeSearcherData
+
     --
     -- NodeMetaUpdated update -> do
     --     shouldProcess   <- isCurrentLocationAndGraphLoaded (update ^. UpdateNodeMeta.location')
@@ -251,13 +270,6 @@ handle (Event.Batch ev) = Just $ case ev of
     --         updateNodeValue         (update ^. NodeResultUpdate.nodeId) (update ^. NodeResultUpdate.value)
     --         updateNodeProfilingData (update ^. NodeResultUpdate.nodeId) (update ^. NodeResultUpdate.execTime)
     --         updateConnectionsForNodes [update ^. NodeResultUpdate.nodeId]
-    --
-    -- NodeSearchResponse response -> handleResponse response $ \request result -> do
-    --     shouldProcess <- isCurrentLocationAndGraphLoaded (request ^. NodeSearch.location)
-    --     when shouldProcess $ do
-    --         Global.workspace . Workspace.nodeSearcherData .= result ^. NodeSearch.nodeSearcherData
-    --         Searcher.updateHints
-    --
     --
     -- RemovePortResponse response -> handleResponse response $ \request result -> do
     --     shouldProcess <- isCurrentLocationAndGraphLoaded (request ^. RemovePort.location)

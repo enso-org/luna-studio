@@ -209,9 +209,12 @@ handleDumpGraphViz = modifyGraphOk defInverse action success where
     success _ _ _                          = return ()
 
 handleMovePort :: Request MovePort.Request -> StateT Env BusT ()
-handleMovePort = modifyGraph defInverse action success where
+handleMovePort = modifyGraph defInverse action replyResult where
     action (MovePort.Request location portRef newPortRef) = Graph.movePort location portRef newPortRef
-    success req inv node                                  = replyResult req inv node
+
+handleNodeSearch :: Request NodeSearch.Request -> StateT Env BusT ()
+handleNodeSearch = modifyGraph defInverse action replyResult where
+    action  _ = return $ NodeSearch.Result mockNSData
 
 handleRemoveConnection :: Request RemoveConnection.Request -> StateT Env BusT ()
 handleRemoveConnection = modifyGraphOk inverse action success where
@@ -311,11 +314,6 @@ handleGetProgram = modifyGraph defInverse action success where
         crumb <- Graph.decodeLocation location
         return $ GetProgram.Result graph (Text.pack code) crumb mockNSData
     success req inv res                  = replyResult req inv res
-
-handleNodeSearch :: Request NodeSearch.Request -> StateT Env BusT ()
-handleNodeSearch = modifyGraph defInverse action success where
-    action (NodeSearch.Request query cursor location) = return $ NodeSearch.Result mockNSData
-    success req inv res                               = replyResult req inv res
 
 handleTypecheck :: Request TypeCheck.Request -> StateT Env BusT ()
 handleTypecheck req@(Request _ _ request) = do

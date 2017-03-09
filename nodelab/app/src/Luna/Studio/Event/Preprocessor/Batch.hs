@@ -33,14 +33,14 @@ handlers = Map.fromList [ handle GetProgramResponse
                         , handle EmpireStarted
                         , handle MonadsUpdate
                         , handle MovePortResponse
+                        , handle NodeResultUpdate
+                        , handle NodeSearchResponse
 
                         , handle RemoveConnectionResponse
                         , handle RemoveConnectionUpdate
                         , handle NodeMetaResponse
                         , handle NodeMetaUpdated
                         , handle NodeRenamed
-                        , handle NodeResultUpdated
-                        , handle NodeSearchResponse
                         , handle NodesRemoved
                         , handle NodesUpdated
                         , handle NodeTypechecked

@@ -117,30 +117,6 @@ openEdit expr nodeId pos = do
     openWith (Just nodeId) =<< translateToScreen pos
     continue $ querySearch expr
 
-globalFunctions :: Items a -> Items a
-globalFunctions = Map.filter (Item.isElement)
-
-nodesData :: Command State (Items NodeAPI.Node)
-nodesData = do
-    completeData <- use $ Global.workspace . Workspace.nodeSearcherData
-    selected     <- selectedNodes
-    mscope <- case selected of
-        [node]   -> do
-            let nodeId = node ^. Node.nodeId
-            mvt <- preuse $ Global.graph . Graph.nodesMap . ix nodeId . NodeAPI.ports . ix (Port.OutPortId Port.All) . Port.valueType
-            return $ convert <$> mvt
-        _ -> return Nothing
-    case mscope of
-        Nothing -> return completeData
-        Just tn -> do
-            let gf = globalFunctions completeData
-                items = completeData
-                mayScope = items ^? ix tn . Item.items
-                scope = fromMaybe mempty mayScope
-                scopefuns = globalFunctions scope
-                overallScope = Map.union scopefuns gf
-            return overallScope
-
 allCommands :: Items ()
 allCommands = Map.fromList $ (,Element ()) . convert <$> (commands <> otherCommands) where
     commands = show <$> [(minBound :: Shortcut.Command) ..]
@@ -188,14 +164,3 @@ querySearch query _ = do
             Searcher.rollbackReady .= False
         return $ All isNode
     when (getAll isNode) $ Batch.nodeSearch query selection
-
-updateHints :: Command State ()
-updateHints = do
-    nodesData' <- nodesData
-    Global.modifySearcher $
-        whenM (use Searcher.isNode) $ do
-            query    <- use Searcher.input
-            let items = Scope.searchInScope nodesData' query
-            Searcher.selected      .= min 1 (length items)
-            Searcher.rollbackReady .= False
-            Searcher.mode          .= Searcher.Node items
