@@ -24,26 +24,25 @@ handlers :: Map.Map String (ByteString -> Batch.Event)
 handlers = Map.fromList [ handle AddNodeResponse
                         , handle AddPortResponse
                         , handle AddSubgraphResponse
-                        , handle CodeUpdated
+                        , handle CodeUpdate
                         , handle CollaborationUpdate
                         , handle ConnectResponse
-                        , handle DisconnectResponse
+                        , handle ConnectUpdate
+                        , handle GetProgramResponse
+                        , handle RemoveConnectionResponse
+                        , handle RemoveConnectionUpdate
                         , handle EmpireStarted
                         , handle MonadsUpdated
                         , handle MovePortResponse
-                        , handle NodeAdded
                         , handle NodeMetaResponse
                         , handle NodeMetaUpdated
                         , handle NodeRenamed
                         , handle NodeResultUpdated
-                        , handle NodesConnected
-                        , handle NodesDisconnected
                         , handle NodeSearchResponse
                         , handle NodesRemoved
                         , handle NodesUpdated
                         , handle NodeTypechecked
                         , handle PortRenamed
-                        , handle ProgramFetched
                         , handle ProjectCreated
                         , handle ProjectCreatedUpdate
                         , handle ProjectExported

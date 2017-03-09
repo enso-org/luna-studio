@@ -13,16 +13,16 @@ import qualified Empire.API.Data.PortRef                as PortRef
 import qualified Empire.API.Graph.AddNode               as AddNode
 import qualified Empire.API.Graph.AddPort               as AddPort
 import qualified Empire.API.Graph.AddSubgraph           as AddSubgraph
-import qualified Empire.API.Graph.CodeUpdate            as CodeUpdate
+import qualified Empire.API.Graph.Code                  as Code
 import qualified Empire.API.Graph.Collaboration         as Collaboration
 import qualified Empire.API.Graph.Connect               as Connect
-import qualified Empire.API.Graph.Disconnect            as Disconnect
 import qualified Empire.API.Graph.GetProgram            as GetProgram
 import qualified Empire.API.Graph.MonadsUpdate          as MonadsUpdate
 import qualified Empire.API.Graph.NodeResultUpdate      as NodeResultUpdate
 import qualified Empire.API.Graph.NodeSearch            as NodeSearch
 import qualified Empire.API.Graph.NodesUpdate           as NodesUpdate
 import qualified Empire.API.Graph.NodeTypecheckerUpdate as NodeTCUpdate
+import qualified Empire.API.Graph.RemoveConnection      as RemoveConnection
 import qualified Empire.API.Graph.RemoveNodes           as RemoveNodes
 import qualified Empire.API.Graph.RemovePort            as RemovePort
 import qualified Empire.API.Graph.RenameNode            as RenameNode
@@ -35,7 +35,7 @@ import           Luna.Studio.Action.Camera              (centerGraph)
 import qualified Luna.Studio.Action.CodeEditor          as CodeEditor
 import           Luna.Studio.Action.Command             (Command)
 import qualified Luna.Studio.Action.Edge                as Edge
-import           Luna.Studio.Action.Graph               (createGraph, localAddConnection, localRemoveConnections, selectNodes,
+import           Luna.Studio.Action.Graph               (createGraph, localAddConnection, localRemoveConnection, selectNodes,
                                                          updateConnectionsForEdges, updateConnectionsForNodes, updateMonads)
 import           Luna.Studio.Action.Graph.AddNode       (localAddNode, localUpdateNode)
 import           Luna.Studio.Action.Graph.AddNode       (localAddNode, localUpdateNode)
@@ -44,7 +44,7 @@ import           Luna.Studio.Action.Graph.AddSubgraph   (localAddSubgraph)
 import           Luna.Studio.Action.Graph.CodeUpdate    (updateCode)
 import           Luna.Studio.Action.Graph.Collaboration (bumpTime, modifyTime, refreshTime, touchCurrentlySelected, updateClient)
 import           Luna.Studio.Action.Graph.Revert        (isCurrentLocation, isCurrentLocationAndGraphLoaded, revertAddNode, revertAddPort,
-                                                         revertAddSubgraph, revertConnect)
+                                                         revertAddSubgraph, revertConnect, revertRemoveConnection)
 import           Luna.Studio.Action.Node                (localRemoveNodes, typecheckNode, updateNodeProfilingData, updateNodeValue,
                                                          updateNodesMeta)
 import qualified Luna.Studio.Action.Node                as Node
@@ -65,7 +65,7 @@ import qualified Luna.Studio.State.Graph                as StateGraph
 
 handle :: Event.Event -> Maybe (Command State ())
 handle (Event.Batch ev) = Just $ case ev of
-    ProgramFetched response -> handleResponse response success doNothing where
+    GetProgramResponse response -> handleResponse response success doNothing where
         location       = response ^. Response.request . GetProgram.location
         success result = do
             isGraphLoaded  <- use $ Global.workspace . Workspace.isGraphLoaded
@@ -134,9 +134,9 @@ handle (Event.Batch ev) = Just $ case ev of
                     collaborativeModify $ flip map nodes $ view Node.nodeId
                 else localAddSubgraph nodes conns
 
-    CodeUpdated update -> do
-       shouldProcess <- isCurrentLocationAndGraphLoaded $ update ^. CodeUpdate.location
-       when shouldProcess $ updateCode $ update ^. CodeUpdate.code
+    CodeUpdate update -> do
+       shouldProcess <- isCurrentLocationAndGraphLoaded $ update ^. Code.location
+       when shouldProcess $ updateCode $ update ^. Code.code
 
     CollaborationUpdate update -> do
         shouldProcess <- isCurrentLocationAndGraphLoaded $ update ^. Collaboration.location
@@ -163,13 +163,27 @@ handle (Event.Batch ev) = Just $ case ev of
             shouldProcess <- isCurrentLocationAndGraphLoaded location
             when shouldProcess $ localAddConnection connection
 
-    NodesConnected update -> do
+    ConnectUpdate update -> do
         shouldProcess <- isCurrentLocationAndGraphLoaded $ update ^. Connect.location'
         when shouldProcess $ localAddConnection $ update ^. Connect.connection'
 
-    -- NodesDisconnected update ->
-    --     whenM (isCurrentLocation $ update ^. Disconnect.location') $
-    --         localRemoveConnections [update ^. Disconnect.dst']
+    RemoveConnectionResponse response -> handleResponse response success failure where
+        requestId          = response ^. Response.requestId
+        request            = response ^. Response.request
+        location           = request  ^. RemoveConnection.location
+        connId             = request  ^. RemoveConnection.connId
+        failure inverse    = whenM (isOwnRequest requestId) $ revertRemoveConnection request inverse
+        success _          = do
+            shouldProcess <- isCurrentLocationAndGraphLoaded location
+            ownRequest    <- isOwnRequest requestId
+            when shouldProcess $ do
+                if ownRequest then do
+                    return ()
+                else void $ localRemoveConnection connId
+
+    RemoveConnectionUpdate update -> do
+        shouldProcess <- isCurrentLocationAndGraphLoaded  $ update ^. RemoveConnection.location'
+        when shouldProcess $ void $ localRemoveConnection $ update ^. RemoveConnection.connId'
     --
     -- NodeMetaUpdated update -> do
     --     shouldProcess   <- isCurrentLocationAndGraphLoaded (update ^. UpdateNodeMeta.location')

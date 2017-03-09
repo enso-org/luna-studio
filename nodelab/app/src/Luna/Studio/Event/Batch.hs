@@ -8,10 +8,9 @@ import qualified Empire.API.Control.EmpireStarted       as EmpireStarted
 import qualified Empire.API.Graph.AddNode               as AddNode
 import qualified Empire.API.Graph.AddPort               as AddPort
 import qualified Empire.API.Graph.AddSubgraph           as AddSubgraph
-import qualified Empire.API.Graph.CodeUpdate            as CodeUpdate
+import qualified Empire.API.Graph.Code                  as Code
 import qualified Empire.API.Graph.Collaboration         as Collaboration
 import qualified Empire.API.Graph.Connect               as Connect
-import qualified Empire.API.Graph.Disconnect            as Disconnect
 import qualified Empire.API.Graph.GetProgram            as GetProgram
 import qualified Empire.API.Graph.MonadsUpdate          as MonadsUpdate
 import qualified Empire.API.Graph.MovePort              as MovePort
@@ -19,6 +18,7 @@ import qualified Empire.API.Graph.NodeResultUpdate      as NodeResultUpdate
 import qualified Empire.API.Graph.NodeSearch            as NodeSearch
 import qualified Empire.API.Graph.NodesUpdate           as NodesUpdate
 import qualified Empire.API.Graph.NodeTypecheckerUpdate as NodeTCUpdate
+import qualified Empire.API.Graph.RemoveConnection      as RemoveConnection
 import qualified Empire.API.Graph.RemoveNodes           as RemoveNodes
 import qualified Empire.API.Graph.RemovePort            as RemovePort
 import qualified Empire.API.Graph.RenameNode            as RenameNode
@@ -37,17 +37,18 @@ data Event = UnknownEvent String
            | AddNodeResponse                           AddNode.Response
            | AddPortResponse                           AddPort.Response
            | AddSubgraphResponse                   AddSubgraph.Response
-           | CodeUpdated                            CodeUpdate.Update
+           | CodeUpdate                                   Code.Update
            | CollaborationUpdate                 Collaboration.Update
            | ConnectionDropped
            | ConnectionOpened
            | ConnectResponse                           Connect.Response
-           | DisconnectInverse                      Disconnect.Inverse
-           | DisconnectResponse                     Disconnect.Response
+           | ConnectUpdate                             Connect.Update
+           | GetProgramResponse                     GetProgram.Response
+           | RemoveConnectionResponse         RemoveConnection.Response
+           | RemoveConnectionUpdate           RemoveConnection.Update
            | EmpireStarted                       EmpireStarted.Status
            | MonadsUpdated                        MonadsUpdate.Update
            | MovePortResponse                         MovePort.Response
-           | NodeAdded                                 AddNode.Update
            | NodeCodeSet                               SetCode.Update
            | NodeMetaInverse                    UpdateNodeMeta.Inverse
            | NodeMetaResponse                   UpdateNodeMeta.Response
@@ -56,13 +57,10 @@ data Event = UnknownEvent String
            | PortRenamed                            RenamePort.Update
            | NodeRenameResponse                     RenameNode.Response
            | NodeResultUpdated                NodeResultUpdate.Update
-           | NodesConnected                            Connect.Update
-           | NodesDisconnected                      Disconnect.Update
            | NodeSearchResponse                     NodeSearch.Response
            | NodesRemoved                          RemoveNodes.Update
            | NodesUpdated                          NodesUpdate.Update
            | NodeTypechecked                      NodeTCUpdate.Update
-           | ProgramFetched                         GetProgram.Response
            | ProjectCreated                      CreateProject.Response
            | ProjectCreatedUpdate                CreateProject.Update
            | ProjectExported                     ExportProject.Response

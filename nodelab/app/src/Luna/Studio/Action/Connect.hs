@@ -12,34 +12,34 @@ module Luna.Studio.Action.Connect
     , stopConnecting
     ) where
 
-import qualified Data.HashMap.Strict                    as HashMap
-import           Data.ScreenPosition                    (ScreenPosition)
-import           Empire.API.Data.Connection             (ConnectionId, toValidConnection)
-import qualified Empire.API.Data.Connection             as Connection
-import           Empire.API.Data.Port                   (InPort (Self), PortId (InPortId))
-import           Empire.API.Data.PortRef                (AnyPortRef (InPortRef', OutPortRef'))
-import qualified Empire.API.Data.PortRef                as PortRef
-import qualified JS.GoogleAnalytics                     as GA
-import           Luna.Studio.Action.Camera.Screen       (translateToWorkspace)
-import           Luna.Studio.Action.Command             (Command)
-import           Luna.Studio.Action.Geometry.Connection (createConnectionModel, createCurrentConnectionModel)
-import           Luna.Studio.Action.Graph.Connect       (connect)
-import           Luna.Studio.Action.Graph.Disconnect    (removeConnections)
-import           Luna.Studio.Action.Node.Drag           (startNodeDrag)
-import           Luna.Studio.Action.Port.Self           (showOrHideAllSelfPorts)
-import           Luna.Studio.Event.Mouse                (mousePosition, workspacePosition)
+import qualified Data.HashMap.Strict                       as HashMap
+import           Data.ScreenPosition                       (ScreenPosition)
+import           Empire.API.Data.Connection                (ConnectionId, toValidConnection)
+import qualified Empire.API.Data.Connection                as Connection
+import           Empire.API.Data.Port                      (InPort (Self), PortId (InPortId))
+import           Empire.API.Data.PortRef                   (AnyPortRef (InPortRef', OutPortRef'))
+import qualified Empire.API.Data.PortRef                   as PortRef
+import qualified JS.GoogleAnalytics                        as GA
+import           Luna.Studio.Action.Camera.Screen          (translateToWorkspace)
+import           Luna.Studio.Action.Command                (Command)
+import           Luna.Studio.Action.Geometry.Connection    (createConnectionModel, createCurrentConnectionModel)
+import           Luna.Studio.Action.Graph.Connect          (connect)
+import           Luna.Studio.Action.Graph.RemoveConnection (removeConnection)
+import           Luna.Studio.Action.Node.Drag              (startNodeDrag)
+import           Luna.Studio.Action.Port.Self              (showOrHideAllSelfPorts)
+import           Luna.Studio.Event.Mouse                   (mousePosition, workspacePosition)
 import           Luna.Studio.Prelude
-import           Luna.Studio.React.Event.Connection     (ModifiedEnd (Destination, Source))
-import           Luna.Studio.React.Model.Connection     (toCurrentConnection)
-import qualified Luna.Studio.React.Model.Node           as Model
-import qualified Luna.Studio.React.Model.NodeEditor     as NodeEditor
-import           Luna.Studio.State.Action               (Action (begin, continue, update), Connect, Mode (Click, Drag), connectAction)
-import qualified Luna.Studio.State.Action               as Action
-import           Luna.Studio.State.Global               (State, beginActionWithKey, continueActionWithKey, removeActionFromState,
-                                                         updateActionWithKey)
-import qualified Luna.Studio.State.Global               as Global
-import qualified Luna.Studio.State.Graph                as Graph
-import           React.Flux                             (MouseEvent)
+import           Luna.Studio.React.Event.Connection        (ModifiedEnd (Destination, Source))
+import           Luna.Studio.React.Model.Connection        (toCurrentConnection)
+import qualified Luna.Studio.React.Model.Node              as Model
+import qualified Luna.Studio.React.Model.NodeEditor        as NodeEditor
+import           Luna.Studio.State.Action                  (Action (begin, continue, update), Connect, Mode (Click, Drag), connectAction)
+import qualified Luna.Studio.State.Action                  as Action
+import           Luna.Studio.State.Global                  (State, beginActionWithKey, continueActionWithKey, removeActionFromState,
+                                                            updateActionWithKey)
+import qualified Luna.Studio.State.Global                  as Global
+import qualified Luna.Studio.State.Graph                   as Graph
+import           React.Flux                                (MouseEvent)
 
 
 instance Action (Command State) Connect where
@@ -72,7 +72,7 @@ startConnecting screenMousePos anyPortRef mayModifiedConnId connectMode = do
                 mayCurrentConnectionModel <- createCurrentConnectionModel anyPortRef mousePos
                 when (isJust mayCurrentConnectionModel) $ do
                     let action = Action.Connect screenMousePos anyPortRef (isJust mayModifiedConnId) Nothing connectMode
-                    withJust mayModifiedConnId $ removeConnections . replicate 1
+                    withJust mayModifiedConnId removeConnection
                     begin action
                     showOrHideAllSelfPorts (Just action) Nothing
                     Global.modifyNodeEditor $ do

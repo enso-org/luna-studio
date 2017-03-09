@@ -27,11 +27,11 @@ handlersMap = Map.fromList
     , makeHandler Graph.handleAddPort
     , makeHandler Graph.handleAddSubgraph
     , makeHandler Graph.handleConnect
-    , makeHandler Graph.handleDisconnect
     , makeHandler Graph.handleDumpGraphViz
     , makeHandler Graph.handleGetProgram
     , makeHandler Graph.handleMovePort
     , makeHandler Graph.handleNodeSearch
+    , makeHandler Graph.handleRemoveConnection
     , makeHandler Graph.handleRemoveNodes
     , makeHandler Graph.handleRemovePort
     , makeHandler Graph.handleRenameNode

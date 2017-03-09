@@ -1,7 +1,7 @@
 module Luna.Studio.Action.Batch  where
 
 import           Data.UUID.Types                      (UUID)
-import           Empire.API.Data.Connection           (Connection)
+import           Empire.API.Data.Connection           (Connection, ConnectionId)
 import qualified Empire.API.Data.DefaultValue         as DefaultValue
 import           Empire.API.Data.Node                 (Node, NodeId)
 import           Empire.API.Data.NodeMeta             (NodeMeta)
@@ -90,10 +90,10 @@ connect src dst = do
     collaborativeModify [nodeId]
     withWorkspace $ BatchCmd.connect src dst where
 
-disconnect :: InPortRef -> Command State ()
-disconnect dst = do
-    collaborativeModify [dst ^. PortRef.dstNodeId]
-    withWorkspace $ BatchCmd.disconnect dst
+removeConnection :: ConnectionId -> Command State ()
+removeConnection connId = do
+    collaborativeModify [connId ^. PortRef.dstNodeId]
+    withWorkspace $ BatchCmd.removeConnection connId
 
 setDefaultValue :: AnyPortRef -> DefaultValue.PortDefault -> Command State ()
 setDefaultValue portRef value = do

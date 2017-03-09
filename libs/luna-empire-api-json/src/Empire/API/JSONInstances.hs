@@ -30,10 +30,9 @@ import           Empire.API.Data.ValueType              as ValueType
 import           Empire.API.Graph.AddNode               as AddNode
 import           Empire.API.Graph.AddPort               as AddPort
 import           Empire.API.Graph.AddSubgraph           as AddSubgraph
-import           Empire.API.Graph.CodeUpdate            as CodeUpdate
+import           Empire.API.Graph.Code                  as Code
 import           Empire.API.Graph.Collaboration         as Collaboration
 import           Empire.API.Graph.Connect               as Connect
-import           Empire.API.Graph.Disconnect            as Disconnect
 import           Empire.API.Graph.GetProgram            as GetProgram
 import           Empire.API.Graph.MonadsUpdate          as MonadsUpdate
 import           Empire.API.Graph.MovePort              as MovePort
@@ -41,6 +40,7 @@ import           Empire.API.Graph.NodeResultUpdate      as NodeResultUpdate
 import           Empire.API.Graph.NodeSearch            as NodeSearch
 import           Empire.API.Graph.NodesUpdate           as NodesUpdate
 import           Empire.API.Graph.NodeTypecheckerUpdate as NodeTypecheckerUpdate
+import           Empire.API.Graph.RemoveConnection      as RemoveConnection
 import           Empire.API.Graph.RemoveNodes           as RemoveNodes
 import           Empire.API.Graph.RemovePort            as RemovePort
 import           Empire.API.Graph.RenameNode            as RenameNode
@@ -147,7 +147,6 @@ instance FromJSON Graph.Graph
 instance ToJSON t => ToJSON (Error.Error t)
 
 instance ToJSON AddNode.Request
-instance ToJSON AddNode.Update
 
 instance ToJSON AddPort.Request
 
@@ -160,9 +159,9 @@ instance ToJSON AddSubgraph.Request
 instance ToJSON Connect.Request
 instance ToJSON Connect.Update
 
-instance ToJSON Disconnect.Request
-instance ToJSON Disconnect.Inverse
-instance ToJSON Disconnect.Update
+instance ToJSON RemoveConnection.Request
+instance ToJSON RemoveConnection.Inverse
+instance ToJSON RemoveConnection.Update
 
 instance ToJSON RemoveNodes.Request
 instance ToJSON RemoveNodes.Inverse
@@ -196,7 +195,7 @@ instance ToJSON NodeResultUpdate.NodeValue
 
 instance ToJSON NodeTypecheckerUpdate.Update
 
-instance ToJSON CodeUpdate.Update
+instance ToJSON Code.Update
 
 instance ToJSON GetProgram.Request
 instance ToJSON GetProgram.Result

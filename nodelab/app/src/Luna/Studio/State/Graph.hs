@@ -22,7 +22,7 @@ module Luna.Studio.State.Graph
     , lookUpConnection
     , nodes
     , nodesMap
-    , removeConnections
+    , removeConnection
     , removeNode
     , updateNodes
     ) where
@@ -95,9 +95,6 @@ removeNode remNodeId state = state & nodesMap . at remNodeId .~ Nothing
 addConnection :: Connection -> Command State ConnectionId
 addConnection conn = connectionsMap . at connId ?= conn >> return connId where
     connId = conn ^. Connection.dst
-
-removeConnections :: [ConnectionId] -> State -> State
-removeConnections connIds state = foldr removeConnection state connIds
 
 removeConnection :: ConnectionId -> State -> State
 removeConnection connId state = state & connectionsMap . at connId .~ Nothing

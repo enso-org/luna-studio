@@ -35,9 +35,9 @@ import qualified Empire.API.Graph.AddNode              as AddNode
 import qualified Empire.API.Graph.AddPort              as AddPort
 import qualified Empire.API.Graph.AddSubgraph          as AddSubgraph
 import qualified Empire.API.Graph.Connect              as Connect
-import qualified Empire.API.Graph.Disconnect           as Disconnect
 import qualified Empire.API.Graph.MovePort             as MovePort
 import qualified Empire.API.Graph.Redo                 as RedoRequest
+import qualified Empire.API.Graph.RemoveConnection     as RemoveConnection
 import qualified Empire.API.Graph.RemoveNodes          as RemoveNodes
 import qualified Empire.API.Graph.RemovePort           as RemovePort
 import qualified Empire.API.Graph.RenameNode           as RenameNode
@@ -63,8 +63,8 @@ handlersMap = Map.fromList
     , makeHandler handleAddPortUndo
     , makeHandler handleAddSubgraphUndo
     , makeHandler handleConnectUndo
-    , makeHandler handleDisconnectUndo
     , makeHandler handleMovePortUndo
+    , makeHandler handleRemoveConnectionUndo
     , makeHandler handleRemoveNodesUndo
     , makeHandler handleRemovePortUndo
     , makeHandler handleRenameNodeUndo
@@ -81,9 +81,9 @@ type family UndoResponseRequest t where
     UndoResponseRequest AddNode.Response              = RemoveNodes.Request
     UndoResponseRequest AddPort.Response              = RemovePort.Request
     UndoResponseRequest AddSubgraph.Response          = RemoveNodes.Request
-    UndoResponseRequest Connect.Response              = Disconnect.Request
-    UndoResponseRequest Disconnect.Response           = Connect.Request
+    UndoResponseRequest Connect.Response              = RemoveConnection.Request
     UndoResponseRequest MovePort.Response             = MovePort.Request
+    UndoResponseRequest RemoveConnection.Response     = Connect.Request
     UndoResponseRequest RemoveNodes.Response          = AddSubgraph.Request
     UndoResponseRequest RemovePort.Response           = AddPort.Request
     UndoResponseRequest RenameNode.Response           = RenameNode.Request
@@ -98,8 +98,8 @@ type family RedoResponseRequest t where
     RedoResponseRequest AddPort.Response              = AddPort.Request
     RedoResponseRequest AddSubgraph.Response          = AddSubgraph.Request
     RedoResponseRequest Connect.Response              = Connect.Request
-    RedoResponseRequest Disconnect.Response           = Disconnect.Request
     RedoResponseRequest MovePort.Response             = MovePort.Request
+    RedoResponseRequest RemoveConnection.Response     = RemoveConnection.Request
     RedoResponseRequest RemoveNodes.Response          = RemoveNodes.Request
     RedoResponseRequest RemovePort.Response           = RemovePort.Request
     RedoResponseRequest RenameNode.Response           = RenameNode.Request
@@ -174,29 +174,17 @@ handleAddSubgraphUndo (Response.Response _ _ req _ (Response.Ok _)) =
     Just (getUndoAddSubgraph req, req)
 
 
-getUndoConnect :: Connect.Request -> Connect.Result -> Disconnect.Request
+getUndoConnect :: Connect.Request -> Connect.Result -> RemoveConnection.Request
 getUndoConnect (Connect.Request location _ _) conn =
-    Disconnect.Request location $ conn ^. Connection.dst
+    RemoveConnection.Request location $ conn ^. Connection.dst
 
-guiRevertConnect :: Connect.Request -> Maybe Disconnect.Request
-guiRevertConnect (Connect.Request location _ (Left dst)) = Just $ Disconnect.Request location dst
+guiRevertConnect :: Connect.Request -> Maybe RemoveConnection.Request
+guiRevertConnect (Connect.Request location _ (Left dst)) = Just $ RemoveConnection.Request location dst
 guiRevertConnect _ = Nothing
 
-handleConnectUndo :: Connect.Response -> Maybe (Disconnect.Request, Connect.Request)
+handleConnectUndo :: Connect.Response -> Maybe (RemoveConnection.Request, Connect.Request)
 handleConnectUndo (Response.Response _ _ req _ (Response.Ok res)) =
     Just (getUndoConnect req res, req)
-
-
-getUndoDisconnect :: Disconnect.Request -> Disconnect.Inverse -> Connect.Request
-getUndoDisconnect (Disconnect.Request location dst) (Disconnect.Inverse src) =
-    Connect.Request location (Left src) (Left dst)
-
-guiRevertDisconnect :: Disconnect.Request -> Disconnect.Inverse -> Connect.Request
-guiRevertDisconnect = getUndoDisconnect
-
-handleDisconnectUndo :: Disconnect.Response -> Maybe (Connect.Request, Disconnect.Request)
-handleDisconnectUndo (Response.Response _ _ req (Response.Ok inv) (Response.Ok _)) =
-    Just (getUndoDisconnect req inv, req)
 
 
 getUndoMovePort :: MovePort.Request -> MovePort.Request
@@ -209,6 +197,18 @@ guiRevertMovePort = getUndoMovePort
 handleMovePortUndo :: MovePort.Response -> Maybe (MovePort.Request, MovePort.Request)
 handleMovePortUndo (Response.Response _ _ req _ (Response.Ok _)) =
     Just (getUndoMovePort req, req)
+
+
+getUndoRemoveConnection :: RemoveConnection.Request -> RemoveConnection.Inverse -> Connect.Request
+getUndoRemoveConnection (RemoveConnection.Request location dst) (RemoveConnection.Inverse src) =
+    Connect.Request location (Left src) (Left dst)
+
+guiRevertRemoveConnection :: RemoveConnection.Request -> RemoveConnection.Inverse -> Connect.Request
+guiRevertRemoveConnection = getUndoRemoveConnection
+
+handleRemoveConnectionUndo :: RemoveConnection.Response -> Maybe (Connect.Request, RemoveConnection.Request)
+handleRemoveConnectionUndo (Response.Response _ _ req (Response.Ok inv) (Response.Ok _)) =
+    Just (getUndoRemoveConnection req inv, req)
 
 
 getUndoRemoveNodes :: RemoveNodes.Request -> RemoveNodes.Inverse -> AddSubgraph.Request

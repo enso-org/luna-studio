@@ -14,7 +14,7 @@ import           Empire.API.Data.Connection                  (Connection)
 import           Luna.Studio.Action.Command                  (Command)
 import           Luna.Studio.Action.ConnectionPen.SmoothLine (addPointToCurve, beginCurve, curveToSvgPath)
 import           Luna.Studio.Action.Geometry.ConnectionPen   (getConnectionsIntersectingSegment, getNodeAtPosition)
-import           Luna.Studio.Action.Graph.Disconnect         (removeConnections, removeConnectionsBetweenNodes)
+import           Luna.Studio.Action.Graph.RemoveConnection   (removeConnection, removeConnectionsBetweenNodes)
 import           Luna.Studio.Data.Color                      (Color (Color))
 import           Luna.Studio.Event.Mouse                     (workspacePosition)
 import           Luna.Studio.Prelude
@@ -64,7 +64,7 @@ checkAndUpdateRestriction conn = continue $ \state -> withJust (state ^. Action.
 handleSegment :: (Position, Position) -> Command State ()
 handleSegment seg@(_, segEnd) = do
     connectionIdsToRemove <- getConnectionsIntersectingSegment seg
-    removeConnections connectionIdsToRemove
+    mapM_ removeConnection connectionIdsToRemove
     allConnections <- use $ Global.graph . Graph.connectionsMap
     let connectionsToRemove = catMaybes $ flip map connectionIdsToRemove $ flip HashMap.lookup allConnections
     mapM_ checkAndUpdateRestriction connectionsToRemove

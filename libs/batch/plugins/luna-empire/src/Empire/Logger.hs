@@ -17,13 +17,13 @@ import           Prologue
 
 import qualified Empire.API.Control.EmpireStarted  as EmpireStarted
 import qualified Empire.API.Graph.AddNode          as AddNode
-import qualified Empire.API.Graph.CodeUpdate       as CodeUpdate
+import qualified Empire.API.Graph.Code             as Code
 import qualified Empire.API.Graph.Connect          as Connect
-import qualified Empire.API.Graph.Disconnect       as Disconnect
 import qualified Empire.API.Graph.DumpGraphViz     as DumpGraphViz
 import qualified Empire.API.Graph.GetProgram       as GetProgram
 import qualified Empire.API.Graph.NodeResultUpdate as NodeResultUpdate
 import qualified Empire.API.Graph.NodesUpdate      as NodesUpdate
+import qualified Empire.API.Graph.RemoveConnection as RemoveConnection
 import qualified Empire.API.Graph.RemoveNodes      as RemoveNodes
 import qualified Empire.API.Graph.RenameNode       as RenameNode
 import qualified Empire.API.Graph.SetDefaultValue  as SetDefaultValue
@@ -114,7 +114,6 @@ logMessage logMsg topic content = do
 -- loggFormattersMap = Map.fromList
 --     [ makeHandler (Proxy :: Proxy (Request AddNode.Request          ))
 --     , makeHandler (Proxy :: Proxy (AddNode.Response         ))
---     , makeHandler (Proxy :: Proxy (AddNode.Update           ))
 --     , makeHandler (Proxy :: Proxy (Request RemoveNodes.Request       ))
 --     , makeHandler (Proxy :: Proxy (RemoveNodes.Response      ))
 --     , makeHandler (Proxy :: Proxy (RemoveNodes.Update        ))
@@ -127,14 +126,14 @@ logMessage logMsg topic content = do
 --     , makeHandler (Proxy :: Proxy (Request Connect.Request          ))
 --     , makeHandler (Proxy :: Proxy (Connect.Response         ))
 --     , makeHandler (Proxy :: Proxy (Connect.Update           ))
---     , makeHandler (Proxy :: Proxy (Request Disconnect.Request       ))
---     , makeHandler (Proxy :: Proxy (Disconnect.Response      ))
---     , makeHandler (Proxy :: Proxy (Disconnect.Update        ))
+--     , makeHandler (Proxy :: Proxy (Request RemoveConnection.Request       ))
+--     , makeHandler (Proxy :: Proxy (RemoveConnection.Response      ))
+--     , makeHandler (Proxy :: Proxy (RemoveConnection.Update        ))
 --     , makeHandler (Proxy :: Proxy (Request GetProgram.Request       ))
 --     , makeHandler (Proxy :: Proxy (GetProgram.Response      ))
 --     , makeHandler (Proxy :: Proxy (NodesUpdate.Update        ))
 --     , makeHandler (Proxy :: Proxy (NodeResultUpdate.Update  ))
---     , makeHandler (Proxy :: Proxy (CodeUpdate.Update        ))
+--     , makeHandler (Proxy :: Proxy (Code.Update        ))
 --     , makeHandler (Proxy :: Proxy (Request CreateProject.Request    ))
 --     , makeHandler (Proxy :: Proxy (CreateProject.Response   ))
 --     , makeHandler (Proxy :: Proxy (CreateProject.Update     ))

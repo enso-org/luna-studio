@@ -9,7 +9,7 @@ import           Luna.Studio.Batch.Connector.Connection (Message (..), sendReque
 import           Luna.Studio.Batch.Workspace            (Workspace)
 import qualified Luna.Studio.Batch.Workspace            as Workspace
 
-import           Empire.API.Data.Connection             (Connection)
+import           Empire.API.Data.Connection             (Connection, ConnectionId)
 import qualified Empire.API.Data.DefaultValue           as DefaultValue
 import           Empire.API.Data.GraphLocation          (GraphLocation)
 import qualified Empire.API.Data.GraphLocation          as GraphLocation
@@ -23,12 +23,12 @@ import qualified Empire.API.Graph.AddPort               as AddPort
 import qualified Empire.API.Graph.AddSubgraph           as AddSubgraph
 import qualified Empire.API.Graph.Collaboration         as Collaboration
 import qualified Empire.API.Graph.Connect               as Connect
-import qualified Empire.API.Graph.Disconnect            as Disconnect
 import qualified Empire.API.Graph.DumpGraphViz          as DumpGraphViz
 import qualified Empire.API.Graph.GetProgram            as GetProgram
 import qualified Empire.API.Graph.MovePort              as MovePort
 import qualified Empire.API.Graph.NodeSearch            as NodeSearch
 import qualified Empire.API.Graph.Redo                  as Redo
+import qualified Empire.API.Graph.RemoveConnection      as RemoveConnection
 import qualified Empire.API.Graph.RemoveNodes           as RemoveNodes
 import qualified Empire.API.Graph.RemovePort            as RemovePort
 import qualified Empire.API.Graph.RenameNode            as RenameNode
@@ -93,11 +93,11 @@ renameNode nid name w uuid guiID = sendRequest $ Message uuid guiID $ withLibrar
 connect :: Either OutPortRef NodeId -> Either InPortRef NodeId -> Workspace -> UUID -> Maybe UUID -> IO ()
 connect src dst workspace uuid guiID = sendRequest $ Message uuid guiID $ withLibrary workspace Connect.Request src dst
 
-disconnect :: InPortRef -> Workspace -> UUID -> Maybe UUID -> IO ()
-disconnect dst workspace uuid guiID = sendRequest $ Message uuid guiID $ withLibrary workspace Disconnect.Request dst
-
 setCode :: NodeId -> Text -> Workspace -> UUID -> Maybe UUID -> IO ()
 setCode nid newCode w uuid guiID = sendRequest $ Message uuid guiID $ withLibrary w SetCode.Request nid newCode
+
+removeConnection :: ConnectionId -> Workspace -> UUID -> Maybe UUID -> IO ()
+removeConnection connId workspace uuid guiID = sendRequest $ Message uuid guiID $ withLibrary workspace RemoveConnection.Request connId
 
 removeNodes :: [NodeId] -> Workspace -> UUID -> Maybe UUID ->  IO ()
 removeNodes nodeIds workspace uuid guiID = sendRequest $ Message uuid guiID $ withLibrary workspace RemoveNodes.Request nodeIds

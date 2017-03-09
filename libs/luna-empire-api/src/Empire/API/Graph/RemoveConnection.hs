@@ -1,20 +1,19 @@
-module Empire.API.Graph.Disconnect where
+module Empire.API.Graph.RemoveConnection where
 
 import           Data.Binary                   (Binary)
-import           Prologue
-
+import           Empire.API.Data.Connection    (ConnectionId)
 import           Empire.API.Data.GraphLocation (GraphLocation)
-import           Empire.API.Data.Node          (NodeId)
-import           Empire.API.Data.Port          (InPort, OutPort)
-import           Empire.API.Data.PortRef       (InPortRef (..), OutPortRef (..))
-import qualified Empire.API.Response           as Response
+import           Empire.API.Data.PortRef       (OutPortRef)
 import qualified Empire.API.Graph.Request      as G
 import qualified Empire.API.Request            as R
 import qualified Empire.API.Response           as Response
+import qualified Empire.API.Response           as Response
 import qualified Empire.API.Topic              as T
+import           Prologue
+
 
 data Request = Request { _location :: GraphLocation
-                       , _dst      :: InPortRef
+                       , _connId   :: ConnectionId
                        } deriving (Generic, Eq, NFData, Show)
 
 data Inverse = Inverse { _src :: OutPortRef
@@ -24,7 +23,7 @@ type Response = Response.SimpleResponse Request Inverse
 instance Response.ResponseResult Request Inverse ()
 
 data Update = Update   { _location' :: GraphLocation
-                       , _dst'      :: InPortRef
+                       , _connId'   :: ConnectionId
                        } deriving (Generic, Eq, NFData, Show)
 
 

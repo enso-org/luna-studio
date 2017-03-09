@@ -21,12 +21,12 @@ whenOk (Response.Response _ _ _ _ (Response.Error _  )) _       = return ()
 
 handleResponse :: (Topic.MessageTopic (Response.Response req inv res), JSON.ToJSON req) => Response.Response req inv res -> (res -> Command State ()) -> (Response.Status inv -> Command State ()) -> Command State ()
 handleResponse resp@(Response.Response uuid _ req inv result) success failure = do
-    whenM (isOwnRequest uuid) $ unregisterRequest uuid
     case result of
         Response.Ok result -> success result
         Response.Error str -> do
             liftIO $ Debug.error (convert $ Topic.topic resp <> " [" <> UUID.toString uuid <> "] " <> str) req
             failure inv
+    whenM (isOwnRequest uuid) $ unregisterRequest uuid
 
 doNothing :: a -> Command State ()
 doNothing = const $ return ()

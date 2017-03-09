@@ -1,12 +1,16 @@
 module Luna.Studio.Action.Graph.AddNode where
 
 import           Control.Monad.State                (modify)
+import qualified Data.Map.Lazy                      as Map
 import           Data.Position                      (Position, vector)
 import           Data.Text                          (Text)
 import           Data.Vector                        (toTuple)
 import           Empire.API.Data.Node               (Node (Node), NodeType (ExpressionNode))
 import qualified Empire.API.Data.Node               as Node
 import qualified Empire.API.Data.NodeMeta           as NodeMeta
+import           Empire.API.Data.Port               (InPort (Arg), OutPort (All), Port (Port), PortId (InPortId, OutPortId),
+                                                     PortState (NotConnected))
+import           Empire.API.Data.TypeRep            (TypeRep (TStar))
 import qualified Empire.API.Graph.AddNode           as AddNode
 import qualified Luna.Studio.Action.Batch           as Batch
 import           Luna.Studio.Action.Command         (Command)
@@ -27,6 +31,7 @@ import qualified Luna.Studio.State.Global           as Global
 import qualified Luna.Studio.State.Graph            as Graph
 
 
+
 addNode :: Position -> Text -> Command State ()
 addNode nodePos expression = do
     selected <- selectedNodes
@@ -36,7 +41,9 @@ addNode nodePos expression = do
         connectTo = if length selected == 1 then
                  Just $ (head selected) ^. Model.nodeId
             else Nothing
-        node     = Node nodeId def nodeType False def nodeMeta def
+        defPortsMap = Map.fromList [ (InPortId  (Arg 0), Port (InPortId  (Arg 0)) "" TStar NotConnected) ,
+                                     (OutPortId All    , Port (OutPortId All    ) "" TStar NotConnected) ]
+        node     = Node nodeId def nodeType False defPortsMap nodeMeta def
     localAddNode node
     selectNodes [node ^. Node.nodeId]
     Batch.addNode nodeId expression nodeMeta connectTo
@@ -51,7 +58,12 @@ localUpdateNode node = do
     zoom Global.graph $ modify $ Graph.addNode node
     mayConnect    <- checkAction connectAction
     mayPenConnect <- checkAction penConnectAction
-    nodeModel     <- showOrHideSelfPort mayConnect mayPenConnect $ Model.fromNode node
+    nodeModel'    <- showOrHideSelfPort mayConnect mayPenConnect $ Model.fromNode node
     let nodeId = node ^. Node.nodeId
-    Global.modifyNodeEditor $ NodeEditor.nodes . at nodeId ?= nodeModel
+    Global.modifyNodeEditor $ do
+        maySelection <- (fmap . fmap) (view Model.isSelected) $ use $ NodeEditor.nodes . at nodeId
+        let nodeModel = case maySelection of
+                Nothing        -> nodeModel'
+                Just selection -> nodeModel' & Model.isSelected .~ selection
+        NodeEditor.nodes . at nodeId ?= nodeModel
     updateConnectionsForNodes [nodeId]
