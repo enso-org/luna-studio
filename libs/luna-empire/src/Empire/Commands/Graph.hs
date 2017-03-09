@@ -400,17 +400,35 @@ transplantMarker donor recipient = do
         IR.writeLayer @Projection (Just index) var
         IR.writeLayer @Marker marker var
 
+data PatternLocation = Var | Target | Nowhere
+
+getPatternLocation :: ASTOp m => NodeId -> m PatternLocation
+getPatternLocation node = do
+    varIsCons    <- do
+      var    <- ASTRead.getASTVar node
+      cons   <- IR.narrowAtom @IR.Cons var
+      return $ isJust cons
+    targetIsCons <- do
+        target <- ASTRead.getASTTarget node
+        cons   <- IR.narrowAtom @IR.Cons target
+        return $ isJust cons
+    if | varIsCons    -> return Var
+       | targetIsCons -> return Target
+       | otherwise    -> return Nowhere
+
 connectToPattern :: ASTOp m => NodeId -> NodeId -> m Connection
 connectToPattern src dst = do
-    cons         <- ASTRead.getASTTarget dst
-    dstIsPattern <- isJust <$> IR.narrowAtom @IR.Cons cons
-    when (not dstIsPattern) $ throwM $ CannotConnectException src dst
+    patternLocation <- getPatternLocation dst
+    case patternLocation of
+        Nowhere -> throwM $ CannotConnectException src dst
+        Target  -> do
+            cons     <- ASTRead.getASTTarget dst
+            consName <- ASTRead.getASTVar dst
+            transplantMarker consName cons
+            ASTModify.rewireNodeName dst cons
+        Var     -> return () -- no additional action required
 
-    consName     <- ASTRead.getASTVar dst
-    transplantMarker consName cons
-    ASTModify.rewireNodeName dst cons
-
-    value        <- ASTRead.getASTVar src
+    value <- ASTRead.getASTVar src
     ASTModify.rewireNode dst value
 
     return $ Connection (OutPortRef src Port.All) (InPortRef dst (Port.Arg 0))
@@ -566,8 +584,8 @@ disconnectPort :: ASTOp m => InPortRef -> m ()
 disconnectPort (InPortRef dstNodeId dstPort) = do
     isPatternMatch <- ASTRead.nodeIsPatternMatch dstNodeId
     if isPatternMatch then do
-        blank <- IR.generalize <$> IR.cons_ "Nothing"
-        ASTModify.rewireNode dstNodeId blank
+        nothing <- IR.generalize <$> IR.cons_ "Nothing"
+        ASTModify.rewireNode dstNodeId nothing
                       else do
         case dstPort of
           Self    -> unAcc dstNodeId
