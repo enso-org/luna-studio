@@ -8,8 +8,8 @@ import qualified Empire.API.Control.EmpireStarted       as EmpireStarted
 import qualified Empire.API.Graph.AddNode               as AddNode
 import qualified Empire.API.Graph.AddPort               as AddPort
 import qualified Empire.API.Graph.AddSubgraph           as AddSubgraph
-import qualified Empire.API.Graph.Code                  as Code
-import qualified Empire.API.Graph.Collaboration         as Collaboration
+import qualified Empire.API.Graph.CodeUpdate            as CodeUpdate
+import qualified Empire.API.Graph.CollaborationUpdate   as CollaborationUpdate
 import qualified Empire.API.Graph.Connect               as Connect
 import qualified Empire.API.Graph.DumpGraphViz          as DumpGraphViz
 import qualified Empire.API.Graph.GetProgram            as GetProgram
@@ -19,6 +19,7 @@ import qualified Empire.API.Graph.NodeResultUpdate      as NodeResultUpdate
 import qualified Empire.API.Graph.NodeSearch            as NodeSearch
 import qualified Empire.API.Graph.NodesUpdate           as NodesUpdate
 import qualified Empire.API.Graph.NodeTypecheckerUpdate as NodeTCUpdate
+import qualified Empire.API.Graph.Redo                  as Redo
 import qualified Empire.API.Graph.RemoveConnection      as RemoveConnection
 import qualified Empire.API.Graph.RemoveNodes           as RemoveNodes
 import qualified Empire.API.Graph.RemovePort            as RemovePort
@@ -39,8 +40,8 @@ data Event = UnknownEvent String
            | AddNodeResponse                           AddNode.Response
            | AddPortResponse                           AddPort.Response
            | AddSubgraphResponse                   AddSubgraph.Response
-           | CodeUpdate                                   Code.Update
-           | CollaborationUpdate                 Collaboration.Update
+           | CodeUpdate                             CodeUpdate.Update
+           | CollaborationUpdate           CollaborationUpdate.Update
            | ConnectionDropped
            | ConnectionOpened
            | ConnectResponse                           Connect.Response
@@ -51,9 +52,12 @@ data Event = UnknownEvent String
            | MovePortResponse                         MovePort.Response
            | NodeResultUpdate                 NodeResultUpdate.Update
            | NodeSearchResponse                     NodeSearch.Response
-
+           | NodesUpdate                           NodesUpdate.Update
+           | NodeTypecheckerUpdate                NodeTCUpdate.Update
+           | RedoResponse                                 Redo.Response
            | RemoveConnectionResponse         RemoveConnection.Response
            | RemoveConnectionUpdate           RemoveConnection.Update
+           | RemoveNodesResponse                   RemoveNodes.Response
 
            | NodeCodeSet                               SetCode.Update
            | NodeMetaInverse                    UpdateNodeMeta.Inverse
@@ -62,9 +66,6 @@ data Event = UnknownEvent String
            | NodeRenamed                            RenameNode.Update
            | PortRenamed                            RenamePort.Update
            | NodeRenameResponse                     RenameNode.Response
-           | NodesRemoved                          RemoveNodes.Update
-           | NodesUpdated                          NodesUpdate.Update
-           | NodeTypechecked                      NodeTCUpdate.Update
            | ProjectCreated                      CreateProject.Response
            | ProjectCreatedUpdate                CreateProject.Update
            | ProjectExported                     ExportProject.Response
@@ -72,8 +73,6 @@ data Event = UnknownEvent String
            | ProjectList                          ListProjects.Response
            | ProjectOpened                         OpenProject.Response
            | ProjectOpenedUpdate                   OpenProject.Update
-           | RemoveNodesInverse                    RemoveNodes.Inverse
-           | RemoveNodesResponse                   RemoveNodes.Response
            | RemovePortResponse                     RemovePort.Response
            | UpdateNodeExpressionResponse UpdateNodeExpression.Response
            deriving (Eq, Show, Generic, NFData)

@@ -17,7 +17,8 @@ import qualified Luna.Studio.Action.Camera            as Camera
 import           Luna.Studio.Action.Command           (Command)
 import           Luna.Studio.Action.Graph             (selectedNodes)
 import           Luna.Studio.Action.Graph.AddSubgraph (addSubgraph)
-import           Luna.Studio.Action.Node              (removeSelectedNodes, snapCoord)
+import           Luna.Studio.Action.Graph.RemoveNodes (removeSelectedNodes)
+import           Luna.Studio.Action.Node              (snapCoord)
 import           Luna.Studio.Event.Event              (Event (Shortcut))
 import qualified Luna.Studio.Event.Shortcut           as Shortcut
 import           Luna.Studio.Prelude

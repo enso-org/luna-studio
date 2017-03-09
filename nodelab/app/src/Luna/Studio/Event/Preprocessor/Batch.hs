@@ -35,15 +35,16 @@ handlers = Map.fromList [ handle GetProgramResponse
                         , handle MovePortResponse
                         , handle NodeResultUpdate
                         , handle NodeSearchResponse
-
+                        , handle NodesUpdate
+                        , handle NodeTypecheckerUpdate
+                        , handle RedoResponse
                         , handle RemoveConnectionResponse
                         , handle RemoveConnectionUpdate
+                        , handle RemoveNodesResponse
+
                         , handle NodeMetaResponse
                         , handle NodeMetaUpdated
                         , handle NodeRenamed
-                        , handle NodesRemoved
-                        , handle NodesUpdated
-                        , handle NodeTypechecked
                         , handle PortRenamed
                         , handle ProjectCreated
                         , handle ProjectCreatedUpdate
@@ -52,7 +53,6 @@ handlers = Map.fromList [ handle GetProgramResponse
                         , handle ProjectList
                         , handle ProjectOpened
                         , handle ProjectOpenedUpdate
-                        , handle RemoveNodesResponse
                         , handle RemovePortResponse
                         , handle UpdateNodeExpressionResponse
                         ]

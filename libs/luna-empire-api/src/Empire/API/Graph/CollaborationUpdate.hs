@@ -1,4 +1,4 @@
-module Empire.API.Graph.Collaboration where
+module Empire.API.Graph.CollaborationUpdate where
 
 import           Data.Binary                   (Binary)
 import           Prologue

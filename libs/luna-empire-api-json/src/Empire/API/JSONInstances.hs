@@ -30,8 +30,8 @@ import           Empire.API.Data.ValueType              as ValueType
 import           Empire.API.Graph.AddNode               as AddNode
 import           Empire.API.Graph.AddPort               as AddPort
 import           Empire.API.Graph.AddSubgraph           as AddSubgraph
-import           Empire.API.Graph.Code                  as Code
-import           Empire.API.Graph.Collaboration         as Collaboration
+import           Empire.API.Graph.CodeUpdate            as CodeUpdate
+import           Empire.API.Graph.CollaborationUpdate   as CollaborationUpdate
 import           Empire.API.Graph.Connect               as Connect
 import           Empire.API.Graph.DumpGraphViz          as DumpGraphViz
 import           Empire.API.Graph.GetProgram            as GetProgram
@@ -41,6 +41,7 @@ import           Empire.API.Graph.NodeResultUpdate      as NodeResultUpdate
 import           Empire.API.Graph.NodeSearch            as NodeSearch
 import           Empire.API.Graph.NodesUpdate           as NodesUpdate
 import           Empire.API.Graph.NodeTypecheckerUpdate as NodeTypecheckerUpdate
+import           Empire.API.Graph.Redo                  as Redo
 import           Empire.API.Graph.RemoveConnection      as RemoveConnection
 import           Empire.API.Graph.RemoveNodes           as RemoveNodes
 import           Empire.API.Graph.RemovePort            as RemovePort
@@ -162,13 +163,16 @@ instance ToJSON Connect.Update
 
 instance ToJSON DumpGraphViz.Request
 
+instance ToJSON Redo.RedoRequest
+instance ToJSON Redo.Request
+
+
 instance ToJSON RemoveConnection.Request
 instance ToJSON RemoveConnection.Inverse
 instance ToJSON RemoveConnection.Update
 
 instance ToJSON RemoveNodes.Request
 instance ToJSON RemoveNodes.Inverse
-instance ToJSON RemoveNodes.Update
 
 instance ToJSON RenameNode.Request
 instance ToJSON RenameNode.Inverse
@@ -198,7 +202,7 @@ instance ToJSON NodeResultUpdate.NodeValue
 
 instance ToJSON NodeTypecheckerUpdate.Update
 
-instance ToJSON Code.Update
+instance ToJSON CodeUpdate.Update
 
 instance ToJSON GetProgram.Request
 instance ToJSON GetProgram.Result
@@ -208,8 +212,8 @@ instance ToJSON NodeSearch.Result
 
 instance ToJSON SetDefaultValue.Request
 
-instance ToJSON Collaboration.Update
-instance ToJSON Collaboration.Event
+instance ToJSON CollaborationUpdate.Update
+instance ToJSON CollaborationUpdate.Event
 
 instance ToJSON CreateLibrary.Request
 instance ToJSON CreateLibrary.Result

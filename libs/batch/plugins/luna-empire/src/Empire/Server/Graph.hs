@@ -41,7 +41,7 @@ import           Empire.API.Data.TypeRep               (TypeRep (TStar))
 import qualified Empire.API.Graph.AddNode              as AddNode
 import qualified Empire.API.Graph.AddPort              as AddPort
 import qualified Empire.API.Graph.AddSubgraph          as AddSubgraph
-import qualified Empire.API.Graph.Code                 as Code
+import qualified Empire.API.Graph.CodeUpdate           as CodeUpdate
 import qualified Empire.API.Graph.Connect              as Connect
 import qualified Empire.API.Graph.DumpGraphViz         as DumpGraphViz
 import qualified Empire.API.Graph.GetProgram           as GetProgram
@@ -89,7 +89,7 @@ notifyCodeUpdate location = do
     (resultCode, _) <- liftIO $ Empire.runEmpire empireNotifEnv currentEmpireEnv $ Graph.getCode location
     case resultCode of
         Left err -> logger Logger.error $ errorMessage <> err
-        Right code -> sendToBus' $ Code.Update location $ Text.pack code
+        Right code -> sendToBus' $ CodeUpdate.Update location $ Text.pack code
 
 notifyNodeResultUpdate :: GraphLocation -> NodeId -> [Value] -> Text -> StateT Env BusT ()
 notifyNodeResultUpdate location nodeId values name = sendToBus' $ NodeResultUpdate.Update location nodeId (NodeResultUpdate.Value name values) 42
@@ -226,22 +226,18 @@ handleRemoveConnection = modifyGraphOk inverse action success where
     action  (RemoveConnection.Request location dst) = Graph.disconnect location dst
     success _ _ _                                   = return ()
 
-
-
-
-
-
 handleRemoveNodes :: Request RemoveNodes.Request -> StateT Env BusT ()
 handleRemoveNodes = modifyGraphOk inverse action success where
-    inverse (RemoveNodes.Request location nodeIds)     = do
+    inverse (RemoveNodes.Request location nodeIds) = do
         Graph allNodes allConnections monads <- Graph.withGraph location $ runASTOp buildGraph
         let idSet = Set.fromList nodeIds
-            nodes = flip filter allNodes       $ \node ->   Set.member (node ^. Node.nodeId)            idSet
-            conns = flip filter allConnections $ \conn -> ( Set.member (conn ^. _1 . PortRef.srcNodeId) idSet
-                                                         || Set.member (conn ^. _2 . PortRef.dstNodeId) idSet )
+            nodes  = flip filter allNodes       $ \node ->   Set.member (node ^. Node.nodeId)            idSet
+            conns' = flip filter allConnections $ \conn -> ( Set.member (conn ^. _1 . PortRef.srcNodeId) idSet
+                                                          || Set.member (conn ^. _2 . PortRef.dstNodeId) idSet )
+            conns  = map (uncurry Connection) conns'
         return $ RemoveNodes.Inverse nodes conns
-    action  (RemoveNodes.Request location nodeIds)     = Graph.removeNodes location nodeIds
-    success (RemoveNodes.Request location nodeIds) _ _ = sendToBus' $ RemoveNodes.Update location nodeIds
+    action (RemoveNodes.Request location nodeIds)  = Graph.removeNodes location nodeIds
+    success _ _ _                                  = return ()
 
 handleUpdateNodeExpression :: Request UpdateNodeExpression.Request -> StateT Env BusT ()-- fixme [SB] returns Result with no new informations and change node expression has addNode+removeNodes
 handleUpdateNodeExpression = modifyGraph inverse action success where

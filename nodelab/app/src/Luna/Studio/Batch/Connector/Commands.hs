@@ -21,7 +21,7 @@ import           Empire.API.Data.Project                (ProjectId)
 import qualified Empire.API.Graph.AddNode               as AddNode
 import qualified Empire.API.Graph.AddPort               as AddPort
 import qualified Empire.API.Graph.AddSubgraph           as AddSubgraph
-import qualified Empire.API.Graph.Collaboration         as Collaboration
+import qualified Empire.API.Graph.CollaborationUpdate   as CollaborationUpdate
 import qualified Empire.API.Graph.Connect               as Connect
 import qualified Empire.API.Graph.DumpGraphViz          as DumpGraphViz
 import qualified Empire.API.Graph.GetProgram            as GetProgram
@@ -118,17 +118,17 @@ setDefaultValue portRef val workspace uuid guiID = sendRequest $ Message uuid gu
 -- setInputNodeType :: NodeId -> Text -> Workspace -> UUID -> Maybe UUID -> IO ()
 -- setInputNodeType nodeId tpe workspace uuid guiID = sendRequest $ Message uuid guiID $ withLibrary workspace SetInputNodeType.Request nodeId (convert tpe)
 
-requestCollaborationRefresh :: Collaboration.ClientId -> Workspace -> IO ()
-requestCollaborationRefresh clientId workspace = sendUpdate $ withLibrary workspace Collaboration.Update clientId Collaboration.Refresh
+requestCollaborationRefresh :: CollaborationUpdate.ClientId -> Workspace -> IO ()
+requestCollaborationRefresh clientId workspace = sendUpdate $ withLibrary workspace CollaborationUpdate.Update clientId CollaborationUpdate.Refresh
 
-collaborativeTouch :: Collaboration.ClientId -> [NodeId] -> Workspace -> IO ()
-collaborativeTouch clientId ids workspace = sendUpdate $ withLibrary workspace Collaboration.Update clientId  $ Collaboration.Touch ids
+collaborativeTouch :: CollaborationUpdate.ClientId -> [NodeId] -> Workspace -> IO ()
+collaborativeTouch clientId ids workspace = sendUpdate $ withLibrary workspace CollaborationUpdate.Update clientId  $ CollaborationUpdate.Touch ids
 
-collaborativeModify :: Collaboration.ClientId ->[NodeId] -> Workspace -> IO ()
-collaborativeModify clientId ids workspace = sendUpdate $ withLibrary workspace Collaboration.Update clientId  $ Collaboration.Modify ids
+collaborativeModify :: CollaborationUpdate.ClientId ->[NodeId] -> Workspace -> IO ()
+collaborativeModify clientId ids workspace = sendUpdate $ withLibrary workspace CollaborationUpdate.Update clientId  $ CollaborationUpdate.Modify ids
 
-cancelCollaborativeTouch :: Collaboration.ClientId -> [NodeId] -> Workspace -> IO ()
-cancelCollaborativeTouch clientId ids workspace = sendUpdate $ withLibrary workspace Collaboration.Update clientId $ Collaboration.CancelTouch ids
+cancelCollaborativeTouch :: CollaborationUpdate.ClientId -> [NodeId] -> Workspace -> IO ()
+cancelCollaborativeTouch clientId ids workspace = sendUpdate $ withLibrary workspace CollaborationUpdate.Update clientId $ CollaborationUpdate.CancelTouch ids
 
 exportProject :: ProjectId -> UUID -> Maybe UUID -> IO ()
 exportProject pid uuid guiID = sendRequest $ Message uuid guiID $ ExportProject.Request pid

@@ -213,7 +213,7 @@ handleRemoveConnectionUndo (Response.Response _ _ req (Response.Ok inv) (Respons
 
 getUndoRemoveNodes :: RemoveNodes.Request -> RemoveNodes.Inverse -> AddSubgraph.Request
 getUndoRemoveNodes (RemoveNodes.Request location _) (RemoveNodes.Inverse nodes conns) =
-    AddSubgraph.Request location nodes $ map (uncurry Connection) conns
+    AddSubgraph.Request location nodes conns
 
 guiRevertRemoveNodes :: RemoveNodes.Request -> RemoveNodes.Inverse -> AddSubgraph.Request
 guiRevertRemoveNodes = getUndoRemoveNodes

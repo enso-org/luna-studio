@@ -18,7 +18,7 @@ import           Data.Word                            (Word8)
 import           Empire.API.Data.Connection           (ConnectionId)
 import           Empire.API.Data.Node                 (NodeId)
 import qualified Empire.API.Data.Node                 as Node
-import qualified Empire.API.Graph.Collaboration       as Collaboration
+import qualified Empire.API.Graph.CollaborationUpdate as CollaborationUpdate
 import           JS.Scene                             (Scene)
 import           Luna.Studio.Action.Command           (Command)
 import           Luna.Studio.Batch.Workspace
@@ -60,7 +60,7 @@ data State = State { _mousePos           :: ScreenPosition
                    , _collaboration      :: Collaboration.State
                    , _pendingRequests    :: Set UUID
                    , _lastEventTimestamp :: DateTime
-                   , _clientId           :: Collaboration.ClientId
+                   , _clientId           :: CollaborationUpdate.ClientId
                    , _random             :: StdGen
                    , _app                :: Ref App
                    }
@@ -131,7 +131,7 @@ modifyConnection connectionId = modify (App.nodeEditor . NodeEditor.connections 
 getConnection :: ConnectionId -> Command State (Maybe Connection)
 getConnection connectionId = get (App.nodeEditor . NodeEditor.connections . at connectionId)
 
-mkState :: DateTime -> Collaboration.ClientId -> StdGen -> Ref App -> State
+mkState :: DateTime -> CollaborationUpdate.ClientId -> StdGen -> Ref App -> State
 mkState = State (ScreenPosition (Vector2 200 200)) def False def def def def def def def def def
 
 nextRandom :: Command State Word8

@@ -17,7 +17,7 @@ import           Prologue
 
 import qualified Empire.API.Control.EmpireStarted  as EmpireStarted
 import qualified Empire.API.Graph.AddNode          as AddNode
-import qualified Empire.API.Graph.Code             as Code
+import qualified Empire.API.Graph.CodeUpdate       as CodeUpdate
 import qualified Empire.API.Graph.Connect          as Connect
 import qualified Empire.API.Graph.DumpGraphViz     as DumpGraphViz
 import qualified Empire.API.Graph.GetProgram       as GetProgram
@@ -116,7 +116,6 @@ logMessage logMsg topic content = do
 --     , makeHandler (Proxy :: Proxy (AddNode.Response         ))
 --     , makeHandler (Proxy :: Proxy (Request RemoveNodes.Request       ))
 --     , makeHandler (Proxy :: Proxy (RemoveNodes.Response      ))
---     , makeHandler (Proxy :: Proxy (RemoveNodes.Update        ))
 --     , makeHandler (Proxy :: Proxy (Request UpdateNodeMeta.Request   ))
 --     , makeHandler (Proxy :: Proxy (UpdateNodeMeta.Response  ))
 --     , makeHandler (Proxy :: Proxy (UpdateNodeMeta.Update    ))
@@ -133,7 +132,7 @@ logMessage logMsg topic content = do
 --     , makeHandler (Proxy :: Proxy (GetProgram.Response      ))
 --     , makeHandler (Proxy :: Proxy (NodesUpdate.Update        ))
 --     , makeHandler (Proxy :: Proxy (NodeResultUpdate.Update  ))
---     , makeHandler (Proxy :: Proxy (Code.Update        ))
+--     , makeHandler (Proxy :: Proxy (CodeUpdate.Update        ))
 --     , makeHandler (Proxy :: Proxy (Request CreateProject.Request    ))
 --     , makeHandler (Proxy :: Proxy (CreateProject.Response   ))
 --     , makeHandler (Proxy :: Proxy (CreateProject.Update     ))

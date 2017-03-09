@@ -7,21 +7,21 @@ module Luna.Studio.React.Model.Node (
 ) where
 
 import           Control.Arrow
-import           Data.Map.Lazy                     (Map)
-import qualified Data.Map.Lazy                     as Map
-import           Data.Time.Clock                   (UTCTime)
+import           Data.Map.Lazy                        (Map)
+import qualified Data.Map.Lazy                        as Map
+import           Data.Time.Clock                      (UTCTime)
 
-import           Data.Position                     (Position (Position), Vector2 (Vector2))
-import           Empire.API.Data.Node              (NodeType)
-import qualified Empire.API.Data.Node              as NodeAPI
-import qualified Empire.API.Data.NodeMeta          as MetaAPI
-import           Empire.API.Data.Port              (PortId (..))
-import           Empire.API.Graph.Collaboration    (ClientId)
-import           Empire.API.Graph.NodeResultUpdate (NodeValue)
-import           Luna.Studio.Prelude               hiding (set)
-import           Luna.Studio.React.Model.Port      (Port)
-import qualified Luna.Studio.React.Model.Port      as Port
-import           Luna.Studio.State.Collaboration   (ColorId)
+import           Data.Position                        (Position (Position), Vector2 (Vector2))
+import           Empire.API.Data.Node                 (NodeType)
+import qualified Empire.API.Data.Node                 as NodeAPI
+import qualified Empire.API.Data.NodeMeta             as MetaAPI
+import           Empire.API.Data.Port                 (PortId (..))
+import           Empire.API.Graph.CollaborationUpdate (ClientId)
+import           Empire.API.Graph.NodeResultUpdate    (NodeValue)
+import           Luna.Studio.Prelude                  hiding (set)
+import           Luna.Studio.React.Model.Port         (Port)
+import qualified Luna.Studio.React.Model.Port         as Port
+import           Luna.Studio.State.Collaboration      (ColorId)
 
 
 data Node = Node { _nodeId                :: NodeAPI.NodeId

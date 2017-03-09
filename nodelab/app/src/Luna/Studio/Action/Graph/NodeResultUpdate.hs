@@ -1,6 +1,4 @@
-{-# LANGUAGE OverloadedStrings #-}
-
-module Luna.Studio.Action.Node.Update where
+module Luna.Studio.Action.Graph.NodeResultUpdate where
 
 import           Control.Arrow                      ((&&&))
 import           Control.Monad.State                (modify)
@@ -26,5 +24,10 @@ import qualified Luna.Studio.State.Global           as Global
 import qualified Luna.Studio.State.Graph            as Graph
 
 
-updateExpression :: NodeId -> Text -> Command State ()
-updateExpression = BatchCmd.updateNodeExpression
+updateNodeValue :: NodeId -> NodeValue -> Command State ()
+updateNodeValue nodeId val =
+    Global.modifyNode nodeId $ Model.value ?= val
+
+updateNodeProfilingData :: NodeId -> Integer -> Command State ()
+updateNodeProfilingData nodeId execTime =
+    Global.modifyNode nodeId $ Model.execTime ?= execTime

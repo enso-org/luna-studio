@@ -7,10 +7,8 @@ module Luna.Studio.Action.Node
     , enter
     , exit
     , handleNodeDragMouseUp
-    , localRemoveNodes
     , modifyNodeMeta
     , nodesDrag
-    , removeSelectedNodes
     , rename
     , selectedToggleMode
     , setCode
@@ -19,11 +17,7 @@ module Luna.Studio.Action.Node
     , startEditName
     , startNodeDrag
     , tryEnter
-    , typecheckNode
-    , updateExpression
-    , updateNodeProfilingData
     , updateNodesMeta
-    , updateNodeValue
     , visualizationsToggled
     ) where
 
@@ -35,7 +29,5 @@ import           Luna.Studio.Action.Node.Expression    (editExpression)
 import           Luna.Studio.Action.Node.Mode          (selectedToggleMode)
 import           Luna.Studio.Action.Node.Name          (applyName, discardName, editName, rename, startEditName)
 import           Luna.Studio.Action.Node.NodeMeta      (modifyNodeMeta, updateNodesMeta)
-import           Luna.Studio.Action.Node.Remove        (localRemoveNodes, removeSelectedNodes)
 import           Luna.Studio.Action.Node.Snap          (snap, snapCoord)
-import           Luna.Studio.Action.Node.Update        (typecheckNode, updateExpression, updateNodeProfilingData, updateNodeValue)
 import           Luna.Studio.Action.Node.Visualization (visualizationsToggled)

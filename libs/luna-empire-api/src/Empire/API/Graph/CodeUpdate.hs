@@ -1,4 +1,4 @@
-module Empire.API.Graph.Code where
+module Empire.API.Graph.CodeUpdate where
 
 import           Data.Binary                   (Binary)
 import           Data.Text                     (Text)

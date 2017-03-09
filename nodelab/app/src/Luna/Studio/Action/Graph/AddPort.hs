@@ -1,26 +1,26 @@
 module Luna.Studio.Action.Graph.AddPort where
 
 import           Control.Arrow
-import qualified Data.Map.Lazy                    as Map
-import           Empire.API.Data.Connection       (Connection (Connection))
-import qualified Empire.API.Data.Connection       as Connection
-import           Empire.API.Data.Node             (NodeId, NodeType (InputEdge, OutputEdge))
-import qualified Empire.API.Data.Node             as Node
-import           Empire.API.Data.Port             (OutPort (All, Projection), Port (Port), PortId (InPortId, OutPortId),
-                                                   PortState (NotConnected))
-import qualified Empire.API.Data.Port             as Port
-import           Empire.API.Data.PortRef          (AnyPortRef (OutPortRef'), OutPortRef (OutPortRef))
-import qualified Empire.API.Data.PortRef          as PortRef
-import           Empire.API.Data.TypeRep          (TypeRep (TStar))
-import qualified Luna.Studio.Action.Batch         as Batch
-import           Luna.Studio.Action.Command       (Command)
-import           Luna.Studio.Action.Graph.AddNode (localUpdateNode)
-import           Luna.Studio.Action.Graph.Connect (localAddConnection)
+import qualified Data.Map.Lazy                        as Map
+import           Empire.API.Data.Connection           (Connection (Connection))
+import qualified Empire.API.Data.Connection           as Connection
+import           Empire.API.Data.Node                 (NodeId, NodeType (InputEdge, OutputEdge))
+import qualified Empire.API.Data.Node                 as Node
+import           Empire.API.Data.Port                 (OutPort (All, Projection), Port (Port), PortId (InPortId, OutPortId),
+                                                       PortState (NotConnected))
+import qualified Empire.API.Data.Port                 as Port
+import           Empire.API.Data.PortRef              (AnyPortRef (OutPortRef'), OutPortRef (OutPortRef))
+import qualified Empire.API.Data.PortRef              as PortRef
+import           Empire.API.Data.TypeRep              (TypeRep (TStar))
+import qualified Luna.Studio.Action.Batch             as Batch
+import           Luna.Studio.Action.Command           (Command)
+import           Luna.Studio.Action.Graph.Connect     (localAddConnection)
+import           Luna.Studio.Action.Graph.NodesUpdate (localUpdateNode)
 import           Luna.Studio.Prelude
-import           Luna.Studio.State.Global         (State)
-import qualified Luna.Studio.State.Global         as Global
-import           Luna.Studio.State.Graph          (connectionsContainingNode)
-import qualified Luna.Studio.State.Graph          as Graph
+import           Luna.Studio.State.Global             (State)
+import qualified Luna.Studio.State.Global             as Global
+import           Luna.Studio.State.Graph              (connectionsContainingNode)
+import qualified Luna.Studio.State.Graph              as Graph
 
 
 addPort :: AnyPortRef -> Command State ()

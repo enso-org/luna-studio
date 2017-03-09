@@ -5,7 +5,7 @@ import qualified Empire.API.Data.Node                      as Node
 import qualified Empire.API.Graph.AddNode                  as AddNode
 import qualified Empire.API.Graph.AddPort                  as AddPort
 import qualified Empire.API.Graph.AddSubgraph              as AddSubgraph
-import qualified Empire.API.Graph.Code                     as Code
+import qualified Empire.API.Graph.CodeUpdate               as CodeUpdate
 import qualified Empire.API.Graph.Connect                  as Connect
 import qualified Empire.API.Graph.GetProgram               as GetProgram
 import qualified Empire.API.Graph.MonadsUpdate             as MonadsUpdate
@@ -26,10 +26,11 @@ import qualified Empire.API.Graph.UpdateNodeMeta           as UpdateNodeMeta
 import           Empire.API.Response                       (ResponseResult, Status)
 import qualified Empire.API.Response                       as Response
 import           Luna.Studio.Action.Command                (Command)
+import           Luna.Studio.Action.Graph.AddSubgraph      (localAddSubgraph)
 import           Luna.Studio.Action.Graph.Connect          (localConnect)
 import           Luna.Studio.Action.Graph.MovePort         (localMovePort)
 import           Luna.Studio.Action.Graph.RemoveConnection (localRemoveConnection)
-import           Luna.Studio.Action.Node.Remove            (localRemoveNodes)
+import           Luna.Studio.Action.Graph.RemoveNodes      (localRemoveNode, localRemoveNodes)
 import qualified Luna.Studio.Batch.Workspace               as Workspace
 import           Luna.Studio.Prelude
 import           Luna.Studio.State.Global                  (State)
@@ -49,7 +50,7 @@ isCurrentLocationAndGraphLoaded location = do
 
 revertAddNode :: AddNode.Request -> Command State ()
 revertAddNode (AddNode.Request loc nodeId _ _ _) =
-    whenM (isCurrentLocationAndGraphLoaded loc) $ localRemoveNodes [nodeId]
+    whenM (isCurrentLocationAndGraphLoaded loc) $ void $ localRemoveNode nodeId
 
 revertAddPort :: AddPort.Request -> Command State ()
 revertAddPort (AddPort.Request loc portRef) =
@@ -57,7 +58,7 @@ revertAddPort (AddPort.Request loc portRef) =
 
 revertAddSubgraph :: AddSubgraph.Request -> Command State ()
 revertAddSubgraph (AddSubgraph.Request loc nodes _) =
-    whenM (isCurrentLocationAndGraphLoaded loc) $ localRemoveNodes $ flip map nodes $ view Node.nodeId
+    whenM (isCurrentLocationAndGraphLoaded loc) $ void $ localRemoveNodes $ flip map nodes $ view Node.nodeId
 
 revertConnect :: Connect.Request -> Command State ()
 revertConnect (Connect.Request loc _ dst) =
@@ -71,3 +72,8 @@ revertRemoveConnection :: RemoveConnection.Request -> Response.Status RemoveConn
 revertRemoveConnection (RemoveConnection.Request loc dst) (Response.Ok (RemoveConnection.Inverse src)) =
     whenM (isCurrentLocationAndGraphLoaded loc) $ void $ localConnect src dst
 revertRemoveConnection (RemoveConnection.Request _loc _dst) (Response.Error _msg) = $notImplemented
+
+revertRemoveNodes :: RemoveNodes.Request -> Response.Status RemoveNodes.Inverse -> Command State ()
+revertRemoveNodes (RemoveNodes.Request loc _) (Response.Ok (RemoveNodes.Inverse nodes conns)) =
+    whenM (isCurrentLocationAndGraphLoaded loc) $ void $ localAddSubgraph nodes conns
+revertRemoveNodes (RemoveNodes.Request _loc _) (Response.Error _msg) = $notImplemented
