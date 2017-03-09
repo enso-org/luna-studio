@@ -55,7 +55,29 @@ edgeSidebar_ ref mayDraggedPort node = when (isEdge node) $ do
             [ "key"       $= "EdgePortsBody"
             , "className" $= Style.prefixFromList [ "edgeports__body" ]
             ] $ do
+            if isInputEdge node then
+                div_
+                    [ "className" $= Style.prefixFromList ["port", "edgeport", "edgeport--i", "edgeport--self"]
+                    ] $
+                    svg_
+                        [ "className" $= Style.prefix "edgeport__svg"
+                        ] $
+                        g_
+                            [ "className" $= Style.prefixFromList [ "port", "port--self" ]
+                            ] $ do
+                            circle_
+                                [ "className" $= Style.prefix "port__shape"
+                                , "fill"      $= "rgba(119,119,119,255)"
+                                , "r"         $= "5"
+                                ] mempty
+                            circle_
+                                [ "className" $= Style.prefix "port__select"
+                                , "r"         $= "13"
+                                ] mempty
+            else return ()
+
             forM_ ports $ edgePort_ ref
+
             if isInputEdge node then do
                 -- TODO: merge two add buttons into one svg_
                 svg_
