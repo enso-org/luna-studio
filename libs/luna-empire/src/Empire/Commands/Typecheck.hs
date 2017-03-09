@@ -27,12 +27,11 @@ import qualified Empire.Commands.GraphBuilder      as GraphBuilder
 import qualified Empire.Commands.Publisher         as Publisher
 
 import qualified Luna.IR                            as IR
-import qualified Luna.IR.Expr.Combinators           as IR
-import           Luna.IR.Imports                    (Imports(..))
-import           Luna.IR.Module.Definition          (Module(..))
-import qualified Luna.IR.Function.Definition        as IR.Function
-import           Luna.Pass                          (SubPass)
-import qualified Luna.Passes.Typechecking.Typecheck as Typecheck
+import qualified OCI.IR.Combinators                 as IR
+import           Luna.IR.Term.Unit                  (Imports(..), Module(..))
+import qualified Luna.IR.Term.Function              as IR.Function
+import           OCI.Pass                           (SubPass)
+import qualified Luna.Pass.Typechecking.Typecheck   as Typecheck
 
 
 getNodeValueReprs :: NodeId -> Command Graph (Either String a)
@@ -66,13 +65,13 @@ runTC = do
                 tp   <- IR.lam tvar tvar
                 v    <- IR.var "in" `typed` tvar
                 l    <- IR.lam v v `typed` tp
-                IR.Function.compile $ IR.generalize l
+                fmap IR.Function.OldFunction $ IR.Function.compile $ IR.generalize l
             id' <- do
                 tvar <- IR.var "a"
                 tp   <- IR.lam tvar tvar
                 v    <- IR.var "in" `typed` tvar
                 l    <- IR.lam v v `typed` tp
-                IR.Function.compile $ IR.generalize l
+                fmap IR.Function.OldFunction $ IR.Function.compile $ IR.generalize l
             let m = Module Map.empty $ Map.fromList [("idInt", idInt'), ("id", id')]
             return $ Imports $ Map.singleton "Stdlib" m
         Typecheck.typecheck mockImports $ map IR.unsafeGeneralize roots

@@ -87,8 +87,8 @@ import qualified Empire.Commands.GraphUtils      as GraphUtils
 import qualified Empire.Commands.Publisher       as Publisher
 import           Empire.Empire
 
-import qualified Luna.IR                  as IR
-import qualified Luna.IR.Expr.Combinators as IR (changeSource, deleteSubtree, replaceNode)
+import qualified Luna.IR            as IR
+import qualified OCI.IR.Combinators as IR (changeSource, deleteSubtree, replaceNode)
 
 generateNodeName :: ASTOp m => m String
 generateNodeName = do

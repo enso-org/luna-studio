@@ -56,7 +56,7 @@ import           Empire.Data.Layers                (TypeLayer)
 import           Empire.Empire
 
 import qualified Luna.IR as IR
-import           Luna.IR.Expr.Term.Uni
+import           Luna.IR.Term.Uni
 
 nameBreadcrumb :: ASTOp m => BreadcrumbItem -> m (Named BreadcrumbItem)
 nameBreadcrumb item@(Breadcrumb.Lambda nid) = do
@@ -176,7 +176,7 @@ getPortState node = do
         IR.String s     -> return . WithDefault . Constant . StringValue $ s
         IR.Number i     -> return $ WithDefault $ Constant $ RationalValue 0 -- FIXME[MM]: put the number here
         Cons n _ -> do
-            name <- pure $ nameToString n
+            name <- pure $ pathNameToString n
             case name of
                 "False" -> return . WithDefault . Constant . BoolValue $ False
                 "True"  -> return . WithDefault . Constant . BoolValue $ True

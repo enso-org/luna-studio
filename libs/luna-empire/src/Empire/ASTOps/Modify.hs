@@ -34,9 +34,8 @@ import           Empire.Data.AST                    (NodeRef, NotLambdaException
                                                      NotUnifyException(..), astExceptionToException,
                                                      astExceptionFromException)
 
-import qualified Luna.IR.Expr.Combinators as IR (changeSource, narrowAtom)
-import           Luna.IR.Expr.Term.Uni
-import           Luna.IR.Expr.Term.Named (Term(Sym_Lam))
+import qualified OCI.IR.Combinators as IR (changeSource, narrowTerm)
+import           Luna.IR.Term.Uni
 import qualified Luna.IR as IR
 
 
@@ -147,5 +146,5 @@ rewireNode nodeId newTarget = do
 
 renameVar :: ASTOp m => NodeRef -> String -> m ()
 renameVar vref name = do
-    var <- IR.narrowAtom @IR.Var vref
+    var <- IR.narrowTerm @IR.Var vref
     mapM_ (flip IR.modifyExprTerm $ IR.name .~ (stringToName name)) var

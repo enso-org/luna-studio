@@ -12,7 +12,7 @@ import           Empire.ASTOp                       (ASTOp, match)
 import qualified Empire.ASTOps.Read                 as Read
 import           Empire.Data.AST                    (NodeRef, NotAppException(..))
 
-import           Luna.IR.Expr.Term.Uni
+import           Luna.IR.Term.Uni
 import qualified Luna.IR as IR
 
 

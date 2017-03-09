@@ -20,6 +20,7 @@ import           Empire.Prelude
 
 import           Control.Monad.Catch  (MonadCatch(..))
 import           Control.Monad.State  (StateT, runStateT, get, put)
+import qualified Control.Monad.State.Dependent as DepState
 import qualified Data.Map             as Map
 import           Empire.Data.Graph    (ASTState(..), Graph, withVis)
 import qualified Empire.Data.Graph    as Graph (ast, nodeMapping, getAnyRef)
@@ -32,19 +33,20 @@ import           Data.Graph.Class     (MonadRefLookup(..), Net)
 import           Data.TypeDesc        (getTypeDesc)
 import           Luna.IR              hiding (get, put, match)
 import           Luna.IR.Layer.Succs  (Succs)
-import           Luna.Pass            (Inputs, Outputs, Preserves, KnownPass)
-import qualified Luna.Pass            as Pass (SubPass, eval')
-import qualified Luna.Pass.Manager    as Pass (PassManager, RefCache, get, setAttr)
+import           OCI.Pass.Class       (Inputs, Outputs, Preserves, KnownPass)
+import qualified OCI.Pass.Class       as Pass (SubPass, eval')
+import qualified OCI.Pass.Manager     as Pass (PassManager, Cache, setAttr, State)
 
 import           System.Log                                 (Logger, DropLogger, dropLogs)
-import           Luna.Passes.Data.ExprRoots                 (ExprRoots(..))
-import           Luna.Passes.Resolution.Data.UnresolvedVars (UnresolvedVars(..))
-import qualified Luna.Passes.Resolution.AliasAnalysis       as AliasAnalysis
-import qualified Luna.Passes.Transform.Parsing.CodeSpan     as CodeSpan
-import qualified Luna.Passes.Transform.Parsing.Parser       as Parser
+import           Luna.Pass.Data.ExprRoots                   (ExprRoots(..))
+import           Luna.Pass.Resolution.Data.UnresolvedVars   (UnresolvedVars(..))
+import           Luna.Pass.Resolution.Data.UnresolvedConses (UnresolvedConses(..), NegativeConses(..))
+import qualified Luna.Pass.Resolution.AliasAnalysis         as AliasAnalysis
+import qualified Luna.Syntax.Text.Parser.Parser             as Parser
+import qualified Luna.Syntax.Text.Parser.CodeSpan           as CodeSpan
 import qualified Data.SpanTree                              as SpanTree
 
-import qualified Luna.IR.Repr.Vis           as Vis
+import qualified OCI.IR.Repr.Vis           as Vis
 
 type ASTOp m = (MonadThrow m,
                 MonadCatch m,
@@ -65,7 +67,6 @@ type EmpireLayers = '[AnyExpr // Model, AnyExprLink // Model,
                       AnyExpr // TCData,
                       AnyExpr // TypeLayer,
                       AnyExpr // UID, AnyExprLink // UID,
-                      AnyExpr // Redirect,
                       AnyExpr // CodeSpan.CodeSpan,
                       AnyExpr // Parser.Parser]
 
@@ -102,11 +103,10 @@ instance MonadPassManager m => MonadRefLookup Attr (Pass.SubPass pass m) where
 match = matchExpr
 
 deriving instance MonadCatch m => MonadCatch (Pass.PassManager m)
-deriving instance MonadCatch m => MonadCatch (IRBuilder m)
-deriving instance MonadCatch m => MonadCatch (RefCache m)
+deriving instance MonadCatch m => MonadCatch (DepState.StateT s m)
 deriving instance MonadCatch m => MonadCatch (SpanTree.TreeBuilder k t m)
 
-runASTOp :: Pass.SubPass EmpirePass (Pass.PassManager (IRBuilder (Parser.IRSpanTreeBuilder (Pass.RefCache (Logger DropLogger (Vis.VisStateT (StateT Graph IO))))))) a
+runASTOp :: Pass.SubPass EmpirePass (Pass.PassManager (IRBuilder (Parser.IRSpanTreeBuilder (DepState.StateT Cache (Logger DropLogger (Vis.VisStateT (StateT Graph IO))))))) a
          -> Command Graph a
 runASTOp pass = runPass (return ()) pass
 
@@ -114,13 +114,15 @@ runAliasAnalysis :: Command Graph ()
 runAliasAnalysis = do
     roots <- uses Graph.nodeMapping $ map Graph.getAnyRef . Map.elems
     let inits = do
-            Pass.setAttr (getTypeDesc @UnresolvedVars) $ UnresolvedVars
+            Pass.setAttr (getTypeDesc @UnresolvedVars)   $ UnresolvedVars   []
+            Pass.setAttr (getTypeDesc @UnresolvedConses) $ UnresolvedConses []
+            Pass.setAttr (getTypeDesc @NegativeConses)   $ NegativeConses   []
             Pass.setAttr (getTypeDesc @ExprRoots) $ ExprRoots $ map unsafeGeneralize roots
     runPass inits AliasAnalysis.runAliasAnalysis
 
 runPass :: forall b a pass. KnownPass pass
-        => Pass.PassManager (IRBuilder (Parser.IRSpanTreeBuilder (Pass.RefCache (Logger DropLogger (Vis.VisStateT (StateT Graph IO)))))) b
-        -> Pass.SubPass pass (Pass.PassManager (IRBuilder (Parser.IRSpanTreeBuilder (Pass.RefCache (Logger DropLogger (Vis.VisStateT (StateT Graph IO))))))) a
+        => Pass.PassManager (IRBuilder (Parser.IRSpanTreeBuilder (DepState.StateT Cache (Logger DropLogger (Vis.VisStateT (StateT Graph IO)))))) b
+        -> Pass.SubPass pass (Pass.PassManager (IRBuilder (Parser.IRSpanTreeBuilder (DepState.StateT Cache (Logger DropLogger (Vis.VisStateT (StateT Graph IO))))))) a
         -> Command Graph a
 runPass inits pass = do
     g <- get
@@ -128,7 +130,7 @@ runPass inits pass = do
     let evalIR = flip runStateT g
                . withVis
                . dropLogs
-               . runRefCache
+               . DepState.evalDefStateT @Cache
                . (\a -> SpanTree.runTreeBuilder a >>= \(foo, _) -> return foo)
                . flip evalIRBuilder currentStateIR
                . flip evalPassManager currentStatePass
@@ -137,7 +139,7 @@ runPass inits pass = do
         a      <- Pass.eval' @pass pass
         Pass.eval' @EmpirePass $ Vis.snapshot "foo"
         st     <- snapshot
-        passSt <- Pass.get
+        passSt <- DepState.get @Pass.State
         return (a, (st, passSt))
     put $ newG & Graph.ast .~ ASTState st passSt
     return a

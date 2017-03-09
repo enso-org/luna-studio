@@ -13,8 +13,8 @@ import           Empire.ASTOp              (ASTOp, match)
 import           Empire.ASTOps.Deconstruct (deconstructApp)
 import           Empire.ASTOps.Read        (isBlank)
 
-import           Luna.IR.Expr.Combinators (deleteSubtree)
-import           Luna.IR.Expr.Term.Uni
+import           OCI.IR.Combinators        (deleteSubtree)
+import           Luna.IR.Term.Uni
 import qualified Luna.IR as IR
 
 removeSubtree :: ASTOp m => NodeRef -> m ()

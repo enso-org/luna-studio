@@ -11,7 +11,7 @@ import           Data.Binary               (Binary)
 import           Data.Either               as Either
 import qualified Data.Maybe                as Maybe
 
-import           Prologue                  hiding (error)
+import           Prologue                  hiding (error, hoistEither)
 import           System.Log.MLogger
 import           ZMQ.Bus.Data.Message      (CorrelationID, Message)
 import qualified ZMQ.Bus.Data.Message      as Message

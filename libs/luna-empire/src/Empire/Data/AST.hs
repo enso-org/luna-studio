@@ -10,8 +10,6 @@ import           Data.Typeable       (cast)
 import           Luna.IR            (SomeExpr, SomeExprLink, IR, IRBuilder,
                                      evalIRBuilder', evalPassManager', snapshot,
                                      runRegs)
-import qualified Luna.Pass.Manager  as Pass (State)
-import qualified Luna.Pass.Manager  as PassManager (get)
 
 import           System.Log         (Logger, DropLogger, dropLogs)
 

@@ -7,6 +7,7 @@ module Empire.ASTOps.Parse (
   ) where
 
 import           Empire.Prelude
+import           Data.Convert
 
 import           Data.List                    (partition)
 import qualified Data.Text                    as Text
@@ -19,8 +20,8 @@ import           Empire.ASTOp                 (ASTOp)
 import           Empire.API.Data.DefaultValue (PortDefault (..), Value (..))
 
 import qualified Luna.IR as IR
-import qualified Luna.Passes.Transform.Parsing.Parsing as Parsing
-import qualified Luna.Passes.Transform.Parsing.Parser as Parser
+import qualified Luna.Syntax.Text.Parser.Parser         as Parser
+import qualified Luna.Syntax.Text.Parser.Parsing        as Parsing
 
 data ParserException e = ParserException e
     deriving (Show)
@@ -74,5 +75,5 @@ parsePortDefault (Constant (IntValue i))      = IR.generalize <$> IR.number (fro
 parsePortDefault (Constant (StringValue s))   = IR.generalize <$> IR.string s
 parsePortDefault (Constant (DoubleValue d))   = $notImplemented
 parsePortDefault (Constant (RationalValue r)) = $notImplemented
-parsePortDefault (Constant (BoolValue b))     = IR.generalize <$> IR.cons_ (stringToName $ show b)
+parsePortDefault (Constant (BoolValue b))     = IR.generalize <$> IR.cons_ (convert $ show b)
 parsePortDefault d = throwM $ PortDefaultNotConstructibleException d

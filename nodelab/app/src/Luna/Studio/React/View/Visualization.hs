@@ -136,7 +136,6 @@ nodeValue_ ref nodeId mayPos visIx value = do
             DoubleList      v -> dataFrame_ visIx $ listTable $ convert . show <$> v
             DoublePairList  v -> dataFrame_ visIx $ listTablePairs $ mapTuple (convert . show) <$> v
             DoubleValue     v -> strDiv $ show v
-            Graphics       gr -> graphics_ visIx gr
             Image     url w h -> image_ visIx $ Image.create (Size (Vector2 w h)) $ convert url
             IntList         v -> dataFrame_ visIx $ listTable $ convert . show <$> v
             IntPairList     v -> dataFrame_ visIx $ listTablePairs $ mapTuple (convert . show) <$> v

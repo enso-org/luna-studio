@@ -33,8 +33,8 @@ import qualified Empire.ASTOps.Read                as ASTRead
 import           Empire.Utils.TextResult           (nodeValueToText)
 
 import qualified Luna.IR as IR
-import           Luna.IR.Expr.Term.Uni
-import qualified Luna.IR.Repr.Vis as Vis
+import           Luna.IR.Term.Uni
+import qualified OCI.IR.Repr.Vis as Vis
 
 import           Web.Browser                       (openBrowser)
 
@@ -62,7 +62,7 @@ valueDecoderRep :: ASTOp m => NodeRef -> m (Maybe ValueDecoderRep)
 valueDecoderRep node = match node $ \case
     -- FIXME, use this second parameter
     Cons n _ -> do
-        name <- pure $ nameToString n
+        name <- pure $ pathNameToString n
         return $ Just $ ConsRep name
     App tc typ -> do
         tc'    <- IR.source tc

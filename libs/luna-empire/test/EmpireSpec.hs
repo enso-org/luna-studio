@@ -33,6 +33,7 @@ import           Empire.Data.Graph             (NodeIDTarget(..), ast, nodeMappi
 import qualified Empire.Data.Library           as Library (body)
 import           Empire.Empire                 (InterpreterEnv(..))
 import           Prologue                      hiding (mapping, toList, (|>))
+import           OCI.IR.Class                  (exprs, links)
 
 import           Test.Hspec (Spec, around, describe, expectationFailure, it, parallel,
                              shouldBe, shouldContain, shouldSatisfy, shouldMatchList,
@@ -305,19 +306,21 @@ spec = around withChannels $ parallel $ do
                 let referenceConnection = (OutPortRef u2 Port.All, InPortRef out (Port.Arg 0))
                 uncurry (Graph.connect loc') referenceConnection
                 Graph.removeNodes top [u1]
-                Graph.withGraph top $ (,) <$> use ast <*> use nodeMapping
-            withResult res $ \(endAst, mapping) -> do
+                Graph.withGraph top $ (,,) <$> use nodeMapping <*> runASTOp exprs <*> runASTOp links
+            withResult res $ \(mapping, edges, nodes) -> do
                 mapping `shouldSatisfy` Map.null
-                endAst `shouldSatisfy` astNull
+                edges   `shouldSatisfy` null
+                nodes   `shouldSatisfy` null
         it "removes `def foo`" $ \env -> do
             u1 <- mkUUID
             res <- evalEmp env $ do
                 Graph.addNode top u1 "def foo" def
                 Graph.removeNodes top [u1]
-                Graph.withGraph top $ (,) <$> use ast <*> use nodeMapping
-            withResult res $ \(endAst, mapping) -> do
+                Graph.withGraph top $ (,,) <$> use nodeMapping <*> runASTOp exprs <*> runASTOp links
+            withResult res $ \(mapping, edges, nodes) -> do
                 mapping `shouldSatisfy` Map.null
-                endAst `shouldSatisfy` astNull
+                edges   `shouldSatisfy` null
+                nodes   `shouldSatisfy` null
         it "RHS of `def foo` is Lam" $ \env -> do
             u1 <- mkUUID
             res <- evalEmp env $ do

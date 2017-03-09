@@ -8,7 +8,7 @@ import           Data.ByteString.Lazy (fromStrict, toStrict)
 import           System.ZMQ4.Monadic  (ZMQ)
 import qualified System.ZMQ4.Monadic  as ZMQ
 
-import           Prologue
+import           Prologue             hiding (hoistEither)
 import           ZMQ.RPC.Handler      (Serializable)
 import           ZMQ.RPC.Response     (Response)
 import qualified ZMQ.RPC.Response     as Response
