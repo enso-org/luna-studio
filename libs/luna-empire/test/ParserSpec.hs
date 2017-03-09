@@ -39,10 +39,10 @@ spec = around withChannels $ do
             u1 <- mkUUID
             res <- evalEmp env $ Graph.addNode top u1 "Vector x y z" def
             withResult res $ \node -> do
-                node ^. Node.nodeType `shouldBe` Node.ExpressionNode "Vector x y z"
+                node ^. Node.nodeType `shouldBe` Node.ExpressionNode "((Vector x) x y) x y z"
                 let outputPorts = Map.elems $ Map.filter Port.isOutputPort $ node ^. Node.ports
                 outputPorts `shouldMatchList` [
-                      Port.Port (Port.OutPortId Port.All) "Output" TStar (Port.WithDefault (Expression "Vector x y z"))
+                      Port.Port (Port.OutPortId Port.All) "Output" TStar (Port.WithDefault (Expression "((Vector x) x y) x y z"))
                     ]
                 let inputPorts = Map.elems $ Map.filter Port.isInputPort $ node ^. Node.ports
                 inputPorts `shouldMatchList` [

@@ -168,7 +168,7 @@ getNodeName nid = do
         vnode <- GraphUtils.getASTVar nid
         name <- match vnode $ \case
             Var{}  -> ASTRead.getVarName vnode
-            Cons{} -> Print.printNodeExpression vnode
+            _      -> Print.printNodeExpression vnode
         return $ Just (Text.pack name)
     else return Nothing
 

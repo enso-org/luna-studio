@@ -416,16 +416,51 @@ getPatternLocation node = do
        | targetIsCons -> return Target
        | otherwise    -> return Nowhere
 
+data NotAPatternException = NotAPatternException NodeRef
+    deriving Show
+
+instance Exception NotAPatternException where
+    fromException = astExceptionFromException
+    toException   = astExceptionToException
+
+constructorToPattern :: ASTOp m => NodeRef -> m NodeRef
+constructorToPattern cons = IR.matchExpr cons $ \case
+    IR.App{}    -> do
+        (f, args) <- ASTDeconstruct.deconstructApp cons
+        fCons     <- IR.narrowTerm @IR.Cons f
+        case fCons of
+            Nothing -> throwM $ NotAPatternException cons
+            Just c  -> do
+                patterns       <- mapM constructorToPattern args
+                constructor    <- IR.matchExpr c $ \case
+                    IR.Cons n _ -> pure n
+                newConstructor <- IR.cons constructor patterns
+                return $ IR.generalize newConstructor
+
+    IR.Var{}       -> return cons
+    IR.Cons n args -> do
+        patterns <- mapM (constructorToPattern <=< IR.source) args
+        IR.generalize <$> IR.cons n patterns
+    IR.Number{} -> return cons
+    IR.String{} -> return cons
+
+data PatternConversion = ConvertToPattern | Don'tConvertToPattern
+
+movePatternToVar :: ASTOp m => PatternConversion -> NodeId -> m ()
+movePatternToVar convertPattern nid = do
+    let converter ConvertToPattern      = constructorToPattern
+        converter Don'tConvertToPattern = return
+    cons     <- ASTRead.getASTTarget nid >>= converter convertPattern
+    consName <- ASTRead.getASTVar nid
+    transplantMarker consName cons
+    ASTModify.rewireNodeName nid cons
+
 connectToPattern :: ASTOp m => NodeId -> NodeId -> m Connection
 connectToPattern src dst = do
     patternLocation <- getPatternLocation dst
     case patternLocation of
-        Nowhere -> throwM $ CannotConnectException src dst
-        Target  -> do
-            cons     <- ASTRead.getASTTarget dst
-            consName <- ASTRead.getASTVar dst
-            transplantMarker consName cons
-            ASTModify.rewireNodeName dst cons
+        Nowhere -> movePatternToVar ConvertToPattern dst
+        Target  -> movePatternToVar Don'tConvertToPattern dst
         Var     -> return () -- no additional action required
 
     value <- ASTRead.getASTVar src
@@ -434,9 +469,9 @@ connectToPattern src dst = do
     return $ Connection (OutPortRef src Port.All) (InPortRef dst (Port.Arg 0))
 
 getVarsInside :: ASTOp m => NodeRef -> m [NodeRef]
-getVarsInside ref = IR.matchExpr ref $ \case
-    IR.Cons _ args -> mapM IR.source args
-    _              -> error "obviously, that is not correct"
+getVarsInside e = do
+    isVar <- isJust <$> IR.narrowTerm @IR.Var e
+    if isVar then return [e] else concat <$> (mapM (getVarsInside <=< IR.source) =<< IR.inputs e)
 
 connectToMatchedVariable :: ASTOp m => OutPortRef -> InPortRef -> Int -> m ()
 connectToMatchedVariable (OutPortRef srcNodeId srcPort) (InPortRef dstNodeId dstPort) pos = do
