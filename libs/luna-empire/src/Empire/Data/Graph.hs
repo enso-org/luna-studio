@@ -115,9 +115,10 @@ deriving instance MonadThrow m => MonadThrow (SpanTree.TreeBuilder s v m)
 withVis :: MonadIO m => Vis.VisStateT m a -> m a
 withVis m = do
     (p, vis) <- Vis.newRunDiffT m
-    let cfg = ByteString.unpack $ encode vis
-    showVis <- liftIO $ lookupEnv "DEBUGVIS"
-    if isJust showVis then void $ liftIO $ openBrowser $ "http://localhost:8000?cfg=" <> cfg else return ()
+    when (not . null $ vis ^. Vis.steps) $ do
+        let cfg = ByteString.unpack $ encode vis
+        showVis <- liftIO $ lookupEnv "DEBUGVIS"
+        if isJust showVis then void $ liftIO $ openBrowser $ "http://localhost:8000?cfg=" <> cfg else return ()
     return p
 
 defaultAST :: IO AST

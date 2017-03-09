@@ -441,7 +441,7 @@ getCode loc = withGraph loc $ runASTOp $ do
         _                  -> lines'
 
 getGraph :: GraphLocation -> Empire APIGraph.Graph
-getGraph loc = withTC loc True $ runASTOp GraphBuilder.buildGraph
+getGraph loc = withTC loc True $ runASTOp (AST.dumpGraphViz "snap") >> runASTOp GraphBuilder.buildGraph
 
 getNodes :: GraphLocation -> Empire [Node]
 getNodes loc = withTC loc True $ runASTOp $ view APIGraph.nodes <$> GraphBuilder.buildGraph
@@ -463,9 +463,7 @@ renameNodeGraph nid name = do
     ASTModify.renameVar vref (Text.unpack name)
 
 dumpGraphViz :: GraphLocation -> Empire ()
-dumpGraphViz loc = withGraph loc $ do
-    -- runASTOp $ AST.dumpGraphViz "gui_dump"
-    return ()
+dumpGraphViz loc = withGraph loc $ return ()
 
 typecheck :: GraphLocation -> Empire ()
 typecheck loc = withGraph loc $ runTC loc False

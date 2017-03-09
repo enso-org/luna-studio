@@ -46,7 +46,8 @@ import qualified Luna.Syntax.Text.Parser.Parser             as Parser
 import qualified Luna.Syntax.Text.Parser.CodeSpan           as CodeSpan
 import qualified Data.SpanTree                              as SpanTree
 
-import qualified OCI.IR.Repr.Vis           as Vis
+import qualified OCI.IR.Repr.Vis                   as Vis
+import qualified Control.Monad.State.Dependent.Old as DepOld
 
 type ASTOp m = (MonadThrow m,
                 MonadCatch m,
@@ -56,6 +57,8 @@ type ASTOp m = (MonadThrow m,
                 Emitters EmpireEmitters m,
                 Editors Net '[AnyExpr, AnyExprLink] m,
                 Editors Layer EmpireLayers m,
+                DepOld.MonadGet Vis.V Vis.Vis m,
+                DepOld.MonadPut Vis.V Vis.Vis m,
                 Parser.IRSpanTreeBuilding m)
 
 
@@ -137,7 +140,6 @@ runPass inits pass = do
     ((a, (st, passSt)), newG) <- liftIO $ evalIR $ do
         inits
         a      <- Pass.eval' @pass pass
-        Pass.eval' @EmpirePass $ Vis.snapshot "foo"
         st     <- snapshot
         passSt <- DepState.get @Pass.State
         return (a, (st, passSt))

@@ -175,8 +175,4 @@ isTrivialLambda node = match node $ \case
     _ -> throwM $ NotLambdaException node
 
 dumpGraphViz :: ASTOp m => String -> m ()
-dumpGraphViz name = do
-    return ()
-    -- ((), diff) <- Vis.newRunDiffT $ Vis.snapshot name
-    -- let vis = BS.C8.unpack $ Aeson.encode $ diff
-    -- void $ liftIO $ openBrowser $ "http://localhost:8000?cfg=" <> vis
+dumpGraphViz name = Vis.snapshot name
