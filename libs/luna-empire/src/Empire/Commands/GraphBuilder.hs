@@ -52,7 +52,7 @@ import qualified Empire.Commands.AST               as AST
 import qualified Empire.Commands.GraphUtils        as GraphUtils
 import           Empire.Data.AST                   (NodeRef, astExceptionToException,
                                                     astExceptionFromException)
-import           Empire.Data.Layers                (TypeLayer)
+import           Empire.Data.Layers                (Projection, TypeLayer)
 import           Empire.Empire
 
 import qualified Luna.IR as IR
@@ -428,7 +428,9 @@ resolveInputNodeId edgeNodes lambdaArgs ref = do
     nodeId <- ASTRead.getNodeId ref
     case List.findIndex (== ref) lambdaArgs of
         Just i -> return (Just i, fmap fst edgeNodes)
-        _      -> return (Nothing, nodeId)
+        _      -> do
+            projection <- IR.readLayer @Projection ref
+            return (projection, nodeId)
 
 getOuterLambdaArguments :: ASTOp m => m [NodeRef]
 getOuterLambdaArguments = do

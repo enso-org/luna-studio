@@ -39,6 +39,7 @@ dependencies:
     - mtl
     - open-browser
     - prologue
+    - safe
     - split
     - stm
     - text

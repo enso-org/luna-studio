@@ -52,13 +52,14 @@ import qualified Data.Text                     as Text
 import qualified Data.UUID                     as UUID
 import qualified Data.UUID.V4                  as UUID (nextRandom)
 import           Empire.Prelude
+import qualified Safe
 
 import           Empire.Data.AST                 (NodeRef, NotInputEdgeException (..), NotUnifyException,
                                                   astExceptionFromException, astExceptionToException)
 import           Empire.Data.BreadcrumbHierarchy (addID, addWithLeafs, removeID, topLevelIDs)
 import           Empire.Data.Graph               (Graph)
 import qualified Empire.Data.Graph               as Graph
-import           Empire.Data.Layers              (Marker, NodeMarker(..))
+import           Empire.Data.Layers              (Marker, NodeMarker(..), Projection)
 
 import           Empire.API.Data.Breadcrumb      as Breadcrumb (Breadcrumb(..), Named, BreadcrumbItem(..))
 import qualified Empire.API.Data.Connection      as Connection
@@ -77,6 +78,7 @@ import qualified Empire.API.Data.PortRef         as PortRef
 import           Empire.ASTOp                    (ASTOp, runASTOp, runAliasAnalysis)
 
 import qualified Empire.ASTOps.Builder           as ASTBuilder
+import qualified Empire.ASTOps.Deconstruct       as ASTDeconstruct
 import qualified Empire.ASTOps.Modify            as ASTModify
 import qualified Empire.ASTOps.Read              as ASTRead
 import qualified Empire.ASTOps.Parse             as ASTParse
@@ -367,9 +369,15 @@ connectPersistent src@(OutPortRef srcNodeId srcPort) (InPortRef' dst@(InPortRef 
     let inputPos = case srcPort of
             All            -> 0   -- FIXME: do not equalise All with Projection 0
             Projection int -> int
-    case dstPort of
-        Self    -> makeAcc srcNodeId dstNodeId inputPos
-        Arg num -> makeApp srcNodeId dstNodeId num inputPos
+    isPatternMatch <- ASTRead.nodeIsPatternMatch srcNodeId
+    if isPatternMatch then do
+        case dstPort of
+            Self    -> $notImplemented
+            Arg num -> connectToMatchedVariable src dst num
+                      else do
+        case dstPort of
+            Self    -> makeAcc srcNodeId dstNodeId inputPos
+            Arg num -> makeApp srcNodeId dstNodeId num inputPos
     return $ Connection src dst
 connectPersistent src@(OutPortRef srcNodeId srcPort) (OutPortRef' dst@(OutPortRef dstNodeId dstPort)) = do
     case dstPort of
@@ -383,18 +391,49 @@ instance Exception CannotConnectException where
     toException = astExceptionToException
     fromException = astExceptionFromException
 
+transplantMarker :: ASTOp m => NodeRef -> NodeRef -> m ()
+transplantMarker donor recipient = do
+    marker     <- IR.readLayer @Marker donor
+    varsInside <- getVarsInside recipient
+    let indexedVars = zip varsInside [0..]
+    forM_ indexedVars $ \(var, index) -> do
+        IR.writeLayer @Projection (Just index) var
+        IR.writeLayer @Marker marker var
+
 connectToPattern :: ASTOp m => NodeId -> NodeId -> m Connection
 connectToPattern src dst = do
     cons         <- ASTRead.getASTTarget dst
     dstIsPattern <- isJust <$> IR.narrowAtom @IR.Cons cons
     when (not dstIsPattern) $ throwM $ CannotConnectException src dst
 
+    consName     <- ASTRead.getASTVar dst
+    transplantMarker consName cons
     ASTModify.rewireNodeName dst cons
 
     value        <- ASTRead.getASTVar src
     ASTModify.rewireNode dst value
 
     return $ Connection (OutPortRef src Port.All) (InPortRef dst (Port.Arg 0))
+
+getVarsInside :: ASTOp m => NodeRef -> m [NodeRef]
+getVarsInside ref = IR.matchExpr ref $ \case
+    IR.Cons _ args -> mapM IR.source args
+    _              -> error "obviously, that is not correct"
+
+connectToMatchedVariable :: ASTOp m => OutPortRef -> InPortRef -> Int -> m ()
+connectToMatchedVariable (OutPortRef srcNodeId srcPort) (InPortRef dstNodeId dstPort) pos = do
+    pattern    <- ASTRead.getASTVar srcNodeId
+    varsInside <- getVarsInside pattern
+    let inputPos = case srcPort of
+            All            -> 0   -- FIXME: do not equalise All with Projection 0
+            Projection int -> int
+    let varToConnectTo = varsInside `Safe.atMay` inputPos
+    case varToConnectTo of
+        Nothing  -> throwM $ CannotConnectException srcNodeId dstNodeId
+        Just var -> do
+            dstAst     <- ASTRead.getASTTarget dstNodeId
+            newNodeRef <- ASTBuilder.applyFunction dstAst var pos
+            GraphUtils.rewireNode dstNodeId newNodeRef
 
 connectNoTC :: GraphLocation -> OutPortRef -> AnyPortRef -> Command Graph Connection
 connectNoTC loc outPort anyPort = do
