@@ -57,8 +57,11 @@ edgeSidebar_ ref mayDraggedPort node = when (isEdge node) $ do
             ] $ do
             forM_ ports $ edgePort_ ref
             if isInputEdge node then do
+                -- TODO: merge two add buttons into one svg_
                 svg_
                     [ "className" $= Style.prefixFromList [ "edgeport__svg", "edgeport__svg--inbetween", "edgeport__svg--inbetween--last" ]
+                    , onMouseDown $ \e _ -> [stopPropagation e]
+                    , onClick $ \e _ -> stopPropagation e : sendAddPortEvent ref node
                     ] $
                     g_ [ "className" $= Style.prefix "port-add-inbetween" ] $ do
                         g_ [ "className" $= Style.prefix "port-add-inbetween__shape" ] $ do
@@ -67,7 +70,6 @@ edgeSidebar_ ref mayDraggedPort node = when (isEdge node) $ do
                                 plainRect 2 8 (-1) (-4)
                                 plainRect 8 2 (-4) (-1)
                         plainPath (Style.prefix "port-add-inbetween__selectable") "M 20 0 A 10 10 0 0 1 20 16 L 10 16 A 10 10 0 0 1 10 0 Z"
-
                 svg_
                     [ "className" $= Style.prefixFromList [ "edgeport__svg", "edgeport__svg--addbutton" ]
                     , "key"       $= (name node <> "AddButton")
@@ -106,7 +108,6 @@ edgeSidebar_ ref mayDraggedPort node = when (isEdge node) $ do
                         , "r"         $= jsShow2 (lineHeight/1.5)
                         ] mempty
             else return ()
-
 
 edgePort_ :: Ref App -> Port -> ReactElementM ViewEventHandler ()
 edgePort_ ref p = when (p ^. Port.visible) $ do
@@ -171,7 +172,7 @@ edgeDraggedPort_ _ref draggedPort = do
         [ "className" $= Style.prefixFromList [ "port", "edgeport", "edgeport--dragged", "hover" ]
         , "style"     @= Aeson.object [ "top"  Aeson..= ( show (pos ^. y) <> "px" ) ]
         ] $ do
-        div_ [ "className" $= Style.prefix "edgeport__name" ] $ elemString $ "arg666"
+        div_ [ "className" $= Style.prefix "edgeport__name" ] $ elemString "arg666"
         svg_
             [ "className" $= Style.prefix "edgeport__svg" ] $
             circle_
