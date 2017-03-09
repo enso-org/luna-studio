@@ -56,8 +56,8 @@ import           Empire.Data.Layers                (Projection, TypeLayer)
 import           Empire.Empire
 
 import qualified Luna.IR as IR
-import qualified Luna.IR.Expr.Combinators as IR
-import           Luna.IR.Expr.Term.Uni
+import qualified OCI.IR.Combinators as IR
+import           Luna.IR.Term.Uni
 
 nameBreadcrumb :: ASTOp m => BreadcrumbItem -> m (Named BreadcrumbItem)
 nameBreadcrumb item@(Breadcrumb.Lambda nid) = do
@@ -179,7 +179,7 @@ getPortState node = do
         IR.String s     -> return . WithDefault . Constant . StringValue $ s
         IR.Number i     -> return $ WithDefault $ Constant $ RationalValue 0 -- FIXME[MM]: put the number here
         Cons n _ -> do
-            name <- pure $ nameToString n
+            name <- pure $ pathNameToString n
             case name of
                 "False" -> return . WithDefault . Constant . BoolValue $ False
                 "True"  -> return . WithDefault . Constant . BoolValue $ True
@@ -253,7 +253,7 @@ buildArgPorts ref = do
     (types, states) <- extractPortInfo ref
     names <- extractArgNames ref
     lambdaSomewhere <- there'sLambdaSomewhereThere ref
-    isCons <- isJust <$> IR.narrowAtom @IR.Cons ref
+    isCons <- isJust <$> IR.narrowTerm @IR.Cons ref
     let additionalEmptyPort = if (not.null) types || lambdaSomewhere || isCons then 0
                               else if NotConnected `elem` states then 0 else 1
         portsTypes = types ++ replicate (max (length names) (length states) - length types + additionalEmptyPort) TStar

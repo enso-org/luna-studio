@@ -15,7 +15,7 @@ import           System.ZMQ4.Monadic             (ZMQ)
 import qualified System.ZMQ4.Monadic             as ZMQ
 
 import qualified Debug.Trace                     as T
-import           Prologue                        hiding (trace)
+import           Prologue                        hiding (trace, hoistEither)
 import           System.Log.MLogger
 import qualified ZMQ.Bus.Control.Handler.Methods as Methods
 import           ZMQ.Bus.Data.Flag               (Flag)

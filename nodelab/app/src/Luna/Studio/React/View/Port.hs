@@ -19,7 +19,6 @@ import           Numeric                      (showFFloat)
 import           React.Flux                   hiding (view)
 import qualified React.Flux                   as React
 
-
 name :: JSString
 name = "port"
 
@@ -200,9 +199,11 @@ portIOExpanded_ :: Ref App -> Port -> ReactElementM ViewEventHandler ()
 portIOExpanded_ ref p = if p ^. Port.portId == InPortId Self then portSelf_ ref p else do
     let portRef   = p ^. Port.portRef
         portId    = p ^. Port.portId
+        portType  = toString $ p ^. Port.valueType
         isInput   = isPortInput p
         num       = getPortNumber p
         color     = convert $ p ^. Port.color
+        py        = jsShow2 (lineHeight * fromIntegral (num + n))
         highlight = if p ^. Port.highlight then ["hover"] else []
         classes   = if isInput then [ "port", "port--i", "port--i--" <> show (num + 1)] ++ highlight
                                else [ "port", "port--o", "port--o--" <> show (num + 1)] ++ highlight
@@ -210,19 +211,25 @@ portIOExpanded_ ref p = if p ^. Port.portId == InPortId Self then portSelf_ ref 
     g_
         [ "className" $= Style.prefixFromList classes
         ] $ do
+        text_
+            [ "className" $= Style.prefix "port__type"
+            , "y"         $= py
+            , "dy"        $= "4"
+            , "dx"        $= (if isInput then "-16" else "176")
+            ] $ elemString portType
         circle_
             [ "className" $= Style.prefix "port__shape"
             , "key"       $= (jsShow portId <> jsShow num <> "a")
             , "fill"      $= color
             , "r"         $= jsShow2 3
-            , "cy"        $= jsShow2 (lineHeight * fromIntegral (num + n))
+            , "cy"        $= py
             ] mempty
         circle_
             ( handlers ref portRef ++
               [ "className" $= Style.prefix "port__select"
               , "key"       $= (jsShow portId <> jsShow num <> "b")
               , "r"         $= jsShow2 (lineHeight/1.5)
-              , "cy"        $= jsShow2 (lineHeight * fromIntegral (num + n))
+              , "cy"        $= py
               ]
             ) mempty
 

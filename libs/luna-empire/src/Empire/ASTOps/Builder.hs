@@ -23,7 +23,7 @@ import           Empire.Data.AST                    (NodeRef, astExceptionFromEx
                                                      astExceptionToException)
 import           Empire.Data.Layers                 (NodeMarker(..), Marker)
 
-import           Luna.IR.Expr.Term.Uni
+import           Luna.IR.Term.Uni
 import qualified Luna.IR as IR
 
 

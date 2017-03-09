@@ -28,9 +28,9 @@ import           Control.Monad.Raise (Throws)
 import           Data.TypeDesc
 import           Luna.IR                  hiding (String)
 import qualified Luna.IR.Layer.Type       as IR (Type)
-import           Luna.Pass
-import           Luna.Pass.Sugar.Construction
-import           Luna.Pass.Sugar.TH       (makePass)
+import           Luna.IR.ToRefactor2
+import           OCI.Pass
+import           OCI.Pass.Definition      (makePass)
 import           Type.Any
 
 

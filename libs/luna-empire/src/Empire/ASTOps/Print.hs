@@ -19,14 +19,14 @@ import qualified Empire.ASTOps.Read        as ASTRead
 import qualified Empire.ASTOps.Deconstruct as ASTDeconstruct
 import           Empire.API.Data.Node      (NodeId)
 import           Empire.API.Data.TypeRep   (TypeRep (..))
-import           Luna.IR.Expr.Term.Uni
+import           Luna.IR.Term.Uni
 import qualified Luna.IR as IR
 
 
 getTypeRep :: ASTOp m => NodeRef -> m TypeRep
 getTypeRep tp = match tp $ \case
     Cons n args -> do
-        name    <- pure $ nameToString n
+        name    <- pure $ pathNameToString n
         argReps <- mapM (getTypeRep <=< IR.source) args
         return $ TCons name argReps
     Lam _as out -> do
@@ -122,7 +122,7 @@ printExpression' suppressNodes paren node = do
         IR.String s -> return $ show s
         Cons n args -> do
             argsNames <- mapM (printExpression' False False <=< IR.source) args
-            return $ nameToString n ++ [ ' ' | (not . null) argsNames ] ++ unwords argsNames
+            return $ pathNameToString n ++ [ ' ' | (not . null) argsNames ] ++ unwords argsNames
         _ -> return ""
 
 printExpression :: ASTOp m => NodeRef -> m String

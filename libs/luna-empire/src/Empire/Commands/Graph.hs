@@ -91,8 +91,8 @@ import qualified Empire.Commands.GraphUtils      as GraphUtils
 import qualified Empire.Commands.Publisher       as Publisher
 import           Empire.Empire
 
-import qualified Luna.IR                  as IR
-import qualified Luna.IR.Expr.Combinators as IR (changeSource, deleteSubtree, narrowAtom, replaceNode)
+import qualified Luna.IR            as IR
+import qualified OCI.IR.Combinators as IR (changeSource, deleteSubtree, narrowTerm, replaceNode)
 
 generateNodeName :: ASTOp m => m String
 generateNodeName = do
@@ -406,11 +406,11 @@ getPatternLocation :: ASTOp m => NodeId -> m PatternLocation
 getPatternLocation node = do
     varIsCons    <- do
       var    <- ASTRead.getASTVar node
-      cons   <- IR.narrowAtom @IR.Cons var
+      cons   <- IR.narrowTerm @IR.Cons var
       return $ isJust cons
     targetIsCons <- do
         target <- ASTRead.getASTTarget node
-        cons   <- IR.narrowAtom @IR.Cons target
+        cons   <- IR.narrowTerm @IR.Cons target
         return $ isJust cons
     if | varIsCons    -> return Var
        | targetIsCons -> return Target
@@ -525,7 +525,7 @@ getCode loc = withGraph loc $ runASTOp $ do
         _                  -> lines'
 
 getGraph :: GraphLocation -> Empire APIGraph.Graph
-getGraph loc = withTC loc True $ runASTOp GraphBuilder.buildGraph
+getGraph loc = withTC loc True $ runASTOp (AST.dumpGraphViz "snap") >> runASTOp GraphBuilder.buildGraph
 
 getNodes :: GraphLocation -> Empire [Node]
 getNodes loc = withTC loc True $ runASTOp $ view APIGraph.nodes <$> GraphBuilder.buildGraph
@@ -547,9 +547,7 @@ renameNodeGraph nid name = do
     ASTModify.renameVar vref (Text.unpack name)
 
 dumpGraphViz :: GraphLocation -> Empire ()
-dumpGraphViz loc = withGraph loc $ do
-    -- runASTOp $ AST.dumpGraphViz "gui_dump"
-    return ()
+dumpGraphViz loc = withGraph loc $ return ()
 
 typecheck :: GraphLocation -> Empire ()
 typecheck loc = withGraph loc $ runTC loc False

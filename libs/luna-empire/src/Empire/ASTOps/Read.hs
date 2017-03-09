@@ -49,8 +49,8 @@ import           Empire.Data.AST                    (NodeRef, EdgeRef, NotUnifyE
 import qualified Empire.Data.Graph                  as Graph
 import           Empire.Data.Layers                 (NodeMarker(..), Marker)
 
-import qualified Luna.IR.Expr.Combinators as IRExpr
-import           Luna.IR.Expr.Term.Uni
+import qualified OCI.IR.Combinators as IRExpr
+import           Luna.IR.Term.Uni
 import qualified Luna.IR as IR
 
 
@@ -72,7 +72,7 @@ getPatternNames node = match node $ \case
 getVarName :: ASTOp m => NodeRef -> m String
 getVarName node = match node $ \case
     Var n    -> return $ nameToString n
-    Cons n _ -> return $ nameToString n
+    Cons n _ -> return $ pathNameToString n
     Blank{}  -> return "_"
 
 rightMatchOperand :: ASTOp m => NodeRef -> m EdgeRef
@@ -167,19 +167,19 @@ getFirstNonLambdaRef' firstLam node = match node $ \case
     _         -> if firstLam then return node else throwM $ NotLambdaException node
 
 isApp :: ASTOp m => NodeRef -> m Bool
-isApp expr = isJust <$> IRExpr.narrowAtom @IR.App expr
+isApp expr = isJust <$> IRExpr.narrowTerm @IR.App expr
 
 isBlank :: ASTOp m => NodeRef -> m Bool
-isBlank expr = isJust <$> IRExpr.narrowAtom @IR.Blank expr
+isBlank expr = isJust <$> IRExpr.narrowTerm @IR.Blank expr
 
 isLambda :: ASTOp m => NodeRef -> m Bool
-isLambda expr = isJust <$> IRExpr.narrowAtom @IR.Lam expr
+isLambda expr = isJust <$> IRExpr.narrowTerm @IR.Lam expr
 
 isMatch :: ASTOp m => NodeRef -> m Bool
-isMatch expr = isJust <$> IRExpr.narrowAtom @IR.Unify expr
+isMatch expr = isJust <$> IRExpr.narrowTerm @IR.Unify expr
 
 isCons :: ASTOp m => NodeRef -> m Bool
-isCons expr = isJust <$> IRExpr.narrowAtom @IR.Cons expr
+isCons expr = isJust <$> IRExpr.narrowTerm @IR.Cons expr
 
 nodeIsPatternMatch :: ASTOp m => NodeId -> m Bool
 nodeIsPatternMatch nid = (do

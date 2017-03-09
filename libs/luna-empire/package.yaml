@@ -28,10 +28,13 @@ dependencies:
     - containers
     - convert
     - data-default
+    - dependent-state
     - exceptions
     - filepath
     - lens
     - luna-core
+    - luna-passes
+    - luna-syntax-text
     - luna-empire-api
     - luna-empire-api-json
     - m-logger

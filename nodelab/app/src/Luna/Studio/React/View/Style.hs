@@ -30,3 +30,12 @@ plainRect w h x y =
           , "x"      $= fromString (show x)
           , "y"      $= fromString (show y)
           ] mempty
+
+plainPath :: JSString -> JSString -> ReactElementM ViewEventHandler ()
+plainPath c d = path_ [ "className" $= c, "d" $= d ] mempty
+
+
+-- TODO
+portSelectablePath :: JSString -> Double -> Double -> Double -> ReactElementM ViewEventHandler ()
+portSelectablePath c x y r = path_ [ "className" $= c, "d" $= fromString d ] mempty
+    where d = "M 20 0 A " <> show r <> " " <> show r <> " 0 0 1 20 16 L 10 16 A " <> show r <> " " <> show r <> " 0 0 1 10 0 Z"

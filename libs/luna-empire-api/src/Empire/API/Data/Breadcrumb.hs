@@ -1,3 +1,5 @@
+{-# LANGUAGE TypeFamilies #-}
+
 module Empire.API.Data.Breadcrumb where
 
 import           Control.DeepSeq      (NFData)
