@@ -100,9 +100,9 @@ portSelf_ ref p = do
                 ] mempty
             circle_
                 ( handlers ref portRef ++
-                  [ "className"  $= Style.prefix "port__select"
-                  , "key"        $= (jsShow portId <> "b")
-                  , "r"          $= (fromString $ show $ r + lineHeight/2)
+                  [ "className" $= Style.prefix "port__select"
+                  , "key"       $= (jsShow portId <> "b")
+                  , "r"         $= (fromString $ show $ r + lineHeight/2)
                   ]
                 ) mempty
     else g_
@@ -113,10 +113,10 @@ portSelf_ ref p = do
                 , "fillOpacity" $= (fromString $ show (1 :: Int))
                 ] mempty
             circle_
-                [ "className"     $= Style.prefixFromList [ "port__select", "invisible" ]
-                  , "key"         $= (jsShow portId <> "b")
-                  , "fillOpacity" $= (fromString $ show (1 :: Int))
-                  ] mempty
+                [ "className"   $= Style.prefixFromList [ "port__select", "invisible" ]
+                , "key"         $= (jsShow portId <> "b")
+                , "fillOpacity" $= (fromString $ show (1 :: Int))
+                ] mempty
 
 portSingle_ :: Ref App -> Port -> ReactElementM ViewEventHandler ()
 portSingle_ ref p = do
@@ -159,6 +159,8 @@ portIO_ ref p numOfPorts = do
         svgFlag1  = if isInput then "1"  else "0"
         svgFlag2  = if isInput then "0"  else "1"
         mode      = if isInput then -1.0 else 1.0
+        n         = if isInput then 1 else 0
+        portType  = toString $ p ^. Port.valueType
         startPortArcX r = r * sin(portAngleStart num numOfPorts r * mode)
         startPortArcY r = r * cos(portAngleStart num numOfPorts r * mode)
         stopPortArcX  r = r * sin(portAngleStop  num numOfPorts r * mode)
@@ -181,6 +183,11 @@ portIO_ ref p numOfPorts = do
     g_
         [ "className" $= Style.prefixFromList classes
         ] $ do
+        text_
+            [ "className" $= Style.prefix "port__type"
+            , "y"         $= jsShow2 ((lineHeight * fromIntegral num) - 20)
+            , "x"        $= (if isInput then "-40" else "40")
+            ] $ elemString portType
         path_
             [ "className" $= Style.prefix "port__shape"
             , "key"       $= (jsShow portId <> "a")

@@ -30,7 +30,6 @@ portAngleStart num numOfPorts r =
         t      = portAngle numOfPorts
     in  pi - number * t + gap/2 --number * t + pi - t + gap/2
 
-
 portAngleStop :: Int -> Int -> Double -> Angle
 portAngleStop num numOfPorts r =
     let number = fromIntegral num + 1
