@@ -24,6 +24,7 @@ import qualified Empire.API.Graph.SetCode               as SetCode
 import qualified Empire.API.Graph.UpdateNodeMeta        as UpdateNodeMeta
 import           Empire.API.Response                    (ResponseResult, Status)
 import           Luna.Studio.Action.Command             (Command)
+import           Luna.Studio.Action.Graph.Disconnect    (localRemoveConnections)
 import           Luna.Studio.Action.Node.Remove         (localRemoveNodes)
 import qualified Luna.Studio.Batch.Workspace            as Workspace
 import           Luna.Studio.Prelude
@@ -53,3 +54,7 @@ revertAddPort (AddPort.Request loc portRef) =
 revertAddSubgraph :: AddSubgraph.Request -> Command State ()
 revertAddSubgraph (AddSubgraph.Request loc nodes _) =
     whenM (isCurrentLocationAndGraphLoaded loc) $ localRemoveNodes $ flip map nodes $ view Node.nodeId
+
+revertConnect :: Connect.Request -> Command State ()
+revertConnect (Connect.Request location _ dst) =
+    either (\connId -> localRemoveConnections [connId]) (const $ return ()) dst

@@ -23,7 +23,7 @@ instance Response.ResponseResult Request Inverse ()
 
 data Update   = Update { _location' :: GraphLocation
                        , _nodeId'   :: NodeId
-                       , _code'      :: Text
+                       , _code'     :: Text
                        } deriving (Generic, Eq, NFData, Show)
 
 

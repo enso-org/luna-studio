@@ -3,7 +3,6 @@ module Luna.Studio.Action.Graph.Connect
     ( connect
     , localConnect
     , localAddConnection
-    , localUpdateConnection
     ) where
 
 
@@ -26,12 +25,14 @@ import qualified Luna.Studio.State.Graph                as Graph
 
 
 connect :: Either OutPortRef NodeId -> Either InPortRef NodeId -> Command Global.State ()
-connect = BatchCmd.connect
+connect src@(Left srcPortRef) dst@(Left dstPortRef) =
+    localConnect srcPortRef dstPortRef >> BatchCmd.connect src dst
+connect src dst = BatchCmd.connect src dst
 
-localConnect :: OutPortRef -> InPortRef -> Command Global.State ConnectionId
+localConnect :: OutPortRef -> InPortRef -> Command Global.State ()
 localConnect src dst = localAddConnection $ Connection src dst
 
-localAddConnection :: Connection -> Command Global.State ConnectionId
+localAddConnection :: Connection -> Command Global.State ()
 localAddConnection connection = do
     connectionId <- zoom Global.graph $ Graph.addConnection connection
     when (connection ^. Connection.dst . PortRef.dstPortId == Self) $ do
@@ -40,7 +41,3 @@ localAddConnection connection = do
         Global.modifyNode nodeId $ Model.ports . at portId . _Just . Model.visible .= True
     mayConnectionModel <- createConnectionModel connection
     Global.modifyNodeEditor $ NodeEditor.connections . at connectionId .= mayConnectionModel
-    return connectionId
-
-localUpdateConnection :: Connection -> Command Global.State ()
-localUpdateConnection = void . localAddConnection

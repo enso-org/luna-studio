@@ -15,7 +15,7 @@ import           Empire.API.Data.TypeRep          (TypeRep (TStar))
 import qualified Luna.Studio.Action.Batch         as Batch
 import           Luna.Studio.Action.Command       (Command)
 import           Luna.Studio.Action.Graph.AddNode (localUpdateNode)
-import           Luna.Studio.Action.Graph.Connect (localUpdateConnection)
+import           Luna.Studio.Action.Graph.Connect (localAddConnection)
 import           Luna.Studio.Prelude
 import           Luna.Studio.State.Global         (State)
 import qualified Luna.Studio.State.Global         as Global
@@ -60,6 +60,6 @@ moveConnectionsWithPorts (OutPortRef' (OutPortRef nodeId (Projection pos))) = do
     forM_ conns $ \conn -> case conn of
         Connection (OutPortRef srcNodeId (Projection i)) connId ->
             when (srcNodeId == nodeId && i >= pos) $
-                localUpdateConnection $ conn & Connection.src . PortRef.srcPortId .~ Projection (i+1)
+                localAddConnection $ conn & Connection.src . PortRef.srcPortId .~ Projection (i+1)
         _ -> return ()
 moveConnectionsWithPorts _ = $notImplemented

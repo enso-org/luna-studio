@@ -2,6 +2,7 @@ module Luna.Studio.Handler.Backend.Graph
     ( handle
     ) where
 
+import qualified Data.DateTime                          as DT
 import qualified Data.Map                               as Map
 import qualified Empire.API.Data.Connection             as Connection
 import qualified Empire.API.Data.Graph                  as Graph
@@ -13,6 +14,7 @@ import qualified Empire.API.Graph.AddNode               as AddNode
 import qualified Empire.API.Graph.AddPort               as AddPort
 import qualified Empire.API.Graph.AddSubgraph           as AddSubgraph
 import qualified Empire.API.Graph.CodeUpdate            as CodeUpdate
+import qualified Empire.API.Graph.Collaboration         as Collaboration
 import qualified Empire.API.Graph.Connect               as Connect
 import qualified Empire.API.Graph.Disconnect            as Disconnect
 import qualified Empire.API.Graph.GetProgram            as GetProgram
@@ -39,8 +41,10 @@ import           Luna.Studio.Action.Graph.AddNode       (localAddNode, localUpda
 import           Luna.Studio.Action.Graph.AddNode       (localAddNode, localUpdateNode)
 import           Luna.Studio.Action.Graph.AddPort       (localAddPort)
 import           Luna.Studio.Action.Graph.AddSubgraph   (localAddSubgraph)
+import           Luna.Studio.Action.Graph.CodeUpdate    (updateCode)
+import           Luna.Studio.Action.Graph.Collaboration (bumpTime, modifyTime, refreshTime, touchCurrentlySelected, updateClient)
 import           Luna.Studio.Action.Graph.Revert        (isCurrentLocation, isCurrentLocationAndGraphLoaded, revertAddNode, revertAddPort,
-                                                         revertAddSubgraph)
+                                                         revertAddSubgraph, revertConnect)
 import           Luna.Studio.Action.Node                (localRemoveNodes, typecheckNode, updateNodeProfilingData, updateNodeValue,
                                                          updateNodesMeta)
 import qualified Luna.Studio.Action.Node                as Node
@@ -52,6 +56,8 @@ import           Luna.Studio.Event.Batch                (Event (..))
 import qualified Luna.Studio.Event.Event                as Event
 import           Luna.Studio.Handler.Backend.Common     (doNothing, handleResponse)
 import           Luna.Studio.Prelude
+import qualified Luna.Studio.React.Model.Node           as NodeModel
+import qualified Luna.Studio.React.Model.NodeEditor     as NodeEditor
 import           Luna.Studio.State.Global               (State)
 import qualified Luna.Studio.State.Global               as Global
 import qualified Luna.Studio.State.Graph                as StateGraph
@@ -128,10 +134,39 @@ handle (Event.Batch ev) = Just $ case ev of
                     collaborativeModify $ flip map nodes $ view Node.nodeId
                 else localAddSubgraph nodes conns
 
-    -- NodesConnected update ->
-    --     whenM (isCurrentLocation $ update ^. Connect.location') $ void $
-    --         localAddConnection $ update ^. Connect.connection'
-    --
+    CodeUpdated update -> do
+       shouldProcess <- isCurrentLocationAndGraphLoaded $ update ^. CodeUpdate.location
+       when shouldProcess $ updateCode $ update ^. CodeUpdate.code
+
+    CollaborationUpdate update -> do
+        shouldProcess <- isCurrentLocationAndGraphLoaded $ update ^. Collaboration.location
+        let clientId = update ^. Collaboration.clientId
+            touchNodes nodeIds setter = Global.modifyNodeEditor $
+                forM_ nodeIds $ \nodeId -> NodeEditor.nodes . at nodeId %= fmap setter
+        myClientId   <- use Global.clientId
+        currentTime  <- use Global.lastEventTimestamp
+        when (shouldProcess && clientId /= myClientId) $ do
+            clientColor <- updateClient clientId
+            case update ^. Collaboration.event of
+                Collaboration.Touch       nodeIds -> touchNodes nodeIds $  NodeModel.collaboration . NodeModel.touch  . at clientId ?~ (DT.addSeconds (2 * refreshTime) currentTime, clientColor)
+                Collaboration.Modify      nodeIds -> touchNodes nodeIds $ (NodeModel.collaboration . NodeModel.modify . at clientId ?~ DT.addSeconds modifyTime currentTime)
+                                                                        . (NodeModel.collaboration . NodeModel.touch  . at clientId %~ bumpTime (DT.addSeconds modifyTime currentTime) clientColor)
+                Collaboration.CancelTouch nodeIds -> touchNodes nodeIds $  NodeModel.collaboration . NodeModel.touch  . at clientId .~ Nothing
+                Collaboration.Refresh             -> touchCurrentlySelected
+
+    ConnectResponse response -> handleResponse response success failure where
+        requestId          = response ^. Response.requestId
+        request            = response ^. Response.request
+        location           = request  ^. Connect.location
+        failure _          = whenM (isOwnRequest requestId) $ revertConnect request
+        success connection = do
+            shouldProcess <- isCurrentLocationAndGraphLoaded location
+            when shouldProcess $ localAddConnection connection
+
+    NodesConnected update -> do
+        shouldProcess <- isCurrentLocationAndGraphLoaded $ update ^. Connect.location'
+        when shouldProcess $ localAddConnection $ update ^. Connect.connection'
+
     -- NodesDisconnected update ->
     --     whenM (isCurrentLocation $ update ^. Disconnect.location') $
     --         localRemoveConnections [update ^. Disconnect.dst']
@@ -188,9 +223,6 @@ handle (Event.Batch ev) = Just $ case ev of
     --         Global.workspace . Workspace.nodeSearcherData .= result ^. NodeSearch.nodeSearcherData
     --         Searcher.updateHints
     --
-    -- CodeUpdated update -> do
-    --     shouldProcess <- isCurrentLocationAndGraphLoaded (update ^. CodeUpdate.location)
-    --     when shouldProcess $ CodeEditor.setCode $ update ^. CodeUpdate.code
     --
     -- RemovePortResponse response -> handleResponse response $ \request result -> do
     --     shouldProcess <- isCurrentLocationAndGraphLoaded (request ^. RemovePort.location)
