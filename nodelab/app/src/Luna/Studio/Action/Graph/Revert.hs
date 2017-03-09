@@ -9,6 +9,7 @@ import qualified Empire.API.Graph.Code                     as Code
 import qualified Empire.API.Graph.Connect                  as Connect
 import qualified Empire.API.Graph.GetProgram               as GetProgram
 import qualified Empire.API.Graph.MonadsUpdate             as MonadsUpdate
+import qualified Empire.API.Graph.MovePort                 as MovePort
 import qualified Empire.API.Graph.NodeResultUpdate         as NodeResultUpdate
 import qualified Empire.API.Graph.NodeSearch               as NodeSearch
 import qualified Empire.API.Graph.NodesUpdate              as NodesUpdate
@@ -26,6 +27,7 @@ import           Empire.API.Response                       (ResponseResult, Stat
 import qualified Empire.API.Response                       as Response
 import           Luna.Studio.Action.Command                (Command)
 import           Luna.Studio.Action.Graph.Connect          (localConnect)
+import           Luna.Studio.Action.Graph.MovePort         (localMovePort)
 import           Luna.Studio.Action.Graph.RemoveConnection (localRemoveConnection)
 import           Luna.Studio.Action.Node.Remove            (localRemoveNodes)
 import qualified Luna.Studio.Batch.Workspace               as Workspace
@@ -58,10 +60,14 @@ revertAddSubgraph (AddSubgraph.Request loc nodes _) =
     whenM (isCurrentLocationAndGraphLoaded loc) $ localRemoveNodes $ flip map nodes $ view Node.nodeId
 
 revertConnect :: Connect.Request -> Command State ()
-revertConnect (Connect.Request location _ dst) =
-    either (void . localRemoveConnection) (const $ return ()) dst
+revertConnect (Connect.Request loc _ dst) =
+    whenM (isCurrentLocationAndGraphLoaded loc) $ either (void . localRemoveConnection) (const $ return ()) dst
+
+revertMovePort :: MovePort.Request -> Command State ()
+revertMovePort (MovePort.Request loc oldPortRef newPortRef) =
+    whenM (isCurrentLocationAndGraphLoaded loc) $ void $ localMovePort newPortRef oldPortRef
 
 revertRemoveConnection :: RemoveConnection.Request -> Response.Status RemoveConnection.Inverse -> Command State ()
-revertRemoveConnection (RemoveConnection.Request location dst) (Response.Ok (RemoveConnection.Inverse src)) =
-    localConnect src dst
-revertRemoveConnection (RemoveConnection.Request _location _dst) (Response.Error _msg) = $notImplemented
+revertRemoveConnection (RemoveConnection.Request loc dst) (Response.Ok (RemoveConnection.Inverse src)) =
+    whenM (isCurrentLocationAndGraphLoaded loc) $ void $ localConnect src dst
+revertRemoveConnection (RemoveConnection.Request _loc _dst) (Response.Error _msg) = $notImplemented

@@ -33,6 +33,7 @@ import           Empire.API.Graph.AddSubgraph           as AddSubgraph
 import           Empire.API.Graph.Code                  as Code
 import           Empire.API.Graph.Collaboration         as Collaboration
 import           Empire.API.Graph.Connect               as Connect
+import           Empire.API.Graph.DumpGraphViz          as DumpGraphViz
 import           Empire.API.Graph.GetProgram            as GetProgram
 import           Empire.API.Graph.MonadsUpdate          as MonadsUpdate
 import           Empire.API.Graph.MovePort              as MovePort
@@ -158,6 +159,8 @@ instance ToJSON AddSubgraph.Request
 
 instance ToJSON Connect.Request
 instance ToJSON Connect.Update
+
+instance ToJSON DumpGraphViz.Request
 
 instance ToJSON RemoveConnection.Request
 instance ToJSON RemoveConnection.Inverse

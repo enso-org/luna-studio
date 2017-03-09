@@ -21,19 +21,21 @@ handle :: forall a. (Binary a, Topic.MessageTopic a) => (a -> Batch.Event) -> (S
 handle cons = (Topic.topic (undefined :: a), cons . decode)
 
 handlers :: Map.Map String (ByteString -> Batch.Event)
-handlers = Map.fromList [ handle AddNodeResponse
+handlers = Map.fromList [ handle GetProgramResponse
+                        , handle AddNodeResponse
                         , handle AddPortResponse
                         , handle AddSubgraphResponse
                         , handle CodeUpdate
                         , handle CollaborationUpdate
                         , handle ConnectResponse
                         , handle ConnectUpdate
-                        , handle GetProgramResponse
+                        , handle DumpGraphVizResponse
+                        , handle EmpireStarted
+                        , handle MonadsUpdate
+                        , handle MovePortResponse
+
                         , handle RemoveConnectionResponse
                         , handle RemoveConnectionUpdate
-                        , handle EmpireStarted
-                        , handle MonadsUpdated
-                        , handle MovePortResponse
                         , handle NodeMetaResponse
                         , handle NodeMetaUpdated
                         , handle NodeRenamed

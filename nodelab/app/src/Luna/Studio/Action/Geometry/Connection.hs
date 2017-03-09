@@ -13,6 +13,7 @@ import           Data.Position                         (Position, Vector2 (Vecto
 import           Data.ScreenPosition                   (ScreenPosition (ScreenPosition), x, y)
 import           Empire.API.Data.Connection            (Connection)
 import qualified Empire.API.Data.Connection            as Connection
+import           Empire.API.Data.Port                  (PortId (InPortId, OutPortId))
 import           Empire.API.Data.PortRef               (AnyPortRef (InPortRef', OutPortRef'))
 import qualified Empire.API.Data.PortRef               as PortRef
 import qualified JS.Scene                              as Scene
@@ -30,6 +31,7 @@ import qualified Luna.Studio.React.Model.Node          as Node
 import           Luna.Studio.React.Model.Port          (Port)
 import qualified Luna.Studio.React.Model.Port          as Port
 import           Luna.Studio.State.Global              (State, getNode)
+import qualified Luna.Studio.State.Global              as Global
 
 
 getConnectionAngle :: Position -> Position -> Int -> Int -> Double
@@ -130,14 +132,18 @@ createConnectionModel :: Connection -> Command State (Maybe Model.Connection)
 createConnectionModel connection = runMaybeT $ do
     let srcPortRef = connection ^. Connection.src
         dstPortRef = connection ^. Connection.dst
-    srcNode <- MaybeT $ getNode $ srcPortRef ^. PortRef.srcNodeId
-    dstNode <- MaybeT $ getNode $ dstPortRef ^. PortRef.dstNodeId
+        srcNodeId  = srcPortRef ^. PortRef.srcNodeId
+        dstNodeId  = dstPortRef ^. PortRef.dstNodeId
+        srcPortId  = OutPortId $ srcPortRef ^. PortRef.srcPortId
+        dstPortId  = InPortId  $ dstPortRef ^. PortRef.dstPortId
+    srcNode <- MaybeT $ getNode srcNodeId
+    dstNode <- MaybeT $ getNode dstNodeId
     srcPort <- MaybeT $ getPort srcPortRef
     dstPort <- MaybeT $ getPort dstPortRef
-    if (srcPort ^. Port.visible && dstPort ^. Port.visible) then do
-            (srcPos, dstPos) <- MaybeT $ getConnectionPosition srcNode srcPort dstNode dstPort
-            return $ Model.Connection dstPortRef srcPos dstPos (srcPort ^. Port.color)
-        else nothing
+    (srcPos, dstPos) <- MaybeT $ getConnectionPosition srcNode srcPort dstNode dstPort
+    lift $ Global.modifyNode srcNodeId $ Node.ports . at srcPortId . _Just . Port.visible .= True
+    lift $ Global.modifyNode dstNodeId $ Node.ports . at dstPortId . _Just . Port.visible .= True
+    return $ Model.Connection dstPortRef srcPos dstPos (srcPort ^. Port.color)
 
 createCurrentConnectionModel :: AnyPortRef -> Position -> Command State (Maybe Model.CurrentConnection)
 createCurrentConnectionModel portRef mousePos = runMaybeT $ do

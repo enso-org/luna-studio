@@ -11,6 +11,7 @@ import qualified Empire.API.Graph.AddSubgraph           as AddSubgraph
 import qualified Empire.API.Graph.Code                  as Code
 import qualified Empire.API.Graph.Collaboration         as Collaboration
 import qualified Empire.API.Graph.Connect               as Connect
+import qualified Empire.API.Graph.DumpGraphViz          as DumpGraphViz
 import qualified Empire.API.Graph.GetProgram            as GetProgram
 import qualified Empire.API.Graph.MonadsUpdate          as MonadsUpdate
 import qualified Empire.API.Graph.MovePort              as MovePort
@@ -34,6 +35,7 @@ import qualified Empire.API.Project.OpenProject         as OpenProject
 
 
 data Event = UnknownEvent String
+           | GetProgramResponse                     GetProgram.Response
            | AddNodeResponse                           AddNode.Response
            | AddPortResponse                           AddPort.Response
            | AddSubgraphResponse                   AddSubgraph.Response
@@ -43,12 +45,14 @@ data Event = UnknownEvent String
            | ConnectionOpened
            | ConnectResponse                           Connect.Response
            | ConnectUpdate                             Connect.Update
-           | GetProgramResponse                     GetProgram.Response
+           | DumpGraphVizResponse                 DumpGraphViz.Response
+           | EmpireStarted                       EmpireStarted.Status
+           | MonadsUpdate                         MonadsUpdate.Update
+           | MovePortResponse                         MovePort.Response
+
            | RemoveConnectionResponse         RemoveConnection.Response
            | RemoveConnectionUpdate           RemoveConnection.Update
-           | EmpireStarted                       EmpireStarted.Status
-           | MonadsUpdated                        MonadsUpdate.Update
-           | MovePortResponse                         MovePort.Response
+
            | NodeCodeSet                               SetCode.Update
            | NodeMetaInverse                    UpdateNodeMeta.Inverse
            | NodeMetaResponse                   UpdateNodeMeta.Response

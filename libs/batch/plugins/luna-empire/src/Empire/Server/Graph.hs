@@ -201,7 +201,17 @@ handleConnect = modifyGraph defInverse action replyResult where
     getDstPort dst = case dst of
         Left portRef -> portRef
         Right nodeId -> InPortRef nodeId Self
-    action  (Connect.Request location src dst)                              = Graph.connectCondTC True location (getSrcPort src) (getDstPort dst)
+    action  (Connect.Request location src dst) = Graph.connectCondTC True location (getSrcPort src) (getDstPort dst)
+
+handleDumpGraphViz :: Request DumpGraphViz.Request -> StateT Env BusT ()
+handleDumpGraphViz = modifyGraphOk defInverse action success where
+    action (DumpGraphViz.Request location) = Graph.dumpGraphViz location
+    success _ _ _                          = return ()
+
+handleMovePort :: Request MovePort.Request -> StateT Env BusT ()
+handleMovePort = modifyGraph defInverse action success where
+    action (MovePort.Request location portRef newPortRef) = Graph.movePort location portRef newPortRef
+    success req inv node                                  = replyResult req inv node
 
 handleRemoveConnection :: Request RemoveConnection.Request -> StateT Env BusT ()
 handleRemoveConnection = modifyGraphOk inverse action success where
@@ -267,11 +277,6 @@ handleSetCode = modifyGraphOk inverse action success where --FIXME[pm] implement
     action  (SetCode.Request location nodeId code)     = void $ Graph.updateNodeExpression location nodeId code
     success (SetCode.Request location nodeId code) _ _ = sendToBus' $ SetCode.Update location nodeId code
 
-handleMovePort :: Request MovePort.Request -> StateT Env BusT ()
-handleMovePort = modifyGraphOk defInverse action success where
-    action (MovePort.Request location portRef newPortRef) = void $ Graph.movePort location portRef newPortRef
-    success _ _ _                                         = return ()
-
 handleRenamePort :: Request RenamePort.Request -> StateT Env BusT ()
 handleRenamePort = modifyGraphOk inverse action success where --FIXME[pm] implement this!
     inverse (RenamePort.Request location portRef name)     = do
@@ -311,13 +316,6 @@ handleNodeSearch :: Request NodeSearch.Request -> StateT Env BusT ()
 handleNodeSearch = modifyGraph defInverse action success where
     action (NodeSearch.Request query cursor location) = return $ NodeSearch.Result mockNSData
     success req inv res                               = replyResult req inv res
-
-handleDumpGraphViz :: Request DumpGraphViz.Request -> StateT Env BusT ()
-handleDumpGraphViz (Request _ _ request) = do
-    let location = request ^. DumpGraphViz.location
-    currentEmpireEnv <- use Env.empireEnv
-    empireNotifEnv   <- use Env.empireNotif
-    void $ liftIO $ Empire.runEmpire empireNotifEnv currentEmpireEnv $ Graph.dumpGraphViz location
 
 handleTypecheck :: Request TypeCheck.Request -> StateT Env BusT ()
 handleTypecheck req@(Request _ _ request) = do

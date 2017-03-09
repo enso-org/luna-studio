@@ -1,10 +1,8 @@
---TODO[react]:Rename module to sth more appropriate
 module Luna.Studio.Action.Graph.Connect
     ( connect
     , localConnect
     , localAddConnection
     ) where
-
 
 import           Empire.API.Data.Connection             (Connection (Connection), ConnectionId)
 import qualified Empire.API.Data.Connection             as Connection
@@ -23,21 +21,21 @@ import qualified Luna.Studio.State.Global               as Global
 import qualified Luna.Studio.State.Graph                as Graph
 
 
-
 connect :: Either OutPortRef NodeId -> Either InPortRef NodeId -> Command Global.State ()
 connect src@(Left srcPortRef) dst@(Left dstPortRef) =
-    localConnect srcPortRef dstPortRef >> BatchCmd.connect src dst
+    whenM (localConnect srcPortRef dstPortRef) $ BatchCmd.connect src dst
 connect src dst = BatchCmd.connect src dst
 
-localConnect :: OutPortRef -> InPortRef -> Command Global.State ()
+localConnect :: OutPortRef -> InPortRef -> Command Global.State Bool
 localConnect src dst = localAddConnection $ Connection src dst
 
-localAddConnection :: Connection -> Command Global.State ()
+localAddConnection :: Connection -> Command Global.State Bool
 localAddConnection connection = do
-    connectionId <- zoom Global.graph $ Graph.addConnection connection
-    when (connection ^. Connection.dst . PortRef.dstPortId == Self) $ do
-        let nodeId = connectionId ^. PortRef.dstNodeId
-        let portId = InPortId (connection ^. Connection.dst . PortRef.dstPortId)
-        Global.modifyNode nodeId $ Model.ports . at portId . _Just . Model.visible .= True
+    let connectionId = connection ^. Connection.dst
     mayConnectionModel <- createConnectionModel connection
-    Global.modifyNodeEditor $ NodeEditor.connections . at connectionId .= mayConnectionModel
+    case mayConnectionModel of
+        Just connModel -> do
+            zoom Global.graph $ Graph.addConnection connection
+            Global.modifyNodeEditor $ NodeEditor.connections . at connectionId .= mayConnectionModel
+            return True
+        Nothing        -> return False

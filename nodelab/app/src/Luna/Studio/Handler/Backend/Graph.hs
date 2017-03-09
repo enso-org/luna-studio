@@ -18,6 +18,7 @@ import qualified Empire.API.Graph.Collaboration         as Collaboration
 import qualified Empire.API.Graph.Connect               as Connect
 import qualified Empire.API.Graph.GetProgram            as GetProgram
 import qualified Empire.API.Graph.MonadsUpdate          as MonadsUpdate
+import qualified Empire.API.Graph.MovePort              as MovePort
 import qualified Empire.API.Graph.NodeResultUpdate      as NodeResultUpdate
 import qualified Empire.API.Graph.NodeSearch            as NodeSearch
 import qualified Empire.API.Graph.NodesUpdate           as NodesUpdate
@@ -43,8 +44,9 @@ import           Luna.Studio.Action.Graph.AddPort       (localAddPort)
 import           Luna.Studio.Action.Graph.AddSubgraph   (localAddSubgraph)
 import           Luna.Studio.Action.Graph.CodeUpdate    (updateCode)
 import           Luna.Studio.Action.Graph.Collaboration (bumpTime, modifyTime, refreshTime, touchCurrentlySelected, updateClient)
+import           Luna.Studio.Action.Graph.MovePort      (localMovePort)
 import           Luna.Studio.Action.Graph.Revert        (isCurrentLocation, isCurrentLocationAndGraphLoaded, revertAddNode, revertAddPort,
-                                                         revertAddSubgraph, revertConnect, revertRemoveConnection)
+                                                         revertAddSubgraph, revertConnect, revertMovePort, revertRemoveConnection)
 import           Luna.Studio.Action.Node                (localRemoveNodes, typecheckNode, updateNodeProfilingData, updateNodeValue,
                                                          updateNodesMeta)
 import qualified Luna.Studio.Action.Node                as Node
@@ -161,11 +163,32 @@ handle (Event.Batch ev) = Just $ case ev of
         failure _          = whenM (isOwnRequest requestId) $ revertConnect request
         success connection = do
             shouldProcess <- isCurrentLocationAndGraphLoaded location
-            when shouldProcess $ localAddConnection connection
+            when shouldProcess $ void $ localAddConnection connection
 
     ConnectUpdate update -> do
         shouldProcess <- isCurrentLocationAndGraphLoaded $ update ^. Connect.location'
-        when shouldProcess $ localAddConnection $ update ^. Connect.connection'
+        when shouldProcess $ void $ localAddConnection $ update ^. Connect.connection'
+
+    DumpGraphVizResponse response -> handleResponse response doNothing doNothing
+
+    MonadsUpdate update -> do
+        shouldProcess <- isCurrentLocationAndGraphLoaded (update ^. MonadsUpdate.location)
+        when shouldProcess $ updateMonads $ update ^. MonadsUpdate.monads
+
+    MovePortResponse response -> handleResponse response success failure where
+        requestId          = response ^. Response.requestId
+        request            = response ^. Response.request
+        location           = request  ^. MovePort.location
+        portRef            = request  ^. MovePort.portRef
+        newPortRef         = request  ^. MovePort.newPortRef
+        failure _          = whenM (isOwnRequest requestId) $ revertMovePort request
+        success node       = do
+            shouldProcess <- isCurrentLocationAndGraphLoaded location
+            ownRequest    <- isOwnRequest requestId
+            when shouldProcess $
+                if ownRequest then
+                    localUpdateNode node
+                else void $ localMovePort portRef newPortRef
 
     RemoveConnectionResponse response -> handleResponse response success failure where
         requestId          = response ^. Response.requestId
@@ -176,8 +199,9 @@ handle (Event.Batch ev) = Just $ case ev of
         success _          = do
             shouldProcess <- isCurrentLocationAndGraphLoaded location
             ownRequest    <- isOwnRequest requestId
-            when shouldProcess $ do
-                if ownRequest then do
+            when shouldProcess $
+                if ownRequest then
+                    --TODO[LJK]: This is left to remind to set Confirmed flag in changes
                     return ()
                 else void $ localRemoveConnection connId
 
@@ -199,9 +223,6 @@ handle (Event.Batch ev) = Just $ case ev of
     --     shouldProcess <- isCurrentLocationAndGraphLoaded (update ^. NodesUpdate.location)
     --     when shouldProcess $ mapM_ localUpdateNode $ update ^. NodesUpdate.nodes
     --
-    -- MonadsUpdated update -> do
-    --     shouldProcess <- isCurrentLocationAndGraphLoaded (update ^. MonadsUpdate.location)
-    --     when shouldProcess $ updateMonads $ update ^. MonadsUpdate.monads
     --
     -- NodeTypechecked update -> do
     --   shouldProcess <- isCurrentLocationAndGraphLoaded (update ^. NodeTCUpdate.location)

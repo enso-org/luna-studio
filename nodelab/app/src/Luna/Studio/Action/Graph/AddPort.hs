@@ -60,6 +60,6 @@ moveConnectionsWithPorts (OutPortRef' (OutPortRef nodeId (Projection pos))) = do
     forM_ conns $ \conn -> case conn of
         Connection (OutPortRef srcNodeId (Projection i)) connId ->
             when (srcNodeId == nodeId && i >= pos) $
-                localAddConnection $ conn & Connection.src . PortRef.srcPortId .~ Projection (i+1)
+                void $ localAddConnection $ conn & Connection.src . PortRef.srcPortId .~ Projection (i+1)
         _ -> return ()
 moveConnectionsWithPorts _ = $notImplemented

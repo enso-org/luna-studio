@@ -6,7 +6,6 @@ import           Prologue
 import           Data.UUID.Types               (UUID)
 import           Empire.API.Data.GraphLocation (GraphLocation)
 import           Empire.API.Data.Node          (NodeId)
-import qualified Empire.API.Request            as R
 import qualified Empire.API.Topic              as T
 
 type ClientId = UUID
@@ -17,10 +16,10 @@ data Event = Modify      [NodeId]
            | Refresh
            deriving (Generic, Eq, NFData, Show)
 
-data Update   = Update { _location  :: GraphLocation
-                       , _clientId  :: ClientId
-                       , _event     :: Event
-                       } deriving (Generic, Eq, NFData, Show)
+data Update = Update { _location  :: GraphLocation
+                     , _clientId  :: ClientId
+                     , _event     :: Event
+                     } deriving (Generic, Eq, NFData, Show)
 
 
 makeLenses ''Update
