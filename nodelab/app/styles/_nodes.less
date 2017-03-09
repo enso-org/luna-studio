@@ -53,6 +53,7 @@
 }
 
 .luna-port__type {
+    display:     none;
     fill:        #888;
     text-anchor: end;
 }
@@ -62,6 +63,10 @@
         text-anchor: start;
     }
 }
+
+.luna-node:hover .luna-port__type { display: inherit }
+.luna-port:hover .luna-port__type { fill: #fff }
+
 
 /////////////////////////////
 //      node expanded      //
