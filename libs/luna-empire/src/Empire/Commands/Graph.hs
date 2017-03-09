@@ -164,7 +164,10 @@ updateGraphSeq newSeq = do
                 _      -> do
                     firstNonLambda <- ASTRead.getFirstNonLambdaRef outerLambda
                     IR.replaceNode firstNonLambda output
-        Nothing              -> Graph.topLevelSeq .= newSeq
+        Nothing              -> do
+            oldSeq <- use Graph.topLevelSeq
+            when (oldSeq /= newSeq) $ mapM_ ASTRemove.removeSubtree oldSeq
+            Graph.topLevelSeq .= newSeq
 
 nodeIdInsideLambda :: ASTOp m => NodeRef -> m (Maybe NodeId)
 nodeIdInsideLambda node = (ASTRead.getVarNode node >>= ASTRead.getNodeId) `catch`
@@ -261,7 +264,6 @@ removeNodeNoTC nodeId = do
     astRef <- GraphUtils.getASTPointer nodeId
     obsoleteEdges <- getOutEdges nodeId
     mapM_ disconnectPort obsoleteEdges
-    ASTRemove.removeSubtree astRef
     Graph.nodeMapping %= Map.delete nodeId
     Graph.breadcrumbHierarchy %= removeID nodeId
 
