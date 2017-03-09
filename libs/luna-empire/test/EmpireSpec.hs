@@ -1054,3 +1054,32 @@ spec = around withChannels $ id $ do
                     , (OutPortRef u2 (Port.Projection 0), InPortRef u3 (Port.Arg 0))
                     , (OutPortRef u2 (Port.Projection 1), InPortRef u3 (Port.Arg 1))
                     ]
+        it "connects two outputs when one of them is pattern match" $ \env -> do
+            u1 <- mkUUID
+            u2 <- mkUUID
+            res <- evalEmp env $ do
+                Graph.addNode top u1 "myVec" def
+                Graph.addNode top u2 "SomeCons (Just a) 0 \"foo\" x" def
+                Graph.connect top (OutPortRef u1 Port.All) (OutPortRef' (OutPortRef u2 Port.All))
+
+                Graph.withGraph top $ runASTOp $
+                    (,,,) <$> GraphBuilder.buildNode u1
+                          <*> GraphBuilder.buildNode u2
+                          <*> GraphBuilder.buildConnections
+                          <*> (ASTRead.getASTPointer u2 >>= ASTRead.varIsPatternMatch)
+            withResult res $ \(myVec, pattern, connections, isPatternMatch) -> do
+                myVec ^. Node.name `shouldBe` "node1"
+                pattern ^. Node.name `shouldBe` "SomeCons (Just a) 0 \"foo\" x"
+                let outputPorts = Map.elems $ Map.filter Port.isOutputPort $ pattern ^. Node.ports
+                outputPorts `shouldMatchList` [
+                    -- FIXME[MM]: these should be NotConnected
+                      Port.Port (Port.OutPortId (Port.Projection 0)) "a" TStar Port.Connected
+                    , Port.Port (Port.OutPortId (Port.Projection 1)) "x" TStar Port.Connected
+                    ]
+                let inputPorts = Map.elems $ Map.filter Port.isInputPort $ pattern ^. Node.ports
+                inputPorts `shouldMatchList` [
+                    -- FIXME[MM]: this should be connected
+                      Port.Port (Port.InPortId (Port.Arg 0)) "Input" TStar (Port.WithDefault (Expression "Vector x y z"))
+                    ]
+                isPatternMatch `shouldBe` True
+                connections `shouldMatchList` [(OutPortRef u1 Port.All, InPortRef u2 (Port.Arg 0))]

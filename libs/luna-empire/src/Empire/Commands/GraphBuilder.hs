@@ -168,7 +168,7 @@ getNodeName nid = do
         vnode <- GraphUtils.getASTVar nid
         name <- match vnode $ \case
             Var{}  -> ASTRead.getVarName vnode
-            _      -> Print.printNodeExpression vnode
+            _      -> Print.printExpression vnode
         return $ Just (Text.pack name)
     else return Nothing
 
@@ -205,8 +205,8 @@ extractArgNames node = do
         -- App is Lam that has some args applied
         App f _a -> extractArgNames =<< IR.source f
         Cons{}   -> do
-            args  <- ASTDeconstruct.extractArguments node
-            names <- mapM ASTRead.getVarName args
+            vars  <- ASTRead.getVarsInside node
+            names <- mapM ASTRead.getVarName vars
             return names
         _ -> return []
 

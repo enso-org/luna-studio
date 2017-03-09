@@ -28,6 +28,7 @@ module Empire.ASTOps.Read (
   , getLambdaOutputRef
   , getLambdaSeqRef
   , getPatternNames
+  , getVarsInside
   , getSelfNodeRef
   , canEnterNode
   , rhsIsLambda
@@ -35,7 +36,7 @@ module Empire.ASTOps.Read (
   , nodeIsPatternMatch
   ) where
 
-import           Control.Monad                      ((>=>), forM)
+import           Control.Monad                      ((>=>), (<=<), forM)
 import           Control.Monad.Catch                (Handler(..), catches)
 import           Data.Coerce                        (coerce)
 import           Data.Maybe                         (isJust)
@@ -74,6 +75,11 @@ getVarName node = match node $ \case
     Var n    -> return $ nameToString n
     Cons n _ -> return $ pathNameToString n
     Blank{}  -> return "_"
+
+getVarsInside :: ASTOp m => NodeRef -> m [NodeRef]
+getVarsInside e = do
+    isVar <- isJust <$> IRExpr.narrowTerm @IR.Var e
+    if isVar then return [e] else concat <$> (mapM (getVarsInside <=< IR.source) =<< IR.inputs e)
 
 rightMatchOperand :: ASTOp m => NodeRef -> m EdgeRef
 rightMatchOperand node = match node $ \case

@@ -121,8 +121,9 @@ printExpression' suppressNodes paren node = do
         IR.Number n -> pure $ show n
         IR.String s -> return $ show s
         Cons n args -> do
-            argsNames <- mapM (printExpression' False False <=< IR.source) args
-            return $ pathNameToString n ++ [ ' ' | (not . null) argsNames ] ++ unwords argsNames
+            argsNames <- mapM (printExpression' False True <=< IR.source) args
+            let hasArgs = (not . null) argsNames
+            return $ parenIf (hasArgs && paren) $ pathNameToString n ++ [ ' ' | hasArgs ] ++ unwords argsNames
         _ -> return ""
 
 printExpression :: ASTOp m => NodeRef -> m String

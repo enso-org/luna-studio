@@ -394,7 +394,7 @@ instance Exception CannotConnectException where
 transplantMarker :: ASTOp m => NodeRef -> NodeRef -> m ()
 transplantMarker donor recipient = do
     marker     <- IR.readLayer @Marker donor
-    varsInside <- getVarsInside recipient
+    varsInside <- ASTRead.getVarsInside recipient
     let indexedVars = zip varsInside [0..]
     forM_ indexedVars $ \(var, index) -> do
         IR.writeLayer @Projection (Just index) var
@@ -443,6 +443,7 @@ constructorToPattern cons = IR.matchExpr cons $ \case
         IR.generalize <$> IR.cons n patterns
     IR.Number{} -> return cons
     IR.String{} -> return cons
+    IR.Grouped g -> constructorToPattern =<< IR.source g
 
 data PatternConversion = ConvertToPattern | Don'tConvertToPattern
 
@@ -468,15 +469,10 @@ connectToPattern src dst = do
 
     return $ Connection (OutPortRef src Port.All) (InPortRef dst (Port.Arg 0))
 
-getVarsInside :: ASTOp m => NodeRef -> m [NodeRef]
-getVarsInside e = do
-    isVar <- isJust <$> IR.narrowTerm @IR.Var e
-    if isVar then return [e] else concat <$> (mapM (getVarsInside <=< IR.source) =<< IR.inputs e)
-
 connectToMatchedVariable :: ASTOp m => OutPortRef -> InPortRef -> Int -> m ()
 connectToMatchedVariable (OutPortRef srcNodeId srcPort) (InPortRef dstNodeId dstPort) pos = do
     pattern    <- ASTRead.getASTVar srcNodeId
-    varsInside <- getVarsInside pattern
+    varsInside <- ASTRead.getVarsInside pattern
     let inputPos = case srcPort of
             All            -> 0   -- FIXME: do not equalise All with Projection 0
             Projection int -> int
