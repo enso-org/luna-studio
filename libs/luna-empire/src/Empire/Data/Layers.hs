@@ -22,6 +22,7 @@ import Empire.Prelude
 
 import           Empire.API.Data.Node     (NodeId)
 import           Empire.API.Data.NodeMeta (NodeMeta)
+import           Empire.API.Data.PortRef  (OutPortRef)
 
 import           Control.Monad.Raise (Throws)
 import           Data.TypeDesc
@@ -36,7 +37,7 @@ import           Type.Any
 type TypeLayer = IR.Type
 
 data Marker
-type instance LayerData Marker t = Maybe NodeId
+type instance LayerData Marker t = Maybe OutPortRef
 
 initNodeMarker :: Req m '[Editor // Layer // AnyExpr // Marker] => Listener New (Expr l) m
 initNodeMarker = listener $ \(t, _) -> writeLayer @Marker Nothing t

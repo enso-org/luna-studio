@@ -129,7 +129,7 @@ addNodeNoTC loc uuid expr meta = do
             when (not outputIsOneOfTheInputs) $ Graph.nodeMapping . at lambdaUUID ?= Graph.AnonymousNode lambdaOutput
             Graph.breadcrumbHierarchy %= addWithLeafs (node ^. Node.nodeId)
                 (if outputIsOneOfTheInputs then [] else [lambdaUUID])
-            IR.writeLayer @Marker (Just lambdaUUID) lambdaOutput
+            IR.writeLayer @Marker (Just $ OutPortRef lambdaUUID Port.All) lambdaOutput
         else Graph.breadcrumbHierarchy %= addID (node ^. Node.nodeId)
         updateNodeSequence
         return node
@@ -330,7 +330,7 @@ updateNodeExpression loc nodeId expr = withTC loc False $ do
                 Graph.nodeMapping . at lambdaUUID ?= Graph.AnonymousNode lambdaOutput
                 Graph.breadcrumbHierarchy %= removeID nodeId
                 Graph.breadcrumbHierarchy %= addWithLeafs nodeId [lambdaUUID]
-            IR.writeLayer @Marker (Just lambdaUUID) lambdaOutput
+            IR.writeLayer @Marker (Just $ OutPortRef lambdaUUID Port.All) lambdaOutput
         updateNodeSequence
     node <- runASTOp $ GraphBuilder.buildNode nodeId
     Publisher.notifyNodeUpdate loc node

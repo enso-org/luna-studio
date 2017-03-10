@@ -17,6 +17,8 @@ import           Data.Maybe                         (isNothing)
 import           Empire.Prelude
 
 import           Empire.API.Data.Node               (NodeId)
+import           Empire.API.Data.PortRef            (OutPortRef(..))
+import qualified Empire.API.Data.Port               as Port
 import           Empire.ASTOp                       (ASTOp, match)
 import           Empire.ASTOps.Deconstruct          (deconstructApp, extractArguments, dumpAccessors)
 import           Empire.ASTOps.Remove               (removeSubtree)
@@ -116,5 +118,5 @@ removeAccessor ref = do
 makeNodeRep :: ASTOp m => NodeId -> String -> NodeRef -> m NodeRef
 makeNodeRep marker name node = do
     nameVar <- IR.var' $ stringToName name
-    IR.writeLayer @Marker (Just marker) nameVar
+    IR.writeLayer @Marker (Just $ OutPortRef marker Port.All) nameVar
     IR.generalize <$> IR.unify nameVar node

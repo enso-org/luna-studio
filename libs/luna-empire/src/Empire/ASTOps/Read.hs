@@ -42,6 +42,7 @@ import           Data.Maybe                         (isJust)
 import           Empire.Prelude
 
 import           Empire.API.Data.Node               (NodeId)
+import           Empire.API.Data.PortRef            (OutPortRef(..))
 import           Empire.ASTOp                       (ASTOp, match)
 import           Empire.Data.AST                    (NodeRef, EdgeRef, NotUnifyException(..),
                                                      NotLambdaException(..),
@@ -58,7 +59,11 @@ isGraphNode :: ASTOp m => NodeRef -> m Bool
 isGraphNode = fmap isJust . getNodeId
 
 getNodeId :: ASTOp m => NodeRef -> m (Maybe NodeId)
-getNodeId node = IR.readLayer @Marker node
+getNodeId node = do
+    portRef <- IR.readLayer @Marker node
+    forM portRef $ \portRef' -> do
+        let OutPortRef nodeId _ = portRef'
+        return nodeId
 
 getPatternNames :: ASTOp m => NodeRef -> m [String]
 getPatternNames node = match node $ \case
