@@ -1,3 +1,13 @@
+'.luna-searcher__input':
+  'enter'     : 'luna-studio:searcher-accept'             # Searcher Accept
+  'backspace' : 'luna-studio:searcher-move-left'          # Searcher MoveLeft
+  'tab'       : 'luna-studio:searcher-move-right'         # Searcher MoveRight
+  'down'      : 'luna-studio:searcher-move-down'          # Searcher MoveDown
+  'up'        : 'luna-studio:searcher-move-up'            # Searcher MoveUp
+  'right'     : 'native!'
+  'left'      : 'native!'
+  'delete'    : 'native!'
+
 '.luna-studio':
   'escape'           : 'luna-studio:cancel'               # Cancel
   # camera
@@ -32,10 +42,3 @@
   'space'           : 'luna-studio:edit-selected-nodes'   # EditSelectedNodes
   # searcher
   'tab'             : 'luna-studio:searcher-open'         # SearcherOpen
-
-'.luna-searcher':
-  'escape'    : 'luna-studio:cancel'                      # Cancel
-  'enter'     : 'luna-studio:searcher-accept'             # SearcherAccept
-  'tab'       : 'luna-studio:searcher-close'              # SearcherClose
-  'down'      : 'luna-studio:searcher-move-down'          # SearcherMoveDown
-  'up'        : 'luna-studio:searcher-move-up'            # SearcherMoveUp
