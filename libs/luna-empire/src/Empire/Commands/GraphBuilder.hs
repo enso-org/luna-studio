@@ -233,7 +233,7 @@ extractPortInfo node = do
                     types <- extractArgTypes tpRef
                     return (types, [])
         Cons n _args -> do
-            args       <- ASTDeconstruct.extractArguments node
+            args       <- ASTRead.getVarsInside node
             portStates <- mapM getPortState args
             types      <- IR.readLayer @TypeLayer node >>= IR.source >>= extractArgTypes
             return (types, portStates)

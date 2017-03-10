@@ -1054,7 +1054,7 @@ spec = around withChannels $ parallel $ do
                     , (OutPortRef u2 (Port.Projection 0), InPortRef u3 (Port.Arg 0))
                     , (OutPortRef u2 (Port.Projection 1), InPortRef u3 (Port.Arg 1))
                     ]
-        it "connects two outputs when one of them is pattern match" $ \env -> do
+        it "connects two outputs when one of them is nested pattern match with literals" $ \env -> do
             u1 <- mkUUID
             u2 <- mkUUID
             res <- evalEmp env $ do
@@ -1079,7 +1079,7 @@ spec = around withChannels $ parallel $ do
                 let inputPorts = Map.elems $ Map.filter Port.isInputPort $ pattern ^. Node.ports
                 inputPorts `shouldMatchList` [
                     -- FIXME[MM]: this should be connected
-                      Port.Port (Port.InPortId (Port.Arg 0)) "Input" TStar (Port.WithDefault (Expression "Vector x y z"))
+                      Port.Port (Port.InPortId (Port.Arg 0)) "Input" TStar (Port.WithDefault (Expression "SomeCons (Just a) 0 \"foo\" x"))
                     ]
                 isPatternMatch `shouldBe` True
                 connections `shouldMatchList` [(OutPortRef u1 Port.All, InPortRef u2 (Port.Arg 0))]
