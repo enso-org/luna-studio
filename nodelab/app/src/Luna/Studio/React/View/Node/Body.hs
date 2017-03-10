@@ -54,8 +54,8 @@ nodeBody = React.defineView objName $ \(ref, n) -> do
                 blurBackground_
                 case n ^. Node.mode of
                     Node.Collapsed -> ""
-                    Node.Expanded -> nodeProperties_ ref $ Properties.fromNode n
-                    Node.Editor   -> multilineField_ [] "editor"
+                    Node.Expanded  -> nodeProperties_ ref $ Properties.fromNode n
+                    Node.Editor    -> multilineField_ [] "editor"
                         $ Field.mk ref (fromMaybe def $ n ^. Node.code)
                         & Field.onCancel .~ Just (UI.NodeEvent . Node.SetCode nodeId)
 

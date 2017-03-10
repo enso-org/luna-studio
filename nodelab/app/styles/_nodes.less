@@ -39,6 +39,16 @@
     }
 }
 
+.luna-node__name--expression {
+    display: none;
+    fill:    #888;
+}
+.luna-node-root:hover {
+    .luna-node__name--expression {
+        display: inherit;
+    }
+}
+
 .luna-port {
     stroke-width: 0;
     &.luna-hover {
@@ -68,7 +78,7 @@
     }
 }
 
-.luna-node:hover .luna-port__type { display: inherit }
+.luna-node-root:hover .luna-port__type { display: inherit }
 .luna-port:hover .luna-port__type { fill: #fff }
 
 

@@ -2,25 +2,26 @@
 module Luna.Studio.React.View.Node where
 
 
-import qualified Data.Aeson                            as Aeson
-import           Data.Matrix                           as Matrix
-import           Data.Matrix                           (Matrix)
-import           Data.Position                         (Position (Position), Vector2 (Vector2), x, y)
-import           Empire.API.Data.Node                  (NodeId)
-import qualified JS.Config                             as Config
-import           Luna.Studio.Action.Geometry.Constants (fontSize)
-import qualified Luna.Studio.Event.Mouse               as Mouse
-import qualified Luna.Studio.Event.UI                  as UI
+import qualified Data.Aeson                             as Aeson
+import           Data.Matrix                            as Matrix
+import           Data.Matrix                            (Matrix)
+import           Data.Position                          (Position (Position), Vector2 (Vector2), x, y)
+import           Empire.API.Data.Node                   (NodeId)
+import qualified JS.Config                              as Config
+import           Luna.Studio.Action.Geometry.Constants  (fontSize)
+import qualified Luna.Studio.Event.Mouse                as Mouse
+import qualified Luna.Studio.Event.UI                   as UI
 import           Luna.Studio.Prelude
-import qualified Luna.Studio.React.Event.Node          as Node
-import           Luna.Studio.React.Model.App           (App)
-import           Luna.Studio.React.Model.Node          (Node)
-import qualified Luna.Studio.React.Model.Node          as Node
-import           Luna.Studio.React.Store               (Ref, dispatch)
-import           Luna.Studio.React.View.Node.Body      (nodeBody_)
-import qualified Luna.Studio.React.View.Style          as Style
+import qualified Luna.Studio.React.Event.Node           as Node
+import           Luna.Studio.React.Model.App            (App)
+import           Luna.Studio.React.Model.Node           (Node)
+import qualified Luna.Studio.React.Model.Node           as Node
+import qualified Luna.Studio.React.Model.NodeProperties as Prop
+import           Luna.Studio.React.Store                (Ref, dispatch)
+import           Luna.Studio.React.View.Node.Body       (nodeBody_)
+import qualified Luna.Studio.React.View.Style           as Style
 import           React.Flux
-import qualified React.Flux                            as React
+import qualified React.Flux                             as React
 
 
 name :: JSString
@@ -62,15 +63,21 @@ node = React.defineView name $ \(ref, n) -> do
                 , onClick       $ \_ m -> dispatch ref $ UI.NodeEvent $ Node.Select m nodeId
                 , onDoubleClick $ \_ _ -> dispatch ref $ UI.NodeEvent $ Node.Enter nodeId
                 , "className"   $= Style.prefixFromList ( [ "node" , (if n ^. Node.isCollapsed then "node--collapsed" else "node--expanded") ]
-                                                          ++ (if n ^. Node.isSelected  then ["node--selected"]  else []) )
+                                                                  ++ (if n ^. Node.isSelected  then ["node--selected"] else []) )
                 ] $
                 svg_
-                    [ "key" $= "name" ] $
+                    [ "key" $= "name" ] $ do
+                    text_
+                        [ "key"         $= "expressionText"
+                        , "y"           $= "-16"
+                        , onDoubleClick $ \e _ -> stopPropagation e : dispatch ref (UI.NodeEvent $ Node.EditExpression nodeId)
+                        , "className"   $= Style.prefixFromList [ "node__name", "node__name--expression", "noselect" ]
+                        ] $ elemString $ convert $ n ^. Node.expression
                     text_
                         [ "key"         $= "nameText"
                         , onDoubleClick $ \e _ -> stopPropagation e : dispatch ref (UI.NodeEvent $ Node.EditExpression nodeId)
                         , "className"   $= Style.prefixFromList [ "node__name", "noselect" ]
-                        ] $ elemString $ convert $ n ^. Node.expression
+                        ] $ elemString $ convert $ Prop.fromNode n ^. Prop.name
 
 node_ :: Ref App -> Node -> ReactElementM ViewEventHandler ()
 node_ ref model = React.viewWithSKey node (jsShow $ model ^. Node.nodeId) (ref, model) mempty
