@@ -10,7 +10,6 @@ module Empire.Data.Layers (
     Marker
   , Meta
   , InputsLayer
-  , Projection
   , TypeLayer
   , TCData
   , TCError(ImportError, UnificationError)
@@ -57,13 +56,6 @@ initInputsLayer :: Req m '[Editor // Layer // AnyExpr // InputsLayer] => Listene
 initInputsLayer = listener $ \(t, _) -> writeLayer @InputsLayer [] t
 makePass 'initInputsLayer
 
-data Projection
-type instance LayerData Projection t = Maybe Int
-
-initProjection :: Req m '[Editor // Layer // AnyExpr // Projection] => Listener New (Expr l) m
-initProjection = listener $ \(t, _) -> writeLayer @Projection Nothing t
-makePass 'initProjection
-
 data TCError a = ImportError (Maybe a) String
                | UnificationError a
 
@@ -83,10 +75,8 @@ attachEmpireLayers = do
     addExprEventListener @Meta initMetaPass
     addExprEventListener @Marker initNodeMarkerPass
     addExprEventListener @InputsLayer initInputsLayerPass
-    addExprEventListener @Projection initProjectionPass
     addExprEventListener @TCData initTcDataPass
     attachLayer 10 (getTypeDesc @Meta)  (getTypeDesc @AnyExpr)
     attachLayer 10 (getTypeDesc @Marker) (getTypeDesc @AnyExpr)
     attachLayer 10 (getTypeDesc @InputsLayer) (getTypeDesc @AnyExpr)
-    attachLayer 10 (getTypeDesc @Projection) (getTypeDesc @AnyExpr)
     attachLayer 10 (getTypeDesc @TCData) (getTypeDesc @AnyExpr)

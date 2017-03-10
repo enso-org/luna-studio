@@ -59,7 +59,7 @@ import           Empire.Data.AST                 (NodeRef, NotInputEdgeException
 import           Empire.Data.BreadcrumbHierarchy (addID, addWithLeafs, removeID, topLevelIDs)
 import           Empire.Data.Graph               (Graph)
 import qualified Empire.Data.Graph               as Graph
-import           Empire.Data.Layers              (Marker, Projection)
+import           Empire.Data.Layers              (Marker)
 
 import           Empire.API.Data.Breadcrumb      as Breadcrumb (Breadcrumb(..), Named, BreadcrumbItem(..))
 import qualified Empire.API.Data.Connection      as Connection
@@ -396,9 +396,11 @@ transplantMarker donor recipient = do
     marker     <- IR.readLayer @Marker donor
     varsInside <- ASTRead.getVarsInside recipient
     let indexedVars = zip varsInside [0..]
+
+        markerPort (Just (OutPortRef nid _)) index = Just (OutPortRef nid (Projection index))
+        markerPort _                         _     = Nothing
     forM_ indexedVars $ \(var, index) -> do
-        IR.writeLayer @Projection (Just index) var
-        IR.writeLayer @Marker marker var
+        IR.writeLayer @Marker (markerPort marker index) var
 
 data PatternLocation = Var | Target | Nowhere
 
@@ -441,9 +443,9 @@ constructorToPattern cons = IR.matchExpr cons $ \case
     IR.Cons n args -> do
         patterns <- mapM (constructorToPattern <=< IR.source) args
         IR.generalize <$> IR.cons n patterns
-    IR.Number{} -> return cons
-    IR.String{} -> return cons
-    IR.Grouped g -> constructorToPattern =<< IR.source g
+    IR.Number{}    -> return cons
+    IR.String{}    -> return cons
+    IR.Grouped g   -> constructorToPattern =<< IR.source g
 
 data PatternConversion = ConvertToPattern | Don'tConvertToPattern
 

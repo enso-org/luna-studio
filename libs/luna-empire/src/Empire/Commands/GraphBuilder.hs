@@ -52,7 +52,7 @@ import qualified Empire.Commands.AST               as AST
 import qualified Empire.Commands.GraphUtils        as GraphUtils
 import           Empire.Data.AST                   (NodeRef, astExceptionToException,
                                                     astExceptionFromException)
-import           Empire.Data.Layers                (Projection, TypeLayer)
+import           Empire.Data.Layers                (Marker, TypeLayer)
 import           Empire.Empire
 
 import qualified Luna.IR as IR
@@ -423,14 +423,15 @@ nodeConnectedToOutput = do
                 _           -> return Nothing
 
 
-resolveInputNodeId :: ASTOp m => Maybe (NodeId, NodeId) -> [NodeRef] -> NodeRef -> m (Maybe Int, Maybe NodeId)
+resolveInputNodeId :: ASTOp m => Maybe (NodeId, NodeId) -> [NodeRef] -> NodeRef -> m (Maybe OutPort, Maybe NodeId)
 resolveInputNodeId edgeNodes lambdaArgs ref = do
-    nodeId <- ASTRead.getNodeId ref
     case List.findIndex (== ref) lambdaArgs of
-        Just i -> return (Just i, fmap fst edgeNodes)
+        Just i -> return (Just $ Projection i, fmap fst edgeNodes)
         _      -> do
-            projection <- IR.readLayer @Projection ref
-            return (projection, nodeId)
+            projection <- IR.readLayer @Marker ref
+            case projection of
+                Just (OutPortRef nodeId portId) -> return (Just portId, Just nodeId)
+                _                               -> return (Nothing, Nothing)
 
 getOuterLambdaArguments :: ASTOp m => m [NodeRef]
 getOuterLambdaArguments = do
@@ -478,5 +479,5 @@ getNodeInputs edgeNodes nodeId = do
                 hasNodeId (outIndex, Just nodeId, index) = Just (outIndex, nodeId, index)
                 hasNodeId _ = Nothing
                 onlyExt  = catMaybes $ map hasNodeId withInd
-                conns    = flip map onlyExt $ \((outIndexToProjection -> proj), n, i) -> (OutPortRef n proj, InPortRef nodeId (Arg i))
+                conns    = flip map onlyExt $ \((fromMaybe All -> proj), n, i) -> (OutPortRef n proj, InPortRef nodeId (Arg i))
             return $ maybeToList selfConnMay ++ conns

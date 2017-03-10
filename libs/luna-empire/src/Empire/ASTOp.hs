@@ -24,7 +24,7 @@ import qualified Control.Monad.State.Dependent as DepState
 import qualified Data.Map             as Map
 import           Empire.Data.Graph    (ASTState(..), Graph, withVis)
 import qualified Empire.Data.Graph    as Graph (ast, nodeMapping, getAnyRef)
-import           Empire.Data.Layers   (Marker, Meta, Projection,
+import           Empire.Data.Layers   (Marker, Meta,
                                       InputsLayer, TypeLayer, TCData)
 import           Empire.Empire        (Command)
 
@@ -66,7 +66,6 @@ type EmpireLayers = '[AnyExpr // Model, AnyExprLink // Model,
                       AnyExpr // Marker,
                       AnyExpr // Meta,
                       AnyExpr // InputsLayer,
-                      AnyExpr // Projection,
                       AnyExpr // Succs,
                       AnyExpr // TCData,
                       AnyExpr // TypeLayer,
