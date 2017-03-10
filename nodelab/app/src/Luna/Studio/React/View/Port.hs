@@ -154,12 +154,17 @@ portIO_ ref p numOfPorts = do
         num       = getPortNumber p
         color     = convert $ p ^. Port.color
         highlight = if p ^. Port.highlight then ["hover"] else []
-        classes   = if isInput then [ "port", "port--i", "port--i--" <> show (num + 1)] ++ highlight
-                               else [ "port", "port--o", "port--o--" <> show (num + 1)] ++ highlight
+        classes   = if isInput then [ "port", "port--i", "port--i--" <> show (num + 1) ] ++ highlight
+                               else [ "port", "port--o", "port--o--" <> show (num + 1) ] ++ highlight
         svgFlag1  = if isInput then "1"  else "0"
         svgFlag2  = if isInput then "0"  else "1"
         mode      = if isInput then -1.0 else 1.0
         n         = if isInput then 1 else 0
+        adjust
+            | numOfPorts == 1 = (-4.0)
+            | numOfPorts == 2 =   4.0
+            | numOfPorts == 3 =  12.0
+            | otherwise       =  20.0
         portType  = toString $ p ^. Port.valueType
         startPortArcX r = r * sin(portAngleStart num numOfPorts r * mode)
         startPortArcY r = r * cos(portAngleStart num numOfPorts r * mode)
@@ -185,8 +190,8 @@ portIO_ ref p numOfPorts = do
         ] $ do
         text_
             [ "className" $= Style.prefix "port__type"
-            , "y"         $= jsShow2 ((lineHeight * fromIntegral num) - 20)
-            , "x"        $= (if isInput then "-40" else "40")
+            , "y"         $= jsShow2 ((lineHeight * fromIntegral num) - adjust)
+            , "x"         $= (if isInput then "-40" else "40")
             ] $ elemString portType
         path_
             [ "className" $= Style.prefix "port__shape"
