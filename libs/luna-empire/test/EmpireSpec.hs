@@ -43,7 +43,7 @@ import           EmpireUtils
 
 
 spec :: Spec
-spec = around withChannels $ id $ do
+spec = around withChannels $ parallel $ do
     describe "luna-empire" $ do
         it "descends into `def foo` and asserts two edges inside" $ \env -> do
             u1 <- mkUUID

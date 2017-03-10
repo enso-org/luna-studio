@@ -38,7 +38,6 @@ module Empire.ASTOps.Read (
 
 import           Control.Monad                      ((>=>), (<=<), forM)
 import           Control.Monad.Catch                (Handler(..), catches)
-import           Data.Coerce                        (coerce)
 import           Data.Maybe                         (isJust)
 import           Empire.Prelude
 
@@ -48,7 +47,7 @@ import           Empire.Data.AST                    (NodeRef, EdgeRef, NotUnifyE
                                                      NotLambdaException(..),
                                                      astExceptionFromException, astExceptionToException)
 import qualified Empire.Data.Graph                  as Graph
-import           Empire.Data.Layers                 (NodeMarker(..), Marker)
+import           Empire.Data.Layers                 (Marker)
 
 import qualified OCI.IR.Combinators as IRExpr
 import           Luna.IR.Term.Uni
@@ -59,7 +58,7 @@ isGraphNode :: ASTOp m => NodeRef -> m Bool
 isGraphNode = fmap isJust . getNodeId
 
 getNodeId :: ASTOp m => NodeRef -> m (Maybe NodeId)
-getNodeId node = coerce <$> IR.readLayer @Marker node
+getNodeId node = IR.readLayer @Marker node
 
 getPatternNames :: ASTOp m => NodeRef -> m [String]
 getPatternNames node = match node $ \case

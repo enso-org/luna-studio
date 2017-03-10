@@ -20,7 +20,7 @@ import           Empire.API.Data.Node              (NodeId)
 import           Empire.API.Data.NodeMeta          (NodeMeta)
 import           Empire.API.Data.TypeRep           (TypeRep)
 import           Empire.Data.AST                   (NodeRef, NotLambdaException(..), NotUnifyException(..))
-import           Empire.Data.Layers                (Meta, NodeMarker(..), TCData, TCError(..),
+import           Empire.Data.Layers                (Meta, TCData, TCError(..),
                                                     TypeLayer, InputsLayer, tcErrors)
 
 import           Empire.ASTOp                      (ASTOp, match)
@@ -48,7 +48,7 @@ addNode :: ASTOp m => NodeId -> String -> String -> m (NodeRef, NodeRef)
 addNode nid name expr = do
     (exprName, ref) <- Parser.parseExpr expr
     let name' = fromMaybe name $ fmap Text.unpack exprName
-    (,) <$> pure ref <*> ASTBuilder.makeNodeRep (NodeMarker nid) name' ref
+    (,) <$> pure ref <*> ASTBuilder.makeNodeRep nid name' ref
 
 limit :: [a] -> [a]
 limit = limitHead where

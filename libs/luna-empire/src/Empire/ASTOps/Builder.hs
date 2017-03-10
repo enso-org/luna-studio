@@ -16,12 +16,13 @@ import           Control.Monad                      (foldM, replicateM)
 import           Data.Maybe                         (isNothing)
 import           Empire.Prelude
 
+import           Empire.API.Data.Node               (NodeId)
 import           Empire.ASTOp                       (ASTOp, match)
 import           Empire.ASTOps.Deconstruct          (deconstructApp, extractArguments, dumpAccessors)
 import           Empire.ASTOps.Remove               (removeSubtree)
 import           Empire.Data.AST                    (NodeRef, astExceptionFromException,
                                                      astExceptionToException)
-import           Empire.Data.Layers                 (NodeMarker(..), Marker)
+import           Empire.Data.Layers                 (Marker)
 
 import           Luna.IR.Term.Uni
 import qualified Luna.IR as IR
@@ -112,7 +113,7 @@ removeAccessor ref = do
             acc <- buildAccessors v ns
             if null args then return acc else reapply acc args
 
-makeNodeRep :: ASTOp m => NodeMarker -> String -> NodeRef -> m NodeRef
+makeNodeRep :: ASTOp m => NodeId -> String -> NodeRef -> m NodeRef
 makeNodeRep marker name node = do
     nameVar <- IR.var' $ stringToName name
     IR.writeLayer @Marker (Just marker) nameVar

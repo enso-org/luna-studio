@@ -59,7 +59,7 @@ import           Empire.Data.AST                 (NodeRef, NotInputEdgeException
 import           Empire.Data.BreadcrumbHierarchy (addID, addWithLeafs, removeID, topLevelIDs)
 import           Empire.Data.Graph               (Graph)
 import qualified Empire.Data.Graph               as Graph
-import           Empire.Data.Layers              (Marker, NodeMarker(..), Projection)
+import           Empire.Data.Layers              (Marker, Projection)
 
 import           Empire.API.Data.Breadcrumb      as Breadcrumb (Breadcrumb(..), Named, BreadcrumbItem(..))
 import qualified Empire.API.Data.Connection      as Connection
@@ -129,7 +129,7 @@ addNodeNoTC loc uuid expr meta = do
             when (not outputIsOneOfTheInputs) $ Graph.nodeMapping . at lambdaUUID ?= Graph.AnonymousNode lambdaOutput
             Graph.breadcrumbHierarchy %= addWithLeafs (node ^. Node.nodeId)
                 (if outputIsOneOfTheInputs then [] else [lambdaUUID])
-            IR.writeLayer @Marker (Just $ NodeMarker lambdaUUID) lambdaOutput
+            IR.writeLayer @Marker (Just lambdaUUID) lambdaOutput
         else Graph.breadcrumbHierarchy %= addID (node ^. Node.nodeId)
         updateNodeSequence
         return node
@@ -330,7 +330,7 @@ updateNodeExpression loc nodeId expr = withTC loc False $ do
                 Graph.nodeMapping . at lambdaUUID ?= Graph.AnonymousNode lambdaOutput
                 Graph.breadcrumbHierarchy %= removeID nodeId
                 Graph.breadcrumbHierarchy %= addWithLeafs nodeId [lambdaUUID]
-            IR.writeLayer @Marker (Just $ NodeMarker lambdaUUID) lambdaOutput
+            IR.writeLayer @Marker (Just lambdaUUID) lambdaOutput
         updateNodeSequence
     node <- runASTOp $ GraphBuilder.buildNode nodeId
     Publisher.notifyNodeUpdate loc node

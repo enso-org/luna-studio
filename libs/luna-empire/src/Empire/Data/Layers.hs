@@ -9,7 +9,6 @@
 module Empire.Data.Layers (
     Marker
   , Meta
-  , NodeMarker(..)
   , InputsLayer
   , Projection
   , TypeLayer
@@ -37,8 +36,7 @@ import           Type.Any
 type TypeLayer = IR.Type
 
 data Marker
-newtype NodeMarker = NodeMarker NodeId deriving (Show, Eq)
-type instance LayerData Marker t = Maybe NodeMarker
+type instance LayerData Marker t = Maybe NodeId
 
 initNodeMarker :: Req m '[Editor // Layer // AnyExpr // Marker] => Listener New (Expr l) m
 initNodeMarker = listener $ \(t, _) -> writeLayer @Marker Nothing t
