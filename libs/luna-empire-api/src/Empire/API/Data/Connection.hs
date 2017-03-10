@@ -5,11 +5,10 @@ import           Data.Binary             (Binary)
 import           Prologue
 
 import           Empire.API.Data.Node    (NodeId)
-import           Empire.API.Data.PortRef (AnyPortRef (InPortRef', OutPortRef'), InPortRef, OutPortRef, dstNodeId, srcNodeId)
+import           Empire.API.Data.Port    (InPort, OutPort)
+import           Empire.API.Data.PortRef (AnyPortRef (InPortRef', OutPortRef'), InPortRef, OutPortRef)
 import qualified Empire.API.Data.PortRef as PortRef
 
-
--- FIXME: Najpewniej to wyladuje calkowicie w GUI
 
 type ConnectionId = InPortRef
 data Connection = Connection { _src :: OutPortRef
@@ -22,12 +21,34 @@ instance Binary Connection
 connectionId :: Lens' Connection ConnectionId
 connectionId = dst
 
-contains' :: NodeId -> Connection -> Bool
-contains' nid (Connection src' dst') = (src' ^. srcNodeId == nid)
-                                    || (dst' ^. dstNodeId == nid)
+srcNodeId :: Lens' Connection NodeId
+srcNodeId = src . PortRef.srcNodeId
 
-contains :: NodeId -> Getter Connection Bool
-contains nid = to (contains' nid)
+srcPortId :: Lens' Connection OutPort
+srcPortId = src . PortRef.srcPortId
+
+dstNodeId :: Lens' Connection NodeId
+dstNodeId = dst . PortRef.dstNodeId
+
+dstPortId :: Lens' Connection InPort
+dstPortId = dst . PortRef.dstPortId
+
+raw :: Getter Connection (OutPortRef, InPortRef)
+raw = to raw' where
+    raw' conn = (conn ^. src, conn ^. dst)
+
+nodeIds :: Getter Connection (NodeId, NodeId)
+nodeIds = to nodeIds' where
+    nodeIds' conn = ( conn ^. src . PortRef.srcNodeId
+                    , conn ^. dst . PortRef.dstNodeId )
+
+containsNode :: NodeId -> Connection -> Bool
+containsNode nid conn = (conn ^. srcNodeId == nid)
+                     || (conn ^. dstNodeId == nid)
+
+containsPortRef :: AnyPortRef -> Connection -> Bool
+containsPortRef (InPortRef'  inPortRef)  conn = conn ^. dst == inPortRef
+containsPortRef (OutPortRef' outPortRef) conn = conn ^. src == outPortRef
 
 toValidConnection :: AnyPortRef -> AnyPortRef -> Maybe Connection
 toValidConnection (OutPortRef' src') (InPortRef' dst') =

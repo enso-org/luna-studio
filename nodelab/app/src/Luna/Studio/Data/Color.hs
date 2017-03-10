@@ -1,3 +1,4 @@
+{-# OPTIONS_GHC -fno-warn-orphans #-}
 {-# LANGUAGE OverloadedStrings #-}
 module Luna.Studio.Data.Color
     ( fromPort
@@ -46,8 +47,8 @@ buildHsl (Color i) = HSL (hue * 2.0 * pi) 0.6 0.5
 
 buildLCH :: Color -> Color.LCH
 buildLCH (Color 0) = Color.LCH 50  0 0 255
-buildLCH (Color i) = Color.LCH 30 45 h 255 where
-    h = (start + delta * (fromIntegral i - 1)) `mod'` 360
+buildLCH (Color i) = Color.LCH 30 45 h' 255 where
+    h'    = (start + delta * (fromIntegral i - 1)) `mod'` 360
     start = 100.7
     delta = 256/pi
 

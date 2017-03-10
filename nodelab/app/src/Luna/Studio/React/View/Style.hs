@@ -1,9 +1,9 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Luna.Studio.React.View.Style where
 
-import Luna.Studio.Prelude
-import Data.List           (intercalate)
-import React.Flux
+import           Data.List           (intercalate)
+import           Luna.Studio.Prelude
+import           React.Flux
 
 prefix :: JSString -> JSString
 prefix a = (<>) "luna-" a
@@ -35,7 +35,7 @@ plainPath :: JSString -> JSString -> ReactElementM ViewEventHandler ()
 plainPath c d = path_ [ "className" $= c, "d" $= d ] mempty
 
 
--- TODO
+-- TODO[JK]: Not used args
 portSelectablePath :: JSString -> Double -> Double -> Double -> ReactElementM ViewEventHandler ()
-portSelectablePath c x y r = path_ [ "className" $= c, "d" $= fromString d ] mempty
+portSelectablePath c _x _y r = path_ [ "className" $= c, "d" $= fromString d ] mempty
     where d = "M 20 0 A " <> show r <> " " <> show r <> " 0 0 1 20 16 L 10 16 A " <> show r <> " " <> show r <> " 0 0 1 10 0 Z"

@@ -22,30 +22,34 @@ handle cons = (Topic.topic (undefined :: a), cons . decode)
 
 handlers :: Map.Map String (ByteString -> Batch.Event)
 handlers = Map.fromList [ handle GetProgramResponse
+                        , handle AddConnectionResponse
                         , handle AddNodeResponse
                         , handle AddPortResponse
                         , handle AddSubgraphResponse
                         , handle CodeUpdate
                         , handle CollaborationUpdate
-                        , handle ConnectResponse
                         , handle ConnectUpdate
                         , handle DumpGraphVizResponse
                         , handle EmpireStarted
                         , handle MonadsUpdate
                         , handle MovePortResponse
                         , handle NodeResultUpdate
-                        , handle NodeSearchResponse
                         , handle NodesUpdate
                         , handle NodeTypecheckerUpdate
                         , handle RedoResponse
                         , handle RemoveConnectionResponse
                         , handle RemoveConnectionUpdate
                         , handle RemoveNodesResponse
-
-                        , handle NodeMetaResponse
-                        , handle NodeMetaUpdated
-                        , handle NodeRenamed
-                        , handle PortRenamed
+                        , handle RemovePortResponse
+                        , handle RenameNodeResponse
+                        , handle RenamePortResponse
+                        , handle SearchNodesResponse
+                        , handle SetNodeCodeResponse
+                        , handle SetNodeExpressionResponse
+                        , handle SetNodesMetaResponse
+                        , handle SetPortDefaultResponse
+                        , handle TypeCheckResponse
+                        , handle UndoResponse
                         , handle ProjectCreated
                         , handle ProjectCreatedUpdate
                         , handle ProjectExported
@@ -53,8 +57,6 @@ handlers = Map.fromList [ handle GetProgramResponse
                         , handle ProjectList
                         , handle ProjectOpened
                         , handle ProjectOpenedUpdate
-                        , handle RemovePortResponse
-                        , handle UpdateNodeExpressionResponse
                         ]
 
 processMessage :: WebMessage -> Batch.Event

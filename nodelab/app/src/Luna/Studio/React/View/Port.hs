@@ -2,22 +2,22 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Luna.Studio.React.View.Port where
 
-import           Empire.API.Data.Port         (InPort (..), OutPort (..), PortId (..))
-import           Empire.API.Data.PortRef      (AnyPortRef)
-import           Luna.Studio.Action.Geometry  (getPortNumber, isPortInput, lineHeight, nodeRadius, nodeRadius', portAngleStart,
-                                               portAngleStop)
-import qualified Luna.Studio.Event.Mouse      as Mouse
-import qualified Luna.Studio.Event.UI         as UI
+import           Empire.API.Data.Port              (InPort (Self), OutPort (All), PortId (InPortId, OutPortId), getPortNumber, isInPort)
+import           Empire.API.Data.PortRef           (AnyPortRef)
+import           Luna.Studio.Action.State.Model    (portAngleStart, portAngleStop)
+import qualified Luna.Studio.Event.Mouse           as Mouse
+import qualified Luna.Studio.Event.UI              as UI
 import           Luna.Studio.Prelude
-import qualified Luna.Studio.React.Event.Port as Port
-import           Luna.Studio.React.Model.App  (App)
-import           Luna.Studio.React.Model.Port (Port (..))
-import qualified Luna.Studio.React.Model.Port as Port
-import           Luna.Studio.React.Store      (Ref, dispatch)
-import qualified Luna.Studio.React.View.Style as Style
-import           Numeric                      (showFFloat)
-import           React.Flux                   hiding (view)
-import qualified React.Flux                   as React
+import qualified Luna.Studio.React.Event.Port      as Port
+import           Luna.Studio.React.Model.App       (App)
+import           Luna.Studio.React.Model.Constants (lineHeight, nodeRadius, nodeRadius')
+import           Luna.Studio.React.Model.Port      (Port)
+import qualified Luna.Studio.React.Model.Port      as Port
+import           Luna.Studio.React.Store           (Ref, dispatch)
+import qualified Luna.Studio.React.View.Style      as Style
+import           Numeric                           (showFFloat)
+import           React.Flux                        hiding (view)
+import qualified React.Flux                        as React
 
 name :: JSString
 name = "port"
@@ -150,8 +150,8 @@ portIO_ :: Ref App -> Port -> Int -> ReactElementM ViewEventHandler ()
 portIO_ ref p numOfPorts = do
     let portRef   = p ^. Port.portRef
         portId    = p ^. Port.portId
-        isInput   = isPortInput p
-        num       = getPortNumber p
+        isInput   = isInPort portId
+        num       = getPortNumber portId
         color     = convert $ p ^. Port.color
         highlight = if p ^. Port.highlight then ["hover"] else []
         classes   = if isInput then [ "port", "port--i", "port--i--" <> show (num + 1)] ++ highlight
@@ -200,8 +200,8 @@ portIOExpanded_ ref p = if p ^. Port.portId == InPortId Self then portSelf_ ref 
     let portRef   = p ^. Port.portRef
         portId    = p ^. Port.portId
         portType  = toString $ p ^. Port.valueType
-        isInput   = isPortInput p
-        num       = getPortNumber p
+        isInput   = isInPort portId
+        num       = getPortNumber portId
         color     = convert $ p ^. Port.color
         py        = jsShow2 (lineHeight * fromIntegral (num + n))
         highlight = if p ^. Port.highlight then ["hover"] else []

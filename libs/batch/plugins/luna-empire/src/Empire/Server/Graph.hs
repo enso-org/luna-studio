@@ -6,77 +6,78 @@
 
 module Empire.Server.Graph where
 
-import           Control.Monad.Error                   (throwError)
-import           Control.Monad.State                   (StateT)
-import qualified Data.Binary                           as Bin
-import           Data.ByteString                       (ByteString)
-import           Data.ByteString.Lazy                  (fromStrict)
-import qualified Data.IntMap                           as IntMap
-import           Data.List                             (break, find, partition)
-import           Data.List.Split                       (splitOneOf)
-import qualified Data.Map                              as Map
-import           Data.Maybe                            (fromMaybe, isJust, isNothing)
-import qualified Data.Set                              as Set
-import           Data.Text                             (stripPrefix)
-import qualified Data.Text                             as Text
-import           Data.Traversable                      (forM)
-import           Data.UUID.Types                       (UUID)
-import qualified Data.UUID.Types                       as UUID
-import qualified Data.UUID.V4                          as UUID
-import           Prologue                              hiding (Item)
+import           Control.Monad.Error                (throwError)
+import           Control.Monad.State                (StateT)
+import qualified Data.Binary                        as Bin
+import           Data.ByteString                    (ByteString)
+import           Data.ByteString.Lazy               (fromStrict)
+import qualified Data.IntMap                        as IntMap
+import           Data.List                          (break, find, partition)
+import           Data.List.Split                    (splitOneOf)
+import qualified Data.Map                           as Map
+import           Data.Maybe                         (fromMaybe, isJust, isNothing)
+import qualified Data.Set                           as Set
+import           Data.Text                          (stripPrefix)
+import qualified Data.Text                          as Text
+import           Data.Traversable                   (forM)
+import           Data.UUID.Types                    (UUID)
+import qualified Data.UUID.Types                    as UUID
+import qualified Data.UUID.V4                       as UUID
+import           Prologue                           hiding (Item)
 
-import           Empire.API.Data.Breadcrumb            (Breadcrumb (..))
-import           Empire.API.Data.Connection            as Connection
-import           Empire.API.Data.DefaultValue          (Value (..))
-import           Empire.API.Data.Graph                 (Graph (..))
-import           Empire.API.Data.GraphLocation         (GraphLocation)
-import           Empire.API.Data.Node                  (Node (..), NodeId)
-import qualified Empire.API.Data.Node                  as Node
-import           Empire.API.Data.NodeMeta              (NodeMeta)
-import qualified Empire.API.Data.NodeSearcher          as NS
-import           Empire.API.Data.Port                  (InPort (..), OutPort (..), Port (..), PortId (..), PortState (..))
-import           Empire.API.Data.PortRef               (InPortRef (..), OutPortRef (..))
-import           Empire.API.Data.PortRef               as PortRef
-import           Empire.API.Data.TypeRep               (TypeRep (TStar))
-import qualified Empire.API.Graph.AddNode              as AddNode
-import qualified Empire.API.Graph.AddPort              as AddPort
-import qualified Empire.API.Graph.AddSubgraph          as AddSubgraph
-import qualified Empire.API.Graph.CodeUpdate           as CodeUpdate
-import qualified Empire.API.Graph.Connect              as Connect
-import qualified Empire.API.Graph.DumpGraphViz         as DumpGraphViz
-import qualified Empire.API.Graph.GetProgram           as GetProgram
-import qualified Empire.API.Graph.MovePort             as MovePort
-import qualified Empire.API.Graph.NodeResultUpdate     as NodeResultUpdate
-import qualified Empire.API.Graph.NodeSearch           as NodeSearch
-import qualified Empire.API.Graph.NodesUpdate          as NodesUpdate
-import qualified Empire.API.Graph.RemoveConnection     as RemoveConnection
-import qualified Empire.API.Graph.RemoveNodes          as RemoveNodes
-import qualified Empire.API.Graph.RemovePort           as RemovePort
-import qualified Empire.API.Graph.RenameNode           as RenameNode
-import qualified Empire.API.Graph.RenamePort           as RenamePort
-import qualified Empire.API.Graph.Request              as G
-import qualified Empire.API.Graph.SetCode              as SetCode
-import qualified Empire.API.Graph.SetDefaultValue      as SetDefaultValue
-import qualified Empire.API.Graph.TypeCheck            as TypeCheck
-import qualified Empire.API.Graph.UpdateNodeExpression as UpdateNodeExpression
-import qualified Empire.API.Graph.UpdateNodeMeta       as UpdateNodeMeta
-import           Empire.API.Request                    (Request (..))
-import qualified Empire.API.Response                   as Response
-import qualified Empire.API.Topic                      as Topic
-import           Empire.ASTOp                          (runASTOp)
-import qualified Empire.ASTOps.Print                   as Print
-import qualified Empire.Commands.Graph                 as Graph
-import           Empire.Commands.GraphBuilder          (buildConnections, buildGraph, buildNodes, getNodeName)
-import qualified Empire.Commands.GraphUtils            as GraphUtils
-import qualified Empire.Commands.Persistence           as Persistence
-import           Empire.Empire                         (Empire)
-import qualified Empire.Empire                         as Empire
-import           Empire.Env                            (Env)
-import qualified Empire.Env                            as Env
-import           Empire.Server.Server                  (errorMessage, replyFail, replyOk, replyResult, sendToBus')
-import           Empire.Utils.TextResult               (nodeValueToText)
-import qualified System.Log.MLogger                    as Logger
-import           ZMQ.Bus.Trans                         (BusT (..))
+import           Empire.API.Data.Breadcrumb         (Breadcrumb (..))
+import           Empire.API.Data.Connection         as Connection
+import           Empire.API.Data.Graph              (Graph (..))
+import           Empire.API.Data.GraphLocation      (GraphLocation)
+import           Empire.API.Data.Node               (Node (..), NodeId)
+import qualified Empire.API.Data.Node               as Node
+import           Empire.API.Data.NodeMeta           (NodeMeta)
+import qualified Empire.API.Data.NodeSearcher       as NS
+import           Empire.API.Data.Port               (InPort (..), OutPort (..), Port (..), PortId (..), PortState (..))
+import           Empire.API.Data.PortDefault        (Value (..))
+import           Empire.API.Data.PortRef            (InPortRef (..), OutPortRef (..))
+import           Empire.API.Data.PortRef            as PortRef
+import           Empire.API.Data.TypeRep            (TypeRep (TStar))
+import qualified Empire.API.Graph.AddConnection     as AddConnection
+import qualified Empire.API.Graph.AddNode           as AddNode
+import qualified Empire.API.Graph.AddPort           as AddPort
+import qualified Empire.API.Graph.AddSubgraph       as AddSubgraph
+import qualified Empire.API.Graph.CodeUpdate        as CodeUpdate
+import qualified Empire.API.Graph.ConnectUpdate     as ConnectUpdate
+import qualified Empire.API.Graph.DumpGraphViz      as DumpGraphViz
+import qualified Empire.API.Graph.GetProgram        as GetProgram
+import qualified Empire.API.Graph.MovePort          as MovePort
+import qualified Empire.API.Graph.NodeResultUpdate  as NodeResultUpdate
+import qualified Empire.API.Graph.NodesUpdate       as NodesUpdate
+import qualified Empire.API.Graph.RemoveConnection  as RemoveConnection
+import qualified Empire.API.Graph.RemoveNodes       as RemoveNodes
+import qualified Empire.API.Graph.RemovePort        as RemovePort
+import qualified Empire.API.Graph.RenameNode        as RenameNode
+import qualified Empire.API.Graph.RenamePort        as RenamePort
+import qualified Empire.API.Graph.Request           as G
+import qualified Empire.API.Graph.SearchNodes       as SearchNodes
+import qualified Empire.API.Graph.SetNodeCode       as SetNodeCode
+import qualified Empire.API.Graph.SetNodeExpression as SetNodeExpression
+import qualified Empire.API.Graph.SetNodesMeta      as SetNodesMeta
+import qualified Empire.API.Graph.SetPortDefault    as SetPortDefault
+import qualified Empire.API.Graph.TypeCheck         as TypeCheck
+import           Empire.API.Request                 (Request (..))
+import qualified Empire.API.Response                as Response
+import qualified Empire.API.Topic                   as Topic
+import           Empire.ASTOp                       (runASTOp)
+import qualified Empire.ASTOps.Print                as Print
+import qualified Empire.Commands.Graph              as Graph
+import           Empire.Commands.GraphBuilder       (buildConnections, buildGraph, buildNodes, getNodeName)
+import qualified Empire.Commands.GraphUtils         as GraphUtils
+import qualified Empire.Commands.Persistence        as Persistence
+import           Empire.Empire                      (Empire)
+import qualified Empire.Empire                      as Empire
+import           Empire.Env                         (Env)
+import qualified Empire.Env                         as Env
+import           Empire.Server.Server               (errorMessage, replyFail, replyOk, replyResult, sendToBus')
+import           Empire.Utils.TextResult            (nodeValueToText)
+import qualified System.Log.MLogger                 as Logger
+import           ZMQ.Bus.Trans                      (BusT (..))
 
 
 logger :: Logger.Logger
@@ -123,7 +124,7 @@ forceTC location = do
     empireNotifEnv   <- use Env.empireNotif
     void $ liftIO $ Empire.runEmpire empireNotifEnv currentEmpireEnv $ Graph.typecheck location
 
-modifyGraph :: forall req inv res d. (G.GraphRequest req, Response.ResponseResult req inv res ) => (req -> Empire inv) -> (req -> Empire res) -> (Request req -> inv -> res -> StateT Env BusT ()) -> Request req -> StateT Env BusT ()
+modifyGraph :: forall req inv res res'. (G.GraphRequest req, Response.ResponseResult req inv res') => (req -> Empire inv) -> (req -> Empire res) -> (Request req -> inv -> res -> StateT Env BusT ()) -> Request req -> StateT Env BusT ()
 modifyGraph inverse action success req@(Request uuid guiID request) = do
     currentEmpireEnv <- use Env.empireEnv
     empireNotifEnv   <- use Env.empireNotif
@@ -141,8 +142,8 @@ modifyGraph inverse action success req@(Request uuid guiID request) = do
                     notifyCodeUpdate $ request ^. G.location
                     saveCurrentProject $ request ^. G.location
 
-modifyGraphOk :: forall req inv res d. (Bin.Binary req, G.GraphRequest req, Response.ResponseResult req inv res, Response.ResponseResult req inv ()) => (req -> Empire inv) -> (req -> Empire res) -> (req -> inv -> res -> StateT Env BusT ()) -> Request req -> StateT Env BusT ()
-modifyGraphOk inverse action success = modifyGraph inverse action (\req@(Request uuid guiID request) inv res -> replyOk req inv >> success request inv res)
+modifyGraphOk :: forall req inv res . (Bin.Binary req, G.GraphRequest req, Response.ResponseResult req inv ()) => (req -> Empire inv) -> (req -> Empire res) -> Request req -> StateT Env BusT ()
+modifyGraphOk inverse action = modifyGraph inverse action (\req@(Request uuid guiID request) inv _ -> replyOk req inv)
 
 -- helpers
 
@@ -167,16 +168,34 @@ connectNodes :: UUID -> Maybe UUID -> GraphLocation -> Text -> NodeId -> NodeId 
 connectNodes reqId guiId location expr dstNodeId srcNodeId = do
     let exprCall = head $ splitOneOf " ." $ Text.unpack expr
         inPort   = if exprCall `elem` stdlibFunctions then Arg 0 else Self
-        request  = Request reqId guiId $ Connect.Request location (Left $ OutPortRef srcNodeId All) (Left $ InPortRef dstNodeId inPort)
-        action (Connect.Request location (Left src) (Left dst)) = Graph.connectCondTC False location src dst
-        success _ _ connection                                  = sendToBus' $ Connect.Update location connection
+        request  = Request reqId guiId $ AddConnection.Request location (Left $ OutPortRef srcNodeId All) (Left $ InPortRef dstNodeId inPort)
+        action (AddConnection.Request location (Left src) (Left dst)) = Graph.connectCondTC False location src dst
+        success _ _ connection                                        = sendToBus' $ ConnectUpdate.Update location connection
     modifyGraph defInverse action success request
     forceTC location --TODO[MM]: is this not the same as: `Graph.connectCondTC True location src dst` in action???
 
 -- Handlers
 
-mtuple :: (Monad m, Applicative m)=>(a -> m b) -> a -> m ((), b)
-mtuple f a = f a >>= \b -> pure ((),b)
+
+handleGetProgram :: Request GetProgram.Request -> StateT Env BusT ()
+handleGetProgram = modifyGraph defInverse action success where
+    action (GetProgram.Request location) = do
+        graph <- Graph.getGraph location
+        code <-  Graph.getCode location
+        crumb <- Graph.decodeLocation location
+        return $ GetProgram.Result graph (Text.pack code) crumb mockNSData
+    success req inv res                  = replyResult req inv res
+
+
+handleAddConnection :: Request AddConnection.Request -> StateT Env BusT ()
+handleAddConnection = modifyGraph defInverse action replyResult where
+    getSrcPort src = case src of
+        Left portRef -> portRef
+        Right nodeId -> OutPortRef nodeId All
+    getDstPort dst = case dst of
+        Left portRef -> portRef
+        Right nodeId -> InPortRef nodeId Self
+    action  (AddConnection.Request location src dst) = Graph.connectCondTC True location (getSrcPort src) (getDstPort dst)
 
 handleAddNode :: Request AddNode.Request -> StateT Env BusT ()
 handleAddNode = modifyGraph defInverse action success where
@@ -193,123 +212,94 @@ handleAddSubgraph :: Request AddSubgraph.Request -> StateT Env BusT ()
 handleAddSubgraph = modifyGraph defInverse action replyResult where
     action (AddSubgraph.Request location nodes connections) = Graph.addSubgraph location nodes connections
 
-handleConnect :: Request Connect.Request -> StateT Env BusT ()
-handleConnect = modifyGraph defInverse action replyResult where
-    getSrcPort src = case src of
-        Left portRef -> portRef
-        Right nodeId -> OutPortRef nodeId All
-    getDstPort dst = case dst of
-        Left portRef -> portRef
-        Right nodeId -> InPortRef nodeId Self
-    action  (Connect.Request location src dst) = Graph.connectCondTC True location (getSrcPort src) (getDstPort dst)
-
 handleDumpGraphViz :: Request DumpGraphViz.Request -> StateT Env BusT ()
-handleDumpGraphViz = modifyGraphOk defInverse action success where
+handleDumpGraphViz = modifyGraphOk defInverse action where
     action (DumpGraphViz.Request location) = Graph.dumpGraphViz location
-    success _ _ _                          = return ()
 
 handleMovePort :: Request MovePort.Request -> StateT Env BusT ()
 handleMovePort = modifyGraph defInverse action replyResult where
     action (MovePort.Request location portRef newPortRef) = Graph.movePort location portRef newPortRef
 
-handleNodeSearch :: Request NodeSearch.Request -> StateT Env BusT ()
-handleNodeSearch = modifyGraph defInverse action replyResult where
-    action  _ = return $ NodeSearch.Result mockNSData
-
 handleRemoveConnection :: Request RemoveConnection.Request -> StateT Env BusT ()
-handleRemoveConnection = modifyGraphOk inverse action success where
+handleRemoveConnection = modifyGraphOk inverse action where
     inverse (RemoveConnection.Request location dst) = do
         connections <- Graph.withGraph location $ runASTOp buildConnections
         case find (\conn -> snd conn == dst) connections of
             Nothing       -> $notImplemented --TODO[LJK, MM]: Return error here like: Response.Error $ "Cannot find connection by this id: " <> show dst
             Just (src, _) -> return $ RemoveConnection.Inverse src
     action  (RemoveConnection.Request location dst) = Graph.disconnect location dst
-    success _ _ _                                   = return ()
 
 handleRemoveNodes :: Request RemoveNodes.Request -> StateT Env BusT ()
-handleRemoveNodes = modifyGraphOk inverse action success where
+handleRemoveNodes = modifyGraphOk inverse action where
     inverse (RemoveNodes.Request location nodeIds) = do
         Graph allNodes allConnections monads <- Graph.withGraph location $ runASTOp buildGraph
         let idSet = Set.fromList nodeIds
-            nodes  = flip filter allNodes       $ \node ->   Set.member (node ^. Node.nodeId)            idSet
-            conns' = flip filter allConnections $ \conn -> ( Set.member (conn ^. _1 . PortRef.srcNodeId) idSet
-                                                          || Set.member (conn ^. _2 . PortRef.dstNodeId) idSet )
-            conns  = map (uncurry Connection) conns'
-        return $ RemoveNodes.Inverse nodes conns
+            nodes = flip filter allNodes       $ \node ->   Set.member (node ^. Node.nodeId)            idSet
+            conns = flip filter allConnections $ \conn -> ( Set.member (conn ^. _1 . PortRef.srcNodeId) idSet
+                                                         || Set.member (conn ^. _2 . PortRef.dstNodeId) idSet )
+        return $ RemoveNodes.Inverse nodes $ map (uncurry Connection) conns
     action (RemoveNodes.Request location nodeIds)  = Graph.removeNodes location nodeIds
-    success _ _ _                                  = return ()
 
-handleUpdateNodeExpression :: Request UpdateNodeExpression.Request -> StateT Env BusT ()-- fixme [SB] returns Result with no new informations and change node expression has addNode+removeNodes
-handleUpdateNodeExpression = modifyGraph inverse action success where
-    inverse (UpdateNodeExpression.Request location nodeId _)                      = do
+handleRemovePort :: Request RemovePort.Request -> StateT Env BusT ()
+handleRemovePort = modifyGraphOk inverse action where
+    inverse (RemovePort.Request location portRef) = do
+        Graph allNodes allConnections monads <- Graph.withGraph location $ runASTOp buildGraph
+        let conns = flip filter allConnections $ case portRef of
+                (OutPortRef' outPortRef) -> (\(src, _) -> src == outPortRef)
+                (InPortRef'  inPortRef)  -> (\(_, dst) -> dst == inPortRef)
+        return $ RemovePort.Inverse $ map (uncurry Connection) conns
+    action (RemovePort.Request location portRef)  = Graph.removePort location portRef
+
+handleRenameNode :: Request RenameNode.Request -> StateT Env BusT ()
+handleRenameNode = modifyGraphOk inverse action where
+    inverse (RenameNode.Request location nodeId name) = do
+        prevName <- Graph.withGraph location $ runASTOp $ getNodeName nodeId
+        return $ RenameNode.Inverse $ maybe "" id  prevName
+    action (RenameNode.Request location nodeId name)  = Graph.renameNode location nodeId name
+
+
+handleRenamePort :: Request RenamePort.Request -> StateT Env BusT ()
+handleRenamePort = modifyGraphOk inverse action where --FIXME[pm] implement this!
+    inverse (RenamePort.Request location portRef name) = do
+        let oldName = "oldname" --FIXME
+        return $ RenamePort.Inverse oldName
+    action (RenamePort.Request location portRef name)  = void $ Graph.renamePort location portRef name
+
+handleSearchNodes :: Request SearchNodes.Request -> StateT Env BusT ()
+handleSearchNodes = modifyGraph defInverse action replyResult where
+    action  _ = return $ SearchNodes.Result mockNSData
+
+handleSetNodeCode :: Request SetNodeCode.Request -> StateT Env BusT ()
+handleSetNodeCode = modifyGraphOk inverse action where --FIXME[pm] implement this!
+    inverse (SetNodeCode.Request location nodeId code) = do
+        oldCode <- Graph.withGraph location $ runASTOp $ getNodeName nodeId
+        return $ SetNodeCode.Inverse $ fromMaybe def oldCode
+    action (SetNodeCode.Request location nodeId code)  = void $ Graph.setNodeExpression location nodeId code
+
+handleSetNodeExpression :: Request SetNodeExpression.Request -> StateT Env BusT ()-- fixme [SB] returns Result with no new informations and change node expression has addNode+removeNodes
+handleSetNodeExpression = modifyGraphOk inverse action where
+    inverse (SetNodeExpression.Request location nodeId _)         = do
         oldExpr <- Graph.withGraph location $ runASTOp $ GraphUtils.getASTTarget nodeId >>= Print.printNodeExpression
-        return $ UpdateNodeExpression.Inverse (Text.pack oldExpr)
-    action  (UpdateNodeExpression.Request location nodeId expression)             = Graph.updateNodeExpression location nodeId expression
-    success (Request _ _ (UpdateNodeExpression.Request location nodeId _)) _ node = sendToBus' $ NodesUpdate.Update location [node]
+        return $ SetNodeExpression.Inverse (Text.pack oldExpr)
+    action (SetNodeExpression.Request location nodeId expression) = Graph.setNodeExpression location nodeId expression
 
-handleUpdateNodeMeta :: Request UpdateNodeMeta.Request -> StateT Env BusT ()
-handleUpdateNodeMeta = modifyGraphOk inverse action success where
-    inverse (UpdateNodeMeta.Request location updates)     = do
+handleSetNodesMeta :: Request SetNodesMeta.Request -> StateT Env BusT ()
+handleSetNodesMeta = modifyGraphOk inverse action where
+    inverse (SetNodesMeta.Request location updates) = do
         allNodes <- Graph.withGraph location $ runASTOp buildNodes
         let idSet = Set.fromList $ map fst updates
             prevMeta = catMaybes $ flip map allNodes $ \node ->
                 if Set.member (node ^. Node.nodeId) idSet then
                      Just (node ^. Node.nodeId, node ^. Node.nodeMeta)
                 else Nothing
-        return $ UpdateNodeMeta.Inverse prevMeta
-    action  (UpdateNodeMeta.Request location updates)     = forM_ updates $ uncurry $ Graph.updateNodeMeta location
-    success (UpdateNodeMeta.Request location updates) _ _ = sendToBus' $ UpdateNodeMeta.Update location updates
+        return $ SetNodesMeta.Inverse prevMeta
+    action (SetNodesMeta.Request location updates) = forM_ updates $ uncurry $ Graph.updateNodeMeta location
 
-handleRenameNode :: Request RenameNode.Request -> StateT Env BusT ()
-handleRenameNode = modifyGraphOk inverse action success where
-    inverse (RenameNode.Request location nodeId name)     = do
-        prevName <- Graph.withGraph location $ runASTOp $ getNodeName nodeId
-        return $ RenameNode.Inverse $ maybe "" id  prevName
-    action  (RenameNode.Request location nodeId name)     = Graph.renameNode location nodeId name
-    success (RenameNode.Request location nodeId name) _ _ = sendToBus' $ RenameNode.Update location nodeId name
-
-handleSetCode :: Request SetCode.Request -> StateT Env BusT ()
-handleSetCode = modifyGraphOk inverse action success where --FIXME[pm] implement this!
-    inverse (SetCode.Request location nodeId code)     = do
-        oldCode <- Graph.withGraph location $ runASTOp $ getNodeName nodeId
-        return $ SetCode.Inverse $ fromMaybe def oldCode
-    action  (SetCode.Request location nodeId code)     = void $ Graph.updateNodeExpression location nodeId code
-    success (SetCode.Request location nodeId code) _ _ = sendToBus' $ SetCode.Update location nodeId code
-
-handleRenamePort :: Request RenamePort.Request -> StateT Env BusT ()
-handleRenamePort = modifyGraphOk inverse action success where --FIXME[pm] implement this!
-    inverse (RenamePort.Request location portRef name)     = do
-        let oldName = "oldname" --FIXME
-        return $ RenamePort.Inverse oldName
-    action  (RenamePort.Request location portRef name)     = void $ Graph.renamePort location portRef name
-    success (RenamePort.Request location portRef name) _ _ = sendToBus' $ RenamePort.Update location portRef name
-
-handleRemovePort :: Request RemovePort.Request -> StateT Env BusT ()
-handleRemovePort = modifyGraphOk defInverse action success where
-    action (RemovePort.Request location portRef) = void $ Graph.removePort location portRef
-    success _ _ _                                = return ()
-
-handleSetDefaultValue :: Request SetDefaultValue.Request -> StateT Env BusT ()
-handleSetDefaultValue = modifyGraphOk inverse action success where
+handleSetPortDefault :: Request SetPortDefault.Request -> StateT Env BusT ()
+handleSetPortDefault = modifyGraphOk inverse action where
     -- TODO[MM]: Get old defaultValue for inverse
-    inverse                                                        = $notImplemented
-    action (SetDefaultValue.Request location portRef defaultValue) = Graph.setDefaultValue location portRef defaultValue
-    success _ _ _                                                  = return ()
-
-stdlibFunctions :: [String]
-stdlibFunctions = ["mockFunction"]
-
-stdlibMethods :: [String]
-stdlibMethods = ["mockMethod"]
-
-handleGetProgram :: Request GetProgram.Request -> StateT Env BusT ()
-handleGetProgram = modifyGraph defInverse action success where
-    action (GetProgram.Request location) = do
-        graph <- Graph.getGraph location
-        code <-  Graph.getCode location
-        crumb <- Graph.decodeLocation location
-        return $ GetProgram.Result graph (Text.pack code) crumb mockNSData
-    success req inv res                  = replyResult req inv res
+    inverse                                                       = $notImplemented
+    action (SetPortDefault.Request location portRef defaultValue) = Graph.setPortDefault location portRef defaultValue
 
 handleTypecheck :: Request TypeCheck.Request -> StateT Env BusT ()
 handleTypecheck req@(Request _ _ request) = do
@@ -321,6 +311,14 @@ handleTypecheck req@(Request _ _ request) = do
         Left err -> replyFail logger err req (Response.Error err)
         Right _  -> Env.empireEnv .= newEmpireEnv
     return ()
+
+
+
+stdlibFunctions :: [String]
+stdlibFunctions = ["mockFunction"]
+
+stdlibMethods :: [String]
+stdlibMethods = ["mockMethod"]
 
 mockNSData :: NS.Items Node
 mockNSData = Map.fromList $ functionsList <> modulesList where

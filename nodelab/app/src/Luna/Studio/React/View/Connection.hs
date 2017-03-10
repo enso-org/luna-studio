@@ -3,7 +3,6 @@ module Luna.Studio.React.View.Connection where
 
 import           Data.Position                      (Position, averagePosition, x, y)
 import           Empire.API.Data.PortRef            (InPortRef)
-import           Luna.Studio.Action.Geometry        (connectionWidth)
 import qualified Luna.Studio.Event.UI               as UI
 import           Luna.Studio.Prelude
 import           Luna.Studio.React.Event.Connection (ModifiedEnd (Destination, Source))
@@ -11,6 +10,7 @@ import qualified Luna.Studio.React.Event.Connection as Connection
 import           Luna.Studio.React.Model.App        (App)
 import           Luna.Studio.React.Model.Connection (Connection, CurrentConnection)
 import qualified Luna.Studio.React.Model.Connection as Connection
+import           Luna.Studio.React.Model.Constants  (connectionWidth)
 import           Luna.Studio.React.Store            (Ref, dispatch)
 import qualified Luna.Studio.React.View.Style       as Style
 import           Numeric                            (showFFloat)

@@ -6,12 +6,12 @@ module EmpireSpec (spec) where
 import           Data.Foldable                 (toList)
 import           Data.List                     (find, stripPrefix)
 import qualified Data.Map                      as Map
-import           Empire.API.Data.DefaultValue  (PortDefault (Expression))
 import qualified Empire.API.Data.Graph         as Graph
 import           Empire.API.Data.GraphLocation (GraphLocation (..))
 import qualified Empire.API.Data.Node          as Node (NodeType (ExpressionNode), canEnter, expression, name, nodeId, nodeType, ports)
 import           Empire.API.Data.NodeMeta      (NodeMeta (..))
 import qualified Empire.API.Data.Port          as Port
+import           Empire.API.Data.PortDefault   (PortDefault (Expression))
 import           Empire.API.Data.PortRef       (AnyPortRef (..), InPortRef (..), OutPortRef (..))
 import           Empire.API.Data.TypeRep       (TypeRep (TCons, TLam, TStar, TVar))
 import           Empire.ASTOp                  (runASTOp)
@@ -22,7 +22,7 @@ import qualified Empire.ASTOps.Read            as ASTRead
 import qualified Empire.Commands.AST           as AST (isTrivialLambda)
 import qualified Empire.Commands.Graph         as Graph (addNode, addPort, connect, disconnect, getConnections, getGraph, getNodeIdSequence,
                                                          getNodes, movePort, removeNodes, removePort, renameNode, renamePort,
-                                                         updateNodeExpression, updateNodeMeta, withGraph)
+                                                         setNodeExpression, updateNodeMeta, withGraph)
 import qualified Empire.Commands.GraphBuilder  as GraphBuilder
 import           Empire.Commands.Library       (withLibrary)
 import qualified Empire.Commands.Typecheck     as Typecheck (run)
@@ -230,11 +230,11 @@ spec = around withChannels $ parallel $ do
                     Graph.getNodes $ top |> u1
                 withResult res'' $ \nodes' -> do
                     let Just input' = find ((== "inputEdge") . view Node.name) nodes'
-                        inputPorts' = toList $ input' ^. Node.ports
-                        inputType = map (view Port.valueType) inputPorts'
+                        inPorts' = toList $ input' ^. Node.ports
+                        inputType = map (view Port.valueType) inPorts'
                     let Just output' = find ((== "outputEdge") . view Node.name) nodes'
-                        outputPorts' = toList $ output' ^. Node.ports
-                        outputType = map (view Port.valueType) outputPorts'
+                        outPorts' = toList $ output' ^. Node.ports
+                        outputType = map (view Port.valueType) outPorts'
                     inputType  `shouldBe` [TCons "Int" []]
                     outputType `shouldBe` [TCons "Int" []]
         it "properly typechecks second id in `mock id -> mock id`" $ \env -> do
@@ -252,12 +252,12 @@ spec = around withChannels $ parallel $ do
                 (res'',_) <- runEmp' env st g' $ do
                     Graph.withGraph top $ runASTOp $ (,) <$> GraphBuilder.buildNode u1 <*> GraphBuilder.buildNode u2
                 withResult res'' $ \(n1, n2) -> do
-                    let inputPorts = Map.elems $ Map.filter Port.isInputPort $ n2 ^. Node.ports
-                    inputPorts `shouldMatchList` [
+                    let inPorts = Map.elems $ Map.filter (Port.isInPort . view Port.portId) $ n2 ^. Node.ports
+                    inPorts `shouldMatchList` [
                           Port.Port (Port.InPortId (Port.Arg 0)) "in" (TLam [TVar "a"] (TVar "a")) Port.Connected
                         ]
-                    let outputPorts = Map.elems $ Map.filter Port.isOutputPort $ n1 ^. Node.ports
-                    outputPorts `shouldMatchList` [
+                    let outPorts = Map.elems $ Map.filter (Port.isOutPort . view Port.portId) $ n1 ^. Node.ports
+                    outPorts `shouldMatchList` [
                           Port.Port (Port.OutPortId Port.All) "Output" (TLam [TVar "a"] (TVar "a")) (Port.WithDefault (Expression "-> $in in"))
                         ]
         it "adds lambda nodeid to node mapping" $ \env -> do
@@ -356,7 +356,7 @@ spec = around withChannels $ parallel $ do
             u1 <- mkUUID
             res <- evalEmp env $ do
                 Graph.addNode top u1 "123" def
-                node  <- Graph.updateNodeExpression top u1 "456"
+                node  <- Graph.setNodeExpression top u1 "456"
                 nodes <- Graph.getNodes top
                 return (node, nodes)
             withResult res $ \(node, nodes) -> do
@@ -367,7 +367,7 @@ spec = around withChannels $ parallel $ do
             u1 <- mkUUID
             res <- evalEmp env $ do
                 Graph.addNode top u1 "1" def
-                node  <- Graph.updateNodeExpression top u1 "-> $a a"
+                node  <- Graph.setNodeExpression top u1 "-> $a a"
                 nodes <- Graph.getNodes top
                 return (node, nodes)
             withResult res $ \(node, nodes) -> do
@@ -379,7 +379,7 @@ spec = around withChannels $ parallel $ do
             u1 <- mkUUID
             res <- evalEmp env $ do
                 Graph.addNode top u1 "1" def
-                Graph.updateNodeExpression top u1 "def foo"
+                Graph.setNodeExpression top u1 "def foo"
             withResult res $ \node -> do
                 node ^. Node.name `shouldBe` "foo"
                 node ^. Node.nodeType `shouldBe` Node.ExpressionNode "-> $a a"
@@ -388,7 +388,7 @@ spec = around withChannels $ parallel $ do
             u1 <- mkUUID
             res <- evalEmp env $ do
                 Graph.addNode top u1 "1" def
-                Graph.updateNodeExpression top u1 "-> $a $b a + b"
+                Graph.setNodeExpression top u1 "-> $a $b a + b"
                 Graph.getGraph (top |> u1)
             withResult res $ \graph -> do
                 let Graph.Graph nodes connections _ = graph
@@ -446,8 +446,8 @@ spec = around withChannels $ parallel $ do
                 Graph.addNode top u1 "-> $a $b a + b" def
                 Graph.getNodes top
             withResult res $ \[plus] -> do
-                let inputPorts = Map.elems $ Map.filter Port.isInputPort $ plus ^. Node.ports
-                inputPorts `shouldMatchList` [
+                let inPorts = Map.elems $ Map.filter (Port.isInPort . view Port.portId) $ plus ^. Node.ports
+                inPorts `shouldMatchList` [
                       Port.Port (Port.InPortId (Port.Arg 0)) "a" TStar Port.NotConnected
                     , Port.Port (Port.InPortId (Port.Arg 1)) "b" TStar Port.NotConnected
                     ]
@@ -457,8 +457,8 @@ spec = around withChannels $ parallel $ do
                 Graph.addNode top u1 "succ" def
                 Graph.getNodes top
             withResult res $ \[succ'] -> do
-                let inputPorts = Map.elems $ Map.filter Port.isInputPort $ succ' ^. Node.ports
-                inputPorts `shouldMatchList` [
+                let inPorts = Map.elems $ Map.filter (Port.isInPort . view Port.portId) $ succ' ^. Node.ports
+                inPorts `shouldMatchList` [
                       Port.Port (Port.InPortId Port.Self)    "self" TStar (Port.WithDefault (Expression "succ"))
                     , Port.Port (Port.InPortId (Port.Arg 0)) "arg0" TStar (Port.NotConnected)
                     ]
@@ -473,8 +473,8 @@ spec = around withChannels $ parallel $ do
                 Graph.getNodes top
             withResult res $ \nodes -> do
                 let Just plus = find (\a -> view Node.nodeId a == u1) nodes
-                    inputPorts = Map.elems $ Map.filter Port.isInputPort $ plus ^. Node.ports
-                inputPorts `shouldMatchList` [
+                    inPorts = Map.elems $ Map.filter (Port.isInPort . view Port.portId) $ plus ^. Node.ports
+                inPorts `shouldMatchList` [
                       Port.Port (Port.InPortId (Port.Arg 0)) "a" TStar Port.Connected
                     , Port.Port (Port.InPortId (Port.Arg 1)) "b" TStar Port.NotConnected
                     ]
@@ -490,8 +490,8 @@ spec = around withChannels $ parallel $ do
                 Graph.connect top (OutPortRef u3 Port.All) (InPortRef u1 (Port.Arg 1))
                 Graph.withGraph top $ runASTOp $ GraphBuilder.buildNode u1
             withResult res $ \n -> do
-                let inputPorts = Map.elems $ Map.filter Port.isInputPort $ n ^. Node.ports
-                inputPorts `shouldMatchList` [
+                let inPorts = Map.elems $ Map.filter (Port.isInPort . view Port.portId) $ n ^. Node.ports
+                inPorts `shouldMatchList` [
                       Port.Port (Port.InPortId Port.Self)    "self"  TStar (Port.WithDefault (Expression "func"))
                     , Port.Port (Port.InPortId (Port.Arg 0)) "arg0" TStar Port.Connected
                     , Port.Port (Port.InPortId (Port.Arg 1)) "arg1" TStar Port.Connected
@@ -521,8 +521,8 @@ spec = around withChannels $ parallel $ do
                 Graph.connect top (OutPortRef u7 Port.All) (InPortRef u1 (Port.Arg 5))
                 Graph.withGraph top $ runASTOp $ GraphBuilder.buildNode u1
             withResult res $ \n -> do
-                let inputPorts = Map.elems $ Map.filter Port.isInputPort $ n ^. Node.ports
-                inputPorts `shouldMatchList` [
+                let inPorts = Map.elems $ Map.filter (Port.isInPort . view Port.portId) $ n ^. Node.ports
+                inPorts `shouldMatchList` [
                       Port.Port (Port.InPortId Port.Self)    "self" TStar (Port.WithDefault (Expression "func"))
                     , Port.Port (Port.InPortId (Port.Arg 0)) "arg0" TStar Port.Connected
                     , Port.Port (Port.InPortId (Port.Arg 1)) "arg1" TStar Port.Connected
@@ -542,8 +542,8 @@ spec = around withChannels $ parallel $ do
                 Graph.disconnect top (InPortRef u1 (Port.Arg 0))
                 Graph.withGraph top $ runASTOp $ GraphBuilder.buildNode u1
             withResult res $ \n -> do
-                let inputPorts = Map.elems $ Map.filter Port.isInputPort $ n ^. Node.ports
-                inputPorts `shouldMatchList` [
+                let inPorts = Map.elems $ Map.filter (Port.isInPort . view Port.portId) $ n ^. Node.ports
+                inPorts `shouldMatchList` [
                       Port.Port (Port.InPortId Port.Self)    "self"  TStar (Port.WithDefault (Expression "func"))
                     , Port.Port (Port.InPortId (Port.Arg 0)) "arg0"  TStar Port.NotConnected
                     ]
@@ -560,8 +560,8 @@ spec = around withChannels $ parallel $ do
                 Graph.disconnect top (InPortRef u3 (Port.Arg 0))
                 Graph.withGraph top $ runASTOp $ GraphBuilder.buildNode u3
             withResult res $ \n -> do
-                let inputPorts = Map.elems $ Map.filter Port.isInputPort $ n ^. Node.ports
-                inputPorts `shouldMatchList` [
+                let inPorts = Map.elems $ Map.filter (Port.isInPort . view Port.portId) $ n ^. Node.ports
+                inPorts `shouldMatchList` [
                       Port.Port (Port.InPortId Port.Self)    "self" TStar (Port.WithDefault (Expression "func"))
                     , Port.Port (Port.InPortId (Port.Arg 0)) "arg0" TStar Port.NotConnected
                     , Port.Port (Port.InPortId (Port.Arg 1)) "arg1" TStar Port.Connected
@@ -582,8 +582,8 @@ spec = around withChannels $ parallel $ do
                 Graph.disconnect top (InPortRef u4 (Port.Arg 0))
                 Graph.withGraph top $ runASTOp $ GraphBuilder.buildNode u4
             withResult res $ \n -> do
-                let inputPorts = Map.elems $ Map.filter Port.isInputPort $ n ^. Node.ports
-                inputPorts `shouldMatchList` [
+                let inPorts = Map.elems $ Map.filter (Port.isInPort . view Port.portId) $ n ^. Node.ports
+                inPorts `shouldMatchList` [
                       Port.Port (Port.InPortId Port.Self)    "self" TStar (Port.WithDefault (Expression "func"))
                     , Port.Port (Port.InPortId (Port.Arg 0)) "arg0" TStar Port.NotConnected
                     , Port.Port (Port.InPortId (Port.Arg 1)) "arg1" TStar Port.Connected
@@ -619,13 +619,13 @@ spec = around withChannels $ parallel $ do
                 let referenceConnection = (OutPortRef input (Port.Projection 0), InPortRef output (Port.Arg 0))
                 return (inputEdge, defFoo, connections, referenceConnection)
             withResult res $ \(inputEdge, defFoo, connections, referenceConnection) -> do
-                let outputPorts = Map.elems $ Map.filter Port.isOutputPort $ inputEdge ^. Node.ports
-                outputPorts `shouldMatchList` [
+                let outPorts = Map.elems $ Map.filter (Port.isOutPort . view Port.portId) $ inputEdge ^. Node.ports
+                outPorts `shouldMatchList` [
                       Port.Port (Port.OutPortId (Port.Projection 0)) "a" TStar Port.Connected
                     , Port.Port (Port.OutPortId (Port.Projection 1)) "b" TStar Port.NotConnected
                     ]
-                let inputPorts = Map.elems $ Map.filter Port.isInputPort $ defFoo ^. Node.ports
-                inputPorts `shouldMatchList` [
+                let inPorts = Map.elems $ Map.filter (Port.isInPort . view Port.portId) $ defFoo ^. Node.ports
+                inPorts `shouldMatchList` [
                       Port.Port (Port.InPortId (Port.Arg 0)) "a" TStar Port.NotConnected
                     , Port.Port (Port.InPortId (Port.Arg 1)) "b" TStar Port.NotConnected
                     ]
@@ -642,14 +642,14 @@ spec = around withChannels $ parallel $ do
                 defFoo <- Graph.withGraph top $ runASTOp $ GraphBuilder.buildNode u1
                 return (inputEdge, defFoo)
             withResult res $ \(inputEdge, defFoo) -> do
-                let outputPorts = Map.elems $ Map.filter Port.isOutputPort $ inputEdge ^. Node.ports
-                outputPorts `shouldMatchList` [
+                let outPorts = Map.elems $ Map.filter (Port.isOutPort . view Port.portId) $ inputEdge ^. Node.ports
+                outPorts `shouldMatchList` [
                       Port.Port (Port.OutPortId (Port.Projection 0)) "a" TStar Port.Connected
                     , Port.Port (Port.OutPortId (Port.Projection 1)) "b" TStar Port.NotConnected
                     , Port.Port (Port.OutPortId (Port.Projection 2)) "c" TStar Port.NotConnected
                     ]
-                let inputPorts = Map.elems $ Map.filter Port.isInputPort $ defFoo ^. Node.ports
-                inputPorts `shouldMatchList` [
+                let inPorts = Map.elems $ Map.filter (Port.isInPort . view Port.portId) $ defFoo ^. Node.ports
+                inPorts `shouldMatchList` [
                       Port.Port (Port.InPortId (Port.Arg 0)) "a" TStar Port.NotConnected
                     , Port.Port (Port.InPortId (Port.Arg 1)) "b" TStar Port.NotConnected
                     , Port.Port (Port.InPortId (Port.Arg 2)) "c" TStar Port.NotConnected
@@ -666,14 +666,14 @@ spec = around withChannels $ parallel $ do
                 connections <- Graph.getConnections loc'
                 return (inputEdge, defFoo, connections)
             withResult res $ \(inputEdge, defFoo, connections) -> do
-                let outputPorts = Map.elems $ Map.filter Port.isOutputPort $ inputEdge ^. Node.ports
-                outputPorts `shouldMatchList` [
+                let outPorts = Map.elems $ Map.filter (Port.isOutPort . view Port.portId) $ inputEdge ^. Node.ports
+                outPorts `shouldMatchList` [
                       Port.Port (Port.OutPortId (Port.Projection 0)) "a" TStar Port.Connected
                     , Port.Port (Port.OutPortId (Port.Projection 1)) "b" TStar Port.Connected
                     , Port.Port (Port.OutPortId (Port.Projection 2)) "c" TStar Port.NotConnected
                     ]
-                let inputPorts = Map.elems $ Map.filter Port.isInputPort $ defFoo ^. Node.ports
-                inputPorts `shouldMatchList` [
+                let inPorts = Map.elems $ Map.filter (Port.isInPort . view Port.portId) $ defFoo ^. Node.ports
+                inPorts `shouldMatchList` [
                       Port.Port (Port.InPortId (Port.Arg 0)) "a" TStar Port.NotConnected
                     , Port.Port (Port.InPortId (Port.Arg 1)) "b" TStar Port.NotConnected
                     , Port.Port (Port.InPortId (Port.Arg 2)) "c" TStar Port.NotConnected
@@ -693,8 +693,8 @@ spec = around withChannels $ parallel $ do
                 connections <- Graph.getConnections top
                 return (node, connections)
             withResult res $ \(node, connections) -> do
-                let inputPorts = Map.elems $ Map.filter Port.isInputPort $ node ^. Node.ports
-                inputPorts `shouldMatchList` [
+                let inPorts = Map.elems $ Map.filter (Port.isInPort . view Port.portId) $ node ^. Node.ports
+                inPorts `shouldMatchList` [
                       Port.Port (Port.InPortId (Port.Arg 0)) "a" TStar Port.NotConnected
                     , Port.Port (Port.InPortId (Port.Arg 1)) "b" TStar Port.Connected
                     ]
@@ -712,12 +712,12 @@ spec = around withChannels $ parallel $ do
                 defFoo <- Graph.withGraph top $ runASTOp $ GraphBuilder.buildNode u1
                 return (inputEdge, defFoo)
             withResult res $ \(inputEdge, node) -> do
-                let outputPorts = Map.elems $ Map.filter Port.isOutputPort $ inputEdge ^. Node.ports
-                outputPorts `shouldMatchList` [
+                let outPorts = Map.elems $ Map.filter (Port.isOutPort . view Port.portId) $ inputEdge ^. Node.ports
+                outPorts `shouldMatchList` [
                       Port.Port (Port.OutPortId (Port.Projection 0)) "a" TStar Port.Connected
                     ]
-                let inputPorts = Map.elems $ Map.filter Port.isInputPort $ node ^. Node.ports
-                inputPorts `shouldMatchList` [
+                let inPorts = Map.elems $ Map.filter (Port.isInPort . view Port.portId) $ node ^. Node.ports
+                inPorts `shouldMatchList` [
                       Port.Port (Port.InPortId (Port.Arg 0)) "a" TStar Port.NotConnected
                     ]
         it "renames port" $ \env -> do
@@ -731,8 +731,8 @@ spec = around withChannels $ parallel $ do
                 inputEdge <- buildInputEdge' loc' input
                 return inputEdge
             withResult res $ \inputEdge -> do
-                let outputPorts = Map.elems $ Map.filter Port.isOutputPort $ inputEdge ^. Node.ports
-                outputPorts `shouldMatchList` [ Port.Port (Port.OutPortId (Port.Projection 0)) "foo" TStar Port.Connected
+                let outPorts = Map.elems $ Map.filter (Port.isOutPort . view Port.portId) $ inputEdge ^. Node.ports
+                outPorts `shouldMatchList` [ Port.Port (Port.OutPortId (Port.Projection 0)) "foo" TStar Port.Connected
                                               , Port.Port (Port.OutPortId (Port.Projection 1)) "bar" TStar Port.NotConnected
                                               ]
         it "changes ports order" $ \env -> do
@@ -745,8 +745,8 @@ spec = around withChannels $ parallel $ do
                 inputEdge <- buildInputEdge' loc' input
                 return inputEdge
             withResult res $ \inputEdge -> do
-                let outputPorts = Map.elems $ Map.filter Port.isOutputPort $ inputEdge ^. Node.ports
-                outputPorts `shouldMatchList` [ Port.Port (Port.OutPortId (Port.Projection 0)) "b" TStar Port.NotConnected
+                let outPorts = Map.elems $ Map.filter (Port.isOutPort . view Port.portId) $ inputEdge ^. Node.ports
+                outPorts `shouldMatchList` [ Port.Port (Port.OutPortId (Port.Projection 0)) "b" TStar Port.NotConnected
                                               , Port.Port (Port.OutPortId (Port.Projection 1)) "c" TStar Port.NotConnected
                                               , Port.Port (Port.OutPortId (Port.Projection 2)) "a" TStar Port.Connected
                                               , Port.Port (Port.OutPortId (Port.Projection 3)) "d" TStar Port.NotConnected
@@ -769,8 +769,8 @@ spec = around withChannels $ parallel $ do
                       ]
                 return (inputEdge, connections, referenceConnections)
             withResult res $ \(inputEdge, connections, referenceConnections) -> do
-                let outputPorts = Map.elems $ Map.filter Port.isOutputPort $ inputEdge ^. Node.ports
-                outputPorts `shouldMatchList` [
+                let outPorts = Map.elems $ Map.filter (Port.isOutPort . view Port.portId) $ inputEdge ^. Node.ports
+                outPorts `shouldMatchList` [
                       Port.Port (Port.OutPortId (Port.Projection 0)) "a" TStar Port.Connected
                     , Port.Port (Port.OutPortId (Port.Projection 1)) "b" TStar Port.Connected
                     ]
@@ -803,12 +803,12 @@ spec = around withChannels $ parallel $ do
                 let referenceConnections = [(OutPortRef input (Port.Projection 0), InPortRef output (Port.Arg 0))]
                 return (inputEdge, defFoo, connections, referenceConnections, nodeIds)
             withResult res $ \(inputEdge, node, connections, referenceConnections, nodeIds) -> do
-                let outputPorts = Map.elems $ Map.filter Port.isOutputPort $ inputEdge ^. Node.ports
-                outputPorts `shouldMatchList` [
+                let outPorts = Map.elems $ Map.filter (Port.isOutPort . view Port.portId) $ inputEdge ^. Node.ports
+                outPorts `shouldMatchList` [
                       Port.Port (Port.OutPortId (Port.Projection 0)) "a" TStar Port.Connected
                     ]
-                let inputPorts = Map.elems $ Map.filter Port.isInputPort $ node ^. Node.ports
-                inputPorts `shouldMatchList` [
+                let inPorts = Map.elems $ Map.filter (Port.isInPort . view Port.portId) $ node ^. Node.ports
+                inPorts `shouldMatchList` [
                       Port.Port (Port.InPortId (Port.Arg 0)) "a" TStar Port.NotConnected
                     ]
                 connections `shouldMatchList` referenceConnections
@@ -826,8 +826,8 @@ spec = around withChannels $ parallel $ do
                 inputEdge <- buildInputEdge' loc' input
                 return inputEdge
             withResult res $ \inputEdge -> do
-              let outputPorts = Map.elems $ Map.filter Port.isOutputPort $ inputEdge ^. Node.ports
-              outputPorts `shouldMatchList` [
+              let outPorts = Map.elems $ Map.filter (Port.isOutPort . view Port.portId) $ inputEdge ^. Node.ports
+              outPorts `shouldMatchList` [
                     Port.Port (Port.OutPortId (Port.Projection 0)) "a" TStar Port.Connected
                   , Port.Port (Port.OutPortId (Port.Projection 1)) "b" TStar Port.Connected
                   ]

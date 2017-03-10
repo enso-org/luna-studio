@@ -26,7 +26,7 @@ fromNode :: Node -> NodeProperties
 fromNode node = NodeProperties (node ^. Node.nodeId)
                            (node ^. Node.ports)
                            (node ^. Node.name)
-                           (node ^. Node.isLiteral)
+                           (Node.isLiteral node)
                            (node ^. Node.nameEdit)
                            (node ^. Node.execTime)
                            (node ^. Node.visualizationsEnabled)

@@ -3,23 +3,22 @@ module Luna.Studio.React.View.Node.Body where
 
 import qualified Data.Aeson                             as Aeson
 import qualified Data.Map.Lazy                          as Map
-import           Empire.API.Data.Port                   (InPort (..), PortId (..))
-import           Luna.Studio.Action.Geometry            (countSameTypePorts, isPortSingle)
+import           Empire.API.Data.Port                   (InPort (Self), PortId (InPortId), isAll, isInPort)
 import           Luna.Studio.Data.Matrix                (translatePropertyValue2)
 import qualified Luna.Studio.Event.UI                   as UI
 import           Luna.Studio.Prelude
 import qualified Luna.Studio.React.Event.Node           as Node
 import           Luna.Studio.React.Model.App            (App)
 import qualified Luna.Studio.React.Model.Field          as Field
-import           Luna.Studio.React.Model.Node           (Node)
+import           Luna.Studio.React.Model.Node           (Node, countArgPorts, countOutPorts, isCollapsed)
 import qualified Luna.Studio.React.Model.Node           as Node
 import qualified Luna.Studio.React.Model.NodeProperties as Properties
 import qualified Luna.Studio.React.Model.Port           as Port
 import           Luna.Studio.React.Store                (Ref, dispatch)
 import           Luna.Studio.React.View.Field           (multilineField_)
-import           Luna.Studio.React.View.Style           (blurBackground_, selectionMark_)
 import           Luna.Studio.React.View.Node.Properties (nodeProperties_)
 import           Luna.Studio.React.View.Port            (portExpanded_, port_)
+import           Luna.Studio.React.View.Style           (blurBackground_, selectionMark_)
 import qualified Luna.Studio.React.View.Style           as Style
 import           Luna.Studio.React.View.Visualization   (visualization_)
 import           React.Flux
@@ -33,12 +32,15 @@ nodeBody = React.defineView objName $ \(ref, n) -> do
     let nodeId    = n ^. Node.nodeId
         pos       = n ^. Node.position
         nodePorts = Map.elems $ n ^. Node.ports
-        ports p   = forM_ p $ \port -> port_ ref port (countSameTypePorts port p) $ isPortSingle port p
+        ports p   = forM_ p $ \port -> port_ ref
+                                             port
+                                            (if isInPort $ port ^. Port.portId then countArgPorts n else countOutPorts n)
+                                            (isAll (port ^. Port.portId) && countArgPorts n + countOutPorts n == 1)
     div_
         [ "key"         $= "nodeBodyRoot"
         , onClick       $ \_ m -> dispatch ref $ UI.NodeEvent $ Node.Select m nodeId
         , onDoubleClick $ \_ _ -> dispatch ref $ UI.NodeEvent $ Node.Enter nodeId
-        , "className"   $= Style.prefixFromList ([ "node", if n ^. Node.isCollapsed then "node--collapsed" else "node--expanded" ]
+        , "className"   $= Style.prefixFromList ([ "node", if isCollapsed n then "node--collapsed" else "node--expanded" ]
                                                 ++ (if n ^. Node.isSelected  then ["node--selected"]  else []))
         , "style"       @= Aeson.object [ "transform" Aeson..= translatePropertyValue2 pos ]
         ] $ do
@@ -67,7 +69,7 @@ nodeBody = React.defineView objName $ \(ref, n) -> do
             [ "key"       $= "essentials"
             , "className" $= Style.prefix "node__essentials"
             ] $ do
-            if  n ^. Node.isCollapsed then do
+            if isCollapsed n then do
                 ports $ filter (\port -> (port ^. Port.portId) /= InPortId Self) nodePorts
                 ports $ filter (\port -> (port ^. Port.portId) == InPortId Self) nodePorts
             else do

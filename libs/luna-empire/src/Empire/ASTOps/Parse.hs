@@ -1,4 +1,4 @@
-{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE OverloadedStrings   #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
 module Empire.ASTOps.Parse (
@@ -8,19 +8,18 @@ module Empire.ASTOps.Parse (
 
 import           Empire.Prelude
 
-import           Data.List                    (partition)
-import qualified Data.Text                    as Text
+import           Data.List                             (partition)
+import qualified Data.Text                             as Text
 
-import           Empire.Data.AST              (NodeRef, astExceptionToException,
-                                               astExceptionFromException)
-import           Empire.ASTOps.Builder        (lams)
-import           Empire.ASTOp                 (ASTOp)
+import           Empire.ASTOp                          (ASTOp)
+import           Empire.ASTOps.Builder                 (lams)
+import           Empire.Data.AST                       (NodeRef, astExceptionFromException, astExceptionToException)
 
-import           Empire.API.Data.DefaultValue (PortDefault (..), Value (..))
+import           Empire.API.Data.PortDefault           (PortDefault (..), Value (..))
 
-import qualified Luna.IR as IR
+import qualified Luna.IR                               as IR
+import qualified Luna.Passes.Transform.Parsing.Parser  as Parser
 import qualified Luna.Passes.Transform.Parsing.Parsing as Parsing
-import qualified Luna.Passes.Transform.Parsing.Parser as Parser
 
 data ParserException e = ParserException e
     deriving (Show)

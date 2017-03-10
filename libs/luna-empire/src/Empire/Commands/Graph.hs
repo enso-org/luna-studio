@@ -16,7 +16,7 @@ module Empire.Commands.Graph
     , movePort
     , removePort
     , renamePort
-    , updateNodeExpression
+    , setNodeExpression
     , updateNodeMeta
     , updatePort
     , connect
@@ -30,7 +30,7 @@ module Empire.Commands.Graph
     , getGraph
     , getNodes
     , getConnections
-    , setDefaultValue
+    , setPortDefault
     , renameNode
     , dumpGraphViz
     , typecheck
@@ -61,7 +61,7 @@ import           Empire.Data.Layers              (Marker, NodeMarker(..))
 import           Empire.API.Data.Breadcrumb      as Breadcrumb (Breadcrumb(..), Named, BreadcrumbItem(..))
 import qualified Empire.API.Data.Connection      as Connection
 import           Empire.API.Data.Connection      (Connection (..))
-import           Empire.API.Data.DefaultValue    (PortDefault (Constant))
+import           Empire.API.Data.PortDefault     (PortDefault (Constant))
 import qualified Empire.API.Data.Graph           as APIGraph
 import           Empire.API.Data.GraphLocation   (GraphLocation (..))
 import           Empire.API.Data.Node            (Node (..), NodeId)
@@ -197,7 +197,7 @@ addPersistentNode n = case n ^. Node.nodeType of
     where
         setDefault nodeId (portId, port) = case port ^. Port.state of
             Port.WithDefault (Constant val) -> case portId of
-                (InPortId pid) -> setDefaultValue' (PortRef.toAnyPortRef nodeId (InPortId pid)) (Constant val)
+                (InPortId pid) -> setPortDefault' (PortRef.toAnyPortRef nodeId (InPortId pid)) (Constant val)
                 _ -> return ()
             _ -> return ()
 
@@ -294,8 +294,8 @@ renamePort loc portRef newName = withGraph loc $ runASTOp $ do
         _ -> throwM NotInputEdgeException
     GraphBuilder.buildConnections >>= \c -> GraphBuilder.buildInputEdge c nodeId
 
-updateNodeExpression :: GraphLocation -> NodeId -> Text -> Empire Node
-updateNodeExpression loc nodeId expr = withTC loc False $ do
+setNodeExpression :: GraphLocation -> NodeId -> Text -> Empire Node
+setNodeExpression loc nodeId expr = withTC loc False $ do
     parsedExpr <- runASTOp $ do
         (exprName, parsedExpr) <- ASTParse.parseExpr $ Text.unpack expr
         target                 <- ASTRead.getASTTarget nodeId
@@ -375,11 +375,11 @@ connectNoTC loc outPort inPort@(InPortRef nid _) = do
         Publisher.notifyNodeUpdate loc n
     return connection
 
-setDefaultValue :: GraphLocation -> AnyPortRef -> PortDefault -> Empire ()
-setDefaultValue loc portRef val = withTC loc False $ runASTOp $ setDefaultValue' portRef val
+setPortDefault :: GraphLocation -> AnyPortRef -> PortDefault -> Empire ()
+setPortDefault loc portRef val = withTC loc False $ runASTOp $ setPortDefault' portRef val
 
-setDefaultValue' :: ASTOp m => AnyPortRef -> PortDefault -> m ()
-setDefaultValue' portRef val = do
+setPortDefault' :: ASTOp m => AnyPortRef -> PortDefault -> m ()
+setPortDefault' portRef val = do
     parsed <- ASTParse.parsePortDefault val
     (nodeId, newRef) <- case portRef of
         InPortRef' (InPortRef nodeId port) -> do

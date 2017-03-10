@@ -35,7 +35,7 @@ import           Empire.Data.BreadcrumbHierarchy   (topLevelIDs)
 import           Empire.Data.Graph                 (Graph)
 import qualified Empire.Data.Graph                 as Graph
 
-import           Empire.API.Data.DefaultValue      (PortDefault (..), Value (..))
+import           Empire.API.Data.PortDefault       (PortDefault (..), Value (..))
 import qualified Empire.API.Data.Graph             as API
 import           Empire.API.Data.Node              (NodeId)
 import qualified Empire.API.Data.Node              as API

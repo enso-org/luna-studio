@@ -21,21 +21,12 @@ data Inverse = Inverse { _prevName :: Text
 type Response = Response.SimpleResponse Request Inverse
 instance Response.ResponseResult Request Inverse ()
 
-data Update   = Update { _location' :: GraphLocation
-                       , _nodeId'   :: NodeId
-                       , _name'     :: Text
-                       } deriving (Generic, Eq, NFData, Show)
-
-
 makeLenses ''Request
-makeLenses ''Update
 makeLenses ''Inverse
 instance Binary Request
-instance Binary Update
 instance Binary Inverse
 instance G.GraphRequest Request where location = location
 
 topicPrefix = "empire.graph.node.rename"
 instance T.MessageTopic (R.Request Request)  where topic _ = topicPrefix <> T.request
 instance T.MessageTopic Response where topic _ = topicPrefix <> T.response
-instance T.MessageTopic Update   where topic _ = topicPrefix <> T.update

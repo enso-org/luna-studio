@@ -3,8 +3,6 @@ module Luna.Studio.Handler.Camera
     ) where
 
 import           Data.Vector                        (Vector2 (Vector2))
-import           React.Flux                         (MouseEvent, wheelDeltaX, wheelDeltaY)
-
 import           Luna.Studio.Action.Camera          (centerGraph, panCamera, panDown, panDrag, panLeft, panRight, panUp, resetCamera,
                                                      resetPan, resetZoom, startPanDrag, startZoomDrag, stopPanDrag, stopZoomDrag, wheelZoom,
                                                      zoomDrag, zoomIn, zoomOut)
@@ -19,6 +17,7 @@ import qualified Luna.Studio.React.Event.App        as App
 import qualified Luna.Studio.React.Event.NodeEditor as NodeEditor
 import           Luna.Studio.State.Action           (Action (continue))
 import           Luna.Studio.State.Global           (State)
+import           React.Flux                         (MouseEvent, wheelDeltaX, wheelDeltaY)
 
 
 

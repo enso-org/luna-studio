@@ -11,7 +11,6 @@ import           Data.ByteString.Lazy              (fromStrict, toStrict)
 import qualified Data.Text                         as Text
 import qualified Data.UUID.V4                      as UUID
 import qualified Empire.API.Data.Breadcrumb        as Breadcrumb
-import           Empire.API.Data.DefaultValue      (PortDefault (Constant), Value (DoubleValue))
 import           Empire.API.Data.GraphLocation     (GraphLocation)
 import qualified Empire.API.Data.GraphLocation     as GraphLocation
 import           Empire.API.Data.Node              (NodeId)
@@ -19,17 +18,18 @@ import qualified Empire.API.Data.Node              as Node
 import qualified Empire.API.Data.NodeMeta          as NodeMeta
 import qualified Empire.API.Data.NodeMeta          as NodeMeta
 import           Empire.API.Data.Port              (InPort (..), OutPort)
+import           Empire.API.Data.PortDefault       (PortDefault (Constant), Value (DoubleValue))
 import           Empire.API.Data.PortRef           (AnyPortRef (..), InPortRef (..), OutPortRef (..))
 import           Empire.API.Data.Project           (ProjectId)
+import qualified Empire.API.Graph.AddConnection    as AddConnection
 import qualified Empire.API.Graph.AddNode          as AddNode
-import qualified Empire.API.Graph.Connect          as Connect
 import qualified Empire.API.Graph.DumpGraphViz     as DumpGraphViz
 import qualified Empire.API.Graph.GetProgram       as GetProgram
 import qualified Empire.API.Graph.RemoveConnection as RemoveConnection
 import qualified Empire.API.Graph.RemoveNodes      as RemoveNodes
-import qualified Empire.API.Graph.SetDefaultValue  as SetDefaultValue
+import qualified Empire.API.Graph.SetNodesMeta     as SetNodesMeta
+import qualified Empire.API.Graph.SetPortDefault   as SetPortDefault
 import qualified Empire.API.Graph.TypeCheck        as TypeCheck
-import qualified Empire.API.Graph.UpdateNodeMeta   as UpdateNodeMeta
 import qualified Empire.API.Library.CreateLibrary  as CreateLibrary
 import qualified Empire.API.Library.ListLibraries  as ListLibraries
 import qualified Empire.API.Project.CreateProject  as CreateProject
@@ -142,16 +142,16 @@ removeNode :: EP.BusEndPoints -> GraphLocation -> NodeId -> IO ()
 removeNode endPoints graphLocation nodeId = sendToBus endPoints $ RemoveNodes.Request graphLocation [nodeId]
 
 updateNodeMeta :: EP.BusEndPoints -> GraphLocation -> NodeId -> Double -> Double -> Bool -> IO ()
-updateNodeMeta endPoints graphLocation nodeId x y req = sendToBus endPoints $ UpdateNodeMeta.Request graphLocation [(nodeId, NodeMeta.NodeMeta (x, y) req)]
+updateNodeMeta endPoints graphLocation nodeId x y req = sendToBus endPoints $ SetNodesMeta.Request graphLocation [(nodeId, NodeMeta.NodeMeta (x, y) req)]
 
 connect :: EP.BusEndPoints -> GraphLocation -> NodeId -> OutPort -> NodeId -> InPort -> IO ()
-connect endPoints graphLocation srcNodeId outPort dstNodeId inPort = sendToBus endPoints $ Connect.Request graphLocation (Left $ OutPortRef srcNodeId outPort) (Left $ InPortRef dstNodeId inPort)
+connect endPoints graphLocation srcNodeId outPort dstNodeId inPort = sendToBus endPoints $ AddConnection.Request graphLocation (Left $ OutPortRef srcNodeId outPort) (Left $ InPortRef dstNodeId inPort)
 
 disconnect :: EP.BusEndPoints -> GraphLocation -> NodeId -> InPort -> IO ()
 disconnect endPoints graphLocation  dstNodeId inPort = sendToBus endPoints $ RemoveConnection.Request graphLocation (InPortRef dstNodeId inPort)
 
 setPortValue :: EP.BusEndPoints -> GraphLocation -> NodeId -> Int -> Double -> IO ()
-setPortValue endPoints graphLocation nodeId portId value = sendToBus endPoints $ SetDefaultValue.Request graphLocation (InPortRef' $ InPortRef nodeId (Arg portId)) (Constant $ DoubleValue value)
+setPortValue endPoints graphLocation nodeId portId value = sendToBus endPoints $ SetPortDefault.Request graphLocation (InPortRef' $ InPortRef nodeId (Arg portId)) (Constant $ DoubleValue value)
 
 getProgram :: EP.BusEndPoints -> GraphLocation -> IO ()
 getProgram endPoints graphLocation = sendToBus endPoints $ GetProgram.Request graphLocation

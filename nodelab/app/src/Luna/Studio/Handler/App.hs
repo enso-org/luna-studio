@@ -5,9 +5,10 @@ module Luna.Studio.Handler.App
 import           Luna.Studio.Prelude
 
 import qualified JS.Config                       as Config
+import           Luna.Studio.Action.Basic        (updateScene)
 import qualified Luna.Studio.Action.Batch        as Batch
 import           Luna.Studio.Action.Command      (Command)
-import           Luna.Studio.Action.Graph.Update (updateScene)
+import           Luna.Studio.Action.State.Action (endAll)
 import           Luna.Studio.Event.Event         (Event (Init, Shortcut, UI))
 import           Luna.Studio.Event.Mouse         (mousePosition)
 import qualified Luna.Studio.Event.Shortcut      as Shortcut
@@ -28,5 +29,5 @@ handle _                                     = Nothing
 
 handleCommand :: Shortcut.Command -> Command State ()
 handleCommand = \case
-    Shortcut.Cancel -> Global.endAll
+    Shortcut.Cancel -> endAll
     _               -> return ()

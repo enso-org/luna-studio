@@ -44,6 +44,7 @@ valueType = port . API.valueType
 state :: Lens' Port API.PortState
 state = port . API.state
 
+
 fromPorts :: NodeId -> [API.Port] -> [Port]
 fromPorts nodeId ports = fromPort nodeId <$> ports
 

@@ -10,19 +10,21 @@ module Luna.Studio.Action.Camera.Zoom
      ) where
 
 import           Data.Matrix                           (getElem, setElem)
-import           Data.ScreenPosition                   (ScreenPosition, Vector2, vector, x, y)
-import           Luna.Studio.Action.Camera.Modify      (modifyCamera)
-import           Luna.Studio.Action.Camera.Screen      (getScreenCenter)
+import           Data.ScreenPosition                   (ScreenPosition, vector, x, y)
+import           Data.Vector                           (Vector2)
+import           Luna.Studio.Action.Basic              (modifyCamera)
 import           Luna.Studio.Action.Command            (Command)
+import           Luna.Studio.Action.State.Action       (beginActionWithKey, continueActionWithKey, removeActionFromState,
+                                                        updateActionWithKey)
+import           Luna.Studio.Action.State.NodeEditor   (getNodeEditor, modifyNodeEditor)
+import           Luna.Studio.Action.State.Scene        (getScreenCenter)
 import           Luna.Studio.Data.CameraTransformation (logicalToScreen, screenToLogical)
 import           Luna.Studio.Data.Matrix               (homothetyMatrix, invertedHomothetyMatrix)
 import           Luna.Studio.Prelude
-import qualified Luna.Studio.React.Model.NodeEditor    as NodeEditor
-import           Luna.Studio.State.Action              (Action (begin, continue, end, update), ZoomDrag (ZoomDrag), zoomDragAction)
-import qualified Luna.Studio.State.Action              as Action
-import           Luna.Studio.State.Global              (State, beginActionWithKey, continueActionWithKey, removeActionFromState,
-                                                        updateActionWithKey)
-import qualified Luna.Studio.State.Global              as Global
+import           Luna.Studio.React.Model.NodeEditor    (screenTransform)
+import           Luna.Studio.State.Action              (Action (begin, continue, end, update), ZoomDrag (ZoomDrag), zoomDragAction,
+                                                        zoomDragFixedPoint, zoomDragPreviousPos)
+import           Luna.Studio.State.Global              (State)
 
 
 instance Action (Command State) ZoomDrag where
@@ -46,7 +48,7 @@ restrictFactor scale factor
 
 zoomCamera :: ScreenPosition -> Double -> Command State ()
 zoomCamera zoomCenter factor = do
-    transformMatrix <- view (NodeEditor.screenTransform . logicalToScreen) <$> Global.getNodeEditor
+    transformMatrix <- view (screenTransform . logicalToScreen) <$> getNodeEditor
     let s = restrictFactor (getElem 1 1 transformMatrix) factor
     modifyCamera (homothetyMatrix zoomCenter s) (invertedHomothetyMatrix zoomCenter s)
 
@@ -60,18 +62,18 @@ startZoomDrag :: ScreenPosition -> Command State ()
 startZoomDrag pos = begin $ ZoomDrag pos pos
 
 zoomDrag :: ScreenPosition -> ZoomDrag -> Command State ()
-zoomDrag actPos state = do
-    let fixedPoint = view Action.zoomDragFixedPoint  state
-        prevPos    = view Action.zoomDragPreviousPos state
+zoomDrag actPos action = do
+    let fixedPoint = action ^. zoomDragFixedPoint
+        prevPos    = action ^. zoomDragPreviousPos
         delta      = actPos ^. vector - prevPos ^. vector
         scale      = 1 + (delta ^. x - delta ^. y) / dragZoomSpeed
     update $ ZoomDrag fixedPoint actPos
     zoomCamera fixedPoint scale
 
 resetZoom :: Command State ()
-resetZoom = Global.modifyNodeEditor $ do
-    NodeEditor.screenTransform . logicalToScreen %= (setElem 1 (1,1) . setElem 1 (2,2))
-    NodeEditor.screenTransform . screenToLogical %= (setElem 1 (1,1) . setElem 1 (2,2))
+resetZoom = modifyNodeEditor $ do
+    screenTransform . logicalToScreen %= (setElem 1 (1,1) . setElem 1 (2,2))
+    screenTransform . screenToLogical %= (setElem 1 (1,1) . setElem 1 (2,2))
 
 wheelZoom :: ScreenPosition -> Vector2 Double -> Command State ()
 wheelZoom pos delta = zoomCamera pos delta' where

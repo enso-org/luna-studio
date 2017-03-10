@@ -6,29 +6,29 @@ module Luna.Studio.React.View.Edge
     , focusPortLabel
     ) where
 
-import qualified Data.Aeson                    as Aeson
-import qualified Data.Map.Lazy                 as Map
-import           Data.Position                 (x, y)
-import qualified Empire.API.Data.PortRef       as PortRef
-import qualified JS.Config                     as Config
-import           JS.Scene                      (inputSidebarId, outputSidebarId)
-import qualified JS.UI                         as UI
-import           Luna.Studio.Action.Geometry   (getPortNumber, isPortInput, lineHeight)
-import qualified Luna.Studio.Event.UI          as UI
+import qualified Data.Aeson                        as Aeson
+import qualified Data.Map.Lazy                     as Map
+import           Data.Position                     (y)
+import           Empire.API.Data.Port              (getPortNumber, isInPort)
+import qualified JS.Config                         as Config
+import           JS.Scene                          (inputSidebarId, outputSidebarId)
+import qualified JS.UI                             as UI
+import qualified Luna.Studio.Event.UI              as UI
 import           Luna.Studio.Prelude
-import qualified Luna.Studio.React.Event.Edge  as Edge
-import           Luna.Studio.React.Model.App   (App)
-import qualified Luna.Studio.React.Model.Field as Field
-import           Luna.Studio.React.Model.Node  (Node, isEdge, isInputEdge)
-import qualified Luna.Studio.React.Model.Node  as Node
-import           Luna.Studio.React.Model.Port  (DraggedPort, Port (..))
-import qualified Luna.Studio.React.Model.Port  as Port
-import           Luna.Studio.React.Store       (Ref, dispatch)
-import           Luna.Studio.React.View.Field  (singleField_)
-import           Luna.Studio.React.View.Port   (handlers, jsShow2)
-import qualified Luna.Studio.React.View.Style  as Style
-import           Luna.Studio.React.View.Style  (plainPath, plainRect)
-import           React.Flux                    hiding (view)
+import qualified Luna.Studio.React.Event.Edge      as Edge
+import           Luna.Studio.React.Model.App       (App)
+import           Luna.Studio.React.Model.Constants (lineHeight)
+import qualified Luna.Studio.React.Model.Field     as Field
+import           Luna.Studio.React.Model.Node      (Node, isEdge, isInputEdge)
+import qualified Luna.Studio.React.Model.Node      as Node
+import           Luna.Studio.React.Model.Port      (DraggedPort, Port (..))
+import qualified Luna.Studio.React.Model.Port      as Port
+import           Luna.Studio.React.Store           (Ref, dispatch)
+import           Luna.Studio.React.View.Field      (singleField_)
+import           Luna.Studio.React.View.Port       (handlers, jsShow2)
+import           Luna.Studio.React.View.Style      (plainPath, plainRect)
+import qualified Luna.Studio.React.View.Style      as Style
+import           React.Flux                        hiding (view)
 
 
 name :: Node -> JSString
@@ -38,12 +38,12 @@ sendAddPortEvent :: Ref App -> Node -> [SomeStoreAction]
 sendAddPortEvent ref node = dispatch ref (UI.EdgeEvent $ Edge.AddPort (node ^. Node.nodeId))
 
 edgeSidebar_ :: Ref App -> Maybe DraggedPort -> Node -> ReactElementM ViewEventHandler ()
-edgeSidebar_ ref mayDraggedPort node = when (isEdge node) $ do
-    let ports   = node ^. Node.ports . to Map.elems
-        nodeId  = node ^. Node.nodeId
-        isPortDragged = Just nodeId == (view ( Port.draggedPort
-                                             . Port.portRef
-                                             . PortRef.nodeId) <$> mayDraggedPort)
+edgeSidebar_ ref _mayDraggedPort node = when (isEdge node) $ do
+    let ports         = node ^. Node.ports . to Map.elems
+        nodeId        = node ^. Node.nodeId
+        -- isPortDragged = Just nodeId == ( view ( Port.draggedPort
+        --                                       . Port.portRef
+        --                                       . PortRef.nodeId ) <$> mayDraggedPort )
     div_
         [ "key"       $= name node
         , "id"        $= if isInputEdge node then inputSidebarId else outputSidebarId
@@ -113,15 +113,15 @@ edgePort_ ref p = when (p ^. Port.visible) $ do
     let portRef   = p ^. Port.portRef
         portId    = p ^. Port.portId
         color     = convert $ p ^. Port.color
-        num       = getPortNumber p
+        num       = getPortNumber portId
         highlight = if p ^. Port.highlight then [ "hover" ] else []
-        classes   = if isPortInput p then [ "port", "edgeport", "edgeport--o", "edgeport--o--" <> show (num + 1) ] ++ highlight
-                                     else [ "port", "edgeport", "edgeport--i", "edgeport--i--" <> show (num + 1) ] ++ highlight
+        classes   = if isInPort portId then [ "port", "edgeport", "edgeport--o", "edgeport--o--" <> show (num + 1) ] ++ highlight
+                                       else [ "port", "edgeport", "edgeport--i", "edgeport--i--" <> show (num + 1) ] ++ highlight
     div_
         [ "key"       $= ( jsShow portId <> "-port-" <> jsShow num )
         , "className" $= Style.prefixFromList classes
         ] $ do
-        if isPortInput p then return () else
+        if isInPort portId then return () else
             svg_
                 [ "className" $= Style.prefixFromList [ "edgeport__svg", "edgeport__svg--inbetween" ]
                 ] $

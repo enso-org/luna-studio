@@ -12,14 +12,15 @@ import           Control.Arrow                                  ((***))
 import qualified Data.Aeson                                     as Aeson
 import           Data.List.Split                                (wordsBy)
 import           Data.Position                                  (Position)
-import           Data.Size                                      (Size (Size), Vector2 (Vector2))
+import           Data.Size                                      (Size (Size))
 import qualified Data.Text                                      as Text
+import           Data.Vector                                    (Vector2 (Vector2))
 import           React.Flux                                     hiding (image_)
 import qualified React.Flux                                     as React
 
-import           Empire.API.Data.DefaultValue                   (Value (..))
-import qualified Empire.API.Data.DefaultValue                   as DefaultValue
 import qualified Empire.API.Data.Error                          as LunaError
+import           Empire.API.Data.PortDefault                    (Value (..))
+import qualified Empire.API.Data.PortDefault                    as PortDefault
 import           Empire.API.Data.TypeRep                        (TypeRep)
 import           Empire.API.Graph.NodeResultUpdate              (NodeValue)
 import qualified Empire.API.Graph.NodeResultUpdate              as NodeResult
@@ -128,7 +129,7 @@ nodeValue_ ref nodeId mayPos visIx value = do
         case value of
             DataFrame    cols -> do
                 let heads  = convert . fst <$> cols
-                    cols'  = fmap DefaultValue.stringify . snd <$> cols
+                    cols'  = fmap PortDefault.stringify . snd <$> cols
                     rows   = transpose cols'
                     widget = DataFrame.create heads rows
                 dataFrame_ visIx widget
