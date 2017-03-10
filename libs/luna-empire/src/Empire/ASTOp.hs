@@ -22,8 +22,10 @@ import           Control.Monad.Catch  (MonadCatch(..))
 import           Control.Monad.State  (StateT, runStateT, get, put)
 import qualified Control.Monad.State.Dependent as DepState
 import qualified Data.Map             as Map
+import           Data.Foldable        (toList)
 import           Empire.Data.Graph    (ASTState(..), Graph, withVis)
-import qualified Empire.Data.Graph    as Graph (ast, nodeMapping, getAnyRef)
+import qualified Empire.Data.Graph    as Graph (ast, breadcrumbHierarchy)
+import qualified Empire.Data.BreadcrumbHierarchy as BH
 import           Empire.Data.Layers   (Marker, Meta,
                                       InputsLayer, TypeLayer, TCData)
 import           Empire.Empire        (Command)
@@ -115,7 +117,12 @@ runASTOp pass = runPass (return ()) pass
 
 runAliasAnalysis :: Command Graph ()
 runAliasAnalysis = do
-    roots <- uses Graph.nodeMapping $ map Graph.getAnyRef . Map.elems
+    --TODO[MK]: AA is broken, fix it and then just pass BH.body here
+    items <- uses (Graph.breadcrumbHierarchy . BH.children) toList
+    let getPtr it = case it ^. BH.self of
+          Just (_, r) -> BH.getAnyRef r
+        roots = getPtr <$> items
+
     let inits = do
             Pass.setAttr (getTypeDesc @UnresolvedVars)   $ UnresolvedVars   []
             Pass.setAttr (getTypeDesc @UnresolvedConses) $ UnresolvedConses []

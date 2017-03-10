@@ -9,7 +9,6 @@
 module Empire.Commands.Graph
     ( addNode
     , addNodeCondTC
-    , addPersistentNode
     , addPort
     , addSubgraph
     , removeNodes
@@ -26,6 +25,7 @@ module Empire.Commands.Graph
     , decodeLocation
     , disconnect
     , getNodeMeta
+    , getNodeIdSequence
     , getCode
     , getGraph
     , getNodes
@@ -36,7 +36,6 @@ module Empire.Commands.Graph
     , typecheck
     , withTC
     , withGraph
-    , getNodeIdSequence
     ) where
 
 import           Control.Monad                 (forM, forM_)
@@ -46,6 +45,7 @@ import           Data.Coerce                   (coerce)
 import           Data.List                     (sort)
 import qualified Data.Map                      as Map
 import           Data.Maybe                    (catMaybes)
+import           Data.Foldable                 (toList)
 import           Data.Text                     (Text)
 import qualified Data.Text                     as Text
 import qualified Data.UUID                     as UUID
@@ -53,7 +53,7 @@ import qualified Data.UUID.V4                  as UUID (nextRandom)
 import           Empire.Prelude
 
 import           Empire.Data.AST                 (NodeRef, NotInputEdgeException (..), NotUnifyException)
-import           Empire.Data.BreadcrumbHierarchy (addID, addWithLeafs, removeID, topLevelIDs)
+import qualified Empire.Data.BreadcrumbHierarchy as BH
 import           Empire.Data.Graph               (Graph)
 import qualified Empire.Data.Graph               as Graph
 import           Empire.Data.Layers              (Marker, NodeMarker(..))
@@ -108,25 +108,28 @@ addNode loc uuid expr meta = withTC loc False $ addNodeNoTC loc uuid expr meta
 
 addNodeNoTC :: GraphLocation -> NodeId -> Text -> NodeMeta -> Command Graph Node
 addNodeNoTC loc uuid expr meta = do
-    (parsedRef, refNode) <- runASTOp $ do
+    ((parsedRef, refNode), nodeItem) <- runASTOp $ do
         newNodeName <- generateNodeName
         parsedNode <- AST.addNode uuid newNodeName (Text.unpack expr)
-        Graph.nodeMapping . at uuid ?= Graph.MatchNode (parsedNode ^. _2)
-        return parsedNode
+        let nodeItem = BH.BItem Map.empty Nothing (Just (uuid, BH.MatchNode $ parsedNode ^. _2)) Nothing
+        Graph.breadcrumbHierarchy . BH.children . at uuid ?= nodeItem
+        return (parsedNode, nodeItem)
     runAliasAnalysis
     node <- runASTOp $ do
-        parsedIsLambda <- ASTRead.isLambda parsedRef
         AST.writeMeta refNode meta
+        parsedIsLambda <- ASTRead.isLambda parsedRef
         node <- GraphBuilder.buildNode uuid
-        if parsedIsLambda then do
-            lambdaUUID <- liftIO $ UUID.nextRandom
-            lambdaOutput <- ASTRead.getLambdaOutputRef parsedRef
+        when parsedIsLambda $ do
+            lambdaUUID             <- liftIO $ UUID.nextRandom
+            lambdaOutput           <- ASTRead.getLambdaOutputRef parsedRef
             outputIsOneOfTheInputs <- AST.isTrivialLambda parsedRef
-            when (not outputIsOneOfTheInputs) $ Graph.nodeMapping . at lambdaUUID ?= Graph.AnonymousNode lambdaOutput
-            Graph.breadcrumbHierarchy %= addWithLeafs (node ^. Node.nodeId)
-                (if outputIsOneOfTheInputs then [] else [lambdaUUID])
+            let anonOutput = if   not outputIsOneOfTheInputs
+                             then Just $ BH.BItem Map.empty Nothing (Just (lambdaUUID, BH.AnonymousNode lambdaOutput)) Nothing
+                             else Nothing
+                lamItem    = nodeItem & BH.children . at lambdaUUID .~ anonOutput
+                                      & BH.body ?~ lambdaOutput
+            Graph.breadcrumbHierarchy . BH.children . at uuid  ?= lamItem
             IR.writeLayer @Marker (Just $ NodeMarker lambdaUUID) lambdaOutput
-        else Graph.breadcrumbHierarchy %= addID (node ^. Node.nodeId)
         updateNodeSequence
         return node
     Publisher.notifyNodeUpdate loc node
@@ -139,16 +142,15 @@ updateNodeSequence = do
 
 makeCurrentSeq :: ASTOp m => m (Maybe NodeRef)
 makeCurrentSeq = do
-  allNodes   <- uses Graph.breadcrumbHierarchy topLevelIDs
+  allNodes   <- uses Graph.breadcrumbHierarchy BH.topLevelIDs
   sortedRefs <- AST.sortByPosition allNodes
   AST.makeSeq sortedRefs
 
 updateGraphSeq :: ASTOp m => Maybe NodeRef -> m ()
 updateGraphSeq newSeq = do
-    lambda <- use Graph.insideNode
+    lambda <- ASTRead.getCurrentASTTarget
     case lambda of
-        Just outerLambdaNode -> do
-            outerLambda <- ASTRead.getASTTarget outerLambdaNode
+        Just outerLambda -> do
             outerBody   <- ASTRead.getLambdaBodyRef outerLambda
             output      <- ASTRead.getLambdaOutputRef outerLambda
             case newSeq of
@@ -165,49 +167,30 @@ updateGraphSeq newSeq = do
                     firstNonLambda <- ASTRead.getFirstNonLambdaRef outerLambda
                     IR.replaceNode firstNonLambda output
         Nothing              -> do
-            oldSeq <- use Graph.topLevelSeq
+            oldSeq <- use $ Graph.breadcrumbHierarchy . BH.body
             when (oldSeq /= newSeq) $ mapM_ ASTRemove.removeSubtree oldSeq
-            Graph.topLevelSeq .= newSeq
+            Graph.breadcrumbHierarchy . BH.body .= newSeq
+
+-- TODO[MK]: Figure out the logic of seqing and migrate to a uniform solution
+getNodeIdSequence :: GraphLocation -> Empire [NodeId]
+getNodeIdSequence loc = withGraph loc $ runASTOp $ do
+    lref <- ASTRead.getCurrentASTTarget
+    nodeSeq <- do
+        bodySeq <- case lref of
+            Just l -> ASTRead.getLambdaBodyRef l
+            _      -> use $ Graph.breadcrumbHierarchy . BH.body
+        case bodySeq of
+            Just b -> AST.readSeq b
+            _      -> return []
+    catMaybes <$> mapM nodeIdInsideLambda nodeSeq
 
 nodeIdInsideLambda :: ASTOp m => NodeRef -> m (Maybe NodeId)
 nodeIdInsideLambda node = (ASTRead.getVarNode node >>= ASTRead.getNodeId) `catch`
     (\(_e :: NotUnifyException) -> return Nothing)
 
-getNodeIdSequence :: GraphLocation -> Empire [NodeId]
-getNodeIdSequence loc = withGraph loc $ runASTOp $ do
-    lambda  <- use Graph.insideNode
-    nodeSeq <- do
-        bodySeq <- case lambda of
-            Just l -> ASTRead.getASTTarget l >>= ASTRead.getLambdaBodyRef
-            _      -> use Graph.topLevelSeq
-        case bodySeq of
-          Just b -> AST.readSeq b
-          _      -> return []
-    catMaybes <$> mapM nodeIdInsideLambda nodeSeq
-
-addPersistentNode :: ASTOp m => Node -> m NodeId
-addPersistentNode n = case n ^. Node.nodeType of
-    Node.ExpressionNode expr -> do
-        let newNodeId = n ^. Node.nodeId
-        (parsedRef, refNode) <- AST.addNode newNodeId (Text.unpack $ n ^. Node.name) (Text.unpack expr)
-        AST.writeMeta refNode (n ^. Node.nodeMeta)
-        Graph.nodeMapping . at newNodeId ?= Graph.MatchNode refNode
-        lambdaUUID <- liftIO $ UUID.nextRandom
-        Graph.nodeMapping . at lambdaUUID ?= Graph.AnonymousNode parsedRef
-        mapM_ (setDefault newNodeId) (Map.toList $ n ^. Node.ports)
-        return newNodeId
-    _ -> return UUID.nil
-    where
-        setDefault nodeId (portId, port) = case port ^. Port.state of
-            Port.WithDefault (Constant val) -> case portId of
-                (InPortId pid) -> setDefaultValue' (PortRef.toAnyPortRef nodeId (InPortId pid)) (Constant val)
-                _ -> return ()
-            _ -> return ()
-
 addPort :: GraphLocation -> NodeId -> Empire Node
 addPort loc nid = withGraph loc $ runASTOp $ do
-    Just lambda <- use Graph.insideNode
-    ref   <- GraphUtils.getASTTarget lambda
+    Just ref <- ASTRead.getCurrentASTTarget
     edges <- GraphBuilder.getEdgePortMapping
     when ((fst <$> edges) /= Just nid) $ throwM NotInputEdgeException
     ASTModify.addLambdaArg ref
@@ -253,7 +236,7 @@ removeNodes :: GraphLocation -> [NodeId] -> Empire ()
 removeNodes loc nodeIds = do
     forM_ nodeIds $ \nodeId -> do
         children <- withTC (loc `descendInto` nodeId) False $ do
-            uses Graph.breadcrumbHierarchy topLevelIDs
+            uses Graph.breadcrumbHierarchy BH.topLevelIDs
         removeNodes (loc `descendInto` nodeId) children
     withTC loc False $ runASTOp $ do
         forM_ nodeIds removeNodeNoTC
@@ -264,14 +247,13 @@ removeNodeNoTC nodeId = do
     astRef <- GraphUtils.getASTPointer nodeId
     obsoleteEdges <- getOutEdges nodeId
     mapM_ disconnectPort obsoleteEdges
-    Graph.nodeMapping %= Map.delete nodeId
-    Graph.breadcrumbHierarchy %= removeID nodeId
+    Graph.breadcrumbHierarchy . BH.children . at nodeId .= Nothing
 
 removePort :: GraphLocation -> AnyPortRef -> Empire Node
 removePort loc portRef = withGraph loc $ runASTOp $ do
     let nodeId = portRef ^. PortRef.nodeId
-    Just lambda <- use Graph.insideNode
-    ref <- GraphUtils.getASTTarget lambda
+    Just lambda <- preuse $ Graph.breadcrumbHierarchy . BH.self . _Just . _1
+    Just ref    <- ASTRead.getCurrentASTTarget
     edges <- GraphBuilder.getEdgePortMapping
     newRef <- case edges of
         Just (input, _output) -> do
@@ -284,22 +266,20 @@ removePort loc portRef = withGraph loc $ runASTOp $ do
 movePort :: GraphLocation -> AnyPortRef -> Int -> Empire Node
 movePort loc portRef newPosition = withGraph loc $ runASTOp $ do
     let nodeId = portRef ^. PortRef.nodeId
-    Just lambda <- use Graph.insideNode
-    ref         <- GraphUtils.getASTTarget lambda
+    Just ref    <- ASTRead.getCurrentASTTarget
     edges       <- GraphBuilder.getEdgePortMapping
     newRef      <- case edges of
         Just (input, _) -> do
             if nodeId == input then ASTModify.moveLambdaArg ref (portRef ^. PortRef.portId) newPosition
                                else throwM NotInputEdgeException
         _ -> throwM NotInputEdgeException
-    when (ref /= newRef) $ GraphUtils.rewireNode lambda newRef
+    when (ref /= newRef) $ ASTModify.rewireCurrentNode newRef
     GraphBuilder.buildConnections >>= \c -> GraphBuilder.buildInputEdge c nodeId
 
 renamePort :: GraphLocation -> AnyPortRef -> String -> Empire Node
 renamePort loc portRef newName = withGraph loc $ runASTOp $ do
     let nodeId = portRef ^. PortRef.nodeId
-    Just lambda <- use Graph.insideNode
-    ref         <- GraphUtils.getASTTarget lambda
+    Just ref    <- ASTRead.getCurrentASTTarget
     edges       <- GraphBuilder.getEdgePortMapping
     _newRef     <- case edges of
         Just (input, _) -> do
@@ -323,11 +303,14 @@ updateNodeExpression loc nodeId expr = withTC loc False $ do
         when parsedIsLambda $ do
             lambdaUUID             <- liftIO $ UUID.nextRandom
             lambdaOutput           <- ASTRead.getLambdaOutputRef parsedExpr
-            outputIsOneOfTheInputs <- AST.isTrivialLambda parsedExpr
-            when (not outputIsOneOfTheInputs) $ do
-                Graph.nodeMapping . at lambdaUUID ?= Graph.AnonymousNode lambdaOutput
-                Graph.breadcrumbHierarchy %= removeID nodeId
-                Graph.breadcrumbHierarchy %= addWithLeafs nodeId [lambdaUUID]
+            outputIsOneOfTheInputs <- AST.isTrivialLambda        parsedExpr
+            Just nodeItem          <- use $ Graph.breadcrumbHierarchy . BH.children . at nodeId
+            let anonOutput = if   not outputIsOneOfTheInputs
+                             then Just $ BH.BItem Map.empty Nothing (Just (lambdaUUID, BH.AnonymousNode lambdaOutput)) Nothing
+                             else Nothing
+                lamItem    = nodeItem & BH.children . at lambdaUUID .~ anonOutput
+                                      & BH.body ?~ lambdaOutput
+            Graph.breadcrumbHierarchy . BH.children . at nodeId  ?= lamItem
             IR.writeLayer @Marker (Just $ NodeMarker lambdaUUID) lambdaOutput
         updateNodeSequence
     node <- runASTOp $ GraphBuilder.buildNode nodeId
@@ -427,10 +410,9 @@ getNodeMeta loc nodeId = withGraph loc $ runASTOp $ do
 
 getCode :: GraphLocation -> Empire String
 getCode loc = withGraph loc $ runASTOp $ do
-    inFunction <- use Graph.insideNode
-    function <- forM inFunction ASTPrint.printFunction
+    function <- ASTPrint.printCurrentFunction
     returnedNodeId <- GraphBuilder.nodeConnectedToOutput
-    allNodes <- uses Graph.breadcrumbHierarchy topLevelIDs
+    allNodes <- uses Graph.breadcrumbHierarchy BH.topLevelIDs
     refs     <- mapM GraphUtils.getASTPointer $ flip filter allNodes $ \nid ->
         case returnedNodeId of
             Just id' -> id' /= nid
@@ -515,10 +497,9 @@ unApp nodeId pos = do
             Nothing              -> False
             Just (_, outputEdge) -> outputEdge == nodeId
     if | connectionToOutputEdge -> do
-        Just lambda  <- use Graph.insideNode
-        astNode <- GraphUtils.getASTTarget lambda
-        newNodeRef <- ASTModify.setLambdaOutputToBlank astNode
-        GraphUtils.rewireNode lambda newNodeRef
+        Just astNode <- ASTRead.getCurrentASTTarget
+        newNodeRef   <- ASTModify.setLambdaOutputToBlank astNode
+        ASTModify.rewireCurrentNode newNodeRef
        | otherwise -> do
         astNode <- GraphUtils.getASTTarget nodeId
         newNodeRef <- ASTRemove.removeArg astNode pos
@@ -531,8 +512,7 @@ makeAcc src dst inputPos = do
             Nothing           -> False
             Just (input, _out) -> input == src
     if | connectToInputEdge -> do
-        Just lambda  <- use Graph.insideNode
-        lambda' <- GraphUtils.getASTTarget lambda
+        Just lambda' <- ASTRead.getCurrentASTTarget
         srcAst  <- AST.getLambdaInputRef lambda' inputPos
         dstAst  <- GraphUtils.getASTTarget dst
         newNodeRef <- ASTBuilder.makeAccessor srcAst dstAst
@@ -552,21 +532,17 @@ makeApp src dst pos inputPos = do
             Just (input, out) -> (input == src, out == dst)
     case (connectToInputEdge, connectToOutputEdge) of
         (True, True) -> do
-            Just lambda <- use Graph.insideNode
-            lambda' <- GraphUtils.getASTTarget lambda
+            Just lambda' <- ASTRead.getCurrentASTTarget
             srcAst <- AST.getLambdaInputRef lambda' inputPos
-            dstAst <- GraphUtils.getASTTarget lambda
-            newNodeRef <- ASTModify.redirectLambdaOutput dstAst srcAst
-            GraphUtils.rewireNode lambda newNodeRef
+            newNodeRef <- ASTModify.redirectLambdaOutput lambda' srcAst
+            ASTModify.rewireCurrentNode newNodeRef
         (False, True) -> do
-            Just lambda <- use Graph.insideNode
+            Just dstAst <- ASTRead.getCurrentASTTarget
             srcAst <- GraphUtils.getASTVar    src
-            dstAst <- GraphUtils.getASTTarget lambda
             newNodeRef <- ASTModify.redirectLambdaOutput dstAst srcAst
-            GraphUtils.rewireNode lambda newNodeRef
+            ASTModify.rewireCurrentNode newNodeRef
         (True, False) -> do
-            Just lambda  <- use Graph.insideNode
-            lambda' <- GraphUtils.getASTTarget lambda
+            Just lambda' <- ASTRead.getCurrentASTTarget
             srcAst  <- AST.getLambdaInputRef lambda' inputPos
             dstAst  <- GraphUtils.getASTTarget dst
             newNodeRef <- ASTBuilder.applyFunction dstAst srcAst pos

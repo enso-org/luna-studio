@@ -31,7 +31,7 @@ import qualified Data.UUID.V4                      as UUID (nextRandom)
 
 import           Empire.API.Data.Breadcrumb        (Breadcrumb(..), BreadcrumbItem, Named(..))
 import qualified Empire.API.Data.Breadcrumb        as Breadcrumb
-import           Empire.Data.BreadcrumbHierarchy   (topLevelIDs)
+import qualified Empire.Data.BreadcrumbHierarchy   as BH
 import           Empire.Data.Graph                 (Graph)
 import qualified Empire.Data.Graph                 as Graph
 
@@ -74,10 +74,10 @@ instance Exception CannotEnterNodeException where
 
 throwIfCannotEnter :: ASTOp m => m ()
 throwIfCannotEnter = do
-    parent <- use Graph.insideNode
+    parent <- use $ Graph.breadcrumbHierarchy . BH.self
     case parent of
-        Just node -> do
-            canEnter <- ASTRead.canEnterNode node
+        Just (node, ref) -> do
+            canEnter <- ASTRead.canEnterNode $ BH.getAnyRef ref
             when (not canEnter) $ throwM $ CannotEnterNodeException node
         _ -> return ()
 
@@ -94,13 +94,13 @@ buildGraph = do
 
 buildNodes :: ASTOp m => m [API.Node]
 buildNodes = do
-    allNodeIds <- uses Graph.breadcrumbHierarchy topLevelIDs
+    allNodeIds <- uses Graph.breadcrumbHierarchy BH.topLevelIDs
     nodes <- mapM buildNode allNodeIds
     return nodes
 
 buildMonads :: ASTOp m => m [(TypeRep, [API.NodeId])]
 buildMonads = do
-    allNodeIds <- uses Graph.breadcrumbHierarchy topLevelIDs
+    allNodeIds <- uses Graph.breadcrumbHierarchy BH.topLevelIDs
     let monad1 = (TCons "MonadMock1" [], List.sort allNodeIds) --FIXME[pm] provide real data
         monad2 = (TCons "MonadMock2" [], allNodeIds)
     return [monad1, monad2]
@@ -115,24 +115,24 @@ buildEdgeNodes connections = getEdgePortMapping >>= \p -> case p of
         return $ Just (inputEdge, outputEdge)
     _ -> return Nothing
 
-getOrCreatePortMapping :: ASTOp m => NodeId -> m (NodeId, NodeId)
-getOrCreatePortMapping nid = do
-    existingMapping <- uses Graph.breadcrumbPortMapping $ Map.lookup nid
+getOrCreatePortMapping :: ASTOp m => m (NodeId, NodeId)
+getOrCreatePortMapping = do
+    existingMapping <- use $ Graph.breadcrumbHierarchy . BH.portMapping
     case existingMapping of
         Just m -> return m
         _      -> do
             ids <- liftIO $ (,) <$> UUID.nextRandom <*> UUID.nextRandom
-            Graph.breadcrumbPortMapping . at nid ?= ids
+            Graph.breadcrumbHierarchy . BH.portMapping ?= ids
             return ids
 
 getEdgePortMapping :: (MonadIO m, ASTOp m) => m (Maybe (NodeId, NodeId))
 getEdgePortMapping = do
-    lastBreadcrumbId <- use Graph.insideNode
-    case lastBreadcrumbId of
-        Just id' -> do
-            isLambda <- ASTRead.rhsIsLambda id'
+    currentBreadcrumb <- use $ Graph.breadcrumbHierarchy . BH.self
+    case currentBreadcrumb of
+        Just (id', ref) -> do
+            isLambda <- ASTRead.rhsIsLambda $ BH.getAnyRef ref
             if isLambda
-                then Just <$> getOrCreatePortMapping id'
+                then Just <$> getOrCreatePortMapping
                 else return Nothing
         _ -> return Nothing
 
@@ -144,7 +144,7 @@ buildNode nid = do
     expr     <- Print.printNodeExpression ref
     meta     <- AST.readMeta root
     name     <- fromMaybe "" <$> getNodeName nid
-    canEnter <- ASTRead.canEnterNode nid
+    canEnter <- ASTRead.canEnterNode root
     ports    <- buildPorts ref
     let code    = Just $ Text.pack expr
         portMap = Map.fromList $ flip fmap ports $ \p@(Port id' _ _ _) -> (id', p)
@@ -289,7 +289,7 @@ buildPorts ref = do
 
 buildConnections :: ASTOp m => m [(OutPortRef, InPortRef)]
 buildConnections = do
-    allNodes <- uses Graph.breadcrumbHierarchy topLevelIDs
+    allNodes <- uses Graph.breadcrumbHierarchy BH.topLevelIDs
     edges <- getEdgePortMapping
     connections <- mapM (getNodeInputs edges) allNodes
     outputEdgeConnections <- forM edges $ uncurry getOutputEdgeInputs
@@ -298,8 +298,7 @@ buildConnections = do
 
 buildInputEdge :: ASTOp m => [(OutPortRef, InPortRef)] -> NodeId -> m API.Node
 buildInputEdge connections nid = do
-    Just lastb <- use Graph.insideNode
-    ref   <- GraphUtils.getASTTarget lastb
+    Just ref <- ASTRead.getCurrentASTTarget
     (types, _states) <- extractPortInfo ref
     let connectedPorts = map (\(OutPortRef _ (Projection p)) -> p)
                $ map fst
@@ -325,8 +324,7 @@ buildInputEdge connections nid = do
 
 buildOutputEdge :: ASTOp m => NodeId -> m API.Node
 buildOutputEdge nid = do
-    Just lastb <- use Graph.insideNode
-    ref <- GraphUtils.getASTTarget lastb
+    Just ref <- ASTRead.getCurrentASTTarget
     out <- followTypeRep ref
     outputType <- case out of
         TLam _ t -> return t
@@ -351,8 +349,7 @@ getLambdaInputArgNumber lambda = do
 
 getOutputEdgeInputs :: ASTOp m => NodeId -> NodeId -> m (Maybe (OutPortRef, InPortRef))
 getOutputEdgeInputs inputEdge outputEdge = do
-    Just lambda <- use Graph.insideNode
-    ref <- GraphUtils.getASTTarget lambda
+    Just ref <- ASTRead.getCurrentASTTarget
     nid <- do
         outputIsInputNum <- getLambdaInputArgNumber ref
         case outputIsInputNum of
@@ -370,7 +367,7 @@ getOutputEdgeInputs inputEdge outputEdge = do
 
 nodeConnectedToOutput :: ASTOp m => m (Maybe NodeId)
 nodeConnectedToOutput = do
-    lambda <- use Graph.insideNode
+    lambda <- preuse $ Graph.breadcrumbHierarchy . BH.self . _Just . _1
     case lambda of
         Nothing -> return Nothing
         _       -> do
@@ -393,7 +390,7 @@ resolveInputNodeId edgeNodes lambdaArgs ref = do
 
 getOuterLambdaArguments :: ASTOp m => m [NodeRef]
 getOuterLambdaArguments = do
-    lambda <- use Graph.insideNode
+    lambda <- preuse $ Graph.breadcrumbHierarchy . BH.self . _Just . _1
     case lambda of
         Just lambda' -> do
             ref <- GraphUtils.getASTTarget lambda'

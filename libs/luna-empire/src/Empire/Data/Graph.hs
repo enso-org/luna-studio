@@ -7,18 +7,10 @@
 module Empire.Data.Graph (
     Graph(..)
   , ast
-  , nodeMapping
   , breadcrumbHierarchy
-  , breadcrumbPortMapping
-  , topLevelSeq
   , lastNameId
-  , insideNode
-  , NodeIDTarget(MatchNode, AnonymousNode)
-  , getAnyRef
   , defaultGraph
-
   , withVis
-
   , AST
   , ASTState(..)
   ) where
@@ -26,8 +18,7 @@ module Empire.Data.Graph (
 import           Data.Map.Lazy                     (Map)
 import qualified Data.Map                          as Map (empty)
 import           Empire.API.Data.Node              (NodeId)
-import           Empire.Data.BreadcrumbHierarchy   (BreadcrumbHierarchy)
-import qualified Empire.Data.BreadcrumbHierarchy   as BC (empty)
+import           Empire.Data.BreadcrumbHierarchy   (BItem)
 import           Empire.Prelude
 
 import           Empire.Data.AST                   (NodeRef)
@@ -58,27 +49,14 @@ import           Web.Browser                (openBrowser)
 
 
 data Graph = Graph { _ast                   :: AST
-                   , _nodeMapping           :: Map NodeId NodeIDTarget
-                   , _breadcrumbHierarchy   :: BreadcrumbHierarchy
-                   , _breadcrumbPortMapping :: Map NodeId (NodeId, NodeId)
-                   , _topLevelSeq           :: Maybe NodeRef
+                   , _breadcrumbHierarchy   :: BItem
                    , _lastNameId            :: Integer
-                   , _insideNode            :: Maybe NodeId
                    } deriving Show
-
-data NodeIDTarget = MatchNode     NodeRef
-                  | AnonymousNode NodeRef
-    deriving Show
-
-getAnyRef :: NodeIDTarget -> NodeRef
-getAnyRef (MatchNode ref)     = ref
-getAnyRef (AnonymousNode ref) = ref
-
 
 defaultGraph :: IO Graph
 defaultGraph = do
     ast' <- defaultAST
-    return $ Graph ast' Map.empty BC.empty Map.empty Nothing 0 Nothing
+    return $ Graph ast' def 0
 
 type AST      = ASTState
 data ASTState = ASTState IR (Pass.RefState (PassManager.PassManager (IRBuilder (Parser.IRSpanTreeBuilder (DepState.StateT Cache (Logger DropLogger (Vis.VisStateT (StateT Graph IO))))))))
@@ -102,11 +80,6 @@ instance MonadState s m => MonadState s (Logger DropLogger m) where
     get = lift   get
     put = lift . put
 
-{-instance MonadState Graph (PassManager.PassManager (IRBuilder (Parser.IRSpanTreeBuilder (DepState.StateT Cache (Logger DropLogger (Vis.VisStateT (StateT Graph IO))))))) where-}
-    {-get   = (lift . lift . lift . lift . lift) get-}
-    {-put   = (lift . lift . lift . lift . lift) . put-}
-    {-state = (lift . lift . lift . lift . lift) . state-}
-
 instance Exception e => MonadException e IO where
     raise = throwM
 
@@ -123,7 +96,7 @@ withVis m = do
 
 defaultAST :: IO AST
 defaultAST = mdo
-    let g = Graph ast Map.empty BC.empty Map.empty Nothing 0 Nothing
+    let g = Graph ast def 0
     ast <- flip evalStateT g $ withVis $ dropLogs $ DepState.evalDefStateT @Cache $ (\a -> SpanTree.runTreeBuilder a >>= \(foo, _) -> return foo) $ evalIRBuilder' $ evalPassManager' $ do
         runRegs
         CodeSpan.init

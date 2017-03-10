@@ -56,7 +56,7 @@ typed me t = do
 
 runTC :: Command Graph ()
 runTC = do
-    allNodeIds <- uses Graph.nodeMapping $ Map.keys
+    allNodeIds <- uses Graph.breadcrumbHierarchy topLevelIDs
     runASTOp $ do
         roots <- mapM GraphUtils.getASTPointer allNodeIds
         mockImports <- do

@@ -5,11 +5,11 @@ module Empire.ASTOps.Print (
     getTypeRep
   , printExpression
   , printNodeExpression
-  , printFunction
+  , printCurrentFunction
   ) where
 
 import           Empire.Prelude
-import           Control.Monad            ((<=<))
+import           Control.Monad            ((<=<), forM)
 import           Data.List                (dropWhileEnd, delete)
 import           Data.Char                (isAlpha)
 
@@ -49,13 +49,14 @@ parenIf :: Bool -> String -> String
 parenIf False s = s
 parenIf True  s = "(" ++ s ++ ")"
 
-printFunction :: ASTOp m => NodeId -> m (String, String)
-printFunction nodeId = do
-    ptr <- ASTRead.getASTPointer nodeId
-    header <- printFunctionHeader ptr
-    lam <- ASTRead.getASTTarget nodeId
-    ret <- printReturnValue lam
-    return (header, ret)
+printCurrentFunction :: ASTOp m => m (Maybe (String, String))
+printCurrentFunction = do
+    mptr <- ASTRead.getCurrentASTPointer
+    mlam <- ASTRead.getCurrentASTTarget
+    forM ((,) <$> mptr <*> mlam) $ \(ptr, lam) -> do
+        header <- printFunctionHeader ptr
+        ret    <- printReturnValue lam
+        return (header, ret)
 
 printFunctionArguments :: ASTOp m => NodeRef -> m [String]
 printFunctionArguments lam = match lam $ \case

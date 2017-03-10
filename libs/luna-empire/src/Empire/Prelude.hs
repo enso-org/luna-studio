@@ -7,7 +7,6 @@ module Empire.Prelude (
     , type (<>)
     , (<|>)
     , at
-    , module Control.Lens.Operators
     , def
     , Default
     , SomeException
@@ -33,12 +32,14 @@ module Empire.Prelude (
     , view
     , when
     , zoom
+    , module X
     ) where
 
 import Control.Applicative ((<|>))
 import Control.Exception (SomeException, Exception(..))
-import Control.Lens (makeLenses, view, zoom, uses, use, at, _1, _2, ix)
-import Control.Lens.Operators
+import Control.Lens           as X (makeLenses, view, zoom, uses, use, at, _1, _2, ix, preuse)
+import Control.Lens.Operators as X
+import Control.Lens.Prism     as X
 import Control.Monad (when)
 import Control.Monad.State.Class (MonadState)
 import Control.Monad.Catch (MonadThrow, throwM)
