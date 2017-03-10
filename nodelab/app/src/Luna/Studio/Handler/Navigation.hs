@@ -44,8 +44,9 @@ selectAny = do
     withJustM Camera.getScreenCenter $ \screenCenter -> do
         workspaceCenter <- Camera.translateToWorkspace screenCenter
         nodes <- Graph.allNodes
-        let node = findNearestNode workspaceCenter nodes
-        Graph.selectNodes [node ^. Node.nodeId]
+        unless (null nodes) $ do
+            let node = findNearestNode workspaceCenter nodes
+            Graph.selectNodes [node ^. Node.nodeId]
 
 goPrev :: Command State ()
 goPrev = do
