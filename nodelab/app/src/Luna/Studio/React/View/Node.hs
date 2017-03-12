@@ -88,8 +88,7 @@ nodeDynamicStyles_ camera n = do
         pos    = expressionPosition camera (n ^. Node.position)
         scale  = (Matrix.toList camera)!!0
     elemString $ "#" <> Config.mountPoint <> "-node-" <> fromString (show nodeId)
-                     <> " .luna-name-trans { transform: translate(" <> show (pos ^. x) <> "px, " <> show (pos ^. y) <> "px)"
-                     <> if scale > 1 then "; font-size: " <> show (fontSize * scale) <> "px }" else " }"
+                     <> " .luna-name-trans { transform: translate(" <> show (pos ^. x) <> "px, " <> show (pos ^. y) <> "px) }"
 
 expressionPosition :: Matrix Double -> Position -> Position
 expressionPosition camera n = Position (Vector2 x' y')

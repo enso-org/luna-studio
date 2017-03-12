@@ -159,32 +159,32 @@ portIO_ ref p numOfPorts = do
         svgFlag1  = if isInput then "1"  else "0"
         svgFlag2  = if isInput then "0"  else "1"
         mode      = if isInput then -1.0 else 1.0
-        n         = if isInput then 1 else 0
+--        n         = if isInput then 1 else 0
         adjust
             | numOfPorts == 1 = (-4.0)
             | numOfPorts == 2 =   4.0
             | numOfPorts == 3 =  12.0
             | otherwise       =  20.0
         portType  = toString $ p ^. Port.valueType
-        startPortArcX r = r * sin(portAngleStart num numOfPorts r * mode)
-        startPortArcY r = r * cos(portAngleStart num numOfPorts r * mode)
-        stopPortArcX  r = r * sin(portAngleStop  num numOfPorts r * mode)
-        stopPortArcY  r = r * cos(portAngleStop  num numOfPorts r * mode)
-        ax = jsShow2 . startPortArcX . (+) nodeRadius
-        ay = jsShow2 . startPortArcY . (+) nodeRadius
-        bx = jsShow2 . stopPortArcX  . (+) nodeRadius
-        by = jsShow2 . stopPortArcY  . (+) nodeRadius
-        cx = jsShow2 $ stopPortArcX  nodeRadius'
-        cy = jsShow2 $ stopPortArcY  nodeRadius'
-        dx = jsShow2 $ startPortArcX nodeRadius'
-        dy = jsShow2 $ startPortArcY nodeRadius'
+        startPortArcX isShape r = r * sin(portAngleStart isShape num numOfPorts r * mode)
+        startPortArcY isShape r = r * cos(portAngleStart isShape num numOfPorts r * mode)
+        stopPortArcX  isShape r = r * sin(portAngleStop  isShape num numOfPorts r * mode)
+        stopPortArcY  isShape r = r * cos(portAngleStop  isShape num numOfPorts r * mode)
+        ax isShape = jsShow2 . startPortArcX isShape . (+) nodeRadius
+        ay isShape = jsShow2 . startPortArcY isShape . (+) nodeRadius
+        bx isShape = jsShow2 . stopPortArcX  isShape . (+) nodeRadius
+        by isShape = jsShow2 . stopPortArcY  isShape . (+) nodeRadius
+        cx isShape = jsShow2 $ stopPortArcX  isShape nodeRadius'
+        cy isShape = jsShow2 $ stopPortArcY  isShape nodeRadius'
+        dx isShape = jsShow2 $ startPortArcX isShape nodeRadius'
+        dy isShape = jsShow2 $ startPortArcY isShape nodeRadius'
         r1 = jsShow2 . (+) nodeRadius
         r2 = jsShow2 nodeRadius'
-        svgPath a = "M"  <> ax a <> " " <> ay a <>
-                   " A " <> r1 a <> " " <> r1 a <> " 0 0 " <> svgFlag1 <> " " <> bx a <> " " <> by a <>
-                   " L " <> cx   <> " " <> cy   <>
-                   " A " <> r2   <> " " <> r2   <> " 0 0 " <> svgFlag2 <> " " <> dx   <> " " <> dy   <>
-                   " Z"
+        svgPath a b = "M"  <> ax a b <> " " <> ay a b <>
+                     " A " <> r1 b <> " " <> r1 b <> " 0 0 " <> svgFlag1 <> " " <> bx a b <> " " <> by a b <>
+                     " L " <> cx a <> " " <> cy a <>
+                     " A " <> r2   <> " " <> r2   <> " 0 0 " <> svgFlag2 <> " " <> dx a <> " " <> dy a <>
+                     " Z"
     g_
         [ "className" $= Style.prefixFromList classes
         ] $ do
@@ -197,13 +197,13 @@ portIO_ ref p numOfPorts = do
             [ "className" $= Style.prefix "port__shape"
             , "key"       $= (jsShow portId <> "a")
             , "fill"      $= color
-            , "d"         $= svgPath 0
+            , "d"         $= svgPath True 0
             ] mempty
         path_
             ( handlers ref portRef ++
               [ "className" $= Style.prefix "port__select"
               , "key"       $= (jsShow portId <> "b")
-              , "d"         $= svgPath lineHeight
+              , "d"         $= svgPath False lineHeight
               ]
             ) mempty
 

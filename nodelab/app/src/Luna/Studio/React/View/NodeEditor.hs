@@ -6,6 +6,7 @@ import qualified Data.HashMap.Strict                   as HashMap
 import qualified Data.Matrix                           as Matrix
 import           Data.Maybe                            (mapMaybe)
 import           JS.Scene                              (sceneId)
+import           Luna.Studio.Action.Geometry.Constants (connectionWidth)
 import qualified Luna.Studio.Data.CameraTransformation as CameraTransformation
 import           Luna.Studio.Data.Matrix               (matrix3dPropertyValue)
 import qualified Luna.Studio.Event.UI                  as UI
@@ -52,6 +53,7 @@ nodeEditor = React.defineView name $ \(ref, ne) -> do
         style_ [ "key" $= "style" ] $ do
             elemString $ ".luna-selection  { box-shadow: 0 0 0 " <> show (0.52/(scale**1.5)) <> "px orange !important }"
             elemString $ ".luna-node-trans { transform: " <> matrix3dPropertyValue camera <> " }"
+            elemString $ ".luna-connection__line { stroke-width: " <> show connectionWidth <> " }"
             forM_ (ne ^. NodeEditor.nodes . to HashMap.elems) $ nodeDynamicStyles_ camera
         svg_
             [ "className" $= Style.prefixFromList [ "plane", "plane--monads", "node-trans" ]
