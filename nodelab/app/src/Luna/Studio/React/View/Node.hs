@@ -8,7 +8,6 @@ import           Data.Matrix                            (Matrix)
 import           Data.Position                          (Position (Position), Vector2 (Vector2), x, y)
 import           Empire.API.Data.Node                   (NodeId)
 import qualified JS.Config                              as Config
-import           Luna.Studio.Action.Geometry.Constants  (fontSize)
 import qualified Luna.Studio.Event.Mouse                as Mouse
 import qualified Luna.Studio.Event.UI                   as UI
 import           Luna.Studio.Prelude
@@ -86,7 +85,6 @@ nodeDynamicStyles_ :: Matrix Double -> Node -> ReactElementM ViewEventHandler ()
 nodeDynamicStyles_ camera n = do
     let nodeId = n ^. Node.nodeId
         pos    = expressionPosition camera (n ^. Node.position)
-        scale  = (Matrix.toList camera)!!0
     elemString $ "#" <> Config.mountPoint <> "-node-" <> fromString (show nodeId)
                      <> " .luna-name-trans { transform: translate(" <> show (pos ^. x) <> "px, " <> show (pos ^. y) <> "px) }"
 
