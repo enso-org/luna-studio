@@ -3,8 +3,6 @@
 
 module Luna.Studio.Error.Error where
 
-import GHCJS.Types (JSVal)
-import           GHCJS.Marshal.Pure (PToJSVal (..))
 import           Luna.Studio.Prelude
 
 data NotificationType = FatalError
