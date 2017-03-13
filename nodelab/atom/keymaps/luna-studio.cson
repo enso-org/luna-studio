@@ -1,3 +1,7 @@
+#
+# http://flight-manual.atom.io/behind-atom/sections/keymaps-in-depth/
+#
+
 '.luna-searcher__input':
   'backspace'  : 'luna-studio:searcher-move-left'          # Searcher MoveLeft
   'ctrl-0'     : 'luna-studio:searcher-accept-0'           # Searcher AcceptEntry 0
