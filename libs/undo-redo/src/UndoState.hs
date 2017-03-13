@@ -4,7 +4,6 @@
 module UndoState where
 
 
-import           Control.Lens
 import           Control.Monad.Reader
 import           Control.Monad.State
 import           Data.Binary                       (Binary)

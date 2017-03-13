@@ -5,11 +5,11 @@ module Empire.ASTOps.Print (
     getTypeRep
   , printExpression
   , printNodeExpression
-  , printFunction
+  , printCurrentFunction
   ) where
 
 import           Empire.Prelude
-import           Control.Monad            ((<=<))
+import           Control.Monad            ((<=<), forM)
 import           Data.List                (dropWhileEnd, delete)
 import           Data.Char                (isAlpha)
 
@@ -20,14 +20,14 @@ import qualified Empire.ASTOps.Read        as ASTRead
 import qualified Empire.ASTOps.Deconstruct as ASTDeconstruct
 import           Empire.API.Data.Node      (NodeId)
 import           Empire.API.Data.TypeRep   (TypeRep (..))
-import           Luna.IR.Expr.Term.Uni
+import           Luna.IR.Term.Uni
 import qualified Luna.IR as IR
 
 
 getTypeRep :: ASTOp m => NodeRef -> m TypeRep
 getTypeRep tp = match tp $ \case
     Cons n args -> do
-        name    <- pure $ nameToString n
+        name    <- pure $ pathNameToString n
         argReps <- mapM (getTypeRep <=< IR.source) args
         return $ TCons name argReps
     Lam _as out -> do
@@ -49,13 +49,14 @@ parenIf :: Bool -> String -> String
 parenIf False s = s
 parenIf True  s = "(" ++ s ++ ")"
 
-printFunction :: ASTOp m => NodeId -> m (String, String)
-printFunction nodeId = do
-    ptr <- ASTRead.getASTPointer nodeId
-    header <- printFunctionHeader ptr
-    lam <- ASTRead.getASTTarget nodeId
-    ret <- printReturnValue lam
-    return (header, ret)
+printCurrentFunction :: ASTOp m => m (Maybe (String, String))
+printCurrentFunction = do
+    mptr <- ASTRead.getCurrentASTPointer
+    mlam <- ASTRead.getCurrentASTTarget
+    forM ((,) <$> mptr <*> mlam) $ \(ptr, lam) -> do
+        header <- printFunctionHeader ptr
+        ret    <- printReturnValue lam
+        return (header, ret)
 
 printFunctionArguments :: ASTOp m => NodeRef -> m [String]
 printFunctionArguments lam = match lam $ \case
@@ -121,7 +122,7 @@ printExpression' suppressNodes paren node = do
         Blank -> return "_"
         IR.Number n -> pure $ show n
         IR.String s -> return $ show s
-        Cons n _ -> pure $ nameToString n
+        Cons n _ -> pure $ pathNameToString n
         _ -> return ""
 
 printExpression :: ASTOp m => NodeRef -> m String

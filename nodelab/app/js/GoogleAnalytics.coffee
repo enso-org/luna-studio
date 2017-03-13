@@ -1,5 +1,4 @@
 $$     = require './common'
-brunch = require 'brunch'
 config = require './config'
 
 startGA = ->
@@ -18,7 +17,7 @@ startGA = ->
       m.parentNode.insertBefore a, m
     ) window, document, 'script', 'https://www.google-analytics.com/analytics.js', 'ga'
     ga 'create', config.gaTrackingId, 'auto'
-    ga 'send', 'pageview', '/b' + brunch.build_number
+    ga 'send', 'pageview', '/b'
   else
     window.ga = ->
 

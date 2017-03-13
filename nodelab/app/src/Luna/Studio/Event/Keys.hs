@@ -6,25 +6,32 @@ import           React.Flux          (KeyboardEvent (KeyboardEvent))
 
 
 backspace, tab, enter, esc, space, leftArrow, upArrow, rightArrow, downArrow, del :: Int
-backspace = 8
-tab   = 9
-enter = 13
-esc   = 27
-space = 32
+backspace  = 8
+tab        = 9
+enter      = 13
+esc        = 27
+space      = 32
 leftArrow  = 37
 upArrow    = 38
 rightArrow = 39
 downArrow  = 40
-del   = 46
-zero  = 48
+del        = 46
 
-zero, a, h, y, z, plus, minus :: Int
-a = 65
-h = 72
-y = 89
-z = 90
+zero, nine, a, h, y, z, plus, minus :: Int
+zero  = 48
+nine  = 57
+a     = 65
+h     = 72
+y     = 89
+z     = 90
 plus  = 187
 minus = 189
+
+digitWithCtrl :: KeyboardEvent -> Bool
+digitWithCtrl (KeyboardEvent False _ True  _ _ key _ _ _    _ False _) = zero <= key && nine >= key
+digitWithCtrl (KeyboardEvent False _ False _ _ key _ _ True _ False _) = zero <= key && nine >= key
+digitWithCtrl _                                                        = False
+
 
 withoutMods :: KeyboardEvent -> Int -> Bool
 withoutMods (KeyboardEvent False _ False _ _ keyCode _ _ False _ False _) key = keyCode == key

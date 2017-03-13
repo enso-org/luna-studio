@@ -16,7 +16,6 @@ module EmpireUtils (
     , mkUUID
     , withChannels
     , emptyGraphLocation
-    , astNull
     ) where
 
 import           Control.Concurrent.STM        (atomically)
@@ -105,11 +104,3 @@ emptyGraphLocation = GraphLocation nil 0 $ Breadcrumb []
 
 mkUUID :: IO UUID
 mkUUID = nextRandom
-
-astNull :: AST -> Bool
-astNull (ASTState (ElemRepMapGraph m) _) =
-    let Just exprMap = m ^. at (getTypeDesc @AnyExpr)
-        ManagedMap _ freeExpr _ = exprMap
-        Just linkMap = m ^. at (getTypeDesc @(Link' AnyExpr))
-        ManagedMap _ freeLink _ = linkMap
-    in  0 `elem` freeExpr && 0 `elem` freeLink

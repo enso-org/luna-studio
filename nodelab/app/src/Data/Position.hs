@@ -8,6 +8,7 @@ where
 import           Data.Aeson          (FromJSON, ToJSON)
 import           Data.Vector         as X
 import           Luna.Studio.Prelude
+
 -----------------------
 -- === Position === ---
 -----------------------
@@ -32,7 +33,6 @@ instance IsList Position where
     type Item Position = Double
     fromList l = Position (fromList l)
     toList   p = [p ^. x, p ^. y]
-
 
 -- === Functions === ---
 

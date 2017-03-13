@@ -21,7 +21,7 @@ import qualified JS.WebSocket                           as WebSocket
 import qualified Luna.Studio.Batch.Connector.Connection as BatchConnection
 import qualified Luna.Studio.Event.Connection           as Connection
 import qualified Luna.Studio.Event.CustomEvent          as CustomEvent
-import           Luna.Studio.Event.Event                (Event (Connection, CustomEvent, Shortcut, UI))
+import           Luna.Studio.Event.Event                (Event (Connection, CustomEvent, UI))
 import           Luna.Studio.Event.UI                   (UIEvent (AppEvent))
 import qualified Luna.Studio.React.Event.App            as App
 
@@ -30,9 +30,7 @@ data AddHandler a = AddHandler ((a -> IO ()) -> IO (IO ()))
 
 atomHandler :: AddHandler Event
 atomHandler = AddHandler $ \h ->
-    Atom.onEvent $
-        whenM UI.isFocusInApp .
-            h . Shortcut
+    Atom.onEvent $ whenM UI.isFocusInApp . h
 
 sceneResizeHandler :: AddHandler Event
 sceneResizeHandler = AddHandler $ \h ->

@@ -11,8 +11,17 @@ import           Luna.Studio.Prelude
 
 
 data Event = InputChanged Text
+           | Accept
+           | AcceptInput
+           | AcceptEntry Int
+           | EditEntry
+           | MoveDown
+           | MoveUp
+           | MoveRight
+           | MoveLeft
            | KeyDown KeyboardEvent
-            deriving (Show, Generic, NFData, Typeable)
+           | KeyUp   KeyboardEvent
+            deriving (Read, Show, Generic, NFData, Typeable)
 
 instance ToJSON   Event
 instance FromJSON Event

@@ -34,7 +34,6 @@ data Value = IntValue        Int
            | StringMaybeList [Maybe String]
            | StringStringMap [(String, String)]
 
-           | Graphics        G.Geometry
            | Lambda          String
            deriving (Generic, Eq, NFData, Show)
 

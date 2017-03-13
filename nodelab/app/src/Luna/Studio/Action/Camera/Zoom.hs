@@ -32,8 +32,8 @@ instance Action (Command State) ZoomDrag where
     end _    = removeActionFromState zoomDragAction
 
 minCamFactor, maxCamFactor, dragZoomSpeed, wheelZoomSpeed, zoomFactorStep :: Double
-minCamFactor   = 0.2
-maxCamFactor   = 8
+minCamFactor   = 0.25
+maxCamFactor   = 1.2
 dragZoomSpeed  = 512
 wheelZoomSpeed = 64
 zoomFactorStep = 1.1

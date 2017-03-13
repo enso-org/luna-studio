@@ -9,6 +9,7 @@ import qualified Empire.API.Data.Connection   as C
 import           Empire.API.Data.Node         (NodeId)
 import qualified Empire.API.Data.Port         as P
 import qualified Empire.API.Data.PortRef      as R
+import qualified Luna.Studio.Action.Camera    as Camera
 import           Luna.Studio.Action.Command   (Command)
 import qualified Luna.Studio.Action.Graph     as Graph
 import           Luna.Studio.Event.Event      (Event (Shortcut))
@@ -18,7 +19,6 @@ import qualified Luna.Studio.React.Model.Node as Node
 import           Luna.Studio.State.Global     (State)
 import qualified Luna.Studio.State.Global     as Global
 import qualified Luna.Studio.State.Graph      as Graph
-
 
 
 handle :: Event -> Maybe (Command State ())
@@ -39,10 +39,20 @@ handleCommand = \case
     Shortcut.GoUp        -> goUp
     _                    -> return ()
 
+selectAny :: Command State ()
+selectAny = do
+    withJustM Camera.getScreenCenter $ \screenCenter -> do
+        workspaceCenter <- Camera.translateToWorkspace screenCenter
+        nodes <- Graph.allNodes
+        unless (null nodes) $ do
+            let node = findNearestNode workspaceCenter nodes
+            Graph.selectNodes [node ^. Node.nodeId]
+
 goPrev :: Command State ()
 goPrev = do
     selectedNodes <- Graph.selectedNodes
-    unless (null selectedNodes) $ do
+    if null selectedNodes then selectAny
+    else do
         let nodeSrc = findLeftMost selectedNodes
             nodeId = nodeSrc ^. Node.nodeId
             inPortRefSelf      = R.InPortRef nodeId P.Self
@@ -57,7 +67,8 @@ goPrev = do
 goNext :: Command State ()
 goNext = do
     selectedNodes <- Graph.selectedNodes
-    unless (null selectedNodes) $ do
+    if null selectedNodes then selectAny
+    else do
         let nodeSrc = findRightMost selectedNodes
             nodeId = nodeSrc ^. Node.nodeId
         nextNodeIds <- getDstNodeIds nodeId
@@ -87,7 +98,8 @@ go :: ([Node] -> Node) ->
 go findMost findNodesOnSide findNearest = do
     nodes         <- Graph.allNodes
     selectedNodes <- Graph.selectedNodes
-    unless (null selectedNodes) $ do
+    if null selectedNodes then selectAny
+    else do
         let nodeSrc = findMost selectedNodes
             pos = nodeSrc ^. Node.position
             nodesSide = findNodesOnSide pos nodes
@@ -129,7 +141,8 @@ goCone :: ([Node] -> Node) ->
 goCone findMost findNodesInCone findNodesOnSide = do
     nodes         <- Graph.allNodes
     selectedNodes <- Graph.selectedNodes
-    unless (null selectedNodes) $ do
+    if null selectedNodes then selectAny
+    else do
         let nodeSrc = findMost selectedNodes
             pos = nodeSrc ^. Node.position
             nodesCone = findNodesInCone pos nodes

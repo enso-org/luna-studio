@@ -61,7 +61,7 @@ openWith nodeId pos = do
           _              -> translateToWorkspace pos
     begin Searcher
     GA.sendEvent GA.NodeSearcher
-    Global.modifyNodeEditor $ NodeEditor.searcher ?= Searcher.Searcher pos' 0 (Searcher.Node def) def nodeId
+    Global.modifyNodeEditor $ NodeEditor.searcher ?= Searcher.Searcher pos' 0 (Searcher.Node def) def nodeId False
     Global.renderIfNeeded
     liftIO Searcher.focus
 
@@ -75,30 +75,29 @@ moveDown :: Searcher -> Command State ()
 moveDown _ = Global.modifySearcher $ do
     items <- use Searcher.resultsLength
     unless (items == 0) $
-        Searcher.selected %= \p -> (p + 1) `mod` items
+        Searcher.selected %= \p -> (p - 1) `mod` (items + 1)
 
 moveUp :: Searcher -> Command State ()
 moveUp _ = Global.modifySearcher $ do
     items <- use Searcher.resultsLength
     unless (items == 0) $
-        Searcher.selected %= \p -> (p - 1) `mod` items
+        Searcher.selected %= \p -> (p + 1) `mod` (items + 1)
 
-proceed :: (Event -> IO ()) -> Searcher -> Command State ()
-proceed scheduleEvent action = withJustM Global.getSearcher $ \searcher ->
-    if searcher ^. Searcher.isNode then
-        close action
-    else
-        accept scheduleEvent action
-
-rollback :: Searcher -> Command State ()
-rollback _ = do
+tryRollback :: Searcher -> Command State ()
+tryRollback _ = do
     withJustM Global.getSearcher $ \searcher -> do
        when (Text.null (searcher ^. Searcher.input)
-         && (searcher ^. Searcher.isNode)) $
+         && (searcher ^. Searcher.isNode)
+         && (searcher ^. Searcher.rollbackReady)) $
             Global.modifySearcher $ do
-                Searcher.selected .= def
-                Searcher.mode     .= Searcher.Command def
-                Searcher.input    .= def
+                Searcher.rollbackReady .= False
+                Searcher.selected      .= def
+                Searcher.mode          .= Searcher.Command def
+                Searcher.input         .= def
+
+enableRollback :: Searcher -> Command State ()
+enableRollback _ = Global.modifySearcher $
+    Searcher.rollbackReady .= True
 
 accept :: (Event -> IO ()) -> Searcher -> Command State ()
 accept scheduleEvent action = do
@@ -156,7 +155,20 @@ execCommand action scheduleEvent expression = case readMaybe expression of
             Searcher.selected .= def
             Searcher.mode     .= Searcher.Node def
             Searcher.input    .= def
+            Searcher.rollbackReady .= False
         Nothing -> return ()
+
+acceptEntry :: (Event -> IO ()) -> Int -> Searcher -> Command State ()
+acceptEntry scheduleEvent entryNum searcher = do
+    mayItemsLength <- (fmap . fmap) (view Searcher.resultsLength) $ Global.getSearcher
+    withJust mayItemsLength $ \itemsLength -> when (itemsLength >= entryNum) $ do
+        Global.modifySearcher $ Searcher.selected .= entryNum
+        accept scheduleEvent searcher
+
+substituteInputWithEntry :: Searcher -> Command State ()
+substituteInputWithEntry _ = Global.modifySearcher $ do
+    newInput <- use Searcher.selectedExpression
+    Searcher.input .= newInput
 
 querySearch :: Text -> Searcher -> Command State ()
 querySearch query _ = do
@@ -165,13 +177,14 @@ querySearch query _ = do
         isNode <- use Searcher.isNode
         Searcher.input .= query
         if isNode then
-            Searcher.mode .= Searcher.Node def
+            Searcher.rollbackReady .= False
+            {- clearing results prevents from selecting out of date result, but make searcher blink. -}
+            -- Searcher.mode .= Searcher.Node def
         else do
-            selected <- use Searcher.selected
             let items = Scope.searchInScope allCommands query
-            when (selected >= length items) $
-                Searcher.selected .= length items - 1
-            Searcher.mode .= Searcher.Command items
+            Searcher.selected      .= min 1 (length items)
+            Searcher.mode          .= Searcher.Command items
+            Searcher.rollbackReady .= False
         return $ All isNode
     when (getAll isNode) $ Batch.nodeSearch query selection
 
@@ -180,9 +193,8 @@ updateHints = do
     nodesData' <- nodesData
     Global.modifySearcher $
         whenM (use Searcher.isNode) $ do
-            selected <- use Searcher.selected
             query    <- use Searcher.input
             let items = Scope.searchInScope nodesData' query
-            when (selected >= length items) $
-                Searcher.selected .= length items - 1
-            Searcher.mode .= Searcher.Node items
+            Searcher.selected      .= min 1 (length items)
+            Searcher.rollbackReady .= False
+            Searcher.mode          .= Searcher.Node items

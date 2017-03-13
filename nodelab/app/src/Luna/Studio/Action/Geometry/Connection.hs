@@ -37,13 +37,13 @@ getConnectionAngle srcPos dstPos num numOfSameTypePorts =
     if      t' > a' - pi / 2 - g then a - pi / 2 - g
     else if t' < b' - pi / 2 + g then b - pi / 2 + g
     else t where
-        a  = portAngleStop  num numOfSameTypePorts portRadius
-        b  = portAngleStart num numOfSameTypePorts portRadius
+        a  = portAngleStop  True num numOfSameTypePorts portRadius
+        b  = portAngleStart True num numOfSameTypePorts portRadius
         t  = nodeToNodeAngle srcPos dstPos
         a' = if a < pi then a + (2 * pi) else a
         b' = if b < pi then b + (2 * pi) else b
         t' = if t < pi then t + (2 * pi) else t
-        g  = portGap portRadius / 4
+        g  = portGap portRadius
 
 -- TODO[JK]: dst numOfInputs
 connectionSrc :: Position -> Position -> Bool -> Bool -> Int -> Int -> Bool -> Position

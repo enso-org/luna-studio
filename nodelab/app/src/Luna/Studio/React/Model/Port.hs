@@ -13,7 +13,6 @@ import qualified Luna.Studio.Data.Color  as Color
 import           Luna.Studio.Prelude     hiding (set)
 
 
-
 data Port = Port { _portRef     :: AnyPortRef
                  , _port        :: API.Port
                  , _color       :: Color

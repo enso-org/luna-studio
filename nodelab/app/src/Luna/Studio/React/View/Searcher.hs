@@ -13,6 +13,7 @@ import           JS.Searcher                      (searcherId)
 import qualified Luna.Studio.Event.Keys           as Keys
 import qualified Luna.Studio.Event.UI             as UI
 import           Luna.Studio.Prelude
+import qualified Luna.Studio.React.Event.App      as App
 import           Luna.Studio.React.Event.Searcher
 import           Luna.Studio.React.Model.App      (App)
 import qualified Luna.Studio.React.Model.Node     as Node
@@ -28,8 +29,15 @@ import qualified Text.ScopeSearcher.QueryResult   as Result
 name :: JSString
 name = "searcher"
 
-preventTabDefault :: React.Event -> KeyboardEvent -> [SomeStoreAction] -> [SomeStoreAction]
-preventTabDefault e k r = if Keys.withoutMods k Keys.tab then preventDefault e : r else r
+handleKeyDown :: Ref App -> React.Event -> KeyboardEvent -> [SomeStoreAction]
+handleKeyDown ref e k = prevent $ stopPropagation e : dispatch' where
+    prevent   = if Keys.withoutMods k Keys.tab
+                || Keys.withoutMods k Keys.upArrow
+                || Keys.withoutMods k Keys.downArrow
+                || Keys.digitWithCtrl k then (preventDefault e :) else id
+    dispatch' = dispatch ref $ if Keys.withoutMods k Keys.esc then
+            UI.AppEvent $ App.KeyDown k
+        else UI.SearcherEvent $ KeyDown k
 
 searcher :: ReactView (Ref App, Matrix Double, Searcher)
 searcher =  React.defineView name $ \(ref, camera, s) -> do
@@ -52,26 +60,30 @@ searcher =  React.defineView name $ \(ref, camera, s) -> do
             [ "key"       $= "nameTrans"
             , "className" $= Style.prefix "name-trans"
             , "style"     @= Aeson.object [ "transform" Aeson..= ("translate(" <> show (pos ^. x) <> "px, " <> show (pos ^. y) <> "px)" :: String) ]
+            , onMouseDown $ \e _ -> [stopPropagation e]
+            , onMouseUp   $ \e _ -> [stopPropagation e]
+            , onClick     $ \e _ -> [stopPropagation e]
             ] $ do
             input_
                 [ "key"       $= "searchInput"
                 , "className" $= Style.prefix "searcher__input"
                 , "id"        $= searcherId
                 , "value"     $= convert (s ^. Searcher.input)
-                , onMouseDown $ \e _ -> [stopPropagation e]
-                , onKeyDown   $ \e k -> preventTabDefault e k $ stopPropagation e : dispatch ref (UI.SearcherEvent $ KeyDown k)
+                , onKeyDown   $ handleKeyDown ref
+                , onKeyUp     $ \_ k -> dispatch ref $ UI.SearcherEvent $ KeyUp k
                 , onChange    $ \e -> let val = target e "value" in dispatch ref $ UI.SearcherEvent $ InputChanged val
                 ]
             div_
                 [ "key"       $= "searcherResults"
                 , "className" $= Style.prefix "searcher__results"
                 ] $ do
-                let resultClasses i = Style.prefixFromList ( "searcher__results__item" : (if i == s ^. Searcher.selected then [ "searcher__results__item--selected" ] else []))
+                let resultClasses i = Style.prefixFromList ( "searcher__results__item" : (if i + 1 == s ^. Searcher.selected then [ "searcher__results__item--selected" ] else []))
                 case s ^. Searcher.mode of
                     Searcher.Command results -> forKeyed_ results $ \(idx, result) ->
                         div_
                             [ "key"       $= jsShow idx
                             , "className" $= resultClasses idx
+                            , onClick     $ \e _ -> stopPropagation e : (dispatch ref $ UI.SearcherEvent $ AcceptEntry (idx + 1))
                             ] $
                             div_
                                 [ "key" $= "name"
@@ -81,6 +93,7 @@ searcher =  React.defineView name $ \(ref, camera, s) -> do
                         div_
                             [ "key"       $= jsShow idx
                             , "className" $= resultClasses idx
+                            , onClick     $ \e _ -> stopPropagation e : (dispatch ref $ UI.SearcherEvent $ AcceptEntry (idx + 1))
                             ] $ do
                             div_
                                 ["key"       $= "prefix"
