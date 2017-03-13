@@ -44,12 +44,12 @@ onEvent callback = do
 parseEvent :: String -> Maybe Event
 parseEvent str = do
     let strBreak s = List.break (== ' ') s & _2 %~ drop 1
-        (tpeStr, r)          = strBreak str
-        (commandStr, argStr) = strBreak r
+        (tpeStr, r) = strBreak str
     case tpeStr of
-        "Shortcut" -> Shortcut .: Shortcut.Event <$> readMaybe commandStr
-                                                 <*> pure (if null argStr then Nothing else Just $ convert argStr)
-        "Searcher" -> UI . SearcherEvent <$> readMaybe commandStr
+        "Shortcut" -> do let (commandStr, argStr) = strBreak r
+                         Shortcut .: Shortcut.Event <$> readMaybe commandStr
+                                                    <*> pure (if null argStr then Nothing else Just $ convert argStr)
+        "Searcher" -> UI . SearcherEvent <$> readMaybe r
         _          -> Nothing
 
 
