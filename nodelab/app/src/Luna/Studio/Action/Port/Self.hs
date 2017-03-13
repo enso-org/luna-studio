@@ -25,10 +25,10 @@ showOrHideSelfPort mayConnect mayPenConnect node = do
         connectToSelfPossible = isJust $ join $
             mapM (toValidConnection $ toAnyPortRef nodeId portId) $ view Action.connectSourcePort <$> mayConnect
     isConnected <- isJust <$> getConnection (InPortRef nodeId Self)
-    if ( isJust mayPenConnect
+    if isJust mayPenConnect
       || connectToSelfPossible
-      || not (node ^. Model.isCollapsed)
-      || isConnected ) then
+      || (node ^. Model.isExpanded)
+      || isConnected then
          return $ node & Model.ports . at portId . _Just . Model.visible .~ True
     else return $ node & Model.ports . at portId . _Just . Model.visible .~ False
 
