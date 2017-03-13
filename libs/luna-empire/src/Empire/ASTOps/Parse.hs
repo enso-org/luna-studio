@@ -38,7 +38,7 @@ parseExpr s = do
   case lamRes of
       (name, Just l)  -> return (name, l)
       _               -> case parsed of
-          Right (Parser.IRBuilder x) -> do
+          Right (Parser.IRB x) -> do
               x' <- x
               return (Nothing, x')
           Left err -> throwM $ ParserException err
