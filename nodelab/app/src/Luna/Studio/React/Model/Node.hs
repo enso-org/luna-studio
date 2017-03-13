@@ -3,19 +3,21 @@
 {-# LANGUAGE RankNTypes        #-}
 module Luna.Studio.React.Model.Node (
     module Luna.Studio.React.Model.Node,
-    NodeAPI.NodeId
+    NodeId
 ) where
 
 import           Control.Arrow
 import           Data.Map.Lazy                     (Map)
 import qualified Data.Map.Lazy                     as Map
+import           Data.Set                          (Set)
 import           Data.Time.Clock                   (UTCTime)
 
 import           Data.Position                     (Position (Position), Vector2 (Vector2))
-import           Empire.API.Data.Node              (NodeType)
+import           Empire.API.Data.Node              (NodeId, NodeType)
 import qualified Empire.API.Data.Node              as NodeAPI
 import qualified Empire.API.Data.NodeMeta          as MetaAPI
 import           Empire.API.Data.Port              (PortId (..))
+import           Empire.API.Data.TypeRep           (TypeRep)
 import           Empire.API.Graph.Collaboration    (ClientId)
 import           Empire.API.Graph.NodeResultUpdate (NodeValue)
 import           Luna.Studio.Prelude               hiding (set)
@@ -24,7 +26,7 @@ import qualified Luna.Studio.React.Model.Port      as Port
 import           Luna.Studio.State.Collaboration   (ColorId)
 
 
-data Node = Node { _nodeId                :: NodeAPI.NodeId
+data Node = Node { _nodeId                :: NodeId
                  , _ports                 :: Map PortId Port
                  , _position              :: Position
                  , _zPos                  :: Int
@@ -47,12 +49,22 @@ data Mode = Collapsed
 
 data ExpandedMode = Editor
                   | Controls
+                  | Case [SubGraph]
+                  | Function SubGraph
                   deriving (Eq, Generic, NFData, Show)
+
+
+data SubGraph = SubGraph
+    { _nodes  :: Set NodeId
+    , _monads :: [(TypeRep, [NodeId])]
+    } deriving (Default, Eq, Generic, NFData, Show)
 
 data Collaboration = Collaboration { _touch  :: Map ClientId (UTCTime, ColorId)
                                    , _modify :: Map ClientId  UTCTime
                                    } deriving (Default, Eq, Generic, NFData, Show)
+
 makeLenses ''Node
+makeLenses ''SubGraph
 makeLenses ''Collaboration
 
 instance Default Mode where def = Collapsed
@@ -79,7 +91,7 @@ isLiteral = to isLiteral' where
         isIn' (OutPortId _) = False
         isIn' (InPortId  _) = True
 
-makeNode :: NodeAPI.NodeId -> Map PortId Port -> Position -> Text -> Maybe Text -> Text -> NodeType -> Bool -> Node
+makeNode :: NodeId -> Map PortId Port -> Position -> Text -> Maybe Text -> Text -> NodeType -> Bool -> Node
 makeNode nid ports' pos expr code' name' tpe' vis = Node nid ports' pos def expr code' name' def def tpe' def False vis def Nothing
 
 makePorts :: NodeAPI.Node -> [Port]
