@@ -63,6 +63,6 @@ handleCommand = \case
     Shortcut.SelectAll           -> selectAll
     Shortcut.RemoveSelectedNodes -> Node.removeSelectedNodes
     Shortcut.Cancel              -> unselectAll
-    Shortcut.ExpandSelectedNodes -> Node.selectedToggleMode Node.Expanded
-    Shortcut.EditSelectedNodes   -> Node.selectedToggleMode Node.Editor
+    Shortcut.ExpandSelectedNodes -> Node.selectedToggleMode $ Node.Expanded Node.Controls
+    Shortcut.EditSelectedNodes   -> Node.selectedToggleMode $ Node.Expanded Node.Editor
     _                            -> return ()

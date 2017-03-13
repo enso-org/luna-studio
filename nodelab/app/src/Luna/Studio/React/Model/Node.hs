@@ -42,9 +42,12 @@ data Node = Node { _nodeId                :: NodeAPI.NodeId
                  } deriving (Eq, Generic, NFData, Show)
 
 data Mode = Collapsed
-          | Expanded
-          | Editor
+          | Expanded ExpandedMode
           deriving (Eq, Generic, NFData, Show)
+
+data ExpandedMode = Editor
+                  | Controls
+                  deriving (Eq, Generic, NFData, Show)
 
 data Collaboration = Collaboration { _touch  :: Map ClientId (UTCTime, ColorId)
                                    , _modify :: Map ClientId  UTCTime
@@ -58,11 +61,15 @@ isMode :: Mode -> Getter Node Bool
 isMode mode' = to isMode' where
     isMode' node = node ^. mode == mode'
 
-isExpanded :: Getter Node Bool
-isExpanded = isMode Expanded
-
 isCollapsed :: Getter Node Bool
 isCollapsed = isMode Collapsed
+
+isExpanded :: Getter Node Bool
+isExpanded = isCollapsed . to not
+
+isExpandedControls :: Getter Node Bool
+isExpandedControls = isMode (Expanded Controls)
+
 
 isLiteral :: Getter Node Bool
 isLiteral = to isLiteral' where
