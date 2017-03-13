@@ -135,10 +135,16 @@ addNodeNoTC loc uuid expr meta = do
     Publisher.notifyNodeUpdate loc node
     return node
 
+updateNodeSequenceWithOutput :: ASTOp m => Maybe NodeRef -> m ()
+updateNodeSequenceWithOutput outputRef = do
+    newSeq     <- makeCurrentSeq
+    updateGraphSeq newSeq outputRef
+
 updateNodeSequence :: ASTOp m => m ()
 updateNodeSequence = do
-    newSeq <- makeCurrentSeq
-    updateGraphSeq newSeq
+    currentTgt <- ASTRead.getCurrentASTTarget
+    outputRef  <- mapM ASTRead.getLambdaOutputRef    currentTgt
+    updateNodeSequenceWithOutput outputRef
 
 makeCurrentSeq :: ASTOp m => m (Maybe NodeRef)
 makeCurrentSeq = do
@@ -146,30 +152,21 @@ makeCurrentSeq = do
   sortedRefs <- AST.sortByPosition allNodes
   AST.makeSeq sortedRefs
 
-updateGraphSeq :: ASTOp m => Maybe NodeRef -> m ()
-updateGraphSeq newSeq = do
-    lambda <- ASTRead.getCurrentASTTarget
-    case lambda of
-        Just outerLambda -> do
-            outerBody   <- ASTRead.getLambdaBodyRef outerLambda
-            output      <- ASTRead.getLambdaOutputRef outerLambda
-            case newSeq of
-                Just s -> case outerBody of
-                    Just _body -> do
-                        oldSeq <- ASTRead.getLambdaSeqRef outerLambda
-                        forM_ oldSeq $ flip IR.matchExpr $ \case
-                            IR.Seq l _r -> IR.changeSource l s
-                    _          -> do
-                        body       <- IR.generalize <$> IR.seq s output
-                        outputLink <- ASTRead.getLambdaOutputLink outerLambda
-                        IR.changeSource outputLink body
-                _      -> do
-                    firstNonLambda <- ASTRead.getFirstNonLambdaRef outerLambda
-                    IR.replaceNode firstNonLambda output
-        Nothing              -> do
-            oldSeq <- use $ Graph.breadcrumbHierarchy . BH.body
-            when (oldSeq /= newSeq) $ mapM_ ASTRemove.removeSubtree oldSeq
-            Graph.breadcrumbHierarchy . BH.body .= newSeq
+updateGraphSeq :: ASTOp m => Maybe NodeRef -> Maybe NodeRef -> m ()
+updateGraphSeq newSeq outputRef = do
+    oldSeq <- use $ Graph.breadcrumbHierarchy . BH.body
+    currentTgt <- ASTRead.getCurrentASTTarget
+    outLink    <- mapM ASTRead.getFirstNonLambdaLink currentTgt
+    newOut     <- case (outputRef, newSeq) of
+        (Just ref, Just new) -> Just . IR.generalize <$> IR.seq new ref
+        (Just ref, Nothing)  -> return $ Just ref
+        (Nothing,  Just n)   -> return $ Just n
+        _                    -> return Nothing
+    case (,) <$> outLink <*> newOut of
+        Just (l, o) -> IR.changeSource l o
+        Nothing     -> return ()
+    when (newOut /= oldSeq) $ mapM_ ASTRemove.removeSubtree oldSeq
+    Graph.breadcrumbHierarchy . BH.body .= newOut
 
 -- TODO[MK]: Figure out the logic of seqing and migrate to a uniform solution
 getNodeIdSequence :: GraphLocation -> Empire [NodeId]
@@ -233,18 +230,13 @@ descendInto (GraphLocation pid lid breadcrumb) nid = GraphLocation pid lid bread
         breadcrumb' = coerce $ coerce breadcrumb ++ [Breadcrumb.Lambda nid]
 
 removeNodes :: GraphLocation -> [NodeId] -> Empire ()
-removeNodes loc nodeIds = do
-    forM_ nodeIds $ \nodeId -> do
-        children <- withTC (loc `descendInto` nodeId) False $ do
-            uses Graph.breadcrumbHierarchy BH.topLevelIDs
-        removeNodes (loc `descendInto` nodeId) children
-    withTC loc False $ runASTOp $ do
-        forM_ nodeIds removeNodeNoTC
-        when (not . null $ nodeIds) $ updateNodeSequence
+removeNodes loc nodeIds = withTC loc False $ runASTOp $ do
+    forM_ nodeIds removeNodeNoTC
+    when (not . null $ nodeIds) $ updateNodeSequence
 
 removeNodeNoTC :: ASTOp m => NodeId -> m ()
 removeNodeNoTC nodeId = do
-    astRef <- GraphUtils.getASTPointer nodeId
+    astRef        <- GraphUtils.getASTPointer nodeId
     obsoleteEdges <- getOutEdges nodeId
     mapM_ disconnectPort obsoleteEdges
     Graph.breadcrumbHierarchy . BH.children . at nodeId .= Nothing
@@ -534,13 +526,10 @@ makeApp src dst pos inputPos = do
         (True, True) -> do
             Just lambda' <- ASTRead.getCurrentASTTarget
             srcAst <- AST.getLambdaInputRef lambda' inputPos
-            newNodeRef <- ASTModify.redirectLambdaOutput lambda' srcAst
-            ASTModify.rewireCurrentNode newNodeRef
+            updateNodeSequenceWithOutput $ Just srcAst
         (False, True) -> do
-            Just dstAst <- ASTRead.getCurrentASTTarget
-            srcAst <- GraphUtils.getASTVar    src
-            newNodeRef <- ASTModify.redirectLambdaOutput dstAst srcAst
-            ASTModify.rewireCurrentNode newNodeRef
+            srcAst     <- GraphUtils.getASTVar    src
+            updateNodeSequenceWithOutput $ Just srcAst
         (True, False) -> do
             Just lambda' <- ASTRead.getCurrentASTTarget
             srcAst  <- AST.getLambdaInputRef lambda' inputPos

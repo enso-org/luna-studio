@@ -153,14 +153,16 @@ getLambdaOutputLink' firstLam node = match node $ \case
     Seq _l r  -> if firstLam then return r else throwM $ NotLambdaException node
 
 getFirstNonLambdaRef :: ASTOp m => NodeRef -> m NodeRef
-getFirstNonLambdaRef = getFirstNonLambdaRef' False
+getFirstNonLambdaRef = getFirstNonLambdaLink >=> IR.source
 
-getFirstNonLambdaRef' :: ASTOp m => Bool -> NodeRef -> m NodeRef
-getFirstNonLambdaRef' firstLam node = match node $ \case
+getFirstNonLambdaLink :: ASTOp m => NodeRef -> m EdgeRef
+getFirstNonLambdaLink node = match node $ \case
     Lam _ next -> do
         nextLam <- IR.source next
-        getFirstNonLambdaRef' True nextLam
-    _         -> if firstLam then return node else throwM $ NotLambdaException node
+        match nextLam $ \case
+            Lam{} -> getFirstNonLambdaLink nextLam
+            _     -> return next
+    _         -> throwM $ NotLambdaException node
 
 isApp :: ASTOp m => NodeRef -> m Bool
 isApp expr = isJust <$> IRExpr.narrowTerm @IR.App expr
