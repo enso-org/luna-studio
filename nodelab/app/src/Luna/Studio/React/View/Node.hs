@@ -61,7 +61,7 @@ node = React.defineView name $ \(ref, n) -> do
                 [ "key"         $= "nameRoot"
                 , onClick       $ \_ m -> dispatch ref $ UI.NodeEvent $ Node.Select m nodeId
                 , onDoubleClick $ \_ _ -> dispatch ref $ UI.NodeEvent $ Node.Enter nodeId
-                , "className"   $= Style.prefixFromList ( [ "node" , (if n ^. Node.isCollapsed then "node--collapsed" else "node--expanded") ]
+                , "className"   $= Style.prefixFromList ( [ "node" , (if n ^. Node.isCollapsed then  "node--collapsed" else "node--expanded") ]
                                                                   ++ (if n ^. Node.isSelected  then ["node--selected"] else []) )
                 ] $
                 svg_
