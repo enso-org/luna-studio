@@ -161,10 +161,10 @@ portIO_ ref p numOfPorts = do
         mode      = if isInput then -1.0 else 1.0
 --        n         = if isInput then 1 else 0
         adjust
-            | numOfPorts == 1 = (-4.0)
-            | numOfPorts == 2 =   4.0
-            | numOfPorts == 3 =  12.0
-            | otherwise       =  20.0
+            | numOfPorts == 1 = (-3.5)
+            | numOfPorts == 2 =   4.5
+            | numOfPorts == 3 =  12.5
+            | otherwise       =  20.5
         portType  = toString $ p ^. Port.valueType
         startPortArcX isShape r = r * sin(portAngleStart isShape num numOfPorts r * mode)
         startPortArcY isShape r = r * cos(portAngleStart isShape num numOfPorts r * mode)
@@ -183,13 +183,13 @@ portIO_ ref p numOfPorts = do
         svgPath a b = "M"  <> ax a b <> " " <> ay a b <>
                      " A " <> r1 b <> " " <> r1 b <> " 0 0 " <> svgFlag1 <> " " <> bx a b <> " " <> by a b <>
                      " L " <> cx a <> " " <> cy a <>
-                     " A " <> r2   <> " " <> r2   <> " 0 0 " <> svgFlag2 <> " " <> dx a <> " " <> dy a <>
+                     " A " <> r2   <> " " <> r2   <> " 0 0 " <> svgFlag2 <> " " <> dx a   <> " " <> dy a   <>
                      " Z"
     g_
         [ "className" $= Style.prefixFromList classes
         ] $ do
         text_
-            [ "className" $= Style.prefix "port__type"
+            [ "className" $= Style.prefixFromList [ "port__type", "noselect" ]
             , "y"         $= jsShow2 ((lineHeight * fromIntegral num) - adjust)
             , "x"         $= (if isInput then "-40" else "40")
             ] $ elemString portType
@@ -224,7 +224,7 @@ portIOExpanded_ ref p = if p ^. Port.portId == InPortId Self then portSelf_ ref 
         [ "className" $= Style.prefixFromList classes
         ] $ do
         text_
-            [ "className" $= Style.prefix "port__type"
+            [ "className" $= Style.prefixFromList [ "port__type", "noselect" ]
             , "y"         $= py
             , "dy"        $= "4"
             , "dx"        $= (if isInput then "-16" else "176")

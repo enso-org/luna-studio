@@ -56,16 +56,19 @@ nodeEditor = React.defineView name $ \(ref, ne) -> do
             elemString $ ".luna-connection__line { stroke-width: " <> show connectionWidth <> " }"
             forM_ (ne ^. NodeEditor.nodes . to HashMap.elems) $ nodeDynamicStyles_ camera
         svg_
-            [ "className" $= Style.prefixFromList [ "plane", "plane--monads", "node-trans" ]
+            [ "className" $= Style.prefixFromList [ "plane", "plane--monads" ]
             , "key"       $= "monads"
-            ] $ forKeyed_ monads $ monad_ (length monads)
+            ] $
+            g_
+                [ "className" $= Style.prefixFromList [ "monads", "node-trans" ]
+                ] $ forKeyed_ monads $ monad_ (length monads)
         svg_
-            [ "className" $= Style.prefixFromList [ "plane", "plane-connections", "node-trans" ]
+            [ "className" $= Style.prefixFromList [ "plane", "plane-connections" ]
             , "key"       $= "connections"
             ] $
             g_
                 [ "key"       $= "connections"
-                , "className" $= Style.prefix "connections"
+                , "className" $= Style.prefixFromList [ "connections", "node-trans" ]
                 ] $ do
                 mapM_ (uncurry (connection_ ref))  $ ne ^. NodeEditor.connections . to HashMap.toList
                 mapM_ (uncurry (connection_ ref))  $ ne ^. NodeEditor.portDragConnections . to HashMap.toList
