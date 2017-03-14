@@ -25,11 +25,12 @@ import qualified Luna.IR as IR
 
 getTypeRep :: ASTOp m => NodeRef -> m TypeRep
 getTypeRep tp = match tp $ \case
-    Cons n args -> TCons (pathNameToString n) <$> mapM (getTypeRep <=< IR.source) args
-    Lam  a out  -> TLam <$> (getTypeRep =<< IR.source a) <*> (getTypeRep =<< IR.source out)
-    Acc  t n    -> TAcc (nameToString n) <$> (getTypeRep =<< IR.source t)
-    Var  n      -> return $ TVar $ delete '#' $ nameToString n
-    _           -> return TStar
+    Cons   n args -> TCons (pathNameToString n) <$> mapM (getTypeRep <=< IR.source) args
+    Lam    a out  -> TLam <$> (getTypeRep =<< IR.source a) <*> (getTypeRep =<< IR.source out)
+    Acc    t n    -> TAcc (nameToString n) <$> (getTypeRep =<< IR.source t)
+    Var    n      -> return $ TVar $ delete '#' $ nameToString n
+    Number _      -> return $ TCons "Number" []
+    _             -> return TStar
 
 parenIf :: Bool -> String -> String
 parenIf False s = s

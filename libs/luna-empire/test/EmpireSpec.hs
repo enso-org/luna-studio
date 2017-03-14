@@ -469,7 +469,6 @@ spec = around withChannels $ parallel $ do
                 let inputPorts = Map.elems $ Map.filter Port.isInputPort $ succ' ^. Node.ports
                 inputPorts `shouldMatchList` [
                       Port.Port (Port.InPortId Port.Self)    "self" TStar (Port.WithDefault (Expression "succ"))
-                    , Port.Port (Port.InPortId (Port.Arg 0)) "arg0" TStar (Port.NotConnected)
                     ]
         it "connects to input port on +" $ \env -> do
             u1 <- mkUUID
@@ -504,7 +503,6 @@ spec = around withChannels $ parallel $ do
                       Port.Port (Port.InPortId Port.Self)    "self"  TStar (Port.WithDefault (Expression "func"))
                     , Port.Port (Port.InPortId (Port.Arg 0)) "arg0" TStar Port.Connected
                     , Port.Port (Port.InPortId (Port.Arg 1)) "arg1" TStar Port.Connected
-                    , Port.Port (Port.InPortId (Port.Arg 2)) "arg2" TStar Port.NotConnected
                     ]
         it "connects five nodes to func" $ \env -> do
             u1 <- mkUUID
@@ -539,7 +537,6 @@ spec = around withChannels $ parallel $ do
                     , Port.Port (Port.InPortId (Port.Arg 3)) "arg3" TStar Port.Connected
                     , Port.Port (Port.InPortId (Port.Arg 4)) "arg4" TStar Port.Connected
                     , Port.Port (Port.InPortId (Port.Arg 5)) "arg5" TStar Port.Connected
-                    , Port.Port (Port.InPortId (Port.Arg 6)) "arg6" TStar Port.NotConnected
                     ]
         it "removes empty port on disconnect" $ \env -> do
             u1 <- mkUUID
@@ -554,7 +551,6 @@ spec = around withChannels $ parallel $ do
                 let inputPorts = Map.elems $ Map.filter Port.isInputPort $ n ^. Node.ports
                 inputPorts `shouldMatchList` [
                       Port.Port (Port.InPortId Port.Self)    "self"  TStar (Port.WithDefault (Expression "func"))
-                    , Port.Port (Port.InPortId (Port.Arg 0)) "arg0"  TStar Port.NotConnected
                     ]
         it "disconnect first connection when two nodes connected" $ \env -> do
             u1 <- mkUUID

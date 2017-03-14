@@ -188,10 +188,8 @@ getPortState node = do
 extractArgTypes :: ASTOp m => NodeRef -> m [TypeRep]
 extractArgTypes node = do
     match node $ \case
-        Lam _args out -> do
-            as   <- mapM Print.getTypeRep [node]
-            return as
-        _ -> return []
+        Lam arg out -> (:) <$> (Print.getTypeRep =<< IR.source arg) <*> (extractArgTypes =<< IR.source out)
+        _           -> return []
 
 extractArgNames :: ASTOp m => NodeRef -> m [String]
 extractArgNames node = do
@@ -208,12 +206,10 @@ extractPortInfo :: ASTOp m => NodeRef -> m ([TypeRep], [PortState])
 extractPortInfo node = do
     match node $ \case
         App f _args -> do
-            unpacked       <- ASTDeconstruct.extractArguments node
-            portStates     <- mapM getPortState unpacked
-            tp    <- do
-                foo <- IR.readLayer @TypeLayer node
-                IR.source foo
-            types <- extractArgTypes tp
+            unpacked   <- ASTDeconstruct.extractArguments node
+            portStates <- mapM getPortState unpacked
+            tp         <- IR.readLayer @TypeLayer node >>= IR.source
+            types      <- extractArgTypes tp
             return (types, portStates)
         Lam _as o -> do
             args     <- ASTDeconstruct.extractArguments node
@@ -231,20 +227,11 @@ extractPortInfo node = do
             types <- extractArgTypes tpRef
             return (types, [])
 
-there'sLambdaSomewhereThere :: ASTOp m => NodeRef -> m Bool
-there'sLambdaSomewhereThere node = match node $ \case
-    App f arg -> there'sLambdaSomewhereThere =<< IR.source f
-    Lam{} -> return True
-    _ -> return False
-
 buildArgPorts :: ASTOp m => NodeRef -> m [Port]
 buildArgPorts ref = do
     (types, states) <- extractPortInfo ref
-    names <- extractArgNames ref
-    lambdaSomewhere <- there'sLambdaSomewhereThere ref
-    let additionalEmptyPort = if (not.null) types || lambdaSomewhere then 0
-                              else if NotConnected `elem` states then 0 else 1
-        portsTypes = types ++ replicate (max (length names) (length states) - length types + additionalEmptyPort) TStar
+    names           <- extractArgNames ref
+    let portsTypes = types ++ replicate (max (length names) (length states) - length types) TStar
         namesGen = names ++ drop (length names) (("arg" ++) . show <$> [(0::Int)..])
         psCons = zipWith3 Port
                           (InPortId . Arg <$> [(0::Int)..])
