@@ -15,13 +15,9 @@ module Empire.Data.Graph (
   , ASTState(..)
   ) where
 
-import           Data.Map.Lazy                     (Map)
-import qualified Data.Map                          as Map (empty)
-import           Empire.API.Data.Node              (NodeId)
 import           Empire.Data.BreadcrumbHierarchy   (BItem)
 import           Empire.Prelude
 
-import           Empire.Data.AST                   (NodeRef)
 import           Control.Monad.State               (MonadState(..), StateT, evalStateT, lift)
 import           Empire.Data.Layers                (attachEmpireLayers)
 import qualified Control.Monad.State.Dependent     as DepState

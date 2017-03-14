@@ -6,18 +6,16 @@ module JS.Atom
     , pushNotification
     -- , subscribeEventListenerInternal
     ) where
-import GHCJS.Types (JSVal)
 import           GHCJS.Foreign.Callback
 import           GHCJS.Marshal.Pure         (pFromJSVal)
+import           GHCJS.Types                (JSVal)
 import           Luna.Studio.Error.Error
-import           Luna.Studio.Event.Shortcut (ShortcutEvent)
 import qualified Luna.Studio.Event.Shortcut as Shortcut
 
 import qualified Data.List                  as List
 import           Text.Read                  (readMaybe)
 
 import           Luna.Studio.Event.Event    (Event (Shortcut, UI))
-import qualified Luna.Studio.Event.Shortcut as Shortcut
 import           Luna.Studio.Event.UI       (UIEvent (SearcherEvent))
 import           Luna.Studio.Prelude
 
