@@ -4,7 +4,7 @@ import           React.Flux                   (mouseCtrlKey, mouseMetaKey)
 
 import qualified Luna.Studio.Action.Batch     as Batch
 import           Luna.Studio.Action.Command   (Command)
-import           Luna.Studio.Action.Graph     (selectAll, toggleSelect, unselectAll)
+import qualified Luna.Studio.Action.Graph     as Graph
 import qualified Luna.Studio.Action.Node      as Node
 import qualified Luna.Studio.Action.Port      as PortControl
 import           Luna.Studio.Event.Event      (Event (Shortcut, UI))
@@ -32,7 +32,7 @@ handle (UI (NodeEvent (Node.MouseDown evt nodeId))) = Just $ do
     when shouldProceed $ Node.startNodeDrag pos nodeId shouldSnap
 handle (UI (NodeEvent (Node.Enter            nodeId))) = Just $ mapM_ Node.tryEnter =<< preuse (Global.graph . Graph.nodesMap . ix nodeId)
 handle (UI (NodeEvent (Node.EditExpression   nodeId))) = Just $ Node.editExpression nodeId
-handle (UI (NodeEvent (Node.Select      kevt nodeId))) = Just $ when (mouseCtrlKey kevt || mouseMetaKey kevt) $ toggleSelect nodeId
+handle (UI (NodeEvent (Node.Select      kevt nodeId))) = Just $ when (mouseCtrlKey kevt || mouseMetaKey kevt) $ Graph.toggleSelect nodeId
 handle (UI (NodeEvent (Node.DisplayResultChanged flag nodeId))) = Just $ Node.visualizationsToggled nodeId flag
 handle (UI (NodeEvent (Node.NameEditStart    nodeId))) = Just $ Node.startEditName nodeId
 handle (UI (NodeEvent (Node.NameApply        nodeId))) = Just $ Node.applyName   nodeId
@@ -60,9 +60,10 @@ handle _   = Nothing
 
 handleCommand :: Shortcut.Command -> Command State ()
 handleCommand = \case
-    Shortcut.SelectAll           -> selectAll
+    Shortcut.SelectAll           -> Graph.selectAll
     Shortcut.RemoveSelectedNodes -> Node.removeSelectedNodes
-    Shortcut.Cancel              -> unselectAll
+    Shortcut.Cancel              -> Graph.unselectAll
     Shortcut.ExpandSelectedNodes -> Node.selectedToggleMode $ Node.Expanded Node.Controls
     Shortcut.EditSelectedNodes   -> Node.selectedToggleMode $ Node.Expanded Node.Editor
+    Shortcut.UnfoldSelectedNodes -> Graph.selectedNodeIds >>= mapM_ Batch.getSubgraph
     _                            -> return ()

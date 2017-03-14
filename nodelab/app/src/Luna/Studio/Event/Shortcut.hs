@@ -37,6 +37,7 @@ data Command = Cancel
              | SelectAll
              | RemoveSelectedNodes
              | ExpandSelectedNodes
+             | UnfoldSelectedNodes
              | EditSelectedNodes
              -- searcher
              | SearcherOpen
