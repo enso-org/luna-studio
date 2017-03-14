@@ -5,7 +5,9 @@ module Luna.Studio.React.View.NodeEditor where
 import qualified Data.HashMap.Strict                   as HashMap
 import qualified Data.Matrix                           as Matrix
 import           Data.Maybe                            (mapMaybe)
+import qualified Empire.API.Data.MonadPath             as MonadPath
 import           JS.Scene                              (sceneId)
+import           Luna.Studio.Action.Geometry.Constants (connectionWidth)
 import qualified Luna.Studio.Data.CameraTransformation as CameraTransformation
 import           Luna.Studio.Data.Matrix               (matrix3dPropertyValue)
 import qualified Luna.Studio.Event.UI                  as UI
@@ -38,7 +40,8 @@ nodeEditor :: ReactView (Ref App, NodeEditor)
 nodeEditor = React.defineView name $ \(ref, ne) -> do
     let camera         = ne ^. NodeEditor.screenTransform . CameraTransformation.logicalToScreen
         (edges, nodes) = partition isEdge $ ne ^. NodeEditor.nodes . to HashMap.elems
-        lookupNode     = _2 %~ mapMaybe (flip HashMap.lookup $ ne ^. NodeEditor.nodes)
+        lookupNode m   = ( m ^. MonadPath.monadType
+                         , m ^. MonadPath.path . to (mapMaybe $ flip HashMap.lookup $ ne ^. NodeEditor.nodes))
         monads         = map lookupNode $ ne ^. NodeEditor.monads
         scale          = (Matrix.toList camera)!!0 :: Double
     div_
@@ -52,18 +55,22 @@ nodeEditor = React.defineView name $ \(ref, ne) -> do
         style_ [ "key" $= "style" ] $ do
             elemString $ ".luna-selection  { box-shadow: 0 0 0 " <> show (0.52/(scale**1.5)) <> "px orange !important }"
             elemString $ ".luna-node-trans { transform: " <> matrix3dPropertyValue camera <> " }"
+            elemString $ ".luna-connection__line { stroke-width: " <> show connectionWidth <> " }"
             forM_ (ne ^. NodeEditor.nodes . to HashMap.elems) $ nodeDynamicStyles_ camera
         svg_
-            [ "className" $= Style.prefixFromList [ "plane", "plane--monads", "node-trans" ]
+            [ "className" $= Style.prefixFromList [ "plane", "plane--monads" ]
             , "key"       $= "monads"
-            ] $ forKeyed_ monads $ monad_ (length monads)
+            ] $
+            g_
+                [ "className" $= Style.prefixFromList [ "monads", "node-trans" ]
+                ] $ forKeyed_ monads $ monad_ (length monads)
         svg_
-            [ "className" $= Style.prefixFromList [ "plane", "plane-connections", "node-trans" ]
+            [ "className" $= Style.prefixFromList [ "plane", "plane-connections" ]
             , "key"       $= "connections"
             ] $
             g_
                 [ "key"       $= "connections"
-                , "className" $= Style.prefix "connections"
+                , "className" $= Style.prefixFromList [ "connections", "node-trans" ]
                 ] $ do
                 mapM_ (uncurry (connection_ ref))  $ ne ^. NodeEditor.connections . to HashMap.toList
                 mapM_ (uncurry (connection_ ref))  $ ne ^. NodeEditor.portDragConnections . to HashMap.toList

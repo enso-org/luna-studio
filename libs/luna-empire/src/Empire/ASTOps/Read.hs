@@ -9,32 +9,7 @@ AST, without modifying it. They can still throw exceptions though.
 
 -}
 
-module Empire.ASTOps.Read (
-    isGraphNode
-  , getNodeId
-  , getVarName
-  , isApp
-  , isBlank
-  , isLambda
-  , isMatch
-  , getASTPointer
-  , getASTTarget
-  , getASTVar
-  , getTargetNode
-  , getVarNode
-  , getLambdaBodyRef
-  , getFirstNonLambdaRef
-  , getLambdaOutputLink
-  , getLambdaOutputRef
-  , getLambdaSeqRef
-  , getPatternNames
-  , getVarsInside
-  , getSelfNodeRef
-  , canEnterNode
-  , rhsIsLambda
-  , varIsPatternMatch
-  , nodeIsPatternMatch
-  ) where
+module Empire.ASTOps.Read where
 
 import           Control.Monad                      ((>=>), (<=<), forM)
 import           Control.Monad.Catch                (Handler(..), catches)
@@ -48,6 +23,7 @@ import           Empire.Data.AST                    (NodeRef, EdgeRef, NotUnifyE
                                                      NotLambdaException(..),
                                                      astExceptionFromException, astExceptionToException)
 import qualified Empire.Data.Graph                  as Graph
+import qualified Empire.Data.BreadcrumbHierarchy    as BH
 import           Empire.Data.Layers                 (Marker)
 
 import qualified OCI.IR.Combinators as IRExpr
@@ -109,20 +85,41 @@ instance Exception NodeDoesNotExistException where
 
 getASTPointer :: ASTOp m => NodeId -> m NodeRef
 getASTPointer nodeId = do
-    node <- use (Graph.nodeMapping . at nodeId)
+    -- TODO[MK]: checking if asking for own node is just to make specs pass, I need to figure out who and why needs it
+    self <- use $ Graph.breadcrumbHierarchy . BH.self
+    let selfRef = case self of
+          Just (id, ref) -> if id == nodeId then Just $ BH.getAnyRef ref else Nothing
+          Nothing -> Nothing
+    case selfRef of
+        Just r -> return r
+        Nothing -> do
+            node <- preuse (Graph.breadcrumbHierarchy . BH.children . ix nodeId . BH.self . _Just . _2)
+            case node of
+                Just target -> pure $ BH.getAnyRef target
+                _           -> throwM $ NodeDoesNotExistException nodeId
+
+getCurrentASTPointer :: ASTOp m => m (Maybe NodeRef)
+getCurrentASTPointer = do
+    node <- use $ Graph.breadcrumbHierarchy . BH.self
     case node of
-        Just target -> pure $ Graph.getAnyRef target
-        _           -> throwM $ NodeDoesNotExistException nodeId
+        Just (_, tgt) -> return $ Just $ BH.getAnyRef tgt
+        _             -> return $ Nothing
 
 getASTTarget :: ASTOp m => NodeId -> m NodeRef
 getASTTarget nodeId = do
     matchNode <- getASTPointer nodeId
     getTargetNode matchNode
 
+getCurrentASTTarget :: ASTOp m => m (Maybe NodeRef)
+getCurrentASTTarget = mapM getTargetNode =<< getCurrentASTPointer
+
 getASTVar :: ASTOp m => NodeId -> m NodeRef
 getASTVar nodeId = do
     matchNode <- getASTPointer nodeId
     getVarNode matchNode
+
+getCurrentASTVar :: ASTOp m => m (Maybe NodeRef)
+getCurrentASTVar = mapM getVarNode =<< getCurrentASTPointer
 
 getSelfNodeRef :: ASTOp m => NodeRef -> m (Maybe NodeRef)
 getSelfNodeRef = getSelfNodeRef' False
@@ -167,14 +164,16 @@ getLambdaOutputLink' firstLam node = match node $ \case
     Seq _l r  -> if firstLam then return r else throwM $ NotLambdaException node
 
 getFirstNonLambdaRef :: ASTOp m => NodeRef -> m NodeRef
-getFirstNonLambdaRef = getFirstNonLambdaRef' False
+getFirstNonLambdaRef = getFirstNonLambdaLink >=> IR.source
 
-getFirstNonLambdaRef' :: ASTOp m => Bool -> NodeRef -> m NodeRef
-getFirstNonLambdaRef' firstLam node = match node $ \case
+getFirstNonLambdaLink :: ASTOp m => NodeRef -> m EdgeRef
+getFirstNonLambdaLink node = match node $ \case
     Lam _ next -> do
         nextLam <- IR.source next
-        getFirstNonLambdaRef' True nextLam
-    _         -> if firstLam then return node else throwM $ NotLambdaException node
+        match nextLam $ \case
+            Lam{} -> getFirstNonLambdaLink nextLam
+            _     -> return next
+    _         -> throwM $ NotLambdaException node
 
 isApp :: ASTOp m => NodeRef -> m Bool
 isApp expr = isJust <$> IRExpr.narrowTerm @IR.App expr
@@ -204,13 +203,12 @@ varIsPatternMatch expr = do
     var <- getVarNode expr
     isCons var
 
-rhsIsLambda :: ASTOp m => NodeId -> m Bool
-rhsIsLambda nid = do
-    node <- getASTTarget nid
-    isLambda node
+rhsIsLambda :: ASTOp m => NodeRef -> m Bool
+rhsIsLambda ref = do
+    rhs <- getTargetNode ref
+    isLambda rhs
 
-canEnterNode :: ASTOp m => NodeId -> m Bool
-canEnterNode nid = do
-    root   <- getASTPointer nid
-    match' <- isMatch root
-    if match' then rhsIsLambda nid else return False
+canEnterNode :: ASTOp m => NodeRef -> m Bool
+canEnterNode ref = do
+    match' <- isMatch ref
+    if match' then rhsIsLambda ref else return False

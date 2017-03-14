@@ -1,4 +1,5 @@
-./script/atom-build
-cd atom
-apm install .
+./script/atom-build && \
+cd atom && \
+rm -r node_modules && \
+apm install . && \
 apm link .

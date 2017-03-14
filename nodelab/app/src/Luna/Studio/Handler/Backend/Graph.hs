@@ -19,6 +19,7 @@ import qualified Empire.API.Graph.CodeUpdate            as CodeUpdate
 import qualified Empire.API.Graph.Connect               as Connect
 import qualified Empire.API.Graph.Disconnect            as Disconnect
 import qualified Empire.API.Graph.GetProgram            as GetProgram
+import qualified Empire.API.Graph.GetSubgraph            as GetSubgraph
 import qualified Empire.API.Graph.MonadsUpdate          as MonadsUpdate
 import qualified Empire.API.Graph.NodeResultUpdate      as NodeResultUpdate
 import qualified Empire.API.Graph.NodeSearch            as NodeSearch
@@ -84,6 +85,11 @@ handle (Event.Batch ev) = Just $ case ev of
             CodeEditor.setCode code
             Global.workspace . Workspace.isGraphLoaded .= True
             requestCollaborationRefresh
+
+    SubgraphFetched response@(Response.Response uuid _ (GetSubgraph.Request loc) _ _) -> do
+        shouldProcess   <- isCurrentLocationAndGraphLoaded loc
+        whenM (isOwnRequest uuid) $ when shouldProcess $ do
+            $notImplemented
 
     AddNodeResponse response@(Response.Response uuid _ (AddNode.Request loc _ _ _ _) _ _) -> do
         shouldProcess   <- isCurrentLocationAndGraphLoaded loc

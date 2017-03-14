@@ -36,6 +36,7 @@ dependencies:
     - luna-passes
     - luna-syntax-text
     - luna-empire-api
+    - luna-stdlib
     - luna-empire-api-json
     - m-logger
     - megaparsec

@@ -7,9 +7,9 @@ import           Data.Binary     (Binary)
 import           Data.List       (intercalate)
 import           Data.Text       (Text)
 
-data TypeRep = TCons String    [TypeRep]
+data TypeRep = TCons String  [TypeRep]
              | TVar  String
-             | TLam  [TypeRep] TypeRep
+             | TLam  TypeRep TypeRep
              | TStar
              | TBlank
              | TAcc  String TypeRep
@@ -26,8 +26,8 @@ instance ToString TypeRep where
             _      -> let reps = toString' True True <$> args
                           par  = parenCons && (not . null $ reps)
                       in parenIf par $ unwords (name : reps)
-        toString' _ parenLam (TLam args out) = parenIf parenLam $ intercalate " -> " reps <> " -> " <> outRep where
-            reps   = toString' False True <$> args
+        toString' _ parenLam (TLam arg out) = parenIf parenLam $ argRep <> " -> " <> outRep where
+            argRep = toString' False True  arg
             outRep = toString' False False out
         toString' _ _ (TVar n) = n
         toString' _ _ TStar = "*"

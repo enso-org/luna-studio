@@ -8,7 +8,7 @@ module Luna.Studio.React.View.Edge
 
 import qualified Data.Aeson                    as Aeson
 import qualified Data.Map.Lazy                 as Map
-import           Data.Position                 (x, y)
+import           Data.Position                 (y)
 import qualified Empire.API.Data.PortRef       as PortRef
 import qualified JS.Config                     as Config
 import           JS.Scene                      (inputSidebarId, outputSidebarId)

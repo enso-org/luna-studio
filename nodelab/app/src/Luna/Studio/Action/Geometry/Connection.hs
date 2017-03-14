@@ -37,13 +37,13 @@ getConnectionAngle srcPos dstPos num numOfSameTypePorts =
     if      t' > a' - pi / 2 - g then a - pi / 2 - g
     else if t' < b' - pi / 2 + g then b - pi / 2 + g
     else t where
-        a  = portAngleStop  num numOfSameTypePorts portRadius
-        b  = portAngleStart num numOfSameTypePorts portRadius
+        a  = portAngleStop  True num numOfSameTypePorts portRadius
+        b  = portAngleStart True num numOfSameTypePorts portRadius
         t  = nodeToNodeAngle srcPos dstPos
         a' = if a < pi then a + (2 * pi) else a
         b' = if b < pi then b + (2 * pi) else b
         t' = if t < pi then t + (2 * pi) else t
-        g  = portGap portRadius / 4
+        g  = portGap portRadius
 
 -- TODO[JK]: dst numOfInputs
 connectionSrc :: Position -> Position -> Bool -> Bool -> Int -> Int -> Bool -> Position
@@ -85,8 +85,8 @@ getConnectionPosition :: Node -> Port -> Node -> Port -> Command State (Maybe (P
 getConnectionPosition srcNode srcPort dstNode dstPort = do
     let srcPos     = srcNode ^. Node.position
         dstPos     = dstNode ^. Node.position
-        isSrcExp   = not $ srcNode ^. Node.isCollapsed
-        isDstExp   = not $ dstNode ^. Node.isCollapsed
+        isSrcExp   = srcNode ^. Node.isExpanded
+        isDstExp   = dstNode ^. Node.isExpanded
         srcPortNum = getPortNumber srcPort
         dstPortNum = getPortNumber dstPort
         srcPorts   = Map.elems $ srcNode ^. Node.ports
@@ -121,7 +121,7 @@ getCurrentConnectionSrcPosition node port mousePos = if isInputEdge node then
         InPortRef'  _ -> connectionDst mousePos pos False isExp portNum numOfSameTypePorts $ isPortSelf port
     where
         pos                = node ^. Node.position
-        isExp              = not $ node ^. Node.isCollapsed
+        isExp              = node ^. Node.isExpanded
         portNum            = getPortNumber port
         ports              = Map.elems $ node ^. Node.ports
         numOfSameTypePorts = countSameTypePorts port ports

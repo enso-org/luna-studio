@@ -23,20 +23,19 @@ portGap r = 0.2 * nodeRadius / r -- to avoid gap narrowing
 portAngle :: Int -> Angle
 portAngle numOfPorts = pi / fromIntegral numOfPorts
 
-portAngleStart :: Int -> Int -> Double -> Angle
-portAngleStart num numOfPorts r =
+portAngleStart :: Bool -> Int -> Int -> Double -> Angle
+portAngleStart isShape num numOfPorts r =
     let number = fromIntegral num + 1
-        gap    = portGap r
+        gap    = if isShape then (portGap r)/2 else 0
         t      = portAngle numOfPorts
-    in  pi - number * t + gap/2 --number * t + pi - t + gap/2
+    in  pi - number * t + gap
 
-
-portAngleStop :: Int -> Int -> Double -> Angle
-portAngleStop num numOfPorts r =
+portAngleStop :: Bool -> Int -> Int -> Double -> Angle
+portAngleStop isShape num numOfPorts r =
     let number = fromIntegral num + 1
-        gap    = portGap r
+        gap    = if isShape then (portGap r)/2 else 0
         t      = portAngle numOfPorts
-    in  pi - number * t + t - gap/2 --number * t + pi - gap/2
+    in  pi - number * t + t - gap
 
 countInput :: Port -> Int
 countInput port = case port ^. Port.portId of

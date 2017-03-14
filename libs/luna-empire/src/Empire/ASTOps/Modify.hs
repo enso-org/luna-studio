@@ -7,17 +7,7 @@
 
 -}
 
-module Empire.ASTOps.Modify (
-    redirectLambdaOutput
-  , renameVar
-  , rewireNode
-  , rewireNodeName
-  , setLambdaOutputToBlank
-  , addLambdaArg
-  , moveLambdaArg
-  , removeLambdaArg
-  , renameLambdaArg
-  ) where
+module Empire.ASTOps.Modify where
 
 import           Control.Lens (folded, ifiltered)
 import           Data.List    (find)
@@ -158,6 +148,13 @@ rewireNodeName nodeId newVar = do
     oldVar    <- ASTRead.getASTVar  nodeId
     replaceVarNode matchNode newVar
     ASTRemove.removeSubtree oldVar
+
+rewireCurrentNode :: ASTOp m => NodeRef -> m ()
+rewireCurrentNode newTarget = do
+    Just matchNode <- ASTRead.getCurrentASTPointer
+    Just oldTarget <- ASTRead.getCurrentASTTarget
+    replaceTargetNode matchNode newTarget
+    ASTRemove.removeSubtree oldTarget
 
 renameVar :: ASTOp m => NodeRef -> String -> m ()
 renameVar vref name = do

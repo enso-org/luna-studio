@@ -55,7 +55,7 @@ searcher =  React.defineView name $ \(ref, camera, s) -> do
         div_
             [ "key"       $= "nodeTrans"
             , "className" $= Style.prefix "node-trans"
-            ] $ withJust nodePrev $ nodeBody_ ref . (Node.position .~ nodePos) -- . (Node.isExpanded .~ True)
+            ] $ withJust nodePrev $ nodeBody_ ref . (Node.position .~ nodePos) -- . (Node.isExpandedControls .~ True)
         div_
             [ "key"       $= "nameTrans"
             , "className" $= Style.prefix "name-trans"

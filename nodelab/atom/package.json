@@ -11,7 +11,6 @@
   "dependencies": {
     "atom-space-pen-views": "^2.0.3",
     "sub-atom": "1.0.x",
-    "brunch": "1.8.5",
     "jquery": "*",
     "react" : "*",
     "react-dom" : "*",
