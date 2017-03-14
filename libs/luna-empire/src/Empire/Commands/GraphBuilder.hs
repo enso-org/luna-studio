@@ -301,6 +301,8 @@ buildInputEdge :: ASTOp m => [(OutPortRef, InPortRef)] -> NodeId -> m API.Node
 buildInputEdge connections nid = do
     Just ref <- ASTRead.getCurrentASTTarget
     (types, _states) <- extractPortInfo ref
+    let getTypes (TLam i o) = i : (getTypes o)
+        getTypes _          = []
     let connectedPorts = map (\(OutPortRef _ (Projection p)) -> p)
                $ map fst
                $ filter (\(OutPortRef refNid p,_) -> nid == refNid)
@@ -311,7 +313,7 @@ buildInputEdge connections nid = do
         [] -> do
             numberOfArguments <- length <$> (ASTDeconstruct.extractArguments ref)
             return $ replicate numberOfArguments TStar
-        [TLam types' _] -> return types'
+        [a] -> return $ getTypes a
     let nameGen = names ++ drop (length names) (fmap (\i -> "arg" ++ show i) [(0::Int)..])
         inputEdges = List.zipWith4 (\n t state i -> Port (OutPortId $ Projection i) n t state) nameGen argTypes states [(0::Int)..]
     return $

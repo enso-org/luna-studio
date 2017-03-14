@@ -261,11 +261,11 @@ spec = around withChannels $ parallel $ do
                 withResult res'' $ \(n1, n2) -> do
                     let inputPorts = Map.elems $ Map.filter Port.isInputPort $ n2 ^. Node.ports
                     inputPorts `shouldMatchList` [
-                          Port.Port (Port.InPortId (Port.Arg 0)) "in" (TLam [TVar "a"] (TVar "a")) Port.Connected
+                          Port.Port (Port.InPortId (Port.Arg 0)) "in" (TLam (TVar "a") (TVar "a")) Port.Connected
                         ]
                     let outputPorts = Map.elems $ Map.filter Port.isOutputPort $ n1 ^. Node.ports
                     outputPorts `shouldMatchList` [
-                          Port.Port (Port.OutPortId Port.All) "Output" (TLam [TVar "a"] (TVar "a")) (Port.WithDefault (Expression "-> $in in"))
+                          Port.Port (Port.OutPortId Port.All) "Output" (TLam (TVar "a") (TVar "a")) (Port.WithDefault (Expression "-> $in in"))
                         ]
         it "adds lambda nodeid to node mapping" $ \env -> do
             u1 <- mkUUID

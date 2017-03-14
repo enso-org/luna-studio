@@ -23,27 +23,13 @@ import           Empire.API.Data.TypeRep   (TypeRep (..))
 import           Luna.IR.Term.Uni
 import qualified Luna.IR as IR
 
-
 getTypeRep :: ASTOp m => NodeRef -> m TypeRep
 getTypeRep tp = match tp $ \case
-    Cons n args -> do
-        name    <- pure $ pathNameToString n
-        argReps <- mapM (getTypeRep <=< IR.source) args
-        return $ TCons name argReps
-    Lam _as out -> do
-        args   <- ASTDeconstruct.extractArguments tp
-        argReps <- mapM getTypeRep args
-        outRep <- getTypeRep =<< IR.source out
-        return $ TLam argReps outRep
-    Acc t n -> do
-        name <- pure $ nameToString n
-        rep <- IR.source t >>= getTypeRep
-        return $ TAcc name rep
-    Var n -> do
-        name <- pure $ nameToString n
-        return $ TVar $ delete '#' name
-    Star -> return TStar
-    _ -> return TBlank
+    Cons n args -> TCons (pathNameToString n) <$> mapM (getTypeRep <=< IR.source) args
+    Lam  a out  -> TLam <$> (getTypeRep =<< IR.source a) <*> (getTypeRep =<< IR.source out)
+    Acc  t n    -> TAcc (nameToString n) <$> (getTypeRep =<< IR.source t)
+    Var  n      -> return $ TVar $ delete '#' $ nameToString n
+    _           -> return TStar
 
 parenIf :: Bool -> String -> String
 parenIf False s = s
