@@ -32,6 +32,7 @@ import           Luna.IR.Term.Unit                  (Imports(..), Module(..))
 import qualified Luna.IR.Term.Function              as IR.Function
 import           OCI.Pass                           (SubPass)
 import qualified Luna.Pass.Typechecking.Typecheck   as Typecheck
+import qualified Luna.Builtin.Std                   as Std
 
 
 getNodeValueReprs :: NodeId -> Command Graph (Either String a)
@@ -46,35 +47,13 @@ collect _ = return ()
     {-st <- TypeCheckState.get-}
     {-putStrLn $ "State is: " <> show st-}
 
-typed :: (IR.MonadRef m, IR.MonadPassManager m, IR.Generalizable' (IR.Expr l) (IR.Expr (IR.Sub IR.Type t)), IR.Generalizable' (IR.Sub IR.Type t) IR.Bottom) => SubPass EmpirePass m (IR.Expr t) -> IR.Expr l -> SubPass EmpirePass m (IR.Expr t)
-typed me t = do
-   e <- me
-   oldTp <- IR.readLayer @IR.Type e >>= IR.source
-   IR.reconnectLayer @IR.Type t e
-   IR.deleteSubtree oldTp
-   return e
-
 runTC :: Command Graph ()
 runTC = do
     allNodeIds <- uses Graph.breadcrumbHierarchy topLevelIDs
     runASTOp $ do
-        roots <- mapM GraphUtils.getASTPointer allNodeIds
-        mockImports <- do
-            idInt' <- do
-                tvar <- IR.cons_ @IR.Draft "Int"
-                tp   <- IR.lam tvar tvar
-                v    <- IR.var "in" `typed` tvar
-                l    <- IR.lam v v `typed` tp
-                fmap IR.Function.OldFunction $ IR.Function.compile $ IR.generalize l
-            id' <- do
-                tvar <- IR.var "a"
-                tp   <- IR.lam tvar tvar
-                v    <- IR.var "in" `typed` tvar
-                l    <- IR.lam v v `typed` tp
-                fmap IR.Function.OldFunction $ IR.Function.compile $ IR.generalize l
-            let m = Module Map.empty $ Map.fromList [("idInt", idInt'), ("id", id')]
-            return $ Imports $ Map.singleton "Stdlib" m
-        Typecheck.typecheck mockImports $ map IR.unsafeGeneralize roots
+        roots   <- mapM GraphUtils.getASTPointer allNodeIds
+        imports <- liftIO Std.stdlib
+        Typecheck.typecheck imports $ map IR.unsafeGeneralize roots
     return ()
 
 runInterpreter :: Command Graph ()

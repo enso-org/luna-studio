@@ -224,10 +224,10 @@ spec = around withChannels $ parallel $ do
                         ports' = toList $ output' ^. Node.ports
                         types = map (view Port.valueType) ports'
                     types `shouldBe` [TCons "Int" []]
-        it "properly typechecks edges inside mock id" $ \env -> do
+        xit "properly typechecks edges inside mock id" $ \env -> do
             u1 <- mkUUID
             (res, st) <- runEmp env $ do
-                Graph.addNode top u1 "idInt" def
+                Graph.addNode top u1 "__intId" def
                 let GraphLocation pid lid _ = top
                 withLibrary pid lid (use Library.body)
             withResult res $ \g -> do
@@ -244,7 +244,7 @@ spec = around withChannels $ parallel $ do
                         outputType = map (view Port.valueType) outputPorts'
                     inputType  `shouldBe` [TCons "Int" []]
                     outputType `shouldBe` [TCons "Int" []]
-        it "properly typechecks second id in `mock id -> mock id`" $ \env -> do
+        xit "properly typechecks second id in `mock id -> mock id`" $ \env -> do
             u1 <- mkUUID
             u2 <- mkUUID
             (res, st) <- runEmp env $ do
