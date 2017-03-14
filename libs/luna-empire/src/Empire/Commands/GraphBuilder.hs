@@ -202,42 +202,54 @@ extractArgNames node = do
         App f _a -> extractArgNames =<< IR.source f
         _ -> return []
 
-extractPortInfo :: ASTOp m => NodeRef -> m ([TypeRep], [PortState])
-extractPortInfo node = do
-    match node $ \case
-        App f _args -> do
-            unpacked   <- ASTDeconstruct.extractArguments node
-            portStates <- mapM getPortState unpacked
-            tp         <- IR.readLayer @TypeLayer node >>= IR.source
-            types      <- extractArgTypes tp
-            return (types, portStates)
-        Lam _as o -> do
-            args     <- ASTDeconstruct.extractArguments node
-            areBlank <- mapM ASTRead.isBlank args
-            isApp    <- ASTRead.isApp =<< IR.source o
-            if and areBlank && isApp
-                then do
-                    extractPortInfo =<< IR.source o
-                else do
-                    tpRef <- IR.source =<< IR.readLayer @TypeLayer node
-                    types <- extractArgTypes tpRef
-                    return (types, [])
-        _ -> do
-            tpRef <- IR.source =<< IR.readLayer @TypeLayer node
-            types <- extractArgTypes tpRef
-            return (types, [])
+extractAppliedPorts :: ASTOp m => Bool -> [NodeRef] -> NodeRef -> m [Maybe (TypeRep, PortState)]
+extractAppliedPorts seenApp bound node = IR.matchExpr node $ \case
+    Lam i o -> case seenApp of
+        True  -> return []
+        False -> do
+            inp <- IR.source i
+            out <- IR.source o
+            extractAppliedPorts False (inp : bound) out
+    App f a -> do
+        arg          <- IR.source a
+        isB          <- ASTRead.isBlank arg
+        argTp        <- IR.readLayer @TypeLayer arg >>= IR.source
+        res          <- if isB || elem arg bound then return Nothing else Just .: (,) <$> Print.getTypeRep argTp <*> getPortState arg
+        rest         <- extractAppliedPorts True bound =<< IR.source f
+        return $ res : rest
+    _       -> return []
+
+
+fromMaybePort :: Maybe (TypeRep, PortState) -> (TypeRep, PortState)
+fromMaybePort Nothing  = (TStar, NotConnected)
+fromMaybePort (Just p) = p
+
+mergePortInfo :: [Maybe (TypeRep, PortState)] -> [TypeRep] -> [(TypeRep, PortState)]
+mergePortInfo []             []       = []
+mergePortInfo (p : rest)     []       = fromMaybePort p : mergePortInfo rest []
+mergePortInfo []             (t : ts) = (t, NotConnected) : mergePortInfo [] ts
+mergePortInfo (Nothing : as) (t : ts) = (t, NotConnected) : mergePortInfo as ts
+mergePortInfo (Just a  : as) ts       = a : mergePortInfo as ts
+
+extractPortInfo :: ASTOp m => NodeRef -> m [(TypeRep, PortState)]
+extractPortInfo n = do
+    applied  <- reverse <$> extractAppliedPorts False [] n
+    tp       <- IR.readLayer @TypeLayer n >>= IR.source
+    fromType <- extractArgTypes tp
+    return $ mergePortInfo applied fromType
+
 
 buildArgPorts :: ASTOp m => NodeRef -> m [Port]
 buildArgPorts ref = do
-    (types, states) <- extractPortInfo ref
-    names           <- extractArgNames ref
-    let portsTypes = types ++ replicate (max (length names) (length states) - length types) TStar
-        namesGen = names ++ drop (length names) (("arg" ++) . show <$> [(0::Int)..])
+    typed <- extractPortInfo ref
+    names <- extractArgNames ref
+    let portsTypes = fmap fst typed ++ replicate (length names - length typed) TStar
+        namesGen   = names ++ drop (length names) (("arg" ++) . show <$> [(0::Int)..])
         psCons = zipWith3 Port
                           (InPortId . Arg <$> [(0::Int)..])
                           namesGen
                           portsTypes
-    return $ zipWith ($) psCons (states ++ repeat NotConnected)
+    return $ zipWith ($) psCons (fmap snd typed ++ repeat NotConnected)
 
 buildSelfPort' :: ASTOp m => Bool -> NodeRef -> m (Maybe Port)
 buildSelfPort' seenAcc node = do
@@ -287,9 +299,8 @@ buildConnections = do
 buildInputEdge :: ASTOp m => [(OutPortRef, InPortRef)] -> NodeId -> m API.Node
 buildInputEdge connections nid = do
     Just ref <- ASTRead.getCurrentASTTarget
-    (types, _states) <- extractPortInfo ref
-    let getTypes (TLam i o) = i : (getTypes o)
-        getTypes _          = []
+    tp       <- IR.readLayer @TypeLayer ref >>= IR.source
+    types    <- extractArgTypes tp
     let connectedPorts = map (\(OutPortRef _ (Projection p)) -> p)
                $ map fst
                $ filter (\(OutPortRef refNid p,_) -> nid == refNid)
@@ -300,7 +311,7 @@ buildInputEdge connections nid = do
         [] -> do
             numberOfArguments <- length <$> (ASTDeconstruct.extractArguments ref)
             return $ replicate numberOfArguments TStar
-        [a] -> return $ getTypes a
+        _  -> return types
     let nameGen = names ++ drop (length names) (fmap (\i -> "arg" ++ show i) [(0::Int)..])
         inputEdges = List.zipWith4 (\n t state i -> Port (OutPortId $ Projection i) n t state) nameGen argTypes states [(0::Int)..]
     return $
