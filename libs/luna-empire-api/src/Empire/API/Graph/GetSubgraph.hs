@@ -17,7 +17,6 @@ data Request = Request { _location    :: GraphLocation
                        } deriving (Generic, Eq, NFData, Show)
 
 data Result = Result { _graph  :: Graph
-                     , _monads :: [MonadPath]
                      } deriving (Generic, Eq, NFData, Show)
 
 type Response = Response.Response Request () Result

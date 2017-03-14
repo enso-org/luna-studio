@@ -307,7 +307,7 @@ handleGetSubgraph :: Request GetSubgraph.Request -> StateT Env BusT ()
 handleGetSubgraph = modifyGraph (mtuple action) success where
     action (GetSubgraph.Request location) = do
         graph <- Graph.getGraph location
-        return $ GetSubgraph.Result graph []
+        return $ GetSubgraph.Result graph
     success req _ res = replyResult req () res
 
 handleNodeSearch :: Request NodeSearch.Request -> StateT Env BusT ()

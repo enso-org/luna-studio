@@ -2,7 +2,6 @@
 module Luna.Studio.Event.Shortcut where
 
 import           Data.Aeson          (FromJSON, ToJSON)
-import qualified Data.List           as List
 import           Luna.Studio.Prelude
 
 
