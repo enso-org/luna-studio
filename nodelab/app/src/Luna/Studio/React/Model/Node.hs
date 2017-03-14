@@ -49,8 +49,7 @@ data Mode = Collapsed
 
 data ExpandedMode = Editor
                   | Controls
-                  | Case [SubGraph]
-                  | Function SubGraph
+                  | Function [SubGraph]
                   deriving (Eq, Generic, NFData, Show)
 
 

@@ -17,7 +17,7 @@ import qualified Luna.Studio.React.Model.NodeProperties as Properties
 import qualified Luna.Studio.React.Model.Port           as Port
 import           Luna.Studio.React.Store                (Ref, dispatch)
 import           Luna.Studio.React.View.Field           (multilineField_)
-import           Luna.Studio.React.View.Node.Case       (expandedCase_)
+import           Luna.Studio.React.View.Node.Container  (container_)
 import           Luna.Studio.React.View.Node.Properties (nodeProperties_)
 import           Luna.Studio.React.View.Port            (portExpanded_, port_)
 import           Luna.Studio.React.View.Style           (blurBackground_, selectionMark_)
@@ -55,10 +55,10 @@ nodeBody = React.defineView objName $ \(ref, n) -> do
                 ] $ do
                 blurBackground_
                 case n ^. Node.mode of
-                    Node.Collapsed               -> ""
-                    Node.Expanded (Node.Case cs) -> expandedCase_ ref cs
-                    Node.Expanded Node.Controls  -> nodeProperties_ ref $ Properties.fromNode n
-                    Node.Expanded Node.Editor    -> multilineField_ [] "editor"
+                    Node.Collapsed                   -> ""
+                    Node.Expanded (Node.Function fs) -> container_ ref fs
+                    Node.Expanded Node.Controls      -> nodeProperties_ ref $ Properties.fromNode n
+                    Node.Expanded Node.Editor        -> multilineField_ [] "editor"
                         $ Field.mk ref (fromMaybe def $ n ^. Node.code)
                         & Field.onCancel .~ Just (UI.NodeEvent . Node.SetCode nodeId)
 

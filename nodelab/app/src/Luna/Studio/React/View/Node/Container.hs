@@ -1,5 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
-module Luna.Studio.React.View.Node.Case where
+module Luna.Studio.React.View.Node.Container where
 
 import           Luna.Studio.Prelude
 import           Luna.Studio.React.Model.App  (App)
@@ -12,11 +12,11 @@ import           React.Flux                   as React
 
 
 name :: JSString
-name = "node-case"
+name = "node-container"
 
-expandedCase_ :: Ref App -> [SubGraph] -> ReactElementM ViewEventHandler ()
-expandedCase_ ref sgs = React.viewWithSKey expandedCase name (ref, sgs) mempty
+container_ :: Ref App -> [SubGraph] -> ReactElementM ViewEventHandler ()
+container_ ref sgs = React.viewWithSKey container name (ref, sgs) mempty
 
-expandedCase :: ReactView (Ref App, [SubGraph])
-expandedCase = React.defineView name $ \(ref, sgs) -> do
+container :: ReactView (Ref App, [SubGraph])
+container = React.defineView name $ \(ref, sgs) -> do
     div_ $ elemString $ show sgs
