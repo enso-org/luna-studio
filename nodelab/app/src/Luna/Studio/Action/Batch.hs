@@ -58,6 +58,9 @@ listLibraries = withUUID . BatchCmd.listLibraries
 getProgram :: Command State ()
 getProgram = withWorkspace BatchCmd.getProgram
 
+getSubgraph :: NodeId -> Command State ()
+getSubgraph nodeId = withWorkspace (BatchCmd.getSubgraph nodeId)
+
 updateNodeExpression :: NodeId -> Text -> Command State ()
 updateNodeExpression = withWorkspace .: BatchCmd.updateNodeExpression
 
