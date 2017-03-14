@@ -20,6 +20,7 @@ import           Empire.API.Data.Error                  as Error
 import           Empire.API.Data.Graph                  as Graph
 import           Empire.API.Data.GraphLocation          as GraphLocation
 import           Empire.API.Data.Library                as Library
+import           Empire.API.Data.MonadPath              as MonadPath
 import           Empire.API.Data.Node                   as Node
 import           Empire.API.Data.NodeMeta               as NodeMeta
 import           Empire.API.Data.Port                   as Port
@@ -144,6 +145,9 @@ instance FromJSON DefaultValue.PortDefault
 
 instance ToJSON Graph.Graph
 instance FromJSON Graph.Graph
+
+instance ToJSON MonadPath.MonadPath
+instance FromJSON MonadPath.MonadPath
 
 instance ToJSON t => ToJSON (Error.Error t)
 

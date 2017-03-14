@@ -5,6 +5,7 @@ module Luna.Studio.React.View.NodeEditor where
 import qualified Data.HashMap.Strict                   as HashMap
 import qualified Data.Matrix                           as Matrix
 import           Data.Maybe                            (mapMaybe)
+import qualified Empire.API.Data.MonadPath             as MonadPath
 import           JS.Scene                              (sceneId)
 import           Luna.Studio.Action.Geometry.Constants (connectionWidth)
 import qualified Luna.Studio.Data.CameraTransformation as CameraTransformation
@@ -39,7 +40,8 @@ nodeEditor :: ReactView (Ref App, NodeEditor)
 nodeEditor = React.defineView name $ \(ref, ne) -> do
     let camera         = ne ^. NodeEditor.screenTransform . CameraTransformation.logicalToScreen
         (edges, nodes) = partition isEdge $ ne ^. NodeEditor.nodes . to HashMap.elems
-        lookupNode     = _2 %~ mapMaybe (flip HashMap.lookup $ ne ^. NodeEditor.nodes)
+        lookupNode m   = ( m ^. MonadPath.monadType
+                         , m ^. MonadPath.path . to (mapMaybe $ flip HashMap.lookup $ ne ^. NodeEditor.nodes))
         monads         = map lookupNode $ ne ^. NodeEditor.monads
         scale          = (Matrix.toList camera)!!0 :: Double
     div_

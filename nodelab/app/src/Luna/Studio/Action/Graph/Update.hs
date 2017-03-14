@@ -11,8 +11,8 @@ module Luna.Studio.Action.Graph.Update
 import qualified Data.HashMap.Strict                    as Map
 import           Empire.API.Data.Connection             (ConnectionId)
 import qualified Empire.API.Data.Connection             as Connection
+import           Empire.API.Data.MonadPath              (MonadPath)
 import           Empire.API.Data.Node                   (NodeId)
-import           Empire.API.Data.TypeRep                (TypeRep)
 import           Luna.Studio.Action.Camera.Screen       (updateSceneOnly)
 import           Luna.Studio.Action.Command             (Command)
 import           Luna.Studio.Action.Geometry.Connection (createConnectionModel)
@@ -45,7 +45,7 @@ updateConnection connId = do
 updateConnectionsForEdges :: Command Global.State ()
 updateConnectionsForEdges = edgeNodes >>= updateConnectionsForNodes . map (view Node.nodeId)
 
-updateMonads :: [(TypeRep, [NodeId])] -> Command State ()
+updateMonads :: [MonadPath] -> Command State ()
 updateMonads monads =
     Global.modifyNodeEditor $ NodeEditor.monads .= monads
 

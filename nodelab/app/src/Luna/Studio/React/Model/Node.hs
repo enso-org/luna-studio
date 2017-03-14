@@ -13,11 +13,11 @@ import           Data.Set                          (Set)
 import           Data.Time.Clock                   (UTCTime)
 
 import           Data.Position                     (Position (Position), Vector2 (Vector2))
+import           Empire.API.Data.MonadPath         (MonadPath)
 import           Empire.API.Data.Node              (NodeId, NodeType)
 import qualified Empire.API.Data.Node              as NodeAPI
 import qualified Empire.API.Data.NodeMeta          as MetaAPI
 import           Empire.API.Data.Port              (PortId (..))
-import           Empire.API.Data.TypeRep           (TypeRep)
 import           Empire.API.Graph.Collaboration    (ClientId)
 import           Empire.API.Graph.NodeResultUpdate (NodeValue)
 import           Luna.Studio.Prelude               hiding (set)
@@ -56,7 +56,7 @@ data ExpandedMode = Editor
 
 data SubGraph = SubGraph
     { _nodes  :: Set NodeId
-    , _monads :: [(TypeRep, [NodeId])]
+    , _monads :: [MonadPath]
     } deriving (Default, Eq, Generic, NFData, Show)
 
 data Collaboration = Collaboration { _touch  :: Map ClientId (UTCTime, ColorId)

@@ -3,36 +3,37 @@
 
 module Empire.Commands.Typecheck where
 
+import           Control.Monad                     (forM_, void)
+import           Control.Monad.Reader              (ask)
+import           Data.List                         (sort)
+import qualified Data.Map                          as Map
+import           Data.Maybe                        (isNothing)
 import           Empire.Prelude
-import           Control.Monad           (forM_, void)
-import           Control.Monad.Reader    (ask)
-import           Data.List               (sort)
-import qualified Data.Map                as Map
-import           Data.Maybe              (isNothing)
 
-import qualified Empire.Data.Graph                 as Graph
-import           Empire.Data.Graph                 (Graph)
-import           Empire.Data.BreadcrumbHierarchy   (topLevelIDs)
+import qualified Empire.API.Data.Error             as APIError
+import           Empire.API.Data.GraphLocation     (GraphLocation (..))
+import           Empire.API.Data.MonadPath         (MonadPath (MonadPath))
 import           Empire.API.Data.Node              (NodeId, nodeId)
 import qualified Empire.API.Data.NodeMeta          as NodeMeta
-import           Empire.API.Data.GraphLocation     (GraphLocation (..))
+import           Empire.API.Data.TypeRep           (TypeRep (TCons))
 import qualified Empire.API.Graph.NodeResultUpdate as NodeResult
-import qualified Empire.API.Data.Error             as APIError
-import           Empire.API.Data.TypeRep           (TypeRep(TCons))
 import           Empire.ASTOp                      (EmpirePass, runASTOp)
-import           Empire.Empire
 import qualified Empire.Commands.AST               as AST
-import qualified Empire.Commands.GraphUtils        as GraphUtils
 import qualified Empire.Commands.GraphBuilder      as GraphBuilder
+import qualified Empire.Commands.GraphUtils        as GraphUtils
 import qualified Empire.Commands.Publisher         as Publisher
+import           Empire.Data.BreadcrumbHierarchy   (topLevelIDs)
+import           Empire.Data.Graph                 (Graph)
+import qualified Empire.Data.Graph                 as Graph
+import           Empire.Empire
 
-import qualified Luna.IR                            as IR
-import qualified OCI.IR.Combinators                 as IR
-import           Luna.IR.Term.Unit                  (Imports(..), Module(..))
-import qualified Luna.IR.Term.Function              as IR.Function
-import           OCI.Pass                           (SubPass)
-import qualified Luna.Pass.Typechecking.Typecheck   as Typecheck
-import qualified Luna.Builtin.Std                   as Std
+import qualified Luna.Builtin.Std                  as Std
+import qualified Luna.IR                           as IR
+import qualified Luna.IR.Term.Function             as IR.Function
+import           Luna.IR.Term.Unit                 (Imports (..), Module (..))
+import qualified Luna.Pass.Typechecking.Typecheck  as Typecheck
+import qualified OCI.IR.Combinators                as IR
+import           OCI.Pass                          (SubPass)
 
 
 getNodeValueReprs :: NodeId -> Command Graph (Either String a)
@@ -104,8 +105,8 @@ updateNodes loc = do
 updateMonads :: GraphLocation -> Command InterpreterEnv ()
 updateMonads loc = do
     allNodeIds <- uses (graph . Graph.breadcrumbHierarchy) topLevelIDs
-    let monad1 = (TCons "MonadMock1" [], sort allNodeIds) --FIXME[pm] provide real data
-        monad2 = (TCons "MonadMock2" [], allNodeIds)
+    let monad1 = MonadPath (TCons "MonadMock1" []) (sort allNodeIds) --FIXME[pm] provide real data
+        monad2 = MonadPath (TCons "MonadMock2" []) allNodeIds
     Publisher.notifyMonadsUpdate loc [monad1, monad2]
 
 updateValues :: GraphLocation -> Command InterpreterEnv ()
