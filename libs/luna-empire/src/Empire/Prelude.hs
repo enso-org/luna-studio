@@ -7,6 +7,7 @@ module Empire.Prelude (
     , type (<>)
     , (<|>)
     , at
+    , catch
     , def
     , Default
     , SomeException
@@ -14,6 +15,7 @@ module Empire.Prelude (
     , ix
     , liftIO
     , makeLenses
+    , MonadCatch
     , MonadIO
     , MonadState
     , MonadThrow
@@ -42,7 +44,7 @@ import Control.Lens.Operators as X
 import Control.Lens.Prism     as X
 import Control.Monad (when)
 import Control.Monad.State.Class (MonadState)
-import Control.Monad.Catch (MonadThrow, throwM)
+import Control.Monad.Catch (MonadThrow, throwM, MonadCatch, catch)
 import Control.Monad.Trans.Class (MonadTrans(..))
 import Control.Monad.IO.Class (MonadIO, liftIO)
 import Data.Default (Default, def)

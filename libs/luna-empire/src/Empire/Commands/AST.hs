@@ -170,8 +170,9 @@ isTrivialLambda :: ASTOp m => NodeRef -> m Bool
 isTrivialLambda node = match node $ \case
     Lam{} -> do
         args <- ASTDeconstruct.extractArguments node
+        vars <- concat <$> mapM ASTRead.getVarsInside args
         out' <- ASTRead.getLambdaOutputRef node
-        return $ out' `elem` args
+        return $ out' `elem` vars
     _ -> throwM $ NotLambdaException node
 
 dumpGraphViz :: ASTOp m => String -> m ()

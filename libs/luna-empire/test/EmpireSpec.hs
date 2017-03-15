@@ -20,7 +20,7 @@ import qualified Empire.ASTOps.Deconstruct     as ASTDeconstruct
 import qualified Empire.ASTOps.Parse           as Parser
 import           Empire.ASTOps.Print           (printExpression)
 import qualified Empire.ASTOps.Read            as ASTRead
-import qualified Empire.Commands.AST           as AST (isTrivialLambda)
+import qualified Empire.Commands.AST           as AST (isTrivialLambda, dumpGraphViz)
 import qualified Empire.Commands.Graph         as Graph (addNode, connect, getGraph, getNodes,
                                                          getConnections, getNodeIdSequence, removeNodes, withGraph,
                                                          renameNode, disconnect, addPort, movePort,
@@ -45,7 +45,7 @@ import           EmpireUtils
 
 
 spec :: Spec
-spec = around withChannels $ parallel $ do
+spec = around withChannels $ id $ do
     describe "luna-empire" $ do
         it "descends into `def foo` and asserts two edges inside" $ \env -> do
             u1 <- mkUUID
@@ -1085,3 +1085,33 @@ spec = around withChannels $ parallel $ do
                     ]
                 isPatternMatch `shouldBe` True
                 connections `shouldMatchList` [(OutPortRef u1 Port.All, InPortRef u2 (Port.Arg 0))]
+        it "supports lambdas pattern matching on their argument" $ \env -> do
+            u1 <- mkUUID
+            res <- evalEmp env $ do
+                Graph.addNode top u1 "(Foobar a b c): b" def
+                node <- Graph.withGraph top $ runASTOp $ GraphBuilder.buildNode u1
+                let loc' = top |> u1
+                graph <- Graph.withGraph loc' $ runASTOp $ GraphBuilder.buildGraph
+                Just (input, output) <- Graph.withGraph loc' $ runASTOp $ do
+                    c <- GraphBuilder.buildConnections
+                    GraphBuilder.buildEdgeNodes c
+                return (node, graph, input, output)
+            withResult res $ \(node, graph, input, output) -> do
+                inputPorts node `shouldMatchList` [
+                      Port.Port (Port.InPortId (Port.Arg 0)) "arg0" TStar Port.NotConnected
+                    ]
+                let Graph.Graph nodes connections _ = graph
+                excludeEdges nodes `shouldBe` []
+                outputPorts input `shouldMatchList` [
+                      Port.Port (Port.OutPortId (Port.Projection 0)) "a" TStar Port.NotConnected
+                    , Port.Port (Port.OutPortId (Port.Projection 1)) "b" TStar Port.Connected
+                    , Port.Port (Port.OutPortId (Port.Projection 2)) "c" TStar Port.NotConnected
+                    ]
+
+                inputPorts output `shouldMatchList` [
+                      Port.Port (Port.InPortId (Port.Arg 0)) "output" TStar Port.Connected
+                    ]
+
+                connections `shouldMatchList` [
+                      (OutPortRef (input ^. Node.nodeId) (Port.Projection 1), InPortRef (output ^. Node.nodeId) (Port.Arg 0))
+                    ]

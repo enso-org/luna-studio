@@ -113,7 +113,7 @@ buildEdgeNodes :: ASTOp m => [(OutPortRef, InPortRef)] -> m (Maybe EdgeNodes)
 buildEdgeNodes connections = getEdgePortMapping >>= \p -> case p of
     Just (inputPort, outputPort) -> do
         inputEdge  <- buildInputEdge connections inputPort
-        outputEdge <- buildOutputEdge outputPort
+        outputEdge <- buildOutputEdge connections outputPort
         return $ Just (inputEdge, outputEdge)
     _ -> return Nothing
 
@@ -200,9 +200,11 @@ extractArgNames :: ASTOp m => NodeRef -> m [String]
 extractArgNames node = do
     match node $ \case
         Lam{}    -> do
-            args  <- ASTDeconstruct.extractArguments node
-            names <- mapM ASTRead.getVarName args
-            return names
+            insideLam <- insideThisNode node
+            args      <- ASTDeconstruct.extractArguments node
+            vars      <- concat <$> mapM ASTRead.getVarsInside args
+            let ports = if insideLam then vars else args
+            mapM ASTRead.getVarName ports `catch` (\(e :: ASTRead.NoNameException) -> return [])
         -- App is Lam that has some args applied
         App f _a -> extractArgNames =<< IR.source f
         Cons{}   -> do
@@ -211,11 +213,19 @@ extractArgNames node = do
             return names
         _ -> return []
 
+insideThisNode :: ASTOp m => NodeRef -> m Bool
+insideThisNode node = do
+    curr <- ASTRead.getCurrentASTTarget
+    return $ case curr of
+        Just n -> n == node
+        _      -> False
+
 extractPortInfo :: ASTOp m => NodeRef -> m ([TypeRep], [PortState])
 extractPortInfo node = do
     match node $ \case
         App f _args -> do
             unpacked   <- ASTDeconstruct.extractArguments node
+            names      <- extractArgNames node
             portStates <- mapM getPortState unpacked
             tp         <- do
                 foo <- IR.readLayer @TypeLayer node
@@ -223,16 +233,19 @@ extractPortInfo node = do
             types      <- extractArgTypes tp
             return (types, portStates)
         Lam _as o -> do
-            args     <- ASTDeconstruct.extractArguments node
-            areBlank <- mapM ASTRead.isBlank args
-            isApp    <- ASTRead.isApp =<< IR.source o
+            insideLam <- insideThisNode node
+            args      <- ASTDeconstruct.extractArguments node
+            vars      <- concat <$> mapM ASTRead.getVarsInside args
+            let ports = if insideLam then vars else args
+            areBlank  <- mapM ASTRead.isBlank ports
+            isApp     <- ASTRead.isApp =<< IR.source o
             if and areBlank && isApp
                 then do
                     extractPortInfo =<< IR.source o
                 else do
                     tpRef <- IR.source =<< IR.readLayer @TypeLayer node
                     types <- extractArgTypes tpRef
-                    return (types, [])
+                    return (types, replicate (length ports) NotConnected)
         Cons n _args -> do
             args       <- ASTRead.getVarsInside node
             portStates <- mapM getPortState args
@@ -350,8 +363,10 @@ buildInputEdge connections nid = do
     names <- extractArgNames ref
     argTypes <- case types of
         [] -> do
-            numberOfArguments <- length <$> (ASTDeconstruct.extractArguments ref)
-            return $ replicate numberOfArguments TStar
+            args <- ASTDeconstruct.extractArguments ref
+            vars <- concat <$> mapM ASTRead.getVarsInside args
+            let numberOfPorts = length vars
+            return $ replicate numberOfPorts TStar
         [a] -> return $ getTypes a
     let nameGen = names ++ drop (length names) (fmap (\i -> "arg" ++ show i) [(0::Int)..])
         inputEdges = List.zipWith4 (\n t state i -> Port (OutPortId $ Projection i) n t state) nameGen argTypes states [(0::Int)..]
@@ -364,14 +379,19 @@ buildInputEdge connections nid = do
             def
             def
 
-buildOutputEdge :: ASTOp m => NodeId -> m API.Node
-buildOutputEdge nid = do
+buildOutputEdge :: ASTOp m => [(OutPortRef, InPortRef)] -> NodeId -> m API.Node
+buildOutputEdge connections nid = do
     Just ref <- ASTRead.getCurrentASTTarget
     out <- followTypeRep ref
     outputType <- case out of
         TLam _ t -> return t
         a -> return a
-    let port = Port (InPortId $ Arg 0) "output" outputType Port.NotConnected
+    let connectedPorts = map (\(InPortRef _ (Arg p)) -> p)
+             $ map snd
+             $ filter (\(_, InPortRef refNid p) -> nid == refNid)
+             $ connections
+        outputConnected = if 0 `elem` connectedPorts then Connected else NotConnected
+        port = Port (InPortId $ Arg 0) "output" outputType outputConnected
     return $
         API.Node nid
             "outputEdge"
@@ -386,7 +406,9 @@ getLambdaInputArgNumber lambda = do
     match lambda $ \case
         Lam _arg _body -> do
             out' <- ASTRead.getLambdaOutputRef lambda
-            (out' `List.elemIndex`) <$> ASTDeconstruct.extractArguments lambda
+            args <- ASTDeconstruct.extractArguments lambda
+            vars <- concat <$> mapM ASTRead.getVarsInside args
+            return $ out' `List.elemIndex` vars
         _ -> return Nothing
 
 getOutputEdgeInputs :: ASTOp m => NodeId -> NodeId -> m (Maybe (OutPortRef, InPortRef))

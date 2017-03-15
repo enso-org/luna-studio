@@ -50,11 +50,19 @@ getPatternNames node = match node $ \case
         return $ concat names
     Blank{}   -> return ["_"]
 
+data NoNameException = NoNameException NodeRef
+    deriving Show
+
+instance Exception NoNameException where
+    toException = astExceptionToException
+    fromException = astExceptionFromException
+
 getVarName :: ASTOp m => NodeRef -> m String
 getVarName node = match node $ \case
     Var n    -> return $ nameToString n
     Cons n _ -> return $ pathNameToString n
     Blank{}  -> return "_"
+    _        -> throwM $ NoNameException node
 
 getVarsInside :: ASTOp m => NodeRef -> m [NodeRef]
 getVarsInside e = do
