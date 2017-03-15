@@ -49,17 +49,6 @@ tryParseLambda s = case words s of
         v <- IR.var "a"
         lam <- IR.generalize <$> IR.lam v v
         return (Just (Text.pack name), Just lam)
-    ["->"] -> do
-        v <- IR.var "a"
-        lam <- IR.generalize <$> IR.lam v v
-        return $ (Nothing, Just lam)
-    ("->" : rest) -> do
-        let (as, body) = partition ((== '$') . head) rest
-        let args = fmap (drop 1) as
-        argRefs <- mapM (IR.var' . stringToName) args
-        (_, bodyRef) <- parseExpr $ unwords body
-        lam <- lams argRefs bodyRef
-        return $ (Nothing, Just lam)
     _ -> return (Nothing, Nothing)
 
 data PortDefaultNotConstructibleException = PortDefaultNotConstructibleException PortDefault
