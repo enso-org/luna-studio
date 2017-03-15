@@ -30,7 +30,7 @@ handlersMap = Map.fromList
     , makeHandler Graph.handleDisconnect
     , makeHandler Graph.handleDumpGraphViz
     , makeHandler Graph.handleGetProgram
-    , makeHandler Graph.handleGetSubgraph
+    , makeHandler Graph.handleGetSubgraphs
     , makeHandler Graph.handleMovePort
     , makeHandler Graph.handleNodeSearch
     , makeHandler Graph.handleRemoveNodes

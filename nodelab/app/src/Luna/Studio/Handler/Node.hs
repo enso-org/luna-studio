@@ -65,5 +65,5 @@ handleCommand = \case
     Shortcut.Cancel              -> Graph.unselectAll
     Shortcut.ExpandSelectedNodes -> Node.selectedToggleMode $ Node.Expanded Node.Controls
     Shortcut.EditSelectedNodes   -> Node.selectedToggleMode $ Node.Expanded Node.Editor
-    Shortcut.UnfoldSelectedNodes -> Graph.selectedNodeIds >>= mapM_ Batch.getSubgraph
+    Shortcut.UnfoldSelectedNodes -> Node.selectedToggleUnfold
     _                            -> return ()

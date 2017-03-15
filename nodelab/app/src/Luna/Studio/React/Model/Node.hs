@@ -49,11 +49,11 @@ data Mode = Collapsed
 
 data ExpandedMode = Editor
                   | Controls
-                  | Function [SubGraph]
+                  | Function [Subgraph]
                   deriving (Eq, Generic, NFData, Show)
 
 
-data SubGraph = SubGraph
+data Subgraph = Subgraph
     { _nodes  :: Set NodeId
     , _monads :: [MonadPath]
     } deriving (Default, Eq, Generic, NFData, Show)
@@ -63,7 +63,7 @@ data Collaboration = Collaboration { _touch  :: Map ClientId (UTCTime, ColorId)
                                    } deriving (Default, Eq, Generic, NFData, Show)
 
 makeLenses ''Node
-makeLenses ''SubGraph
+makeLenses ''Subgraph
 makeLenses ''Collaboration
 
 instance Default Mode where def = Collapsed
@@ -81,6 +81,10 @@ isExpanded = isCollapsed . to not
 isExpandedControls :: Getter Node Bool
 isExpandedControls = isMode (Expanded Controls)
 
+isExpandedFunction :: Getter Node Bool
+isExpandedFunction = to (isFun' . _mode) where
+    isFun' (Expanded (Function _)) = True
+    isFun' _                       = False
 
 isLiteral :: Getter Node Bool
 isLiteral = to isLiteral' where

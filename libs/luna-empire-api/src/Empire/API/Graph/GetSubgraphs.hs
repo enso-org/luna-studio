@@ -1,4 +1,4 @@
-module Empire.API.Graph.GetSubgraph where
+module Empire.API.Graph.GetSubgraphs where
 
 import           Data.Binary                   (Binary)
 import           Prologue
@@ -16,7 +16,7 @@ import qualified Empire.API.Topic              as T
 data Request = Request { _location    :: GraphLocation
                        } deriving (Generic, Eq, NFData, Show)
 
-data Result = Result { _graph  :: Graph
+data Result = Result { _graphs :: [Graph]
                      } deriving (Generic, Eq, NFData, Show)
 
 type Response = Response.Response Request () Result

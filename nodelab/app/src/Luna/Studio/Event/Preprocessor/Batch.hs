@@ -53,7 +53,7 @@ handlers = Map.fromList [ handle AddNodeResponse
                         , handle ProjectOpenedUpdate
                         , handle RemoveNodesResponse
                         , handle RemovePortResponse
-                        , handle SubgraphFetched
+                        , handle SubgraphsFetched
                         , handle UpdateNodeExpressionResponse
                         ]
 

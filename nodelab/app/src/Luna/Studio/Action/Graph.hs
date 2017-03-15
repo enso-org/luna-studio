@@ -7,6 +7,8 @@ module Luna.Studio.Action.Graph
     , localConnect
     , localAddConnection
     , localRemoveConnections
+    , localMerge
+    , localUnmerge
     , modifySelectionHistory
     , removeConnections
     , createGraph
@@ -32,5 +34,6 @@ import           Luna.Studio.Action.Graph.Lookup           (allNodeIds, allNodes
 import           Luna.Studio.Action.Graph.Selection        (selectAll, selectNodes, selectedNodeIds, selectedNodes, toggleSelect,
                                                             unselectAll)
 import           Luna.Studio.Action.Graph.SelectionHistory (modifySelectionHistory)
+import           Luna.Studio.Action.Graph.Subgraph         (localMerge, localUnmerge)
 import           Luna.Studio.Action.Graph.Update           (updateConnection, updateConnections, updateConnectionsForEdges,
                                                             updateConnectionsForNodes, updateMonads)

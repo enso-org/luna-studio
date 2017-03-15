@@ -27,7 +27,7 @@ import qualified Empire.API.Graph.Connect               as Connect
 import qualified Empire.API.Graph.Disconnect            as Disconnect
 import qualified Empire.API.Graph.DumpGraphViz          as DumpGraphViz
 import qualified Empire.API.Graph.GetProgram            as GetProgram
-import qualified Empire.API.Graph.GetSubgraph           as GetSubgraph
+import qualified Empire.API.Graph.GetSubgraphs          as GetSubgraphs
 import qualified Empire.API.Graph.MovePort              as MovePort
 import qualified Empire.API.Graph.NodeSearch            as NodeSearch
 import qualified Empire.API.Graph.Redo                  as Redo
@@ -88,7 +88,7 @@ getProgram :: Workspace -> UUID -> Maybe UUID -> IO ()
 getProgram workspace uuid guiID = sendRequest $ Message uuid guiID $ withLibrary workspace GetProgram.Request
 
 getSubgraph :: NodeId -> Workspace -> UUID -> Maybe UUID -> IO ()
-getSubgraph nodeId workspace uuid guiID = sendRequest $ Message uuid guiID $ withLibrary workspace $ GetSubgraph.Request . (GraphLocation.breadcrumb . Breadcrumb.items %~ (Breadcrumb.Lambda nodeId:))
+getSubgraph nodeId workspace uuid guiID = sendRequest $ Message uuid guiID $ withLibrary workspace $ GetSubgraphs.Request . (GraphLocation.breadcrumb . Breadcrumb.items %~ (Breadcrumb.Lambda nodeId:))
 
 nodeSearch :: Text -> (Int, Int) -> Workspace -> UUID -> Maybe UUID -> IO ()
 nodeSearch query cursor workspace uuid guiID = sendRequest $ Message uuid guiID $ withLibrary workspace $ NodeSearch.Request query cursor

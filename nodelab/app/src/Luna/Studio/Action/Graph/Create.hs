@@ -1,5 +1,6 @@
 module Luna.Studio.Action.Graph.Create
-    ( createGraph
+    ( addNodes
+    , createGraph
     ) where
 
 import qualified Data.HashMap.Lazy                as HashMap
@@ -19,15 +20,15 @@ import qualified Luna.Studio.State.Graph          as Graph
 
 
 
-fastAddNodes :: [Node] -> Command State ()
-fastAddNodes nodes = do
+addNodes :: [Node] -> Command State ()
+addNodes nodes = do
     let nodeIds = view Node.nodeId <$> nodes
     Global.graph . Graph.nodesMap .= HashMap.fromList (nodeIds `zip` nodes)
     mapM_ registerNode nodes
 
 createGraph :: [Node] -> [(OutPortRef, InPortRef)] -> [MonadPath] -> Command State ()
 createGraph nodes connections monads = do
-    fastAddNodes nodes
+    addNodes nodes
     mapM_ (uncurry localConnect) connections
     updateMonads monads
     updateNodeZOrder

@@ -36,7 +36,7 @@ import           Empire.API.Graph.Collaboration         as Collaboration
 import           Empire.API.Graph.Connect               as Connect
 import           Empire.API.Graph.Disconnect            as Disconnect
 import           Empire.API.Graph.GetProgram            as GetProgram
-import           Empire.API.Graph.GetSubgraph           as GetSubgraph
+import           Empire.API.Graph.GetSubgraphs          as GetSubgraphs
 import           Empire.API.Graph.MonadsUpdate          as MonadsUpdate
 import           Empire.API.Graph.MovePort              as MovePort
 import           Empire.API.Graph.NodeResultUpdate      as NodeResultUpdate
@@ -208,8 +208,8 @@ instance ToJSON CodeUpdate.Update
 instance ToJSON GetProgram.Request
 instance ToJSON GetProgram.Result
 
-instance ToJSON GetSubgraph.Request
-instance ToJSON GetSubgraph.Result
+instance ToJSON GetSubgraphs.Request
+instance ToJSON GetSubgraphs.Result
 
 instance ToJSON NodeSearch.Request
 instance ToJSON NodeSearch.Result

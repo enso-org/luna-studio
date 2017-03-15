@@ -7,9 +7,11 @@ import qualified Data.Map                               as Map
 import qualified Luna.Studio.Batch.Workspace            as Workspace
 import           Luna.Studio.Prelude
 
+import qualified Empire.API.Data.Breadcrumb             as Breadcrumb
 import qualified Empire.API.Data.Connection             as Connection
 import qualified Empire.API.Data.Graph                  as Graph
 import           Empire.API.Data.GraphLocation          (GraphLocation (..))
+import qualified Empire.API.Data.GraphLocation          as GraphLocation
 import qualified Empire.API.Data.Node                   as Node
 import           Empire.API.Data.Port                   (InPort (Arg), OutPort (Projection), PortId (InPortId, OutPortId))
 import qualified Empire.API.Data.PortRef                as PortRef
@@ -19,7 +21,7 @@ import qualified Empire.API.Graph.CodeUpdate            as CodeUpdate
 import qualified Empire.API.Graph.Connect               as Connect
 import qualified Empire.API.Graph.Disconnect            as Disconnect
 import qualified Empire.API.Graph.GetProgram            as GetProgram
-import qualified Empire.API.Graph.GetSubgraph            as GetSubgraph
+import qualified Empire.API.Graph.GetSubgraphs          as GetSubgraphs
 import qualified Empire.API.Graph.MonadsUpdate          as MonadsUpdate
 import qualified Empire.API.Graph.NodeResultUpdate      as NodeResultUpdate
 import qualified Empire.API.Graph.NodeSearch            as NodeSearch
@@ -41,7 +43,7 @@ import           Luna.Studio.Action.Camera              (centerGraph)
 import qualified Luna.Studio.Action.CodeEditor          as CodeEditor
 import           Luna.Studio.Action.Command             (Command)
 import qualified Luna.Studio.Action.Edge                as Edge
-import           Luna.Studio.Action.Graph               (createGraph, localAddConnection, localRemoveConnections, selectNodes,
+import           Luna.Studio.Action.Graph               (createGraph, localAddConnection, localMerge, localRemoveConnections, selectNodes,
                                                          updateConnectionsForEdges, updateConnectionsForNodes, updateMonads)
 import           Luna.Studio.Action.Node                (addDummyNode, localRemoveNodes, typecheckNode, updateNode, updateNodeProfilingData,
                                                          updateNodeValue, updateNodesMeta)
@@ -86,10 +88,11 @@ handle (Event.Batch ev) = Just $ case ev of
             Global.workspace . Workspace.isGraphLoaded .= True
             requestCollaborationRefresh
 
-    SubgraphFetched response@(Response.Response uuid _ (GetSubgraph.Request loc) _ _) -> do
-        shouldProcess   <- isCurrentLocationAndGraphLoaded loc
-        whenM (isOwnRequest uuid) $ when shouldProcess $ do
-            $notImplemented
+    SubgraphsFetched response -> handleResponse response $ \request result -> do
+        let parentId = request ^. GetSubgraphs.location
+                                . GraphLocation.breadcrumb
+                                . Breadcrumb.items . to last . Breadcrumb.nodeId
+        localMerge parentId $ result ^. GetSubgraphs.graphs
 
     AddNodeResponse response@(Response.Response uuid _ (AddNode.Request loc _ _ _ _) _ _) -> do
         shouldProcess   <- isCurrentLocationAndGraphLoaded loc
