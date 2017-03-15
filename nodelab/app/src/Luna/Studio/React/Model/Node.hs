@@ -9,7 +9,6 @@ module Luna.Studio.React.Model.Node (
 import           Control.Arrow
 import           Data.Map.Lazy                     (Map)
 import qualified Data.Map.Lazy                     as Map
-import           Data.Set                          (Set)
 import           Data.Time.Clock                   (UTCTime)
 
 import           Data.Position                     (Position (Position), Vector2 (Vector2))
@@ -54,7 +53,8 @@ data ExpandedMode = Editor
 
 
 data Subgraph = Subgraph
-    { _nodes  :: Set NodeId
+    { _nodes  :: [NodeId]
+    , _edges  :: [Node]
     , _monads :: [MonadPath]
     } deriving (Default, Eq, Generic, NFData, Show)
 

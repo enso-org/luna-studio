@@ -39,6 +39,8 @@ selectedToggleUnfold = do
 toggleLocal :: Bool -> Mode -> [Node] -> Command State ()
 toggleLocal allNewMode newMode nodes = do
     updatedNodes <- forM nodes $ \node -> do
+        when (node ^. Node.isExpandedFunction) $
+            Graph.localUnmerge node
         let newNode = node & Node.mode .~ if allNewMode then def else newMode
         mayConnect    <- checkAction connectAction
         mayPenConnect <- checkAction penConnectAction

@@ -3,7 +3,8 @@ module Luna.Studio.Action.Graph.Subgraph
     , localUnmerge
     ) where
 
-import qualified Data.Set                         as Set
+import           Data.Position                    (Position(Position))
+import qualified Data.Position                    as Position
 
 import           Empire.API.Data.Graph            (Graph)
 import qualified Empire.API.Data.Graph            as GraphAPI
@@ -20,14 +21,18 @@ import qualified Luna.Studio.State.Global         as Global
 
 
 localMerge :: NodeId -> [Graph] -> Command State ()
-localMerge parentId graphs = do
-    subgraphs <- forM graphs $ \graph -> do
-        let nodes       = graph ^. GraphAPI.nodes
-            connections = graph ^. GraphAPI.connections
-            monads      = graph ^. GraphAPI.monads
-        Create.addNodes nodes
+localMerge parentId graphs = withJustM (Global.getNode parentId) $ \parentNode -> do
+    subgraphs  <- forM graphs $ \graph -> do
+        let (edges, nodes) = partition NodeAPI.isEdge $ graph ^. GraphAPI.nodes
+            connections    = graph ^. GraphAPI.connections
+            monads         = graph ^. GraphAPI.monads
+            nodesPos       = map (Position . Position.fromTuple . view NodeAPI.position) nodes
+            topLeft        = fromMaybe def $ Position.leftTopPoint nodesPos
+            parentPos      = parentNode ^. Node.position
+            movedNodes     = map (NodeAPI.position %~ Position.onTuple (\p -> p - topLeft + parentPos)) nodes
+        Create.addNodes movedNodes
         mapM_ (uncurry Connect.localConnect) connections
-        return $ Node.Subgraph (Set.fromList $ map (view NodeAPI.nodeId) nodes) monads
+        return $ Node.Subgraph (view NodeAPI.nodeId <$> nodes) (Node.fromNode <$> edges) monads
     Global.modifyNode parentId $
         Node.mode .= Node.Expanded (Node.Function subgraphs)
 
@@ -41,4 +46,4 @@ localUnmerge node = case node ^. Node.mode of
 
 localUnmergeSubgraph :: Subgraph -> Command State ()
 localUnmergeSubgraph subgraph = do
-    Remove.localRemoveNodes $ subgraph ^. Node.nodes . to Set.toList
+    Remove.localRemoveNodes $ subgraph ^. Node.nodes

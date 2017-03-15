@@ -66,6 +66,9 @@ distance p0 p1 = magnitude (p0 ^. vector - p1 ^. vector)
 distanceSquared :: Position -> Position -> Double
 distanceSquared p0 p1 = lengthSquared (p0 ^. vector - p1 ^. vector)
 
+onTuple :: (Position -> Position) -> (Double, Double) -> (Double, Double)
+onTuple action = toTuple . fromPosition . action . Position . fromTuple
+
 -- TODO[react]: Possible solution to differ Mouse Position and Graph Position
 -- makeClassy  ''Position
 -- class HasPosition a where

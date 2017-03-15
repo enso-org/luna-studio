@@ -30,7 +30,7 @@ handle (UI (NodeEvent (Node.MouseDown evt nodeId))) = Just $ do
         shouldSnap    = Mouse.withoutMods evt Mouse.leftButton
     pos <- workspacePosition evt
     when shouldProceed $ Node.startNodeDrag pos nodeId shouldSnap
-handle (UI (NodeEvent (Node.Enter            nodeId))) = Just $ mapM_ Node.tryEnter =<< preuse (Global.graph . Graph.nodesMap . ix nodeId)
+handle (UI (NodeEvent (Node.Enter            nodeId))) = Just $ withJustM (preuse $ Global.graph . Graph.nodesMap . ix nodeId) Node.tryEnter
 handle (UI (NodeEvent (Node.EditExpression   nodeId))) = Just $ Node.editExpression nodeId
 handle (UI (NodeEvent (Node.Select      kevt nodeId))) = Just $ when (mouseCtrlKey kevt || mouseMetaKey kevt) $ Graph.toggleSelect nodeId
 handle (UI (NodeEvent (Node.DisplayResultChanged flag nodeId))) = Just $ Node.visualizationsToggled nodeId flag
