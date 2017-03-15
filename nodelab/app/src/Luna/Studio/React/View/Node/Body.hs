@@ -47,7 +47,7 @@ nodeBody = React.defineView objName $ \(ref, n) -> do
         ] $ do
         div_
             [ "key"       $= "shortValue"
-            ] $ mapM_ (elemString . convert) $ n ?^ Node.value . _Just . _Value . _1
+            ] $ mapM_ (elemString . convert) $ n ^? Node.value . _Just .  NodeResult._Value . _1
         div_
             [ "key"       $= "main"
             , "className" $= Style.prefix "node__main"
