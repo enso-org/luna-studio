@@ -13,7 +13,7 @@ import qualified Empire.API.Graph.Collaboration         as Collaboration
 import qualified Empire.API.Graph.Connect               as Connect
 import qualified Empire.API.Graph.Disconnect            as Disconnect
 import qualified Empire.API.Graph.GetProgram            as GetProgram
-import qualified Empire.API.Graph.GetSubgraph            as GetSubgraph
+import qualified Empire.API.Graph.GetSubgraphs          as GetSubgraphs
 import qualified Empire.API.Graph.MonadsUpdate          as MonadsUpdate
 import qualified Empire.API.Graph.MovePort              as MovePort
 import qualified Empire.API.Graph.NodeResultUpdate      as NodeResultUpdate
@@ -74,7 +74,7 @@ data Event = UnknownEvent String
            | RemoveNodesInverse                    RemoveNodes.Inverse
            | RemoveNodesResponse                   RemoveNodes.Response
            | RemovePortResponse                     RemovePort.Response
-           | SubgraphFetched                       GetSubgraph.Response
+           | SubgraphsFetched                     GetSubgraphs.Response
            | UpdateNodeExpressionResponse UpdateNodeExpression.Response
            deriving (Eq, Show, Generic, NFData)
 

@@ -4,6 +4,7 @@ module Luna.Studio.React.View.Node.Body where
 import qualified Data.Aeson                             as Aeson
 import qualified Data.Map.Lazy                          as Map
 import           Empire.API.Data.Port                   (InPort (..), PortId (..))
+import qualified Empire.API.Graph.NodeResultUpdate      as NodeResult
 import           Luna.Studio.Action.Geometry            (countSameTypePorts, isPortSingle)
 import           Luna.Studio.Data.Matrix                (translatePropertyValue2)
 import qualified Luna.Studio.Event.UI                   as UI
@@ -44,6 +45,9 @@ nodeBody = React.defineView objName $ \(ref, n) -> do
                                                 ++ (if n ^. Node.isSelected  then ["node--selected"]  else []))
         , "style"       @= Aeson.object [ "transform" Aeson..= translatePropertyValue2 pos ]
         ] $ do
+        div_
+            [ "key"       $= "shortValue"
+            ] $ mapM_ (elemString . convert) $ n ^? Node.value . _Just .  NodeResult._Value . _1
         div_
             [ "key"       $= "main"
             , "className" $= Style.prefix "node__main"

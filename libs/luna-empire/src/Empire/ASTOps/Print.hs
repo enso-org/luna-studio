@@ -22,13 +22,16 @@ import           Empire.API.Data.TypeRep   (TypeRep (..))
 import           Luna.IR.Term.Uni
 import qualified Luna.IR as IR
 
+import qualified Luna.Syntax.Text.Pretty.Pretty as CodeGen
+
 getTypeRep :: ASTOp m => NodeRef -> m TypeRep
 getTypeRep tp = match tp $ \case
-    Cons n args -> TCons (pathNameToString n) <$> mapM (getTypeRep <=< IR.source) args
-    Lam  a out  -> TLam <$> (getTypeRep =<< IR.source a) <*> (getTypeRep =<< IR.source out)
-    Acc  t n    -> TAcc (nameToString n) <$> (getTypeRep =<< IR.source t)
-    Var  n      -> return $ TVar $ delete '#' $ nameToString n
-    _           -> return TStar
+    Cons   n args -> TCons (pathNameToString n) <$> mapM (getTypeRep <=< IR.source) args
+    Lam    a out  -> TLam <$> (getTypeRep =<< IR.source a) <*> (getTypeRep =<< IR.source out)
+    Acc    t n    -> TAcc (nameToString n) <$> (getTypeRep =<< IR.source t)
+    Var    n      -> return $ TVar $ delete '#' $ nameToString n
+    Number _      -> return $ TCons "Number" []
+    _             -> return TStar
 
 parenIf :: Bool -> String -> String
 parenIf False s = s
@@ -61,60 +64,11 @@ printFunctionHeader function = match function $ \case
         args <- IR.source r >>= printFunctionArguments
         return $ "def " ++ name ++ " " ++ unwords args ++ ":"
 
-printExpression' :: ASTOp m => Bool -> Bool -> NodeRef -> m String
-printExpression' suppressNodes paren node = do
-    let recur = printExpression' suppressNodes
-    let displayFun funExpr node' = do
-            unpackedArgs <- ASTDeconstruct.extractArguments node'
-            argsRep <- mapM (recur True) unpackedArgs
-            if all (not . isAlpha) funExpr && length argsRep == 2
-                then return $ parenIf paren $ head argsRep ++ " " ++ funExpr ++ " " ++ (argsRep !! 1)
-                else do
-                    let dropTailBlanks = dropWhileEnd (== "_") argsRep
-                    let shouldParen = paren && not (null unpackedArgs)
-                    case argsRep of
-                        a : as -> return $ parenIf shouldParen $ funExpr ++ " " ++ unwords dropTailBlanks
-                        _ -> return funExpr
-
-    match node $ \case
-        Lam{} -> do
-            args    <- ASTDeconstruct.extractArguments node
-            argReps <- mapM (printExpression' False False) args
-            out     <- ASTRead.getLambdaOutputRef node
-            sugared <- and <$> mapM ASTRead.isBlank args
-            repr    <- printExpression' False sugared out
-            let bindsRep = if sugared then "" else "-> " ++ unwords (('$' :) <$> argReps) ++ " "
-            return $ parenIf (not sugared && paren) $ bindsRep ++ repr
-        Unify l r -> do
-            leftRep  <- IR.source l >>= recur paren
-            rightRep <- IR.source r >>= recur paren
-            return $ leftRep ++ " = " ++ rightRep
-        Var n -> do
-            name   <- pure $ nameToString n
-            isNode <- ASTRead.isGraphNode node
-            return $ if isNode && suppressNodes then "_" else name
-        Acc t n -> do
-            name   <- pure $ nameToString n
-            target <- IR.source t
-            match target $ \case
-                Blank -> return $ "_." <> name
-                _ -> do
-                    targetRep <- recur True target
-                    return $ if targetRep == "_" then name else targetRep <> "." <> name
-        App f _args -> do
-            funExpr <- IR.source f >>= recur True
-            displayFun funExpr node
-        Blank -> return "_"
-        IR.Number n -> pure $ show n
-        IR.String s -> return $ show s
-        Cons n args -> do
-            argsNames <- mapM (printExpression' False True <=< IR.source) args
-            let hasArgs = (not . null) argsNames
-            return $ parenIf (hasArgs && paren) $ pathNameToString n ++ [ ' ' | hasArgs ] ++ unwords argsNames
-        _ -> return ""
+printExpression' :: ASTOp m => NodeRef -> m String
+printExpression' = CodeGen.passlike . IR.unsafeGeneralize
 
 printExpression :: ASTOp m => NodeRef -> m String
-printExpression = printExpression' False False
+printExpression = printExpression'
 
 printNodeExpression :: ASTOp m => NodeRef -> m String
-printNodeExpression = printExpression' True False
+printNodeExpression = printExpression'

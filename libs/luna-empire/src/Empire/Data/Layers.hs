@@ -9,16 +9,13 @@
 module Empire.Data.Layers (
     Marker
   , Meta
-  , InputsLayer
   , TypeLayer
-  , TCData
-  , TCError(ImportError, UnificationError)
-  , tcErrors
   , attachEmpireLayers
   ) where
 
 import Empire.Prelude
 
+import           Control.Lens.Iso         (from)
 import           Empire.API.Data.Node     (NodeId)
 import           Empire.API.Data.NodeMeta (NodeMeta)
 import           Empire.API.Data.PortRef  (OutPortRef)
@@ -42,6 +39,10 @@ initNodeMarker :: Req m '[Editor // Layer // AnyExpr // Marker] => Listener New 
 initNodeMarker = listener $ \(t, _) -> writeLayer @Marker Nothing t
 makePass 'initNodeMarker
 
+importNodeMarker :: Req m '[Writer // Layer // AnyExpr // Marker] => Listener Import (Expr l) m
+importNodeMarker = listener $ \(t, _, ls) -> when (getTypeDesc_ @Marker ^. from typeDesc `elem` ls) $ writeLayer @Marker Nothing t
+makePass 'importNodeMarker
+
 data Meta
 type instance LayerData Meta t = Maybe NodeMeta
 
@@ -49,34 +50,15 @@ initMeta :: Req m '[Editor // Layer // AnyExpr // Meta] => Listener New (Expr l)
 initMeta = listener $ \(t, _) -> writeLayer @Meta Nothing t
 makePass 'initMeta
 
-data InputsLayer
-type instance LayerData InputsLayer t = [SomeExprLink]
-
-initInputsLayer :: Req m '[Editor // Layer // AnyExpr // InputsLayer] => Listener New (Expr l) m
-initInputsLayer = listener $ \(t, _) -> writeLayer @InputsLayer [] t
-makePass 'initInputsLayer
-
-data TCError a = ImportError (Maybe a) String
-               | UnificationError a
-
-data TCDataMock = TCDataMock { _tcErrors :: [TCError SomeExpr] }
-
-makeLenses ''TCDataMock
-
-data TCData
-type instance LayerData TCData t = TCDataMock
-
-initTcData :: Req m '[Editor // Layer // AnyExpr // TCData] => Listener New (Expr l) m
-initTcData = listener $ \(t, _) -> writeLayer @TCData (TCDataMock []) t
-makePass 'initTcData
+importMeta :: Req m '[Writer // Layer // AnyExpr // Meta] => Listener Import (Expr l) m
+importMeta = listener $ \(t, _, ls) -> when (getTypeDesc_ @Meta ^. from typeDesc `elem` ls) $ writeLayer @Meta Nothing t
+makePass 'importMeta
 
 attachEmpireLayers :: (MonadPassManager m, Throws IRError m) => m ()
 attachEmpireLayers = do
-    addExprEventListener @Meta initMetaPass
+    addExprEventListener @Meta   initMetaPass
+    addExprEventListener @Meta   importMetaPass
     addExprEventListener @Marker initNodeMarkerPass
-    addExprEventListener @InputsLayer initInputsLayerPass
-    addExprEventListener @TCData initTcDataPass
+    addExprEventListener @Marker importNodeMarkerPass
     attachLayer 10 (getTypeDesc @Meta)  (getTypeDesc @AnyExpr)
     attachLayer 10 (getTypeDesc @Marker) (getTypeDesc @AnyExpr)
-    attachLayer 10 (getTypeDesc @InputsLayer) (getTypeDesc @AnyExpr)
-    attachLayer 10 (getTypeDesc @TCData) (getTypeDesc @AnyExpr)

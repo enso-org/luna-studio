@@ -43,6 +43,12 @@ makeLenses ''NodeType
 makePrisms ''NodeType
 makeLenses ''NodeTypecheckerUpdate
 
+isEdge :: Node -> Bool
+isEdge = isEdge' . _nodeType where
+    isEdge' InputEdge  = True
+    isEdge' OutputEdge = True
+    isEdge' _          = False
+
 position :: Lens' Node (Double, Double)
 position = nodeMeta . NodeMeta.position
 

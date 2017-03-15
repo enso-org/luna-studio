@@ -45,7 +45,7 @@ import           EmpireUtils
 
 
 spec :: Spec
-spec = around withChannels $ parallel $ do
+spec = around withChannels $ id $ do
     describe "luna-empire" $ do
         it "descends into `def foo` and asserts two edges inside" $ \env -> do
             u1 <- mkUUID
@@ -64,7 +64,7 @@ spec = around withChannels $ parallel $ do
                 Graph.addNode top u1 "def foo" def
             withResult res $ \node -> do
                 node ^. Node.name `shouldBe` "foo"
-                node ^. Node.nodeType `shouldBe` Node.ExpressionNode "-> $a a"
+                node ^. Node.nodeType `shouldBe` Node.ExpressionNode "a: a"
                 node ^. Node.canEnter `shouldBe` True
         it "makes connection to output edge" $ \env -> do
             u1 <- mkUUID
@@ -195,7 +195,7 @@ spec = around withChannels $ parallel $ do
         xit "properly typechecks input nodes" $ \env -> do
             u1 <- mkUUID
             (res, st) <- runEmp env $ do
-                Graph.addNode top u1 "-> $a $b a + b" def
+                Graph.addNode top u1 "a: b: a + b" def
                 let GraphLocation pid lid _ = top
                 withLibrary pid lid (use Library.body)
             withResult res $ \g -> do
@@ -211,7 +211,7 @@ spec = around withChannels $ parallel $ do
         xit "properly typechecks output nodes" $ \env -> do
             u1 <- mkUUID
             (res, st) <- runEmp env $ do
-                Graph.addNode top u1 "-> $a $b a + b" def
+                Graph.addNode top u1 "a: b: a + b" def
                 let GraphLocation pid lid _ = top
                 withLibrary pid lid (use Library.body)
             withResult res $ \g -> do
@@ -263,12 +263,12 @@ spec = around withChannels $ parallel $ do
                           Port.Port (Port.InPortId (Port.Arg 0)) "in" (TLam (TVar "a") (TVar "a")) Port.Connected
                         ]
                     outputPorts n1 `shouldMatchList` [
-                          Port.Port (Port.OutPortId Port.All) "Output" (TLam (TVar "a") (TVar "a")) (Port.WithDefault (Expression "-> $in in"))
+                          Port.Port (Port.OutPortId Port.All) "Output" (TLam (TVar "a") (TVar "a")) (Port.WithDefault (Expression "in: in"))
                         ]
         it "adds lambda nodeid to node mapping" $ \env -> do
             u1 <- mkUUID
             res <- evalEmp env $ do
-                Graph.addNode top u1 "-> $a $b a + b" def
+                Graph.addNode top u1 "a: b: a + b" def
                 Graph.withGraph (top |> u1) $ use $ breadcrumbHierarchy . BH.children
             withResult res $ \(toList -> mapping) -> do
                 let isLambdaNode n = case fromJust $ n ^. BH.self of
@@ -280,17 +280,16 @@ spec = around withChannels $ parallel $ do
             u1 <- mkUUID
             res <- evalEmp env $ do
                 let loc' = top |> u1
-                Graph.addNode top u1 "-> $a $b a + b" def
+                Graph.addNode top u1 "a: b: a + b" def
                 Graph.getNodes loc'
             withResult res $ \(excludeEdges -> nodes) -> do
                 nodes `shouldSatisfy` ((== 1) . length)
-                -- fix when printer prints it properly
-                head nodes `shouldSatisfy` (\a -> a ^. Node.nodeType . Node.expression == "(+ a) a b")
+                head nodes `shouldSatisfy` (\a -> a ^. Node.nodeType . Node.expression == "a + b")
         it "places connections between + node and output" $ \env -> do
           u1 <- mkUUID
           res <- evalEmp env $ do
               let loc' = top |> u1
-              Graph.addNode top u1 "-> $a $b a + b" def
+              Graph.addNode top u1 "a: b: a + b" def
               Graph.getConnections loc'
           withResult res $ \conns -> do
               -- one from a to +, one from b to + and one from + to output edge
@@ -374,11 +373,11 @@ spec = around withChannels $ parallel $ do
             u1 <- mkUUID
             res <- evalEmp env $ do
                 Graph.addNode top u1 "1" def
-                node  <- Graph.updateNodeExpression top u1 "-> $a a"
+                node  <- Graph.updateNodeExpression top u1 "a: a"
                 nodes <- Graph.getNodes top
                 return (node, nodes)
             withResult res $ \(node, nodes) -> do
-                node ^. Node.nodeType `shouldBe` Node.ExpressionNode "-> $a a"
+                node ^. Node.nodeType `shouldBe` Node.ExpressionNode "a: a"
                 node ^. Node.nodeId `shouldBe` u1
                 node ^. Node.canEnter `shouldBe` True
                 nodes `shouldSatisfy` ((== 1) . length)
@@ -389,19 +388,19 @@ spec = around withChannels $ parallel $ do
                 Graph.updateNodeExpression top u1 "def foo"
             withResult res $ \node -> do
                 node ^. Node.name `shouldBe` "foo"
-                node ^. Node.nodeType `shouldBe` Node.ExpressionNode "-> $a a"
+                node ^. Node.nodeType `shouldBe` Node.ExpressionNode "a: a"
                 node ^. Node.canEnter `shouldBe` True
         it "changes expression to lambda with node inside" $ \env -> do
             u1 <- mkUUID
             res <- evalEmp env $ do
                 Graph.addNode top u1 "1" def
-                Graph.updateNodeExpression top u1 "-> $a $b a + b"
+                Graph.updateNodeExpression top u1 "a: b: a + b"
                 Graph.getGraph (top |> u1)
             withResult res $ \graph -> do
                 let Graph.Graph nodes connections _ = graph
                 excludeEdges nodes `shouldSatisfy` ((== 1) . length)
                 -- fix when printer prints it properly
-                head nodes `shouldSatisfy` (\a -> a ^. Node.nodeType . Node.expression == "(+ a) a b")
+                head nodes `shouldSatisfy` (\a -> a ^. Node.nodeType . Node.expression == "a + b")
                 connections `shouldSatisfy` ((== 3) . length)
     describe "dumpAccessors" $ do
         it "foo.bar" $ \env -> do
@@ -450,7 +449,7 @@ spec = around withChannels $ parallel $ do
         it "shows two input ports on +" $ \env -> do
             u1 <- mkUUID
             res <- evalEmp env $ do
-                Graph.addNode top u1 "-> $a $b a + b" def
+                Graph.addNode top u1 "a: b: a + b" def
                 Graph.getNodes top
             withResult res $ \[plus] -> do
                 inputPorts plus `shouldMatchList` [
@@ -465,13 +464,12 @@ spec = around withChannels $ parallel $ do
             withResult res $ \[succ'] -> do
                 inputPorts succ' `shouldMatchList` [
                       Port.Port (Port.InPortId Port.Self)    "self" TStar (Port.WithDefault (Expression "succ"))
-                    , Port.Port (Port.InPortId (Port.Arg 0)) "arg0" TStar (Port.NotConnected)
                     ]
         it "connects to input port on +" $ \env -> do
             u1 <- mkUUID
             u2 <- mkUUID
             res <- evalEmp env $ do
-                Graph.addNode top u1 "-> $a $b a + b" def
+                Graph.addNode top u1 "a: b: a + b" def
                 Graph.addNode top u2 "1" def
                 Graph.getNodes top
                 connectToInput top (OutPortRef u2 Port.All) (InPortRef u1 (Port.Arg 0))
@@ -498,7 +496,6 @@ spec = around withChannels $ parallel $ do
                       Port.Port (Port.InPortId Port.Self)    "self"  TStar (Port.WithDefault (Expression "func"))
                     , Port.Port (Port.InPortId (Port.Arg 0)) "arg0" TStar Port.Connected
                     , Port.Port (Port.InPortId (Port.Arg 1)) "arg1" TStar Port.Connected
-                    , Port.Port (Port.InPortId (Port.Arg 2)) "arg2" TStar Port.NotConnected
                     ]
         it "connects five nodes to func" $ \env -> do
             u1 <- mkUUID
@@ -532,7 +529,6 @@ spec = around withChannels $ parallel $ do
                     , Port.Port (Port.InPortId (Port.Arg 3)) "arg3" TStar Port.Connected
                     , Port.Port (Port.InPortId (Port.Arg 4)) "arg4" TStar Port.Connected
                     , Port.Port (Port.InPortId (Port.Arg 5)) "arg5" TStar Port.Connected
-                    , Port.Port (Port.InPortId (Port.Arg 6)) "arg6" TStar Port.NotConnected
                     ]
         it "removes empty port on disconnect" $ \env -> do
             u1 <- mkUUID
@@ -546,7 +542,6 @@ spec = around withChannels $ parallel $ do
             withResult res $ \n -> do
                 inputPorts n `shouldMatchList` [
                       Port.Port (Port.InPortId Port.Self)    "self"  TStar (Port.WithDefault (Expression "func"))
-                    , Port.Port (Port.InPortId (Port.Arg 0)) "arg0"  TStar Port.NotConnected
                     ]
         it "disconnect first connection when two nodes connected" $ \env -> do
             u1 <- mkUUID
@@ -637,7 +632,7 @@ spec = around withChannels $ parallel $ do
         it "adds port on literal lambda" $ \env -> do
             u1 <- mkUUID
             res <- evalEmp env $ do
-                Graph.addNode top u1 "-> $a $b a + b" def
+                Graph.addNode top u1 "a: b: a + b" def
                 let loc' = top |> u1
                 Just (input, _) <- Graph.withGraph loc' $ runASTOp GraphBuilder.getEdgePortMapping
                 Graph.addPort loc' input
@@ -681,7 +676,7 @@ spec = around withChannels $ parallel $ do
         it "removes port" $ \env -> do
             u1 <- mkUUID
             res <- evalEmp env $ do
-                Graph.addNode top u1 "-> $a $b a" def
+                Graph.addNode top u1 "a: b: a" def
                 let loc' = top |> u1
                 Just (input, _) <- Graph.withGraph loc' $ runASTOp GraphBuilder.getEdgePortMapping
                 Graph.removePort loc' (OutPortRef' (OutPortRef input (Port.Projection 1)))
@@ -698,7 +693,7 @@ spec = around withChannels $ parallel $ do
         it "renames port" $ \env -> do
             u1 <- mkUUID
             res <- evalEmp env $ do
-                Graph.addNode top u1 "-> $a $b a" def
+                Graph.addNode top u1 "a: b: a" def
                 let loc' = top |> u1
                 Just (input, _) <- Graph.withGraph loc' $ runASTOp GraphBuilder.getEdgePortMapping
                 Graph.renamePort loc' (OutPortRef' (OutPortRef input (Port.Projection 0))) "foo"
@@ -713,7 +708,7 @@ spec = around withChannels $ parallel $ do
         it "changes ports order" $ \env -> do
             u1 <- mkUUID
             res <- evalEmp env $ do
-                Graph.addNode top u1 "-> $a $b $c $d a" def
+                Graph.addNode top u1 "a: b: c: d: a" def
                 let loc' = top |> u1
                 Just (input, _) <- Graph.withGraph loc' $ runASTOp GraphBuilder.getEdgePortMapping
                 Graph.movePort loc' (OutPortRef' (OutPortRef input (Port.Projection 0))) 2
@@ -884,7 +879,7 @@ spec = around withChannels $ parallel $ do
             u1 <- mkUUID
             u2 <- mkUUID
             res <- evalEmp env $ do
-                Graph.addNode top u1 "-> $a a" def
+                Graph.addNode top u1 "a: a" def
                 let loc = top |> u1
                 Graph.addNode loc u2 "1" def
                 Graph.removeNodes loc [u2]
@@ -909,10 +904,9 @@ spec = around withChannels $ parallel $ do
                 myVec ^. Node.name `shouldBe` "node1"
                 pattern ^. Node.name `shouldBe` "Vector x y z"
                 outputPorts pattern `shouldMatchList` [
-                    -- FIXME[MM]: these should be NotConnected
-                      Port.Port (Port.OutPortId (Port.Projection 0)) "x" TStar Port.Connected
-                    , Port.Port (Port.OutPortId (Port.Projection 1)) "y" TStar Port.Connected
-                    , Port.Port (Port.OutPortId (Port.Projection 2)) "z" TStar Port.Connected
+                      Port.Port (Port.OutPortId (Port.Projection 0)) "x" TStar Port.NotConnected
+                    , Port.Port (Port.OutPortId (Port.Projection 1)) "y" TStar Port.NotConnected
+                    , Port.Port (Port.OutPortId (Port.Projection 2)) "z" TStar Port.NotConnected
                     ]
                 inputPorts pattern `shouldMatchList` [
                     -- FIXME[MM]: this should be connected
@@ -939,10 +933,9 @@ spec = around withChannels $ parallel $ do
                 pattern ^. Node.name `shouldBe` "Vector x y z"
                 pattern ^. Node.nodeType `shouldBe` Node.ExpressionNode "Nothing"
                 outputPorts pattern `shouldMatchList` [
-                    -- FIXME[MM]: these should be NotConnected
-                      Port.Port (Port.OutPortId (Port.Projection 0)) "x" TStar Port.Connected
-                    , Port.Port (Port.OutPortId (Port.Projection 1)) "y" TStar Port.Connected
-                    , Port.Port (Port.OutPortId (Port.Projection 2)) "z" TStar Port.Connected
+                      Port.Port (Port.OutPortId (Port.Projection 0)) "x" TStar Port.NotConnected
+                    , Port.Port (Port.OutPortId (Port.Projection 1)) "y" TStar Port.NotConnected
+                    , Port.Port (Port.OutPortId (Port.Projection 2)) "z" TStar Port.NotConnected
                     ]
                 inputPorts pattern `shouldMatchList` [
                     -- FIXME[MM]: this should be NotConnected
@@ -969,10 +962,9 @@ spec = around withChannels $ parallel $ do
                 myVec ^. Node.name `shouldBe` "node1"
                 pattern ^. Node.name `shouldBe` "Vector x y z"
                 outputPorts pattern `shouldMatchList` [
-                    -- FIXME[MM]: these should be NotConnected
-                      Port.Port (Port.OutPortId (Port.Projection 0)) "x" TStar Port.Connected
-                    , Port.Port (Port.OutPortId (Port.Projection 1)) "y" TStar Port.Connected
-                    , Port.Port (Port.OutPortId (Port.Projection 2)) "z" TStar Port.Connected
+                      Port.Port (Port.OutPortId (Port.Projection 0)) "x" TStar Port.NotConnected
+                    , Port.Port (Port.OutPortId (Port.Projection 1)) "y" TStar Port.NotConnected
+                    , Port.Port (Port.OutPortId (Port.Projection 2)) "z" TStar Port.NotConnected
                     ]
                 inputPorts pattern `shouldMatchList` [
                     -- FIXME[MM]: this should be connected
@@ -999,10 +991,11 @@ spec = around withChannels $ parallel $ do
                          <*> GraphBuilder.buildConnections
             withResult res $ \(pattern, plus, connections) -> do
                 outputPorts pattern `shouldMatchList` [
-                      Port.Port (Port.OutPortId (Port.Projection 0)) "x" TStar Port.Connected
-                    , Port.Port (Port.OutPortId (Port.Projection 1)) "y" TStar Port.Connected
-                      -- FIXME[MM]: should be NotConnected
-                    , Port.Port (Port.OutPortId (Port.Projection 2)) "z" TStar Port.Connected
+                    -- FIXME[MM]: these should be connected
+                      Port.Port (Port.OutPortId (Port.Projection 0)) "x" TStar Port.NotConnected
+                    , Port.Port (Port.OutPortId (Port.Projection 1)) "y" TStar Port.NotConnected
+                    -------------------
+                    , Port.Port (Port.OutPortId (Port.Projection 2)) "z" TStar Port.NotConnected
                     ]
                 inputPorts pattern `shouldMatchList` [
                       -- FIXME[MM]: this should be connected
@@ -1010,13 +1003,12 @@ spec = around withChannels $ parallel $ do
                     ]
 
                 outputPorts plus `shouldMatchList` [
-                      Port.Port (Port.OutPortId Port.All) "Output" TStar (Port.WithDefault (Expression "(+ x) x y"))
+                      Port.Port (Port.OutPortId Port.All) "Output" TStar (Port.WithDefault (Expression "x + y"))
                     ]
                 inputPorts plus `shouldMatchList` [
                         Port.Port (Port.InPortId Port.Self)    "self" TStar (Port.WithDefault (Expression "+"))
                       , Port.Port (Port.InPortId (Port.Arg 0)) "arg0" TStar Port.Connected
                       , Port.Port (Port.InPortId (Port.Arg 1)) "arg1" TStar Port.Connected
-                      , Port.Port (Port.InPortId (Port.Arg 2)) "arg2" TStar Port.NotConnected
                     ]
                 connections `shouldMatchList` [
                       (OutPortRef u1 Port.All, InPortRef u2 (Port.Arg 0))
@@ -1040,9 +1032,8 @@ spec = around withChannels $ parallel $ do
                 myVec ^. Node.name `shouldBe` "node1"
                 pattern ^. Node.name `shouldBe` "SomeCons (Just a) 0 \"foo\" x"
                 outputPorts pattern `shouldMatchList` [
-                    -- FIXME[MM]: these should be NotConnected
-                      Port.Port (Port.OutPortId (Port.Projection 0)) "a" TStar Port.Connected
-                    , Port.Port (Port.OutPortId (Port.Projection 1)) "x" TStar Port.Connected
+                      Port.Port (Port.OutPortId (Port.Projection 0)) "a" TStar Port.NotConnected
+                    , Port.Port (Port.OutPortId (Port.Projection 1)) "x" TStar Port.NotConnected
                     ]
                 inputPorts pattern `shouldMatchList` [
                     -- FIXME[MM]: this should be connected

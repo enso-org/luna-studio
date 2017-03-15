@@ -45,7 +45,7 @@ import qualified Empire.API.Graph.Connect              as Connect
 import qualified Empire.API.Graph.Disconnect           as Disconnect
 import qualified Empire.API.Graph.DumpGraphViz         as DumpGraphViz
 import qualified Empire.API.Graph.GetProgram           as GetProgram
-import qualified Empire.API.Graph.GetSubgraph          as GetSubgraph
+import qualified Empire.API.Graph.GetSubgraphs         as GetSubgraphs
 import qualified Empire.API.Graph.MovePort             as MovePort
 import qualified Empire.API.Graph.NodeResultUpdate     as NodeResultUpdate
 import qualified Empire.API.Graph.NodeSearch           as NodeSearch
@@ -303,11 +303,11 @@ handleGetProgram = modifyGraph (mtuple action) success where
         return $ GetProgram.Result graph (Text.pack code) crumb mockNSData
     success req _ res = replyResult req () res
 
-handleGetSubgraph :: Request GetSubgraph.Request -> StateT Env BusT ()
-handleGetSubgraph = modifyGraph (mtuple action) success where
-    action (GetSubgraph.Request location) = do
+handleGetSubgraphs :: Request GetSubgraphs.Request -> StateT Env BusT ()
+handleGetSubgraphs = modifyGraph (mtuple action) success where
+    action (GetSubgraphs.Request location) = do
         graph <- Graph.getGraph location
-        return $ GetSubgraph.Result graph []
+        return $ GetSubgraphs.Result [graph] --FIXME: should return multiple graphs
     success req _ res = replyResult req () res
 
 handleNodeSearch :: Request NodeSearch.Request -> StateT Env BusT ()

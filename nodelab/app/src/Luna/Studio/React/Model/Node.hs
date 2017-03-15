@@ -9,7 +9,6 @@ module Luna.Studio.React.Model.Node (
 import           Control.Arrow
 import           Data.Map.Lazy                     (Map)
 import qualified Data.Map.Lazy                     as Map
-import           Data.Set                          (Set)
 import           Data.Time.Clock                   (UTCTime)
 
 import           Data.Position                     (Position (Position), Vector2 (Vector2))
@@ -49,12 +48,13 @@ data Mode = Collapsed
 
 data ExpandedMode = Editor
                   | Controls
-                  | Function [SubGraph]
+                  | Function [Subgraph]
                   deriving (Eq, Generic, NFData, Show)
 
 
-data SubGraph = SubGraph
-    { _nodes  :: Set NodeId
+data Subgraph = Subgraph
+    { _nodes  :: [NodeId]
+    , _edges  :: [Node]
     , _monads :: [MonadPath]
     } deriving (Default, Eq, Generic, NFData, Show)
 
@@ -63,7 +63,7 @@ data Collaboration = Collaboration { _touch  :: Map ClientId (UTCTime, ColorId)
                                    } deriving (Default, Eq, Generic, NFData, Show)
 
 makeLenses ''Node
-makeLenses ''SubGraph
+makeLenses ''Subgraph
 makeLenses ''Collaboration
 
 instance Default Mode where def = Collapsed
@@ -81,6 +81,10 @@ isExpanded = isCollapsed . to not
 isExpandedControls :: Getter Node Bool
 isExpandedControls = isMode (Expanded Controls)
 
+isExpandedFunction :: Getter Node Bool
+isExpandedFunction = to (isFun' . _mode) where
+    isFun' (Expanded (Function _)) = True
+    isFun' _                       = False
 
 isLiteral :: Getter Node Bool
 isLiteral = to isLiteral' where

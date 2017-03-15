@@ -57,6 +57,7 @@
   # nodes
   'backspace'       : 'luna-studio:remove-selected-nodes' # RemoveSelectedNodes
   'ctrl-a'          : 'luna-studio:select-all'            # SelectAll
+  'ctrl-e'          : 'luna-studio:unfold-selected-nodes' # UnfoldSelectedNodes
   'delete'          : 'luna-studio:remove-selected-nodes' # RemoveSelectedNodes
   'enter'           : 'luna-studio:expand-selected-nodes' # ExpandSelectedNodes
   'space'           : 'luna-studio:edit-selected-nodes'   # EditSelectedNodes

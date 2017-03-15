@@ -26,8 +26,7 @@ import           Data.Foldable        (toList)
 import           Empire.Data.Graph    (ASTState(..), Graph, withVis)
 import qualified Empire.Data.Graph    as Graph (ast, breadcrumbHierarchy)
 import qualified Empire.Data.BreadcrumbHierarchy as BH
-import           Empire.Data.Layers   (Marker, Meta,
-                                      InputsLayer, TypeLayer, TCData)
+import           Empire.Data.Layers   (Marker, Meta, TypeLayer)
 import           Empire.Empire        (Command)
 
 import           Data.Event           (Emitters, type (//))
@@ -67,9 +66,7 @@ type ASTOp m = (MonadThrow m,
 type EmpireLayers = '[AnyExpr // Model, AnyExprLink // Model,
                       AnyExpr // Marker,
                       AnyExpr // Meta,
-                      AnyExpr // InputsLayer,
                       AnyExpr // Succs,
-                      AnyExpr // TCData,
                       AnyExpr // TypeLayer,
                       AnyExpr // UID, AnyExprLink // UID,
                       AnyExpr // CodeSpan.CodeSpan,

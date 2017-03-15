@@ -111,15 +111,17 @@ updateMonads loc = do
 
 updateValues :: GraphLocation -> Command InterpreterEnv ()
 updateValues loc = do
-    dests <- use destructors
-    liftIO $ sequence_ dests
-    destructors .= []
     allNodeIds <- uses (graph . Graph.breadcrumbHierarchy) topLevelIDs
-    forM_ allNodeIds $ \nid -> do
-        noErrors <- isNothing <$> uses errorsCache (Map.lookup nid)
-        when noErrors $ do
-            val <- zoom graph $ getNodeValueReprs nid
-            $notImplemented
+    forM_ allNodeIds $ \nid -> Publisher.notifyResultUpdate loc nid (NodeResult.Value "Hello!" []) 0
+    {-dests <- use destructors-}
+    {-liftIO $ sequence_ dests-}
+    {-destructors .= []-}
+    {-allNodeIds <- uses (graph . Graph.breadcrumbHierarchy) topLevelIDs-}
+    {-forM_ allNodeIds $ \nid -> do-}
+        {-noErrors <- isNothing <$> uses errorsCache (Map.lookup nid)-}
+        {-when noErrors $ do-}
+            {-val <- zoom graph $ getNodeValueReprs nid-}
+            {-$notImplemented-}
 
 flushCache :: Command InterpreterEnv ()
 flushCache = do
@@ -133,4 +135,4 @@ run loc = do
     updateNodes loc
     updateMonads loc
     -- zoom graph runInterpreter
-    -- updateValues loc
+    updateValues loc

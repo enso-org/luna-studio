@@ -13,6 +13,7 @@ import           Empire.API.Data.TypeRep       (TypeRep)
 import qualified Empire.API.Topic              as T
 
 data NodeValue = Value Text [DV.Value] | Error (Error TypeRep) deriving (Show, Eq, Generic, NFData)
+makePrisms ''NodeValue
 
 data Update = Update { _location  :: GraphLocation
                      , _nodeId    :: NodeId
