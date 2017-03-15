@@ -194,21 +194,27 @@ extractArgTypes node = do
         Lam arg out -> (:) <$> (Print.getTypeRep =<< IR.source arg) <*> (extractArgTypes =<< IR.source out)
         _           -> return []
 
-extractArgNames :: ASTOp m => NodeRef -> m [String]
+safeGetVarName :: ASTOp m => NodeRef -> m (Maybe String)
+safeGetVarName node = do
+    name <- (Just <$> ASTRead.getVarName node) `catch`
+        (\(e :: ASTRead.NoNameException) -> return Nothing)
+    return name
+
+extractArgNames :: ASTOp m => NodeRef -> m [Maybe String]
 extractArgNames node = do
     match node $ \case
         Lam{}    -> do
-            insideLam <- insideThisNode node
-            args      <- ASTDeconstruct.extractArguments node
-            vars      <- concat <$> mapM ASTRead.getVarsInside args
+            insideLam  <- insideThisNode node
+            args       <- ASTDeconstruct.extractArguments node
+            vars       <- concat <$> mapM ASTRead.getVarsInside args
             let ports = if insideLam then vars else args
-            mapM ASTRead.getVarName ports `catch` (\(e :: ASTRead.NoNameException) -> return [])
+            mapM safeGetVarName ports
         -- App is Lam that has some args applied
         App f _a -> extractArgNames =<< IR.source f
         Cons{}   -> do
             vars  <- ASTRead.getVarsInside node
             names <- mapM ASTRead.getVarName vars
-            return names
+            return $ map Just names
         _ -> return []
 
 insideThisNode :: ASTOp m => NodeRef -> m Bool
@@ -217,6 +223,14 @@ insideThisNode node = do
     return $ case curr of
         Just n -> n == node
         _      -> False
+
+getPortsNames :: ASTOp m => NodeRef -> m [String]
+getPortsNames node = do
+    names <- extractArgNames node
+    let backupNames = map (\i -> "arg" ++ show i) [(0::Int)..]
+    forM (zip names backupNames) $ \(name, backup) -> case name of
+        Just n -> return n
+        _      -> return backup
 
 -- extractPortInfo :: ASTOp m => NodeRef -> m ([TypeRep], [PortState])
 -- extractPortInfo node = do
@@ -293,12 +307,11 @@ extractPortInfo n = do
 buildArgPorts :: ASTOp m => NodeRef -> m [Port]
 buildArgPorts ref = do
     typed <- extractPortInfo ref
-    names <- extractArgNames ref
+    names <- getPortsNames ref
     let portsTypes = fmap fst typed ++ replicate (length names - length typed) TStar
-        namesGen   = names ++ drop (length names) (("arg" ++) . show <$> [(0::Int)..])
         psCons = zipWith3 Port
                           (InPortId . Arg <$> [(0::Int)..])
-                          namesGen
+                          names
                           portsTypes
     return $ zipWith ($) psCons (fmap snd typed ++ repeat NotConnected)
 
@@ -383,7 +396,7 @@ buildInputEdge connections nid = do
                $ filter (\(OutPortRef refNid p,_) -> nid == refNid)
                $ connections
         states = map (\i -> if i `elem` connectedPorts then Connected else NotConnected) [(0::Int)..]
-    names <- extractArgNames ref
+    names <- getPortsNames ref
     argTypes <- case types of
         [] -> do
             args <- ASTDeconstruct.extractArguments ref
@@ -391,8 +404,7 @@ buildInputEdge connections nid = do
             let numberOfPorts = length vars
             return $ replicate numberOfPorts TStar
         _  -> return types
-    let nameGen = names ++ drop (length names) (fmap (\i -> "arg" ++ show i) [(0::Int)..])
-        inputEdges = List.zipWith4 (\n t state i -> Port (OutPortId $ Projection i) n t state) nameGen argTypes states [(0::Int)..]
+    let inputEdges = List.zipWith4 (\n t state i -> Port (OutPortId $ Projection i) n t state) names argTypes states [(0::Int)..]
     return $
         API.Node nid
             "inputEdge"
