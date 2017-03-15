@@ -2,8 +2,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 
 module JS.UI
-    ( displayConnectionClosedMessage
-    , focus
+    ( focus
     , setCursor
     , setDefaultCursor
     , setMovingCursor
@@ -12,8 +11,6 @@ module JS.UI
 
 import qualified JS.Config           as Config
 import           Luna.Studio.Prelude
-
-foreign import javascript safe "require('./BSOD').connectionClosed()" displayConnectionClosedMessage :: IO ()
 
 foreign import javascript safe "document.getElementById($1).focus()" focus :: JSString -> IO ()
 
