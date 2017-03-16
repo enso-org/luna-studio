@@ -10,7 +10,7 @@ import qualified Empire.API.Data.GraphLocation          as GraphLocation
 import           Empire.API.Data.Node                   (Node, NodeId)
 import           Empire.API.Data.NodeMeta               (NodeMeta)
 import           Empire.API.Data.PortDefault            (PortDefault)
-import           Empire.API.Data.PortRef                (AnyPortRef, InPortRef, OutPortRef)
+import           Empire.API.Data.PortRef                (AnyPortRef, OutPortRef)
 import           Empire.API.Data.Project                (ProjectId)
 import qualified Empire.API.Graph.AddConnection         as AddConnection
 import qualified Empire.API.Graph.AddNode               as AddNode
@@ -81,7 +81,7 @@ dumpGraphViz workspace uuid guiID = sendRequest $ Message uuid guiID $ withLibra
 getProgram :: Workspace -> UUID -> Maybe UUID -> IO ()
 getProgram workspace uuid guiID = sendRequest $ Message uuid guiID $ withLibrary workspace GetProgram.Request
 
-addConnection :: Either OutPortRef NodeId -> Either InPortRef NodeId -> Workspace -> UUID -> Maybe UUID -> IO ()
+addConnection :: Either OutPortRef NodeId -> Either AnyPortRef NodeId -> Workspace -> UUID -> Maybe UUID -> IO ()
 addConnection src dst workspace uuid guiID = sendRequest $ Message uuid guiID $ withLibrary workspace AddConnection.Request src dst
 
 addNode :: NodeId -> Text -> NodeMeta -> Maybe NodeId -> Workspace -> UUID -> Maybe UUID -> IO ()

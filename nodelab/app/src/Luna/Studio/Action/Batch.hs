@@ -5,7 +5,7 @@ import           Empire.API.Data.Connection           (Connection, ConnectionId)
 import           Empire.API.Data.Node                 (Node, NodeId)
 import           Empire.API.Data.NodeMeta             (NodeMeta)
 import           Empire.API.Data.PortDefault          (PortDefault)
-import           Empire.API.Data.PortRef              (AnyPortRef, InPortRef, OutPortRef, dstNodeId, nodeId)
+import           Empire.API.Data.PortRef              (AnyPortRef (InPortRef', OutPortRef'), InPortRef (InPortRef), OutPortRef (OutPortRef), dstNodeId, nodeId)
 import           Empire.API.Data.Project              (ProjectId)
 import           Luna.Studio.Action.Command           (Command)
 import           Luna.Studio.Action.UUID              (registerRequest)
@@ -64,9 +64,13 @@ getProgram :: Command State ()
 getProgram = withWorkspace BatchCmd.getProgram
 
 
-addConnection :: Either OutPortRef NodeId -> Either InPortRef NodeId -> Command State ()
+addConnection :: Either OutPortRef NodeId -> Either AnyPortRef NodeId -> Command State ()
 addConnection src dst = do
-    collaborativeModify . return $ either (view dstNodeId) id dst
+    let nid = case dst of
+            Left (OutPortRef' (OutPortRef nid' _)) -> nid'
+            Left (InPortRef'  (InPortRef  nid' _)) -> nid'
+            Right nid'                             -> nid'
+    collaborativeModify [nid]
     withWorkspace $ BatchCmd.addConnection src dst
 
 addNode :: NodeId -> Text -> NodeMeta -> Maybe NodeId -> Command State ()
