@@ -12,41 +12,40 @@ module Luna.Studio.Action.Connect
     , stopConnecting
     ) where
 
-import qualified Data.HashMap.Strict                    as HashMap
-import           Data.ScreenPosition                    (ScreenPosition)
-import           Empire.API.Data.Connection             (ConnectionId, toValidConnection)
-import qualified Empire.API.Data.Connection             as Connection
-import           Empire.API.Data.Port                   (InPort (Self), PortId (InPortId))
-import           Empire.API.Data.PortRef                (AnyPortRef (InPortRef', OutPortRef'))
-import qualified Empire.API.Data.PortRef                as PortRef
-import qualified JS.GoogleAnalytics                     as GA
-import           Luna.Studio.Action.Camera.Screen       (translateToWorkspace)
-import           Luna.Studio.Action.Command             (Command)
-import           Luna.Studio.Action.Geometry.Connection (createConnectionModel, createCurrentConnectionModel)
-import           Luna.Studio.Action.Graph.Connect       (connect)
-import           Luna.Studio.Action.Graph.Disconnect    (removeConnections)
-import           Luna.Studio.Action.Node.Drag           (startNodeDrag)
-import           Luna.Studio.Action.Port.Self           (showOrHideAllSelfPorts)
-import           Luna.Studio.Event.Mouse                (mousePosition, workspacePosition)
+import qualified Data.HashMap.Strict                 as HashMap
+import           Data.ScreenPosition                 (ScreenPosition)
+import           Empire.API.Data.Connection          (ConnectionId, toValidConnection)
+import qualified Empire.API.Data.Connection          as Connection
+import           Empire.API.Data.Port                (InPort (Self), PortId (InPortId))
+import           Empire.API.Data.PortRef             (AnyPortRef (InPortRef', OutPortRef'))
+import qualified Empire.API.Data.PortRef             as PortRef
+import qualified JS.GoogleAnalytics                  as GA
+import           Luna.Studio.Action.Basic            (connect, removeConnection, updateAllPortsSelfVisibility)
+import           Luna.Studio.Action.Command          (Command)
+import           Luna.Studio.Action.Node.Drag        (startNodeDrag)
+import           Luna.Studio.Action.State.Action     (beginActionWithKey, continueActionWithKey, removeActionFromState, updateActionWithKey)
+import           Luna.Studio.Action.State.Model      (createConnectionModel, createCurrentConnectionModel)
+import           Luna.Studio.Action.State.NodeEditor (getNode, modifyNodeEditor)
+import           Luna.Studio.Action.State.Scene      (translateToWorkspace)
+import           Luna.Studio.Event.Mouse             (mousePosition, workspacePosition)
 import           Luna.Studio.Prelude
-import           Luna.Studio.React.Event.Connection     (ModifiedEnd (Destination, Source))
-import           Luna.Studio.React.Model.Connection     (toCurrentConnection)
-import qualified Luna.Studio.React.Model.Node           as Model
-import qualified Luna.Studio.React.Model.NodeEditor     as NodeEditor
-import           Luna.Studio.State.Action               (Action (begin, continue, update), Connect, Mode (Click, Drag), connectAction)
-import qualified Luna.Studio.State.Action               as Action
-import           Luna.Studio.State.Global               (State, beginActionWithKey, continueActionWithKey, removeActionFromState,
-                                                         updateActionWithKey)
-import qualified Luna.Studio.State.Global               as Global
-import qualified Luna.Studio.State.Graph                as Graph
-import           React.Flux                             (MouseEvent)
+import           Luna.Studio.React.Event.Connection  (ModifiedEnd (Destination, Source))
+import           Luna.Studio.React.Model.Connection  (toCurrentConnection)
+import           Luna.Studio.React.Model.Node        (isCollapsed)
+import qualified Luna.Studio.React.Model.NodeEditor  as NodeEditor
+import           Luna.Studio.State.Action            (Action (begin, continue, end, update), Connect (Connect), Mode (Click, Drag),
+                                                      connectAction, connectMode, connectSnappedPort, connectSourcePort, connectStartPos)
+import           Luna.Studio.State.Global            (State, currentConnectAction)
+import qualified Luna.Studio.State.Global            as Global
+import qualified Luna.Studio.State.Graph             as Graph
+import           React.Flux                          (MouseEvent)
 
 
 instance Action (Command State) Connect where
-    begin    = beginActionWithKey    connectAction
-    continue = continueActionWithKey connectAction
-    update   = updateActionWithKey   connectAction
-    end      = stopConnecting
+    begin action = beginActionWithKey    connectAction action >> currentConnectAction ?= action
+    continue     = continueActionWithKey connectAction
+    update       = updateActionWithKey   connectAction
+    end          = stopConnecting
 
 
 handleConnectionMouseDown :: MouseEvent -> ConnectionId -> ModifiedEnd -> Command State ()
@@ -60,65 +59,66 @@ handleConnectionMouseDown evt connId modifiedEnd = do
         startConnecting mousePos portRef (Just connId) Drag
 
 startConnecting :: ScreenPosition -> AnyPortRef -> Maybe ConnectionId -> Mode -> Command State ()
-startConnecting screenMousePos anyPortRef mayModifiedConnId connectMode = do
+startConnecting screenMousePos anyPortRef mayModifiedConnId connectMode' = do
     let nodeId = anyPortRef ^. PortRef.nodeId
         portId = anyPortRef ^. PortRef.portId
     mousePos <- translateToWorkspace screenMousePos
-    mayNode  <- Global.getNode nodeId
+    mayNode  <- getNode nodeId
     withJust mayNode $ \node -> do
-        case (portId, node ^. Model.isExpanded) of
-            (InPortId Self, False) -> when (connectMode == Drag) $ startNodeDrag mousePos nodeId True
+        case (portId, not . isCollapsed $ node) of
+            (InPortId Self, False) -> when (connectMode' == Drag) $ startNodeDrag mousePos nodeId True
             _                      -> do
                 mayCurrentConnectionModel <- createCurrentConnectionModel anyPortRef mousePos
                 when (isJust mayCurrentConnectionModel) $ do
-                    let action = Action.Connect screenMousePos anyPortRef (isJust mayModifiedConnId) Nothing connectMode
-                    withJust mayModifiedConnId $ removeConnections . replicate 1
+                    let action = Connect screenMousePos anyPortRef (isJust mayModifiedConnId) Nothing connectMode'
+                    withJust mayModifiedConnId removeConnection
                     begin action
-                    showOrHideAllSelfPorts (Just action) Nothing
-                    Global.modifyNodeEditor $ do
+                    void $ updateAllPortsSelfVisibility
+                    modifyNodeEditor $ do
                         withJust mayModifiedConnId $ \connId ->
                             NodeEditor.connections . at connId .= Nothing
                         NodeEditor.currentConnections .= maybeToList mayCurrentConnectionModel
 
 handleMove :: MouseEvent -> Connect -> Command State ()
-handleMove evt action = when (isNothing $ action ^. Action.connectSnappedPort) $ do
+handleMove evt action = when (isNothing $ action ^. connectSnappedPort) $ do
     mousePos                  <- workspacePosition evt
-    mayCurrentConnectionModel <- createCurrentConnectionModel (action ^. Action.connectSourcePort) mousePos
-    Global.modifyNodeEditor $ NodeEditor.currentConnections .= maybeToList mayCurrentConnectionModel
+    mayCurrentConnectionModel <- createCurrentConnectionModel (action ^. connectSourcePort) mousePos
+    modifyNodeEditor $ NodeEditor.currentConnections .= maybeToList mayCurrentConnectionModel
     when (isNothing mayCurrentConnectionModel) $ stopConnecting action
 
 handlePortMouseUp :: AnyPortRef -> Connect -> Command State ()
-handlePortMouseUp portRef action = when (action ^. Action.connectMode == Drag) $
+handlePortMouseUp portRef action = when (action ^. connectMode == Drag) $
     connectToPort portRef action
 
 snapToPort :: AnyPortRef -> Connect -> Command State ()
 snapToPort portRef action =
-    withJust (toValidConnection (action ^. Action.connectSourcePort) portRef) $ \conn -> do
+    withJust (toValidConnection (action ^. connectSourcePort) portRef) $ \conn -> do
         mayConnModel <- createConnectionModel conn
         withJust mayConnModel $ \connModel -> do
-            update $ action & Action.connectSnappedPort ?~ portRef
-            Global.modifyNodeEditor $ NodeEditor.currentConnections .= [toCurrentConnection connModel]
+            update $ action & connectSnappedPort ?~ portRef
+            modifyNodeEditor $ NodeEditor.currentConnections .= [toCurrentConnection connModel]
 
 cancelSnapToPort :: AnyPortRef -> Connect -> Command State ()
-cancelSnapToPort portRef action = when (Just portRef == action ^. Action.connectSnappedPort) $
-    update $ action & Action.connectSnappedPort .~ Nothing
+cancelSnapToPort portRef action = when (Just portRef == action ^. connectSnappedPort) $
+    update $ action & connectSnappedPort .~ Nothing
 
 handleMouseUp :: MouseEvent -> Connect -> Command State ()
-handleMouseUp evt action = when (action ^. Action.connectMode == Drag) $ do
+handleMouseUp evt action = when (action ^. connectMode == Drag) $ do
     mousePos <- mousePosition evt
-    if (mousePos == action ^. Action.connectStartPos) then
-        update $ action & Action.connectMode .~ Click
+    if (mousePos == action ^. connectStartPos) then
+        update $ action & connectMode .~ Click
     else stopConnecting action
 
 stopConnecting :: Connect -> Command State ()
 stopConnecting _ = do
-    Global.modifyNodeEditor $ NodeEditor.currentConnections .= def
-    showOrHideAllSelfPorts Nothing Nothing
+    modifyNodeEditor $ NodeEditor.currentConnections .= def
+    void $ updateAllPortsSelfVisibility
+    currentConnectAction .= Nothing
     removeActionFromState connectAction
 
 connectToPort :: AnyPortRef -> Connect -> Command State ()
 connectToPort dst action = do
-    withJust (toValidConnection dst $ action ^. Action.connectSourcePort) $ \newConn -> do
+    withJust (toValidConnection dst $ action ^. connectSourcePort) $ \newConn -> do
         connect (Left $ newConn ^. Connection.src) (Left $ newConn ^. Connection.dst)
         GA.sendEvent $ GA.Connect GA.Manual
     stopConnecting action

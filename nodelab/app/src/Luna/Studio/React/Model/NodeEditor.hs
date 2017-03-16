@@ -15,13 +15,15 @@ import           Luna.Studio.React.Model.Port          (DraggedPort)
 import           Luna.Studio.React.Model.Searcher      (Searcher)
 import           Luna.Studio.React.Model.SelectionBox  (SelectionBox)
 
+type ConnectionsMap = HashMap InPortRef Connection
+type NodesMap       = HashMap NodeId Node
 
 data NodeEditor = NodeEditor { _screenTransform     :: CameraTransformation
-                             , _nodes               :: HashMap NodeId    Node
+                             , _nodes               :: NodesMap
                              , _monads              :: [MonadPath]
                              , _connections         :: HashMap InPortRef Connection
                              , _currentConnections  :: [CurrentConnection]
-                             , _portDragConnections :: HashMap InPortRef Connection
+                             , _portDragConnections :: ConnectionsMap
                              , _connectionPen       :: Maybe ConnectionPen
                              , _selectionBox        :: Maybe SelectionBox
                              , _searcher            :: Maybe Searcher

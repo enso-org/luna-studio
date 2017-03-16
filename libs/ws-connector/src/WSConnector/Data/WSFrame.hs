@@ -1,15 +1,15 @@
 {-# LANGUAGE DeriveGeneric         #-}
-{-# LANGUAGE TemplateHaskell       #-}
-{-# LANGUAGE TypeFamilies          #-}
 {-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE TemplateHaskell       #-}
+{-# LANGUAGE TypeFamilies          #-}
 
 module WSConnector.Data.WSFrame where
 
-import qualified Data.Binary                        as Binary
-import           Data.ByteString                    (ByteString)
-import           Data.ByteString.Base64.Lazy        (decodeLenient, encode)
-import           Data.ByteString.Lazy               (fromStrict, toStrict)
+import qualified Data.Binary                 as Binary
+import           Data.ByteString             (ByteString)
+import           Data.ByteString.Base64.Lazy (decodeLenient, encode)
+import           Data.ByteString.Lazy        (fromStrict, toStrict)
 import           Prologue
 
 import           WSConnector.Data.WSMessage

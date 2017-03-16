@@ -1,12 +1,14 @@
 {-# LANGUAGE TypeFamilies #-}
 module Data.Size
-( module Data.Size
-, module X
-)
+    ( module Data.Size
+    , vector
+    , x
+    , y
+    )
 where
 
 import           Data.Aeson          (ToJSON)
-import           Data.Vector         as X
+import           Data.Vector
 import           Luna.Studio.Prelude
 
 
@@ -33,3 +35,12 @@ instance IsList Size where
     type Item Size = Double
     fromList l = Size (fromList l)
     toList   p = [p ^. x, p ^. y]
+
+
+-- === Functions === ---
+
+fromTuple :: (Double, Double) -> Size
+fromTuple = uncurry fromDoubles
+
+fromDoubles :: Double -> Double -> Size
+fromDoubles = Size .: Vector2

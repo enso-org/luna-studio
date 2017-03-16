@@ -1,5 +1,4 @@
-{-# LANGUAGE LambdaCase   #-}
-{-# LANGUAGE ViewPatterns #-}
+{-# LANGUAGE LambdaCase #-}
 
 module Empire.ASTOps.Print (
     getTypeRep
@@ -8,20 +7,20 @@ module Empire.ASTOps.Print (
   , printCurrentFunction
   ) where
 
+import           Control.Monad                  (forM, (<=<))
+import           Data.Char                      (isAlpha)
+import           Data.List                      (delete, dropWhileEnd)
 import           Empire.Prelude
-import           Control.Monad            ((<=<), forM)
-import           Data.List                (dropWhileEnd, delete)
-import           Data.Char                (isAlpha)
 
-import           Empire.ASTOp              (ASTOp, match)
-import           Empire.Data.AST           (NodeRef)
-import qualified Empire.ASTOps.Builder     as ASTBuilder
-import qualified Empire.ASTOps.Read        as ASTRead
-import qualified Empire.ASTOps.Deconstruct as ASTDeconstruct
-import           Empire.API.Data.Node      (NodeId)
-import           Empire.API.Data.TypeRep   (TypeRep (..))
+import           Empire.API.Data.Node           (NodeId)
+import           Empire.API.Data.TypeRep        (TypeRep (..))
+import           Empire.ASTOp                   (ASTOp, match)
+import qualified Empire.ASTOps.Builder          as ASTBuilder
+import qualified Empire.ASTOps.Deconstruct      as ASTDeconstruct
+import qualified Empire.ASTOps.Read             as ASTRead
+import           Empire.Data.AST                (NodeRef)
+import qualified Luna.IR                        as IR
 import           Luna.IR.Term.Uni
-import qualified Luna.IR as IR
 
 import qualified Luna.Syntax.Text.Pretty.Pretty as CodeGen
 

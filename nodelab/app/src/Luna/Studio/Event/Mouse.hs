@@ -1,12 +1,12 @@
 module Luna.Studio.Event.Mouse where
 
-import           Data.Position              (Position, Vector2 (Vector2))
-import           Data.ScreenPosition        (ScreenPosition (ScreenPosition))
-import           Luna.Studio.Action.Camera  (getWorkspacePos, translateToWorkspace)
-import           Luna.Studio.Action.Command (Command)
+import           Data.Position                  (Position)
+import           Data.ScreenPosition            (ScreenPosition, fromDoubles)
+import           Luna.Studio.Action.Command     (Command)
+import           Luna.Studio.Action.State.Scene (getWorkspacePosition, translateToWorkspace)
 import           Luna.Studio.Prelude
-import           Luna.Studio.State.Global   (State)
-import           React.Flux                 (MouseEvent (MouseEvent), mousePageX, mousePageY)
+import           Luna.Studio.State.Global       (State)
+import           React.Flux                     (MouseEvent (MouseEvent), mousePageX, mousePageY)
 -- import           Data.Bits (setBit, testBit)
 -- import           Type.List (Index)
 -- import           Data.Typeable
@@ -16,12 +16,8 @@ workspacePosition :: MouseEvent -> Command State Position
 workspacePosition = translateToWorkspace <=< mousePosition
 
 mousePosition :: MouseEvent -> Command State ScreenPosition
-mousePosition e = do
-    mayWorkspacePos <- getWorkspacePos
-    let pagePos = ScreenPosition (Vector2 (fromIntegral $ mousePageX e) (fromIntegral $ mousePageY e))
-    case mayWorkspacePos of
-        Just workspacePos -> return $ pagePos - workspacePos
-        Nothing -> return pagePos
+mousePosition e = getWorkspacePosition >>= return . maybe pagePos (\workspacePos -> pagePos - workspacePos) where
+    pagePos = fromDoubles (fromIntegral $ mousePageX e) (fromIntegral $ mousePageY e)
 
 leftButton :: Int
 leftButton = 0

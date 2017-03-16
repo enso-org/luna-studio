@@ -1,12 +1,14 @@
 {-# LANGUAGE TypeFamilies #-}
 module Data.ScreenPosition
     ( module Data.ScreenPosition
-    , module X
+    , vector
+    , x
+    , y
     )
 where
 
 import           Data.Aeson          (FromJSON, ToJSON)
-import           Data.Vector         as X
+import           Data.Vector
 import           Luna.Studio.Prelude
 -----------------------------
 -- === ScreenPosition === ---
@@ -32,3 +34,12 @@ instance IsList ScreenPosition where
     type Item ScreenPosition = Double
     fromList l = ScreenPosition (fromList l)
     toList   p = [p ^. x, p ^. y]
+
+
+-- === Functions === ---
+
+fromTuple :: (Double, Double) -> ScreenPosition
+fromTuple = uncurry fromDoubles
+
+fromDoubles :: Double -> Double -> ScreenPosition
+fromDoubles = ScreenPosition .: Vector2

@@ -1,5 +1,6 @@
 module Luna.Studio.Action.UUID
-    ( registerRequest
+    ( getUUID
+    , registerRequest
     , unregisterRequest
     , isOwnRequest
     ) where

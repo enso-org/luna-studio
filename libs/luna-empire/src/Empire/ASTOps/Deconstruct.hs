@@ -8,12 +8,12 @@ module Empire.ASTOps.Deconstruct (
 
 import           Empire.Prelude
 
-import           Empire.ASTOp                       (ASTOp, match)
-import qualified Empire.ASTOps.Read                 as Read
-import           Empire.Data.AST                    (NodeRef, NotAppException(..))
+import           Empire.ASTOp       (ASTOp, match)
+import qualified Empire.ASTOps.Read as Read
+import           Empire.Data.AST    (NodeRef, NotAppException (..))
 
+import qualified Luna.IR            as IR
 import           Luna.IR.Term.Uni
-import qualified Luna.IR as IR
 
 
 deconstructApp :: ASTOp m => NodeRef -> m (NodeRef, [NodeRef])

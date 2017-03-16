@@ -2,7 +2,7 @@ module Luna.Studio.Handler.Backend.Control
     ( handle
     ) where
 
-import           JS.Atom (pushNotification)
+import           JS.Atom                    (pushNotification)
 import           Luna.Studio.Error.Error
 
 import           Luna.Studio.Prelude

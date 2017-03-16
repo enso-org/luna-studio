@@ -5,17 +5,17 @@ module Empire.ASTOps.Remove (
   , removeSubtree
   ) where
 
-import           Control.Monad (foldM)
+import           Control.Monad             (foldM)
 import           Empire.Prelude
 
-import           Empire.Data.AST           (NodeRef, NotAppException(..))
 import           Empire.ASTOp              (ASTOp, match)
 import           Empire.ASTOps.Deconstruct (deconstructApp)
 import           Empire.ASTOps.Read        (isBlank)
+import           Empire.Data.AST           (NodeRef, NotAppException (..))
 
-import           OCI.IR.Combinators        (deleteSubtree)
+import qualified Luna.IR                   as IR
 import           Luna.IR.Term.Uni
-import qualified Luna.IR as IR
+import           OCI.IR.Combinators        (deleteSubtree)
 
 removeSubtree :: ASTOp m => NodeRef -> m ()
 removeSubtree ref = deleteSubtree ref

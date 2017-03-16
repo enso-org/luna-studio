@@ -7,96 +7,107 @@ module Handlers where
 
 import           UndoState
 
-import           Control.Exception                     (Exception)
-import           Control.Exception.Safe                (MonadThrow, throwM)
-import           Data.Binary                           (Binary, decode)
-import qualified Data.Binary                           as Bin
-import           Data.ByteString                       (ByteString, empty)
-import           Data.ByteString.Lazy                  (fromStrict, toStrict)
-import qualified Data.List                             as List
-import           Data.Map.Strict                       (Map)
-import qualified Data.Map.Strict                       as Map
+import           Control.Exception                  (Exception)
+import           Control.Exception.Safe             (MonadThrow, throwM)
+import           Data.Binary                        (Binary, decode)
+import qualified Data.Binary                        as Bin
+import           Data.ByteString                    (ByteString, empty)
+import           Data.ByteString.Lazy               (fromStrict, toStrict)
+import qualified Data.List                          as List
+import           Data.Map.Strict                    (Map)
+import qualified Data.Map.Strict                    as Map
 import           Data.Maybe
-import qualified Data.Set                              as Set
-import           Prologue                              hiding (throwM)
+import qualified Data.Set                           as Set
+import           Prologue                           hiding (throwM)
 
-import           Data.UUID                             as UUID (nil)
-import           Empire.API.Data.Connection            (Connection)
-import           Empire.API.Data.Connection            as Connection
-import           Empire.API.Data.Graph                 (Graph)
-import           Empire.API.Data.GraphLocation         (GraphLocation)
-import           Empire.API.Data.Node                  (Node, NodeId)
-import qualified Empire.API.Data.Node                  as Node
-import           Empire.API.Data.NodeMeta              (NodeMeta)
-import qualified Empire.API.Data.Port                  as Port
-import           Empire.API.Data.PortRef               (AnyPortRef (OutPortRef'), InPortRef, OutPortRef (..), dstNodeId, srcNodeId)
-import qualified Empire.API.Data.PortRef               as PortRef
-import qualified Empire.API.Graph.AddNode              as AddNode
-import qualified Empire.API.Graph.AddPort              as AddPort
-import qualified Empire.API.Graph.AddSubgraph          as AddSubgraph
-import qualified Empire.API.Graph.Connect              as Connect
-import qualified Empire.API.Graph.Disconnect           as Disconnect
-import qualified Empire.API.Graph.Redo                 as RedoRequest
-import qualified Empire.API.Graph.RemoveNodes          as RemoveNodes
-import qualified Empire.API.Graph.RemovePort           as RemovePort
-import qualified Empire.API.Graph.RenameNode           as RenameNode
-import qualified Empire.API.Graph.RenamePort           as RenamePort
-import qualified Empire.API.Graph.SetCode              as SetCode
-import qualified Empire.API.Graph.Undo                 as UndoRequest
-import qualified Empire.API.Graph.UpdateNodeExpression as UpdateNodeExpression
-import           Empire.API.Graph.UpdateNodeMeta       (SingleUpdate)
-import qualified Empire.API.Graph.UpdateNodeMeta       as UpdateNodeMeta
-import           Empire.API.Request                    (Request (..))
-import qualified Empire.API.Request                    as Request
-import           Empire.API.Response                   (Response (..))
-import qualified Empire.API.Response                   as Response
-import qualified Empire.API.Topic                      as Topic
+import           Data.UUID                          as UUID (nil)
+import           Empire.API.Data.Connection         (Connection)
+import           Empire.API.Data.Connection         as Connection
+import           Empire.API.Data.Graph              (Graph)
+import           Empire.API.Data.GraphLocation      (GraphLocation)
+import           Empire.API.Data.Node               (Node, NodeId)
+import qualified Empire.API.Data.Node               as Node
+import           Empire.API.Data.NodeMeta           (NodeMeta)
+import qualified Empire.API.Data.Port               as Port
+import           Empire.API.Data.PortRef            (AnyPortRef (OutPortRef'), InPortRef, OutPortRef (..), dstNodeId, srcNodeId)
+import qualified Empire.API.Data.PortRef            as PortRef
+import qualified Empire.API.Graph.AddConnection     as AddConnection
+import qualified Empire.API.Graph.AddNode           as AddNode
+import qualified Empire.API.Graph.AddPort           as AddPort
+import qualified Empire.API.Graph.AddSubgraph       as AddSubgraph
+import qualified Empire.API.Graph.MovePort          as MovePort
+import qualified Empire.API.Graph.Redo              as RedoRequest
+import qualified Empire.API.Graph.RemoveConnection  as RemoveConnection
+import qualified Empire.API.Graph.RemoveNodes       as RemoveNodes
+import qualified Empire.API.Graph.RemovePort        as RemovePort
+import qualified Empire.API.Graph.RenameNode        as RenameNode
+import qualified Empire.API.Graph.RenamePort        as RenamePort
+import qualified Empire.API.Graph.SetNodeCode       as SetNodeCode
+import qualified Empire.API.Graph.SetNodeExpression as SetNodeExpression
+import           Empire.API.Graph.SetNodesMeta      (SingleUpdate)
+import qualified Empire.API.Graph.SetNodesMeta      as SetNodesMeta
+import qualified Empire.API.Graph.SetPortDefault    as SetPortDefault
+import qualified Empire.API.Graph.Undo              as UndoRequest
+import           Empire.API.Request                 (Request (..))
+import qualified Empire.API.Request                 as Request
+import           Empire.API.Response                (Response (..))
+import qualified Empire.API.Response                as Response
+import qualified Empire.API.Topic                   as Topic
 
 
 type Handler = ByteString -> UndoPure ()
 
 handlersMap :: Map String (Handler)
 handlersMap = Map.fromList
-    [ makeHandler handleAddNodeUndo
+    [ makeHandler handleAddConnectionUndo
+    , makeHandler handleAddNodeUndo
     , makeHandler handleAddPortUndo
     , makeHandler handleAddSubgraphUndo
-    , makeHandler handleConnectUndo
-    , makeHandler handleDisconnectUndo
+    , makeHandler handleMovePortUndo
+    , makeHandler handleRemoveConnectionUndo
     , makeHandler handleRemoveNodesUndo
+    , makeHandler handleRemovePortUndo
     , makeHandler handleRenameNodeUndo
     , makeHandler handleRenamePortUndo
-    , makeHandler handleSetCodeUndo
-    , makeHandler handleUpdateNodeExpressionUndo
-    , makeHandler handleUpdateNodeMetaUndo
+    , makeHandler handleSetNodeCodeUndo
+    , makeHandler handleSetNodeExpressionUndo
+    , makeHandler handleSetNodesMetaUndo
+    , makeHandler handleSetPortDefaultUndo
     ]
 
 type UndoRequests a = (UndoResponseRequest a, RedoResponseRequest a)
 
 type family UndoResponseRequest t where
+    UndoResponseRequest AddConnection.Response        = RemoveConnection.Request
     UndoResponseRequest AddNode.Response              = RemoveNodes.Request
     UndoResponseRequest AddPort.Response              = RemovePort.Request
     UndoResponseRequest AddSubgraph.Response          = RemoveNodes.Request
-    UndoResponseRequest Connect.Response              = Disconnect.Request
-    UndoResponseRequest Disconnect.Response           = Connect.Request
+    UndoResponseRequest MovePort.Response             = MovePort.Request
+    UndoResponseRequest RemoveConnection.Response     = AddConnection.Request
     UndoResponseRequest RemoveNodes.Response          = AddSubgraph.Request
+    UndoResponseRequest RemovePort.Response           = AddPort.Request
     UndoResponseRequest RenameNode.Response           = RenameNode.Request
     UndoResponseRequest RenamePort.Response           = RenamePort.Request
-    UndoResponseRequest SetCode.Response              = SetCode.Request
-    UndoResponseRequest UpdateNodeExpression.Response = UpdateNodeExpression.Request
-    UndoResponseRequest UpdateNodeMeta.Response       = UpdateNodeMeta.Request
+    UndoResponseRequest SetNodeCode.Response          = SetNodeCode.Request
+    UndoResponseRequest SetNodeExpression.Response    = SetNodeExpression.Request
+    UndoResponseRequest SetNodesMeta.Response         = SetNodesMeta.Request
+    UndoResponseRequest SetPortDefault.Response       = SetPortDefault.Request
 
 type family RedoResponseRequest t where
+    RedoResponseRequest AddConnection.Response        = AddConnection.Request
     RedoResponseRequest AddNode.Response              = AddNode.Request
     RedoResponseRequest AddPort.Response              = AddPort.Request
     RedoResponseRequest AddSubgraph.Response          = AddSubgraph.Request
-    RedoResponseRequest Connect.Response              = Connect.Request
-    RedoResponseRequest Disconnect.Response           = Disconnect.Request
+    RedoResponseRequest MovePort.Response             = MovePort.Request
+    RedoResponseRequest RemoveConnection.Response     = RemoveConnection.Request
     RedoResponseRequest RemoveNodes.Response          = RemoveNodes.Request
+    RedoResponseRequest RemovePort.Response           = RemovePort.Request
     RedoResponseRequest RenameNode.Response           = RenameNode.Request
     RedoResponseRequest RenamePort.Response           = RenamePort.Request
-    RedoResponseRequest SetCode.Response              = SetCode.Request
-    RedoResponseRequest UpdateNodeExpression.Response = UpdateNodeExpression.Request
-    RedoResponseRequest UpdateNodeMeta.Response       = UpdateNodeMeta.Request
+    RedoResponseRequest SetNodeCode.Response          = SetNodeCode.Request
+    RedoResponseRequest SetNodeExpression.Response    = SetNodeExpression.Request
+    RedoResponseRequest SetNodesMeta.Response         = SetNodesMeta.Request
+    RedoResponseRequest SetPortDefault.Response       = SetPortDefault.Request
 
 data ResponseErrorException = ResponseErrorException deriving (Show)
 instance Exception ResponseErrorException
@@ -127,127 +138,127 @@ handle message = do
     redo    %= List.deleteBy compareMsgByUserId message
     history %= (message :)
 
-withOk :: Response.Status a -> (a -> Maybe b) -> Maybe b
-withOk (Response.Error _) _ = Nothing
-withOk (Response.Ok a)    f = f a
+
+getUndoAddNode :: AddNode.Request -> RemoveNodes.Request
+getUndoAddNode (AddNode.Request location nodeId _ _ _) =
+    RemoveNodes.Request location [nodeId]
 
 handleAddNodeUndo :: AddNode.Response -> Maybe (RemoveNodes.Request, AddNode.Request)
-handleAddNodeUndo (Response.Response _ _ (AddNode.Request location nodeType nodeMeta connectTo _) _ res) =
-    withOk res $ \node ->
-        let nodeId  = node ^. Node.nodeId
-            undoMsg = RemoveNodes.Request location [nodeId]
-            redoMsg = AddNode.Request location nodeType nodeMeta connectTo $ Just nodeId
-        in Just (undoMsg, redoMsg)
-
-handleAddSubgraphUndo :: AddSubgraph.Response -> Maybe (RemoveNodes.Request, AddSubgraph.Request)
-handleAddSubgraphUndo (Response.Response _ _ (AddSubgraph.Request location nodes connections saveNodeIds) _ res ) =
-    withOk res $ \idMapping ->
-        case idMapping of
-            Nothing     -> let ids     = map (^. Node.nodeId) nodes
-                               undoMsg = RemoveNodes.Request location ids
-                               redoMsg = AddSubgraph.Request location nodes connections True
-                           in Just (undoMsg, redoMsg)
-            Just idsMap -> let nodes'       = flip map nodes $ Node.nodeId %~ (idsMap Map.!)
-                               connections' = map ((Connection.src . PortRef.srcNodeId %~ (idsMap Map.!))
-                                                 . (Connection.dst . PortRef.dstNodeId %~ (idsMap Map.!))
-                                                  ) connections
-                               ids'    = map (^. Node.nodeId) nodes'
-                               undoMsg = RemoveNodes.Request location ids'
-                               redoMsg = AddSubgraph.Request location nodes' connections' True
-                           in Just (undoMsg, redoMsg)
-
-connect :: (OutPortRef, InPortRef) -> Connection
-connect = uncurry Connection
-
-filterNodes :: [NodeId] -> [Node] -> [Node]
-filterNodes nodesIds nodes = catMaybes getNodes
-    where getNode nId = List.find (\node -> node ^. Node.nodeId == nId) nodes
-          getNodes    = map getNode nodesIds
-
-filterConnections :: [(OutPortRef, InPortRef)] -> [NodeId] -> [(OutPortRef, InPortRef)]
-filterConnections connectionPorts nodesIds = concat nodesConnections
-    where  nodeConnections nId = Prologue.filter (\(outPort, inPort) -> outPort ^. PortRef.srcNodeId == nId
-                                                                     || inPort  ^. PortRef.dstNodeId == nId) connectionPorts
-           nodesConnections    = map nodeConnections nodesIds
-
-handleRemoveNodesUndo :: RemoveNodes.Response -> Maybe (AddSubgraph.Request, RemoveNodes.Request)
-handleRemoveNodesUndo (Response.Response _ _ (RemoveNodes.Request location nodesIds) inv _) =
-    withOk inv $ \(RemoveNodes.Inverse nodes connectionPorts) ->
-        let deletedNodes        = filterNodes nodesIds nodes
-            deletedConnections  = filterConnections connectionPorts nodesIds
-            connections         = connect <$> deletedConnections
-            undoMsg             = AddSubgraph.Request location deletedNodes connections True -- FIXME [WD]: nie uzywamy literalow, nigdy
-            redoMsg             = RemoveNodes.Request location nodesIds
-        in Just (undoMsg, redoMsg)
-
-handleUpdateNodeExpressionUndo :: UpdateNodeExpression.Response -> Maybe ( UpdateNodeExpression.Request,  UpdateNodeExpression.Request)
-handleUpdateNodeExpressionUndo (Response.Response _ _ (UpdateNodeExpression.Request location nodeId expression) inv res) =
-    withOk inv $ \(UpdateNodeExpression.Inverse oldExpr) ->
-        let undoMsg = UpdateNodeExpression.Request location nodeId oldExpr
-            redoMsg = UpdateNodeExpression.Request location nodeId expression
-        in Just (undoMsg, redoMsg)
-
-tupleUpdate :: Node -> SingleUpdate
-tupleUpdate node = (node ^. Node.nodeId, node ^. Node.nodeMeta)
-
-filterMeta :: [Node] -> [SingleUpdate] -> [SingleUpdate]
-filterMeta allNodes updates = map tupleUpdate justNodes
-    where  nodeIds = map fst updates
-           findNode updatedId = List.find (\node -> node ^. Node.nodeId == updatedId) allNodes
-           justNodes          = catMaybes $ map findNode nodeIds
-
-handleUpdateNodeMetaUndo :: UpdateNodeMeta.Response -> Maybe (UpdateNodeMeta.Request, UpdateNodeMeta.Request)
-handleUpdateNodeMetaUndo (Response.Response _ _ (UpdateNodeMeta.Request location updates) inv _) =
-    withOk inv $ \(UpdateNodeMeta.Inverse nodes) ->
-    let prevMeta = filterMeta nodes updates
-        undoMsg  = UpdateNodeMeta.Request location prevMeta
-        redoMsg  = UpdateNodeMeta.Request location updates
-    in Just (undoMsg, redoMsg)
-
-emptyName = ""
-
-handleRenameNodeUndo :: RenameNode.Response ->  Maybe (RenameNode.Request, RenameNode.Request)
-handleRenameNodeUndo (Response.Response _ _ (RenameNode.Request location nodeId name) inv res) =
-    withOk inv $ \(RenameNode.Inverse namePrev) -> do
-        namePrev' <- case namePrev of
-            Just nameOld -> pure nameOld
-            Nothing      -> pure emptyName
-        let undoMsg = RenameNode.Request location nodeId namePrev'
-            redoMsg = RenameNode.Request location nodeId name
-        Just (undoMsg, redoMsg)
+handleAddNodeUndo (Response.Response _ _ req _ (Response.Ok _)) =
+    Just (getUndoAddNode req, req)
 
 
-handleRenamePortUndo :: RenamePort.Response ->  Maybe (RenamePort.Request, RenamePort.Request)
-handleRenamePortUndo (Response.Response _ _ (RenamePort.Request location portRef name) inv res) =
-    withOk inv $ \(RenamePort.Inverse namePrev) -> do
-        let undoMsg = RenamePort.Request location portRef namePrev
-            redoMsg = RenamePort.Request location portRef name
-        Just (undoMsg, redoMsg)
-
-handleSetCodeUndo :: SetCode.Response ->  Maybe (SetCode.Request, SetCode.Request)
-handleSetCodeUndo (Response.Response _ _ (SetCode.Request location nodeId code) inv res) =
-    withOk inv $ \(SetCode.Inverse codePrev) -> do
-        let undoMsg = SetCode.Request location nodeId codePrev
-            redoMsg = SetCode.Request location nodeId code
-        Just (undoMsg, redoMsg)
-
-handleConnectUndo :: Connect.Response -> Maybe (Disconnect.Request, Connect.Request)
-handleConnectUndo (Response.Response _ _ redoMsg@(Connect.Request location (Left src) (Left dst)) inv res) =
-    withOk res . const $
-        let undoMsg = Disconnect.Request location dst
-        in Just (undoMsg, redoMsg)
-
-handleDisconnectUndo :: Disconnect.Response -> Maybe (Connect.Request, Disconnect.Request)
-handleDisconnectUndo (Response.Response _ _ (Disconnect.Request location dst) inv res) =
-    withOk inv $ \(Disconnect.Inverse src) ->
-        let undoMsg = Connect.Request location (Left src) (Left dst)
-            redoMsg = Disconnect.Request location dst
-        in Just (undoMsg, redoMsg)
+getUndoAddPort :: AddPort.Request -> RemovePort.Request
+getUndoAddPort (AddPort.Request location portRef) =
+    RemovePort.Request location portRef
 
 handleAddPortUndo :: AddPort.Response -> Maybe (RemovePort.Request, AddPort.Request)
-handleAddPortUndo (Response.Response _ _ req@(AddPort.Request location nodeId) _inv res) =
-    withOk res $ \node ->
-        let Port.OutPortId newlyAddedPort = view Port.portId $ last $ Map.elems $ Map.filter Port.isOutputPort $ node ^. Node.ports
-            undoMsg = RemovePort.Request location $ OutPortRef' $ OutPortRef nodeId newlyAddedPort
-            redoMsg = req
-        in Just (undoMsg, redoMsg)
+handleAddPortUndo (Response.Response _ _ req _ (Response.Ok _)) = Just (getUndoAddPort req, req)
+
+
+getUndoAddSubgraph :: AddSubgraph.Request -> RemoveNodes.Request
+getUndoAddSubgraph (AddSubgraph.Request location nodes conns) =
+    RemoveNodes.Request location $ map (view Node.nodeId) nodes
+
+handleAddSubgraphUndo :: AddSubgraph.Response -> Maybe (RemoveNodes.Request, AddSubgraph.Request)
+handleAddSubgraphUndo (Response.Response _ _ req _ (Response.Ok _)) =
+    Just (getUndoAddSubgraph req, req)
+
+
+getUndoAddConnection :: AddConnection.Request -> AddConnection.Result -> RemoveConnection.Request
+getUndoAddConnection (AddConnection.Request location _ _) conn =
+    RemoveConnection.Request location $ conn ^. Connection.dst
+
+handleAddConnectionUndo :: AddConnection.Response -> Maybe (RemoveConnection.Request, AddConnection.Request)
+handleAddConnectionUndo (Response.Response _ _ req _ (Response.Ok res)) =
+    Just (getUndoAddConnection req res, req)
+
+
+getUndoMovePort :: MovePort.Request -> MovePort.Request
+getUndoMovePort (MovePort.Request location oldPortRef newPortRef) =
+    MovePort.Request location newPortRef oldPortRef
+
+handleMovePortUndo :: MovePort.Response -> Maybe (MovePort.Request, MovePort.Request)
+handleMovePortUndo (Response.Response _ _ req _ (Response.Ok _)) =
+    Just (getUndoMovePort req, req)
+
+
+getUndoRemoveConnection :: RemoveConnection.Request -> RemoveConnection.Inverse -> AddConnection.Request
+getUndoRemoveConnection (RemoveConnection.Request location dst) (RemoveConnection.Inverse src) =
+    AddConnection.Request location (Left src) (Left dst)
+
+handleRemoveConnectionUndo :: RemoveConnection.Response -> Maybe (AddConnection.Request, RemoveConnection.Request)
+handleRemoveConnectionUndo (Response.Response _ _ req (Response.Ok inv) (Response.Ok _)) =
+    Just (getUndoRemoveConnection req inv, req)
+
+
+getUndoRemoveNodes :: RemoveNodes.Request -> RemoveNodes.Inverse -> AddSubgraph.Request
+getUndoRemoveNodes (RemoveNodes.Request location _) (RemoveNodes.Inverse nodes conns) =
+    AddSubgraph.Request location nodes conns
+
+handleRemoveNodesUndo :: RemoveNodes.Response -> Maybe (AddSubgraph.Request, RemoveNodes.Request)
+handleRemoveNodesUndo (Response.Response _ _ req (Response.Ok inv) (Response.Ok _)) =
+    Just (getUndoRemoveNodes req inv, req)
+
+
+-- TODO[LJK/SB]: Preserve connections
+getUndoRemovePort :: RemovePort.Request -> AddPort.Request
+getUndoRemovePort (RemovePort.Request location portRef) =
+    AddPort.Request location portRef
+
+handleRemovePortUndo :: RemovePort.Response -> Maybe (AddPort.Request, RemovePort.Request)
+handleRemovePortUndo (Response.Response _ _ req _ (Response.Ok _)) = Just (getUndoRemovePort req, req)
+
+
+getUndoRenameNode :: RenameNode.Request -> RenameNode.Inverse -> RenameNode.Request
+getUndoRenameNode (RenameNode.Request location nodeId _) (RenameNode.Inverse prevName) =
+    RenameNode.Request location nodeId prevName
+
+handleRenameNodeUndo :: RenameNode.Response -> Maybe (RenameNode.Request, RenameNode.Request)
+handleRenameNodeUndo (Response.Response _ _ req (Response.Ok inv) (Response.Ok _)) =
+    Just (getUndoRenameNode req inv, req)
+
+
+getUndoRenamePort :: RenamePort.Request -> RenamePort.Inverse -> RenamePort.Request
+getUndoRenamePort (RenamePort.Request location portRef _) (RenamePort.Inverse prevName) =
+    RenamePort.Request location portRef prevName
+
+handleRenamePortUndo :: RenamePort.Response -> Maybe (RenamePort.Request, RenamePort.Request)
+handleRenamePortUndo (Response.Response _ _ req (Response.Ok inv) (Response.Ok _)) =
+    Just (getUndoRenamePort req inv, req)
+
+
+getUndoSetNodeCode :: SetNodeCode.Request -> SetNodeCode.Inverse -> SetNodeCode.Request
+getUndoSetNodeCode (SetNodeCode.Request location nodeId _) (SetNodeCode.Inverse prevCode) =
+    SetNodeCode.Request location nodeId prevCode
+
+handleSetNodeCodeUndo :: SetNodeCode.Response -> Maybe (SetNodeCode.Request, SetNodeCode.Request)
+handleSetNodeCodeUndo (Response.Response _ _ req (Response.Ok inv) (Response.Ok _)) =
+    Just (getUndoSetNodeCode req inv, req)
+
+
+getUndoSetNodeExpression :: SetNodeExpression.Request -> SetNodeExpression.Inverse -> SetNodeExpression.Request
+getUndoSetNodeExpression (SetNodeExpression.Request location nodeId _) (SetNodeExpression.Inverse prevExpr) =
+    SetNodeExpression.Request location nodeId prevExpr
+
+handleSetNodeExpressionUndo :: SetNodeExpression.Response -> Maybe ( SetNodeExpression.Request,  SetNodeExpression.Request)
+handleSetNodeExpressionUndo (Response.Response _ _ req (Response.Ok inv) (Response.Ok _)) =
+    Just (getUndoSetNodeExpression req inv, req)
+
+
+getUndoSetNodesMeta :: SetNodesMeta.Request -> SetNodesMeta.Inverse -> SetNodesMeta.Request
+getUndoSetNodesMeta (SetNodesMeta.Request location _) (SetNodesMeta.Inverse prevMeta) =
+    SetNodesMeta.Request location prevMeta
+
+handleSetNodesMetaUndo :: SetNodesMeta.Response -> Maybe (SetNodesMeta.Request, SetNodesMeta.Request)
+handleSetNodesMetaUndo (Response.Response _ _ req (Response.Ok inv) (Response.Ok _)) =
+    Just (getUndoSetNodesMeta req inv, req)
+
+
+getUndoSetPortDefault :: SetPortDefault.Request -> SetPortDefault.Inverse -> SetPortDefault.Request
+getUndoSetPortDefault (SetPortDefault.Request location portRef _) (SetPortDefault.Inverse prevPortDefault) =
+    SetPortDefault.Request location portRef prevPortDefault
+
+handleSetPortDefaultUndo :: SetPortDefault.Response -> Maybe (SetPortDefault.Request, SetPortDefault.Request)
+handleSetPortDefaultUndo (Response.Response _ _ req (Response.Ok inv) (Response.Ok _)) =
+    Just (getUndoSetPortDefault req inv, req)

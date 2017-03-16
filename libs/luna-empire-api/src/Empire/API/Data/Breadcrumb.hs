@@ -1,12 +1,8 @@
 {-# LANGUAGE TypeFamilies #-}
-
 module Empire.API.Data.Breadcrumb where
 
 import           Control.DeepSeq      (NFData)
 import           Data.Binary          (Binary)
-import           Data.Text            (Text)
-import           Prologue             hiding (Text)
-
 import           Empire.API.Data.Node (NodeId)
 import           Prologue
 

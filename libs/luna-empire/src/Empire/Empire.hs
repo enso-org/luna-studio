@@ -1,12 +1,12 @@
-{-# LANGUAGE ScopedTypeVariables       #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 
 module Empire.Empire where
 
 import           Empire.API.Data.AsyncUpdate   (AsyncUpdate)
-import           Empire.API.Data.DefaultValue  (Value)
 import qualified Empire.API.Data.Error         as APIError
 import           Empire.API.Data.GraphLocation (GraphLocation)
 import           Empire.API.Data.Node          (Node, NodeId)
+import           Empire.API.Data.PortDefault   (Value)
 import           Empire.API.Data.Project       (ProjectId)
 import           Empire.API.Data.TypeRep       (TypeRep)
 import           Empire.Data.AST               (SomeASTException)
@@ -14,8 +14,8 @@ import           Empire.Data.Graph             (Graph, defaultGraph)
 import           Empire.Data.Project           (Project)
 import           Empire.Prelude
 
-import           Control.Exception             (try)
 import           Control.Concurrent.STM.TChan  (TChan)
+import           Control.Exception             (try)
 import           Control.Monad.Except          (ExceptT (..), MonadError, runExceptT, throwError)
 import           Control.Monad.Reader
 import           Control.Monad.State

@@ -1,9 +1,9 @@
 module Empire.Utils.TextResult where
 
+import qualified Data.Text                   as Text
 import           Empire.Prelude
-import qualified Data.Text                    as Text
 
-import           Empire.API.Data.DefaultValue (Value (..))
+import           Empire.API.Data.PortDefault (Value (..))
 
 
 showLength :: [a] -> String

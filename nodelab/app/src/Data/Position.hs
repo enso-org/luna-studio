@@ -1,12 +1,14 @@
 {-# LANGUAGE TypeFamilies #-}
 module Data.Position
     ( module Data.Position
-    , module X
+    , vector
+    , x
+    , y
     )
 where
 
 import           Data.Aeson          (FromJSON, ToJSON)
-import           Data.Vector         as X
+import           Data.Vector         hiding (fromTuple, toTuple)
 import           Luna.Studio.Prelude
 
 -----------------------
@@ -66,8 +68,17 @@ distance p0 p1 = magnitude (p0 ^. vector - p1 ^. vector)
 distanceSquared :: Position -> Position -> Double
 distanceSquared p0 p1 = lengthSquared (p0 ^. vector - p1 ^. vector)
 
+fromTuple :: (Double, Double) -> Position
+fromTuple = uncurry fromDoubles
+
+toTuple :: Position -> (Double, Double)
+toTuple (Position (Vector2 x' y')) = (x', y')
+
+fromDoubles :: Double -> Double -> Position
+fromDoubles = Position .: Vector2
+
 onTuple :: (Position -> Position) -> (Double, Double) -> (Double, Double)
-onTuple action = toTuple . fromPosition . action . Position . fromTuple
+onTuple action = toTuple . action . fromTuple
 
 -- TODO[react]: Possible solution to differ Mouse Position and Graph Position
 -- makeClassy  ''Position

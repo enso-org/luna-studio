@@ -2,7 +2,7 @@
 module Luna.Studio.React.View.SelectionBox where
 
 import qualified Data.Aeson                           as Aeson
-import           Data.Position                        (Position (Position), Vector2 (Vector2), x, y)
+import           Data.Position                        (fromDoubles, x, y)
 import           Luna.Studio.Prelude
 import           Luna.Studio.React.Model.SelectionBox (SelectionBox, end, start)
 import           React.Flux
@@ -14,7 +14,7 @@ name = "selection-box"
 
 selectionBox :: ReactView SelectionBox
 selectionBox = React.defineView name $ \model -> do
-    let pos       = Position (Vector2 (min (model ^. start . x) (model ^. end . x)) (min (model ^. start . y) (model ^. end . y)))
+    let pos       = fromDoubles (min (model ^. start . x) (model ^. end . x)) (min (model ^. start . y) (model ^. end . y))
         width     = abs $ model ^. start . x - model ^. end . x
         height    = abs $ model ^. start . y - model ^. end . y
         translate = "translate(" <> jsShow (pos ^. x) <> "," <> jsShow (pos ^. y) <> ")"

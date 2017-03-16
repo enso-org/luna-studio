@@ -1,18 +1,18 @@
 module Empire.API.Graph.Redo where
 
-import Prologue
 import           Data.Binary                   (Binary)
+import           Prologue
 
 import           Empire.API.Data.GraphLocation (GraphLocation)
 import qualified Empire.API.Graph.Request      as G
-import qualified Empire.API.Topic              as T
-import qualified Empire.API.Response           as Response
 import qualified Empire.API.Request            as R
+import qualified Empire.API.Response           as Response
+import qualified Empire.API.Topic              as T
 
-data RedoRequest = RedoRequest deriving (Generic, Show, Eq)
+data RedoRequest = RedoRequest deriving (Generic, Show, Eq, NFData)
 
 data Request = Request { _request :: RedoRequest
-                       } deriving (Generic, Show, Eq)
+                       } deriving (Generic, Show, Eq, NFData)
 
 makeLenses ''RedoRequest
 makeLenses ''Request

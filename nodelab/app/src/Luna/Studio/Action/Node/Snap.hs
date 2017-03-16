@@ -3,14 +3,12 @@ module Luna.Studio.Action.Node.Snap
     , snapCoord
     ) where
 
-import           Data.Position       (Position, x, y)
+import           Data.Position                     (Position, x, y)
 import           Luna.Studio.Prelude
-
-gridSize :: Int
-gridSize = 16
+import           Luna.Studio.React.Model.Constants (gridSize)
 
 snapCoord :: Double -> Double
-snapCoord p = fromIntegral . (* gridSize) . round $ p / fromIntegral gridSize
+snapCoord p = (* gridSize) . fromIntegral $ (round $ p / gridSize :: Integer)
 
 snap :: Position -> Position
 snap = (x %~ snapCoord) . (y %~ snapCoord)
