@@ -203,19 +203,31 @@ safeGetVarName node = do
 extractArgNames :: ASTOp m => NodeRef -> m [Maybe String]
 extractArgNames node = do
     match node $ \case
-        Lam{}    -> do
+        Lam{}  -> do
             insideLam  <- insideThisNode node
             args       <- ASTDeconstruct.extractArguments node
             vars       <- concat <$> mapM ASTRead.getVarsInside args
             let ports = if insideLam then vars else args
             mapM safeGetVarName ports
         -- App is Lam that has some args applied
-        App f _a -> extractArgNames =<< IR.source f
-        Cons{}   -> do
+        App{}  -> extractAppArgNames node
+        Cons{} -> do
             vars  <- ASTRead.getVarsInside node
             names <- mapM ASTRead.getVarName vars
             return $ map Just names
         _ -> return []
+
+extractAppArgNames :: ASTOp m => NodeRef -> m [Maybe String]
+extractAppArgNames node = go [] node
+    where
+        go vars node = match node $ \case
+            App f a -> do
+                varName <- safeGetVarName =<< IR.source a
+                go (varName : vars) =<< IR.source f
+            Lam{}   -> extractArgNames node
+            Cons{}  -> return vars
+            Var{}   -> return vars
+            Acc{}   -> return vars
 
 insideThisNode :: ASTOp m => NodeRef -> m Bool
 insideThisNode node = do
