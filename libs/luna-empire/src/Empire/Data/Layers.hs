@@ -9,7 +9,6 @@
 module Empire.Data.Layers (
     Marker
   , Meta
-  , NodeMarker(..)
   , TypeLayer
   , attachEmpireLayers
   ) where
@@ -19,6 +18,7 @@ import Empire.Prelude
 import           Control.Lens.Iso         (from)
 import           Empire.API.Data.Node     (NodeId)
 import           Empire.API.Data.NodeMeta (NodeMeta)
+import           Empire.API.Data.PortRef  (OutPortRef)
 
 import           Control.Monad.Raise (Throws)
 import           Data.TypeDesc
@@ -33,8 +33,7 @@ import           Type.Any
 type TypeLayer = IR.Type
 
 data Marker
-newtype NodeMarker = NodeMarker NodeId deriving (Show, Eq)
-type instance LayerData Marker t = Maybe NodeMarker
+type instance LayerData Marker t = Maybe OutPortRef
 
 initNodeMarker :: Req m '[Editor // Layer // AnyExpr // Marker] => Listener New (Expr l) m
 initNodeMarker = listener $ \(t, _) -> writeLayer @Marker Nothing t

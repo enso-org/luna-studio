@@ -20,7 +20,7 @@ import           Empire.API.Data.Node              (NodeId)
 import           Empire.API.Data.NodeMeta          (NodeMeta)
 import           Empire.API.Data.TypeRep           (TypeRep)
 import           Empire.Data.AST                   (NodeRef, NotLambdaException(..), NotUnifyException(..))
-import           Empire.Data.Layers                (Meta, NodeMarker(..), TypeLayer)
+import           Empire.Data.Layers                (Meta, TypeLayer)
 
 import           Empire.ASTOp                      (ASTOp, match)
 import qualified Empire.ASTOps.Builder             as ASTBuilder
@@ -47,7 +47,7 @@ addNode :: ASTOp m => NodeId -> String -> String -> m (NodeRef, NodeRef)
 addNode nid name expr = do
     (exprName, ref) <- Parser.parseExpr expr
     let name' = fromMaybe name $ fmap Text.unpack exprName
-    (,) <$> pure ref <*> ASTBuilder.makeNodeRep (NodeMarker nid) name' ref
+    (,) <$> pure ref <*> ASTBuilder.makeNodeRep nid name' ref
 
 limit :: [a] -> [a]
 limit = limitHead where
@@ -169,8 +169,9 @@ isTrivialLambda :: ASTOp m => NodeRef -> m Bool
 isTrivialLambda node = match node $ \case
     Lam{} -> do
         args <- ASTDeconstruct.extractArguments node
+        vars <- concat <$> mapM ASTRead.getVarsInside args
         out' <- ASTRead.getLambdaOutputRef node
-        return $ out' `elem` args
+        return $ out' `elem` vars
     _ -> throwM $ NotLambdaException node
 
 dumpGraphViz :: ASTOp m => String -> m ()

@@ -1,6 +1,7 @@
 module Luna.Studio.Action.Basic.Revert where
 
 import           Empire.API.Data.Node                       (nodeId)
+import           Empire.API.Data.PortRef                    (AnyPortRef (InPortRef'))
 import qualified Empire.API.Graph.AddConnection             as AddConnection
 import qualified Empire.API.Graph.AddNode                   as AddNode
 import qualified Empire.API.Graph.AddPort                   as AddPort
@@ -35,8 +36,11 @@ import           Luna.Studio.State.Global                   (State)
 
 
 revertAddConnection :: AddConnection.Request -> Command State ()
-revertAddConnection (AddConnection.Request loc _ dst) =
-    whenM (isCurrentLocationAndGraphLoaded loc) $ either (void . localRemoveConnection) (const $ return ()) dst
+revertAddConnection (AddConnection.Request loc _ (Left (InPortRef' dst))) =
+    whenM (isCurrentLocationAndGraphLoaded loc) $ void $ localRemoveConnection dst
+revertAddConnection (AddConnection.Request loc _ (Left _)) = return ()
+revertAddConnection _ = $notImplemented
+
 
 revertAddNode :: AddNode.Request -> Command State ()
 revertAddNode (AddNode.Request loc nid _ _ _) =

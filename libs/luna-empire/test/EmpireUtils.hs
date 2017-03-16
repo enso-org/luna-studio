@@ -16,22 +16,27 @@ module EmpireUtils (
     , mkUUID
     , withChannels
     , emptyGraphLocation
+    , connectToInput
+    , inputPorts
+    , outputPorts
     ) where
 
 import           Control.Concurrent.STM        (atomically)
 import           Control.Concurrent.STM.TChan  (newTChan)
 import           Control.Exception             (Exception, bracket)
 import           Data.Coerce                   (coerce)
-import           Data.Graph.Class              (ElemRepMapGraph (..))
-import           Data.ManagedVectorMap
+import qualified Data.Map                      as Map
 import           Data.Reflection               (Given (..), give)
-import           Data.TypeDesc
 import           Data.UUID                     (UUID, nil)
 import           Data.UUID.V4                  (nextRandom)
-import           Empire.API.Data.Breadcrumb    (Breadcrumb (..), BreadcrumbItem (Lambda))
-import           Empire.API.Data.GraphLocation (GraphLocation (..))
-import           Empire.API.Data.Node          (Node, NodeId, NodeType (..), nodeId, nodeType)
-import qualified Empire.Commands.Graph         as Graph (getNodes)
+import           Empire.API.Data.Breadcrumb    (Breadcrumb(..), BreadcrumbItem(Lambda))
+import           Empire.API.Data.Connection    (Connection)
+import           Empire.API.Data.GraphLocation (GraphLocation(..))
+import           Empire.API.Data.Port          (Port)
+import qualified Empire.API.Data.Port          as Port
+import           Empire.API.Data.PortRef       (AnyPortRef(InPortRef'), InPortRef, OutPortRef)
+import           Empire.API.Data.Node          (Node, NodeId, NodeType(..), nodeId, nodeType, ports)
+import qualified Empire.Commands.Graph         as Graph (connect, getNodes)
 import           Empire.Commands.Library       (createLibrary, listLibraries, withLibrary)
 import           Empire.Commands.Project       (createProject, listProjects)
 import           Empire.Data.AST               ()
@@ -104,3 +109,12 @@ emptyGraphLocation = GraphLocation nil 0 $ Breadcrumb []
 
 mkUUID :: IO UUID
 mkUUID = nextRandom
+
+connectToInput :: GraphLocation -> OutPortRef -> InPortRef -> Empire Connection
+connectToInput loc outPort inPort = Graph.connect loc outPort (InPortRef' inPort)
+
+inputPorts :: Node -> [Port]
+inputPorts node = Map.elems $ Map.filter (Port.isInPort . view Port.portId) $ node ^. ports
+
+outputPorts :: Node -> [Port]
+outputPorts node = Map.elems $ Map.filter (Port.isOutPort . view Port.portId) $ node ^. ports

@@ -168,7 +168,7 @@ connectNodes :: UUID -> Maybe UUID -> GraphLocation -> Text -> NodeId -> NodeId 
 connectNodes reqId guiId location expr dstNodeId srcNodeId = do
     let exprCall = head $ splitOneOf " ." $ Text.unpack expr
         inPort   = if exprCall `elem` stdlibFunctions then Arg 0 else Self
-        request  = Request reqId guiId $ AddConnection.Request location (Left $ OutPortRef srcNodeId All) (Left $ InPortRef dstNodeId inPort)
+        request  = Request reqId guiId $ AddConnection.Request location (Left $ OutPortRef srcNodeId All) (Left . InPortRef' $ InPortRef dstNodeId inPort)
         action (AddConnection.Request location (Left src) (Left dst)) = Graph.connectCondTC False location src dst
         success _ _ connection                                        = sendToBus' $ ConnectUpdate.Update location connection
     modifyGraph defInverse action success request
@@ -194,7 +194,7 @@ handleAddConnection = modifyGraph defInverse action replyResult where
         Right nodeId -> OutPortRef nodeId All
     getDstPort dst = case dst of
         Left portRef -> portRef
-        Right nodeId -> InPortRef nodeId Self
+        Right nodeId -> InPortRef' $ InPortRef nodeId Self
     action  (AddConnection.Request location src dst) = Graph.connectCondTC True location (getSrcPort src) (getDstPort dst)
 
 handleAddNode :: Request AddNode.Request -> StateT Env BusT ()

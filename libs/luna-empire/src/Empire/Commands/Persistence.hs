@@ -24,6 +24,7 @@ import qualified Empire.Data.Project             as Project
 
 import qualified Empire.API.Data.Graph           as G
 import           Empire.API.Data.GraphLocation   (GraphLocation (..))
+import           Empire.API.Data.PortRef         (AnyPortRef(InPortRef'))
 import           Empire.API.Data.Project         (ProjectId)
 import qualified Empire.API.Persistence.Envelope as E
 import qualified Empire.API.Persistence.Library  as L
@@ -92,7 +93,7 @@ createProjectFromPersistent maybePid p = do
     withLibrary pid lid $ zoom Library.body $ do
       let graph = lib ^. L.graph
           nodes = graph ^. G.nodes
-          connections = graph ^. G.connections
+          connections = map (\x -> x & _2 %~ InPortRef') $ graph ^. G.connections
       {-runASTOp $ mapM_ Graph.addPersistentNode nodes-}
       {-runASTOp $ mapM (uncurry Graph.connectPersistent) connections-}
       return ()

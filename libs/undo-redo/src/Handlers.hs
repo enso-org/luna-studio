@@ -29,7 +29,7 @@ import           Empire.API.Data.Node               (Node, NodeId)
 import qualified Empire.API.Data.Node               as Node
 import           Empire.API.Data.NodeMeta           (NodeMeta)
 import qualified Empire.API.Data.Port               as Port
-import           Empire.API.Data.PortRef            (AnyPortRef (OutPortRef'), InPortRef, OutPortRef (..), dstNodeId, srcNodeId)
+import           Empire.API.Data.PortRef            (AnyPortRef (OutPortRef', InPortRef'), InPortRef, OutPortRef (..), dstNodeId, srcNodeId)
 import qualified Empire.API.Data.PortRef            as PortRef
 import qualified Empire.API.Graph.AddConnection     as AddConnection
 import qualified Empire.API.Graph.AddNode           as AddNode
@@ -185,7 +185,7 @@ handleMovePortUndo (Response.Response _ _ req _ (Response.Ok _)) =
 
 getUndoRemoveConnection :: RemoveConnection.Request -> RemoveConnection.Inverse -> AddConnection.Request
 getUndoRemoveConnection (RemoveConnection.Request location dst) (RemoveConnection.Inverse src) =
-    AddConnection.Request location (Left src) (Left dst)
+    AddConnection.Request location (Left src) (Left $ InPortRef' dst)
 
 handleRemoveConnectionUndo :: RemoveConnection.Response -> Maybe (AddConnection.Request, RemoveConnection.Request)
 handleRemoveConnectionUndo (Response.Response _ _ req (Response.Ok inv) (Response.Ok _)) =

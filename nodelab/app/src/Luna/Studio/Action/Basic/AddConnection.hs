@@ -5,7 +5,7 @@ import           Empire.API.Data.Connection              (Connection (Connection
                                                           src)
 import           Empire.API.Data.Node                    (NodeId)
 import           Empire.API.Data.Port                    (InPort (Self))
-import           Empire.API.Data.PortRef                 (InPortRef, OutPortRef)
+import           Empire.API.Data.PortRef                 (AnyPortRef (InPortRef'), InPortRef, OutPortRef)
 import           Luna.Studio.Action.Basic.DrawConnection (drawConnection)
 import           Luna.Studio.Action.Basic.UpdateNode     (updatePortSelfVisibility)
 import qualified Luna.Studio.Action.Batch                as Batch
@@ -19,9 +19,11 @@ addConnection :: Connection -> Command State ()
 addConnection conn = connect (Left $ conn ^. src) (Left $ conn ^. dst)
 
 connect :: Either OutPortRef NodeId -> Either InPortRef NodeId -> Command State ()
-connect src'@(Left srcPortRef) dst'@(Left dstPortRef) =
-    whenM (localConnect srcPortRef dstPortRef) $ Batch.addConnection src' dst'
-connect src' dst' = Batch.addConnection src' dst'
+connect src'@(Left srcPortRef) (Left dstPortRef) =
+    whenM (localConnect srcPortRef dstPortRef) $ Batch.addConnection src' (Left $ InPortRef' dstPortRef)
+connect src' (Left dstPortRef) = Batch.addConnection src' (Left $ InPortRef' dstPortRef)
+connect src' (Right nid)       = Batch.addConnection src' (Right nid)
+
 
 localConnect :: OutPortRef -> InPortRef -> Command State Bool
 localConnect src' dst' = localAddConnection $ Connection src' dst'

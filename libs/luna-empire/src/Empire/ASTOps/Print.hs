@@ -12,13 +12,12 @@ import           Data.Char                      (isAlpha)
 import           Data.List                      (delete, dropWhileEnd)
 import           Empire.Prelude
 
-import           Empire.API.Data.Node           (NodeId)
-import           Empire.API.Data.TypeRep        (TypeRep (..))
-import           Empire.ASTOp                   (ASTOp, match)
-import qualified Empire.ASTOps.Builder          as ASTBuilder
-import qualified Empire.ASTOps.Deconstruct      as ASTDeconstruct
-import qualified Empire.ASTOps.Read             as ASTRead
-import           Empire.Data.AST                (NodeRef)
+import           Empire.ASTOp              (ASTOp, match)
+import           Empire.Data.AST           (NodeRef)
+import qualified Empire.ASTOps.Read        as ASTRead
+import qualified Empire.ASTOps.Deconstruct as ASTDeconstruct
+import           Empire.API.Data.Node      (NodeId)
+import           Empire.API.Data.TypeRep   (TypeRep (..))
 import qualified Luna.IR                        as IR
 import           Luna.IR.Term.Uni
 

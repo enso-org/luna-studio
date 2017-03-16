@@ -9,8 +9,9 @@ module Empire.ASTOps.Parse (
 import           Data.Convert
 import           Empire.Prelude
 
-import           Data.List                       (partition)
-import qualified Data.Text                       as Text
+import           Data.Char                    (isUpper)
+import           Data.List                    (partition)
+import qualified Data.Text                    as Text
 
 import           Empire.ASTOp                    (ASTOp)
 import           Empire.ASTOps.Builder           (lams)
@@ -32,8 +33,8 @@ instance Exception e => Exception (ParserException e) where
 
 parseExpr :: ASTOp m => String -> m (Maybe Text.Text, NodeRef)
 parseExpr s = do
-  lamRes <- tryParseLambda s
-  parsed <- pure $ Parsing.runParser Parsing.expr s
+  lamRes  <- tryParseLambda s
+  parsed  <- pure $ Parsing.runParser Parsing.expr s
   case lamRes of
       (name, Just l)  -> return (name, l)
       _               -> case parsed of
