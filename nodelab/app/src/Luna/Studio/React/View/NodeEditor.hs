@@ -7,13 +7,13 @@ import qualified Data.Matrix                           as Matrix
 import           Data.Maybe                            (mapMaybe)
 import qualified Empire.API.Data.MonadPath             as MonadPath
 import           JS.Scene                              (sceneId)
-import           Luna.Studio.Action.Geometry.Constants (connectionWidth)
 import qualified Luna.Studio.Data.CameraTransformation as CameraTransformation
 import           Luna.Studio.Data.Matrix               (matrix3dPropertyValue)
 import qualified Luna.Studio.Event.UI                  as UI
 import           Luna.Studio.Prelude                   hiding (transform)
 import qualified Luna.Studio.React.Event.NodeEditor    as NE
 import           Luna.Studio.React.Model.App           (App)
+import           Luna.Studio.React.Model.Constants     (connectionWidth)
 import           Luna.Studio.React.Model.Node          (isEdge)
 import           Luna.Studio.React.Model.NodeEditor    (NodeEditor)
 import qualified Luna.Studio.React.Model.NodeEditor    as NodeEditor

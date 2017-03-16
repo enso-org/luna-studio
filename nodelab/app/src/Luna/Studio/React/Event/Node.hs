@@ -1,16 +1,13 @@
 {-# LANGUAGE DeriveAnyClass #-}
-
 module Luna.Studio.React.Event.Node where
 
-import           Data.Aeson                   (FromJSON, ToJSON)
-import           React.Flux                   (KeyboardEvent, MouseEvent)
-
-import           Empire.API.Data.DefaultValue (PortDefault)
-import           Empire.API.Data.Node         (NodeId)
-import           Empire.API.Data.PortRef      (AnyPortRef)
+import           Data.Aeson                  (FromJSON, ToJSON)
+import           Empire.API.Data.Node        (NodeId)
+import           Empire.API.Data.PortDefault (PortDefault)
+import           Empire.API.Data.PortRef     (AnyPortRef)
 import           Luna.Studio.Prelude
-import qualified Luna.Studio.State.Action     as Action
-
+import           Luna.Studio.State.Action    (InitValue)
+import           React.Flux                  (KeyboardEvent, MouseEvent)
 
 
 data Event = DisplayResultChanged Bool          NodeId
@@ -23,8 +20,8 @@ data Event = DisplayResultChanged Bool          NodeId
            | NameEditStart                      NodeId
            | PortApplyString      KeyboardEvent AnyPortRef PortDefault
            | PortEditString                     AnyPortRef PortDefault
-           | PortInitSlider          MouseEvent AnyPortRef Action.InitValue
-           | PortSetDefaultValue                AnyPortRef PortDefault
+           | PortInitSlider          MouseEvent AnyPortRef InitValue
+           | PortSetPortDefault                 AnyPortRef PortDefault
            | Select               MouseEvent    NodeId
            | SetCode                            NodeId Text
             deriving (Show, Generic, NFData, Typeable)

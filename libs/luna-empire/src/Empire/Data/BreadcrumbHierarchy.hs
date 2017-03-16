@@ -5,10 +5,10 @@ import           Empire.Prelude
 import           Empire.API.Data.Breadcrumb (Breadcrumb (..), BreadcrumbItem (..))
 import           Empire.API.Data.Node       (NodeId)
 
-import           Empire.Data.AST                   (NodeRef)
+import           Empire.Data.AST            (NodeRef)
 
-import           Data.Map                          (Map)
-import qualified Data.Map                          as Map
+import           Data.Map                   (Map)
+import qualified Data.Map                   as Map
 
 data NodeIDTarget = MatchNode     NodeRef
                   | AnonymousNode NodeRef

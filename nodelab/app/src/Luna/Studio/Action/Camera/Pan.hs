@@ -12,18 +12,20 @@ module Luna.Studio.Action.Camera.Pan
      ) where
 
 import           Data.Matrix                           (setElem)
-import           Data.ScreenPosition                   (ScreenPosition, Vector2 (Vector2), vector)
-import           Luna.Studio.Action.Camera.Modify      (modifyCamera)
+import           Data.ScreenPosition                   (ScreenPosition, vector)
+import           Data.Vector                           (Vector2 (Vector2))
+import           Luna.Studio.Action.Basic              (modifyCamera)
 import           Luna.Studio.Action.Command            (Command)
+import           Luna.Studio.Action.State.Action       (beginActionWithKey, continueActionWithKey, removeActionFromState,
+                                                        updateActionWithKey)
+import           Luna.Studio.Action.State.NodeEditor   (modifyNodeEditor)
 import           Luna.Studio.Data.CameraTransformation (logicalToScreen, screenToLogical)
 import           Luna.Studio.Data.Matrix               (invertedTranslationMatrix, translationMatrix)
 import           Luna.Studio.Prelude
-import qualified Luna.Studio.React.Model.NodeEditor    as NodeEditor
-import           Luna.Studio.State.Action              (Action (begin, continue, end, update), PanDrag (PanDrag), panDragAction)
-import qualified Luna.Studio.State.Action              as Action
-import           Luna.Studio.State.Global              (State, beginActionWithKey, continueActionWithKey, removeActionFromState,
-                                                        updateActionWithKey)
-import qualified Luna.Studio.State.Global              as Global
+import           Luna.Studio.React.Model.NodeEditor    (screenTransform)
+import           Luna.Studio.State.Action              (Action (begin, continue, end, update), PanDrag (PanDrag), panDragAction,
+                                                        panDragPreviousPos)
+import           Luna.Studio.State.Global              (State)
 
 
 instance Action (Command State) PanDrag where
@@ -48,16 +50,16 @@ startPanDrag :: ScreenPosition -> Command State ()
 startPanDrag pos = begin $ PanDrag pos
 
 panDrag :: ScreenPosition -> PanDrag -> Command State ()
-panDrag actPos state = do
-    let prevPos = view Action.panDragPreviousPos state
-        delta = actPos ^. vector - prevPos ^. vector
+panDrag actPos action = do
+    let prevPos = action ^. panDragPreviousPos
+        delta   = actPos ^. vector - prevPos ^. vector
     update $ PanDrag actPos
     panCamera delta
 
 resetPan :: Command State ()
-resetPan = Global.modifyNodeEditor $ do
-    NodeEditor.screenTransform . logicalToScreen %= (setElem 0 (4,1) . setElem 0 (4,2))
-    NodeEditor.screenTransform . screenToLogical %= (setElem 0 (4,1) . setElem 0 (4,2))
+resetPan = modifyNodeEditor $ do
+    screenTransform . logicalToScreen %= (setElem 0 (4,1) . setElem 0 (4,2))
+    screenTransform . screenToLogical %= (setElem 0 (4,1) . setElem 0 (4,2))
 
 stopPanDrag :: PanDrag -> Command State ()
 stopPanDrag _ = removeActionFromState panDragAction

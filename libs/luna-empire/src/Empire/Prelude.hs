@@ -54,8 +54,8 @@ import Data.Typeable (typeRep)
 import Prologue (notImplemented, typeRep', (.:), (.:.), type (<>))
 import Prelude
 
-import qualified OCI.IR.Name.QualName as IR
-import qualified Data.Convert         as Convert
+import qualified Data.Convert              as Convert
+import qualified OCI.IR.Name.QualName      as IR
 
 nameToString :: IR.Name -> String
 nameToString = Convert.convert

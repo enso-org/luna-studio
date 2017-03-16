@@ -1,12 +1,11 @@
 module Luna.Studio.Action.Batch  where
 
 import           Data.UUID.Types                      (UUID)
-import           Empire.API.Data.Connection           (Connection)
-import qualified Empire.API.Data.DefaultValue         as DefaultValue
+import           Empire.API.Data.Connection           (Connection, ConnectionId)
 import           Empire.API.Data.Node                 (Node, NodeId)
 import           Empire.API.Data.NodeMeta             (NodeMeta)
-import           Empire.API.Data.PortRef              (AnyPortRef (..), InPortRef (..), OutPortRef (..))
-import qualified Empire.API.Data.PortRef              as PortRef (dstNodeId, nodeId)
+import           Empire.API.Data.PortDefault          (PortDefault)
+import           Empire.API.Data.PortRef              (AnyPortRef, InPortRef, OutPortRef, dstNodeId, nodeId)
 import           Empire.API.Data.Project              (ProjectId)
 import           Luna.Studio.Action.Command           (Command)
 import           Luna.Studio.Action.UUID              (registerRequest)
@@ -19,7 +18,7 @@ import           Luna.Studio.State.Global             (State, clientId, workspac
 withWorkspace :: (Workspace -> UUID -> Maybe UUID -> IO ()) -> Command State ()
 withWorkspace act = do
     uuid       <- registerRequest
-    guiID      <- use $ clientId
+    guiID      <- use clientId
     workspace' <- use workspace
     liftIO $ act workspace' uuid $ Just guiID
 
@@ -31,23 +30,8 @@ withWorkspace' act = do
 withUUID :: (UUID -> Maybe UUID -> IO ()) -> Command State ()
 withUUID act = do
     uuid  <- registerRequest
-    guiID <- use $ clientId
+    guiID <- use clientId
     liftIO $ act uuid $ Just guiID
-
-addNode :: Text -> NodeMeta -> Maybe NodeId -> Command State ()
-addNode = withWorkspace .:. BatchCmd.addNode
-
-addPort :: NodeId -> Command State ()
-addPort = withWorkspace . BatchCmd.addPort
-
-addSubgraph :: [Node] -> [Connection] -> Command State ()
-addSubgraph = withWorkspace .: BatchCmd.addSubgraph
-
-createProject :: Text -> Command State ()
-createProject = withUUID . BatchCmd.createProject
-
-listProjects :: Command State ()
-listProjects = withUUID BatchCmd.listProjects
 
 createLibrary :: Text -> Text -> Command State ()
 createLibrary = withWorkspace .: BatchCmd.createLibrary
@@ -55,59 +39,95 @@ createLibrary = withWorkspace .: BatchCmd.createLibrary
 listLibraries :: ProjectId -> Command State ()
 listLibraries = withUUID . BatchCmd.listLibraries
 
+
+createProject :: Text -> Command State ()
+createProject = withUUID . BatchCmd.createProject
+
+exportProject :: ProjectId -> Command State ()
+exportProject = withUUID . BatchCmd.exportProject
+
+importProject :: Text -> Command State ()
+importProject = withUUID . BatchCmd.importProject
+
+listProjects :: Command State ()
+listProjects = withUUID BatchCmd.listProjects
+
+openProject :: FilePath -> Command State ()
+openProject = withUUID . BatchCmd.openProject
+
+
+dumpGraphViz :: Command State ()
+dumpGraphViz = withWorkspace BatchCmd.dumpGraphViz
+
+
 getProgram :: Command State ()
 getProgram = withWorkspace BatchCmd.getProgram
 
+
+addConnection :: Either OutPortRef NodeId -> Either InPortRef NodeId -> Command State ()
+addConnection src dst = do
+    collaborativeModify . return $ either (view dstNodeId) id dst
+    withWorkspace $ BatchCmd.addConnection src dst
+
+addNode :: NodeId -> Text -> NodeMeta -> Maybe NodeId -> Command State ()
+addNode = withWorkspace .:: BatchCmd.addNode
+
+addPort :: AnyPortRef -> Command State ()
+addPort = withWorkspace . BatchCmd.addPort
+
+addSubgraph :: [Node] -> [Connection] -> Command State ()
+addSubgraph = withWorkspace .: BatchCmd.addSubgraph
+
 getSubgraph :: NodeId -> Command State ()
-getSubgraph nodeId = withWorkspace (BatchCmd.getSubgraph nodeId)
+getSubgraph nid = withWorkspace (BatchCmd.getSubgraph nid)
 
-updateNodeExpression :: NodeId -> Text -> Command State ()
-updateNodeExpression = withWorkspace .: BatchCmd.updateNodeExpression
+movePort :: AnyPortRef -> AnyPortRef -> Command State ()
+movePort = withWorkspace .: BatchCmd.movePort
 
-updateNodeMeta :: [(NodeId, NodeMeta)] -> Command State ()
-updateNodeMeta = withWorkspace . BatchCmd.updateNodeMeta
+redo :: Command State ()
+redo = withUUID BatchCmd.redo
 
-renameNode :: NodeId -> Text -> Command State ()
-renameNode = withWorkspace .:  BatchCmd.renameNode
-
-setCode :: NodeId -> Text -> Command State ()
-setCode = withWorkspace .:  BatchCmd.setCode
+removeConnection :: ConnectionId -> Command State ()
+removeConnection connId = do
+    collaborativeModify [connId ^. dstNodeId]
+    withWorkspace $ BatchCmd.removeConnection connId
 
 removeNodes :: [NodeId] -> Command State ()
 removeNodes = withWorkspace . BatchCmd.removeNodes
 
-renamePort :: AnyPortRef -> String -> Command State ()
-renamePort = withWorkspace .: BatchCmd.renamePort
-
-movePort :: AnyPortRef -> Int -> Command State ()
-movePort = withWorkspace .: BatchCmd.movePort
-
 removePort :: AnyPortRef -> Command State ()
 removePort = withWorkspace . BatchCmd.removePort
 
-connect :: Either OutPortRef NodeId -> Either InPortRef NodeId -> Command State ()
-connect src dst = do
-    let nodeId = case dst of
-            Left portRef  -> portRef ^. PortRef.dstNodeId
-            Right nodeId' -> nodeId'
-    collaborativeModify [nodeId]
-    withWorkspace $ BatchCmd.connect src dst where
+renameNode :: NodeId -> Text -> Command State ()
+renameNode = withWorkspace .:  BatchCmd.renameNode
 
-disconnect :: InPortRef -> Command State ()
-disconnect dst = do
-    collaborativeModify [dst ^. PortRef.dstNodeId]
-    withWorkspace $ BatchCmd.disconnect dst
+renamePort :: AnyPortRef -> String -> Command State ()
+renamePort = withWorkspace .: BatchCmd.renamePort
 
-setDefaultValue :: AnyPortRef -> DefaultValue.PortDefault -> Command State ()
-setDefaultValue portRef value = do
-    collaborativeModify [portRef ^. PortRef.nodeId]
-    withWorkspace $ BatchCmd.setDefaultValue portRef value
+searchNodes :: Text -> (Int, Int) -> Command State ()
+searchNodes = withWorkspace .: BatchCmd.searchNodes
 
-setInputNodeType :: NodeId -> Text -> Command State ()
-setInputNodeType = withWorkspace .: BatchCmd.setInputNodeType
+-- TODO[LJK, PM]: Probably remove
+-- setInputNodeType :: NodeId -> Text -> Command State ()
+-- setInputNodeType = withWorkspace .: BatchCmd.setInputNodeType
 
-nodeSearch :: Text -> (Int, Int) -> Command State ()
-nodeSearch = withWorkspace .: BatchCmd.nodeSearch
+setNodeCode :: NodeId -> Text -> Command State ()
+setNodeCode = withWorkspace .:  BatchCmd.setNodeCode
+
+setNodeExpression :: NodeId -> Text -> Command State ()
+setNodeExpression = withWorkspace .: BatchCmd.setNodeExpression
+
+setNodesMeta :: [(NodeId, NodeMeta)] -> Command State ()
+setNodesMeta = withWorkspace . BatchCmd.setNodesMeta
+
+setPortDefault :: AnyPortRef -> PortDefault -> Command State ()
+setPortDefault portRef portDefault = do
+    collaborativeModify [portRef ^. nodeId]
+    withWorkspace $ BatchCmd.setPortDefault portRef portDefault
+
+undo :: Command State ()
+undo = withUUID BatchCmd.undo
+
 
 requestCollaborationRefresh :: Command State ()
 requestCollaborationRefresh = do
@@ -128,21 +148,3 @@ cancelCollaborativeTouch :: [NodeId] -> Command State ()
 cancelCollaborativeTouch nodeIds = unless (null nodeIds) $ do
     clId <- use clientId
     withWorkspace' $ BatchCmd.cancelCollaborativeTouch clId nodeIds
-
-exportProject :: ProjectId -> Command State ()
-exportProject = withUUID . BatchCmd.exportProject
-
-importProject :: Text -> Command State ()
-importProject = withUUID . BatchCmd.importProject
-
-openProject :: FilePath -> Command State ()
-openProject = withUUID . BatchCmd.openProject
-
-dumpGraphViz :: Command State ()
-dumpGraphViz = withWorkspace BatchCmd.dumpGraphViz
-
-requestRedo :: Command State ()
-requestRedo = withUUID BatchCmd.requestRedo
-
-requestUndo :: Command State ()
-requestUndo = withUUID BatchCmd.requestUndo

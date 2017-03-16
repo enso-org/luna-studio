@@ -4,23 +4,23 @@ module Empire.Commands.Breadcrumb (
 
 import           Empire.Prelude
 
-import           Control.Monad.Except       (throwError)
-import           Control.Monad.Reader       (ask)
-import           Control.Monad.State        (get, put)
-import           Data.Coerce                (coerce)
-import           Data.Maybe                 (maybe)
+import           Control.Monad.Except            (throwError)
+import           Control.Monad.Reader            (ask)
+import           Control.Monad.State             (get, put)
+import           Data.Coerce                     (coerce)
+import           Data.Maybe                      (maybe)
 
 import           Empire.Data.BreadcrumbHierarchy (navigateTo, replaceAt)
-import qualified Empire.Data.Graph          as Graph
-import qualified Empire.Data.Library        as Library
+import qualified Empire.Data.Graph               as Graph
+import qualified Empire.Data.Library             as Library
 
-import           Empire.API.Data.Breadcrumb (Breadcrumb (..), BreadcrumbItem (..))
-import           Empire.API.Data.Library    (LibraryId)
-import           Empire.API.Data.Node       (NodeId)
-import           Empire.API.Data.Project    (ProjectId)
+import           Empire.API.Data.Breadcrumb      (Breadcrumb (..), BreadcrumbItem (..))
+import           Empire.API.Data.Library         (LibraryId)
+import           Empire.API.Data.Node            (NodeId)
+import           Empire.API.Data.Project         (ProjectId)
 
-import           Empire.Commands.Library    (withLibrary)
-import           Empire.Empire              (Command, Empire, runEmpire)
+import           Empire.Commands.Library         (withLibrary)
+import           Empire.Empire                   (Command, Empire, runEmpire)
 
 withBreadcrumb :: ProjectId -> LibraryId -> Breadcrumb BreadcrumbItem -> Command Graph.Graph a -> Empire a
 withBreadcrumb pid lid breadcrumb act = withLibrary pid lid $ zoom Library.body $ do

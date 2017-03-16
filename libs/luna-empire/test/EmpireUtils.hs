@@ -26,6 +26,7 @@ import           Control.Concurrent.STM.TChan  (newTChan)
 import           Control.Exception             (Exception, bracket)
 import           Data.Coerce                   (coerce)
 import qualified Data.Map                      as Map
+import           Data.Reflection               (Given (..), give)
 import           Data.UUID                     (UUID, nil)
 import           Data.UUID.V4                  (nextRandom)
 import           Empire.API.Data.Breadcrumb    (Breadcrumb(..), BreadcrumbItem(Lambda))
@@ -39,15 +40,11 @@ import qualified Empire.Commands.Graph         as Graph (connect, getNodes)
 import           Empire.Commands.Library       (createLibrary, listLibraries, withLibrary)
 import           Empire.Commands.Project       (createProject, listProjects)
 import           Empire.Data.AST               ()
-import           Empire.Data.Graph             (AST, ASTState(..), Graph)
+import           Empire.Data.Graph             (AST, ASTState (..), Graph)
 import qualified Empire.Data.Library           as Library (body)
-import           Empire.Empire                 (CommunicationEnv(..), Env, Error, Empire, InterpreterEnv(..), runEmpire)
-import           Data.TypeDesc
-import           Data.Graph.Class              (ElemRepMapGraph(..))
-import           Data.ManagedVectorMap
+import           Empire.Empire                 (CommunicationEnv (..), Empire, Env, Error, InterpreterEnv (..), runEmpire)
 import           Luna.IR                       (AnyExpr, Link')
 import           Prologue                      hiding (mapping, toList, (|>))
-import           Data.Reflection               (Given(..), give)
 
 import           Test.Hspec                    (expectationFailure)
 
@@ -117,7 +114,7 @@ connectToInput :: GraphLocation -> OutPortRef -> InPortRef -> Empire Connection
 connectToInput loc outPort inPort = Graph.connect loc outPort (InPortRef' inPort)
 
 inputPorts :: Node -> [Port]
-inputPorts node = Map.elems $ Map.filter Port.isInputPort $ node ^. ports
+inputPorts node = Map.elems $ Map.filter (Port.isInPort . view Port.portId) $ node ^. ports
 
 outputPorts :: Node -> [Port]
-outputPorts node = Map.elems $ Map.filter Port.isOutputPort $ node ^. ports
+outputPorts node = Map.elems $ Map.filter (Port.isOutPort . view Port.portId) $ node ^. ports

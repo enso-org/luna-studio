@@ -14,15 +14,15 @@ import qualified Empire.API.Topic              as T
 
 
 data Request = Request { _location    :: GraphLocation
-                       , _anyPortRef  :: AnyPortRef
-                       , _newPosition :: Int
+                       , _portRef     :: AnyPortRef
+                       , _newPortRef  :: AnyPortRef
                        } deriving (Generic, Eq, NFData, Show)
 
---TODO[MM]: Remove Node as Response Result. We don't use it
 type Result = Node
 
 type Response = Response.Response Request () Result
 instance Response.ResponseResult Request () Result
+
 
 makeLenses ''Request
 instance Binary Request

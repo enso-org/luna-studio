@@ -4,49 +4,49 @@
 
 module Main where
 
-import qualified Data.Binary                      as Bin
-import qualified Data.ByteString                  as ByteString
-import qualified Data.ByteString.Char8            as Char8 (pack)
-import           Data.ByteString.Lazy             (fromStrict, toStrict)
-import qualified Data.Text                        as Text
-import qualified Data.UUID.V4                     as UUID
-import qualified Empire.API.Data.Breadcrumb       as Breadcrumb
-import           Empire.API.Data.DefaultValue     (PortDefault (Constant), Value (DoubleValue))
-import           Empire.API.Data.GraphLocation    (GraphLocation)
-import qualified Empire.API.Data.GraphLocation    as GraphLocation
-import           Empire.API.Data.Node             (NodeId)
-import qualified Empire.API.Data.Node             as Node
-import qualified Empire.API.Data.NodeMeta         as NodeMeta
-import qualified Empire.API.Data.NodeMeta         as NodeMeta
-import           Empire.API.Data.Port             (InPort (..), OutPort)
-import           Empire.API.Data.PortRef          (AnyPortRef (..), InPortRef (..), OutPortRef (..))
-import           Empire.API.Data.Project          (ProjectId)
-import qualified Empire.API.Graph.AddNode         as AddNode
-import qualified Empire.API.Graph.Connect         as Connect
-import qualified Empire.API.Graph.Disconnect      as Disconnect
-import qualified Empire.API.Graph.DumpGraphViz    as DumpGraphViz
-import qualified Empire.API.Graph.GetProgram      as GetProgram
-import qualified Empire.API.Graph.RemoveNodes     as RemoveNodes
-import qualified Empire.API.Graph.SetDefaultValue as SetDefaultValue
-import qualified Empire.API.Graph.TypeCheck       as TypeCheck
-import qualified Empire.API.Graph.UpdateNodeMeta  as UpdateNodeMeta
-import qualified Empire.API.Library.CreateLibrary as CreateLibrary
-import qualified Empire.API.Library.ListLibraries as ListLibraries
-import qualified Empire.API.Project.CreateProject as CreateProject
-import qualified Empire.API.Project.ListProjects  as ListProjects
-import           Empire.API.Request               (Request (..))
-import qualified Empire.API.Response              as Response
-import qualified Empire.API.Topic                 as Topic
-import           Prologue                         hiding (argument)
+import qualified Data.Binary                       as Bin
+import qualified Data.ByteString                   as ByteString
+import qualified Data.ByteString.Char8             as Char8 (pack)
+import           Data.ByteString.Lazy              (fromStrict, toStrict)
+import qualified Data.Text                         as Text
+import qualified Data.UUID.V4                      as UUID
+import qualified Empire.API.Data.Breadcrumb        as Breadcrumb
+import           Empire.API.Data.GraphLocation     (GraphLocation)
+import qualified Empire.API.Data.GraphLocation     as GraphLocation
+import           Empire.API.Data.Node              (NodeId)
+import qualified Empire.API.Data.Node              as Node
+import qualified Empire.API.Data.NodeMeta          as NodeMeta
+import qualified Empire.API.Data.NodeMeta          as NodeMeta
+import           Empire.API.Data.Port              (InPort (..), OutPort)
+import           Empire.API.Data.PortDefault       (PortDefault (Constant), Value (DoubleValue))
+import           Empire.API.Data.PortRef           (AnyPortRef (..), InPortRef (..), OutPortRef (..))
+import           Empire.API.Data.Project           (ProjectId)
+import qualified Empire.API.Graph.AddConnection    as AddConnection
+import qualified Empire.API.Graph.AddNode          as AddNode
+import qualified Empire.API.Graph.DumpGraphViz     as DumpGraphViz
+import qualified Empire.API.Graph.GetProgram       as GetProgram
+import qualified Empire.API.Graph.RemoveConnection as RemoveConnection
+import qualified Empire.API.Graph.RemoveNodes      as RemoveNodes
+import qualified Empire.API.Graph.SetNodesMeta     as SetNodesMeta
+import qualified Empire.API.Graph.SetPortDefault   as SetPortDefault
+import qualified Empire.API.Graph.TypeCheck        as TypeCheck
+import qualified Empire.API.Library.CreateLibrary  as CreateLibrary
+import qualified Empire.API.Library.ListLibraries  as ListLibraries
+import qualified Empire.API.Project.CreateProject  as CreateProject
+import qualified Empire.API.Project.ListProjects   as ListProjects
+import           Empire.API.Request                (Request (..))
+import qualified Empire.API.Response               as Response
+import qualified Empire.API.Topic                  as Topic
+import           Prologue                          hiding (argument)
 import           System.Console.Docopt
-import           System.Environment               (getArgs)
-import           System.Log.Options               (help, long, metavar, short)
-import qualified System.Log.Options               as Opt
-import qualified ZMQ.Bus.Bus                      as Bus
-import qualified ZMQ.Bus.Config                   as Config
-import qualified ZMQ.Bus.Data.Flag                as Flag
-import qualified ZMQ.Bus.Data.Message             as Message
-import qualified ZMQ.Bus.EndPoint                 as EP
+import           System.Environment                (getArgs)
+import           System.Log.Options                (help, long, metavar, short)
+import qualified System.Log.Options                as Opt
+import qualified ZMQ.Bus.Bus                       as Bus
+import qualified ZMQ.Bus.Config                    as Config
+import qualified ZMQ.Bus.Data.Flag                 as Flag
+import qualified ZMQ.Bus.Data.Message              as Message
+import qualified ZMQ.Bus.EndPoint                  as EP
 
 
 toGraphLocation :: String -> String -> GraphLocation
@@ -64,24 +64,24 @@ main = do
     when (args `isPresent` command "addNode") $ do
         pid       <- args `getArgOrExit` argument "pid"
         lid       <- args `getArgOrExit` argument "lid"
+        nodeId    <- args `getArgOrExit` argument "nodeId"
         expr      <- args `getArgOrExit` argument "expression"
         x         <- args `getArgOrExit` argument "x"
         y         <- args `getArgOrExit` argument "y"
-        nodeId    <- args `getArgOrExit` argument "nodeId"
-        addNode endPoints (toGraphLocation pid lid) expr (read x) (read y) (read nodeId)
+        addNode endPoints (toGraphLocation pid lid) (read nodeId) expr (read x) (read y)
     when (args `isPresent` command "removeNode") $ do
         pid       <- args `getArgOrExit` argument "pid"
         lid       <- args `getArgOrExit` argument "lid"
         nodeId    <- args `getArgOrExit` argument "nodeId"
         removeNode endPoints (toGraphLocation pid lid) (read nodeId)
-    when (args `isPresent` command "updateNodeMeta") $ do
+    when (args `isPresent` command "setNodeMeta") $ do
         pid       <- args `getArgOrExit` argument "pid"
         lid       <- args `getArgOrExit` argument "lid"
         nodeId    <- args `getArgOrExit` argument "nodeId"
         x         <- args `getArgOrExit` argument "x"
         y         <- args `getArgOrExit` argument "y"
         req       <- args `getArgOrExit` argument "req"
-        updateNodeMeta endPoints (toGraphLocation pid lid) (read nodeId) (read x) (read y) (read req)
+        setNodeMeta endPoints (toGraphLocation pid lid) (read nodeId) (read x) (read y) (read req)
     when (args `isPresent` command "connect") $ do
         pid       <- args `getArgOrExit` argument "pid"
         lid       <- args `getArgOrExit` argument "lid"
@@ -135,23 +135,23 @@ sendToBus endPoints msg = do
   let msg' = Request uuid Nothing msg
   void $ Bus.runBus endPoints $ Bus.send Flag.Enable $ Message.Message (Topic.topic msg') $ toStrict . Bin.encode $ msg'
 
-addNode :: EP.BusEndPoints -> GraphLocation -> String -> Double -> Double -> NodeId -> IO ()
-addNode endPoints graphLocation expression x y nodeId = sendToBus endPoints $ AddNode.Request graphLocation (AddNode.ExpressionNode $ Text.pack expression) (NodeMeta.NodeMeta (x, y) True) Nothing Nothing
+addNode :: EP.BusEndPoints -> GraphLocation -> NodeId -> String -> Double -> Double -> IO ()
+addNode endPoints graphLocation nodeId expression x y = sendToBus endPoints $ AddNode.Request graphLocation nodeId (Text.pack expression) (NodeMeta.NodeMeta (x, y) True) Nothing
 
 removeNode :: EP.BusEndPoints -> GraphLocation -> NodeId -> IO ()
 removeNode endPoints graphLocation nodeId = sendToBus endPoints $ RemoveNodes.Request graphLocation [nodeId]
 
-updateNodeMeta :: EP.BusEndPoints -> GraphLocation -> NodeId -> Double -> Double -> Bool -> IO ()
-updateNodeMeta endPoints graphLocation nodeId x y req = sendToBus endPoints $ UpdateNodeMeta.Request graphLocation [(nodeId, NodeMeta.NodeMeta (x, y) req)]
+setNodeMeta :: EP.BusEndPoints -> GraphLocation -> NodeId -> Double -> Double -> Bool -> IO ()
+setNodeMeta endPoints graphLocation nodeId x y req = sendToBus endPoints $ SetNodesMeta.Request graphLocation [(nodeId, NodeMeta.NodeMeta (x, y) req)]
 
 connect :: EP.BusEndPoints -> GraphLocation -> NodeId -> OutPort -> NodeId -> InPort -> IO ()
-connect endPoints graphLocation srcNodeId outPort dstNodeId inPort = sendToBus endPoints $ Connect.Request graphLocation (Left $ OutPortRef srcNodeId outPort) (Left $ InPortRef dstNodeId inPort)
+connect endPoints graphLocation srcNodeId outPort dstNodeId inPort = sendToBus endPoints $ AddConnection.Request graphLocation (Left $ OutPortRef srcNodeId outPort) (Left . InPortRef' $ InPortRef dstNodeId inPort)
 
 disconnect :: EP.BusEndPoints -> GraphLocation -> NodeId -> InPort -> IO ()
-disconnect endPoints graphLocation  dstNodeId inPort = sendToBus endPoints $ Disconnect.Request graphLocation (InPortRef dstNodeId inPort)
+disconnect endPoints graphLocation  dstNodeId inPort = sendToBus endPoints $ RemoveConnection.Request graphLocation (InPortRef dstNodeId inPort)
 
 setPortValue :: EP.BusEndPoints -> GraphLocation -> NodeId -> Int -> Double -> IO ()
-setPortValue endPoints graphLocation nodeId portId value = sendToBus endPoints $ SetDefaultValue.Request graphLocation (InPortRef' $ InPortRef nodeId (Arg portId)) (Constant $ DoubleValue value)
+setPortValue endPoints graphLocation nodeId portId value = sendToBus endPoints $ SetPortDefault.Request graphLocation (InPortRef' $ InPortRef nodeId (Arg portId)) (Constant $ DoubleValue value)
 
 getProgram :: EP.BusEndPoints -> GraphLocation -> IO ()
 getProgram endPoints graphLocation = sendToBus endPoints $ GetProgram.Request graphLocation

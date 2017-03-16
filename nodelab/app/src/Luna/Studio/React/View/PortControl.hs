@@ -3,11 +3,9 @@ module Luna.Studio.React.View.PortControl
     ( portControl_
     ) where
 
-import           React.Flux                   as React
-
-import qualified Empire.API.Data.DefaultValue as DefaultValue
-import           Empire.API.Data.Port         (InPort (..), InPort (..), OutPort (..), PortId (..))
+import           Empire.API.Data.Port         (InPort (Arg), OutPort (All), PortId (InPortId, OutPortId))
 import qualified Empire.API.Data.Port         as PortAPI
+import qualified Empire.API.Data.PortDefault  as PortDefault
 import           Empire.API.Data.PortRef      (AnyPortRef (..), toAnyPortRef)
 import qualified Empire.API.Data.ValueType    as ValueType
 import qualified JS.Config                    as Config
@@ -20,7 +18,9 @@ import           Luna.Studio.React.Model.Port (Port)
 import qualified Luna.Studio.React.Model.Port as Port
 import           Luna.Studio.React.Store      (Ref, dispatch)
 import qualified Luna.Studio.React.View.Style as Style
-import qualified Luna.Studio.State.Action     as Action
+import           Luna.Studio.State.Action     (InitValue (Continous, Discrete))
+import           React.Flux                   as React
+
 
 
 
@@ -61,34 +61,34 @@ inPortControl = React.defineView "inPortControl" $ \(ref, portRef, port) ->
                     ValueType.Other -> elemString "(other)"
                     _               -> do
                         let zeroValue    = case port ^. Port.valueType . ValueType.toEnum of
-                                ValueType.DiscreteNumber   -> DefaultValue.IntValue    def
-                                ValueType.ContinuousNumber -> DefaultValue.DoubleValue def
-                                ValueType.String           -> DefaultValue.StringValue def
-                                ValueType.Bool             -> DefaultValue.BoolValue   False
+                                ValueType.DiscreteNumber   -> PortDefault.IntValue    def
+                                ValueType.ContinuousNumber -> PortDefault.DoubleValue def
+                                ValueType.String           -> PortDefault.StringValue def
+                                ValueType.Bool             -> PortDefault.BoolValue   False
                                 _                          -> undefined
-                            defaultValue = DefaultValue.Constant zeroValue
+                            defaultValue = PortDefault.Constant zeroValue
                         button_
-                            [ onClick $ \_ _ -> dispatch ref $ UI.NodeEvent $ Node.PortSetDefaultValue portRef defaultValue
+                            [ onClick $ \_ _ -> dispatch ref $ UI.NodeEvent $ Node.PortSetPortDefault portRef defaultValue
                             ] $ elemString "not set"
             PortAPI.Connected -> elemString "(connected)"
             PortAPI.WithDefault defVal -> void $ case port ^. Port.valueType . ValueType.toEnum of
                 ValueType.DiscreteNumber -> do
-                    let value = fromMaybe 0 $ defVal ^? DefaultValue._Constant . DefaultValue._IntValue
+                    let value = fromMaybe 0 $ defVal ^? PortDefault._Constant . PortDefault._IntValue
                     div_
                         [ "className" $= Style.prefix "horizontal-slider"
                         --TODO[react]: +1 with Q and up key, -1 with W and down key, edit on double click
-                        , onMouseDown $ \e m -> stopPropagation e : dispatch ref (UI.NodeEvent $ Node.PortInitSlider m portRef $ Action.Discrete value)
+                        , onMouseDown $ \e m -> stopPropagation e : dispatch ref (UI.NodeEvent $ Node.PortInitSlider m portRef $ Discrete value)
                         ] $ elemString $ show value
                 ValueType.ContinuousNumber -> do
-                    let value = fromMaybe 0.0 $ defVal ^? DefaultValue._Constant . DefaultValue._DoubleValue
+                    let value = fromMaybe 0.0 $ defVal ^? PortDefault._Constant . PortDefault._DoubleValue
                     div_
                         [ "className" $= Style.prefix "horizontal-slider"
                         --TODO[react]: +1 with Q and up key, -1 with W and down key, edit on double click
-                        , onMouseDown $ \e m -> stopPropagation e : dispatch ref (UI.NodeEvent $ Node.PortInitSlider m portRef $ Action.Continous value)
+                        , onMouseDown $ \e m -> stopPropagation e : dispatch ref (UI.NodeEvent $ Node.PortInitSlider m portRef $ Continous value)
                         ] $ elemString $ show value
                 ValueType.String -> do
-                    let value = fromMaybe "" $ defVal ^? DefaultValue._Constant . DefaultValue._StringValue
-                        defaultValue val = DefaultValue.Constant $ DefaultValue.StringValue val
+                    let value = fromMaybe "" $ defVal ^? PortDefault._Constant . PortDefault._StringValue
+                        defaultValue val = PortDefault.Constant $ PortDefault.StringValue val
                     input_
                         [ "id" $= portControlId
                         , "value" $= convert value
@@ -97,10 +97,10 @@ inPortControl = React.defineView "inPortControl" $ \(ref, portRef, port) ->
                         , onChange    $ \e   -> let val = target e "value" in dispatch ref $ UI.NodeEvent $ Node.PortEditString portRef $ defaultValue val
                         ]
                 ValueType.Bool -> do
-                    let value = fromMaybe True $ defVal ^? DefaultValue._Constant . DefaultValue._BoolValue
-                        defaultValue = DefaultValue.Constant $ DefaultValue.BoolValue $ not value
+                    let value = fromMaybe True $ defVal ^? PortDefault._Constant . PortDefault._BoolValue
+                        defaultValue = PortDefault.Constant $ PortDefault.BoolValue $ not value
                     button_
-                        [ onClick $ \_ _ -> dispatch ref $ UI.NodeEvent $ Node.PortSetDefaultValue portRef defaultValue
+                        [ onClick $ \_ _ -> dispatch ref $ UI.NodeEvent $ Node.PortSetPortDefault portRef defaultValue
                         ] $ elemString $ show value
                 ValueType.Other ->
                     elemString "(other)"

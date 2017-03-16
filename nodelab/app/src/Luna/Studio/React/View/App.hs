@@ -20,7 +20,7 @@ import qualified Luna.Studio.React.Model.App             as App
 import           Luna.Studio.React.Store                 (Ref, dispatch, dispatch', dt)
 import           Luna.Studio.React.View.Breadcrumbs      (breadcrumbs_)
 import           Luna.Studio.React.View.NodeEditor       (nodeEditor_)
-import qualified  Luna.Studio.React.View.Style            as Style
+import qualified Luna.Studio.React.View.Style            as Style
 
 
 name :: JSString

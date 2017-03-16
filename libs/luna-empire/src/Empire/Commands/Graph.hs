@@ -16,8 +16,8 @@ module Empire.Commands.Graph
     , movePort
     , removePort
     , renamePort
-    , updateNodeExpression
-    , updateNodeMeta
+    , setNodeExpression
+    , setNodeMeta
     , updatePort
     , connect
     , connectPersistent
@@ -31,7 +31,7 @@ module Empire.Commands.Graph
     , getGraph
     , getNodes
     , getConnections
-    , setDefaultValue
+    , setPortDefault
     , renameNode
     , dumpGraphViz
     , typecheck
@@ -64,7 +64,7 @@ import           Empire.Data.Layers              (Marker)
 import           Empire.API.Data.Breadcrumb      as Breadcrumb (Breadcrumb(..), Named, BreadcrumbItem(..))
 import qualified Empire.API.Data.Connection      as Connection
 import           Empire.API.Data.Connection      (Connection (..))
-import           Empire.API.Data.DefaultValue    (PortDefault (Constant))
+import           Empire.API.Data.PortDefault    (PortDefault (Constant))
 import qualified Empire.API.Data.Graph           as APIGraph
 import           Empire.API.Data.GraphLocation   (GraphLocation (..))
 import           Empire.API.Data.Node            (Node (..), NodeId)
@@ -202,31 +202,13 @@ addPort loc nid = withGraph loc $ runASTOp $ do
 generateNodeId :: IO NodeId
 generateNodeId = UUID.nextRandom
 
-addSubgraph :: GraphLocation -> [Node] -> [Connection] -> Bool -> Empire (Maybe (Map.Map NodeId NodeId))
-addSubgraph loc nodes conns saveIds = withTC loc False $ do
-
-    newIds <- liftIO $ replicateM (length nodes) generateNodeId
-    if saveIds then do
-        forM_ nodes $ \n -> case n ^. Node.nodeType of
-            Node.ExpressionNode expr -> void $ addNodeNoTC loc (n ^. Node.nodeId) expr (n ^. Node.nodeMeta)
-            _ -> return ()
-        forM_ conns $ \(Connection src dst) -> connectNoTC loc src (InPortRef' dst)
-        return Nothing
-
-    else do
-        let
-            idMapping' = Map.fromList $ flip zip newIds $ flip map nodes $ view Node.nodeId
-            connectionsSrcs = map (^. Connection.src . PortRef.srcNodeId) conns
-            idMapping = Map.union idMapping' $ Map.fromList (zip connectionsSrcs connectionsSrcs)
-            nodes' = flip map nodes $ Node.nodeId %~ (idMapping Map.!)
-            connections' = map (\conn -> conn & Connection.src . PortRef.srcNodeId %~ (idMapping Map.!)
-                                              & Connection.dst . PortRef.dstNodeId %~ (idMapping Map.!)
-                               ) conns
-        forM_ nodes' $ \n -> case n ^. Node.nodeType of
-            Node.ExpressionNode expr -> void $ addNodeNoTC loc (n ^. Node.nodeId) expr (n ^. Node.nodeMeta)
-            _ -> return ()
-        forM_ connections' $ \(Connection src dst) -> connectNoTC loc src (InPortRef' dst)
-        return $ Just idMapping
+addSubgraph :: GraphLocation -> [Node] -> [Connection] -> Empire ([Node])
+addSubgraph loc nodes conns = withTC loc False $ do
+    newNodes <- fmap catMaybes $ forM nodes $ \n -> case n ^. Node.nodeType of
+        Node.ExpressionNode expr -> Just <$> addNodeNoTC loc (n ^. Node.nodeId) expr (n ^. Node.nodeMeta)
+        _ -> return Nothing
+    forM_ conns $ \(Connection src dst) -> connectNoTC loc src (InPortRef' dst)
+    return newNodes
 
 descendInto :: GraphLocation -> NodeId -> GraphLocation
 descendInto (GraphLocation pid lid breadcrumb) nid = GraphLocation pid lid breadcrumb'
@@ -284,8 +266,8 @@ renamePort loc portRef newName = withGraph loc $ runASTOp $ do
         _ -> throwM NotInputEdgeException
     GraphBuilder.buildConnections >>= \c -> GraphBuilder.buildInputEdge c nodeId
 
-updateNodeExpression :: GraphLocation -> NodeId -> Text -> Empire Node
-updateNodeExpression loc nodeId expr = withTC loc False $ do
+setNodeExpression :: GraphLocation -> NodeId -> Text -> Empire Node
+setNodeExpression loc nodeId expr = withTC loc False $ do
     parsedExpr <- runASTOp $ do
         (exprName, parsedExpr) <- ASTParse.parseExpr $ Text.unpack expr
         target                 <- ASTRead.getASTTarget nodeId
@@ -313,8 +295,8 @@ updateNodeExpression loc nodeId expr = withTC loc False $ do
     Publisher.notifyNodeUpdate loc node
     return node
 
-updateNodeMeta :: GraphLocation -> NodeId -> NodeMeta -> Empire ()
-updateNodeMeta loc nodeId newMeta = withGraph loc $ do
+setNodeMeta :: GraphLocation -> NodeId -> NodeMeta -> Empire ()
+setNodeMeta loc nodeId newMeta = withGraph loc $ do
     doTCMay <- runASTOp $ do
         ref <- GraphUtils.getASTPointer nodeId
         oldMetaMay <- AST.readMeta ref
@@ -481,11 +463,11 @@ connectNoTC loc outPort anyPort = do
         Publisher.notifyNodeUpdate loc n
     return connection
 
-setDefaultValue :: GraphLocation -> AnyPortRef -> PortDefault -> Empire ()
-setDefaultValue loc portRef val = withTC loc False $ runASTOp $ setDefaultValue' portRef val
+setPortDefault :: GraphLocation -> AnyPortRef -> PortDefault -> Empire ()
+setPortDefault loc portRef val = withTC loc False $ runASTOp $ setPortDefault' portRef val
 
-setDefaultValue' :: ASTOp m => AnyPortRef -> PortDefault -> m ()
-setDefaultValue' portRef val = do
+setPortDefault' :: ASTOp m => AnyPortRef -> PortDefault -> m ()
+setPortDefault' portRef val = do
     parsed <- ASTParse.parsePortDefault val
     (nodeId, newRef) <- case portRef of
         InPortRef' (InPortRef nodeId port) -> do

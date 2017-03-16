@@ -1,7 +1,6 @@
+-- TODO[LJK, PM]: Remove or restore
 {-# OPTIONS_GHC -fno-warn-unused-binds #-}
-
 {-# LANGUAGE OverloadedStrings #-}
-
 module Luna.Studio.Handler.Debug
     ( handle
     , handleEv

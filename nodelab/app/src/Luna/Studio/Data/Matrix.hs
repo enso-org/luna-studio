@@ -2,8 +2,9 @@ module Luna.Studio.Data.Matrix where
 
 import           Data.Matrix         (Matrix)
 import qualified Data.Matrix         as Matrix
-import           Data.Position       (Position, Vector2, x, y)
+import           Data.Position       (Position, x, y)
 import           Data.ScreenPosition (ScreenPosition)
+import           Data.Vector         (Vector2)
 import           Luna.Studio.Prelude
 
 

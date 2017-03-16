@@ -3,7 +3,7 @@
 module ParserSpec (spec) where
 
 import qualified Data.Map                     as Map
-import           Empire.API.Data.DefaultValue (PortDefault(Expression))
+import           Empire.API.Data.PortDefault (PortDefault(Expression))
 import qualified Empire.API.Data.Node         as Node (NodeType(ExpressionNode),
                                                        nodeType, ports)
 import qualified Empire.API.Data.Port         as Port
@@ -40,11 +40,11 @@ spec = around withChannels $ do
             res <- evalEmp env $ Graph.addNode top u1 "Vector x y z" def
             withResult res $ \node -> do
                 node ^. Node.nodeType `shouldBe` Node.ExpressionNode "Vector x y z"
-                let outputPorts = Map.elems $ Map.filter Port.isOutputPort $ node ^. Node.ports
+                let outputPorts = Map.elems $ Map.filter (Port.isOutPort . view Port.portId) $ node ^. Node.ports
                 outputPorts `shouldMatchList` [
                       Port.Port (Port.OutPortId Port.All) "Output" TStar (Port.WithDefault (Expression "Vector x y z"))
                     ]
-                let inputPorts = Map.elems $ Map.filter Port.isInputPort $ node ^. Node.ports
+                let inputPorts = Map.elems $ Map.filter (Port.isInPort . view Port.portId) $ node ^. Node.ports
                 inputPorts `shouldMatchList` [
                       Port.Port (Port.InPortId (Port.Arg 0)) "x" TStar (Port.WithDefault (Expression "x"))
                     , Port.Port (Port.InPortId (Port.Arg 1)) "y" TStar (Port.WithDefault (Expression "y"))

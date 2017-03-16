@@ -1,11 +1,11 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Luna.Studio.React.View.Node where
 
-
 import qualified Data.Aeson                             as Aeson
 import           Data.Matrix                            as Matrix
 import           Data.Matrix                            (Matrix)
-import           Data.Position                          (Position (Position), Vector2 (Vector2), x, y)
+import           Data.Position                          (Position (Position), x, y)
+import           Data.Vector                            (Vector2 (Vector2))
 import           Empire.API.Data.Node                   (NodeId)
 import qualified JS.Config                              as Config
 import qualified Luna.Studio.Event.Mouse                as Mouse
@@ -13,7 +13,7 @@ import qualified Luna.Studio.Event.UI                   as UI
 import           Luna.Studio.Prelude
 import qualified Luna.Studio.React.Event.Node           as Node
 import           Luna.Studio.React.Model.App            (App)
-import           Luna.Studio.React.Model.Node           (Node)
+import           Luna.Studio.React.Model.Node           (Node, isCollapsed)
 import qualified Luna.Studio.React.Model.Node           as Node
 import qualified Luna.Studio.React.Model.NodeProperties as Prop
 import           Luna.Studio.React.Store                (Ref, dispatch)
@@ -40,7 +40,7 @@ node = React.defineView name $ \(ref, n) -> do
     let nodeId    = n ^. Node.nodeId
         nodeLimit = 10000::Int
         zIndex    = n ^. Node.zPos
-        z         = if n ^. Node.isCollapsed then zIndex else zIndex + nodeLimit
+        z         = if isCollapsed n then zIndex else zIndex + nodeLimit
     div_
         [ "key"       $= (nodePrefix <> fromString (show nodeId))
         , "id"        $= (nodePrefix <> fromString (show nodeId))
@@ -61,8 +61,8 @@ node = React.defineView name $ \(ref, n) -> do
                 [ "key"         $= "nameRoot"
                 , onClick       $ \_ m -> dispatch ref $ UI.NodeEvent $ Node.Select m nodeId
                 , onDoubleClick $ \_ _ -> dispatch ref $ UI.NodeEvent $ Node.Enter nodeId
-                , "className"   $= Style.prefixFromList ( [ "node" , (if n ^. Node.isCollapsed then  "node--collapsed" else "node--expanded") ]
-                                                                  ++ (if n ^. Node.isSelected  then ["node--selected"] else []) )
+                , "className"   $= Style.prefixFromList ( [ "node" , (if isCollapsed n then "node--collapsed"   else "node--expanded") ]
+                                                          ++ (if n ^. Node.isSelected  then ["node--selected"]  else []) )
                 ] $
                 svg_
                     [ "key" $= "name" ] $ do

@@ -33,8 +33,8 @@ class (MessageTopic (Request req), MessageTopic (Response req inv res), Binary r
   result :: Request req -> inv -> res -> Response req inv res
   result (Request uuid guiID req) inv payload = Response uuid guiID req (Ok inv) (Ok payload)
 
-  error :: Request req -> String-> Response req inv res
-  error  (Request uuid guiID req) msg = Response uuid guiID req (Error msg) (Error msg)
+  error :: Request req -> Status inv -> String -> Response req inv res
+  error  (Request uuid guiID req) inv msg = Response uuid guiID req inv (Error msg)
 
 ok :: (ResponseResult req inv (), MessageTopic (Response req inv ())) => Request req -> inv -> Response req inv ()
 ok (Request uuid guiID req) inv = Response uuid guiID req (Ok inv) (Ok ())
