@@ -7,37 +7,41 @@ module Luna.Studio.React.Model.Node
     ) where
 
 import           Control.Arrow
+import           Data.Convert                         (Convertible (convert))
 import           Data.Map.Lazy                        (Map)
 import qualified Data.Map.Lazy                        as Map
 import           Data.Position                        (Position, fromTuple)
 import           Data.Time.Clock                      (UTCTime)
+
 import           Empire.API.Data.MonadPath            (MonadPath)
 import           Empire.API.Data.Node                 (NodeId, NodeType (InputEdge, OutputEdge))
 import qualified Empire.API.Data.Node                 as Node
-import           Empire.API.Data.NodeMeta             (displayResult)
+import qualified Empire.API.Data.NodeMeta             as NodeMeta
 import           Empire.API.Data.Port                 (PortId, isArg, isInPort, isInPort, isOutPort, isProjection)
 import           Empire.API.Graph.CollaborationUpdate (ClientId)
 import           Empire.API.Graph.NodeResultUpdate    (NodeValue)
-import           Luna.Studio.Prelude                  hiding (set)
+import           Luna.Studio.Prelude
 import           Luna.Studio.React.Model.Port         (Port, fromPorts, portId)
 import           Luna.Studio.State.Collaboration      (ColorId)
 
 
 data Node = Node { _nodeId                :: NodeId
+                 , _name                  :: Text
+                 , _nodeType              :: NodeType
+                 , _canEnter              :: Bool
                  , _ports                 :: Map PortId Port
                  , _position              :: Position
-                 , _zPos                  :: Int
-                 , _expression            :: Text
-                 , _code                  :: Maybe Text
-                 , _name                  :: Text
-                 , _nameEdit              :: Maybe Text
-                 , _value                 :: Maybe NodeValue
-                 , _nodeType              :: NodeType
-                 , _mode                  :: Mode
-                 , _isSelected            :: Bool
                  , _visualizationsEnabled :: Bool
-                 , _collaboration         :: Collaboration
+                 , _code                  :: Maybe Text
+
+                 , _expression            :: Text
+                 , _value                 :: Maybe NodeValue
+                 , _zPos                  :: Int
+                 , _isSelected            :: Bool
+                 , _mode                  :: Mode
+                 , _nameEdit              :: Maybe Text
                  , _execTime              :: Maybe Integer
+                 , _collaboration         :: Collaboration
                  } deriving (Eq, Generic, NFData, Show)
 
 data Mode = Collapsed
@@ -116,30 +120,37 @@ countArgPorts = foldl (\acc p -> acc + if isArg $ p ^. portId then 1 else 0) 0 .
 countProjectionPorts :: Node -> Int
 countProjectionPorts = foldl (\acc p -> acc + if isProjection $ p ^. portId then 1 else 0) 0 . getPorts
 
-
-makeNode :: NodeId -> Map PortId Port -> Position -> Text -> Maybe Text -> Text -> NodeType -> Bool -> Node
-makeNode nid ports' pos expr code' name' tpe' vis = Node nid ports' pos def expr code' name' def def tpe' def False vis def Nothing
-
 makePorts :: Node.Node -> [Port]
 makePorts node = fromPorts (node ^. Node.nodeId) (Map.elems $ node ^. Node.ports)
 
 makePortsMap :: [Port] -> Map PortId Port
 makePortsMap = Map.fromList . map (view portId &&& id)
 
-fromNode :: Node.Node -> Node
-fromNode n = makeNode nodeId' ports' position' expression' code' name' nodeType' vis where
-    position'   = fromTuple $ n ^. Node.position
-    nodeId'     = n ^. Node.nodeId
-    name'       = n ^. Node.name
-    vis         = n ^. Node.nodeMeta . displayResult
-    code'       = n ^. Node.code
-    nodeType'   = n ^. Node.nodeType
-    ports'      = makePortsMap $ makePorts n
-    expression' = case n ^. Node.nodeType of
-        Node.ExpressionNode expr     -> expr
-        Node.InputNode      inputIx  -> convert $ "Input " <> show inputIx
-        Node.OutputNode     outputIx -> convert $ "Output " <> show outputIx
-        Node.ModuleNode              -> "Module"
-        Node.FunctionNode   _        -> "Function" -- & value .~ (convert $ intercalate " -> " tpeSig) --TODO[react]
-        Node.InputEdge               -> "Input"
-        Node.OutputEdge              -> "Output"
+instance Convertible Node.Node Node where
+    convert n = Node
+        {- nodeId                -} (n ^. Node.nodeId)
+        {- name                  -} (n ^. Node.name)
+        {- nodeType              -} (n ^. Node.nodeType)
+        {- canEnter              -} (n ^. Node.canEnter)
+        {- ports                 -} (makePortsMap $ makePorts n)
+        {- position              -} (fromTuple $ n ^. Node.position)
+        {- visualizationsEnabled -} (n ^. Node.nodeMeta . NodeMeta.displayResult)
+        {- code                  -} (n ^. Node.code)
+
+        {- expression            -} expression'
+        {- value                 -} def
+        {- zPos                  -} def
+        {- isSelected            -} False
+        {- mode                  -} def
+        {- nameEdit              -} def
+        {- execTime              -} def
+        {- collaboration         -} def
+        where
+            expression' = case n ^. Node.nodeType of
+                Node.ExpressionNode expr     -> expr
+                Node.InputNode      inputIx  -> convert $ "Input " <> show inputIx
+                Node.OutputNode     outputIx -> convert $ "Output " <> show outputIx
+                Node.ModuleNode              -> "Module"
+                Node.FunctionNode   _        -> "Function" -- & value .~ (convert $ intercalate " -> " tpeSig) --TODO[react]
+                Node.InputEdge               -> "Input"
+                Node.OutputEdge              -> "Output"

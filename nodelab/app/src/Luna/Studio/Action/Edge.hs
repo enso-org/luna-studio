@@ -48,7 +48,7 @@ import           Luna.Studio.Prelude
 import           Luna.Studio.React.Model.Connection  (toConnection)
 import qualified Luna.Studio.React.Model.Connection  as Connection
 import           Luna.Studio.React.Model.Constants   (lineHeight)
-import           Luna.Studio.React.Model.Node        (Node, fromNode, isInputEdge)
+import           Luna.Studio.React.Model.Node        (Node, isInputEdge)
 import qualified Luna.Studio.React.Model.Node        as Node
 import qualified Luna.Studio.React.Model.NodeEditor  as NodeEditor
 import           Luna.Studio.React.Model.Port        (DraggedPort (DraggedPort))
@@ -125,7 +125,7 @@ handleMove evt portDrag = do
         nodeId  = portRef  ^. PortRef.nodeId
         portId  = portRef  ^. PortRef.portId
     apiNode        <- HashMap.lookup nodeId <$> (use $ Global.graph . Graph.nodesMap)
-    let mayOriginalNode = fromNode <$> apiNode
+    let mayOriginalNode = convert <$> apiNode
     withJust mayOriginalNode $ \node' -> do
         let node = node' & Node.ports . at portId . _Just . Port.visible .~ False
         mousePos <- mousePosition evt
@@ -146,7 +146,7 @@ stopPortDrag portDrag = do
         NodeEditor.draggedPort         .= Nothing
         NodeEditor.portDragConnections .= def
     mayNode <- use $ Global.graph . Graph.nodesMap . at nodeId
-    withJust mayNode $ \node -> modifyNodeEditor $ NodeEditor.nodes . at nodeId ?= fromNode node
+    withJust mayNode $ \node -> modifyNodeEditor $ NodeEditor.nodes . at nodeId ?= convert node
     void redrawConnectionsForEdgeNodes
     removeActionFromState portDragAction
 
@@ -303,6 +303,6 @@ confirmReorder portDrag = do
                             Global.graph . Graph.connectionsMap . at (conn ^. ConnectionAPI.dst) .= Nothing
                         forM_ updatedConnections $ \conn ->
                             Global.graph . Graph.connectionsMap . at (conn ^. ConnectionAPI.dst) ?= conn
-                        modifyNodeEditor $ NodeEditor.nodes . at nodeId ?= fromNode node
+                        modifyNodeEditor $ NodeEditor.nodes . at nodeId ?= convert node
                         void redrawConnectionsForEdgeNodes
                         Batch.movePort portRef $notImplemented

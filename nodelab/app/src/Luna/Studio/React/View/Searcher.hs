@@ -44,7 +44,7 @@ searcher =  React.defineView name $ \(ref, camera, s) -> do
     let pos       = expressionPosition camera (s ^. Searcher.position)
         nodePos   = s ^. Searcher.position
         mode      = s ^. Searcher.mode
-        nodePrev  = Node.fromNode <$> s ^. Searcher.selectedNode
+        nodePrev  = convert <$> s ^. Searcher.selectedNode
         className = Style.prefixFromList ( "node-root" : (case mode of
                                                           Searcher.Node    { } -> [ "searcher" ]
                                                           Searcher.Command { } -> [ "searcher", "searcher--command" ]))

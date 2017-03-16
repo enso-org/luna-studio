@@ -10,7 +10,7 @@ import qualified Luna.Studio.Action.State.Graph          as Graph
 import           Luna.Studio.Action.State.Model          (shouldDisplayPortSelf)
 import qualified Luna.Studio.Action.State.NodeEditor     as NodeEditor
 import           Luna.Studio.Prelude
-import           Luna.Studio.React.Model.Node            (fromNode, isSelected)
+import           Luna.Studio.React.Model.Node            (isSelected)
 import qualified Luna.Studio.React.Model.Node            as Model
 import           Luna.Studio.React.Model.Port            (visible)
 import           Luna.Studio.State.Global                (State)
@@ -25,7 +25,7 @@ localUpdateNode node = Graph.inGraph (node ^. nodeId) >>= \exists ->
         then return False
         else do
             let nid       = node ^. nodeId
-                nodeModel = fromNode node
+                nodeModel = convert node
             portSelfVis <- shouldDisplayPortSelf nodeModel
             selected    <- maybe False (view isSelected) <$> NodeEditor.getNode nid
             Graph.addNode node

@@ -30,7 +30,7 @@ localMerge parentId graphs = withJustM (getNode parentId) $ \parentNode -> do
             movedNodes     = map (NodeAPI.position %~ Position.onTuple (\p -> p - topLeft + parentPos)) nodes
         localAddNodes movedNodes
         mapM_ (uncurry localConnect) connections
-        return $ Node.Subgraph (view NodeAPI.nodeId <$> nodes) (Node.fromNode <$> edges) monads
+        return $ Node.Subgraph (view NodeAPI.nodeId <$> nodes) (convert <$> edges) monads
     modifyNode parentId $ Node.mode .= Node.Expanded (Node.Function subgraphs)
     void $ redrawConnectionsForNode parentId
 

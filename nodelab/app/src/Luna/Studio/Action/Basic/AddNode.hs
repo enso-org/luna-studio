@@ -49,7 +49,7 @@ localAddNodes = mapM_ localAddNode
 
 localAddNode :: Node -> Command State ()
 localAddNode node = do
-    let nodeModel' = Model.fromNode node
+    let nodeModel' = convert node
     selfPortVis <- shouldDisplayPortSelf $ nodeModel'
     let nodeModel = nodeModel' & Model.ports . ix (InPortId Self) . visible .~ selfPortVis
     Graph.addNode      node
