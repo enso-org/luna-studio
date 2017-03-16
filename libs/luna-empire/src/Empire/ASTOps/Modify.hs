@@ -7,16 +7,7 @@
 
 -}
 
-module Empire.ASTOps.Modify (
-    redirectLambdaOutput
-  , renameVar
-  , rewireNode
-  , setLambdaOutputToBlank
-  , addLambdaArg
-  , moveLambdaArg
-  , removeLambdaArg
-  , renameLambdaArg
-  ) where
+module Empire.ASTOps.Modify where
 
 import           Control.Lens (folded, ifiltered)
 import           Data.List    (find)
@@ -34,9 +25,8 @@ import           Empire.Data.AST                    (NodeRef, NotLambdaException
                                                      NotUnifyException(..), astExceptionToException,
                                                      astExceptionFromException)
 
-import qualified Luna.IR.Expr.Combinators as IR (changeSource, narrowAtom)
-import           Luna.IR.Expr.Term.Uni
-import           Luna.IR.Expr.Term.Named (Term(Sym_Lam))
+import qualified OCI.IR.Combinators as IR (changeSource, narrowTerm)
+import           Luna.IR.Term.Uni
 import qualified Luna.IR as IR
 
 
@@ -145,7 +135,14 @@ rewireNode nodeId newTarget = do
     replaceTargetNode matchNode newTarget
     ASTRemove.removeSubtree oldTarget
 
+rewireCurrentNode :: ASTOp m => NodeRef -> m ()
+rewireCurrentNode newTarget = do
+    Just matchNode <- ASTRead.getCurrentASTPointer
+    Just oldTarget <- ASTRead.getCurrentASTTarget
+    replaceTargetNode matchNode newTarget
+    ASTRemove.removeSubtree oldTarget
+
 renameVar :: ASTOp m => NodeRef -> String -> m ()
 renameVar vref name = do
-    var <- IR.narrowAtom @IR.Var vref
+    var <- IR.narrowTerm @IR.Var vref
     mapM_ (flip IR.modifyExprTerm $ IR.name .~ (stringToName name)) var

@@ -43,16 +43,16 @@ packages:
   - location: ../../tools/batch/plugins/luna-empire
   - location: ../../tools/batch/plugins/request-monitor
   - location:
-      commit: a6ccc1871f65dd1a1790c4a136ba2c5f95ec07a1
+      commit: e708c043e4b5f644ac7ce44788e224aee3e0971b
       git: git@github.com:luna/luna.git
-    subdirs: [core]
+    subdirs: [core, passes, syntax/text, stdlib]
     extra-dep: true
   - location:
       commit: 37701cbee057a36186628a808faa1129a679b7c8
       git: https://github.com/luna/container.git
     extra-dep: true
   - location:
-      commit: 6b9f0f6ec43e83c88f28e0fe051ac74516c35605
+      commit: 36c19ac29dd6308b4046e5c90e00d3560f2b3b44
       git: https://github.com/luna/data-pool.git
     extra-dep: true
   - location:
@@ -64,7 +64,7 @@ packages:
       git: https://github.com/luna/data-base.git
     extra-dep: true
   - location:
-      commit: 211164cbb214790b26fb5bac7f2771d18c1b9574
+      commit: fb0e46aacaa7060046f88d4c5a5f708fd443c8ae
       git: https://github.com/luna/data-construction.git
     extra-dep: true
   - location:
@@ -80,7 +80,7 @@ packages:
       git: https://github.com/luna/data-result.git
     extra-dep: true
   - location:
-      commit: a326bbde198cc430ae04b0711c30abf3422d704c
+      commit: e1156d3445eca43b4d99aa2a4a427bfd549802d6
       git: https://github.com/luna/dependent-state.git
     extra-dep: true
   - location:
@@ -92,7 +92,7 @@ packages:
       git: https://github.com/luna/impossible.git
     extra-dep: true
   - location:
-      commit: 834aa7e4e258dcce0ada28ab04d9c199ab8592df
+      commit: e8ee4afc760e7470b0612087734ae6530fe997c5
       git: https://github.com/luna/lens-utils.git
     extra-dep: true
   - location:
@@ -100,7 +100,7 @@ packages:
       git: https://github.com/luna/poly-control.git
     extra-dep: true
   - location:
-      commit: d06edcda82d346dc713ea8ca760b253b35bd303b
+      commit: d332b8f5ff84c8d75038fb98d99a7735d4e0809f
       git: https://github.com/luna/prologue.git
     extra-dep: true
   - location:
@@ -112,7 +112,7 @@ packages:
       git: https://github.com/luna/typelevel.git
     extra-dep: true
   - location:
-      commit: 211164cbb214790b26fb5bac7f2771d18c1b9574
+      commit: fb0e46aacaa7060046f88d4c5a5f708fd443c8ae
       git: https://github.com/luna/data-construction.git
     extra-dep: true
   - location:
@@ -128,10 +128,10 @@ packages:
       git: https://github.com/luna/data-shell.git
     extra-dep: true
   - location:
-      commit: 03b31eb5994a8d3ac9f70c3914360bf5263936db
+      commit: af5a618f5813ac639a6760836a6d6fa7ef5af1da
       git: git@github.com:luna/visualization-api.git
     extra-dep: true
   - location:
-      commit: 9e8a519858edc51b249aaa508c15df8b40f4669e
+      commit: 8383aae6b80671c3375a05bfe2c0c2c4bc3c6f39
       git: https://github.com/luna/monoid
     extra-dep: true

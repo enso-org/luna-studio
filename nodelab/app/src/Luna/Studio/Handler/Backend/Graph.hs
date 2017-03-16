@@ -3,7 +3,9 @@ module Luna.Studio.Handler.Backend.Graph
     ) where
 
 import qualified Data.DateTime                                as DT
+import qualified Empire.API.Data.Breadcrumb                   as Breadcrumb
 import qualified Empire.API.Data.Graph                        as Graph
+import qualified Empire.API.Data.GraphLocation                as GraphLocation
 import qualified Empire.API.Data.Node                         as Node
 import qualified Empire.API.Graph.AddConnection               as AddConnection
 import qualified Empire.API.Graph.AddNode                     as AddNode
@@ -13,6 +15,7 @@ import qualified Empire.API.Graph.CodeUpdate                  as CodeUpdate
 import qualified Empire.API.Graph.CollaborationUpdate         as CollaborationUpdate
 import qualified Empire.API.Graph.ConnectUpdate               as ConnectUpdate
 import qualified Empire.API.Graph.GetProgram                  as GetProgram
+import qualified Empire.API.Graph.GetSubgraphs                as GetSubgraphs
 import qualified Empire.API.Graph.MonadsUpdate                as MonadsUpdate
 import qualified Empire.API.Graph.MovePort                    as MovePort
 import qualified Empire.API.Graph.NodeResultUpdate            as NodeResultUpdate
@@ -30,11 +33,12 @@ import qualified Empire.API.Graph.SetNodesMeta                as SetNodesMeta
 import qualified Empire.API.Graph.SetPortDefault              as SetPortDefault
 import qualified Empire.API.Response                          as Response
 import           Luna.Studio.Action.Basic                     (createGraph, localAddConnection, localAddNode, localAddPort,
-                                                               localAddSubgraph, localMovePort, localRemoveConnection, localRemoveNodes,
-                                                               localRemovePort, localRenameNode, localSetCode, localSetNodeCode,
-                                                               localSetNodeExpression, localSetNodesMeta, localSetPortDefault,
-                                                               localSetSearcherHints, localUpdateNode, localUpdateNodeTypecheck,
-                                                               localUpdateNodes, setNodeProfilingData, setNodeValue)
+                                                               localAddSubgraph, localMerge, localMovePort, localRemoveConnection,
+                                                               localRemoveNodes, localRemovePort, localRenameNode, localSetCode,
+                                                               localSetNodeCode, localSetNodeExpression, localSetNodesMeta,
+                                                               localSetPortDefault, localSetSearcherHints, localUpdateNode,
+                                                               localUpdateNodeTypecheck, localUpdateNodes, setNodeProfilingData,
+                                                               setNodeValue)
 import           Luna.Studio.Action.Basic.Revert              (revertAddConnection, revertAddNode, revertAddPort, revertAddSubgraph,
                                                                revertMovePort, revertRemoveConnection, revertRemoveNodes, revertRemovePort,
                                                                revertRenameNode, revertSetNodeCode, revertSetNodeExpression,
@@ -72,7 +76,6 @@ handle (Event.Batch ev) = Just $ case ev of
                     code        = result ^. GetProgram.code
                     nsData      = result ^. GetProgram.nodeSearcherData
                     breadcrumb  = result ^. GetProgram.breadcrumb
-
                 Global.workspace . Workspace.nodeSearcherData .= nsData
                 setBreadcrumbs breadcrumb
                 createGraph nodes connections monads
@@ -161,6 +164,16 @@ handle (Event.Batch ev) = Just $ case ev of
         when shouldProcess $ void $ localAddConnection $ update ^. ConnectUpdate.connection'
 
     DumpGraphVizResponse response -> handleResponse response doNothing doNothing
+
+    --TODO[LJK, PM]: Review this Handler
+    GetSubgraphsResponse response -> handleResponse response success doNothing where
+        request        = response ^. Response.request
+        success result = do
+            let parentId = request ^. GetSubgraphs.location
+                                    . GraphLocation.breadcrumb
+                                    . Breadcrumb.items . to last . Breadcrumb.nodeId
+            localMerge parentId $ result ^. GetSubgraphs.graphs
+
 
     MonadsUpdate update -> do
         shouldProcess <- isCurrentLocationAndGraphLoaded $ update ^. MonadsUpdate.location

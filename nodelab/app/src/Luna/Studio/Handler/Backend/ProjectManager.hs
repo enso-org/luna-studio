@@ -15,9 +15,9 @@ import qualified Empire.API.Project.OpenProject     as OpenProject
 import qualified Empire.API.Response                as Response
 import           GHCJS.Marshal.Pure                 (pFromJSVal)
 import           JS.DownloadFile                    (downloadFile)
+import           Luna.Studio.Action.Basic           (loadGraph, loadProject)
 import qualified Luna.Studio.Action.Batch           as BatchCmd (importProject)
 import           Luna.Studio.Action.Command         (Command)
-import           Luna.Studio.Action.ProjectManager  (loadGraph, loadProject)
 import qualified Luna.Studio.Batch.Workspace        as Workspace
 import qualified Luna.Studio.Event.Batch            as Batch
 import qualified Luna.Studio.Event.CustomEvent      as CustomEvent

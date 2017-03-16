@@ -15,15 +15,19 @@ module Luna.Studio.Action.Basic
     , exitBreadcrumb
     , focusNode
     , focusNodes
+    , loadGraph
+    , loadProject
     , localAddConnection
     , localAddConnections
     , localAddNode
     , localAddPort
     , localAddSubgraph
     , localConnect
+    , localMerge
     , localMoveNode
     , localMoveNodes
     , localMovePort
+    , localUnmerge
     , localRemoveConnection
     , localRemoveConnections
     , localRemoveConnectionsBetweenNodes
@@ -50,6 +54,7 @@ module Luna.Studio.Action.Basic
     , moveNode
     , moveNodes
     , movePort
+    , navigateToGraph
     , redrawConnection
     , redrawConnections
     , redrawConnectionsForEdgeNodes
@@ -63,20 +68,20 @@ module Luna.Studio.Action.Basic
     , removeSelectedNodes
     , renameNode
     , resetCamera
+    , saveCurrentLocation
     , selectAll
     , selectNodes
     , selectPreviousNodes
     , setNodeCode
     , setNodeExpression
     , setNodeMeta
-    , setNodeMode
     , setNodeProfilingData
     , setNodesMeta
-    , setNodesMode
     , setNodeValue
     , setPortDefault
-    , setSelectedNodesMode
     , toggleSelect
+    , toggleSelectedNodesMode
+    , toggleSelectedNodesUnfold
     , toggleVisualizations
     , unselectAll
     , updateAllPortsSelfVisibility
@@ -101,8 +106,10 @@ import           Luna.Studio.Action.Basic.DrawConnection      (drawConnection, r
                                                                redrawConnectionsForEdgeNodes, redrawConnectionsForNodes)
 import           Luna.Studio.Action.Basic.EnterBreadcrumb     (enterBreadcrumb, enterBreadcrumbs, enterNode, exitBreadcrumb)
 import           Luna.Studio.Action.Basic.FocusNode           (focusNode, focusNodes, updateNodeZOrder)
+import           Luna.Studio.Action.Basic.Merge               (localMerge, localUnmerge)
 import           Luna.Studio.Action.Basic.ModifyCamera        (modifyCamera, resetCamera)
 import           Luna.Studio.Action.Basic.MovePort            (localMovePort, movePort)
+import           Luna.Studio.Action.Basic.ProjectManager      (loadGraph, loadProject, navigateToGraph, saveCurrentLocation)
 import           Luna.Studio.Action.Basic.RemoveConnection    (localRemoveConnection, localRemoveConnections,
                                                                localRemoveConnectionsBetweenNodes, removeConnection, removeConnections,
                                                                removeConnectionsBetweenNodes)
@@ -120,7 +127,7 @@ import           Luna.Studio.Action.Basic.SetNodeExpression   (localSetNodeExpre
 import           Luna.Studio.Action.Basic.SetNodeMeta         (localMoveNode, localMoveNodes, localSetNodeMeta, localSetNodesMeta,
                                                                localToggleVisualizations, moveNode, moveNodes, setNodeMeta, setNodesMeta,
                                                                toggleVisualizations)
-import           Luna.Studio.Action.Basic.SetNodeMode         (setNodeMode, setNodesMode, setSelectedNodesMode)
+import           Luna.Studio.Action.Basic.SetNodeMode         (toggleSelectedNodesMode, toggleSelectedNodesUnfold)
 import           Luna.Studio.Action.Basic.SetNodeResult       (setNodeProfilingData, setNodeValue)
 import           Luna.Studio.Action.Basic.SetPortDefault      (localSetPortDefault, setPortDefault)
 import           Luna.Studio.Action.Basic.UpdateCollaboration (updateClient, updateCollaboration)

@@ -7,7 +7,6 @@ module Empire.Prelude (
     , type (<>)
     , (<|>)
     , at
-    , module Control.Lens.Operators
     , def
     , Default
     , SomeException
@@ -21,6 +20,7 @@ module Empire.Prelude (
     , MonadTrans(..)
     , nameToString
     , notImplemented
+    , pathNameToString
     , module Prelude
     , Proxy(..)
     , stringToName
@@ -32,29 +32,34 @@ module Empire.Prelude (
     , view
     , when
     , zoom
+    , module X
     ) where
 
-import Control.Applicative ((<|>))
-import Control.Exception (SomeException, Exception(..))
-import Control.Lens (makeLenses, view, zoom, uses, use, at, _1, _2, ix)
-import Control.Lens.Operators
-import Control.Monad (when)
-import Control.Monad.State.Class (MonadState)
-import Control.Monad.Catch (MonadThrow, throwM)
-import Control.Monad.Trans.Class (MonadTrans(..))
-import Control.Monad.IO.Class (MonadIO, liftIO)
-import Data.Default (Default, def)
-import Data.Monoid ((<>))
-import Data.Proxy (Proxy(..))
-import Data.Typeable (typeRep)
-import Prologue (notImplemented, typeRep', (.:), (.:.), type (<>))
-import Prelude
+import           Control.Applicative       ((<|>))
+import           Control.Exception         (Exception (..), SomeException)
+import           Control.Lens              as X (at, ix, makeLenses, preuse, use, uses, view, zoom, _1, _2)
+import           Control.Lens.Operators    as X
+import           Control.Lens.Prism        as X
+import           Control.Monad             (when)
+import           Control.Monad.Catch       (MonadThrow, throwM)
+import           Control.Monad.IO.Class    (MonadIO, liftIO)
+import           Control.Monad.State.Class (MonadState)
+import           Control.Monad.Trans.Class (MonadTrans (..))
+import           Data.Default              (Default, def)
+import           Data.Monoid               ((<>))
+import           Data.Proxy                (Proxy (..))
+import           Data.Typeable             (typeRep)
+import           Prelude
+import           Prologue                  (type (<>), notImplemented, typeRep', (.:), (.:.))
 
-import qualified Luna.IR.Name as IR
-import qualified Data.Convert as Convert
+import qualified Data.Convert              as Convert
+import qualified OCI.IR.Name.QualName      as IR
 
 nameToString :: IR.Name -> String
 nameToString = Convert.convert
+
+pathNameToString :: IR.QualName -> String
+pathNameToString = nameToString . Convert.convert
 
 stringToName :: String -> IR.Name
 stringToName = Convert.convert

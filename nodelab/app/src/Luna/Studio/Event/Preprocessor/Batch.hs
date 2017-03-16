@@ -31,6 +31,7 @@ handlers = Map.fromList [ handle GetProgramResponse
                         , handle ConnectUpdate
                         , handle DumpGraphVizResponse
                         , handle EmpireStarted
+                        , handle GetSubgraphsResponse
                         , handle MonadsUpdate
                         , handle MovePortResponse
                         , handle NodeResultUpdate

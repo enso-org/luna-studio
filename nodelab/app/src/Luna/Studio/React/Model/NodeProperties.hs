@@ -24,9 +24,9 @@ makeLenses ''NodeProperties
 
 fromNode :: Node -> NodeProperties
 fromNode node = NodeProperties (node ^. Node.nodeId)
-                           (node ^. Node.ports)
-                           (node ^. Node.name)
-                           (Node.isLiteral node)
-                           (node ^. Node.nameEdit)
-                           (node ^. Node.execTime)
-                           (node ^. Node.visualizationsEnabled)
+                               (node ^. Node.ports)
+                               (node ^. Node.name)
+                               (Node.isLiteral node)
+                               (node ^. Node.nameEdit)
+                               (node ^. Node.execTime)
+                               (node ^. Node.visualizationsEnabled)

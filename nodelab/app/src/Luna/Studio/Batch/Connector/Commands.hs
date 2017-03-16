@@ -2,9 +2,11 @@ module Luna.Studio.Batch.Connector.Commands where
 
 import qualified Data.Text                              as Text
 import           Data.UUID.Types                        (UUID)
+import qualified Empire.API.Data.Breadcrumb             as Breadcrumb
 import           Empire.API.Data.Connection             (Connection, ConnectionId)
 import           Empire.API.Data.GraphLocation          (GraphLocation)
 import           Empire.API.Data.GraphLocation          (projectId)
+import qualified Empire.API.Data.GraphLocation          as GraphLocation
 import           Empire.API.Data.Node                   (Node, NodeId)
 import           Empire.API.Data.NodeMeta               (NodeMeta)
 import           Empire.API.Data.PortDefault            (PortDefault)
@@ -18,6 +20,7 @@ import           Empire.API.Graph.CollaborationUpdate   (ClientId)
 import qualified Empire.API.Graph.CollaborationUpdate   as CollaborationUpdate
 import qualified Empire.API.Graph.DumpGraphViz          as DumpGraphViz
 import qualified Empire.API.Graph.GetProgram            as GetProgram
+import qualified Empire.API.Graph.GetSubgraphs          as GetSubgraphs
 import qualified Empire.API.Graph.MovePort              as MovePort
 import qualified Empire.API.Graph.Redo                  as Redo
 import qualified Empire.API.Graph.RemoveConnection      as RemoveConnection
@@ -78,7 +81,6 @@ dumpGraphViz workspace uuid guiID = sendRequest $ Message uuid guiID $ withLibra
 getProgram :: Workspace -> UUID -> Maybe UUID -> IO ()
 getProgram workspace uuid guiID = sendRequest $ Message uuid guiID $ withLibrary workspace GetProgram.Request
 
-
 addConnection :: Either OutPortRef NodeId -> Either InPortRef NodeId -> Workspace -> UUID -> Maybe UUID -> IO ()
 addConnection src dst workspace uuid guiID = sendRequest $ Message uuid guiID $ withLibrary workspace AddConnection.Request src dst
 
@@ -90,6 +92,9 @@ addPort portRef workspace uuid guiID = sendRequest $ Message uuid guiID $ (withL
 
 addSubgraph :: [Node] -> [Connection] -> Workspace -> UUID -> Maybe UUID -> IO ()
 addSubgraph nodes connections workspace uuid guiID = sendRequest $ Message uuid guiID $ (withLibrary workspace AddSubgraph.Request) nodes connections
+
+getSubgraph :: NodeId -> Workspace -> UUID -> Maybe UUID -> IO ()
+getSubgraph nodeId workspace uuid guiID = sendRequest $ Message uuid guiID $ withLibrary workspace $ GetSubgraphs.Request . (GraphLocation.breadcrumb . Breadcrumb.items %~ (Breadcrumb.Lambda nodeId:))
 
 movePort :: AnyPortRef -> AnyPortRef -> Workspace -> UUID -> Maybe UUID -> IO ()
 movePort portRef newPortRef workspace uuid guiID = sendRequest $ Message uuid guiID $ (withLibrary workspace MovePort.Request) portRef newPortRef

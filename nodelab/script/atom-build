@@ -1,17 +1,16 @@
-GEN=atom/lib/gen
-brunch build
-rm -rf $GEN
-mkdir $GEN
-echo "module.exports = (function(){" > $GEN/ghcjs-code.js
-cat vendor/uuid.js >> $GEN/ghcjs-code.js
-cat script/imports.js >> $GEN/ghcjs-code.js
-sed -f script/patch.sed app/env.ghcjs >> $GEN/ghcjs-code.js
-echo "});" >> $GEN/ghcjs-code.js
-cp -r app/js/* $GEN
-cp app/config.release.js $GEN
-cp app/config.debug.js $GEN
-
-STYLES=atom/styles
-rm -rf $STYLES
-mkdir $STYLES
+GEN=atom/lib/gen && \
+brunch build && \
+rm -rf $GEN && \
+mkdir $GEN && \
+echo "module.exports = (function(){" > $GEN/ghcjs-code.js && \
+cat vendor/uuid.js >> $GEN/ghcjs-code.js && \
+cat script/imports.js >> $GEN/ghcjs-code.js && \
+sed -f script/patch.sed app/env.ghcjs >> $GEN/ghcjs-code.js && \
+echo "});" >> $GEN/ghcjs-code.js && \
+cp -r app/js/* $GEN && \
+cp app/config.release.js $GEN && \
+cp app/config.debug.js $GEN && \
+STYLES=atom/styles && \
+rm -rf $STYLES && \
+mkdir $STYLES && \
 cp www/stylesheets/app.css $STYLES/styles.css

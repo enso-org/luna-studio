@@ -48,13 +48,13 @@ getAllNodes :: Command State [Node]
 getAllNodes = Map.elems <$> getNodesMap
 
 getEdgeNodes :: Command State [Node]
-getEdgeNodes = filter (view isEdge) <$> getAllNodes
+getEdgeNodes = filter isEdge <$> getAllNodes
 
 getNode :: NodeId -> Command State (Maybe Node)
 getNode nid = Map.lookup nid <$> getNodesMap
 
 getNodes :: Command State [Node]
-getNodes = filter (not . view isEdge) <$> getAllNodes
+getNodes = filter (not . isEdge) <$> getAllNodes
 
 getNodesMap :: Command State NodesMap
 getNodesMap = view nodesMap <$> getGraph

@@ -9,13 +9,13 @@ import           Control.Monad.Trans.Maybe          (runMaybeT)
 import qualified Data.HashMap.Strict                as HashMap
 import qualified Data.Map.Lazy                      as Map
 import           Empire.API.Data.Connection         (ConnectionId)
+import           Empire.API.Data.MonadPath          (MonadPath)
 import           Empire.API.Data.Node               (NodeId)
 import qualified Empire.API.Data.Node               as Node
 import           Empire.API.Data.Port               (OutPort (All), _WithDefault)
 import           Empire.API.Data.PortDefault        (PortDefault)
 import           Empire.API.Data.PortRef            (AnyPortRef (InPortRef', OutPortRef'), InPortRef, OutPortRef (OutPortRef))
 import qualified Empire.API.Data.PortRef            as PortRef
-import           Empire.API.Data.TypeRep            (TypeRep)
 import           Luna.Studio.Action.Command         (Command)
 import           Luna.Studio.Action.State.App       (get, modify)
 import           Luna.Studio.Batch.Workspace        (nodeSearcherData)
@@ -103,10 +103,10 @@ updateConnections :: [Connection] -> Command State ()
 updateConnections update = modifyNodeEditor $ connections .= HashMap.fromList (map (view connectionId &&& id) update)
 
 
-getMonads :: Command State [(TypeRep, [NodeId])]
+getMonads :: Command State [MonadPath]
 getMonads = view monads <$> getNodeEditor
 
-updateMonads :: [(TypeRep, [NodeId])] -> Command State ()
+updateMonads :: [MonadPath] -> Command State ()
 updateMonads update = modifyNodeEditor $ monads .= update
 
 

@@ -4,16 +4,11 @@ module Empire.Data.AST where
 
 import           Empire.Prelude
 
-import           Control.Monad.State (StateT)
-import           Data.Typeable       (cast)
+import           Data.Typeable  (cast)
 
-import           Luna.IR            (SomeExpr, SomeExprLink, IR, IRBuilder,
-                                     evalIRBuilder', evalPassManager', snapshot,
-                                     runRegs)
-import qualified Luna.Pass.Manager  as Pass (State)
-import qualified Luna.Pass.Manager  as PassManager (get)
+import           Luna.IR        (IR, IRBuilder, SomeExpr, SomeExprLink, evalIRBuilder', evalPassManager', runRegs, snapshot)
 
-import           System.Log         (Logger, DropLogger, dropLogs)
+import           System.Log     (DropLogger, Logger, dropLogs)
 
 
 type NodeRef       = SomeExpr

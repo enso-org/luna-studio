@@ -21,7 +21,7 @@ data Event = InputChanged Text
            | MoveLeft
            | KeyDown KeyboardEvent
            | KeyUp   KeyboardEvent
-            deriving (Show, Generic, NFData, Typeable)
+            deriving (Read, Show, Generic, NFData, Typeable)
 
 instance ToJSON   Event
 instance FromJSON Event

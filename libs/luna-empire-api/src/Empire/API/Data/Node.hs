@@ -53,17 +53,14 @@ instance Binary Node
 instance Binary NodeType
 instance Binary NodeTypecheckerUpdate
 
-isEdge :: Getter Node Bool
-isEdge = to isEdge' where
-    isEdge' node = node ^. isInputEdge || node ^. isOutputEdge
+isEdge :: Node -> Bool
+isEdge node = isInputEdge node || isOutputEdge node
 
-isInputEdge :: Getter Node Bool
-isInputEdge = to isInputEdge' where
-    isInputEdge' node = node ^. nodeType == InputEdge
+isInputEdge :: Node -> Bool
+isInputEdge node = node ^. nodeType == InputEdge
 
-isOutputEdge :: Getter Node Bool
-isOutputEdge = to isOutputEdge' where
-    isOutputEdge' node = node ^. nodeType == OutputEdge
+isOutputEdge :: Node -> Bool
+isOutputEdge node = node ^. nodeType == OutputEdge
 
 makePortsMap :: [Port] -> Map PortId Port
 makePortsMap = Map.fromList . map (view Port.portId &&& id)

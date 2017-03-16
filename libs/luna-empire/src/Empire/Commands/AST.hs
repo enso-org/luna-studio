@@ -20,8 +20,7 @@ import           Empire.API.Data.Node              (NodeId)
 import           Empire.API.Data.NodeMeta          (NodeMeta)
 import           Empire.API.Data.TypeRep           (TypeRep)
 import           Empire.Data.AST                   (NodeRef, NotLambdaException(..), NotUnifyException(..))
-import           Empire.Data.Layers                (Meta, NodeMarker(..), TCData, TCError(..),
-                                                    TypeLayer, InputsLayer, tcErrors)
+import           Empire.Data.Layers                (Meta, NodeMarker(..), TypeLayer)
 
 import           Empire.ASTOp                      (ASTOp, match)
 import qualified Empire.ASTOps.Builder             as ASTBuilder
@@ -33,8 +32,8 @@ import qualified Empire.ASTOps.Read                as ASTRead
 import           Empire.Utils.TextResult           (nodeValueToText)
 
 import qualified Luna.IR as IR
-import           Luna.IR.Expr.Term.Uni
-import qualified Luna.IR.Repr.Vis as Vis
+import           Luna.IR.Term.Uni
+import qualified OCI.IR.Repr.Vis as Vis
 
 import           Web.Browser                       (openBrowser)
 
@@ -62,7 +61,7 @@ valueDecoderRep :: ASTOp m => NodeRef -> m (Maybe ValueDecoderRep)
 valueDecoderRep node = match node $ \case
     -- FIXME, use this second parameter
     Cons n _ -> do
-        name <- pure $ nameToString n
+        name <- pure $ pathNameToString n
         return $ Just $ ConsRep name
     App tc typ -> do
         tc'    <- IR.source tc
@@ -138,27 +137,27 @@ tryHead [] = Nothing
 tryHead (a:_) = Just a
 
 getError :: ASTOp m => NodeRef -> m (Maybe (APIError.Error TypeRep))
-getError n = do
-    tc <- view tcErrors <$> IR.readLayer @TCData n
-    err <- mapM reprError tc
-    inp <- IR.readLayer @InputsLayer n
-    inps <- mapM (IR.source) inp
-    inpErrs <- catMaybes <$> mapM getError inps
-    return $ tryHead err <|> tryHead inpErrs
+getError n = return $ Nothing
+    {-tc <- view tcErrors <$> IR.readLayer @TCData n-}
+    {-err <- mapM reprError tc-}
+    {-inp <- IR.readLayer @InputsLayer n-}
+    {-inps <- mapM (IR.source) inp-}
+    {-inpErrs <- catMaybes <$> mapM getError inps-}
+    {-return $ tryHead err <|> tryHead inpErrs-}
 
-reprError :: ASTOp m => TCError NodeRef -> m (APIError.Error TypeRep)
-reprError tcErr = case tcErr of
-    ImportError Nothing m  -> return $ APIError.ImportError m
-    ImportError (Just n) m -> do
-        tp <- do
-            t <- IR.readLayer @TypeLayer n
-            IR.source t
-        tpRep <- Printer.getTypeRep tp
-        return $ APIError.NoMethodError m tpRep
-    UnificationError uniNode -> do
-        match uniNode $ \case
-            Unify l r -> APIError.TypeError <$> (Printer.getTypeRep =<< IR.source l) <*> (Printer.getTypeRep =<< IR.source r)
-            _         -> throwM $ NotUnifyException uniNode
+{-reprError :: ASTOp m => TCError NodeRef -> m (APIError.Error TypeRep)-}
+{-reprError tcErr = case tcErr of-}
+    {-ImportError Nothing m  -> return $ APIError.ImportError m-}
+    {-ImportError (Just n) m -> do-}
+        {-tp <- do-}
+            {-t <- IR.readLayer @TypeLayer n-}
+            {-IR.source t-}
+        {-tpRep <- Printer.getTypeRep tp-}
+        {-return $ APIError.NoMethodError m tpRep-}
+    {-UnificationError uniNode -> do-}
+        {-match uniNode $ \case-}
+            {-Unify l r -> APIError.TypeError <$> (Printer.getTypeRep =<< IR.source l) <*> (Printer.getTypeRep =<< IR.source r)-}
+            {-_         -> throwM $ NotUnifyException uniNode-}
 
 getLambdaInputRef :: ASTOp m => NodeRef -> Int -> m NodeRef
 getLambdaInputRef node pos = do
@@ -175,8 +174,4 @@ isTrivialLambda node = match node $ \case
     _ -> throwM $ NotLambdaException node
 
 dumpGraphViz :: ASTOp m => String -> m ()
-dumpGraphViz name = do
-    return ()
-    -- ((), diff) <- Vis.newRunDiffT $ Vis.snapshot name
-    -- let vis = BS.C8.unpack $ Aeson.encode $ diff
-    -- void $ liftIO $ openBrowser $ "http://localhost:8000?cfg=" <> vis
+dumpGraphViz name = Vis.snapshot name

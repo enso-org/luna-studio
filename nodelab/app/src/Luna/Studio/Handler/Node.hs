@@ -1,7 +1,8 @@
 module Luna.Studio.Handler.Node where
 
 import           Luna.Studio.Action.Basic     (enterNode, localSetPortDefault, localToggleVisualizations, removeSelectedNodes, selectAll,
-                                               setNodeCode, setPortDefault, setSelectedNodesMode, toggleSelect, unselectAll)
+                                               setNodeCode, setPortDefault, toggleSelect, toggleSelectedNodesMode,
+                                               toggleSelectedNodesUnfold, unselectAll)
 import           Luna.Studio.Action.Command   (Command)
 import qualified Luna.Studio.Action.Node      as Node
 import qualified Luna.Studio.Action.Port      as PortControl
@@ -62,6 +63,7 @@ handleCommand = \case
     Shortcut.SelectAll           -> selectAll
     Shortcut.RemoveSelectedNodes -> removeSelectedNodes
     Shortcut.Cancel              -> unselectAll
-    Shortcut.ExpandSelectedNodes -> setSelectedNodesMode Node.Expanded
-    Shortcut.EditSelectedNodes   -> setSelectedNodesMode Node.Editor
+    Shortcut.ExpandSelectedNodes -> toggleSelectedNodesMode $ Node.Expanded Node.Controls
+    Shortcut.EditSelectedNodes   -> toggleSelectedNodesMode $ Node.Expanded Node.Editor
+    Shortcut.UnfoldSelectedNodes -> toggleSelectedNodesUnfold
     _                            -> return ()

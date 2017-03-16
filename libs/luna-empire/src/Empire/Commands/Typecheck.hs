@@ -3,36 +3,37 @@
 
 module Empire.Commands.Typecheck where
 
+import           Control.Monad                     (forM_, void)
+import           Control.Monad.Reader              (ask)
+import           Data.List                         (sort)
+import qualified Data.Map                          as Map
+import           Data.Maybe                        (isNothing)
 import           Empire.Prelude
-import           Control.Monad           (forM_, void)
-import           Control.Monad.Reader    (ask)
-import           Data.List               (sort)
-import qualified Data.Map                as Map
-import           Data.Maybe              (isNothing)
 
-import qualified Empire.Data.Graph                 as Graph
-import           Empire.Data.Graph                 (Graph)
-import           Empire.Data.BreadcrumbHierarchy   (topLevelIDs)
+import qualified Empire.API.Data.Error             as APIError
+import           Empire.API.Data.GraphLocation     (GraphLocation (..))
+import           Empire.API.Data.MonadPath         (MonadPath (MonadPath))
 import           Empire.API.Data.Node              (NodeId, nodeId)
 import qualified Empire.API.Data.NodeMeta          as NodeMeta
-import           Empire.API.Data.GraphLocation     (GraphLocation (..))
+import           Empire.API.Data.TypeRep           (TypeRep (TCons))
 import qualified Empire.API.Graph.NodeResultUpdate as NodeResult
-import qualified Empire.API.Data.Error             as APIError
-import           Empire.API.Data.TypeRep           (TypeRep(TCons))
 import           Empire.ASTOp                      (EmpirePass, runASTOp)
-import           Empire.Empire
 import qualified Empire.Commands.AST               as AST
-import qualified Empire.Commands.GraphUtils        as GraphUtils
 import qualified Empire.Commands.GraphBuilder      as GraphBuilder
+import qualified Empire.Commands.GraphUtils        as GraphUtils
 import qualified Empire.Commands.Publisher         as Publisher
+import           Empire.Data.BreadcrumbHierarchy   (topLevelIDs)
+import           Empire.Data.Graph                 (Graph)
+import qualified Empire.Data.Graph                 as Graph
+import           Empire.Empire
 
-import qualified Luna.IR                            as IR
-import qualified Luna.IR.Expr.Combinators           as IR
-import           Luna.IR.Imports                    (Imports(..))
-import           Luna.IR.Module.Definition          (Module(..))
-import qualified Luna.IR.Function.Definition        as IR.Function
-import           Luna.Pass                          (SubPass)
-import qualified Luna.Passes.Typechecking.Typecheck as Typecheck
+import qualified Luna.Builtin.Std                  as Std
+import qualified Luna.IR                           as IR
+import qualified Luna.IR.Term.Function             as IR.Function
+import           Luna.IR.Term.Unit                 (Imports (..), Module (..))
+import qualified Luna.Pass.Typechecking.Typecheck  as Typecheck
+import qualified OCI.IR.Combinators                as IR
+import           OCI.Pass                          (SubPass)
 
 
 getNodeValueReprs :: NodeId -> Command Graph (Either String a)
@@ -47,35 +48,13 @@ collect _ = return ()
     {-st <- TypeCheckState.get-}
     {-putStrLn $ "State is: " <> show st-}
 
-typed :: (IR.MonadRef m, IR.MonadPassManager m, IR.Generalizable' (IR.Expr l) (IR.Expr (IR.Sub IR.Type t)), IR.Generalizable' (IR.Sub IR.Type t) IR.Bottom) => SubPass EmpirePass m (IR.Expr t) -> IR.Expr l -> SubPass EmpirePass m (IR.Expr t)
-typed me t = do
-   e <- me
-   oldTp <- IR.readLayer @IR.Type e >>= IR.source
-   IR.reconnectLayer @IR.Type t e
-   IR.deleteSubtree oldTp
-   return e
-
 runTC :: Command Graph ()
 runTC = do
-    allNodeIds <- uses Graph.nodeMapping $ Map.keys
+    allNodeIds <- uses Graph.breadcrumbHierarchy topLevelIDs
     runASTOp $ do
-        roots <- mapM GraphUtils.getASTPointer allNodeIds
-        mockImports <- do
-            idInt' <- do
-                tvar <- IR.cons_ @IR.Draft "Int"
-                tp   <- IR.lam tvar tvar
-                v    <- IR.var "in" `typed` tvar
-                l    <- IR.lam v v `typed` tp
-                IR.Function.compile $ IR.generalize l
-            id' <- do
-                tvar <- IR.var "a"
-                tp   <- IR.lam tvar tvar
-                v    <- IR.var "in" `typed` tvar
-                l    <- IR.lam v v `typed` tp
-                IR.Function.compile $ IR.generalize l
-            let m = Module Map.empty $ Map.fromList [("idInt", idInt'), ("id", id')]
-            return $ Imports $ Map.singleton "Stdlib" m
-        Typecheck.typecheck mockImports $ map IR.unsafeGeneralize roots
+        roots   <- mapM GraphUtils.getASTPointer allNodeIds
+        imports <- liftIO Std.stdlib
+        Typecheck.typecheck imports $ map IR.unsafeGeneralize roots
     return ()
 
 runInterpreter :: Command Graph ()
@@ -126,21 +105,23 @@ updateNodes loc = do
 updateMonads :: GraphLocation -> Command InterpreterEnv ()
 updateMonads loc = do
     allNodeIds <- uses (graph . Graph.breadcrumbHierarchy) topLevelIDs
-    let monad1 = (TCons "MonadMock1" [], sort allNodeIds) --FIXME[pm] provide real data
-        monad2 = (TCons "MonadMock2" [], allNodeIds)
+    let monad1 = MonadPath (TCons "MonadMock1" []) (sort allNodeIds) --FIXME[pm] provide real data
+        monad2 = MonadPath (TCons "MonadMock2" []) allNodeIds
     Publisher.notifyMonadsUpdate loc [monad1, monad2]
 
 updateValues :: GraphLocation -> Command InterpreterEnv ()
 updateValues loc = do
-    dests <- use destructors
-    liftIO $ sequence_ dests
-    destructors .= []
     allNodeIds <- uses (graph . Graph.breadcrumbHierarchy) topLevelIDs
-    forM_ allNodeIds $ \nid -> do
-        noErrors <- isNothing <$> uses errorsCache (Map.lookup nid)
-        when noErrors $ do
-            val <- zoom graph $ getNodeValueReprs nid
-            $notImplemented
+    forM_ allNodeIds $ \nid -> Publisher.notifyResultUpdate loc nid (NodeResult.Value "Hello!" []) 0
+    {-dests <- use destructors-}
+    {-liftIO $ sequence_ dests-}
+    {-destructors .= []-}
+    {-allNodeIds <- uses (graph . Graph.breadcrumbHierarchy) topLevelIDs-}
+    {-forM_ allNodeIds $ \nid -> do-}
+        {-noErrors <- isNothing <$> uses errorsCache (Map.lookup nid)-}
+        {-when noErrors $ do-}
+            {-val <- zoom graph $ getNodeValueReprs nid-}
+            {-$notImplemented-}
 
 flushCache :: Command InterpreterEnv ()
 flushCache = do
@@ -154,4 +135,4 @@ run loc = do
     updateNodes loc
     updateMonads loc
     -- zoom graph runInterpreter
-    -- updateValues loc
+    updateValues loc

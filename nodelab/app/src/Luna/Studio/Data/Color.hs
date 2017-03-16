@@ -86,7 +86,7 @@ tpRepToColor (TCons tn as) = ensureRange $ case tn of
      "String"     -> 3
      "List"       -> 5 + hashMany as
      _            -> hash tn + hashMany as
-tpRepToColor (TLam as out) = ensureRange . hashMany $ out : as
+tpRepToColor (TLam a out) = ensureRange . hashMany $ [out, a]
 tpRepToColor (TVar _n) = 9
 tpRepToColor _ = 0
 

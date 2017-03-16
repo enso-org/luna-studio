@@ -39,7 +39,6 @@ import qualified Luna.Studio.React.Model.NodeEditor             as NodeEditor
 import           Luna.Studio.React.Store                        (Ref, dispatch)
 import qualified Luna.Studio.React.View.Style                   as Style
 import           Luna.Studio.React.View.Visualization.DataFrame (dataFrame_)
-import           Luna.Studio.React.View.Visualization.Graphics  (graphics_)
 import           Luna.Studio.React.View.Visualization.Image     (image_)
 
 
@@ -137,7 +136,6 @@ nodeValue_ ref nodeId mayPos visIx value = do
             DoubleList      v -> dataFrame_ visIx $ listTable $ convert . show <$> v
             DoublePairList  v -> dataFrame_ visIx $ listTablePairs $ mapTuple (convert . show) <$> v
             DoubleValue     v -> strDiv $ show v
-            Graphics       gr -> graphics_ visIx gr
             Image     url w h -> image_ visIx $ Image.create (Size (Vector2 w h)) $ convert url
             IntList         v -> dataFrame_ visIx $ listTable $ convert . show <$> v
             IntPairList     v -> dataFrame_ visIx $ listTablePairs $ mapTuple (convert . show) <$> v

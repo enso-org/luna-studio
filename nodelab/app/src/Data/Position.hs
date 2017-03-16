@@ -8,7 +8,7 @@ module Data.Position
 where
 
 import           Data.Aeson          (FromJSON, ToJSON)
-import           Data.Vector
+import           Data.Vector         hiding (fromTuple, toTuple)
 import           Luna.Studio.Prelude
 
 -----------------------
@@ -35,7 +35,6 @@ instance IsList Position where
     type Item Position = Double
     fromList l = Position (fromList l)
     toList   p = [p ^. x, p ^. y]
-
 
 -- === Functions === ---
 
@@ -77,6 +76,9 @@ toTuple (Position (Vector2 x' y')) = (x', y')
 
 fromDoubles :: Double -> Double -> Position
 fromDoubles = Position .: Vector2
+
+onTuple :: (Position -> Position) -> (Double, Double) -> (Double, Double)
+onTuple action = toTuple . action . fromTuple
 
 -- TODO[react]: Possible solution to differ Mouse Position and Graph Position
 -- makeClassy  ''Position

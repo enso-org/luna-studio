@@ -78,6 +78,9 @@ addPort = withWorkspace . BatchCmd.addPort
 addSubgraph :: [Node] -> [Connection] -> Command State ()
 addSubgraph = withWorkspace .: BatchCmd.addSubgraph
 
+getSubgraph :: NodeId -> Command State ()
+getSubgraph nid = withWorkspace (BatchCmd.getSubgraph nid)
+
 movePort :: AnyPortRef -> AnyPortRef -> Command State ()
 movePort = withWorkspace .: BatchCmd.movePort
 

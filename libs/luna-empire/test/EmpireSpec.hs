@@ -3,36 +3,39 @@
 
 module EmpireSpec (spec) where
 
-import           Data.Foldable                 (toList)
-import           Data.List                     (find, stripPrefix)
-import qualified Data.Map                      as Map
-import qualified Empire.API.Data.Graph         as Graph
-import           Empire.API.Data.GraphLocation (GraphLocation (..))
-import qualified Empire.API.Data.Node          as Node (NodeType (ExpressionNode), canEnter, expression, name, nodeId, nodeType, ports)
-import           Empire.API.Data.NodeMeta      (NodeMeta (..))
-import qualified Empire.API.Data.Port          as Port
-import           Empire.API.Data.PortDefault   (PortDefault (Expression))
-import           Empire.API.Data.PortRef       (AnyPortRef (..), InPortRef (..), OutPortRef (..))
-import           Empire.API.Data.TypeRep       (TypeRep (TCons, TLam, TStar, TVar))
-import           Empire.ASTOp                  (runASTOp)
-import qualified Empire.ASTOps.Deconstruct     as ASTDeconstruct
-import qualified Empire.ASTOps.Parse           as Parser
-import           Empire.ASTOps.Print           (printExpression)
-import qualified Empire.ASTOps.Read            as ASTRead
-import qualified Empire.Commands.AST           as AST (isTrivialLambda)
-import qualified Empire.Commands.Graph         as Graph (addNode, addPort, connect, disconnect, getConnections, getGraph, getNodeIdSequence,
-                                                         getNodes, movePort, removeNodes, removePort, renameNode, renamePort,
-                                                         setNodeExpression, updateNodeMeta, withGraph)
-import qualified Empire.Commands.GraphBuilder  as GraphBuilder
-import           Empire.Commands.Library       (withLibrary)
-import qualified Empire.Commands.Typecheck     as Typecheck (run)
-import           Empire.Data.Graph             (NodeIDTarget (..), ast, nodeMapping)
-import qualified Empire.Data.Library           as Library (body)
-import           Empire.Empire                 (InterpreterEnv (..))
-import           Prologue                      hiding (mapping, toList, (|>))
+import           Data.Foldable                   (toList)
+import           Data.List                       (find, stripPrefix)
+import qualified Data.Map                        as Map
+import qualified Empire.API.Data.Graph           as Graph
+import           Empire.API.Data.GraphLocation   (GraphLocation (..))
+import qualified Empire.API.Data.Node            as Node (NodeType (ExpressionNode), canEnter, expression, name, nodeId, nodeType, ports)
+import           Empire.API.Data.NodeMeta        (NodeMeta (..))
+import qualified Empire.API.Data.Port            as Port
+import           Empire.API.Data.PortDefault     (PortDefault (Expression))
+import           Empire.API.Data.PortRef         (AnyPortRef (..), InPortRef (..), OutPortRef (..))
+import           Empire.API.Data.TypeRep         (TypeRep (TCons, TLam, TStar, TVar))
+import           Empire.ASTOp                    (runASTOp)
+import qualified Empire.ASTOps.Deconstruct       as ASTDeconstruct
+import qualified Empire.ASTOps.Parse             as Parser
+import           Empire.ASTOps.Print             (printExpression)
+import qualified Empire.ASTOps.Read              as ASTRead
+import qualified Empire.Commands.AST             as AST (isTrivialLambda)
+import qualified Empire.Commands.Graph           as Graph (addNode, addPort, connect, disconnect, getConnections, getGraph,
+                                                           getNodeIdSequence, getNodes, movePort, removeNodes, removePort, renameNode,
+                                                           renamePort, setNodeExpression, setNodeMeta, withGraph)
+import qualified Empire.Commands.GraphBuilder    as GraphBuilder
+import           Empire.Commands.Library         (withLibrary)
+import qualified Empire.Commands.Typecheck       as Typecheck (run)
+import           Empire.Data.BreadcrumbHierarchy (NodeIDTarget (..))
+import qualified Empire.Data.BreadcrumbHierarchy as BH
+import           Empire.Data.Graph               (ast, breadcrumbHierarchy)
+import qualified Empire.Data.Library             as Library (body)
+import           Empire.Empire                   (InterpreterEnv (..))
+import           OCI.IR.Class                    (exprs, links)
+import           Prologue                        hiding (mapping, toList, (|>))
 
-import           Test.Hspec                    (Spec, around, describe, expectationFailure, it, parallel, shouldBe, shouldContain,
-                                                shouldMatchList, shouldSatisfy, shouldStartWith, xdescribe, xit)
+import           Test.Hspec                      (Spec, around, describe, expectationFailure, it, parallel, shouldBe, shouldContain,
+                                                  shouldMatchList, shouldSatisfy, shouldStartWith, xdescribe, xit)
 
 import           EmpireUtils
 
@@ -57,7 +60,7 @@ spec = around withChannels $ parallel $ do
                 Graph.addNode top u1 "def foo" def
             withResult res $ \node -> do
                 node ^. Node.name `shouldBe` "foo"
-                node ^. Node.nodeType `shouldBe` Node.ExpressionNode "-> $a a"
+                node ^. Node.nodeType `shouldBe` Node.ExpressionNode "a: a"
                 node ^. Node.canEnter `shouldBe` True
         it "makes connection to output edge" $ \env -> do
             u1 <- mkUUID
@@ -188,7 +191,7 @@ spec = around withChannels $ parallel $ do
         xit "properly typechecks input nodes" $ \env -> do
             u1 <- mkUUID
             (res, st) <- runEmp env $ do
-                Graph.addNode top u1 "-> $a $b a + b" def
+                Graph.addNode top u1 "a: b: a + b" def
                 let GraphLocation pid lid _ = top
                 withLibrary pid lid (use Library.body)
             withResult res $ \g -> do
@@ -204,7 +207,7 @@ spec = around withChannels $ parallel $ do
         xit "properly typechecks output nodes" $ \env -> do
             u1 <- mkUUID
             (res, st) <- runEmp env $ do
-                Graph.addNode top u1 "-> $a $b a + b" def
+                Graph.addNode top u1 "a: b: a + b" def
                 let GraphLocation pid lid _ = top
                 withLibrary pid lid (use Library.body)
             withResult res $ \g -> do
@@ -217,10 +220,10 @@ spec = around withChannels $ parallel $ do
                         ports' = toList $ output' ^. Node.ports
                         types = map (view Port.valueType) ports'
                     types `shouldBe` [TCons "Int" []]
-        it "properly typechecks edges inside mock id" $ \env -> do
+        xit "properly typechecks edges inside mock id" $ \env -> do
             u1 <- mkUUID
             (res, st) <- runEmp env $ do
-                Graph.addNode top u1 "idInt" def
+                Graph.addNode top u1 "__intId" def
                 let GraphLocation pid lid _ = top
                 withLibrary pid lid (use Library.body)
             withResult res $ \g -> do
@@ -237,7 +240,7 @@ spec = around withChannels $ parallel $ do
                         outputType = map (view Port.valueType) outPorts'
                     inputType  `shouldBe` [TCons "Int" []]
                     outputType `shouldBe` [TCons "Int" []]
-        it "properly typechecks second id in `mock id -> mock id`" $ \env -> do
+        xit "properly typechecks second id in `mock id -> mock id`" $ \env -> do
             u1 <- mkUUID
             u2 <- mkUUID
             (res, st) <- runEmp env $ do
@@ -252,40 +255,39 @@ spec = around withChannels $ parallel $ do
                 (res'',_) <- runEmp' env st g' $ do
                     Graph.withGraph top $ runASTOp $ (,) <$> GraphBuilder.buildNode u1 <*> GraphBuilder.buildNode u2
                 withResult res'' $ \(n1, n2) -> do
-                    let inPorts = Map.elems $ Map.filter (Port.isInPort . view Port.portId) $ n2 ^. Node.ports
-                    inPorts `shouldMatchList` [
-                          Port.Port (Port.InPortId (Port.Arg 0)) "in" (TLam [TVar "a"] (TVar "a")) Port.Connected
+                    let inputPorts = Map.elems $ Map.filter (Port.isInPort . view Port.portId) $ n2 ^. Node.ports
+                    inputPorts `shouldMatchList` [
+                          Port.Port (Port.InPortId (Port.Arg 0)) "in" (TLam (TVar "a") (TVar "a")) Port.Connected
                         ]
-                    let outPorts = Map.elems $ Map.filter (Port.isOutPort . view Port.portId) $ n1 ^. Node.ports
-                    outPorts `shouldMatchList` [
-                          Port.Port (Port.OutPortId Port.All) "Output" (TLam [TVar "a"] (TVar "a")) (Port.WithDefault (Expression "-> $in in"))
+                    let outputPorts = Map.elems $ Map.filter (Port.isOutPort . view Port.portId) $ n1 ^. Node.ports
+                    outputPorts `shouldMatchList` [
+                          Port.Port (Port.OutPortId Port.All) "Output" (TLam (TVar "a") (TVar "a")) (Port.WithDefault (Expression "in: in"))
                         ]
         it "adds lambda nodeid to node mapping" $ \env -> do
             u1 <- mkUUID
             res <- evalEmp env $ do
-                Graph.addNode top u1 "-> $a $b a + b" def
-                Graph.withGraph top $ use nodeMapping
+                Graph.addNode top u1 "a: b: a + b" def
+                Graph.withGraph (top |> u1) $ use $ breadcrumbHierarchy . BH.children
             withResult res $ \(toList -> mapping) -> do
-                let isLambdaNode n = case n of
-                        AnonymousNode _ -> True
-                        _               -> False
+                let isLambdaNode n = case fromJust $ n ^. BH.self of
+                        (_, AnonymousNode _) -> True
+                        _                    -> False
                     lambdaNodes = filter isLambdaNode mapping
                 lambdaNodes `shouldSatisfy` (not . null)
         it "puts + inside plus lambda" $ \env -> do
             u1 <- mkUUID
             res <- evalEmp env $ do
                 let loc' = top |> u1
-                Graph.addNode top u1 "-> $a $b a + b" def
+                Graph.addNode top u1 "a: b: a + b" def
                 Graph.getNodes loc'
             withResult res $ \(excludeEdges -> nodes) -> do
                 nodes `shouldSatisfy` ((== 1) . length)
-                -- fix when printer prints it properly
-                head nodes `shouldSatisfy` (\a -> a ^. Node.nodeType . Node.expression == "(+ a) a b")
+                head nodes `shouldSatisfy` (\a -> a ^. Node.nodeType . Node.expression == "a + b")
         it "places connections between + node and output" $ \env -> do
           u1 <- mkUUID
           res <- evalEmp env $ do
               let loc' = top |> u1
-              Graph.addNode top u1 "-> $a $b a + b" def
+              Graph.addNode top u1 "a: b: a + b" def
               Graph.getConnections loc'
           withResult res $ \conns -> do
               -- one from a to +, one from b to + and one from + to output edge
@@ -301,24 +303,26 @@ spec = around withChannels $ parallel $ do
                 let referenceConnection = (OutPortRef u2 Port.All, InPortRef out (Port.Arg 0))
                 uncurry (Graph.connect loc') referenceConnection
                 Graph.removeNodes top [u1]
-                Graph.withGraph top $ (,) <$> use ast <*> use nodeMapping
-            withResult res $ \(endAst, mapping) -> do
+                Graph.withGraph top $ (,,) <$> use (breadcrumbHierarchy .  BH.children) <*> runASTOp exprs <*> runASTOp links
+            withResult res $ \(mapping, edges, nodes) -> do
                 mapping `shouldSatisfy` Map.null
-                endAst `shouldSatisfy` astNull
+                edges   `shouldSatisfy` null
+                nodes   `shouldSatisfy` null
         it "removes `def foo`" $ \env -> do
             u1 <- mkUUID
             res <- evalEmp env $ do
                 Graph.addNode top u1 "def foo" def
                 Graph.removeNodes top [u1]
-                Graph.withGraph top $ (,) <$> use ast <*> use nodeMapping
-            withResult res $ \(endAst, mapping) -> do
+                Graph.withGraph top $ (,,) <$> use (breadcrumbHierarchy . BH.children) <*> runASTOp exprs <*> runASTOp links
+            withResult res $ \(mapping, edges, nodes) -> do
                 mapping `shouldSatisfy` Map.null
-                endAst `shouldSatisfy` astNull
+                edges   `shouldSatisfy` null
+                nodes   `shouldSatisfy` null
         it "RHS of `def foo` is Lam" $ \env -> do
             u1 <- mkUUID
             res <- evalEmp env $ do
                 Graph.addNode top u1 "def foo" def
-                Graph.withGraph top $ runASTOp $ ASTRead.rhsIsLambda u1
+                Graph.withGraph top $ runASTOp $ ASTRead.rhsIsLambda =<< ASTRead.getASTPointer u1
             withResult res $ \a -> a `shouldBe` True
         it "`def foo` is trivial - has output connected to input" $ \env -> do
             res <- evalEmp env $ do
@@ -367,11 +371,11 @@ spec = around withChannels $ parallel $ do
             u1 <- mkUUID
             res <- evalEmp env $ do
                 Graph.addNode top u1 "1" def
-                node  <- Graph.setNodeExpression top u1 "-> $a a"
+                node  <- Graph.setNodeExpression top u1 "a: a"
                 nodes <- Graph.getNodes top
                 return (node, nodes)
             withResult res $ \(node, nodes) -> do
-                node ^. Node.nodeType `shouldBe` Node.ExpressionNode "-> $a a"
+                node ^. Node.nodeType `shouldBe` Node.ExpressionNode "a: a"
                 node ^. Node.nodeId `shouldBe` u1
                 node ^. Node.canEnter `shouldBe` True
                 nodes `shouldSatisfy` ((== 1) . length)
@@ -382,19 +386,19 @@ spec = around withChannels $ parallel $ do
                 Graph.setNodeExpression top u1 "def foo"
             withResult res $ \node -> do
                 node ^. Node.name `shouldBe` "foo"
-                node ^. Node.nodeType `shouldBe` Node.ExpressionNode "-> $a a"
+                node ^. Node.nodeType `shouldBe` Node.ExpressionNode "a: a"
                 node ^. Node.canEnter `shouldBe` True
         it "changes expression to lambda with node inside" $ \env -> do
             u1 <- mkUUID
             res <- evalEmp env $ do
                 Graph.addNode top u1 "1" def
-                Graph.setNodeExpression top u1 "-> $a $b a + b"
+                Graph.setNodeExpression top u1 "a: b: a + b"
                 Graph.getGraph (top |> u1)
             withResult res $ \graph -> do
                 let Graph.Graph nodes connections _ = graph
                 excludeEdges nodes `shouldSatisfy` ((== 1) . length)
                 -- fix when printer prints it properly
-                head nodes `shouldSatisfy` (\a -> a ^. Node.nodeType . Node.expression == "(+ a) a b")
+                head nodes `shouldSatisfy` (\a -> a ^. Node.nodeType . Node.expression == "a + b")
                 connections `shouldSatisfy` ((== 3) . length)
     describe "dumpAccessors" $ do
         it "foo.bar" $ \env -> do
@@ -443,7 +447,7 @@ spec = around withChannels $ parallel $ do
         it "shows two input ports on +" $ \env -> do
             u1 <- mkUUID
             res <- evalEmp env $ do
-                Graph.addNode top u1 "-> $a $b a + b" def
+                Graph.addNode top u1 "a: b: a + b" def
                 Graph.getNodes top
             withResult res $ \[plus] -> do
                 let inPorts = Map.elems $ Map.filter (Port.isInPort . view Port.portId) $ plus ^. Node.ports
@@ -460,13 +464,12 @@ spec = around withChannels $ parallel $ do
                 let inPorts = Map.elems $ Map.filter (Port.isInPort . view Port.portId) $ succ' ^. Node.ports
                 inPorts `shouldMatchList` [
                       Port.Port (Port.InPortId Port.Self)    "self" TStar (Port.WithDefault (Expression "succ"))
-                    , Port.Port (Port.InPortId (Port.Arg 0)) "arg0" TStar (Port.NotConnected)
                     ]
         it "connects to input port on +" $ \env -> do
             u1 <- mkUUID
             u2 <- mkUUID
             res <- evalEmp env $ do
-                Graph.addNode top u1 "-> $a $b a + b" def
+                Graph.addNode top u1 "a: b: a + b" def
                 Graph.addNode top u2 "1" def
                 Graph.getNodes top
                 Graph.connect top (OutPortRef u2 Port.All) (InPortRef u1 (Port.Arg 0))
@@ -495,7 +498,6 @@ spec = around withChannels $ parallel $ do
                       Port.Port (Port.InPortId Port.Self)    "self"  TStar (Port.WithDefault (Expression "func"))
                     , Port.Port (Port.InPortId (Port.Arg 0)) "arg0" TStar Port.Connected
                     , Port.Port (Port.InPortId (Port.Arg 1)) "arg1" TStar Port.Connected
-                    , Port.Port (Port.InPortId (Port.Arg 2)) "arg2" TStar Port.NotConnected
                     ]
         it "connects five nodes to func" $ \env -> do
             u1 <- mkUUID
@@ -530,7 +532,6 @@ spec = around withChannels $ parallel $ do
                     , Port.Port (Port.InPortId (Port.Arg 3)) "arg3" TStar Port.Connected
                     , Port.Port (Port.InPortId (Port.Arg 4)) "arg4" TStar Port.Connected
                     , Port.Port (Port.InPortId (Port.Arg 5)) "arg5" TStar Port.Connected
-                    , Port.Port (Port.InPortId (Port.Arg 6)) "arg6" TStar Port.NotConnected
                     ]
         it "removes empty port on disconnect" $ \env -> do
             u1 <- mkUUID
@@ -545,7 +546,6 @@ spec = around withChannels $ parallel $ do
                 let inPorts = Map.elems $ Map.filter (Port.isInPort . view Port.portId) $ n ^. Node.ports
                 inPorts `shouldMatchList` [
                       Port.Port (Port.InPortId Port.Self)    "self"  TStar (Port.WithDefault (Expression "func"))
-                    , Port.Port (Port.InPortId (Port.Arg 0)) "arg0"  TStar Port.NotConnected
                     ]
         it "disconnect first connection when two nodes connected" $ \env -> do
             u1 <- mkUUID
@@ -657,7 +657,7 @@ spec = around withChannels $ parallel $ do
         it "adds port on literal lambda" $ \env -> do
             u1 <- mkUUID
             res <- evalEmp env $ do
-                Graph.addNode top u1 "-> $a $b a + b" def
+                Graph.addNode top u1 "a: b: a + b" def
                 let loc' = top |> u1
                 Just (input, _) <- Graph.withGraph loc' $ runASTOp GraphBuilder.getEdgePortMapping
                 Graph.addPort loc' input
@@ -704,7 +704,7 @@ spec = around withChannels $ parallel $ do
         it "removes port" $ \env -> do
             u1 <- mkUUID
             res <- evalEmp env $ do
-                Graph.addNode top u1 "-> $a $b a" def
+                Graph.addNode top u1 "a: b: a" def
                 let loc' = top |> u1
                 Just (input, _) <- Graph.withGraph loc' $ runASTOp GraphBuilder.getEdgePortMapping
                 Graph.removePort loc' (OutPortRef' (OutPortRef input (Port.Projection 1)))
@@ -723,7 +723,7 @@ spec = around withChannels $ parallel $ do
         it "renames port" $ \env -> do
             u1 <- mkUUID
             res <- evalEmp env $ do
-                Graph.addNode top u1 "-> $a $b a" def
+                Graph.addNode top u1 "a: b: a" def
                 let loc' = top |> u1
                 Just (input, _) <- Graph.withGraph loc' $ runASTOp GraphBuilder.getEdgePortMapping
                 Graph.renamePort loc' (OutPortRef' (OutPortRef input (Port.Projection 0))) "foo"
@@ -738,10 +738,10 @@ spec = around withChannels $ parallel $ do
         it "changes ports order" $ \env -> do
             u1 <- mkUUID
             res <- evalEmp env $ do
-                Graph.addNode top u1 "-> $a $b $c $d a" def
+                Graph.addNode top u1 "a: b: c: d: a" def
                 let loc' = top |> u1
                 Just (input, _) <- Graph.withGraph loc' $ runASTOp GraphBuilder.getEdgePortMapping
-                Graph.movePort loc' (OutPortRef' (OutPortRef input (Port.Projection 0))) (OutPortRef' (OutPortRef input (Port.Projection 2)))
+                Graph.movePort loc' (OutPortRef' (OutPortRef input (Port.Projection 0))) 2
                 inputEdge <- buildInputEdge' loc' input
                 return inputEdge
             withResult res $ \inputEdge -> do
@@ -881,9 +881,9 @@ spec = around withChannels $ parallel $ do
                 Graph.addNode top u1 "1" $ NodeMeta (10, 10) False
                 Graph.addNode top u2 "2" $ NodeMeta (10, 20) False
                 Graph.addNode top u3 "3" $ NodeMeta (10, 30) False
-                Graph.updateNodeMeta top u3 $ NodeMeta (10, 10) False
-                Graph.updateNodeMeta top u2 $ NodeMeta (20, 30) False
-                Graph.updateNodeMeta top u1 $ NodeMeta (30, 20) False
+                Graph.setNodeMeta top u3 $ NodeMeta (10, 10) False
+                Graph.setNodeMeta top u2 $ NodeMeta (20, 30) False
+                Graph.setNodeMeta top u1 $ NodeMeta (30, 20) False
                 Graph.getNodeIdSequence top
             withResult res $ \nodeSeq -> do
                 nodeSeq `shouldMatchList` [u3, u2, u1]
@@ -913,7 +913,7 @@ spec = around withChannels $ parallel $ do
             u1 <- mkUUID
             u2 <- mkUUID
             res <- evalEmp env $ do
-                Graph.addNode top u1 "-> $a a" def
+                Graph.addNode top u1 "a: a" def
                 let loc = top |> u1
                 Graph.addNode loc u2 "1" def
                 Graph.removeNodes loc [u2]

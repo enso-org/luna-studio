@@ -53,5 +53,4 @@ nodeValueToText w = Text.pack $ case w of
     StringStringMap v -> "Map [" <> showLength v <> "]"
     StringMaybeList v -> "Vector [" <> showLength v <> "]"
 
-    Graphics        _ -> "Graphics"
     _                 -> "(unknown type)"

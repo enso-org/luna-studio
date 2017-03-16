@@ -17,10 +17,11 @@ rightArrow = 39
 downArrow  = 40
 del        = 46
 
-zero, nine, a, h, y, z, plus, minus :: Int
+zero, nine, a, e, h, y, z, plus, minus :: Int
 zero  = 48
 nine  = 57
 a     = 65
+e     = 69
 h     = 72
 y     = 89
 z     = 90

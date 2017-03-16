@@ -128,13 +128,13 @@ getCurrentConnectionSrcPosition node port mousePos = do
             (InPortId  _) -> countArgPorts node
             (OutPortId _) -> countOutPorts node
 
-connectionAngle :: Position -> Position -> Int -> Int -> Double
-connectionAngle srcPos dstPos num numOfSameTypePorts =
+getConnectionAngle :: Position -> Position -> Int -> Int -> Double
+getConnectionAngle srcPos dstPos num numOfSameTypePorts =
     if      t' > a' - pi / 2 - g then a - pi / 2 - g
     else if t' < b' - pi / 2 + g then b - pi / 2 + g
     else t where
-        a  = portAngleStop  num numOfSameTypePorts portRadius
-        b  = portAngleStart num numOfSameTypePorts portRadius
+        a  = portAngleStop  True num numOfSameTypePorts portRadius
+        b  = portAngleStart True num numOfSameTypePorts portRadius
         t  = nodeToNodeAngle srcPos dstPos
         a' = if a < pi then a + (2 * pi) else a
         b' = if b < pi then b + (2 * pi) else b
@@ -148,7 +148,7 @@ connectionSrc src dst isSrcExpanded _isDstExpanded num numOfSameTypePorts isSing
     else move (Vector2 (portRadius * cos t) (portRadius * sin t)) src where
         t = if isSingle then
                  nodeToNodeAngle src dst
-            else connectionAngle src dst num numOfSameTypePorts
+            else getConnectionAngle src dst num numOfSameTypePorts
 
 connectionDst :: Position -> Position -> Bool -> Bool -> Int -> Int -> Bool -> Position
 connectionDst src dst isSrcExpanded isDstExpanded num numOfSameTypePorts isSelf' =
@@ -158,4 +158,4 @@ connectionDst src dst isSrcExpanded isDstExpanded num numOfSameTypePorts isSelf'
         then move (Vector2 0 (lineHeight * (fromIntegral num + 1))) dst
         else move (Vector2 (portRadius * (-cos t)) (portRadius * (-sin t))) dst where
             src' = if isSrcExpanded then move (Vector2 nodeExpandedWidth 0) src else src
-            t    = connectionAngle src' dst num numOfSameTypePorts
+            t    = getConnectionAngle src' dst num numOfSameTypePorts

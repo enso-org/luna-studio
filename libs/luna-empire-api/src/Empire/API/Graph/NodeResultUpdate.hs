@@ -12,7 +12,9 @@ import qualified Empire.API.Data.PortDefault   as PD (Value)
 import           Empire.API.Data.TypeRep       (TypeRep)
 import qualified Empire.API.Topic              as T
 
+
 data NodeValue = Value Text [PD.Value] | Error (Error TypeRep) deriving (Show, Eq, Generic, NFData)
+makePrisms ''NodeValue
 
 data Update = Update { _location  :: GraphLocation
                      , _nodeId    :: NodeId

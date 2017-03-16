@@ -74,14 +74,14 @@ main = do
         lid       <- args `getArgOrExit` argument "lid"
         nodeId    <- args `getArgOrExit` argument "nodeId"
         removeNode endPoints (toGraphLocation pid lid) (read nodeId)
-    when (args `isPresent` command "updateNodeMeta") $ do
+    when (args `isPresent` command "setNodeMeta") $ do
         pid       <- args `getArgOrExit` argument "pid"
         lid       <- args `getArgOrExit` argument "lid"
         nodeId    <- args `getArgOrExit` argument "nodeId"
         x         <- args `getArgOrExit` argument "x"
         y         <- args `getArgOrExit` argument "y"
         req       <- args `getArgOrExit` argument "req"
-        updateNodeMeta endPoints (toGraphLocation pid lid) (read nodeId) (read x) (read y) (read req)
+        setNodeMeta endPoints (toGraphLocation pid lid) (read nodeId) (read x) (read y) (read req)
     when (args `isPresent` command "connect") $ do
         pid       <- args `getArgOrExit` argument "pid"
         lid       <- args `getArgOrExit` argument "lid"
@@ -141,8 +141,8 @@ addNode endPoints graphLocation nodeId expression x y = sendToBus endPoints $ Ad
 removeNode :: EP.BusEndPoints -> GraphLocation -> NodeId -> IO ()
 removeNode endPoints graphLocation nodeId = sendToBus endPoints $ RemoveNodes.Request graphLocation [nodeId]
 
-updateNodeMeta :: EP.BusEndPoints -> GraphLocation -> NodeId -> Double -> Double -> Bool -> IO ()
-updateNodeMeta endPoints graphLocation nodeId x y req = sendToBus endPoints $ SetNodesMeta.Request graphLocation [(nodeId, NodeMeta.NodeMeta (x, y) req)]
+setNodeMeta :: EP.BusEndPoints -> GraphLocation -> NodeId -> Double -> Double -> Bool -> IO ()
+setNodeMeta endPoints graphLocation nodeId x y req = sendToBus endPoints $ SetNodesMeta.Request graphLocation [(nodeId, NodeMeta.NodeMeta (x, y) req)]
 
 connect :: EP.BusEndPoints -> GraphLocation -> NodeId -> OutPort -> NodeId -> InPort -> IO ()
 connect endPoints graphLocation srcNodeId outPort dstNodeId inPort = sendToBus endPoints $ AddConnection.Request graphLocation (Left $ OutPortRef srcNodeId outPort) (Left $ InPortRef dstNodeId inPort)

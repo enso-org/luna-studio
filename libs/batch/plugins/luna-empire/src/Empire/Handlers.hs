@@ -28,6 +28,7 @@ handlersMap = Map.fromList
     , makeHandler Graph.handleAddSubgraph
     , makeHandler Graph.handleDumpGraphViz
     , makeHandler Graph.handleGetProgram
+    , makeHandler Graph.handleGetSubgraphs
     , makeHandler Graph.handleMovePort
     , makeHandler Graph.handleRemoveConnection
     , makeHandler Graph.handleRemoveNodes

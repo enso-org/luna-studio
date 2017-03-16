@@ -31,6 +31,9 @@ instance ToJSON   MouseEvent where
 instance FromJSON MouseEvent where
     parseJSON = $notImplemented
 
+instance Read KeyboardEvent where
+    readPrec = error "Read KeyboardEvent"
+
 instance ToJSON   KeyboardEvent where
     toJSON _ = toJSON "(KeyboardEvent)"
 instance FromJSON KeyboardEvent where

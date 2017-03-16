@@ -46,8 +46,9 @@ selectAny = do
     withJustM getScreenCenter $ \screenCenter -> do
         workspaceCenter <- translateToWorkspace screenCenter
         nodes <- getNodes
-        let node = findNearestNode workspaceCenter nodes
-        selectNodes [node ^. Node.nodeId]
+        unless (null nodes) $ do
+            let node = findNearestNode workspaceCenter nodes
+            selectNodes [node ^. Node.nodeId]
 
 goPrev :: Command State ()
 goPrev = do

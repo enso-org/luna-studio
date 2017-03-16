@@ -23,8 +23,6 @@ import           Data.Traversable                   (forM)
 import           Data.UUID.Types                    (UUID)
 import qualified Data.UUID.Types                    as UUID
 import qualified Data.UUID.V4                       as UUID
-import           Prologue                           hiding (Item)
-
 import           Empire.API.Data.Breadcrumb         (Breadcrumb (..))
 import           Empire.API.Data.Connection         as Connection
 import           Empire.API.Data.Graph              (Graph (..))
@@ -33,7 +31,7 @@ import           Empire.API.Data.Node               (Node (..), NodeId)
 import qualified Empire.API.Data.Node               as Node
 import           Empire.API.Data.NodeMeta           (NodeMeta)
 import qualified Empire.API.Data.NodeSearcher       as NS
-import           Empire.API.Data.Port               (InPort (..), OutPort (..), Port (..), PortId (..), PortState (..))
+import           Empire.API.Data.Port               (InPort (..), OutPort (..), Port (..), PortId (..), PortState (..), getPortNumber)
 import           Empire.API.Data.PortDefault        (Value (..))
 import           Empire.API.Data.PortRef            (InPortRef (..), OutPortRef (..))
 import           Empire.API.Data.PortRef            as PortRef
@@ -46,6 +44,7 @@ import qualified Empire.API.Graph.CodeUpdate        as CodeUpdate
 import qualified Empire.API.Graph.ConnectUpdate     as ConnectUpdate
 import qualified Empire.API.Graph.DumpGraphViz      as DumpGraphViz
 import qualified Empire.API.Graph.GetProgram        as GetProgram
+import qualified Empire.API.Graph.GetSubgraphs      as GetSubgraphs
 import qualified Empire.API.Graph.MovePort          as MovePort
 import qualified Empire.API.Graph.NodeResultUpdate  as NodeResultUpdate
 import qualified Empire.API.Graph.NodesUpdate       as NodesUpdate
@@ -76,6 +75,7 @@ import           Empire.Env                         (Env)
 import qualified Empire.Env                         as Env
 import           Empire.Server.Server               (errorMessage, replyFail, replyOk, replyResult, sendToBus')
 import           Empire.Utils.TextResult            (nodeValueToText)
+import           Prologue                           hiding (Item)
 import qualified System.Log.MLogger                 as Logger
 import           ZMQ.Bus.Trans                      (BusT (..))
 
@@ -216,9 +216,15 @@ handleDumpGraphViz :: Request DumpGraphViz.Request -> StateT Env BusT ()
 handleDumpGraphViz = modifyGraphOk defInverse action where
     action (DumpGraphViz.Request location) = Graph.dumpGraphViz location
 
+handleGetSubgraphs :: Request GetSubgraphs.Request -> StateT Env BusT ()
+handleGetSubgraphs = modifyGraph defInverse action replyResult where
+    action (GetSubgraphs.Request location) = do
+        graph <- Graph.getGraph location
+        return $ GetSubgraphs.Result [graph] --FIXME: should return multiple graphs
+
 handleMovePort :: Request MovePort.Request -> StateT Env BusT ()
 handleMovePort = modifyGraph defInverse action replyResult where
-    action (MovePort.Request location portRef newPortRef) = Graph.movePort location portRef newPortRef
+    action (MovePort.Request location portRef newPortRef) = Graph.movePort location portRef $ getPortNumber $ newPortRef ^. portId -- TODO[LJK, MM, PM, MK]: Decide if we want to have newPortRef here or just number
 
 handleRemoveConnection :: Request RemoveConnection.Request -> StateT Env BusT ()
 handleRemoveConnection = modifyGraphOk inverse action where
@@ -293,7 +299,7 @@ handleSetNodesMeta = modifyGraphOk inverse action where
                      Just (node ^. Node.nodeId, node ^. Node.nodeMeta)
                 else Nothing
         return $ SetNodesMeta.Inverse prevMeta
-    action (SetNodesMeta.Request location updates) = forM_ updates $ uncurry $ Graph.updateNodeMeta location
+    action (SetNodesMeta.Request location updates) = forM_ updates $ uncurry $ Graph.setNodeMeta location
 
 handleSetPortDefault :: Request SetPortDefault.Request -> StateT Env BusT ()
 handleSetPortDefault = modifyGraphOk inverse action where

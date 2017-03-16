@@ -19,10 +19,8 @@ import           Luna.Studio.React.Model.App             (App)
 import qualified Luna.Studio.React.Model.App             as App
 import           Luna.Studio.React.Store                 (Ref, dispatch, dispatch', dt)
 import           Luna.Studio.React.View.Breadcrumbs      (breadcrumbs_)
-import           Luna.Studio.React.View.CodeEditor       (codeEditor_)
-import           Luna.Studio.React.View.CodeEditorToggle (codeEditorToggle_)
 import           Luna.Studio.React.View.NodeEditor       (nodeEditor_)
-import qualified  Luna.Studio.React.View.Style            as Style
+import qualified Luna.Studio.React.View.Style            as Style
 
 
 name :: JSString
@@ -62,8 +60,6 @@ app ref = React.defineControllerView name ref $ \store () -> do
                 ] $ do
                 nodeEditor_  ref $ s ^. App.nodeEditor
                 breadcrumbs_ ref $ s ^. App.breadcrumbs
-                codeEditorToggle_ ref
-            codeEditor_ $ s ^. App.codeEditor
 
 focus :: IO ()
 focus = UI.focus appId

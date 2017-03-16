@@ -1,8 +1,8 @@
 module Luna.Studio.Action.Basic.CreateGraph where
 
-import           Empire.API.Data.Node                   (Node, NodeId)
+import           Empire.API.Data.MonadPath              (MonadPath)
+import           Empire.API.Data.Node                   (Node)
 import           Empire.API.Data.PortRef                (InPortRef, OutPortRef)
-import           Empire.API.Data.TypeRep                (TypeRep)
 import           Luna.Studio.Action.Basic.AddConnection (localConnect)
 import           Luna.Studio.Action.Basic.AddNode       (localAddNode)
 import           Luna.Studio.Action.Basic.FocusNode     (updateNodeZOrder)
@@ -14,7 +14,7 @@ import           Luna.Studio.State.Global               (State)
 import qualified Luna.Studio.State.Global               as Global
 
 
-createGraph :: [Node] -> [(OutPortRef, InPortRef)] -> [(TypeRep, [NodeId])] -> Command State ()
+createGraph :: [Node] -> [(OutPortRef, InPortRef)] -> [MonadPath] -> Command State ()
 createGraph nodes connections monads = do
     Global.graph .= def
     NodeEditor.resetGraph

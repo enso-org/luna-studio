@@ -2,7 +2,6 @@
 module Luna.Studio.Event.Shortcut where
 
 import           Data.Aeson          (FromJSON, ToJSON)
-import qualified Data.List           as List
 import           Luna.Studio.Prelude
 
 
@@ -38,6 +37,7 @@ data Command = Cancel
              | SelectAll
              | RemoveSelectedNodes
              | ExpandSelectedNodes
+             | UnfoldSelectedNodes
              | EditSelectedNodes
              -- searcher
              | SearcherOpen
@@ -57,8 +57,3 @@ instance ToJSON   Command
 instance FromJSON Command
 instance ToJSON   ShortcutEvent
 instance FromJSON ShortcutEvent
-
-fromString :: String -> ShortcutEvent
-fromString str = result where
-    (commandStr, argStr) = List.break (== ' ') str & _2 %~ drop 1
-    result = Event (read commandStr) $ if null argStr then Nothing else Just $ convert argStr

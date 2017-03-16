@@ -1,13 +1,16 @@
 module Luna.Studio.Action.Basic.ProjectManager where
 
-import           Empire.API.Data.Breadcrumb        (BreadcrumbItem, items)
-import qualified Empire.API.Data.GraphLocation     (breadcrumb, items)
-import           Empire.API.Data.Node              (Node, nodeId)
-import           Luna.Studio.Action.Command        (Command)
-import           Luna.Studio.Action.ProjectManager (navigateToGraph)
-import           Luna.Studio.Batch.Workspace       (currentLocation)
+import           Empire.API.Data.Breadcrumb            (Breadcrumb (Breadcrumb))
+import           Empire.API.Data.GraphLocation         (GraphLocation (GraphLocation))
+import           Empire.API.Data.Project               (ProjectId)
+import qualified JS.GraphLocation                      as JS
+import           Luna.Studio.Action.Basic.DestroyGraph (destroyGraph)
+import qualified Luna.Studio.Action.Batch              as Batch
+import           Luna.Studio.Action.Command            (Command)
+import           Luna.Studio.Batch.Workspace           (currentLocation, uiGraphLocation)
 import           Luna.Studio.Prelude
-import           Luna.Studio.State.Global          (State, workspace)
+import           Luna.Studio.State.Global              (State, workspace)
+
 
 loadProject :: ProjectId -> Command State ()
 loadProject projId = navigateToGraph $ GraphLocation projId 0 (Breadcrumb [])

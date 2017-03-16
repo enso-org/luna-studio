@@ -19,6 +19,7 @@ import           Empire.API.Data.Error                  as Error
 import           Empire.API.Data.Graph                  as Graph
 import           Empire.API.Data.GraphLocation          as GraphLocation
 import           Empire.API.Data.Library                as Library
+import           Empire.API.Data.MonadPath              as MonadPath
 import           Empire.API.Data.Node                   as Node
 import           Empire.API.Data.NodeMeta               as NodeMeta
 import           Empire.API.Data.Port                   as Port
@@ -36,6 +37,7 @@ import           Empire.API.Graph.CollaborationUpdate   as CollaborationUpdate
 import           Empire.API.Graph.ConnectUpdate         as ConnectUpdate
 import           Empire.API.Graph.DumpGraphViz          as DumpGraphViz
 import           Empire.API.Graph.GetProgram            as GetProgram
+import           Empire.API.Graph.GetSubgraphs          as GetSubgraphs
 import           Empire.API.Graph.MonadsUpdate          as MonadsUpdate
 import           Empire.API.Graph.MovePort              as MovePort
 import           Empire.API.Graph.NodeResultUpdate      as NodeResultUpdate
@@ -149,6 +151,9 @@ instance FromJSON PortDefault.PortDefault
 instance ToJSON Graph.Graph
 instance FromJSON Graph.Graph
 
+instance ToJSON MonadPath.MonadPath
+instance FromJSON MonadPath.MonadPath
+
 instance ToJSON t => ToJSON (Error.Error t)
 
 
@@ -171,6 +176,9 @@ instance ToJSON DumpGraphViz.Request
 
 instance ToJSON GetProgram.Request
 instance ToJSON GetProgram.Result
+
+instance ToJSON GetSubgraphs.Request
+instance ToJSON GetSubgraphs.Result
 
 instance ToJSON MonadsUpdate.Update
 

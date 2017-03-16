@@ -44,6 +44,9 @@ addNode nodePos expression = do
     Batch.addNode nid expression nodeMeta connectTo
     GA.sendEvent $ GA.AddNode $ if isJust connectTo then GA.AutoConnect else GA.Simple
 
+localAddNodes :: [Node] -> Command State ()
+localAddNodes = mapM_ localAddNode
+
 localAddNode :: Node -> Command State ()
 localAddNode node = do
     let nodeModel' = Model.fromNode node

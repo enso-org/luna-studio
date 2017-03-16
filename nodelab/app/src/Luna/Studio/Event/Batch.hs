@@ -14,6 +14,7 @@ import qualified Empire.API.Graph.CollaborationUpdate   as CollaborationUpdate
 import qualified Empire.API.Graph.ConnectUpdate         as ConnectUpdate
 import qualified Empire.API.Graph.DumpGraphViz          as DumpGraphViz
 import qualified Empire.API.Graph.GetProgram            as GetProgram
+import qualified Empire.API.Graph.GetSubgraphs          as GetSubgraphs
 import qualified Empire.API.Graph.MonadsUpdate          as MonadsUpdate
 import qualified Empire.API.Graph.MovePort              as MovePort
 import qualified Empire.API.Graph.NodeResultUpdate      as NodeResultUpdate
@@ -52,6 +53,7 @@ data Event = UnknownEvent String
            | ConnectUpdate                       ConnectUpdate.Update
            | DumpGraphVizResponse                 DumpGraphViz.Response
            | EmpireStarted                       EmpireStarted.Status
+           | GetSubgraphsResponse                 GetSubgraphs.Response
            | MonadsUpdate                         MonadsUpdate.Update
            | MovePortResponse                         MovePort.Response
            | NodeResultUpdate                 NodeResultUpdate.Update

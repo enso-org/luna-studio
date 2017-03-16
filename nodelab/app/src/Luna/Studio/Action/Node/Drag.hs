@@ -24,7 +24,7 @@ import           Luna.Studio.Event.Mouse             (workspacePosition)
 import           Luna.Studio.Prelude
 import           Luna.Studio.React.Model.Connection  (toCurrentConnection)
 import           Luna.Studio.React.Model.Node        (isSelected)
-import           Luna.Studio.React.Model.Node        as Model
+import qualified Luna.Studio.React.Model.Node        as Model
 import           Luna.Studio.React.Model.NodeEditor  (currentConnections)
 import           Luna.Studio.React.Model.Port        as Port
 import           Luna.Studio.State.Action            (Action (begin, continue, end, update), NodeDrag (NodeDrag), nodeDragAction,
