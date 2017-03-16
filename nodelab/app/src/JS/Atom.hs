@@ -48,7 +48,7 @@ parseEvent str = do
     case tpeStr of
         "Shortcut" -> do let (commandStr, argStr) = strBreak r
                          Shortcut .: Shortcut.Event <$> readMaybe commandStr
-                                                    <*> pure (if null argStr then Nothing else Just $ convert argStr)
+                                                    <*> pure (if null argStr then Nothing else Just argStr)
         "Searcher" -> UI . SearcherEvent <$> readMaybe r
         _          -> Nothing
 

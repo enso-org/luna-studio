@@ -48,7 +48,7 @@ data Command = Cancel
 
 data ShortcutEvent = Event
                    { _command :: Command
-                   , _arg :: Maybe Text
+                   , _arg :: Maybe String
                    } deriving (Generic, NFData, Show, Typeable)
 
 makeLenses ''ShortcutEvent

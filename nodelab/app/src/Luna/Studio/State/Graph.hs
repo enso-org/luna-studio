@@ -15,17 +15,9 @@ data Graph = Graph { _nodesMap             :: NodesMap
                    , _connectionsMap       :: ConnectionsMap
                    } deriving (Show, Eq, Generic)
 
-data Subgraph = Subgraph { _nodesList       :: [Node]
-                         , _connectionsList :: [Connection]
-                         } deriving (Show, Eq, Generic)
-
 makeLenses ''Graph
-makeLenses ''Subgraph
 
 instance ToJSON Graph
-instance ToJSON Subgraph
-instance FromJSON Subgraph
+instance FromJSON Graph
 instance Default Graph where
     def = Graph def def
-instance Default Subgraph where
-    def = Subgraph def def

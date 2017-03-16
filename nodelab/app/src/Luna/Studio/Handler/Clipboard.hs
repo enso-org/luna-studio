@@ -1,11 +1,10 @@
 module Luna.Studio.Handler.Clipboard where
 
 import           Data.Aeson                          (decode, encode)
-import           Data.ByteString.Lazy.Char8          (unpack)
+import           Data.ByteString.Lazy.Char8          (pack, unpack)
 import qualified Data.HashMap.Strict                 as HashMap
 import           Data.Position                       (x, y)
 import qualified Data.Set                            as Set
-import           Data.Text.Encoding                  (encodeUtf8)
 
 import qualified Empire.API.Data.Connection          as Connection
 import           Empire.API.Data.Node                (Node)
@@ -25,8 +24,7 @@ import           Luna.Studio.Prelude
 import qualified Luna.Studio.React.Model.Node        as UINode
 import           Luna.Studio.State.Global            (State)
 import qualified Luna.Studio.State.Global            as Global
-import           Luna.Studio.State.Graph             (Subgraph)
-import qualified Luna.Studio.State.Graph             as Subgraph
+import qualified Luna.Studio.State.Graph             as Graph
 
 
 handle :: Event -> Maybe (Command State ())
@@ -44,19 +42,18 @@ copySelectionToClipboard = do
 cutSelectionToClipboard :: Command State()
 cutSelectionToClipboard = copySelectionToClipboard >> removeSelectedNodes
 
-pasteFromClipboard :: Text -> Command State ()
+pasteFromClipboard :: String -> Command State ()
 pasteFromClipboard clipboardData = do
-  let maybeSubgraph = decode $ convert $ encodeUtf8 clipboardData :: Maybe Subgraph
-  forM_ maybeSubgraph $ \subgraph -> do
-      graphNodesIds <- Set.fromList . HashMap.keys <$> getNodesMap
-      let nodes       = subgraph ^. Subgraph.nodesList
-          connections = filter (\conn -> Set.member (conn ^. Connection.src . PortRef.srcNodeId) graphNodesIds) $ subgraph ^. Subgraph.connectionsList
-      workspacePos <- translateToWorkspace =<< use Global.mousePos
-      let shiftX = workspacePos ^. x - minimum (map (^. Node.nodeMeta . NodeMeta.position . _1) nodes)
-          shiftY = workspacePos ^. y - minimum (map (^. Node.nodeMeta . NodeMeta.position . _2) nodes)
-          shiftNode, shiftNodeX, shiftNodeY :: Node -> Node
-          shiftNodeX = Node.nodeMeta . NodeMeta.position . _1 %~ snapCoord . (+shiftX)
-          shiftNodeY = Node.nodeMeta . NodeMeta.position . _2 %~ snapCoord . (+shiftY)
-          shiftNode = shiftNodeY . shiftNodeX
-          nodes' = map shiftNode nodes
-      addSubgraph nodes' connections
+    withJust (decode $ pack clipboardData) $ \subgraph -> do
+        graphNodesIds <- Set.fromList . HashMap.keys <$> getNodesMap
+        let nodes       = HashMap.elems $ subgraph ^. Graph.nodesMap
+            connections = filter (\conn -> Set.member (conn ^. Connection.src . PortRef.srcNodeId) graphNodesIds) $ HashMap.elems $ subgraph ^. Graph.connectionsMap
+        workspacePos <- translateToWorkspace =<< use Global.mousePos
+        let shiftX = workspacePos ^. x - minimum (map (^. Node.nodeMeta . NodeMeta.position . _1) nodes)
+            shiftY = workspacePos ^. y - minimum (map (^. Node.nodeMeta . NodeMeta.position . _2) nodes)
+            shiftNode, shiftNodeX, shiftNodeY :: Node -> Node
+            shiftNodeX = Node.nodeMeta . NodeMeta.position . _1 %~ snapCoord . (+shiftX)
+            shiftNodeY = Node.nodeMeta . NodeMeta.position . _2 %~ snapCoord . (+shiftY)
+            shiftNode = shiftNodeY . shiftNodeX
+            nodes' = map shiftNode nodes
+        addSubgraph nodes' connections

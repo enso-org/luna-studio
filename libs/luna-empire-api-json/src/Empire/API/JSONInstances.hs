@@ -93,29 +93,14 @@ instance FromJSON Node.NodeTypecheckerUpdate
 instance ToJSON NodeMeta.NodeMeta
 instance FromJSON NodeMeta.NodeMeta
 
-instance {-# OVERLAPPING #-} (ToJSON b) => ToJSON (Map UUID b) where
-    toJSON = toJSON . Map.mapKeys UUID.toString
-    {-# INLINE toJSON #-}
-
-instance {-# OVERLAPPING #-} (ToJSON b) => ToJSON  (Map AnyPortRef b) where
-    toJSON = toJSON . Map.mapKeys show
-    {-# INLINE toJSON #-}
-
-instance {-# OVERLAPPING #-} (ToJSON b) => ToJSON  (Map InPortRef b) where
-    toJSON = toJSON . Map.mapKeys show
-    {-# INLINE toJSON #-}
-
-instance {-# OVERLAPPING #-} (ToJSON b) => ToJSON  (Map OutPortRef b) where
-    toJSON = toJSON . Map.mapKeys show
-    {-# INLINE toJSON #-}
-
-instance {-# OVERLAPPING #-} (ToJSON b) => ToJSON  (Map PortId b) where
-    toJSON = toJSON . Map.mapKeys show
-    {-# INLINE toJSON #-}
-
-instance {-# OVERLAPPING #-} (FromJSON b) => FromJSON  (Map PortId b) where
-    parseJSON = fmap (Map.mapKeys read) . parseJSON -- TODO: use readMaybe
-    {-# INLINE parseJSON #-}
+instance {-# OVERLAPPING #-} ToJSON   v => ToJSON   (Map PortId     v) where toJSON = toJSON . Map.toList
+instance {-# OVERLAPPING #-} FromJSON v => FromJSON (Map PortId     v) where parseJSON = fmap Map.fromList . parseJSON
+instance {-# OVERLAPPING #-} ToJSON   v => ToJSON   (Map UUID       v) where toJSON = toJSON . Map.toList
+instance {-# OVERLAPPING #-} FromJSON v => FromJSON (Map UUID       v) where parseJSON = fmap Map.fromList . parseJSON
+instance {-# OVERLAPPING #-} ToJSON   v => ToJSON   (Map AnyPortRef v) where toJSON = toJSON . Map.toList
+instance {-# OVERLAPPING #-} FromJSON v => FromJSON (Map AnyPortRef v) where parseJSON = fmap Map.fromList . parseJSON
+instance {-# OVERLAPPING #-} ToJSON   v => ToJSON   (Map InPortRef  v) where toJSON = toJSON . Map.toList
+instance {-# OVERLAPPING #-} FromJSON v => FromJSON (Map InPortRef  v) where parseJSON = fmap Map.fromList . parseJSON
 
 instance ToJSON Port.Port
 instance FromJSON Port.Port
@@ -210,7 +195,7 @@ instance ToJSON RenameNode.Inverse
 instance ToJSON RenamePort.Request
 instance ToJSON RenamePort.Inverse
 
-instance (ToJSON a) => ToJSON (Request.Request a)
+instance ToJSON a => ToJSON (Request.Request a)
 
 instance ToJSON SearchNodes.Request
 instance ToJSON SearchNodes.Result
@@ -260,7 +245,7 @@ instance ToJSON ImportProject.Result
 
 
 instance (ToJSON req, ToJSON res, ToJSON inv) => ToJSON (Response.Response req inv res)
-instance (ToJSON payload) => ToJSON (Response.Status payload)
+instance ToJSON payload => ToJSON (Response.Status payload)
 
 instance ToJSON EmpireStarted.Status
 
