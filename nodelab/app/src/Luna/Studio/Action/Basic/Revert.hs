@@ -65,7 +65,7 @@ revertRemoveConnection (RemoveConnection.Request _loc _dst) (Response.Error _msg
 
 revertRemoveNodes :: RemoveNodes.Request -> Response.Status RemoveNodes.Inverse -> Command State ()
 revertRemoveNodes (RemoveNodes.Request loc _) (Response.Ok (RemoveNodes.Inverse nodes conns)) =
-    whenM (isCurrentLocationAndGraphLoaded loc) $ void $ localAddSubgraph nodes conns
+    whenM (isCurrentLocationAndGraphLoaded loc) $ void $ localAddSubgraph (convert <$> nodes) conns
 revertRemoveNodes (RemoveNodes.Request _loc _) (Response.Error _msg) = $notImplemented
 
 revertRemovePort :: RemovePort.Request -> Response.Status RemovePort.Inverse -> Command State ()

@@ -1,11 +1,9 @@
 --TODO[PM, LJK]: make sure that those operations updates everything around and refactor
 module Luna.Studio.Action.Basic.Merge where
 
-import           Data.Position                           (fromTuple)
 import qualified Data.Position                           as Position
 import           Empire.API.Data.Graph                   (Graph)
 import qualified Empire.API.Data.Graph                   as GraphAPI
-import qualified Empire.API.Data.Node                    as NodeAPI
 import           Luna.Studio.Action.Basic.AddConnection  (localConnect)
 import           Luna.Studio.Action.Basic.AddNode        (localAddNodes)
 import           Luna.Studio.Action.Basic.DrawConnection (redrawConnectionsForNode)
@@ -21,16 +19,16 @@ import           Luna.Studio.State.Global                (State)
 localMerge :: NodeId -> [Graph] -> Command State ()
 localMerge parentId graphs = withJustM (getNode parentId) $ \parentNode -> do
     subgraphs  <- forM graphs $ \graph -> do
-        let (edges, nodes) = partition NodeAPI.isEdge $ graph ^. GraphAPI.nodes
+        let (edges, nodes) = partition Node.isEdge $ map convert $ graph ^. GraphAPI.nodes
             connections    = graph ^. GraphAPI.connections
             monads         = graph ^. GraphAPI.monads
-            nodesPos       = map (fromTuple . view NodeAPI.position) nodes
+            nodesPos       = view Node.position <$> nodes
             topLeft        = fromMaybe def $ Position.leftTopPoint nodesPos
             parentPos      = parentNode ^. Node.position
-            movedNodes     = map (NodeAPI.position %~ Position.onTuple (\p -> p - topLeft + parentPos)) nodes
+            movedNodes     = map (Node.position %~ (\p -> p - topLeft + parentPos)) nodes
         localAddNodes movedNodes
         mapM_ (uncurry localConnect) connections
-        return $ Node.Subgraph (view NodeAPI.nodeId <$> nodes) (convert <$> edges) monads
+        return $ Node.Subgraph (view Node.nodeId <$> nodes) edges monads
     modifyNode parentId $ Node.mode .= Node.Expanded (Node.Function subgraphs)
     void $ redrawConnectionsForNode parentId
 

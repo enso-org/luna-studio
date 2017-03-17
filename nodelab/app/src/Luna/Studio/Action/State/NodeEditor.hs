@@ -29,6 +29,7 @@ import           Luna.Studio.React.Model.NodeEditor
 import           Luna.Studio.React.Model.Port       (Port, state, valueType)
 import           Luna.Studio.React.Model.Searcher   (Searcher)
 import           Luna.Studio.State.Global           (State, workspace)
+import           Luna.Studio.State.Graph            (Graph (Graph))
 import           Text.ScopeSearcher.Item            (Items, isElement, items)
 
 
@@ -50,6 +51,14 @@ resetGraph = modifyNodeEditor $ do
     visualizations      .= def
     draggedPort         .= def
 
+
+separateSubgraph :: [NodeId] -> Command State Graph
+separateSubgraph nodeIds = do
+    let idSet = Set.fromList nodeIds
+        inSet = flip Set.member idSet
+    nodes' <- HashMap.filterWithKey (inSet .: const)  <$> getNodesMap
+    conns' <- HashMap.filter (inSet . view dstNodeId) <$> getConnectionsMap
+    return $ Graph (HashMap.map convert nodes') (HashMap.map convert conns')
 
 addNode :: Node -> Command State ()
 addNode node = modifyNodeEditor $ nodes . at (node ^. nodeId) ?= node

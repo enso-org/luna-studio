@@ -1,7 +1,5 @@
 module Luna.Studio.Action.Basic.AddPort where
 
-import qualified Data.Map.Lazy                          as Map
-import           Empire.API.Data.Node                   (ports)
 import           Empire.API.Data.Port                   (Port (Port))
 import           Empire.API.Data.PortRef                (AnyPortRef (OutPortRef'), OutPortRef (OutPortRef), srcPortId)
 import           Empire.API.Data.TypeRep                (TypeRep (TStar))
@@ -9,11 +7,10 @@ import           Luna.Studio.Action.Basic.AddConnection (localAddConnection)
 import           Luna.Studio.Action.Basic.UpdateNode    (localUpdateNode)
 import qualified Luna.Studio.Action.Batch               as Batch
 import           Luna.Studio.Action.Command             (Command)
-import qualified Luna.Studio.Action.State.Graph         as Graph
 import           Luna.Studio.Action.State.NodeEditor    (getConnectionsContainingNode, getNode)
 import           Luna.Studio.Prelude
 import qualified Luna.Studio.React.Model.Connection     as Connection
-import           Luna.Studio.React.Model.Node           (countProjectionPorts, getPorts, isInputEdge)
+import           Luna.Studio.React.Model.Node           (countProjectionPorts, getPorts, isInputEdge, ports)
 import           Luna.Studio.React.Model.Port           (OutPort (Projection), PortId (OutPortId), PortState (NotConnected), portId,
                                                          toPortsMap)
 import           Luna.Studio.State.Global               (State)
@@ -25,8 +22,7 @@ addPort portRef = whenM (localAddPort portRef) $ Batch.addPort portRef
 localAddPort :: AnyPortRef -> Command State Bool
 localAddPort (OutPortRef' (OutPortRef nid pid@(Projection pos))) = do
     mayNode      <- getNode nid
-    mayGraphNode <- Graph.getNode nid
-    flip (maybe (return False)) ((,) <$> mayNode <*> mayGraphNode) $ \(node, graphNode) ->
+    flip (maybe (return False)) mayNode $ \node ->
         if     (not . isInputEdge $ node)
             || pos > countProjectionPorts node
             || pos < 0
@@ -42,7 +38,7 @@ localAddPort (OutPortRef' (OutPortRef nid pid@(Projection pos))) = do
                         _                        -> port'
                     newPorts    = newPort : newPorts'
                     newPortsMap = toPortsMap newPorts
-                void . localUpdateNode $ graphNode & ports .~ Map.map convert newPortsMap
+                void . localUpdateNode $ node & ports .~ newPortsMap
                 conns <- getConnectionsContainingNode nid
                 forM_ conns $ \conn -> case conn ^. Connection.src of
                     (OutPortRef srcNid (Projection i)) ->

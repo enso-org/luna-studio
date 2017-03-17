@@ -1,19 +1,19 @@
 {-# LANGUAGE ExistentialQuantification #-}
 module Luna.Studio.State.Action where
 
-import           Data.Aeson                 (FromJSON, ToJSON)
-import           Data.Curve                 (Curve)
+import           Data.Aeson                   (FromJSON, ToJSON)
+import           Data.Curve                   (Curve)
 import           Data.Dynamic
-import           Data.Map                   (Map)
-import           Data.Position              (Position)
-import           Data.ScreenPosition        (ScreenPosition)
-import           Data.Set                   (Set)
-import qualified Data.Set                   as Set
-import           Empire.API.Data.Connection (ConnectionId)
-import           Empire.API.Data.Node       (NodeId)
-import           Empire.API.Data.Port       (PortId)
-import           Empire.API.Data.PortRef    (AnyPortRef)
+import           Data.Map                     (Map)
+import           Data.Position                (Position)
+import           Data.ScreenPosition          (ScreenPosition)
+import           Data.Set                     (Set)
+import qualified Data.Set                     as Set
+import           Empire.API.Data.Connection   (ConnectionId)
+import           Empire.API.Data.Port         (PortId)
+import           Empire.API.Data.PortRef      (AnyPortRef)
 import           Luna.Studio.Prelude
+import           Luna.Studio.React.Model.Node (Node, NodeId)
 
 
 data NodeDrag = NodeDrag { _nodeDragStartPos      :: Position
@@ -23,26 +23,22 @@ data NodeDrag = NodeDrag { _nodeDragStartPos      :: Position
                          } deriving (Eq, Show, Generic, Typeable)
 
 makeLenses ''NodeDrag
-instance ToJSON NodeDrag
 
 data MultiSelection = MultiSelection { _multiSelecectionStartPos :: Position
                                      } deriving (Eq, Show, Generic, Typeable)
 
 makeLenses ''MultiSelection
-instance ToJSON MultiSelection
 
 data PanDrag = PanDrag { _panDragPreviousPos :: ScreenPosition
                        } deriving (Eq, Show, Generic, Typeable)
 
 makeLenses ''PanDrag
-instance ToJSON PanDrag
 
 data ZoomDrag = ZoomDrag { _zoomDragFixedPoint  :: ScreenPosition
                          , _zoomDragPreviousPos :: ScreenPosition
                          } deriving (Eq, Show, Generic, Typeable)
 
 makeLenses ''ZoomDrag
-instance ToJSON ZoomDrag
 
 
 data SliderDrag = SliderDrag { _sliderDragPortRef   :: AnyPortRef
@@ -59,7 +55,6 @@ instance NFData InitValue
 makeLenses ''InitValue
 makeLenses ''SliderDrag
 
-instance ToJSON SliderDrag
 instance ToJSON InitValue
 instance FromJSON InitValue
 
@@ -68,7 +63,6 @@ data PenConnect = PenConnect { _penConnectCurve           :: Curve
                              } deriving (Eq, Generic, Show, Typeable)
 
 makeLenses ''PenConnect
-instance ToJSON PenConnect
 
 data PenDisconnect = PenDisconnect { _penDisconnectCurve                :: Curve
                                    , _penDisconnectLastVisitedNode      :: Maybe NodeId
@@ -76,10 +70,8 @@ data PenDisconnect = PenDisconnect { _penDisconnectCurve                :: Curve
                                    } deriving (Eq, Generic, Show, Typeable)
 
 makeLenses ''PenDisconnect
-instance ToJSON PenDisconnect
 
 data Mode = Drag | Click deriving (Eq, Generic, Show, Typeable)
-instance ToJSON Mode
 
 data Connect = Connect { _connectStartPos       :: ScreenPosition
                        , _connectSourcePort     :: AnyPortRef
@@ -89,21 +81,19 @@ data Connect = Connect { _connectStartPos       :: ScreenPosition
                        } deriving (Eq, Generic, Show, Typeable)
 
 makeLenses ''Connect
-instance ToJSON Connect
 
-data PortDrag = PortDrag { _portDragStartPos    :: ScreenPosition
-                         , _portDragPortRef     :: AnyPortRef
-                         , _portDragPortMapping :: Map PortId PortId
-                         , _portDragMode        :: Mode
+data PortDrag = PortDrag { _portDragStartPos     :: ScreenPosition
+                         , _portDragPortRef      :: AnyPortRef
+                         , _portDragPortMapping  :: Map PortId PortId
+                         , _portDragMode         :: Mode
+                         , _portDragOriginalNode :: Node
                          } deriving (Eq, Generic, Show, Typeable)
 
 makeLenses ''PortDrag
-instance ToJSON PortDrag
 
 data Searcher = Searcher deriving (Eq, Generic, Show, Typeable)
 
 makeLenses ''Searcher
-instance ToJSON Searcher
 
 data VisualizationDrag = VisualizationDrag
     { _visNodeId :: NodeId
@@ -112,7 +102,6 @@ data VisualizationDrag = VisualizationDrag
     } deriving (Eq, Show, Generic, Typeable)
 
 makeLenses ''VisualizationDrag
-instance ToJSON VisualizationDrag
 
 data SomeAction m = forall a. (Action m a, Show a, Typeable a) => SomeAction Dynamic a deriving (Typeable)
 

@@ -6,7 +6,6 @@ import qualified Data.DateTime                                as DT
 import qualified Empire.API.Data.Breadcrumb                   as Breadcrumb
 import qualified Empire.API.Data.Graph                        as Graph
 import qualified Empire.API.Data.GraphLocation                as GraphLocation
-import qualified Empire.API.Data.Node                         as Node
 import qualified Empire.API.Graph.AddConnection               as AddConnection
 import qualified Empire.API.Graph.AddNode                     as AddNode
 import qualified Empire.API.Graph.AddPort                     as AddPort
@@ -56,7 +55,7 @@ import           Luna.Studio.Event.Batch                      (Event (..))
 import qualified Luna.Studio.Event.Event                      as Event
 import           Luna.Studio.Handler.Backend.Common           (doNothing, handleResponse)
 import           Luna.Studio.Prelude
-import qualified Luna.Studio.React.Model.Node                 as NodeModel
+import qualified Luna.Studio.React.Model.Node                 as Node
 import qualified Luna.Studio.React.Model.NodeEditor           as NodeEditor
 import           Luna.Studio.State.Global                     (State)
 import qualified Luna.Studio.State.Global                     as Global
@@ -70,7 +69,7 @@ handle (Event.Batch ev) = Just $ case ev of
             isGraphLoaded  <- use $ Global.workspace . Workspace.isGraphLoaded
             isGoodLocation <- isCurrentLocation location
             when (isGoodLocation && not isGraphLoaded) $ do
-                let nodes       = result ^. GetProgram.graph . Graph.nodes
+                let nodes       = convert <$> result ^. GetProgram.graph . Graph.nodes
                     connections = result ^. GetProgram.graph . Graph.connections
                     monads      = result ^. GetProgram.graph . Graph.monads
                     code        = result ^. GetProgram.code
@@ -98,7 +97,8 @@ handle (Event.Batch ev) = Just $ case ev of
         request      = response ^. Response.request
         location     = request  ^. AddNode.location
         failure _    = whenM (isOwnRequest requestId) $ revertAddNode request
-        success node = do
+        success node' = do
+            let node = convert node'
             shouldProcess <- isCurrentLocationAndGraphLoaded location
             ownRequest    <- isOwnRequest requestId
             when shouldProcess $ do
@@ -113,7 +113,8 @@ handle (Event.Batch ev) = Just $ case ev of
         location     = request  ^. AddPort.location
         portRef      = request  ^. AddPort.anyPortRef
         failure _    = whenM (isOwnRequest requestId) $ revertAddPort request
-        success node = do
+        success node' = do
+            let node = convert node'
             shouldProcess <- isCurrentLocationAndGraphLoaded location
             ownRequest    <- isOwnRequest requestId
             when shouldProcess $ do
@@ -131,7 +132,8 @@ handle (Event.Batch ev) = Just $ case ev of
         location      = request  ^. AddSubgraph.location
         conns         = request  ^. AddSubgraph.connections
         failure _     = whenM (isOwnRequest requestId) $ revertAddSubgraph request
-        success nodes = do
+        success nodes' = do
+            let nodes = convert <$> nodes'
             shouldProcess <- isCurrentLocationAndGraphLoaded location
             ownRequest    <- isOwnRequest requestId
             when shouldProcess $ do
@@ -154,9 +156,9 @@ handle (Event.Batch ev) = Just $ case ev of
         when (shouldProcess && clientId /= myClientId) $ do
             clientColor <- updateClient clientId
             case update ^. CollaborationUpdate.event of
-                CollaborationUpdate.Touch       nodeIds -> touchNodes nodeIds $  NodeModel.collaboration . NodeModel.touch  . at clientId ?~ (DT.addSeconds (2 * refreshTime) currentTime, clientColor)
-                CollaborationUpdate.Modify      nodeIds -> touchNodes nodeIds $ (NodeModel.collaboration . NodeModel.modify . at clientId ?~ DT.addSeconds modifyTime currentTime) . (NodeModel.collaboration . NodeModel.touch  . at clientId %~ bumpTime (DT.addSeconds modifyTime currentTime) clientColor)
-                CollaborationUpdate.CancelTouch nodeIds -> touchNodes nodeIds $  NodeModel.collaboration . NodeModel.touch  . at clientId .~ Nothing
+                CollaborationUpdate.Touch       nodeIds -> touchNodes nodeIds $  Node.collaboration . Node.touch  . at clientId ?~ (DT.addSeconds (2 * refreshTime) currentTime, clientColor)
+                CollaborationUpdate.Modify      nodeIds -> touchNodes nodeIds $ (Node.collaboration . Node.modify . at clientId ?~ DT.addSeconds modifyTime currentTime) . (Node.collaboration . Node.touch  . at clientId %~ bumpTime (DT.addSeconds modifyTime currentTime) clientColor)
+                CollaborationUpdate.CancelTouch nodeIds -> touchNodes nodeIds $  Node.collaboration . Node.touch  . at clientId .~ Nothing
                 CollaborationUpdate.Refresh             -> touchCurrentlySelected
 
     ConnectUpdate update -> do
@@ -186,7 +188,8 @@ handle (Event.Batch ev) = Just $ case ev of
         portRef            = request  ^. MovePort.portRef
         newPortRef         = request  ^. MovePort.newPortRef
         failure _          = whenM (isOwnRequest requestId) $ revertMovePort request
-        success node       = do
+        success node'      = do
+            let node = convert node'
             shouldProcess <- isCurrentLocationAndGraphLoaded location
             ownRequest    <- isOwnRequest requestId
             when shouldProcess $
@@ -203,7 +206,7 @@ handle (Event.Batch ev) = Just $ case ev of
 
     NodesUpdate update -> do
         shouldProcess <- isCurrentLocationAndGraphLoaded $ update ^. NodesUpdate.location
-        when shouldProcess $ localUpdateNodes $ update ^. NodesUpdate.nodes
+        when shouldProcess $ localUpdateNodes $ convert <$> update ^. NodesUpdate.nodes
 
     NodeTypecheckerUpdate update -> do
       shouldProcess <- isCurrentLocationAndGraphLoaded $ update ^. NodeTCUpdate.location

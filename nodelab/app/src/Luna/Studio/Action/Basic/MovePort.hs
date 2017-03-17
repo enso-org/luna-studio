@@ -1,18 +1,15 @@
 module Luna.Studio.Action.Basic.MovePort where
 
-import qualified Data.Map.Lazy                          as Map
-import           Empire.API.Data.Node                   (ports)
-import           Empire.API.Data.PortRef                (AnyPortRef (OutPortRef'), OutPortRef (OutPortRef), srcPortId)
 import           Luna.Studio.Action.Basic.AddConnection (localAddConnection)
 import           Luna.Studio.Action.Basic.UpdateNode    (localUpdateNode)
 import qualified Luna.Studio.Action.Batch               as Batch
 import           Luna.Studio.Action.Command             (Command)
-import qualified Luna.Studio.Action.State.Graph         as Graph
 import           Luna.Studio.Action.State.NodeEditor    (getConnectionsContainingNode, getNode)
 import           Luna.Studio.Prelude
-import           Luna.Studio.React.Model.Connection     (src)
-import           Luna.Studio.React.Model.Node           (countProjectionPorts, getPorts, hasPort, isInputEdge)
-import           Luna.Studio.React.Model.Port           (OutPort (Projection), PortId (OutPortId), portId, toPortsMap)
+import           Luna.Studio.React.Model.Connection     (src, srcPortId)
+import           Luna.Studio.React.Model.Node           (countProjectionPorts, getPorts, hasPort, isInputEdge, ports)
+import           Luna.Studio.React.Model.Port           (AnyPortRef (OutPortRef'), OutPort (Projection), OutPortRef (OutPortRef),
+                                                         PortId (OutPortId), portId, toPortsMap)
 import           Luna.Studio.State.Global               (State)
 
 
@@ -23,8 +20,7 @@ localMovePort :: AnyPortRef -> AnyPortRef -> Command State Bool
 localMovePort (OutPortRef' (OutPortRef nid pid@(Projection pos))) (OutPortRef' (OutPortRef newNid newPid@(Projection newPos))) =
     if nid /= newNid || pid == newPid then return False else do
         mayNode      <- getNode nid
-        mayGraphNode <- Graph.getNode nid
-        flip (maybe (return False)) ((,) <$> mayNode <*> mayGraphNode) $ \(node, graphNode) ->
+        flip (maybe (return False)) mayNode $ \node ->
             if     (not . isInputEdge $ node)
                 || hasPort (OutPortId pid) node
                 || newPos >= countProjectionPorts node
@@ -42,17 +38,17 @@ localMovePort (OutPortRef' (OutPortRef nid pid@(Projection pos))) (OutPortRef' (
                                 else port'
                         _                        -> port'
                     newPortsMap = toPortsMap newPorts
-                void . localUpdateNode $ graphNode & ports .~ Map.map convert newPortsMap
+                void . localUpdateNode $ node & ports .~ newPortsMap
                 conns <- getConnectionsContainingNode nid
                 forM_ conns $ \conn -> case conn ^. src of
                     OutPortRef srcNid (Projection i) ->
                         when (srcNid == nid) $
                             if i == pos
-                                then void . localAddConnection $ convert $ conn & src . srcPortId .~ Projection newPos
+                                then void . localAddConnection $ convert $ conn & srcPortId .~ Projection newPos
                             else if i > pos && i <= newPos
-                                then void . localAddConnection $ convert $ conn & src . srcPortId .~ Projection (i-1)
+                                then void . localAddConnection $ convert $ conn & srcPortId .~ Projection (i-1)
                             else if i < pos && i >= newPos
-                                then void . localAddConnection $ convert $ conn & src . srcPortId .~ Projection (i+1)
+                                then void . localAddConnection $ convert $ conn & srcPortId .~ Projection (i+1)
                                 else return ()
                     _ -> return ()
                 return True

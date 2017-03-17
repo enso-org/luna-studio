@@ -1,19 +1,7 @@
 {-# LANGUAGE DeriveAnyClass #-}
 module Luna.Studio.React.Model.Port
     ( module Luna.Studio.React.Model.Port
-    , PortId (..)
-    , TypeRep (..)
-    , PortState (..)
-    , PortDefault (..)
-    , InPort (..)
-    , OutPort (..)
-    , getPortNumber
-    , isAll
-    , isArg
-    , isInPort
-    , isOutPort
-    , isProjection
-    , isSelf
+    , module X
     )
     where
 
@@ -23,10 +11,11 @@ import           Data.Convert                (Convertible (convert))
 import           Data.Map.Lazy               (Map)
 import qualified Data.Map.Lazy               as Map
 import           Data.Position               (Position)
-import           Empire.API.Data.Port        (InPort (..), OutPort (..), PortId (..), PortState (..), getPortNumber, isAll, isArg, isInPort,
-                                              isOutPort, isProjection, isSelf)
+import           Empire.API.Data.Port        as X (InPort (..), OutPort (..), PortId (..), PortState (..), getPortNumber, isAll, isArg,
+                                                   isInPort, isOutPort, isProjection, isSelf, _InPortId, _OutPortId)
 import qualified Empire.API.Data.Port        as Empire
-import           Empire.API.Data.PortDefault (PortDefault (..))
+import           Empire.API.Data.PortDefault as X (PortDefault (..))
+import           Empire.API.Data.PortRef     as X (AnyPortRef (InPortRef', OutPortRef'), InPortRef (InPortRef), OutPortRef (OutPortRef))
 import           Empire.API.Data.TypeRep     (TypeRep (..))
 import           Luna.Studio.Data.Color      (Color)
 import qualified Luna.Studio.Data.Color      as Color

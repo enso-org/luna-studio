@@ -8,9 +8,7 @@ import           Luna.Studio.Action.Basic.RemoveConnection (localRemoveConnectio
 import           Luna.Studio.Action.Basic.SelectNode       (selectPreviousNodes)
 import qualified Luna.Studio.Action.Batch                  as Batch
 import           Luna.Studio.Action.Command                (Command)
-import           Luna.Studio.Action.State.Graph            (inGraph)
-import qualified Luna.Studio.Action.State.Graph            as Graph
-import           Luna.Studio.Action.State.NodeEditor       (getSelectedNodes)
+import           Luna.Studio.Action.State.NodeEditor       (getSelectedNodes, inNodeEditor)
 import qualified Luna.Studio.Action.State.NodeEditor       as NodeEditor
 import           Luna.Studio.Prelude
 import           Luna.Studio.React.Model.Node              (nodeId)
@@ -37,9 +35,8 @@ localRemoveNode = fmap listToMaybe . localRemoveNodes . return
 
 localRemoveNodes :: [NodeId] -> Command State [NodeId]
 localRemoveNodes nodeIds = do
-    nids <- filterM inGraph nodeIds
+    nids <- filterM inNodeEditor nodeIds
     void $ localRemoveConnectionsContainingNodes nids
-    mapM_ Graph.removeNode      nids
     mapM_ NodeEditor.removeNode nids
     selectedIds <- Set.fromList . (map (view nodeId)) <$> getSelectedNodes
     when (Set.isSubsetOf selectedIds $ Set.fromList nids) selectPreviousNodes

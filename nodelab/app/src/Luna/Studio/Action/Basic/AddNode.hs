@@ -4,7 +4,7 @@ import qualified Data.Map.Lazy                           as Map
 import           Data.Position                           (Position, toTuple)
 import           Data.Text                               (Text)
 import           Data.Vector                             ()
-import           Empire.API.Data.Node                    (Node (Node), NodeType (ExpressionNode), nodeId)
+import qualified Empire.API.Data.Node                    as Empire
 import           Empire.API.Data.NodeMeta                (NodeMeta (NodeMeta))
 import           Empire.API.Data.Port                    (InPort (Arg, Self), OutPort (All), Port (Port), PortId (InPortId, OutPortId),
                                                           PortState (NotConnected))
@@ -16,13 +16,13 @@ import           Luna.Studio.Action.Basic.SelectNode     (selectNode)
 import qualified Luna.Studio.Action.Batch                as Batch
 import           Luna.Studio.Action.Command              (Command)
 import           Luna.Studio.Action.Node.Snap            (snap)
-import qualified Luna.Studio.Action.State.Graph          as Graph
 import           Luna.Studio.Action.State.Model          (shouldDisplayPortSelf)
 import           Luna.Studio.Action.State.NodeEditor     (getSelectedNodes)
 import qualified Luna.Studio.Action.State.NodeEditor     as NodeEditor
 import           Luna.Studio.Action.UUID                 (getUUID)
 import           Luna.Studio.Prelude
-import qualified Luna.Studio.React.Model.Node            as Model
+import           Luna.Studio.React.Model.Node            (Node, NodeType (ExpressionNode))
+import qualified Luna.Studio.React.Model.Node            as Node
 import           Luna.Studio.React.Model.Port            (visible)
 import           Luna.Studio.State.Global                (State)
 
@@ -34,11 +34,11 @@ addNode nodePos expression = do
     let nodeType    = ExpressionNode expression
         nodeMeta    = NodeMeta (toTuple $ snap nodePos) True
         connectTo   = if length selected == 1
-                      then view Model.nodeId <$> listToMaybe selected
+                      then view Node.nodeId <$> listToMaybe selected
                       else Nothing
         defPortsMap = Map.fromList [ (InPortId  (Arg 0), Port (InPortId  (Arg 0)) "" TStar NotConnected) ,
                                      (OutPortId All    , Port (OutPortId All    ) "" TStar NotConnected) ]
-        node        = Node nid def nodeType False defPortsMap nodeMeta def
+        node        = convert $ Empire.Node nid def nodeType False defPortsMap nodeMeta def
     localAddNode node
     selectNode nid
     Batch.addNode nid expression nodeMeta connectTo
@@ -49,10 +49,8 @@ localAddNodes = mapM_ localAddNode
 
 localAddNode :: Node -> Command State ()
 localAddNode node = do
-    let nodeModel' = convert node
-    selfPortVis <- shouldDisplayPortSelf $ nodeModel'
-    let nodeModel = nodeModel' & Model.ports . ix (InPortId Self) . visible .~ selfPortVis
-    Graph.addNode      node
-    NodeEditor.addNode nodeModel
-    void . redrawConnectionsForNode $ node ^. nodeId
-    focusNode $ node ^. nodeId
+    selfPortVis <- shouldDisplayPortSelf $ node
+    let node' = node & Node.ports . ix (InPortId Self) . visible .~ selfPortVis
+    NodeEditor.addNode node'
+    void . redrawConnectionsForNode $ node ^. Node.nodeId
+    focusNode $ node ^. Node.nodeId
