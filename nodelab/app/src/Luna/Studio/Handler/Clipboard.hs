@@ -15,8 +15,8 @@ import qualified JS.Clipboard                        as JS (copyStringToClipboar
 import           Luna.Studio.Action.Basic            (addSubgraph, removeSelectedNodes)
 import           Luna.Studio.Action.Command          (Command)
 import           Luna.Studio.Action.Node             (snapCoord)
-import           Luna.Studio.Action.State.Graph      (getNodesMap, separateSubgraph)
-import           Luna.Studio.Action.State.NodeEditor (getSelectedNodes)
+import           Luna.Studio.Action.State.Graph      (separateSubgraph)
+import           Luna.Studio.Action.State.NodeEditor (getNodesMap, getSelectedNodes)
 import           Luna.Studio.Action.State.Scene      (translateToWorkspace)
 import           Luna.Studio.Event.Event             (Event (Shortcut))
 import qualified Luna.Studio.Event.Shortcut          as Shortcut

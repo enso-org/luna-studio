@@ -12,7 +12,6 @@ module Luna.Studio.Action.Connect
     , stopConnecting
     ) where
 
-import qualified Data.HashMap.Strict                 as HashMap
 import           Data.ScreenPosition                 (ScreenPosition)
 import qualified Empire.API.Data.Connection          as ConnectionAPI
 import           Empire.API.Data.Port                (InPort (Self), PortId (InPortId))
@@ -36,8 +35,6 @@ import qualified Luna.Studio.React.Model.NodeEditor  as NodeEditor
 import           Luna.Studio.State.Action            (Action (begin, continue, end, update), Connect (Connect), Mode (Click, Drag),
                                                       connectAction, connectMode, connectSnappedPort, connectSourcePort, connectStartPos)
 import           Luna.Studio.State.Global            (State, currentConnectAction)
-import qualified Luna.Studio.State.Global            as Global
-import qualified Luna.Studio.State.Graph             as Graph
 import           React.Flux                          (MouseEvent)
 
 
@@ -95,7 +92,7 @@ snapToPort portRef action =
         mayConnModel <- createConnectionModel conn
         withJust mayConnModel $ \connModel -> do
             update $ action & connectSnappedPort ?~ portRef
-            modifyNodeEditor $ NodeEditor.currentConnections .= [Connection.toCurrentConnection connModel]
+            modifyNodeEditor $ NodeEditor.currentConnections .= [convert connModel]
 
 cancelSnapToPort :: AnyPortRef -> Connect -> Command State ()
 cancelSnapToPort portRef action = when (Just portRef == action ^. connectSnappedPort) $

@@ -22,7 +22,6 @@ import           Luna.Studio.Action.State.NodeEditor (getSelectedNodes, modifyNo
 import qualified Luna.Studio.Action.State.NodeEditor as NodeEditor
 import           Luna.Studio.Event.Mouse             (workspacePosition)
 import           Luna.Studio.Prelude
-import           Luna.Studio.React.Model.Connection  (toCurrentConnection)
 import           Luna.Studio.React.Model.Node        (isSelected)
 import qualified Luna.Studio.React.Model.Node        as Model
 import           Luna.Studio.React.Model.NodeEditor  (currentConnections)
@@ -98,7 +97,7 @@ snapConnectionsForNodes mousePos nodeIds = when (length nodeIds == 1) $ forM_ no
                 mayConnModel2 <- fmap join $ mapM createConnectionModel $      Connection outPortRef  <$> view Connection.dst <$> mayConn
                 case (,) <$> mayConnModel1 <*> mayConnModel2 of
                     Just (connModel1, connModel2) -> do
-                        modifyNodeEditor $ currentConnections .= map toCurrentConnection [connModel1, connModel2]
+                        modifyNodeEditor $ currentConnections .= map convert [connModel1, connModel2]
                         continue $ \nodeDrag -> update $ nodeDrag & nodeDragSnappedConn ?~ connId
                     _ -> continue clearSnappedConnection
             _ -> continue clearSnappedConnection

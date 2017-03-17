@@ -2,7 +2,6 @@ module Luna.Studio.Action.Basic.AddPort where
 
 import           Control.Arrow
 import qualified Data.Map.Lazy                          as Map
-import           Empire.API.Data.Connection             (Connection (Connection), src)
 import           Empire.API.Data.Node                   (ports)
 import           Empire.API.Data.Port                   (OutPort (Projection), Port (Port), PortId (OutPortId), PortState (NotConnected),
                                                          portId)
@@ -12,10 +11,10 @@ import           Luna.Studio.Action.Basic.AddConnection (localAddConnection)
 import           Luna.Studio.Action.Basic.UpdateNode    (localUpdateNode)
 import qualified Luna.Studio.Action.Batch               as Batch
 import           Luna.Studio.Action.Command             (Command)
-import           Luna.Studio.Action.State.Graph         (getConnectionsContainingNode)
 import qualified Luna.Studio.Action.State.Graph         as Graph
-import           Luna.Studio.Action.State.NodeEditor    (getNode)
+import           Luna.Studio.Action.State.NodeEditor    (getConnectionsContainingNode, getNode)
 import           Luna.Studio.Prelude
+import qualified Luna.Studio.React.Model.Connection     as Connection
 import           Luna.Studio.React.Model.Node           (countProjectionPorts, getPorts, isInputEdge)
 import           Luna.Studio.React.Model.Port           (port)
 import           Luna.Studio.State.Global               (State)
@@ -46,10 +45,10 @@ localAddPort (OutPortRef' (OutPortRef nid pid@(Projection pos))) = do
                     newPortsMap = Map.fromList $ map (view portId &&& id) newPorts
                 void . localUpdateNode $ graphNode & ports .~ newPortsMap
                 conns <- getConnectionsContainingNode nid
-                forM_ conns $ \conn -> case conn of
-                    Connection (OutPortRef srcNid (Projection i)) _ ->
+                forM_ conns $ \conn -> case conn ^. Connection.src of
+                    (OutPortRef srcNid (Projection i)) ->
                         when (srcNid == nid && i >= pos) $
-                            void . localAddConnection $ conn & src . srcPortId .~ Projection (i+1)
+                            void . localAddConnection $ convert $ conn & Connection.src . srcPortId .~ Projection (i+1)
                     _ -> return ()
                 return True
 localAddPort _ = $notImplemented

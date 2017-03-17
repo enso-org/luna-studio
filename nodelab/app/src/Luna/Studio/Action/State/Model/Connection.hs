@@ -45,7 +45,7 @@ createConnectionModel connection = runMaybeT $ do
     (srcPos, dstPos) <- MaybeT $ getConnectionPosition srcNode srcPort dstNode dstPort
     lift $ modifyNode srcNodeId $ ports . ix srcPortId . visible .= True
     lift $ modifyNode dstNodeId $ ports . ix dstPortId . visible .= True
-    return $ Model.Connection srcPortRef dstPortRef srcPos dstPos $ srcPort ^. color
+    return $ Model.Connection connection srcPos dstPos $ srcPort ^. color
 
 createCurrentConnectionModel :: AnyPortRef -> Position -> Command State (Maybe Model.CurrentConnection)
 createCurrentConnectionModel portRef mousePos = runMaybeT $ do
@@ -61,8 +61,8 @@ distSqFromMouseIfIntersect nid nodePos connId = runMaybeT $ do
         then nothing
         else do
             conn <- MaybeT $ NodeEditor.getConnection connId
-            let srcPos  = conn ^. Model.from
-                dstPos  = conn ^. Model.to
+            let srcPos  = conn ^. Model.srcPos
+                dstPos  = conn ^. Model.dstPos
                 proj    = closestPointOnLine (srcPos, dstPos) nodePos
                 u       = closestPointOnLineParam (srcPos, dstPos) nodePos
                 distSq  = distanceSquared proj nodePos
@@ -83,7 +83,7 @@ getIntersectingConnections node mousePos = do
 getConnectionsIntersectingSegment :: (Position, Position) -> Command State [ConnectionId]
 getConnectionsIntersectingSegment seg = flip fmap NodeEditor.getConnections $
     map (view Model.connectionId) . filter (
-        \conn -> doesSegmentsIntersects seg (conn ^. Model.from, conn ^. Model.to) )
+        \conn -> doesSegmentsIntersects seg (conn ^. Model.srcPos, conn ^. Model.dstPos) )
 
 getConnectionPosition :: Node -> Port -> Node -> Port -> Command State (Maybe (Position, Position))
 getConnectionPosition srcNode srcPort dstNode dstPort = do

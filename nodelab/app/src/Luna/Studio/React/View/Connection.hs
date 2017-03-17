@@ -41,8 +41,8 @@ line src dst b = do
 connection :: ReactView (Ref App, Connection)
 connection = React.defineView name $ \(ref, model) -> do
     let connId   = model ^. Connection.connectionId
-        src      = model ^. Connection.from
-        dst      = model ^. Connection.to
+        src      = model ^. Connection.srcPos
+        dst      = model ^. Connection.dstPos
         mid      = averagePosition src dst
         eventSrc = onMouseDown $ \e m -> stopPropagation e : dispatch ref (UI.ConnectionEvent $ Connection.MouseDown m connId Source)
         eventDst = onMouseDown $ \e m -> stopPropagation e : dispatch ref (UI.ConnectionEvent $ Connection.MouseDown m connId Destination)

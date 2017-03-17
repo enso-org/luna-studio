@@ -8,7 +8,8 @@ import qualified Control.Monad.State                as M
 import           Control.Monad.Trans.Maybe          (runMaybeT)
 import qualified Data.HashMap.Strict                as HashMap
 import qualified Data.Map.Lazy                      as Map
-import           Empire.API.Data.Connection         (ConnectionId)
+import qualified Data.Set                           as Set
+
 import           Empire.API.Data.MonadPath          (MonadPath)
 import           Empire.API.Data.Node               (NodeId)
 import qualified Empire.API.Data.Node               as Node
@@ -21,7 +22,8 @@ import           Luna.Studio.Action.State.App       (get, modify)
 import           Luna.Studio.Batch.Workspace        (nodeSearcherData)
 import           Luna.Studio.Prelude
 import           Luna.Studio.React.Model.App        (nodeEditor)
-import           Luna.Studio.React.Model.Connection (Connection, CurrentConnection, connectionId)
+import           Luna.Studio.React.Model.Connection (Connection, ConnectionId, CurrentConnection, connectionId, containsNode,
+                                                     containsPortRef, dstNodeId, srcNodeId)
 import           Luna.Studio.React.Model.Node       (Node, isEdge, isSelected, nodeId, ports)
 import           Luna.Studio.React.Model.NodeEditor
 import           Luna.Studio.React.Model.Port       (Port, state, valueType)
@@ -92,6 +94,22 @@ getConnections = HashMap.elems <$> getConnectionsMap
 
 getConnectionsMap :: Command State ConnectionsMap
 getConnectionsMap = view connections <$> getNodeEditor
+
+getConnectionsContainingNode :: NodeId -> Command State [Connection]
+getConnectionsContainingNode nid = filter (containsNode nid) <$> getConnections
+
+getConnectionsContainingNodes :: [NodeId] -> Command State [Connection]
+getConnectionsContainingNodes nodeIds = filter containsNode' <$> getConnections where
+    nodeIdsSet         = Set.fromList nodeIds
+    containsNode' conn = Set.member (conn ^. srcNodeId) nodeIdsSet
+                      || Set.member (conn ^. dstNodeId) nodeIdsSet
+
+getConnectionsBetweenNodes :: NodeId -> NodeId -> Command State [Connection]
+getConnectionsBetweenNodes nid1 nid2 =
+    filter (\conn -> containsNode nid1 conn && containsNode nid2 conn) <$> getConnections
+
+getConnectionsContainingPortRef :: AnyPortRef -> Command State [Connection]
+getConnectionsContainingPortRef portRef = filter (containsPortRef portRef) <$> getConnections
 
 modifyConnection :: Monoid r => ConnectionId -> M.State Connection r -> Command State r
 modifyConnection connId = modify (nodeEditor . connections . at connId) . zoom traverse
