@@ -5,7 +5,7 @@ import           Data.Position                       (Position, x, y)
 import           Data.ScreenPosition                 (fromDoubles)
 import           Empire.API.Data.Node                (NodeId)
 import           Luna.Studio.Action.Command          (Command)
-import           Luna.Studio.Action.State.NodeEditor (getNodes, inNodeEditor)
+import           Luna.Studio.Action.State.NodeEditor (getNodes, inGraph)
 import           Luna.Studio.Action.State.Scene      (translateToWorkspace)
 import           Luna.Studio.Data.Angle              (Angle)
 import           Luna.Studio.Data.Geometry           (isPointInCircle, isPointInRectangle)
@@ -71,4 +71,4 @@ shouldDisplayPortSelf node = do
             penConnecting <- checkIfActionPerfoming penConnectAction
             if (not . isCollapsed $ node) || penConnecting || connectToSelfPossible
                 then return True
-                else inNodeEditor $ InPortRef nid Self
+                else inGraph $ InPortRef nid Self

@@ -163,11 +163,11 @@ getNodeSearcherData = do
             scope = fromMaybe mempty $ completeData ^? ix tn . items
 
 class NodeEditorElementId a where
-    inNodeEditor :: a -> Command State Bool
+    inGraph :: a -> Command State Bool
 instance NodeEditorElementId NodeId where
-    inNodeEditor = fmap isJust . getNode
+    inGraph = fmap isJust . getNode
 instance NodeEditorElementId ConnectionId where
-    inNodeEditor = fmap isJust . getConnection
+    inGraph = fmap isJust . getConnection
 
 class HasPort a where
     getPort :: a -> Command State (Maybe Port)

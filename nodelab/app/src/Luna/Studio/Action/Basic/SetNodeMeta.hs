@@ -59,4 +59,4 @@ localSetNodeMeta nid update = do
         Node.visualizationsEnabled .= update ^. displayResult
         Node.position              .= (fromTuple $ update ^. position)
     void $ redrawConnectionsForNode nid
-    NodeEditor.inNodeEditor nid
+    NodeEditor.inGraph nid

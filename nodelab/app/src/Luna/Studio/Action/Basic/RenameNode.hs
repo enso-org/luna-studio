@@ -18,4 +18,4 @@ localRenameNode nid update = do
     NodeEditor.modifyNode nid $ do
         Node.name     .= update
         Node.nameEdit .= Nothing
-    NodeEditor.inNodeEditor nid
+    NodeEditor.inGraph nid

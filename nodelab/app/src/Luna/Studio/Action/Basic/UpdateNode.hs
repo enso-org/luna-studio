@@ -18,7 +18,7 @@ localUpdateNodes :: [Node] -> Command State ()
 localUpdateNodes = mapM_ localUpdateNode
 
 localUpdateNode :: Node -> Command State Bool
-localUpdateNode node = NodeEditor.inNodeEditor (node ^. Node.nodeId) >>= \exists ->
+localUpdateNode node = NodeEditor.inGraph (node ^. Node.nodeId) >>= \exists ->
     if not exists
         then return False
         else do

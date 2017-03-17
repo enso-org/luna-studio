@@ -33,8 +33,8 @@ localAddConnections conns = map (view connectionId) <$> filterM localAddConnecti
 
 localAddConnection :: Connection -> Command State Bool
 localAddConnection connection = do
-    inNodeEditor <- drawConnection connection
-    if not inNodeEditor
+    inGraph <- drawConnection connection
+    if not inGraph
         then return False
         else do
             Graph.addConnection connection

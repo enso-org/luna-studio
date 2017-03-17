@@ -16,4 +16,4 @@ setNodeCode nid code =
 localSetNodeCode :: NodeId -> Text -> Command State Bool
 localSetNodeCode nid code = do
     NodeEditor.modifyNode nid $ Node.code .= Just code
-    NodeEditor.inNodeEditor nid
+    NodeEditor.inGraph nid
