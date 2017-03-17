@@ -1,18 +1,17 @@
 module Luna.Studio.Action.Batch  where
 
 import           Data.UUID.Types                      (UUID)
-import           Empire.API.Data.Connection           (Connection (Connection), ConnectionId)
+import           Empire.API.Data.Connection           (Connection, ConnectionId)
+import           Empire.API.Data.Node                 (Node, NodeId)
 import           Empire.API.Data.NodeMeta             (NodeMeta)
 import           Empire.API.Data.PortDefault          (PortDefault)
-import           Empire.API.Data.PortRef              (AnyPortRef (InPortRef', OutPortRef'), InPortRef (InPortRef), OutPortRef (OutPortRef),
-                                                       dstNodeId, nodeId)
+import           Empire.API.Data.PortRef              (AnyPortRef (InPortRef', OutPortRef'), InPortRef (InPortRef), OutPortRef (OutPortRef), dstNodeId, nodeId)
 import           Empire.API.Data.Project              (ProjectId)
 import           Luna.Studio.Action.Command           (Command)
 import           Luna.Studio.Action.UUID              (registerRequest)
 import qualified Luna.Studio.Batch.Connector.Commands as BatchCmd
 import           Luna.Studio.Batch.Workspace          (Workspace)
 import           Luna.Studio.Prelude
-import           Luna.Studio.React.Model.Node         (Node, NodeId)
 import           Luna.Studio.State.Global             (State, clientId, workspace)
 
 
@@ -80,8 +79,8 @@ addNode = withWorkspace .:: BatchCmd.addNode
 addPort :: AnyPortRef -> Command State ()
 addPort = withWorkspace . BatchCmd.addPort
 
-addSubgraph :: [Node] -> [(OutPortRef, InPortRef)] -> Command State ()
-addSubgraph nodes conns = withWorkspace $ BatchCmd.addSubgraph (map convert nodes) (map (uncurry Connection) conns)
+addSubgraph :: [Node] -> [Connection] -> Command State ()
+addSubgraph = withWorkspace .: BatchCmd.addSubgraph
 
 getSubgraph :: NodeId -> Command State ()
 getSubgraph nid = withWorkspace (BatchCmd.getSubgraph nid)

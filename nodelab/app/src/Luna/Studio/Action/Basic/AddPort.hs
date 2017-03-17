@@ -47,7 +47,7 @@ localAddPort (OutPortRef' (OutPortRef nid pid@(Projection pos))) = do
                 forM_ conns $ \conn -> case conn ^. Connection.src of
                     (OutPortRef srcNid (Projection i)) ->
                         when (srcNid == nid && i >= pos) $
-                            void $ localAddConnection (conn ^. Connection.src & srcPortId .~ Projection (i+1)) (conn ^. Connection.dst)
+                            void . localAddConnection $ convert $ conn & Connection.src . srcPortId .~ Projection (i+1)
                     _ -> return ()
                 return True
 localAddPort _ = $notImplemented

@@ -10,7 +10,7 @@ import           Luna.Studio.Action.Command             (Command)
 import qualified Luna.Studio.Action.State.Graph         as Graph
 import           Luna.Studio.Action.State.NodeEditor    (getConnectionsContainingNode, getNode)
 import           Luna.Studio.Prelude
-import           Luna.Studio.React.Model.Connection     (dst, src)
+import           Luna.Studio.React.Model.Connection     (src)
 import           Luna.Studio.React.Model.Node           (countProjectionPorts, getPorts, hasPort, isInputEdge)
 import           Luna.Studio.React.Model.Port           (OutPort (Projection), PortId (OutPortId), portId, toPortsMap)
 import           Luna.Studio.State.Global               (State)
@@ -48,11 +48,11 @@ localMovePort (OutPortRef' (OutPortRef nid pid@(Projection pos))) (OutPortRef' (
                     OutPortRef srcNid (Projection i) ->
                         when (srcNid == nid) $
                             if i == pos
-                                then void $ localAddConnection (conn ^. src & srcPortId .~ Projection newPos) (conn ^. dst)
+                                then void . localAddConnection $ convert $ conn & src . srcPortId .~ Projection newPos
                             else if i > pos && i <= newPos
-                                then void $ localAddConnection (conn ^. src & srcPortId .~ Projection (i-1)) (conn ^. dst)
+                                then void . localAddConnection $ convert $ conn & src . srcPortId .~ Projection (i-1)
                             else if i < pos && i >= newPos
-                                then void $ localAddConnection (conn ^. src & srcPortId .~ Projection (i+1)) (conn ^. dst)
+                                then void . localAddConnection $ convert $ conn & src . srcPortId .~ Projection (i+1)
                                 else return ()
                     _ -> return ()
                 return True

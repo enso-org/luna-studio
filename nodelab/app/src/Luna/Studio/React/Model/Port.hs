@@ -53,12 +53,8 @@ data DraggedPort = DraggedPort { _draggedPort       :: Port
 makeLenses ''DraggedPort
 instance ToJSON DraggedPort
 
-type PortsMap = Map PortId Port
-
 toPortsMap :: [Port] -> Map PortId Port
 toPortsMap = Map.fromList . map (view portId &&& id)
-
-
 
 countInPorts :: [PortId] -> Int
 countInPorts = foldl (\acc pid -> acc + if isInPort pid then 1 else 0) 0

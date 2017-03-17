@@ -1,4 +1,3 @@
--- TODO[PM]: Finish implementation
 module Luna.Studio.Handler.Clipboard where
 
 import           Data.Aeson                          (decode, encode)
@@ -16,7 +15,7 @@ import qualified JS.Clipboard                        as JS (copyStringToClipboar
 import           Luna.Studio.Action.Basic            (addSubgraph, removeSelectedNodes)
 import           Luna.Studio.Action.Command          (Command)
 import           Luna.Studio.Action.Node             (snapCoord)
--- import           Luna.Studio.Action.State.Graph      (separateSubgraph)
+import           Luna.Studio.Action.State.Graph      (separateSubgraph)
 import           Luna.Studio.Action.State.NodeEditor (getNodesMap, getSelectedNodes)
 import           Luna.Studio.Action.State.Scene      (translateToWorkspace)
 import           Luna.Studio.Event.Event             (Event (Shortcut))
@@ -35,26 +34,26 @@ handle (Shortcut (Shortcut.Event Shortcut.Cut    _        )) = Just cutSelection
 handle _ = Nothing
 
 copySelectionToClipboard :: Command State ()
-copySelectionToClipboard = return ()
-    -- nodeIds  <- map (view UINode.nodeId) <$> getSelectedNodes
-    -- subgraph <- separateSubgraph nodeIds
-    -- liftIO $ JS.copyStringToClipboard $ convert $ unpack $ encode subgraph
+copySelectionToClipboard = do
+    nodeIds  <- map (view UINode.nodeId) <$> getSelectedNodes
+    subgraph <- separateSubgraph nodeIds
+    liftIO $ JS.copyStringToClipboard $ convert $ unpack $ encode subgraph
 
 cutSelectionToClipboard :: Command State()
 cutSelectionToClipboard = copySelectionToClipboard >> removeSelectedNodes
 
 pasteFromClipboard :: String -> Command State ()
-pasteFromClipboard clipboardData = return ()
-    -- withJust (decode $ pack clipboardData) $ \subgraph -> do
-    --     graphNodesIds <- Set.fromList . HashMap.keys <$> getNodesMap
-    --     let nodes       = HashMap.elems $ subgraph ^. Graph.nodesMap
-    --         connections = filter (\conn -> Set.member (conn ^. Connection.src . PortRef.srcNodeId) graphNodesIds) $ HashMap.elems $ subgraph ^. Graph.connectionsMap
-    --     workspacePos <- translateToWorkspace =<< use Global.mousePos
-    --     let shiftX = workspacePos ^. x - minimum (map (^. Node.nodeMeta . NodeMeta.position . _1) nodes)
-    --         shiftY = workspacePos ^. y - minimum (map (^. Node.nodeMeta . NodeMeta.position . _2) nodes)
-    --         shiftNode, shiftNodeX, shiftNodeY :: Node -> Node
-    --         shiftNodeX = Node.nodeMeta . NodeMeta.position . _1 %~ snapCoord . (+shiftX)
-    --         shiftNodeY = Node.nodeMeta . NodeMeta.position . _2 %~ snapCoord . (+shiftY)
-    --         shiftNode = shiftNodeY . shiftNodeX
-    --         nodes' = map shiftNode nodes
-    --     addSubgraph nodes' connections
+pasteFromClipboard clipboardData = do
+    withJust (decode $ pack clipboardData) $ \subgraph -> do
+        graphNodesIds <- Set.fromList . HashMap.keys <$> getNodesMap
+        let nodes       = HashMap.elems $ subgraph ^. Graph.nodesMap
+            connections = filter (\conn -> Set.member (conn ^. Connection.src . PortRef.srcNodeId) graphNodesIds) $ HashMap.elems $ subgraph ^. Graph.connectionsMap
+        workspacePos <- translateToWorkspace =<< use Global.mousePos
+        let shiftX = workspacePos ^. x - minimum (map (^. Node.nodeMeta . NodeMeta.position . _1) nodes)
+            shiftY = workspacePos ^. y - minimum (map (^. Node.nodeMeta . NodeMeta.position . _2) nodes)
+            shiftNode, shiftNodeX, shiftNodeY :: Node -> Node
+            shiftNodeX = Node.nodeMeta . NodeMeta.position . _1 %~ snapCoord . (+shiftX)
+            shiftNodeY = Node.nodeMeta . NodeMeta.position . _2 %~ snapCoord . (+shiftY)
+            shiftNode = shiftNodeY . shiftNodeX
+            nodes' = map shiftNode nodes
+        addSubgraph nodes' connections

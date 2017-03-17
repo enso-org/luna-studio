@@ -12,6 +12,7 @@ type NodesMap       = HashMap NodeId Node
 type ConnectionsMap = HashMap ConnectionId Connection
 
 data Graph = Graph { _nodesMap             :: NodesMap
+                   , _connectionsMap       :: ConnectionsMap
                    } deriving (Show, Eq, Generic)
 
 makeLenses ''Graph
@@ -19,4 +20,4 @@ makeLenses ''Graph
 instance ToJSON Graph
 instance FromJSON Graph
 instance Default Graph where
-    def = Graph def
+    def = Graph def def
