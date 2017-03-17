@@ -14,8 +14,7 @@ module Luna.Studio.Action.Connect
 
 import qualified Data.HashMap.Strict                 as HashMap
 import           Data.ScreenPosition                 (ScreenPosition)
-import           Empire.API.Data.Connection          (ConnectionId, toValidConnection)
-import qualified Empire.API.Data.Connection          as Connection
+import qualified Empire.API.Data.Connection          as ConnectionAPI
 import           Empire.API.Data.Port                (InPort (Self), PortId (InPortId))
 import           Empire.API.Data.PortRef             (AnyPortRef (InPortRef', OutPortRef'))
 import qualified Empire.API.Data.PortRef             as PortRef
@@ -25,12 +24,13 @@ import           Luna.Studio.Action.Command          (Command)
 import           Luna.Studio.Action.Node.Drag        (startNodeDrag)
 import           Luna.Studio.Action.State.Action     (beginActionWithKey, continueActionWithKey, removeActionFromState, updateActionWithKey)
 import           Luna.Studio.Action.State.Model      (createConnectionModel, createCurrentConnectionModel)
-import           Luna.Studio.Action.State.NodeEditor (getNode, modifyNodeEditor)
+import           Luna.Studio.Action.State.NodeEditor (getConnection, getNode, modifyNodeEditor)
 import           Luna.Studio.Action.State.Scene      (translateToWorkspace)
 import           Luna.Studio.Event.Mouse             (mousePosition, workspacePosition)
 import           Luna.Studio.Prelude
 import           Luna.Studio.React.Event.Connection  (ModifiedEnd (Destination, Source))
-import           Luna.Studio.React.Model.Connection  (toCurrentConnection)
+import           Luna.Studio.React.Model.Connection  (ConnectionId)
+import qualified Luna.Studio.React.Model.Connection  as Connection
 import           Luna.Studio.React.Model.Node        (isCollapsed)
 import qualified Luna.Studio.React.Model.NodeEditor  as NodeEditor
 import           Luna.Studio.State.Action            (Action (begin, continue, end, update), Connect (Connect), Mode (Click, Drag),
@@ -50,8 +50,7 @@ instance Action (Command State) Connect where
 
 handleConnectionMouseDown :: MouseEvent -> ConnectionId -> ModifiedEnd -> Command State ()
 handleConnectionMouseDown evt connId modifiedEnd = do
-    connectionsMap <- use $ Global.graph . Graph.connectionsMap
-    withJust (HashMap.lookup connId connectionsMap) $ \connection -> do
+    withJustM (getConnection connId) $ \connection -> do
         let portRef = case modifiedEnd of
                 Destination -> OutPortRef' (connection ^. Connection.src)
                 Source      -> InPortRef'  (connection ^. Connection.dst)
@@ -92,11 +91,11 @@ handlePortMouseUp portRef action = when (action ^. connectMode == Drag) $
 
 snapToPort :: AnyPortRef -> Connect -> Command State ()
 snapToPort portRef action =
-    withJust (toValidConnection (action ^. connectSourcePort) portRef) $ \conn -> do
+    withJust (ConnectionAPI.toValidConnection (action ^. connectSourcePort) portRef) $ \conn -> do
         mayConnModel <- createConnectionModel conn
         withJust mayConnModel $ \connModel -> do
             update $ action & connectSnappedPort ?~ portRef
-            modifyNodeEditor $ NodeEditor.currentConnections .= [toCurrentConnection connModel]
+            modifyNodeEditor $ NodeEditor.currentConnections .= [Connection.toCurrentConnection connModel]
 
 cancelSnapToPort :: AnyPortRef -> Connect -> Command State ()
 cancelSnapToPort portRef action = when (Just portRef == action ^. connectSnappedPort) $
@@ -118,7 +117,7 @@ stopConnecting _ = do
 
 connectToPort :: AnyPortRef -> Connect -> Command State ()
 connectToPort dst action = do
-    withJust (toValidConnection dst $ action ^. connectSourcePort) $ \newConn -> do
-        connect (Left $ newConn ^. Connection.src) (Left $ newConn ^. Connection.dst)
+    withJust (ConnectionAPI.toValidConnection dst $ action ^. connectSourcePort) $ \newConn -> do
+        connect (Left $ newConn ^. ConnectionAPI.src) (Left $ newConn ^. ConnectionAPI.dst)
         GA.sendEvent $ GA.Connect GA.Manual
     stopConnecting action

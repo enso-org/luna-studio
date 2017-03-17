@@ -22,12 +22,13 @@ data NodeEditor = NodeEditor { _screenTransform     :: CameraTransformation
                              , _nodes               :: NodesMap
                              , _monads              :: [MonadPath]
                              , _connections         :: HashMap InPortRef Connection
+                             , _visualizations      :: [(NodeId, Int, Position)] --TODO move to node
+
                              , _currentConnections  :: [CurrentConnection]
                              , _portDragConnections :: ConnectionsMap
                              , _connectionPen       :: Maybe ConnectionPen
                              , _selectionBox        :: Maybe SelectionBox
                              , _searcher            :: Maybe Searcher
-                             , _visualizations      :: [(NodeId, Int, Position)]
                              , _draggedPort         :: Maybe DraggedPort
                              } deriving (Default, Eq, Generic)
 

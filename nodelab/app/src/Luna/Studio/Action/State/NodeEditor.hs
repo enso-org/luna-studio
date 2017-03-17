@@ -151,14 +151,10 @@ instance HasPort OutPortRef where
 instance HasPort AnyPortRef where
     getPort = getPortFromAnyPortRef
 
--- TODO[LJK]: Try to get this to work:
 modifyPort :: Monoid r => AnyPortRef -> M.State Port r -> Command State r
-modifyPort portRef = $notImplemented
-    -- modifyNode nid . (ports . at pid)
-    -- modify (nodeEditor . nodes . at nid . ports . at pid) . zoom traverse where
-    --     nid = portRef ^. PortRef.nodeId
-    --     pid = portRef ^. PortRef.portId
-
+modifyPort portRef = modify (nodeEditor . nodes . at nid . traverse . ports . at pid) . zoom traverse where
+    nid = portRef ^. PortRef.nodeId
+    pid = portRef ^. PortRef.portId
 
 getPortFromAnyPortRef :: AnyPortRef -> Command State (Maybe Port)
 getPortFromAnyPortRef portRef = runMaybeT $ do

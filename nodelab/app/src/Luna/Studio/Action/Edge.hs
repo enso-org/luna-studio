@@ -196,11 +196,13 @@ updateConnectionsForDraggedPort :: AnyPortRef -> Position -> Command State ()
 updateConnectionsForDraggedPort portRef pos = do
     connectionsToUpdate <- Graph.getConnectionsContainingPortRef portRef
     forM_ connectionsToUpdate $ \conn -> do
-        let connId = conn ^. ConnectionAPI.dst
+        let connId  = conn ^. ConnectionAPI.connectionId
+            connSrc = conn ^. ConnectionAPI.src
+            connDst = conn ^. ConnectionAPI.dst
             srcPortRef = case portRef of
                 InPortRef'  _ -> OutPortRef' $ conn ^. ConnectionAPI.src
                 OutPortRef' _ -> InPortRef'  $ conn ^. ConnectionAPI.dst
-        mayConnModel <- (fmap . fmap) (toConnection connId) $ createCurrentConnectionModel srcPortRef pos
+        mayConnModel <- (fmap . fmap) (toConnection connSrc connDst) $ createCurrentConnectionModel srcPortRef pos
         mayPortColor <- (fmap . fmap) (view Port.color) $ getPort portRef
         withJust ((,) <$> mayConnModel <*> mayPortColor) $ \(connModel', portColor) -> do
             let connModel = case portRef of

@@ -45,7 +45,7 @@ createConnectionModel connection = runMaybeT $ do
     (srcPos, dstPos) <- MaybeT $ getConnectionPosition srcNode srcPort dstNode dstPort
     lift $ modifyNode srcNodeId $ ports . ix srcPortId . visible .= True
     lift $ modifyNode dstNodeId $ ports . ix dstPortId . visible .= True
-    return $ Model.Connection dstPortRef srcPos dstPos $ srcPort ^. color
+    return $ Model.Connection srcPortRef dstPortRef srcPos dstPos $ srcPort ^. color
 
 createCurrentConnectionModel :: AnyPortRef -> Position -> Command State (Maybe Model.CurrentConnection)
 createCurrentConnectionModel portRef mousePos = runMaybeT $ do

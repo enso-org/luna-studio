@@ -1,26 +1,22 @@
 module Luna.Studio.Handler.Navigation where
 
-import qualified Data.HashMap.Strict                 as HashMap
-
 import           Data.Position                       (Position (Position), vector, x, y)
 import           Data.Vector                         (lengthSquared, magnitude)
 import           Luna.Studio.Prelude
 
-import qualified Empire.API.Data.Connection          as C
-import           Empire.API.Data.Node                (NodeId)
 import qualified Empire.API.Data.Port                as P
 import qualified Empire.API.Data.PortRef             as R
 import           Luna.Studio.Action.Basic            (selectNodes)
 import           Luna.Studio.Action.Command          (Command)
-import           Luna.Studio.Action.State.NodeEditor (getNode, getNodes, getSelectedNodes)
+import           Luna.Studio.Action.State.NodeEditor (getConnection, getConnections, getNode, getNodes, getSelectedNodes)
 import           Luna.Studio.Action.State.Scene      (getScreenCenter, translateToWorkspace)
 import           Luna.Studio.Event.Event             (Event (Shortcut))
 import qualified Luna.Studio.Event.Shortcut          as Shortcut
+import qualified Luna.Studio.React.Model.Connection  as C
+import           Luna.Studio.React.Model.Node        (NodeId)
 import           Luna.Studio.React.Model.Node        (Node)
 import qualified Luna.Studio.React.Model.Node        as Node
 import           Luna.Studio.State.Global            (State)
-import qualified Luna.Studio.State.Global            as Global
-import qualified Luna.Studio.State.Graph             as Graph
 
 
 handle :: Event -> Maybe (Command State ())
@@ -59,11 +55,11 @@ goPrev = do
             nodeId = nodeSrc ^. Node.nodeId
             inPortRefSelf      = R.InPortRef nodeId P.Self
             inPortRefFirstPort = R.InPortRef nodeId $ P.Arg 0
-        prevSelfNodeIdMay <- preuse $ Global.graph . Graph.connectionsMap . ix inPortRefSelf . C.src . R.srcNodeId
+        prevSelfNodeIdMay <- view (C.src . R.srcNodeId) <∘> getConnection inPortRefSelf
         case prevSelfNodeIdMay of
             Just prevSelfNodeId -> selectNodes [prevSelfNodeId]
             Nothing -> do
-                prevFirstPortNodeIdMay <- preuse $ Global.graph . Graph.connectionsMap . ix inPortRefFirstPort . C.src . R.srcNodeId
+                prevFirstPortNodeIdMay <- view (C.src . R.srcNodeId) <∘> getConnection inPortRefFirstPort
                 withJust prevFirstPortNodeIdMay $ selectNodes . return
 
 goNext :: Command State ()
@@ -81,8 +77,7 @@ goNext = do
 
 getDstNodeIds :: NodeId -> Command State [NodeId]
 getDstNodeIds nodeId = do
-    connMap <- use $ Global.graph . Graph.connectionsMap
-    let connections = filter matchNodeId $ HashMap.elems connMap
+    connections <- filter matchNodeId <$> getConnections
     return $ (^. C.dst . R.dstNodeId) <$> connections
     where
         matchNodeId conn = conn ^. C.src . R.srcNodeId == nodeId
