@@ -1,5 +1,6 @@
 module Luna.Studio.Action.Basic.Revert where
 
+import           Empire.API.Data.Connection                 (dst, src)
 import           Empire.API.Data.Node                       (nodeId)
 import           Empire.API.Data.PortRef                    (AnyPortRef (InPortRef'))
 import qualified Empire.API.Graph.AddConnection             as AddConnection
@@ -17,7 +18,7 @@ import qualified Empire.API.Graph.SetNodeExpression         as SetNodeExpression
 import qualified Empire.API.Graph.SetNodesMeta              as SetNodesMeta
 import qualified Empire.API.Graph.SetPortDefault            as SetPortDefault
 import qualified Empire.API.Response                        as Response
-import           Luna.Studio.Action.Basic.AddConnection     (localAddConnections, localConnect)
+import           Luna.Studio.Action.Basic.AddConnection     (localAddConnection, localAddConnections)
 import           Luna.Studio.Action.Basic.AddPort           (localAddPort)
 import           Luna.Studio.Action.Basic.AddSubgraph       (localAddSubgraph)
 import           Luna.Studio.Action.Basic.MovePort          (localMovePort)
@@ -36,8 +37,8 @@ import           Luna.Studio.State.Global                   (State)
 
 
 revertAddConnection :: AddConnection.Request -> Command State ()
-revertAddConnection (AddConnection.Request loc _ (Left (InPortRef' dst))) =
-    whenM (isCurrentLocationAndGraphLoaded loc) $ void $ localRemoveConnection dst
+revertAddConnection (AddConnection.Request loc _ (Left (InPortRef' dst'))) =
+    whenM (isCurrentLocationAndGraphLoaded loc) $ void $ localRemoveConnection dst'
 revertAddConnection (AddConnection.Request loc _ (Left _)) = return ()
 revertAddConnection _ = $notImplemented
 
@@ -59,18 +60,19 @@ revertMovePort (MovePort.Request loc oldPortRef newPortRef) =
     whenM (isCurrentLocationAndGraphLoaded loc) $ void $ localMovePort newPortRef oldPortRef
 
 revertRemoveConnection :: RemoveConnection.Request -> Response.Status RemoveConnection.Inverse -> Command State ()
-revertRemoveConnection (RemoveConnection.Request loc dst) (Response.Ok (RemoveConnection.Inverse src)) =
-    whenM (isCurrentLocationAndGraphLoaded loc) $ void $ localConnect src dst
+revertRemoveConnection (RemoveConnection.Request loc dst') (Response.Ok (RemoveConnection.Inverse src')) =
+    whenM (isCurrentLocationAndGraphLoaded loc) $ void $ localAddConnection src' dst'
 revertRemoveConnection (RemoveConnection.Request _loc _dst) (Response.Error _msg) = $notImplemented
 
+--TODO[LJK]: Force Empire.API.Data.Connection to be instance of wrapped to make functions like this cleaner
 revertRemoveNodes :: RemoveNodes.Request -> Response.Status RemoveNodes.Inverse -> Command State ()
 revertRemoveNodes (RemoveNodes.Request loc _) (Response.Ok (RemoveNodes.Inverse nodes conns)) =
-    whenM (isCurrentLocationAndGraphLoaded loc) $ void $ localAddSubgraph (convert <$> nodes) conns
+    whenM (isCurrentLocationAndGraphLoaded loc) $ void $ localAddSubgraph (map convert nodes) (map (\conn -> (conn ^. src, conn ^. dst)) conns)
 revertRemoveNodes (RemoveNodes.Request _loc _) (Response.Error _msg) = $notImplemented
 
 revertRemovePort :: RemovePort.Request -> Response.Status RemovePort.Inverse -> Command State ()
 revertRemovePort (RemovePort.Request loc portRef) (Response.Ok (RemovePort.Inverse conns)) =
-    whenM (isCurrentLocationAndGraphLoaded loc) $ void $ localAddPort portRef >> localAddConnections conns
+    whenM (isCurrentLocationAndGraphLoaded loc) $ void $ localAddPort portRef >> localAddConnections (map (\conn -> (conn ^. src, conn ^. dst)) conns)
 revertRemovePort (RemovePort.Request _loc _portRef) (Response.Error _msg) = $notImplemented
 
 revertRenameNode :: RenameNode.Request -> Response.Status RenameNode.Inverse -> Command State ()
@@ -95,7 +97,7 @@ revertSetNodeExpression (SetNodeExpression.Request _loc _nid _) (Response.Error 
 
 revertSetNodesMeta :: SetNodesMeta.Request -> Response.Status SetNodesMeta.Inverse -> Command State ()
 revertSetNodesMeta (SetNodesMeta.Request loc _) (Response.Ok (SetNodesMeta.Inverse prevMeta)) =
-    whenM (isCurrentLocationAndGraphLoaded loc) $ void $ localSetNodesMeta prevMeta
+    whenM (isCurrentLocationAndGraphLoaded loc) $ void . localSetNodesMeta $ map convert prevMeta
 revertSetNodesMeta (SetNodesMeta.Request _loc _) (Response.Error _msg) = $notImplemented
 
 revertSetPortDefault :: SetPortDefault.Request -> Response.Status SetPortDefault.Inverse -> Command State ()

@@ -3,7 +3,6 @@
 {-# LANGUAGE LambdaCase     #-}
 module Luna.Studio.Action.State.NodeEditor where
 
-import           Control.Arrow                      ((&&&))
 import qualified Control.Monad.State                as M
 import           Control.Monad.Trans.Maybe          (runMaybeT)
 import qualified Data.HashMap.Strict                as HashMap
@@ -11,7 +10,6 @@ import qualified Data.Map.Lazy                      as Map
 import qualified Data.Set                           as Set
 
 import           Empire.API.Data.MonadPath          (MonadPath)
-import           Empire.API.Data.Node               (NodeId)
 import qualified Empire.API.Data.Node               as Node
 import           Empire.API.Data.Port               (OutPort (All), _WithDefault)
 import           Empire.API.Data.PortDefault        (PortDefault)
@@ -22,9 +20,9 @@ import           Luna.Studio.Action.State.App       (get, modify)
 import           Luna.Studio.Batch.Workspace        (nodeSearcherData)
 import           Luna.Studio.Prelude
 import           Luna.Studio.React.Model.App        (nodeEditor)
-import           Luna.Studio.React.Model.Connection (Connection, ConnectionId, CurrentConnection, connectionId, containsNode,
-                                                     containsPortRef, dstNodeId, srcNodeId)
-import           Luna.Studio.React.Model.Node       (Node, isEdge, isSelected, nodeId, ports)
+import           Luna.Studio.React.Model.Connection (Connection, ConnectionId, ConnectionsMap, CurrentConnection, connectionId,
+                                                     containsNode, containsPortRef, dstNodeId, srcNodeId, toConnectionsMap)
+import           Luna.Studio.React.Model.Node       (Node, NodeId, NodesMap, isEdge, isSelected, nodeId, ports, toNodesMap)
 import           Luna.Studio.React.Model.NodeEditor
 import           Luna.Studio.React.Model.Port       (Port, state, valueType)
 import           Luna.Studio.React.Model.Searcher   (Searcher)
@@ -50,6 +48,15 @@ resetGraph = modifyNodeEditor $ do
     searcher            .= def
     visualizations      .= def
     draggedPort         .= def
+
+-- TODO[LJK]: Make this work
+-- separateSubgraph :: [NodeId] -> Command State Graph
+-- separateSubgraph nodeIds = do
+--     let idSet = Set.fromList nodeIds
+--         inSet = flip Set.member idSet
+--     nodes <- Map.filterWithKey (inSet .: const)  <$> getNodesMap
+--     conns <- Map.filter (inSet . view dstNodeId) <$> getConnectionsMap
+--     return $ Graph nodes conns
 
 
 separateSubgraph :: [NodeId] -> Command State Graph
@@ -88,7 +95,7 @@ getSelectedNodes :: Command State [Node]
 getSelectedNodes = filter (view isSelected) <$> getNodes
 
 updateNodes :: [Node] -> Command State ()
-updateNodes update = modifyNodeEditor $ nodes .= HashMap.fromList (map (view nodeId &&& id) update)
+updateNodes update = modifyNodeEditor $ nodes .= toNodesMap update
 
 
 addConnection :: Connection -> Command State ()
@@ -104,6 +111,10 @@ getConnections = HashMap.elems <$> getConnectionsMap
 getConnectionsMap :: Command State ConnectionsMap
 getConnectionsMap = view connections <$> getNodeEditor
 
+getConnectionsBetweenNodes :: NodeId -> NodeId -> Command State [Connection]
+getConnectionsBetweenNodes nid1 nid2 =
+    filter (\conn -> containsNode nid1 conn && containsNode nid2 conn) <$> getConnections
+
 getConnectionsContainingNode :: NodeId -> Command State [Connection]
 getConnectionsContainingNode nid = filter (containsNode nid) <$> getConnections
 
@@ -113,12 +124,11 @@ getConnectionsContainingNodes nodeIds = filter containsNode' <$> getConnections 
     containsNode' conn = Set.member (conn ^. srcNodeId) nodeIdsSet
                       || Set.member (conn ^. dstNodeId) nodeIdsSet
 
-getConnectionsBetweenNodes :: NodeId -> NodeId -> Command State [Connection]
-getConnectionsBetweenNodes nid1 nid2 =
-    filter (\conn -> containsNode nid1 conn && containsNode nid2 conn) <$> getConnections
-
 getConnectionsContainingPortRef :: AnyPortRef -> Command State [Connection]
 getConnectionsContainingPortRef portRef = filter (containsPortRef portRef) <$> getConnections
+
+getConnectionsToNode :: NodeId -> Command State [Connection]
+getConnectionsToNode nid = filter (\conn -> conn ^. dstNodeId == nid) <$> getConnections
 
 modifyConnection :: Monoid r => ConnectionId -> M.State Connection r -> Command State r
 modifyConnection connId = modify (nodeEditor . connections . at connId) . zoom traverse
@@ -127,7 +137,7 @@ removeConnection :: ConnectionId -> Command State ()
 removeConnection connId = modifyNodeEditor $ connections . at connId .= Nothing
 
 updateConnections :: [Connection] -> Command State ()
-updateConnections update = modifyNodeEditor $ connections .= HashMap.fromList (map (view connectionId &&& id) update)
+updateConnections update = modifyNodeEditor $ connections .= toConnectionsMap update
 
 
 getMonads :: Command State [MonadPath]

@@ -6,13 +6,13 @@ import           Empire.API.Data.PortRef             (dstNodeId)
 import           Luna.Studio.Action.Basic.UpdateNode (updatePortSelfVisibility)
 import qualified Luna.Studio.Action.Batch            as Batch
 import           Luna.Studio.Action.Command          (Command)
-import qualified Luna.Studio.Action.State.Graph      as Graph
 import           Luna.Studio.Action.State.NodeEditor (getConnectionsBetweenNodes, getConnectionsContainingNode,
-                                                      getConnectionsContainingNodes)
+                                                      getConnectionsContainingNodes, inGraph)
 import qualified Luna.Studio.Action.State.NodeEditor as NodeEditor
 import           Luna.Studio.Prelude
 import           Luna.Studio.React.Model.Connection  (ConnectionId, connectionId)
 import           Luna.Studio.State.Global            (State)
+
 
 removeConnections :: [ConnectionId] -> Command State ()
 removeConnections connIds = localRemoveConnections connIds >>= \connToRemoveIds ->
@@ -27,11 +27,10 @@ localRemoveConnections = filterM localRemoveConnection
 
 localRemoveConnection :: ConnectionId -> Command State Bool
 localRemoveConnection connId = do
-    mayConn <- Graph.getConnection connId
-    Graph.removeConnection connId
+    result <- inGraph connId
     NodeEditor.removeConnection connId
     void . updatePortSelfVisibility $ connId ^. dstNodeId
-    return $ isJust mayConn
+    return result
 
 
 localRemoveConnectionsContainingNode :: NodeId -> Command State [ConnectionId]

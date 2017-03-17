@@ -1,13 +1,11 @@
 module Luna.Studio.Action.Basic
-    ( addConnection
-    , addNode
+    ( addNode
     , addPort
     , addSubgraph
     , centerGraph
     , connect
     , createGraph
     , destroyGraph
-    , drawConnection
     , dropSelectionHistory
     , enterBreadcrumb
     , enterBreadcrumbs
@@ -22,7 +20,6 @@ module Luna.Studio.Action.Basic
     , localAddNode
     , localAddPort
     , localAddSubgraph
-    , localConnect
     , localMerge
     , localMoveNode
     , localMoveNodes
@@ -94,16 +91,15 @@ module Luna.Studio.Action.Basic
     , updateScene
     ) where
 
-import           Luna.Studio.Action.Basic.AddConnection       (addConnection, connect, localAddConnection, localAddConnections,
-                                                               localConnect)
+import           Luna.Studio.Action.Basic.AddConnection       (connect, localAddConnection, localAddConnections)
 import           Luna.Studio.Action.Basic.AddNode             (addNode, localAddNode)
 import           Luna.Studio.Action.Basic.AddPort             (addPort, localAddPort)
 import           Luna.Studio.Action.Basic.AddSubgraph         (addSubgraph, localAddSubgraph, localUpdateSubgraph)
 import           Luna.Studio.Action.Basic.CenterGraph         (centerGraph)
 import           Luna.Studio.Action.Basic.CreateGraph         (createGraph)
 import           Luna.Studio.Action.Basic.DestroyGraph        (destroyGraph)
-import           Luna.Studio.Action.Basic.DrawConnection      (drawConnection, redrawConnection, redrawConnections,
-                                                               redrawConnectionsForEdgeNodes, redrawConnectionsForNodes)
+import           Luna.Studio.Action.Basic.DrawConnection      (redrawConnection, redrawConnections, redrawConnectionsForEdgeNodes,
+                                                               redrawConnectionsForNodes)
 import           Luna.Studio.Action.Basic.EnterBreadcrumb     (enterBreadcrumb, enterBreadcrumbs, enterNode, exitBreadcrumb)
 import           Luna.Studio.Action.Basic.FocusNode           (focusNode, focusNodes, updateNodeZOrder)
 import           Luna.Studio.Action.Basic.Merge               (localMerge, localUnmerge)

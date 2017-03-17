@@ -1,8 +1,7 @@
 module Luna.Studio.Action.Basic.SetNodeMeta where
 
 import           Control.Monad                           (filterM)
-import           Data.Position                           (Position, fromTuple, toTuple)
-import           Empire.API.Data.NodeMeta                (NodeMeta (NodeMeta), displayResult, position)
+import           Data.Position                           (Position)
 import           Luna.Studio.Action.Basic.DrawConnection (redrawConnectionsForNode)
 import qualified Luna.Studio.Action.Batch                as Batch
 import           Luna.Studio.Action.Command              (Command)
@@ -16,12 +15,12 @@ import           Luna.Studio.State.Global                (State)
 toggleVisualizations :: NodeId -> Bool -> Command State ()
 toggleVisualizations nid displayRes = do
     mayPos <- view Node.position <∘> NodeEditor.getNode nid
-    withJust mayPos $ \pos -> setNodesMeta [(nid, NodeMeta (toTuple pos) displayRes)]
+    withJust mayPos $ \pos -> setNodesMeta [(nid, pos, displayRes)]
 
 localToggleVisualizations :: NodeId -> Bool -> Command State ()
 localToggleVisualizations nid displayRes = do
     mayPos <- view Node.position <∘> NodeEditor.getNode nid
-    withJust mayPos $ \pos -> void $ localSetNodesMeta [(nid, NodeMeta (toTuple pos) displayRes)]
+    withJust mayPos $ \pos -> void $ localSetNodesMeta [(nid, pos, displayRes)]
 
 moveNode :: (NodeId, Position) -> Command State ()
 moveNode = moveNodes . return
@@ -33,30 +32,30 @@ moveNodes :: [(NodeId, Position)] -> Command State ()
 moveNodes nodesPos = do
     update <- fmap catMaybes . forM nodesPos $ \(nid, pos) ->
         flip fmap2 (NodeEditor.getNode nid) $
-            \node -> (nid, NodeMeta (toTuple pos) (node ^. Node.visualizationsEnabled))
+            \node -> (nid, pos, node ^. Node.visualizationsEnabled)
     setNodesMeta update
 
 localMoveNodes :: [(NodeId, Position)] -> Command State [NodeId]
 localMoveNodes nodesPos = do
     update <- fmap catMaybes . forM nodesPos $ \(nid, pos) ->
         flip fmap2 (NodeEditor.getNode nid) $
-            \node -> (nid, NodeMeta (toTuple pos) (node ^. Node.visualizationsEnabled))
+            \node -> (nid, pos, node ^. Node.visualizationsEnabled)
     localSetNodesMeta update
 
-setNodeMeta :: (NodeId, NodeMeta) -> Command State ()
+setNodeMeta :: (NodeId, Position, Bool) -> Command State ()
 setNodeMeta = setNodesMeta . return
 
-setNodesMeta :: [(NodeId, NodeMeta)] -> Command State ()
+setNodesMeta :: [(NodeId, Position, Bool)] -> Command State ()
 setNodesMeta update' = filterM (uncurry localSetNodeMeta) update' >>= \update ->
     unless (null update) $ Batch.setNodesMeta update
 
-localSetNodesMeta :: [(NodeId, NodeMeta)] -> Command State [NodeId]
-localSetNodesMeta = fmap2 fst . filterM (uncurry localSetNodeMeta)
+localSetNodesMeta :: [(NodeId, Position, Bool)] -> Command State [NodeId]
+localSetNodesMeta = fmap2 (view _1) . filterM (\(nid, pos, dispRes) -> localSetNodeMeta nid pos dispRes)
 
-localSetNodeMeta :: NodeId -> NodeMeta -> Command State Bool
-localSetNodeMeta nid update = do
+localSetNodeMeta :: NodeId -> Position -> Bool -> Command State Bool
+localSetNodeMeta nid pos dispRes = do
     NodeEditor.modifyNode nid $ do
-        Node.visualizationsEnabled .= update ^. displayResult
-        Node.position              .= (fromTuple $ update ^. position)
+        Node.visualizationsEnabled .= dispRes
+        Node.position              .= pos
     void $ redrawConnectionsForNode nid
     NodeEditor.inGraph nid

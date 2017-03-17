@@ -4,7 +4,7 @@ module Luna.Studio.Action.Basic.Merge where
 import qualified Data.Position                           as Position
 import           Empire.API.Data.Graph                   (Graph)
 import qualified Empire.API.Data.Graph                   as GraphAPI
-import           Luna.Studio.Action.Basic.AddConnection  (localConnect)
+import           Luna.Studio.Action.Basic.AddConnection  (localAddConnections)
 import           Luna.Studio.Action.Basic.AddNode        (localAddNodes)
 import           Luna.Studio.Action.Basic.DrawConnection (redrawConnectionsForNode)
 import           Luna.Studio.Action.Basic.RemoveNode     (localRemoveNodes)
@@ -27,7 +27,7 @@ localMerge parentId graphs = withJustM (getNode parentId) $ \parentNode -> do
             parentPos      = parentNode ^. Node.position
             movedNodes     = map (Node.position %~ (\p -> p - topLeft + parentPos)) nodes
         localAddNodes movedNodes
-        mapM_ (uncurry localConnect) connections
+        void $ localAddConnections connections
         return $ Node.Subgraph (view Node.nodeId <$> nodes) edges monads
     modifyNode parentId $ Node.mode .= Node.Expanded (Node.Function subgraphs)
     void $ redrawConnectionsForNode parentId

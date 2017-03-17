@@ -9,7 +9,7 @@ import qualified Luna.Studio.Action.Batch                  as Batch
 import           Luna.Studio.Action.Command                (Command)
 import           Luna.Studio.Action.State.NodeEditor       (getConnectionsContainingNode, getNode)
 import           Luna.Studio.Prelude
-import           Luna.Studio.React.Model.Connection        (connectionId, src)
+import           Luna.Studio.React.Model.Connection        (connectionId, dst, src)
 import           Luna.Studio.React.Model.Node              (hasPort, isInputEdge, ports)
 import           Luna.Studio.React.Model.Port              (OutPort (Projection), PortId (OutPortId), portId, toPortsMap)
 import           Luna.Studio.State.Global                  (State)
@@ -40,9 +40,9 @@ localRemovePort (OutPortRef' (OutPortRef nid pid@(Projection pos))) = do
                     OutPortRef srcNid (Projection i) ->
                         when (srcNid == nid) $
                             if i == pos
-                                then void . removeConnection   $ conn ^. connectionId
+                                then void . removeConnection $ conn ^. connectionId
                             else if (i >= pos)
-                                then void . localAddConnection $ convert $ conn & src . srcPortId .~ Projection (i-1)
+                                then void $ localAddConnection (conn ^. src & srcPortId .~ Projection (i-1)) (conn ^. dst)
                                 else return ()
                     _ -> return ()
                 return True

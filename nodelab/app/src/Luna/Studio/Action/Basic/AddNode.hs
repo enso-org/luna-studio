@@ -32,7 +32,8 @@ addNode nodePos expression = do
     selected <- getSelectedNodes
     nid      <- getUUID
     let nodeType    = ExpressionNode expression
-        nodeMeta    = NodeMeta (toTuple $ snap nodePos) True
+        snappedPos  = snap nodePos
+        nodeMeta    = NodeMeta (toTuple snappedPos) True
         connectTo   = if length selected == 1
                       then view Node.nodeId <$> listToMaybe selected
                       else Nothing
@@ -41,7 +42,7 @@ addNode nodePos expression = do
         node        = convert $ Empire.Node nid def nodeType False defPortsMap nodeMeta def
     localAddNode node
     selectNode nid
-    Batch.addNode nid expression nodeMeta connectTo
+    Batch.addNode nid expression snappedPos True connectTo
     GA.sendEvent $ GA.AddNode $ if isJust connectTo then GA.AutoConnect else GA.Simple
 
 localAddNodes :: [Node] -> Command State ()

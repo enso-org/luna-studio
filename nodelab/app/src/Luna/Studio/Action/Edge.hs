@@ -15,14 +15,12 @@ module Luna.Studio.Action.Edge
 
 import           Control.Arrow
 import           Control.Monad.Trans.Maybe           (MaybeT (MaybeT), runMaybeT)
-import qualified Data.HashMap.Strict                 as HashMap
 import           Data.Map.Lazy                       (Map)
 import qualified Data.Map.Lazy                       as Map
 import           Data.Position                       (Position (Position), move)
 import           Data.ScreenPosition                 (ScreenPosition, fromScreenPosition)
 import           Data.Size                           (x, y)
 import           Data.Vector                         (Vector2 (Vector2), scalarProduct)
-import qualified Empire.API.Data.Connection          as ConnectionAPI
 import           Empire.API.Data.PortRef             (AnyPortRef (InPortRef', OutPortRef'), toAnyPortRef)
 import qualified Empire.API.Data.PortRef             as PortRef
 import           Luna.Studio.Action.Basic            (redrawConnectionsForEdgeNodes)
@@ -32,15 +30,15 @@ import           Luna.Studio.Action.Command          (Command)
 import qualified Luna.Studio.Action.Connect          as Connect
 import           Luna.Studio.Action.State.Action     (beginActionWithKey, continueActionWithKey, removeActionFromState, updateActionWithKey)
 import           Luna.Studio.Action.State.App        (renderIfNeeded)
-import qualified Luna.Studio.Action.State.Graph      as Graph
 import           Luna.Studio.Action.State.Model      (createConnectionModel, createCurrentConnectionModel, getInputEdgePortPosition,
                                                       getOutputEdgePortPosition)
-import           Luna.Studio.Action.State.NodeEditor (getNode, getPort, modifyNodeEditor)
+import           Luna.Studio.Action.State.NodeEditor (addConnection, getConnectionsContainingNode, getConnectionsContainingPortRef, getNode,
+                                                      getPort, modifyNodeEditor, removeConnection)
 import           Luna.Studio.Action.State.Scene      (getInputSidebarPosition, getInputSidebarSize, getOutputSidebarPosition,
                                                       getOutputSidebarSize, translateToWorkspace)
 import           Luna.Studio.Event.Mouse             (mousePosition, workspacePosition)
 import           Luna.Studio.Prelude
-import           Luna.Studio.React.Model.Connection  (toConnection)
+import           Luna.Studio.React.Model.Connection  (connectionId, dst, src, toConnection)
 import qualified Luna.Studio.React.Model.Connection  as Connection
 import           Luna.Studio.React.Model.Constants   (lineHeight)
 import           Luna.Studio.React.Model.Node        (Node, NodeId, isInputEdge)
@@ -55,8 +53,6 @@ import           Luna.Studio.State.Action            (Action (begin, continue, e
                                                       portDragMode, portDragOriginalNode, portDragPortMapping, portDragPortRef,
                                                       portDragStartPos)
 import           Luna.Studio.State.Global            (State)
-import qualified Luna.Studio.State.Global            as Global
-import qualified Luna.Studio.State.Graph             as Graph
 import           React.Flux                          (MouseEvent)
 
 
@@ -119,7 +115,6 @@ handleAppMove evt = do
 handleMove :: MouseEvent -> PortDrag -> Command State ()
 handleMove evt portDrag = do
     let portRef = portDrag ^. portDragPortRef
-        nodeId  = portRef  ^. PortRef.nodeId
         portId  = portRef  ^. PortRef.portId
         node' = portDrag ^. portDragOriginalNode
         node = node' & Node.ports . at portId . _Just . Port.visible .~ False
@@ -171,31 +166,31 @@ getDraggedPortPositionInSidebar mousePos node = runMaybeT $ do
 updateConnectionsForPort :: PortDrag -> AnyPortRef -> Command State ()
 updateConnectionsForPort portDrag portRef = do
     let portMapping = portDrag ^. portDragPortMapping
-    connectionsToUpdate <- Graph.getConnectionsContainingPortRef portRef
+    connectionsToUpdate <- getConnectionsContainingPortRef portRef
     forM_ connectionsToUpdate $ \conn -> do
         let mayNewConn = case portRef of
                 InPortRef' _ -> do
                     newDstPortId <- Map.lookup (portRef ^. PortRef.portId) portMapping
                     newDstPort   <- newDstPortId ^? _InPortId
-                    return $ conn & ConnectionAPI.dst . PortRef.dstPortId .~ newDstPort
+                    return $ conn & dst . PortRef.dstPortId .~ newDstPort
                 OutPortRef' _ -> do
                     newSrcPortId <- Map.lookup (portRef ^. PortRef.portId) portMapping
                     newSrcPort   <- newSrcPortId ^? _OutPortId
-                    return $ conn & ConnectionAPI.src . PortRef.srcPortId .~ newSrcPort
+                    return $ conn & src . PortRef.srcPortId .~ newSrcPort
         withJust mayNewConn $ \newConn -> do
-            mayConnectionModel <- createConnectionModel newConn
-            modifyNodeEditor $ NodeEditor.connections . at (newConn ^. ConnectionAPI.dst) .= mayConnectionModel
+            mayConnectionModel <- createConnectionModel (newConn ^. src) (newConn ^. dst)
+            modifyNodeEditor $ NodeEditor.connections . at (newConn ^. dst) .= mayConnectionModel
 
 
 updateConnectionsForDraggedPort :: AnyPortRef -> Position -> Command State ()
 updateConnectionsForDraggedPort portRef pos = do
-    connectionsToUpdate <- Graph.getConnectionsContainingPortRef portRef
+    connectionsToUpdate <- getConnectionsContainingPortRef portRef
     forM_ connectionsToUpdate $ \conn -> do
-        let connId  = conn ^. ConnectionAPI.connectionId
+        let connId  = conn ^. connectionId
             srcPortRef = case portRef of
-                InPortRef'  _ -> OutPortRef' $ conn ^. ConnectionAPI.src
-                OutPortRef' _ -> InPortRef'  $ conn ^. ConnectionAPI.dst
-        mayConnModel <- (fmap . fmap) (toConnection conn) $ createCurrentConnectionModel srcPortRef pos
+                InPortRef'  _ -> OutPortRef' $ conn ^. src
+                OutPortRef' _ -> InPortRef'  $ conn ^. dst
+        mayConnModel <- (fmap . fmap) (toConnection (conn ^. src) connId) $ createCurrentConnectionModel srcPortRef pos
         mayPortColor <- (fmap . fmap) (view Port.color) $ getPort portRef
         withJust ((,) <$> mayConnModel <*> mayPortColor) $ \(connModel', portColor) -> do
             let connModel = case portRef of
@@ -276,27 +271,25 @@ confirmReorder portDrag = do
         case (,) <$> mayOldNode <*> mayPortNewPos of
             Nothing   -> end portDrag
             Just (node', _) -> do
-                connectionsToUpdate <- Graph.getConnectionsContainingNode nodeId
+                connectionsToUpdate <- getConnectionsContainingNode nodeId
                 let mayNode = reorderPortsInNode Node.ports Port.portId node' portMapping
                     mayUpdatedConnections = forM connectionsToUpdate $ \conn -> do
-                        if | conn ^. ConnectionAPI.src . PortRef.srcNodeId == nodeId -> do
-                                let connPortId = OutPortId (conn ^. ConnectionAPI.src . PortRef.srcPortId)
+                        if | conn ^. src . PortRef.srcNodeId == nodeId -> do
+                                let connPortId = OutPortId (conn ^. src . PortRef.srcPortId)
                                 newConnPortId <- Map.lookup connPortId portMapping
                                 newPort       <- newConnPortId ^? _OutPortId
-                                return $ conn & ConnectionAPI.src . PortRef.srcPortId .~ newPort
-                           | conn ^. ConnectionAPI.dst . PortRef.dstNodeId == nodeId -> do
-                               let connPortId = InPortId (conn ^. ConnectionAPI.dst . PortRef.dstPortId)
+                                return $ conn & src . PortRef.srcPortId .~ newPort
+                           | conn ^. dst . PortRef.dstNodeId == nodeId -> do
+                               let connPortId = InPortId (conn ^. dst . PortRef.dstPortId)
                                newConnPortId <- Map.lookup connPortId portMapping
                                newPort <- newConnPortId ^? _InPortId
-                               return $ conn & ConnectionAPI.dst . PortRef.dstPortId .~ newPort
+                               return $ conn & dst . PortRef.dstPortId .~ newPort
                            | otherwise -> Nothing
                 case (,) <$> mayNode <*> mayUpdatedConnections of
                     Nothing                 -> end portDrag
                     Just (node, updatedConnections) -> do
-                        forM_ connectionsToUpdate $ \conn ->
-                            Global.graph . Graph.connectionsMap . at (conn ^. ConnectionAPI.dst) .= Nothing
-                        forM_ updatedConnections $ \conn ->
-                            Global.graph . Graph.connectionsMap . at (conn ^. ConnectionAPI.dst) ?= conn
+                        forM_ connectionsToUpdate $ removeConnection . view connectionId
+                        forM_ updatedConnections $ addConnection
                         modifyNodeEditor $ NodeEditor.nodes . at nodeId ?= node
                         void redrawConnectionsForEdgeNodes
                         Batch.movePort portRef $notImplemented

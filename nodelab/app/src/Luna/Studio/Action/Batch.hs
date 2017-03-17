@@ -1,17 +1,20 @@
 module Luna.Studio.Action.Batch  where
 
+import           Data.Position                        (Position, toTuple)
 import           Data.UUID.Types                      (UUID)
-import           Empire.API.Data.Connection           (Connection, ConnectionId)
-import           Empire.API.Data.Node                 (Node, NodeId)
-import           Empire.API.Data.NodeMeta             (NodeMeta)
+import           Empire.API.Data.Connection           (Connection (Connection))
+import           Empire.API.Data.NodeMeta             (NodeMeta (NodeMeta))
 import           Empire.API.Data.PortDefault          (PortDefault)
-import           Empire.API.Data.PortRef              (AnyPortRef (InPortRef', OutPortRef'), InPortRef (InPortRef), OutPortRef (OutPortRef), dstNodeId, nodeId)
+import           Empire.API.Data.PortRef              (AnyPortRef (InPortRef', OutPortRef'), InPortRef (InPortRef), OutPortRef (OutPortRef),
+                                                       dstNodeId, nodeId)
 import           Empire.API.Data.Project              (ProjectId)
 import           Luna.Studio.Action.Command           (Command)
 import           Luna.Studio.Action.UUID              (registerRequest)
 import qualified Luna.Studio.Batch.Connector.Commands as BatchCmd
 import           Luna.Studio.Batch.Workspace          (Workspace)
 import           Luna.Studio.Prelude
+import           Luna.Studio.React.Model.Connection   (ConnectionId)
+import           Luna.Studio.React.Model.Node         (Node, NodeId)
 import           Luna.Studio.State.Global             (State, clientId, workspace)
 
 
@@ -73,14 +76,14 @@ addConnection src dst = do
     collaborativeModify [nid]
     withWorkspace $ BatchCmd.addConnection src dst
 
-addNode :: NodeId -> Text -> NodeMeta -> Maybe NodeId -> Command State ()
-addNode = withWorkspace .:: BatchCmd.addNode
+addNode :: NodeId -> Text -> Position -> Bool -> Maybe NodeId -> Command State ()
+addNode nid expr pos dispRes connectTo = withWorkspace $ BatchCmd.addNode nid expr (NodeMeta (toTuple pos) dispRes) connectTo
 
 addPort :: AnyPortRef -> Command State ()
 addPort = withWorkspace . BatchCmd.addPort
 
-addSubgraph :: [Node] -> [Connection] -> Command State ()
-addSubgraph = withWorkspace .: BatchCmd.addSubgraph
+addSubgraph :: [Node] -> [(OutPortRef, InPortRef)] -> Command State ()
+addSubgraph nodes conns = withWorkspace $ BatchCmd.addSubgraph (map convert nodes) (map (uncurry Connection) conns)
 
 getSubgraph :: NodeId -> Command State ()
 getSubgraph nid = withWorkspace (BatchCmd.getSubgraph nid)
@@ -121,8 +124,8 @@ setNodeCode = withWorkspace .:  BatchCmd.setNodeCode
 setNodeExpression :: NodeId -> Text -> Command State ()
 setNodeExpression = withWorkspace .: BatchCmd.setNodeExpression
 
-setNodesMeta :: [(NodeId, NodeMeta)] -> Command State ()
-setNodesMeta = withWorkspace . BatchCmd.setNodesMeta
+setNodesMeta :: [(NodeId, Position, Bool)] -> Command State ()
+setNodesMeta = withWorkspace . BatchCmd.setNodesMeta . map convert
 
 setPortDefault :: AnyPortRef -> PortDefault -> Command State ()
 setPortDefault portRef portDefault = do

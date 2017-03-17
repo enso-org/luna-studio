@@ -1,13 +1,17 @@
 {-# LANGUAGE DeriveAnyClass    #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RankNTypes        #-}
+{-# OPTIONS_GHC -fno-warn-orphans  #-}
 module Luna.Studio.React.Model.Node
     ( module Luna.Studio.React.Model.Node
     , NodeId
     , NodeType (..)
     ) where
 
+import           Control.Arrow                        ((&&&))
 import           Data.Convert                         (Convertible (convert))
+import           Data.HashMap.Strict                  (HashMap)
+import qualified Data.HashMap.Strict                  as HashMap
 import           Data.Map.Lazy                        (Map)
 import qualified Data.Map.Lazy                        as Map
 import           Data.Position                        (Position, fromTuple, toTuple)
@@ -15,20 +19,20 @@ import           Data.Time.Clock                      (UTCTime)
 import           Empire.API.Data.MonadPath            (MonadPath)
 import           Empire.API.Data.Node                 (NodeId, NodeType (..))
 import qualified Empire.API.Data.Node                 as Empire
+import           Empire.API.Data.NodeMeta             (NodeMeta (NodeMeta))
 import qualified Empire.API.Data.NodeMeta             as NodeMeta
 import           Empire.API.Graph.CollaborationUpdate (ClientId)
 import           Empire.API.Graph.NodeResultUpdate    (NodeValue)
 import           Luna.Studio.Prelude
-import           Luna.Studio.React.Model.Port         (Port, PortId, isInPort)
+import           Luna.Studio.React.Model.Port         (Port, PortId, PortsMap, isInPort)
 import qualified Luna.Studio.React.Model.Port         as Port
 import           Luna.Studio.State.Collaboration      (ColorId)
-
 
 data Node = Node { _nodeId                :: NodeId
                  , _name                  :: Text
                  , _nodeType              :: NodeType
                  , _canEnter              :: Bool
-                 , _ports                 :: Map PortId Port
+                 , _ports                 :: PortsMap
                  , _position              :: Position
                  , _visualizationsEnabled :: Bool
                  , _code                  :: Maybe Text
@@ -51,7 +55,6 @@ data ExpandedMode = Editor
                   | Function [Subgraph]
                   deriving (Eq, Generic, NFData, Show)
 
-
 data Subgraph = Subgraph
     { _nodes  :: [NodeId]
     , _edges  :: [Node]
@@ -67,6 +70,12 @@ makeLenses ''Subgraph
 makeLenses ''Collaboration
 
 instance Default Mode where def = Collapsed
+
+type NodesMap = HashMap NodeId Node
+
+toNodesMap :: [Node] -> NodesMap
+toNodesMap = HashMap.fromList . map (view nodeId &&& id)
+
 
 isEdge :: Node -> Bool
 isEdge node = isInputEdge node || isOutputEdge node
@@ -147,3 +156,17 @@ instance Convertible Node Empire.Node where
         {- ports                 -} (Map.map convert $ n ^. ports)
         {- nodeMeta              -} (NodeMeta.NodeMeta (toTuple $ n ^. position) (n ^. visualizationsEnabled))
         {- code                  -} (n ^. code)
+
+
+instance Convertible (Position, Bool) NodeMeta where
+    convert (pos, dispRes) = NodeMeta (toTuple pos) dispRes
+
+instance Convertible NodeMeta (Position, Bool) where
+    convert (NodeMeta pos dispRes) = (fromTuple pos, dispRes)
+
+
+instance Convertible (NodeId, Position, Bool) (NodeId, NodeMeta) where
+    convert (nid, pos, dispRes) = (nid, convert (pos, dispRes))
+
+instance Convertible (NodeId, NodeMeta) (NodeId, Position, Bool) where
+    convert (nid, NodeMeta pos dispRes) = (nid, fromTuple pos, dispRes)

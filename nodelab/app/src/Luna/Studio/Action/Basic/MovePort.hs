@@ -1,15 +1,15 @@
 module Luna.Studio.Action.Basic.MovePort where
 
+import           Empire.API.Data.PortRef                (AnyPortRef (OutPortRef'), OutPortRef (OutPortRef), srcPortId)
 import           Luna.Studio.Action.Basic.AddConnection (localAddConnection)
 import           Luna.Studio.Action.Basic.UpdateNode    (localUpdateNode)
 import qualified Luna.Studio.Action.Batch               as Batch
 import           Luna.Studio.Action.Command             (Command)
 import           Luna.Studio.Action.State.NodeEditor    (getConnectionsContainingNode, getNode)
 import           Luna.Studio.Prelude
-import           Luna.Studio.React.Model.Connection     (src, srcPortId)
+import           Luna.Studio.React.Model.Connection     (dst, src)
 import           Luna.Studio.React.Model.Node           (countProjectionPorts, getPorts, hasPort, isInputEdge, ports)
-import           Luna.Studio.React.Model.Port           (AnyPortRef (OutPortRef'), OutPort (Projection), OutPortRef (OutPortRef),
-                                                         PortId (OutPortId), portId, toPortsMap)
+import           Luna.Studio.React.Model.Port           (OutPort (Projection), PortId (OutPortId), portId, toPortsMap)
 import           Luna.Studio.State.Global               (State)
 
 
@@ -44,11 +44,11 @@ localMovePort (OutPortRef' (OutPortRef nid pid@(Projection pos))) (OutPortRef' (
                     OutPortRef srcNid (Projection i) ->
                         when (srcNid == nid) $
                             if i == pos
-                                then void . localAddConnection $ convert $ conn & srcPortId .~ Projection newPos
+                                then void $ localAddConnection (conn ^. src & srcPortId .~ Projection newPos) (conn ^. dst)
                             else if i > pos && i <= newPos
-                                then void . localAddConnection $ convert $ conn & srcPortId .~ Projection (i-1)
+                                then void $ localAddConnection (conn ^. src & srcPortId .~ Projection (i-1)) (conn ^. dst)
                             else if i < pos && i >= newPos
-                                then void . localAddConnection $ convert $ conn & srcPortId .~ Projection (i+1)
+                                then void $ localAddConnection (conn ^. src & srcPortId .~ Projection (i+1)) (conn ^. dst)
                                 else return ()
                     _ -> return ()
                 return True

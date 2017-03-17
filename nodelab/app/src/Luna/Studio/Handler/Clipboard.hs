@@ -1,3 +1,4 @@
+-- TODO[PM]: Finish implementation
 module Luna.Studio.Handler.Clipboard where
 
 import           Data.Aeson                          (decode, encode)
@@ -53,4 +54,5 @@ pasteFromClipboard clipboardData = do
             shiftNodeY = Node.position . y %~ snapCoord . (+shiftY)
             shiftNode = shiftNodeY . shiftNodeX
             nodes' = map shiftNode nodes
-        addSubgraph nodes' connections
+        --TODO[LJK]: Use unwrap here
+        addSubgraph nodes' $ map (\conn -> (conn ^. Connection.src, conn ^. Connection.dst)) connections
