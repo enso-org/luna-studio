@@ -3,7 +3,6 @@ module Luna.Studio.React.View.Node.Body where
 
 import qualified Data.Aeson                             as Aeson
 import qualified Data.Map.Lazy                          as Map
-import           Empire.API.Data.Port                   (InPort (Self), PortId (InPortId), isAll, isInPort)
 import qualified Empire.API.Graph.NodeResultUpdate      as NodeResult
 import           Luna.Studio.Data.Matrix                (translatePropertyValue2)
 import qualified Luna.Studio.Event.UI                   as UI
@@ -14,6 +13,7 @@ import qualified Luna.Studio.React.Model.Field          as Field
 import           Luna.Studio.React.Model.Node           (Node, countArgPorts, countOutPorts, isCollapsed)
 import qualified Luna.Studio.React.Model.Node           as Node
 import qualified Luna.Studio.React.Model.NodeProperties as Properties
+import           Luna.Studio.React.Model.Port           (InPort (Self), PortId (InPortId), isAll, isInPort)
 import qualified Luna.Studio.React.Model.Port           as Port
 import           Luna.Studio.React.Store                (Ref, dispatch)
 import           Luna.Studio.React.View.Field           (multilineField_)
@@ -36,6 +36,7 @@ nodeBody = React.defineView objName $ \(ref, n) -> do
         pos       = n ^. Node.position
         nodePorts = Map.elems $ n ^. Node.ports
         ports p   = forM_ p $ \port -> port_ ref
+                                             nodeId
                                              port
                                             (if isInPort $ port ^. Port.portId then countArgPorts n else countOutPorts n)
                                             (isAll (port ^. Port.portId) && countArgPorts n + countOutPorts n == 1)
@@ -81,7 +82,7 @@ nodeBody = React.defineView objName $ \(ref, n) -> do
                 ports $ filter (\port -> (port ^. Port.portId) == InPortId Self) nodePorts
             else do
                 ports $ filter (\port -> (port ^. Port.portId) == InPortId Self) nodePorts
-                forM_  (filter (\port -> (port ^. Port.portId) /= InPortId Self) nodePorts) $ \port -> portExpanded_ ref port
+                forM_  (filter (\port -> (port ^. Port.portId) /= InPortId Self) nodePorts) $ \port -> portExpanded_ ref nodeId port
 
 nodeBody_ :: Ref App -> Node -> ReactElementM ViewEventHandler ()
 nodeBody_ ref model = React.viewWithSKey nodeBody objName (ref, model) mempty

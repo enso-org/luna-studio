@@ -1,8 +1,7 @@
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 {-# LANGUAGE OverloadedStrings #-}
 module Luna.Studio.Data.Color
-    ( fromPort
-    , Color (..)
+    ( Color (..)
     , fromType
     , h
     , l
@@ -16,11 +15,9 @@ import qualified Data.Color              as Color
 import           Data.Convert            (Convertible (convert))
 import           Data.Fixed              (mod')
 import           Data.Hashable           (hash)
+import           Empire.API.Data.TypeRep (TypeRep (..))
 import           Luna.Studio.Prelude
 
-import           Empire.API.Data.Port    (Port)
-import qualified Empire.API.Data.Port    as Port
-import           Empire.API.Data.TypeRep (TypeRep (..))
 
 newtype Color = Color { fromColor :: Int }
               deriving (Eq, Generic, Ord, Show, NFData)
@@ -92,6 +89,3 @@ tpRepToColor _ = 0
 
 fromType :: TypeRep -> Color
 fromType = Color . tpRepToColor
-
-fromPort :: Port -> Color
-fromPort port = fromType $ port ^. Port.valueType

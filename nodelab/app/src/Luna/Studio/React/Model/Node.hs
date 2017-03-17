@@ -3,25 +3,24 @@
 {-# LANGUAGE RankNTypes        #-}
 module Luna.Studio.React.Model.Node
     ( module Luna.Studio.React.Model.Node
-    , Node.NodeId
+    , NodeId
+    , NodeType (..)
     ) where
 
-import           Control.Arrow
 import           Data.Convert                         (Convertible (convert))
 import           Data.Map.Lazy                        (Map)
 import qualified Data.Map.Lazy                        as Map
-import           Data.Position                        (Position, fromTuple)
+import           Data.Position                        (Position, fromTuple, toTuple)
 import           Data.Time.Clock                      (UTCTime)
-
 import           Empire.API.Data.MonadPath            (MonadPath)
-import           Empire.API.Data.Node                 (NodeId, NodeType (InputEdge, OutputEdge))
-import qualified Empire.API.Data.Node                 as Node
+import           Empire.API.Data.Node                 (NodeId, NodeType (..))
+import qualified Empire.API.Data.Node                 as Empire
 import qualified Empire.API.Data.NodeMeta             as NodeMeta
-import           Empire.API.Data.Port                 (PortId, isArg, isInPort, isInPort, isOutPort, isProjection)
 import           Empire.API.Graph.CollaborationUpdate (ClientId)
 import           Empire.API.Graph.NodeResultUpdate    (NodeValue)
 import           Luna.Studio.Prelude
-import           Luna.Studio.React.Model.Port         (Port, fromPorts, portId)
+import           Luna.Studio.React.Model.Port         (Port, PortId, isInPort)
+import qualified Luna.Studio.React.Model.Port         as Port
 import           Luna.Studio.State.Collaboration      (ColorId)
 
 
@@ -34,7 +33,6 @@ data Node = Node { _nodeId                :: NodeId
                  , _visualizationsEnabled :: Bool
                  , _code                  :: Maybe Text
 
-                 , _expression            :: Text
                  , _value                 :: Maybe NodeValue
                  , _zPos                  :: Int
                  , _isSelected            :: Bool
@@ -109,35 +107,28 @@ hasPort :: PortId -> Node -> Bool
 hasPort pid = Map.member pid . view ports
 
 countInPorts :: Node -> Int
-countInPorts = foldl (\acc p -> acc + if isInPort $ p ^. portId then 1 else 0) 0 . getPorts
+countInPorts = Port.countInPorts . Map.keys . (view ports)
 
 countOutPorts :: Node -> Int
-countOutPorts = foldl (\acc p -> acc + if isOutPort $ p ^. portId then 1 else 0) 0 . getPorts
+countOutPorts = Port.countOutPorts . Map.keys . (view ports)
 
 countArgPorts :: Node -> Int
-countArgPorts = foldl (\acc p -> acc + if isArg $ p ^. portId then 1 else 0) 0 . getPorts
+countArgPorts = Port.countArgPorts . Map.keys . (view ports)
 
 countProjectionPorts :: Node -> Int
-countProjectionPorts = foldl (\acc p -> acc + if isProjection $ p ^. portId then 1 else 0) 0 . getPorts
+countProjectionPorts = Port.countProjectionPorts . Map.keys . (view ports)
 
-makePorts :: Node.Node -> [Port]
-makePorts node = fromPorts (node ^. Node.nodeId) (Map.elems $ node ^. Node.ports)
-
-makePortsMap :: [Port] -> Map PortId Port
-makePortsMap = Map.fromList . map (view portId &&& id)
-
-instance Convertible Node.Node Node where
+instance Convertible Empire.Node Node where
     convert n = Node
-        {- nodeId                -} (n ^. Node.nodeId)
-        {- name                  -} (n ^. Node.name)
-        {- nodeType              -} (n ^. Node.nodeType)
-        {- canEnter              -} (n ^. Node.canEnter)
-        {- ports                 -} (makePortsMap $ makePorts n)
-        {- position              -} (fromTuple $ n ^. Node.position)
-        {- visualizationsEnabled -} (n ^. Node.nodeMeta . NodeMeta.displayResult)
-        {- code                  -} (n ^. Node.code)
+        {- nodeId                -} (n ^. Empire.nodeId)
+        {- name                  -} (n ^. Empire.name)
+        {- nodeType              -} (n ^. Empire.nodeType)
+        {- canEnter              -} (n ^. Empire.canEnter)
+        {- ports                 -} (Map.map convert $ n ^. Empire.ports)
+        {- position              -} (fromTuple $ n ^. Empire.position)
+        {- visualizationsEnabled -} (n ^. Empire.nodeMeta . NodeMeta.displayResult)
+        {- code                  -} (n ^. Empire.code)
 
-        {- expression            -} expression'
         {- value                 -} def
         {- zPos                  -} def
         {- isSelected            -} False
@@ -145,12 +136,14 @@ instance Convertible Node.Node Node where
         {- nameEdit              -} def
         {- execTime              -} def
         {- collaboration         -} def
-        where
-            expression' = case n ^. Node.nodeType of
-                Node.ExpressionNode expr     -> expr
-                Node.InputNode      inputIx  -> convert $ "Input " <> show inputIx
-                Node.OutputNode     outputIx -> convert $ "Output " <> show outputIx
-                Node.ModuleNode              -> "Module"
-                Node.FunctionNode   _        -> "Function" -- & value .~ (convert $ intercalate " -> " tpeSig) --TODO[react]
-                Node.InputEdge               -> "Input"
-                Node.OutputEdge              -> "Output"
+
+
+instance Convertible Node Empire.Node where
+    convert n = Empire.Node
+        {- nodeId                -} (n ^. nodeId)
+        {- name                  -} (n ^. name)
+        {- nodeType              -} (n ^. nodeType)
+        {- canEnter              -} (n ^. canEnter)
+        {- ports                 -} (Map.map convert $ n ^. ports)
+        {- nodeMeta              -} (NodeMeta.NodeMeta (toTuple $ n ^. position) (n ^. visualizationsEnabled))
+        {- code                  -} (n ^. code)

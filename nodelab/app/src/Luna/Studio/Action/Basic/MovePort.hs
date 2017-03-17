@@ -1,9 +1,7 @@
 module Luna.Studio.Action.Basic.MovePort where
 
-import           Control.Arrow
 import qualified Data.Map.Lazy                          as Map
 import           Empire.API.Data.Node                   (ports)
-import           Empire.API.Data.Port                   (OutPort (Projection), PortId (OutPortId), portId)
 import           Empire.API.Data.PortRef                (AnyPortRef (OutPortRef'), OutPortRef (OutPortRef), srcPortId)
 import           Luna.Studio.Action.Basic.AddConnection (localAddConnection)
 import           Luna.Studio.Action.Basic.UpdateNode    (localUpdateNode)
@@ -14,7 +12,7 @@ import           Luna.Studio.Action.State.NodeEditor    (getConnectionsContainin
 import           Luna.Studio.Prelude
 import           Luna.Studio.React.Model.Connection     (src)
 import           Luna.Studio.React.Model.Node           (countProjectionPorts, getPorts, hasPort, isInputEdge)
-import           Luna.Studio.React.Model.Port           (port)
+import           Luna.Studio.React.Model.Port           (OutPort (Projection), PortId (OutPortId), portId, toPortsMap)
 import           Luna.Studio.State.Global               (State)
 
 
@@ -32,7 +30,7 @@ localMovePort (OutPortRef' (OutPortRef nid pid@(Projection pos))) (OutPortRef' (
                 || newPos >= countProjectionPorts node
                 || newPos < 0 then return False
             else do
-                let oldPorts    = map (view port) $ getPorts node
+                let oldPorts    = getPorts node
                     newPorts    = flip map oldPorts $ \port' -> case port' ^. portId of
                         OutPortId (Projection i) ->
                             if i == pos
@@ -43,8 +41,8 @@ localMovePort (OutPortRef' (OutPortRef nid pid@(Projection pos))) (OutPortRef' (
                                 then port' & portId .~ OutPortId (Projection (i+1))
                                 else port'
                         _                        -> port'
-                    newPortsMap = Map.fromList $ map (view portId &&& id) newPorts
-                void . localUpdateNode $ graphNode & ports .~ newPortsMap
+                    newPortsMap = toPortsMap newPorts
+                void . localUpdateNode $ graphNode & ports .~ Map.map convert newPortsMap
                 conns <- getConnectionsContainingNode nid
                 forM_ conns $ \conn -> case conn ^. src of
                     OutPortRef srcNid (Projection i) ->

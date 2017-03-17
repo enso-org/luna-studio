@@ -10,6 +10,7 @@ import qualified Data.Aeson                        as Aeson
 import qualified Data.Map.Lazy                     as Map
 import           Data.Position                     (y)
 import           Empire.API.Data.Port              (getPortNumber, isInPort)
+import           Empire.API.Data.PortRef           (toAnyPortRef)
 import qualified JS.Config                         as Config
 import           JS.Scene                          (inputSidebarId, outputSidebarId)
 import qualified JS.UI                             as UI
@@ -19,7 +20,7 @@ import qualified Luna.Studio.React.Event.Edge      as Edge
 import           Luna.Studio.React.Model.App       (App)
 import           Luna.Studio.React.Model.Constants (lineHeight)
 import qualified Luna.Studio.React.Model.Field     as Field
-import           Luna.Studio.React.Model.Node      (Node, isEdge, isInputEdge)
+import           Luna.Studio.React.Model.Node      (Node, NodeId, isEdge, isInputEdge)
 import qualified Luna.Studio.React.Model.Node      as Node
 import           Luna.Studio.React.Model.Port      (DraggedPort, Port (..))
 import qualified Luna.Studio.React.Model.Port      as Port
@@ -76,7 +77,7 @@ edgeSidebar_ ref _mayDraggedPort node = when (isEdge node) $ do
                                 ] mempty
             else return ()
 
-            forM_ ports $ edgePort_ ref
+            forM_ ports $ edgePort_ ref nodeId
 
             if isInputEdge node then do
                 -- TODO: merge two add buttons into one svg_
@@ -131,10 +132,10 @@ edgeSidebar_ ref _mayDraggedPort node = when (isEdge node) $ do
                         ] mempty
             else return ()
 
-edgePort_ :: Ref App -> Port -> ReactElementM ViewEventHandler ()
-edgePort_ ref p = when (p ^. Port.visible) $ do
-    let portRef   = p ^. Port.portRef
-        portId    = p ^. Port.portId
+edgePort_ :: Ref App -> NodeId -> Port -> ReactElementM ViewEventHandler ()
+edgePort_ ref nid p = when (p ^. Port.visible) $ do
+    let portId    = p ^. Port.portId
+        portRef   = toAnyPortRef nid portId
         color     = convert $ p ^. Port.color
         num       = getPortNumber portId
         highlight = if p ^. Port.highlight then [ "hover" ] else []

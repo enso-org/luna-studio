@@ -6,14 +6,13 @@ import           Data.Matrix                            as Matrix
 import           Data.Matrix                            (Matrix)
 import           Data.Position                          (Position (Position), x, y)
 import           Data.Vector                            (Vector2 (Vector2))
-import           Empire.API.Data.Node                   (NodeId)
 import qualified JS.Config                              as Config
 import qualified Luna.Studio.Event.Mouse                as Mouse
 import qualified Luna.Studio.Event.UI                   as UI
 import           Luna.Studio.Prelude
 import qualified Luna.Studio.React.Event.Node           as Node
 import           Luna.Studio.React.Model.App            (App)
-import           Luna.Studio.React.Model.Node           (Node, isCollapsed)
+import           Luna.Studio.React.Model.Node           (Node, NodeId, NodeType (ExpressionNode), isCollapsed)
 import qualified Luna.Studio.React.Model.Node           as Node
 import qualified Luna.Studio.React.Model.NodeProperties as Prop
 import           Luna.Studio.React.Store                (Ref, dispatch)
@@ -71,7 +70,9 @@ node = React.defineView name $ \(ref, n) -> do
                         , "y"           $= "-16"
                         , onDoubleClick $ \e _ -> stopPropagation e : dispatch ref (UI.NodeEvent $ Node.EditExpression nodeId)
                         , "className"   $= Style.prefixFromList [ "node__name", "node__name--expression", "noselect" ]
-                        ] $ elemString $ convert $ n ^. Node.expression
+                        ] $ elemString $ case n ^. Node.nodeType of
+                                (ExpressionNode expr) -> convert $ expr
+                                _                     -> "" -- TODO[PM, JK, LJK]: Find out what to do with other types
                     text_
                         [ "key"         $= "nameText"
                         , onDoubleClick $ \e _ -> stopPropagation e : dispatch ref (UI.NodeEvent $ Node.EditExpression nodeId)

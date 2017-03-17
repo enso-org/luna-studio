@@ -1,9 +1,7 @@
 module Luna.Studio.Action.Basic.RemovePort where
 
-import           Control.Arrow
 import qualified Data.Map.Lazy                             as Map
 import           Empire.API.Data.Node                      (ports)
-import           Empire.API.Data.Port                      (OutPort (Projection), PortId (OutPortId), portId)
 import           Empire.API.Data.PortRef                   (AnyPortRef (OutPortRef'), OutPortRef (OutPortRef), srcPortId)
 import           Luna.Studio.Action.Basic.AddConnection    (localAddConnection)
 import           Luna.Studio.Action.Basic.RemoveConnection (removeConnection)
@@ -15,6 +13,7 @@ import           Luna.Studio.Action.State.NodeEditor       (getConnectionsContai
 import           Luna.Studio.Prelude
 import           Luna.Studio.React.Model.Connection        (connectionId, src)
 import           Luna.Studio.React.Model.Node              (hasPort, isInputEdge)
+import           Luna.Studio.React.Model.Port              (OutPort (Projection), PortId (OutPortId), portId, toPortsMap)
 import           Luna.Studio.State.Global                  (State)
 
 
@@ -29,15 +28,15 @@ localRemovePort (OutPortRef' (OutPortRef nid pid@(Projection pos))) = do
         if (not $ isInputEdge node) || hasPort (OutPortId pid) node
             then return False
             else do
-                let oldPorts    = Map.elems $ Map.delete (OutPortId pid) $ graphNode ^. ports
+                let oldPorts    = map convert . Map.elems $ Map.delete (OutPortId pid) $ graphNode ^. ports
                     newPorts    = flip map oldPorts $ \port' -> case port' ^. portId of
                         OutPortId (Projection i) ->
                             if i < pos
                                 then port'
                                 else port' & portId .~ OutPortId (Projection (i-1))
                         _                        -> port'
-                    newPortsMap = Map.fromList $ map (view portId &&& id) newPorts
-                void . localUpdateNode $ graphNode & ports .~ newPortsMap
+                    newPortsMap = toPortsMap newPorts
+                void . localUpdateNode $ graphNode & ports .~ Map.map convert newPortsMap
                 conns <- getConnectionsContainingNode nid
                 -- TODO[LJK]: Do it at once so we don't update the same Connection twice accidentaly
                 forM_ conns $ \conn -> case conn ^. src of
