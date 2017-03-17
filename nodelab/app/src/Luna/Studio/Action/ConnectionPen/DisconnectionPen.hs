@@ -10,18 +10,17 @@ import qualified Data.Curve                                  as Curve
 import qualified Data.HashMap.Strict                         as HashMap
 import           Data.Position                               (Position, distance)
 import           Data.Timestamp                              (Timestamp)
-import           Empire.API.Data.Connection                  (Connection, nodeIds)
 import           Luna.Studio.Action.Basic.RemoveConnection   (removeConnection, removeConnectionsBetweenNodes)
 import           Luna.Studio.Action.Command                  (Command)
 import           Luna.Studio.Action.ConnectionPen.SmoothLine (addPointToCurve, beginCurve, curveToSvgPath)
 import           Luna.Studio.Action.State.Action             (beginActionWithKey, continueActionWithKey, removeActionFromState,
                                                               updateActionWithKey)
-import           Luna.Studio.Action.State.Graph              (getConnectionsMap)
 import           Luna.Studio.Action.State.Model              (getConnectionsIntersectingSegment, getNodeAtPosition)
-import           Luna.Studio.Action.State.NodeEditor         (modifyNodeEditor)
+import           Luna.Studio.Action.State.NodeEditor         (getConnectionsMap, modifyNodeEditor)
 import           Luna.Studio.Data.Color                      (Color (Color))
 import           Luna.Studio.Event.Mouse                     (workspacePosition)
 import           Luna.Studio.Prelude
+import           Luna.Studio.React.Model.Connection          (Connection, nodeIds)
 import           Luna.Studio.React.Model.ConnectionPen       (ConnectionPen (ConnectionPen))
 import qualified Luna.Studio.React.Model.ConnectionPen       as ConnectionPen
 import qualified Luna.Studio.React.Model.NodeEditor          as NodeEditor

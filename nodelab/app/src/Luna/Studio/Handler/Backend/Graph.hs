@@ -4,6 +4,7 @@ module Luna.Studio.Handler.Backend.Graph
 
 import qualified Data.DateTime                                as DT
 import qualified Empire.API.Data.Breadcrumb                   as Breadcrumb
+import           Empire.API.Data.Connection                   (dst, src)
 import qualified Empire.API.Data.Graph                        as Graph
 import qualified Empire.API.Data.GraphLocation                as GraphLocation
 import qualified Empire.API.Data.Node                         as Node
@@ -91,7 +92,7 @@ handle (Event.Batch ev) = Just $ case ev of
         failure _          = whenM (isOwnRequest requestId) $ revertAddConnection request
         success connection = do
             shouldProcess <- isCurrentLocationAndGraphLoaded location
-            when shouldProcess $ void $ localAddConnection connection
+            when shouldProcess $ void $ localAddConnection (connection ^. src) (connection ^. dst)
 
     AddNodeResponse response -> handleResponse response success failure where
         requestId    = response ^. Response.requestId
@@ -138,7 +139,7 @@ handle (Event.Batch ev) = Just $ case ev of
                 if ownRequest then do
                     localUpdateNodes nodes
                     collaborativeModify $ flip map nodes $ view Node.nodeId
-                else void $ localAddSubgraph nodes conns
+                else void $ localAddSubgraph (map convert nodes) (map (\conn -> (conn ^. src, conn ^. dst)) conns)
 
     CodeUpdate update -> do
        shouldProcess <- isCurrentLocationAndGraphLoaded $ update ^. CodeUpdate.location
@@ -160,8 +161,10 @@ handle (Event.Batch ev) = Just $ case ev of
                 CollaborationUpdate.Refresh             -> touchCurrentlySelected
 
     ConnectUpdate update -> do
+        let src' = update ^. ConnectUpdate.connection' . src
+            dst' = update ^. ConnectUpdate.connection' . dst
         shouldProcess <- isCurrentLocationAndGraphLoaded $ update ^. ConnectUpdate.location'
-        when shouldProcess $ void $ localAddConnection $ update ^. ConnectUpdate.connection'
+        when shouldProcess $ void $ localAddConnection src' dst'
 
     DumpGraphVizResponse response -> handleResponse response doNothing doNothing
 

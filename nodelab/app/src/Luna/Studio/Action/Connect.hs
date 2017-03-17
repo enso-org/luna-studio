@@ -28,7 +28,7 @@ import           Luna.Studio.Action.State.Scene      (translateToWorkspace)
 import           Luna.Studio.Event.Mouse             (mousePosition, workspacePosition)
 import           Luna.Studio.Prelude
 import           Luna.Studio.React.Event.Connection  (ModifiedEnd (Destination, Source))
-import           Luna.Studio.React.Model.Connection  (ConnectionId)
+import           Luna.Studio.React.Model.Connection  (ConnectionId, toValidEmpireConnection)
 import qualified Luna.Studio.React.Model.Connection  as Connection
 import           Luna.Studio.React.Model.Node        (isCollapsed)
 import qualified Luna.Studio.React.Model.NodeEditor  as NodeEditor
@@ -88,8 +88,8 @@ handlePortMouseUp portRef action = when (action ^. connectMode == Drag) $
 
 snapToPort :: AnyPortRef -> Connect -> Command State ()
 snapToPort portRef action =
-    withJust (ConnectionAPI.toValidConnection (action ^. connectSourcePort) portRef) $ \conn -> do
-        mayConnModel <- createConnectionModel conn
+    withJust (toValidEmpireConnection (action ^. connectSourcePort) portRef) $ \conn -> do
+        mayConnModel <- createConnectionModel (conn ^. ConnectionAPI.src) (conn ^. ConnectionAPI.dst)
         withJust mayConnModel $ \connModel -> do
             update $ action & connectSnappedPort ?~ portRef
             modifyNodeEditor $ NodeEditor.currentConnections .= [convert connModel]
@@ -114,7 +114,7 @@ stopConnecting _ = do
 
 connectToPort :: AnyPortRef -> Connect -> Command State ()
 connectToPort dst action = do
-    withJust (ConnectionAPI.toValidConnection dst $ action ^. connectSourcePort) $ \newConn -> do
+    withJust (toValidEmpireConnection dst $ action ^. connectSourcePort) $ \newConn -> do
         connect (Left $ newConn ^. ConnectionAPI.src) (Left $ newConn ^. ConnectionAPI.dst)
         GA.sendEvent $ GA.Connect GA.Manual
     stopConnecting action
