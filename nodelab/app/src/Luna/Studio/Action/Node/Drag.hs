@@ -68,7 +68,7 @@ nodesDrag evt snapped nodeDrag = do
                          Just pos -> snap (move delta pos) ^. vector - pos ^. vector
                          Nothing  -> delta
                  else delta
-    moveNodes . Map.toList $ Map.map (move shift') nodesStartPos
+    void $ localMoveNodes . Map.toList $ Map.map (move shift') nodesStartPos
     snapConnectionsForNodes coord $ Map.keys nodesStartPos
 
 clearSnappedConnection :: NodeDrag -> Command State ()
