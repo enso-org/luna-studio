@@ -16,7 +16,7 @@ import           Luna.Studio.React.Model.Constants   (nodeRadius)
 import           Luna.Studio.React.Model.Node        (Node, NodeId, hasPort, isCollapsed, nodeId, position, position, zPos)
 import           Luna.Studio.React.Model.Port        (InPort (Self), PortId (InPortId))
 import           Luna.Studio.State.Action            (connectSourcePort, penConnectAction)
-import           Luna.Studio.State.Global            (State, currentConnectAction)
+import           Luna.Studio.State.Global            (State, actions, currentConnectAction)
 
 
 foreign import javascript safe "document.getElementById($1).getBoundingClientRect().left"   expandedNodeLeft   :: JSString -> IO Double
@@ -64,8 +64,8 @@ shouldDisplayPortSelf node = do
         then return False
         else do
             let nid = node ^. nodeId
-            connectToSelfPossible <- fmap (isJust . join) $ (fmap . fmap)
-                ((toValidEmpireConnection $ toAnyPortRef nid selfId) . view connectSourcePort) $ use currentConnectAction
+            connectToSelfPossible <- fmap (isJust . join) $ fmap2
+                (toValidEmpireConnection (toAnyPortRef nid selfId) . view connectSourcePort) $ use (actions . currentConnectAction)
             penConnecting <- checkIfActionPerfoming penConnectAction
             if (not . isCollapsed $ node) || penConnecting || connectToSelfPossible
                 then return True

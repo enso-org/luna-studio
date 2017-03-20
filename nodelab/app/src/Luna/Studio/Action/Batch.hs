@@ -15,13 +15,13 @@ import           Luna.Studio.Batch.Workspace          (Workspace)
 import           Luna.Studio.Prelude
 import           Luna.Studio.React.Model.Connection   (ConnectionId)
 import           Luna.Studio.React.Model.Node         (Node, NodeId)
-import           Luna.Studio.State.Global             (State, clientId, workspace)
+import           Luna.Studio.State.Global             (State, backend, clientId, workspace)
 
 
 withWorkspace :: (Workspace -> UUID -> Maybe UUID -> IO ()) -> Command State ()
 withWorkspace act = do
     uuid       <- registerRequest
-    guiID      <- use clientId
+    guiID      <- use $ backend . clientId
     workspace' <- use workspace
     liftIO $ act workspace' uuid $ Just guiID
 
@@ -33,7 +33,7 @@ withWorkspace' act = do
 withUUID :: (UUID -> Maybe UUID -> IO ()) -> Command State ()
 withUUID act = do
     uuid  <- registerRequest
-    guiID <- use clientId
+    guiID <- use $ backend . clientId
     liftIO $ act uuid $ Just guiID
 
 createLibrary :: Text -> Text -> Command State ()
@@ -138,20 +138,20 @@ undo = withUUID BatchCmd.undo
 
 requestCollaborationRefresh :: Command State ()
 requestCollaborationRefresh = do
-    clId <- use clientId
+    clId <- use $ backend . clientId
     withWorkspace' $ BatchCmd.requestCollaborationRefresh clId
 
 collaborativeTouch :: [NodeId] -> Command State ()
 collaborativeTouch nodeIds = unless (null nodeIds) $ do
-    clId <- use clientId
+    clId <- use $ backend . clientId
     withWorkspace' $ BatchCmd.collaborativeTouch clId nodeIds
 
 collaborativeModify :: [NodeId] -> Command State ()
 collaborativeModify nodeIds = unless (null nodeIds) $ do
-    clId <- use clientId
+    clId <- use $ backend . clientId
     withWorkspace' $ BatchCmd.collaborativeModify clId nodeIds
 
 cancelCollaborativeTouch :: [NodeId] -> Command State ()
 cancelCollaborativeTouch nodeIds = unless (null nodeIds) $ do
-    clId <- use clientId
+    clId <- use $ backend . clientId
     withWorkspace' $ BatchCmd.cancelCollaborativeTouch clId nodeIds

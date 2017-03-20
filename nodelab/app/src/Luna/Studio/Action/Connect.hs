@@ -34,12 +34,12 @@ import           Luna.Studio.React.Model.Node        (isCollapsed)
 import qualified Luna.Studio.React.Model.NodeEditor  as NodeEditor
 import           Luna.Studio.State.Action            (Action (begin, continue, end, update), Connect (Connect), Mode (Click, Drag),
                                                       connectAction, connectMode, connectSnappedPort, connectSourcePort, connectStartPos)
-import           Luna.Studio.State.Global            (State, currentConnectAction)
+import           Luna.Studio.State.Global            (State, actions, currentConnectAction)
 import           React.Flux                          (MouseEvent)
 
 
 instance Action (Command State) Connect where
-    begin action = beginActionWithKey    connectAction action >> currentConnectAction ?= action
+    begin action = beginActionWithKey    connectAction action >> actions . currentConnectAction ?= action
     continue     = continueActionWithKey connectAction
     update       = updateActionWithKey   connectAction
     end          = stopConnecting
@@ -109,7 +109,7 @@ stopConnecting :: Connect -> Command State ()
 stopConnecting _ = do
     modifyNodeEditor $ NodeEditor.currentConnections .= def
     void $ updateAllPortsSelfVisibility
-    currentConnectAction .= Nothing
+    actions . currentConnectAction .= Nothing
     removeActionFromState connectAction
 
 connectToPort :: AnyPortRef -> Connect -> Command State ()

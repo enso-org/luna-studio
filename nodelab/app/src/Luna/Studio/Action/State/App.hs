@@ -10,15 +10,16 @@ import           Luna.Studio.React.Model.Breadcrumbs (Breadcrumb, BreadcrumbItem
 import           Luna.Studio.React.Model.CodeEditor  (CodeEditor, visible)
 import           Luna.Studio.React.Store             (Ref, commit, continueModify)
 import qualified Luna.Studio.React.Store             as Store
-import           Luna.Studio.State.Global            (State, app, renderNeeded)
+import           Luna.Studio.State.Global            (State, ui)
+import           Luna.Studio.State.UI                (app, renderNeeded)
 
 
 withApp :: (Ref App -> Command State r) -> Command State r
-withApp action = use app >>= action
+withApp action = use (ui . app) >>= action
 
 modify :: LensLike' (Focusing Identity b) App s -> M.StateT s Identity b -> Command State b
 modify lens action = do
-    renderNeeded .= True
+    ui . renderNeeded .= True
     withApp . continueModify $ zoom lens action
 
 get :: Getting r App r -> Command State r
@@ -26,11 +27,13 @@ get lens = withApp $ return . view lens <=< Store.get
 
 modifyApp :: M.State App r -> Command State r
 modifyApp action = do
-    renderNeeded .= True
+    ui . renderNeeded .= True
     withApp $ continueModify action
 
 renderIfNeeded :: Command State ()
-renderIfNeeded = whenM (use renderNeeded) $ withApp commit >> renderNeeded .= False
+renderIfNeeded = whenM (use $ ui . renderNeeded) $ do
+    withApp commit
+    ui . renderNeeded .= False
 
 setBreadcrumbs :: Breadcrumb (Named BreadcrumbItem)-> Command State ()
 setBreadcrumbs input = modifyApp $ breadcrumbs .= input

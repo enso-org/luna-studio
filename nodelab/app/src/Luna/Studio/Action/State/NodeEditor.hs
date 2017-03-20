@@ -18,6 +18,7 @@ import qualified Empire.API.Data.PortRef            as PortRef
 import           Luna.Studio.Action.Command         (Command)
 import           Luna.Studio.Action.State.App       (get, modify)
 import           Luna.Studio.Batch.Workspace        (nodeSearcherData)
+import           Luna.Studio.Data.Graph             (Graph (Graph))
 import           Luna.Studio.Prelude
 import           Luna.Studio.React.Model.App        (nodeEditor)
 import           Luna.Studio.React.Model.Connection (Connection, ConnectionId, ConnectionsMap, CurrentConnection, connectionId,
@@ -27,7 +28,6 @@ import           Luna.Studio.React.Model.NodeEditor
 import           Luna.Studio.React.Model.Port       (Port, state, valueType)
 import           Luna.Studio.React.Model.Searcher   (Searcher)
 import           Luna.Studio.State.Global           (State, workspace)
-import           Luna.Studio.State.Graph            (Graph (Graph))
 import           Text.ScopeSearcher.Item            (Items, isElement, items)
 
 

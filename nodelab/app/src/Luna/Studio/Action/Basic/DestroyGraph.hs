@@ -5,7 +5,7 @@ import           Luna.Studio.Action.State.App (modifyApp)
 import           Luna.Studio.Batch.Workspace  (isGraphLoaded)
 import           Luna.Studio.Prelude
 import           Luna.Studio.React.Model.App  (codeEditor, nodeEditor)
-import           Luna.Studio.State.Global     (State, graph, workspace)
+import           Luna.Studio.State.Global     (State, workspace)
 
 
 destroyGraph :: Command State ()
@@ -14,4 +14,3 @@ destroyGraph = do
     modifyApp $ do
         codeEditor .= def
         nodeEditor .= def
-    graph .= def

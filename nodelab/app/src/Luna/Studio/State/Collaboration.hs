@@ -16,12 +16,12 @@ data Client = Client { _lastSeen :: DateTime
                      , _colorId  :: ColorId
                      } deriving (Eq, Show, Generic)
 
-newtype Collaboration = Collaboration { _knownClients :: Map ClientId Client
+newtype State = State { _knownClients :: Map ClientId Client
                                       } deriving (Default, Eq, Generic, Show)
 
-makeLenses ''Collaboration
+makeLenses ''State
 makeLenses ''Client
 
-instance ToJSON Collaboration
+instance ToJSON State
 instance ToJSON Client
 instance ToJSON ColorId

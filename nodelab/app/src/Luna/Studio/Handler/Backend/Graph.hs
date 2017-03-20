@@ -152,7 +152,7 @@ handle (Event.Batch ev) = Just $ case ev of
         let clientId = update ^. CollaborationUpdate.clientId
             touchNodes nodeIds setter = modifyNodeEditor $
                 forM_ nodeIds $ \nodeId -> NodeEditor.nodes . at nodeId %= fmap setter
-        myClientId   <- use Global.clientId
+        myClientId   <- use $ Global.backend . Global.clientId
         currentTime  <- use Global.lastEventTimestamp
         when (shouldProcess && clientId /= myClientId) $ do
             clientColor <- updateClient clientId

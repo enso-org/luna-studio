@@ -29,6 +29,7 @@ import qualified Luna.Studio.React.View.App          as App
 import           Luna.Studio.State.Action            (Action (begin, continue, end, update), Searcher (Searcher), searcherAction)
 import           Luna.Studio.State.Global            (State)
 import qualified Luna.Studio.State.Global            as Global
+import qualified Luna.Studio.State.UI                as UI
 import           Text.ScopeSearcher.Item             (Item (..), Items)
 import qualified Text.ScopeSearcher.Scope            as Scope
 
@@ -44,7 +45,7 @@ data OtherCommands = AddNode
                    deriving (Bounded, Enum, Eq, Generic, Read, Show)
 
 open :: Command State ()
-open = openWith def =<< use Global.mousePos
+open = openWith def =<< use (Global.ui . UI.mousePos)
 
 positionDelta :: Double
 positionDelta = 100

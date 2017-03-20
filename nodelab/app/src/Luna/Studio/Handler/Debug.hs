@@ -39,10 +39,10 @@ handle _ = Nothing
 
 handleEv :: Event -> Maybe (Command Global.State ())
 handleEv ev = Just $
-    -- Global.lastEvent ?= ev
-    -- Global.eventNum  += 1
+    -- Global.debug . Global.lastEvent ?= ev
+    -- Global.debug . Global.eventNum  += 1
     when shouldExportState $ do
-        evN <- use Global.eventNum
+        evN <- use $ Global.debug . Global.eventNum
         liftIO $ do
             processedEvent evN
             val <- toJSVal $ toJSON ev

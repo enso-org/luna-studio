@@ -1,5 +1,6 @@
+{-# LANGUAGE DeriveAnyClass    #-}
 {-# LANGUAGE OverloadedStrings #-}
-module Luna.Studio.State.Graph where
+module Luna.Studio.Data.Graph where
 
 import           Data.Aeson                 (FromJSON, ToJSON)
 import           Data.HashMap.Strict        (HashMap)
@@ -13,11 +14,6 @@ type ConnectionsMap = HashMap ConnectionId Connection
 
 data Graph = Graph { _nodesMap             :: NodesMap
                    , _connectionsMap       :: ConnectionsMap
-                   } deriving (Show, Eq, Generic)
+                   } deriving (Default, Eq, FromJSON, Generic, Show, ToJSON)
 
 makeLenses ''Graph
-
-instance ToJSON Graph
-instance FromJSON Graph
-instance Default Graph where
-    def = Graph def def

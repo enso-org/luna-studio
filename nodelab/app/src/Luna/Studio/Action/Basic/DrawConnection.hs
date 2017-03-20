@@ -10,16 +10,17 @@ import           Luna.Studio.Prelude
 import           Luna.Studio.React.Model.Connection  (Connection, ConnectionId, connectionId, dst, src, toConnectionsMap)
 import           Luna.Studio.React.Model.Node        (NodeId, nodeId)
 import           Luna.Studio.React.Model.NodeEditor  (connections)
-import           Luna.Studio.State.Global            (State, scene)
+import           Luna.Studio.State.Global            (State, ui)
+import           Luna.Studio.State.UI                (scene)
 
 
 createConnection :: OutPortRef -> InPortRef -> Command State (Maybe Connection)
 createConnection src' dst' = do
-    prevInputSidebar  <- (fmap . fmap) (view inputSidebar)  $ use scene
-    prevOutputSidebar <- (fmap . fmap) (view outputSidebar) $ use scene
+    prevInputSidebar  <- view inputSidebar  `fmap2` use (ui . scene)
+    prevOutputSidebar <- view outputSidebar `fmap2` use (ui . scene)
     mayConnModel      <- createConnectionModel src' dst'
-    newInputSidebar   <- (fmap . fmap) (view inputSidebar)  $ use scene
-    newOutputSidebar  <- (fmap . fmap) (view outputSidebar) $ use scene
+    newInputSidebar   <- view inputSidebar  `fmap2` use (ui . scene)
+    newOutputSidebar  <- view outputSidebar `fmap2` use (ui . scene)
     when (newInputSidebar /= prevInputSidebar || newOutputSidebar /= prevOutputSidebar) $
         void redrawConnectionsForEdgeNodes
     return $ mayConnModel
