@@ -10,7 +10,7 @@ import qualified Data.Aeson                        as Aeson
 import qualified Data.Map.Lazy                     as Map
 import           Data.Position                     (y)
 import           Empire.API.Data.Port              (getPortNumber, isInPort)
-import           Empire.API.Data.PortRef           (toAnyPortRef)
+import           Empire.API.Data.PortRef           (AnyPortRef (OutPortRef'), OutPortRef (OutPortRef), toAnyPortRef)
 import qualified JS.Config                         as Config
 import           JS.Scene                          (inputSidebarId, outputSidebarId)
 import qualified JS.UI                             as UI
@@ -20,9 +20,9 @@ import qualified Luna.Studio.React.Event.Edge      as Edge
 import           Luna.Studio.React.Model.App       (App)
 import           Luna.Studio.React.Model.Constants (lineHeight)
 import qualified Luna.Studio.React.Model.Field     as Field
-import           Luna.Studio.React.Model.Node      (Node, NodeId, isEdge, isInputEdge)
+import           Luna.Studio.React.Model.Node      (Node, NodeId, countProjectionPorts, isEdge, isInputEdge)
 import qualified Luna.Studio.React.Model.Node      as Node
-import           Luna.Studio.React.Model.Port      (DraggedPort, Port (..))
+import           Luna.Studio.React.Model.Port      (DraggedPort, OutPort (Projection), Port (..), getPortNumber, isInPort)
 import qualified Luna.Studio.React.Model.Port      as Port
 import           Luna.Studio.React.Store           (Ref, dispatch)
 import           Luna.Studio.React.View.Field      (singleField_)
@@ -35,8 +35,8 @@ import           React.Flux                        hiding (view)
 name :: Node -> JSString
 name node = "edgePorts" <> if isInputEdge node then "Inputs" else "Outputs"
 
-sendAddPortEvent :: Ref App -> Node -> [SomeStoreAction]
-sendAddPortEvent ref node = dispatch ref (UI.EdgeEvent $ Edge.AddPort (node ^. Node.nodeId))
+sendAddPortEvent :: Ref App -> AnyPortRef -> [SomeStoreAction]
+sendAddPortEvent ref portRef = dispatch ref (UI.EdgeEvent $ Edge.AddPort portRef)
 
 edgeSidebar_ :: Ref App -> Maybe DraggedPort -> Node -> ReactElementM ViewEventHandler ()
 edgeSidebar_ ref _mayDraggedPort node = when (isEdge node) $ do
@@ -81,37 +81,26 @@ edgeSidebar_ ref _mayDraggedPort node = when (isEdge node) $ do
 
             if isInputEdge node then do
                 -- TODO: merge two add buttons into one svg_
-                svg_
-                    [ "className" $= Style.prefixFromList [ "edgeport__svg", "edgeport__svg--inbetween", "edgeport__svg--inbetween--last" ]
-                    , onMouseDown $ \e _ -> [stopPropagation e]
-                    , onClick $ \e _ -> stopPropagation e : sendAddPortEvent ref node
-                    ] $
-                    g_ [ "className" $= Style.prefix "port-add-inbetween" ] $ do
-                        g_ [ "className" $= Style.prefix "port-add-inbetween__shape" ] $ do
-                            plainPath (Style.prefix "port-add-inbetween__droplet") "M10.0749836,12.9509892 C11.4541267,14.1514559 13.0835452,14.9902759 15.0097241,14.9902759 C18.8703469,14.9902759 22,11.8606228 22,8 C22,4.13937722 18.8703469,1.0097241 15.0097241,1.0097241 C13.0977164,1.0097241 11.4518168,1.82232527 10.1029674,3.02127407 C5.44945277,7.13675725 4.06697429,7.99999996 1.05578798,7.99999996 C4.06697429,7.99999996 5.38818292,8.87139207 10.0749836,12.9509892 Z"
-                            g_ [ "className" $= Style.prefix "port-add-inbetween__plus" ] $ do
-                                plainRect 2 8 (-1) (-4)
-                                plainRect 8 2 (-4) (-1)
-                        plainPath (Style.prefix "port-add-inbetween__selectable") "M 20 0 A 10 10 0 0 1 20 16 L 10 16 A 10 10 0 0 1 10 0 Z"
-                svg_
-                    [ "className" $= Style.prefixFromList [ "edgeport__svg", "edgeport__svg--addbutton" ]
-                    , "key"       $= (name node <> "AddButton")
-                    , onMouseDown $ \e _ -> [stopPropagation e]
-                    , onClick $ \e _ -> stopPropagation e : sendAddPortEvent ref node
-                    ] $ do
-                    circle_
-                        [ "className" $= Style.prefix "port__shape"
-                        , "key"       $= jsShow "addButtonShape"
-                        , "r"         $= jsShow2 3
-                        ] mempty
-                    g_ [ "className" $= Style.prefix "port__plus" ] $ do
-                          plainRect 0 0 0 0
-                          plainRect 0 0 0 0
-                    circle_
-                        [ "className" $= Style.prefix "port__select"
-                        , "key"       $= jsShow "addButtonSelect"
-                        , "r"         $= jsShow2 (lineHeight/1.5)
-                        ] mempty
+                addButton_ ref (OutPortRef' (OutPortRef nodeId (Projection (countProjectionPorts node)))) True
+                -- svg_
+                --     [ "className" $= Style.prefixFromList [ "edgeport__svg", "edgeport__svg--addbutton" ]
+                --     , "key"       $= (name node <> "AddButton")
+                --     , onMouseDown $ \e _ -> [stopPropagation e]
+                --     , onClick $ \e _ -> stopPropagation e : sendAddPortEvent ref (OutPortRef' (OutPortRef nodeId (Projection (countProjectionPorts node))))
+                --     ] $ do
+                --     circle_
+                --         [ "className" $= Style.prefix "port__shape"
+                --         , "key"       $= jsShow "addButtonShape"
+                --         , "r"         $= jsShow2 3
+                --         ] mempty
+                --     g_ [ "className" $= Style.prefix "port__plus" ] $ do
+                --           plainRect 0 0 0 0
+                --           plainRect 0 0 0 0
+                --     circle_
+                --         [ "className" $= Style.prefix "port__select"
+                --         , "key"       $= jsShow "addButtonSelect"
+                --         , "r"         $= jsShow2 (lineHeight/1.5)
+                --         ] mempty
                 svg_
                     [ "className" $= Style.prefix "edit-icon"
                     , "key"       $= (name node <> "editIcon")
@@ -132,6 +121,22 @@ edgeSidebar_ ref _mayDraggedPort node = when (isEdge node) $ do
                         ] mempty
             else return ()
 
+addButton_ :: Ref App -> AnyPortRef -> Bool -> ReactElementM ViewEventHandler ()
+addButton_ ref portRef isLast = do
+    let classes = ["edgeport__svg", "edgeport__svg--inbetween"] ++ if isLast then ["edgeport__svg--inbetween--last"] else []
+    svg_
+        [ "className" $= Style.prefixFromList classes
+        , onMouseDown $ \e _ -> [stopPropagation e]
+        , onClick $ \e _ -> stopPropagation e : sendAddPortEvent ref portRef
+        ] $
+        g_ [ "className" $= Style.prefix "port-add-inbetween" ] $ do
+            g_ [ "className" $= Style.prefix "port-add-inbetween__shape" ] $ do
+                plainPath (Style.prefix "port-add-inbetween__droplet") "M10.0749836,12.9509892 C11.4541267,14.1514559 13.0835452,14.9902759 15.0097241,14.9902759 C18.8703469,14.9902759 22,11.8606228 22,8 C22,4.13937722 18.8703469,1.0097241 15.0097241,1.0097241 C13.0977164,1.0097241 11.4518168,1.82232527 10.1029674,3.02127407 C5.44945277,7.13675725 4.06697429,7.99999996 1.05578798,7.99999996 C4.06697429,7.99999996 5.38818292,8.87139207 10.0749836,12.9509892 Z"
+                g_ [ "className" $= Style.prefix "port-add-inbetween__plus" ] $ do
+                    plainRect 2 8 (-1) (-4)
+                    plainRect 8 2 (-4) (-1)
+            plainPath (Style.prefix "port-add-inbetween__selectable") "M 20 0 A 10 10 0 0 1 20 16 L 10 16 A 10 10 0 0 1 10 0 Z"
+
 edgePort_ :: Ref App -> NodeId -> Port -> ReactElementM ViewEventHandler ()
 edgePort_ ref nid p = when (p ^. Port.visible) $ do
     let portId    = p ^. Port.portId
@@ -145,17 +150,7 @@ edgePort_ ref nid p = when (p ^. Port.visible) $ do
         [ "key"       $= ( jsShow portId <> "-port-" <> jsShow num )
         , "className" $= Style.prefixFromList classes
         ] $ do
-        if isInPort portId then return () else
-            svg_
-                [ "className" $= Style.prefixFromList [ "edgeport__svg", "edgeport__svg--inbetween" ]
-                ] $
-                g_ [ "className" $= Style.prefix "port-add-inbetween" ] $ do
-                    g_ [ "className" $= Style.prefix "port-add-inbetween__shape" ] $ do
-                        plainPath (Style.prefix "port-add-inbetween__droplet") "M10.0749836,12.9509892 C11.4541267,14.1514559 13.0835452,14.9902759 15.0097241,14.9902759 C18.8703469,14.9902759 22,11.8606228 22,8 C22,4.13937722 18.8703469,1.0097241 15.0097241,1.0097241 C13.0977164,1.0097241 11.4518168,1.82232527 10.1029674,3.02127407 C5.44945277,7.13675725 4.06697429,7.99999996 1.05578798,7.99999996 C4.06697429,7.99999996 5.38818292,8.87139207 10.0749836,12.9509892 Z"
-                        g_ [ "className" $= Style.prefix "port-add-inbetween__plus" ] $ do
-                            plainRect 2 8 (-1) (-4)
-                            plainRect 8 2 (-4) (-1)
-                    plainPath (Style.prefix "port-add-inbetween__selectable") "M 20 0 A 10 10 0 0 1 20 16 L 10 16 A 10 10 0 0 1 10 0 Z"
+        if isInPort portId then return () else addButton_ ref portRef False
         svg_
             [ "className" $= Style.prefix "edgeport__svg"
             ] $ do
