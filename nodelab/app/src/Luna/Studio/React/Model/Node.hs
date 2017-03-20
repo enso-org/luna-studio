@@ -28,6 +28,7 @@ import           Luna.Studio.React.Model.Port         (Port, PortId, PortsMap, i
 import qualified Luna.Studio.React.Model.Port         as Port
 import           Luna.Studio.State.Collaboration      (ColorId)
 
+
 data Node = Node { _nodeId                :: NodeId
                  , _name                  :: Text
                  , _nodeType              :: NodeType
@@ -56,22 +57,65 @@ data ExpandedMode = Editor
                   deriving (Eq, Generic, NFData, Show)
 
 data Subgraph = Subgraph
-    { _nodes  :: [NodeId]
-    , _edges  :: [Node]
-    , _monads :: [MonadPath]
+    { _nodes       :: NodesMap
+    , _monads      :: [MonadPath]
     } deriving (Default, Eq, Generic, NFData, Show)
 
 data Collaboration = Collaboration { _touch  :: Map ClientId (UTCTime, ColorId)
                                    , _modify :: Map ClientId  UTCTime
                                    } deriving (Default, Eq, Generic, NFData, Show)
 
+type NodesMap = HashMap NodeId Node
+
 makeLenses ''Node
 makeLenses ''Subgraph
 makeLenses ''Collaboration
 
-instance Default Mode where def = Collapsed
+instance Convertible Empire.Node Node where
+    convert n = Node
+        {- nodeId                -} (n ^. Empire.nodeId)
+        {- name                  -} (n ^. Empire.name)
+        {- nodeType              -} (n ^. Empire.nodeType)
+        {- canEnter              -} (n ^. Empire.canEnter)
+        {- ports                 -} (convert <$> n ^. Empire.ports)
+        {- position              -} (fromTuple $ n ^. Empire.position)
+        {- visualizationsEnabled -} (n ^. Empire.nodeMeta . NodeMeta.displayResult)
+        {- code                  -} (n ^. Empire.code)
 
-type NodesMap = HashMap NodeId Node
+        {- value                 -} def
+        {- zPos                  -} def
+        {- isSelected            -} False
+        {- mode                  -} def
+        {- nameEdit              -} def
+        {- execTime              -} def
+        {- collaboration         -} def
+
+
+instance Convertible Node Empire.Node where
+    convert n = Empire.Node
+        {- nodeId                -} (n ^. nodeId)
+        {- name                  -} (n ^. name)
+        {- nodeType              -} (n ^. nodeType)
+        {- canEnter              -} (n ^. canEnter)
+        {- ports                 -} (convert <$> n ^. ports)
+        {- nodeMeta              -} (NodeMeta.NodeMeta (toTuple $ n ^. position) (n ^. visualizationsEnabled))
+        {- code                  -} (n ^. code)
+
+
+instance Convertible (Position, Bool) NodeMeta where
+    convert (pos, dispRes) = NodeMeta (toTuple pos) dispRes
+
+instance Convertible NodeMeta (Position, Bool) where
+    convert (NodeMeta pos dispRes) = (fromTuple pos, dispRes)
+
+
+instance Convertible (NodeId, Position, Bool) (NodeId, NodeMeta) where
+    convert (nid, pos, dispRes) = (nid, convert (pos, dispRes))
+
+instance Convertible (NodeId, NodeMeta) (NodeId, Position, Bool) where
+    convert (nid, NodeMeta pos dispRes) = (nid, fromTuple pos, dispRes)
+
+instance Default Mode where def = Collapsed
 
 toNodesMap :: [Node] -> NodesMap
 toNodesMap = HashMap.fromList . map (view nodeId &&& id)
@@ -126,47 +170,3 @@ countArgPorts = Port.countArgPorts . Map.keys . (view ports)
 
 countProjectionPorts :: Node -> Int
 countProjectionPorts = Port.countProjectionPorts . Map.keys . (view ports)
-
-instance Convertible Empire.Node Node where
-    convert n = Node
-        {- nodeId                -} (n ^. Empire.nodeId)
-        {- name                  -} (n ^. Empire.name)
-        {- nodeType              -} (n ^. Empire.nodeType)
-        {- canEnter              -} (n ^. Empire.canEnter)
-        {- ports                 -} (Map.map convert $ n ^. Empire.ports)
-        {- position              -} (fromTuple $ n ^. Empire.position)
-        {- visualizationsEnabled -} (n ^. Empire.nodeMeta . NodeMeta.displayResult)
-        {- code                  -} (n ^. Empire.code)
-
-        {- value                 -} def
-        {- zPos                  -} def
-        {- isSelected            -} False
-        {- mode                  -} def
-        {- nameEdit              -} def
-        {- execTime              -} def
-        {- collaboration         -} def
-
-
-instance Convertible Node Empire.Node where
-    convert n = Empire.Node
-        {- nodeId                -} (n ^. nodeId)
-        {- name                  -} (n ^. name)
-        {- nodeType              -} (n ^. nodeType)
-        {- canEnter              -} (n ^. canEnter)
-        {- ports                 -} (Map.map convert $ n ^. ports)
-        {- nodeMeta              -} (NodeMeta.NodeMeta (toTuple $ n ^. position) (n ^. visualizationsEnabled))
-        {- code                  -} (n ^. code)
-
-
-instance Convertible (Position, Bool) NodeMeta where
-    convert (pos, dispRes) = NodeMeta (toTuple pos) dispRes
-
-instance Convertible NodeMeta (Position, Bool) where
-    convert (NodeMeta pos dispRes) = (fromTuple pos, dispRes)
-
-
-instance Convertible (NodeId, Position, Bool) (NodeId, NodeMeta) where
-    convert (nid, pos, dispRes) = (nid, convert (pos, dispRes))
-
-instance Convertible (NodeId, NodeMeta) (NodeId, Position, Bool) where
-    convert (nid, NodeMeta pos dispRes) = (nid, fromTuple pos, dispRes)

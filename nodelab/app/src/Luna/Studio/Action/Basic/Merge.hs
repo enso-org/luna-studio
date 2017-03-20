@@ -1,34 +1,28 @@
 --TODO[PM, LJK]: make sure that those operations updates everything around and refactor
 module Luna.Studio.Action.Basic.Merge where
 
-import qualified Data.Position                           as Position
-import           Empire.API.Data.Graph                   (Graph)
-import qualified Empire.API.Data.Graph                   as GraphAPI
-import           Luna.Studio.Action.Basic.AddConnection  (localAddConnections)
-import           Luna.Studio.Action.Basic.AddNode        (localAddNodes)
-import           Luna.Studio.Action.Basic.DrawConnection (redrawConnectionsForNode)
-import           Luna.Studio.Action.Basic.RemoveNode     (localRemoveNodes)
-import           Luna.Studio.Action.Command              (Command)
-import           Luna.Studio.Action.State.NodeEditor     (getNode, modifyNode)
+import qualified Data.HashMap.Strict                       as HashMap
+import           Empire.API.Data.Graph                     (Graph)
+import qualified Empire.API.Data.Graph                     as GraphAPI
+import           Luna.Studio.Action.Basic.AddConnection    (localAddConnections)
+import           Luna.Studio.Action.Basic.DrawConnection   (redrawConnectionsForNode)
+import           Luna.Studio.Action.Basic.RemoveConnection (localRemoveConnectionsContainingNodes)
+import           Luna.Studio.Action.Command                (Command)
+import           Luna.Studio.Action.State.NodeEditor       (modifyNode)
 import           Luna.Studio.Prelude
-import           Luna.Studio.React.Model.Node            (Node, NodeId, Subgraph)
-import qualified Luna.Studio.React.Model.Node            as Node
-import           Luna.Studio.State.Global                (State)
+import           Luna.Studio.React.Model.Node              (Node, NodeId, Subgraph)
+import qualified Luna.Studio.React.Model.Node              as Node
+import           Luna.Studio.State.Global                  (State)
 
 
 localMerge :: NodeId -> [Graph] -> Command State ()
-localMerge parentId graphs = withJustM (getNode parentId) $ \parentNode -> do
-    subgraphs  <- forM graphs $ \graph -> do
-        let (edges, nodes) = partition Node.isEdge $ map convert $ graph ^. GraphAPI.nodes
-            connections    = graph ^. GraphAPI.connections
-            monads         = graph ^. GraphAPI.monads
-            nodesPos       = view Node.position <$> nodes
-            topLeft        = fromMaybe def $ Position.leftTopPoint nodesPos
-            parentPos      = parentNode ^. Node.position
-            movedNodes     = map (Node.position %~ (\p -> p - topLeft + parentPos)) nodes
-        localAddNodes movedNodes
+localMerge parentId graphs = do
+    subgraphs <- forM graphs $ \graph -> do
+        let nodes       = convert <$> graph ^. GraphAPI.nodes
+            connections = graph ^. GraphAPI.connections
+            monads      = graph ^. GraphAPI.monads
         void $ localAddConnections connections
-        return $ Node.Subgraph (view Node.nodeId <$> nodes) edges monads
+        return $ Node.Subgraph (Node.toNodesMap nodes) monads
     modifyNode parentId $ Node.mode .= Node.Expanded (Node.Function subgraphs)
     void $ redrawConnectionsForNode parentId
 
@@ -41,4 +35,4 @@ localUnmerge node = case node ^. Node.mode of
     _ -> return ()
 
 localUnmergeSubgraph :: Subgraph -> Command State ()
-localUnmergeSubgraph = void . localRemoveNodes . view Node.nodes
+localUnmergeSubgraph = void . localRemoveConnectionsContainingNodes . HashMap.keys . view Node.nodes

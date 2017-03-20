@@ -20,8 +20,7 @@ import qualified Luna.Studio.React.Model.Node     as Node
 import           Luna.Studio.React.Model.Searcher (Searcher)
 import qualified Luna.Studio.React.Model.Searcher as Searcher
 import           Luna.Studio.React.Store          (Ref, dispatch)
-import           Luna.Studio.React.View.Node      (expressionPosition)
-import           Luna.Studio.React.View.Node.Body (nodeBody_)
+import           Luna.Studio.React.View.Node      (expressionPosition, nodeBody_)
 import qualified Luna.Studio.React.View.Style     as Style
 import qualified Text.ScopeSearcher.QueryResult   as Result
 
