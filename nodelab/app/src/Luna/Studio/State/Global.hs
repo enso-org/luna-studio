@@ -29,7 +29,6 @@ data State = State
         , _collaboration        :: Collaboration.State
         , _debug                :: DebugState
         , _selectionHistory     :: [Set NodeId]
-        -- TODO[react]: wyjebawszy
         , _workspace            :: Workspace
         , _lastEventTimestamp   :: DateTime
         , _random               :: StdGen

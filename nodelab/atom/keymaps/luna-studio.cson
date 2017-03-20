@@ -44,6 +44,7 @@
   'ctrl-up'          : 'luna-studio:pan-up'               # PanUp
   'h'                : 'luna-studio:center-graph'         # CenterGraph
   # navigation
+  'ctrl-esc'         : 'luna-studio:exit-graph'           # ExitGraph
   'ctrl-shift-down'  : 'luna-studio:go-cone-down'         # GoConeDown
   'ctrl-shift-left'  : 'luna-studio:go-cone-left'         # GoConeLeft
   'ctrl-shift-right' : 'luna-studio:go-cone-right'        # GoConeRight

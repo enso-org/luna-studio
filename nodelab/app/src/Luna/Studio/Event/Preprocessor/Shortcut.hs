@@ -42,16 +42,17 @@ handleKeyApp evt
     | Keys.withCtrlShift    evt Keys.zero       = Just CenterGraph
     | Keys.withoutMods      evt Keys.h          = Just CenterGraph
     -- navigation
+    | Keys.withCtrl         evt Keys.esc        = Just ExitGraph
+    | Keys.withCtrlShift    evt Keys.downArrow  = Just GoConeDown
+    | Keys.withCtrlShift    evt Keys.leftArrow  = Just GoConeLeft
+    | Keys.withCtrlShift    evt Keys.rightArrow = Just GoConeRight
+    | Keys.withCtrlShift    evt Keys.upArrow    = Just GoConeUp
+    | Keys.withoutMods      evt Keys.downArrow  = Just GoDown
+    | Keys.withoutMods      evt Keys.leftArrow  = Just GoLeft
+    | Keys.withoutMods      evt Keys.rightArrow = Just GoRight
+    | Keys.withoutMods      evt Keys.upArrow    = Just GoUp
     | Keys.withShift        evt Keys.leftArrow  = Just GoPrev
     | Keys.withShift        evt Keys.rightArrow = Just GoNext
-    | Keys.withoutMods      evt Keys.leftArrow  = Just GoLeft
-    | Keys.withoutMods      evt Keys.upArrow    = Just GoUp
-    | Keys.withoutMods      evt Keys.rightArrow = Just GoRight
-    | Keys.withoutMods      evt Keys.downArrow  = Just GoDown
-    | Keys.withCtrlShift    evt Keys.leftArrow  = Just GoConeLeft
-    | Keys.withCtrlShift    evt Keys.upArrow    = Just GoConeUp
-    | Keys.withCtrlShift    evt Keys.rightArrow = Just GoConeRight
-    | Keys.withCtrlShift    evt Keys.downArrow  = Just GoConeDown
     -- nodes
     | Keys.withCtrl         evt Keys.a          = Just SelectAll
     | Keys.withCtrl         evt Keys.e          = Just UnfoldSelectedNodes

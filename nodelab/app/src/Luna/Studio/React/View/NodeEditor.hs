@@ -9,6 +9,8 @@ import qualified Empire.API.Data.MonadPath             as MonadPath
 import           JS.Scene                              (sceneId)
 import qualified Luna.Studio.Data.CameraTransformation as CameraTransformation
 import           Luna.Studio.Data.Matrix               (matrix3dPropertyValue)
+import           Luna.Studio.Event.Event               (Event (Shortcut))
+import qualified Luna.Studio.Event.Shortcut            as Shortcut
 import qualified Luna.Studio.Event.UI                  as UI
 import           Luna.Studio.Prelude                   hiding (transform)
 import qualified Luna.Studio.React.Event.NodeEditor    as NE
@@ -17,7 +19,7 @@ import           Luna.Studio.React.Model.Constants     (connectionWidth)
 import           Luna.Studio.React.Model.Node          (isEdge)
 import           Luna.Studio.React.Model.NodeEditor    (NodeEditor)
 import qualified Luna.Studio.React.Model.NodeEditor    as NodeEditor
-import           Luna.Studio.React.Store               (Ref, dispatch)
+import           Luna.Studio.React.Store               (Ref, dispatch, dispatch')
 import           Luna.Studio.React.View.Connection     (connection_, currentConnection_)
 import           Luna.Studio.React.View.ConnectionPen  (connectionPen_)
 import           Luna.Studio.React.View.Edge           (edgeSidebar_)
@@ -45,12 +47,13 @@ nodeEditor = React.defineView name $ \(ref, ne) -> do
         monads         = map lookupNode $ ne ^. NodeEditor.monads
         scale          = (Matrix.toList camera)!!0 :: Double
     div_
-        [ "className" $= Style.prefix "graph"
-        , "id"        $= sceneId
-        , "key"       $= "graph"
-        , onMouseDown $ \_ e   -> dispatch ref $ UI.NodeEditorEvent $ NE.MouseDown e
-        , onWheel     $ \e m w -> preventDefault e : dispatch ref (UI.NodeEditorEvent $ NE.Wheel m w)
-        , onScroll    $ \e     -> [preventDefault e]
+        [ "className"   $= Style.prefix "graph"
+        , "id"          $= sceneId
+        , "key"         $= "graph"
+        , onMouseDown   $ \_ e   -> dispatch ref $ UI.NodeEditorEvent $ NE.MouseDown e
+        , onDoubleClick $ \_ _   -> dispatch' ref $ Shortcut $ Shortcut.Event Shortcut.ExitGraph def
+        , onWheel       $ \e m w -> preventDefault e : dispatch ref (UI.NodeEditorEvent $ NE.Wheel m w)
+        , onScroll      $ \e     -> [preventDefault e]
         ] $ do
         style_ [ "key" $= "style" ] $ do
             elemString $ ".luna-selection  { box-shadow: 0 0 0 " <> show (0.52/(scale**1.5)) <> "px orange !important }"

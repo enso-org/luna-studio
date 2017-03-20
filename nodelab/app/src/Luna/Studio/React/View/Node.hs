@@ -46,6 +46,7 @@ node = React.defineView name $ \(ref, n) -> do
         , "className" $= Style.prefix "node-root"
         , "style"     @= Aeson.object [ "zIndex" Aeson..= show z ]
         , onMouseDown   $ handleMouseDown ref nodeId
+        , onDoubleClick $ \e _ -> [stopPropagation e]
         ] $ do
         div_
             [ "key"       $= "nodeTrans"

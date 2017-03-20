@@ -23,16 +23,17 @@ data Command = Cancel
              | Cut
              | Paste
              -- navigation
-             | GoPrev
-             | GoNext
-             | GoLeft
-             | GoUp
-             | GoRight
-             | GoDown
-             | GoConeLeft
-             | GoConeUp
-             | GoConeRight
+             | ExitGraph
              | GoConeDown
+             | GoConeLeft
+             | GoConeRight
+             | GoConeUp
+             | GoDown
+             | GoLeft
+             | GoNext
+             | GoPrev
+             | GoRight
+             | GoUp
              -- node
              | SelectAll
              | RemoveSelectedNodes
