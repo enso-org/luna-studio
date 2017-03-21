@@ -1,9 +1,5 @@
 module Luna.Studio.Action.Basic.SetCode where
 
-<<<<<<< HEAD
-import           JS.Atom                            (pushCode)
-=======
->>>>>>> atomdoublerepr
 import           Luna.Studio.Action.Command         (Command)
 import           Luna.Studio.Action.State.App       (modifyCodeEditor)
 import           Luna.Studio.Prelude
