@@ -1,11 +1,13 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TypeApplications  #-}
+{-# LANGUAGE LambdaCase        #-}
 
 module Empire.Commands.Typecheck where
 
 import           Control.Monad                     (forM_, void)
 import           Control.Monad.Reader              (ask, runReaderT)
 import           Control.Monad.State               (execStateT, gets)
+import           Control.Monad.Except
 import           Data.List                         (sort)
 import           Data.Map                          (Map)
 import qualified Data.Map                          as Map
@@ -67,7 +69,13 @@ runInterpreter :: Imports -> Command Graph (Maybe Interpreter.LocalScope)
 runInterpreter imports = runASTOp $ do
     bodyRef    <- use $ Graph.breadcrumbHierarchy . BH.body
     res        <- mapM (Interpreter.interpret' imports . IR.unsafeGeneralize) bodyRef
-    mapM (\v -> liftIO $ execStateT v def) res
+    case res of
+        Nothing -> return Nothing
+        Just v  -> do
+            result <- liftIO $ runExceptT $ execStateT v def
+            case result of
+                Left e  -> return Nothing
+                Right r -> return $ Just r
 
 reportError :: GraphLocation -> NodeId -> Maybe (APIError.Error TypeRep) -> Command InterpreterEnv ()
 reportError loc nid err = do
@@ -118,7 +126,9 @@ updateValues loc scope = do
             BH.MatchNode r -> do
                 ref <- zoom graph $ runASTOp $ ASTRead.getVarNode r
                 let resVal = Interpreter.localLookup (IR.unsafeGeneralize ref) scope
-                liftIO $ forM_ resVal $ \v -> listenShortRep v $ \strRep -> flip runReaderT env $ Publisher.notifyResultUpdate loc nid (NodeResult.Value (fromString strRep) []) 0
+                liftIO $ forM_ resVal $ \v -> listenShortRep v $ \case
+                    Left  err    -> flip runReaderT env $ Publisher.notifyResultUpdate loc nid (NodeResult.Error $ APIError.RuntimeError err) 0
+                    Right strRep -> flip runReaderT env $ Publisher.notifyResultUpdate loc nid (NodeResult.Value (fromString strRep) []) 0
 
 flushCache :: Command InterpreterEnv ()
 flushCache = do
