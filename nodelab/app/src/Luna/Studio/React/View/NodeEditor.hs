@@ -56,10 +56,10 @@ nodeEditor = React.defineView name $ \(ref, ne) -> do
 
 
     div_
-        [ "className" $= Style.prefix "graph"
-        , "id"        $= sceneId
-        , "key"       $= "graph"
-        , onMouseDown   $ \_ e   -> dispatch ref $ UI.NodeEditorEvent $ NE.MouseDown e
+        [ "className"   $= Style.prefix "graph"
+        , "id"          $= sceneId
+        , "key"         $= "graph"
+        , onMouseDown   $ \_ m   -> dispatch ref $ UI.NodeEditorEvent $ NE.MouseDown m
         , onDoubleClick $ \_ _   -> dispatch' ref $ Shortcut $ Shortcut.Event Shortcut.ExitGraph def
         , onWheel       $ \e m w -> preventDefault e : dispatch ref (UI.NodeEditorEvent $ NE.Wheel m w)
         , onScroll      $ \e     -> [preventDefault e]

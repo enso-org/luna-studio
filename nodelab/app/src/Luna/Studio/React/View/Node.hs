@@ -2,8 +2,10 @@
 module Luna.Studio.React.View.Node where
 
 import qualified Data.Aeson                             as Aeson
+import qualified Data.HashMap.Strict                    as HashMap
 import qualified Data.Map.Lazy                          as Map
 import           Data.Matrix                            (Matrix)
+import qualified Empire.API.Data.MonadPath              as MonadPath
 import qualified Empire.API.Graph.NodeResultUpdate      as NodeResult
 import qualified JS.Config                              as Config
 import           Luna.Studio.Data.Matrix                (showNodeTranslate, showNodeMatrix)
@@ -11,6 +13,7 @@ import qualified Luna.Studio.Event.Mouse                as Mouse
 import qualified Luna.Studio.Event.UI                   as UI
 import           Luna.Studio.Prelude
 import qualified Luna.Studio.React.Event.Node           as Node
+import qualified Luna.Studio.React.Event.NodeEditor     as NE
 import           Luna.Studio.React.Model.App            (App)
 import qualified Luna.Studio.React.Model.Field          as Field
 import           Luna.Studio.React.Model.Node           (Node, NodeId, NodeType (ExpressionNode), Subgraph, countArgPorts, countOutPorts,
@@ -187,8 +190,26 @@ nodePorts_ :: Ref App -> Node -> ReactElementM ViewEventHandler ()
 nodePorts_ ref model = React.viewWithSKey nodePorts objNamePorts (ref, model) mempty
 
 nodeContainer_ :: Ref App -> [Subgraph] -> ReactElementM ViewEventHandler ()
-nodeContainer_ ref sgs = React.viewWithSKey nodeContainer "node-container" (ref, sgs) mempty
+nodeContainer_ ref subgraphs = React.viewWithSKey nodeContainer "node-container" (ref, subgraphs) mempty
 
 nodeContainer :: ReactView (Ref App, [Subgraph])
-nodeContainer = React.defineView name $ \(_ref, sgs) -> do
-    div_ $ elemString $ show sgs
+nodeContainer = React.defineView name $ \(ref, subgraphs) -> do
+    div_ $ forM_ subgraphs $ \subgraph -> do
+      let (edges, nodes) = partition Node.isEdge $ subgraph ^. Node.nodes . to HashMap.elems
+          lookupNode m   = ( m ^. MonadPath.monadType
+                           , m ^. MonadPath.path . to (mapMaybe $ flip HashMap.lookup $ subgraph ^. Node.nodes))
+          monads         = map lookupNode $ subgraph ^. Node.monads
+      div_
+          [ "className"   $= Style.prefix "graph"
+          -- , "id"          $= sceneId
+          , "key"         $= "graph"
+          , onMouseDown   $ \_ m   -> dispatch ref $ UI.NodeEditorEvent $ NE.MouseDown m
+          , onDoubleClick $ \e _   -> [preventDefault e]
+          -- , onWheel       $ \e m w -> preventDefault e : dispatch ref (UI.NodeEditorEvent $ NE.Wheel m w)
+          -- , onScroll      $ \e     -> [preventDefault e]
+          ] $ do
+            div_
+                [ "className" $= Style.prefixFromList [ "plane", "plane--nodes" ]
+                , "key"       $= "nodes"
+                ] $ do
+                forM_ nodes $ node_ ref
