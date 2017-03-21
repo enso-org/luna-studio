@@ -24,7 +24,7 @@ import qualified Empire.API.Data.PortDefault                    as PortDefault
 import           Empire.API.Data.TypeRep                        (TypeRep)
 import           Empire.API.Graph.NodeResultUpdate              (NodeValue)
 import qualified Empire.API.Graph.NodeResultUpdate              as NodeResult
-import           Luna.Studio.Data.Matrix                        (translatePropertyValue2)
+--import           Luna.Studio.Data.Matrix                        (translatePropertyValue2)
 import qualified Luna.Studio.Event.UI                           as UI
 import           Luna.Studio.Prelude
 import qualified Luna.Studio.React.Event.Visualization          as Visualization
@@ -115,8 +115,8 @@ nodeValue_ ref nodeId mayPos visIx value = do
         translatedDiv_ = case mayPos of
             Just pos -> div_ [ "className" $= Style.prefixFromList [ "node-trans", "noselect", "node-root" ]
                              , "style" @= Aeson.object
-                                [ "zIndex"    Aeson..= show (1000 :: Integer)
-                                , "transform" Aeson..= translatePropertyValue2 pos ] ]
+                                [ "zIndex"    Aeson..= show (1000 :: Integer) ] ]
+                                --, "transform" Aeson..= translatePropertyValue2 pos ] ]
                          . div_ [ "className" $= Style.prefix "node__visuals" ]
             Nothing -> div_
     translatedDiv_ $ do

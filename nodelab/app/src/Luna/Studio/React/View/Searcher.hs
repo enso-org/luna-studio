@@ -4,12 +4,11 @@ module Luna.Studio.React.View.Searcher where
 
 import qualified Data.Aeson                       as Aeson
 import           Data.Matrix                      (Matrix)
--- import           Data.Position                    (Position (Position), Vector2 (Vector2))
-import           Data.Vector
 import           React.Flux
 import qualified React.Flux                       as React
 
 import           JS.Searcher                      (searcherId)
+import           Luna.Studio.Data.Matrix          (showNodeTranslate)
 import qualified Luna.Studio.Event.Keys           as Keys
 import qualified Luna.Studio.Event.UI             as UI
 import           Luna.Studio.Prelude
@@ -20,7 +19,7 @@ import qualified Luna.Studio.React.Model.Node     as Node
 import           Luna.Studio.React.Model.Searcher (Searcher)
 import qualified Luna.Studio.React.Model.Searcher as Searcher
 import           Luna.Studio.React.Store          (Ref, dispatch)
-import           Luna.Studio.React.View.Node      (expressionPosition, nodeBody_)
+import           Luna.Studio.React.View.Node      (nodeBody_)
 import qualified Luna.Studio.React.View.Style     as Style
 import qualified Text.ScopeSearcher.QueryResult   as Result
 
@@ -40,8 +39,7 @@ handleKeyDown ref e k = prevent $ stopPropagation e : dispatch' where
 
 searcher :: ReactView (Ref App, Matrix Double, Searcher)
 searcher =  React.defineView name $ \(ref, camera, s) -> do
-    let pos       = expressionPosition camera (s ^. Searcher.position)
-        nodePos   = s ^. Searcher.position
+    let nodePos   = s ^. Searcher.position
         mode      = s ^. Searcher.mode
         nodePrev  = convert <$> s ^. Searcher.selectedNode
         className = Style.prefixFromList ( "node-root" : (case mode of
@@ -58,7 +56,7 @@ searcher =  React.defineView name $ \(ref, camera, s) -> do
         div_
             [ "key"       $= "nameTrans"
             , "className" $= Style.prefix "name-trans"
-            , "style"     @= Aeson.object [ "transform" Aeson..= ("translate(" <> show (pos ^. x) <> "px, " <> show (pos ^. y) <> "px)" :: String) ]
+            , "style"     @= Aeson.object [ "transform" Aeson..= (showNodeTranslate camera $ s ^. Searcher.position) ]
             , onMouseDown $ \e _ -> [stopPropagation e]
             , onMouseUp   $ \e _ -> [stopPropagation e]
             , onClick     $ \e _ -> [stopPropagation e]

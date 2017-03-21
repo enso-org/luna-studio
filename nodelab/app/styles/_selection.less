@@ -11,23 +11,28 @@
     left:          0;
     top:           0;
     position:      absolute;
-    border-radius: 34px;
+    border-radius: 34rem;
     opacity:       0;
-    left:         -1px;
-    top:          -1px;
+    left:         -1rem;
+    top:          -1rem;
+    right:        -1rem;
+    bottom:       -1rem;
 }
 
 .luna-node--selected {
     .luna-selection {
-        width:  ~"calc(100% + 20px)";
-        height: ~"calc(100% + 20px)";
-        left:   -11px;
-        top:    -11px;
+        width:   auto;
+        height:  auto;
+        left:   -10rem;
+        right:  -10rem;
+        bottom: -10rem;
+        top:    -10rem;
         opacity: 1;
     }
+
     &.luna-node--expanded {
         .luna-selection {
-            border-radius: 10px;
+            border-radius: 10rem;
         }
     }
 }
