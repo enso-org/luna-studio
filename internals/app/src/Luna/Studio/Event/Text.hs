@@ -8,7 +8,7 @@ import           Luna.Studio.Prelude
 
 
 data TextEvent = TextEvent
-               { _filePath  :: String
+               { _filePath  :: FilePath
                , _start     :: Int
                , _stop      :: Int
                , _text      :: Text

@@ -2,26 +2,29 @@ w         = require './gen/websocket'
 websocket = w()
 LunaStudioTab = require './luna-studio-tab'
 SubAtom       = require 'sub-atom'
-c             = require "./gen/ghcjs-code.js"
-code = c()
+
 i             = require "./gen/ghcjs-code2.js"
 internal = i()
+c             = require "./gen/ghcjs-code.js"
+code = c()
 path = require 'path'
 
 
 module.exports =
   activate: ->
     internal.start(websocket)
+    rootPath = atom.project.getPaths().shift()
+    # if rootPath != ""
+    #   internal.pushInternalEvent("SetProject " + rootPath)
     atom.workspace.addOpener (uri) ->
 
       if path.extname(uri) is '.luna'
-        internal.pushInternalEvent("openFile" + uri)
+        # internal.pushInternalEvent("OpenFile " + uri)
 
         atom.workspace.open().then (@editor) ->
           @buffer = @editor.buffer
           @buffer.setPath(uri)
-          internal.pushInternalEvent("getBuffer" + uri) ##todo  odbierz bufor i go ustaw, zapnij się na eventy związane z kopiowaniem tekstu
-
+          # internal.pushInternalEvent("GetBuffer " + uri) ##todo  odbierz bufor i go ustaw, zapnij się na eventy związane z kopiowaniem tekstu
           withoutTrigger = (callback) ->
             @triggerPush = false
             callback()
@@ -30,7 +33,7 @@ module.exports =
           setBuffer = (text) ->
             withoutTrigger =>
               @buffer.setText(text)
-            internal.bufferListener setBuffer
+          internal.bufferListener setBuffer
 
           setCode = (uri_send, start_send, end_send, text) ->
             withoutTrigger =>
@@ -39,31 +42,32 @@ module.exports =
                 end = buffer.positionForCharacterIndex(end_send)
                 @buffer.setTextInRange [start, end], text
                 @editor.scrollToBufferPosition(start)
-            internal.codeListener setCode
+          internal.codeListener setCode
 
-            @ss = new SubAtom
-            @ss.add @buffer.onDidChange (event) =>
-                return unless @triggerPush
-                if event.newText != '' or event.oldText != ''
-                    diff =
-                        uri: uri
-                        start: buffer.characterIndexForPosition(event.oldRange.start)
-                        end: buffer.characterIndexForPosition(event.oldRange.end)
-                        text: event.newText
-                        cursor: buffer.characterIndexForPosition(@editor.getCursorBufferPosition())
-                internal.pushText(diff)
+          @ss = new SubAtom
+          @ss.add @buffer.onDidChange (event) =>
+              # return unless @triggerPush
+              if event.newText != '' or event.oldText != ''
+                  diff =
+                      uri: uri
+                      start: buffer.characterIndexForPosition(event.oldRange.start)
+                      end: buffer.characterIndexForPosition(event.oldRange.end)
+                      text: event.newText
+                      cursor: buffer.characterIndexForPosition(@editor.getCursorBufferPosition())
+              console.log(diff)
+              internal.pushText(diff)
 
         atom.workspace.getActivePane().activateItem new LunaStudioTab(uri, code, websocket)
 
 
     @subs = new SubAtom
     @subs.add atom.commands.add '.luna-studio', 'luna-studio:cancel': -> code.pushEvent("Shortcut Cancel")
-    @subs.add atom.commands.add '.luna-studio', 'core:close':                    ->
-      activeFilePath =atom.workspace.getActivePaneItem().buffer.file.path
+    # @subs.add atom.commands.add '.luna-studio', 'core:close':                    ->
+    #   activeFilePath =atom.workspace.getActivePaneItem().buffer.file.path
       #   if atom.workspace.getActivePaneItem().buffer
       #     atom.workspace.getActivePaneItem().buffer.file.path
       #   else atom.workspace.getActivePane().activeItem.uri
-      internal.pushInternalEvent("CloseFile" + activeFilePath)
+      # internal.pushInternalEvent("CloseFile" + activeFilePath)
     # @subs.add atom.commands.add '.luna-studio', 'core:save', (e)                 ->
     #   activeFilePath = atom.workspace.getActivePaneItem().buffer.file.path
     #   e.preventDefault()

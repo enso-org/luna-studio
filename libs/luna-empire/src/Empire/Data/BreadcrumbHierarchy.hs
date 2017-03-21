@@ -1,6 +1,7 @@
 module Empire.Data.BreadcrumbHierarchy where
 
 import           Empire.Prelude
+import           Control.Lens.TH
 
 import           Empire.API.Data.Breadcrumb (Breadcrumb (..), BreadcrumbItem (..))
 import           Empire.API.Data.Node       (NodeId)
@@ -13,6 +14,8 @@ import qualified Data.Map                   as Map
 data NodeIDTarget = MatchNode     NodeRef
                   | AnonymousNode NodeRef
                   deriving (Show, Eq)
+
+makePrisms ''NodeIDTarget
 
 getAnyRef :: NodeIDTarget -> NodeRef
 getAnyRef (MatchNode ref)     = ref

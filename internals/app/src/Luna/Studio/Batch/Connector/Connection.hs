@@ -48,11 +48,20 @@ deserialize = Binary.decode . Base64.decodeLenient . pack
 
 sendMessages :: [WebMessage] -> IO ()
 sendMessages msgs = do
+    putStrLn "before getWebSocket"
     socket <- getWebSocket
-    send socket $ serialize $ Frame msgs
+    putStrLn $ show msgs
+    putStrLn "sendMessages 1"
+    let serialized = serialize $ Frame msgs
+    putStrLn "sendMessages 2"
+    send socket serialized
+    putStrLn "sendMessages 3"
 
 sendMessage :: WebMessage -> IO ()
-sendMessage msg = sendMessages [msg]
+sendMessage msg = do
+  putStrLn "sendMessage 1"
+  sendMessages [msg]
+  putStrLn "sendMessage 2"
 
 makeMessage :: (Topic.MessageTopic (Request a), Binary a) => Message a -> WebMessage
 makeMessage (Message uuid guiID body) = let body' = Request uuid guiID body in WebMessage (Topic.topic body') (Binary.encode body')

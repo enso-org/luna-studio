@@ -12,14 +12,18 @@ module JS.WebSocket (WebSocket
                     , onOpen
                     , send
                     ) where
-
+import           Data.Coerce             (coerce)
 import           Data.JSString
 import           GHCJS.Foreign.Callback
 import           GHCJS.Marshal.Pure     (PFromJSVal (..), PToJSVal (..))
 import           GHCJS.Types            (IsJSVal)
 import           Luna.Studio.Prelude
 
-newtype WebSocket      = WebSocket      JSVal deriving (PFromJSVal, PToJSVal)
+import           Control.DeepSeq (force)
+
+
+
+newtype WebSocket      = WebSocket      JSVal deriving (PFromJSVal, PToJSVal, NFData)
 newtype WSMessageEvent = WSMessageEvent JSVal deriving (PFromJSVal, PToJSVal)
 newtype WSClosedEvent  = WSClosedEvent  JSVal deriving (PFromJSVal, PToJSVal)
 
@@ -33,10 +37,16 @@ foreign import javascript safe "$1.code"
     getCode :: WSClosedEvent -> IO Int
 
 foreign import javascript safe "arg_websocket"
-    getWebSocket' :: IO JSVal 
+    getWebSocket' :: IO JSVal
 
 getWebSocket :: IO WebSocket
-getWebSocket = pFromJSVal <$> getWebSocket'
+getWebSocket = do
+  putStrLn "getWebSocket 1"
+  webs <- getWebSocket'
+  putStrLn "getWebSocket 2"
+  let !foo = force (coerce webs)
+  putStrLn "getWebSocket 3"
+  return foo
 
 foreign import javascript safe "$1.isOpen()"
     isOpen :: WebSocket -> IO Bool

@@ -21,35 +21,35 @@ handle :: forall a. (Binary a, Topic.MessageTopic a) => (a -> Batch.Event) -> (S
 handle cons = (Topic.topic (undefined :: a), cons . decode)
 
 handlers :: Map.Map String (ByteString -> Batch.Event)
-handlers = Map.fromList [ handle GetProgramResponse
-                        , handle AddConnectionResponse
-                        , handle AddNodeResponse
-                        , handle AddPortResponse
-                        , handle AddSubgraphResponse
-                        , handle CodeUpdate
-                        , handle CollaborationUpdate
-                        , handle ConnectUpdate
-                        , handle DumpGraphVizResponse
+handlers = Map.fromList [ --handle GetProgramResponse
+                        -- , handle AddConnectionResponse
+                        -- , handle AddNodeResponse
+                        -- , handle AddPortResponse
+                        -- , handle AddSubgraphResponse
+                        -- , handle CodeUpdate
+                          handle CollaborationUpdate
+                        -- , handle ConnectUpdate
+                        -- , handle DumpGraphVizResponse
                         , handle EmpireStarted
-                        , handle GetSubgraphsResponse
-                        , handle MonadsUpdate
-                        , handle MovePortResponse
-                        , handle NodeResultUpdate
-                        , handle NodesUpdate
-                        , handle NodeTypecheckerUpdate
+                        -- , handle GetSubgraphsResponse
+                        -- , handle MonadsUpdate
+                        -- , handle MovePortResponse
+                        -- , handle NodeResultUpdate
+                        -- , handle NodesUpdate
+                        -- , handle NodeTypecheckerUpdate
                         , handle RedoResponse
-                        , handle RemoveConnectionResponse
-                        , handle RemoveConnectionUpdate
-                        , handle RemoveNodesResponse
-                        , handle RemovePortResponse
-                        , handle RenameNodeResponse
-                        , handle RenamePortResponse
-                        , handle SearchNodesResponse
-                        , handle SetNodeCodeResponse
-                        , handle SetNodeExpressionResponse
-                        , handle SetNodesMetaResponse
-                        , handle SetPortDefaultResponse
-                        , handle TypeCheckResponse
+                        -- , handle RemoveConnectionResponse
+                        -- , handle RemoveConnectionUpdate
+                        -- , handle RemoveNodesResponse
+                        -- , handle RemovePortResponse
+                        -- , handle RenameNodeResponse
+                        -- , handle RenamePortResponse
+                        -- , handle SearchNodesResponse
+                        -- , handle SetNodeCodeResponse
+                        -- , handle SetNodeExpressionResponse
+                        -- , handle SetNodesMetaResponse
+                        -- , handle SetPortDefaultResponse
+                        -- , handle TypeCheckResponse
                         , handle UndoResponse
                         , handle ProjectCreated
                         , handle ProjectCreatedUpdate

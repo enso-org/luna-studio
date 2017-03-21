@@ -6,6 +6,7 @@ import           Data.Position       (Position,  x, y)
 import           Data.ScreenPosition (ScreenPosition)
 import           Data.Vector         (Vector2)
 import           Luna.Studio.Prelude
+import           Numeric             (showFFloat)
 
 
 translationMatrix :: Vector2 Double -> Matrix Double
@@ -69,12 +70,12 @@ showNodeMatrix :: Matrix Double -> Position -> String
 showNodeMatrix camera nodePos = foldl (<>) "matrix3d(" (intersperse ", " $ map show mx2) <> ")"
     where mx1   = Matrix.toList camera
           scale = mx1!!0
-          nx    = mx1!!12 + (scale * nodePos ^. x)
-          ny    = mx1!!13 + (scale * nodePos ^. y)
+          nx    = fromInteger (round $ mx1!!12 + (scale * nodePos ^. x):: Integer)
+          ny    = fromInteger (round $ mx1!!13 + (scale * nodePos ^. y):: Integer)
           mx2   = take 12 mx1 ++ nx:ny:drop 14 mx1
 
 showNodeTranslate :: Matrix Double -> Position -> String
-showNodeTranslate camera nodePos = "translate(" <> show nx <> "px, " <> show ny <> "px)"
+showNodeTranslate camera nodePos = "translate(" <> show1 nx <> "px, " <> show1 ny <> "px)"
     where mx1   = Matrix.toList camera
           scale = mx1!!0
           nx    = mx1!!12 + (scale * nodePos ^. x)
@@ -82,3 +83,6 @@ showNodeTranslate camera nodePos = "translate(" <> show nx <> "px, " <> show ny 
 
 --          x'    = fromInteger (round $ camX + (scale * posX) :: Integer)
 --          y'    = fromInteger (round $ camY + (scale * posY) :: Integer)
+
+show1 :: Double -> String
+show1 a = showFFloat (Just 0) a "" -- limit Double to two decimal numbers TODO: remove before the release

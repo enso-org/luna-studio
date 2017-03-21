@@ -22,6 +22,7 @@ import           Luna.Studio.Action.Command         (Command)
 import qualified Luna.Studio.Batch.Workspace        as Workspace
 import qualified Luna.Studio.Event.Batch            as Batch
 import qualified Luna.Studio.Event.CustomEvent      as CustomEvent
+import qualified Luna.Studio.Event.Event                as Event
 import           Luna.Studio.Event.Event            (Event (Batch, CustomEvent, Atom))
 import           Luna.Studio.Event.Internal         (InternalEvent(..), ActionType(..))
 import           Luna.Studio.Handler.Backend.Common (doNothing, handleResponse)
@@ -37,10 +38,10 @@ setProject projectId project = do
 
 handle :: Event -> Maybe (Command State ())
 
-handle (Atom (InternalEvent SetProject path)) = Just $ putStrLn "setProject" >> BatchCmd.setProject path
-handle (Atom (InternalEvent CloseFile path))  = Just $ BatchCmd.closeFile path
-handle (Atom (InternalEvent OpenFile path))   = Just $ putStrLn "openFile" >> BatchCmd.openFile path
-handle (Atom (InternalEvent SaveFile path))   = Just $ BatchCmd.saveFile path
+handle (Event.Atom (InternalEvent SetProject path)) = Just $ BatchCmd.setProject path
+handle (Event.Atom (InternalEvent CloseFile path))  = Just $ BatchCmd.closeFile path
+handle (Event.Atom (InternalEvent OpenFile path))   = Just $ BatchCmd.openFile path
+handle (Event.Atom (InternalEvent SaveFile path))   = Just $ BatchCmd.saveFile path
 
 handle (Batch (Batch.ProjectSet response))    = Just $ handleResponse response doNothing doNothing
 

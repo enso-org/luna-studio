@@ -97,7 +97,10 @@ setProject :: FilePath -> UUID -> Maybe UUID -> IO ()
 setProject rootPath uuid guiID = sendRequest $ Message uuid guiID $ SetProject.Request rootPath
 
 substitute :: FilePath -> Int -> Int -> Text -> Maybe Int -> UUID -> Maybe UUID -> IO ()
-substitute path start end text cursor uuid guiID = sendRequest $ Message uuid guiID $ Substitute.Request path start end text cursor
+substitute path start end text cursor uuid guiID = do
+  putStrLn "Commands substitute"
+  sendRequest $ Message uuid guiID $ Substitute.Request path start end text cursor
+  putStrLn "Commands substitute 2"
 
 --
 

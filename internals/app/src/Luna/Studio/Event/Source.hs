@@ -6,7 +6,7 @@ module Luna.Studio.Event.Source
     , fileHandler
     , textHandler
     , customEventHandler
-    , sceneResizeHandler
+    -- , sceneResizeHandler
     , webSocketHandler
     ) where
 
@@ -36,18 +36,14 @@ data AddHandler a = AddHandler ((a -> IO ()) -> IO (IO ()))
 
 textHandler :: AddHandler Event
 textHandler = AddHandler $ \h ->
-    Atom.subscribeText $
-      -- whenM UI.isFocusInApp .
-      h . Text
+    Atom.subscribeText $ h . Text
 
 fileHandler :: AddHandler Event
-fileHandler = AddHandler $ \h ->
-    Atom.subscribeEventListenerInternal $
-          -- whenM UI.isFocusInApp .
-      h . Atom
+fileHandler = AddHandler $ \h -> do
+    Atom.subscribeEventListenerInternal $ h . Atom
 
-sceneResizeHandler :: AddHandler Event
-sceneResizeHandler = undefined --AddHandler $ \h ->
+-- sceneResizeHandler :: AddHandler Event
+-- sceneResizeHandler = undefined --AddHandler $ \h ->
 --     Scene.onSceneResize $ h $ UI $ AppEvent App.Resize
 
 webSocketHandler :: WebSocket.WebSocket -> AddHandler Event

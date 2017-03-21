@@ -19,7 +19,7 @@ import qualified Empire.ASTOps.Deconstruct       as ASTDeconstruct
 import qualified Empire.ASTOps.Parse             as Parser
 import           Empire.ASTOps.Print             (printExpression)
 import qualified Empire.ASTOps.Read              as ASTRead
-import qualified Empire.Commands.AST             as AST (isTrivialLambda)
+import qualified Empire.Commands.AST             as AST (isTrivialLambda, dumpGraphViz)
 import qualified Empire.Commands.Graph           as Graph (addNode, addPort, connect, disconnect, getConnections, getGraph,
                                                            getNodeIdSequence, getNodes, movePort, removeNodes, removePort, renameNode,
                                                            renamePort, setNodeExpression, setNodeMeta, withGraph)
@@ -892,7 +892,6 @@ spec = around withChannels $ id $ do
                 Graph.addNode top u1 "myVec" def
                 Graph.addNode top u2 "Vector x y z" def
                 Graph.connect top (OutPortRef u1 Port.All) (OutPortRef' (OutPortRef u2 Port.All))
-
                 Graph.withGraph top $ runASTOp $
                     (,,,) <$> GraphBuilder.buildNode u1
                           <*> GraphBuilder.buildNode u2

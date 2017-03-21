@@ -18,10 +18,6 @@ import           Text.Read                  (readMaybe)
 foreign import javascript safe "atomCallback.pushNotification($1, $2)"
   pushNotification' :: Int -> JSString -> IO ()
 
-foreign import javascript safe "atomCallback.pushNotification($1, $2)"
-  pushNotification' :: Int -> JSString -> IO ()
-
-
 foreign import javascript safe "atomCallback.onEvent($1)"
     onEvent' :: Callback (JSVal -> IO ()) -> IO ()
 

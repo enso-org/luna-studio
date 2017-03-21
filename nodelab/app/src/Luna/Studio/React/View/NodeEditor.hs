@@ -36,10 +36,10 @@ name :: JSString
 name = "node-editor"
 
 show1 :: Double -> String
-show1 a = showFFloat (Just 1) a "" -- limit Double to two decimal numbers
+show1 a = showFFloat (Just 1) a "" -- limit Double to two decimal numbers TODO: remove before the release
 
 show4 :: Double -> String
-show4 a = showFFloat (Just 4) a "" -- limit Double to two decimal numbers
+show4 a = showFFloat (Just 4) a "" -- limit Double to two decimal numbers TODO: remove before the release
 
 nodeEditor_ :: Ref App -> NodeEditor -> ReactElementM ViewEventHandler ()
 nodeEditor_ ref ne = React.viewWithSKey nodeEditor name (ref, ne) mempty
@@ -53,17 +53,19 @@ nodeEditor = React.defineView name $ \(ref, ne) -> do
         monads         = map lookupNode $ ne ^. NodeEditor.monads
         scale          = (Matrix.toList camera)!!0 :: Double
 
+
+
     div_
-        [ "className" $= Style.prefix "graph"
-        , "id"        $= sceneId
-        , "key"       $= "graph"
-        , onMouseDown   $ \_ e   -> dispatch ref $ UI.NodeEditorEvent $ NE.MouseDown e
+        [ "className"   $= Style.prefix "graph"
+        , "id"          $= sceneId
+        , "key"         $= "graph"
+        , onMouseDown   $ \_ m   -> dispatch ref $ UI.NodeEditorEvent $ NE.MouseDown m
         , onDoubleClick $ \_ _   -> dispatch' ref $ Shortcut $ Shortcut.Event Shortcut.ExitGraph def
         , onWheel       $ \e m w -> preventDefault e : dispatch ref (UI.NodeEditorEvent $ NE.Wheel m w)
         , onScroll      $ \e     -> [preventDefault e]
         ] $ do
 
--- dynamic styles
+
 
         style_
             [ "key" $= "style"
@@ -90,7 +92,7 @@ nodeEditor = React.defineView name $ \(ref, ne) -> do
 
             forM_ (ne ^. NodeEditor.nodes . to HashMap.elems) $ nodeDynamicStyles_ camera
 
--- monads and connections
+
 
         svg_
             [ "className" $= Style.prefix "svg-planes"
@@ -111,7 +113,6 @@ nodeEditor = React.defineView name $ \(ref, ne) -> do
                 mapM_ selectionBox_                $ ne ^. NodeEditor.selectionBox
                 mapM_ connectionPen_               $ ne ^. NodeEditor.connectionPen
 
--- nodes
 
         div_
             [ "className" $= Style.prefixFromList [ "plane", "plane--nodes" ]
@@ -121,11 +122,9 @@ nodeEditor = React.defineView name $ \(ref, ne) -> do
             forM_ (ne ^. NodeEditor.visualizations) $ pinnedVisualization_ ref ne
             mapM_ (searcher_ ref camera) $ ne ^. NodeEditor.searcher
 
--- port sidebars
 
         forM_ edges $ edgeSidebar_ ref (ne ^. NodeEditor.draggedPort)
 
--- connection pen
 
         canvas_
             [ "className" $= Style.prefixFromList [ "plane", "plane--canvas", "hide" ]

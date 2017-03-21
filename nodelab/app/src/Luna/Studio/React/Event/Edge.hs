@@ -13,7 +13,7 @@ import           React.Flux              (MouseEvent)
 
 data Event = AddPort           AnyPortRef
            | MouseMove         MouseEvent NodeId
-           | RemovePort
+           | RemovePort        AnyPortRef
            | PortNameApply     AnyPortRef String
            | PortNameDiscard   AnyPortRef
            | PortNameStartEdit AnyPortRef

@@ -9,7 +9,6 @@ module Luna.Studio.React.View.Edge
 import qualified Data.Aeson                        as Aeson
 import qualified Data.Map.Lazy                     as Map
 import           Data.Position                     (y)
-import           Empire.API.Data.Port              (getPortNumber, isInPort)
 import           Empire.API.Data.PortRef           (AnyPortRef (OutPortRef'), OutPortRef (OutPortRef), toAnyPortRef)
 import qualified JS.Config                         as Config
 import           JS.Scene                          (inputSidebarId, outputSidebarId)
@@ -22,7 +21,7 @@ import           Luna.Studio.React.Model.Constants (lineHeight)
 import qualified Luna.Studio.React.Model.Field     as Field
 import           Luna.Studio.React.Model.Node      (Node, NodeId, countProjectionPorts, isEdge, isInputEdge)
 import qualified Luna.Studio.React.Model.Node      as Node
-import           Luna.Studio.React.Model.Port      (DraggedPort, OutPort (Projection), Port (..), getPortNumber, isInPort)
+import           Luna.Studio.React.Model.Port      (DraggedPort, OutPort (Projection), Port (..), getPortNumber, isInPort, isOutPort)
 import qualified Luna.Studio.React.Model.Port      as Port
 import           Luna.Studio.React.Store           (Ref, dispatch)
 import           Luna.Studio.React.View.Field      (singleField_)
@@ -56,7 +55,7 @@ edgeSidebar_ ref _mayDraggedPort node = when (isEdge node) $ do
             [ "key"       $= "EdgePortsBody"
             , "className" $= Style.prefixFromList [ "edgeports__body" ]
             ] $ do
-            if isInputEdge node then
+            when (isInputEdge node) $
                 div_
                     [ "className" $= Style.prefixFromList ["port", "edgeport", "edgeport--i", "edgeport--self"]
                     ] $
@@ -75,11 +74,10 @@ edgeSidebar_ ref _mayDraggedPort node = when (isEdge node) $ do
                                 [ "className" $= Style.prefix "port__select"
                                 , "r"         $= "13"
                                 ] mempty
-            else return ()
 
             forM_ ports $ edgePort_ ref nodeId
 
-            if isInputEdge node then do
+            when (isInputEdge node) $ do
                 -- TODO: merge two add buttons into one svg_
                 addButton_ ref (OutPortRef' (OutPortRef nodeId (Projection (countProjectionPorts node)))) True
                 -- svg_
@@ -119,7 +117,6 @@ edgeSidebar_ ref _mayDraggedPort node = when (isEdge node) $ do
                         , "key"       $= jsShow "editIconSelect"
                         , "r"         $= jsShow2 (lineHeight/1.5)
                         ] mempty
-            else return ()
 
 addButton_ :: Ref App -> AnyPortRef -> Bool -> ReactElementM ViewEventHandler ()
 addButton_ ref portRef isLast = do
@@ -127,7 +124,7 @@ addButton_ ref portRef isLast = do
     svg_
         [ "className" $= Style.prefixFromList classes
         , onMouseDown $ \e _ -> [stopPropagation e]
-        , onClick $ \e _ -> stopPropagation e : sendAddPortEvent ref portRef
+        , onClick     $ \e _ -> stopPropagation e : dispatch ref (UI.EdgeEvent $ Edge.AddPort portRef)
         ] $
         g_ [ "className" $= Style.prefix "port-add-inbetween" ] $ do
             g_ [ "className" $= Style.prefix "port-add-inbetween__shape" ] $ do
@@ -150,7 +147,7 @@ edgePort_ ref nid p = when (p ^. Port.visible) $ do
         [ "key"       $= ( jsShow portId <> "-port-" <> jsShow num )
         , "className" $= Style.prefixFromList classes
         ] $ do
-        if isInPort portId then return () else addButton_ ref portRef False
+        when (isOutPort portId) $ addButton_ ref portRef False
         svg_
             [ "className" $= Style.prefix "edgeport__svg"
             ] $ do
@@ -164,11 +161,12 @@ edgePort_ ref nid p = when (p ^. Port.visible) $ do
                   plainRect 2 8 (-1) (-4)
                   plainRect 8 2 (-4) (-1)
             circle_
-                ( handlers ref portRef ++
-                  [ "className" $= Style.prefix "port__select"
-                  , "key"       $= (jsShow portId <> jsShow num <> "b")
-                  , "r"         $= jsShow2 (lineHeight/1.5)
-                  ] ) mempty
+                [ "className" $= Style.prefix "port__select"
+                , "key"       $= (jsShow portId <> jsShow num <> "b")
+                , onMouseDown $ \e _ -> [stopPropagation e]
+                , onClick     $ \e _ -> stopPropagation e : dispatch ref (UI.EdgeEvent $ Edge.RemovePort portRef)
+                , "r"         $= jsShow2 (lineHeight/1.5)
+                ] mempty
 
         if p ^. Port.isEdited then
             singleField_ [ "id" $= portLabelId ] (jsShow portId)

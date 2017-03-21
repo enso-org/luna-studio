@@ -58,28 +58,28 @@ consoleTimeEnd   = consoleTimeEnd'   . convert
 
 actions :: LoopRef -> [Event -> Maybe (Command State ())]
 actions loop =
-    [ App.handle
-    , Breadcrumbs.handle
-    , Camera.handle
-    , Clipboard.handle
-    , CodeEditor.handle
-    , Collaboration.handle
-    , Connect.handle
-    , ConnectionPen.handle
-    , Control.handle
-    , Debug.handle
-    , Debug.handleEv
-    , Edge.handle
-    , Graph.handle
-    , MultiSelection.handle
-    , Navigation.handle
-    , Node.handle
-    , Port.handle
+    [ --App.handle
+    -- , Breadcrumbs.handle
+    -- , Camera.handle
+    -- , Clipboard.handle
+    -- , CodeEditor.handle
+      Collaboration.handle
+    -- , Connect.handle
+    -- , ConnectionPen.handle
+    -- , Control.handle
+    -- , Debug.handle
+    -- , Debug.handleEv
+    -- , Edge.handle
+    -- , Graph.handle
+    -- , MultiSelection.handle
+    -- , Navigation.handle
+    -- , Node.handle
+    -- , Port.handle
     , Undo.handle
     , ProjectManager.handle
     , Text.handle
-    , Searcher.handle (scheduleEvent loop)
-    , Visualization.handle
+    -- , Searcher.handle (scheduleEvent loop)
+    -- , Visualization.handle
     ]
 
 runCommands :: [Event -> Maybe (Command State ())] -> Event -> Command State ()
@@ -112,13 +112,14 @@ processEvent loop ev = modifyMVar_ (loop ^. Loop.state) $ \state -> do
 connectEventSources :: WebSocket -> LoopRef -> IO ()
 connectEventSources conn loop = do
     let handlers = [ JSHandlers.webSocketHandler conn
-                  --  , JSHandlers.atomHandler
-                   , JSHandlers.sceneResizeHandler
                    , JSHandlers.textHandler
                    , JSHandlers.fileHandler
                    ]
         mkSource (AddHandler rh) = rh $ scheduleEvent loop
     sequence_ $ mkSource <$> handlers
+    -- mkSource $ JSHandlers.webSocketHandler conn
+    -- mkSource $ JSHandlers.textHandler
+    -- mkSource $ JSHandlers.fileHandler
 
 handleExcept :: State -> Event -> JSException -> IO State
 handleExcept oldState event except = do
