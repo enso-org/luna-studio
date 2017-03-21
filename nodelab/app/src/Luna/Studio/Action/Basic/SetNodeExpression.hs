@@ -2,9 +2,9 @@ module Luna.Studio.Action.Basic.SetNodeExpression where
 
 import qualified Luna.Studio.Action.Batch            as Batch
 import           Luna.Studio.Action.Command          (Command)
-import qualified Luna.Studio.Action.State.NodeEditor as NodeEditor
+import           Luna.Studio.Action.State.NodeEditor (inGraph, modifyNode)
 import           Luna.Studio.Prelude
-import           Luna.Studio.React.Model.Node        (NodeId, NodeType (ExpressionNode), nodeType)
+import           Luna.Studio.React.Model.Node        (NodeId, expression)
 import           Luna.Studio.State.Global            (State)
 
 
@@ -14,9 +14,6 @@ setNodeExpression nid update =
 
 localSetNodeExpression :: NodeId -> Text -> Command State Bool
 localSetNodeExpression nid update = do
-    mayType <- (fmap . fmap) (view nodeType) $ NodeEditor.getNode nid
-    case mayType of
-        Just (ExpressionNode _) -> do
-            NodeEditor.modifyNode nid $ nodeType .= ExpressionNode update
-            return True
-        _                   -> return False
+    exists <- inGraph nid
+    when exists $ modifyNode nid $ expression .= update
+    return exists

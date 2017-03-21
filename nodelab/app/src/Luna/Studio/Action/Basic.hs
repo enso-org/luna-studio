@@ -17,6 +17,8 @@ module Luna.Studio.Action.Basic
     , loadProject
     , localAddConnection
     , localAddConnections
+    , localAddAnyNode
+    , localAddEdgeNode
     , localAddNode
     , localAddPort
     , localAddSubgraph
@@ -24,7 +26,6 @@ module Luna.Studio.Action.Basic
     , localMoveNode
     , localMoveNodes
     , localMovePort
-    , localUnmerge
     , localRemoveConnection
     , localRemoveConnections
     , localRemoveConnectionsBetweenNodes
@@ -41,8 +42,13 @@ module Luna.Studio.Action.Basic
     , localSetPortDefault
     , localSetSearcherHints
     , localToggleVisualizations
+    , localUnmerge
+    , localUpdateAnyNode
+    , localUpdateAnyNodes
     , localUpdateConnection
+    , localUpdateEdgeNode
     , localUpdateNode
+    , localUpdateEdgeNodes
     , localUpdateNodes
     , localUpdateNodeTypecheck
     , localUpdateSubgraph
@@ -92,7 +98,7 @@ module Luna.Studio.Action.Basic
     ) where
 
 import           Luna.Studio.Action.Basic.AddConnection       (connect, localAddConnection, localAddConnections)
-import           Luna.Studio.Action.Basic.AddNode             (addNode, localAddNode)
+import           Luna.Studio.Action.Basic.AddNode             (addNode, localAddAnyNode, localAddEdgeNode, localAddNode)
 import           Luna.Studio.Action.Basic.AddPort             (addPort, localAddPort)
 import           Luna.Studio.Action.Basic.AddSubgraph         (addSubgraph, localAddSubgraph, localUpdateSubgraph)
 import           Luna.Studio.Action.Basic.CenterGraph         (centerGraph)
@@ -128,6 +134,7 @@ import           Luna.Studio.Action.Basic.SetNodeResult       (setNodeProfilingD
 import           Luna.Studio.Action.Basic.SetPortDefault      (localSetPortDefault, setPortDefault)
 import           Luna.Studio.Action.Basic.UpdateCollaboration (updateClient, updateCollaboration)
 import           Luna.Studio.Action.Basic.UpdateConnection    (localUpdateConnection, updateConnection)
-import           Luna.Studio.Action.Basic.UpdateNode          (localUpdateNode, localUpdateNodeTypecheck, localUpdateNodes,
-                                                               updateAllPortsSelfVisibility, updatePortSelfVisibility,
+import           Luna.Studio.Action.Basic.UpdateNode          (localUpdateAnyNode, localUpdateAnyNodes, localUpdateEdgeNode,
+                                                               localUpdateEdgeNodes, localUpdateNode, localUpdateNodeTypecheck,
+                                                               localUpdateNodes, updateAllPortsSelfVisibility, updatePortSelfVisibility,
                                                                updatePortSelfVisibilityForIds)

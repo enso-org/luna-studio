@@ -4,9 +4,8 @@ module Luna.Studio.React.View.Searcher where
 
 import qualified Data.Aeson                       as Aeson
 import           Data.Matrix                      (Matrix)
-import           React.Flux
-import qualified React.Flux                       as React
-
+import           Empire.API.Data.Node             (NodeType (ExpressionNode))
+import qualified Empire.API.Data.Node             as Empire
 import           JS.Searcher                      (searcherId)
 import           Luna.Studio.Data.Matrix          (showNodeTranslate)
 import qualified Luna.Studio.Event.Keys           as Keys
@@ -21,6 +20,8 @@ import qualified Luna.Studio.React.Model.Searcher as Searcher
 import           Luna.Studio.React.Store          (Ref, dispatch)
 import           Luna.Studio.React.View.Node      (nodeBody_)
 import qualified Luna.Studio.React.View.Style     as Style
+import           React.Flux
+import qualified React.Flux                       as React
 import qualified Text.ScopeSearcher.QueryResult   as Result
 
 
@@ -41,7 +42,10 @@ searcher :: ReactView (Ref App, Matrix Double, Searcher)
 searcher =  React.defineView name $ \(ref, camera, s) -> do
     let nodePos   = s ^. Searcher.position
         mode      = s ^. Searcher.mode
-        nodePrev  = convert <$> s ^. Searcher.selectedNode
+        nodePrev  = flip (maybe Nothing) (s ^. Searcher.selectedNode) $
+            \empireNode -> case empireNode ^. Empire.nodeType of
+                ExpressionNode expr -> Just $ convert (empireNode, expr)
+                _                   -> Nothing
         className = Style.prefixFromList ( "node-root" : (case mode of
                                                           Searcher.Node    { } -> [ "searcher" ]
                                                           Searcher.Command { } -> [ "searcher", "searcher--command" ]))

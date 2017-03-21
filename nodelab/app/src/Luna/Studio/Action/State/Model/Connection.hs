@@ -11,15 +11,15 @@ import           Luna.Studio.Action.Command          (Command)
 import           Luna.Studio.Action.State.Model.Node (nodeToNodeAngle)
 import           Luna.Studio.Action.State.Model.Port (getInputEdgePortPosition, getOutputEdgePortPosition, portAngleStart, portAngleStop,
                                                       portGap)
-import           Luna.Studio.Action.State.NodeEditor (getConnection, getConnections, getNode, getPort, modifyNode)
+import           Luna.Studio.Action.State.NodeEditor (getAnyNode, getConnection, getConnections, getPort, modifyNode)
 import           Luna.Studio.Data.Geometry           (closestPointOnLine, closestPointOnLineParam, doesSegmentsIntersects)
 import           Luna.Studio.Prelude
 import           Luna.Studio.React.Model.Connection  (Connection (Connection), ConnectionId, CurrentConnection (CurrentConnection),
                                                       connectionId, containsNode)
 import qualified Luna.Studio.React.Model.Connection  as Model
 import           Luna.Studio.React.Model.Constants   (lineHeight, nodeExpandedWidth, nodeRadius, portRadius)
-import           Luna.Studio.React.Model.Node        (Node, countArgPorts, countOutPorts, isCollapsed, isInputEdge, isOutputEdge, nodeId,
-                                                      ports, position)
+import           Luna.Studio.React.Model.EdgeNode    (EdgeNode, isInputEdge)
+import           Luna.Studio.React.Model.Node        (Node, countArgPorts, countOutPorts, isCollapsed, nodeId, ports, position)
 import           Luna.Studio.React.Model.Port        (PortId (InPortId, OutPortId), getPortNumber, isSelf)
 import           Luna.Studio.React.Model.Port        (Port, color, portId, visible)
 import           Luna.Studio.State.Global            (State)
@@ -33,8 +33,8 @@ createConnectionModel srcPortRef dstPortRef = runMaybeT $ do
         dstNodeId  = dstPortRef ^. PortRef.dstNodeId
         srcPortId  = OutPortId $ srcPortRef ^. PortRef.srcPortId
         dstPortId  = InPortId  $ dstPortRef ^. PortRef.dstPortId
-    srcNode <- MaybeT $ getNode srcNodeId
-    dstNode <- MaybeT $ getNode dstNodeId
+    srcNode <- MaybeT $ getAnyNode srcNodeId
+    dstNode <- MaybeT $ getAnyNode dstNodeId
     srcPort <- MaybeT $ getPort srcPortRef
     dstPort <- MaybeT $ getPort dstPortRef
     (srcPos, dstPos) <- MaybeT $ getConnectionPosition srcNode srcPort dstNode dstPort
@@ -44,7 +44,7 @@ createConnectionModel srcPortRef dstPortRef = runMaybeT $ do
 
 createCurrentConnectionModel :: AnyPortRef -> Position -> Command State (Maybe CurrentConnection)
 createCurrentConnectionModel portRef mousePos = runMaybeT $ do
-    node        <- MaybeT $ getNode $ portRef ^. PortRef.nodeId
+    node        <- MaybeT $ getAnyNode $ portRef ^. PortRef.nodeId
     port        <- MaybeT $ getPort portRef
     connPortPos <- MaybeT $ getCurrentConnectionSrcPosition node port mousePos
     return $ CurrentConnection connPortPos mousePos $ port ^. color
@@ -77,8 +77,20 @@ getConnectionsIntersectingSegment seg = flip fmap getConnections $
     map (view Model.connectionId) . filter (
         \conn -> doesSegmentsIntersects seg (conn ^. Model.srcPos, conn ^. Model.dstPos) )
 
-getConnectionPosition :: Node -> Port -> Node -> Port -> Command State (Maybe (Position, Position))
-getConnectionPosition srcNode srcPort dstNode dstPort = do
+getConnectionPosition :: Either Node EdgeNode -> Port -> Either Node EdgeNode -> Port -> Command State (Maybe (Position, Position))
+getConnectionPosition (Right _) srcPort (Right _) dstPort = runMaybeT $ do
+    srcConnPos <- MaybeT $ getInputEdgePortPosition $ srcPort ^. portId
+    dstConnPos <- MaybeT $ getOutputEdgePortPosition $ dstPort ^. portId
+    return (srcConnPos, dstConnPos)
+getConnectionPosition (Right _) srcPort dstNode dstPort = runMaybeT $ do
+    srcConnPos <- MaybeT $ getInputEdgePortPosition $ srcPort ^. portId
+    dstConnPos <- MaybeT $ getCurrentConnectionSrcPosition dstNode dstPort srcConnPos
+    return (srcConnPos, dstConnPos)
+getConnectionPosition srcNode srcPort (Right _) dstPort = runMaybeT $ do
+    dstConnPos <- MaybeT $ getOutputEdgePortPosition $ dstPort ^. portId
+    srcConnPos <- MaybeT $ getCurrentConnectionSrcPosition srcNode srcPort dstConnPos
+    return (srcConnPos, dstConnPos)
+getConnectionPosition (Left srcNode) srcPort (Left dstNode) dstPort = do
     let srcPos     = srcNode ^. position
         dstPos     = dstNode ^. position
         isSrcExp   = not . isCollapsed $ srcNode
@@ -87,29 +99,17 @@ getConnectionPosition srcNode srcPort dstNode dstPort = do
         dstPortNum = getPortNumber $ dstPort ^. portId
         numOfSrcOutPorts = countOutPorts srcNode
         numOfDstInPorts  = countArgPorts dstNode
-    if isInputEdge srcNode && isOutputEdge dstNode then runMaybeT $ do
-        srcConnPos <- MaybeT $ getInputEdgePortPosition $ srcPort ^. portId
-        dstConnPos <- MaybeT $ getOutputEdgePortPosition $ dstPort ^. portId
-        return (srcConnPos, dstConnPos)
-    else if isInputEdge srcNode then runMaybeT $ do
-        srcConnPos <- MaybeT $ getInputEdgePortPosition $ srcPort ^. portId
-        dstConnPos <- MaybeT $ getCurrentConnectionSrcPosition dstNode dstPort srcConnPos
-        return (srcConnPos, dstConnPos)
-    else if isOutputEdge dstNode then runMaybeT $ do
-        dstConnPos <- MaybeT $ getOutputEdgePortPosition $ dstPort ^. portId
-        srcConnPos <- MaybeT $ getCurrentConnectionSrcPosition srcNode srcPort dstConnPos
-        return (srcConnPos, dstConnPos)
-    else do
-        let srcConnPos = connectionSrc srcPos dstPos isSrcExp isDstExp srcPortNum numOfSrcOutPorts $ countOutPorts srcNode + countArgPorts srcNode == 1
-            dstConnPos = connectionDst srcPos dstPos isSrcExp isDstExp dstPortNum numOfDstInPorts $ isSelf $ dstPort ^. portId
-        return $ Just (srcConnPos, dstConnPos)
+        srcConnPos = connectionSrc srcPos dstPos isSrcExp isDstExp srcPortNum numOfSrcOutPorts $ countOutPorts srcNode + countArgPorts srcNode == 1
+        dstConnPos = connectionDst srcPos dstPos isSrcExp isDstExp dstPortNum numOfDstInPorts $ isSelf $ dstPort ^. portId
+    return $ Just (srcConnPos, dstConnPos)
 
-
-getCurrentConnectionSrcPosition :: Node -> Port -> Position -> Command State (Maybe Position)
-getCurrentConnectionSrcPosition node port mousePos = do
-    if      isInputEdge node  then getInputEdgePortPosition  $ port ^. portId
-    else if isOutputEdge node then getOutputEdgePortPosition $ port ^. portId
-    else return $ Just $ case port ^. portId of
+getCurrentConnectionSrcPosition :: Either Node EdgeNode -> Port -> Position -> Command State (Maybe Position)
+getCurrentConnectionSrcPosition (Right node) port _ = do
+    if isInputEdge node
+        then getInputEdgePortPosition  $ port ^. portId
+        else getOutputEdgePortPosition $ port ^. portId
+getCurrentConnectionSrcPosition (Left node) port mousePos =
+    return . Just $ case port ^. portId of
         OutPortId _ -> connectionSrc pos mousePos isExp False portNum numOfSameTypePorts $ countOutPorts node + countArgPorts node == 1
         InPortId  _ -> connectionDst mousePos pos False isExp portNum numOfSameTypePorts $ isSelf $ port ^. portId
     where

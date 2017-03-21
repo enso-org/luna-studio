@@ -19,6 +19,7 @@ import qualified Luna.Studio.Data.Graph              as Graph
 import           Luna.Studio.Event.Event             (Event (Shortcut))
 import qualified Luna.Studio.Event.Shortcut          as Shortcut
 import           Luna.Studio.Prelude
+import           Luna.Studio.React.Model.EdgeNode    (EdgeNode)
 import           Luna.Studio.React.Model.Node        (Node)
 import qualified Luna.Studio.React.Model.Node        as Node
 import           Luna.Studio.State.Global            (State)
@@ -45,7 +46,7 @@ pasteFromClipboard :: String -> Command State ()
 pasteFromClipboard clipboardData = do
     withJust (decode $ pack clipboardData) $ \subgraph -> do
         graphNodesIds <- Set.fromList . HashMap.keys <$> getNodesMap
-        let nodes       = convert <$> HashMap.elems (subgraph ^. Graph.nodesMap)
+        let nodes       = (convert <$> HashMap.elems (subgraph ^. Graph.nodesMap) :: [Either Node EdgeNode]) ^.. traverse . _Left
             connections = filter (\conn -> Set.member (conn ^. Connection.src . PortRef.srcNodeId) graphNodesIds) $ HashMap.elems $ subgraph ^. Graph.connectionsMap
         workspacePos <- translateToWorkspace =<< use (Global.ui . UI.mousePos)
         let shiftX = workspacePos ^. x - minimum (map (^. Node.position . x) nodes)

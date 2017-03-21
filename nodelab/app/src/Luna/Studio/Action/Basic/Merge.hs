@@ -10,7 +10,8 @@ import           Luna.Studio.Action.Basic.RemoveConnection (localRemoveConnectio
 import           Luna.Studio.Action.Command                (Command)
 import           Luna.Studio.Action.State.NodeEditor       (modifyNode)
 import           Luna.Studio.Prelude
-import           Luna.Studio.React.Model.Node              (Node, NodeId, Subgraph)
+import           Luna.Studio.React.Model.EdgeNode          (toEdgeNodesMap)
+import           Luna.Studio.React.Model.Node              (Node, NodeId, Subgraph, toNodesMap)
 import qualified Luna.Studio.React.Model.Node              as Node
 import           Luna.Studio.State.Global                  (State)
 
@@ -18,11 +19,13 @@ import           Luna.Studio.State.Global                  (State)
 localMerge :: NodeId -> [Graph] -> Command State ()
 localMerge parentId graphs = do
     subgraphs <- forM graphs $ \graph -> do
-        let nodes       = convert <$> graph ^. GraphAPI.nodes
+        let allNodes    = (convert <$> graph ^. GraphAPI.nodes)
+            nodesMap    = toNodesMap $ allNodes ^.. traverse . _Left
+            edgeMap     = toEdgeNodesMap $ allNodes ^.. traverse . _Right
             connections = graph ^. GraphAPI.connections
             monads      = graph ^. GraphAPI.monads
         void $ localAddConnections connections
-        return $ Node.Subgraph (Node.toNodesMap nodes) monads
+        return $ Node.Subgraph nodesMap edgeMap monads
     modifyNode parentId $ Node.mode .= Node.Expanded (Node.Function subgraphs)
     void $ redrawConnectionsForNode parentId
 

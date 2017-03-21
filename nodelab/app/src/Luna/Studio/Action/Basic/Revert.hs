@@ -33,13 +33,15 @@ import           Luna.Studio.Action.Basic.SetPortDefault    (localSetPortDefault
 import           Luna.Studio.Action.Command                 (Command)
 import           Luna.Studio.Action.State.Graph             (isCurrentLocationAndGraphLoaded)
 import           Luna.Studio.Prelude
+import           Luna.Studio.React.Model.EdgeNode           (EdgeNode)
+import           Luna.Studio.React.Model.Node               (Node)
 import           Luna.Studio.State.Global                   (State)
 
 
 revertAddConnection :: AddConnection.Request -> Command State ()
 revertAddConnection (AddConnection.Request loc _ (Left (InPortRef' dst'))) =
     whenM (isCurrentLocationAndGraphLoaded loc) $ void $ localRemoveConnection dst'
-revertAddConnection (AddConnection.Request loc _ (Left _)) = return ()
+revertAddConnection (AddConnection.Request _ _ (Left _)) = return ()
 revertAddConnection _ = $notImplemented
 
 
@@ -67,7 +69,9 @@ revertRemoveConnection (RemoveConnection.Request _loc _dst) (Response.Error _msg
 --TODO[LJK]: Force Empire.API.Data.Connection to be instance of wrapped to make functions like this cleaner
 revertRemoveNodes :: RemoveNodes.Request -> Response.Status RemoveNodes.Inverse -> Command State ()
 revertRemoveNodes (RemoveNodes.Request loc _) (Response.Ok (RemoveNodes.Inverse nodes conns)) =
-    whenM (isCurrentLocationAndGraphLoaded loc) $ void $ localAddSubgraph (map convert nodes) (map (\conn -> (conn ^. src, conn ^. dst)) conns)
+    whenM (isCurrentLocationAndGraphLoaded loc) $ void $ localAddSubgraph nodes' (map (\conn -> (conn ^. src, conn ^. dst)) conns)
+    where
+        nodes' = ((map convert nodes) :: [Either Node EdgeNode]) ^.. traverse . _Left
 revertRemoveNodes (RemoveNodes.Request _loc _) (Response.Error _msg) = $notImplemented
 
 revertRemovePort :: RemovePort.Request -> Response.Status RemovePort.Inverse -> Command State ()

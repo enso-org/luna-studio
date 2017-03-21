@@ -8,14 +8,13 @@ import           Data.Maybe                            (mapMaybe)
 import qualified Empire.API.Data.MonadPath             as MonadPath
 import           JS.Scene                              (sceneId)
 import qualified Luna.Studio.Data.CameraTransformation as CameraTransformation
-import           Luna.Studio.Data.Matrix               (showCameraScale, showCameraTranslate, showCameraMatrix)
+import           Luna.Studio.Data.Matrix               (showCameraMatrix, showCameraScale, showCameraTranslate)
 import           Luna.Studio.Event.Event               (Event (Shortcut))
 import qualified Luna.Studio.Event.Shortcut            as Shortcut
 import qualified Luna.Studio.Event.UI                  as UI
 import           Luna.Studio.Prelude                   hiding (transform)
 import qualified Luna.Studio.React.Event.NodeEditor    as NE
 import           Luna.Studio.React.Model.App           (App)
-import           Luna.Studio.React.Model.Node          (isEdge)
 import           Luna.Studio.React.Model.NodeEditor    (NodeEditor)
 import qualified Luna.Studio.React.Model.NodeEditor    as NodeEditor
 import           Luna.Studio.React.Store               (Ref, dispatch, dispatch')
@@ -47,7 +46,8 @@ nodeEditor_ ref ne = React.viewWithSKey nodeEditor name (ref, ne) mempty
 nodeEditor :: ReactView (Ref App, NodeEditor)
 nodeEditor = React.defineView name $ \(ref, ne) -> do
     let camera         = ne ^. NodeEditor.screenTransform . CameraTransformation.logicalToScreen
-        (edges, nodes) = partition isEdge $ ne ^. NodeEditor.nodes . to HashMap.elems
+        nodes          = ne ^. NodeEditor.nodes . to HashMap.elems
+        edges          = ne ^. NodeEditor.edgeNodes . to HashMap.elems
         lookupNode m   = ( m ^. MonadPath.monadType
                          , m ^. MonadPath.path . to (mapMaybe $ flip HashMap.lookup $ ne ^. NodeEditor.nodes))
         monads         = map lookupNode $ ne ^. NodeEditor.monads

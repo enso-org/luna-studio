@@ -8,7 +8,7 @@ import           Data.Matrix                            (Matrix)
 import qualified Empire.API.Data.MonadPath              as MonadPath
 import qualified Empire.API.Graph.NodeResultUpdate      as NodeResult
 import qualified JS.Config                              as Config
-import           Luna.Studio.Data.Matrix                (showNodeTranslate, showNodeMatrix)
+import           Luna.Studio.Data.Matrix                (showNodeMatrix, showNodeTranslate)
 import qualified Luna.Studio.Event.Mouse                as Mouse
 import qualified Luna.Studio.Event.UI                   as UI
 import           Luna.Studio.Prelude
@@ -16,8 +16,7 @@ import qualified Luna.Studio.React.Event.Node           as Node
 import qualified Luna.Studio.React.Event.NodeEditor     as NE
 import           Luna.Studio.React.Model.App            (App)
 import qualified Luna.Studio.React.Model.Field          as Field
-import           Luna.Studio.React.Model.Node           (Node, NodeId, NodeType (ExpressionNode), Subgraph, countArgPorts, countOutPorts,
-                                                         isCollapsed)
+import           Luna.Studio.React.Model.Node           (Node, NodeId, Subgraph, countArgPorts, countOutPorts, isCollapsed)
 import qualified Luna.Studio.React.Model.Node           as Node
 import qualified Luna.Studio.React.Model.NodeProperties as Prop
 import           Luna.Studio.React.Model.Port           (InPort (Self), PortId (InPortId), isAll, isInPort)
@@ -76,9 +75,7 @@ node = React.defineView name $ \(ref, n) -> do
                     , onDoubleClick $ \e _ -> stopPropagation e : dispatch ref (UI.NodeEvent $ Node.EditExpression nodeId)
                     , "className"   $= Style.prefixFromList [ "node__name", "node__name--expression", "noselect" ]
                     , "y"           $= "-16"
-                    ] $ elemString $ case n ^. Node.nodeType of
-                                (ExpressionNode expr) -> convert $ expr
-                                _                     -> "" -- TODO[PM, JK, LJK]: Find out what to do with other types
+                    ] $ elemString . convert $ n ^. Node.expression
                 text_
                     [ "key"         $= "nameText"
                     , onDoubleClick $ \e _ -> stopPropagation e : dispatch ref (UI.NodeEvent $ Node.EditExpression nodeId)
@@ -195,10 +192,11 @@ nodeContainer_ ref subgraphs = React.viewWithSKey nodeContainer "node-container"
 nodeContainer :: ReactView (Ref App, [Subgraph])
 nodeContainer = React.defineView name $ \(ref, subgraphs) -> do
     div_ $ forM_ subgraphs $ \subgraph -> do
-      let (edges, nodes) = partition Node.isEdge $ subgraph ^. Node.nodes . to HashMap.elems
-          lookupNode m   = ( m ^. MonadPath.monadType
-                           , m ^. MonadPath.path . to (mapMaybe $ flip HashMap.lookup $ subgraph ^. Node.nodes))
-          monads         = map lookupNode $ subgraph ^. Node.monads
+      let edges        = subgraph ^. Node.edgeNodes . to HashMap.elems
+          nodes        = subgraph ^. Node.nodes . to HashMap.elems
+          lookupNode m = ( m ^. MonadPath.monadType
+                         , m ^. MonadPath.path . to (mapMaybe $ flip HashMap.lookup $ subgraph ^. Node.nodes))
+          monads       = map lookupNode $ subgraph ^. Node.monads
       div_
           [ "className"   $= Style.prefix "graph"
           -- , "id"          $= sceneId
