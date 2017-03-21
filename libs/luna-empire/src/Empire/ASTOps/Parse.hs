@@ -42,7 +42,7 @@ parseExpr s = do
       _ -> do
           IR.writeAttr @Source.Source $ convert s
           Parsing.parsingBase Parsing.expr
-          res <- IR.readAttr @Parser.ParsedModule
+          res <- IR.readAttr @Parser.ParsedExpr
           return (Nothing, unwrap' res)
 
 tryParseLambda :: ASTOp m => String -> m (Maybe Text.Text, Maybe NodeRef)

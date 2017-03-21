@@ -60,7 +60,7 @@ type ASTOp m = (MonadThrow m,
                 MonadState Graph m,
                 Emitters EmpireEmitters m,
                 Editors Net  '[AnyExpr, AnyExprLink] m,
-                Editors Attr '[Source, Parser.ParsedModule, SourceTree, MarkedExprMap] m,
+                Editors Attr '[Source, Parser.ParsedExpr, SourceTree, MarkedExprMap] m,
                 Editors Layer EmpireLayers m,
                 DepOld.MonadGet Vis.V Vis.Vis m,
                 DepOld.MonadPut Vis.V Vis.Vis m,
@@ -84,12 +84,12 @@ data EmpirePass
 type instance Abstract   EmpirePass = EmpirePass
 type instance Inputs     Net   EmpirePass = '[AnyExpr, AnyExprLink]
 type instance Inputs     Layer EmpirePass = EmpireLayers
-type instance Inputs     Attr  EmpirePass = '[Source, Parser.ParsedModule, SourceTree, MarkedExprMap] -- Parser attrs temporarily - probably need to call it as a separate Pass
+type instance Inputs     Attr  EmpirePass = '[Source, Parser.ParsedExpr, SourceTree, MarkedExprMap] -- Parser attrs temporarily - probably need to call it as a separate Pass
 type instance Inputs     Event EmpirePass = '[]
 
 type instance Outputs    Net   EmpirePass = '[AnyExpr, AnyExprLink]
 type instance Outputs    Layer EmpirePass = EmpireLayers
-type instance Outputs    Attr  EmpirePass = '[Source, Parser.ParsedModule, SourceTree, MarkedExprMap]
+type instance Outputs    Attr  EmpirePass = '[Source, Parser.ParsedExpr, SourceTree, MarkedExprMap]
 type instance Outputs    Event EmpirePass = EmpireEmitters
 
 type instance Preserves        EmpirePass = '[]
@@ -119,7 +119,7 @@ runASTOp pass = runPass inits pass where
         setAttr (getTypeDesc @SourceTree)           $ (mempty :: SourceTree)
         setAttr (getTypeDesc @MarkedExprMap)        $ (mempty :: MarkedExprMap)
         setAttr (getTypeDesc @Source)               $ (error "Data not provided: Source")
-        setAttr (getTypeDesc @Parser.ParsedModule)  $ (error "Data not provided: ParsedModule")
+        setAttr (getTypeDesc @Parser.ParsedExpr)  $ (error "Data not provided: ParsedExpr")
 
 
 runAliasAnalysis :: Command Graph ()

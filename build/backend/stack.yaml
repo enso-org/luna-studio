@@ -43,7 +43,7 @@ packages:
   - location: ../../tools/batch/plugins/luna-empire
   - location: ../../tools/batch/plugins/request-monitor
   - location:
-      commit: 89e162aff23e80980aa8917ebe4d0485182926e9
+      commit: 6cee1c9ff2aa97945351fc2a4dbc9824015ae2c7
       git: git@github.com:luna/luna.git
     subdirs: [core, passes, syntax/text, stdlib]
     extra-dep: true
@@ -100,7 +100,7 @@ packages:
       git: https://github.com/luna/poly-control.git
     extra-dep: true
   - location:
-      commit: 00e1d31b4c519944faf2a98641133e72e6be27d5
+      commit: d7ac470ac822968cb0a46ac354fdadb0db0f5dae
       git: https://github.com/luna/prologue.git
     extra-dep: true
   - location:

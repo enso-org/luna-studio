@@ -4,11 +4,14 @@
 module Empire.Commands.Typecheck where
 
 import           Control.Monad                     (forM_, void)
-import           Control.Monad.Reader              (ask)
+import           Control.Monad.Reader              (ask, runReaderT)
+import           Control.Monad.State               (execStateT, gets)
 import           Data.List                         (sort)
+import           Data.Map                          (Map)
 import qualified Data.Map                          as Map
 import           Data.Maybe                        (isNothing)
 import           Empire.Prelude
+import           Prologue                          (toListOf, fromString)
 
 import qualified Empire.API.Data.Error             as APIError
 import           Empire.API.Data.GraphLocation     (GraphLocation (..))
@@ -22,15 +25,20 @@ import qualified Empire.Commands.AST               as AST
 import qualified Empire.Commands.GraphBuilder      as GraphBuilder
 import qualified Empire.Commands.GraphUtils        as GraphUtils
 import qualified Empire.Commands.Publisher         as Publisher
+import qualified Empire.ASTOps.Read                as ASTRead
 import           Empire.Data.BreadcrumbHierarchy   (topLevelIDs)
+import qualified Empire.Data.BreadcrumbHierarchy   as BH
 import           Empire.Data.Graph                 (Graph)
 import qualified Empire.Data.Graph                 as Graph
+import           Empire.Data.AST                   (NodeRef)
 import           Empire.Empire
 
 import qualified Luna.Builtin.Std                  as Std
 import qualified Luna.IR                           as IR
 import           Luna.Builtin.Data.Module          (Imports (..), Module (..))
+import           Luna.Builtin.Data.LunaValue       (listenShortRep, LunaData)
 import qualified Luna.Pass.Typechecking.Typecheck  as Typecheck
+import qualified Luna.Pass.Evaluation.Interpreter  as Interpreter
 import qualified OCI.IR.Combinators                as IR
 import           OCI.Pass                          (SubPass)
 
@@ -47,26 +55,19 @@ collect _ = return ()
     {-st <- TypeCheckState.get-}
     {-putStrLn $ "State is: " <> show st-}
 
-runTC :: Command Graph ()
-runTC = do
+runTC :: Imports -> Command Graph ()
+runTC imports = do
     allNodeIds <- uses Graph.breadcrumbHierarchy topLevelIDs
     runASTOp $ do
         roots   <- mapM GraphUtils.getASTPointer allNodeIds
-        imports <- liftIO Std.stdlib
         Typecheck.typecheck imports $ map IR.unsafeGeneralize roots
     return ()
 
-runInterpreter :: Command Graph ()
-runInterpreter = runASTOp $ do
-    _ast       <- use Graph.ast
-    allNodes   <- uses Graph.breadcrumbHierarchy topLevelIDs
-    refs       <- mapM GraphUtils.getASTPointer allNodes
-    metas      <- mapM AST.readMeta refs
-    let sorted = fmap snd $ sort $ zip metas allNodes
-    _evals     <- mapM GraphUtils.getASTVar sorted
-    newAst     <- liftIO $ fmap snd $ $notImplemented
-    Graph.ast .= newAst
-    return ()
+runInterpreter :: Imports -> Command Graph (Maybe Interpreter.LocalScope)
+runInterpreter imports = runASTOp $ do
+    bodyRef    <- use $ Graph.breadcrumbHierarchy . BH.body
+    res        <- mapM (Interpreter.interpret' imports . IR.unsafeGeneralize) bodyRef
+    mapM (\v -> liftIO $ execStateT v def) res
 
 reportError :: GraphLocation -> NodeId -> Maybe (APIError.Error TypeRep) -> Command InterpreterEnv ()
 reportError loc nid err = do
@@ -108,19 +109,16 @@ updateMonads loc = do
         monad2 = MonadPath (TCons "MonadMock2" []) allNodeIds
     Publisher.notifyMonadsUpdate loc [monad1, monad2]
 
-updateValues :: GraphLocation -> Command InterpreterEnv ()
-updateValues loc = do
-    allNodeIds <- uses (graph . Graph.breadcrumbHierarchy) topLevelIDs
-    forM_ allNodeIds $ \nid -> Publisher.notifyResultUpdate loc nid (NodeResult.Value "Hello!" []) 0
-    {-dests <- use destructors-}
-    {-liftIO $ sequence_ dests-}
-    {-destructors .= []-}
-    {-allNodeIds <- uses (graph . Graph.breadcrumbHierarchy) topLevelIDs-}
-    {-forM_ allNodeIds $ \nid -> do-}
-        {-noErrors <- isNothing <$> uses errorsCache (Map.lookup nid)-}
-        {-when noErrors $ do-}
-            {-val <- zoom graph $ getNodeValueReprs nid-}
-            {-$notImplemented-}
+updateValues :: GraphLocation -> Interpreter.LocalScope -> Command InterpreterEnv ()
+updateValues loc scope = do
+    allNodes   <- gets $ toListOf $ graph . Graph.breadcrumbHierarchy . BH.children . traverse . BH.self . _Just
+    env        <- ask
+    forM_ allNodes $ \(nid, tgt) -> do
+        case tgt of
+            BH.MatchNode r -> do
+                ref <- zoom graph $ runASTOp $ ASTRead.getVarNode r
+                let resVal = Interpreter.localLookup (IR.unsafeGeneralize ref) scope
+                liftIO $ forM_ resVal $ \v -> listenShortRep v $ \strRep -> flip runReaderT env $ Publisher.notifyResultUpdate loc nid (NodeResult.Value (fromString strRep) []) 0
 
 flushCache :: Command InterpreterEnv ()
 flushCache = do
@@ -130,8 +128,9 @@ flushCache = do
 
 run :: GraphLocation -> Command InterpreterEnv ()
 run loc = do
-    zoom graph runTC
+    std <- liftIO $ Std.stdlib
+    zoom graph $ runTC std
     updateNodes loc
     updateMonads loc
-    -- zoom graph runInterpreter
-    updateValues loc
+    scope <- zoom graph $ runInterpreter std
+    mapM_ (updateValues loc) scope
