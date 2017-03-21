@@ -45,18 +45,6 @@ import qualified OCI.IR.Combinators                as IR
 import           OCI.Pass                          (SubPass)
 
 
-getNodeValueReprs :: NodeId -> Command Graph (Either String a)
-getNodeValueReprs nid = runASTOp $ do
-    nodeRef <- GraphUtils.getASTPointer nid
-    metaMay <- AST.readMeta nodeRef
-    $notImplemented
-
-collect :: Monad m => a -> m ()
-collect _ = return ()
-    {-putStrLn $ "After pass: " <> pass-}
-    {-st <- TypeCheckState.get-}
-    {-putStrLn $ "State is: " <> show st-}
-
 runTC :: Imports -> Command Graph ()
 runTC imports = do
     allNodeIds <- uses Graph.breadcrumbHierarchy topLevelIDs

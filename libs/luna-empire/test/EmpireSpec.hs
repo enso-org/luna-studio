@@ -884,7 +884,7 @@ spec = around withChannels $ id $ do
                 Graph.getNodeIdSequence loc
             withResult res $ \idSeq -> do
                 idSeq    `shouldBe` []
-    xdescribe "pattern match" $ do -- New parser is broken – does not handle conses correctly
+    describe "pattern match" $ do
         it "connects two outputs when one of them is pattern match" $ \env -> do
             u1 <- mkUUID
             u2 <- mkUUID
@@ -892,7 +892,6 @@ spec = around withChannels $ id $ do
                 Graph.addNode top u1 "myVec" def
                 Graph.addNode top u2 "Vector x y z" def
                 Graph.connect top (OutPortRef u1 Port.All) (OutPortRef' (OutPortRef u2 Port.All))
-
                 Graph.withGraph top $ runASTOp $
                     (,,,) <$> GraphBuilder.buildNode u1
                           <*> GraphBuilder.buildNode u2

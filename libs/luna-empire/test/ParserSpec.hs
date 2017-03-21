@@ -35,7 +35,7 @@ spec = around withChannels $ do
             u1 <- mkUUID
             res <- evalEmp env $ Graph.addNode top u1 "\"foo\"" def
             withResult res $ \s' -> s' ^. Node.nodeType `shouldBe` Node.ExpressionNode "\"foo\""
-        xit "parses constructors" $ \env -> do -- It doesn't...
+        it "parses constructors" $ \env -> do
             u1 <- mkUUID
             res <- evalEmp env $ Graph.addNode top u1 "Vector x y z" def
             withResult res $ \node -> do

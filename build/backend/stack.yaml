@@ -43,7 +43,7 @@ packages:
   - location: ../../tools/batch/plugins/luna-empire
   - location: ../../tools/batch/plugins/request-monitor
   - location:
-      commit: da76e5ee120eab37fae0a62934d2ff6cc4a44dfa
+      commit: 3a28d961ca68e55fbaa0ef4a0db007aab2c5e47a
       git: git@github.com:luna/luna.git
     subdirs: [core, passes, syntax/text, stdlib]
     extra-dep: true
