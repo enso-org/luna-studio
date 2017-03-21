@@ -19,10 +19,8 @@ import           Luna.Studio.React.Model.App             (App)
 import qualified Luna.Studio.React.Model.App             as App
 import           Luna.Studio.React.Store                 (Ref, dispatch, dispatch', dt)
 import           Luna.Studio.React.View.Breadcrumbs      (breadcrumbs_)
-import           Luna.Studio.React.View.CodeEditor       (codeEditor_)
-import           Luna.Studio.React.View.CodeEditorToggle (codeEditorToggle_)
 import           Luna.Studio.React.View.NodeEditor       (nodeEditor_)
-import           Luna.Studio.React.View.Searcher         (searcher_)
+import qualified Luna.Studio.React.View.Style            as Style
 
 
 name :: JSString
@@ -50,21 +48,18 @@ app ref = React.defineControllerView name ref $ \store () -> do
         , "key"       $= "app"
         , "id"        $= appId
         , "tabIndex"  $= "-1"
-        , "className" $= "luna-studio"
+        , "className" $= Style.prefix "studio"
         ] $
         div_
-            [ "className" $= "luna-main"
+            [ "className" $= Style.prefix "main"
             , "key"       $= "main"
             ] $ do
             div_
-                [ "className" $= "luna-graph-editor"
+                [ "className" $= Style.prefix "graph-editor"
                 , "key"       $= "graph-editor"
                 ] $ do
                 nodeEditor_  ref $ s ^. App.nodeEditor
                 breadcrumbs_ ref $ s ^. App.breadcrumbs
-                codeEditorToggle_ ref
-                mapM_ (searcher_ ref) $ s ^. App.searcher
-            codeEditor_ $ s ^. App.codeEditor
 
 focus :: IO ()
 focus = UI.focus appId

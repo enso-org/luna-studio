@@ -1,0 +1,247 @@
+-- This file has been generated from package.yaml by hpack version 0.14.0.
+--
+-- see: https://github.com/sol/hpack
+
+name:           internals
+version:        0.1.0.0
+synopsis:       NodeLab
+homepage:       www.nodelab.io
+author:         New Byte Order
+maintainer:     contact@nodelab.io
+license:        AllRightsReserved
+build-type:     Simple
+cabal-version:  >= 1.10
+
+executable internals
+  main-is: Main.hs
+  hs-source-dirs:
+      app/src
+  default-extensions: BangPatterns ConstraintKinds DefaultSignatures DeriveDataTypeable DeriveFoldable DeriveFunctor DeriveGeneric DeriveTraversable DoAndIfThenElse FlexibleContexts FlexibleInstances GeneralizedNewtypeDeriving LambdaCase MultiParamTypeClasses NoImplicitPrelude ScopedTypeVariables StandaloneDeriving TemplateHaskell TupleSections ViewPatterns
+  ghc-options: -Wall -O2
+  build-depends:
+      base >= 4.9 && < 4.10
+    , aeson
+    , base64-bytestring
+    , binary
+    , bytestring
+    , containers
+    , convert
+    , data-default
+    , datetime
+    , deepseq
+    , ghcjs-base
+    , ghcjs-dom
+    , ghcjs-prim
+    , hashable
+    , lens
+    , luna-empire-api
+    , luna-empire-api-json
+    , matrix
+    , mtl
+    , placeholders
+    , prologue
+    , random
+    , react-flux
+    , scope-searcher
+    , split
+    , text
+    , time
+    , transformers
+    , unordered-containers
+    , uuid-types
+    , visualization-api
+  other-modules:
+      Data.Color
+      Data.Curve
+      Data.Position
+      Data.ScreenPosition
+      Data.Size
+      Data.Timestamp
+      Data.Type.Hide
+      Data.Vector
+      JS.Atom
+      JS.Clipboard
+      JS.Config
+      JS.CustomEvent
+      JS.Debug
+      JS.DownloadFile
+      JS.GoogleAnalytics
+      JS.GraphLocation
+      JS.Scene
+      JS.Searcher
+      JS.UI
+      JS.UUID
+      JS.WebSocket
+      Luna.Studio.Action.Basic
+      Luna.Studio.Action.Basic.AddConnection
+      Luna.Studio.Action.Basic.AddNode
+      Luna.Studio.Action.Basic.AddPort
+      Luna.Studio.Action.Basic.AddSubgraph
+      Luna.Studio.Action.Basic.CenterGraph
+      Luna.Studio.Action.Basic.CreateGraph
+      Luna.Studio.Action.Basic.DestroyGraph
+      Luna.Studio.Action.Basic.DrawConnection
+      Luna.Studio.Action.Basic.EnterBreadcrumb
+      Luna.Studio.Action.Basic.FocusNode
+      Luna.Studio.Action.Basic.Merge
+      Luna.Studio.Action.Basic.ModifyCamera
+      Luna.Studio.Action.Basic.MovePort
+      Luna.Studio.Action.Basic.ProjectManager
+      Luna.Studio.Action.Basic.RemoveConnection
+      Luna.Studio.Action.Basic.RemoveNode
+      Luna.Studio.Action.Basic.RemovePort
+      Luna.Studio.Action.Basic.RenameNode
+      Luna.Studio.Action.Basic.Revert
+      Luna.Studio.Action.Basic.Scene
+      Luna.Studio.Action.Basic.SearchNodes
+      Luna.Studio.Action.Basic.SelectNode
+      Luna.Studio.Action.Basic.SetCode
+      Luna.Studio.Action.Basic.SetNodeCode
+      Luna.Studio.Action.Basic.SetNodeExpression
+      Luna.Studio.Action.Basic.SetNodeMeta
+      Luna.Studio.Action.Basic.SetNodeMode
+      Luna.Studio.Action.Basic.SetNodeResult
+      Luna.Studio.Action.Basic.SetPortDefault
+      Luna.Studio.Action.Basic.UpdateCollaboration
+      Luna.Studio.Action.Basic.UpdateConnection
+      Luna.Studio.Action.Basic.UpdateNode
+      Luna.Studio.Action.Batch
+      Luna.Studio.Action.Camera
+      Luna.Studio.Action.Camera.Pan
+      Luna.Studio.Action.Camera.Zoom
+      Luna.Studio.Action.Command
+      Luna.Studio.Action.Connect
+      Luna.Studio.Action.ConnectionPen
+      Luna.Studio.Action.ConnectionPen.ConnectionPen
+      Luna.Studio.Action.ConnectionPen.DisconnectionPen
+      Luna.Studio.Action.ConnectionPen.SmoothLine
+      Luna.Studio.Action.Edge
+      Luna.Studio.Action.MultiSelection
+      Luna.Studio.Action.Node
+      Luna.Studio.Action.Node.Drag
+      Luna.Studio.Action.Node.EditExpression
+      Luna.Studio.Action.Node.EditName
+      Luna.Studio.Action.Node.Snap
+      Luna.Studio.Action.Port
+      Luna.Studio.Action.Port.Actions
+      Luna.Studio.Action.Port.Control
+      Luna.Studio.Action.Port.Highlight
+      Luna.Studio.Action.Searcher
+      Luna.Studio.Action.State.Action
+      Luna.Studio.Action.State.App
+      Luna.Studio.Action.State.Graph
+      Luna.Studio.Action.State.Model
+      Luna.Studio.Action.State.Model.Connection
+      Luna.Studio.Action.State.Model.Node
+      Luna.Studio.Action.State.Model.Port
+      Luna.Studio.Action.State.NodeEditor
+      Luna.Studio.Action.State.Scene
+      Luna.Studio.Action.UUID
+      Luna.Studio.Action.Visualization
+      Luna.Studio.Batch.Connector.Commands
+      Luna.Studio.Batch.Connector.Connection
+      Luna.Studio.Batch.Workspace
+      Luna.Studio.Data.Aeson
+      Luna.Studio.Data.Angle
+      Luna.Studio.Data.CameraTransformation
+      Luna.Studio.Data.Color
+      Luna.Studio.Data.CtxDynamic
+      Luna.Studio.Data.Geometry
+      Luna.Studio.Data.Matrix
+      Luna.Studio.Error.Error
+      Luna.Studio.Event.Batch
+      Luna.Studio.Event.Connection
+      Luna.Studio.Event.CustomEvent
+      Luna.Studio.Event.Debug
+      Luna.Studio.Event.Engine
+      Luna.Studio.Event.Event
+      Luna.Studio.Event.Internal
+      Luna.Studio.Event.Keys
+      Luna.Studio.Event.Loader
+      Luna.Studio.Event.Loop
+      Luna.Studio.Event.Mouse
+      Luna.Studio.Event.Preprocessor.Batch
+      Luna.Studio.Event.Preprocessor.CustomEvent
+      Luna.Studio.Event.Preprocessor.Shortcut
+      Luna.Studio.Event.Processor
+      Luna.Studio.Event.Shortcut
+      Luna.Studio.Event.Source
+      Luna.Studio.Event.Text
+      Luna.Studio.Event.UI
+      Luna.Studio.Handler.App
+      Luna.Studio.Handler.Backend.Common
+      Luna.Studio.Handler.Backend.Control
+      Luna.Studio.Handler.Backend.Graph
+      Luna.Studio.Handler.Backend.ProjectManager
+      Luna.Studio.Handler.Backend.Text
+      Luna.Studio.Handler.Breadcrumbs
+      Luna.Studio.Handler.Camera
+      Luna.Studio.Handler.Clipboard
+      Luna.Studio.Handler.CodeEditor
+      Luna.Studio.Handler.Collaboration
+      Luna.Studio.Handler.Connect
+      Luna.Studio.Handler.ConnectionPen
+      Luna.Studio.Handler.Debug
+      Luna.Studio.Handler.Edge
+      Luna.Studio.Handler.MultiSelection
+      Luna.Studio.Handler.Navigation
+      Luna.Studio.Handler.Node
+      Luna.Studio.Handler.Port
+      Luna.Studio.Handler.Searcher
+      Luna.Studio.Handler.Undo
+      Luna.Studio.Handler.Visualization
+      Luna.Studio.Prelude
+      Luna.Studio.Prelude.Instances
+      Luna.Studio.React.Event.App
+      Luna.Studio.React.Event.Breadcrumbs
+      Luna.Studio.React.Event.CodeEditor
+      Luna.Studio.React.Event.Connection
+      Luna.Studio.React.Event.Edge
+      Luna.Studio.React.Event.Node
+      Luna.Studio.React.Event.NodeEditor
+      Luna.Studio.React.Event.Port
+      Luna.Studio.React.Event.Searcher
+      Luna.Studio.React.Event.Visualization
+      Luna.Studio.React.Model.App
+      Luna.Studio.React.Model.Breadcrumbs
+      Luna.Studio.React.Model.CodeEditor
+      Luna.Studio.React.Model.Connection
+      Luna.Studio.React.Model.ConnectionPen
+      Luna.Studio.React.Model.Constants
+      Luna.Studio.React.Model.DataFrame
+      Luna.Studio.React.Model.Field
+      Luna.Studio.React.Model.Image
+      Luna.Studio.React.Model.Node
+      Luna.Studio.React.Model.NodeEditor
+      Luna.Studio.React.Model.NodeProperties
+      Luna.Studio.React.Model.Port
+      Luna.Studio.React.Model.Searcher
+      Luna.Studio.React.Model.SelectionBox
+      Luna.Studio.React.Store
+      Luna.Studio.React.Store.Ref
+      Luna.Studio.React.View.App
+      Luna.Studio.React.View.Breadcrumbs
+      Luna.Studio.React.View.Connection
+      Luna.Studio.React.View.ConnectionPen
+      Luna.Studio.React.View.Edge
+      Luna.Studio.React.View.Field
+      Luna.Studio.React.View.Monad
+      Luna.Studio.React.View.Node
+      Luna.Studio.React.View.Node.Body
+      Luna.Studio.React.View.Node.Container
+      Luna.Studio.React.View.Node.Properties
+      Luna.Studio.React.View.NodeEditor
+      Luna.Studio.React.View.Port
+      Luna.Studio.React.View.PortControl
+      Luna.Studio.React.View.Searcher
+      Luna.Studio.React.View.SelectionBox
+      Luna.Studio.React.View.Style
+      Luna.Studio.React.View.Visualization
+      Luna.Studio.React.View.Visualization.DataFrame
+      Luna.Studio.React.View.Visualization.Graphics
+      Luna.Studio.React.View.Visualization.Image
+      Luna.Studio.State.Action
+      Luna.Studio.State.Collaboration
+      Luna.Studio.State.Global
+      Luna.Studio.State.Graph
+  default-language: Haskell2010

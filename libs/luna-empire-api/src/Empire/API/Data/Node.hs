@@ -1,16 +1,17 @@
+{-# LANGUAGE Rank2Types #-}
 module Empire.API.Data.Node where
 
-import           Data.Binary               (Binary)
-import           Data.Map.Lazy             (Map)
-import qualified Data.Map.Lazy             as Map
-import           Data.Text                 (Text)
-import           Data.UUID.Types           (UUID)
+import           Control.Arrow            ((&&&))
+import           Data.Binary              (Binary)
+import           Data.Map.Lazy            (Map)
+import qualified Data.Map.Lazy            as Map
+import           Data.Text                (Text)
+import           Data.UUID.Types          (UUID)
+import           Empire.API.Data.NodeMeta (NodeMeta)
+import qualified Empire.API.Data.NodeMeta as NodeMeta
+import           Empire.API.Data.Port     (Port, PortId)
+import qualified Empire.API.Data.Port     as Port
 import           Prologue
-
-import           Empire.API.Data.NodeMeta  (NodeMeta)
-import qualified Empire.API.Data.NodeMeta  as NodeMeta
-import           Empire.API.Data.Port      (Port, PortId)
-import qualified Empire.API.Data.Port      as Port
 
 
 type NodeId = UUID
@@ -51,3 +52,15 @@ position = nodeMeta . NodeMeta.position
 instance Binary Node
 instance Binary NodeType
 instance Binary NodeTypecheckerUpdate
+
+isEdge :: Node -> Bool
+isEdge node = isInputEdge node || isOutputEdge node
+
+isInputEdge :: Node -> Bool
+isInputEdge node = node ^. nodeType == InputEdge
+
+isOutputEdge :: Node -> Bool
+isOutputEdge node = node ^. nodeType == OutputEdge
+
+makePortsMap :: [Port] -> Map PortId Port
+makePortsMap = Map.fromList . map (view Port.portId &&& id)

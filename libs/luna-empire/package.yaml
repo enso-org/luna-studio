@@ -28,17 +28,22 @@ dependencies:
     - containers
     - convert
     - data-default
+    - dependent-state
     - exceptions
     - filepath
     - lens
-    - luna
+    - luna-core
+    - luna-passes
+    - luna-syntax-text
     - luna-empire-api
+    - luna-stdlib
     - luna-empire-api-json
     - m-logger
     - megaparsec
     - mtl
     - open-browser
     - prologue
+    - safe
     - split
     - stm
     - text

@@ -1,20 +1,19 @@
+{-# LANGUAGE GADTs                      #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
-{-# LANGUAGE GADTs #-}
 
 module UndoState where
 
 
-import           Control.Lens
 import           Control.Monad.Reader
 import           Control.Monad.State
-import           Data.Binary                       (Binary)
-import qualified Data.Set                          as Set
-import           Data.UUID.Types                       (UUID)
-import           Prologue                          hiding (throwM)
-import Util as Util
-import qualified ZMQ.Bus.Trans                     as Bus
+import           Data.Binary          (Binary)
+import qualified Data.Set             as Set
+import           Data.UUID.Types      (UUID)
+import           Prologue             hiding (throwM)
+import           Util                 as Util
+import qualified ZMQ.Bus.Trans        as Bus
 
-import qualified Empire.API.Topic                  as Topic
+import qualified Empire.API.Topic     as Topic
 
 
 type GuiID   = UUID

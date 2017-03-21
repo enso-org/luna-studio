@@ -1,4 +1,4 @@
-{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE OverloadedStrings   #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
 module Empire.ASTOps.Parse (
@@ -6,26 +6,22 @@ module Empire.ASTOps.Parse (
   , parsePortDefault
   ) where
 
+import           Data.Convert
 import           Empire.Prelude
 
-import           Data.Char                    (isLetter)
-import           Data.List.Split              (splitOn)
-import           Data.List                    (partition, takeWhile)
-import           Data.Ratio                   (approxRational)
+import           Data.Char                    (isUpper)
+import           Data.List                    (partition)
 import qualified Data.Text                    as Text
-import           Text.Read                    (readMaybe)
 
-import           Empire.Data.AST              (NodeRef, astExceptionToException,
-                                               astExceptionFromException)
-import           Empire.ASTOps.Builder        (buildAccessors, lams)
-import           Empire.ASTOp                 (ASTOp, EmpirePass)
+import           Empire.ASTOp                    (ASTOp)
+import           Empire.ASTOps.Builder           (lams)
+import           Empire.Data.AST                 (NodeRef, astExceptionFromException, astExceptionToException)
 
-import           Empire.API.Data.DefaultValue (PortDefault (..), Value (..))
+import           Empire.API.Data.PortDefault     (PortDefault (..), Value (..))
 
-import qualified Luna.IR as IR
-import qualified Luna.Pass as Pass
-import qualified Luna.Passes.Transform.Parsing.Parsing as Parsing
-import qualified Luna.Passes.Transform.Parsing.Parser as Parser
+import qualified Luna.IR                         as IR
+import qualified Luna.Syntax.Text.Parser.Parser  as Parser
+import qualified Luna.Syntax.Text.Parser.Parsing as Parsing
 
 data ParserException e = ParserException e
     deriving (Show)
@@ -37,12 +33,12 @@ instance Exception e => Exception (ParserException e) where
 
 parseExpr :: ASTOp m => String -> m (Maybe Text.Text, NodeRef)
 parseExpr s = do
-  lamRes <- tryParseLambda s
-  parsed <- pure $ Parsing.runParser Parsing.expr s
+  lamRes  <- tryParseLambda s
+  parsed  <- pure $ Parsing.runParser Parsing.expr s
   case lamRes of
       (name, Just l)  -> return (name, l)
       _               -> case parsed of
-          Right (Parser.IRBuilder x) -> do
+          Right (Parser.IRB x) -> do
               x' <- x
               return (Nothing, x')
           Left err -> throwM $ ParserException err
@@ -50,20 +46,9 @@ parseExpr s = do
 tryParseLambda :: ASTOp m => String -> m (Maybe Text.Text, Maybe NodeRef)
 tryParseLambda s = case words s of
     ("def" : name : _) -> do
-        v <- IR.strVar "arg0"
+        v <- IR.var "a"
         lam <- IR.generalize <$> IR.lam v v
         return (Just (Text.pack name), Just lam)
-    ["->"] -> do
-        v <- IR.strVar "arg0"
-        lam <- IR.generalize <$> IR.lam v v
-        return $ (Nothing, Just lam)
-    ("->" : rest) -> do
-        let (as, body) = partition ((== '$') . head) rest
-        let args = fmap (drop 1) as
-        argRefs <- mapM IR.strVar args
-        (_, bodyRef) <- parseExpr $ unwords body
-        lam <- lams (map IR.generalize argRefs) bodyRef
-        return $ (Nothing, Just lam)
     _ -> return (Nothing, Nothing)
 
 data PortDefaultNotConstructibleException = PortDefaultNotConstructibleException PortDefault
@@ -74,12 +59,10 @@ instance Exception PortDefaultNotConstructibleException where
     fromException = astExceptionFromException
 
 parsePortDefault :: ASTOp m => PortDefault -> m NodeRef
-parsePortDefault (Expression expr)          = snd <$> parseExpr expr
-parsePortDefault (Constant (IntValue i))    = IR.generalize <$> IR.number (fromIntegral i)
-parsePortDefault (Constant (StringValue s)) = IR.generalize <$> IR.string s
-parsePortDefault (Constant (DoubleValue d)) = $notImplemented
+parsePortDefault (Expression expr)            = snd <$> parseExpr expr
+parsePortDefault (Constant (IntValue i))      = IR.generalize <$> IR.number (fromIntegral i)
+parsePortDefault (Constant (StringValue s))   = IR.generalize <$> IR.string s
+parsePortDefault (Constant (DoubleValue d))   = $notImplemented
 parsePortDefault (Constant (RationalValue r)) = $notImplemented
-parsePortDefault (Constant (BoolValue b))   = do
-    bool' <- IR.string $ show b
-    IR.generalize <$> IR.cons_ bool'
+parsePortDefault (Constant (BoolValue b))     = IR.generalize <$> IR.cons_ (convert $ show b)
 parsePortDefault d = throwM $ PortDefaultNotConstructibleException d

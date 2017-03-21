@@ -1,5 +1,6 @@
-{-# LANGUAGE LambdaCase       #-}
-{-# LANGUAGE TypeApplications #-}
+{-# LANGUAGE LambdaCase          #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TypeApplications    #-}
 
 {-|
 
@@ -8,39 +9,25 @@ AST, without modifying it. They can still throw exceptions though.
 
 -}
 
-module Empire.ASTOps.Read (
-    isGraphNode
-  , getNodeId
-  , getVarName
-  , getName
-  , isApp
-  , isBlank
-  , isLambda
-  , isMatch
-  , getASTPointer
-  , getASTTarget
-  , getASTVar
-  , getLambdaOutputRef
-  , getPatternNames
-  , getSelfNodeRef
-  , canEnterNode
-  , rhsIsLambda
-  ) where
+module Empire.ASTOps.Read where
 
-import           Data.Coerce                        (coerce)
+import           Control.Monad                      ((>=>), (<=<), forM)
+import           Control.Monad.Catch                (Handler(..), catches)
 import           Data.Maybe                         (isJust)
 import           Empire.Prelude
 
 import           Empire.API.Data.Node               (NodeId)
+import           Empire.API.Data.PortRef            (OutPortRef(..))
 import           Empire.ASTOp                       (ASTOp, match)
 import           Empire.Data.AST                    (NodeRef, EdgeRef, NotUnifyException(..),
                                                      NotLambdaException(..),
                                                      astExceptionFromException, astExceptionToException)
 import qualified Empire.Data.Graph                  as Graph
-import           Empire.Data.Layers                 (NodeMarker(..), Marker)
+import qualified Empire.Data.BreadcrumbHierarchy    as BH
+import           Empire.Data.Layers                 (Marker)
 
-import qualified Luna.IR.Expr.Combinators as IRExpr
-import           Luna.IR.Expr.Term.Uni
+import qualified OCI.IR.Combinators as IRExpr
+import           Luna.IR.Term.Uni
 import qualified Luna.IR as IR
 
 
@@ -48,29 +35,39 @@ isGraphNode :: ASTOp m => NodeRef -> m Bool
 isGraphNode = fmap isJust . getNodeId
 
 getNodeId :: ASTOp m => NodeRef -> m (Maybe NodeId)
-getNodeId node = coerce <$> IR.readLayer @Marker node
+getNodeId node = do
+    portRef <- IR.readLayer @Marker node
+    forM portRef $ \portRef' -> do
+        let OutPortRef nodeId _ = portRef'
+        return nodeId
 
 getPatternNames :: ASTOp m => NodeRef -> m [String]
 getPatternNames node = match node $ \case
-    Var n     -> (:[]) <$> getName n
+    Var n     -> return [nameToString n]
     Cons _ as -> do
         args  <- mapM IR.source as
         names <- mapM getPatternNames args
         return $ concat names
     Blank{}   -> return ["_"]
 
+data NoNameException = NoNameException NodeRef
+    deriving Show
+
+instance Exception NoNameException where
+    toException = astExceptionToException
+    fromException = astExceptionFromException
+
 getVarName :: ASTOp m => NodeRef -> m String
 getVarName node = match node $ \case
-    Var n -> getName n
-    Cons n _ -> getName n
-    Blank{} -> return "_"
+    Var n    -> return $ nameToString n
+    Cons n _ -> return $ pathNameToString n
+    Blank{}  -> return "_"
+    _        -> throwM $ NoNameException node
 
-getName :: ASTOp m => EdgeRef -> m String
-getName node = do
-    str <- IR.source node
-    match str $ \case
-        IR.String s -> return s
-        Var n -> getVarName str
+getVarsInside :: ASTOp m => NodeRef -> m [NodeRef]
+getVarsInside e = do
+    isVar <- isJust <$> IRExpr.narrowTerm @IR.Var e
+    if isVar then return [e] else concat <$> (mapM (getVarsInside <=< IR.source) =<< IR.inputs e)
 
 rightMatchOperand :: ASTOp m => NodeRef -> m EdgeRef
 rightMatchOperand node = match node $ \case
@@ -96,59 +93,130 @@ instance Exception NodeDoesNotExistException where
 
 getASTPointer :: ASTOp m => NodeId -> m NodeRef
 getASTPointer nodeId = do
-    node <- use (Graph.nodeMapping . at nodeId)
+    -- TODO[MK]: checking if asking for own node is just to make specs pass, I need to figure out who and why needs it
+    self <- use $ Graph.breadcrumbHierarchy . BH.self
+    let selfRef = case self of
+          Just (id, ref) -> if id == nodeId then Just $ BH.getAnyRef ref else Nothing
+          Nothing -> Nothing
+    case selfRef of
+        Just r -> return r
+        Nothing -> do
+            node <- preuse (Graph.breadcrumbHierarchy . BH.children . ix nodeId . BH.self . _Just . _2)
+            case node of
+                Just target -> pure $ BH.getAnyRef target
+                _           -> throwM $ NodeDoesNotExistException nodeId
+
+getCurrentASTPointer :: ASTOp m => m (Maybe NodeRef)
+getCurrentASTPointer = do
+    node <- use $ Graph.breadcrumbHierarchy . BH.self
     case node of
-        Just target -> pure $ Graph.getAnyRef target
-        _           -> throwM $ NodeDoesNotExistException nodeId
+        Just (_, tgt) -> return $ Just $ BH.getAnyRef tgt
+        _             -> return $ Nothing
 
 getASTTarget :: ASTOp m => NodeId -> m NodeRef
 getASTTarget nodeId = do
     matchNode <- getASTPointer nodeId
     getTargetNode matchNode
 
+getCurrentASTTarget :: ASTOp m => m (Maybe NodeRef)
+getCurrentASTTarget = mapM getTargetNode =<< getCurrentASTPointer
+
 getASTVar :: ASTOp m => NodeId -> m NodeRef
 getASTVar nodeId = do
     matchNode <- getASTPointer nodeId
     getVarNode matchNode
+
+getCurrentASTVar :: ASTOp m => m (Maybe NodeRef)
+getCurrentASTVar = mapM getVarNode =<< getCurrentASTPointer
 
 getSelfNodeRef :: ASTOp m => NodeRef -> m (Maybe NodeRef)
 getSelfNodeRef = getSelfNodeRef' False
 
 getSelfNodeRef' :: ASTOp m => Bool -> NodeRef -> m (Maybe NodeRef)
 getSelfNodeRef' seenAcc node = match node $ \case
-    Acc _ t -> IR.source t >>= getSelfNodeRef' True
+    Acc t _ -> IR.source t >>= getSelfNodeRef' True
     App t _ -> IR.source t >>= getSelfNodeRef' seenAcc
     _       -> return $ if seenAcc then Just node else Nothing
 
-getLambdaOutputRef :: ASTOp m => NodeRef -> m NodeRef
-getLambdaOutputRef = getLambdaOutputRef' False
+getLambdaBodyRef :: ASTOp m => NodeRef -> m (Maybe NodeRef)
+getLambdaBodyRef lam = do
+    seqRef <- getLambdaSeqRef lam
+    forM seqRef $ flip match $ \case
+        Seq l _r -> IR.source l
 
-getLambdaOutputRef' :: ASTOp m => Bool -> NodeRef -> m NodeRef
-getLambdaOutputRef' firstLam node = match node $ \case
-    Lam _ out -> do
-        nextLam <- IR.source out
-        getLambdaOutputRef' True nextLam
-    _         -> if firstLam then return node else throwM $ NotLambdaException node
+getLambdaSeqRef :: ASTOp m => NodeRef -> m (Maybe NodeRef)
+getLambdaSeqRef = getLambdaSeqRef' False
+
+getLambdaSeqRef' :: ASTOp m => Bool -> NodeRef -> m (Maybe NodeRef)
+getLambdaSeqRef' firstLam node = match node $ \case
+    Lam _ next -> do
+        nextLam <- IR.source next
+        getLambdaSeqRef' True nextLam
+    Seq{}     -> if firstLam then return $ Just node else throwM $ NotLambdaException node
+    _         -> if firstLam then return Nothing     else throwM $ NotLambdaException node
+
+getLambdaOutputRef :: ASTOp m => NodeRef -> m NodeRef
+getLambdaOutputRef = getLambdaOutputLink >=> IR.source
+
+getLambdaOutputLink :: ASTOp m => NodeRef -> m EdgeRef
+getLambdaOutputLink = getLambdaOutputLink' False
+
+getLambdaOutputLink' :: ASTOp m => Bool -> NodeRef -> m EdgeRef
+getLambdaOutputLink' firstLam node = match node $ \case
+    Lam _ next -> do
+        nextLam <- IR.source next
+        match nextLam $ \case
+            Lam{} -> getLambdaOutputLink' True nextLam
+            Seq{} -> getLambdaOutputLink' True nextLam
+            _     -> return next
+    Seq _l r  -> if firstLam then return r else throwM $ NotLambdaException node
+
+getFirstNonLambdaRef :: ASTOp m => NodeRef -> m NodeRef
+getFirstNonLambdaRef = getFirstNonLambdaLink >=> IR.source
+
+getFirstNonLambdaLink :: ASTOp m => NodeRef -> m EdgeRef
+getFirstNonLambdaLink node = match node $ \case
+    Lam _ next -> do
+        nextLam <- IR.source next
+        match nextLam $ \case
+            Lam{} -> getFirstNonLambdaLink nextLam
+            _     -> return next
+    _         -> throwM $ NotLambdaException node
 
 isApp :: ASTOp m => NodeRef -> m Bool
-isApp expr = isJust <$> IRExpr.narrowAtom @IR.App expr
+isApp expr = isJust <$> IRExpr.narrowTerm @IR.App expr
 
 isBlank :: ASTOp m => NodeRef -> m Bool
-isBlank expr = isJust <$> IRExpr.narrowAtom @IR.Blank expr
+isBlank expr = isJust <$> IRExpr.narrowTerm @IR.Blank expr
 
 isLambda :: ASTOp m => NodeRef -> m Bool
-isLambda expr = isJust <$> IRExpr.narrowAtom @IR.Lam expr
+isLambda expr = isJust <$> IRExpr.narrowTerm @IR.Lam expr
 
 isMatch :: ASTOp m => NodeRef -> m Bool
-isMatch expr = isJust <$> IRExpr.narrowAtom @IR.Unify expr
+isMatch expr = isJust <$> IRExpr.narrowTerm @IR.Unify expr
 
-rhsIsLambda :: ASTOp m => NodeId -> m Bool
-rhsIsLambda nid = do
-    node <- getASTTarget nid
-    isLambda node
+isCons :: ASTOp m => NodeRef -> m Bool
+isCons expr = isJust <$> IRExpr.narrowTerm @IR.Cons expr
 
-canEnterNode :: ASTOp m => NodeId -> m Bool
-canEnterNode nid = do
-    root   <- getASTPointer nid
-    match' <- isMatch root
-    if match' then rhsIsLambda nid else return False
+nodeIsPatternMatch :: ASTOp m => NodeId -> m Bool
+nodeIsPatternMatch nid = (do
+    root <- getASTPointer nid
+    varIsPatternMatch root) `catches` [
+          Handler (\(e :: NotUnifyException)         -> return False)
+        , Handler (\(e :: NodeDoesNotExistException) -> return False)
+        ]
+
+varIsPatternMatch :: ASTOp m => NodeRef -> m Bool
+varIsPatternMatch expr = do
+    var <- getVarNode expr
+    isCons var
+
+rhsIsLambda :: ASTOp m => NodeRef -> m Bool
+rhsIsLambda ref = do
+    rhs <- getTargetNode ref
+    isLambda rhs
+
+canEnterNode :: ASTOp m => NodeRef -> m Bool
+canEnterNode ref = do
+    match' <- isMatch ref
+    if match' then rhsIsLambda ref else return False

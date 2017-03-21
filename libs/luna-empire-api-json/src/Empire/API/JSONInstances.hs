@@ -12,40 +12,56 @@ import qualified Data.UUID.Types                        as UUID
 import           Prologue
 import           Text.Read                              (readMaybe)
 
+import           Empire.API.Atom.GetBuffer              as GetBuffer
+import           Empire.API.Atom.Substitute             as Substitute
+import           Empire.API.Atom.CloseFile              as CloseFile
+import           Empire.API.Atom.OpenFile               as OpenFile
+import           Empire.API.Atom.SaveFile               as SaveFile
+import           Empire.API.Atom.SetProject             as SetProject
 import           Empire.API.Control.EmpireStarted       as EmpireStarted
 import           Empire.API.Data.Breadcrumb             as Breadcrumb
 import           Empire.API.Data.Connection             as Connection
-import           Empire.API.Data.DefaultValue           as DefaultValue
 import           Empire.API.Data.Error                  as Error
 import           Empire.API.Data.Graph                  as Graph
 import           Empire.API.Data.GraphLocation          as GraphLocation
 import           Empire.API.Data.Library                as Library
+import           Empire.API.Data.MonadPath              as MonadPath
 import           Empire.API.Data.Node                   as Node
 import           Empire.API.Data.NodeMeta               as NodeMeta
 import           Empire.API.Data.Port                   as Port
+import           Empire.API.Data.PortDefault            as PortDefault
 import           Empire.API.Data.PortRef                as PortRef
 import           Empire.API.Data.Project                as Project
 import           Empire.API.Data.TypeRep                as TypeRep
 import           Empire.API.Data.ValueType              as ValueType
+import           Empire.API.Graph.AddConnection         as AddConnection
 import           Empire.API.Graph.AddNode               as AddNode
 import           Empire.API.Graph.AddPort               as AddPort
 import           Empire.API.Graph.AddSubgraph           as AddSubgraph
 import           Empire.API.Graph.CodeUpdate            as CodeUpdate
-import           Empire.API.Graph.Collaboration         as Collaboration
-import           Empire.API.Graph.Connect               as Connect
-import           Empire.API.Graph.Disconnect            as Disconnect
+import           Empire.API.Graph.CollaborationUpdate   as CollaborationUpdate
+import           Empire.API.Graph.ConnectUpdate         as ConnectUpdate
+import           Empire.API.Graph.DumpGraphViz          as DumpGraphViz
 import           Empire.API.Graph.GetProgram            as GetProgram
+import           Empire.API.Graph.GetSubgraphs          as GetSubgraphs
 import           Empire.API.Graph.MonadsUpdate          as MonadsUpdate
+import           Empire.API.Graph.MovePort              as MovePort
 import           Empire.API.Graph.NodeResultUpdate      as NodeResultUpdate
-import           Empire.API.Graph.NodeSearch            as NodeSearch
 import           Empire.API.Graph.NodesUpdate           as NodesUpdate
 import           Empire.API.Graph.NodeTypecheckerUpdate as NodeTypecheckerUpdate
+import           Empire.API.Graph.Redo                  as Redo
+import           Empire.API.Graph.RemoveConnection      as RemoveConnection
 import           Empire.API.Graph.RemoveNodes           as RemoveNodes
+import           Empire.API.Graph.RemovePort            as RemovePort
 import           Empire.API.Graph.RenameNode            as RenameNode
-import           Empire.API.Graph.SetDefaultValue       as SetDefaultValue
-import           Empire.API.Graph.SetInputNodeType      as SetInputNodeType
-import           Empire.API.Graph.UpdateNodeExpression  as UpdateNodeExpression
-import           Empire.API.Graph.UpdateNodeMeta        as UpdateNodeMeta
+import           Empire.API.Graph.RenamePort            as RenamePort
+import           Empire.API.Graph.SearchNodes           as SearchNodes
+import           Empire.API.Graph.SetNodeCode           as SetNodeCode
+import           Empire.API.Graph.SetNodeExpression     as SetNodeExpression
+import           Empire.API.Graph.SetNodesMeta          as SetNodesMeta
+import           Empire.API.Graph.SetPortDefault        as SetPortDefault
+import           Empire.API.Graph.TypeCheck             as TypeCheck
+import           Empire.API.Graph.Undo                  as Undo
 import           Empire.API.Library.CreateLibrary       as CreateLibrary
 import           Empire.API.Library.ListLibraries       as ListLibraries
 import           Empire.API.Persistence.Envelope        as PEnvelope
@@ -83,29 +99,14 @@ instance FromJSON Node.NodeTypecheckerUpdate
 instance ToJSON NodeMeta.NodeMeta
 instance FromJSON NodeMeta.NodeMeta
 
-instance {-# OVERLAPPING #-} (ToJSON b) => ToJSON (Map UUID b) where
-    toJSON = toJSON . Map.mapKeys UUID.toString
-    {-# INLINE toJSON #-}
-
-instance {-# OVERLAPPING #-} (ToJSON b) => ToJSON  (Map AnyPortRef b) where
-    toJSON = toJSON . Map.mapKeys show
-    {-# INLINE toJSON #-}
-
-instance {-# OVERLAPPING #-} (ToJSON b) => ToJSON  (Map InPortRef b) where
-    toJSON = toJSON . Map.mapKeys show
-    {-# INLINE toJSON #-}
-
-instance {-# OVERLAPPING #-} (ToJSON b) => ToJSON  (Map OutPortRef b) where
-    toJSON = toJSON . Map.mapKeys show
-    {-# INLINE toJSON #-}
-
-instance {-# OVERLAPPING #-} (ToJSON b) => ToJSON  (Map PortId b) where
-    toJSON = toJSON . Map.mapKeys show
-    {-# INLINE toJSON #-}
-
-instance {-# OVERLAPPING #-} (FromJSON b) => FromJSON  (Map PortId b) where
-    parseJSON = fmap (Map.mapKeys read) . parseJSON -- TODO: use readMaybe
-    {-# INLINE parseJSON #-}
+instance {-# OVERLAPPING #-} ToJSON   v => ToJSON   (Map PortId     v) where toJSON = toJSON . Map.toList
+instance {-# OVERLAPPING #-} FromJSON v => FromJSON (Map PortId     v) where parseJSON = fmap Map.fromList . parseJSON
+instance {-# OVERLAPPING #-} ToJSON   v => ToJSON   (Map UUID       v) where toJSON = toJSON . Map.toList
+instance {-# OVERLAPPING #-} FromJSON v => FromJSON (Map UUID       v) where parseJSON = fmap Map.fromList . parseJSON
+instance {-# OVERLAPPING #-} ToJSON   v => ToJSON   (Map AnyPortRef v) where toJSON = toJSON . Map.toList
+instance {-# OVERLAPPING #-} FromJSON v => FromJSON (Map AnyPortRef v) where parseJSON = fmap Map.fromList . parseJSON
+instance {-# OVERLAPPING #-} ToJSON   v => ToJSON   (Map InPortRef  v) where toJSON = toJSON . Map.toList
+instance {-# OVERLAPPING #-} FromJSON v => FromJSON (Map InPortRef  v) where parseJSON = fmap Map.fromList . parseJSON
 
 instance ToJSON Port.Port
 instance FromJSON Port.Port
@@ -133,70 +134,101 @@ instance FromJSON PortRef.InPortRef
 instance ToJSON Connection.Connection
 instance FromJSON Connection.Connection
 
-instance ToJSON DefaultValue.Value
-instance FromJSON DefaultValue.Value
-instance ToJSON DefaultValue.PortDefault
-instance FromJSON DefaultValue.PortDefault
+instance ToJSON PortDefault.Value
+instance FromJSON PortDefault.Value
+instance ToJSON PortDefault.PortDefault
+instance FromJSON PortDefault.PortDefault
 
 instance ToJSON Graph.Graph
 instance FromJSON Graph.Graph
 
+instance ToJSON MonadPath.MonadPath
+instance FromJSON MonadPath.MonadPath
+
 instance ToJSON t => ToJSON (Error.Error t)
 
-instance ToJSON AddNode.NodeType
+
+instance ToJSON AddConnection.Request
+
 instance ToJSON AddNode.Request
-instance ToJSON AddNode.Update
 
 instance ToJSON AddPort.Request
 
 instance ToJSON AddSubgraph.Request
 
-instance ToJSON Connect.Connect
-instance ToJSON Connect.Request
-instance ToJSON Connect.Update
+instance ToJSON CodeUpdate.Update
 
-instance ToJSON Disconnect.Request
-instance ToJSON Disconnect.Inverse
-instance ToJSON Disconnect.Update
+instance ToJSON CollaborationUpdate.Update
+instance ToJSON CollaborationUpdate.Event
 
-instance ToJSON RemoveNodes.Request
-instance ToJSON RemoveNodes.Inverse
-instance ToJSON RemoveNodes.Update
+instance ToJSON ConnectUpdate.Update
 
-instance ToJSON RenameNode.Request
-instance ToJSON RenameNode.Inverse
-instance ToJSON RenameNode.Update
+instance ToJSON DumpGraphViz.Request
 
-instance ToJSON UpdateNodeMeta.Request
-instance ToJSON UpdateNodeMeta.Inverse
-instance ToJSON UpdateNodeMeta.Update
-
-instance ToJSON NodesUpdate.Update
+instance ToJSON GetSubgraphs.Request
+instance ToJSON GetSubgraphs.Result
 
 instance ToJSON MonadsUpdate.Update
 
-instance ToJSON UpdateNodeExpression.Request
-instance ToJSON UpdateNodeExpression.Inverse
+instance ToJSON MovePort.Request
+
+instance ToJSON NodesUpdate.Update
 
 instance ToJSON NodeResultUpdate.Update
 instance ToJSON NodeResultUpdate.NodeValue
 
 instance ToJSON NodeTypecheckerUpdate.Update
 
-instance ToJSON CodeUpdate.Update
+instance ToJSON Redo.RedoRequest
+instance ToJSON Redo.Request
+
+instance ToJSON RemoveConnection.Request
+instance ToJSON RemoveConnection.Inverse
+instance ToJSON RemoveConnection.Update
+
+instance ToJSON RemoveNodes.Request
+instance ToJSON RemoveNodes.Inverse
+
+instance ToJSON RemovePort.Request
+instance ToJSON RemovePort.Inverse
+
+instance ToJSON RenameNode.Request
+instance ToJSON RenameNode.Inverse
+
+instance ToJSON RenamePort.Request
+instance ToJSON RenamePort.Inverse
+
+instance ToJSON a => ToJSON (Request.Request a)
+
+instance ToJSON SearchNodes.Request
+instance ToJSON SearchNodes.Result
+
+instance ToJSON SetNodeCode.Request
+instance ToJSON SetNodeCode.Inverse
+
+instance ToJSON GetBuffer.Request
+instance ToJSON GetBuffer.Result
+
+instance ToJSON Substitute.Request
+instance ToJSON Substitute.Update
 
 instance ToJSON GetProgram.Request
 instance ToJSON GetProgram.Result
 
-instance ToJSON NodeSearch.Request
-instance ToJSON NodeSearch.Result
+instance ToJSON SetNodeExpression.Request
+instance ToJSON SetNodeExpression.Inverse
 
-instance ToJSON SetDefaultValue.Request
+instance ToJSON SetNodesMeta.Request
+instance ToJSON SetNodesMeta.Inverse
 
-instance ToJSON SetInputNodeType.Request
+instance ToJSON SetPortDefault.Request
+instance ToJSON SetPortDefault.Inverse
 
-instance ToJSON Collaboration.Update
-instance ToJSON Collaboration.Event
+instance ToJSON TypeCheck.Request
+
+instance ToJSON Undo.UndoRequest
+instance ToJSON Undo.Request
+
 
 instance ToJSON CreateLibrary.Request
 instance ToJSON CreateLibrary.Result
@@ -223,9 +255,17 @@ instance ToJSON ExportProject.Result
 instance ToJSON ImportProject.Request
 instance ToJSON ImportProject.Result
 
+instance ToJSON CloseFile.Request
+
+instance ToJSON OpenFile.Request
+
+instance ToJSON SaveFile.Request
+
+instance ToJSON SetProject.Request
+
 
 instance (ToJSON req, ToJSON res, ToJSON inv) => ToJSON (Response.Response req inv res)
-instance (ToJSON payload) => ToJSON (Response.Status payload)
+instance ToJSON payload => ToJSON (Response.Status payload)
 
 instance ToJSON EmpireStarted.Status
 
@@ -236,7 +276,6 @@ instance FromJSON PLibrary.Library
 instance ToJSON PEnvelope.Envelope
 instance FromJSON PEnvelope.Envelope
 
-instance (ToJSON a) => ToJSON (Request.Request a)
 instance ToJSON UUID where
   toJSON = toJSON . UUID.toString
 instance FromJSON UUID where

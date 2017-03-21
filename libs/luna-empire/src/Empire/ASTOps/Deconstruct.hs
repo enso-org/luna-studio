@@ -8,12 +8,12 @@ module Empire.ASTOps.Deconstruct (
 
 import           Empire.Prelude
 
-import           Empire.ASTOp                       (ASTOp, match)
-import qualified Empire.ASTOps.Read                 as Read
-import           Empire.Data.AST                    (NodeRef, NotAppException(..))
+import           Empire.ASTOp       (ASTOp, match)
+import qualified Empire.ASTOps.Read as Read
+import           Empire.Data.AST    (NodeRef, NotAppException (..))
 
-import           Luna.IR.Expr.Term.Uni
-import qualified Luna.IR as IR
+import qualified Luna.IR            as IR
+import           Luna.IR.Term.Uni
 
 
 deconstructApp :: ASTOp m => NodeRef -> m (NodeRef, [NodeRef])
@@ -34,9 +34,10 @@ data ExtractFilter = FApp | FLam
 
 extractArguments :: ASTOp m => NodeRef -> m [NodeRef]
 extractArguments expr = match expr $ \case
-    App{} -> reverse <$> extractArguments' FApp expr
-    Lam{} -> extractArguments' FLam expr
-    _ -> return []
+    App{}       -> reverse <$> extractArguments' FApp expr
+    Lam{}       -> extractArguments' FLam expr
+    Cons _ args -> mapM IR.source args
+    _           -> return []
 
 extractArguments' :: ASTOp m => ExtractFilter -> NodeRef -> m [NodeRef]
 extractArguments' FApp expr = match expr $ \case
@@ -62,16 +63,16 @@ dumpAccessors' firstApp node = do
     match node $ \case
         Var n -> do
             isNode <- Read.isGraphNode node
-            name <- Read.getName n
+            name <- Read.getVarName node
             if isNode
                 then return (Just node, [])
                 else return (Nothing, [name])
         App t a -> do
             target <- IR.source t
             dumpAccessors' False target
-        Acc n t -> do
+        Acc t n -> do
             target <- IR.source t
-            name <- Read.getName n
+            let name = nameToString n
             (tgt, names) <- dumpAccessors' False target
             return (tgt, names ++ [name])
         _ -> return (Just node, [])

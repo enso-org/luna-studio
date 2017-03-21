@@ -1,0 +1,18 @@
+var app              = require('./app2'),
+    common           = require('./common'),
+    config           = require('./config');
+    atomCallback2 = require('./atom-callback2')();
+
+var run = function(websocket) {
+  var arg_websocket = function() { return websocket; };
+
+GHCJS_CODE_BE_THERE
+
+};
+
+return { start     : function(websocket) { run(websocket);}
+       , pushText  : function(data) { atomCallback2.pushText(data); }
+       , bufferListener  : function(callback) { atomCallback2.bufferListener(callback); }
+       , codeListener  : function(callback) { atomCallback2.codeListener(callback); }
+       , pushInternalEvent : function(data) { atomCallback2.pushInternalEvent(data); }
+       }

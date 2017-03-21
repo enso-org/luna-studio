@@ -1,14 +1,11 @@
 $$              = require('./common')
 config          = require('./config')
-brunch          = require('brunch')
-websocket       = require('./websocket')
+# websocket       = require('./websocket')
 atomCallback    = require('./atom-callback')
 GoogleAnalytics = require('./GoogleAnalytics')
 
-console.info 'Current version ' + brunch.env + ' ' + brunch.git_commit + ' build  ' + brunch.build_number
-console.info 'Build at ' + brunch.date
 
-$$.websocket = websocket()
+# $$.websocket = websocket()
 
 start = ->
   $(document).ready ->
@@ -21,6 +18,6 @@ start = ->
 
 module.exports =
   start: start
-  websocket: $$.websocket
+  # websocket: $$.websocket
 
 window.processedEvents = []

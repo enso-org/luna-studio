@@ -1,21 +1,13 @@
 {-# LANGUAGE LambdaCase          #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TypeApplications    #-}
 
 {-| This module contains operations that output modified nodes.
     These functions use reading, deconstructing and building APIs.
 
 -}
 
-module Empire.ASTOps.Modify (
-    redirectLambdaOutput
-  , renameVar
-  , rewireNode
-  , setLambdaOutputToBlank
-  , addLambdaArg
-  , moveLambdaArg
-  , removeLambdaArg
-  , renameLambdaArg
-  ) where
+module Empire.ASTOps.Modify where
 
 import           Control.Lens (folded, ifiltered)
 import           Data.List    (find)
@@ -33,9 +25,8 @@ import           Empire.Data.AST                    (NodeRef, NotLambdaException
                                                      NotUnifyException(..), astExceptionToException,
                                                      astExceptionFromException)
 
-import qualified Luna.IR.Expr.Combinators as IR (changeSource)
-import           Luna.IR.Expr.Term.Uni
-import           Luna.IR.Expr.Term.Named (Term(Sym_Lam))
+import qualified OCI.IR.Combinators as IR (changeSource, narrowTerm)
+import           Luna.IR.Term.Uni
 import qualified Luna.IR as IR
 
 
@@ -43,7 +34,7 @@ import qualified Luna.IR as IR
 addLambdaArg :: ASTOp m => NodeRef -> m ()
 addLambdaArg lambda = match lambda $ \case
     Lam _arg _body -> do
-        out'  <- ASTRead.getLambdaOutputRef lambda
+        out'  <- ASTRead.getFirstNonLambdaRef lambda
         addLambdaArg' [] lambda out'
     _ -> throwM $ NotLambdaException lambda
 
@@ -59,7 +50,7 @@ addLambdaArg' boundNames lambda out = match lambda $ \case
         body'    <- IR.source body
         if body' == out then do
             let Just argName = find (not . flip elem newBoundNames) allWords
-            v <- IR.strVar argName
+            v <- IR.var $ stringToName argName
             l <- IR.lam v out
             IR.changeSource body $ IR.generalize l
         else do
@@ -79,7 +70,7 @@ removeLambdaArg _      (Port.OutPortId Port.All) = throwM $ CannotRemovePortExce
 removeLambdaArg lambda (Port.OutPortId (Port.Projection port)) = match lambda $ \case
     Lam _arg _body -> do
         args <- ASTDeconstruct.extractArguments lambda
-        out  <- ASTRead.getLambdaOutputRef lambda
+        out  <- ASTRead.getFirstNonLambdaRef lambda
         let newArgs = args ^.. folded . ifiltered (\i _ -> i /= port)
         ASTBuilder.lams newArgs out
     _ -> throwM $ NotLambdaException lambda
@@ -137,6 +128,13 @@ replaceTargetNode matchNode newTarget = do
             IR.changeSource r newTarget
         _ -> throwM $ NotUnifyException matchNode
 
+replaceVarNode :: ASTOp m => NodeRef -> NodeRef -> m ()
+replaceVarNode matchNode newVar = do
+    match matchNode $ \case
+        Unify l _r -> do
+            IR.changeSource l newVar
+        _ -> throwM $ NotUnifyException matchNode
+
 rewireNode :: ASTOp m => NodeId -> NodeRef -> m ()
 rewireNode nodeId newTarget = do
     matchNode <- ASTRead.getASTPointer nodeId
@@ -144,8 +142,21 @@ rewireNode nodeId newTarget = do
     replaceTargetNode matchNode newTarget
     ASTRemove.removeSubtree oldTarget
 
+rewireNodeName :: ASTOp m => NodeId -> NodeRef -> m ()
+rewireNodeName nodeId newVar = do
+    matchNode <- ASTRead.getASTPointer nodeId
+    oldVar    <- ASTRead.getASTVar  nodeId
+    replaceVarNode matchNode newVar
+    ASTRemove.removeSubtree oldVar
+
+rewireCurrentNode :: ASTOp m => NodeRef -> m ()
+rewireCurrentNode newTarget = do
+    Just matchNode <- ASTRead.getCurrentASTPointer
+    Just oldTarget <- ASTRead.getCurrentASTTarget
+    replaceTargetNode matchNode newTarget
+    ASTRemove.removeSubtree oldTarget
+
 renameVar :: ASTOp m => NodeRef -> String -> m ()
-renameVar vref name = match vref $ \case
-    Var n -> do
-        (var :: IR.Expr (IR.E IR.String)) <- IR.unsafeGeneralize <$> IR.source n
-        IR.modifyExprTerm var $ IR.lit .~ name
+renameVar vref name = do
+    var <- IR.narrowTerm @IR.Var vref
+    mapM_ (flip IR.modifyExprTerm $ IR.name .~ (stringToName name)) var

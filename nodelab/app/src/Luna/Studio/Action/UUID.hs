@@ -1,5 +1,6 @@
 module Luna.Studio.Action.UUID
-    ( registerRequest
+    ( getUUID
+    , registerRequest
     , unregisterRequest
     , isOwnRequest
     ) where
@@ -9,7 +10,7 @@ import           Data.UUID.Types            (UUID)
 import           Data.UUID.Types.Internal   (buildFromBytes)
 import           Luna.Studio.Action.Command (Command)
 import           Luna.Studio.Prelude
-import           Luna.Studio.State.Global   (State, nextRandom, pendingRequests)
+import           Luna.Studio.State.Global   (State, backend, nextRandom, pendingRequests)
 
 getUUID :: Command State UUID
 getUUID = do
@@ -20,11 +21,11 @@ getUUID = do
 registerRequest :: Command State UUID
 registerRequest = do
     uuid <- getUUID
-    pendingRequests %= Set.insert uuid
+    backend . pendingRequests %= Set.insert uuid
     return uuid
 
 unregisterRequest :: UUID -> Command State ()
-unregisterRequest uuid = pendingRequests %= Set.delete uuid
+unregisterRequest uuid = backend . pendingRequests %= Set.delete uuid
 
 isOwnRequest :: UUID -> Command State Bool
-isOwnRequest uuid = uses pendingRequests $ Set.member uuid
+isOwnRequest uuid = uses (backend . pendingRequests) $ Set.member uuid

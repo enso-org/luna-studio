@@ -1,24 +1,22 @@
 module Luna.Studio.Handler.Navigation where
 
-import qualified Data.HashMap.Strict          as HashMap
-
-import           Data.Position                (Position (Position), lengthSquared, magnitude, vector, x, y)
+import           Data.Position                       (Position (Position), vector, x, y)
+import           Data.Vector                         (lengthSquared, magnitude)
 import           Luna.Studio.Prelude
 
-import qualified Empire.API.Data.Connection   as C
-import           Empire.API.Data.Node         (NodeId)
-import qualified Empire.API.Data.Port         as P
-import qualified Empire.API.Data.PortRef      as R
-import           Luna.Studio.Action.Command   (Command)
-import qualified Luna.Studio.Action.Graph     as Graph
-import           Luna.Studio.Event.Event      (Event (Shortcut))
-import qualified Luna.Studio.Event.Shortcut   as Shortcut
-import           Luna.Studio.React.Model.Node (Node)
-import qualified Luna.Studio.React.Model.Node as Node
-import           Luna.Studio.State.Global     (State)
-import qualified Luna.Studio.State.Global     as Global
-import qualified Luna.Studio.State.Graph      as Graph
-
+import qualified Empire.API.Data.Port                as P
+import qualified Empire.API.Data.PortRef             as R
+import           Luna.Studio.Action.Basic            (selectNodes)
+import           Luna.Studio.Action.Command          (Command)
+import           Luna.Studio.Action.State.NodeEditor (getConnection, getConnections, getNode, getNodes, getSelectedNodes)
+import           Luna.Studio.Action.State.Scene      (getScreenCenter, translateToWorkspace)
+import           Luna.Studio.Event.Event             (Event (Shortcut))
+import qualified Luna.Studio.Event.Shortcut          as Shortcut
+import qualified Luna.Studio.React.Model.Connection  as C
+import           Luna.Studio.React.Model.Node        (NodeId)
+import           Luna.Studio.React.Model.Node        (Node)
+import qualified Luna.Studio.React.Model.Node        as Node
+import           Luna.Studio.State.Global            (State)
 
 
 handle :: Event -> Maybe (Command State ())
@@ -39,37 +37,47 @@ handleCommand = \case
     Shortcut.GoUp        -> goUp
     _                    -> return ()
 
+selectAny :: Command State ()
+selectAny = do
+    withJustM getScreenCenter $ \screenCenter -> do
+        workspaceCenter <- translateToWorkspace screenCenter
+        nodes <- getNodes
+        unless (null nodes) $ do
+            let node = findNearestNode workspaceCenter nodes
+            selectNodes [node ^. Node.nodeId]
+
 goPrev :: Command State ()
 goPrev = do
-    selectedNodes <- Graph.selectedNodes
-    unless (null selectedNodes) $ do
+    selectedNodes <- getSelectedNodes
+    if null selectedNodes then selectAny
+    else do
         let nodeSrc = findLeftMost selectedNodes
             nodeId = nodeSrc ^. Node.nodeId
             inPortRefSelf      = R.InPortRef nodeId P.Self
             inPortRefFirstPort = R.InPortRef nodeId $ P.Arg 0
-        prevSelfNodeIdMay <- preuse $ Global.graph . Graph.connectionsMap . ix inPortRefSelf . C.src . R.srcNodeId
+        prevSelfNodeIdMay <- view (C.src . R.srcNodeId) <∘> getConnection inPortRefSelf
         case prevSelfNodeIdMay of
-            Just prevSelfNodeId -> Graph.selectNodes [prevSelfNodeId]
+            Just prevSelfNodeId -> selectNodes [prevSelfNodeId]
             Nothing -> do
-                prevFirstPortNodeIdMay <- preuse $ Global.graph . Graph.connectionsMap . ix inPortRefFirstPort . C.src . R.srcNodeId
-                withJust prevFirstPortNodeIdMay $ Graph.selectNodes . return
+                prevFirstPortNodeIdMay <- view (C.src . R.srcNodeId) <∘> getConnection inPortRefFirstPort
+                withJust prevFirstPortNodeIdMay $ selectNodes . return
 
 goNext :: Command State ()
 goNext = do
-    selectedNodes <- Graph.selectedNodes
-    unless (null selectedNodes) $ do
+    selectedNodes <- getSelectedNodes
+    if null selectedNodes then selectAny
+    else do
         let nodeSrc = findRightMost selectedNodes
             nodeId = nodeSrc ^. Node.nodeId
         nextNodeIds <- getDstNodeIds nodeId
-        nextNodes <- catMaybes <$> mapM Global.getNode nextNodeIds
+        nextNodes <- catMaybes <$> mapM getNode nextNodeIds
         unless (null nextNodes) $ do
             let nextNode = findUpMost nextNodes
-            Graph.selectNodes [nextNode ^. Node.nodeId]
+            selectNodes [nextNode ^. Node.nodeId]
 
 getDstNodeIds :: NodeId -> Command State [NodeId]
 getDstNodeIds nodeId = do
-    connMap <- use $ Global.graph . Graph.connectionsMap
-    let connections = filter matchNodeId $ HashMap.elems connMap
+    connections <- filter matchNodeId <$> getConnections
     return $ (^. C.dst . R.dstNodeId) <$> connections
     where
         matchNodeId conn = conn ^. C.src . R.srcNodeId == nodeId
@@ -85,14 +93,15 @@ go :: ([Node] -> Node) ->
       (Position -> [Node] -> Node) ->
       Command State ()
 go findMost findNodesOnSide findNearest = do
-    nodes         <- Graph.allNodes
-    selectedNodes <- Graph.selectedNodes
-    unless (null selectedNodes) $ do
+    nodes         <- getNodes
+    selectedNodes <- getSelectedNodes
+    if null selectedNodes then selectAny
+    else do
         let nodeSrc = findMost selectedNodes
             pos = nodeSrc ^. Node.position
             nodesSide = findNodesOnSide pos nodes
         unless (null nodesSide) $ do
-            Graph.selectNodes [findNearest pos nodesSide ^. Node.nodeId]
+            selectNodes [findNearest pos nodesSide ^. Node.nodeId]
 
 closenestPow :: Double
 closenestPow = 2.5
@@ -127,16 +136,17 @@ goCone :: ([Node] -> Node) ->
           (Position -> [Node] -> [Node]) ->
           Command State ()
 goCone findMost findNodesInCone findNodesOnSide = do
-    nodes         <- Graph.allNodes
-    selectedNodes <- Graph.selectedNodes
-    unless (null selectedNodes) $ do
+    nodes         <- getNodes
+    selectedNodes <- getSelectedNodes
+    if null selectedNodes then selectAny
+    else do
         let nodeSrc = findMost selectedNodes
             pos = nodeSrc ^. Node.position
             nodesCone = findNodesInCone pos nodes
             nodesSide = findNodesOnSide pos nodes
         if not $ null nodesCone
-            then                           Graph.selectNodes [findNearestNode pos nodesCone ^. Node.nodeId]
-            else unless (null nodesSide) $ Graph.selectNodes [findNearestNode pos nodesSide ^. Node.nodeId]
+            then                           selectNodes [findNearestNode pos nodesCone ^. Node.nodeId]
+            else unless (null nodesSide) $ selectNodes [findNearestNode pos nodesSide ^. Node.nodeId]
 
 findRightMost, findLeftMost, findDownMost, findUpMost :: [Node] -> Node
 findRightMost = maximumBy (compare `on` (^. Node.position . x))

@@ -5,6 +5,7 @@ import           Control.Monad.Reader
 import           Control.Monad.STM                      (atomically)
 import           Empire.API.Data.AsyncUpdate            (AsyncUpdate (..))
 import           Empire.API.Data.GraphLocation          (GraphLocation)
+import           Empire.API.Data.MonadPath              (MonadPath)
 import           Empire.API.Data.Node                   (Node, NodeId, NodeTypecheckerUpdate)
 import           Empire.API.Data.TypeRep                (TypeRep)
 import           Empire.Data.Graph                      (Graph)
@@ -16,7 +17,7 @@ import qualified Empire.API.Graph.NodeResultUpdate      as NodeResult
 import qualified Empire.API.Graph.NodesUpdate           as Node
 import qualified Empire.API.Graph.NodeTypecheckerUpdate as NodeTCUpdate
 
-notifyMonadsUpdate :: GraphLocation -> [(TypeRep, [NodeId])] -> Command s ()
+notifyMonadsUpdate :: GraphLocation -> [MonadPath] -> Command s ()
 notifyMonadsUpdate loc m =
     sendUpdate $ MonadsUpdate $ Monads.Update loc m
 

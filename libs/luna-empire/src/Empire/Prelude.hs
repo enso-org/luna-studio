@@ -7,7 +7,7 @@ module Empire.Prelude (
     , type (<>)
     , (<|>)
     , at
-    , module Control.Lens.Operators
+    , catch
     , def
     , Default
     , SomeException
@@ -15,13 +15,17 @@ module Empire.Prelude (
     , ix
     , liftIO
     , makeLenses
+    , MonadCatch
     , MonadIO
     , MonadState
     , MonadThrow
     , MonadTrans(..)
+    , nameToString
     , notImplemented
+    , pathNameToString
     , module Prelude
     , Proxy(..)
+    , stringToName
     , throwM
     , typeRep
     , typeRep'
@@ -30,15 +34,17 @@ module Empire.Prelude (
     , view
     , when
     , zoom
+    , module X
     ) where
 
 import Control.Applicative ((<|>))
 import Control.Exception (SomeException, Exception(..))
-import Control.Lens (makeLenses, view, zoom, uses, use, at, _1, _2, ix)
-import Control.Lens.Operators
+import Control.Lens           as X (makeLenses, view, zoom, uses, use, at, _1, _2, ix, preuse)
+import Control.Lens.Operators as X
+import Control.Lens.Prism     as X
 import Control.Monad (when)
 import Control.Monad.State.Class (MonadState)
-import Control.Monad.Catch (MonadThrow, throwM)
+import Control.Monad.Catch (MonadThrow, throwM, MonadCatch, catch)
 import Control.Monad.Trans.Class (MonadTrans(..))
 import Control.Monad.IO.Class (MonadIO, liftIO)
 import Data.Default (Default, def)
@@ -47,3 +53,15 @@ import Data.Proxy (Proxy(..))
 import Data.Typeable (typeRep)
 import Prologue (notImplemented, typeRep', (.:), (.:.), type (<>))
 import Prelude
+
+import qualified Data.Convert              as Convert
+import qualified OCI.IR.Name.QualName      as IR
+
+nameToString :: IR.Name -> String
+nameToString = Convert.convert
+
+pathNameToString :: IR.QualName -> String
+pathNameToString = nameToString . Convert.convert
+
+stringToName :: String -> IR.Name
+stringToName = Convert.convert

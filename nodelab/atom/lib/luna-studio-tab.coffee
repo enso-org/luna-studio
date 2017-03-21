@@ -6,9 +6,9 @@ uniqueTabNo = 0
 module.exports =
 class LunaStudioTab extends View
   mountPoint = ""
-  initialize: (@uri, @code) ->
+  initialize: (@uri, @code, @websocket) ->
       @on 'contextmenu', -> false
-      @code.start(@uri, mountPoint)
+      @code.start(@uri, mountPoint, websocket)
 
   @content: ->
     mountPoint = "luna-studio-mount" + uniqueTabNo

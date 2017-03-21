@@ -21,36 +21,43 @@ handle :: forall a. (Binary a, Topic.MessageTopic a) => (a -> Batch.Event) -> (S
 handle cons = (Topic.topic (undefined :: a), cons . decode)
 
 handlers :: Map.Map String (ByteString -> Batch.Event)
-handlers = Map.fromList [ handle NodeAdded
+handlers = Map.fromList [ handle GetProgramResponse
+                        , handle AddConnectionResponse
                         , handle AddNodeResponse
                         , handle AddPortResponse
-                        , handle NodesRemoved
-                        , handle RemoveNodesResponse
-                        , handle NodesConnected
-                        , handle ConnectResponse
-                        , handle NodesDisconnected
-                        , handle DisconnectResponse
-                        , handle NodeMetaUpdated
-                        , handle NodeMetaResponse
-                        , handle NodesUpdated
-                        , handle MonadsUpdated
-                        , handle NodeTypechecked
-                        , handle ProgramFetched
-                        , handle CodeUpdated
-                        , handle NodeResultUpdated
                         , handle AddSubgraphResponse
+                        , handle CodeUpdate
                         , handle CollaborationUpdate
-                        , handle ProjectList
+                        , handle ConnectUpdate
+                        , handle DumpGraphVizResponse
+                        , handle EmpireStarted
+                        , handle GetSubgraphsResponse
+                        , handle MonadsUpdate
+                        , handle MovePortResponse
+                        , handle NodeResultUpdate
+                        , handle NodesUpdate
+                        , handle NodeTypecheckerUpdate
+                        , handle RedoResponse
+                        , handle RemoveConnectionResponse
+                        , handle RemoveConnectionUpdate
+                        , handle RemoveNodesResponse
+                        , handle RemovePortResponse
+                        , handle RenameNodeResponse
+                        , handle RenamePortResponse
+                        , handle SearchNodesResponse
+                        , handle SetNodeCodeResponse
+                        , handle SetNodeExpressionResponse
+                        , handle SetNodesMetaResponse
+                        , handle SetPortDefaultResponse
+                        , handle TypeCheckResponse
+                        , handle UndoResponse
                         , handle ProjectCreated
                         , handle ProjectCreatedUpdate
-                        , handle ProjectOpened
-                        , handle ProjectOpenedUpdate
                         , handle ProjectExported
                         , handle ProjectImported
-                        , handle NodeRenamed
-                        , handle UpdateNodeExpressionResponse
-                        , handle NodeSearchResponse
-                        , handle EmpireStarted
+                        , handle ProjectList
+                        , handle ProjectOpened
+                        , handle ProjectOpenedUpdate
                         ]
 
 processMessage :: WebMessage -> Batch.Event

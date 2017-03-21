@@ -1,24 +1,35 @@
 {-# LANGUAGE DeriveAnyClass #-}
-module Luna.Studio.React.Model.Port where
+module Luna.Studio.React.Model.Port
+    ( module Luna.Studio.React.Model.Port
+    , module X
+    )
+    where
 
-import           Data.Aeson              (ToJSON)
-import           Data.Position           (Position)
+import           Control.Arrow               ((&&&))
+import           Data.Aeson                  (ToJSON)
+import           Data.Convert                (Convertible (convert))
+import           Data.Map.Lazy               (Map)
+import qualified Data.Map.Lazy               as Map
+import           Data.Position               (Position)
+import           Empire.API.Data.Port        as X (InPort (..), OutPort (..), PortId (..), PortState (..), getPortNumber, isAll, isArg,
+                                                   isInPort, isOutPort, isProjection, isSelf, _InPortId, _OutPortId)
+import qualified Empire.API.Data.Port        as Empire
+import           Empire.API.Data.PortDefault as X (PortDefault (..))
+import           Empire.API.Data.PortRef     as X (AnyPortRef (InPortRef', OutPortRef'), InPortRef (InPortRef), OutPortRef (OutPortRef))
+import           Empire.API.Data.TypeRep     (TypeRep (..))
+import           Luna.Studio.Data.Color      (Color)
+import qualified Luna.Studio.Data.Color      as Color
+import           Luna.Studio.Prelude         hiding (set)
 
-import           Empire.API.Data.Node    (NodeId)
-import qualified Empire.API.Data.Port    as API
-import           Empire.API.Data.PortRef (AnyPortRef, toAnyPortRef)
-import           Empire.API.Data.TypeRep (TypeRep)
-import           Luna.Studio.Data.Color  (Color)
-import qualified Luna.Studio.Data.Color  as Color
-import           Luna.Studio.Prelude     hiding (set)
 
-
-
-data Port = Port { _portRef     :: AnyPortRef
-                 , _port        :: API.Port
-                 , _color       :: Color
-                 , _highlight   :: Bool
-                 , _visible     :: Bool
+data Port = Port { _portId    :: PortId
+                 , _name      :: String
+                 , _valueType :: TypeRep
+                 , _state     :: PortState
+                 , _color     :: Color
+                 , _highlight :: Bool
+                 , _visible   :: Bool
+                 , _isEdited  :: Bool
                  } deriving (Eq, Show, Typeable, Generic, NFData)
 
 makeLenses ''Port
@@ -31,21 +42,40 @@ data DraggedPort = DraggedPort { _draggedPort       :: Port
 makeLenses ''DraggedPort
 instance ToJSON DraggedPort
 
-portId :: Lens' Port API.PortId
-portId = port . API.portId
+type PortsMap = Map PortId Port
 
-name :: Lens' Port String
-name = port . API.name
+toPortsMap :: [Port] -> Map PortId Port
+toPortsMap = Map.fromList . map (view portId &&& id)
 
-valueType :: Lens' Port TypeRep
-valueType = port . API.valueType
 
-state :: Lens' Port API.PortState
-state = port . API.state
 
-fromPorts :: NodeId -> [API.Port] -> [Port]
-fromPorts nodeId ports = fromPort nodeId <$> ports
+countInPorts :: [PortId] -> Int
+countInPorts = foldl (\acc pid -> acc + if isInPort pid then 1 else 0) 0
 
-fromPort :: NodeId -> API.Port -> Port
-fromPort nodeId p = Port portRef' p (Color.fromPort p) False True where
-    portRef' = toAnyPortRef nodeId $ p ^. API.portId
+countOutPorts :: [PortId] -> Int
+countOutPorts = foldl (\acc pid -> acc + if isOutPort pid then 1 else 0) 0
+
+countArgPorts :: [PortId] -> Int
+countArgPorts = foldl (\acc pid -> acc + if isArg pid then 1 else 0) 0
+
+countProjectionPorts :: [PortId] -> Int
+countProjectionPorts = foldl (\acc pid -> acc + if isProjection pid then 1 else 0) 0
+
+
+instance Convertible Empire.Port Port where
+    convert p = Port
+        {- portId    -} (p ^. Empire.portId)
+        {- name      -} (p ^. Empire.name)
+        {- nodeType  -} (p ^. Empire.valueType)
+        {- state     -} (p ^. Empire.state)
+        {- color     -} (Color.fromType $ p ^. Empire.valueType)
+        {- highlight -} False
+        {- visible   -} True
+        {- isEdited  -} False
+
+instance Convertible Port Empire.Port where
+    convert p = Empire.Port
+        {- portId    -} (p ^. portId)
+        {- name      -} (p ^. name)
+        {- nodeType  -} (p ^. valueType)
+        {- state     -} (p ^. state)

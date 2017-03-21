@@ -41,8 +41,11 @@ toAnyPortRef nid (InPortId pid)  = InPortRef'  $ InPortRef  nid pid
 toAnyPortRef nid (OutPortId pid) = OutPortRef' $ OutPortRef nid pid
 
 makeLenses ''AnyPortRef
+makePrisms ''AnyPortRef
 makeLenses ''OutPortRef
+makePrisms ''OutPortRef
 makeLenses ''InPortRef
+makePrisms ''InPortRef
 
 instance Binary AnyPortRef
 instance Binary InPortRef

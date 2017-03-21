@@ -9,6 +9,7 @@ import           GHCJS.Prim                                 (JSException)
 import qualified JS.Debug
 import           JS.WebSocket                               (WebSocket)
 import           Luna.Studio.Action.Command                 (Command, execCommand)
+import           Luna.Studio.Action.State.App               (renderIfNeeded)
 import           Luna.Studio.Event.Event                    (Event)
 import qualified Luna.Studio.Event.Event                    as Event
 import           Luna.Studio.Event.Loop                     (LoopRef)
@@ -101,7 +102,7 @@ processEvent loop ev = modifyMVar_ (loop ^. Loop.state) $ \state -> do
     timestamp <- getCurrentTime
     let state' = state & Global.lastEventTimestamp .~ timestamp
     handle (handleExcept state realEvent) $ do
-        newState <- execCommand (runCommands (actions loop) realEvent >> Global.renderIfNeeded) state'
+        newState <- execCommand (runCommands (actions loop) realEvent >> renderIfNeeded) state'
         when displayProcessingTime $
             consoleTimeEnd (realEvent ^. Event.name)
         return newState

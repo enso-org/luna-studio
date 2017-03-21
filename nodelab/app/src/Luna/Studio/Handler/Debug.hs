@@ -1,7 +1,6 @@
+-- TODO[LJK, PM]: Remove or restore
 {-# OPTIONS_GHC -fno-warn-unused-binds #-}
-
 {-# LANGUAGE OverloadedStrings #-}
-
 module Luna.Studio.Handler.Debug
     ( handle
     , handleEv
@@ -40,10 +39,10 @@ handle _ = Nothing
 
 handleEv :: Event -> Maybe (Command Global.State ())
 handleEv ev = Just $
-    -- Global.lastEvent ?= ev
-    -- Global.eventNum  += 1
+    -- Global.debug . Global.lastEvent ?= ev
+    -- Global.debug . Global.eventNum  += 1
     when shouldExportState $ do
-        evN <- use Global.eventNum
+        evN <- use $ Global.debug . Global.eventNum
         liftIO $ do
             processedEvent evN
             val <- toJSVal $ toJSON ev

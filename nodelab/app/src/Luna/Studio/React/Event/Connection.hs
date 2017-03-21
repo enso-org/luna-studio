@@ -2,10 +2,10 @@
 
 module Luna.Studio.React.Event.Connection where
 
-import           Data.Aeson                 (FromJSON, ToJSON)
-import           Empire.API.Data.Connection (ConnectionId)
+import           Data.Aeson                         (FromJSON, ToJSON)
 import           Luna.Studio.Prelude
-import           React.Flux                 (MouseEvent)
+import           Luna.Studio.React.Model.Connection (ConnectionId)
+import           React.Flux                         (MouseEvent)
 
 
 

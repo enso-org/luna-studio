@@ -3,7 +3,6 @@ module Luna.Studio.React.View.Connection where
 
 import           Data.Position                      (Position, averagePosition, x, y)
 import           Empire.API.Data.PortRef            (InPortRef)
-import           Luna.Studio.Action.Geometry        (connectionWidth)
 import qualified Luna.Studio.Event.UI               as UI
 import           Luna.Studio.Prelude
 import           Luna.Studio.React.Event.Connection (ModifiedEnd (Destination, Source))
@@ -12,6 +11,7 @@ import           Luna.Studio.React.Model.App        (App)
 import           Luna.Studio.React.Model.Connection (Connection, CurrentConnection)
 import qualified Luna.Studio.React.Model.Connection as Connection
 import           Luna.Studio.React.Store            (Ref, dispatch)
+import qualified Luna.Studio.React.View.Style       as Style
 import           Numeric                            (showFFloat)
 import           React.Flux                         as React
 
@@ -40,29 +40,46 @@ line src dst b = do
 
 connection :: ReactView (Ref App, Connection)
 connection = React.defineView name $ \(ref, model) -> do
-    let connId      = model ^. Connection.connectionId
-        src         = model ^. Connection.from
-        dst         = model ^. Connection.to
-        mid         = averagePosition src dst
-        color       = "stroke"      $= convert (model ^. Connection.color)
-        width       = "strokeWidth" $= show2  connectionWidth
-        widthSelect = "strokeWidth" $= show2 (connectionWidth * 4)
-        eventSrc    = onMouseDown $ \e m -> stopPropagation e : dispatch ref (UI.ConnectionEvent $ Connection.MouseDown m connId Source)
-        eventDst    = onMouseDown $ \e m -> stopPropagation e : dispatch ref (UI.ConnectionEvent $ Connection.MouseDown m connId Destination)
+    let connId   = model ^. Connection.connectionId
+        src      = model ^. Connection.srcPos
+        dst      = model ^. Connection.dstPos
+        mid      = averagePosition src dst
+        eventSrc = onMouseDown $ \e m -> stopPropagation e : dispatch ref (UI.ConnectionEvent $ Connection.MouseDown m connId Source)
+        eventDst = onMouseDown $ \e m -> stopPropagation e : dispatch ref (UI.ConnectionEvent $ Connection.MouseDown m connId Destination)
     g_
-        [ "className" $= "luna-connection"
-        , "key"       $= "connection"] $ do
-        line src dst [ width, color ]
+        [ "key"       $= "connection"
+        , "className" $= Style.prefix "connection"
+        ] $ do
+        line src dst
+            [ "key"       $= "line"
+            , "className" $= Style.prefix "connection__line"
+            , "stroke"    $= convert (model ^. Connection.color)
+            ]
         g_
-            [ "className" $= "luna-connection__src"
-            , "key"       $= "src" ] $ do
-            line src mid [ width, "key" $= "1" ]
-            line src mid [ widthSelect, eventSrc, "key" $= "2" ]
+            [ "className" $= Style.prefix "connection__src"
+            , "key"       $= "src"
+            ] $ do
+            line src mid
+                [ "key"       $= "1"
+                , "className" $= Style.prefix "connection__line"
+                ]
+            line src mid
+                [ "key"       $= "2"
+                , "className" $= Style.prefix "connection__select"
+                , eventSrc
+                ]
         g_
-            [ "className" $= "luna-connection__dst"
+            [ "className" $= Style.prefix "connection__dst"
             , "key" $= "dst" ] $ do
-            line mid dst [ width, "key" $= "1" ]
-            line mid dst [ widthSelect, eventDst, "key" $= "2" ]
+            line mid dst
+                [ "key"       $= "1"
+                , "className" $= Style.prefix "connection__line"
+                ]
+            line mid dst
+                [ "key"       $= "2"
+                , "className" $= Style.prefix "connection__select"
+                , eventDst
+                ]
 
 connection_ :: Ref App -> InPortRef -> Connection -> ReactElementM ViewEventHandler ()
 connection_ ref inPortRef model = React.viewWithSKey connection (jsShow inPortRef) (ref, model) mempty
@@ -71,9 +88,8 @@ currentConnection :: ReactView CurrentConnection
 currentConnection = React.defineView name $ \model -> do
     let src   = model ^. Connection.currentFrom
         dst   = model ^. Connection.currentTo
-        color = "stroke"      $= convert (model ^. Connection.currentColor)
-        width = "strokeWidth" $= show2 connectionWidth
-    line src dst [ width, color ]
+        color = "stroke" $= convert (model ^. Connection.currentColor)
+    line src dst [ color, "className" $= Style.prefix "connection__line" ]
 
-currentConnection_ :: CurrentConnection -> ReactElementM ViewEventHandler ()
-currentConnection_ model = React.viewWithSKey currentConnection "current-connection" model mempty
+currentConnection_ :: Int -> CurrentConnection -> ReactElementM ViewEventHandler ()
+currentConnection_ key model = React.viewWithSKey currentConnection (fromString $ "current-connection" <> show key) model mempty

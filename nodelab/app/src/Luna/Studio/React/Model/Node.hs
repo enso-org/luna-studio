@@ -1,98 +1,172 @@
 {-# LANGUAGE DeriveAnyClass    #-}
 {-# LANGUAGE OverloadedStrings #-}
-module Luna.Studio.React.Model.Node (
-    module Luna.Studio.React.Model.Node,
-    NodeAPI.NodeId
-) where
+{-# LANGUAGE RankNTypes        #-}
+{-# OPTIONS_GHC -fno-warn-orphans  #-}
+module Luna.Studio.React.Model.Node
+    ( module Luna.Studio.React.Model.Node
+    , NodeId
+    , NodeType (..)
+    ) where
 
-import           Control.Arrow
-import           Data.Aeson                        (ToJSON)
-import           Data.Map.Lazy                     (Map)
-import qualified Data.Map.Lazy                     as Map
-import           Data.Time.Clock                   (UTCTime)
+import           Control.Arrow                        ((&&&))
+import           Data.Convert                         (Convertible (convert))
+import           Data.HashMap.Strict                  (HashMap)
+import qualified Data.HashMap.Strict                  as HashMap
+import           Data.Map.Lazy                        (Map)
+import qualified Data.Map.Lazy                        as Map
+import           Data.Position                        (Position, fromTuple, toTuple)
+import           Data.Time.Clock                      (UTCTime)
+import           Empire.API.Data.MonadPath            (MonadPath)
+import           Empire.API.Data.Node                 (NodeId, NodeType (..))
+import qualified Empire.API.Data.Node                 as Empire
+import           Empire.API.Data.NodeMeta             (NodeMeta (NodeMeta))
+import qualified Empire.API.Data.NodeMeta             as NodeMeta
+import           Empire.API.Graph.CollaborationUpdate (ClientId)
+import           Empire.API.Graph.NodeResultUpdate    (NodeValue)
+import           Luna.Studio.Prelude
+import           Luna.Studio.React.Model.Port         (Port, PortId, PortsMap, isInPort)
+import qualified Luna.Studio.React.Model.Port         as Port
+import           Luna.Studio.State.Collaboration      (ColorId)
 
-import           Data.Position                     (Position (Position), Vector2 (Vector2))
-import           Empire.API.Data.Node              (NodeType)
-import qualified Empire.API.Data.Node              as NodeAPI
-import qualified Empire.API.Data.NodeMeta          as MetaAPI
-import           Empire.API.Data.Port              (PortId (..))
-import           Empire.API.Graph.Collaboration    (ClientId)
-import           Empire.API.Graph.NodeResultUpdate (NodeValue)
-import           Luna.Studio.Prelude               hiding (set)
-import           Luna.Studio.React.Model.Port      (Port)
-import qualified Luna.Studio.React.Model.Port      as Port
-import           Luna.Studio.State.Collaboration   (ColorId)
 
-
-
-data Node = Node { _nodeId                :: NodeAPI.NodeId
-                 , _ports                 :: Map PortId Port
-                 , _position              :: Position
-                 , _zPos                  :: Int
-                 , _expression            :: Text
-                 , _code                  :: Maybe Text
+data Node = Node { _nodeId                :: NodeId
                  , _name                  :: Text
-                 , _nameEdit              :: Maybe Text
-                 , _value                 :: Maybe NodeValue
                  , _nodeType              :: NodeType
-                 , _isExpanded            :: Bool
-                 , _isSelected            :: Bool
+                 , _canEnter              :: Bool
+                 , _ports                 :: PortsMap
+                 , _position              :: Position
                  , _visualizationsEnabled :: Bool
-                 , _collaboration         :: Collaboration
-                 , _execTime              :: Maybe Integer
-                 } deriving (Eq, Show, Typeable, Generic, NFData)
+                 , _code                  :: Maybe Text
 
-type CollaborationMap = Map ClientId UTCTime
+                 , _value                 :: Maybe NodeValue
+                 , _zPos                  :: Int
+                 , _isSelected            :: Bool
+                 , _mode                  :: Mode
+                 , _nameEdit              :: Maybe Text
+                 , _execTime              :: Maybe Integer
+                 , _collaboration         :: Collaboration
+                 } deriving (Eq, Generic, NFData, Show)
+
+data Mode = Collapsed
+          | Expanded ExpandedMode
+          deriving (Eq, Generic, NFData, Show)
+
+data ExpandedMode = Editor
+                  | Controls
+                  | Function [Subgraph]
+                  deriving (Eq, Generic, NFData, Show)
+
+data Subgraph = Subgraph
+    { _nodes       :: NodesMap
+    , _monads      :: [MonadPath]
+    } deriving (Default, Eq, Generic, NFData, Show)
+
 data Collaboration = Collaboration { _touch  :: Map ClientId (UTCTime, ColorId)
-                                   , _modify :: CollaborationMap
-                                   } deriving (Eq, Show, Generic, NFData)
+                                   , _modify :: Map ClientId  UTCTime
+                                   } deriving (Default, Eq, Generic, NFData, Show)
+
+type NodesMap = HashMap NodeId Node
+
 makeLenses ''Node
+makeLenses ''Subgraph
 makeLenses ''Collaboration
 
-isLiteral :: Getter Node Bool
-isLiteral = to isLiteral' where
-    isLiteral' node = not $ any isIn' portIds where
-        portIds = Map.keys $ node ^. ports
-        isIn' :: PortId -> Bool
-        isIn' (OutPortId _) = False
-        isIn' (InPortId  _) = True
+instance Convertible Empire.Node Node where
+    convert n = Node
+        {- nodeId                -} (n ^. Empire.nodeId)
+        {- name                  -} (n ^. Empire.name)
+        {- nodeType              -} (n ^. Empire.nodeType)
+        {- canEnter              -} (n ^. Empire.canEnter)
+        {- ports                 -} (convert <$> n ^. Empire.ports)
+        {- position              -} (fromTuple $ n ^. Empire.position)
+        {- visualizationsEnabled -} (n ^. Empire.nodeMeta . NodeMeta.displayResult)
+        {- code                  -} (n ^. Empire.code)
 
-instance ToJSON Node
-instance ToJSON Collaboration
+        {- value                 -} def
+        {- zPos                  -} def
+        {- isSelected            -} False
+        {- mode                  -} def
+        {- nameEdit              -} def
+        {- execTime              -} def
+        {- collaboration         -} def
 
-instance Default Collaboration where
-    def = Collaboration def def
 
-makeNode :: NodeAPI.NodeId -> Map PortId Port -> Position -> Text -> Maybe Text -> Text -> NodeType -> Bool -> Node
-makeNode nid ports' pos expr code' name' tpe' vis = Node nid ports' pos def expr code' name' def def tpe' False False vis def Nothing
+instance Convertible Node Empire.Node where
+    convert n = Empire.Node
+        {- nodeId                -} (n ^. nodeId)
+        {- name                  -} (n ^. name)
+        {- nodeType              -} (n ^. nodeType)
+        {- canEnter              -} (n ^. canEnter)
+        {- ports                 -} (convert <$> n ^. ports)
+        {- nodeMeta              -} (NodeMeta.NodeMeta (toTuple $ n ^. position) (n ^. visualizationsEnabled))
+        {- code                  -} (n ^. code)
 
-makePorts :: NodeAPI.Node -> [Port]
-makePorts node = Port.fromPorts (node ^. NodeAPI.nodeId) (Map.elems $ node ^. NodeAPI.ports)
 
-fromNode :: NodeAPI.Node -> Node
-fromNode n = makeNode nodeId' ports' position' expression' code' name' nodeType' vis where
-    position' = Position (uncurry Vector2 $ n ^. NodeAPI.nodeMeta ^. MetaAPI.position)
-    nodeId'     = n ^. NodeAPI.nodeId
-    name'       = n ^. NodeAPI.name
-    vis         = n ^. NodeAPI.nodeMeta . MetaAPI.displayResult
-    code'       = n ^. NodeAPI.code
-    nodeType'   = n ^. NodeAPI.nodeType
-    ports'      = Map.fromList $ map (view Port.portId &&& id) $ makePorts n
-    expression' = case n ^. NodeAPI.nodeType of
-        NodeAPI.ExpressionNode expr     -> expr
-        NodeAPI.InputNode      inputIx  -> convert $ "Input " <> show inputIx
-        NodeAPI.OutputNode     outputIx -> convert $ "Output " <> show outputIx
-        NodeAPI.ModuleNode              -> "Module"
-        NodeAPI.FunctionNode _          -> "Function" -- & value .~ (convert $ intercalate " -> " tpeSig) --TODO[react]
-        NodeAPI.InputEdge               -> "Input"
-        NodeAPI.OutputEdge              -> "Output"
+instance Convertible (Position, Bool) NodeMeta where
+    convert (pos, dispRes) = NodeMeta (toTuple pos) dispRes
+
+instance Convertible NodeMeta (Position, Bool) where
+    convert (NodeMeta pos dispRes) = (fromTuple pos, dispRes)
+
+
+instance Convertible (NodeId, Position, Bool) (NodeId, NodeMeta) where
+    convert (nid, pos, dispRes) = (nid, convert (pos, dispRes))
+
+instance Convertible (NodeId, NodeMeta) (NodeId, Position, Bool) where
+    convert (nid, NodeMeta pos dispRes) = (nid, fromTuple pos, dispRes)
+
+instance Default Mode where def = Collapsed
+
+toNodesMap :: [Node] -> NodesMap
+toNodesMap = HashMap.fromList . map (view nodeId &&& id)
 
 
 isEdge :: Node -> Bool
 isEdge node = isInputEdge node || isOutputEdge node
 
 isInputEdge :: Node -> Bool
-isInputEdge node = node ^. nodeType == NodeAPI.InputEdge
+isInputEdge node = node ^. nodeType == InputEdge
 
 isOutputEdge :: Node -> Bool
-isOutputEdge node = node ^. nodeType == NodeAPI.OutputEdge
+isOutputEdge node = node ^. nodeType == OutputEdge
+
+isMode :: Mode -> Node -> Bool
+isMode mode' node = node ^. mode == mode'
+
+isExpanded :: Node -> Bool
+isExpanded node = case node ^. mode of
+    Expanded _ -> True
+    _          -> False
+
+isExpandedControls :: Node -> Bool
+isExpandedControls = isMode (Expanded Controls)
+
+isExpandedFunction :: Node -> Bool
+isExpandedFunction node = case node ^. mode of
+    Expanded (Function _) -> True
+    _                     -> False
+
+isCollapsed :: Node -> Bool
+isCollapsed = isMode Collapsed
+
+isLiteral :: Node -> Bool
+isLiteral node = not $ any isInPort portIds where
+    portIds = Map.keys $ node ^. ports
+
+getPorts :: Node -> [Port]
+getPorts = Map.elems . view ports
+
+hasPort :: PortId -> Node -> Bool
+hasPort pid = Map.member pid . view ports
+
+countInPorts :: Node -> Int
+countInPorts = Port.countInPorts . Map.keys . (view ports)
+
+countOutPorts :: Node -> Int
+countOutPorts = Port.countOutPorts . Map.keys . (view ports)
+
+countArgPorts :: Node -> Int
+countArgPorts = Port.countArgPorts . Map.keys . (view ports)
+
+countProjectionPorts :: Node -> Int
+countProjectionPorts = Port.countProjectionPorts . Map.keys . (view ports)

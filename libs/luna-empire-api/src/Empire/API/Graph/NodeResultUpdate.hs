@@ -1,18 +1,20 @@
 module Empire.API.Graph.NodeResultUpdate where
 
-import           Prologue                      hiding (TypeRep, Text)
 import           Data.Binary                   (Binary)
 import           Data.Text                     (Text)
 import           Prologue                      hiding (Text, TypeRep)
+import           Prologue                      hiding (Text, TypeRep)
 
-import qualified Empire.API.Data.DefaultValue  as DV (Value)
 import           Empire.API.Data.Error         (Error)
 import           Empire.API.Data.GraphLocation (GraphLocation)
 import           Empire.API.Data.Node          (NodeId)
+import qualified Empire.API.Data.PortDefault   as PD (Value)
 import           Empire.API.Data.TypeRep       (TypeRep)
 import qualified Empire.API.Topic              as T
 
-data NodeValue = Value Text [DV.Value] | Error (Error TypeRep) deriving (Show, Eq, Generic, NFData)
+
+data NodeValue = Value Text [PD.Value] | Error (Error TypeRep) deriving (Show, Eq, Generic, NFData)
+makePrisms ''NodeValue
 
 data Update = Update { _location  :: GraphLocation
                      , _nodeId    :: NodeId

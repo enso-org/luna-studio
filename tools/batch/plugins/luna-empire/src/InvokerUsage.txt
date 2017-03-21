@@ -1,7 +1,7 @@
 Usage:
   luna-empire-invoker addNode        <pid> <lid> <expression> <x> <y>
   luna-empire-invoker removeNode     <pid> <lid> <nodeId>
-  luna-empire-invoker updateNodeMeta <pid> <lid> <nodeId>     <x> <y> <req>
+  luna-empire-invoker setNodeMeta <pid> <lid> <nodeId>     <x> <y> <req>
   luna-empire-invoker connect        <pid> <lid> <srcNodeId> <outPort> <dstNodeId> <inPort>
   luna-empire-invoker setValue       <pid> <lid> <nodeId>    <portId>  <value>
   luna-empire-invoker disconnect     <pid> <lid>                       <dstNodeId> <inPort>

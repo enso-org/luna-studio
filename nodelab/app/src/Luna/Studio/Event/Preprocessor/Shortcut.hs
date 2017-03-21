@@ -13,12 +13,12 @@ import           Luna.Studio.Event.UI             (UIEvent (AppEvent, SearcherEv
 import           Luna.Studio.Prelude
 import qualified Luna.Studio.React.Event.App      as App
 import qualified Luna.Studio.React.Event.Searcher as Searcher
-
+import qualified React.Flux                       as React
 
 
 process :: Event -> Maybe Event
 process (UI (AppEvent      (App.KeyDown      e))) = Shortcut . flip Shortcut.Event def <$> handleKeyApp e
-process (UI (SearcherEvent (Searcher.KeyDown e))) = Shortcut . flip Shortcut.Event def <$> handleKeySearcher e
+process (UI (SearcherEvent (Searcher.KeyDown e))) = UI . SearcherEvent <$> handleKeySearcher e
 process _ = Nothing
 
 isEventHandled :: KeyboardEvent -> Bool
@@ -42,21 +42,24 @@ handleKeyApp evt
     | Keys.withCtrlShift    evt Keys.zero       = Just CenterGraph
     | Keys.withoutMods      evt Keys.h          = Just CenterGraph
     -- navigation
+    | Keys.withCtrl         evt Keys.esc        = Just ExitGraph
+    | Keys.withCtrlShift    evt Keys.downArrow  = Just GoConeDown
+    | Keys.withCtrlShift    evt Keys.leftArrow  = Just GoConeLeft
+    | Keys.withCtrlShift    evt Keys.rightArrow = Just GoConeRight
+    | Keys.withCtrlShift    evt Keys.upArrow    = Just GoConeUp
+    | Keys.withoutMods      evt Keys.downArrow  = Just GoDown
+    | Keys.withoutMods      evt Keys.leftArrow  = Just GoLeft
+    | Keys.withoutMods      evt Keys.rightArrow = Just GoRight
+    | Keys.withoutMods      evt Keys.upArrow    = Just GoUp
     | Keys.withShift        evt Keys.leftArrow  = Just GoPrev
     | Keys.withShift        evt Keys.rightArrow = Just GoNext
-    | Keys.withoutMods      evt Keys.leftArrow  = Just GoLeft
-    | Keys.withoutMods      evt Keys.upArrow    = Just GoUp
-    | Keys.withoutMods      evt Keys.rightArrow = Just GoRight
-    | Keys.withoutMods      evt Keys.downArrow  = Just GoDown
-    | Keys.withCtrlShift    evt Keys.leftArrow  = Just GoConeLeft
-    | Keys.withCtrlShift    evt Keys.upArrow    = Just GoConeUp
-    | Keys.withCtrlShift    evt Keys.rightArrow = Just GoConeRight
-    | Keys.withCtrlShift    evt Keys.downArrow  = Just GoConeDown
     -- nodes
     | Keys.withCtrl         evt Keys.a          = Just SelectAll
+    | Keys.withCtrl         evt Keys.e          = Just UnfoldSelectedNodes
     | Keys.withoutMods      evt Keys.backspace  = Just RemoveSelectedNodes
     | Keys.withoutMods      evt Keys.del        = Just RemoveSelectedNodes
     | Keys.withoutMods      evt Keys.enter      = Just ExpandSelectedNodes
+    | Keys.withoutMods      evt Keys.space      = Just EditSelectedNodes
     -- searcher
     | Keys.withoutMods evt Keys.tab             = Just SearcherOpen
     -- undo / redo
@@ -66,12 +69,13 @@ handleKeyApp evt
     --
     | otherwise                                 = Nothing
 
-handleKeySearcher :: KeyboardEvent -> Maybe Command
+handleKeySearcher :: KeyboardEvent -> Maybe Searcher.Event
 handleKeySearcher evt
-    | Keys.withoutMods evt Keys.esc       = Just Cancel
-    | Keys.withoutMods evt Keys.backspace = Just SearcherMoveLeft
-    | Keys.withoutMods evt Keys.downArrow = Just SearcherMoveDown
-    | Keys.withoutMods evt Keys.enter     = Just SearcherAccept
-    | Keys.withoutMods evt Keys.tab       = Just SearcherMoveRight
-    | Keys.withoutMods evt Keys.upArrow   = Just SearcherMoveUp
-    | otherwise                           = Nothing
+    | Keys.withoutMods   evt Keys.backspace = Just   Searcher.MoveLeft
+    | Keys.withoutMods   evt Keys.downArrow = Just   Searcher.MoveDown
+    | Keys.withoutMods   evt Keys.enter     = Just   Searcher.Accept
+    | Keys.withCtrl      evt Keys.enter     = Just   Searcher.AcceptInput
+    | Keys.digitWithCtrl evt                = Just $ Searcher.AcceptEntry $ (React.keyCode evt) - Keys.zero
+    | Keys.withoutMods   evt Keys.tab       = Just   Searcher.EditEntry
+    | Keys.withoutMods   evt Keys.upArrow   = Just   Searcher.MoveUp
+    | otherwise                             = Nothing

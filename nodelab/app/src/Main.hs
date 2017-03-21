@@ -33,7 +33,7 @@ runApp chan socket = do
         Engine.scheduleInit loop
         appRef <- Store.createApp $ Engine.scheduleEvent loop
         React.reactRender Config.mountPoint (App.app appRef) ()
-        let initState = mkState initTime clientId random appRef
+        let initState = mkState appRef clientId initTime random
                       & Global.workspace . Workspace.lastUILocation .~ lastLocation
         state <- newMVar initState
         Engine.connectEventSources socket loop

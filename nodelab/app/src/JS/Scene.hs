@@ -3,8 +3,9 @@
 module JS.Scene where
 
 import           Control.Exception      (handle)
-import           Data.ScreenPosition    (ScreenPosition (ScreenPosition), Vector2 (Vector2))
-import           Data.Size              (Size (Size))
+import           Data.ScreenPosition    (ScreenPosition, fromDoubles)
+import           Data.Size              (Size)
+import qualified Data.Size              as Size
 import           GHCJS.Foreign.Callback
 import           GHCJS.Types            (JSException (JSException))
 
@@ -77,16 +78,13 @@ outputSidebarTop    = liftIO $ elementTop    outputSidebarId
 
 get :: MonadIO m => m (Maybe Scene)
 get = liftIO . handle (\JSException {} -> return Nothing) $ do
-    scenePos   <- ScreenPosition .: Vector2 <$> sceneLeft <*> sceneTop
-    sceneSiz   <- Size .: Vector2 <$> sceneWidth <*> sceneHeight
-    inputSPos  <- handle (\JSException {} -> return Nothing) $ Just <$> (ScreenPosition .: Vector2 <$> inputSidebarLeft <*> inputSidebarTop)
-    inputSSiz  <- handle (\JSException {} -> return Nothing) $ Just <$> (Size .: Vector2 <$> inputSidebarWidth <*> inputSidebarHeight)
-    outputSPos <- handle (\JSException {} -> return Nothing) $ Just <$> (ScreenPosition .: Vector2 <$> outputSidebarLeft <*> outputSidebarTop)
-    outputSSiz <- handle (\JSException {} -> return Nothing) $ Just <$> (Size .: Vector2 <$> outputSidebarWidth <*> outputSidebarHeight)
-    let inputSidebar = if isJust inputSPos && isJust inputSSiz then
-                Just $ InputSidebar (fromJust inputSPos) (fromJust inputSSiz)
-            else Nothing
-        outputSidebar = if isJust outputSPos && isJust outputSSiz then
-                Just $ OutputSidebar (fromJust outputSPos) (fromJust outputSSiz)
-            else Nothing
-    return $ Just $ Scene scenePos sceneSiz inputSidebar outputSidebar
+    scenePos   <-      fromDoubles <$> sceneLeft <*> sceneTop
+    sceneSiz   <- Size.fromDoubles <$> sceneWidth <*> sceneHeight
+    inputSPos  <- handle (\JSException {} -> return Nothing) $ Just <$> (     fromDoubles <$> inputSidebarLeft   <*> inputSidebarTop)
+    inputSSiz  <- handle (\JSException {} -> return Nothing) $ Just <$> (Size.fromDoubles <$> inputSidebarWidth  <*> inputSidebarHeight)
+    outputSPos <- handle (\JSException {} -> return Nothing) $ Just <$> (     fromDoubles <$> outputSidebarLeft  <*> outputSidebarTop)
+    outputSSiz <- handle (\JSException {} -> return Nothing) $ Just <$> (Size.fromDoubles <$> outputSidebarWidth <*> outputSidebarHeight)
+    return $ Just $ Scene scenePos
+                          sceneSiz
+                          (InputSidebar  <$> inputSPos  <*> inputSSiz)
+                          (OutputSidebar <$> outputSPos <*> outputSSiz)

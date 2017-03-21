@@ -7,7 +7,6 @@ import           Prologue
 import           Control.Monad.State   (StateT)
 import qualified Data.Binary           as Bin
 import           Data.ByteString       (ByteString)
-import           Data.ByteString       (ByteString)
 import           Data.ByteString.Lazy  (fromStrict)
 import           Data.Map.Strict       (Map)
 import qualified Data.Map.Strict       as Map
@@ -24,26 +23,25 @@ type Handler = ByteString -> StateT Env BusT ()
 
 handlersMap :: Map String Handler
 handlersMap = Map.fromList
-    [ makeHandler Graph.handleAddNode
+    [ makeHandler Graph.handleAddConnection
+    , makeHandler Graph.handleAddNode
     , makeHandler Graph.handleAddPort
     , makeHandler Graph.handleAddSubgraph
-    , makeHandler Graph.handleRemoveNodes
-    , makeHandler Graph.handleRemovePort
-    , makeHandler Graph.handleMovePort
-    , makeHandler Graph.handleUpdateNodeExpression
-    , makeHandler Graph.handleUpdateNodeMeta
-    , makeHandler Graph.handleRenameNode
-    , makeHandler Graph.handleConnect
-    , makeHandler Graph.handleDisconnect
     , makeHandler Graph.handleDumpGraphViz
     , makeHandler Graph.handleGetProgram
-    , makeHandler Graph.handleNodeSearch
+    , makeHandler Graph.handleGetSubgraphs
+    , makeHandler Graph.handleMovePort
+    , makeHandler Graph.handleRemoveConnection
     , makeHandler Graph.handleRemoveNodes
+    , makeHandler Graph.handleRemovePort
     , makeHandler Graph.handleRenameNode
-    , makeHandler Graph.handleSetDefaultValue
+    , makeHandler Graph.handleRenamePort
+    , makeHandler Graph.handleSearchNodes
+    , makeHandler Graph.handleSetNodeCode
+    , makeHandler Graph.handleSetNodeExpression
+    , makeHandler Graph.handleSetNodesMeta
+    , makeHandler Graph.handleSetPortDefault
     , makeHandler Graph.handleTypecheck
-    , makeHandler Graph.handleUpdateNodeExpression
-    , makeHandler Graph.handleUpdateNodeMeta
     , makeHandler Library.handleCreateLibrary
     , makeHandler Library.handleListLibraries
     , makeHandler Project.handleCreateProject

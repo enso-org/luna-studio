@@ -1,63 +1,50 @@
-module Empire.Data.BreadcrumbHierarchy (
-      BreadcrumbHierarchy
-    , empty
-    , replaceAt
-    , navigateTo
-    , addID
-    , addWithLeafs
-    , removeID
-    , topLevelIDs
-    ) where
+module Empire.Data.BreadcrumbHierarchy where
 
-import           Empire.Prelude hiding (at)
-
-import           Data.List (delete, filter, find)
-import           Data.Tree
+import           Empire.Prelude
 
 import           Empire.API.Data.Breadcrumb (Breadcrumb (..), BreadcrumbItem (..))
 import           Empire.API.Data.Node       (NodeId)
 
+import           Empire.Data.AST            (NodeRef)
 
-newtype BreadcrumbHierarchy = BC (Forest NodeId) deriving (Eq, Show)
+import           Data.Map                   (Map)
+import qualified Data.Map                   as Map
 
-empty :: BreadcrumbHierarchy
-empty = BC []
+data NodeIDTarget = MatchNode     NodeRef
+                  | AnonymousNode NodeRef
+                  deriving (Show, Eq)
 
-replaceAt :: Breadcrumb BreadcrumbItem -> BreadcrumbHierarchy -> BreadcrumbHierarchy -> Maybe BreadcrumbHierarchy
-replaceAt (Breadcrumb bs) (BC forest) (BC hierarchy) = BC <$> go bs forest hierarchy
-    where
-      go :: [BreadcrumbItem] -> Forest NodeId -> Forest NodeId -> Maybe (Forest NodeId)
-      go [] newForest _ = Just newForest
-      go (Lambda b:bs) newForest forest = case find (\(Node l _) -> b == l) forest of
-          Just a@(Node b f) -> case go bs newForest f of
-              Just x -> Just $ Node b x : delete a forest
-              _      -> Nothing
-          _                 -> Nothing
+getAnyRef :: NodeIDTarget -> NodeRef
+getAnyRef (MatchNode ref)     = ref
+getAnyRef (AnonymousNode ref) = ref
 
-navigateTo :: BreadcrumbHierarchy -> Breadcrumb BreadcrumbItem -> Maybe BreadcrumbHierarchy
-navigateTo (BC forest) (Breadcrumb breadcrumbs) = BC <$> go forest nodeIds
-    where
-      nodeIds = map (\(Lambda id) -> id) breadcrumbs
-      go :: Forest NodeId -> [NodeId] -> Maybe (Forest NodeId)
-      go forest [] = Just forest
-      go forest (b:bs) | Just f <- at b forest = go f bs
-                       | otherwise = Nothing
+newtype BreadcrumbHierarchy = BC { _items :: Map NodeId BItem } deriving (Show, Eq)
 
-at :: NodeId -> Forest NodeId -> Maybe (Forest NodeId)
-at nid forest = snd <$> find ((==) nid . fst) topLevel
-    where
-      topLevel = map (\a -> (rootLabel a, subForest a)) forest
+data BItem = BItem { _children    :: Map NodeId BItem
+                   , _portMapping :: Maybe (NodeId, NodeId)
+                   , _self        :: Maybe (NodeId, NodeIDTarget)
+                   , _body        :: Maybe NodeRef
+                   } deriving (Show, Eq)
 
-addID :: NodeId -> BreadcrumbHierarchy -> BreadcrumbHierarchy
-addID nodeid (BC hierarchy) = BC $ Node nodeid [] : hierarchy
+makeLenses ''BItem
 
-addWithLeafs :: NodeId -> [NodeId] -> BreadcrumbHierarchy -> BreadcrumbHierarchy
-addWithLeafs nodeid leafs (BC hierarchy) = BC $ Node nodeid children : hierarchy
-    where
-        children = map (\nid -> Node nid []) leafs
+instance Default BItem where
+    def = BItem def def def def
 
-removeID :: NodeId -> BreadcrumbHierarchy -> BreadcrumbHierarchy
-removeID nodeid (BC hierarchy) = BC $ filter (\(Node nid _) -> nid /= nodeid) hierarchy
+navigateTo :: BItem -> Breadcrumb BreadcrumbItem -> Maybe BItem
+navigateTo b (Breadcrumb crumbs) = go crumbs b where
+    go [] b = pure b
+    go (Lambda id : crumbs) b = do
+        child <- b ^. children . at id
+        go crumbs child
 
-topLevelIDs :: BreadcrumbHierarchy -> [NodeId]
-topLevelIDs (BC f) = map (\(Node nid _) -> nid) f
+replaceAt :: Breadcrumb BreadcrumbItem -> BItem -> BItem -> Maybe BItem
+replaceAt (Breadcrumb crumbs) par child = go crumbs par child where
+    go [] par child = pure child
+    go (Lambda id : crumbs) par child = do
+        rep <- par ^. children . at id
+        new <- go crumbs rep child
+        return $ par & children . at id ?~ new
+
+topLevelIDs :: BItem -> [NodeId]
+topLevelIDs = Map.keys . view children

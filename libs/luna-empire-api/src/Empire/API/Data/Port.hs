@@ -1,10 +1,10 @@
 module Empire.API.Data.Port where
 
-import Prologue                     hiding (TypeRep)
-import Data.Binary                  (Binary)
+import           Data.Binary                 (Binary)
+import           Prologue                    hiding (TypeRep)
 
-import Empire.API.Data.DefaultValue (PortDefault)
-import Empire.API.Data.TypeRep      (TypeRep)
+import           Empire.API.Data.PortDefault (PortDefault)
+import           Empire.API.Data.TypeRep     (TypeRep)
 
 data InPort  = Self | Arg Int        deriving (Generic, Show, Eq, Read, NFData)
 data OutPort = All  | Projection Int deriving (Generic, Show, Eq, Read, NFData)
@@ -14,6 +14,7 @@ instance Binary OutPort
 
 data PortId = InPortId InPort | OutPortId OutPort deriving (Generic, Show, Read, Eq, NFData)
 
+makePrisms ''PortId
 instance Ord PortId where
   (InPortId  _) `compare` (OutPortId _) = LT
   (OutPortId _) `compare` (InPortId  _) = GT
@@ -46,10 +47,32 @@ instance Binary PortId
 instance Binary Port
 instance Binary PortState
 
-isInputPort :: Port -> Bool
-isInputPort port = case port ^. portId of
-    InPortId _ -> True
-    _          -> False
+isInPort :: PortId -> Bool
+isInPort (InPortId _) = True
+isInPort _            = False
 
-isOutputPort :: Port -> Bool
-isOutputPort = not . isInputPort
+isOutPort :: PortId -> Bool
+isOutPort (OutPortId _) = True
+isOutPort _             = False
+
+
+isSelf :: PortId -> Bool
+isSelf (InPortId Self) = True
+isSelf _               = False
+
+isArg :: PortId -> Bool
+isArg (InPortId (Arg _)) = True
+isArg _                  = False
+
+isAll :: PortId -> Bool
+isAll (OutPortId All) = True
+isAll _               = False
+
+isProjection :: PortId -> Bool
+isProjection (OutPortId (Projection _)) = True
+isProjection _                          = False
+
+getPortNumber :: PortId -> Int
+getPortNumber (InPortId  (Arg i))        = i
+getPortNumber (OutPortId (Projection i)) = i
+getPortNumber _                          = 0

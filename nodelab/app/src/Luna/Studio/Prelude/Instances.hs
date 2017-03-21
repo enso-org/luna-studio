@@ -9,14 +9,12 @@ import           Data.HashMap.Strict      (HashMap)
 import qualified Data.HashMap.Strict      as HashMap
 import           Data.JSString            (JSString)
 import qualified Data.JSString            as JSString
-import qualified Data.Map.Strict          as Map
 import           Development.Placeholders
 import           Empire.API.JSONInstances ()
 import           Prologue
 import           React.Flux
 import           React.Flux.Store         (ReactStoreRef)
 
-import           Data.UUID.Types          (UUID)
 import           Empire.API.Data.Port     (InPort, OutPort)
 import           Empire.API.Data.PortRef  (AnyPortRef, InPortRef, OutPortRef)
 
@@ -30,6 +28,9 @@ instance ToJSON   MouseEvent where
     toJSON _ = toJSON "(MouseEvent)"
 instance FromJSON MouseEvent where
     parseJSON = $notImplemented
+
+instance Read KeyboardEvent where
+    readPrec = error "Read KeyboardEvent"
 
 instance ToJSON   KeyboardEvent where
     toJSON _ = toJSON "(KeyboardEvent)"
@@ -68,18 +69,13 @@ instance Convertible String JSString where
 instance Convertible JSString String where
     convert = JSString.unpack
 
-instance ToJSON b => ToJSON (HashMap UUID b) where
-    toJSON = toJSON . Map.fromList . HashMap.toList
+instance (Eq k, Hashable k, ToJSON k, ToJSON v) => ToJSON (HashMap k v) where
+    toJSON = toJSON . HashMap.toList
     {-# INLINE toJSON #-}
 
-instance ToJSON b => ToJSON (HashMap AnyPortRef b) where
-    toJSON = toJSON . Map.fromList . HashMap.toList
-    {-# INLINE toJSON #-}
-
-instance ToJSON b => ToJSON (HashMap InPortRef b) where
-    toJSON = toJSON . Map.fromList . HashMap.toList
-    {-# INLINE toJSON #-}
-
+instance (Eq k, FromJSON k, FromJSON v, Hashable k) => FromJSON (HashMap k v) where
+    parseJSON = fmap HashMap.fromList . parseJSON
+    {-# INLINE parseJSON #-}
 -- ======= Data.HashMap ========================================================
 
 instance Default (HashMap a b) where def = HashMap.empty

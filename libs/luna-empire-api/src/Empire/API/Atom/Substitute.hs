@@ -19,10 +19,20 @@ data Request = Request { _filePath :: FilePath
 type Response = Response.SimpleResponse Request ()
 instance Response.ResponseResult Request () ()
 
+data Update = Update { _filePath' :: FilePath
+                     , _start'    :: Int
+                     , _end'      :: Int
+                     , _newText'  :: Text
+                     , _cursor'   :: Maybe Int
+                     } deriving (Generic, Eq, NFData, Show)
+
 makeLenses ''Request
+makeLenses ''Update
 
 instance Binary Request
+instance Binary Update
 
 topicPrefix = "empire.atom.file.substitute"
 instance T.MessageTopic (R.Request Request)  where topic _ = topicPrefix <> T.request
-instance T.MessageTopic Response where topic _ = topicPrefix <> T.response
+instance T.MessageTopic Response             where topic _ = topicPrefix <> T.response
+instance T.MessageTopic Update               where topic _ = topicPrefix <> T.response

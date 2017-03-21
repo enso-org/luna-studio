@@ -21,7 +21,7 @@ data Result  = Result  { _graph            :: Graph
                        , _breadcrumb       :: Breadcrumb (Named BreadcrumbItem)
                        , _nodeSearcherData :: Items Node
                        } deriving (Generic, Eq, NFData, Show)
-
+ 
 type Response = Response.Response Request () Result
 instance Response.ResponseResult Request () Result
 

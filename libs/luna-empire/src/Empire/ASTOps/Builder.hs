@@ -16,14 +16,17 @@ import           Control.Monad                      (foldM, replicateM)
 import           Data.Maybe                         (isNothing)
 import           Empire.Prelude
 
+import           Empire.API.Data.Node               (NodeId)
+import           Empire.API.Data.PortRef            (OutPortRef(..))
+import qualified Empire.API.Data.Port               as Port
 import           Empire.ASTOp                       (ASTOp, match)
 import           Empire.ASTOps.Deconstruct          (deconstructApp, extractArguments, dumpAccessors)
 import           Empire.ASTOps.Remove               (removeSubtree)
 import           Empire.Data.AST                    (NodeRef, astExceptionFromException,
                                                      astExceptionToException)
-import           Empire.Data.Layers                 (NodeMarker(..), Marker)
+import           Empire.Data.Layers                 (Marker)
 
-import           Luna.IR.Expr.Term.Uni
+import           Luna.IR.Term.Uni
 import qualified Luna.IR as IR
 
 
@@ -76,7 +79,7 @@ reapply funRef args = do
     apps fun args
 
 buildAccessors :: ASTOp m => NodeRef -> [String] -> m NodeRef
-buildAccessors = foldM $ \t n -> IR.generalize <$> IR.strAcc n t
+buildAccessors = foldM $ \t n -> IR.acc' t (stringToName n)
 
 data SelfPortNotExistantException = SelfPortNotExistantException NodeRef
     deriving (Show)
@@ -108,12 +111,12 @@ removeAccessor ref = do
     case names of
         []     -> throwM $ SelfPortNotConnectedException ref
         n : ns -> do
-            v   <- IR.generalize <$> IR.strVar n
+            v   <- IR.var' $ stringToName n
             acc <- buildAccessors v ns
             if null args then return acc else reapply acc args
 
-makeNodeRep :: ASTOp m => NodeMarker -> String -> NodeRef -> m NodeRef
+makeNodeRep :: ASTOp m => NodeId -> String -> NodeRef -> m NodeRef
 makeNodeRep marker name node = do
-    (nameVar :: NodeRef) <- IR.generalize <$> IR.strVar name
-    IR.writeLayer @Marker (Just marker) nameVar
+    nameVar <- IR.var' $ stringToName name
+    IR.writeLayer @Marker (Just $ OutPortRef marker Port.All) nameVar
     IR.generalize <$> IR.unify nameVar node
