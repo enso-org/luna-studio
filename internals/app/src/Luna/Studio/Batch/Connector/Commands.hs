@@ -53,6 +53,8 @@ import           Luna.Studio.Batch.Workspace            (currentLocation)
 import           Luna.Studio.Prelude
 
 
+import Data.Text (unpack, pack)
+
 withLibrary :: Workspace -> (GraphLocation -> a) -> a
 withLibrary w f = f $ w ^. currentLocation
 
@@ -99,7 +101,14 @@ setProject rootPath uuid guiID = sendRequest $ Message uuid guiID $ SetProject.R
 substitute :: FilePath -> Int -> Int -> Text -> Maybe Int -> UUID -> Maybe UUID -> IO ()
 substitute path start end text cursor uuid guiID = do
   putStrLn "Commands substitute"
-  sendRequest $ Message uuid guiID $ Substitute.Request path start end text cursor
+  putStrLn $ show start
+  putStrLn "after text show"
+  let path1 = "/home/sylwia/project/doublerep/nodelab/atom/test.luna"
+      start1 = 0
+      end1 = 0
+      text1 = "a"
+      cursor1 = Just 1
+  sendRequest $ Message uuid guiID $ Substitute.Request path1 start1 end1 (pack text1) cursor1
   putStrLn "Commands substitute 2"
 
 --

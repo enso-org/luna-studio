@@ -14,17 +14,17 @@ module.exports =
   activate: ->
     internal.start(websocket)
     rootPath = atom.project.getPaths().shift()
-    # if rootPath != ""
-    #   internal.pushInternalEvent("SetProject " + rootPath)
+    if rootPath != ""
+      internal.pushInternalEvent("SetProject " + rootPath)
     atom.workspace.addOpener (uri) ->
 
       if path.extname(uri) is '.luna'
-        # internal.pushInternalEvent("OpenFile " + uri)
+        internal.pushInternalEvent("OpenFile " + uri)
 
         atom.workspace.open().then (@editor) ->
           @buffer = @editor.buffer
           @buffer.setPath(uri)
-          # internal.pushInternalEvent("GetBuffer " + uri) ##todo  odbierz bufor i go ustaw, zapnij się na eventy związane z kopiowaniem tekstu
+          internal.pushInternalEvent("GetBuffer " + uri) ##todo  odbierz bufor i go ustaw, zapnij się na eventy związane z kopiowaniem tekstu
           withoutTrigger = (callback) ->
             @triggerPush = false
             callback()
@@ -55,7 +55,7 @@ module.exports =
                       text: event.newText
                       cursor: buffer.characterIndexForPosition(@editor.getCursorBufferPosition())
               console.log(diff)
-              internal.pushText(diff)
+              internal.pushText({uri: "/home/sylwia/project/doublerep/nodelab/atom/test2.luna", start: 0, end: 0, text: "x", cursor: 1})
 
         atom.workspace.getActivePane().activateItem new LunaStudioTab(uri, code, websocket)
 

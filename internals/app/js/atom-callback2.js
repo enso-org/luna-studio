@@ -57,19 +57,27 @@ module.exports = function () {
       });
     },
     getPath: function(data) {
-      data.uri;
+      console.log(data)
+      return data.uri;
     },
     getStart: function(data) {
-      data.start;
+      console.log(data)
+      return data.start;
     },
     getStop: function(data) {
-      data.end;
+      console.log(data)
+
+      return data.end;
     },
     getText: function(data) {
-      data.text;
+      console.log(data)
+
+      return data.text;
     },
     getCursor: function(data) {
-      data.cursor;
+      console.log(data)
+      
+      return data.cursor;
     },
 
   };
