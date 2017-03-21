@@ -8,14 +8,13 @@ import           Data.Maybe                            (mapMaybe)
 import qualified Empire.API.Data.MonadPath             as MonadPath
 import           JS.Scene                              (sceneId)
 import qualified Luna.Studio.Data.CameraTransformation as CameraTransformation
-import           Luna.Studio.Data.Matrix               (matrix3dPropertyValue)
+import           Luna.Studio.Data.Matrix               (showCameraScale, showCameraTranslate, showCameraMatrix)
 import           Luna.Studio.Event.Event               (Event (Shortcut))
 import qualified Luna.Studio.Event.Shortcut            as Shortcut
 import qualified Luna.Studio.Event.UI                  as UI
 import           Luna.Studio.Prelude                   hiding (transform)
 import qualified Luna.Studio.React.Event.NodeEditor    as NE
 import           Luna.Studio.React.Model.App           (App)
-import           Luna.Studio.React.Model.Constants     (connectionWidth)
 import           Luna.Studio.React.Model.Node          (isEdge)
 import           Luna.Studio.React.Model.NodeEditor    (NodeEditor)
 import qualified Luna.Studio.React.Model.NodeEditor    as NodeEditor
@@ -29,11 +28,18 @@ import           Luna.Studio.React.View.Searcher       (searcher_)
 import           Luna.Studio.React.View.SelectionBox   (selectionBox_)
 import qualified Luna.Studio.React.View.Style          as Style
 import           Luna.Studio.React.View.Visualization  (pinnedVisualization_)
+import           Numeric                               (showFFloat)
 import           React.Flux                            hiding (transform)
 import qualified React.Flux                            as React
 
 name :: JSString
 name = "node-editor"
+
+show1 :: Double -> String
+show1 a = showFFloat (Just 1) a "" -- limit Double to two decimal numbers
+
+show4 :: Double -> String
+show4 a = showFFloat (Just 4) a "" -- limit Double to two decimal numbers
 
 nodeEditor_ :: Ref App -> NodeEditor -> ReactElementM ViewEventHandler ()
 nodeEditor_ ref ne = React.viewWithSKey nodeEditor name (ref, ne) mempty
@@ -46,40 +52,67 @@ nodeEditor = React.defineView name $ \(ref, ne) -> do
                          , m ^. MonadPath.path . to (mapMaybe $ flip HashMap.lookup $ ne ^. NodeEditor.nodes))
         monads         = map lookupNode $ ne ^. NodeEditor.monads
         scale          = (Matrix.toList camera)!!0 :: Double
+
     div_
-        [ "className"   $= Style.prefix "graph"
-        , "id"          $= sceneId
-        , "key"         $= "graph"
+        [ "className" $= Style.prefix "graph"
+        , "id"        $= sceneId
+        , "key"       $= "graph"
         , onMouseDown   $ \_ e   -> dispatch ref $ UI.NodeEditorEvent $ NE.MouseDown e
         , onDoubleClick $ \_ _   -> dispatch' ref $ Shortcut $ Shortcut.Event Shortcut.ExitGraph def
         , onWheel       $ \e m w -> preventDefault e : dispatch ref (UI.NodeEditorEvent $ NE.Wheel m w)
         , onScroll      $ \e     -> [preventDefault e]
         ] $ do
-        style_ [ "key" $= "style" ] $ do
-            elemString $ ".luna-selection  { box-shadow: 0 0 0 " <> show (0.52/(scale**1.5)) <> "px orange !important }"
-            elemString $ ".luna-node-trans { transform: " <> matrix3dPropertyValue camera <> " }"
-            elemString $ ".luna-connection__line { stroke-width: " <> show connectionWidth <> " }"
+
+-- dynamic styles
+
+        style_
+            [ "key" $= "style"
+            ] $ do
+
+            elemString $ ":root { font-size: " <> show scale <> "px }"
+            elemString $ ":root { --scale: "   <> show scale <> " }"
+
+            --elemString $ ".luna-selection  { box-shadow: 0 0 0 " <> show (0.52/(scale**1.5)) <> "px orange !important }"
+
+            elemString $ ".luna-camera-scale { transform: "     <> showCameraScale     camera <> " }"
+            elemString $ ".luna-camera-translate { transform: " <> showCameraTranslate camera <> " }"
+            elemString $ ".luna-camera-transform { transform: " <> showCameraMatrix    camera <> " }"
+
+            elemString $ ".luna-connection__line { stroke-width: "   <> show (1.6 + (1 / scale)) <> " }"
+            elemString $ ".luna-connection__select { stroke-width: " <> show (10/scale)          <> " }"
+
+            --collapsed nodes
+            elemString $ ".luna-port-io-shape-mask { r: "  <> show (19.2 + (0.8 / scale)) <> "px }"
+            elemString $ ".luna-port-io-select-mask { r: " <> show (19.2 + (0.8 / scale)) <> "px }"
+
+            --expanded nodes
+            elemString $ "circle.luna-port__shape { r: " <> show (3 + (1 / scale)) <> "px }"
+
             forM_ (ne ^. NodeEditor.nodes . to HashMap.elems) $ nodeDynamicStyles_ camera
+
+-- monads and connections
+
         svg_
-            [ "className" $= Style.prefixFromList [ "plane", "plane--monads" ]
-            , "key"       $= "monads"
-            ] $
+            [ "className" $= Style.prefix "svg-planes"
+            , "key"       $= "svgPlanes"
+            ] $ do
             g_
-                [ "className" $= Style.prefixFromList [ "monads", "node-trans" ]
-                ] $ forKeyed_ monads $ monad_ (length monads)
-        svg_
-            [ "className" $= Style.prefixFromList [ "plane", "plane-connections" ]
-            , "key"       $= "connections"
-            ] $
+                [ "className" $= Style.prefixFromList [ "plane", "plane--monads", "camera-transform" ]
+                , "key"       $= "monads"
+                ] $
+                forKeyed_ monads $ monad_ (length monads)
             g_
-                [ "key"       $= "connections"
-                , "className" $= Style.prefixFromList [ "connections", "node-trans" ]
+                [ "className" $= Style.prefixFromList [ "plane", "plane--connections", "camera-transform" ]
+                , "key"       $= "connections"
                 ] $ do
                 mapM_ (uncurry (connection_ ref))  $ ne ^. NodeEditor.connections . to HashMap.toList
                 mapM_ (uncurry (connection_ ref))  $ ne ^. NodeEditor.portDragConnections . to HashMap.toList
                 mapM_ (uncurry currentConnection_) $ keyed $ ne ^. NodeEditor.currentConnections
                 mapM_ selectionBox_                $ ne ^. NodeEditor.selectionBox
                 mapM_ connectionPen_               $ ne ^. NodeEditor.connectionPen
+
+-- nodes
+
         div_
             [ "className" $= Style.prefixFromList [ "plane", "plane--nodes" ]
             , "key"       $= "nodes"
@@ -87,7 +120,13 @@ nodeEditor = React.defineView name $ \(ref, ne) -> do
             forM_ nodes $ node_ ref
             forM_ (ne ^. NodeEditor.visualizations) $ pinnedVisualization_ ref ne
             mapM_ (searcher_ ref camera) $ ne ^. NodeEditor.searcher
+
+-- port sidebars
+
         forM_ edges $ edgeSidebar_ ref (ne ^. NodeEditor.draggedPort)
+
+-- connection pen
+
         canvas_
             [ "className" $= Style.prefixFromList [ "plane", "plane--canvas", "hide" ]
             , "key"       $= "canvas"

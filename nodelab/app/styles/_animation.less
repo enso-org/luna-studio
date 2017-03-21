@@ -5,20 +5,27 @@
 /////////////////////////////
 
 .luna-blur,
-.luna-node__main,
 .luna-node__properties,
 .luna-node__properties-crop,
 .luna-port__shape {
     transition: all @transitionSpeed ease-out;
 }
 
+.luna-node__container {
+    transition: left   @selectionSpeed  ease-out,
+                top    @selectionSpeed  ease-out,
+                width  @transitionSpeed ease-out,
+                height @transitionSpeed ease-out;
+}
+
 .luna-selection {
     transition: left          @selectionSpeed  ease-out,
                 top           @selectionSpeed  ease-out,
+                bottom        @selectionSpeed  ease-out,
+                right         @selectionSpeed  ease-out,
                 width         @selectionSpeed  ease-out,
                 height        @selectionSpeed  ease-out,
                 opacity       @selectionSpeed  ease-out,
-                box-shadow    0ms              linear,
                 border-radius @transitionSpeed ease-out;
 }
 

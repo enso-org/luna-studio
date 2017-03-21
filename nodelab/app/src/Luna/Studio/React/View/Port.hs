@@ -11,6 +11,7 @@ import qualified Luna.Studio.React.Event.Port      as Port
 import           Luna.Studio.React.Model.App       (App)
 import           Luna.Studio.React.Model.Constants (lineHeight, nodeRadius, nodeRadius')
 import           Luna.Studio.React.Model.Node      (NodeId)
+--import           Luna.Studio.React.Model.Port (Port (..))
 import           Luna.Studio.React.Model.Port      (InPort (Self), OutPort (All), Port, PortId (InPortId, OutPortId), getPortNumber,
                                                     isInPort)
 import qualified Luna.Studio.React.Model.Port      as Port
@@ -22,6 +23,15 @@ import qualified React.Flux                        as React
 
 name :: JSString
 name = "port"
+
+typeOffsetX :: Double
+typeOffsetX = 40
+
+typeOffsetY1,typeOffsetY2,typeOffsetY3,typeOffsetY :: Double
+typeOffsetY1 = (-3.5)
+typeOffsetY2 = 4.5
+typeOffsetY3 = 12.5
+typeOffsetY  = 20.5
 
 selectAreaWidth :: Double
 selectAreaWidth = 8
@@ -88,62 +98,54 @@ portSelf_ ref nid p = do
         color     = convert $ p ^. Port.color
         highlight = if p ^. Port.highlight then ["hover"] else []
         visible   = p ^. Port.visible
-        className = Style.prefixFromList $ [ "port", "port--self" ] ++ highlight
-        r         = 5
-    if visible then
-        g_
-            [ "className" $= className ] $ do
-            circle_
-                [ "className" $= Style.prefix "port__shape"
-                , "key"       $= (jsShow portId <> "a")
-                , "fill"      $= color
-                , "r"         $= (fromString $ show r)
-                ] mempty
-            circle_
-                ( handlers ref portRef ++
-                  [ "className" $= Style.prefix "port__select"
-                  , "key"       $= (jsShow portId <> "b")
-                  , "r"         $= (fromString $ show $ r + lineHeight/2)
-                  ]
-                ) mempty
-    else g_
-            [ "className" $= className ] $ do
-            circle_
-                [ "className"   $= Style.prefixFromList [ "port__shape", "invisible" ]
-                , "key"         $= (jsShow portId <> "a")
-                , "fillOpacity" $= (fromString $ show (1 :: Int))
-                ] mempty
-            circle_
-                [ "className"   $= Style.prefixFromList [ "port__select", "invisible" ]
-                , "key"         $= (jsShow portId <> "b")
-                , "fillOpacity" $= (fromString $ show (1 :: Int))
-                ] mempty
+        className = Style.prefixFromList $ if visible then [ "port", "port--self" ] ++ highlight else [ "port", "port--self", "port--invisible" ]
+    g_
+        [ "className" $= className ] $ do
+        circle_
+            [ "className" $= Style.prefix "port__shape"
+            , "key"       $= (jsShow portId <> "a")
+            , "fill"      $= color
+            ] mempty
+        circle_
+            ( handlers ref portRef ++
+            [ "className" $= Style.prefix "port__select"
+            , "key"       $= (jsShow portId <> "b")
+            , "r"         $= jsShow2 (lineHeight/1.5)
+            ]) mempty
 
 portSingle_ :: Ref App -> NodeId -> Port -> ReactElementM ViewEventHandler ()
 portSingle_ ref nid p = do
     let portId    = p ^. Port.portId
         portRef   = toAnyPortRef nid portId
+        portType  = toString $ p ^. Port.valueType
+        isInput   = isInPort portId
         color     = convert $ p ^. Port.color
         highlight = if p ^. Port.highlight then ["hover"] else []
-        className = Style.prefixFromList $ [ "port", "port--o--single" ] ++ highlight
+        classes   = Style.prefixFromList $ [ "port", "port--o--single" ] ++ highlight
         r1 :: Double -> JSString
         r1 = jsShow2 . (+) nodeRadius
         r2 = jsShow2 nodeRadius'
         svgPath :: Double -> Integer -> Integer -> JSString
         svgPath a b c = "M0 -" <> r1 a <> " A " <> r1 a <> " " <> r1 a <> " 0 0 " <> jsShow b <> " 0 "  <> r1 a <>
                        " L0 "  <> r2   <> " A " <> r2   <> " " <> r2   <> " 1 0 " <> jsShow c <> " 0 -" <> r2   <> " Z "
-    g_ [ "className" $= className ] $ do
+    g_ [ "className" $= classes ] $ do
+        text_
+            [ "className" $= Style.prefixFromList [ "port__type", "noselect" ]
+            , "key"       $= (jsShow portId <> "-type")
+            , "y"         $= jsShow2 (-typeOffsetY1)
+            , "x"         $= jsShow2 (if isInput then (-typeOffsetX) else typeOffsetX)
+            ] $ elemString portType
         path_
             [ "className" $= Style.prefix "port__shape"
             , "key"       $= (jsShow portId <> "a" )
             , "fill"      $= color
-            , "d"         $= (svgPath 0 0 1 <> svgPath 0 1 0)
+            , "d"         $= (svgPath 20 0 1 <> svgPath 20 1 0)
             ] mempty
         path_
             ( handlers ref portRef ++
               [ "className" $= Style.prefix "port__select"
               , "key"       $= (jsShow portId <> "b")
-              , "d"         $= (svgPath lineHeight 0 1 <> svgPath lineHeight 1 0)
+              , "d"         $= (svgPath 20 0 1 <> svgPath 20 1 0)
               ]
             ) mempty
 
@@ -151,6 +153,7 @@ portIO_ :: Ref App -> NodeId -> Port -> Int -> ReactElementM ViewEventHandler ()
 portIO_ ref nid p numOfPorts = do
     let portId    = p ^. Port.portId
         portRef   = toAnyPortRef nid portId
+        portType  = toString $ p ^. Port.valueType
         isInput   = isInPort portId
         num       = getPortNumber portId
         color     = convert $ p ^. Port.color
@@ -160,13 +163,12 @@ portIO_ ref nid p numOfPorts = do
         svgFlag1  = if isInput then "1"  else "0"
         svgFlag2  = if isInput then "0"  else "1"
         mode      = if isInput then -1.0 else 1.0
---        n         = if isInput then 1 else 0
+--      n         = if isInput then 1 else 0
         adjust
-            | numOfPorts == 1 = (-3.5)
-            | numOfPorts == 2 =   4.5
-            | numOfPorts == 3 =  12.5
-            | otherwise       =  20.5
-        portType  = toString $ p ^. Port.valueType
+            | numOfPorts == 1 = typeOffsetY1
+            | numOfPorts == 2 = typeOffsetY2
+            | numOfPorts == 3 = typeOffsetY3
+            | otherwise       = typeOffsetY
         startPortArcX isShape r = r * sin(portAngleStart isShape num numOfPorts r * mode)
         startPortArcY isShape r = r * cos(portAngleStart isShape num numOfPorts r * mode)
         stopPortArcX  isShape r = r * sin(portAngleStop  isShape num numOfPorts r * mode)
@@ -191,19 +193,20 @@ portIO_ ref nid p numOfPorts = do
         ] $ do
         text_
             [ "className" $= Style.prefixFromList [ "port__type", "noselect" ]
+            , "key"       $= (jsShow portId <> "-type")
             , "y"         $= jsShow2 ((lineHeight * fromIntegral num) - adjust)
-            , "x"         $= (if isInput then "-40" else "40")
+            , "x"         $= jsShow2 (if isInput then (-typeOffsetX) else typeOffsetX)
             ] $ elemString portType
         path_
             [ "className" $= Style.prefix "port__shape"
-            , "key"       $= (jsShow portId <> "a")
+            , "key"       $= (jsShow portId <> "-shape")
             , "fill"      $= color
-            , "d"         $= svgPath True 0
+            , "d"         $= svgPath True 20
             ] mempty
         path_
             ( handlers ref portRef ++
               [ "className" $= Style.prefix "port__select"
-              , "key"       $= (jsShow portId <> "b")
+              , "key"       $= (jsShow portId <> "-select")
               , "d"         $= svgPath False lineHeight
               ]
             ) mempty
@@ -226,23 +229,24 @@ portIOExpanded_ ref nid p = if p ^. Port.portId == InPortId Self then portSelf_ 
         ] $ do
         text_
             [ "className" $= Style.prefixFromList [ "port__type", "noselect" ]
+            , "key"       $= (jsShow portId <> "-type")
             , "y"         $= py
-            , "dy"        $= "4"
-            , "dx"        $= (if isInput then "-16" else "176")
+            , "dy"        $= "4px"
+            , "dx"        $= (if isInput then "-16px" else "176px")
             ] $ elemString portType
         circle_
             [ "className" $= Style.prefix "port__shape"
-            , "key"       $= (jsShow portId <> jsShow num <> "a")
+            , "key"       $= (jsShow portId <> jsShow num <> "-shape")
             , "fill"      $= color
             , "r"         $= jsShow2 3
-            , "cy"        $= py
+            , "cy"        $= (py <> "px")
             ] mempty
         circle_
             ( handlers ref portRef ++
               [ "className" $= Style.prefix "port__select"
-              , "key"       $= (jsShow portId <> jsShow num <> "b")
+              , "key"       $= (jsShow portId <> jsShow num <> "-select")
               , "r"         $= jsShow2 (lineHeight/1.5)
-              , "cy"        $= py
+              , "cy"        $= (py <> "px")
               ]
             ) mempty
 

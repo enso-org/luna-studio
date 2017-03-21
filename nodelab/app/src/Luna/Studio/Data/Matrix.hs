@@ -2,7 +2,7 @@ module Luna.Studio.Data.Matrix where
 
 import           Data.Matrix         (Matrix)
 import qualified Data.Matrix         as Matrix
-import           Data.Position       (Position, x, y)
+import           Data.Position       (Position,  x, y)
 import           Data.ScreenPosition (ScreenPosition)
 import           Data.Vector         (Vector2)
 import           Luna.Studio.Prelude
@@ -48,21 +48,37 @@ invertedHomothetyMatrix pos k = Matrix.fromList 4 4 [ 1/k  , 0    , 0, 0
     hX = (1 - k) * pos ^. x
     hY = (1 - k) * pos ^. y
 
-translatePropertyValue :: Matrix Double -> String
-translatePropertyValue matrix = "translate(" <> nx <> "px, " <> ny <> "px)"
+showCameraTranslate :: Matrix Double -> String
+showCameraTranslate matrix = "translate(" <> show nx <> "px, " <> show ny <> "px)"
     where mx = Matrix.toList matrix
-          s  = mx!!0 :: Double
-          nx = show (round $ s * mx!!12 :: Integer)
-          ny = show (round $ s * mx!!13 :: Integer)
+          nx = mx!!12
+          ny = mx!!13
 
-translatePropertyValue2 :: Position ->  String
-translatePropertyValue2 position = "translate(" <> nx <> "px, " <> ny <> "px)"
-    where nx = show $ position ^. x
-          ny = show $ position ^. y
+showCameraScale :: Matrix Double -> String
+showCameraScale camera = "scale(" <> show scale <> ")"
+    where scale = (Matrix.toList camera)!!0
 
-matrix3dPropertyValue :: Matrix Double -> String
-matrix3dPropertyValue matrix = foldl (<>) "matrix3d(" (intersperse ", " $ map show mx2) <> ")"
-    where mx1 = Matrix.toList matrix
-          nx  = fromIntegral (round $ mx1!!12 :: Integer)
-          ny  = fromIntegral (round $ mx1!!13 :: Integer)
+showCameraMatrix :: Matrix Double -> String
+showCameraMatrix camera = foldl (<>) "matrix3d(" (intersperse ", " $ map show mx2) <> ")"
+    where mx1 = Matrix.toList camera
+          nx  = mx1!!12
+          ny  = mx1!!13
           mx2 = take 12 mx1 ++ nx:ny:drop 14 mx1
+
+showNodeMatrix :: Matrix Double -> Position -> String
+showNodeMatrix camera nodePos = foldl (<>) "matrix3d(" (intersperse ", " $ map show mx2) <> ")"
+    where mx1   = Matrix.toList camera
+          scale = mx1!!0
+          nx    = mx1!!12 + (scale * nodePos ^. x)
+          ny    = mx1!!13 + (scale * nodePos ^. y)
+          mx2   = take 12 mx1 ++ nx:ny:drop 14 mx1
+
+showNodeTranslate :: Matrix Double -> Position -> String
+showNodeTranslate camera nodePos = "translate(" <> show nx <> "px, " <> show ny <> "px)"
+    where mx1   = Matrix.toList camera
+          scale = mx1!!0
+          nx    = mx1!!12 + (scale * nodePos ^. x)
+          ny    = mx1!!13 + (scale * nodePos ^. y)
+
+--          x'    = fromInteger (round $ camX + (scale * posX) :: Integer)
+--          y'    = fromInteger (round $ camY + (scale * posY) :: Integer)

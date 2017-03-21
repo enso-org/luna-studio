@@ -19,14 +19,14 @@
 //          nodes          //
 /////////////////////////////
 
-.luna-node-root {
-  position: absolute;
-}
-
 .luna-node {
     position: absolute;
     width:    0;
     height:   0;
+}
+
+.luna-node__text {
+    top: -36rem !important;
 }
 
 .luna-node__name {
@@ -40,8 +40,8 @@
 }
 
 .luna-node__name--expression {
-    fill:    #888;
-    font-size: 12px;
+    fill:        #888;
+    font-size:   12px;
     line-height: 16px;
 }
 
@@ -53,9 +53,18 @@
         }
     }
 }
+.luna-port--self .luna-port__select {
+    r: 10;
+}
 
 .luna-port__select {
     opacity: 0;
+}
+
+.luna-port--invisible {
+    circle {
+        r: 0 !important;
+    }
 }
 
 // types
@@ -68,13 +77,14 @@
     text-anchor: end;
 }
 
-.luna-port--o {
+.luna-port--o,
+.luna-port--o--single {
     .luna-port__type {
         text-anchor: start;
     }
 }
 
-.luna-node-root:hover .luna-port__type { display: inherit }
+.luna-node:hover .luna-port__type { display: inherit }
 .luna-port:hover .luna-port__type { fill: #fff }
 
 
@@ -84,7 +94,7 @@
 
 .luna-node--expanded {
     z-index: 10000;
-    .luna-node__visuals {
+    .luna-node__vizzs {
         left: 0;
         top: -8px;
     }
@@ -94,13 +104,13 @@
     .luna-port--o {
         .luna-port__shape,
         .luna-port__select {
-            cx: @expandedNodeWidth;
+            cx: @expandedNodeWidthPx;
         }
         .luna-port__type {
             text-anchor: start;
         }
     }
-    .luna-node__main {
+    .luna-node__body {
         height: auto;
         width:  @expandedNodeWidth;
         left:   0;
@@ -111,7 +121,7 @@
         border-radius:   @borderRadius;
     }
     .luna-node__properties-crop {
-        max-height: 110px;
+        max-height: 110rem;
         max-width:  @expandedNodeWidth;
     }
     .luna-node__properties {
@@ -120,44 +130,43 @@
         opacity:       1;
         border-radius: @borderRadius;
         left:          0;
-        padding:       12px @expandedNodePadding 8px;
+        padding:       ~"calc(12px * var(--scale)) calc(12px * var(--scale)) calc(8px * var(--scale))";
     }
     .luna-selection {
         border-radius: 1px;
     }
 }
 
-.luna-node__main {
-    width:    40px;
-    height:   40px;
+.luna-node__body {
+    width:    40rem;
+    height:   40rem;
     position: relative;
-    top:     -20px;
-    left:    -20px;
+    top:     -20rem;
+    left:    -20rem;
 }
 
 .luna-node__properties-crop {
-    max-width:  40px;
-    max-height: 40px;
+    max-width:  40rem;
+    max-height: 40rem;
     overflow:   hidden;
 }
-.luna-node__properties,
-.luna-node__visuals {
-    font-size: 10px;
+.luna-node__properties *,
+.luna-node__vizzs * {
+    font-size: ~"calc(10px * var(--scale))";
 }
 
 .luna-node__properties {
     color:         @colorTextUneditable;
-    line-height:   @lineHeight;
-    width:         40px;
-    height:        40px;
+    line-height:   ~"calc(16px * var(--scale))";
+    width:         40rem;
+    height:        40rem;
     opacity:       1;
     position:      relative;
     left:          0;
-    border-radius: 20px;
+    border-radius: 20rem;
     overflow:      hidden;
-    padding:       12px @expandedNodePadding 8px (@expandedNodePadding + 20px);
     .luna-blur {
-        border-radius: 20px;
+        border-radius: 20rem;
     }
     .luna-row {
         display:         flex;
@@ -170,7 +179,7 @@
     }
 }
 
-.luna-node__visuals {
+.luna-node__vizzs {
     position: relative;
     left:    -30px;
     top:     -16px;
