@@ -22,7 +22,7 @@ localRemovePort :: AnyPortRef -> Command State Bool
 localRemovePort (OutPortRef' (OutPortRef nid pid@(Projection pos))) = do
     mayNode      <- getNode nid
     flip (maybe (return False)) mayNode $ \node ->
-        if (not $ isInputEdge node) || hasPort (OutPortId pid) node
+        if (not $ isInputEdge node) || (not $ hasPort (OutPortId pid) node)
             then return False
             else do
                 let oldPorts    = Map.elems $ Map.delete (OutPortId pid) $ node ^. ports
