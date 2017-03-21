@@ -58,13 +58,12 @@ node = React.defineView name $ \(ref, n) -> do
                                                         ++ (if n ^. Node.isSelected  then ["node--selected"] else []) )
         , "style"     @= Aeson.object [ "zIndex" Aeson..= show z ]
         , onMouseDown   $ handleMouseDown ref nodeId
-        , onDoubleClick $ \e _ -> [stopPropagation e]
+        , onClick       $ \_ m -> dispatch ref $ UI.NodeEvent $ Node.Select m nodeId
+        , onDoubleClick $ \e _ -> stopPropagation e : (dispatch ref $ UI.NodeEvent $ Node.Enter nodeId)
         ] $ do
         svg_
             [ "className" $= Style.prefix "node__text"
             , "key"       $= "nodeText"
-            , onClick       $ \_ m -> dispatch ref $ UI.NodeEvent $ Node.Select m nodeId
-            , onDoubleClick $ \_ _ -> dispatch ref $ UI.NodeEvent $ Node.Enter nodeId
             ] $
             g_
                 [ "className" $= Style.prefix "node-translate"
