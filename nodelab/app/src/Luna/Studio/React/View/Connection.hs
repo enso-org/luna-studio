@@ -22,6 +22,10 @@ name = "connection"
 show2 :: Double -> JSString
 show2 a = convert $ showFFloat (Just 2) a "" -- limit Double to two decimal numbers
 
+show0 :: Double -> JSString
+show0 a = convert $ showFFloat (Just 0) a "" -- limit Double to two decimal numbers
+
+
 --TODO: move & refactor: the list is inversed
 mergeList :: [a] -> [a] -> [a]
 mergeList [] [] = []
@@ -31,10 +35,10 @@ mergeList (x1:xs) ys = mergeList xs (x1:ys)
 
 line :: Position -> Position -> [PropertyOrHandler ViewEventHandler] -> ReactElementM ViewEventHandler ()
 line src dst b = do
-    let a = [ "x1" $= show2 (src ^. x)
-            , "y1" $= show2 (src ^. y)
-            , "x2" $= show2 (dst ^. x)
-            , "y2" $= show2 (dst ^. y)
+    let a = [ "x1" $= show0 (src ^. x)
+            , "y1" $= show0 (src ^. y)
+            , "x2" $= show0 (dst ^. x)
+            , "y2" $= show0 (dst ^. y)
             ]
     line_ (mergeList a b) mempty
 
