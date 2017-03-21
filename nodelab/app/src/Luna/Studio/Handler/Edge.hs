@@ -22,4 +22,4 @@ handle (UI (EdgeEvent (Edge.AddPort    portRef)))              = Just $ addPort 
 -- handle (UI (EdgeEvent (Edge.PortNameStartEdit portRef)))      = Just $ Edge.portNameEdit portRef True
 -- handle (UI (EdgeEvent (Edge.PortNameApply     portRef name))) = Just $ Batch.renamePort portRef name >> Edge.portNameEdit portRef False
 -- handle (UI (EdgeEvent (Edge.PortNameDiscard   portRef)))      = Just $ Edge.portNameEdit portRef False
-handle _                                                      = Nothing
+handle _ = Nothing

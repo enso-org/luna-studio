@@ -1,54 +1,75 @@
-
+w         = require './gen/websocket'
+websocket = w()
 LunaStudioTab = require './luna-studio-tab'
 SubAtom       = require 'sub-atom'
 c             = require "./gen/ghcjs-code.js"
 code = c()
+i             = require "./gen/ghcjs-code2.js"
+internal = i()
 path = require 'path'
 
 
 module.exports =
   activate: ->
+    internal.start(websocket)
     atom.workspace.addOpener (uri) ->
-        if path.extname(uri) is '.luna'
-            atom.workspace.open().then (@editor) ->
-                @buffer = @editor.buffer
-                listenToBufferChanges = ->
-                  @buffer.onDidChange(event) =>
-                    if !(event.newText is "\n") and (event.newText.length is 0)
-                      changeType : 'deletion'
-                      event : {oldRange: event.oldRange}
-                      cursor : @buffer.getCursorBufferPosition()
-                    else if event.oldRange.containsRange(event.newRange) or event.newRange.containsRange(event.oldRange)
-                      changeType : 'substitution'
-                      event : {oldRange: event.oldRange, newRange: event.newRange, newText: event.newText}
-                      cursor : @buffer.getCursorBufferPosition()
-                    else
-                      changeType : 'insertion'
-                      event : {newRange: event.newRange, newText: event.newText}
-                      cursor : @buffer.getCursorBufferPosition()
-                code.pushInternalEvent listenToBufferChanges
-                changeBuffer = (data) ->
-                  if data.event.newRange then newRange = Range.fromObject(data.event.newRange)
-                  if data.event.oldRange then oldRange = Range.fromObject(data.event.oldRange)
-                  if data.event.newText then newText = data.event.newText
 
-                  switch data.changeType
-                    when 'deletion'
-                      @buffer.delete oldRange
-                      actionArea = oldRange.start
-                    when 'substitution'
-                       @buffer.setTextInBufferRange oldRange, newText
-                       actionArea = oldRange.start
-                    else
-                      @buffer.insert newRange.start, newText
-                      actionArea = newRange.start
-                code.codeListener changeBuffer
+      if path.extname(uri) is '.luna'
+        internal.pushInternalEvent("openFile" + uri)
 
-            atom.workspace.getActivePane().activateItem new LunaStudioTab(uri, code)
+        atom.workspace.open().then (@editor) ->
+          @buffer = @editor.buffer
+          @buffer.setPath(uri)
+          internal.pushInternalEvent("getBuffer" + uri) ##todo  odbierz bufor i go ustaw, zapnij się na eventy związane z kopiowaniem tekstu
+
+          withoutTrigger = (callback) ->
+            @triggerPush = false
+            callback()
+            @triggerPush = true
+
+          setBuffer = (text) ->
+            withoutTrigger =>
+              @buffer.setText(text)
+            internal.bufferListener setBuffer
+
+          setCode = (uri_send, start_send, end_send, text) ->
+            withoutTrigger =>
+              if uri == uri_send
+                start = buffer.positionForCharacterIndex(start_send)
+                end = buffer.positionForCharacterIndex(end_send)
+                @buffer.setTextInRange [start, end], text
+                @editor.scrollToBufferPosition(start)
+            internal.codeListener setCode
+
+            @ss = new SubAtom
+            @ss.add @buffer.onDidChange (event) =>
+                return unless @triggerPush
+                if event.newText != '' or event.oldText != ''
+                    diff =
+                        uri: uri
+                        start: buffer.characterIndexForPosition(event.oldRange.start)
+                        end: buffer.characterIndexForPosition(event.oldRange.end)
+                        text: event.newText
+                        cursor: buffer.characterIndexForPosition(@editor.getCursorBufferPosition())
+                internal.pushText(diff)
+
+        atom.workspace.getActivePane().activateItem new LunaStudioTab(uri, code, websocket)
 
 
     @subs = new SubAtom
     @subs.add atom.commands.add '.luna-studio', 'luna-studio:cancel': -> code.pushEvent("Shortcut Cancel")
+    @subs.add atom.commands.add '.luna-studio', 'core:close':                    ->
+      activeFilePath =atom.workspace.getActivePaneItem().buffer.file.path
+      #   if atom.workspace.getActivePaneItem().buffer
+      #     atom.workspace.getActivePaneItem().buffer.file.path
+      #   else atom.workspace.getActivePane().activeItem.uri
+      internal.pushInternalEvent("CloseFile" + activeFilePath)
+    # @subs.add atom.commands.add '.luna-studio', 'core:save', (e)                 ->
+    #   activeFilePath = atom.workspace.getActivePaneItem().buffer.file.path
+    #   e.preventDefault()
+    #   e.stopPropagation()
+    #   internal.pushInternalEvent("SaveFile" + activeFilePath)
+    @subs.add atom.commands.add '.luna-studio', 'luna-studio:cancel':       -> code.pushEvent("Shortcut Cancel")
     # camera
     @subs.add atom.commands.add '.luna-studio', 'luna-studio:center-graph': -> code.pushEvent("Shortcut CenterGraph")
     @subs.add atom.commands.add '.luna-studio', 'luna-studio:pan-down':     -> code.pushEvent("Shortcut PanDown")
@@ -106,3 +127,4 @@ module.exports =
 
   deactivate: ->
     @subs.dispose()
+    @ss.dispose()

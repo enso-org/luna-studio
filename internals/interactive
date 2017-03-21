@@ -1,0 +1,54 @@
+#!/bin/bash
+
+# TODO: use `stack ghci`
+
+stack build --only-dependencies
+
+export PATH=`stack path --bin-path`
+
+ghcjs  -package-db $(stack path --snapshot-pkg-db) \
+       -package-db $(stack path --local-pkg-db)    \
+       -iapp/src/ \
+       -DGHCJS_BROWSER \
+       --interactive \
+       -fwarn-unused-imports \
+       -package base \
+       -package ghcjs-base \
+       -package ghcjs-dom \
+       -package text \
+       -package transformers \
+       -package matrix \
+       -package mtl \
+       -package lens \
+       -package containers \
+       -package random \
+       -package pretty-show \
+       -package convert \
+       -package process \
+       -package constraints \
+       -package errors \
+       -package vector \
+       -package aeson \
+       -package luna-empire-api \
+       -package datetime \
+       -XNoImplicitPrelude \
+       -XDoAndIfThenElse \
+       -XTemplateHaskell \
+       -XDeriveGeneric \
+       -XStandaloneDeriving \
+       -XFlexibleContexts \
+       -XMultiParamTypeClasses \
+       -XDefaultSignatures \
+       -XDeriveFunctor \
+       -XDeriveTraversable \
+       -XDeriveFoldable \
+       -XFlexibleInstances \
+       -XLambdaCase \
+       -XConstraintKinds \
+       -XGeneralizedNewtypeDeriving \
+       -XDeriveDataTypeable \
+       -XScopedTypeVariables \
+       -odir  ../../dist/ghcjs \
+       -hidir ../../dist/ghcjs \
+       -debug \
+       Main

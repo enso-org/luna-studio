@@ -1,0 +1,232 @@
+@import '_variables';
+
+/////////////////////////////
+//        utilities        //
+/////////////////////////////
+
+.luna-blur {
+    backdrop-filter: blur(0);
+    background:      rgba(255,255,255,0);
+    position:        absolute;
+    z-index:        -1;
+    top:             0;
+    left:            0;
+    height:          100%;
+    width:           100%;
+}
+
+/////////////////////////////
+//          nodes          //
+/////////////////////////////
+
+.luna-node-root {
+  position: absolute;
+}
+
+.luna-node {
+    position: absolute;
+    width:    0;
+    height:   0;
+}
+
+.luna-node__name {
+    fill:        @colorName;
+    text-anchor: middle;
+    font-weight: 300;
+    filter:      "url(#textShadow)";
+    &::selection {
+        background: none;
+    }
+}
+
+.luna-node__name--expression {
+    fill:    #888;
+    font-size: 12px;
+    line-height: 16px;
+}
+
+.luna-port {
+    stroke-width: 0;
+    &.luna-hover {
+        .luna-port__shape {
+            fill: #fff !important;
+        }
+    }
+}
+
+.luna-port__select {
+    opacity: 0;
+}
+
+// types
+
+.luna-port__type {
+    font-size:   10px;
+    line-height: 16px;
+    display:     none;
+    fill:        #888;
+    text-anchor: end;
+}
+
+.luna-port--o {
+    .luna-port__type {
+        text-anchor: start;
+    }
+}
+
+.luna-node-root:hover .luna-port__type { display: inherit }
+.luna-port:hover .luna-port__type { fill: #fff }
+
+
+/////////////////////////////
+//      node expanded      //
+/////////////////////////////
+
+.luna-node--expanded {
+    z-index: 10000;
+    .luna-node__visuals {
+        left: 0;
+        top: -8px;
+    }
+    .luna-port {
+        position: relative;
+    }
+    .luna-port--o {
+        .luna-port__shape,
+        .luna-port__select {
+            cx: @expandedNodeWidth;
+        }
+        .luna-port__type {
+            text-anchor: start;
+        }
+    }
+    .luna-node__main {
+        height: auto;
+        width:  @expandedNodeWidth;
+        left:   0;
+    }
+    .luna-blur {
+        backdrop-filter: blur(12px);
+        background:      rgba(40,40,40,.5);
+        border-radius:   @borderRadius;
+    }
+    .luna-node__properties-crop {
+        max-height: 110px;
+        max-width:  @expandedNodeWidth;
+    }
+    .luna-node__properties {
+        height:        auto;
+        width:         @expandedNodeWidth - 2 * @expandedNodePadding;
+        opacity:       1;
+        border-radius: @borderRadius;
+        left:          0;
+        padding:       12px @expandedNodePadding 8px;
+    }
+    .luna-selection {
+        border-radius: 1px;
+    }
+}
+
+.luna-node__main {
+    width:    40px;
+    height:   40px;
+    position: relative;
+    top:     -20px;
+    left:    -20px;
+}
+
+.luna-node__properties-crop {
+    max-width:  40px;
+    max-height: 40px;
+    overflow:   hidden;
+}
+.luna-node__properties,
+.luna-node__visuals {
+    font-size: 10px;
+}
+
+.luna-node__properties {
+    color:         @colorTextUneditable;
+    line-height:   @lineHeight;
+    width:         40px;
+    height:        40px;
+    opacity:       1;
+    position:      relative;
+    left:          0;
+    border-radius: 20px;
+    overflow:      hidden;
+    padding:       12px @expandedNodePadding 8px (@expandedNodePadding + 20px);
+    .luna-blur {
+        border-radius: 20px;
+    }
+    .luna-row {
+        display:         flex;
+        justify-content: space-between;
+        position:        relative;
+        width:           @expandedNodeWidth - 2 * @expandedNodePadding;
+    }
+    .luna-row--output-name {
+        justify-content: flex-end;
+    }
+}
+
+.luna-node__visuals {
+    position: relative;
+    left:    -30px;
+    top:     -16px;
+    width:    @expandedNodeWidth;
+    table {
+        border:          0;
+        width:           100%;
+        text-align:      left;
+        border-collapse: collapse;
+    }
+    td, th {
+        line-height: 20px;
+        padding:     0 12px;
+    }
+    th {
+        border-bottom: 2px solid rgba(255,255,255,.02);
+    }
+    tr {
+        &:nth-child(even) {
+            background: rgba(255,255,255,.0)
+        }
+    }
+}
+
+.luna-vis {
+    position: relative;
+    width:    @expandedNodeWidth;
+    height:   @expandedNodeWidth - 2 * @expandedNodePadding;
+    overflow: hidden;
+    .luna-scroll {
+        overflow: scroll;
+        height:   100%;
+    }
+}
+
+.luna-vis--graph {
+    position: relative;
+    svg {
+        position: relative;
+        top:      15px;
+        left:    -5px;
+        fill:     #666;
+        overflow: initial;
+    }
+}
+
+/////////////////////////////
+//          monad          //
+/////////////////////////////
+
+.luna-plane--monads {
+    opacity: .15;
+}
+
+.luna-monad {
+    stroke-width:    28px;
+    fill:            none;
+    stroke-linejoin: round;
+}

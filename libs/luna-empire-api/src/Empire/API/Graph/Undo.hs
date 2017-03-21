@@ -7,7 +7,7 @@ import           Empire.API.Data.GraphLocation (GraphLocation)
 import qualified Empire.API.Graph.Request      as G
 import qualified Empire.API.Topic              as T
 import qualified Empire.API.Response           as Response
-import qualified Empire.API.Request            as R
+import qualified Empire.API.Request             as R
 
 data UndoRequest  = UndoRequest deriving (Generic, Show, Eq, NFData)
 

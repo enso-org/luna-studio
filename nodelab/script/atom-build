@@ -7,7 +7,17 @@ cat vendor/uuid.js >> $GEN/ghcjs-code.js && \
 cat script/imports.js >> $GEN/ghcjs-code.js && \
 sed -f script/patch.sed app/env.ghcjs >> $GEN/ghcjs-code.js && \
 echo "});" >> $GEN/ghcjs-code.js && \
+
+echo "module.exports = (function(){" > $GEN/ghcjs-code2.js && \
+cat ../internals/vendor/uuid.js >> $GEN/ghcjs-code2.js && \
+cat ../internals/script/imports.js >> $GEN/ghcjs-code2.js && \
+sed -f ../internals/script/patch.sed ../internals/app/env2.ghcjs >> $GEN/ghcjs-code2.js && \
+echo "});" >> $GEN/ghcjs-code2.js && \
+
 cp -r app/js/* $GEN && \
+cp ../internals/app/js/atom-callback2.js $GEN && \
+cp ../internals/app/js/app2.coffee $GEN && \
+
 cp app/config.release.js $GEN && \
 cp app/config.debug.js $GEN && \
 STYLES=atom/styles && \

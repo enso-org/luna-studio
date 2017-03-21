@@ -1,0 +1,51 @@
+/////////////////////////////
+//         searcher        //
+/////////////////////////////
+
+.luna-searcher {
+    z-index: 100000000;
+}
+
+.luna-searcher__input {
+    font-weight:   300;
+    text-align:    center;
+    font-family:   @fontDefault;
+    font-size:     12px;
+    line-height:   12px;
+    height:        12px;
+    background:    @colorBackground;
+    color:         #fff;
+    transform:     translate(-50%, calc(-50% - 55px));
+    overflow:      inherit;
+    &:focus {
+        outline: 0;
+    }
+}
+
+.luna-searcher__results {
+    bottom:         30px;
+    display:        flex;
+    flex-direction: column-reverse;
+    position:       absolute;
+    width:          100%;
+    left: -50%;
+    text-align:     center;
+
+}
+
+.luna-searcher__results__item {
+    background:     #222;
+    line-height:    @gridSize;
+    display:        flex;
+    justify-content: center;
+    &:first-child {
+        border-bottom-right-radius: @borderRadius;
+        border-bottom-left-radius:  @borderRadius;
+        padding-bottom:             8px;
+    }
+    &:last-child {
+        border-top-right-radius: @borderRadius;
+        border-top-left-radius:  @borderRadius;
+        padding-top:             8px;
+    }
+}

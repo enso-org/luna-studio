@@ -1,0 +1,26 @@
+@import '_variables';
+
+/////////////////////////////
+//       connections       //
+/////////////////////////////
+
+.luna-connections {
+    stroke-linecap:  round;
+    stroke-linejoin: round;
+}
+.luna-connection__line {
+    stroke-width: @strokeWidth;
+}
+.luna-connection__src,
+.luna-connection__dst {
+    :first-child {
+        stroke: rgba(255,255,255,0);
+    }
+    &:hover :first-child {
+        stroke: #fff;
+    }
+    line {
+        opacity:        1;
+        stroke-linecap: butt;
+    }
+}

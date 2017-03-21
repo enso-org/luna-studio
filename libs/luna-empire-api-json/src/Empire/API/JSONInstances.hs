@@ -12,6 +12,12 @@ import qualified Data.UUID.Types                        as UUID
 import           Prologue
 import           Text.Read                              (readMaybe)
 
+import           Empire.API.Atom.GetBuffer              as GetBuffer
+import           Empire.API.Atom.Substitute             as Substitute
+import           Empire.API.Atom.CloseFile              as CloseFile
+import           Empire.API.Atom.OpenFile               as OpenFile
+import           Empire.API.Atom.SaveFile               as SaveFile
+import           Empire.API.Atom.SetProject             as SetProject
 import           Empire.API.Control.EmpireStarted       as EmpireStarted
 import           Empire.API.Data.Breadcrumb             as Breadcrumb
 import           Empire.API.Data.Connection             as Connection
@@ -179,6 +185,14 @@ instance ToJSON NodeTypecheckerUpdate.Update
 instance ToJSON Redo.RedoRequest
 instance ToJSON Redo.Request
 
+
+
+instance ToJSON GetBuffer.Request
+instance ToJSON GetBuffer.Result
+
+instance ToJSON Substitute.Request
+instance ToJSON Substitute.Update
+
 instance ToJSON RemoveConnection.Request
 instance ToJSON RemoveConnection.Inverse
 instance ToJSON RemoveConnection.Update
@@ -242,6 +256,14 @@ instance ToJSON ExportProject.Result
 
 instance ToJSON ImportProject.Request
 instance ToJSON ImportProject.Result
+
+instance ToJSON CloseFile.Request
+
+instance ToJSON OpenFile.Request
+
+instance ToJSON SaveFile.Request
+
+instance ToJSON SetProject.Request
 
 
 instance (ToJSON req, ToJSON res, ToJSON inv) => ToJSON (Response.Response req inv res)

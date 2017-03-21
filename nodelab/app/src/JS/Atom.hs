@@ -1,9 +1,7 @@
 {-# LANGUAGE JavaScriptFFI #-}
 module JS.Atom
     ( onEvent
-    , pushCode
     , pushNotification
-    -- , subscribeEventListenerInternal
     ) where
 import qualified Data.List                  as List
 import           GHCJS.Foreign.Callback
@@ -20,8 +18,9 @@ import           Text.Read                  (readMaybe)
 foreign import javascript safe "atomCallback.pushNotification($1, $2)"
   pushNotification' :: Int -> JSString -> IO ()
 
-foreign import javascript safe "atomCallback.pushCode($1)"
-    pushCode :: JSString -> IO ()
+foreign import javascript safe "atomCallback.pushNotification($1, $2)"
+  pushNotification' :: Int -> JSString -> IO ()
+
 
 foreign import javascript safe "atomCallback.onEvent($1)"
     onEvent' :: Callback (JSVal -> IO ()) -> IO ()
@@ -51,10 +50,3 @@ parseEvent str = do
                                                     <*> pure (if null argStr then Nothing else Just argStr)
         "Searcher" -> UI . SearcherEvent <$> readMaybe r
         _          -> Nothing
-
-
--- subscribeEventListenerInternal :: (InternalEvent -> IO ()) -> IO (IO ())
--- subscribeEventListenerInternal callback = do
---     wrappedCallback <- syncCallback1 ContinueAsync $ callback . fromJSVal
---     subscribeEventListenerInternal' wrappedCallback
---     return $ unsubscribeEventListenerInternal' wrappedCallback >> releaseCallback wrappedCallback

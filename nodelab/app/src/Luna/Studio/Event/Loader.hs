@@ -13,7 +13,7 @@ withActiveConnection action = do
     addr   <- getBackendAddress
     socket <- WS.getWebSocket
     isOpen <- WS.isOpen socket
-    let onConnectionClosed = pushNotification $ Notification Error "Server crashed."
+    let onConnectionClosed = pushNotification $ Notification Error "Connection closed."
     if isOpen then action socket
     else do
         void $ WS.onOpen  socket $ action socket

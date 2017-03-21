@@ -1,0 +1,101 @@
+@import '_variables';
+
+/////////////////////////////
+//          resets         //
+/////////////////////////////
+
+* { border: none; margin: 0; padding: 0; }
+img { display: block; }
+a { text-decoration: none; }
+
+// Tweak for using events on SVG elements
+svg * { pointer-events: all; }
+
+// "Turn off overscrolling in Chrome"
+html { overflow: hidden; height: 100%; }
+body { height: 100%; overflow: auto; }
+
+/////////////////////////////
+//        utilities        //
+/////////////////////////////
+
+.luna-hide {
+    display: none;
+}
+
+/////////////////////////////
+//       basic styles      //
+/////////////////////////////
+
+body {
+    font:         12px/15px @fontDefault;
+    background:   @colorBackground;
+    font-weight:  300;
+    font-variant -ligatures: contextual;
+}
+
+/////////////////////////////
+//          layout         //
+/////////////////////////////
+
+.luna-main {
+    display:     flex;
+    align-items: stretch;
+    width:       100%;
+    top:         0;
+    bottom:      0;
+    position:    absolute;
+    overflow:    hidden;
+}
+
+.luna-breadcrumbs {
+    position:    absolute;
+    top:         0;
+    left:        0;
+    flex:        none;
+    line-height: 30px;
+    padding:     2px;
+    color:       @colorText;
+}
+
+.luna-breadcrumbs__item {
+    float:        left;
+    padding-left: 10px;
+    cursor:       pointer;
+}
+
+.luna-graph-editor {
+    flex:     2 auto;
+    position: relative;
+}
+
+.luna-graph {
+    position: relative;
+    flex:     none;
+    overflow: inherit;
+    color:    @colorName;
+    width:    100%;
+    height:   100%;
+}
+
+.luna-plane {
+    position: absolute;
+    width:    1px;
+    height:   1px;
+    overflow: inherit;
+}
+
+.luna-plane--nodes {
+    svg {
+        position: absolute;
+        top:      0;
+        left:     0;
+        overflow: inherit;
+        width:    1px;
+        height:   1px;
+    }
+}
+.luna-plane--canvas {
+    height: 100%;
+    width:  100%;
+}

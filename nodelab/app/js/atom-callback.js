@@ -8,20 +8,10 @@ var removeFromArray = function (array, elt) {
 module.exports = function () {
 
   var listeners = {
-    onEvent: [],
-    codeListener: [],
-    eventListenerInternal: [],
+    onEvent: []
   };
 
   return {
-    codeListener: function (listener) {
-      listeners.codeListener.push(listener);
-    },
-    pushCode: function(data) {
-      listeners.codeListener.forEach(function(listener) {
-        listener(data);
-      });
-    },
     pushNotification: function (lvl, error) {
       if (typeof atom == 'undefined')
       {
@@ -74,16 +64,6 @@ module.exports = function () {
             });
           }
       }
-    },
-    subscribeEventListenerInternal: function(listener) {
-      listeners.eventListenerInternal.push(listener);
-    },
-    unsubscribeEventListenerInternal: function(listener) {
-      removeFromArray(listeners.eventListenerInternal, listener);
-    },
-    pushInternalEvent: function(data) {
-      listeners.eventListenerInternal.forEach(function(listener) {
-      });
     },
     onEvent: function (listener) {
       listeners.onEvent.push(listener);

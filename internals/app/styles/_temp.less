@@ -1,0 +1,139 @@
+@import '_variables';
+
+[x1="NaN"] { display: none } // FIXME [Piotr Mołdawski] Implement Haskell exception for zero length connections
+
+#editor {
+    height:   100%;
+    width:    100%;
+    position: absolute;
+    bottom:   0px;
+    display: flex;
+}
+
+.ace_gutter {
+    background: rgb(30, 30, 30);
+}
+
+.ace_editor {
+    font-family: @fontDefault !important;
+    font-weight: 300 !important;
+}
+
+// http://stackoverflow.luna-com/questions/826782/how-to-disable-text-selection-highlighting-using-css
+.luna-noselect {
+    -webkit-touch-callout: none; /* iOS Safari */
+      -webkit-user-select: none; /* Chrome/Safari/Opera */
+       -khtml-user-select: none; /* Konqueror */
+         -moz-user-select: none; /* Firefox */
+          -ms-user-select: none; /* Internet Explorer/Edge */
+              user-select: none; /* Non-prefixed version, currently not supported by any browser */
+}
+
+.luna-horizontal-slider {
+    cursor: col-resize;
+}
+
+.luna-searcher-results {
+    overflow: hidden;
+    .luna-result-selected {
+        overflow:   hidden;
+        background: @colorSelect;
+    }
+    .luna-result {
+        overflow: hidden;
+    }
+    .luna-result-prefix {
+        width:      100px;
+        display:    block;
+        float:      left;
+        text-align: right;
+    }
+    .luna-result-name {
+        width:       100px;
+        margin-left: 4px;
+        float:       left;
+    }
+}
+
+.luna-message-container {
+    position:   fixed;
+    top:        0;
+    bottom:     0;
+    left:       0;
+    right:      0;
+    background: rgba(0, 0, 255, 0.8);
+    z-index:    9999;
+    color:      #fff;
+    .luna-msg {
+        position:    absolute;
+        top:         50%;
+        margin-top: -40px;
+        padding:     0 150px;
+        width:       100%;
+        box-sizing:  border-box;
+        p {
+            position: relative;
+            top:      30px;
+        }
+    }
+}
+
+.luna-message-container svg {
+    width:        100px;
+    height:       100px;
+    float:        left;
+    margin-right: 20px;
+}
+
+.luna-node-expanded {
+    width: 240px;
+    color: @colorName;
+    .luna-properties {
+        width:         inherit;
+        color:         white;
+        overflow:      hidden;
+        background:    #333;
+        padding:       7px;
+        border-radius: 10px;
+        .luna-label {
+            float:    left;
+            width:    120px;
+            overflow: hidden;
+        }
+        .luna-value {
+            overflow:   hidden;
+            width:      120px;
+            text-align: right;
+            float:      left;
+        }
+    }
+}
+.luna-node-searcher svg { overflow: inherit }
+
+.luna-scrollbar(@backgroundColor, @slider, @radius) {
+    &::-webkit-scrollbar {
+        -webkit-appearance: none;
+    }
+    &::-webkit-scrollbar:vertical {
+        width: 11px;
+    }
+    &::-webkit-scrollbar:horizontal {
+        display: none;
+    }
+    &::-webkit-scrollbar-thumb {
+        border-radius:    @radius;
+        border:           2px solid @backgroundColor; /* sho.scrollbard match background, can't be transparent */
+        background-color: @slider;
+    }
+    &::-webkit-scrollbar-track {
+        background-color: @backgroundColor;
+        border-radius:    8px;
+    }
+}
+
+
+// code edit node
+
+.luna-node__properties-crop textarea {
+    position: relative;
+}
