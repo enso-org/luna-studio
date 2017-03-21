@@ -45,10 +45,10 @@ import           EmpireUtils
 spec :: Spec
 spec = around withChannels $ id $ do
     describe "luna-empire" $ do
-        it "descends into `def foo` and asserts two edges inside" $ \env -> do
+        it "descends into `foo = a: a` and asserts two edges inside" $ \env -> do
             u1 <- mkUUID
             res <- evalEmp env $ do
-                Graph.addNode top u1 "def foo" def
+                Graph.addNode top u1 "foo = a: a" def
                 topLevel <- graphIDs top
                 n1Level <- Graph.getNodes (top |> u1)
                 return (topLevel, n1Level)
@@ -56,10 +56,10 @@ spec = around withChannels $ id $ do
                 [u1] `shouldMatchList` topLevel
                 n1Level `shouldSatisfy` ((== 2) . length)
                 excludeEdges n1Level `shouldSatisfy` null
-        it "asserts things about `def foo`" $ \env -> do
+        it "asserts things about `foo = a: a`" $ \env -> do
             u1 <- mkUUID
             res <- evalEmp env $ do
-                Graph.addNode top u1 "def foo" def
+                Graph.addNode top u1 "foo = a: a" def
             withResult res $ \node -> do
                 node ^. Node.name `shouldBe` "foo"
                 node ^. Node.nodeType `shouldBe` Node.ExpressionNode "a: a"
@@ -68,7 +68,7 @@ spec = around withChannels $ id $ do
             u1 <- mkUUID
             u2 <- mkUUID
             res <- evalEmp env $ do
-                Graph.addNode top u1 "def foo" def
+                Graph.addNode top u1 "foo = a: a" def
                 let loc' = top |> u1
                 Graph.addNode loc' u2 "4" def
                 Just (_, out) <- Graph.withGraph loc' $ runASTOp GraphBuilder.getEdgePortMapping
@@ -82,7 +82,7 @@ spec = around withChannels $ id $ do
         it "connects input with output edge" $ \env -> do
             u1 <- mkUUID
             res <- evalEmp env $ do
-                Graph.addNode top u1 "def foo" def
+                Graph.addNode top u1 "foo = a: a" def
                 let loc' = top |> u1
                 Just (input, output) <- Graph.withGraph loc' $ runASTOp GraphBuilder.getEdgePortMapping
                 Graph.disconnect loc' (InPortRef output (Port.Arg 0))
@@ -96,7 +96,7 @@ spec = around withChannels $ id $ do
             u1 <- mkUUID
             u2 <- mkUUID
             res <- evalEmp env $ do
-                Graph.addNode top u1 "def foo" def
+                Graph.addNode top u1 "foo = a: a" def
                 let loc' = top |> u1
                 Graph.addNode loc' u2 "succ" def
                 Just (input, _) <- Graph.withGraph loc' $ runASTOp GraphBuilder.getEdgePortMapping
@@ -112,7 +112,7 @@ spec = around withChannels $ id $ do
             u2 <- mkUUID
             res <- evalEmp env $ do
                 let loc' = top |> u1
-                Graph.addNode top u1 "def foo" def
+                Graph.addNode top u1 "foo = a: a" def
                 Graph.addNode loc' u2 "succ" def
                 Just (input, _) <- Graph.withGraph loc' $ runASTOp GraphBuilder.getEdgePortMapping
                 let referenceConnection = (OutPortRef input (Port.Projection 0), InPortRef u2 (Port.Arg 0))
@@ -122,11 +122,11 @@ spec = around withChannels $ id $ do
             withResult res $ \(conn, connections) -> do
                 connections `shouldSatisfy` ((== 2) . length)
                 connections `shouldContain` [conn]
-        it "has proper connection inside `def foo`" $ \env -> do
+        it "has proper connection inside `foo = a: a`" $ \env -> do
             u1 <- mkUUID
             res <- evalEmp env $ do
                 let loc' = top |> u1
-                Graph.addNode top u1 "def foo" def
+                Graph.addNode top u1 "foo = a: a" def
                 conns <- Graph.getConnections loc'
                 Just edges <- Graph.withGraph loc' $ runASTOp GraphBuilder.getEdgePortMapping
                 return (conns, edges)
@@ -138,7 +138,7 @@ spec = around withChannels $ id $ do
             u3 <- mkUUID
             res <- evalEmp env $ do
                 let loc' = top |> u1
-                Graph.addNode top u1 "def foo" def
+                Graph.addNode top u1 "foo = a: a" def
                 Graph.addNode loc' u2 "4" def
                 Graph.addNode loc' u3 "succ" def
                 let referenceConnection = (OutPortRef u2 Port.All, InPortRef u3 Port.Self)
@@ -153,8 +153,8 @@ spec = around withChannels $ id $ do
             u2 <- mkUUID
             u3 <- mkUUID
             res <- evalEmp env $ do
-                Graph.addNode top u1 "def foo" def
-                Graph.addNode (top |> u1) u2 "def bar" def
+                Graph.addNode top u1 "foo = a: a" def
+                Graph.addNode (top |> u1) u2 "bar = c: c" def
                 let loc = top |> u1 |> u2
                 Graph.addNode loc u3 "4" def
                 graphIDs loc
@@ -166,17 +166,17 @@ spec = around withChannels $ id $ do
             u1 <- mkUUID
             u2 <- mkUUID
             res <- evalEmp env $ do
-                Graph.addNode top u1 "def foo" def
+                Graph.addNode top u1 "foo = a: a" def
                 Graph.addNode top u2 "4" def
                 connectToInput top (OutPortRef u2 Port.All) (InPortRef u1 (Port.Arg 0))
                 Graph.getGraph top
             withResult res $ \g -> do
                 let Just lambdaNode = find ((== u1) . view Node.nodeId) $ Graph._nodes g
                 lambdaNode ^. Node.canEnter `shouldBe` False
-        it "has no null node inside `def foo`" $ \env -> do
+        it "has no null node inside `foo = a: a`" $ \env -> do
             u1 <- mkUUID
             res <- evalEmp env $ do
-                Graph.addNode top u1 "def foo" def
+                Graph.addNode top u1 "foo = a: a" def
                 Graph.getNodes (top |> u1)
             withResult res $ \(excludeEdges -> ids) -> do
                 ids `shouldSatisfy` null
@@ -292,12 +292,12 @@ spec = around withChannels $ id $ do
           withResult res $ \conns -> do
               -- one from a to +, one from b to + and one from + to output edge
               conns `shouldSatisfy` ((== 3) . length)
-        it "cleans after removing `def foo` with `4` inside connected to output" $ \env -> do
+        it "cleans after removing `foo = a: a` with `4` inside connected to output" $ \env -> do
             u1 <- mkUUID
             u2 <- mkUUID
             res <- evalEmp env $ do
                 let loc' = top |> u1
-                Graph.addNode top u1 "def foo" def
+                Graph.addNode top u1 "foo = a: a" def
                 Graph.addNode loc' u2 "4" def
                 Just (_, out) <- Graph.withGraph loc' $ runASTOp GraphBuilder.getEdgePortMapping
                 let referenceConnection = (OutPortRef u2 Port.All, InPortRef out (Port.Arg 0))
@@ -308,27 +308,24 @@ spec = around withChannels $ id $ do
                 mapping `shouldSatisfy` Map.null
                 edges   `shouldSatisfy` null
                 nodes   `shouldSatisfy` null
-        it "removes `def foo`" $ \env -> do
+        it "removes `foo = a: a`" $ \env -> do
             u1 <- mkUUID
             res <- evalEmp env $ do
-                Graph.addNode top u1 "def foo" def
+                Graph.addNode top u1 "foo = a: a" def
                 Graph.removeNodes top [u1]
                 Graph.withGraph top $ (,,) <$> use (breadcrumbHierarchy . BH.children) <*> runASTOp exprs <*> runASTOp links
             withResult res $ \(mapping, edges, nodes) -> do
                 mapping `shouldSatisfy` Map.null
                 edges   `shouldSatisfy` null
                 nodes   `shouldSatisfy` null
-        it "RHS of `def foo` is Lam" $ \env -> do
+        it "RHS of `foo = a: a` is Lam" $ \env -> do
             u1 <- mkUUID
             res <- evalEmp env $ do
-                Graph.addNode top u1 "def foo" def
-                Graph.withGraph top $ runASTOp $ ASTRead.rhsIsLambda =<< ASTRead.getASTPointer u1
-            withResult res $ \a -> a `shouldBe` True
-        it "`def foo` is trivial - has output connected to input" $ \env -> do
-            res <- evalEmp env $ do
-                Graph.withGraph top $ do
-                   (_, ref) <- runASTOp $ Parser.parseExpr "def foo"
-                   runASTOp $ AST.isTrivialLambda ref
+                Graph.addNode top u1 "foo = a: a" def
+                Graph.withGraph top $ runASTOp $ do
+                    isLambda <- ASTRead.rhsIsLambda =<< ASTRead.getASTPointer u1
+                    isTrivial <- AST.isTrivialLambda =<< ASTRead.getASTTarget u1
+                    return $ isLambda && isTrivial
             withResult res $ \a -> a `shouldBe` True
         it "changes name of a variable in-place" $ \env -> do
             u1 <- mkUUID
@@ -383,7 +380,7 @@ spec = around withChannels $ id $ do
             u1 <- mkUUID
             res <- evalEmp env $ do
                 Graph.addNode top u1 "1" def
-                Graph.setNodeExpression top u1 "def foo"
+                Graph.setNodeExpression top u1 "foo = a: a"
             withResult res $ \node -> do
                 node ^. Node.name `shouldBe` "foo"
                 node ^. Node.nodeType `shouldBe` Node.ExpressionNode "a: a"
@@ -586,7 +583,7 @@ spec = around withChannels $ id $ do
         it "adds port" $ \env -> do
             u1 <- mkUUID
             res <- evalEmp env $ do
-                Graph.addNode top u1 "def foo" def
+                Graph.addNode top u1 "foo = a: a" def
                 let loc' = top |> u1
                 Just (input, output) <- Graph.withGraph loc' $ runASTOp GraphBuilder.getEdgePortMapping
                 Graph.addPort loc' input 1
@@ -630,7 +627,7 @@ spec = around withChannels $ id $ do
         it "adds two ports" $ \env -> do
             u1 <- mkUUID
             res <- evalEmp env $ do
-                Graph.addNode top u1 "def foo" def
+                Graph.addNode top u1 "foo = a: a" def
                 let loc' = top |> u1
                 Just (input, _) <- Graph.withGraph loc' $ runASTOp GraphBuilder.getEdgePortMapping
                 Graph.addPort loc' input 1
@@ -676,7 +673,7 @@ spec = around withChannels $ id $ do
             u1 <- mkUUID
             u2 <- mkUUID
             res <- evalEmp env $ do
-                Graph.addNode top u1 "def foo" def
+                Graph.addNode top u1 "foo = a: a" def
                 Graph.addNode top u2 "func" def
                 let loc' = top |> u1
                 Just (input, _) <- Graph.withGraph loc' $ runASTOp GraphBuilder.getEdgePortMapping
@@ -745,7 +742,7 @@ spec = around withChannels $ id $ do
             u1 <- mkUUID
             u2 <- mkUUID
             res <- evalEmp env $ do
-                Graph.addNode top u1 "def foo" def
+                Graph.addNode top u1 "foo = a: a" def
                 let loc' = top |> u1
                 Graph.addNode loc' u2 "func" def
                 Just (input, output) <- Graph.withGraph loc' $ runASTOp GraphBuilder.getEdgePortMapping
@@ -767,7 +764,7 @@ spec = around withChannels $ id $ do
         it "does not allow to remove All port" $ \env -> do
             u1 <- mkUUID
             res <- evalEmp env $ do
-                Graph.addNode top u1 "def foo" def
+                Graph.addNode top u1 "foo = a: a" def
                 let loc' = top |> u1
                 Just (input, _) <- Graph.withGraph loc' $ runASTOp GraphBuilder.getEdgePortMapping
                 Graph.removePort loc' (OutPortRef' (OutPortRef input Port.All))
@@ -778,7 +775,7 @@ spec = around withChannels $ id $ do
             u1 <- mkUUID
             u2 <- mkUUID
             res <- evalEmp env $ do
-                Graph.addNode top u1 "def foo" def
+                Graph.addNode top u1 "foo = a: a" def
                 let loc' = top |> u1
                 Graph.addNode loc' u2 "func" def
                 Just (input, output) <- Graph.withGraph loc' $ runASTOp GraphBuilder.getEdgePortMapping
@@ -804,7 +801,7 @@ spec = around withChannels $ id $ do
             u1 <- mkUUID
             u2 <- mkUUID
             res <- evalEmp env $ do
-                Graph.addNode top u1 "def foo" def
+                Graph.addNode top u1 "foo = a: a" def
                 let loc' = top |> u1
                 Just (input, _) <- Graph.withGraph loc' $ runASTOp GraphBuilder.getEdgePortMapping
                 Graph.addPort loc' input 1
@@ -877,7 +874,7 @@ spec = around withChannels $ id $ do
             u1 <- mkUUID
             u2 <- mkUUID
             res <- evalEmp env $ do
-                Graph.addNode top u1 "def foo" def
+                Graph.addNode top u1 "foo = a: a" def
                 let loc = top |> u1
                 Graph.addNode loc u2 "4" def
                 Graph.getNodeIdSequence loc
@@ -888,7 +885,7 @@ spec = around withChannels $ id $ do
             u2 <- mkUUID
             u3 <- mkUUID
             res <- evalEmp env $ do
-                Graph.addNode top u1 "def foo" def
+                Graph.addNode top u1 "foo = a: a" def
                 let loc = top |> u1
                 Graph.addNode loc u2 "4" $ NodeMeta (10, 10) False
                 Graph.addNode loc u3 "6" $ NodeMeta (10, 20) False

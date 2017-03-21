@@ -9,7 +9,7 @@ module Empire.ASTOps.Parse (
 
 import           Data.Convert
 import           Empire.Prelude
-import           Prologue
+import           Prologue (convert, unwrap')
 
 import           Data.Char                    (isUpper)
 import           Data.List                    (partition)
@@ -17,6 +17,7 @@ import qualified Data.Text                    as Text
 
 import           Empire.ASTOp                    (ASTOp)
 import           Empire.ASTOps.Builder           (lams)
+import           Empire.ASTOps.Print
 import           Empire.Data.AST                 (NodeRef, astExceptionFromException, astExceptionToException)
 
 import           Empire.API.Data.PortDefault     (PortDefault (..), Value (..))
@@ -34,24 +35,12 @@ instance Exception e => Exception (ParserException e) where
     fromException = astExceptionFromException
     displayException (ParserException e) = "ParserException (" ++ displayException e ++ ")"
 
-parseExpr :: ASTOp m => String -> m (Maybe Text.Text, NodeRef)
+parseExpr :: ASTOp m => String -> m NodeRef
 parseExpr s = do
-  lamRes  <- tryParseLambda s
-  case lamRes of
-      (name, Just l) -> return (name, l)
-      _ -> do
-          IR.writeAttr @Source.Source $ convert s
-          Parsing.parsingBase Parsing.expr
-          res <- IR.readAttr @Parser.ParsedExpr
-          return (Nothing, unwrap' res)
-
-tryParseLambda :: ASTOp m => String -> m (Maybe Text.Text, Maybe NodeRef)
-tryParseLambda s = case words s of
-    ("def" : name : _) -> do
-        v <- IR.var "a"
-        lam <- IR.generalize <$> IR.lam v v
-        return (Just (Text.pack name), Just lam)
-    _ -> return (Nothing, Nothing)
+    IR.writeAttr @Source.Source $ convert s
+    Parsing.parsingBase Parsing.expr
+    res <- IR.readAttr @Parser.ParsedExpr
+    return $ unwrap' res
 
 data PortDefaultNotConstructibleException = PortDefaultNotConstructibleException PortDefault
     deriving Show
@@ -61,7 +50,7 @@ instance Exception PortDefaultNotConstructibleException where
     fromException = astExceptionFromException
 
 parsePortDefault :: ASTOp m => PortDefault -> m NodeRef
-parsePortDefault (Expression expr)            = snd <$> parseExpr expr
+parsePortDefault (Expression expr)            = parseExpr expr
 parsePortDefault (Constant (IntValue i))      = IR.generalize <$> IR.number (fromIntegral i)
 parsePortDefault (Constant (StringValue s))   = IR.generalize <$> IR.string s
 parsePortDefault (Constant (DoubleValue d))   = $notImplemented
