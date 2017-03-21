@@ -43,9 +43,8 @@ import qualified Graphics.API                      as G
 --                                                           autoScatterChartIntTuple)
 
 
-addNode :: ASTOp m => NodeId -> String -> String -> m NodeRef
-addNode nid name expr = do
-    node <- Parser.parseExpr expr
+addNode :: ASTOp m => NodeId -> String -> NodeRef -> m NodeRef
+addNode nid name node = do
     ASTBuilder.makeNodeRep nid name node
 
 limit :: [a] -> [a]

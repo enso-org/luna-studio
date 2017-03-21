@@ -111,10 +111,11 @@ addNode :: GraphLocation -> NodeId -> Text -> NodeMeta -> Empire Node
 addNode loc uuid expr meta = withTC loc False $ addNodeNoTC loc uuid expr meta
 
 addNodeNoTC :: GraphLocation -> NodeId -> Text -> NodeMeta -> Command Graph Node
-addNodeNoTC loc uuid expr meta = do
+addNodeNoTC loc uuid input meta = do
+    (parse, _) <- ASTParse.runParser input
     (expr, nodeItem) <- runASTOp $ do
         newNodeName <- generateNodeName
-        parsedNode <- AST.addNode uuid newNodeName (Text.unpack expr)
+        parsedNode <- AST.addNode uuid newNodeName parse
         let nodeItem = BH.BItem Map.empty Nothing (Just (uuid, BH.MatchNode parsedNode)) Nothing
         Graph.breadcrumbHierarchy . BH.children . at uuid ?= nodeItem
         return (parsedNode, nodeItem)
