@@ -21,41 +21,53 @@ import qualified Empire.ASTOps.Builder              as ASTBuilder
 import qualified Empire.ASTOps.Deconstruct          as ASTDeconstruct
 import qualified Empire.ASTOps.Read                 as ASTRead
 import qualified Empire.ASTOps.Remove               as ASTRemove
-import           Empire.Data.AST                    (NodeRef, NotLambdaException(..),
+import           Empire.Data.AST                    (EdgeRef, NodeRef, NotLambdaException(..),
                                                      NotUnifyException(..), astExceptionToException,
                                                      astExceptionFromException)
 
-import qualified OCI.IR.Combinators as IR (changeSource, narrowTerm)
+import qualified OCI.IR.Combinators as IR (changeSource, narrowTerm, replaceNode)
 import           Luna.IR.Term.Uni
 import qualified Luna.IR as IR
 
 
 
-addLambdaArg :: ASTOp m => NodeRef -> m ()
-addLambdaArg lambda = match lambda $ \case
+addLambdaArg :: ASTOp m => Int -> NodeRef -> m ()
+addLambdaArg position lambda = match lambda $ \case
     Lam _arg _body -> do
         out'  <- ASTRead.getFirstNonLambdaRef lambda
-        addLambdaArg' [] lambda out'
+        names <- getArgNames lambda
+        let Just nameForNewArg = find (not . flip elem names) allWords
+        addLambdaArg' position nameForNewArg Nothing lambda
     _ -> throwM $ NotLambdaException lambda
 
 allWords :: [String]
 allWords = drop 1 $ allWords' where
     allWords' = fmap reverse $ "" : (flip (:) <$> allWords' <*> ['a' .. 'z'])
 
-addLambdaArg' :: ASTOp m => [String] -> NodeRef -> NodeRef -> m ()
-addLambdaArg' boundNames lambda out = match lambda $ \case
-    Lam _arg body -> do
-        argNames <- ASTRead.getPatternNames =<< IR.source _arg
-        let newBoundNames = argNames ++ boundNames
-        body'    <- IR.source body
-        if body' == out then do
-            let Just argName = find (not . flip elem newBoundNames) allWords
-            v <- IR.var $ stringToName argName
-            l <- IR.lam v out
-            IR.changeSource body $ IR.generalize l
-        else do
-            addLambdaArg' newBoundNames body' out
-    _ -> throwM $ NotLambdaException lambda
+getArgNames :: ASTOp m => NodeRef -> m [String]
+getArgNames ref = match ref $ \case
+    Lam a body -> do
+        argNames <- ASTRead.getPatternNames =<< IR.source a
+        (argNames ++) <$> (getArgNames =<< IR.source body)
+    _ -> return []
+
+replaceWithLam :: ASTOp m => Maybe EdgeRef -> String -> NodeRef -> m ()
+replaceWithLam parent name lam = do
+    tmpBlank <- IR.blank
+    binder   <- IR.var $ stringToName name
+    newLam   <- IR.lam binder tmpBlank
+    case parent of
+        Just e  -> IR.changeSource e $ IR.generalize newLam
+        Nothing -> IR.replaceNode lam newLam
+    IR.replaceNode tmpBlank lam
+    ASTRemove.removeSubtree $ IR.generalize tmpBlank
+    return ()
+
+addLambdaArg' :: ASTOp m => Int -> String -> Maybe EdgeRef -> NodeRef -> m ()
+addLambdaArg' 0   name parent lam = replaceWithLam parent name lam
+addLambdaArg' pos name parent lam = match lam $ \case
+    Lam _ b -> addLambdaArg' (pos - 1) name (Just b) =<< IR.source b
+    _       -> replaceWithLam parent name lam
 
 data CannotRemovePortException = CannotRemovePortException
     deriving Show

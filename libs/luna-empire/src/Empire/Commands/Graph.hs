@@ -189,12 +189,12 @@ nodeIdInsideLambda :: ASTOp m => NodeRef -> m (Maybe NodeId)
 nodeIdInsideLambda node = (ASTRead.getVarNode node >>= ASTRead.getNodeId) `catch`
     (\(_e :: NotUnifyException) -> return Nothing)
 
-addPort :: GraphLocation -> NodeId -> Empire Node
-addPort loc nid = withGraph loc $ runASTOp $ do
+addPort :: GraphLocation -> NodeId -> Int -> Empire Node
+addPort loc nid position = withGraph loc $ runASTOp $ do
     Just ref <- ASTRead.getCurrentASTTarget
     edges <- GraphBuilder.getEdgePortMapping
     when ((fst <$> edges) /= Just nid) $ throwM NotInputEdgeException
-    ASTModify.addLambdaArg ref
+    ASTModify.addLambdaArg position ref
     -- TODO[MM]: This should match for any node. Now it ignores node and replace it by InputEdge.
     inputEdge <- GraphBuilder.buildConnections >>= \c -> GraphBuilder.buildInputEdge c nid
     return inputEdge
