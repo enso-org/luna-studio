@@ -244,42 +244,6 @@ getPortsNames node = do
         Just n -> return n
         _      -> return backup
 
--- extractPortInfo :: ASTOp m => NodeRef -> m ([TypeRep], [PortState])
--- extractPortInfo node = do
---     match node $ \case
---         App f _args -> do
---             unpacked   <- ASTDeconstruct.extractArguments node
---             names      <- extractArgNames node
---             portStates <- mapM getPortState unpacked
---             tp         <- do
---                 foo <- IR.readLayer @TypeLayer node
---                 IR.source foo
---             types      <- extractArgTypes tp
---             return (types, portStates)
---         Lam _as o -> do
---             insideLam <- insideThisNode node
---             args      <- ASTDeconstruct.extractArguments node
---             vars      <- concat <$> mapM ASTRead.getVarsInside args
---             let ports = if insideLam then vars else args
---             areBlank  <- mapM ASTRead.isBlank ports
---             isApp     <- ASTRead.isApp =<< IR.source o
---             if and areBlank && isApp
---                 then do
---                     extractPortInfo =<< IR.source o
---                 else do
---                     tpRef <- IR.source =<< IR.readLayer @TypeLayer node
---                     types <- extractArgTypes tpRef
---                     return (types, replicate (length ports) NotConnected)
---         Cons n _args -> do
---             args       <- ASTRead.getVarsInside node
---             portStates <- mapM getPortState args
---             types      <- IR.readLayer @TypeLayer node >>= IR.source >>= extractArgTypes
---             return (types, portStates)
---         _ -> do
---             tpRef <- IR.source =<< IR.readLayer @TypeLayer node
---             types <- extractArgTypes tpRef
---             return (types, [])
-
 extractAppliedPorts :: ASTOp m => Bool -> [NodeRef] -> NodeRef -> m [Maybe (TypeRep, PortState)]
 extractAppliedPorts seenApp bound node = IR.matchExpr node $ \case
     Lam i o -> case seenApp of
@@ -323,7 +287,7 @@ buildArgPorts ref = do
     let portsTypes = fmap fst typed ++ replicate (length names - length typed) TStar
         psCons = zipWith3 Port
                           (InPortId . Arg <$> [(0::Int)..])
-                          names
+                          (names ++ (("arg" ++) . show <$> [0..]))
                           portsTypes
     return $ zipWith ($) psCons (fmap snd typed ++ repeat NotConnected)
 
