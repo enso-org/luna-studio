@@ -1,4 +1,5 @@
 {-# LANGUAGE OverloadedStrings   #-}
+{-# LANGUAGE TypeApplications    #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
 module Empire.ASTOps.Parse (
@@ -8,6 +9,7 @@ module Empire.ASTOps.Parse (
 
 import           Data.Convert
 import           Empire.Prelude
+import           Prologue
 
 import           Data.Char                    (isUpper)
 import           Data.List                    (partition)
@@ -22,6 +24,7 @@ import           Empire.API.Data.PortDefault     (PortDefault (..), Value (..))
 import qualified Luna.IR                         as IR
 import qualified Luna.Syntax.Text.Parser.Parser  as Parser
 import qualified Luna.Syntax.Text.Parser.Parsing as Parsing
+import qualified Luna.Syntax.Text.Source         as Source
 
 data ParserException e = ParserException e
     deriving (Show)
@@ -34,14 +37,13 @@ instance Exception e => Exception (ParserException e) where
 parseExpr :: ASTOp m => String -> m (Maybe Text.Text, NodeRef)
 parseExpr s = do
   lamRes  <- tryParseLambda s
-  parsed  <- pure $ Parsing.runParser Parsing.expr s
   case lamRes of
-      (name, Just l)  -> return (name, l)
-      _               -> case parsed of
-          Right (Parser.IRB x) -> do
-              x' <- x
-              return (Nothing, x')
-          Left err -> throwM $ ParserException err
+      (name, Just l) -> return (name, l)
+      _ -> do
+          IR.writeAttr @Source.Source $ convert s
+          Parsing.parsingBase Parsing.expr
+          res <- IR.readAttr @Parser.ParsedModule
+          return (Nothing, unwrap' res)
 
 tryParseLambda :: ASTOp m => String -> m (Maybe Text.Text, Maybe NodeRef)
 tryParseLambda s = case words s of

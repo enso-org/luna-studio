@@ -29,8 +29,7 @@ import           Empire.Empire
 
 import qualified Luna.Builtin.Std                  as Std
 import qualified Luna.IR                           as IR
-import qualified Luna.IR.Term.Function             as IR.Function
-import           Luna.IR.Term.Unit                 (Imports (..), Module (..))
+import           Luna.Builtin.Data.Module          (Imports (..), Module (..))
 import qualified Luna.Pass.Typechecking.Typecheck  as Typecheck
 import qualified OCI.IR.Combinators                as IR
 import           OCI.Pass                          (SubPass)

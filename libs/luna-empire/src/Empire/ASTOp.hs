@@ -16,7 +16,8 @@ module Empire.ASTOp (
   , match
   ) where
 
-import           Empire.Prelude
+import           Empire.Prelude       hiding (mempty)
+import           Prologue             (mempty)
 
 import           Control.Monad.Catch  (MonadCatch(..))
 import           Control.Monad.State  (StateT, runStateT, get, put)
@@ -38,14 +39,16 @@ import           OCI.Pass.Class       (Inputs, Outputs, Preserves, KnownPass)
 import qualified OCI.Pass.Class       as Pass (SubPass, eval')
 import qualified OCI.Pass.Manager     as Pass (PassManager, Cache, setAttr, State)
 
-import           System.Log                                 (Logger, DropLogger, dropLogs)
-import           Luna.Pass.Data.ExprRoots                   (ExprRoots(..))
-import           Luna.Pass.Resolution.Data.UnresolvedVars   (UnresolvedVars(..))
-import           Luna.Pass.Resolution.Data.UnresolvedConses (UnresolvedConses(..), NegativeConses(..))
-import qualified Luna.Pass.Resolution.AliasAnalysis         as AliasAnalysis
-import qualified Luna.Syntax.Text.Parser.Parser             as Parser
-import qualified Luna.Syntax.Text.Parser.CodeSpan           as CodeSpan
-import qualified Data.SpanTree                              as SpanTree
+import           System.Log                                   (Logger, DropLogger, dropLogs)
+import           Luna.Pass.Data.ExprRoots                     (ExprRoots(..))
+import           Luna.Pass.Resolution.Data.UnresolvedVars     (UnresolvedVars(..))
+import           Luna.Pass.Resolution.Data.UnresolvedConses   (UnresolvedConses(..), NegativeConses(..))
+import qualified Luna.Pass.Resolution.AliasAnalysis           as AliasAnalysis
+import qualified Luna.Syntax.Text.Parser.Parser               as Parser
+import qualified Luna.Syntax.Text.Parser.CodeSpan             as CodeSpan
+import           Luna.Syntax.Text.Parser.Marker               (MarkedExprMap)
+import qualified Data.SpanTree                                as SpanTree
+import           Luna.Syntax.Text.Source                      (Source, SourceTree)
 
 import qualified OCI.IR.Repr.Vis                   as Vis
 import qualified Control.Monad.State.Dependent.Old as DepOld
@@ -56,7 +59,8 @@ type ASTOp m = (MonadThrow m,
                 MonadIO m,
                 MonadState Graph m,
                 Emitters EmpireEmitters m,
-                Editors Net '[AnyExpr, AnyExprLink] m,
+                Editors Net  '[AnyExpr, AnyExprLink] m,
+                Editors Attr '[Source, Parser.ParsedModule, SourceTree, MarkedExprMap] m,
                 Editors Layer EmpireLayers m,
                 DepOld.MonadGet Vis.V Vis.Vis m,
                 DepOld.MonadPut Vis.V Vis.Vis m,
@@ -80,12 +84,12 @@ data EmpirePass
 type instance Abstract   EmpirePass = EmpirePass
 type instance Inputs     Net   EmpirePass = '[AnyExpr, AnyExprLink]
 type instance Inputs     Layer EmpirePass = EmpireLayers
-type instance Inputs     Attr  EmpirePass = '[]
+type instance Inputs     Attr  EmpirePass = '[Source, Parser.ParsedModule, SourceTree, MarkedExprMap] -- Parser attrs temporarily - probably need to call it as a separate Pass
 type instance Inputs     Event EmpirePass = '[]
 
 type instance Outputs    Net   EmpirePass = '[AnyExpr, AnyExprLink]
 type instance Outputs    Layer EmpirePass = EmpireLayers
-type instance Outputs    Attr  EmpirePass = '[]
+type instance Outputs    Attr  EmpirePass = '[Source, Parser.ParsedModule, SourceTree, MarkedExprMap]
 type instance Outputs    Event EmpirePass = EmpireEmitters
 
 type instance Preserves        EmpirePass = '[]
@@ -110,7 +114,13 @@ deriving instance MonadCatch m => MonadCatch (SpanTree.TreeBuilder k t m)
 
 runASTOp :: Pass.SubPass EmpirePass (Pass.PassManager (IRBuilder (Parser.IRSpanTreeBuilder (DepState.StateT Cache (Logger DropLogger (Vis.VisStateT (StateT Graph IO))))))) a
          -> Command Graph a
-runASTOp pass = runPass (return ()) pass
+runASTOp pass = runPass inits pass where
+    inits = do
+        setAttr (getTypeDesc @SourceTree)           $ (mempty :: SourceTree)
+        setAttr (getTypeDesc @MarkedExprMap)        $ (mempty :: MarkedExprMap)
+        setAttr (getTypeDesc @Source)               $ (error "Data not provided: Source")
+        setAttr (getTypeDesc @Parser.ParsedModule)  $ (error "Data not provided: ParsedModule")
+
 
 runAliasAnalysis :: Command Graph ()
 runAliasAnalysis = do
