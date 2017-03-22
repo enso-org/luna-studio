@@ -17,6 +17,7 @@ data Event = AddPort           AnyPortRef
            | PortNameApply     AnyPortRef String
            | PortNameDiscard   AnyPortRef
            | PortNameStartEdit AnyPortRef
+           | ToggleEdgeMode    NodeId
             deriving (Show, Generic, NFData, Typeable)
 
 instance ToJSON   Event

@@ -1,6 +1,6 @@
 module Luna.Studio.Handler.Edge where
 
-import           Luna.Studio.Action.Basic     (addPort, removePort)
+import           Luna.Studio.Action.Basic     (addPort, removePort, toggleEdgeMode)
 import qualified Luna.Studio.Action.Batch     as Batch
 import           Luna.Studio.Action.Command   (Command)
 import qualified Luna.Studio.Action.Edge      as Edge
@@ -14,6 +14,7 @@ import           Luna.Studio.State.Global     (State)
 
 
 handle :: Event -> Maybe (Command State ())
+handle (UI (EdgeEvent (Edge.ToggleEdgeMode nid)))              = Just $ toggleEdgeMode nid
 handle (UI (EdgeEvent (Edge.RemovePort portRef)))              = Just $ removePort portRef
 handle (UI (EdgeEvent (Edge.AddPort    portRef)))              = Just $ addPort portRef
 -- handle (UI (AppEvent  (App.MouseMove   evt _)))               = Just $ Edge.handleAppMove evt

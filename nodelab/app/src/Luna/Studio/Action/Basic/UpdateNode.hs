@@ -9,6 +9,7 @@ import           Luna.Studio.Action.State.Model              (shouldDisplayPortS
 import qualified Luna.Studio.Action.State.NodeEditor         as NodeEditor
 import           Luna.Studio.Prelude
 import           Luna.Studio.React.Model.Node                (EdgeNode, ExpressionNode, Node (Edge, Expression), NodeId, nodeId, ports)
+import           Luna.Studio.React.Model.Node.EdgeNode       (mode)
 import           Luna.Studio.React.Model.Node.ExpressionNode (isSelected)
 import           Luna.Studio.React.Model.Port                (visible)
 import           Luna.Studio.State.Global                    (State)
@@ -27,13 +28,13 @@ localUpdateNode (Expression node) = localUpdateExpressionNode node
 localUpdateNode (Edge edge)       = localUpdateEdgeNode edge
 
 localUpdateEdgeNode :: EdgeNode -> Command State Bool
-localUpdateEdgeNode node = NodeEditor.inGraph (node ^. nodeId) >>= \exists ->
-    if not exists
-        then return False
-        else do
-            let nid = node ^. nodeId
-            NodeEditor.addEdgeNode node
-            void $ redrawConnectionsForNode nid
+localUpdateEdgeNode node = NodeEditor.getEdgeNode (node ^. nodeId) >>= \mayNode ->
+    case mayNode of
+        Nothing       -> return False
+        Just prevNode -> do
+            let edgeMode = prevNode ^. mode
+            NodeEditor.addEdgeNode $ node & mode .~ edgeMode
+            void $ redrawConnectionsForNode $ node ^. nodeId
             return True
 
 localUpdateExpressionNode :: ExpressionNode -> Command State Bool
