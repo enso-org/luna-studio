@@ -356,8 +356,8 @@ spec = around withChannels $ parallel $ do
         it "changes node expression" $ \env -> do
             u1 <- mkUUID
             res <- evalEmp env $ do
-                Graph.addNode top u1 "123" def
-                node  <- Graph.setNodeExpression top u1 "456"
+                Graph.addNode top u1 "‹0›123" def
+                node  <- Graph.setNodeExpression top u1 "‹0›456"
                 nodes <- Graph.getNodes top
                 return (node, nodes)
             withResult res $ \(node, nodes) -> do

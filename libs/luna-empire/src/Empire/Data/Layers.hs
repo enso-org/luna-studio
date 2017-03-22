@@ -10,6 +10,7 @@ module Empire.Data.Layers (
     Marker
   , Meta
   , TypeLayer
+  , CodeMarkers
   , attachEmpireLayers
   ) where
 
@@ -20,14 +21,17 @@ import           Empire.API.Data.Node     (NodeId)
 import           Empire.API.Data.NodeMeta (NodeMeta)
 import           Empire.API.Data.PortRef  (OutPortRef)
 
-import           Control.Monad.Raise (Throws)
+import           Control.Monad.Raise            (Throws)
 import           Data.TypeDesc
-import           Luna.IR                  hiding (String)
-import qualified Luna.IR.Layer.Type       as IR (Type)
+import           Luna.IR                        hiding (Import, String)
+import qualified Luna.IR.Layer.Type             as IR (Type)
 import           Luna.IR.ToRefactor2
+import           Luna.Syntax.Text.Parser.Marker (MarkedExprMap)
+import           OCI.IR.Class                   (Import)
 import           OCI.Pass
-import           OCI.Pass.Definition      (makePass)
+import           OCI.Pass.Definition            (makePass)
 import           Type.Any
+import qualified Prologue                       as Prologue (mempty)
 
 
 type TypeLayer = IR.Type
@@ -54,11 +58,25 @@ importMeta :: Req m '[Writer // Layer // AnyExpr // Meta] => Listener Import (Ex
 importMeta = listener $ \(t, _, ls) -> when (getTypeDesc_ @Meta ^. from typeDesc `elem` ls) $ writeLayer @Meta Nothing t
 makePass 'importMeta
 
+data CodeMarkers
+type instance LayerData CodeMarkers t = MarkedExprMap
+
+initCodeMarkers :: Req m '[Editor // Layer // AnyExpr // CodeMarkers] => Listener New (Expr l) m
+initCodeMarkers = listener $ \(t, _) -> writeLayer @CodeMarkers Prologue.mempty t
+makePass 'initCodeMarkers
+
+importCodeMarkers :: Req m '[Writer // Layer // AnyExpr // CodeMarkers] => Listener Import (Expr l) m
+importCodeMarkers = listener $ \(t, _, ls) -> when (getTypeDesc_ @CodeMarkers ^. from typeDesc `elem` ls) $ writeLayer @CodeMarkers Prologue.mempty t
+makePass 'importCodeMarkers
+
 attachEmpireLayers :: (MonadPassManager m, Throws IRError m) => m ()
 attachEmpireLayers = do
-    addExprEventListener @Meta   initMetaPass
-    addExprEventListener @Meta   importMetaPass
-    addExprEventListener @Marker initNodeMarkerPass
-    addExprEventListener @Marker importNodeMarkerPass
-    attachLayer 10 (getTypeDesc @Meta)  (getTypeDesc @AnyExpr)
-    attachLayer 10 (getTypeDesc @Marker) (getTypeDesc @AnyExpr)
+    addExprEventListener @Meta        initMetaPass
+    addExprEventListener @Meta        importMetaPass
+    addExprEventListener @Marker      initNodeMarkerPass
+    addExprEventListener @Marker      importNodeMarkerPass
+    addExprEventListener @CodeMarkers initCodeMarkersPass
+    addExprEventListener @CodeMarkers importCodeMarkersPass
+    attachLayer 10 (getTypeDesc @Meta)        (getTypeDesc @AnyExpr)
+    attachLayer 10 (getTypeDesc @Marker)      (getTypeDesc @AnyExpr)
+    attachLayer 10 (getTypeDesc @CodeMarkers) (getTypeDesc @AnyExpr)

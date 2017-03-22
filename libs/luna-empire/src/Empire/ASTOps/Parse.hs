@@ -24,6 +24,7 @@ import           Empire.ASTOps.Builder           (lams)
 import           Empire.ASTOps.Print
 import           Empire.Data.AST                 (NodeRef, astExceptionFromException, astExceptionToException)
 import           Empire.Data.Graph               (Graph)
+import           Empire.Data.Layers              (CodeMarkers)
 import           Empire.Data.Parser              (ParserPass)
 
 import           Empire.API.Data.PortDefault     (PortDefault (..), Value (..))
@@ -56,15 +57,15 @@ runParser expr = do
     let inits = do
             IR.setAttr (getTypeDesc @Source.SourceTree)      $ (mempty :: Source.SourceTree)
             IR.setAttr (getTypeDesc @Parser.MarkedExprMap)   $ (mempty :: Parser.MarkedExprMap)
-            IR.setAttr (getTypeDesc @Source.Source)          $ (error "Data not provided: Source")
+            IR.setAttr (getTypeDesc @Source.Source)          $ (convert expr :: Source.Source)
             IR.setAttr (getTypeDesc @Parser.ParsedExpr)      $ (error "Data not provided: ParsedExpr")
             IR.setAttr (getTypeDesc @Parser.ReparsingStatus) $ (error "Data not provided: ReparsingStatus")
         run = runPass @ParserPass inits
     run $ do
-        IR.writeAttr @Source.Source $ convert expr
         Parsing.parsingBase Parsing.expr `catchAll` (\e -> throwM $ ParserException e)
         res     <- IR.readAttr @Parser.ParsedExpr
         exprMap <- IR.readAttr @Parser.MarkedExprMap
+        IR.writeLayer @CodeMarkers exprMap (unwrap' res)
         return (unwrap' res, exprMap)
 
 runReparser :: Text.Text -> NodeRef -> Command Graph (NodeRef, Parser.MarkedExprMap, Parser.ReparsingStatus)
@@ -72,23 +73,17 @@ runReparser expr oldExpr = do
     let inits = do
             IR.setAttr (getTypeDesc @Source.SourceTree)      $ (mempty :: Source.SourceTree)
             IR.setAttr (getTypeDesc @Parser.MarkedExprMap)   $ (mempty :: Parser.MarkedExprMap)
-            IR.setAttr (getTypeDesc @Source.Source)          $ (error "Data not provided: Source")
-            IR.setAttr (getTypeDesc @Parser.ParsedExpr)      $ (error "Data not provided: ParsedExpr")
+            IR.setAttr (getTypeDesc @Source.Source)          $ (convert expr :: Source.Source)
+            IR.setAttr (getTypeDesc @Parser.ParsedExpr)      $ (wrap' oldExpr :: Parser.ParsedExpr)
             IR.setAttr (getTypeDesc @Parser.ReparsingStatus) $ (error "Data not provided: ReparsingStatus")
         run = runPass @ParserPass inits
     run $ do
-        IR.writeAttr @Source.Source $ convert expr
-        IR.writeAttr @Parser.ParsedExpr $ wrap' oldExpr
         do
-            gidMapOld <- IR.readAttr @Parser.MarkedExprMap
-            refOld    <- IR.readAttr @Parser.ParsedExpr
-            -- elsOld    <- exprs
+            gidMapOld <- IR.readLayer @CodeMarkers oldExpr
 
             -- parsing new file and updating updated analysis
-            IR.writeAttr @Parser.MarkedExprMap mempty
-            Parsing.parsingBase Parsing.valExpr `catchAll` (\e -> throwM $ ParserException e)
+            Parsing.parsingBase Parsing.nonAssignmentExpr `catchAll` (\e -> throwM $ ParserException e)
             gidMap    <- IR.readAttr @Parser.MarkedExprMap
-            ref       <- IR.readAttr @Parser.ParsedExpr
 
             -- Preparing reparsing status
             rs        <- Parsing.cmpMarkedExprMaps gidMapOld gidMap
@@ -96,6 +91,7 @@ runReparser expr oldExpr = do
 
         res     <- IR.readAttr @Parser.ParsedExpr
         exprMap <- IR.readAttr @Parser.MarkedExprMap
+        IR.writeLayer @CodeMarkers exprMap (unwrap' res)
         status  <- IR.readAttr @Parser.ReparsingStatus
         return (unwrap' res, exprMap, status)
 
