@@ -49,15 +49,18 @@ handleMouseDown ref nodeId e m =
     then stopPropagation e : dispatch ref (UI.NodeEvent $ Node.MouseDown m nodeId)
     else []
 
+node_ :: Ref App -> Node -> ReactElementM ViewEventHandler ()
+node_ ref model = React.viewWithSKey node (jsShow $ model ^. Node.nodeId) (ref, model) mempty
+
 node :: ReactView (Ref App, Node)
 node = React.defineView name $ \(ref, n) -> case n ^. Node.mode of
     Node.Expanded (Node.Function fs) -> nodeContainer_ ref fs
-    _ -> do
+    _ ->
         let nodeId    = n ^. Node.nodeId
             nodeLimit = 10000::Int
             zIndex    = n ^. Node.zPos
             z         = if isCollapsed n then zIndex else zIndex + nodeLimit
-        div_
+        in div_
             [ "key"       $= (nodePrefix <> fromString (show nodeId))
             , "id"        $= (nodePrefix <> fromString (show nodeId))
             , "className" $= Style.prefixFromList ( [ "node" , (if isCollapsed n then  "node--collapsed" else "node--expanded") ]
@@ -89,9 +92,6 @@ node = React.defineView name $ \(ref, n) -> case n ^. Node.mode of
             nodeVisualizations_ ref n
             nodePorts_ ref n
 
-node_ :: Ref App -> Node -> ReactElementM ViewEventHandler ()
-node_ ref model = React.viewWithSKey node (jsShow $ model ^. Node.nodeId) (ref, model) mempty
-
 nodeDynamicStyles_ :: Matrix Double -> Node -> ReactElementM ViewEventHandler ()
 nodeDynamicStyles_ camera n = do
     let nodeId  = n ^. Node.nodeId
@@ -102,11 +102,13 @@ nodeDynamicStyles_ camera n = do
     elemString $ "#" <> Config.mountPoint <> "-node-" <> fromString (show nodeId) <> " path.luna-port__shape { clip-path: url(#port-io-shape-mask-"   <> show nodeId <> ") }"
     elemString $ "#" <> Config.mountPoint <> "-node-" <> fromString (show nodeId) <> " path.luna-port__select { clip-path: url(#port-io-select-mask-" <> show nodeId <> ") }"
 
+nodeBody_ :: Ref App -> Node -> ReactElementM ViewEventHandler ()
+nodeBody_ ref model = React.viewWithSKey nodeBody "node-body" (ref, model) mempty
 
 nodeBody :: ReactView (Ref App, Node)
-nodeBody = React.defineView objNameBody $ \(ref, n) -> do
+nodeBody = React.defineView objNameBody $ \(ref, n) ->
     let nodeId = n ^. Node.nodeId
-    div_
+    in div_
         [ "key"       $= "nodeBody"
         , "className" $= Style.prefixFromList [ "node__body", "node-translate" ]
         ] $ do
@@ -123,11 +125,13 @@ nodeBody = React.defineView objNameBody $ \(ref, n) -> do
                     & Field.onCancel .~ Just (UI.NodeEvent . Node.SetCode nodeId)
                 _                                -> ""
 
+nodeVisualizations_ :: Ref App -> Node -> ReactElementM ViewEventHandler ()
+nodeVisualizations_ ref model = React.viewWithSKey nodeVisualizations objNameVis (ref, model) mempty
 
 nodeVisualizations :: ReactView (Ref App, Node)
-nodeVisualizations = React.defineView objNameVis $ \(ref, n) -> do
+nodeVisualizations = React.defineView objNameVis $ \(ref, n) ->
     let nodeId = n ^. Node.nodeId
-    div_
+    in div_
         [ "key"       $= "shortValue"
         , "className" $= Style.prefixFromList [ "node-translate", "noselect" ]
         , onDoubleClick $ \e _ -> [stopPropagation e]
@@ -137,9 +141,11 @@ nodeVisualizations = React.defineView objNameVis $ \(ref, n) -> do
 --        , "className" $= Style.prefixFromList [ "node__visualisations", "node-translate" ]
 --        ] $ forM_ (n ^. Node.value) $ visualization_ ref nodeId def
 
+nodePorts_ :: Ref App -> Node -> ReactElementM ViewEventHandler ()
+nodePorts_ ref model = React.viewWithSKey nodePorts objNamePorts (ref, model) mempty
 
 nodePorts :: ReactView (Ref App, Node)
-nodePorts = React.defineView objNamePorts $ \(ref, n) -> do
+nodePorts = React.defineView objNamePorts $ \(ref, n) ->
     let nodeId     = n ^. Node.nodeId
         nodePorts' = Map.elems $ n ^. Node.ports
         ports p   = forM_ p $ \port -> port_ ref
@@ -148,7 +154,7 @@ nodePorts = React.defineView objNamePorts $ \(ref, n) -> do
                                             (if isInPort $ port ^. Port.portId then countArgPorts n else countOutPorts n)
                                             (isAll (port ^. Port.portId) && countArgPorts n + countOutPorts n == 1)
 
-    svg_
+    in svg_
         [ "key"       $= "nodePorts"
         , "className" $= Style.prefixFromList [ "node__ports" ]
         ] $ do
@@ -179,21 +185,11 @@ nodePorts = React.defineView objNamePorts $ \(ref, n) -> do
                 ports $ filter (\port -> (port ^. Port.portId) == InPortId Self) nodePorts'
                 forM_  (filter (\port -> (port ^. Port.portId) /= InPortId Self) nodePorts') $ \port -> portExpanded_ ref nodeId port
 
-
-nodeBody_ :: Ref App -> Node -> ReactElementM ViewEventHandler ()
-nodeBody_ ref model = React.viewWithSKey nodeBody "node-body" (ref, model) mempty
-
-nodeVisualizations_ :: Ref App -> Node -> ReactElementM ViewEventHandler ()
-nodeVisualizations_ ref model = React.viewWithSKey nodeVisualizations objNameVis (ref, model) mempty
-
-nodePorts_ :: Ref App -> Node -> ReactElementM ViewEventHandler ()
-nodePorts_ ref model = React.viewWithSKey nodePorts objNamePorts (ref, model) mempty
-
 nodeContainer_ :: Ref App -> [Subgraph] -> ReactElementM ViewEventHandler ()
 nodeContainer_ ref subgraphs = React.viewWithSKey nodeContainer "node-container" (ref, subgraphs) mempty
 
 nodeContainer :: ReactView (Ref App, [Subgraph])
-nodeContainer = React.defineView name $ \(ref, subgraphs) -> do
+nodeContainer = React.defineView name $ \(ref, subgraphs) ->
     div_ $ forM_ subgraphs $ \subgraph -> do
       let edges        = subgraph ^. Node.edgeNodes . to HashMap.elems
           nodes        = subgraph ^. Node.nodes . to HashMap.elems
