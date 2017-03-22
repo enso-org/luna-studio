@@ -23,7 +23,9 @@ import           Luna.Studio.React.Model.Port           (InPort (Self), PortId (
 import qualified Luna.Studio.React.Model.Port           as Port
 import           Luna.Studio.React.Store                (Ref, dispatch)
 import           Luna.Studio.React.View.Field           (multilineField_)
+import           Luna.Studio.React.View.Monad           (monads_)
 import           Luna.Studio.React.View.Node.Properties (nodeProperties_)
+import           Luna.Studio.React.View.Plane           (svgPlanes_, planeMonads_)
 import           Luna.Studio.React.View.Port            (portExpanded_, port_)
 import           Luna.Studio.React.View.Style           (blurBackground_, selectionMark_)
 import qualified Luna.Studio.React.View.Style           as Style
@@ -205,3 +207,5 @@ nodeContainer = React.defineView name $ \(ref, subgraphs) -> do
           -- , onScroll      $ \e     -> [preventDefault e]
           ] $ do
               forM_ nodes $ node_ ref
+              svgPlanes_ $
+                  planeMonads_ $ monads_ monads
