@@ -5,7 +5,7 @@ module Luna.Studio.Handler.App
 import           Luna.Studio.Prelude
 
 import qualified JS.Config                       as Config
-import           Luna.Studio.Action.Basic        (updateScene)
+-- import           Luna.Studio.Action.Basic        (updateScene)
 import qualified Luna.Studio.Action.Batch        as Batch
 import           Luna.Studio.Action.Command      (Command)
 import           Luna.Studio.Action.State.Action (endAll)

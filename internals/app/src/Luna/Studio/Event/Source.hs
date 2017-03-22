@@ -17,7 +17,7 @@ import           GHCJS.Prim                             (fromJSString)
 
 import qualified JS.Atom                                as Atom
 import qualified JS.CustomEvent                         as CustomEvent
-import qualified JS.Scene                               as Scene
+-- import qualified JS.Scene                               as Scene
 -- import qualified JS.UI                                  as UI
 import qualified JS.WebSocket                           as WebSocket
 import qualified Luna.Studio.Batch.Connector.Connection as BatchConnection
