@@ -38,19 +38,19 @@ foreign import javascript safe "atomCallback2.subscribeText($1)"
 foreign import javascript safe "($1).unsubscribeText()"
   unsubscribeText' :: Callback (JSVal -> IO ()) -> IO ()
 
-foreign import javascript safe "getPath($1)"
+foreign import javascript safe "atomCallback2.getPath($1)"
   getPath :: JSVal -> JSString
 
-foreign import javascript safe "getStart($1)"
+foreign import javascript safe "atomCallback2.getStart($1)"
   getStart :: JSVal -> Int
 
-foreign import javascript safe "getStop($1)"
+foreign import javascript safe "atomCallback2.getStop($1)"
   getStop :: JSVal -> Int
 
-foreign import javascript safe "getText($1)"
+foreign import javascript safe "atomCallback2.getText($1)"
   getText :: JSVal -> JSString
 
-foreign import javascript safe "getCursor($1)"
+foreign import javascript safe "atomCallback2.getCursor($1)"
   getCursor :: JSVal -> Int
 
 jsvalToText :: JSVal -> TextEvent

@@ -57,27 +57,44 @@ module.exports = function () {
       });
     },
     getPath: function(data) {
-      console.log(data)
-      return data.uri;
+      var key = "uri";
+      for(key in data) {
+        if(data.hasOwnProperty(key)) {
+          var value = data.key;
+          return value;}
+        }
     },
     getStart: function(data) {
-      console.log(data)
-      return data.start;
+      var key = "start";
+      for(key in data) {
+        if(data.hasOwnProperty(key)) {
+          var value = data.key;
+          return value;}
+        }
     },
     getStop: function(data) {
-      console.log(data)
-
-      return data.end;
+      var key = "end";
+      for(key in data) {
+        if(data.hasOwnProperty(key)) {
+          var value = data.key;
+          return value;}
+        }
     },
     getText: function(data) {
-      console.log(data)
-
-      return data.text;
+      var key = "text";
+      for(key in data) {
+        if(data.hasOwnProperty(key)) {
+          var value = data.key;
+          return value;}
+        }
     },
     getCursor: function(data) {
-      console.log(data)
-      
-      return data.cursor;
+      var key = "cursor";
+      for(key in data) {
+        if(data.hasOwnProperty(key)) {
+          var value = data.key;
+          return value;}
+        }
     },
 
   };
