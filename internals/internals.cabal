@@ -73,38 +73,8 @@ executable internals
       JS.UUID
       JS.WebSocket
       Luna.Studio.Action.Basic
-      Luna.Studio.Action.Basic.AddConnection
-      Luna.Studio.Action.Basic.AddNode
-      Luna.Studio.Action.Basic.AddPort
-      Luna.Studio.Action.Basic.AddSubgraph
-      Luna.Studio.Action.Basic.CenterGraph
-      Luna.Studio.Action.Basic.CreateGraph
       Luna.Studio.Action.Basic.DestroyGraph
-      Luna.Studio.Action.Basic.DrawConnection
-      Luna.Studio.Action.Basic.EnterBreadcrumb
-      Luna.Studio.Action.Basic.FocusNode
-      Luna.Studio.Action.Basic.Merge
-      Luna.Studio.Action.Basic.ModifyCamera
-      Luna.Studio.Action.Basic.MovePort
       Luna.Studio.Action.Basic.ProjectManager
-      Luna.Studio.Action.Basic.RemoveConnection
-      Luna.Studio.Action.Basic.RemoveNode
-      Luna.Studio.Action.Basic.RemovePort
-      Luna.Studio.Action.Basic.RenameNode
-      Luna.Studio.Action.Basic.Revert
-      Luna.Studio.Action.Basic.Scene
-      Luna.Studio.Action.Basic.SearchNodes
-      Luna.Studio.Action.Basic.SelectNode
-      Luna.Studio.Action.Basic.SetCode
-      Luna.Studio.Action.Basic.SetNodeCode
-      Luna.Studio.Action.Basic.SetNodeExpression
-      Luna.Studio.Action.Basic.SetNodeMeta
-      Luna.Studio.Action.Basic.SetNodeMode
-      Luna.Studio.Action.Basic.SetNodeResult
-      Luna.Studio.Action.Basic.SetPortDefault
-      Luna.Studio.Action.Basic.UpdateCollaboration
-      Luna.Studio.Action.Basic.UpdateConnection
-      Luna.Studio.Action.Basic.UpdateNode
       Luna.Studio.Action.Batch
       Luna.Studio.Action.Camera
       Luna.Studio.Action.Camera.Pan
