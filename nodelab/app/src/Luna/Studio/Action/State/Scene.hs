@@ -11,6 +11,7 @@ import           Data.Vector                           (scalarProduct, vector, x
 import           JS.Scene                              (InputSidebar, OutputSidebar, Scene)
 import qualified JS.Scene                              as Scene
 import           Luna.Studio.Action.Command            (Command)
+import           Luna.Studio.Action.State.App          (renderIfNeeded)
 import           Luna.Studio.Action.State.NodeEditor   (getNodeEditor)
 import           Luna.Studio.Data.CameraTransformation (logicalToScreen, screenToLogical)
 import           Luna.Studio.Prelude
@@ -42,6 +43,7 @@ getScene = use (Global.ui . UI.scene) >>= maybe (updateScene >> use (Global.ui .
 
 updateScene :: Command State ()
 updateScene = do
+    renderIfNeeded
     mayNewScene <- Scene.get
     let shouldUpdate = flip (maybe True) mayNewScene $ \newScene ->
             newScene ^. Scene.position /= def || newScene ^. Scene.size /= def

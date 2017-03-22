@@ -56,7 +56,6 @@ edgeSidebar_ ref _mayDraggedPort node = do
         --                                       . PortRef.nodeId ) <$> mayDraggedPort )
     div_
         [ "key"         $= name node
-        , "id"          $= if isInputEdge node then inputSidebarId else outputSidebarId
         , "className"   $= Style.prefixFromList classes
         , onDoubleClick $ \e _ -> [stopPropagation e]
         , onMouseDown   $ \e _ -> [stopPropagation e]
@@ -64,27 +63,29 @@ edgeSidebar_ ref _mayDraggedPort node = do
         ] $ do
         div_
             [ "key"       $= "EdgePortsBody"
+            , "id"        $= if isInputEdge node then inputSidebarId else outputSidebarId
             , "className" $= Style.prefixFromList [ "edgeports__body" ]
             ] $ do
-            when (isInputEdge node) $
-                div_
-                    [ "className" $= Style.prefixFromList ["port", "edgeport", "edgeport--i", "edgeport--self"]
-                    ] $
-                    svg_
-                        [ "className" $= Style.prefix "edgeport__svg"
-                        ] $
-                        g_
-                            [ "className" $= Style.prefixFromList [ "port", "port--self" ]
-                            ] $ do
-                            circle_
-                                [ "className" $= Style.prefix "port__shape"
-                                , "fill"      $= "rgba(119,119,119,255)"
-                                , "r"         $= "5"
-                                ] mempty
-                            circle_
-                                [ "className" $= Style.prefix "port__select"
-                                , "r"         $= "13"
-                                ] mempty
+            -- TODO[LJK]: Find out how self port works in this case
+            -- when (isInputEdge node) $
+            --     div_
+            --         [ "className" $= Style.prefixFromList ["port", "edgeport", "edgeport--i", "edgeport--self"]
+            --         ] $
+            --         svg_
+            --             [ "className" $= Style.prefix "edgeport__svg"
+            --             ] $
+            --             g_
+            --                 [ "className" $= Style.prefixFromList [ "port", "port--self" ]
+            --                 ] $ do
+            --                 circle_
+            --                     [ "className" $= Style.prefix "port__shape"
+            --                     , "fill"      $= "rgba(119,119,119,255)"
+            --                     , "r"         $= "5"
+            --                     ] mempty
+            --                 circle_
+            --                     [ "className" $= Style.prefix "port__select"
+            --                     , "r"         $= "13"
+            --                     ] mempty
 
             forM_ ports $ edgePort_ ref mode nodeId
 

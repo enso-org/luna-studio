@@ -23,7 +23,7 @@ getInputEdgePortPosition pid = do
             pos     = inputSidebar ^. inputSidebarPosition
             siz     = inputSidebar ^. inputSidebarSize
             posX    = pos ^. x + siz ^. x
-            posY    = (fromIntegral portNum) * gridSize + pos ^. y + siz ^. y / 2
+            posY    = pos ^. y + (fromIntegral (portNum + 1)) * gridSize
         (fmap Just) . translateToWorkspace $ fromDoubles posX posY
 
 getOutputEdgePortPosition :: PortId -> Command State (Maybe Position)
@@ -34,7 +34,7 @@ getOutputEdgePortPosition pid = do
             pos     = outputSidebar ^. outputSidebarPosition
             siz     = outputSidebar ^. outputSidebarSize
             posX    = pos ^. x
-            posY    = (fromIntegral $ if isSelf pid then 0 else  portNum + 1) * gridSize + pos ^. y + siz ^. y / 2
+            posY    = (fromIntegral $ if isSelf pid then 0 else  portNum + 1) * gridSize + pos ^. y
         (fmap Just) . translateToWorkspace $ fromDoubles posX posY
 
 

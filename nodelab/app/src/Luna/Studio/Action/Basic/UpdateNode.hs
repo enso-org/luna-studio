@@ -4,6 +4,7 @@ import           Control.Monad                               (filterM)
 import           Empire.API.Data.Node                        (NodeTypecheckerUpdate, tcNodeId, tcPorts)
 import           Empire.API.Data.Port                        (InPort (Self), PortId (InPortId))
 import           Luna.Studio.Action.Basic.DrawConnection     (redrawConnectionsForNode)
+import           Luna.Studio.Action.Basic.Scene              (updateScene)
 import           Luna.Studio.Action.Command                  (Command)
 import           Luna.Studio.Action.State.Model              (shouldDisplayPortSelf)
 import qualified Luna.Studio.Action.State.NodeEditor         as NodeEditor
@@ -34,7 +35,7 @@ localUpdateEdgeNode node = NodeEditor.getEdgeNode (node ^. nodeId) >>= \mayNode 
         Just prevNode -> do
             let edgeMode = prevNode ^. mode
             NodeEditor.addEdgeNode $ node & mode .~ edgeMode
-            void $ redrawConnectionsForNode $ node ^. nodeId
+            updateScene
             return True
 
 localUpdateExpressionNode :: ExpressionNode -> Command State Bool
