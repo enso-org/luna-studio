@@ -43,9 +43,11 @@ import qualified Graphics.API                      as G
 --                                                           autoScatterChartIntTuple)
 
 
-addNode :: ASTOp m => NodeId -> String -> NodeRef -> m NodeRef
-addNode nid name node = do
-    ASTBuilder.makeNodeRep nid name node
+addNode :: ASTOp m => NodeId -> String -> String -> m (NodeRef, NodeRef)
+addNode nid name expr = do
+    (exprName, ref) <- Parser.parseExpr expr
+    let name' = fromMaybe name $ fmap Text.unpack exprName
+    (,) <$> pure ref <*> ASTBuilder.makeNodeRep nid name' ref
 
 limit :: [a] -> [a]
 limit = limitHead where
