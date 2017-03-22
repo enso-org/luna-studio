@@ -32,13 +32,13 @@ import qualified Empire.API.Graph.SetNodeExpression           as SetNodeExpressi
 import qualified Empire.API.Graph.SetNodesMeta                as SetNodesMeta
 import qualified Empire.API.Graph.SetPortDefault              as SetPortDefault
 import qualified Empire.API.Response                          as Response
-import           Luna.Studio.Action.Basic                     (createGraph, localAddConnection, localAddNode, localAddPort,
+import           Luna.Studio.Action.Basic                     (createGraph, localAddAnyNode, localAddConnection, localAddPort,
                                                                localAddSubgraph, localMerge, localMovePort, localRemoveConnection,
                                                                localRemoveNodes, localRemovePort, localRenameNode, localSetCode,
                                                                localSetNodeCode, localSetNodeExpression, localSetNodesMeta,
-                                                               localSetPortDefault, localSetSearcherHints, localUpdateNode,
-                                                               localUpdateNodeTypecheck, localUpdateNodes, setNodeProfilingData,
-                                                               setNodeValue)
+                                                               localSetPortDefault, localSetSearcherHints, localUpdateAnyNode,
+                                                               localUpdateAnyNodes, localUpdateNodeTypecheck, localUpdateNodes,
+                                                               setNodeProfilingData, setNodeValue)
 import           Luna.Studio.Action.Basic.Revert              (revertAddConnection, revertAddNode, revertAddPort, revertAddSubgraph,
                                                                revertMovePort, revertRemoveConnection, revertRemoveNodes, revertRemovePort,
                                                                revertRenameNode, revertSetNodeCode, revertSetNodeExpression,
@@ -56,6 +56,8 @@ import           Luna.Studio.Event.Batch                      (Event (..))
 import qualified Luna.Studio.Event.Event                      as Event
 import           Luna.Studio.Handler.Backend.Common           (doNothing, handleResponse)
 import           Luna.Studio.Prelude
+import           Luna.Studio.React.Model.EdgeNode             (EdgeNode)
+import           Luna.Studio.React.Model.Node                 (Node)
 import qualified Luna.Studio.React.Model.Node                 as Node
 import qualified Luna.Studio.React.Model.NodeEditor           as NodeEditor
 import           Luna.Studio.State.Global                     (State)
@@ -104,9 +106,11 @@ handle (Event.Batch ev) = Just $ case ev of
             ownRequest    <- isOwnRequest requestId
             when shouldProcess $ do
                 if ownRequest then do
-                     void $ localUpdateNode node
-                     collaborativeModify [node ^. Node.nodeId]
-                else localAddNode node
+                     void $ localUpdateAnyNode node
+                     case node of
+                         Left n -> collaborativeModify [n ^. Node.nodeId]
+                         _      -> return ()
+                else localAddAnyNode node
 
     AddPortResponse response -> handleResponse response success failure where
         requestId    = response ^. Response.requestId
@@ -120,12 +124,14 @@ handle (Event.Batch ev) = Just $ case ev of
             ownRequest    <- isOwnRequest requestId
             when shouldProcess $ do
                 if ownRequest then do
-                     void $ localUpdateNode node
-                     collaborativeModify [node ^. Node.nodeId]
+                     void $ localUpdateAnyNode node
+                     case node of
+                         Left n -> collaborativeModify [n ^. Node.nodeId]
+                         _      -> return ()
                 else do
                     --TODO[LJK, PM]: What should happen if localAddPort fails? (Example reason - node is not in graph)
                     void $ localAddPort portRef
-                    void $ localUpdateNode node
+                    void $ localUpdateAnyNode node
 
     AddSubgraphResponse response -> handleResponse response success failure where
         requestId     = response ^. Response.requestId
@@ -134,7 +140,7 @@ handle (Event.Batch ev) = Just $ case ev of
         conns         = request  ^. AddSubgraph.connections
         failure _     = whenM (isOwnRequest requestId) $ revertAddSubgraph request
         success nodes' = do
-            let nodes = convert <$> nodes'
+            let nodes = (convert <$> nodes' :: [Either Node EdgeNode]) ^.. traverse . _Left
             shouldProcess <- isCurrentLocationAndGraphLoaded location
             ownRequest    <- isOwnRequest requestId
             when shouldProcess $ do
@@ -197,7 +203,7 @@ handle (Event.Batch ev) = Just $ case ev of
             ownRequest    <- isOwnRequest requestId
             when shouldProcess $
                 if ownRequest then
-                    void $ localUpdateNode node
+                    void $ localUpdateAnyNode node
                 else void $ localMovePort portRef newPortRef
 
     NodeResultUpdate update -> do
@@ -209,7 +215,7 @@ handle (Event.Batch ev) = Just $ case ev of
 
     NodesUpdate update -> do
         shouldProcess <- isCurrentLocationAndGraphLoaded $ update ^. NodesUpdate.location
-        when shouldProcess $ localUpdateNodes $ convert <$> update ^. NodesUpdate.nodes
+        when shouldProcess $ localUpdateAnyNodes $ convert <$> update ^. NodesUpdate.nodes
 
     NodeTypecheckerUpdate update -> do
       shouldProcess <- isCurrentLocationAndGraphLoaded $ update ^. NodeTCUpdate.location

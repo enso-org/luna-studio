@@ -13,11 +13,12 @@ module Empire.ASTOp (
   , EmpirePass
   , runAliasAnalysis
   , runASTOp
+  , runPass
   , match
   ) where
 
 import           Empire.Prelude       hiding (mempty)
-import           Prologue             (mempty)
+import           Prologue             (Text, mempty)
 
 import           Control.Monad.Catch  (MonadCatch(..))
 import           Control.Monad.State  (StateT, runStateT, get, put)
@@ -45,6 +46,7 @@ import           Luna.Pass.Resolution.Data.UnresolvedVars     (UnresolvedVars(..
 import           Luna.Pass.Resolution.Data.UnresolvedConses   (UnresolvedConses(..), NegativeConses(..))
 import qualified Luna.Pass.Resolution.AliasAnalysis           as AliasAnalysis
 import qualified Luna.Syntax.Text.Parser.Parser               as Parser
+import qualified Luna.Syntax.Text.Parser.Parsing              as Parsing
 import qualified Luna.Syntax.Text.Parser.CodeSpan             as CodeSpan
 import           Luna.Syntax.Text.Parser.Marker               (MarkedExprMap)
 import qualified Data.SpanTree                                as SpanTree
@@ -116,10 +118,10 @@ runASTOp :: Pass.SubPass EmpirePass (Pass.PassManager (IRBuilder (Parser.IRSpanT
          -> Command Graph a
 runASTOp pass = runPass inits pass where
     inits = do
-        setAttr (getTypeDesc @SourceTree)           $ (mempty :: SourceTree)
-        setAttr (getTypeDesc @MarkedExprMap)        $ (mempty :: MarkedExprMap)
-        setAttr (getTypeDesc @Source)               $ (error "Data not provided: Source")
-        setAttr (getTypeDesc @Parser.ParsedExpr)  $ (error "Data not provided: ParsedExpr")
+        setAttr (getTypeDesc @SourceTree)        $ (mempty :: SourceTree)
+        setAttr (getTypeDesc @MarkedExprMap)     $ (mempty :: MarkedExprMap)
+        setAttr (getTypeDesc @Source)            $ (error "Data not provided: Source")
+        setAttr (getTypeDesc @Parser.ParsedExpr) $ (error "Data not provided: ParsedExpr")
 
 
 runAliasAnalysis :: Command Graph ()
@@ -137,7 +139,7 @@ runAliasAnalysis = do
             Pass.setAttr (getTypeDesc @ExprRoots) $ ExprRoots $ map unsafeGeneralize roots
     runPass inits AliasAnalysis.runAliasAnalysis
 
-runPass :: forall b a pass. KnownPass pass
+runPass :: forall pass b a. KnownPass pass
         => Pass.PassManager (IRBuilder (Parser.IRSpanTreeBuilder (DepState.StateT Cache (Logger DropLogger (Vis.VisStateT (StateT Graph IO)))))) b
         -> Pass.SubPass pass (Pass.PassManager (IRBuilder (Parser.IRSpanTreeBuilder (DepState.StateT Cache (Logger DropLogger (Vis.VisStateT (StateT Graph IO))))))) a
         -> Command Graph a

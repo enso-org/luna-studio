@@ -10,11 +10,11 @@ import           Luna.Studio.Action.Connect          (connectToPort, startConnec
 import           Luna.Studio.Action.Edge             (startPortDrag)
 import           Luna.Studio.Event.Mouse             (mousePosition)
 import           Luna.Studio.Prelude
-import           Luna.Studio.React.Model.Node        (isInputEdge)
+import           Luna.Studio.React.Model.EdgeNode    (isInputEdge)
 import           Luna.Studio.State.Action            (Action (continue), Mode (Click, Drag), connectAction, connectMode, portDragAction)
 
 import           Luna.Studio.Action.State.Action     (checkAction)
-import           Luna.Studio.Action.State.NodeEditor (getNode)
+import           Luna.Studio.Action.State.NodeEditor (getAnyNode)
 import           Luna.Studio.State.Global            (State)
 import           React.Flux                          (MouseEvent)
 
@@ -36,9 +36,12 @@ handleClick evt portRef = do
 
 startPortDragOrConnect :: MouseEvent -> AnyPortRef -> Mode -> Command State ()
 startPortDragOrConnect evt portRef mode = do
-    mayNode <- getNode $ portRef ^. PortRef.nodeId
+    mayNode <- getAnyNode $ portRef ^. PortRef.nodeId
     withJust mayNode $ \node -> do
         mousePos <- mousePosition evt
-        if (isInputEdge node) then
+        let doPortDrag = case node of
+                Right n -> isInputEdge n
+                _       -> False
+        if doPortDrag then
              startPortDrag   mousePos portRef         mode
         else startConnecting mousePos portRef Nothing mode

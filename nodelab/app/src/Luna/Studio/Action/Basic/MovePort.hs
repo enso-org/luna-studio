@@ -2,13 +2,13 @@ module Luna.Studio.Action.Basic.MovePort where
 
 import           Empire.API.Data.PortRef                (AnyPortRef (OutPortRef'), OutPortRef (OutPortRef), srcPortId)
 import           Luna.Studio.Action.Basic.AddConnection (localAddConnection)
-import           Luna.Studio.Action.Basic.UpdateNode    (localUpdateNode)
+import           Luna.Studio.Action.Basic.UpdateNode    (localUpdateEdgeNode)
 import qualified Luna.Studio.Action.Batch               as Batch
 import           Luna.Studio.Action.Command             (Command)
-import           Luna.Studio.Action.State.NodeEditor    (getConnectionsContainingNode, getNode)
+import           Luna.Studio.Action.State.NodeEditor    (getConnectionsContainingNode, getEdgeNode)
 import           Luna.Studio.Prelude
 import           Luna.Studio.React.Model.Connection     (dst, src)
-import           Luna.Studio.React.Model.Node           (countProjectionPorts, getPorts, hasPort, isInputEdge, ports)
+import           Luna.Studio.React.Model.EdgeNode       (countProjectionPorts, getPorts, hasPort, isInputEdge, ports)
 import           Luna.Studio.React.Model.Port           (OutPort (Projection), PortId (OutPortId), portId, toPortsMap)
 import           Luna.Studio.State.Global               (State)
 
@@ -19,7 +19,7 @@ movePort portRef newPortRef = whenM (localMovePort portRef newPortRef) $ Batch.m
 localMovePort :: AnyPortRef -> AnyPortRef -> Command State Bool
 localMovePort (OutPortRef' (OutPortRef nid pid@(Projection pos))) (OutPortRef' (OutPortRef newNid newPid@(Projection newPos))) =
     if nid /= newNid || pid == newPid then return False else do
-        mayNode      <- getNode nid
+        mayNode      <- getEdgeNode nid
         flip (maybe (return False)) mayNode $ \node ->
             if     (not . isInputEdge $ node)
                 || hasPort (OutPortId pid) node
@@ -38,7 +38,7 @@ localMovePort (OutPortRef' (OutPortRef nid pid@(Projection pos))) (OutPortRef' (
                                 else port'
                         _                        -> port'
                     newPortsMap = toPortsMap newPorts
-                void . localUpdateNode $ node & ports .~ newPortsMap
+                void . localUpdateEdgeNode $ node & ports .~ newPortsMap
                 conns <- getConnectionsContainingNode nid
                 forM_ conns $ \conn -> case conn ^. src of
                     OutPortRef srcNid (Projection i) ->

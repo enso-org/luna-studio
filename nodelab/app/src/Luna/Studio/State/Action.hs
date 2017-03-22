@@ -1,19 +1,20 @@
 {-# LANGUAGE ExistentialQuantification #-}
 module Luna.Studio.State.Action where
 
-import           Data.Aeson                   (FromJSON, ToJSON)
-import           Data.Curve                   (Curve)
+import           Data.Aeson                       (FromJSON, ToJSON)
+import           Data.Curve                       (Curve)
 import           Data.Dynamic
-import           Data.Map                     (Map)
-import           Data.Position                (Position)
-import           Data.ScreenPosition          (ScreenPosition)
-import           Data.Set                     (Set)
-import qualified Data.Set                     as Set
-import           Empire.API.Data.Connection   (ConnectionId)
-import           Empire.API.Data.Port         (PortId)
-import           Empire.API.Data.PortRef      (AnyPortRef)
+import           Data.Map                         (Map)
+import           Data.Position                    (Position)
+import           Data.ScreenPosition              (ScreenPosition)
+import           Data.Set                         (Set)
+import qualified Data.Set                         as Set
+import           Empire.API.Data.Connection       (ConnectionId)
+import           Empire.API.Data.Port             (PortId)
+import           Empire.API.Data.PortRef          (AnyPortRef)
 import           Luna.Studio.Prelude
-import           Luna.Studio.React.Model.Node (Node, NodeId)
+import           Luna.Studio.React.Model.EdgeNode (EdgeNode)
+import           Luna.Studio.React.Model.Node     (NodeId)
 
 
 data NodeDrag = NodeDrag { _nodeDragStartPos      :: Position
@@ -86,7 +87,7 @@ data PortDrag = PortDrag { _portDragStartPos     :: ScreenPosition
                          , _portDragPortRef      :: AnyPortRef
                          , _portDragPortMapping  :: Map PortId PortId
                          , _portDragMode         :: Mode
-                         , _portDragOriginalNode :: Node
+                         , _portDragOriginalNode :: EdgeNode
                          } deriving (Eq, Generic, Show, Typeable)
 
 makeLenses ''PortDrag

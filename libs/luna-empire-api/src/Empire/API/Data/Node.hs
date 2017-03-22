@@ -16,15 +16,9 @@ import           Prologue
 
 type NodeId = UUID
 
-type FunctionType = [String]
-
 data NodeType = ExpressionNode  { _expression :: Text }
               | InputEdge
               | OutputEdge
-              | InputNode       { _inputIx    :: Int  }
-              | OutputNode      { _outputIx   :: Int  }
-              | FunctionNode    { _functionType :: FunctionType }
-              | ModuleNode
               deriving (Generic, Eq, NFData, Show)
 
 data Node = Node { _nodeId   :: NodeId

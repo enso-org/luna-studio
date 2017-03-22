@@ -55,7 +55,7 @@ import Prologue (notImplemented, typeRep', (.:), (.:.), type (<>))
 import Prelude
 
 import qualified Data.Convert              as Convert
-import qualified OCI.IR.Name.QualName      as IR
+import qualified OCI.IR.Name.Qualified     as IR
 
 nameToString :: IR.Name -> String
 nameToString = Convert.convert

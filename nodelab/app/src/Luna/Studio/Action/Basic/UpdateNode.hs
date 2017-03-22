@@ -8,14 +8,35 @@ import           Luna.Studio.Action.Command              (Command)
 import           Luna.Studio.Action.State.Model          (shouldDisplayPortSelf)
 import qualified Luna.Studio.Action.State.NodeEditor     as NodeEditor
 import           Luna.Studio.Prelude
+import           Luna.Studio.React.Model.EdgeNode        (EdgeNode)
+import qualified Luna.Studio.React.Model.EdgeNode        as EdgeNode
 import           Luna.Studio.React.Model.Node            (Node, NodeId, isSelected)
 import qualified Luna.Studio.React.Model.Node            as Node
 import           Luna.Studio.React.Model.Port            (visible)
 import           Luna.Studio.State.Global                (State)
 
+localUpdateAnyNodes :: [Either Node EdgeNode] -> Command State ()
+localUpdateAnyNodes = mapM_ localUpdateAnyNode
 
 localUpdateNodes :: [Node] -> Command State ()
 localUpdateNodes = mapM_ localUpdateNode
+
+localUpdateEdgeNodes :: [EdgeNode] -> Command State ()
+localUpdateEdgeNodes = mapM_ localUpdateEdgeNode
+
+localUpdateAnyNode :: Either Node EdgeNode -> Command State Bool
+localUpdateAnyNode (Left  node) = localUpdateNode node
+localUpdateAnyNode (Right edge) = localUpdateEdgeNode edge
+
+localUpdateEdgeNode :: EdgeNode -> Command State Bool
+localUpdateEdgeNode node = NodeEditor.inGraph (node ^. EdgeNode.nodeId) >>= \exists ->
+    if not exists
+        then return False
+        else do
+            let nid = node ^. EdgeNode.nodeId
+            NodeEditor.addEdgeNode node
+            void $ redrawConnectionsForNode nid
+            return True
 
 localUpdateNode :: Node -> Command State Bool
 localUpdateNode node = NodeEditor.inGraph (node ^. Node.nodeId) >>= \exists ->

@@ -5,7 +5,6 @@
 module Luna.Studio.React.Model.Node
     ( module Luna.Studio.React.Model.Node
     , NodeId
-    , NodeType (..)
     ) where
 
 import           Control.Arrow                        ((&&&))
@@ -16,14 +15,17 @@ import           Data.Map.Lazy                        (Map)
 import qualified Data.Map.Lazy                        as Map
 import           Data.Position                        (Position, fromTuple, toTuple)
 import           Data.Time.Clock                      (UTCTime)
+import           Empire.API.Data.Breadcrumb           (BreadcrumbItem)
 import           Empire.API.Data.MonadPath            (MonadPath)
-import           Empire.API.Data.Node                 (NodeId, NodeType (..))
+import           Empire.API.Data.Node                 (NodeId)
 import qualified Empire.API.Data.Node                 as Empire
 import           Empire.API.Data.NodeMeta             (NodeMeta (NodeMeta))
 import qualified Empire.API.Data.NodeMeta             as NodeMeta
 import           Empire.API.Graph.CollaborationUpdate (ClientId)
 import           Empire.API.Graph.NodeResultUpdate    (NodeValue)
 import           Luna.Studio.Prelude
+import           Luna.Studio.React.Model.EdgeNode     (EdgeNode, EdgeNodesMap)
+import qualified Luna.Studio.React.Model.EdgeNode     as EdgeNode
 import           Luna.Studio.React.Model.Port         (Port, PortId, PortsMap, isInPort)
 import qualified Luna.Studio.React.Model.Port         as Port
 import           Luna.Studio.State.Collaboration      (ColorId)
@@ -31,7 +33,7 @@ import           Luna.Studio.State.Collaboration      (ColorId)
 
 data Node = Node { _nodeId                :: NodeId
                  , _name                  :: Text
-                 , _nodeType              :: NodeType
+                 , _expression            :: Text
                  , _canEnter              :: Bool
                  , _ports                 :: PortsMap
                  , _position              :: Position
@@ -53,11 +55,12 @@ data Mode = Collapsed
 
 data ExpandedMode = Editor
                   | Controls
-                  | Function [Subgraph]
+                  | Function (Map BreadcrumbItem Subgraph)
                   deriving (Eq, Generic, NFData, Show)
 
 data Subgraph = Subgraph
     { _nodes       :: NodesMap
+    , _edgeNodes   :: EdgeNodesMap
     , _monads      :: [MonadPath]
     } deriving (Default, Eq, Generic, NFData, Show)
 
@@ -67,15 +70,17 @@ data Collaboration = Collaboration { _touch  :: Map ClientId (UTCTime, ColorId)
 
 type NodesMap = HashMap NodeId Node
 
+makeLenses ''Collaboration
 makeLenses ''Node
 makeLenses ''Subgraph
-makeLenses ''Collaboration
+makePrisms ''ExpandedMode
+makePrisms ''Mode
 
-instance Convertible Empire.Node Node where
-    convert n = Node
+instance Convertible (Empire.Node, Text) Node where
+    convert (n, expr) = Node
         {- nodeId                -} (n ^. Empire.nodeId)
         {- name                  -} (n ^. Empire.name)
-        {- nodeType              -} (n ^. Empire.nodeType)
+        {- expression            -} expr
         {- canEnter              -} (n ^. Empire.canEnter)
         {- ports                 -} (convert <$> n ^. Empire.ports)
         {- position              -} (fromTuple $ n ^. Empire.position)
@@ -90,16 +95,21 @@ instance Convertible Empire.Node Node where
         {- execTime              -} def
         {- collaboration         -} def
 
+instance Convertible Empire.Node (Either Node EdgeNode) where
+    convert n = case n ^. Empire.nodeType of
+        Empire.ExpressionNode expr -> Left  $ convert (n, expr)
+        Empire.InputEdge           -> Right $ convert (n, EdgeNode.InputEdge)
+        Empire.OutputEdge          -> Right $ convert (n, EdgeNode.OutputEdge)
 
 instance Convertible Node Empire.Node where
     convert n = Empire.Node
-        {- nodeId                -} (n ^. nodeId)
-        {- name                  -} (n ^. name)
-        {- nodeType              -} (n ^. nodeType)
-        {- canEnter              -} (n ^. canEnter)
-        {- ports                 -} (convert <$> n ^. ports)
-        {- nodeMeta              -} (NodeMeta.NodeMeta (toTuple $ n ^. position) (n ^. visualizationsEnabled))
-        {- code                  -} (n ^. code)
+        {- nodeId   -} (n ^. nodeId)
+        {- name     -} (n ^. name)
+        {- nodeType -} (Empire.ExpressionNode $ n ^. expression)
+        {- canEnter -} (n ^. canEnter)
+        {- ports    -} (convert <$> n ^. ports)
+        {- nodeMeta -} (NodeMeta.NodeMeta (toTuple $ n ^. position) (n ^. visualizationsEnabled))
+        {- code     -} (n ^. code)
 
 
 instance Convertible (Position, Bool) NodeMeta where
@@ -120,15 +130,8 @@ instance Default Mode where def = Collapsed
 toNodesMap :: [Node] -> NodesMap
 toNodesMap = HashMap.fromList . map (view nodeId &&& id)
 
-
-isEdge :: Node -> Bool
-isEdge node = isInputEdge node || isOutputEdge node
-
-isInputEdge :: Node -> Bool
-isInputEdge node = node ^. nodeType == InputEdge
-
-isOutputEdge :: Node -> Bool
-isOutputEdge node = node ^. nodeType == OutputEdge
+subgraphs :: Getter Node [Subgraph]
+subgraphs = to (toListOf $ mode . _Expanded . _Function . traverse)
 
 isMode :: Mode -> Node -> Bool
 isMode mode' node = node ^. mode == mode'

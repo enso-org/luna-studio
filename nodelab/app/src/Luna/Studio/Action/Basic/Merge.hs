@@ -2,6 +2,9 @@
 module Luna.Studio.Action.Basic.Merge where
 
 import qualified Data.HashMap.Strict                       as HashMap
+import           Data.Map.Lazy                             (Map)
+import qualified Data.Map.Lazy                             as Map
+import           Empire.API.Data.Breadcrumb                (BreadcrumbItem)
 import           Empire.API.Data.Graph                     (Graph)
 import qualified Empire.API.Data.Graph                     as GraphAPI
 import           Luna.Studio.Action.Basic.AddConnection    (localAddConnections)
@@ -10,20 +13,23 @@ import           Luna.Studio.Action.Basic.RemoveConnection (localRemoveConnectio
 import           Luna.Studio.Action.Command                (Command)
 import           Luna.Studio.Action.State.NodeEditor       (modifyNode)
 import           Luna.Studio.Prelude
-import           Luna.Studio.React.Model.Node              (Node, NodeId, Subgraph)
+import           Luna.Studio.React.Model.EdgeNode          (toEdgeNodesMap)
+import           Luna.Studio.React.Model.Node              (Node, NodeId, Subgraph, toNodesMap)
 import qualified Luna.Studio.React.Model.Node              as Node
 import           Luna.Studio.State.Global                  (State)
 
 
-localMerge :: NodeId -> [Graph] -> Command State ()
+localMerge :: NodeId -> Map BreadcrumbItem Graph -> Command State ()
 localMerge parentId graphs = do
-    subgraphs <- forM graphs $ \graph -> do
-        let nodes       = convert <$> graph ^. GraphAPI.nodes
+    subgraphs <- forM (Map.toList graphs) $ \(k, graph) -> do
+        let allNodes    = (convert <$> graph ^. GraphAPI.nodes)
+            nodesMap    = toNodesMap $ allNodes ^.. traverse . _Left
+            edgeMap     = toEdgeNodesMap $ allNodes ^.. traverse . _Right
             connections = graph ^. GraphAPI.connections
             monads      = graph ^. GraphAPI.monads
         void $ localAddConnections connections
-        return $ Node.Subgraph (Node.toNodesMap nodes) monads
-    modifyNode parentId $ Node.mode .= Node.Expanded (Node.Function subgraphs)
+        return (k, Node.Subgraph nodesMap edgeMap monads)
+    modifyNode parentId $ Node.mode .= Node.Expanded (Node.Function $ Map.fromList subgraphs)
     void $ redrawConnectionsForNode parentId
 
 localUnmerge :: Node -> Command State ()

@@ -111,22 +111,23 @@ addNode :: GraphLocation -> NodeId -> Text -> NodeMeta -> Empire Node
 addNode loc uuid expr meta = withTC loc False $ addNodeNoTC loc uuid expr meta
 
 addNodeNoTC :: GraphLocation -> NodeId -> Text -> NodeMeta -> Command Graph Node
-addNodeNoTC loc uuid expr meta = do
-    ((parsedRef, refNode), nodeItem) <- runASTOp $ do
+addNodeNoTC loc uuid input meta = do
+    (parse, _) <- ASTParse.runParser input
+    (expr, nodeItem) <- runASTOp $ do
         newNodeName <- generateNodeName
-        parsedNode <- AST.addNode uuid newNodeName (Text.unpack expr)
-        let nodeItem = BH.BItem Map.empty Nothing (Just (uuid, BH.MatchNode $ parsedNode ^. _2)) Nothing
+        parsedNode <- AST.addNode uuid newNodeName parse
+        let nodeItem = BH.BItem Map.empty Nothing (Just (uuid, BH.MatchNode parsedNode)) Nothing
         Graph.breadcrumbHierarchy . BH.children . at uuid ?= nodeItem
         return (parsedNode, nodeItem)
     runAliasAnalysis
     node <- runASTOp $ do
-        AST.writeMeta refNode meta
-        parsedIsLambda <- ASTRead.isLambda parsedRef
+        AST.writeMeta expr meta
+        parsedIsLambda <- ASTRead.getTargetNode expr >>= ASTRead.isLambda
         node <- GraphBuilder.buildNode uuid
         when parsedIsLambda $ do
             lambdaUUID             <- liftIO $ UUID.nextRandom
-            lambdaOutput           <- ASTRead.getLambdaOutputRef parsedRef
-            outputIsOneOfTheInputs <- AST.isTrivialLambda parsedRef
+            lambdaOutput           <- ASTRead.getTargetNode expr >>= ASTRead.getLambdaOutputRef
+            outputIsOneOfTheInputs <- ASTRead.getTargetNode expr >>= AST.isTrivialLambda
             let anonOutput = if   not outputIsOneOfTheInputs
                              then Just $ BH.BItem Map.empty Nothing (Just (lambdaUUID, BH.AnonymousNode lambdaOutput)) Nothing
                              else Nothing
@@ -268,20 +269,25 @@ renamePort loc portRef newName = withGraph loc $ runASTOp $ do
 
 setNodeExpression :: GraphLocation -> NodeId -> Text -> Empire Node
 setNodeExpression loc nodeId expr = withTC loc False $ do
-    parsedExpr <- runASTOp $ do
-        (exprName, parsedExpr) <- ASTParse.parseExpr $ Text.unpack expr
-        target                 <- ASTRead.getASTTarget nodeId
-        IR.replaceNode target parsedExpr
-        IR.deleteSubtree target
-        forM_ exprName $ \newName -> renameNodeGraph nodeId newName
-        return parsedExpr
+    oldExpr <- runASTOp $ ASTRead.getASTTarget nodeId
+    parsed <- view _1 <$> ASTParse.runReparser expr oldExpr
+    -- FIXME[MM]: temporarily put parsed expression to breadcrumb hierarchy
+    --            so alias analysis can pick it up
+    tempUUID <- liftIO $ UUID.nextRandom
+    runASTOp $ do
+        let nodeItem = BH.BItem Map.empty Nothing (Just (tempUUID, BH.AnonymousNode parsed)) Nothing
+        Graph.breadcrumbHierarchy . BH.children . at tempUUID ?= nodeItem
     runAliasAnalysis
     runASTOp $ do
-        parsedIsLambda <- ASTRead.isLambda parsedExpr
+        Graph.breadcrumbHierarchy . BH.children . at tempUUID .= Nothing
+        target <- ASTRead.getASTTarget nodeId
+        IR.replaceNode target parsed
+        IR.deleteSubtree target
+        parsedIsLambda <- ASTRead.isLambda parsed
         when parsedIsLambda $ do
             lambdaUUID             <- liftIO $ UUID.nextRandom
-            lambdaOutput           <- ASTRead.getLambdaOutputRef parsedExpr
-            outputIsOneOfTheInputs <- AST.isTrivialLambda        parsedExpr
+            lambdaOutput           <- ASTRead.getLambdaOutputRef parsed
+            outputIsOneOfTheInputs <- AST.isTrivialLambda        parsed
             Just nodeItem          <- use $ Graph.breadcrumbHierarchy . BH.children . at nodeId
             let anonOutput = if   not outputIsOneOfTheInputs
                              then Just $ BH.BItem Map.empty Nothing (Just (lambdaUUID, BH.AnonymousNode lambdaOutput)) Nothing

@@ -23,7 +23,9 @@ import           Luna.Studio.Prelude
 import           Luna.Studio.React.Model.App        (nodeEditor)
 import           Luna.Studio.React.Model.Connection (Connection, ConnectionId, ConnectionsMap, CurrentConnection, connectionId,
                                                      containsNode, containsPortRef, dstNodeId, srcNodeId, toConnectionsMap)
-import           Luna.Studio.React.Model.Node       (Node, NodeId, NodesMap, isEdge, isSelected, nodeId, ports, toNodesMap)
+import           Luna.Studio.React.Model.EdgeNode   (EdgeNode, EdgeNodesMap, toEdgeNodesMap)
+import qualified Luna.Studio.React.Model.EdgeNode   as EdgeNode
+import           Luna.Studio.React.Model.Node       (Node, NodeId, NodesMap, isSelected, nodeId, ports, toNodesMap)
 import           Luna.Studio.React.Model.NodeEditor
 import           Luna.Studio.React.Model.Port       (Port, state, valueType)
 import           Luna.Studio.React.Model.Searcher   (Searcher)
@@ -67,20 +69,39 @@ separateSubgraph nodeIds = do
     conns' <- HashMap.filter (inSet . view dstNodeId) <$> getConnectionsMap
     return $ Graph (HashMap.map convert nodes') (HashMap.map convert conns')
 
+addAnyNode :: Either Node EdgeNode -> Command State ()
+addAnyNode (Left  node) = addNode node
+addAnyNode (Right edge) = addEdgeNode edge
+
 addNode :: Node -> Command State ()
 addNode node = modifyNodeEditor $ nodes . at (node ^. nodeId) ?= node
 
-getAllNodes :: Command State [Node]
-getAllNodes = HashMap.elems <$> getNodesMap
+addEdgeNode :: EdgeNode -> Command State ()
+addEdgeNode node = modifyNodeEditor $ edgeNodes . at (node ^. EdgeNode.nodeId) ?= node
 
-getEdgeNodes :: Command State [Node]
-getEdgeNodes = filter isEdge <$> getAllNodes
+getAnyNode :: NodeId -> Command State (Maybe (Either Node EdgeNode))
+getAnyNode nid = do
+    mayNode     <- getNode nid
+    mayEdgeNode <- getEdgeNode nid
+    return $ case (mayNode, mayEdgeNode) of
+        (Just node, _)     -> Just $ Left node
+        (_, Just edgeNode) -> Just $ Right edgeNode
+        _                  -> Nothing
+
+getEdgeNode :: NodeId -> Command State (Maybe EdgeNode)
+getEdgeNode nid = view (edgeNodes . at nid) <$> getNodeEditor
+
+getEdgeNodes :: Command State [EdgeNode]
+getEdgeNodes = HashMap.elems <$> getEdgeNodesMap
+
+getEdgeNodesMap :: Command State EdgeNodesMap
+getEdgeNodesMap = view edgeNodes <$> getNodeEditor
 
 getNode :: NodeId -> Command State (Maybe Node)
 getNode nid = view (nodes . at nid) <$> getNodeEditor
 
 getNodes :: Command State [Node]
-getNodes = filter (not . isEdge) <$> getAllNodes
+getNodes = HashMap.elems <$> getNodesMap
 
 getNodesMap :: Command State NodesMap
 getNodesMap = view nodes <$> getNodeEditor
@@ -88,15 +109,22 @@ getNodesMap = view nodes <$> getNodeEditor
 modifyNode :: Monoid r => NodeId -> M.State Node r -> Command State r
 modifyNode nid = modify (nodeEditor . nodes . at nid) . zoom traverse
 
+modifyEdgeNode :: Monoid r => NodeId -> M.State EdgeNode r -> Command State r
+modifyEdgeNode nid = modify (nodeEditor . edgeNodes . at nid) . zoom traverse
+
 removeNode :: NodeId -> Command State ()
-removeNode nid = modifyNodeEditor $ nodes . at nid .= Nothing
+removeNode nid = modifyNodeEditor $ do
+    nodes     . at nid .= Nothing
+    edgeNodes . at nid .= Nothing
 
 getSelectedNodes :: Command State [Node]
 getSelectedNodes = filter (view isSelected) <$> getNodes
 
+updateEdgeNodes :: [EdgeNode] -> Command State ()
+updateEdgeNodes update = modifyNodeEditor $ edgeNodes .= toEdgeNodesMap update
+
 updateNodes :: [Node] -> Command State ()
 updateNodes update = modifyNodeEditor $ nodes .= toNodesMap update
-
 
 addConnection :: Connection -> Command State ()
 addConnection conn = modifyNodeEditor $ connections . at connId ?= conn where
@@ -175,7 +203,7 @@ getNodeSearcherData = do
 class NodeEditorElementId a where
     inGraph :: a -> Command State Bool
 instance NodeEditorElementId NodeId where
-    inGraph = fmap isJust . getNode
+    inGraph = fmap isJust . getAnyNode
 instance NodeEditorElementId ConnectionId where
     inGraph = fmap isJust . getConnection
 
@@ -189,14 +217,20 @@ instance HasPort AnyPortRef where
     getPort = getPortFromAnyPortRef
 
 modifyPort :: Monoid r => AnyPortRef -> M.State Port r -> Command State r
-modifyPort portRef = modify (nodeEditor . nodes . at nid . traverse . ports . at pid) . zoom traverse where
-    nid = portRef ^. PortRef.nodeId
-    pid = portRef ^. PortRef.portId
+modifyPort portRef s = do
+    let nid = portRef ^. PortRef.nodeId
+        pid = portRef ^. PortRef.portId
+    mayEdgeNode <- getEdgeNode nid
+    if isJust mayEdgeNode
+    then modify (nodeEditor . edgeNodes . at nid . traverse . EdgeNode.ports . at pid) . zoom traverse $ s
+    else modify (nodeEditor . nodes     . at nid . traverse . ports          . at pid) . zoom traverse $ s
 
 getPortFromAnyPortRef :: AnyPortRef -> Command State (Maybe Port)
 getPortFromAnyPortRef portRef = runMaybeT $ do
-    Just node <- lift $ getNode $ portRef ^. PortRef.nodeId
-    fromJustM $ node ^? ports . ix (portRef ^. PortRef.portId)
+    Just node' <- lift $ getAnyNode $ portRef ^. PortRef.nodeId
+    fromJustM $ case node' of
+        Left  node     -> node     ^? ports          . ix (portRef ^. PortRef.portId)
+        Right edgeNode -> edgeNode ^? EdgeNode.ports . ix (portRef ^. PortRef.portId)
 
 getPortDefault :: AnyPortRef -> Command State (Maybe PortDefault)
 getPortDefault portRef = maybe Nothing (\mayPort -> mayPort ^? state . _WithDefault) <$> getPort portRef

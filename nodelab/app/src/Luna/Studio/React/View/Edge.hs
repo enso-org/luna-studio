@@ -18,9 +18,9 @@ import           Luna.Studio.Prelude
 import qualified Luna.Studio.React.Event.Edge      as Edge
 import           Luna.Studio.React.Model.App       (App)
 import           Luna.Studio.React.Model.Constants (lineHeight)
+import           Luna.Studio.React.Model.EdgeNode  (EdgeMode (AddRemove, MoveConnect), EdgeNode, NodeId, countProjectionPorts, isInputEdge)
+import qualified Luna.Studio.React.Model.EdgeNode  as EdgeNode
 import qualified Luna.Studio.React.Model.Field     as Field
-import           Luna.Studio.React.Model.Node      (Node, NodeId, countProjectionPorts, isEdge, isInputEdge)
-import qualified Luna.Studio.React.Model.Node      as Node
 import           Luna.Studio.React.Model.Port      (DraggedPort, OutPort (Projection), Port (..), getPortNumber, isInPort, isOutPort)
 import qualified Luna.Studio.React.Model.Port      as Port
 import           Luna.Studio.React.Store           (Ref, dispatch)
@@ -31,25 +31,35 @@ import qualified Luna.Studio.React.View.Style      as Style
 import           React.Flux                        hiding (view)
 
 
-name :: Node -> JSString
+name :: EdgeNode -> JSString
 name node = "edgePorts" <> if isInputEdge node then "Inputs" else "Outputs"
 
-sendAddPortEvent :: Ref App -> AnyPortRef -> [SomeStoreAction]
-sendAddPortEvent ref portRef = dispatch ref (UI.EdgeEvent $ Edge.AddPort portRef)
+portHandlers :: Ref App -> EdgeMode -> AnyPortRef -> [PropertyOrHandler [SomeStoreAction]]
+portHandlers ref AddRemove portRef =
+    [ onMouseDown $ \e _ -> [stopPropagation e]
+    , onClick     $ \e _ -> stopPropagation e : dispatch ref (UI.EdgeEvent $ Edge.RemovePort portRef)
+    ]
+portHandlers ref MoveConnect portRef =
+    [ onMouseDown $ \e _ -> [stopPropagation e]
+    ]
 
-edgeSidebar_ :: Ref App -> Maybe DraggedPort -> Node -> ReactElementM ViewEventHandler ()
-edgeSidebar_ ref _mayDraggedPort node = when (isEdge node) $ do
-    let ports         = node ^. Node.ports . to Map.elems
-        nodeId        = node ^. Node.nodeId
+edgeSidebar_ :: Ref App -> Maybe DraggedPort -> EdgeNode -> ReactElementM ViewEventHandler ()
+edgeSidebar_ ref _mayDraggedPort node = do
+    let ports         = node ^. EdgeNode.ports . to Map.elems
+        nodeId        = node ^. EdgeNode.nodeId
+        mode          = node ^. EdgeNode.mode
+        classes       = [ "edgeports", if isInputEdge node then "edgeports--i" else "edgeports--o" ]
+                     ++ if mode == AddRemove then ["edgeports--editmode"] else []
         -- isPortDragged = Just nodeId == ( view ( Port.draggedPort
         --                                       . Port.portRef
         --                                       . PortRef.nodeId ) <$> mayDraggedPort )
     div_
-        [ "key"       $= name node
-        , "id"        $= if isInputEdge node then inputSidebarId else outputSidebarId
-        , "className" $= Style.prefixFromList [ "edgeports", "edgeports--editmode", if isInputEdge node then "edgeports--i" else "edgeports--o" ]
-        , onMouseDown $ \e _ -> [stopPropagation e]
-        , onMouseMove $ \e m -> stopPropagation e : (dispatch ref $ UI.EdgeEvent $ Edge.MouseMove m nodeId)
+        [ "key"         $= name node
+        , "id"          $= if isInputEdge node then inputSidebarId else outputSidebarId
+        , "className"   $= Style.prefixFromList classes
+        , onDoubleClick $ \e _ -> [stopPropagation e]
+        , onMouseDown   $ \e _ -> [stopPropagation e]
+        , onMouseMove   $ \e m -> stopPropagation e : (dispatch ref $ UI.EdgeEvent $ Edge.MouseMove m nodeId)
         ] $ do
         div_
             [ "key"       $= "EdgePortsBody"
@@ -75,7 +85,7 @@ edgeSidebar_ ref _mayDraggedPort node = when (isEdge node) $ do
                                 , "r"         $= "13"
                                 ] mempty
 
-            forM_ ports $ edgePort_ ref nodeId
+            forM_ ports $ edgePort_ ref mode nodeId
 
             when (isInputEdge node) $ do
                 -- TODO: merge two add buttons into one svg_
@@ -115,6 +125,7 @@ edgeSidebar_ ref _mayDraggedPort node = when (isEdge node) $ do
                     circle_
                         [ "className" $= Style.prefix "edit-icon__select"
                         , "key"       $= jsShow "editIconSelect"
+                        -- , onClick     $ \e _ -> stopPropagation e : dispatch ref (UI.EdgeEvent $ Edge.ToggleMode )
                         , "r"         $= jsShow2 (lineHeight/1.5)
                         ] mempty
 
@@ -134,8 +145,8 @@ addButton_ ref portRef isLast = do
                     plainRect 8 2 (-4) (-1)
             plainPath (Style.prefix "port-add-inbetween__selectable") "M 20 0 A 10 10 0 0 1 20 16 L 10 16 A 10 10 0 0 1 10 0 Z"
 
-edgePort_ :: Ref App -> NodeId -> Port -> ReactElementM ViewEventHandler ()
-edgePort_ ref nid p = when (p ^. Port.visible) $ do
+edgePort_ :: Ref App -> EdgeMode -> NodeId -> Port -> ReactElementM ViewEventHandler ()
+edgePort_ ref mode nid p = when (p ^. Port.visible) $ do
     let portId    = p ^. Port.portId
         portRef   = toAnyPortRef nid portId
         color     = convert $ p ^. Port.color
@@ -160,13 +171,11 @@ edgePort_ ref nid p = when (p ^. Port.visible) $ do
             g_ [ "className" $= Style.prefix "port__plus" ] $ do
                   plainRect 2 8 (-1) (-4)
                   plainRect 8 2 (-4) (-1)
-            circle_
+            circle_ (
                 [ "className" $= Style.prefix "port__select"
                 , "key"       $= (jsShow portId <> jsShow num <> "b")
-                , onMouseDown $ \e _ -> [stopPropagation e]
-                , onClick     $ \e _ -> stopPropagation e : dispatch ref (UI.EdgeEvent $ Edge.RemovePort portRef)
                 , "r"         $= jsShow2 (lineHeight/1.5)
-                ] mempty
+                ] ++ portHandlers ref mode portRef ) mempty
 
         if p ^. Port.isEdited then
             singleField_ [ "id" $= portLabelId ] (jsShow portId)

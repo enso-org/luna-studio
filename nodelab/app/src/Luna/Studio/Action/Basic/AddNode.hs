@@ -21,17 +21,19 @@ import           Luna.Studio.Action.State.NodeEditor     (getSelectedNodes)
 import qualified Luna.Studio.Action.State.NodeEditor     as NodeEditor
 import           Luna.Studio.Action.UUID                 (getUUID)
 import           Luna.Studio.Prelude
-import           Luna.Studio.React.Model.Node            (Node, NodeType (ExpressionNode))
+import           Luna.Studio.React.Model.EdgeNode        (EdgeNode)
+import qualified Luna.Studio.React.Model.EdgeNode        as EdgeNode
+import           Luna.Studio.React.Model.Node            (Node)
 import qualified Luna.Studio.React.Model.Node            as Node
 import           Luna.Studio.React.Model.Port            (visible)
 import           Luna.Studio.State.Global                (State)
 
 
 addNode :: Position -> Text -> Command State ()
-addNode nodePos expression = do
+addNode nodePos expr = do
     selected <- getSelectedNodes
     nid      <- getUUID
-    let nodeType    = ExpressionNode expression
+    let nodeType    = Empire.ExpressionNode expr
         snappedPos  = snap nodePos
         nodeMeta    = NodeMeta (toTuple snappedPos) True
         connectTo   = if length selected == 1
@@ -39,14 +41,26 @@ addNode nodePos expression = do
                       else Nothing
         defPortsMap = Map.fromList [ (InPortId  (Arg 0), Port (InPortId  (Arg 0)) "" TStar NotConnected) ,
                                      (OutPortId All    , Port (OutPortId All    ) "" TStar NotConnected) ]
-        node        = convert $ Empire.Node nid def nodeType False defPortsMap nodeMeta def
+        node        = convert $ (Empire.Node nid def nodeType False defPortsMap nodeMeta def, expr)
     localAddNode node
     selectNode nid
-    Batch.addNode nid expression snappedPos True connectTo
+    Batch.addNode nid expr snappedPos True connectTo
     GA.sendEvent $ GA.AddNode $ if isJust connectTo then GA.AutoConnect else GA.Simple
 
 localAddNodes :: [Node] -> Command State ()
 localAddNodes = mapM_ localAddNode
+
+localAddAnyNodes :: [Either Node EdgeNode] -> Command State ()
+localAddAnyNodes = mapM_ localAddAnyNode
+
+localAddAnyNode :: Either Node EdgeNode -> Command State ()
+localAddAnyNode (Left  node) = localAddNode node
+localAddAnyNode (Right edge) = localAddEdgeNode edge
+
+localAddEdgeNode :: EdgeNode -> Command State ()
+localAddEdgeNode node = do
+    NodeEditor.addEdgeNode node
+    void . redrawConnectionsForNode $ node ^. EdgeNode.nodeId
 
 localAddNode :: Node -> Command State ()
 localAddNode node = do

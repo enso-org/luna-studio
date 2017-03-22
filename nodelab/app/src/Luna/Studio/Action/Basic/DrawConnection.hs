@@ -8,7 +8,8 @@ import           Luna.Studio.Action.State.NodeEditor (getConnections, getEdgeNod
 import qualified Luna.Studio.Action.State.NodeEditor as NodeEditor
 import           Luna.Studio.Prelude
 import           Luna.Studio.React.Model.Connection  (Connection, ConnectionId, connectionId, dst, src, toConnectionsMap)
-import           Luna.Studio.React.Model.Node        (NodeId, nodeId)
+import           Luna.Studio.React.Model.EdgeNode    (nodeId)
+import           Luna.Studio.React.Model.Node        (NodeId)
 import           Luna.Studio.React.Model.NodeEditor  (connections)
 import           Luna.Studio.State.Global            (State, ui)
 import           Luna.Studio.State.UI                (scene)
