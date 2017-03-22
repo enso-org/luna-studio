@@ -57,19 +57,19 @@ module.exports = function () {
       });
     },
     getPath: function(data) {
-      return data.uri
+      return data.uri;
     },
     getStart: function(data) {
-      return data.start
+      return data.start;
     },
     getStop: function(data) {
-      return data.end
+      return data.end;
     },
     getText: function(data) {
-      return data.text
+      return data.text;
     },
     getCursor: function(data) {
-      return data.cursor
+      return data.cursor;
     },
 
   };
