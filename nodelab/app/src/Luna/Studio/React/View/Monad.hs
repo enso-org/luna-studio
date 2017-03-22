@@ -1,15 +1,14 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Luna.Studio.React.View.Monad where
 
-import           Data.Position                     (Position, fromDoubles, x, y)
-import           Empire.API.Data.TypeRep           (TypeRep)
-import qualified Luna.Studio.Data.Color            as Color
+import           Data.Position                               (Position, fromDoubles, x, y)
+import           Empire.API.Data.TypeRep                     (TypeRep)
+import qualified Luna.Studio.Data.Color                      as Color
 import           Luna.Studio.Prelude
-import           Luna.Studio.React.Model.Constants (gridSize)
-import           Luna.Studio.React.Model.Node      (Node)
-import qualified Luna.Studio.React.Model.Node      as Node
-import qualified Luna.Studio.React.View.Style      as Style
-import           React.Flux                        as React
+import           Luna.Studio.React.Model.Constants           (gridSize)
+import           Luna.Studio.React.Model.Node.ExpressionNode (ExpressionNode, position)
+import qualified Luna.Studio.React.View.Style                as Style
+import           React.Flux                                  as React
 
 
 objName :: JSString
@@ -18,12 +17,12 @@ objName = "monad"
 monadPadding :: Double
 monadPadding = 2 * gridSize
 
-nodeToMonadPoint :: Int -> Int -> Node -> Position
+nodeToMonadPoint :: Int -> Int -> ExpressionNode -> Position
 nodeToMonadPoint num allMonads node = fromDoubles x' y'
     where a  = if allMonads == 1 then 0
                else (fromIntegral num - ((fromIntegral allMonads - 1) / 2)) * monadPadding
-          x' = node ^. Node.position ^. x
-          y' = node ^. Node.position ^. y + a
+          x' = node ^. position ^. x
+          y' = node ^. position ^. y + a
 
 monad :: ReactView (TypeRep, [Position])
 monad = React.defineView objName $ \case
@@ -39,8 +38,8 @@ monad = React.defineView objName $ \case
             , "stroke"    $= convert (Color.buildLCH $ Color.fromType tr)
             ] mempty
 
-monad_ :: Int -> (Int, (TypeRep, [Node])) -> ReactElementM ViewEventHandler ()
+monad_ :: Int -> (Int, (TypeRep, [ExpressionNode])) -> ReactElementM ViewEventHandler ()
 monad_ allMonads (num, (tr, nodes)) = React.viewWithSKey monad (jsShow num) (tr, map (nodeToMonadPoint num allMonads) nodes) mempty
 
-monads_ :: [(TypeRep, [Node])] -> ReactElementM ViewEventHandler ()
+monads_ :: [(TypeRep, [ExpressionNode])] -> ReactElementM ViewEventHandler ()
 monads_ monads = forKeyed_ monads $ monad_ (length monads)

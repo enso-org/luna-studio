@@ -6,29 +6,30 @@ module Luna.Studio.React.View.Edge
     , focusPortLabel
     ) where
 
-import qualified Data.Aeson                        as Aeson
-import qualified Data.Map.Lazy                     as Map
-import           Data.Position                     (y)
-import           Empire.API.Data.PortRef           (AnyPortRef (OutPortRef'), OutPortRef (OutPortRef), toAnyPortRef)
-import qualified JS.Config                         as Config
-import           JS.Scene                          (inputSidebarId, outputSidebarId)
-import qualified JS.UI                             as UI
-import qualified Luna.Studio.Event.UI              as UI
+import qualified Data.Aeson                            as Aeson
+import qualified Data.Map.Lazy                         as Map
+import           Data.Position                         (y)
+import           Empire.API.Data.PortRef               (AnyPortRef (OutPortRef'), OutPortRef (OutPortRef), toAnyPortRef)
+import qualified JS.Config                             as Config
+import           JS.Scene                              (inputSidebarId, outputSidebarId)
+import qualified JS.UI                                 as UI
+import qualified Luna.Studio.Event.UI                  as UI
 import           Luna.Studio.Prelude
-import qualified Luna.Studio.React.Event.Edge      as Edge
-import           Luna.Studio.React.Model.App       (App)
-import           Luna.Studio.React.Model.Constants (lineHeight)
-import           Luna.Studio.React.Model.EdgeNode  (EdgeMode (AddRemove, MoveConnect), EdgeNode, NodeId, countProjectionPorts, isInputEdge)
-import qualified Luna.Studio.React.Model.EdgeNode  as EdgeNode
-import qualified Luna.Studio.React.Model.Field     as Field
-import           Luna.Studio.React.Model.Port      (DraggedPort, OutPort (Projection), Port (..), getPortNumber, isInPort, isOutPort)
-import qualified Luna.Studio.React.Model.Port      as Port
-import           Luna.Studio.React.Store           (Ref, dispatch)
-import           Luna.Studio.React.View.Field      (singleField_)
-import           Luna.Studio.React.View.Port       (handlers, jsShow2)
-import           Luna.Studio.React.View.Style      (plainPath, plainRect)
-import qualified Luna.Studio.React.View.Style      as Style
-import           React.Flux                        hiding (view)
+import qualified Luna.Studio.React.Event.Edge          as Edge
+import           Luna.Studio.React.Model.App           (App)
+import           Luna.Studio.React.Model.Constants     (lineHeight)
+import qualified Luna.Studio.React.Model.Field         as Field
+import           Luna.Studio.React.Model.Node.EdgeNode (EdgeMode (AddRemove, MoveConnect), EdgeNode, NodeId, countProjectionPorts,
+                                                        isInputEdge)
+import qualified Luna.Studio.React.Model.Node.EdgeNode as EdgeNode
+import           Luna.Studio.React.Model.Port          (DraggedPort, OutPort (Projection), Port (..), getPortNumber, isInPort, isOutPort)
+import qualified Luna.Studio.React.Model.Port          as Port
+import           Luna.Studio.React.Store               (Ref, dispatch)
+import           Luna.Studio.React.View.Field          (singleField_)
+import           Luna.Studio.React.View.Port           (handlers, jsShow2)
+import           Luna.Studio.React.View.Style          (plainPath, plainRect)
+import qualified Luna.Studio.React.View.Style          as Style
+import           React.Flux                            hiding (view)
 
 
 name :: EdgeNode -> JSString

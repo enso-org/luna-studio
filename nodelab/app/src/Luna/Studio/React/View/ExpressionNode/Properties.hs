@@ -1,21 +1,21 @@
 {-# LANGUAGE OverloadedStrings #-}
-module Luna.Studio.React.View.Node.Properties where
+module Luna.Studio.React.View.ExpressionNode.Properties where
 
-import qualified JS.Config                              as Config
-import qualified JS.UI                                  as UI
-import qualified Luna.Studio.Event.UI                   as UI
+import qualified JS.Config                                             as Config
+import qualified JS.UI                                                 as UI
+import qualified Luna.Studio.Event.UI                                  as UI
 import           Luna.Studio.Prelude
-import qualified Luna.Studio.React.Event.Node           as Node
-import           Luna.Studio.React.Model.App            (App)
-import qualified Luna.Studio.React.Model.Field          as Field
-import           Luna.Studio.React.Model.NodeProperties (NodeProperties)
-import qualified Luna.Studio.React.Model.NodeProperties as Prop
-import           Luna.Studio.React.Store                (Ref, dispatch)
-import           Luna.Studio.React.View.Field           (singleField_)
-import           Luna.Studio.React.View.PortControl     (portControl_)
-import qualified Luna.Studio.React.View.Style           as Style
+import qualified Luna.Studio.React.Event.Node                          as Node
+import           Luna.Studio.React.Model.App                           (App)
+import qualified Luna.Studio.React.Model.Field                         as Field
+import           Luna.Studio.React.Model.Node.ExpressionNodeProperties (NodeProperties)
+import qualified Luna.Studio.React.Model.Node.ExpressionNodeProperties as Prop
+import           Luna.Studio.React.Store                               (Ref, dispatch)
+import           Luna.Studio.React.View.Field                          (singleField_)
+import           Luna.Studio.React.View.PortControl                    (portControl_)
+import qualified Luna.Studio.React.View.Style                          as Style
 import           React.Flux
-import qualified React.Flux                             as React
+import qualified React.Flux                                            as React
 
 
 objName :: JSString

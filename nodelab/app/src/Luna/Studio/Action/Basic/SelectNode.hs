@@ -1,23 +1,24 @@
 --TODO[LJK, PM]: Refactor
 module Luna.Studio.Action.Basic.SelectNode where
 
-import qualified Data.HashMap.Strict                 as Map
-import qualified Data.Set                            as Set
-import           Empire.API.Data.Node                (NodeId)
-import           Luna.Studio.Action.Basic.FocusNode  (focusNodes)
-import           Luna.Studio.Action.Batch            (cancelCollaborativeTouch, collaborativeTouch)
-import           Luna.Studio.Action.Command          (Command)
-import           Luna.Studio.Action.State.NodeEditor (getNode, getNodes, getNodes, getSelectedNodes, modifyNode, modifyNodeEditor)
+import qualified Data.HashMap.Strict                         as Map
+import qualified Data.Set                                    as Set
+import           Empire.API.Data.Node                        (NodeId)
+import           Luna.Studio.Action.Basic.FocusNode          (focusNodes)
+import           Luna.Studio.Action.Batch                    (cancelCollaborativeTouch, collaborativeTouch)
+import           Luna.Studio.Action.Command                  (Command)
+import           Luna.Studio.Action.State.NodeEditor         (getExpressionNode, getExpressionNodes, getSelectedNodes, modifyExpressionNode,
+                                                              modifyExpressionNodeEditor)
 import           Luna.Studio.Prelude
-import           Luna.Studio.React.Model.Node        (isSelected, nodeId)
-import           Luna.Studio.React.Model.NodeEditor  (nodes)
-import           Luna.Studio.State.Global            (State, selectionHistory)
+import           Luna.Studio.React.Model.Node.ExpressionNode (isSelected, nodeId)
+import           Luna.Studio.React.Model.NodeEditor          (expressionNodes)
+import           Luna.Studio.State.Global                    (State, selectionHistory)
 
 
 selectAll :: Command State ()
 selectAll = do
-    nodeIds <- map (view nodeId) <$> getNodes
-    forM_ nodeIds $ \nid -> modifyNode nid $ isSelected .= True
+    nodeIds <- map (view nodeId) <$> getExpressionNodes
+    forM_ nodeIds $ \nid -> modifyExpressionNode nid $ isSelected .= True
     focusNodes nodeIds
     collaborativeTouch nodeIds
     modifySelectionHistory nodeIds
@@ -49,15 +50,15 @@ selectPreviousNodes = do
 unselectAll :: Command State ()
 unselectAll = do
     prevSelected <- map (view nodeId) <$> getSelectedNodes
-    modifyNodeEditor $ nodes %= Map.map (isSelected .~ False)
+    modifyExpressionNodeEditor $ expressionNodes %= Map.map (isSelected .~ False)
     cancelCollaborativeTouch prevSelected
 
 toggleSelect :: NodeId -> Command State ()
-toggleSelect nid = getNode nid >>= \mayNode ->
+toggleSelect nid = getExpressionNode nid >>= \mayNode ->
     withJust mayNode $ \node ->
         if node ^. isSelected
             then do
-                modifyNode nid $ isSelected .= False
+                modifyExpressionNode nid $ isSelected .= False
                 selection <- map (view nodeId) <$> getSelectedNodes
                 if null selection
                     then dropSelectionHistory
@@ -70,7 +71,7 @@ toggleSelect nid = getNode nid >>= \mayNode ->
 -- If your new selection should be added to history launch modifySelectionHistory with ids from result.
 addToSelection :: [NodeId] -> Command State ()
 addToSelection nodeIds = do
-    forM_ nodeIds $ \nid -> modifyNode nid $ isSelected .= True
+    forM_ nodeIds $ \nid -> modifyExpressionNode nid $ isSelected .= True
     focusNodes nodeIds
     collaborativeTouch nodeIds
 
@@ -78,7 +79,7 @@ addToSelection nodeIds = do
 -- If your new selection should be added to history launch modifySelectionHistory with ids from result.
 removeFromSelection :: [NodeId] -> Command State ()
 removeFromSelection nodeIds = do
-    forM_ nodeIds $ \nid -> modifyNode nid $ isSelected .= False
+    forM_ nodeIds $ \nid -> modifyExpressionNode nid $ isSelected .= False
     cancelCollaborativeTouch nodeIds
 
 historyMaxLength :: Int

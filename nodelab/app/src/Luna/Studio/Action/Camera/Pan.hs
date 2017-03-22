@@ -18,7 +18,7 @@ import           Luna.Studio.Action.Basic              (modifyCamera)
 import           Luna.Studio.Action.Command            (Command)
 import           Luna.Studio.Action.State.Action       (beginActionWithKey, continueActionWithKey, removeActionFromState,
                                                         updateActionWithKey)
-import           Luna.Studio.Action.State.NodeEditor   (modifyNodeEditor)
+import           Luna.Studio.Action.State.NodeEditor   (modifyExpressionNodeEditor)
 import           Luna.Studio.Data.CameraTransformation (logicalToScreen, screenToLogical)
 import           Luna.Studio.Data.Matrix               (invertedTranslationMatrix, translationMatrix)
 import           Luna.Studio.Prelude
@@ -57,7 +57,7 @@ panDrag actPos action = do
     panCamera delta
 
 resetPan :: Command State ()
-resetPan = modifyNodeEditor $ do
+resetPan = modifyExpressionNodeEditor $ do
     screenTransform . logicalToScreen %= (setElem 0 (4,1) . setElem 0 (4,2))
     screenTransform . screenToLogical %= (setElem 0 (4,1) . setElem 0 (4,2))
 

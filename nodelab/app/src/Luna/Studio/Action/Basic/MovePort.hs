@@ -8,7 +8,7 @@ import           Luna.Studio.Action.Command             (Command)
 import           Luna.Studio.Action.State.NodeEditor    (getConnectionsContainingNode, getEdgeNode)
 import           Luna.Studio.Prelude
 import           Luna.Studio.React.Model.Connection     (dst, src)
-import           Luna.Studio.React.Model.EdgeNode       (countProjectionPorts, getPorts, hasPort, isInputEdge, ports)
+import           Luna.Studio.React.Model.Node.EdgeNode  (countProjectionPorts, getPorts, hasPort, isInputEdge, ports)
 import           Luna.Studio.React.Model.Port           (OutPort (Projection), PortId (OutPortId), portId, toPortsMap)
 import           Luna.Studio.State.Global               (State)
 

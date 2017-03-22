@@ -32,8 +32,8 @@ import           Luna.Studio.React.Model.App                    (App)
 import           Luna.Studio.React.Model.DataFrame              (DataFrame)
 import qualified Luna.Studio.React.Model.DataFrame              as DataFrame
 import qualified Luna.Studio.React.Model.Image                  as Image
-import           Luna.Studio.React.Model.Node                   (Node, NodeId)
-import qualified Luna.Studio.React.Model.Node                   as Node
+import           Luna.Studio.React.Model.Node.ExpressionNode    (ExpressionNode, NodeId)
+import qualified Luna.Studio.React.Model.Node.ExpressionNode    as Node
 import           Luna.Studio.React.Model.NodeEditor             (NodeEditor)
 import qualified Luna.Studio.React.Model.NodeEditor             as NodeEditor
 import           Luna.Studio.React.Store                        (Ref, dispatch)
@@ -48,7 +48,7 @@ viewName = "visualization"
 
 pinnedVisualization_ :: Ref App -> NodeEditor -> (NodeId, Int, Position) -> ReactElementM ViewEventHandler ()
 pinnedVisualization_ ref ne (nodeId, _, position) =
-    withJust (ne ^. NodeEditor.nodes . at nodeId) $ \node ->
+    withJust (ne ^. NodeEditor.expressionNodes . at nodeId) $ \node ->
         withJust (node ^. Node.value) $
             visualization_ ref nodeId $ Just position
 
@@ -68,7 +68,7 @@ errorMessageWrapMargin = 30
 errorLen :: Int
 errorLen = 40
 
-strValue :: Node -> String
+strValue :: ExpressionNode -> String
 strValue n = convert $ case n ^. Node.value of
     Nothing -> ""
     Just (NodeResult.Value value []) -> value

@@ -5,23 +5,23 @@ module Luna.Studio.Action.MultiSelection
     , stopMultiSelection
     ) where
 
-import           Data.Position                        (Position, fromDoubles, x, y)
-import           Luna.Studio.Action.Basic             (modifySelectionHistory, selectNodes, unselectAll)
-import           Luna.Studio.Action.Command           (Command)
-import           Luna.Studio.Action.State.NodeEditor  (getNodes, getSelectedNodes, modifyNodeEditor)
-import           Luna.Studio.Data.Geometry            (isPointInRectangle)
-import           Luna.Studio.Event.Mouse              (workspacePosition)
+import           Data.Position                               (Position, fromDoubles, x, y)
+import           Luna.Studio.Action.Basic                    (modifySelectionHistory, selectNodes, unselectAll)
+import           Luna.Studio.Action.Command                  (Command)
+import           Luna.Studio.Action.State.NodeEditor         (getExpressionNodes, getSelectedNodes, modifyExpressionNodeEditor)
+import           Luna.Studio.Data.Geometry                   (isPointInRectangle)
+import           Luna.Studio.Event.Mouse                     (workspacePosition)
 import           Luna.Studio.Prelude
-import           Luna.Studio.React.Model.Node         (nodeId, position)
-import           Luna.Studio.React.Model.SelectionBox (SelectionBox (SelectionBox))
-import           Luna.Studio.State.Action             (Action (begin, continue, end, update), MultiSelection (MultiSelection),
-                                                       multiSelecectionStartPos, multiSelectionAction)
-import           React.Flux                           (MouseEvent)
+import           Luna.Studio.React.Model.Node.ExpressionNode (nodeId, position)
+import           Luna.Studio.React.Model.SelectionBox        (SelectionBox (SelectionBox))
+import           Luna.Studio.State.Action                    (Action (begin, continue, end, update), MultiSelection (MultiSelection),
+                                                              multiSelecectionStartPos, multiSelectionAction)
+import           React.Flux                                  (MouseEvent)
 
-import           Luna.Studio.Action.State.Action      (beginActionWithKey, continueActionWithKey, removeActionFromState,
-                                                       updateActionWithKey)
-import           Luna.Studio.React.Model.NodeEditor   (selectionBox)
-import           Luna.Studio.State.Global             (State)
+import           Luna.Studio.Action.State.Action             (beginActionWithKey, continueActionWithKey, removeActionFromState,
+                                                              updateActionWithKey)
+import           Luna.Studio.React.Model.NodeEditor          (selectionBox)
+import           Luna.Studio.State.Global                    (State)
 
 
 instance Action (Command State) MultiSelection where
@@ -40,19 +40,19 @@ updateMultiSelection :: MouseEvent -> MultiSelection -> Command State ()
 updateMultiSelection evt state = do
     let startPos = view multiSelecectionStartPos state
     coord <- workspacePosition evt
-    modifyNodeEditor $ selectionBox .= Just (SelectionBox startPos coord)
+    modifyExpressionNodeEditor $ selectionBox .= Just (SelectionBox startPos coord)
     updateSelection startPos coord
 
 updateSelection :: Position -> Position -> Command State ()
 updateSelection start act = do
     let leftTop     = fromDoubles (min (start ^. x) (act ^. x)) (min (start ^. y) (act ^. y))
         rightBottom = fromDoubles (max (start ^. x) (act ^. x)) (max (start ^. y) (act ^. y))
-    nodeIds <- map (view nodeId) . filter (flip isPointInRectangle (leftTop, rightBottom) . (view position)) <$> getNodes
+    nodeIds <- map (view nodeId) . filter (flip isPointInRectangle (leftTop, rightBottom) . (view position)) <$> getExpressionNodes
     selectNodes nodeIds
 
 stopMultiSelection :: MultiSelection -> Command State ()
 stopMultiSelection _ = do
     removeActionFromState multiSelectionAction
-    modifyNodeEditor $ selectionBox .= Nothing
+    modifyExpressionNodeEditor $ selectionBox .= Nothing
     nodeIds <- map (view nodeId) <$> getSelectedNodes
     modifySelectionHistory nodeIds

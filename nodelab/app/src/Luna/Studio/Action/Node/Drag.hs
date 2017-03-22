@@ -7,29 +7,30 @@ module Luna.Studio.Action.Node.Drag
     ) where
 
 import           Control.Arrow
-import qualified Data.Map                            as Map
-import           Data.Position                       (Position, move, vector)
-import           Empire.API.Data.Node                (NodeId)
-import           Empire.API.Data.Port                (InPort (Self), OutPort (All), PortId (InPortId))
-import           Empire.API.Data.PortRef             (InPortRef (InPortRef), OutPortRef (OutPortRef))
-import           Luna.Studio.Action.Basic            (connect, localMoveNodes, moveNodes, selectNodes, updatePortSelfVisibility)
-import           Luna.Studio.Action.Command          (Command)
-import           Luna.Studio.Action.Node.Snap        (snap)
-import           Luna.Studio.Action.State.Model      (createConnectionModel, getIntersectingConnections)
-import           Luna.Studio.Action.State.NodeEditor (getConnection, getNode, getSelectedNodes, modifyNode, modifyNodeEditor)
-import           Luna.Studio.Event.Mouse             (workspacePosition)
+import qualified Data.Map                                    as Map
+import           Data.Position                               (Position, move, vector)
+import           Empire.API.Data.Node                        (NodeId)
+import           Empire.API.Data.Port                        (InPort (Self), OutPort (All), PortId (InPortId))
+import           Empire.API.Data.PortRef                     (InPortRef (InPortRef), OutPortRef (OutPortRef))
+import           Luna.Studio.Action.Basic                    (connect, localMoveNodes, moveNodes, selectNodes, updatePortSelfVisibility)
+import           Luna.Studio.Action.Command                  (Command)
+import           Luna.Studio.Action.Node.Snap                (snap)
+import           Luna.Studio.Action.State.Model              (createConnectionModel, getIntersectingConnections)
+import           Luna.Studio.Action.State.NodeEditor         (getConnection, getExpressionNode, getSelectedNodes, modifyExpressionNode,
+                                                              modifyExpressionNodeEditor)
+import           Luna.Studio.Event.Mouse                     (workspacePosition)
 import           Luna.Studio.Prelude
-import           Luna.Studio.React.Model.Connection  (dst, src)
-import           Luna.Studio.React.Model.Node        (isSelected)
-import qualified Luna.Studio.React.Model.Node        as Model
-import           Luna.Studio.React.Model.NodeEditor  (currentConnections)
-import           Luna.Studio.React.Model.Port        as Port
-import           Luna.Studio.State.Action            (Action (begin, continue, end, update), NodeDrag (NodeDrag), nodeDragAction,
-                                                      nodeDragNodeId, nodeDragNodesStartPos, nodeDragSnappedConn, nodeDragStartPos)
+import           Luna.Studio.React.Model.Connection          (dst, src)
+import           Luna.Studio.React.Model.Node.ExpressionNode (isSelected, nodeId, ports, position)
+import           Luna.Studio.React.Model.NodeEditor          (currentConnections)
+import           Luna.Studio.React.Model.Port                (visible)
+import           Luna.Studio.State.Action                    (Action (begin, continue, end, update), NodeDrag (NodeDrag), nodeDragAction,
+                                                              nodeDragNodeId, nodeDragNodesStartPos, nodeDragSnappedConn, nodeDragStartPos)
 
-import           Luna.Studio.Action.State.Action     (beginActionWithKey, continueActionWithKey, removeActionFromState, updateActionWithKey)
-import           Luna.Studio.State.Global            (State)
-import           React.Flux                          (MouseEvent)
+import           Luna.Studio.Action.State.Action             (beginActionWithKey, continueActionWithKey, removeActionFromState,
+                                                              updateActionWithKey)
+import           Luna.Studio.State.Global                    (State)
+import           React.Flux                                  (MouseEvent)
 
 
 instance Action (Command State) NodeDrag where
@@ -37,7 +38,7 @@ instance Action (Command State) NodeDrag where
     continue     = continueActionWithKey nodeDragAction
     update       = updateActionWithKey   nodeDragAction
     end nodeDrag = do
-            metaUpdate <- map (view Model.nodeId &&& view Model.position) <$> getSelectedNodes
+            metaUpdate <- map (view nodeId &&& view position) <$> getSelectedNodes
             moveNodes metaUpdate
             clearSnappedConnection nodeDrag
             removeActionFromState nodeDragAction
@@ -45,11 +46,11 @@ instance Action (Command State) NodeDrag where
 
 startNodeDrag :: Position -> NodeId -> Bool -> Command State ()
 startNodeDrag coord nid snapped = do
-    mayNode <- getNode nid
+    mayNode <- getExpressionNode nid
     withJust mayNode $ \node -> do
         unless (node ^. isSelected) $ selectNodes [nid]
         nodes <- getSelectedNodes
-        let nodesPos = Map.fromList $ (view Model.nodeId &&& view Model.position) <$> nodes
+        let nodesPos = Map.fromList $ (view nodeId &&& view position) <$> nodes
         if snapped then do
             let snappedNodes = Map.map snap nodesPos
             begin $ NodeDrag coord nid snappedNodes Nothing
@@ -74,14 +75,14 @@ nodesDrag evt snapped nodeDrag = do
 clearSnappedConnection :: NodeDrag -> Command State ()
 clearSnappedConnection nodeDrag = do
     let nid = nodeDrag ^. nodeDragNodeId
-    modifyNodeEditor $ currentConnections .= def
+    modifyExpressionNodeEditor $ currentConnections .= def
     void $ updatePortSelfVisibility nid
     continue $ \nodeDrag' -> do
         update $ nodeDrag' & nodeDragSnappedConn .~ Nothing
 
 snapConnectionsForNodes :: Position -> [NodeId] -> Command State ()
 snapConnectionsForNodes mousePos nodeIds = when (length nodeIds == 1) $ forM_ nodeIds $ \nid -> do
-    mayNode <- getNode nid
+    mayNode <- getExpressionNode nid
     withJust mayNode $ \node -> do
         mayConnId <- getIntersectingConnections node mousePos
         case mayConnId of
@@ -89,12 +90,12 @@ snapConnectionsForNodes mousePos nodeIds = when (length nodeIds == 1) $ forM_ no
                 let selfPortRef = InPortRef  nid Self
                     outPortRef  = OutPortRef nid All
                 mayConn       <- getConnection connId
-                modifyNode nid $ Model.ports . ix (InPortId Self) . Port.visible .= True
+                modifyExpressionNode nid $ ports . ix (InPortId Self) . visible .= True
                 mayConnModel1 <- fmap join . mapM (flip createConnectionModel selfPortRef) $ view src <$> mayConn
                 mayConnModel2 <- fmap join $ mapM (createConnectionModel outPortRef)       $ view dst <$> mayConn
                 case (,) <$> mayConnModel1 <*> mayConnModel2 of
                     Just (connModel1, connModel2) -> do
-                        modifyNodeEditor $ currentConnections .= map convert [connModel1, connModel2]
+                        modifyExpressionNodeEditor $ currentConnections .= map convert [connModel1, connModel2]
                         continue $ \nodeDrag -> update $ nodeDrag & nodeDragSnappedConn ?~ connId
                     _ -> continue clearSnappedConnection
             _ -> continue clearSnappedConnection
@@ -107,7 +108,7 @@ handleNodeDragMouseUp evt nodeDrag = do
     if startPos == coord then
         selectNodes [nid]
     else do
-        metaUpdate <- map (view Model.nodeId &&& view Model.position) <$> getSelectedNodes
+        metaUpdate <- map (view nodeId &&& view position) <$> getSelectedNodes
         moveNodes metaUpdate
         withJust (nodeDrag ^. nodeDragSnappedConn) $ \connId -> do
             mayConn <- getConnection connId

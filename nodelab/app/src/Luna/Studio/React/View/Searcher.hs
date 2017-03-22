@@ -1,28 +1,27 @@
-
 {-# LANGUAGE OverloadedStrings #-}
 module Luna.Studio.React.View.Searcher where
 
-import qualified Data.Aeson                       as Aeson
-import           Data.Matrix                      (Matrix)
-import           Empire.API.Data.Node             (NodeType (ExpressionNode))
-import qualified Empire.API.Data.Node             as Empire
-import           JS.Searcher                      (searcherId)
-import           Luna.Studio.Data.Matrix          (showNodeTranslate)
-import qualified Luna.Studio.Event.Keys           as Keys
-import qualified Luna.Studio.Event.UI             as UI
+import qualified Data.Aeson                                  as Aeson
+import           Data.Matrix                                 (Matrix)
+import           Empire.API.Data.Node                        (NodeType (ExpressionNode))
+import qualified Empire.API.Data.Node                        as Empire
+import           JS.Searcher                                 (searcherId)
+import           Luna.Studio.Data.Matrix                     (showNodeTranslate)
+import qualified Luna.Studio.Event.Keys                      as Keys
+import qualified Luna.Studio.Event.UI                        as UI
 import           Luna.Studio.Prelude
-import qualified Luna.Studio.React.Event.App      as App
+import qualified Luna.Studio.React.Event.App                 as App
 import           Luna.Studio.React.Event.Searcher
-import           Luna.Studio.React.Model.App      (App)
-import qualified Luna.Studio.React.Model.Node     as Node
-import           Luna.Studio.React.Model.Searcher (Searcher)
-import qualified Luna.Studio.React.Model.Searcher as Searcher
-import           Luna.Studio.React.Store          (Ref, dispatch)
-import           Luna.Studio.React.View.Node      (nodeBody_)
-import qualified Luna.Studio.React.View.Style     as Style
+import           Luna.Studio.React.Model.App                 (App)
+import qualified Luna.Studio.React.Model.Node.ExpressionNode as Node
+import           Luna.Studio.React.Model.Searcher            (Searcher)
+import qualified Luna.Studio.React.Model.Searcher            as Searcher
+import           Luna.Studio.React.Store                     (Ref, dispatch)
+import           Luna.Studio.React.View.ExpressionNode       (nodeBody_)
+import qualified Luna.Studio.React.View.Style                as Style
 import           React.Flux
-import qualified React.Flux                       as React
-import qualified Text.ScopeSearcher.QueryResult   as Result
+import qualified React.Flux                                  as React
+import qualified Text.ScopeSearcher.QueryResult              as Result
 
 
 name :: JSString

@@ -20,5 +20,5 @@ localSetPortDefault :: AnyPortRef -> PortDefault -> Command State Bool
 localSetPortDefault portRef portDef = do
     let nid = portRef ^. nodeId
         pid = portRef ^. portId
-    NodeEditor.modifyNode nid $ Node.ports . ix pid . Port.state .= WithDefault portDef
+    NodeEditor.modifyExpressionNode nid $ Node.ports . ix pid . Port.state .= WithDefault portDef
     isJust <$> NodeEditor.getPort portRef

@@ -14,46 +14,47 @@ module Luna.Studio.Action.Edge
     ) where
 
 import           Control.Arrow
-import           Control.Monad.Trans.Maybe           (MaybeT (MaybeT), runMaybeT)
-import           Data.Map.Lazy                       (Map)
-import qualified Data.Map.Lazy                       as Map
-import           Data.Position                       (Position (Position), move)
-import           Data.ScreenPosition                 (ScreenPosition, fromScreenPosition)
-import           Data.Size                           (x, y)
-import           Data.Vector                         (Vector2 (Vector2), scalarProduct)
-import           Empire.API.Data.PortRef             (AnyPortRef (InPortRef', OutPortRef'), toAnyPortRef)
-import qualified Empire.API.Data.PortRef             as PortRef
-import           Luna.Studio.Action.Basic            (redrawConnectionsForEdgeNodes)
-import qualified Luna.Studio.Action.Basic            as Basic
-import qualified Luna.Studio.Action.Batch            as Batch
-import           Luna.Studio.Action.Command          (Command)
-import qualified Luna.Studio.Action.Connect          as Connect
-import           Luna.Studio.Action.State.Action     (beginActionWithKey, continueActionWithKey, removeActionFromState, updateActionWithKey)
-import           Luna.Studio.Action.State.App        (renderIfNeeded)
-import           Luna.Studio.Action.State.Model      (createConnectionModel, createCurrentConnectionModel, getInputEdgePortPosition,
-                                                      getOutputEdgePortPosition)
-import           Luna.Studio.Action.State.NodeEditor (addConnection, getConnectionsContainingNode, getConnectionsContainingPortRef,
-                                                      getEdgeNode, getPort, modifyNodeEditor, removeConnection)
-import           Luna.Studio.Action.State.Scene      (getInputSidebarPosition, getInputSidebarSize, getOutputSidebarPosition,
-                                                      getOutputSidebarSize, translateToWorkspace)
-import           Luna.Studio.Event.Mouse             (mousePosition, workspacePosition)
+import           Control.Monad.Trans.Maybe             (MaybeT (MaybeT), runMaybeT)
+import           Data.Map.Lazy                         (Map)
+import qualified Data.Map.Lazy                         as Map
+import           Data.Position                         (Position (Position), move)
+import           Data.ScreenPosition                   (ScreenPosition, fromScreenPosition)
+import           Data.Size                             (x, y)
+import           Data.Vector                           (Vector2 (Vector2), scalarProduct)
+import           Empire.API.Data.PortRef               (AnyPortRef (InPortRef', OutPortRef'), toAnyPortRef)
+import qualified Empire.API.Data.PortRef               as PortRef
+import           Luna.Studio.Action.Basic              (redrawConnectionsForEdgeNodes)
+import qualified Luna.Studio.Action.Basic              as Basic
+import qualified Luna.Studio.Action.Batch              as Batch
+import           Luna.Studio.Action.Command            (Command)
+import qualified Luna.Studio.Action.Connect            as Connect
+import           Luna.Studio.Action.State.Action       (beginActionWithKey, continueActionWithKey, removeActionFromState,
+                                                        updateActionWithKey)
+import           Luna.Studio.Action.State.App          (renderIfNeeded)
+import           Luna.Studio.Action.State.Model        (createConnectionModel, createCurrentConnectionModel, getInputEdgePortPosition,
+                                                        getOutputEdgePortPosition)
+import           Luna.Studio.Action.State.NodeEditor   (addConnection, getConnectionsContainingNode, getConnectionsContainingPortRef,
+                                                        getEdgeNode, getPort, modifyExpressionNodeEditor, removeConnection)
+import           Luna.Studio.Action.State.Scene        (getInputSidebarPosition, getInputSidebarSize, getOutputSidebarPosition,
+                                                        getOutputSidebarSize, translateToWorkspace)
+import           Luna.Studio.Event.Mouse               (mousePosition, workspacePosition)
 import           Luna.Studio.Prelude
-import           Luna.Studio.React.Model.Connection  (connectionId, dst, src, toConnection)
-import qualified Luna.Studio.React.Model.Connection  as Connection
-import           Luna.Studio.React.Model.Constants   (lineHeight)
-import           Luna.Studio.React.Model.EdgeNode    (EdgeNode, NodeId, isInputEdge)
-import qualified Luna.Studio.React.Model.EdgeNode    as EdgeNode
-import qualified Luna.Studio.React.Model.NodeEditor  as NodeEditor
-import           Luna.Studio.React.Model.Port        (DraggedPort (DraggedPort), InPort (Arg, Self), OutPort (All, Projection),
-                                                      PortId (InPortId, OutPortId), _InPortId, _OutPortId)
-import qualified Luna.Studio.React.Model.Port        as Port
-import qualified Luna.Studio.React.View.Edge         as Edge
-import           Luna.Studio.State.Action            (Action (begin, continue, end, update), Connect, Mode (Click, Drag),
-                                                      PortDrag (PortDrag), connectMode, connectSourcePort, connectStartPos, portDragAction,
-                                                      portDragMode, portDragOriginalNode, portDragPortMapping, portDragPortRef,
-                                                      portDragStartPos)
-import           Luna.Studio.State.Global            (State)
-import           React.Flux                          (MouseEvent)
+import           Luna.Studio.React.Model.Connection    (connectionId, dst, src, toConnection)
+import qualified Luna.Studio.React.Model.Connection    as Connection
+import           Luna.Studio.React.Model.Constants     (lineHeight)
+import           Luna.Studio.React.Model.Node.EdgeNode (EdgeNode, NodeId, isInputEdge)
+import qualified Luna.Studio.React.Model.Node.EdgeNode as EdgeNode
+import qualified Luna.Studio.React.Model.NodeEditor    as NodeEditor
+import           Luna.Studio.React.Model.Port          (DraggedPort (DraggedPort), InPort (Arg, Self), OutPort (All, Projection),
+                                                        PortId (InPortId, OutPortId), _InPortId, _OutPortId)
+import qualified Luna.Studio.React.Model.Port          as Port
+import qualified Luna.Studio.React.View.Edge           as Edge
+import           Luna.Studio.State.Action              (Action (begin, continue, end, update), Connect, Mode (Click, Drag),
+                                                        PortDrag (PortDrag), connectMode, connectSourcePort, connectStartPos,
+                                                        portDragAction, portDragMode, portDragOriginalNode, portDragPortMapping,
+                                                        portDragPortRef, portDragStartPos)
+import           Luna.Studio.State.Global              (State)
+import           React.Flux                            (MouseEvent)
 
 
 instance Action (Command State) PortDrag where
@@ -63,14 +64,14 @@ instance Action (Command State) PortDrag where
     end      = stopPortDrag
 
 portRename :: AnyPortRef -> String -> Command State ()
-portRename portRef name = modifyNodeEditor $ do
+portRename portRef name = modifyExpressionNodeEditor $ do
     let nodeId = portRef ^. PortRef.nodeId
         portId = portRef ^. PortRef.portId
     NodeEditor.edgeNodes . at nodeId . _Just . EdgeNode.ports . at portId . _Just . Port.name .= name
 
 portNameEdit :: AnyPortRef -> Bool -> Command State ()
 portNameEdit portRef isEdited = do
-    modifyNodeEditor $ do
+    modifyExpressionNodeEditor $ do
         let nodeId = portRef ^. PortRef.nodeId
             portId = portRef ^. PortRef.portId
         NodeEditor.edgeNodes . at nodeId . _Just . EdgeNode.ports . at portId . _Just . Port.isEdited .= isEdited
@@ -89,7 +90,7 @@ startPortDrag mousePos portRef mode = do
         withJust mayDraggedPortPos $ \draggedPortPos -> do
             let portMapping = Map.fromList $ map (id &&& id) $ node ^. EdgeNode.ports . to Map.keys
             begin $ PortDrag mousePos portRef portMapping mode node
-            modifyNodeEditor $ do
+            modifyExpressionNodeEditor $ do
                 NodeEditor.draggedPort ?= DraggedPort draggedPort draggedPortPos
                 NodeEditor.edgeNodes . at nodeId . _Just . EdgeNode.ports . at portId . _Just . Port.visible .= False
             translateToWorkspace mousePos >>= updateConnectionsForDraggedPort portRef
@@ -124,7 +125,7 @@ handleMove evt portDrag = do
     case mayDraggedPortPos of
         Nothing -> end portDrag
         Just draggedPortPos -> do
-            modifyNodeEditor $ NodeEditor.draggedPort . _Just . Port.positionInSidebar .= draggedPortPos
+            modifyExpressionNodeEditor $ NodeEditor.draggedPort . _Just . Port.positionInSidebar .= draggedPortPos
             localReorderPorts workspaceMousePos node portDrag
             updateConnectionsForDraggedPort portRef workspaceMousePos
 
@@ -132,11 +133,11 @@ stopPortDrag :: PortDrag -> Command State ()
 stopPortDrag portDrag = do
     let portRef = portDrag ^. portDragPortRef
         nodeId  = portRef ^. PortRef.nodeId
-    modifyNodeEditor $ do
+    modifyExpressionNodeEditor $ do
         NodeEditor.draggedPort         .= Nothing
         NodeEditor.portDragConnections .= def
     let originalNode = portDrag ^. portDragOriginalNode
-    modifyNodeEditor $ NodeEditor.edgeNodes . at nodeId ?= originalNode
+    modifyExpressionNodeEditor $ NodeEditor.edgeNodes . at nodeId ?= originalNode
     void redrawConnectionsForEdgeNodes
     removeActionFromState portDragAction
 
@@ -179,7 +180,7 @@ updateConnectionsForPort portDrag portRef = do
                     return $ conn & src . PortRef.srcPortId .~ newSrcPort
         withJust mayNewConn $ \newConn -> do
             mayConnectionModel <- createConnectionModel (newConn ^. src) (newConn ^. dst)
-            modifyNodeEditor $ NodeEditor.connections . at (newConn ^. dst) .= mayConnectionModel
+            modifyExpressionNodeEditor $ NodeEditor.connections . at (newConn ^. dst) .= mayConnectionModel
 
 
 updateConnectionsForDraggedPort :: AnyPortRef -> Position -> Command State ()
@@ -196,7 +197,7 @@ updateConnectionsForDraggedPort portRef pos = do
             let connModel = case portRef of
                     OutPortRef' _ -> connModel' & Connection.color .~ portColor
                     InPortRef'  _ -> connModel'
-            modifyNodeEditor $ do
+            modifyExpressionNodeEditor $ do
                 NodeEditor.connections         . at connId .= Nothing
                 NodeEditor.portDragConnections . at connId ?= connModel
 
@@ -250,7 +251,7 @@ localReorderPorts mousePos originalNode portDrag = do
             case reorderPortsInNode EdgeNode.ports Port.portId originalNode newMapping of
                 Nothing          -> end portDrag
                 Just updatedNode -> do
-                    modifyNodeEditor $ NodeEditor.edgeNodes . at nodeId ?= updatedNode
+                    modifyExpressionNodeEditor $ NodeEditor.edgeNodes . at nodeId ?= updatedNode
                     update $ portDrag & portDragPortMapping .~ newMapping
                     continue $ \portDrag' -> mapM_ (updateConnectionsForPort portDrag') $
                         map (toAnyPortRef (originalNode ^. EdgeNode.nodeId) . view Port.portId) (originalNode ^. EdgeNode.ports . to Map.elems)
@@ -290,6 +291,6 @@ confirmReorder portDrag = do
                     Just (node, updatedConnections) -> do
                         forM_ connectionsToUpdate $ removeConnection . view connectionId
                         forM_ updatedConnections $ addConnection
-                        modifyNodeEditor $ NodeEditor.edgeNodes . at nodeId ?= node
+                        modifyExpressionNodeEditor $ NodeEditor.edgeNodes . at nodeId ?= node
                         void redrawConnectionsForEdgeNodes
                         Batch.movePort portRef $notImplemented

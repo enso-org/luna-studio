@@ -15,7 +15,7 @@ import           Luna.Studio.Action.ConnectionPen.SmoothLine (addPointToCurve, b
 import           Luna.Studio.Action.State.Action             (beginActionWithKey, continueActionWithKey, removeActionFromState,
                                                               updateActionWithKey)
 import           Luna.Studio.Action.State.Model              (getNodeAtPosition)
-import           Luna.Studio.Action.State.NodeEditor         (modifyNodeEditor)
+import           Luna.Studio.Action.State.NodeEditor         (modifyExpressionNodeEditor)
 import           Luna.Studio.Data.Color                      (Color (Color))
 import           Luna.Studio.Event.Mouse                     (workspacePosition)
 import           Luna.Studio.Prelude
@@ -41,7 +41,7 @@ startConnecting evt timestamp = do
     let curve = beginCurve pos timestamp
     begin $ PenConnect curve Nothing
     updateAllPortsSelfVisibility
-    modifyNodeEditor $ NodeEditor.connectionPen ?= ConnectionPen (curveToSvgPath curve) (Color 1)
+    modifyExpressionNodeEditor $ NodeEditor.connectionPen ?= ConnectionPen (curveToSvgPath curve) (Color 1)
 
 connectProcessSegment :: CurveSegment -> PenConnect -> Command State ()
 connectProcessSegment seg state = do
@@ -64,7 +64,7 @@ connectMove evt timestamp state = do
     let curve  = addPointToCurve pos timestamp $ state ^. penConnectCurve
         state' = state & penConnectCurve .~ curve
     update state'
-    modifyNodeEditor $ NodeEditor.connectionPen . _Just . ConnectionPen.path .= curveToSvgPath curve
+    modifyExpressionNodeEditor $ NodeEditor.connectionPen . _Just . ConnectionPen.path .= curveToSvgPath curve
     when (length (curve ^. Curve.segments) > 1 && head (curve ^. Curve.segments) ^. Curve.approved) $
         connectProcessSegment (head $ drop 1 $ curve ^. Curve.segments) state'
 
@@ -73,6 +73,6 @@ stopConnecting state = do
     let curve = state ^. penConnectCurve
     unless ((head $ curve ^. Curve.segments) ^. Curve.approved) $
         connectProcessSegment (head $ curve ^. Curve.segments) state
-    modifyNodeEditor $ NodeEditor.connectionPen .= Nothing
+    modifyExpressionNodeEditor $ NodeEditor.connectionPen .= Nothing
     updateAllPortsSelfVisibility
     removeActionFromState penConnectAction
