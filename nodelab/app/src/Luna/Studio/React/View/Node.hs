@@ -54,7 +54,7 @@ node_ ref model = React.viewWithSKey node (jsShow $ model ^. Node.nodeId) (ref, 
 
 node :: ReactView (Ref App, Node)
 node = React.defineView name $ \(ref, n) -> case n ^. Node.mode of
-    Node.Expanded (Node.Function fs) -> nodeContainer_ ref fs
+    Node.Expanded (Node.Function fs) -> nodeContainer_ ref $ Map.elems fs
     _ ->
         let nodeId    = n ^. Node.nodeId
             nodeLimit = 10000::Int

@@ -126,7 +126,6 @@ updateEdgeNodes update = modifyNodeEditor $ edgeNodes .= toEdgeNodesMap update
 updateNodes :: [Node] -> Command State ()
 updateNodes update = modifyNodeEditor $ nodes .= toNodesMap update
 
-
 addConnection :: Connection -> Command State ()
 addConnection conn = modifyNodeEditor $ connections . at connId ?= conn where
     connId = conn ^. connectionId
