@@ -156,40 +156,21 @@ executable internals
       Luna.Studio.Event.Engine
       Luna.Studio.Event.Event
       Luna.Studio.Event.Internal
-      Luna.Studio.Event.Keys
       Luna.Studio.Event.Loader
       Luna.Studio.Event.Loop
-      Luna.Studio.Event.Mouse
       Luna.Studio.Event.Preprocessor.Batch
       Luna.Studio.Event.Preprocessor.CustomEvent
-      Luna.Studio.Event.Preprocessor.Shortcut
       Luna.Studio.Event.Processor
-      Luna.Studio.Event.Shortcut
       Luna.Studio.Event.Source
       Luna.Studio.Event.Text
       Luna.Studio.Event.UI
       Luna.Studio.Handler.App
       Luna.Studio.Handler.Backend.Common
       Luna.Studio.Handler.Backend.Control
-      Luna.Studio.Handler.Backend.Graph
       Luna.Studio.Handler.Backend.ProjectManager
       Luna.Studio.Handler.Backend.Text
-      Luna.Studio.Handler.Breadcrumbs
-      Luna.Studio.Handler.Camera
-      Luna.Studio.Handler.Clipboard
-      Luna.Studio.Handler.CodeEditor
       Luna.Studio.Handler.Collaboration
-      Luna.Studio.Handler.Connect
-      Luna.Studio.Handler.ConnectionPen
       Luna.Studio.Handler.Debug
-      Luna.Studio.Handler.Edge
-      Luna.Studio.Handler.MultiSelection
-      Luna.Studio.Handler.Navigation
-      Luna.Studio.Handler.Node
-      Luna.Studio.Handler.Port
-      Luna.Studio.Handler.Searcher
-      Luna.Studio.Handler.Undo
-      Luna.Studio.Handler.Visualization
       Luna.Studio.Prelude
       Luna.Studio.Prelude.Instances
       Luna.Studio.React.Event.App

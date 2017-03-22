@@ -16,30 +16,30 @@ import           Luna.Studio.Event.Loop                     (LoopRef)
 import qualified Luna.Studio.Event.Loop                     as Loop
 import qualified Luna.Studio.Event.Preprocessor.Batch       as BatchEventPreprocessor
 import qualified Luna.Studio.Event.Preprocessor.CustomEvent as CustomEventPreprocessor
-import qualified Luna.Studio.Event.Preprocessor.Shortcut    as ShortcutEventPreprocessor
+-- import qualified Luna.Studio.Event.Preprocessor.Shortcut    as ShortcutEventPreprocessor
 import           Luna.Studio.Event.Source                   (AddHandler (..))
 import qualified Luna.Studio.Event.Source                   as JSHandlers
 import qualified Luna.Studio.Handler.App                    as App
-import qualified Luna.Studio.Handler.Backend.Control        as Control
-import qualified Luna.Studio.Handler.Backend.Graph          as Graph
+-- import qualified Luna.Studio.Handler.Backend.Control        as Control
+-- import qualified Luna.Studio.Handler.Backend.Graph          as Graph
 import qualified Luna.Studio.Handler.Backend.ProjectManager as ProjectManager
 import qualified Luna.Studio.Handler.Backend.Text           as Text
-import qualified Luna.Studio.Handler.Breadcrumbs            as Breadcrumbs
-import qualified Luna.Studio.Handler.Camera                 as Camera
-import qualified Luna.Studio.Handler.Clipboard              as Clipboard
-import qualified Luna.Studio.Handler.CodeEditor             as CodeEditor
-import qualified Luna.Studio.Handler.Collaboration          as Collaboration
-import qualified Luna.Studio.Handler.Connect                as Connect
-import qualified Luna.Studio.Handler.ConnectionPen          as ConnectionPen
-import qualified Luna.Studio.Handler.Debug                  as Debug
-import qualified Luna.Studio.Handler.Edge                   as Edge
-import qualified Luna.Studio.Handler.MultiSelection         as MultiSelection
-import qualified Luna.Studio.Handler.Navigation             as Navigation
-import qualified Luna.Studio.Handler.Node                   as Node
-import qualified Luna.Studio.Handler.Port                   as Port
-import qualified Luna.Studio.Handler.Searcher               as Searcher
-import qualified Luna.Studio.Handler.Undo                   as Undo
-import qualified Luna.Studio.Handler.Visualization          as Visualization
+-- import qualified Luna.Studio.Handler.Breadcrumbs            as Breadcrumbs
+-- import qualified Luna.Studio.Handler.Camera                 as Camera
+-- import qualified Luna.Studio.Handler.Clipboard              as Clipboard
+-- import qualified Luna.Studio.Handler.CodeEditor             as CodeEditor
+-- import qualified Luna.Studio.Handler.Collaboration          as Collaboration
+-- import qualified Luna.Studio.Handler.Connect                as Connect
+-- import qualified Luna.Studio.Handler.ConnectionPen          as ConnectionPen
+-- import qualified Luna.Studio.Handler.Debug                  as Debug
+-- import qualified Luna.Studio.Handler.Edge                   as Edge
+-- import qualified Luna.Studio.Handler.MultiSelection         as MultiSelection
+-- import qualified Luna.Studio.Handler.Navigation             as Navigation
+-- import qualified Luna.Studio.Handler.Node                   as Node
+-- import qualified Luna.Studio.Handler.Port                   as Port
+-- import qualified Luna.Studio.Handler.Searcher               as Searcher
+-- import qualified Luna.Studio.Handler.Undo                   as Undo
+-- import qualified Luna.Studio.Handler.Visualization          as Visualization
 import           Luna.Studio.Prelude
 import           Luna.Studio.State.Global                   (State)
 import qualified Luna.Studio.State.Global                   as Global
@@ -63,7 +63,7 @@ actions loop =
     -- , Camera.handle
     -- , Clipboard.handle
     -- , CodeEditor.handle
-      Collaboration.handle
+      -- Collaboration.handle
     -- , Connect.handle
     -- , ConnectionPen.handle
     -- , Control.handle
@@ -75,8 +75,8 @@ actions loop =
     -- , Navigation.handle
     -- , Node.handle
     -- , Port.handle
-    , Undo.handle
-    , ProjectManager.handle
+    -- , Undo.handle
+    ProjectManager.handle
     , Text.handle
     -- , Searcher.handle (scheduleEvent loop)
     -- , Visualization.handle
@@ -88,9 +88,9 @@ runCommands cmds event = sequence_ . catMaybes $ fmap ($ event) cmds
 preprocessEvent :: Event -> IO Event
 preprocessEvent ev = do
     let batchEvent    = BatchEventPreprocessor.process ev
-        shortcutEvent = ShortcutEventPreprocessor.process ev
+        -- shortcutEvent = ShortcutEventPreprocessor.process ev
     customEvent   <- CustomEventPreprocessor.process ev
-    return $ fromMaybe ev $ getLast $ Last batchEvent <> Last customEvent <> Last shortcutEvent
+    return $ fromMaybe ev $ getLast $ Last batchEvent <> Last customEvent
 
 processEvent :: LoopRef -> Event -> IO ()
 processEvent loop ev = modifyMVar_ (loop ^. Loop.state) $ \state -> do
