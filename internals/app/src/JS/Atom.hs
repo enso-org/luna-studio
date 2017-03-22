@@ -39,32 +39,32 @@ foreign import javascript safe "($1).unsubscribeText()"
   unsubscribeText' :: Callback (JSVal -> IO ()) -> IO ()
 
 foreign import javascript safe "atomCallback2.getPath($1)"
-  getPath :: JSVal -> JSString
+  getPath :: JSVal -> JSVal
 
 foreign import javascript safe "atomCallback2.getStart($1)"
-  getStart :: JSVal -> Int
+  getStart :: JSVal -> JSVal
 
 foreign import javascript safe "atomCallback2.getStop($1)"
-  getStop :: JSVal -> Int
+  getStop :: JSVal -> JSVal
 
 foreign import javascript safe "atomCallback2.getText($1)"
-  getText :: JSVal -> JSString
+  getText :: JSVal -> JSVal
 
 foreign import javascript safe "atomCallback2.getCursor($1)"
-  getCursor :: JSVal -> Int
+  getCursor :: JSVal -> JSVal
 
 jsvalToText :: JSVal -> TextEvent
 jsvalToText jsval = result where
-  filepath = JSString.unpack $ getPath jsval
-  start    = getStart jsval
-  stop     = getStop jsval
-  text     = JSString.unpack $ getText jsval
-  cursor   = getCursor jsval
-  result   = TextEvent filepath start stop (Text.pack text) $ Just cursor
+  filepath = pFromJSVal $ getPath jsval
+  start    = pFromJSVal $ getStart jsval
+  stop     = pFromJSVal $ getStop jsval
+  text     = pFromJSVal $ getText jsval
+  cursor   = pFromJSVal $ getCursor jsval
+  result   = TextEvent filepath start stop text $ Just cursor
 
 subscribeText :: (TextEvent -> IO ()) -> IO (IO ())
 subscribeText callback = do
-  wrappedCallback <- syncCallback1 ContinueAsync $ callback . jsvalToText 
+  wrappedCallback <- syncCallback1 ContinueAsync $ callback . jsvalToText
   subscribeText' wrappedCallback
   return $ unsubscribeText' wrappedCallback >> releaseCallback wrappedCallback
 

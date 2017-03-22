@@ -57,44 +57,19 @@ module.exports = function () {
       });
     },
     getPath: function(data) {
-      var key = "uri";
-      for(key in data) {
-        if(data.hasOwnProperty(key)) {
-          var value = data.key;
-          return value;}
-        }
+      return data.uri
     },
     getStart: function(data) {
-      var key = "start";
-      for(key in data) {
-        if(data.hasOwnProperty(key)) {
-          var value = data.key;
-          return value;}
-        }
+      return data.start
     },
     getStop: function(data) {
-      var key = "end";
-      for(key in data) {
-        if(data.hasOwnProperty(key)) {
-          var value = data.key;
-          return value;}
-        }
+      return data.end
     },
     getText: function(data) {
-      var key = "text";
-      for(key in data) {
-        if(data.hasOwnProperty(key)) {
-          var value = data.key;
-          return value;}
-        }
+      return data.text
     },
     getCursor: function(data) {
-      var key = "cursor";
-      for(key in data) {
-        if(data.hasOwnProperty(key)) {
-          var value = data.key;
-          return value;}
-        }
+      return data.cursor
     },
 
   };

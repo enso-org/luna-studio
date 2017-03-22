@@ -55,7 +55,7 @@ module.exports =
                       text: event.newText
                       cursor: buffer.characterIndexForPosition(@editor.getCursorBufferPosition())
               console.log(diff)
-              internal.pushText({uri: "/home/sylwia/project/doublerep/nodelab/atom/test2.luna", start: 0, end: 0, text: "x", cursor: 1})
+              internal.pushText(diff)
 
         atom.workspace.getActivePane().activateItem new LunaStudioTab(uri, code, websocket)
 
