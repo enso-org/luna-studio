@@ -43,7 +43,7 @@ import           EmpireUtils
 
 
 spec :: Spec
-spec = around withChannels $ id $ do
+spec = around withChannels $ parallel $ do
     describe "luna-empire" $ do
         it "descends into `foo = a: a` and asserts two edges inside" $ \env -> do
             u1 <- mkUUID
@@ -376,15 +376,14 @@ spec = around withChannels $ id $ do
                 node ^. Node.nodeId `shouldBe` u1
                 node ^. Node.canEnter `shouldBe` True
                 nodes `shouldSatisfy` ((== 1) . length)
-        it "changes node name when new expression is def name" $ \env -> do
+        it "does not allow to change expression to assignment" $ \env -> do
             u1 <- mkUUID
             res <- evalEmp env $ do
                 Graph.addNode top u1 "1" def
                 Graph.setNodeExpression top u1 "foo = a: a"
-            withResult res $ \node -> do
-                node ^. Node.name `shouldBe` "foo"
-                node ^. Node.nodeType `shouldBe` Node.ExpressionNode "a: a"
-                node ^. Node.canEnter `shouldBe` True
+            case res of
+                Left err -> err `shouldStartWith` "ParserException"
+                Right _  -> expectationFailure "should throw ParserException"
         it "changes expression to lambda with node inside" $ \env -> do
             u1 <- mkUUID
             res <- evalEmp env $ do
@@ -393,9 +392,8 @@ spec = around withChannels $ id $ do
                 Graph.getGraph (top |> u1)
             withResult res $ \graph -> do
                 let Graph.Graph nodes connections _ = graph
-                excludeEdges nodes `shouldSatisfy` ((== 1) . length)
-                -- fix when printer prints it properly
-                head nodes `shouldSatisfy` (\a -> a ^. Node.nodeType . Node.expression == "a + b")
+                let [node] = excludeEdges nodes
+                node ^. Node.nodeType `shouldBe` Node.ExpressionNode "a + b"
                 connections `shouldSatisfy` ((== 3) . length)
     describe "dumpAccessors" $ do
         it "foo.bar" $ \env -> do
@@ -605,7 +603,7 @@ spec = around withChannels $ id $ do
         it "adds port at the first position" $ \env -> do
             u1 <- mkUUID
             res <- evalEmp env $ do
-                Graph.addNode top u1 "def foo" def
+                Graph.addNode top u1 "foo = a: a" def
                 let loc' = top |> u1
                 Just (input, output) <- Graph.withGraph loc' $ runASTOp GraphBuilder.getEdgePortMapping
                 Graph.addPort loc' input 0

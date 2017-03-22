@@ -21,7 +21,7 @@ import EmpireUtils
 spec :: Spec
 spec = around withChannels $ do
     describe "parser" $ do
-        xit "shows error on parse error" $ \env -> do -- It doesn't
+        it "shows error on parse error" $ \env -> do
             u1 <- mkUUID
             res <- evalEmp env $ Graph.addNode top u1 ")()#%&&@^#&$....1foo0x3r2" def
             case res of

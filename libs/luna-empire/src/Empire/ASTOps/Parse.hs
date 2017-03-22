@@ -6,13 +6,15 @@ module Empire.ASTOps.Parse (
     parseExpr
   , parsePortDefault
   , runParser
+  , runReparser
   ) where
 
 import           Data.Convert
 import           Empire.Empire
 import           Empire.Prelude hiding (mempty)
-import           Prologue (convert, unwrap', mempty)
+import           Prologue (convert, unwrap', mempty, wrap', wrap)
 
+import           Control.Monad.Catch          (catchAll)
 import           Data.Char                    (isUpper)
 import           Data.List                    (partition)
 import qualified Data.Text                    as Text
@@ -52,17 +54,50 @@ parseExpr s = do
 runParser :: Text.Text -> Command Graph (NodeRef, Parser.MarkedExprMap)
 runParser expr = do
     let inits = do
-            IR.setAttr (getTypeDesc @Source.SourceTree)    $ (mempty :: Source.SourceTree)
-            IR.setAttr (getTypeDesc @Parser.MarkedExprMap) $ (mempty :: Parser.MarkedExprMap)
-            IR.setAttr (getTypeDesc @Source.Source)        $ (error "Data not provided: Source")
-            IR.setAttr (getTypeDesc @Parser.ParsedExpr)    $ (error "Data not provided: ParsedExpr")
+            IR.setAttr (getTypeDesc @Source.SourceTree)      $ (mempty :: Source.SourceTree)
+            IR.setAttr (getTypeDesc @Parser.MarkedExprMap)   $ (mempty :: Parser.MarkedExprMap)
+            IR.setAttr (getTypeDesc @Source.Source)          $ (error "Data not provided: Source")
+            IR.setAttr (getTypeDesc @Parser.ParsedExpr)      $ (error "Data not provided: ParsedExpr")
+            IR.setAttr (getTypeDesc @Parser.ReparsingStatus) $ (error "Data not provided: ReparsingStatus")
         run = runPass @ParserPass inits
     run $ do
         IR.writeAttr @Source.Source $ convert expr
-        Parsing.parsingBase Parsing.expr
+        Parsing.parsingBase Parsing.expr `catchAll` (\e -> throwM $ ParserException e)
         res     <- IR.readAttr @Parser.ParsedExpr
         exprMap <- IR.readAttr @Parser.MarkedExprMap
         return (unwrap' res, exprMap)
+
+runReparser :: Text.Text -> NodeRef -> Command Graph (NodeRef, Parser.MarkedExprMap, Parser.ReparsingStatus)
+runReparser expr oldExpr = do
+    let inits = do
+            IR.setAttr (getTypeDesc @Source.SourceTree)      $ (mempty :: Source.SourceTree)
+            IR.setAttr (getTypeDesc @Parser.MarkedExprMap)   $ (mempty :: Parser.MarkedExprMap)
+            IR.setAttr (getTypeDesc @Source.Source)          $ (error "Data not provided: Source")
+            IR.setAttr (getTypeDesc @Parser.ParsedExpr)      $ (error "Data not provided: ParsedExpr")
+            IR.setAttr (getTypeDesc @Parser.ReparsingStatus) $ (error "Data not provided: ReparsingStatus")
+        run = runPass @ParserPass inits
+    run $ do
+        IR.writeAttr @Source.Source $ convert expr
+        IR.writeAttr @Parser.ParsedExpr $ wrap' oldExpr
+        do
+            gidMapOld <- IR.readAttr @Parser.MarkedExprMap
+            refOld    <- IR.readAttr @Parser.ParsedExpr
+            -- elsOld    <- exprs
+
+            -- parsing new file and updating updated analysis
+            IR.writeAttr @Parser.MarkedExprMap mempty
+            Parsing.parsingBase Parsing.valExpr `catchAll` (\e -> throwM $ ParserException e)
+            gidMap    <- IR.readAttr @Parser.MarkedExprMap
+            ref       <- IR.readAttr @Parser.ParsedExpr
+
+            -- Preparing reparsing status
+            rs        <- Parsing.cmpMarkedExprMaps gidMapOld gidMap
+            IR.writeAttr @Parser.ReparsingStatus (wrap rs)
+
+        res     <- IR.readAttr @Parser.ParsedExpr
+        exprMap <- IR.readAttr @Parser.MarkedExprMap
+        status  <- IR.readAttr @Parser.ReparsingStatus
+        return (unwrap' res, exprMap, status)
 
 data PortDefaultNotConstructibleException = PortDefaultNotConstructibleException PortDefault
     deriving Show

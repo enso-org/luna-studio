@@ -269,33 +269,37 @@ renamePort loc portRef newName = withGraph loc $ runASTOp $ do
 
 setNodeExpression :: GraphLocation -> NodeId -> Text -> Empire Node
 setNodeExpression loc nodeId expr = withTC loc False $ do
-    $notImplemented
-    -- parsedExpr <- runASTOp $ do
-    --     (exprName, parsedExpr) <- ASTParse.parseExpr $ Text.unpack expr
-    --     target                 <- ASTRead.getASTTarget nodeId
-    --     IR.replaceNode target parsedExpr
-    --     IR.deleteSubtree target
-    --     forM_ exprName $ \newName -> renameNodeGraph nodeId newName
-    --     return parsedExpr
-    -- runAliasAnalysis
-    -- runASTOp $ do
-    --     parsedIsLambda <- ASTRead.isLambda parsedExpr
-    --     when parsedIsLambda $ do
-    --         lambdaUUID             <- liftIO $ UUID.nextRandom
-    --         lambdaOutput           <- ASTRead.getLambdaOutputRef parsedExpr
-    --         outputIsOneOfTheInputs <- AST.isTrivialLambda        parsedExpr
-    --         Just nodeItem          <- use $ Graph.breadcrumbHierarchy . BH.children . at nodeId
-    --         let anonOutput = if   not outputIsOneOfTheInputs
-    --                          then Just $ BH.BItem Map.empty Nothing (Just (lambdaUUID, BH.AnonymousNode lambdaOutput)) Nothing
-    --                          else Nothing
-    --             lamItem    = nodeItem & BH.children . at lambdaUUID .~ anonOutput
-    --                                   & BH.body ?~ lambdaOutput
-    --         Graph.breadcrumbHierarchy . BH.children . at nodeId  ?= lamItem
-    --         IR.writeLayer @Marker (Just $ OutPortRef lambdaUUID Port.All) lambdaOutput
-    --     updateNodeSequence
-    -- node <- runASTOp $ GraphBuilder.buildNode nodeId
-    -- Publisher.notifyNodeUpdate loc node
-    -- return node
+    oldExpr <- runASTOp $ ASTRead.getASTTarget nodeId
+    parsed <- view _1 <$> ASTParse.runReparser expr oldExpr
+    -- FIXME[MM]: temporarily put parsed expression to breadcrumb hierarchy
+    --            so alias analysis can pick it up
+    tempUUID <- liftIO $ UUID.nextRandom
+    runASTOp $ do
+        let nodeItem = BH.BItem Map.empty Nothing (Just (tempUUID, BH.AnonymousNode parsed)) Nothing
+        Graph.breadcrumbHierarchy . BH.children . at tempUUID ?= nodeItem
+    runAliasAnalysis
+    runASTOp $ do
+        Graph.breadcrumbHierarchy . BH.children . at tempUUID .= Nothing
+        target <- ASTRead.getASTTarget nodeId
+        IR.replaceNode target parsed
+        IR.deleteSubtree target
+        parsedIsLambda <- ASTRead.isLambda parsed
+        when parsedIsLambda $ do
+            lambdaUUID             <- liftIO $ UUID.nextRandom
+            lambdaOutput           <- ASTRead.getLambdaOutputRef parsed
+            outputIsOneOfTheInputs <- AST.isTrivialLambda        parsed
+            Just nodeItem          <- use $ Graph.breadcrumbHierarchy . BH.children . at nodeId
+            let anonOutput = if   not outputIsOneOfTheInputs
+                             then Just $ BH.BItem Map.empty Nothing (Just (lambdaUUID, BH.AnonymousNode lambdaOutput)) Nothing
+                             else Nothing
+                lamItem    = nodeItem & BH.children . at lambdaUUID .~ anonOutput
+                                      & BH.body ?~ lambdaOutput
+            Graph.breadcrumbHierarchy . BH.children . at nodeId  ?= lamItem
+            IR.writeLayer @Marker (Just $ OutPortRef lambdaUUID Port.All) lambdaOutput
+        updateNodeSequence
+    node <- runASTOp $ GraphBuilder.buildNode nodeId
+    Publisher.notifyNodeUpdate loc node
+    return node
 
 setNodeMeta :: GraphLocation -> NodeId -> NodeMeta -> Empire ()
 setNodeMeta loc nodeId newMeta = withGraph loc $ do
