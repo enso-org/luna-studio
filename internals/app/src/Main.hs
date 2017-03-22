@@ -17,7 +17,7 @@ import qualified Luna.Studio.Batch.Workspace as Workspace
 import           Luna.Studio.Event.Engine    (LoopRef (LoopRef))
 import qualified Luna.Studio.Event.Engine    as Engine
 import qualified Luna.Studio.React.Store     as Store
-import qualified Luna.Studio.React.View.App  as App
+-- import qualified Luna.Studio.React.View.App  as App
 import           Luna.Studio.State.Global    (mkState)
 import qualified Luna.Studio.State.Global    as Global
 
@@ -37,7 +37,7 @@ runApp chan socket = do
                       & Global.workspace . Workspace.lastUILocation .~ lastLocation
         state <- newMVar initState
         Engine.connectEventSources socket loop
-    App.focus
+    -- App.focus
 
 main :: IO ()
 main = do

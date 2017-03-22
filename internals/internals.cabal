@@ -219,27 +219,6 @@ executable internals
       Luna.Studio.React.Model.SelectionBox
       Luna.Studio.React.Store
       Luna.Studio.React.Store.Ref
-      Luna.Studio.React.View.App
-      Luna.Studio.React.View.Breadcrumbs
-      Luna.Studio.React.View.Connection
-      Luna.Studio.React.View.ConnectionPen
-      Luna.Studio.React.View.Edge
-      Luna.Studio.React.View.Field
-      Luna.Studio.React.View.Monad
-      Luna.Studio.React.View.Node
-      Luna.Studio.React.View.Node.Body
-      Luna.Studio.React.View.Node.Container
-      Luna.Studio.React.View.Node.Properties
-      Luna.Studio.React.View.NodeEditor
-      Luna.Studio.React.View.Port
-      Luna.Studio.React.View.PortControl
-      Luna.Studio.React.View.Searcher
-      Luna.Studio.React.View.SelectionBox
-      Luna.Studio.React.View.Style
-      Luna.Studio.React.View.Visualization
-      Luna.Studio.React.View.Visualization.DataFrame
-      Luna.Studio.React.View.Visualization.Graphics
-      Luna.Studio.React.View.Visualization.Image
       Luna.Studio.State.Action
       Luna.Studio.State.Collaboration
       Luna.Studio.State.Global

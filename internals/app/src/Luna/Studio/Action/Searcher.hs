@@ -25,7 +25,7 @@ import           Luna.Studio.Prelude
 import qualified Luna.Studio.React.Model.Node        as Node
 import qualified Luna.Studio.React.Model.NodeEditor  as NodeEditor
 import qualified Luna.Studio.React.Model.Searcher    as Searcher
-import qualified Luna.Studio.React.View.App          as App
+-- import qualified Luna.Studio.React.View.App          as App
 import           Luna.Studio.State.Action            (Action (begin, continue, end, update), Searcher (Searcher), searcherAction)
 import           Luna.Studio.State.Global            (State)
 import qualified Luna.Studio.State.Global            as Global
@@ -61,10 +61,10 @@ openWith nodeId pos = do
     liftIO Searcher.focus
 
 close :: Searcher -> Command State ()
-close _ = do
-    modifyNodeEditor $ NodeEditor.searcher .= Nothing
-    removeActionFromState searcherAction
-    liftIO App.focus
+close _ = undefined --do
+    -- modifyNodeEditor $ NodeEditor.searcher .= Nothing
+    -- removeActionFromState searcherAction
+    -- liftIO App.focus
 
 moveDown :: Searcher -> Command State ()
 moveDown _ = modifySearcher $ do

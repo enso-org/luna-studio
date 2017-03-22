@@ -53,7 +53,7 @@ import qualified Luna.Studio.React.Model.Node        as Node
 import qualified Luna.Studio.React.Model.NodeEditor  as NodeEditor
 import           Luna.Studio.React.Model.Port        (DraggedPort (DraggedPort))
 import qualified Luna.Studio.React.Model.Port        as Port
-import qualified Luna.Studio.React.View.Edge         as Edge
+-- import qualified Luna.Studio.React.View.Edge         as Edge
 import           Luna.Studio.State.Action            (Action (begin, continue, end, update), Connect, Mode (Click, Drag),
                                                       PortDrag (PortDrag), connectMode, connectSourcePort, connectStartPos, portDragAction,
                                                       portDragMode, portDragPortMapping, portDragPortRef, portDragStartPos)
@@ -76,14 +76,14 @@ portRename portRef name = modifyNodeEditor $ do
     NodeEditor.nodes . at nodeId . _Just . Node.ports . at portId . _Just . Port.name .= name
 
 portNameEdit :: AnyPortRef -> Bool -> Command State ()
-portNameEdit portRef isEdited = do
-    modifyNodeEditor $ do
-        let nodeId = portRef ^. PortRef.nodeId
-            portId = portRef ^. PortRef.portId
-        NodeEditor.nodes . at nodeId . _Just . Node.ports . at portId . _Just . Port.isEdited .= isEdited
-    when isEdited $ do
-        renderIfNeeded
-        liftIO Edge.focusPortLabel
+portNameEdit portRef isEdited = undefined --do
+    -- modifyNodeEditor $ do
+    --     let nodeId = portRef ^. PortRef.nodeId
+    --         portId = portRef ^. PortRef.portId
+    --     NodeEditor.nodes . at nodeId . _Just . Node.ports . at portId . _Just . Port.isEdited .= isEdited
+    -- when isEdited $ do
+    --     renderIfNeeded
+    --     liftIO Edge.focusPortLabel
 
 startPortDrag :: ScreenPosition -> AnyPortRef -> Mode -> Command State ()
 startPortDrag mousePos portRef mode = do
