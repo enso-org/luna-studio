@@ -116,7 +116,9 @@ removeAccessor ref = do
             if null args then return acc else reapply acc args
 
 makeNodeRep :: ASTOp m => NodeId -> String -> NodeRef -> m NodeRef
-makeNodeRep marker name node = do
-    nameVar <- IR.var' $ stringToName name
-    IR.writeLayer @Marker (Just $ OutPortRef marker Port.All) nameVar
-    IR.generalize <$> IR.unify nameVar node
+makeNodeRep marker name node = match node $ \case
+    Unify{} -> return node
+    _       -> do
+        nameVar <- IR.var' $ stringToName name
+        IR.writeLayer @Marker (Just $ OutPortRef marker Port.All) nameVar
+        IR.generalize <$> IR.unify nameVar node
