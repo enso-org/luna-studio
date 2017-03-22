@@ -69,9 +69,11 @@ data Collaboration = Collaboration { _touch  :: Map ClientId (UTCTime, ColorId)
 
 type NodesMap = HashMap NodeId Node
 
+makeLenses ''Collaboration
 makeLenses ''Node
 makeLenses ''Subgraph
-makeLenses ''Collaboration
+makePrisms ''ExpandedMode
+makePrisms ''Mode
 
 instance Convertible (Empire.Node, Text) Node where
     convert (n, expr) = Node
@@ -127,6 +129,8 @@ instance Default Mode where def = Collapsed
 toNodesMap :: [Node] -> NodesMap
 toNodesMap = HashMap.fromList . map (view nodeId &&& id)
 
+subgraphs :: Getter Node [Subgraph]
+subgraphs = to (toListOf $ mode . _Expanded . _Function . traverse)
 
 isMode :: Mode -> Node -> Bool
 isMode mode' node = node ^. mode == mode'

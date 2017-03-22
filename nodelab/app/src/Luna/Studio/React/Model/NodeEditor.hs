@@ -1,6 +1,7 @@
 {-# LANGUAGE DeriveAnyClass #-}
 module Luna.Studio.React.Model.NodeEditor where
 
+import qualified Data.HashMap.Strict                   as HashMap
 import           Data.Position                         (Position)
 import           Empire.API.Data.MonadPath             (MonadPath)
 import           Luna.Studio.Data.CameraTransformation (CameraTransformation)
@@ -8,7 +9,8 @@ import           Luna.Studio.Prelude
 import           Luna.Studio.React.Model.Connection    (ConnectionsMap, CurrentConnection)
 import           Luna.Studio.React.Model.ConnectionPen (ConnectionPen)
 import           Luna.Studio.React.Model.EdgeNode      (EdgeNodesMap)
-import           Luna.Studio.React.Model.Node          (NodeId, NodesMap)
+import           Luna.Studio.React.Model.Node          (Node, NodeId, NodesMap)
+import qualified Luna.Studio.React.Model.Node          as Node
 import           Luna.Studio.React.Model.Port          (DraggedPort)
 import           Luna.Studio.React.Model.Searcher      (Searcher)
 import           Luna.Studio.React.Model.SelectionBox  (SelectionBox)
@@ -30,3 +32,7 @@ data NodeEditor = NodeEditor { _screenTransform     :: CameraTransformation
                              } deriving (Default, Eq, Generic)
 
 makeLenses ''NodeEditor
+
+nodesRecursive :: Getter NodeEditor [Node]
+nodesRecursive = to (concatMap nodesRecursive' . HashMap.elems . view nodes) where
+    nodesRecursive' node = node : concatMap nodesRecursive' (concatMap (HashMap.elems . view Node.nodes) (node ^. Node.subgraphs))

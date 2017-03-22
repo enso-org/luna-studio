@@ -48,42 +48,44 @@ handleMouseDown ref nodeId e m =
     else []
 
 node :: ReactView (Ref App, Node)
-node = React.defineView name $ \(ref, n) -> do
-    let nodeId    = n ^. Node.nodeId
-        nodeLimit = 10000::Int
-        zIndex    = n ^. Node.zPos
-        z         = if isCollapsed n then zIndex else zIndex + nodeLimit
-    div_
-        [ "key"       $= (nodePrefix <> fromString (show nodeId))
-        , "id"        $= (nodePrefix <> fromString (show nodeId))
-        , "className" $= Style.prefixFromList ( [ "node" , (if isCollapsed n then  "node--collapsed" else "node--expanded") ]
-                                                        ++ (if n ^. Node.isSelected  then ["node--selected"] else []) )
-        , "style"     @= Aeson.object [ "zIndex" Aeson..= show z ]
-        , onMouseDown   $ handleMouseDown ref nodeId
-        , onClick       $ \_ m -> dispatch ref $ UI.NodeEvent $ Node.Select m nodeId
-        , onDoubleClick $ \e _ -> stopPropagation e : (dispatch ref $ UI.NodeEvent $ Node.Enter nodeId)
-        ] $ do
-        svg_
-            [ "className" $= Style.prefix "node__text"
-            , "key"       $= "nodeText"
-            ] $
-            g_
-                [ "className" $= Style.prefix "node-translate"
-                ] $ do
-                text_
-                    [ "key"         $= "expressionText"
-                    , onDoubleClick $ \e _ -> stopPropagation e : dispatch ref (UI.NodeEvent $ Node.EditExpression nodeId)
-                    , "className"   $= Style.prefixFromList [ "node__name", "node__name--expression", "noselect" ]
-                    , "y"           $= "-16"
-                    ] $ elemString . convert $ n ^. Node.expression
-                text_
-                    [ "key"         $= "nameText"
-                    , onDoubleClick $ \e _ -> stopPropagation e : dispatch ref (UI.NodeEvent $ Node.EditExpression nodeId)
-                    , "className"   $= Style.prefixFromList [ "node__name", "noselect" ]
-                    ] $ elemString $ convert $ Prop.fromNode n ^. Prop.name
-        nodeBody_ ref n
-        nodeVisualizations_ ref n
-        nodePorts_ ref n
+node = React.defineView name $ \(ref, n) -> case n ^. Node.mode of
+    Node.Expanded (Node.Function fs) -> nodeContainer_ ref fs
+    _ -> do
+        let nodeId    = n ^. Node.nodeId
+            nodeLimit = 10000::Int
+            zIndex    = n ^. Node.zPos
+            z         = if isCollapsed n then zIndex else zIndex + nodeLimit
+        div_
+            [ "key"       $= (nodePrefix <> fromString (show nodeId))
+            , "id"        $= (nodePrefix <> fromString (show nodeId))
+            , "className" $= Style.prefixFromList ( [ "node" , (if isCollapsed n then  "node--collapsed" else "node--expanded") ]
+                                                            ++ (if n ^. Node.isSelected  then ["node--selected"] else []) )
+            , "style"     @= Aeson.object [ "zIndex" Aeson..= show z ]
+            , onMouseDown   $ handleMouseDown ref nodeId
+            , onClick       $ \_ m -> dispatch ref $ UI.NodeEvent $ Node.Select m nodeId
+            , onDoubleClick $ \e _ -> stopPropagation e : (dispatch ref $ UI.NodeEvent $ Node.Enter nodeId)
+            ] $ do
+            svg_
+                [ "className" $= Style.prefix "node__text"
+                , "key"       $= "nodeText"
+                ] $
+                g_
+                    [ "className" $= Style.prefix "node-translate"
+                    ] $ do
+                    text_
+                        [ "key"         $= "expressionText"
+                        , onDoubleClick $ \e _ -> stopPropagation e : dispatch ref (UI.NodeEvent $ Node.EditExpression nodeId)
+                        , "className"   $= Style.prefixFromList [ "node__name", "node__name--expression", "noselect" ]
+                        , "y"           $= "-16"
+                        ] $ elemString . convert $ n ^. Node.expression
+                    text_
+                        [ "key"         $= "nameText"
+                        , onDoubleClick $ \e _ -> stopPropagation e : dispatch ref (UI.NodeEvent $ Node.EditExpression nodeId)
+                        , "className"   $= Style.prefixFromList [ "node__name", "noselect" ]
+                        ] $ elemString $ convert $ Prop.fromNode n ^. Prop.name
+            nodeBody_ ref n
+            nodeVisualizations_ ref n
+            nodePorts_ ref n
 
 node_ :: Ref App -> Node -> ReactElementM ViewEventHandler ()
 node_ ref model = React.viewWithSKey node (jsShow $ model ^. Node.nodeId) (ref, model) mempty
@@ -113,12 +115,11 @@ nodeBody = React.defineView objNameBody $ \(ref, n) -> do
             ] $ do
             blurBackground_
             case n ^. Node.mode of
-                Node.Collapsed                   -> ""
-                Node.Expanded (Node.Function fs) -> nodeContainer_ ref fs
                 Node.Expanded Node.Controls      -> nodeProperties_ ref $ Prop.fromNode n
                 Node.Expanded Node.Editor        -> multilineField_ [] "editor"
                     $ Field.mk ref (fromMaybe def $ n ^. Node.code)
                     & Field.onCancel .~ Just (UI.NodeEvent . Node.SetCode nodeId)
+                _                                -> ""
 
 
 nodeVisualizations :: ReactView (Ref App, Node)
@@ -198,16 +199,9 @@ nodeContainer = React.defineView name $ \(ref, subgraphs) -> do
                          , m ^. MonadPath.path . to (mapMaybe $ flip HashMap.lookup $ subgraph ^. Node.nodes))
           monads       = map lookupNode $ subgraph ^. Node.monads
       div_
-          [ "className"   $= Style.prefix "graph"
-          -- , "id"          $= sceneId
-          , "key"         $= "graph"
-          , onMouseDown   $ \_ m   -> dispatch ref $ UI.NodeEditorEvent $ NE.MouseDown m
+          [ onMouseDown   $ \_ m   -> dispatch ref $ UI.NodeEditorEvent $ NE.MouseDown m
           , onDoubleClick $ \e _   -> [preventDefault e]
           -- , onWheel       $ \e m w -> preventDefault e : dispatch ref (UI.NodeEditorEvent $ NE.Wheel m w)
           -- , onScroll      $ \e     -> [preventDefault e]
           ] $ do
-            div_
-                [ "className" $= Style.prefixFromList [ "plane", "plane--nodes" ]
-                , "key"       $= "nodes"
-                ] $ do
-                forM_ nodes $ node_ ref
+              forM_ nodes $ node_ ref
