@@ -2,7 +2,6 @@ module Luna.Studio.Action.State.App where
 
 import           Control.Lens.Internal.Zoom          (Focusing)
 import qualified Control.Monad.State                 as M
-import qualified JS.GoogleAnalytics                  as GA
 import           Luna.Studio.Action.Command          (Command)
 import           Luna.Studio.Prelude                 hiding (lens)
 import           Luna.Studio.React.Model.App         (App, breadcrumbs, codeEditor)
@@ -37,10 +36,3 @@ setBreadcrumbs input = modifyApp $ breadcrumbs .= input
 
 modifyCodeEditor :: (CodeEditor -> CodeEditor) -> Command State ()
 modifyCodeEditor f = modifyApp $ codeEditor %= f
-
-toggleCodeEditor :: Command State ()
-toggleCodeEditor = do
-    GA.sendEvent GA.ToggleText
-    modifyCodeEditor $ visible %~ not
-    -- size <- use $ Global.camera . Camera.camera . Camera.windowSize --TODO[react] remove
-    -- Camera.updateWindowSize size
