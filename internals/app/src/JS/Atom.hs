@@ -64,7 +64,7 @@ jsvalToText jsval = result where
 
 subscribeText :: (TextEvent -> IO ()) -> IO (IO ())
 subscribeText callback = do
-  wrappedCallback <- syncCallback1 ContinueAsync $ callback . jsvalToText . pFromJSVal
+  wrappedCallback <- syncCallback1 ContinueAsync $ callback . jsvalToText 
   subscribeText' wrappedCallback
   return $ unsubscribeText' wrappedCallback >> releaseCallback wrappedCallback
 
