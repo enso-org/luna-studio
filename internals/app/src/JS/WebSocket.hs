@@ -41,11 +41,8 @@ foreign import javascript safe "arg_websocket"
 
 getWebSocket :: IO WebSocket
 getWebSocket = do
-  putStrLn "getWebSocket 1"
   webs <- getWebSocket'
-  putStrLn "getWebSocket 2"
   let !foo = force (coerce webs)
-  putStrLn "getWebSocket 3"
   return foo
 
 foreign import javascript safe "$1.isOpen()"
