@@ -1,43 +1,52 @@
 {-# LANGUAGE DeriveAnyClass    #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RankNTypes        #-}
+{-# OPTIONS_GHC -fno-warn-orphans  #-}
 module Luna.Studio.React.Model.Node
     ( module Luna.Studio.React.Model.Node
-    , Node.NodeId
+    , NodeId
     ) where
 
-import           Control.Arrow
+import           Control.Arrow                        ((&&&))
+import           Data.Convert                         (Convertible (convert))
+import           Data.HashMap.Strict                  (HashMap)
+import qualified Data.HashMap.Strict                  as HashMap
 import           Data.Map.Lazy                        (Map)
 import qualified Data.Map.Lazy                        as Map
-import           Data.Position                        (Position, fromTuple)
+import           Data.Position                        (Position, fromTuple, toTuple)
 import           Data.Time.Clock                      (UTCTime)
+import           Empire.API.Data.Breadcrumb           (BreadcrumbItem)
 import           Empire.API.Data.MonadPath            (MonadPath)
-import           Empire.API.Data.Node                 (NodeId, NodeType (InputEdge, OutputEdge))
-import qualified Empire.API.Data.Node                 as Node
-import           Empire.API.Data.NodeMeta             (displayResult)
-import           Empire.API.Data.Port                 (PortId, isArg, isInPort, isInPort, isOutPort, isProjection)
+import           Empire.API.Data.Node                 (NodeId)
+import qualified Empire.API.Data.Node                 as Empire
+import           Empire.API.Data.NodeMeta             (NodeMeta (NodeMeta))
+import qualified Empire.API.Data.NodeMeta             as NodeMeta
 import           Empire.API.Graph.CollaborationUpdate (ClientId)
 import           Empire.API.Graph.NodeResultUpdate    (NodeValue)
-import           Luna.Studio.Prelude                  hiding (set)
-import           Luna.Studio.React.Model.Port         (Port, fromPorts, portId)
+import           Luna.Studio.Prelude
+import           Luna.Studio.React.Model.EdgeNode     (EdgeNode, EdgeNodesMap)
+import qualified Luna.Studio.React.Model.EdgeNode     as EdgeNode
+import           Luna.Studio.React.Model.Port         (Port, PortId, PortsMap, isInPort)
+import qualified Luna.Studio.React.Model.Port         as Port
 import           Luna.Studio.State.Collaboration      (ColorId)
 
 
 data Node = Node { _nodeId                :: NodeId
-                 , _ports                 :: Map PortId Port
-                 , _position              :: Position
-                 , _zPos                  :: Int
-                 , _expression            :: Text
-                 , _code                  :: Maybe Text
                  , _name                  :: Text
-                 , _nameEdit              :: Maybe Text
-                 , _value                 :: Maybe NodeValue
-                 , _nodeType              :: NodeType
-                 , _mode                  :: Mode
-                 , _isSelected            :: Bool
+                 , _expression            :: Text
+                 , _canEnter              :: Bool
+                 , _ports                 :: PortsMap
+                 , _position              :: Position
                  , _visualizationsEnabled :: Bool
-                 , _collaboration         :: Collaboration
+                 , _code                  :: Maybe Text
+
+                 , _value                 :: Maybe NodeValue
+                 , _zPos                  :: Int
+                 , _isSelected            :: Bool
+                 , _mode                  :: Mode
+                 , _nameEdit              :: Maybe Text
                  , _execTime              :: Maybe Integer
+                 , _collaboration         :: Collaboration
                  } deriving (Eq, Generic, NFData, Show)
 
 data Mode = Collapsed
@@ -46,34 +55,83 @@ data Mode = Collapsed
 
 data ExpandedMode = Editor
                   | Controls
-                  | Function [Subgraph]
+                  | Function (Map BreadcrumbItem Subgraph)
                   deriving (Eq, Generic, NFData, Show)
 
-
 data Subgraph = Subgraph
-    { _nodes  :: [NodeId]
-    , _edges  :: [Node]
-    , _monads :: [MonadPath]
+    { _nodes       :: NodesMap
+    , _edgeNodes   :: EdgeNodesMap
+    , _monads      :: [MonadPath]
     } deriving (Default, Eq, Generic, NFData, Show)
 
 data Collaboration = Collaboration { _touch  :: Map ClientId (UTCTime, ColorId)
                                    , _modify :: Map ClientId  UTCTime
                                    } deriving (Default, Eq, Generic, NFData, Show)
 
+type NodesMap = HashMap NodeId Node
+
+makeLenses ''Collaboration
 makeLenses ''Node
 makeLenses ''Subgraph
-makeLenses ''Collaboration
+makePrisms ''ExpandedMode
+makePrisms ''Mode
+
+instance Convertible (Empire.Node, Text) Node where
+    convert (n, expr) = Node
+        {- nodeId                -} (n ^. Empire.nodeId)
+        {- name                  -} (n ^. Empire.name)
+        {- expression            -} expr
+        {- canEnter              -} (n ^. Empire.canEnter)
+        {- ports                 -} (convert <$> n ^. Empire.ports)
+        {- position              -} (fromTuple $ n ^. Empire.position)
+        {- visualizationsEnabled -} (n ^. Empire.nodeMeta . NodeMeta.displayResult)
+        {- code                  -} (n ^. Empire.code)
+
+        {- value                 -} def
+        {- zPos                  -} def
+        {- isSelected            -} False
+        {- mode                  -} def
+        {- nameEdit              -} def
+        {- execTime              -} def
+        {- collaboration         -} def
+
+instance Convertible Empire.Node (Either Node EdgeNode) where
+    convert n = case n ^. Empire.nodeType of
+        Empire.ExpressionNode expr -> Left  $ convert (n, expr)
+        Empire.InputEdge           -> Right $ convert (n, EdgeNode.InputEdge)
+        Empire.OutputEdge          -> Right $ convert (n, EdgeNode.OutputEdge)
+
+instance Convertible Node Empire.Node where
+    convert n = Empire.Node
+        {- nodeId   -} (n ^. nodeId)
+        {- name     -} (n ^. name)
+        {- nodeType -} (Empire.ExpressionNode $ n ^. expression)
+        {- canEnter -} (n ^. canEnter)
+        {- ports    -} (convert <$> n ^. ports)
+        {- nodeMeta -} (NodeMeta.NodeMeta (toTuple $ n ^. position) (n ^. visualizationsEnabled))
+        {- code     -} (n ^. code)
+
+
+instance Convertible (Position, Bool) NodeMeta where
+    convert (pos, dispRes) = NodeMeta (toTuple pos) dispRes
+
+instance Convertible NodeMeta (Position, Bool) where
+    convert (NodeMeta pos dispRes) = (fromTuple pos, dispRes)
+
+
+instance Convertible (NodeId, Position, Bool) (NodeId, NodeMeta) where
+    convert (nid, pos, dispRes) = (nid, convert (pos, dispRes))
+
+instance Convertible (NodeId, NodeMeta) (NodeId, Position, Bool) where
+    convert (nid, NodeMeta pos dispRes) = (nid, fromTuple pos, dispRes)
 
 instance Default Mode where def = Collapsed
 
-isEdge :: Node -> Bool
-isEdge node = isInputEdge node || isOutputEdge node
+toNodesMap :: [Node] -> NodesMap
+toNodesMap = HashMap.fromList . map (view nodeId &&& id)
 
-isInputEdge :: Node -> Bool
-isInputEdge node = node ^. nodeType == InputEdge
-
-isOutputEdge :: Node -> Bool
-isOutputEdge node = node ^. nodeType == OutputEdge
+subgraphs :: Getter Node [Subgraph]
+subgraphs = to (toListOf $ mode . _Expanded . _Function . traverse)
 
 isMode :: Mode -> Node -> Bool
 isMode mode' node = node ^. mode == mode'
@@ -105,41 +163,13 @@ hasPort :: PortId -> Node -> Bool
 hasPort pid = Map.member pid . view ports
 
 countInPorts :: Node -> Int
-countInPorts = foldl (\acc p -> acc + if isInPort $ p ^. portId then 1 else 0) 0 . getPorts
+countInPorts = Port.countInPorts . Map.keys . (view ports)
 
 countOutPorts :: Node -> Int
-countOutPorts = foldl (\acc p -> acc + if isOutPort $ p ^. portId then 1 else 0) 0 . getPorts
+countOutPorts = Port.countOutPorts . Map.keys . (view ports)
 
 countArgPorts :: Node -> Int
-countArgPorts = foldl (\acc p -> acc + if isArg $ p ^. portId then 1 else 0) 0 . getPorts
+countArgPorts = Port.countArgPorts . Map.keys . (view ports)
 
 countProjectionPorts :: Node -> Int
-countProjectionPorts = foldl (\acc p -> acc + if isProjection $ p ^. portId then 1 else 0) 0 . getPorts
-
-
-makeNode :: NodeId -> Map PortId Port -> Position -> Text -> Maybe Text -> Text -> NodeType -> Bool -> Node
-makeNode nid ports' pos expr code' name' tpe' vis = Node nid ports' pos def expr code' name' def def tpe' def False vis def Nothing
-
-makePorts :: Node.Node -> [Port]
-makePorts node = fromPorts (node ^. Node.nodeId) (Map.elems $ node ^. Node.ports)
-
-makePortsMap :: [Port] -> Map PortId Port
-makePortsMap = Map.fromList . map (view portId &&& id)
-
-fromNode :: Node.Node -> Node
-fromNode n = makeNode nodeId' ports' position' expression' code' name' nodeType' vis where
-    position'   = fromTuple $ n ^. Node.position
-    nodeId'     = n ^. Node.nodeId
-    name'       = n ^. Node.name
-    vis         = n ^. Node.nodeMeta . displayResult
-    code'       = n ^. Node.code
-    nodeType'   = n ^. Node.nodeType
-    ports'      = makePortsMap $ makePorts n
-    expression' = case n ^. Node.nodeType of
-        Node.ExpressionNode expr     -> expr
-        Node.InputNode      inputIx  -> convert $ "Input " <> show inputIx
-        Node.OutputNode     outputIx -> convert $ "Output " <> show outputIx
-        Node.ModuleNode              -> "Module"
-        Node.FunctionNode   _        -> "Function" -- & value .~ (convert $ intercalate " -> " tpeSig) --TODO[react]
-        Node.InputEdge               -> "Input"
-        Node.OutputEdge              -> "Output"
+countProjectionPorts = Port.countProjectionPorts . Map.keys . (view ports)

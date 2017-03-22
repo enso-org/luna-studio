@@ -131,6 +131,7 @@ executable internals
       Luna.Studio.React.Model.ConnectionPen
       Luna.Studio.React.Model.Constants
       Luna.Studio.React.Model.DataFrame
+      Luna.Studio.React.Model.EdgeNode
       Luna.Studio.React.Model.Field
       Luna.Studio.React.Model.Image
       Luna.Studio.React.Model.Node

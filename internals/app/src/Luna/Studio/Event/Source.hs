@@ -2,11 +2,9 @@
 
 module Luna.Studio.Event.Source
     ( AddHandler(..)
-    -- , atomHandler
     , fileHandler
     , textHandler
     , customEventHandler
-    -- , sceneResizeHandler
     , webSocketHandler
     ) where
 
@@ -24,15 +22,11 @@ import qualified Luna.Studio.Batch.Connector.Connection as BatchConnection
 import qualified Luna.Studio.Event.Connection           as Connection
 import qualified Luna.Studio.Event.CustomEvent          as CustomEvent
 import           Luna.Studio.Event.Event                (Event (Atom, Connection, CustomEvent, Text, UI))
--- import           Luna.Studio.Event.UI                   (UIEvent (AppEvent))
 import qualified Luna.Studio.React.Event.App            as App
 
 
 data AddHandler a = AddHandler ((a -> IO ()) -> IO (IO ()))
 
--- atomHandler :: AddHandler Event
--- atomHandler = AddHandler $ \h ->
---     Atom.onEvent $ whenM UI.isFocusInApp . h
 
 textHandler :: AddHandler Event
 textHandler = AddHandler $ \h ->
@@ -42,9 +36,6 @@ fileHandler :: AddHandler Event
 fileHandler = AddHandler $ \h -> do
     Atom.subscribeEventListenerInternal $ h . Atom
 
--- sceneResizeHandler :: AddHandler Event
--- sceneResizeHandler = undefined --AddHandler $ \h ->
---     Scene.onSceneResize $ h $ UI $ AppEvent App.Resize
 
 webSocketHandler :: WebSocket.WebSocket -> AddHandler Event
 webSocketHandler conn = AddHandler $ \h -> do
