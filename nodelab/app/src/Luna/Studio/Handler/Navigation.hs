@@ -1,22 +1,21 @@
 module Luna.Studio.Handler.Navigation where
 
-import           Data.Position                       (Position (Position), vector, x, y)
-import           Data.Vector                         (lengthSquared, magnitude)
+import           Data.Position                               (Position (Position), vector, x, y)
+import           Data.Vector                                 (lengthSquared, magnitude)
 import           Luna.Studio.Prelude
 
-import qualified Empire.API.Data.Port                as P
-import qualified Empire.API.Data.PortRef             as R
-import           Luna.Studio.Action.Basic            (selectNodes)
-import           Luna.Studio.Action.Command          (Command)
-import           Luna.Studio.Action.State.NodeEditor (getConnection, getConnections, getNode, getNodes, getSelectedNodes)
-import           Luna.Studio.Action.State.Scene      (getScreenCenter, translateToWorkspace)
-import           Luna.Studio.Event.Event             (Event (Shortcut))
-import qualified Luna.Studio.Event.Shortcut          as Shortcut
-import qualified Luna.Studio.React.Model.Connection  as C
-import           Luna.Studio.React.Model.Node        (NodeId)
-import           Luna.Studio.React.Model.Node        (Node)
-import qualified Luna.Studio.React.Model.Node        as Node
-import           Luna.Studio.State.Global            (State)
+import qualified Empire.API.Data.Port                        as P
+import qualified Empire.API.Data.PortRef                     as R
+import           Luna.Studio.Action.Basic                    (selectNodes)
+import           Luna.Studio.Action.Command                  (Command)
+import           Luna.Studio.Action.State.NodeEditor         (getConnection, getConnections, getExpressionNode, getExpressionNodes,
+                                                              getSelectedNodes)
+import           Luna.Studio.Action.State.Scene              (getScreenCenter, translateToWorkspace)
+import           Luna.Studio.Event.Event                     (Event (Shortcut))
+import qualified Luna.Studio.Event.Shortcut                  as Shortcut
+import qualified Luna.Studio.React.Model.Connection          as C
+import           Luna.Studio.React.Model.Node.ExpressionNode (ExpressionNode, NodeId, nodeId, position)
+import           Luna.Studio.State.Global                    (State)
 
 
 handle :: Event -> Maybe (Command State ())
@@ -41,10 +40,10 @@ selectAny :: Command State ()
 selectAny = do
     withJustM getScreenCenter $ \screenCenter -> do
         workspaceCenter <- translateToWorkspace screenCenter
-        nodes <- getNodes
+        nodes <- getExpressionNodes
         unless (null nodes) $ do
             let node = findNearestNode workspaceCenter nodes
-            selectNodes [node ^. Node.nodeId]
+            selectNodes [node ^. nodeId]
 
 goPrev :: Command State ()
 goPrev = do
@@ -52,9 +51,9 @@ goPrev = do
     if null selectedNodes then selectAny
     else do
         let nodeSrc = findLeftMost selectedNodes
-            nodeId = nodeSrc ^. Node.nodeId
-            inPortRefSelf      = R.InPortRef nodeId P.Self
-            inPortRefFirstPort = R.InPortRef nodeId $ P.Arg 0
+            nid     = nodeSrc ^. nodeId
+            inPortRefSelf      = R.InPortRef nid   P.Self
+            inPortRefFirstPort = R.InPortRef nid $ P.Arg 0
         prevSelfNodeIdMay <- view (C.src . R.srcNodeId) <∘> getConnection inPortRefSelf
         case prevSelfNodeIdMay of
             Just prevSelfNodeId -> selectNodes [prevSelfNodeId]
@@ -68,19 +67,19 @@ goNext = do
     if null selectedNodes then selectAny
     else do
         let nodeSrc = findRightMost selectedNodes
-            nodeId = nodeSrc ^. Node.nodeId
-        nextNodeIds <- getDstNodeIds nodeId
-        nextNodes <- catMaybes <$> mapM getNode nextNodeIds
+            nid     = nodeSrc ^. nodeId
+        nextNodeIds <- getDstNodeIds nid
+        nextNodes   <- catMaybes <$> mapM getExpressionNode nextNodeIds
         unless (null nextNodes) $ do
             let nextNode = findUpMost nextNodes
-            selectNodes [nextNode ^. Node.nodeId]
+            selectNodes [nextNode ^. nodeId]
 
 getDstNodeIds :: NodeId -> Command State [NodeId]
-getDstNodeIds nodeId = do
+getDstNodeIds nid = do
     connections <- filter matchNodeId <$> getConnections
     return $ (^. C.dst . R.dstNodeId) <$> connections
     where
-        matchNodeId conn = conn ^. C.src . R.srcNodeId == nodeId
+        matchNodeId conn = conn ^. C.src . R.srcNodeId == nid
 
 goRight, goLeft, goDown, goUp :: Command State ()
 goRight = go findRightMost findNodesOnRightSide findNearestRight
@@ -88,20 +87,20 @@ goLeft  = go findLeftMost  findNodesOnLeftSide  findNearestLeft
 goDown  = go findDownMost  findNodesOnDownSide  findNearestDown
 goUp    = go findUpMost    findNodesOnUpSide    findNearestUp
 
-go :: ([Node] -> Node) ->
-      (Position -> [Node] -> [Node]) ->
-      (Position -> [Node] -> Node) ->
+go :: ([ExpressionNode] -> ExpressionNode) ->
+      (Position -> [ExpressionNode] -> [ExpressionNode]) ->
+      (Position -> [ExpressionNode] -> ExpressionNode) ->
       Command State ()
 go findMost findNodesOnSide findNearest = do
-    nodes         <- getNodes
+    nodes         <- getExpressionNodes
     selectedNodes <- getSelectedNodes
     if null selectedNodes then selectAny
     else do
         let nodeSrc = findMost selectedNodes
-            pos = nodeSrc ^. Node.position
+            pos = nodeSrc ^. position
             nodesSide = findNodesOnSide pos nodes
         unless (null nodesSide) $ do
-            selectNodes [findNearest pos nodesSide ^. Node.nodeId]
+            selectNodes [findNearest pos nodesSide ^. nodeId]
 
 closenestPow :: Double
 closenestPow = 2.5
@@ -112,15 +111,15 @@ axisDistanceLeft  pos = -(pos ^. x)
 axisDistanceDown  pos =   pos ^. y
 axisDistanceUp    pos = -(pos ^. y)
 
-findNearestRight, findNearestLeft, findNearestDown, findNearestUp :: Position -> [Node] -> Node
+findNearestRight, findNearestLeft, findNearestDown, findNearestUp :: Position -> [ExpressionNode] -> ExpressionNode
 findNearestRight pos = maximumBy (compare `on` closenest pos axisDistanceRight)
 findNearestLeft  pos = maximumBy (compare `on` closenest pos axisDistanceLeft)
 findNearestDown  pos = maximumBy (compare `on` closenest pos axisDistanceDown)
 findNearestUp    pos = maximumBy (compare `on` closenest pos axisDistanceUp)
 
-closenest :: Position -> (Position -> Double) -> Node -> Double
+closenest :: Position -> (Position -> Double) -> ExpressionNode -> Double
 closenest pos axisDistance node = axisDist / (dist ** closenestPow) where
-    pos' = node ^. Node.position
+    pos' = node ^. position
     vect = pos' ^. vector - pos ^. vector
     dist = magnitude vect
     axisDist = axisDistance (Position vect)
@@ -131,42 +130,42 @@ goConeLeft  = goCone findLeftMost  findNodesOnLeft  findNodesOnLeftSide
 goConeDown  = goCone findDownMost  findNodesOnDown  findNodesOnDownSide
 goConeUp    = goCone findUpMost    findNodesOnUp    findNodesOnUpSide
 
-goCone :: ([Node] -> Node) ->
-          (Position -> [Node] -> [Node]) ->
-          (Position -> [Node] -> [Node]) ->
+goCone :: ([ExpressionNode] -> ExpressionNode) ->
+          (Position -> [ExpressionNode] -> [ExpressionNode]) ->
+          (Position -> [ExpressionNode] -> [ExpressionNode]) ->
           Command State ()
 goCone findMost findNodesInCone findNodesOnSide = do
-    nodes         <- getNodes
+    nodes         <- getExpressionNodes
     selectedNodes <- getSelectedNodes
     if null selectedNodes then selectAny
     else do
         let nodeSrc = findMost selectedNodes
-            pos = nodeSrc ^. Node.position
+            pos = nodeSrc ^. position
             nodesCone = findNodesInCone pos nodes
             nodesSide = findNodesOnSide pos nodes
         if not $ null nodesCone
-            then                           selectNodes [findNearestNode pos nodesCone ^. Node.nodeId]
-            else unless (null nodesSide) $ selectNodes [findNearestNode pos nodesSide ^. Node.nodeId]
+            then                           selectNodes [findNearestNode pos nodesCone ^. nodeId]
+            else unless (null nodesSide) $ selectNodes [findNearestNode pos nodesSide ^. nodeId]
 
-findRightMost, findLeftMost, findDownMost, findUpMost :: [Node] -> Node
-findRightMost = maximumBy (compare `on` (^. Node.position . x))
-findLeftMost  = minimumBy (compare `on` (^. Node.position . x))
-findDownMost  = maximumBy (compare `on` (^. Node.position . y))
-findUpMost    = minimumBy (compare `on` (^. Node.position . y))
+findRightMost, findLeftMost, findDownMost, findUpMost :: [ExpressionNode] -> ExpressionNode
+findRightMost = maximumBy (compare `on` (^. position . x))
+findLeftMost  = minimumBy (compare `on` (^. position . x))
+findDownMost  = maximumBy (compare `on` (^. position . y))
+findUpMost    = minimumBy (compare `on` (^. position . y))
 
-findNodesOnRightSide, findNodesOnLeftSide, findNodesOnDownSide, findNodesOnUpSide :: Position -> [Node] -> [Node]
-findNodesOnRightSide pos = filter $ \node -> node ^. Node.position . x > pos ^. x
-findNodesOnLeftSide  pos = filter $ \node -> node ^. Node.position . x < pos ^. x
-findNodesOnDownSide  pos = filter $ \node -> node ^. Node.position . y > pos ^. y
-findNodesOnUpSide    pos = filter $ \node -> node ^. Node.position . y < pos ^. y
+findNodesOnRightSide, findNodesOnLeftSide, findNodesOnDownSide, findNodesOnUpSide :: Position -> [ExpressionNode] -> [ExpressionNode]
+findNodesOnRightSide pos = filter $ \node -> node ^. position . x > pos ^. x
+findNodesOnLeftSide  pos = filter $ \node -> node ^. position . x < pos ^. x
+findNodesOnDownSide  pos = filter $ \node -> node ^. position . y > pos ^. y
+findNodesOnUpSide    pos = filter $ \node -> node ^. position . y < pos ^. y
 
-findNodesOnRight, findNodesOnLeft, findNodesOnDown, findNodesOnUp :: Position -> [Node] -> [Node]
+findNodesOnRight, findNodesOnLeft, findNodesOnDown, findNodesOnUp :: Position -> [ExpressionNode] -> [ExpressionNode]
 findNodesOnRight = filter . isOnRight
 findNodesOnLeft  = filter . isOnLeft
 findNodesOnDown  = filter . isOnDown
 findNodesOnUp    = filter . isOnUp
 
-isOnRight, isOnLeft, isOnDown, isOnUp :: Position -> Node -> Bool
+isOnRight, isOnLeft, isOnDown, isOnUp :: Position -> ExpressionNode -> Bool
 isOnRight = isInCone (>)  skip (>=)
 isOnLeft  = isInCone (<)  skip (>=)
 isOnDown  = isInCone skip (>)  (<)
@@ -175,15 +174,15 @@ isOnUp    = isInCone skip (<)  (<)
 skip :: Double -> Double -> Bool
 skip _ _ = True
 
-isInCone :: (Double -> Double -> Bool) -> (Double -> Double -> Bool) -> (Double -> Double -> Bool) -> Position -> Node -> Bool
+isInCone :: (Double -> Double -> Bool) -> (Double -> Double -> Bool) -> (Double -> Double -> Bool) -> Position -> ExpressionNode -> Bool
 isInCone cmpDXZero cmpDYZero cmpDims pos node = dx `cmpDXZero` 0.0 && dy `cmpDYZero` 0.0 && abs dx `cmpDims` abs dy where
-    nodePos = node ^. Node.position
+    nodePos = node ^. position
     dx = nodePos ^. x - pos ^. x
     dy = nodePos ^. y - pos ^. y
 
-findNearestNode :: Position -> [Node] -> Node
+findNearestNode :: Position -> [ExpressionNode] -> ExpressionNode
 findNearestNode pos = minimumBy (compare `on` distance pos)
 
-distance :: Position -> Node -> Double
+distance :: Position -> ExpressionNode -> Double
 distance pos node = lengthSquared (wpos ^. vector - pos ^. vector) where
-    wpos = node ^. Node.position
+    wpos = node ^. position

@@ -1,16 +1,16 @@
 --TODO[LJK, PM]: Review names in this module
 module Luna.Studio.Action.Basic.SetNodeMode where
 
-import           Luna.Studio.Action.Basic.DrawConnection (redrawConnectionsForNodes)
-import           Luna.Studio.Action.Basic.Merge          (localUnmerge)
-import           Luna.Studio.Action.Basic.UpdateNode     (updatePortSelfVisibilityForIds)
-import qualified Luna.Studio.Action.Batch                as Batch
-import           Luna.Studio.Action.Command              (Command)
-import           Luna.Studio.Action.State.NodeEditor     (getSelectedNodes)
-import qualified Luna.Studio.Action.State.NodeEditor     as NodeEditor
+import           Luna.Studio.Action.Basic.DrawConnection     (redrawConnectionsForNodes)
+import           Luna.Studio.Action.Basic.Merge              (localUnmerge)
+import           Luna.Studio.Action.Basic.UpdateNode         (updatePortSelfVisibilityForIds)
+import qualified Luna.Studio.Action.Batch                    as Batch
+import           Luna.Studio.Action.Command                  (Command)
+import           Luna.Studio.Action.State.NodeEditor         (getSelectedNodes)
+import qualified Luna.Studio.Action.State.NodeEditor         as NodeEditor
 import           Luna.Studio.Prelude
-import           Luna.Studio.React.Model.Node            (Mode, Node, isExpandedFunction, isMode, mode, nodeId)
-import           Luna.Studio.State.Global                (State)
+import           Luna.Studio.React.Model.Node.ExpressionNode (ExpressionNode, Mode, isExpandedFunction, isMode, mode, nodeId)
+import           Luna.Studio.State.Global                    (State)
 
 
 toggleSelectedNodesMode :: Mode -> Command State ()
@@ -29,12 +29,12 @@ toggleSelectedNodesUnfold = do
     else
         mapM_ (Batch.getSubgraph . (view nodeId)) nodes
 
-toggleNodesMode :: Bool -> Mode -> [Node] -> Command State ()
+toggleNodesMode :: Bool -> Mode -> [ExpressionNode] -> Command State ()
 toggleNodesMode allNewMode newMode nodes = do
     updatedNodes <- forM nodes $ \node -> do
         when (isExpandedFunction node) $ localUnmerge node
         return $ node & mode .~ if allNewMode then def else newMode
     let nodeIds = map (view nodeId) updatedNodes
-    forM_ updatedNodes $ \node -> NodeEditor.addNode node
+    forM_ updatedNodes $ \node -> NodeEditor.addExpressionNode node
     void $ updatePortSelfVisibilityForIds nodeIds
     void $ redrawConnectionsForNodes      nodeIds

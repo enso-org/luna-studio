@@ -14,7 +14,7 @@ import qualified Luna.Studio.Batch.Connector.Commands as BatchCmd
 import           Luna.Studio.Batch.Workspace          (Workspace)
 import           Luna.Studio.Prelude
 import           Luna.Studio.React.Model.Connection   (ConnectionId)
-import           Luna.Studio.React.Model.Node         (Node, NodeId)
+import           Luna.Studio.React.Model.Node         (ExpressionNode, NodeId)
 import           Luna.Studio.State.Global             (State, backend, clientId, workspace)
 
 
@@ -82,7 +82,7 @@ addNode nid expr pos dispRes connectTo = withWorkspace $ BatchCmd.addNode nid ex
 addPort :: AnyPortRef -> Command State ()
 addPort = withWorkspace . BatchCmd.addPort
 
-addSubgraph :: [Node] -> [(OutPortRef, InPortRef)] -> Command State ()
+addSubgraph :: [ExpressionNode] -> [(OutPortRef, InPortRef)] -> Command State ()
 addSubgraph nodes conns = withWorkspace $ BatchCmd.addSubgraph (map convert nodes) (map (uncurry Connection) conns)
 
 getSubgraph :: NodeId -> Command State ()

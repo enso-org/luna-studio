@@ -1,28 +1,30 @@
 {-# LANGUAGE MultiWayIf #-}
 module Luna.Studio.Action.State.Model.Connection where
 
-import           Control.Monad.Trans.Maybe           (MaybeT (MaybeT), runMaybeT)
-import           Data.Position                       (Position, distanceSquared, move)
-import           Data.Vector                         (Vector2 (Vector2))
-import           Empire.API.Data.Node                (NodeId)
-import           Empire.API.Data.PortRef             (AnyPortRef, InPortRef, OutPortRef)
-import qualified Empire.API.Data.PortRef             as PortRef
-import           Luna.Studio.Action.Command          (Command)
-import           Luna.Studio.Action.State.Model.Node (nodeToNodeAngle)
-import           Luna.Studio.Action.State.Model.Port (getInputEdgePortPosition, getOutputEdgePortPosition, portAngleStart, portAngleStop,
-                                                      portGap)
-import           Luna.Studio.Action.State.NodeEditor (getAnyNode, getConnection, getConnections, getPort, modifyNode)
-import           Luna.Studio.Data.Geometry           (closestPointOnLine, closestPointOnLineParam, doesSegmentsIntersects)
+import           Control.Monad.Trans.Maybe                     (MaybeT (MaybeT), runMaybeT)
+import           Data.Position                                 (Position, distanceSquared, move)
+import           Data.Vector                                   (Vector2 (Vector2))
+import           Empire.API.Data.Node                          (NodeId)
+import           Empire.API.Data.PortRef                       (AnyPortRef, InPortRef, OutPortRef)
+import qualified Empire.API.Data.PortRef                       as PortRef
+import           Luna.Studio.Action.Command                    (Command)
+import           Luna.Studio.Action.State.Model.ExpressionNode (nodeToNodeAngle)
+import           Luna.Studio.Action.State.Model.Port           (getInputEdgePortPosition, getOutputEdgePortPosition, portAngleStart,
+                                                                portAngleStop, portGap)
+import           Luna.Studio.Action.State.NodeEditor           (getConnection, getConnections, getNode, getPort, modifyExpressionNode)
+import           Luna.Studio.Data.Geometry                     (closestPointOnLine, closestPointOnLineParam, doesSegmentsIntersects)
 import           Luna.Studio.Prelude
-import           Luna.Studio.React.Model.Connection  (Connection (Connection), ConnectionId, CurrentConnection (CurrentConnection),
-                                                      connectionId, containsNode)
-import qualified Luna.Studio.React.Model.Connection  as Model
-import           Luna.Studio.React.Model.Constants   (lineHeight, nodeExpandedWidth, nodeRadius, portRadius)
-import           Luna.Studio.React.Model.EdgeNode    (EdgeNode, isInputEdge)
-import           Luna.Studio.React.Model.Node        (Node, countArgPorts, countOutPorts, isCollapsed, nodeId, ports, position)
-import           Luna.Studio.React.Model.Port        (PortId (InPortId, OutPortId), getPortNumber, isSelf)
-import           Luna.Studio.React.Model.Port        (Port, color, portId, visible)
-import           Luna.Studio.State.Global            (State)
+import           Luna.Studio.React.Model.Connection            (Connection (Connection), ConnectionId,
+                                                                CurrentConnection (CurrentConnection), connectionId, containsNode)
+import qualified Luna.Studio.React.Model.Connection            as Model
+import           Luna.Studio.React.Model.Constants             (lineHeight, nodeExpandedWidth, nodeRadius, portRadius)
+import           Luna.Studio.React.Model.Node                  (Node (Edge, Expression))
+import           Luna.Studio.React.Model.Node.EdgeNode         (isInputEdge)
+import           Luna.Studio.React.Model.Node.ExpressionNode   (ExpressionNode, countArgPorts, countOutPorts, isCollapsed, nodeId, ports,
+                                                                position)
+import           Luna.Studio.React.Model.Port                  (PortId (InPortId, OutPortId), getPortNumber, isSelf)
+import           Luna.Studio.React.Model.Port                  (Port, color, portId, visible)
+import           Luna.Studio.State.Global                      (State)
 
 
 -- WARNING: Since getInputSidebar and getOutputSidebar can change scene redrawConnectionForEdgeNodes may be needed if connection is made for edge nodes
@@ -33,18 +35,18 @@ createConnectionModel srcPortRef dstPortRef = runMaybeT $ do
         dstNodeId  = dstPortRef ^. PortRef.dstNodeId
         srcPortId  = OutPortId $ srcPortRef ^. PortRef.srcPortId
         dstPortId  = InPortId  $ dstPortRef ^. PortRef.dstPortId
-    srcNode <- MaybeT $ getAnyNode srcNodeId
-    dstNode <- MaybeT $ getAnyNode dstNodeId
+    srcNode <- MaybeT $ getNode srcNodeId
+    dstNode <- MaybeT $ getNode dstNodeId
     srcPort <- MaybeT $ getPort srcPortRef
     dstPort <- MaybeT $ getPort dstPortRef
     (srcPos, dstPos) <- MaybeT $ getConnectionPosition srcNode srcPort dstNode dstPort
-    lift $ modifyNode srcNodeId $ ports . ix srcPortId . visible .= True
-    lift $ modifyNode dstNodeId $ ports . ix dstPortId . visible .= True
+    lift $ modifyExpressionNode srcNodeId $ ports . ix srcPortId . visible .= True
+    lift $ modifyExpressionNode dstNodeId $ ports . ix dstPortId . visible .= True
     return $ Connection srcPortRef dstPortRef srcPos dstPos $ srcPort ^. color
 
 createCurrentConnectionModel :: AnyPortRef -> Position -> Command State (Maybe CurrentConnection)
 createCurrentConnectionModel portRef mousePos = runMaybeT $ do
-    node        <- MaybeT $ getAnyNode $ portRef ^. PortRef.nodeId
+    node        <- MaybeT $ getNode $ portRef ^. PortRef.nodeId
     port        <- MaybeT $ getPort portRef
     connPortPos <- MaybeT $ getCurrentConnectionSrcPosition node port mousePos
     return $ CurrentConnection connPortPos mousePos $ port ^. color
@@ -62,7 +64,7 @@ distSqFromMouseIfIntersect nid nodePos connId = runMaybeT $ do
             then nothing
             else return (connId, distSq)
 
-getIntersectingConnections :: Node -> Position -> Command State (Maybe ConnectionId)
+getIntersectingConnections :: ExpressionNode -> Position -> Command State (Maybe ConnectionId)
 getIntersectingConnections node mousePos = do
     let nid          = node ^. nodeId
         posToCompare = if isCollapsed node then node ^. position else mousePos
@@ -77,20 +79,20 @@ getConnectionsIntersectingSegment seg = flip fmap getConnections $
     map (view Model.connectionId) . filter (
         \conn -> doesSegmentsIntersects seg (conn ^. Model.srcPos, conn ^. Model.dstPos) )
 
-getConnectionPosition :: Either Node EdgeNode -> Port -> Either Node EdgeNode -> Port -> Command State (Maybe (Position, Position))
-getConnectionPosition (Right _) srcPort (Right _) dstPort = runMaybeT $ do
+getConnectionPosition :: Node -> Port -> Node -> Port -> Command State (Maybe (Position, Position))
+getConnectionPosition (Edge _) srcPort (Edge _) dstPort = runMaybeT $ do
     srcConnPos <- MaybeT $ getInputEdgePortPosition $ srcPort ^. portId
     dstConnPos <- MaybeT $ getOutputEdgePortPosition $ dstPort ^. portId
     return (srcConnPos, dstConnPos)
-getConnectionPosition (Right _) srcPort dstNode dstPort = runMaybeT $ do
+getConnectionPosition (Edge _) srcPort dstNode dstPort = runMaybeT $ do
     srcConnPos <- MaybeT $ getInputEdgePortPosition $ srcPort ^. portId
     dstConnPos <- MaybeT $ getCurrentConnectionSrcPosition dstNode dstPort srcConnPos
     return (srcConnPos, dstConnPos)
-getConnectionPosition srcNode srcPort (Right _) dstPort = runMaybeT $ do
+getConnectionPosition srcNode srcPort (Edge _) dstPort = runMaybeT $ do
     dstConnPos <- MaybeT $ getOutputEdgePortPosition $ dstPort ^. portId
     srcConnPos <- MaybeT $ getCurrentConnectionSrcPosition srcNode srcPort dstConnPos
     return (srcConnPos, dstConnPos)
-getConnectionPosition (Left srcNode) srcPort (Left dstNode) dstPort = do
+getConnectionPosition (Expression srcNode) srcPort (Expression dstNode) dstPort = do
     let srcPos     = srcNode ^. position
         dstPos     = dstNode ^. position
         isSrcExp   = not . isCollapsed $ srcNode
@@ -103,12 +105,12 @@ getConnectionPosition (Left srcNode) srcPort (Left dstNode) dstPort = do
         dstConnPos = connectionDst srcPos dstPos isSrcExp isDstExp dstPortNum numOfDstInPorts $ isSelf $ dstPort ^. portId
     return $ Just (srcConnPos, dstConnPos)
 
-getCurrentConnectionSrcPosition :: Either Node EdgeNode -> Port -> Position -> Command State (Maybe Position)
-getCurrentConnectionSrcPosition (Right node) port _ = do
+getCurrentConnectionSrcPosition :: Node -> Port -> Position -> Command State (Maybe Position)
+getCurrentConnectionSrcPosition (Edge node) port _ = do
     if isInputEdge node
         then getInputEdgePortPosition  $ port ^. portId
         else getOutputEdgePortPosition $ port ^. portId
-getCurrentConnectionSrcPosition (Left node) port mousePos =
+getCurrentConnectionSrcPosition (Expression node) port mousePos =
     return . Just $ case port ^. portId of
         OutPortId _ -> connectionSrc pos mousePos isExp False portNum numOfSameTypePorts $ countOutPorts node + countArgPorts node == 1
         InPortId  _ -> connectionDst mousePos pos False isExp portNum numOfSameTypePorts $ isSelf $ port ^. portId

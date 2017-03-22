@@ -1,37 +1,38 @@
 {-# LANGUAGE OverloadedStrings #-}
-module Luna.Studio.React.View.Node where
+module Luna.Studio.React.View.ExpressionNode where
 
-import qualified Data.Aeson                             as Aeson
-import qualified Data.HashMap.Strict                    as HashMap
-import qualified Data.Map.Lazy                          as Map
-import           Data.Matrix                            (Matrix)
-import qualified Empire.API.Data.MonadPath              as MonadPath
-import qualified Empire.API.Graph.NodeResultUpdate      as NodeResult
-import qualified JS.Config                              as Config
-import           Luna.Studio.Data.Matrix                (showNodeMatrix, showNodeTranslate)
-import qualified Luna.Studio.Event.Mouse                as Mouse
-import qualified Luna.Studio.Event.UI                   as UI
+import qualified Data.Aeson                                            as Aeson
+import qualified Data.HashMap.Strict                                   as HashMap
+import qualified Data.Map.Lazy                                         as Map
+import           Data.Matrix                                           (Matrix)
+import qualified Empire.API.Data.MonadPath                             as MonadPath
+import qualified Empire.API.Graph.NodeResultUpdate                     as NodeResult
+import qualified JS.Config                                             as Config
+import           Luna.Studio.Data.Matrix                               (showNodeMatrix, showNodeTranslate)
+import qualified Luna.Studio.Event.Mouse                               as Mouse
+import qualified Luna.Studio.Event.UI                                  as UI
 import           Luna.Studio.Prelude
-import qualified Luna.Studio.React.Event.Node           as Node
-import qualified Luna.Studio.React.Event.NodeEditor     as NE
-import           Luna.Studio.React.Model.App            (App)
-import qualified Luna.Studio.React.Model.Field          as Field
-import           Luna.Studio.React.Model.Node           (Node, NodeId, Subgraph, countArgPorts, countOutPorts, isCollapsed)
-import qualified Luna.Studio.React.Model.Node           as Node
-import qualified Luna.Studio.React.Model.NodeProperties as Prop
-import           Luna.Studio.React.Model.Port           (InPort (Self), PortId (InPortId), isAll, isInPort)
-import qualified Luna.Studio.React.Model.Port           as Port
-import           Luna.Studio.React.Store                (Ref, dispatch)
-import           Luna.Studio.React.View.Field           (multilineField_)
-import           Luna.Studio.React.View.Monad           (monads_)
-import           Luna.Studio.React.View.Node.Properties (nodeProperties_)
-import           Luna.Studio.React.View.Plane           (svgPlanes_, planeMonads_)
-import           Luna.Studio.React.View.Port            (portExpanded_, port_)
-import           Luna.Studio.React.View.Style           (blurBackground_, selectionMark_)
-import qualified Luna.Studio.React.View.Style           as Style
-import           Luna.Studio.React.View.Visualization   (visualization_)
+import qualified Luna.Studio.React.Event.Node                          as Node
+import qualified Luna.Studio.React.Event.NodeEditor                    as NE
+import           Luna.Studio.React.Model.App                           (App)
+import qualified Luna.Studio.React.Model.Field                         as Field
+import           Luna.Studio.React.Model.Node.ExpressionNode           (ExpressionNode, NodeId, Subgraph, countArgPorts, countOutPorts,
+                                                                        isCollapsed)
+import qualified Luna.Studio.React.Model.Node.ExpressionNode           as Node
+import qualified Luna.Studio.React.Model.Node.ExpressionNodeProperties as Prop
+import           Luna.Studio.React.Model.Port                          (InPort (Self), PortId (InPortId), isAll, isInPort)
+import qualified Luna.Studio.React.Model.Port                          as Port
+import           Luna.Studio.React.Store                               (Ref, dispatch)
+import           Luna.Studio.React.View.ExpressionNode.Properties      (nodeProperties_)
+import           Luna.Studio.React.View.Field                          (multilineField_)
+import           Luna.Studio.React.View.Monad                          (monads_)
+import           Luna.Studio.React.View.Plane                          (planeMonads_, svgPlanes_)
+import           Luna.Studio.React.View.Port                           (portExpanded_, port_)
+import           Luna.Studio.React.View.Style                          (blurBackground_, selectionMark_)
+import qualified Luna.Studio.React.View.Style                          as Style
+import           Luna.Studio.React.View.Visualization                  (visualization_)
 import           React.Flux
-import qualified React.Flux                             as React
+import qualified React.Flux                                            as React
 
 
 name, objNameBody, objNameVis, objNamePorts :: JSString
@@ -49,10 +50,10 @@ handleMouseDown ref nodeId e m =
     then stopPropagation e : dispatch ref (UI.NodeEvent $ Node.MouseDown m nodeId)
     else []
 
-node_ :: Ref App -> Node -> ReactElementM ViewEventHandler ()
+node_ :: Ref App -> ExpressionNode -> ReactElementM ViewEventHandler ()
 node_ ref model = React.viewWithSKey node (jsShow $ model ^. Node.nodeId) (ref, model) mempty
 
-node :: ReactView (Ref App, Node)
+node :: ReactView (Ref App, ExpressionNode)
 node = React.defineView name $ \(ref, n) -> case n ^. Node.mode of
     Node.Expanded (Node.Function fs) -> nodeContainer_ ref $ Map.elems fs
     _ ->
@@ -92,7 +93,7 @@ node = React.defineView name $ \(ref, n) -> case n ^. Node.mode of
             nodeVisualizations_ ref n
             nodePorts_ ref n
 
-nodeDynamicStyles_ :: Matrix Double -> Node -> ReactElementM ViewEventHandler ()
+nodeDynamicStyles_ :: Matrix Double -> ExpressionNode -> ReactElementM ViewEventHandler ()
 nodeDynamicStyles_ camera n = do
     let nodeId  = n ^. Node.nodeId
         nodePos = n ^. Node.position
@@ -102,10 +103,10 @@ nodeDynamicStyles_ camera n = do
     elemString $ "#" <> Config.mountPoint <> "-node-" <> fromString (show nodeId) <> " path.luna-port__shape { clip-path: url(#port-io-shape-mask-"   <> show nodeId <> ") }"
     elemString $ "#" <> Config.mountPoint <> "-node-" <> fromString (show nodeId) <> " path.luna-port__select { clip-path: url(#port-io-select-mask-" <> show nodeId <> ") }"
 
-nodeBody_ :: Ref App -> Node -> ReactElementM ViewEventHandler ()
+nodeBody_ :: Ref App -> ExpressionNode -> ReactElementM ViewEventHandler ()
 nodeBody_ ref model = React.viewWithSKey nodeBody "node-body" (ref, model) mempty
 
-nodeBody :: ReactView (Ref App, Node)
+nodeBody :: ReactView (Ref App, ExpressionNode)
 nodeBody = React.defineView objNameBody $ \(ref, n) ->
     let nodeId = n ^. Node.nodeId
     in div_
@@ -125,10 +126,10 @@ nodeBody = React.defineView objNameBody $ \(ref, n) ->
                     & Field.onCancel .~ Just (UI.NodeEvent . Node.SetCode nodeId)
                 _                                -> ""
 
-nodeVisualizations_ :: Ref App -> Node -> ReactElementM ViewEventHandler ()
+nodeVisualizations_ :: Ref App -> ExpressionNode -> ReactElementM ViewEventHandler ()
 nodeVisualizations_ ref model = React.viewWithSKey nodeVisualizations objNameVis (ref, model) mempty
 
-nodeVisualizations :: ReactView (Ref App, Node)
+nodeVisualizations :: ReactView (Ref App, ExpressionNode)
 nodeVisualizations = React.defineView objNameVis $ \(ref, n) ->
     let nodeId = n ^. Node.nodeId
     in div_
@@ -141,10 +142,10 @@ nodeVisualizations = React.defineView objNameVis $ \(ref, n) ->
 --        , "className" $= Style.prefixFromList [ "node__visualisations", "node-translate" ]
 --        ] $ forM_ (n ^. Node.value) $ visualization_ ref nodeId def
 
-nodePorts_ :: Ref App -> Node -> ReactElementM ViewEventHandler ()
+nodePorts_ :: Ref App -> ExpressionNode -> ReactElementM ViewEventHandler ()
 nodePorts_ ref model = React.viewWithSKey nodePorts objNamePorts (ref, model) mempty
 
-nodePorts :: ReactView (Ref App, Node)
+nodePorts :: ReactView (Ref App, ExpressionNode)
 nodePorts = React.defineView objNamePorts $ \(ref, n) ->
     let nodeId     = n ^. Node.nodeId
         nodePorts' = Map.elems $ n ^. Node.ports
@@ -192,9 +193,9 @@ nodeContainer :: ReactView (Ref App, [Subgraph])
 nodeContainer = React.defineView name $ \(ref, subgraphs) ->
     div_ $ forM_ subgraphs $ \subgraph -> do
       let edges        = subgraph ^. Node.edgeNodes . to HashMap.elems
-          nodes        = subgraph ^. Node.nodes . to HashMap.elems
+          nodes        = subgraph ^. Node.expressionNodes . to HashMap.elems
           lookupNode m = ( m ^. MonadPath.monadType
-                         , m ^. MonadPath.path . to (mapMaybe $ flip HashMap.lookup $ subgraph ^. Node.nodes))
+                         , m ^. MonadPath.path . to (mapMaybe $ flip HashMap.lookup $ subgraph ^. Node.expressionNodes))
           monads       = map lookupNode $ subgraph ^. Node.monads
       div_
           [ onMouseDown   $ \_ m   -> dispatch ref $ UI.NodeEditorEvent $ NE.MouseDown m

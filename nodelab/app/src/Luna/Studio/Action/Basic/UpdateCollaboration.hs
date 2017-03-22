@@ -1,18 +1,19 @@
 module Luna.Studio.Action.Basic.UpdateCollaboration where
 
-import qualified Data.DateTime                        as DT
-import qualified Data.HashMap.Strict                  as HashMap
-import qualified Data.Map.Lazy                        as Map
-import           Empire.API.Graph.CollaborationUpdate (ClientId)
-import qualified Luna.Studio.Action.Batch             as Batch
-import           Luna.Studio.Action.Command           (Command)
-import           Luna.Studio.Action.State.NodeEditor  (getSelectedNodes, modifyNodeEditor)
+import qualified Data.DateTime                               as DT
+import qualified Data.HashMap.Strict                         as HashMap
+import qualified Data.Map.Lazy                               as Map
+import           Empire.API.Graph.CollaborationUpdate        (ClientId)
+import qualified Luna.Studio.Action.Batch                    as Batch
+import           Luna.Studio.Action.Command                  (Command)
+import           Luna.Studio.Action.State.NodeEditor         (getSelectedNodes, modifyExpressionNodeEditor)
 import           Luna.Studio.Prelude
-import           Luna.Studio.React.Model.Node         (modify, nodeId, touch)
-import qualified Luna.Studio.React.Model.Node         as Node
-import           Luna.Studio.React.Model.NodeEditor   (nodes)
-import           Luna.Studio.State.Collaboration      (Client (Client), ColorId (ColorId), colorId, knownClients, lastSeen, unColorId)
-import           Luna.Studio.State.Global             (State, collaboration, lastEventTimestamp)
+import           Luna.Studio.React.Model.Node.ExpressionNode (modify, nodeId, touch)
+import qualified Luna.Studio.React.Model.Node.ExpressionNode as Node
+import           Luna.Studio.React.Model.NodeEditor          (expressionNodes)
+import           Luna.Studio.State.Collaboration             (Client (Client), ColorId (ColorId), colorId, knownClients, lastSeen,
+                                                              unColorId)
+import           Luna.Studio.State.Global                    (State, collaboration, lastEventTimestamp)
 
 
 updateCollaboration :: Command State ()
@@ -42,10 +43,10 @@ touchCurrentlySelected = (map (view nodeId) <$> getSelectedNodes) >>= Batch.coll
 expireTouchedNodes :: Command State ()
 expireTouchedNodes = do
     currentTime  <- use lastEventTimestamp
-    modifyNodeEditor $ do
+    modifyExpressionNodeEditor $ do
         let update = ( Node.collaboration . touch  %~ Map.filter (\(ts, _) -> DT.diffSeconds ts currentTime > 0) )
                    . ( Node.collaboration . modify %~ Map.filter (\ ts     -> DT.diffSeconds ts currentTime > 0) )
-        nodes %= HashMap.map update
+        expressionNodes %= HashMap.map update
 
 everyNSeconds :: Integer -> Command State () -> Command State ()
 everyNSeconds interval action = use lastEventTimestamp >>= \currentTime ->

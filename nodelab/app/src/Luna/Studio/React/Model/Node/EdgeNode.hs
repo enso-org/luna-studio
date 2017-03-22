@@ -2,21 +2,21 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RankNTypes        #-}
 {-# OPTIONS_GHC -fno-warn-orphans  #-}
-module Luna.Studio.React.Model.EdgeNode
-    ( module Luna.Studio.React.Model.EdgeNode
+module Luna.Studio.React.Model.Node.EdgeNode
+    ( module Luna.Studio.React.Model.Node.EdgeNode
     , NodeId
     ) where
 
-import           Control.Arrow                        ((&&&))
-import           Data.Convert                         (Convertible (convert))
-import           Data.HashMap.Strict                  (HashMap)
-import qualified Data.HashMap.Strict                  as HashMap
-import qualified Data.Map.Lazy                        as Map
-import           Empire.API.Data.Node                 (NodeId)
-import qualified Empire.API.Data.Node                 as Empire
+import           Control.Arrow                ((&&&))
+import           Data.Convert                 (Convertible (convert))
+import           Data.HashMap.Strict          (HashMap)
+import qualified Data.HashMap.Strict          as HashMap
+import qualified Data.Map.Lazy                as Map
+import           Empire.API.Data.Node         (NodeId)
+import qualified Empire.API.Data.Node         as Empire
 import           Luna.Studio.Prelude
-import           Luna.Studio.React.Model.Port         (Port, PortId, PortsMap)
-import qualified Luna.Studio.React.Model.Port         as Port
+import           Luna.Studio.React.Model.Port (Port, PortId, PortsMap)
+import qualified Luna.Studio.React.Model.Port as Port
 
 
 data EdgeType = InputEdge | OutputEdge  deriving (Generic, Eq, NFData, Show)

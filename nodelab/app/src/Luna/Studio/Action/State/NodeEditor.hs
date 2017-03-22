@@ -3,45 +3,47 @@
 {-# LANGUAGE LambdaCase     #-}
 module Luna.Studio.Action.State.NodeEditor where
 
-import qualified Control.Monad.State                as M
-import           Control.Monad.Trans.Maybe          (runMaybeT)
-import qualified Data.HashMap.Strict                as HashMap
-import qualified Data.Map.Lazy                      as Map
-import qualified Data.Set                           as Set
+import qualified Control.Monad.State                         as M
+import           Control.Monad.Trans.Maybe                   (MaybeT (MaybeT), runMaybeT)
+import qualified Data.HashMap.Strict                         as HashMap
+import qualified Data.Map.Lazy                               as Map
+import qualified Data.Set                                    as Set
 
-import           Empire.API.Data.MonadPath          (MonadPath)
-import qualified Empire.API.Data.Node               as Node
-import           Empire.API.Data.Port               (OutPort (All), _WithDefault)
-import           Empire.API.Data.PortDefault        (PortDefault)
-import           Empire.API.Data.PortRef            (AnyPortRef (InPortRef', OutPortRef'), InPortRef, OutPortRef (OutPortRef))
-import qualified Empire.API.Data.PortRef            as PortRef
-import           Luna.Studio.Action.Command         (Command)
-import           Luna.Studio.Action.State.App       (get, modify)
-import           Luna.Studio.Batch.Workspace        (nodeSearcherData)
-import           Luna.Studio.Data.Graph             (Graph (Graph))
+import           Empire.API.Data.MonadPath                   (MonadPath)
+import qualified Empire.API.Data.Node                        as Node
+import           Empire.API.Data.Port                        (OutPort (All), _WithDefault)
+import           Empire.API.Data.PortDefault                 (PortDefault)
+import           Empire.API.Data.PortRef                     (AnyPortRef (InPortRef', OutPortRef'), InPortRef, OutPortRef (OutPortRef))
+import qualified Empire.API.Data.PortRef                     as PortRef
+import           Luna.Studio.Action.Command                  (Command)
+import           Luna.Studio.Action.State.App                (get, modify)
+import           Luna.Studio.Batch.Workspace                 (nodeSearcherData)
+import           Luna.Studio.Data.Graph                      (Graph (Graph))
 import           Luna.Studio.Prelude
-import           Luna.Studio.React.Model.App        (nodeEditor)
-import           Luna.Studio.React.Model.Connection (Connection, ConnectionId, ConnectionsMap, CurrentConnection, connectionId,
-                                                     containsNode, containsPortRef, dstNodeId, srcNodeId, toConnectionsMap)
-import           Luna.Studio.React.Model.EdgeNode   (EdgeNode, EdgeNodesMap, toEdgeNodesMap)
-import qualified Luna.Studio.React.Model.EdgeNode   as EdgeNode
-import           Luna.Studio.React.Model.Node       (Node, NodeId, NodesMap, isSelected, nodeId, ports, toNodesMap)
+import           Luna.Studio.React.Model.App                 (nodeEditor)
+import           Luna.Studio.React.Model.Connection          (Connection, ConnectionId, ConnectionsMap, CurrentConnection, connectionId,
+                                                              containsNode, containsPortRef, dstNodeId, srcNodeId, toConnectionsMap)
+import           Luna.Studio.React.Model.Node                (EdgeNode, EdgeNodesMap, ExpressionNode, ExpressionNodesMap,
+                                                              Node (Edge, Expression), NodeId, NodesMap, nodeId, ports, toEdgeNodesMap,
+                                                              toExpressionNodesMap, toNodesList, toNodesMap, _Edge, _Expression)
+import           Luna.Studio.React.Model.Node.ExpressionNode (isSelected)
 import           Luna.Studio.React.Model.NodeEditor
-import           Luna.Studio.React.Model.Port       (Port, state, valueType)
-import           Luna.Studio.React.Model.Searcher   (Searcher)
-import           Luna.Studio.State.Global           (State, workspace)
-import           Text.ScopeSearcher.Item            (Items, isElement, items)
+import           Luna.Studio.React.Model.Port                (Port, state, valueType)
+import           Luna.Studio.React.Model.Searcher            (Searcher)
+import           Luna.Studio.State.Global                    (State, workspace)
+import           Text.ScopeSearcher.Item                     (Items, isElement, items)
 
 
 getNodeEditor :: Command State NodeEditor
 getNodeEditor = get nodeEditor
 
-modifyNodeEditor :: M.State NodeEditor r -> Command State r
-modifyNodeEditor = modify nodeEditor
+modifyExpressionNodeEditor :: M.State NodeEditor r -> Command State r
+modifyExpressionNodeEditor = modify nodeEditor
 
 resetGraph :: Command State ()
-resetGraph = modifyNodeEditor $ do
-    nodes               .= def
+resetGraph = modifyExpressionNodeEditor $ do
+    expressionNodes     .= def
+    edgeNodes           .= def
     monads              .= def
     connections         .= def
     portDragConnections .= def
@@ -65,31 +67,36 @@ separateSubgraph :: [NodeId] -> Command State Graph
 separateSubgraph nodeIds = do
     let idSet = Set.fromList nodeIds
         inSet = flip Set.member idSet
-    nodes' <- HashMap.filterWithKey (inSet .: const)  <$> getNodesMap
+    nodes' <- HashMap.filterWithKey (inSet .: const)  <$> getExpressionNodesMap
     conns' <- HashMap.filter (inSet . view dstNodeId) <$> getConnectionsMap
     return $ Graph (HashMap.map convert nodes') (HashMap.map convert conns')
 
-addAnyNode :: Either Node EdgeNode -> Command State ()
-addAnyNode (Left  node) = addNode node
-addAnyNode (Right edge) = addEdgeNode edge
-
 addNode :: Node -> Command State ()
-addNode node = modifyNodeEditor $ nodes . at (node ^. nodeId) ?= node
+addNode (Expression node) = addExpressionNode node
+addNode (Edge edge)       = addEdgeNode edge
+
+addExpressionNode :: ExpressionNode -> Command State ()
+addExpressionNode node = modifyExpressionNodeEditor $ expressionNodes . at (node ^. nodeId) ?= node
 
 addEdgeNode :: EdgeNode -> Command State ()
-addEdgeNode node = modifyNodeEditor $ edgeNodes . at (node ^. EdgeNode.nodeId) ?= node
+addEdgeNode node = modifyExpressionNodeEditor $ edgeNodes . at (node ^. nodeId) ?= node
 
-getAnyNode :: NodeId -> Command State (Maybe (Either Node EdgeNode))
-getAnyNode nid = do
-    mayNode     <- getNode nid
-    mayEdgeNode <- getEdgeNode nid
-    return $ case (mayNode, mayEdgeNode) of
-        (Just node, _)     -> Just $ Left node
-        (_, Just edgeNode) -> Just $ Right edgeNode
-        _                  -> Nothing
+getNode :: NodeId -> Command State (Maybe Node)
+getNode nid = do
+    mayExpressionNode <- fmap2 Expression $ getExpressionNode nid
+    mayEdgeNode       <- fmap2 Edge       $ getEdgeNode nid
+    if isJust mayExpressionNode
+        then return mayExpressionNode
+        else return mayEdgeNode
+
+getNodes :: Command State [Node]
+getNodes = toNodesList <$> getExpressionNodes <*> getEdgeNodes
+
+getNodesMap :: Command State NodesMap
+getNodesMap = toNodesMap <$> getExpressionNodes <*> getEdgeNodes
 
 getEdgeNode :: NodeId -> Command State (Maybe EdgeNode)
-getEdgeNode nid = view (edgeNodes . at nid) <$> getNodeEditor
+getEdgeNode nid = HashMap.lookup nid <$> getEdgeNodesMap
 
 getEdgeNodes :: Command State [EdgeNode]
 getEdgeNodes = HashMap.elems <$> getEdgeNodesMap
@@ -97,37 +104,42 @@ getEdgeNodes = HashMap.elems <$> getEdgeNodesMap
 getEdgeNodesMap :: Command State EdgeNodesMap
 getEdgeNodesMap = view edgeNodes <$> getNodeEditor
 
-getNode :: NodeId -> Command State (Maybe Node)
-getNode nid = view (nodes . at nid) <$> getNodeEditor
+getExpressionNode :: NodeId -> Command State (Maybe ExpressionNode)
+getExpressionNode nid = HashMap.lookup nid <$> getExpressionNodesMap
 
-getNodes :: Command State [Node]
-getNodes = HashMap.elems <$> getNodesMap
+getExpressionNodes :: Command State [ExpressionNode]
+getExpressionNodes = HashMap.elems <$> getExpressionNodesMap
 
-getNodesMap :: Command State NodesMap
-getNodesMap = view nodes <$> getNodeEditor
+getExpressionNodesMap :: Command State ExpressionNodesMap
+getExpressionNodesMap = view expressionNodes <$> getNodeEditor
 
-modifyNode :: Monoid r => NodeId -> M.State Node r -> Command State r
-modifyNode nid = modify (nodeEditor . nodes . at nid) . zoom traverse
+modifyExpressionNode :: Monoid r => NodeId -> M.State ExpressionNode r -> Command State r
+modifyExpressionNode nid = modify (nodeEditor . expressionNodes . at nid) . zoom traverse
 
 modifyEdgeNode :: Monoid r => NodeId -> M.State EdgeNode r -> Command State r
 modifyEdgeNode nid = modify (nodeEditor . edgeNodes . at nid) . zoom traverse
 
 removeNode :: NodeId -> Command State ()
-removeNode nid = modifyNodeEditor $ do
-    nodes     . at nid .= Nothing
-    edgeNodes . at nid .= Nothing
+removeNode nid = modifyExpressionNodeEditor $ do
+    expressionNodes . at nid .= Nothing
+    edgeNodes       . at nid .= Nothing
 
-getSelectedNodes :: Command State [Node]
-getSelectedNodes = filter (view isSelected) <$> getNodes
-
-updateEdgeNodes :: [EdgeNode] -> Command State ()
-updateEdgeNodes update = modifyNodeEditor $ edgeNodes .= toEdgeNodesMap update
+getSelectedNodes :: Command State [ExpressionNode]
+getSelectedNodes = filter (view isSelected) <$> getExpressionNodes
 
 updateNodes :: [Node] -> Command State ()
-updateNodes update = modifyNodeEditor $ nodes .= toNodesMap update
+updateNodes nodes = do
+    updateExpressionNodes $ nodes ^.. traverse . _Expression
+    updateEdgeNodes       $ nodes ^.. traverse . _Edge
+
+updateEdgeNodes :: [EdgeNode] -> Command State ()
+updateEdgeNodes update = modifyExpressionNodeEditor $ edgeNodes .= toEdgeNodesMap update
+
+updateExpressionNodes :: [ExpressionNode] -> Command State ()
+updateExpressionNodes update = modifyExpressionNodeEditor $ expressionNodes .= toExpressionNodesMap update
 
 addConnection :: Connection -> Command State ()
-addConnection conn = modifyNodeEditor $ connections . at connId ?= conn where
+addConnection conn = modifyExpressionNodeEditor $ connections . at connId ?= conn where
     connId = conn ^. connectionId
 
 getConnection :: ConnectionId -> Command State (Maybe Connection)
@@ -162,17 +174,17 @@ modifyConnection :: Monoid r => ConnectionId -> M.State Connection r -> Command 
 modifyConnection connId = modify (nodeEditor . connections . at connId) . zoom traverse
 
 removeConnection :: ConnectionId -> Command State ()
-removeConnection connId = modifyNodeEditor $ connections . at connId .= Nothing
+removeConnection connId = modifyExpressionNodeEditor $ connections . at connId .= Nothing
 
 updateConnections :: [Connection] -> Command State ()
-updateConnections update = modifyNodeEditor $ connections .= toConnectionsMap update
+updateConnections update = modifyExpressionNodeEditor $ connections .= toConnectionsMap update
 
 
 getMonads :: Command State [MonadPath]
 getMonads = view monads <$> getNodeEditor
 
 updateMonads :: [MonadPath] -> Command State ()
-updateMonads update = modifyNodeEditor $ monads .= update
+updateMonads update = modifyExpressionNodeEditor $ monads .= update
 
 
 modifyCurrentConnections :: M.State [CurrentConnection] r -> Command State r
@@ -203,7 +215,7 @@ getNodeSearcherData = do
 class NodeEditorElementId a where
     inGraph :: a -> Command State Bool
 instance NodeEditorElementId NodeId where
-    inGraph = fmap isJust . getAnyNode
+    inGraph = fmap isJust . getNode
 instance NodeEditorElementId ConnectionId where
     inGraph = fmap isJust . getConnection
 
@@ -217,20 +229,14 @@ instance HasPort AnyPortRef where
     getPort = getPortFromAnyPortRef
 
 modifyPort :: Monoid r => AnyPortRef -> M.State Port r -> Command State r
-modifyPort portRef s = do
-    let nid = portRef ^. PortRef.nodeId
-        pid = portRef ^. PortRef.portId
-    mayEdgeNode <- getEdgeNode nid
-    if isJust mayEdgeNode
-    then modify (nodeEditor . edgeNodes . at nid . traverse . EdgeNode.ports . at pid) . zoom traverse $ s
-    else modify (nodeEditor . nodes     . at nid . traverse . ports          . at pid) . zoom traverse $ s
+modifyPort portRef = modify (nodeEditor . edgeNodes . at nid . traverse . ports . at pid) . zoom traverse where
+    nid = portRef ^. PortRef.nodeId
+    pid = portRef ^. PortRef.portId
 
 getPortFromAnyPortRef :: AnyPortRef -> Command State (Maybe Port)
 getPortFromAnyPortRef portRef = runMaybeT $ do
-    Just node' <- lift $ getAnyNode $ portRef ^. PortRef.nodeId
-    fromJustM $ case node' of
-        Left  node     -> node     ^? ports          . ix (portRef ^. PortRef.portId)
-        Right edgeNode -> edgeNode ^? EdgeNode.ports . ix (portRef ^. PortRef.portId)
+    node <- MaybeT . getNode $ portRef ^. PortRef.nodeId
+    fromJustM $ node ^? ports . ix (portRef ^. PortRef.portId)
 
 getPortDefault :: AnyPortRef -> Command State (Maybe PortDefault)
 getPortDefault portRef = maybe Nothing (\mayPort -> mayPort ^? state . _WithDefault) <$> getPort portRef

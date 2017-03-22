@@ -1,5 +1,6 @@
 module Luna.Studio.Action.Basic.Revert where
 
+import           Control.Arrow                              ((&&&))
 import           Empire.API.Data.Connection                 (dst, src)
 import           Empire.API.Data.Node                       (nodeId)
 import           Empire.API.Data.PortRef                    (AnyPortRef (InPortRef'))
@@ -33,8 +34,7 @@ import           Luna.Studio.Action.Basic.SetPortDefault    (localSetPortDefault
 import           Luna.Studio.Action.Command                 (Command)
 import           Luna.Studio.Action.State.Graph             (isCurrentLocationAndGraphLoaded)
 import           Luna.Studio.Prelude
-import           Luna.Studio.React.Model.EdgeNode           (EdgeNode)
-import           Luna.Studio.React.Model.Node               (Node)
+import           Luna.Studio.React.Model.Node               (_Expression)
 import           Luna.Studio.State.Global                   (State)
 
 
@@ -71,7 +71,8 @@ revertRemoveNodes :: RemoveNodes.Request -> Response.Status RemoveNodes.Inverse 
 revertRemoveNodes (RemoveNodes.Request loc _) (Response.Ok (RemoveNodes.Inverse nodes conns)) =
     whenM (isCurrentLocationAndGraphLoaded loc) $ void $ localAddSubgraph nodes' (map (\conn -> (conn ^. src, conn ^. dst)) conns)
     where
-        nodes' = ((map convert nodes) :: [Either Node EdgeNode]) ^.. traverse . _Left
+        nodes' = (map convert nodes) ^.. traverse . _Expression
+        conns' = map (view src &&& view dst) conns
 revertRemoveNodes (RemoveNodes.Request _loc _) (Response.Error _msg) = $notImplemented
 
 revertRemovePort :: RemovePort.Request -> Response.Status RemovePort.Inverse -> Command State ()

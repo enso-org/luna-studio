@@ -32,12 +32,12 @@ import qualified Empire.API.Graph.SetNodeExpression           as SetNodeExpressi
 import qualified Empire.API.Graph.SetNodesMeta                as SetNodesMeta
 import qualified Empire.API.Graph.SetPortDefault              as SetPortDefault
 import qualified Empire.API.Response                          as Response
-import           Luna.Studio.Action.Basic                     (createGraph, localAddAnyNode, localAddConnection, localAddPort,
+import           Luna.Studio.Action.Basic                     (createGraph, localAddConnection, localAddNode, localAddPort,
                                                                localAddSubgraph, localMerge, localMovePort, localRemoveConnection,
                                                                localRemoveNodes, localRemovePort, localRenameNode, localSetCode,
                                                                localSetNodeCode, localSetNodeExpression, localSetNodesMeta,
-                                                               localSetPortDefault, localSetSearcherHints, localUpdateAnyNode,
-                                                               localUpdateAnyNodes, localUpdateNodeTypecheck, localUpdateNodes,
+                                                               localSetPortDefault, localSetSearcherHints, localUpdateExpressionNodes,
+                                                               localUpdateNode, localUpdateNodeTypecheck, localUpdateNodes,
                                                                setNodeProfilingData, setNodeValue)
 import           Luna.Studio.Action.Basic.Revert              (revertAddConnection, revertAddNode, revertAddPort, revertAddSubgraph,
                                                                revertMovePort, revertRemoveConnection, revertRemoveNodes, revertRemovePort,
@@ -49,16 +49,15 @@ import           Luna.Studio.Action.Camera                    (centerGraph)
 import           Luna.Studio.Action.Command                   (Command)
 import           Luna.Studio.Action.State.App                 (setBreadcrumbs)
 import           Luna.Studio.Action.State.Graph               (isCurrentLocation, isCurrentLocationAndGraphLoaded)
-import           Luna.Studio.Action.State.NodeEditor          (modifyNodeEditor, updateMonads)
+import           Luna.Studio.Action.State.NodeEditor          (modifyExpressionNodeEditor, updateMonads)
 import           Luna.Studio.Action.UUID                      (isOwnRequest)
 import qualified Luna.Studio.Batch.Workspace                  as Workspace
 import           Luna.Studio.Event.Batch                      (Event (..))
 import qualified Luna.Studio.Event.Event                      as Event
 import           Luna.Studio.Handler.Backend.Common           (doNothing, handleResponse)
 import           Luna.Studio.Prelude
-import           Luna.Studio.React.Model.EdgeNode             (EdgeNode)
-import           Luna.Studio.React.Model.Node                 (Node)
-import qualified Luna.Studio.React.Model.Node                 as Node
+import           Luna.Studio.React.Model.Node                 (Node (Expression), nodeId, _Expression)
+import qualified Luna.Studio.React.Model.Node.ExpressionNode  as Node
 import qualified Luna.Studio.React.Model.NodeEditor           as NodeEditor
 import           Luna.Studio.State.Global                     (State)
 import qualified Luna.Studio.State.Global                     as Global
@@ -106,11 +105,11 @@ handle (Event.Batch ev) = Just $ case ev of
             ownRequest    <- isOwnRequest requestId
             when shouldProcess $ do
                 if ownRequest then do
-                     void $ localUpdateAnyNode node
+                     void $ localUpdateNode node
                      case node of
-                         Left n -> collaborativeModify [n ^. Node.nodeId]
-                         _      -> return ()
-                else localAddAnyNode node
+                         Expression n -> collaborativeModify [n ^. nodeId]
+                         _            -> return ()
+                else localAddNode node
 
     AddPortResponse response -> handleResponse response success failure where
         requestId    = response ^. Response.requestId
@@ -124,14 +123,14 @@ handle (Event.Batch ev) = Just $ case ev of
             ownRequest    <- isOwnRequest requestId
             when shouldProcess $ do
                 if ownRequest then do
-                     void $ localUpdateAnyNode node
+                     void $ localUpdateNode node
                      case node of
-                         Left n -> collaborativeModify [n ^. Node.nodeId]
-                         _      -> return ()
+                         Expression n -> collaborativeModify [n ^. nodeId]
+                         _            -> return ()
                 else do
                     --TODO[LJK, PM]: What should happen if localAddPort fails? (Example reason - node is not in graph)
                     void $ localAddPort portRef
-                    void $ localUpdateAnyNode node
+                    void $ localUpdateNode node
 
     AddSubgraphResponse response -> handleResponse response success failure where
         requestId     = response ^. Response.requestId
@@ -140,13 +139,13 @@ handle (Event.Batch ev) = Just $ case ev of
         conns         = request  ^. AddSubgraph.connections
         failure _     = whenM (isOwnRequest requestId) $ revertAddSubgraph request
         success nodes' = do
-            let nodes = (convert <$> nodes' :: [Either Node EdgeNode]) ^.. traverse . _Left
+            let nodes = (convert <$> nodes') ^.. traverse . _Expression
             shouldProcess <- isCurrentLocationAndGraphLoaded location
             ownRequest    <- isOwnRequest requestId
             when shouldProcess $ do
                 if ownRequest then do
-                    localUpdateNodes nodes
-                    collaborativeModify $ flip map nodes $ view Node.nodeId
+                    localUpdateExpressionNodes nodes
+                    collaborativeModify $ flip map nodes $ view nodeId
                 else void $ localAddSubgraph nodes (map (\conn -> (conn ^. src, conn ^. dst)) conns)
 
     CodeUpdate update -> do
@@ -156,8 +155,8 @@ handle (Event.Batch ev) = Just $ case ev of
     CollaborationUpdate update -> do
         shouldProcess <- isCurrentLocationAndGraphLoaded $ update ^. CollaborationUpdate.location
         let clientId = update ^. CollaborationUpdate.clientId
-            touchNodes nodeIds setter = modifyNodeEditor $
-                forM_ nodeIds $ \nodeId -> NodeEditor.nodes . at nodeId %= fmap setter
+            touchNodes nodeIds setter = modifyExpressionNodeEditor $
+                forM_ nodeIds $ \nid -> NodeEditor.expressionNodes . at nid %= fmap setter
         myClientId   <- use $ Global.backend . Global.clientId
         currentTime  <- use Global.lastEventTimestamp
         when (shouldProcess && clientId /= myClientId) $ do
@@ -203,19 +202,19 @@ handle (Event.Batch ev) = Just $ case ev of
             ownRequest    <- isOwnRequest requestId
             when shouldProcess $
                 if ownRequest then
-                    void $ localUpdateAnyNode node
+                    void $ localUpdateNode node
                 else void $ localMovePort portRef newPortRef
 
     NodeResultUpdate update -> do
         shouldProcess <- isCurrentLocationAndGraphLoaded $ update ^. NodeResultUpdate.location
         when shouldProcess $ do
-            let nodeId = update ^. NodeResultUpdate.nodeId
-            setNodeValue           nodeId $ update ^. NodeResultUpdate.value
-            setNodeProfilingData   nodeId $ update ^. NodeResultUpdate.execTime
+            let nid = update ^. NodeResultUpdate.nodeId
+            setNodeValue         nid $ update ^. NodeResultUpdate.value
+            setNodeProfilingData nid $ update ^. NodeResultUpdate.execTime
 
     NodesUpdate update -> do
         shouldProcess <- isCurrentLocationAndGraphLoaded $ update ^. NodesUpdate.location
-        when shouldProcess $ localUpdateAnyNodes $ convert <$> update ^. NodesUpdate.nodes
+        when shouldProcess $ localUpdateNodes $ convert <$> update ^. NodesUpdate.nodes
 
     NodeTypecheckerUpdate update -> do
       shouldProcess <- isCurrentLocationAndGraphLoaded $ update ^. NodeTCUpdate.location
@@ -276,7 +275,7 @@ handle (Event.Batch ev) = Just $ case ev of
         requestId       = response ^. Response.requestId
         request         = response ^. Response.request
         location        = request  ^. RenameNode.location
-        nodeId          = request  ^. RenameNode.nodeId
+        nid             = request  ^. RenameNode.nodeId
         name            = request  ^. RenameNode.name
         failure inverse = whenM (isOwnRequest requestId) $ revertRenameNode request inverse
         success _       = do
@@ -286,7 +285,7 @@ handle (Event.Batch ev) = Just $ case ev of
                 if ownRequest then
                     --TODO[LJK]: This is left to remind to set Confirmed flag in changes
                     return ()
-                else void $ localRenameNode nodeId name
+                else void $ localRenameNode nid name
 
     RenamePortResponse response -> handleResponse response success failure where
         requestId       = response ^. Response.requestId
@@ -318,7 +317,7 @@ handle (Event.Batch ev) = Just $ case ev of
         requestId       = response ^. Response.requestId
         request         = response ^. Response.request
         location        = request  ^. SetNodeCode.location
-        nodeId          = request  ^. SetNodeCode.nodeId
+        nid             = request  ^. SetNodeCode.nodeId
         code            = request  ^. SetNodeCode.newCode
         failure inverse = whenM (isOwnRequest requestId) $ revertSetNodeCode request inverse
         success _       = do
@@ -327,13 +326,13 @@ handle (Event.Batch ev) = Just $ case ev of
             when shouldProcess $
                 if ownRequest then
                     return ()
-                else void $ localSetNodeCode nodeId code
+                else void $ localSetNodeCode nid code
 
     SetNodeExpressionResponse response -> handleResponse response success failure where
         requestId       = response ^. Response.requestId
         request         = response ^. Response.request
         location        = request  ^. SetNodeExpression.location
-        nodeId          = request  ^. SetNodeExpression.nodeId
+        nid             = request  ^. SetNodeExpression.nodeId
         expression      = request  ^. SetNodeExpression.expression
         failure inverse = whenM (isOwnRequest requestId) $ revertSetNodeExpression request inverse
         success _       = do
@@ -342,7 +341,7 @@ handle (Event.Batch ev) = Just $ case ev of
             when shouldProcess $
                 if ownRequest then
                     return ()
-                else void $ localSetNodeExpression nodeId expression
+                else void $ localSetNodeExpression nid expression
 
     SetNodesMetaResponse response -> handleResponse response success failure where
         requestId       = response ^. Response.requestId

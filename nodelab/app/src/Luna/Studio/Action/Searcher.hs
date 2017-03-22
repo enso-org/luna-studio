@@ -2,36 +2,38 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Luna.Studio.Action.Searcher where
 
-import qualified Data.Map                            as Map
-import           Data.Monoid                         (All (All), getAll)
-import qualified Data.Text                           as Text
-import           Text.Read                           (readMaybe)
+import qualified Data.Map                                    as Map
+import           Data.Monoid                                 (All (All), getAll)
+import qualified Data.Text                                   as Text
+import           Text.Read                                   (readMaybe)
 
-import           Data.Position                       (Position)
-import           Data.ScreenPosition                 (ScreenPosition, x)
-import           Empire.API.Data.Node                (NodeId)
-import qualified JS.GoogleAnalytics                  as GA
-import qualified JS.Searcher                         as Searcher
-import           Luna.Studio.Action.Basic            (addNode, setNodeExpression)
-import qualified Luna.Studio.Action.Batch            as Batch
-import           Luna.Studio.Action.Command          (Command)
-import           Luna.Studio.Action.State.Action     (beginActionWithKey, continueActionWithKey, removeActionFromState, updateActionWithKey)
-import           Luna.Studio.Action.State.App        (renderIfNeeded)
-import           Luna.Studio.Action.State.NodeEditor (getSearcher, getSelectedNodes, getSelectedNodes, modifyNodeEditor, modifySearcher)
-import           Luna.Studio.Action.State.Scene      (translateToScreen, translateToWorkspace)
-import           Luna.Studio.Event.Event             (Event (Shortcut))
-import qualified Luna.Studio.Event.Shortcut          as Shortcut
+import           Data.Position                               (Position)
+import           Data.ScreenPosition                         (ScreenPosition, x)
+import           Empire.API.Data.Node                        (NodeId)
+import qualified JS.GoogleAnalytics                          as GA
+import qualified JS.Searcher                                 as Searcher
+import           Luna.Studio.Action.Basic                    (addNode, setNodeExpression)
+import qualified Luna.Studio.Action.Batch                    as Batch
+import           Luna.Studio.Action.Command                  (Command)
+import           Luna.Studio.Action.State.Action             (beginActionWithKey, continueActionWithKey, removeActionFromState,
+                                                              updateActionWithKey)
+import           Luna.Studio.Action.State.App                (renderIfNeeded)
+import           Luna.Studio.Action.State.NodeEditor         (getSearcher, getSelectedNodes, getSelectedNodes, modifyExpressionNodeEditor,
+                                                              modifySearcher)
+import           Luna.Studio.Action.State.Scene              (translateToScreen, translateToWorkspace)
+import           Luna.Studio.Event.Event                     (Event (Shortcut))
+import qualified Luna.Studio.Event.Shortcut                  as Shortcut
 import           Luna.Studio.Prelude
-import qualified Luna.Studio.React.Model.Node        as Node
-import qualified Luna.Studio.React.Model.NodeEditor  as NodeEditor
-import qualified Luna.Studio.React.Model.Searcher    as Searcher
-import qualified Luna.Studio.React.View.App          as App
-import           Luna.Studio.State.Action            (Action (begin, continue, end, update), Searcher (Searcher), searcherAction)
-import           Luna.Studio.State.Global            (State)
-import qualified Luna.Studio.State.Global            as Global
-import qualified Luna.Studio.State.UI                as UI
-import           Text.ScopeSearcher.Item             (Item (..), Items)
-import qualified Text.ScopeSearcher.Scope            as Scope
+import           Luna.Studio.React.Model.Node.ExpressionNode (position)
+import qualified Luna.Studio.React.Model.NodeEditor          as NodeEditor
+import qualified Luna.Studio.React.Model.Searcher            as Searcher
+import qualified Luna.Studio.React.View.App                  as App
+import           Luna.Studio.State.Action                    (Action (begin, continue, end, update), Searcher (Searcher), searcherAction)
+import           Luna.Studio.State.Global                    (State)
+import qualified Luna.Studio.State.Global                    as Global
+import qualified Luna.Studio.State.UI                        as UI
+import           Text.ScopeSearcher.Item                     (Item (..), Items)
+import qualified Text.ScopeSearcher.Scope                    as Scope
 
 
 instance Action (Command State) Searcher where
@@ -52,18 +54,18 @@ positionDelta = 100
 
 openWith :: Maybe NodeId -> ScreenPosition -> Command State ()
 openWith nodeId pos = do
-    pos' <- (map (view Node.position) <$> getSelectedNodes) >>= \case
+    pos' <- (map (view position) <$> getSelectedNodes) >>= \case
           [nodePosition] -> if isNothing nodeId then return $ nodePosition & x %~ (+positionDelta) else translateToWorkspace pos
           _              -> translateToWorkspace pos
     begin Searcher
     GA.sendEvent GA.NodeSearcher
-    modifyNodeEditor $ NodeEditor.searcher ?= Searcher.Searcher pos' 0 (Searcher.Node def) def nodeId False
+    modifyExpressionNodeEditor $ NodeEditor.searcher ?= Searcher.Searcher pos' 0 (Searcher.Node def) def nodeId False
     renderIfNeeded
     liftIO Searcher.focus
 
 close :: Searcher -> Command State ()
 close _ = do
-    modifyNodeEditor $ NodeEditor.searcher .= Nothing
+    modifyExpressionNodeEditor $ NodeEditor.searcher .= Nothing
     removeActionFromState searcherAction
     liftIO App.focus
 

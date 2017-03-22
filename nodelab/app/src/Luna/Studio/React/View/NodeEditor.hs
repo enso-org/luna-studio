@@ -21,8 +21,8 @@ import           Luna.Studio.React.Store               (Ref, dispatch, dispatch'
 import           Luna.Studio.React.View.Connection     (connection_, currentConnection_)
 import           Luna.Studio.React.View.ConnectionPen  (connectionPen_)
 import           Luna.Studio.React.View.Edge           (edgeSidebar_)
+import           Luna.Studio.React.View.ExpressionNode (nodeDynamicStyles_, node_)
 import           Luna.Studio.React.View.Monad          (monads_)
-import           Luna.Studio.React.View.Node           (nodeDynamicStyles_, node_)
 import           Luna.Studio.React.View.Plane          (planeCanvas_, planeConnections_, planeMonads_, planeNodes_, svgPlanes_)
 import           Luna.Studio.React.View.Searcher       (searcher_)
 import           Luna.Studio.React.View.SelectionBox   (selectionBox_)
@@ -48,10 +48,10 @@ nodeEditor_ ref ne = React.viewWithSKey nodeEditor name (ref, ne) mempty
 nodeEditor :: ReactView (Ref App, NodeEditor)
 nodeEditor = React.defineView name $ \(ref, ne) -> do
     let camera         = ne ^. NodeEditor.screenTransform . CameraTransformation.logicalToScreen
-        nodes          = ne ^. NodeEditor.nodes . to HashMap.elems
+        nodes          = ne ^. NodeEditor.expressionNodes . to HashMap.elems
         edges          = ne ^. NodeEditor.edgeNodes . to HashMap.elems
         lookupNode m   = ( m ^. MonadPath.monadType
-                         , m ^. MonadPath.path . to (mapMaybe $ flip HashMap.lookup $ ne ^. NodeEditor.nodes))
+                         , m ^. MonadPath.path . to (mapMaybe $ flip HashMap.lookup $ ne ^. NodeEditor.expressionNodes))
         monads         = map lookupNode $ ne ^. NodeEditor.monads
         scale          = (Matrix.toList camera)!!0 :: Double
 

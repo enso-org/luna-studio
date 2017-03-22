@@ -16,7 +16,7 @@ import           Luna.Studio.Action.ConnectionPen.SmoothLine (addPointToCurve, b
 import           Luna.Studio.Action.State.Action             (beginActionWithKey, continueActionWithKey, removeActionFromState,
                                                               updateActionWithKey)
 import           Luna.Studio.Action.State.Model              (getConnectionsIntersectingSegment, getNodeAtPosition)
-import           Luna.Studio.Action.State.NodeEditor         (getConnectionsMap, modifyNodeEditor)
+import           Luna.Studio.Action.State.NodeEditor         (getConnectionsMap, modifyExpressionNodeEditor)
 import           Luna.Studio.Data.Color                      (Color (Color))
 import           Luna.Studio.Event.Mouse                     (workspacePosition)
 import           Luna.Studio.Prelude
@@ -43,7 +43,7 @@ startDisconnecting evt timestamp = do
     pos <- workspacePosition evt
     let curve = beginCurve pos timestamp
     begin $ PenDisconnect curve Nothing Nothing
-    modifyNodeEditor $ NodeEditor.connectionPen ?= ConnectionPen (curveToSvgPath curve) (Color 2)
+    modifyExpressionNodeEditor $ NodeEditor.connectionPen ?= ConnectionPen (curveToSvgPath curve) (Color 2)
 
 checkAndUpdateRestriction :: Connection -> Command State ()
 checkAndUpdateRestriction conn = continue $ \state -> withJust (state ^. penDisconnectLastVisitedNode) $ \lastNode -> do
@@ -92,7 +92,7 @@ disconnectMove evt timestamp state = do
     let curve = addPointToCurve pos timestamp $ state ^. penDisconnectCurve
         state'   = state & penDisconnectCurve .~ curve
     update state'
-    modifyNodeEditor $ NodeEditor.connectionPen . _Just . ConnectionPen.path .= curveToSvgPath curve
+    modifyExpressionNodeEditor $ NodeEditor.connectionPen . _Just . ConnectionPen.path .= curveToSvgPath curve
     when (length (curve ^. Curve.segments) > 1 && head (curve ^. Curve.segments) ^. Curve.approved) $
         disconnectProcessSegment $ head $ drop 1 $ curve ^. Curve.segments
 
@@ -101,4 +101,4 @@ stopDisconnecting state = do
     let curve = state ^. penDisconnectCurve . Curve.segments
     disconnectProcessSegment $ head curve
     removeActionFromState penDisconnectAction
-    modifyNodeEditor $ NodeEditor.connectionPen .= Nothing
+    modifyExpressionNodeEditor $ NodeEditor.connectionPen .= Nothing
