@@ -21,8 +21,9 @@ import           Luna.Studio.React.Store               (Ref, dispatch, dispatch'
 import           Luna.Studio.React.View.Connection     (connection_, currentConnection_)
 import           Luna.Studio.React.View.ConnectionPen  (connectionPen_)
 import           Luna.Studio.React.View.Edge           (edgeSidebar_)
-import           Luna.Studio.React.View.Monad          (monad_)
+import           Luna.Studio.React.View.Monad          (monads_)
 import           Luna.Studio.React.View.Node           (nodeDynamicStyles_, node_)
+import           Luna.Studio.React.View.Plane          (planeCanvas_, planeConnections_, planeMonads_, planeNodes_, svgPlanes_)
 import           Luna.Studio.React.View.Searcher       (searcher_)
 import           Luna.Studio.React.View.SelectionBox   (selectionBox_)
 import qualified Luna.Studio.React.View.Style          as Style
@@ -30,6 +31,7 @@ import           Luna.Studio.React.View.Visualization  (pinnedVisualization_)
 import           Numeric                               (showFFloat)
 import           React.Flux                            hiding (transform)
 import qualified React.Flux                            as React
+
 
 name :: JSString
 name = "node-editor"
@@ -53,8 +55,6 @@ nodeEditor = React.defineView name $ \(ref, ne) -> do
         monads         = map lookupNode $ ne ^. NodeEditor.monads
         scale          = (Matrix.toList camera)!!0 :: Double
 
-
-
     div_
         [ "className"   $= Style.prefix "graph"
         , "id"          $= sceneId
@@ -64,8 +64,6 @@ nodeEditor = React.defineView name $ \(ref, ne) -> do
         , onWheel       $ \e m w -> preventDefault e : dispatch ref (UI.NodeEditorEvent $ NE.Wheel m w)
         , onScroll      $ \e     -> [preventDefault e]
         ] $ do
-
-
 
         style_
             [ "key" $= "style"
@@ -92,39 +90,21 @@ nodeEditor = React.defineView name $ \(ref, ne) -> do
 
             forM_ (ne ^. NodeEditor.nodesRecursive) $ nodeDynamicStyles_ camera
 
-        svg_
-            [ "className" $= Style.prefix "svg-planes"
-            , "key"       $= "svgPlanes"
-            ] $ do
-            g_
-                [ "className" $= Style.prefixFromList [ "plane", "plane--monads", "camera-transform" ]
-                , "key"       $= "monads"
-                ] $
-                forKeyed_ monads $ monad_ (length monads)
-            g_
-                [ "className" $= Style.prefixFromList [ "plane", "plane--connections", "camera-transform" ]
-                , "key"       $= "connections"
-                ] $ do
-                mapM_ (uncurry (connection_ ref))  $ ne ^. NodeEditor.connections . to HashMap.toList
-                mapM_ (uncurry (connection_ ref))  $ ne ^. NodeEditor.portDragConnections . to HashMap.toList
-                mapM_ (uncurry currentConnection_) $ keyed $ ne ^. NodeEditor.currentConnections
-                mapM_ selectionBox_                $ ne ^. NodeEditor.selectionBox
-                mapM_ connectionPen_               $ ne ^. NodeEditor.connectionPen
+        svgPlanes_ $ do
+            planeMonads_ $
+                monads_ monads
+            planeConnections_ $ do
+                forM_     (ne ^. NodeEditor.connections . to HashMap.toList        ) $ uncurry $ connection_ ref
+                forM_     (ne ^. NodeEditor.portDragConnections . to HashMap.toList) $ uncurry $ connection_ ref
+                forKeyed_ (ne ^. NodeEditor.currentConnections                     ) $ uncurry currentConnection_
+                forM_     (ne ^. NodeEditor.selectionBox                           ) selectionBox_
+                forM_     (ne ^. NodeEditor.connectionPen                          ) connectionPen_
 
-
-        div_
-            [ "className" $= Style.prefixFromList [ "plane", "plane--nodes" ]
-            , "key"       $= "nodes"
-            ] $ do
-            forM_ nodes $ node_ ref
+        planeNodes_ $ do
+            forM_  nodes                            $ node_ ref
             forM_ (ne ^. NodeEditor.visualizations) $ pinnedVisualization_ ref ne
-            mapM_ (searcher_ ref camera) $ ne ^. NodeEditor.searcher
-
+            forM_ (ne ^. NodeEditor.searcher      ) $ searcher_ ref camera
 
         forM_ edges $ edgeSidebar_ ref (ne ^. NodeEditor.draggedPort)
 
-
-        canvas_
-            [ "className" $= Style.prefixFromList [ "plane", "plane--canvas", "hide" ]
-            , "key"       $= "canvas"
-            ] mempty
+        planeCanvas_ mempty

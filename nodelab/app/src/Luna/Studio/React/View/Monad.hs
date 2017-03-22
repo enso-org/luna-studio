@@ -41,3 +41,6 @@ monad = React.defineView objName $ \case
 
 monad_ :: Int -> (Int, (TypeRep, [Node])) -> ReactElementM ViewEventHandler ()
 monad_ allMonads (num, (tr, nodes)) = React.viewWithSKey monad (jsShow num) (tr, map (nodeToMonadPoint num allMonads) nodes) mempty
+
+monads_ :: [(TypeRep, [Node])] -> ReactElementM ViewEventHandler ()
+monads_ monads = forKeyed_ monads $ monad_ (length monads)
