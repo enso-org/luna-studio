@@ -8,7 +8,7 @@ class LunaStudioTab extends View
   mountPoint = ""
   initialize: (@uri, @code, @websocket) ->
       @on 'contextmenu', -> false
-      @code.start(@uri, mountPoint, websocket)
+      @code.start(@uri, mountPoint, @websocket)
 
   @content: ->
     mountPoint = "luna-studio-mount" + uniqueTabNo
