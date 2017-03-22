@@ -76,38 +76,11 @@ executable internals
       Luna.Studio.Action.Basic.DestroyGraph
       Luna.Studio.Action.Basic.ProjectManager
       Luna.Studio.Action.Batch
-      Luna.Studio.Action.Camera
-      Luna.Studio.Action.Camera.Pan
-      Luna.Studio.Action.Camera.Zoom
       Luna.Studio.Action.Command
-      Luna.Studio.Action.Connect
-      Luna.Studio.Action.ConnectionPen
-      Luna.Studio.Action.ConnectionPen.ConnectionPen
-      Luna.Studio.Action.ConnectionPen.DisconnectionPen
-      Luna.Studio.Action.ConnectionPen.SmoothLine
-      Luna.Studio.Action.Edge
-      Luna.Studio.Action.MultiSelection
-      Luna.Studio.Action.Node
-      Luna.Studio.Action.Node.Drag
-      Luna.Studio.Action.Node.EditExpression
-      Luna.Studio.Action.Node.EditName
-      Luna.Studio.Action.Node.Snap
-      Luna.Studio.Action.Port
-      Luna.Studio.Action.Port.Actions
-      Luna.Studio.Action.Port.Control
-      Luna.Studio.Action.Port.Highlight
-      Luna.Studio.Action.Searcher
       Luna.Studio.Action.State.Action
       Luna.Studio.Action.State.App
-      Luna.Studio.Action.State.Graph
       Luna.Studio.Action.State.Model
-      Luna.Studio.Action.State.Model.Connection
-      Luna.Studio.Action.State.Model.Node
-      Luna.Studio.Action.State.Model.Port
-      Luna.Studio.Action.State.NodeEditor
-      Luna.Studio.Action.State.Scene
       Luna.Studio.Action.UUID
-      Luna.Studio.Action.Visualization
       Luna.Studio.Batch.Connector.Commands
       Luna.Studio.Batch.Connector.Connection
       Luna.Studio.Batch.Workspace
