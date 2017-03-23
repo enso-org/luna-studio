@@ -12,6 +12,7 @@ import           Empire.API.Data.TypeRep                 (TypeRep (TStar))
 import qualified JS.GoogleAnalytics                      as GA
 import           Luna.Studio.Action.Basic.DrawConnection (redrawConnectionsForNode)
 import           Luna.Studio.Action.Basic.FocusNode      (focusNode)
+import           Luna.Studio.Action.Basic.Scene          (updateScene)
 import           Luna.Studio.Action.Basic.SelectNode     (selectNode)
 import qualified Luna.Studio.Action.Batch                as Batch
 import           Luna.Studio.Action.Command              (Command)
@@ -57,7 +58,7 @@ localAddNode (Edge edge)       = localAddEdgeNode edge
 localAddEdgeNode :: EdgeNode -> Command State ()
 localAddEdgeNode node = do
     NodeEditor.addEdgeNode node
-    void . redrawConnectionsForNode $ node ^. nodeId
+    updateScene
 
 localAddExpressionNode :: ExpressionNode -> Command State ()
 localAddExpressionNode node = do

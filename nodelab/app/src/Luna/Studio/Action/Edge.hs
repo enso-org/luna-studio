@@ -34,7 +34,7 @@ import           Luna.Studio.Action.State.App          (renderIfNeeded)
 import           Luna.Studio.Action.State.Model        (createConnectionModel, createCurrentConnectionModel, getInputEdgePortPosition,
                                                         getOutputEdgePortPosition)
 import           Luna.Studio.Action.State.NodeEditor   (addConnection, getConnectionsContainingNode, getConnectionsContainingPortRef,
-                                                        getEdgeNode, getPort, modifyExpressionNodeEditor, removeConnection)
+                                                        getEdgeNode, getPort, modifyNodeEditor, removeConnection)
 import           Luna.Studio.Action.State.Scene        (getInputSidebarPosition, getInputSidebarSize, getOutputSidebarPosition,
                                                         getOutputSidebarSize, translateToWorkspace)
 import           Luna.Studio.Event.Mouse               (mousePosition, workspacePosition)
@@ -64,14 +64,14 @@ instance Action (Command State) PortDrag where
     end      = stopPortDrag
 
 portRename :: AnyPortRef -> String -> Command State ()
-portRename portRef name = modifyExpressionNodeEditor $ do
+portRename portRef name = modifyNodeEditor $ do
     let nodeId = portRef ^. PortRef.nodeId
         portId = portRef ^. PortRef.portId
     NodeEditor.edgeNodes . at nodeId . _Just . EdgeNode.ports . at portId . _Just . Port.name .= name
 
 portNameEdit :: AnyPortRef -> Bool -> Command State ()
 portNameEdit portRef isEdited = do
-    modifyExpressionNodeEditor $ do
+    modifyNodeEditor $ do
         let nodeId = portRef ^. PortRef.nodeId
             portId = portRef ^. PortRef.portId
         NodeEditor.edgeNodes . at nodeId . _Just . EdgeNode.ports . at portId . _Just . Port.isEdited .= isEdited
@@ -90,7 +90,7 @@ startPortDrag mousePos portRef mode = do
         withJust mayDraggedPortPos $ \draggedPortPos -> do
             let portMapping = Map.fromList $ map (id &&& id) $ node ^. EdgeNode.ports . to Map.keys
             begin $ PortDrag mousePos portRef portMapping mode node
-            modifyExpressionNodeEditor $ do
+            modifyNodeEditor $ do
                 NodeEditor.draggedPort ?= DraggedPort draggedPort draggedPortPos
                 NodeEditor.edgeNodes . at nodeId . _Just . EdgeNode.ports . at portId . _Just . Port.visible .= False
             translateToWorkspace mousePos >>= updateConnectionsForDraggedPort portRef
@@ -125,7 +125,7 @@ handleMove evt portDrag = do
     case mayDraggedPortPos of
         Nothing -> end portDrag
         Just draggedPortPos -> do
-            modifyExpressionNodeEditor $ NodeEditor.draggedPort . _Just . Port.positionInSidebar .= draggedPortPos
+            modifyNodeEditor $ NodeEditor.draggedPort . _Just . Port.positionInSidebar .= draggedPortPos
             localReorderPorts workspaceMousePos node portDrag
             updateConnectionsForDraggedPort portRef workspaceMousePos
 
@@ -133,11 +133,11 @@ stopPortDrag :: PortDrag -> Command State ()
 stopPortDrag portDrag = do
     let portRef = portDrag ^. portDragPortRef
         nodeId  = portRef ^. PortRef.nodeId
-    modifyExpressionNodeEditor $ do
+    modifyNodeEditor $ do
         NodeEditor.draggedPort         .= Nothing
         NodeEditor.portDragConnections .= def
     let originalNode = portDrag ^. portDragOriginalNode
-    modifyExpressionNodeEditor $ NodeEditor.edgeNodes . at nodeId ?= originalNode
+    modifyNodeEditor $ NodeEditor.edgeNodes . at nodeId ?= originalNode
     void redrawConnectionsForEdgeNodes
     removeActionFromState portDragAction
 
@@ -180,7 +180,7 @@ updateConnectionsForPort portDrag portRef = do
                     return $ conn & src . PortRef.srcPortId .~ newSrcPort
         withJust mayNewConn $ \newConn -> do
             mayConnectionModel <- createConnectionModel (newConn ^. src) (newConn ^. dst)
-            modifyExpressionNodeEditor $ NodeEditor.connections . at (newConn ^. dst) .= mayConnectionModel
+            modifyNodeEditor $ NodeEditor.connections . at (newConn ^. dst) .= mayConnectionModel
 
 
 updateConnectionsForDraggedPort :: AnyPortRef -> Position -> Command State ()
@@ -197,7 +197,7 @@ updateConnectionsForDraggedPort portRef pos = do
             let connModel = case portRef of
                     OutPortRef' _ -> connModel' & Connection.color .~ portColor
                     InPortRef'  _ -> connModel'
-            modifyExpressionNodeEditor $ do
+            modifyNodeEditor $ do
                 NodeEditor.connections         . at connId .= Nothing
                 NodeEditor.portDragConnections . at connId ?= connModel
 
@@ -251,7 +251,7 @@ localReorderPorts mousePos originalNode portDrag = do
             case reorderPortsInNode EdgeNode.ports Port.portId originalNode newMapping of
                 Nothing          -> end portDrag
                 Just updatedNode -> do
-                    modifyExpressionNodeEditor $ NodeEditor.edgeNodes . at nodeId ?= updatedNode
+                    modifyNodeEditor $ NodeEditor.edgeNodes . at nodeId ?= updatedNode
                     update $ portDrag & portDragPortMapping .~ newMapping
                     continue $ \portDrag' -> mapM_ (updateConnectionsForPort portDrag') $
                         map (toAnyPortRef (originalNode ^. EdgeNode.nodeId) . view Port.portId) (originalNode ^. EdgeNode.ports . to Map.elems)
@@ -291,6 +291,6 @@ confirmReorder portDrag = do
                     Just (node, updatedConnections) -> do
                         forM_ connectionsToUpdate $ removeConnection . view connectionId
                         forM_ updatedConnections $ addConnection
-                        modifyExpressionNodeEditor $ NodeEditor.edgeNodes . at nodeId ?= node
+                        modifyNodeEditor $ NodeEditor.edgeNodes . at nodeId ?= node
                         void redrawConnectionsForEdgeNodes
                         Batch.movePort portRef $notImplemented

@@ -18,7 +18,7 @@ import           Luna.Studio.Action.Command                  (Command)
 import           Luna.Studio.Action.State.Action             (beginActionWithKey, continueActionWithKey, removeActionFromState,
                                                               updateActionWithKey)
 import           Luna.Studio.Action.State.App                (renderIfNeeded)
-import           Luna.Studio.Action.State.NodeEditor         (getSearcher, getSelectedNodes, getSelectedNodes, modifyExpressionNodeEditor,
+import           Luna.Studio.Action.State.NodeEditor         (getSearcher, getSelectedNodes, getSelectedNodes, modifyNodeEditor,
                                                               modifySearcher)
 import           Luna.Studio.Action.State.Scene              (translateToScreen, translateToWorkspace)
 import           Luna.Studio.Event.Event                     (Event (Shortcut))
@@ -59,13 +59,13 @@ openWith nodeId pos = do
           _              -> translateToWorkspace pos
     begin Searcher
     GA.sendEvent GA.NodeSearcher
-    modifyExpressionNodeEditor $ NodeEditor.searcher ?= Searcher.Searcher pos' 0 (Searcher.Node def) def nodeId False
+    modifyNodeEditor $ NodeEditor.searcher ?= Searcher.Searcher pos' 0 (Searcher.Node def) def nodeId False
     renderIfNeeded
     liftIO Searcher.focus
 
 close :: Searcher -> Command State ()
 close _ = do
-    modifyExpressionNodeEditor $ NodeEditor.searcher .= Nothing
+    modifyNodeEditor $ NodeEditor.searcher .= Nothing
     removeActionFromState searcherAction
     liftIO App.focus
 

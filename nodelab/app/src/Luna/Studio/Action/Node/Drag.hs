@@ -17,7 +17,7 @@ import           Luna.Studio.Action.Command                  (Command)
 import           Luna.Studio.Action.Node.Snap                (snap)
 import           Luna.Studio.Action.State.Model              (createConnectionModel, getIntersectingConnections)
 import           Luna.Studio.Action.State.NodeEditor         (getConnection, getExpressionNode, getSelectedNodes, modifyExpressionNode,
-                                                              modifyExpressionNodeEditor)
+                                                              modifyNodeEditor)
 import           Luna.Studio.Event.Mouse                     (workspacePosition)
 import           Luna.Studio.Prelude
 import           Luna.Studio.React.Model.Connection          (dst, src)
@@ -75,7 +75,7 @@ nodesDrag evt snapped nodeDrag = do
 clearSnappedConnection :: NodeDrag -> Command State ()
 clearSnappedConnection nodeDrag = do
     let nid = nodeDrag ^. nodeDragNodeId
-    modifyExpressionNodeEditor $ currentConnections .= def
+    modifyNodeEditor $ currentConnections .= def
     void $ updatePortSelfVisibility nid
     continue $ \nodeDrag' -> do
         update $ nodeDrag' & nodeDragSnappedConn .~ Nothing
@@ -95,7 +95,7 @@ snapConnectionsForNodes mousePos nodeIds = when (length nodeIds == 1) $ forM_ no
                 mayConnModel2 <- fmap join $ mapM (createConnectionModel outPortRef)       $ view dst <$> mayConn
                 case (,) <$> mayConnModel1 <*> mayConnModel2 of
                     Just (connModel1, connModel2) -> do
-                        modifyExpressionNodeEditor $ currentConnections .= map convert [connModel1, connModel2]
+                        modifyNodeEditor $ currentConnections .= map convert [connModel1, connModel2]
                         continue $ \nodeDrag -> update $ nodeDrag & nodeDragSnappedConn ?~ connId
                     _ -> continue clearSnappedConnection
             _ -> continue clearSnappedConnection

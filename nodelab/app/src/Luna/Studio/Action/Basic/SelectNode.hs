@@ -8,7 +8,7 @@ import           Luna.Studio.Action.Basic.FocusNode          (focusNodes)
 import           Luna.Studio.Action.Batch                    (cancelCollaborativeTouch, collaborativeTouch)
 import           Luna.Studio.Action.Command                  (Command)
 import           Luna.Studio.Action.State.NodeEditor         (getExpressionNode, getExpressionNodes, getSelectedNodes, modifyExpressionNode,
-                                                              modifyExpressionNodeEditor)
+                                                              modifyNodeEditor)
 import           Luna.Studio.Prelude
 import           Luna.Studio.React.Model.Node.ExpressionNode (isSelected, nodeId)
 import           Luna.Studio.React.Model.NodeEditor          (expressionNodes)
@@ -50,7 +50,7 @@ selectPreviousNodes = do
 unselectAll :: Command State ()
 unselectAll = do
     prevSelected <- map (view nodeId) <$> getSelectedNodes
-    modifyExpressionNodeEditor $ expressionNodes %= Map.map (isSelected .~ False)
+    modifyNodeEditor $ expressionNodes %= Map.map (isSelected .~ False)
     cancelCollaborativeTouch prevSelected
 
 toggleSelect :: NodeId -> Command State ()

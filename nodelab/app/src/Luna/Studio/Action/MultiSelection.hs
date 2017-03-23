@@ -8,7 +8,7 @@ module Luna.Studio.Action.MultiSelection
 import           Data.Position                               (Position, fromDoubles, x, y)
 import           Luna.Studio.Action.Basic                    (modifySelectionHistory, selectNodes, unselectAll)
 import           Luna.Studio.Action.Command                  (Command)
-import           Luna.Studio.Action.State.NodeEditor         (getExpressionNodes, getSelectedNodes, modifyExpressionNodeEditor)
+import           Luna.Studio.Action.State.NodeEditor         (getExpressionNodes, getSelectedNodes, modifyNodeEditor)
 import           Luna.Studio.Data.Geometry                   (isPointInRectangle)
 import           Luna.Studio.Event.Mouse                     (workspacePosition)
 import           Luna.Studio.Prelude
@@ -40,7 +40,7 @@ updateMultiSelection :: MouseEvent -> MultiSelection -> Command State ()
 updateMultiSelection evt state = do
     let startPos = view multiSelecectionStartPos state
     coord <- workspacePosition evt
-    modifyExpressionNodeEditor $ selectionBox .= Just (SelectionBox startPos coord)
+    modifyNodeEditor $ selectionBox .= Just (SelectionBox startPos coord)
     updateSelection startPos coord
 
 updateSelection :: Position -> Position -> Command State ()
@@ -53,6 +53,6 @@ updateSelection start act = do
 stopMultiSelection :: MultiSelection -> Command State ()
 stopMultiSelection _ = do
     removeActionFromState multiSelectionAction
-    modifyExpressionNodeEditor $ selectionBox .= Nothing
+    modifyNodeEditor $ selectionBox .= Nothing
     nodeIds <- map (view nodeId) <$> getSelectedNodes
     modifySelectionHistory nodeIds

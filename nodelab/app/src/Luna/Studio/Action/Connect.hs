@@ -24,13 +24,14 @@ import           Luna.Studio.Action.Node.Drag                (startNodeDrag)
 import           Luna.Studio.Action.State.Action             (beginActionWithKey, continueActionWithKey, removeActionFromState,
                                                               updateActionWithKey)
 import           Luna.Studio.Action.State.Model              (createConnectionModel, createCurrentConnectionModel)
-import           Luna.Studio.Action.State.NodeEditor         (getConnection, getExpressionNode, modifyExpressionNodeEditor)
+import           Luna.Studio.Action.State.NodeEditor         (getConnection, getNode, modifyNodeEditor)
 import           Luna.Studio.Action.State.Scene              (translateToWorkspace)
 import           Luna.Studio.Event.Mouse                     (mousePosition, workspacePosition)
 import           Luna.Studio.Prelude
 import           Luna.Studio.React.Event.Connection          (ModifiedEnd (Destination, Source))
 import           Luna.Studio.React.Model.Connection          (ConnectionId, toValidEmpireConnection)
 import qualified Luna.Studio.React.Model.Connection          as Connection
+import           Luna.Studio.React.Model.Node                (Node (Expression))
 import           Luna.Studio.React.Model.Node.ExpressionNode (isCollapsed)
 import qualified Luna.Studio.React.Model.NodeEditor          as NodeEditor
 import           Luna.Studio.State.Action                    (Action (begin, continue, end, update), Connect (Connect), Mode (Click, Drag),
@@ -61,27 +62,30 @@ startConnecting screenMousePos anyPortRef mayModifiedConnId connectMode' = do
     let nodeId = anyPortRef ^. PortRef.nodeId
         portId = anyPortRef ^. PortRef.portId
     mousePos <- translateToWorkspace screenMousePos
-    mayNode  <- getExpressionNode nodeId
+    mayNode  <- getNode nodeId
     withJust mayNode $ \node -> do
-        case (portId, not . isCollapsed $ node) of
-            (InPortId Self, False) -> when (connectMode' == Drag) $ startNodeDrag mousePos nodeId True
-            _                      -> do
-                mayCurrentConnectionModel <- createCurrentConnectionModel anyPortRef mousePos
-                when (isJust mayCurrentConnectionModel) $ do
-                    let action = Connect screenMousePos anyPortRef (isJust mayModifiedConnId) Nothing connectMode'
-                    withJust mayModifiedConnId removeConnection
-                    begin action
-                    void $ updateAllPortsSelfVisibility
-                    modifyExpressionNodeEditor $ do
-                        withJust mayModifiedConnId $ \connId ->
-                            NodeEditor.connections . at connId .= Nothing
-                        NodeEditor.currentConnections .= maybeToList mayCurrentConnectionModel
+        let shouldDoNodeDrag = case node of
+                Expression node' -> portId == InPortId Self && isCollapsed node'
+                _                -> False
+        if shouldDoNodeDrag
+        then when (connectMode' == Drag) $ startNodeDrag mousePos nodeId True
+        else do
+            mayCurrentConnectionModel <- createCurrentConnectionModel anyPortRef mousePos
+            when (isJust mayCurrentConnectionModel) $ do
+                let action = Connect screenMousePos anyPortRef (isJust mayModifiedConnId) Nothing connectMode'
+                withJust mayModifiedConnId removeConnection
+                begin action
+                void $ updateAllPortsSelfVisibility
+                modifyNodeEditor $ do
+                    withJust mayModifiedConnId $ \connId ->
+                        NodeEditor.connections . at connId .= Nothing
+                    NodeEditor.currentConnections .= maybeToList mayCurrentConnectionModel
 
 handleMove :: MouseEvent -> Connect -> Command State ()
 handleMove evt action = when (isNothing $ action ^. connectSnappedPort) $ do
     mousePos                  <- workspacePosition evt
     mayCurrentConnectionModel <- createCurrentConnectionModel (action ^. connectSourcePort) mousePos
-    modifyExpressionNodeEditor $ NodeEditor.currentConnections .= maybeToList mayCurrentConnectionModel
+    modifyNodeEditor $ NodeEditor.currentConnections .= maybeToList mayCurrentConnectionModel
     when (isNothing mayCurrentConnectionModel) $ stopConnecting action
 
 handlePortMouseUp :: AnyPortRef -> Connect -> Command State ()
@@ -94,7 +98,7 @@ snapToPort portRef action =
         mayConnModel <- createConnectionModel (conn ^. ConnectionAPI.src) (conn ^. ConnectionAPI.dst)
         withJust mayConnModel $ \connModel -> do
             update $ action & connectSnappedPort ?~ portRef
-            modifyExpressionNodeEditor $ NodeEditor.currentConnections .= [convert connModel]
+            modifyNodeEditor $ NodeEditor.currentConnections .= [convert connModel]
 
 cancelSnapToPort :: AnyPortRef -> Connect -> Command State ()
 cancelSnapToPort portRef action = when (Just portRef == action ^. connectSnappedPort) $
@@ -109,7 +113,7 @@ handleMouseUp evt action = when (action ^. connectMode == Drag) $ do
 
 stopConnecting :: Connect -> Command State ()
 stopConnecting _ = do
-    modifyExpressionNodeEditor $ NodeEditor.currentConnections .= def
+    modifyNodeEditor $ NodeEditor.currentConnections .= def
     void $ updateAllPortsSelfVisibility
     actions . currentConnectAction .= Nothing
     removeActionFromState connectAction

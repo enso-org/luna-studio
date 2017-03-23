@@ -43,6 +43,6 @@ startPortDragOrConnect evt portRef mode = do
         let doPortDrag = case node of
                 Edge n -> isInputEdge n
                 _      -> False
-        if doPortDrag then
-             startPortDrag   mousePos portRef         mode
+        if False --doPortDrag
+        then startPortDrag   mousePos portRef         mode
         else startConnecting mousePos portRef Nothing mode

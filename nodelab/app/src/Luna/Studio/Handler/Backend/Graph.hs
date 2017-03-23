@@ -49,7 +49,7 @@ import           Luna.Studio.Action.Camera                    (centerGraph)
 import           Luna.Studio.Action.Command                   (Command)
 import           Luna.Studio.Action.State.App                 (setBreadcrumbs)
 import           Luna.Studio.Action.State.Graph               (isCurrentLocation, isCurrentLocationAndGraphLoaded)
-import           Luna.Studio.Action.State.NodeEditor          (modifyExpressionNodeEditor, updateMonads)
+import           Luna.Studio.Action.State.NodeEditor          (modifyNodeEditor, updateMonads)
 import           Luna.Studio.Action.UUID                      (isOwnRequest)
 import qualified Luna.Studio.Batch.Workspace                  as Workspace
 import           Luna.Studio.Event.Batch                      (Event (..))
@@ -155,7 +155,7 @@ handle (Event.Batch ev) = Just $ case ev of
     CollaborationUpdate update -> do
         shouldProcess <- isCurrentLocationAndGraphLoaded $ update ^. CollaborationUpdate.location
         let clientId = update ^. CollaborationUpdate.clientId
-            touchNodes nodeIds setter = modifyExpressionNodeEditor $
+            touchNodes nodeIds setter = modifyNodeEditor $
                 forM_ nodeIds $ \nid -> NodeEditor.expressionNodes . at nid %= fmap setter
         myClientId   <- use $ Global.backend . Global.clientId
         currentTime  <- use Global.lastEventTimestamp

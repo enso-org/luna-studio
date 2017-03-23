@@ -75,6 +75,7 @@ module Luna.Studio.Action.Basic
     , selectAll
     , selectNodes
     , selectPreviousNodes
+    , setEdgeMode
     , setNodeCode
     , setNodeExpression
     , setNodeMeta
@@ -82,6 +83,7 @@ module Luna.Studio.Action.Basic
     , setNodesMeta
     , setNodeValue
     , setPortDefault
+    , toggleEdgeMode
     , toggleSelect
     , toggleSelectedNodesMode
     , toggleSelectedNodesUnfold
@@ -124,6 +126,7 @@ import           Luna.Studio.Action.Basic.SearchNodes         (localSetSearcherH
 import           Luna.Studio.Action.Basic.SelectNode          (dropSelectionHistory, modifySelectionHistory, selectAll, selectNodes,
                                                                selectPreviousNodes, toggleSelect, unselectAll)
 import           Luna.Studio.Action.Basic.SetCode             (localSetCode)
+import           Luna.Studio.Action.Basic.SetEdgeMode         (setEdgeMode, toggleEdgeMode)
 import           Luna.Studio.Action.Basic.SetNodeCode         (localSetNodeCode, setNodeCode)
 import           Luna.Studio.Action.Basic.SetNodeExpression   (localSetNodeExpression, setNodeExpression)
 import           Luna.Studio.Action.Basic.SetNodeMeta         (localMoveNode, localMoveNodes, localSetNodeMeta, localSetNodesMeta,

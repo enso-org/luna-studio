@@ -16,7 +16,7 @@ import           Luna.Studio.Action.Basic              (modifyCamera)
 import           Luna.Studio.Action.Command            (Command)
 import           Luna.Studio.Action.State.Action       (beginActionWithKey, continueActionWithKey, removeActionFromState,
                                                         updateActionWithKey)
-import           Luna.Studio.Action.State.NodeEditor   (getNodeEditor, modifyExpressionNodeEditor)
+import           Luna.Studio.Action.State.NodeEditor   (getNodeEditor, modifyNodeEditor)
 import           Luna.Studio.Action.State.Scene        (getScreenCenter)
 import           Luna.Studio.Data.CameraTransformation (logicalToScreen, screenToLogical)
 import           Luna.Studio.Data.Matrix               (homothetyMatrix, invertedHomothetyMatrix)
@@ -71,7 +71,7 @@ zoomDrag actPos action = do
     zoomCamera fixedPoint scale
 
 resetZoom :: Command State ()
-resetZoom = modifyExpressionNodeEditor $ do
+resetZoom = modifyNodeEditor $ do
     screenTransform . logicalToScreen %= (setElem 1 (1,1) . setElem 1 (2,2))
     screenTransform . screenToLogical %= (setElem 1 (1,1) . setElem 1 (2,2))
 
