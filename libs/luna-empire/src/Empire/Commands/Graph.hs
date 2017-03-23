@@ -61,7 +61,8 @@ import           Empire.Data.Graph               (Graph)
 import qualified Empire.Data.Graph               as Graph
 import           Empire.Data.Layers              (Marker)
 
-import           Empire.API.Data.Breadcrumb      as Breadcrumb (Breadcrumb(..), Named, BreadcrumbItem(..))
+import           Empire.API.Data.Breadcrumb      (Breadcrumb, Named, BreadcrumbItem)
+import qualified Empire.API.Data.Breadcrumb      as Breadcrumb
 import qualified Empire.API.Data.Connection      as Connection
 import           Empire.API.Data.Connection      (Connection (..))
 import           Empire.API.Data.PortDefault    (PortDefault (Constant))

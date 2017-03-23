@@ -8,8 +8,13 @@ import           Prologue
 
 
 
-data BreadcrumbItem = Lambda { _nodeId     :: NodeId
-                             } deriving (Show, Eq, Ord, Generic, NFData)
+data Target = TopLevel
+            | Arg' Int
+            deriving (Eq, Generic, NFData, Ord, Show)
+
+data BreadcrumbItem = Lambda NodeId
+                    | Arg Int
+                    deriving (Show, Eq, Ord, Generic, NFData)
 
 data Named a        = Named  { _name       :: Text
                              , _breadcrumb :: a
@@ -27,3 +32,7 @@ instance Binary BreadcrumbItem
 
 instance Default (Breadcrumb a) where
     def = Breadcrumb def
+
+appendTarget :: Target -> Breadcrumb BreadcrumbItem -> Breadcrumb BreadcrumbItem
+appendTarget TopLevel = id
+appendTarget (Arg' i) = items %~ (++ [Arg i])

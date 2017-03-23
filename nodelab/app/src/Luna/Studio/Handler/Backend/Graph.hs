@@ -179,9 +179,9 @@ handle (Event.Batch ev) = Just $ case ev of
     GetSubgraphsResponse response -> handleResponse response success doNothing where
         request        = response ^. Response.request
         success result = do
-            let parentId = request ^. GetSubgraphs.location
-                                    . GraphLocation.breadcrumb
-                                    . Breadcrumb.items . to last . Breadcrumb.nodeId
+            let Breadcrumb.Lambda parentId = request ^. GetSubgraphs.location
+                                                      . GraphLocation.breadcrumb
+                                                      . Breadcrumb.items . to last
             localMerge parentId $ result ^. GetSubgraphs.graphs
 
 

@@ -222,7 +222,7 @@ handleGetSubgraphs :: Request GetSubgraphs.Request -> StateT Env BusT ()
 handleGetSubgraphs = modifyGraph defInverse action replyResult where
     action (GetSubgraphs.Request location) = do
         graph <- Graph.getGraph location
-        return $ GetSubgraphs.Result $ Map.singleton (location ^. GraphLocation.breadcrumb . Breadcrumb.items . to last) graph --FIXME: should return multiple graphs
+        return $ GetSubgraphs.Result $ Map.singleton Breadcrumb.TopLevel graph --FIXME: should return multiple graphs
 
 handleMovePort :: Request MovePort.Request -> StateT Env BusT ()
 handleMovePort = modifyGraph defInverse action replyResult where

@@ -12,12 +12,12 @@ import qualified Data.UUID.Types                        as UUID
 import           Prologue
 import           Text.Read                              (readMaybe)
 
-import           Empire.API.Atom.GetBuffer              as GetBuffer
-import           Empire.API.Atom.Substitute             as Substitute
 import           Empire.API.Atom.CloseFile              as CloseFile
+import           Empire.API.Atom.GetBuffer              as GetBuffer
 import           Empire.API.Atom.OpenFile               as OpenFile
 import           Empire.API.Atom.SaveFile               as SaveFile
 import           Empire.API.Atom.SetProject             as SetProject
+import           Empire.API.Atom.Substitute             as Substitute
 import           Empire.API.Control.EmpireStarted       as EmpireStarted
 import           Empire.API.Data.Breadcrumb             as Breadcrumb
 import           Empire.API.Data.Connection             as Connection
@@ -82,10 +82,12 @@ instance ToJSON Library.Library
 instance ToJSON a   => ToJSON (Breadcrumb.Breadcrumb a)
 instance ToJSON a   => ToJSON (Breadcrumb.Named a)
 instance               ToJSON Breadcrumb.BreadcrumbItem
+instance               ToJSON Breadcrumb.Target
 
 instance FromJSON a => FromJSON (Breadcrumb.Breadcrumb a)
 instance FromJSON a => FromJSON (Breadcrumb.Named a)
 instance               FromJSON Breadcrumb.BreadcrumbItem
+instance               FromJSON Breadcrumb.Target
 
 instance ToJSON GraphLocation.GraphLocation
 
@@ -107,8 +109,8 @@ instance {-# OVERLAPPING #-} ToJSON   v => ToJSON   (Map AnyPortRef v) where toJ
 instance {-# OVERLAPPING #-} FromJSON v => FromJSON (Map AnyPortRef v) where parseJSON = fmap Map.fromList . parseJSON
 instance {-# OVERLAPPING #-} ToJSON   v => ToJSON   (Map InPortRef  v) where toJSON = toJSON . Map.toList
 instance {-# OVERLAPPING #-} FromJSON v => FromJSON (Map InPortRef  v) where parseJSON = fmap Map.fromList . parseJSON
-instance {-# OVERLAPPING #-} ToJSON   v => ToJSON   (Map BreadcrumbItem v) where toJSON = toJSON . Map.toList
-instance {-# OVERLAPPING #-} FromJSON v => FromJSON (Map BreadcrumbItem v) where parseJSON = fmap Map.fromList . parseJSON
+instance {-# OVERLAPPING #-} ToJSON   v => ToJSON   (Map Breadcrumb.Target v) where toJSON = toJSON . Map.toList
+instance {-# OVERLAPPING #-} FromJSON v => FromJSON (Map Breadcrumb.Target v) where parseJSON = fmap Map.fromList . parseJSON
 
 instance ToJSON Port.Port
 instance FromJSON Port.Port

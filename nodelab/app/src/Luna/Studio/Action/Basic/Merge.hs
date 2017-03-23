@@ -4,7 +4,7 @@ module Luna.Studio.Action.Basic.Merge where
 import qualified Data.HashMap.Strict                         as HashMap
 import           Data.Map.Lazy                               (Map)
 import qualified Data.Map.Lazy                               as Map
-import           Empire.API.Data.Breadcrumb                  (BreadcrumbItem)
+import           Empire.API.Data.Breadcrumb                  (Target)
 import           Empire.API.Data.Graph                       (Graph)
 import qualified Empire.API.Data.Graph                       as GraphAPI
 import           Luna.Studio.Action.Basic.AddConnection      (localAddConnections)
@@ -20,7 +20,7 @@ import           Luna.Studio.React.Model.Node.ExpressionNode (ExpandedMode (Func
 import           Luna.Studio.State.Global                    (State)
 
 
-localMerge :: NodeId -> Map BreadcrumbItem Graph -> Command State ()
+localMerge :: NodeId -> Map Target Graph -> Command State ()
 localMerge parentId graphs = do
     subgraphs <- forM (Map.toList graphs) $ \(k, graph) -> do
         let allNodes           = (convert <$> graph ^. GraphAPI.nodes)
