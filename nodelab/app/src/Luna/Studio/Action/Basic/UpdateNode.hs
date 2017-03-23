@@ -10,8 +10,9 @@ import           Luna.Studio.Action.State.Model              (shouldDisplayPortS
 import qualified Luna.Studio.Action.State.NodeEditor         as NodeEditor
 import           Luna.Studio.Prelude
 import           Luna.Studio.React.Model.Node                (EdgeNode, ExpressionNode, Node (Edge, Expression), NodeId, nodeId, ports)
-import           Luna.Studio.React.Model.Node.EdgeNode       (mode)
+import qualified Luna.Studio.React.Model.Node.EdgeNode       as Edge
 import           Luna.Studio.React.Model.Node.ExpressionNode (isSelected)
+import qualified Luna.Studio.React.Model.Node.ExpressionNode as Node
 import           Luna.Studio.React.Model.Port                (visible)
 import           Luna.Studio.State.Global                    (State)
 
@@ -33,8 +34,8 @@ localUpdateEdgeNode node = NodeEditor.getEdgeNode (node ^. nodeId) >>= \mayNode 
     case mayNode of
         Nothing       -> return False
         Just prevNode -> do
-            let edgeMode = prevNode ^. mode
-            NodeEditor.addEdgeNode $ node & mode .~ edgeMode
+            let edgeMode = prevNode ^. Edge.mode
+            NodeEditor.addEdgeNode $ node & Edge.mode .~ edgeMode
             updateScene
             return True
 
@@ -44,9 +45,11 @@ localUpdateExpressionNode node = NodeEditor.getExpressionNode (node ^. nodeId) >
         Nothing       -> return False
         Just prevNode -> do
             let selected = prevNode ^. isSelected
+                mode     = prevNode ^. Node.mode
             portSelfVis <- shouldDisplayPortSelf node
             NodeEditor.addExpressionNode $ node & isSelected                           .~ selected
                                                 & ports . ix (InPortId Self) . visible .~ portSelfVis
+                                                & Node.mode                            .~ mode
             void . redrawConnectionsForNode $ node ^. nodeId
             return True
 
