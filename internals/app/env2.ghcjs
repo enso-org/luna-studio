@@ -4,7 +4,7 @@ var app              = require('./app2'),
     config           = require('./config');
     atomCallback2 = require('./atom-callback2')();
 
-var run = function(websocket) {
+var run = function() {
 
 GHCJS_CODE_BE_THERE
 
