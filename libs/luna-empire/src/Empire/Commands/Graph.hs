@@ -212,11 +212,6 @@ addSubgraph loc nodes conns = withTC loc False $ do
     forM_ conns $ \(Connection src dst) -> connectNoTC loc src (InPortRef' dst)
     return newNodes
 
-descendInto :: GraphLocation -> NodeId -> GraphLocation
-descendInto (GraphLocation pid lid breadcrumb) nid = GraphLocation pid lid breadcrumb'
-    where
-        breadcrumb' = coerce $ coerce breadcrumb ++ [Breadcrumb.Lambda nid]
-
 removeNodes :: GraphLocation -> [NodeId] -> Empire ()
 removeNodes loc nodeIds = withTC loc False $ runASTOp $ do
     forM_ nodeIds removeNodeNoTC
@@ -532,7 +527,7 @@ getConnections :: GraphLocation -> Empire [(OutPortRef, InPortRef)]
 getConnections loc = withTC loc True $ runASTOp $ view APIGraph.connections <$> GraphBuilder.buildGraph
 
 decodeLocation :: GraphLocation -> Empire (Breadcrumb (Named BreadcrumbItem))
-decodeLocation loc@(GraphLocation _ _ crumbs) = withGraph loc $ GraphBuilder.decodeBreadcrumbs crumbs
+decodeLocation loc@(GraphLocation _ crumbs) = withGraph loc $ GraphBuilder.decodeBreadcrumbs crumbs
 
 renameNode :: GraphLocation -> NodeId -> Text -> Empire ()
 renameNode loc nid name = withTC loc False $ do
@@ -567,7 +562,7 @@ withTC loc flush cmd = withGraph loc $ do
     return res
 
 withGraph :: GraphLocation -> Command Graph a -> Empire a
-withGraph (GraphLocation pid lid breadcrumb) = withBreadcrumb pid lid breadcrumb
+withGraph (GraphLocation file breadcrumb) = withBreadcrumb file breadcrumb
 
 getOutEdges :: ASTOp m => NodeId -> m [InPortRef]
 getOutEdges nodeId = do

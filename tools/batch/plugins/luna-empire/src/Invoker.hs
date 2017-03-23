@@ -49,8 +49,8 @@ import qualified ZMQ.Bus.Data.Message              as Message
 import qualified ZMQ.Bus.EndPoint                  as EP
 
 
-toGraphLocation :: String -> String -> GraphLocation
-toGraphLocation pid lid = GraphLocation.GraphLocation (read pid) (read lid) (Breadcrumb.Breadcrumb [])
+toGraphLocation :: FilePath -> GraphLocation
+toGraphLocation file = GraphLocation.GraphLocation file (Breadcrumb.Breadcrumb [])
 
 patterns :: Docopt
 patterns = [docoptFile|src/InvokerUsage.txt|]
@@ -62,51 +62,44 @@ main = do
     args <- parseArgsOrExit patterns =<< getArgs
     endPoints <- EP.clientFromConfig <$> Config.load
     when (args `isPresent` command "addNode") $ do
-        pid       <- args `getArgOrExit` argument "pid"
-        lid       <- args `getArgOrExit` argument "lid"
+        file      <- args `getArgOrExit` argument "file"
         nodeId    <- args `getArgOrExit` argument "nodeId"
         expr      <- args `getArgOrExit` argument "expression"
         x         <- args `getArgOrExit` argument "x"
         y         <- args `getArgOrExit` argument "y"
-        addNode endPoints (toGraphLocation pid lid) (read nodeId) expr (read x) (read y)
+        addNode endPoints (toGraphLocation file) (read nodeId) expr (read x) (read y)
     when (args `isPresent` command "removeNode") $ do
-        pid       <- args `getArgOrExit` argument "pid"
-        lid       <- args `getArgOrExit` argument "lid"
+        file      <- args `getArgOrExit` argument "file"
         nodeId    <- args `getArgOrExit` argument "nodeId"
-        removeNode endPoints (toGraphLocation pid lid) (read nodeId)
+        removeNode endPoints (toGraphLocation file) (read nodeId)
     when (args `isPresent` command "setNodeMeta") $ do
-        pid       <- args `getArgOrExit` argument "pid"
-        lid       <- args `getArgOrExit` argument "lid"
+        file      <- args `getArgOrExit` argument "file"
         nodeId    <- args `getArgOrExit` argument "nodeId"
         x         <- args `getArgOrExit` argument "x"
         y         <- args `getArgOrExit` argument "y"
         req       <- args `getArgOrExit` argument "req"
-        setNodeMeta endPoints (toGraphLocation pid lid) (read nodeId) (read x) (read y) (read req)
+        setNodeMeta endPoints (toGraphLocation file) (read nodeId) (read x) (read y) (read req)
     when (args `isPresent` command "connect") $ do
-        pid       <- args `getArgOrExit` argument "pid"
-        lid       <- args `getArgOrExit` argument "lid"
+        file      <- args `getArgOrExit` argument "file"
         srcNodeId <- args `getArgOrExit` argument "srcNodeId"
         outPort   <- args `getArgOrExit` argument "outPort"
         dstNodeId <- args `getArgOrExit` argument "dstNodeId"
         inPort    <- args `getArgOrExit` argument "inPort"
-        connect endPoints (toGraphLocation pid lid) (read srcNodeId) (read outPort) (read dstNodeId) (read inPort)
+        connect endPoints (toGraphLocation file) (read srcNodeId) (read outPort) (read dstNodeId) (read inPort)
     when (args `isPresent` command "disconnect") $ do
-        pid       <- args `getArgOrExit` argument "pid"
-        lid       <- args `getArgOrExit` argument "lid"
+        file      <- args `getArgOrExit` argument "file"
         dstNodeId <- args `getArgOrExit` argument "dstNodeId"
         inPort    <- args `getArgOrExit` argument "inPort"
-        disconnect endPoints (toGraphLocation pid lid) (read dstNodeId) (read inPort)
+        disconnect endPoints (toGraphLocation file) (read dstNodeId) (read inPort)
     when (args `isPresent` command "setValue") $ do
-        pid       <- args `getArgOrExit` argument "pid"
-        lid       <- args `getArgOrExit` argument "lid"
+        file      <- args `getArgOrExit` argument "file"
         nodeId    <- args `getArgOrExit` argument "nodeId"
         portId    <- args `getArgOrExit` argument "portId"
         value     <- args `getArgOrExit` argument "value"
-        setPortValue endPoints (toGraphLocation pid lid) (read nodeId) (read portId) (read value)
+        setPortValue endPoints (toGraphLocation file) (read nodeId) (read portId) (read value)
     when (args `isPresent` command "getProgram") $ do
-        pid       <- args `getArgOrExit` argument "pid"
-        lid       <- args `getArgOrExit` argument "lid"
-        getProgram endPoints (toGraphLocation pid lid)
+        file      <- args `getArgOrExit` argument "file"
+        getProgram endPoints (toGraphLocation file)
     when (args `isPresent` command "createProject") $ do
         name      <- args `getArgOrExit` argument "name"
         createProject endPoints name
@@ -121,13 +114,11 @@ main = do
         pid       <- args `getArgOrExit` argument "pid"
         listLibraries endPoints $ read pid
     when (args `isPresent` command "graphviz") $ do
-        pid       <- args `getArgOrExit` argument "pid"
-        lid       <- args `getArgOrExit` argument "lid"
-        environmentDumpGraphviz endPoints $ toGraphLocation pid lid
+        file      <- args `getArgOrExit` argument "file"
+        environmentDumpGraphviz endPoints $ toGraphLocation file
     when (args `isPresent` command "typecheck") $ do
-        pid       <- args `getArgOrExit` argument "pid"
-        lid       <- args `getArgOrExit` argument "lid"
-        typecheck endPoints $ toGraphLocation pid lid
+        file      <- args `getArgOrExit` argument "file"
+        typecheck endPoints $ toGraphLocation file
 
 sendToBus :: (Topic.MessageTopic (Request a), Bin.Binary a) => EP.BusEndPoints -> a -> IO ()
 sendToBus endPoints msg = do

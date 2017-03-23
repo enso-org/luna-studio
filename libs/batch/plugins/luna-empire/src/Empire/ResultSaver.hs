@@ -36,7 +36,6 @@ import           Empire.API.Request                (Request (..))
 import qualified Empire.API.Response               as Response
 import qualified Empire.API.Topic                  as Topic
 import qualified Empire.Commands.Library           as Library
-import qualified Empire.Commands.Project           as Project
 import qualified Empire.Empire                     as Empire
 import qualified Empire.Handlers                   as Handlers
 import           Empire.ResultSaver.Env            (ResultSaverEnv)
@@ -139,7 +138,7 @@ importProjectResponseHandler response = do
           if requestId /= reqId then return ()
                                 else do
                                     uuid <- liftIO $ UUID.nextRandom
-                                    let request = Request uuid Nothing $ GetProgram.Request $ GraphLocation projectId 0 (Breadcrumb [])
+                                    let request = Request uuid Nothing $ GetProgram.Request $ GraphLocation $notImplemented (Breadcrumb [])
                                     sendToBus request
                                     Env.state .= Env.ProgramRequested uuid
         _ -> return ()

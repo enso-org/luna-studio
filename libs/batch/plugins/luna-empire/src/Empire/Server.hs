@@ -31,7 +31,6 @@ import           Empire.Data.Graph                (Graph, ast)
 import qualified Empire.Commands.AST              as AST
 import qualified Empire.Commands.Library          as Library
 import qualified Empire.Commands.Persistence      as Persistence
-import qualified Empire.Commands.Project          as Project
 import qualified Empire.Commands.Typecheck        as Typecheck
 import qualified Empire.Empire                    as Empire
 import           Empire.Env                       (Env)

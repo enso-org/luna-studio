@@ -22,8 +22,8 @@ import           Empire.API.Data.Project         (ProjectId)
 import           Empire.Commands.Library         (withLibrary)
 import           Empire.Empire                   (Command, Empire, runEmpire)
 
-withBreadcrumb :: ProjectId -> LibraryId -> Breadcrumb BreadcrumbItem -> Command Graph.Graph a -> Empire a
-withBreadcrumb pid lid breadcrumb act = withLibrary pid lid $ zoom Library.body $ do
+withBreadcrumb :: FilePath -> Breadcrumb BreadcrumbItem -> Command Graph.Graph a -> Empire a
+withBreadcrumb file breadcrumb act = withLibrary file $ zoom Library.body $ do
     graph <- get
     let  breadcrumbHierarchy = graph ^. Graph.breadcrumbHierarchy
     case breadcrumbHierarchy `navigateTo` breadcrumb of

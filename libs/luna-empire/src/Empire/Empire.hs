@@ -11,7 +11,7 @@ import           Empire.API.Data.Project       (ProjectId)
 import           Empire.API.Data.TypeRep       (TypeRep)
 import           Empire.Data.AST               (SomeASTException)
 import           Empire.Data.Graph             (Graph, defaultGraph)
-import           Empire.Data.Project           (Project)
+import           Empire.Data.Library           (Library)
 import           Empire.Prelude
 
 import           Control.Concurrent.STM.TChan  (TChan)
@@ -24,9 +24,9 @@ import qualified Data.Map.Lazy                 as Map
 
 type Error = String
 
-type ProjectManager = Map ProjectId Project
+type ActiveFiles = Map FilePath Library
 
-newtype Env = Env { _projectManager :: ProjectManager } deriving Show
+newtype Env = Env { _activeFiles :: ActiveFiles } deriving Show
 makeLenses ''Env
 
 instance Default Env where
