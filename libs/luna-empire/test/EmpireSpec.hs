@@ -186,7 +186,7 @@ spec = around withChannels $ parallel $ do
                 Graph.addNode top u1 "4" def
                 graphIDs $ top |> u1
             case res of
-                Left err -> case stripPrefix "CannotEnterNodeException" err of
+                Left err -> case stripPrefix "Breadcrumb" err of
                     Just _ -> return ()
                     _      -> expectationFailure err
                 Right _  -> expectationFailure "should throw"
@@ -269,9 +269,9 @@ spec = around withChannels $ parallel $ do
                 Graph.addNode top u1 "a: b: a + b" def
                 Graph.withGraph (top |> u1) $ use $ breadcrumbHierarchy . BH.children
             withResult res $ \(toList -> mapping) -> do
-                let isLambdaNode n = case fromJust $ n ^. BH.self of
-                        (_, AnonymousNode _) -> True
-                        _                    -> False
+                let isLambdaNode n = case n ^. BH.self of
+                        AnonymousNode _ -> True
+                        _               -> False
                     lambdaNodes = filter isLambdaNode mapping
                 lambdaNodes `shouldSatisfy` (not . null)
         it "puts + inside plus lambda" $ \env -> do
@@ -368,7 +368,9 @@ spec = around withChannels $ parallel $ do
             u1 <- mkUUID
             res <- evalEmp env $ do
                 Graph.addNode top u1 "1" def
+                Graph.withGraph top $ runASTOp $ AST.dumpGraphViz "topkek1"
                 node  <- Graph.setNodeExpression top u1 "a: a"
+                Graph.withGraph top $ runASTOp $ AST.dumpGraphViz "topkek"
                 nodes <- Graph.getNodes top
                 return (node, nodes)
             withResult res $ \(node, nodes) -> do

@@ -15,7 +15,7 @@ module Empire.Data.Graph (
   , ASTState(..)
   ) where
 
-import           Empire.Data.BreadcrumbHierarchy   (BItem)
+import           Empire.Data.BreadcrumbHierarchy   (BParent)
 import           Empire.Prelude
 
 import           Control.Monad.State               (MonadState(..), StateT, evalStateT, lift)
@@ -45,7 +45,7 @@ import           Web.Browser                (openBrowser)
 
 
 data Graph = Graph { _ast                   :: AST
-                   , _breadcrumbHierarchy   :: BItem
+                   , _breadcrumbHierarchy   :: BParent
                    , _lastNameId            :: Integer
                    } deriving Show
 

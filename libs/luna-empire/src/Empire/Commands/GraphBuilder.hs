@@ -42,7 +42,7 @@ import           Empire.API.Data.Node              (NodeId)
 import qualified Empire.API.Data.Node              as API
 import           Empire.API.Data.Port              (InPort (..), OutPort (..), Port (..), PortId (..), PortState (..))
 import qualified Empire.API.Data.Port              as Port
-import           Empire.API.Data.PortRef           (InPortRef (..), OutPortRef (..))
+import           Empire.API.Data.PortRef           (InPortRef (..), OutPortRef (..), srcNodeId)
 import           Empire.API.Data.TypeRep           (TypeRep(TLam, TStar, TCons))
 
 import           Empire.ASTOp                      (ASTOp, match, runASTOp)
@@ -74,18 +74,8 @@ instance Exception CannotEnterNodeException where
     toException = astExceptionToException
     fromException = astExceptionFromException
 
-throwIfCannotEnter :: ASTOp m => m ()
-throwIfCannotEnter = do
-    parent <- use $ Graph.breadcrumbHierarchy . BH.self
-    case parent of
-        Just (node, ref) -> do
-            canEnter <- ASTRead.canEnterNode $ BH.getAnyRef ref
-            when (not canEnter) $ throwM $ CannotEnterNodeException node
-        _ -> return ()
-
 buildGraph :: ASTOp m => m API.Graph
 buildGraph = do
-    throwIfCannotEnter
     connections <- buildConnections
     nodes <- buildNodes
     edges <- buildEdgeNodes connections
@@ -117,26 +107,8 @@ buildEdgeNodes connections = getEdgePortMapping >>= \p -> case p of
         return $ Just (inputEdge, outputEdge)
     _ -> return Nothing
 
-getOrCreatePortMapping :: ASTOp m => m (NodeId, NodeId)
-getOrCreatePortMapping = do
-    existingMapping <- use $ Graph.breadcrumbHierarchy . BH.portMapping
-    case existingMapping of
-        Just m -> return m
-        _      -> do
-            ids <- liftIO $ (,) <$> UUID.nextRandom <*> UUID.nextRandom
-            Graph.breadcrumbHierarchy . BH.portMapping ?= ids
-            return ids
-
 getEdgePortMapping :: (MonadIO m, ASTOp m) => m (Maybe (NodeId, NodeId))
-getEdgePortMapping = do
-    currentBreadcrumb <- use $ Graph.breadcrumbHierarchy . BH.self
-    case currentBreadcrumb of
-        Just (id', ref) -> do
-            isLambda <- ASTRead.rhsIsLambda $ BH.getAnyRef ref
-            if isLambda
-                then Just <$> getOrCreatePortMapping
-                else return Nothing
-        _ -> return Nothing
+getEdgePortMapping = preuse $ Graph.breadcrumbHierarchy . BH._LambdaParent . BH.portMapping
 
 buildNode :: ASTOp m => NodeId -> m API.Node
 buildNode nid = do
@@ -442,19 +414,10 @@ getOutputEdgeInputs inputEdge outputEdge = do
 
 nodeConnectedToOutput :: ASTOp m => m (Maybe NodeId)
 nodeConnectedToOutput = do
-    lambda <- preuse $ Graph.breadcrumbHierarchy . BH.self . _Just . _1
-    case lambda of
-        Nothing -> return Nothing
-        _       -> do
-            edges <- getEdgePortMapping
-            case edges of
-                Just (i, o) -> do
-                    connection <- getOutputEdgeInputs i o
-                    case connection of
-                        Nothing -> return Nothing
-                        Just (OutPortRef nid _, _) -> return $ Just nid
-                _           -> return Nothing
-
+    edges  <- preuse $ Graph.breadcrumbHierarchy . BH._LambdaParent . BH.portMapping
+    fmap join $ forM edges $ \(i, o) -> do
+        connection <- getOutputEdgeInputs i o
+        return $ (view $ _1 . srcNodeId) <$> connection
 
 resolveInputNodeId :: ASTOp m => Maybe (NodeId, NodeId) -> [NodeRef] -> NodeRef -> m (Maybe OutPort, Maybe NodeId)
 resolveInputNodeId edgeNodes lambdaArgs ref = do
@@ -468,13 +431,10 @@ resolveInputNodeId edgeNodes lambdaArgs ref = do
 
 getOuterLambdaArguments :: ASTOp m => m [NodeRef]
 getOuterLambdaArguments = do
-    lambda <- preuse $ Graph.breadcrumbHierarchy . BH.self . _Just . _1
-    case lambda of
-        Just lambda' -> do
-            ref <- GraphUtils.getASTTarget lambda'
-            lambdaArgs <- ASTDeconstruct.extractArguments ref
-            return lambdaArgs
-        _ -> return []
+    refMay <- ASTRead.getCurrentASTTarget
+    case refMay of
+        Just ref -> ASTDeconstruct.extractArguments ref
+        _        -> return []
 
 outIndexToProjection :: Maybe Int -> OutPort
 outIndexToProjection Nothing = All
