@@ -10,7 +10,7 @@ import           Luna.Studio.Action.Command                (Command)
 import           Luna.Studio.Action.State.NodeEditor       (getConnectionsContainingNode, getEdgeNode)
 import           Luna.Studio.Prelude
 import           Luna.Studio.React.Model.Connection        (connectionId, dst, src)
-import           Luna.Studio.React.Model.Node.EdgeNode     (hasPort, isInputEdge, ports)
+import           Luna.Studio.React.Model.Node.EdgeNode     (countProjectionPorts, hasPort, isInputEdge, ports)
 import           Luna.Studio.React.Model.Port              (OutPort (Projection), PortId (OutPortId), portId, toPortsMap)
 import           Luna.Studio.State.Global                  (State)
 
@@ -20,9 +20,9 @@ removePort portRef = whenM (localRemovePort portRef) $ Batch.removePort portRef
 
 localRemovePort :: AnyPortRef -> Command State Bool
 localRemovePort (OutPortRef' (OutPortRef nid pid@(Projection pos))) = do
-    mayNode      <- getEdgeNode nid
+    mayNode <- getEdgeNode nid
     flip (maybe (return False)) mayNode $ \node ->
-        if (not $ isInputEdge node) || (not $ hasPort (OutPortId pid) node)
+        if (not $ isInputEdge node) || (not $ hasPort (OutPortId pid) node) || countProjectionPorts node == 1
             then return False
             else do
                 let oldPorts    = Map.elems $ Map.delete (OutPortId pid) $ node ^. ports
