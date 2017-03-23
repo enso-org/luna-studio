@@ -26,7 +26,7 @@ import           Luna.Studio.React.Model.Port          (DraggedPort, OutPort (Pr
 import qualified Luna.Studio.React.Model.Port          as Port
 import           Luna.Studio.React.Store               (Ref, dispatch)
 import           Luna.Studio.React.View.Field          (singleField_)
-import           Luna.Studio.React.View.Port           (handlers, jsShow2)
+import           Luna.Studio.React.View.Port           (handleClick, handleMouseDown, handleMouseUp, jsShow2)
 import           Luna.Studio.React.View.Style          (plainPath, plainRect)
 import qualified Luna.Studio.React.View.Style          as Style
 import           React.Flux                            hiding (view)
@@ -42,6 +42,9 @@ portHandlers ref AddRemove portRef =
     ]
 portHandlers ref MoveConnect portRef =
     [ onMouseDown $ \e _ -> [stopPropagation e]
+    , onClick     $ handleClick     ref portRef
+    , onMouseDown $ handleMouseDown ref portRef
+    , onMouseUp   $ handleMouseUp   ref portRef
     ]
 
 edgeSidebar_ :: Ref App -> Maybe DraggedPort -> EdgeNode -> ReactElementM ViewEventHandler ()
@@ -64,7 +67,7 @@ edgeSidebar_ ref _mayDraggedPort node = do
         div_
             [ "key"       $= "EdgePortsBody"
             , "id"        $= if isInputEdge node then inputSidebarId else outputSidebarId
-            , "className" $= Style.prefixFromList [ "edgeports__body" ]
+            , "className" $= Style.prefixFromList [ "edgeports__body", "noselect" ]
             ] $ do
             -- TODO[LJK]: Find out how self port works in this case
             -- when (isInputEdge node) $
@@ -182,7 +185,7 @@ edgePort_ ref mode nid p = when (p ^. Port.visible) $ do
                 & Field.onCancel .~ Just (const $ UI.EdgeEvent $ Edge.PortNameDiscard portRef)
                 & Field.onAccept .~ Just (UI.EdgeEvent . Edge.PortNameApply portRef . convert)
         else
-            div_ [ "className" $= Style.prefix "edgeport__name"
+            div_ [ "className" $= Style.prefixFromList ["edgeport__name", "noselect"]
                  , onDoubleClick $ \_ _ -> dispatch ref $ UI.EdgeEvent $ Edge.PortNameStartEdit portRef
                  ] $ elemString $ p ^. Port.name
 

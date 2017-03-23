@@ -37,11 +37,11 @@ import           Text.ScopeSearcher.Item                     (Items, isElement, 
 getNodeEditor :: Command State NodeEditor
 getNodeEditor = get nodeEditor
 
-modifyExpressionNodeEditor :: M.State NodeEditor r -> Command State r
-modifyExpressionNodeEditor = modify nodeEditor
+modifyNodeEditor :: M.State NodeEditor r -> Command State r
+modifyNodeEditor = modify nodeEditor
 
 resetGraph :: Command State ()
-resetGraph = modifyExpressionNodeEditor $ do
+resetGraph = modifyNodeEditor $ do
     expressionNodes     .= def
     edgeNodes           .= def
     monads              .= def
@@ -76,10 +76,10 @@ addNode (Expression node) = addExpressionNode node
 addNode (Edge edge)       = addEdgeNode edge
 
 addExpressionNode :: ExpressionNode -> Command State ()
-addExpressionNode node = modifyExpressionNodeEditor $ expressionNodes . at (node ^. nodeId) ?= node
+addExpressionNode node = modifyNodeEditor $ expressionNodes . at (node ^. nodeId) ?= node
 
 addEdgeNode :: EdgeNode -> Command State ()
-addEdgeNode node = modifyExpressionNodeEditor $ edgeNodes . at (node ^. nodeId) ?= node
+addEdgeNode node = modifyNodeEditor $ edgeNodes . at (node ^. nodeId) ?= node
 
 getNode :: NodeId -> Command State (Maybe Node)
 getNode nid = do
@@ -120,7 +120,7 @@ modifyEdgeNode :: Monoid r => NodeId -> M.State EdgeNode r -> Command State r
 modifyEdgeNode nid = modify (nodeEditor . edgeNodes . at nid) . zoom traverse
 
 removeNode :: NodeId -> Command State ()
-removeNode nid = modifyExpressionNodeEditor $ do
+removeNode nid = modifyNodeEditor $ do
     expressionNodes . at nid .= Nothing
     edgeNodes       . at nid .= Nothing
 
@@ -133,13 +133,13 @@ updateNodes nodes = do
     updateEdgeNodes       $ nodes ^.. traverse . _Edge
 
 updateEdgeNodes :: [EdgeNode] -> Command State ()
-updateEdgeNodes update = modifyExpressionNodeEditor $ edgeNodes .= toEdgeNodesMap update
+updateEdgeNodes update = modifyNodeEditor $ edgeNodes .= toEdgeNodesMap update
 
 updateExpressionNodes :: [ExpressionNode] -> Command State ()
-updateExpressionNodes update = modifyExpressionNodeEditor $ expressionNodes .= toExpressionNodesMap update
+updateExpressionNodes update = modifyNodeEditor $ expressionNodes .= toExpressionNodesMap update
 
 addConnection :: Connection -> Command State ()
-addConnection conn = modifyExpressionNodeEditor $ connections . at connId ?= conn where
+addConnection conn = modifyNodeEditor $ connections . at connId ?= conn where
     connId = conn ^. connectionId
 
 getConnection :: ConnectionId -> Command State (Maybe Connection)
@@ -174,17 +174,17 @@ modifyConnection :: Monoid r => ConnectionId -> M.State Connection r -> Command 
 modifyConnection connId = modify (nodeEditor . connections . at connId) . zoom traverse
 
 removeConnection :: ConnectionId -> Command State ()
-removeConnection connId = modifyExpressionNodeEditor $ connections . at connId .= Nothing
+removeConnection connId = modifyNodeEditor $ connections . at connId .= Nothing
 
 updateConnections :: [Connection] -> Command State ()
-updateConnections update = modifyExpressionNodeEditor $ connections .= toConnectionsMap update
+updateConnections update = modifyNodeEditor $ connections .= toConnectionsMap update
 
 
 getMonads :: Command State [MonadPath]
 getMonads = view monads <$> getNodeEditor
 
 updateMonads :: [MonadPath] -> Command State ()
-updateMonads update = modifyExpressionNodeEditor $ monads .= update
+updateMonads update = modifyNodeEditor $ monads .= update
 
 
 modifyCurrentConnections :: M.State [CurrentConnection] r -> Command State r

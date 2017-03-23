@@ -6,7 +6,7 @@ import qualified Data.Map.Lazy                               as Map
 import           Empire.API.Graph.CollaborationUpdate        (ClientId)
 import qualified Luna.Studio.Action.Batch                    as Batch
 import           Luna.Studio.Action.Command                  (Command)
-import           Luna.Studio.Action.State.NodeEditor         (getSelectedNodes, modifyExpressionNodeEditor)
+import           Luna.Studio.Action.State.NodeEditor         (getSelectedNodes, modifyNodeEditor)
 import           Luna.Studio.Prelude
 import           Luna.Studio.React.Model.Node.ExpressionNode (modify, nodeId, touch)
 import qualified Luna.Studio.React.Model.Node.ExpressionNode as Node
@@ -43,7 +43,7 @@ touchCurrentlySelected = (map (view nodeId) <$> getSelectedNodes) >>= Batch.coll
 expireTouchedNodes :: Command State ()
 expireTouchedNodes = do
     currentTime  <- use lastEventTimestamp
-    modifyExpressionNodeEditor $ do
+    modifyNodeEditor $ do
         let update = ( Node.collaboration . touch  %~ Map.filter (\(ts, _) -> DT.diffSeconds ts currentTime > 0) )
                    . ( Node.collaboration . modify %~ Map.filter (\ ts     -> DT.diffSeconds ts currentTime > 0) )
         expressionNodes %= HashMap.map update

@@ -7,7 +7,7 @@ import           Data.Vector                                 (Vector2 (Vector2),
 import           Luna.Studio.Action.Basic.DrawConnection     (redrawConnectionsForEdgeNodes)
 import           Luna.Studio.Action.Basic.ModifyCamera       (resetCamera)
 import           Luna.Studio.Action.Command                  (Command)
-import           Luna.Studio.Action.State.NodeEditor         (getExpressionNodes, modifyExpressionNodeEditor)
+import           Luna.Studio.Action.State.NodeEditor         (getExpressionNodes, modifyNodeEditor)
 import           Luna.Studio.Action.State.Scene              (getScreenCenter, getScreenSize)
 import           Luna.Studio.Data.CameraTransformation       (lastInverse, logicalToScreen, screenToLogical)
 import           Luna.Studio.Data.Matrix                     (homothetyMatrix, invertedHomothetyMatrix, invertedTranslationMatrix,
@@ -32,7 +32,7 @@ centerGraph = do
                 let span         = Size (rightBottom ^. vector - leftTop ^. vector + scalarProduct padding 2)
                     shift        = padding + screenCenter ^. vector - scalarProduct (span ^. vector) 0.5 - leftTop ^. vector
                     factor       = min 1 $ min (screenSize ^. x / span ^. x) (screenSize ^. y / span ^. y)
-                modifyExpressionNodeEditor $ do
+                modifyNodeEditor $ do
                     screenTransform . logicalToScreen .= multStd2 (translationMatrix shift) (homothetyMatrix screenCenter factor)
                     screenTransform . screenToLogical .= multStd2 (invertedHomothetyMatrix screenCenter factor) (invertedTranslationMatrix shift)
                     screenTransform . lastInverse     .= 2
