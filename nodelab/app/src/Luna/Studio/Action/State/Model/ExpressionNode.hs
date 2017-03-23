@@ -65,9 +65,11 @@ shouldDisplayPortSelf node = do
         then return False
         else do
             let nid = node ^. nodeId
-            connectToSelfPossible <- fmap (isJust . join) $ fmap2
-                (toValidEmpireConnection (toAnyPortRef nid selfId) . view connectSourcePort) $ use (actions . currentConnectAction)
-            penConnecting <- checkIfActionPerfoming penConnectAction
-            if (not . isCollapsed $ node) || penConnecting || connectToSelfPossible
+            penConnecting    <- checkIfActionPerfoming penConnectAction
+            mayConnectAction <- use $ actions . currentConnectAction
+            let connectToSelfPossible = isJust . join $
+                    (toValidEmpireConnection (toAnyPortRef nid selfId) . view connectSourcePort) <$> mayConnectAction
+                isSource = (view connectSourcePort <$> mayConnectAction) == Just (toAnyPortRef nid selfId)
+            if (not . isCollapsed $ node) || penConnecting || connectToSelfPossible || isSource
                 then return True
                 else inGraph $ InPortRef nid Self
