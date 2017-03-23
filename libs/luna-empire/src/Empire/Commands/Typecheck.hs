@@ -13,7 +13,7 @@ import           Data.Map                          (Map)
 import qualified Data.Map                          as Map
 import           Data.Maybe                        (isNothing)
 import           Empire.Prelude
-import           Prologue                          (toListOf, fromString)
+import           Prologue                          (itoListOf, itraverse, toListOf, fromString)
 
 import qualified Empire.API.Data.Error             as APIError
 import           Empire.API.Data.GraphLocation     (GraphLocation (..))
@@ -55,7 +55,7 @@ runTC imports = do
 
 runInterpreter :: Imports -> Command Graph (Maybe Interpreter.LocalScope)
 runInterpreter imports = runASTOp $ do
-    bodyRef    <- use $ Graph.breadcrumbHierarchy . BH.body
+    bodyRef    <- preuse $ Graph.breadcrumbHierarchy . BH.body
     res        <- mapM (Interpreter.interpret' imports . IR.unsafeGeneralize) bodyRef
     case res of
         Nothing -> return Nothing
@@ -107,7 +107,8 @@ updateMonads loc = do
 
 updateValues :: GraphLocation -> Interpreter.LocalScope -> Command InterpreterEnv ()
 updateValues loc scope = do
-    allNodes   <- gets $ toListOf $ graph . Graph.breadcrumbHierarchy . BH.children . traverse . BH.self . _Just
+    childrenMap <- use $ graph . Graph.breadcrumbHierarchy . BH.children
+    let allNodes = Map.assocs $ view BH.self <$> childrenMap
     env        <- ask
     forM_ allNodes $ \(nid, tgt) -> do
         case tgt of

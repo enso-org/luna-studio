@@ -18,10 +18,10 @@ module Empire.ASTOp (
   ) where
 
 import           Empire.Prelude       hiding (mempty)
-import           Prologue             (Text, mempty)
+import           Prologue             (Text, mempty, toListOf)
 
 import           Control.Monad.Catch  (MonadCatch(..))
-import           Control.Monad.State  (StateT, runStateT, get, put)
+import           Control.Monad.State  (StateT, runStateT, get, gets, put)
 import qualified Control.Monad.State.Dependent as DepState
 import qualified Data.Map             as Map
 import           Data.Foldable        (toList)
@@ -127,11 +127,7 @@ runASTOp pass = runPass inits pass where
 runAliasAnalysis :: Command Graph ()
 runAliasAnalysis = do
     --TODO[MK]: AA is broken, fix it and then just pass BH.body here
-    items <- uses (Graph.breadcrumbHierarchy . BH.children) toList
-    let getPtr it = case it ^. BH.self of
-          Just (_, r) -> BH.getAnyRef r
-        roots = getPtr <$> items
-
+    roots <- gets $ toListOf $ Graph.breadcrumbHierarchy . BH.children . traverse . BH.self . BH.anyRef
     let inits = do
             Pass.setAttr (getTypeDesc @UnresolvedVars)   $ UnresolvedVars   []
             Pass.setAttr (getTypeDesc @UnresolvedConses) $ UnresolvedConses []

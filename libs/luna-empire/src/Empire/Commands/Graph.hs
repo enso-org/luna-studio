@@ -116,43 +116,44 @@ addNode loc uuid expr meta = withTC loc False $ addNodeNoTC loc uuid expr meta
 
 addNodeNoTC :: GraphLocation -> NodeId -> Text -> NodeMeta -> Command Graph Node
 addNodeNoTC loc uuid input meta = do
-    (parse, _) <- ASTParse.runParser input
-    (expr, nodeItem) <- runASTOp $ do
-        newNodeName <- generateNodeName
-        parsedNode <- AST.addNode uuid newNodeName parse
-        let nodeItem = BH.BItem Map.empty Nothing (Just (uuid, BH.MatchNode parsedNode)) Nothing
-        Graph.breadcrumbHierarchy . BH.children . at uuid ?= nodeItem
-        return (parsedNode, nodeItem)
+    parse <- fst <$> ASTParse.runParser input
+    expr <- runASTOp $ do
+        newNodeName  <- generateNodeName
+        parsedNode   <- AST.addNode uuid newNodeName parse
+        let nodeItem = BH.ExprItem Map.empty (BH.MatchNode parsedNode)
+        Graph.breadcrumbHierarchy . BH.children . at uuid ?= BH.ExprChild nodeItem
+        return parsedNode
     runAliasAnalysis
     node <- runASTOp $ do
+        parsedRef     <- ASTRead.getASTTarget uuid
         AST.writeMeta expr meta
-        parsedIsLambda <- ASTRead.getTargetNode expr >>= ASTRead.isLambda
-        node <- GraphBuilder.buildNode uuid
+        parsedIsLambda <- ASTRead.isLambda parsedRef
         when parsedIsLambda $ do
             lambdaUUID             <- liftIO $ UUID.nextRandom
-            lambdaOutput           <- ASTRead.getTargetNode expr >>= ASTRead.getLambdaOutputRef
-            outputIsOneOfTheInputs <- ASTRead.getTargetNode expr >>= AST.isTrivialLambda
+            lambdaOutput           <- ASTRead.getLambdaOutputRef   parsedRef
+            lambdaBody             <- ASTRead.getFirstNonLambdaRef parsedRef
+            portMapping            <- liftIO $ (,) <$> UUID.nextRandom <*> UUID.nextRandom
+            outputIsOneOfTheInputs <- AST.isTrivialLambda parsedRef
             let anonOutput = if   not outputIsOneOfTheInputs
-                             then Just $ BH.BItem Map.empty Nothing (Just (lambdaUUID, BH.AnonymousNode lambdaOutput)) Nothing
+                             then Just $ BH.ExprChild $ BH.ExprItem Map.empty (BH.AnonymousNode lambdaOutput)
                              else Nothing
-                lamItem    = nodeItem & BH.children . at lambdaUUID .~ anonOutput
-                                      & BH.body ?~ lambdaOutput
-            Graph.breadcrumbHierarchy . BH.children . at uuid  ?= lamItem
+                lamItem    = BH.LamItem portMapping (BH.MatchNode expr) (Map.empty & at lambdaUUID .~ anonOutput) lambdaBody
+            Graph.breadcrumbHierarchy . BH.children . at uuid  ?= BH.LambdaChild lamItem
             IR.writeLayer @Marker (Just $ OutPortRef lambdaUUID Port.All) lambdaOutput
         updateNodeSequence
-        return node
+        GraphBuilder.buildNode uuid
     Publisher.notifyNodeUpdate loc node
     return node
 
 updateNodeSequenceWithOutput :: ASTOp m => Maybe NodeRef -> m ()
 updateNodeSequenceWithOutput outputRef = do
-    newSeq     <- makeCurrentSeq
+    newSeq <- makeCurrentSeq
     updateGraphSeq newSeq outputRef
 
 updateNodeSequence :: ASTOp m => m ()
 updateNodeSequence = do
     currentTgt <- ASTRead.getCurrentASTTarget
-    outputRef  <- mapM ASTRead.getLambdaOutputRef    currentTgt
+    outputRef  <- mapM ASTRead.getLambdaOutputRef currentTgt
     updateNodeSequenceWithOutput outputRef
 
 makeCurrentSeq :: ASTOp m => m (Maybe NodeRef)
@@ -163,7 +164,7 @@ makeCurrentSeq = do
 
 updateGraphSeq :: ASTOp m => Maybe NodeRef -> Maybe NodeRef -> m ()
 updateGraphSeq newSeq outputRef = do
-    oldSeq <- use $ Graph.breadcrumbHierarchy . BH.body
+    oldSeq     <- preuse $ Graph.breadcrumbHierarchy . BH.body
     currentTgt <- ASTRead.getCurrentASTTarget
     outLink    <- mapM ASTRead.getFirstNonLambdaLink currentTgt
     newOut     <- case (outputRef, newSeq) of
@@ -175,7 +176,8 @@ updateGraphSeq newSeq outputRef = do
         Just (l, o) -> IR.changeSource l o
         Nothing     -> return ()
     when (newOut /= oldSeq) $ mapM_ ASTRemove.removeSubtree oldSeq
-    Graph.breadcrumbHierarchy . BH.body .= newOut
+    Graph.breadcrumbHierarchy . BH._ToplevelParent . BH.topBody .= newOut
+    forM_ newOut $ (Graph.breadcrumbHierarchy . BH.body .=)
 
 -- TODO[MK]: Figure out the logic of seqing and migrate to a uniform solution
 getNodeIdSequence :: GraphLocation -> Empire [NodeId]
@@ -184,7 +186,7 @@ getNodeIdSequence loc = withGraph loc $ runASTOp $ do
     nodeSeq <- do
         bodySeq <- case lref of
             Just l -> ASTRead.getLambdaBodyRef l
-            _      -> use $ Graph.breadcrumbHierarchy . BH.body
+            _      -> preuse $ Graph.breadcrumbHierarchy . BH.body
         case bodySeq of
             Just b -> AST.readSeq b
             _      -> return []
@@ -230,7 +232,6 @@ removeNodeNoTC nodeId = do
 removePort :: GraphLocation -> AnyPortRef -> Empire Node
 removePort loc portRef = withGraph loc $ runASTOp $ do
     let nodeId = portRef ^. PortRef.nodeId
-    Just lambda <- preuse $ Graph.breadcrumbHierarchy . BH.self . _Just . _1
     Just ref    <- ASTRead.getCurrentASTTarget
     edges <- GraphBuilder.getEdgePortMapping
     newRef <- case edges of
@@ -238,7 +239,7 @@ removePort loc portRef = withGraph loc $ runASTOp $ do
             if nodeId == input then ASTModify.removeLambdaArg ref $ portRef ^. PortRef.portId
                                else throwM NotInputEdgeException
         _ -> return ref
-    when (ref /= newRef) $ GraphUtils.rewireNode lambda newRef
+    when (ref /= newRef) $ ASTModify.rewireCurrentNode newRef
     GraphBuilder.buildConnections >>= \c -> GraphBuilder.buildInputEdge c nodeId
 
 movePort :: GraphLocation -> AnyPortRef -> Int -> Empire Node
@@ -268,35 +269,27 @@ renamePort loc portRef newName = withGraph loc $ runASTOp $ do
 
 setNodeExpression :: GraphLocation -> NodeId -> Text -> Empire Node
 setNodeExpression loc nodeId expr = withTC loc False $ do
-    oldExpr <- runASTOp $ ASTRead.getASTTarget nodeId
-    parsed <- view _1 <$> ASTParse.runReparser expr oldExpr
-    -- FIXME[MM]: temporarily put parsed expression to breadcrumb hierarchy
-    --            so alias analysis can pick it up
-    tempUUID <- liftIO $ UUID.nextRandom
-    runASTOp $ do
-        let nodeItem = BH.BItem Map.empty Nothing (Just (tempUUID, BH.AnonymousNode parsed)) Nothing
-        Graph.breadcrumbHierarchy . BH.children . at tempUUID ?= nodeItem
+    oldExpr    <- runASTOp $ ASTRead.getASTTarget nodeId
+    parsedRef  <- view _1 <$> ASTParse.runReparser expr oldExpr
+    runASTOp $ ASTModify.rewireNode nodeId parsedRef
     runAliasAnalysis
-    runASTOp $ do
-        Graph.breadcrumbHierarchy . BH.children . at tempUUID .= Nothing
-        target <- ASTRead.getASTTarget nodeId
-        IR.replaceNode target parsed
-        IR.deleteSubtree target
-        parsedIsLambda <- ASTRead.isLambda parsed
+    node <- runASTOp $ do
+        refNode        <- ASTRead.getASTPointer nodeId
+        parsedIsLambda <- ASTRead.isLambda parsedRef
         when parsedIsLambda $ do
             lambdaUUID             <- liftIO $ UUID.nextRandom
-            lambdaOutput           <- ASTRead.getLambdaOutputRef parsed
-            outputIsOneOfTheInputs <- AST.isTrivialLambda        parsed
-            Just nodeItem          <- use $ Graph.breadcrumbHierarchy . BH.children . at nodeId
+            lambdaOutput           <- ASTRead.getLambdaOutputRef   parsedRef
+            lambdaBody             <- ASTRead.getFirstNonLambdaRef parsedRef
+            portMapping            <- liftIO $ (,) <$> UUID.nextRandom <*> UUID.nextRandom
+            outputIsOneOfTheInputs <- AST.isTrivialLambda parsedRef
             let anonOutput = if   not outputIsOneOfTheInputs
-                             then Just $ BH.BItem Map.empty Nothing (Just (lambdaUUID, BH.AnonymousNode lambdaOutput)) Nothing
+                             then Just $ BH.ExprChild $ BH.ExprItem Map.empty (BH.AnonymousNode lambdaOutput)
                              else Nothing
-                lamItem    = nodeItem & BH.children . at lambdaUUID .~ anonOutput
-                                      & BH.body ?~ lambdaOutput
-            Graph.breadcrumbHierarchy . BH.children . at nodeId  ?= lamItem
+                lamItem    = BH.LamItem portMapping (BH.MatchNode refNode) (Map.empty & at lambdaUUID .~ anonOutput) lambdaBody
+            Graph.breadcrumbHierarchy . BH.children . at nodeId  ?= BH.LambdaChild lamItem
             IR.writeLayer @Marker (Just $ OutPortRef lambdaUUID Port.All) lambdaOutput
         updateNodeSequence
-    node <- runASTOp $ GraphBuilder.buildNode nodeId
+        GraphBuilder.buildNode nodeId
     Publisher.notifyNodeUpdate loc node
     return node
 

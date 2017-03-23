@@ -4,6 +4,7 @@ module Empire.Prelude (
     , (.:.)
     , (.:)
     , (<>)
+    , (<?!>)
     , type (<>)
     , (<|>)
     , at
@@ -56,6 +57,10 @@ import Prelude
 
 import qualified Data.Convert              as Convert
 import qualified OCI.IR.Name.Qualified     as IR
+
+infixr 0 <?!>
+(<?!>) :: (Exception e, MonadThrow m) => m (Maybe a) -> e -> m a
+m <?!> e = m >>= maybe (throwM e) return
 
 nameToString :: IR.Name -> String
 nameToString = Convert.convert
