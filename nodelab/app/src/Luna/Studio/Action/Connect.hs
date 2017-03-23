@@ -65,7 +65,9 @@ startConnecting screenMousePos anyPortRef mayModifiedConnId connectMode' = do
     mayNode  <- getNode nodeId
     withJust mayNode $ \node -> do
         let shouldDoNodeDrag = case node of
-                Expression node' -> portId == InPortId Self && isCollapsed node'
+                Expression node' -> isNothing mayModifiedConnId
+                                 && portId == InPortId Self
+                                 && isCollapsed node'
                 _                -> False
         if shouldDoNodeDrag
         then when (connectMode' == Drag) $ startNodeDrag mousePos nodeId True
@@ -114,9 +116,9 @@ handleMouseUp evt action = when (action ^. connectMode == Drag) $ do
 stopConnecting :: Connect -> Command State ()
 stopConnecting _ = do
     modifyNodeEditor $ NodeEditor.currentConnections .= def
-    void $ updateAllPortsSelfVisibility
     actions . currentConnectAction .= Nothing
     removeActionFromState connectAction
+    void $ updateAllPortsSelfVisibility
 
 connectToPort :: AnyPortRef -> Connect -> Command State ()
 connectToPort dst action = do
