@@ -35,12 +35,13 @@ import           React.Flux                            hiding (view)
 name :: EdgeNode -> JSString
 name node = "edgePorts" <> if isInputEdge node then "Inputs" else "Outputs"
 
-portHandlers :: Ref App -> EdgeMode -> AnyPortRef -> [PropertyOrHandler [SomeStoreAction]]
-portHandlers ref AddRemove portRef =
-    [ onMouseDown $ \e _ -> [stopPropagation e]
-    , onClick     $ \e _ -> stopPropagation e : dispatch ref (UI.EdgeEvent $ Edge.RemovePort portRef)
-    ]
-portHandlers ref MoveConnect portRef =
+portHandlers :: Ref App -> EdgeMode -> Bool -> AnyPortRef -> [PropertyOrHandler [SomeStoreAction]]
+portHandlers ref AddRemove isOnly portRef =
+    [ onMouseDown $ \e _ -> [stopPropagation e] ] ++
+    if isOnly then [] else
+    [ onClick     $ \e _ -> stopPropagation e : dispatch ref (UI.EdgeEvent $ Edge.RemovePort portRef) ]
+
+portHandlers ref MoveConnect _ portRef =
     [ onMouseDown $ \e _ -> [stopPropagation e]
     , onClick     $ handleClick     ref portRef
     , onMouseDown $ handleMouseDown ref portRef
@@ -90,7 +91,7 @@ edgeSidebar_ ref _mayDraggedPort node = do
             --                     , "r"         $= "13"
             --                     ] mempty
 
-            forM_ ports $ edgePort_ ref mode nodeId
+            forM_ ports $ edgePort_ ref mode nodeId (countProjectionPorts node == 1)
 
             when (isInputEdge node) $ do
                 svg_
@@ -147,8 +148,8 @@ addButton_ ref portRef =
                     plainRect 8 2 (-4) (-1)
             plainPath (Style.prefix "port-add-inbetween__selectable") "M 20 0 A 10 10 0 0 1 20 16 L 10 16 A 10 10 0 0 1 10 0 Z"
 
-edgePort_ :: Ref App -> EdgeMode -> NodeId -> Port -> ReactElementM ViewEventHandler ()
-edgePort_ ref mode nid p = when (p ^. Port.visible) $ do
+edgePort_ :: Ref App -> EdgeMode -> NodeId -> Bool -> Port -> ReactElementM ViewEventHandler ()
+edgePort_ ref mode nid isOnly p = when (p ^. Port.visible) $ do
     let portId    = p ^. Port.portId
         portRef   = toAnyPortRef nid portId
         color     = convert $ p ^. Port.color
@@ -170,14 +171,14 @@ edgePort_ ref mode nid p = when (p ^. Port.visible) $ do
                 , "fill"      $= color
                 , "r"         $= jsShow2 3
                 ] mempty
-            g_ [ "className" $= Style.prefix "port__plus" ] $ do
+            when (not isOnly) $ g_ [ "className" $= Style.prefix "port__plus" ] $ do
                   plainRect 2 8 (-1) (-4)
                   plainRect 8 2 (-4) (-1)
             circle_ (
                 [ "className" $= Style.prefix "port__select"
                 , "key"       $= (jsShow portId <> jsShow num <> "b")
                 , "r"         $= jsShow2 (lineHeight/1.5)
-                ] ++ portHandlers ref mode portRef ) mempty
+                ] ++ portHandlers ref mode isOnly portRef ) mempty
 
         if p ^. Port.isEdited then
             singleField_ [ "id" $= portLabelId ] (jsShow portId)
