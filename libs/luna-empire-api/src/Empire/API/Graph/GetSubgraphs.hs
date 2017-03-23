@@ -4,7 +4,7 @@ import           Data.Binary                   (Binary)
 import           Data.Map                      (Map)
 import           Prologue
 
-import           Empire.API.Data.Breadcrumb    (Target)
+import           Empire.API.Data.Breadcrumb    (BreadcrumbItem)
 import           Empire.API.Data.Graph         (Graph)
 import           Empire.API.Data.GraphLocation (GraphLocation)
 import           Empire.API.Data.MonadPath     (MonadPath)
@@ -18,7 +18,7 @@ import qualified Empire.API.Topic              as T
 data Request = Request { _location    :: GraphLocation
                        } deriving (Generic, Eq, NFData, Show)
 
-data Result = Result { _graphs :: Map Target Graph
+data Result = Result { _graphs :: Map BreadcrumbItem Graph
                      } deriving (Generic, Eq, NFData, Show)
 
 type Response = Response.Response Request () Result
@@ -28,7 +28,6 @@ makeLenses ''Request
 makeLenses ''Result
 
 instance Binary Request
-instance Binary Target
 instance Binary Result
 instance G.GraphRequest Request where location = location
 

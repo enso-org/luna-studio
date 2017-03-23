@@ -7,13 +7,8 @@ import           Empire.API.Data.Node (NodeId)
 import           Prologue
 
 
-
-data Target = TopLevel
-            | Arg' Int
-            deriving (Eq, Generic, NFData, Ord, Show)
-
 data BreadcrumbItem = Lambda NodeId
-                    | Arg Int
+                    | Arg NodeId Int
                     deriving (Show, Eq, Ord, Generic, NFData)
 
 data Named a        = Named  { _name       :: Text
@@ -32,7 +27,3 @@ instance Binary BreadcrumbItem
 
 instance Default (Breadcrumb a) where
     def = Breadcrumb def
-
-appendTarget :: Target -> Breadcrumb BreadcrumbItem -> Breadcrumb BreadcrumbItem
-appendTarget TopLevel = id
-appendTarget (Arg' i) = items %~ (++ [Arg i])

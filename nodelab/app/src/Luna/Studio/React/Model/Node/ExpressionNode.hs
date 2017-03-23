@@ -15,7 +15,7 @@ import           Data.Map.Lazy                         (Map)
 import qualified Data.Map.Lazy                         as Map
 import           Data.Position                         (Position, fromTuple, toTuple)
 import           Data.Time.Clock                       (UTCTime)
-import           Empire.API.Data.Breadcrumb            (Target)
+import           Empire.API.Data.Breadcrumb            (BreadcrumbItem)
 import           Empire.API.Data.MonadPath             (MonadPath)
 import           Empire.API.Data.Node                  (NodeId)
 import qualified Empire.API.Data.Node                  as Empire
@@ -53,7 +53,7 @@ data Mode = Collapsed
 
 data ExpandedMode = Editor
                 | Controls
-                | Function (Map Target Subgraph)
+                | Function (Map BreadcrumbItem Subgraph)
                 deriving (Eq, Generic, NFData, Show)
 
 data Subgraph = Subgraph
