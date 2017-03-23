@@ -4,6 +4,7 @@ author:             New Byte Order <contact@newbyteorder.com>
 
 default-extensions:
   - NoImplicitPrelude
+  - LambdaCase
 
 ghc-options:
     -Wall

@@ -31,8 +31,8 @@ main = execParser opts >>= run
 run :: Cmd -> IO ()
 run cmd = case cmd of
     Version     -> putStrLn (Version.full False)
-    Run verbose -> do
+    Run verbosity -> do
         busEndPoints <- EndPoint.clientFromConfig <$> Config.load
         config <- WSConfig.readWebsocketConfig <$> WSConfigLoader.load
-        rootLogger setIntLevel verbose
+        rootLogger setIntLevel verbosity
         WSConnector.run busEndPoints config

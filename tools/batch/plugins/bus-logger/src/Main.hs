@@ -2,18 +2,18 @@
 
 module Main where
 
-import qualified Data.List                  as List
+import qualified Data.List              as List
 
+import           Prologue               hiding (switch)
+import           System.Log.MLogger
+import           System.Log.Options     hiding (info)
+import qualified System.Log.Options     as Opt
+import qualified ZMQ.Bus.Config         as Config
+import qualified ZMQ.Bus.EndPoint       as EP
 import           ZMQ.Bus.Logger.Cmd     (Cmd)
 import qualified ZMQ.Bus.Logger.Cmd     as Cmd
 import qualified ZMQ.Bus.Logger.Logger  as Logger
 import qualified ZMQ.Bus.Logger.Version as Version
-import           Prologue                   hiding (switch)
-import           System.Log.MLogger
-import           System.Log.Options         hiding (info)
-import qualified System.Log.Options         as Opt
-import qualified ZMQ.Bus.Config             as Config
-import qualified ZMQ.Bus.EndPoint           as EP
 
 
 
@@ -51,7 +51,6 @@ run cmd = case cmd of
         let topics = if List.null $ Cmd.topics cmd
                         then [""]
                         else Cmd.topics cmd
-        r <- Logger.run endPoints topics
-        case r of
+        Logger.run endPoints topics >>= \case
             Left err -> logger criticalFail err
             _        -> return ()

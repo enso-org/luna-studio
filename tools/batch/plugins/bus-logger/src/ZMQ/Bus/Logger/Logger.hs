@@ -13,9 +13,7 @@ import qualified Data.Map.Strict           as Map
 import qualified Data.Maybe                as Maybe
 import qualified Data.Time.Clock           as Clock
 
-import           Control.Monad.Error       (MonadError)
-import           ZMQ.Bus.Logger.Env    (Env)
-import qualified ZMQ.Bus.Logger.Env    as Env
+import           Control.Monad.Except      (MonadError)
 import           Prologue                  hiding (error)
 import           System.Log.MLogger
 import qualified ZMQ.Bus.Bus               as Bus
@@ -23,6 +21,8 @@ import qualified ZMQ.Bus.Data.Message      as Message
 import           ZMQ.Bus.Data.MessageFrame (MessageFrame (MessageFrame))
 import           ZMQ.Bus.Data.Topic        (Topic)
 import           ZMQ.Bus.EndPoint          (BusEndPoints)
+import           ZMQ.Bus.Logger.Env        (Env)
+import qualified ZMQ.Bus.Logger.Env        as Env
 import           ZMQ.Bus.RPC.Types         (Response (Response), Result (ErrorResult, Status), Value (Value))
 import           ZMQ.Bus.Trans             (BusT (..))
 import qualified ZMQ.Bus.Trans             as Bus
