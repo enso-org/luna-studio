@@ -14,17 +14,17 @@ module.exports =
   activate: ->
     internal.start(websocket)
     rootPath = atom.project.getPaths().shift()
-    if rootPath != ""
-      internal.pushInternalEvent("SetProject " + rootPath)
+    # if rootPath != ""
+    #   internal.pushInternalEvent("SetProject " + rootPath)
     atom.workspace.addOpener (uri) ->
 
       if path.extname(uri) is '.luna'
-        internal.pushInternalEvent("OpenFile " + uri)
+        # internal.pushInternalEvent("OpenFile " + uri)
 
         atom.workspace.open().then (@editor) ->
           @buffer = @editor.buffer
           @buffer.setPath(uri)
-          internal.pushInternalEvent("GetBuffer " + uri) ##todo  odbierz bufor i go ustaw, zapnij się na eventy związane z kopiowaniem tekstu
+        #   internal.pushInternalEvent("GetBuffer " + uri)
           withoutTrigger = (callback) ->
             @triggerPush = false
             callback()
@@ -33,7 +33,7 @@ module.exports =
           setBuffer = (text) ->
             withoutTrigger =>
               @buffer.setText(text)
-          internal.bufferListener setBuffer
+        #   internal.bufferListener setBuffer
 
           setCode = (uri_send, start_send, end_send, text) ->
             withoutTrigger =>
@@ -42,7 +42,7 @@ module.exports =
                 end = buffer.positionForCharacterIndex(end_send)
                 @buffer.setTextInRange [start, end], text
                 @editor.scrollToBufferPosition(start)
-          internal.codeListener setCode
+        #   internal.codeListener setCode
 
           @ss = new SubAtom
           @ss.add @buffer.onDidChange (event) =>
@@ -54,8 +54,7 @@ module.exports =
                       end: buffer.characterIndexForPosition(event.oldRange.end)
                       text: event.newText
                       cursor: buffer.characterIndexForPosition(@editor.getCursorBufferPosition())
-              console.log(diff)
-              internal.pushText(diff)
+            #   internal.pushText(diff)
 
         atom.workspace.getActivePane().activateItem new LunaStudioTab(uri, code, websocket)
 
