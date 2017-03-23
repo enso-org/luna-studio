@@ -32,11 +32,9 @@ foreign import javascript safe "$1.data"
 foreign import javascript safe "$1.code"
     getCode :: WSClosedEvent -> IO Int
 
-foreign import javascript safe "arg_websocket"
-    getWebSocket' :: IO JSVal --IO WebSocket
+foreign import javascript safe "init.websocket"
+    getWebSocket :: IO WebSocket
 
-getWebSocket :: IO WebSocket
-getWebSocket = pFromJSVal <$> getWebSocket'
 
 foreign import javascript safe "$1.isOpen()"
     isOpen :: WebSocket -> IO Bool

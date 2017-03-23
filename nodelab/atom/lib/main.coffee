@@ -1,5 +1,5 @@
-w         = require './gen/websocket'
-websocket = w()
+# w         = require './gen/websocket'
+# websocket = w()
 LunaStudioTab = require './luna-studio-tab'
 SubAtom       = require 'sub-atom'
 
@@ -12,7 +12,7 @@ path = require 'path'
 
 module.exports =
   activate: ->
-    internal.start(websocket)
+    internal.start()
     rootPath = atom.project.getPaths().shift()
     # if rootPath != ""
     #   internal.pushInternalEvent("SetProject " + rootPath)
@@ -56,7 +56,7 @@ module.exports =
                       cursor: buffer.characterIndexForPosition(@editor.getCursorBufferPosition())
             #   internal.pushText(diff)
 
-        atom.workspace.getActivePane().activateItem new LunaStudioTab(uri, code, websocket)
+        atom.workspace.getActivePane().activateItem new LunaStudioTab(uri, code)
 
 
     @subs = new SubAtom
