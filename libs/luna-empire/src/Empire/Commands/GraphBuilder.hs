@@ -175,6 +175,7 @@ safeGetVarName node = do
 extractArgNames :: ASTOp m => NodeRef -> m [Maybe String]
 extractArgNames node = do
     match node $ \case
+        Grouped g -> IR.source g >>= extractArgNames
         Lam{}  -> do
             insideLam  <- insideThisNode node
             args       <- ASTDeconstruct.extractArguments node
@@ -387,6 +388,7 @@ buildOutputEdge connections nid = do
 getLambdaInputArgNumber :: ASTOp m => NodeRef -> m (Maybe Int)
 getLambdaInputArgNumber lambda = do
     match lambda $ \case
+        Grouped g      -> IR.source g >>= getLambdaInputArgNumber
         Lam _arg _body -> do
             out' <- ASTRead.getLambdaOutputRef lambda
             args <- ASTDeconstruct.extractArguments lambda

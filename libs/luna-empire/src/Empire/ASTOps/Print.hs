@@ -47,6 +47,7 @@ printCurrentFunction = do
 
 printFunctionArguments :: ASTOp m => NodeRef -> m [String]
 printFunctionArguments lam = match lam $ \case
+    Grouped g   -> IR.source g >>= printFunctionArguments
     Lam _args _ -> do
         args' <- ASTDeconstruct.extractArguments lam
         mapM printExpression args'

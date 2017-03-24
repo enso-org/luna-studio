@@ -56,6 +56,17 @@ spec = around withChannels $ parallel $ do
                 [u1] `shouldMatchList` topLevel
                 n1Level `shouldSatisfy` ((== 2) . length)
                 excludeEdges n1Level `shouldSatisfy` null
+        it "descends into `foo = (a: a)` and asserts two edges inside" $ \env -> do
+            u1 <- mkUUID
+            res <- evalEmp env $ do
+                Graph.addNode top u1 "foo = (a: a)" def
+                topLevel <- graphIDs top
+                n1Level <- Graph.getNodes (top |> u1)
+                return (topLevel, n1Level)
+            withResult res $ \(topLevel, n1Level) -> do
+                [u1] `shouldMatchList` topLevel
+                n1Level `shouldSatisfy` ((== 2) . length)
+                excludeEdges n1Level `shouldSatisfy` null
         it "asserts things about `foo = a: a`" $ \env -> do
             u1 <- mkUUID
             res <- evalEmp env $ do

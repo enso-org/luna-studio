@@ -138,6 +138,7 @@ getLambdaSeqRef = getLambdaSeqRef' False
 
 getLambdaSeqRef' :: ASTOp m => Bool -> NodeRef -> m (Maybe NodeRef)
 getLambdaSeqRef' firstLam node = match node $ \case
+    Grouped g  -> IR.source g >>= getLambdaSeqRef' firstLam
     Lam _ next -> do
         nextLam <- IR.source next
         getLambdaSeqRef' True nextLam
@@ -152,6 +153,7 @@ getLambdaOutputLink = getLambdaOutputLink' False
 
 getLambdaOutputLink' :: ASTOp m => Bool -> NodeRef -> m EdgeRef
 getLambdaOutputLink' firstLam node = match node $ \case
+    Grouped g  -> IR.source g >>= getLambdaOutputLink' firstLam
     Lam _ next -> do
         nextLam <- IR.source next
         match nextLam $ \case
@@ -165,6 +167,7 @@ getFirstNonLambdaRef = getFirstNonLambdaLink >=> IR.source
 
 getFirstNonLambdaLink :: ASTOp m => NodeRef -> m EdgeRef
 getFirstNonLambdaLink node = match node $ \case
+    Grouped g  -> IR.source g >>= getFirstNonLambdaLink
     Lam _ next -> do
         nextLam <- IR.source next
         match nextLam $ \case
@@ -179,7 +182,10 @@ isBlank :: ASTOp m => NodeRef -> m Bool
 isBlank expr = isJust <$> IRExpr.narrowTerm @IR.Blank expr
 
 isLambda :: ASTOp m => NodeRef -> m Bool
-isLambda expr = isJust <$> IRExpr.narrowTerm @IR.Lam expr
+isLambda expr = match expr $ \case 
+    Lam{}     -> return True
+    Grouped g -> IR.source g >>= isLambda
+    _         -> return False
 
 isMatch :: ASTOp m => NodeRef -> m Bool
 isMatch expr = isJust <$> IRExpr.narrowTerm @IR.Unify expr
