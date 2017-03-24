@@ -2,12 +2,14 @@ module Empire.Commands.Library
     ( withLibrary
     , listLibraries
     , createLibrary
+    , getBuffer
     ) where
 
 import           Control.Monad.Except    (throwError)
 import           Control.Monad.Reader
 import           Control.Monad.State
 import qualified Data.Map                as Map
+import           Data.Text               as Text
 import           Empire.Prelude
 
 import           Empire.Data.Library     (Library)
@@ -43,3 +45,6 @@ withLibrary file cmd = do
             Just lib -> do
                 let result = (_2 %~ Just) <$> Empire.runEmpire notifEnv lib cmd
                 Empire.empire $ const $ const result
+
+getBuffer :: FilePath -> Maybe (Int, Int) -> Empire Text
+getBuffer = $notImplemented

@@ -38,7 +38,6 @@ import           Empire.API.Data.PortRef       (AnyPortRef(InPortRef'), InPortRe
 import           Empire.API.Data.Node          (Node, NodeId, NodeType(..), nodeId, nodeType, ports)
 import qualified Empire.Commands.Graph         as Graph (connect, getNodes)
 import           Empire.Commands.Library       (createLibrary, listLibraries, withLibrary)
-import           Empire.Commands.Project       (createProject, listProjects)
 import           Empire.Data.AST               ()
 import           Empire.Data.Graph             (AST, ASTState (..), Graph)
 import qualified Empire.Data.Library           as Library (body, path)

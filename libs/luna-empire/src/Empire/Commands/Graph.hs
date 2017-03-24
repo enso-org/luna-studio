@@ -27,6 +27,7 @@ module Empire.Commands.Graph
     , disconnect
     , getNodeMeta
     , getNodeIdSequence
+    , getBuffer
     , getCode
     , getGraph
     , getNodes
@@ -35,6 +36,7 @@ module Empire.Commands.Graph
     , renameNode
     , dumpGraphViz
     , typecheck
+    , substituteCode
     , withTC
     , withGraph
     ) where
@@ -89,6 +91,7 @@ import qualified Empire.Commands.AST             as AST
 import           Empire.Commands.Breadcrumb      (withBreadcrumb)
 import qualified Empire.Commands.GraphBuilder    as GraphBuilder
 import qualified Empire.Commands.GraphUtils      as GraphUtils
+import qualified Empire.Commands.Library         as Library
 import qualified Empire.Commands.Publisher       as Publisher
 import           Empire.Empire
 
@@ -517,6 +520,9 @@ getCode loc = withGraph loc $ runASTOp $ do
         Just (header, ret) -> header : map ("    " ++) (lines' ++ [ret])
         _                  -> lines'
 
+getBuffer :: FilePath -> Maybe (Int, Int) -> Empire Text
+getBuffer file span = Library.getBuffer file span
+
 getGraph :: GraphLocation -> Empire APIGraph.Graph
 getGraph loc = withTC loc True $ runASTOp GraphBuilder.buildGraph
 
@@ -544,6 +550,9 @@ dumpGraphViz loc = withGraph loc $ return ()
 
 typecheck :: GraphLocation -> Empire ()
 typecheck loc = withGraph loc $ runTC loc False
+
+substituteCode :: FilePath -> Int -> Int -> Text -> Maybe Int -> Empire ()
+substituteCode = $notImplemented
 
 -- internal
 

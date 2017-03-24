@@ -38,6 +38,8 @@ import           Empire.API.Data.PortDefault        (Value (..))
 import           Empire.API.Data.PortRef            (InPortRef (..), OutPortRef (..))
 import           Empire.API.Data.PortRef            as PortRef
 import           Empire.API.Data.TypeRep            (TypeRep (TStar))
+import qualified Empire.API.Atom.GetBuffer          as GetBuffer
+import qualified Empire.API.Atom.Substitute         as Substitute
 import qualified Empire.API.Graph.AddConnection     as AddConnection
 import qualified Empire.API.Graph.AddNode           as AddNode
 import qualified Empire.API.Graph.AddPort           as AddPort
@@ -319,6 +321,27 @@ handleTypecheck req@(Request _ _ request) = do
         Left err -> replyFail logger err req (Response.Error err)
         Right _  -> Env.empireEnv .= newEmpireEnv
     return ()
+
+-- FIXME[MM]: it's wrong but it works
+instance G.GraphRequest Substitute.Request where
+    location = lens getter setter where
+        getter (Substitute.Request file _ _ _ _) = GraphLocation.GraphLocation file (Breadcrumb [])
+        setter (Substitute.Request _    s e n c) (GraphLocation.GraphLocation file _) = Substitute.Request file s e n c
+
+instance G.GraphRequest GetBuffer.Request where
+    location = lens getter setter where
+        getter (GetBuffer.Request file _) = GraphLocation.GraphLocation file (Breadcrumb [])
+        setter (GetBuffer.Request _    s) (GraphLocation.GraphLocation file _) = GetBuffer.Request file s
+
+handleSubstitute :: Request Substitute.Request -> StateT Env BusT ()
+handleSubstitute = modifyGraphOk defInverse action where
+    action (Substitute.Request file start end newText cursor) = Graph.substituteCode file start end newText cursor
+
+handleGetBuffer :: Request GetBuffer.Request -> StateT Env BusT ()
+handleGetBuffer = modifyGraph defInverse action replyResult where
+    action (GetBuffer.Request file span) = do
+        code <- Graph.getBuffer file span
+        return $ GetBuffer.Result code
 
 
 
