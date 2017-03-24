@@ -1,6 +1,4 @@
-module Empire.Commands.Breadcrumb (
-      withBreadcrumb
-      ) where
+module Empire.Commands.Breadcrumb where
 
 import           Empire.Prelude
 

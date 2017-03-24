@@ -107,10 +107,8 @@ generateNodeName = do
     return $ "node" <> show newNameId
 
 addNodeCondTC :: Bool -> GraphLocation -> NodeId -> Text -> NodeMeta -> Empire Node
-addNodeCondTC doTC loc uuid expr meta = withGraph loc $ do
-    node <- addNodeNoTC loc uuid expr meta
-    when doTC $ runTC loc False
-    return node
+addNodeCondTC True  loc uuid expr meta = addNode loc uuid expr meta
+addNodeCondTC False loc uuid expr meta = withGraph loc $ addNodeNoTC loc uuid expr meta
 
 addNode :: GraphLocation -> NodeId -> Text -> NodeMeta -> Empire Node
 addNode loc uuid expr meta = withTC loc False $ addNodeNoTC loc uuid expr meta
@@ -335,10 +333,8 @@ updatePort :: GraphLocation -> AnyPortRef -> Either Int String -> Empire AnyPort
 updatePort = $notImplemented
 
 connectCondTC :: Bool -> GraphLocation -> OutPortRef -> AnyPortRef -> Empire Connection
-connectCondTC doTC loc outPort anyPort = withGraph loc $ do
-    result <- connectNoTC loc outPort anyPort
-    when doTC $ runTC loc False
-    return result
+connectCondTC True  loc outPort anyPort = connect loc outPort anyPort
+connectCondTC False loc outPort anyPort = withGraph loc $ connectNoTC loc outPort anyPort
 
 connect :: GraphLocation -> OutPortRef -> AnyPortRef -> Empire Connection
 connect loc outPort anyPort = withTC loc False $ connectNoTC loc outPort anyPort
@@ -580,9 +576,9 @@ printNodeLine :: ASTOp m => NodeId -> m String
 printNodeLine nodeId = GraphUtils.getASTPointer nodeId >>= ASTPrint.printExpression
 
 withTC :: GraphLocation -> Bool -> Command Graph a -> Empire a
-withTC loc flush cmd = withGraph loc $ do
-    res <- cmd
-    runTC loc flush
+withTC loc@(GraphLocation pid lid _) flush cmd = do
+    res <- withGraph loc $ cmd
+    withGraph (GraphLocation pid lid $ Breadcrumb []) $ runTC loc flush
     return res
 
 withGraph :: GraphLocation -> Command Graph a -> Empire a

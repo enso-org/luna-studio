@@ -12,6 +12,8 @@ module Empire.Commands.GraphBuilder (
   , buildEdgeNodes
   , buildGraph
   , buildInputEdge
+  , buildInputEdgeTypecheckUpdate
+  , buildOutputEdgeTypecheckUpdate
   , decodeBreadcrumbs
   , getEdgePortMapping
   , getNodeName
@@ -335,6 +337,12 @@ buildConnections = do
     let foo = maybeToList $ join outputEdgeConnections
     return $ foo ++ concat connections
 
+buildInputEdgeTypecheckUpdate :: ASTOp m => NodeId -> m API.NodeTypecheckerUpdate
+buildInputEdgeTypecheckUpdate nid = do
+    API.Node nid _ _ _ m _ _ <- buildInputEdge [] nid
+    return $ API.NodeTypecheckerUpdate nid m
+
+
 buildInputEdge :: ASTOp m => [(OutPortRef, InPortRef)] -> NodeId -> m API.Node
 buildInputEdge connections nid = do
     Just ref <- ASTRead.getCurrentASTTarget
@@ -363,13 +371,18 @@ buildInputEdge connections nid = do
             def
             def
 
+buildOutputEdgeTypecheckUpdate :: ASTOp m => NodeId -> m API.NodeTypecheckerUpdate
+buildOutputEdgeTypecheckUpdate nid = do
+    API.Node nid _ _ _ m _ _ <- buildOutputEdge [] nid
+    return $ API.NodeTypecheckerUpdate nid m
+
 buildOutputEdge :: ASTOp m => [(OutPortRef, InPortRef)] -> NodeId -> m API.Node
 buildOutputEdge connections nid = do
     Just ref <- ASTRead.getCurrentASTTarget
-    out <- followTypeRep ref
-    outputType <- case out of
-        TLam _ t -> return t
-        a -> return a
+    out      <- followTypeRep ref
+    let traverseLams (TLam _ t) = traverseLams t
+        traverseLams s          = s
+        outputType = traverseLams out
     let connectedPorts = map (\(InPortRef _ (Arg p)) -> p)
              $ map snd
              $ filter (\(_, InPortRef refNid p) -> nid == refNid)
