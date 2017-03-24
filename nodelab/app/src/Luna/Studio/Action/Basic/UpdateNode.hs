@@ -13,7 +13,7 @@ import           Luna.Studio.React.Model.Node                (EdgeNode, Expressi
 import qualified Luna.Studio.React.Model.Node.EdgeNode       as Edge
 import           Luna.Studio.React.Model.Node.ExpressionNode (isSelected)
 import qualified Luna.Studio.React.Model.Node.ExpressionNode as Node
-import           Luna.Studio.React.Model.Port                (visible)
+import           Luna.Studio.React.Model.Port                (Mode (Invisible), ensureVisibility, mode)
 import           Luna.Studio.State.Global                    (State)
 
 localUpdateNodes :: [Node] -> Command State ()
@@ -45,11 +45,12 @@ localUpdateExpressionNode node = NodeEditor.getExpressionNode (node ^. nodeId) >
         Nothing       -> return False
         Just prevNode -> do
             let selected = prevNode ^. isSelected
-                mode     = prevNode ^. Node.mode
+                mode'    = prevNode ^. Node.mode
             portSelfVis <- shouldDisplayPortSelf node
-            NodeEditor.addExpressionNode $ node & isSelected                           .~ selected
-                                                & ports . ix (InPortId Self) . visible .~ portSelfVis
-                                                & Node.mode                            .~ mode
+            let (selfMode :: Mode -> Mode) = if portSelfVis then ensureVisibility else const Invisible
+            NodeEditor.addExpressionNode $ node & isSelected                        .~ selected
+                                                & ports . ix (InPortId Self) . mode %~ selfMode
+                                                & Node.mode                         .~ mode'
             void . redrawConnectionsForNode $ node ^. nodeId
             return True
 
@@ -73,6 +74,6 @@ updatePortSelfVisibility :: NodeId -> Command State Bool
 updatePortSelfVisibility nid = NodeEditor.getExpressionNode nid >>=
     maybe (return False) ( \node -> do
         vis <- shouldDisplayPortSelf node
-        NodeEditor.modifyExpressionNode nid $ ports . ix (InPortId Self) . visible .= vis
+        NodeEditor.modifyExpressionNode nid $ ports . ix (InPortId Self) . mode %= if vis then const Invisible else ensureVisibility
         return True
         )

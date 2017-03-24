@@ -9,9 +9,9 @@ import           Empire.API.Data.PortRef                       (AnyPortRef, InPo
 import qualified Empire.API.Data.PortRef                       as PortRef
 import           Luna.Studio.Action.Command                    (Command)
 import           Luna.Studio.Action.State.Model.ExpressionNode (nodeToNodeAngle)
-import           Luna.Studio.Action.State.Model.Port           (getInputEdgePortPosition, getOutputEdgePortPosition, portAngleStart,
-                                                                portAngleStop, portGap)
-import           Luna.Studio.Action.State.NodeEditor           (getConnection, getConnections, getNode, getPort, modifyExpressionNode)
+import           Luna.Studio.Action.State.Model.Port           (portAngleStart, portAngleStop, portGap)
+import           Luna.Studio.Action.State.Model.Sidebar        (getInputEdgePortPosition, getOutputEdgePortPosition)
+import           Luna.Studio.Action.State.NodeEditor           (getConnection, getConnections, getNode, getPort)
 import           Luna.Studio.Data.Geometry                     (closestPointOnLine, closestPointOnLineParam, doesSegmentsIntersects)
 import           Luna.Studio.Prelude
 import           Luna.Studio.React.Model.Connection            (Connection (Connection), ConnectionId,
@@ -20,10 +20,8 @@ import qualified Luna.Studio.React.Model.Connection            as Model
 import           Luna.Studio.React.Model.Constants             (lineHeight, nodeExpandedWidth, nodeRadius, portRadius)
 import           Luna.Studio.React.Model.Node                  (Node (Edge, Expression))
 import           Luna.Studio.React.Model.Node.EdgeNode         (isInputEdge)
-import           Luna.Studio.React.Model.Node.ExpressionNode   (ExpressionNode, countArgPorts, countOutPorts, isCollapsed, nodeId, ports,
-                                                                position)
-import           Luna.Studio.React.Model.Port                  (PortId (InPortId, OutPortId), getPortNumber, isSelf)
-import           Luna.Studio.React.Model.Port                  (Port, color, portId, visible)
+import           Luna.Studio.React.Model.Node.ExpressionNode   (ExpressionNode, countArgPorts, countOutPorts, isCollapsed, nodeId, position)
+import           Luna.Studio.React.Model.Port                  (Port, PortId (InPortId, OutPortId), color, getPortNumber, isSelf, portId)
 import           Luna.Studio.State.Global                      (State)
 
 
@@ -33,15 +31,11 @@ createConnectionModel :: OutPortRef -> InPortRef -> Command State (Maybe Connect
 createConnectionModel srcPortRef dstPortRef = runMaybeT $ do
     let srcNodeId  = srcPortRef ^. PortRef.srcNodeId
         dstNodeId  = dstPortRef ^. PortRef.dstNodeId
-        srcPortId  = OutPortId $ srcPortRef ^. PortRef.srcPortId
-        dstPortId  = InPortId  $ dstPortRef ^. PortRef.dstPortId
     srcNode <- MaybeT $ getNode srcNodeId
     dstNode <- MaybeT $ getNode dstNodeId
     srcPort <- MaybeT $ getPort srcPortRef
     dstPort <- MaybeT $ getPort dstPortRef
     (srcPos, dstPos) <- MaybeT $ getConnectionPosition srcNode srcPort dstNode dstPort
-    lift $ modifyExpressionNode srcNodeId $ ports . ix srcPortId . visible .= True
-    lift $ modifyExpressionNode dstNodeId $ ports . ix dstPortId . visible .= True
     return $ Connection srcPortRef dstPortRef srcPos dstPos $ srcPort ^. color
 
 createCurrentConnectionModel :: AnyPortRef -> Position -> Command State (Maybe CurrentConnection)

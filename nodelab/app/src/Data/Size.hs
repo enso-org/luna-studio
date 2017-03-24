@@ -44,3 +44,6 @@ fromTuple = uncurry fromDoubles
 
 fromDoubles :: Double -> Double -> Size
 fromDoubles = Size .: Vector2
+
+toTuple :: Size -> (Double, Double)
+toTuple (Size (Vector2 x' y')) = (x', y')

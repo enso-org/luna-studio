@@ -20,7 +20,9 @@ import qualified Luna.Studio.React.Model.Port as Port
 
 
 data EdgeType = InputEdge | OutputEdge  deriving (Generic, Eq, NFData, Show)
-data EdgeMode = AddRemove | MoveConnect deriving (Generic, Eq, NFData, Show)
+data EdgeMode = AddRemove
+              | MoveConnect
+              deriving (Generic, Eq, NFData, Show)
 
 instance Default EdgeMode where
     def = MoveConnect

@@ -11,7 +11,6 @@ import           Data.Convert                (Convertible (convert))
 import           Data.Map.Lazy               (Map)
 import qualified Data.Map.Lazy               as Map
 import           Data.Position               (Position)
-import           Empire.API.Data.Node        (NodeId)
 import           Empire.API.Data.Port        as X (InPort (..), OutPort (..), PortId (..), PortState (..), getPortNumber, isAll, isArg,
                                                    isInPort, isOutPort, isProjection, isSelf, _InPortId, _OutPortId)
 import qualified Empire.API.Data.Port        as Empire
@@ -22,34 +21,61 @@ import           Luna.Studio.Data.Color      (Color)
 import qualified Luna.Studio.Data.Color      as Color
 import           Luna.Studio.Prelude         hiding (set)
 
+data Mode = Normal
+          | Invisible
+          | Highlighted
+          | Moved Position
+          | NameEdit
+          deriving (Eq, Show, Typeable, Generic, NFData)
+
+instance ToJSON Mode
+instance Default Mode where
+    def = Normal
 
 data Port = Port { _portId    :: PortId
                  , _name      :: String
                  , _valueType :: TypeRep
                  , _state     :: PortState
                  , _color     :: Color
-                 , _highlight :: Bool
-                 , _visible   :: Bool
-                 , _isEdited  :: Bool
+                 , _mode      :: Mode
                  } deriving (Eq, Show, Typeable, Generic, NFData)
 
 makeLenses ''Port
 instance ToJSON Port
-
-data DraggedPort = DraggedPort { _draggedPortNodeId :: NodeId
-                               , _draggedPort       :: Port
-                               , _positionInSidebar :: Position
-                               } deriving (Eq, Show, Typeable, Generic, NFData)
-
-makeLenses ''DraggedPort
-instance ToJSON DraggedPort
 
 type PortsMap = Map PortId Port
 
 toPortsMap :: [Port] -> Map PortId Port
 toPortsMap = Map.fromList . map (view portId &&& id)
 
+isInMode :: Mode -> Port -> Bool
+isInMode m p = case (m, p ^. mode) of
+    (Moved _, Moved _) -> True
+    (m1, m2)           -> m1 == m2
 
+isInNormalMode :: Port -> Bool
+isInNormalMode = isInMode Normal
+
+isInvisible :: Port -> Bool
+isInvisible = isInMode Invisible
+
+ensureVisibility :: Mode -> Mode
+ensureVisibility Invisible = Normal
+ensureVisibility m = m
+
+isHighlighted :: Port -> Bool
+isHighlighted = isInMode Highlighted
+
+isInMovedMode :: Port -> Bool
+isInMovedMode = isInMode (Moved def)
+
+isInNameEditMode :: Port -> Bool
+isInNameEditMode = isInMode NameEdit
+
+getPositionInSidebar :: Port -> Maybe Position
+getPositionInSidebar p = case p ^. mode of
+    Moved pos -> Just pos
+    _         -> Nothing
 
 countInPorts :: [PortId] -> Int
 countInPorts = foldl (\acc pid -> acc + if isInPort pid then 1 else 0) 0
@@ -71,9 +97,7 @@ instance Convertible Empire.Port Port where
         {- nodeType  -} (p ^. Empire.valueType)
         {- state     -} (p ^. Empire.state)
         {- color     -} (Color.fromType $ p ^. Empire.valueType)
-        {- highlight -} False
-        {- visible   -} True
-        {- isEdited  -} False
+        {- mode      -} Normal
 
 instance Convertible Port Empire.Port where
     convert p = Empire.Port
