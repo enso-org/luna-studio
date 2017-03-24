@@ -8,7 +8,7 @@ module Luna.Studio.React.View.Edge
 
 import qualified Data.Aeson                            as Aeson
 import qualified Data.Map.Lazy                         as Map
-import           Data.Position                         (y)
+import           Data.Position                         (x, y)
 import           Empire.API.Data.PortRef               (AnyPortRef (OutPortRef'), OutPortRef (OutPortRef), toAnyPortRef)
 import qualified JS.Config                             as Config
 import           JS.Scene                              (inputSidebarId, outputSidebarId)
@@ -49,15 +49,14 @@ portHandlers ref MoveConnect _ portRef =
     ]
 
 edgeSidebar_ :: Ref App -> Maybe DraggedPort -> EdgeNode -> ReactElementM ViewEventHandler ()
-edgeSidebar_ ref _mayDraggedPort node = do
+edgeSidebar_ ref mayDraggedPort node = do
     let ports         = node ^. EdgeNode.ports . to Map.elems
         nodeId        = node ^. EdgeNode.nodeId
         mode          = node ^. EdgeNode.mode
         classes       = [ "edgeports", if isInputEdge node then "edgeports--i" else "edgeports--o" ]
                      ++ if mode == AddRemove then ["edgeports--editmode"] else []
-        -- isPortDragged = Just nodeId == ( view ( Port.draggedPort
-        --                                       . Port.portRef
-        --                                       . PortRef.nodeId ) <$> mayDraggedPort )
+        isPortDragged = Just nodeId == (view  Port.draggedPortNodeId <$> mayDraggedPort)
+
     div_
         [ "key"         $= name node
         , "className"   $= Style.prefixFromList classes
@@ -70,6 +69,7 @@ edgeSidebar_ ref _mayDraggedPort node = do
             , "id"        $= if isInputEdge node then inputSidebarId else outputSidebarId
             , "className" $= Style.prefixFromList [ "edgeports__body", "noselect" ]
             ] $ do
+            when isPortDragged . withJust mayDraggedPort $ draggedEdgePort_ ref
             -- TODO[LJK]: Find out how self port works in this case
             -- when (isInputEdge node) $
             --     div_
@@ -147,6 +147,29 @@ addButton_ ref portRef =
                     plainRect 2 8 (-1) (-4)
                     plainRect 8 2 (-4) (-1)
             plainPath (Style.prefix "port-add-inbetween__selectable") "M 20 0 A 10 10 0 0 1 20 16 L 10 16 A 10 10 0 0 1 10 0 Z"
+
+draggedEdgePort_ :: Ref App -> DraggedPort -> ReactElementM ViewEventHandler ()
+draggedEdgePort_ ref p = do
+    let posX   = p ^. Port.positionInSidebar . x
+        posY   = p ^. Port.positionInSidebar . y
+        color  = convert $ p ^. Port.draggedPort . Port.color
+    div_
+        [ "key"       $= "dragged-port"
+        , "className" $= Style.prefixFromList [ "port", "edgeport--dragged-port", "hover" ]
+        , "x"         $= jsShow2 posX
+        , "y"         $= jsShow2 posY
+        ] $ do
+        svg_
+            [ "className" $= Style.prefix "edgeport__svg"
+            ] $ circle_
+                [ "className" $= Style.prefix "port__shape"
+                , "key"       $= "dragged-port-a"
+                , "fill"      $= color
+                , "r"         $= jsShow2 3
+                ] mempty
+        div_ [ "className" $= Style.prefixFromList ["edgeport__name", "noselect"]
+             ] $ elemString $ p ^. Port.draggedPort . Port.name
+
 
 edgePort_ :: Ref App -> EdgeMode -> NodeId -> Bool -> Port -> ReactElementM ViewEventHandler ()
 edgePort_ ref mode nid isOnly p = when (p ^. Port.visible) $ do

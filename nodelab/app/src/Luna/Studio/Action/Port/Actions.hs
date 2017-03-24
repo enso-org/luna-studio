@@ -31,8 +31,8 @@ handleMouseDown evt portRef = do
 handleClick :: MouseEvent -> AnyPortRef -> Command State ()
 handleClick evt portRef = do
     mayConnect <- checkAction connectAction
-    if (Just Click == (view connectMode <$> mayConnect)) then
-            continue $ connectToPort portRef
+    if (Just Click == (view connectMode <$> mayConnect))
+        then continue $ connectToPort portRef
         else startPortDragOrConnect evt portRef Click
 
 startPortDragOrConnect :: MouseEvent -> AnyPortRef -> Mode -> Command State ()
@@ -43,6 +43,6 @@ startPortDragOrConnect evt portRef mode = do
         let doPortDrag = case node of
                 Edge n -> isInputEdge n
                 _      -> False
-        if False --doPortDrag
-        then startPortDrag   mousePos portRef         mode
-        else startConnecting mousePos portRef Nothing mode
+        if doPortDrag
+            then startPortDrag   mousePos portRef         mode
+            else startConnecting mousePos portRef Nothing mode

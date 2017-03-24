@@ -11,6 +11,7 @@ import           Data.Convert                (Convertible (convert))
 import           Data.Map.Lazy               (Map)
 import qualified Data.Map.Lazy               as Map
 import           Data.Position               (Position)
+import           Empire.API.Data.Node        (NodeId)
 import           Empire.API.Data.Port        as X (InPort (..), OutPort (..), PortId (..), PortState (..), getPortNumber, isAll, isArg,
                                                    isInPort, isOutPort, isProjection, isSelf, _InPortId, _OutPortId)
 import qualified Empire.API.Data.Port        as Empire
@@ -35,7 +36,8 @@ data Port = Port { _portId    :: PortId
 makeLenses ''Port
 instance ToJSON Port
 
-data DraggedPort = DraggedPort { _draggedPort       :: Port
+data DraggedPort = DraggedPort { _draggedPortNodeId :: NodeId
+                               , _draggedPort       :: Port
                                , _positionInSidebar :: Position
                                } deriving (Eq, Show, Typeable, Generic, NFData)
 
