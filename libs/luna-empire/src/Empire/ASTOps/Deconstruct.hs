@@ -38,6 +38,7 @@ extractArguments expr = match expr $ \case
     App{}       -> reverse <$> extractArguments' FApp expr
     Lam{}       -> extractArguments' FLam expr
     Cons _ args -> mapM IR.source args
+    Grouped g   -> IR.source g >>= extractArguments
     _           -> return []
 
 extractAppArguments :: ASTOp m => NodeRef -> m [NodeRef]
@@ -50,6 +51,7 @@ extractArguments' FApp expr = match expr $ \case
         args    <- extractArguments' FApp nextApp
         arg'    <- IR.source b
         return $ arg' : args
+    Grouped g -> IR.source g >>= extractArguments' FApp
     _       -> return []
 extractArguments' FLam expr = match expr $ \case
     Lam b a -> do
@@ -57,6 +59,7 @@ extractArguments' FLam expr = match expr $ \case
         args    <- extractArguments' FLam nextLam
         arg'    <- IR.source b
         return $ arg' : args
+    Grouped g -> IR.source g >>= extractArguments' FLam
     _       -> return []
 
 dumpAccessors :: ASTOp m => NodeRef -> m (Maybe NodeRef, [String])

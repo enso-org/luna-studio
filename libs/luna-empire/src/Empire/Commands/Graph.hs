@@ -260,7 +260,7 @@ removePort loc portRef = withGraph loc $ runASTOp $ do
     edges <- GraphBuilder.getEdgePortMapping
     newRef <- case edges of
         Just (input, _output) -> do
-            if nodeId == input then ASTModify.removeLambdaArg ref $ portRef ^. PortRef.portId
+            if nodeId == input then ASTModify.removeLambdaArg (portRef ^. PortRef.portId) ref
                                else throwM NotInputEdgeException
         _ -> return ref
     when (ref /= newRef) $ ASTModify.rewireCurrentNode newRef
@@ -273,7 +273,7 @@ movePort loc portRef newPosition = withGraph loc $ runASTOp $ do
     edges       <- GraphBuilder.getEdgePortMapping
     newRef      <- case edges of
         Just (input, _) -> do
-            if nodeId == input then ASTModify.moveLambdaArg ref (portRef ^. PortRef.portId) newPosition
+            if nodeId == input then ASTModify.moveLambdaArg (portRef ^. PortRef.portId) newPosition ref
                                else throwM NotInputEdgeException
         _ -> throwM NotInputEdgeException
     when (ref /= newRef) $ ASTModify.rewireCurrentNode newRef
@@ -286,7 +286,7 @@ renamePort loc portRef newName = withGraph loc $ runASTOp $ do
     edges       <- GraphBuilder.getEdgePortMapping
     _newRef     <- case edges of
         Just (input, _) -> do
-            if nodeId == input then ASTModify.renameLambdaArg ref (portRef ^. PortRef.portId) newName
+            if nodeId == input then ASTModify.renameLambdaArg (portRef ^. PortRef.portId) newName ref
                                else throwM NotInputEdgeException
         _ -> throwM NotInputEdgeException
     GraphBuilder.buildConnections >>= \c -> GraphBuilder.buildInputEdge c nodeId

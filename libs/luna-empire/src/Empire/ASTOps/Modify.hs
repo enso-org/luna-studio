@@ -38,6 +38,7 @@ addLambdaArg position lambda = match lambda $ \case
         names <- getArgNames lambda
         let Just nameForNewArg = find (not . flip elem names) allWords
         addLambdaArg' position nameForNewArg Nothing lambda
+    Grouped g -> IR.source g >>= addLambdaArg position
     _ -> throwM $ NotLambdaException lambda
 
 allWords :: [String]
@@ -46,6 +47,7 @@ allWords = drop 1 $ allWords' where
 
 getArgNames :: ASTOp m => NodeRef -> m [String]
 getArgNames ref = match ref $ \case
+    Grouped g   -> IR.source g >>= getArgNames
     Lam a body -> do
         argNames <- ASTRead.getPatternNames =<< IR.source a
         (argNames ++) <$> (getArgNames =<< IR.source body)
@@ -76,10 +78,11 @@ instance Exception CannotRemovePortException where
     toException = astExceptionToException
     fromException = astExceptionFromException
 
-removeLambdaArg :: ASTOp m => NodeRef -> Port.PortId -> m NodeRef
-removeLambdaArg _      Port.InPortId{} = throwM $ CannotRemovePortException
-removeLambdaArg _      (Port.OutPortId Port.All) = throwM $ CannotRemovePortException
-removeLambdaArg lambda (Port.OutPortId (Port.Projection port)) = match lambda $ \case
+removeLambdaArg :: ASTOp m => Port.PortId -> NodeRef -> m NodeRef
+removeLambdaArg Port.InPortId{}           _ = throwM $ CannotRemovePortException
+removeLambdaArg (Port.OutPortId Port.All) _ = throwM $ CannotRemovePortException
+removeLambdaArg p@(Port.OutPortId (Port.Projection port)) lambda = match lambda $ \case
+    Grouped g      -> IR.source g >>= removeLambdaArg p >>= fmap IR.generalize . IR.grouped
     Lam _arg _body -> do
         args <- ASTDeconstruct.extractArguments lambda
         out  <- ASTRead.getFirstNonLambdaRef lambda
@@ -95,21 +98,23 @@ shiftPosition from to lst = uncurry (insertAt to) $ getAndRemove from lst where
     getAndRemove 0 (x : xs) = (x, xs)
     getAndRemove i (x : xs) = let (r, rs) = getAndRemove (i - 1) xs in (r, x : rs)
 
-moveLambdaArg :: ASTOp m => NodeRef -> Port.PortId -> Int -> m NodeRef
-moveLambdaArg _ Port.InPortId{}           _ = throwM $ CannotRemovePortException
-moveLambdaArg _ (Port.OutPortId Port.All) _ = throwM $ CannotRemovePortException
-moveLambdaArg lambda (Port.OutPortId (Port.Projection port)) newPosition = match lambda $ \case
-    Lam _ _ -> do
+moveLambdaArg :: ASTOp m => Port.PortId -> Int -> NodeRef -> m NodeRef
+moveLambdaArg Port.InPortId{}           _ _ = throwM $ CannotRemovePortException
+moveLambdaArg (Port.OutPortId Port.All) _ _ = throwM $ CannotRemovePortException
+moveLambdaArg p@(Port.OutPortId (Port.Projection port)) newPosition lambda = match lambda $ \case
+    Grouped g -> IR.source g >>= moveLambdaArg p newPosition >>= fmap IR.generalize . IR.grouped
+    Lam _ _   -> do
         args <- ASTDeconstruct.extractArguments lambda
         out  <- ASTRead.getLambdaOutputRef      lambda
         let newArgs = shiftPosition port newPosition args
         ASTBuilder.lams newArgs out
     _ -> throwM $ NotLambdaException lambda
 
-renameLambdaArg :: ASTOp m => NodeRef -> Port.PortId -> String -> m ()
-renameLambdaArg _   Port.InPortId{}           _ = throwM CannotRemovePortException
-renameLambdaArg _   (Port.OutPortId Port.All) _ = throwM CannotRemovePortException
-renameLambdaArg lam (Port.OutPortId (Port.Projection port)) newName = match lam $ \case
+renameLambdaArg :: ASTOp m => Port.PortId -> String -> NodeRef -> m ()
+renameLambdaArg Port.InPortId{}           _ _ = throwM CannotRemovePortException
+renameLambdaArg (Port.OutPortId Port.All) _ _ = throwM CannotRemovePortException
+renameLambdaArg p@(Port.OutPortId (Port.Projection port)) newName lam = match lam $ \case
+    Grouped g -> IR.source g >>= renameLambdaArg p newName
     Lam _ _ -> do
         args <- ASTDeconstruct.extractArguments lam
         let arg = args !! port
@@ -119,6 +124,7 @@ renameLambdaArg lam (Port.OutPortId (Port.Projection port)) newName = match lam 
 redirectLambdaOutput :: ASTOp m => NodeRef -> NodeRef -> m NodeRef
 redirectLambdaOutput lambda newOutputRef = do
     match lambda $ \case
+        Grouped g   -> IR.source g >>= flip redirectLambdaOutput newOutputRef >>= fmap IR.generalize . IR.grouped
         Lam _args _ -> do
             args' <- ASTDeconstruct.extractArguments lambda
             ASTBuilder.lams args' newOutputRef
@@ -127,6 +133,7 @@ redirectLambdaOutput lambda newOutputRef = do
 setLambdaOutputToBlank :: ASTOp m => NodeRef -> m NodeRef
 setLambdaOutputToBlank lambda = do
     match lambda $ \case
+        Grouped g   -> IR.source g >>= setLambdaOutputToBlank >>= fmap IR.generalize . IR.grouped
         Lam _args _ -> do
             args' <- ASTDeconstruct.extractArguments lambda
             blank <- IR.generalize <$> IR.blank

@@ -129,7 +129,7 @@ spec = around withChannels $ id $ do
         it "cannot enter map node in map (x:x)" $ \env -> do
             u1 <- mkUUID
             res <- evalEmp env $ do
-                Graph.addNode top u1 "map (x:x)" def
+                Graph.addNode top u1 "map x:x" def
                 Graph.getGraph (top |> u1)
             case res of
                 Left err -> case stripPrefix "Breadcrumb" err of
