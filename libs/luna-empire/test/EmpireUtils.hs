@@ -13,6 +13,7 @@ module EmpireUtils (
     , withResult
     , top
     , (|>)
+    , (|>-)
     , mkUUID
     , withChannels
     , emptyGraphLocation
@@ -29,7 +30,7 @@ import qualified Data.Map                      as Map
 import           Data.Reflection               (Given (..), give)
 import           Data.UUID                     (UUID, nil)
 import           Data.UUID.V4                  (nextRandom)
-import           Empire.API.Data.Breadcrumb    (Breadcrumb(..), BreadcrumbItem(Lambda))
+import           Empire.API.Data.Breadcrumb    (Breadcrumb(..), BreadcrumbItem(Lambda, Arg))
 import           Empire.API.Data.Connection    (Connection)
 import           Empire.API.Data.GraphLocation (GraphLocation(..))
 import           Empire.API.Data.Port          (Port)
@@ -98,6 +99,10 @@ top = given
 infixl 5 |>
 (|>) :: GraphLocation -> NodeId -> GraphLocation
 (|>) (GraphLocation pid lid bc) nid = GraphLocation pid lid $ coerce $ (++ [Lambda nid]) $ coerce bc
+
+infixl 5 |>-
+(|>-) :: GraphLocation -> (NodeId, Int) -> GraphLocation
+(|>-) (GraphLocation pid lid bc) it = GraphLocation pid lid $ Breadcrumb $ (++ [uncurry Arg it]) $ coerce bc
 
 withChannels :: (CommunicationEnv -> IO a) -> IO a
 withChannels = bracket createChannels (const $ return ())
