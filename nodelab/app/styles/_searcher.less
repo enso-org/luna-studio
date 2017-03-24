@@ -7,6 +7,16 @@
     position: absolute;
     top: ~"calc(-34rem - 15.4px)";
 }
+.luna-searcher--command {
+    top: ~"calc(-34rem - 7.4px)";
+    .luna-searcher__input {
+        background: #004D40;
+        padding:    8px;
+    }
+    .luna-searcher__results {
+        bottom:         32px;
+    }
+}
 
 .luna-searcher__preview {
     display: none;
@@ -18,6 +28,7 @@
 
 
 .luna-searcher__input {
+    border-radius: @borderRadius;
     font-weight:   300;
     text-align:    center;
     font-family:   @fontDefault;
