@@ -103,7 +103,12 @@ getASTTarget nodeId = do
     getTargetNode matchNode
 
 getCurrentASTTarget :: ASTOp m => m (Maybe NodeRef)
-getCurrentASTTarget = mapM getTargetNode =<< getCurrentASTPointer
+getCurrentASTTarget = do
+    ref <- preuse $ Graph.breadcrumbHierarchy . BH._LambdaParent . BH.self
+    case ref of
+        Just (BH.AnonymousNode r) -> return $ Just r
+        Just (BH.MatchNode     r) -> Just <$> getTargetNode r
+        Nothing                   -> return Nothing
 
 getASTVar :: ASTOp m => NodeId -> m NodeRef
 getASTVar nodeId = do

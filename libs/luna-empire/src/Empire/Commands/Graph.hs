@@ -44,6 +44,7 @@ module Empire.Commands.Graph
 import           Control.Monad                 (forM, forM_)
 import           Control.Monad.Catch           (MonadCatch(..))
 import           Control.Monad.State           hiding (when)
+import           Control.Arrow                 ((&&&))
 import           Data.Coerce                   (coerce)
 import           Data.List                     (sort)
 import qualified Data.Map                      as Map
@@ -67,7 +68,7 @@ import           Empire.API.Data.Breadcrumb      (Breadcrumb (..), Named, Breadc
 import qualified Empire.API.Data.Breadcrumb      as Breadcrumb
 import qualified Empire.API.Data.Connection      as Connection
 import           Empire.API.Data.Connection      (Connection (..))
-import           Empire.API.Data.PortDefault    (PortDefault (Constant))
+import           Empire.API.Data.PortDefault     (PortDefault (Constant))
 import qualified Empire.API.Data.Graph           as APIGraph
 import           Empire.API.Data.GraphLocation   (GraphLocation (..))
 import           Empire.API.Data.Node            (Node (..), NodeId)
@@ -125,25 +126,46 @@ addNodeNoTC loc uuid input meta = do
         return parsedNode
     runAliasAnalysis
     node <- runASTOp $ do
-        parsedRef     <- ASTRead.getASTTarget uuid
+        parsedRef <- ASTRead.getASTTarget uuid
+        lamItem   <- prepareLambdaChild (BH.MatchNode expr) parsedRef
+        exprItem  <- prepareExprChild   (BH.MatchNode expr) parsedRef
+        forM_ lamItem  $ (Graph.breadcrumbHierarchy . BH.children . ix uuid .=) . BH.LambdaChild
+        forM_ exprItem $ (Graph.breadcrumbHierarchy . BH.children . ix uuid .=) . BH.ExprChild
         AST.writeMeta expr meta
-        parsedIsLambda <- ASTRead.isLambda parsedRef
-        when parsedIsLambda $ do
-            lambdaUUID             <- liftIO $ UUID.nextRandom
-            lambdaOutput           <- ASTRead.getLambdaOutputRef   parsedRef
-            lambdaBody             <- ASTRead.getFirstNonLambdaRef parsedRef
-            portMapping            <- liftIO $ (,) <$> UUID.nextRandom <*> UUID.nextRandom
-            outputIsOneOfTheInputs <- AST.isTrivialLambda parsedRef
-            let anonOutput = if   not outputIsOneOfTheInputs
-                             then Just $ BH.ExprChild $ BH.ExprItem Map.empty (BH.AnonymousNode lambdaOutput)
-                             else Nothing
-                lamItem    = BH.LamItem portMapping (BH.MatchNode expr) (Map.empty & at lambdaUUID .~ anonOutput) lambdaBody
-            Graph.breadcrumbHierarchy . BH.children . at uuid  ?= BH.LambdaChild lamItem
-            IR.writeLayer @Marker (Just $ OutPortRef lambdaUUID Port.All) lambdaOutput
         updateNodeSequence
         GraphBuilder.buildNode uuid
     Publisher.notifyNodeUpdate loc node
     return node
+
+prepareLambdaChild :: ASTOp m => BH.NodeIDTarget -> NodeRef -> m (Maybe BH.LamItem)
+prepareLambdaChild tgt ref = do
+    parsedIsLambda <- ASTRead.isLambda ref
+    if parsedIsLambda then do
+        lambdaUUID             <- liftIO $ UUID.nextRandom
+        portMapping            <- liftIO $ (,) <$> UUID.nextRandom <*> UUID.nextRandom
+        lambdaOutput           <- ASTRead.getLambdaOutputRef   ref
+        lambdaBody             <- ASTRead.getFirstNonLambdaRef ref
+        outputIsOneOfTheInputs <- AST.isTrivialLambda ref
+        let anonOutput = if   not outputIsOneOfTheInputs
+                         then Just $ BH.ExprChild $ BH.ExprItem Map.empty (BH.AnonymousNode lambdaOutput)
+                         else Nothing
+            lamItem    = BH.LamItem portMapping tgt (Map.empty & at lambdaUUID .~ anonOutput) lambdaBody
+        IR.writeLayer @Marker (Just $ OutPortRef lambdaUUID Port.All) lambdaOutput
+        return $ Just lamItem
+    else return Nothing
+
+prepareExprChild :: ASTOp m => BH.NodeIDTarget -> NodeRef -> m (Maybe BH.ExprItem)
+prepareExprChild tgt ref = do
+    parsedIsLambda <- ASTRead.isLambda ref
+    if not parsedIsLambda then do
+        let bareItem = BH.ExprItem Map.empty tgt
+        args  <- ASTDeconstruct.extractAppArguments ref
+        items <- mapM (uncurry prepareLambdaChild . (BH.AnonymousNode &&& id)) args
+        let addItem par (port, child) = case child of
+              Just ch -> par & BH.portChildren . at port ?~ ch
+              _       -> par
+        return $ Just $ foldl addItem bareItem $ zip [0..] items
+    else return Nothing
 
 updateNodeSequenceWithOutput :: ASTOp m => Maybe NodeRef -> m ()
 updateNodeSequenceWithOutput outputRef = do
