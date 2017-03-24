@@ -7,8 +7,6 @@ module Luna.Studio.Action.Edge
     , handleEdgeMove
     , handleMouseUp
     , stopPortDrag
-    , removePort
-    , addPort
     , portRename
     , portNameEdit
     ) where
@@ -91,7 +89,7 @@ startPortDrag mousePos portRef mode = do
             let portMapping = Map.fromList $ map (id &&& id) $ node ^. EdgeNode.ports . to Map.keys
             begin $ PortDrag mousePos portRef portMapping mode node
             modifyNodeEditor $ do
-                NodeEditor.draggedPort ?= DraggedPort draggedPort draggedPortPos
+                NodeEditor.draggedPort ?= DraggedPort nodeId draggedPort draggedPortPos
                 NodeEditor.edgeNodes . at nodeId . _Just . EdgeNode.ports . at portId . _Just . Port.visible .= False
             translateToWorkspace mousePos >>= updateConnectionsForDraggedPort portRef
 
@@ -134,7 +132,7 @@ stopPortDrag portDrag = do
     let portRef = portDrag ^. portDragPortRef
         nodeId  = portRef ^. PortRef.nodeId
     modifyNodeEditor $ do
-        NodeEditor.draggedPort         .= Nothing
+        -- NodeEditor.draggedPort         .= Nothing
         NodeEditor.portDragConnections .= def
     let originalNode = portDrag ^. portDragOriginalNode
     modifyNodeEditor $ NodeEditor.edgeNodes . at nodeId ?= originalNode
@@ -148,12 +146,6 @@ restoreConnect portDrag =
 restorePortDrag :: NodeId -> Connect -> Command State ()
 restorePortDrag nodeId connect = when (connect ^. connectSourcePort . PortRef.nodeId == nodeId) $ do
     startPortDrag (connect ^. connectStartPos) (connect ^. connectSourcePort) (connect ^. connectMode)
-
-removePort :: PortDrag -> Command State ()
-removePort portDrag = Batch.removePort (portDrag ^. portDragPortRef) >> end portDrag
-
-addPort :: AnyPortRef -> Command State ()
-addPort = Basic.addPort
 
 
 
