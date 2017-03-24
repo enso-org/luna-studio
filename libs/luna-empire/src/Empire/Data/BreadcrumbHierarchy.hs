@@ -102,6 +102,14 @@ instance HasBody BParent where
         LambdaParent   i -> LambdaParent   <$> body trans i
         ToplevelParent i -> ToplevelParent <$> body trans i
 
+getBreadcrumbItems :: BParent -> Breadcrumb BreadcrumbItem -> [BChild]
+getBreadcrumbItems b (Breadcrumb crumbs) = go crumbs b where
+    go [] _ = []
+    go (Lambda id : crumbs) b = case b ^? children . ix id of
+        Just (LambdaChild c) -> LambdaChild c : go crumbs (LambdaParent c)
+        Just (ExprChild   c) -> ExprChild   c : []
+        Nothing              -> []
+
 navigateTo :: BParent -> Breadcrumb BreadcrumbItem -> Maybe BParent
 navigateTo b (Breadcrumb crumbs) = go crumbs b where
     go [] b = pure b

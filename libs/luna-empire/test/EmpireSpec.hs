@@ -368,9 +368,7 @@ spec = around withChannels $ parallel $ do
             u1 <- mkUUID
             res <- evalEmp env $ do
                 Graph.addNode top u1 "1" def
-                Graph.withGraph top $ runASTOp $ AST.dumpGraphViz "topkek1"
                 node  <- Graph.setNodeExpression top u1 "a: a"
-                Graph.withGraph top $ runASTOp $ AST.dumpGraphViz "topkek"
                 nodes <- Graph.getNodes top
                 return (node, nodes)
             withResult res $ \(node, nodes) -> do
