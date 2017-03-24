@@ -61,7 +61,7 @@ import           Empire.Data.Graph               (Graph)
 import qualified Empire.Data.Graph               as Graph
 import           Empire.Data.Layers              (Marker)
 
-import           Empire.API.Data.Breadcrumb      (Breadcrumb, Named, BreadcrumbItem)
+import           Empire.API.Data.Breadcrumb      (Breadcrumb (..), Named, BreadcrumbItem)
 import qualified Empire.API.Data.Breadcrumb      as Breadcrumb
 import qualified Empire.API.Data.Connection      as Connection
 import           Empire.API.Data.Connection      (Connection (..))
@@ -525,7 +525,7 @@ getConnections :: GraphLocation -> Empire [(OutPortRef, InPortRef)]
 getConnections loc = withTC loc True $ runASTOp $ view APIGraph.connections <$> GraphBuilder.buildGraph
 
 decodeLocation :: GraphLocation -> Empire (Breadcrumb (Named BreadcrumbItem))
-decodeLocation loc@(GraphLocation _ _ crumbs) = withGraph loc $ GraphBuilder.decodeBreadcrumbs crumbs
+decodeLocation loc@(GraphLocation p l crumbs) = withGraph (GraphLocation p l $ Breadcrumb []) $ GraphBuilder.decodeBreadcrumbs crumbs
 
 renameNode :: GraphLocation -> NodeId -> Text -> Empire ()
 renameNode loc nid name = withTC loc False $ do

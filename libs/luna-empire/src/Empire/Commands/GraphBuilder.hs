@@ -60,13 +60,11 @@ import qualified Luna.IR as IR
 import qualified OCI.IR.Combinators as IR
 import           Luna.IR.Term.Uni
 
-nameBreadcrumb :: ASTOp m => BreadcrumbItem -> m (Named BreadcrumbItem)
-nameBreadcrumb item@(Breadcrumb.Lambda nid) = do
-    name <- getNodeName nid
-    return $ Named (fromMaybe "" name) item
-
 decodeBreadcrumbs :: Breadcrumb BreadcrumbItem -> Command Graph (Breadcrumb (Named BreadcrumbItem))
-decodeBreadcrumbs (Breadcrumb items) = fmap Breadcrumb $ runASTOp $ forM items nameBreadcrumb
+decodeBreadcrumbs bs@(Breadcrumb items) = runASTOp $ do
+    bh    <- use Graph.breadcrumbHierarchy
+    names <- forM (BH.getBreadcrumbItems bh bs) $ \child -> getUniName $ child ^. BH.self . BH.anyRef
+    return $ Breadcrumb $ fmap (\(n, i) -> Named (fromMaybe "" n) i) $ zip names items
 
 data CannotEnterNodeException = CannotEnterNodeException NodeId
     deriving Show
@@ -133,17 +131,19 @@ buildNodeTypecheckUpdate nid = do
   let portMap = Map.fromList $ flip fmap ports $ \p@(Port id' _ _ _) -> (id', p)
   return $ API.NodeTypecheckerUpdate nid portMap
 
-getNodeName :: ASTOp m => NodeId -> m (Maybe Text)
-getNodeName nid = do
-    root  <- GraphUtils.getASTPointer nid
+getUniName :: ASTOp m => NodeRef -> m (Maybe Text)
+getUniName root = do
     match' <- ASTRead.isMatch root
     if match' then do
-        vnode <- GraphUtils.getASTVar nid
+        vnode <- ASTRead.getVarNode root
         name <- match vnode $ \case
             Var{}  -> ASTRead.getVarName vnode
             _      -> Print.printExpression vnode
         return $ Just (Text.pack name)
     else return Nothing
+
+getNodeName :: ASTOp m => NodeId -> m (Maybe Text)
+getNodeName nid = ASTRead.getASTPointer nid >>= getUniName
 
 getPortState :: ASTOp m => NodeRef -> m PortState
 getPortState node = do
