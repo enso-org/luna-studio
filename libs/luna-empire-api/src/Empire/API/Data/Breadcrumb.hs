@@ -3,8 +3,9 @@ module Empire.API.Data.Breadcrumb where
 
 import           Control.DeepSeq      (NFData)
 import           Data.Binary          (Binary)
+import           Data.Monoid          (Monoid (..))
 import           Empire.API.Data.Node (NodeId)
-import           Prologue
+import           Prologue             hiding (Monoid, mappend, mempty)
 
 
 data BreadcrumbItem = Lambda NodeId
@@ -25,5 +26,9 @@ instance Binary a => Binary (Breadcrumb a)
 instance Binary a => Binary (Named a)
 instance Binary BreadcrumbItem
 
+instance Monoid (Breadcrumb a) where
+    mappend bc1 bc2 = Breadcrumb $ (bc1 ^. items) <> (bc2 ^. items)
+    mempty = Breadcrumb def
+
 instance Default (Breadcrumb a) where
-    def = Breadcrumb def
+    def = mempty
