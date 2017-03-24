@@ -36,35 +36,35 @@ withUUID act = do
     guiID <- use $ backend . clientId
     liftIO $ act uuid $ Just guiID
 
-createLibrary :: Text -> Text -> Command State ()
-createLibrary = withWorkspace .: BatchCmd.createLibrary
-
-listLibraries :: ProjectId -> Command State ()
-listLibraries = withUUID . BatchCmd.listLibraries
-
-
-createProject :: Text -> Command State ()
-createProject = withUUID . BatchCmd.createProject
-
-exportProject :: ProjectId -> Command State ()
-exportProject = withUUID . BatchCmd.exportProject
-
-importProject :: Text -> Command State ()
-importProject = withUUID . BatchCmd.importProject
-
-listProjects :: Command State ()
-listProjects = withUUID BatchCmd.listProjects
-
-openProject :: FilePath -> Command State ()
-openProject = withUUID . BatchCmd.openProject
+-- createLibrary :: Text -> Text -> Command State ()
+-- createLibrary = withWorkspace .: BatchCmd.createLibrary
+--
+-- listLibraries :: ProjectId -> Command State ()
+-- listLibraries = withUUID . BatchCmd.listLibraries
+--
+--
+-- createProject :: Text -> Command State ()
+-- createProject = withUUID . BatchCmd.createProject
+--
+-- exportProject :: ProjectId -> Command State ()
+-- exportProject = withUUID . BatchCmd.exportProject
+--
+-- importProject :: Text -> Command State ()
+-- importProject = withUUID . BatchCmd.importProject
+--
+-- listProjects :: Command State ()
+-- listProjects = withUUID BatchCmd.listProjects
+--
+-- openProject :: FilePath -> Command State ()
+-- openProject = withUUID . BatchCmd.openProject
 
 
 dumpGraphViz :: Command State ()
 dumpGraphViz = withWorkspace BatchCmd.dumpGraphViz
 
 
-getProgram :: Command State ()
-getProgram = withWorkspace BatchCmd.getProgram
+-- getProgram :: Command State ()
+-- getProgram = withWorkspace BatchCmd.getProgram
 
 
 addConnection :: Either OutPortRef NodeId -> Either AnyPortRef NodeId -> Command State ()
