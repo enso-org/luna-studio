@@ -4,7 +4,18 @@
 
 .luna-searcher {
     z-index: 100000000;
+    position: absolute;
+    top: ~"calc(-34rem - 15.4px)";
 }
+
+.luna-searcher__preview {
+    display: none;
+}
+.luna-searcher__body {
+    bottom: 0;
+    position: absolute;
+}
+
 
 .luna-searcher__input {
     font-weight:   300;
@@ -15,7 +26,7 @@
     height:        12px;
     background:    @colorBackground;
     color:         #fff;
-    transform:     translate(-50%, calc(-50% - 55px));
+    transform:     translate(-50%);
     overflow:      inherit;
     &:focus {
         outline: 0;
@@ -23,19 +34,19 @@
 }
 
 .luna-searcher__results {
-    bottom:         30rem;
+    bottom:         16px;
     display:        flex;
     flex-direction: column-reverse;
     position:       absolute;
     width:          100%;
-    left: -50%;
+    left:          -50%;
     text-align:     center;
 
 }
 
 .luna-searcher__results__item {
     background:     #222;
-    line-height:    @gridSize;
+    line-height:    16px;
     display:        flex;
     justify-content: center;
     &:first-child {
