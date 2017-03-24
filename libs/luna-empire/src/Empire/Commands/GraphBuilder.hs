@@ -40,7 +40,7 @@ import qualified Empire.API.Data.Graph             as API
 import           Empire.API.Data.MonadPath              (MonadPath(MonadPath))
 import           Empire.API.Data.Node              (NodeId)
 import qualified Empire.API.Data.Node              as API
-import           Empire.API.Data.Port              (InPort (..), OutPort (..), Port (..), PortId (..), PortState (..))
+import           Empire.API.Data.Port              (InPort (..), OutPort (..), Port (..), PortId (..), OutPortTree (..), PortState (..))
 import qualified Empire.API.Data.Port              as Port
 import           Empire.API.Data.PortRef           (InPortRef (..), OutPortRef (..), srcNodeId)
 import           Empire.API.Data.TypeRep           (TypeRep(TLam, TStar, TCons))
@@ -318,10 +318,10 @@ flipPorts = map flipPort
         flipPort (Port portId portName portType portState) =
             Port (flipPortId portId) (flipPortName portName) portType portState
 
-        flipPortId (OutPortId All)            = InPortId  (Arg 0)
-        flipPortId (OutPortId (Projection i)) = InPortId  (Arg i)
-        flipPortId (InPortId  (Arg i))        = OutPortId (Projection i)
-        flipPortId (InPortId  Self)           = error "flipPortId: cannot flip self"
+        flipPortId (OutPortId All)              = InPortId  (Arg 0)
+        flipPortId (OutPortId (Projection i _)) = InPortId  (Arg i)
+        flipPortId (InPortId  (Arg i))          = OutPortId (Projection i All)
+        flipPortId (InPortId  Self)             = error "flipPortId: cannot flip self"
 
         flipPortName "Output" = "Input"
         flipPortName name     = name
@@ -340,7 +340,7 @@ buildInputEdge connections nid = do
     Just ref <- ASTRead.getCurrentASTTarget
     tp       <- IR.readLayer @TypeLayer ref >>= IR.source
     types    <- extractArgTypes tp
-    let connectedPorts = map (\(OutPortRef _ (Projection p)) -> p)
+    let connectedPorts = map (\(OutPortRef _ (Projection p _)) -> p)
                $ map fst
                $ filter (\(OutPortRef refNid p,_) -> nid == refNid)
                $ connections
@@ -353,11 +353,11 @@ buildInputEdge connections nid = do
             let numberOfPorts = length vars
             return $ replicate numberOfPorts TStar
         _  -> return types
-    let inputEdges = List.zipWith4 (\n t state i -> Port (OutPortId $ Projection i) n t state) names argTypes states [(0::Int)..]
+    let inputEdges = List.zipWith4 (\n t state i -> Port (OutPortId $ Projection i All) n t state) names argTypes states [(0::Int)..]
     return $
         API.Node nid
             "inputEdge"
-            API.InputEdge
+            (API.InputEdge $ Map.fromList $ flip map inputEdges $ \port -> (let OutPortId (Projection x _) = port ^. Port.portId in x, TAll port))
             False
             (Map.fromList $ flip map inputEdges $ \port -> (port ^. Port.portId, port))
             def
@@ -402,7 +402,7 @@ getOutputEdgeInputs inputEdge outputEdge = do
     nid <- do
         outputIsInputNum <- getLambdaInputArgNumber ref
         case outputIsInputNum of
-            Just index -> return $ Just (inputEdge, Projection index)
+            Just index -> return $ Just (inputEdge, Projection index All)
             _       -> do
                 output <- ASTRead.getLambdaOutputRef ref
                 nid <- ASTRead.getNodeId output
@@ -424,7 +424,7 @@ nodeConnectedToOutput = do
 resolveInputNodeId :: ASTOp m => Maybe (NodeId, NodeId) -> [NodeRef] -> NodeRef -> m (Maybe OutPort, Maybe NodeId)
 resolveInputNodeId edgeNodes lambdaArgs ref = do
     case List.findIndex (== ref) lambdaArgs of
-        Just i -> return (Just $ Projection i, fmap fst edgeNodes)
+        Just i -> return (Just $ Projection i All, fmap fst edgeNodes)
         _      -> do
             projection <- IR.readLayer @Marker ref
             case projection of
@@ -440,7 +440,7 @@ getOuterLambdaArguments = do
 
 outIndexToProjection :: Maybe Int -> OutPort
 outIndexToProjection Nothing = All
-outIndexToProjection (Just i) = Projection i
+outIndexToProjection (Just i) = Projection i All
 
 getNodeInputs :: ASTOp m => Maybe (NodeId, NodeId) -> NodeId -> m [(OutPortRef, InPortRef)]
 getNodeInputs edgeNodes nodeId = do

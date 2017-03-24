@@ -208,7 +208,7 @@ handleAddNode = modifyGraph defInverse action success where
 
 handleAddPort :: Request AddPort.Request -> StateT Env BusT ()
 handleAddPort = modifyGraph defInverse action replyResult where
-    action  (AddPort.Request location (OutPortRef' (OutPortRef nid (Projection i)))) = Graph.addPort location nid i
+    action  (AddPort.Request location (OutPortRef' (OutPortRef nid (Projection i _)))) = Graph.addPort location nid i
 
 handleAddSubgraph :: Request AddSubgraph.Request -> StateT Env BusT ()
 handleAddSubgraph = modifyGraph defInverse action replyResult where

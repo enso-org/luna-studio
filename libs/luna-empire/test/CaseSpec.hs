@@ -10,7 +10,7 @@ import qualified Empire.API.Data.Graph         as Graph
 import qualified Empire.Data.Graph             as Graph (breadcrumbHierarchy)
 import           Empire.API.Data.GraphLocation (GraphLocation(..))
 import qualified Empire.API.Data.Node          as Node (NodeType(ExpressionNode, InputEdge, OutputEdge),
-                                                        canEnter, expression, name, nodeId, nodeType, ports)
+                                                        canEnter, expression, name, nodeId, _InputEdge, nodeType, ports)
 import           Empire.API.Data.NodeMeta      (NodeMeta(..))
 import qualified Empire.API.Data.Port          as Port
 import           Empire.API.Data.PortDefault   (PortDefault (Constant, Expression), Value(IntValue))
@@ -71,16 +71,16 @@ spec = around withChannels $ id $ do
                     , Port.Port (Port.InPortId (Port.Arg 0)) "arg0" TStar (Port.WithDefault (Expression "x: x"))
                     ]
                 let Graph.Graph nodes connections _ = graph
-                    Just inputEdge = find (\n -> n ^. Node.nodeType == Node.InputEdge) nodes
+                    Just inputEdge  = find (\n -> isJust $ n ^? Node.nodeType . Node._InputEdge) nodes
                     Just outputEdge = find (\n -> n ^. Node.nodeType == Node.OutputEdge) nodes
                 outputPorts inputEdge `shouldMatchList` [
-                      Port.Port (Port.OutPortId (Port.Projection 0)) "x" TStar Port.Connected
+                      Port.Port (Port.OutPortId (Port.Projection 0 Port.All)) "x" TStar Port.Connected
                     ]
                 inputPorts outputEdge `shouldMatchList` [
                       Port.Port (Port.InPortId (Port.Arg 0)) "output" TStar Port.Connected
                     ]
                 connections `shouldMatchList` [
-                      (OutPortRef (inputEdge ^. Node.nodeId) (Port.Projection 0),
+                      (OutPortRef (inputEdge ^. Node.nodeId) (Port.Projection 0 Port.All),
                       InPortRef (outputEdge ^. Node.nodeId) (Port.Arg 0))
                     ]
         xit "shows anonymous breadcrumbs in foo ((Acc a): b: a + b) 1 ((Vector a b c): a * b + c)" $ \env -> do
@@ -98,12 +98,12 @@ spec = around withChannels $ id $ do
                     , Port.Port (Port.InPortId (Port.Arg 2)) "arg2" TStar (Port.WithDefault (Expression "((Vector a b c): a * b + c)"))
                     ]
                 let Graph.Graph nodes connections _ = graph0
-                    Just inputEdge = find (\n -> n ^. Node.nodeType == Node.InputEdge) nodes
+                    Just inputEdge = find (\n -> isJust $ n ^? Node.nodeType . Node._InputEdge) nodes
                     Just outputEdge = find (\n -> n ^. Node.nodeType == Node.OutputEdge) nodes
                 outputPorts inputEdge `shouldMatchList` [
                     --FIXME[MM]: all ports in this test should be connected
-                      Port.Port (Port.OutPortId (Port.Projection 0)) "a" TStar Port.NotConnected
-                    , Port.Port (Port.OutPortId (Port.Projection 1)) "b" TStar Port.NotConnected
+                      Port.Port (Port.OutPortId (Port.Projection 0 Port.All)) "a" TStar Port.NotConnected
+                    , Port.Port (Port.OutPortId (Port.Projection 1 Port.All)) "b" TStar Port.NotConnected
                     ]
                 inputPorts outputEdge `shouldMatchList` [
                       Port.Port (Port.InPortId (Port.Arg 0)) "output" TStar Port.NotConnected
@@ -111,13 +111,13 @@ spec = around withChannels $ id $ do
                 -- from input ports to + and from + to output
                 connections `shouldSatisfy` ((== 3) . length)
                 let Graph.Graph nodes connections _ = graph2
-                    Just inputEdge = find (\n -> n ^. Node.nodeType == Node.InputEdge) nodes
+                    Just inputEdge = find (\n -> isJust $ n ^? Node.nodeType . Node._InputEdge) nodes
                     Just outputEdge = find (\n -> n ^. Node.nodeType == Node.OutputEdge) nodes
                 outputPorts inputEdge `shouldMatchList` [
                     --FIXME[MM]: all ports in this test should be connected
-                      Port.Port (Port.OutPortId (Port.Projection 0)) "a" TStar Port.NotConnected
-                    , Port.Port (Port.OutPortId (Port.Projection 1)) "b" TStar Port.NotConnected
-                    , Port.Port (Port.OutPortId (Port.Projection 2)) "c" TStar Port.NotConnected
+                      Port.Port (Port.OutPortId (Port.Projection 0 Port.All)) "a" TStar Port.NotConnected
+                    , Port.Port (Port.OutPortId (Port.Projection 1 Port.All)) "b" TStar Port.NotConnected
+                    , Port.Port (Port.OutPortId (Port.Projection 2 Port.All)) "c" TStar Port.NotConnected
                     ]
                 inputPorts outputEdge `shouldMatchList` [
                       Port.Port (Port.InPortId (Port.Arg 0)) "output" TStar Port.NotConnected
