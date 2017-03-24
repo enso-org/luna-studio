@@ -11,7 +11,6 @@ import qualified Empire.API.Atom.Substitute             as Substitute
 import qualified Empire.API.Data.Breadcrumb             as Breadcrumb
 import           Empire.API.Data.Connection             (Connection, ConnectionId)
 import           Empire.API.Data.GraphLocation          (GraphLocation)
-import           Empire.API.Data.GraphLocation          (projectId)
 import qualified Empire.API.Data.GraphLocation          as GraphLocation
 import           Empire.API.Data.Node                   (Node, NodeId)
 import           Empire.API.Data.NodeMeta               (NodeMeta)
@@ -38,27 +37,27 @@ withLibrary :: Workspace -> (GraphLocation -> a) -> a
 withLibrary w f = f $ w ^. currentLocation
 
 
-createLibrary :: Text -> Text -> Workspace -> UUID -> Maybe UUID -> IO ()
-createLibrary name path workspace uuid guiID= sendRequest $ Message uuid guiID $ CreateLibrary.Request (workspace ^. currentLocation . projectId) (Just $ Text.unpack name) (Text.unpack path)
-
-listLibraries :: ProjectId -> UUID -> Maybe UUID -> IO ()
-listLibraries pid uuid guiID = sendRequest $ Message uuid guiID $ ListLibraries.Request pid
-
-
-createProject :: Text -> UUID -> Maybe UUID -> IO ()
-createProject name uuid guiID = sendRequest $ Message uuid guiID $ CreateProject.Request $ Text.unpack name
-
-exportProject :: ProjectId -> UUID -> Maybe UUID -> IO ()
-exportProject pid uuid guiID = sendRequest $ Message uuid guiID $ ExportProject.Request pid
-
-importProject :: Text -> UUID -> Maybe UUID -> IO ()
-importProject payload uuid guiID = sendRequest $ Message uuid guiID $ ImportProject.Request payload
-
-listProjects :: UUID -> Maybe UUID -> IO ()
-listProjects uuid guiID = sendRequest $ Message uuid guiID ListProjects.Request
-
-openProject :: FilePath -> UUID -> Maybe UUID -> IO ()
-openProject path uuid guiID = sendRequest $ Message uuid guiID $ OpenProject.Request path
+-- createLibrary :: Text -> Text -> Workspace -> UUID -> Maybe UUID -> IO ()
+-- createLibrary name path workspace uuid guiID= sendRequest $ Message uuid guiID $ CreateLibrary.Request (workspace ^. currentLocation ) (Just $ Text.unpack name) (Text.unpack path)
+--
+-- listLibraries :: ProjectId -> UUID -> Maybe UUID -> IO ()
+-- listLibraries pid uuid guiID = sendRequest $ Message uuid guiID $ ListLibraries.Request pid
+--
+--
+-- createProject :: Text -> UUID -> Maybe UUID -> IO ()
+-- createProject name uuid guiID = sendRequest $ Message uuid guiID $ CreateProject.Request $ Text.unpack name
+--
+-- exportProject :: ProjectId -> UUID -> Maybe UUID -> IO ()
+-- exportProject pid uuid guiID = sendRequest $ Message uuid guiID $ ExportProject.Request pid
+--
+-- importProject :: Text -> UUID -> Maybe UUID -> IO ()
+-- importProject payload uuid guiID = sendRequest $ Message uuid guiID $ ImportProject.Request payload
+--
+-- listProjects :: UUID -> Maybe UUID -> IO ()
+-- listProjects uuid guiID = sendRequest $ Message uuid guiID ListProjects.Request
+--
+-- openProject :: FilePath -> UUID -> Maybe UUID -> IO ()
+-- openProject path uuid guiID = sendRequest $ Message uuid guiID $ OpenProject.Request path
 
 -- Atom requests --
 

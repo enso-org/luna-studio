@@ -16,5 +16,5 @@ import qualified Luna.Studio.State.Global        as Global
 
 
 handle :: Event -> Maybe (Command Global.State ())
-handle  Init                                 = Just $ maybe Batch.listProjects Batch.openProject Nothing
+-- handle  Init                                 = Just $ maybe Batch.listProjects Batch.openProject Nothing
 handle _                                     = Nothing
