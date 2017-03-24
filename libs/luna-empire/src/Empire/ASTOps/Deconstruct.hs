@@ -3,6 +3,7 @@
 module Empire.ASTOps.Deconstruct (
     deconstructApp
   , extractArguments
+  , extractAppArguments
   , dumpAccessors
   ) where
 
@@ -38,6 +39,9 @@ extractArguments expr = match expr $ \case
     Lam{}       -> extractArguments' FLam expr
     Cons _ args -> mapM IR.source args
     _           -> return []
+
+extractAppArguments :: ASTOp m => NodeRef -> m [NodeRef]
+extractAppArguments = extractArguments' FApp
 
 extractArguments' :: ASTOp m => ExtractFilter -> NodeRef -> m [NodeRef]
 extractArguments' FApp expr = match expr $ \case

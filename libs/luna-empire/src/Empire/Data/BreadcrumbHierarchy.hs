@@ -116,6 +116,9 @@ navigateTo b (Breadcrumb crumbs) = go crumbs b where
     go (Lambda id : crumbs) b = do
         child <- b ^? children . ix id . _LambdaChild . re _LambdaParent
         go crumbs child
+    go (Arg id pos : crumbs) b = do
+        child <- b ^? children . ix id . _ExprChild . portChildren . ix pos . re _LambdaParent
+        go crumbs child
 
 replaceAt :: Breadcrumb BreadcrumbItem -> BParent -> BParent -> Maybe BParent
 replaceAt (Breadcrumb crumbs) par child = go crumbs par child where
@@ -124,6 +127,10 @@ replaceAt (Breadcrumb crumbs) par child = go crumbs par child where
         lowerPar <- par ^? children . ix id . _LambdaChild . re _LambdaParent
         LambdaParent replaced <- go crumbs lowerPar child
         return $ par & children . ix id . _LambdaChild .~ replaced
+    go (Arg id pos : crumbs) par child = do
+        lowerPar <- par ^? children . ix id . _ExprChild . portChildren . ix pos . re _LambdaParent
+        LambdaParent replaced <- go crumbs lowerPar child
+        return $ par & children . ix id . _ExprChild . portChildren . ix pos .~ replaced
 
 topLevelIDs :: BParent -> [NodeId]
 topLevelIDs = Map.keys . view children
