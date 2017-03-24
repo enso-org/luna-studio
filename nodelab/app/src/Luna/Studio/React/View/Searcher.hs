@@ -45,20 +45,16 @@ searcher =  React.defineView name $ \(ref, camera, s) -> do
             \empireNode -> case empireNode ^. Empire.nodeType of
                 ExpressionNode expr -> Just $ convert (empireNode, expr)
                 _                   -> Nothing
-        className = Style.prefixFromList ( "node-root" : (case mode of
-                                                          Searcher.Node    { } -> [ "searcher" ]
-                                                          Searcher.Command { } -> [ "searcher", "searcher--command" ]))
+        className = Style.prefixFromList ( "searcher" : ( case mode of
+                                                                    Searcher.Node    { } -> [ "searcher--node" ]
+                                                                    Searcher.Command { } -> [ "searcher--command"   ]))
     div_
         [ "key"       $= name
         , "className" $= className
         ] $ do
         div_
-            [ "key"       $= "nodeTrans"
-            , "className" $= Style.prefix "node-trans"
-            ] $ withJust nodePrev $ nodeBody_ ref . (Node.position .~ nodePos) -- . (Node.isExpandedControls .~ True)
-        div_
-            [ "key"       $= "nameTrans"
-            , "className" $= Style.prefix "name-trans"
+            [ "key"       $= "searcherBody"
+            , "className" $= Style.prefix "searcher__body"
             , "style"     @= Aeson.object [ "transform" Aeson..= (showNodeTranslate camera $ s ^. Searcher.position) ]
             , onMouseDown $ \e _ -> [stopPropagation e]
             , onMouseUp   $ \e _ -> [stopPropagation e]
@@ -103,6 +99,11 @@ searcher =  React.defineView name $ \(ref, camera, s) -> do
                                 ["key" $= "name"
                                 ,"className" $= Style.prefix "searcher__results__item__name"
                                 ] $ elemString $ convert $ result ^. Result.name
+        div_
+            [ "key"       $= "searcherPreview"
+            , "className" $= Style.prefix "searcher__preview"
+            ] $ withJust nodePrev $ nodeBody_ ref . (Node.position .~ nodePos)
+                                              -- . (Node.isExpandedControls .~ True)
 
 searcher_ :: Ref App -> Matrix Double -> Searcher -> ReactElementM ViewEventHandler ()
 searcher_ ref camera model = React.viewWithSKey searcher name (ref, camera, model) mempty
