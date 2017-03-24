@@ -27,9 +27,3 @@ handleSaveFile = $notImplemented
 
 handleCloseFile :: Request CloseFile.Request -> StateT Env BusT ()
 handleCloseFile = $notImplemented
-
-handleSubstitute :: Request Substitute.Request -> StateT Env BusT ()
-handleSubstitute = $notImplemented
-
-handleGetBuffer :: Request GetBuffer.Request -> StateT Env BusT ()
-handleGetBuffer = $notImplemented
