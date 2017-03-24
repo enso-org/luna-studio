@@ -1,41 +1,8 @@
 module Luna.Studio.Action.State.Model.Port where
 
-import           Data.Position                     (Position)
-import           Data.ScreenPosition               (fromDoubles, x, y)
-import           Empire.API.Data.Port              (PortId, getPortNumber, isSelf)
-import           JS.Scene                          (inputSidebarPosition, inputSidebarSize, outputSidebarPosition, outputSidebarSize)
-import           Luna.Studio.Action.Command        (Command)
-import           Luna.Studio.Action.State.Scene    (translateToWorkspace)
-import           Luna.Studio.Action.State.Scene    (getInputSidebar, getOutputSidebar)
 import           Luna.Studio.Data.Angle            (Angle)
 import           Luna.Studio.Prelude
-import           Luna.Studio.React.Model.Constants (gridSize, nodeRadius)
-import           Luna.Studio.State.Global          (State)
-
-
--- WARNING: Since getInputSidebar and getOutputSidebar can change scene redrawConnectionForEdgeNodes may be needed after use of those function
-
-getInputEdgePortPosition :: PortId -> Command State (Maybe Position)
-getInputEdgePortPosition pid = do
-    mayInputSidebar <- getInputSidebar
-    flip (maybe (return Nothing)) mayInputSidebar $ \inputSidebar -> do
-        let portNum = getPortNumber pid
-            pos     = inputSidebar ^. inputSidebarPosition
-            siz     = inputSidebar ^. inputSidebarSize
-            posX    = pos ^. x + siz ^. x
-            posY    = pos ^. y + (fromIntegral (portNum + 1)) * gridSize
-        (fmap Just) . translateToWorkspace $ fromDoubles posX posY
-
-getOutputEdgePortPosition :: PortId -> Command State (Maybe Position)
-getOutputEdgePortPosition pid = do
-    mayOutputSidebar <- getOutputSidebar
-    flip (maybe (return Nothing)) mayOutputSidebar $ \outputSidebar -> do
-        let portNum = getPortNumber pid
-            pos     = outputSidebar ^. outputSidebarPosition
-            siz     = outputSidebar ^. outputSidebarSize
-            posX    = pos ^. x
-            posY    = (fromIntegral $ if isSelf pid then 0 else  portNum + 1) * gridSize + pos ^. y
-        (fmap Just) . translateToWorkspace $ fromDoubles posX posY
+import           Luna.Studio.React.Model.Constants (nodeRadius)
 
 
 portGap :: Double -> Angle

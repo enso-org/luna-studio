@@ -23,7 +23,7 @@ import           Luna.Studio.Prelude
 import           Luna.Studio.React.Model.Connection          (dst, src)
 import           Luna.Studio.React.Model.Node.ExpressionNode (isSelected, nodeId, ports, position)
 import           Luna.Studio.React.Model.NodeEditor          (currentConnections)
-import           Luna.Studio.React.Model.Port                (visible)
+import           Luna.Studio.React.Model.Port                (ensureVisibility, mode)
 import           Luna.Studio.State.Action                    (Action (begin, continue, end, update), NodeDrag (NodeDrag), nodeDragAction,
                                                               nodeDragNodeId, nodeDragNodesStartPos, nodeDragSnappedConn, nodeDragStartPos)
 
@@ -90,7 +90,7 @@ snapConnectionsForNodes mousePos nodeIds = when (length nodeIds == 1) $ forM_ no
                 let selfPortRef = InPortRef  nid Self
                     outPortRef  = OutPortRef nid All
                 mayConn       <- getConnection connId
-                modifyExpressionNode nid $ ports . ix (InPortId Self) . visible .= True
+                modifyExpressionNode nid $ ports . ix (InPortId Self) . mode %= ensureVisibility
                 mayConnModel1 <- fmap join . mapM (flip createConnectionModel selfPortRef) $ view src <$> mayConn
                 mayConnModel2 <- fmap join $ mapM (createConnectionModel outPortRef)       $ view dst <$> mayConn
                 case (,) <$> mayConnModel1 <*> mayConnModel2 of

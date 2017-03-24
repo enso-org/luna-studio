@@ -23,7 +23,7 @@ import qualified Luna.Studio.Action.State.NodeEditor     as NodeEditor
 import           Luna.Studio.Action.UUID                 (getUUID)
 import           Luna.Studio.Prelude
 import           Luna.Studio.React.Model.Node            (EdgeNode, ExpressionNode, Node (Edge, Expression), nodeId, ports)
-import           Luna.Studio.React.Model.Port            (visible)
+import           Luna.Studio.React.Model.Port            (Mode (Invisible), ensureVisibility, mode)
 import           Luna.Studio.State.Global                (State)
 
 
@@ -63,7 +63,8 @@ localAddEdgeNode node = do
 localAddExpressionNode :: ExpressionNode -> Command State ()
 localAddExpressionNode node = do
     selfPortVis <- shouldDisplayPortSelf $ node
-    let node' = node & ports . ix (InPortId Self) . visible .~ selfPortVis
+    let selfMode = if selfPortVis then ensureVisibility else const Invisible
+        node' = node & ports . ix (InPortId Self) . mode %~ selfMode
     NodeEditor.addExpressionNode node'
     void . redrawConnectionsForNode $ node ^. nodeId
     focusNode $ node ^. nodeId

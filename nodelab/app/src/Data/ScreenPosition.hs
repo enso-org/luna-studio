@@ -43,3 +43,9 @@ fromTuple = uncurry fromDoubles
 
 fromDoubles :: Double -> Double -> ScreenPosition
 fromDoubles = ScreenPosition .: Vector2
+
+toTuple :: ScreenPosition -> (Double, Double)
+toTuple (ScreenPosition (Vector2 x' y')) = (x', y')
+
+move :: Vector2 Double -> ScreenPosition -> ScreenPosition
+move vec pos = pos & vector +~ vec

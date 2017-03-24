@@ -46,22 +46,10 @@ resetGraph = modifyNodeEditor $ do
     edgeNodes           .= def
     monads              .= def
     connections         .= def
-    portDragConnections .= def
     connectionPen       .= def
     selectionBox        .= def
     searcher            .= def
     visualizations      .= def
-    draggedPort         .= def
-
--- TODO[LJK]: Make this work
--- separateSubgraph :: [NodeId] -> Command State Graph
--- separateSubgraph nodeIds = do
---     let idSet = Set.fromList nodeIds
---         inSet = flip Set.member idSet
---     nodes <- Map.filterWithKey (inSet .: const)  <$> getNodesMap
---     conns <- Map.filter (inSet . view dstNodeId) <$> getConnectionsMap
---     return $ Graph nodes conns
-
 
 separateSubgraph :: [NodeId] -> Command State Graph
 separateSubgraph nodeIds = do
@@ -227,11 +215,6 @@ instance HasPort OutPortRef where
     getPort portRef = getPortFromAnyPortRef $ OutPortRef' portRef
 instance HasPort AnyPortRef where
     getPort = getPortFromAnyPortRef
-
-modifyPort :: Monoid r => AnyPortRef -> M.State Port r -> Command State r
-modifyPort portRef = modify (nodeEditor . edgeNodes . at nid . traverse . ports . at pid) . zoom traverse where
-    nid = portRef ^. PortRef.nodeId
-    pid = portRef ^. PortRef.portId
 
 getPortFromAnyPortRef :: AnyPortRef -> Command State (Maybe Port)
 getPortFromAnyPortRef portRef = runMaybeT $ do

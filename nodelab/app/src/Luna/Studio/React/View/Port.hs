@@ -12,8 +12,8 @@ import           Luna.Studio.React.Model.App       (App)
 import           Luna.Studio.React.Model.Constants (lineHeight, nodeRadius, nodeRadius')
 import           Luna.Studio.React.Model.Node      (NodeId)
 --import           Luna.Studio.React.Model.Port (Port (..))
-import           Luna.Studio.React.Model.Port      (InPort (Self), OutPort (All), Port, PortId (InPortId, OutPortId), getPortNumber,
-                                                    isInPort)
+import           Luna.Studio.React.Model.Port      (InPort (Self), Mode (Highlighted, Invisible), OutPort (All), Port,
+                                                    PortId (InPortId, OutPortId), getPortNumber, isHighlighted, isInPort)
 import qualified Luna.Studio.React.Model.Port      as Port
 import           Luna.Studio.React.Store           (Ref, dispatch)
 import qualified Luna.Studio.React.View.Style      as Style
@@ -96,9 +96,11 @@ portSelf_ ref nid p = do
     let portId    = p ^. Port.portId
         portRef   = toAnyPortRef nid portId
         color     = convert $ p ^. Port.color
-        highlight = if p ^. Port.highlight then ["hover"] else []
-        visible   = p ^. Port.visible
-        className = Style.prefixFromList $ if visible then [ "port", "port--self" ] ++ highlight else [ "port", "port--self", "port--invisible" ]
+        modeClass = case p ^. Port.mode of
+            Highlighted -> ["hover"]
+            Invisible   -> ["port--invisible"]
+            _           -> []
+        className = Style.prefixFromList $ ["port", "port--self"] ++ modeClass
     g_
         [ "className" $= className ] $ do
         circle_
@@ -120,8 +122,7 @@ portSingle_ ref nid p = do
         portType  = toString $ p ^. Port.valueType
         isInput   = isInPort portId
         color     = convert $ p ^. Port.color
-        highlight = if p ^. Port.highlight then ["hover"] else []
-        classes   = Style.prefixFromList $ [ "port", "port--o--single" ] ++ highlight
+        classes   = Style.prefixFromList $ [ "port", "port--o--single" ] ++ if isHighlighted p then ["hover"] else []
         r1 :: Double -> JSString
         r1 = jsShow2 . (+) nodeRadius
         r2 = jsShow2 nodeRadius'
@@ -157,7 +158,7 @@ portIO_ ref nid p numOfPorts = do
         isInput   = isInPort portId
         num       = getPortNumber portId
         color     = convert $ p ^. Port.color
-        highlight = if p ^. Port.highlight then ["hover"] else []
+        highlight = if isHighlighted p then ["hover"] else []
         classes   = if isInput then [ "port", "port--i", "port--i--" <> show (num + 1) ] ++ highlight
                                else [ "port", "port--o", "port--o--" <> show (num + 1) ] ++ highlight
         svgFlag1  = if isInput then "1"  else "0"
@@ -220,7 +221,7 @@ portIOExpanded_ ref nid p = if p ^. Port.portId == InPortId Self then portSelf_ 
         num       = getPortNumber portId
         color     = convert $ p ^. Port.color
         py        = jsShow2 (lineHeight * fromIntegral (num + n))
-        highlight = if p ^. Port.highlight then ["hover"] else []
+        highlight = if isHighlighted p then ["hover"] else []
         classes   = if isInput then [ "port", "port--i", "port--i--" <> show (num + 1)] ++ highlight
                                else [ "port", "port--o", "port--o--" <> show (num + 1)] ++ highlight
         n         = if isInput then 1 else 0

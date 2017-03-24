@@ -95,7 +95,6 @@ nodeEditor = React.defineView name $ \(ref, ne) -> do
                 monads_ monads
             planeConnections_ $ do
                 forM_     (ne ^. NodeEditor.connections . to HashMap.toList        ) $ uncurry $ connection_ ref
-                forM_     (ne ^. NodeEditor.portDragConnections . to HashMap.toList) $ uncurry $ connection_ ref
                 forKeyed_ (ne ^. NodeEditor.currentConnections                     ) $ uncurry currentConnection_
                 forM_     (ne ^. NodeEditor.selectionBox                           ) selectionBox_
                 forM_     (ne ^. NodeEditor.connectionPen                          ) connectionPen_
@@ -105,6 +104,6 @@ nodeEditor = React.defineView name $ \(ref, ne) -> do
             forM_ (ne ^. NodeEditor.visualizations) $ pinnedVisualization_ ref ne
             forM_ (ne ^. NodeEditor.searcher      ) $ searcher_ ref camera
 
-        forM_ edges $ edgeSidebar_ ref (ne ^. NodeEditor.draggedPort)
+        forM_ edges $ edgeSidebar_ ref
 
         planeCanvas_ mempty
