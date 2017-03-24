@@ -11,7 +11,7 @@ import           Control.Monad.Except
 import           Data.List                         (sort)
 import           Data.Map                          (Map)
 import qualified Data.Map                          as Map
-import           Data.Maybe                        (isNothing)
+import           Data.Maybe                        (maybeToList, isNothing)
 import           Empire.Prelude
 import           Prologue                          (itoListOf, itraverse, toListOf, fromString)
 
@@ -25,6 +25,7 @@ import qualified Empire.API.Graph.NodeResultUpdate as NodeResult
 import           Empire.ASTOp                      (EmpirePass, runASTOp)
 import qualified Empire.Commands.AST               as AST
 import qualified Empire.Commands.GraphBuilder      as GraphBuilder
+import           Empire.Commands.Breadcrumb        (zoomBreadcrumb)
 import qualified Empire.Commands.GraphUtils        as GraphUtils
 import qualified Empire.Commands.Publisher         as Publisher
 import qualified Empire.ASTOps.Read                as ASTRead
@@ -47,10 +48,8 @@ import           OCI.Pass                          (SubPass)
 
 runTC :: Imports -> Command Graph ()
 runTC imports = do
-    allNodeIds <- uses Graph.breadcrumbHierarchy topLevelIDs
-    runASTOp $ do
-        roots   <- mapM GraphUtils.getASTPointer allNodeIds
-        Typecheck.typecheck imports $ map IR.unsafeGeneralize roots
+    root <- preuse $ Graph.breadcrumbHierarchy . BH.body
+    runASTOp $ Typecheck.typecheck imports $ map IR.unsafeGeneralize $ maybeToList root
     return ()
 
 runInterpreter :: Imports -> Command Graph (Maybe Interpreter.LocalScope)
@@ -76,27 +75,33 @@ reportError loc nid err = do
             Nothing -> Publisher.notifyResultUpdate loc nid (NodeResult.Value "" []) 0
 
 updateNodes :: GraphLocation -> Command InterpreterEnv ()
-updateNodes loc = do
-    allNodeIds <- uses (graph . Graph.breadcrumbHierarchy) topLevelIDs
+updateNodes loc@(GraphLocation _ _ br) = zoom graph $ zoomBreadcrumb br $ do
+    portMapping <- preuse $ Graph.breadcrumbHierarchy . BH._LambdaParent . BH.portMapping
+    case portMapping of
+        Just (i, o) -> do
+            (u1, u2) <- runASTOp $ (,) <$> GraphBuilder.buildInputEdgeTypecheckUpdate i <*> GraphBuilder.buildOutputEdgeTypecheckUpdate o
+            Publisher.notifyNodeTypecheck loc u1
+            Publisher.notifyNodeTypecheck loc u2
+        Nothing     -> return ()
+    allNodeIds <- uses Graph.breadcrumbHierarchy topLevelIDs
     forM_ allNodeIds $ \nid -> do
-        err <- zoom graph $ runASTOp $ do
-            ref <- GraphUtils.getASTTarget nid
-            AST.getError ref
-        reportError loc nid err
-
-        rep <- zoom graph $ runASTOp $ GraphBuilder.buildNodeTypecheckUpdate nid
+        rep <- runASTOp $ GraphBuilder.buildNodeTypecheckUpdate nid
         Publisher.notifyNodeTypecheck loc rep
+        {-err <- runASTOp $ do-}
+            {-ref <- GraphUtils.getASTTarget nid-}
+            {-AST.getError ref-}
+        {-reportError loc nid err-}
         -- FIXME[MM]: use cache? maybe it's not required any more
         -- cached <- uses nodesCache $ Map.lookup nid
         -- when (cached /= Just rep) $ do
             -- nodesCache %= Map.insert nid rep
-    edgeNodes  <- zoom graph $ runASTOp $ GraphBuilder.buildConnections >>= \c -> GraphBuilder.buildEdgeNodes c
-    forM_ edgeNodes $ \edges -> forM_ edges $ \rep -> do
-        let nid = rep ^. nodeId
-        cached <- uses nodesCache $ Map.lookup nid
-        when (cached /= Just rep) $ do
-            Publisher.notifyNodeUpdate loc rep
-            nodesCache %= Map.insert nid rep
+    {-edgeNodes  <- zoom graph $ runASTOp $ GraphBuilder.buildConnections >>= \c -> GraphBuilder.buildEdgeNodes c-}
+    {-forM_ edgeNodes $ \edges -> forM_ edges $ \rep -> do-}
+        {-let nid = rep ^. nodeId-}
+        {-cached <- uses nodesCache $ Map.lookup nid-}
+        {-when (cached /= Just rep) $ do-}
+            {-Publisher.notifyNodeUpdate loc rep-}
+            {-nodesCache %= Map.insert nid rep-}
 
 updateMonads :: GraphLocation -> Command InterpreterEnv ()
 updateMonads loc = do
