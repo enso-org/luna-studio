@@ -22,7 +22,7 @@ import qualified Luna.Studio.State.UI            as UI
 handle :: Event -> Maybe (Command Global.State ())
 handle (UI (AppEvent (App.MouseMove evt _))) = Just $ Global.ui . UI.mousePos <~ mousePosition evt
 handle (UI (AppEvent  App.Resize          )) = Just   updateScene
-handle (UI (AppEvent  App.MouseLeave      )) = Just   endAll
+--handle (UI (AppEvent  App.MouseLeave      )) = Just   endAll
 handle (Shortcut (Shortcut.Event command _)) = Just $ handleCommand command
 handle  Init                                 = Just $ maybe Batch.listProjects Batch.openProject Config.openedFile
 handle _                                     = Nothing
