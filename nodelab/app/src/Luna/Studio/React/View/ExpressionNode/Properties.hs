@@ -41,7 +41,7 @@ nodeProperties = React.defineView objName $ \(ref, p) -> do
                         & Field.onAccept .~ Just (const $ UI.NodeEvent $ Node.NameApply nodeId)
                         & Field.onEdit   .~ Just (UI.NodeEvent . flip Node.NameChange nodeId)
                 Nothing ->
-                    elemString $ convert $ p ^. Prop.name
+                    mempty --elemString $ convert $ p ^. Prop.name TODO: move to expression name
         forM_ (p ^. Prop.ports) $ portControl_ ref nodeId (p ^. Prop.isLiteral)
         div_
             [ "key"       $= "display-results"

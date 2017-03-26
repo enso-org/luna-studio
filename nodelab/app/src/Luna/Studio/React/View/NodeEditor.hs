@@ -47,13 +47,13 @@ nodeEditor_ ref ne = React.viewWithSKey nodeEditor name (ref, ne) mempty
 
 nodeEditor :: ReactView (Ref App, NodeEditor)
 nodeEditor = React.defineView name $ \(ref, ne) -> do
-    let camera         = ne ^. NodeEditor.screenTransform . CameraTransformation.logicalToScreen
-        nodes          = ne ^. NodeEditor.expressionNodes . to HashMap.elems
-        edges          = ne ^. NodeEditor.edgeNodes . to HashMap.elems
-        lookupNode m   = ( m ^. MonadPath.monadType
-                         , m ^. MonadPath.path . to (mapMaybe $ flip HashMap.lookup $ ne ^. NodeEditor.expressionNodes))
-        monads         = map lookupNode $ ne ^. NodeEditor.monads
-        scale          = (Matrix.toList camera)!!0 :: Double
+    let camera       = ne ^. NodeEditor.screenTransform . CameraTransformation.logicalToScreen
+        nodes        = ne ^. NodeEditor.expressionNodes . to HashMap.elems
+        edges        = ne ^. NodeEditor.edgeNodes . to HashMap.elems
+        lookupNode m = ( m ^. MonadPath.monadType
+                       , m ^. MonadPath.path . to (mapMaybe $ flip HashMap.lookup $ ne ^. NodeEditor.expressionNodes))
+        monads       = map lookupNode $ ne ^. NodeEditor.monads
+        scale        = (Matrix.toList camera)!!0 :: Double
 
     div_
         [ "className"   $= Style.prefix "graph"
