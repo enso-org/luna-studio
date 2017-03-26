@@ -239,3 +239,30 @@
     fill:            none;
     stroke-linejoin: round;
 }
+
+// controls
+
+.luna-ctrl-switch {
+    width: 20rem;
+    background: #111;
+    border-radius: 1000px;
+    position: relative;
+    top: 3rem;
+    display: flex;
+    &::after {
+        display: block;
+        content: " ";
+        width: 10rem;
+        height: 10rem;
+        background: #777;
+        border-radius: 1000px;
+    }
+}
+.luna-ctrl-switch--on {
+    flex-direction: row-reverse;
+    background: saturate(darken(green,5%),-50%);
+}
+.luna-ctrl-switch--off {
+    flex-direction: row;
+    background: saturate(darken(red,25%),-60%);
+}

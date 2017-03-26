@@ -56,10 +56,11 @@ nodeProperties = React.defineView objName $ \(ref, p) -> do
                 , "className" $= Style.prefix "value"
                 ] $ do
                 let val = p ^. Prop.visualizationsEnabled
-                button_
-                    [ "key" $= "button"
+                div_
+                    [ "key" $= "ctrl-switch"
+                    , "className" $= Style.prefixFromList (["ctrl-switch"] ++ if val then ["ctrl-switch--on"] else ["ctrl-switch--off"])
                     , onClick $ \_ _ -> dispatch ref $ UI.NodeEvent $ Node.DisplayResultChanged (not val) nodeId
-                    ] $ elemString $ if val then "yes" else "no"
+                    ] mempty
         div_
             [ "key" $= "execution-time"
             , "className" $= Style.prefix "row"
