@@ -19,7 +19,7 @@ removePort :: AnyPortRef -> Command State ()
 removePort portRef = whenM (localRemovePort portRef) $ Batch.removePort portRef
 
 localRemovePort :: AnyPortRef -> Command State Bool
-localRemovePort (OutPortRef' (OutPortRef nid pid@(Projection pos))) = do
+localRemovePort (OutPortRef' (OutPortRef nid pid@(Projection pos _))) = do
     mayNode <- getEdgeNode nid
     flip (maybe (return False)) mayNode $ \node ->
         if (not $ isInputEdge node) || (not $ hasPort (OutPortId pid) node) || countProjectionPorts node == 1
@@ -27,22 +27,22 @@ localRemovePort (OutPortRef' (OutPortRef nid pid@(Projection pos))) = do
             else do
                 let oldPorts    = Map.elems $ Map.delete (OutPortId pid) $ node ^. ports
                     newPorts    = flip map oldPorts $ \port' -> case port' ^. portId of
-                        OutPortId (Projection i) ->
+                        OutPortId (Projection i p) ->
                             if i < pos
                                 then port'
-                                else port' & portId .~ OutPortId (Projection (i-1))
+                                else port' & portId .~ OutPortId (Projection (i-1) p)
                         _                        -> port'
                     newPortsMap = toPortsMap newPorts
                 void . localUpdateEdgeNode $ node & ports .~ newPortsMap
                 conns <- getConnectionsContainingNode nid
                 -- TODO[LJK]: Do it at once so we don't update the same Connection twice accidentaly
                 forM_ conns $ \conn -> case conn ^. src of
-                    OutPortRef srcNid (Projection i) ->
+                    OutPortRef srcNid (Projection i p) ->
                         when (srcNid == nid) $
                             if i == pos
                                 then void . removeConnection $ conn ^. connectionId
                             else if (i >= pos)
-                                then void $ localAddConnection (conn ^. src & srcPortId .~ Projection (i-1)) (conn ^. dst)
+                                then void $ localAddConnection (conn ^. src & srcPortId .~ Projection (i-1) p) (conn ^. dst)
                                 else return ()
                     _ -> return ()
                 return True

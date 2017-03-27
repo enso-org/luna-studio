@@ -5,11 +5,12 @@ import           Control.Arrow            ((&&&))
 import           Data.Binary              (Binary)
 import           Data.Map.Lazy            (Map)
 import qualified Data.Map.Lazy            as Map
+import           Data.Maybe               (isJust)
 import           Data.Text                (Text)
 import           Data.UUID.Types          (UUID)
 import           Empire.API.Data.NodeMeta (NodeMeta)
 import qualified Empire.API.Data.NodeMeta as NodeMeta
-import           Empire.API.Data.Port     (Port, PortId, OutPortTree)
+import           Empire.API.Data.Port     (OutPortTree, Port, PortId)
 import qualified Empire.API.Data.Port     as Port
 import           Prologue
 
@@ -17,7 +18,7 @@ import           Prologue
 type NodeId = UUID
 
 data NodeType = ExpressionNode  { _expression     :: Text }
-              | InputEdge       { _inputEdgePorts :: Map Int (OutPortTree Port) }
+              | InputEdge       { _inputEdgePorts :: [OutPortTree Port] }
               | OutputEdge
               deriving (Generic, Eq, NFData, Show)
 

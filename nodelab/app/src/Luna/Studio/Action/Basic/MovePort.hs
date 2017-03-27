@@ -17,7 +17,7 @@ movePort :: AnyPortRef -> AnyPortRef -> Command State ()
 movePort portRef newPortRef = whenM (localMovePort portRef newPortRef) $ Batch.movePort portRef newPortRef
 
 localMovePort :: AnyPortRef -> AnyPortRef -> Command State Bool
-localMovePort (OutPortRef' (OutPortRef nid pid@(Projection pos))) (OutPortRef' (OutPortRef newNid newPid@(Projection newPos))) =
+localMovePort (OutPortRef' (OutPortRef nid pid@(Projection pos _))) (OutPortRef' (OutPortRef newNid newPid@(Projection newPos _))) =
     if nid /= newNid || pid == newPid then return False else do
         mayNode      <- getEdgeNode nid
         flip (maybe (return False)) mayNode $ \node ->
@@ -28,27 +28,27 @@ localMovePort (OutPortRef' (OutPortRef nid pid@(Projection pos))) (OutPortRef' (
             else do
                 let oldPorts    = getPorts node
                     newPorts    = flip map oldPorts $ \port' -> case port' ^. portId of
-                        OutPortId (Projection i) ->
+                        OutPortId (Projection i p) ->
                             if i == pos
-                                then port' & portId .~ OutPortId (Projection newPos)
+                                then port' & portId .~ OutPortId (Projection newPos p)
                             else if i > pos && i <= newPos
-                                then port' & portId .~ OutPortId (Projection (i-1))
+                                then port' & portId .~ OutPortId (Projection (i-1) p)
                             else if i < pos && i >= newPos
-                                then port' & portId .~ OutPortId (Projection (i+1))
+                                then port' & portId .~ OutPortId (Projection (i+1) p)
                                 else port'
                         _                        -> port'
                     newPortsMap = toPortsMap newPorts
                 void . localUpdateEdgeNode $ node & ports .~ newPortsMap
                 conns <- getConnectionsContainingNode nid
                 forM_ conns $ \conn -> case conn ^. src of
-                    OutPortRef srcNid (Projection i) ->
+                    OutPortRef srcNid (Projection i p) ->
                         when (srcNid == nid) $
                             if i == pos
-                                then void $ localAddConnection (conn ^. src & srcPortId .~ Projection newPos) (conn ^. dst)
+                                then void $ localAddConnection (conn ^. src & srcPortId .~ Projection newPos p) (conn ^. dst)
                             else if i > pos && i <= newPos
-                                then void $ localAddConnection (conn ^. src & srcPortId .~ Projection (i-1)) (conn ^. dst)
+                                then void $ localAddConnection (conn ^. src & srcPortId .~ Projection (i-1) p) (conn ^. dst)
                             else if i < pos && i >= newPos
-                                then void $ localAddConnection (conn ^. src & srcPortId .~ Projection (i+1)) (conn ^. dst)
+                                then void $ localAddConnection (conn ^. src & srcPortId .~ Projection (i+1) p) (conn ^. dst)
                                 else return ()
                     _ -> return ()
                 return True

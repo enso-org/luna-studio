@@ -200,24 +200,24 @@ getPortPositionToCompare portId mousePos portDrag = do
             return $ Just $ move (Vector2 0 (-lineHeight/2)) mousePos
         else do
             let draggedPortNum = case draggedPortId of
-                    InPortId  Self             -> -1
-                    InPortId  (Arg num)        -> num
-                    OutPortId All              -> -1
-                    OutPortId (Projection num) -> num
+                    InPortId  Self               -> -1
+                    InPortId  (Arg num)          -> num
+                    OutPortId All                -> -1
+                    OutPortId (Projection num _) -> num
             case portId of
-                InPortId  Self             -> getOutputEdgePortPosition (InPortId Self)
-                InPortId  (Arg num)        -> if num < draggedPortNum then orgPos
+                InPortId  Self               -> getOutputEdgePortPosition (InPortId Self)
+                InPortId  (Arg num)          -> if num < draggedPortNum then orgPos
                     else (fmap . fmap) (move (Vector2 0 (-lineHeight))) orgPos where
                         orgPos = getOutputEdgePortPosition (InPortId (Arg num))
-                OutPortId All              -> $notImplemented
-                OutPortId (Projection num) -> if num < draggedPortNum then orgPos
+                OutPortId All                -> $notImplemented
+                OutPortId (Projection num p) -> if num < draggedPortNum then orgPos
                     else (fmap . fmap) (move (Vector2 0 (-lineHeight))) orgPos where
-                        orgPos = getInputEdgePortPosition (OutPortId (Projection num))
+                        orgPos = getInputEdgePortPosition (OutPortId (Projection num p))
 
 comparePortsByNewPositionInNode :: (PortId, Position) -> (PortId, Position) -> Ordering
 comparePortsByNewPositionInNode (portId1, pos1) (portId2, pos2) = case (portId1, portId2) of
-    ((InPortId (Arg _))        , (InPortId (Arg _)))         -> compare (pos1 ^. y) (pos2 ^. y)
-    ((OutPortId (Projection _)), (OutPortId (Projection _))) -> compare (pos1 ^. y) (pos2 ^. y)
+    ((InPortId (Arg _))        , (InPortId (Arg _)))             -> compare (pos1 ^. y) (pos2 ^. y)
+    ((OutPortId (Projection _ _)), (OutPortId (Projection _ _))) -> compare (pos1 ^. y) (pos2 ^. y)
     _ -> compare portId1 portId2
 
 -- reorderPortsInNode :: Node -> Map PortId PortId -> Maybe Node
@@ -258,9 +258,9 @@ confirmReorder portDrag = do
     withJust mayNewPortId $ \newPortId -> when (newPortId /= portId) $ do
         mayOldNode <- getEdgeNode nodeId
         let mayPortNewPos = case newPortId of
-                OutPortId (Projection num) -> Just num
-                InPortId  (Arg num)        -> Just num
-                _                          -> Nothing
+                OutPortId (Projection num _) -> Just num
+                InPortId  (Arg num)          -> Just num
+                _                            -> Nothing
         case (,) <$> mayOldNode <*> mayPortNewPos of
             Nothing   -> end portDrag
             Just (node', _) -> do

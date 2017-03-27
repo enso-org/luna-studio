@@ -47,7 +47,7 @@ toNodesMap = HashMap.fromList .: map (view nodeId &&& id) .: toNodesList
 instance Convertible Empire.Node Node where
     convert n = case n ^. Empire.nodeType of
         Empire.ExpressionNode expr -> Expression $ convert (n, expr)
-        Empire.InputEdge           -> Edge       $ convert (n, EdgeNode.InputEdge)
+        Empire.InputEdge _         -> Edge       $ convert (n, EdgeNode.InputEdge)
         Empire.OutputEdge          -> Edge       $ convert (n, EdgeNode.OutputEdge)
 
 class IsNode a where

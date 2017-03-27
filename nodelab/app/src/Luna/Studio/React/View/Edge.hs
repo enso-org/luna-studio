@@ -22,7 +22,8 @@ import qualified Luna.Studio.React.Model.Field         as Field
 import           Luna.Studio.React.Model.Node.EdgeNode (EdgeMode (AddRemove, MoveConnect), EdgeNode, NodeId, countProjectionPorts,
                                                         isInputEdge)
 import qualified Luna.Studio.React.Model.Node.EdgeNode as EdgeNode
-import           Luna.Studio.React.Model.Port          (DraggedPort, OutPort (Projection), Port (..), getPortNumber, isInPort, isOutPort)
+import           Luna.Studio.React.Model.Port          (DraggedPort, OutPort (All, Projection), Port (..), getPortNumber, isInPort,
+                                                        isOutPort)
 import qualified Luna.Studio.React.Model.Port          as Port
 import           Luna.Studio.React.Store               (Ref, dispatch)
 import           Luna.Studio.React.View.Field          (singleField_)
@@ -98,7 +99,7 @@ edgeSidebar_ ref mayDraggedPort node = do
                     [ "className" $= Style.prefixFromList [ "edgeport__svg", "edgeport__svg--addbutton" ]
                     , "key"       $= (name node <> "AddButton")
                     , onMouseDown $ \e _ -> [stopPropagation e]
-                    , onClick $ \e _ -> stopPropagation e : dispatch ref (UI.EdgeEvent $ Edge.AddPort $ OutPortRef' (OutPortRef nodeId (Projection (countProjectionPorts node))))
+                    , onClick $ \e _ -> stopPropagation e : dispatch ref (UI.EdgeEvent $ Edge.AddPort $ OutPortRef' (OutPortRef nodeId (Projection (countProjectionPorts node) All)))
                     ] $ do
                     circle_
                         [ "className" $= Style.prefix "port__shape"
