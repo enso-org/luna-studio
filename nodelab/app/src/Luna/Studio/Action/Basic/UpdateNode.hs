@@ -74,6 +74,6 @@ updatePortSelfVisibility :: NodeId -> Command State Bool
 updatePortSelfVisibility nid = NodeEditor.getExpressionNode nid >>=
     maybe (return False) ( \node -> do
         vis <- shouldDisplayPortSelf node
-        NodeEditor.modifyExpressionNode nid $ ports . ix (InPortId Self) . mode %= if vis then const Invisible else ensureVisibility
+        NodeEditor.modifyExpressionNode nid $ ports . ix (InPortId Self) . mode %= if vis then ensureVisibility else const Invisible
         return True
         )
