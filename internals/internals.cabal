@@ -70,12 +70,8 @@ executable internals
       JS.UI
       JS.UUID
       JS.WebSocket
-      Luna.Studio.Action.Basic
-      Luna.Studio.Action.Basic.DestroyGraph
-      Luna.Studio.Action.Basic.ProjectManager
       Luna.Studio.Action.Batch
       Luna.Studio.Action.Command
-      Luna.Studio.Action.State.Action
       Luna.Studio.Action.State.App
       Luna.Studio.Action.State.Model
       Luna.Studio.Action.UUID
@@ -145,5 +141,4 @@ executable internals
       Luna.Studio.State.Action
       Luna.Studio.State.Collaboration
       Luna.Studio.State.Global
-      Luna.Studio.State.Graph
   default-language: Haskell2010
