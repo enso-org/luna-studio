@@ -10,7 +10,7 @@ import           Data.Map                    (Map)
 data InPort  = Self | Arg Int                deriving (Generic, Show, Eq, Read, NFData)
 data OutPort = All  | Projection Int OutPort deriving (Generic, Show, Eq, Read, NFData)
 
-data OutPortTree a = TAll a | TProjections a (Map Int (OutPortTree a)) deriving (Generic, Show, Eq, Read, NFData)
+data OutPortTree a = OutPortTree a [OutPortTree a] deriving (Generic, Show, Eq, Read, NFData)
 
 instance Binary InPort
 instance Binary OutPort

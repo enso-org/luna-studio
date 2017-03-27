@@ -357,7 +357,7 @@ buildInputEdge connections nid = do
     return $
         API.Node nid
             "inputEdge"
-            (API.InputEdge $ Map.fromList $ flip map inputEdges $ \port -> (let OutPortId (Projection x _) = port ^. Port.portId in x, TAll port))
+            (API.InputEdge $ Map.fromList $ flip map inputEdges $ \port -> (let OutPortId (Projection x _) = port ^. Port.portId in x, OutPortTree port []))
             False
             (Map.fromList $ flip map inputEdges $ \port -> (port ^. Port.portId, port))
             def
