@@ -52,6 +52,38 @@ executable internals
     , visualization-api
   other-modules:
       Data.Timestamp
+      Internal.Action.Batch
+      Internal.Action.Command
+      Internal.Action.State.App
+      Internal.Action.UUID
+      Internal.Batch.Connector.Commands
+      Internal.Batch.Connector.Connection
+      Internal.Batch.Workspace
+      Internal.Error.Error
+      Internal.Event.Batch
+      Internal.Event.Connection
+      Internal.Event.CustomEvent
+      Internal.Event.Debug
+      Internal.Event.Engine
+      Internal.Event.Event
+      Internal.Event.Internal
+      Internal.Event.Loader
+      Internal.Event.Loop
+      Internal.Event.Preprocessor.Batch
+      Internal.Event.Preprocessor.CustomEvent
+      Internal.Event.Processor
+      Internal.Event.Source
+      Internal.Event.Text
+      Internal.Handler.App
+      Internal.Handler.Backend.Common
+      Internal.Handler.Backend.Control
+      Internal.Handler.Backend.ProjectManager
+      Internal.Handler.Backend.Text
+      Internal.Handler.Collaboration
+      Internal.Prelude
+      Internal.Prelude.Instances
+      Internal.State.Collaboration
+      Internal.State.Global
       JS.Atom
       JS.Config
       JS.CustomEvent
@@ -60,45 +92,4 @@ executable internals
       JS.GraphLocation
       JS.UUID
       JS.WebSocket
-      Luna.Studio.Action.Batch
-      Luna.Studio.Action.Command
-      Luna.Studio.Action.State.App
-      Luna.Studio.Action.State.Model
-      Luna.Studio.Action.UUID
-      Luna.Studio.Batch.Connector.Commands
-      Luna.Studio.Batch.Connector.Connection
-      Luna.Studio.Batch.Workspace
-      Luna.Studio.Data.Aeson
-      Luna.Studio.Data.Angle
-      Luna.Studio.Data.CameraTransformation
-      Luna.Studio.Data.Color
-      Luna.Studio.Data.CtxDynamic
-      Luna.Studio.Data.Geometry
-      Luna.Studio.Data.Matrix
-      Luna.Studio.Error.Error
-      Luna.Studio.Event.Batch
-      Luna.Studio.Event.Connection
-      Luna.Studio.Event.CustomEvent
-      Luna.Studio.Event.Debug
-      Luna.Studio.Event.Engine
-      Luna.Studio.Event.Event
-      Luna.Studio.Event.Internal
-      Luna.Studio.Event.Loader
-      Luna.Studio.Event.Loop
-      Luna.Studio.Event.Preprocessor.Batch
-      Luna.Studio.Event.Preprocessor.CustomEvent
-      Luna.Studio.Event.Processor
-      Luna.Studio.Event.Source
-      Luna.Studio.Event.Text
-      Luna.Studio.Handler.App
-      Luna.Studio.Handler.Backend.Common
-      Luna.Studio.Handler.Backend.Control
-      Luna.Studio.Handler.Backend.ProjectManager
-      Luna.Studio.Handler.Backend.Text
-      Luna.Studio.Handler.Collaboration
-      Luna.Studio.Handler.Debug
-      Luna.Studio.Prelude
-      Luna.Studio.Prelude.Instances
-      Luna.Studio.State.Collaboration
-      Luna.Studio.State.Global
   default-language: Haskell2010

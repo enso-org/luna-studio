@@ -2,7 +2,7 @@ module JS.Debug where
 
 import           Data.Aeson          (ToJSON, toJSON)
 import           Data.JSString.Text  (textToJSString)
-import           Luna.Studio.Prelude
+import           Internal.Prelude
 
 foreign import javascript safe "window.state  = $1"         saveState :: JSVal -> IO ()
 foreign import javascript safe "window.lastEv = $1"         lastEv    :: JSVal -> IO ()

@@ -5,7 +5,7 @@ module JS.CustomEvent
 
 import           GHCJS.Foreign.Callback
 import           GHCJS.Types
-import           Luna.Studio.Prelude
+import           Internal.Prelude
 
 foreign import javascript safe "require('CustomEvent').initializeEvents()"
     initializeEvents :: IO ()
@@ -21,6 +21,3 @@ registerCallback callback = do
     wrappedCallback <- asyncCallback2 callback
     registerCallback' wrappedCallback
     return $ unregisterCallback' wrappedCallback >> releaseCallback wrappedCallback
-
-
-
