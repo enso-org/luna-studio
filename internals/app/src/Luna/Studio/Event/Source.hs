@@ -21,8 +21,8 @@ import qualified JS.WebSocket                           as WebSocket
 import qualified Luna.Studio.Batch.Connector.Connection as BatchConnection
 import qualified Luna.Studio.Event.Connection           as Connection
 import qualified Luna.Studio.Event.CustomEvent          as CustomEvent
-import           Luna.Studio.Event.Event                (Event (Atom, Connection, CustomEvent, Text, UI))
-import qualified Luna.Studio.React.Event.App            as App
+import           Luna.Studio.Event.Event                (Event (Atom, Connection, CustomEvent, Text))
+-- import qualified Luna.Studio.React.Event.App            as App
 
 
 data AddHandler a = AddHandler ((a -> IO ()) -> IO (IO ()))

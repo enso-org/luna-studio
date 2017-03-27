@@ -16,7 +16,7 @@ import           JS.WebSocket                (WebSocket)
 import qualified Luna.Studio.Batch.Workspace as Workspace
 import           Luna.Studio.Event.Engine    (LoopRef (LoopRef))
 import qualified Luna.Studio.Event.Engine    as Engine
-import qualified Luna.Studio.React.Store     as Store
+-- import qualified Luna.Studio.React.Store     as Store
 -- import qualified Luna.Studio.React.View.App  as App
 import           Luna.Studio.State.Global    (mkState)
 import qualified Luna.Studio.State.Global    as Global
@@ -31,9 +31,9 @@ runApp chan socket = do
     mdo
         let loop = LoopRef chan state
         Engine.scheduleInit loop
-        appRef <- Store.createApp $ Engine.scheduleEvent loop
+        -- appRef <- Store.createApp $ Engine.scheduleEvent loop
         -- React.reactRender Config.mountPoint (App.app appRef) ()
-        let initState = mkState initTime clientId random appRef
+        let initState = mkState initTime clientId random
                       & Global.workspace . Workspace.lastUILocation .~ lastLocation
         state <- newMVar initState
         Engine.connectEventSources socket loop

@@ -10,7 +10,7 @@ import qualified Luna.Studio.Event.Debug       as Debug
 import           Luna.Studio.Event.Internal    (InternalEvent)
 -- import           Luna.Studio.Event.Shortcut    (ShortcutEvent)
 import           Luna.Studio.Event.Text        (TextEvent)
-import           Luna.Studio.Event.UI          (UIEvent)
+-- import           Luna.Studio.Event.UI          (UIEvent)
 import           Luna.Studio.Prelude
 
 
@@ -24,7 +24,7 @@ data Event = Init
            | Tick
           --  | Shortcut                    ShortcutEvent
            | Text                            TextEvent
-           | UI                                UIEvent
+        --    | UI                                UIEvent
            deriving (Generic, Show, NFData)
 
 makeLenses ''Event
