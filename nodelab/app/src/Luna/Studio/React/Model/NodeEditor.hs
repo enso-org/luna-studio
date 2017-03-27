@@ -11,7 +11,6 @@ import           Luna.Studio.React.Model.ConnectionPen       (ConnectionPen)
 import           Luna.Studio.React.Model.Node                (EdgeNodesMap, ExpressionNode, ExpressionNodesMap, NodeId)
 -- TODO[PM]: Try to separate subgraph from Model.Node.NodeExpression
 import qualified Luna.Studio.React.Model.Node.ExpressionNode as Subgraph
-import           Luna.Studio.React.Model.Port                (DraggedPort)
 import           Luna.Studio.React.Model.Searcher            (Searcher)
 import           Luna.Studio.React.Model.SelectionBox        (SelectionBox)
 
@@ -24,11 +23,9 @@ data NodeEditor = NodeEditor { _screenTransform     :: CameraTransformation
                              , _visualizations      :: [(NodeId, Int, Position)] --TODO move to node
 
                              , _currentConnections  :: [CurrentConnection]
-                             , _portDragConnections :: ConnectionsMap
                              , _connectionPen       :: Maybe ConnectionPen
                              , _selectionBox        :: Maybe SelectionBox
                              , _searcher            :: Maybe Searcher
-                             , _draggedPort         :: Maybe DraggedPort
                              } deriving (Default, Eq, Generic)
 
 makeLenses ''NodeEditor

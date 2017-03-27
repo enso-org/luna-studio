@@ -61,6 +61,7 @@ module Luna.Studio.Action.Basic
     , redrawConnection
     , redrawConnections
     , redrawConnectionsForEdgeNodes
+    , redrawConnectionsForNode
     , redrawConnectionsForNodes
     , removeConnection
     , removeConnections
@@ -107,7 +108,7 @@ import           Luna.Studio.Action.Basic.CenterGraph         (centerGraph)
 import           Luna.Studio.Action.Basic.CreateGraph         (createGraph)
 import           Luna.Studio.Action.Basic.DestroyGraph        (destroyGraph)
 import           Luna.Studio.Action.Basic.DrawConnection      (redrawConnection, redrawConnections, redrawConnectionsForEdgeNodes,
-                                                               redrawConnectionsForNodes)
+                                                               redrawConnectionsForNode, redrawConnectionsForNodes)
 import           Luna.Studio.Action.Basic.EnterBreadcrumb     (enterBreadcrumb, enterBreadcrumbs, enterNode, exitBreadcrumb)
 import           Luna.Studio.Action.Basic.FocusNode           (focusNode, focusNodes, updateNodeZOrder)
 import           Luna.Studio.Action.Basic.Merge               (localMerge, localUnmerge)

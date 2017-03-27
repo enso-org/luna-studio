@@ -12,7 +12,7 @@ import           Luna.Studio.Action.Connect                  ()
 import           Luna.Studio.Prelude
 import           Luna.Studio.React.Model.Connection          (toValidEmpireConnection)
 import           Luna.Studio.React.Model.Node.ExpressionNode (isCollapsed, ports)
-import           Luna.Studio.React.Model.Port                (highlight)
+import           Luna.Studio.React.Model.Port                (Mode (Highlighted, Normal), mode)
 import           Luna.Studio.State.Action                    (actionsBlockingPortHighlight, connectAction, connectSourcePort)
 
 import           Luna.Studio.Action.State.Action             (checkAction, runningActions)
@@ -29,13 +29,17 @@ handleMouseEnter portRef = do
         mayConnectAction <- checkAction connectAction
         case (view connectSourcePort <$> mayConnectAction) of
             Just src -> when (isJust $ toValidEmpireConnection src portRef) $
-                modifyExpressionNode nid $ ports . ix pid . highlight .= True
+                modifyExpressionNode nid $ ports . ix pid . mode .= Highlighted
             Nothing  -> do
                 actions <- Set.fromList <$> runningActions
                 let notBlocked = Set.null (Set.intersection actions actionsBlockingPortHighlight)
                     highlight' = notBlocked && (pid /= InPortId Self || (not . isCollapsed $ node))
-                modifyExpressionNode nid $ ports . ix pid . highlight .= highlight'
+                modifyExpressionNode nid $ ports . ix pid . mode %= \mode' ->
+                    case (highlight', mode') of
+                        (True,  _)           -> Highlighted
+                        (False, Highlighted) -> Normal
+                        _                    -> mode'
 
 handleMouseLeave :: AnyPortRef -> Command State ()
 handleMouseLeave portRef = modifyExpressionNode (portRef ^. nodeId) $
-    ports. ix (portRef ^. portId) . highlight .= False
+    ports. ix (portRef ^. portId) . mode .= Normal

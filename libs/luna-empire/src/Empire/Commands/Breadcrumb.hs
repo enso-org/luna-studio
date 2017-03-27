@@ -1,6 +1,4 @@
-module Empire.Commands.Breadcrumb (
-      withBreadcrumb
-      ) where
+module Empire.Commands.Breadcrumb where
 
 import           Empire.Prelude
 
@@ -23,7 +21,10 @@ import           Empire.Commands.Library         (withLibrary)
 import           Empire.Empire                   (Command, Empire, runEmpire)
 
 withBreadcrumb :: ProjectId -> LibraryId -> Breadcrumb BreadcrumbItem -> Command Graph.Graph a -> Empire a
-withBreadcrumb pid lid breadcrumb act = withLibrary pid lid $ zoom Library.body $ do
+withBreadcrumb pid lid breadcrumb act = withLibrary pid lid $ zoom Library.body $ zoomBreadcrumb breadcrumb act
+
+zoomBreadcrumb :: Breadcrumb BreadcrumbItem -> Command Graph.Graph a -> Command Graph.Graph a
+zoomBreadcrumb breadcrumb act = do
     graph <- get
     let  breadcrumbHierarchy = graph ^. Graph.breadcrumbHierarchy
     case breadcrumbHierarchy `navigateTo` breadcrumb of

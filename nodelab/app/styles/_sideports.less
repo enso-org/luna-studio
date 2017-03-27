@@ -201,15 +201,8 @@
             fill: #fff !important;
         }
     }
-    .luna-edgeport__svg--addbutton {
-        circle { r: 0 }
-        rect {
-            width:  0;
-            height: 0;
-            fill:   @colorBackground;
-        }
-    }
     .luna-edit-icon {
+        bottom:   -20px;
         opacity:  0;
         circle { r: 0 }
     }
@@ -220,6 +213,29 @@
                 circle { r: 6px }
                 &:hover circle { r: 7px }
             }
+        }
+    }
+    .luna-edgeport__svg--addbutton {
+        top:        inherit;
+        bottom:     0;
+        .luna-port__shape {
+            r:    6px;
+            fill: #444;
+        }
+        &:hover {
+            .luna-port__shape { fill: #fff }
+        }
+        rect {
+            height: 2px;
+            width:  8px;
+            x:     -4px;
+            y:     -1px;
+        }
+        rect + rect {
+            height: 8px;
+            width:  2px;
+            x:     -1px;
+            y:     -4px;
         }
     }
 }
@@ -247,24 +263,10 @@
     .luna-edgeport__svg:hover .luna-port__shape { r: 7px }
     .luna-edit-icon {
         bottom: -20px;
-        .luna-edit-icon__shape01 { fill: none !important }
-        .luna-edit-icon__shape02 {
-            rect {
-                fill:   #555;
-                height: 10px;
-                width:  2px;
-                y:     -5px;
-                x:     -1px;
-            }
-            rect + rect {
-                width:  10px;
-                height: 2px;
-                x:     -5px;
-                y:     -1px;
-            }
-            path { d: path("") }
+        .luna-edit-icon__shape01 {
+            fill: #fff;
+            r:    7;
         }
-        &:hover rect { fill: #fff }
     }
     .luna-edgeport__svg--addbutton {
         top:        inherit;
