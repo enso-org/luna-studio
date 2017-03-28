@@ -33,28 +33,6 @@ withUUID act = do
     guiID <- use clientId
     liftIO $ act uuid $ Just guiID
 
--- createLibrary :: Text -> Text -> Command State ()
--- createLibrary = withWorkspace .: BatchCmd.createLibrary
---
--- listLibraries :: ProjectId -> Command State ()
--- listLibraries = withUUID . BatchCmd.listLibraries
---
---
--- createProject :: Text -> Command State ()
--- createProject = withUUID . BatchCmd.createProject
---
--- exportProject :: ProjectId -> Command State ()
--- exportProject = withUUID . BatchCmd.exportProject
---
--- importProject :: Text -> Command State ()
--- importProject = withUUID . BatchCmd.importProject
---
--- listProjects :: Command State ()
--- listProjects = withUUID BatchCmd.listProjects
---
--- openProject :: FilePath -> Command State ()
--- openProject = withUUID . BatchCmd.openProject
-
 
 closeFile :: FilePath -> Command State ()
 closeFile = withUUID . BatchCmd.closeFile
@@ -73,11 +51,3 @@ setProject = withUUID . BatchCmd.setProject
 
 substitute :: FilePath -> Int -> Int -> Text -> Maybe Int -> Command State ()
 substitute = withUUID .::. BatchCmd.substitute
-
-
--- dumpGraphViz :: Command State ()
--- dumpGraphViz = withWorkspace BatchCmd.dumpGraphViz
---
---
--- getProgram :: Command State ()
--- getProgram = withWorkspace BatchCmd.getProgram
