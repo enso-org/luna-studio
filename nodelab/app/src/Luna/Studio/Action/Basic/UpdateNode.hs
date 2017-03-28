@@ -9,7 +9,8 @@ import           Luna.Studio.Action.Command                  (Command)
 import           Luna.Studio.Action.State.Model              (shouldDisplayPortSelf)
 import qualified Luna.Studio.Action.State.NodeEditor         as NodeEditor
 import           Luna.Studio.Prelude
-import           Luna.Studio.React.Model.Node                (EdgeNode, ExpressionNode, Node (Edge, Expression), NodeLoc, nodeLoc, ports)
+import           Luna.Studio.React.Model.Node                (EdgeNode, ExpressionNode, Node (Edge, Expression), NodeLoc, NodePath, nodeLoc,
+                                                              ports)
 import qualified Luna.Studio.React.Model.Node.EdgeNode       as Edge
 import           Luna.Studio.React.Model.Node.ExpressionNode (isSelected)
 import qualified Luna.Studio.React.Model.Node.ExpressionNode as Node
@@ -54,12 +55,13 @@ localUpdateExpressionNode node = NodeEditor.getExpressionNode (node ^. nodeLoc) 
             void . redrawConnectionsForNode $ node ^. nodeLoc
             return True
 
-localUpdateNodeTypecheck :: NodeTypecheckerUpdate -> Command State Bool
-localUpdateNodeTypecheck update = do
-    mayNode <- NodeEditor.getNode $ convert $ update ^. tcNodeId
+localUpdateNodeTypecheck :: NodePath -> NodeTypecheckerUpdate -> Command State Bool
+localUpdateNodeTypecheck path update = do
+    let tcNodeLoc = convert (path, update ^. tcNodeId)
+    mayNode <- NodeEditor.getNode tcNodeLoc
     success <- flip (maybe (return False)) mayNode (\node ->
         localUpdateNode $ node & ports .~ (convert <$> (update ^. tcPorts))) -- typecheck non-existing node?
-    void . redrawConnectionsForNode $ convert $ update ^. tcNodeId
+    void $ redrawConnectionsForNode tcNodeLoc
     return success
 
 updateAllPortsSelfVisibility :: Command State ()
