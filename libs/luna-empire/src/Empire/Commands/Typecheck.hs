@@ -75,7 +75,7 @@ reportError loc nid err = do
             Nothing -> Publisher.notifyResultUpdate loc nid (NodeResult.Value "" []) 0
 
 updateNodes :: GraphLocation -> Command InterpreterEnv ()
-updateNodes loc@(GraphLocation _ _ br) = zoom graph $ zoomBreadcrumb br $ do
+updateNodes loc@(GraphLocation _ br) = zoom graph $ zoomBreadcrumb br $ do
     portMapping <- preuse $ Graph.breadcrumbHierarchy . BH._LambdaParent . BH.portMapping
     case portMapping of
         Just (i, o) -> do

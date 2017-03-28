@@ -99,7 +99,7 @@ infixl 5 |>
 
 infixl 5 |>-
 (|>-) :: GraphLocation -> (NodeId, Int) -> GraphLocation
-(|>-) (GraphLocation pid lid bc) it = GraphLocation pid lid $ Breadcrumb $ (++ [uncurry Arg it]) $ coerce bc
+(|>-) (GraphLocation file bc) it = GraphLocation file $ Breadcrumb $ (++ [uncurry Arg it]) $ coerce bc
 
 withChannels :: (CommunicationEnv -> IO a) -> IO a
 withChannels = bracket createChannels (const $ return ())

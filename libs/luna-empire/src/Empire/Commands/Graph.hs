@@ -576,9 +576,9 @@ printNodeLine :: ASTOp m => NodeId -> m String
 printNodeLine nodeId = GraphUtils.getASTPointer nodeId >>= ASTPrint.printExpression
 
 withTC :: GraphLocation -> Bool -> Command Graph a -> Empire a
-withTC loc@(GraphLocation pid lid _) flush cmd = do
+withTC loc@(GraphLocation file _) flush cmd = do
     res <- withGraph loc $ cmd
-    withGraph (GraphLocation pid lid $ Breadcrumb []) $ runTC loc flush
+    withGraph (GraphLocation file $ Breadcrumb []) $ runTC loc flush
     return res
 
 withGraph :: GraphLocation -> Command Graph a -> Empire a
