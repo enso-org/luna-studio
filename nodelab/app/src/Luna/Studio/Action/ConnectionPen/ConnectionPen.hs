@@ -53,8 +53,8 @@ connectProcessSegment seg state = do
     unless (null intersectedNodes) $ do
         let uniqueIntersectedNodes = map head $ group intersectedNodes
         let nodesToConnect = case state ^. penConnectLastVisitedNode of
-                Just nodeId -> zip (nodeId : uniqueIntersectedNodes) uniqueIntersectedNodes
-                Nothing     -> zip uniqueIntersectedNodes $ tail uniqueIntersectedNodes
+                Just nodeLoc -> zip (nodeLoc : uniqueIntersectedNodes) uniqueIntersectedNodes
+                Nothing      -> zip uniqueIntersectedNodes $ tail uniqueIntersectedNodes
         mapM_ (\(id1, id2) -> when (id1 /= id2) $ connect (Right id1) (Right id2)) nodesToConnect
         update $ state & penConnectLastVisitedNode ?~ last uniqueIntersectedNodes
 

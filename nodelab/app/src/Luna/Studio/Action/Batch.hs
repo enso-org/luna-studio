@@ -2,19 +2,18 @@ module Luna.Studio.Action.Batch  where
 
 import           Data.Position                        (Position, toTuple)
 import           Data.UUID.Types                      (UUID)
-import           Empire.API.Data.Connection           (Connection (Connection))
 import           Empire.API.Data.NodeMeta             (NodeMeta (NodeMeta))
 import           Empire.API.Data.PortDefault          (PortDefault)
-import           Empire.API.Data.PortRef              (AnyPortRef (InPortRef', OutPortRef'), InPortRef (InPortRef), OutPortRef (OutPortRef),
-                                                       dstNodeId, nodeId)
 import           Empire.API.Data.Project              (ProjectId)
 import           Luna.Studio.Action.Command           (Command)
 import           Luna.Studio.Action.UUID              (registerRequest)
 import qualified Luna.Studio.Batch.Connector.Commands as BatchCmd
 import           Luna.Studio.Batch.Workspace          (Workspace)
+import           Luna.Studio.Data.PortRef             (AnyPortRef (InPortRef', OutPortRef'), InPortRef (InPortRef), OutPortRef (OutPortRef),
+                                                       dstNodeLoc, nodeLoc)
 import           Luna.Studio.Prelude
 import           Luna.Studio.React.Model.Connection   (ConnectionId)
-import           Luna.Studio.React.Model.Node         (ExpressionNode, NodeId)
+import           Luna.Studio.React.Model.Node         (ExpressionNode, NodeLoc)
 import           Luna.Studio.State.Global             (State, backend, clientId, workspace)
 
 
@@ -67,26 +66,26 @@ getProgram :: Command State ()
 getProgram = withWorkspace BatchCmd.getProgram
 
 
-addConnection :: Either OutPortRef NodeId -> Either AnyPortRef NodeId -> Command State ()
+addConnection :: Either OutPortRef NodeLoc -> Either AnyPortRef NodeLoc -> Command State ()
 addConnection src dst = do
-    let nid = case dst of
-            Left (OutPortRef' (OutPortRef nid' _)) -> nid'
-            Left (InPortRef'  (InPortRef  nid' _)) -> nid'
-            Right nid'                             -> nid'
-    collaborativeModify [nid]
+    let nl = case dst of
+            Left (OutPortRef' (OutPortRef nl' _)) -> nl'
+            Left (InPortRef'  (InPortRef  nl' _)) -> nl'
+            Right nl'                             -> nl'
+    collaborativeModify [nl]
     withWorkspace $ BatchCmd.addConnection src dst
 
-addNode :: NodeId -> Text -> Position -> Bool -> Maybe NodeId -> Command State ()
-addNode nid expr pos dispRes connectTo = withWorkspace $ BatchCmd.addNode nid expr (NodeMeta (toTuple pos) dispRes) connectTo
+addNode :: NodeLoc -> Text -> Position -> Bool -> Maybe NodeLoc -> Command State ()
+addNode nl expr pos dispRes connectTo = withWorkspace $ BatchCmd.addNode nl expr (NodeMeta (toTuple pos) dispRes) connectTo
 
 addPort :: AnyPortRef -> Command State ()
 addPort = withWorkspace . BatchCmd.addPort
 
 addSubgraph :: [ExpressionNode] -> [(OutPortRef, InPortRef)] -> Command State ()
-addSubgraph nodes conns = withWorkspace $ BatchCmd.addSubgraph (map convert nodes) (map (uncurry Connection) conns)
+addSubgraph nodes conns = withWorkspace $ BatchCmd.addSubgraph (convert <$> nodes) (convert <$> conns)
 
-getSubgraph :: NodeId -> Command State ()
-getSubgraph nid = withWorkspace (BatchCmd.getSubgraph nid)
+getSubgraph :: NodeLoc -> Command State ()
+getSubgraph nl = withWorkspace (BatchCmd.getSubgraph nl)
 
 movePort :: AnyPortRef -> Int -> Command State ()
 movePort = withWorkspace .: BatchCmd.movePort
@@ -96,16 +95,16 @@ redo = withUUID BatchCmd.redo
 
 removeConnection :: ConnectionId -> Command State ()
 removeConnection connId = do
-    collaborativeModify [connId ^. dstNodeId]
+    collaborativeModify [connId ^. dstNodeLoc]
     withWorkspace $ BatchCmd.removeConnection connId
 
-removeNodes :: [NodeId] -> Command State ()
+removeNodes :: [NodeLoc] -> Command State ()
 removeNodes = withWorkspace . BatchCmd.removeNodes
 
 removePort :: AnyPortRef -> Command State ()
 removePort = withWorkspace . BatchCmd.removePort
 
-renameNode :: NodeId -> Text -> Command State ()
+renameNode :: NodeLoc -> Text -> Command State ()
 renameNode = withWorkspace .:  BatchCmd.renameNode
 
 renamePort :: AnyPortRef -> String -> Command State ()
@@ -118,18 +117,18 @@ searchNodes = withWorkspace .: BatchCmd.searchNodes
 -- setInputNodeType :: NodeId -> Text -> Command State ()
 -- setInputNodeType = withWorkspace .: BatchCmd.setInputNodeType
 
-setNodeCode :: NodeId -> Text -> Command State ()
+setNodeCode :: NodeLoc -> Text -> Command State ()
 setNodeCode = withWorkspace .:  BatchCmd.setNodeCode
 
-setNodeExpression :: NodeId -> Text -> Command State ()
+setNodeExpression :: NodeLoc -> Text -> Command State ()
 setNodeExpression = withWorkspace .: BatchCmd.setNodeExpression
 
-setNodesMeta :: [(NodeId, Position, Bool)] -> Command State ()
+setNodesMeta :: [(NodeLoc, Position, Bool)] -> Command State ()
 setNodesMeta = withWorkspace . BatchCmd.setNodesMeta . map convert
 
 setPortDefault :: AnyPortRef -> PortDefault -> Command State ()
 setPortDefault portRef portDefault = do
-    collaborativeModify [portRef ^. nodeId]
+    collaborativeModify [portRef ^. nodeLoc]
     withWorkspace $ BatchCmd.setPortDefault portRef portDefault
 
 undo :: Command State ()
@@ -141,17 +140,17 @@ requestCollaborationRefresh = do
     clId <- use $ backend . clientId
     withWorkspace' $ BatchCmd.requestCollaborationRefresh clId
 
-collaborativeTouch :: [NodeId] -> Command State ()
-collaborativeTouch nodeIds = unless (null nodeIds) $ do
+collaborativeTouch :: [NodeLoc] -> Command State ()
+collaborativeTouch nodeLocs = unless (null nodeLocs) $ do
     clId <- use $ backend . clientId
-    withWorkspace' $ BatchCmd.collaborativeTouch clId nodeIds
+    withWorkspace' $ BatchCmd.collaborativeTouch clId nodeLocs
 
-collaborativeModify :: [NodeId] -> Command State ()
-collaborativeModify nodeIds = unless (null nodeIds) $ do
+collaborativeModify :: [NodeLoc] -> Command State ()
+collaborativeModify nodeLocs = unless (null nodeLocs) $ do
     clId <- use $ backend . clientId
-    withWorkspace' $ BatchCmd.collaborativeModify clId nodeIds
+    withWorkspace' $ BatchCmd.collaborativeModify clId nodeLocs
 
-cancelCollaborativeTouch :: [NodeId] -> Command State ()
-cancelCollaborativeTouch nodeIds = unless (null nodeIds) $ do
+cancelCollaborativeTouch :: [NodeLoc] -> Command State ()
+cancelCollaborativeTouch nodeLocs = unless (null nodeLocs) $ do
     clId <- use $ backend . clientId
-    withWorkspace' $ BatchCmd.cancelCollaborativeTouch clId nodeIds
+    withWorkspace' $ BatchCmd.cancelCollaborativeTouch clId nodeLocs

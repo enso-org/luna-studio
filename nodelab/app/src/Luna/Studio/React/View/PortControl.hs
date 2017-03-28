@@ -6,14 +6,14 @@ module Luna.Studio.React.View.PortControl
 import           Empire.API.Data.Port         (InPort (Arg), OutPort (All), PortId (InPortId, OutPortId))
 import qualified Empire.API.Data.Port         as PortAPI
 import qualified Empire.API.Data.PortDefault  as PortDefault
-import           Empire.API.Data.PortRef      (AnyPortRef (..), toAnyPortRef)
 import qualified Empire.API.Data.ValueType    as ValueType
 import qualified JS.Config                    as Config
+import           Luna.Studio.Data.PortRef     (AnyPortRef (..), toAnyPortRef)
 import qualified Luna.Studio.Event.UI         as UI
 import           Luna.Studio.Prelude          hiding (group)
 import qualified Luna.Studio.React.Event.Node as Node
 import           Luna.Studio.React.Model.App  (App)
-import           Luna.Studio.React.Model.Node (NodeId)
+import           Luna.Studio.React.Model.Node (NodeLoc)
 import           Luna.Studio.React.Model.Port (Port)
 import qualified Luna.Studio.React.Model.Port as Port
 import           Luna.Studio.React.Store      (Ref, dispatch)
@@ -24,12 +24,12 @@ import           React.Flux                   as React
 
 
 
-portControl_ :: Ref App -> NodeId -> Bool -> Port -> ReactElementM ViewEventHandler ()
-portControl_ ref nodeId isLiteral port = React.viewWithSKey portControl (jsShow $ port ^. Port.portId) (ref, nodeId, isLiteral, port) mempty
+portControl_ :: Ref App -> NodeLoc -> Bool -> Port -> ReactElementM ViewEventHandler ()
+portControl_ ref nl isLiteral port = React.viewWithSKey portControl (jsShow $ port ^. Port.portId) (ref, nl, isLiteral, port) mempty
 
-portControl :: ReactView (Ref App, NodeId, Bool, Port)
-portControl = React.defineView "portControl" $ \(ref, nodeId, isLiteral, port) ->
-    let portRef = toAnyPortRef nodeId $ port ^. Port.portId
+portControl :: ReactView (Ref App, NodeLoc, Bool, Port)
+portControl = React.defineView "portControl" $ \(ref, nl, isLiteral, port) ->
+    let portRef = toAnyPortRef nl $ port ^. Port.portId
     in case port ^. Port.portId of
         InPortId  (Arg _) -> inPortControl_ ref portRef port
         OutPortId All     -> when isLiteral $ inPortControl_ ref portRef port

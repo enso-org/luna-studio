@@ -9,7 +9,8 @@ import           Text.Read                                   (readMaybe)
 
 import           Data.Position                               (Position)
 import           Data.ScreenPosition                         (ScreenPosition, x)
-import           Empire.API.Data.Node                        (NodeId)
+import           Empire.API.Data.NodeLoc                     (NodeLoc)
+import qualified Empire.API.Data.NodeLoc                     as NodeLoc
 import qualified JS.GoogleAnalytics                          as GA
 import qualified JS.Searcher                                 as Searcher
 import           Luna.Studio.Action.Basic                    (addNode, setNodeExpression)
@@ -52,14 +53,14 @@ open = openWith def =<< use (Global.ui . UI.mousePos)
 positionDelta :: Double
 positionDelta = 100
 
-openWith :: Maybe NodeId -> ScreenPosition -> Command State ()
-openWith nodeId pos = do
+openWith :: Maybe NodeLoc -> ScreenPosition -> Command State ()
+openWith nodeLoc pos = do
     pos' <- (map (view position) <$> getSelectedNodes) >>= \case
-          [nodePosition] -> if isNothing nodeId then return $ nodePosition & x %~ (+positionDelta) else translateToWorkspace pos
+          [nodePosition] -> if isNothing nodeLoc then return $ nodePosition & x %~ (+positionDelta) else translateToWorkspace pos
           _              -> translateToWorkspace pos
     begin Searcher
     GA.sendEvent GA.NodeSearcher
-    modifyNodeEditor $ NodeEditor.searcher ?= Searcher.Searcher pos' 0 (Searcher.Node def) def nodeId False
+    modifyNodeEditor $ NodeEditor.searcher ?= Searcher.Searcher pos' 0 (Searcher.Node def) def nodeLoc False
     renderIfNeeded
     liftIO Searcher.focus
 
@@ -102,16 +103,18 @@ accept scheduleEvent action = do
     withJustM getSearcher $ \searcher -> do
         let expression = searcher ^. Searcher.selectedExpression
         if searcher ^. Searcher.isNode then do
-            case searcher ^. Searcher.nodeId of
-                Nothing     -> addNode (searcher ^. Searcher.position) expression
-                Just nodeId -> setNodeExpression nodeId expression
+            case searcher ^. Searcher.nodeLoc of
+                Nothing     -> do
+                    let path = NodeLoc.empty --FIXME
+                    addNode path (searcher ^. Searcher.position) expression
+                Just nodeLoc -> setNodeExpression nodeLoc expression
             close action
         else
             execCommand action scheduleEvent $ convert expression
 
-openEdit :: Text -> NodeId -> Position -> Command State ()
-openEdit expr nodeId pos = do
-    openWith (Just nodeId) =<< translateToScreen pos
+openEdit :: Text -> NodeLoc -> Position -> Command State ()
+openEdit expr nodeLoc pos = do
+    openWith (Just nodeLoc) =<< translateToScreen pos
     continue $ querySearch expr
 
 allCommands :: Items ()

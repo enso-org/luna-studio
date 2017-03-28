@@ -4,23 +4,23 @@ module Luna.Studio.Action.State.Model.Connection where
 import           Control.Monad.Trans.Maybe                     (MaybeT (MaybeT), runMaybeT)
 import           Data.Position                                 (Position, distanceSquared, move)
 import           Data.Vector                                   (Vector2 (Vector2))
-import           Empire.API.Data.Node                          (NodeId)
-import           Empire.API.Data.PortRef                       (AnyPortRef, InPortRef, OutPortRef)
-import qualified Empire.API.Data.PortRef                       as PortRef
 import           Luna.Studio.Action.Command                    (Command)
 import           Luna.Studio.Action.State.Model.ExpressionNode (nodeToNodeAngle)
 import           Luna.Studio.Action.State.Model.Port           (portAngleStart, portAngleStop, portGap)
 import           Luna.Studio.Action.State.Model.Sidebar        (getInputEdgePortPosition, getOutputEdgePortPosition)
 import           Luna.Studio.Action.State.NodeEditor           (getConnection, getConnections, getNode, getPort)
 import           Luna.Studio.Data.Geometry                     (closestPointOnLine, closestPointOnLineParam, doesSegmentsIntersects)
+import           Luna.Studio.Data.PortRef                      (AnyPortRef, InPortRef, OutPortRef)
+import qualified Luna.Studio.Data.PortRef                      as PortRef
 import           Luna.Studio.Prelude
 import           Luna.Studio.React.Model.Connection            (Connection (Connection), ConnectionId,
                                                                 CurrentConnection (CurrentConnection), connectionId, containsNode)
 import qualified Luna.Studio.React.Model.Connection            as Model
 import           Luna.Studio.React.Model.Constants             (lineHeight, nodeExpandedWidth, nodeRadius, portRadius)
-import           Luna.Studio.React.Model.Node                  (Node (Edge, Expression))
+import           Luna.Studio.React.Model.Node                  (Node (Edge, Expression), NodeLoc)
 import           Luna.Studio.React.Model.Node.EdgeNode         (isInputEdge)
-import           Luna.Studio.React.Model.Node.ExpressionNode   (ExpressionNode, countArgPorts, countOutPorts, isCollapsed, nodeId, position)
+import           Luna.Studio.React.Model.Node.ExpressionNode   (ExpressionNode, countArgPorts, countOutPorts, isCollapsed, nodeLoc,
+                                                                position)
 import           Luna.Studio.React.Model.Port                  (Port, PortId (InPortId, OutPortId), color, getPortNumber, isSelf, portId)
 import           Luna.Studio.State.Global                      (State)
 
@@ -29,10 +29,10 @@ import           Luna.Studio.State.Global                      (State)
 
 createConnectionModel :: OutPortRef -> InPortRef -> Command State (Maybe Connection)
 createConnectionModel srcPortRef dstPortRef = runMaybeT $ do
-    let srcNodeId  = srcPortRef ^. PortRef.srcNodeId
-        dstNodeId  = dstPortRef ^. PortRef.dstNodeId
-    srcNode <- MaybeT $ getNode srcNodeId
-    dstNode <- MaybeT $ getNode dstNodeId
+    let srcNodeLoc  = srcPortRef ^. PortRef.srcNodeLoc
+        dstNodeLoc  = dstPortRef ^. PortRef.dstNodeLoc
+    srcNode <- MaybeT $ getNode srcNodeLoc
+    dstNode <- MaybeT $ getNode dstNodeLoc
     srcPort <- MaybeT $ getPort srcPortRef
     dstPort <- MaybeT $ getPort dstPortRef
     (srcPos, dstPos) <- MaybeT $ getConnectionPosition srcNode srcPort dstNode dstPort
@@ -40,15 +40,15 @@ createConnectionModel srcPortRef dstPortRef = runMaybeT $ do
 
 createCurrentConnectionModel :: AnyPortRef -> Position -> Command State (Maybe CurrentConnection)
 createCurrentConnectionModel portRef mousePos = runMaybeT $ do
-    node        <- MaybeT $ getNode $ portRef ^. PortRef.nodeId
+    node        <- MaybeT $ getNode $ portRef ^. PortRef.nodeLoc
     port        <- MaybeT $ getPort portRef
     connPortPos <- MaybeT $ getCurrentConnectionSrcPosition node port mousePos
     return $ CurrentConnection connPortPos mousePos $ port ^. color
 
-distSqFromMouseIfIntersect :: NodeId -> Position -> ConnectionId -> Command State (Maybe (ConnectionId, Double))
-distSqFromMouseIfIntersect nid nodePos connId = runMaybeT $ do
+distSqFromMouseIfIntersect :: NodeLoc -> Position -> ConnectionId -> Command State (Maybe (ConnectionId, Double))
+distSqFromMouseIfIntersect nl nodePos connId = runMaybeT $ do
     conn <- MaybeT $ getConnection connId
-    if containsNode nid conn then nothing else do
+    if containsNode nl conn then nothing else do
         let srcPos  = conn ^. Model.srcPos
             dstPos  = conn ^. Model.dstPos
             proj    = closestPointOnLine (srcPos, dstPos) nodePos
@@ -60,10 +60,10 @@ distSqFromMouseIfIntersect nid nodePos connId = runMaybeT $ do
 
 getIntersectingConnections :: ExpressionNode -> Position -> Command State (Maybe ConnectionId)
 getIntersectingConnections node mousePos = do
-    let nid          = node ^. nodeId
+    let nl           = node ^. nodeLoc
         posToCompare = if isCollapsed node then node ^. position else mousePos
     connIds             <- map (view connectionId) <$> getConnections
-    intersecingConnIds' <- forM connIds $ distSqFromMouseIfIntersect nid posToCompare
+    intersecingConnIds' <- forM connIds $ distSqFromMouseIfIntersect nl posToCompare
     let intersecingConnIds = catMaybes intersecingConnIds'
     return $ if null intersecingConnIds then Nothing else
         Just $ fst $ minimumBy (\(_, distSq1) (_, distSq2) -> compare distSq1 distSq2) intersecingConnIds

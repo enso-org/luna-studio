@@ -2,7 +2,7 @@ module Luna.Studio.Action.Basic.RemoveNode where
 
 import           Control.Monad                             (filterM)
 import qualified Data.Set                                  as Set
-import           Empire.API.Data.Node                      (NodeId)
+import           Empire.API.Data.NodeLoc                   (NodeLoc)
 import qualified JS.GoogleAnalytics                        as GA
 import           Luna.Studio.Action.Basic.RemoveConnection (localRemoveConnectionsContainingNodes)
 import           Luna.Studio.Action.Basic.SelectNode       (selectPreviousNodes)
@@ -11,33 +11,33 @@ import           Luna.Studio.Action.Command                (Command)
 import           Luna.Studio.Action.State.NodeEditor       (getSelectedNodes, inGraph)
 import qualified Luna.Studio.Action.State.NodeEditor       as NodeEditor
 import           Luna.Studio.Prelude
-import           Luna.Studio.React.Model.Node              (nodeId)
+import           Luna.Studio.React.Model.Node              (nodeLoc)
 import           Luna.Studio.State.Global                  (State)
 
 
-removeNode :: NodeId -> Command State ()
+removeNode :: NodeLoc -> Command State ()
 removeNode = removeNodes . return
 
-removeNodes :: [NodeId] -> Command State ()
-removeNodes nids = do
-    removedNodes <- localRemoveNodes nids
+removeNodes :: [NodeLoc] -> Command State ()
+removeNodes nls = do
+    removedNodes <- localRemoveNodes nls
     Batch.removeNodes removedNodes
     GA.sendEvent $ GA.RemoveNode $ length removedNodes
 
 removeSelectedNodes :: Command State ()
-removeSelectedNodes = getSelectedNodes >>= removeNodes . map (view nodeId)
+removeSelectedNodes = getSelectedNodes >>= removeNodes . map (view nodeLoc)
 
-localRemoveSelectedNodes :: Command State [NodeId]
-localRemoveSelectedNodes = getSelectedNodes >>= localRemoveNodes . map (view nodeId)
+localRemoveSelectedNodes :: Command State [NodeLoc]
+localRemoveSelectedNodes = getSelectedNodes >>= localRemoveNodes . map (view nodeLoc)
 
-localRemoveNode :: NodeId -> Command State (Maybe NodeId)
+localRemoveNode :: NodeLoc -> Command State (Maybe NodeLoc)
 localRemoveNode = fmap listToMaybe . localRemoveNodes . return
 
-localRemoveNodes :: [NodeId] -> Command State [NodeId]
-localRemoveNodes nodeIds = do
-    nids <- filterM inGraph nodeIds
-    void $ localRemoveConnectionsContainingNodes nids
-    mapM_ NodeEditor.removeNode nids
-    selectedIds <- Set.fromList . (map (view nodeId)) <$> getSelectedNodes
-    when (Set.isSubsetOf selectedIds $ Set.fromList nids) selectPreviousNodes
-    return nids
+localRemoveNodes :: [NodeLoc] -> Command State [NodeLoc]
+localRemoveNodes nodeLocs = do
+    nls <- filterM inGraph nodeLocs
+    void $ localRemoveConnectionsContainingNodes nls
+    mapM_ NodeEditor.removeNode nls
+    selectedIds <- Set.fromList . (map (view nodeLoc)) <$> getSelectedNodes
+    when (Set.isSubsetOf selectedIds $ Set.fromList nls) selectPreviousNodes
+    return nls

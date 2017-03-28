@@ -27,6 +27,7 @@ import           Empire.API.Data.GraphLocation          as GraphLocation
 import           Empire.API.Data.Library                as Library
 import           Empire.API.Data.MonadPath              as MonadPath
 import           Empire.API.Data.Node                   as Node
+import           Empire.API.Data.NodeLoc                as NodeLoc
 import           Empire.API.Data.NodeMeta               as NodeMeta
 import           Empire.API.Data.Port                   as Port
 import           Empire.API.Data.PortDefault            as PortDefault
@@ -99,6 +100,13 @@ instance FromJSON Node.NodeTypecheckerUpdate
 instance ToJSON NodeMeta.NodeMeta
 instance FromJSON NodeMeta.NodeMeta
 
+instance ToJSON NodeLoc
+instance ToJSON NodePath
+instance FromJSON NodeLoc
+instance FromJSON NodePath
+
+instance {-# OVERLAPPING #-} ToJSON   v => ToJSON   (Map NodeLoc     v) where toJSON = toJSON . Map.toList
+instance {-# OVERLAPPING #-} FromJSON v => FromJSON (Map NodeLoc     v) where parseJSON = fmap Map.fromList . parseJSON
 instance {-# OVERLAPPING #-} ToJSON   v => ToJSON   (Map PortId     v) where toJSON = toJSON . Map.toList
 instance {-# OVERLAPPING #-} FromJSON v => FromJSON (Map PortId     v) where parseJSON = fmap Map.fromList . parseJSON
 instance {-# OVERLAPPING #-} ToJSON   v => ToJSON   (Map UUID       v) where toJSON = toJSON . Map.toList

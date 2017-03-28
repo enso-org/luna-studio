@@ -9,7 +9,7 @@ import           Luna.Studio.Action.Command                  (Command)
 import           Luna.Studio.Action.State.NodeEditor         (getSelectedNodes)
 import qualified Luna.Studio.Action.State.NodeEditor         as NodeEditor
 import           Luna.Studio.Prelude
-import           Luna.Studio.React.Model.Node.ExpressionNode (ExpressionNode, Mode, isExpandedFunction, isMode, mode, nodeId)
+import           Luna.Studio.React.Model.Node.ExpressionNode (ExpressionNode, Mode, isExpandedFunction, isMode, mode, nodeLoc)
 import           Luna.Studio.State.Global                    (State)
 
 
@@ -27,14 +27,14 @@ toggleSelectedNodesUnfold = do
         mapM_ localUnmerge nodes
         toggleNodesMode allNewMode def nodes
     else
-        mapM_ (Batch.getSubgraph . (view nodeId)) nodes
+        mapM_ (Batch.getSubgraph . (view nodeLoc)) nodes
 
 toggleNodesMode :: Bool -> Mode -> [ExpressionNode] -> Command State ()
 toggleNodesMode allNewMode newMode nodes = do
     updatedNodes <- forM nodes $ \node -> do
         when (isExpandedFunction node) $ localUnmerge node
         return $ node & mode .~ if allNewMode then def else newMode
-    let nodeIds = map (view nodeId) updatedNodes
+    let nodeLocs = map (view nodeLoc) updatedNodes
     forM_ updatedNodes $ \node -> NodeEditor.addExpressionNode node
-    void $ updatePortSelfVisibilityForIds nodeIds
-    void $ redrawConnectionsForNodes      nodeIds
+    void $ updatePortSelfVisibilityForIds nodeLocs
+    void $ redrawConnectionsForNodes      nodeLocs

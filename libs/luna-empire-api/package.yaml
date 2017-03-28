@@ -14,6 +14,7 @@ dependencies:
   - binary
   - bytestring
   - containers
+  - convert
   - deepseq
   - hashable
   - lens

@@ -9,7 +9,7 @@ import           Luna.Studio.Action.Command                  (Command)
 import           Luna.Studio.Action.State.Model              (shouldDisplayPortSelf)
 import qualified Luna.Studio.Action.State.NodeEditor         as NodeEditor
 import           Luna.Studio.Prelude
-import           Luna.Studio.React.Model.Node                (EdgeNode, ExpressionNode, Node (Edge, Expression), NodeId, nodeId, ports)
+import           Luna.Studio.React.Model.Node                (EdgeNode, ExpressionNode, Node (Edge, Expression), NodeLoc, nodeLoc, ports)
 import qualified Luna.Studio.React.Model.Node.EdgeNode       as Edge
 import           Luna.Studio.React.Model.Node.ExpressionNode (isSelected)
 import qualified Luna.Studio.React.Model.Node.ExpressionNode as Node
@@ -30,7 +30,7 @@ localUpdateNode (Expression node) = localUpdateExpressionNode node
 localUpdateNode (Edge edge)       = localUpdateEdgeNode edge
 
 localUpdateEdgeNode :: EdgeNode -> Command State Bool
-localUpdateEdgeNode node = NodeEditor.getEdgeNode (node ^. nodeId) >>= \mayNode ->
+localUpdateEdgeNode node = NodeEditor.getEdgeNode (node ^. nodeLoc) >>= \mayNode ->
     case mayNode of
         Nothing       -> return False
         Just prevNode -> do
@@ -40,7 +40,7 @@ localUpdateEdgeNode node = NodeEditor.getEdgeNode (node ^. nodeId) >>= \mayNode 
             return True
 
 localUpdateExpressionNode :: ExpressionNode -> Command State Bool
-localUpdateExpressionNode node = NodeEditor.getExpressionNode (node ^. nodeId) >>= \mayNode ->
+localUpdateExpressionNode node = NodeEditor.getExpressionNode (node ^. nodeLoc) >>= \mayNode ->
     case mayNode of
         Nothing       -> return False
         Just prevNode -> do
@@ -51,26 +51,26 @@ localUpdateExpressionNode node = NodeEditor.getExpressionNode (node ^. nodeId) >
             NodeEditor.addExpressionNode $ node & isSelected                        .~ selected
                                                 & ports . ix (InPortId Self) . mode %~ selfMode
                                                 & Node.mode                         .~ mode'
-            void . redrawConnectionsForNode $ node ^. nodeId
+            void . redrawConnectionsForNode $ node ^. nodeLoc
             return True
 
 localUpdateNodeTypecheck :: NodeTypecheckerUpdate -> Command State Bool
 localUpdateNodeTypecheck update = do
-    mayNode <- NodeEditor.getNode $ update ^. tcNodeId
+    mayNode <- NodeEditor.getNode $ convert $ update ^. tcNodeId
     success <- flip (maybe (return False)) mayNode (\node ->
         localUpdateNode $ node & ports .~ (convert <$> (update ^. tcPorts))) -- typecheck non-existing node?
-    void . redrawConnectionsForNode $ update ^. tcNodeId
+    void . redrawConnectionsForNode $ convert $ update ^. tcNodeId
     return success
 
 updateAllPortsSelfVisibility :: Command State ()
 updateAllPortsSelfVisibility = do
-    nids <- map (view nodeId) <$> NodeEditor.getExpressionNodes
-    void $ updatePortSelfVisibilityForIds nids
+    nls <- map (view nodeLoc) <$> NodeEditor.getExpressionNodes
+    void $ updatePortSelfVisibilityForIds nls
 
-updatePortSelfVisibilityForIds :: [NodeId] -> Command State [NodeId]
+updatePortSelfVisibilityForIds :: [NodeLoc] -> Command State [NodeLoc]
 updatePortSelfVisibilityForIds = filterM updatePortSelfVisibility
 
-updatePortSelfVisibility :: NodeId -> Command State Bool
+updatePortSelfVisibility :: NodeLoc -> Command State Bool
 updatePortSelfVisibility nid = NodeEditor.getExpressionNode nid >>=
     maybe (return False) ( \node -> do
         vis <- shouldDisplayPortSelf node

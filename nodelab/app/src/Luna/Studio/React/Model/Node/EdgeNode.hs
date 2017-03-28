@@ -4,19 +4,23 @@
 {-# OPTIONS_GHC -fno-warn-orphans  #-}
 module Luna.Studio.React.Model.Node.EdgeNode
     ( module Luna.Studio.React.Model.Node.EdgeNode
+    , module X
     , NodeId
+    , NodeLoc
     ) where
 
-import           Control.Arrow                ((&&&))
-import           Data.Convert                 (Convertible (convert))
-import           Data.HashMap.Strict          (HashMap)
-import qualified Data.HashMap.Strict          as HashMap
-import qualified Data.Map.Lazy                as Map
-import           Empire.API.Data.Node         (NodeId)
-import qualified Empire.API.Data.Node         as Empire
+import           Control.Arrow                  ((&&&))
+import           Data.Convert                   (Convertible (convert))
+import           Data.HashMap.Strict            (HashMap)
+import qualified Data.HashMap.Strict            as HashMap
+import qualified Data.Map.Lazy                  as Map
+import           Empire.API.Data.Node           (NodeId)
+import qualified Empire.API.Data.Node           as Empire
+import           Empire.API.Data.NodeLoc        (NodeLoc (NodeLoc), NodePath)
 import           Luna.Studio.Prelude
-import           Luna.Studio.React.Model.Port (Port, PortId, PortsMap)
-import qualified Luna.Studio.React.Model.Port as Port
+import           Luna.Studio.React.Model.IsNode as X (IsNode (..))
+import           Luna.Studio.React.Model.Port   (PortsMap)
+import qualified Luna.Studio.React.Model.Port   as Port
 
 
 data EdgeType = InputEdge | OutputEdge  deriving (Generic, Eq, NFData, Show)
@@ -27,9 +31,9 @@ data EdgeMode = AddRemove
 instance Default EdgeMode where
     def = MoveConnect
 
-data EdgeNode = EdgeNode { _nodeId                :: NodeId
+data EdgeNode = EdgeNode { _nodeLoc'              :: NodeLoc
                          , _edgeType              :: EdgeType
-                         , _ports                 :: PortsMap
+                         , _ports'                :: PortsMap
                          , _mode                  :: EdgeMode
                          } deriving (Eq, Generic, NFData, Show)
 
@@ -37,12 +41,22 @@ makeLenses ''EdgeNode
 
 type EdgeNodesMap = HashMap NodeId EdgeNode
 
-instance Convertible (Empire.Node, EdgeType) EdgeNode where
-    convert (n, type') = EdgeNode
-        {- nodeId   -} (n ^. Empire.nodeId)
+instance Convertible (NodePath, Empire.Node, EdgeType) EdgeNode where
+    convert (path, n, type') = EdgeNode
+        {- nodeLoc  -} (NodeLoc path (n ^. Empire.nodeId))
         {- edgeType -} type'
         {- ports    -} (convert <$> n ^. Empire.ports)
         {- mode     -} def
+
+instance IsNode EdgeNode where
+    nodeLoc              = nodeLoc'
+    ports                = ports'
+    getPorts             = Map.elems . view ports
+    hasPort pid          = Map.member pid . view ports
+    countInPorts         = Port.countInPorts . Map.keys . (view ports)
+    countOutPorts        = Port.countOutPorts . Map.keys . (view ports)
+    countArgPorts        = Port.countArgPorts . Map.keys . (view ports)
+    countProjectionPorts = Port.countProjectionPorts . Map.keys . (view ports)
 
 toEdgeNodesMap :: [EdgeNode] -> EdgeNodesMap
 toEdgeNodesMap = HashMap.fromList . map (view nodeId &&& id)
@@ -62,21 +76,3 @@ isInAddRemoveMode = isInMode AddRemove
 
 isInMoveConnectMode :: EdgeNode -> Bool
 isInMoveConnectMode = isInMode MoveConnect
-
-getPorts :: EdgeNode -> [Port]
-getPorts = Map.elems . view ports
-
-hasPort :: PortId -> EdgeNode -> Bool
-hasPort pid = Map.member pid . view ports
-
-countInPorts :: EdgeNode -> Int
-countInPorts = Port.countInPorts . Map.keys . (view ports)
-
-countOutPorts :: EdgeNode -> Int
-countOutPorts = Port.countOutPorts . Map.keys . (view ports)
-
-countArgPorts :: EdgeNode -> Int
-countArgPorts = Port.countArgPorts . Map.keys . (view ports)
-
-countProjectionPorts :: EdgeNode -> Int
-countProjectionPorts = Port.countProjectionPorts . Map.keys . (view ports)

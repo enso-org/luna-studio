@@ -2,21 +2,23 @@
 module Luna.Studio.Prelude.Instances where
 
 import           Data.Aeson
-import           Data.Convert             (Convertible (convert))
-import           Data.Default             (Default (def))
-import           Data.Hashable            (Hashable)
-import           Data.HashMap.Strict      (HashMap)
-import qualified Data.HashMap.Strict      as HashMap
-import           Data.JSString            (JSString)
-import qualified Data.JSString            as JSString
+import           Data.Convert               (Convertible (convert))
+import           Data.Default               (Default (def))
+import           Data.Hashable              (Hashable)
+import           Data.HashMap.Strict        (HashMap)
+import qualified Data.HashMap.Strict        as HashMap
+import           Data.JSString              (JSString)
+import qualified Data.JSString              as JSString
 import           Development.Placeholders
-import           Empire.API.JSONInstances ()
+import           Empire.API.JSONInstances   ()
 import           Prologue
 import           React.Flux
-import           React.Flux.Store         (ReactStoreRef)
+import           React.Flux.Store           (ReactStoreRef)
 
-import           Empire.API.Data.Port     (InPort, OutPort)
-import           Empire.API.Data.PortRef  (AnyPortRef, InPortRef, OutPortRef)
+import           Empire.API.Data.Breadcrumb (Breadcrumb, BreadcrumbItem)
+import           Empire.API.Data.NodeLoc    (NodeLoc, NodePath)
+import           Empire.API.Data.Port       (InPort, OutPort)
+import           Empire.API.Data.PortRef    (AnyPortRef, InPortRef, OutPortRef)
 
 -- ======= React.Flux ==========================================================
 
@@ -69,7 +71,7 @@ instance Convertible String JSString where
 instance Convertible JSString String where
     convert = JSString.unpack
 
-instance (Eq k, Hashable k, ToJSON k, ToJSON v) => ToJSON (HashMap k v) where
+instance (ToJSON k, ToJSON v) => ToJSON (HashMap k v) where
     toJSON = toJSON . HashMap.toList
     {-# INLINE toJSON #-}
 
@@ -79,8 +81,12 @@ instance (Eq k, FromJSON k, FromJSON v, Hashable k) => FromJSON (HashMap k v) wh
 -- ======= Data.HashMap ========================================================
 
 instance Default (HashMap a b) where def = HashMap.empty
-instance Hashable InPort
-instance Hashable OutPort
-instance Hashable InPortRef
-instance Hashable OutPortRef
+instance Hashable a => Hashable (Breadcrumb a)
 instance Hashable AnyPortRef
+instance Hashable BreadcrumbItem
+instance Hashable InPort
+instance Hashable InPortRef
+instance Hashable NodeLoc
+instance Hashable NodePath
+instance Hashable OutPort
+instance Hashable OutPortRef

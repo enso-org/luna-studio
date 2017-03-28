@@ -20,7 +20,7 @@ import           Luna.Studio.Action.State.NodeEditor         (getConnectionsMap,
 import           Luna.Studio.Data.Color                      (Color (Color))
 import           Luna.Studio.Event.Mouse                     (workspacePosition)
 import           Luna.Studio.Prelude
-import           Luna.Studio.React.Model.Connection          (Connection, nodeIds)
+import           Luna.Studio.React.Model.Connection          (Connection, nodeLocs)
 import           Luna.Studio.React.Model.ConnectionPen       (ConnectionPen (ConnectionPen))
 import qualified Luna.Studio.React.Model.ConnectionPen       as ConnectionPen
 import qualified Luna.Studio.React.Model.NodeEditor          as NodeEditor
@@ -47,7 +47,7 @@ startDisconnecting evt timestamp = do
 
 checkAndUpdateRestriction :: Connection -> Command State ()
 checkAndUpdateRestriction conn = continue $ \state -> withJust (state ^. penDisconnectLastVisitedNode) $ \lastNode -> do
-    let (n1, n2) = conn ^. nodeIds
+    let (n1, n2) = conn ^. nodeLocs
         lastNodeInConn = lastNode == n1 || lastNode == n2
         newRestriction = if lastNode == n1 then n2 else n1
         restrictionPossible = case state ^. penDisconnectNextNodeRestriction of

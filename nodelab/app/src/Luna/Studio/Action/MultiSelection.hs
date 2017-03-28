@@ -12,7 +12,7 @@ import           Luna.Studio.Action.State.NodeEditor         (getExpressionNodes
 import           Luna.Studio.Data.Geometry                   (isPointInRectangle)
 import           Luna.Studio.Event.Mouse                     (workspacePosition)
 import           Luna.Studio.Prelude
-import           Luna.Studio.React.Model.Node.ExpressionNode (nodeId, position)
+import           Luna.Studio.React.Model.Node.ExpressionNode (nodeLoc, position)
 import           Luna.Studio.React.Model.SelectionBox        (SelectionBox (SelectionBox))
 import           Luna.Studio.State.Action                    (Action (begin, continue, end, update), MultiSelection (MultiSelection),
                                                               multiSelecectionStartPos, multiSelectionAction)
@@ -47,12 +47,12 @@ updateSelection :: Position -> Position -> Command State ()
 updateSelection start act = do
     let leftTop     = fromDoubles (min (start ^. x) (act ^. x)) (min (start ^. y) (act ^. y))
         rightBottom = fromDoubles (max (start ^. x) (act ^. x)) (max (start ^. y) (act ^. y))
-    nodeIds <- map (view nodeId) . filter (flip isPointInRectangle (leftTop, rightBottom) . (view position)) <$> getExpressionNodes
-    selectNodes nodeIds
+    nodeLocs <- map (view nodeLoc) . filter (flip isPointInRectangle (leftTop, rightBottom) . (view position)) <$> getExpressionNodes
+    selectNodes nodeLocs
 
 stopMultiSelection :: MultiSelection -> Command State ()
 stopMultiSelection _ = do
     removeActionFromState multiSelectionAction
     modifyNodeEditor $ selectionBox .= Nothing
-    nodeIds <- map (view nodeId) <$> getSelectedNodes
-    modifySelectionHistory nodeIds
+    nodeLocs <- map (view nodeLoc) <$> getSelectedNodes
+    modifySelectionHistory nodeLocs

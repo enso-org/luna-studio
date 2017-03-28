@@ -5,6 +5,7 @@ import qualified Data.Aeson                                  as Aeson
 import           Data.Matrix                                 (Matrix)
 import           Empire.API.Data.Node                        (NodeType (ExpressionNode))
 import qualified Empire.API.Data.Node                        as Empire
+import qualified Empire.API.Data.NodeLoc                     as NodeLoc
 import           JS.Searcher                                 (searcherId)
 import           Luna.Studio.Data.Matrix                     (showNodeTranslate)
 import qualified Luna.Studio.Event.Keys                      as Keys
@@ -23,7 +24,6 @@ import           React.Flux
 import qualified React.Flux                                  as React
 import qualified Text.ScopeSearcher.QueryResult              as Result
 
-
 name :: JSString
 name = "searcher"
 
@@ -39,11 +39,11 @@ handleKeyDown ref e k = prevent $ stopPropagation e : dispatch' where
 
 searcher :: ReactView (Ref App, Matrix Double, Searcher)
 searcher =  React.defineView name $ \(ref, camera, s) -> do
-    let nodePos   = s ^. Searcher.position
-        mode      = s ^. Searcher.mode
-        nodePrev  = flip (maybe Nothing) (s ^. Searcher.selectedNode) $
+    let nodePos     = s ^. Searcher.position
+        mode        = s ^. Searcher.mode
+        nodePreview = flip (maybe Nothing) (s ^. Searcher.selectedNode) $
             \empireNode -> case empireNode ^. Empire.nodeType of
-                ExpressionNode expr -> Just $ convert (empireNode, expr)
+                ExpressionNode expr -> Just $ convert (NodeLoc.empty, empireNode, expr)
                 _                   -> Nothing
         className = Style.prefixFromList ( "searcher" : ( case mode of
                                                                     Searcher.Node    { } -> [ "searcher--node" ]
@@ -102,7 +102,7 @@ searcher =  React.defineView name $ \(ref, camera, s) -> do
         div_
             [ "key"       $= "searcherPreview"
             , "className" $= Style.prefix "searcher__preview"
-            ] $ withJust nodePrev $ nodeBody_ ref . (Node.position .~ nodePos)
+            ] $ withJust nodePreview $ nodeBody_ ref . (Node.position .~ nodePos)
                                               -- . (Node.isExpandedControls .~ True)
 
 searcher_ :: Ref App -> Matrix Double -> Searcher -> ReactElementM ViewEventHandler ()

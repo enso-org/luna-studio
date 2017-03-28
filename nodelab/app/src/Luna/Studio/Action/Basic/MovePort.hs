@@ -1,11 +1,11 @@
 module Luna.Studio.Action.Basic.MovePort where
 
-import           Empire.API.Data.PortRef                (AnyPortRef (OutPortRef'), OutPortRef (OutPortRef), srcPortId, toAnyPortRef)
 import           Luna.Studio.Action.Basic.AddConnection (localAddConnection)
 import           Luna.Studio.Action.Basic.UpdateNode    (localUpdateEdgeNode)
 import qualified Luna.Studio.Action.Batch               as Batch
 import           Luna.Studio.Action.Command             (Command)
 import           Luna.Studio.Action.State.NodeEditor    (getConnectionsContainingNode, getEdgeNode)
+import           Luna.Studio.Data.PortRef               (AnyPortRef (OutPortRef'), OutPortRef (OutPortRef), srcPortId, toAnyPortRef)
 import           Luna.Studio.Prelude
 import           Luna.Studio.React.Model.Connection     (dst, src)
 import           Luna.Studio.React.Model.Node.EdgeNode  (countProjectionPorts, getPorts, hasPort, isInputEdge, ports)

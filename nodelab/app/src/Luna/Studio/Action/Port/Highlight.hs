@@ -6,9 +6,9 @@ module Luna.Studio.Action.Port.Highlight
 
 import qualified Data.Set                                    as Set
 import           Empire.API.Data.Port                        (InPort (Self), PortId (InPortId))
-import           Empire.API.Data.PortRef                     (AnyPortRef, nodeId, portId)
 import           Luna.Studio.Action.Command                  (Command)
 import           Luna.Studio.Action.Connect                  ()
+import           Luna.Studio.Data.PortRef                    (AnyPortRef, nodeLoc, portId)
 import           Luna.Studio.Prelude
 import           Luna.Studio.React.Model.Connection          (toValidEmpireConnection)
 import           Luna.Studio.React.Model.Node.ExpressionNode (isCollapsed, ports)
@@ -22,24 +22,24 @@ import           Luna.Studio.State.Global                    (State)
 
 handleMouseEnter :: AnyPortRef -> Command State ()
 handleMouseEnter portRef = do
-    let nid = portRef ^. nodeId
+    let nl  = portRef ^. nodeLoc
     let pid = portRef ^. portId
-    mayNode <- getExpressionNode nid
+    mayNode <- getExpressionNode nl
     withJust mayNode $ \node -> do
         mayConnectAction <- checkAction connectAction
         case (view connectSourcePort <$> mayConnectAction) of
             Just src -> when (isJust $ toValidEmpireConnection src portRef) $
-                modifyExpressionNode nid $ ports . ix pid . mode .= Highlighted
+                modifyExpressionNode nl $ ports . ix pid . mode .= Highlighted
             Nothing  -> do
                 actions <- Set.fromList <$> runningActions
                 let notBlocked = Set.null (Set.intersection actions actionsBlockingPortHighlight)
                     highlight' = notBlocked && (pid /= InPortId Self || (not . isCollapsed $ node))
-                modifyExpressionNode nid $ ports . ix pid . mode %= \mode' ->
+                modifyExpressionNode nl $ ports . ix pid . mode %= \mode' ->
                     case (highlight', mode') of
                         (True,  _)           -> Highlighted
                         (False, Highlighted) -> Normal
                         _                    -> mode'
 
 handleMouseLeave :: AnyPortRef -> Command State ()
-handleMouseLeave portRef = modifyExpressionNode (portRef ^. nodeId) $
+handleMouseLeave portRef = modifyExpressionNode (portRef ^. nodeLoc) $
     ports. ix (portRef ^. portId) . mode .= Normal

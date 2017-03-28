@@ -15,8 +15,6 @@ module Luna.Studio.Action.Connect
 import           Data.ScreenPosition                         (ScreenPosition)
 import qualified Empire.API.Data.Connection                  as ConnectionAPI
 import           Empire.API.Data.Port                        (InPort (Self), PortId (InPortId))
-import           Empire.API.Data.PortRef                     (AnyPortRef (InPortRef', OutPortRef'))
-import qualified Empire.API.Data.PortRef                     as PortRef
 import qualified JS.GoogleAnalytics                          as GA
 import           Luna.Studio.Action.Basic                    (connect, removeConnection, updateAllPortsSelfVisibility)
 import           Luna.Studio.Action.Command                  (Command)
@@ -26,6 +24,8 @@ import           Luna.Studio.Action.State.Action             (beginActionWithKey
 import           Luna.Studio.Action.State.Model              (createConnectionModel, createCurrentConnectionModel)
 import           Luna.Studio.Action.State.NodeEditor         (getConnection, getNode, modifyNodeEditor)
 import           Luna.Studio.Action.State.Scene              (translateToWorkspace)
+import           Luna.Studio.Data.PortRef                    (AnyPortRef (InPortRef', OutPortRef'))
+import qualified Luna.Studio.Data.PortRef                    as PortRef
 import           Luna.Studio.Event.Mouse                     (mousePosition, workspacePosition)
 import           Luna.Studio.Prelude
 import           Luna.Studio.React.Event.Connection          (ModifiedEnd (Destination, Source))
@@ -59,10 +59,10 @@ handleConnectionMouseDown evt connId modifiedEnd = do
 
 startConnecting :: ScreenPosition -> AnyPortRef -> Maybe ConnectionId -> Mode -> Command State ()
 startConnecting screenMousePos anyPortRef mayModifiedConnId connectMode' = do
-    let nodeId = anyPortRef ^. PortRef.nodeId
-        portId = anyPortRef ^. PortRef.portId
+    let nodeLoc = anyPortRef ^. PortRef.nodeLoc
+        portId  = anyPortRef ^. PortRef.portId
     mousePos <- translateToWorkspace screenMousePos
-    mayNode  <- getNode nodeId
+    mayNode  <- getNode nodeLoc
     withJust mayNode $ \node -> do
         let shouldDoNodeDrag = case node of
                 Expression node' -> isNothing mayModifiedConnId
@@ -70,7 +70,7 @@ startConnecting screenMousePos anyPortRef mayModifiedConnId connectMode' = do
                                  && isCollapsed node'
                 _                -> False
         if shouldDoNodeDrag
-        then when (connectMode' == Drag) $ startNodeDrag mousePos nodeId True
+        then when (connectMode' == Drag) $ startNodeDrag mousePos nodeLoc True
         else do
             mayCurrentConnectionModel <- createCurrentConnectionModel anyPortRef mousePos
             when (isJust mayCurrentConnectionModel) $ do
@@ -97,7 +97,7 @@ handlePortMouseUp portRef action = when (action ^. connectMode == Drag) $
 snapToPort :: AnyPortRef -> Connect -> Command State ()
 snapToPort portRef action =
     withJust (toValidEmpireConnection (action ^. connectSourcePort) portRef) $ \conn -> do
-        mayConnModel <- createConnectionModel (conn ^. ConnectionAPI.src) (conn ^. ConnectionAPI.dst)
+        mayConnModel <- createConnectionModel (convert $ conn ^. ConnectionAPI.src) (convert $ conn ^. ConnectionAPI.dst)
         withJust mayConnModel $ \connModel -> do
             update $ action & connectSnappedPort ?~ portRef
             modifyNodeEditor $ NodeEditor.currentConnections .= [convert connModel]
@@ -123,6 +123,6 @@ stopConnecting _ = do
 connectToPort :: AnyPortRef -> Connect -> Command State ()
 connectToPort dst action = do
     withJust (toValidEmpireConnection dst $ action ^. connectSourcePort) $ \newConn -> do
-        connect (Left $ newConn ^. ConnectionAPI.src) (Left $ newConn ^. ConnectionAPI.dst)
+        connect (Left $ convert $ newConn ^. ConnectionAPI.src) (Left $ convert $ newConn ^. ConnectionAPI.dst)
         GA.sendEvent $ GA.Connect GA.Manual
     stopConnecting action

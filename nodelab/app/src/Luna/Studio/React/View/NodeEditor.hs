@@ -88,7 +88,7 @@ nodeEditor = React.defineView name $ \(ref, ne) -> do
             --expanded nodes
             elemString $ "circle.luna-port__shape { r: " <> show (3 + (1 / scale)) <> "px }"
 
-            forM_ (ne ^. NodeEditor.nodesRecursive) $ nodeDynamicStyles_ camera
+            forM_ (ne ^. NodeEditor.expressionNodesRecursive) $ nodeDynamicStyles_ camera
 
         svgPlanes_ $ do
             planeMonads_ $

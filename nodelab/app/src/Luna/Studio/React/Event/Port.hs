@@ -2,10 +2,10 @@
 
 module Luna.Studio.React.Event.Port where
 
-import           Data.Aeson              (FromJSON, ToJSON)
-import           Empire.API.Data.PortRef (AnyPortRef)
+import           Data.Aeson               (FromJSON, ToJSON)
+import           Luna.Studio.Data.PortRef (AnyPortRef)
 import           Luna.Studio.Prelude
-import           React.Flux              (MouseEvent)
+import           React.Flux               (MouseEvent)
 
 
 

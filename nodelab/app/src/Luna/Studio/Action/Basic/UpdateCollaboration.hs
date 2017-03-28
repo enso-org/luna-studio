@@ -8,7 +8,7 @@ import qualified Luna.Studio.Action.Batch                    as Batch
 import           Luna.Studio.Action.Command                  (Command)
 import           Luna.Studio.Action.State.NodeEditor         (getSelectedNodes, modifyNodeEditor)
 import           Luna.Studio.Prelude
-import           Luna.Studio.React.Model.Node.ExpressionNode (modify, nodeId, touch)
+import           Luna.Studio.React.Model.Node.ExpressionNode (modify, nodeLoc, touch)
 import qualified Luna.Studio.React.Model.Node.ExpressionNode as Node
 import           Luna.Studio.React.Model.NodeEditor          (expressionNodes)
 import           Luna.Studio.State.Collaboration             (Client (Client), ColorId (ColorId), colorId, knownClients, lastSeen,
@@ -38,7 +38,7 @@ refreshTime = 10
 modifyTime  =  3
 
 touchCurrentlySelected :: Command State ()
-touchCurrentlySelected = (map (view nodeId) <$> getSelectedNodes) >>= Batch.collaborativeTouch
+touchCurrentlySelected = (map (view nodeLoc) <$> getSelectedNodes) >>= Batch.collaborativeTouch
 
 expireTouchedNodes :: Command State ()
 expireTouchedNodes = do

@@ -1,14 +1,14 @@
 module Luna.Studio.Action.Basic.DrawConnection where
 
-import           Empire.API.Data.PortRef             (InPortRef, OutPortRef)
 import           JS.Scene                            (inputSidebar, outputSidebar)
 import           Luna.Studio.Action.Command          (Command)
 import           Luna.Studio.Action.State.Model      (createConnectionModel)
 import           Luna.Studio.Action.State.NodeEditor (getConnections, getEdgeNodes, modifyNodeEditor)
 import qualified Luna.Studio.Action.State.NodeEditor as NodeEditor
+import           Luna.Studio.Data.PortRef            (InPortRef, OutPortRef)
 import           Luna.Studio.Prelude
 import           Luna.Studio.React.Model.Connection  (Connection, ConnectionId, connectionId, dst, src, toConnectionsMap)
-import           Luna.Studio.React.Model.Node        (NodeId, nodeId)
+import           Luna.Studio.React.Model.Node        (NodeLoc, nodeLoc)
 import           Luna.Studio.React.Model.NodeEditor  (connections)
 import           Luna.Studio.State.Global            (State, ui)
 import           Luna.Studio.State.UI                (scene)
@@ -42,21 +42,21 @@ redrawConnections = do
     modifyNodeEditor $ connections .= toConnectionsMap conns
 
 --TODO[LJK]: Should we remove all previous conns for node?
-redrawConnectionsForNode :: NodeId -> Command State [ConnectionId]
-redrawConnectionsForNode nid = do
-    oldConnections <- NodeEditor.getConnectionsContainingNode nid
+redrawConnectionsForNode :: NodeLoc -> Command State [ConnectionId]
+redrawConnectionsForNode nl = do
+    oldConnections <- NodeEditor.getConnectionsContainingNode nl
     conns <- catMaybes <$> mapM (\conn -> createConnection (conn ^. src) (conn ^. dst)) oldConnections
     mapM_ NodeEditor.addConnection conns
     return $ map (view connectionId) conns
 
 --TODO[LJK]: Should we remove all previous conns for nodes?
-redrawConnectionsForNodes :: [NodeId] -> Command State [ConnectionId]
-redrawConnectionsForNodes nodeIds = do
-    oldConnections <- NodeEditor.getConnectionsContainingNodes nodeIds
+redrawConnectionsForNodes :: [NodeLoc] -> Command State [ConnectionId]
+redrawConnectionsForNodes nodeLocs = do
+    oldConnections <- NodeEditor.getConnectionsContainingNodes nodeLocs
     conns <- catMaybes <$> mapM (\conn -> createConnection (conn ^. src) (conn ^. dst)) oldConnections
     mapM_ NodeEditor.addConnection conns
     return $ map (view connectionId) conns
 
 redrawConnectionsForEdgeNodes :: Command State [ConnectionId]
 redrawConnectionsForEdgeNodes = getEdgeNodes >>=
-    redrawConnectionsForNodes . map (view nodeId)
+    redrawConnectionsForNodes . map (view nodeLoc)

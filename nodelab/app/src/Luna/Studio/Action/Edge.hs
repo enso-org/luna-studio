@@ -19,8 +19,6 @@ import           Data.Position                         (Position (Position), mov
 import           Data.ScreenPosition                   (ScreenPosition, fromScreenPosition)
 import           Data.Size                             (x, y)
 import           Data.Vector                           (Vector2 (Vector2), scalarProduct)
-import           Empire.API.Data.PortRef               (AnyPortRef (InPortRef', OutPortRef'), toAnyPortRef)
-import qualified Empire.API.Data.PortRef               as PortRef
 import           Luna.Studio.Action.Basic              (localMovePort, redrawConnectionsForNode, setEdgePortMode)
 import qualified Luna.Studio.Action.Basic              as Basic
 import qualified Luna.Studio.Action.Batch              as Batch
@@ -36,12 +34,14 @@ import           Luna.Studio.Action.State.NodeEditor   (addConnection, getConnec
                                                         getEdgeNode, getPort, modifyEdgeNode, modifyNodeEditor, removeConnection)
 import           Luna.Studio.Action.State.Scene        (getInputSidebarPosition, getInputSidebarSize, getOutputSidebarPosition,
                                                         getOutputSidebarSize, translateToWorkspace)
+import           Luna.Studio.Data.PortRef              (AnyPortRef (InPortRef', OutPortRef'), toAnyPortRef)
+import qualified Luna.Studio.Data.PortRef              as PortRef
 import           Luna.Studio.Event.Mouse               (mousePosition, workspacePosition)
 import           Luna.Studio.Prelude
 import           Luna.Studio.React.Model.Connection    (connectionId, dst, src, toConnection)
 import qualified Luna.Studio.React.Model.Connection    as Connection
 import           Luna.Studio.React.Model.Constants     (gridSize)
-import           Luna.Studio.React.Model.Node.EdgeNode (EdgeNode, NodeId, countProjectionPorts, edgeType, isInputEdge, isOutputEdge)
+import           Luna.Studio.React.Model.Node.EdgeNode (EdgeNode, NodeLoc, countProjectionPorts, edgeType, isInputEdge, isOutputEdge)
 import qualified Luna.Studio.React.Model.Node.EdgeNode as EdgeNode
 import qualified Luna.Studio.React.Model.NodeEditor    as NodeEditor
 import           Luna.Studio.React.Model.Port          (InPort (Arg, Self), OutPort (All, Projection), PortId (InPortId, OutPortId),
@@ -64,16 +64,16 @@ instance Action (Command State) PortDrag where
 
 portRename :: AnyPortRef -> String -> Command State ()
 portRename portRef name = return () -- modifyNodeEditor $ do
-    -- let nodeId = portRef ^. PortRef.nodeId
+    -- let nodeLoc = portRef ^. PortRef.nodeLoc
     --     portId = portRef ^. PortRef.portId
-    -- NodeEditor.edgeNodes . at nodeId . _Just . EdgeNode.ports . at portId . _Just . Port.name .= name
+    -- NodeEditor.edgeNodes . at nodeLoc . _Just . EdgeNode.ports . at portId . _Just . Port.name .= name
 
 portNameEdit :: AnyPortRef -> Bool -> Command State ()
 portNameEdit portRef isEdited = return () -- do
     -- modifyNodeEditor $ do
-    --     let nodeId = portRef ^. PortRef.nodeId
+    --     let nodeLoc = portRef ^. PortRef.nodeLoc
     --         portId = portRef ^. PortRef.portId
-    --     NodeEditor.edgeNodes . at nodeId . _Just . EdgeNode.ports . at portId . _Just . Port.isEdited .= isEdited
+    --     NodeEditor.edgeNodes . at nodeLoc . _Just . EdgeNode.ports . at portId . _Just . Port.isEdited .= isEdited
     -- when isEdited $ do
     --     renderIfNeeded
     --     liftIO Edge.focusPortLabel
@@ -86,9 +86,9 @@ handleMouseUp evt portDrag = do
         update $ portDrag & portDragMode .~ Click
     else stopPortDrag True portDrag
 
-handleEdgeMove :: MouseEvent -> NodeId -> Command State ()
-handleEdgeMove evt nodeId = do
-    continue $ restorePortDrag nodeId
+handleEdgeMove :: MouseEvent -> NodeLoc -> Command State ()
+handleEdgeMove evt nodeLoc = do
+    continue $ restorePortDrag nodeLoc
     continue $ handleMove evt
 
 handleAppMove :: MouseEvent -> Command State ()
@@ -99,9 +99,9 @@ handleAppMove evt = do
 startPortDrag :: ScreenPosition -> AnyPortRef -> Mode -> Command State ()
 startPortDrag mousePos portRef mode = do
     mayDraggedPort <- getPort portRef
-    mayNode        <- getEdgeNode $ portRef ^. PortRef.nodeId
+    mayNode        <- getEdgeNode $ portRef ^. PortRef.nodeLoc
     withJust ((,) <$> mayDraggedPort <*> mayNode) $ \(draggedPort, node) -> do
-        let nodeId = portRef ^. PortRef.nodeId
+        let nodeLoc = portRef ^. PortRef.nodeLoc
             portId = portRef ^. PortRef.portId
         mayMousePos <- getMousePositionInSidebar mousePos $ node ^. edgeType
         mayPortPos  <- if isOutputEdge node then return . Just $ getPortPositionInOutputSidebar portId
@@ -115,7 +115,7 @@ handleMove :: MouseEvent -> PortDrag -> Command State ()
 handleMove evt portDrag = do
     mousePos <- mousePosition evt
     let portRef       = portDrag ^. portDragActPortRef
-        nodeId        = portRef  ^. PortRef.nodeId
+        nodeLoc        = portRef  ^. PortRef.nodeLoc
         portId        = portRef  ^. PortRef.portId
         startPortPos  = portDrag ^. portDragPortStartPosInSidebar
         startMousePos = portDrag ^. portDragStartPos
@@ -123,7 +123,7 @@ handleMove evt portDrag = do
         newPos        = move shift startPortPos
     mayNewPortNum <- case portId of
         (OutPortId (Projection i)) -> runMaybeT $ do
-            node <- MaybeT $ getEdgeNode nodeId
+            node <- MaybeT $ getEdgeNode nodeLoc
             let newNum = min (countProjectionPorts node - 1) $ max 0 (round $ newPos ^. y / gridSize)
             if newNum /= i then return newNum else nothing
         _                          -> $notImplemented
@@ -136,7 +136,7 @@ stopPortDrag :: Bool -> PortDrag -> Command State ()
 stopPortDrag acceptChanges portDrag = do
     let portRef    = portDrag ^. portDragActPortRef
         orgPortRef = portDrag ^. portDragStartPortRef
-        nodeId     = portRef ^. PortRef.nodeId
+        nodeLoc     = portRef ^. PortRef.nodeLoc
         portId     = portRef ^. PortRef.portId
         orgPortId  = orgPortRef ^. PortRef.portId
     setEdgePortMode portRef Port.Normal
@@ -147,7 +147,7 @@ stopPortDrag acceptChanges portDrag = do
                     then Batch.movePort orgPortRef num
                     else void $ localMovePort portRef orgNum
             _                        -> $notImplemented
-        else void $ redrawConnectionsForNode nodeId
+        else void $ redrawConnectionsForNode nodeLoc
     removeActionFromState portDragAction
 
 
@@ -155,6 +155,6 @@ restoreConnect :: PortDrag -> Command State ()
 restoreConnect portDrag =
     Connect.startConnecting (portDrag ^. portDragStartPos) (portDrag ^. portDragStartPortRef) Nothing (portDrag ^. portDragMode)
 
-restorePortDrag :: NodeId -> Connect -> Command State ()
-restorePortDrag nodeId connect = when (connect ^. connectSourcePort . PortRef.nodeId == nodeId) $ do
+restorePortDrag :: NodeLoc -> Connect -> Command State ()
+restorePortDrag nodeLoc connect = when (connect ^. connectSourcePort . PortRef.nodeLoc == nodeLoc) $ do
     startPortDrag (connect ^. connectStartPos) (connect ^. connectSourcePort) (connect ^. connectMode)
