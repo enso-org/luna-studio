@@ -194,7 +194,7 @@ handle (Event.Batch ev) = Just $ case ev of
         request            = response ^. Response.request
         location           = request  ^. MovePort.location
         portRef            = request  ^. MovePort.portRef
-        newPortRef         = request  ^. MovePort.newPortRef
+        newPos             = request  ^. MovePort.newPortPos
         failure _          = whenM (isOwnRequest requestId) $ revertMovePort request
         success node'      = do
             let node = convert node'
@@ -203,7 +203,7 @@ handle (Event.Batch ev) = Just $ case ev of
             when shouldProcess $
                 if ownRequest then
                     void $ localUpdateNode node
-                else void $ localMovePort portRef newPortRef
+                else void $ localMovePort portRef newPos >> localUpdateNode node
 
     NodeResultUpdate update -> do
         shouldProcess <- isCurrentLocationAndGraphLoaded $ update ^. NodeResultUpdate.location

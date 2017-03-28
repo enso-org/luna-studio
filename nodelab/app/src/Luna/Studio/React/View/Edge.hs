@@ -89,7 +89,9 @@ edgeSidebar_ ref node = do
             --                     , "r"         $= "13"
             --                     ] mempty
 
-            forM_ ports $ edgePort_ ref mode nodeId (countProjectionPorts node == 1)
+            forM_ ports $ \p -> if isInMovedMode p
+                then edgePlaceholderForPort_ >> edgeDraggedPort_ ref p
+                else edgePort_ ref mode nodeId (countProjectionPorts node == 1) p
 
             when (isInputEdge node) $ do
                 svg_
@@ -147,7 +149,7 @@ addButton_ ref portRef =
             plainPath (Style.prefix "port-add-inbetween__selectable") "M 20 0 A 10 10 0 0 1 20 16 L 10 16 A 10 10 0 0 1 10 0 Z"
 
 edgePort_ :: Ref App -> EdgeMode -> NodeId -> Bool -> Port -> ReactElementM ViewEventHandler ()
-edgePort_ ref mode nid isOnly p = if isInMovedMode p then edgeDraggedPort_ ref p else do
+edgePort_ ref mode nid isOnly p = do
     let portId    = p ^. Port.portId
         portRef   = toAnyPortRef nid portId
         color     = convert $ p ^. Port.color
@@ -188,6 +190,11 @@ edgePort_ ref mode nid isOnly p = if isInMovedMode p then edgeDraggedPort_ ref p
                  , onDoubleClick $ \_ _ -> dispatch ref $ UI.EdgeEvent $ Edge.PortNameStartEdit portRef
                  ] $ elemString $ p ^. Port.name
 
+edgePlaceholderForPort_ :: ReactElementM ViewEventHandler ()
+edgePlaceholderForPort_ = div_
+    [ "key"       $= "port-placeholder"
+    , "className" $= Style.prefixFromList [ "port", "edgeport", "edgeport--i", "noselect" ]
+    ] mempty
 
 edgeDraggedPort_ :: Ref App -> Port -> ReactElementM ViewEventHandler ()
 edgeDraggedPort_ _ref p = withJust (getPositionInSidebar p) $ \pos ->
@@ -195,7 +202,7 @@ edgeDraggedPort_ _ref p = withJust (getPositionInSidebar p) $ \pos ->
         [ "className" $= Style.prefixFromList [ "port", "edgeport", "edgeport--dragged", "hover" ]
         , "style"     @= Aeson.object [ "transform"  Aeson..= ("translate(0px, " <> show (pos ^. y) <> "px)") ]
         ] $ do
-        div_ [ "className" $= Style.prefix "edgeport__name" ] $ elemString $ show (pos ^. y)-- p ^. Port.name
+        div_ [ "className" $= Style.prefix "edgeport__name" ] $ elemString $ p ^. Port.name
         svg_
             [ "className" $= Style.prefix "edgeport__svg" ] $
             circle_

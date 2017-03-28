@@ -96,8 +96,8 @@ addSubgraph nodes connections workspace uuid guiID = sendRequest $ Message uuid 
 getSubgraph :: NodeId -> Workspace -> UUID -> Maybe UUID -> IO ()
 getSubgraph nodeId workspace uuid guiID = sendRequest $ Message uuid guiID $ withLibrary workspace $ GetSubgraphs.Request . (GraphLocation.breadcrumb . Breadcrumb.items %~ (Breadcrumb.Lambda nodeId:))
 
-movePort :: AnyPortRef -> AnyPortRef -> Workspace -> UUID -> Maybe UUID -> IO ()
-movePort portRef newPortRef workspace uuid guiID = sendRequest $ Message uuid guiID $ (withLibrary workspace MovePort.Request) portRef newPortRef
+movePort :: AnyPortRef -> Int -> Workspace -> UUID -> Maybe UUID -> IO ()
+movePort portRef newPortPos workspace uuid guiID = sendRequest $ Message uuid guiID $ (withLibrary workspace MovePort.Request) portRef newPortPos
 
 redo :: UUID -> Maybe UUID -> IO ()
 redo uuid guiID = sendRequest $ Message uuid guiID $ Redo.Request Redo.RedoRequest

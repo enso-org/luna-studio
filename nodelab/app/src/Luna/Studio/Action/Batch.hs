@@ -88,7 +88,7 @@ addSubgraph nodes conns = withWorkspace $ BatchCmd.addSubgraph (map convert node
 getSubgraph :: NodeId -> Command State ()
 getSubgraph nid = withWorkspace (BatchCmd.getSubgraph nid)
 
-movePort :: AnyPortRef -> AnyPortRef -> Command State ()
+movePort :: AnyPortRef -> Int -> Command State ()
 movePort = withWorkspace .: BatchCmd.movePort
 
 redo :: Command State ()

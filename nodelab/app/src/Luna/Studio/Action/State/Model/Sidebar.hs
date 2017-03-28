@@ -5,13 +5,14 @@ import           Data.Position                         (Position, fromDoubles, f
 import           Data.ScreenPosition                   (ScreenPosition (ScreenPosition), toTuple, x)
 import qualified Data.ScreenPosition                   as SP
 import           Data.Size                             (Size)
+import           Data.Vector                           (Vector2 (Vector2))
 import           JS.Scene                              (inputSidebarPosition, inputSidebarSize, outputSidebarPosition)
 import           Luna.Studio.Action.Command            (Command)
 import           Luna.Studio.Action.State.Scene        (getInputSidebar, getInputSidebarPosition, getOutputSidebar, translateToWorkspace)
 import           Luna.Studio.Prelude
 import           Luna.Studio.React.Model.Constants     (gridSize)
 import           Luna.Studio.React.Model.Node.EdgeNode (EdgeType (InputEdge, OutputEdge))
-import           Luna.Studio.React.Model.Port          (PortId, getPortNumber, isSelf)
+import           Luna.Studio.React.Model.Port          (Port, PortId, getPortNumber, getPositionInSidebar, isSelf, portId)
 import           Luna.Studio.State.Global              (State)
 
 
@@ -30,28 +31,32 @@ getPortPositionInInputSidebar :: Size -> PortId -> Position
 getPortPositionInInputSidebar sidebarSize pid = fromDoubles posX posY where
     portNum = getPortNumber pid
     posX    = sidebarSize ^. x
-    posY    = (fromIntegral (portNum + 1)) * gridSize
+    posY    = (fromIntegral portNum) * gridSize
 
 getPortPositionInOutputSidebar :: PortId -> Position
 getPortPositionInOutputSidebar pid = fromDoubles 0 posY where
     portNum = getPortNumber pid
-    posY    = (fromIntegral $ if isSelf pid then 0 else portNum + 1) * gridSize
+    posY    = (fromIntegral $ if isSelf pid then 0 else portNum) * gridSize
 
-getInputEdgePortPosition :: PortId -> Command State (Maybe Position)
-getInputEdgePortPosition pid = do
+getInputEdgePortPosition :: Port -> Command State (Maybe Position)
+getInputEdgePortPosition p = do
+    let pid = p ^. portId
     mayInputSidebar <- getInputSidebar
     flip (maybe (return Nothing)) mayInputSidebar $
         \inputSidebar -> do
-            let shift = inputSidebar ^. inputSidebarPosition . vector
+            let shift = inputSidebar ^. inputSidebarPosition . vector + Vector2 0 gridSize
                 siz   = inputSidebar ^. inputSidebarSize
-                pos   = ScreenPosition . view SP.vector . move shift $ getPortPositionInInputSidebar siz pid
+                pos   = ScreenPosition . view SP.vector . move shift $
+                    maybe (getPortPositionInInputSidebar siz pid) id (getPositionInSidebar p)
             Just <$> translateToWorkspace pos
 
-getOutputEdgePortPosition :: PortId -> Command State (Maybe Position)
-getOutputEdgePortPosition pid = do
+getOutputEdgePortPosition :: Port -> Command State (Maybe Position)
+getOutputEdgePortPosition p = do
+    let pid = p ^. portId
     mayOutputSidebar <- getOutputSidebar
     flip (maybe (return Nothing)) mayOutputSidebar $
         \outputSidebar -> do
-            let shift = outputSidebar ^. outputSidebarPosition . vector
-                pos   = ScreenPosition . view SP.vector . move shift $ getPortPositionInOutputSidebar pid
+            let shift = outputSidebar ^. outputSidebarPosition . vector + Vector2 0 gridSize
+                pos   = ScreenPosition . view SP.vector . move shift $
+                    maybe (getPortPositionInOutputSidebar pid) id (getPositionInSidebar p)
             Just <$> translateToWorkspace pos

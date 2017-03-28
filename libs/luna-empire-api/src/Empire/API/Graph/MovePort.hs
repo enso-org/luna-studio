@@ -15,7 +15,7 @@ import qualified Empire.API.Topic              as T
 
 data Request = Request { _location    :: GraphLocation
                        , _portRef     :: AnyPortRef
-                       , _newPortRef  :: AnyPortRef
+                       , _newPortPos  :: Int
                        } deriving (Generic, Eq, NFData, Show)
 
 type Result = Node

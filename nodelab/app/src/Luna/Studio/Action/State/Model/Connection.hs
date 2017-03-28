@@ -75,15 +75,15 @@ getConnectionsIntersectingSegment seg = flip fmap getConnections $
 
 getConnectionPosition :: Node -> Port -> Node -> Port -> Command State (Maybe (Position, Position))
 getConnectionPosition (Edge _) srcPort (Edge _) dstPort = runMaybeT $ do
-    srcConnPos <- MaybeT $ getInputEdgePortPosition $ srcPort ^. portId
-    dstConnPos <- MaybeT $ getOutputEdgePortPosition $ dstPort ^. portId
+    srcConnPos <- MaybeT $ getInputEdgePortPosition srcPort
+    dstConnPos <- MaybeT $ getOutputEdgePortPosition dstPort
     return (srcConnPos, dstConnPos)
 getConnectionPosition (Edge _) srcPort dstNode dstPort = runMaybeT $ do
-    srcConnPos <- MaybeT $ getInputEdgePortPosition $ srcPort ^. portId
+    srcConnPos <- MaybeT $ getInputEdgePortPosition srcPort
     dstConnPos <- MaybeT $ getCurrentConnectionSrcPosition dstNode dstPort srcConnPos
     return (srcConnPos, dstConnPos)
 getConnectionPosition srcNode srcPort (Edge _) dstPort = runMaybeT $ do
-    dstConnPos <- MaybeT $ getOutputEdgePortPosition $ dstPort ^. portId
+    dstConnPos <- MaybeT $ getOutputEdgePortPosition dstPort
     srcConnPos <- MaybeT $ getCurrentConnectionSrcPosition srcNode srcPort dstConnPos
     return (srcConnPos, dstConnPos)
 getConnectionPosition (Expression srcNode) srcPort (Expression dstNode) dstPort = do
@@ -102,8 +102,8 @@ getConnectionPosition (Expression srcNode) srcPort (Expression dstNode) dstPort 
 getCurrentConnectionSrcPosition :: Node -> Port -> Position -> Command State (Maybe Position)
 getCurrentConnectionSrcPosition (Edge node) port _ = do
     if isInputEdge node
-        then getInputEdgePortPosition  $ port ^. portId
-        else getOutputEdgePortPosition $ port ^. portId
+        then getInputEdgePortPosition  port
+        else getOutputEdgePortPosition port
 getCurrentConnectionSrcPosition (Expression node) port mousePos =
     return . Just $ case port ^. portId of
         OutPortId _ -> connectionSrc pos mousePos isExp False portNum numOfSameTypePorts $ countOutPorts node + countArgPorts node == 1

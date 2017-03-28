@@ -3,7 +3,7 @@ module Luna.Studio.Action.Basic.Revert where
 import           Control.Arrow                              ((&&&))
 import           Empire.API.Data.Connection                 (dst, src)
 import           Empire.API.Data.Node                       (nodeId)
-import           Empire.API.Data.PortRef                    (AnyPortRef (InPortRef'))
+import           Empire.API.Data.PortRef                    (AnyPortRef (InPortRef', OutPortRef'), OutPortRef (OutPortRef), toAnyPortRef)
 import qualified Empire.API.Graph.AddConnection             as AddConnection
 import qualified Empire.API.Graph.AddNode                   as AddNode
 import qualified Empire.API.Graph.AddPort                   as AddPort
@@ -35,6 +35,7 @@ import           Luna.Studio.Action.Command                 (Command)
 import           Luna.Studio.Action.State.Graph             (isCurrentLocationAndGraphLoaded)
 import           Luna.Studio.Prelude
 import           Luna.Studio.React.Model.Node               (_Expression)
+import           Luna.Studio.React.Model.Port               (OutPort (Projection), PortId (OutPortId))
 import           Luna.Studio.State.Global                   (State)
 
 
@@ -58,8 +59,11 @@ revertAddSubgraph (AddSubgraph.Request loc nodes _) =
     whenM (isCurrentLocationAndGraphLoaded loc) $ void . localRemoveNodes $ map (view nodeId) nodes
 
 revertMovePort :: MovePort.Request -> Command State ()
-revertMovePort (MovePort.Request loc oldPortRef newPortRef) =
-    whenM (isCurrentLocationAndGraphLoaded loc) $ void $ localMovePort newPortRef oldPortRef
+revertMovePort (MovePort.Request loc oldPortRef newPos) =
+    whenM (isCurrentLocationAndGraphLoaded loc) $ case oldPortRef of
+        OutPortRef' (OutPortRef nid (Projection i)) ->
+            void $ localMovePort (toAnyPortRef nid $ OutPortId $ Projection newPos) i
+        _                                           -> $notImplemented
 
 revertRemoveConnection :: RemoveConnection.Request -> Response.Status RemoveConnection.Inverse -> Command State ()
 revertRemoveConnection (RemoveConnection.Request loc dst') (Response.Ok (RemoveConnection.Inverse src')) =
