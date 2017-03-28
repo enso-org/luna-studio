@@ -88,6 +88,7 @@ instance FromJSON a => FromJSON (Breadcrumb.Named a)
 instance               FromJSON Breadcrumb.BreadcrumbItem
 
 instance ToJSON GraphLocation.GraphLocation
+instance FromJSON GraphLocation.GraphLocation
 
 instance ToJSON Node.Node
 instance FromJSON Node.Node
