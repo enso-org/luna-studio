@@ -192,8 +192,8 @@ edgePort_ ref mode nid isOnly p = if isInMovedMode p then edgeDraggedPort_ ref p
 edgeDraggedPort_ :: Ref App -> Port -> ReactElementM ViewEventHandler ()
 edgeDraggedPort_ _ref p = withJust (getPositionInSidebar p) $ \pos ->
     div_
-        [ "className" $= Style.prefixFromList [ "port", "edgeport", "luna-edgeport—dragged-port", "hover" ]
-        , "style"     @= Aeson.object [ "top"  Aeson..= ( show (pos ^. y) <> "px" ) ]
+        [ "className" $= Style.prefixFromList [ "port", "edgeport", "edgeport--dragged", "hover" ]
+        , "style"     @= Aeson.object [ "transform"  Aeson..= ("translate(0px, " <> show (pos ^. y) <> "px)") ]
         ] $ do
         div_ [ "className" $= Style.prefix "edgeport__name" ] $ elemString $ show (pos ^. y)-- p ^. Port.name
         svg_
