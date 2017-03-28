@@ -244,26 +244,35 @@
 
 .luna-ctrl-switch {
     cursor: pointer;
-    width: 20rem;
+    height: 8rem;
+    width: 16rem;
     background: #111;
     border-radius: 1000px;
     position: relative;
-    top: 3rem;
+    top: 4rem;
     display: flex;
     &::after {
+        top: -2rem;
+        position: relative;
         display: block;
         content: " ";
-        width: 16rem;
-        height: 16rem;
+        width: 12rem;
+        height: 12rem;
         background: #777;
         border-radius: 1000px;
     }
 }
 .luna-ctrl-switch--on {
-    flex-direction: row-reverse;
-    background: saturate(darken(green,5%),-50%);
+    background: #888;
+    &::after {
+        background: #bbb;
+        left: 6rem;
+    }
 }
 .luna-ctrl-switch--off {
-    flex-direction: row;
-    background: saturate(darken(red,25%),-60%);
+    background: #3a3a3a;
+    &::after {
+        background: #666;
+        left: -2rem;
+    }
 }
