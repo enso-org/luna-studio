@@ -26,7 +26,7 @@ localMerge parentPath graphs = do
         let allNodes           = (convert . (NodeLoc.appendItem k parentPath,) <$> graph ^. GraphAPI.nodes)
             expressionNodesMap = toExpressionNodesMap $ allNodes ^.. traverse . _Expression
             edgeNodesMap       = toEdgeNodesMap $ allNodes ^.. traverse . _Edge
-            connections        = map ((_1 %~ convert . (parentPath,)) . (_2 %~ convert . (parentPath,))) $ graph ^. GraphAPI.connections
+            connections        = map ((_1 %~ convert) . (_2 %~ convert)) $ graph ^. GraphAPI.connections
             monads             = graph ^. GraphAPI.monads
         void $ localAddConnections connections
         return (k, Subgraph expressionNodesMap edgeNodesMap monads)

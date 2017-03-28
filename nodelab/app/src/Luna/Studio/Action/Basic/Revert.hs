@@ -33,7 +33,7 @@ import           Luna.Studio.Action.Basic.SetNodeExpression (localSetNodeExpress
 import           Luna.Studio.Action.Basic.SetNodeMeta       (localSetNodesMeta)
 import           Luna.Studio.Action.Basic.SetPortDefault    (localSetPortDefault)
 import           Luna.Studio.Action.Command                 (Command)
-import           Luna.Studio.Action.State.Graph             (inCurrentLocation)
+import           Luna.Studio.Action.State.Graph             (isCurrentLocationAndGraphLoaded)
 import           Luna.Studio.Prelude
 import           Luna.Studio.React.Model.Node               (_Expression)
 import           Luna.Studio.React.Model.Port               (OutPort (Projection), PortId (OutPortId))
@@ -42,79 +42,78 @@ import           Luna.Studio.State.Global                   (State)
 
 revertAddConnection :: AddConnection.Request -> Command State ()
 revertAddConnection (AddConnection.Request loc _ (Left (InPortRef' dst'))) =
-    inCurrentLocation loc $ \path -> void $ localRemoveConnection $ convert (path, dst')
+    whenM (isCurrentLocationAndGraphLoaded loc) $ void $ localRemoveConnection $ convert dst'
 revertAddConnection (AddConnection.Request _ _ (Left _)) = return ()
 revertAddConnection _ = $notImplemented
 
 
 revertAddNode :: AddNode.Request -> Command State ()
 revertAddNode (AddNode.Request loc nid _ _ _) =
-    inCurrentLocation loc $ \path -> void $ localRemoveNode $ convert (path, nid)
+    whenM (isCurrentLocationAndGraphLoaded loc) $ void $ localRemoveNode $ convert nid
 
 revertAddPort :: AddPort.Request -> Command State ()
 revertAddPort (AddPort.Request loc portRef) =
-    inCurrentLocation loc $ \path -> void $ localRemovePort $ convert (path, portRef)
+    whenM (isCurrentLocationAndGraphLoaded loc) $ void $ localRemovePort $ convert portRef
 
 revertAddSubgraph :: AddSubgraph.Request -> Command State ()
 revertAddSubgraph (AddSubgraph.Request loc nodes _) =
-    inCurrentLocation loc $ \path -> void . localRemoveNodes $ map (convert . (path,) . view nodeId) nodes
+    whenM (isCurrentLocationAndGraphLoaded loc) $ void . localRemoveNodes $ map (convert . view nodeId) nodes
 
 revertMovePort :: MovePort.Request -> Command State ()
 revertMovePort (MovePort.Request loc oldPortRef newPos) =
-    inCurrentLocation loc $ \path -> case oldPortRef of
+    whenM (isCurrentLocationAndGraphLoaded loc) $ case oldPortRef of
         OutPortRef' (OutPortRef nid (Projection i)) ->
-            void $ localMovePort (convert (path, toAnyPortRef nid $ OutPortId $ Projection newPos)) i
+            void $ localMovePort (convert $ toAnyPortRef nid $ OutPortId $ Projection newPos) i
         _                                           -> $notImplemented
 
 revertRemoveConnection :: RemoveConnection.Request -> Response.Status RemoveConnection.Inverse -> Command State ()
 revertRemoveConnection (RemoveConnection.Request loc dst') (Response.Ok (RemoveConnection.Inverse src')) =
-    inCurrentLocation loc $ \path -> void $ localAddConnection (convert (path, src')) (convert (path, dst'))
+    whenM (isCurrentLocationAndGraphLoaded loc) $ void $ localAddConnection (convert src') (convert dst')
 revertRemoveConnection (RemoveConnection.Request _loc _dst) (Response.Error _msg) = $notImplemented
 
 --TODO[LJK]: Force Empire.API.Data.Connection to be instance of wrapped to make functions like this cleaner
 revertRemoveNodes :: RemoveNodes.Request -> Response.Status RemoveNodes.Inverse -> Command State ()
 revertRemoveNodes (RemoveNodes.Request loc _) (Response.Ok (RemoveNodes.Inverse nodes conns)) =
-    inCurrentLocation loc $ \path -> do
-        let nodes' = (map (convert . (path,)) nodes) ^.. traverse . _Expression
-            conns' = map (view src &&& view dst) conns
-        void $ localAddSubgraph nodes' $ map (\conn -> (convert (path, conn ^. src), convert (path, conn ^. dst))) conns
+    whenM (isCurrentLocationAndGraphLoaded loc) $ void $ localAddSubgraph nodes' (map (\conn -> (convert $ conn ^. src, convert $ conn ^. dst)) conns)
+    where
+        nodes' = (map (convert . (loc,)) nodes) ^.. traverse . _Expression
+        conns' = map (view src &&& view dst) conns
 revertRemoveNodes (RemoveNodes.Request _loc _) (Response.Error _msg) = $notImplemented
 
 revertRemovePort :: RemovePort.Request -> Response.Status RemovePort.Inverse -> Command State ()
 revertRemovePort (RemovePort.Request loc portRef) (Response.Ok (RemovePort.Inverse conns)) =
-    inCurrentLocation loc $ \path -> do
-        void $ localAddPort $ convert (path, portRef)
-        void $ localAddConnections (map (\conn -> (convert (path, conn ^. src), convert (path, conn ^. dst))) conns)
+    whenM (isCurrentLocationAndGraphLoaded loc) $ do
+        void $ localAddPort (convert portRef)
+        void $ localAddConnections (map (\conn -> (convert $ conn ^. src, convert $ conn ^. dst)) conns)
 revertRemovePort (RemovePort.Request _loc _portRef) (Response.Error _msg) = $notImplemented
 
 revertRenameNode :: RenameNode.Request -> Response.Status RenameNode.Inverse -> Command State ()
 revertRenameNode (RenameNode.Request loc nid _) (Response.Ok (RenameNode.Inverse prevName)) =
-    inCurrentLocation loc $ \path -> void $ localRenameNode (convert (path, nid)) prevName
+    whenM (isCurrentLocationAndGraphLoaded loc) $ void $ localRenameNode (convert nid) prevName
 revertRenameNode (RenameNode.Request _loc _nid _) (Response.Error _msg) = $notImplemented
 
 revertRenamePort :: RenamePort.Request -> Response.Status RenamePort.Inverse -> Command State ()
 revertRenamePort (RenamePort.Request loc portRef _) (Response.Ok (RenamePort.Inverse prevName)) =
-    inCurrentLocation loc $ \path -> void $ $notImplemented
+    whenM (isCurrentLocationAndGraphLoaded loc) $ void $ $notImplemented
 revertRenamePort (RenamePort.Request _loc _portRef _) (Response.Error _msg) = $notImplemented
 
 revertSetNodeCode :: SetNodeCode.Request -> Response.Status SetNodeCode.Inverse -> Command State ()
 revertSetNodeCode (SetNodeCode.Request loc nid _) (Response.Ok (SetNodeCode.Inverse prevCode)) =
-    inCurrentLocation loc $ \path -> void $ localSetNodeCode (convert (path, nid)) prevCode
+    whenM (isCurrentLocationAndGraphLoaded loc) $ void $ localSetNodeCode (convert nid) prevCode
 revertSetNodeCode (SetNodeCode.Request _loc _nid _) (Response.Error _msg) = $notImplemented
 
 revertSetNodeExpression :: SetNodeExpression.Request -> Response.Status SetNodeExpression.Inverse -> Command State ()
 revertSetNodeExpression (SetNodeExpression.Request loc nid _) (Response.Ok (SetNodeExpression.Inverse prevCode)) =
-    inCurrentLocation loc $ \path -> void $ localSetNodeExpression (convert (path, nid)) prevCode
+    whenM (isCurrentLocationAndGraphLoaded loc) $ void $ localSetNodeExpression (convert nid) prevCode
 revertSetNodeExpression (SetNodeExpression.Request _loc _nid _) (Response.Error _msg) = $notImplemented
 
 revertSetNodesMeta :: SetNodesMeta.Request -> Response.Status SetNodesMeta.Inverse -> Command State ()
 revertSetNodesMeta (SetNodesMeta.Request loc _) (Response.Ok (SetNodesMeta.Inverse prevMeta)) =
-    inCurrentLocation loc $ \path -> do
-        let conv (nid, meta) = convert (convert (path, nid) :: NodeLoc, meta)
-        void . localSetNodesMeta $ map conv prevMeta
+    whenM (isCurrentLocationAndGraphLoaded loc) $ void . localSetNodesMeta $ map conv prevMeta where
+        conv (nid, meta) = convert (convert (loc, nid) :: NodeLoc, meta)
 revertSetNodesMeta (SetNodesMeta.Request _loc _) (Response.Error _msg) = $notImplemented
 
 revertSetPortDefault :: SetPortDefault.Request -> Response.Status SetPortDefault.Inverse -> Command State ()
 revertSetPortDefault (SetPortDefault.Request loc nid _) (Response.Ok (SetPortDefault.Inverse prevCode)) =
-    inCurrentLocation loc $ \path -> void $ localSetPortDefault (convert (path, nid)) prevCode
+    whenM (isCurrentLocationAndGraphLoaded loc) $ void $ localSetPortDefault (convert nid) prevCode
 revertSetPortDefault (SetPortDefault.Request _loc _nid _) (Response.Error _msg) = $notImplemented
