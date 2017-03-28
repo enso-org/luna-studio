@@ -64,74 +64,79 @@ edgeSidebar_ ref node = do
         , onMouseMove   $ \e m -> stopPropagation e : (dispatch ref $ UI.EdgeEvent $ Edge.MouseMove m nodeId)
         ] $ do
         div_
-            [ "key"       $= "EdgePortsBody"
-            , "id"        $= if isInputEdge node then inputSidebarId else outputSidebarId
-            , "className" $= Style.prefixFromList [ "edgeports__body", "noselect" ]
-            ] $ do
-            -- TODO[LJK]: Find out how self port works in this case
-            -- when (isInputEdge node) $
-            --     div_
-            --         [ "className" $= Style.prefixFromList ["port", "edgeport", "edgeport--i", "edgeport--self"]
-            --         ] $
-            --         svg_
-            --             [ "className" $= Style.prefix "edgeport__svg"
-            --             ] $
-            --             g_
-            --                 [ "className" $= Style.prefixFromList [ "port", "port--self" ]
-            --                 ] $ do
-            --                 circle_
-            --                     [ "className" $= Style.prefix "port__shape"
-            --                     , "fill"      $= "rgba(119,119,119,255)"
-            --                     , "r"         $= "5"
-            --                     ] mempty
-            --                 circle_
-            --                     [ "className" $= Style.prefix "port__select"
-            --                     , "r"         $= "13"
-            --                     ] mempty
+            [ "key" $= "activeArea"
+            , "className" $= Style.prefixFromList [ "edgeports__active-area", "noselect" ]
+            ] $
+            div_
+                [ "key"       $= "EdgePortsBody"
+                , "id"        $= if isInputEdge node then inputSidebarId else outputSidebarId
+                , "className" $= Style.prefixFromList [ "edgeports__body", "noselect" ]
+                ] $ do
+                -- TODO[LJK]: Find out how self port works in this case
+                -- when (isInputEdge node) $
+                --     div_
+                --         [ "className" $= Style.prefixFromList ["port", "edgeport", "edgeport--i", "edgeport--self"]
+                --         ] $
+                --         svg_
+                --             [ "className" $= Style.prefix "edgeport__svg"
+                --             ] $
+                --             g_
+                --                 [ "className" $= Style.prefixFromList [ "port", "port--self" ]
+                --                 ] $ do
+                --                 circle_
+                --                     [ "className" $= Style.prefix "port__shape"
+                --                     , "fill"      $= "rgba(119,119,119,255)"
+                --                     , "r"         $= "5"
+                --                     ] mempty
+                --                 circle_
+                --                     [ "className" $= Style.prefix "port__select"
+                --                     , "r"         $= "13"
+                --                     ] mempty
 
-            forM_ ports $ \p -> if isInMovedMode p
-                then edgePlaceholderForPort_ >> edgeDraggedPort_ ref p
-                else edgePort_ ref mode nodeId (countProjectionPorts node == 1) p
+                forM_ ports $ \p -> if isInMovedMode p
+                    then edgePlaceholderForPort_ >> edgeDraggedPort_ ref p
+                    else edgePort_ ref mode nodeId (countProjectionPorts node == 1) p
 
-            when (isInputEdge node) $ do
-                svg_
-                    [ "className" $= Style.prefixFromList [ "edgeport__svg", "edgeport__svg--addbutton" ]
-                    , "key"       $= (name node <> "AddButton")
-                    , onMouseDown $ \e _ -> [stopPropagation e]
-                    , onClick $ \e _ -> stopPropagation e : dispatch ref (UI.EdgeEvent $ Edge.AddPort $ OutPortRef' (OutPortRef nodeId (Projection (countProjectionPorts node))))
-                    ] $ do
-                    circle_
-                        [ "className" $= Style.prefix "port__shape"
-                        , "key"       $= jsShow "addButtonShape"
-                        , "r"         $= jsShow2 3
-                        ] mempty
-                    g_ [ "className" $= Style.prefix "port__plus" ] $ do
-                          plainRect 0 0 0 0
-                          plainRect 0 0 0 0
-                    circle_
-                        [ "className" $= Style.prefix "port__select"
-                        , "key"       $= jsShow "addButtonSelect"
-                        , "r"         $= jsShow2 (lineHeight/1.5)
-                        ] mempty
-                svg_
-                    [ "className" $= Style.prefix "edit-icon"
-                    , onClick $ \e _ -> stopPropagation e : dispatch ref (UI.EdgeEvent $ Edge.ToggleEdgeMode nodeId)
-                    , "key"       $= (name node <> "editIcon")
-                    ] $ do
-                    circle_
-                        [ "className" $= Style.prefix "edit-icon__shape01"
-                        , "key"       $= jsShow "editIconShape"
-                        , "r"         $= jsShow2 3
-                        ] mempty
-                    g_ [ "className" $= Style.prefix "edit-icon__shape02" ] $ do
-                          plainPath "" ""
-                          plainRect 0 0 0 0
-                          plainRect 0 0 0 0
-                    circle_
-                        [ "className" $= Style.prefix "edit-icon__select"
-                        , "key"       $= jsShow "editIconSelect"
-                        , "r"         $= jsShow2 (lineHeight/1.5)
-                        ] mempty
+
+                when (isInputEdge node) $ do
+                    svg_
+                        [ "className" $= Style.prefixFromList [ "edgeport__svg", "edgeport__svg--addbutton" ]
+                        , "key"       $= (name node <> "AddButton")
+                        , onMouseDown $ \e _ -> [stopPropagation e]
+                        , onClick $ \e _ -> stopPropagation e : dispatch ref (UI.EdgeEvent $ Edge.AddPort $ OutPortRef' (OutPortRef nodeId (Projection (countProjectionPorts node))))
+                        ] $ do
+                        circle_
+                            [ "className" $= Style.prefix "port__shape"
+                            , "key"       $= jsShow "addButtonShape"
+                            , "r"         $= jsShow2 3
+                            ] mempty
+                        g_ [ "className" $= Style.prefix "port__plus" ] $ do
+                              plainRect 0 0 0 0
+                              plainRect 0 0 0 0
+                        circle_
+                            [ "className" $= Style.prefix "port__select"
+                            , "key"       $= jsShow "addButtonSelect"
+                            , "r"         $= jsShow2 (lineHeight/1.5)
+                            ] mempty
+                    svg_
+                        [ "className" $= Style.prefix "edit-icon"
+                        , onClick $ \e _ -> stopPropagation e : dispatch ref (UI.EdgeEvent $ Edge.ToggleEdgeMode nodeId)
+                        , "key"       $= (name node <> "editIcon")
+                        ] $ do
+                        circle_
+                            [ "className" $= Style.prefix "edit-icon__shape01"
+                            , "key"       $= jsShow "editIconShape"
+                            , "r"         $= jsShow2 3
+                            ] mempty
+                        g_ [ "className" $= Style.prefix "edit-icon__shape02" ] $ do
+                              plainPath "" ""
+                              plainRect 0 0 0 0
+                              plainRect 0 0 0 0
+                        circle_
+                            [ "className" $= Style.prefix "edit-icon__select"
+                            , "key"       $= jsShow "editIconSelect"
+                            , "r"         $= jsShow2 (lineHeight/1.5)
+                            ] mempty
 
 addButton_ :: Ref App -> AnyPortRef -> ReactElementM ViewEventHandler ()
 addButton_ ref portRef =
