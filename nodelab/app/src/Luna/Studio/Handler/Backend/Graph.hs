@@ -205,7 +205,7 @@ handle (Event.Batch ev) = Just $ case ev of
 
     NodeTypecheckerUpdate update -> do
       inCurrentLocation (update ^. NodeTCUpdate.location) $ \path ->
-          void . localUpdateNodeTypecheck $ update ^. NodeTCUpdate.node
+          void $ localUpdateNodeTypecheck path $ update ^. NodeTCUpdate.node
 
     RedoResponse response -> $notImplemented
 
