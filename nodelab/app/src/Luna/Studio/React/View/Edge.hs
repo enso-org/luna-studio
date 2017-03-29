@@ -51,11 +51,13 @@ portHandlers ref MoveConnect _ portRef =
 
 edgeSidebar_ :: Ref App -> EdgeNode -> ReactElementM ViewEventHandler ()
 edgeSidebar_ ref node = do
-    let ports         = node ^. EdgeNode.ports . to Map.elems
-        nodeLoc       = node ^. EdgeNode.nodeLoc
-        mode          = node ^. EdgeNode.mode
-        classes       = [ "edgeports", if isInputEdge node then "edgeports--i" else "edgeports--o" ]
-                     ++ if mode == AddRemove then ["edgeports--editmode"] else []
+    let ports            = node ^. EdgeNode.ports . to Map.elems
+        nodeLoc          = node ^. EdgeNode.nodeLoc
+        mode             = node ^. EdgeNode.mode
+        portDraggedClass = if any isInMovedMode ports then ["edgeports--dragmode"] else []
+        classes          = [ "edgeports", if isInputEdge node then "edgeports--i" else "edgeports--o" ]
+                        ++ if mode == AddRemove then ["edgeports--editmode"] else []
+                        ++ portDraggedClass
     div_
         [ "key"         $= name node
         , "className"   $= Style.prefixFromList classes
