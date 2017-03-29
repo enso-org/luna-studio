@@ -17,10 +17,10 @@ import           Luna.Studio.State.Global              (State)
 
 
 handle :: Event -> Maybe (Command State ())
-handle (UI (VisualizationEvent (Visualization.Pin   nodeId visIx         ))) = Just $ Visualization.pin   nodeId visIx
-handle (UI (VisualizationEvent (Visualization.Unpin nodeId visIx position))) = Just $ Visualization.unpin nodeId visIx position
-handle (UI (VisualizationEvent (Visualization.MouseDown evt nodeId visIx position))) = Just $
-    when (Mouse.withoutMods evt Mouse.leftButton) $ Visualization.startDrag nodeId visIx position evt
+handle (UI (VisualizationEvent (Visualization.Pin   nodeLoc visIx         ))) = Just $ Visualization.pin   nodeLoc visIx
+handle (UI (VisualizationEvent (Visualization.Unpin nodeLoc visIx position))) = Just $ Visualization.unpin nodeLoc visIx position
+handle (UI (VisualizationEvent (Visualization.MouseDown evt nodeLoc visIx position))) = Just $
+    when (Mouse.withoutMods evt Mouse.leftButton) $ Visualization.startDrag nodeLoc visIx position evt
 handle (UI (AppEvent  (App.MouseMove mevt _))) = Just $ continue $ Visualization.drag mevt
 handle (UI (AppEvent  (App.MouseUp   mevt  ))) = Just $ continue $ Visualization.stopDrag mevt
 handle _ = Nothing

@@ -63,7 +63,7 @@ revertMovePort :: MovePort.Request -> Command State ()
 revertMovePort (MovePort.Request loc oldPortRef newPos) =
     inCurrentLocation loc $ \path -> case oldPortRef of
         OutPortRef' (OutPortRef nid (Projection i p)) ->
-            void $ localMovePort (convert $ toAnyPortRef nid $ OutPortId $ Projection newPos p) i
+            void $ localMovePort (convert (path, toAnyPortRef nid $ OutPortId $ Projection newPos p)) i
         _                                           -> $notImplemented
 
 revertRemoveConnection :: RemoveConnection.Request -> Response.Status RemoveConnection.Inverse -> Command State ()

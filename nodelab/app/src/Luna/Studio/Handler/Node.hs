@@ -24,19 +24,19 @@ import           React.Flux                                  (mouseCtrlKey, mous
 
 handle :: Event -> Maybe (Command State ())
 handle (Shortcut (Shortcut.Event command _))        = Just $ handleCommand command
-handle (UI (NodeEvent (Node.MouseDown evt nodeId))) = Just $ do
+handle (UI (NodeEvent (Node.MouseDown evt nodeLoc))) = Just $ do
     let shouldProceed = Mouse.withoutMods evt Mouse.leftButton || Mouse.withShift evt Mouse.leftButton
         shouldSnap    = Mouse.withoutMods evt Mouse.leftButton
     pos <- workspacePosition evt
-    when shouldProceed $ Node.startNodeDrag pos nodeId shouldSnap
-handle (UI (NodeEvent (Node.Enter            nodeId))) = Just $ withJustM (getExpressionNode nodeId) enterNode
-handle (UI (NodeEvent (Node.EditExpression   nodeId))) = Just $ Node.editExpression nodeId
-handle (UI (NodeEvent (Node.Select      kevt nodeId))) = Just $ when (mouseCtrlKey kevt || mouseMetaKey kevt) $ toggleSelect nodeId
-handle (UI (NodeEvent (Node.DisplayResultChanged flag nodeId))) = Just $ localToggleVisualizations nodeId flag
-handle (UI (NodeEvent (Node.NameEditStart    nodeId))) = Just $ Node.startEditName nodeId
-handle (UI (NodeEvent (Node.NameApply        nodeId))) = Just $ Node.applyName   nodeId
-handle (UI (NodeEvent (Node.NameDiscard      nodeId))) = Just $ Node.discardName nodeId
-handle (UI (NodeEvent (Node.NameChange   val nodeId))) = Just $ Node.editName nodeId val
+    when shouldProceed $ Node.startNodeDrag pos nodeLoc shouldSnap
+handle (UI (NodeEvent (Node.Enter            nodeLoc))) = Just $ withJustM (getExpressionNode nodeLoc) enterNode
+handle (UI (NodeEvent (Node.EditExpression   nodeLoc))) = Just $ Node.editExpression nodeLoc
+handle (UI (NodeEvent (Node.Select      kevt nodeLoc))) = Just $ when (mouseCtrlKey kevt || mouseMetaKey kevt) $ toggleSelect nodeLoc
+handle (UI (NodeEvent (Node.DisplayResultChanged flag nodeLoc))) = Just $ localToggleVisualizations nodeLoc flag
+handle (UI (NodeEvent (Node.NameEditStart    nodeLoc))) = Just $ Node.startEditName nodeLoc
+handle (UI (NodeEvent (Node.NameApply        nodeLoc))) = Just $ Node.applyName   nodeLoc
+handle (UI (NodeEvent (Node.NameDiscard      nodeLoc))) = Just $ Node.discardName nodeLoc
+handle (UI (NodeEvent (Node.NameChange   val nodeLoc))) = Just $ Node.editName nodeLoc val
 handle (UI (NodeEvent (Node.PortEditString       portRef portDef))) = Just $ void $ localSetPortDefault portRef portDef
 handle (UI (NodeEvent (Node.PortApplyString kevt portRef portDef))) = Just $ when (Keys.withoutMods kevt Keys.enter) $
                                                                                         setPortDefault portRef portDef
@@ -44,7 +44,7 @@ handle (UI (NodeEvent (Node.PortSetPortDefault portRef portDef))) = Just $ setPo
 handle (UI (NodeEvent (Node.PortInitSlider mevt portRef sliderInit)))       = Just $ do
     mousePos <- mousePosition mevt
     PortControl.startMoveSlider portRef mousePos sliderInit
-handle (UI (NodeEvent (Node.SetCode nodeId code))) = Just $ setNodeCode nodeId code
+handle (UI (NodeEvent (Node.SetCode nodeLoc code))) = Just $ setNodeCode nodeLoc code
 handle (UI (AppEvent  (App.MouseMove mevt _))) = Just $ do
     mousePos <- mousePosition mevt
     continue $ PortControl.moveSlider mousePos
