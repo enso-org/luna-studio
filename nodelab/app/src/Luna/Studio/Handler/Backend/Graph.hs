@@ -58,7 +58,6 @@ import           Luna.Studio.Handler.Backend.Common           (doNothing, handle
 import           Luna.Studio.Prelude
 import           Luna.Studio.React.Model.Node                 (Node (Expression), nodeLoc, _Expression)
 import qualified Luna.Studio.React.Model.Node.ExpressionNode  as Node
-import qualified Luna.Studio.React.Model.NodeEditor           as NodeEditor
 import           Luna.Studio.State.Global                     (State)
 import qualified Luna.Studio.State.Global                     as Global
 
@@ -147,18 +146,18 @@ handle (Event.Batch ev) = Just $ case ev of
 
     CollaborationUpdate update -> inCurrentLocation (update ^. CollaborationUpdate.location) $ \path -> do
         let clientId = update ^. CollaborationUpdate.clientId
-            touchNodes nodeIds setter = forM_ nodeIds $ \nid ->
-                modifyExpressionNode (convert (path, nid)) setter
+            touchNodes nodeLocs setter = forM_ nodeLocs $ \nl ->
+                modifyExpressionNode (prependPath path nl) setter
         myClientId   <- use $ Global.backend . Global.clientId
         currentTime  <- use Global.lastEventTimestamp
         when (clientId /= myClientId) $ do
             clientColor <- updateClient clientId
             case update ^. CollaborationUpdate.event of
-                CollaborationUpdate.Touch       nodeIds -> touchNodes nodeIds $  Node.collaboration . Node.touch  . at clientId ?= (DT.addSeconds (2 * refreshTime) currentTime, clientColor)
-                CollaborationUpdate.Modify      nodeIds -> touchNodes nodeIds $ do
+                CollaborationUpdate.Touch       nodeLocs -> touchNodes nodeLocs $  Node.collaboration . Node.touch  . at clientId ?= (DT.addSeconds (2 * refreshTime) currentTime, clientColor)
+                CollaborationUpdate.Modify      nodeLocs -> touchNodes nodeLocs $ do
                     Node.collaboration . Node.touch  . at clientId %= bumpTime (DT.addSeconds modifyTime currentTime) clientColor
                     Node.collaboration . Node.modify . at clientId ?= DT.addSeconds modifyTime currentTime
-                CollaborationUpdate.CancelTouch nodeIds -> touchNodes nodeIds $  Node.collaboration . Node.touch  . at clientId .= Nothing
+                CollaborationUpdate.CancelTouch nodeLocs -> touchNodes nodeLocs $  Node.collaboration . Node.touch  . at clientId .= Nothing
                 CollaborationUpdate.Refresh             -> touchCurrentlySelected
 
     ConnectUpdate update -> do
@@ -171,10 +170,12 @@ handle (Event.Batch ev) = Just $ case ev of
 
     --TODO[LJK, PM]: Review this Handler
     GetSubgraphsResponse response -> handleResponse response success doNothing where
+        requestId      = response ^. Response.requestId
         request        = response ^. Response.request
         location       = request ^. GetSubgraphs.location
         success result = inCurrentLocation location $ \path ->
-            localMerge path $ result ^. GetSubgraphs.graphs
+            whenM (isOwnRequest requestId) $
+                localMerge path $ result ^. GetSubgraphs.graphs
 
 
     MonadsUpdate update -> do

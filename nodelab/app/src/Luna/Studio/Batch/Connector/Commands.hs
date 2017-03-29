@@ -160,10 +160,10 @@ requestCollaborationRefresh :: ClientId -> Workspace -> IO ()
 requestCollaborationRefresh clientId workspace = sendUpdate $ withLibrary workspace CollaborationUpdate.Update clientId CollaborationUpdate.Refresh
 
 collaborativeTouch :: ClientId -> [NodeLoc] -> Workspace -> IO ()
-collaborativeTouch clientId locs workspace = sendUpdate $ withLibrary workspace CollaborationUpdate.Update clientId  $ CollaborationUpdate.Touch (convert <$> locs)
+collaborativeTouch clientId locs workspace = sendUpdate $ withLibrary workspace CollaborationUpdate.Update clientId  $ CollaborationUpdate.Touch locs
 
 collaborativeModify :: ClientId -> [NodeLoc] -> Workspace -> IO ()
-collaborativeModify clientId locs workspace = sendUpdate $ withLibrary workspace CollaborationUpdate.Update clientId  $ CollaborationUpdate.Modify (convert <$> locs)
+collaborativeModify clientId locs workspace = sendUpdate $ withLibrary workspace CollaborationUpdate.Update clientId  $ CollaborationUpdate.Modify locs
 
 cancelCollaborativeTouch :: ClientId -> [NodeLoc] -> Workspace -> IO ()
-cancelCollaborativeTouch clientId locs workspace = sendUpdate $ withLibrary workspace CollaborationUpdate.Update clientId $ CollaborationUpdate.CancelTouch (convert <$> locs)
+cancelCollaborativeTouch clientId locs workspace = sendUpdate $ withLibrary workspace CollaborationUpdate.Update clientId $ CollaborationUpdate.CancelTouch locs

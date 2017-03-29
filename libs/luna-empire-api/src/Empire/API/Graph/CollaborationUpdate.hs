@@ -5,14 +5,14 @@ import           Prologue
 
 import           Data.UUID.Types               (UUID)
 import           Empire.API.Data.GraphLocation (GraphLocation)
-import           Empire.API.Data.Node          (NodeId)
+import           Empire.API.Data.NodeLoc       (NodeLoc)
 import qualified Empire.API.Topic              as T
 
 type ClientId = UUID
 
-data Event = Modify      [NodeId]
-           | Touch       [NodeId]
-           | CancelTouch [NodeId]
+data Event = Modify      [NodeLoc]
+           | Touch       [NodeLoc]
+           | CancelTouch [NodeLoc]
            | Refresh
            deriving (Generic, Eq, NFData, Show)
 
