@@ -27,9 +27,9 @@ module.exports = function () {
     bufferListener: function (listener) {
       listeners.bufferListener.push(listener);
     },
-    pushBuffer: function(data) {
+    pushBuffer: function(data1, data2) {
       listeners.bufferListener.forEach(function(listener) {
-        listener(data);
+        listener(data1, data2);
       });
     },
 

@@ -74,7 +74,7 @@ saveProject projectRoot pid = do
 
 
 saveLocation :: FilePath -> GraphLocation -> Empire ()
-saveLocation projectRoot (GraphLocation _ _) = $notImplemented -- saveProject projectRoot pid
+saveLocation projectRoot (GraphLocation _ _) = return () -- saveProject projectRoot pid
 
 readProject :: BS.ByteString -> Maybe P.Project
 readProject bytes = (view E.project) <$> envelope where

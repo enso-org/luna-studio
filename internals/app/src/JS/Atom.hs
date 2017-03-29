@@ -22,7 +22,7 @@ import           Internal.Prelude
 foreign import javascript safe "atomCallback2.pushCode($1, $2, $3, $4)"
     pushCode' :: JSString -> Int -> Int -> JSString -> IO ()
 
-foreign import javascript safe "atomCallback2.pushBuffer($1)"
+foreign import javascript safe "atomCallback2.pushBuffer($1, $2)"
     pushBuffer :: JSString -> JSString -> IO ()
 
 

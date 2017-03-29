@@ -341,7 +341,7 @@ handleGetBuffer :: Request GetBuffer.Request -> StateT Env BusT ()
 handleGetBuffer = modifyGraph defInverse action replyResult where
     action (GetBuffer.Request file span) = do
         code <- Graph.getBuffer file span
-        return $ GetBuffer.Result code
+        return $ GetBuffer.Result "DUPA"
 
 
 

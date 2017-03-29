@@ -563,7 +563,7 @@ typecheck :: GraphLocation -> Empire ()
 typecheck loc = withGraph loc $ runTC loc False
 
 substituteCode :: FilePath -> Int -> Int -> Text -> Maybe Int -> Empire ()
-substituteCode = $notImplemented
+substituteCode _ _ _ _ _ = return ()
 
 -- internal
 

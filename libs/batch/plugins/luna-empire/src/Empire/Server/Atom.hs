@@ -14,13 +14,18 @@ import qualified Empire.API.Atom.CloseFile             as CloseFile
 import qualified Empire.API.Atom.GetBuffer             as GetBuffer
 import qualified Empire.API.Atom.Substitute            as Substitute
 
+import qualified Empire.Data.Library                   as Library
+import qualified Empire.Empire                         as Empire
 import           ZMQ.Bus.Trans                         (BusT (..))
 
 handleSetProject :: Request SetProject.Request -> StateT Env BusT ()
 handleSetProject = $notImplemented
 
 handleOpenFile :: Request OpenFile.Request -> StateT Env BusT ()
-handleOpenFile = $notImplemented
+handleOpenFile (Request _ _ (OpenFile.Request path)) = do
+    lib <- liftIO $ Library.make (Just "dupaName") path
+    Env.empireEnv . Empire.activeFiles . at path ?= lib
+    return ()
 
 handleSaveFile :: Request SaveFile.Request -> StateT Env BusT ()
 handleSaveFile = $notImplemented

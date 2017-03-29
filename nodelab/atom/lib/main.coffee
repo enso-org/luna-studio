@@ -19,21 +19,22 @@ module.exports =
     atom.workspace.addOpener (uri) ->
 
       if path.extname(uri) is '.luna'
-        # internal.pushInternalEvent("OpenFile " + uri)
+        internal.pushInternalEvent("OpenFile " + uri)
 
         atom.workspace.open().then (@editor) ->
           @buffer = @editor.buffer
           @buffer.setPath(uri)
-        #   internal.pushInternalEvent("GetBuffer " + uri)
+          internal.pushInternalEvent("GetBuffer " + uri)
           withoutTrigger = (callback) ->
             @triggerPush = false
             callback()
             @triggerPush = true
 
-          setBuffer = (text) ->
+          setBuffer = (uri_send, text) ->
             withoutTrigger =>
-              @buffer.setText(text)
-        #   internal.bufferListener setBuffer
+              if uri == uri_send
+                @buffer.setText(text)
+          internal.bufferListener setBuffer
 
           setCode = (uri_send, start_send, end_send, text) ->
             withoutTrigger =>
@@ -42,11 +43,11 @@ module.exports =
                 end = buffer.positionForCharacterIndex(end_send)
                 @buffer.setTextInRange [start, end], text
                 @editor.scrollToBufferPosition(start)
-        #   internal.codeListener setCode
+          internal.codeListener setCode
 
           @ss = new SubAtom
           @ss.add @buffer.onDidChange (event) =>
-              # return unless @triggerPush
+              return unless @triggerPush
               if event.newText != '' or event.oldText != ''
                   diff =
                       uri: uri
@@ -54,7 +55,7 @@ module.exports =
                       end: buffer.characterIndexForPosition(event.oldRange.end)
                       text: event.newText
                       cursor: buffer.characterIndexForPosition(@editor.getCursorBufferPosition())
-            #   internal.pushText(diff)
+              internal.pushText(diff)
 
         atom.workspace.getActivePane().activateItem new LunaStudioTab(uri, code)
 

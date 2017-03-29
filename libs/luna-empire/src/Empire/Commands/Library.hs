@@ -1,3 +1,5 @@
+{-# LANGUAGE OverloadedStrings #-}
+
 module Empire.Commands.Library
     ( withLibrary
     , listLibraries
@@ -47,4 +49,4 @@ withLibrary file cmd = do
                 Empire.empire $ const $ const result
 
 getBuffer :: FilePath -> Maybe (Int, Int) -> Empire Text
-getBuffer = $notImplemented
+getBuffer _ _ = return "CHUJ"
