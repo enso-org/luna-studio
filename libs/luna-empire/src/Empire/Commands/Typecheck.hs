@@ -1,19 +1,19 @@
+{-# LANGUAGE LambdaCase        #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TypeApplications  #-}
-{-# LANGUAGE LambdaCase        #-}
 
 module Empire.Commands.Typecheck where
 
 import           Control.Monad                     (forM_, void)
+import           Control.Monad.Except
 import           Control.Monad.Reader              (ask, runReaderT)
 import           Control.Monad.State               (execStateT, gets)
-import           Control.Monad.Except
 import           Data.List                         (sort)
 import           Data.Map                          (Map)
 import qualified Data.Map                          as Map
-import           Data.Maybe                        (maybeToList, isNothing)
+import           Data.Maybe                        (isNothing, maybeToList)
 import           Empire.Prelude
-import           Prologue                          (itoListOf, itraverse, toListOf, fromString)
+import           Prologue                          (fromString, itoListOf, itraverse, toListOf)
 
 import qualified Empire.API.Data.Error             as APIError
 import           Empire.API.Data.GraphLocation     (GraphLocation (..))
@@ -23,25 +23,25 @@ import qualified Empire.API.Data.NodeMeta          as NodeMeta
 import           Empire.API.Data.TypeRep           (TypeRep (TCons))
 import qualified Empire.API.Graph.NodeResultUpdate as NodeResult
 import           Empire.ASTOp                      (EmpirePass, runASTOp)
+import qualified Empire.ASTOps.Read                as ASTRead
 import qualified Empire.Commands.AST               as AST
-import qualified Empire.Commands.GraphBuilder      as GraphBuilder
 import           Empire.Commands.Breadcrumb        (zoomBreadcrumb)
+import qualified Empire.Commands.GraphBuilder      as GraphBuilder
 import qualified Empire.Commands.GraphUtils        as GraphUtils
 import qualified Empire.Commands.Publisher         as Publisher
-import qualified Empire.ASTOps.Read                as ASTRead
+import           Empire.Data.AST                   (NodeRef)
 import           Empire.Data.BreadcrumbHierarchy   (topLevelIDs)
 import qualified Empire.Data.BreadcrumbHierarchy   as BH
 import           Empire.Data.Graph                 (Graph)
 import qualified Empire.Data.Graph                 as Graph
-import           Empire.Data.AST                   (NodeRef)
 import           Empire.Empire
 
+import           Luna.Builtin.Data.LunaValue       (LunaData, listenShortRep)
+import           Luna.Builtin.Data.Module          (Imports (..), Module (..))
 import qualified Luna.Builtin.Std                  as Std
 import qualified Luna.IR                           as IR
-import           Luna.Builtin.Data.Module          (Imports (..), Module (..))
-import           Luna.Builtin.Data.LunaValue       (listenShortRep, LunaData)
-import qualified Luna.Pass.Typechecking.Typecheck  as Typecheck
 import qualified Luna.Pass.Evaluation.Interpreter  as Interpreter
+import qualified Luna.Pass.Typechecking.Typecheck  as Typecheck
 import qualified OCI.IR.Combinators                as IR
 import           OCI.Pass                          (SubPass)
 

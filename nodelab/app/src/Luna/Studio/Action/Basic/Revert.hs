@@ -62,8 +62,8 @@ revertAddSubgraph (AddSubgraph.Request loc nodes _) =
 revertMovePort :: MovePort.Request -> Command State ()
 revertMovePort (MovePort.Request loc oldPortRef newPos) =
     whenM (isCurrentLocationAndGraphLoaded loc) $ case oldPortRef of
-        OutPortRef' (OutPortRef nid (Projection i)) ->
-            void $ localMovePort (convert $ toAnyPortRef nid $ OutPortId $ Projection newPos) i
+        OutPortRef' (OutPortRef nid (Projection i p)) ->
+            void $ localMovePort (convert $ toAnyPortRef nid $ OutPortId $ Projection newPos p) i
         _                                           -> $notImplemented
 
 revertRemoveConnection :: RemoveConnection.Request -> Response.Status RemoveConnection.Inverse -> Command State ()

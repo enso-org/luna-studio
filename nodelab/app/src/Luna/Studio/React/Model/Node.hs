@@ -49,7 +49,7 @@ toNodesMap = HashMap.fromList .: map (view nodeId &&& id) .: toNodesList
 instance Convertible (NodePath, Empire.Node) Node where
     convert (path, n) = case n ^. Empire.nodeType of
         Empire.ExpressionNode expr -> Expression $ convert (path, n, expr)
-        Empire.InputEdge           -> Edge       $ convert (path, n, EdgeNode.InputEdge)
+        Empire.InputEdge      _    -> Edge       $ convert (path, n, EdgeNode.InputEdge)
         Empire.OutputEdge          -> Edge       $ convert (path, n, EdgeNode.OutputEdge)
 
 instance Convertible (GraphLocation, Empire.Node) Node where

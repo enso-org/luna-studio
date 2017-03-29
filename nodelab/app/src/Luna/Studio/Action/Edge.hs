@@ -122,7 +122,7 @@ handleMove evt portDrag = do
         shift         = mousePos ^. vector - startMousePos ^. vector
         newPos        = move shift startPortPos
     mayNewPortNum <- case portId of
-        (OutPortId (Projection i)) -> runMaybeT $ do
+        (OutPortId (Projection i _)) -> runMaybeT $ do
             node <- MaybeT $ getEdgeNode nodeLoc
             let newNum = min (countProjectionPorts node - 1) $ max 0 (round $ newPos ^. y / gridSize)
             if newNum /= i then return newNum else nothing
@@ -142,11 +142,11 @@ stopPortDrag acceptChanges portDrag = do
     setEdgePortMode portRef Port.Normal
     if portRef /= orgPortRef
         then case (orgPortId, portId) of
-            (OutPortId (Projection orgNum), OutPortId (Projection num)) ->
+            (OutPortId (Projection orgNum _), OutPortId (Projection num _)) ->
                 if acceptChanges
                     then Batch.movePort orgPortRef num
                     else void $ localMovePort portRef orgNum
-            _                        -> $notImplemented
+            _ -> $notImplemented
         else void $ redrawConnectionsForNode nodeLoc
     removeActionFromState portDragAction
 

@@ -344,8 +344,8 @@ connect loc outPort anyPort = withTC loc False $ connectNoTC loc outPort anyPort
 connectPersistent :: ASTOp m => OutPortRef -> AnyPortRef -> m Connection
 connectPersistent src@(OutPortRef srcNodeId srcPort) (InPortRef' dst@(InPortRef dstNodeId dstPort)) = do
     let inputPos = case srcPort of
-            All            -> 0   -- FIXME: do not equalise All with Projection 0
-            Projection int -> int
+            All              -> 0   -- FIXME: do not equalise All with Projection 0
+            Projection int _ -> int
     isPatternMatch <- ASTRead.nodeIsPatternMatch srcNodeId
     if isPatternMatch then do
         case dstPort of
@@ -358,8 +358,8 @@ connectPersistent src@(OutPortRef srcNodeId srcPort) (InPortRef' dst@(InPortRef 
     return $ Connection src dst
 connectPersistent src@(OutPortRef srcNodeId srcPort) (OutPortRef' dst@(OutPortRef dstNodeId dstPort)) = do
     case dstPort of
-        All          -> connectToPattern srcNodeId dstNodeId
-        Projection _ -> $notImplemented
+        All            -> connectToPattern srcNodeId dstNodeId
+        Projection _ _ -> $notImplemented
 
 data CannotConnectException = CannotConnectException NodeId NodeId
     deriving Show
@@ -374,7 +374,7 @@ transplantMarker donor recipient = do
     varsInside <- ASTRead.getVarsInside recipient
     let indexedVars = zip varsInside [0..]
 
-        markerPort (Just (OutPortRef nid _)) index = Just (OutPortRef nid (Projection index))
+        markerPort (Just (OutPortRef nid _)) index = Just (OutPortRef nid (Projection index All))
         markerPort _                         _     = Nothing
     forM_ indexedVars $ \(var, index) -> do
         IR.writeLayer @Marker (markerPort marker index) var
@@ -453,8 +453,8 @@ connectToMatchedVariable (OutPortRef srcNodeId srcPort) (InPortRef dstNodeId dst
     pattern    <- ASTRead.getASTVar srcNodeId
     varsInside <- ASTRead.getVarsInside pattern
     let inputPos = case srcPort of
-            All            -> 0   -- FIXME: do not equalise All with Projection 0
-            Projection int -> int
+            All              -> 0   -- FIXME: do not equalise All with Projection 0
+            Projection int _ -> int
     let varToConnectTo = varsInside `Safe.atMay` inputPos
     case varToConnectTo of
         Nothing  -> throwM $ CannotConnectException srcNodeId dstNodeId

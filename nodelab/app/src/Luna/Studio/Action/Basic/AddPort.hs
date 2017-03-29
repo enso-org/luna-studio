@@ -20,7 +20,7 @@ addPort :: AnyPortRef -> Command State ()
 addPort portRef = whenM (localAddPort portRef) $ Batch.addPort portRef
 
 localAddPort :: AnyPortRef -> Command State Bool
-localAddPort (OutPortRef' (OutPortRef nid pid@(Projection pos))) = do
+localAddPort (OutPortRef' (OutPortRef nid pid@(Projection pos _))) = do
     mayNode <- getEdgeNode nid
     flip (maybe (return False)) mayNode $ \node ->
         if     (not . isInputEdge $ node)
@@ -31,19 +31,19 @@ localAddPort (OutPortRef' (OutPortRef nid pid@(Projection pos))) = do
                 let newPort     = convert $ Port (OutPortId pid) "" TStar NotConnected
                     oldPorts    = getPorts node
                     newPorts'   = flip map oldPorts $ \port' -> case port' ^. portId of
-                        OutPortId (Projection i) ->
+                        OutPortId (Projection i p) ->
                             if i < pos
                                 then port'
-                                else port' & portId .~ (OutPortId $ Projection (i+1))
+                                else port' & portId .~ (OutPortId $ Projection (i+1) p)
                         _                        -> port'
                     newPorts    = newPort : newPorts'
                     newPortsMap = toPortsMap newPorts
                 void . localUpdateEdgeNode $ node & ports .~ newPortsMap
                 conns <- getConnectionsContainingNode nid
                 forM_ conns $ \conn -> case conn ^. Connection.src of
-                    (OutPortRef srcNid (Projection i)) ->
+                    (OutPortRef srcNid (Projection i p)) ->
                         when (srcNid == nid && i >= pos) $
-                            void $ localAddConnection (conn ^. Connection.src & srcPortId .~ Projection (i+1)) (conn ^. Connection.dst)
+                            void $ localAddConnection (conn ^. Connection.src & srcPortId .~ Projection (i+1) p) (conn ^. Connection.dst)
                     _ -> return ()
                 return True
 localAddPort _ = $notImplemented

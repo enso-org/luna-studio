@@ -178,8 +178,8 @@ handleAddConnectionUndo (Response.Response _ _ req _ (Response.Ok res)) =
 
 getUndoMovePort :: MovePort.Request -> MovePort.Request
 getUndoMovePort (MovePort.Request location oldPortRef newPos) = case oldPortRef of
-    OutPortRef' (OutPortRef nid (Projection i)) ->
-        MovePort.Request location (toAnyPortRef nid $ OutPortId $ Projection newPos) i
+    OutPortRef' (OutPortRef nid (Projection i p)) ->
+        MovePort.Request location (toAnyPortRef nid $ OutPortId $ Projection newPos p) i
     _                                           -> $notImplemented
 
 handleMovePortUndo :: MovePort.Response -> Maybe (MovePort.Request, MovePort.Request)

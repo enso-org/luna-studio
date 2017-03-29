@@ -5,12 +5,16 @@ import           Prologue                    hiding (TypeRep)
 
 import           Empire.API.Data.PortDefault (PortDefault)
 import           Empire.API.Data.TypeRep     (TypeRep)
+import           Data.Map                    (Map)
 
-data InPort  = Self | Arg Int        deriving (Generic, Show, Eq, Read, NFData)
-data OutPort = All  | Projection Int deriving (Generic, Show, Eq, Read, NFData)
+data InPort  = Self | Arg Int                deriving (Generic, Show, Eq, Read, NFData)
+data OutPort = All  | Projection Int OutPort deriving (Generic, Show, Eq, Read, NFData)
+
+data OutPortTree a = OutPortTree a [OutPortTree a] deriving (Generic, Show, Eq, Read, NFData)
 
 instance Binary InPort
 instance Binary OutPort
+instance Binary a => Binary (OutPortTree a)
 
 data PortId = InPortId InPort | OutPortId OutPort deriving (Generic, Show, Read, Eq, NFData)
 
@@ -28,10 +32,10 @@ instance Ord InPort where
   (Arg a) `compare` (Arg b) = a `compare` b
 
 instance Ord OutPort where
-  All            `compare` All            = EQ
-  All            `compare` (Projection _) = LT
-  (Projection _) `compare` All            = GT
-  (Projection a) `compare` (Projection b) = a `compare` b
+  All              `compare` All              = EQ
+  All              `compare` (Projection _ _) = LT
+  (Projection _ _) `compare` All              = GT
+  (Projection a _) `compare` (Projection b _) = a `compare` b
 
 data PortState = NotConnected | Connected | WithDefault PortDefault deriving (Show, Eq, Generic, NFData)
 
@@ -69,10 +73,10 @@ isAll (OutPortId All) = True
 isAll _               = False
 
 isProjection :: PortId -> Bool
-isProjection (OutPortId (Projection _)) = True
-isProjection _                          = False
+isProjection (OutPortId (Projection _ _)) = True
+isProjection _                            = False
 
 getPortNumber :: PortId -> Int
-getPortNumber (InPortId  (Arg i))        = i
-getPortNumber (OutPortId (Projection i)) = i
-getPortNumber _                          = 0
+getPortNumber (InPortId  (Arg i))          = i
+getPortNumber (OutPortId (Projection i _)) = i
+getPortNumber _                            = 0

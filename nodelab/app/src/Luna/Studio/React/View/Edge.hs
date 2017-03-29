@@ -22,8 +22,8 @@ import qualified Luna.Studio.React.Model.Field         as Field
 import           Luna.Studio.React.Model.Node.EdgeNode (EdgeMode (AddRemove, MoveConnect), EdgeNode, NodeLoc, countProjectionPorts,
                                                         isInputEdge)
 import qualified Luna.Studio.React.Model.Node.EdgeNode as EdgeNode
-import           Luna.Studio.React.Model.Port          (OutPort (Projection), Port (..), getPortNumber, getPositionInSidebar, isHighlighted,
-                                                        isInMovedMode, isInNameEditMode, isInPort, isOutPort)
+import           Luna.Studio.React.Model.Port          (OutPort (All, Projection), Port (..), getPortNumber, getPositionInSidebar,
+                                                        isHighlighted, isInMovedMode, isInNameEditMode, isInPort, isOutPort)
 import qualified Luna.Studio.React.Model.Port          as Port
 import           Luna.Studio.React.Store               (Ref, dispatch)
 import           Luna.Studio.React.View.Field          (singleField_)
@@ -97,13 +97,12 @@ edgeSidebar_ ref node = do
                     then edgePlaceholderForPort_ >> edgeDraggedPort_ ref p
                     else edgePort_ ref mode nodeLoc (countProjectionPorts node == 1) p
 
-
                 when (isInputEdge node) $ do
                     svg_
                         [ "className" $= Style.prefixFromList [ "edgeport__svg", "edgeport__svg--addbutton" ]
                         , "key"       $= (name node <> "AddButton")
                         , onMouseDown $ \e _ -> [stopPropagation e]
-                        , onClick $ \e _ -> stopPropagation e : dispatch ref (UI.EdgeEvent $ Edge.AddPort $ OutPortRef' (OutPortRef nodeLoc (Projection (countProjectionPorts node))))
+                        , onClick $ \e _ -> stopPropagation e : dispatch ref (UI.EdgeEvent $ Edge.AddPort $ OutPortRef' (OutPortRef nodeLoc (Projection (countProjectionPorts node) All)))
                         ] $ do
                         circle_
                             [ "className" $= Style.prefix "port__shape"

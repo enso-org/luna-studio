@@ -126,6 +126,8 @@ instance ToJSON Port.OutPort
 instance FromJSON Port.OutPort
 instance ToJSON Port.PortId
 instance FromJSON Port.PortId
+instance ToJSON   a => ToJSON   (Port.OutPortTree a)
+instance FromJSON a => FromJSON (Port.OutPortTree a)
 instance ToJSON Port.PortState
 instance FromJSON Port.PortState
 
