@@ -107,7 +107,6 @@ startPortDrag mousePos portRef mode = do
         mayPortPos  <- if isOutputEdge node then return . Just $ getPortPositionInOutputSidebar portId
                                             else fmap2 (flip getPortPositionInInputSidebar portId) getInputSidebarSize
         withJust ((,) <$> mayMousePos <*> mayPortPos) $ \(mousePos', portPos) -> do
-            let shift = portPos ^. vector - mousePos' ^. vector
             setEdgePortMode portRef $ Port.Moved portPos
             begin $ PortDrag mousePos portPos portRef portRef mode
 
@@ -119,8 +118,7 @@ handleMove evt portDrag = do
         portId        = portRef  ^. PortRef.portId
         startPortPos  = portDrag ^. portDragPortStartPosInSidebar
         startMousePos = portDrag ^. portDragStartPos
-        shift         = mousePos ^. vector - startMousePos ^. vector
-        newPos        = move shift startPortPos
+        newPos        = startPortPos & y +~ mousePos ^. y - startMousePos ^. y
     mayNewPortNum <- case portId of
         (OutPortId (Projection i _)) -> runMaybeT $ do
             node <- MaybeT $ getEdgeNode nodeLoc
