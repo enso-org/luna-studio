@@ -2,8 +2,8 @@
 //        sideports        //
 /////////////////////////////
 
-@edgeportsWidth: @gridSize;
-@edgeNameMargin: @edgeportsWidth + 8px;
+@edgeportsWidth: 16px;
+@edgeNameMargin: 16px + 8px;
 
 .luna-edgeports {
     display:         flex;
@@ -12,6 +12,7 @@
     height:          100%;
     position:        absolute;
     width:           0;
+    .luna-port__shape { r: 4px !important }
 }
 
 .luna-edgeports__active-area {
@@ -22,12 +23,11 @@
 }
 
 .luna-edgeports__body {
-    background:     #2a2a2a;
+    background:     none; // #2a2a2a;
     display:        flex;
     flex-direction: column;
     width:          @edgeportsWidth;
-
-    padding:        @gridSize/2 0;
+    padding:        @edgeportsWidth/2 0;
     border-radius:  0 @borderRadius @borderRadius 0;
 }
 
@@ -36,7 +36,7 @@
 /////////////////////////////
 
 .luna-edgeport {
-    height:   @gridSize;
+    height:   @edgeportsWidth;
     position: relative;
 }
 
@@ -65,6 +65,7 @@
 /////////////////////////////
 
 .luna-edgeports--i {
+    left: -4px;
     .luna-edgeport__name {
         left: @edgeNameMargin;
     }
@@ -78,7 +79,7 @@
 /////////////////////////////
 
 .luna-edgeports--o {
-    right: 0;
+    right: 12px;
     .luna-edgeports__body {
         border-radius: @borderRadius 0 0 @borderRadius;
         right:         0;
@@ -229,7 +230,7 @@
         top:        inherit;
         bottom:     0;
         .luna-port__shape {
-            r:    6px;
+            r:    6px !important;
             fill: #444;
         }
         &:hover {
@@ -255,7 +256,7 @@
 .luna-edgeports--editmode {
     .luna-port-add-inbetween { display: block }
     .luna-edgeport__name     { left:    38px }
-    .luna-port__shape        { r:       6px }
+    .luna-port__shape        { r:       6px !important }
     .luna-port__plus {
         rect {
             opacity: 1;
