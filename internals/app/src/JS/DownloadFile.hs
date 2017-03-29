@@ -1,7 +1,7 @@
 module JS.DownloadFile (downloadFile) where
 
 import           Data.JSString.Text  (textToJSString)
-import           Luna.Studio.Prelude
+import           Internal.Prelude
 
 foreign import javascript safe "require('DownloadFile').downloadFile($2, $1)" downloadFile' :: JSString -> JSString -> IO ()
 

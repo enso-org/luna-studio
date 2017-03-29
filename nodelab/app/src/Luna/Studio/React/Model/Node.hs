@@ -4,12 +4,12 @@
 {-# OPTIONS_GHC -fno-warn-orphans  #-}
 module Luna.Studio.React.Model.Node
     ( module Luna.Studio.React.Model.Node
-    , NodeId
+    , module X
     , EdgeNode
     , EdgeNodesMap
-    , toEdgeNodesMap
     , ExpressionNode
     , ExpressionNodesMap
+    , toEdgeNodesMap
     , toExpressionNodesMap
     ) where
 
@@ -17,15 +17,18 @@ import           Control.Arrow                               ((&&&))
 import           Data.Convert                                (Convertible (convert))
 import           Data.HashMap.Strict                         (HashMap)
 import qualified Data.HashMap.Strict                         as HashMap
-import           Empire.API.Data.Node                        (NodeId)
+import           Empire.API.Data.GraphLocation               (GraphLocation)
+import qualified Empire.API.Data.GraphLocation               as GraphLocation
+import           Empire.API.Data.Node                        as X (NodeId)
 import qualified Empire.API.Data.Node                        as Empire
+import           Empire.API.Data.NodeLoc                     as X (NodeLoc (NodeLoc), NodePath (NodePath))
 import           Luna.Studio.Prelude
+import           Luna.Studio.React.Model.IsNode              as X (IsNode (..))
 import           Luna.Studio.React.Model.Node.EdgeNode       (EdgeNode, EdgeNodesMap, toEdgeNodesMap)
 import qualified Luna.Studio.React.Model.Node.EdgeNode       as EdgeNode
 import           Luna.Studio.React.Model.Node.ExpressionNode (ExpressionNode, ExpressionNodesMap, toExpressionNodesMap)
 import qualified Luna.Studio.React.Model.Node.ExpressionNode as ExpressionNode
 import           Luna.Studio.React.Model.Node.NodeMeta       ()
-import           Luna.Studio.React.Model.Port                (Port, PortId, PortsMap)
 
 
 data Node = Expression ExpressionNode
@@ -43,29 +46,21 @@ toNodesList exprNodes edgeNodes = (map Expression exprNodes) ++ (map Edge edgeNo
 toNodesMap :: [ExpressionNode] -> [EdgeNode] -> NodesMap
 toNodesMap = HashMap.fromList .: map (view nodeId &&& id) .: toNodesList
 
+instance Convertible (NodePath, Empire.Node) Node where
+    convert (path, n) = case n ^. Empire.nodeType of
+        Empire.ExpressionNode expr -> Expression $ convert (path, n, expr)
+        Empire.InputEdge      _    -> Edge       $ convert (path, n, EdgeNode.InputEdge)
+        Empire.OutputEdge          -> Edge       $ convert (path, n, EdgeNode.OutputEdge)
 
-instance Convertible Empire.Node Node where
-    convert n = case n ^. Empire.nodeType of
-        Empire.ExpressionNode expr -> Expression $ convert (n, expr)
-        Empire.InputEdge _         -> Edge       $ convert (n, EdgeNode.InputEdge)
-        Empire.OutputEdge          -> Edge       $ convert (n, EdgeNode.OutputEdge)
-
-class IsNode a where
-    nodeId               :: Lens' a NodeId
-    ports                :: Lens' a PortsMap
-    getPorts             :: a -> [Port]
-    hasPort              :: PortId -> a -> Bool
-    countInPorts         :: a -> Int
-    countOutPorts        :: a -> Int
-    countArgPorts        :: a -> Int
-    countProjectionPorts :: a -> Int
+instance Convertible (GraphLocation, Empire.Node) Node where
+    convert (loc, n) = convert (NodePath $ loc ^. GraphLocation.breadcrumb, n)
 
 instance IsNode Node where
-    nodeId = lens getNodeId' setNodeId' where
-        getNodeId' (Expression node)         = node ^. nodeId
-        getNodeId' (Edge       node)         = node ^. nodeId
-        setNodeId' (Expression node) nodeId' = Expression $ node & ExpressionNode.nodeId .~ nodeId'
-        setNodeId' (Edge       node) nodeId' = Edge       $ node & EdgeNode.nodeId       .~ nodeId'
+    nodeLoc = lens getNodeId' setNodeId' where
+        getNodeId' (Expression node)         = node ^. nodeLoc
+        getNodeId' (Edge       node)         = node ^. nodeLoc
+        setNodeId' (Expression node) nodeLoc' = Expression $ node & ExpressionNode.nodeLoc .~ nodeLoc'
+        setNodeId' (Edge       node) nodeLoc' = Edge       $ node & EdgeNode.nodeLoc       .~ nodeLoc'
     ports = lens getPorts' setPorts' where
         getPorts' (Expression node)        = node ^. ports
         getPorts' (Edge       node)        = node ^. ports
@@ -83,24 +78,3 @@ instance IsNode Node where
     countArgPorts (Edge node)              = countArgPorts node
     countProjectionPorts (Expression node) = countProjectionPorts node
     countProjectionPorts (Edge node)       = countProjectionPorts node
-
-
-instance IsNode EdgeNode where
-    nodeId               = EdgeNode.nodeId
-    ports                = EdgeNode.ports
-    getPorts             = EdgeNode.getPorts
-    hasPort              = EdgeNode.hasPort
-    countInPorts         = EdgeNode.countInPorts
-    countOutPorts        = EdgeNode.countOutPorts
-    countArgPorts        = EdgeNode.countArgPorts
-    countProjectionPorts = EdgeNode.countProjectionPorts
-
-instance IsNode ExpressionNode where
-    nodeId               = ExpressionNode.nodeId
-    ports                = ExpressionNode.ports
-    getPorts             = ExpressionNode.getPorts
-    hasPort              = ExpressionNode.hasPort
-    countInPorts         = ExpressionNode.countInPorts
-    countOutPorts        = ExpressionNode.countOutPorts
-    countArgPorts        = ExpressionNode.countArgPorts
-    countProjectionPorts = ExpressionNode.countProjectionPorts

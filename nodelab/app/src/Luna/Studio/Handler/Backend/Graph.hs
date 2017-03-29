@@ -3,10 +3,9 @@ module Luna.Studio.Handler.Backend.Graph
     ) where
 
 import qualified Data.DateTime                                as DT
-import qualified Empire.API.Data.Breadcrumb                   as Breadcrumb
 import           Empire.API.Data.Connection                   (dst, src)
 import qualified Empire.API.Data.Graph                        as Graph
-import qualified Empire.API.Data.GraphLocation                as GraphLocation
+import qualified Empire.API.Data.NodeLoc                      as NodeLoc
 import qualified Empire.API.Graph.AddConnection               as AddConnection
 import qualified Empire.API.Graph.AddNode                     as AddNode
 import qualified Empire.API.Graph.AddPort                     as AddPort
@@ -48,7 +47,7 @@ import           Luna.Studio.Action.Batch                     (collaborativeModi
 import           Luna.Studio.Action.Camera                    (centerGraph)
 import           Luna.Studio.Action.Command                   (Command)
 import           Luna.Studio.Action.State.App                 (setBreadcrumbs)
-import           Luna.Studio.Action.State.Graph               (isCurrentLocation, isCurrentLocationAndGraphLoaded)
+import           Luna.Studio.Action.State.Graph               (inCurrentLocation, isCurrentLocation)
 import           Luna.Studio.Action.State.NodeEditor          (modifyNodeEditor, updateMonads)
 import           Luna.Studio.Action.UUID                      (isOwnRequest)
 import qualified Luna.Studio.Batch.Workspace                  as Workspace
@@ -56,7 +55,7 @@ import           Luna.Studio.Event.Batch                      (Event (..))
 import qualified Luna.Studio.Event.Event                      as Event
 import           Luna.Studio.Handler.Backend.Common           (doNothing, handleResponse)
 import           Luna.Studio.Prelude
-import           Luna.Studio.React.Model.Node                 (Node (Expression), nodeId, _Expression)
+import           Luna.Studio.React.Model.Node                 (Node (Expression), nodeLoc, _Expression)
 import qualified Luna.Studio.React.Model.Node.ExpressionNode  as Node
 import qualified Luna.Studio.React.Model.NodeEditor           as NodeEditor
 import           Luna.Studio.State.Global                     (State)
@@ -71,8 +70,8 @@ handle (Event.Batch ev) = Just $ case ev of
             isGraphLoaded  <- use $ Global.workspace . Workspace.isGraphLoaded
             isGoodLocation <- isCurrentLocation location
             when (isGoodLocation && not isGraphLoaded) $ do
-                let nodes       = convert <$> result ^. GetProgram.graph . Graph.nodes
-                    connections = result ^. GetProgram.graph . Graph.connections
+                let nodes       = convert . (NodeLoc.empty,) <$> result ^. GetProgram.graph . Graph.nodes
+                    connections = ((_1 %~ convert) . (_2 %~ convert)) <$> result ^. GetProgram.graph . Graph.connections
                     monads      = result ^. GetProgram.graph . Graph.monads
                     code        = result ^. GetProgram.code
                     nsData      = result ^. GetProgram.nodeSearcherData
@@ -90,26 +89,23 @@ handle (Event.Batch ev) = Just $ case ev of
         request            = response ^. Response.request
         location           = request  ^. AddConnection.location
         failure _          = whenM (isOwnRequest requestId) $ revertAddConnection request
-        success connection = do
-            shouldProcess <- isCurrentLocationAndGraphLoaded location
-            when shouldProcess $ void $ localAddConnection (connection ^. src) (connection ^. dst)
+        success connection = inCurrentLocation location $ \path -> do
+            void $ localAddConnection (convert (path, connection ^. src)) (convert (path, connection ^. dst))
 
     AddNodeResponse response -> handleResponse response success failure where
         requestId    = response ^. Response.requestId
         request      = response ^. Response.request
         location     = request  ^. AddNode.location
         failure _    = whenM (isOwnRequest requestId) $ revertAddNode request
-        success node' = do
-            let node = convert node'
-            shouldProcess <- isCurrentLocationAndGraphLoaded location
+        success node' = inCurrentLocation location $ \path -> do
+            let node = convert (path, node')
             ownRequest    <- isOwnRequest requestId
-            when shouldProcess $ do
-                if ownRequest then do
-                     void $ localUpdateNode node
-                     case node of
-                         Expression n -> collaborativeModify [n ^. nodeId]
-                         _            -> return ()
-                else localAddNode node
+            if ownRequest then do
+                 void $ localUpdateNode node
+                 case node of
+                     Expression n -> collaborativeModify [n ^. nodeLoc]
+                     _            -> return ()
+            else localAddNode node
 
     AddPortResponse response -> handleResponse response success failure where
         requestId    = response ^. Response.requestId
@@ -117,20 +113,18 @@ handle (Event.Batch ev) = Just $ case ev of
         location     = request  ^. AddPort.location
         portRef      = request  ^. AddPort.anyPortRef
         failure _    = whenM (isOwnRequest requestId) $ revertAddPort request
-        success node' = do
-            let node = convert node'
-            shouldProcess <- isCurrentLocationAndGraphLoaded location
+        success node' = inCurrentLocation location $ \path -> do
+            let node = convert (path, node')
             ownRequest    <- isOwnRequest requestId
-            when shouldProcess $ do
-                if ownRequest then do
-                     void $ localUpdateNode node
-                     case node of
-                         Expression n -> collaborativeModify [n ^. nodeId]
-                         _            -> return ()
-                else do
-                    --TODO[LJK, PM]: What should happen if localAddPort fails? (Example reason - node is not in graph)
-                    void $ localAddPort portRef
-                    void $ localUpdateNode node
+            if ownRequest then do
+                 void $ localUpdateNode node
+                 case node of
+                     Expression n -> collaborativeModify [n ^. nodeLoc]
+                     _            -> return ()
+            else do
+                --TODO[LJK, PM]: What should happen if localAddPort fails? (Example reason - node is not in graph)
+                void $ localAddPort $ convert (path, portRef)
+                void $ localUpdateNode node
 
     AddSubgraphResponse response -> handleResponse response success failure where
         requestId     = response ^. Response.requestId
@@ -138,28 +132,25 @@ handle (Event.Batch ev) = Just $ case ev of
         location      = request  ^. AddSubgraph.location
         conns         = request  ^. AddSubgraph.connections
         failure _     = whenM (isOwnRequest requestId) $ revertAddSubgraph request
-        success nodes' = do
-            let nodes = (convert <$> nodes') ^.. traverse . _Expression
-            shouldProcess <- isCurrentLocationAndGraphLoaded location
+        success nodes' = inCurrentLocation location $ \path -> do
+            let nodes = (convert . (path,) <$> nodes') ^.. traverse . _Expression
             ownRequest    <- isOwnRequest requestId
-            when shouldProcess $ do
-                if ownRequest then do
-                    localUpdateExpressionNodes nodes
-                    collaborativeModify $ flip map nodes $ view nodeId
-                else void $ localAddSubgraph nodes (map (\conn -> (conn ^. src, conn ^. dst)) conns)
+            if ownRequest then do
+                localUpdateExpressionNodes nodes
+                collaborativeModify $ flip map nodes $ view nodeLoc
+            else void $ localAddSubgraph nodes (map (\conn -> (convert (path, conn ^. src), convert (path, conn ^. dst))) conns)
 
     CodeUpdate update -> do
-       shouldProcess <- isCurrentLocationAndGraphLoaded $ update ^. CodeUpdate.location
-       when shouldProcess $ localSetCode $ update ^. CodeUpdate.code
+       inCurrentLocation (update ^. CodeUpdate.location) $ \path -> do
+            localSetCode $ update ^. CodeUpdate.code
 
-    CollaborationUpdate update -> do
-        shouldProcess <- isCurrentLocationAndGraphLoaded $ update ^. CollaborationUpdate.location
+    CollaborationUpdate update -> inCurrentLocation (update ^. CollaborationUpdate.location) $ \path -> do
         let clientId = update ^. CollaborationUpdate.clientId
             touchNodes nodeIds setter = modifyNodeEditor $
                 forM_ nodeIds $ \nid -> NodeEditor.expressionNodes . at nid %= fmap setter
         myClientId   <- use $ Global.backend . Global.clientId
         currentTime  <- use Global.lastEventTimestamp
-        when (shouldProcess && clientId /= myClientId) $ do
+        when (clientId /= myClientId) $ do
             clientColor <- updateClient clientId
             case update ^. CollaborationUpdate.event of
                 CollaborationUpdate.Touch       nodeIds -> touchNodes nodeIds $  Node.collaboration . Node.touch  . at clientId ?~ (DT.addSeconds (2 * refreshTime) currentTime, clientColor)
@@ -170,55 +161,51 @@ handle (Event.Batch ev) = Just $ case ev of
     ConnectUpdate update -> do
         let src' = update ^. ConnectUpdate.connection' . src
             dst' = update ^. ConnectUpdate.connection' . dst
-        shouldProcess <- isCurrentLocationAndGraphLoaded $ update ^. ConnectUpdate.location'
-        when shouldProcess $ void $ localAddConnection src' dst'
+        inCurrentLocation (update ^. ConnectUpdate.location') $ \path -> do
+            void $ localAddConnection (convert (path,src')) (convert (path, dst'))
 
     DumpGraphVizResponse response -> handleResponse response doNothing doNothing
 
     --TODO[LJK, PM]: Review this Handler
     GetSubgraphsResponse response -> handleResponse response success doNothing where
         request        = response ^. Response.request
-        success result = do
-            let Breadcrumb.Lambda parentId = request ^. GetSubgraphs.location
-                                                      . GraphLocation.breadcrumb
-                                                      . Breadcrumb.items . to last
-            localMerge parentId $ result ^. GetSubgraphs.graphs
+        location       = request ^. GetSubgraphs.location
+        success result = inCurrentLocation location $ \path ->
+            localMerge path $ result ^. GetSubgraphs.graphs
 
 
     MonadsUpdate update -> do
-        shouldProcess <- isCurrentLocationAndGraphLoaded $ update ^. MonadsUpdate.location
-        when shouldProcess $ updateMonads $ update ^. MonadsUpdate.monads
+        inCurrentLocation (update ^. MonadsUpdate.location) $ \path ->
+            updateMonads $ update ^. MonadsUpdate.monads
 
     MovePortResponse response -> handleResponse response success failure where
         requestId          = response ^. Response.requestId
         request            = response ^. Response.request
         location           = request  ^. MovePort.location
         portRef            = request  ^. MovePort.portRef
-        newPortRef         = request  ^. MovePort.newPortRef
+        newPos             = request  ^. MovePort.newPortPos
         failure _          = whenM (isOwnRequest requestId) $ revertMovePort request
-        success node'      = do
-            let node = convert node'
-            shouldProcess <- isCurrentLocationAndGraphLoaded location
-            ownRequest    <- isOwnRequest requestId
-            when shouldProcess $
-                if ownRequest then
-                    void $ localUpdateNode node
-                else void $ localMovePort portRef newPortRef
+        success node'      = inCurrentLocation location $ \path -> do
+            let node = convert (path, node')
+            ownRequest <- isOwnRequest requestId
+            if ownRequest then
+                void $ localUpdateNode node
+            else void $ localMovePort (convert portRef) newPos >> localUpdateNode node
 
     NodeResultUpdate update -> do
-        shouldProcess <- isCurrentLocationAndGraphLoaded $ update ^. NodeResultUpdate.location
-        when shouldProcess $ do
+        let location = update ^. NodeResultUpdate.location
+        inCurrentLocation location $ \path -> do
             let nid = update ^. NodeResultUpdate.nodeId
-            setNodeValue         nid $ update ^. NodeResultUpdate.value
-            setNodeProfilingData nid $ update ^. NodeResultUpdate.execTime
+            setNodeValue         (convert (path, nid)) $ update ^. NodeResultUpdate.value
+            setNodeProfilingData (convert (path, nid)) $ update ^. NodeResultUpdate.execTime
 
     NodesUpdate update -> do
-        shouldProcess <- isCurrentLocationAndGraphLoaded $ update ^. NodesUpdate.location
-        when shouldProcess $ localUpdateNodes $ convert <$> update ^. NodesUpdate.nodes
+        inCurrentLocation (update ^. NodesUpdate.location) $ \path -> do
+            localUpdateNodes $ convert . (path,) <$> update ^. NodesUpdate.nodes
 
     NodeTypecheckerUpdate update -> do
-      shouldProcess <- isCurrentLocationAndGraphLoaded $ update ^. NodeTCUpdate.location
-      when shouldProcess $ void . localUpdateNodeTypecheck $ update ^. NodeTCUpdate.node
+      inCurrentLocation (update ^. NodeTCUpdate.location) $ \path ->
+          void . localUpdateNodeTypecheck $ update ^. NodeTCUpdate.node
 
     RedoResponse response -> $notImplemented
 
@@ -228,18 +215,16 @@ handle (Event.Batch ev) = Just $ case ev of
         location           = request  ^. RemoveConnection.location
         connId             = request  ^. RemoveConnection.connId
         failure inverse    = whenM (isOwnRequest requestId) $ revertRemoveConnection request inverse
-        success _          = do
-            shouldProcess <- isCurrentLocationAndGraphLoaded location
+        success _          = inCurrentLocation location $ \path -> do
             ownRequest    <- isOwnRequest requestId
-            when shouldProcess $
-                if ownRequest then
-                    --TODO[LJK]: This is left to remind to set Confirmed flag in changes
-                    return ()
-                else void $ localRemoveConnection connId
+            if ownRequest then
+                --TODO[LJK]: This is left to remind to set Confirmed flag in changes
+                return ()
+            else void $ localRemoveConnection (convert (path, connId))
 
     RemoveConnectionUpdate update -> do
-        shouldProcess <- isCurrentLocationAndGraphLoaded  $ update ^. RemoveConnection.location'
-        when shouldProcess $ void $ localRemoveConnection $ update ^. RemoveConnection.connId'
+        inCurrentLocation (update ^. RemoveConnection.location') $ \path ->
+            void $ localRemoveConnection $ convert (path, update ^. RemoveConnection.connId')
 
     RemoveNodesResponse response -> handleResponse response success failure where
         requestId       = response ^. Response.requestId
@@ -247,14 +232,12 @@ handle (Event.Batch ev) = Just $ case ev of
         location        = request  ^. RemoveNodes.location
         nodeIds         = request  ^. RemoveNodes.nodeIds
         failure inverse = whenM (isOwnRequest requestId) $ revertRemoveNodes request inverse
-        success _       = do
-            shouldProcess <- isCurrentLocationAndGraphLoaded location
+        success _       = inCurrentLocation location $ \path -> do
             ownRequest    <- isOwnRequest requestId
-            when shouldProcess $
-                if ownRequest then
-                    --TODO[LJK]: This is left to remind to set Confirmed flag in changes
-                    return ()
-                else void $ localRemoveNodes nodeIds
+            if ownRequest then
+                --TODO[LJK]: This is left to remind to set Confirmed flag in changes
+                return ()
+            else void $ localRemoveNodes $ convert . (path,) <$> nodeIds
 
     RemovePortResponse response -> handleResponse response success failure where
         requestId       = response ^. Response.requestId
@@ -262,14 +245,12 @@ handle (Event.Batch ev) = Just $ case ev of
         location        = request  ^. RemovePort.location
         portRef         = request  ^. RemovePort.portRef
         failure inverse = whenM (isOwnRequest requestId) $ revertRemovePort request inverse
-        success _       = do
-            shouldProcess <- isCurrentLocationAndGraphLoaded location
+        success _       = inCurrentLocation location $ \path -> do
             ownRequest    <- isOwnRequest requestId
-            when shouldProcess $
-                if ownRequest then
-                    --TODO[LJK]: This is left to remind to set Confirmed flag in changes
-                    return ()
-                else void $ localRemovePort portRef
+            if ownRequest then
+                --TODO[LJK]: This is left to remind to set Confirmed flag in changes
+                return ()
+            else void $ localRemovePort (convert (path, portRef))
 
     RenameNodeResponse response -> handleResponse response success failure where
         requestId       = response ^. Response.requestId
@@ -278,14 +259,12 @@ handle (Event.Batch ev) = Just $ case ev of
         nid             = request  ^. RenameNode.nodeId
         name            = request  ^. RenameNode.name
         failure inverse = whenM (isOwnRequest requestId) $ revertRenameNode request inverse
-        success _       = do
-            shouldProcess <- isCurrentLocationAndGraphLoaded location
+        success _       = inCurrentLocation location $ \path -> do
             ownRequest    <- isOwnRequest requestId
-            when shouldProcess $
-                if ownRequest then
-                    --TODO[LJK]: This is left to remind to set Confirmed flag in changes
-                    return ()
-                else void $ localRenameNode nid name
+            if ownRequest then
+                --TODO[LJK]: This is left to remind to set Confirmed flag in changes
+                return ()
+            else void $ localRenameNode (convert (path, nid)) name
 
     RenamePortResponse response -> handleResponse response success failure where
         requestId       = response ^. Response.requestId
@@ -294,23 +273,20 @@ handle (Event.Batch ev) = Just $ case ev of
         portRef         = request  ^. RenamePort.portRef
         name            = request  ^. RenamePort.name
         failure inverse = whenM (isOwnRequest requestId) $ $notImplemented
-        success _       = do
-            shouldProcess <- isCurrentLocationAndGraphLoaded location
+        success _       = inCurrentLocation location $ \path -> do
             ownRequest    <- isOwnRequest requestId
-            when shouldProcess $
-                if ownRequest then
-                    --TODO[LJK]: This is left to remind to set Confirmed flag in changes
-                    return ()
-                else void $ $notImplemented
+            if ownRequest then
+                --TODO[LJK]: This is left to remind to set Confirmed flag in changes
+                return ()
+            else void $ $notImplemented
 
 
     SearchNodesResponse response -> handleResponse response success doNothing where
         requestId      = response ^. Response.requestId
         location       = response ^. Response.request . SearchNodes.location
-        success result = do
-            shouldProcess <- isCurrentLocationAndGraphLoaded location
+        success result = inCurrentLocation location $ \path -> do
             ownRequest    <- isOwnRequest requestId
-            when (ownRequest && shouldProcess) $
+            when ownRequest $
                 localSetSearcherHints $ result ^. SearchNodes.nodeSearcherData
 
     SetNodeCodeResponse response -> handleResponse response success failure where
@@ -320,13 +296,11 @@ handle (Event.Batch ev) = Just $ case ev of
         nid             = request  ^. SetNodeCode.nodeId
         code            = request  ^. SetNodeCode.newCode
         failure inverse = whenM (isOwnRequest requestId) $ revertSetNodeCode request inverse
-        success _       = do
-            shouldProcess <- isCurrentLocationAndGraphLoaded location
+        success _       = inCurrentLocation location $ \path ->  do
             ownRequest    <- isOwnRequest requestId
-            when shouldProcess $
-                if ownRequest then
-                    return ()
-                else void $ localSetNodeCode nid code
+            if ownRequest then
+                return ()
+            else void $ localSetNodeCode (convert (path, nid)) code
 
     SetNodeExpressionResponse response -> handleResponse response success failure where
         requestId       = response ^. Response.requestId
@@ -335,13 +309,11 @@ handle (Event.Batch ev) = Just $ case ev of
         nid             = request  ^. SetNodeExpression.nodeId
         expression      = request  ^. SetNodeExpression.expression
         failure inverse = whenM (isOwnRequest requestId) $ revertSetNodeExpression request inverse
-        success _       = do
-            shouldProcess <- isCurrentLocationAndGraphLoaded location
+        success _       = inCurrentLocation location $ \path -> do
             ownRequest    <- isOwnRequest requestId
-            when shouldProcess $
-                if ownRequest then
-                    return ()
-                else void $ localSetNodeExpression nid expression
+            if ownRequest then
+                return ()
+            else void $ localSetNodeExpression (convert (path, nid)) expression
 
     SetNodesMetaResponse response -> handleResponse response success failure where
         requestId       = response ^. Response.requestId
@@ -349,13 +321,11 @@ handle (Event.Batch ev) = Just $ case ev of
         location        = request  ^. SetNodesMeta.location
         updates         = request  ^. SetNodesMeta.updates
         failure inverse = whenM (isOwnRequest requestId) $ revertSetNodesMeta request inverse
-        success _       = do
-            shouldProcess <- isCurrentLocationAndGraphLoaded location
+        success _       = inCurrentLocation location $ \path -> do
             ownRequest    <- isOwnRequest requestId
-            when shouldProcess $
-                if ownRequest then
-                    return ()
-                else void $ localSetNodesMeta (map convert updates)
+            if ownRequest then
+                return ()
+            else void $ localSetNodesMeta $ map (convert . (path,)) updates
 
     SetPortDefaultResponse response -> handleResponse response success failure where
         requestId       = response ^. Response.requestId
@@ -364,13 +334,11 @@ handle (Event.Batch ev) = Just $ case ev of
         portRef         = request  ^. SetPortDefault.portRef
         defaultVal      = request  ^. SetPortDefault.defaultValue
         failure inverse = whenM (isOwnRequest requestId) $ revertSetPortDefault request inverse
-        success _       = do
-            shouldProcess <- isCurrentLocationAndGraphLoaded location
+        success _       = inCurrentLocation location $ \path -> do
             ownRequest    <- isOwnRequest requestId
-            when shouldProcess $
-                if ownRequest then
-                    return ()
-                else void $ localSetPortDefault portRef defaultVal
+            if ownRequest then
+                return ()
+            else void $ localSetPortDefault (convert (path, portRef)) defaultVal
 
     TypeCheckResponse response -> handleResponse response doNothing doNothing
 

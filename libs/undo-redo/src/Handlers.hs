@@ -28,8 +28,10 @@ import           Empire.API.Data.GraphLocation      (GraphLocation)
 import           Empire.API.Data.Node               (Node, NodeId)
 import qualified Empire.API.Data.Node               as Node
 import           Empire.API.Data.NodeMeta           (NodeMeta)
+import           Empire.API.Data.Port               (OutPort (Projection), PortId (OutPortId))
 import qualified Empire.API.Data.Port               as Port
-import           Empire.API.Data.PortRef            (AnyPortRef (OutPortRef', InPortRef'), InPortRef, OutPortRef (..), dstNodeId, srcNodeId)
+import           Empire.API.Data.PortRef            (AnyPortRef (InPortRef', OutPortRef'), InPortRef, OutPortRef (..), dstNodeId, srcNodeId,
+                                                     toAnyPortRef)
 import qualified Empire.API.Data.PortRef            as PortRef
 import qualified Empire.API.Graph.AddConnection     as AddConnection
 import qualified Empire.API.Graph.AddNode           as AddNode
@@ -175,8 +177,10 @@ handleAddConnectionUndo (Response.Response _ _ req _ (Response.Ok res)) =
 
 
 getUndoMovePort :: MovePort.Request -> MovePort.Request
-getUndoMovePort (MovePort.Request location oldPortRef newPortRef) =
-    MovePort.Request location newPortRef oldPortRef
+getUndoMovePort (MovePort.Request location oldPortRef newPos) = case oldPortRef of
+    OutPortRef' (OutPortRef nid (Projection i p)) ->
+        MovePort.Request location (toAnyPortRef nid $ OutPortId $ Projection newPos p) i
+    _                                           -> $notImplemented
 
 handleMovePortUndo :: MovePort.Response -> Maybe (MovePort.Request, MovePort.Request)
 handleMovePortUndo (Response.Response _ _ req _ (Response.Ok _)) =

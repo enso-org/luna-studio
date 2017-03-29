@@ -77,6 +77,7 @@ module Luna.Studio.Action.Basic
     , selectNodes
     , selectPreviousNodes
     , setEdgeMode
+    , setEdgePortMode
     , setNodeCode
     , setNodeExpression
     , setNodeMeta
@@ -136,6 +137,7 @@ import           Luna.Studio.Action.Basic.SetNodeMeta         (localMoveNode, lo
 import           Luna.Studio.Action.Basic.SetNodeMode         (toggleSelectedNodesMode, toggleSelectedNodesUnfold)
 import           Luna.Studio.Action.Basic.SetNodeResult       (setNodeProfilingData, setNodeValue)
 import           Luna.Studio.Action.Basic.SetPortDefault      (localSetPortDefault, setPortDefault)
+import           Luna.Studio.Action.Basic.SetPortMode         (setEdgePortMode)
 import           Luna.Studio.Action.Basic.UpdateCollaboration (updateClient, updateCollaboration)
 import           Luna.Studio.Action.Basic.UpdateConnection    (localUpdateConnection, updateConnection)
 import           Luna.Studio.Action.Basic.UpdateNode          (localUpdateEdgeNode, localUpdateEdgeNodes, localUpdateExpressionNode,

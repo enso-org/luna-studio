@@ -3,11 +3,11 @@ module Luna.Studio.Action.Port.Actions
     , handleClick
     ) where
 
-import           Empire.API.Data.PortRef               (AnyPortRef)
-import qualified Empire.API.Data.PortRef               as PortRef
 import           Luna.Studio.Action.Command            (Command)
 import           Luna.Studio.Action.Connect            (connectToPort, startConnecting)
 import           Luna.Studio.Action.Edge               (startPortDrag)
+import           Luna.Studio.Data.PortRef              (AnyPortRef)
+import qualified Luna.Studio.Data.PortRef              as PortRef
 import           Luna.Studio.Event.Mouse               (mousePosition)
 import           Luna.Studio.Prelude
 import           Luna.Studio.React.Model.Node          (Node (Edge))
@@ -37,7 +37,7 @@ handleClick evt portRef = do
 
 startPortDragOrConnect :: MouseEvent -> AnyPortRef -> Mode -> Command State ()
 startPortDragOrConnect evt portRef mode = do
-    mayNode <- getNode $ portRef ^. PortRef.nodeId
+    mayNode <- getNode $ portRef ^. PortRef.nodeLoc
     withJust mayNode $ \node -> do
         mousePos <- mousePosition evt
         let doPortDrag = case node of

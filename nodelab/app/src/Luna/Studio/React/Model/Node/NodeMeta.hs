@@ -7,6 +7,7 @@ module Luna.Studio.React.Model.Node.NodeMeta where
 import           Data.Convert             (Convertible (convert))
 import           Data.Position            (Position, fromTuple, toTuple)
 import           Empire.API.Data.Node     (NodeId)
+import           Empire.API.Data.NodeLoc  (NodeLoc (NodeLoc), NodePath)
 import           Empire.API.Data.NodeMeta (NodeMeta (NodeMeta))
 import           Luna.Studio.Prelude
 
@@ -18,8 +19,11 @@ instance Convertible NodeMeta (Position, Bool) where
     convert (NodeMeta pos dispRes) = (fromTuple pos, dispRes)
 
 
-instance Convertible (NodeId, Position, Bool) (NodeId, NodeMeta) where
-    convert (nid, pos, dispRes) = (nid, convert (pos, dispRes))
+instance Convertible (NodeLoc, Position, Bool) (NodeLoc, NodeMeta) where
+    convert (nl, pos, dispRes) = (nl, convert (pos, dispRes))
 
-instance Convertible (NodeId, NodeMeta) (NodeId, Position, Bool) where
-    convert (nid, NodeMeta pos dispRes) = (nid, fromTuple pos, dispRes)
+instance Convertible (NodeLoc, NodeMeta) (NodeLoc, Position, Bool) where
+    convert (nl, NodeMeta pos dispRes) = (nl, fromTuple pos, dispRes)
+
+instance Convertible (NodePath, (NodeId, NodeMeta)) (NodeLoc, Position, Bool) where
+    convert (path, (nid, meta)) = convert (NodeLoc path nid, meta)

@@ -8,13 +8,13 @@ import           Data.Position                (Position)
 import           React.Flux                   (MouseEvent)
 
 import           Luna.Studio.Prelude
-import           Luna.Studio.React.Model.Node (NodeId)
+import           Luna.Studio.React.Model.Node (NodeLoc)
 
 
 
-data Event = Pin                  NodeId Int
-           | Unpin                NodeId Int Position
-           | MouseDown MouseEvent NodeId Int Position
+data Event = Pin                  NodeLoc Int
+           | Unpin                NodeLoc Int Position
+           | MouseDown MouseEvent NodeLoc Int Position
             deriving (Show, Generic, NFData, Typeable)
 
 instance ToJSON   Event

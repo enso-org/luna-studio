@@ -12,11 +12,11 @@ import           GHCJS.Foreign.Callback
 import           GHCJS.Marshal.Pure         (pFromJSVal)
 import qualified Data.JSString              as JSString
 import qualified Data.Text                  as Text
-import           Luna.Studio.Event.Internal (InternalEvent)
-import qualified Luna.Studio.Event.Internal as Internal
-import           Luna.Studio.Event.Text (TextEvent, TextEvent (..))
-import qualified Luna.Studio.Event.Text as TextEvent
-import           Luna.Studio.Prelude
+import           Internal.Event.Internal (InternalEvent)
+import qualified Internal.Event.Internal as Internal
+import           Internal.Event.Text (TextEvent, TextEvent (..))
+import qualified Internal.Event.Text as TextEvent
+import           Internal.Prelude
 
 
 foreign import javascript safe "atomCallback2.pushCode($1, $2, $3, $4)"

@@ -226,7 +226,7 @@ handleGetSubgraphs = modifyGraph defInverse action replyResult where
 
 handleMovePort :: Request MovePort.Request -> StateT Env BusT ()
 handleMovePort = modifyGraph defInverse action replyResult where
-    action (MovePort.Request location portRef newPortRef) = Graph.movePort location portRef $ getPortNumber $ newPortRef ^. portId -- TODO[LJK, MM, PM, MK]: Decide if we want to have newPortRef here or just number
+    action (MovePort.Request location portRef newPortPos) = Graph.movePort location portRef newPortPos
 
 handleRemoveConnection :: Request RemoveConnection.Request -> StateT Env BusT ()
 handleRemoveConnection = modifyGraphOk inverse action where

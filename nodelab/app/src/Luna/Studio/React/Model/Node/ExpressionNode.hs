@@ -4,7 +4,9 @@
 {-# OPTIONS_GHC -fno-warn-orphans  #-}
 module Luna.Studio.React.Model.Node.ExpressionNode
     ( module Luna.Studio.React.Model.Node.ExpressionNode
+    , module X
     , NodeId
+    , NodeLoc
     ) where
 
 import           Control.Arrow                         ((&&&))
@@ -19,21 +21,23 @@ import           Empire.API.Data.Breadcrumb            (BreadcrumbItem)
 import           Empire.API.Data.MonadPath             (MonadPath)
 import           Empire.API.Data.Node                  (NodeId)
 import qualified Empire.API.Data.Node                  as Empire
+import           Empire.API.Data.NodeLoc               (NodeLoc (NodeLoc), NodePath)
 import qualified Empire.API.Data.NodeMeta              as NodeMeta
 import           Empire.API.Graph.CollaborationUpdate  (ClientId)
 import           Empire.API.Graph.NodeResultUpdate     (NodeValue)
 import           Luna.Studio.Prelude
+import           Luna.Studio.React.Model.IsNode        as X (IsNode (..))
 import           Luna.Studio.React.Model.Node.EdgeNode (EdgeNodesMap)
-import           Luna.Studio.React.Model.Port          (Port, PortId, PortsMap, isInPort)
+import           Luna.Studio.React.Model.Port          (PortsMap, isInPort)
 import qualified Luna.Studio.React.Model.Port          as Port
 import           Luna.Studio.State.Collaboration       (ColorId)
 
 
-data ExpressionNode = ExpressionNode { _nodeId                :: NodeId
+data ExpressionNode = ExpressionNode { _nodeLoc'              :: NodeLoc
                                      , _name                  :: Text
                                      , _expression            :: Text
                                      , _canEnter              :: Bool
-                                     , _ports                 :: PortsMap
+                                     , _ports'                :: PortsMap
                                      , _position              :: Position
                                      , _visualizationsEnabled :: Bool
                                      , _code                  :: Maybe Text
@@ -75,9 +79,9 @@ makeLenses ''Subgraph
 makePrisms ''ExpandedMode
 makePrisms ''Mode
 
-instance Convertible (Empire.Node, Text) ExpressionNode where
-    convert (n, expr) = ExpressionNode
-        {- nodeId                -} (n ^. Empire.nodeId)
+instance Convertible (NodePath, Empire.Node, Text) ExpressionNode where
+    convert (path, n, expr) = ExpressionNode
+        {- nodeLoc               -} (NodeLoc path $ n ^. Empire.nodeId)
         {- name                  -} (n ^. Empire.name)
         {- expression            -} expr
         {- canEnter              -} (n ^. Empire.canEnter)
@@ -107,11 +111,21 @@ instance Convertible ExpressionNode Empire.Node where
 
 instance Default Mode where def = Collapsed
 
+instance IsNode ExpressionNode where
+    nodeLoc              = nodeLoc'
+    ports                = ports'
+    getPorts             = Map.elems . view ports
+    hasPort pid          = Map.member pid . view ports
+    countInPorts         = Port.countInPorts . Map.keys . (view ports)
+    countOutPorts        = Port.countOutPorts . Map.keys . (view ports)
+    countArgPorts        = Port.countArgPorts . Map.keys . (view ports)
+    countProjectionPorts = Port.countProjectionPorts . Map.keys . (view ports)
+
 toExpressionNodesMap :: [ExpressionNode] -> ExpressionNodesMap
 toExpressionNodesMap = HashMap.fromList . map (view nodeId &&& id)
 
-subgraphs :: Getter ExpressionNode [Subgraph]
-subgraphs = to (toListOf $ mode . _Expanded . _Function . traverse)
+subgraphs :: Applicative f => (Map BreadcrumbItem Subgraph -> f (Map BreadcrumbItem Subgraph)) -> ExpressionNode -> f ExpressionNode
+subgraphs = mode . _Expanded . _Function
 
 isMode :: Mode -> ExpressionNode -> Bool
 isMode mode' node = node ^. mode == mode'
@@ -135,21 +149,3 @@ isCollapsed = isMode Collapsed
 isLiteral :: ExpressionNode -> Bool
 isLiteral node = not $ any isInPort portIds where
     portIds = Map.keys $ node ^. ports
-
-getPorts :: ExpressionNode -> [Port]
-getPorts = Map.elems . view ports
-
-hasPort :: PortId -> ExpressionNode -> Bool
-hasPort pid = Map.member pid . view ports
-
-countInPorts :: ExpressionNode -> Int
-countInPorts = Port.countInPorts . Map.keys . (view ports)
-
-countOutPorts :: ExpressionNode -> Int
-countOutPorts = Port.countOutPorts . Map.keys . (view ports)
-
-countArgPorts :: ExpressionNode -> Int
-countArgPorts = Port.countArgPorts . Map.keys . (view ports)
-
-countProjectionPorts :: ExpressionNode -> Int
-countProjectionPorts = Port.countProjectionPorts . Map.keys . (view ports)

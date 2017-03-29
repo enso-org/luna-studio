@@ -1,6 +1,6 @@
 module JS.UUID (generateUUID) where
 
-import           Luna.Studio.Prelude
+import           Internal.Prelude
 
 import qualified Data.UUID.Types     as UUID
 

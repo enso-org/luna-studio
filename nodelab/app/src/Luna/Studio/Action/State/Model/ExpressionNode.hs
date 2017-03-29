@@ -3,18 +3,18 @@ module Luna.Studio.Action.State.Model.ExpressionNode where
 import           Control.Monad                               (filterM)
 import           Data.Position                               (Position, x, y)
 import           Data.ScreenPosition                         (fromDoubles)
-import           Empire.API.Data.PortRef                     (InPortRef (InPortRef), toAnyPortRef)
 import           Luna.Studio.Action.Command                  (Command)
 import           Luna.Studio.Action.State.Action             (checkIfActionPerfoming)
 import           Luna.Studio.Action.State.NodeEditor         (getExpressionNodes, inGraph)
 import           Luna.Studio.Action.State.Scene              (translateToWorkspace)
 import           Luna.Studio.Data.Angle                      (Angle)
 import           Luna.Studio.Data.Geometry                   (isPointInCircle, isPointInRectangle)
+import           Luna.Studio.Data.PortRef                    (InPortRef (InPortRef), toAnyPortRef)
 import           Luna.Studio.Prelude
 import           Luna.Studio.React.Model.Connection          (toValidEmpireConnection)
 import           Luna.Studio.React.Model.Constants           (nodeRadius)
-import           Luna.Studio.React.Model.Node.ExpressionNode (ExpressionNode, NodeId, hasPort, isCollapsed, nodeId, position, position,
-                                                              zPos)
+import           Luna.Studio.React.Model.Node.ExpressionNode (ExpressionNode, NodeLoc, hasPort, isCollapsed, nodeId, nodeLoc, nodeLoc,
+                                                              position, position, zPos)
 import           Luna.Studio.React.Model.Port                (InPort (Self), PortId (InPortId))
 import           Luna.Studio.State.Action                    (connectSourcePort, penConnectAction)
 import           Luna.Studio.State.Global                    (State, actions, currentConnectAction)
@@ -49,12 +49,12 @@ isPointInNode p node =
             rightBottom <- translateToWorkspace $ fromDoubles right bottom
             return $ isPointInRectangle p (leftTop, rightBottom)
 
-getNodeAtPosition :: Position -> Command State (Maybe NodeId)
+getNodeAtPosition :: Position -> Command State (Maybe NodeLoc)
 getNodeAtPosition p = do
     nodes <- getExpressionNodes >>= filterM (isPointInNode p)
     if null nodes
         then return Nothing
-        else return $ Just $ maximumBy (\node1 node2 -> compare (node1 ^. zPos) (node2 ^. zPos)) nodes ^. nodeId
+        else return $ Just $ maximumBy (\node1 node2 -> compare (node1 ^. zPos) (node2 ^. zPos)) nodes ^. nodeLoc
 
 
 
@@ -64,12 +64,12 @@ shouldDisplayPortSelf node = do
     if not $ hasPort selfId node
         then return False
         else do
-            let nid = node ^. nodeId
+            let nl = node ^. nodeLoc
             penConnecting    <- checkIfActionPerfoming penConnectAction
             mayConnectAction <- use $ actions . currentConnectAction
             let connectToSelfPossible = isJust . join $
-                    (toValidEmpireConnection (toAnyPortRef nid selfId) . view connectSourcePort) <$> mayConnectAction
-                isSource = (view connectSourcePort <$> mayConnectAction) == Just (toAnyPortRef nid selfId)
+                    (toValidEmpireConnection (toAnyPortRef nl selfId) . view connectSourcePort) <$> mayConnectAction
+                isSource = (view connectSourcePort <$> mayConnectAction) == Just (toAnyPortRef nl selfId)
             if (not . isCollapsed $ node) || penConnecting || connectToSelfPossible || isSource
                 then return True
-                else inGraph $ InPortRef nid Self
+                else inGraph $ InPortRef nl Self

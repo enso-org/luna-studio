@@ -1,7 +1,4 @@
-module Luna.Studio.React.Model.Connection
-  ( module Luna.Studio.React.Model.Connection
-  , ConnectionId
-  ) where
+module Luna.Studio.React.Model.Connection where
 
 import           Control.Arrow                ((&&&))
 import           Data.Aeson                   (ToJSON)
@@ -9,16 +6,16 @@ import           Data.Convert                 (Convertible (convert))
 import           Data.HashMap.Strict          (HashMap)
 import qualified Data.HashMap.Strict          as HashMap
 import           Data.Position                (Position)
-import           Empire.API.Data.Connection   (ConnectionId)
 import qualified Empire.API.Data.Connection   as Empire
-import           Empire.API.Data.PortRef      (AnyPortRef (InPortRef', OutPortRef'), InPortRef, OutPortRef)
-import qualified Empire.API.Data.PortRef      as PortRef
 import           Luna.Studio.Data.Color       (Color)
+import           Luna.Studio.Data.PortRef     (AnyPortRef (InPortRef', OutPortRef'), InPortRef, OutPortRef)
+import qualified Luna.Studio.Data.PortRef     as PortRef
 import           Luna.Studio.Prelude
-import           Luna.Studio.React.Model.Node (NodeId)
+import           Luna.Studio.React.Model.Node (NodeLoc)
 import           Luna.Studio.React.Model.Port (InPort, OutPort)
 
 
+type ConnectionId = InPortRef
 
 data Connection = Connection { _src    :: OutPortRef
                              , _dst    :: InPortRef
@@ -48,14 +45,14 @@ toConnectionsMap = HashMap.fromList . map (view connectionId &&& id)
 connectionId :: Lens' Connection ConnectionId
 connectionId = dst
 
-srcNodeId :: Lens' Connection NodeId
-srcNodeId = src . PortRef.srcNodeId
+srcNodeLoc :: Lens' Connection NodeLoc
+srcNodeLoc = src . PortRef.srcNodeLoc
 
 srcPortId :: Lens' Connection OutPort
 srcPortId = src . PortRef.srcPortId
 
-dstNodeId :: Lens' Connection NodeId
-dstNodeId = dst . PortRef.dstNodeId
+dstNodeLoc :: Lens' Connection NodeLoc
+dstNodeLoc = dst . PortRef.dstNodeLoc
 
 dstPortId :: Lens' Connection InPort
 dstPortId = dst . PortRef.dstPortId
@@ -64,14 +61,14 @@ raw :: Getter Connection (OutPortRef, InPortRef)
 raw = to raw' where
     raw' conn = (conn ^. src, conn ^. dst)
 
-nodeIds :: Getter Connection (NodeId, NodeId)
-nodeIds = to nodeIds' where
-    nodeIds' conn = ( conn ^. src . PortRef.srcNodeId
-                    , conn ^. dst . PortRef.dstNodeId )
+nodeLocs :: Getter Connection (NodeLoc, NodeLoc)
+nodeLocs = to nodeLocs' where
+    nodeLocs' conn = ( conn ^. src . PortRef.srcNodeLoc
+                    , conn ^. dst . PortRef.dstNodeLoc )
 
-containsNode :: NodeId -> Connection -> Bool
-containsNode nid conn = (conn ^. srcNodeId == nid)
-                     || (conn ^. dstNodeId == nid)
+containsNode :: NodeLoc -> Connection -> Bool
+containsNode nid conn = (conn ^. srcNodeLoc == nid)
+                     || (conn ^. dstNodeLoc == nid)
 
 containsPortRef :: AnyPortRef -> Connection -> Bool
 containsPortRef (InPortRef'  inPortRef)  conn = conn ^. dst == inPortRef
@@ -79,8 +76,8 @@ containsPortRef (OutPortRef' outPortRef) conn = conn ^. src == outPortRef
 
 toValidEmpireConnection :: AnyPortRef -> AnyPortRef -> Maybe Empire.Connection
 toValidEmpireConnection (OutPortRef' src') (InPortRef' dst')     =
-    if src' ^. PortRef.srcNodeId /= dst' ^. PortRef.dstNodeId
-    then Just $ Empire.Connection src' dst'
+    if src' ^. PortRef.srcNodeLoc /= dst' ^. PortRef.dstNodeLoc
+    then Just $ Empire.Connection (convert src') (convert dst')
     else Nothing
 toValidEmpireConnection dst'@(InPortRef' _) src'@(OutPortRef' _) = toValidEmpireConnection src' dst'
 toValidEmpireConnection _ _                                      = Nothing
@@ -94,5 +91,5 @@ toConnection src' dst' = Connection src' dst' <$> view currentFrom <*> view curr
 
 instance Convertible Connection Empire.Connection where
     convert conn = Empire.Connection
-        {- src -} (conn ^. src)
-        {- dst -} (conn ^. dst)
+        {- src -} (convert $ conn ^. src)
+        {- dst -} (convert $ conn ^. dst)

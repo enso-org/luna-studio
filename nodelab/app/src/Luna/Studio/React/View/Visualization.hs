@@ -32,7 +32,7 @@ import           Luna.Studio.React.Model.App                    (App)
 import           Luna.Studio.React.Model.DataFrame              (DataFrame)
 import qualified Luna.Studio.React.Model.DataFrame              as DataFrame
 import qualified Luna.Studio.React.Model.Image                  as Image
-import           Luna.Studio.React.Model.Node.ExpressionNode    (ExpressionNode, NodeId)
+import           Luna.Studio.React.Model.Node.ExpressionNode    (ExpressionNode, NodeLoc)
 import qualified Luna.Studio.React.Model.Node.ExpressionNode    as Node
 import           Luna.Studio.React.Model.NodeEditor             (NodeEditor)
 import qualified Luna.Studio.React.Model.NodeEditor             as NodeEditor
@@ -46,21 +46,21 @@ import           Luna.Studio.React.View.Visualization.Image     (image_)
 viewName :: JSString
 viewName = "visualization"
 
-pinnedVisualization_ :: Ref App -> NodeEditor -> (NodeId, Int, Position) -> ReactElementM ViewEventHandler ()
-pinnedVisualization_ ref ne (nodeId, _, position) =
-    withJust (ne ^. NodeEditor.expressionNodes . at nodeId) $ \node ->
+pinnedVisualization_ :: Ref App -> NodeEditor -> (NodeLoc, Int, Position) -> ReactElementM ViewEventHandler ()
+pinnedVisualization_ ref ne (nl, _, position) =
+    withJust (NodeEditor.getExpressionNode nl ne) $ \node ->
         withJust (node ^. Node.value) $
-            visualization_ ref nodeId $ Just position
+            visualization_ ref nl $ Just position
 
-visualization_ :: Ref App -> NodeId -> Maybe Position -> NodeValue -> ReactElementM ViewEventHandler ()
-visualization_ ref nodeId mayPos v = React.view visualization (ref, nodeId, mayPos, v) mempty
+visualization_ :: Ref App -> NodeLoc -> Maybe Position -> NodeValue -> ReactElementM ViewEventHandler ()
+visualization_ ref nl mayPos v = React.view visualization (ref, nl, mayPos, v) mempty
 
-visualization :: ReactView (Ref App, NodeId, Maybe Position, NodeValue)
-visualization = React.defineView viewName $ \(ref, nodeId, mayPos, nodeValue) ->
+visualization :: ReactView (Ref App, NodeLoc, Maybe Position, NodeValue)
+visualization = React.defineView viewName $ \(ref, nl, mayPos, nodeValue) ->
     div_ [ "className" $= Style.prefix "noselect" ] $
         case nodeValue of
             NodeResult.Error msg          -> nodeError_ msg
-            NodeResult.Value _ valueReprs -> nodeValues_ ref nodeId mayPos valueReprs
+            NodeResult.Value _ valueReprs -> nodeValues_ ref nl mayPos valueReprs
 
 errorMessageWrapMargin :: Int
 errorMessageWrapMargin = 30
@@ -103,11 +103,11 @@ nodeError_ err = do
         , "className" $= Style.prefixFromList [ "vis", "vis--error" ]
         ] $ elemString message
 
-nodeValues_ :: Ref App -> NodeId -> Maybe Position -> [Value] -> ReactElementM ViewEventHandler ()
-nodeValues_ ref nodeId mayPos = mapM_ (uncurry $ nodeValue_ ref nodeId mayPos) . keyed
+nodeValues_ :: Ref App -> NodeLoc -> Maybe Position -> [Value] -> ReactElementM ViewEventHandler ()
+nodeValues_ ref nl mayPos = mapM_ (uncurry $ nodeValue_ ref nl mayPos) . keyed
 
-nodeValue_ :: Ref App -> NodeId -> Maybe Position -> Int -> Value -> ReactElementM ViewEventHandler ()
-nodeValue_ ref nodeId mayPos visIx value = do
+nodeValue_ :: Ref App -> NodeLoc -> Maybe Position -> Int -> Value -> ReactElementM ViewEventHandler ()
+nodeValue_ ref nl mayPos visIx value = do
     let isPinned = isJust mayPos
         event = case mayPos of
             Just pos -> \n v -> Visualization.Unpin n v pos
@@ -121,9 +121,9 @@ nodeValue_ ref nodeId mayPos visIx value = do
             Nothing -> div_
     translatedDiv_ $ do
         withJust mayPos $ \pos ->
-            button_ [ onMouseDown $ \e m -> stopPropagation e : dispatch ref (UI.VisualizationEvent $ Visualization.MouseDown m nodeId visIx pos)] $
+            button_ [ onMouseDown $ \e m -> stopPropagation e : dispatch ref (UI.VisualizationEvent $ Visualization.MouseDown m nl visIx pos)] $
                 elemString "move"
-        button_ [ onClick $ \_ _ -> dispatch ref $ UI.VisualizationEvent $ event nodeId visIx ] $
+        button_ [ onClick $ \_ _ -> dispatch ref $ UI.VisualizationEvent $ event nl visIx ] $
             elemString $ if isPinned then "unpin" else "pin"
         case value of
             DataFrame    cols -> do

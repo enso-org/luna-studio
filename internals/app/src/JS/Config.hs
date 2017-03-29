@@ -12,7 +12,7 @@ module JS.Config
 import qualified Data.JSString       as JSString
 import qualified Data.List           as List
 import           GHCJS.Marshal.Pure  (pFromJSVal)
-import           Luna.Studio.Prelude
+import           Internal.Prelude
 import           System.IO.Unsafe    (unsafePerformIO)
 
 
