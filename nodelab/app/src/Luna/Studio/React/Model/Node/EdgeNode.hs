@@ -14,12 +14,12 @@ import           Data.Convert                   (Convertible (convert))
 import           Data.HashMap.Strict            (HashMap)
 import qualified Data.HashMap.Strict            as HashMap
 import qualified Data.Map.Lazy                  as Map
-import           Empire.API.Data.Node           (NodeId)
+import           Empire.API.Data.Node           (NodeId, inputEdgePorts)
 import qualified Empire.API.Data.Node           as Empire
 import           Empire.API.Data.NodeLoc        (NodeLoc (NodeLoc), NodePath)
 import           Luna.Studio.Prelude
 import           Luna.Studio.React.Model.IsNode as X (IsNode (..))
-import           Luna.Studio.React.Model.Port   (PortsMap)
+import           Luna.Studio.React.Model.Port   (PortsMap, toPortsMap)
 import qualified Luna.Studio.React.Model.Port   as Port
 
 
@@ -45,7 +45,11 @@ instance Convertible (NodePath, Empire.Node, EdgeType) EdgeNode where
     convert (path, n, type') = EdgeNode
         {- nodeLoc  -} (NodeLoc path (n ^. Empire.nodeId))
         {- edgeType -} type'
-        {- ports    -} (convert <$> n ^. Empire.ports)
+        {- ports    -} ( case type' of
+            OutputEdge -> convert <$> n ^. Empire.ports
+            InputEdge  ->
+                toPortsMap . convert . maybe [] id $ n ^? Empire.nodeType . inputEdgePorts
+            )
         {- mode     -} def
 
 instance IsNode EdgeNode where

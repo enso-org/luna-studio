@@ -105,3 +105,7 @@ instance Convertible Port Empire.Port where
         {- name      -} (p ^. name)
         {- nodeType  -} (p ^. valueType)
         {- state     -} (p ^. state)
+
+instance Convertible [Empire.OutPortTree Empire.Port] [Port] where
+    convert ports = concat . flip map ports $ \(Empire.OutPortTree p subtrees) ->
+        convert p : convert subtrees
