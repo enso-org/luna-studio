@@ -63,17 +63,16 @@ instance Action (Command State) PortDrag where
     end      = stopPortDrag False
 
 portRename :: AnyPortRef -> String -> Command State ()
-portRename portRef name = return () -- modifyNodeEditor $ do
+portRename portRef name = return () -- do
     -- let nodeLoc = portRef ^. PortRef.nodeLoc
     --     portId = portRef ^. PortRef.portId
-    -- NodeEditor.edgeNodes . at nodeLoc . _Just . EdgeNode.ports . at portId . _Just . Port.name .= name
+    -- modifyEdgeNode nodeLoc $ EdgeNode.ports . at portId . _Just . Port.name .= name
 
 portNameEdit :: AnyPortRef -> Bool -> Command State ()
 portNameEdit portRef isEdited = return () -- do
-    -- modifyNodeEditor $ do
     --     let nodeLoc = portRef ^. PortRef.nodeLoc
     --         portId = portRef ^. PortRef.portId
-    --     NodeEditor.edgeNodes . at nodeLoc . _Just . EdgeNode.ports . at portId . _Just . Port.isEdited .= isEdited
+    --     modifyEdgeNode nodeLoc $ EdgeNode.ports . at portId . _Just . Port.isEdited .= isEdited
     -- when isEdited $ do
     --     renderIfNeeded
     --     liftIO Edge.focusPortLabel

@@ -63,6 +63,12 @@ pathItems = path . localBc . Breadcrumb.items
 appendItem :: BreadcrumbItem -> NodePath -> NodePath
 appendItem item = localBc %~ (<> Breadcrumb [item])
 
+dropItem :: NodePath -> NodePath
+dropItem = localBc . Breadcrumb.items %~ init
+
+replaceLast :: BreadcrumbItem -> NodePath -> NodePath
+replaceLast item = appendItem item . dropItem
+
 fromPath :: NodePath -> NodeLoc
 fromPath path = NodeLoc path' $ lastItem ^. Breadcrumb.nodeId where
     path' = path & localBc . Breadcrumb.items %~ init

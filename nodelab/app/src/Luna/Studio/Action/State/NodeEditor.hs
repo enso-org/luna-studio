@@ -9,6 +9,7 @@ import qualified Control.Monad.State                          as M
 import           Control.Monad.Trans.Maybe                    (MaybeT (MaybeT), runMaybeT)
 import qualified Data.HashMap.Strict                          as HashMap
 import qualified Data.Map.Lazy                                as Map
+import           Data.Monoid                                  (First (First), getFirst)
 import qualified Data.Set                                     as Set
 
 import           Empire.API.Data.MonadPath                    (MonadPath)
@@ -98,6 +99,14 @@ getExpressionNodes = view NE.expressionNodesRecursive <$> getNodeEditor
 
 modifyExpressionNode :: Monoid r => NodeLoc -> M.State ExpressionNode r -> Command State r
 modifyExpressionNode = Internal.modifyNodeRec NE.expressionNodes ExpressionNode.expressionNodes
+
+modifyExpressionNodes_ :: M.State ExpressionNode () -> Command State ()
+modifyExpressionNodes_ = void . modifyExpressionNodes
+
+modifyExpressionNodes :: M.State ExpressionNode r -> Command State [r]
+modifyExpressionNodes modifier = do
+    nodeLocs <- view ExpressionNode.nodeLoc `fmap2` getExpressionNodes --FIXME it can be done faster
+    catMaybes . map getFirst <$> forM nodeLocs (flip modifyExpressionNode $ (fmap (First . Just) modifier))
 
 modifyEdgeNode :: Monoid r => NodeLoc -> M.State EdgeNode r -> Command State r
 modifyEdgeNode = Internal.modifyNodeRec NE.edgeNodes ExpressionNode.edgeNodes

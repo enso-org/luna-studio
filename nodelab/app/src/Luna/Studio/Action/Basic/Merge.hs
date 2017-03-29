@@ -23,7 +23,7 @@ import           Luna.Studio.State.Global                    (State)
 localMerge :: NodePath -> Map BreadcrumbItem Graph -> Command State ()
 localMerge parentPath graphs = do
     subgraphs <- forM (Map.toList graphs) $ \(k, graph) -> do
-        let allNodes           = (convert . (NodeLoc.appendItem k parentPath,) <$> graph ^. GraphAPI.nodes)
+        let allNodes           = (convert . (NodeLoc.replaceLast k parentPath,) <$> graph ^. GraphAPI.nodes)
             expressionNodesMap = toExpressionNodesMap $ allNodes ^.. traverse . _Expression
             edgeNodesMap       = toEdgeNodesMap $ allNodes ^.. traverse . _Edge
             connections        = map ((_1 %~ convert . (parentPath,)) . (_2 %~ convert . (parentPath,))) $ graph ^. GraphAPI.connections

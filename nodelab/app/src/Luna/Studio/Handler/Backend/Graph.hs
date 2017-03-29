@@ -48,7 +48,7 @@ import           Luna.Studio.Action.Camera                    (centerGraph)
 import           Luna.Studio.Action.Command                   (Command)
 import           Luna.Studio.Action.State.App                 (setBreadcrumbs)
 import           Luna.Studio.Action.State.Graph               (inCurrentLocation, isCurrentLocation)
-import           Luna.Studio.Action.State.NodeEditor          (modifyNodeEditor, updateMonads)
+import           Luna.Studio.Action.State.NodeEditor          (modifyExpressionNode, updateMonads)
 import           Luna.Studio.Action.UUID                      (isOwnRequest)
 import qualified Luna.Studio.Batch.Workspace                  as Workspace
 import           Luna.Studio.Event.Batch                      (Event (..))
@@ -146,16 +146,18 @@ handle (Event.Batch ev) = Just $ case ev of
 
     CollaborationUpdate update -> inCurrentLocation (update ^. CollaborationUpdate.location) $ \path -> do
         let clientId = update ^. CollaborationUpdate.clientId
-            touchNodes nodeIds setter = modifyNodeEditor $
-                forM_ nodeIds $ \nid -> NodeEditor.expressionNodes . at nid %= fmap setter
+            touchNodes nodeIds setter = forM_ nodeIds $ \nid ->
+                modifyExpressionNode (convert (path, nid)) setter
         myClientId   <- use $ Global.backend . Global.clientId
         currentTime  <- use Global.lastEventTimestamp
         when (clientId /= myClientId) $ do
             clientColor <- updateClient clientId
             case update ^. CollaborationUpdate.event of
-                CollaborationUpdate.Touch       nodeIds -> touchNodes nodeIds $  Node.collaboration . Node.touch  . at clientId ?~ (DT.addSeconds (2 * refreshTime) currentTime, clientColor)
-                CollaborationUpdate.Modify      nodeIds -> touchNodes nodeIds $ (Node.collaboration . Node.modify . at clientId ?~ DT.addSeconds modifyTime currentTime) . (Node.collaboration . Node.touch  . at clientId %~ bumpTime (DT.addSeconds modifyTime currentTime) clientColor)
-                CollaborationUpdate.CancelTouch nodeIds -> touchNodes nodeIds $  Node.collaboration . Node.touch  . at clientId .~ Nothing
+                CollaborationUpdate.Touch       nodeIds -> touchNodes nodeIds $  Node.collaboration . Node.touch  . at clientId ?= (DT.addSeconds (2 * refreshTime) currentTime, clientColor)
+                CollaborationUpdate.Modify      nodeIds -> touchNodes nodeIds $ do
+                    Node.collaboration . Node.touch  . at clientId %= bumpTime (DT.addSeconds modifyTime currentTime) clientColor
+                    Node.collaboration . Node.modify . at clientId ?= DT.addSeconds modifyTime currentTime
+                CollaborationUpdate.CancelTouch nodeIds -> touchNodes nodeIds $  Node.collaboration . Node.touch  . at clientId .= Nothing
                 CollaborationUpdate.Refresh             -> touchCurrentlySelected
 
     ConnectUpdate update -> do

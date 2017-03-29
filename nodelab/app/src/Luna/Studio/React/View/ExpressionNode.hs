@@ -199,12 +199,7 @@ nodeContainer = React.defineView name $ \(ref, subgraphs) ->
           lookupNode m = ( m ^. MonadPath.monadType
                          , m ^. MonadPath.path . to (mapMaybe $ flip HashMap.lookup $ subgraph ^. Node.expressionNodes))
           monads       = map lookupNode $ subgraph ^. Node.monads
-      div_
-          [ onMouseDown   $ \_ m   -> dispatch ref $ UI.NodeEditorEvent $ NE.MouseDown m
-          , onDoubleClick $ \e _   -> [preventDefault e]
-          -- , onWheel       $ \e m w -> preventDefault e : dispatch ref (UI.NodeEditorEvent $ NE.Wheel m w)
-          -- , onScroll      $ \e     -> [preventDefault e]
-          ] $ do
+      div_ $ do
               forM_ nodes $ node_ ref
               svgPlanes_ $
                   planeMonads_ $ monads_ monads

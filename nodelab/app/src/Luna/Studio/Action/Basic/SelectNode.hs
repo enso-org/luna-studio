@@ -49,7 +49,8 @@ selectPreviousNodes = do
 unselectAll :: Command State ()
 unselectAll = do
     prevSelected <- map (view nodeLoc) <$> getSelectedNodes
-    modifyNodeEditor $ expressionNodes %= Map.map (isSelected .~ False)
+    forM_ prevSelected $ \prev ->
+        modifyExpressionNode prev $ isSelected .= False
     cancelCollaborativeTouch prevSelected
 
 toggleSelect :: NodeLoc -> Command State ()
