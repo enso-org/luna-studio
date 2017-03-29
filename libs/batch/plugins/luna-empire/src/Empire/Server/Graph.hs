@@ -239,14 +239,15 @@ handleRemoveConnection = modifyGraphOk inverse action where
 
 handleRemoveNodes :: Request RemoveNodes.Request -> StateT Env BusT ()
 handleRemoveNodes = modifyGraphOk inverse action where
-    inverse (RemoveNodes.Request location nodeIds) = do
+    inverse (RemoveNodes.Request location nodeLocs) = do
+        let nodeIds = convert <$> nodeLocs --TODO[PM -> MM] Use NodeLoc instead of NodeId
         Graph allNodes allConnections monads <- Graph.withGraph location $ runASTOp buildGraph
         let idSet = Set.fromList nodeIds
             nodes = flip filter allNodes       $ \node ->   Set.member (node ^. Node.nodeId)            idSet
             conns = flip filter allConnections $ \conn -> ( Set.member (conn ^. _1 . PortRef.srcNodeId) idSet
                                                          || Set.member (conn ^. _2 . PortRef.dstNodeId) idSet )
         return $ RemoveNodes.Inverse nodes $ map (uncurry Connection) conns
-    action (RemoveNodes.Request location nodeIds)  = Graph.removeNodes location nodeIds
+    action (RemoveNodes.Request location nodeLocs)  = Graph.removeNodes location $ convert <$> nodeLocs --TODO[PM -> MM] Use NodeLoc instead of NodeId
 
 handleRemovePort :: Request RemovePort.Request -> StateT Env BusT ()
 handleRemovePort = modifyGraphOk inverse action where

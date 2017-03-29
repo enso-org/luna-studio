@@ -1,6 +1,7 @@
 {-# LANGUAGE DeriveAnyClass #-}
 module Empire.API.Data.NodeLoc where
 
+import           Data.Binary                   (Binary)
 import           Data.Convert                  (Convertible (..))
 import qualified Data.List                     as List
 import           Empire.API.Data.Breadcrumb    (Breadcrumb (Breadcrumb), BreadcrumbItem)
@@ -22,6 +23,9 @@ data NodeLoc = NodeLoc
 
 makeLenses ''NodePath
 makeLenses ''NodeLoc
+
+instance Binary NodePath
+instance Binary NodeLoc
 
 instance Convertible (NodePath, NodeId) NodeLoc where
     convert = uncurry NodeLoc
@@ -70,6 +74,9 @@ replaceLast :: BreadcrumbItem -> NodePath -> NodePath
 replaceLast item = appendItem item . dropItem
 
 fromPath :: NodePath -> NodeLoc
-fromPath path = NodeLoc path' $ lastItem ^. Breadcrumb.nodeId where
-    path' = path & localBc . Breadcrumb.items %~ init
-    lastItem = path ^. localBc . Breadcrumb.items . to last
+fromPath path' = NodeLoc newPath $ lastItem ^. Breadcrumb.nodeId where
+    newPath = path' & localBc . Breadcrumb.items %~ init
+    lastItem = path' ^. localBc . Breadcrumb.items . to last
+
+prependPath :: NodePath -> NodeLoc -> NodeLoc
+prependPath path' = path . localBc %~ (path' ^. localBc <>)

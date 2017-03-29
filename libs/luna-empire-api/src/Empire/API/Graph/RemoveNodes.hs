@@ -6,6 +6,7 @@ import           Prologue                      hiding (TypeRep)
 import           Empire.API.Data.Connection    (Connection)
 import           Empire.API.Data.GraphLocation (GraphLocation)
 import           Empire.API.Data.Node          (Node, NodeId)
+import           Empire.API.Data.NodeLoc       (NodeLoc)
 import           Empire.API.Data.PortRef       (InPortRef (..), OutPortRef (..))
 import           Empire.API.Data.TypeRep       (TypeRep)
 import qualified Empire.API.Graph.Request      as G
@@ -15,7 +16,7 @@ import qualified Empire.API.Topic              as T
 
 
 data Request = Request { _location :: GraphLocation
-                       , _nodeIds  :: [NodeId]
+                       , _nodeLocs :: [NodeLoc]
                        } deriving (Generic, Eq, NFData, Show)
 
 data Inverse = Inverse { _nodes       :: [Node]

@@ -139,7 +139,7 @@ addNode :: EP.BusEndPoints -> GraphLocation -> NodeId -> String -> Double -> Dou
 addNode endPoints graphLocation nodeId expression x y = sendToBus endPoints $ AddNode.Request graphLocation nodeId (Text.pack expression) (NodeMeta.NodeMeta (x, y) True) Nothing
 
 removeNode :: EP.BusEndPoints -> GraphLocation -> NodeId -> IO ()
-removeNode endPoints graphLocation nodeId = sendToBus endPoints $ RemoveNodes.Request graphLocation [nodeId]
+removeNode endPoints graphLocation nodeId = sendToBus endPoints $ RemoveNodes.Request graphLocation [convert nodeId]
 
 setNodeMeta :: EP.BusEndPoints -> GraphLocation -> NodeId -> Double -> Double -> Bool -> IO ()
 setNodeMeta endPoints graphLocation nodeId x y req = sendToBus endPoints $ SetNodesMeta.Request graphLocation [(nodeId, NodeMeta.NodeMeta (x, y) req)]

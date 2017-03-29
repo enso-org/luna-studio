@@ -1,16 +1,13 @@
 --TODO[LJK, PM]: Refactor
 module Luna.Studio.Action.Basic.SelectNode where
 
-import qualified Data.HashMap.Strict                         as Map
 import qualified Data.Set                                    as Set
 import           Luna.Studio.Action.Basic.FocusNode          (focusNodes)
 import           Luna.Studio.Action.Batch                    (cancelCollaborativeTouch, collaborativeTouch)
 import           Luna.Studio.Action.Command                  (Command)
-import           Luna.Studio.Action.State.NodeEditor         (getExpressionNode, getExpressionNodes, getSelectedNodes, modifyExpressionNode,
-                                                              modifyNodeEditor)
+import           Luna.Studio.Action.State.NodeEditor         (getExpressionNode, getExpressionNodes, getSelectedNodes, modifyExpressionNode)
 import           Luna.Studio.Prelude
 import           Luna.Studio.React.Model.Node.ExpressionNode (NodeLoc, isSelected, nodeLoc)
-import           Luna.Studio.React.Model.NodeEditor          (expressionNodes)
 import           Luna.Studio.State.Global                    (State, selectionHistory)
 
 

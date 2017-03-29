@@ -5,6 +5,7 @@ module Luna.Studio.Handler.Backend.Graph
 import qualified Data.DateTime                                as DT
 import           Empire.API.Data.Connection                   (dst, src)
 import qualified Empire.API.Data.Graph                        as Graph
+import           Empire.API.Data.NodeLoc                      (prependPath)
 import qualified Empire.API.Data.NodeLoc                      as NodeLoc
 import qualified Empire.API.Graph.AddConnection               as AddConnection
 import qualified Empire.API.Graph.AddNode                     as AddNode
@@ -232,14 +233,14 @@ handle (Event.Batch ev) = Just $ case ev of
         requestId       = response ^. Response.requestId
         request         = response ^. Response.request
         location        = request  ^. RemoveNodes.location
-        nodeIds         = request  ^. RemoveNodes.nodeIds
+        nodeLocs        = request  ^. RemoveNodes.nodeLocs
         failure inverse = whenM (isOwnRequest requestId) $ revertRemoveNodes request inverse
         success _       = inCurrentLocation location $ \path -> do
             ownRequest    <- isOwnRequest requestId
             if ownRequest then
                 --TODO[LJK]: This is left to remind to set Confirmed flag in changes
                 return ()
-            else void $ localRemoveNodes $ convert . (path,) <$> nodeIds
+            else void $ localRemoveNodes $ prependPath path <$> nodeLocs
 
     RemovePortResponse response -> handleResponse response success failure where
         requestId       = response ^. Response.requestId

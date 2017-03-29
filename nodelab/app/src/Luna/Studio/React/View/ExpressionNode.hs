@@ -13,7 +13,6 @@ import qualified Luna.Studio.Event.Mouse                               as Mouse
 import qualified Luna.Studio.Event.UI                                  as UI
 import           Luna.Studio.Prelude
 import qualified Luna.Studio.React.Event.Node                          as Node
-import qualified Luna.Studio.React.Event.NodeEditor                    as NE
 import           Luna.Studio.React.Model.App                           (App)
 import qualified Luna.Studio.React.Model.Field                         as Field
 import           Luna.Studio.React.Model.Node.ExpressionNode           (ExpressionNode, NodeLoc, Subgraph, countArgPorts, countOutPorts,

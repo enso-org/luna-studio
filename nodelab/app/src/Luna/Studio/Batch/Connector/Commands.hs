@@ -113,7 +113,7 @@ removeConnection connId workspace uuid guiID = sendRequest $ Message uuid guiID 
     (workspace', connId') = convert (workspace, connId)
 
 removeNodes :: [NodeLoc] -> Workspace -> UUID -> Maybe UUID ->  IO ()
-removeNodes nodeLocs workspace uuid guiID = sendRequest $ Message uuid guiID $ withLibrary workspace RemoveNodes.Request (convert <$> nodeLocs)
+removeNodes nodeLocs workspace uuid guiID = sendRequest $ Message uuid guiID $ withLibrary workspace RemoveNodes.Request nodeLocs
 
 removePort :: AnyPortRef -> Workspace -> UUID -> Maybe UUID -> IO ()
 removePort portRef workspace uuid guiID = sendRequest $ Message uuid guiID $ (withLibrary workspace' RemovePort.Request) portRef' where
