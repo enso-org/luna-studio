@@ -5,16 +5,16 @@ import           Data.Vector                                 (lengthSquared, mag
 import           Luna.Studio.Prelude
 
 import qualified Empire.API.Data.Port                        as P
-import qualified Empire.API.Data.PortRef                     as R
 import           Luna.Studio.Action.Basic                    (selectNodes)
 import           Luna.Studio.Action.Command                  (Command)
 import           Luna.Studio.Action.State.NodeEditor         (getConnection, getConnections, getExpressionNode, getExpressionNodes,
                                                               getSelectedNodes)
 import           Luna.Studio.Action.State.Scene              (getScreenCenter, translateToWorkspace)
+import qualified Luna.Studio.Data.PortRef                    as R
 import           Luna.Studio.Event.Event                     (Event (Shortcut))
 import qualified Luna.Studio.Event.Shortcut                  as Shortcut
 import qualified Luna.Studio.React.Model.Connection          as C
-import           Luna.Studio.React.Model.Node.ExpressionNode (ExpressionNode, NodeId, nodeId, position)
+import           Luna.Studio.React.Model.Node.ExpressionNode (ExpressionNode, NodeLoc, nodeLoc, position)
 import           Luna.Studio.State.Global                    (State)
 
 
@@ -43,7 +43,7 @@ selectAny = do
         nodes <- getExpressionNodes
         unless (null nodes) $ do
             let node = findNearestNode workspaceCenter nodes
-            selectNodes [node ^. nodeId]
+            selectNodes [node ^. nodeLoc]
 
 goPrev :: Command State ()
 goPrev = do
@@ -51,15 +51,15 @@ goPrev = do
     if null selectedNodes then selectAny
     else do
         let nodeSrc = findLeftMost selectedNodes
-            nid     = nodeSrc ^. nodeId
-            inPortRefSelf      = R.InPortRef nid   P.Self
-            inPortRefFirstPort = R.InPortRef nid $ P.Arg 0
-        prevSelfNodeIdMay <- view (C.src . R.srcNodeId) <∘> getConnection inPortRefSelf
-        case prevSelfNodeIdMay of
-            Just prevSelfNodeId -> selectNodes [prevSelfNodeId]
+            nl     = nodeSrc ^. nodeLoc
+            inPortRefSelf      = R.InPortRef nl   P.Self
+            inPortRefFirstPort = R.InPortRef nl $ P.Arg 0
+        prevSelfNodeLocMay <- view (C.src . R.srcNodeLoc) <∘> getConnection inPortRefSelf
+        case prevSelfNodeLocMay of
+            Just prevSelfNodeLoc -> selectNodes [prevSelfNodeLoc]
             Nothing -> do
-                prevFirstPortNodeIdMay <- view (C.src . R.srcNodeId) <∘> getConnection inPortRefFirstPort
-                withJust prevFirstPortNodeIdMay $ selectNodes . return
+                prevFirstPortNodeLocMay <- view (C.src . R.srcNodeLoc) <∘> getConnection inPortRefFirstPort
+                withJust prevFirstPortNodeLocMay $ selectNodes . return
 
 goNext :: Command State ()
 goNext = do
@@ -67,19 +67,19 @@ goNext = do
     if null selectedNodes then selectAny
     else do
         let nodeSrc = findRightMost selectedNodes
-            nid     = nodeSrc ^. nodeId
-        nextNodeIds <- getDstNodeIds nid
-        nextNodes   <- catMaybes <$> mapM getExpressionNode nextNodeIds
+            nl     = nodeSrc ^. nodeLoc
+        nextNodeLocs <- getDstNodeLocs nl
+        nextNodes   <- catMaybes <$> mapM getExpressionNode nextNodeLocs
         unless (null nextNodes) $ do
             let nextNode = findUpMost nextNodes
-            selectNodes [nextNode ^. nodeId]
+            selectNodes [nextNode ^. nodeLoc]
 
-getDstNodeIds :: NodeId -> Command State [NodeId]
-getDstNodeIds nid = do
-    connections <- filter matchNodeId <$> getConnections
-    return $ (^. C.dst . R.dstNodeId) <$> connections
+getDstNodeLocs :: NodeLoc -> Command State [NodeLoc]
+getDstNodeLocs nl = do
+    connections <- filter matchNodeLoc <$> getConnections
+    return $ (^. C.dst . R.dstNodeLoc) <$> connections
     where
-        matchNodeId conn = conn ^. C.src . R.srcNodeId == nid
+        matchNodeLoc conn = conn ^. C.src . R.srcNodeLoc == nl
 
 goRight, goLeft, goDown, goUp :: Command State ()
 goRight = go findRightMost findNodesOnRightSide findNearestRight
@@ -100,7 +100,7 @@ go findMost findNodesOnSide findNearest = do
             pos = nodeSrc ^. position
             nodesSide = findNodesOnSide pos nodes
         unless (null nodesSide) $ do
-            selectNodes [findNearest pos nodesSide ^. nodeId]
+            selectNodes [findNearest pos nodesSide ^. nodeLoc]
 
 closenestPow :: Double
 closenestPow = 2.5
@@ -144,8 +144,8 @@ goCone findMost findNodesInCone findNodesOnSide = do
             nodesCone = findNodesInCone pos nodes
             nodesSide = findNodesOnSide pos nodes
         if not $ null nodesCone
-            then                           selectNodes [findNearestNode pos nodesCone ^. nodeId]
-            else unless (null nodesSide) $ selectNodes [findNearestNode pos nodesSide ^. nodeId]
+            then                           selectNodes [findNearestNode pos nodesCone ^. nodeLoc]
+            else unless (null nodesSide) $ selectNodes [findNearestNode pos nodesSide ^. nodeLoc]
 
 findRightMost, findLeftMost, findDownMost, findUpMost :: [ExpressionNode] -> ExpressionNode
 findRightMost = maximumBy (compare `on` (^. position . x))

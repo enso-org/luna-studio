@@ -1,7 +1,7 @@
 --TODO[PM]: Refactor and treat this as Action
 module Luna.Studio.Action.Node.EditName where
 
-import           Empire.API.Data.Node                             (NodeId)
+import           Empire.API.Data.NodeLoc                          (NodeLoc)
 import           Luna.Studio.Action.Basic                         (renameNode)
 import           Luna.Studio.Action.Command                       (Command)
 import           Luna.Studio.Action.State.App                     (renderIfNeeded)
@@ -13,25 +13,25 @@ import           Luna.Studio.React.View.ExpressionNode.Properties (focusNameLabe
 import           Luna.Studio.State.Global                         (State)
 
 
-startEditName :: NodeId -> Command State ()
-startEditName nid = do
-    modifyExpressionNode nid $ do
+startEditName :: NodeLoc -> Command State ()
+startEditName nl = do
+    modifyExpressionNode nl $ do
         name' <- use name
         nameEdit ?= name'
     renderIfNeeded
     liftIO focusNameLabel
 
-editName :: NodeId -> Text -> Command State ()
-editName nid update =
-    modifyExpressionNode nid $ nameEdit ?= update
+editName :: NodeLoc -> Text -> Command State ()
+editName nl update =
+    modifyExpressionNode nl $ nameEdit ?= update
 
-applyName :: NodeId -> Command State ()
-applyName nid = do
-    mayName <- getExpressionNode nid >>= return . maybe Nothing (view nameEdit)
-    withJust mayName $ renameNode nid
+applyName :: NodeLoc -> Command State ()
+applyName nl = do
+    mayName <- getExpressionNode nl >>= return . maybe Nothing (view nameEdit)
+    withJust mayName $ renameNode nl
     liftIO focus
 
-discardName :: NodeId -> Command State ()
-discardName nid = do
-    modifyExpressionNode nid $ nameEdit .= Nothing
+discardName :: NodeLoc -> Command State ()
+discardName nl = do
+    modifyExpressionNode nl $ nameEdit .= Nothing
     liftIO focus

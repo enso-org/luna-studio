@@ -1,15 +1,16 @@
 module Luna.Studio.Action.Basic.AddSubgraph where
 
 import qualified Data.Map.Lazy                               as Map
-import           Empire.API.Data.PortRef                     (InPortRef, OutPortRef, dstNodeId, srcNodeId)
+import qualified Empire.API.Data.NodeLoc                     as NodeLoc
 import           Luna.Studio.Action.Basic.AddConnection      (localAddConnection)
 import           Luna.Studio.Action.Basic.AddNode            (localAddExpressionNodes)
 import           Luna.Studio.Action.Basic.SelectNode         (selectNodes)
 import qualified Luna.Studio.Action.Batch                    as Batch
 import           Luna.Studio.Action.Command                  (Command)
 import           Luna.Studio.Action.UUID                     (getUUID)
+import           Luna.Studio.Data.PortRef                    (InPortRef, OutPortRef, dstNodeLoc, srcNodeLoc)
 import           Luna.Studio.Prelude
-import           Luna.Studio.React.Model.Node.ExpressionNode (ExpressionNode, nodeId)
+import           Luna.Studio.React.Model.Node.ExpressionNode (ExpressionNode, nodeLoc)
 import           Luna.Studio.State.Global                    (State)
 
 
@@ -20,15 +21,16 @@ addSubgraph nodes conns = do
 
 localAddSubgraph :: [ExpressionNode] -> [(OutPortRef, InPortRef)] -> Command State ([ExpressionNode], [(OutPortRef, InPortRef)])
 localAddSubgraph nodes conns = do
-    (newIds, newNodes) <- fmap unzip $ forM nodes $ \node -> do
+    (newLocs, newNodes) <- fmap unzip $ forM nodes $ \node -> do
         newId <- getUUID
-        return $ (newId, node & nodeId .~ newId)
-    let idMapping = Map.fromList $ flip zip newIds $ map (view nodeId) nodes
+        let newLoc = (node ^. nodeLoc) & NodeLoc.nodeId .~ newId
+        return $ (newLoc, node & nodeLoc .~ newLoc)
+    let idMapping = Map.fromList $ flip zip newLocs $ map (view nodeLoc) nodes
         newConns  = flip map conns $
-            ( \(src, dst) -> maybe (src, dst) (\nid -> (src & srcNodeId .~ nid, dst)) $ Map.lookup (src ^. srcNodeId) idMapping ) .
-            ( \(src, dst) -> maybe (src, dst) (\nid -> (src, dst & dstNodeId .~ nid)) $ Map.lookup (dst ^. dstNodeId) idMapping )
+            ( \(src, dst) -> maybe (src, dst) (\nl -> (src & srcNodeLoc .~ nl, dst)) $ Map.lookup (src ^. srcNodeLoc) idMapping ) .
+            ( \(src, dst) -> maybe (src, dst) (\nl -> (src, dst & dstNodeLoc .~ nl)) $ Map.lookup (dst ^. dstNodeLoc) idMapping )
     localUpdateSubgraph newNodes newConns
-    selectNodes newIds
+    selectNodes newLocs
     return (newNodes, newConns)
 
 localUpdateSubgraph :: [ExpressionNode] -> [(OutPortRef, InPortRef)] -> Command State ()

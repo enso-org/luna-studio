@@ -16,7 +16,7 @@ import qualified Luna.Studio.React.Event.Node                          as Node
 import qualified Luna.Studio.React.Event.NodeEditor                    as NE
 import           Luna.Studio.React.Model.App                           (App)
 import qualified Luna.Studio.React.Model.Field                         as Field
-import           Luna.Studio.React.Model.Node.ExpressionNode           (ExpressionNode, NodeId, Subgraph, countArgPorts, countOutPorts,
+import           Luna.Studio.React.Model.Node.ExpressionNode           (ExpressionNode, NodeLoc, Subgraph, countArgPorts, countOutPorts,
                                                                         isCollapsed)
 import qualified Luna.Studio.React.Model.Node.ExpressionNode           as Node
 import qualified Luna.Studio.React.Model.Node.ExpressionNodeProperties as Prop
@@ -44,10 +44,10 @@ objNamePorts = "node-ports"
 nodePrefix :: JSString
 nodePrefix = Config.prefix "node-"
 
-handleMouseDown :: Ref App -> NodeId -> Event -> MouseEvent -> [SomeStoreAction]
-handleMouseDown ref nodeId e m =
+handleMouseDown :: Ref App -> NodeLoc -> Event -> MouseEvent -> [SomeStoreAction]
+handleMouseDown ref nodeLoc e m =
     if Mouse.withoutMods m Mouse.leftButton || Mouse.withShift m Mouse.leftButton
-    then stopPropagation e : dispatch ref (UI.NodeEvent $ Node.MouseDown m nodeId)
+    then stopPropagation e : dispatch ref (UI.NodeEvent $ Node.MouseDown m nodeLoc)
     else []
 
 node_ :: Ref App -> ExpressionNode -> ReactElementM ViewEventHandler ()
@@ -58,6 +58,7 @@ node = React.defineView name $ \(ref, n) -> case n ^. Node.mode of
     Node.Expanded (Node.Function fs) -> nodeContainer_ ref $ Map.elems fs
     _ ->
         let nodeId    = n ^. Node.nodeId
+            nodeLoc   = n ^. Node.nodeLoc
             nodeLimit = 10000::Int
             zIndex    = n ^. Node.zPos
             z         = if isCollapsed n then zIndex else zIndex + nodeLimit
@@ -67,9 +68,9 @@ node = React.defineView name $ \(ref, n) -> case n ^. Node.mode of
             , "className" $= Style.prefixFromList ( [ "node" , (if isCollapsed n then  "node--collapsed" else "node--expanded") ]
                                                             ++ (if n ^. Node.isSelected  then ["node--selected"] else []) )
             , "style"     @= Aeson.object [ "zIndex" Aeson..= show z ]
-            , onMouseDown   $ handleMouseDown ref nodeId
-            , onClick       $ \_ m -> dispatch ref $ UI.NodeEvent $ Node.Select m nodeId
-            , onDoubleClick $ \e _ -> stopPropagation e : (dispatch ref $ UI.NodeEvent $ Node.Enter nodeId)
+            , onMouseDown   $ handleMouseDown ref nodeLoc
+            , onClick       $ \_ m -> dispatch ref $ UI.NodeEvent $ Node.Select m nodeLoc
+            , onDoubleClick $ \e _ -> stopPropagation e : (dispatch ref $ UI.NodeEvent $ Node.Enter nodeLoc)
             ] $ do
             svg_
                 [ "className" $= Style.prefix "node__text"
@@ -80,13 +81,13 @@ node = React.defineView name $ \(ref, n) -> case n ^. Node.mode of
                     ] $ do
                     text_
                         [ "key"         $= "expressionText"
-                        , onDoubleClick $ \e _ -> stopPropagation e : dispatch ref (UI.NodeEvent $ Node.EditExpression nodeId)
+                        , onDoubleClick $ \e _ -> stopPropagation e : dispatch ref (UI.NodeEvent $ Node.EditExpression nodeLoc)
                         , "className"   $= Style.prefixFromList [ "node__name", "node__name--expression", "noselect" ]
                         , "y"           $= "-16"
                         ] $ elemString . convert $ n ^. Node.expression
                     text_
                         [ "key"         $= "nameText"
-                        , onDoubleClick $ \e _ -> stopPropagation e : dispatch ref (UI.NodeEvent $ Node.EditExpression nodeId)
+                        , onDoubleClick $ \e _ -> stopPropagation e : dispatch ref (UI.NodeEvent $ Node.EditExpression nodeLoc)
                         , "className"   $= Style.prefixFromList [ "node__name", "noselect" ]
                         ] $ elemString $ convert $ Prop.fromNode n ^. Prop.name
             nodeBody_ ref n
@@ -108,7 +109,7 @@ nodeBody_ ref model = React.viewWithSKey nodeBody "node-body" (ref, model) mempt
 
 nodeBody :: ReactView (Ref App, ExpressionNode)
 nodeBody = React.defineView objNameBody $ \(ref, n) ->
-    let nodeId = n ^. Node.nodeId
+    let nodeLoc = n ^. Node.nodeLoc
     in div_
         [ "key"       $= "nodeBody"
         , "className" $= Style.prefixFromList [ "node__body", "node-translate" ]
@@ -123,7 +124,7 @@ nodeBody = React.defineView objNameBody $ \(ref, n) ->
                 Node.Expanded Node.Controls      -> nodeProperties_ ref $ Prop.fromNode n
                 Node.Expanded Node.Editor        -> multilineField_ [] "editor"
                     $ Field.mk ref (fromMaybe def $ n ^. Node.code)
-                    & Field.onCancel .~ Just (UI.NodeEvent . Node.SetCode nodeId)
+                    & Field.onCancel .~ Just (UI.NodeEvent . Node.SetCode nodeLoc)
                 _                                -> ""
 
 nodeVisualizations_ :: Ref App -> ExpressionNode -> ReactElementM ViewEventHandler ()
@@ -131,7 +132,7 @@ nodeVisualizations_ ref model = React.viewWithSKey nodeVisualizations objNameVis
 
 nodeVisualizations :: ReactView (Ref App, ExpressionNode)
 nodeVisualizations = React.defineView objNameVis $ \(ref, n) ->
-    let nodeId = n ^. Node.nodeId
+    let nodeLoc = n ^. Node.nodeLoc
     in div_
         [ "key"       $= "shortValue"
         , "className" $= Style.prefixFromList [ "node-translate", "noselect" ]
@@ -140,7 +141,7 @@ nodeVisualizations = React.defineView objNameVis $ \(ref, n) ->
 --    div_
 --        [ "key"       $= "visualizations"
 --        , "className" $= Style.prefixFromList [ "node__visualisations", "node-translate" ]
---        ] $ forM_ (n ^. Node.value) $ visualization_ ref nodeId def
+--        ] $ forM_ (n ^. Node.value) $ visualization_ ref nodeLoc def
 
 nodePorts_ :: Ref App -> ExpressionNode -> ReactElementM ViewEventHandler ()
 nodePorts_ ref model = React.viewWithSKey nodePorts objNamePorts (ref, model) mempty
@@ -148,9 +149,10 @@ nodePorts_ ref model = React.viewWithSKey nodePorts objNamePorts (ref, model) me
 nodePorts :: ReactView (Ref App, ExpressionNode)
 nodePorts = React.defineView objNamePorts $ \(ref, n) ->
     let nodeId     = n ^. Node.nodeId
+        nodeLoc    = n ^. Node.nodeLoc
         nodePorts' = Map.elems $ n ^. Node.ports
         ports p   = forM_ p $ \port -> port_ ref
-                                             nodeId
+                                             nodeLoc
                                              port
                                             (if isInPort $ port ^. Port.portId then countArgPorts n else countOutPorts n)
                                             (isAll (port ^. Port.portId) && countArgPorts n + countOutPorts n == 1)
@@ -184,7 +186,7 @@ nodePorts = React.defineView objNamePorts $ \(ref, n) ->
                 ports $ filter (\port -> (port ^. Port.portId) == InPortId Self) nodePorts'
             else do
                 ports $ filter (\port -> (port ^. Port.portId) == InPortId Self) nodePorts'
-                forM_  (filter (\port -> (port ^. Port.portId) /= InPortId Self) nodePorts') $ \port -> portExpanded_ ref nodeId port
+                forM_  (filter (\port -> (port ^. Port.portId) /= InPortId Self) nodePorts') $ \port -> portExpanded_ ref nodeLoc port
 
 nodeContainer_ :: Ref App -> [Subgraph] -> ReactElementM ViewEventHandler ()
 nodeContainer_ ref subgraphs = React.viewWithSKey nodeContainer "node-container" (ref, subgraphs) mempty

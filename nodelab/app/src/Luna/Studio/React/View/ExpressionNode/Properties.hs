@@ -23,7 +23,7 @@ objName = "node-properties"
 
 nodeProperties :: ReactView (Ref App, NodeProperties)
 nodeProperties = React.defineView objName $ \(ref, p) -> do
-    let nodeId = p ^. Prop.nodeId
+    let nodeLoc = p ^. Prop.nodeLoc
     div_
         [ "key"       $= "properties"
         , "className" $= Style.prefixFromList [ "node__properties", "noselect" ]
@@ -31,18 +31,18 @@ nodeProperties = React.defineView objName $ \(ref, p) -> do
         div_
             [ "key"       $= "value"
             , "className" $= Style.prefixFromList [ "row", "row--output-name" ]
-            , onDoubleClick $ \_ _ -> dispatch ref $ UI.NodeEvent $ Node.NameEditStart nodeId
+            , onDoubleClick $ \_ _ -> dispatch ref $ UI.NodeEvent $ Node.NameEditStart nodeLoc
             ] $
             case p ^. Prop.nameEdit of
                 Just name ->
                     singleField_ ["id"  $= nameLabelId] "name-label"
                         $ Field.mk ref name
-                        & Field.onCancel .~ Just (const $ UI.NodeEvent $ Node.NameDiscard nodeId)
-                        & Field.onAccept .~ Just (const $ UI.NodeEvent $ Node.NameApply nodeId)
-                        & Field.onEdit   .~ Just (UI.NodeEvent . flip Node.NameChange nodeId)
+                        & Field.onCancel .~ Just (const $ UI.NodeEvent $ Node.NameDiscard nodeLoc)
+                        & Field.onAccept .~ Just (const $ UI.NodeEvent $ Node.NameApply nodeLoc)
+                        & Field.onEdit   .~ Just (UI.NodeEvent . flip Node.NameChange nodeLoc)
                 Nothing ->
-                    elemString $ convert $ p ^. Prop.name
-        forM_ (p ^. Prop.ports) $ portControl_ ref nodeId (p ^. Prop.isLiteral)
+                    mempty --elemString $ convert $ p ^. Prop.name TODO: move to expression name
+        forM_ (p ^. Prop.ports) $ portControl_ ref nodeLoc (p ^. Prop.isLiteral)
         div_
             [ "key"       $= "display-results"
             , "className" $= Style.prefix "row"
@@ -56,10 +56,11 @@ nodeProperties = React.defineView objName $ \(ref, p) -> do
                 , "className" $= Style.prefix "value"
                 ] $ do
                 let val = p ^. Prop.visualizationsEnabled
-                button_
-                    [ "key" $= "button"
-                    , onClick $ \_ _ -> dispatch ref $ UI.NodeEvent $ Node.DisplayResultChanged (not val) nodeId
-                    ] $ elemString $ if val then "yes" else "no"
+                div_
+                    [ "key" $= "ctrl-switch"
+                    , "className" $= Style.prefixFromList (["ctrl-switch"] ++ if val then ["ctrl-switch--on"] else ["ctrl-switch--off"])
+                    , onClick $ \_ _ -> dispatch ref $ UI.NodeEvent $ Node.DisplayResultChanged (not val) nodeLoc
+                    ] mempty
         div_
             [ "key" $= "execution-time"
             , "className" $= Style.prefix "row"

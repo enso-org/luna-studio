@@ -1,7 +1,8 @@
 module Luna.Studio.React.Model.Searcher where
 
 import           Data.Position                  (Position)
-import           Empire.API.Data.Node           (Node, NodeId)
+import           Empire.API.Data.Node           (Node)
+import           Empire.API.Data.NodeLoc        (NodeLoc)
 import           Luna.Studio.Prelude
 import           Text.ScopeSearcher.QueryResult (QueryResult)
 import qualified Text.ScopeSearcher.QueryResult as Result
@@ -16,7 +17,7 @@ data Searcher = Searcher
       , _selected      :: Int
       , _mode          :: Mode
       , _input         :: Text
-      , _nodeId        :: Maybe NodeId
+      , _nodeLoc       :: Maybe NodeLoc
       , _rollbackReady :: Bool
       } deriving (Eq, Generic, Show)
 

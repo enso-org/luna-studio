@@ -2,14 +2,14 @@
 module Luna.Studio.React.Model.Node.ExpressionNodeProperties where
 
 import           Luna.Studio.Prelude
-import           Luna.Studio.React.Model.Node.ExpressionNode (ExpressionNode, NodeId)
+import           Luna.Studio.React.Model.Node.ExpressionNode (ExpressionNode, NodeLoc)
 import qualified Luna.Studio.React.Model.Node.ExpressionNode as Node
 import           Luna.Studio.React.Model.Port                (PortsMap)
 
 
 
 data NodeProperties = NodeProperties
-                    { _nodeId                :: NodeId
+                    { _nodeLoc               :: NodeLoc
                     , _ports                 :: PortsMap
                     , _name                  :: Text
                     , _isLiteral             :: Bool
@@ -21,7 +21,7 @@ data NodeProperties = NodeProperties
 makeLenses ''NodeProperties
 
 fromNode :: ExpressionNode -> NodeProperties
-fromNode node = NodeProperties (node ^. Node.nodeId)
+fromNode node = NodeProperties (node ^. Node.nodeLoc)
                                (node ^. Node.ports)
                                (node ^. Node.name)
                                (Node.isLiteral node)

@@ -1,6 +1,9 @@
 module Luna.Studio.Action.State.Graph where
 
-import           Empire.API.Data.GraphLocation (GraphLocation)
+import qualified Data.List                     as List
+import           Empire.API.Data.Breadcrumb    (Breadcrumb (Breadcrumb), items)
+import           Empire.API.Data.GraphLocation (GraphLocation, breadcrumb)
+import           Empire.API.Data.NodeLoc       (NodePath)
 import           Luna.Studio.Action.Command    (Command)
 import           Luna.Studio.Batch.Workspace   (currentLocation, isGraphLoaded)
 import           Luna.Studio.Prelude
@@ -15,3 +18,10 @@ isCurrentLocationAndGraphLoaded location = do
     icl <- isCurrentLocation location
     igl <- use $ workspace . isGraphLoaded
     return $ icl && igl
+
+inCurrentLocation :: GraphLocation -> (NodePath -> Command State ()) -> Command State ()
+inCurrentLocation location action =
+    whenM (use $ workspace . isGraphLoaded) $ do
+        currentBc <- use (workspace . currentLocation . breadcrumb . items)
+        withJust (List.stripPrefix currentBc $ location ^. breadcrumb . items) $
+            action . convert . Breadcrumb

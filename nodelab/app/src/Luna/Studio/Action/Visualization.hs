@@ -10,7 +10,7 @@ module Luna.Studio.Action.Visualization
 import           React.Flux                                  (MouseEvent)
 
 import           Data.Position                               (Position)
-import           Empire.API.Data.Node                        (NodeId)
+import           Empire.API.Data.NodeLoc                     (NodeLoc)
 import           Luna.Studio.Action.Command                  (Command)
 import           Luna.Studio.Action.State.Action             (beginActionWithKey, continueActionWithKey, removeActionFromState,
                                                               updateActionWithKey)
@@ -31,34 +31,34 @@ instance Action (Command State) VisualizationDrag where
     end _    = removeActionFromState visualizationDragAction
 
 
-pin :: NodeId -> Int -> Command State ()
-pin nid visIx = do
-    mayNode <- getExpressionNode nid
+pin :: NodeLoc -> Int -> Command State ()
+pin nl visIx = do
+    mayNode <- getExpressionNode nl
     withJust mayNode $ \node ->
         modifyNodeEditor $
-            visualizations %= ((nid, visIx, node ^. position) :)
+            visualizations %= ((nl, visIx, node ^. position) :)
 
-unpin :: NodeId -> Int -> Position -> Command State ()
-unpin nid visIx pos =
-    modifyNodeEditor $ visualizations %= delete (nid, visIx, pos)
+unpin :: NodeLoc -> Int -> Position -> Command State ()
+unpin nl visIx pos =
+    modifyNodeEditor $ visualizations %= delete (nl, visIx, pos)
 
-startDrag :: NodeId -> Int -> Position -> MouseEvent -> Command State ()
-startDrag nid visIx pos evt = do
-    begin $ VisualizationDrag nid visIx pos
-    moveTo evt nid visIx pos
+startDrag :: NodeLoc -> Int -> Position -> MouseEvent -> Command State ()
+startDrag nl visIx pos evt = do
+    begin $ VisualizationDrag nl visIx pos
+    moveTo evt nl visIx pos
 
 drag :: MouseEvent -> VisualizationDrag -> Command State ()
-drag evt (VisualizationDrag nid visIx pos) = moveTo evt nid visIx pos
+drag evt (VisualizationDrag nl visIx pos) = moveTo evt nl visIx pos
 
 stopDrag :: MouseEvent -> VisualizationDrag ->  Command State ()
-stopDrag evt (VisualizationDrag nid visIx pos) = do
-    moveTo evt nid visIx pos
+stopDrag evt (VisualizationDrag nl visIx pos) = do
+    moveTo evt nl visIx pos
     removeActionFromState visualizationDragAction
 
-moveTo :: MouseEvent -> NodeId -> Int -> Position -> Command State ()
-moveTo evt nid visIx oldPos = do
+moveTo :: MouseEvent -> NodeLoc -> Int -> Position -> Command State ()
+moveTo evt nl visIx oldPos = do
     pos <- workspacePosition evt
-    update $ VisualizationDrag nid visIx pos
+    update $ VisualizationDrag nl visIx pos
     modifyNodeEditor $ do
-        visualizations %= delete (nid, visIx, oldPos)
-        visualizations %= ((nid, visIx, pos) :)
+        visualizations %= delete (nl, visIx, oldPos)
+        visualizations %= ((nl, visIx, pos) :)

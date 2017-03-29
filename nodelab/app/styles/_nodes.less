@@ -239,3 +239,40 @@
     fill:            none;
     stroke-linejoin: round;
 }
+
+// controls
+
+.luna-ctrl-switch {
+    cursor: pointer;
+    height: 8rem;
+    width: 16rem;
+    background: #111;
+    border-radius: 1000px;
+    position: relative;
+    top: 4rem;
+    display: flex;
+    &::after {
+        top: -2rem;
+        position: relative;
+        display: block;
+        content: " ";
+        width: 12rem;
+        height: 12rem;
+        background: #777;
+        border-radius: 1000px;
+    }
+}
+.luna-ctrl-switch--on {
+    background: #888;
+    &::after {
+        background: #bbb;
+        left: 6rem;
+    }
+}
+.luna-ctrl-switch--off {
+    background: #3a3a3a;
+    &::after {
+        background: #666;
+        left: -2rem;
+    }
+}

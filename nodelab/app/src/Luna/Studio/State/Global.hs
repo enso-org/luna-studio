@@ -7,7 +7,7 @@ import           Data.Map                             (Map)
 import           Data.Set                             (Set)
 import           Data.UUID.Types                      (UUID)
 import           Data.Word                            (Word8)
-import           Empire.API.Data.Node                 (NodeId)
+import           Empire.API.Data.NodeLoc              (NodeLoc)
 import           Empire.API.Graph.CollaborationUpdate (ClientId)
 import           Luna.Studio.Action.Command           (Command)
 import           Luna.Studio.Batch.Workspace
@@ -28,7 +28,7 @@ data State = State
         , _actions              :: ActionState
         , _collaboration        :: Collaboration.State
         , _debug                :: DebugState
-        , _selectionHistory     :: [Set NodeId]
+        , _selectionHistory     :: [Set NodeLoc]
         , _workspace            :: Workspace
         , _lastEventTimestamp   :: DateTime
         , _random               :: StdGen

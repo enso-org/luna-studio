@@ -17,7 +17,7 @@ import           Data.JSString
 import           GHCJS.Foreign.Callback
 import           GHCJS.Marshal.Pure     (PFromJSVal (..), PToJSVal (..))
 import           GHCJS.Types            (IsJSVal)
-import           Luna.Studio.Prelude
+import           Internal.Prelude
 
 import           Control.DeepSeq (force)
 

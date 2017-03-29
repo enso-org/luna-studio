@@ -14,7 +14,6 @@ module Luna.Studio.Action.Basic
     , focusNode
     , focusNodes
     , loadGraph
-    , loadProject
     , localAddConnection
     , localAddConnections
     , localAddEdgeNode
@@ -77,6 +76,7 @@ module Luna.Studio.Action.Basic
     , selectNodes
     , selectPreviousNodes
     , setEdgeMode
+    , setEdgePortMode
     , setNodeCode
     , setNodeExpression
     , setNodeMeta
@@ -114,7 +114,7 @@ import           Luna.Studio.Action.Basic.FocusNode           (focusNode, focusN
 import           Luna.Studio.Action.Basic.Merge               (localMerge, localUnmerge)
 import           Luna.Studio.Action.Basic.ModifyCamera        (modifyCamera, resetCamera)
 import           Luna.Studio.Action.Basic.MovePort            (localMovePort, movePort)
-import           Luna.Studio.Action.Basic.ProjectManager      (loadGraph, loadProject, navigateToGraph, saveCurrentLocation)
+import           Luna.Studio.Action.Basic.ProjectManager      (loadGraph, navigateToGraph, saveCurrentLocation)
 import           Luna.Studio.Action.Basic.RemoveConnection    (localRemoveConnection, localRemoveConnections,
                                                                localRemoveConnectionsBetweenNodes, removeConnection, removeConnections,
                                                                removeConnectionsBetweenNodes)
@@ -136,6 +136,7 @@ import           Luna.Studio.Action.Basic.SetNodeMeta         (localMoveNode, lo
 import           Luna.Studio.Action.Basic.SetNodeMode         (toggleSelectedNodesMode, toggleSelectedNodesUnfold)
 import           Luna.Studio.Action.Basic.SetNodeResult       (setNodeProfilingData, setNodeValue)
 import           Luna.Studio.Action.Basic.SetPortDefault      (localSetPortDefault, setPortDefault)
+import           Luna.Studio.Action.Basic.SetPortMode         (setEdgePortMode)
 import           Luna.Studio.Action.Basic.UpdateCollaboration (updateClient, updateCollaboration)
 import           Luna.Studio.Action.Basic.UpdateConnection    (localUpdateConnection, updateConnection)
 import           Luna.Studio.Action.Basic.UpdateNode          (localUpdateEdgeNode, localUpdateEdgeNodes, localUpdateExpressionNode,

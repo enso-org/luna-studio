@@ -2,7 +2,7 @@
 module Luna.Studio.React.View.Connection where
 
 import           Data.Position                      (Position, averagePosition, x, y)
-import           Empire.API.Data.PortRef            (InPortRef)
+import           Luna.Studio.Data.PortRef           (InPortRef)
 import qualified Luna.Studio.Event.UI               as UI
 import           Luna.Studio.Prelude
 import           Luna.Studio.React.Event.Connection (ModifiedEnd (Destination, Source))

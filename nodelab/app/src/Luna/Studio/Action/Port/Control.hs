@@ -8,13 +8,13 @@ module Luna.Studio.Action.Port.Control
 
 import           Data.ScreenPosition                 (ScreenPosition, x)
 import           Empire.API.Data.PortDefault         (PortDefault (Constant), Value (DoubleValue, IntValue))
-import           Empire.API.Data.PortRef             (AnyPortRef)
 import qualified JS.UI                               as JS
 import           Luna.Studio.Action.Basic            (localSetPortDefault)
 import qualified Luna.Studio.Action.Batch            as Batch
 import           Luna.Studio.Action.Command          (Command)
 import           Luna.Studio.Action.State.Action     (beginActionWithKey, continueActionWithKey, removeActionFromState, updateActionWithKey)
 import           Luna.Studio.Action.State.NodeEditor (getPortDefault)
+import           Luna.Studio.Data.PortRef            (AnyPortRef)
 import           Luna.Studio.Prelude
 import           Luna.Studio.State.Action            (Action (begin, continue, end, update), InitValue (Continous, Discrete),
                                                       SliderDrag (SliderDrag), sliderDragAction, sliderDragInitValue, sliderDragPortRef,

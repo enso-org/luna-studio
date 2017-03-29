@@ -7,9 +7,9 @@ module JS.GraphLocation (
 import           Data.Aeson                  (decode, encode)
 import           Data.ByteString.Lazy.Char8  as ByteString
 import           JavaScript.Web.Storage      (getItem, localStorage, setItem)
-import           Luna.Studio.Prelude
+import           Internal.Prelude
 
-import           Empire.API.Data.GraphLocation (GraphLocation )
+import           Empire.API.Data.GraphLocation (GraphLocation)
 
 
 

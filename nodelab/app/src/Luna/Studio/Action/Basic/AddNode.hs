@@ -22,27 +22,29 @@ import           Luna.Studio.Action.State.NodeEditor     (getSelectedNodes)
 import qualified Luna.Studio.Action.State.NodeEditor     as NodeEditor
 import           Luna.Studio.Action.UUID                 (getUUID)
 import           Luna.Studio.Prelude
-import           Luna.Studio.React.Model.Node            (EdgeNode, ExpressionNode, Node (Edge, Expression), nodeId, ports)
+import           Luna.Studio.React.Model.Node            (EdgeNode, ExpressionNode, Node (Edge, Expression), NodeLoc (NodeLoc), NodePath,
+                                                          nodeLoc, ports)
 import           Luna.Studio.React.Model.Port            (Mode (Invisible), ensureVisibility, mode)
 import           Luna.Studio.State.Global                (State)
 
 
-addNode :: Position -> Text -> Command State ()
-addNode nodePos expr = do
+addNode :: NodePath -> Position -> Text -> Command State ()
+addNode parentPath nodePos expr = do
     selected <- getSelectedNodes
     nid      <- getUUID
     let nodeType    = Empire.ExpressionNode expr
         snappedPos  = snap nodePos
         nodeMeta    = NodeMeta (toTuple snappedPos) True
         connectTo   = if length selected == 1
-                      then view nodeId <$> listToMaybe selected
+                      then view nodeLoc <$> listToMaybe selected
                       else Nothing
         defPortsMap = Map.fromList [ (InPortId  (Arg 0), Port (InPortId  (Arg 0)) "" TStar NotConnected) ,
                                      (OutPortId All    , Port (OutPortId All    ) "" TStar NotConnected) ]
-        node        = convert $ Empire.Node nid def nodeType False defPortsMap nodeMeta def
+        node        = Expression $ convert (parentPath,  Empire.Node nid def nodeType False defPortsMap nodeMeta def, expr)
+        nl          = NodeLoc parentPath nid
     localAddNode node
-    selectNode nid
-    Batch.addNode nid expr snappedPos True connectTo
+    selectNode nl
+    Batch.addNode nl expr snappedPos True connectTo
     GA.sendEvent $ GA.AddNode $ if isJust connectTo then GA.AutoConnect else GA.Simple
 
 localAddExpressionNodes :: [ExpressionNode] -> Command State ()
@@ -66,5 +68,5 @@ localAddExpressionNode node = do
     let selfMode = if selfPortVis then ensureVisibility else const Invisible
         node' = node & ports . ix (InPortId Self) . mode %~ selfMode
     NodeEditor.addExpressionNode node'
-    void . redrawConnectionsForNode $ node ^. nodeId
-    focusNode $ node ^. nodeId
+    void . redrawConnectionsForNode $ node ^. nodeLoc
+    focusNode $ node ^. nodeLoc
