@@ -5,7 +5,7 @@
 /////////////////////////////
 
 .luna-blur {
-    backdrop-filter: blur(0);
+    //backdrop-filter: blur(0);
     background:      rgba(255,255,255,0);
     position:        absolute;
     z-index:        -1;
@@ -116,9 +116,11 @@
         left:   0;
     }
     .luna-blur {
-        backdrop-filter: blur(12px);
-        background:      rgba(40,40,40,.5);
+        //backdrop-filter: blur(12px);
+        //background:      rgba(40,40,40,.5);
+        background:      #222;
         border-radius:   @borderRadius;
+        box-shadow:      0 0 10px @colorBackground;
     }
     .luna-node__properties-crop {
         max-height: 110rem;
@@ -174,7 +176,8 @@
         position:        relative;
         width:           @expandedNodeWidth - 2 * @expandedNodePadding;
     }
-    .luna-row--output-name {
+    .luna-row--first {
+        height: 16rem;
         justify-content: flex-end;
     }
 }
@@ -275,4 +278,19 @@
         background: #666;
         left: -2rem;
     }
+}
+
+/////////////////////////////
+//          monad          //
+/////////////////////////////
+
+.luna-node__icons {
+
+}
+.luna-icon--show {
+    x: -5px;
+    y: -100px;
+    width: 10px;
+    height: 10px;
+    fill: red;
 }

@@ -92,6 +92,7 @@ node = React.defineView name $ \(ref, n) -> case n ^. Node.mode of
                         , "className"   $= Style.prefixFromList [ "node__name", "node__name--expression", "noselect" ]
                         , "y"           $= "-16"
                         ] $ elemString . convert $ n ^. Node.expression
+
                     if n ^. Node.isNameEdited then
                         term "foreignObject"
                             [ "key"    $= "nameEdit"
@@ -107,6 +108,15 @@ node = React.defineView name $ \(ref, n) -> case n ^. Node.mode of
                             , onDoubleClick $ \e _ -> stopPropagation e : dispatch ref (UI.NodeEvent $ Node.NameEditStart nodeLoc)
                             , "className"   $= Style.prefixFromList [ "node__name", "noselect" ]
                             ] $ elemString $ convert $ n ^. Node.name
+                    g_
+                        [ "className" $= Style.prefix "node__icons"
+                        ] $ do
+                        let val = Prop.fromNode n ^. Prop.visualizationsEnabled
+                        rect_
+                            [ "key" $= "ctrlSwitch"
+                            , "className" $= Style.prefixFromList (["icon", "icon--show"] ++ if val then ["icon--show--on"] else ["icon--show--off"])
+                            , onClick $ \_ _ -> dispatch ref $ UI.NodeEvent $ Node.DisplayResultChanged (not val) nodeLoc
+                            ] mempty
             nodeBody_ ref n
             nodeVisualizations_ ref n
             nodePorts_ ref n
@@ -210,13 +220,17 @@ nodeContainer_ ref subgraphs = React.viewWithSKey nodeContainer "node-container"
 
 nodeContainer :: ReactView (Ref App, [Subgraph])
 nodeContainer = React.defineView name $ \(ref, subgraphs) ->
-    div_ $ forM_ subgraphs $ \subgraph -> do
-      let sidebars     = subgraph ^. Node.sidebarNodes . to HashMap.elems
-          nodes        = subgraph ^. Node.expressionNodes . to HashMap.elems
-          lookupNode m = ( m ^. MonadPath.monadType
-                         , m ^. MonadPath.path . to (mapMaybe $ flip HashMap.lookup $ subgraph ^. Node.expressionNodes))
-          monads       = map lookupNode $ subgraph ^. Node.monads
-      div_ $ do
-              forM_ nodes $ node_ ref
-              svgPlanes_ $
-                  planeMonads_ $ monads_ monads
+div_
+    [ "className" $= Style.prefix "subgraphs"
+    ] $ forM_ subgraphs $ \subgraph -> do
+    let sidebars     = subgraph ^. Node.sidebarNodes . to HashMap.elems
+        nodes        = subgraph ^. Node.expressionNodes . to HashMap.elems
+        lookupNode m = ( m ^. MonadPath.monadType
+                       , m ^. MonadPath.path . to (mapMaybe $ flip HashMap.lookup $ subgraph ^. Node.expressionNodes))
+        monads       = map lookupNode $ subgraph ^. Node.monads
+    div_
+        [ "className" $= Style.prefix "subgraph"
+        ] $ do
+        forM_ nodes $ node_ ref
+        svgPlanes_ $
+        planeMonads_ $ monads_ monads

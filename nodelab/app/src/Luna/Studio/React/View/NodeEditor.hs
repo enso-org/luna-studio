@@ -72,8 +72,6 @@ nodeEditor = React.defineView name $ \(ref, ne) -> do
             elemString $ ":root { font-size: " <> show scale <> "px }"
             elemString $ ":root { --scale: "   <> show scale <> " }"
 
-            --elemString $ ".luna-selection  { box-shadow: 0 0 0 " <> show (0.52/(scale**1.5)) <> "px orange !important }"
-
             elemString $ ".luna-camera-scale { transform: "     <> showCameraScale     camera <> " }"
             elemString $ ".luna-camera-translate { transform: " <> showCameraTranslate camera <> " }"
             elemString $ ".luna-camera-transform { transform: " <> showCameraMatrix    camera <> " }"
