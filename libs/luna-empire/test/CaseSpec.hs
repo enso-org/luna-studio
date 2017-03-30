@@ -23,7 +23,7 @@ import           Empire.ASTOps.Print           (printExpression)
 import qualified Empire.ASTOps.Read            as ASTRead
 import qualified Empire.Commands.AST           as AST (isTrivialLambda, dumpGraphViz)
 import qualified Empire.Commands.Graph         as Graph (addNode, connect, getGraph, getNodes,
-                                                         getConnections, getNodeIdSequence, removeNodes, withGraph,
+                                                         getConnections, removeNodes, withGraph,
                                                          renameNode, disconnect, addPort, movePort,
                                                          removePort, renamePort)
 import qualified Empire.Commands.GraphBuilder    as GraphBuilder

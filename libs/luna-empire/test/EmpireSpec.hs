@@ -21,7 +21,7 @@ import           Empire.ASTOps.Print             (printExpression)
 import qualified Empire.ASTOps.Read              as ASTRead
 import qualified Empire.Commands.AST             as AST (isTrivialLambda, dumpGraphViz)
 import qualified Empire.Commands.Graph           as Graph (addNode, addPort, connect, disconnect, getConnections, getGraph,
-                                                           getNodeIdSequence, getNodes, movePort, removeNodes, removePort, renameNode,
+                                                           getNodes, movePort, removeNodes, removePort, renameNode,
                                                            renamePort, setNodeExpression, setNodeMeta, withGraph)
 import qualified Empire.Commands.GraphBuilder    as GraphBuilder
 import           Empire.Commands.Library         (withLibrary)
@@ -828,7 +828,7 @@ spec = around withChannels $ parallel $ do
             u1 <- mkUUID
             res <- evalEmp env $ do
                 Graph.addNode top u1 "1" def
-                Graph.getNodeIdSequence top
+                Graph.withGraph top $ runASTOp $ GraphBuilder.getNodeIdSequence
             withResult res $ \nodeSeq -> do
                 nodeSeq `shouldMatchList` [u1]
         it "adds three nodes in line" $ \env -> do
@@ -839,7 +839,7 @@ spec = around withChannels $ parallel $ do
                 Graph.addNode top u1 "1" $ NodeMeta (10, 10) False
                 Graph.addNode top u2 "2" $ NodeMeta (10, 20) False
                 Graph.addNode top u3 "3" $ NodeMeta (10, 30) False
-                Graph.getNodeIdSequence top
+                Graph.withGraph top $ runASTOp $ GraphBuilder.getNodeIdSequence
             withResult res $ \nodeSeq -> do
                 nodeSeq `shouldMatchList` [u1, u2, u3]
         it "adds three nodes in reverse order" $ \env -> do
@@ -850,7 +850,7 @@ spec = around withChannels $ parallel $ do
                 Graph.addNode top u1 "1" $ NodeMeta (10, 30) False
                 Graph.addNode top u2 "2" $ NodeMeta (10, 20) False
                 Graph.addNode top u3 "3" $ NodeMeta (10, 10) False
-                Graph.getNodeIdSequence top
+                Graph.withGraph top $ runASTOp $ GraphBuilder.getNodeIdSequence
             withResult res $ \nodeSeq -> do
                 nodeSeq `shouldMatchList` [u3, u2, u1]
         it "updates sequence after node removal" $ \env -> do
@@ -862,7 +862,7 @@ spec = around withChannels $ parallel $ do
                 Graph.addNode top u2 "2" $ NodeMeta (10, 20) False
                 Graph.addNode top u3 "3" $ NodeMeta (10, 10) False
                 Graph.removeNodes top [u2]
-                Graph.getNodeIdSequence top
+                Graph.withGraph top $ runASTOp $ GraphBuilder.getNodeIdSequence
             withResult res $ \nodeSeq -> do
                 nodeSeq `shouldMatchList` [u3, u1]
         it "updates sequence after node meta update" $ \env -> do
@@ -876,7 +876,7 @@ spec = around withChannels $ parallel $ do
                 Graph.setNodeMeta top u3 $ NodeMeta (10, 10) False
                 Graph.setNodeMeta top u2 $ NodeMeta (20, 30) False
                 Graph.setNodeMeta top u1 $ NodeMeta (30, 20) False
-                Graph.getNodeIdSequence top
+                Graph.withGraph top $ runASTOp $ GraphBuilder.getNodeIdSequence
             withResult res $ \nodeSeq -> do
                 nodeSeq `shouldMatchList` [u3, u2, u1]
         it "adds one node inside lambda" $ \env -> do
@@ -886,7 +886,7 @@ spec = around withChannels $ parallel $ do
                 Graph.addNode top u1 "foo = a: a" def
                 let loc = top |> u1
                 Graph.addNode loc u2 "4" def
-                Graph.getNodeIdSequence loc
+                Graph.withGraph loc $ runASTOp $ GraphBuilder.getNodeIdSequence
             withResult res $ \idSeq -> do
                 idSeq    `shouldBe` [u2]
         it "adds two nodes inside" $ \env -> do
@@ -898,7 +898,7 @@ spec = around withChannels $ parallel $ do
                 let loc = top |> u1
                 Graph.addNode loc u2 "4" $ NodeMeta (10, 10) False
                 Graph.addNode loc u3 "6" $ NodeMeta (10, 20) False
-                Graph.getNodeIdSequence loc
+                Graph.withGraph loc $ runASTOp $ GraphBuilder.getNodeIdSequence
             withResult res $ \idSeq -> do
                 idSeq    `shouldBe` [u2, u3]
         it "adds one node inside and removes it" $ \env -> do
@@ -909,7 +909,7 @@ spec = around withChannels $ parallel $ do
                 let loc = top |> u1
                 Graph.addNode loc u2 "1" def
                 Graph.removeNodes loc [u2]
-                Graph.getNodeIdSequence loc
+                Graph.withGraph loc $ runASTOp $ GraphBuilder.getNodeIdSequence
             withResult res $ \idSeq -> do
                 idSeq    `shouldBe` []
     describe "pattern match" $ do

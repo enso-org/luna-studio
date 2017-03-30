@@ -6,6 +6,7 @@
 
 module Empire.Commands.GraphBuilder (
     buildConnections
+  , buildMonads
   , buildNode
   , buildNodeTypecheckUpdate
   , buildNodes
@@ -16,6 +17,7 @@ module Empire.Commands.GraphBuilder (
   , buildOutputEdgeTypecheckUpdate
   , decodeBreadcrumbs
   , getEdgePortMapping
+  , getNodeIdSequence
   , getNodeName
   , nodeConnectedToOutput
   ) where
@@ -54,7 +56,7 @@ import qualified Empire.ASTOps.Read                as ASTRead
 import qualified Empire.Commands.AST               as AST
 import qualified Empire.Commands.GraphUtils        as GraphUtils
 import           Empire.Data.AST                   (NodeRef, astExceptionToException,
-                                                    astExceptionFromException)
+                                                    astExceptionFromException, NotUnifyException)
 import           Empire.Data.Layers                (Marker, TypeLayer)
 import           Empire.Empire
 
@@ -92,10 +94,41 @@ buildNodes = do
 
 buildMonads :: ASTOp m => m [MonadPath]
 buildMonads = do
-    allNodeIds <- uses Graph.breadcrumbHierarchy BH.topLevelIDs
-    let monad1 = MonadPath (TCons "MonadMock1" []) (List.sort allNodeIds) --FIXME[pm] provide real data
-        monad2 = MonadPath (TCons "MonadMock2" []) allNodeIds
-    return [monad1, monad2]
+    allNodeIds <- getNodeIdSequence
+    ioPath     <- filterM doesIO allNodeIds
+    let ioMonad = MonadPath (TCons "IO" []) ioPath
+    return [ioMonad]
+
+doesIO :: ASTOp m => NodeId -> m Bool
+doesIO node = do
+    ref <- ASTRead.getASTPointer node
+    tp  <- IR.getLayer @TypeLayer ref >>= IR.source
+    IR.matchExpr tp $ \case
+        Monadic _ m -> hasIO =<< IR.source m
+        _           -> return False
+
+hasIO :: ASTOp m => NodeRef -> m Bool
+hasIO ref = IR.matchExpr ref $ \case
+    Cons n _  -> return $ n == "IO"
+    Unify l r -> (||) <$> (hasIO =<< IR.source l) <*> (hasIO =<< IR.source r)
+    _         -> return False
+
+
+nodeIdInsideLambda :: ASTOp m => NodeRef -> m (Maybe NodeId)
+nodeIdInsideLambda node = (ASTRead.getVarNode node >>= ASTRead.getNodeId) `catch`
+    (\(_e :: NotUnifyException) -> return Nothing)
+
+getNodeIdSequence :: ASTOp m => m [NodeId]
+getNodeIdSequence = do
+    lref <- ASTRead.getCurrentASTTarget
+    nodeSeq <- do
+        bodySeq <- case lref of
+            Just l -> ASTRead.getLambdaBodyRef l
+            _      -> preuse $ Graph.breadcrumbHierarchy . BH.body
+        case bodySeq of
+            Just b -> AST.readSeq b
+            _      -> return []
+    catMaybes <$> mapM nodeIdInsideLambda nodeSeq
 
 type EdgeNodes = (API.Node, API.Node)
 

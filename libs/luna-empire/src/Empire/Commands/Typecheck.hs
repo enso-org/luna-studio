@@ -104,11 +104,9 @@ updateNodes loc@(GraphLocation _ _ br) = zoom graph $ zoomBreadcrumb br $ do
             {-nodesCache %= Map.insert nid rep-}
 
 updateMonads :: GraphLocation -> Command InterpreterEnv ()
-updateMonads loc = do
-    allNodeIds <- uses (graph . Graph.breadcrumbHierarchy) topLevelIDs
-    let monad1 = MonadPath (TCons "MonadMock1" []) (sort allNodeIds) --FIXME[pm] provide real data
-        monad2 = MonadPath (TCons "MonadMock2" []) allNodeIds
-    Publisher.notifyMonadsUpdate loc [monad1, monad2]
+updateMonads loc@(GraphLocation _ _ br) = zoom graph $ zoomBreadcrumb br $ do
+    newMonads <- runASTOp GraphBuilder.buildMonads
+    Publisher.notifyMonadsUpdate loc newMonads
 
 updateValues :: GraphLocation -> Interpreter.LocalScope -> Command InterpreterEnv ()
 updateValues loc scope = do
@@ -134,7 +132,7 @@ run :: GraphLocation -> Command InterpreterEnv ()
 run loc = do
     std <- liftIO $ snd <$> Std.mockStdlib
     zoom graph $ runTC std
-    updateNodes loc
+    updateNodes  loc
     updateMonads loc
     scope <- zoom graph $ runInterpreter std
     mapM_ (updateValues loc) scope

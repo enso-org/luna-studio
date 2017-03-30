@@ -26,7 +26,6 @@ module Empire.Commands.Graph
     , decodeLocation
     , disconnect
     , getNodeMeta
-    , getNodeIdSequence
     , getCode
     , getGraph
     , getNodes
@@ -195,23 +194,6 @@ updateGraphSeq newSeq outputRef = do
     when (newOut /= oldSeq) $ mapM_ ASTRemove.removeSubtree oldSeq
     Graph.breadcrumbHierarchy . BH._ToplevelParent . BH.topBody .= newOut
     forM_ newOut $ (Graph.breadcrumbHierarchy . BH.body .=)
-
--- TODO[MK]: Figure out the logic of seqing and migrate to a uniform solution
-getNodeIdSequence :: GraphLocation -> Empire [NodeId]
-getNodeIdSequence loc = withGraph loc $ runASTOp $ do
-    lref <- ASTRead.getCurrentASTTarget
-    nodeSeq <- do
-        bodySeq <- case lref of
-            Just l -> ASTRead.getLambdaBodyRef l
-            _      -> preuse $ Graph.breadcrumbHierarchy . BH.body
-        case bodySeq of
-            Just b -> AST.readSeq b
-            _      -> return []
-    catMaybes <$> mapM nodeIdInsideLambda nodeSeq
-
-nodeIdInsideLambda :: ASTOp m => NodeRef -> m (Maybe NodeId)
-nodeIdInsideLambda node = (ASTRead.getVarNode node >>= ASTRead.getNodeId) `catch`
-    (\(_e :: NotUnifyException) -> return Nothing)
 
 addPort :: GraphLocation -> NodeId -> Int -> Empire Node
 addPort loc nid position = withGraph loc $ runASTOp $ do
