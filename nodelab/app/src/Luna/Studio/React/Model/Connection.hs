@@ -16,20 +16,25 @@ import           Luna.Studio.React.Model.Port (InPort, OutPort)
 
 
 type ConnectionId = InPortRef
+data Mode = Normal | Sidebar | Highlighted | Dimmed deriving (Eq, Show, Typeable, Generic)
+
+instance ToJSON Mode
 
 data Connection = Connection { _src    :: OutPortRef
                              , _dst    :: InPortRef
                              , _srcPos :: Position
                              , _dstPos :: Position
+                             , _mode   :: Mode
                              , _color  :: Color
                              } deriving (Eq, Show, Typeable, Generic)
 
 makeLenses ''Connection
 instance ToJSON Connection
 
-data CurrentConnection = CurrentConnection { _currentFrom         :: Position
-                                           , _currentTo           :: Position
-                                           , _currentColor        :: Color
+data CurrentConnection = CurrentConnection { _currentFrom  :: Position
+                                           , _currentTo    :: Position
+                                           , _currentMode  :: Mode
+                                           , _currentColor :: Color
                                            } deriving (Eq, Show, Typeable, Generic)
 
 makeLenses ''CurrentConnection
@@ -84,10 +89,10 @@ toValidEmpireConnection _ _                                      = Nothing
 
 
 instance Convertible Connection CurrentConnection where
-    convert = CurrentConnection <$> view srcPos <*> view dstPos <*> view color
+    convert = CurrentConnection <$> view srcPos <*> view dstPos <*> view mode <*> view color
 
 toConnection :: OutPortRef -> InPortRef -> CurrentConnection -> Connection
-toConnection src' dst' = Connection src' dst' <$> view currentFrom <*> view currentTo <*> view currentColor
+toConnection src' dst' = Connection src' dst' <$> view currentFrom <*> view currentTo <*> view currentMode <*> view currentColor
 
 instance Convertible Connection Empire.Connection where
     convert conn = Empire.Connection

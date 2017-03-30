@@ -13,12 +13,13 @@ import           Empire.API.Data.NodeLoc            (NodeLoc)
 import           Luna.Studio.Data.PortRef           (AnyPortRef)
 import           Luna.Studio.Prelude
 import           Luna.Studio.React.Model.Connection (ConnectionId)
+import qualified Luna.Studio.React.Model.Connection as Connection
 
 
-data NodeDrag = NodeDrag { _nodeDragStartPos      :: Position
-                         , _nodeDragNodeLoc       :: NodeLoc
-                         , _nodeDragNodesStartPos :: Map NodeLoc Position
-                         , _nodeDragSnappedConn   :: Maybe ConnectionId
+data NodeDrag = NodeDrag { _nodeDragStartPos                 :: Position
+                         , _nodeDragNodeLoc                  :: NodeLoc
+                         , _nodeDragNodesStartPos            :: Map NodeLoc Position
+                         , _nodeDragSnappedConnIdAndPrevMode :: Maybe (ConnectionId, Connection.Mode)
                          } deriving (Eq, Show, Generic, Typeable)
 
 makeLenses ''NodeDrag
