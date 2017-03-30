@@ -94,7 +94,7 @@ import qualified Empire.Commands.Publisher       as Publisher
 import           Empire.Empire
 
 import qualified Luna.IR            as IR
-import qualified OCI.IR.Combinators as IR (changeSource, deleteSubtree, narrowTerm, replaceNode)
+import qualified OCI.IR.Combinators as IR (replaceSource, deleteSubtree, narrowTerm)
 
 generateNodeName :: ASTOp m => m String
 generateNodeName = do
@@ -145,7 +145,7 @@ prepareLambdaChild tgt ref = do
                          then Just $ BH.ExprChild $ BH.ExprItem Map.empty (BH.AnonymousNode lambdaOutput)
                          else Nothing
             lamItem    = BH.LamItem portMapping tgt (Map.empty & at lambdaUUID .~ anonOutput) lambdaBody
-        IR.writeLayer @Marker (Just $ OutPortRef lambdaUUID Port.All) lambdaOutput
+        IR.putLayer @Marker lambdaOutput $ Just $ OutPortRef lambdaUUID Port.All
         return $ Just lamItem
     else return Nothing
 
@@ -190,7 +190,7 @@ updateGraphSeq newSeq outputRef = do
         (Nothing,  Just n)   -> return $ Just n
         _                    -> return Nothing
     case (,) <$> outLink <*> newOut of
-        Just (l, o) -> IR.changeSource l o
+        Just (l, o) -> IR.replaceSource o l
         Nothing     -> return ()
     when (newOut /= oldSeq) $ mapM_ ASTRemove.removeSubtree oldSeq
     Graph.breadcrumbHierarchy . BH._ToplevelParent . BH.topBody .= newOut
@@ -309,7 +309,7 @@ setNodeExpression loc nodeId expr = withTC loc False $ do
                              else Nothing
                 lamItem    = BH.LamItem portMapping (BH.MatchNode refNode) (Map.empty & at lambdaUUID .~ anonOutput) lambdaBody
             Graph.breadcrumbHierarchy . BH.children . at nodeId  ?= BH.LambdaChild lamItem
-            IR.writeLayer @Marker (Just $ OutPortRef lambdaUUID Port.All) lambdaOutput
+            IR.putLayer @Marker lambdaOutput $ Just $ OutPortRef lambdaUUID Port.All
         updateNodeSequence
         GraphBuilder.buildNode nodeId
     Publisher.notifyNodeUpdate loc node
@@ -370,14 +370,14 @@ instance Exception CannotConnectException where
 
 transplantMarker :: ASTOp m => NodeRef -> NodeRef -> m ()
 transplantMarker donor recipient = do
-    marker     <- IR.readLayer @Marker donor
+    marker     <- IR.getLayer @Marker donor
     varsInside <- ASTRead.getVarsInside recipient
     let indexedVars = zip varsInside [0..]
 
         markerPort (Just (OutPortRef nid _)) index = Just (OutPortRef nid (Projection index All))
         markerPort _                         _     = Nothing
     forM_ indexedVars $ \(var, index) -> do
-        IR.writeLayer @Marker (markerPort marker index) var
+        IR.putLayer @Marker var $ markerPort marker index
 
 data PatternLocation = Var | Target | Nowhere
 

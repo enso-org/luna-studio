@@ -39,34 +39,34 @@ type TypeLayer = IR.Type
 data Marker
 type instance LayerData Marker t = Maybe OutPortRef
 
-initNodeMarker :: Req m '[Editor // Layer // AnyExpr // Marker] => Listener New (Expr l) m
-initNodeMarker = listener $ \(t, _) -> writeLayer @Marker Nothing t
+initNodeMarker :: Req m '[Editor // Layer // AnyExpr // Marker] => Listener (New // Expr l) m
+initNodeMarker = listener $ \(t, _) -> putLayer @Marker t Nothing
 makePass 'initNodeMarker
 
-importNodeMarker :: Req m '[Writer // Layer // AnyExpr // Marker] => Listener Import (Expr l) m
-importNodeMarker = listener $ \(t, _, ls) -> when (getTypeDesc_ @Marker ^. from typeDesc `elem` ls) $ writeLayer @Marker Nothing t
+importNodeMarker :: Req m '[Writer // Layer // AnyExpr // Marker] => Listener (Import // Expr l) m
+importNodeMarker = listener $ \(t, _, ls) -> when (getTypeDesc_ @Marker ^. from typeDesc `elem` ls) $ putLayer @Marker t Nothing
 makePass 'importNodeMarker
 
 data Meta
 type instance LayerData Meta t = Maybe NodeMeta
 
-initMeta :: Req m '[Editor // Layer // AnyExpr // Meta] => Listener New (Expr l) m
-initMeta = listener $ \(t, _) -> writeLayer @Meta Nothing t
+initMeta :: Req m '[Editor // Layer // AnyExpr // Meta] => Listener (New // Expr l) m
+initMeta = listener $ \(t, _) -> putLayer @Meta t Nothing
 makePass 'initMeta
 
-importMeta :: Req m '[Writer // Layer // AnyExpr // Meta] => Listener Import (Expr l) m
-importMeta = listener $ \(t, _, ls) -> when (getTypeDesc_ @Meta ^. from typeDesc `elem` ls) $ writeLayer @Meta Nothing t
+importMeta :: Req m '[Writer // Layer // AnyExpr // Meta] => Listener (Import // Expr l) m
+importMeta = listener $ \(t, _, ls) -> when (getTypeDesc_ @Meta ^. from typeDesc `elem` ls) $ putLayer @Meta t Nothing
 makePass 'importMeta
 
 data CodeMarkers
 type instance LayerData CodeMarkers t = MarkedExprMap
 
-initCodeMarkers :: Req m '[Editor // Layer // AnyExpr // CodeMarkers] => Listener New (Expr l) m
-initCodeMarkers = listener $ \(t, _) -> writeLayer @CodeMarkers Prologue.mempty t
+initCodeMarkers :: Req m '[Editor // Layer // AnyExpr // CodeMarkers] => Listener (New // Expr l) m
+initCodeMarkers = listener $ \(t, _) -> putLayer @CodeMarkers t Prologue.mempty
 makePass 'initCodeMarkers
 
-importCodeMarkers :: Req m '[Writer // Layer // AnyExpr // CodeMarkers] => Listener Import (Expr l) m
-importCodeMarkers = listener $ \(t, _, ls) -> when (getTypeDesc_ @CodeMarkers ^. from typeDesc `elem` ls) $ writeLayer @CodeMarkers Prologue.mempty t
+importCodeMarkers :: Req m '[Writer // Layer // AnyExpr // CodeMarkers] => Listener (Import // Expr l) m
+importCodeMarkers = listener $ \(t, _, ls) -> when (getTypeDesc_ @CodeMarkers ^. from typeDesc `elem` ls) $ putLayer @CodeMarkers t Prologue.mempty
 makePass 'importCodeMarkers
 
 attachEmpireLayers :: (MonadPassManager m, Throws IRError m) => m ()

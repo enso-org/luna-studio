@@ -94,17 +94,17 @@ stringBoolMapToStringStringMap = fmap (second show)
 
 getNodeValue :: (MonadIO m, ASTOp m) => NodeRef -> m (Either String a)
 getNodeValue node = do
-    tpNode  <- IR.source =<< IR.readLayer @TypeLayer node
+    tpNode  <- IR.source =<< IR.getLayer @TypeLayer node
     -- decoder <- decoderForType tpNode
     -- v <- (^. Interpreter.value) <$> IR.readLayer @InterpreterData node
     $notImplemented
 
 
 readMeta :: ASTOp m => NodeRef -> m (Maybe NodeMeta)
-readMeta ref = IR.readLayer @Meta ref
+readMeta ref = IR.getLayer @Meta ref
 
 writeMeta :: ASTOp m => NodeRef -> NodeMeta -> m ()
-writeMeta ref newMeta = IR.writeLayer @Meta (Just newMeta) ref
+writeMeta ref newMeta = IR.putLayer @Meta ref $ Just newMeta
 
 sortByPosition :: ASTOp m => [NodeId] -> m [NodeRef]
 sortByPosition nodeIds = do

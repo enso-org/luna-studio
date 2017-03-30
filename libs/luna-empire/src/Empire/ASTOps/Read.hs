@@ -36,7 +36,7 @@ isGraphNode = fmap isJust . getNodeId
 
 getNodeId :: ASTOp m => NodeRef -> m (Maybe NodeId)
 getNodeId node = do
-    portRef <- IR.readLayer @Marker node
+    portRef <- IR.getLayer @Marker node
     forM portRef $ \portRef' -> do
         let OutPortRef nodeId _ = portRef'
         return nodeId

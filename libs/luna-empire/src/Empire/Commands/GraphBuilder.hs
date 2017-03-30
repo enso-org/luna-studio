@@ -165,6 +165,7 @@ getPortState node = do
 extractArgTypes :: ASTOp m => NodeRef -> m [TypeRep]
 extractArgTypes node = do
     match node $ \case
+        Monadic s _ -> extractArgTypes =<< IR.source s
         Lam arg out -> (:) <$> (Print.getTypeRep =<< IR.source arg) <*> (extractArgTypes =<< IR.source out)
         _           -> return []
 
@@ -230,7 +231,7 @@ extractAppliedPorts seenApp bound node = IR.matchExpr node $ \case
     App f a -> do
         arg          <- IR.source a
         isB          <- ASTRead.isBlank arg
-        argTp        <- IR.readLayer @TypeLayer arg >>= IR.source
+        argTp        <- IR.getLayer @TypeLayer arg >>= IR.source
         res          <- if isB || elem arg bound then return Nothing else Just .: (,) <$> Print.getTypeRep argTp <*> getPortState arg
         rest         <- extractAppliedPorts True bound =<< IR.source f
         return $ res : rest
@@ -251,7 +252,7 @@ mergePortInfo (Just a  : as) ts       = a : mergePortInfo as ts
 extractPortInfo :: ASTOp m => NodeRef -> m [(TypeRep, PortState)]
 extractPortInfo n = do
     applied  <- reverse <$> extractAppliedPorts False [] n
-    tp       <- IR.readLayer @TypeLayer n >>= IR.source
+    tp       <- IR.getLayer @TypeLayer n >>= IR.source
     fromType <- extractArgTypes tp
     return $ mergePortInfo applied fromType
 
@@ -291,7 +292,7 @@ buildSelfPort = buildSelfPort' False
 
 followTypeRep :: ASTOp m => NodeRef -> m TypeRep
 followTypeRep ref = do
-    tp <- IR.source =<< IR.readLayer @TypeLayer ref
+    tp <- IR.source =<< IR.getLayer @TypeLayer ref
     Print.getTypeRep tp
 
 buildPorts :: ASTOp m => NodeRef -> m [Port]
@@ -346,7 +347,7 @@ buildInputEdgeTypecheckUpdate nid = do
 buildInputEdge :: ASTOp m => [(OutPortRef, InPortRef)] -> NodeId -> m API.Node
 buildInputEdge connections nid = do
     Just ref <- ASTRead.getCurrentASTTarget
-    tp       <- IR.readLayer @TypeLayer ref >>= IR.source
+    tp       <- IR.getLayer @TypeLayer ref >>= IR.source
     types    <- extractArgTypes tp
     let connectedPorts = map (\(OutPortRef _ (Projection p _)) -> p)
                $ map fst
@@ -439,7 +440,7 @@ resolveInputNodeId edgeNodes lambdaArgs ref = do
     case List.findIndex (== ref) lambdaArgs of
         Just i -> return (Just $ Projection i All, fmap fst edgeNodes)
         _      -> do
-            projection <- IR.readLayer @Marker ref
+            projection <- IR.getLayer @Marker ref
             case projection of
                 Just (OutPortRef nodeId portId) -> return (Just portId, Just nodeId)
                 _                               -> return (Nothing, Nothing)

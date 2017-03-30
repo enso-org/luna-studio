@@ -25,7 +25,7 @@ import           Empire.Data.AST                    (EdgeRef, NodeRef, NotLambda
                                                      NotUnifyException(..), astExceptionToException,
                                                      astExceptionFromException)
 
-import qualified OCI.IR.Combinators as IR (changeSource, narrowTerm, replaceNode)
+import qualified OCI.IR.Combinators as IR (replaceSource, narrowTerm, replace, substitute)
 import           Luna.IR.Term.Uni
 import qualified Luna.IR as IR
 
@@ -59,10 +59,9 @@ replaceWithLam parent name lam = do
     binder   <- IR.var $ stringToName name
     newLam   <- IR.lam binder tmpBlank
     case parent of
-        Just e  -> IR.changeSource e $ IR.generalize newLam
-        Nothing -> IR.replaceNode lam newLam
-    IR.replaceNode tmpBlank lam
-    ASTRemove.removeSubtree $ IR.generalize tmpBlank
+        Just e  -> IR.replaceSource (IR.generalize newLam) e
+        Nothing -> IR.substitute newLam lam
+    IR.replace lam tmpBlank
     return ()
 
 addLambdaArg' :: ASTOp m => Int -> String -> Maybe EdgeRef -> NodeRef -> m ()
@@ -144,14 +143,14 @@ replaceTargetNode :: ASTOp m => NodeRef -> NodeRef -> m ()
 replaceTargetNode matchNode newTarget = do
     match matchNode $ \case
         Unify _l r -> do
-            IR.changeSource r newTarget
+            IR.replaceSource newTarget r
         _ -> throwM $ NotUnifyException matchNode
 
 replaceVarNode :: ASTOp m => NodeRef -> NodeRef -> m ()
 replaceVarNode matchNode newVar = do
     match matchNode $ \case
         Unify l _r -> do
-            IR.changeSource l newVar
+            IR.replaceSource newVar l
         _ -> throwM $ NotUnifyException matchNode
 
 rewireNode :: ASTOp m => NodeId -> NodeRef -> m ()

@@ -43,12 +43,12 @@ packages:
   - location: ../../tools/batch/plugins/luna-empire
   - location: ../../tools/batch/plugins/request-monitor
   - location:
-      commit: 716ca21ea491044ec674619506b85becce32b3a7
+      commit: 3a0f63d3ff225f610af6911a78560c7b1156abe5
       git: git@github.com:luna/luna.git
     subdirs: [core, passes, syntax/text, stdlib]
     extra-dep: true
   - location:
-      commit: 37701cbee057a36186628a808faa1129a679b7c8
+      commit: fc7c12e57e05c3b1bee8266d3a79ed332f0e2396
       git: https://github.com/luna/container.git
     extra-dep: true
   - location:
@@ -56,7 +56,7 @@ packages:
       git: https://github.com/luna/data-pool.git
     extra-dep: true
   - location:
-      commit: fa2155bed99c14a0c7fea6b266c941af6716ff43
+      commit: 8ad4a9ce566e316aa85f9ec7fe845cf80fb8c784
       git: https://github.com/luna/convert.git
     extra-dep: true
   - location:
@@ -100,7 +100,7 @@ packages:
       git: https://github.com/luna/poly-control.git
     extra-dep: true
   - location:
-      commit: d7ac470ac822968cb0a46ac354fdadb0db0f5dae
+      commit: a13a70de945708409f7e03606202a53ac48bee64
       git: https://github.com/luna/prologue.git
     extra-dep: true
   - location:

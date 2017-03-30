@@ -132,7 +132,7 @@ flushCache = do
 
 run :: GraphLocation -> Command InterpreterEnv ()
 run loc = do
-    std <- liftIO $ Std.stdlib
+    std <- liftIO $ snd <$> Std.mockStdlib
     zoom graph $ runTC std
     updateNodes loc
     updateMonads loc

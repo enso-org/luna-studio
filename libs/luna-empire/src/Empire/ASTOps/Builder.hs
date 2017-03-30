@@ -120,5 +120,5 @@ makeNodeRep marker name node = match node $ \case
     Unify{} -> return node
     _       -> do
         nameVar <- IR.var' $ stringToName name
-        IR.writeLayer @Marker (Just $ OutPortRef marker Port.All) nameVar
+        IR.putLayer @Marker nameVar $ Just $ OutPortRef marker Port.All
         IR.generalize <$> IR.unify nameVar node

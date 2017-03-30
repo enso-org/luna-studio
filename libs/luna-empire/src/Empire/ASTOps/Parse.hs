@@ -46,10 +46,10 @@ instance Exception e => Exception (ParserException e) where
 
 parseExpr :: ASTOp m => String -> m NodeRef
 parseExpr s = do
-    IR.writeAttr @Source.Source $ convert s
+    IR.putAttr @Source.Source $ convert s
     Parsing.parsingBase Parsing.expr
-    res     <- IR.readAttr @Parser.ParsedExpr
-    exprMap <- IR.readAttr @Parser.MarkedExprMap
+    res     <- IR.getAttr @Parser.ParsedExpr
+    exprMap <- IR.getAttr @Parser.MarkedExprMap
     return $ unwrap' res
 
 runParser :: Text.Text -> Command Graph (NodeRef, Parser.MarkedExprMap)
@@ -63,9 +63,9 @@ runParser expr = do
         run = runPass @ParserPass inits
     run $ do
         Parsing.parsingBase Parsing.expr `catchAll` (\e -> throwM $ ParserException e)
-        res     <- IR.readAttr @Parser.ParsedExpr
-        exprMap <- IR.readAttr @Parser.MarkedExprMap
-        IR.writeLayer @CodeMarkers exprMap (unwrap' res)
+        res     <- IR.getAttr @Parser.ParsedExpr
+        exprMap <- IR.getAttr @Parser.MarkedExprMap
+        IR.putLayer @CodeMarkers (unwrap' res) exprMap
         return (unwrap' res, exprMap)
 
 runReparser :: Text.Text -> NodeRef -> Command Graph (NodeRef, Parser.MarkedExprMap, Parser.ReparsingStatus)
@@ -79,20 +79,20 @@ runReparser expr oldExpr = do
         run = runPass @ParserPass inits
     run $ do
         do
-            gidMapOld <- IR.readLayer @CodeMarkers oldExpr
+            gidMapOld <- IR.getLayer @CodeMarkers oldExpr
 
             -- parsing new file and updating updated analysis
             Parsing.parsingBase Parsing.nonAssignmentExpr `catchAll` (\e -> throwM $ ParserException e)
-            gidMap    <- IR.readAttr @Parser.MarkedExprMap
+            gidMap    <- IR.getAttr @Parser.MarkedExprMap
 
             -- Preparing reparsing status
             rs        <- Parsing.cmpMarkedExprMaps gidMapOld gidMap
-            IR.writeAttr @Parser.ReparsingStatus (wrap rs)
+            IR.putAttr @Parser.ReparsingStatus (wrap rs)
 
-        res     <- IR.readAttr @Parser.ParsedExpr
-        exprMap <- IR.readAttr @Parser.MarkedExprMap
-        IR.writeLayer @CodeMarkers exprMap (unwrap' res)
-        status  <- IR.readAttr @Parser.ReparsingStatus
+        res     <- IR.getAttr @Parser.ParsedExpr
+        exprMap <- IR.getAttr @Parser.MarkedExprMap
+        IR.putLayer @CodeMarkers (unwrap' res) exprMap
+        status  <- IR.getAttr @Parser.ReparsingStatus
         return (unwrap' res, exprMap, status)
 
 data PortDefaultNotConstructibleException = PortDefaultNotConstructibleException PortDefault
