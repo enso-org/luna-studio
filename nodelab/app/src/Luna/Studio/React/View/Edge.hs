@@ -28,7 +28,7 @@ import qualified Luna.Studio.React.Model.Port          as Port
 import           Luna.Studio.React.Store               (Ref, dispatch)
 import           Luna.Studio.React.View.Field          (singleField_)
 import           Luna.Studio.React.View.Port           (handleClick, handleMouseDown, handleMouseUp, jsShow2)
-import           Luna.Studio.React.View.Style          (plainPath, plainRect)
+import           Luna.Studio.React.View.Style          (plainPath_, plainRect_)
 import qualified Luna.Studio.React.View.Style          as Style
 import           React.Flux                            hiding (view)
 
@@ -112,8 +112,8 @@ edgeSidebar_ ref node = do
                             , "r"         $= jsShow2 3
                             ] mempty
                         g_ [ "className" $= Style.prefix "port__plus" ] $ do
-                              plainRect 0 0 0 0
-                              plainRect 0 0 0 0
+                              plainRect_ "key1" 0 0 0 0
+                              plainRect_ "key2" 0 0 0 0
                         circle_
                             [ "className" $= Style.prefix "port__select"
                             , "key"       $= jsShow "addButtonSelect"
@@ -130,9 +130,9 @@ edgeSidebar_ ref node = do
                             , "r"         $= jsShow2 3
                             ] mempty
                         g_ [ "className" $= Style.prefix "edit-icon__shape02" ] $ do
-                              plainPath "" ""
-                              plainRect 0 0 0 0
-                              plainRect 0 0 0 0
+                              plainPath_ "" ""
+                              plainRect_ "key1" 0 0 0 0
+                              plainRect_ "key2" 0 0 0 0
                         circle_
                             [ "className" $= Style.prefix "edit-icon__select"
                             , "key"       $= jsShow "editIconSelect"
@@ -148,11 +148,11 @@ addButton_ ref portRef =
         ] $
         g_ [ "className" $= Style.prefix "port-add-inbetween" ] $ do
             g_ [ "className" $= Style.prefix "port-add-inbetween__shape" ] $ do
-                plainPath (Style.prefix "port-add-inbetween__droplet") "M10.0749836,12.9509892 C11.4541267,14.1514559 13.0835452,14.9902759 15.0097241,14.9902759 C18.8703469,14.9902759 22,11.8606228 22,8 C22,4.13937722 18.8703469,1.0097241 15.0097241,1.0097241 C13.0977164,1.0097241 11.4518168,1.82232527 10.1029674,3.02127407 C5.44945277,7.13675725 4.06697429,7.99999996 1.05578798,7.99999996 C4.06697429,7.99999996 5.38818292,8.87139207 10.0749836,12.9509892 Z"
+                plainPath_ (Style.prefix "port-add-inbetween__droplet") "M10.0749836,12.9509892 C11.4541267,14.1514559 13.0835452,14.9902759 15.0097241,14.9902759 C18.8703469,14.9902759 22,11.8606228 22,8 C22,4.13937722 18.8703469,1.0097241 15.0097241,1.0097241 C13.0977164,1.0097241 11.4518168,1.82232527 10.1029674,3.02127407 C5.44945277,7.13675725 4.06697429,7.99999996 1.05578798,7.99999996 C4.06697429,7.99999996 5.38818292,8.87139207 10.0749836,12.9509892 Z"
                 g_ [ "className" $= Style.prefix "port-add-inbetween__plus" ] $ do
-                    plainRect 2 8 (-1) (-4)
-                    plainRect 8 2 (-4) (-1)
-            plainPath (Style.prefix "port-add-inbetween__selectable") "M 20 0 A 10 10 0 0 1 20 16 L 10 16 A 10 10 0 0 1 10 0 Z"
+                    plainRect_ "key1" 2 8 (-1) (-4)
+                    plainRect_ "key2" 8 2 (-4) (-1)
+            plainPath_ (Style.prefix "port-add-inbetween__selectable") "M 20 0 A 10 10 0 0 1 20 16 L 10 16 A 10 10 0 0 1 10 0 Z"
 
 edgePort_ :: Ref App -> EdgeMode -> NodeLoc -> Bool -> Port -> ReactElementM ViewEventHandler ()
 edgePort_ ref mode nl isOnly p = do
@@ -178,8 +178,8 @@ edgePort_ ref mode nl isOnly p = do
                 , "r"         $= jsShow2 3
                 ] mempty
             when (not isOnly) $ g_ [ "className" $= Style.prefix "port__plus" ] $ do
-                  plainRect 2 8 (-1) (-4)
-                  plainRect 8 2 (-4) (-1)
+                  plainRect_ "key1" 2 8 (-1) (-4)
+                  plainRect_ "key2" 8 2 (-4) (-1)
             circle_ (
                 [ "className" $= Style.prefix "port__select"
                 , "key"       $= (jsShow portId <> jsShow num <> "b")

@@ -23,16 +23,17 @@ selectionMark_ = div_
     , "className" $= prefix "selection"
     ] mempty
 
-plainRect :: Double -> Double -> Double -> Double -> ReactElementM ViewEventHandler ()
-plainRect w h x y =
-    rect_ [ "width"  $= fromString (show w)
+plainRect_ :: JSString -> Double -> Double -> Double -> Double -> ReactElementM ViewEventHandler ()
+plainRect_ key w h x y =
+    rect_ [ "key"    $= key
+          , "width"  $= fromString (show w)
           , "height" $= fromString (show h)
           , "x"      $= fromString (show x)
           , "y"      $= fromString (show y)
           ] mempty
 
-plainPath :: JSString -> JSString -> ReactElementM ViewEventHandler ()
-plainPath c d = path_ [ "className" $= c, "d" $= d ] mempty
+plainPath_ :: JSString -> JSString -> ReactElementM ViewEventHandler ()
+plainPath_ c d = path_ [ "className" $= c, "d" $= d ] mempty
 
 
 -- TODO[JK]: Not used args
