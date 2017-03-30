@@ -85,6 +85,7 @@ data Connect = Connect { _connectStartPos       :: ScreenPosition
                        , _connectSourcePort     :: AnyPortRef
                        , _connectIsConnModified :: Bool
                        , _connectSnappedPort    :: Maybe AnyPortRef
+                       , _connectIsPortPhantom  :: Bool
                        , _connectMode           :: Mode
                        } deriving (Eq, Generic, Show, Typeable)
 
@@ -95,6 +96,7 @@ data PortDrag = PortDrag { _portDragStartPos              :: ScreenPosition
                          , _portDragPortStartPosInSidebar :: Position
                          , _portDragStartPortRef          :: AnyPortRef
                          , _portDragActPortRef            :: AnyPortRef
+                         , _portDragIsPortPhantom         :: Bool
                          , _portDragMode                  :: Mode
                          } deriving (Eq, Generic, Show, Typeable)
 

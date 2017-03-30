@@ -36,28 +36,37 @@ import           React.Flux                            hiding (view)
 name :: EdgeNode -> JSString
 name node = "edgePorts" <> if isInputEdge node then "Inputs" else "Outputs"
 
-portHandlers :: Ref App -> EdgeMode -> Bool -> AnyPortRef -> [PropertyOrHandler [SomeStoreAction]]
-portHandlers ref AddRemove isOnly portRef =
+portHandlers :: Ref App -> EdgeMode -> Bool -> Bool -> AnyPortRef -> [PropertyOrHandler [SomeStoreAction]]
+portHandlers ref AddRemove _ isOnly portRef =
     [ onMouseDown $ \e _ -> [stopPropagation e] ] ++
     if isOnly then [] else
     [ onClick     $ \e _ -> stopPropagation e : dispatch ref (UI.EdgeEvent $ Edge.RemovePort portRef) ]
 
-portHandlers ref MoveConnect _ portRef =
+portHandlers ref MoveConnect False _ portRef =
     [ onMouseDown $ \e _ -> [stopPropagation e]
     , onClick     $ handleClick     ref portRef
     , onMouseDown $ handleMouseDown ref portRef
     , onMouseUp   $ handleMouseUp   ref portRef
     ]
+portHandlers ref MoveConnect True _ portRef = []
 
 edgeSidebar_ :: Ref App -> EdgeNode -> ReactElementM ViewEventHandler ()
 edgeSidebar_ ref node = do
-    let ports            = node ^. EdgeNode.ports . to Map.elems
-        nodeLoc          = node ^. EdgeNode.nodeLoc
-        mode             = node ^. EdgeNode.mode
-        portDraggedClass = if any isInMovedMode ports then ["edgeports--dragmode"] else []
-        classes          = [ "edgeports", if isInputEdge node then "edgeports--i" else "edgeports--o" ]
-                        ++ if mode == AddRemove then ["edgeports--editmode"] else []
-                        ++ portDraggedClass
+    let ports             = node ^. EdgeNode.ports . to Map.elems
+        nodeLoc           = node ^. EdgeNode.nodeLoc
+        mode              = node ^. EdgeNode.mode
+        isPortDragged     = any isInMovedMode ports
+        classes           = [ "edgeports", if isInputEdge node then "edgeports--i" else "edgeports--o" ]
+                         ++ if mode == AddRemove then ["edgeports--editmode"] else []
+                         ++ if isPortDragged then ["edgeports--dragmode"] else []
+        addButtonHandlers = let portRef = OutPortRef' (OutPortRef nodeLoc (Projection (countProjectionPorts node) All)) in
+            case mode of
+                AddRemove   -> [ onMouseDown $ \e _ -> [stopPropagation e]
+                               , onClick     $ \e _ -> stopPropagation e : dispatch ref (UI.EdgeEvent $ Edge.AddPort portRef)
+                               ]
+                MoveConnect -> portHandlers ref mode False False portRef
+
+
     div_
         [ "key"         $= name node
         , "className"   $= Style.prefixFromList classes
@@ -97,15 +106,13 @@ edgeSidebar_ ref node = do
 
                 forM_ ports $ \p -> if isInMovedMode p
                     then edgePlaceholderForPort_ >> edgeDraggedPort_ ref p
-                    else edgePort_ ref mode nodeLoc (countProjectionPorts node == 1) p
+                    else edgePort_ ref mode nodeLoc isPortDragged (countProjectionPorts node == 1) p
 
-                when (isInputEdge node) $ do
-                    svg_
+                when (isInputEdge node && not isPortDragged) $ do
+                    svg_ (
                         [ "className" $= Style.prefixFromList [ "edgeport__svg", "edgeport__svg--addbutton" ]
                         , "key"       $= (name node <> "AddButton")
-                        , onMouseDown $ \e _ -> [stopPropagation e]
-                        , onClick $ \e _ -> stopPropagation e : dispatch ref (UI.EdgeEvent $ Edge.AddPort $ OutPortRef' (OutPortRef nodeLoc (Projection (countProjectionPorts node) All)))
-                        ] $ do
+                        ] ++ addButtonHandlers ) $ do
                         circle_
                             [ "className" $= Style.prefix "port__shape"
                             , "key"       $= jsShow "addButtonShape"
@@ -154,8 +161,8 @@ addButton_ ref portRef =
                     plainRect_ "key2" 8 2 (-4) (-1)
             plainPath_ (Style.prefix "port-add-inbetween__selectable") "M 20 0 A 10 10 0 0 1 20 16 L 10 16 A 10 10 0 0 1 10 0 Z"
 
-edgePort_ :: Ref App -> EdgeMode -> NodeLoc -> Bool -> Port -> ReactElementM ViewEventHandler ()
-edgePort_ ref mode nl isOnly p = do
+edgePort_ :: Ref App -> EdgeMode -> NodeLoc -> Bool -> Bool -> Port -> ReactElementM ViewEventHandler ()
+edgePort_ ref mode nl isPortDragged isOnly p = do
     let portId    = p ^. Port.portId
         portRef   = toAnyPortRef nl portId
         color     = convert $ p ^. Port.color
@@ -184,7 +191,7 @@ edgePort_ ref mode nl isOnly p = do
                 [ "className" $= Style.prefix "port__select"
                 , "key"       $= (jsShow portId <> jsShow num <> "b")
                 , "r"         $= jsShow2 (lineHeight/1.5)
-                ] ++ portHandlers ref mode isOnly portRef ) mempty
+                ] ++ portHandlers ref mode isPortDragged isOnly portRef ) mempty
 
         if isInNameEditMode p then
             singleField_ [ "id" $= portLabelId ] (jsShow portId)
