@@ -45,6 +45,8 @@ import qualified Luna.Pass.Typechecking.Typecheck  as Typecheck
 import qualified OCI.IR.Combinators                as IR
 import           OCI.Pass                          (SubPass)
 
+import System.IO.Unsafe
+import Data.IORef
 
 runTC :: Imports -> Command Graph ()
 runTC imports = do
@@ -128,11 +130,19 @@ flushCache = do
     valuesCache .= def
     nodesCache  .= def
 
+-- temporary: at some point this will be part of our state
+std :: (Std.WorldState, Imports)
+std = unsafePerformIO Std.mockStdlib
+{-# NOINLINE std #-}
+
+flushWorld :: IO ()
+flushWorld = let Std.WorldState c s = fst std in writeIORef c 0 >> writeIORef s []
+
 run :: GraphLocation -> Command InterpreterEnv ()
 run loc = do
-    std <- liftIO $ snd <$> Std.mockStdlib
-    zoom graph $ runTC std
+    zoom graph $ runTC $ snd std
     updateNodes  loc
     updateMonads loc
-    scope <- zoom graph $ runInterpreter std
+    liftIO flushWorld
+    scope <- zoom graph $ runInterpreter $ snd std
     mapM_ (updateValues loc) scope
