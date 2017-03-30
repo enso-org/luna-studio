@@ -164,7 +164,7 @@ handle (Event.Batch ev) = Just $ case ev of
         let src' = update ^. ConnectUpdate.connection' . src
             dst' = update ^. ConnectUpdate.connection' . dst
         inCurrentLocation (update ^. ConnectUpdate.location') $ \path -> do
-            void $ localAddConnection (convert (path,src')) (convert (path, dst'))
+            void $ localAddConnection (convert (path, src')) (convert (path, dst'))
 
     DumpGraphVizResponse response -> handleResponse response doNothing doNothing
 

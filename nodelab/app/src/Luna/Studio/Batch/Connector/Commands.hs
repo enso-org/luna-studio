@@ -89,8 +89,8 @@ addConnection src dst workspace uuid guiID = sendRequest $ Message uuid guiID $ 
 
 addNode :: NodeLoc -> Text -> NodeMeta -> Maybe NodeLoc -> Workspace -> UUID -> Maybe UUID -> IO ()
 addNode nodeLoc expression meta connectTo workspace uuid guiID =
-    sendRequest $ Message uuid guiID $ (withLibrary updatedWorkspace AddNode.Request) nid expression meta (convert <$> connectTo) where
-        (updatedWorkspace, nid) = convert (workspace, nodeLoc)
+    sendRequest $ Message uuid guiID $ (withLibrary workspace' AddNode.Request) nodeId expression meta (convert <$> connectTo) where
+        (workspace', nodeId) = convert (workspace, nodeLoc)
 
 addPort :: AnyPortRef -> Workspace -> UUID -> Maybe UUID -> IO ()
 addPort portRef workspace uuid guiID = sendRequest $ Message uuid guiID $ (withLibrary workspace AddPort.Request) $ convert portRef
@@ -120,8 +120,8 @@ removePort portRef workspace uuid guiID = sendRequest $ Message uuid guiID $ (wi
     (workspace', portRef') = convert (workspace, portRef)
 
 renameNode :: NodeLoc -> Text -> Workspace -> UUID -> Maybe UUID -> IO ()
-renameNode nl name workspace uuid guiID = sendRequest $ Message uuid guiID $ withLibrary updatedWorkspace RenameNode.Request nid name where
-    (updatedWorkspace, nid) = convert (workspace, nl)
+renameNode nl name workspace uuid guiID = sendRequest $ Message uuid guiID $ withLibrary workspace' RenameNode.Request nodeId name where
+    (workspace', nodeId) = convert (workspace, nl)
 
 renamePort :: AnyPortRef -> String -> Workspace -> UUID -> Maybe UUID -> IO ()
 renamePort portRef name workspace uuid guiID = sendRequest $ Message uuid guiID $ withLibrary workspace' RenamePort.Request portRef' name where
@@ -136,13 +136,13 @@ searchNodes query cursor workspace uuid guiID = sendRequest $ Message uuid guiID
 
 setNodeCode :: NodeLoc -> Text -> Workspace -> UUID -> Maybe UUID -> IO ()
 setNodeCode nodeLoc newCode workspace uuid guiID =
-    sendRequest $ Message uuid guiID $ withLibrary updatedWorkspace SetNodeCode.Request nodeId newCode where
-        (updatedWorkspace, nodeId) = convert (workspace, nodeLoc)
+    sendRequest $ Message uuid guiID $ withLibrary workspace' SetNodeCode.Request nodeId newCode where
+        (workspace', nodeId) = convert (workspace, nodeLoc)
 
 setNodeExpression :: NodeLoc -> Text -> Workspace -> UUID -> Maybe UUID -> IO ()
 setNodeExpression nodeLoc expression workspace uuid guiID =
-    sendRequest $ Message uuid guiID $ withLibrary updatedWorkspace SetNodeExpression.Request nodeId expression where
-        (updatedWorkspace, nodeId) = convert (workspace, nodeLoc)
+    sendRequest $ Message uuid guiID $ withLibrary workspace' SetNodeExpression.Request nodeId expression where
+        (workspace', nodeId) = convert (workspace, nodeLoc)
 
 setNodesMeta :: [(NodeLoc, NodeMeta)] -> Workspace -> UUID -> Maybe UUID -> IO ()
 setNodesMeta updates workspace uuid guiID = sendRequest $ Message uuid guiID $ withLibrary workspace SetNodesMeta.Request (map (_1 %~ convert) updates)
