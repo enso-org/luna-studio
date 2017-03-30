@@ -32,7 +32,7 @@ instance Action (Command State) PenConnect where
     begin    = beginActionWithKey    penConnectAction
     continue = continueActionWithKey penConnectAction
     update   = updateActionWithKey   penConnectAction
-    end _    = removeActionFromState penConnectAction
+    end      = stopConnecting
 
 
 startConnecting :: MouseEvent -> Timestamp -> Command State ()
