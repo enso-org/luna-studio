@@ -1,13 +1,13 @@
 module Luna.Studio.Action.Basic.AddPort where
 
 import           Empire.API.Data.Port                     (Port (Port))
+import           Empire.API.Data.PortRef                  (AnyPortRef (OutPortRef'), OutPortRef (OutPortRef), srcPortId)
 import           Empire.API.Data.TypeRep                  (TypeRep (TStar))
 import           Luna.Studio.Action.Basic.AddConnection   (localAddConnection)
 import           Luna.Studio.Action.Basic.UpdateNode      (localUpdateSidebarNode)
 import qualified Luna.Studio.Action.Batch                 as Batch
 import           Luna.Studio.Action.Command               (Command)
 import           Luna.Studio.Action.State.NodeEditor      (getConnectionsContainingNode, getSidebarNode)
-import           Luna.Studio.Data.PortRef                 (AnyPortRef (OutPortRef'), OutPortRef (OutPortRef), srcPortId)
 import           Luna.Studio.Prelude
 import qualified Luna.Studio.React.Model.Connection       as Connection
 import           Luna.Studio.React.Model.Node.SidebarNode (countProjectionPorts, getPorts, isInputSidebar, ports)

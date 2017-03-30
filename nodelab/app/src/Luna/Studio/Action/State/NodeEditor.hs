@@ -16,13 +16,13 @@ import           Empire.API.Data.MonadPath                    (MonadPath)
 import qualified Empire.API.Data.Node                         as Empire
 import           Empire.API.Data.Port                         (OutPort (All), _WithDefault)
 import           Empire.API.Data.PortDefault                  (PortDefault)
+import           Empire.API.Data.PortRef                      (AnyPortRef (InPortRef', OutPortRef'), InPortRef, OutPortRef (OutPortRef))
+import qualified Empire.API.Data.PortRef                      as PortRef
 import           Luna.Studio.Action.Command                   (Command)
 import           Luna.Studio.Action.State.App                 (get, modify)
 import qualified Luna.Studio.Action.State.Internal.NodeEditor as Internal
 import           Luna.Studio.Batch.Workspace                  (nodeSearcherData)
 import           Luna.Studio.Data.Graph                       (Graph (Graph))
-import           Luna.Studio.Data.PortRef                     (AnyPortRef (InPortRef', OutPortRef'), InPortRef, OutPortRef (OutPortRef))
-import qualified Luna.Studio.Data.PortRef                     as PortRef
 import           Luna.Studio.Prelude
 import           Luna.Studio.React.Model.App                  (nodeEditor)
 import           Luna.Studio.React.Model.Connection           (Connection, ConnectionId, ConnectionsMap, CurrentConnection, connectionId,
@@ -64,7 +64,7 @@ separateSubgraph nodeLocs = do
         mkMap = HashMap.fromList . map (view nodeLoc &&& id)
     nodes' <- HashMap.filterWithKey (inSet .: const) . mkMap <$> getExpressionNodes
     conns' <- HashMap.filter (inSet . view dstNodeLoc) <$> getConnectionsMap
-    return $ Graph (HashMap.map convert nodes') (HashMap.fromList $ map ((_1 %~ convert) . (_2 %~ convert)) $ HashMap.toList conns')
+    return $ Graph (HashMap.map convert nodes') (HashMap.map convert conns')
 
 addNode :: Node -> Command State ()
 addNode (Expression node) = addExpressionNode node

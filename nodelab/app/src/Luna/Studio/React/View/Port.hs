@@ -2,8 +2,8 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Luna.Studio.React.View.Port where
 
+import           Empire.API.Data.PortRef           (AnyPortRef, toAnyPortRef)
 import           Luna.Studio.Action.State.Model    (portAngleStart, portAngleStop)
-import           Luna.Studio.Data.PortRef          (AnyPortRef, toAnyPortRef)
 import qualified Luna.Studio.Event.Mouse           as Mouse
 import qualified Luna.Studio.Event.UI              as UI
 import           Luna.Studio.Prelude

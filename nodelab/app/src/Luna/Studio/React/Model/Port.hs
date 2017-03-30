@@ -15,10 +15,10 @@ import           Empire.API.Data.Port        as X (InPort (..), OutPort (..), Po
                                                    isInPort, isOutPort, isProjection, isSelf, _InPortId, _OutPortId)
 import qualified Empire.API.Data.Port        as Empire
 import           Empire.API.Data.PortDefault as X (PortDefault (..))
+import           Empire.API.Data.PortRef     as X (AnyPortRef (InPortRef', OutPortRef'), InPortRef (InPortRef), OutPortRef (OutPortRef))
 import           Empire.API.Data.TypeRep     (TypeRep (..))
 import           Luna.Studio.Data.Color      (Color)
 import qualified Luna.Studio.Data.Color      as Color
-import           Luna.Studio.Data.PortRef    as X (AnyPortRef (InPortRef', OutPortRef'), InPortRef (InPortRef), OutPortRef (OutPortRef))
 import           Luna.Studio.Prelude         hiding (set)
 
 data Mode = Normal

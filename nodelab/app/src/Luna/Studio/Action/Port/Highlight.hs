@@ -6,9 +6,9 @@ module Luna.Studio.Action.Port.Highlight
 
 import qualified Data.Set                                    as Set
 import           Empire.API.Data.Port                        (InPort (Self), PortId (InPortId))
+import           Empire.API.Data.PortRef                     (AnyPortRef, nodeLoc, portId)
 import           Luna.Studio.Action.Command                  (Command)
 import           Luna.Studio.Action.Connect                  ()
-import           Luna.Studio.Data.PortRef                    (AnyPortRef, nodeLoc, portId)
 import           Luna.Studio.Prelude
 import           Luna.Studio.React.Model.Connection          (toValidEmpireConnection)
 import           Luna.Studio.React.Model.Node.ExpressionNode (isCollapsed, ports)

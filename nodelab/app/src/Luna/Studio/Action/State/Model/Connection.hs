@@ -4,6 +4,8 @@ module Luna.Studio.Action.State.Model.Connection where
 import           Control.Monad.Trans.Maybe                     (MaybeT (MaybeT), runMaybeT)
 import           Data.Position                                 (Position, distanceSquared, move, y)
 import           Data.Vector                                   (Vector2 (Vector2))
+import           Empire.API.Data.PortRef                       (AnyPortRef(OutPortRef'), InPortRef, OutPortRef)
+import qualified Empire.API.Data.PortRef                       as PortRef
 import           Luna.Studio.Action.Command                    (Command)
 import           Luna.Studio.Action.State.Model.ExpressionNode (nodeToNodeAngle)
 import           Luna.Studio.Action.State.Model.Port           (portAngleStart, portAngleStop, portGap)
@@ -11,8 +13,6 @@ import           Luna.Studio.Action.State.Model.Sidebar        (getInputSidebarP
 import           Luna.Studio.Action.State.NodeEditor           (getConnection, getConnections, getNode, getPort)
 import           Luna.Studio.Data.Color                        (Color (Color))
 import           Luna.Studio.Data.Geometry                     (closestPointOnLine, closestPointOnLineParam, doesSegmentsIntersects)
-import           Luna.Studio.Data.PortRef                      (AnyPortRef (OutPortRef'), InPortRef, OutPortRef)
-import qualified Luna.Studio.Data.PortRef                      as PortRef
 import           Luna.Studio.Prelude
 import           Luna.Studio.React.Model.Connection            (Connection (Connection), ConnectionId,
                                                                 CurrentConnection (CurrentConnection), Mode (Normal, Sidebar), connectionId,

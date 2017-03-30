@@ -1,9 +1,9 @@
 module Luna.Studio.Action.Basic.SetPortMode where
 
+import           Empire.API.Data.PortRef                 (AnyPortRef, nodeLoc, portId)
 import           Luna.Studio.Action.Basic.DrawConnection (redrawConnectionsForNode)
 import           Luna.Studio.Action.Command              (Command)
 import           Luna.Studio.Action.State.NodeEditor     (modifySidebarNode)
-import           Luna.Studio.Data.PortRef                (AnyPortRef, nodeLoc, portId)
 import           Luna.Studio.Prelude
 import           Luna.Studio.React.Model.Node            (ports)
 import           Luna.Studio.React.Model.Port            (Mode, mode)

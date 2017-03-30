@@ -31,7 +31,7 @@ localMerge parentPath graphs = do
     let parentLoc = NodeLoc.fromPath parentPath
     modifyExpressionNode parentLoc $ mode .= Expanded (Function $ Map.fromList subgraphs)
     forM_ (Map.elems graphs) $ \graph -> do
-        let connections        = map ((_1 %~ convert . (parentPath,)) . (_2 %~ convert . (parentPath,))) $ graph ^. GraphAPI.connections
+        let connections        = map ((_1 %~ NodeLoc.prependPath parentPath) . (_2 %~ NodeLoc.prependPath parentPath)) $ graph ^. GraphAPI.connections
         void $ localAddConnections connections
     void $ redrawConnectionsForNode parentLoc
 

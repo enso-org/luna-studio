@@ -1,11 +1,11 @@
 module Luna.Studio.Action.Basic.DrawConnection where
 
+import           Empire.API.Data.PortRef             (InPortRef, OutPortRef)
 import           JS.Scene                            (inputSidebar, outputSidebar)
 import           Luna.Studio.Action.Command          (Command)
 import           Luna.Studio.Action.State.Model      (createConnectionModel)
 import           Luna.Studio.Action.State.NodeEditor (getConnections, getSidebarNodes, modifyNodeEditor)
 import qualified Luna.Studio.Action.State.NodeEditor as NodeEditor
-import           Luna.Studio.Data.PortRef            (InPortRef, OutPortRef)
 import           Luna.Studio.Prelude
 import           Luna.Studio.React.Model.Connection  (Connection, ConnectionId, connectionId, dst, src, toConnectionsMap)
 import           Luna.Studio.React.Model.Node        (NodeLoc, nodeLoc)

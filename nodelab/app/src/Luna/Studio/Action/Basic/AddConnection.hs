@@ -1,12 +1,12 @@
 module Luna.Studio.Action.Basic.AddConnection where
 
 import           Control.Monad                           (filterM)
+import           Empire.API.Data.PortRef                 (AnyPortRef (InPortRef'), InPortRef, OutPortRef, dstNodeLoc, dstPortId)
 import           Luna.Studio.Action.Basic.DrawConnection (createConnection)
 import           Luna.Studio.Action.Basic.UpdateNode     (updatePortSelfVisibility)
 import qualified Luna.Studio.Action.Batch                as Batch
 import           Luna.Studio.Action.Command              (Command)
 import qualified Luna.Studio.Action.State.NodeEditor     as NodeEditor
-import           Luna.Studio.Data.PortRef                (AnyPortRef (InPortRef'), InPortRef, OutPortRef, dstNodeLoc, dstPortId)
 import           Luna.Studio.Prelude
 import           Luna.Studio.React.Model.Connection      (ConnectionId)
 import           Luna.Studio.React.Model.Node            (NodeLoc)

@@ -6,9 +6,9 @@ module Luna.Studio.React.View.PortControl
 import           Empire.API.Data.Port         (InPort (Arg), OutPort (All), PortId (InPortId, OutPortId))
 import qualified Empire.API.Data.Port         as PortAPI
 import qualified Empire.API.Data.PortDefault  as PortDefault
+import           Empire.API.Data.PortRef      (AnyPortRef (..), toAnyPortRef)
 import qualified Empire.API.Data.ValueType    as ValueType
 import qualified JS.Config                    as Config
-import           Luna.Studio.Data.PortRef     (AnyPortRef (..), toAnyPortRef)
 import qualified Luna.Studio.Event.UI         as UI
 import           Luna.Studio.Prelude          hiding (group)
 import qualified Luna.Studio.React.Event.Node as Node

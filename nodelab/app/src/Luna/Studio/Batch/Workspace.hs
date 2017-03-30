@@ -15,11 +15,11 @@ import qualified Empire.API.Data.GraphLocation as GraphLocation
 import           Empire.API.Data.Library       (Library)
 import qualified Empire.API.Data.Library       as Library
 import           Empire.API.Data.Node          (Node, NodeId)
-import           Empire.API.Data.NodeLoc       (NodeLoc (NodeLoc), NodePath (NodePath))
+import           Empire.API.Data.NodeLoc       (HasBreadcrumb (..), NodeLoc (NodeLoc), NodePath (NodePath))
 import           Empire.API.Data.Project       (Project, ProjectId)
 import qualified Empire.API.Data.Project       as Project
-
 import           Text.ScopeSearcher.Item       (Items)
+
 
 data UIGraphLocation = UIGraphLocation { _projectId   :: ProjectId
                                        , _libraryName :: String
@@ -82,15 +82,10 @@ fromUIGraphLocation projs (UIGraphLocation projId lib bc) = do
     (libraryId, _) <- find (\(_,p) -> p ^. Library.path == lib) libs
     return $ GraphLocation projId libraryId bc
 
-
-instance Convertible (Workspace, NodeLoc) (Breadcrumb BreadcrumbItem) where
-    convert (workspace, nodeLoc) = convert (workspace ^. currentLocation, nodeLoc)
-
-instance Convertible (Workspace, NodeLoc) (Workspace, NodeId) where
-    convert (workspace, nodeLoc) = (workspace & currentLocation .~ newLocation, nodeId') where
-        (newLocation, nodeId') = convert (workspace ^. currentLocation, nodeLoc)
-
 instance Convertible (GraphLocation, Breadcrumb BreadcrumbItem, NodeId) (Maybe NodeLoc) where
     convert (graphLoc, breadcrumb', nodeId') = do
         localBc' <- Breadcrumb <$> List.stripPrefix (graphLoc ^. GraphLocation.breadcrumb . Breadcrumb.items) (breadcrumb' ^. Breadcrumb.items)
         return $ NodeLoc (NodePath localBc') nodeId'
+
+instance HasBreadcrumb Workspace where
+    breadcrumb = currentLocation . GraphLocation.breadcrumb

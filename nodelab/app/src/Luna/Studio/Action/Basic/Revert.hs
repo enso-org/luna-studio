@@ -3,7 +3,7 @@ module Luna.Studio.Action.Basic.Revert where
 import           Control.Arrow                              ((&&&))
 import           Empire.API.Data.Connection                 (dst, src)
 import           Empire.API.Data.Node                       (nodeId)
-import           Empire.API.Data.NodeLoc                    (NodeLoc)
+import           Empire.API.Data.NodeLoc                    (NodeLoc, prependPath)
 import           Empire.API.Data.PortRef                    (AnyPortRef (InPortRef', OutPortRef'), OutPortRef (OutPortRef), toAnyPortRef)
 import qualified Empire.API.Graph.AddConnection             as AddConnection
 import qualified Empire.API.Graph.AddNode                   as AddNode
@@ -42,18 +42,18 @@ import           Luna.Studio.State.Global                   (State)
 
 revertAddConnection :: AddConnection.Request -> Command State ()
 revertAddConnection (AddConnection.Request loc _ (Left (InPortRef' dst'))) =
-    inCurrentLocation loc $ \path -> void $ localRemoveConnection $ convert (path, dst')
+    inCurrentLocation loc $ \path -> void $ localRemoveConnection $ prependPath path dst'
 revertAddConnection (AddConnection.Request _ _ (Left _)) = return ()
 revertAddConnection _ = $notImplemented
 
 
 revertAddNode :: AddNode.Request -> Command State ()
-revertAddNode (AddNode.Request loc nid _ _ _) =
-    inCurrentLocation loc $ \path -> void $ localRemoveNode $ convert (path, nid)
+revertAddNode (AddNode.Request loc nl _ _ _) =
+    inCurrentLocation loc $ \path -> void $ localRemoveNode $ prependPath path nl
 
 revertAddPort :: AddPort.Request -> Command State ()
 revertAddPort (AddPort.Request loc portRef) =
-    inCurrentLocation loc $ \path -> void $ localRemovePort $ convert (path, portRef)
+    inCurrentLocation loc $ \path -> void $ localRemovePort $ prependPath path portRef
 
 revertAddSubgraph :: AddSubgraph.Request -> Command State ()
 revertAddSubgraph (AddSubgraph.Request loc nodes _) =
@@ -63,12 +63,12 @@ revertMovePort :: MovePort.Request -> Command State ()
 revertMovePort (MovePort.Request loc oldPortRef newPos) =
     inCurrentLocation loc $ \path -> case oldPortRef of
         OutPortRef' (OutPortRef nid (Projection i p)) ->
-            void $ localMovePort (convert (path, toAnyPortRef nid $ OutPortId $ Projection newPos p)) i
+            void $ localMovePort (prependPath path (toAnyPortRef nid $ OutPortId $ Projection newPos p)) i
         _                                           -> $notImplemented
 
 revertRemoveConnection :: RemoveConnection.Request -> Response.Status RemoveConnection.Inverse -> Command State ()
 revertRemoveConnection (RemoveConnection.Request loc dst') (Response.Ok (RemoveConnection.Inverse src')) =
-    inCurrentLocation loc $ \path -> void $ localAddConnection (convert (path, src')) (convert (path, dst'))
+    inCurrentLocation loc $ \path -> void $ localAddConnection (prependPath path src') (prependPath path dst')
 revertRemoveConnection (RemoveConnection.Request _loc _dst) (Response.Error _msg) = $notImplemented
 
 --TODO[LJK]: Force Empire.API.Data.Connection to be instance of wrapped to make functions like this cleaner
@@ -77,14 +77,14 @@ revertRemoveNodes (RemoveNodes.Request loc _) (Response.Ok (RemoveNodes.Inverse 
     inCurrentLocation loc $ \path -> do
         let nodes' = (map (convert . (path,)) nodes) ^.. traverse . _Expression
             conns' = map (view src &&& view dst) conns
-        void $ localAddSubgraph nodes' $ map (\conn -> (convert (path, conn ^. src), convert (path, conn ^. dst))) conns
+        void $ localAddSubgraph nodes' $ map (\conn -> (prependPath path (conn ^. src), prependPath path (conn ^. dst))) conns
 revertRemoveNodes (RemoveNodes.Request _loc _) (Response.Error _msg) = $notImplemented
 
 revertRemovePort :: RemovePort.Request -> Response.Status RemovePort.Inverse -> Command State ()
 revertRemovePort (RemovePort.Request loc portRef) (Response.Ok (RemovePort.Inverse conns)) =
     inCurrentLocation loc $ \path -> do
-        void $ localAddPort $ convert (path, portRef)
-        void $ localAddConnections (map (\conn -> (convert (path, conn ^. src), convert (path, conn ^. dst))) conns)
+        void $ localAddPort $ prependPath path portRef
+        void $ localAddConnections (map (\conn -> (prependPath path (conn ^. src), prependPath path (conn ^. dst))) conns)
 revertRemovePort (RemovePort.Request _loc _portRef) (Response.Error _msg) = $notImplemented
 
 revertRenameNode :: RenameNode.Request -> Response.Status RenameNode.Inverse -> Command State ()
@@ -115,6 +115,6 @@ revertSetNodesMeta (SetNodesMeta.Request loc _) (Response.Ok (SetNodesMeta.Inver
 revertSetNodesMeta (SetNodesMeta.Request _loc _) (Response.Error _msg) = $notImplemented
 
 revertSetPortDefault :: SetPortDefault.Request -> Response.Status SetPortDefault.Inverse -> Command State ()
-revertSetPortDefault (SetPortDefault.Request loc nid _) (Response.Ok (SetPortDefault.Inverse prevCode)) =
-    inCurrentLocation loc $ \path -> void $ localSetPortDefault (convert (path, nid)) prevCode
-revertSetPortDefault (SetPortDefault.Request _loc _nid _) (Response.Error _msg) = $notImplemented
+revertSetPortDefault (SetPortDefault.Request loc portRef _) (Response.Ok (SetPortDefault.Inverse prevCode)) =
+    inCurrentLocation loc $ \path -> void $ localSetPortDefault (prependPath path portRef) prevCode
+revertSetPortDefault (SetPortDefault.Request _loc _portRef _) (Response.Error _msg) = $notImplemented

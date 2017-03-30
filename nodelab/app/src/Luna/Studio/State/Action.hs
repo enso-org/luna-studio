@@ -10,7 +10,7 @@ import           Data.ScreenPosition                (ScreenPosition)
 import           Data.Set                           (Set)
 import qualified Data.Set                           as Set
 import           Empire.API.Data.NodeLoc            (NodeLoc)
-import           Luna.Studio.Data.PortRef           (AnyPortRef)
+import           Empire.API.Data.PortRef            (AnyPortRef)
 import           Luna.Studio.Prelude
 import           Luna.Studio.React.Model.Connection (ConnectionId)
 import qualified Luna.Studio.React.Model.Connection as Connection

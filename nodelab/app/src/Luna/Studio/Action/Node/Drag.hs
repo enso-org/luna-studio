@@ -11,13 +11,13 @@ import qualified Data.Map                                    as Map
 import           Data.Position                               (Position, move, vector)
 import           Empire.API.Data.NodeLoc                     (NodeLoc)
 import           Empire.API.Data.Port                        (InPort (Self), OutPort (All), PortId (InPortId))
+import           Empire.API.Data.PortRef                     (InPortRef (InPortRef), OutPortRef (OutPortRef))
 import           Luna.Studio.Action.Basic                    (connect, localMoveNodes, moveNodes, selectNodes, updatePortSelfVisibility)
 import           Luna.Studio.Action.Command                  (Command)
 import           Luna.Studio.Action.Node.Snap                (snap)
 import           Luna.Studio.Action.State.Model              (createConnectionModel, getIntersectingConnections)
 import           Luna.Studio.Action.State.NodeEditor         (getConnection, getExpressionNode, getSelectedNodes, modifyConnection,
                                                               modifyExpressionNode, modifyNodeEditor)
-import           Luna.Studio.Data.PortRef                    (InPortRef (InPortRef), OutPortRef (OutPortRef))
 import           Luna.Studio.Event.Mouse                     (workspacePosition)
 import           Luna.Studio.Prelude
 import           Luna.Studio.React.Model.Connection          (Mode (Dimmed, Highlighted), dst, src)

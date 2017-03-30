@@ -2,6 +2,7 @@
 module Empire.API.Data.Connection where
 
 import           Data.Binary             (Binary)
+import           Data.Convert            (Convertible (..))
 import           Prologue
 
 import           Empire.API.Data.Node    (NodeId)
@@ -17,3 +18,9 @@ data Connection = Connection { _src :: OutPortRef
 
 makeLenses ''Connection
 instance Binary Connection
+
+instance Convertible Connection (OutPortRef, InPortRef) where
+    convert = (,) <$> view src <*> view dst
+
+instance Convertible (OutPortRef, InPortRef) Connection where
+    convert = uncurry Connection

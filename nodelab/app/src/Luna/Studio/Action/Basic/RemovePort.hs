@@ -1,13 +1,13 @@
 module Luna.Studio.Action.Basic.RemovePort where
 
 import qualified Data.Map.Lazy                             as Map
+import           Empire.API.Data.PortRef                   (AnyPortRef (OutPortRef'), OutPortRef (OutPortRef), srcPortId)
 import           Luna.Studio.Action.Basic.AddConnection    (localAddConnection)
 import           Luna.Studio.Action.Basic.RemoveConnection (removeConnection)
 import           Luna.Studio.Action.Basic.UpdateNode       (localUpdateSidebarNode)
 import qualified Luna.Studio.Action.Batch                  as Batch
 import           Luna.Studio.Action.Command                (Command)
 import           Luna.Studio.Action.State.NodeEditor       (getConnectionsContainingNode, getSidebarNode)
-import           Luna.Studio.Data.PortRef                  (AnyPortRef (OutPortRef'), OutPortRef (OutPortRef), srcPortId)
 import           Luna.Studio.Prelude
 import           Luna.Studio.React.Model.Connection        (connectionId, dst, src)
 import           Luna.Studio.React.Model.Node.SidebarNode  (countProjectionPorts, hasPort, isInputSidebar, ports)

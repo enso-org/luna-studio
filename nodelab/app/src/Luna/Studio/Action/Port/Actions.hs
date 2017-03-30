@@ -3,11 +3,11 @@ module Luna.Studio.Action.Port.Actions
     , handleClick
     ) where
 
+import           Empire.API.Data.PortRef                  (AnyPortRef, nodeLoc, portId)
 import           Luna.Studio.Action.Basic                 (localAddPort)
 import           Luna.Studio.Action.Command               (Command)
 import           Luna.Studio.Action.Connect               (connectToPort, startConnecting)
 import           Luna.Studio.Action.Sidebar               (startPortDrag)
-import           Luna.Studio.Data.PortRef                 (AnyPortRef, nodeLoc, portId)
 import           Luna.Studio.Event.Mouse                  (mousePosition)
 import           Luna.Studio.Prelude
 import           Luna.Studio.React.Model.Node             (Node (Sidebar), countProjectionPorts, hasPort)

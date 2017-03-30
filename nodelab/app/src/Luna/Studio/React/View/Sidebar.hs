@@ -11,7 +11,7 @@ import           Data.Position                            (y)
 import qualified JS.Config                                as Config
 import           JS.Scene                                 (inputSidebarId, outputSidebarId)
 import qualified JS.UI                                    as UI
-import           Luna.Studio.Data.PortRef                 (AnyPortRef (OutPortRef'), OutPortRef (OutPortRef), toAnyPortRef)
+import           Empire.API.Data.PortRef                 (AnyPortRef (OutPortRef'), OutPortRef (OutPortRef), toAnyPortRef)
 import qualified Luna.Studio.Event.UI                     as UI
 import           Luna.Studio.Prelude
 import qualified Luna.Studio.React.Event.Sidebar          as Sidebar

@@ -19,8 +19,8 @@ import           Luna.Studio.Action.State.App             (renderIfNeeded)
 import           Luna.Studio.Action.State.Model           (getPortPositionInInputSidebar, getPortPositionInOutputSidebar)
 import           Luna.Studio.Action.State.NodeEditor      (getSidebarNode, modifySidebarNode)
 import           Luna.Studio.Action.State.Scene           (getInputSidebarSize)
-import           Luna.Studio.Data.PortRef                 (AnyPortRef)
-import qualified Luna.Studio.Data.PortRef                 as PortRef
+import           Empire.API.Data.PortRef                 (AnyPortRef)
+import qualified Empire.API.Data.PortRef                 as PortRef
 import           Luna.Studio.Event.Mouse                  (mousePosition)
 import           Luna.Studio.Prelude
 import           Luna.Studio.React.Model.Constants        (gridSize)

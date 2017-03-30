@@ -3,11 +3,11 @@
 
 module Luna.Studio.React.Event.Sidebar where
 
-import           Data.Aeson               (FromJSON, ToJSON)
-import           Empire.API.Data.NodeLoc  (NodeLoc)
-import           Luna.Studio.Data.PortRef (AnyPortRef)
+import           Data.Aeson              (FromJSON, ToJSON)
+import           Empire.API.Data.NodeLoc (NodeLoc)
+import           Empire.API.Data.PortRef (AnyPortRef)
 import           Luna.Studio.Prelude
-import           React.Flux               (MouseEvent)
+import           React.Flux              (MouseEvent)
 
 
 

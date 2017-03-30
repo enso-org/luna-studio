@@ -71,7 +71,7 @@ handle (Event.Batch ev) = Just $ case ev of
             isGoodLocation <- isCurrentLocation location
             when (isGoodLocation && not isGraphLoaded) $ do
                 let nodes       = convert . (NodeLoc.empty,) <$> result ^. GetProgram.graph . Graph.nodes
-                    connections = ((_1 %~ convert) . (_2 %~ convert)) <$> result ^. GetProgram.graph . Graph.connections
+                    connections = result ^. GetProgram.graph . Graph.connections
                     monads      = result ^. GetProgram.graph . Graph.monads
                     code        = result ^. GetProgram.code
                     nsData      = result ^. GetProgram.nodeSearcherData
@@ -90,7 +90,7 @@ handle (Event.Batch ev) = Just $ case ev of
         location           = request  ^. AddConnection.location
         failure _          = whenM (isOwnRequest requestId) $ revertAddConnection request
         success connection = inCurrentLocation location $ \path -> do
-            void $ localAddConnection (convert (path, connection ^. src)) (convert (path, connection ^. dst))
+            void $ localAddConnection (prependPath path (connection ^. src)) (prependPath path (connection ^. dst))
 
     AddNodeResponse response -> handleResponse response success failure where
         requestId    = response ^. Response.requestId
@@ -123,7 +123,7 @@ handle (Event.Batch ev) = Just $ case ev of
                      _            -> return ()
             else do
                 --TODO[LJK, PM]: What should happen if localAddPort fails? (Example reason - node is not in graph)
-                void $ localAddPort $ convert (path, portRef)
+                void $ localAddPort $ prependPath path portRef
                 void $ localUpdateNode node
 
     AddSubgraphResponse response -> handleResponse response success failure where
@@ -138,7 +138,7 @@ handle (Event.Batch ev) = Just $ case ev of
             if ownRequest then do
                 localUpdateExpressionNodes nodes
                 collaborativeModify $ flip map nodes $ view nodeLoc
-            else void $ localAddSubgraph nodes (map (\conn -> (convert (path, conn ^. src), convert (path, conn ^. dst))) conns)
+            else void $ localAddSubgraph nodes (map (\conn -> (prependPath path (conn ^. src), prependPath path (conn ^. dst))) conns)
 
     CodeUpdate update -> do
        inCurrentLocation (update ^. CodeUpdate.location) $ \path -> do
@@ -164,7 +164,7 @@ handle (Event.Batch ev) = Just $ case ev of
         let src' = update ^. ConnectUpdate.connection' . src
             dst' = update ^. ConnectUpdate.connection' . dst
         inCurrentLocation (update ^. ConnectUpdate.location') $ \path -> do
-            void $ localAddConnection (convert (path, src')) (convert (path, dst'))
+            void $ localAddConnection (prependPath path src') (prependPath path dst')
 
     DumpGraphVizResponse response -> handleResponse response doNothing doNothing
 
@@ -194,7 +194,7 @@ handle (Event.Batch ev) = Just $ case ev of
             ownRequest <- isOwnRequest requestId
             if ownRequest then
                 void $ localUpdateNode node
-            else void $ localMovePort (convert portRef) newPos >> localUpdateNode node
+            else void $ localMovePort portRef newPos >> localUpdateNode node
 
     NodeResultUpdate update -> do
         let location = update ^. NodeResultUpdate.location
@@ -224,11 +224,11 @@ handle (Event.Batch ev) = Just $ case ev of
             if ownRequest then
                 --TODO[LJK]: This is left to remind to set Confirmed flag in changes
                 return ()
-            else void $ localRemoveConnection (convert (path, connId))
+            else void $ localRemoveConnection $ prependPath path connId
 
     RemoveConnectionUpdate update -> do
         inCurrentLocation (update ^. RemoveConnection.location') $ \path ->
-            void $ localRemoveConnection $ convert (path, update ^. RemoveConnection.connId')
+            void $ localRemoveConnection $ prependPath path $ update ^. RemoveConnection.connId'
 
     RemoveNodesResponse response -> handleResponse response success failure where
         requestId       = response ^. Response.requestId
@@ -254,7 +254,7 @@ handle (Event.Batch ev) = Just $ case ev of
             if ownRequest then
                 --TODO[LJK]: This is left to remind to set Confirmed flag in changes
                 return ()
-            else void $ localRemovePort (convert (path, portRef))
+            else void $ localRemovePort $ prependPath path portRef
 
     RenameNodeResponse response -> handleResponse response success failure where
         requestId       = response ^. Response.requestId
@@ -342,7 +342,7 @@ handle (Event.Batch ev) = Just $ case ev of
             ownRequest    <- isOwnRequest requestId
             if ownRequest then
                 return ()
-            else void $ localSetPortDefault (convert (path, portRef)) defaultVal
+            else void $ localSetPortDefault (prependPath path portRef) defaultVal
 
     TypeCheckResponse response -> handleResponse response doNothing doNothing
 
