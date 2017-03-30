@@ -564,9 +564,8 @@ withGraph (GraphLocation pid lid breadcrumb) = withBreadcrumb pid lid breadcrumb
 
 getOutEdges :: ASTOp m => NodeId -> m [InPortRef]
 getOutEdges nodeId = do
-    graphRep <- GraphBuilder.buildGraph
-    let edges    = graphRep ^. APIGraph.connections
-        filtered = filter (\(opr, _) -> opr ^. PortRef.srcNodeId == nodeId) edges
+    edges <- GraphBuilder.buildConnections
+    let filtered = filter (\(opr, _) -> opr ^. PortRef.srcNodeId == nodeId) edges
     return $ view _2 <$> filtered
 
 disconnectPort :: ASTOp m => InPortRef -> m ()
