@@ -23,6 +23,12 @@ selectionMark_ = div_
     , "className" $= prefix "selection"
     ] mempty
 
+errorMark_ :: ReactElementM ViewEventHandler ()
+errorMark_ = div_
+    [ "key"       $= "errorMark"
+    , "className" $= prefix "error"
+    ] $ div_ mempty
+
 plainRect_ :: JSString -> Double -> Double -> Double -> Double -> ReactElementM ViewEventHandler ()
 plainRect_ key w h x y =
     rect_ [ "key"    $= key

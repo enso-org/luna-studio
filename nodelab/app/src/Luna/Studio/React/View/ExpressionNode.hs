@@ -17,7 +17,7 @@ import qualified Luna.Studio.React.Event.Node                          as Node
 import           Luna.Studio.React.Model.App                           (App)
 import qualified Luna.Studio.React.Model.Field                         as Field
 import           Luna.Studio.React.Model.Node.ExpressionNode           (ExpressionNode, NodeLoc, Subgraph, countArgPorts, countOutPorts,
-                                                                        isCollapsed)
+                                                                        isCollapsed,returnsError)
 import qualified Luna.Studio.React.Model.Node.ExpressionNode           as Node
 import qualified Luna.Studio.React.Model.Node.ExpressionNodeProperties as Prop
 import           Luna.Studio.React.Model.Port                          (InPort (Self), PortId (InPortId), isAll, isInPort)
@@ -29,7 +29,7 @@ import           Luna.Studio.React.View.Field                          (multilin
 import           Luna.Studio.React.View.Monad                          (monads_)
 import           Luna.Studio.React.View.Plane                          (planeMonads_, svgPlanes_)
 import           Luna.Studio.React.View.Port                           (portExpanded_, port_)
-import           Luna.Studio.React.View.Style                          (blurBackground_, selectionMark_)
+import           Luna.Studio.React.View.Style                          (blurBackground_, errorMark_, selectionMark_)
 import qualified Luna.Studio.React.View.Style                          as Style
 import           Luna.Studio.React.View.Visualization                  (visualization_)
 import           React.Flux
@@ -72,8 +72,9 @@ node = React.defineView name $ \(ref, n) -> case n ^. Node.mode of
         in div_
             [ "key"       $= (nodePrefix <> fromString (show nodeId))
             , "id"        $= (nodePrefix <> fromString (show nodeId))
-            , "className" $= Style.prefixFromList ( [ "node" , (if isCollapsed n then  "node--collapsed" else "node--expanded") ]
-                                                            ++ (if n ^. Node.isSelected  then ["node--selected"] else []) )
+            , "className" $= Style.prefixFromList ( [ "node", (if isCollapsed n then "node--collapsed" else "node--expanded") ]
+                                                           ++ (if returnsError n then ["node--error"] else [])
+                                                           ++ (if n ^. Node.isSelected then ["node--selected"] else []) )
             , "style"     @= Aeson.object [ "zIndex" Aeson..= show z ]
             , onMouseDown   $ handleMouseDown ref nodeLoc
             , onClick       $ \_ m -> dispatch ref $ UI.NodeEvent $ Node.Select m nodeLoc
@@ -141,6 +142,7 @@ nodeBody = React.defineView objNameBody $ \(ref, n) ->
         [ "key"       $= "nodeBody"
         , "className" $= Style.prefixFromList [ "node__body", "node-translate" ]
         ] $ do
+        errorMark_
         selectionMark_
         div_
             [ "key"       $= "properties-crop"
@@ -219,18 +221,17 @@ nodeContainer_ :: Ref App -> [Subgraph] -> ReactElementM ViewEventHandler ()
 nodeContainer_ ref subgraphs = React.viewWithSKey nodeContainer "node-container" (ref, subgraphs) mempty
 
 nodeContainer :: ReactView (Ref App, [Subgraph])
-nodeContainer = React.defineView name $ \(ref, subgraphs) ->
-div_
-    [ "className" $= Style.prefix "subgraphs"
-    ] $ forM_ subgraphs $ \subgraph -> do
-    let sidebars     = subgraph ^. Node.sidebarNodes . to HashMap.elems
-        nodes        = subgraph ^. Node.expressionNodes . to HashMap.elems
-        lookupNode m = ( m ^. MonadPath.monadType
-                       , m ^. MonadPath.path . to (mapMaybe $ flip HashMap.lookup $ subgraph ^. Node.expressionNodes))
-        monads       = map lookupNode $ subgraph ^. Node.monads
+nodeContainer = React.defineView name $ \(ref, subgraphs) -> do
     div_
-        [ "className" $= Style.prefix "subgraph"
-        ] $ do
-        forM_ nodes $ node_ ref
-        svgPlanes_ $
-        planeMonads_ $ monads_ monads
+        [ "className" $= Style.prefix "subgraphs"
+        ] $ forM_ subgraphs $ \subgraph -> do
+        let sidebars     = subgraph ^. Node.sidebarNodes . to HashMap.elems
+            nodes        = subgraph ^. Node.expressionNodes . to HashMap.elems
+            lookupNode m = ( m ^. MonadPath.monadType
+                           , m ^. MonadPath.path . to (mapMaybe $ flip HashMap.lookup $ subgraph ^. Node.expressionNodes))
+            monads       = map lookupNode $ subgraph ^. Node.monads
+        div_
+            [ "className" $= Style.prefix "subgraph"
+            ] $ do
+            forM_ nodes $ node_ ref
+            svgPlanes_ $ planeMonads_ $ monads_ monads

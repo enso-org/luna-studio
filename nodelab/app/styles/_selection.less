@@ -36,3 +36,33 @@
         }
     }
 }
+
+/////////////////////////////
+//         errors          //
+/////////////////////////////
+
+.luna-node--error {
+    .luna-error {
+        z-index:      -100;
+        opacity:       1;
+        width:         auto;
+        height:        auto;
+        position:      absolute;
+        border-radius: 34rem;
+        left:         -10rem;
+        top:          -10rem;
+        right:        -10rem;
+        bottom:       -10rem;
+        opacity: .2;
+        background: repeating-linear-gradient(
+            135deg,
+            rgba(0,0,0,0),
+            rgba(0,0,0,0) 12px,
+            red 12px,
+            red 24px
+        );
+    }
+    &.luna-node--expanded .luna-error {
+        border-radius: 10rem;
+    }
+}
