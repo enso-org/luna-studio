@@ -16,7 +16,7 @@ import           Luna.Studio.Prelude
 import           Luna.Studio.React.Model.Node                (ExpressionNode, NodePath, nodeLoc, toExpressionNodesMap, toSidebarNodesMap,
                                                               _Expression, _Sidebar)
 import           Luna.Studio.React.Model.Node.ExpressionNode (ExpandedMode (Function), Mode (Collapsed, Expanded), Subgraph (Subgraph),
-                                                              expressionNodes, mode)
+                                                              expressionNodes, mode, sidebarNodes)
 import           Luna.Studio.State.Global                    (State)
 
 
@@ -26,12 +26,13 @@ localMerge parentPath graphs = do
         let allNodes           = (convert . (NodeLoc.replaceLast k parentPath,) <$> graph ^. GraphAPI.nodes)
             expressionNodesMap = toExpressionNodesMap $ allNodes ^.. traverse . _Expression
             sidebarNodesMap    = toSidebarNodesMap    $ allNodes ^.. traverse . _Sidebar
-            connections        = map ((_1 %~ convert . (parentPath,)) . (_2 %~ convert . (parentPath,))) $ graph ^. GraphAPI.connections
             monads             = graph ^. GraphAPI.monads
-        void $ localAddConnections connections
         return (k, Subgraph expressionNodesMap sidebarNodesMap monads)
     let parentLoc = NodeLoc.fromPath parentPath
     modifyExpressionNode parentLoc $ mode .= Expanded (Function $ Map.fromList subgraphs)
+    forM_ (Map.elems graphs) $ \graph -> do
+        let connections        = map ((_1 %~ convert . (parentPath,)) . (_2 %~ convert . (parentPath,))) $ graph ^. GraphAPI.connections
+        void $ localAddConnections connections
     void $ redrawConnectionsForNode parentLoc
 
 localUnmerge :: ExpressionNode -> Command State ()
@@ -45,4 +46,7 @@ localUnmerge node = case node ^. mode of
 
 --TODO[PM]: Review this function - do we need to disconnect sidebar nodes as well?
 localUnmergeSubgraph :: Subgraph -> Command State ()
-localUnmergeSubgraph = void . localRemoveConnectionsContainingNodes . map (view nodeLoc) . HashMap.elems . view expressionNodes
+localUnmergeSubgraph subgraph = do
+    let expressionLocs = view nodeLoc <$> (subgraph ^. expressionNodes . to HashMap.elems)
+        sidebarLocs    = view nodeLoc <$> (subgraph ^. sidebarNodes . to HashMap.elems)
+    void $ localRemoveConnectionsContainingNodes $ expressionLocs <> sidebarLocs
