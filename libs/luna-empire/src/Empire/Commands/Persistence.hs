@@ -1,3 +1,5 @@
+{-# LANGUAGE OverloadedStrings #-}
+
 module Empire.Commands.Persistence
     ( saveProject
     , saveLocation
@@ -129,4 +131,4 @@ defaultLibraryPath = "Main.luna"
 createDefaultProject :: Empire ()
 createDefaultProject = do
   logger Logger.info "Creating default project"
-  void $ createLibrary (Just defaultLibraryName) (fromString defaultLibraryPath)
+  void $ createLibrary (Just defaultLibraryName) (fromString defaultLibraryPath) ""

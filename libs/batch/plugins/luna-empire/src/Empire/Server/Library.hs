@@ -29,6 +29,7 @@ handleCreateLibrary req@(Request _ _ request) = do
     (result, newEmpireEnv) <- liftIO $ Empire.runEmpire empireNotifEnv currentEmpireEnv $ Library.createLibrary
         (request ^. CreateLibrary.libraryName)
         (fromString $ request ^. CreateLibrary.path)
+        ""
     case result of
         Left err -> replyFail logger err req (Response.Error err)
         Right library -> do

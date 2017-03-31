@@ -1,6 +1,7 @@
 module Empire.Server.Atom where
 
 import           Control.Monad.State                   (StateT)
+import qualified Data.Text.IO                          as Text
 import           Prologue                              hiding (Item)
 
 import           Empire.Env                            (Env)
@@ -23,7 +24,9 @@ handleSetProject = $notImplemented
 
 handleOpenFile :: Request OpenFile.Request -> StateT Env BusT ()
 handleOpenFile (Request _ _ (OpenFile.Request path)) = do
-    lib <- liftIO $ Library.make (Just "dupaName") path
+    lib <- liftIO $ do
+        code <- Text.readFile path
+        Library.make (Just "dupaName") path code
     Env.empireEnv . Empire.activeFiles . at path ?= lib
     return ()
 

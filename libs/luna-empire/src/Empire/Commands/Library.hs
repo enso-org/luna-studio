@@ -12,6 +12,7 @@ import           Control.Monad.Reader
 import           Control.Monad.State
 import qualified Data.Map                as Map
 import           Data.Text               as Text
+import           Data.Text.IO            as Text
 import           Empire.Prelude
 
 import           Empire.Data.Library     (Library)
@@ -26,9 +27,9 @@ import           Empire.Empire           (Command, Empire)
 import qualified Empire.Empire           as Empire
 import qualified Empire.Utils.IdGen      as IdGen
 
-createLibrary :: Maybe String -> FilePath -> Empire Library
-createLibrary name path = do
-    library <- liftIO $ Library.make name path
+createLibrary :: Maybe String -> FilePath -> Text -> Empire Library
+createLibrary name path code = do
+    library <- liftIO $ Library.make name path code
     Empire.activeFiles . at path ?= library
     return library
 
@@ -49,4 +50,6 @@ withLibrary file cmd = do
                 Empire.empire $ const $ const result
 
 getBuffer :: FilePath -> Maybe (Int, Int) -> Empire Text
-getBuffer _ _ = return "CHUJ"
+getBuffer path Nothing = withLibrary path $ do
+    source <- use Library.code
+    return source

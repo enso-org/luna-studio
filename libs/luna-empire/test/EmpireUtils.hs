@@ -1,6 +1,7 @@
-{-# LANGUAGE DeriveAnyClass   #-}
-{-# LANGUAGE RankNTypes       #-}
-{-# LANGUAGE TypeApplications #-}
+{-# LANGUAGE DeriveAnyClass    #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RankNTypes        #-}
+{-# LANGUAGE TypeApplications  #-}
 
 module EmpireUtils (
       runEmp
@@ -51,7 +52,7 @@ import           Test.Hspec                    (expectationFailure)
 
 runEmp :: CommunicationEnv -> (Given GraphLocation => Empire a) -> IO (Either Error a, Env)
 runEmp env act = runEmpire env def $ do
-    _ <- createLibrary (Just "TestFile") "TestFile"
+    _ <- createLibrary (Just "TestFile") "TestFile" ""
     let toLoc = GraphLocation "TestFile"
     give (toLoc $ Breadcrumb []) act
 

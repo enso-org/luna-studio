@@ -56,12 +56,14 @@ import qualified Data.UUID                     as UUID
 import qualified Data.UUID.V4                  as UUID (nextRandom)
 import           Empire.Prelude
 import qualified Safe
+import qualified System.IO                     as IO
 
 import           Empire.Data.AST                 (NodeRef, NotInputEdgeException (..), NotUnifyException,
                                                   astExceptionFromException, astExceptionToException)
 import qualified Empire.Data.BreadcrumbHierarchy as BH
 import           Empire.Data.Graph               (Graph)
 import qualified Empire.Data.Graph               as Graph
+import qualified Empire.Data.Library             as Library
 import           Empire.Data.Layers              (Marker)
 
 import           Empire.API.Data.Breadcrumb      (Breadcrumb (..), Named, BreadcrumbItem)
@@ -563,8 +565,17 @@ typecheck :: GraphLocation -> Empire ()
 typecheck loc = withGraph loc $ runTC loc False
 
 substituteCode :: FilePath -> Int -> Int -> Text -> Maybe Int -> Empire ()
-substituteCode _ _ _ _ _ = return ()
-
+substituteCode path start end code cursor = do
+    liftIO $ print path >> print start >> print end >> print code >> print cursor
+    Library.withLibrary path $ do
+        currentCode <- use Library.code
+        let len            = end - start
+            (prefix, rest) = Text.splitAt start currentCode
+            suffix         = Text.drop len rest
+            newCode        = Text.concat [prefix, code, suffix]
+        liftIO $ print newCode
+        liftIO $ IO.hFlush IO.stdout
+        Library.code .= newCode
 -- internal
 
 runTC :: GraphLocation -> Bool -> Command Graph ()

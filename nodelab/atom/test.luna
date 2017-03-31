@@ -1,0 +1,7 @@
+def pi: 3.14
+
+def foo: a + b
+
+a = 3
+print a
+
