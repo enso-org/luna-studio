@@ -334,14 +334,15 @@ instance G.GraphRequest GetBuffer.Request where
         setter (GetBuffer.Request _    s) (GraphLocation.GraphLocation file _) = GetBuffer.Request file s
 
 handleSubstitute :: Request Substitute.Request -> StateT Env BusT ()
-handleSubstitute = modifyGraphOk defInverse action where
+handleSubstitute = modifyGraph defInverse action success where
     action (Substitute.Request file start end newText cursor) = Graph.substituteCode file start end newText cursor
+    success _ _ _ = return ()
 
 handleGetBuffer :: Request GetBuffer.Request -> StateT Env BusT ()
 handleGetBuffer = modifyGraph defInverse action replyResult where
     action (GetBuffer.Request file span) = do
         code <- Graph.getBuffer file span
-        return $ GetBuffer.Result "DUPA"
+        return $ GetBuffer.Result code
 
 
 
