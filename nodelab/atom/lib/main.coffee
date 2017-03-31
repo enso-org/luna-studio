@@ -47,16 +47,19 @@ module.exports =
 
           @ss = new SubAtom
           @ss.add @buffer.onDidChange (event) =>
+              console.log(event)
               return unless @triggerPush
               if event.newText != '' or event.oldText != ''
                   diff =
                       uri: uri
                       start: buffer.characterIndexForPosition(event.oldRange.start)
-                      end: buffer.characterIndexForPosition(event.oldRange.end)
+                      end: buffer.characterIndexForPosition(event.oldRange.start) + event.oldText.length
                       text: event.newText
                       cursor: buffer.characterIndexForPosition(@editor.getCursorBufferPosition())
-              internal.pushText(diff)
+                  console.log(diff, event.oldRange.start, event.oldRange.end)
+                  internal.pushText(diff)
           @ss.add @buffer.onWillSave (event) => internal.pushInternalEvent("SaveFile " + uri)
+          @ss.add @buffer.onWillReload (event) => internal.pushInternalEvent("GetBuffer " + uri)
 
         atom.workspace.getActivePane().activateItem new LunaStudioTab(uri, code)
 
@@ -67,7 +70,6 @@ module.exports =
         if atom.workspace.getActivePaneItem().buffer
             activeFilePath =  atom.workspace.getActivePaneItem().buffer.file.path
         else activeFilePath = atom.workspace.getActivePane().activeItem.uri
-        # console.log(activeFilePath)
         if path.extname(activeFilePath) is ".luna"
             internal.pushInternalEvent("CloseFile " + activeFilePath)
     @subs.add atom.commands.add 'atom-workspace', 'core:save', (e)                 ->
@@ -75,7 +77,6 @@ module.exports =
           activeFilePath =  atom.workspace.getActivePaneItem().buffer.file.path
       else activeFilePath = atom.workspace.getActivePane().activeItem.uri
       if path.extname(activeFilePath) is ".luna"
-        # console.log("core save" + activeFilePath)
         e.preventDefault()
         e.stopImmediatePropagation()
         internal.pushInternalEvent("SaveFile " + activeFilePath)
