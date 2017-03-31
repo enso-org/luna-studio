@@ -54,6 +54,8 @@ sidebar_ ref node = do
     let ports             = node ^. SidebarNode.ports . to Map.elems
         nodeLoc           = node ^. SidebarNode.nodeLoc
         mode              = node ^. SidebarNode.mode
+        mayFixedPos       = map (\pos -> "style" @= Aeson.object [ "bottom" Aeson..= show pos]) $
+            maybeToList $ node ^. SidebarNode.fixedBottomPos
         isPortDragged     = any isInMovedMode ports
         classes           = [ "sidebarports", if isInputSidebar node then "sidebar--i" else "sidebar--o" ]
                          ++ if mode == AddRemove then ["sidebarports--editmode"] else []
@@ -66,13 +68,13 @@ sidebar_ ref node = do
                 MoveConnect -> portHandlers ref mode False False portRef
 
 
-    div_
+    div_ (
         [ "key"         $= name node
         , "className"   $= Style.prefixFromList classes
         , onDoubleClick $ \e _ -> [stopPropagation e]
         , onMouseDown   $ \e _ -> [stopPropagation e]
         , onMouseMove   $ \e m -> stopPropagation e : (dispatch ref $ UI.SidebarEvent $ Sidebar.MouseMove m nodeLoc)
-        ] $ do
+        ] ++ mayFixedPos ) $ do
         div_
             [ "key" $= "activeArea"
             , "className" $= Style.prefixFromList [ "sidebarports__active-area", "noselect" ]

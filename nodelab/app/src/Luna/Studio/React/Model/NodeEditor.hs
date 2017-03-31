@@ -21,8 +21,6 @@ import qualified Luna.Studio.React.Model.Node.ExpressionNode as ExpressionNode
 import           Luna.Studio.React.Model.Searcher            (Searcher)
 import           Luna.Studio.React.Model.SelectionBox        (SelectionBox)
 
-type BottomDist = Double
-
 data NodeEditor = NodeEditor { _screenTransform     :: CameraTransformation
                              , _expressionNodes     :: ExpressionNodesMap
                              , _sidebarNodes        :: SidebarNodesMap

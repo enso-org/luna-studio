@@ -11,7 +11,7 @@ import           Luna.Studio.Action.Command               (Command)
 import           Luna.Studio.Action.State.Scene           (getInputSidebar, getInputSidebarPosition, getOutputSidebar, translateToWorkspace)
 import           Luna.Studio.Prelude
 import           Luna.Studio.React.Model.Constants        (gridSize)
-import           Luna.Studio.React.Model.Node.SidebarNode (SidebarType (InputSidebar, OutputSidebar))
+import           Luna.Studio.React.Model.Node.SidebarNode (SidebarType (Input, Output))
 import           Luna.Studio.React.Model.Port             (Port, PortId, getPortNumber, getPositionInSidebar, isSelf, portId)
 import           Luna.Studio.State.Global                 (State)
 
@@ -20,12 +20,12 @@ import           Luna.Studio.State.Global                 (State)
 
 getMousePositionInSidebar :: ScreenPosition -> SidebarType -> Command State (Maybe Position)
 getMousePositionInSidebar mousePos type' = case type' of
-        InputSidebar -> runMaybeT $ do
+        Input  -> runMaybeT $ do
             pos <- MaybeT getInputSidebarPosition
             let (posX, posY)     = toTuple pos
                 (mouseX, mouseY) = toTuple mousePos
             return $ fromTuple (mouseX - posX, mouseY - posY)
-        OutputSidebar -> $notImplemented
+        Output -> $notImplemented
 
 getPortPositionInInputSidebar :: Size -> PortId -> Position
 getPortPositionInInputSidebar sidebarSize pid = fromDoubles posX posY where

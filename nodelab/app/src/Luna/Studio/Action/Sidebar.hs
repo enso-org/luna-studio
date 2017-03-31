@@ -6,7 +6,10 @@ module Luna.Studio.Action.Sidebar where
 import           Control.Monad.Trans.Maybe                (MaybeT (MaybeT), runMaybeT)
 import           Data.ScreenPosition                      (ScreenPosition)
 import           Data.Size                                (y)
-import           Luna.Studio.Action.Basic                 (localMovePort, localRemovePort, redrawConnectionsForNode, setSidebarPortMode)
+import qualified JS.Scene                                 as Scene
+import           Luna.Studio.Action.Basic                 (getScene, localMovePort, localRemovePort, redrawConnectionsForNode,
+                                                           setSidebarPortMode)
+import qualified Luna.Studio.Action.Basic                 as Basic
 import qualified Luna.Studio.Action.Batch                 as Batch
 import           Luna.Studio.Action.Command               (Command)
 import qualified Luna.Studio.Action.Connect               as Connect
@@ -21,7 +24,8 @@ import qualified Luna.Studio.Data.PortRef                 as PortRef
 import           Luna.Studio.Event.Mouse                  (mousePosition)
 import           Luna.Studio.Prelude
 import           Luna.Studio.React.Model.Constants        (gridSize)
-import           Luna.Studio.React.Model.Node.SidebarNode (NodeLoc, countProjectionPorts, isOutputSidebar, ports)
+import           Luna.Studio.React.Model.Node.SidebarNode (NodeLoc, SidebarType (Input), countProjectionPorts, fixedBottomPos,
+                                                           isOutputSidebar, ports, sidebarType)
 import           Luna.Studio.React.Model.Port             (OutPort (Projection), PortId (OutPortId), getPortNumber)
 import qualified Luna.Studio.React.Model.Port             as Port
 import qualified Luna.Studio.React.View.Sidebar           as Sidebar
@@ -45,6 +49,33 @@ instance Action (Command State) PortDrag where
                 removeActionFromState portDragAction
             else cancelPortDragUnsafe action
 
+getInputSidebarBottomDistance :: Command State (Maybe Double)
+getInputSidebarBottomDistance = getScene >>= \mayScene -> return $
+    case (mayScene, (join $ view Scene.inputSidebar <$> mayScene)) of
+        (Nothing, _)               -> Nothing
+        (_, Nothing)               -> Nothing
+        (Just scene, Just sidebar) -> Just $
+            scene ^. Scene.size . y - sidebar ^. Scene.inputSidebarPosition . y - sidebar ^. Scene.inputSidebarSize . y
+
+setFixedBottomPos :: AnyPortRef -> Command State ()
+setFixedBottomPos portRef = do
+    let nodeLoc = portRef ^. PortRef.nodeLoc
+    mayNode <- getSidebarNode nodeLoc
+    withJust mayNode $ \node -> case (node ^. sidebarType, portRef ^. PortRef.portId) of
+        (Input, OutPortId (Projection _ _)) -> do
+            mayBottomPos <- getInputSidebarBottomDistance
+            modifySidebarNode nodeLoc $ fixedBottomPos .= mayBottomPos
+        _ -> $notImplemented
+
+addPort :: AnyPortRef -> Command State ()
+addPort portRef = do
+    setFixedBottomPos portRef
+    Basic.addPort portRef
+
+removePort :: AnyPortRef -> Command State ()
+removePort portRef = do
+    setFixedBottomPos portRef
+    Basic.removePort portRef
 
 startPortNameEdit :: AnyPortRef -> Command State ()
 startPortNameEdit portRef = do

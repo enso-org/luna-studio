@@ -13,6 +13,7 @@ module Luna.Studio.Action.Basic
     , exitBreadcrumb
     , focusNode
     , focusNodes
+    , getScene
     , loadGraph
     , loadProject
     , localAddConnection
@@ -123,7 +124,7 @@ import           Luna.Studio.Action.Basic.RemoveNode          (localRemoveNode, 
                                                                removeNodes, removeSelectedNodes)
 import           Luna.Studio.Action.Basic.RemovePort          (localRemovePort, removePort)
 import           Luna.Studio.Action.Basic.RenameNode          (localRenameNode, renameNode)
-import           Luna.Studio.Action.Basic.Scene               (updateScene)
+import           Luna.Studio.Action.Basic.Scene               (getScene, updateScene)
 import           Luna.Studio.Action.Basic.SearchNodes         (localSetSearcherHints)
 import           Luna.Studio.Action.Basic.SelectNode          (dropSelectionHistory, modifySelectionHistory, selectAll, selectNodes,
                                                                selectPreviousNodes, toggleSelect, unselectAll)

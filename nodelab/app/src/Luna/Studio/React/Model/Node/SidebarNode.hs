@@ -23,7 +23,7 @@ import           Luna.Studio.React.Model.Port   (PortsMap, toPortsMap)
 import qualified Luna.Studio.React.Model.Port   as Port
 
 
-data SidebarType = InputSidebar | OutputSidebar  deriving (Generic, Eq, NFData, Show)
+data SidebarType = Input | Output  deriving (Generic, Eq, NFData, Show)
 data SidebarMode = AddRemove
               | MoveConnect
               deriving (Generic, Eq, NFData, Show)
@@ -31,10 +31,11 @@ data SidebarMode = AddRemove
 instance Default SidebarMode where
     def = MoveConnect
 
-data SidebarNode = SidebarNode { _nodeLoc'    :: NodeLoc
-                               , _sidebarType :: SidebarType
-                               , _ports'      :: PortsMap
-                               , _mode        :: SidebarMode
+data SidebarNode = SidebarNode { _nodeLoc'       :: NodeLoc
+                               , _sidebarType    :: SidebarType
+                               , _ports'         :: PortsMap
+                               , _mode           :: SidebarMode
+                               , _fixedBottomPos :: Maybe Double
                                } deriving (Eq, Generic, NFData, Show)
 
 makeLenses ''SidebarNode
@@ -43,14 +44,14 @@ type SidebarNodesMap = HashMap NodeId SidebarNode
 
 instance Convertible (NodePath, Empire.Node, SidebarType) SidebarNode where
     convert (path, n, type') = SidebarNode
-        {- nodeLoc     -} (NodeLoc path (n ^. Empire.nodeId))
-        {- sidebarType -} type'
-        {- ports       -} ( case type' of
-            OutputSidebar -> convert <$> n ^. Empire.ports
-            InputSidebar  ->
-                toPortsMap . convert . maybe [] id $ n ^? Empire.nodeType . inputEdgePorts
+        {- nodeLoc        -} (NodeLoc path (n ^. Empire.nodeId))
+        {- sidebarType    -} type'
+        {- ports          -} ( case type' of
+            Output -> convert <$> n ^. Empire.ports
+            Input  -> toPortsMap . convert . maybe [] id $ n ^? Empire.nodeType . inputEdgePorts
             )
-        {- mode        -} def
+        {- mode           -} def
+        {- fixedBottomPos -} def
 
 instance IsNode SidebarNode where
     nodeLoc              = nodeLoc'
@@ -67,10 +68,10 @@ toSidebarNodesMap = HashMap.fromList . map (view nodeId &&& id)
 
 
 isInputSidebar :: SidebarNode -> Bool
-isInputSidebar n = n ^. sidebarType == InputSidebar
+isInputSidebar n = n ^. sidebarType == Input
 
 isOutputSidebar :: SidebarNode -> Bool
-isOutputSidebar n = n ^. sidebarType == OutputSidebar
+isOutputSidebar n = n ^. sidebarType == Output
 
 isInMode :: SidebarMode -> SidebarNode -> Bool
 isInMode mode' n = n ^. mode == mode'
