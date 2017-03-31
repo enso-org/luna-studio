@@ -2,6 +2,6 @@ def pi: 3.14
 
 def foo: a + b
 
-a = 3
+a = 1
+foo a 6
 print a
-
