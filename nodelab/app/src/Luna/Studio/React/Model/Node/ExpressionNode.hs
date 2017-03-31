@@ -9,28 +9,28 @@ module Luna.Studio.React.Model.Node.ExpressionNode
     , NodeLoc
     ) where
 
-import           Control.Arrow                         ((&&&))
-import           Data.Convert                          (Convertible (convert))
-import           Data.HashMap.Strict                   (HashMap)
-import qualified Data.HashMap.Strict                   as HashMap
-import           Data.Map.Lazy                         (Map)
-import qualified Data.Map.Lazy                         as Map
-import           Data.Position                         (Position, fromTuple, toTuple)
-import           Data.Time.Clock                       (UTCTime)
-import           Empire.API.Data.Breadcrumb            (BreadcrumbItem)
-import           Empire.API.Data.MonadPath             (MonadPath)
-import           Empire.API.Data.Node                  (NodeId)
-import qualified Empire.API.Data.Node                  as Empire
-import           Empire.API.Data.NodeLoc               (NodeLoc (NodeLoc), NodePath)
-import qualified Empire.API.Data.NodeMeta              as NodeMeta
-import           Empire.API.Graph.CollaborationUpdate  (ClientId)
-import           Empire.API.Graph.NodeResultUpdate     (NodeValue)
+import           Control.Arrow                            ((&&&))
+import           Data.Convert                             (Convertible (convert))
+import           Data.HashMap.Strict                      (HashMap)
+import qualified Data.HashMap.Strict                      as HashMap
+import           Data.Map.Lazy                            (Map)
+import qualified Data.Map.Lazy                            as Map
+import           Data.Position                            (Position, fromTuple, toTuple)
+import           Data.Time.Clock                          (UTCTime)
+import           Empire.API.Data.Breadcrumb               (BreadcrumbItem)
+import           Empire.API.Data.MonadPath                (MonadPath)
+import           Empire.API.Data.Node                     (NodeId)
+import qualified Empire.API.Data.Node                     as Empire
+import           Empire.API.Data.NodeLoc                  (NodeLoc (NodeLoc), NodePath)
+import qualified Empire.API.Data.NodeMeta                 as NodeMeta
+import           Empire.API.Graph.CollaborationUpdate     (ClientId)
+import           Empire.API.Graph.NodeResultUpdate        (NodeValue)
 import           Luna.Studio.Prelude
-import           Luna.Studio.React.Model.IsNode        as X (IsNode (..))
-import           Luna.Studio.React.Model.Node.EdgeNode (EdgeNodesMap)
-import           Luna.Studio.React.Model.Port          (PortsMap, isInPort)
-import qualified Luna.Studio.React.Model.Port          as Port
-import           Luna.Studio.State.Collaboration       (ColorId)
+import           Luna.Studio.React.Model.IsNode           as X (IsNode (..))
+import           Luna.Studio.React.Model.Node.SidebarNode (SidebarNodesMap)
+import           Luna.Studio.React.Model.Port             (PortsMap, isInPort)
+import qualified Luna.Studio.React.Model.Port             as Port
+import           Luna.Studio.State.Collaboration          (ColorId)
 
 
 data ExpressionNode = ExpressionNode { _nodeLoc'              :: NodeLoc
@@ -62,7 +62,7 @@ data ExpandedMode = Editor
 
 data Subgraph = Subgraph
   { _expressionNodes :: ExpressionNodesMap
-  , _edgeNodes       :: EdgeNodesMap
+  , _sidebarNodes    :: SidebarNodesMap
   , _monads          :: [MonadPath]
   } deriving (Default, Eq, Generic, NFData, Show)
 

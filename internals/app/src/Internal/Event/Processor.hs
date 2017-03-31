@@ -49,7 +49,7 @@ actions loop =
     -- , Control.handle
     -- , Debug.handle
     -- , Debug.handleEv
-    -- , Edge.handle
+    -- , Sidebar.handle
     -- , Graph.handle
     -- , MultiSelection.handle
     -- , Navigation.handle

@@ -1,7 +1,7 @@
 {-# LANGUAGE DeriveAnyClass #-}
 {-# LANGUAGE TypeFamilies   #-}
 
-module Luna.Studio.React.Event.Edge where
+module Luna.Studio.React.Event.Sidebar where
 
 import           Data.Aeson               (FromJSON, ToJSON)
 import           Empire.API.Data.NodeLoc  (NodeLoc)
@@ -17,7 +17,7 @@ data Event = AddPort           AnyPortRef
            | PortNameApply     AnyPortRef String
            | PortNameDiscard   AnyPortRef
            | PortNameStartEdit AnyPortRef
-           | ToggleEdgeMode    NodeLoc
+           | ToggleSidebarMode NodeLoc
             deriving (Show, Generic, NFData, Typeable)
 
 instance ToJSON   Event

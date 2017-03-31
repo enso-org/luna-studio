@@ -3,23 +3,23 @@ module Luna.Studio.Action.Port.Actions
     , handleClick
     ) where
 
-import           Luna.Studio.Action.Basic              (localAddPort)
-import           Luna.Studio.Action.Command            (Command)
-import           Luna.Studio.Action.Connect            (connectToPort, startConnecting)
-import           Luna.Studio.Action.Edge               (startPortDrag)
-import           Luna.Studio.Data.PortRef              (AnyPortRef, nodeLoc, portId)
-import           Luna.Studio.Event.Mouse               (mousePosition)
+import           Luna.Studio.Action.Basic                 (localAddPort)
+import           Luna.Studio.Action.Command               (Command)
+import           Luna.Studio.Action.Connect               (connectToPort, startConnecting)
+import           Luna.Studio.Action.Sidebar               (startPortDrag)
+import           Luna.Studio.Data.PortRef                 (AnyPortRef, nodeLoc, portId)
+import           Luna.Studio.Event.Mouse                  (mousePosition)
 import           Luna.Studio.Prelude
-import           Luna.Studio.React.Model.Node          (Node (Edge), countProjectionPorts, hasPort)
-import           Luna.Studio.React.Model.Node.EdgeNode (isOutputEdge)
-import           Luna.Studio.React.Model.Port          (getPortNumber)
-import           Luna.Studio.State.Action              (Action (continue), Mode (Click, Drag), connectAction, connectMode, portDragAction,
-                                                        portDragMode)
+import           Luna.Studio.React.Model.Node             (Node (Sidebar), countProjectionPorts, hasPort)
+import           Luna.Studio.React.Model.Node.SidebarNode (isOutputSidebar)
+import           Luna.Studio.React.Model.Port             (getPortNumber)
+import           Luna.Studio.State.Action                 (Action (continue), Mode (Click, Drag), connectAction, connectMode,
+                                                           portDragAction, portDragMode)
 
-import           Luna.Studio.Action.State.Action       (checkAction, checkIfActionPerfoming)
-import           Luna.Studio.Action.State.NodeEditor   (getNode)
-import           Luna.Studio.State.Global              (State)
-import           React.Flux                            (MouseEvent)
+import           Luna.Studio.Action.State.Action          (checkAction, checkIfActionPerfoming)
+import           Luna.Studio.Action.State.NodeEditor      (getNode)
+import           Luna.Studio.State.Global                 (State)
+import           React.Flux                               (MouseEvent)
 
 
 handleMouseDown :: MouseEvent -> AnyPortRef -> Command State ()
@@ -44,8 +44,8 @@ startPortDragOrConnect evt portRef mode = do
     withJust mayNode $ \node -> do
         mousePos <- mousePosition evt
         let doConnect = case node of
-                Edge n -> isOutputEdge n
-                _      -> True
+                Sidebar n -> isOutputSidebar n
+                _         -> True
         if doConnect
             then startConnecting mousePos portRef Nothing False mode
             else do

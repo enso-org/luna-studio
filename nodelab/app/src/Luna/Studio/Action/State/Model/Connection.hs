@@ -7,7 +7,7 @@ import           Data.Vector                                   (Vector2 (Vector2
 import           Luna.Studio.Action.Command                    (Command)
 import           Luna.Studio.Action.State.Model.ExpressionNode (nodeToNodeAngle)
 import           Luna.Studio.Action.State.Model.Port           (portAngleStart, portAngleStop, portGap)
-import           Luna.Studio.Action.State.Model.Sidebar        (getInputEdgePortPosition, getOutputEdgePortPosition)
+import           Luna.Studio.Action.State.Model.Sidebar        (getInputSidebarPortPosition, getOutputSidebarPortPosition)
 import           Luna.Studio.Action.State.NodeEditor           (getConnection, getConnections, getNode, getPort)
 import           Luna.Studio.Data.Geometry                     (closestPointOnLine, closestPointOnLineParam, doesSegmentsIntersects)
 import           Luna.Studio.Data.PortRef                      (AnyPortRef, InPortRef, OutPortRef)
@@ -18,15 +18,16 @@ import           Luna.Studio.React.Model.Connection            (Connection (Conn
                                                                 containsNode)
 import qualified Luna.Studio.React.Model.Connection            as Model
 import           Luna.Studio.React.Model.Constants             (lineHeight, nodeExpandedWidth, nodeRadius, portRadius)
-import           Luna.Studio.React.Model.Node                  (Node (Edge, Expression), NodeLoc)
-import           Luna.Studio.React.Model.Node.EdgeNode         (isInputEdge)
+import           Luna.Studio.React.Model.Node                  (Node (Expression), NodeLoc)
+import qualified Luna.Studio.React.Model.Node                  as Node
 import           Luna.Studio.React.Model.Node.ExpressionNode   (ExpressionNode, countArgPorts, countOutPorts, isCollapsed, nodeLoc,
                                                                 position)
+import           Luna.Studio.React.Model.Node.SidebarNode      (isInputSidebar)
 import           Luna.Studio.React.Model.Port                  (Port, PortId (InPortId, OutPortId), color, getPortNumber, isSelf, portId)
 import           Luna.Studio.State.Global                      (State)
 
 
--- WARNING: Since getInputSidebar and getOutputSidebar can change scene redrawConnectionForEdgeNodes may be needed if connection is made for edge nodes
+-- WARNING: Since getInputSidebar and getOutputSidebar can change scene redrawConnectionForSidebarNodes may be needed if connection is made for sidebar nodes
 
 createConnectionModel :: OutPortRef -> InPortRef -> Command State (Maybe Connection)
 createConnectionModel srcPortRef dstPortRef = runMaybeT $ do
@@ -75,16 +76,16 @@ getConnectionsIntersectingSegment seg = flip fmap getConnections $
         \conn -> doesSegmentsIntersects seg (conn ^. Model.srcPos, conn ^. Model.dstPos) )
 
 getConnectionPositionAndMode :: Node -> Port -> Node -> Port -> Command State (Maybe ((Position, Position), Mode))
-getConnectionPositionAndMode (Edge _) srcPort (Edge _) dstPort = runMaybeT $ do
-    srcConnPos <- MaybeT $ getInputEdgePortPosition srcPort
-    dstConnPos <- MaybeT $ getOutputEdgePortPosition dstPort
+getConnectionPositionAndMode (Node.Sidebar _) srcPort (Node.Sidebar _) dstPort = runMaybeT $ do
+    srcConnPos <- MaybeT $ getInputSidebarPortPosition srcPort
+    dstConnPos <- MaybeT $ getOutputSidebarPortPosition dstPort
     return ((srcConnPos, dstConnPos), Sidebar)
-getConnectionPositionAndMode (Edge _) srcPort dstNode dstPort = runMaybeT $ do
-    srcConnPos <- MaybeT $ getInputEdgePortPosition srcPort
+getConnectionPositionAndMode (Node.Sidebar _) srcPort dstNode dstPort = runMaybeT $ do
+    srcConnPos <- MaybeT $ getInputSidebarPortPosition srcPort
     dstConnPos <- MaybeT $ fmap2 fst $ getCurrentConnectionSrcPositionAndMode dstNode dstPort srcConnPos
     return ((srcConnPos, dstConnPos), Sidebar)
-getConnectionPositionAndMode srcNode srcPort (Edge _) dstPort = runMaybeT $ do
-    dstConnPos <- MaybeT $ getOutputEdgePortPosition dstPort
+getConnectionPositionAndMode srcNode srcPort (Node.Sidebar _) dstPort = runMaybeT $ do
+    dstConnPos <- MaybeT $ getOutputSidebarPortPosition dstPort
     srcConnPos <- MaybeT $ fmap2 fst $ getCurrentConnectionSrcPositionAndMode srcNode srcPort dstConnPos
     return ((srcConnPos, dstConnPos), Sidebar)
 getConnectionPositionAndMode (Expression srcNode) srcPort (Expression dstNode) dstPort = do
@@ -101,10 +102,10 @@ getConnectionPositionAndMode (Expression srcNode) srcPort (Expression dstNode) d
     return $ Just ((srcConnPos, dstConnPos), Normal)
 
 getCurrentConnectionSrcPositionAndMode :: Node -> Port -> Position -> Command State (Maybe (Position, Mode))
-getCurrentConnectionSrcPositionAndMode (Edge node) port _ = do
-    if isInputEdge node
-        then fmap2 (, Sidebar) $ getInputEdgePortPosition  port
-        else fmap2 (, Sidebar) $ getOutputEdgePortPosition port
+getCurrentConnectionSrcPositionAndMode (Node.Sidebar node) port _ = do
+    if isInputSidebar node
+        then fmap2 (, Sidebar) $ getInputSidebarPortPosition  port
+        else fmap2 (, Sidebar) $ getOutputSidebarPortPosition port
 getCurrentConnectionSrcPositionAndMode (Expression node) port mousePos =
     return . Just $ case port ^. portId of
         OutPortId _ -> (, Normal) $ connectionSrc pos mousePos isExp False portNum numOfSameTypePorts $ countOutPorts node + countArgPorts node == 1

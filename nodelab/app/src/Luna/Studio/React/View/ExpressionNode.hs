@@ -211,7 +211,7 @@ nodeContainer_ ref subgraphs = React.viewWithSKey nodeContainer "node-container"
 nodeContainer :: ReactView (Ref App, [Subgraph])
 nodeContainer = React.defineView name $ \(ref, subgraphs) ->
     div_ $ forM_ subgraphs $ \subgraph -> do
-      let edges        = subgraph ^. Node.edgeNodes . to HashMap.elems
+      let sidebars     = subgraph ^. Node.sidebarNodes . to HashMap.elems
           nodes        = subgraph ^. Node.expressionNodes . to HashMap.elems
           lookupNode m = ( m ^. MonadPath.monadType
                          , m ^. MonadPath.path . to (mapMaybe $ flip HashMap.lookup $ subgraph ^. Node.expressionNodes))

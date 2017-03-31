@@ -4,7 +4,7 @@ import           Data.Matrix                                 (multStd2)
 import           Data.Position                               (minimumRectangle, vector, x, y)
 import           Data.Size                                   (Size (Size))
 import           Data.Vector                                 (Vector2 (Vector2), scalarProduct)
-import           Luna.Studio.Action.Basic.DrawConnection     (redrawConnectionsForEdgeNodes)
+import           Luna.Studio.Action.Basic.DrawConnection     (redrawConnectionsForSidebarNodes)
 import           Luna.Studio.Action.Basic.ModifyCamera       (resetCamera)
 import           Luna.Studio.Action.Command                  (Command)
 import           Luna.Studio.Action.State.NodeEditor         (getExpressionNodes, modifyNodeEditor)
@@ -36,5 +36,5 @@ centerGraph = do
                     screenTransform . logicalToScreen .= multStd2 (translationMatrix shift) (homothetyMatrix screenCenter factor)
                     screenTransform . screenToLogical .= multStd2 (invertedHomothetyMatrix screenCenter factor) (invertedTranslationMatrix shift)
                     screenTransform . lastInverse     .= 2
-                void redrawConnectionsForEdgeNodes
+                void redrawConnectionsForSidebarNodes
         Nothing -> resetCamera

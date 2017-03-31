@@ -27,8 +27,9 @@ import           Luna.Studio.Prelude
 import           Luna.Studio.React.Model.App                  (nodeEditor)
 import           Luna.Studio.React.Model.Connection           (Connection, ConnectionId, ConnectionsMap, CurrentConnection, connectionId,
                                                                containsNode, containsPortRef, dstNodeLoc, srcNodeLoc, toConnectionsMap)
-import           Luna.Studio.React.Model.Node                 (EdgeNode, ExpressionNode, Node (Edge, Expression), NodeLoc, nodeLoc, ports,
-                                                               toEdgeNodesMap, toExpressionNodesMap, toNodesList, _Edge, _Expression)
+import           Luna.Studio.React.Model.Node                 (ExpressionNode, Node (Expression, Sidebar), NodeLoc, SidebarNode, nodeLoc,
+                                                               ports, toExpressionNodesMap, toNodesList, toSidebarNodesMap, _Expression,
+                                                               _Sidebar)
 import           Luna.Studio.React.Model.Node.ExpressionNode  (isSelected)
 import qualified Luna.Studio.React.Model.Node.ExpressionNode  as ExpressionNode
 import           Luna.Studio.React.Model.NodeEditor           (NodeEditor)
@@ -48,7 +49,7 @@ modifyNodeEditor = modify nodeEditor
 resetGraph :: Command State ()
 resetGraph = modifyNodeEditor $ do
     NE.expressionNodes     .= def
-    NE.edgeNodes           .= def
+    NE.sidebarNodes        .= def
     NE.monads              .= def
     NE.connections         .= def
     NE.visualizations      .= def
@@ -67,29 +68,29 @@ separateSubgraph nodeLocs = do
 
 addNode :: Node -> Command State ()
 addNode (Expression node) = addExpressionNode node
-addNode (Edge edge)       = addEdgeNode edge
+addNode (Sidebar    node) = addSidebarNode node
 
 addExpressionNode :: ExpressionNode -> Command State ()
 addExpressionNode node = Internal.addNodeRec NE.expressionNodes ExpressionNode.expressionNodes (node ^. nodeLoc) node
 
-addEdgeNode :: EdgeNode -> Command State ()
-addEdgeNode node = Internal.addNodeRec NE.edgeNodes ExpressionNode.edgeNodes (node ^. nodeLoc) node
+addSidebarNode :: SidebarNode -> Command State ()
+addSidebarNode node = Internal.addNodeRec NE.sidebarNodes ExpressionNode.sidebarNodes (node ^. nodeLoc) node
 
 getNode :: NodeLoc -> Command State (Maybe Node)
 getNode nl = do
     mayExpressionNode <- Expression `fmap2` getExpressionNode nl
     if isJust mayExpressionNode
         then return mayExpressionNode
-        else Edge `fmap2` getEdgeNode nl
+        else Sidebar `fmap2` getSidebarNode nl
 
 getNodes :: Command State [Node]
-getNodes = toNodesList <$> getExpressionNodes <*> getEdgeNodes
+getNodes = toNodesList <$> getExpressionNodes <*> getSidebarNodes
 
-getEdgeNode :: NodeLoc -> Command State (Maybe EdgeNode)
-getEdgeNode nl = NE.getEdgeNode nl <$> getNodeEditor
+getSidebarNode :: NodeLoc -> Command State (Maybe SidebarNode)
+getSidebarNode nl = NE.getSidebarNode nl <$> getNodeEditor
 
-getEdgeNodes :: Command State [EdgeNode]
-getEdgeNodes = view NE.edgeNodesRecursive <$> getNodeEditor
+getSidebarNodes :: Command State [SidebarNode]
+getSidebarNodes = view NE.sidebarNodesRecursive <$> getNodeEditor
 
 getExpressionNode :: NodeLoc -> Command State (Maybe ExpressionNode)
 getExpressionNode nl = NE.getExpressionNode nl <$> getNodeEditor
@@ -108,12 +109,12 @@ modifyExpressionNodes modifier = do
     nodeLocs <- view ExpressionNode.nodeLoc `fmap2` getExpressionNodes --FIXME it can be done faster
     catMaybes . map getFirst <$> forM nodeLocs (flip modifyExpressionNode $ (fmap (First . Just) modifier))
 
-modifyEdgeNode :: Monoid r => NodeLoc -> M.State EdgeNode r -> Command State r
-modifyEdgeNode = Internal.modifyNodeRec NE.edgeNodes ExpressionNode.edgeNodes
+modifySidebarNode :: Monoid r => NodeLoc -> M.State SidebarNode r -> Command State r
+modifySidebarNode = Internal.modifyNodeRec NE.sidebarNodes ExpressionNode.sidebarNodes
 
 removeNode :: NodeLoc -> Command State ()
 removeNode nl = do
-    Internal.removeNodeRec NE.edgeNodes       ExpressionNode.edgeNodes       nl
+    Internal.removeNodeRec NE.sidebarNodes    ExpressionNode.sidebarNodes    nl
     Internal.removeNodeRec NE.expressionNodes ExpressionNode.expressionNodes nl
 
 getSelectedNodes :: Command State [ExpressionNode]
@@ -122,10 +123,10 @@ getSelectedNodes = filter (view isSelected) <$> getExpressionNodes
 updateNodes :: [Node] -> Command State ()
 updateNodes nodes = do
     updateExpressionNodes $ nodes ^.. traverse . _Expression
-    updateEdgeNodes       $ nodes ^.. traverse . _Edge
+    updateSidebarNodes    $ nodes ^.. traverse . _Sidebar
 
-updateEdgeNodes :: [EdgeNode] -> Command State ()
-updateEdgeNodes update = modifyNodeEditor $ NE.edgeNodes .= toEdgeNodesMap update
+updateSidebarNodes :: [SidebarNode] -> Command State ()
+updateSidebarNodes update = modifyNodeEditor $ NE.sidebarNodes .= toSidebarNodesMap update
 
 updateExpressionNodes :: [ExpressionNode] -> Command State ()
 updateExpressionNodes update = modifyNodeEditor $ NE.expressionNodes .= toExpressionNodesMap update

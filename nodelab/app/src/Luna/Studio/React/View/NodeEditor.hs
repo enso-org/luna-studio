@@ -20,12 +20,12 @@ import qualified Luna.Studio.React.Model.NodeEditor    as NodeEditor
 import           Luna.Studio.React.Store               (Ref, dispatch, dispatch')
 import           Luna.Studio.React.View.Connection     (connection_, currentConnection_)
 import           Luna.Studio.React.View.ConnectionPen  (connectionPen_)
-import           Luna.Studio.React.View.Edge           (edgeSidebar_)
 import           Luna.Studio.React.View.ExpressionNode (nodeDynamicStyles_, node_)
 import           Luna.Studio.React.View.Monad          (monads_)
 import           Luna.Studio.React.View.Plane          (planeCanvas_, planeConnections_, planeMonads_, planeNodes_, svgPlanes_)
 import           Luna.Studio.React.View.Searcher       (searcher_)
 import           Luna.Studio.React.View.SelectionBox   (selectionBox_)
+import           Luna.Studio.React.View.Sidebar        (sidebar_)
 import qualified Luna.Studio.React.View.Style          as Style
 import           Luna.Studio.React.View.Visualization  (pinnedVisualization_)
 import           Numeric                               (showFFloat)
@@ -49,7 +49,7 @@ nodeEditor :: ReactView (Ref App, NodeEditor)
 nodeEditor = React.defineView name $ \(ref, ne) -> do
     let camera       = ne ^. NodeEditor.screenTransform . CameraTransformation.logicalToScreen
         nodes        = ne ^. NodeEditor.expressionNodes . to HashMap.elems
-        edges        = ne ^. NodeEditor.edgeNodes . to HashMap.elems
+        sidebars     = ne ^. NodeEditor.sidebarNodes . to HashMap.elems
         lookupNode m = ( m ^. MonadPath.monadType
                        , m ^. MonadPath.path . to (mapMaybe $ flip HashMap.lookup $ ne ^. NodeEditor.expressionNodes))
         monads       = map lookupNode $ ne ^. NodeEditor.monads
@@ -104,6 +104,6 @@ nodeEditor = React.defineView name $ \(ref, ne) -> do
             forM_ (ne ^. NodeEditor.visualizations) $ pinnedVisualization_ ref ne
             forM_ (ne ^. NodeEditor.searcher      ) $ searcher_ ref camera
 
-        forM_ edges $ edgeSidebar_ ref
+        forM_ sidebars $ sidebar_ ref
 
         planeCanvas_ mempty

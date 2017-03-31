@@ -2,8 +2,8 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RankNTypes        #-}
 {-# OPTIONS_GHC -fno-warn-orphans  #-}
-module Luna.Studio.React.Model.Node.EdgeNode
-    ( module Luna.Studio.React.Model.Node.EdgeNode
+module Luna.Studio.React.Model.Node.SidebarNode
+    ( module Luna.Studio.React.Model.Node.SidebarNode
     , module X
     , NodeId
     , NodeLoc
@@ -23,36 +23,36 @@ import           Luna.Studio.React.Model.Port   (PortsMap, toPortsMap)
 import qualified Luna.Studio.React.Model.Port   as Port
 
 
-data EdgeType = InputEdge | OutputEdge  deriving (Generic, Eq, NFData, Show)
-data EdgeMode = AddRemove
+data SidebarType = InputSidebar | OutputSidebar  deriving (Generic, Eq, NFData, Show)
+data SidebarMode = AddRemove
               | MoveConnect
               deriving (Generic, Eq, NFData, Show)
 
-instance Default EdgeMode where
+instance Default SidebarMode where
     def = MoveConnect
 
-data EdgeNode = EdgeNode { _nodeLoc'              :: NodeLoc
-                         , _edgeType              :: EdgeType
-                         , _ports'                :: PortsMap
-                         , _mode                  :: EdgeMode
-                         } deriving (Eq, Generic, NFData, Show)
+data SidebarNode = SidebarNode { _nodeLoc'    :: NodeLoc
+                               , _sidebarType :: SidebarType
+                               , _ports'      :: PortsMap
+                               , _mode        :: SidebarMode
+                               } deriving (Eq, Generic, NFData, Show)
 
-makeLenses ''EdgeNode
+makeLenses ''SidebarNode
 
-type EdgeNodesMap = HashMap NodeId EdgeNode
+type SidebarNodesMap = HashMap NodeId SidebarNode
 
-instance Convertible (NodePath, Empire.Node, EdgeType) EdgeNode where
-    convert (path, n, type') = EdgeNode
-        {- nodeLoc  -} (NodeLoc path (n ^. Empire.nodeId))
-        {- edgeType -} type'
-        {- ports    -} ( case type' of
-            OutputEdge -> convert <$> n ^. Empire.ports
-            InputEdge  ->
+instance Convertible (NodePath, Empire.Node, SidebarType) SidebarNode where
+    convert (path, n, type') = SidebarNode
+        {- nodeLoc     -} (NodeLoc path (n ^. Empire.nodeId))
+        {- sidebarType -} type'
+        {- ports       -} ( case type' of
+            OutputSidebar -> convert <$> n ^. Empire.ports
+            InputSidebar  ->
                 toPortsMap . convert . maybe [] id $ n ^? Empire.nodeType . inputEdgePorts
             )
-        {- mode     -} def
+        {- mode        -} def
 
-instance IsNode EdgeNode where
+instance IsNode SidebarNode where
     nodeLoc              = nodeLoc'
     ports                = ports'
     getPorts             = Map.elems . view ports
@@ -62,21 +62,21 @@ instance IsNode EdgeNode where
     countArgPorts        = Port.countArgPorts . Map.keys . (view ports)
     countProjectionPorts = Port.countProjectionPorts . Map.keys . (view ports)
 
-toEdgeNodesMap :: [EdgeNode] -> EdgeNodesMap
-toEdgeNodesMap = HashMap.fromList . map (view nodeId &&& id)
+toSidebarNodesMap :: [SidebarNode] -> SidebarNodesMap
+toSidebarNodesMap = HashMap.fromList . map (view nodeId &&& id)
 
 
-isInputEdge :: EdgeNode -> Bool
-isInputEdge n = n ^. edgeType == InputEdge
+isInputSidebar :: SidebarNode -> Bool
+isInputSidebar n = n ^. sidebarType == InputSidebar
 
-isOutputEdge :: EdgeNode -> Bool
-isOutputEdge n = n ^. edgeType == OutputEdge
+isOutputSidebar :: SidebarNode -> Bool
+isOutputSidebar n = n ^. sidebarType == OutputSidebar
 
-isInMode :: EdgeMode -> EdgeNode -> Bool
+isInMode :: SidebarMode -> SidebarNode -> Bool
 isInMode mode' n = n ^. mode == mode'
 
-isInAddRemoveMode :: EdgeNode -> Bool
+isInAddRemoveMode :: SidebarNode -> Bool
 isInAddRemoveMode = isInMode AddRemove
 
-isInMoveConnectMode :: EdgeNode -> Bool
+isInMoveConnectMode :: SidebarNode -> Bool
 isInMoveConnectMode = isInMode MoveConnect

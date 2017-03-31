@@ -31,12 +31,12 @@ import qualified Luna.Studio.Handler.Collaboration          as Collaboration
 import qualified Luna.Studio.Handler.Connect                as Connect
 import qualified Luna.Studio.Handler.ConnectionPen          as ConnectionPen
 import qualified Luna.Studio.Handler.Debug                  as Debug
-import qualified Luna.Studio.Handler.Edge                   as Edge
 import qualified Luna.Studio.Handler.MultiSelection         as MultiSelection
 import qualified Luna.Studio.Handler.Navigation             as Navigation
 import qualified Luna.Studio.Handler.Node                   as Node
 import qualified Luna.Studio.Handler.Port                   as Port
 import qualified Luna.Studio.Handler.Searcher               as Searcher
+import qualified Luna.Studio.Handler.Sidebar                as Sidebar
 import qualified Luna.Studio.Handler.Undo                   as Undo
 import qualified Luna.Studio.Handler.Visualization          as Visualization
 import           Luna.Studio.Prelude
@@ -68,12 +68,12 @@ actions loop =
     , Control.handle
     , Debug.handle
     , Debug.handleEv
-    , Edge.handle
     , Graph.handle
     , MultiSelection.handle
     , Navigation.handle
     , Node.handle
     , Port.handle
+    , Sidebar.handle
     , Undo.handle
     , ProjectManager.handle
     , Searcher.handle (scheduleEvent loop)

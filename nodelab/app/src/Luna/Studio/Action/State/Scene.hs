@@ -36,7 +36,7 @@ translateToScreen pos = do
     return $ ScreenPosition.fromDoubles (getElem 1 1 posInWorkspace) (getElem 1 2 posInWorkspace)
 
 
--- WARNING: Those functions can discretely change our app, be sure to redraw connections for edges!
+-- WARNING: Those functions can discretely change our app, be sure to redraw connections for sidebars!
 
 getScene :: Command State (Maybe Scene)
 getScene = use (Global.ui . UI.scene) >>= maybe (updateScene >> use (Global.ui . UI.scene)) (return . return . id)
