@@ -21,7 +21,7 @@ import qualified Luna.Studio.Data.PortRef              as PortRef
 import           Luna.Studio.Event.Mouse               (mousePosition)
 import           Luna.Studio.Prelude
 import           Luna.Studio.React.Model.Constants     (gridSize)
-import           Luna.Studio.React.Model.Node.EdgeNode (NodeLoc, countProjectionPorts, isOutputEdge)
+import           Luna.Studio.React.Model.Node.EdgeNode (NodeLoc, countProjectionPorts, isOutputEdge, ports)
 import           Luna.Studio.React.Model.Port          (OutPort (Projection), PortId (OutPortId), getPortNumber)
 import qualified Luna.Studio.React.Model.Port          as Port
 import qualified Luna.Studio.React.View.Edge           as Edge
@@ -31,6 +31,7 @@ import           Luna.Studio.State.Action              (Action (begin, continue,
                                                         portDragMode, portDragPortStartPosInSidebar, portDragStartPortRef, portDragStartPos)
 import           Luna.Studio.State.Global              (State)
 import           React.Flux                            (MouseEvent)
+
 
 instance Action (Command State) PortDrag where
     begin      = beginActionWithKey    portDragAction
@@ -44,20 +45,27 @@ instance Action (Command State) PortDrag where
             else cancelPortDragUnsafe action
 
 
-portRename :: AnyPortRef -> String -> Command State ()
-portRename portRef name = return () -- do
-    -- let nodeLoc = portRef ^. PortRef.nodeLoc
-    --     portId = portRef ^. PortRef.portId
-    -- modifyEdgeNode nodeLoc $ EdgeNode.ports . at portId . _Just . Port.name .= name
+startPortNameEdit :: AnyPortRef -> Command State ()
+startPortNameEdit portRef = do
+    let nodeLoc = portRef ^. PortRef.nodeLoc
+        pid     = portRef ^. PortRef.portId
+    modifyEdgeNode nodeLoc $ ports . ix pid . Port.mode .= Port.NameEdit
+    renderIfNeeded
+    liftIO Edge.focusPortLabel
 
-portNameEdit :: AnyPortRef -> Bool -> Command State ()
-portNameEdit portRef isEdited = return () -- do
-    --     let nodeLoc = portRef ^. PortRef.nodeLoc
-    --         portId = portRef ^. PortRef.portId
-    --     modifyEdgeNode nodeLoc $ EdgeNode.ports . at portId . _Just . Port.isEdited .= isEdited
-    -- when isEdited $ do
-    --     renderIfNeeded
-    --     liftIO Edge.focusPortLabel
+cancelPortNameEdit :: AnyPortRef -> Command State ()
+cancelPortNameEdit portRef = do
+    let nodeLoc = portRef ^. PortRef.nodeLoc
+        portId  = portRef ^. PortRef.portId
+    modifyEdgeNode nodeLoc $ ports . ix portId . Port.mode .= Port.Normal
+
+finishPortNameEdit :: AnyPortRef -> String -> Command State ()
+finishPortNameEdit portRef name = do
+    let nodeLoc = portRef ^. PortRef.nodeLoc
+        portId  = portRef ^. PortRef.portId
+    Batch.renamePort portRef name
+    modifyEdgeNode nodeLoc $ ports . ix portId %= (\p -> p & Port.name .~ name
+                                                           & Port.mode .~ Port.Normal)
 
 handleMouseUp :: MouseEvent -> PortDrag -> Command State ()
 handleMouseUp evt portDrag = do

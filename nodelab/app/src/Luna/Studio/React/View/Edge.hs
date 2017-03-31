@@ -48,7 +48,7 @@ portHandlers ref MoveConnect False _ portRef =
     , onMouseDown $ handleMouseDown ref portRef
     , onMouseUp   $ handleMouseUp   ref portRef
     ]
-portHandlers ref MoveConnect True _ portRef = []
+portHandlers _ _ _ _ _ = []
 
 edgeSidebar_ :: Ref App -> EdgeNode -> ReactElementM ViewEventHandler ()
 edgeSidebar_ ref node = do
