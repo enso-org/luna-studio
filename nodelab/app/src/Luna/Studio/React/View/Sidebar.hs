@@ -57,9 +57,9 @@ sidebar_ ref node = do
         mayFixedPos       = map (\pos -> "style" @= Aeson.object [ "bottom" Aeson..= show pos]) $
             maybeToList $ node ^. SidebarNode.fixedBottomPos
         isPortDragged     = any isInMovedMode ports
-        classes           = [ "sidebarports", if isInputSidebar node then "sidebar--i" else "sidebar--o" ]
-                         ++ if mode == AddRemove then ["sidebarports--editmode"] else []
-                         ++ if isPortDragged then ["sidebarports--dragmode"] else []
+        classes           = [ "sidebar", if isInputSidebar node then "sidebar--i" else "sidebar--o" ]
+                         ++ if mode == AddRemove then ["sidebar--editmode"] else []
+                         ++ if isPortDragged then ["sidebar--dragmode"] else []
         addButtonHandlers = let portRef = OutPortRef' (OutPortRef nodeLoc (Projection (countProjectionPorts node) All)) in
             case mode of
                 AddRemove   -> [ onMouseDown $ \e _ -> [stopPropagation e]
@@ -77,12 +77,12 @@ sidebar_ ref node = do
         ] ++ mayFixedPos ) $ do
         div_
             [ "key" $= "activeArea"
-            , "className" $= Style.prefixFromList [ "sidebarports__active-area", "noselect" ]
+            , "className" $= Style.prefixFromList [ "sidebar__active-area", "noselect" ]
             ] $
             div_
                 [ "key"       $= "SidebarPortsBody"
                 , "id"        $= if isInputSidebar node then inputSidebarId else outputSidebarId
-                , "className" $= Style.prefixFromList [ "sidebarports__body", "noselect" ]
+                , "className" $= Style.prefixFromList [ "sidebar__body", "noselect" ]
                 ] $ do
                 -- TODO[LJK]: Find out how self port works in this case
                 -- when (isInputSidebar node) $
@@ -111,7 +111,7 @@ sidebar_ ref node = do
 
                 when (isInputSidebar node && not isPortDragged) $ do
                     svg_ (
-                        [ "className" $= Style.prefixFromList [ "sidebarport__svg", "sidebarport__svg--addbutton" ]
+                        [ "className" $= Style.prefixFromList [ "sidebar__port__svg", "sidebar__port__svg--addbutton" ]
                         , "key"       $= (name node <> "AddButton")
                         ] ++ addButtonHandlers ) $ do
                         circle_
@@ -150,7 +150,7 @@ sidebar_ ref node = do
 addButton_ :: Ref App -> AnyPortRef -> ReactElementM ViewEventHandler ()
 addButton_ ref portRef =
     svg_
-        [ "className" $= Style.prefixFromList ["sidebarport__svg", "sidebarport__svg--inbetween"]
+        [ "className" $= Style.prefixFromList ["sidebar__port__svg", "sidebar__port__svg--inbetween"]
         , onMouseDown $ \e _ -> [stopPropagation e]
         , onClick     $ \e _ -> stopPropagation e : dispatch ref (UI.SidebarEvent $ Sidebar.AddPort portRef)
         ] $
@@ -169,15 +169,15 @@ sidebarPort_ ref mode nl isPortDragged isOnly p = do
         color     = convert $ p ^. Port.color
         num       = getPortNumber portId
         highlight = if isHighlighted p || isInNameEditMode p then [ "hover" ] else []
-        classes   = if isInPort portId then [ "port", "sidebarport", "sidebarport--o", "sidebarport--o--" <> show (num + 1) ] ++ highlight
-                                       else [ "port", "sidebarport", "sidebarport--i", "sidebarport--i--" <> show (num + 1) ] ++ highlight
+        classes   = if isInPort portId then [ "port", "sidebar__port", "sidebar__port--o", "sidebar__port--o--" <> show (num + 1) ] ++ highlight
+                                       else [ "port", "sidebar__port", "sidebar__port--i", "sidebar__port--i--" <> show (num + 1) ] ++ highlight
     div_
         [ "key"       $= ( jsShow portId <> "-port-" <> jsShow num )
         , "className" $= Style.prefixFromList classes
         ] $ do
         when (isOutPort portId) $ addButton_ ref portRef
         svg_
-            [ "className" $= Style.prefix "sidebarport__svg"
+            [ "className" $= Style.prefix "sidebar__port__svg"
             ] $ do
             circle_
                 [ "className" $= Style.prefix "port__shape"
@@ -200,25 +200,25 @@ sidebarPort_ ref mode nl isPortDragged isOnly p = do
                 & Field.onCancel .~ Just (const $ UI.SidebarEvent $ Sidebar.PortNameDiscard portRef)
                 & Field.onAccept .~ Just (UI.SidebarEvent . Sidebar.PortNameApply portRef . convert)
         else
-            div_ [ "className" $= Style.prefixFromList ["sidebarport__name", "noselect"]
+            div_ [ "className" $= Style.prefixFromList ["sidebar__port__name", "noselect"]
                  , onDoubleClick $ \_ _ -> dispatch ref $ UI.SidebarEvent $ Sidebar.PortNameStartEdit portRef
                  ] $ elemString $ p ^. Port.name
 
 sidebarPlaceholderForPort_ :: ReactElementM ViewEventHandler ()
 sidebarPlaceholderForPort_ = div_
     [ "key"       $= "port-placeholder"
-    , "className" $= Style.prefixFromList [ "port", "sidebarport", "sidebarport--i", "noselect" ]
+    , "className" $= Style.prefixFromList [ "port", "sidebar__port", "sidebar__port--i", "noselect" ]
     ] mempty
 
 sidebarDraggedPort_ :: Ref App -> Port -> ReactElementM ViewEventHandler ()
 sidebarDraggedPort_ _ref p = withJust (getPositionInSidebar p) $ \pos ->
     div_
-        [ "className" $= Style.prefixFromList [ "port", "sidebarport", "sidebarport--dragged", "hover" ]
+        [ "className" $= Style.prefixFromList [ "port", "sidebar__port", "sidebar__port--dragged", "hover" ]
         , "style"     @= Aeson.object [ "transform"  Aeson..= ("translate(0px, " <> show (pos ^. y) <> "px)") ]
         ] $ do
-        div_ [ "className" $= Style.prefix "sidebarport__name" ] $ elemString $ p ^. Port.name
+        div_ [ "className" $= Style.prefix "sidebar__port__name" ] $ elemString $ p ^. Port.name
         svg_
-            [ "className" $= Style.prefix "sidebarport__svg" ] $
+            [ "className" $= Style.prefix "sidebar__port__svg" ] $
             circle_
                 [ "className" $= Style.prefix "port__shape"
                 , "r"         $= jsShow2 3

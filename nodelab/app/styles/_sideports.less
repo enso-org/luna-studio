@@ -5,7 +5,7 @@
 @edgeportsWidth: 16px;
 @edgeNameMargin: 16px + 8px;
 
-.luna-edgeports {
+.luna-sidebar {
     display:         flex;
     justify-content: center;
     flex-direction:  column;
@@ -15,20 +15,20 @@
     .luna-port__shape { r: 4px !important }
 }
 
-.luna-edgeports--dragmode {
-    .luna-edgeports__active-area {
+.luna-sidebar--dragmode {
+    .luna-sidebar__active-area {
         width: 64px;
     }
 }
 
-.luna-edgeports__active-area {
+.luna-sidebar__active-area {
     width:          16px;
     margin-top:    -50%;
     position:       absolute;
     margin-top:    -50%;
 }
 
-.luna-edgeports__body {
+.luna-sidebar__body {
     background:     none; // #2a2a2a;
     display:        flex;
     flex-direction: column;
@@ -41,12 +41,12 @@
 //         edgeport        //
 /////////////////////////////
 
-.luna-edgeport {
+.luna-sidebar__port {
     height:   @edgeportsWidth;
     position: relative;
 }
 
-.luna-edgeport__svg {
+.luna-sidebar__port__svg {
     top:      50%;
     height:   1px;
     width:    1px;
@@ -54,7 +54,7 @@
     position: absolute;
 }
 
-.luna-edgeport__name {
+.luna-sidebar__port__name {
     top:        -1px;
     color:       darken(@colorText, 30%);
     position:    absolute;
@@ -62,7 +62,7 @@
     text-shadow: 0 0 2px black;
 }
 
-.luna-edgeport--dragged {
+.luna-sidebar__port--dragged {
     position: absolute;
 }
 
@@ -70,12 +70,12 @@
 //          inputs         //
 /////////////////////////////
 
-.luna-edgeports--i {
+.luna-sidebar--i {
     left: -6px;
-    .luna-edgeport__name {
+    .luna-sidebar__port__name {
         left: 26px;
     }
-    .luna-edgeport__svg {
+    .luna-sidebar__port__svg {
         left: @edgeportsWidth;
     }
 }
@@ -84,13 +84,13 @@
 //         outputs         //
 /////////////////////////////
 
-.luna-edgeports--o {
+.luna-sidebar--o {
     right: 10px;
-    .luna-edgeports__body {
+    .luna-sidebar__body {
         border-radius: @borderRadius 0 0 @borderRadius;
         right:         0;
     }
-    .luna-edgeport__name {
+    .luna-sidebar__port__name {
         left:  inherit;
         right: 26px;
     }
@@ -100,7 +100,7 @@
 //          icons          //
 /////////////////////////////
 
-.luna-edgeport .luna-port__plus {
+.luna-sidebar__port .luna-port__plus {
     transform: rotate(45deg);
     rect {
         opacity: 0;
@@ -115,14 +115,14 @@
     fill: @colorBackground;
 }
 
-.luna-edgeport__svg--inbetween {
+.luna-sidebar__port__svg--inbetween {
     position: absolute;
     left:     24px !important;
     top:      0px;
     z-index:  10000;
 }
 
-.luna-edgeport__svg--inbetween--last {
+.luna-sidebar__port__svg--inbetween--last {
     top:    inherit;
     bottom: 7px;
 }
@@ -157,8 +157,8 @@
         transform: scale(1);
     }
 }
-.luna-edgeport__svg--inbetween--last:hover {
-    &+.luna-edgeport__svg--addbutton {
+.luna-sidebar__port__svg--inbetween--last:hover {
+    &+.luna-sidebar__port__svg--addbutton {
         circle { r: 0 }
         rect   { width:0; height:0 }
     }
@@ -213,9 +213,9 @@
     r: 11px !important;
 }
 
-.luna-edgeports:not(.luna-edgeports--editmode) {
-    .luna-edgeport:hover {
-        .luna-edgeport__name {
+.luna-sidebar:not(.luna-sidebar--editmode) {
+    .luna-sidebar__port:hover {
+        .luna-sidebar__port__name {
             color: @colorText;
         }
         .luna-port__shape {
@@ -227,7 +227,7 @@
         opacity:  0;
         circle { r: 0 }
     }
-    &.luna-edgeports--i {
+    &.luna-sidebar--i {
         &:hover {
             .luna-edit-icon {
                 opacity: 1;
@@ -236,7 +236,7 @@
             }
         }
     }
-    .luna-edgeport__svg--addbutton {
+    .luna-sidebar__port__svg--addbutton {
         top:        inherit;
         bottom:     0;
         .luna-port__shape {
@@ -263,9 +263,9 @@
 
 // edit mode
 
-.luna-edgeports--editmode {
+.luna-sidebar--editmode {
     .luna-port-add-inbetween { display: block }
-    .luna-edgeport__name     { left:    38px }
+    .luna-sidebar__port__name     { left:    38px }
     .luna-port__shape        { r:       6px !important }
     .luna-port__plus {
         rect {
@@ -281,7 +281,7 @@
             x:     -4px;
         }
     }
-    .luna-edgeport__svg:hover .luna-port__shape { r: 7px }
+    .luna-sidebar__port__svg:hover .luna-port__shape { r: 7px }
     .luna-edit-icon {
         bottom: -20px;
         .luna-edit-icon__shape01 {
@@ -289,7 +289,7 @@
             r:    7;
         }
     }
-    .luna-edgeport__svg--addbutton {
+    .luna-sidebar__port__svg--addbutton {
         top:        inherit;
         bottom:     0;
         .luna-port__shape { fill: #444 }
