@@ -26,16 +26,16 @@ data Event = UnknownEvent String
            | ConnectionDropped
            | ConnectionOpened
            | EmpireStarted                       EmpireStarted.Status
-           | RedoResponse                                 Redo.Response
-           | UndoResponse                                 Undo.Response
-
-           | ProjectCreated                      CreateProject.Response
-           | ProjectCreatedUpdate                CreateProject.Update
-           | ProjectExported                     ExportProject.Response
-           | ProjectImported                     ImportProject.Response
-           | ProjectList                          ListProjects.Response
-           | ProjectOpened                         OpenProject.Response
-           | ProjectOpenedUpdate                   OpenProject.Update
+        --    | RedoResponse                                 Redo.Response
+        --    | UndoResponse                                 Undo.Response
+           --
+        --    | ProjectCreated                      CreateProject.Response
+        --    | ProjectCreatedUpdate                CreateProject.Update
+        --    | ProjectExported                     ExportProject.Response
+        --    | ProjectImported                     ImportProject.Response
+        --    | ProjectList                          ListProjects.Response
+        --    | ProjectOpened                         OpenProject.Response
+        --    | ProjectOpenedUpdate                   OpenProject.Update
 
            | ProjectSet                             SetProject.Response
            | FileClosed                              CloseFile.Response
