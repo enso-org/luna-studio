@@ -1,17 +1,13 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Luna.Studio.React.View.ExpressionNode.Properties where
 
-import qualified JS.Config                                             as Config
-import qualified JS.UI                                                 as UI
 import qualified Luna.Studio.Event.UI                                  as UI
 import           Luna.Studio.Prelude
 import qualified Luna.Studio.React.Event.Node                          as Node
 import           Luna.Studio.React.Model.App                           (App)
-import qualified Luna.Studio.React.Model.Field                         as Field
 import           Luna.Studio.React.Model.Node.ExpressionNodeProperties (NodeProperties)
 import qualified Luna.Studio.React.Model.Node.ExpressionNodeProperties as Prop
 import           Luna.Studio.React.Store                               (Ref, dispatch)
-import           Luna.Studio.React.View.Field                          (singleField_)
 import           Luna.Studio.React.View.PortControl                    (portControl_)
 import qualified Luna.Studio.React.View.Style                          as Style
 import           React.Flux
@@ -28,20 +24,6 @@ nodeProperties = React.defineView objName $ \(ref, p) -> do
         [ "key"       $= "properties"
         , "className" $= Style.prefixFromList [ "node__properties", "noselect" ]
         ] $ do
-        div_
-            [ "key"       $= "value"
-            , "className" $= Style.prefixFromList [ "row", "row--output-name" ]
-            , onDoubleClick $ \_ _ -> dispatch ref $ UI.NodeEvent $ Node.NameEditStart nodeLoc
-            ] $
-            case p ^. Prop.nameEdit of
-                Just name ->
-                    singleField_ ["id"  $= nameLabelId] "name-label"
-                        $ Field.mk ref name
-                        & Field.onCancel .~ Just (const $ UI.NodeEvent $ Node.NameDiscard nodeLoc)
-                        & Field.onAccept .~ Just (const $ UI.NodeEvent $ Node.NameApply nodeLoc)
-                        & Field.onEdit   .~ Just (UI.NodeEvent . flip Node.NameChange nodeLoc)
-                Nothing ->
-                    mempty --elemString $ convert $ p ^. Prop.name TODO: move to expression name
         forM_ (p ^. Prop.ports) $ portControl_ ref nodeLoc (p ^. Prop.isLiteral)
         div_
             [ "key"       $= "display-results"
@@ -79,9 +61,3 @@ nodeProperties = React.defineView objName $ \(ref, p) -> do
 
 nodeProperties_ :: Ref App -> NodeProperties -> ReactElementM ViewEventHandler ()
 nodeProperties_ ref prop = React.viewWithSKey nodeProperties objName (ref, prop) mempty
-
-nameLabelId :: JSString
-nameLabelId = Config.prefix "focus-nameLabel"
-
-focusNameLabel :: IO ()
-focusNameLabel = UI.focus nameLabelId

@@ -8,6 +8,7 @@ import           Data.Matrix                                           (Matrix)
 import qualified Empire.API.Data.MonadPath                             as MonadPath
 import qualified Empire.API.Graph.NodeResultUpdate                     as NodeResult
 import qualified JS.Config                                             as Config
+import qualified JS.UI                                                 as UI
 import           Luna.Studio.Data.Matrix                               (showNodeMatrix, showNodeTranslate)
 import qualified Luna.Studio.Event.Mouse                               as Mouse
 import qualified Luna.Studio.Event.UI                                  as UI
@@ -23,6 +24,7 @@ import           Luna.Studio.React.Model.Port                          (InPort (
 import qualified Luna.Studio.React.Model.Port                          as Port
 import           Luna.Studio.React.Store                               (Ref, dispatch)
 import           Luna.Studio.React.View.ExpressionNode.Properties      (nodeProperties_)
+import           Luna.Studio.React.View.Field                          (singleField_)
 import           Luna.Studio.React.View.Field                          (multilineField_)
 import           Luna.Studio.React.View.Monad                          (monads_)
 import           Luna.Studio.React.View.Plane                          (planeMonads_, svgPlanes_)
@@ -42,6 +44,12 @@ objNamePorts = "node-ports"
 
 nodePrefix :: JSString
 nodePrefix = Config.prefix "node-"
+
+nameLabelId :: JSString
+nameLabelId = Config.prefix "focus-nameLabel"
+
+focusNameLabel :: IO ()
+focusNameLabel = UI.focus nameLabelId
 
 handleMouseDown :: Ref App -> NodeLoc -> Event -> MouseEvent -> [SomeStoreAction]
 handleMouseDown ref nodeLoc e m =
@@ -84,11 +92,21 @@ node = React.defineView name $ \(ref, n) -> case n ^. Node.mode of
                         , "className"   $= Style.prefixFromList [ "node__name", "node__name--expression", "noselect" ]
                         , "y"           $= "-16"
                         ] $ elemString . convert $ n ^. Node.expression
-                    text_
-                        [ "key"         $= "nameText"
-                        , onDoubleClick $ \e _ -> stopPropagation e : dispatch ref (UI.NodeEvent $ Node.EditExpression nodeLoc)
-                        , "className"   $= Style.prefixFromList [ "node__name", "noselect" ]
-                        ] $ elemString $ convert $ Prop.fromNode n ^. Prop.name
+                    if n ^. Node.isNameEdited then
+                        term "foreignObject"
+                            [ "key"    $= "nameEdit"
+                            , "width"  $= "200"
+                            , "height" $= "30"
+                            ] $ singleField_ ["id"  $= nameLabelId] "name-label"
+                                $ Field.mk ref (n ^. Node.name)
+                                & Field.onCancel .~ Just (const $ UI.NodeEvent $ Node.NameEditDiscard nodeLoc)
+                                & Field.onAccept .~ Just (UI.NodeEvent . Node.NameEditApply nodeLoc)
+                    else
+                        text_
+                            [ "key"         $= "nameText"
+                            , onDoubleClick $ \e _ -> stopPropagation e : dispatch ref (UI.NodeEvent $ Node.NameEditStart nodeLoc)
+                            , "className"   $= Style.prefixFromList [ "node__name", "noselect" ]
+                            ] $ elemString $ convert $ n ^. Node.name
             nodeBody_ ref n
             nodeVisualizations_ ref n
             nodePorts_ ref n

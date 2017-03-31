@@ -34,9 +34,8 @@ handle (UI (NodeEvent (Node.EditExpression   nodeLoc))) = Just $ Node.editExpres
 handle (UI (NodeEvent (Node.Select      kevt nodeLoc))) = Just $ when (mouseCtrlKey kevt || mouseMetaKey kevt) $ toggleSelect nodeLoc
 handle (UI (NodeEvent (Node.DisplayResultChanged flag nodeLoc))) = Just $ localToggleVisualizations nodeLoc flag
 handle (UI (NodeEvent (Node.NameEditStart    nodeLoc))) = Just $ Node.startEditName nodeLoc
-handle (UI (NodeEvent (Node.NameApply        nodeLoc))) = Just $ Node.applyName   nodeLoc
-handle (UI (NodeEvent (Node.NameDiscard      nodeLoc))) = Just $ Node.discardName nodeLoc
-handle (UI (NodeEvent (Node.NameChange   val nodeLoc))) = Just $ Node.editName nodeLoc val
+handle (UI (NodeEvent (Node.NameEditApply    nodeLoc val))) = Just $ Node.applyName nodeLoc val
+handle (UI (NodeEvent (Node.NameEditDiscard  nodeLoc))) = Just $ Node.discardName nodeLoc
 handle (UI (NodeEvent (Node.PortEditString       portRef portDef))) = Just $ void $ localSetPortDefault portRef portDef
 handle (UI (NodeEvent (Node.PortApplyString kevt portRef portDef))) = Just $ when (Keys.withoutMods kevt Keys.enter) $
                                                                                         setPortDefault portRef portDef

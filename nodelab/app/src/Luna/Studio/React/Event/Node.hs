@@ -14,9 +14,8 @@ data Event = DisplayResultChanged Bool          NodeLoc
            | EditExpression                     NodeLoc
            | Enter                              NodeLoc
            | MouseDown            MouseEvent    NodeLoc
-           | NameApply                          NodeLoc
-           | NameChange           Text          NodeLoc
-           | NameDiscard                        NodeLoc
+           | NameEditApply                      NodeLoc Text
+           | NameEditDiscard                    NodeLoc
            | NameEditStart                      NodeLoc
            | PortApplyString      KeyboardEvent AnyPortRef PortDefault
            | PortEditString                     AnyPortRef PortDefault
