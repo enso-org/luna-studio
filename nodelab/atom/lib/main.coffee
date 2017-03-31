@@ -62,13 +62,13 @@ module.exports =
 
     @subs = new SubAtom
     @subs.add atom.commands.add '.luna-studio', 'luna-studio:cancel': -> code.pushEvent("Shortcut Cancel")
-    @subs.add atom.commands.add 'atom-workspace', 'core:close': -> internal.pushInternalEvent("CloseFile " + atom.workspace.getActivePaneItem().buffer.file.path)
-        # activeFilePath = atom.workspace.getActivePaneItem().buffer.file.path
-        # if atom.workspace.getActivePaneItem().buffer
-        #     activeFilePath = atom.workspace.getActivePaneItem().buffer.file.path
-        # else activeFilePath = atom.workspace.getActivePane().activeItem.uri
+    @subs.add atom.commands.add 'atom-workspace', 'core:close': ->
+        if atom.workspace.getActivePaneItem().buffer
+            activeFilePath =  atom.workspace.getActivePaneItem().buffer.file.path
+        else activeFilePath = atom.workspace.getActivePane().activeItem.uri
         # console.log(activeFilePath)
-        # internal.pushInternalEvent("CloseFile " + activeFilePath)
+        if path.extname(activeFilePath) is ".luna"
+            internal.pushInternalEvent("CloseFile " + activeFilePath)
     @subs.add atom.commands.add 'atom-workspace', 'core:save', (e)                 ->
       if atom.workspace.getActivePaneItem().buffer
           activeFilePath =  atom.workspace.getActivePaneItem().buffer.file.path
