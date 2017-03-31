@@ -62,7 +62,5 @@ nodeProperties = React.defineView objName $ \(ref, p) -> do
                     , "className" $= Style.prefix "value"
                     ] $ elemString $ show execTime <> " ms"
 
-
-
 nodeProperties_ :: Ref App -> NodeProperties -> ReactElementM ViewEventHandler ()
 nodeProperties_ ref prop = React.viewWithSKey nodeProperties objName (ref, prop) mempty
