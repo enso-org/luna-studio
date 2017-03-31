@@ -56,6 +56,7 @@ module.exports =
                       text: event.newText
                       cursor: buffer.characterIndexForPosition(@editor.getCursorBufferPosition())
               internal.pushText(diff)
+          @ss.add @buffer.onWillSave (event) => internal.pushInternalEvent("SaveFile " + uri)
 
         atom.workspace.getActivePane().activateItem new LunaStudioTab(uri, code)
 
