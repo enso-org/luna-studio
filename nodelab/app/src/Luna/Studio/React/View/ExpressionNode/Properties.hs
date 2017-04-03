@@ -46,7 +46,8 @@ nodeProperties = React.defineView objName $ \(ref, p) -> do
                 div_
                     [ "key" $= "ctrlSwitch"
                     , "className" $= Style.prefixFromList (["ctrl-switch"] ++ if val then ["ctrl-switch--on"] else ["ctrl-switch--off"])
-                    , onClick $ \_ _ -> dispatch ref $ UI.NodeEvent $ Node.DisplayResultChanged (not val) nodeLoc
+                    , onDoubleClick $ \e _ -> [stopPropagation e]
+                    , onClick       $ \_ _ -> dispatch ref $ UI.NodeEvent $ Node.DisplayResultChanged (not val) nodeLoc
                     ] mempty
         div_
             [ "key" $= "executionTime"
