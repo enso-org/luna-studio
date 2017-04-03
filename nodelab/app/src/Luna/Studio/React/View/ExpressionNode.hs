@@ -10,6 +10,7 @@ import qualified Empire.API.Graph.NodeResultUpdate                     as NodeRe
 import qualified JS.Config                                             as Config
 import qualified JS.UI                                                 as UI
 import           Luna.Studio.Data.Matrix                               (showNodeMatrix, showNodeTranslate)
+import           Luna.Studio.Data.PortRef                              (toAnyPortRef)
 import qualified Luna.Studio.Event.Mouse                               as Mouse
 import qualified Luna.Studio.Event.UI                                  as UI
 import           Luna.Studio.Prelude
@@ -17,10 +18,10 @@ import qualified Luna.Studio.React.Event.Node                          as Node
 import           Luna.Studio.React.Model.App                           (App)
 import qualified Luna.Studio.React.Model.Field                         as Field
 import           Luna.Studio.React.Model.Node.ExpressionNode           (ExpressionNode, NodeLoc, Subgraph, countArgPorts, countOutPorts,
-                                                                        isCollapsed,returnsError)
+                                                                        isCollapsed, returnsError)
 import qualified Luna.Studio.React.Model.Node.ExpressionNode           as Node
 import qualified Luna.Studio.React.Model.Node.ExpressionNodeProperties as Prop
-import           Luna.Studio.React.Model.Port                          (InPort (Self), PortId (InPortId), isAll, isInPort)
+import           Luna.Studio.React.Model.Port                          (InPort (Arg, Self), PortId (InPortId), isAll, isInPort)
 import qualified Luna.Studio.React.Model.Port                          as Port
 import           Luna.Studio.React.Store                               (Ref, dispatch)
 import           Luna.Studio.React.View.ExpressionNode.Properties      (nodeProperties_)
@@ -28,7 +29,7 @@ import           Luna.Studio.React.View.Field                          (singleFi
 import           Luna.Studio.React.View.Field                          (multilineField_)
 import           Luna.Studio.React.View.Monad                          (monads_)
 import           Luna.Studio.React.View.Plane                          (planeMonads_, svgPlanes_)
-import           Luna.Studio.React.View.Port                           (portExpanded_, port_)
+import           Luna.Studio.React.View.Port                           (portExpanded_, portPhantom_, port_)
 import           Luna.Studio.React.View.Style                          (blurBackground_, errorMark_, selectionMark_)
 import qualified Luna.Studio.React.View.Style                          as Style
 import           Luna.Studio.React.View.Visualization                  (visualization_)
@@ -216,6 +217,7 @@ nodePorts = React.defineView objNamePorts $ \(ref, n) ->
             else do
                 ports $ filter (\port -> (port ^. Port.portId) == InPortId Self) nodePorts'
                 forM_  (filter (\port -> (port ^. Port.portId) /= InPortId Self) nodePorts') $ \port -> portExpanded_ ref nodeLoc port
+            portPhantom_ ref $ toAnyPortRef nodeLoc $ InPortId (Arg $ countArgPorts n)
 
 nodeContainer_ :: Ref App -> [Subgraph] -> ReactElementM ViewEventHandler ()
 nodeContainer_ ref subgraphs = React.viewWithSKey nodeContainer "node-container" (ref, subgraphs) mempty

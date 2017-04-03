@@ -251,6 +251,27 @@ portIOExpanded_ ref nl p = if p ^. Port.portId == InPortId Self then portSelf_ r
               ]
             ) mempty
 
+portPhantom_ :: Ref App -> AnyPortRef -> ReactElementM ViewEventHandler ()
+portPhantom_ ref portRef = do
+    g_
+        [ "className" $= Style.prefixFromList ["port"]
+        ] $ do
+        circle_
+            [ "className" $= Style.prefix "port__shape"
+            , "key"       $= "phantom-shape"
+            , "r"         $= jsShow2 3
+            , "fill"      $= "gray"
+            , "cy"        $= "30px"
+            ] mempty
+        circle_
+            ( handlers ref portRef ++
+              [ "className" $= Style.prefix "port__select"
+              , "key"       $= "phantom-select"
+              , "r"         $= jsShow2 (lineHeight/1.5)
+              , "cy"        $= "30px"
+              ]
+            ) mempty
+
 portSidebar_ :: Bool -> ReactElementM ViewEventHandler ()
 portSidebar_ isInput = do
     let classes = Style.prefixFromList [ "port-sidebar", if isInput then "port-sidebar--i" else "port-sidebar--o" ]
