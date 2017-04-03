@@ -32,7 +32,7 @@ import           Luna.Studio.React.View.Plane                          (planeMon
 import           Luna.Studio.React.View.Port                           (portExpanded_, portPhantom_, port_)
 import           Luna.Studio.React.View.Style                          (blurBackground_, errorMark_, selectionMark_)
 import qualified Luna.Studio.React.View.Style                          as Style
-import           Luna.Studio.React.View.Visualization                  (visualization_)
+import           Luna.Studio.React.View.Visualization                  (visualization_,strValue)
 import           React.Flux
 import qualified React.Flux                                            as React
 
@@ -167,7 +167,7 @@ nodeVisualizations = React.defineView objNameVis $ \(ref, n) ->
         [ "key"       $= "shortValue"
         , "className" $= Style.prefixFromList [ "node__returned-value", "node-translate", "noselect" ]
         , onDoubleClick $ \e _ -> [stopPropagation e]
-        ] $ mapM_ (elemString . convert) $ n ^? Node.value . _Just .  NodeResult._Value . _1
+        ] $ elemString $ strValue n
 --    div_
 --        [ "key"       $= "visualizations"
 --        , "className" $= Style.prefixFromList [ "node__visualisations", "node-translate" ]
