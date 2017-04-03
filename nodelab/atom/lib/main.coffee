@@ -60,6 +60,12 @@ module.exports =
                   internal.pushText(diff)
           @ss.add @buffer.onWillSave (event) => internal.pushInternalEvent("SaveFile " + uri)
           @ss.add @buffer.onWillReload (event) => internal.pushInternalEvent("GetBuffer " + uri)
+          @ss.add atom.workspace.onDidDestroyPaneItem (event) => #console.log(event.item.buffer.file.path)
+            if event.item.buffer
+                activeFilePath = event.item.buffer.file.path
+            else activeFilePath = event.item.uri
+            if path.extname(activeFilePath) is '.luna'
+                internal.pushInternalEvent("CloseFile " + activeFilePath)
 
         atom.workspace.getActivePane().activateItem new LunaStudioTab(uri, code)
 
