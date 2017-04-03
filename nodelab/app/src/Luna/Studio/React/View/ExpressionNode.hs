@@ -165,7 +165,7 @@ nodeVisualizations = React.defineView objNameVis $ \(ref, n) ->
     let nodeLoc = n ^. Node.nodeLoc
     in div_
         [ "key"       $= "shortValue"
-        , "className" $= Style.prefixFromList [ "node-translate", "noselect" ]
+        , "className" $= Style.prefixFromList [ "node__returned-value", "node-translate", "noselect" ]
         , onDoubleClick $ \e _ -> [stopPropagation e]
         ] $ mapM_ (elemString . convert) $ n ^? Node.value . _Just .  NodeResult._Value . _1
 --    div_

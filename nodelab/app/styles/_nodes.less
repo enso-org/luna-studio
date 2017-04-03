@@ -6,13 +6,13 @@
 
 .luna-blur {
     //backdrop-filter: blur(0);
-    background:      rgba(255,255,255,0);
-    position:        absolute;
-    z-index:        -1;
-    top:             0;
-    left:            0;
-    height:          100%;
-    width:           100%;
+    background: rgba(255,255,255,0);
+    position:   absolute;
+    z-index:   -1;
+    top:        0;
+    left:       0;
+    height:     100%;
+    width:      100%;
 }
 
 /////////////////////////////
@@ -26,7 +26,8 @@
 }
 
 .luna-node__text {
-    top: -36rem !important;
+    top: inherit !important;
+    bottom: 36rem !important;
 }
 
 .luna-node__name {
@@ -40,9 +41,19 @@
 }
 
 .luna-node__name--expression {
-    fill:        #888;
+    fill:        lightgreen;
     font-size:   12px;
     line-height: 16px;
+}
+
+.luna-node__returned-value {
+    white-space:     nowrap;
+    display:         flex;
+    justify-content: center;
+    color:           #888;
+    font-size:       10px;
+    position:        relative;
+    top:            -8rem;
 }
 
 .luna-port {
@@ -67,6 +78,12 @@
     }
 }
 
+.luna-node--error .luna-port--o {
+    path, circle {
+        //fill: #d20;
+    }
+}
+
 // types
 
 .luna-port__type {
@@ -86,7 +103,6 @@
 
 .luna-node:hover .luna-port__type { display: inherit }
 .luna-port:hover .luna-port__type { fill: #fff }
-
 
 /////////////////////////////
 //      node expanded      //
@@ -118,9 +134,9 @@
     .luna-blur {
         //backdrop-filter: blur(12px);
         //background:      rgba(40,40,40,.5);
-        background:      #222;
-        border-radius:   @borderRadius;
-        box-shadow:      0 0 10px @colorBackground;
+        background:    #222;
+        border-radius: @borderRadius;
+        box-shadow:    0 0 10px @colorBackground;
     }
     .luna-node__properties-crop {
         max-height: 110rem;
@@ -132,7 +148,7 @@
         opacity:       1;
         border-radius: @borderRadius;
         left:          0;
-        padding:       ~"calc(12px * var(--scale)) calc(12px * var(--scale)) calc(8px * var(--scale))";
+        padding:      ~"calc(12px * var(--scale)) calc(12px * var(--scale)) calc(8px * var(--scale))";
     }
     .luna-selection {
         border-radius: 1px;
@@ -159,7 +175,7 @@
 
 .luna-node__properties {
     color:         @colorTextUneditable;
-    line-height:   ~"calc(16px * var(--scale))";
+    line-height:  ~"calc(16px * var(--scale))";
     width:         40rem;
     height:        40rem;
     opacity:       1;
@@ -177,7 +193,7 @@
         width:           @expandedNodeWidth - 2 * @expandedNodePadding;
     }
     .luna-row--first {
-        height: 16rem;
+        height:          16rem;
         justify-content: flex-end;
     }
 }
@@ -246,22 +262,22 @@
 // controls
 
 .luna-ctrl-switch {
-    cursor: pointer;
-    height: 8rem;
-    width: 16rem;
-    background: #111;
+    cursor:        pointer;
+    height:        8rem;
+    width:         16rem;
+    background:    #111;
     border-radius: 1000px;
-    position: relative;
-    top: 4rem;
-    display: flex;
+    position:      relative;
+    top:           4rem;
+    display:       flex;
     &::after {
-        top: -2rem;
-        position: relative;
-        display: block;
-        content: " ";
-        width: 12rem;
-        height: 12rem;
-        background: #777;
+        top:          -2rem;
+        position:      relative;
+        display:       block;
+        content:       " ";
+        width:         12rem;
+        height:        12rem;
+        background:    #777;
         border-radius: 1000px;
     }
 }
@@ -269,7 +285,7 @@
     background: #888;
     &::after {
         background: #bbb;
-        left: 6rem;
+        left:       6rem;
     }
 }
 .luna-ctrl-switch--off {
@@ -288,9 +304,9 @@
     display: none;
 }
 .luna-icon--show {
-    x: -5px;
-    y: -100px;
-    width: 10px;
+    x:     -5px;
+    y:     -100px;
+    width:  10px;
     height: 10px;
-    fill: red;
+    fill:   red;
 }

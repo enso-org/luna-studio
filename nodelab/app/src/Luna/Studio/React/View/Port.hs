@@ -122,7 +122,7 @@ portSingle_ ref nl p = do
         portType  = toString $ p ^. Port.valueType
         isInput   = isInPort portId
         color     = convert $ p ^. Port.color
-        classes   = Style.prefixFromList $ [ "port", "port--o--single" ] ++ if isHighlighted p then ["hover"] else []
+        classes   = Style.prefixFromList $ [ "port", "port--o", "port--o--single" ] ++ if isHighlighted p then ["hover"] else []
         r1 :: Double -> JSString
         r1 = jsShow2 . (+) nodeRadius
         r2 = jsShow2 nodeRadius'
