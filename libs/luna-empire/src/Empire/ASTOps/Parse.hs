@@ -35,6 +35,7 @@ import qualified Luna.Syntax.Text.Parser.Marker  as Parser (MarkedExprMap)
 import qualified Luna.Syntax.Text.Parser.Parser  as Parser
 import qualified Luna.Syntax.Text.Parser.Parsing as Parsing
 import qualified Luna.Syntax.Text.Source         as Source
+import qualified Luna.IR.Term.Literal            as Lit
 
 data ParserException e = ParserException e
     deriving (Show)
@@ -106,7 +107,7 @@ parsePortDefault :: ASTOp m => PortDefault -> m NodeRef
 parsePortDefault (Expression expr)            = parseExpr expr
 parsePortDefault (Constant (IntValue i))      = IR.generalize <$> IR.number (fromIntegral i)
 parsePortDefault (Constant (StringValue s))   = IR.generalize <$> IR.string s
-parsePortDefault (Constant (DoubleValue d))   = $notImplemented
-parsePortDefault (Constant (RationalValue r)) = $notImplemented
+parsePortDefault (Constant (DoubleValue d))   = IR.generalize <$> IR.number (Lit.fromDouble d)
+parsePortDefault (Constant (RationalValue r)) = IR.generalize <$> IR.number (Lit.fromDouble $ realToFrac r)
 parsePortDefault (Constant (BoolValue b))     = IR.generalize <$> IR.cons_ (convert $ show b)
 parsePortDefault d = throwM $ PortDefaultNotConstructibleException d

@@ -18,6 +18,8 @@ module Empire.Commands.GraphBuilder (
   , decodeBreadcrumbs
   , getEdgePortMapping
   , getNodeIdSequence
+  , getInPortDefault
+  , getDefault
   , getNodeName
   , nodeConnectedToOutput
   ) where
@@ -58,13 +60,14 @@ import qualified Empire.ASTOps.Read                as ASTRead
 import qualified Empire.Commands.AST               as AST
 import qualified Empire.Commands.GraphUtils        as GraphUtils
 import           Empire.Data.AST                   (NodeRef, astExceptionToException,
-                                                    astExceptionFromException, NotUnifyException)
+                                                    astExceptionFromException, NotUnifyException, NotAppException (..))
 import           Empire.Data.Layers                (Marker, TypeLayer)
 import           Empire.Empire
 
 import qualified Luna.IR as IR
-import qualified OCI.IR.Combinators as IR
+import qualified OCI.IR.Combinators   as IR
 import           Luna.IR.Term.Uni
+import qualified Luna.IR.Term.Literal as Lit
 
 decodeBreadcrumbs :: Breadcrumb BreadcrumbItem -> Command Graph (Breadcrumb (Named BreadcrumbItem))
 decodeBreadcrumbs bs@(Breadcrumb items) = runASTOp $ do
@@ -182,19 +185,34 @@ getUniName root = do
 getNodeName :: ASTOp m => NodeId -> m (Maybe Text)
 getNodeName nid = ASTRead.getASTPointer nid >>= getUniName
 
+getDefault :: ASTOp m => NodeRef -> m PortDefault
+getDefault arg = match arg $ \case
+        IR.String s       -> return $ Constant $ StringValue $ s
+        IR.Number i       -> return $ Constant $ if Lit.isInteger i then IntValue $ Lit.toInt i else DoubleValue $ Lit.toDouble i
+        IR.Cons "True"  _ -> return $ Constant $ BoolValue True
+        IR.Cons "False" _ -> return $ Constant $ BoolValue False
+        _                 -> Expression <$> Print.printExpression arg
+
+getInPortDefault :: ASTOp m => NodeRef -> Int -> m PortDefault
+getInPortDefault ref pos = do
+    (_, args) <- ASTDeconstruct.deconstructApp ref
+    argRef    <- maybe (throwM $ NotAppException ref) return $ args ^? ix pos
+    getDefault argRef
+
+
 getPortState :: ASTOp m => NodeRef -> m PortState
 getPortState node = do
     isConnected <- ASTRead.isGraphNode node
     if isConnected then return Connected else match node $ \case
         IR.String s     -> return . WithDefault . Constant . StringValue $ s
-        IR.Number i     -> return $ WithDefault $ Constant $ RationalValue 0 -- FIXME[MM]: put the number here
+        IR.Number i     -> return . WithDefault . Constant $ if Lit.isInteger i then IntValue $ Lit.toInt i else DoubleValue $ Lit.toDouble i
         Cons n _ -> do
             name <- pure $ pathNameToString n
             case name of
                 "False" -> return . WithDefault . Constant . BoolValue $ False
                 "True"  -> return . WithDefault . Constant . BoolValue $ True
                 _       -> WithDefault . Expression <$> Print.printExpression node
-        Blank   -> return NotConnected
+        Blank -> return NotConnected
         _     -> WithDefault . Expression <$> Print.printExpression node
 
 extractArgTypes :: ASTOp m => NodeRef -> m [TypeRep]

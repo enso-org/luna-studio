@@ -31,6 +31,7 @@ module Empire.Commands.Graph
     , getNodes
     , getConnections
     , setPortDefault
+    , getPortDefault
     , renameNode
     , dumpGraphViz
     , typecheck
@@ -42,6 +43,7 @@ import           Control.Monad                 (forM, forM_)
 import           Control.Monad.Catch           (MonadCatch(..))
 import           Control.Monad.State           hiding (when)
 import           Control.Arrow                 ((&&&))
+import           Control.Monad.Error           (throwError)
 import           Data.Coerce                   (coerce)
 import           Data.List                     (sort)
 import qualified Data.Map                      as Map
@@ -464,6 +466,11 @@ connectNoTC loc outPort anyPort = do
     forM_ nodeToUpdate $ \n -> do
         Publisher.notifyNodeUpdate loc n
     return connection
+
+getPortDefault :: GraphLocation -> AnyPortRef -> Empire PortDefault
+getPortDefault loc (OutPortRef' (OutPortRef nodeId _))      = withGraph loc $ runASTOp $ GraphBuilder.getDefault =<< GraphUtils.getASTTarget nodeId
+getPortDefault loc (InPortRef'  (InPortRef  _ Self))        = throwError "Cannot set default value on self port"
+getPortDefault loc (InPortRef'  (InPortRef nodeId (Arg x))) = withGraph loc $ runASTOp $ flip GraphBuilder.getInPortDefault x =<< GraphUtils.getASTTarget nodeId
 
 setPortDefault :: GraphLocation -> AnyPortRef -> PortDefault -> Empire ()
 setPortDefault loc portRef val = withTC loc False $ runASTOp $ setPortDefault' portRef val
