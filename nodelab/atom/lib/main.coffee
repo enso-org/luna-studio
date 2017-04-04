@@ -1,5 +1,3 @@
-# w         = require './gen/websocket'
-# websocket = w()
 LunaStudioTab = require './luna-studio-tab'
 SubAtom       = require 'sub-atom'
 
