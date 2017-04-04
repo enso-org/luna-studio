@@ -25,6 +25,8 @@ foreign import javascript safe "atomCallback2.pushCode($1, $2, $3, $4)"
 foreign import javascript safe "atomCallback2.pushBuffer($1, $2)"
     pushBuffer :: JSString -> JSString -> IO ()
 
+foreign import javascript safe "atomCallback2.pushStatus($1, $2, $3)"
+    pushStatus :: JSString -> JSString -> JSString -> IO ()
 
 foreign import javascript safe "atomCallback2.subscribeEventListenerInternal($1)"
   subscribeEventListenerInternal' :: Callback (JSVal -> IO ()) -> IO ()
