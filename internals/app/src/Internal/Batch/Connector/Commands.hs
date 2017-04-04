@@ -2,6 +2,7 @@ module Internal.Batch.Connector.Commands where
 
 import qualified Data.Text                              as Text
 import           Data.UUID.Types                        (UUID)
+import qualified Empire.API.Atom.IsSaved              as IsSaved
 import qualified Empire.API.Atom.CloseFile              as CloseFile
 import qualified Empire.API.Atom.GetBuffer              as GetBuffer
 import qualified Empire.API.Atom.OpenFile               as OpenFile
@@ -72,6 +73,9 @@ openFile path uuid guiID = sendRequest $ Message uuid guiID $ OpenFile.Request p
 
 saveFile :: FilePath -> UUID -> Maybe UUID -> IO ()
 saveFile path uuid guiID = sendRequest $ Message uuid guiID $ SaveFile.Request path
+
+isSaved :: FilePath -> UUID -> Maybe UUID -> IO ()
+isSaved path uuid guiID = sendRequest $ Message uuid guiID $ IsSaved.Request path
 
 setProject :: FilePath -> UUID -> Maybe UUID -> IO ()
 setProject rootPath uuid guiID = sendRequest $ Message uuid guiID $ SetProject.Request rootPath

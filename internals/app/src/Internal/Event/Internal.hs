@@ -7,6 +7,7 @@ import           Internal.Prelude
 
 
 data ActionType = CloseFile
+                  | IsSaved
                   | OpenFile
                   | SaveFile
                   | SetProject

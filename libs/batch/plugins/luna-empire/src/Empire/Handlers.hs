@@ -49,6 +49,7 @@ handlersMap = Map.fromList
     , makeHandler Project.handleImportProject
     , makeHandler Project.handleListProjects
     , makeHandler Project.handleOpenProject
+    , makeHandler Atom.handleIsSaved
     , makeHandler Atom.handleSetProject
     , makeHandler Atom.handleOpenFile
     , makeHandler Atom.handleSaveFile

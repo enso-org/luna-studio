@@ -17,7 +17,7 @@ import qualified Empire.API.Response                as Response
 import           GHCJS.Marshal.Pure                 (pFromJSVal)
 import           JS.DownloadFile                    (downloadFile)
 -- import           Internal.Action.Basic           (loadGraph, loadProject)
-import qualified Internal.Action.Batch           as BatchCmd (closeFile, openFile, saveFile, setProject)
+import qualified Internal.Action.Batch           as BatchCmd (closeFile, isSaved, openFile, saveFile, setProject)
 import           Internal.Action.Command         (Command)
 import qualified Internal.Batch.Workspace        as Workspace
 import qualified Internal.Event.Batch            as Batch
@@ -42,6 +42,7 @@ handle (Event.Atom (InternalEvent SetProject path)) = Just $ BatchCmd.setProject
 handle (Event.Atom (InternalEvent CloseFile path))  = Just $ BatchCmd.closeFile path
 handle (Event.Atom (InternalEvent OpenFile path))   = Just $ BatchCmd.openFile path
 handle (Event.Atom (InternalEvent SaveFile path))   = Just $ BatchCmd.saveFile path
+handle (Event.Atom (InternalEvent IsSaved path))    = Just $ BatchCmd.isSaved path
 
 handle (Batch (Batch.ProjectSet response))    = Just $ handleResponse response doNothing doNothing
 
