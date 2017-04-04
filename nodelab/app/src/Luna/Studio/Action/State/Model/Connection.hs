@@ -18,7 +18,7 @@ import           Luna.Studio.React.Model.Connection            (Connection (Conn
                                                                 CurrentConnection (CurrentConnection), Mode (Normal, Sidebar), connectionId,
                                                                 containsNode, toConnection)
 import qualified Luna.Studio.React.Model.Connection            as Model
-import           Luna.Studio.React.Model.Constants             (lineHeight, nodeExpandedWidth, nodeRadius, portRadius)
+import           Luna.Studio.React.Model.Constants             (lineHeight, nodeExpandedWidth, nodeRadius, portRadius, gridSize)
 import           Luna.Studio.React.Model.Node                  (Node (Expression), NodeLoc, hasPort)
 import qualified Luna.Studio.React.Model.Node                  as Node
 import           Luna.Studio.React.Model.Node.ExpressionNode   (ExpressionNode, countArgPorts, countOutPorts, isCollapsed, nodeLoc,
@@ -44,7 +44,7 @@ createConnectionModel srcPortRef dstPortRef = runMaybeT $ do
         return $ Connection srcPortRef dstPortRef srcPos dstPos t $ srcPort ^. color
     else if countArgPorts dstNode == getPortNumber dstPortId then case dstNode of
         Expression n -> MaybeT $ fmap2 (toConnection srcPortRef dstPortRef) $
-            createCurrentConnectionModel (OutPortRef' srcPortRef) $ n ^. position & y %~ (+30)
+            createCurrentConnectionModel (OutPortRef' srcPortRef) $ getPortPhantomPosition n
         _            -> nothing
     else nothing
 
@@ -58,7 +58,7 @@ createCurrentConnectionModel portRef mousePos = runMaybeT $ do
             (connPortPos, t) <- MaybeT $ getCurrentConnectionSrcPositionAndMode node port mousePos
             return (connPortPos, t, port ^. color)
         else if countArgPorts node == getPortNumber pid then case node of
-            Expression n -> return (n ^. position & y %~ (+30), Normal, Color 0)
+            Expression n -> return (getPortPhantomPosition n, Normal, Color 0)
             _            -> nothing
         else nothing
     return $ CurrentConnection connPortPos mousePos t c
@@ -75,6 +75,9 @@ distSqFromMouseIfIntersect nl nodePos connId = runMaybeT $ do
         if u < 0 || u > 1 || distSq > nodeRadius ^ (2 :: Integer)
             then nothing
             else return (connId, distSq)
+
+getPortPhantomPosition :: ExpressionNode -> Position
+getPortPhantomPosition n = n ^. position & y %~ (+ 2 * gridSize)
 
 getIntersectingConnections :: ExpressionNode -> Position -> Command State (Maybe ConnectionId)
 getIntersectingConnections node mousePos = do

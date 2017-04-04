@@ -9,7 +9,7 @@ import qualified Luna.Studio.Event.UI              as UI
 import           Luna.Studio.Prelude
 import qualified Luna.Studio.React.Event.Port      as Port
 import           Luna.Studio.React.Model.App       (App)
-import           Luna.Studio.React.Model.Constants (lineHeight, nodeRadius, nodeRadius')
+import           Luna.Studio.React.Model.Constants (lineHeight, nodeRadius, nodeRadius', gridSize)
 import           Luna.Studio.React.Model.Node      (NodeLoc)
 --import           Luna.Studio.React.Model.Port (Port (..))
 import           Luna.Studio.React.Model.Port      (InPort (Self), Mode (Highlighted, Invisible), OutPort (All), Port,
@@ -261,14 +261,14 @@ portPhantom_ ref portRef = do
             , "key"       $= "phantom-shape"
             , "r"         $= jsShow2 3
             , "fill"      $= "gray"
-            , "cy"        $= "30px"
+            , "cy"        $= fromString (show (2 * gridSize) <> "px")
             ] mempty
         circle_
             ( handlers ref portRef ++
               [ "className" $= Style.prefix "port__select"
               , "key"       $= "phantom-select"
               , "r"         $= jsShow2 (lineHeight/1.5)
-              , "cy"        $= "30px"
+              , "cy"        $= fromString (show (2 * gridSize) <> "px")
               ]
             ) mempty
 
