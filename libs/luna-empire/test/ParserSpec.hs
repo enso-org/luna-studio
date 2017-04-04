@@ -1,4 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE QuasiQuotes       #-}
 
 module ParserSpec (spec) where
 
@@ -6,14 +7,21 @@ import qualified Data.Map                     as Map
 import           Empire.API.Data.PortDefault (PortDefault(Expression))
 import qualified Empire.API.Data.Node         as Node (NodeType(ExpressionNode),
                                                        nodeType, ports)
-import qualified Empire.API.Data.Port         as Port
-import           Empire.API.Data.TypeRep      (TypeRep(TStar))
-import qualified Empire.Commands.Graph        as Graph
+import qualified Empire.API.Data.Port          as Port
+import           Empire.API.Data.Breadcrumb    (Breadcrumb(..))
+import           Empire.API.Data.GraphLocation (GraphLocation(..))
+import           Empire.API.Data.TypeRep       (TypeRep(TStar))
+import           Empire.ASTOp                  (runASTOp)
+import qualified Empire.ASTOps.Parse           as ASTParse
+import qualified Empire.Commands.Graph         as Graph
+import qualified Empire.Commands.GraphBuilder  as GraphBuilder
+import qualified Empire.Commands.Library       as Library
 
 import           Prologue                   hiding ((|>))
 
 import           Test.Hspec (Spec, around, describe, it, xit, expectationFailure,
                              shouldBe, shouldMatchList, shouldStartWith)
+import           Text.RawString.QQ (r)
 
 import EmpireUtils
 
@@ -50,3 +58,21 @@ spec = around withChannels $ do
                     , Port.Port (Port.InPortId (Port.Arg 1)) "y" TStar (Port.WithDefault (Expression "y"))
                     , Port.Port (Port.InPortId (Port.Arg 2)) "z" TStar (Port.WithDefault (Expression "z"))
                     ]
+        it "parses unit" $ \env -> do
+            let code = [r|‹0›def pi: 3.14
+
+‹1›def foo: a + b
+
+‹2›def bar:
+    a ‹3›= 1
+    ‹4›foo a 6
+    ‹5›print a|]
+            res <- evalEmp env $ do
+                Library.createLibrary Nothing "TestPath" code
+                let loc = GraphLocation "TestPath" $ Breadcrumb []
+                -- (ref, exprMap) <- Graph.withGraph loc $
+                --     ASTParse.runUnitParser code
+                graph <- Graph.withGraph loc $ runASTOp $ GraphBuilder.buildGraph
+                return graph
+            withResult res $ \graph -> do
+                print graph

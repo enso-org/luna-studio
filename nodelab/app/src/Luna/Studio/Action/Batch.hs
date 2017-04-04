@@ -57,6 +57,9 @@ withUUID act = do
 -- openProject :: FilePath -> Command State ()
 -- openProject = withUUID . BatchCmd.openProject
 
+openFile :: FilePath -> Command State ()
+openFile = withUUID . BatchCmd.openFile
+
 
 dumpGraphViz :: Command State ()
 dumpGraphViz = withWorkspace BatchCmd.dumpGraphViz

@@ -17,11 +17,13 @@ import qualified Empire.API.Atom.SaveFile              as SaveFile
 import qualified Empire.API.Atom.CloseFile             as CloseFile
 import qualified Empire.API.Atom.GetBuffer             as GetBuffer
 import qualified Empire.API.Atom.Substitute            as Substitute
+import qualified Empire.API.Response                as Response
 
+import qualified Empire.Commands.Graph                 as Graph
 import qualified Empire.Commands.Library               as Library
 import qualified Empire.Data.Library                   as Library
 import qualified Empire.Empire                         as Empire
-import           Empire.Server.Server                  (errorMessage, replyOk)
+import           Empire.Server.Server                  (errorMessage, replyFail, replyOk)
 import qualified System.Log.MLogger                    as Logger
 import           ZMQ.Bus.Trans                         (BusT (..))
 
@@ -32,12 +34,15 @@ handleSetProject :: Request SetProject.Request -> StateT Env BusT ()
 handleSetProject = $notImplemented
 
 handleOpenFile :: Request OpenFile.Request -> StateT Env BusT ()
-handleOpenFile (Request _ _ (OpenFile.Request path)) = do
-    lib <- liftIO $ do
-        code <- Text.readFile path
-        Library.make (Just "dupaName") path code
-    Env.empireEnv . Empire.activeFiles . at path ?= lib
-    return ()
+handleOpenFile req@(Request _ _ (OpenFile.Request path)) = do
+    currentEmpireEnv <- use Env.empireEnv
+    empireNotifEnv   <- use Env.empireNotif
+    (result, newEmpireEnv) <- liftIO $ Empire.runEmpire empireNotifEnv currentEmpireEnv $ Graph.openFile path
+    case result of
+        Left err -> replyFail logger err req (Response.Error err)
+        Right _  -> do
+            Env.empireEnv .= newEmpireEnv
+            replyOk req ()
 
 handleSaveFile :: Request SaveFile.Request -> StateT Env BusT ()
 handleSaveFile req@(Request _ _ (SaveFile.Request inPath)) = do

@@ -35,6 +35,7 @@ module Empire.Commands.Graph
     , setPortDefault
     , renameNode
     , dumpGraphViz
+    , openFile
     , typecheck
     , substituteCode
     , withTC
@@ -52,6 +53,7 @@ import           Data.Maybe                    (catMaybes, isJust)
 import           Data.Foldable                 (toList)
 import           Data.Text                     (Text)
 import qualified Data.Text                     as Text
+import qualified Data.Text.IO                  as Text
 import qualified Data.UUID                     as UUID
 import qualified Data.UUID.V4                  as UUID (nextRandom)
 import           Empire.Prelude
@@ -560,6 +562,18 @@ renameNodeGraph nid name = do
 
 dumpGraphViz :: GraphLocation -> Empire ()
 dumpGraphViz loc = withGraph loc $ return ()
+
+openFile :: FilePath -> Empire ()
+openFile path = do
+    code <- liftIO $ Text.readFile path
+    Library.createLibrary Nothing path code
+    let loc = GraphLocation path $ Breadcrumb []
+    forM (Text.lines code) $ \codeLine -> do
+        when (codeLine /= Text.empty) $ do
+            uuid <- liftIO $ UUID.nextRandom
+            node <- addNode loc uuid codeLine def
+            return ()
+    return ()
 
 typecheck :: GraphLocation -> Empire ()
 typecheck loc = withGraph loc $ runTC loc False
