@@ -47,13 +47,10 @@ instance HasBreadcrumb NodeLoc                     where breadcrumb = path . bre
 instance HasNodeLoc NodeLoc                        where nodeLoc = id
 
 instance HasBreadcrumb b => Convertible b NodePath where
-    convert = convert . view breadcrumb
+    convert = NodePath . view breadcrumb
 
 instance HasBreadcrumb b => Convertible (b, NodeLoc) (b, NodeId) where
     convert (b, n) = (b & breadcrumb %~ (<> (n ^. breadcrumb)), n ^. nodeId) where
-
-instance Convertible (GraphLocation, NodeId) NodeLoc where
-    convert (graphLoc, nodeId) = NodeLoc (convert graphLoc) nodeId
 
 empty :: NodePath
 empty = def
