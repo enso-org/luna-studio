@@ -9,7 +9,7 @@ import qualified Empire.API.Request      as R
 import qualified Empire.API.Response     as Response
 import qualified Empire.API.Topic        as T
 
-data IsSaved = True | False
+data IsSaved = True | False deriving (Generic, Eq, NFData, Show)
 
 data Request = Request { _filePath :: FilePath
                        } deriving (Generic, Eq, NFData, Show)
@@ -23,6 +23,7 @@ instance Response.ResponseResult Request () Result
 makeLenses ''Request
 makeLenses ''Result
 
+instance Binary IsSaved
 instance Binary Request
 instance Binary Result
 
