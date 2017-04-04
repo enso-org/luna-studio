@@ -24,7 +24,7 @@ handle (UI (AppEvent (App.MouseMove evt _))) = Just $ Global.ui . UI.mousePos <~
 handle (UI (AppEvent  App.Resize          )) = Just   updateScene
 handle (UI (AppEvent  App.MouseLeave      )) = Just   endAll
 handle (Shortcut (Shortcut.Event command _)) = Just $ handleCommand command
-handle  Init                                 = Nothing -- Just $ maybe Batch.listProjects Batch.openProject Config.openedFile
+handle  Init                                 = Just   Batch.getProgram
 handle _                                     = Nothing
 
 

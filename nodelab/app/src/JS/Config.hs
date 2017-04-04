@@ -27,7 +27,7 @@ foreign import javascript safe "arg_url" openedFile' :: IO JSVal
 foreign import javascript safe "arg_mount" mountPoint' :: IO JSVal
 
 {-# NOINLINE openedFile #-}
-openedFile :: Maybe String
+openedFile :: Maybe FilePath
 openedFile = unsafePerformIO $ pFromJSVal <$> openedFile'
 
 {-# NOINLINE mountPoint #-}
