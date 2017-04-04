@@ -6,11 +6,11 @@ import qualified Data.HashMap.Strict                                   as HashMa
 import qualified Data.Map.Lazy                                         as Map
 import           Data.Matrix                                           (Matrix)
 import qualified Empire.API.Data.MonadPath                             as MonadPath
+import           Empire.API.Data.PortRef                               (toAnyPortRef)
 import qualified Empire.API.Graph.NodeResultUpdate                     as NodeResult
 import qualified JS.Config                                             as Config
 import qualified JS.UI                                                 as UI
 import           Luna.Studio.Data.Matrix                               (showNodeMatrix, showNodeTranslate)
-import           Luna.Studio.Data.PortRef                              (toAnyPortRef)
 import qualified Luna.Studio.Event.Mouse                               as Mouse
 import qualified Luna.Studio.Event.UI                                  as UI
 import           Luna.Studio.Prelude
@@ -32,7 +32,7 @@ import           Luna.Studio.React.View.Plane                          (planeMon
 import           Luna.Studio.React.View.Port                           (portExpanded_, portPhantom_, port_)
 import           Luna.Studio.React.View.Style                          (blurBackground_, errorMark_, selectionMark_)
 import qualified Luna.Studio.React.View.Style                          as Style
-import           Luna.Studio.React.View.Visualization                  (visualization_,strValue)
+import           Luna.Studio.React.View.Visualization                  (strValue, visualization_)
 import           React.Flux
 import qualified React.Flux                                            as React
 
