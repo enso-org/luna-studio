@@ -468,9 +468,9 @@ connectNoTC loc outPort anyPort = do
     return connection
 
 getPortDefault :: GraphLocation -> AnyPortRef -> Empire PortDefault
-getPortDefault loc (OutPortRef' (OutPortRef nodeId _))      = withGraph loc $ runASTOp $ GraphBuilder.getDefault =<< GraphUtils.getASTTarget nodeId
+getPortDefault loc (OutPortRef' (OutPortRef (NodeLoc _ nodeId) _))      = withGraph loc $ runASTOp $ GraphBuilder.getDefault =<< GraphUtils.getASTTarget nodeId
 getPortDefault loc (InPortRef'  (InPortRef  _ Self))        = throwError "Cannot set default value on self port"
-getPortDefault loc (InPortRef'  (InPortRef nodeId (Arg x))) = withGraph loc $ runASTOp $ flip GraphBuilder.getInPortDefault x =<< GraphUtils.getASTTarget nodeId
+getPortDefault loc (InPortRef'  (InPortRef  (NodeLoc _ nodeId) (Arg x))) = withGraph loc $ runASTOp $ flip GraphBuilder.getInPortDefault x =<< GraphUtils.getASTTarget nodeId
 
 setPortDefault :: GraphLocation -> AnyPortRef -> PortDefault -> Empire ()
 setPortDefault loc portRef val = withTC loc False $ runASTOp $ setPortDefault' portRef val
