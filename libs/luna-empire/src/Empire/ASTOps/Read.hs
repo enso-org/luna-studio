@@ -15,9 +15,11 @@ import           Control.Monad                      ((>=>), (<=<), forM)
 import           Control.Monad.Catch                (Handler(..), catches)
 import           Data.Maybe                         (isJust)
 import           Empire.Prelude
+import           Prologue                           (preview)
 
 import           Empire.API.Data.Node               (NodeId)
-import           Empire.API.Data.PortRef            (OutPortRef(..))
+import qualified Empire.API.Data.PortRef            as PortRef
+import qualified Empire.API.Data.NodeLoc            as NodeLoc
 import           Empire.ASTOp                       (ASTOp, match)
 import           Empire.Data.AST                    (NodeRef, EdgeRef, NotUnifyException(..),
                                                      NotLambdaException(..),
@@ -35,11 +37,7 @@ isGraphNode :: ASTOp m => NodeRef -> m Bool
 isGraphNode = fmap isJust . getNodeId
 
 getNodeId :: ASTOp m => NodeRef -> m (Maybe NodeId)
-getNodeId node = do
-    portRef <- IR.getLayer @Marker node
-    forM portRef $ \portRef' -> do
-        let OutPortRef nodeId _ = portRef'
-        return nodeId
+getNodeId node = preview (_Just . PortRef.srcNodeLoc . NodeLoc.nodeId) <$> IR.getLayer @Marker node
 
 getPatternNames :: ASTOp m => NodeRef -> m [String]
 getPatternNames node = match node $ \case

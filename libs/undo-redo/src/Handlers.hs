@@ -142,8 +142,8 @@ handle message = do
 
 
 getUndoAddNode :: AddNode.Request -> RemoveNodes.Request
-getUndoAddNode (AddNode.Request location nodeId _ _ _) =
-    RemoveNodes.Request location [convert nodeId]
+getUndoAddNode (AddNode.Request location nodeLoc _ _ _) =
+    RemoveNodes.Request location [nodeLoc]
 
 handleAddNodeUndo :: AddNode.Response -> Maybe (RemoveNodes.Request, AddNode.Request)
 handleAddNodeUndo (Response.Response _ _ req _ (Response.Ok _)) =

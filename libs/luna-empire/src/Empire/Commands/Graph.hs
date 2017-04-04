@@ -70,6 +70,8 @@ import qualified Empire.API.Data.Graph           as APIGraph
 import           Empire.API.Data.GraphLocation   (GraphLocation (..))
 import           Empire.API.Data.Node            (Node (..), NodeId)
 import qualified Empire.API.Data.Node            as Node
+import           Empire.API.Data.NodeLoc         (NodeLoc (..))
+import qualified Empire.API.Data.NodeLoc         as NodeLoc
 import           Empire.API.Data.NodeMeta        (NodeMeta)
 import qualified Empire.API.Data.NodeMeta        as NodeMeta
 import           Empire.API.Data.Port            (InPort (..), OutPort (..), PortId (..))
@@ -144,7 +146,7 @@ prepareLambdaChild tgt ref = do
                          then Just $ BH.ExprChild $ BH.ExprItem Map.empty (BH.AnonymousNode lambdaOutput)
                          else Nothing
             lamItem    = BH.LamItem portMapping tgt (Map.empty & at lambdaUUID .~ anonOutput) lambdaBody
-        IR.putLayer @Marker lambdaOutput $ Just $ OutPortRef lambdaUUID Port.All
+        IR.putLayer @Marker lambdaOutput $ Just $ OutPortRef (NodeLoc def lambdaUUID) Port.All
         return $ Just lamItem
     else return Nothing
 
@@ -291,7 +293,7 @@ setNodeExpression loc nodeId expr = withTC loc False $ do
                              else Nothing
                 lamItem    = BH.LamItem portMapping (BH.MatchNode refNode) (Map.empty & at lambdaUUID .~ anonOutput) lambdaBody
             Graph.breadcrumbHierarchy . BH.children . at nodeId  ?= BH.LambdaChild lamItem
-            IR.putLayer @Marker lambdaOutput $ Just $ OutPortRef lambdaUUID Port.All
+            IR.putLayer @Marker lambdaOutput $ Just $ OutPortRef (NodeLoc def lambdaUUID) Port.All
         updateNodeSequence
         GraphBuilder.buildNode nodeId
     Publisher.notifyNodeUpdate loc node
@@ -324,7 +326,7 @@ connect :: GraphLocation -> OutPortRef -> AnyPortRef -> Empire Connection
 connect loc outPort anyPort = withTC loc False $ connectNoTC loc outPort anyPort
 
 connectPersistent :: ASTOp m => OutPortRef -> AnyPortRef -> m Connection
-connectPersistent src@(OutPortRef srcNodeId srcPort) (InPortRef' dst@(InPortRef dstNodeId dstPort)) = do
+connectPersistent src@(OutPortRef (NodeLoc _ srcNodeId) srcPort) (InPortRef' dst@(InPortRef (NodeLoc _ dstNodeId) dstPort)) = do
     let inputPos = case srcPort of
             All              -> 0   -- FIXME: do not equalise All with Projection 0
             Projection int _ -> int
@@ -338,7 +340,7 @@ connectPersistent src@(OutPortRef srcNodeId srcPort) (InPortRef' dst@(InPortRef 
             Self    -> makeAcc srcNodeId dstNodeId inputPos
             Arg num -> makeApp srcNodeId dstNodeId num inputPos
     return $ Connection src dst
-connectPersistent src@(OutPortRef srcNodeId srcPort) (OutPortRef' dst@(OutPortRef dstNodeId dstPort)) = do
+connectPersistent src@(OutPortRef (NodeLoc _ srcNodeId) srcPort) (OutPortRef' dst@(OutPortRef (NodeLoc _ dstNodeId) dstPort)) = do
     case dstPort of
         All            -> connectToPattern srcNodeId dstNodeId
         Projection _ _ -> $notImplemented
@@ -428,10 +430,10 @@ connectToPattern src dst = do
     value <- ASTRead.getASTVar src
     ASTModify.rewireNode dst value
 
-    return $ Connection (OutPortRef src Port.All) (InPortRef dst (Port.Arg 0))
+    return $ Connection (OutPortRef (NodeLoc def src) Port.All) (InPortRef (NodeLoc def dst) (Port.Arg 0))
 
 connectToMatchedVariable :: ASTOp m => OutPortRef -> InPortRef -> Int -> m ()
-connectToMatchedVariable (OutPortRef srcNodeId srcPort) (InPortRef dstNodeId dstPort) pos = do
+connectToMatchedVariable (OutPortRef (NodeLoc _ srcNodeId) srcPort) (InPortRef (NodeLoc _ dstNodeId) dstPort) pos = do
     pattern    <- ASTRead.getASTVar srcNodeId
     varsInside <- ASTRead.getVarsInside pattern
     let inputPos = case srcPort of
@@ -470,17 +472,17 @@ setPortDefault' :: ASTOp m => AnyPortRef -> PortDefault -> m ()
 setPortDefault' portRef val = do
     parsed <- ASTParse.parsePortDefault val
     (nodeId, newRef) <- case portRef of
-        InPortRef' (InPortRef nodeId port) -> do
+        InPortRef' (InPortRef (NodeLoc _ nodeId) port) -> do
             ref <- GraphUtils.getASTTarget nodeId
             newRef <- case port of
                 Self    -> ASTBuilder.makeAccessor parsed ref
                 Arg num -> ASTBuilder.applyFunction ref parsed num
             return (nodeId, newRef)
-        OutPortRef' (OutPortRef nodeId _) -> return (nodeId, parsed)
+        OutPortRef' (OutPortRef (NodeLoc _ nodeId) _) -> return (nodeId, parsed)
     GraphUtils.rewireNode nodeId newRef
 
 disconnect :: GraphLocation -> InPortRef -> Empire ()
-disconnect loc port@(InPortRef nid _) = withTC loc False $ do
+disconnect loc port@(InPortRef (NodeLoc _ nid) _) = withTC loc False $ do
     nodeToUpdate <- runASTOp $ do
         disconnectPort port
 
@@ -569,7 +571,7 @@ getOutEdges nodeId = do
     return $ view _2 <$> filtered
 
 disconnectPort :: ASTOp m => InPortRef -> m ()
-disconnectPort (InPortRef dstNodeId dstPort) = do
+disconnectPort (InPortRef (NodeLoc _ dstNodeId) dstPort) = do
     isPatternMatch <- ASTRead.nodeIsPatternMatch dstNodeId
     if isPatternMatch then do
         nothing <- IR.generalize <$> IR.cons_ "Nothing"

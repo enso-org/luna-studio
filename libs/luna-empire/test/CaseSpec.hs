@@ -13,6 +13,7 @@ import qualified Empire.API.Data.Node          as Node (NodeType(ExpressionNode,
                                                         canEnter, expression, name, nodeId, _InputEdge, nodeType, ports)
 import           Empire.API.Data.NodeMeta      (NodeMeta(..))
 import qualified Empire.API.Data.Port          as Port
+import           Empire.API.Data.NodeLoc       (NodeLoc (..))
 import           Empire.API.Data.PortDefault   (PortDefault (Constant, Expression), Value(IntValue))
 import           Empire.API.Data.PortRef       (InPortRef (..), OutPortRef (..), AnyPortRef(..))
 import           Empire.API.Data.TypeRep       (TypeRep(TCons, TStar, TLam, TVar))
@@ -80,8 +81,8 @@ spec = around withChannels $ id $ do
                       Port.Port (Port.InPortId (Port.Arg 0)) "output" TStar Port.Connected
                     ]
                 connections `shouldMatchList` [
-                      (OutPortRef (inputEdge ^. Node.nodeId) (Port.Projection 0 Port.All),
-                      InPortRef (outputEdge ^. Node.nodeId) (Port.Arg 0))
+                      (OutPortRef (NodeLoc def $ inputEdge  ^. Node.nodeId) (Port.Projection 0 Port.All),
+                       InPortRef  (NodeLoc def $ outputEdge ^. Node.nodeId) (Port.Arg 0))
                     ]
         xit "shows anonymous breadcrumbs in foo ((Acc a): b: a + b) 1 ((Vector a b c): a * b + c)" $ \env -> do
             u1 <- mkUUID

@@ -44,6 +44,8 @@ import qualified Empire.API.Data.Graph             as API
 import           Empire.API.Data.MonadPath              (MonadPath(MonadPath))
 import           Empire.API.Data.Node              (NodeId)
 import qualified Empire.API.Data.Node              as API
+import qualified Empire.API.Data.NodeLoc           as NodeLoc
+import           Empire.API.Data.NodeLoc           (NodeLoc (..))
 import           Empire.API.Data.Port              (InPort (..), OutPort (..), Port (..), PortId (..), OutPortTree (..), PortState (..))
 import qualified Empire.API.Data.Port              as Port
 import           Empire.API.Data.PortRef           (InPortRef (..), OutPortRef (..), srcNodeId)
@@ -385,7 +387,7 @@ buildInputEdge connections nid = do
     types    <- extractArgTypes tp
     let connectedPorts = map (\(OutPortRef _ (Projection p _)) -> p)
                $ map fst
-               $ filter (\(OutPortRef refNid p,_) -> nid == refNid)
+               $ filter (\(OutPortRef refNid p,_) -> nid == refNid ^. NodeLoc.nodeId)
                $ connections
         states = map (\i -> if i `elem` connectedPorts then Connected else NotConnected) [(0::Int)..]
     names <- getPortsNames ref
@@ -420,7 +422,7 @@ buildOutputEdge connections nid = do
         outputType = traverseLams out
     let connectedPorts = map (\(InPortRef _ (Arg p)) -> p)
              $ map snd
-             $ filter (\(_, InPortRef refNid p) -> nid == refNid)
+             $ filter (\(_, InPortRef refNid p) -> nid == refNid ^. NodeLoc.nodeId)
              $ connections
         outputConnected = if 0 `elem` connectedPorts then Connected else NotConnected
         port = Port (InPortId $ Arg 0) "output" outputType outputConnected
@@ -459,7 +461,7 @@ getOutputEdgeInputs inputEdge outputEdge = do
                     _       -> return Nothing
     case nid of
         Just (id', arg) -> do
-            return $ Just (OutPortRef id' arg, InPortRef outputEdge (Arg 0))
+            return $ Just (OutPortRef (NodeLoc def id') arg, InPortRef (NodeLoc def outputEdge) (Arg 0))
         _ -> return Nothing
 
 nodeConnectedToOutput :: ASTOp m => m (Maybe NodeId)
@@ -476,8 +478,8 @@ resolveInputNodeId edgeNodes lambdaArgs ref = do
         _      -> do
             projection <- IR.getLayer @Marker ref
             case projection of
-                Just (OutPortRef nodeId portId) -> return (Just portId, Just nodeId)
-                _                               -> return (Nothing, Nothing)
+                Just (OutPortRef nodeLoc portId) -> return (Just portId, Just $ nodeLoc ^. NodeLoc.nodeId)
+                _                                -> return (Nothing, Nothing)
 
 getOuterLambdaArguments :: ASTOp m => m [NodeRef]
 getOuterLambdaArguments = do
@@ -502,19 +504,17 @@ getNodeInputs edgeNodes nodeId = do
         Just _p -> do
             nodeBeingMatched <- GraphUtils.getASTTarget nodeId >>= ASTRead.getNodeId
             case nodeBeingMatched of
-                Just id' -> return [(OutPortRef id' Port.All, InPortRef nodeId (Port.Arg 0))]
+                Just id' -> return [(OutPortRef (NodeLoc def id') Port.All, InPortRef (NodeLoc def nodeId) (Port.Arg 0))]
                 _        -> return []
         _       -> do
             selfMay     <- ASTRead.getSelfNodeRef ref
             lambdaArgs  <- getOuterLambdaArguments
-            selfNodeMay <- case selfMay of
-                Just self -> fmap snd $ resolveInputNodeId edgeNodes lambdaArgs self
-                Nothing   -> return Nothing
+            selfNodeMay <- fmap join $ forM selfMay $ fmap snd . resolveInputNodeId edgeNodes lambdaArgs
             let projection  = case selfMay of
                     Just self -> Just $ outIndexToProjection $ List.findIndex (== self) lambdaArgs
                     Nothing   -> Nothing
-            let selfConnMay = (,) <$> (OutPortRef <$> selfNodeMay <*> projection)
-                                  <*> (Just $ InPortRef nodeId Self)
+            let selfConnMay = (,) <$> (OutPortRef <$> (NodeLoc def <$> selfNodeMay) <*> projection)
+                                  <*> (Just $ InPortRef (NodeLoc def nodeId) Self)
 
             args     <- ASTDeconstruct.extractArguments ref
             nodeMays <- mapM (resolveInputNodeId edgeNodes lambdaArgs) args
@@ -522,5 +522,5 @@ getNodeInputs edgeNodes nodeId = do
                 hasNodeId (outIndex, Just nodeId, index) = Just (outIndex, nodeId, index)
                 hasNodeId _ = Nothing
                 onlyExt  = catMaybes $ map hasNodeId withInd
-                conns    = flip map onlyExt $ \((fromMaybe All -> proj), n, i) -> (OutPortRef n proj, InPortRef nodeId (Arg i))
+                conns    = flip map onlyExt $ \((fromMaybe All -> proj), n, i) -> (OutPortRef (NodeLoc def n) proj, InPortRef (NodeLoc def nodeId) (Arg i))
             return $ maybeToList selfConnMay ++ conns
