@@ -237,6 +237,7 @@ extractAppArgNames node = go [] node
             Cons{}  -> return vars
             Var{}   -> return vars
             Acc{}   -> return vars
+            _       -> return []
 
 insideThisNode :: ASTOp m => NodeRef -> m Bool
 insideThisNode node = do
