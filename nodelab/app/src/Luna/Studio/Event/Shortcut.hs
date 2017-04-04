@@ -7,6 +7,8 @@ import           Luna.Studio.Prelude
 
 data Command = Cancel
              | OpenSearcher
+             | Autolayout
+             | AutolayoutAll
              -- camera
              | CenterGraph
              | PanDown
