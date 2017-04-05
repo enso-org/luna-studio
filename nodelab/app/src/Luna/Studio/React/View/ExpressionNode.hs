@@ -173,8 +173,11 @@ nodeVisualizations = React.defineView objNameVis $ \(ref, n) ->
         , onDoubleClick $ \e _ -> [stopPropagation e]
         ] $ --elemString $ strValue n
         iframe_
-            [ "srcDoc" $= ("<style>* { font: 12px/16px Hasklig, monospace; color: #fff; padding: 0; margin: 0; text-align: center; }</style>"
-                        <> jsShow (strValue n) )
+            [ "srcDoc" $= ("<style>"
+                        <> "* { font:12px/16px Hasklig, monospace;color: #fff; padding:0; margin:0; border:none; }"
+                        <> "body { display:flex; justify-content:center; }"
+                        <> "table td { padding: 0 4px 2px }</style>"
+                        <> (convert $ strValue n) )
             --, onMouseDown $ \_ _ -> traceShowMToStdout "NIE JEST NAJGORZEJ"
             ] mempty
 --    div_
