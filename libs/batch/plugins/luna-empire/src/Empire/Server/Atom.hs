@@ -16,6 +16,7 @@ import qualified Empire.API.Atom.OpenFile              as OpenFile
 import qualified Empire.API.Atom.SaveFile              as SaveFile
 import qualified Empire.API.Atom.CloseFile             as CloseFile
 import qualified Empire.API.Atom.GetBuffer             as GetBuffer
+import qualified Empire.API.Atom.IsSaved               as IsSaved
 import qualified Empire.API.Atom.Substitute            as Substitute
 import qualified Empire.API.Response                as Response
 
@@ -62,3 +63,6 @@ handleSaveFile req@(Request _ _ (SaveFile.Request inPath)) = do
 handleCloseFile :: Request CloseFile.Request -> StateT Env BusT ()
 handleCloseFile (Request _ _ (CloseFile.Request path)) = do
     Env.empireEnv . Empire.activeFiles . at path .= Nothing
+
+handleIsSaved :: Request IsSaved.Request -> StateT Env BusT ()
+handleIsSaved (Request _ _ _) = $notImplemented

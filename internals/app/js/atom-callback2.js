@@ -12,6 +12,7 @@ module.exports = function () {
     codeListener: [],
     eventListenerInternal: [],
     textListener: [],
+    statusListener: [],
   };
 
   return {
@@ -30,6 +31,15 @@ module.exports = function () {
     pushBuffer: function(data1, data2) {
       listeners.bufferListener.forEach(function(listener) {
         listener(data1, data2);
+      });
+    },
+
+    statusListener: function (listener) {
+      listeners.statusListener.push(listener);
+    },
+    pushStatus: function(data1, data2, data3) {
+      listeners.statusListener.forEach(function(listener) {
+        listener(data1, data2, data3);
       });
     },
 

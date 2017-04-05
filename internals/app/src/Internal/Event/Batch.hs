@@ -4,6 +4,7 @@ module Internal.Event.Batch where
 import           Data.Aeson                             (ToJSON)
 import           Internal.Prelude
 
+import qualified Empire.API.Atom.IsSaved                as IsSaved
 import qualified Empire.API.Atom.GetBuffer              as GetBuffer
 import qualified Empire.API.Atom.Substitute             as Substitute
 import qualified Empire.API.Atom.CloseFile              as CloseFile
@@ -37,6 +38,7 @@ data Event = UnknownEvent String
         --    | ProjectOpened                         OpenProject.Response
         --    | ProjectOpenedUpdate                   OpenProject.Update
 
+           | IsSaved                                   IsSaved.Response
            | ProjectSet                             SetProject.Response
            | FileClosed                              CloseFile.Response
            | FileOpened                               OpenFile.Response

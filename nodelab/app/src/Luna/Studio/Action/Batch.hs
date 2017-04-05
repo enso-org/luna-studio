@@ -65,8 +65,8 @@ dumpGraphViz :: Command State ()
 dumpGraphViz = withWorkspace BatchCmd.dumpGraphViz
 
 
--- getProgram :: Command State ()
--- getProgram = withWorkspace BatchCmd.getProgram
+getProgram :: Command State ()
+getProgram = withWorkspace BatchCmd.getProgram
 
 
 addConnection :: Either OutPortRef NodeLoc -> Either AnyPortRef NodeLoc -> Command State ()
