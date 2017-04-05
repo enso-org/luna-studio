@@ -274,21 +274,23 @@ getPortsNames node = do
         Just n -> return n
         _      -> return backup
 
-extractAppliedPorts :: ASTOp m => Bool -> [NodeRef] -> NodeRef -> m [Maybe (TypeRep, PortState)]
-extractAppliedPorts seenApp bound node = IR.matchExpr node $ \case
+extractAppliedPorts :: ASTOp m => Bool -> Bool -> [NodeRef] -> NodeRef -> m [Maybe (TypeRep, PortState)]
+extractAppliedPorts seenApp  seenLam bound node = IR.matchExpr node $ \case
     Lam i o -> case seenApp of
         True  -> return []
         False -> do
             inp <- IR.source i
             out <- IR.source o
-            extractAppliedPorts False (inp : bound) out
-    App f a -> do
-        arg          <- IR.source a
-        isB          <- ASTRead.isBlank arg
-        argTp        <- IR.getLayer @TypeLayer arg >>= IR.source
-        res          <- if isB || elem arg bound then return Nothing else Just .: (,) <$> Print.getTypeRep argTp <*> getPortState arg
-        rest         <- extractAppliedPorts True bound =<< IR.source f
-        return $ res : rest
+            extractAppliedPorts False True (inp : bound) out
+    App f a -> case seenLam of
+        True  -> return []
+        False -> do
+            arg          <- IR.source a
+            isB          <- ASTRead.isBlank arg
+            argTp        <- IR.getLayer @TypeLayer arg >>= IR.source
+            res          <- if isB || elem arg bound then return Nothing else Just .: (,) <$> Print.getTypeRep argTp <*> getPortState arg
+            rest         <- extractAppliedPorts True False bound =<< IR.source f
+            return $ res : rest
     _       -> return []
 
 
@@ -305,7 +307,7 @@ mergePortInfo (Just a  : as) ts       = a : mergePortInfo as ts
 
 extractPortInfo :: ASTOp m => NodeRef -> m [(TypeRep, PortState)]
 extractPortInfo n = do
-    applied  <- reverse <$> extractAppliedPorts False [] n
+    applied  <- reverse <$> extractAppliedPorts False False [] n
     tp       <- IR.getLayer @TypeLayer n >>= IR.source
     fromType <- extractArgTypes tp
     return $ mergePortInfo applied fromType

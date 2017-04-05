@@ -9,6 +9,7 @@ dependencies:
   - bytestring
   - containers
   - either
+  - ekg
   - errors
   - filemanip
   - filepath
