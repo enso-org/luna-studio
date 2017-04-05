@@ -8,7 +8,7 @@ import           Data.Map.Lazy                 (Map)
 import           Data.UUID.Types               (nil)
 import           Luna.Studio.Prelude
 
-import           Empire.API.Data.Breadcrumb    (Breadcrumb (..), BreadcrumbItem)
+import           Empire.API.Data.Breadcrumb    (Breadcrumb (Breadcrumb), BreadcrumbItem)
 import qualified Empire.API.Data.Breadcrumb    as Breadcrumb
 import           Empire.API.Data.GraphLocation (GraphLocation (..))
 import qualified Empire.API.Data.GraphLocation as GraphLocation
@@ -61,6 +61,9 @@ currentLibrary' w = fromMaybe err $ project ^? Project.libs . ix lid where
 currentLibrary :: Getter Workspace Library
 currentLibrary = to currentLibrary'
 
+upperWorkspace :: Workspace -> Workspace
+upperWorkspace w = w & currentLocation . GraphLocation.breadcrumb . Breadcrumb.items .~ newItems where
+    newItems = fromMaybe def $ mayTail $ w ^. currentLocation . GraphLocation.breadcrumb . Breadcrumb.items
 
 makeLenses ''UIGraphLocation
 instance ToJSON UIGraphLocation
@@ -81,11 +84,6 @@ fromUIGraphLocation projs (UIGraphLocation projId lib bc) = do
     let libs  = IntMap.toList $ project ^. Project.libs
     (libraryId, _) <- find (\(_,p) -> p ^. Library.path == lib) libs
     return $ GraphLocation projId libraryId bc
-
-instance Convertible (GraphLocation, Breadcrumb BreadcrumbItem, NodeId) (Maybe NodeLoc) where
-    convert (graphLoc, breadcrumb', nodeId') = do
-        localBc' <- Breadcrumb <$> List.stripPrefix (graphLoc ^. GraphLocation.breadcrumb . Breadcrumb.items) (breadcrumb' ^. Breadcrumb.items)
-        return $ NodeLoc (NodePath localBc') nodeId'
 
 instance HasBreadcrumb Workspace where
     breadcrumb = currentLocation . GraphLocation.breadcrumb
