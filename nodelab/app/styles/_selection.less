@@ -17,6 +17,7 @@
     top:          -1rem;
     right:        -1rem;
     bottom:       -1rem;
+    pointer-events: none;
 }
 
 .luna-node--selected {
@@ -43,6 +44,7 @@
 
 .luna-node--error {
     .luna-error {
+        pointer-events: none;
         z-index:      -100;
         opacity:       1;
         width:         auto;
@@ -53,14 +55,15 @@
         top:          -11px;
         right:        -11px;
         bottom:       -11px;
-        opacity: .4;
+        opacity:       .3;
         background: repeating-linear-gradient(
             135deg,
             rgba(0,0,0,0),
-            rgba(0,0,0,0) 4px,
-            red 4px,
-            red 8px
+            rgba(0,0,0,0) 8rem,
+            red 8rem,
+            red 16rem
         );
+        background-position: center center;
     }
     &.luna-node--expanded .luna-error {
         border-radius: 10px;
