@@ -17,46 +17,54 @@ import           Prologue
 
 type NodeId = UUID
 
-data NodeType = ExpressionNode { _expression        :: Text }
-              | InputEdge      { _inputEdgePorts :: [OutPortTree Port] }
-              | OutputEdge
-              deriving (Generic, Eq, NFData, Show)
+data ExpressionNode = ExpressionNode { _exprNodeId :: NodeId
+                                     , _expression :: Text
+                                     , _name       :: Maybe Text
+                                     , _code       :: Maybe Text
+                                     , _inPorts    :: Map InPort Port
+                                     , _outPorts   :: OutPortTree Port
+                                     , _nodeMeta   :: NodeMeta
+                                     , _canEnter   :: Bool
+                                     } deriving (Generic, Eq, NFData, Show, Typeable)
 
-data Node = Node { _nodeId   :: NodeId
-                 , _name     :: Text
-                 , _nodeType :: NodeType
-                 , _canEnter :: Bool
-                 , _inPorts  :: Map InPort Port
-                 , _outPorts :: OutPortTree Port
-                 , _nodeMeta :: NodeMeta
-                 , _code     :: Maybe Text
-                 } deriving (Generic, Eq, NFData, Show, Typeable)
+data InputSidebar = InputSidebar { _inputNodeId    :: NodeId
+                                 , _inputEdgePorts :: [OutPortTree Port]
+                                 } deriving (Generic, Eq, NFData, Show, Typeable)
+
+data OutputSidebar = OutputSidebar { _outputNodeId    :: NodeId
+                                   , _outputEdgePorts :: Map InPort Port
+                                   } deriving (Generic, Eq, NFData, Show, Typeable)
 
 data NodeTypecheckerUpdate = NodeTypecheckerUpdate {
-      _tcNodeId :: NodeId
-    , _tcPorts  :: Map PortId Port
+      _tcNodeId   :: NodeId
+    , _tcInPorts  :: Map InPort Port
+    , _tcOutPorts :: OutPortTree Port
     } deriving (Generic, Eq, NFData, Show, Typeable)
 
-makeLenses ''Node
-makeLenses ''NodeType
-makePrisms ''NodeType
+makeLenses ''ExpressionNode
+makeLenses ''InputSidebar
+makeLenses ''OutputSidebar
 makeLenses ''NodeTypecheckerUpdate
 
-position :: Lens' Node (Double, Double)
+position :: Lens' ExpressionNode (Double, Double)
 position = nodeMeta . NodeMeta.position
 
-instance Binary Node
-instance Binary NodeType
+instance Binary ExpressionNode
+instance Binary InputSidebar
+instance Binary OutputSidebar
 instance Binary NodeTypecheckerUpdate
-
-isEdge :: Node -> Bool
-isEdge node = isInputEdge node || isOutputEdge node
-
-isInputEdge :: Node -> Bool
-isInputEdge node = isJust $ node ^? nodeType . _InputEdge
-
-isOutputEdge :: Node -> Bool
-isOutputEdge node = node ^. nodeType == OutputEdge
 
 makePortsMap :: [Port] -> Map PortId Port
 makePortsMap = Map.fromList . map (view Port.portId &&& id)
+
+class HasNodeId a where
+    nodeId :: Lens' a NodeId
+
+instance HasNodeId ExpressionNode where
+    nodeId = exprNodeId
+
+instance HasNodeId InputSidebar where
+    nodeId = inputNodeId
+
+instance HasNodeId OutputSidebar where
+    nodeId = outputNodeId

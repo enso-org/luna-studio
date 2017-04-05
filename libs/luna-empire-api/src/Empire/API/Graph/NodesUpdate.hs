@@ -4,11 +4,11 @@ import           Data.Binary                   (Binary)
 import           Prologue
 
 import           Empire.API.Data.GraphLocation (GraphLocation)
-import           Empire.API.Data.Node          (Node)
+import           Empire.API.Data.Node          (ExpressionNode)
 import qualified Empire.API.Topic              as T
 
 data Update = Update { _location  :: GraphLocation
-                     , _nodes     :: [Node]
+                     , _nodes     :: [ExpressionNode]
                      } deriving (Generic, Eq, NFData, Show)
 
 makeLenses ''Update

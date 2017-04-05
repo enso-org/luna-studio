@@ -4,7 +4,6 @@ import           Data.Binary                   (Binary)
 import           Prologue
 
 import           Empire.API.Data.GraphLocation (GraphLocation)
-import           Empire.API.Data.Node          (Node)
 import qualified Empire.API.Topic              as T
 
 

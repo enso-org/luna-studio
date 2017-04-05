@@ -48,7 +48,7 @@ import           Empire.API.Data.Node              (NodeId)
 import qualified Empire.API.Data.Node              as API
 import qualified Empire.API.Data.NodeLoc           as NodeLoc
 import           Empire.API.Data.NodeLoc           (NodeLoc (..))
-import           Empire.API.Data.Port              (InPort (..), OutPort (..), Port (..), PortId (..), OutPortTree (..), PortState (..))
+import           Empire.API.Data.Port              (InPort (..), _InPortId, OutPort (..), Port (..), PortId (..), OutPortTree (..), PortState (..))
 import qualified Empire.API.Data.Port              as Port
 import           Empire.API.Data.PortRef           (InPortRef (..), OutPortRef (..), srcNodeId)
 import           Empire.API.Data.TypeRep           (TypeRep(TLam, TStar, TCons))
@@ -157,10 +157,11 @@ buildNode nid = do
     meta     <- AST.readMeta root
     name     <- fromMaybe "" <$> getNodeName nid
     canEnter <- ASTRead.canEnterNode root
-    ports    <- buildPorts root
+    inports  <- buildInPorts  root
+    outports <- buildOutPorts root
     let code    = Just $ Text.pack expr
-        portMap = Map.fromList $ flip fmap ports $ \p@(Port id' _ _ _) -> (id', p)
-    return $ API.Node nid name (API.ExpressionNode $ Text.pack expr) canEnter portMap (fromMaybe def meta) code
+        portMap = Map.fromList $ flip fmap inports $ \p@(Port (InPortId id') _ _ _) -> (id', p)
+    return $ API.Node nid name (API.ExpressionNode $ Text.pack expr) canEnter portMap outports (fromMaybe def meta) code
 
 buildNodeTypecheckUpdate :: ASTOp m => NodeId -> m API.NodeTypecheckerUpdate
 buildNodeTypecheckUpdate nid = do
@@ -451,7 +452,7 @@ buildOutputEdge connections nid = do
             "outputEdge"
             API.OutputEdge
             False
-            (Map.singleton (port ^. Port.portId) port)
+            (Map.singleton (port ^?! Port.portId . _InPortId) port)
             def
             def
 

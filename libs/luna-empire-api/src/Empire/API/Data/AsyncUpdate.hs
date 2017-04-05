@@ -1,7 +1,6 @@
 module Empire.API.Data.AsyncUpdate where
 
 import           Empire.API.Data.GraphLocation          (GraphLocation)
-import           Empire.API.Data.Node                   (Node)
 import           Prologue
 
 import qualified Empire.API.Graph.ConnectUpdate         as ConnectUpdate

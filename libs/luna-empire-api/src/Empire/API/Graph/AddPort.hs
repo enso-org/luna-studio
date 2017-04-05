@@ -4,8 +4,8 @@ import           Data.Binary                   (Binary)
 import           Prologue
 
 import           Empire.API.Data.GraphLocation (GraphLocation)
-import           Empire.API.Data.Node          (Node)
-import           Empire.API.Data.PortRef       (AnyPortRef)
+import           Empire.API.Data.Node          (InputSidebar)
+import           Empire.API.Data.PortRef       (OutPortRef)
 import qualified Empire.API.Graph.Request      as G
 import qualified Empire.API.Request            as R
 import qualified Empire.API.Response           as Response
@@ -13,10 +13,10 @@ import qualified Empire.API.Topic              as T
 
 
 data Request = Request { _location    :: GraphLocation
-                       , _anyPortRef  :: AnyPortRef
+                       , _anyPortRef  :: OutPortRef
                        } deriving (Generic, Eq, NFData, Show)
 
-type Result = Node
+type Result = InputSidebar
 
 type Response = Response.Response Request () Result
 instance Response.ResponseResult Request () Result

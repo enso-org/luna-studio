@@ -6,7 +6,6 @@ import           Prologue
 import           Data.Map                      (Map (..))
 import           Empire.API.Data.Connection    (Connection)
 import           Empire.API.Data.GraphLocation (GraphLocation)
-import           Empire.API.Data.Node          (Node)
 import           Empire.API.Data.PortRef       (AnyPortRef)
 import qualified Empire.API.Graph.Request      as G
 import qualified Empire.API.Request            as R

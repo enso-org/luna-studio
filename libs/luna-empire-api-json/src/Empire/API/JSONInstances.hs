@@ -90,11 +90,13 @@ instance               FromJSON Breadcrumb.BreadcrumbItem
 
 instance ToJSON GraphLocation.GraphLocation
 
-instance ToJSON Node.Node
-instance FromJSON Node.Node
-instance ToJSON Node.NodeType
-instance FromJSON Node.NodeType
-instance ToJSON Node.NodeTypecheckerUpdate
+instance ToJSON   Node.ExpressionNode
+instance FromJSON Node.ExpressionNode
+instance ToJSON   Node.InputSidebar
+instance FromJSON Node.InputSidebar
+instance ToJSON   Node.OutputSidebar
+instance FromJSON Node.OutputSidebar
+instance ToJSON   Node.NodeTypecheckerUpdate
 instance FromJSON Node.NodeTypecheckerUpdate
 
 instance ToJSON NodeMeta.NodeMeta
