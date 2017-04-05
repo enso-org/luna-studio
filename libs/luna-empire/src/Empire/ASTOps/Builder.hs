@@ -1,4 +1,5 @@
 {-# LANGUAGE DeriveAnyClass      #-}
+{-# LANGUAGE TupleSections       #-}
 {-# LANGUAGE LambdaCase          #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeApplications    #-}
@@ -12,7 +13,7 @@ module Empire.ASTOps.Builder (
   , removeAccessor
   ) where
 
-import           Control.Monad                      (foldM, replicateM)
+import           Control.Monad                      (foldM, replicateM, forM_)
 import           Data.Maybe                         (isNothing)
 import           Empire.Prelude
 
@@ -23,6 +24,7 @@ import qualified Empire.API.Data.Port               as Port
 import           Empire.ASTOp                       (ASTOp, match)
 import           Empire.ASTOps.Deconstruct          (deconstructApp, extractArguments, dumpAccessors)
 import           Empire.ASTOps.Remove               (removeSubtree)
+import qualified Empire.ASTOps.Read                 as ASTRead
 import           Empire.Data.AST                    (NodeRef, astExceptionFromException,
                                                      astExceptionToException)
 import           Empire.Data.Layers                 (Marker)
@@ -116,10 +118,19 @@ removeAccessor ref = do
             acc <- buildAccessors v ns
             if null args then return acc else reapply acc args
 
+attachNodeMarkers :: ASTOp m => NodeId -> NodeRef -> m ()
+attachNodeMarkers marker ref = do
+    pats <- ASTRead.dumpPatternVars ref
+    forM_ (zip pats $ [0 :: Int ..]) $ \(patVar, num) -> do
+        IR.putLayer @Marker patVar $ Just $ OutPortRef (NodeLoc def marker) $ Port.Projection num Port.All
+
 makeNodeRep :: ASTOp m => NodeId -> String -> NodeRef -> m NodeRef
-makeNodeRep marker name node = match node $ \case
-    Unify{} -> return node
-    _       -> do
-        nameVar <- IR.var' $ stringToName name
-        IR.putLayer @Marker nameVar $ Just $ OutPortRef (NodeLoc def marker) Port.All
-        IR.generalize <$> IR.unify nameVar node
+makeNodeRep marker name node = do
+    (pat, uni) <- match node $ \case
+        Unify l r -> (, node) <$> IR.source l
+        _         -> do
+            var <- IR.var' $ stringToName name
+            uni <- IR.unify var node
+            return (IR.generalize var, IR.generalize uni)
+    attachNodeMarkers marker pat
+    return uni

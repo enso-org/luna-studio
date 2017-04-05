@@ -191,6 +191,13 @@ isMatch expr = isJust <$> IRExpr.narrowTerm @IR.Unify expr
 isCons :: ASTOp m => NodeRef -> m Bool
 isCons expr = isJust <$> IRExpr.narrowTerm @IR.Cons expr
 
+dumpPatternVars :: ASTOp m => NodeRef -> m [NodeRef]
+dumpPatternVars ref = match ref $ \case
+    Var _     -> return [ref]
+    Cons _ as -> fmap concat $ mapM (dumpPatternVars <=< IR.source) as
+    Grouped g -> dumpPatternVars =<< IR.source g
+    _         -> return []
+
 nodeIsPatternMatch :: ASTOp m => NodeId -> m Bool
 nodeIsPatternMatch nid = (do
     root <- getASTPointer nid
