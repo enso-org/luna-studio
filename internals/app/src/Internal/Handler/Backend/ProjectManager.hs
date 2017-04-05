@@ -2,9 +2,12 @@ module Internal.Handler.Backend.ProjectManager
     ( handle
     ) where
 
+
+import           JS.Atom
 import qualified Data.Map.Lazy                      as Map
 import qualified Data.UUID.Types                    as UUID
 import qualified Empire.API.Atom.OpenFile           as OpenFile
+import qualified Empire.API.Atom.IsSaved            as IsSaved
 import           Empire.API.Data.Breadcrumb         (Breadcrumb (..))
 import qualified Empire.API.Data.GraphLocation      as GraphLocation
 import           Empire.API.Data.Project            (Project, ProjectId)
@@ -28,7 +31,7 @@ import           Internal.Handler.Backend.Common (doNothing, handleResponse)
 import           Internal.Prelude
 import           Internal.State.Global           (State)
 import qualified Internal.State.Global           as Global
-
+import Data.Char(toUpper)
 
 handle :: Event -> Maybe (Command State ())
 
@@ -41,7 +44,7 @@ handle (Event.Atom (InternalEvent IsSaved path))    = Just $ BatchCmd.isSaved pa
 handle (Batch (Batch.ProjectSet response))    = Just $ handleResponse response doNothing doNothing
 handle (Batch (Batch.FileOpened response))    = Just $ handleResponse response success doNothing where
     success result = do
-        let uri  = response ^. Response.request . FileOpened.filePath
+        let uri  = response ^. Response.request . OpenFile.filePath
             status = "ok"
         liftIO $ pushStatus (convert "FileSaved") (convert uri) (convert status)
 handle (Batch (Batch.FileClosed response))    = Just $ handleResponse response doNothing doNothing
@@ -49,7 +52,7 @@ handle (Batch (Batch.FileSaved response))     = Just $ handleResponse response d
 handle (Batch (Batch.IsSaved response))       = Just $ handleResponse response success doNothing where
    success result = do
        let uri  = response ^. Response.request . IsSaved.filePath
-           status = result ^. IsSaved.status
+           status = map toUpper . show $ result ^. IsSaved.status
        liftIO $ pushStatus (convert "IsSaved") (convert uri) (convert status)
 
 handle _ = Nothing
