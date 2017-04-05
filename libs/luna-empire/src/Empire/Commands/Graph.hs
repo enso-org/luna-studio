@@ -45,7 +45,7 @@ import           Control.Monad.State           hiding (when)
 import           Control.Arrow                 ((&&&))
 import           Control.Monad.Error           (throwError)
 import           Data.Coerce                   (coerce)
-import           Data.List                     (sort)
+import           Data.List                     (sort, group)
 import qualified Data.Map                      as Map
 import           Data.Maybe                    (catMaybes, isJust)
 import           Data.Foldable                 (toList)
@@ -167,8 +167,8 @@ prepareExprChild tgt ref = do
 
 updateNodeSequenceWithOutput :: ASTOp m => Maybe NodeRef -> m ()
 updateNodeSequenceWithOutput outputRef = do
-    newSeq <- makeCurrentSeq
-    updateGraphSeq newSeq outputRef
+    newSeq <- makeCurrentSeq outputRef
+    updateGraphSeq newSeq
 
 updateNodeSequence :: ASTOp m => m ()
 updateNodeSequence = do
@@ -176,22 +176,18 @@ updateNodeSequence = do
     outputRef  <- mapM ASTRead.getLambdaOutputRef currentTgt
     updateNodeSequenceWithOutput outputRef
 
-makeCurrentSeq :: ASTOp m => m (Maybe NodeRef)
-makeCurrentSeq = do
-  allNodes   <- uses Graph.breadcrumbHierarchy BH.topLevelIDs
-  sortedRefs <- AST.sortByPosition allNodes
-  AST.makeSeq sortedRefs
+makeCurrentSeq :: ASTOp m => Maybe NodeRef -> m (Maybe NodeRef)
+makeCurrentSeq out = do
+  allNodes    <- uses Graph.breadcrumbHierarchy BH.topLevelIDs
+  sortedRefs  <- AST.sortByPosition allNodes
+  let withOut = fmap head $ group $ sortedRefs ++ toList out
+  AST.makeSeq withOut
 
-updateGraphSeq :: ASTOp m => Maybe NodeRef -> Maybe NodeRef -> m ()
-updateGraphSeq newSeq outputRef = do
+updateGraphSeq :: ASTOp m => Maybe NodeRef -> m ()
+updateGraphSeq newOut = do
     oldSeq     <- preuse $ Graph.breadcrumbHierarchy . BH.body
     currentTgt <- ASTRead.getCurrentASTTarget
     outLink    <- mapM ASTRead.getFirstNonLambdaLink currentTgt
-    newOut     <- case (outputRef, newSeq) of
-        (Just ref, Just new) -> Just . IR.generalize <$> IR.seq new ref
-        (Just ref, Nothing)  -> return $ Just ref
-        (Nothing,  Just n)   -> return $ Just n
-        _                    -> return Nothing
     case (,) <$> outLink <*> newOut of
         Just (l, o) -> IR.replaceSource o l
         Nothing     -> return ()
