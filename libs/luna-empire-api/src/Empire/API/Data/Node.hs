@@ -10,7 +10,7 @@ import           Data.Text                (Text)
 import           Data.UUID.Types          (UUID)
 import           Empire.API.Data.NodeMeta (NodeMeta)
 import qualified Empire.API.Data.NodeMeta as NodeMeta
-import           Empire.API.Data.Port     (OutPortTree, Port, PortId)
+import           Empire.API.Data.Port     (OutPortTree, Port, PortId, InPort)
 import qualified Empire.API.Data.Port     as Port
 import           Prologue
 
@@ -26,7 +26,8 @@ data Node = Node { _nodeId   :: NodeId
                  , _name     :: Text
                  , _nodeType :: NodeType
                  , _canEnter :: Bool
-                 , _ports    :: Map PortId Port -- FIXME[LJK, MK]: At some point we need to drop this map and unify all port types across the project
+                 , _inPorts  :: Map InPort Port
+                 , _outPorts :: OutPortTree Port
                  , _nodeMeta :: NodeMeta
                  , _code     :: Maybe Text
                  } deriving (Generic, Eq, NFData, Show, Typeable)

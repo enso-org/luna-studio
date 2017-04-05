@@ -105,8 +105,10 @@ instance ToJSON NodePath
 instance FromJSON NodeLoc
 instance FromJSON NodePath
 
-instance {-# OVERLAPPING #-} ToJSON   v => ToJSON   (Map NodeLoc     v) where toJSON = toJSON . Map.toList
-instance {-# OVERLAPPING #-} FromJSON v => FromJSON (Map NodeLoc     v) where parseJSON = fmap Map.fromList . parseJSON
+instance {-# OVERLAPPING #-} ToJSON   v => ToJSON   (Map NodeLoc    v) where toJSON = toJSON . Map.toList
+instance {-# OVERLAPPING #-} FromJSON v => FromJSON (Map NodeLoc    v) where parseJSON = fmap Map.fromList . parseJSON
+instance {-# OVERLAPPING #-} ToJSON   v => ToJSON   (Map InPort     v) where toJSON = toJSON . Map.toList
+instance {-# OVERLAPPING #-} FromJSON v => FromJSON (Map InPort     v) where parseJSON = fmap Map.fromList . parseJSON
 instance {-# OVERLAPPING #-} ToJSON   v => ToJSON   (Map PortId     v) where toJSON = toJSON . Map.toList
 instance {-# OVERLAPPING #-} FromJSON v => FromJSON (Map PortId     v) where parseJSON = fmap Map.fromList . parseJSON
 instance {-# OVERLAPPING #-} ToJSON   v => ToJSON   (Map UUID       v) where toJSON = toJSON . Map.toList
