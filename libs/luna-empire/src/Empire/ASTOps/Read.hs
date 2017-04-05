@@ -89,16 +89,21 @@ instance Exception NodeDoesNotExistException where
     toException = astExceptionToException
     fromException = astExceptionFromException
 
+getASTRef :: ASTOp m => NodeId -> m BH.NodeIDTarget
+getASTRef nodeId = preuse (Graph.breadcrumbHierarchy . BH.children . ix nodeId . BH.self) <?!> NodeDoesNotExistException nodeId
+
 getASTPointer :: ASTOp m => NodeId -> m NodeRef
-getASTPointer nodeId = preuse (Graph.breadcrumbHierarchy . BH.children . ix nodeId . BH.self . BH.anyRef) <?!> NodeDoesNotExistException nodeId
+getASTPointer nodeId = view BH.anyRef <$> getASTRef nodeId
 
 getCurrentASTPointer :: ASTOp m => m (Maybe NodeRef)
 getCurrentASTPointer = preuse $ Graph.breadcrumbHierarchy . BH._LambdaParent . BH.self . BH.anyRef
 
 getASTTarget :: ASTOp m => NodeId -> m NodeRef
 getASTTarget nodeId = do
-    matchNode <- getASTPointer nodeId
-    getTargetNode matchNode
+    ref <- getASTRef nodeId
+    case ref of
+        BH.AnonymousNode r -> return r
+        BH.MatchNode     r -> getTargetNode r
 
 getCurrentASTTarget :: ASTOp m => m (Maybe NodeRef)
 getCurrentASTTarget = do

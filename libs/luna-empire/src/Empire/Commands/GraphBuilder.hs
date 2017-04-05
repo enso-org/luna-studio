@@ -147,37 +147,33 @@ getEdgePortMapping = preuse $ Graph.breadcrumbHierarchy . BH._LambdaParent . BH.
 
 buildNode :: ASTOp m => NodeId -> m API.ExpressionNode
 buildNode nid = do
-    root     <- GraphUtils.getASTPointer nid
-    match'   <- ASTRead.isMatch root
-    ref      <- if match' then GraphUtils.getASTTarget nid else return root
-    expr     <- Print.printNodeExpression ref
-    meta     <- AST.readMeta root
-    name     <- fromMaybe "" <$> getNodeName nid
-    canEnter <- ASTRead.canEnterNode root
-    inports  <- buildInPorts  root
-    outports <- buildOutPorts root
-    let code    = Just $ Text.pack expr
-        portMap = Map.fromList $ flip fmap inports $ \p@(Port (InPortId id') _ _ _) -> (id', p)
-    return $ API.ExpressionNode nid name (API.ExpressionNode $ Text.pack expr) canEnter portMap outports (fromMaybe def meta) code
+    root      <- GraphUtils.getASTPointer nid
+    ref       <- GraphUtils.getASTTarget  nid
+    expr      <- Text.pack <$> Print.printNodeExpression ref
+    meta      <- fromMaybe def <$> AST.readMeta root
+    name      <- getNodeName nid
+    canEnter  <- ASTRead.isLambda ref
+    inports   <- buildInPorts  ref
+    outports  <- buildOutPorts root
+    let code      = Just expr
+        inPortMap = Map.fromList $ flip fmap inports $ \p@(Port (InPortId id') _ _ _) -> (id', p)
+    return $ API.ExpressionNode nid expr name code inPortMap outports meta canEnter
 
 buildNodeTypecheckUpdate :: ASTOp m => NodeId -> m API.NodeTypecheckerUpdate
 buildNodeTypecheckUpdate nid = do
-  root   <- GraphUtils.getASTPointer nid
-  match' <- ASTRead.isMatch root
-  ref    <- if match' then GraphUtils.getASTTarget nid else return root
-  ports  <- buildPorts ref
-  let portMap = Map.fromList $ flip fmap ports $ \p@(Port id' _ _ _) -> (id', p)
-  return $ API.ExpressionUpdate nid portMap
+  root     <- GraphUtils.getASTPointer nid
+  ref      <- GraphUtils.getASTTarget  nid
+  inPorts  <- buildInPorts  ref
+  outPorts <- buildOutPorts root
+  let inPortMap = Map.fromList $ flip fmap inPorts $ \p@(Port (InPortId id') _ _ _) -> (id', p)
+  return $ API.ExpressionUpdate nid inPortMap outPorts
 
 getUniName :: ASTOp m => NodeRef -> m (Maybe Text)
 getUniName root = do
     match' <- ASTRead.isMatch root
     if match' then do
         vnode <- ASTRead.getVarNode root
-        name <- match vnode $ \case
-            Var{}  -> ASTRead.getVarName vnode
-            _      -> Print.printExpression vnode
-        return $ Just (Text.pack name)
+        Just . Text.pack <$> Print.printExpression vnode
     else return Nothing
 
 getNodeName :: ASTOp m => NodeId -> m (Maybe Text)
@@ -349,39 +345,38 @@ followTypeRep ref = do
     tp <- IR.source =<< IR.getLayer @TypeLayer ref
     Print.getTypeRep tp
 
-buildPorts :: ASTOp m => NodeRef -> m [Port]
-buildPorts node = do
-    isMatch  <- ASTRead.isMatch node
-    flipNode <- if isMatch then ASTRead.varIsPatternMatch node else return False
-    ref      <- if isMatch then if flipNode then ASTRead.getVarNode node else ASTRead.getTargetNode node
-                           else return node
+buildInPorts :: ASTOp m => NodeRef -> m [Port]
+buildInPorts ref = do
     selfPort <- maybeToList <$> buildSelfPort ref
     argPorts <- buildArgPorts ref
-    tpRep    <- followTypeRep ref
-    outState <- getPortState ref
-    let ports = selfPort ++ argPorts ++ [Port (OutPortId All) "Output" tpRep outState]
-    return $ if flipNode then flipPorts ports else ports
+    return $ selfPort ++ argPorts
 
-data SelfPortFlipException = SelfPortFlipException
-    deriving Show
+cutThroughGroups :: ASTOp m => NodeRef -> m NodeRef
+cutThroughGroups r = match r $ \case
+    Grouped g -> cutThroughGroups =<< IR.source g
+    _         -> return r
 
-instance Exception SelfPortFlipException where
-    fromException = astExceptionFromException
-    toException   = astExceptionToException
+buildDummyOutPort :: ASTOp m => NodeRef -> m (OutPortTree Port)
+buildDummyOutPort ref = do
+    tp <- followTypeRep ref
+    return $ OutPortTree (Port (OutPortId All) "Output" tp NotConnected) []
 
-flipPorts :: [Port] -> [Port]
-flipPorts = map flipPort
-    where
-        flipPort (Port portId portName portType portState) =
-            Port (flipPortId portId) (flipPortName portName) portType portState
+buildOutPortTree :: ASTOp m => OutPort -> NodeRef -> m (OutPortTree Port)
+buildOutPortTree portId ref' = do
+    ref   <- cutThroughGroups ref'
+    name  <- Print.printExpression ref
+    tp    <- followTypeRep ref
+    let wholePort = Port (OutPortId portId) name tp NotConnected
+    children <- match ref $ \case
+        Cons _ as -> zipWithM buildOutPortTree (Port.addProjection portId <$> [0 ..]) =<< mapM IR.source as
+        _         -> return []
+    return $ OutPortTree wholePort children
 
-        flipPortId (OutPortId All)              = InPortId  (Arg 0)
-        flipPortId (OutPortId (Projection i _)) = InPortId  (Arg i)
-        flipPortId (InPortId  (Arg i))          = OutPortId (Projection i All)
-        flipPortId (InPortId  Self)             = error "flipPortId: cannot flip self"
+buildOutPorts :: ASTOp m => NodeRef -> m (OutPortTree Port)
+buildOutPorts ref = match ref $ \case
+    Unify l r -> buildOutPortTree All =<< IR.source l
+    _         -> buildDummyOutPort ref
 
-        flipPortName "Output" = "Input"
-        flipPortName name     = name
 
 buildConnections :: ASTOp m => m [(OutPortRef, InPortRef)]
 buildConnections = do

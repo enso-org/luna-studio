@@ -70,7 +70,7 @@ import           Empire.API.Data.Connection      (Connection (..))
 import           Empire.API.Data.PortDefault     (PortDefault (Constant))
 import qualified Empire.API.Data.Graph           as APIGraph
 import           Empire.API.Data.GraphLocation   (GraphLocation (..))
-import           Empire.API.Data.Node            (Node (..), NodeId)
+import           Empire.API.Data.Node            (ExpressionNode (..), InputSidebar (..), OutputSidebar (..), NodeId)
 import qualified Empire.API.Data.Node            as Node
 import           Empire.API.Data.NodeLoc         (NodeLoc (..))
 import qualified Empire.API.Data.NodeLoc         as NodeLoc
@@ -106,14 +106,14 @@ generateNodeName = do
     Graph.lastNameId .= newNameId
     return $ "node" <> show newNameId
 
-addNodeCondTC :: Bool -> GraphLocation -> NodeId -> Text -> NodeMeta -> Empire Node
+addNodeCondTC :: Bool -> GraphLocation -> NodeId -> Text -> NodeMeta -> Empire ExpressionNode
 addNodeCondTC True  loc uuid expr meta = addNode loc uuid expr meta
 addNodeCondTC False loc uuid expr meta = withGraph loc $ addNodeNoTC loc uuid expr meta
 
-addNode :: GraphLocation -> NodeId -> Text -> NodeMeta -> Empire Node
+addNode :: GraphLocation -> NodeId -> Text -> NodeMeta -> Empire ExpressionNode
 addNode loc uuid expr meta = withTC loc False $ addNodeNoTC loc uuid expr meta
 
-addNodeNoTC :: GraphLocation -> NodeId -> Text -> NodeMeta -> Command Graph Node
+addNodeNoTC :: GraphLocation -> NodeId -> Text -> NodeMeta -> Command Graph ExpressionNode
 addNodeNoTC loc uuid input meta = do
     parse <- fst <$> ASTParse.runParser input
     expr <- runASTOp $ do
@@ -195,24 +195,22 @@ updateGraphSeq newOut = do
     Graph.breadcrumbHierarchy . BH._ToplevelParent . BH.topBody .= newOut
     forM_ newOut $ (Graph.breadcrumbHierarchy . BH.body .=)
 
-addPort :: GraphLocation -> NodeId -> Int -> Empire Node
+addPort :: GraphLocation -> NodeId -> Int -> Empire InputSidebar
 addPort loc nid position = withGraph loc $ runASTOp $ do
     Just ref <- ASTRead.getCurrentASTTarget
     edges <- GraphBuilder.getEdgePortMapping
     when ((fst <$> edges) /= Just nid) $ throwM NotInputEdgeException
     ASTModify.addLambdaArg position ref
     -- TODO[MM]: This should match for any node. Now it ignores node and replace it by InputEdge.
-    inputEdge <- GraphBuilder.buildConnections >>= \c -> GraphBuilder.buildInputEdge c nid
+    inputEdge <- GraphBuilder.buildConnections >>= \c -> GraphBuilder.buildInputSidebar c nid
     return inputEdge
 
 generateNodeId :: IO NodeId
 generateNodeId = UUID.nextRandom
 
-addSubgraph :: GraphLocation -> [Node] -> [Connection] -> Empire ([Node])
+addSubgraph :: GraphLocation -> [ExpressionNode] -> [Connection] -> Empire [ExpressionNode]
 addSubgraph loc nodes conns = withTC loc False $ do
-    newNodes <- fmap catMaybes $ forM nodes $ \n -> case n ^. Node.nodeType of
-        Node.ExpressionNode expr -> Just <$> addNodeNoTC loc (n ^. Node.nodeId) expr (n ^. Node.nodeMeta)
-        _ -> return Nothing
+    newNodes <- forM nodes $ \n -> addNodeNoTC loc (n ^. Node.nodeId) (n ^. Node.expression) (n ^. Node.nodeMeta)
     forM_ conns $ \(Connection src dst) -> connectNoTC loc src (InPortRef' dst)
     return newNodes
 
@@ -233,7 +231,7 @@ removeNodeNoTC nodeId = do
     mapM_ disconnectPort obsoleteEdges
     Graph.breadcrumbHierarchy . BH.children . at nodeId .= Nothing
 
-removePort :: GraphLocation -> AnyPortRef -> Empire Node
+removePort :: GraphLocation -> AnyPortRef -> Empire InputSidebar
 removePort loc portRef = withGraph loc $ runASTOp $ do
     let nodeId = portRef ^. PortRef.nodeId
     Just ref    <- ASTRead.getCurrentASTTarget
@@ -244,9 +242,9 @@ removePort loc portRef = withGraph loc $ runASTOp $ do
                                else throwM NotInputEdgeException
         _ -> return ref
     when (ref /= newRef) $ ASTModify.rewireCurrentNode newRef
-    GraphBuilder.buildConnections >>= \c -> GraphBuilder.buildInputEdge c nodeId
+    GraphBuilder.buildConnections >>= \c -> GraphBuilder.buildInputSidebar c nodeId
 
-movePort :: GraphLocation -> AnyPortRef -> Int -> Empire Node
+movePort :: GraphLocation -> AnyPortRef -> Int -> Empire InputSidebar
 movePort loc portRef newPosition = withGraph loc $ runASTOp $ do
     let nodeId = portRef ^. PortRef.nodeId
     Just ref    <- ASTRead.getCurrentASTTarget
@@ -257,9 +255,9 @@ movePort loc portRef newPosition = withGraph loc $ runASTOp $ do
                                else throwM NotInputEdgeException
         _ -> throwM NotInputEdgeException
     when (ref /= newRef) $ ASTModify.rewireCurrentNode newRef
-    GraphBuilder.buildConnections >>= \c -> GraphBuilder.buildInputEdge c nodeId
+    GraphBuilder.buildConnections >>= \c -> GraphBuilder.buildInputSidebar c nodeId
 
-renamePort :: GraphLocation -> AnyPortRef -> String -> Empire Node
+renamePort :: GraphLocation -> AnyPortRef -> String -> Empire InputSidebar
 renamePort loc portRef newName = withGraph loc $ runASTOp $ do
     let nodeId = portRef ^. PortRef.nodeId
     Just ref    <- ASTRead.getCurrentASTTarget
@@ -269,9 +267,9 @@ renamePort loc portRef newName = withGraph loc $ runASTOp $ do
             if nodeId == input then ASTModify.renameLambdaArg (portRef ^. PortRef.portId) newName ref
                                else throwM NotInputEdgeException
         _ -> throwM NotInputEdgeException
-    GraphBuilder.buildConnections >>= \c -> GraphBuilder.buildInputEdge c nodeId
+    GraphBuilder.buildConnections >>= \c -> GraphBuilder.buildInputSidebar c nodeId
 
-setNodeExpression :: GraphLocation -> NodeId -> Text -> Empire Node
+setNodeExpression :: GraphLocation -> NodeId -> Text -> Empire ExpressionNode
 setNodeExpression loc nodeId expr = withTC loc False $ do
     oldExpr    <- runASTOp $ ASTRead.getASTTarget nodeId
     parsedRef  <- view _1 <$> ASTParse.runReparser expr oldExpr
@@ -523,7 +521,7 @@ getCode loc = withGraph loc $ runASTOp $ do
 getGraph :: GraphLocation -> Empire APIGraph.Graph
 getGraph loc = withTC loc True $ runASTOp GraphBuilder.buildGraph
 
-getNodes :: GraphLocation -> Empire [Node]
+getNodes :: GraphLocation -> Empire [ExpressionNode]
 getNodes loc = withTC loc True $ runASTOp $ view APIGraph.nodes <$> GraphBuilder.buildGraph
 
 getConnections :: GraphLocation -> Empire [(OutPortRef, InPortRef)]

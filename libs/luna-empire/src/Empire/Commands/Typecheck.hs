@@ -83,7 +83,7 @@ updateNodes loc@(GraphLocation _ _ br) = zoom graph $ zoomBreadcrumb br $ do
     updates <- runASTOp $ do
         sidebarUpdates <- case portMapping of
             Just (i, o) -> do
-                (u1, u2) <- (,) <$> GraphBuilder.buildInputEdgeTypecheckUpdate i <*> GraphBuilder.buildOutputEdgeTypecheckUpdate o
+                (u1, u2) <- (,) <$> GraphBuilder.buildInputSidebarTypecheckUpdate i <*> GraphBuilder.buildOutputSidebarTypecheckUpdate o
                 return [u1, u2]
             Nothing     -> return []
         allNodeIds  <- uses Graph.breadcrumbHierarchy topLevelIDs

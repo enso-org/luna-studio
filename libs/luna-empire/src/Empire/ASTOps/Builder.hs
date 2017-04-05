@@ -13,7 +13,7 @@ module Empire.ASTOps.Builder (
   , removeAccessor
   ) where
 
-import           Control.Monad                      (foldM, replicateM, forM_)
+import           Control.Monad                      (foldM, replicateM, forM_, zipWithM_)
 import           Data.Maybe                         (isNothing)
 import           Empire.Prelude
 
@@ -118,11 +118,21 @@ removeAccessor ref = do
             acc <- buildAccessors v ns
             if null args then return acc else reapply acc args
 
-attachNodeMarkers :: ASTOp m => NodeId -> NodeRef -> m ()
-attachNodeMarkers marker ref = do
-    pats <- ASTRead.dumpPatternVars ref
-    forM_ (zip pats $ [0 :: Int ..]) $ \(patVar, num) -> do
-        IR.putLayer @Marker patVar $ Just $ OutPortRef (NodeLoc def marker) $ Port.Projection num Port.All
+cutGroups :: ASTOp m => NodeRef -> m NodeRef
+cutGroups r = match r $ \case
+    Grouped g -> cutGroups =<< IR.source g
+    _         -> return r
+
+attachNodeMarkers :: ASTOp m => NodeId -> Port.OutPort -> NodeRef -> m ()
+attachNodeMarkers marker port ref' = do
+    ref <- cutGroups ref'
+    IR.putLayer @Marker ref $ Just $ OutPortRef (NodeLoc def marker) port
+    match ref $ \case
+        Cons _ as -> do
+            args <- mapM IR.source as
+            zipWithM_ (attachNodeMarkers marker) (Port.addProjection port <$> [0..]) args
+        _ -> return ()
+
 
 makeNodeRep :: ASTOp m => NodeId -> String -> NodeRef -> m NodeRef
 makeNodeRep marker name node = do
@@ -132,5 +142,5 @@ makeNodeRep marker name node = do
             var <- IR.var' $ stringToName name
             uni <- IR.unify var node
             return (IR.generalize var, IR.generalize uni)
-    attachNodeMarkers marker pat
+    attachNodeMarkers marker Port.All pat
     return uni

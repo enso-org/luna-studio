@@ -4,8 +4,7 @@ module ParserSpec (spec) where
 
 import qualified Data.Map                     as Map
 import           Empire.API.Data.PortDefault (PortDefault(Expression))
-import qualified Empire.API.Data.Node         as Node (NodeType(ExpressionNode),
-                                                       nodeType, ports)
+import qualified Empire.API.Data.Node         as Node
 import qualified Empire.API.Data.Port         as Port
 import           Empire.API.Data.TypeRep      (TypeRep(TStar))
 import qualified Empire.Commands.Graph        as Graph
@@ -30,22 +29,19 @@ spec = around withChannels $ do
         it "parses 123" $ \env -> do
             u1 <- mkUUID
             res <- evalEmp env $ Graph.addNode top u1 "123" def
-            withResult res $ \s' -> s' ^. Node.nodeType `shouldBe` Node.ExpressionNode "123"
+            withResult res $ \s' -> s' ^. Node.expression `shouldBe` "123"
         it "parses \"foo\"" $ \env -> do
             u1 <- mkUUID
             res <- evalEmp env $ Graph.addNode top u1 "\"foo\"" def
-            withResult res $ \s' -> s' ^. Node.nodeType `shouldBe` Node.ExpressionNode "\"foo\""
+            withResult res $ \s' -> s' ^. Node.expression `shouldBe` "\"foo\""
         it "parses constructors" $ \env -> do
             u1 <- mkUUID
             res <- evalEmp env $ Graph.addNode top u1 "Vector x y z" def
             withResult res $ \node -> do
-                node ^. Node.nodeType `shouldBe` Node.ExpressionNode "Vector x y z"
-                let outputPorts = Map.elems $ Map.filter (Port.isOutPort . view Port.portId) $ node ^. Node.ports
-                outputPorts `shouldMatchList` [
-                      Port.Port (Port.OutPortId Port.All) "Output" TStar (Port.WithDefault (Expression "Vector x y z"))
-                    ]
-                let inputPorts = Map.elems $ Map.filter (Port.isInPort . view Port.portId) $ node ^. Node.ports
-                inputPorts `shouldMatchList` [
+                node  ^. Node.expression `shouldBe` "Vector x y z"
+                (node ^. Node.outPorts)  `shouldBe`
+                    Port.OutPortTree (Port.Port (Port.OutPortId Port.All) "node1" TStar Port.NotConnected) []
+                (node ^.. Node.inPorts . traverse) `shouldMatchList` [
                       Port.Port (Port.InPortId (Port.Arg 0)) "x" TStar (Port.WithDefault (Expression "x"))
                     , Port.Port (Port.InPortId (Port.Arg 1)) "y" TStar (Port.WithDefault (Expression "y"))
                     , Port.Port (Port.InPortId (Port.Arg 2)) "z" TStar (Port.WithDefault (Expression "z"))

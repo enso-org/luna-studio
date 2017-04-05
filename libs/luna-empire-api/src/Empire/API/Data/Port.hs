@@ -80,3 +80,7 @@ getPortNumber :: PortId -> Int
 getPortNumber (InPortId  (Arg i))          = i
 getPortNumber (OutPortId (Projection i _)) = i
 getPortNumber _                            = 0
+
+addProjection :: OutPort -> Int -> OutPort
+addProjection All              i = Projection i All
+addProjection (Projection x r) i = Projection x (addProjection r i)
