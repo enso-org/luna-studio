@@ -14,7 +14,7 @@ module Empire.Commands.GraphBuilder (
   , buildGraph
   , buildInputEdge
   , buildInputEdgeTypecheckUpdate
-  , buildOutputEdgeTypecheckUpdate
+  , buildOutputSidebarTypecheckUpdate
   , decodeBreadcrumbs
   , getEdgePortMapping
   , getNodeIdSequence
@@ -141,7 +141,7 @@ buildEdgeNodes :: ASTOp m => [(OutPortRef, InPortRef)] -> m (Maybe EdgeNodes)
 buildEdgeNodes connections = getEdgePortMapping >>= \p -> case p of
     Just (inputPort, outputPort) -> do
         inputEdge  <- buildInputEdge connections inputPort
-        outputEdge <- buildOutputEdge connections outputPort
+        outputEdge <- buildOutputSidebar connections outputPort
         return $ Just (inputEdge, outputEdge)
     _ -> return Nothing
 
@@ -391,7 +391,7 @@ buildConnections = do
     allNodes <- uses Graph.breadcrumbHierarchy BH.topLevelIDs
     edges <- getEdgePortMapping
     connections <- mapM (getNodeInputs edges) allNodes
-    outputEdgeConnections <- forM edges $ uncurry getOutputEdgeInputs
+    outputEdgeConnections <- forM edges $ uncurry getOutputSidebarInputs
     let foo = maybeToList $ join outputEdgeConnections
     return $ foo ++ concat connections
 
@@ -429,13 +429,13 @@ buildInputEdge connections nid = do
             def
             def
 
-buildOutputEdgeTypecheckUpdate :: ASTOp m => NodeId -> m API.NodeTypecheckerUpdate
-buildOutputEdgeTypecheckUpdate nid = do
-    API.Node nid _ _ _ m _ _ <- buildOutputEdge [] nid
+buildOutputSidebarTypecheckUpdate :: ASTOp m => NodeId -> m API.NodeTypecheckerUpdate
+buildOutputSidebarTypecheckUpdate nid = do
+    API.OutputSidebar nid m <- buildOutputSidebar [] nid
     return $ API.NodeTypecheckerUpdate nid m
 
-buildOutputEdge :: ASTOp m => [(OutPortRef, InPortRef)] -> NodeId -> m API.Node
-buildOutputEdge connections nid = do
+buildOutputSidebar :: ASTOp m => [(OutPortRef, InPortRef)] -> NodeId -> m API.OutputSidebar
+buildOutputSidebar connections nid = do
     Just ref <- ASTRead.getCurrentASTTarget
     out      <- followTypeRep ref
     let traverseLams (TLam _ t) = traverseLams t
@@ -448,13 +448,7 @@ buildOutputEdge connections nid = do
         outputConnected = if 0 `elem` connectedPorts then Connected else NotConnected
         port = Port (InPortId $ Arg 0) "output" outputType outputConnected
     return $
-        API.Node nid
-            "outputEdge"
-            API.OutputEdge
-            False
-            (Map.singleton (port ^?! Port.portId . _InPortId) port)
-            def
-            def
+        API.OutputSidebar nid (Map.singleton (Arg 0) port)
 
 getLambdaInputArgNumber :: ASTOp m => NodeRef -> m (Maybe Int)
 getLambdaInputArgNumber lambda = do
@@ -467,8 +461,8 @@ getLambdaInputArgNumber lambda = do
             return $ out' `List.elemIndex` vars
         _ -> return Nothing
 
-getOutputEdgeInputs :: ASTOp m => NodeId -> NodeId -> m (Maybe (OutPortRef, InPortRef))
-getOutputEdgeInputs inputEdge outputEdge = do
+getOutputSidebarInputs :: ASTOp m => NodeId -> NodeId -> m (Maybe (OutPortRef, InPortRef))
+getOutputSidebarInputs inputEdge outputEdge = do
     Just ref <- ASTRead.getCurrentASTTarget
     nid <- do
         outputIsInputNum <- getLambdaInputArgNumber ref
@@ -489,7 +483,7 @@ nodeConnectedToOutput :: ASTOp m => m (Maybe NodeId)
 nodeConnectedToOutput = do
     edges  <- preuse $ Graph.breadcrumbHierarchy . BH._LambdaParent . BH.portMapping
     fmap join $ forM edges $ \(i, o) -> do
-        connection <- getOutputEdgeInputs i o
+        connection <- getOutputSidebarInputs i o
         return $ (view $ _1 . srcNodeId) <$> connection
 
 resolveInputNodeId :: ASTOp m => Maybe (NodeId, NodeId) -> [NodeRef] -> NodeRef -> m (Maybe OutPort, Maybe NodeId)

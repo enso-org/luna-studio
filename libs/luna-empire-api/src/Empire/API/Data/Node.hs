@@ -35,11 +35,10 @@ data OutputSidebar = OutputSidebar { _outputNodeId    :: NodeId
                                    , _outputEdgePorts :: Map InPort Port
                                    } deriving (Generic, Eq, NFData, Show, Typeable)
 
-data NodeTypecheckerUpdate = NodeTypecheckerUpdate {
-      _tcNodeId   :: NodeId
-    , _tcInPorts  :: Map InPort Port
-    , _tcOutPorts :: OutPortTree Port
-    } deriving (Generic, Eq, NFData, Show, Typeable)
+data NodeTypecheckerUpdate = ExpressionUpdate    { _tcNodeId   :: NodeId, _tcInPorts       :: Map InPort Port, _tcOutPorts :: OutPortTree Port }
+                           | OutputSidebarUpdate { _tcNodeId   :: NodeId, _tcInPorts       :: Map InPort Port }
+                           | InputSidebarUpdate  { _tcNodeId   :: NodeId, _tcInputOutPorts :: [OutPortTree Port] }
+                           deriving (Generic, Eq, NFData, Show, Typeable)
 
 makeLenses ''ExpressionNode
 makeLenses ''InputSidebar

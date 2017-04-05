@@ -5,7 +5,7 @@ module Empire.Empire where
 import           Empire.API.Data.AsyncUpdate   (AsyncUpdate)
 import qualified Empire.API.Data.Error         as APIError
 import           Empire.API.Data.GraphLocation (GraphLocation)
-import           Empire.API.Data.Node          (Node, NodeId)
+import           Empire.API.Data.Node          (ExpressionNode, NodeId)
 import           Empire.API.Data.PortDefault   (Value)
 import           Empire.API.Data.Project       (ProjectId)
 import           Empire.API.Data.TypeRep       (TypeRep)
@@ -42,7 +42,7 @@ instance Show CommunicationEnv where
     show _ = "CommunicationEnv"
 
 data InterpreterEnv = InterpreterEnv { _valuesCache :: Map NodeId [Value]
-                                     , _nodesCache  :: Map NodeId Node
+                                     , _nodesCache  :: Map NodeId ExpressionNode
                                      , _errorsCache :: Map NodeId (APIError.Error TypeRep)
                                      , _graph       :: Graph
                                      , _destructors :: [IO ()]
