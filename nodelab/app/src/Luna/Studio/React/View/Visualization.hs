@@ -73,7 +73,7 @@ strValue n = convert $ case n ^. Node.value of
     Nothing -> ""
     Just (NodeResult.Value value []) -> value
     Just (NodeResult.Value value _ ) -> value
-    Just (NodeResult.Error msg     ) -> limitString errorLen (convert $ showError msg)
+    Just (NodeResult.Error msg     ) -> convert $ showError msg --limitString errorLen (convert $ showError msg)
 
 limitString :: Int -> Text -> Text
 limitString limit str | Text.length str > limit64 = Text.take limit64 str <> "…"
