@@ -12,8 +12,8 @@ module Empire.Commands.GraphBuilder (
   , buildNodes
   , buildEdgeNodes
   , buildGraph
-  , buildInputEdge
-  , buildInputEdgeTypecheckUpdate
+  , buildInputSidebar
+  , buildInputSidebarTypecheckUpdate
   , buildOutputSidebarTypecheckUpdate
   , decodeBreadcrumbs
   , getEdgePortMapping
@@ -84,17 +84,14 @@ instance Exception CannotEnterNodeException where
 buildGraph :: ASTOp m => m API.Graph
 buildGraph = do
     connections <- buildConnections
-    nodes <- buildNodes
-    edges <- buildEdgeNodes connections
-    let allNodes = nodes ++ case edges of
-            Just (input, output) -> [input, output]
-            _                    -> []
-    API.Graph allNodes connections <$> buildMonads
+    nodes       <- buildNodes
+    edges       <- buildEdgeNodes connections
+    API.Graph nodes connections (fst <$> edges) (snd <$> edges) <$> buildMonads
 
-buildNodes :: ASTOp m => m [API.Node]
+buildNodes :: ASTOp m => m [API.ExpressionNode]
 buildNodes = do
     allNodeIds <- uses Graph.breadcrumbHierarchy BH.topLevelIDs
-    nodes <- mapM buildNode allNodeIds
+    nodes      <- mapM buildNode allNodeIds
     return nodes
 
 buildMonads :: ASTOp m => m [MonadPath]
@@ -135,12 +132,12 @@ getNodeIdSequence = do
             _      -> return []
     catMaybes <$> mapM nodeIdInsideLambda nodeSeq
 
-type EdgeNodes = (API.Node, API.Node)
+type EdgeNodes = (API.InputSidebar, API.OutputSidebar)
 
 buildEdgeNodes :: ASTOp m => [(OutPortRef, InPortRef)] -> m (Maybe EdgeNodes)
 buildEdgeNodes connections = getEdgePortMapping >>= \p -> case p of
     Just (inputPort, outputPort) -> do
-        inputEdge  <- buildInputEdge connections inputPort
+        inputEdge  <- buildInputSidebar connections inputPort
         outputEdge <- buildOutputSidebar connections outputPort
         return $ Just (inputEdge, outputEdge)
     _ -> return Nothing
@@ -148,7 +145,7 @@ buildEdgeNodes connections = getEdgePortMapping >>= \p -> case p of
 getEdgePortMapping :: (MonadIO m, ASTOp m) => m (Maybe (NodeId, NodeId))
 getEdgePortMapping = preuse $ Graph.breadcrumbHierarchy . BH._LambdaParent . BH.portMapping
 
-buildNode :: ASTOp m => NodeId -> m API.Node
+buildNode :: ASTOp m => NodeId -> m API.ExpressionNode
 buildNode nid = do
     root     <- GraphUtils.getASTPointer nid
     match'   <- ASTRead.isMatch root
@@ -161,7 +158,7 @@ buildNode nid = do
     outports <- buildOutPorts root
     let code    = Just $ Text.pack expr
         portMap = Map.fromList $ flip fmap inports $ \p@(Port (InPortId id') _ _ _) -> (id', p)
-    return $ API.Node nid name (API.ExpressionNode $ Text.pack expr) canEnter portMap outports (fromMaybe def meta) code
+    return $ API.ExpressionNode nid name (API.ExpressionNode $ Text.pack expr) canEnter portMap outports (fromMaybe def meta) code
 
 buildNodeTypecheckUpdate :: ASTOp m => NodeId -> m API.NodeTypecheckerUpdate
 buildNodeTypecheckUpdate nid = do
@@ -170,7 +167,7 @@ buildNodeTypecheckUpdate nid = do
   ref    <- if match' then GraphUtils.getASTTarget nid else return root
   ports  <- buildPorts ref
   let portMap = Map.fromList $ flip fmap ports $ \p@(Port id' _ _ _) -> (id', p)
-  return $ API.NodeTypecheckerUpdate nid portMap
+  return $ API.ExpressionUpdate nid portMap
 
 getUniName :: ASTOp m => NodeRef -> m (Maybe Text)
 getUniName root = do
@@ -395,14 +392,14 @@ buildConnections = do
     let foo = maybeToList $ join outputEdgeConnections
     return $ foo ++ concat connections
 
-buildInputEdgeTypecheckUpdate :: ASTOp m => NodeId -> m API.NodeTypecheckerUpdate
-buildInputEdgeTypecheckUpdate nid = do
-    API.Node nid _ _ _ m _ _ <- buildInputEdge [] nid
-    return $ API.NodeTypecheckerUpdate nid m
+buildInputSidebarTypecheckUpdate :: ASTOp m => NodeId -> m API.NodeTypecheckerUpdate
+buildInputSidebarTypecheckUpdate nid = do
+    API.InputSidebar nid ps <- buildInputSidebar [] nid
+    return $ API.InputSidebarUpdate nid ps
 
 
-buildInputEdge :: ASTOp m => [(OutPortRef, InPortRef)] -> NodeId -> m API.Node
-buildInputEdge connections nid = do
+buildInputSidebar :: ASTOp m => [(OutPortRef, InPortRef)] -> NodeId -> m API.InputSidebar
+buildInputSidebar connections nid = do
     Just ref <- ASTRead.getCurrentASTTarget
     tp       <- IR.getLayer @TypeLayer ref >>= IR.source
     types    <- extractArgTypes tp
@@ -420,19 +417,12 @@ buildInputEdge connections nid = do
             return $ replicate numberOfPorts TStar
         _  -> return types
     let inputEdges = List.zipWith4 (\n t state i -> Port (OutPortId $ Projection i All) n t state) names argTypes states [(0::Int)..]
-    return $
-        API.Node nid
-            "inputEdge"
-            (API.InputEdge $ flip OutPortTree [] <$> inputEdges)
-            False
-            (Map.fromList $ flip map inputEdges $ \port -> (port ^. Port.portId, port))
-            def
-            def
+    return $ API.InputSidebar nid $ flip OutPortTree [] <$> inputEdges
 
 buildOutputSidebarTypecheckUpdate :: ASTOp m => NodeId -> m API.NodeTypecheckerUpdate
 buildOutputSidebarTypecheckUpdate nid = do
     API.OutputSidebar nid m <- buildOutputSidebar [] nid
-    return $ API.NodeTypecheckerUpdate nid m
+    return $ API.OutputSidebarUpdate nid m
 
 buildOutputSidebar :: ASTOp m => [(OutPortRef, InPortRef)] -> NodeId -> m API.OutputSidebar
 buildOutputSidebar connections nid = do

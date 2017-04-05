@@ -11,8 +11,8 @@ import           Empire.API.Data.TypeRep   (TypeRep)
 
 data Graph = Graph { _nodes         :: [ExpressionNode]
                    , _connections   :: [(OutPortRef, InPortRef)]
-                   , _inputSidebar  :: InputSidebar
-                   , _outputSidebar :: OutputSidebar
+                   , _inputSidebar  :: Maybe InputSidebar
+                   , _outputSidebar :: Maybe OutputSidebar
                    , _monads        :: [MonadPath]
                    } deriving (Generic, Eq, NFData, Show)
 
