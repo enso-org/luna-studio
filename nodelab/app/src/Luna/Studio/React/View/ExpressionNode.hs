@@ -111,7 +111,8 @@ node = React.defineView name $ \(ref, n) -> case n ^. Node.mode of
                             , "className"   $= Style.prefixFromList [ "node__name", "noselect" ]
                             ] $ elemString $ convert $ n ^. Node.name
                     g_
-                        [ "className" $= Style.prefix "node__icons"
+                        [ "key"       $= "icons"
+                        , "className" $= Style.prefix "node__icons"
                         ] $ do
                         let val = Prop.fromNode n ^. Prop.visualizationsEnabled
                         rect_

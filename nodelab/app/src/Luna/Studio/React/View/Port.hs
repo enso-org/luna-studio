@@ -254,7 +254,8 @@ portIOExpanded_ ref nl p = if p ^. Port.portId == InPortId Self then portSelf_ r
 portPhantom_ :: Ref App -> AnyPortRef -> ReactElementM ViewEventHandler ()
 portPhantom_ ref portRef = do
     g_
-        [ "className" $= Style.prefixFromList ["port", "port--i", "port--i--phantom"]
+        [ "key"       $= "port-phantom"
+        , "className" $= Style.prefixFromList ["port", "port--i", "port--i--phantom"]
         ] $ do
         circle_
             [ "className" $= Style.prefix "port__shape"
