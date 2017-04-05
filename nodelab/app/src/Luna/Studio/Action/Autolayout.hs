@@ -19,6 +19,7 @@ import           Luna.Studio.State.Global                    (State)
 data NodesChain = NodesChain { _nodes    :: [ExpressionNode]
                              , _outConns :: [Connection]
                              , _inConns  :: [Connection]
+                             , _len      :: Int
                              } deriving (Eq, Generic, Show)
 makeLenses ''NodesChain
 
@@ -37,33 +38,29 @@ autolayoutNodes nls = do
         mayNode <- getExpressionNode nl
         outC    <- getConnectionsFromNode nl
         inC     <- getConnectionsToNode nl
-        return $ maybe Nothing (\node -> Just (nl, NodesChain [node] outC inC)) mayNode
+        return $ maybe Nothing (\node -> Just (nl, NodesChain [node] outC inC 1)) mayNode
     alignChains chains
 
 mergeChains :: Map NodeLoc NodesChain -> Map NodeLoc NodesChain
 mergeChains chains = foldl proccessByKey chains (Map.keys chains) where
     proccessByKey :: Map NodeLoc NodesChain -> NodeLoc -> Map NodeLoc NodesChain
     proccessByKey result nl = maybe result (proccessChain result) $ Map.lookup nl result
+    performMerge :: Map NodeLoc NodesChain -> NodeLoc -> NodesChain -> NodeLoc -> NodesChain -> Map NodeLoc NodesChain
+    performMerge chainsMap prefId prefix suffId suffix = flip proccessChain mergedChain $ Map.delete suffId . Map.insert prefId mergedChain $ chainsMap where
+        mergedChain = NodesChain (prefix ^. nodes ++ suffix ^. nodes) (suffix ^. outConns) (prefix ^. inConns) (prefix ^. len + suffix ^. len)
     proccessChain :: Map NodeLoc NodesChain -> NodesChain -> Map NodeLoc NodesChain
-    proccessChain result chain = do
+    proccessChain result chain =
         if (length $ chain ^. outConns) == 1 then do
             let dstNl = view dstNodeLoc . head $ chain ^. outConns
                 nl    = view nodeLoc    . head $ chain ^. nodes
-            case Map.lookup dstNl result of
-                Nothing       -> result
-                Just dstChain -> do
-                    let dstInConns = dstChain ^. inConns
-                    if length dstInConns == 1 then do
-                        let mergedChain = NodesChain (chain ^. nodes ++ dstChain ^. nodes) (dstChain ^. outConns) (chain ^. inConns)
-                        flip proccessChain mergedChain $ Map.delete dstNl . Map.insert nl mergedChain $ result
+                performMerge' dstChain = if length (dstChain ^. inConns) == 1
+                    then performMerge result nl chain dstNl dstChain
                     else result
+            maybe result performMerge' $ Map.lookup dstNl result
         else if (length $ filter (isSelf . InPortId . view dstPortId) $ chain ^. outConns) == 1 then do
             let dstNl = view dstNodeLoc . head $ chain ^. outConns
                 nl    = view nodeLoc    . head $ chain ^. nodes
-            case Map.lookup dstNl result of
-                Nothing       -> result
-                Just dstChain -> flip proccessChain mergedChain $ Map.delete dstNl . Map.insert nl mergedChain $ result where
-                    mergedChain = NodesChain (chain ^. nodes ++ dstChain ^. nodes) (dstChain ^. outConns) (chain ^. inConns)
+            maybe result (performMerge result nl chain dstNl) $ Map.lookup dstNl result
         else result
 
 alignChains :: Map NodeLoc NodesChain -> Command State ()
