@@ -16,8 +16,8 @@ import           Luna.Studio.State.Global   (State)
 
 
 handle :: Event -> Maybe (Command State ())
-handle (Batch (Batch.EmpireStarted _)) = Just $
+handle (Batch (Batch.EmpireStarted _)) = Just $ do
     liftIO $ pushNotification $ Notification Error "Server crashed."
-    -- error "Server crashed." -- could have done that more politely, but… let it crash
+    -- Batch.getProgram
 
 handle _ = Nothing

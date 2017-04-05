@@ -69,7 +69,8 @@ handle (Event.Batch ev) = Just $ case ev of
         success result = do
             isGraphLoaded  <- use $ Global.workspace . Workspace.isGraphLoaded
             isGoodLocation <- isCurrentLocation location
-            when (isGoodLocation && not isGraphLoaded) $ do
+            when isGoodLocation $ do
+                print "GetProgram"
                 let nodes       = convert . (NodeLoc.empty,) <$> result ^. GetProgram.graph . Graph.nodes
                     connections = result ^. GetProgram.graph . Graph.connections
                     monads      = result ^. GetProgram.graph . Graph.monads
@@ -79,10 +80,11 @@ handle (Event.Batch ev) = Just $ case ev of
                 Global.workspace . Workspace.nodeSearcherData .= nsData
                 setBreadcrumbs breadcrumb
                 createGraph nodes connections monads
-                centerGraph
                 localSetCode code
+                unless isGraphLoaded $ do
+                    centerGraph
+                    requestCollaborationRefresh
                 Global.workspace . Workspace.isGraphLoaded .= True
-                requestCollaborationRefresh
 
     AddConnectionResponse response -> handleResponse response success failure where
         requestId          = response ^. Response.requestId
