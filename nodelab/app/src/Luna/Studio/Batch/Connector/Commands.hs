@@ -7,7 +7,7 @@ import           Empire.API.Data.GraphLocation          (GraphLocation)
 import           Empire.API.Data.GraphLocation          (projectId)
 import qualified Empire.API.Data.GraphLocation          as GraphLocation
 import           Empire.API.Data.Node                   (Node)
-import           Empire.API.Data.NodeLoc                (NodeLoc, normalise)
+import           Empire.API.Data.NodeLoc                (NodeLoc, normalise, normalise')
 import qualified Empire.API.Data.NodeLoc                as NodeLoc
 import           Empire.API.Data.NodeMeta               (NodeMeta)
 import           Empire.API.Data.PortDefault            (PortDefault)
@@ -93,7 +93,8 @@ addNode nodeLoc expression meta connectTo workspace uuid guiID =
         (workspace', nodeLoc') = normalise workspace nodeLoc
 
 addPort :: AnyPortRef -> Workspace -> UUID -> Maybe UUID -> IO ()
-addPort portRef workspace uuid guiID = sendRequest $ Message uuid guiID $ (withLibrary workspace AddPort.Request) portRef
+addPort portRef workspace uuid guiID = sendRequest $ Message uuid guiID $ (withLibrary workspace' AddPort.Request) portRef' where
+    (workspace', portRef') = normalise workspace portRef
 
 addSubgraph :: [Node] -> [Connection] -> Workspace -> UUID -> Maybe UUID -> IO ()
 addSubgraph nodes connections workspace uuid guiID = sendRequest $ Message uuid guiID $ (withLibrary workspace AddSubgraph.Request) nodes connections
@@ -113,7 +114,8 @@ removeConnection connId workspace uuid guiID = sendRequest $ Message uuid guiID 
     (workspace', connId') = normalise workspace connId
 
 removeNodes :: [NodeLoc] -> Workspace -> UUID -> Maybe UUID ->  IO ()
-removeNodes nodeLocs workspace uuid guiID = sendRequest $ Message uuid guiID $ withLibrary workspace RemoveNodes.Request nodeLocs
+removeNodes nodeLocs workspace uuid guiID = sendRequest $ Message uuid guiID $ withLibrary workspace' RemoveNodes.Request nodeLocs' where
+    (workspace', nodeLocs') = normalise' workspace nodeLocs
 
 removePort :: AnyPortRef -> Workspace -> UUID -> Maybe UUID -> IO ()
 removePort portRef workspace uuid guiID = sendRequest $ Message uuid guiID $ (withLibrary workspace' RemovePort.Request) portRef' where
@@ -145,7 +147,8 @@ setNodeExpression nodeLoc expression workspace uuid guiID =
         (workspace', nodeId) = convert (workspace, nodeLoc)
 
 setNodesMeta :: [(NodeLoc, NodeMeta)] -> Workspace -> UUID -> Maybe UUID -> IO ()
-setNodesMeta updates workspace uuid guiID = sendRequest $ Message uuid guiID $ withLibrary workspace SetNodesMeta.Request (map (_1 %~ convert) updates)
+setNodesMeta updates workspace uuid guiID = sendRequest $ Message uuid guiID $ withLibrary workspace' SetNodesMeta.Request (map (_1 %~ convert) updates') where
+    (workspace', updates') = normalise' workspace updates
 
 setPortDefault :: AnyPortRef -> PortDefault -> Workspace -> UUID -> Maybe UUID -> IO ()
 setPortDefault portRef portDef workspace uuid guiID = sendRequest $ Message uuid guiID $ withLibrary workspace' SetPortDefault.Request portRef' portDef where

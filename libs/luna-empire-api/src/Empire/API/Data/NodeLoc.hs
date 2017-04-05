@@ -5,6 +5,7 @@ module Empire.API.Data.NodeLoc where
 import           Data.Binary                   (Binary)
 import           Data.Convert                  (Convertible (..))
 import qualified Data.List                     as List
+import qualified Data.Set                      as Set
 import           Empire.API.Data.Breadcrumb    (Breadcrumb (Breadcrumb), BreadcrumbItem)
 import qualified Empire.API.Data.Breadcrumb    as Breadcrumb
 import           Empire.API.Data.GraphLocation (GraphLocation)
@@ -81,3 +82,15 @@ prependPath b = nodeLoc . path . localBc %~ (b ^. breadcrumb <>)
 normalise :: (HasBreadcrumb b, HasNodeLoc n) => b -> n -> (b, n)
 normalise b n = ( b & breadcrumb %~ (<> (n ^. nodeLoc . path . localBc))
                 , n & nodeLoc . path .~ def)
+
+normalise' :: (HasBreadcrumb b, HasNodeLoc n) => b -> [n] -> (b, [n])
+normalise' b ns =
+    let split n = case n ^. nodeLoc . path . localBc . Breadcrumb.items of
+          (h:t) -> Just (h, n & nodeLoc . path . localBc . Breadcrumb.items .~ t)
+          _     -> Nothing
+        splitted = sequence $ map split ns
+    in case splitted of
+        Nothing -> (b, ns)
+        Just splitted -> case Set.toList $ Set.fromList $ map fst splitted of
+            [item] -> normalise' (b & breadcrumb . Breadcrumb.items %~ (<> [item])) $ map snd splitted
+            _      -> (b, ns)
