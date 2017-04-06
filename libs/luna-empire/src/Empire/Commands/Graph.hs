@@ -57,6 +57,7 @@ import           Empire.Prelude
 import qualified Safe
 
 import           Empire.Data.AST                 (NodeRef, NotInputEdgeException (..), NotUnifyException,
+                                                  InvalidConnectionException (..),
                                                   astExceptionFromException, astExceptionToException)
 import qualified Empire.Data.BreadcrumbHierarchy as BH
 import           Empire.Data.Graph               (Graph)
@@ -323,23 +324,14 @@ connect loc outPort anyPort = withTC loc False $ connectNoTC loc outPort anyPort
 
 connectPersistent :: ASTOp m => OutPortRef -> AnyPortRef -> m Connection
 connectPersistent src@(OutPortRef (NodeLoc _ srcNodeId) srcPort) (InPortRef' dst@(InPortRef (NodeLoc _ dstNodeId) dstPort)) = do
-    let inputPos = case srcPort of
-            All              -> 0   -- FIXME: do not equalise All with Projection 0
-            Projection int _ -> int
-    isPatternMatch <- ASTRead.nodeIsPatternMatch srcNodeId
-    if isPatternMatch then do
-        case dstPort of
-            Self    -> $notImplemented
-            Arg num -> connectToMatchedVariable src dst num
-                      else do
-        case dstPort of
-            Self    -> makeAcc srcNodeId dstNodeId inputPos
-            Arg num -> makeApp srcNodeId dstNodeId num inputPos
+    case dstPort of
+            Self    -> makeAcc srcNodeId dstNodeId srcPort
+            Arg num -> makeApp srcNodeId dstNodeId num srcPort
     return $ Connection src dst
 connectPersistent src@(OutPortRef (NodeLoc _ srcNodeId) srcPort) (OutPortRef' dst@(OutPortRef (NodeLoc _ dstNodeId) dstPort)) = do
     case dstPort of
         All            -> connectToPattern srcNodeId dstNodeId
-        Projection _ _ -> $notImplemented
+        Projection _ _ -> throwM InvalidConnectionException
 
 data CannotConnectException = CannotConnectException NodeId NodeId
     deriving Show
@@ -462,15 +454,12 @@ connectNoTC loc outPort anyPort = do
     return connection
 
 getPortDefault :: GraphLocation -> AnyPortRef -> Empire PortDefault
-getPortDefault loc (OutPortRef' (OutPortRef (NodeLoc _ nodeId) _))      = withGraph loc $ runASTOp $ GraphBuilder.getDefault =<< GraphUtils.getASTTarget nodeId
-getPortDefault loc (InPortRef'  (InPortRef  _ Self))        = throwError "Cannot set default value on self port"
+getPortDefault loc (InPortRef'  (InPortRef  _ Self))                     = throwError "Cannot set default value on self port"
+getPortDefault loc (OutPortRef' (OutPortRef (NodeLoc _ nodeId) _))       = withGraph loc $ runASTOp $ GraphBuilder.getDefault =<< GraphUtils.getASTTarget nodeId
 getPortDefault loc (InPortRef'  (InPortRef  (NodeLoc _ nodeId) (Arg x))) = withGraph loc $ runASTOp $ flip GraphBuilder.getInPortDefault x =<< GraphUtils.getASTTarget nodeId
 
 setPortDefault :: GraphLocation -> AnyPortRef -> PortDefault -> Empire ()
-setPortDefault loc portRef val = withTC loc False $ runASTOp $ setPortDefault' portRef val
-
-setPortDefault' :: ASTOp m => AnyPortRef -> PortDefault -> m ()
-setPortDefault' portRef val = do
+setPortDefault loc portRef val = withTC loc False $ runASTOp $ do
     parsed <- ASTParse.parsePortDefault val
     (nodeId, newRef) <- case portRef of
         InPortRef' (InPortRef (NodeLoc _ nodeId) port) -> do
@@ -584,7 +573,7 @@ disconnectPort (InPortRef (NodeLoc _ dstNodeId) dstPort) = do
 
 unAcc :: ASTOp m => NodeId -> m ()
 unAcc nodeId = do
-    dstAst <- GraphUtils.getASTTarget nodeId
+    dstAst     <- GraphUtils.getASTTarget   nodeId
     newNodeRef <- ASTBuilder.removeAccessor dstAst
     GraphUtils.rewireNode nodeId newNodeRef
 
@@ -603,47 +592,23 @@ unApp nodeId pos = do
         newNodeRef <- ASTRemove.removeArg astNode pos
         GraphUtils.rewireNode nodeId newNodeRef
 
-makeAcc :: ASTOp m => NodeId -> NodeId -> Int -> m ()
-makeAcc src dst inputPos = do
-    edges <- GraphBuilder.getEdgePortMapping
-    let connectToInputEdge = case edges of
-            Nothing           -> False
-            Just (input, _out) -> input == src
-    if | connectToInputEdge -> do
-        Just lambda' <- ASTRead.getCurrentASTTarget
-        srcAst  <- AST.getLambdaInputRef lambda' inputPos
-        dstAst  <- GraphUtils.getASTTarget dst
-        newNodeRef <- ASTBuilder.makeAccessor srcAst dstAst
-        GraphUtils.rewireNode dst newNodeRef
-       | otherwise -> do
-        srcAst <- GraphUtils.getASTVar    src
-        dstAst <- GraphUtils.getASTTarget dst
-        newNodeRef <- ASTBuilder.makeAccessor srcAst dstAst
-        GraphUtils.rewireNode dst newNodeRef
+makeAcc :: ASTOp m => NodeId -> NodeId -> OutPort -> m ()
+makeAcc src dst outPort = do
+    srcAst     <- ASTRead.getASTOutForPort src outPort
+    dstAst     <- ASTRead.getASTTarget dst
+    newNodeRef <- ASTBuilder.makeAccessor srcAst dstAst
+    GraphUtils.rewireNode dst newNodeRef
 
-
-makeApp :: ASTOp m => NodeId -> NodeId -> Int -> Int -> m ()
-makeApp src dst pos inputPos = do
+makeApp :: ASTOp m => NodeId -> NodeId -> Int -> OutPort -> m ()
+makeApp src dst pos outPort = do
     edges <- GraphBuilder.getEdgePortMapping
-    let (connectToInputEdge, connectToOutputEdge) = case edges of
-            Nothing           -> (False, False)
-            Just (input, out) -> (input == src, out == dst)
-    case (connectToInputEdge, connectToOutputEdge) of
-        (True, True) -> do
-            Just lambda' <- ASTRead.getCurrentASTTarget
-            srcAst <- AST.getLambdaInputRef lambda' inputPos
-            updateNodeSequenceWithOutput $ Just srcAst
-        (False, True) -> do
-            srcAst     <- GraphUtils.getASTVar    src
-            updateNodeSequenceWithOutput $ Just srcAst
-        (True, False) -> do
-            Just lambda' <- ASTRead.getCurrentASTTarget
-            srcAst  <- AST.getLambdaInputRef lambda' inputPos
-            dstAst  <- GraphUtils.getASTTarget dst
-            newNodeRef <- ASTBuilder.applyFunction dstAst srcAst pos
-            GraphUtils.rewireNode dst newNodeRef
-        (False, False) -> do
-            srcAst <- GraphUtils.getASTVar    src
-            dstAst <- GraphUtils.getASTTarget dst
+    let connectToOutputEdge = case edges of
+            Nothing       -> False
+            Just (_, out) -> out == dst
+    srcAst <- ASTRead.getASTOutForPort src outPort
+    if connectToOutputEdge
+        then updateNodeSequenceWithOutput $ Just srcAst
+        else do
+            dstAst     <- GraphUtils.getASTTarget dst
             newNodeRef <- ASTBuilder.applyFunction dstAst srcAst pos
             GraphUtils.rewireNode dst newNodeRef

@@ -351,10 +351,6 @@ buildInPorts ref = do
     argPorts <- buildArgPorts ref
     return $ selfPort ++ argPorts
 
-cutThroughGroups :: ASTOp m => NodeRef -> m NodeRef
-cutThroughGroups r = match r $ \case
-    Grouped g -> cutThroughGroups =<< IR.source g
-    _         -> return r
 
 buildDummyOutPort :: ASTOp m => NodeRef -> m (OutPortTree Port)
 buildDummyOutPort ref = do
@@ -363,7 +359,7 @@ buildDummyOutPort ref = do
 
 buildOutPortTree :: ASTOp m => OutPort -> NodeRef -> m (OutPortTree Port)
 buildOutPortTree portId ref' = do
-    ref   <- cutThroughGroups ref'
+    ref   <- ASTRead.cutThroughGroups ref'
     name  <- Print.printExpression ref
     tp    <- followTypeRep ref
     let wholePort = Port (OutPortId portId) name tp NotConnected

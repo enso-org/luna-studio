@@ -118,14 +118,9 @@ removeAccessor ref = do
             acc <- buildAccessors v ns
             if null args then return acc else reapply acc args
 
-cutGroups :: ASTOp m => NodeRef -> m NodeRef
-cutGroups r = match r $ \case
-    Grouped g -> cutGroups =<< IR.source g
-    _         -> return r
-
 attachNodeMarkers :: ASTOp m => NodeId -> Port.OutPort -> NodeRef -> m ()
 attachNodeMarkers marker port ref' = do
-    ref <- cutGroups ref'
+    ref <- ASTRead.cutThroughGroups ref'
     IR.putLayer @Marker ref $ Just $ OutPortRef (NodeLoc def marker) port
     match ref $ \case
         Cons _ as -> do
