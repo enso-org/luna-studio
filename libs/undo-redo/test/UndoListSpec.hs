@@ -30,6 +30,7 @@ import           Prologue
 
 import qualified Empire.API.Data.Node          as Node
 import qualified Empire.API.Data.Node          (NodeType (..))
+import           Empire.API.Data.NodeLoc       (NodeLoc (..))
 import           Empire.API.Graph.AddNode      (Request (..), Result (..))
 import qualified Empire.API.Graph.AddNode      as AddNode
 import qualified Empire.API.Topic              as Topic
@@ -66,7 +67,7 @@ spec = describe "Undo-Redo for single user" $ do
         node <- generateNode
 
         let nodeId = node ^. Node.nodeId
-            response = Response.Response reqID (Just guiID) (AddNode.Request graphLocation nodeId "3" def Nothing) (Response.Ok ()) (Response.Ok node)
+            response = Response.Response reqID (Just guiID) (AddNode.Request graphLocation (NodeLoc def nodeId) "3" def Nothing) (Response.Ok ()) (Response.Ok node)
             topic = "empire.graph.node.add.response"
         (_, state1) <- run' state $ handleMessage $ Message.Message topic $ toStrict $ encode response
         case state1 of UndoState undo redo history -> do
@@ -80,7 +81,7 @@ spec = describe "Undo-Redo for single user" $ do
         node  <- generateNode
 
         let nodeId   = node ^. Node.nodeId
-            response = Response.Response reqID (Just guiID) (AddNode.Request graphLocation nodeId "3" def Nothing) (Response.Ok ()) (Response.Ok node)
+            response = Response.Response reqID (Just guiID) (AddNode.Request graphLocation (NodeLoc def nodeId) "3" def Nothing) (Response.Ok ()) (Response.Ok node)
             topic    = "empire.graph.node.add.response"
         (_, state1) <- run' state $ handleMessage $ Message.Message topic $ toStrict $ encode response
         case state1 of UndoState undo redo history -> do
@@ -95,7 +96,7 @@ spec = describe "Undo-Redo for single user" $ do
         node   <- generateNode
 
         let nodeId   = node ^. Node.nodeId
-            response = Response.Response reqID1 (Just guiID) (AddNode.Request graphLocation nodeId "3" def Nothing) (Response.Ok ()) (Response.Ok node)
+            response = Response.Response reqID1 (Just guiID) (AddNode.Request graphLocation (NodeLoc def nodeId) "3" def Nothing) (Response.Ok ()) (Response.Ok node)
             topic    = Topic.topic response
             undoReq  = Request.Request reqID2 (Just guiID) (Undo.Request Undo.UndoRequest)
         (_, UndoState undo redo _) <- run' state $ do
@@ -114,9 +115,9 @@ spec = describe "Undo-Redo for single user" $ do
         node2  <- generateNode
 
         let nodeId1   = node1 ^. Node.nodeId
-            response1 = Response.Response reqID1 (Just guiID) (AddNode.Request graphLocation nodeId1 "3" def Nothing) (Response.Ok ()) (Response.Ok node1)
+            response1 = Response.Response reqID1 (Just guiID) (AddNode.Request graphLocation (NodeLoc def nodeId1) "3" def Nothing) (Response.Ok ()) (Response.Ok node1)
             nodeId2   = node2 ^. Node.nodeId
-            response2 = Response.Response reqID2 (Just guiID) (AddNode.Request graphLocation nodeId2 "3" def Nothing) (Response.Ok ()) (Response.Ok node2)
+            response2 = Response.Response reqID2 (Just guiID) (AddNode.Request graphLocation (NodeLoc def nodeId2) "3" def Nothing) (Response.Ok ()) (Response.Ok node2)
             topic     = Topic.topic response1
             undoReq   = Request.Request reqID3 (Just guiID) (Undo.Request Undo.UndoRequest)
         (_, UndoState undo redo history) <- run' state $ do
@@ -138,9 +139,9 @@ spec = describe "Undo-Redo for single user" $ do
         node2  <- generateNode
 
         let nodeId1   = node1 ^. Node.nodeId
-            response1 = Response.Response reqID1 (Just guiID) (AddNode.Request graphLocation nodeId1 "3" def Nothing) (Response.Ok ()) (Response.Ok node1)
+            response1 = Response.Response reqID1 (Just guiID) (AddNode.Request graphLocation (NodeLoc def nodeId1) "3" def Nothing) (Response.Ok ()) (Response.Ok node1)
             nodeId2   = node2 ^. Node.nodeId
-            response2 = Response.Response reqID2 (Just guiID) (AddNode.Request graphLocation nodeId2 "3" def Nothing) (Response.Ok ()) (Response.Ok node2)
+            response2 = Response.Response reqID2 (Just guiID) (AddNode.Request graphLocation (NodeLoc def nodeId2) "3" def Nothing) (Response.Ok ()) (Response.Ok node2)
             topic     = Topic.topic response1
             undoReq1  = Request.Request reqID3 (Just guiID) (Undo.Request Undo.UndoRequest)
             undoReq2  = Request.Request reqID4 (Just guiID) (Undo.Request Undo.UndoRequest)
@@ -164,9 +165,9 @@ spec = describe "Undo-Redo for single user" $ do
         node2  <- generateNode
 
         let nodeId1   = node1 ^. Node.nodeId
-            response1 = Response.Response reqID1 (Just guiID) (AddNode.Request graphLocation nodeId1 "3" def Nothing) (Response.Ok ()) (Response.Ok node1)
+            response1 = Response.Response reqID1 (Just guiID) (AddNode.Request graphLocation (NodeLoc def nodeId1) "3" def Nothing) (Response.Ok ()) (Response.Ok node1)
             nodeId2   = node2 ^. Node.nodeId
-            response2 = Response.Response reqID2 (Just guiID) (AddNode.Request graphLocation nodeId2 "3" def Nothing) (Response.Ok ()) (Response.Ok node2)
+            response2 = Response.Response reqID2 (Just guiID) (AddNode.Request graphLocation (NodeLoc def nodeId2) "3" def Nothing) (Response.Ok ()) (Response.Ok node2)
             topic     = Topic.topic response1
             undoReq   = Request.Request reqID3 (Just guiID) (Undo.Request Undo.UndoRequest)
             redoReq   = Request.Request reqID4 (Just guiID) (Redo.Request Redo.RedoRequest)
@@ -192,11 +193,11 @@ spec = describe "Undo-Redo for single user" $ do
         node3  <- generateNode
 
         let nodeId1   = node1 ^. Node.nodeId
-            response1 = Response.Response reqID1 (Just guiID) (AddNode.Request graphLocation nodeId1 "3" def Nothing) (Response.Ok ()) (Response.Ok node1)
+            response1 = Response.Response reqID1 (Just guiID) (AddNode.Request graphLocation (NodeLoc def nodeId1) "3" def Nothing) (Response.Ok ()) (Response.Ok node1)
             nodeId2   = node2 ^. Node.nodeId
-            response2 = Response.Response reqID2 (Just guiID) (AddNode.Request graphLocation nodeId2 "3" def Nothing) (Response.Ok ()) (Response.Ok node2)
+            response2 = Response.Response reqID2 (Just guiID) (AddNode.Request graphLocation (NodeLoc def nodeId2) "3" def Nothing) (Response.Ok ()) (Response.Ok node2)
             nodeId3   = node3 ^. Node.nodeId
-            response3 = Response.Response reqID3 (Just guiID) (AddNode.Request graphLocation nodeId3 "3" def Nothing) (Response.Ok ()) (Response.Ok node3)
+            response3 = Response.Response reqID3 (Just guiID) (AddNode.Request graphLocation (NodeLoc def nodeId3) "3" def Nothing) (Response.Ok ()) (Response.Ok node3)
             topic     = Topic.topic response1
             undoReq   = Request.Request reqID4 (Just guiID) (Undo.Request Undo.UndoRequest)
         (_, UndoState undo redo history) <- run' state $ do
@@ -221,11 +222,11 @@ spec = describe "Undo-Redo for single user" $ do
         node3  <- generateNode
 
         let nodeId1   = node1 ^. Node.nodeId
-            response1 = Response.Response reqID1 (Just guiID) (AddNode.Request graphLocation nodeId1 "3" def Nothing) (Response.Ok ()) (Response.Ok node1)
+            response1 = Response.Response reqID1 (Just guiID) (AddNode.Request graphLocation (NodeLoc def nodeId1) "3" def Nothing) (Response.Ok ()) (Response.Ok node1)
             nodeId2   = node2 ^. Node.nodeId
-            response2 = Response.Response reqID2 (Just guiID) (AddNode.Request graphLocation nodeId2 "3" def Nothing) (Response.Ok ()) (Response.Ok node2)
+            response2 = Response.Response reqID2 (Just guiID) (AddNode.Request graphLocation (NodeLoc def nodeId2) "3" def Nothing) (Response.Ok ()) (Response.Ok node2)
             nodeId3   = node3 ^. Node.nodeId
-            response3 = Response.Response reqID3 (Nothing)    (AddNode.Request graphLocation nodeId3 "3" def Nothing) (Response.Ok ()) (Response.Ok node3)
+            response3 = Response.Response reqID3 (Nothing)    (AddNode.Request graphLocation (NodeLoc def nodeId3) "3" def Nothing) (Response.Ok ()) (Response.Ok node3)
             topic     = Topic.topic response1
             undoReq   = Request.Request reqID4 (Just guiID) (Undo.Request Undo.UndoRequest)
         (_, UndoState undo redo history) <- run' state $ do

@@ -1,6 +1,7 @@
-{-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE RankNTypes       #-}
-{-# LANGUAGE TemplateHaskell  #-}
+{-# LANGUAGE FlexibleContexts  #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RankNTypes        #-}
+{-# LANGUAGE TemplateHaskell   #-}
 
 module Empire.Server where
 
@@ -52,6 +53,8 @@ import           ZMQ.Bus.EndPoint                 (BusEndPoints)
 import           ZMQ.Bus.Trans                    (BusT (..))
 import qualified ZMQ.Bus.Trans                    as BusT
 
+import System.Remote.Monitoring
+
 logger :: Logger.Logger
 logger = Logger.getLogger $(Logger.moduleName)
 
@@ -62,6 +65,7 @@ sendStarted endPoints = do
 
 run :: BusEndPoints -> [Topic] -> Bool -> FilePath -> IO (Either Bus.Error ())
 run endPoints topics formatted projectRoot = do
+    forkServer "localhost" 1234
     logger Logger.info $ "Subscribing to topics: " <> show topics
     logger Logger.info $ (Utils.display formatted) endPoints
     sendStarted endPoints

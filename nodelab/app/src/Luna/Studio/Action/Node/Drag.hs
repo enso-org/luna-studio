@@ -11,21 +11,24 @@ import qualified Data.Map                                    as Map
 import           Data.Position                               (Position, move, vector)
 import           Empire.API.Data.NodeLoc                     (NodeLoc)
 import           Empire.API.Data.Port                        (InPort (Self), OutPort (All), PortId (InPortId))
+import           Empire.API.Data.PortRef                     (InPortRef (InPortRef), OutPortRef (OutPortRef))
 import           Luna.Studio.Action.Basic                    (connect, localMoveNodes, moveNodes, selectNodes, updatePortSelfVisibility)
 import           Luna.Studio.Action.Command                  (Command)
 import           Luna.Studio.Action.Node.Snap                (snap)
 import           Luna.Studio.Action.State.Model              (createConnectionModel, getIntersectingConnections)
-import           Luna.Studio.Action.State.NodeEditor         (getConnection, getExpressionNode, getSelectedNodes, modifyExpressionNode,
-                                                              modifyNodeEditor)
-import           Luna.Studio.Data.PortRef                    (InPortRef (InPortRef), OutPortRef (OutPortRef))
+import           Luna.Studio.Action.State.NodeEditor         (getConnection, getExpressionNode, getSelectedNodes, modifyConnection,
+                                                              modifyExpressionNode, modifyNodeEditor)
 import           Luna.Studio.Event.Mouse                     (workspacePosition)
 import           Luna.Studio.Prelude
-import           Luna.Studio.React.Model.Connection          (dst, src)
+import           Luna.Studio.React.Model.Connection          (Mode (Dimmed, Highlighted), dst, src)
+import qualified Luna.Studio.React.Model.Connection          as Connection
+
 import           Luna.Studio.React.Model.Node.ExpressionNode (isSelected, nodeLoc, ports, position)
 import           Luna.Studio.React.Model.NodeEditor          (currentConnections)
 import           Luna.Studio.React.Model.Port                (ensureVisibility, mode)
 import           Luna.Studio.State.Action                    (Action (begin, continue, end, update), NodeDrag (NodeDrag), nodeDragAction,
-                                                              nodeDragNodeLoc, nodeDragNodesStartPos, nodeDragSnappedConn, nodeDragStartPos)
+                                                              nodeDragNodeLoc, nodeDragNodesStartPos, nodeDragSnappedConnIdAndPrevMode,
+                                                              nodeDragStartPos)
 
 import           Luna.Studio.Action.State.Action             (beginActionWithKey, continueActionWithKey, removeActionFromState,
                                                               updateActionWithKey)
@@ -76,9 +79,11 @@ clearSnappedConnection :: NodeDrag -> Command State ()
 clearSnappedConnection nodeDrag = do
     let nl = nodeDrag ^. nodeDragNodeLoc
     modifyNodeEditor $ currentConnections .= def
+    withJust (nodeDrag ^. nodeDragSnappedConnIdAndPrevMode) $ \(connId, m) ->
+        modifyConnection connId $ Connection.mode .= m
     void $ updatePortSelfVisibility nl
     continue $ \nodeDrag' -> do
-        update $ nodeDrag' & nodeDragSnappedConn .~ Nothing
+        update $ nodeDrag' & nodeDragSnappedConnIdAndPrevMode .~ Nothing
 
 snapConnectionsForNodes :: Position -> [NodeLoc] -> Command State ()
 snapConnectionsForNodes mousePos nodeLocs = when (length nodeLocs == 1) $ forM_ nodeLocs $ \nl -> do
@@ -93,10 +98,14 @@ snapConnectionsForNodes mousePos nodeLocs = when (length nodeLocs == 1) $ forM_ 
                 modifyExpressionNode nl $ ports . ix (InPortId Self) . mode %= ensureVisibility
                 mayConnModel1 <- fmap join . mapM (flip createConnectionModel selfPortRef) $ view src <$> mayConn
                 mayConnModel2 <- fmap join $ mapM (createConnectionModel outPortRef)       $ view dst <$> mayConn
-                case (,) <$> mayConnModel1 <*> mayConnModel2 of
-                    Just (connModel1, connModel2) -> do
-                        modifyNodeEditor $ currentConnections .= map convert [connModel1, connModel2]
-                        continue $ \nodeDrag -> update $ nodeDrag & nodeDragSnappedConn ?~ connId
+                case (,,) <$> mayConn <*> mayConnModel1 <*> mayConnModel2 of
+                    Just (conn, connModel1, connModel2) -> do
+                        modifyNodeEditor $ currentConnections .= map convert
+                            [ connModel1 & Connection.mode .~ Highlighted
+                            , connModel2 & Connection.mode .~ Highlighted
+                            ]
+                        continue $ \nodeDrag -> update $ nodeDrag & nodeDragSnappedConnIdAndPrevMode ?~ (connId, conn ^. Connection.mode)
+                        modifyConnection connId $ Connection.mode .= Dimmed
                     _ -> continue clearSnappedConnection
             _ -> continue clearSnappedConnection
 
@@ -110,11 +119,11 @@ handleNodeDragMouseUp evt nodeDrag = do
     else do
         metaUpdate <- map (view nodeLoc &&& view position) <$> getSelectedNodes
         moveNodes metaUpdate
-        withJust (nodeDrag ^. nodeDragSnappedConn) $ \connId -> do
+        withJust (nodeDrag ^. nodeDragSnappedConnIdAndPrevMode) $ \(connId, _) -> do
             mayConn <- getConnection connId
             withJust mayConn $ \conn -> do
                 connect (Left $ conn ^. src) $ Right nl
-                connect (Right nl)                     $ Left $ conn ^. dst
+                connect (Right nl)           $ Left $ conn ^. dst
         clearSnappedConnection nodeDrag
     continue stopNodeDrag
 

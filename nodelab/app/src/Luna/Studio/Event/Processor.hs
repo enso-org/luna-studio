@@ -20,6 +20,7 @@ import qualified Luna.Studio.Event.Preprocessor.Shortcut    as ShortcutEventPrep
 import           Luna.Studio.Event.Source                   (AddHandler (..))
 import qualified Luna.Studio.Event.Source                   as JSHandlers
 import qualified Luna.Studio.Handler.App                    as App
+import qualified Luna.Studio.Handler.Autolayout             as Autolayout
 import qualified Luna.Studio.Handler.Backend.Control        as Control
 import qualified Luna.Studio.Handler.Backend.Graph          as Graph
 import qualified Luna.Studio.Handler.Backend.ProjectManager as ProjectManager
@@ -31,12 +32,12 @@ import qualified Luna.Studio.Handler.Collaboration          as Collaboration
 import qualified Luna.Studio.Handler.Connect                as Connect
 import qualified Luna.Studio.Handler.ConnectionPen          as ConnectionPen
 import qualified Luna.Studio.Handler.Debug                  as Debug
-import qualified Luna.Studio.Handler.Edge                   as Edge
 import qualified Luna.Studio.Handler.MultiSelection         as MultiSelection
 import qualified Luna.Studio.Handler.Navigation             as Navigation
 import qualified Luna.Studio.Handler.Node                   as Node
 import qualified Luna.Studio.Handler.Port                   as Port
 import qualified Luna.Studio.Handler.Searcher               as Searcher
+import qualified Luna.Studio.Handler.Sidebar                as Sidebar
 import qualified Luna.Studio.Handler.Undo                   as Undo
 import qualified Luna.Studio.Handler.Visualization          as Visualization
 import           Luna.Studio.Prelude
@@ -58,6 +59,7 @@ consoleTimeEnd   = consoleTimeEnd'   . convert
 actions :: LoopRef -> [Event -> Maybe (Command State ())]
 actions loop =
     [ App.handle
+    , Autolayout.handle
     , Breadcrumbs.handle
     , Camera.handle
     , Clipboard.handle
@@ -68,12 +70,12 @@ actions loop =
     , Control.handle
     , Debug.handle
     , Debug.handleEv
-    , Edge.handle
     , Graph.handle
     , MultiSelection.handle
     , Navigation.handle
     , Node.handle
     , Port.handle
+    , Sidebar.handle
     , Undo.handle
     , ProjectManager.handle
     , Searcher.handle (scheduleEvent loop)

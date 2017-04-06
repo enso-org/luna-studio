@@ -69,11 +69,11 @@ errorLen :: Int
 errorLen = 40
 
 strValue :: ExpressionNode -> String
-strValue n = convert $ case n ^. Node.value of
+strValue n = case n ^. Node.value of
     Nothing -> ""
-    Just (NodeResult.Value value []) -> value
-    Just (NodeResult.Value value _ ) -> value
-    Just (NodeResult.Error msg     ) -> limitString errorLen (convert $ showError msg)
+    Just (NodeResult.Value value []) -> Text.unpack value
+    Just (NodeResult.Value value _ ) -> Text.unpack value
+    Just (NodeResult.Error msg     ) -> showError msg --limitString errorLen (convert $ showError msg)
 
 limitString :: Int -> Text -> Text
 limitString limit str | Text.length str > limit64 = Text.take limit64 str <> "…"

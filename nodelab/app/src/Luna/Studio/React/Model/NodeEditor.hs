@@ -15,15 +15,15 @@ import           Luna.Studio.Data.CameraTransformation       (CameraTransformati
 import           Luna.Studio.Prelude
 import           Luna.Studio.React.Model.Connection          (ConnectionsMap, CurrentConnection)
 import           Luna.Studio.React.Model.ConnectionPen       (ConnectionPen)
-import           Luna.Studio.React.Model.Node                (EdgeNode, EdgeNodesMap, ExpressionNode, ExpressionNodesMap, NodeId, NodeLoc)
+import           Luna.Studio.React.Model.Node                (ExpressionNode, ExpressionNodesMap, NodeId, NodeLoc, SidebarNode,
+                                                              SidebarNodesMap)
 import qualified Luna.Studio.React.Model.Node.ExpressionNode as ExpressionNode
 import           Luna.Studio.React.Model.Searcher            (Searcher)
 import           Luna.Studio.React.Model.SelectionBox        (SelectionBox)
 
-
 data NodeEditor = NodeEditor { _screenTransform     :: CameraTransformation
                              , _expressionNodes     :: ExpressionNodesMap
-                             , _edgeNodes           :: EdgeNodesMap
+                             , _sidebarNodes        :: SidebarNodesMap
                              , _monads              :: [MonadPath]
                              , _connections         :: ConnectionsMap
                              , _visualizations      :: [(NodeLoc, Int, Position)] --TODO move to node
@@ -41,18 +41,18 @@ expressionNodesRecursive = to (concatMap expressionNodesRecursive' . HashMap.ele
     expressionNodesRecursive' node = node : concatMap expressionNodesRecursive' (concatMap (HashMap.elems . view ExpressionNode.expressionNodes) (node ^. ExpressionNode.subgraphs))
 
 
-edgeNodesRecursive :: Getter NodeEditor [EdgeNode]
-edgeNodesRecursive = to edgeNodesRecursive' where
-    edgeNodesRecursive' ne = HashMap.elems (ne ^. edgeNodes) <> concatMap edgeNodesRec (HashMap.elems $ ne ^. expressionNodes)
-    edgeNodesRec node = (concatMap (HashMap.elems . view ExpressionNode.edgeNodes) (node ^. ExpressionNode.subgraphs))
-                     <> concatMap edgeNodesRec (concatMap (HashMap.elems . view ExpressionNode.expressionNodes) (node ^. ExpressionNode.subgraphs))
+sidebarNodesRecursive :: Getter NodeEditor [SidebarNode]
+sidebarNodesRecursive = to sidebarNodesRecursive' where
+    sidebarNodesRecursive' ne = HashMap.elems (ne ^. sidebarNodes) <> concatMap sidebarNodesRec (HashMap.elems $ ne ^. expressionNodes)
+    sidebarNodesRec node = (concatMap (HashMap.elems . view ExpressionNode.sidebarNodes) (node ^. ExpressionNode.subgraphs))
+                     <> concatMap sidebarNodesRec (concatMap (HashMap.elems . view ExpressionNode.expressionNodes) (node ^. ExpressionNode.subgraphs))
 
 
 getExpressionNode :: NodeLoc -> NodeEditor -> Maybe ExpressionNode
 getExpressionNode = _getNodeRec expressionNodes ExpressionNode.expressionNodes
 
-getEdgeNode :: NodeLoc -> NodeEditor -> Maybe EdgeNode
-getEdgeNode = _getNodeRec edgeNodes ExpressionNode.edgeNodes
+getSidebarNode :: NodeLoc -> NodeEditor -> Maybe SidebarNode
+getSidebarNode = _getNodeRec sidebarNodes ExpressionNode.sidebarNodes
 
 _getNodeRec :: Lens' NodeEditor (HashMap NodeId a) -> Lens' ExpressionNode.Subgraph (HashMap NodeId a) -> NodeLoc -> NodeEditor -> Maybe a
 _getNodeRec rootLens subLens nl ne = getNodeRec' (nl ^. NodeLoc.pathItems) where

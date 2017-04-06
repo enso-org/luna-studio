@@ -9,10 +9,11 @@ import           Luna.Studio.Action.Command                  (Command)
 import           Luna.Studio.Action.State.Model              (shouldDisplayPortSelf)
 import qualified Luna.Studio.Action.State.NodeEditor         as NodeEditor
 import           Luna.Studio.Prelude
-import           Luna.Studio.React.Model.Node                (EdgeNode, ExpressionNode, Node (Edge, Expression), NodeLoc, nodeLoc, ports)
-import qualified Luna.Studio.React.Model.Node.EdgeNode       as Edge
+import           Luna.Studio.React.Model.Node                (ExpressionNode, Node (Expression, Sidebar), NodeLoc, NodePath, SidebarNode,
+                                                              nodeLoc, ports)
 import           Luna.Studio.React.Model.Node.ExpressionNode (isSelected)
 import qualified Luna.Studio.React.Model.Node.ExpressionNode as Node
+import qualified Luna.Studio.React.Model.Node.SidebarNode    as Sidebar
 import           Luna.Studio.React.Model.Port                (Mode (Invisible), ensureVisibility, mode)
 import           Luna.Studio.State.Global                    (State)
 
@@ -22,20 +23,20 @@ localUpdateNodes = mapM_ localUpdateNode
 localUpdateExpressionNodes :: [ExpressionNode] -> Command State ()
 localUpdateExpressionNodes = mapM_ localUpdateExpressionNode
 
-localUpdateEdgeNodes :: [EdgeNode] -> Command State ()
-localUpdateEdgeNodes = mapM_ localUpdateEdgeNode
+localUpdateSidebarNodes :: [SidebarNode] -> Command State ()
+localUpdateSidebarNodes = mapM_ localUpdateSidebarNode
 
 localUpdateNode :: Node -> Command State Bool
 localUpdateNode (Expression node) = localUpdateExpressionNode node
-localUpdateNode (Edge edge)       = localUpdateEdgeNode edge
+localUpdateNode (Sidebar    node) = localUpdateSidebarNode node
 
-localUpdateEdgeNode :: EdgeNode -> Command State Bool
-localUpdateEdgeNode node = NodeEditor.getEdgeNode (node ^. nodeLoc) >>= \mayNode ->
+localUpdateSidebarNode :: SidebarNode -> Command State Bool
+localUpdateSidebarNode node = NodeEditor.getSidebarNode (node ^. nodeLoc) >>= \mayNode ->
     case mayNode of
         Nothing       -> return False
         Just prevNode -> do
-            let edgeMode = prevNode ^. Edge.mode
-            NodeEditor.addEdgeNode $ node & Edge.mode .~ edgeMode
+            let sidebarMode = prevNode ^. Sidebar.mode
+            NodeEditor.addSidebarNode $ node & Sidebar.mode .~ sidebarMode
             updateScene
             return True
 
@@ -54,12 +55,13 @@ localUpdateExpressionNode node = NodeEditor.getExpressionNode (node ^. nodeLoc) 
             void . redrawConnectionsForNode $ node ^. nodeLoc
             return True
 
-localUpdateNodeTypecheck :: NodeTypecheckerUpdate -> Command State Bool
-localUpdateNodeTypecheck update = do
-    mayNode <- NodeEditor.getNode $ convert $ update ^. tcNodeId
+localUpdateNodeTypecheck :: NodePath -> NodeTypecheckerUpdate -> Command State Bool
+localUpdateNodeTypecheck path update = do
+    let tcNodeLoc = convert (path, update ^. tcNodeId)
+    mayNode <- NodeEditor.getNode tcNodeLoc
     success <- flip (maybe (return False)) mayNode (\node ->
         localUpdateNode $ node & ports .~ (convert <$> (update ^. tcPorts))) -- typecheck non-existing node?
-    void . redrawConnectionsForNode $ convert $ update ^. tcNodeId
+    void $ redrawConnectionsForNode tcNodeLoc
     return success
 
 updateAllPortsSelfVisibility :: Command State ()

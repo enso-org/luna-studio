@@ -42,8 +42,8 @@ appId :: JSString
 appId = Config.prefix "app"
 
 inputSidebarId, outputSidebarId :: JSString
-inputSidebarId  = Config.prefix "edge-sidebar--i"
-outputSidebarId = Config.prefix "edge-sidebar--o"
+inputSidebarId  = Config.prefix "sidebar--i"
+outputSidebarId = Config.prefix "sidebar--o"
 
 
 foreign import javascript safe "document.getElementById($1).offsetWidth"  elementWidth  :: JSString -> IO Double

@@ -61,6 +61,6 @@ c ‹4›= 3|]
                 c ^. Node.code `shouldBe` Just "3"
                 c ^. Node.canEnter `shouldBe` False
                 connections `shouldMatchList` [
-                      (OutPortRef (pi ^. Node.nodeId) Port.All, InPortRef (anon ^. Node.nodeId) (Port.Arg 0))
-                    , (OutPortRef (c ^. Node.nodeId) Port.All, InPortRef (bar ^. Node.nodeId) (Port.Arg 0))
+                      (outPortRef (pi ^. Node.nodeId) Port.All, inPortRef (anon ^. Node.nodeId) (Port.Arg 0))
+                    , (outPortRef (c ^. Node.nodeId) Port.All, inPortRef (bar ^. Node.nodeId) (Port.Arg 0))
                     ]

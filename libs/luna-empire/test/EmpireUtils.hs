@@ -21,6 +21,8 @@ module EmpireUtils (
     , connectToInput
     , inputPorts
     , outputPorts
+    , outPortRef
+    , inPortRef
     ) where
 
 import           Control.Concurrent.STM        (atomically)
@@ -36,7 +38,8 @@ import           Empire.API.Data.Connection    (Connection)
 import           Empire.API.Data.GraphLocation (GraphLocation(..))
 import           Empire.API.Data.Port          (Port)
 import qualified Empire.API.Data.Port          as Port
-import           Empire.API.Data.PortRef       (AnyPortRef(InPortRef'), InPortRef, OutPortRef)
+import           Empire.API.Data.NodeLoc       (NodeLoc(..))
+import           Empire.API.Data.PortRef       (AnyPortRef(InPortRef'), InPortRef(..), OutPortRef(..))
 import           Empire.API.Data.Node          (Node, NodeId, NodeType(..), nodeId, nodeType, ports)
 import qualified Empire.Commands.Graph         as Graph (connect, getNodes)
 import           Empire.Commands.Library       (createLibrary, listLibraries, withLibrary)
@@ -121,3 +124,9 @@ inputPorts node = Map.elems $ Map.filter (Port.isInPort . view Port.portId) $ no
 
 outputPorts :: Node -> [Port]
 outputPorts node = Map.elems $ Map.filter (Port.isOutPort . view Port.portId) $ node ^. ports
+
+outPortRef :: NodeId -> Port.OutPort -> OutPortRef
+outPortRef = OutPortRef . NodeLoc def
+
+inPortRef :: NodeId -> Port.InPort -> InPortRef
+inPortRef = InPortRef . NodeLoc def

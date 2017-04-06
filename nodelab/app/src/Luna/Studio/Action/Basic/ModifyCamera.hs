@@ -1,7 +1,7 @@
 module Luna.Studio.Action.Basic.ModifyCamera where
 
 import           Data.Matrix                             (Matrix, identity, inverse, multStd2)
-import           Luna.Studio.Action.Basic.DrawConnection (redrawConnectionsForEdgeNodes)
+import           Luna.Studio.Action.Basic.DrawConnection (redrawConnectionsForSidebarNodes)
 import           Luna.Studio.Action.Command              (Command)
 import           Luna.Studio.Action.State.NodeEditor     (modifyNodeEditor)
 import           Luna.Studio.Data.CameraTransformation   (lastInverse, logicalToScreen, screenToLogical)
@@ -28,11 +28,11 @@ modifyCamera matrix invertedMatrix = do
             else do
                 screenTransform . screenToLogical %= multStd2 invertedMatrix
                 screenTransform . lastInverse     += 1
-    void $ redrawConnectionsForEdgeNodes
+    void $ redrawConnectionsForSidebarNodes
 
 resetCamera :: Command State ()
 resetCamera = do
     modifyNodeEditor $ do
         screenTransform . logicalToScreen .= identity 4
         screenTransform . screenToLogical .= identity 4
-    void $ redrawConnectionsForEdgeNodes
+    void $ redrawConnectionsForSidebarNodes

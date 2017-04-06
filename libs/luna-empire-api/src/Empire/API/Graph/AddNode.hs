@@ -5,6 +5,7 @@ import           Prologue
 
 import           Empire.API.Data.GraphLocation (GraphLocation)
 import           Empire.API.Data.Node          (Node, NodeId)
+import           Empire.API.Data.NodeLoc       (NodeLoc)
 import           Empire.API.Data.NodeMeta      (NodeMeta)
 import qualified Empire.API.Graph.Request      as G
 import qualified Empire.API.Request            as R
@@ -12,7 +13,7 @@ import qualified Empire.API.Response           as Response
 import qualified Empire.API.Topic              as T
 
 data Request = Request { _location   :: GraphLocation
-                       , _nodeId     :: NodeId
+                       , _nodeLoc    :: NodeLoc
                        , _expression :: Text
                        , _nodeMeta   :: NodeMeta
                        , _connectTo  :: Maybe NodeId

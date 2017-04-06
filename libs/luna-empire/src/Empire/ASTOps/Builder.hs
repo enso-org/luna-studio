@@ -17,7 +17,8 @@ import           Data.Maybe                         (isNothing)
 import           Empire.Prelude
 
 import           Empire.API.Data.Node               (NodeId)
-import           Empire.API.Data.PortRef            (OutPortRef(..))
+import           Empire.API.Data.PortRef            (OutPortRef (..))
+import           Empire.API.Data.NodeLoc            (NodeLoc (..))
 import qualified Empire.API.Data.Port               as Port
 import           Empire.ASTOp                       (ASTOp, match)
 import           Empire.ASTOps.Deconstruct          (deconstructApp, extractArguments, dumpAccessors)
@@ -120,5 +121,5 @@ makeNodeRep marker name node = match node $ \case
     Unify{} -> return node
     _       -> do
         nameVar <- IR.var' $ stringToName name
-        IR.writeLayer @Marker (Just $ OutPortRef marker Port.All) nameVar
+        IR.putLayer @Marker nameVar $ Just $ OutPortRef (NodeLoc def marker) Port.All
         IR.generalize <$> IR.unify nameVar node

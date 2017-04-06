@@ -3,7 +3,7 @@
 #
 
 '.luna-searcher__input':
-  'backspace'  : 'luna-studio:searcher-move-left'          # Searcher MoveLeft
+  'backspace'  : 'native!'
   'ctrl-0'     : 'luna-studio:searcher-accept-0'           # Searcher AcceptEntry 0
   'ctrl-1'     : 'luna-studio:searcher-accept-1'           # Searcher AcceptEntry 1
   'ctrl-2'     : 'luna-studio:searcher-accept-2'           # Searcher AcceptEntry 2

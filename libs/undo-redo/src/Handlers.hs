@@ -142,8 +142,8 @@ handle message = do
 
 
 getUndoAddNode :: AddNode.Request -> RemoveNodes.Request
-getUndoAddNode (AddNode.Request location nodeId _ _ _) =
-    RemoveNodes.Request location [nodeId]
+getUndoAddNode (AddNode.Request location nodeLoc _ _ _) =
+    RemoveNodes.Request location [nodeLoc]
 
 handleAddNodeUndo :: AddNode.Response -> Maybe (RemoveNodes.Request, AddNode.Request)
 handleAddNodeUndo (Response.Response _ _ req _ (Response.Ok _)) =
@@ -160,7 +160,7 @@ handleAddPortUndo (Response.Response _ _ req _ (Response.Ok _)) = Just (getUndoA
 
 getUndoAddSubgraph :: AddSubgraph.Request -> RemoveNodes.Request
 getUndoAddSubgraph (AddSubgraph.Request location nodes conns) =
-    RemoveNodes.Request location $ map (view Node.nodeId) nodes
+    RemoveNodes.Request location $ map (convert . view Node.nodeId) nodes
 
 handleAddSubgraphUndo :: AddSubgraph.Response -> Maybe (RemoveNodes.Request, AddSubgraph.Request)
 handleAddSubgraphUndo (Response.Response _ _ req _ (Response.Ok _)) =
@@ -178,8 +178,8 @@ handleAddConnectionUndo (Response.Response _ _ req _ (Response.Ok res)) =
 
 getUndoMovePort :: MovePort.Request -> MovePort.Request
 getUndoMovePort (MovePort.Request location oldPortRef newPos) = case oldPortRef of
-    OutPortRef' (OutPortRef nid (Projection i)) ->
-        MovePort.Request location (toAnyPortRef nid $ OutPortId $ Projection newPos) i
+    OutPortRef' (OutPortRef nid (Projection i p)) ->
+        MovePort.Request location (toAnyPortRef nid $ OutPortId $ Projection newPos p) i
     _                                           -> $notImplemented
 
 handleMovePortUndo :: MovePort.Response -> Maybe (MovePort.Request, MovePort.Request)

@@ -5,14 +5,14 @@
 /////////////////////////////
 
 .luna-blur {
-    backdrop-filter: blur(0);
-    background:      rgba(255,255,255,0);
-    position:        absolute;
-    z-index:        -1;
-    top:             0;
-    left:            0;
-    height:          100%;
-    width:           100%;
+    //backdrop-filter: blur(0);
+    background: rgba(255,255,255,0);
+    position:   absolute;
+    z-index:   -1;
+    top:        0;
+    left:       0;
+    height:     100%;
+    width:      100%;
 }
 
 /////////////////////////////
@@ -26,7 +26,8 @@
 }
 
 .luna-node__text {
-    top: -36rem !important;
+    top:    inherit !important;
+    bottom: 36rem !important;
 }
 
 .luna-node__name {
@@ -40,13 +41,24 @@
 }
 
 .luna-node__name--expression {
-    fill:        #888;
+    fill:        lightslategrey;
     font-size:   12px;
     line-height: 16px;
 }
 
+.luna-node__returned-value {
+    white-space:     nowrap;
+    display:         flex;
+    justify-content: center;
+    color:           #888;
+    font-size:       10rem;
+    line-height:     16rem;
+    position:        relative;
+    top:            -8rem;
+}
+
 .luna-port {
-    stroke-width: 0;
+    stroke-width:   0;
     &.luna-hover {
         .luna-port__shape {
             fill: #fff !important;
@@ -67,6 +79,12 @@
     }
 }
 
+.luna-port--i--phantom {
+    display: none;
+}
+
+
+
 // types
 
 .luna-port__type {
@@ -86,7 +104,6 @@
 
 .luna-node:hover .luna-port__type { display: inherit }
 .luna-port:hover .luna-port__type { fill: #fff }
-
 
 /////////////////////////////
 //      node expanded      //
@@ -116,9 +133,11 @@
         left:   0;
     }
     .luna-blur {
-        backdrop-filter: blur(12px);
-        background:      rgba(40,40,40,.5);
-        border-radius:   @borderRadius;
+        //backdrop-filter: blur(12px);
+        //background:      rgba(40,40,40,.5);
+        background:    #222;
+        border-radius: @borderRadius;
+        box-shadow:    0 0 10px @colorBackground;
     }
     .luna-node__properties-crop {
         max-height: 110rem;
@@ -130,7 +149,7 @@
         opacity:       1;
         border-radius: @borderRadius;
         left:          0;
-        padding:       ~"calc(12px * var(--scale)) calc(12px * var(--scale)) calc(8px * var(--scale))";
+        padding:      ~"calc(12px * var(--scale)) calc(12px * var(--scale)) calc(8px * var(--scale))";
     }
     .luna-selection {
         border-radius: 1px;
@@ -150,6 +169,11 @@
     max-height: 40rem;
     overflow:   hidden;
 }
+
+.luna-node__properties-crop textarea {
+
+}
+
 .luna-node__properties *,
 .luna-node__vizzs * {
     font-size: ~"calc(10px * var(--scale))";
@@ -174,7 +198,8 @@
         position:        relative;
         width:           @expandedNodeWidth - 2 * @expandedNodePadding;
     }
-    .luna-row--output-name {
+    .luna-row--first {
+        height:          16rem;
         justify-content: flex-end;
     }
 }
@@ -243,22 +268,22 @@
 // controls
 
 .luna-ctrl-switch {
-    cursor: pointer;
-    height: 8rem;
-    width: 16rem;
-    background: #111;
+    cursor:        pointer;
+    height:        8rem;
+    width:         16rem;
+    background:    #111;
     border-radius: 1000px;
-    position: relative;
-    top: 4rem;
-    display: flex;
+    position:      relative;
+    top:           4rem;
+    display:       flex;
     &::after {
-        top: -2rem;
-        position: relative;
-        display: block;
-        content: " ";
-        width: 12rem;
-        height: 12rem;
-        background: #777;
+        top:          -2rem;
+        position:      relative;
+        display:       block;
+        content:       " ";
+        width:         12rem;
+        height:        12rem;
+        background:    #777;
         border-radius: 1000px;
     }
 }
@@ -266,13 +291,28 @@
     background: #888;
     &::after {
         background: #bbb;
-        left: 6rem;
+        left:       6rem;
     }
 }
 .luna-ctrl-switch--off {
     background: #3a3a3a;
     &::after {
         background: #666;
-        left: -2rem;
+        left:      -2rem;
     }
+}
+
+/////////////////////////////
+//          icons          //
+/////////////////////////////
+
+.luna-node__icons {
+    display: none;
+}
+.luna-icon--show {
+    x:     -5px;
+    y:     -100px;
+    width:  10px;
+    height: 10px;
+    fill:   red;
 }

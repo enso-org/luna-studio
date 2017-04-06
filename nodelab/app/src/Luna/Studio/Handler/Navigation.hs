@@ -5,12 +5,12 @@ import           Data.Vector                                 (lengthSquared, mag
 import           Luna.Studio.Prelude
 
 import qualified Empire.API.Data.Port                        as P
+import qualified Empire.API.Data.PortRef                     as R
 import           Luna.Studio.Action.Basic                    (selectNodes)
 import           Luna.Studio.Action.Command                  (Command)
 import           Luna.Studio.Action.State.NodeEditor         (getConnection, getConnections, getExpressionNode, getExpressionNodes,
                                                               getSelectedNodes)
 import           Luna.Studio.Action.State.Scene              (getScreenCenter, translateToWorkspace)
-import qualified Luna.Studio.Data.PortRef                    as R
 import           Luna.Studio.Event.Event                     (Event (Shortcut))
 import qualified Luna.Studio.Event.Shortcut                  as Shortcut
 import qualified Luna.Studio.React.Model.Connection          as C

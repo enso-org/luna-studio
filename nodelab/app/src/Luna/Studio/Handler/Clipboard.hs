@@ -50,7 +50,7 @@ pasteFromClipboard clipboardData = do
         selectedBc <- use (workspace . currentLocation . GraphLocation.breadcrumb) --FIXME
         graphNodesLocs <- Set.fromList . map (view nodeLoc)  <$> getExpressionNodes
         let nodes       = (convert . (NodePath selectedBc,) <$> HashMap.elems (subgraph ^. Graph.nodesMap)) ^.. traverse . _Expression
-            connections = filter (\conn -> Set.member (convert $ conn ^. Connection.src . PortRef.srcNodeId) graphNodesLocs) $ HashMap.elems $ subgraph ^. Graph.connectionsMap
+            connections = filter (\conn -> Set.member (conn ^. Connection.src . PortRef.srcNodeLoc) graphNodesLocs) $ HashMap.elems $ subgraph ^. Graph.connectionsMap
         workspacePos <- translateToWorkspace =<< use (Global.ui . UI.mousePos)
         let shiftX = workspacePos ^. x - minimum (map (^. position . x) nodes)
             shiftY = workspacePos ^. y - minimum (map (^. position . y) nodes)
@@ -60,4 +60,4 @@ pasteFromClipboard clipboardData = do
             shiftNode = shiftNodeY . shiftNodeX
             nodes' = map shiftNode nodes
         --TODO[LJK]: Use unwrap here
-        addSubgraph nodes' $ map (\conn -> (convert $ conn ^. Connection.src, convert $ conn ^. Connection.dst)) connections
+        addSubgraph nodes' $ convert <$> connections

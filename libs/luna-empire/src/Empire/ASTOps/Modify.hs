@@ -25,7 +25,7 @@ import           Empire.Data.AST                    (EdgeRef, NodeRef, NotLambda
                                                      NotUnifyException(..), astExceptionToException,
                                                      astExceptionFromException)
 
-import qualified OCI.IR.Combinators as IR (changeSource, narrowTerm, replaceNode)
+import qualified OCI.IR.Combinators as IR (replaceSource, narrowTerm, replace, substitute)
 import           Luna.IR.Term.Uni
 import qualified Luna.IR as IR
 
@@ -59,10 +59,9 @@ replaceWithLam parent name lam = do
     binder   <- IR.var $ stringToName name
     newLam   <- IR.lam binder tmpBlank
     case parent of
-        Just e  -> IR.changeSource e $ IR.generalize newLam
-        Nothing -> IR.replaceNode lam newLam
-    IR.replaceNode tmpBlank lam
-    ASTRemove.removeSubtree $ IR.generalize tmpBlank
+        Just e  -> IR.replaceSource (IR.generalize newLam) e
+        Nothing -> IR.substitute newLam lam
+    IR.replace lam tmpBlank
     return ()
 
 addLambdaArg' :: ASTOp m => Int -> String -> Maybe EdgeRef -> NodeRef -> m ()
@@ -81,7 +80,7 @@ instance Exception CannotRemovePortException where
 removeLambdaArg :: ASTOp m => Port.PortId -> NodeRef -> m NodeRef
 removeLambdaArg Port.InPortId{}           _ = throwM $ CannotRemovePortException
 removeLambdaArg (Port.OutPortId Port.All) _ = throwM $ CannotRemovePortException
-removeLambdaArg p@(Port.OutPortId (Port.Projection port)) lambda = match lambda $ \case
+removeLambdaArg p@(Port.OutPortId (Port.Projection port Port.All)) lambda = match lambda $ \case
     Grouped g      -> IR.source g >>= removeLambdaArg p >>= fmap IR.generalize . IR.grouped
     Lam _arg _body -> do
         args <- ASTDeconstruct.extractArguments lambda
@@ -101,7 +100,7 @@ shiftPosition from to lst = uncurry (insertAt to) $ getAndRemove from lst where
 moveLambdaArg :: ASTOp m => Port.PortId -> Int -> NodeRef -> m NodeRef
 moveLambdaArg Port.InPortId{}           _ _ = throwM $ CannotRemovePortException
 moveLambdaArg (Port.OutPortId Port.All) _ _ = throwM $ CannotRemovePortException
-moveLambdaArg p@(Port.OutPortId (Port.Projection port)) newPosition lambda = match lambda $ \case
+moveLambdaArg p@(Port.OutPortId (Port.Projection port Port.All)) newPosition lambda = match lambda $ \case
     Grouped g -> IR.source g >>= moveLambdaArg p newPosition >>= fmap IR.generalize . IR.grouped
     Lam _ _   -> do
         args <- ASTDeconstruct.extractArguments lambda
@@ -113,7 +112,7 @@ moveLambdaArg p@(Port.OutPortId (Port.Projection port)) newPosition lambda = mat
 renameLambdaArg :: ASTOp m => Port.PortId -> String -> NodeRef -> m ()
 renameLambdaArg Port.InPortId{}           _ _ = throwM CannotRemovePortException
 renameLambdaArg (Port.OutPortId Port.All) _ _ = throwM CannotRemovePortException
-renameLambdaArg p@(Port.OutPortId (Port.Projection port)) newName lam = match lam $ \case
+renameLambdaArg p@(Port.OutPortId (Port.Projection port Port.All)) newName lam = match lam $ \case
     Grouped g -> IR.source g >>= renameLambdaArg p newName
     Lam _ _ -> do
         args <- ASTDeconstruct.extractArguments lam
@@ -144,14 +143,14 @@ replaceTargetNode :: ASTOp m => NodeRef -> NodeRef -> m ()
 replaceTargetNode matchNode newTarget = do
     match matchNode $ \case
         Unify _l r -> do
-            IR.changeSource r newTarget
+            IR.replaceSource newTarget r
         _ -> throwM $ NotUnifyException matchNode
 
 replaceVarNode :: ASTOp m => NodeRef -> NodeRef -> m ()
 replaceVarNode matchNode newVar = do
     match matchNode $ \case
         Unify l _r -> do
-            IR.changeSource l newVar
+            IR.replaceSource newVar l
         _ -> throwM $ NotUnifyException matchNode
 
 rewireNode :: ASTOp m => NodeId -> NodeRef -> m ()

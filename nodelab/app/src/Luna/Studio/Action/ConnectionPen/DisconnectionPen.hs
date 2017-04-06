@@ -35,7 +35,7 @@ instance Action (Command State) PenDisconnect where
     begin    = beginActionWithKey    penDisconnectAction
     continue = continueActionWithKey penDisconnectAction
     update   = updateActionWithKey   penDisconnectAction
-    end _    = removeActionFromState penDisconnectAction
+    end      = stopDisconnecting
 
 
 startDisconnecting :: MouseEvent -> Timestamp -> Command State ()

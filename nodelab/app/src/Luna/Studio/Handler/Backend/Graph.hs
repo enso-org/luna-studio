@@ -5,6 +5,7 @@ module Luna.Studio.Handler.Backend.Graph
 import qualified Data.DateTime                                as DT
 import           Empire.API.Data.Connection                   (dst, src)
 import qualified Empire.API.Data.Graph                        as Graph
+import           Empire.API.Data.NodeLoc                      (prependPath)
 import qualified Empire.API.Data.NodeLoc                      as NodeLoc
 import qualified Empire.API.Graph.AddConnection               as AddConnection
 import qualified Empire.API.Graph.AddNode                     as AddNode
@@ -43,12 +44,12 @@ import           Luna.Studio.Action.Basic.Revert              (revertAddConnecti
                                                                revertRenameNode, revertSetNodeCode, revertSetNodeExpression,
                                                                revertSetNodesMeta, revertSetPortDefault)
 import           Luna.Studio.Action.Basic.UpdateCollaboration (bumpTime, modifyTime, refreshTime, touchCurrentlySelected, updateClient)
-import           Luna.Studio.Action.Batch                     (collaborativeModify, requestCollaborationRefresh)
+import           Luna.Studio.Action.Batch                     (collaborativeModify, requestCollaborationRefresh, getProgram)
 import           Luna.Studio.Action.Camera                    (centerGraph)
 import           Luna.Studio.Action.Command                   (Command)
 import           Luna.Studio.Action.State.App                 (setBreadcrumbs)
 import           Luna.Studio.Action.State.Graph               (inCurrentLocation, isCurrentLocation)
-import           Luna.Studio.Action.State.NodeEditor          (modifyNodeEditor, updateMonads)
+import           Luna.Studio.Action.State.NodeEditor          (modifyExpressionNode, updateMonads)
 import           Luna.Studio.Action.UUID                      (isOwnRequest)
 import qualified Luna.Studio.Batch.Workspace                  as Workspace
 import           Luna.Studio.Event.Batch                      (Event (..))
@@ -57,21 +58,21 @@ import           Luna.Studio.Handler.Backend.Common           (doNothing, handle
 import           Luna.Studio.Prelude
 import           Luna.Studio.React.Model.Node                 (Node (Expression), nodeLoc, _Expression)
 import qualified Luna.Studio.React.Model.Node.ExpressionNode  as Node
-import qualified Luna.Studio.React.Model.NodeEditor           as NodeEditor
 import           Luna.Studio.State.Global                     (State)
 import qualified Luna.Studio.State.Global                     as Global
 
 
 handle :: Event.Event -> Maybe (Command State ())
 handle (Event.Batch ev) = Just $ case ev of
-    GetProgramResponse response -> handleResponse response success doNothing where
+    GetProgramResponse response -> handleResponse response success failure where
         location       = response ^. Response.request . GetProgram.location
         success result = do
             isGraphLoaded  <- use $ Global.workspace . Workspace.isGraphLoaded
             isGoodLocation <- isCurrentLocation location
-            when (isGoodLocation && not isGraphLoaded) $ do
+            when isGoodLocation $ do
+                putStrLn "GetProgram"
                 let nodes       = convert . (NodeLoc.empty,) <$> result ^. GetProgram.graph . Graph.nodes
-                    connections = ((_1 %~ convert) . (_2 %~ convert)) <$> result ^. GetProgram.graph . Graph.connections
+                    connections = result ^. GetProgram.graph . Graph.connections
                     monads      = result ^. GetProgram.graph . Graph.monads
                     code        = result ^. GetProgram.code
                     nsData      = result ^. GetProgram.nodeSearcherData
@@ -79,10 +80,14 @@ handle (Event.Batch ev) = Just $ case ev of
                 Global.workspace . Workspace.nodeSearcherData .= nsData
                 setBreadcrumbs breadcrumb
                 createGraph nodes connections monads
-                centerGraph
                 localSetCode code
+                unless isGraphLoaded $ do
+                    centerGraph
+                    requestCollaborationRefresh
                 Global.workspace . Workspace.isGraphLoaded .= True
-                requestCollaborationRefresh
+        failure _ = do
+            Global.workspace %= Workspace.upperWorkspace
+            getProgram
 
     AddConnectionResponse response -> handleResponse response success failure where
         requestId          = response ^. Response.requestId
@@ -90,7 +95,7 @@ handle (Event.Batch ev) = Just $ case ev of
         location           = request  ^. AddConnection.location
         failure _          = whenM (isOwnRequest requestId) $ revertAddConnection request
         success connection = inCurrentLocation location $ \path -> do
-            void $ localAddConnection (convert (path, connection ^. src)) (convert (path, connection ^. dst))
+            void $ localAddConnection (prependPath path (connection ^. src)) (prependPath path (connection ^. dst))
 
     AddNodeResponse response -> handleResponse response success failure where
         requestId    = response ^. Response.requestId
@@ -123,7 +128,7 @@ handle (Event.Batch ev) = Just $ case ev of
                      _            -> return ()
             else do
                 --TODO[LJK, PM]: What should happen if localAddPort fails? (Example reason - node is not in graph)
-                void $ localAddPort $ convert (path, portRef)
+                void $ localAddPort $ prependPath path portRef
                 void $ localUpdateNode node
 
     AddSubgraphResponse response -> handleResponse response success failure where
@@ -138,7 +143,7 @@ handle (Event.Batch ev) = Just $ case ev of
             if ownRequest then do
                 localUpdateExpressionNodes nodes
                 collaborativeModify $ flip map nodes $ view nodeLoc
-            else void $ localAddSubgraph nodes (map (\conn -> (convert (path, conn ^. src), convert (path, conn ^. dst))) conns)
+            else void $ localAddSubgraph nodes (map (\conn -> (prependPath path (conn ^. src), prependPath path (conn ^. dst))) conns)
 
     CodeUpdate update -> do
        inCurrentLocation (update ^. CodeUpdate.location) $ \path -> do
@@ -146,32 +151,36 @@ handle (Event.Batch ev) = Just $ case ev of
 
     CollaborationUpdate update -> inCurrentLocation (update ^. CollaborationUpdate.location) $ \path -> do
         let clientId = update ^. CollaborationUpdate.clientId
-            touchNodes nodeIds setter = modifyNodeEditor $
-                forM_ nodeIds $ \nid -> NodeEditor.expressionNodes . at nid %= fmap setter
+            touchNodes nodeLocs setter = forM_ nodeLocs $ \nl ->
+                modifyExpressionNode (prependPath path nl) setter
         myClientId   <- use $ Global.backend . Global.clientId
         currentTime  <- use Global.lastEventTimestamp
         when (clientId /= myClientId) $ do
             clientColor <- updateClient clientId
             case update ^. CollaborationUpdate.event of
-                CollaborationUpdate.Touch       nodeIds -> touchNodes nodeIds $  Node.collaboration . Node.touch  . at clientId ?~ (DT.addSeconds (2 * refreshTime) currentTime, clientColor)
-                CollaborationUpdate.Modify      nodeIds -> touchNodes nodeIds $ (Node.collaboration . Node.modify . at clientId ?~ DT.addSeconds modifyTime currentTime) . (Node.collaboration . Node.touch  . at clientId %~ bumpTime (DT.addSeconds modifyTime currentTime) clientColor)
-                CollaborationUpdate.CancelTouch nodeIds -> touchNodes nodeIds $  Node.collaboration . Node.touch  . at clientId .~ Nothing
+                CollaborationUpdate.Touch       nodeLocs -> touchNodes nodeLocs $  Node.collaboration . Node.touch  . at clientId ?= (DT.addSeconds (2 * refreshTime) currentTime, clientColor)
+                CollaborationUpdate.Modify      nodeLocs -> touchNodes nodeLocs $ do
+                    Node.collaboration . Node.touch  . at clientId %= bumpTime (DT.addSeconds modifyTime currentTime) clientColor
+                    Node.collaboration . Node.modify . at clientId ?= DT.addSeconds modifyTime currentTime
+                CollaborationUpdate.CancelTouch nodeLocs -> touchNodes nodeLocs $  Node.collaboration . Node.touch  . at clientId .= Nothing
                 CollaborationUpdate.Refresh             -> touchCurrentlySelected
 
     ConnectUpdate update -> do
         let src' = update ^. ConnectUpdate.connection' . src
             dst' = update ^. ConnectUpdate.connection' . dst
         inCurrentLocation (update ^. ConnectUpdate.location') $ \path -> do
-            void $ localAddConnection (convert (path,src')) (convert (path, dst'))
+            void $ localAddConnection (prependPath path src') (prependPath path dst')
 
     DumpGraphVizResponse response -> handleResponse response doNothing doNothing
 
     --TODO[LJK, PM]: Review this Handler
     GetSubgraphsResponse response -> handleResponse response success doNothing where
+        requestId      = response ^. Response.requestId
         request        = response ^. Response.request
         location       = request ^. GetSubgraphs.location
         success result = inCurrentLocation location $ \path ->
-            localMerge path $ result ^. GetSubgraphs.graphs
+            whenM (isOwnRequest requestId) $
+                localMerge path $ result ^. GetSubgraphs.graphs
 
 
     MonadsUpdate update -> do
@@ -190,7 +199,7 @@ handle (Event.Batch ev) = Just $ case ev of
             ownRequest <- isOwnRequest requestId
             if ownRequest then
                 void $ localUpdateNode node
-            else void $ localMovePort (convert portRef) newPos >> localUpdateNode node
+            else void $ localMovePort portRef newPos >> localUpdateNode node
 
     NodeResultUpdate update -> do
         let location = update ^. NodeResultUpdate.location
@@ -205,7 +214,7 @@ handle (Event.Batch ev) = Just $ case ev of
 
     NodeTypecheckerUpdate update -> do
       inCurrentLocation (update ^. NodeTCUpdate.location) $ \path ->
-          void . localUpdateNodeTypecheck $ update ^. NodeTCUpdate.node
+          void $ localUpdateNodeTypecheck path $ update ^. NodeTCUpdate.node
 
     RedoResponse response -> $notImplemented
 
@@ -220,24 +229,24 @@ handle (Event.Batch ev) = Just $ case ev of
             if ownRequest then
                 --TODO[LJK]: This is left to remind to set Confirmed flag in changes
                 return ()
-            else void $ localRemoveConnection (convert (path, connId))
+            else void $ localRemoveConnection $ prependPath path connId
 
     RemoveConnectionUpdate update -> do
         inCurrentLocation (update ^. RemoveConnection.location') $ \path ->
-            void $ localRemoveConnection $ convert (path, update ^. RemoveConnection.connId')
+            void $ localRemoveConnection $ prependPath path $ update ^. RemoveConnection.connId'
 
     RemoveNodesResponse response -> handleResponse response success failure where
         requestId       = response ^. Response.requestId
         request         = response ^. Response.request
         location        = request  ^. RemoveNodes.location
-        nodeIds         = request  ^. RemoveNodes.nodeIds
+        nodeLocs        = request  ^. RemoveNodes.nodeLocs
         failure inverse = whenM (isOwnRequest requestId) $ revertRemoveNodes request inverse
         success _       = inCurrentLocation location $ \path -> do
             ownRequest    <- isOwnRequest requestId
             if ownRequest then
                 --TODO[LJK]: This is left to remind to set Confirmed flag in changes
                 return ()
-            else void $ localRemoveNodes $ convert . (path,) <$> nodeIds
+            else void $ localRemoveNodes $ prependPath path <$> nodeLocs
 
     RemovePortResponse response -> handleResponse response success failure where
         requestId       = response ^. Response.requestId
@@ -250,7 +259,7 @@ handle (Event.Batch ev) = Just $ case ev of
             if ownRequest then
                 --TODO[LJK]: This is left to remind to set Confirmed flag in changes
                 return ()
-            else void $ localRemovePort (convert (path, portRef))
+            else void $ localRemovePort $ prependPath path portRef
 
     RenameNodeResponse response -> handleResponse response success failure where
         requestId       = response ^. Response.requestId
@@ -338,7 +347,7 @@ handle (Event.Batch ev) = Just $ case ev of
             ownRequest    <- isOwnRequest requestId
             if ownRequest then
                 return ()
-            else void $ localSetPortDefault (convert (path, portRef)) defaultVal
+            else void $ localSetPortDefault (prependPath path portRef) defaultVal
 
     TypeCheckResponse response -> handleResponse response doNothing doNothing
 

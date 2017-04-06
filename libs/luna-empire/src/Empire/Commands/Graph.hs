@@ -25,13 +25,13 @@ module Empire.Commands.Graph
     , decodeLocation
     , disconnect
     , getNodeMeta
-    , getNodeIdSequence
     , getBuffer
     , getCode
     , getGraph
     , getNodes
     , getConnections
     , setPortDefault
+    , getPortDefault
     , renameNode
     , dumpGraphViz
     , openFile
@@ -46,8 +46,9 @@ import           Control.Monad                 (forM, forM_)
 import           Control.Monad.Catch           (MonadCatch(..))
 import           Control.Monad.State           hiding (when)
 import           Control.Arrow                 ((&&&))
+import           Control.Monad.Error           (throwError)
 import           Data.Coerce                   (coerce)
-import           Data.List                     (sort)
+import           Data.List                     (sort, group)
 import qualified Data.Map                      as Map
 import           Data.Maybe                    (catMaybes, isJust)
 import           Data.Foldable                 (toList)
@@ -77,6 +78,8 @@ import qualified Empire.API.Data.Graph           as APIGraph
 import           Empire.API.Data.GraphLocation   (GraphLocation (..))
 import           Empire.API.Data.Node            (Node (..), NodeId)
 import qualified Empire.API.Data.Node            as Node
+import           Empire.API.Data.NodeLoc         (NodeLoc (..))
+import qualified Empire.API.Data.NodeLoc         as NodeLoc
 import           Empire.API.Data.NodeMeta        (NodeMeta)
 import qualified Empire.API.Data.NodeMeta        as NodeMeta
 import           Empire.API.Data.Port            (InPort (..), OutPort (..), PortId (..))
@@ -101,9 +104,10 @@ import qualified Empire.Commands.Publisher       as Publisher
 import           Empire.Empire
 
 import qualified Luna.IR            as IR
-import qualified OCI.IR.Combinators as IR (changeSource, deleteSubtree, narrowTerm, replaceNode)
+import qualified OCI.IR.Combinators as IR (replaceSource, deleteSubtree, narrowTerm)
 import           Luna.Syntax.Text.Parser.Marker (MarkedExprMap(..))
 import qualified Luna.Syntax.Text.Parser.Marker as Luna
+
 
 generateNodeName :: ASTOp m => m String
 generateNodeName = do
@@ -154,7 +158,7 @@ prepareLambdaChild tgt ref = do
                          then Just $ BH.ExprChild $ BH.ExprItem Map.empty (BH.AnonymousNode lambdaOutput)
                          else Nothing
             lamItem    = BH.LamItem portMapping tgt (Map.empty & at lambdaUUID .~ anonOutput) lambdaBody
-        IR.writeLayer @Marker (Just $ OutPortRef lambdaUUID Port.All) lambdaOutput
+        IR.putLayer @Marker lambdaOutput $ Just $ OutPortRef (NodeLoc def lambdaUUID) Port.All
         return $ Just lamItem
     else return Nothing
 
@@ -173,8 +177,8 @@ prepareExprChild tgt ref = do
 
 updateNodeSequenceWithOutput :: ASTOp m => Maybe NodeRef -> m ()
 updateNodeSequenceWithOutput outputRef = do
-    newSeq <- makeCurrentSeq
-    updateGraphSeq newSeq outputRef
+    newSeq <- makeCurrentSeq outputRef
+    updateGraphSeq newSeq
 
 updateNodeSequence :: ASTOp m => m ()
 updateNodeSequence = do
@@ -182,45 +186,24 @@ updateNodeSequence = do
     outputRef  <- mapM ASTRead.getLambdaOutputRef currentTgt
     updateNodeSequenceWithOutput outputRef
 
-makeCurrentSeq :: ASTOp m => m (Maybe NodeRef)
-makeCurrentSeq = do
-  allNodes   <- uses Graph.breadcrumbHierarchy BH.topLevelIDs
-  sortedRefs <- AST.sortByPosition allNodes
-  AST.makeSeq sortedRefs
+makeCurrentSeq :: ASTOp m => Maybe NodeRef -> m (Maybe NodeRef)
+makeCurrentSeq out = do
+  allNodes    <- uses Graph.breadcrumbHierarchy BH.topLevelIDs
+  sortedRefs  <- AST.sortByPosition allNodes
+  let withOut = fmap head $ group $ sortedRefs ++ toList out
+  AST.makeSeq withOut
 
-updateGraphSeq :: ASTOp m => Maybe NodeRef -> Maybe NodeRef -> m ()
-updateGraphSeq newSeq outputRef = do
+updateGraphSeq :: ASTOp m => Maybe NodeRef -> m ()
+updateGraphSeq newOut = do
     oldSeq     <- preuse $ Graph.breadcrumbHierarchy . BH.body
     currentTgt <- ASTRead.getCurrentASTTarget
     outLink    <- mapM ASTRead.getFirstNonLambdaLink currentTgt
-    newOut     <- case (outputRef, newSeq) of
-        (Just ref, Just new) -> Just . IR.generalize <$> IR.seq new ref
-        (Just ref, Nothing)  -> return $ Just ref
-        (Nothing,  Just n)   -> return $ Just n
-        _                    -> return Nothing
     case (,) <$> outLink <*> newOut of
-        Just (l, o) -> IR.changeSource l o
+        Just (l, o) -> IR.replaceSource o l
         Nothing     -> return ()
     when (newOut /= oldSeq) $ mapM_ ASTRemove.removeSubtree oldSeq
     Graph.breadcrumbHierarchy . BH._ToplevelParent . BH.topBody .= newOut
     forM_ newOut $ (Graph.breadcrumbHierarchy . BH.body .=)
-
--- TODO[MK]: Figure out the logic of seqing and migrate to a uniform solution
-getNodeIdSequence :: GraphLocation -> Empire [NodeId]
-getNodeIdSequence loc = withGraph loc $ runASTOp $ do
-    lref <- ASTRead.getCurrentASTTarget
-    nodeSeq <- do
-        bodySeq <- case lref of
-            Just l -> ASTRead.getLambdaBodyRef l
-            _      -> preuse $ Graph.breadcrumbHierarchy . BH.body
-        case bodySeq of
-            Just b -> AST.readSeq b
-            _      -> return []
-    catMaybes <$> mapM nodeIdInsideLambda nodeSeq
-
-nodeIdInsideLambda :: ASTOp m => NodeRef -> m (Maybe NodeId)
-nodeIdInsideLambda node = (ASTRead.getVarNode node >>= ASTRead.getNodeId) `catch`
-    (\(_e :: NotUnifyException) -> return Nothing)
 
 addPort :: GraphLocation -> NodeId -> Int -> Empire Node
 addPort loc nid position = withGraph loc $ runASTOp $ do
@@ -313,7 +296,7 @@ setNodeExpression loc nodeId expr = withTC loc False $ do
                              else Nothing
                 lamItem    = BH.LamItem portMapping (BH.MatchNode refNode) (Map.empty & at lambdaUUID .~ anonOutput) lambdaBody
             Graph.breadcrumbHierarchy . BH.children . at nodeId  ?= BH.LambdaChild lamItem
-            IR.writeLayer @Marker (Just $ OutPortRef lambdaUUID Port.All) lambdaOutput
+            IR.putLayer @Marker lambdaOutput $ Just $ OutPortRef (NodeLoc def lambdaUUID) Port.All
         updateNodeSequence
         GraphBuilder.buildNode nodeId
     Publisher.notifyNodeUpdate loc node
@@ -346,10 +329,10 @@ connect :: GraphLocation -> OutPortRef -> AnyPortRef -> Empire Connection
 connect loc outPort anyPort = withTC loc False $ connectNoTC loc outPort anyPort
 
 connectPersistent :: ASTOp m => OutPortRef -> AnyPortRef -> m Connection
-connectPersistent src@(OutPortRef srcNodeId srcPort) (InPortRef' dst@(InPortRef dstNodeId dstPort)) = do
+connectPersistent src@(OutPortRef (NodeLoc _ srcNodeId) srcPort) (InPortRef' dst@(InPortRef (NodeLoc _ dstNodeId) dstPort)) = do
     let inputPos = case srcPort of
-            All            -> 0   -- FIXME: do not equalise All with Projection 0
-            Projection int -> int
+            All              -> 0   -- FIXME: do not equalise All with Projection 0
+            Projection int _ -> int
     isPatternMatch <- ASTRead.nodeIsPatternMatch srcNodeId
     if isPatternMatch then do
         case dstPort of
@@ -360,10 +343,10 @@ connectPersistent src@(OutPortRef srcNodeId srcPort) (InPortRef' dst@(InPortRef 
             Self    -> makeAcc srcNodeId dstNodeId inputPos
             Arg num -> makeApp srcNodeId dstNodeId num inputPos
     return $ Connection src dst
-connectPersistent src@(OutPortRef srcNodeId srcPort) (OutPortRef' dst@(OutPortRef dstNodeId dstPort)) = do
+connectPersistent src@(OutPortRef (NodeLoc _ srcNodeId) srcPort) (OutPortRef' dst@(OutPortRef (NodeLoc _ dstNodeId) dstPort)) = do
     case dstPort of
-        All          -> connectToPattern srcNodeId dstNodeId
-        Projection _ -> $notImplemented
+        All            -> connectToPattern srcNodeId dstNodeId
+        Projection _ _ -> $notImplemented
 
 data CannotConnectException = CannotConnectException NodeId NodeId
     deriving Show
@@ -374,14 +357,14 @@ instance Exception CannotConnectException where
 
 transplantMarker :: ASTOp m => NodeRef -> NodeRef -> m ()
 transplantMarker donor recipient = do
-    marker     <- IR.readLayer @Marker donor
+    marker     <- IR.getLayer @Marker donor
     varsInside <- ASTRead.getVarsInside recipient
     let indexedVars = zip varsInside [0..]
 
-        markerPort (Just (OutPortRef nid _)) index = Just (OutPortRef nid (Projection index))
+        markerPort (Just (OutPortRef nid _)) index = Just (OutPortRef nid (Projection index All))
         markerPort _                         _     = Nothing
     forM_ indexedVars $ \(var, index) -> do
-        IR.writeLayer @Marker (markerPort marker index) var
+        IR.putLayer @Marker var $ markerPort marker index
 
 data PatternLocation = Var | Target | Nowhere
 
@@ -450,15 +433,15 @@ connectToPattern src dst = do
     value <- ASTRead.getASTVar src
     ASTModify.rewireNode dst value
 
-    return $ Connection (OutPortRef src Port.All) (InPortRef dst (Port.Arg 0))
+    return $ Connection (OutPortRef (NodeLoc def src) Port.All) (InPortRef (NodeLoc def dst) (Port.Arg 0))
 
 connectToMatchedVariable :: ASTOp m => OutPortRef -> InPortRef -> Int -> m ()
-connectToMatchedVariable (OutPortRef srcNodeId srcPort) (InPortRef dstNodeId dstPort) pos = do
+connectToMatchedVariable (OutPortRef (NodeLoc _ srcNodeId) srcPort) (InPortRef (NodeLoc _ dstNodeId) dstPort) pos = do
     pattern    <- ASTRead.getASTVar srcNodeId
     varsInside <- ASTRead.getVarsInside pattern
     let inputPos = case srcPort of
-            All            -> 0   -- FIXME: do not equalise All with Projection 0
-            Projection int -> int
+            All              -> 0   -- FIXME: do not equalise All with Projection 0
+            Projection int _ -> int
     let varToConnectTo = varsInside `Safe.atMay` inputPos
     case varToConnectTo of
         Nothing  -> throwM $ CannotConnectException srcNodeId dstNodeId
@@ -485,6 +468,11 @@ connectNoTC loc outPort anyPort = do
         Publisher.notifyNodeUpdate loc n
     return connection
 
+getPortDefault :: GraphLocation -> AnyPortRef -> Empire PortDefault
+getPortDefault loc (OutPortRef' (OutPortRef (NodeLoc _ nodeId) _))      = withGraph loc $ runASTOp $ GraphBuilder.getDefault =<< GraphUtils.getASTTarget nodeId
+getPortDefault loc (InPortRef'  (InPortRef  _ Self))        = throwError "Cannot set default value on self port"
+getPortDefault loc (InPortRef'  (InPortRef  (NodeLoc _ nodeId) (Arg x))) = withGraph loc $ runASTOp $ flip GraphBuilder.getInPortDefault x =<< GraphUtils.getASTTarget nodeId
+
 setPortDefault :: GraphLocation -> AnyPortRef -> PortDefault -> Empire ()
 setPortDefault loc portRef val = withTC loc False $ runASTOp $ setPortDefault' portRef val
 
@@ -492,17 +480,17 @@ setPortDefault' :: ASTOp m => AnyPortRef -> PortDefault -> m ()
 setPortDefault' portRef val = do
     parsed <- ASTParse.parsePortDefault val
     (nodeId, newRef) <- case portRef of
-        InPortRef' (InPortRef nodeId port) -> do
+        InPortRef' (InPortRef (NodeLoc _ nodeId) port) -> do
             ref <- GraphUtils.getASTTarget nodeId
             newRef <- case port of
                 Self    -> ASTBuilder.makeAccessor parsed ref
                 Arg num -> ASTBuilder.applyFunction ref parsed num
             return (nodeId, newRef)
-        OutPortRef' (OutPortRef nodeId _) -> return (nodeId, parsed)
+        OutPortRef' (OutPortRef (NodeLoc _ nodeId) _) -> return (nodeId, parsed)
     GraphUtils.rewireNode nodeId newRef
 
 disconnect :: GraphLocation -> InPortRef -> Empire ()
-disconnect loc port@(InPortRef nid _) = withTC loc False $ do
+disconnect loc port@(InPortRef (NodeLoc _ nid) _) = withTC loc False $ do
     nodeToUpdate <- runASTOp $ do
         disconnectPort port
 
@@ -596,7 +584,7 @@ loadCode code = do
         assignment <- ASTRead.isMatch expr
         if assignment then do
             var <- ASTRead.getVarNode expr
-            IR.writeLayer @Marker (Just $ OutPortRef uuid Port.All) var
+            IR.putLayer @Marker var (Just $ OutPortRef (NodeLoc def uuid) Port.All)
             let nodeItem = BH.ExprItem Map.empty (BH.MatchNode expr)
             Graph.breadcrumbHierarchy . BH.children . at uuid ?= BH.ExprChild nodeItem
 
@@ -631,13 +619,12 @@ withGraph (GraphLocation file breadcrumb) = withBreadcrumb file breadcrumb
 
 getOutEdges :: ASTOp m => NodeId -> m [InPortRef]
 getOutEdges nodeId = do
-    graphRep <- GraphBuilder.buildGraph
-    let edges    = graphRep ^. APIGraph.connections
-        filtered = filter (\(opr, _) -> opr ^. PortRef.srcNodeId == nodeId) edges
+    edges <- GraphBuilder.buildConnections
+    let filtered = filter (\(opr, _) -> opr ^. PortRef.srcNodeId == nodeId) edges
     return $ view _2 <$> filtered
 
 disconnectPort :: ASTOp m => InPortRef -> m ()
-disconnectPort (InPortRef dstNodeId dstPort) = do
+disconnectPort (InPortRef (NodeLoc _ dstNodeId) dstPort) = do
     isPatternMatch <- ASTRead.nodeIsPatternMatch dstNodeId
     if isPatternMatch then do
         nothing <- IR.generalize <$> IR.cons_ "Nothing"

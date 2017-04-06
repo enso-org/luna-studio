@@ -80,7 +80,8 @@ type EmpireLayers = '[AnyExpr // Model, AnyExprLink // Model,
 
 type EmpireEmitters = '[New // AnyExpr, New // AnyExprLink,
                         Import // AnyExpr, Import // AnyExprLink,
-                        Delete // AnyExpr, Delete // AnyExprLink]
+                        Delete // AnyExpr, Delete // AnyExprLink,
+                        OnDeepDelete // AnyExpr]
 
 data EmpirePass
 type instance Abstract   EmpirePass = EmpirePass

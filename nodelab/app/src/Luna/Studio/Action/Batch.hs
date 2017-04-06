@@ -4,13 +4,13 @@ import           Data.Position                        (Position, toTuple)
 import           Data.UUID.Types                      (UUID)
 import           Empire.API.Data.NodeMeta             (NodeMeta (NodeMeta))
 import           Empire.API.Data.PortDefault          (PortDefault)
+import           Empire.API.Data.PortRef              (AnyPortRef (InPortRef', OutPortRef'), InPortRef (InPortRef), OutPortRef (OutPortRef),
+                                                       dstNodeLoc, nodeLoc)
 import           Empire.API.Data.Project              (ProjectId)
 import           Luna.Studio.Action.Command           (Command)
 import           Luna.Studio.Action.UUID              (registerRequest)
 import qualified Luna.Studio.Batch.Connector.Commands as BatchCmd
 import           Luna.Studio.Batch.Workspace          (Workspace)
-import           Luna.Studio.Data.PortRef             (AnyPortRef (InPortRef', OutPortRef'), InPortRef (InPortRef), OutPortRef (OutPortRef),
-                                                       dstNodeLoc, nodeLoc)
 import           Luna.Studio.Prelude
 import           Luna.Studio.React.Model.Connection   (ConnectionId)
 import           Luna.Studio.React.Model.Node         (ExpressionNode, NodeLoc)

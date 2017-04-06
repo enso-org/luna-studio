@@ -1,5 +1,7 @@
+export ATOM_HOME=$LUNA_HOME
 ./script/atom-build && \
 cd atom && \
 rm -rf node_modules && \
 apm install . && \
 apm link .
+export ATOM_HOME=~/.atom

@@ -10,10 +10,10 @@ import qualified Empire.API.Data.Breadcrumb    as Breadcrumb
 import           Empire.API.Data.GraphLocation (GraphLocation (..))
 import qualified Empire.API.Data.GraphLocation as GraphLocation
 import           Empire.API.Data.Node          (Node, NodeId)
-import           Empire.API.Data.NodeLoc       (NodeLoc (NodeLoc), NodePath (NodePath))
-
+import           Empire.API.Data.NodeLoc       (HasBreadcrumb (..), NodeLoc (NodeLoc), NodePath (NodePath))
+import           Empire.API.Data.Project       (Project, ProjectId)
+import qualified Empire.API.Data.Project       as Project
 import           Text.ScopeSearcher.Item       (Items)
-
 
 
 data Workspace = Workspace { _currentLocation  :: GraphLocation
@@ -34,17 +34,13 @@ uiGraphLocation' w = GraphLocation library breadcrumb' where
     breadcrumb' = w ^. currentLocation . GraphLocation.breadcrumb
     library     = w ^. currentLocation . GraphLocation.filePath
 
+upperWorkspace :: Workspace -> Workspace
+upperWorkspace w = w & currentLocation . GraphLocation.breadcrumb . Breadcrumb.items .~ newItems where
+    newItems = fromMaybe def $ mayTail $ w ^. currentLocation . GraphLocation.breadcrumb . Breadcrumb.items
+
 uiGraphLocation :: Getter Workspace GraphLocation
 uiGraphLocation = to uiGraphLocation'
 
-instance Convertible (Workspace, NodeLoc) (Breadcrumb BreadcrumbItem) where
-    convert (workspace, nodeLoc) = convert (workspace ^. currentLocation, nodeLoc)
 
-instance Convertible (Workspace, NodeLoc) (Workspace, NodeId) where
-    convert (workspace, nodeLoc) = (workspace & currentLocation .~ newLocation, nodeId') where
-        (newLocation, nodeId') = convert (workspace ^. currentLocation, nodeLoc)
-
-instance Convertible (GraphLocation, Breadcrumb BreadcrumbItem, NodeId) (Maybe NodeLoc) where
-    convert (graphLoc, breadcrumb', nodeId') = do
-        localBc' <- Breadcrumb <$> List.stripPrefix (graphLoc ^. GraphLocation.breadcrumb . Breadcrumb.items) (breadcrumb' ^. Breadcrumb.items)
-        return $ NodeLoc (NodePath localBc') nodeId'
+instance HasBreadcrumb Workspace where
+    breadcrumb = currentLocation . GraphLocation.breadcrumb

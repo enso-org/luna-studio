@@ -24,13 +24,13 @@ import qualified Empire.API.Data.Node                  as Empire
 import           Empire.API.Data.NodeLoc               (NodeLoc (NodeLoc), NodePath)
 import qualified Empire.API.Data.NodeMeta              as NodeMeta
 import           Empire.API.Graph.CollaborationUpdate  (ClientId)
-import           Empire.API.Graph.NodeResultUpdate     (NodeValue)
+import           Empire.API.Graph.NodeResultUpdate     (NodeValue, NodeValue (Error))
 import           Luna.Studio.Prelude
-import           Luna.Studio.React.Model.IsNode        as X (IsNode (..))
-import           Luna.Studio.React.Model.Node.EdgeNode (EdgeNodesMap)
-import           Luna.Studio.React.Model.Port          (PortsMap, isInPort)
-import qualified Luna.Studio.React.Model.Port          as Port
-import           Luna.Studio.State.Collaboration       (ColorId)
+import           Luna.Studio.React.Model.IsNode           as X (IsNode (..))
+import           Luna.Studio.React.Model.Node.SidebarNode (SidebarNodesMap)
+import           Luna.Studio.React.Model.Port             (PortsMap, isInPort)
+import qualified Luna.Studio.React.Model.Port             as Port
+import           Luna.Studio.State.Collaboration          (ColorId)
 
 
 data ExpressionNode = ExpressionNode { _nodeLoc'              :: NodeLoc
@@ -41,12 +41,11 @@ data ExpressionNode = ExpressionNode { _nodeLoc'              :: NodeLoc
                                      , _position              :: Position
                                      , _visualizationsEnabled :: Bool
                                      , _code                  :: Maybe Text
-
                                      , _value                 :: Maybe NodeValue
                                      , _zPos                  :: Int
                                      , _isSelected            :: Bool
                                      , _mode                  :: Mode
-                                     , _nameEdit              :: Maybe Text
+                                     , _isNameEdited          :: Bool
                                      , _execTime              :: Maybe Integer
                                      , _collaboration         :: Collaboration
                                      } deriving (Eq, Generic, NFData, Show)
@@ -62,7 +61,7 @@ data ExpandedMode = Editor
 
 data Subgraph = Subgraph
   { _expressionNodes :: ExpressionNodesMap
-  , _edgeNodes       :: EdgeNodesMap
+  , _sidebarNodes    :: SidebarNodesMap
   , _monads          :: [MonadPath]
   } deriving (Default, Eq, Generic, NFData, Show)
 
@@ -94,7 +93,7 @@ instance Convertible (NodePath, Empire.Node, Text) ExpressionNode where
         {- zPos                  -} def
         {- isSelected            -} False
         {- mode                  -} def
-        {- nameEdit              -} def
+        {- isNameEdited          -} False
         {- execTime              -} def
         {- collaboration         -} def
 
@@ -126,6 +125,11 @@ toExpressionNodesMap = HashMap.fromList . map (view nodeId &&& id)
 
 subgraphs :: Applicative f => (Map BreadcrumbItem Subgraph -> f (Map BreadcrumbItem Subgraph)) -> ExpressionNode -> f ExpressionNode
 subgraphs = mode . _Expanded . _Function
+
+returnsError :: ExpressionNode -> Bool
+returnsError node = case node ^. value of
+    Just (Error _) -> True
+    _              -> False
 
 isMode :: Mode -> ExpressionNode -> Bool
 isMode mode' node = node ^. mode == mode'

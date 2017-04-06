@@ -65,6 +65,21 @@ $ cd $REPO_DIR/nodelab
 $ brunch watch --server # or serve $REPO_DIR/nodelab/www using any HTTP server
 ```
 
+### Run GUI in Atom
+
+Create folder ```.luna-atom``` (name can be changed) and export path to it as ```LUNA_HOME```. Then:
+
+```shell
+$ cd $REPO_DIR/internals
+$ stack build --fast
+$ cd $REPO_DIR/nodelab
+$ ./script/atom-install
+$ ./script/atom-run
+```
+
+Every change in nodelab code requires rerun of ```atom-install``` script and reload of Atom (OSX shortcut: ```ctrl + alt + cmd + L```, Linux shortcut: ```ctrl + shift + F5```).
+
+
 ## Known problems
 
 * If you have experienced problems like: ```Oops. Connection to the server was closed. Please reload page to reconnect again.``` open browser console and ```setBackendAddress("ws://localhost:8088")``` and reload browser.

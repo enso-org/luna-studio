@@ -25,6 +25,7 @@ import qualified Luna.Syntax.Text.Pretty.Pretty as CodeGen
 
 getTypeRep :: ASTOp m => NodeRef -> m TypeRep
 getTypeRep tp = match tp $ \case
+    Monadic s _   -> getTypeRep =<< IR.source s
     Cons   n args -> TCons (pathNameToString n) <$> mapM (getTypeRep <=< IR.source) args
     Lam    a out  -> TLam <$> (getTypeRep =<< IR.source a) <*> (getTypeRep =<< IR.source out)
     Acc    t n    -> TAcc (nameToString n) <$> (getTypeRep =<< IR.source t)

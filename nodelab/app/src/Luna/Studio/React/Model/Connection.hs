@@ -7,29 +7,34 @@ import           Data.HashMap.Strict          (HashMap)
 import qualified Data.HashMap.Strict          as HashMap
 import           Data.Position                (Position)
 import qualified Empire.API.Data.Connection   as Empire
+import           Empire.API.Data.PortRef      (AnyPortRef (InPortRef', OutPortRef'), InPortRef, OutPortRef)
+import qualified Empire.API.Data.PortRef      as PortRef
 import           Luna.Studio.Data.Color       (Color)
-import           Luna.Studio.Data.PortRef     (AnyPortRef (InPortRef', OutPortRef'), InPortRef, OutPortRef)
-import qualified Luna.Studio.Data.PortRef     as PortRef
 import           Luna.Studio.Prelude
 import           Luna.Studio.React.Model.Node (NodeLoc)
 import           Luna.Studio.React.Model.Port (InPort, OutPort)
 
 
 type ConnectionId = InPortRef
+data Mode = Normal | Sidebar | Highlighted | Dimmed deriving (Eq, Show, Typeable, Generic)
+
+instance ToJSON Mode
 
 data Connection = Connection { _src    :: OutPortRef
                              , _dst    :: InPortRef
                              , _srcPos :: Position
                              , _dstPos :: Position
+                             , _mode   :: Mode
                              , _color  :: Color
                              } deriving (Eq, Show, Typeable, Generic)
 
 makeLenses ''Connection
 instance ToJSON Connection
 
-data CurrentConnection = CurrentConnection { _currentFrom         :: Position
-                                           , _currentTo           :: Position
-                                           , _currentColor        :: Color
+data CurrentConnection = CurrentConnection { _currentFrom  :: Position
+                                           , _currentTo    :: Position
+                                           , _currentMode  :: Mode
+                                           , _currentColor :: Color
                                            } deriving (Eq, Show, Typeable, Generic)
 
 makeLenses ''CurrentConnection
@@ -77,19 +82,17 @@ containsPortRef (OutPortRef' outPortRef) conn = conn ^. src == outPortRef
 toValidEmpireConnection :: AnyPortRef -> AnyPortRef -> Maybe Empire.Connection
 toValidEmpireConnection (OutPortRef' src') (InPortRef' dst')     =
     if src' ^. PortRef.srcNodeLoc /= dst' ^. PortRef.dstNodeLoc
-    then Just $ Empire.Connection (convert src') (convert dst')
+    then Just $ Empire.Connection src' dst'
     else Nothing
 toValidEmpireConnection dst'@(InPortRef' _) src'@(OutPortRef' _) = toValidEmpireConnection src' dst'
 toValidEmpireConnection _ _                                      = Nothing
 
 
 instance Convertible Connection CurrentConnection where
-    convert = CurrentConnection <$> view srcPos <*> view dstPos <*> view color
+    convert = CurrentConnection <$> view srcPos <*> view dstPos <*> view mode <*> view color
 
 toConnection :: OutPortRef -> InPortRef -> CurrentConnection -> Connection
-toConnection src' dst' = Connection src' dst' <$> view currentFrom <*> view currentTo <*> view currentColor
+toConnection src' dst' = Connection src' dst' <$> view currentFrom <*> view currentTo <*> view currentMode <*> view currentColor
 
 instance Convertible Connection Empire.Connection where
-    convert conn = Empire.Connection
-        {- src -} (convert $ conn ^. src)
-        {- dst -} (convert $ conn ^. dst)
+    convert = Empire.Connection <$> view src <*> view dst

@@ -1,11 +1,11 @@
 module Luna.Studio.Action.Basic.DrawConnection where
 
+import           Empire.API.Data.PortRef             (InPortRef, OutPortRef)
 import           JS.Scene                            (inputSidebar, outputSidebar)
 import           Luna.Studio.Action.Command          (Command)
 import           Luna.Studio.Action.State.Model      (createConnectionModel)
-import           Luna.Studio.Action.State.NodeEditor (getConnections, getEdgeNodes, modifyNodeEditor)
+import           Luna.Studio.Action.State.NodeEditor (getConnections, getSidebarNodes, modifyNodeEditor)
 import qualified Luna.Studio.Action.State.NodeEditor as NodeEditor
-import           Luna.Studio.Data.PortRef            (InPortRef, OutPortRef)
 import           Luna.Studio.Prelude
 import           Luna.Studio.React.Model.Connection  (Connection, ConnectionId, connectionId, dst, src, toConnectionsMap)
 import           Luna.Studio.React.Model.Node        (NodeLoc, nodeLoc)
@@ -22,7 +22,7 @@ createConnection src' dst' = do
     newInputSidebar   <- view inputSidebar  `fmap2` use (ui . scene)
     newOutputSidebar  <- view outputSidebar `fmap2` use (ui . scene)
     when (newInputSidebar /= prevInputSidebar || newOutputSidebar /= prevOutputSidebar) $
-        void redrawConnectionsForEdgeNodes
+        void redrawConnectionsForSidebarNodes
     return $ mayConnModel
 
 redrawConnection :: ConnectionId -> Command State Bool
@@ -57,6 +57,6 @@ redrawConnectionsForNodes nodeLocs = do
     mapM_ NodeEditor.addConnection conns
     return $ map (view connectionId) conns
 
-redrawConnectionsForEdgeNodes :: Command State [ConnectionId]
-redrawConnectionsForEdgeNodes = getEdgeNodes >>=
+redrawConnectionsForSidebarNodes :: Command State [ConnectionId]
+redrawConnectionsForSidebarNodes = getSidebarNodes >>=
     redrawConnectionsForNodes . map (view nodeLoc)

@@ -27,6 +27,8 @@ isEventHandled = isJust . handleKeyApp
 handleKeyApp :: KeyboardEvent -> Maybe Command
 handleKeyApp evt
     | Keys.withoutMods      evt Keys.esc        = Just Cancel
+    | Keys.withoutMods      evt Keys.l          = Just Autolayout
+    | Keys.withCtrl         evt Keys.l          = Just AutolayoutAll
     -- camera
     | Keys.withCtrl         evt Keys.leftArrow  = Just PanLeft
     | Keys.withCtrl         evt Keys.rightArrow = Just PanRight

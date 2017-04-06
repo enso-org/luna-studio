@@ -22,8 +22,8 @@ import           Luna.Studio.Action.State.NodeEditor     (getSelectedNodes)
 import qualified Luna.Studio.Action.State.NodeEditor     as NodeEditor
 import           Luna.Studio.Action.UUID                 (getUUID)
 import           Luna.Studio.Prelude
-import           Luna.Studio.React.Model.Node            (EdgeNode, ExpressionNode, Node (Edge, Expression), NodeLoc (NodeLoc), NodePath,
-                                                          nodeLoc, ports)
+import           Luna.Studio.React.Model.Node            (ExpressionNode, Node (Expression, Sidebar), NodeLoc (NodeLoc), NodePath,
+                                                          SidebarNode, nodeLoc, ports)
 import           Luna.Studio.React.Model.Port            (Mode (Invisible), ensureVisibility, mode)
 import           Luna.Studio.State.Global                (State)
 
@@ -55,11 +55,11 @@ localAddNodes = mapM_ localAddNode
 
 localAddNode :: Node -> Command State ()
 localAddNode (Expression node) = localAddExpressionNode node
-localAddNode (Edge edge)       = localAddEdgeNode edge
+localAddNode (Sidebar    node) = localAddSidebarNode node
 
-localAddEdgeNode :: EdgeNode -> Command State ()
-localAddEdgeNode node = do
-    NodeEditor.addEdgeNode node
+localAddSidebarNode :: SidebarNode -> Command State ()
+localAddSidebarNode node = do
+    NodeEditor.addSidebarNode node
     updateScene
 
 localAddExpressionNode :: ExpressionNode -> Command State ()

@@ -2,13 +2,13 @@ module Luna.Studio.Action.Basic.RemoveConnection where
 
 import           Control.Monad                       (filterM)
 import           Empire.API.Data.NodeLoc             (NodeLoc)
+import           Empire.API.Data.PortRef             (dstNodeLoc)
 import           Luna.Studio.Action.Basic.UpdateNode (updatePortSelfVisibility)
 import qualified Luna.Studio.Action.Batch            as Batch
 import           Luna.Studio.Action.Command          (Command)
 import           Luna.Studio.Action.State.NodeEditor (getConnectionsBetweenNodes, getConnectionsContainingNode,
                                                       getConnectionsContainingNodes, inGraph)
 import qualified Luna.Studio.Action.State.NodeEditor as NodeEditor
-import           Luna.Studio.Data.PortRef            (dstNodeLoc)
 import           Luna.Studio.Prelude
 import           Luna.Studio.React.Model.Connection  (ConnectionId, connectionId)
 import           Luna.Studio.State.Global            (State)

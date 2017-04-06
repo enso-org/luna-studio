@@ -2,14 +2,14 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Luna.Studio.React.View.Port where
 
+import           Empire.API.Data.PortRef           (AnyPortRef, toAnyPortRef)
 import           Luna.Studio.Action.State.Model    (portAngleStart, portAngleStop)
-import           Luna.Studio.Data.PortRef          (AnyPortRef, toAnyPortRef)
 import qualified Luna.Studio.Event.Mouse           as Mouse
 import qualified Luna.Studio.Event.UI              as UI
 import           Luna.Studio.Prelude
 import qualified Luna.Studio.React.Event.Port      as Port
 import           Luna.Studio.React.Model.App       (App)
-import           Luna.Studio.React.Model.Constants (lineHeight, nodeRadius, nodeRadius')
+import           Luna.Studio.React.Model.Constants (lineHeight, nodeRadius, nodeRadius', gridSize)
 import           Luna.Studio.React.Model.Node      (NodeLoc)
 --import           Luna.Studio.React.Model.Port (Port (..))
 import           Luna.Studio.React.Model.Port      (InPort (Self), Mode (Highlighted, Invisible), OutPort (All), Port,
@@ -122,7 +122,7 @@ portSingle_ ref nl p = do
         portType  = toString $ p ^. Port.valueType
         isInput   = isInPort portId
         color     = convert $ p ^. Port.color
-        classes   = Style.prefixFromList $ [ "port", "port--o--single" ] ++ if isHighlighted p then ["hover"] else []
+        classes   = Style.prefixFromList $ [ "port", "port--o", "port--o--single" ] ++ if isHighlighted p then ["hover"] else []
         r1 :: Double -> JSString
         r1 = jsShow2 . (+) nodeRadius
         r2 = jsShow2 nodeRadius'
@@ -248,6 +248,28 @@ portIOExpanded_ ref nl p = if p ^. Port.portId == InPortId Self then portSelf_ r
               , "key"       $= (jsShow portId <> jsShow num <> "-select")
               , "r"         $= jsShow2 (lineHeight/1.5)
               , "cy"        $= (py <> "px")
+              ]
+            ) mempty
+
+portPhantom_ :: Ref App -> AnyPortRef -> ReactElementM ViewEventHandler ()
+portPhantom_ ref portRef = do
+    g_
+        [ "key"       $= "port-phantom"
+        , "className" $= Style.prefixFromList ["port", "port--i", "port--i--phantom"]
+        ] $ do
+        circle_
+            [ "className" $= Style.prefix "port__shape"
+            , "key"       $= "phantom-shape"
+            , "r"         $= jsShow2 3
+            , "fill"      $= "gray"
+            , "cy"        $= fromString (show (2 * gridSize) <> "px")
+            ] mempty
+        circle_
+            ( handlers ref portRef ++
+              [ "className" $= Style.prefix "port__select"
+              , "key"       $= "phantom-select"
+              , "r"         $= jsShow2 (lineHeight/1.5)
+              , "cy"        $= fromString (show (2 * gridSize) <> "px")
               ]
             ) mempty
 

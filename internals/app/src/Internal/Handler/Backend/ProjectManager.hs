@@ -11,27 +11,24 @@ import qualified Empire.API.Atom.IsSaved            as IsSaved
 import           Empire.API.Data.Breadcrumb         (Breadcrumb (..))
 import qualified Empire.API.Data.GraphLocation      as GraphLocation
 import           Empire.API.Data.Project            (Project, ProjectId)
+import qualified Empire.API.Response                as Response
 -- import qualified Empire.API.Project.CreateProject   as CreateProject
 -- import qualified Empire.API.Project.ExportProject   as ExportProject
 -- import qualified Empire.API.Project.ImportProject   as ImportProject
 -- import qualified Empire.API.Project.ListProjects    as ListProjects
 -- import qualified Empire.API.Project.OpenProject     as OpenProject
-import qualified Empire.API.Response             as Response
-import           GHCJS.Marshal.Pure              (pFromJSVal)
-import           JS.DownloadFile                 (downloadFile)
 import qualified Internal.Action.Batch           as BatchCmd (closeFile, isSaved, openFile, saveFile, setProject)
 import           Internal.Action.Command         (Command)
-import qualified Internal.Batch.Workspace        as Workspace
+-- import qualified Internal.Batch.Workspace        as Workspace
 import qualified Internal.Event.Batch            as Batch
-import qualified Internal.Event.CustomEvent      as CustomEvent
+-- import qualified Internal.Event.CustomEvent      as CustomEvent
 import qualified Internal.Event.Event                as Event
 import           Internal.Event.Event            (Event (Batch, CustomEvent, Atom))
 import           Internal.Event.Internal         (InternalEvent(..), ActionType(..))
 import           Internal.Handler.Backend.Common (doNothing, handleResponse)
 import           Internal.Prelude
 import           Internal.State.Global           (State)
-import qualified Internal.State.Global           as Global
-import Data.Char(toUpper)
+import           Data.Char                       (toUpper)
 
 handle :: Event -> Maybe (Command State ())
 

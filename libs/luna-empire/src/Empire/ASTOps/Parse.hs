@@ -36,6 +36,7 @@ import qualified Luna.Syntax.Text.Parser.Marker  as Parser (MarkedExprMap)
 import qualified Luna.Syntax.Text.Parser.Parser  as Parser
 import qualified Luna.Syntax.Text.Parser.Parsing as Parsing
 import qualified Luna.Syntax.Text.Source         as Source
+import qualified Luna.IR.Term.Literal            as Lit
 
 data ParserException e = ParserException e
     deriving (Show)
@@ -47,10 +48,10 @@ instance Exception e => Exception (ParserException e) where
 
 parseExpr :: ASTOp m => String -> m NodeRef
 parseExpr s = do
-    IR.writeAttr @Source.Source $ convert s
+    IR.putAttr @Source.Source $ convert s
     Parsing.parsingBase Parsing.expr
-    res     <- IR.readAttr @Parser.ParsedExpr
-    exprMap <- IR.readAttr @Parser.MarkedExprMap
+    res     <- IR.getAttr @Parser.ParsedExpr
+    exprMap <- IR.getAttr @Parser.MarkedExprMap
     return $ unwrap' res
 
 runUnitParser :: Text.Text -> Command Graph (NodeRef, Parser.MarkedExprMap)
@@ -65,9 +66,9 @@ runUnitParser code = do
     run $ do
         let protoFunc = (\body -> uncurry Parsing.seqLines body)
         Parsing.parsingBase (protoFunc <$> Parsing.discoverBlock Parsing.lineExpr) `catchAll` (\e -> throwM $ ParserException e)
-        res     <- IR.readAttr @Parser.ParsedExpr
-        exprMap <- IR.readAttr @Parser.MarkedExprMap
-        IR.writeLayer @CodeMarkers exprMap (unwrap' res)
+        res     <- IR.getAttr @Parser.ParsedExpr
+        exprMap <- IR.getAttr @Parser.MarkedExprMap
+        IR.putLayer @CodeMarkers (unwrap' res) exprMap
         return (unwrap' res, exprMap)
 
 runUnitReparser :: Text.Text -> NodeRef -> Command Graph (NodeRef, Parser.MarkedExprMap)
@@ -81,20 +82,20 @@ runUnitReparser code oldExpr = do
         run = runPass @ParserPass inits
     run $ do
         do
-            gidMapOld <- IR.readLayer @CodeMarkers oldExpr
+            gidMapOld <- IR.getLayer @CodeMarkers oldExpr
 
             -- parsing new file and updating updated analysis
             let protoFunc = (\body -> uncurry Parsing.seqLines body)
             Parsing.parsingBase (protoFunc <$> Parsing.discoverBlock Parsing.lineExpr) `catchAll` (\e -> throwM $ ParserException e)
-            gidMap    <- IR.readAttr @Parser.MarkedExprMap
+            gidMap    <- IR.getAttr @Parser.MarkedExprMap
 
             -- Preparing reparsing status
             rs        <- Parsing.cmpMarkedExprMaps gidMapOld gidMap
-            IR.writeAttr @Parser.ReparsingStatus (wrap rs)
+            IR.putAttr @Parser.ReparsingStatus (wrap rs)
 
-        res     <- IR.readAttr @Parser.ParsedExpr
-        exprMap <- IR.readAttr @Parser.MarkedExprMap
-        IR.writeLayer @CodeMarkers exprMap (unwrap' res)
+        res     <- IR.getAttr @Parser.ParsedExpr
+        exprMap <- IR.getAttr @Parser.MarkedExprMap
+        IR.putLayer @CodeMarkers (unwrap' res) exprMap
         return (unwrap' res, exprMap)
 
 runParser :: Text.Text -> Command Graph (NodeRef, Parser.MarkedExprMap)
@@ -108,9 +109,9 @@ runParser expr = do
         run = runPass @ParserPass inits
     run $ do
         Parsing.parsingBase Parsing.expr `catchAll` (\e -> throwM $ ParserException e)
-        res     <- IR.readAttr @Parser.ParsedExpr
-        exprMap <- IR.readAttr @Parser.MarkedExprMap
-        IR.writeLayer @CodeMarkers exprMap (unwrap' res)
+        res     <- IR.getAttr @Parser.ParsedExpr
+        exprMap <- IR.getAttr @Parser.MarkedExprMap
+        IR.putLayer @CodeMarkers (unwrap' res) exprMap
         return (unwrap' res, exprMap)
 
 runReparser :: Text.Text -> NodeRef -> Command Graph (NodeRef, Parser.MarkedExprMap, Parser.ReparsingStatus)
@@ -124,20 +125,20 @@ runReparser expr oldExpr = do
         run = runPass @ParserPass inits
     run $ do
         do
-            gidMapOld <- IR.readLayer @CodeMarkers oldExpr
+            gidMapOld <- IR.getLayer @CodeMarkers oldExpr
 
             -- parsing new file and updating updated analysis
             Parsing.parsingBase Parsing.nonAssignmentExpr `catchAll` (\e -> throwM $ ParserException e)
-            gidMap    <- IR.readAttr @Parser.MarkedExprMap
+            gidMap    <- IR.getAttr @Parser.MarkedExprMap
 
             -- Preparing reparsing status
             rs        <- Parsing.cmpMarkedExprMaps gidMapOld gidMap
-            IR.writeAttr @Parser.ReparsingStatus (wrap rs)
+            IR.putAttr @Parser.ReparsingStatus (wrap rs)
 
-        res     <- IR.readAttr @Parser.ParsedExpr
-        exprMap <- IR.readAttr @Parser.MarkedExprMap
-        IR.writeLayer @CodeMarkers exprMap (unwrap' res)
-        status  <- IR.readAttr @Parser.ReparsingStatus
+        res     <- IR.getAttr @Parser.ParsedExpr
+        exprMap <- IR.getAttr @Parser.MarkedExprMap
+        IR.putLayer @CodeMarkers (unwrap' res) exprMap
+        status  <- IR.getAttr @Parser.ReparsingStatus
         return (unwrap' res, exprMap, status)
 
 data PortDefaultNotConstructibleException = PortDefaultNotConstructibleException PortDefault
@@ -151,7 +152,7 @@ parsePortDefault :: ASTOp m => PortDefault -> m NodeRef
 parsePortDefault (Expression expr)            = parseExpr expr
 parsePortDefault (Constant (IntValue i))      = IR.generalize <$> IR.number (fromIntegral i)
 parsePortDefault (Constant (StringValue s))   = IR.generalize <$> IR.string s
-parsePortDefault (Constant (DoubleValue d))   = $notImplemented
-parsePortDefault (Constant (RationalValue r)) = $notImplemented
+parsePortDefault (Constant (DoubleValue d))   = IR.generalize <$> IR.number (Lit.fromDouble d)
+parsePortDefault (Constant (RationalValue r)) = IR.generalize <$> IR.number (Lit.fromDouble $ realToFrac r)
 parsePortDefault (Constant (BoolValue b))     = IR.generalize <$> IR.cons_ (convert $ show b)
 parsePortDefault d = throwM $ PortDefaultNotConstructibleException d

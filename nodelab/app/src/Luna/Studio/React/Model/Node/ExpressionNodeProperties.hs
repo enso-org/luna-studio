@@ -13,7 +13,6 @@ data NodeProperties = NodeProperties
                     , _ports                 :: PortsMap
                     , _name                  :: Text
                     , _isLiteral             :: Bool
-                    , _nameEdit              :: Maybe Text
                     , _execTime              :: Maybe Integer
                     , _visualizationsEnabled :: Bool
                     } deriving (Eq)
@@ -21,10 +20,10 @@ data NodeProperties = NodeProperties
 makeLenses ''NodeProperties
 
 fromNode :: ExpressionNode -> NodeProperties
-fromNode node = NodeProperties (node ^. Node.nodeLoc)
-                               (node ^. Node.ports)
-                               (node ^. Node.name)
-                               (Node.isLiteral node)
-                               (node ^. Node.nameEdit)
-                               (node ^. Node.execTime)
-                               (node ^. Node.visualizationsEnabled)
+fromNode node = NodeProperties
+    {- nodeLoc               -} (node ^. Node.nodeLoc)
+    {- ports                 -} (node ^. Node.ports)
+    {- name                  -} (node ^. Node.name)
+    {- isLiteral             -} (Node.isLiteral node)
+    {- execTime              -} (node ^. Node.execTime)
+    {- visualizationsEnabled -} (node ^. Node.visualizationsEnabled)
