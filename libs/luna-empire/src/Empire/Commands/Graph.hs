@@ -3,7 +3,6 @@
 {-# LANGUAGE OverloadedStrings   #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE StandaloneDeriving  #-}
-{-# LANGUAGE TupleSections       #-}
 {-# LANGUAGE TypeApplications    #-}
 {-# LANGUAGE TupleSections       #-}
 
@@ -38,6 +37,7 @@ module Empire.Commands.Graph
     , openFile
     , typecheck
     , substituteCode
+    , loadCode
     , withTC
     , withGraph
     ) where
@@ -102,6 +102,8 @@ import           Empire.Empire
 
 import qualified Luna.IR            as IR
 import qualified OCI.IR.Combinators as IR (changeSource, deleteSubtree, narrowTerm, replaceNode)
+import           Luna.Syntax.Text.Parser.Marker (MarkedExprMap(..))
+import qualified Luna.Syntax.Text.Parser.Marker as Luna
 
 generateNodeName :: ASTOp m => m String
 generateNodeName = do
@@ -568,12 +570,7 @@ openFile path = do
     code <- liftIO $ Text.readFile path
     Library.createLibrary Nothing path code
     let loc = GraphLocation path $ Breadcrumb []
-    forM (Text.lines code) $ \codeLine -> do
-        when (codeLine /= Text.empty) $ do
-            uuid <- liftIO $ UUID.nextRandom
-            node <- addNode loc uuid codeLine def
-            return ()
-    return ()
+    withGraph loc $ loadCode code
 
 typecheck :: GraphLocation -> Empire ()
 typecheck loc = withGraph loc $ runTC loc False
@@ -590,6 +587,29 @@ substituteCode path start end code cursor = do
         liftIO $ print newCode
         liftIO $ IO.hFlush IO.stdout
         Library.code .= newCode
+
+loadCode :: Text -> Command Graph ()
+loadCode code = do
+    (ref, exprMap) <- ASTParse.runUnitParser code
+    runASTOp $ forM_ (coerce exprMap :: Map.Map Luna.Marker NodeRef) $ \expr -> do
+        uuid <- liftIO $ UUID.nextRandom
+        assignment <- ASTRead.isMatch expr
+        if assignment then do
+            var <- ASTRead.getVarNode expr
+            IR.writeLayer @Marker (Just $ OutPortRef uuid Port.All) var
+            let nodeItem = BH.ExprItem Map.empty (BH.MatchNode expr)
+            Graph.breadcrumbHierarchy . BH.children . at uuid ?= BH.ExprChild nodeItem
+
+            target   <- ASTRead.getASTTarget uuid
+            lamItem  <- prepareLambdaChild (BH.MatchNode expr) target
+            exprItem <- prepareExprChild   (BH.MatchNode expr) target
+            forM_ lamItem  $ (Graph.breadcrumbHierarchy . BH.children . ix uuid .=) . BH.LambdaChild
+            forM_ exprItem $ (Graph.breadcrumbHierarchy . BH.children . ix uuid .=) . BH.ExprChild
+        else do
+            let nodeItem = BH.ExprItem Map.empty (BH.AnonymousNode expr)
+            Graph.breadcrumbHierarchy . BH.children . at uuid ?= BH.ExprChild nodeItem
+    runAliasAnalysis
+
 -- internal
 
 runTC :: GraphLocation -> Bool -> Command Graph ()

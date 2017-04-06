@@ -1,5 +1,4 @@
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE QuasiQuotes       #-}
 
 module ParserSpec (spec) where
 
@@ -21,7 +20,6 @@ import           Prologue                   hiding ((|>))
 
 import           Test.Hspec (Spec, around, describe, it, xit, expectationFailure,
                              shouldBe, shouldMatchList, shouldStartWith)
-import           Text.RawString.QQ (r)
 
 import EmpireUtils
 
@@ -58,21 +56,3 @@ spec = around withChannels $ do
                     , Port.Port (Port.InPortId (Port.Arg 1)) "y" TStar (Port.WithDefault (Expression "y"))
                     , Port.Port (Port.InPortId (Port.Arg 2)) "z" TStar (Port.WithDefault (Expression "z"))
                     ]
-        it "parses unit" $ \env -> do
-            let code = [r|‹0›def pi: 3.14
-
-‹1›def foo: a + b
-
-‹2›def bar:
-    a ‹3›= 1
-    ‹4›foo a 6
-    ‹5›print a|]
-            res <- evalEmp env $ do
-                Library.createLibrary Nothing "TestPath" code
-                let loc = GraphLocation "TestPath" $ Breadcrumb []
-                -- (ref, exprMap) <- Graph.withGraph loc $
-                --     ASTParse.runUnitParser code
-                graph <- Graph.withGraph loc $ runASTOp $ GraphBuilder.buildGraph
-                return graph
-            withResult res $ \graph -> do
-                print graph
