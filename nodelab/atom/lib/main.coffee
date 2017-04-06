@@ -49,7 +49,7 @@ module.exports =
                   atom.workspaceView.getActivePaneItem().destroy()
             #   else if uri == uri_send and type == "IsSaved" and status =="False"
                 # internal.pushInternalEvent("SaveFile " + uri)
-                # na plik zapisal sie zrob destroy i wyslij close file 
+                # na plik zapisal sie zrob destroy i wyslij close file
                   # prompt window to ask if the file should be saved, send save
 
 
@@ -68,13 +68,13 @@ module.exports =
                   internal.pushText(diff)
           @ss.add @buffer.onWillSave (event) => internal.pushInternalEvent("SaveFile " + uri)
           @ss.add @buffer.onWillReload (event) => internal.pushInternalEvent("GetBuffer " + uri)
-          @ss.add atom.workspace.onWillDestroyPaneItem (event) => #console.log(event.item.buffer.file.path)
+          @ss.add atom.workspace.onDidDestroyPaneItem (event) => #console.log(event.item.buffer.file.path)
             if event.item.buffer
                 activeFilePath = event.item.buffer.file.path
             else activeFilePath = event.item.uri
             if path.extname(activeFilePath) is '.luna'
-                internal.pushInternalEvent("IsSaved " + activeFilePath)
-                internal.statusListener isSaved
+                internal.pushInternalEvent("CloseFile " + activeFilePath)
+                # internal.statusListener isSaved
 
         atom.workspace.getActivePane().activateItem new LunaStudioTab(uri, code)
 
