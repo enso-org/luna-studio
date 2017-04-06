@@ -1,3 +1,0 @@
-export ATOM_HOME=$LUNA_HOME
-atom
-export ATOM_HOME=~/.atom
