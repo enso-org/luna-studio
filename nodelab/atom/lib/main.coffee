@@ -7,13 +7,64 @@ c             = require "./gen/ghcjs-code.js"
 code = c()
 path = require 'path'
 
-
 module.exports =
   activate: ->
     internal.start()
     rootPath = atom.project.getPaths().shift()
     # if rootPath != ""
     #   internal.pushInternalEvent("SetProject " + rootPath)
+
+    @observed = new SubAtom
+    @observed.add atom.workspace.observeTextEditors (@editor) ->
+        if @editor.buffer && editor.buffer.file
+            uri = @editor.buffer.file.path
+            if path.extname(uri) is '.luna'
+                console.log(uri)
+                internal.pushInternalEvent("OpenFile " + uri)
+
+                # @editor = editor
+                @buffer = @editor.buffer
+
+                console.log("in observed")
+                console.log(editor)
+                @triggerPush = true
+                withoutTrigger = (callback) ->
+                    @triggerPush = false
+                    callback()
+                    @triggerPush = true
+                setCode = (uri_send, start_send, end_send, text) ->
+                  withoutTrigger =>
+                    if uri == uri_send
+                      start = buffer.positionForCharacterIndex(start_send)
+                      end = buffer.positionForCharacterIndex(end_send)
+                      @buffer.setTextInRange [start, end], text
+                      @editor.scrollToBufferPosition(start)
+                internal.codeListener setCode
+                @sss = new SubAtom
+                @sss.add @buffer.onDidChange (event) =>
+                    console.log(event)
+                    return unless @triggerPush
+                    if event.newText != '' or event.oldText != ''
+                        diff =
+                            uri: uri
+                            start: buffer.characterIndexForPosition(event.oldRange.start)
+                            end: buffer.characterIndexForPosition(event.oldRange.start) + event.oldText.length
+                            text: event.newText
+                            cursor: buffer.characterIndexForPosition(@editor.getCursorBufferPosition())
+                        console.log(diff, event.oldRange.start, event.oldRange.end)
+                        internal.pushText(diff)
+                @sss.add @buffer.onWillSave (event) => internal.pushInternalEvent("SaveFile " + uri)
+                @sss.add atom.workspace.onDidDestroyPaneItem (event) => #console.log(event.item.buffer.file.path)
+                  if event.item.buffer
+                      activeFilePath = event.item.buffer.file.path
+                  else activeFilePath = event.item.uri
+                  if path.extname(activeFilePath) is '.luna'
+                      internal.pushInternalEvent("CloseFile " + activeFilePath)
+
+
+
+
+
     atom.workspace.addOpener (uri) ->
 
       if path.extname(uri) is '.luna'
@@ -77,6 +128,14 @@ module.exports =
                 # internal.statusListener isSaved
 
         atom.workspace.getActivePane().activateItem new LunaStudioTab(uri, code)
+
+
+
+
+
+
+
+
 
 
     @subs = new SubAtom
@@ -144,6 +203,7 @@ module.exports =
     @subs.add atom.commands.add '.luna-searcher', 'luna-studio:searcher-accept-input': -> code.pushEvent("Searcher AcceptInput")
     @subs.add atom.commands.add '.luna-searcher', 'luna-studio:searcher-accept':       -> code.pushEvent("Searcher Accept")
     @subs.add atom.commands.add '.luna-searcher', 'luna-studio:searcher-move-down':    -> code.pushEvent("Searcher MoveDown")
+    @subs.add atom.commands.add '.luna-searcher', 'luna-studio:searcher-move-left':    -> code.pushEvent("Searcher MoveLeft")
     @subs.add atom.commands.add '.luna-searcher', 'luna-studio:searcher-move-right':   -> code.pushEvent("Searcher MoveRight")
     @subs.add atom.commands.add '.luna-searcher', 'luna-studio:searcher-move-up':      -> code.pushEvent("Searcher MoveUp")
     # undo/redo
@@ -153,3 +213,5 @@ module.exports =
   deactivate: ->
     @subs.dispose()
     @ss.dispose()
+    @sss.dispose()
+    @observed.dispose()
