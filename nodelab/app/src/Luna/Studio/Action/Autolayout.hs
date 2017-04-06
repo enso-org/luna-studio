@@ -1,73 +1,141 @@
 {-# LANGUAGE MultiWayIf #-}
 module Luna.Studio.Action.Autolayout where
 
+import           Control.Monad.State.Lazy                    (execState, get, modify)
+import qualified Control.Monad.State.Lazy                    as S
 import           Data.Map.Lazy                               (Map)
 import qualified Data.Map.Lazy                               as Map
-import           Data.Position                               (Position, move)
-import           Data.Vector                                 (Vector2 (Vector2))
+import           Data.Position                               (Position, minimumRectangle, x, y)
 import           Luna.Studio.Action.Basic                    (moveNodes)
 import           Luna.Studio.Action.Command                  (Command)
-import           Luna.Studio.Action.State.NodeEditor         (getConnectionsFromNode, getConnectionsToNode, getExpressionNode,
-                                                              getExpressionNodes, getSelectedNodes)
+import           Luna.Studio.Action.State.NodeEditor         (getConnectionsFromNode, getConnectionsToNode, getExpressionNodes,
+                                                              getSelectedNodes)
 import           Luna.Studio.Prelude
-import           Luna.Studio.React.Model.Connection          (Connection, dstNodeLoc, dstPortId)
-import           Luna.Studio.React.Model.Node.ExpressionNode (ExpressionNode, NodeLoc, nodeLoc, position)
+import           Luna.Studio.React.Model.Connection          (Connection, dstNodeLoc, dstPortId, srcNodeLoc)
+import           Luna.Studio.React.Model.Node.ExpressionNode (ExpressionNode, NodeLoc)
+import qualified Luna.Studio.React.Model.Node.ExpressionNode as Node
 import           Luna.Studio.React.Model.Port                (PortId (InPortId), isSelf)
 import           Luna.Studio.State.Global                    (State)
 
 
-data NodesChain = NodesChain { _nodes    :: [ExpressionNode]
-                             , _outConns :: [Connection]
-                             , _inConns  :: [Connection]
-                             , _len      :: Int
-                             } deriving (Eq, Generic, Show)
-makeLenses ''NodesChain
+data DFSState = NotProccessed | InProccess | Proccessed deriving Eq
+data NodeInfo = NodeInfo { _nodeLoc  :: NodeLoc
+                         , _name     :: Text
+                         , _actPos   :: Position
+                         , _dfsState :: DFSState
+                         , _inConns  :: [Connection]
+                         , _outConns :: [Connection]
+                         }
+makeLenses ''NodeInfo
+
+type NodesInfoMap      = Map NodeLoc NodeInfo
+type AutolayoutState a = S.State NodesInfoMap a
+
 
 gapBetweenNodes :: Double
 gapBetweenNodes = 150
 
 autolayoutAllNodes :: Command State ()
-autolayoutAllNodes = map (view nodeLoc) <$> getExpressionNodes >>= autolayoutNodes
+autolayoutAllNodes = getExpressionNodes >>= autolayoutNodes
 
 autolayoutSelectedNodes :: Command State ()
-autolayoutSelectedNodes = map (view nodeLoc) <$> getSelectedNodes >>= autolayoutNodes
+autolayoutSelectedNodes = getSelectedNodes >>= autolayoutNodes
 
-autolayoutNodes :: [NodeLoc] -> Command State ()
-autolayoutNodes nls = do
-    chains <- fmap (mergeChains . Map.fromList . catMaybes) $ forM nls $ \nl -> do
-        mayNode <- getExpressionNode nl
-        outC    <- getConnectionsFromNode nl
-        inC     <- getConnectionsToNode nl
-        return $ maybe Nothing (\node -> Just (nl, NodesChain [node] outC inC 1)) mayNode
-    alignChains chains
+autolayoutNodes :: [ExpressionNode] -> Command State ()
+autolayoutNodes nodes = do
+    let mayMinRect = minimumRectangle $ map (view Node.position) nodes
+    withJust mayMinRect $ \(leftTop, rightBottom) -> do
+        let x' = ((leftTop ^. x) + (rightBottom ^. x)) / 2
+        nodesMap <- fmap Map.fromList $ forM nodes $ \n -> do
+            let nl = n ^. Node.nodeLoc
+            inConns'  <- getConnectionsToNode   nl
+            outConns' <- getConnectionsFromNode nl
+            return $ (nl, NodeInfo nl
+                                   (n ^. Node.name)
+                                   (n ^. Node.position & x .~ x')
+                                   NotProccessed
+                                   inConns'
+                                   outConns' )
+        moveNodes . Map.toList . fmap (view actPos) $ execState findPositions nodesMap
 
-mergeChains :: Map NodeLoc NodesChain -> Map NodeLoc NodesChain
-mergeChains chains = foldl proccessByKey chains (Map.keys chains) where
-    proccessByKey :: Map NodeLoc NodesChain -> NodeLoc -> Map NodeLoc NodesChain
-    proccessByKey result nl = maybe result (proccessChain result) $ Map.lookup nl result
-    performMerge :: Map NodeLoc NodesChain -> NodeLoc -> NodesChain -> NodeLoc -> NodesChain -> Map NodeLoc NodesChain
-    performMerge chainsMap prefId prefix suffId suffix = flip proccessChain mergedChain $ Map.delete suffId . Map.insert prefId mergedChain $ chainsMap where
-        mergedChain = NodesChain (prefix ^. nodes ++ suffix ^. nodes) (suffix ^. outConns) (prefix ^. inConns) (prefix ^. len + suffix ^. len)
-    proccessChain :: Map NodeLoc NodesChain -> NodesChain -> Map NodeLoc NodesChain
-    proccessChain result chain =
-        if (length $ chain ^. outConns) == 1 then do
-            let dstNl = view dstNodeLoc . head $ chain ^. outConns
-                nl    = view nodeLoc    . head $ chain ^. nodes
-                performMerge' dstChain = if length (dstChain ^. inConns) == 1
-                    then performMerge result nl chain dstNl dstChain
-                    else result
-            maybe result performMerge' $ Map.lookup dstNl result
-        else if (length $ filter (isSelf . InPortId . view dstPortId) $ chain ^. outConns) == 1 then do
-            let dstNl = view dstNodeLoc . head $ chain ^. outConns
-                nl    = view nodeLoc    . head $ chain ^. nodes
-            maybe result (performMerge result nl chain dstNl) $ Map.lookup dstNl result
-        else result
 
-alignChains :: Map NodeLoc NodesChain -> Command State ()
-alignChains = moveNodes . concat . map getAlignedChainPositions . Map.elems
+findPositions :: AutolayoutState ()
+findPositions = removeCycles >> get >>= mapM_ findPositionRecursive . Map.keys
 
-getAlignedChainPositions :: NodesChain -> [(NodeLoc, Position)]
-getAlignedChainPositions chain = if null $ chain ^. nodes then [] else
-    foldl setPos [] $ chain ^. nodes where
-        setPos result n = if null result then [(n ^. nodeLoc, n ^. position)] else
-            (n ^. nodeLoc, move (Vector2 gapBetweenNodes 0) . snd $ head result) : result
+findPositionRecursive :: NodeLoc -> AutolayoutState ()
+findPositionRecursive nl = lookupNode nl >>= \mayNode -> case mayNode of
+    Nothing -> return ()
+    Just n  -> alignNeighbours n >>= mapM_ findPositionRecursive
+
+lookupNode :: NodeLoc -> AutolayoutState (Maybe NodeInfo)
+lookupNode nl = Map.lookup nl <$> get
+
+lookupNodes :: [NodeLoc] -> AutolayoutState [NodeInfo]
+lookupNodes = fmap catMaybes . mapM lookupNode
+
+areInChain :: NodeInfo -> NodeInfo -> Bool
+areInChain n1 n2 =
+    (maybe False (isNlTheSame n2) $ onlyToSelfConnNl n1) ||
+    (maybe False (isNlTheSame n1) $ onlyToSelfConnNl n2) ||
+    areInChain' n1 n2 ||
+    areInChain' n2 n1 where
+        isNlTheSame n nl    = nl == n ^. nodeLoc
+        areInChain' n1' n2' = maybe False (\(nl2, nl1) -> isNlTheSame n2' nl2 && isNlTheSame n1' nl1) $ (,) <$> onlyOutConnNl n1' <*> onlyInConnNl n2'
+        hasSingleInConn  n  = length (n ^. inConns)  == 1
+        hasSingleOutConn n  = length (n ^. outConns) == 1
+        onlyInConnNl  n     = if hasSingleInConn  n then Just . view srcNodeLoc . head $ n ^. inConns  else Nothing
+        onlyOutConnNl n     = if hasSingleOutConn n then Just . view dstNodeLoc . head $ n ^. outConns else Nothing
+        onlyToSelfConnNl n  = case filter (isSelf . InPortId . view dstPortId) $ n ^. outConns of
+            [conn] -> Just $ conn ^. dstNodeLoc
+            _      -> Nothing
+
+removeCycles :: AutolayoutState ()
+removeCycles = get >>= mapM_ removeCyclesForNode . Map.keys
+
+removeCyclesForNode :: NodeLoc -> AutolayoutState ()
+removeCyclesForNode nl = withJustM (lookupNode nl) $ \n -> when (n ^. dfsState == NotProccessed) $ do
+    modify $ Map.update (\node -> Just $ node & dfsState .~ InProccess) nl
+    let removeConnectionsWithNode :: NodeLoc -> [Connection] -> [Connection]
+        removeConnectionsWithNode nl' = filter (\conn -> conn ^. srcNodeLoc /= nl'
+                                                      && conn ^. dstNodeLoc /= nl')
+        processDstNode :: NodeLoc -> AutolayoutState ()
+        processDstNode dstNl = withJustM (lookupNode dstNl) $ \dstNode -> case dstNode ^. dfsState of
+            NotProccessed -> removeCyclesForNode dstNl
+            Proccessed -> return ()
+            InProccess -> modify $
+                Map.update (\node -> Just $ node & inConns  %~ removeConnectionsWithNode nl) dstNl .
+                Map.update (\node -> Just $ node & outConns %~ removeConnectionsWithNode dstNl) nl
+    forM_ (map (view dstNodeLoc) $ n ^. outConns) $ processDstNode
+    modify $ Map.update (\node -> Just $ node & dfsState .~ Proccessed) nl
+
+alignNeighbours :: NodeInfo -> AutolayoutState [NodeLoc]
+alignNeighbours n = fmap nub' $ (++) <$> alignNeighboursX n <*> alignNeighboursY n
+
+alignNeighboursX :: NodeInfo -> AutolayoutState [NodeLoc]
+alignNeighboursX n = do
+    let prevX = n ^. actPos . x - gapBetweenNodes
+        nextX = n ^. actPos . x + gapBetweenNodes
+    preds <- lookupNodes . map (view srcNodeLoc) $ n ^. inConns
+    succs <- lookupNodes . map (view dstNodeLoc) $ n ^. outConns
+    predsToUpdate <- fmap catMaybes . forM preds $ \node ->
+        if node ^. actPos . x <= prevX then return Nothing else do
+            let nl = node ^. nodeLoc
+            modify $ Map.update (\n' -> Just $ n' & actPos . x .~ prevX) nl
+            return $ Just nl
+    succsToUpdate <- fmap catMaybes . forM succs $ \node ->
+        if node ^. actPos . x >= nextX then return Nothing else do
+            let nl = node ^. nodeLoc
+            modify $ Map.update (\n' -> Just $ n' & actPos . x .~ nextX) nl
+            return $ Just nl
+    return $ predsToUpdate ++ succsToUpdate
+
+alignNeighboursY :: NodeInfo -> AutolayoutState [NodeLoc]
+alignNeighboursY n = do
+    let y' = n ^. actPos . y
+    preds <- lookupNodes . map (view srcNodeLoc) $ n ^. inConns
+    succs <- lookupNodes . map (view dstNodeLoc) $ n ^. outConns
+    fmap catMaybes . forM (preds ++ succs) $ \node ->
+        if node ^. actPos . y == y' || (not $ areInChain n node) then return Nothing else do
+            let nl = node ^. nodeLoc
+            modify $ Map.update (\n' -> Just $ n' & actPos . y .~ y') nl
+            return $ Just nl

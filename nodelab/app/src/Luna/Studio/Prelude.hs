@@ -19,10 +19,13 @@ import           Data.Default                  as X
 import           Data.Either                   as X (isLeft, isRight)
 import           Data.Foldable                 as X (Foldable, foldlM, forM_, mapM_, sequenceA_, traverse_)
 import           Data.Function                 as X (on)
+import           Data.Hashable                 (Hashable)
+import qualified Data.HashSet                  as HashSet
 import           Data.JSString                 as X (JSString)
 import           Data.List                     as X hiding (uncons, (++))
 import           Data.Maybe                    as X
 import           Data.Monoid                   as X (Monoid, mappend, mconcat, mempty, (<>))
+import qualified Data.Set                      as Set
 import           Data.String                   as X (IsString (fromString))
 import           Data.Text                     as X (Text)
 import           Data.Traversable              as X (forM, mapM, sequenceA)
@@ -62,6 +65,11 @@ withJustM mMayVal action = do
     mayVal <- mMayVal
     withJust mayVal action
 
+withJustM_ :: Monad m => m (Maybe a) -> (a -> m b) -> m ()
+withJustM_ mMayVal action = do
+    mayVal <- mMayVal
+    withJust mayVal $ void . action
+
 keyed :: [a] -> [(Int, a)]
 keyed = zip [0..]
 
@@ -90,3 +98,12 @@ mayInit = withNotNull init
 
 mayLast :: [a] -> Maybe a
 mayLast = withNotNull last
+
+
+-- WARNING: Those functions work faster than nub but are not stable!!!
+
+nub' :: (Hashable a, Eq a) => [a] -> [a]
+nub' = HashSet.toList . HashSet.fromList
+
+nub'' :: Ord a => [a] -> [a]
+nub'' = Set.toList . Set.fromList
