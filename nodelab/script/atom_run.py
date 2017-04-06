@@ -5,7 +5,7 @@ import subprocess
 import os
 
 def run_luna():
-    os.environ['ATOM_HOME'] = os.environ['LUNA_HOME']
+    os.environ['ATOM_HOME'] = os.environ.get('LUNA_HOME', os.path.expanduser('~') + '/.luna-atom')
     subprocess.call(['atom'])
     os.environ['ATOM_HOME'] = os.path.expanduser('~') + '/.atom'
 
