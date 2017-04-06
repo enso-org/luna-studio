@@ -160,6 +160,9 @@ getConnectionsContainingNodes nodeLocs = filter containsNode' <$> getConnections
 getConnectionsContainingPortRef :: AnyPortRef -> Command State [Connection]
 getConnectionsContainingPortRef portRef = filter (containsPortRef portRef) <$> getConnections
 
+getConnectionsFromNode :: NodeLoc -> Command State [Connection]
+getConnectionsFromNode nl = filter (\conn -> conn ^. srcNodeLoc == nl) <$> getConnections
+
 getConnectionsToNode :: NodeLoc -> Command State [Connection]
 getConnectionsToNode nl = filter (\conn -> conn ^. dstNodeLoc == nl) <$> getConnections
 
