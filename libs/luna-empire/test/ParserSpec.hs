@@ -6,9 +6,15 @@ import qualified Data.Map                     as Map
 import           Empire.API.Data.PortDefault (PortDefault(Expression))
 import qualified Empire.API.Data.Node         as Node (NodeType(ExpressionNode),
                                                        nodeType, ports)
-import qualified Empire.API.Data.Port         as Port
-import           Empire.API.Data.TypeRep      (TypeRep(TStar))
-import qualified Empire.Commands.Graph        as Graph
+import qualified Empire.API.Data.Port          as Port
+import           Empire.API.Data.Breadcrumb    (Breadcrumb(..))
+import           Empire.API.Data.GraphLocation (GraphLocation(..))
+import           Empire.API.Data.TypeRep       (TypeRep(TStar))
+import           Empire.ASTOp                  (runASTOp)
+import qualified Empire.ASTOps.Parse           as ASTParse
+import qualified Empire.Commands.Graph         as Graph
+import qualified Empire.Commands.GraphBuilder  as GraphBuilder
+import qualified Empire.Commands.Library       as Library
 
 import           Prologue                   hiding ((|>))
 

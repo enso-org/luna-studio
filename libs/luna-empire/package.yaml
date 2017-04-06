@@ -17,6 +17,7 @@ tests:
             - hspec
             - QuickCheck
             - reflection
+            - raw-strings-qq
 
 ghc-options: -Wall
 

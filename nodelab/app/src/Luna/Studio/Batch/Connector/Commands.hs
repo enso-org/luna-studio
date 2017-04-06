@@ -2,6 +2,7 @@ module Luna.Studio.Batch.Connector.Commands where
 
 import qualified Data.Text                              as Text
 import           Data.UUID.Types                        (UUID)
+import qualified Empire.API.Atom.OpenFile               as OpenFile
 import           Empire.API.Data.Connection             (Connection)
 import           Empire.API.Data.GraphLocation          (GraphLocation)
 import qualified Empire.API.Data.GraphLocation          as GraphLocation
@@ -73,6 +74,8 @@ listProjects uuid guiID = sendRequest $ Message uuid guiID ListProjects.Request
 openProject :: FilePath -> UUID -> Maybe UUID -> IO ()
 openProject path uuid guiID = sendRequest $ Message uuid guiID $ OpenProject.Request path
 
+openFile :: FilePath -> UUID -> Maybe UUID -> IO ()
+openFile path uuid guiID = sendRequest $ Message uuid guiID $ OpenFile.Request path
 
 dumpGraphViz :: Workspace -> UUID -> Maybe UUID -> IO ()
 dumpGraphViz workspace uuid guiID = sendRequest $ Message uuid guiID $ withLibrary workspace DumpGraphViz.Request

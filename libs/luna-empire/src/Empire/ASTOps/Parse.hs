@@ -7,6 +7,7 @@ module Empire.ASTOps.Parse (
   , parsePortDefault
   , runParser
   , runReparser
+  , runUnitParser
   ) where
 
 import           Data.Convert
@@ -51,6 +52,50 @@ parseExpr s = do
     res     <- IR.readAttr @Parser.ParsedExpr
     exprMap <- IR.readAttr @Parser.MarkedExprMap
     return $ unwrap' res
+
+runUnitParser :: Text.Text -> Command Graph (NodeRef, Parser.MarkedExprMap)
+runUnitParser code = do
+    let inits = do
+          IR.setAttr (getTypeDesc @Source.SourceTree)      $ (mempty :: Source.SourceTree)
+          IR.setAttr (getTypeDesc @Parser.MarkedExprMap)   $ (mempty :: Parser.MarkedExprMap)
+          IR.setAttr (getTypeDesc @Source.Source)          $ (convert code :: Source.Source)
+          IR.setAttr (getTypeDesc @Parser.ParsedExpr)      $ (error "Data not provided: ParsedExpr")
+          IR.setAttr (getTypeDesc @Parser.ReparsingStatus) $ (error "Data not provided: ReparsingStatus")
+        run = runPass @ParserPass inits
+    run $ do
+        let protoFunc = (\body -> uncurry Parsing.seqLines body)
+        Parsing.parsingBase (protoFunc <$> Parsing.discoverBlock Parsing.lineExpr) `catchAll` (\e -> throwM $ ParserException e)
+        res     <- IR.readAttr @Parser.ParsedExpr
+        exprMap <- IR.readAttr @Parser.MarkedExprMap
+        IR.writeLayer @CodeMarkers exprMap (unwrap' res)
+        return (unwrap' res, exprMap)
+
+runUnitReparser :: Text.Text -> NodeRef -> Command Graph (NodeRef, Parser.MarkedExprMap)
+runUnitReparser code oldExpr = do
+    let inits = do
+          IR.setAttr (getTypeDesc @Source.SourceTree)      $ (mempty :: Source.SourceTree)
+          IR.setAttr (getTypeDesc @Parser.MarkedExprMap)   $ (mempty :: Parser.MarkedExprMap)
+          IR.setAttr (getTypeDesc @Source.Source)          $ (convert code :: Source.Source)
+          IR.setAttr (getTypeDesc @Parser.ParsedExpr)      $ (wrap' oldExpr :: Parser.ParsedExpr)
+          IR.setAttr (getTypeDesc @Parser.ReparsingStatus) $ (error "Data not provided: ReparsingStatus")
+        run = runPass @ParserPass inits
+    run $ do
+        do
+            gidMapOld <- IR.readLayer @CodeMarkers oldExpr
+
+            -- parsing new file and updating updated analysis
+            let protoFunc = (\body -> uncurry Parsing.seqLines body)
+            Parsing.parsingBase (protoFunc <$> Parsing.discoverBlock Parsing.lineExpr) `catchAll` (\e -> throwM $ ParserException e)
+            gidMap    <- IR.readAttr @Parser.MarkedExprMap
+
+            -- Preparing reparsing status
+            rs        <- Parsing.cmpMarkedExprMaps gidMapOld gidMap
+            IR.writeAttr @Parser.ReparsingStatus (wrap rs)
+
+        res     <- IR.readAttr @Parser.ParsedExpr
+        exprMap <- IR.readAttr @Parser.MarkedExprMap
+        IR.writeLayer @CodeMarkers exprMap (unwrap' res)
+        return (unwrap' res, exprMap)
 
 runParser :: Text.Text -> Command Graph (NodeRef, Parser.MarkedExprMap)
 runParser expr = do

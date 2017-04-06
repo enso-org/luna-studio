@@ -1,7 +1,6 @@
-def pi: 3.14
+pi ‹0›= 3.14
 
-def foo: a + b
+foo ‹1›= a: b: a + b
 
-a = 1
-foo a 6
-print a
+c ‹2›= 4
+bar ‹3›= foo 8 c

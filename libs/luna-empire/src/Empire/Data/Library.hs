@@ -15,9 +15,6 @@ data Library = Library { _name    :: Maybe String
                        , _body    :: Graph
                        } deriving (Show)
 
-make :: Maybe String -> FilePath -> Text -> IO Library
-make name path code = Library name path code <$> defaultGraph
-
 makeLenses ''Library
 
 toAPI :: Library -> API.Library

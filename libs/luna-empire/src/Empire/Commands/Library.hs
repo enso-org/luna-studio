@@ -15,6 +15,7 @@ import           Data.Text               as Text
 import           Data.Text.IO            as Text
 import           Empire.Prelude
 
+import           Empire.Data.Graph       as Graph (defaultGraph)
 import           Empire.Data.Library     (Library)
 import qualified Empire.Data.Library     as Library
 import           Empire.Data.Project     (Project)
@@ -29,9 +30,13 @@ import qualified Empire.Utils.IdGen      as IdGen
 
 createLibrary :: Maybe String -> FilePath -> Text -> Empire Library
 createLibrary name path code = do
-    library <- liftIO $ Library.make name path code
+    library <- liftIO $ make name path code
     Empire.activeFiles . at path ?= library
     return library
+
+make :: Maybe String -> FilePath -> Text -> IO Library
+make name path code = Library.Library name path code <$> Graph.defaultGraph
+
 
 listLibraries :: Empire [Library]
 listLibraries = do
