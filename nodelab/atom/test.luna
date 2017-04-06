@@ -4,3 +4,4 @@ foo ‹1›= a: b: a + b
 
 c ‹2›= 4
 bar ‹3›= foo 8 c
+

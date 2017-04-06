@@ -37,7 +37,8 @@ spec = around withChannels $ do
 foo ‹1›= a: b: a + b
 bar ‹2›= foo c 6
 ‹3›print pi
-c ‹4›= 3|]
+c ‹4›= 3
+|]
             res <- evalEmp env $ do
                 Library.createLibrary Nothing "TestPath" code
                 let loc = GraphLocation "TestPath" $ Breadcrumb []

@@ -555,7 +555,9 @@ dumpGraphViz loc = withGraph loc $ return ()
 
 openFile :: FilePath -> Empire ()
 openFile path = do
-    code <- liftIO $ Text.readFile path
+    code <- do
+        rawCode <- liftIO $ Text.readFile path
+        return $ Text.stripEnd rawCode
     Library.createLibrary Nothing path code
     let loc = GraphLocation path $ Breadcrumb []
     withGraph loc $ loadCode code
