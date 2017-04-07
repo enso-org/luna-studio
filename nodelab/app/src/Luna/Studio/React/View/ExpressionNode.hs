@@ -7,6 +7,7 @@ import qualified Data.Map.Lazy                                         as Map
 import           Data.Matrix                                           (Matrix)
 import qualified Empire.API.Data.MonadPath                             as MonadPath
 import           Empire.API.Data.PortRef                               (toAnyPortRef)
+import qualified Empire.API.Graph.NodeResultUpdate                     as NodeResult
 import qualified JS.Config                                             as Config
 import qualified JS.UI                                                 as UI
 import           Luna.Studio.Data.Matrix                               (showNodeMatrix, showNodeTranslate)
@@ -34,10 +35,6 @@ import qualified Luna.Studio.React.View.Style                          as Style
 import           Luna.Studio.React.View.Visualization                  (strValue, visualization_)
 import           React.Flux
 import qualified React.Flux                                            as React
-
---import System.IO.Unsafe (unsafePerformIO)
---traceShowMToStdout :: (Show a, Monad m) => a -> m ()
---traceShowMToStdout v = unsafePerformIO $ print v >> return (return ())
 
 name, objNameBody, objNameVis, objNamePorts :: JSString
 name         = "node"
@@ -176,6 +173,8 @@ nodeVisualizations = React.defineView objNameVis $ \(ref, n) ->
             [ "key"       $= "visualizations"
             , "className" $= Style.prefixFromList [ "node__visualisations" ]
             ] $ forM_ (n ^. Node.value) $ visualization_ ref nodeLoc def
+
+
 
 nodePorts_ :: Ref App -> ExpressionNode -> ReactElementM ViewEventHandler ()
 nodePorts_ ref model = React.viewWithSKey nodePorts objNamePorts (ref, model) mempty
