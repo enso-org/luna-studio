@@ -626,6 +626,7 @@ reloadCode loc code = do
                     forM_ oldNodeId $ removeNodeNoTC
                     return Nothing
             forM_ (catMaybes nodes) $ Publisher.notifyNodeUpdate loc
+            runAliasAnalysis
             return $ Just rs
         Nothing -> return Nothing
 
