@@ -10,7 +10,7 @@ import           Data.Text                (Text)
 import           Data.UUID.Types          (UUID)
 import           Empire.API.Data.NodeMeta (NodeMeta)
 import qualified Empire.API.Data.NodeMeta as NodeMeta
-import           Empire.API.Data.Port     (OutPortTree, Port, PortId, InPort)
+import           Empire.API.Data.Port     (OutPortTree, InPortTree, Port, PortId, InPort)
 import qualified Empire.API.Data.Port     as Port
 import           Prologue
 
@@ -21,7 +21,7 @@ data ExpressionNode = ExpressionNode { _exprNodeId :: NodeId
                                      , _expression :: Text
                                      , _name       :: Maybe Text
                                      , _code       :: Maybe Text
-                                     , _inPorts    :: Map InPort Port
+                                     , _inPorts    :: InPortTree  Port
                                      , _outPorts   :: OutPortTree Port
                                      , _nodeMeta   :: NodeMeta
                                      , _canEnter   :: Bool
@@ -32,7 +32,7 @@ data InputSidebar = InputSidebar { _inputNodeId    :: NodeId
                                  } deriving (Generic, Eq, NFData, Show, Typeable)
 
 data OutputSidebar = OutputSidebar { _outputNodeId    :: NodeId
-                                   , _outputEdgePorts :: Map InPort Port
+                                   , _outputEdgePorts :: InPortTree Port
                                    } deriving (Generic, Eq, NFData, Show, Typeable)
 
 data NodeTypecheckerUpdate = ExpressionUpdate    { _tcNodeId   :: NodeId, _tcInPorts       :: Map InPort Port, _tcOutPorts :: OutPortTree Port }
