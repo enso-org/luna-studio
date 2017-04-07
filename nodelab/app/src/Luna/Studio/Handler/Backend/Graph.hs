@@ -44,7 +44,7 @@ import           Luna.Studio.Action.Basic.Revert              (revertAddConnecti
                                                                revertRenameNode, revertSetNodeCode, revertSetNodeExpression,
                                                                revertSetNodesMeta, revertSetPortDefault)
 import           Luna.Studio.Action.Basic.UpdateCollaboration (bumpTime, modifyTime, refreshTime, touchCurrentlySelected, updateClient)
-import           Luna.Studio.Action.Batch                     (collaborativeModify, requestCollaborationRefresh, getProgram)
+import           Luna.Studio.Action.Batch                     (collaborativeModify, getProgram, requestCollaborationRefresh)
 import           Luna.Studio.Action.Camera                    (centerGraph)
 import           Luna.Studio.Action.Command                   (Command)
 import           Luna.Studio.Action.State.App                 (setBreadcrumbs)
@@ -58,6 +58,7 @@ import           Luna.Studio.Handler.Backend.Common           (doNothing, handle
 import           Luna.Studio.Prelude
 import           Luna.Studio.React.Model.Node                 (Node (Expression), nodeLoc, _Expression)
 import qualified Luna.Studio.React.Model.Node.ExpressionNode  as Node
+import           Luna.Studio.Report
 import           Luna.Studio.State.Global                     (State)
 import qualified Luna.Studio.State.Global                     as Global
 
@@ -86,8 +87,12 @@ handle (Event.Batch ev) = Just $ case ev of
                     requestCollaborationRefresh
                 Global.workspace . Workspace.isGraphLoaded .= True
         failure _ = do
-            Global.workspace %= Workspace.upperWorkspace
-            getProgram
+            isOnTop <- uses Global.workspace Workspace.isOnTopBreadcrumb
+            if isOnTop
+                then fatal "Cannot get file from backend"
+                else do
+                    Global.workspace %= Workspace.upperWorkspace
+                    getProgram
 
     AddConnectionResponse response -> handleResponse response success failure where
         requestId          = response ^. Response.requestId

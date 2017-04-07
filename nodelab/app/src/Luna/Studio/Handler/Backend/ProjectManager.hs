@@ -78,8 +78,8 @@ handle :: Event -> Maybe (Command State ())
 --         let projectId = result ^. ImportProject.projectId
 --             project   = result ^. ImportProject.project
 --         setProject projectId project
-
 -- handle (CustomEvent (CustomEvent.RawEvent "file.import" jsVal)) = Just $ BatchCmd.importProject $ convert projectData where
 --     projectData = pFromJSVal jsVal :: String
+
 
 handle _ = Nothing

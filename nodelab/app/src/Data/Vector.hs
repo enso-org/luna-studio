@@ -73,7 +73,7 @@ instance Num a => Num (Vector2 a) where
 instance IsList (Vector2 a) where
     type Item (Vector2 a) = a
     fromList [x',y'] = Vector2 x' y'
-    fromList _     = error "List must be of length 2 to create Vector2."
+    fromList _     = $(placeholder "List must be of length 2 to create Vector2.")
     toList   vec   = [vec ^. x, vec ^. y]
 
 instance Applicative Vector2 where
