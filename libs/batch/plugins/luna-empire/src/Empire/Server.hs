@@ -28,6 +28,7 @@ import           Empire.API.Data.AsyncUpdate      (AsyncUpdate (..))
 import           Empire.API.Data.GraphLocation    (GraphLocation)
 import qualified Empire.API.Topic                 as Topic
 import           Empire.Data.Graph                (Graph, ast)
+import qualified Empire.Data.Graph                as Graph
 
 import qualified Empire.Commands.AST              as AST
 import qualified Empire.Commands.Library          as Library
@@ -100,10 +101,12 @@ readAll chan = do
 startTCWorker :: Empire.CommunicationEnv -> TChan (GraphLocation, Graph, Bool) -> Bus ()
 startTCWorker env chan = liftIO $ do
     interpreterEnv <- Empire.defaultInterpreterEnv
+    let pmState = interpreterEnv ^. Empire.graph . Graph.ast . Graph.pmState
     void $ Empire.runEmpire env interpreterEnv $ forever $ do
         (loc, g, flush) <- liftIO $ atomically $ readAll chan
+        return ()
         if flush then Typecheck.flushCache else return ()
-        Empire.graph .= g
+        Empire.graph .= (g & Graph.ast . Graph.pmState .~ pmState)
         Typecheck.run loc
         {-zoom (Empire.graph . ast) $ AST.dumpGraphViz "tc_graph"-}
 
