@@ -60,7 +60,11 @@ autolayoutNodes nodes = do
 
 
 findPositions :: AutolayoutState ()
-findPositions = removeCycles >> get >>= mapM_ findPositionRecursive . Map.keys
+findPositions = do
+    removeCycles
+    nls <- Map.keys <$> get
+    mapM_ findPositionRecursive nls
+    mapM_ alignToLeft nls
 
 findPositionRecursive :: NodeLoc -> AutolayoutState ()
 findPositionRecursive nl = lookupNode nl >>= \mayNode -> case mayNode of
@@ -89,6 +93,21 @@ areInChain n1 n2 =
             [conn] -> Just $ conn ^. dstNodeLoc
             _      -> Nothing
 
+getPrevInChain :: NodeInfo -> AutolayoutState (Maybe NodeInfo)
+getPrevInChain n =
+    find (areInChain n) . catMaybes <$> mapM (lookupNode . view srcNodeLoc) (n ^. inConns)
+
+getNextInChain :: NodeInfo -> AutolayoutState (Maybe NodeInfo)
+getNextInChain n =
+    find (areInChain n) . catMaybes <$> mapM (lookupNode . view dstNodeLoc) (n ^. outConns)
+
+isHeadInChain :: NodeInfo -> AutolayoutState Bool
+isHeadInChain = fmap isNothing . getPrevInChain
+
+isLastInChain :: NodeInfo -> AutolayoutState Bool
+isLastInChain = fmap isNothing . getNextInChain
+
+
 removeCycles :: AutolayoutState ()
 removeCycles = get >>= mapM_ removeCyclesForNode . Map.keys
 
@@ -115,18 +134,20 @@ alignNeighboursX :: NodeInfo -> AutolayoutState [NodeLoc]
 alignNeighboursX n = do
     let prevX = n ^. actPos . x - gapBetweenNodes
         nextX = n ^. actPos . x + gapBetweenNodes
-    preds <- lookupNodes . map (view srcNodeLoc) $ n ^. inConns
-    succs <- lookupNodes . map (view dstNodeLoc) $ n ^. outConns
-    predsToUpdate <- fmap catMaybes . forM preds $ \node ->
-        if node ^. actPos . x <= prevX then return Nothing else do
+        proccessPred :: NodeInfo -> AutolayoutState (Maybe NodeLoc)
+        proccessPred node = if node ^. actPos . x <= prevX then return Nothing else do
             let nl = node ^. nodeLoc
             modify $ Map.update (\n' -> Just $ n' & actPos . x .~ prevX) nl
             return $ Just nl
-    succsToUpdate <- fmap catMaybes . forM succs $ \node ->
-        if node ^. actPos . x >= nextX then return Nothing else do
+        proccessSucc :: NodeInfo -> AutolayoutState (Maybe NodeLoc)
+        proccessSucc node = if node ^. actPos . x >= nextX then return Nothing else do
             let nl = node ^. nodeLoc
             modify $ Map.update (\n' -> Just $ n' & actPos . x .~ nextX) nl
             return $ Just nl
+    preds <- lookupNodes . map (view srcNodeLoc) $ n ^. inConns
+    succs <- lookupNodes . map (view dstNodeLoc) $ n ^. outConns
+    predsToUpdate <- fmap catMaybes $ mapM proccessPred preds
+    succsToUpdate <- fmap catMaybes $ mapM proccessSucc succs
     return $ predsToUpdate ++ succsToUpdate
 
 alignNeighboursY :: NodeInfo -> AutolayoutState [NodeLoc]
@@ -139,3 +160,17 @@ alignNeighboursY n = do
             let nl = node ^. nodeLoc
             modify $ Map.update (\n' -> Just $ n' & actPos . y .~ y') nl
             return $ Just nl
+
+alignToLeft :: NodeLoc -> AutolayoutState ()
+alignToLeft nl = withJustM (lookupNode nl) $ \n -> do
+    preds  <- lookupNodes . map (view srcNodeLoc) $ n ^. inConns
+    succs  <- lookupNodes . map (view dstNodeLoc) $ n ^. outConns
+    isLast <- isLastInChain n
+    let maxPredX = maximum $ map (view $ actPos . x) preds
+        needMove = not (null preds)
+                && length succs == 1
+                && not isLast
+                && maxPredX < n ^. actPos . x - gapBetweenNodes
+    when needMove $ do
+        modify $ Map.update (\n' -> Just $ n' & actPos . x .~ maxPredX + gapBetweenNodes)  (n ^. nodeLoc)
+        forM_ succs $ alignToLeft . view nodeLoc
