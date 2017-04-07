@@ -6,13 +6,22 @@ internal = i()
 c             = require "./gen/ghcjs-code.js"
 code = c()
 path = require 'path'
+# w = require './gen/websocket'
+# websocket = w()
+
+init = require './gen/init'
 
 module.exports =
   activate: ->
     internal.start()
-    rootPath = atom.project.getPaths().shift()
-    # if rootPath != ""
-    #   internal.pushInternalEvent("SetProject " + rootPath)
+
+    actStatus = (data) ->
+        if data == 'activate'
+            rootPath = atom.project.getPaths().shift()
+            if rootPath != ""
+                internal.pushInternalEvent("SetProject " + rootPath)
+    internal.statusListener actStatus
+
 
     @observed = new SubAtom
     @observed.add atom.workspace.observeTextEditors (@editor) ->
@@ -22,7 +31,6 @@ module.exports =
                 console.log(uri)
                 internal.pushInternalEvent("OpenFile " + uri)
 
-                # @editor = editor
                 @buffer = @editor.buffer
 
                 console.log("in observed")
