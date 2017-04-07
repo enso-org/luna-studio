@@ -33,13 +33,12 @@ import           GHC.Generics                  as X (Generic)
 import           GHCJS.Marshal                 as X (FromJSVal (..), ToJSVal (..))
 import           GHCJS.Types                   as X (JSVal)
 import           Luna.Studio.Prelude.Instances ()
-import           Prelude                       hiding (curry, print, putStr, putStrLn, uncurry, (++), (.))
+import           Prelude                       hiding (curry, error, print, putStr, putStrLn, uncurry, (++), (.))
 import           Prologue                      as X (NFData, convert, curry, fmap1, fmap2, fmap3, fmap4, fmap5, fmap6, fmap7, fmap8, fmap9,
                                                      foldlDef, fromJustM, ifElseId, ifM, lift2, lift3, pprint, putStr, show', switch,
                                                      toString, uncurry, unlessM, whenLeft, whenLeft', whenM, whenRight, whenRight',
                                                      withJust, ($>), (++), (.), (.:), (.:.), (.::), (.::.), (.:::), (.:::.), (.::::),
                                                      (.::::.), (<<∘>>), (<<∘∘>>), (<∘>), (<∘∘>), (<∘∘∘>), (<∘∘∘∘>), (<∘∘∘∘∘>))
-
 
 foreign import javascript safe "console.log($1)" consoleLog :: JSString -> IO ()
 

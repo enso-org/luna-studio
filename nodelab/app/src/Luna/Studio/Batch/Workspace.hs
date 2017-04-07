@@ -38,6 +38,9 @@ upperWorkspace :: Workspace -> Workspace
 upperWorkspace w = w & currentLocation . GraphLocation.breadcrumb . Breadcrumb.items .~ newItems where
     newItems = fromMaybe def $ mayTail $ w ^. currentLocation . GraphLocation.breadcrumb . Breadcrumb.items
 
+isOnTopBreadcrumb :: Workspace -> Bool
+isOnTopBreadcrumb = view (currentLocation . GraphLocation.breadcrumb . Breadcrumb.items . to null)
+
 uiGraphLocation :: Getter Workspace GraphLocation
 uiGraphLocation = to uiGraphLocation'
 

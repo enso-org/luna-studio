@@ -50,7 +50,7 @@ import           Control.Monad.Error           (throwError)
 import           Data.Coerce                   (coerce)
 import           Data.List                     (sort, group)
 import qualified Data.Map                      as Map
-import           Data.Maybe                    (catMaybes, isJust)
+import           Data.Maybe                    (catMaybes, fromMaybe, isJust)
 import           Data.Foldable                 (toList)
 import           Data.Text                     (Text)
 import qualified Data.Text                     as Text
@@ -67,7 +67,7 @@ import qualified Empire.Data.BreadcrumbHierarchy as BH
 import           Empire.Data.Graph               (Graph)
 import qualified Empire.Data.Graph               as Graph
 import qualified Empire.Data.Library             as Library
-import           Empire.Data.Layers              (Marker)
+import           Empire.Data.Layers              (CodeMarkers, Marker)
 
 import           Empire.API.Data.Breadcrumb      (Breadcrumb (..), Named, BreadcrumbItem)
 import qualified Empire.API.Data.Breadcrumb      as Breadcrumb
@@ -107,6 +107,7 @@ import qualified Luna.IR            as IR
 import qualified OCI.IR.Combinators as IR (replaceSource, deleteSubtree, narrowTerm)
 import           Luna.Syntax.Text.Parser.Marker (MarkedExprMap(..))
 import qualified Luna.Syntax.Text.Parser.Marker as Luna
+import qualified Luna.Syntax.Text.Parser.Parser as Parser (ReparsingStatus(..), ReparsingChange(..))
 
 
 generateNodeName :: ASTOp m => m String
@@ -193,6 +194,12 @@ makeCurrentSeq out = do
   let withOut = fmap head $ group $ sortedRefs ++ toList out
   AST.makeSeq withOut
 
+transplantExprMap :: ASTOp m => Maybe NodeRef -> Maybe NodeRef -> m ()
+transplantExprMap (Just oldSeq) (Just newSeq) = do
+    exprMap <- IR.getLayer @CodeMarkers oldSeq
+    IR.putLayer @CodeMarkers newSeq exprMap
+transplantExprMap _             _             = return ()
+
 updateGraphSeq :: ASTOp m => Maybe NodeRef -> m ()
 updateGraphSeq newOut = do
     oldSeq     <- preuse $ Graph.breadcrumbHierarchy . BH.body
@@ -201,6 +208,7 @@ updateGraphSeq newOut = do
     case (,) <$> outLink <*> newOut of
         Just (l, o) -> IR.replaceSource o l
         Nothing     -> return ()
+    transplantExprMap oldSeq newOut
     when (newOut /= oldSeq) $ mapM_ ASTRemove.removeSubtree oldSeq
     Graph.breadcrumbHierarchy . BH._ToplevelParent . BH.topBody .= newOut
     forM_ newOut $ (Graph.breadcrumbHierarchy . BH.body .=)
@@ -565,39 +573,90 @@ openFile path = do
 typecheck :: GraphLocation -> Empire ()
 typecheck loc = withGraph loc $ runTC loc False
 
-substituteCode :: FilePath -> Int -> Int -> Text -> Maybe Int -> Empire ()
+substituteCode :: FilePath -> Int -> Int -> Text -> Maybe Int -> Empire (Maybe Parser.ReparsingStatus)
 substituteCode path start end code cursor = do
-    liftIO $ print path >> print start >> print end >> print code >> print cursor
-    Library.withLibrary path $ do
+    newCode <- Library.withLibrary path $ do
         currentCode <- use Library.code
         let len            = end - start
             (prefix, rest) = Text.splitAt start currentCode
             suffix         = Text.drop len rest
             newCode        = Text.concat [prefix, code, suffix]
-        liftIO $ print newCode
-        liftIO $ IO.hFlush IO.stdout
         Library.code .= newCode
+        return newCode
+    let loc = GraphLocation path (Breadcrumb [])
+    withTC loc True $ reloadCode loc newCode
+
+reloadCode :: GraphLocation -> Text -> Command Graph (Maybe Parser.ReparsingStatus)
+reloadCode loc code = do
+    expr <- preuse $ Graph.breadcrumbHierarchy . BH.body
+    case expr of
+        Just e -> do
+            (ref, exprMap, rs) <- ASTParse.runUnitReparser code e
+            Graph.breadcrumbHierarchy . BH.body .= ref
+            nodes <- runASTOp $ forM (coerce rs :: [Parser.ReparsingChange]) $ \x -> case x of
+                Parser.AddedExpr expr -> do
+                    uuid <- insertNode Nothing expr
+                    Just <$> GraphBuilder.buildNode uuid
+                Parser.ChangedExpr oldExpr expr -> do
+                    oldNodeId <- (ASTRead.getVarNode oldExpr >>= ASTRead.getNodeId) `catch`
+                        (\(_e :: NotUnifyException) -> return Nothing)
+
+                    forM oldNodeId $ \nodeId -> do
+                        oldMeta <- AST.readMeta oldExpr
+                        forM oldMeta $ AST.writeMeta expr
+                        varNode <- ASTRead.getVarNode expr
+                        IR.putLayer @Marker varNode (Just $ OutPortRef (NodeLoc def nodeId) Port.All)
+                        let nodeItem = BH.ExprItem Map.empty (BH.MatchNode expr)
+                        Graph.breadcrumbHierarchy . BH.children . at nodeId ?= BH.ExprChild nodeItem
+                        ASTModify.rewireNode nodeId =<< ASTRead.getTargetNode expr
+                        GraphBuilder.buildNode nodeId
+                Parser.UnchangedExpr oldExpr expr -> do
+                    oldMeta <- AST.readMeta oldExpr
+                    forM oldMeta $ AST.writeMeta expr
+                    Just oldNodeId <- (ASTRead.getVarNode oldExpr >>= ASTRead.getNodeId) `catch`
+                        (\(_e :: NotUnifyException) -> return Nothing)
+                    var <- ASTRead.getVarNode expr
+                    IR.putLayer @Marker var (Just $ OutPortRef (NodeLoc def oldNodeId) Port.All)
+                    let nodeItem = BH.ExprItem Map.empty (BH.MatchNode expr)
+                    Graph.breadcrumbHierarchy . BH.children . at oldNodeId ?= BH.ExprChild nodeItem
+                    Just <$> GraphBuilder.buildNode oldNodeId
+                Parser.RemovedExpr oldExpr -> do
+                    oldNodeId <- (ASTRead.getVarNode oldExpr >>= ASTRead.getNodeId) `catch`
+                        (\(_e :: NotUnifyException) -> return Nothing)
+                    forM_ oldNodeId $ removeNodeNoTC
+                    return Nothing
+            forM_ (catMaybes nodes) $ Publisher.notifyNodeUpdate loc
+            runAliasAnalysis
+            return $ Just rs
+        Nothing -> return Nothing
+
+insertNode :: ASTOp m => Maybe NodeId -> NodeRef -> m NodeId
+insertNode oldUUID expr = do
+    newUUID <- liftIO $ UUID.nextRandom
+    let uuid = fromMaybe newUUID oldUUID
+    assignment <- ASTRead.isMatch expr
+    if assignment then do
+        var <- ASTRead.getVarNode expr
+        IR.putLayer @Marker var (Just $ OutPortRef (NodeLoc def uuid) Port.All)
+        let nodeItem = BH.ExprItem Map.empty (BH.MatchNode expr)
+        Graph.breadcrumbHierarchy . BH.children . at uuid ?= BH.ExprChild nodeItem
+
+        target   <- ASTRead.getASTTarget uuid
+        lamItem  <- prepareLambdaChild (BH.MatchNode expr) target
+        exprItem <- prepareExprChild   (BH.MatchNode expr) target
+        forM_ lamItem  $ (Graph.breadcrumbHierarchy . BH.children . ix uuid .=) . BH.LambdaChild
+        forM_ exprItem $ (Graph.breadcrumbHierarchy . BH.children . ix uuid .=) . BH.ExprChild
+    else do
+        let nodeItem = BH.ExprItem Map.empty (BH.AnonymousNode expr)
+        Graph.breadcrumbHierarchy . BH.children . at uuid ?= BH.ExprChild nodeItem
+    return uuid
 
 loadCode :: Text -> Command Graph ()
 loadCode code = do
     (ref, exprMap) <- ASTParse.runUnitParser code
-    runASTOp $ forM_ (coerce exprMap :: Map.Map Luna.Marker NodeRef) $ \expr -> do
-        uuid <- liftIO $ UUID.nextRandom
-        assignment <- ASTRead.isMatch expr
-        if assignment then do
-            var <- ASTRead.getVarNode expr
-            IR.putLayer @Marker var (Just $ OutPortRef (NodeLoc def uuid) Port.All)
-            let nodeItem = BH.ExprItem Map.empty (BH.MatchNode expr)
-            Graph.breadcrumbHierarchy . BH.children . at uuid ?= BH.ExprChild nodeItem
-
-            target   <- ASTRead.getASTTarget uuid
-            lamItem  <- prepareLambdaChild (BH.MatchNode expr) target
-            exprItem <- prepareExprChild   (BH.MatchNode expr) target
-            forM_ lamItem  $ (Graph.breadcrumbHierarchy . BH.children . ix uuid .=) . BH.LambdaChild
-            forM_ exprItem $ (Graph.breadcrumbHierarchy . BH.children . ix uuid .=) . BH.ExprChild
-        else do
-            let nodeItem = BH.ExprItem Map.empty (BH.AnonymousNode expr)
-            Graph.breadcrumbHierarchy . BH.children . at uuid ?= BH.ExprChild nodeItem
+    runASTOp $ forM_ (coerce exprMap :: Map.Map Luna.Marker NodeRef) $ insertNode Nothing
+    Graph.breadcrumbHierarchy . BH._ToplevelParent . BH.topBody .= Just ref
+    Graph.breadcrumbHierarchy . BH.body .= ref
     runAliasAnalysis
 
 -- internal

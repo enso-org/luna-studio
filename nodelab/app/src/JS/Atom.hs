@@ -3,16 +3,16 @@ module JS.Atom
     ( onEvent
     , pushNotification
     ) where
-import qualified Data.List                  as List
+import qualified Data.List                     as List
 import           GHCJS.Foreign.Callback
-import           GHCJS.Marshal.Pure         (pFromJSVal)
-import           GHCJS.Types                (JSVal)
-import           Luna.Studio.Error.Error
-import           Luna.Studio.Event.Event    (Event (Shortcut, UI))
-import qualified Luna.Studio.Event.Shortcut as Shortcut
-import           Luna.Studio.Event.UI       (UIEvent (SearcherEvent))
+import           GHCJS.Marshal.Pure            (pFromJSVal)
+import           GHCJS.Types                   (JSVal)
+import           Luna.Studio.Data.Notification
+import           Luna.Studio.Event.Event       (Event (Shortcut, UI))
+import qualified Luna.Studio.Event.Shortcut    as Shortcut
+import           Luna.Studio.Event.UI          (UIEvent (SearcherEvent))
 import           Luna.Studio.Prelude
-import           Text.Read                  (readMaybe)
+import           Text.Read                     (readMaybe)
 
 
 foreign import javascript safe "atomCallback.pushNotification($1, $2)"

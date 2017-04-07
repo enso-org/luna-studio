@@ -1,23 +1,27 @@
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE QuasiQuotes       #-}
+{-# LANGUAGE OverloadedStrings   #-}
+{-# LANGUAGE QuasiQuotes         #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE ViewPatterns        #-}
 
 module FileLoadSpec (spec) where
 
-import           Data.List                     (find)
-import qualified Data.Map                      as Map
-import qualified Empire.API.Data.Graph         as Graph
-import qualified Empire.API.Data.Node          as Node
-import qualified Empire.API.Data.Port          as Port
-import           Empire.API.Data.Breadcrumb    (Breadcrumb(..))
-import           Empire.API.Data.GraphLocation (GraphLocation(..))
-import           Empire.API.Data.PortRef         (AnyPortRef (..), InPortRef (..), OutPortRef (..))
-import           Empire.API.Data.TypeRep       (TypeRep(TStar))
-import           Empire.ASTOp                  (runASTOp)
-import qualified Empire.ASTOps.Parse           as ASTParse
-import qualified Empire.ASTOps.Print           as ASTPrint
-import qualified Empire.Commands.Graph         as Graph
-import qualified Empire.Commands.GraphBuilder  as GraphBuilder
-import qualified Empire.Commands.Library       as Library
+import           Data.Coerce
+import           Data.List                      (find)
+import qualified Data.Map                       as Map
+import qualified Empire.API.Data.Graph          as Graph
+import qualified Empire.API.Data.Node           as Node
+import qualified Empire.API.Data.Port           as Port
+import           Empire.API.Data.Breadcrumb     (Breadcrumb(..))
+import           Empire.API.Data.GraphLocation  (GraphLocation(..))
+import           Empire.API.Data.PortRef        (AnyPortRef (..), InPortRef (..), OutPortRef (..))
+import           Empire.API.Data.TypeRep        (TypeRep(TStar))
+import           Empire.ASTOp                   (runASTOp)
+import qualified Empire.ASTOps.Parse            as ASTParse
+import qualified Empire.ASTOps.Print            as ASTPrint
+import qualified Empire.Commands.Graph          as Graph
+import qualified Empire.Commands.GraphBuilder   as GraphBuilder
+import qualified Empire.Commands.Library        as Library
+import qualified Luna.Syntax.Text.Parser.Parser as Parser (ReparsingStatus(..), ReparsingChange(..))
 
 import           Prologue                   hiding ((|>))
 
@@ -64,4 +68,103 @@ c ‹4›= 3
                 connections `shouldMatchList` [
                       (outPortRef (pi ^. Node.nodeId) Port.All, inPortRef (anon ^. Node.nodeId) (Port.Arg 0))
                     , (outPortRef (c ^. Node.nodeId) Port.All, inPortRef (bar ^. Node.nodeId) (Port.Arg 0))
+                    ]
+        it "shows proper changes to expressions" $ \env -> do
+            let code = [r|pi ‹0›= 3.14
+
+foo ‹1›= a: b: a + b
+
+c ‹2›= 4
+bar ‹3›= foo 8 c
+|]
+            res <- evalEmp env $ do
+                Library.createLibrary Nothing "TestPath" code
+                let loc = GraphLocation "TestPath" $ Breadcrumb []
+                Graph.withGraph loc $ Graph.loadCode code
+                Graph.substituteCode "TestPath" 59 59 "3" (Just 60)
+            withResult res $ \(coerce -> Just (rs :: [Parser.ReparsingChange])) -> do
+                let unchanged = filter (\x -> case x of Parser.UnchangedExpr{} -> True; _ -> False) rs
+                    changed   = filter (\x -> case x of Parser.ChangedExpr{} -> True; _ -> False) rs
+                length unchanged `shouldBe` 3
+                length changed `shouldBe` 1
+        it "does not duplicate nodes on edit" $ \env -> do
+            let code = [r|pi ‹0›= 3.14
+
+foo ‹1›= a: b: a + b
+
+c ‹2›= 4
+bar ‹3›= foo 8 c
+|]
+            res <- evalEmp env $ do
+                Library.createLibrary Nothing "TestPath" code
+                let loc = GraphLocation "TestPath" $ Breadcrumb []
+                Graph.withGraph loc $ Graph.loadCode code
+                changes <- Graph.substituteCode "TestPath" 43 43 "3" (Just 44)
+                graph   <- Graph.getGraph loc
+                return (changes, graph)
+            withResult res $ \(coerce -> Just (rs :: [Parser.ReparsingChange]), graph) -> do
+                let unchanged = filter (\x -> case x of Parser.UnchangedExpr{} -> True; _ -> False) rs
+                    changed   = filter (\x -> case x of Parser.ChangedExpr{} -> True; _ -> False) rs
+                length unchanged `shouldBe` 3
+                length changed `shouldBe` 1
+                let Graph.Graph nodes connections _ = graph
+                    cNodes = filter (\node -> node ^. Node.name == "c") nodes
+                length cNodes `shouldBe` 1
+                let [cNode] = cNodes
+                    Just bar = find (\node -> node ^. Node.name == "bar") nodes
+                connections `shouldMatchList` [
+                      (outPortRef (cNode ^. Node.nodeId) Port.All, inPortRef (bar ^. Node.nodeId) (Port.Arg 1))
+                    ]
+        it "double modification gives proper value" $ \env -> do
+            let code = [r|pi ‹0›= 3.14
+
+foo ‹1›= a: b: a + b
+
+c ‹2›= 4
+bar ‹3›= foo 8 c
+|]
+            res <- evalEmp env $ do
+                Library.createLibrary Nothing "TestPath" code
+                let loc = GraphLocation "TestPath" $ Breadcrumb []
+                Graph.withGraph loc $ Graph.loadCode code
+                Graph.substituteCode "TestPath" 43 43 "3" (Just 44)
+                Graph.substituteCode "TestPath" 43 43 "3" (Just 44)
+                Graph.getGraph loc
+            withResult res $ \graph -> do
+                let Graph.Graph nodes connections _ = graph
+                    cNodes = filter (\node -> node ^. Node.name == "c") nodes
+                length nodes `shouldBe` 4
+                length cNodes `shouldBe` 1
+                let [cNode] = cNodes
+                    Just bar = find (\node -> node ^. Node.name == "bar") nodes
+                cNode ^. Node.code `shouldBe` Just "334"
+                connections `shouldMatchList` [
+                      (outPortRef (cNode ^. Node.nodeId) Port.All, inPortRef (bar ^. Node.nodeId) (Port.Arg 1))
+                    ]
+        it "modifying two expressions give proper values" $ \env -> do
+            let code = [r|pi ‹0›= 3.14
+
+foo ‹1›= a: b: a + b
+
+c ‹2›= 4
+bar ‹3›= foo 8 c
+|]
+            res <- evalEmp env $ do
+                Library.createLibrary Nothing "TestPath" code
+                let loc = GraphLocation "TestPath" $ Breadcrumb []
+                Graph.withGraph loc $ Graph.loadCode code
+                Graph.substituteCode "TestPath" 43 43 "3" (Just 44)
+                Graph.substituteCode "TestPath" 59 59 "1" (Just 60)
+                Graph.getGraph loc
+            withResult res $ \graph -> do
+                let Graph.Graph nodes connections _ = graph
+                    cNodes = filter (\node -> node ^. Node.name == "c") nodes
+                length nodes `shouldBe` 4
+                length cNodes `shouldBe` 1
+                let [cNode] = cNodes
+                    Just bar = find (\node -> node ^. Node.name == "bar") nodes
+                cNode ^. Node.code `shouldBe` Just "34"
+                bar ^. Node.code `shouldBe` Just "foo 18 c"
+                connections `shouldMatchList` [
+                      (outPortRef (cNode ^. Node.nodeId) Port.All, inPortRef (bar ^. Node.nodeId) (Port.Arg 1))
                     ]
