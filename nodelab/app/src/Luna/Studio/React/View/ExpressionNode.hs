@@ -7,7 +7,6 @@ import qualified Data.Map.Lazy                                         as Map
 import           Data.Matrix                                           (Matrix)
 import qualified Empire.API.Data.MonadPath                             as MonadPath
 import           Empire.API.Data.PortRef                               (toAnyPortRef)
-import qualified Empire.API.Graph.NodeResultUpdate                     as NodeResult
 import qualified JS.Config                                             as Config
 import qualified JS.UI                                                 as UI
 import           Luna.Studio.Data.Matrix                               (showNodeMatrix, showNodeTranslate)
@@ -32,15 +31,15 @@ import           Luna.Studio.React.View.Plane                          (planeMon
 import           Luna.Studio.React.View.Port                           (portExpanded_, portPhantom_, port_)
 import           Luna.Studio.React.View.Style                          (blurBackground_, errorMark_, selectionMark_)
 import qualified Luna.Studio.React.View.Style                          as Style
-import           Luna.Studio.React.View.Visualization                  (strValue, visualization_)
+import           Luna.Studio.React.View.Visualization                  (nodeShortValue_, nodeVisualizations_, strValue, visualization_)
 import           React.Flux
 import qualified React.Flux                                            as React
 
-name, objNameBody, objNameVis, objNamePorts :: JSString
-name         = "node"
-objNameBody  = "node-body"
-objNameVis   = "node-vis"
-objNamePorts = "node-ports"
+
+name, objNameBody, objNamePorts :: JSString
+name            = "node"
+objNameBody     = "node-body"
+objNamePorts    = "node-ports"
 
 nodePrefix :: JSString
 nodePrefix = Config.prefix "node-"
@@ -63,13 +62,14 @@ node_ ref model = React.viewWithSKey node (jsShow $ model ^. Node.nodeId) (ref, 
 node :: ReactView (Ref App, ExpressionNode)
 node = React.defineView name $ \(ref, n) -> case n ^. Node.mode of
     Node.Expanded (Node.Function fs) -> nodeContainer_ ref $ Map.elems fs
-    _ ->
-        let nodeId    = n ^. Node.nodeId
-            nodeLoc   = n ^. Node.nodeLoc
-            nodeLimit = 10000::Int
-            zIndex    = n ^. Node.zPos
-            z         = if isCollapsed n then zIndex else zIndex + nodeLimit
-        in div_
+    _ -> do
+        let nodeId          = n ^. Node.nodeId
+            nodeLoc         = n ^. Node.nodeLoc
+            nodeLimit       = 10000::Int
+            zIndex          = n ^. Node.zPos
+            z               = if isCollapsed n then zIndex else zIndex + nodeLimit
+            isVisualization = Prop.fromNode n ^. Prop.visualizationsEnabled
+        div_
             [ "key"       $= (nodePrefix <> fromString (show nodeId))
             , "id"        $= (nodePrefix <> fromString (show nodeId))
             , "className" $= Style.prefixFromList ( [ "node", (if isCollapsed n then "node--collapsed" else "node--expanded") ]
@@ -113,14 +113,14 @@ node = React.defineView name $ \(ref, n) -> case n ^. Node.mode of
                         [ "key"       $= "icons"
                         , "className" $= Style.prefix "node__icons"
                         ] $ do
-                        let val = Prop.fromNode n ^. Prop.visualizationsEnabled
                         rect_
                             [ "key" $= "ctrlSwitch"
-                            , "className" $= Style.prefixFromList (["icon", "icon--show"] ++ if val then ["icon--show--on"] else ["icon--show--off"])
-                            , onClick $ \_ _ -> dispatch ref $ UI.NodeEvent $ Node.DisplayResultChanged (not val) nodeLoc
+                            , "className" $= Style.prefixFromList (["icon", "icon--show"] ++ if isVisualization then ["icon--show--on"] else ["icon--show--off"])
+                            , onClick $ \_ _ -> dispatch ref $ UI.NodeEvent $ Node.DisplayResultChanged (not isVisualization) nodeLoc
                             ] mempty
             nodeBody_ ref n
-            nodeVisualizations_ ref n
+            nodeShortValue_ n
+            if isVisualization then nodeVisualizations_ ref n else return ()
             nodePorts_ ref n
 
 nodeDynamicStyles_ :: Matrix Double -> ExpressionNode -> ReactElementM ViewEventHandler ()
@@ -137,9 +137,9 @@ nodeBody_ :: Ref App -> ExpressionNode -> ReactElementM ViewEventHandler ()
 nodeBody_ ref model = React.viewWithSKey nodeBody "node-body" (ref, model) mempty
 
 nodeBody :: ReactView (Ref App, ExpressionNode)
-nodeBody = React.defineView objNameBody $ \(ref, n) ->
+nodeBody = React.defineView objNameBody $ \(ref, n) -> do
     let nodeLoc = n ^. Node.nodeLoc
-    in div_
+    div_
         [ "key"       $= "nodeBody"
         , "className" $= Style.prefixFromList [ "node__body", "node-translate" ]
         ] $ do
@@ -156,25 +156,6 @@ nodeBody = React.defineView objNameBody $ \(ref, n) ->
                     $ Field.mk ref (fromMaybe def $ n ^. Node.code)
                     & Field.onCancel .~ Just (UI.NodeEvent . Node.SetCode nodeLoc)
                 _                                -> ""
-
-nodeVisualizations_ :: Ref App -> ExpressionNode -> ReactElementM ViewEventHandler ()
-nodeVisualizations_ ref model = React.viewWithSKey nodeVisualizations objNameVis (ref, model) mempty
-
-nodeVisualizations :: ReactView (Ref App, ExpressionNode)
-nodeVisualizations = React.defineView objNameVis $ \(ref, n) ->
-    let nodeLoc = n ^. Node.nodeLoc
-    in div_
-        [ "key"       $= "shortValue"
-        , "className" $= Style.prefixFromList [ "node__returned-value", "node-translate", "noselect" ]
-        , onDoubleClick $ \e _ -> [stopPropagation e]
-        ] $ do
-        elemString $ strValue n
-        div_
-            [ "key"       $= "visualizations"
-            , "className" $= Style.prefixFromList [ "node__visualisations" ]
-            ] $ forM_ (n ^. Node.value) $ visualization_ ref nodeLoc def
-
-
 
 nodePorts_ :: Ref App -> ExpressionNode -> ReactElementM ViewEventHandler ()
 nodePorts_ ref model = React.viewWithSKey nodePorts objNamePorts (ref, model) mempty
@@ -198,7 +179,7 @@ nodePorts = React.defineView objNamePorts $ \(ref, n) -> do
             clipPath_
                 [ "id"  $= fromString ("port-io-shape-mask-" <> show nodeId)
                 , "key" $= "portIoShapeMask"
-                ] $ do
+                ] $
                 circle_
                     [ "className" $= Style.prefix "port-io-shape-mask"
                     ] mempty

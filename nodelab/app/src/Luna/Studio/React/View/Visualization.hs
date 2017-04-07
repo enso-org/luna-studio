@@ -1,7 +1,9 @@
 {-# LANGUAGE LambdaCase        #-}
 {-# LANGUAGE OverloadedStrings #-}
 module Luna.Studio.React.View.Visualization
-( visualization
+( nodeShortValue_
+, nodeVisualizations_
+, visualization
 , visualization_
 , pinnedVisualization_
 , strValue
@@ -24,7 +26,6 @@ import qualified Empire.API.Data.PortDefault                    as PortDefault
 import           Empire.API.Data.TypeRep                        (TypeRep)
 import           Empire.API.Graph.NodeResultUpdate              (NodeValue)
 import qualified Empire.API.Graph.NodeResultUpdate              as NodeResult
---import           Luna.Studio.Data.Matrix                        (translatePropertyValue2)
 import qualified Luna.Studio.Event.UI                           as UI
 import           Luna.Studio.Prelude
 import qualified Luna.Studio.React.Event.Visualization          as Visualization
@@ -42,9 +43,33 @@ import           Luna.Studio.React.View.Visualization.DataFrame (dataFrame_)
 import           Luna.Studio.React.View.Visualization.Image     (image_)
 
 
+viewName, objNameVis, objNameShortVal :: JSString
+viewName        = "visualization"
+objNameVis      = "node-vis"
+objNameShortVal = "node-short-value"
 
-viewName :: JSString
-viewName = "visualization"
+nodeShortValue_ :: ExpressionNode -> ReactElementM ViewEventHandler ()
+nodeShortValue_ model = React.viewWithSKey nodeShortValue objNameShortVal (model) mempty
+
+nodeShortValue :: ReactView (ExpressionNode)
+nodeShortValue = React.defineView objNameShortVal $ \(n) -> do
+    div_
+        [ "key"       $= "shortValue"
+        , "className" $= Style.prefixFromList [ "node__short-value", "node-translate", "noselect" ]
+        , onDoubleClick $ \e _ -> [stopPropagation e]
+        ] $ elemString $ strValue n
+
+nodeVisualizations_ :: Ref App -> ExpressionNode -> ReactElementM ViewEventHandler ()
+nodeVisualizations_ ref model = React.viewWithSKey nodeVisualizations objNameVis (ref, model) mempty
+
+nodeVisualizations :: ReactView (Ref App, ExpressionNode)
+nodeVisualizations = React.defineView objNameVis $ \(ref, n) -> do
+    let nodeLoc = n ^. Node.nodeLoc
+    div_
+        [ "key"       $= "visualizations"
+        , "className" $= Style.prefixFromList [ "node__visualizations", "node-translate", "noselect" ]
+        , onDoubleClick $ \e _ -> [stopPropagation e]
+        ] $ forM_ (n ^. Node.value) $ visualization_ ref nodeLoc def
 
 pinnedVisualization_ :: Ref App -> NodeEditor -> (NodeLoc, Int, Position) -> ReactElementM ViewEventHandler ()
 pinnedVisualization_ ref ne (nl, _, position) =
@@ -71,7 +96,6 @@ visualization = React.defineView viewName $ \(ref, nl, mayPos, nodeValue) ->
 --     --, onMouseDown $ \_ _ -> traceShowMToStdout "NIE JEST NAJGORZEJ"
 --     ] mempty
 
-
 nodeValues_ :: Ref App -> NodeLoc -> Maybe Position -> [Value] -> ReactElementM ViewEventHandler ()
 nodeValues_ ref nl mayPos = mapM_ (uncurry $ nodeValue_ ref nl mayPos) . keyed
 
@@ -90,9 +114,13 @@ nodeValue_ ref nl mayPos visIx value = do
             Nothing -> div_
     translatedDiv_ $ do
         withJust mayPos $ \pos ->
-            button_ [ onMouseDown $ \e m -> stopPropagation e : dispatch ref (UI.VisualizationEvent $ Visualization.MouseDown m nl visIx pos)] $
+            button_ [ onMouseDown $ \e m -> stopPropagation e : dispatch ref (UI.VisualizationEvent $ Visualization.MouseDown m nl visIx pos)
+                    , "key" $= "button1"
+                    ] $
                 elemString "move"
-        button_ [ onClick $ \_ _ -> dispatch ref $ UI.VisualizationEvent $ event nl visIx ] $
+        button_ [ onClick $ \_ _ -> dispatch ref $ UI.VisualizationEvent $ event nl visIx
+                , "key" $= "button2"
+                ] $
             elemString $ if isPinned then "unpin" else "pin"
         case value of
             DataFrame    cols -> do
