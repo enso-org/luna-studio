@@ -124,14 +124,8 @@ instance {-# OVERLAPPING #-} FromJSON v => FromJSON (Map Breadcrumb.BreadcrumbIt
 
 instance ToJSON Port.Port
 instance FromJSON Port.Port
-instance ToJSON Port.InPort
-instance FromJSON Port.InPort
-instance ToJSON Port.OutPort
-instance FromJSON Port.OutPort
 instance ToJSON Port.PortId
 instance FromJSON Port.PortId
-instance ToJSON   a => ToJSON   (Port.OutPortTree a)
-instance FromJSON a => FromJSON (Port.OutPortTree a)
 instance ToJSON Port.PortState
 instance FromJSON Port.PortState
 
