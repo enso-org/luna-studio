@@ -44,7 +44,7 @@ import           Luna.Studio.Action.Basic.Revert              (revertAddConnecti
                                                                revertRenameNode, revertSetNodeCode, revertSetNodeExpression,
                                                                revertSetNodesMeta, revertSetPortDefault)
 import           Luna.Studio.Action.Basic.UpdateCollaboration (bumpTime, modifyTime, refreshTime, touchCurrentlySelected, updateClient)
-import           Luna.Studio.Action.Batch                     (collaborativeModify, requestCollaborationRefresh, getProgram)
+import           Luna.Studio.Action.Batch                     (collaborativeModify, getProgram, requestCollaborationRefresh)
 import           Luna.Studio.Action.Camera                    (centerGraph)
 import           Luna.Studio.Action.Command                   (Command)
 import           Luna.Studio.Action.State.App                 (setBreadcrumbs)
