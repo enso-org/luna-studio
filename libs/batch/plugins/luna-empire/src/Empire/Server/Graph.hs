@@ -336,8 +336,18 @@ instance G.GraphRequest GetBuffer.Request where
 
 handleSubstitute :: Request Substitute.Request -> StateT Env BusT ()
 handleSubstitute = modifyGraph defInverse action success where
-    action (Substitute.Request file start end newText cursor) = Graph.substituteCode file start end newText cursor
-    success _ _ _ = return ()
+    action req@(Substitute.Request file start end newText cursor) = do
+        Graph.substituteCode file start end newText cursor
+        let loc = req ^. G.location
+        graph <- Graph.getGraph loc
+        code  <- Graph.getCode loc
+        crumb <- Graph.decodeLocation loc
+        return $ GetProgram.Result graph (Text.pack code) crumb mockNSData
+    success (Request uuid guiID request) inv res = do
+        -- DISCLAIMER, FIXME[MM]: ugly hack - send response to bogus GetProgram request
+        -- after each substitute
+        let loc = request ^. G.location
+        replyResult (Request uuid guiID (GetProgram.Request loc)) () res
 
 handleGetBuffer :: Request GetBuffer.Request -> StateT Env BusT ()
 handleGetBuffer = modifyGraph defInverse action replyResult where

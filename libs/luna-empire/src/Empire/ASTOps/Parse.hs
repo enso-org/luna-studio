@@ -8,6 +8,7 @@ module Empire.ASTOps.Parse (
   , runParser
   , runReparser
   , runUnitParser
+  , runUnitReparser
   ) where
 
 import           Data.Convert
@@ -71,7 +72,7 @@ runUnitParser code = do
         IR.putLayer @CodeMarkers (unwrap' res) exprMap
         return (unwrap' res, exprMap)
 
-runUnitReparser :: Text.Text -> NodeRef -> Command Graph (NodeRef, Parser.MarkedExprMap)
+runUnitReparser :: Text.Text -> NodeRef -> Command Graph (NodeRef, Parser.MarkedExprMap, Parser.ReparsingStatus)
 runUnitReparser code oldExpr = do
     let inits = do
           IR.setAttr (getTypeDesc @Source.SourceTree)      $ (mempty :: Source.SourceTree)
@@ -95,8 +96,9 @@ runUnitReparser code oldExpr = do
 
         res     <- IR.getAttr @Parser.ParsedExpr
         exprMap <- IR.getAttr @Parser.MarkedExprMap
+        rs      <- IR.getAttr @Parser.ReparsingStatus
         IR.putLayer @CodeMarkers (unwrap' res) exprMap
-        return (unwrap' res, exprMap)
+        return (unwrap' res, exprMap, rs)
 
 runParser :: Text.Text -> Command Graph (NodeRef, Parser.MarkedExprMap)
 runParser expr = do
