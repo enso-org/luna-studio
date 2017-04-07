@@ -167,10 +167,9 @@ alignToLeft nl = withJustM (lookupNode nl) $ \n -> do
     succs  <- lookupNodes . map (view dstNodeLoc) $ n ^. outConns
     isLast <- isLastInChain n
     let maxPredX = maximum $ map (view $ actPos . x) preds
-        needMove = not (null preds)
-                && length succs == 1
-                && not isLast
-                && maxPredX < n ^. actPos . x - gapBetweenNodes
+        needMove = not (null preds) && (null succs || ( length succs == 1
+                                                     && not isLast
+                                                     && maxPredX < n ^. actPos . x - gapBetweenNodes ))
     when needMove $ do
         modify $ Map.update (\n' -> Just $ n' & actPos . x .~ maxPredX + gapBetweenNodes)  (n ^. nodeLoc)
         forM_ succs $ alignToLeft . view nodeLoc
