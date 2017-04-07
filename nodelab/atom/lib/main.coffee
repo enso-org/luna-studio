@@ -6,10 +6,25 @@ internal = i()
 c             = require "./gen/ghcjs-code.js"
 code = c()
 path = require 'path'
-# w = require './gen/websocket'
-# websocket = w()
 
-init = require './gen/init'
+{TextEditor} = require 'atom'
+
+TextEditor::onDidStopChangingWithDiffs = (callback) ->
+  diffs = []
+  disposed = no
+  sub = @onDidChange (diff) ->
+    diffs.push diff
+    clearTimeout changeTimeout if changeTimeout
+    changeTimeout = setTimeout ->
+      changeTimeout = null
+      callback diffs if not disposed
+      diffs = []
+    , 300
+  dispose: ->
+    disposed = yes
+    sub.dispose()
+
+
 
 module.exports =
   activate: ->
