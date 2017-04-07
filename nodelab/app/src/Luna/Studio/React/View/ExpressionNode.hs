@@ -119,8 +119,12 @@ node = React.defineView name $ \(ref, n) -> case n ^. Node.mode of
                             , onClick $ \_ _ -> dispatch ref $ UI.NodeEvent $ Node.DisplayResultChanged (not isVisualization) nodeLoc
                             ] mempty
             nodeBody_ ref n
-            nodeShortValue_ n
-            if isVisualization then nodeVisualizations_ ref n else return ()
+            div_
+                [ "key"       $= "results"
+                , "className" $= Style.prefixFromList ["node__results", "node-translate"]
+                ] $ do
+                nodeShortValue_ n
+                if isVisualization then nodeVisualizations_ ref n else return ()
             nodePorts_ ref n
 
 nodeDynamicStyles_ :: Matrix Double -> ExpressionNode -> ReactElementM ViewEventHandler ()

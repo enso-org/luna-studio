@@ -84,8 +84,6 @@
     display: none;
 }
 
-
-
 // types
 
 .luna-port__type {
@@ -112,10 +110,6 @@
 
 .luna-node--expanded {
     z-index: 10000;
-    .luna-node__vizzs {
-        left: 0;
-        top: -8px;
-    }
     .luna-port {
         position: relative;
     }
@@ -171,12 +165,7 @@
     overflow:   hidden;
 }
 
-.luna-node__properties-crop textarea {
-
-}
-
-.luna-node__properties *,
-.luna-node__vizzs * {
+.luna-node__properties * {
     font-size: ~"calc(10px * var(--scale))";
 }
 
@@ -202,53 +191,6 @@
     .luna-row--first {
         height:          16rem;
         justify-content: flex-end;
-    }
-}
-
-.luna-node__vizzs {
-    position: relative;
-    left:    -30px;
-    top:     -16px;
-    width:    @expandedNodeWidth;
-    table {
-        border:          0;
-        width:           100%;
-        text-align:      left;
-        border-collapse: collapse;
-    }
-    td, th {
-        line-height: 20px;
-        padding:     0 12px;
-    }
-    th {
-        border-bottom: 2px solid rgba(255,255,255,.02);
-    }
-    tr {
-        &:nth-child(even) {
-            background: rgba(255,255,255,.0)
-        }
-    }
-}
-
-.luna-vis {
-    position: relative;
-    width:    @expandedNodeWidth;
-    height:   @expandedNodeWidth - 2 * @expandedNodePadding;
-    overflow: hidden;
-    .luna-scroll {
-        overflow: scroll;
-        height:   100%;
-    }
-}
-
-.luna-vis--graph {
-    position: relative;
-    svg {
-        position: relative;
-        top:      15px;
-        left:    -5px;
-        fill:     #666;
-        overflow: initial;
     }
 }
 

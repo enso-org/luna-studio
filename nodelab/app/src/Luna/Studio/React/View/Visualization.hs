@@ -55,7 +55,7 @@ nodeShortValue :: ReactView (ExpressionNode)
 nodeShortValue = React.defineView objNameShortVal $ \(n) -> do
     div_
         [ "key"       $= "shortValue"
-        , "className" $= Style.prefixFromList [ "node__short-value", "node-translate", "noselect" ]
+        , "className" $= Style.prefixFromList [ "node__short-value", "noselect" ]
         , onDoubleClick $ \e _ -> [stopPropagation e]
         ] $ elemString $ strValue n
 
@@ -67,7 +67,7 @@ nodeVisualizations = React.defineView objNameVis $ \(ref, n) -> do
     let nodeLoc = n ^. Node.nodeLoc
     div_
         [ "key"       $= "visualizations"
-        , "className" $= Style.prefixFromList [ "node__visualizations", "node-translate", "noselect" ]
+        , "className" $= Style.prefixFromList [ "node__visualizations", "noselect" ]
         , onDoubleClick $ \e _ -> [stopPropagation e]
         ] $ forM_ (n ^. Node.value) $ visualization_ ref nodeLoc def
 
@@ -85,8 +85,7 @@ visualization = React.defineView viewName $ \(ref, nl, mayPos, nodeValue) ->
     div_ [ "className" $= Style.prefixFromList [ "noselect" ] ] $
         case nodeValue of
             NodeResult.Value _ valueReprs -> nodeValues_ ref nl mayPos valueReprs
-            otherwise                     -> mempty
-
+            _                             -> mempty
 -- iframe_
 --     [ "srcDoc" $= ("<style>"
 --                 <> "* { font:12px/16px Hasklig, monospace;color: #fff; padding:0; margin:0; border:none; }"
