@@ -4,19 +4,23 @@
 //     selection mark      //
 /////////////////////////////
 
+iframe {
+    pointer-events: none !important;
+}
+
 .luna-selection {
-    width:         100%;
-    height:        100%;
-    border:        1px solid orange;
-    left:          0;
-    top:           0;
-    position:      absolute;
-    border-radius: 34rem;
-    opacity:       0;
-    left:         -1rem;
-    top:          -1rem;
-    right:        -1rem;
-    bottom:       -1rem;
+    width:          100%;
+    height:         100%;
+    border:         1px solid orange;
+    left:           0;
+    top:            0;
+    position:       absolute;
+    border-radius:  34rem;
+    opacity:        0;
+    left:          -1rem;
+    top:           -1rem;
+    right:         -1rem;
+    bottom:        -1rem;
     pointer-events: none;
 }
 
@@ -45,17 +49,17 @@
 .luna-node--error {
     .luna-error {
         pointer-events: none;
-        z-index:      -100;
-        opacity:       1;
-        width:         auto;
-        height:        auto;
-        position:      absolute;
-        border-radius: 34px;
-        left:         -11px;
-        top:          -11px;
-        right:        -11px;
-        bottom:       -11px;
-        opacity:       .3;
+        z-index:       -100;
+        opacity:        1;
+        width:          auto;
+        height:         auto;
+        position:       absolute;
+        border-radius:  34px;
+        left:          -11px;
+        top:           -11px;
+        right:         -11px;
+        bottom:        -11px;
+        opacity:        .3;
         background: repeating-linear-gradient(
             135deg,
             rgba(0,0,0,0),

@@ -36,6 +36,9 @@ import           Luna.Studio.React.View.Visualization                  (strValue
 import           React.Flux
 import qualified React.Flux                                            as React
 
+--import System.IO.Unsafe (unsafePerformIO)
+--traceShowMToStdout :: (Show a, Monad m) => a -> m ()
+--traceShowMToStdout v = unsafePerformIO $ print v >> return (return ())
 
 name, objNameBody, objNameVis, objNamePorts :: JSString
 name         = "node"
@@ -111,7 +114,8 @@ node = React.defineView name $ \(ref, n) -> case n ^. Node.mode of
                             , "className"   $= Style.prefixFromList [ "node__name", "noselect" ]
                             ] $ elemString $ convert $ n ^. Node.name
                     g_
-                        [ "className" $= Style.prefix "node__icons"
+                        [ "key"       $= "icons"
+                        , "className" $= Style.prefix "node__icons"
                         ] $ do
                         let val = Prop.fromNode n ^. Prop.visualizationsEnabled
                         rect_
@@ -167,7 +171,15 @@ nodeVisualizations = React.defineView objNameVis $ \(ref, n) ->
         [ "key"       $= "shortValue"
         , "className" $= Style.prefixFromList [ "node__returned-value", "node-translate", "noselect" ]
         , onDoubleClick $ \e _ -> [stopPropagation e]
-        ] $ elemString $ strValue n
+        ] $ --elemString $ strValue n
+        iframe_
+            [ "srcDoc" $= ("<style>"
+                        <> "* { font:12px/16px Hasklig, monospace;color: #fff; padding:0; margin:0; border:none; }"
+                        <> "body { display:flex; justify-content:center; }"
+                        <> "table td { padding: 0 4px 2px }</style>"
+                        <> (convert $ strValue n) )
+            --, onMouseDown $ \_ _ -> traceShowMToStdout "NIE JEST NAJGORZEJ"
+            ] mempty
 --    div_
 --        [ "key"       $= "visualizations"
 --        , "className" $= Style.prefixFromList [ "node__visualisations", "node-translate" ]

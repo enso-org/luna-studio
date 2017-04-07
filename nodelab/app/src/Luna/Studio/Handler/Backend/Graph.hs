@@ -44,7 +44,7 @@ import           Luna.Studio.Action.Basic.Revert              (revertAddConnecti
                                                                revertRenameNode, revertSetNodeCode, revertSetNodeExpression,
                                                                revertSetNodesMeta, revertSetPortDefault)
 import           Luna.Studio.Action.Basic.UpdateCollaboration (bumpTime, modifyTime, refreshTime, touchCurrentlySelected, updateClient)
-import           Luna.Studio.Action.Batch                     (collaborativeModify, requestCollaborationRefresh)
+import           Luna.Studio.Action.Batch                     (collaborativeModify, getProgram, requestCollaborationRefresh)
 import           Luna.Studio.Action.Camera                    (centerGraph)
 import           Luna.Studio.Action.Command                   (Command)
 import           Luna.Studio.Action.State.App                 (setBreadcrumbs)
@@ -58,19 +58,20 @@ import           Luna.Studio.Handler.Backend.Common           (doNothing, handle
 import           Luna.Studio.Prelude
 import           Luna.Studio.React.Model.Node                 (Node (Expression), nodeLoc, _Expression)
 import qualified Luna.Studio.React.Model.Node.ExpressionNode  as Node
+import           Luna.Studio.Report
 import           Luna.Studio.State.Global                     (State)
 import qualified Luna.Studio.State.Global                     as Global
 
 
 handle :: Event.Event -> Maybe (Command State ())
 handle (Event.Batch ev) = Just $ case ev of
-    GetProgramResponse response -> handleResponse response success doNothing where
+    GetProgramResponse response -> handleResponse response success failure where
         location       = response ^. Response.request . GetProgram.location
         success result = do
             isGraphLoaded  <- use $ Global.workspace . Workspace.isGraphLoaded
             isGoodLocation <- isCurrentLocation location
             when isGoodLocation $ do
-                print "GetProgram"
+                putStrLn "GetProgram"
                 let nodes       = convert . (NodeLoc.empty,) <$> result ^. GetProgram.graph . Graph.nodes
                     connections = result ^. GetProgram.graph . Graph.connections
                     monads      = result ^. GetProgram.graph . Graph.monads
@@ -85,6 +86,13 @@ handle (Event.Batch ev) = Just $ case ev of
                     centerGraph
                     requestCollaborationRefresh
                 Global.workspace . Workspace.isGraphLoaded .= True
+        failure _ = do
+            isOnTop <- uses Global.workspace Workspace.isOnTopBreadcrumb
+            if isOnTop
+                then fatal "Cannot get file from backend"
+                else do
+                    Global.workspace %= Workspace.upperWorkspace
+                    getProgram
 
     AddConnectionResponse response -> handleResponse response success failure where
         requestId          = response ^. Response.requestId

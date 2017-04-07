@@ -33,13 +33,12 @@ import           GHC.Generics                  as X (Generic)
 import           GHCJS.Marshal                 as X (FromJSVal (..), ToJSVal (..))
 import           GHCJS.Types                   as X (JSVal)
 import           Luna.Studio.Prelude.Instances ()
-import           Prelude                       hiding (curry, print, putStr, putStrLn, uncurry, (++), (.))
+import           Prelude                       hiding (curry, error, print, putStr, putStrLn, uncurry, (++), (.))
 import           Prologue                      as X (NFData, convert, curry, fmap1, fmap2, fmap3, fmap4, fmap5, fmap6, fmap7, fmap8, fmap9,
                                                      foldlDef, fromJustM, ifElseId, ifM, lift2, lift3, pprint, putStr, show', switch,
                                                      toString, uncurry, unlessM, whenLeft, whenLeft', whenM, whenRight, whenRight',
                                                      withJust, ($>), (++), (.), (.:), (.:.), (.::), (.::.), (.:::), (.:::.), (.::::),
                                                      (.::::.), (<<∘>>), (<<∘∘>>), (<∘>), (<∘∘>), (<∘∘∘>), (<∘∘∘∘>), (<∘∘∘∘∘>))
-
 
 foreign import javascript safe "console.log($1)" consoleLog :: JSString -> IO ()
 
@@ -76,3 +75,18 @@ just a = MaybeT.MaybeT (return (Just a))
 -- | From Control.Errors. Analogous to 'Nothing' and equivalent to 'mzero'
 nothing :: (Monad m) => MaybeT.MaybeT m a
 nothing = MaybeT.MaybeT (return Nothing)
+
+withNotNull :: ([a] -> b) -> [a] -> Maybe b
+withNotNull f a = if null a then Nothing else Just $ f a
+
+mayHead :: [a] -> Maybe a
+mayHead = withNotNull head
+
+mayTail :: [a] -> Maybe [a]
+mayTail = withNotNull tail
+
+mayInit :: [a] -> Maybe [a]
+mayInit = withNotNull init
+
+mayLast :: [a] -> Maybe a
+mayLast = withNotNull last

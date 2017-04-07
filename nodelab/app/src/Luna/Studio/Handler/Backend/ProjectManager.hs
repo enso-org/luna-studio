@@ -41,7 +41,7 @@ handle (Batch (Batch.ProjectList response)) = Just $ handleResponse response suc
         Global.workspace . Workspace.projects .= projectsMap
 
         lastLocation <- use $ Global.workspace . Workspace.lastUILocation
-        let fallbackLocation  = GraphLocation.GraphLocation (fromMaybe (error "No projects found") $ projects ^? ix 0 . _1) 0 (Breadcrumb [])
+        let fallbackLocation  = GraphLocation.GraphLocation (fromMaybe $(placeholder "No projects found") $ projects ^? ix 0 . _1) 0 (Breadcrumb [])
             lastGraphLocation = lastLocation >>= Workspace.fromUIGraphLocation projectsMap
         Global.workspace . Workspace.currentLocation .= fromMaybe fallbackLocation lastGraphLocation
         loc <- use $ Global.workspace . Workspace.currentLocation

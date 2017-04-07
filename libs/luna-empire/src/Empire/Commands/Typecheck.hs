@@ -22,6 +22,7 @@ import           Empire.API.Data.MonadPath         (MonadPath (MonadPath))
 import           Empire.API.Data.Node              (NodeId, nodeId)
 import qualified Empire.API.Data.NodeMeta          as NodeMeta
 import           Empire.API.Data.TypeRep           (TypeRep (TCons))
+import           Empire.API.Data.PortDefault       (Value (StringValue))
 import qualified Empire.API.Graph.NodeResultUpdate as NodeResult
 import           Empire.ASTOp                      (EmpirePass, runASTOp)
 import qualified Empire.ASTOps.Read                as ASTRead
@@ -37,7 +38,7 @@ import           Empire.Data.Graph                 (Graph)
 import qualified Empire.Data.Graph                 as Graph
 import           Empire.Empire
 
-import           Luna.Builtin.Data.LunaValue       (LunaData, listenShortRep)
+import           Luna.Builtin.Data.LunaValue       (LunaData, listenReps)
 import           Luna.Builtin.Data.Module          (Imports (..), Module (..))
 import qualified Luna.Builtin.Std                  as Std
 import qualified Luna.IR                           as IR
@@ -106,9 +107,9 @@ updateValues loc scope = do
         _              -> return Nothing
     forM_ allVars $ \(nid, ref) -> do
         let resVal = Interpreter.localLookup (IR.unsafeGeneralize ref) scope
-        liftIO $ forM_ resVal $ \v -> listenShortRep v $ \case
-            Left  err    -> flip runReaderT env $ Publisher.notifyResultUpdate loc nid (NodeResult.Error $ APIError.RuntimeError err) 0
-            Right strRep -> flip runReaderT env $ Publisher.notifyResultUpdate loc nid (NodeResult.Value (fromString strRep) []) 0
+        liftIO $ forM_ resVal $ \v -> listenReps v $ \case
+            Left  err            -> flip runReaderT env $ Publisher.notifyResultUpdate loc nid (NodeResult.Error $ APIError.RuntimeError err) 0
+            Right (short, longs) -> flip runReaderT env $ Publisher.notifyResultUpdate loc nid (NodeResult.Value (fromString short) $ StringValue <$> longs) 0
 
 flushCache :: Command InterpreterEnv ()
 flushCache = do
