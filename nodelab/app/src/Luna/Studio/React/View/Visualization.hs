@@ -19,7 +19,6 @@ import qualified Data.Text                                      as Text
 import           Data.Vector                                    (Vector2 (Vector2))
 import           React.Flux                                     hiding (image_)
 import qualified React.Flux                                     as React
-
 import qualified Empire.API.Data.Error                          as LunaError
 import           Empire.API.Data.PortDefault                    (Value (..))
 import qualified Empire.API.Data.PortDefault                    as PortDefault
@@ -84,7 +83,7 @@ visualization :: ReactView (Ref App, NodeLoc, Maybe Position, NodeValue)
 visualization = React.defineView viewName $ \(ref, nl, mayPos, nodeValue) ->
     div_ [ "className" $= Style.prefixFromList [ "noselect" ] ] $
         case nodeValue of
-            NodeResult.Value _ valueReprs -> nodeValues_ ref nl mayPos valueReprs
+            NodeResult.Value _ valueReprs -> mapM_ (uncurry $ nodeValue_ ref nl mayPos) $ keyed valueReprs
             _                             -> mempty
 -- iframe_
 --     [ "srcDoc" $= ("<style>"
@@ -95,9 +94,6 @@ visualization = React.defineView viewName $ \(ref, nl, mayPos, nodeValue) ->
 --     --, onMouseDown $ \_ _ -> traceShowMToStdout "NIE JEST NAJGORZEJ"
 --     ] mempty
 
-nodeValues_ :: Ref App -> NodeLoc -> Maybe Position -> [Value] -> ReactElementM ViewEventHandler ()
-nodeValues_ ref nl mayPos = mapM_ (uncurry $ nodeValue_ ref nl mayPos) . keyed
-
 nodeValue_ :: Ref App -> NodeLoc -> Maybe Position -> Int -> Value -> ReactElementM ViewEventHandler ()
 nodeValue_ ref nl mayPos visIx value = do
     let isPinned = isJust mayPos
@@ -106,10 +102,8 @@ nodeValue_ ref nl mayPos visIx value = do
             Nothing  -> Visualization.Pin
         translatedDiv_ = case mayPos of
             Just pos -> div_ [ "className" $= Style.prefixFromList [ "node-trans", "noselect", "node-root" ]
-                             , "style" @= Aeson.object
-                                [ "zIndex"    Aeson..= show (1000 :: Integer) ] ]
-                                --, "transform" Aeson..= translatePropertyValue2 pos ] ]
-                         . div_ [ "className" $= Style.prefix "node__visuals" ]
+                             , "style"     @= Aeson.object [ "zIndex" Aeson..= show (1000 :: Integer) ]
+                             ] . div_ [ "className" $= Style.prefix "node__visuals" ]
             Nothing -> div_
     translatedDiv_ $ do
         withJust mayPos $ \pos ->
