@@ -12,10 +12,20 @@ module.exports = function () {
   };
 
   return {
-    pushNotification: function (lvl, error) {
-      if (typeof atom == 'undefined')
+    pushNotification: function (lvl, msg) {
+      if (typeof atom === 'undefined')
       {
-          console.log(error);
+          switch(lvl) {
+              case 0:
+              case 1:
+                  console.error(msg);
+                  break;
+              case 2:
+                  console.warn(msg);
+                  break;
+              default:
+                  console.log(msg);
+          }
       }
       else
       {
@@ -23,12 +33,12 @@ module.exports = function () {
           if (lvl === 0) {
             notification = atom.notifications.addFatalError("Fatal Error", {
               dismissable: true,
-              description: error,
+              description: msg,
               buttons: [
                 {
                   text: 'Copy to clipboard',
                   onDidClick: function() {
-                    atom.clipboard.write(error);
+                    atom.clipboard.write(msg);
                     return notification.dismiss();
                   }
                 }
@@ -37,12 +47,12 @@ module.exports = function () {
           } else if (lvl === 1) {
             notification = atom.notifications.addError("Error", {
               dismissable: true,
-              description: error,
+              description: msg,
               buttons: [
                 {
                   text: 'Copy to clipboard',
                   onDidClick: function() {
-                    atom.clipboard.write(error);
+                    atom.clipboard.write(msg);
                     return notification.dismiss();
                   }
                 }
@@ -51,12 +61,12 @@ module.exports = function () {
           } else {
             notification = atom.notifications.addWarning("Warning", {
               dismissable: true,
-              description: error,
+              description: msg,
               buttons: [
                 {
                   text: 'Copy to clipboard',
                   onDidClick: function() {
-                    atom.clipboard.write(error);
+                    atom.clipboard.write(msg);
                     return notification.dismiss();
                   }
                 }

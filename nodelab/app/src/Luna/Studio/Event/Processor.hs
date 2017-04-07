@@ -41,6 +41,7 @@ import qualified Luna.Studio.Handler.Sidebar                as Sidebar
 import qualified Luna.Studio.Handler.Undo                   as Undo
 import qualified Luna.Studio.Handler.Visualization          as Visualization
 import           Luna.Studio.Prelude
+import           Luna.Studio.Report
 import           Luna.Studio.State.Global                   (State)
 import qualified Luna.Studio.State.Global                   as Global
 
@@ -120,7 +121,7 @@ connectEventSources conn loop = do
 
 handleExcept :: State -> Event -> JSException -> IO State
 handleExcept oldState event except = do
-    putStrLn $ "JavaScriptException: " <> show except <> "\n\nwhile processing: " <> show event
+    error $ "JavaScriptException: " <> show except <> "\n\nwhile processing: " <> show event
     return oldState
 
 
