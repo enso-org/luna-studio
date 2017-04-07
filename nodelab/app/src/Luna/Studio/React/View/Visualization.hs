@@ -7,8 +7,7 @@ module Luna.Studio.React.View.Visualization
 , visualization_
 , pinnedVisualization_
 , strValue
-)
-where
+) where
 
 import           Control.Arrow                                  ((***))
 import qualified Data.Aeson                                     as Aeson
@@ -40,7 +39,6 @@ import           Luna.Studio.React.Store                        (Ref, dispatch)
 import qualified Luna.Studio.React.View.Style                   as Style
 import           Luna.Studio.React.View.Visualization.DataFrame (dataFrame_)
 import           Luna.Studio.React.View.Visualization.Image     (image_)
-
 
 viewName, objNameVis, objNameShortVal :: JSString
 viewName        = "visualization"
