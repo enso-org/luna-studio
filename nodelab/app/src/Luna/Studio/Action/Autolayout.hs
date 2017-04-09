@@ -64,7 +64,7 @@ findPositions = do
     removeCycles
     nls <- Map.keys <$> get
     mapM_ findPositionRecursive nls
-    mapM_ alignToLeft nls
+    mapM_ alignChainsX nls
 
 findPositionRecursive :: NodeLoc -> AutolayoutState ()
 findPositionRecursive nl = lookupNode nl >>= \mayNode -> case mayNode of
@@ -161,15 +161,19 @@ alignNeighboursY n = do
             modify $ Map.update (\n' -> Just $ n' & actPos . y .~ y') nl
             return $ Just nl
 
-alignToLeft :: NodeLoc -> AutolayoutState ()
-alignToLeft nl = withJustM (lookupNode nl) $ \n -> do
+alignChainsX :: NodeLoc -> AutolayoutState ()
+alignChainsX nl = withJustM (lookupNode nl) $ \n -> do
     preds  <- lookupNodes . map (view srcNodeLoc) $ n ^. inConns
     succs  <- lookupNodes . map (view dstNodeLoc) $ n ^. outConns
     isLast <- isLastInChain n
-    let maxPredX = maximum $ map (view $ actPos . x) preds
-        needMove = not (null preds) && (null succs || ( length succs == 1
-                                                     && not isLast
-                                                     && maxPredX < n ^. actPos . x - gapBetweenNodes ))
-    when needMove $ do
-        modify $ Map.update (\n' -> Just $ n' & actPos . x .~ maxPredX + gapBetweenNodes)  (n ^. nodeLoc)
-        forM_ succs $ alignToLeft . view nodeLoc
+    let alignToLeft = not (null preds) && (null succs || (length succs == 1 && not isLast))
+    if alignToLeft then do
+        let maxPredX = maximum $ map (view $ actPos . x) preds
+        when (maxPredX < n ^. actPos . x - gapBetweenNodes ) $ do
+            modify $ Map.update (\n' -> Just $ n' & actPos . x .~ maxPredX + gapBetweenNodes)  (n ^. nodeLoc)
+            forM_ succs $ alignChainsX . view nodeLoc
+    else do
+        let minSuccX = minimum $ map (view $ actPos . x) succs
+        when (minSuccX > n ^. actPos . x + gapBetweenNodes ) $ do
+            modify $ Map.update (\n' -> Just $ n' & actPos . x .~ minSuccX - gapBetweenNodes)  (n ^. nodeLoc)
+            forM_ preds $ alignChainsX . view nodeLoc
