@@ -101,11 +101,13 @@ module.exports =
     @subs.add atom.commands.add '.luna-studio', 'luna-studio:go-right':      -> code.pushEvent("Shortcut GoRight")
     @subs.add atom.commands.add '.luna-studio', 'luna-studio:go-up':         -> code.pushEvent("Shortcut GoUp")
     # nodes
-    @subs.add atom.commands.add '.luna-studio', 'luna-studio:edit-selected-nodes':   -> code.pushEvent("Shortcut EditSelectedNodes")
-    @subs.add atom.commands.add '.luna-studio', 'luna-studio:expand-selected-nodes': -> code.pushEvent("Shortcut ExpandSelectedNodes")
-    @subs.add atom.commands.add '.luna-studio', 'luna-studio:remove-selected-nodes': -> code.pushEvent("Shortcut RemoveSelectedNodes")
-    @subs.add atom.commands.add '.luna-studio', 'luna-studio:select-all':            -> code.pushEvent("Shortcut SelectAll")
-    @subs.add atom.commands.add '.luna-studio', 'luna-studio:unfold-selected-nodes': -> code.pushEvent("Shortcut UnfoldSelectedNodes")
+    @subs.add atom.commands.add '.luna-studio', 'luna-studio:edit-selected-nodes':       -> code.pushEvent("Shortcut EditSelectedNodes")
+    @subs.add atom.commands.add '.luna-studio', 'luna-studio:expand-selected-nodes':     -> code.pushEvent("Shortcut ExpandSelectedNodes")
+    @subs.add atom.commands.add '.luna-studio', 'luna-studio:remove-selected-nodes':     -> code.pushEvent("Shortcut RemoveSelectedNodes")
+    @subs.add atom.commands.add '.luna-studio', 'luna-studio:select-all':                -> code.pushEvent("Shortcut SelectAll")
+    @subs.add atom.commands.add '.luna-studio', 'luna-studio:unfold-selected-nodes':     -> code.pushEvent("Shortcut UnfoldSelectedNodes")
+    @subs.add atom.commands.add '.luna-studio', 'luna-studio:autolayout-selected-nodes': -> code.pushEvent("Shortcut AutolayoutSelectedNodes")
+    @subs.add atom.commands.add '.luna-studio', 'luna-studio:autolayout-all-nodes':      -> code.pushEvent("Shortcut AutolayoutAllNodes")
     # searcher
     @subs.add atom.commands.add '.luna-studio', 'luna-studio:searcher-open':           -> code.pushEvent("Shortcut SearcherOpen")
     @subs.add atom.commands.add '.luna-searcher', 'luna-studio:searcher-accept-0':     -> code.pushEvent("Searcher AcceptEntry 0")

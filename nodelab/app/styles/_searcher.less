@@ -3,9 +3,9 @@
 /////////////////////////////
 
 .luna-searcher {
-    z-index: 100000000;
+    z-index:  100000000;
     position: absolute;
-    top: ~"calc(-34rem - 15.4px)";
+    top:     ~"calc(-34rem - 15.4px)";
 }
 .luna-searcher--command {
     top: ~"calc(-34rem - 7.4px)";
@@ -14,7 +14,7 @@
         padding:    8px;
     }
     .luna-searcher__results {
-        bottom:         32px;
+        bottom: 32px;
     }
 }
 
@@ -26,19 +26,19 @@
     position: absolute;
 }
 
-
 .luna-searcher__input {
+    background:    @colorBackground;
     border-radius: @borderRadius;
-    font-weight:   300;
-    text-align:    center;
+    color:         #fff;
     font-family:   @fontDefault;
     font-size:     12px;
-    line-height:   12px;
+    font-weight:   300;
     height:        12px;
-    background:    @colorBackground;
-    color:         #fff;
-    transform:     translate(-50%);
+    line-height:   12px;
     overflow:      inherit;
+    text-align:    center;
+    transform:     translate(-50%);
+    width:         1000px;
     &:focus {
         outline: 0;
     }
@@ -52,13 +52,12 @@
     width:          100%;
     left:          -50%;
     text-align:     center;
-
 }
 
 .luna-searcher__results__item {
-    background:     #222;
-    line-height:    16px;
-    display:        flex;
+    background:      #222;
+    line-height:     16px;
+    display:         flex;
     justify-content: center;
     &:first-child {
         border-bottom-right-radius: @borderRadius;
