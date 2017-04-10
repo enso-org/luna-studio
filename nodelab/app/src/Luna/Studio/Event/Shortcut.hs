@@ -7,8 +7,6 @@ import           Luna.Studio.Prelude
 
 data Command = Cancel
              | OpenSearcher
-             | Autolayout
-             | AutolayoutAll
              -- camera
              | CenterGraph
              | PanDown
@@ -42,6 +40,8 @@ data Command = Cancel
              | ExpandSelectedNodes
              | UnfoldSelectedNodes
              | EditSelectedNodes
+             | AutolayoutSelectedNodes
+             | AutolayoutAllNodes
              -- searcher
              | SearcherOpen
              -- undo/redo

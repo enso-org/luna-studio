@@ -20,7 +20,6 @@ import qualified Luna.Studio.Event.Preprocessor.Shortcut    as ShortcutEventPrep
 import           Luna.Studio.Event.Source                   (AddHandler (..))
 import qualified Luna.Studio.Event.Source                   as JSHandlers
 import qualified Luna.Studio.Handler.App                    as App
-import qualified Luna.Studio.Handler.Autolayout             as Autolayout
 import qualified Luna.Studio.Handler.Backend.Control        as Control
 import qualified Luna.Studio.Handler.Backend.Graph          as Graph
 import qualified Luna.Studio.Handler.Backend.ProjectManager as ProjectManager
@@ -60,7 +59,6 @@ consoleTimeEnd   = consoleTimeEnd'   . convert
 actions :: LoopRef -> [Event -> Maybe (Command State ())]
 actions loop =
     [ App.handle
-    , Autolayout.handle
     , Breadcrumbs.handle
     , Camera.handle
     , Clipboard.handle
