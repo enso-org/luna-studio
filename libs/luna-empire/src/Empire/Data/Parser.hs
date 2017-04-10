@@ -30,6 +30,7 @@ import           Data.TypeDesc        (getTypeDesc)
 import           Luna.IR              hiding (get, put, match)
 import           Luna.IR.Layer.Succs  (Succs)
 import           OCI.Pass.Class       (Inputs, Outputs, Preserves, KnownPass)
+import           OCI.IR.Class         (Import)
 import qualified OCI.Pass.Class       as Pass (SubPass, eval')
 import qualified OCI.Pass.Manager     as Pass (PassManager, Cache, setAttr, State)
 
