@@ -125,7 +125,7 @@ attachNodeMarkers marker port ref' = do
     match ref $ \case
         Cons _ as -> do
             args <- mapM IR.source as
-            zipWithM_ (attachNodeMarkers marker) (Port.addProjection port <$> [0..]) args
+            zipWithM_ (attachNodeMarkers marker) ((port ++) . pure . Port.Projection <$> [0..]) args
         _ -> return ()
 
 
@@ -137,5 +137,5 @@ makeNodeRep marker name node = do
             var <- IR.var' $ stringToName name
             uni <- IR.unify var node
             return (IR.generalize var, IR.generalize uni)
-    attachNodeMarkers marker Port.All pat
+    attachNodeMarkers marker [] pat
     return uni

@@ -6,6 +6,7 @@ import qualified Data.Map                     as Map
 import           Empire.API.Data.PortDefault (PortDefault(Expression))
 import qualified Empire.API.Data.Node         as Node
 import qualified Empire.API.Data.Port         as Port
+import           Empire.API.Data.LabeledTree  (LabeledTree (..))
 import           Empire.API.Data.TypeRep      (TypeRep(TStar))
 import qualified Empire.Commands.Graph        as Graph
 
@@ -40,9 +41,9 @@ spec = around withChannels $ do
             withResult res $ \node -> do
                 node  ^. Node.expression `shouldBe` "Vector x y z"
                 (node ^. Node.outPorts)  `shouldBe`
-                    Port.OutPortTree (Port.Port (Port.OutPortId Port.All) "node1" TStar Port.NotConnected) []
+                    LabeledTree def (Port.Port (Port.OutPortId []) "node1" TStar Port.NotConnected)
                 (node ^.. Node.inPorts . traverse) `shouldMatchList` [
-                      Port.Port (Port.InPortId (Port.Arg 0)) "x" TStar (Port.WithDefault (Expression "x"))
-                    , Port.Port (Port.InPortId (Port.Arg 1)) "y" TStar (Port.WithDefault (Expression "y"))
-                    , Port.Port (Port.InPortId (Port.Arg 2)) "z" TStar (Port.WithDefault (Expression "z"))
+                      Port.Port (Port.InPortId [Port.Arg 0]) "x" TStar (Port.WithDefault (Expression "x"))
+                    , Port.Port (Port.InPortId [Port.Arg 1]) "y" TStar (Port.WithDefault (Expression "y"))
+                    , Port.Port (Port.InPortId [Port.Arg 2]) "z" TStar (Port.WithDefault (Expression "z"))
                     ]

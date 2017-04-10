@@ -48,8 +48,9 @@ import           Empire.API.Data.Node              (NodeId)
 import qualified Empire.API.Data.Node              as API
 import qualified Empire.API.Data.NodeLoc           as NodeLoc
 import           Empire.API.Data.NodeLoc           (NodeLoc (..))
-import           Empire.API.Data.Port              (InPort (..), _InPortId, OutPort (..), Port (..), PortId (..), OutPortTree (..), PortState (..))
+import           Empire.API.Data.Port              (InPortIndex (..), OutPortIndex (..), OutPort, InPort, _InPortId, OutPorts (..), InPorts (..), Port (..), PortId (..), InPortTree, OutPortTree, PortState (..))
 import qualified Empire.API.Data.Port              as Port
+import           Empire.API.Data.LabeledTree       (LabeledTree (..))
 import           Empire.API.Data.PortRef           (InPortRef (..), OutPortRef (..), srcNodeId)
 import           Empire.API.Data.TypeRep           (TypeRep(TLam, TStar, TCons))
 
@@ -156,8 +157,7 @@ buildNode nid = do
     inports   <- buildInPorts  ref
     outports  <- buildOutPorts root
     let code      = Just expr
-        inPortMap = Map.fromList $ flip fmap inports $ \p@(Port (InPortId id') _ _ _) -> (id', p)
-    return $ API.ExpressionNode nid expr name code inPortMap outports meta canEnter
+    return $ API.ExpressionNode nid expr name code inports outports meta canEnter
 
 buildNodeTypecheckUpdate :: ASTOp m => NodeId -> m API.NodeTypecheckerUpdate
 buildNodeTypecheckUpdate nid = do
@@ -165,8 +165,7 @@ buildNodeTypecheckUpdate nid = do
   ref      <- GraphUtils.getASTTarget  nid
   inPorts  <- buildInPorts  ref
   outPorts <- buildOutPorts root
-  let inPortMap = Map.fromList $ flip fmap inPorts $ \p@(Port (InPortId id') _ _ _) -> (id', p)
-  return $ API.ExpressionUpdate nid inPortMap outPorts
+  return $ API.ExpressionUpdate nid inPorts outPorts
 
 getUniName :: ASTOp m => NodeRef -> m (Maybe Text)
 getUniName root = do
@@ -312,7 +311,7 @@ buildArgPorts ref = do
     names <- getPortsNames ref
     let portsTypes = fmap fst typed ++ replicate (length names - length typed) TStar
         psCons = zipWith3 Port
-                          (InPortId . Arg <$> [(0::Int)..])
+                          (InPortId . pure . Arg <$> [(0::Int)..])
                           (names ++ (("arg" ++) . show <$> [0..]))
                           portsTypes
     return $ zipWith ($) psCons (fmap snd typed ++ repeat NotConnected)
@@ -322,7 +321,7 @@ buildSelfPort' seenAcc node = do
     let buildPort noType = do
             tpRep     <- if noType then return TStar else followTypeRep node
             portState <- getPortState node
-            return . Just $ Port (InPortId Self) "self" tpRep portState
+            return . Just $ Port (InPortId [Self]) "self" tpRep portState
 
     match node $ \case
         (Acc t _)  -> IR.source t >>= buildSelfPort' True
@@ -340,22 +339,29 @@ buildSelfPort' seenAcc node = do
 buildSelfPort :: ASTOp m => NodeRef -> m (Maybe Port)
 buildSelfPort = buildSelfPort' False
 
+buildWholePort :: ASTOp m => NodeRef -> m Port
+buildWholePort ref = do
+    tp    <- followTypeRep ref
+    state <- getPortState ref
+    return $ Port (InPortId []) "base" tp state
+
 followTypeRep :: ASTOp m => NodeRef -> m TypeRep
 followTypeRep ref = do
     tp <- IR.source =<< IR.getLayer @TypeLayer ref
     Print.getTypeRep tp
 
-buildInPorts :: ASTOp m => NodeRef -> m [Port]
+buildInPorts :: ASTOp m => NodeRef -> m (InPortTree Port)
 buildInPorts ref = do
-    selfPort <- maybeToList <$> buildSelfPort ref
+    selfPort <- buildSelfPort ref
     argPorts <- buildArgPorts ref
-    return $ selfPort ++ argPorts
+    whole    <- buildWholePort ref
+    return $ LabeledTree (InPorts (LabeledTree def <$> selfPort) (LabeledTree def <$> argPorts)) whole
 
 
 buildDummyOutPort :: ASTOp m => NodeRef -> m (OutPortTree Port)
 buildDummyOutPort ref = do
     tp <- followTypeRep ref
-    return $ OutPortTree (Port (OutPortId All) "Output" tp NotConnected) []
+    return $ LabeledTree (Port.OutPorts []) (Port (OutPortId []) "Output" tp NotConnected)
 
 buildOutPortTree :: ASTOp m => OutPort -> NodeRef -> m (OutPortTree Port)
 buildOutPortTree portId ref' = do
@@ -364,13 +370,13 @@ buildOutPortTree portId ref' = do
     tp    <- followTypeRep ref
     let wholePort = Port (OutPortId portId) name tp NotConnected
     children <- match ref $ \case
-        Cons _ as -> zipWithM buildOutPortTree (Port.addProjection portId <$> [0 ..]) =<< mapM IR.source as
+        Cons _ as -> zipWithM buildOutPortTree ((portId ++) . pure . Port.Projection <$> [0 ..]) =<< mapM IR.source as
         _         -> return []
-    return $ OutPortTree wholePort children
+    return $ LabeledTree (OutPorts children) wholePort
 
 buildOutPorts :: ASTOp m => NodeRef -> m (OutPortTree Port)
 buildOutPorts ref = match ref $ \case
-    Unify l r -> buildOutPortTree All =<< IR.source l
+    Unify l r -> buildOutPortTree [] =<< IR.source l
     _         -> buildDummyOutPort ref
 
 
@@ -394,7 +400,7 @@ buildInputSidebar connections nid = do
     Just ref <- ASTRead.getCurrentASTTarget
     tp       <- IR.getLayer @TypeLayer ref >>= IR.source
     types    <- extractArgTypes tp
-    let connectedPorts = map (\(OutPortRef _ (Projection p _)) -> p)
+    let connectedPorts = map (\(OutPortRef _ (Port.Projection p : _)) -> p)
                $ map fst
                $ filter (\(OutPortRef refNid p,_) -> nid == refNid ^. NodeLoc.nodeId)
                $ connections
@@ -407,8 +413,8 @@ buildInputSidebar connections nid = do
             let numberOfPorts = length vars
             return $ replicate numberOfPorts TStar
         _  -> return types
-    let inputEdges = List.zipWith4 (\n t state i -> Port (OutPortId $ Projection i All) n t state) names argTypes states [(0::Int)..]
-    return $ API.InputSidebar nid $ flip OutPortTree [] <$> inputEdges
+    let inputEdges = List.zipWith4 (\n t state i -> Port (OutPortId $ [Projection i]) n t state) names argTypes states [(0::Int)..]
+    return $ API.InputSidebar nid $ LabeledTree (OutPorts []) <$> inputEdges
 
 buildOutputSidebarTypecheckUpdate :: ASTOp m => NodeId -> m API.NodeTypecheckerUpdate
 buildOutputSidebarTypecheckUpdate nid = do
@@ -422,14 +428,14 @@ buildOutputSidebar connections nid = do
     let traverseLams (TLam _ t) = traverseLams t
         traverseLams s          = s
         outputType = traverseLams out
-    let connectedPorts = map (\(InPortRef _ (Arg p)) -> p)
+    let connectedPorts = map (\(InPortRef _ [Port.Arg p]) -> p)
              $ map snd
              $ filter (\(_, InPortRef refNid p) -> nid == refNid ^. NodeLoc.nodeId)
              $ connections
         outputConnected = if 0 `elem` connectedPorts then Connected else NotConnected
-        port = Port (InPortId $ Arg 0) "output" outputType outputConnected
+        port = Port (InPortId []) "output" outputType outputConnected
     return $
-        API.OutputSidebar nid (Map.singleton (Arg 0) port)
+        API.OutputSidebar nid $ LabeledTree (Port.InPorts Nothing []) port
 
 getLambdaInputArgNumber :: ASTOp m => NodeRef -> m (Maybe Int)
 getLambdaInputArgNumber lambda = do
@@ -448,16 +454,16 @@ getOutputSidebarInputs inputEdge outputEdge = do
     nid <- do
         outputIsInputNum <- getLambdaInputArgNumber ref
         case outputIsInputNum of
-            Just index -> return $ Just (inputEdge, Projection index All)
+            Just index -> return $ Just (inputEdge, [Projection index])
             _       -> do
                 output <- ASTRead.getLambdaOutputRef ref
                 nid <- ASTRead.getNodeId output
                 case nid of
-                    Just id' -> return $ Just (id', All)
+                    Just id' -> return $ Just (id', [])
                     _       -> return Nothing
     case nid of
         Just (id', arg) -> do
-            return $ Just (OutPortRef (NodeLoc def id') arg, InPortRef (NodeLoc def outputEdge) (Arg 0))
+            return $ Just (OutPortRef (NodeLoc def id') arg, InPortRef (NodeLoc def outputEdge) [])
         _ -> return Nothing
 
 nodeConnectedToOutput :: ASTOp m => m (Maybe NodeId)
@@ -470,7 +476,7 @@ nodeConnectedToOutput = do
 resolveInputNodeId :: ASTOp m => Maybe (NodeId, NodeId) -> [NodeRef] -> NodeRef -> m (Maybe OutPort, Maybe NodeId)
 resolveInputNodeId edgeNodes lambdaArgs ref = do
     case List.findIndex (== ref) lambdaArgs of
-        Just i -> return (Just $ Projection i All, fmap fst edgeNodes)
+        Just i -> return (Just $ [Projection i], fmap fst edgeNodes)
         _      -> do
             projection <- IR.getLayer @Marker ref
             case projection of
@@ -485,8 +491,8 @@ getOuterLambdaArguments = do
         _        -> return []
 
 outIndexToProjection :: Maybe Int -> OutPort
-outIndexToProjection Nothing = All
-outIndexToProjection (Just i) = Projection i All
+outIndexToProjection Nothing  = []
+outIndexToProjection (Just i) = [Projection i]
 
 getNodeInputs :: ASTOp m => Maybe (NodeId, NodeId) -> NodeId -> m [(OutPortRef, InPortRef)]
 getNodeInputs edgeNodes nodeId = do
@@ -500,7 +506,7 @@ getNodeInputs edgeNodes nodeId = do
         Just _p -> do
             nodeBeingMatched <- GraphUtils.getASTTarget nodeId >>= ASTRead.getNodeId
             case nodeBeingMatched of
-                Just id' -> return [(OutPortRef (NodeLoc def id') Port.All, InPortRef (NodeLoc def nodeId) (Port.Arg 0))]
+                Just id' -> return [(OutPortRef (NodeLoc def id') [], InPortRef (NodeLoc def nodeId) [])]
                 _        -> return []
         _       -> do
             selfMay     <- ASTRead.getSelfNodeRef ref
@@ -510,7 +516,7 @@ getNodeInputs edgeNodes nodeId = do
                     Just self -> Just $ outIndexToProjection $ List.findIndex (== self) lambdaArgs
                     Nothing   -> Nothing
             let selfConnMay = (,) <$> (OutPortRef <$> (NodeLoc def <$> selfNodeMay) <*> projection)
-                                  <*> (Just $ InPortRef (NodeLoc def nodeId) Self)
+                                  <*> (Just $ InPortRef (NodeLoc def nodeId) [Self])
 
             args     <- ASTDeconstruct.extractArguments ref
             nodeMays <- mapM (resolveInputNodeId edgeNodes lambdaArgs) args
@@ -518,5 +524,5 @@ getNodeInputs edgeNodes nodeId = do
                 hasNodeId (outIndex, Just nodeId, index) = Just (outIndex, nodeId, index)
                 hasNodeId _ = Nothing
                 onlyExt  = catMaybes $ map hasNodeId withInd
-                conns    = flip map onlyExt $ \((fromMaybe All -> proj), n, i) -> (OutPortRef (NodeLoc def n) proj, InPortRef (NodeLoc def nodeId) (Arg i))
+                conns    = flip map onlyExt $ \((fromMaybe [] -> proj), n, i) -> (OutPortRef (NodeLoc def n) proj, InPortRef (NodeLoc def nodeId) [Arg i])
             return $ maybeToList selfConnMay ++ conns

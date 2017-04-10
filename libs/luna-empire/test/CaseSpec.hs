@@ -15,6 +15,7 @@ import qualified Empire.API.Data.Port          as Port
 import           Empire.API.Data.Port          (OutPortTree (..))
 import           Empire.API.Data.NodeLoc       (NodeLoc (..))
 import           Empire.API.Data.PortDefault   (PortDefault (Constant, Expression), Value(IntValue))
+import           Empire.API.Data.LabeledTree   (LabeledTree (..))
 import           Empire.API.Data.PortRef       (InPortRef (..), OutPortRef (..), AnyPortRef(..))
 import           Empire.API.Data.TypeRep       (TypeRep(TCons, TStar, TLam, TVar))
 import           Empire.ASTOp                  (runASTOp)
@@ -57,8 +58,8 @@ spec = around withChannels $ id $ do
                 return node
             withResult res $ \node -> do
                 (node ^.. Node.inPorts . traverse) `shouldMatchList` [
-                      Port.Port (Port.InPortId (Port.Arg 0)) "arg0" TStar Port.Connected
-                    , Port.Port (Port.InPortId (Port.Arg 1)) "arg1" TStar Port.NotConnected
+                      Port.Port (Port.InPortId [Port.Arg 0]) "arg0" TStar Port.Connected
+                    , Port.Port (Port.InPortId [Port.Arg 1]) "arg1" TStar Port.NotConnected
                     ]
         it "shows anonymous breadcrumb in map (x:x)" $ \env -> do
             u1 <- mkUUID
@@ -68,19 +69,19 @@ spec = around withChannels $ id $ do
                 return (node, graph)
             withResult res $ \(node, graph) -> do
                 (node ^.. Node.inPorts . traverse) `shouldMatchList` [
-                      Port.Port (Port.InPortId Port.Self)    "self" TStar (Port.WithDefault (Expression "map"))
-                    , Port.Port (Port.InPortId (Port.Arg 0)) "arg0" TStar (Port.WithDefault (Expression "x: x"))
+                      Port.Port (Port.InPortId [Port.Self])    "self" TStar (Port.WithDefault (Expression "map"))
+                    , Port.Port (Port.InPortId [Port.Arg 0]) "arg0" TStar (Port.WithDefault (Expression "x: x"))
                     ]
                 let Graph.Graph nodes connections (Just inputEdge) (Just outputEdge) _ = graph
                 (inputEdge ^. Node.inputEdgePorts) `shouldMatchList` [
-                      OutPortTree (Port.Port (Port.OutPortId $ Port.Projection 0 Port.All) "x" TStar Port.Connected) []
+                      LabeledTree def (Port.Port (Port.OutPortId $ [Port.Projection 0]) "x" TStar Port.Connected)
                     ]
                 (outputEdge ^.. Node.outputEdgePorts . traverse) `shouldMatchList` [
-                      Port.Port (Port.InPortId (Port.Arg 0)) "output" TStar Port.Connected
+                      Port.Port (Port.InPortId [Port.Arg 0]) "output" TStar Port.Connected
                     ]
                 connections `shouldMatchList` [
-                      (OutPortRef (NodeLoc def $ inputEdge  ^. Node.nodeId) (Port.Projection 0 Port.All),
-                       InPortRef  (NodeLoc def $ outputEdge ^. Node.nodeId) (Port.Arg 0))
+                      (OutPortRef (NodeLoc def $ inputEdge  ^. Node.nodeId) [Port.Projection 0],
+                       InPortRef  (NodeLoc def $ outputEdge ^. Node.nodeId) [Port.Arg 0])
                     ]
         {-xit "shows anonymous breadcrumbs in foo ((Acc a): b: a + b) 1 ((Vector a b c): a * b + c)" $ \env -> do-}
             {-u1 <- mkUUID-}
@@ -99,8 +100,8 @@ spec = around withChannels $ id $ do
                 {-let Graph.Graph nodes connections (Just inputEdge) (Just outputEdge) _ = graph0-}
                 {-outputPorts inputEdge `shouldMatchList` [-}
                     {---FIXME[MM]: all ports in this test should be connected-}
-                      {-Port.Port (Port.OutPortId (Port.Projection 0 Port.All)) "a" TStar Port.NotConnected-}
-                    {-, Port.Port (Port.OutPortId (Port.Projection 1 Port.All)) "b" TStar Port.NotConnected-}
+                      {-Port.Port (Port.OutPortId (Port.Projection 0 [])) "a" TStar Port.NotConnected-}
+                    {-, Port.Port (Port.OutPortId (Port.Projection 1 [])) "b" TStar Port.NotConnected-}
                     {-]-}
                 {-inputPorts outputEdge `shouldMatchList` [-}
                       {-Port.Port (Port.InPortId (Port.Arg 0)) "output" TStar Port.NotConnected-}
@@ -110,9 +111,9 @@ spec = around withChannels $ id $ do
                 {-let Graph.Graph nodes connections (Just inputEdge) (Just outputEdge) _ = graph2-}
                 {-(inputEdge ^. Node.inputEdgePorts) `shouldMatchList` [-}
                     {---FIXME[MM]: all ports in this test should be connected-}
-                      {-OutPortTree (Port.Port (Port.OutPortId Port.All) "a" TStar Port.NotConnected) []-}
-                    {-, OutPortTree (Port.Port (Port.OutPortId Port.All) "b" TStar Port.NotConnected) []-}
-                    {-, OutPortTree (Port.Port (Port.OutPortId Port.All) "c" TStar Port.NotConnected) []-}
+                      {-OutPortTree (Port.Port (Port.OutPortId []) "a" TStar Port.NotConnected) []-}
+                    {-, OutPortTree (Port.Port (Port.OutPortId []) "b" TStar Port.NotConnected) []-}
+                    {-, OutPortTree (Port.Port (Port.OutPortId []) "c" TStar Port.NotConnected) []-}
                     {-]-}
                 {-(outputEdge ^.. Node.outputEdgePorts . traverse) `shouldMatchList` [-}
                       {-Port.Port (Port.InPortId (Port.Arg 0)) "output" TStar Port.NotConnected-}

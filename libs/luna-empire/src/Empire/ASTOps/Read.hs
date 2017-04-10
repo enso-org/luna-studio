@@ -49,17 +49,17 @@ getASTOutForPort nodeId port = do
         _ -> getOutputForPort port =<< getASTVar nodeId
 
 getLambdaInputForPort :: ASTOp m => OutPort -> NodeRef -> m NodeRef
-getLambdaInputForPort All                 lam = throwM PortDoesNotExistException
-getLambdaInputForPort (Projection 0 rest) lam = cutThroughGroups lam >>= flip match `id` \case
+getLambdaInputForPort []                    lam = throwM PortDoesNotExistException
+getLambdaInputForPort (Projection 0 : rest) lam = cutThroughGroups lam >>= flip match `id` \case
     Lam i _ -> getOutputForPort rest =<< IR.source i
     _       -> throwM PortDoesNotExistException
-getLambdaInputForPort (Projection i rest) lam = cutThroughGroups lam >>= flip match `id` \case
-    Lam _ o -> getLambdaInputForPort (Projection (i - 1) rest) =<< IR.source o
+getLambdaInputForPort (Projection i : rest) lam = cutThroughGroups lam >>= flip match `id` \case
+    Lam _ o -> getLambdaInputForPort (Projection (i - 1) : rest) =<< IR.source o
     _       -> throwM PortDoesNotExistException
 
 getOutputForPort :: ASTOp m => OutPort -> NodeRef -> m NodeRef
-getOutputForPort All                 ref = cutThroughGroups ref
-getOutputForPort (Projection i rest) ref = cutThroughGroups ref >>= flip match `id` \case
+getOutputForPort []                    ref = cutThroughGroups ref
+getOutputForPort (Projection i : rest) ref = cutThroughGroups ref >>= flip match `id` \case
     Cons _ as -> case as ^? ix i of
         Just s  -> getOutputForPort rest =<< IR.source s
         Nothing -> throwM PortDoesNotExistException

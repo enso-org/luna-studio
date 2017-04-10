@@ -24,6 +24,12 @@ newtype OutPorts s    = OutPorts [s]   deriving (Default, Eq, Foldable, Functor,
 type    OutPort       = [OutPortIndex]
 makeWrapped ''OutPorts
 
+instance Default (OutPorts s) where
+    def = OutPorts def
+
+instance Default (InPorts s) where
+    def = InPorts def def
+
 type InPortTree  a = LabeledTree InPorts  a
 type OutPortTree a = LabeledTree OutPorts a
 

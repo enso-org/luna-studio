@@ -78,9 +78,9 @@ instance Exception CannotRemovePortException where
     fromException = astExceptionFromException
 
 removeLambdaArg :: ASTOp m => Port.PortId -> NodeRef -> m NodeRef
-removeLambdaArg Port.InPortId{}           _ = throwM $ CannotRemovePortException
-removeLambdaArg (Port.OutPortId Port.All) _ = throwM $ CannotRemovePortException
-removeLambdaArg p@(Port.OutPortId (Port.Projection port Port.All)) lambda = match lambda $ \case
+removeLambdaArg Port.InPortId{}     _ = throwM $ CannotRemovePortException
+removeLambdaArg (Port.OutPortId []) _ = throwM $ CannotRemovePortException
+removeLambdaArg p@(Port.OutPortId (Port.Projection port : [])) lambda = match lambda $ \case
     Grouped g      -> IR.source g >>= removeLambdaArg p >>= fmap IR.generalize . IR.grouped
     Lam _arg _body -> do
         args <- ASTDeconstruct.extractArguments lambda
@@ -98,9 +98,9 @@ shiftPosition from to lst = uncurry (insertAt to) $ getAndRemove from lst where
     getAndRemove i (x : xs) = let (r, rs) = getAndRemove (i - 1) xs in (r, x : rs)
 
 moveLambdaArg :: ASTOp m => Port.PortId -> Int -> NodeRef -> m NodeRef
-moveLambdaArg Port.InPortId{}           _ _ = throwM $ CannotRemovePortException
-moveLambdaArg (Port.OutPortId Port.All) _ _ = throwM $ CannotRemovePortException
-moveLambdaArg p@(Port.OutPortId (Port.Projection port Port.All)) newPosition lambda = match lambda $ \case
+moveLambdaArg Port.InPortId{}     _ _ = throwM $ CannotRemovePortException
+moveLambdaArg (Port.OutPortId []) _ _ = throwM $ CannotRemovePortException
+moveLambdaArg p@(Port.OutPortId (Port.Projection port : [])) newPosition lambda = match lambda $ \case
     Grouped g -> IR.source g >>= moveLambdaArg p newPosition >>= fmap IR.generalize . IR.grouped
     Lam _ _   -> do
         args <- ASTDeconstruct.extractArguments lambda
@@ -110,9 +110,9 @@ moveLambdaArg p@(Port.OutPortId (Port.Projection port Port.All)) newPosition lam
     _ -> throwM $ NotLambdaException lambda
 
 renameLambdaArg :: ASTOp m => Port.PortId -> String -> NodeRef -> m ()
-renameLambdaArg Port.InPortId{}           _ _ = throwM CannotRemovePortException
-renameLambdaArg (Port.OutPortId Port.All) _ _ = throwM CannotRemovePortException
-renameLambdaArg p@(Port.OutPortId (Port.Projection port Port.All)) newName lam = match lam $ \case
+renameLambdaArg Port.InPortId{}     _ _ = throwM CannotRemovePortException
+renameLambdaArg (Port.OutPortId []) _ _ = throwM CannotRemovePortException
+renameLambdaArg p@(Port.OutPortId (Port.Projection port : [])) newName lam = match lam $ \case
     Grouped g -> IR.source g >>= renameLambdaArg p newName
     Lam _ _ -> do
         args <- ASTDeconstruct.extractArguments lam
