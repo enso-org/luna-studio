@@ -109,10 +109,10 @@ instance FromJSON NodePath
 
 instance {-# OVERLAPPING #-} ToJSON   v => ToJSON   (Map NodeLoc    v) where toJSON = toJSON . Map.toList
 instance {-# OVERLAPPING #-} FromJSON v => FromJSON (Map NodeLoc    v) where parseJSON = fmap Map.fromList . parseJSON
-instance {-# OVERLAPPING #-} ToJSON   v => ToJSON   (Map InPort     v) where toJSON = toJSON . Map.toList
-instance {-# OVERLAPPING #-} FromJSON v => FromJSON (Map InPort     v) where parseJSON = fmap Map.fromList . parseJSON
-instance {-# OVERLAPPING #-} ToJSON   v => ToJSON   (Map PortId     v) where toJSON = toJSON . Map.toList
-instance {-# OVERLAPPING #-} FromJSON v => FromJSON (Map PortId     v) where parseJSON = fmap Map.fromList . parseJSON
+instance {-# OVERLAPPING #-} ToJSON   v => ToJSON   (Map InPortId   v) where toJSON = toJSON . Map.toList
+instance {-# OVERLAPPING #-} FromJSON v => FromJSON (Map InPortId   v) where parseJSON = fmap Map.fromList . parseJSON
+instance {-# OVERLAPPING #-} ToJSON   v => ToJSON   (Map AnyPortId  v) where toJSON = toJSON . Map.toList
+instance {-# OVERLAPPING #-} FromJSON v => FromJSON (Map AnyPortId  v) where parseJSON = fmap Map.fromList . parseJSON
 instance {-# OVERLAPPING #-} ToJSON   v => ToJSON   (Map UUID       v) where toJSON = toJSON . Map.toList
 instance {-# OVERLAPPING #-} FromJSON v => FromJSON (Map UUID       v) where parseJSON = fmap Map.fromList . parseJSON
 instance {-# OVERLAPPING #-} ToJSON   v => ToJSON   (Map AnyPortRef v) where toJSON = toJSON . Map.toList
@@ -122,10 +122,10 @@ instance {-# OVERLAPPING #-} FromJSON v => FromJSON (Map InPortRef  v) where par
 instance {-# OVERLAPPING #-} ToJSON   v => ToJSON   (Map Breadcrumb.BreadcrumbItem v) where toJSON = toJSON . Map.toList
 instance {-# OVERLAPPING #-} FromJSON v => FromJSON (Map Breadcrumb.BreadcrumbItem v) where parseJSON = fmap Map.fromList . parseJSON
 
-instance ToJSON Port.Port
-instance FromJSON Port.Port
-instance ToJSON Port.PortId
-instance FromJSON Port.PortId
+instance ToJSON i => ToJSON (Port.Port i)
+instance FromJSON i => FromJSON (Port.Port i)
+instance ToJSON Port.AnyPortId
+instance FromJSON Port.AnyPortId
 instance ToJSON Port.PortState
 instance FromJSON Port.PortState
 

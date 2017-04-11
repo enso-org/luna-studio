@@ -9,19 +9,19 @@ import           Data.Binary                 (Binary)
 import           Prologue                    hiding (TypeRep)
 
 import           Data.Aeson.Types            (FromJSON, ToJSON)
-import           Data.Map                    (Map)
 import           Empire.API.Data.LabeledTree (LabeledTree)
 import           Empire.API.Data.PortDefault (PortDefault)
 import           Empire.API.Data.TypeRep     (TypeRep)
 
+
 data InPortIndex = Self | Arg Int                             deriving (Show, Eq, Ord, NFData, Generic)
 data InPorts s   = InPorts { _self :: Maybe s, _args :: [s] } deriving (Default, Eq, Foldable, Functor, Generic, NFData, Show, Traversable)
-type InPort      = [InPortIndex]
+type InPortId    = [InPortIndex]
 makeLenses ''InPorts
 
 data    OutPortIndex  = Projection Int deriving (Show, Eq, Ord, NFData, Generic)
 newtype OutPorts s    = OutPorts [s]   deriving (Default, Eq, Foldable, Functor, Generic, NFData, Show, Traversable)
-type    OutPort       = [OutPortIndex]
+type    OutPortId     = [OutPortIndex]
 makeWrapped ''OutPorts
 
 type InPortTree  a = LabeledTree InPorts  a
@@ -53,52 +53,59 @@ instance Ixed (OutPorts s) where
     ix (Projection i) = wrapped . ix i
 
 
-data PortId = InPortId InPort | OutPortId OutPort deriving (Generic, Show, Eq, Ord, NFData)
-makePrisms ''PortId
+data AnyPortId = InPortId' InPortId | OutPortId' OutPortId deriving (Generic, Show, Eq, Ord, NFData)
+makePrisms ''AnyPortId
 
 data PortState = NotConnected | Connected | WithDefault PortDefault deriving (Show, Eq, Generic, NFData)
 
-data Port = Port { _portId     :: PortId
-                 , _name       :: String
-                 , _valueType  :: TypeRep
-                 , _state      :: PortState
-                 } deriving (Show, Eq, Generic, NFData)
+data Port i = Port
+        { _portId     :: i
+        , _name       :: String
+        , _valueType  :: TypeRep
+        , _state      :: PortState
+        } deriving (Show, Eq, Generic, NFData)
+
+type InPort  = Port InPortId
+type OutPort = Port OutPortId
 
 makeLenses ''Port
 makePrisms ''PortState
-instance Binary PortId
-instance Binary Port
+instance Binary AnyPortId
+instance Binary i => Binary (Port i)
 instance Binary PortState
 
-isInPort :: PortId -> Bool
-isInPort (InPortId _) = True
+isInPort :: AnyPortId -> Bool
+isInPort (InPortId' _) = True
 isInPort _            = False
 
-isOutPort :: PortId -> Bool
-isOutPort (OutPortId _) = True
+isOutPort :: AnyPortId -> Bool
+isOutPort (OutPortId' _) = True
 isOutPort _             = False
 
-isSelf :: PortId -> Bool
-isSelf (InPortId (Self:_)) = True
+isSelf :: AnyPortId -> Bool
+isSelf (InPortId' (Self:_)) = True
 isSelf _                   = False
 
-isInAll :: PortId -> Bool
-isInAll (InPortId []) = True
+isInAll :: AnyPortId -> Bool
+isInAll (InPortId' []) = True
 isInAll _             = False
 
-isArg :: PortId -> Bool
-isArg (InPortId (Arg _:_)) = True
+isArg :: AnyPortId -> Bool
+isArg (InPortId' (Arg _:_)) = True
 isArg _                    = False
 
-isOutAll :: PortId -> Bool
-isOutAll (OutPortId []) = True
+isOutAll :: AnyPortId -> Bool
+isOutAll (OutPortId' []) = True
 isOutAll _              = False
 
-isProjection :: PortId -> Bool
-isProjection (OutPortId (Projection _:_)) = True
+isProjection :: AnyPortId -> Bool
+isProjection (OutPortId' (Projection _:_)) = True
 isProjection _                            = False
 
-getPortNumber :: PortId -> Int
-getPortNumber (InPortId  (Arg i:_))        = i
-getPortNumber (OutPortId (Projection i:_)) = i
-getPortNumber _                            = 0
+class PortNumber p where getPortNumber :: p -> Int
+instance PortNumber InPortId where
+    getPortNumber (Arg i : _) = i
+    getPortNumber _           = 0
+instance PortNumber OutPortId where
+    getPortNumber (Projection i : _) = i
+    getPortNumber _                  = 0

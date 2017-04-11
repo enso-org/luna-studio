@@ -8,15 +8,15 @@ import           Data.Binary             (Binary)
 import           Empire.API.Data.Node    (NodeId)
 import           Empire.API.Data.NodeLoc (HasNodeLoc (..), NodeLoc)
 import qualified Empire.API.Data.NodeLoc as NodeLoc
-import           Empire.API.Data.Port    (InPort, OutPort, PortId (..))
+import           Empire.API.Data.Port    (AnyPortId (..), InPortId, OutPortId)
 import           Prologue
 
 data InPortRef  = InPortRef  { _dstNodeLoc :: NodeLoc
-                             , _dstPortId :: InPort
+                             , _dstPortId :: InPortId
                              } deriving (Show, Eq, Generic, Ord, NFData)
 
 data OutPortRef = OutPortRef { _srcNodeLoc :: NodeLoc
-                             , _srcPortId :: OutPort
+                             , _srcPortId :: OutPortId
                              } deriving (Show, Eq, Generic, Ord, NFData)
 
 data AnyPortRef = OutPortRef' OutPortRef | InPortRef' InPortRef deriving (Show, Eq, Generic, NFData)
@@ -56,11 +56,11 @@ nodeId' (InPortRef'  (InPortRef  nl _)) = nl ^. NodeLoc.nodeId
 nodeId :: Getter AnyPortRef NodeId
 nodeId = to nodeId'
 
-portId' :: AnyPortRef -> PortId
-portId' (OutPortRef' (OutPortRef _ pid)) = OutPortId pid
-portId' (InPortRef'  (InPortRef  _ pid)) = InPortId  pid
+portId' :: AnyPortRef -> AnyPortId
+portId' (OutPortRef' (OutPortRef _ pid)) = OutPortId' pid
+portId' (InPortRef'  (InPortRef  _ pid)) = InPortId'  pid
 
-portId :: Getter AnyPortRef PortId
+portId :: Getter AnyPortRef AnyPortId
 portId = to portId'
 
 dstNodeId :: Lens' InPortRef NodeId
@@ -69,6 +69,6 @@ dstNodeId = dstNodeLoc . NodeLoc.nodeId
 srcNodeId :: Lens' OutPortRef NodeId
 srcNodeId = srcNodeLoc . NodeLoc.nodeId
 
-toAnyPortRef :: NodeLoc -> PortId -> AnyPortRef
-toAnyPortRef nl (InPortId pid)  = InPortRef'  $ InPortRef  nl pid
-toAnyPortRef nl (OutPortId pid) = OutPortRef' $ OutPortRef nl pid
+toAnyPortRef :: NodeLoc -> AnyPortId -> AnyPortRef
+toAnyPortRef nl (InPortId' pid)  = InPortRef'  $ InPortRef  nl pid
+toAnyPortRef nl (OutPortId' pid) = OutPortRef' $ OutPortRef nl pid

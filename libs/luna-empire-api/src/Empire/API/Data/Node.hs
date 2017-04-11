@@ -10,7 +10,7 @@ import           Data.Text                (Text)
 import           Data.UUID.Types          (UUID)
 import           Empire.API.Data.NodeMeta (NodeMeta)
 import qualified Empire.API.Data.NodeMeta as NodeMeta
-import           Empire.API.Data.Port     (OutPortTree, InPortTree, Port, PortId, InPort)
+import           Empire.API.Data.Port     (AnyPortId, InPort, InPortId, InPortTree, OutPort, OutPortTree)
 import qualified Empire.API.Data.Port     as Port
 import           Prologue
 
@@ -21,23 +21,23 @@ data ExpressionNode = ExpressionNode { _exprNodeId :: NodeId
                                      , _expression :: Text
                                      , _name       :: Maybe Text
                                      , _code       :: Maybe Text
-                                     , _inPorts    :: InPortTree  Port
-                                     , _outPorts   :: OutPortTree Port
+                                     , _inPorts    :: InPortTree  InPort
+                                     , _outPorts   :: OutPortTree OutPort
                                      , _nodeMeta   :: NodeMeta
                                      , _canEnter   :: Bool
                                      } deriving (Generic, Eq, NFData, Show, Typeable)
 
 data InputSidebar = InputSidebar { _inputNodeId    :: NodeId
-                                 , _inputEdgePorts :: [OutPortTree Port]
+                                 , _inputEdgePorts :: [OutPortTree OutPort]
                                  } deriving (Generic, Eq, NFData, Show, Typeable)
 
 data OutputSidebar = OutputSidebar { _outputNodeId    :: NodeId
-                                   , _outputEdgePorts :: InPortTree Port
+                                   , _outputEdgePorts :: InPortTree InPort
                                    } deriving (Generic, Eq, NFData, Show, Typeable)
 
-data NodeTypecheckerUpdate = ExpressionUpdate    { _tcNodeId   :: NodeId, _tcInPorts       :: InPortTree Port, _tcOutPorts :: OutPortTree Port }
-                           | OutputSidebarUpdate { _tcNodeId   :: NodeId, _tcInPorts       :: InPortTree Port }
-                           | InputSidebarUpdate  { _tcNodeId   :: NodeId, _tcInputOutPorts :: [OutPortTree Port] }
+data NodeTypecheckerUpdate = ExpressionUpdate    { _tcNodeId   :: NodeId, _tcInPorts       :: InPortTree InPort, _tcOutPorts :: OutPortTree OutPort }
+                           | OutputSidebarUpdate { _tcNodeId   :: NodeId, _tcInPorts       :: InPortTree InPort }
+                           | InputSidebarUpdate  { _tcNodeId   :: NodeId, _tcInputOutPorts :: [OutPortTree OutPort] }
                            deriving (Generic, Eq, NFData, Show, Typeable)
 
 makeLenses ''ExpressionNode
@@ -52,9 +52,6 @@ instance Binary ExpressionNode
 instance Binary InputSidebar
 instance Binary OutputSidebar
 instance Binary NodeTypecheckerUpdate
-
-makePortsMap :: [Port] -> Map PortId Port
-makePortsMap = Map.fromList . map (view Port.portId &&& id)
 
 class HasNodeId a where
     nodeId :: Lens' a NodeId

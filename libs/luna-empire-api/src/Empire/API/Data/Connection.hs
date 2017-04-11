@@ -6,7 +6,6 @@ import           Data.Convert            (Convertible (..))
 import           Prologue
 
 import           Empire.API.Data.Node    (NodeId)
-import           Empire.API.Data.Port    (InPort, OutPort)
 import           Empire.API.Data.PortRef (AnyPortRef (InPortRef', OutPortRef'), InPortRef, OutPortRef)
 import qualified Empire.API.Data.PortRef as PortRef
 
