@@ -593,15 +593,14 @@ reloadCode loc code = handle (\(_e :: ASTParse.ParserException SomeException) ->
         Just e -> do
             (ref, exprMap, rs) <- ASTParse.runUnitReparser code e
             Graph.breadcrumbHierarchy . BH.body .= ref
-            nodes <- runASTOp $ forM (coerce rs :: [Parser.ReparsingChange]) $ \x -> case x of
+            runASTOp $ forM_ (coerce rs :: [Parser.ReparsingChange]) $ \x -> case x of
                 Parser.AddedExpr expr -> do
-                    uuid <- insertNode Nothing expr
-                    Just <$> GraphBuilder.buildNode uuid
+                    void $ insertNode Nothing expr
                 Parser.ChangedExpr oldExpr expr -> do
                     oldNodeId <- (ASTRead.getVarNode oldExpr >>= ASTRead.getNodeId) `catch`
                         (\(_e :: NotUnifyException) -> return Nothing)
 
-                    forM oldNodeId $ \nodeId -> do
+                    forM_ oldNodeId $ \nodeId -> do
                         oldMeta <- AST.readMeta oldExpr
                         forM oldMeta $ AST.writeMeta expr
                         varNode <- ASTRead.getVarNode expr
@@ -609,7 +608,6 @@ reloadCode loc code = handle (\(_e :: ASTParse.ParserException SomeException) ->
                         let nodeItem = BH.ExprItem Map.empty (BH.MatchNode expr)
                         Graph.breadcrumbHierarchy . BH.children . at nodeId ?= BH.ExprChild nodeItem
                         ASTModify.rewireNode nodeId =<< ASTRead.getTargetNode expr
-                        GraphBuilder.buildNode nodeId
                 Parser.UnchangedExpr oldExpr expr -> do
                     oldMeta <- AST.readMeta oldExpr
                     forM oldMeta $ AST.writeMeta expr
@@ -619,13 +617,10 @@ reloadCode loc code = handle (\(_e :: ASTParse.ParserException SomeException) ->
                     IR.putLayer @Marker var (Just $ OutPortRef (NodeLoc def oldNodeId) Port.All)
                     let nodeItem = BH.ExprItem Map.empty (BH.MatchNode expr)
                     Graph.breadcrumbHierarchy . BH.children . at oldNodeId ?= BH.ExprChild nodeItem
-                    Just <$> GraphBuilder.buildNode oldNodeId
                 Parser.RemovedExpr oldExpr -> do
                     oldNodeId <- (ASTRead.getVarNode oldExpr >>= ASTRead.getNodeId) `catch`
                         (\(_e :: NotUnifyException) -> return Nothing)
                     forM_ oldNodeId $ removeNodeNoTC
-                    return Nothing
-            forM_ (catMaybes nodes) $ Publisher.notifyNodeUpdate loc
             runAliasAnalysis
             return $ Just rs
         Nothing -> return Nothing
