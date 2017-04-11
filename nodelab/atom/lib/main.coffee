@@ -1,3 +1,4 @@
+LunaEditorTab = require './luna-editor-tab'
 LunaStudioTab = require './luna-studio-tab'
 SubAtom       = require 'sub-atom'
 
@@ -7,30 +8,6 @@ c             = require "./gen/ghcjs-code.js"
 code = c()
 path = require 'path'
 
-{TextEditor, TextBuffer} = require 'atom'
-
-TextBuffer::onDidStopChangingWithDiffs = (callback) ->
-  diffs = []
-  disposed = no
-  sub = @onDidChange (diff) ->
-    diff_ext =
-        uri: buffer.file.path
-        start: buffer.characterIndexForPosition(diff.oldRange.start)
-        end: buffer.characterIndexForPosition(diff.oldRange.start) + diff.oldText.length
-        text: diff.newText
-        cursor: buffer.characterIndexForPosition(editor.getCursorBufferPosition())
-    diffs.push diff_ext
-    clearTimeout changeTimeout if changeTimeout
-    changeTimeout = setTimeout ->
-      changeTimeout = null
-      callback diffs if not disposed
-      diffs = []
-    , 300
-  dispose: ->
-    disposed = yes
-    sub.dispose()
-
-
 
 module.exports =
   activate: ->
@@ -38,60 +15,10 @@ module.exports =
 
     actStatus = (data) ->
         if data == 'activate'
-            editors = atom.workspace.getTextEditors()
-            console.log("editors")
-            console.log(editors)
             rootPath = atom.project.getPaths().shift()
             if rootPath != ""
                 internal.pushInternalEvent("SetProject " + rootPath)
     internal.statusListener actStatus
-
-
-    @observed = new SubAtom
-    @observed.add atom.workspace.observeTextEditors (@editor) ->
-        if @editor.buffer && editor.buffer.file
-            uri = @editor.buffer.file.path
-            if path.extname(uri) is '.luna'
-                console.log(uri)
-                internal.pushInternalEvent("OpenFile " + uri)
-
-                @buffer = @editor.buffer
-
-                console.log("in observed")
-                console.log(editor)
-                @triggerPush = true
-                withoutTrigger = (callback) ->
-                    @triggerPush = false
-                    callback()
-                    @triggerPush = true
-                setCode = (uri_send, start_send, end_send, text) ->
-                  withoutTrigger =>
-                    if uri == uri_send
-                      start = buffer.positionForCharacterIndex(start_send)
-                      end = buffer.positionForCharacterIndex(end_send)
-                      @buffer.setTextInRange [start, end], text
-                      @editor.scrollToBufferPosition(start)
-                internal.codeListener setCode
-                @sss = new SubAtom
-                @sss.add @buffer.onDidChange (event) =>
-                    console.log(event)
-                    return unless @triggerPush
-                    if event.newText != '' or event.oldText != ''
-                        diff =
-                            uri: uri
-                            start: buffer.characterIndexForPosition(event.oldRange.start)
-                            end: buffer.characterIndexForPosition(event.oldRange.start) + event.oldText.length
-                            text: event.newText
-                            cursor: buffer.characterIndexForPosition(@editor.getCursorBufferPosition())
-                        console.log(diff, event.oldRange.start, event.oldRange.end)
-                        internal.pushText(diff)
-                @sss.add @buffer.onWillSave (event) => internal.pushInternalEvent("SaveFile " + uri)
-                @sss.add atom.workspace.onDidDestroyPaneItem (event) => #console.log(event.item.buffer.file.path)
-                  if event.item.buffer
-                      activeFilePath = event.item.buffer.file.path
-                  else activeFilePath = event.item.uri
-                  if path.extname(activeFilePath) is '.luna'
-                      internal.pushInternalEvent("CloseFile " + activeFilePath)
 
 
 
@@ -101,84 +28,28 @@ module.exports =
 
       if path.extname(uri) is '.luna'
         internal.pushInternalEvent("OpenFile " + uri)
-
-        atom.workspace.open().then (@editor) ->
-          @buffer = @editor.buffer
-          @buffer.setPath(uri)
-          internal.pushInternalEvent("GetBuffer " + uri)
-          withoutTrigger = (callback) ->
-            @triggerPush = false
-            callback()
-            @triggerPush = true
-
-          setBuffer = (uri_send, text) ->
-            withoutTrigger =>
-              if uri == uri_send
-                @buffer.setText(text)
-          internal.bufferListener setBuffer
-
-          setCode = (uri_send, start_send, end_send, text) ->
-            withoutTrigger =>
-              if uri == uri_send
-                start = buffer.positionForCharacterIndex(start_send)
-                end = buffer.positionForCharacterIndex(end_send)
-                @buffer.setTextInRange [start, end], text
-                @editor.scrollToBufferPosition(start)
-          internal.codeListener setCode
-
-          isSaved = (type, uri_send, status) ->
-              if uri == uri_send and type == "IsSaved" and status =="True"
-                  internal.pushInternalEvent("CloseFile " + activeFilePath)
-                  atom.workspaceView.getActivePaneItem().destroy()
-            #   else if uri == uri_send and type == "IsSaved" and status =="False"
-                # internal.pushInternalEvent("SaveFile " + uri)
-                # na plik zapisal sie zrob destroy i wyslij close file
-                  # prompt window to ask if the file should be saved, send save
-
-
-          @ss = new SubAtom
-          @ss.add @buffer.onDidChange (event) =>
-              console.log(event)
-              return unless @triggerPush
-              if event.newText != '' or event.oldText != ''
-                  diff =
-                      uri: uri
-                      start: buffer.characterIndexForPosition(event.oldRange.start)
-                      end: buffer.characterIndexForPosition(event.oldRange.start) + event.oldText.length
-                      text: event.newText
-                      cursor: buffer.characterIndexForPosition(@editor.getCursorBufferPosition())
-                  console.log(diff, event.oldRange.start, event.oldRange.end)
-                  internal.pushText(diff)
-          @ss.add @buffer.onWillSave (event) => internal.pushInternalEvent("SaveFile " + uri)
-          @ss.add @buffer.onWillReload (event) => internal.pushInternalEvent("GetBuffer " + uri)
-          @ss.add atom.workspace.onDidDestroyPaneItem (event) => #console.log(event.item.buffer.file.path)
-            if event.item.buffer
-                activeFilePath = event.item.buffer.file.path
-            else activeFilePath = event.item.uri
-            if path.extname(activeFilePath) is '.luna'
-                internal.pushInternalEvent("CloseFile " + activeFilePath)
-                # internal.statusListener isSaved
-
+        atom.workspace.getActivePane().activateItem new LunaEditorTab(uri, internal)
         atom.workspace.getActivePane().activateItem new LunaStudioTab(uri, code)
 
 
-
-
-
-
-
-
-
-
     @subs = new SubAtom
-    @subs.add atom.commands.add '.luna-studio', 'luna-studio:cancel': -> code.pushEvent("Shortcut Cancel")
+    # @subs.add atom.commands.add 'atom-text-editor', 'core:copy': ->
+    #     if atom.workspace.getActivePaneItem().buffer
+    #         activeFilePath = atom.workspace.getActivePaneItem().buffer.file.path
+    #         activeEd = atom.workspace.getActivePaneItem().buffer
+    #     if path.extname(activeFilePath) is ".luna"
+    #         console.log("in if")
+    #         console.log(atom.workspace.getActiveTextEditor().getSelections())
+    #         internal.pushInternalEvent("GetBuffer " + "activeFilePath")
+
     @subs.add atom.commands.add 'atom-workspace', 'core:close': ->
         if atom.workspace.getActivePaneItem().buffer
-            activeFilePath =  atom.workspace.getActivePaneItem().buffer.file.path
+            activeFilePath = atom.workspace.getActivePaneItem().buffer.file.path
         else activeFilePath = atom.workspace.getActivePane().activeItem.uri
         if path.extname(activeFilePath) is ".luna"
             internal.pushInternalEvent("CloseFile " + activeFilePath)
     @subs.add atom.commands.add 'atom-workspace', 'core:save', (e)                 ->
+      console.log('save')
       if atom.workspace.getActivePaneItem().buffer
           activeFilePath =  atom.workspace.getActivePaneItem().buffer.file.path
       else activeFilePath = atom.workspace.getActivePane().activeItem.uri
@@ -246,6 +117,3 @@ module.exports =
 
   deactivate: ->
     @subs.dispose()
-    @ss.dispose()
-    @sss.dispose()
-    @observed.dispose()
