@@ -119,10 +119,6 @@ hasIO ref = IR.matchExpr ref $ \case
     _         -> return False
 
 
-nodeIdInsideLambda :: ASTOp m => NodeRef -> m (Maybe NodeId)
-nodeIdInsideLambda node = (ASTRead.getVarNode node >>= ASTRead.getNodeId) `catch`
-    (\(_e :: NotUnifyException) -> return Nothing)
-
 getNodeIdSequence :: ASTOp m => m [NodeId]
 getNodeIdSequence = do
     lref <- ASTRead.getCurrentASTTarget
@@ -133,7 +129,7 @@ getNodeIdSequence = do
         case bodySeq of
             Just b -> AST.readSeq b
             _      -> return []
-    catMaybes <$> mapM nodeIdInsideLambda nodeSeq
+    catMaybes <$> mapM ASTRead.safeGetVarNodeId nodeSeq
 
 type EdgeNodes = (API.Node, API.Node)
 
