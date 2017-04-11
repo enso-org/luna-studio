@@ -27,8 +27,6 @@ isEventHandled = isJust . handleKeyApp
 handleKeyApp :: KeyboardEvent -> Maybe Command
 handleKeyApp evt
     | Keys.withoutMods      evt Keys.esc        = Just Cancel
-    | Keys.withoutMods      evt Keys.l          = Just Autolayout
-    | Keys.withCtrl         evt Keys.l          = Just AutolayoutAll
     -- camera
     | Keys.withCtrl         evt Keys.leftArrow  = Just PanLeft
     | Keys.withCtrl         evt Keys.rightArrow = Just PanRight
@@ -62,6 +60,8 @@ handleKeyApp evt
     | Keys.withoutMods      evt Keys.del        = Just RemoveSelectedNodes
     | Keys.withoutMods      evt Keys.enter      = Just ExpandSelectedNodes
     | Keys.withoutMods      evt Keys.space      = Just EditSelectedNodes
+    | Keys.withoutMods      evt Keys.l          = Just AutolayoutSelectedNodes
+    | Keys.withCtrl         evt Keys.l          = Just AutolayoutAllNodes
     -- searcher
     | Keys.withoutMods evt Keys.tab             = Just SearcherOpen
     -- undo / redo

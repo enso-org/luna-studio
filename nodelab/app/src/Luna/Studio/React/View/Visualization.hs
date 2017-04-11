@@ -1,12 +1,13 @@
 {-# LANGUAGE LambdaCase        #-}
 {-# LANGUAGE OverloadedStrings #-}
 module Luna.Studio.React.View.Visualization
-( visualization
+( nodeShortValue_
+, nodeVisualizations_
+, visualization
 , visualization_
 , pinnedVisualization_
 , strValue
-)
-where
+) where
 
 import           Control.Arrow                                  ((***))
 import qualified Data.Aeson                                     as Aeson
@@ -17,14 +18,12 @@ import qualified Data.Text                                      as Text
 import           Data.Vector                                    (Vector2 (Vector2))
 import           React.Flux                                     hiding (image_)
 import qualified React.Flux                                     as React
-
 import qualified Empire.API.Data.Error                          as LunaError
 import           Empire.API.Data.PortDefault                    (Value (..))
 import qualified Empire.API.Data.PortDefault                    as PortDefault
 import           Empire.API.Data.TypeRep                        (TypeRep)
 import           Empire.API.Graph.NodeResultUpdate              (NodeValue)
 import qualified Empire.API.Graph.NodeResultUpdate              as NodeResult
---import           Luna.Studio.Data.Matrix                        (translatePropertyValue2)
 import qualified Luna.Studio.Event.UI                           as UI
 import           Luna.Studio.Prelude
 import qualified Luna.Studio.React.Event.Visualization          as Visualization
@@ -41,10 +40,33 @@ import qualified Luna.Studio.React.View.Style                   as Style
 import           Luna.Studio.React.View.Visualization.DataFrame (dataFrame_)
 import           Luna.Studio.React.View.Visualization.Image     (image_)
 
+viewName, objNameVis, objNameShortVal :: JSString
+viewName        = "visualization"
+objNameVis      = "node-vis"
+objNameShortVal = "node-short-value"
 
+nodeShortValue_ :: ExpressionNode -> ReactElementM ViewEventHandler ()
+nodeShortValue_ model = React.viewWithSKey nodeShortValue objNameShortVal (model) mempty
 
-viewName :: JSString
-viewName = "visualization"
+nodeShortValue :: ReactView (ExpressionNode)
+nodeShortValue = React.defineView objNameShortVal $ \(n) -> do
+    div_
+        [ "key"       $= "shortValue"
+        , "className" $= Style.prefixFromList [ "node__short-value", "noselect" ]
+        , onDoubleClick $ \e _ -> [stopPropagation e]
+        ] $ elemString $ strValue n
+
+nodeVisualizations_ :: Ref App -> ExpressionNode -> ReactElementM ViewEventHandler ()
+nodeVisualizations_ ref model = React.viewWithSKey nodeVisualizations objNameVis (ref, model) mempty
+
+nodeVisualizations :: ReactView (Ref App, ExpressionNode)
+nodeVisualizations = React.defineView objNameVis $ \(ref, n) -> do
+    let nodeLoc = n ^. Node.nodeLoc
+    div_
+        [ "key"       $= "visualizations"
+        , "className" $= Style.prefixFromList [ "node__visualizations", "noselect" ]
+        , onDoubleClick $ \e _ -> [stopPropagation e]
+        ] $ forM_ (n ^. Node.value) $ visualization_ ref nodeLoc def
 
 pinnedVisualization_ :: Ref App -> NodeEditor -> (NodeLoc, Int, Position) -> ReactElementM ViewEventHandler ()
 pinnedVisualization_ ref ne (nl, _, position) =
@@ -57,54 +79,18 @@ visualization_ ref nl mayPos v = React.view visualization (ref, nl, mayPos, v) m
 
 visualization :: ReactView (Ref App, NodeLoc, Maybe Position, NodeValue)
 visualization = React.defineView viewName $ \(ref, nl, mayPos, nodeValue) ->
-    div_ [ "className" $= Style.prefix "noselect" ] $
+    div_ [ "className" $= Style.prefixFromList [ "noselect" ] ] $
         case nodeValue of
-            NodeResult.Error msg          -> nodeError_ msg
-            NodeResult.Value _ valueReprs -> nodeValues_ ref nl mayPos valueReprs
-
-errorMessageWrapMargin :: Int
-errorMessageWrapMargin = 30
-
-errorLen :: Int
-errorLen = 40
-
-strValue :: ExpressionNode -> String
-strValue n = case n ^. Node.value of
-    Nothing -> ""
-    Just (NodeResult.Value value []) -> Text.unpack value
-    Just (NodeResult.Value value _ ) -> Text.unpack value
-    Just (NodeResult.Error msg     ) -> showError msg --limitString errorLen (convert $ showError msg)
-
-limitString :: Int -> Text -> Text
-limitString limit str | Text.length str > limit64 = Text.take limit64 str <> "…"
-                      | otherwise                 = str
-                      where limit64 = fromIntegral limit
-
-wrapLines :: Int -> String -> String
-wrapLines limit str = unlines . reverse $ foldl f [] $ words str where
-    f (a:as) e = let t = a ++ " " ++ e in if length t <= limit then t:as else e:a:as
-    f []     e = [e]
-
-showError :: LunaError.Error TypeRep -> String
-showError = showErrorSep ""
-
-showErrorSep :: String -> LunaError.Error TypeRep -> String
-showErrorSep sep err = case err of
-    LunaError.ImportError   name     -> "Cannot find symbol \"" <> name        <> "\""
-    LunaError.NoMethodError name tpe -> "Cannot find method \"" <> name        <> "\" for type \"" <> toString tpe <> "\""
-    LunaError.TypeError     t1   t2  -> "Cannot match type  \"" <> toString t1 <> "\" with \""     <> toString t2  <> "\""
-    LunaError.RuntimeError  msg      -> "Runtime error: " <> sep <> msg
-
-nodeError_ :: LunaError.Error TypeRep -> ReactElementM ViewEventHandler ()
-nodeError_ err = do
-    let message = wrapLines errorMessageWrapMargin $ showErrorSep "\n" err
-    div_
-        [ "key"       $= "error"
-        , "className" $= Style.prefixFromList [ "vis", "vis--error" ]
-        ] $ elemString message
-
-nodeValues_ :: Ref App -> NodeLoc -> Maybe Position -> [Value] -> ReactElementM ViewEventHandler ()
-nodeValues_ ref nl mayPos = mapM_ (uncurry $ nodeValue_ ref nl mayPos) . keyed
+            NodeResult.Value _ valueReprs -> mapM_ (uncurry $ nodeValue_ ref nl mayPos) $ keyed valueReprs
+            _                             -> mempty
+-- iframe_
+--     [ "srcDoc" $= ("<style>"
+--                 <> "* { font:12px/16px Hasklig, monospace;color: #fff; padding:0; margin:0; border:none; }"
+--                 <> "body { display:flex; justify-content:center; }"
+--                 <> "table td { padding: 0 4px 2px }</style>"
+--                 <> (convert $ strValue n) )
+--     --, onMouseDown $ \_ _ -> traceShowMToStdout "NIE JEST NAJGORZEJ"
+--     ] mempty
 
 nodeValue_ :: Ref App -> NodeLoc -> Maybe Position -> Int -> Value -> ReactElementM ViewEventHandler ()
 nodeValue_ ref nl mayPos visIx value = do
@@ -114,16 +100,18 @@ nodeValue_ ref nl mayPos visIx value = do
             Nothing  -> Visualization.Pin
         translatedDiv_ = case mayPos of
             Just pos -> div_ [ "className" $= Style.prefixFromList [ "node-trans", "noselect", "node-root" ]
-                             , "style" @= Aeson.object
-                                [ "zIndex"    Aeson..= show (1000 :: Integer) ] ]
-                                --, "transform" Aeson..= translatePropertyValue2 pos ] ]
-                         . div_ [ "className" $= Style.prefix "node__visuals" ]
+                             , "style"     @= Aeson.object [ "zIndex" Aeson..= show (1000 :: Integer) ]
+                             ] . div_ [ "className" $= Style.prefix "node__visuals" ]
             Nothing -> div_
     translatedDiv_ $ do
         withJust mayPos $ \pos ->
-            button_ [ onMouseDown $ \e m -> stopPropagation e : dispatch ref (UI.VisualizationEvent $ Visualization.MouseDown m nl visIx pos)] $
+            button_ [ onMouseDown $ \e m -> stopPropagation e : dispatch ref (UI.VisualizationEvent $ Visualization.MouseDown m nl visIx pos)
+                    , "key" $= "button1"
+                    ] $
                 elemString "move"
-        button_ [ onClick $ \_ _ -> dispatch ref $ UI.VisualizationEvent $ event nl visIx ] $
+        button_ [ onClick $ \_ _ -> dispatch ref $ UI.VisualizationEvent $ event nl visIx
+                , "key" $= "button2"
+                ] $
             elemString $ if isPinned then "unpin" else "pin"
         case value of
             DataFrame    cols -> do
@@ -148,7 +136,24 @@ nodeValue_ ref nl mayPos visIx value = do
             StringValue   str -> strDiv str
             _ -> return ()
     where
-      strDiv = div_ . elemString . normalize
+        strDiv = div_ . elemString . normalize
+
+strValue :: ExpressionNode -> String
+strValue n = case n ^. Node.value of
+    Nothing -> ""
+    Just (NodeResult.Value value []) -> Text.unpack value
+    Just (NodeResult.Value value _ ) -> Text.unpack value
+    Just (NodeResult.Error msg     ) -> showError msg --limitString errorLen (convert $ showError msg)
+
+showError :: LunaError.Error TypeRep -> String
+showError = showErrorSep ""
+
+showErrorSep :: String -> LunaError.Error TypeRep -> String
+showErrorSep sep err = case err of
+    LunaError.ImportError   name     -> "Cannot find symbol \"" <> name        <> "\""
+    LunaError.NoMethodError name tpe -> "Cannot find method \"" <> name        <> "\" for type \"" <> toString tpe <> "\""
+    LunaError.TypeError     t1   t2  -> "Cannot match type  \"" <> toString t1 <> "\" with \""     <> toString t2  <> "\""
+    LunaError.RuntimeError  msg      -> "Runtime error: " <> sep <> msg
 
 listTable :: [Text] -> DataFrame
 listTable col = DataFrame.create ["Index", "Value"] rows where

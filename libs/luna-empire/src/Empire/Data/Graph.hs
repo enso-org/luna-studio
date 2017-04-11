@@ -13,6 +13,8 @@ module Empire.Data.Graph (
   , withVis
   , AST
   , ASTState(..)
+  , ir
+  , pmState
   ) where
 
 import           Empire.Data.BreadcrumbHierarchy   (BParent)
@@ -55,7 +57,9 @@ defaultGraph = do
     return $ Graph ast' def 0
 
 type AST      = ASTState
-data ASTState = ASTState IR (Pass.RefState (PassManager.PassManager (IRBuilder (Parser.IRSpanTreeBuilder (DepState.StateT Cache (Logger DropLogger (Vis.VisStateT (StateT Graph IO))))))))
+data ASTState = ASTState { _ir      :: IR
+                         , _pmState :: Pass.RefState (PassManager.PassManager (IRBuilder (Parser.IRSpanTreeBuilder (DepState.StateT Cache (Logger DropLogger (Vis.VisStateT (StateT Graph IO)))))))
+                         }
 
 instance Show ASTState where
     show _ = "AST"
@@ -107,3 +111,4 @@ defaultAST = mdo
 
 
 makeLenses ''Graph
+makeLenses ''ASTState
