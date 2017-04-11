@@ -325,87 +325,14 @@ connect loc outPort anyPort = withTC loc False $ connectNoTC loc outPort anyPort
 connectPersistent :: ASTOp m => OutPortRef -> AnyPortRef -> m Connection
 connectPersistent src@(OutPortRef (NodeLoc _ srcNodeId) srcPort) (InPortRef' dst@(InPortRef (NodeLoc _ dstNodeId) dstPort)) = do
     case dstPort of
-            [Self]    -> makeAcc srcNodeId dstNodeId srcPort
-            [Arg num] -> makeApp srcNodeId dstNodeId num srcPort
+        []        -> makeWhole srcNodeId dstNodeId srcPort
+        [Self]    -> makeAcc   srcNodeId dstNodeId srcPort
+        [Arg num] -> makeApp   srcNodeId dstNodeId num srcPort
     return $ Connection src dst
 connectPersistent src@(OutPortRef (NodeLoc _ srcNodeId) srcPort) (OutPortRef' dst@(OutPortRef (NodeLoc _ dstNodeId) dstPort)) = do
     case dstPort of
         []               -> $notImplemented --connectToPattern srcNodeId dstNodeId
         Projection _ : _ -> throwM InvalidConnectionException
-
-data CannotConnectException = CannotConnectException NodeId NodeId
-    deriving Show
-
-instance Exception CannotConnectException where
-    toException = astExceptionToException
-    fromException = astExceptionFromException
-
-transplantMarker :: ASTOp m => NodeRef -> NodeRef -> m ()
-transplantMarker donor recipient = do
-    marker     <- IR.getLayer @Marker donor
-    varsInside <- ASTRead.getVarsInside recipient
-    let indexedVars = zip varsInside [0..]
-
-        markerPort (Just (OutPortRef nid _)) index = Just $ OutPortRef nid [Projection index]
-        markerPort _                         _     = Nothing
-    forM_ indexedVars $ \(var, index) -> do
-        IR.putLayer @Marker var $ markerPort marker index
-
-data PatternLocation = Var | Target | Nowhere
-
-getPatternLocation :: ASTOp m => NodeId -> m PatternLocation
-getPatternLocation node = do
-    varIsCons    <- do
-      var    <- ASTRead.getASTVar node
-      cons   <- IR.narrowTerm @IR.Cons var
-      return $ isJust cons
-    targetIsCons <- do
-        target <- ASTRead.getASTTarget node
-        cons   <- IR.narrowTerm @IR.Cons target
-        return $ isJust cons
-    if | varIsCons    -> return Var
-       | targetIsCons -> return Target
-       | otherwise    -> return Nowhere
-
-data NotAPatternException = NotAPatternException NodeRef
-    deriving Show
-
-instance Exception NotAPatternException where
-    fromException = astExceptionFromException
-    toException   = astExceptionToException
-
-constructorToPattern :: ASTOp m => NodeRef -> m NodeRef
-constructorToPattern cons = IR.matchExpr cons $ \case
-    IR.App{}    -> do
-        (f, args) <- ASTDeconstruct.deconstructApp cons
-        fCons     <- IR.narrowTerm @IR.Cons f
-        case fCons of
-            Nothing -> throwM $ NotAPatternException cons
-            Just c  -> do
-                patterns       <- mapM constructorToPattern args
-                constructor    <- IR.matchExpr c $ \case
-                    IR.Cons n _ -> pure n
-                newConstructor <- IR.cons constructor patterns
-                return $ IR.generalize newConstructor
-
-    IR.Var{}       -> return cons
-    IR.Cons n args -> do
-        patterns <- mapM (constructorToPattern <=< IR.source) args
-        IR.generalize <$> IR.cons n patterns
-    IR.Number{}    -> return cons
-    IR.String{}    -> return cons
-    IR.Grouped g   -> constructorToPattern =<< IR.source g
-
-data PatternConversion = ConvertToPattern | Don'tConvertToPattern
-
-movePatternToVar :: ASTOp m => PatternConversion -> NodeId -> m ()
-movePatternToVar convertPattern nid = do
-    let converter ConvertToPattern      = constructorToPattern
-        converter Don'tConvertToPattern = return
-    cons     <- ASTRead.getASTTarget nid >>= converter convertPattern
-    consName <- ASTRead.getASTVar nid
-    transplantMarker consName cons
-    ASTModify.rewireNodeName nid cons
 
 connectNoTC :: GraphLocation -> OutPortRef -> AnyPortRef -> Command Graph Connection
 connectNoTC loc outPort anyPort = do
@@ -533,15 +460,19 @@ getOutEdges nodeId = do
     return $ view _2 <$> filtered
 
 disconnectPort :: ASTOp m => InPortRef -> m ()
-disconnectPort (InPortRef (NodeLoc _ dstNodeId) dstPort) = do
-    isPatternMatch <- ASTRead.nodeIsPatternMatch dstNodeId
-    if isPatternMatch then do
-        nothing <- IR.generalize <$> IR.cons_ "Nothing"
-        ASTModify.rewireNode dstNodeId nothing
-                      else do
-        case dstPort of
-          [Self]    -> unAcc dstNodeId
-          [Arg num] -> unApp dstNodeId num
+disconnectPort (InPortRef (NodeLoc _ dstNodeId) dstPort) = case dstPort of
+    []        -> setToNothing dstNodeId
+    [Self]    -> unAcc dstNodeId
+    [Arg num] -> unApp dstNodeId num
+
+setToNothing :: ASTOp m => NodeId -> m ()
+setToNothing dst = do
+    edges <- GraphBuilder.getEdgePortMapping
+    let disconnectOutputEdge = case edges of
+            Nothing       -> False
+            Just (_, out) -> out == dst
+    nothing <- IR.generalize <$> IR.cons_ "None"
+    if disconnectOutputEdge then updateNodeSequenceWithOutput (Just nothing) else GraphUtils.rewireNode dst nothing
 
 unAcc :: ASTOp m => NodeId -> m ()
 unAcc nodeId = do
@@ -573,14 +504,16 @@ makeAcc src dst outPort = do
 
 makeApp :: ASTOp m => NodeId -> NodeId -> Int -> OutPort -> m ()
 makeApp src dst pos outPort = do
+    srcAst     <- ASTRead.getASTOutForPort src outPort
+    dstAst     <- GraphUtils.getASTTarget dst
+    newNodeRef <- ASTBuilder.applyFunction dstAst srcAst pos
+    GraphUtils.rewireNode dst newNodeRef
+
+makeWhole :: ASTOp m => NodeId -> NodeId -> OutPort -> m ()
+makeWhole src dst outPort = do
     edges <- GraphBuilder.getEdgePortMapping
     let connectToOutputEdge = case edges of
             Nothing       -> False
             Just (_, out) -> out == dst
     srcAst <- ASTRead.getASTOutForPort src outPort
-    if connectToOutputEdge
-        then updateNodeSequenceWithOutput $ Just srcAst
-        else do
-            dstAst     <- GraphUtils.getASTTarget dst
-            newNodeRef <- ASTBuilder.applyFunction dstAst srcAst pos
-            GraphUtils.rewireNode dst newNodeRef
+    if connectToOutputEdge then updateNodeSequenceWithOutput (Just srcAst) else GraphUtils.rewireNode dst srcAst

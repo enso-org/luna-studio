@@ -69,7 +69,8 @@ spec = around withChannels $ id $ do
                 return (node, graph)
             withResult res $ \(node, graph) -> do
                 (node ^.. Node.inPorts . traverse) `shouldMatchList` [
-                      Port.Port (Port.InPortId [Port.Self])    "self" TStar (Port.WithDefault (Expression "map"))
+                      Port.Port (Port.InPortId [])           "base" TStar (Port.WithDefault $ Expression "map x: x")
+                    , Port.Port (Port.InPortId [Port.Self])  "self" TStar (Port.WithDefault (Expression "map"))
                     , Port.Port (Port.InPortId [Port.Arg 0]) "arg0" TStar (Port.WithDefault (Expression "x: x"))
                     ]
                 let Graph.Graph nodes connections (Just inputEdge) (Just outputEdge) _ = graph
@@ -77,11 +78,11 @@ spec = around withChannels $ id $ do
                       LabeledTree def (Port.Port (Port.OutPortId $ [Port.Projection 0]) "x" TStar Port.Connected)
                     ]
                 (outputEdge ^.. Node.outputEdgePorts . traverse) `shouldMatchList` [
-                      Port.Port (Port.InPortId [Port.Arg 0]) "output" TStar Port.Connected
+                      Port.Port (Port.InPortId []) "output" TStar Port.Connected
                     ]
                 connections `shouldMatchList` [
                       (OutPortRef (NodeLoc def $ inputEdge  ^. Node.nodeId) [Port.Projection 0],
-                       InPortRef  (NodeLoc def $ outputEdge ^. Node.nodeId) [Port.Arg 0])
+                       InPortRef  (NodeLoc def $ outputEdge ^. Node.nodeId) [])
                     ]
         {-xit "shows anonymous breadcrumbs in foo ((Acc a): b: a + b) 1 ((Vector a b c): a * b + c)" $ \env -> do-}
             {-u1 <- mkUUID-}

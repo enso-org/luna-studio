@@ -25,6 +25,7 @@ module Empire.Commands.GraphBuilder (
   ) where
 
 import           Empire.Prelude
+import           Prologue                          (filtered, has)
 
 import           Control.Monad.State               hiding (when)
 
@@ -51,7 +52,7 @@ import           Empire.API.Data.NodeLoc           (NodeLoc (..))
 import           Empire.API.Data.Port              (InPortIndex (..), OutPortIndex (..), OutPort, InPort, _InPortId, OutPorts (..), InPorts (..), Port (..), PortId (..), InPortTree, OutPortTree, PortState (..))
 import qualified Empire.API.Data.Port              as Port
 import           Empire.API.Data.LabeledTree       (LabeledTree (..))
-import           Empire.API.Data.PortRef           (InPortRef (..), OutPortRef (..), srcNodeId)
+import           Empire.API.Data.PortRef           (InPortRef (..), OutPortRef (..), srcNodeId, dstNodeId)
 import           Empire.API.Data.TypeRep           (TypeRep(TLam, TStar, TCons))
 
 import           Empire.ASTOp                      (ASTOp, match, runASTOp)
@@ -432,8 +433,8 @@ buildOutputSidebar connections nid = do
              $ map snd
              $ filter (\(_, InPortRef refNid p) -> nid == refNid ^. NodeLoc.nodeId)
              $ connections
-        outputConnected = if 0 `elem` connectedPorts then Connected else NotConnected
-        port = Port (InPortId []) "output" outputType outputConnected
+        outputConnected = if has (traverse . _2 . dstNodeId . filtered (== nid)) connections then Connected else NotConnected
+        port            = Port (InPortId []) "output" outputType outputConnected
     return $
         API.OutputSidebar nid $ LabeledTree (Port.InPorts Nothing []) port
 

@@ -63,11 +63,9 @@ portId' (InPortRef'  (InPortRef  _ pid)) = InPortId  pid
 portId :: Getter AnyPortRef PortId
 portId = to portId'
 
-{-# DEPRECATED dstNodeId "Use dstNodeLoc" #-}
 dstNodeId :: Lens' InPortRef NodeId
 dstNodeId = dstNodeLoc . NodeLoc.nodeId
 
-{-# DEPRECATED srcNodeId "Use srcNodeLoc" #-}
 srcNodeId :: Lens' OutPortRef NodeId
 srcNodeId = srcNodeLoc . NodeLoc.nodeId
 
