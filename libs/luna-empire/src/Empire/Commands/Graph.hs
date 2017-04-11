@@ -43,7 +43,7 @@ module Empire.Commands.Graph
     ) where
 
 import           Control.Monad                 (forM, forM_)
-import           Control.Monad.Catch           (MonadCatch(..))
+import           Control.Monad.Catch           (MonadCatch(..), handle)
 import           Control.Monad.State           hiding (when)
 import           Control.Arrow                 ((&&&))
 import           Control.Monad.Error           (throwError)
@@ -587,7 +587,7 @@ substituteCode path start end code cursor = do
     withTC loc True $ reloadCode loc newCode
 
 reloadCode :: GraphLocation -> Text -> Command Graph (Maybe Parser.ReparsingStatus)
-reloadCode loc code = do
+reloadCode loc code = handle (\(_e :: ASTParse.ParserException SomeException) -> return Nothing) $ do
     expr <- preuse $ Graph.breadcrumbHierarchy . BH.body
     case expr of
         Just e -> do
