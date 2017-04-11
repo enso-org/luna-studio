@@ -7,13 +7,19 @@ c             = require "./gen/ghcjs-code.js"
 code = c()
 path = require 'path'
 
-{TextEditor} = require 'atom'
+{TextEditor, TextBuffer} = require 'atom'
 
-TextEditor::onDidStopChangingWithDiffs = (callback) ->
+TextBuffer::onDidStopChangingWithDiffs = (callback) ->
   diffs = []
   disposed = no
   sub = @onDidChange (diff) ->
-    diffs.push diff
+    diff_ext =
+        uri: buffer.file.path
+        start: buffer.characterIndexForPosition(diff.oldRange.start)
+        end: buffer.characterIndexForPosition(diff.oldRange.start) + diff.oldText.length
+        text: diff.newText
+        cursor: buffer.characterIndexForPosition(editor.getCursorBufferPosition())
+    diffs.push diff_ext
     clearTimeout changeTimeout if changeTimeout
     changeTimeout = setTimeout ->
       changeTimeout = null
@@ -32,6 +38,9 @@ module.exports =
 
     actStatus = (data) ->
         if data == 'activate'
+            editors = atom.workspace.getTextEditors()
+            console.log("editors")
+            console.log(editors)
             rootPath = atom.project.getPaths().shift()
             if rootPath != ""
                 internal.pushInternalEvent("SetProject " + rootPath)
