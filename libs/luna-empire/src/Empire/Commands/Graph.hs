@@ -202,7 +202,7 @@ addPort loc nid position = withGraph loc $ runASTOp $ do
     when ((fst <$> edges) /= Just nid) $ throwM NotInputEdgeException
     ASTModify.addLambdaArg position ref
     -- TODO[MM]: This should match for any node. Now it ignores node and replace it by InputEdge.
-    inputEdge <- GraphBuilder.buildConnections >>= \c -> GraphBuilder.buildInputSidebar c nid
+    inputEdge <- GraphBuilder.buildInputSidebar nid
     return inputEdge
 
 generateNodeId :: IO NodeId
@@ -242,7 +242,7 @@ removePort loc portRef = withGraph loc $ runASTOp $ do
                                else throwM NotInputEdgeException
         _ -> return ref
     when (ref /= newRef) $ ASTModify.rewireCurrentNode newRef
-    GraphBuilder.buildConnections >>= \c -> GraphBuilder.buildInputSidebar c nodeId
+    GraphBuilder.buildInputSidebar nodeId
 
 movePort :: GraphLocation -> AnyPortRef -> Int -> Empire InputSidebar
 movePort loc portRef newPosition = withGraph loc $ runASTOp $ do
@@ -255,7 +255,7 @@ movePort loc portRef newPosition = withGraph loc $ runASTOp $ do
                                else throwM NotInputEdgeException
         _ -> throwM NotInputEdgeException
     when (ref /= newRef) $ ASTModify.rewireCurrentNode newRef
-    GraphBuilder.buildConnections >>= \c -> GraphBuilder.buildInputSidebar c nodeId
+    GraphBuilder.buildInputSidebar nodeId
 
 renamePort :: GraphLocation -> AnyPortRef -> String -> Empire InputSidebar
 renamePort loc portRef newName = withGraph loc $ runASTOp $ do
@@ -267,7 +267,7 @@ renamePort loc portRef newName = withGraph loc $ runASTOp $ do
             if nodeId == input then ASTModify.renameLambdaArg (portRef ^. PortRef.portId) newName ref
                                else throwM NotInputEdgeException
         _ -> throwM NotInputEdgeException
-    GraphBuilder.buildConnections >>= \c -> GraphBuilder.buildInputSidebar c nodeId
+    GraphBuilder.buildInputSidebar nodeId
 
 setNodeExpression :: GraphLocation -> NodeId -> Text -> Empire ExpressionNode
 setNodeExpression loc nodeId expr = withTC loc False $ do

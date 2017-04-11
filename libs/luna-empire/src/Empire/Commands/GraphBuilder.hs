@@ -139,7 +139,7 @@ type EdgeNodes = (API.InputSidebar, API.OutputSidebar)
 buildEdgeNodes :: ASTOp m => [(OutPortRef, InPortRef)] -> m (Maybe EdgeNodes)
 buildEdgeNodes connections = getEdgePortMapping >>= \p -> case p of
     Just (inputPort, outputPort) -> do
-        inputEdge  <- buildInputSidebar connections inputPort
+        inputEdge  <- buildInputSidebar inputPort
         outputEdge <- buildOutputSidebar connections outputPort
         return $ Just (inputEdge, outputEdge)
     _ -> return Nothing
@@ -379,7 +379,7 @@ buildOutPorts ref = match ref $ \case
 buildConnections :: ASTOp m => m [(OutPortRef, InPortRef)]
 buildConnections = do
     allNodes <- uses Graph.breadcrumbHierarchy BH.topLevelIDs
-    edges <- getEdgePortMapping
+    edges    <- getEdgePortMapping
     connections <- mapM (getNodeInputs edges) allNodes
     outputEdgeConnections <- forM edges $ uncurry getOutputSidebarInputs
     let foo = maybeToList $ join outputEdgeConnections
@@ -387,12 +387,12 @@ buildConnections = do
 
 buildInputSidebarTypecheckUpdate :: ASTOp m => NodeId -> m API.NodeTypecheckerUpdate
 buildInputSidebarTypecheckUpdate nid = do
-    API.InputSidebar nid ps <- buildInputSidebar [] nid
+    API.InputSidebar nid ps <- buildInputSidebar nid
     return $ API.InputSidebarUpdate nid ps
 
 
-buildInputSidebar :: ASTOp m => [(OutPortRef, InPortRef)] -> NodeId -> m API.InputSidebar
-buildInputSidebar connections nid = do
+buildInputSidebar :: ASTOp m => NodeId -> m API.InputSidebar
+buildInputSidebar nid = do
     Just ref <- ASTRead.getCurrentASTTarget
     args     <- ASTDeconstruct.extractArguments ref
     argTrees <- zipWithM buildOutPortTree (pure . Projection <$> [0..]) args

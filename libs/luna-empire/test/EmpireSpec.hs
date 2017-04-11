@@ -607,7 +607,7 @@ spec = around withChannels $ parallel $ do
                     , Port.Port (Port.InPortId [Port.Arg 2]) "node3" TStar Port.Connected
                     ]
     describe "port manipulation" $ do
-        let buildInputEdge' loc nid = Graph.withGraph loc $ runASTOp $ GraphBuilder.buildConnections >>= \c -> GraphBuilder.buildInputSidebar c nid
+        let buildInputEdge' loc nid = Graph.withGraph loc $ runASTOp $ GraphBuilder.buildInputSidebar nid
         it "adds port" $ \env -> do
             u1 <- mkUUID
             res <- evalEmp env $ do
@@ -622,7 +622,7 @@ spec = around withChannels $ parallel $ do
                 return (inputEdge, defFoo, connections, referenceConnection)
             withResult res $ \(inputEdge, defFoo, connections, referenceConnection) -> do
                 (inputEdge ^. Node.inputEdgePorts) `shouldMatchList` [
-                      LabeledTree def (Port.Port (Port.OutPortId [Port.Projection 0]) "a" TStar Port.Connected)
+                      LabeledTree def (Port.Port (Port.OutPortId [Port.Projection 0]) "a" TStar Port.NotConnected)
                     , LabeledTree def (Port.Port (Port.OutPortId [Port.Projection 1]) "b" TStar Port.NotConnected)
                     ]
                 (defFoo ^.. Node.inPorts . traverse) `shouldMatchList` [
@@ -646,7 +646,7 @@ spec = around withChannels $ parallel $ do
             withResult res $ \(inputEdge, defFoo, connections, referenceConnection) -> do
                 (inputEdge ^. Node.inputEdgePorts) `shouldMatchList` [
                       LabeledTree def (Port.Port (Port.OutPortId [Port.Projection 0]) "b" TStar Port.NotConnected)
-                    , LabeledTree def (Port.Port (Port.OutPortId [Port.Projection 1]) "a" TStar Port.Connected)
+                    , LabeledTree def (Port.Port (Port.OutPortId [Port.Projection 1]) "a" TStar Port.NotConnected)
                     ]
                 (defFoo ^.. Node.inPorts . traverse) `shouldMatchList` [
                       Port.Port (Port.InPortId [])           "base" TStar (Port.WithDefault $ Expression "b: a: a")
@@ -667,7 +667,7 @@ spec = around withChannels $ parallel $ do
                 return (inputEdge, defFoo)
             withResult res $ \(inputEdge, defFoo) -> do
                 (inputEdge ^. Node.inputEdgePorts) `shouldMatchList` [
-                      LabeledTree def (Port.Port (Port.OutPortId [Port.Projection 0]) "a" TStar Port.Connected)
+                      LabeledTree def (Port.Port (Port.OutPortId [Port.Projection 0]) "a" TStar Port.NotConnected)
                     , LabeledTree def (Port.Port (Port.OutPortId [Port.Projection 1]) "b" TStar Port.NotConnected)
                     , LabeledTree def (Port.Port (Port.OutPortId [Port.Projection 2]) "c" TStar Port.NotConnected)
                     ]
@@ -689,10 +689,10 @@ spec = around withChannels $ parallel $ do
                 connections <- Graph.getConnections loc'
                 return (inputEdge, defFoo, connections)
             withResult res $ \(inputEdge, defFoo, connections) -> do
-                (inputEdge ^. Node.inputEdgePorts) `shouldMatchList` [
-                      LabeledTree def (Port.Port (Port.OutPortId [Port.Projection 0]) "a" TStar Port.Connected)
-                    , LabeledTree def (Port.Port (Port.OutPortId [Port.Projection 1]) "b" TStar Port.Connected)
-                    , LabeledTree def (Port.Port (Port.OutPortId [Port.Projection 2]) "c" TStar Port.NotConnected)
+                inputEdge ^.. Node.inputEdgePorts . traverse . traverse `shouldMatchList` [
+                      Port.Port (Port.OutPortId [Port.Projection 0]) "a" TStar Port.NotConnected
+                    , Port.Port (Port.OutPortId [Port.Projection 1]) "b" TStar Port.NotConnected
+                    , Port.Port (Port.OutPortId [Port.Projection 2]) "c" TStar Port.NotConnected
                     ]
                 (defFoo ^.. Node.inPorts . traverse) `shouldMatchList` [
                       Port.Port (Port.InPortId [])           "base" TStar (Port.WithDefault $ Expression "a: b: c: a + b")
@@ -735,7 +735,7 @@ spec = around withChannels $ parallel $ do
                 return (inputEdge, defFoo)
             withResult res $ \(inputEdge, node) -> do
                 (inputEdge ^. Node.inputEdgePorts) `shouldMatchList` [
-                      LabeledTree def (Port.Port (Port.OutPortId [Port.Projection 0]) "a" TStar Port.Connected)
+                      LabeledTree def (Port.Port (Port.OutPortId [Port.Projection 0]) "a" TStar Port.NotConnected)
                     ]
                 (node ^.. Node.inPorts . traverse) `shouldMatchList` [
                       Port.Port (Port.InPortId [])           "base" TStar (Port.WithDefault $ Expression "a: a")
@@ -753,7 +753,7 @@ spec = around withChannels $ parallel $ do
                 return inputEdge
             withResult res $ \inputEdge -> do
                 (inputEdge ^. Node.inputEdgePorts) `shouldMatchList` [
-                      LabeledTree def (Port.Port (Port.OutPortId [Port.Projection 0]) "foo" TStar Port.Connected)
+                      LabeledTree def (Port.Port (Port.OutPortId [Port.Projection 0]) "foo" TStar Port.NotConnected)
                     , LabeledTree def (Port.Port (Port.OutPortId [Port.Projection 1]) "bar" TStar Port.NotConnected)
                     ]
         it "changes ports order" $ \env -> do
@@ -766,11 +766,11 @@ spec = around withChannels $ parallel $ do
                 inputEdge <- buildInputEdge' loc' input
                 return inputEdge
             withResult res $ \inputEdge -> do
-                (inputEdge ^. Node.inputEdgePorts) `shouldMatchList` [
-                      LabeledTree def (Port.Port (Port.OutPortId [Port.Projection 0]) "b" TStar Port.NotConnected)
-                    , LabeledTree def (Port.Port (Port.OutPortId [Port.Projection 1]) "c" TStar Port.NotConnected)
-                    , LabeledTree def (Port.Port (Port.OutPortId [Port.Projection 2]) "a" TStar Port.Connected)
-                    , LabeledTree def (Port.Port (Port.OutPortId [Port.Projection 3]) "d" TStar Port.NotConnected)
+                inputEdge ^.. Node.inputEdgePorts . traverse . traverse `shouldMatchList` [
+                      Port.Port (Port.OutPortId [Port.Projection 0]) "b" TStar Port.NotConnected
+                    , Port.Port (Port.OutPortId [Port.Projection 1]) "c" TStar Port.NotConnected
+                    , Port.Port (Port.OutPortId [Port.Projection 2]) "a" TStar Port.NotConnected
+                    , Port.Port (Port.OutPortId [Port.Projection 3]) "d" TStar Port.NotConnected
                     ]
         it "connects to added port inside lambda" $ \env -> do
             u1 <- mkUUID
@@ -790,9 +790,9 @@ spec = around withChannels $ parallel $ do
                       ]
                 return (inputEdge, connections, referenceConnections)
             withResult res $ \(inputEdge, connections, referenceConnections) -> do
-                (inputEdge ^. Node.inputEdgePorts) `shouldMatchList` [
-                      LabeledTree def (Port.Port (Port.OutPortId [Port.Projection 0]) "a" TStar Port.Connected)
-                    , LabeledTree def (Port.Port (Port.OutPortId [Port.Projection 1]) "b" TStar Port.Connected)
+                inputEdge ^.. Node.inputEdgePorts . traverse . traverse `shouldMatchList` [
+                      Port.Port (Port.OutPortId [Port.Projection 0]) "a" TStar Port.NotConnected
+                    , Port.Port (Port.OutPortId [Port.Projection 1]) "b" TStar Port.NotConnected
                     ]
                 connections `shouldMatchList` referenceConnections
         it "does not allow to remove All port" $ \env -> do
@@ -823,10 +823,10 @@ spec = around withChannels $ parallel $ do
                 let referenceConnections = [(outPortRef input [Port.Projection 0], inPortRef output [])]
                 return (inputEdge, defFoo, connections, referenceConnections, nodeIds)
             withResult res $ \(inputEdge, node, connections, referenceConnections, nodeIds) -> do
-                (inputEdge ^. Node.inputEdgePorts) `shouldMatchList` [
-                      LabeledTree def (Port.Port (Port.OutPortId [Port.Projection 0]) "a" TStar Port.Connected)
+                inputEdge ^.. Node.inputEdgePorts . traverse . traverse `shouldMatchList` [
+                      Port.Port (Port.OutPortId [Port.Projection 0]) "a" TStar Port.NotConnected
                     ]
-                (node ^.. Node.inPorts . traverse) `shouldMatchList` [
+                node ^.. Node.inPorts . traverse `shouldMatchList` [
                       Port.Port (Port.InPortId [])           "base" TStar (Port.WithDefault $ Expression "a: node2 = func b\n   a")
                     , Port.Port (Port.InPortId [Port.Arg 0]) "a"    TStar Port.NotConnected
                     ]
@@ -845,9 +845,9 @@ spec = around withChannels $ parallel $ do
                 inputEdge <- buildInputEdge' loc' input
                 return inputEdge
             withResult res $ \inputEdge -> do
-              (inputEdge ^. Node.inputEdgePorts) `shouldMatchList` [
-                    LabeledTree def (Port.Port (Port.OutPortId [Port.Projection 0]) "a" TStar Port.Connected)
-                  , LabeledTree def (Port.Port (Port.OutPortId [Port.Projection 1]) "b" TStar Port.Connected)
+              inputEdge ^.. Node.inputEdgePorts . traverse . traverse `shouldMatchList` [
+                    Port.Port (Port.OutPortId [Port.Projection 0]) "a" TStar Port.NotConnected
+                  , Port.Port (Port.OutPortId [Port.Projection 1]) "b" TStar Port.NotConnected
                   ]
     describe "node sequence" $ do
         it "adds one node to sequence" $ \env -> do
@@ -1109,13 +1109,14 @@ spec = around withChannels $ parallel $ do
                     ]
                 let Graph.Graph nodes connections _ _ _ = graph
                 nodes `shouldBe` []
-                input ^. Node.inputEdgePorts `shouldMatchList` [
-                      LabeledTree def (Port.Port (Port.OutPortId [Port.Projection 0]) "a" TStar Port.NotConnected)
-                    , LabeledTree def (Port.Port (Port.OutPortId [Port.Projection 1]) "b" TStar Port.Connected)
-                    , LabeledTree def (Port.Port (Port.OutPortId [Port.Projection 2]) "c" TStar Port.NotConnected)
+                input ^.. Node.inputEdgePorts . traverse . traverse `shouldMatchList` [
+                      Port.Port (Port.OutPortId [Port.Projection 0])                    "Foobar a b c" TStar Port.NotConnected
+                    , Port.Port (Port.OutPortId [Port.Projection 0, Port.Projection 0]) "a"            TStar Port.NotConnected
+                    , Port.Port (Port.OutPortId [Port.Projection 0, Port.Projection 1]) "b"            TStar Port.NotConnected
+                    , Port.Port (Port.OutPortId [Port.Projection 0, Port.Projection 2]) "c"            TStar Port.NotConnected
                     ]
 
-                (output ^.. Node.outputEdgePorts . traverse) `shouldMatchList` [
+                output ^.. Node.outputEdgePorts . traverse `shouldMatchList` [
                       Port.Port (Port.InPortId []) "output" TStar Port.Connected
                     ]
 

@@ -75,7 +75,7 @@ spec = around withChannels $ id $ do
                     ]
                 let Graph.Graph nodes connections (Just inputEdge) (Just outputEdge) _ = graph
                 (inputEdge ^. Node.inputEdgePorts) `shouldMatchList` [
-                      LabeledTree def (Port.Port (Port.OutPortId $ [Port.Projection 0]) "x" TStar Port.Connected)
+                      LabeledTree def (Port.Port (Port.OutPortId $ [Port.Projection 0]) "x" TStar Port.NotConnected)
                     ]
                 (outputEdge ^.. Node.outputEdgePorts . traverse) `shouldMatchList` [
                       Port.Port (Port.InPortId []) "output" TStar Port.Connected
