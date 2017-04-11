@@ -21,7 +21,7 @@ import           Empire.Prelude       hiding (mempty)
 import           Prologue             (Text, mempty, toListOf)
 
 import           Control.Monad.Catch  (MonadCatch(..))
-import           Control.Monad.State  (StateT, runStateT, get, gets, put)
+import           Control.Monad.State  (MonadState, StateT, runStateT, get, gets, put)
 import qualified Control.Monad.State.Dependent as DepState
 import qualified Data.Map             as Map
 import           Data.Foldable        (toList)

@@ -2,6 +2,7 @@
 
 module Empire.Empire where
 
+import           Empire.Prelude                hiding (TypeRep)
 import           Empire.API.Data.AsyncUpdate   (AsyncUpdate)
 import qualified Empire.API.Data.Error         as APIError
 import           Empire.API.Data.GraphLocation (GraphLocation)
@@ -12,7 +13,6 @@ import           Empire.API.Data.TypeRep       (TypeRep)
 import           Empire.Data.AST               (SomeASTException)
 import           Empire.Data.Graph             (Graph, defaultGraph)
 import           Empire.Data.Project           (Project)
-import           Empire.Prelude
 
 import           Control.Concurrent.STM.TChan  (TChan)
 import           Control.Exception             (try)

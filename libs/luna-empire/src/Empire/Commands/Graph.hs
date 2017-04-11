@@ -18,7 +18,6 @@ module Empire.Commands.Graph
     , renamePort
     , setNodeExpression
     , setNodeMeta
-    , updatePort
     , connect
     , connectPersistent
     , connectCondTC
@@ -53,7 +52,7 @@ import           Data.Text                     (Text)
 import qualified Data.Text                     as Text
 import qualified Data.UUID                     as UUID
 import qualified Data.UUID.V4                  as UUID (nextRandom)
-import           Empire.Prelude
+import           Empire.Prelude                hiding (toList)
 import qualified Safe
 
 import           Empire.Data.AST                 (NodeRef, NotInputEdgeException (..), NotUnifyException,
@@ -312,9 +311,6 @@ setNodeMeta loc nodeId newMeta = withGraph loc $ do
         triggerTC :: NodeMeta -> NodeMeta -> Bool
         triggerTC oldMeta' newMeta' = oldMeta' ^. NodeMeta.displayResult /= newMeta' ^. NodeMeta.displayResult
 
-updatePort :: GraphLocation -> AnyPortRef -> Either Int String -> Empire AnyPortRef
-updatePort = $notImplemented
-
 connectCondTC :: Bool -> GraphLocation -> OutPortRef -> AnyPortRef -> Empire Connection
 connectCondTC True  loc outPort anyPort = connect loc outPort anyPort
 connectCondTC False loc outPort anyPort = withGraph loc $ connectNoTC loc outPort anyPort
@@ -329,10 +325,13 @@ connectPersistent src@(OutPortRef (NodeLoc _ srcNodeId) srcPort) (InPortRef' dst
         [Self]    -> makeAcc   srcNodeId dstNodeId srcPort
         [Arg num] -> makeApp   srcNodeId dstNodeId num srcPort
     return $ Connection src dst
-connectPersistent src@(OutPortRef (NodeLoc _ srcNodeId) srcPort) (OutPortRef' dst@(OutPortRef (NodeLoc _ dstNodeId) dstPort)) = do
+connectPersistent src@(OutPortRef (NodeLoc _ srcNodeId) srcPort) (OutPortRef' dst@(OutPortRef d@(NodeLoc _ dstNodeId) dstPort)) = do
     case dstPort of
-        []               -> $notImplemented --connectToPattern srcNodeId dstNodeId
-        Projection _ : _ -> throwM InvalidConnectionException
+        []    -> do
+            ASTBuilder.flipNode dstNodeId
+            updateNodeSequence
+            connectPersistent src (InPortRef' (InPortRef d []))
+        _ : _ -> throwM InvalidConnectionException
 
 connectNoTC :: GraphLocation -> OutPortRef -> AnyPortRef -> Command Graph Connection
 connectNoTC loc outPort anyPort = do

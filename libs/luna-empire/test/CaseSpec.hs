@@ -70,7 +70,7 @@ spec = around withChannels $ id $ do
             withResult res $ \(node, graph) -> do
                 (node ^.. Node.inPorts . traverse) `shouldMatchList` [
                       Port.Port (Port.InPortId [])           "base" TStar (Port.WithDefault $ Expression "map x: x")
-                    , Port.Port (Port.InPortId [Port.Self])  "self" TStar (Port.WithDefault (Expression "map"))
+                    , Port.Port (Port.InPortId [Port.Self])  "self" TStar Port.NotConnected
                     , Port.Port (Port.InPortId [Port.Arg 0]) "arg0" TStar (Port.WithDefault (Expression "x: x"))
                     ]
                 let Graph.Graph nodes connections (Just inputEdge) (Just outputEdge) _ = graph

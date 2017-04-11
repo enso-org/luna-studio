@@ -319,23 +319,18 @@ buildArgPorts ref = do
 
 buildSelfPort' :: ASTOp m => Bool -> NodeRef -> m (Maybe Port)
 buildSelfPort' seenAcc node = do
-    let buildPort noType = do
-            tpRep     <- if noType then return TStar else followTypeRep node
-            portState <- getPortState node
-            return . Just $ Port (InPortId [Self]) "self" tpRep portState
+    let buildActualSelf = do
+            tpRep     <- followTypeRep node
+            portState <- getPortState  node
+            return $ Just $ Port (InPortId [Self]) "self" tpRep portState
+    let potentialSelf = Just $ Port (InPortId [Self]) "self" TStar NotConnected
 
     match node $ \case
         (Acc t _)  -> IR.source t >>= buildSelfPort' True
         (App t _)  -> IR.source t >>= buildSelfPort' seenAcc
-        Lam _as o -> do
-            args     <- ASTDeconstruct.extractArguments node
-            areBlank <- mapM ASTRead.isBlank args
-            if and areBlank
-                then IR.source o >>= buildSelfPort' seenAcc
-                else if seenAcc then buildPort False else return Nothing
         Blank      -> return Nothing
-        (Var _)    -> if seenAcc then buildPort False else buildPort True
-        _        -> if seenAcc then buildPort False else return Nothing
+        (Var _)    -> if seenAcc then buildActualSelf else return potentialSelf
+        _          -> if seenAcc then buildActualSelf else return Nothing
 
 buildSelfPort :: ASTOp m => NodeRef -> m (Maybe Port)
 buildSelfPort = buildSelfPort' False
@@ -399,23 +394,9 @@ buildInputSidebarTypecheckUpdate nid = do
 buildInputSidebar :: ASTOp m => [(OutPortRef, InPortRef)] -> NodeId -> m API.InputSidebar
 buildInputSidebar connections nid = do
     Just ref <- ASTRead.getCurrentASTTarget
-    tp       <- IR.getLayer @TypeLayer ref >>= IR.source
-    types    <- extractArgTypes tp
-    let connectedPorts = map (\(OutPortRef _ (Port.Projection p : _)) -> p)
-               $ map fst
-               $ filter (\(OutPortRef refNid p,_) -> nid == refNid ^. NodeLoc.nodeId)
-               $ connections
-        states = map (\i -> if i `elem` connectedPorts then Connected else NotConnected) [(0::Int)..]
-    names <- getPortsNames ref
-    argTypes <- case types of
-        [] -> do
-            args <- ASTDeconstruct.extractArguments ref
-            vars <- concat <$> mapM ASTRead.getVarsInside args
-            let numberOfPorts = length vars
-            return $ replicate numberOfPorts TStar
-        _  -> return types
-    let inputEdges = List.zipWith4 (\n t state i -> Port (OutPortId $ [Projection i]) n t state) names argTypes states [(0::Int)..]
-    return $ API.InputSidebar nid $ LabeledTree (OutPorts []) <$> inputEdges
+    args     <- ASTDeconstruct.extractArguments ref
+    argTrees <- zipWithM buildOutPortTree (pure . Projection <$> [0..]) args
+    return $ API.InputSidebar nid argTrees
 
 buildOutputSidebarTypecheckUpdate :: ASTOp m => NodeId -> m API.NodeTypecheckerUpdate
 buildOutputSidebarTypecheckUpdate nid = do
@@ -429,11 +410,7 @@ buildOutputSidebar connections nid = do
     let traverseLams (TLam _ t) = traverseLams t
         traverseLams s          = s
         outputType = traverseLams out
-    let connectedPorts = map (\(InPortRef _ [Port.Arg p]) -> p)
-             $ map snd
-             $ filter (\(_, InPortRef refNid p) -> nid == refNid ^. NodeLoc.nodeId)
-             $ connections
-        outputConnected = if has (traverse . _2 . dstNodeId . filtered (== nid)) connections then Connected else NotConnected
+    let outputConnected = if has (traverse . _2 . dstNodeId . filtered (== nid)) connections then Connected else NotConnected
         port            = Port (InPortId []) "output" outputType outputConnected
     return $
         API.OutputSidebar nid $ LabeledTree (Port.InPorts Nothing []) port

@@ -7,6 +7,7 @@
 module Empire.ASTOps.Builder (
     buildAccessors
   , lams
+  , flipNode
   , makeNodeRep
   , makeAccessor
   , applyFunction
@@ -15,7 +16,8 @@ module Empire.ASTOps.Builder (
 
 import           Control.Monad                      (foldM, replicateM, forM_, zipWithM_)
 import           Data.Maybe                         (isNothing)
-import           Empire.Prelude
+import           Empire.Prelude                     (stringToName)
+import           Prologue
 
 import           Empire.API.Data.Node               (NodeId)
 import           Empire.API.Data.PortRef            (OutPortRef (..))
@@ -28,6 +30,8 @@ import qualified Empire.ASTOps.Read                 as ASTRead
 import           Empire.Data.AST                    (NodeRef, astExceptionFromException,
                                                      astExceptionToException)
 import           Empire.Data.Layers                 (Marker)
+import qualified Empire.Data.Graph                  as Graph
+import qualified Empire.Data.BreadcrumbHierarchy    as BH
 
 import           Luna.IR.Term.Uni
 import qualified Luna.IR as IR
@@ -128,6 +132,48 @@ attachNodeMarkers marker port ref' = do
             zipWithM_ (attachNodeMarkers marker) ((port ++) . pure . Port.Projection <$> [0..]) args
         _ -> return ()
 
+data CannotFlipNodeException = CannotFlipNodeException deriving (Show)
+instance Exception CannotFlipNodeException where
+    toException   = astExceptionToException
+    fromException = astExceptionFromException
+
+patternify :: ASTOp m => NodeRef -> m NodeRef
+patternify ref = match ref $ \case
+    App _ _ -> do
+        (fun, args) <- deconstructApp ref
+        match fun $ \case
+            Cons n _ -> do
+                as <- mapM patternify args
+                IR.generalize <$> IR.cons n as
+            _ -> throwM CannotFlipNodeException
+    Var n -> IR.generalize <$> IR.var n -- Copy the Var to forget all metadata like node markers, potentially belonging to other nodes and unified by Alias Analysis
+    Grouped g -> patternify =<< IR.source g
+    Number _  -> return ref
+    String _  -> return ref
+    Cons _ _  -> return ref
+    _         -> throwM CannotFlipNodeException
+
+appify :: ASTOp m => NodeRef -> m NodeRef
+appify ref = match ref $ \case
+    Cons n as -> do
+        args <- mapM (IR.source >=> appify) as
+        fun  <- IR.cons_ n
+        apps fun args
+    Var n     -> IR.generalize <$> IR.var n -- Copy the Var to forget all metadata like node markers, potentially belonging to other nodes and unified by Alias Analysis
+    Number _  -> return ref
+    String _  -> return ref
+    Grouped g -> appify =<< IR.source g
+    _         -> throwM CannotFlipNodeException
+
+flipNode :: ASTOp m => NodeId -> m ()
+flipNode nid = do
+    lhs    <- ASTRead.getASTVar    nid
+    rhs    <- ASTRead.getASTTarget nid
+    newlhs <- patternify rhs
+    newrhs <- appify     lhs
+    uni    <- IR.unify newlhs newrhs
+    attachNodeMarkers nid [] newlhs
+    Graph.breadcrumbHierarchy . BH.children . at nid . _Just . BH.self .= BH.MatchNode (IR.generalize uni)
 
 makeNodeRep :: ASTOp m => NodeId -> String -> NodeRef -> m NodeRef
 makeNodeRep marker name node = do

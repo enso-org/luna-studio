@@ -6,14 +6,14 @@
 module Empire.Commands.Typecheck where
 
 import           Control.Monad                     (forM_, void)
-import           Control.Monad.Except
+import           Control.Monad.Except              hiding (when)
 import           Control.Monad.Reader              (ask, runReaderT)
 import           Control.Monad.State               (execStateT, gets)
 import           Data.List                         (sort)
 import           Data.Map                          (Map)
 import qualified Data.Map                          as Map
 import           Data.Maybe                        (isNothing, maybeToList)
-import           Empire.Prelude
+import           Empire.Prelude                    hiding (toList)
 import           Prologue                          (catMaybes, fromString, itoListOf, itraverse, toListOf)
 
 import qualified Empire.API.Data.Error             as APIError
