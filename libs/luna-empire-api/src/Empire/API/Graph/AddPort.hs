@@ -12,8 +12,8 @@ import qualified Empire.API.Response           as Response
 import qualified Empire.API.Topic              as T
 
 
-data Request = Request { _location    :: GraphLocation
-                       , _anyPortRef  :: OutPortRef
+data Request = Request { _location   :: GraphLocation
+                       , _outPortRef :: OutPortRef
                        } deriving (Generic, Eq, NFData, Show)
 
 type Result = InputSidebar

@@ -1,5 +1,5 @@
-{-# LANGUAGE DeriveFunctor     #-}
 {-# LANGUAGE DeriveFoldable    #-}
+{-# LANGUAGE DeriveFunctor     #-}
 {-# LANGUAGE DeriveTraversable #-}
 {-# LANGUAGE TypeFamilies      #-}
 
@@ -9,18 +9,18 @@ import           Data.Binary                 (Binary)
 import           Prologue                    hiding (TypeRep)
 
 import           Data.Aeson.Types            (FromJSON, ToJSON)
-import           Empire.API.Data.PortDefault (PortDefault)
-import           Empire.API.Data.TypeRep     (TypeRep)
 import           Data.Map                    (Map)
 import           Empire.API.Data.LabeledTree (LabeledTree)
+import           Empire.API.Data.PortDefault (PortDefault)
+import           Empire.API.Data.TypeRep     (TypeRep)
 
 data InPortIndex = Self | Arg Int                             deriving (Show, Eq, Ord, NFData, Generic)
-data InPorts s   = InPorts { _self :: Maybe s, _args :: [s] } deriving (NFData, Generic, Show, Eq, Functor, Foldable, Traversable)
+data InPorts s   = InPorts { _self :: Maybe s, _args :: [s] } deriving (Default, Eq, Foldable, Functor, Generic, NFData, Show, Traversable)
 type InPort      = [InPortIndex]
 makeLenses ''InPorts
 
 data    OutPortIndex  = Projection Int deriving (Show, Eq, Ord, NFData, Generic)
-newtype OutPorts s    = OutPorts [s]   deriving (NFData, Generic, Show, Eq, Functor, Foldable, Traversable)
+newtype OutPorts s    = OutPorts [s]   deriving (Default, Eq, Foldable, Functor, Generic, NFData, Show, Traversable)
 type    OutPort       = [OutPortIndex]
 makeWrapped ''OutPorts
 
@@ -77,3 +77,28 @@ isInPort _            = False
 isOutPort :: PortId -> Bool
 isOutPort (OutPortId _) = True
 isOutPort _             = False
+
+isSelf :: PortId -> Bool
+isSelf (InPortId (Self:_)) = True
+isSelf _                   = False
+
+isInAll :: PortId -> Bool
+isInAll (InPortId []) = True
+isInAll _             = False
+
+isArg :: PortId -> Bool
+isArg (InPortId (Arg _:_)) = True
+isArg _                    = False
+
+isOutAll :: PortId -> Bool
+isOutAll (OutPortId []) = True
+isOutAll _              = False
+
+isProjection :: PortId -> Bool
+isProjection (OutPortId (Projection _:_)) = True
+isProjection _                            = False
+
+getPortNumber :: PortId -> Int
+getPortNumber (InPortId  (Arg i:_))        = i
+getPortNumber (OutPortId (Projection i:_)) = i
+getPortNumber _                            = 0
