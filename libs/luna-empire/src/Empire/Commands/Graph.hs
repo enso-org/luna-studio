@@ -139,16 +139,18 @@ prepareLambdaChild :: ASTOp m => BH.NodeIDTarget -> NodeRef -> m (Maybe BH.LamIt
 prepareLambdaChild tgt ref = do
     parsedIsLambda <- ASTRead.isLambda ref
     if parsedIsLambda then do
-        lambdaUUID             <- liftIO $ UUID.nextRandom
         portMapping            <- liftIO $ (,) <$> UUID.nextRandom <*> UUID.nextRandom
         lambdaOutput           <- ASTRead.getLambdaOutputRef   ref
         lambdaBody             <- ASTRead.getFirstNonLambdaRef ref
         outputIsOneOfTheInputs <- AST.isTrivialLambda ref
-        let anonOutput = if   not outputIsOneOfTheInputs
-                         then Just $ BH.ExprChild $ BH.ExprItem Map.empty (BH.AnonymousNode lambdaOutput)
-                         else Nothing
-            lamItem    = BH.LamItem portMapping tgt (Map.empty & at lambdaUUID .~ anonOutput) lambdaBody
-        IR.putLayer @Marker lambdaOutput $ Just $ OutPortRef (NodeLoc def lambdaUUID) []
+        ASTBuilder.attachNodeMarkersForArgs (fst $ portMapping) [] ref
+        lambdaUUID <- liftIO $ UUID.nextRandom
+        anonOutput <- if not outputIsOneOfTheInputs
+            then do
+                IR.putLayer @Marker lambdaOutput $ Just $ OutPortRef (NodeLoc def lambdaUUID) []
+                return $ Just $ BH.ExprChild $ BH.ExprItem Map.empty (BH.AnonymousNode lambdaOutput)
+            else return Nothing
+        let lamItem = BH.LamItem portMapping tgt (Map.empty & at lambdaUUID .~ anonOutput) lambdaBody
         return $ Just lamItem
     else return Nothing
 
@@ -197,13 +199,14 @@ updateGraphSeq newOut = do
 
 addPort :: GraphLocation -> NodeId -> Int -> Empire InputSidebar
 addPort loc nid position = withGraph loc $ runASTOp $ do
-    Just ref <- ASTRead.getCurrentASTTarget
     edges <- GraphBuilder.getEdgePortMapping
     when ((fst <$> edges) /= Just nid) $ throwM NotInputEdgeException
+    Just ref <- ASTRead.getCurrentASTTarget
+    ASTBuilder.detachNodeMarkersForArgs ref
     ASTModify.addLambdaArg position ref
-    -- TODO[MM]: This should match for any node. Now it ignores node and replace it by InputEdge.
-    inputEdge <- GraphBuilder.buildInputSidebar nid
-    return inputEdge
+    newLam  <- ASTRead.getCurrentASTTarget
+    mapM_ (ASTBuilder.attachNodeMarkersForArgs nid []) newLam
+    GraphBuilder.buildInputSidebar nid
 
 generateNodeId :: IO NodeId
 generateNodeId = UUID.nextRandom
@@ -235,6 +238,7 @@ removePort :: GraphLocation -> OutPortRef -> Empire InputSidebar
 removePort loc portRef = withGraph loc $ runASTOp $ do
     let nodeId = portRef ^. PortRef.srcNodeId
     Just ref    <- ASTRead.getCurrentASTTarget
+    ASTBuilder.detachNodeMarkersForArgs ref
     edges <- GraphBuilder.getEdgePortMapping
     newRef <- case edges of
         Just (input, _output) -> do
@@ -242,6 +246,7 @@ removePort loc portRef = withGraph loc $ runASTOp $ do
                                else throwM NotInputEdgeException
         _ -> return ref
     when (ref /= newRef) $ ASTModify.rewireCurrentNode newRef
+    ASTBuilder.attachNodeMarkersForArgs nodeId [] newRef
     GraphBuilder.buildInputSidebar nodeId
 
 movePort :: GraphLocation -> OutPortRef -> Int -> Empire InputSidebar
@@ -255,6 +260,7 @@ movePort loc portRef newPosition = withGraph loc $ runASTOp $ do
                                else throwM NotInputEdgeException
         _ -> throwM NotInputEdgeException
     when (ref /= newRef) $ ASTModify.rewireCurrentNode newRef
+    ASTBuilder.attachNodeMarkersForArgs nodeId [] ref
     GraphBuilder.buildInputSidebar nodeId
 
 renamePort :: GraphLocation -> OutPortRef -> String -> Empire InputSidebar
@@ -270,26 +276,17 @@ renamePort loc portRef newName = withGraph loc $ runASTOp $ do
     GraphBuilder.buildInputSidebar nodeId
 
 setNodeExpression :: GraphLocation -> NodeId -> Text -> Empire ExpressionNode
-setNodeExpression loc nodeId expr = withTC loc False $ do
+setNodeExpression loc nodeId expression = withTC loc False $ do
     oldExpr    <- runASTOp $ ASTRead.getASTTarget nodeId
-    parsedRef  <- view _1 <$> ASTParse.runReparser expr oldExpr
+    parsedRef  <- view _1 <$> ASTParse.runReparser expression oldExpr
     runASTOp $ ASTModify.rewireNode nodeId parsedRef
     runAliasAnalysis
     node <- runASTOp $ do
-        refNode        <- ASTRead.getASTPointer nodeId
-        parsedIsLambda <- ASTRead.isLambda parsedRef
-        when parsedIsLambda $ do
-            lambdaUUID             <- liftIO $ UUID.nextRandom
-            lambdaOutput           <- ASTRead.getLambdaOutputRef   parsedRef
-            lambdaBody             <- ASTRead.getFirstNonLambdaRef parsedRef
-            portMapping            <- liftIO $ (,) <$> UUID.nextRandom <*> UUID.nextRandom
-            outputIsOneOfTheInputs <- AST.isTrivialLambda parsedRef
-            let anonOutput = if   not outputIsOneOfTheInputs
-                             then Just $ BH.ExprChild $ BH.ExprItem Map.empty (BH.AnonymousNode lambdaOutput)
-                             else Nothing
-                lamItem    = BH.LamItem portMapping (BH.MatchNode refNode) (Map.empty & at lambdaUUID .~ anonOutput) lambdaBody
-            Graph.breadcrumbHierarchy . BH.children . at nodeId  ?= BH.LambdaChild lamItem
-            IR.putLayer @Marker lambdaOutput $ Just $ OutPortRef (NodeLoc def lambdaUUID) []
+        expr      <- ASTRead.getASTPointer nodeId
+        lamItem   <- prepareLambdaChild (BH.MatchNode expr) parsedRef
+        exprItem  <- prepareExprChild   (BH.MatchNode expr) parsedRef
+        forM_ lamItem  $ (Graph.breadcrumbHierarchy . BH.children . ix nodeId .=) . BH.LambdaChild
+        forM_ exprItem $ (Graph.breadcrumbHierarchy . BH.children . ix nodeId .=) . BH.ExprChild
         updateNodeSequence
         GraphBuilder.buildNode nodeId
     Publisher.notifyNodeUpdate loc node

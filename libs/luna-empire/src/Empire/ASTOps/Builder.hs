@@ -4,15 +4,7 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeApplications    #-}
 
-module Empire.ASTOps.Builder (
-    buildAccessors
-  , lams
-  , flipNode
-  , makeNodeRep
-  , makeAccessor
-  , applyFunction
-  , removeAccessor
-  ) where
+module Empire.ASTOps.Builder where
 
 import           Control.Monad                      (foldM, replicateM, forM_, zipWithM_)
 import           Data.Maybe                         (isNothing)
@@ -122,6 +114,13 @@ removeAccessor ref = do
             acc <- buildAccessors v ns
             if null args then return acc else reapply acc args
 
+detachNodeMarkers :: ASTOp m => NodeRef -> m ()
+detachNodeMarkers ref' = do
+    ref <- ASTRead.cutThroughGroups ref'
+    IR.putLayer @Marker ref Nothing
+    inps <- IR.inputs ref
+    mapM_ (IR.source >=> detachNodeMarkers) inps
+
 attachNodeMarkers :: ASTOp m => NodeId -> Port.OutPortId -> NodeRef -> m ()
 attachNodeMarkers marker port ref' = do
     ref <- ASTRead.cutThroughGroups ref'
@@ -131,6 +130,16 @@ attachNodeMarkers marker port ref' = do
             args <- mapM IR.source as
             zipWithM_ (attachNodeMarkers marker) ((port ++) . pure . Port.Projection <$> [0..]) args
         _ -> return ()
+
+detachNodeMarkersForArgs :: ASTOp m => NodeRef -> m ()
+detachNodeMarkersForArgs lam = do
+    args <- extractArguments lam
+    mapM_ detachNodeMarkers args
+
+attachNodeMarkersForArgs :: ASTOp m => NodeId -> Port.OutPortId -> NodeRef -> m ()
+attachNodeMarkersForArgs nid port lam = do
+    args <- extractArguments lam
+    zipWithM_ (attachNodeMarkers nid) (pure . Port.Projection <$> [0..]) args
 
 data CannotFlipNodeException = CannotFlipNodeException deriving (Show)
 instance Exception CannotFlipNodeException where

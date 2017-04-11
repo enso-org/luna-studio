@@ -212,79 +212,6 @@ spec = around withChannels $ parallel $ do
                     Just _ -> return ()
                     _      -> expectationFailure err
                 Right _  -> expectationFailure "should throw"
-        {-xit "properly typechecks input nodes" $ \env -> do-}
-            {-u1 <- mkUUID-}
-            {-(res, st) <- runEmp env $ do-}
-                {-Graph.addNode top u1 "a: b: a + b" def-}
-                {-let GraphLocation pid lid _ = top-}
-                {-withLibrary pid lid (use Library.body)-}
-            {-withResult res $ \g -> do-}
-                {-(_, (extractGraph -> g')) <- runEmpire env (InterpreterEnv def def def g def) $-}
-                    {-Typecheck.run emptyGraphLocation-}
-                {-(res'', _) <- runEmp' env st g' $ do-}
-                    {-Graph.getNodes $ top |> u1-}
-                {-withResult res'' $ \nodes' -> do-}
-                    {-let Just input = find ((== "inputEdge") . view Node.name) nodes'-}
-                        {-ports' = toList $ input ^. Node.ports-}
-                        {-types = map (view Port.valueType) ports'-}
-                    {-types `shouldMatchList` [TCons "Int" [], TCons "Int" []]-}
-        {-xit "properly typechecks output nodes" $ \env -> do-}
-            {-u1 <- mkUUID-}
-            {-(res, st) <- runEmp env $ do-}
-                {-Graph.addNode top u1 "a: b: a + b" def-}
-                {-let GraphLocation pid lid _ = top-}
-                {-withLibrary pid lid (use Library.body)-}
-            {-withResult res $ \g -> do-}
-                {-(_, (extractGraph -> g')) <- runEmpire env (InterpreterEnv def def def g def) $-}
-                    {-Typecheck.run emptyGraphLocation-}
-                {-(res'',_) <- runEmp' env st g' $ do-}
-                    {-Graph.getNodes $ top |> u1-}
-                {-withResult res'' $ \nodes' -> do-}
-                    {-let Just output' = find ((== "outputEdge") . view Node.name) nodes'-}
-                        {-ports' = toList $ output' ^. Node.ports-}
-                        {-types = map (view Port.valueType) ports'-}
-                    {-types `shouldBe` [TCons "Int" []]-}
-        {-xit "properly typechecks edges inside mock id" $ \env -> do-}
-            {-u1 <- mkUUID-}
-            {-(res, st) <- runEmp env $ do-}
-                {-Graph.addNode top u1 "__intId" def-}
-                {-let GraphLocation pid lid _ = top-}
-                {-withLibrary pid lid (use Library.body)-}
-            {-withResult res $ \g -> do-}
-                {-(_, (extractGraph -> g')) <- runEmpire env (InterpreterEnv def def def g def) $-}
-                    {-Typecheck.run emptyGraphLocation-}
-                {-(res'',_) <- runEmp' env st g' $ do-}
-                    {-Graph.getNodes $ top |> u1-}
-                {-withResult res'' $ \nodes' -> do-}
-                    {-let Just input' = find ((== "inputEdge") . view Node.name) nodes'-}
-                        {-inPorts' = toList $ input' ^. Node.ports-}
-                        {-inputType = map (view Port.valueType) inPorts'-}
-                    {-let Just output' = find ((== "outputEdge") . view Node.name) nodes'-}
-                        {-outPorts' = toList $ output' ^. Node.ports-}
-                        {-outputType = map (view Port.valueType) outPorts'-}
-                    {-inputType  `shouldBe` [TCons "Int" []]-}
-                    {-outputType `shouldBe` [TCons "Int" []]-}
-        {-xit "properly typechecks second id in `mock id -> mock id`" $ \env -> do-}
-            {-u1 <- mkUUID-}
-            {-u2 <- mkUUID-}
-            {-(res, st) <- runEmp env $ do-}
-                {-Graph.addNode top u1 "id" def-}
-                {-Graph.addNode top u2 "id" def-}
-                {-connectToInput top (outPortRef u1 []) (inPortRef u2 (Port.Arg 0))-}
-                {-let GraphLocation pid lid _ = top-}
-                {-withLibrary pid lid (use Library.body)-}
-            {-withResult res $ \g -> do-}
-                {-(_, (extractGraph -> g')) <- runEmpire env (InterpreterEnv def def def g def) $-}
-                    {-Typecheck.run emptyGraphLocation-}
-                {-(res'',_) <- runEmp' env st g' $ do-}
-                    {-Graph.withGraph top $ runASTOp $ (,) <$> GraphBuilder.buildNode u1 <*> GraphBuilder.buildNode u2-}
-                {-withResult res'' $ \(n1, n2) -> do-}
-                    {-inputPorts n2 `shouldMatchList` [-}
-                          {-Port.Port (Port.Arg 0)) "in" (TLam (TVar "a") (TVar "a")) Port.Connected-}
-                        {-]-}
-                    {-outputPorts n1 `shouldMatchList` [-}
-                          {-Port.Port [] "Output" (TLam (TVar "a") (TVar "a")) (Port.WithDefault (Expression "in: in"))-}
-                        {-]-}
         it "adds lambda nodeid to node mapping" $ \env -> do
             u1 <- mkUUID
             res <- evalEmp env $ do
@@ -1098,9 +1025,7 @@ spec = around withChannels $ parallel $ do
                 node <- Graph.withGraph top $ runASTOp $ GraphBuilder.buildNode u1
                 let loc' = top |> u1
                 graph <- Graph.withGraph loc' $ runASTOp $ GraphBuilder.buildGraph
-                Just (input, output) <- Graph.withGraph loc' $ runASTOp $ do
-                    c <- GraphBuilder.buildConnections
-                    GraphBuilder.buildEdgeNodes c
+                Just (input, output) <- Graph.withGraph loc' $ runASTOp GraphBuilder.buildEdgeNodes
                 return (node, graph, input, output)
             withResult res $ \(node, graph, input, output) -> do
                 (node ^.. Node.inPorts . traverse) `shouldMatchList` [
@@ -1121,7 +1046,7 @@ spec = around withChannels $ parallel $ do
                     ]
 
                 connections `shouldMatchList` [
-                      (outPortRef (input ^. Node.nodeId) [Port.Projection 1], inPortRef (output ^. Node.nodeId) [])
+                      (outPortRef (input ^. Node.nodeId) [Port.Projection 0, Port.Projection 1], inPortRef (output ^. Node.nodeId) [])
                     ]
         it "supports multi-parameter lambdas pattern matching on their arguments" $ \env -> do
             u1 <- mkUUID
@@ -1130,9 +1055,7 @@ spec = around withChannels $ parallel $ do
                 node <- Graph.withGraph top $ runASTOp $ GraphBuilder.buildNode u1
                 let loc' = top |> u1
                 graph <- Graph.withGraph loc' $ runASTOp $ GraphBuilder.buildGraph
-                Just (input, output) <- Graph.withGraph loc' $ runASTOp $ do
-                    c <- GraphBuilder.buildConnections
-                    GraphBuilder.buildEdgeNodes c
+                Just (input, output) <- Graph.withGraph loc' $ runASTOp GraphBuilder.buildEdgeNodes
                 return (node, graph, input, output)
             withResult res $ \(node, graph, input, output) -> do
                 (node ^.. Node.inPorts . traverse) `shouldMatchList` [
