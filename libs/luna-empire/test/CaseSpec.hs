@@ -58,8 +58,8 @@ spec = around withChannels $ id $ do
                 return node
             withResult res $ \node -> do
                 (node ^.. Node.inPorts . traverse) `shouldMatchList` [
-                      Port.Port (Port.InPortId [Port.Arg 0]) "arg0" TStar Port.Connected
-                    , Port.Port (Port.InPortId [Port.Arg 1]) "arg1" TStar Port.NotConnected
+                      Port.Port [Port.Arg 0] "arg0" TStar Port.Connected
+                    , Port.Port [Port.Arg 1] "arg1" TStar Port.NotConnected
                     ]
         it "shows anonymous breadcrumb in map (x:x)" $ \env -> do
             u1 <- mkUUID
@@ -69,16 +69,16 @@ spec = around withChannels $ id $ do
                 return (node, graph)
             withResult res $ \(node, graph) -> do
                 (node ^.. Node.inPorts . traverse) `shouldMatchList` [
-                      Port.Port (Port.InPortId [])           "base" TStar (Port.WithDefault $ Expression "map x: x")
-                    , Port.Port (Port.InPortId [Port.Self])  "self" TStar Port.NotConnected
-                    , Port.Port (Port.InPortId [Port.Arg 0]) "arg0" TStar (Port.WithDefault (Expression "x: x"))
+                      Port.Port []           "base" TStar (Port.WithDefault $ Expression "map x: x")
+                    , Port.Port [Port.Self]  "self" TStar Port.NotConnected
+                    , Port.Port [Port.Arg 0] "arg0" TStar (Port.WithDefault (Expression "x: x"))
                     ]
                 let Graph.Graph nodes connections (Just inputEdge) (Just outputEdge) _ = graph
                 (inputEdge ^. Node.inputEdgePorts) `shouldMatchList` [
-                      LabeledTree def (Port.Port (Port.OutPortId $ [Port.Projection 0]) "x" TStar Port.NotConnected)
+                      LabeledTree def (Port.Port [Port.Projection 0] "x" TStar Port.NotConnected)
                     ]
                 (outputEdge ^.. Node.outputEdgePorts . traverse) `shouldMatchList` [
-                      Port.Port (Port.InPortId []) "output" TStar Port.Connected
+                      Port.Port [] "output" TStar Port.Connected
                     ]
                 connections `shouldMatchList` [
                       (OutPortRef (NodeLoc def $ inputEdge  ^. Node.nodeId) [Port.Projection 0],

@@ -49,7 +49,7 @@ import           Empire.API.Data.Node              (NodeId)
 import qualified Empire.API.Data.Node              as API
 import qualified Empire.API.Data.NodeLoc           as NodeLoc
 import           Empire.API.Data.NodeLoc           (NodeLoc (..))
-import           Empire.API.Data.Port              (InPortIndex (..), OutPortIndex (..), OutPort, InPort, _InPortId, OutPorts (..), InPorts (..), Port (..), PortId (..), InPortTree, OutPortTree, PortState (..))
+import           Empire.API.Data.Port              (InPortIndex (..), OutPortIndex (..), OutPort, InPort, InPortId, OutPortId, OutPorts (..), InPorts (..), Port (..), InPortTree, OutPortTree, PortState (..))
 import qualified Empire.API.Data.Port              as Port
 import           Empire.API.Data.LabeledTree       (LabeledTree (..))
 import           Empire.API.Data.PortRef           (InPortRef (..), OutPortRef (..), srcNodeId, dstNodeId)
@@ -306,24 +306,24 @@ extractPortInfo n = do
     fromType <- extractArgTypes tp
     return $ mergePortInfo applied fromType
 
-buildArgPorts :: ASTOp m => NodeRef -> m [Port]
+buildArgPorts :: ASTOp m => NodeRef -> m [InPort]
 buildArgPorts ref = do
     typed <- extractPortInfo ref
     names <- getPortsNames ref
     let portsTypes = fmap fst typed ++ replicate (length names - length typed) TStar
         psCons = zipWith3 Port
-                          (InPortId . pure . Arg <$> [(0::Int)..])
+                          (pure . Arg <$> [(0::Int)..])
                           (names ++ (("arg" ++) . show <$> [0..]))
                           portsTypes
     return $ zipWith ($) psCons (fmap snd typed ++ repeat NotConnected)
 
-buildSelfPort' :: ASTOp m => Bool -> NodeRef -> m (Maybe Port)
+buildSelfPort' :: ASTOp m => Bool -> NodeRef -> m (Maybe InPort)
 buildSelfPort' seenAcc node = do
     let buildActualSelf = do
             tpRep     <- followTypeRep node
             portState <- getPortState  node
-            return $ Just $ Port (InPortId [Self]) "self" tpRep portState
-    let potentialSelf = Just $ Port (InPortId [Self]) "self" TStar NotConnected
+            return $ Just $ Port [Self] "self" tpRep portState
+    let potentialSelf = Just $ Port [Self] "self" TStar NotConnected
 
     match node $ \case
         (Acc t _)  -> IR.source t >>= buildSelfPort' True
@@ -332,21 +332,21 @@ buildSelfPort' seenAcc node = do
         (Var _)    -> if seenAcc then buildActualSelf else return potentialSelf
         _          -> if seenAcc then buildActualSelf else return Nothing
 
-buildSelfPort :: ASTOp m => NodeRef -> m (Maybe Port)
+buildSelfPort :: ASTOp m => NodeRef -> m (Maybe InPort)
 buildSelfPort = buildSelfPort' False
 
-buildWholePort :: ASTOp m => NodeRef -> m Port
+buildWholePort :: ASTOp m => NodeRef -> m InPort
 buildWholePort ref = do
     tp    <- followTypeRep ref
     state <- getPortState ref
-    return $ Port (InPortId []) "base" tp state
+    return $ Port [] "base" tp state
 
 followTypeRep :: ASTOp m => NodeRef -> m TypeRep
 followTypeRep ref = do
     tp <- IR.source =<< IR.getLayer @TypeLayer ref
     Print.getTypeRep tp
 
-buildInPorts :: ASTOp m => NodeRef -> m (InPortTree Port)
+buildInPorts :: ASTOp m => NodeRef -> m (InPortTree InPort)
 buildInPorts ref = do
     selfPort <- buildSelfPort ref
     argPorts <- buildArgPorts ref
@@ -354,23 +354,23 @@ buildInPorts ref = do
     return $ LabeledTree (InPorts (LabeledTree def <$> selfPort) (LabeledTree def <$> argPorts)) whole
 
 
-buildDummyOutPort :: ASTOp m => NodeRef -> m (OutPortTree Port)
+buildDummyOutPort :: ASTOp m => NodeRef -> m (OutPortTree OutPort)
 buildDummyOutPort ref = do
     tp <- followTypeRep ref
-    return $ LabeledTree (Port.OutPorts []) (Port (OutPortId []) "Output" tp NotConnected)
+    return $ LabeledTree (Port.OutPorts []) (Port [] "Output" tp NotConnected)
 
-buildOutPortTree :: ASTOp m => OutPort -> NodeRef -> m (OutPortTree Port)
+buildOutPortTree :: ASTOp m => OutPortId -> NodeRef -> m (OutPortTree OutPort)
 buildOutPortTree portId ref' = do
     ref   <- ASTRead.cutThroughGroups ref'
     name  <- Print.printExpression ref
     tp    <- followTypeRep ref
-    let wholePort = Port (OutPortId portId) name tp NotConnected
+    let wholePort = Port portId name tp NotConnected
     children <- match ref $ \case
         Cons _ as -> zipWithM buildOutPortTree ((portId ++) . pure . Port.Projection <$> [0 ..]) =<< mapM IR.source as
         _         -> return []
     return $ LabeledTree (OutPorts children) wholePort
 
-buildOutPorts :: ASTOp m => NodeRef -> m (OutPortTree Port)
+buildOutPorts :: ASTOp m => NodeRef -> m (OutPortTree OutPort)
 buildOutPorts ref = match ref $ \case
     Unify l r -> buildOutPortTree [] =<< IR.source l
     _         -> buildDummyOutPort ref
@@ -411,7 +411,7 @@ buildOutputSidebar connections nid = do
         traverseLams s          = s
         outputType = traverseLams out
     let outputConnected = if has (traverse . _2 . dstNodeId . filtered (== nid)) connections then Connected else NotConnected
-        port            = Port (InPortId []) "output" outputType outputConnected
+        port            = Port [] "output" outputType outputConnected
     return $
         API.OutputSidebar nid $ LabeledTree (Port.InPorts Nothing []) port
 
@@ -451,7 +451,7 @@ nodeConnectedToOutput = do
         connection <- getOutputSidebarInputs i o
         return $ (view $ _1 . srcNodeId) <$> connection
 
-resolveInputNodeId :: ASTOp m => Maybe (NodeId, NodeId) -> [NodeRef] -> NodeRef -> m (Maybe OutPort, Maybe NodeId)
+resolveInputNodeId :: ASTOp m => Maybe (NodeId, NodeId) -> [NodeRef] -> NodeRef -> m (Maybe OutPortId, Maybe NodeId)
 resolveInputNodeId edgeNodes lambdaArgs ref = do
     case List.findIndex (== ref) lambdaArgs of
         Just i -> return (Just $ [Projection i], fmap fst edgeNodes)
@@ -468,7 +468,7 @@ getOuterLambdaArguments = do
         Just ref -> ASTDeconstruct.extractArguments ref
         _        -> return []
 
-outIndexToProjection :: Maybe Int -> OutPort
+outIndexToProjection :: Maybe Int -> OutPortId
 outIndexToProjection Nothing  = []
 outIndexToProjection (Just i) = [Projection i]
 

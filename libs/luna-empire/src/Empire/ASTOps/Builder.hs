@@ -122,7 +122,7 @@ removeAccessor ref = do
             acc <- buildAccessors v ns
             if null args then return acc else reapply acc args
 
-attachNodeMarkers :: ASTOp m => NodeId -> Port.OutPort -> NodeRef -> m ()
+attachNodeMarkers :: ASTOp m => NodeId -> Port.OutPortId -> NodeRef -> m ()
 attachNodeMarkers marker port ref' = do
     ref <- ASTRead.cutThroughGroups ref'
     IR.putLayer @Marker ref $ Just $ OutPortRef (NodeLoc def marker) port

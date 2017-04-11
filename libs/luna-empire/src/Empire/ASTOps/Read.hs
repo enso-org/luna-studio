@@ -38,7 +38,7 @@ cutThroughGroups r = match r $ \case
     Grouped g -> cutThroughGroups =<< IR.source g
     _         -> return r
 
-getASTOutForPort :: ASTOp m => NodeId -> OutPort -> m NodeRef
+getASTOutForPort :: ASTOp m => NodeId -> OutPortId -> m NodeRef
 getASTOutForPort nodeId port = do
     asLambda <- preuse $ Graph.breadcrumbHierarchy . BH._LambdaParent
     case asLambda of
@@ -48,7 +48,7 @@ getASTOutForPort nodeId port = do
               else getOutputForPort      port =<< getASTVar nodeId
         _ -> getOutputForPort port =<< getASTVar nodeId
 
-getLambdaInputForPort :: ASTOp m => OutPort -> NodeRef -> m NodeRef
+getLambdaInputForPort :: ASTOp m => OutPortId -> NodeRef -> m NodeRef
 getLambdaInputForPort []                    lam = throwM PortDoesNotExistException
 getLambdaInputForPort (Projection 0 : rest) lam = cutThroughGroups lam >>= flip match `id` \case
     Lam i _ -> getOutputForPort rest =<< IR.source i
@@ -57,7 +57,7 @@ getLambdaInputForPort (Projection i : rest) lam = cutThroughGroups lam >>= flip 
     Lam _ o -> getLambdaInputForPort (Projection (i - 1) : rest) =<< IR.source o
     _       -> throwM PortDoesNotExistException
 
-getOutputForPort :: ASTOp m => OutPort -> NodeRef -> m NodeRef
+getOutputForPort :: ASTOp m => OutPortId -> NodeRef -> m NodeRef
 getOutputForPort []                    ref = cutThroughGroups ref
 getOutputForPort (Projection i : rest) ref = cutThroughGroups ref >>= flip match `id` \case
     Cons _ as -> case as ^? ix i of

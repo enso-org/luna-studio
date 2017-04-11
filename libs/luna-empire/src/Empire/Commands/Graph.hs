@@ -76,7 +76,7 @@ import           Empire.API.Data.NodeLoc         (NodeLoc (..))
 import qualified Empire.API.Data.NodeLoc         as NodeLoc
 import           Empire.API.Data.NodeMeta        (NodeMeta)
 import qualified Empire.API.Data.NodeMeta        as NodeMeta
-import           Empire.API.Data.Port            (InPort, OutPort, InPortIndex (..), OutPortIndex (..), PortId (..))
+import           Empire.API.Data.Port            (InPortId, OutPortId, InPort, OutPort, InPortIndex (..), OutPortIndex (..), AnyPortId (..))
 import qualified Empire.API.Data.Port            as Port
 import           Empire.API.Data.PortRef         (AnyPortRef (..), InPortRef (..), OutPortRef (..))
 import qualified Empire.API.Data.PortRef         as PortRef
@@ -231,40 +231,40 @@ removeNodeNoTC nodeId = do
     mapM_ disconnectPort obsoleteEdges
     Graph.breadcrumbHierarchy . BH.children . at nodeId .= Nothing
 
-removePort :: GraphLocation -> AnyPortRef -> Empire InputSidebar
+removePort :: GraphLocation -> OutPortRef -> Empire InputSidebar
 removePort loc portRef = withGraph loc $ runASTOp $ do
-    let nodeId = portRef ^. PortRef.nodeId
+    let nodeId = portRef ^. PortRef.srcNodeId
     Just ref    <- ASTRead.getCurrentASTTarget
     edges <- GraphBuilder.getEdgePortMapping
     newRef <- case edges of
         Just (input, _output) -> do
-            if nodeId == input then ASTModify.removeLambdaArg (portRef ^. PortRef.portId) ref
+            if nodeId == input then ASTModify.removeLambdaArg (portRef ^. PortRef.srcPortId) ref
                                else throwM NotInputEdgeException
         _ -> return ref
     when (ref /= newRef) $ ASTModify.rewireCurrentNode newRef
     GraphBuilder.buildInputSidebar nodeId
 
-movePort :: GraphLocation -> AnyPortRef -> Int -> Empire InputSidebar
+movePort :: GraphLocation -> OutPortRef -> Int -> Empire InputSidebar
 movePort loc portRef newPosition = withGraph loc $ runASTOp $ do
-    let nodeId = portRef ^. PortRef.nodeId
+    let nodeId = portRef ^. PortRef.srcNodeId
     Just ref    <- ASTRead.getCurrentASTTarget
     edges       <- GraphBuilder.getEdgePortMapping
     newRef      <- case edges of
         Just (input, _) -> do
-            if nodeId == input then ASTModify.moveLambdaArg (portRef ^. PortRef.portId) newPosition ref
+            if nodeId == input then ASTModify.moveLambdaArg (portRef ^. PortRef.srcPortId) newPosition ref
                                else throwM NotInputEdgeException
         _ -> throwM NotInputEdgeException
     when (ref /= newRef) $ ASTModify.rewireCurrentNode newRef
     GraphBuilder.buildInputSidebar nodeId
 
-renamePort :: GraphLocation -> AnyPortRef -> String -> Empire InputSidebar
+renamePort :: GraphLocation -> OutPortRef -> String -> Empire InputSidebar
 renamePort loc portRef newName = withGraph loc $ runASTOp $ do
-    let nodeId = portRef ^. PortRef.nodeId
+    let nodeId = portRef ^. PortRef.srcNodeId
     Just ref    <- ASTRead.getCurrentASTTarget
     edges       <- GraphBuilder.getEdgePortMapping
     _newRef     <- case edges of
         Just (input, _) -> do
-            if nodeId == input then ASTModify.renameLambdaArg (portRef ^. PortRef.portId) newName ref
+            if nodeId == input then ASTModify.renameLambdaArg (portRef ^. PortRef.srcPortId) newName ref
                                else throwM NotInputEdgeException
         _ -> throwM NotInputEdgeException
     GraphBuilder.buildInputSidebar nodeId
@@ -494,21 +494,21 @@ unApp nodeId pos = do
         newNodeRef <- ASTRemove.removeArg astNode pos
         GraphUtils.rewireNode nodeId newNodeRef
 
-makeAcc :: ASTOp m => NodeId -> NodeId -> OutPort -> m ()
+makeAcc :: ASTOp m => NodeId -> NodeId -> OutPortId -> m ()
 makeAcc src dst outPort = do
     srcAst     <- ASTRead.getASTOutForPort src outPort
     dstAst     <- ASTRead.getASTTarget dst
     newNodeRef <- ASTBuilder.makeAccessor srcAst dstAst
     GraphUtils.rewireNode dst newNodeRef
 
-makeApp :: ASTOp m => NodeId -> NodeId -> Int -> OutPort -> m ()
+makeApp :: ASTOp m => NodeId -> NodeId -> Int -> OutPortId -> m ()
 makeApp src dst pos outPort = do
     srcAst     <- ASTRead.getASTOutForPort src outPort
     dstAst     <- GraphUtils.getASTTarget dst
     newNodeRef <- ASTBuilder.applyFunction dstAst srcAst pos
     GraphUtils.rewireNode dst newNodeRef
 
-makeWhole :: ASTOp m => NodeId -> NodeId -> OutPort -> m ()
+makeWhole :: ASTOp m => NodeId -> NodeId -> OutPortId -> m ()
 makeWhole src dst outPort = do
     edges <- GraphBuilder.getEdgePortMapping
     let connectToOutputEdge = case edges of
