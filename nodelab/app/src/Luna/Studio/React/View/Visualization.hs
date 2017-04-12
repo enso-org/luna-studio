@@ -13,9 +13,7 @@ import           Control.Arrow                                  ((***))
 import qualified Data.Aeson                                     as Aeson
 import           Data.List.Split                                (wordsBy)
 import           Data.Position                                  (Position)
-import           Data.Size                                      (Size (Size))
 import qualified Data.Text                                      as Text
-import           Data.Vector                                    (Vector2 (Vector2))
 import           React.Flux                                     hiding (image_)
 import qualified React.Flux                                     as React
 import qualified Empire.API.Data.Error                          as LunaError
