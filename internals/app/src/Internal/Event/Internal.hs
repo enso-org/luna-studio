@@ -25,9 +25,3 @@ instance ToJSON   ActionType
 instance FromJSON ActionType
 instance ToJSON   InternalEvent
 instance FromJSON InternalEvent
-
-
-fromString :: String -> InternalEvent
-fromString str = result where
-    (commandStr, argStr) = List.break (== ' ') str & _2 %~ drop 1
-    result = InternalEvent (read commandStr) argStr
