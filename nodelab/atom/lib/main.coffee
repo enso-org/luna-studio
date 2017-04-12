@@ -17,11 +17,10 @@ module.exports =
         if data == 'activate'
             rootPath = atom.project.getPaths().shift()
             if rootPath != ""
-                internal.pushInternalEvent("SetProject " + rootPath)
+                internal.pushInternalEvent(event: "SetProject", uri: rootPath)
     internal.statusListener actStatus
 
 
-                internal.pushInternalEvent(event: "SetProject", uri: rootPath)
 
 
 

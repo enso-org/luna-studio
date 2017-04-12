@@ -306,20 +306,21 @@ setNodeExpression loc nodeId expr = withTC loc False $ do
     return node
 
 setNodeMeta :: GraphLocation -> NodeId -> NodeMeta -> Empire ()
-setNodeMeta loc nodeId newMeta = withGraph loc $ do
-    doTCMay <- runASTOp $ do
-        ref <- GraphUtils.getASTPointer nodeId
-        oldMetaMay <- AST.readMeta ref
-        doTCMay <- forM oldMetaMay $ \oldMeta ->
-            return $ triggerTC oldMeta newMeta
-        AST.writeMeta ref newMeta
-        updateNodeSequence
-        return doTCMay
-    forM_ doTCMay $ \doTC ->
-        when doTC $ runTC loc False
-    where
-        triggerTC :: NodeMeta -> NodeMeta -> Bool
-        triggerTC oldMeta' newMeta' = oldMeta' ^. NodeMeta.displayResult /= newMeta' ^. NodeMeta.displayResult
+setNodeMeta loc nodeId newMeta = do
+    withGraph loc $ do
+        doTCMay <- runASTOp $ do
+            ref <- GraphUtils.getASTPointer nodeId
+            oldMetaMay <- AST.readMeta ref
+            let triggerTC :: NodeMeta -> NodeMeta -> Bool
+                triggerTC oldMeta' newMeta' = oldMeta' ^. NodeMeta.displayResult /= newMeta' ^. NodeMeta.displayResult
+            doTCMay <- forM oldMetaMay $ \oldMeta ->
+                return $ triggerTC oldMeta newMeta
+            AST.writeMeta ref newMeta
+            updateNodeSequence
+            return doTCMay
+        forM_ doTCMay $ \doTC ->
+            when doTC $ runTC loc False
+    updateCode loc
 
 updatePort :: GraphLocation -> AnyPortRef -> Either Int String -> Empire AnyPortRef
 updatePort = $notImplemented
@@ -655,6 +656,17 @@ loadCode code = do
     Graph.breadcrumbHierarchy . BH._ToplevelParent . BH.topBody .= Just ref
     Graph.breadcrumbHierarchy . BH.body .= ref
     runAliasAnalysis
+
+updateCode :: GraphLocation -> Empire ()
+updateCode loc@(GraphLocation file _) = do
+    newCode <- withGraph loc $ runASTOp $ do
+        nodeSequence <- GraphBuilder.getNodeIdSequence
+        refs         <- mapM ASTRead.getASTPointer nodeSequence
+        expressions  <- mapM ASTPrint.printExpression refs
+        let newCode = Text.unlines $ map Text.pack expressions
+        return newCode
+    Library.withLibrary file $ Library.code .= newCode
+    Publisher.notifyCodeUpdate file 0 (Text.length newCode) newCode Nothing
 
 -- internal
 
