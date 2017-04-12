@@ -10,23 +10,23 @@ data VisualizationValue = JsonValue String
                         | HtmlValue String
                         deriving (Generic, Eq, NFData, Show)
 
-data Value = IntValue    Int
-           | DoubleValue Double
-           | BoolValue   Bool
-           | StringValue String
-           deriving (Generic, Eq, NFData, Show)
+data PortValue = IntValue    Int
+               | DoubleValue Double
+               | BoolValue   Bool
+               | StringValue String
+               deriving (Generic, Eq, NFData, Show)
 
 data PortDefault = Expression String
-                 | Constant   Value
+                 | Constant   PortValue
                  deriving (Generic, Eq, NFData, Show)
 
-instance Binary Value
+instance Binary PortValue
 instance Binary PortDefault
 instance Binary VisualizationValue
 
-makePrisms ''Value
+makePrisms ''PortValue
 makePrisms ''PortDefault
 makePrisms ''VisualizationValue
 
-stringify :: Value -> Text
+stringify :: PortValue -> Text
 stringify = pack . show

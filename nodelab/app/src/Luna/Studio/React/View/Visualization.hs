@@ -17,7 +17,7 @@ import qualified Data.Text                                      as Text
 import           React.Flux                                     hiding (image_)
 import qualified React.Flux                                     as React
 import qualified Empire.API.Data.Error                          as LunaError
-import           Empire.API.Data.PortDefault                    (Value (..))
+import           Empire.API.Data.PortDefault                    (PortValue (..))
 import qualified Empire.API.Data.PortDefault                    as PortDefault
 import           Empire.API.Data.TypeRep                        (TypeRep)
 import           Empire.API.Graph.NodeResultUpdate              (NodeValue)
@@ -90,7 +90,7 @@ visualization = React.defineView viewName $ \(ref, nl, mayPos, nodeValue) ->
 --     --, onMouseDown $ \_ _ -> traceShowMToStdout "NIE JEST NAJGORZEJ"
 --     ] mempty
 
-nodeValue_ :: Ref App -> NodeLoc -> Maybe Position -> Int -> Value -> ReactElementM ViewEventHandler ()
+nodeValue_ :: Ref App -> NodeLoc -> Maybe Position -> Int -> PortValue -> ReactElementM ViewEventHandler ()
 nodeValue_ ref nl mayPos visIx value = do
     let isPinned = isJust mayPos
         event = case mayPos of

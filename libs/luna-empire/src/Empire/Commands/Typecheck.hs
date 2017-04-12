@@ -22,7 +22,7 @@ import           Empire.API.Data.MonadPath         (MonadPath (MonadPath))
 import           Empire.API.Data.Node              (NodeId, nodeId)
 import qualified Empire.API.Data.NodeMeta          as NodeMeta
 import           Empire.API.Data.TypeRep           (TypeRep (TCons))
-import           Empire.API.Data.PortDefault       (Value (StringValue))
+import           Empire.API.Data.PortDefault       (PortValue (StringValue))
 import qualified Empire.API.Graph.NodeResultUpdate as NodeResult
 import           Empire.ASTOp                      (EmpirePass, runASTOp)
 import qualified Empire.ASTOps.Read                as ASTRead
