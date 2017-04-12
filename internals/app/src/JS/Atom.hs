@@ -20,31 +20,31 @@ import qualified Internal.Event.Text as TextEvent
 import           Internal.Prelude
 
 
-foreign import javascript safe "atomCallback2.pushCode($1, $2, $3, $4)"
+foreign import javascript safe "atomCallbackInternals.pushCode($1, $2, $3, $4)"
     pushCode' :: JSString -> Int -> Int -> JSString -> IO ()
 
-foreign import javascript safe "atomCallback2.pushBuffer($1, $2)"
+foreign import javascript safe "atomCallbackInternals.pushBuffer($1, $2)"
     pushBuffer :: JSString -> JSString -> IO ()
 
-foreign import javascript safe "atomCallback2.pushStatus($1, $2, $3)"
+foreign import javascript safe "atomCallbackInternals.pushStatus($1, $2, $3)"
     pushStatus :: JSString -> JSString -> JSString -> IO ()
 
-foreign import javascript safe "atomCallback2.subscribeEventListenerInternal($1)"
+foreign import javascript safe "atomCallbackInternals.subscribeEventListenerInternal($1)"
   subscribeEventListenerInternal' :: Callback (JSVal -> IO ()) -> IO ()
 
 foreign import javascript safe "($1).unsubscribeEventListenerInternal()"
   unsubscribeEventListenerInternal' :: Callback (JSVal -> IO ()) -> IO ()
 
-foreign import javascript safe "atomCallback2.subscribeText($1)"
+foreign import javascript safe "atomCallbackInternals.subscribeText($1)"
   subscribeText' :: Callback (JSVal -> IO ()) -> IO ()
 
 foreign import javascript safe "($1).unsubscribeText()"
   unsubscribeText' :: Callback (JSVal -> IO ()) -> IO ()
 
-foreign import javascript safe "atomCallback2.getPath($1)"
+foreign import javascript safe "atomCallbackInternals.getPath($1)"
   getPath :: JSVal -> JSVal
 
-foreign import javascript safe "atomCallback2.getStart($1)"
+foreign import javascript safe "atomCallbackInternals.getStart($1)"
   getStart :: JSVal -> JSVal
 
 foreign import javascript safe "atomCallback2.getStop($1)"
