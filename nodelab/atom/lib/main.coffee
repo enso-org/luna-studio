@@ -42,6 +42,11 @@ module.exports =
     #         console.log("in if")
     #         console.log(atom.workspace.getActiveTextEditor().getSelections())
     #         internal.pushInternalEvent("GetBuffer " + "activeFilePath")
+    @subs.add atom.workspace.onDidOpen (e) =>
+        try
+            atom.workspace.saveActivePaneItem()
+        catch error
+            console.log error
 
     @subs.add atom.commands.add 'atom-workspace', 'core:close': ->
         if atom.workspace.getActivePaneItem().buffer
