@@ -24,7 +24,7 @@ import qualified Empire.API.Data.Node                  as Empire
 import           Empire.API.Data.NodeLoc               (NodeLoc (NodeLoc), NodePath)
 import qualified Empire.API.Data.NodeMeta              as NodeMeta
 import           Empire.API.Graph.CollaborationUpdate  (ClientId)
-import           Empire.API.Graph.NodeResultUpdate     (NodeValue, NodeValue (Error))
+import           Empire.API.Graph.NodeResultUpdate     (NodeValue(NodeError))
 import           Luna.Studio.Prelude
 import           Luna.Studio.React.Model.IsNode           as X (IsNode (..))
 import           Luna.Studio.React.Model.Node.SidebarNode (SidebarNodesMap)
@@ -55,9 +55,9 @@ data Mode = Collapsed
           deriving (Eq, Generic, NFData, Show)
 
 data ExpandedMode = Editor
-                | Controls
-                | Function (Map BreadcrumbItem Subgraph)
-                deriving (Eq, Generic, NFData, Show)
+                  | Controls
+                  | Function (Map BreadcrumbItem Subgraph)
+                  deriving (Eq, Generic, NFData, Show)
 
 data Subgraph = Subgraph
   { _expressionNodes :: ExpressionNodesMap
@@ -88,7 +88,6 @@ instance Convertible (NodePath, Empire.Node, Text) ExpressionNode where
         {- position              -} (fromTuple $ n ^. Empire.position)
         {- visualizationsEnabled -} (n ^. Empire.nodeMeta . NodeMeta.displayResult)
         {- code                  -} (n ^. Empire.code)
-
         {- value                 -} def
         {- zPos                  -} def
         {- isSelected            -} False
@@ -128,8 +127,8 @@ subgraphs = mode . _Expanded . _Function
 
 returnsError :: ExpressionNode -> Bool
 returnsError node = case node ^. value of
-    Just (Error _) -> True
-    _              -> False
+    Just (NodeError _) -> True
+    _                  -> False
 
 isMode :: Mode -> ExpressionNode -> Bool
 isMode mode' node = node ^. mode == mode'

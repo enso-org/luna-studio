@@ -9,7 +9,6 @@ module Luna.Studio.React.View.Visualization
 , strValue
 ) where
 
-import           Control.Arrow                                  ((***))
 import qualified Data.Aeson                                     as Aeson
 import           Data.List.Split                                (wordsBy)
 import           Data.Position                                  (Position)
@@ -17,11 +16,9 @@ import qualified Data.Text                                      as Text
 import           React.Flux                                     hiding (image_)
 import qualified React.Flux                                     as React
 import qualified Empire.API.Data.Error                          as LunaError
-import           Empire.API.Data.PortDefault                    (PortValue (..))
-import qualified Empire.API.Data.PortDefault                    as PortDefault
+import           Empire.API.Data.PortDefault                    (PortValue(..))
 import           Empire.API.Data.TypeRep                        (TypeRep)
-import           Empire.API.Graph.NodeResultUpdate              (NodeValue)
-import qualified Empire.API.Graph.NodeResultUpdate              as NodeResult
+import           Empire.API.Graph.NodeResultUpdate              (NodeValue(..))
 import qualified Luna.Studio.Event.UI                           as UI
 import           Luna.Studio.Prelude
 import qualified Luna.Studio.React.Event.Visualization          as Visualization
@@ -79,7 +76,7 @@ visualization :: ReactView (Ref App, NodeLoc, Maybe Position, NodeValue)
 visualization = React.defineView viewName $ \(ref, nl, mayPos, nodeValue) ->
     div_ [ "className" $= Style.prefixFromList [ "noselect" ] ] $
         case nodeValue of
-            NodeResult.Value _ valueReprs -> mapM_ (uncurry $ nodeValue_ ref nl mayPos) $ keyed valueReprs
+            NodeValue _ valueReprs -> mapM_ (uncurry $ nodeValue_ ref nl mayPos) $ keyed valueReprs
             _                             -> mempty
 -- iframe_
 --     [ "srcDoc" $= ("<style>"
@@ -116,16 +113,15 @@ nodeValue_ ref nl mayPos visIx value = do
             DoubleValue v -> strDiv $ show v
             IntValue    v -> strDiv $ show v
             StringValue v -> strDiv v
-            _ -> return ()
     where
         strDiv = div_ . elemString . normalize
 
 strValue :: ExpressionNode -> String
 strValue n = case n ^. Node.value of
     Nothing -> ""
-    Just (NodeResult.Value value []) -> Text.unpack value
-    Just (NodeResult.Value value _ ) -> Text.unpack value
-    Just (NodeResult.Error msg     ) -> showError msg --limitString errorLen (convert $ showError msg)
+    Just (NodeValue value []) -> Text.unpack value
+    Just (NodeValue value _ ) -> Text.unpack value
+    Just (NodeError msg     ) -> showError msg --limitString errorLen (convert $ showError msg)
 
 showError :: LunaError.Error TypeRep -> String
 showError = showErrorSep ""
@@ -136,19 +132,6 @@ showErrorSep sep err = case err of
     LunaError.NoMethodError name tpe -> "Cannot find method \"" <> name        <> "\" for type \"" <> toString tpe <> "\""
     LunaError.TypeError     t1   t2  -> "Cannot match type  \"" <> toString t1 <> "\" with \""     <> toString t2  <> "\""
     LunaError.RuntimeError  msg      -> "Runtime error: " <> sep <> msg
-
-listTable :: [Text] -> DataFrame
-listTable col = DataFrame.create ["Index", "Value"] rows where
-    nats = [1..] :: [Integer]
-    idxs = convert . show <$> take (length col) nats
-    cols = [idxs, col]
-    rows = transpose cols
-
-mapTuple :: (b -> c) -> (b, b) -> (c, c)
-mapTuple = join (***)
-
-listTablePairs :: [(Text, Text)] -> DataFrame
-listTablePairs rows = DataFrame.create ["fst", "snd"] $ (\(f,s) -> [f,s]) <$> rows
 
 normalize :: String -> String
 normalize = intercalate "<br />" . wordsBy (== '\n')

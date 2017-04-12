@@ -13,7 +13,9 @@ import qualified Empire.API.Topic              as Topic
 
 type ShortValue = Text
 
-data NodeValue = Value ShortValue [PortValue] | Error (Error TypeRep) deriving (Show, Eq, Generic, NFData)
+data NodeValue = NodeValue ShortValue [PortValue]
+               | NodeError (Error TypeRep)
+               deriving (Show, Eq, Generic, NFData)
 makePrisms ''NodeValue
 
 data Update = Update { _location :: GraphLocation
@@ -27,4 +29,4 @@ instance Binary Update
 instance Binary NodeValue
 
 topicPrefix = "empire.graph.result"
-instance Topic.MessageTopic Update   where topic _ = topicPrefix <> Topic.update
+instance Topic.MessageTopic Update where topic _ = topicPrefix <> Topic.update

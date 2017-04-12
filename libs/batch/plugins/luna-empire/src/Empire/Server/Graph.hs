@@ -49,6 +49,7 @@ import qualified Empire.API.Graph.DumpGraphViz      as DumpGraphViz
 import qualified Empire.API.Graph.GetProgram        as GetProgram
 import qualified Empire.API.Graph.GetSubgraphs      as GetSubgraphs
 import qualified Empire.API.Graph.MovePort          as MovePort
+import           Empire.API.Graph.NodeResultUpdate  (NodeValue(NodeValue))
 import qualified Empire.API.Graph.NodeResultUpdate  as NodeResultUpdate
 import qualified Empire.API.Graph.NodesUpdate       as NodesUpdate
 import qualified Empire.API.Graph.RemoveConnection  as RemoveConnection
@@ -95,7 +96,7 @@ notifyCodeUpdate location = do
         Right code -> sendToBus' $ CodeUpdate.Update location $ Text.pack code
 
 notifyNodeResultUpdate :: GraphLocation -> NodeId -> [PortValue] -> Text -> StateT Env BusT ()
-notifyNodeResultUpdate location nodeId values name = sendToBus' $ NodeResultUpdate.Update location nodeId (NodeResultUpdate.Value name values) 42
+notifyNodeResultUpdate location nodeId values name = sendToBus' $ NodeResultUpdate.Update location nodeId (NodeValue name values) 42
 -- FIXME: report correct execution time
 
 saveCurrentProject :: GraphLocation -> StateT Env BusT ()
