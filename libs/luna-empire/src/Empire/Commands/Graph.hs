@@ -103,11 +103,11 @@ import qualified Empire.Commands.Library         as Library
 import qualified Empire.Commands.Publisher       as Publisher
 import           Empire.Empire
 
-import qualified Luna.IR            as IR
-import qualified OCI.IR.Combinators as IR (replaceSource, deleteSubtree, narrowTerm)
-import           Luna.Syntax.Text.Parser.Marker (MarkedExprMap(..))
-import qualified Luna.Syntax.Text.Parser.Marker as Luna
-import qualified Luna.Syntax.Text.Parser.Parser as Parser (ReparsingStatus(..), ReparsingChange(..))
+import qualified Luna.IR                          as IR
+import qualified OCI.IR.Combinators               as IR (replaceSource, deleteSubtree, narrowTerm)
+import           Luna.Syntax.Text.Parser.Marker   (MarkedExprMap(..))
+import qualified Luna.Syntax.Text.Parser.Marker   as Luna
+import qualified Luna.Syntax.Text.Parser.Parser   as Parser (ReparsingStatus(..), ReparsingChange(..))
 
 
 generateNodeName :: ASTOp m => m String
@@ -306,21 +306,19 @@ setNodeExpression loc nodeId expr = withTC loc False $ do
     return node
 
 setNodeMeta :: GraphLocation -> NodeId -> NodeMeta -> Empire ()
-setNodeMeta loc nodeId newMeta = do
-    withGraph loc $ do
-        doTCMay <- runASTOp $ do
-            ref <- GraphUtils.getASTPointer nodeId
-            oldMetaMay <- AST.readMeta ref
-            let triggerTC :: NodeMeta -> NodeMeta -> Bool
-                triggerTC oldMeta' newMeta' = oldMeta' ^. NodeMeta.displayResult /= newMeta' ^. NodeMeta.displayResult
-            doTCMay <- forM oldMetaMay $ \oldMeta ->
-                return $ triggerTC oldMeta newMeta
-            AST.writeMeta ref newMeta
-            updateNodeSequence
-            return doTCMay
-        forM_ doTCMay $ \doTC ->
-            when doTC $ runTC loc False
-    updateCode loc
+setNodeMeta loc nodeId newMeta = withGraph loc $ do
+    doTCMay <- runASTOp $ do
+        ref <- GraphUtils.getASTPointer nodeId
+        oldMetaMay <- AST.readMeta ref
+        let triggerTC :: NodeMeta -> NodeMeta -> Bool
+            triggerTC oldMeta' newMeta' = oldMeta' ^. NodeMeta.displayResult /= newMeta' ^. NodeMeta.displayResult
+        doTCMay <- forM oldMetaMay $ \oldMeta ->
+            return $ triggerTC oldMeta newMeta
+        AST.writeMeta ref newMeta
+        updateNodeSequence
+        return doTCMay
+    forM_ doTCMay $ \doTC ->
+        when doTC $ runTC loc False
 
 updatePort :: GraphLocation -> AnyPortRef -> Either Int String -> Empire AnyPortRef
 updatePort = $notImplemented
@@ -657,13 +655,30 @@ loadCode code = do
     Graph.breadcrumbHierarchy . BH.body .= ref
     runAliasAnalysis
 
+printMarkedExpression :: ASTOp m => Map.Map Luna.Marker NodeRef -> NodeRef -> m Text
+printMarkedExpression exprMap ref = do
+    expr <- Text.pack <$> ASTPrint.printExpression ref
+    let chunks = Text.splitOn " = " expr
+    case chunks of
+        [e] -> return e
+        [var, val] -> do
+            let markers = Map.keys $ Map.filter (== ref) exprMap
+            case markers of
+                [index] -> do
+                    let marker = " ‹" ++ show index ++ "›= "
+                    return $ Text.concat [var, Text.pack marker, val]
+                _   -> return $ Text.concat [var, val]
+        _ -> error "printMarkedExpression: bigger mistake"
+
 updateCode :: GraphLocation -> Empire ()
 updateCode loc@(GraphLocation file _) = do
     newCode <- withGraph loc $ runASTOp $ do
+        Just nodeSeq <- GraphBuilder.getNodeSeq
+        exprMap      <- IR.getLayer @CodeMarkers nodeSeq
         nodeSequence <- GraphBuilder.getNodeIdSequence
         refs         <- mapM ASTRead.getASTPointer nodeSequence
-        expressions  <- mapM ASTPrint.printExpression refs
-        let newCode = Text.unlines $ map Text.pack expressions
+        expressions  <- mapM (printMarkedExpression (coerce exprMap)) refs
+        let newCode = Text.unlines $ expressions
         return newCode
     Library.withLibrary file $ Library.code .= newCode
     Publisher.notifyCodeUpdate file 0 (Text.length newCode) newCode Nothing
