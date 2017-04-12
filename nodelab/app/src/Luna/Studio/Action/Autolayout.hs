@@ -176,17 +176,18 @@ alignChainsX nl = withJustM (lookupNode nl) $ \n -> do
     preds  <- lookupNodes . map (view srcNodeLoc) $ n ^. inConns
     succs  <- lookupNodes . map (view dstNodeLoc) $ n ^. outConns
     isLast <- isLastInChain n
-    let alignToLeft = not (null preds) && (null succs || (length succs == 1 && not isLast))
+    let alignToLeft  = not (null preds) && (null succs || (length succs == 1 && not isLast))
     if alignToLeft then do
         let maxPredX = maximum $ map (view $ actPos . x) preds
         when (maxPredX < n ^. actPos . x - gapBetweenNodes ) $ do
             modify $ Map.update (\n' -> Just $ n' & actPos . x .~ maxPredX + gapBetweenNodes)  (n ^. nodeLoc)
             forM_ succs $ alignChainsX . view nodeLoc
-    else do
+    else if not $ null succs then do
         let minSuccX = minimum $ map (view $ actPos . x) succs
         when (minSuccX > n ^. actPos . x + gapBetweenNodes ) $ do
             modify $ Map.update (\n' -> Just $ n' & actPos . x .~ minSuccX - gapBetweenNodes)  (n ^. nodeLoc)
             forM_ preds $ alignChainsX . view nodeLoc
+    else return ()
 
 sortOutConns :: [Connection] -> [Connection]
 sortOutConns conns = do
