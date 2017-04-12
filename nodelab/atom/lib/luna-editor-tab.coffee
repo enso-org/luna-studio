@@ -50,11 +50,11 @@ class LunaEditorTab extends TextEditor
               @getBuffer().setText(text)
       @internal.bufferListener setBuffer
 
-      setCode = (uri_send, start_send, end_send, text) ->
+      setCode = (uri_send, start_send, end_send, text) =>
           withoutTrigger =>
             if @uri == uri_send
-              start = buffer.positionForCharacterIndex(start_send)
-              end = buffer.positionForCharacterIndex(end_send)
+              start = @getBuffer().positionForCharacterIndex(start_send)
+              end = @getBuffer().positionForCharacterIndex(end_send)
               @getBuffer().setTextInRange [start, end], text
               @.scrollToBufferPosition(start)
       @internal.codeListener setCode
