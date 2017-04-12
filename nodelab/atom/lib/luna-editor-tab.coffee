@@ -52,7 +52,7 @@ class LunaEditorTab extends TextEditor
 
       setCode = (uri_send, start_send, end_send, text) ->
           withoutTrigger =>
-            if uri == uri_send
+            if @uri == uri_send
               start = buffer.positionForCharacterIndex(start_send)
               end = buffer.positionForCharacterIndex(end_send)
               @getBuffer().setTextInRange [start, end], text
