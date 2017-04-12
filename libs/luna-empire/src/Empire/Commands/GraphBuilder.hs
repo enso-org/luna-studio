@@ -18,6 +18,7 @@ module Empire.Commands.GraphBuilder (
   , decodeBreadcrumbs
   , getEdgePortMapping
   , getNodeIdSequence
+  , getNodeSeq
   , getInPortDefault
   , getDefault
   , getNodeName
@@ -118,17 +119,19 @@ hasIO ref = IR.matchExpr ref $ \case
     Unify l r -> (||) <$> (hasIO =<< IR.source l) <*> (hasIO =<< IR.source r)
     _         -> return False
 
+getNodeSeq :: ASTOp m => m (Maybe NodeRef)
+getNodeSeq = do
+    lref    <- ASTRead.getCurrentASTTarget
+    case lref of
+        Just l -> ASTRead.getLambdaBodyRef l
+        _      -> preuse $ Graph.breadcrumbHierarchy . BH.body
 
 getNodeIdSequence :: ASTOp m => m [NodeId]
 getNodeIdSequence = do
-    lref <- ASTRead.getCurrentASTTarget
-    nodeSeq <- do
-        bodySeq <- case lref of
-            Just l -> ASTRead.getLambdaBodyRef l
-            _      -> preuse $ Graph.breadcrumbHierarchy . BH.body
-        case bodySeq of
-            Just b -> AST.readSeq b
-            _      -> return []
+    bodySeq    <- getNodeSeq
+    nodeSeq    <- case bodySeq of
+        Just b -> AST.readSeq b
+        _      -> return []
     catMaybes <$> mapM ASTRead.safeGetVarNodeId nodeSeq
 
 type EdgeNodes = (API.Node, API.Node)
