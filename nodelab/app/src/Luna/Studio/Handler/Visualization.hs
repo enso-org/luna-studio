@@ -21,6 +21,6 @@ handle (UI (VisualizationEvent (Visualization.Pin   nodeLoc visIx         ))) = 
 handle (UI (VisualizationEvent (Visualization.Unpin nodeLoc visIx position))) = Just $ Visualization.unpin nodeLoc visIx position
 handle (UI (VisualizationEvent (Visualization.MouseDown evt nodeLoc visIx position))) = Just $
     when (Mouse.withoutMods evt Mouse.leftButton) $ Visualization.startDrag nodeLoc visIx position evt
-handle (UI (AppEvent  (App.MouseMove mevt _))) = Just $ continue $ Visualization.drag mevt
-handle (UI (AppEvent  (App.MouseUp   mevt  ))) = Just $ continue $ Visualization.stopDrag mevt
+handle (UI (AppEvent (App.MouseMove mevt _))) = Just $ continue $ Visualization.drag mevt
+handle (UI (AppEvent (App.MouseUp   mevt  ))) = Just $ continue $ Visualization.stopDrag mevt
 handle _ = Nothing

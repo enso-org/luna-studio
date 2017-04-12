@@ -103,10 +103,10 @@ handle (Event.Batch ev) = Just $ case ev of
             void $ localAddConnection (prependPath path (connection ^. src)) (prependPath path (connection ^. dst))
 
     AddNodeResponse response -> handleResponse response success failure where
-        requestId    = response ^. Response.requestId
-        request      = response ^. Response.request
-        location     = request  ^. AddNode.location
-        failure _    = whenM (isOwnRequest requestId) $ revertAddNode request
+        requestId     = response ^. Response.requestId
+        request       = response ^. Response.request
+        location      = request  ^. AddNode.location
+        failure _     = whenM (isOwnRequest requestId) $ revertAddNode request
         success node' = inCurrentLocation location $ \path -> do
             let node = convert (path, node')
             ownRequest    <- isOwnRequest requestId
@@ -118,11 +118,11 @@ handle (Event.Batch ev) = Just $ case ev of
             else localAddNode node
 
     AddPortResponse response -> handleResponse response success failure where
-        requestId    = response ^. Response.requestId
-        request      = response ^. Response.request
-        location     = request  ^. AddPort.location
-        portRef      = request  ^. AddPort.anyPortRef
-        failure _    = whenM (isOwnRequest requestId) $ revertAddPort request
+        requestId     = response ^. Response.requestId
+        request       = response ^. Response.request
+        location      = request  ^. AddPort.location
+        portRef       = request  ^. AddPort.anyPortRef
+        failure _     = whenM (isOwnRequest requestId) $ revertAddPort request
         success node' = inCurrentLocation location $ \path -> do
             let node = convert (path, node')
             ownRequest    <- isOwnRequest requestId
@@ -137,14 +137,14 @@ handle (Event.Batch ev) = Just $ case ev of
                 void $ localUpdateNode node
 
     AddSubgraphResponse response -> handleResponse response success failure where
-        requestId     = response ^. Response.requestId
-        request       = response ^. Response.request
-        location      = request  ^. AddSubgraph.location
-        conns         = request  ^. AddSubgraph.connections
-        failure _     = whenM (isOwnRequest requestId) $ revertAddSubgraph request
+        requestId      = response ^. Response.requestId
+        request        = response ^. Response.request
+        location       = request  ^. AddSubgraph.location
+        conns          = request  ^. AddSubgraph.connections
+        failure _      = whenM (isOwnRequest requestId) $ revertAddSubgraph request
         success nodes' = inCurrentLocation location $ \path -> do
             let nodes = (convert . (path,) <$> nodes') ^.. traverse . _Expression
-            ownRequest    <- isOwnRequest requestId
+            ownRequest <- isOwnRequest requestId
             if ownRequest then do
                 localUpdateExpressionNodes nodes
                 collaborativeModify $ flip map nodes $ view nodeLoc
@@ -158,8 +158,8 @@ handle (Event.Batch ev) = Just $ case ev of
         let clientId = update ^. CollaborationUpdate.clientId
             touchNodes nodeLocs setter = forM_ nodeLocs $ \nl ->
                 modifyExpressionNode (prependPath path nl) setter
-        myClientId   <- use $ Global.backend . Global.clientId
-        currentTime  <- use Global.lastEventTimestamp
+        myClientId  <- use $ Global.backend . Global.clientId
+        currentTime <- use Global.lastEventTimestamp
         when (clientId /= myClientId) $ do
             clientColor <- updateClient clientId
             case update ^. CollaborationUpdate.event of
@@ -193,13 +193,13 @@ handle (Event.Batch ev) = Just $ case ev of
             updateMonads $ update ^. MonadsUpdate.monads
 
     MovePortResponse response -> handleResponse response success failure where
-        requestId          = response ^. Response.requestId
-        request            = response ^. Response.request
-        location           = request  ^. MovePort.location
-        portRef            = request  ^. MovePort.portRef
-        newPos             = request  ^. MovePort.newPortPos
-        failure _          = whenM (isOwnRequest requestId) $ revertMovePort request
-        success node'      = inCurrentLocation location $ \path -> do
+        requestId     = response ^. Response.requestId
+        request       = response ^. Response.request
+        location      = request  ^. MovePort.location
+        portRef       = request  ^. MovePort.portRef
+        newPos        = request  ^. MovePort.newPortPos
+        failure _     = whenM (isOwnRequest requestId) $ revertMovePort request
+        success node' = inCurrentLocation location $ \path -> do
             let node = convert (path, node')
             ownRequest <- isOwnRequest requestId
             if ownRequest then
@@ -224,12 +224,12 @@ handle (Event.Batch ev) = Just $ case ev of
     RedoResponse response -> $notImplemented
 
     RemoveConnectionResponse response -> handleResponse response success failure where
-        requestId          = response ^. Response.requestId
-        request            = response ^. Response.request
-        location           = request  ^. RemoveConnection.location
-        connId             = request  ^. RemoveConnection.connId
-        failure inverse    = whenM (isOwnRequest requestId) $ revertRemoveConnection request inverse
-        success _          = inCurrentLocation location $ \path -> do
+        requestId       = response ^. Response.requestId
+        request         = response ^. Response.request
+        location        = request  ^. RemoveConnection.location
+        connId          = request  ^. RemoveConnection.connId
+        failure inverse = whenM (isOwnRequest requestId) $ revertRemoveConnection request inverse
+        success _       = inCurrentLocation location $ \path -> do
             ownRequest    <- isOwnRequest requestId
             if ownRequest then
                 --TODO[LJK]: This is left to remind to set Confirmed flag in changes

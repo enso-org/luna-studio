@@ -7,7 +7,7 @@ import           Prologue                      hiding (Text, TypeRep)
 import           Empire.API.Data.Error         (Error)
 import           Empire.API.Data.GraphLocation (GraphLocation)
 import           Empire.API.Data.Node          (NodeId)
-import           Empire.API.Data.PortDefault   (PortValue)
+import           Empire.API.Data.PortDefault   (PortValue,VisualizationValue)
 import           Empire.API.Data.TypeRep       (TypeRep)
 import qualified Empire.API.Topic              as Topic
 
@@ -17,6 +17,12 @@ data NodeValue = NodeValue ShortValue [PortValue]
                | NodeError (Error TypeRep)
                deriving (Show, Eq, Generic, NFData)
 makePrisms ''NodeValue
+
+data NodeVisualization = NodeVisualization { _visualizationValue :: VisualizationValue
+                                           , _visualizationId    :: Int
+                                           , _isPinned           :: Bool
+                                           } deriving (Show, Eq, Generic, NFData)
+makePrisms ''NodeVisualization
 
 data Update = Update { _location :: GraphLocation
                      , _nodeId   :: NodeId
