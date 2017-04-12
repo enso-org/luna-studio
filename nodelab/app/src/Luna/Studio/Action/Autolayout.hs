@@ -1,24 +1,24 @@
 {-# LANGUAGE MultiWayIf #-}
 module Luna.Studio.Action.Autolayout where
 
-import           Control.Monad.State.Lazy                    (execState, get, modify)
+import           Control.Monad.State.Lazy                    (execStateT, get, modify)
 import qualified Control.Monad.State.Lazy                    as S
 import           Data.Map.Lazy                               (Map)
 import qualified Data.Map.Lazy                               as Map
-import           Data.Position                               (Position, minimumRectangle, x, y)
+import           Data.Position                               (Position, fromDoubles, minimumRectangle, toTuple, x, y)
 import           Luna.Studio.Action.Basic                    (moveNodes)
 import           Luna.Studio.Action.Command                  (Command)
 import           Luna.Studio.Action.State.NodeEditor         (getConnectionsFromNode, getConnectionsToNode, getExpressionNodes,
                                                               getSelectedNodes)
 import           Luna.Studio.Prelude
-import           Luna.Studio.React.Model.Connection          (Connection, dstNodeLoc, dstPortId, srcNodeLoc)
+import           Luna.Studio.React.Model.Connection          (Connection, dstNodeLoc, dstPortId, srcNodeLoc, srcPortId)
 import           Luna.Studio.React.Model.Node.ExpressionNode (ExpressionNode, NodeLoc)
 import qualified Luna.Studio.React.Model.Node.ExpressionNode as Node
-import           Luna.Studio.React.Model.Port                (PortId (InPortId), isSelf)
+import           Luna.Studio.React.Model.Port                (InPort (Self), PortId (InPortId), isSelf)
 import           Luna.Studio.State.Global                    (State)
 
 
-data DFSState = NotProccessed | InProccess | Proccessed deriving Eq
+data DFSState = NotProccessed | InProccess | Proccessed deriving (Eq, Show)
 data NodeInfo = NodeInfo { _nodeLoc  :: NodeLoc
                          , _name     :: Text
                          , _actPos   :: Position
@@ -26,10 +26,11 @@ data NodeInfo = NodeInfo { _nodeLoc  :: NodeLoc
                          , _inConns  :: [Connection]
                          , _outConns :: [Connection]
                          }
+
 makeLenses ''NodeInfo
 
 type NodesInfoMap      = Map NodeLoc NodeInfo
-type AutolayoutState a = S.State NodesInfoMap a
+type AutolayoutState a = S.StateT NodesInfoMap IO a
 
 
 gapBetweenNodes :: Double
@@ -46,18 +47,22 @@ autolayoutNodes nodes = do
     let mayMinRect = minimumRectangle $ map (view Node.position) nodes
     withJust mayMinRect $ \(leftTop, rightBottom) -> do
         let x' = ((leftTop ^. x) + (rightBottom ^. x)) / 2
+            y' = ((leftTop ^. y) + (rightBottom ^. y)) / 2
         nodesMap <- fmap Map.fromList $ forM nodes $ \n -> do
             let nl = n ^. Node.nodeLoc
             inConns'  <- getConnectionsToNode   nl
             outConns' <- getConnectionsFromNode nl
             return $ (nl, NodeInfo nl
                                    (n ^. Node.name)
-                                   (n ^. Node.position & x .~ x')
+                                   (fromDoubles x' y')
                                    NotProccessed
                                    inConns'
                                    outConns' )
-        moveNodes . Map.toList . fmap (view actPos) $ execState findPositions nodesMap
+        ns <- liftIO $ execStateT findPositions nodesMap
+        moveNodes . Map.toList . fmap (view actPos) $ ns
 
+clearDFSState :: AutolayoutState ()
+clearDFSState = modify $ fmap (\n -> n & dfsState .~ NotProccessed)
 
 findPositions :: AutolayoutState ()
 findPositions = do
@@ -65,6 +70,11 @@ findPositions = do
     nls <- Map.keys <$> get
     mapM_ findPositionRecursive nls
     mapM_ alignChainsX nls
+    clearDFSState
+    mapM_ (\nl -> withJustM_ (lookupNode nl) $ \n -> when (null $ n ^. inConns) $ void $ alignYForward n) nls
+    clearDFSState
+    mapM_ (\nl -> withJustM_ (lookupNode nl) $ \n -> when (null $ n ^. outConns) $ void $ alignYBackward n) nls
+
 
 findPositionRecursive :: NodeLoc -> AutolayoutState ()
 findPositionRecursive nl = lookupNode nl >>= \mayNode -> case mayNode of
@@ -128,7 +138,7 @@ removeCyclesForNode nl = withJustM (lookupNode nl) $ \n -> when (n ^. dfsState =
     modify $ Map.update (\node -> Just $ node & dfsState .~ Proccessed) nl
 
 alignNeighbours :: NodeInfo -> AutolayoutState [NodeLoc]
-alignNeighbours n = fmap nub' $ (++) <$> alignNeighboursX n <*> alignNeighboursY n
+alignNeighbours = fmap nub' . alignNeighboursX
 
 alignNeighboursX :: NodeInfo -> AutolayoutState [NodeLoc]
 alignNeighboursX n = do
@@ -150,16 +160,16 @@ alignNeighboursX n = do
     succsToUpdate <- fmap catMaybes $ mapM proccessSucc succs
     return $ predsToUpdate ++ succsToUpdate
 
-alignNeighboursY :: NodeInfo -> AutolayoutState [NodeLoc]
-alignNeighboursY n = do
-    let y' = n ^. actPos . y
-    preds <- lookupNodes . map (view srcNodeLoc) $ n ^. inConns
-    succs <- lookupNodes . map (view dstNodeLoc) $ n ^. outConns
-    fmap catMaybes . forM (preds ++ succs) $ \node ->
-        if node ^. actPos . y == y' || (not $ areInChain n node) then return Nothing else do
-            let nl = node ^. nodeLoc
-            modify $ Map.update (\n' -> Just $ n' & actPos . y .~ y') nl
-            return $ Just nl
+-- alignNeighboursY :: NodeInfo -> AutolayoutState [NodeLoc]
+-- alignNeighboursY n = do
+--     let y' = n ^. actPos . y
+--     preds <- lookupNodes . map (view srcNodeLoc) $ n ^. inConns
+--     succs <- lookupNodes . map (view dstNodeLoc) $ n ^. outConns
+--     fmap catMaybes . forM (preds ++ succs) $ \node ->
+--         if node ^. actPos . y == y' || (not $ areInChain n node) then return Nothing else do
+--             let nl = node ^. nodeLoc
+--             modify $ Map.update (\n' -> Just $ n' & actPos . y .~ y') nl
+--             return $ Just nl
 
 alignChainsX :: NodeLoc -> AutolayoutState ()
 alignChainsX nl = withJustM (lookupNode nl) $ \n -> do
@@ -177,3 +187,46 @@ alignChainsX nl = withJustM (lookupNode nl) $ \n -> do
         when (minSuccX > n ^. actPos . x + gapBetweenNodes ) $ do
             modify $ Map.update (\n' -> Just $ n' & actPos . x .~ minSuccX - gapBetweenNodes)  (n ^. nodeLoc)
             forM_ preds $ alignChainsX . view nodeLoc
+
+sortOutConns :: [Connection] -> [Connection]
+sortOutConns conns = do
+    let sortFunction c1 c2 =
+            if      c1 ^. dstPortId == Self then LT
+            else if c2 ^. dstPortId == Self then GT
+            else (c1 ^. srcPortId) `compare` (c2 ^. srcPortId)
+    sortBy sortFunction conns
+
+alignYForward :: NodeInfo -> AutolayoutState Double
+alignYForward n = do
+    if n ^. dfsState /= NotProccessed then return (n ^. actPos . y + gapBetweenNodes) else do
+        modify $ Map.update (\n' -> Just $ n' & dfsState .~ Proccessed) (n ^. nodeLoc)
+        let sortedNls = map (view dstNodeLoc) . sortOutConns $ n ^. outConns
+            proccessNode maxY nl = do
+                mayNode <- lookupNode nl
+                case mayNode of
+                    Nothing   -> return maxY
+                    Just node -> if node ^. dfsState /= NotProccessed then return maxY else do
+                        modify $ Map.update (\n' -> Just $ n' & actPos . y .~ maxY) nl
+                        alignYForward $ node & actPos . y .~ maxY
+        maxY <- foldlM proccessNode (n ^. actPos . y) sortedNls
+        return $ max maxY (n ^. actPos . y + gapBetweenNodes)
+
+sortInConns :: [Connection] -> [Connection]
+sortInConns conns = do
+    let sortFunction c1 c2 = compare (c1 ^. dstPortId) (c2 ^. dstPortId)
+    sortBy sortFunction conns
+
+alignYBackward :: NodeInfo -> AutolayoutState Double
+alignYBackward n = do
+    if n ^. dfsState /= NotProccessed then return (n ^. actPos . y + gapBetweenNodes) else do
+        modify $ Map.update (\n' -> Just $ n' & dfsState .~ Proccessed) (n ^. nodeLoc)
+        let sortedNls = map (view srcNodeLoc) . sortInConns $ n ^. inConns
+            proccessNode maxY nl = do
+                mayNode <- lookupNode nl
+                case mayNode of
+                    Nothing   -> return maxY
+                    Just node -> if node ^. dfsState /= NotProccessed then return maxY else do
+                        modify $ Map.update (\n' -> Just $ n' & actPos . y .~ maxY) nl
+                        alignYBackward $ node & actPos . y .~ maxY
+        maxY <- foldlM proccessNode (n ^. actPos . y) sortedNls
+        return $ max maxY (n ^. actPos . y + gapBetweenNodes)

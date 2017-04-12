@@ -329,5 +329,22 @@ stdlibFunctions = ["mockFunction"]
 stdlibMethods :: [String]
 stdlibMethods = ["mockMethod"]
 
-mockNSData :: NS.Items ExpressionNode
+mockNSData :: NS.Items Node
 mockNSData = Map.empty
+-- mockNSData = Map.fromList $ functionsList <> modulesList where
+--     nodeSearcherSymbols = words "mockNode1 mockNode2 mockNode3 mockNode4"
+--     (methods, functions) = partition (elem '.') nodeSearcherSymbols
+--     functionsList = functionEntry <$> functions
+--     functionEntry function = (convert function, NS.Element $ mockNode "mockNode")
+--     modulesMethodsMap = foldl updateModulesMethodsMap Map.empty methods
+--     updateModulesMethodsMap map el = Map.insert moduleName methodNames map where
+--         (moduleName, dotMethodName) = break (== '.') el
+--         methodName = tail dotMethodName
+--         methodNames = methodName : (fromMaybe [] $ Map.lookup moduleName map)
+--     modulesList = (uncurry moduleEntry) <$> Map.toList modulesMethodsMap
+--     moduleEntry moduleName methodList = (convert moduleName, NS.Group (Map.fromList $ functionEntry <$> methodList) $ mockNode "mockGroupNode")
+--     mockNode name = Node (fromJust $ UUID.fromString "094f9784-3f07-40a1-84df-f9cf08679a27") name (Node.ExpressionNode name) False mockPorts def def
+--     mockPorts = Map.fromList [ (InPortId  Self  , Port (InPortId  Self)    "self" TStar NotConnected)
+--                              , (InPortId (Arg 0), Port (InPortId (Arg 0)) "arg 0" TStar NotConnected)
+--                              , (OutPortId All   , Port (OutPortId All)   "Output" TStar NotConnected)
+--                              ]
