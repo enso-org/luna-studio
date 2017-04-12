@@ -3,7 +3,8 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 
 module Empire.ASTOps.Parse (
-    parseExpr
+    ParserException
+  , parseExpr
   , parsePortDefault
   , runParser
   , runReparser

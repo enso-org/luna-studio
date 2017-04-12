@@ -168,3 +168,52 @@ bar ‹3›= foo 8 c
                 connections `shouldMatchList` [
                       (outPortRef (cNode ^. Node.nodeId) Port.All, inPortRef (bar ^. Node.nodeId) (Port.Arg 1))
                     ]
+        it "adding an expression works" $ \env -> do
+            let code = [r|pi ‹0›= 3.14
+
+foo ‹1›= a: b: a + b
+
+c ‹2›= 4
+bar ‹3›= foo 8 c
+|]
+            res <- evalEmp env $ do
+                Library.createLibrary Nothing "TestPath" code
+                let loc = GraphLocation "TestPath" $ Breadcrumb []
+                Graph.withGraph loc $ Graph.loadCode code
+                Graph.substituteCode "TestPath" 35 35 "d ‹4›= 10" (Just 36)
+                Graph.getGraph loc
+            withResult res $ \graph -> do
+                let Graph.Graph nodes connections _ = graph
+                    Just d = find (\node -> node ^. Node.name == "d") nodes
+                d ^. Node.code `shouldBe` Just "10"
+                let Just c = find (\node -> node ^. Node.name == "c") nodes
+                    Just bar = find (\node -> node ^. Node.name == "bar") nodes
+                connections `shouldMatchList` [
+                      (outPortRef (c ^. Node.nodeId) Port.All, inPortRef (bar ^. Node.nodeId) (Port.Arg 1))
+                    ]
+        it "unparseable expression does not sabotage whole file" $ \env -> do
+            let code = [r|pi ‹0›= 3.14
+
+foo ‹1›= a: b: a + b
+
+c ‹2›= 4
+bar ‹3›= foo 8 c
+|]
+            res <- evalEmp env $ do
+                Library.createLibrary Nothing "TestPath" code
+                let loc = GraphLocation "TestPath" $ Breadcrumb []
+                Graph.withGraph loc $ Graph.loadCode code
+                Graph.substituteCode "TestPath" 8 12 ")" (Just 8)
+                Graph.substituteCode "TestPath" 8 9 "5" (Just 8)
+                Graph.getGraph loc
+            withResult res $ \graph -> do
+                let Graph.Graph nodes connections _ = graph
+                    Just pi = find (\node -> node ^. Node.name == "pi") nodes
+                    Just c = find (\node -> node ^. Node.name == "c") nodes
+                    Just bar = find (\node -> node ^. Node.name == "bar") nodes
+                pi ^. Node.code `shouldBe` Just "5"
+                c ^. Node.code `shouldBe` Just "4"
+                bar ^. Node.code `shouldBe` Just "foo 8 c"
+                connections `shouldMatchList` [
+                      (outPortRef (c ^. Node.nodeId) Port.All, inPortRef (bar ^. Node.nodeId) (Port.Arg 1))
+                    ]
