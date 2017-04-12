@@ -77,7 +77,7 @@ class LunaEditorTab extends TextEditor
               activeFilePath = event.item.buffer.file.path
           else activeFilePath = event.item.uri
           if path.extname(activeFilePath) is '.luna'
-              internal.pushInternalEvent("CloseFile " + activeFilePath)
+              @internal.pushInternalEvent("CloseFile " + activeFilePath)
               # internal.statusListener isSaved
 
 
