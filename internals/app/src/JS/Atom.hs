@@ -50,13 +50,13 @@ foreign import javascript safe "atomCallbackInternals.getPath($1)"
 foreign import javascript safe "atomCallbackInternals.getStart($1)"
   getStart :: JSVal -> JSVal
 
-foreign import javascript safe "atomCallback2.getStop($1)"
+foreign import javascript safe "atomCallbackInternals.getStop($1)"
   getStop :: JSVal -> JSVal
 
-foreign import javascript safe "atomCallback2.getText($1)"
+foreign import javascript safe "atomCallbackInternals.getText($1)"
   getText :: JSVal -> JSVal
 
-foreign import javascript safe "atomCallback2.getCursor($1)"
+foreign import javascript safe "atomCallbackInternals.getCursor($1)"
   getCursor :: JSVal -> JSVal
 
 jsvalToText :: JSVal -> TextEvent
