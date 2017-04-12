@@ -114,26 +114,10 @@ nodeValue_ ref nl mayPos visIx value = do
                 ] $
             elemString $ if isPinned then "unpin" else "pin"
         case value of
-            DataFrame    cols -> do
-                let heads  = convert . fst <$> cols
-                    cols'  = fmap PortDefault.stringify . snd <$> cols
-                    rows   = transpose cols'
-                    widget = DataFrame.create heads rows
-                dataFrame_ visIx widget
-            BoolValue       v -> strDiv $ show v
-            DoubleList      v -> dataFrame_ visIx $ listTable $ convert . show <$> v
-            DoublePairList  v -> dataFrame_ visIx $ listTablePairs $ mapTuple (convert . show) <$> v
-            DoubleValue     v -> strDiv $ show v
-            Image     url w h -> image_ visIx $ Image.create (Size (Vector2 w h)) $ convert url
-            IntList         v -> dataFrame_ visIx $ listTable $ convert . show <$> v
-            IntPairList     v -> dataFrame_ visIx $ listTablePairs $ mapTuple (convert . show) <$> v
-            IntValue        v -> strDiv $ show v
-            Lambda        str -> strDiv str
-            RationalValue   v -> strDiv $ show v
-            StringList      v -> dataFrame_ visIx $ listTable $ convert <$> v
-            StringMaybeList v -> dataFrame_ visIx $ listTable $ convert . show <$> v
-            StringStringMap v -> dataFrame_ visIx $ listTablePairs $ mapTuple convert <$> v
-            StringValue   str -> strDiv str
+            BoolValue   v -> strDiv $ show v
+            DoubleValue v -> strDiv $ show v
+            IntValue    v -> strDiv $ show v
+            StringValue v -> strDiv v
             _ -> return ()
     where
         strDiv = div_ . elemString . normalize

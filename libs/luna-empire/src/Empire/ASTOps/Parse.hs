@@ -108,6 +108,5 @@ parsePortDefault (Expression expr)            = parseExpr expr
 parsePortDefault (Constant (IntValue i))      = IR.generalize <$> IR.number (fromIntegral i)
 parsePortDefault (Constant (StringValue s))   = IR.generalize <$> IR.string s
 parsePortDefault (Constant (DoubleValue d))   = IR.generalize <$> IR.number (Lit.fromDouble d)
-parsePortDefault (Constant (RationalValue r)) = IR.generalize <$> IR.number (Lit.fromDouble $ realToFrac r)
 parsePortDefault (Constant (BoolValue b))     = IR.generalize <$> IR.cons_ (convert $ show b)
 parsePortDefault d = throwM $ PortDefaultNotConstructibleException d

@@ -77,7 +77,6 @@ import qualified Empire.Empire                      as Empire
 import           Empire.Env                         (Env)
 import qualified Empire.Env                         as Env
 import           Empire.Server.Server               (errorMessage, replyFail, replyOk, replyResult, sendToBus')
-import           Empire.Utils.TextResult            (nodeValueToText)
 import           Prologue                           hiding (Item)
 import qualified System.Log.MLogger                 as Logger
 import           ZMQ.Bus.Trans                      (BusT (..))
