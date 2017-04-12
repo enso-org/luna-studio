@@ -27,8 +27,9 @@ module.exports =
     atom.workspace.addOpener (uri) ->
 
       if path.extname(uri) is '.luna'
-        atom.workspace.getActivePane().activateItem new LunaEditorTab(uri, internal)
         internal.pushInternalEvent(event: "OpenFile", uri: uri)
+          
+        atom.workspace.getActivePane().activateItem new LunaEditorTab(uri, internal)
         atom.workspace.getActivePane().activateItem new LunaStudioTab(uri, code)
 
 
