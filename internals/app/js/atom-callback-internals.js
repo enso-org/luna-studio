@@ -66,6 +66,10 @@ module.exports = function () {
           listener(data);
       });
     },
+
+    getEvent: function(data) {
+      return data.event;
+    },
     getPath: function(data) {
       return data.uri;
     },

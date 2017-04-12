@@ -13,7 +13,7 @@ import           GHCJS.Foreign.Callback
 import           GHCJS.Marshal.Pure         (pFromJSVal)
 import qualified Data.JSString              as JSString
 import qualified Data.Text                  as Text
-import           Internal.Event.Internal (InternalEvent)
+import           Internal.Event.Internal (InternalEvent, InternalEvent(..))
 import qualified Internal.Event.Internal as Internal
 import           Internal.Event.Text (TextEvent, TextEvent (..))
 import qualified Internal.Event.Text as TextEvent
@@ -41,6 +41,9 @@ foreign import javascript safe "atomCallbackInternals.subscribeText($1)"
 foreign import javascript safe "($1).unsubscribeText()"
   unsubscribeText' :: Callback (JSVal -> IO ()) -> IO ()
 
+foreign import javascript safe "atomCallbackInternals.getEvent($1)"
+  getEvent :: JSVal -> JSVal
+
 foreign import javascript safe "atomCallbackInternals.getPath($1)"
   getPath :: JSVal -> JSVal
 
@@ -65,6 +68,12 @@ jsvalToText jsval = result where
   cursor   = pFromJSVal $ getCursor jsval
   result   = TextEvent filepath start stop text $ Just cursor
 
+jsvalToInternalEvent :: JSVal -> InternalEvent
+jsvalToInternalEvent jsval = result where
+    event = read $ pFromJSVal $ getEvent jsval
+    filepath = pFromJSVal $ getPath jsval
+    result = InternalEvent event filepath
+
 subscribeText :: (TextEvent -> IO ()) -> IO (IO ())
 subscribeText callback = do
   wrappedCallback <- syncCallback1 ContinueAsync $ callback . jsvalToText
@@ -81,6 +90,6 @@ pushCode = do
 
 subscribeEventListenerInternal :: (InternalEvent -> IO ()) -> IO (IO ())
 subscribeEventListenerInternal callback = do
-    wrappedCallback <- syncCallback1 ContinueAsync $ callback . Internal.fromString . pFromJSVal
+    wrappedCallback <- syncCallback1 ContinueAsync $ callback . jsvalToInternalEvent
     subscribeEventListenerInternal' wrappedCallback
     return $ unsubscribeEventListenerInternal' wrappedCallback >> releaseCallback wrappedCallback

@@ -21,14 +21,15 @@ module.exports =
     internal.statusListener actStatus
 
 
+                internal.pushInternalEvent(event: "SetProject", uri: rootPath)
 
 
 
     atom.workspace.addOpener (uri) ->
 
       if path.extname(uri) is '.luna'
-        internal.pushInternalEvent("OpenFile " + uri)
         atom.workspace.getActivePane().activateItem new LunaEditorTab(uri, internal)
+        internal.pushInternalEvent(event: "OpenFile", uri: uri)
         atom.workspace.getActivePane().activateItem new LunaStudioTab(uri, code)
 
 
@@ -47,7 +48,7 @@ module.exports =
             activeFilePath = atom.workspace.getActivePaneItem().buffer.file.path
         else activeFilePath = atom.workspace.getActivePane().activeItem.uri
         if path.extname(activeFilePath) is ".luna"
-            internal.pushInternalEvent("CloseFile " + activeFilePath)
+            internal.pushInternalEvent(event: "CloseFile", uri: activeFilePath)
     @subs.add atom.commands.add 'atom-workspace', 'core:save', (e)                 ->
       console.log('save')
       if atom.workspace.getActivePaneItem().buffer
@@ -56,7 +57,7 @@ module.exports =
       if path.extname(activeFilePath) is ".luna"
         e.preventDefault()
         e.stopImmediatePropagation()
-        internal.pushInternalEvent("SaveFile " + activeFilePath)
+        internal.pushInternalEvent(event: "SaveFile", uri: activeFilePath)
     @subs.add atom.commands.add '.luna-studio', 'luna-studio:cancel':       -> code.pushEvent("Shortcut Cancel")
     # camera
     @subs.add atom.commands.add '.luna-studio', 'luna-studio:center-graph': -> code.pushEvent("Shortcut CenterGraph")

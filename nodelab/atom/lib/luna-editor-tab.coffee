@@ -37,7 +37,7 @@ class LunaEditorTab extends TextEditor
     #   @getBuffer = @getBuffer() #@editor.buffer
       @getBuffer().setPath(@uri)
 
-      @internal.pushInternalEvent("GetBuffer " + @uri)
+      @internal.pushInternalEvent(event: "GetBuffer", uri: @uri)
 
       withoutTrigger = (callback) =>
           @triggerPush = false
@@ -70,17 +70,19 @@ class LunaEditorTab extends TextEditor
                   text: event.newText
                   cursor: @getBuffer().characterIndexForPosition(@.getCursorBufferPosition())
               @internal.pushText(diff)
-      @subscribe.add @buffer.onWillSave (event) => internal.pushInternalEvent("SaveFile " + uri)
-      @subscribe.add @buffer.onWillReload (event) => internal.pushInternalEvent("GetBuffer " + uri)
-      @subscribe.add atom.workspace.onDidDestroyPaneItem (event) => #console.log(event.item.buffer.file.path)
-          if event.item.buffer
-              activeFilePath = event.item.buffer.file.path
-          else activeFilePath = event.item.uri
-          if path.extname(activeFilePath) is '.luna'
-              @internal.pushInternalEvent("CloseFile " + activeFilePath)
-              # internal.statusListener isSaved
+      @subscribe.add @buffer.onWillSave (event) => internal.pushInternalEvent(event: "SaveFile", uri: @uri)
+      @subscribe.add @buffer.onWillReload (event) => internal.pushInternalEvent(event: "GetBuffer", uri: @uri)
+    #   @subscribe.add atom.workspace.onDidDestroyPaneItem (event) => #console.log(event.item.buffer.file.path)
+    #       if event.item.buffer
+    #           activeFilePath = event.item.buffer.file.path
+    #       else activeFilePath = event.item.uri
+    #       if path.extname(activeFilePath) is '.luna'
+    #           @internal.pushInternalEvent("CloseFile " + activeFilePath)
+    #           # internal.statusListener isSaved
 
 
   getTitle: -> path.basename(@uri)
+  destroy: -> console.log(event.item.buffer.file.path)
+
   deactivate: ->
     @subscribe.dispose()
