@@ -46,6 +46,7 @@ import qualified Luna.Pass.Evaluation.Interpreter  as Interpreter
 import qualified Luna.Pass.Typechecking.Typecheck  as Typecheck
 import qualified OCI.IR.Combinators                as IR
 import           OCI.Pass                          (SubPass)
+import           Luna.Pass.Resolution.Data.CurrentTarget (CurrentTarget (TgtNone))
 
 import System.IO.Unsafe
 import Data.IORef
@@ -53,7 +54,7 @@ import Data.IORef
 runTC :: Imports -> Command Graph ()
 runTC imports = do
     root <- preuse $ Graph.breadcrumbHierarchy . BH.body
-    runASTOp $ Typecheck.typecheck imports $ map IR.unsafeGeneralize $ maybeToList root
+    runASTOp $ Typecheck.typecheck TgtNone imports $ map IR.unsafeGeneralize $ maybeToList root
     return ()
 
 runInterpreter :: Imports -> Command Graph (Maybe Interpreter.LocalScope)
