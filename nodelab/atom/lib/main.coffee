@@ -47,6 +47,7 @@ module.exports =
             atom.workspace.saveActivePaneItem()
         catch error
             console.log error
+            atom.workspace.destroyActivePaneItem()
 
     @subs.add atom.commands.add 'atom-workspace', 'core:close': ->
         if atom.workspace.getActivePaneItem().buffer
