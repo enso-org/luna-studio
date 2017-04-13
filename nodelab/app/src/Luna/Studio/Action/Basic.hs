@@ -15,7 +15,6 @@ module Luna.Studio.Action.Basic
     , focusNodes
     , getScene
     , loadGraph
-    , loadProject
     , localAddConnection
     , localAddConnections
     , localAddExpressionNode
@@ -116,7 +115,7 @@ import           Luna.Studio.Action.Basic.FocusNode           (focusNode, focusN
 import           Luna.Studio.Action.Basic.Merge               (localMerge, localUnmerge)
 import           Luna.Studio.Action.Basic.ModifyCamera        (modifyCamera, resetCamera)
 import           Luna.Studio.Action.Basic.MovePort            (localMovePort, movePort)
-import           Luna.Studio.Action.Basic.ProjectManager      (loadGraph, loadProject, navigateToGraph, saveCurrentLocation)
+import           Luna.Studio.Action.Basic.ProjectManager      (loadGraph, navigateToGraph, saveCurrentLocation)
 import           Luna.Studio.Action.Basic.RemoveConnection    (localRemoveConnection, localRemoveConnections,
                                                                localRemoveConnectionsBetweenNodes, removeConnection, removeConnections,
                                                                removeConnectionsBetweenNodes)

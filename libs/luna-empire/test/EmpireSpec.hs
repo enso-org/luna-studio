@@ -43,11 +43,6 @@ import           Test.Hspec                      (Spec, around, describe, expect
 
 import           EmpireUtils
 
-outPortRef :: NodeId -> Port.OutPort -> OutPortRef
-outPortRef = OutPortRef . NodeLoc def
-
-inPortRef :: NodeId -> Port.InPort -> InPortRef
-inPortRef = InPortRef . NodeLoc def
 
 spec :: Spec
 spec = around withChannels $ parallel $ do
@@ -212,8 +207,8 @@ spec = around withChannels $ parallel $ do
             u1 <- mkUUID
             (res, st) <- runEmp env $ do
                 Graph.addNode top u1 "a: b: a + b" def
-                let GraphLocation pid lid _ = top
-                withLibrary pid lid (use Library.body)
+                let GraphLocation file _ = top
+                withLibrary file (use Library.body)
             withResult res $ \g -> do
                 (_, (extractGraph -> g')) <- runEmpire env (InterpreterEnv def def def g def) $
                     Typecheck.run emptyGraphLocation
@@ -228,8 +223,8 @@ spec = around withChannels $ parallel $ do
             u1 <- mkUUID
             (res, st) <- runEmp env $ do
                 Graph.addNode top u1 "a: b: a + b" def
-                let GraphLocation pid lid _ = top
-                withLibrary pid lid (use Library.body)
+                let GraphLocation file _ = top
+                withLibrary file (use Library.body)
             withResult res $ \g -> do
                 (_, (extractGraph -> g')) <- runEmpire env (InterpreterEnv def def def g def) $
                     Typecheck.run emptyGraphLocation
@@ -244,8 +239,8 @@ spec = around withChannels $ parallel $ do
             u1 <- mkUUID
             (res, st) <- runEmp env $ do
                 Graph.addNode top u1 "__intId" def
-                let GraphLocation pid lid _ = top
-                withLibrary pid lid (use Library.body)
+                let GraphLocation file _ = top
+                withLibrary file (use Library.body)
             withResult res $ \g -> do
                 (_, (extractGraph -> g')) <- runEmpire env (InterpreterEnv def def def g def) $
                     Typecheck.run emptyGraphLocation
@@ -267,8 +262,8 @@ spec = around withChannels $ parallel $ do
                 Graph.addNode top u1 "id" def
                 Graph.addNode top u2 "id" def
                 connectToInput top (outPortRef u1 Port.All) (inPortRef u2 (Port.Arg 0))
-                let GraphLocation pid lid _ = top
-                withLibrary pid lid (use Library.body)
+                let GraphLocation file _ = top
+                withLibrary file (use Library.body)
             withResult res $ \g -> do
                 (_, (extractGraph -> g')) <- runEmpire env (InterpreterEnv def def def g def) $
                     Typecheck.run emptyGraphLocation

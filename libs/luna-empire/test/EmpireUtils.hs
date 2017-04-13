@@ -1,6 +1,7 @@
-{-# LANGUAGE DeriveAnyClass   #-}
-{-# LANGUAGE RankNTypes       #-}
-{-# LANGUAGE TypeApplications #-}
+{-# LANGUAGE DeriveAnyClass    #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RankNTypes        #-}
+{-# LANGUAGE TypeApplications  #-}
 
 module EmpireUtils (
       runEmp
@@ -20,6 +21,8 @@ module EmpireUtils (
     , connectToInput
     , inputPorts
     , outputPorts
+    , outPortRef
+    , inPortRef
     ) where
 
 import           Control.Concurrent.STM        (atomically)
@@ -35,14 +38,14 @@ import           Empire.API.Data.Connection    (Connection)
 import           Empire.API.Data.GraphLocation (GraphLocation(..))
 import           Empire.API.Data.Port          (Port)
 import qualified Empire.API.Data.Port          as Port
-import           Empire.API.Data.PortRef       (AnyPortRef(InPortRef'), InPortRef, OutPortRef)
+import           Empire.API.Data.NodeLoc       (NodeLoc(..))
+import           Empire.API.Data.PortRef       (AnyPortRef(InPortRef'), InPortRef(..), OutPortRef(..))
 import           Empire.API.Data.Node          (Node, NodeId, NodeType(..), nodeId, nodeType, ports)
 import qualified Empire.Commands.Graph         as Graph (connect, getNodes)
 import           Empire.Commands.Library       (createLibrary, listLibraries, withLibrary)
-import           Empire.Commands.Project       (createProject, listProjects)
 import           Empire.Data.AST               ()
 import           Empire.Data.Graph             (AST, ASTState (..), Graph)
-import qualified Empire.Data.Library           as Library (body)
+import qualified Empire.Data.Library           as Library (body, path)
 import           Empire.Empire                 (CommunicationEnv (..), Empire, Env, Error, InterpreterEnv (..), runEmpire)
 import           Luna.IR                       (AnyExpr, Link')
 import           Prologue                      hiding (mapping, toList, (|>))
@@ -52,9 +55,8 @@ import           Test.Hspec                    (expectationFailure)
 
 runEmp :: CommunicationEnv -> (Given GraphLocation => Empire a) -> IO (Either Error a, Env)
 runEmp env act = runEmpire env def $ do
-    (pid, _) <- createProject Nothing "project1"
-    (lid, _) <- createLibrary pid (Just "lib1") "/libs/lib1"
-    let toLoc = GraphLocation pid lid
+    _ <- createLibrary (Just "TestFile") "TestFile" ""
+    let toLoc = GraphLocation "TestFile"
     give (toLoc $ Breadcrumb []) act
 
 evalEmp :: CommunicationEnv -> (Given GraphLocation => Empire a) -> IO (Either Error a)
@@ -63,10 +65,9 @@ evalEmp env act = fst <$> runEmp env act
 runEmp' :: CommunicationEnv -> Env -> Graph ->
               (Given GraphLocation => Empire a) -> IO (Either Error a, Env)
 runEmp' env st newGraph act = runEmpire env st $ do
-    pid <- (fst . head) <$> listProjects
-    lid <- (fst . head) <$> listLibraries pid
-    withLibrary pid lid $ Library.body .= newGraph
-    let toLoc = GraphLocation pid lid
+    lib <- head <$> listLibraries
+    withLibrary (lib ^. Library.path) $ Library.body .= newGraph
+    let toLoc = GraphLocation (lib ^. Library.path)
     give (toLoc $ Breadcrumb []) act
 
 graphIDs :: GraphLocation -> Empire [NodeId]
@@ -98,11 +99,11 @@ top = given
 
 infixl 5 |>
 (|>) :: GraphLocation -> NodeId -> GraphLocation
-(|>) (GraphLocation pid lid bc) nid = GraphLocation pid lid $ coerce $ (++ [Lambda nid]) $ coerce bc
+(|>) (GraphLocation file bc) nid = GraphLocation file $ coerce $ (++ [Lambda nid]) $ coerce bc
 
 infixl 5 |>-
 (|>-) :: GraphLocation -> (NodeId, Int) -> GraphLocation
-(|>-) (GraphLocation pid lid bc) it = GraphLocation pid lid $ Breadcrumb $ (++ [uncurry Arg it]) $ coerce bc
+(|>-) (GraphLocation file bc) it = GraphLocation file $ Breadcrumb $ (++ [uncurry Arg it]) $ coerce bc
 
 withChannels :: (CommunicationEnv -> IO a) -> IO a
 withChannels = bracket createChannels (const $ return ())
@@ -110,7 +111,7 @@ withChannels = bracket createChannels (const $ return ())
         createChannels = atomically $ CommunicationEnv <$> newTChan <*> newTChan
 
 emptyGraphLocation :: GraphLocation
-emptyGraphLocation = GraphLocation nil 0 $ Breadcrumb []
+emptyGraphLocation = GraphLocation "" $ Breadcrumb []
 
 mkUUID :: IO UUID
 mkUUID = nextRandom
@@ -123,3 +124,9 @@ inputPorts node = Map.elems $ Map.filter (Port.isInPort . view Port.portId) $ no
 
 outputPorts :: Node -> [Port]
 outputPorts node = Map.elems $ Map.filter (Port.isOutPort . view Port.portId) $ node ^. ports
+
+outPortRef :: NodeId -> Port.OutPort -> OutPortRef
+outPortRef = OutPortRef . NodeLoc def
+
+inPortRef :: NodeId -> Port.InPort -> InPortRef
+inPortRef = InPortRef . NodeLoc def

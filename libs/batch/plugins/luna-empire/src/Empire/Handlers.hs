@@ -49,12 +49,13 @@ handlersMap = Map.fromList
     , makeHandler Project.handleImportProject
     , makeHandler Project.handleListProjects
     , makeHandler Project.handleOpenProject
+    , makeHandler Atom.handleIsSaved
     , makeHandler Atom.handleSetProject
     , makeHandler Atom.handleOpenFile
     , makeHandler Atom.handleSaveFile
     , makeHandler Atom.handleCloseFile
-    , makeHandler Atom.handleGetBuffer
-    , makeHandler Atom.handleSubstitute
+    , makeHandler Graph.handleGetBuffer
+    , makeHandler Graph.handleSubstitute
     ]
 
 makeHandler :: forall a. (Topic.MessageTopic a, Bin.Binary a) => (a -> StateT Env BusT ()) -> (String, Handler)

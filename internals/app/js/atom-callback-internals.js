@@ -12,6 +12,7 @@ module.exports = function () {
     codeListener: [],
     eventListenerInternal: [],
     textListener: [],
+    statusListener: [],
   };
 
   return {
@@ -27,9 +28,18 @@ module.exports = function () {
     bufferListener: function (listener) {
       listeners.bufferListener.push(listener);
     },
-    pushBuffer: function(data) {
+    pushBuffer: function(data1, data2) {
       listeners.bufferListener.forEach(function(listener) {
-        listener(data);
+        listener(data1, data2);
+      });
+    },
+
+    statusListener: function (listener) {
+      listeners.statusListener.push(listener);
+    },
+    pushStatus: function(data1, data2, data3) {
+      listeners.statusListener.forEach(function(listener) {
+        listener(data1, data2, data3);
       });
     },
 
@@ -55,6 +65,10 @@ module.exports = function () {
       listeners.textListener.forEach(function(listener) {
           listener(data);
       });
+    },
+
+    getEvent: function(data) {
+      return data.event;
     },
     getPath: function(data) {
       return data.uri;
