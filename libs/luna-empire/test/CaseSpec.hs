@@ -1,46 +1,42 @@
-{-# LANGUAGE OverloadedStrings     #-}
-{-# LANGUAGE ViewPatterns          #-}
+{-# LANGUAGE OverloadedStrings #-}
 
 module CaseSpec (spec) where
 
-import           Data.Foldable                 (toList)
-import           Data.List                     (find, stripPrefix)
-import qualified Data.Map                      as Map
-import qualified Empire.API.Data.Graph         as Graph
-import qualified Empire.Data.Graph             as Graph (breadcrumbHierarchy)
-import           Empire.API.Data.GraphLocation (GraphLocation(..))
-import qualified Empire.API.Data.Node          as Node (NodeType(ExpressionNode, InputEdge, OutputEdge),
-                                                        canEnter, expression, name, nodeId, _InputEdge, nodeType, ports)
-import           Empire.API.Data.NodeMeta      (NodeMeta(..))
-import qualified Empire.API.Data.Port          as Port
-import           Empire.API.Data.NodeLoc       (NodeLoc (..))
-import           Empire.API.Data.PortDefault   (PortDefault (Constant, Expression), Value(IntValue))
-import           Empire.API.Data.PortRef       (InPortRef (..), OutPortRef (..), AnyPortRef(..))
-import           Empire.API.Data.TypeRep       (TypeRep(TCons, TStar, TLam, TVar))
-import           Empire.ASTOp                  (runASTOp)
-import qualified Empire.ASTOps.Deconstruct     as ASTDeconstruct
-import qualified Empire.ASTOps.Parse           as Parser
-import           Empire.ASTOps.Print           (printExpression)
-import qualified Empire.ASTOps.Read            as ASTRead
-import qualified Empire.Commands.AST           as AST (isTrivialLambda, dumpGraphViz)
-import qualified Empire.Commands.Graph         as Graph (addNode, connect, getGraph, getNodes,
-                                                         getConnections, removeNodes, withGraph,
-                                                         renameNode, disconnect, addPort, movePort,
-                                                         removePort, renamePort)
+import           Data.Foldable                   (toList)
+import           Data.List                       (find, stripPrefix)
+import qualified Data.Map                        as Map
+import qualified Empire.API.Data.Graph           as Graph
+import           Empire.API.Data.GraphLocation   (GraphLocation (..))
+import qualified Empire.API.Data.Node            as Node (NodeType (ExpressionNode, InputEdge, OutputEdge), canEnter, expression, name,
+                                                          nodeId, nodeType, ports, _InputEdge)
+import           Empire.API.Data.NodeLoc         (NodeLoc (..))
+import           Empire.API.Data.NodeMeta        (NodeMeta (..))
+import qualified Empire.API.Data.Port            as Port
+import           Empire.API.Data.PortDefault     (PortDefault (Constant, Expression), PortValue (IntValue))
+import           Empire.API.Data.PortRef         (AnyPortRef (..), InPortRef (..), OutPortRef (..))
+import           Empire.API.Data.TypeRep         (TypeRep (TCons, TLam, TStar, TVar))
+import           Empire.ASTOp                    (runASTOp)
+import qualified Empire.ASTOps.Deconstruct       as ASTDeconstruct
+import qualified Empire.ASTOps.Parse             as Parser
+import           Empire.ASTOps.Print             (printExpression)
+import qualified Empire.ASTOps.Read              as ASTRead
+import qualified Empire.Commands.AST             as AST (dumpGraphViz, isTrivialLambda)
+import qualified Empire.Commands.Graph           as Graph (addNode, addPort, connect, disconnect, getConnections, getGraph, getNodes,
+                                                           movePort, removeNodes, removePort, renameNode, renamePort, withGraph)
 import qualified Empire.Commands.GraphBuilder    as GraphBuilder
 import           Empire.Commands.Library         (withLibrary)
 import qualified Empire.Commands.Typecheck       as Typecheck (run)
-import           Empire.Data.Graph               (breadcrumbHierarchy)
-import qualified Empire.Data.Library             as Library (body)
 import           Empire.Data.BreadcrumbHierarchy (NodeIDTarget (..))
 import qualified Empire.Data.BreadcrumbHierarchy as BH
-import           Empire.Empire                   (InterpreterEnv(..))
-import           Prologue                        hiding (mapping, toList, (|>))
+import           Empire.Data.Graph               (breadcrumbHierarchy)
+import qualified Empire.Data.Graph               as Graph (breadcrumbHierarchy)
+import qualified Empire.Data.Library             as Library (body)
+import           Empire.Empire                   (InterpreterEnv (..))
 import           OCI.IR.Class                    (exprs, links)
+import           Prologue                        hiding (mapping, toList, (|>))
 
-import           Test.Hspec (Spec, around, describe, expectationFailure, it, parallel,
-                             shouldBe, shouldContain, shouldSatisfy, shouldMatchList,
-                             shouldStartWith, xit, xdescribe)
+import           Test.Hspec                      (Spec, around, describe, expectationFailure, it, parallel, shouldBe, shouldContain,
+                                                  shouldMatchList, shouldSatisfy, shouldStartWith, xdescribe, xit)
 
 import           EmpireUtils
 

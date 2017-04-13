@@ -29,8 +29,6 @@ import qualified Empire.ASTOps.Parse               as Parser
 import qualified Empire.ASTOps.Print               as Printer
 import qualified Empire.ASTOps.Read                as ASTRead
 
-import           Empire.Utils.TextResult           (nodeValueToText)
-
 import qualified Luna.IR as IR
 import           Luna.IR.Term.Uni
 import qualified OCI.IR.Repr.Vis as Vis

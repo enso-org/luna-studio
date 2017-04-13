@@ -148,8 +148,10 @@ instance FromJSON PortRef.InPortRef
 instance ToJSON Connection.Connection
 instance FromJSON Connection.Connection
 
-instance ToJSON PortDefault.Value
-instance FromJSON PortDefault.Value
+instance ToJSON PortDefault.VisualizationValue
+instance FromJSON PortDefault.VisualizationValue
+instance ToJSON PortDefault.PortValue
+instance FromJSON PortDefault.PortValue
 instance ToJSON PortDefault.PortDefault
 instance FromJSON PortDefault.PortDefault
 

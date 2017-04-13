@@ -17,7 +17,7 @@ import           Prologue
 
 type NodeId = UUID
 
-data NodeType = ExpressionNode { _expression        :: Text }
+data NodeType = ExpressionNode { _expression     :: Text }
               | InputEdge      { _inputEdgePorts :: [OutPortTree Port] }
               | OutputEdge
               deriving (Generic, Eq, NFData, Show)

@@ -35,7 +35,7 @@ import           Empire.API.Data.NodeMeta           (NodeMeta)
 import           Empire.API.Data.NodeLoc            (NodeLoc (..))
 import qualified Empire.API.Data.NodeSearcher       as NS
 import           Empire.API.Data.Port               (InPort (..), OutPort (..), Port (..), PortId (..), PortState (..), getPortNumber)
-import           Empire.API.Data.PortDefault        (Value (..))
+import           Empire.API.Data.PortDefault        (PortValue (..))
 import           Empire.API.Data.PortRef            (InPortRef (..), OutPortRef (..))
 import           Empire.API.Data.PortRef            as PortRef
 import           Empire.API.Data.TypeRep            (TypeRep (TStar))
@@ -51,6 +51,7 @@ import qualified Empire.API.Graph.DumpGraphViz      as DumpGraphViz
 import qualified Empire.API.Graph.GetProgram        as GetProgram
 import qualified Empire.API.Graph.GetSubgraphs      as GetSubgraphs
 import qualified Empire.API.Graph.MovePort          as MovePort
+import           Empire.API.Graph.NodeResultUpdate  (NodeValue(NodeValue))
 import qualified Empire.API.Graph.NodeResultUpdate  as NodeResultUpdate
 import qualified Empire.API.Graph.NodesUpdate       as NodesUpdate
 import qualified Empire.API.Graph.RemoveConnection  as RemoveConnection
@@ -79,7 +80,6 @@ import qualified Empire.Empire                      as Empire
 import           Empire.Env                         (Env)
 import qualified Empire.Env                         as Env
 import           Empire.Server.Server               (errorMessage, replyFail, replyOk, replyResult, sendToBus')
-import           Empire.Utils.TextResult            (nodeValueToText)
 import           Prologue                           hiding (Item)
 import qualified System.Log.MLogger                 as Logger
 import           ZMQ.Bus.Trans                      (BusT (..))
@@ -97,8 +97,8 @@ notifyCodeUpdate location = do
         Left err -> logger Logger.error $ errorMessage <> err
         Right code -> sendToBus' $ CodeUpdate.Update location $ Text.pack code
 
-notifyNodeResultUpdate :: GraphLocation -> NodeId -> [Value] -> Text -> StateT Env BusT ()
-notifyNodeResultUpdate location nodeId values name = sendToBus' $ NodeResultUpdate.Update location nodeId (NodeResultUpdate.Value name values) 42
+notifyNodeResultUpdate :: GraphLocation -> NodeId -> [PortValue] -> Text -> StateT Env BusT ()
+notifyNodeResultUpdate location nodeId values name = sendToBus' $ NodeResultUpdate.Update location nodeId (NodeValue name values) 42
 -- FIXME: report correct execution time
 
 saveCurrentProject :: GraphLocation -> StateT Env BusT ()
@@ -364,20 +364,21 @@ stdlibMethods :: [String]
 stdlibMethods = ["mockMethod"]
 
 mockNSData :: NS.Items Node
-mockNSData = Map.fromList $ functionsList <> modulesList where
-    nodeSearcherSymbols = words "mockNode1 mockNode2 mockNode3 mockNode4"
-    (methods, functions) = partition (elem '.') nodeSearcherSymbols
-    functionsList = functionEntry <$> functions
-    functionEntry function = (convert function, NS.Element $ mockNode "mockNode")
-    modulesMethodsMap = foldl updateModulesMethodsMap Map.empty methods
-    updateModulesMethodsMap map el = Map.insert moduleName methodNames map where
-        (moduleName, dotMethodName) = break (== '.') el
-        methodName = tail dotMethodName
-        methodNames = methodName : (fromMaybe [] $ Map.lookup moduleName map)
-    modulesList = (uncurry moduleEntry) <$> Map.toList modulesMethodsMap
-    moduleEntry moduleName methodList = (convert moduleName, NS.Group (Map.fromList $ functionEntry <$> methodList) $ mockNode "mockGroupNode")
-    mockNode name = Node (fromJust $ UUID.fromString "094f9784-3f07-40a1-84df-f9cf08679a27") name (Node.ExpressionNode name) False mockPorts def def
-    mockPorts = Map.fromList [ (InPortId  Self  , Port (InPortId  Self)    "self" TStar NotConnected)
-                             , (InPortId (Arg 0), Port (InPortId (Arg 0)) "arg 0" TStar NotConnected)
-                             , (OutPortId All   , Port (OutPortId All)   "Output" TStar NotConnected)
-                             ]
+mockNSData = Map.empty
+-- mockNSData = Map.fromList $ functionsList <> modulesList where
+--     nodeSearcherSymbols = words "mockNode1 mockNode2 mockNode3 mockNode4"
+--     (methods, functions) = partition (elem '.') nodeSearcherSymbols
+--     functionsList = functionEntry <$> functions
+--     functionEntry function = (convert function, NS.Element $ mockNode "mockNode")
+--     modulesMethodsMap = foldl updateModulesMethodsMap Map.empty methods
+--     updateModulesMethodsMap map el = Map.insert moduleName methodNames map where
+--         (moduleName, dotMethodName) = break (== '.') el
+--         methodName = tail dotMethodName
+--         methodNames = methodName : (fromMaybe [] $ Map.lookup moduleName map)
+--     modulesList = (uncurry moduleEntry) <$> Map.toList modulesMethodsMap
+--     moduleEntry moduleName methodList = (convert moduleName, NS.Group (Map.fromList $ functionEntry <$> methodList) $ mockNode "mockGroupNode")
+--     mockNode name = Node (fromJust $ UUID.fromString "094f9784-3f07-40a1-84df-f9cf08679a27") name (Node.ExpressionNode name) False mockPorts def def
+--     mockPorts = Map.fromList [ (InPortId  Self  , Port (InPortId  Self)    "self" TStar NotConnected)
+--                              , (InPortId (Arg 0), Port (InPortId (Arg 0)) "arg 0" TStar NotConnected)
+--                              , (OutPortId All   , Port (OutPortId All)   "Output" TStar NotConnected)
+--                              ]

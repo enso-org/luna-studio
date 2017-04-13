@@ -18,7 +18,7 @@ import qualified Empire.API.Data.Node              as Node
 import qualified Empire.API.Data.NodeMeta          as NodeMeta
 import           Empire.API.Data.NodeLoc           (NodeLoc (..))
 import           Empire.API.Data.Port              (InPort (..), OutPort)
-import           Empire.API.Data.PortDefault       (PortDefault (Constant), Value (DoubleValue))
+import           Empire.API.Data.PortDefault       (PortDefault (Constant), PortValue (DoubleValue))
 import           Empire.API.Data.PortRef           (AnyPortRef (..), InPortRef (..), OutPortRef (..))
 import           Empire.API.Data.Project           (ProjectId)
 import qualified Empire.API.Graph.AddConnection    as AddConnection

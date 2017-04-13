@@ -7,7 +7,7 @@ module Luna.Studio.Action.Port.Control
     ) where
 
 import           Data.ScreenPosition                 (ScreenPosition, x)
-import           Empire.API.Data.PortDefault         (PortDefault (Constant), Value (DoubleValue, IntValue))
+import           Empire.API.Data.PortDefault         (PortDefault (Constant), PortValue (DoubleValue, IntValue))
 import           Empire.API.Data.PortRef             (AnyPortRef)
 import qualified JS.UI                               as JS
 import           Luna.Studio.Action.Basic            (localSetPortDefault)

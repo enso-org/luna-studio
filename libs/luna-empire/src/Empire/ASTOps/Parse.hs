@@ -30,7 +30,7 @@ import           Empire.Data.Graph               (Graph)
 import           Empire.Data.Layers              (CodeMarkers)
 import           Empire.Data.Parser              (ParserPass)
 
-import           Empire.API.Data.PortDefault     (PortDefault (..), Value (..))
+import           Empire.API.Data.PortDefault     (PortDefault (..), PortValue (..))
 
 import           Data.TypeDesc                   (getTypeDesc)
 import qualified Luna.IR                         as IR
@@ -152,10 +152,9 @@ instance Exception PortDefaultNotConstructibleException where
     fromException = astExceptionFromException
 
 parsePortDefault :: ASTOp m => PortDefault -> m NodeRef
-parsePortDefault (Expression expr)            = parseExpr expr
-parsePortDefault (Constant (IntValue i))      = IR.generalize <$> IR.number (fromIntegral i)
-parsePortDefault (Constant (StringValue s))   = IR.generalize <$> IR.string s
-parsePortDefault (Constant (DoubleValue d))   = IR.generalize <$> IR.number (Lit.fromDouble d)
-parsePortDefault (Constant (RationalValue r)) = IR.generalize <$> IR.number (Lit.fromDouble $ realToFrac r)
-parsePortDefault (Constant (BoolValue b))     = IR.generalize <$> IR.cons_ (convert $ show b)
+parsePortDefault (Expression expr)          = parseExpr expr
+parsePortDefault (Constant (IntValue    i)) = IR.generalize <$> IR.number (fromIntegral i)
+parsePortDefault (Constant (StringValue s)) = IR.generalize <$> IR.string s
+parsePortDefault (Constant (DoubleValue d)) = IR.generalize <$> IR.number (Lit.fromDouble d)
+parsePortDefault (Constant (BoolValue   b)) = IR.generalize <$> IR.cons_ (convert $ show b)
 parsePortDefault d = throwM $ PortDefaultNotConstructibleException d
