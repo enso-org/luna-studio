@@ -20,7 +20,7 @@ loadGraph location = do
     destroyGraph
     workspace . currentLocation .= location
     saveCurrentLocation
-    -- Batch.getProgram
+    Batch.getProgram
 
 navigateToGraph :: GraphLocation -> Command State ()
 navigateToGraph location = do
