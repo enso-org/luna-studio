@@ -348,22 +348,17 @@ connectNoTC loc outPort anyPort = do
         Publisher.notifyNodeUpdate loc n
     return connection
 
-getPortDefault :: GraphLocation -> AnyPortRef -> Empire PortDefault
-getPortDefault loc (InPortRef'  (InPortRef  _ (Self : _)))                   = throwError "Cannot set default value on self port"
-getPortDefault loc (OutPortRef' (OutPortRef (NodeLoc _ nodeId) _))           = withGraph loc $ runASTOp $ GraphBuilder.getDefault =<< GraphUtils.getASTTarget nodeId
-getPortDefault loc (InPortRef'  (InPortRef  (NodeLoc _ nodeId) (Arg x : _))) = withGraph loc $ runASTOp $ flip GraphBuilder.getInPortDefault x =<< GraphUtils.getASTTarget nodeId
+getPortDefault :: GraphLocation -> InPortRef -> Empire PortDefault
+getPortDefault loc (InPortRef  _ (Self : _))                   = throwError "Cannot set default value on self port"
+getPortDefault loc (InPortRef  (NodeLoc _ nodeId) (Arg x : _)) = withGraph loc $ runASTOp $ flip GraphBuilder.getInPortDefault x =<< GraphUtils.getASTTarget nodeId
 
-setPortDefault :: GraphLocation -> AnyPortRef -> PortDefault -> Empire ()
-setPortDefault loc portRef val = withTC loc False $ runASTOp $ do
+setPortDefault :: GraphLocation -> InPortRef -> PortDefault -> Empire ()
+setPortDefault loc (InPortRef (NodeLoc _ nodeId) port) val = withTC loc False $ runASTOp $ do
     parsed <- ASTParse.parsePortDefault val
-    (nodeId, newRef) <- case portRef of
-        InPortRef' (InPortRef (NodeLoc _ nodeId) port) -> do
-            ref <- GraphUtils.getASTTarget nodeId
-            newRef <- case port of
-                [Self]    -> ASTBuilder.makeAccessor parsed ref
-                [Arg num] -> ASTBuilder.applyFunction ref parsed num
-            return (nodeId, newRef)
-        OutPortRef' (OutPortRef (NodeLoc _ nodeId) _) -> return (nodeId, parsed)
+    ref <- GraphUtils.getASTTarget nodeId
+    newRef <- case port of
+        [Self]    -> ASTBuilder.makeAccessor parsed ref
+        [Arg num] -> ASTBuilder.applyFunction ref parsed num
     GraphUtils.rewireNode nodeId newRef
 
 disconnect :: GraphLocation -> InPortRef -> Empire ()
