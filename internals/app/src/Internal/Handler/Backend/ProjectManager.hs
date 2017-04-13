@@ -23,11 +23,11 @@ import           Data.Char                       (toUpper)
 
 handle :: Event -> Maybe (Command State ())
 
-handle (Event.Atom (InternalEvent SetProject path)) = Just $ BatchCmd.setProject path
-handle (Event.Atom (InternalEvent CloseFile path))  = Just $ BatchCmd.closeFile path
-handle (Event.Atom (InternalEvent OpenFile path))   = Just $ BatchCmd.openFile path
-handle (Event.Atom (InternalEvent SaveFile path))   = Just $ BatchCmd.saveFile path
-handle (Event.Atom (InternalEvent IsSaved path))    = Just $ BatchCmd.isSaved path
+handle (Event.Atom (InternalEvent SetProject path _)) = Just $ BatchCmd.setProject path
+handle (Event.Atom (InternalEvent CloseFile path _))  = Just $ BatchCmd.closeFile path
+handle (Event.Atom (InternalEvent OpenFile path _))   = Just $ BatchCmd.openFile path
+handle (Event.Atom (InternalEvent SaveFile path _))   = Just $ BatchCmd.saveFile path
+handle (Event.Atom (InternalEvent IsSaved path _))    = Just $ BatchCmd.isSaved path
 
 handle (Batch (Batch.ProjectSet response))    = Just $ handleResponse response doNothing doNothing
 handle (Batch (Batch.FileOpened response))    = Just $ handleResponse response success doNothing where

@@ -37,7 +37,7 @@ withUUID act = do
 closeFile :: FilePath -> Command State ()
 closeFile = withUUID . BatchCmd.closeFile
 
-getBuffer :: FilePath -> Maybe (Int, Int) -> Command State ()
+getBuffer :: FilePath -> Maybe [(Int, Int)] -> Command State ()
 getBuffer = withUUID .: BatchCmd.getBuffer
 
 openFile :: FilePath -> Command State ()

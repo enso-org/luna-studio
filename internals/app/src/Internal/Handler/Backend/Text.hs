@@ -24,7 +24,8 @@ import           Internal.Handler.Backend.Common     (doNothing, handleResponse)
 
 handle :: Event.Event -> Maybe (Command State ())
 handle (Event.Text (TextEvent filepath start stop text cursor)) = Just $ putStrLn "textEvent"  >>  ActBatch.substitute filepath start stop text cursor >> putStrLn "textEvent after send req"
-handle (Event.Atom (InternalEvent GetBuffer filepath)) = Just $ putStrLn "getBuffer" >> ActBatch.getBuffer filepath Nothing
+handle (Event.Atom (InternalEvent GetBuffer filepath Nothing)) = Just $ putStrLn "getBuffer" >> ActBatch.getBuffer filepath Nothing
+handle (Event.Atom (InternalEvent Copy filepath selections)) = Just $ putStrLn "getBuffer" >> ActBatch.getBuffer filepath selections
 
 handle (Event.Batch (SubstituteResponse response)) = Just $ handleResponse response doNothing doNothing
 handle (Event.Batch (BufferGetResponse  response)) = Just $ handleResponse response success doNothing where

@@ -30,7 +30,7 @@ import Data.Text (unpack, pack)
 closeFile :: FilePath -> UUID -> Maybe UUID -> IO ()
 closeFile path uuid guiID = sendRequest $ Message uuid guiID $ CloseFile.Request path
 
-getBuffer :: FilePath -> Maybe (Int, Int) -> UUID -> Maybe UUID -> IO ()
+getBuffer :: FilePath -> Maybe [(Int, Int)] -> UUID -> Maybe UUID -> IO ()
 getBuffer path maybeSpan uuid guiID = sendRequest $ Message uuid guiID $ GetBuffer.Request path maybeSpan
 
 openFile :: FilePath -> UUID -> Maybe UUID -> IO ()

@@ -11,6 +11,8 @@ module JS.Atom
 
 import           GHCJS.Foreign.Callback
 import           GHCJS.Marshal.Pure         (pFromJSVal)
+import qualified GHCJS.Marshal.Internal as GHCJSInternal
+import           GHCJS.Prim         (fromJSArray)
 import qualified Data.JSString              as JSString
 import qualified Data.Text                  as Text
 import           Internal.Event.Internal (InternalEvent, InternalEvent(..))
@@ -59,6 +61,9 @@ foreign import javascript safe "atomCallbackInternals.getText($1)"
 foreign import javascript safe "atomCallbackInternals.getCursor($1)"
   getCursor :: JSVal -> JSVal
 
+foreign import javascript safe "atomCallbackInternals.getSelections($1)"
+  getSelections :: JSVal -> JSVal
+
 jsvalToText :: JSVal -> TextEvent
 jsvalToText jsval = result where
   filepath = pFromJSVal $ getPath jsval
@@ -72,7 +77,8 @@ jsvalToInternalEvent :: JSVal -> InternalEvent
 jsvalToInternalEvent jsval = result where
     event = read $ pFromJSVal $ getEvent jsval
     filepath = pFromJSVal $ getPath jsval
-    result = InternalEvent event filepath
+    -- maybeSelections = GHCJSInternal.fromJSVal $ getSelections jsval
+    result = InternalEvent event filepath Nothing
 
 subscribeText :: (TextEvent -> IO ()) -> IO (IO ())
 subscribeText callback = do

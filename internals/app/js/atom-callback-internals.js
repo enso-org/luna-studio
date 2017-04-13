@@ -85,6 +85,10 @@ module.exports = function () {
     getCursor: function(data) {
       return data.cursor;
     },
-
+    getSelections: function(data) {
+      if(data.hasOwnProperty(selections)) {
+        return data.selections;
+      };
+    },
   };
 };
