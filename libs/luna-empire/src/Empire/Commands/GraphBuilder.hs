@@ -311,7 +311,7 @@ buildArgPorts :: ASTOp m => NodeRef -> m [InPort]
 buildArgPorts ref = do
     typed <- extractPortInfo ref
     names <- getPortsNames ref
-    let portsTypes = fmap fst typed ++ replicate (length names - length typed) TStar
+    let portsTypes = fmap fst typed ++ List.replicate (length names - length typed) TStar
         psCons = zipWith3 Port
                           (pure . Arg <$> [(0::Int)..])
                           (names ++ (("arg" ++) . show <$> [0..]))
