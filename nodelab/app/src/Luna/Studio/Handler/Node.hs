@@ -21,7 +21,7 @@ import           Luna.Studio.React.Model.Node.ExpressionNode (NodeLoc)
 import qualified Luna.Studio.React.Model.Node.ExpressionNode as Node
 import           Luna.Studio.State.Action                    (Action (continue))
 import           Luna.Studio.State.Global                    (State)
-import           React.Flux                                  (MouseEvent, mouseCtrlKey, mouseMetaKey)
+import           React.Flux                                  (MouseEvent, mouseButton, mouseCtrlKey, mouseMetaKey)
 
 
 handle :: Event -> Maybe (Command State ())
@@ -63,9 +63,11 @@ handleMouseDown evt nl =
         shouldSnap    = Mouse.withoutMods evt Mouse.leftButton
 
 handleMouseMove :: MouseEvent -> Command State ()
-handleMouseMove evt = do
-    mousePosition evt >>= continue . PortControl.moveSlider
-    continue . Node.nodesDrag evt $ Mouse.withoutMods evt Mouse.leftButton
+handleMouseMove evt = if mouseButton evt == Mouse.leftButton
+    then do
+        mousePosition evt >>= continue . PortControl.moveSlider
+        continue . Node.nodesDrag evt $ Mouse.withoutMods evt Mouse.leftButton
+    else handleMouseUp evt
 
 handleMouseUp :: MouseEvent -> Command State ()
 handleMouseUp evt = do
