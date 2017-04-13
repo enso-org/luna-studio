@@ -320,7 +320,7 @@ alignSubgraph pos s = case getSubgraphMinimumRectangle s of
     Nothing                     -> return pos
     Just (leftTop, rightBottom) -> do
         moveSubgraph (pos ^. vector - leftTop ^. vector) s
-        return $ pos & y %~ (+ (rightBottom ^. y - leftTop ^. y))
+        return $ pos & y %~ (+ (rightBottom ^. y - leftTop ^. y + gapBetweenNodes))
 
 moveSubgraph :: Vector2 Double -> Subgraph -> AutolayoutState ()
 moveSubgraph shift s = mapM_ moveNode $ s ^. nodeLocs where
