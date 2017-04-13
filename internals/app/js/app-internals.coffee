@@ -1,11 +1,9 @@
 $$              = require('./common')
 config          = require('./config')
-# websocket       = require('./websocket')
-atomCallback    = require('./atom-callback2')
+atomCallbackInternals    = require('./atom-callback-internals')
 GoogleAnalytics = require('./GoogleAnalytics')
 
 
-# $$.websocket = websocket()
 
 start = ->
   $(document).ready ->
@@ -18,6 +16,5 @@ start = ->
 
 module.exports =
   start: start
-  # websocket: $$.websocket
 
 window.processedEvents = []

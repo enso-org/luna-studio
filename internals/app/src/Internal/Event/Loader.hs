@@ -1,6 +1,6 @@
 module Internal.Event.Loader where
 
--- import           JS.Atom                 (pushNotification)
+import           JS.Atom                 (pushStatus)
 import           JS.Config               (getBackendAddress)
 import           JS.WebSocket            (WebSocket)
 import qualified JS.WebSocket            as WS
@@ -14,9 +14,10 @@ withActiveConnection action = do
     socket <- WS.getWebSocket
     isOpen <- WS.isOpen socket
     let onConnectionClosed = putStrLn "ConnectionClosed."
-    if isOpen then action socket
+    if isOpen then do
+        action socket >> pushStatus (convert "activate") (convert "") (convert "")
     else do
-        void $ WS.onOpen  socket $ action socket
+        void $ WS.onOpen socket $ action socket >> pushStatus (convert "activate") (convert "") (convert "")
         void $ WS.onClose socket $ const onConnectionClosed
         void $ WS.onError socket onConnectionClosed
         void $ WS.connect socket addr

@@ -50,8 +50,7 @@ import           UndoState                     (Undo (..), UndoMessage (..), Und
 
 generateGraphLocation ::  IO GraphLocation
 generateGraphLocation = do
-    uuid1 <- UUID.nextRandom
-    return $ GraphLocation uuid1 0 $ Breadcrumb []
+    return $ GraphLocation "file" $ Breadcrumb []
 
 generateNode :: IO Node.Node
 generateNode = do

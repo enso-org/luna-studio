@@ -52,7 +52,7 @@ run cmd = case cmd of
     Cmd.Save projectIdStr outFile -> do
       endPoints <- EP.clientFromConfig <$> Config.load
       let projectId = fromMaybe (UUID.nil) (UUID.fromString projectIdStr)
-          gl = GraphLocation projectId 0 (Breadcrumb [])
+          gl = GraphLocation $notImplemented (Breadcrumb [])
       r <- ResultSaver.save endPoints gl
       case r of
           Left err   -> logger criticalFail err

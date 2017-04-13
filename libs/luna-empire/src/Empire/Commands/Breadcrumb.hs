@@ -20,8 +20,8 @@ import           Empire.API.Data.Project         (ProjectId)
 import           Empire.Commands.Library         (withLibrary)
 import           Empire.Empire                   (Command, Empire, runEmpire)
 
-withBreadcrumb :: ProjectId -> LibraryId -> Breadcrumb BreadcrumbItem -> Command Graph.Graph a -> Empire a
-withBreadcrumb pid lid breadcrumb act = withLibrary pid lid $ zoom Library.body $ zoomBreadcrumb breadcrumb act
+withBreadcrumb :: FilePath -> Breadcrumb BreadcrumbItem -> Command Graph.Graph a -> Empire a
+withBreadcrumb file breadcrumb act = withLibrary file $ zoom Library.body $ zoomBreadcrumb breadcrumb act
 
 zoomBreadcrumb :: Breadcrumb BreadcrumbItem -> Command Graph.Graph a -> Command Graph.Graph a
 zoomBreadcrumb breadcrumb act = do

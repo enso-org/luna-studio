@@ -3,6 +3,7 @@
 module JS.Atom
     ( pushCode
     , pushBuffer
+    , pushStatus
     , subscribeText
     , subscribeEventListenerInternal
     ) where
@@ -12,45 +13,50 @@ import           GHCJS.Foreign.Callback
 import           GHCJS.Marshal.Pure         (pFromJSVal)
 import qualified Data.JSString              as JSString
 import qualified Data.Text                  as Text
-import           Internal.Event.Internal (InternalEvent)
+import           Internal.Event.Internal (InternalEvent, InternalEvent(..))
 import qualified Internal.Event.Internal as Internal
 import           Internal.Event.Text (TextEvent, TextEvent (..))
 import qualified Internal.Event.Text as TextEvent
 import           Internal.Prelude
 
 
-foreign import javascript safe "atomCallback2.pushCode($1, $2, $3, $4)"
+foreign import javascript safe "atomCallbackInternals.pushCode($1, $2, $3, $4)"
     pushCode' :: JSString -> Int -> Int -> JSString -> IO ()
 
-foreign import javascript safe "atomCallback2.pushBuffer($1)"
+foreign import javascript safe "atomCallbackInternals.pushBuffer($1, $2)"
     pushBuffer :: JSString -> JSString -> IO ()
 
+foreign import javascript safe "atomCallbackInternals.pushStatus($1, $2, $3)"
+    pushStatus :: JSString -> JSString -> JSString -> IO ()
 
-foreign import javascript safe "atomCallback2.subscribeEventListenerInternal($1)"
+foreign import javascript safe "atomCallbackInternals.subscribeEventListenerInternal($1)"
   subscribeEventListenerInternal' :: Callback (JSVal -> IO ()) -> IO ()
 
 foreign import javascript safe "($1).unsubscribeEventListenerInternal()"
   unsubscribeEventListenerInternal' :: Callback (JSVal -> IO ()) -> IO ()
 
-foreign import javascript safe "atomCallback2.subscribeText($1)"
+foreign import javascript safe "atomCallbackInternals.subscribeText($1)"
   subscribeText' :: Callback (JSVal -> IO ()) -> IO ()
 
 foreign import javascript safe "($1).unsubscribeText()"
   unsubscribeText' :: Callback (JSVal -> IO ()) -> IO ()
 
-foreign import javascript safe "atomCallback2.getPath($1)"
+foreign import javascript safe "atomCallbackInternals.getEvent($1)"
+  getEvent :: JSVal -> JSVal
+
+foreign import javascript safe "atomCallbackInternals.getPath($1)"
   getPath :: JSVal -> JSVal
 
-foreign import javascript safe "atomCallback2.getStart($1)"
+foreign import javascript safe "atomCallbackInternals.getStart($1)"
   getStart :: JSVal -> JSVal
 
-foreign import javascript safe "atomCallback2.getStop($1)"
+foreign import javascript safe "atomCallbackInternals.getStop($1)"
   getStop :: JSVal -> JSVal
 
-foreign import javascript safe "atomCallback2.getText($1)"
+foreign import javascript safe "atomCallbackInternals.getText($1)"
   getText :: JSVal -> JSVal
 
-foreign import javascript safe "atomCallback2.getCursor($1)"
+foreign import javascript safe "atomCallbackInternals.getCursor($1)"
   getCursor :: JSVal -> JSVal
 
 jsvalToText :: JSVal -> TextEvent
@@ -61,6 +67,12 @@ jsvalToText jsval = result where
   text     = pFromJSVal $ getText jsval
   cursor   = pFromJSVal $ getCursor jsval
   result   = TextEvent filepath start stop text $ Just cursor
+
+jsvalToInternalEvent :: JSVal -> InternalEvent
+jsvalToInternalEvent jsval = result where
+    event = read $ pFromJSVal $ getEvent jsval
+    filepath = pFromJSVal $ getPath jsval
+    result = InternalEvent event filepath
 
 subscribeText :: (TextEvent -> IO ()) -> IO (IO ())
 subscribeText callback = do
@@ -78,6 +90,6 @@ pushCode = do
 
 subscribeEventListenerInternal :: (InternalEvent -> IO ()) -> IO (IO ())
 subscribeEventListenerInternal callback = do
-    wrappedCallback <- syncCallback1 ContinueAsync $ callback . Internal.fromString . pFromJSVal
+    wrappedCallback <- syncCallback1 ContinueAsync $ callback . jsvalToInternalEvent
     subscribeEventListenerInternal' wrappedCallback
     return $ unsubscribeEventListenerInternal' wrappedCallback >> releaseCallback wrappedCallback

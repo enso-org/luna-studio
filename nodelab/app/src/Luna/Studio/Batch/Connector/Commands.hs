@@ -2,9 +2,9 @@ module Luna.Studio.Batch.Connector.Commands where
 
 import qualified Data.Text                              as Text
 import           Data.UUID.Types                        (UUID)
+import qualified Empire.API.Atom.OpenFile               as OpenFile
 import           Empire.API.Data.Connection             (Connection)
 import           Empire.API.Data.GraphLocation          (GraphLocation)
-import           Empire.API.Data.GraphLocation          (projectId)
 import qualified Empire.API.Data.GraphLocation          as GraphLocation
 import           Empire.API.Data.Node                   (Node)
 import           Empire.API.Data.NodeLoc                (NodeLoc, normalise, normalise')
@@ -53,7 +53,7 @@ withLibrary w f = f $ w ^. currentLocation
 
 
 createLibrary :: Text -> Text -> Workspace -> UUID -> Maybe UUID -> IO ()
-createLibrary name path workspace uuid guiID= sendRequest $ Message uuid guiID $ CreateLibrary.Request (workspace ^. currentLocation . projectId) (Just $ Text.unpack name) (Text.unpack path)
+createLibrary name path workspace uuid guiID= sendRequest $ Message uuid guiID $ CreateLibrary.Request $notImplemented (Just $ Text.unpack name) (Text.unpack path)
 
 listLibraries :: ProjectId -> UUID -> Maybe UUID -> IO ()
 listLibraries pid uuid guiID = sendRequest $ Message uuid guiID $ ListLibraries.Request pid
@@ -74,6 +74,8 @@ listProjects uuid guiID = sendRequest $ Message uuid guiID ListProjects.Request
 openProject :: FilePath -> UUID -> Maybe UUID -> IO ()
 openProject path uuid guiID = sendRequest $ Message uuid guiID $ OpenProject.Request path
 
+openFile :: FilePath -> UUID -> Maybe UUID -> IO ()
+openFile path uuid guiID = sendRequest $ Message uuid guiID $ OpenFile.Request path
 
 dumpGraphViz :: Workspace -> UUID -> Maybe UUID -> IO ()
 dumpGraphViz workspace uuid guiID = sendRequest $ Message uuid guiID $ withLibrary workspace DumpGraphViz.Request

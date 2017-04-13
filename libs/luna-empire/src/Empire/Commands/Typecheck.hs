@@ -81,7 +81,7 @@ reportError loc nid err = do
             Nothing -> Publisher.notifyResultUpdate loc nid (NodeValue "" []) 0
 
 updateNodes :: GraphLocation -> Command InterpreterEnv ()
-updateNodes loc@(GraphLocation _ _ br) = zoom graph $ zoomBreadcrumb br $ do
+updateNodes loc@(GraphLocation _ br) = zoom graph $ zoomBreadcrumb br $ do
     portMapping <- preuse $ Graph.breadcrumbHierarchy . BH._LambdaParent . BH.portMapping
     updates <- runASTOp $ do
         sidebarUpdates <- case portMapping of
@@ -95,7 +95,7 @@ updateNodes loc@(GraphLocation _ _ br) = zoom graph $ zoomBreadcrumb br $ do
     mapM_ (Publisher.notifyNodeTypecheck loc) updates
 
 updateMonads :: GraphLocation -> Command InterpreterEnv ()
-updateMonads loc@(GraphLocation _ _ br) = zoom graph $ zoomBreadcrumb br $ do
+updateMonads loc@(GraphLocation _ br) = zoom graph $ zoomBreadcrumb br $ do
     newMonads <- runASTOp GraphBuilder.buildMonads
     Publisher.notifyMonadsUpdate loc newMonads
 
