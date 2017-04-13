@@ -9,7 +9,7 @@ import           Data.Position                               (Position, fromDoub
 import           Data.Set                                    (Set)
 import qualified Data.Set                                    as Set
 import           Data.Vector                                 (Vector2)
-import           Luna.Studio.Action.Basic                    (moveNodes)
+import           Luna.Studio.Action.Basic                    (centerGraph, moveNodes)
 import           Luna.Studio.Action.Command                  (Command)
 import           Luna.Studio.Action.Node                     (snap)
 import           Luna.Studio.Action.State.NodeEditor         (getConnectionsFromNode, getConnectionsToNode, getExpressionNodes,
@@ -49,7 +49,7 @@ gapBetweenNodes :: Double
 gapBetweenNodes = 16 * gridSize
 
 autolayoutAllNodes :: Command State ()
-autolayoutAllNodes = getExpressionNodes >>= autolayoutNodes
+autolayoutAllNodes = getExpressionNodes >>= autolayoutNodes >> centerGraph
 
 autolayoutSelectedNodes :: Command State ()
 autolayoutSelectedNodes = getSelectedNodes >>= autolayoutNodes
