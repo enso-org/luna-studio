@@ -46,7 +46,7 @@ type AutolayoutState a = S.StateT NodesInfoMap IO a
 
 
 gapBetweenNodes :: Double
-gapBetweenNodes = 8 * gridSize
+gapBetweenNodes = 16 * gridSize
 
 autolayoutAllNodes :: Command State ()
 autolayoutAllNodes = getExpressionNodes >>= autolayoutNodes
