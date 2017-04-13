@@ -20,7 +20,7 @@ addPort :: OutPortRef -> Command State ()
 addPort portRef = whenM (localAddPort portRef) $ Batch.addPort portRef
 
 localAddPort :: OutPortRef -> Command State Bool
-localAddPort (OutPortRef nid pid@(Projection pos:_)) = do
+localAddPort (OutPortRef nid pid@[Projection pos]) = do
     mayNode <- getInputNode nid
     flip (maybe (return False)) mayNode $ \node ->
         if pos > countProjectionPorts node

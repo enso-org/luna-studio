@@ -76,10 +76,6 @@ getPositionInSidebar p = case p ^. mode of
     Moved pos -> Just pos
     _         -> Nothing
 
--- countOutPorts :: OutPortTree Port -> Int
--- countOutPorts (OutPortTree _ []) = 1
--- countOutPorts (OutPortTree _ ps) = sum $ map countOutPorts ps
---
 outPortTreeLeafs :: OutPortTree (Port i) -> [Port i]
 outPortTreeLeafs (LabeledTree (OutPorts []) p) = [p]
 outPortTreeLeafs (LabeledTree (OutPorts ps) _) = concatMap outPortTreeLeafs ps
@@ -88,11 +84,6 @@ inPortTreeLeafs :: InPortTree (Port i) -> [Port i]
 inPortTreeLeafs (LabeledTree (InPorts Nothing []) p) = [p]
 inPortTreeLeafs (LabeledTree (InPorts mps     ps) _) = concatMap inPortTreeLeafs $ maybeToList mps <> ps
 
--- countArgPorts :: [AnyPortId] -> Int
--- countArgPorts = foldl (\acc pid -> acc + if isArg pid then 1 else 0) 0
---
--- countProjectionPorts :: [AnyPortId] -> Int
--- countProjectionPorts = foldl (\acc pid -> acc + if isProjection pid then 1 else 0) 0
 
 instance Convertible InPort  AnyPort where convert = fmap InPortId'
 instance Convertible OutPort AnyPort where convert = fmap OutPortId'

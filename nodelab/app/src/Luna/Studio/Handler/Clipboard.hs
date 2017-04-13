@@ -22,7 +22,7 @@ import qualified Luna.Studio.Data.Graph                      as Graph
 import           Luna.Studio.Event.Event                     (Event (Shortcut))
 import qualified Luna.Studio.Event.Shortcut                  as Shortcut
 import           Luna.Studio.Prelude
-import           Luna.Studio.React.Model.Node                (ExpressionNode, _Expression)
+import           Luna.Studio.React.Model.Node                (ExpressionNode)
 import           Luna.Studio.React.Model.Node.ExpressionNode (nodeLoc, position)
 import           Luna.Studio.State.Global                    (State, workspace)
 import qualified Luna.Studio.State.Global                    as Global
