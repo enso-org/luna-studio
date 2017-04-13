@@ -5,16 +5,18 @@ import           Control.Monad.State.Lazy                    (execStateT, get, m
 import qualified Control.Monad.State.Lazy                    as S
 import           Data.Map.Lazy                               (Map)
 import qualified Data.Map.Lazy                               as Map
-import           Data.Position                               (Position, fromDoubles, minimumRectangle, move, vector, x, y)
+import           Data.Position                               (Position, fromDoubles, minimumRectangle, move, toTuple, vector, x, y)
 import           Data.Set                                    (Set)
 import qualified Data.Set                                    as Set
 import           Data.Vector                                 (Vector2)
 import           Luna.Studio.Action.Basic                    (moveNodes)
 import           Luna.Studio.Action.Command                  (Command)
+import           Luna.Studio.Action.Node                     (snap)
 import           Luna.Studio.Action.State.NodeEditor         (getConnectionsFromNode, getConnectionsToNode, getExpressionNodes,
                                                               getSelectedNodes)
 import           Luna.Studio.Prelude
 import           Luna.Studio.React.Model.Connection          (Connection, dstNodeLoc, dstPortId, srcNodeLoc, srcPortId)
+import           Luna.Studio.React.Model.Constants           (gridSize)
 import           Luna.Studio.React.Model.Node.ExpressionNode (ExpressionNode, NodeLoc)
 import qualified Luna.Studio.React.Model.Node.ExpressionNode as Node
 import           Luna.Studio.React.Model.Port                (InPort (Self), PortId (InPortId), isSelf)
@@ -44,7 +46,7 @@ type AutolayoutState a = S.StateT NodesInfoMap IO a
 
 
 gapBetweenNodes :: Double
-gapBetweenNodes = 150
+gapBetweenNodes = 8 * gridSize
 
 autolayoutAllNodes :: Command State ()
 autolayoutAllNodes = getExpressionNodes >>= autolayoutNodes
@@ -56,18 +58,19 @@ autolayoutNodes :: [ExpressionNode] -> Command State ()
 autolayoutNodes nodes = do
     let mayMinRect = minimumRectangle $ map (view Node.position) nodes
     withJust mayMinRect $ \(leftTop, _) -> do
+        let leftTop' = snap leftTop
         nodesMap <- fmap Map.fromList $ forM nodes $ \n -> do
             let nl = n ^. Node.nodeLoc
             inConns'  <- getConnectionsToNode   nl
             outConns' <- getConnectionsFromNode nl
             return $ (nl, NodeInfo nl
                                    (n ^. Node.name)
-                                   leftTop
+                                   leftTop'
                                    NotProccessed
                                    Nothing
                                    inConns'
                                    outConns' )
-        ns <- liftIO $ execStateT (findPositions leftTop) nodesMap
+        ns <- liftIO $ execStateT (findPositions leftTop') nodesMap
         moveNodes . Map.toList . fmap (view actPos) $ ns
 
 clearDFSState :: AutolayoutState ()
@@ -77,6 +80,7 @@ findPositions :: Position -> AutolayoutState ()
 findPositions pos = do
     removeCycles
     nls <- Map.keys <$> get
+    clearDFSState
     mapM_ findPositionRecursive nls
     mapM_ alignChainsX nls
     alignNodesY pos
@@ -85,7 +89,9 @@ findPositions pos = do
 findPositionRecursive :: NodeLoc -> AutolayoutState ()
 findPositionRecursive nl = lookupNode nl >>= \mayNode -> case mayNode of
     Nothing -> return ()
-    Just n  -> alignNeighbours n >>= mapM_ findPositionRecursive
+    Just n  -> do
+        modify $ Map.update (\n' -> Just $ n' & dfsState .~ Proccessed) nl
+        alignNeighbours n >>= mapM_ findPositionRecursive
 
 lookupNode :: NodeLoc -> AutolayoutState (Maybe NodeInfo)
 lookupNode nl = Map.lookup nl <$> get
@@ -158,15 +164,19 @@ alignNeighboursX n = do
     let prevX = n ^. actPos . x - gapBetweenNodes
         nextX = n ^. actPos . x + gapBetweenNodes
         proccessPred :: NodeInfo -> AutolayoutState (Maybe NodeLoc)
-        proccessPred node = if node ^. actPos . x <= prevX then return Nothing else do
-            let nl = node ^. nodeLoc
-            modify $ Map.update (\n' -> Just $ n' & actPos . x .~ prevX) nl
-            return $ Just nl
+        proccessPred node = if node ^. dfsState == Proccessed && node ^. actPos . x <= prevX
+            then return Nothing
+            else do
+                let nl = node ^. nodeLoc
+                modify $ Map.update (\n' -> Just $ n' & actPos . x .~ prevX) nl
+                return $ Just nl
         proccessSucc :: NodeInfo -> AutolayoutState (Maybe NodeLoc)
-        proccessSucc node = if node ^. actPos . x >= nextX then return Nothing else do
-            let nl = node ^. nodeLoc
-            modify $ Map.update (\n' -> Just $ n' & actPos . x .~ nextX) nl
-            return $ Just nl
+        proccessSucc node = if node ^. dfsState == Proccessed && node ^. actPos . x >= nextX
+            then return Nothing
+            else do
+                let nl = node ^. nodeLoc
+                modify $ Map.update (\n' -> Just $ n' & actPos . x .~ nextX) nl
+                return $ Just nl
     preds <- lookupNodes . map (view srcNodeLoc) $ n ^. inConns
     succs <- lookupNodes . map (view dstNodeLoc) $ n ^. outConns
     predsToUpdate <- fmap catMaybes $ mapM proccessPred preds
