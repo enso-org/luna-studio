@@ -31,6 +31,7 @@ import           Empire.Data.Graph                (Graph, ast)
 import qualified Empire.Data.Graph                as Graph
 
 import qualified Empire.Commands.AST              as AST
+import qualified Empire.Commands.Graph            as Graph (openFile)
 import qualified Empire.Commands.Library          as Library
 import qualified Empire.Commands.Persistence      as Persistence
 import qualified Empire.Commands.Typecheck        as Typecheck
@@ -127,7 +128,7 @@ startAsyncUpdateWorker asyncChan = forever $ do
         CodeUpdate        up -> Server.sendToBus' up
 
 projectFiles :: FilePath -> IO [FilePath]
-projectFiles = find always (extension ==? ".lproj")
+projectFiles = find always (extension ==? ".luna")
 
 loadAllProjects :: StateT Env BusT ()
 loadAllProjects = do
@@ -137,14 +138,14 @@ loadAllProjects = do
   projects <- liftIO $ projectFiles projectRoot
   loadedProjects <- flip mapM projects $ \proj -> do
     currentEmpireEnv <- use Env.empireEnv
-    (result, newEmpireEnv) <- liftIO $ Empire.runEmpire empireNotifEnv currentEmpireEnv $ Persistence.loadProject proj
+    (result, newEmpireEnv) <- liftIO $ Empire.runEmpire empireNotifEnv currentEmpireEnv $ Graph.openFile proj
     case result of
         Left err -> do
           logger Logger.error $ "Cannot load project [" <> proj <> "]: " <> err
           return Nothing
-        Right projectId -> do
+        Right _ -> do
           Env.empireEnv .= newEmpireEnv
-          return $ Just projectId
+          return $ Just ()
 
   when ((catMaybes loadedProjects) == []) $ do
     currentEmpireEnv <- use Env.empireEnv
