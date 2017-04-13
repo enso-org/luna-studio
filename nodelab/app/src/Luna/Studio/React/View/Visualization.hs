@@ -16,7 +16,7 @@ import qualified Data.Text                                      as Text
 import           React.Flux                                     hiding (image_)
 import qualified React.Flux                                     as React
 import qualified Empire.API.Data.Error                          as LunaError
-import           Empire.API.Data.PortDefault                    (PortValue(..))
+import           Empire.API.Data.PortDefault                    (VisualizationValue(..),PortValue(..))
 import           Empire.API.Data.TypeRep                        (TypeRep)
 import           Empire.API.Graph.NodeResultUpdate              (NodeValue(..))
 import qualified Luna.Studio.Event.UI                           as UI
@@ -87,7 +87,7 @@ visualization = React.defineView viewName $ \(ref, nl, mayPos, nodeValue) ->
 --     --, onMouseDown $ \_ _ -> traceShowMToStdout "NIE JEST NAJGORZEJ"
 --     ] mempty
 
-nodeValue_ :: Ref App -> NodeLoc -> Maybe Position -> Int -> PortValue -> ReactElementM ViewEventHandler ()
+nodeValue_ :: Ref App -> NodeLoc -> Maybe Position -> Int -> VisualizationValue -> ReactElementM ViewEventHandler ()
 nodeValue_ ref nl mayPos visIx value = do
     let isPinned = isJust mayPos
         event = case mayPos of
@@ -109,10 +109,8 @@ nodeValue_ ref nl mayPos visIx value = do
                 ] $
             elemString $ if isPinned then "unpin" else "pin"
         case value of
-            BoolValue   v -> strDiv $ show v
-            DoubleValue v -> strDiv $ show v
-            IntValue    v -> strDiv $ show v
-            StringValue v -> strDiv v
+            JsonValue v -> strDiv v
+            HtmlValue v -> strDiv v
     where
         strDiv = div_ . elemString . normalize
 
