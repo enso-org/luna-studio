@@ -3,7 +3,7 @@
 module Empire.Commands.Persistence
     ( saveProject
     , saveLocation
-    , loadProject
+    -- , loadProject
     , createDefaultProject
     , importProject
     , exportProject
@@ -18,7 +18,8 @@ import           Data.String                     (fromString)
 import           Data.Text                       (Text)
 import qualified Data.UUID                       as UUID
 import           Empire.Prelude
-import           System.FilePath                 (takeBaseName)
+import           System.Environment              (getEnv)
+import           System.FilePath                 ((</>), takeBaseName)
 
 import qualified Empire.Data.Library             as Library
 import           Empire.Data.Project             (Project)
@@ -101,20 +102,20 @@ createProjectFromPersistent maybePid p = $notImplemented -- do
   -- project <- withProject pid (get >>= return)
   -- return (pid, project)
 
-
-loadProject :: FilePath -> Empire ProjectId
-loadProject path = do
-    logger Logger.info $ "Loading project " <> path
-    bytes <- liftIO $ BS.readFile path
-    let proj = readProject bytes
-        basename = takeBaseName path
-        maybeProjId = UUID.fromString basename
-    case proj of
-      Nothing   -> throwError $ "Cannot read JSON from " <> path
-      Just proj' -> do
-        (pid, _) <- createProjectFromPersistent maybeProjId proj'
-        return pid
-
+--
+-- loadProject :: FilePath -> Empire ProjectId
+-- loadProject path = do
+--     logger Logger.info $ "Loading project " <> path
+--     bytes <- liftIO $ BS.readFile path
+--     let proj = readProject bytes
+--         basename = takeBaseName path
+--         maybeProjId = UUID.fromString basename
+--     case proj of
+--       Nothing   -> throwError $ "Cannot read JSON from " <> path
+--       Just proj' -> do
+--         (pid, _) <- createProjectFromPersistent maybeProjId proj'
+--         return pid
+--
 
 
 importProject :: Text -> Empire (ProjectId, Project)
@@ -128,7 +129,14 @@ defaultProjectName = "default"
 defaultLibraryName = "Main"
 defaultLibraryPath = "Main.luna"
 
+touch :: FilePath -> IO ()
+touch name = appendFile name ""
+
 createDefaultProject :: Empire ()
 createDefaultProject = do
   logger Logger.info "Creating default project"
-  void $ createLibrary (Just defaultLibraryName) (fromString defaultLibraryPath) ""
+  lunaroot <- liftIO $ getEnv "LUNAROOT"
+  let path = lunaroot </> "projects" </> defaultLibraryPath
+  logger Logger.info $ "Creating file " ++ path
+  liftIO $ touch path
+  void $ createLibrary (Just defaultLibraryName) (fromString path) ""

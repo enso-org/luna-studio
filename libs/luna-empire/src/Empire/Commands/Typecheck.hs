@@ -39,6 +39,7 @@ import qualified Empire.Data.Graph                 as Graph
 import           Empire.Empire
 
 import           Luna.Builtin.Data.LunaValue       (LunaData, listenReps)
+import           Luna.Builtin.Data.LunaEff         (runIO, runError)
 import           Luna.Builtin.Data.Module          (Imports (..), Module (..))
 import qualified Luna.Builtin.Std                  as Std
 import qualified Luna.IR                           as IR
@@ -64,7 +65,7 @@ runInterpreter imports = runASTOp $ do
     case res of
         Nothing -> return Nothing
         Just v  -> do
-            result <- liftIO $ runExceptT $ execStateT v def
+            result <- liftIO $ runIO $ runError $ execStateT v def
             case result of
                 Left e  -> return Nothing
                 Right r -> return $ Just r

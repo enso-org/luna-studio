@@ -81,6 +81,8 @@ import           Empire.Env                         (Env)
 import qualified Empire.Env                         as Env
 import           Empire.Server.Server               (errorMessage, replyFail, replyOk, replyResult, sendToBus')
 import           Prologue                           hiding (Item)
+import           System.Environment                 (getEnv)
+import           System.FilePath                    ((</>))
 import qualified System.Log.MLogger                 as Logger
 import           ZMQ.Bus.Trans                      (BusT (..))
 
@@ -129,21 +131,34 @@ forceTC location = do
     empireNotifEnv   <- use Env.empireNotif
     void $ liftIO $ Empire.runEmpire empireNotifEnv currentEmpireEnv $ Graph.typecheck location
 
+defaultLibraryPath = "Main.luna"
+
+webGUIHack :: G.GraphRequest req => req -> IO req
+webGUIHack req = do
+    lunaroot <- liftIO $ getEnv "LUNAROOT"
+    let path = lunaroot </> "projects" </> defaultLibraryPath
+        realLocation = req ^. G.location
+        realFile     = realLocation ^. GraphLocation.filePath
+        hackedReq    = if null realFile then req & G.location . GraphLocation.filePath .~ path
+                                        else req
+    return hackedReq
+
 modifyGraph :: forall req inv res res'. (G.GraphRequest req, Response.ResponseResult req inv res') => (req -> Empire inv) -> (req -> Empire res) -> (Request req -> inv -> res -> StateT Env BusT ()) -> Request req -> StateT Env BusT ()
-modifyGraph inverse action success req@(Request uuid guiID request) = do
+modifyGraph inverse action success origReq@(Request uuid guiID request') = do
+    request          <- liftIO $ webGUIHack request'
     currentEmpireEnv <- use Env.empireEnv
     empireNotifEnv   <- use Env.empireNotif
     (inv', _)        <- liftIO $ Empire.runEmpire empireNotifEnv currentEmpireEnv $ inverse request
     case inv' of
-        Left err  -> replyFail logger err req (Response.Error err)
+        Left err  -> replyFail logger err origReq (Response.Error err)
         Right inv -> do
             let invStatus = Response.Ok inv
             (result, newEmpireEnv) <- liftIO $ Empire.runEmpire empireNotifEnv currentEmpireEnv $ action request
             case result of
-                Left  err    -> replyFail logger err req invStatus
+                Left  err    -> replyFail logger err origReq invStatus
                 Right result -> do
                     Env.empireEnv .= newEmpireEnv
-                    success req inv result
+                    success origReq inv result
                     notifyCodeUpdate $ request ^. G.location
                     saveCurrentProject $ request ^. G.location
 
