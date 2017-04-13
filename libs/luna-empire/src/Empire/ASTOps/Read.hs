@@ -83,10 +83,6 @@ leftMatchOperand node = match node $ \case
 getVarNode :: ASTOp m => NodeRef -> m NodeRef
 getVarNode node = leftMatchOperand node >>= IR.source
 
-safeGetVarNodeId :: ASTOp m => NodeRef -> m (Maybe NodeId)
-safeGetVarNodeId node = (getVarNode node >>= getNodeId) `catch`
-    (\(_e :: NotUnifyException) -> return Nothing)
-
 data NodeDoesNotExistException = NodeDoesNotExistException NodeId
     deriving Show
 instance Exception NodeDoesNotExistException where
@@ -184,7 +180,7 @@ isBlank :: ASTOp m => NodeRef -> m Bool
 isBlank expr = isJust <$> IRExpr.narrowTerm @IR.Blank expr
 
 isLambda :: ASTOp m => NodeRef -> m Bool
-isLambda expr = match expr $ \case
+isLambda expr = match expr $ \case 
     Lam{}     -> return True
     Grouped g -> IR.source g >>= isLambda
     _         -> return False

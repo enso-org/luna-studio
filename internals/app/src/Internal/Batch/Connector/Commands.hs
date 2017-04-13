@@ -2,7 +2,6 @@ module Internal.Batch.Connector.Commands where
 
 import qualified Data.Text                              as Text
 import           Data.UUID.Types                        (UUID)
-import qualified Empire.API.Atom.IsSaved              as IsSaved
 import qualified Empire.API.Atom.CloseFile              as CloseFile
 import qualified Empire.API.Atom.GetBuffer              as GetBuffer
 import qualified Empire.API.Atom.OpenFile               as OpenFile
@@ -12,6 +11,7 @@ import qualified Empire.API.Atom.Substitute             as Substitute
 import qualified Empire.API.Data.Breadcrumb             as Breadcrumb
 import           Empire.API.Data.Connection             (Connection, ConnectionId)
 import           Empire.API.Data.GraphLocation          (GraphLocation)
+import           Empire.API.Data.GraphLocation          (projectId)
 import qualified Empire.API.Data.GraphLocation          as GraphLocation
 import           Empire.API.Data.Node                   (Node, NodeId)
 import           Empire.API.Data.NodeMeta               (NodeMeta)
@@ -73,9 +73,6 @@ openFile path uuid guiID = sendRequest $ Message uuid guiID $ OpenFile.Request p
 
 saveFile :: FilePath -> UUID -> Maybe UUID -> IO ()
 saveFile path uuid guiID = sendRequest $ Message uuid guiID $ SaveFile.Request path
-
-isSaved :: FilePath -> UUID -> Maybe UUID -> IO ()
-isSaved path uuid guiID = sendRequest $ Message uuid guiID $ IsSaved.Request path
 
 setProject :: FilePath -> UUID -> Maybe UUID -> IO ()
 setProject rootPath uuid guiID = sendRequest $ Message uuid guiID $ SetProject.Request rootPath

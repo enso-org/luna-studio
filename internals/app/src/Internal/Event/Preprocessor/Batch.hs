@@ -37,7 +37,7 @@ handlers = Map.fromList [ --handle GetProgramResponse
                         -- , handle NodeResultUpdate
                         -- , handle NodesUpdate
                         -- , handle NodeTypecheckerUpdate
-                        -- , handle RedoResponse
+                        , handle RedoResponse
                         -- , handle RemoveConnectionResponse
                         -- , handle RemoveConnectionUpdate
                         -- , handle RemoveNodesResponse
@@ -50,6 +50,14 @@ handlers = Map.fromList [ --handle GetProgramResponse
                         -- , handle SetNodesMetaResponse
                         -- , handle SetPortDefaultResponse
                         -- , handle TypeCheckResponse
+                        , handle UndoResponse
+                        , handle ProjectCreated
+                        , handle ProjectCreatedUpdate
+                        , handle ProjectExported
+                        , handle ProjectImported
+                        , handle ProjectList
+                        , handle ProjectOpened
+                        , handle ProjectOpenedUpdate
                         , handle ProjectSet
                         , handle FileClosed
                         , handle FileOpened

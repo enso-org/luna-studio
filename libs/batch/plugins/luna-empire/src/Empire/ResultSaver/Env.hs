@@ -27,4 +27,5 @@ data ResultSaverEnv = ResultSaverEnv { _graphLocation :: GraphLocation
 makeLenses ''ResultSaverEnv
 
 instance Default ResultSaverEnv where
-    def = ResultSaverEnv (GraphLocation "" (Breadcrumb [])) Init
+    def = ResultSaverEnv (GraphLocation UUID.nil 0 (Breadcrumb [])) Init
+

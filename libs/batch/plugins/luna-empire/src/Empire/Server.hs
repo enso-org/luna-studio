@@ -31,9 +31,9 @@ import           Empire.Data.Graph                (Graph, ast)
 import qualified Empire.Data.Graph                as Graph
 
 import qualified Empire.Commands.AST              as AST
-import qualified Empire.Commands.Graph            as Graph (openFile)
 import qualified Empire.Commands.Library          as Library
 import qualified Empire.Commands.Persistence      as Persistence
+import qualified Empire.Commands.Project          as Project
 import qualified Empire.Commands.Typecheck        as Typecheck
 import qualified Empire.Empire                    as Empire
 import           Empire.Env                       (Env)
@@ -120,15 +120,14 @@ startAsyncUpdateWorker :: TChan AsyncUpdate -> StateT Env BusT ()
 startAsyncUpdateWorker asyncChan = forever $ do
     update <- liftIO $ atomically $ readTChan asyncChan
     case update of
-        NodesUpdate       up -> Server.sendToBus' up
+        NodesUpdate      up -> Server.sendToBus' up
         MonadsUpdate      up -> Server.sendToBus' up
         TypecheckerUpdate up -> Server.sendToBus' up
-        ResultUpdate      up -> Server.sendToBus' up
-        ConnectionUpdate  up -> Server.sendToBus' up
-        CodeUpdate        up -> Server.sendToBus' up
+        ResultUpdate     up -> Server.sendToBus' up
+        ConnectionUpdate up -> Server.sendToBus' up
 
 projectFiles :: FilePath -> IO [FilePath]
-projectFiles = find always (extension ==? ".luna")
+projectFiles = find always (extension ==? ".lproj")
 
 loadAllProjects :: StateT Env BusT ()
 loadAllProjects = do
@@ -138,14 +137,14 @@ loadAllProjects = do
   projects <- liftIO $ projectFiles projectRoot
   loadedProjects <- flip mapM projects $ \proj -> do
     currentEmpireEnv <- use Env.empireEnv
-    (result, newEmpireEnv) <- liftIO $ Empire.runEmpire empireNotifEnv currentEmpireEnv $ Graph.openFile proj
+    (result, newEmpireEnv) <- liftIO $ Empire.runEmpire empireNotifEnv currentEmpireEnv $ Persistence.loadProject proj
     case result of
         Left err -> do
           logger Logger.error $ "Cannot load project [" <> proj <> "]: " <> err
           return Nothing
-        Right _ -> do
+        Right projectId -> do
           Env.empireEnv .= newEmpireEnv
-          return $ Just ()
+          return $ Just projectId
 
   when ((catMaybes loadedProjects) == []) $ do
     currentEmpireEnv <- use Env.empireEnv

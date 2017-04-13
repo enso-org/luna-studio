@@ -3,7 +3,6 @@ module Empire.Commands.Publisher where
 import           Control.Concurrent.STM.TChan           (writeTChan)
 import           Control.Monad.Reader
 import           Control.Monad.STM                      (atomically)
-import           Data.Text                              (Text)
 import           Empire.API.Data.AsyncUpdate            (AsyncUpdate (..))
 import           Empire.API.Data.GraphLocation          (GraphLocation)
 import           Empire.API.Data.MonadPath              (MonadPath)
@@ -13,7 +12,6 @@ import           Empire.Data.Graph                      (Graph)
 import           Empire.Empire
 import           Empire.Prelude
 
-import qualified Empire.API.Atom.Substitute             as Substitute
 import qualified Empire.API.Graph.MonadsUpdate          as Monads
 import qualified Empire.API.Graph.NodeResultUpdate      as NodeResult
 import qualified Empire.API.Graph.NodesUpdate           as Node
@@ -34,10 +32,6 @@ notifyNodeTypecheck loc n =
 notifyResultUpdate :: (MonadReader CommunicationEnv m, MonadIO m) => GraphLocation -> NodeId -> NodeResult.NodeValue -> Integer -> m ()
 notifyResultUpdate loc nid v t =
     sendUpdate $ ResultUpdate $ NodeResult.Update loc nid v t
-
-notifyCodeUpdate :: (MonadReader CommunicationEnv m, MonadIO m) => FilePath -> Int -> Int -> Text -> Maybe Int -> m ()
-notifyCodeUpdate path start end code cursor =
-    sendUpdate $ CodeUpdate $ Substitute.Update path start end code cursor
 
 sendUpdate :: (MonadReader CommunicationEnv m, MonadIO m) => AsyncUpdate -> m ()
 sendUpdate upd = do

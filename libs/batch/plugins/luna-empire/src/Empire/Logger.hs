@@ -40,6 +40,7 @@ import qualified Empire.API.Project.OpenProject    as OpenProject
 import           Empire.API.Request                (Request)
 import qualified Empire.API.Topic                  as Topic
 import qualified Empire.Commands.Library           as Library
+import qualified Empire.Commands.Project           as Project
 import qualified Empire.Empire                     as Empire
 import           Empire.Env                        (LoggerEnv)
 import qualified Empire.Env                        as Env

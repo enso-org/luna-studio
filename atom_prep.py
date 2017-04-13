@@ -42,13 +42,13 @@ nodelab_js = glob.glob('./nodelab/.stack-work/**/bin/nodelab.jsexe/all.js',recur
 internals_js = glob.glob('./internals/.stack-work/**/bin/internals.jsexe/all.js',recursive=True)
 
 prepare_ghcjs('./nodelab/atom/lib/gen/ghcjs-code.js', './nodelab/app/env.ghcjs', nodelab_js[0])
-prepare_ghcjs('./nodelab/atom/lib/gen/ghcjs-code2.js', './internals/app/env-internals.ghcjs', internals_js[0])
+prepare_ghcjs('./nodelab/atom/lib/gen/ghcjs-code2.js', './internals/app/env2.ghcjs', internals_js[0])
 
 # copy files
 
 distutils.dir_util.copy_tree('./nodelab/app/js', './nodelab/atom/lib/gen')
-shutil.copy('./internals/app/js/atom-callback-internals.js', './nodelab/atom/lib/gen')
-shutil.copy('./internals/app/js/app-internals.coffee', './nodelab/atom/lib/gen')
+shutil.copy('./internals/app/js/atom-callback2.js', './nodelab/atom/lib/gen')
+shutil.copy('./internals/app/js/app2.coffee', './nodelab/atom/lib/gen')
 shutil.copy('./nodelab/app/config.release.js', './nodelab/atom/lib/gen')
 shutil.copy('./nodelab/app/config.debug.js', './nodelab/atom/lib/gen')
 shutil.copy('./nodelab/www/stylesheets/app.css', './nodelab/atom/styles')

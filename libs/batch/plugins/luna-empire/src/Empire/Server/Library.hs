@@ -27,24 +27,24 @@ handleCreateLibrary req@(Request _ _ request) = do
     currentEmpireEnv <- use Env.empireEnv
     empireNotifEnv   <- use Env.empireNotif
     (result, newEmpireEnv) <- liftIO $ Empire.runEmpire empireNotifEnv currentEmpireEnv $ Library.createLibrary
+        (request ^. CreateLibrary.projectId)
         (request ^. CreateLibrary.libraryName)
         (fromString $ request ^. CreateLibrary.path)
-        ""
     case result of
         Left err -> replyFail logger err req (Response.Error err)
-        Right library -> do
+        Right (libraryId, library) -> do
             Env.empireEnv .= newEmpireEnv
-            replyResult req () $ CreateLibrary.Result $notImplemented $ DataLibrary.toAPI library
-            sendToBus' $ CreateLibrary.Update $notImplemented $ DataLibrary.toAPI library
+            replyResult req () $ CreateLibrary.Result libraryId $ DataLibrary.toAPI library
+            sendToBus' $ CreateLibrary.Update libraryId $ DataLibrary.toAPI library
 
 handleListLibraries :: Request ListLibraries.Request -> StateT Env BusT ()
 handleListLibraries req@(Request _ _ request) = do
     currentEmpireEnv <- use Env.empireEnv
     empireNotifEnv   <- use Env.empireNotif
     (result, newEmpireEnv) <- liftIO $ Empire.runEmpire empireNotifEnv currentEmpireEnv $ Library.listLibraries
+        (request ^. ListLibraries.projectId)
     case result of
         Left err -> replyFail logger err req (Response.Error err)
         Right librariesList -> do
             Env.empireEnv .= newEmpireEnv
-            let libraries = zip [0..] (map DataLibrary.toAPI librariesList)
-            replyResult req () $ ListLibraries.Result $ libraries
+            replyResult req () $ ListLibraries.Result $ (_2 %~ DataLibrary.toAPI) <$> librariesList

@@ -9,19 +9,19 @@ import           Data.ByteString.Lazy.Char8  as ByteString
 import           JavaScript.Web.Storage      (getItem, localStorage, setItem)
 import           Luna.Studio.Prelude
 
-import           Empire.API.Data.GraphLocation (GraphLocation )
+import qualified Luna.Studio.Batch.Workspace as Workspace
 
 
 
 key :: JSString
 key = "lastLocation"
 
-saveLocation :: GraphLocation -> IO ()
+saveLocation :: Workspace.UIGraphLocation -> IO ()
 saveLocation location = do
     let payload = convert . ByteString.unpack $ encode location
     setItem key payload localStorage
 
-loadLocation :: IO (Maybe GraphLocation)
+loadLocation :: IO (Maybe Workspace.UIGraphLocation)
 loadLocation = do
     payload <- getItem key localStorage
     return $ decode . ByteString.pack . convert =<< payload

@@ -10,8 +10,7 @@ import           Data.Word                            (Word8)
 import           Empire.API.Data.NodeLoc              (NodeLoc)
 import           Empire.API.Graph.CollaborationUpdate (ClientId)
 import           Luna.Studio.Action.Command           (Command)
-import           Luna.Studio.Batch.Workspace (Workspace)
-import           qualified Luna.Studio.Batch.Workspace as Workspace
+import           Luna.Studio.Batch.Workspace
 import           Luna.Studio.Event.Event              (Event)
 import           Luna.Studio.Prelude
 import           Luna.Studio.React.Model.App          (App)
@@ -56,15 +55,15 @@ makeLenses ''BackendState
 makeLenses ''State
 makeLenses ''DebugState
 
-mkState :: Ref App -> ClientId -> FilePath -> DateTime -> StdGen -> State
-mkState ref clientId' path = State
+mkState :: Ref App -> ClientId -> DateTime -> StdGen -> State
+mkState ref clientId' = State
     {- react                -} (UI.mkState ref)
     {- backend              -} (BackendState def clientId')
     {- actions              -} def
     {- collaboration        -} def
     {- debug                -} def
     {- selectionHistory     -} def
-    {- workspace            -} (Workspace.mk path)
+    {- workspace            -} def
 
 nextRandom :: Command State Word8
 nextRandom = uses random Random.random >>= \(val, rnd) -> random .= rnd >> return val

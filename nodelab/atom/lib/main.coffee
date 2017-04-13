@@ -1,4 +1,5 @@
-LunaEditorTab = require './luna-editor-tab'
+# w         = require './gen/websocket'
+# websocket = w()
 LunaStudioTab = require './luna-studio-tab'
 SubAtom       = require 'sub-atom'
 
@@ -12,58 +13,65 @@ path = require 'path'
 module.exports =
   activate: ->
     internal.start()
-
-    actStatus = (data) ->
-        if data == 'activate'
-            rootPath = atom.project.getPaths().shift()
-            if rootPath != ""
-                internal.pushInternalEvent(event: "SetProject", uri: rootPath)
-    internal.statusListener actStatus
-
-
-
-
-
+    rootPath = atom.project.getPaths().shift()
+    # if rootPath != ""
+    #   internal.pushInternalEvent("SetProject " + rootPath)
     atom.workspace.addOpener (uri) ->
 
       if path.extname(uri) is '.luna'
-        internal.pushInternalEvent(event: "OpenFile", uri: uri)
-          
-        atom.workspace.getActivePane().activateItem new LunaEditorTab(uri, internal)
+        # internal.pushInternalEvent("OpenFile " + uri)
+
+        atom.workspace.open().then (@editor) ->
+          @buffer = @editor.buffer
+          @buffer.setPath(uri)
+        #   internal.pushInternalEvent("GetBuffer " + uri)
+          withoutTrigger = (callback) ->
+            @triggerPush = false
+            callback()
+            @triggerPush = true
+
+          setBuffer = (text) ->
+            withoutTrigger =>
+              @buffer.setText(text)
+        #   internal.bufferListener setBuffer
+
+          setCode = (uri_send, start_send, end_send, text) ->
+            withoutTrigger =>
+              if uri == uri_send
+                start = buffer.positionForCharacterIndex(start_send)
+                end = buffer.positionForCharacterIndex(end_send)
+                @buffer.setTextInRange [start, end], text
+                @editor.scrollToBufferPosition(start)
+        #   internal.codeListener setCode
+
+          @ss = new SubAtom
+          @ss.add @buffer.onDidChange (event) =>
+              # return unless @triggerPush
+              if event.newText != '' or event.oldText != ''
+                  diff =
+                      uri: uri
+                      start: buffer.characterIndexForPosition(event.oldRange.start)
+                      end: buffer.characterIndexForPosition(event.oldRange.end)
+                      text: event.newText
+                      cursor: buffer.characterIndexForPosition(@editor.getCursorBufferPosition())
+            #   internal.pushText(diff)
+
         atom.workspace.getActivePane().activateItem new LunaStudioTab(uri, code)
 
 
     @subs = new SubAtom
-    # @subs.add atom.commands.add 'atom-text-editor', 'core:copy': ->
-    #     if atom.workspace.getActivePaneItem().buffer
-    #         activeFilePath = atom.workspace.getActivePaneItem().buffer.file.path
-    #         activeEd = atom.workspace.getActivePaneItem().buffer
-    #     if path.extname(activeFilePath) is ".luna"
-    #         console.log("in if")
-    #         console.log(atom.workspace.getActiveTextEditor().getSelections())
-    #         internal.pushInternalEvent("GetBuffer " + "activeFilePath")
-    @subs.add atom.workspace.onDidOpen (e) =>
-        try
-            atom.workspace.saveActivePaneItem()
-        catch error
-            console.log error
-            atom.workspace.destroyActivePaneItem()
-
-    @subs.add atom.commands.add 'atom-workspace', 'core:close': ->
-        if atom.workspace.getActivePaneItem().buffer
-            activeFilePath = atom.workspace.getActivePaneItem().buffer.file.path
-        else activeFilePath = atom.workspace.getActivePane().activeItem.uri
-        if path.extname(activeFilePath) is ".luna"
-            internal.pushInternalEvent(event: "CloseFile", uri: activeFilePath)
-    @subs.add atom.commands.add 'atom-workspace', 'core:save', (e)                 ->
-      console.log('save')
-      if atom.workspace.getActivePaneItem().buffer
-          activeFilePath =  atom.workspace.getActivePaneItem().buffer.file.path
-      else activeFilePath = atom.workspace.getActivePane().activeItem.uri
-      if path.extname(activeFilePath) is ".luna"
-        e.preventDefault()
-        e.stopImmediatePropagation()
-        internal.pushInternalEvent(event: "SaveFile", uri: activeFilePath)
+    @subs.add atom.commands.add '.luna-studio', 'luna-studio:cancel': -> code.pushEvent("Shortcut Cancel")
+    # @subs.add atom.commands.add '.luna-studio', 'core:close':                    ->
+    #   activeFilePath =atom.workspace.getActivePaneItem().buffer.file.path
+      #   if atom.workspace.getActivePaneItem().buffer
+      #     atom.workspace.getActivePaneItem().buffer.file.path
+      #   else atom.workspace.getActivePane().activeItem.uri
+      # internal.pushInternalEvent("CloseFile" + activeFilePath)
+    # @subs.add atom.commands.add '.luna-studio', 'core:save', (e)                 ->
+    #   activeFilePath = atom.workspace.getActivePaneItem().buffer.file.path
+    #   e.preventDefault()
+    #   e.stopPropagation()
+    #   internal.pushInternalEvent("SaveFile" + activeFilePath)
     @subs.add atom.commands.add '.luna-studio', 'luna-studio:cancel':       -> code.pushEvent("Shortcut Cancel")
     # camera
     @subs.add atom.commands.add '.luna-studio', 'luna-studio:center-graph': -> code.pushEvent("Shortcut CenterGraph")
@@ -115,7 +123,6 @@ module.exports =
     @subs.add atom.commands.add '.luna-searcher', 'luna-studio:searcher-accept-input': -> code.pushEvent("Searcher AcceptInput")
     @subs.add atom.commands.add '.luna-searcher', 'luna-studio:searcher-accept':       -> code.pushEvent("Searcher Accept")
     @subs.add atom.commands.add '.luna-searcher', 'luna-studio:searcher-move-down':    -> code.pushEvent("Searcher MoveDown")
-    @subs.add atom.commands.add '.luna-searcher', 'luna-studio:searcher-move-left':    -> code.pushEvent("Searcher MoveLeft")
     @subs.add atom.commands.add '.luna-searcher', 'luna-studio:searcher-move-right':   -> code.pushEvent("Searcher MoveRight")
     @subs.add atom.commands.add '.luna-searcher', 'luna-studio:searcher-move-up':      -> code.pushEvent("Searcher MoveUp")
     # undo/redo
@@ -124,3 +131,4 @@ module.exports =
 
   deactivate: ->
     @subs.dispose()
+    @ss.dispose()

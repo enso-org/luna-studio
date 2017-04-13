@@ -46,9 +46,6 @@ openFile = withUUID . BatchCmd.openFile
 saveFile :: FilePath -> Command State ()
 saveFile = withUUID . BatchCmd.saveFile
 
-isSaved :: FilePath -> Command State ()
-isSaved = withUUID . BatchCmd.isSaved
-
 setProject :: FilePath -> Command State ()
 setProject = withUUID . BatchCmd.setProject
 

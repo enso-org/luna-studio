@@ -38,8 +38,28 @@ consoleTimeEnd   = consoleTimeEnd'   . convert
 
 actions :: LoopRef -> [Event -> Maybe (Command State ())]
 actions loop =
-    [ ProjectManager.handle
+    [ --App.handle
+    -- , Breadcrumbs.handle
+    -- , Camera.handle
+    -- , Clipboard.handle
+    -- , CodeEditor.handle
+      -- Collaboration.handle
+    -- , Connect.handle
+    -- , ConnectionPen.handle
+    -- , Control.handle
+    -- , Debug.handle
+    -- , Debug.handleEv
+    -- , Sidebar.handle
+    -- , Graph.handle
+    -- , MultiSelection.handle
+    -- , Navigation.handle
+    -- , Node.handle
+    -- , Port.handle
+    -- , Undo.handle
+    ProjectManager.handle
     , Text.handle
+    -- , Searcher.handle (scheduleEvent loop)
+    -- , Visualization.handle
     ]
 
 runCommands :: [Event -> Maybe (Command State ())] -> Event -> Command State ()

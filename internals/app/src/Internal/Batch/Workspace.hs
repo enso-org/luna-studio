@@ -17,13 +17,15 @@ import qualified Empire.API.Data.Project       as Project
 
 import           Text.ScopeSearcher.Item       (Items)
 
--- data UIGraphLocation = UIGraphLocation { _libraryName :: String
---                                        , _breadcrumb  :: Breadcrumb BreadcrumbItem
---                                        } deriving (Show, Eq, Generic)
+data UIGraphLocation = UIGraphLocation { _projectId   :: ProjectId
+                                       , _libraryName :: String
+                                       , _breadcrumb  :: Breadcrumb BreadcrumbItem
+                                       } deriving (Show, Eq, Generic)
 
 
-data Workspace = Workspace { _currentLocation  :: GraphLocation
-                           , _lastUILocation   :: Maybe GraphLocation
+data Workspace = Workspace { _projects         :: Map ProjectId Project
+                           , _currentLocation  :: GraphLocation
+                           , _lastUILocation   :: Maybe UIGraphLocation
                            , _isGraphLoaded    :: Bool
                            , _nodeSearcherData :: Items Node
                            } deriving (Show, Eq, Generic)
@@ -31,47 +33,47 @@ data Workspace = Workspace { _currentLocation  :: GraphLocation
 instance ToJSON Workspace
 
 instance Default Workspace where
-    def = Workspace (GraphLocation "" (Breadcrumb [])) def False def
+    def = Workspace def (GraphLocation nil 0 (Breadcrumb [])) def False def
 
 makeLenses ''Workspace
 
--- currentProject' :: Workspace -> Project
--- currentProject' w = fromMaybe err $ w ^? projects . ix pid where
---     pid = w ^. currentLocation . GraphLocation.projectId
---     err = error $ "Invalid project id: " <> show pid
---
--- currentProject :: Getter Workspace Project
--- currentProject = to currentProject'
+currentProject' :: Workspace -> Project
+currentProject' w = fromMaybe err $ w ^? projects . ix pid where
+    pid = w ^. currentLocation . GraphLocation.projectId
+    err = error $ "Invalid project id: " <> show pid
 
--- currentProjectId :: Functor f => (ProjectId -> f ProjectId) -> Workspace -> f Workspace
--- currentProjectId = currentLocation . GraphLocation.projectId
+currentProject :: Getter Workspace Project
+currentProject = to currentProject'
 
--- currentLibrary' :: Workspace -> Library
--- currentLibrary' w = fromMaybe err $ project ^? Project.libs . ix lid where
---     lid = w ^. currentLocation . GraphLocation.libraryId
---     project = w ^. currentProject
---     err = error "Invalid library id"
---
--- currentLibrary :: Getter Workspace Library
--- currentLibrary = to currentLibrary'
+currentProjectId :: Functor f => (ProjectId -> f ProjectId) -> Workspace -> f Workspace
+currentProjectId = currentLocation . GraphLocation.projectId
+
+currentLibrary' :: Workspace -> Library
+currentLibrary' w = fromMaybe err $ project ^? Project.libs . ix lid where
+    lid = w ^. currentLocation . GraphLocation.libraryId
+    project = w ^. currentProject
+    err = error "Invalid library id"
+
+currentLibrary :: Getter Workspace Library
+currentLibrary = to currentLibrary'
 
 
--- makeLenses ''UIGraphLocation
--- instance ToJSON UIGraphLocation
--- instance FromJSON UIGraphLocation
+makeLenses ''UIGraphLocation
+instance ToJSON UIGraphLocation
+instance FromJSON UIGraphLocation
 
-uiGraphLocation' :: Workspace -> GraphLocation
-uiGraphLocation' w = GraphLocation library breadcrumb' where
+uiGraphLocation' :: Workspace -> UIGraphLocation
+uiGraphLocation' w = UIGraphLocation project library breadcrumb' where
     breadcrumb' = w ^. currentLocation . GraphLocation.breadcrumb
-    -- project     = w ^. currentProjectId
-    library     = w ^. currentLocation . GraphLocation.filePath
+    project     = w ^. currentProjectId
+    library     = w ^. currentLibrary  . Library.path
 
-uiGraphLocation :: Getter Workspace GraphLocation
+uiGraphLocation :: Getter Workspace UIGraphLocation
 uiGraphLocation = to uiGraphLocation'
 
--- fromUIGraphLocation :: UIGraphLocation -> GraphLocation
--- fromUIGraphLocation (UIGraphLocation lib bc) = do
---     project <- projs ^? ix projId
---     let libs  = IntMap.toList $ project ^. Project.libs
---     (libraryId, _) <- find (\(_,p) -> p ^. Library.path == lib) libs
---     return $ GraphLocation projId libraryId bc
+fromUIGraphLocation :: Map ProjectId Project -> UIGraphLocation -> Maybe GraphLocation
+fromUIGraphLocation projs (UIGraphLocation projId lib bc) = do
+    project <- projs ^? ix projId
+    let libs  = IntMap.toList $ project ^. Project.libs
+    (libraryId, _) <- find (\(_,p) -> p ^. Library.path == lib) libs
+    return $ GraphLocation projId libraryId bc

@@ -8,7 +8,6 @@ dependencies:
   - binary
   - bytestring
   - containers
-  - directory
   - either
   - ekg
   - errors
@@ -21,12 +20,11 @@ dependencies:
   - m-logger
   - mtl
   - optparse-applicative
-  - path
   - pretty-show
+  - prologue
   - prologue
   - split
   - stm
-  - temporary
   - text
   - time
   - transformers

@@ -28,7 +28,7 @@ import           Data.Foldable        (toList)
 import           Empire.Data.Graph    (ASTState(..), Graph, withVis)
 import qualified Empire.Data.Graph    as Graph (ast, breadcrumbHierarchy)
 import qualified Empire.Data.BreadcrumbHierarchy as BH
-import           Empire.Data.Layers   (CodeMarkers, Marker, Meta, TypeLayer)
+import           Empire.Data.Layers   (Marker, Meta, TypeLayer)
 import           Empire.Empire        (Command)
 
 import           Data.Event           (Emitters, type (//))
@@ -77,8 +77,7 @@ type EmpireLayers = '[AnyExpr // Model, AnyExprLink // Model,
                       AnyExpr // TypeLayer,
                       AnyExpr // UID, AnyExprLink // UID,
                       AnyExpr // CodeSpan.CodeSpan,
-                      AnyExpr // Parser.Parser,
-                      AnyExpr // CodeMarkers]
+                      AnyExpr // Parser.Parser]
 
 type EmpireEmitters = '[New // AnyExpr, New // AnyExprLink,
                         Import // AnyExpr, Import // AnyExprLink,
@@ -159,5 +158,4 @@ runPass inits pass = do
         passSt <- DepState.get @Pass.State
         return (a, (st, passSt))
     put $ newG & Graph.ast .~ ASTState st passSt
-
     return a

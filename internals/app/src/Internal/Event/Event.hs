@@ -27,6 +27,7 @@ data Event = Init
         --    | UI                                UIEvent
            deriving (Generic, Show, NFData)
 
+makeLenses ''Event
 
 instance ToJSON Event
 
