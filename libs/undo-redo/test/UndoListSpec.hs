@@ -30,6 +30,7 @@ import           Prologue
 
 import qualified Empire.API.Data.Node          as Node
 import           Empire.API.Data.Port
+import           Empire.API.Data.LabeledTree
 import           Empire.API.Data.TypeRep
 import           Empire.API.Data.NodeLoc       (NodeLoc (..))
 import           Empire.API.Graph.AddNode      (Request (..), Result (..))
@@ -57,7 +58,7 @@ generateGraphLocation = do
 generateNode :: IO Node.ExpressionNode
 generateNode = do
     nodeId <- UUID.nextRandom
-    return $ Node.ExpressionNode nodeId "3" (Just "3") (Just "3") def (OutPortTree (Port (OutPortId All) "" TStar NotConnected) []) def False
+    return $ Node.ExpressionNode nodeId "3" (Just "3") (Just "3") (LabeledTree def (Port [] "whole" TStar NotConnected)) (LabeledTree def (Port [] "" TStar NotConnected)) def False
 
 spec :: Spec
 spec = describe "Undo-Redo for single user" $ do

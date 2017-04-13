@@ -34,7 +34,7 @@ import qualified Empire.API.Data.Node               as Node
 import           Empire.API.Data.NodeMeta           (NodeMeta)
 import           Empire.API.Data.NodeLoc            (NodeLoc (..))
 import qualified Empire.API.Data.NodeSearcher       as NS
-import           Empire.API.Data.Port               (InPort (..), OutPort (..), Port (..), PortId (..), PortState (..), getPortNumber)
+import           Empire.API.Data.Port               (InPort (..), OutPort (..), Port (..), InPortIndex (..), OutPortIndex (..), PortState (..), getPortNumber)
 import           Empire.API.Data.PortDefault        (Value (..))
 import           Empire.API.Data.PortRef            (InPortRef (..), OutPortRef (..))
 import           Empire.API.Data.PortRef            as PortRef
@@ -170,8 +170,8 @@ addExpressionNode location nodeId expression nodeMeta connectTo = do
 connectNodes :: UUID -> Maybe UUID -> GraphLocation -> Text -> NodeId -> NodeId -> StateT Env BusT ()
 connectNodes reqId guiId location expr dstNodeId srcNodeId = do
     let exprCall = head $ splitOneOf " ." $ Text.unpack expr
-        inPort   = if exprCall `elem` stdlibFunctions then Arg 0 else Self
-        request  = Request reqId guiId $ AddConnection.Request location (Left $ OutPortRef (NodeLoc def srcNodeId) All) (Left . InPortRef' $ InPortRef (NodeLoc def dstNodeId) inPort)
+        inPort   = if exprCall `elem` stdlibFunctions then [Arg 0] else [Self]
+        request  = Request reqId guiId $ AddConnection.Request location (Left $ OutPortRef (NodeLoc def srcNodeId) []) (Left . InPortRef' $ InPortRef (NodeLoc def dstNodeId) inPort)
         action (AddConnection.Request location (Left src) (Left dst)) = Graph.connectCondTC False location src dst
         success _ _ connection                                        = sendToBus' $ ConnectUpdate.Update location connection
     modifyGraph defInverse action success request
@@ -194,10 +194,10 @@ handleAddConnection :: Request AddConnection.Request -> StateT Env BusT ()
 handleAddConnection = modifyGraph defInverse action replyResult where
     getSrcPort src = case src of
         Left portRef -> portRef
-        Right nodeId -> OutPortRef (NodeLoc def nodeId) All
+        Right nodeId -> OutPortRef (NodeLoc def nodeId) []
     getDstPort dst = case dst of
         Left portRef  -> portRef
-        Right nodeLoc -> InPortRef' $ InPortRef nodeLoc Self
+        Right nodeLoc -> InPortRef' $ InPortRef nodeLoc [Self]
     action  (AddConnection.Request location src dst) = Graph.connectCondTC True location (getSrcPort src) (getDstPort dst)
 
 handleAddNode :: Request AddNode.Request -> StateT Env BusT ()
@@ -209,7 +209,7 @@ handleAddNode = modifyGraph defInverse action success where
 
 handleAddPort :: Request AddPort.Request -> StateT Env BusT ()
 handleAddPort = modifyGraph defInverse action replyResult where
-    action  (AddPort.Request location (OutPortRef (NodeLoc _ nid) (Projection i _))) = Graph.addPort location nid i
+    action  (AddPort.Request location (OutPortRef (NodeLoc _ nid) (Projection i : _))) = Graph.addPort location nid i
 
 handleAddSubgraph :: Request AddSubgraph.Request -> StateT Env BusT ()
 handleAddSubgraph = modifyGraph defInverse action replyResult where
@@ -254,9 +254,7 @@ handleRemovePort :: Request RemovePort.Request -> StateT Env BusT ()
 handleRemovePort = modifyGraphOk inverse action where
     inverse (RemovePort.Request location portRef) = do
         Graph allNodes allConnections _ _ monads <- Graph.withGraph location $ runASTOp buildGraph
-        let conns = flip filter allConnections $ case portRef of
-                (OutPortRef' outPortRef) -> (\(src, _) -> src == outPortRef)
-                (InPortRef'  inPortRef)  -> (\(_, dst) -> dst == inPortRef)
+        let conns = flip filter allConnections $ (== portRef) . fst
         return $ RemovePort.Inverse $ map (uncurry Connection) conns
     action (RemovePort.Request location portRef)  = Graph.removePort location portRef
 
@@ -329,7 +327,7 @@ stdlibFunctions = ["mockFunction"]
 stdlibMethods :: [String]
 stdlibMethods = ["mockMethod"]
 
-mockNSData :: NS.Items Node
+mockNSData :: NS.Items ExpressionNode
 mockNSData = Map.empty
 -- mockNSData = Map.fromList $ functionsList <> modulesList where
 --     nodeSearcherSymbols = words "mockNode1 mockNode2 mockNode3 mockNode4"

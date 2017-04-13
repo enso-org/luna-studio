@@ -14,12 +14,12 @@ import           Empire.API.Data.PortDefault (PortDefault)
 import           Empire.API.Data.TypeRep     (TypeRep)
 
 
-data InPortIndex = Self | Arg Int                             deriving (Show, Eq, Ord, NFData, Generic)
+data InPortIndex = Self | Arg Int                             deriving (Show, Eq, Ord, NFData, Generic, Read)
 data InPorts s   = InPorts { _self :: Maybe s, _args :: [s] } deriving (Default, Eq, Foldable, Functor, Generic, NFData, Show, Traversable)
 type InPortId    = [InPortIndex]
 makeLenses ''InPorts
 
-data    OutPortIndex  = Projection Int deriving (Show, Eq, Ord, NFData, Generic)
+data    OutPortIndex  = Projection Int deriving (Show, Eq, Ord, NFData, Generic, Read)
 newtype OutPorts s    = OutPorts [s]   deriving (Default, Eq, Foldable, Functor, Generic, NFData, Show, Traversable)
 type    OutPortId     = [OutPortIndex]
 makeWrapped ''OutPorts
