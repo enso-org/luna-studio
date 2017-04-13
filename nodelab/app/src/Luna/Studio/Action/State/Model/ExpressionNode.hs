@@ -15,7 +15,7 @@ import           Luna.Studio.React.Model.Connection          (toValidEmpireConne
 import           Luna.Studio.React.Model.Constants           (nodeRadius)
 import           Luna.Studio.React.Model.Node.ExpressionNode (ExpressionNode, NodeLoc, hasPort, isCollapsed, nodeId, nodeLoc, nodeLoc,
                                                               position, position, zPos)
-import           Luna.Studio.React.Model.Port                (InPort (Self), PortId (InPortId))
+import           Luna.Studio.React.Model.Port                (AnyPortId (InPortId'), InPortIndex (Self))
 import           Luna.Studio.State.Action                    (connectSourcePort, penConnectAction)
 import           Luna.Studio.State.Global                    (State, actions, currentConnectAction)
 
@@ -60,7 +60,7 @@ getNodeAtPosition p = do
 
 shouldDisplayPortSelf :: ExpressionNode -> Command State Bool
 shouldDisplayPortSelf node = do
-    let selfId = InPortId Self
+    let selfId = InPortId' [Self]
     if not $ hasPort selfId node
         then return False
         else do
@@ -72,4 +72,4 @@ shouldDisplayPortSelf node = do
                 isSource = (view connectSourcePort <$> mayConnectAction) == Just (toAnyPortRef nl selfId)
             if (not . isCollapsed $ node) || penConnecting || connectToSelfPossible || isSource
                 then return True
-                else inGraph $ InPortRef nl Self
+                else inGraph $ InPortRef nl [Self]

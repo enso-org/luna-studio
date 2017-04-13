@@ -13,21 +13,21 @@ import           Luna.Studio.Action.Basic.RemoveConnection   (localRemoveConnect
 import           Luna.Studio.Action.Command                  (Command)
 import           Luna.Studio.Action.State.NodeEditor         (modifyExpressionNode)
 import           Luna.Studio.Prelude
-import           Luna.Studio.React.Model.Node                (ExpressionNode, NodePath, nodeLoc, toExpressionNodesMap, toSidebarNodesMap,
-                                                              _Expression, _Sidebar)
+import           Luna.Studio.React.Model.Node                (ExpressionNode, NodePath, nodeLoc, toNodesMap)
 import           Luna.Studio.React.Model.Node.ExpressionNode (ExpandedMode (Function), Mode (Collapsed, Expanded), Subgraph (Subgraph),
-                                                              expressionNodes, mode, sidebarNodes)
+                                                              expressionNodes, inputNode, mode, outputNode)
 import           Luna.Studio.State.Global                    (State)
 
 
 localMerge :: NodePath -> Map BreadcrumbItem Graph -> Command State ()
 localMerge parentPath graphs = do
     subgraphs <- forM (Map.toList graphs) $ \(k, graph) -> do
-        let allNodes           = (convert . (NodeLoc.replaceLast k parentPath,) <$> graph ^. GraphAPI.nodes)
-            expressionNodesMap = toExpressionNodesMap $ allNodes ^.. traverse . _Expression
-            sidebarNodesMap    = toSidebarNodesMap    $ allNodes ^.. traverse . _Sidebar
+        let path =  NodeLoc.replaceLast k parentPath
+            expressionNodesMap = toNodesMap $ (convert . (path, ) <$> graph ^. GraphAPI.nodes)
+            mayInputNode       = convert . (path, ) <$> graph ^. GraphAPI.inputSidebar
+            mayOutputNode      = convert . (path, ) <$> graph ^. GraphAPI.outputSidebar
             monads             = graph ^. GraphAPI.monads
-        return (k, Subgraph expressionNodesMap sidebarNodesMap monads)
+        return (k, Subgraph expressionNodesMap mayInputNode mayOutputNode monads)
     let parentLoc = NodeLoc.fromPath parentPath
     modifyExpressionNode parentLoc $ mode .= Expanded (Function $ Map.fromList subgraphs)
     forM_ (Map.elems graphs) $ \graph -> do
@@ -48,5 +48,6 @@ localUnmerge node = case node ^. mode of
 localUnmergeSubgraph :: Subgraph -> Command State ()
 localUnmergeSubgraph subgraph = do
     let expressionLocs = view nodeLoc <$> (subgraph ^. expressionNodes . to HashMap.elems)
-        sidebarLocs    = view nodeLoc <$> (subgraph ^. sidebarNodes . to HashMap.elems)
-    void $ localRemoveConnectionsContainingNodes $ expressionLocs <> sidebarLocs
+        inputLoc      = view nodeLoc <$> (subgraph ^. inputNode )
+        outputLoc     = view nodeLoc <$> (subgraph ^. outputNode)
+    void $ localRemoveConnectionsContainingNodes $ expressionLocs <> maybeToList inputLoc <> maybeToList outputLoc

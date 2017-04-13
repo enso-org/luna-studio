@@ -15,7 +15,7 @@ module Luna.Studio.Action.Connect
 import           Control.Monad.Trans.Maybe                   (MaybeT (MaybeT), runMaybeT)
 import           Data.ScreenPosition                         (ScreenPosition)
 import qualified Empire.API.Data.Connection                  as ConnectionAPI
-import           Empire.API.Data.Port                        (InPort (Self), PortId (InPortId))
+import           Empire.API.Data.Port                        (AnyPortId (InPortId'), InPortIndex (Self))
 import           Empire.API.Data.PortRef                     (AnyPortRef (InPortRef', OutPortRef'))
 import qualified Empire.API.Data.PortRef                     as PortRef
 import qualified JS.GoogleAnalytics                          as GA
@@ -49,7 +49,9 @@ instance Action (Command State) Connect where
     update       = updateActionWithKey   connectAction
     end action   = do
         stopConnectingUnsafe action
-        when (action ^. connectIsPortPhantom) $ void $ localRemovePort $ action ^. connectSourcePort
+        when (action ^. connectIsPortPhantom) $ case action ^. connectSourcePort of
+            OutPortRef' outPortRef -> void $ localRemovePort outPortRef
+            _                      -> return ()
 
 
 handleConnectionMouseDown :: MouseEvent -> ConnectionId -> ModifiedEnd -> Command State ()
@@ -70,7 +72,7 @@ startConnecting screenMousePos anyPortRef mayModifiedConnId isPortPhantom connec
         node <- MaybeT $ getNode nodeLoc
         let shouldDoNodeDrag = case node of
                 Expression node' -> isNothing mayModifiedConnId
-                                 && portId == InPortId Self
+                                 && portId == InPortId' [Self]
                                  && isCollapsed node'
                 _                -> False
         if shouldDoNodeDrag
@@ -86,7 +88,9 @@ startConnecting screenMousePos anyPortRef mayModifiedConnId isPortPhantom connec
                     withJust mayModifiedConnId $ \connId ->
                         NodeEditor.connections . at connId .= Nothing
                     NodeEditor.currentConnections .= [currentConnectionModel]
-    when (isNothing maySuccess && isPortPhantom) $ void $ localRemovePort anyPortRef
+    when (isNothing maySuccess && isPortPhantom) $ case anyPortRef of
+        OutPortRef' outPortRef -> void $ localRemovePort outPortRef
+        _                      -> return ()
 
 handleMove :: MouseEvent -> Connect -> Command State ()
 handleMove evt action = when (isNothing $ action ^. connectSnappedPort) $ do
@@ -128,7 +132,9 @@ stopConnectingUnsafe _ = do
 connectToPort :: AnyPortRef -> Connect -> Command State ()
 connectToPort dst action = do
     withJust (toValidEmpireConnection dst $ action ^. connectSourcePort) $ \newConn -> do
-        when (action ^. connectIsPortPhantom) $ Batch.addPort $ action ^. connectSourcePort
+        when (action ^. connectIsPortPhantom) $ case action ^. connectSourcePort of
+            OutPortRef' outPortRef -> Batch.addPort outPortRef
+            _                      -> return ()
         connect (Left $ newConn ^. ConnectionAPI.src) (Left $ newConn ^. ConnectionAPI.dst)
         GA.sendEvent $ GA.Connect GA.Manual
     stopConnectingUnsafe action

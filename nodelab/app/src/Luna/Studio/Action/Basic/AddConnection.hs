@@ -10,7 +10,7 @@ import qualified Luna.Studio.Action.State.NodeEditor     as NodeEditor
 import           Luna.Studio.Prelude
 import           Luna.Studio.React.Model.Connection      (ConnectionId)
 import           Luna.Studio.React.Model.Node            (NodeLoc)
-import           Luna.Studio.React.Model.Port            (InPort (Self))
+import           Luna.Studio.React.Model.Port            (InPortIndex (Self))
 import           Luna.Studio.State.Global                (State)
 
 
@@ -28,5 +28,5 @@ localAddConnection src' dst' = do
     mayConn <- createConnection src' dst'
     withJust mayConn $ \conn -> do
         NodeEditor.addConnection conn
-        when (Self == dst' ^. dstPortId) . void . updatePortSelfVisibility $ dst' ^. dstNodeLoc
+        when ([Self] == dst' ^. dstPortId) . void . updatePortSelfVisibility $ dst' ^. dstNodeLoc
     return $ isJust mayConn

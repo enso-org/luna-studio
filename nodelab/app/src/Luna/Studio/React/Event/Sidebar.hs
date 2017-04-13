@@ -17,7 +17,8 @@ data Event = AddPort           AnyPortRef
            | PortNameApply     AnyPortRef String
            | PortNameDiscard   AnyPortRef
            | PortNameStartEdit AnyPortRef
-           | ToggleSidebarMode NodeLoc
+           | ToggleInputMode   NodeLoc
+           | ToggleOutputMode  NodeLoc
             deriving (Show, Generic, NFData, Typeable)
 
 instance ToJSON   Event

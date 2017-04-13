@@ -4,7 +4,7 @@ import           Empire.API.Data.PortRef             (InPortRef, OutPortRef)
 import           JS.Scene                            (inputSidebar, outputSidebar)
 import           Luna.Studio.Action.Command          (Command)
 import           Luna.Studio.Action.State.Model      (createConnectionModel)
-import           Luna.Studio.Action.State.NodeEditor (getConnections, getSidebarNodes, modifyNodeEditor)
+import           Luna.Studio.Action.State.NodeEditor (getConnections, getInputNodes, getOutputNodes, modifyNodeEditor)
 import qualified Luna.Studio.Action.State.NodeEditor as NodeEditor
 import           Luna.Studio.Prelude
 import           Luna.Studio.React.Model.Connection  (Connection, ConnectionId, connectionId, dst, src, toConnectionsMap)
@@ -58,5 +58,7 @@ redrawConnectionsForNodes nodeLocs = do
     return $ map (view connectionId) conns
 
 redrawConnectionsForSidebarNodes :: Command State [ConnectionId]
-redrawConnectionsForSidebarNodes = getSidebarNodes >>=
-    redrawConnectionsForNodes . map (view nodeLoc)
+redrawConnectionsForSidebarNodes = do
+    ins  <- redrawConnectionsForNodes . map (view nodeLoc) =<< getInputNodes
+    outs <- redrawConnectionsForNodes . map (view nodeLoc) =<< getOutputNodes
+    return $ ins <> outs

@@ -76,36 +76,46 @@ instance Binary PortState
 
 isInPort :: AnyPortId -> Bool
 isInPort (InPortId' _) = True
-isInPort _            = False
+isInPort _             = False
 
 isOutPort :: AnyPortId -> Bool
 isOutPort (OutPortId' _) = True
-isOutPort _             = False
+isOutPort _              = False
 
-isSelf :: AnyPortId -> Bool
-isSelf (InPortId' (Self:_)) = True
-isSelf _                   = False
+isSelf :: InPortId -> Bool
+isSelf (Self:_) = True
+isSelf _        = False
 
-isInAll :: AnyPortId -> Bool
-isInAll (InPortId' []) = True
-isInAll _             = False
+isInAll :: InPortId -> Bool
+isInAll [] = True
+isInAll _  = False
 
-isArg :: AnyPortId -> Bool
-isArg (InPortId' (Arg _:_)) = True
-isArg _                    = False
+isArg :: InPortId -> Bool
+isArg (Arg _:_) = True
+isArg _         = False
 
-isOutAll :: AnyPortId -> Bool
-isOutAll (OutPortId' []) = True
-isOutAll _              = False
+isOutAll :: OutPortId -> Bool
+isOutAll [] = True
+isOutAll _  = False
 
-isProjection :: AnyPortId -> Bool
-isProjection (OutPortId' (Projection _:_)) = True
-isProjection _                            = False
+isProjection :: OutPortId -> Bool
+isProjection (Projection _:_) = True
+isProjection _                = False
 
-class PortNumber p where getPortNumber :: p -> Int
+withOut :: (OutPortId -> Bool) -> AnyPortId -> Bool
+withOut = anyOf _OutPortId'
+
+withIn :: (InPortId -> Bool) -> AnyPortId -> Bool
+withIn = anyOf _InPortId'
+
+class PortNumber p where
+    getPortNumber :: p -> Int
 instance PortNumber InPortId where
     getPortNumber (Arg i : _) = i
     getPortNumber _           = 0
 instance PortNumber OutPortId where
     getPortNumber (Projection i : _) = i
     getPortNumber _                  = 0
+instance PortNumber AnyPortId where
+    getPortNumber (InPortId' i) = getPortNumber i
+    getPortNumber (OutPortId' i) = getPortNumber i

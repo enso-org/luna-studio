@@ -49,7 +49,8 @@ nodeEditor :: ReactView (Ref App, NodeEditor)
 nodeEditor = React.defineView name $ \(ref, ne) -> do
     let camera       = ne ^. NodeEditor.screenTransform . CameraTransformation.logicalToScreen
         nodes        = ne ^. NodeEditor.expressionNodes . to HashMap.elems
-        sidebars     = ne ^. NodeEditor.sidebarNodes . to HashMap.elems
+        input        = ne ^. NodeEditor.inputNode
+        output       = ne ^. NodeEditor.outputNode
         lookupNode m = ( m ^. MonadPath.monadType
                        , m ^. MonadPath.path . to (mapMaybe $ flip HashMap.lookup $ ne ^. NodeEditor.expressionNodes))
         monads       = map lookupNode $ ne ^. NodeEditor.monads
@@ -102,6 +103,7 @@ nodeEditor = React.defineView name $ \(ref, ne) -> do
             forM_ (ne ^. NodeEditor.visualizations) $ pinnedVisualization_ ref ne
             forM_ (ne ^. NodeEditor.searcher      ) $ searcher_ ref camera
 
-        forM_ sidebars $ sidebar_ ref
+        forM_ input  $ sidebar_ ref
+        forM_ output  $ sidebar_ ref
 
         planeCanvas_ mempty

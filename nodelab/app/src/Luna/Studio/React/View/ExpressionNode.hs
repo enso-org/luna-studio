@@ -20,7 +20,8 @@ import           Luna.Studio.React.Model.Node.ExpressionNode           (Expressi
                                                                         isCollapsed, returnsError)
 import qualified Luna.Studio.React.Model.Node.ExpressionNode           as Node
 import qualified Luna.Studio.React.Model.Node.ExpressionNodeProperties as Prop
-import           Luna.Studio.React.Model.Port                          (InPort (Arg, Self), PortId (InPortId), isAll, isInPort)
+import           Luna.Studio.React.Model.Port                          (AnyPortId (InPortId'), InPortIndex (Arg, Self), isInPort, isOutAll,
+                                                                        withOut)
 import qualified Luna.Studio.React.Model.Port                          as Port
 import           Luna.Studio.React.Store                               (Ref, dispatch)
 import           Luna.Studio.React.View.ExpressionNode.Properties      (nodeProperties_)
@@ -100,7 +101,7 @@ node = React.defineView name $ \(ref, n) -> case n ^. Node.mode of
                             , "width"  $= "200"
                             , "height" $= "30"
                             ] $ singleField_ ["id"  $= nameLabelId] "name-label"
-                                $ Field.mk ref (n ^. Node.name)
+                                $ Field.mk ref (fromMaybe def $ n ^. Node.name)
                                 & Field.onCancel .~ Just (const $ UI.NodeEvent $ Node.NameEditDiscard nodeLoc)
                                 & Field.onAccept .~ Just (UI.NodeEvent . Node.NameEditApply nodeLoc)
                     else
@@ -108,7 +109,7 @@ node = React.defineView name $ \(ref, n) -> case n ^. Node.mode of
                             [ "key"         $= "nameText"
                             , onDoubleClick $ \e _ -> stopPropagation e : dispatch ref (UI.NodeEvent $ Node.NameEditStart nodeLoc)
                             , "className"   $= Style.prefixFromList [ "node__name", "noselect" ]
-                            ] $ elemString $ convert $ n ^. Node.name
+                            ] $ elemString $ convert $ fromMaybe def $ n ^. Node.name
                     g_
                         [ "key"       $= "icons"
                         , "className" $= Style.prefix "node__icons"
@@ -168,12 +169,12 @@ nodePorts :: ReactView (Ref App, ExpressionNode)
 nodePorts = React.defineView objNamePorts $ \(ref, n) -> do
     let nodeId     = n ^. Node.nodeId
         nodeLoc    = n ^. Node.nodeLoc
-        nodePorts' = Map.elems $ n ^. Node.ports
+        nodePorts' = Node.portsList n
         ports p   = forM_ p $ \port -> port_ ref
                                              nodeLoc
                                              port
                                             (if isInPort $ port ^. Port.portId then countArgPorts n else countOutPorts n)
-                                            (isAll (port ^. Port.portId) && countArgPorts n + countOutPorts n == 1)
+                                            (withOut isOutAll (port ^. Port.portId) && countArgPorts n + countOutPorts n == 1)
     svg_
         [ "key"       $= "nodePorts"
         , "className" $= Style.prefixFromList [ "node__ports" ]
@@ -199,12 +200,12 @@ nodePorts = React.defineView objNamePorts $ \(ref, n) -> do
             , "key"       $= "nodeTransform"
             ] $ do
             if isCollapsed n then do
-                ports $ filter (\port -> (port ^. Port.portId) /= InPortId Self) nodePorts'
-                ports $ filter (\port -> (port ^. Port.portId) == InPortId Self) nodePorts'
+                ports $ filter (\port -> (port ^. Port.portId) /= InPortId' [Self]) nodePorts'
+                ports $ filter (\port -> (port ^. Port.portId) == InPortId' [Self]) nodePorts'
             else do
-                ports $ filter (\port -> (port ^. Port.portId) == InPortId Self) nodePorts'
-                forM_  (filter (\port -> (port ^. Port.portId) /= InPortId Self) nodePorts') $ \port -> portExpanded_ ref nodeLoc port
-            portPhantom_ ref $ toAnyPortRef nodeLoc $ InPortId (Arg $ countArgPorts n)
+                ports $ filter (\port -> (port ^. Port.portId) == InPortId' [Self]) nodePorts'
+                forM_  (filter (\port -> (port ^. Port.portId) /= InPortId' [Self]) nodePorts') $ \port -> portExpanded_ ref nodeLoc port
+            portPhantom_ ref $ toAnyPortRef nodeLoc $ InPortId' [Arg $ countArgPorts n]
 
 nodeContainer_ :: Ref App -> [Subgraph] -> ReactElementM ViewEventHandler ()
 nodeContainer_ ref subgraphs = React.viewWithSKey nodeContainer "node-container" (ref, subgraphs) mempty
@@ -214,7 +215,8 @@ nodeContainer = React.defineView name $ \(ref, subgraphs) -> do
     div_
         [ "className" $= Style.prefix "subgraphs"
         ] $ forM_ subgraphs $ \subgraph -> do
-        let sidebars     = subgraph ^. Node.sidebarNodes . to HashMap.elems
+        let input        = subgraph ^. Node.inputNode
+            output       = subgraph ^. Node.outputNode
             nodes        = subgraph ^. Node.expressionNodes . to HashMap.elems
             lookupNode m = ( m ^. MonadPath.monadType
                            , m ^. MonadPath.path . to (mapMaybe $ flip HashMap.lookup $ subgraph ^. Node.expressionNodes))

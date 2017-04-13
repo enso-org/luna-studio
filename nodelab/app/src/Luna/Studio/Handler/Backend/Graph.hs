@@ -32,12 +32,12 @@ import qualified Empire.API.Graph.SetNodeExpression           as SetNodeExpressi
 import qualified Empire.API.Graph.SetNodesMeta                as SetNodesMeta
 import qualified Empire.API.Graph.SetPortDefault              as SetPortDefault
 import qualified Empire.API.Response                          as Response
-import           Luna.Studio.Action.Basic                     (createGraph, localAddConnection, localAddNode, localAddPort,
+import           Luna.Studio.Action.Basic                     (createGraph, localAddConnection, localAddExpressionNode, localAddPort,
                                                                localAddSubgraph, localMerge, localMovePort, localRemoveConnection,
                                                                localRemoveNodes, localRemovePort, localRenameNode, localSetCode,
                                                                localSetNodeCode, localSetNodeExpression, localSetNodesMeta,
-                                                               localSetPortDefault, localSetSearcherHints, localUpdateExpressionNodes,
-                                                               localUpdateNode, localUpdateNodeTypecheck, localUpdateNodes,
+                                                               localSetPortDefault, localSetSearcherHints, localUpdateExpressionNode,
+                                                               localUpdateExpressionNodes, localUpdateInputNode, localUpdateNodeTypecheck,
                                                                setNodeProfilingData, setNodeValue)
 import           Luna.Studio.Action.Basic.Revert              (revertAddConnection, revertAddNode, revertAddPort, revertAddSubgraph,
                                                                revertMovePort, revertRemoveConnection, revertRemoveNodes, revertRemovePort,
@@ -73,6 +73,8 @@ handle (Event.Batch ev) = Just $ case ev of
             when isGoodLocation $ do
                 putStrLn "GetProgram"
                 let nodes       = convert . (NodeLoc.empty,) <$> result ^. GetProgram.graph . Graph.nodes
+                    input       = convert . (NodeLoc.empty,) <$> result ^. GetProgram.graph . Graph.inputSidebar
+                    output      = convert . (NodeLoc.empty,) <$> result ^. GetProgram.graph . Graph.outputSidebar
                     connections = result ^. GetProgram.graph . Graph.connections
                     monads      = result ^. GetProgram.graph . Graph.monads
                     code        = result ^. GetProgram.code
@@ -80,7 +82,7 @@ handle (Event.Batch ev) = Just $ case ev of
                     breadcrumb  = result ^. GetProgram.breadcrumb
                 Global.workspace . Workspace.nodeSearcherData .= nsData
                 setBreadcrumbs breadcrumb
-                createGraph nodes connections monads
+                createGraph nodes input output connections monads
                 localSetCode code
                 unless isGraphLoaded $ do
                     centerGraph
@@ -111,30 +113,25 @@ handle (Event.Batch ev) = Just $ case ev of
             let node = convert (path, node')
             ownRequest    <- isOwnRequest requestId
             if ownRequest then do
-                 void $ localUpdateNode node
-                 case node of
-                     Expression n -> collaborativeModify [n ^. nodeLoc]
-                     _            -> return ()
-            else localAddNode node
+                 void $ localUpdateExpressionNode node
+                 collaborativeModify [node ^. nodeLoc]
+            else localAddExpressionNode node
 
     AddPortResponse response -> handleResponse response success failure where
         requestId    = response ^. Response.requestId
         request      = response ^. Response.request
         location     = request  ^. AddPort.location
-        portRef      = request  ^. AddPort.anyPortRef
+        portRef      = request  ^. AddPort.outPortRef
         failure _    = whenM (isOwnRequest requestId) $ revertAddPort request
         success node' = inCurrentLocation location $ \path -> do
             let node = convert (path, node')
             ownRequest    <- isOwnRequest requestId
             if ownRequest then do
-                 void $ localUpdateNode node
-                 case node of
-                     Expression n -> collaborativeModify [n ^. nodeLoc]
-                     _            -> return ()
+                 void $ localUpdateInputNode node
             else do
                 --TODO[LJK, PM]: What should happen if localAddPort fails? (Example reason - node is not in graph)
                 void $ localAddPort $ prependPath path portRef
-                void $ localUpdateNode node
+                void $ localUpdateInputNode node
 
     AddSubgraphResponse response -> handleResponse response success failure where
         requestId     = response ^. Response.requestId
@@ -143,7 +140,7 @@ handle (Event.Batch ev) = Just $ case ev of
         conns         = request  ^. AddSubgraph.connections
         failure _     = whenM (isOwnRequest requestId) $ revertAddSubgraph request
         success nodes' = inCurrentLocation location $ \path -> do
-            let nodes = (convert . (path,) <$> nodes') ^.. traverse . _Expression
+            let nodes = (convert . (path,) <$> nodes')
             ownRequest    <- isOwnRequest requestId
             if ownRequest then do
                 localUpdateExpressionNodes nodes
@@ -187,7 +184,6 @@ handle (Event.Batch ev) = Just $ case ev of
             whenM (isOwnRequest requestId) $
                 localMerge path $ result ^. GetSubgraphs.graphs
 
-
     MonadsUpdate update -> do
         inCurrentLocation (update ^. MonadsUpdate.location) $ \path ->
             updateMonads $ update ^. MonadsUpdate.monads
@@ -203,8 +199,8 @@ handle (Event.Batch ev) = Just $ case ev of
             let node = convert (path, node')
             ownRequest <- isOwnRequest requestId
             if ownRequest then
-                void $ localUpdateNode node
-            else void $ localMovePort portRef newPos >> localUpdateNode node
+                void $ localUpdateInputNode node
+            else void $ localMovePort portRef newPos >> localUpdateInputNode node
 
     NodeResultUpdate update -> do
         let location = update ^. NodeResultUpdate.location
@@ -215,7 +211,7 @@ handle (Event.Batch ev) = Just $ case ev of
 
     NodesUpdate update -> do
         inCurrentLocation (update ^. NodesUpdate.location) $ \path -> do
-            localUpdateNodes $ convert . (path,) <$> update ^. NodesUpdate.nodes
+            localUpdateExpressionNodes $ convert . (path,) <$> update ^. NodesUpdate.nodes
 
     NodeTypecheckerUpdate update -> do
       inCurrentLocation (update ^. NodeTCUpdate.location) $ \path ->

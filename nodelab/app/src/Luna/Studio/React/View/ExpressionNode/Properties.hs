@@ -28,7 +28,7 @@ nodeProperties = React.defineView objName $ \(ref, p) -> do
             , "className" $= Style.prefixFromList [ "row", "row--first" ]
             --, onDoubleClick $ \_ _ -> dispatch ref $ UI.NodeEvent $ Node.NameEditStart nodeLoc
             ] $ mempty
-        forM_ (p ^. Prop.ports) $ portControl_ ref nodeLoc (p ^. Prop.isLiteral)
+        forM_ (Prop.inPortsList p) $ portControl_ ref nodeLoc
         div_
             [ "key"       $= "showResults"
             , "className" $= Style.prefix "row"

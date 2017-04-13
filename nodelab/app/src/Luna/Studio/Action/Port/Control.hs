@@ -8,7 +8,7 @@ module Luna.Studio.Action.Port.Control
 
 import           Data.ScreenPosition                 (ScreenPosition, x)
 import           Empire.API.Data.PortDefault         (PortDefault (Constant), Value (DoubleValue, IntValue))
-import           Empire.API.Data.PortRef             (AnyPortRef)
+import           Empire.API.Data.PortRef             (InPortRef)
 import qualified JS.UI                               as JS
 import           Luna.Studio.Action.Basic            (localSetPortDefault)
 import qualified Luna.Studio.Action.Batch            as Batch
@@ -34,7 +34,7 @@ instance Action (Command State) SliderDrag where
         removeActionFromState sliderDragAction
 
 
-startMoveSlider :: AnyPortRef -> ScreenPosition -> InitValue -> Command State ()
+startMoveSlider :: InPortRef -> ScreenPosition -> InitValue -> Command State ()
 startMoveSlider portRef initPos initVal = do
     begin $ SliderDrag portRef initPos initVal
     JS.setMovingCursor

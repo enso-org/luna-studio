@@ -12,7 +12,7 @@ import qualified Empire.API.Data.PortRef      as PortRef
 import           Luna.Studio.Data.Color       (Color)
 import           Luna.Studio.Prelude
 import           Luna.Studio.React.Model.Node (NodeLoc)
-import           Luna.Studio.React.Model.Port (InPort, OutPort)
+import           Luna.Studio.React.Model.Port (InPortId, OutPortId)
 
 
 type ConnectionId = InPortRef
@@ -53,13 +53,13 @@ connectionId = dst
 srcNodeLoc :: Lens' Connection NodeLoc
 srcNodeLoc = src . PortRef.srcNodeLoc
 
-srcPortId :: Lens' Connection OutPort
+srcPortId :: Lens' Connection OutPortId
 srcPortId = src . PortRef.srcPortId
 
 dstNodeLoc :: Lens' Connection NodeLoc
 dstNodeLoc = dst . PortRef.dstNodeLoc
 
-dstPortId :: Lens' Connection InPort
+dstPortId :: Lens' Connection InPortId
 dstPortId = dst . PortRef.dstPortId
 
 raw :: Getter Connection (OutPortRef, InPortRef)

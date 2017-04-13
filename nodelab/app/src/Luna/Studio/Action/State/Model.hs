@@ -4,7 +4,7 @@ module Luna.Studio.Action.State.Model
     , getConnectionsIntersectingSegment
     , getInputSidebarPortPosition
     , getIntersectingConnections
-    , getMousePositionInSidebar
+    , getMousePositionInInputSidebar
     , getNodeAtPosition
     , getOutputSidebarPortPosition
     , getPortPositionInInputSidebar
@@ -18,6 +18,6 @@ import           Luna.Studio.Action.State.Model.Connection     (createConnection
                                                                 getConnectionsIntersectingSegment, getIntersectingConnections)
 import           Luna.Studio.Action.State.Model.ExpressionNode (getNodeAtPosition, shouldDisplayPortSelf)
 import           Luna.Studio.Action.State.Model.Port           (portAngleStart, portAngleStop)
-import           Luna.Studio.Action.State.Model.Sidebar        (getInputSidebarPortPosition, getMousePositionInSidebar,
+import           Luna.Studio.Action.State.Model.Sidebar        (getInputSidebarPortPosition, getMousePositionInInputSidebar,
                                                                 getOutputSidebarPortPosition, getPortPositionInInputSidebar,
                                                                 getPortPositionInOutputSidebar)

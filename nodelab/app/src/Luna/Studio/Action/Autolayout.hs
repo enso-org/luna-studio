@@ -14,13 +14,13 @@ import           Luna.Studio.Prelude
 import           Luna.Studio.React.Model.Connection          (Connection, dstNodeLoc, dstPortId, srcNodeLoc, srcPortId)
 import           Luna.Studio.React.Model.Node.ExpressionNode (ExpressionNode, NodeLoc)
 import qualified Luna.Studio.React.Model.Node.ExpressionNode as Node
-import           Luna.Studio.React.Model.Port                (InPort (Self), PortId (InPortId), isSelf)
+import           Luna.Studio.React.Model.Port                (AnyPortId (InPortId'), InPortIndex (Self), isSelf)
 import           Luna.Studio.State.Global                    (State)
 
 
 data DFSState = NotProccessed | InProccess | Proccessed deriving (Eq, Show)
 data NodeInfo = NodeInfo { _nodeLoc  :: NodeLoc
-                         , _name     :: Text
+                         , _name     :: Maybe Text
                          , _actPos   :: Position
                          , _dfsState :: DFSState
                          , _inConns  :: [Connection]
@@ -99,7 +99,7 @@ areInChain n1 n2 =
         hasSingleOutConn n  = length (n ^. outConns) == 1
         onlyInConnNl  n     = if hasSingleInConn  n then Just . view srcNodeLoc . head $ n ^. inConns  else Nothing
         onlyOutConnNl n     = if hasSingleOutConn n then Just . view dstNodeLoc . head $ n ^. outConns else Nothing
-        onlyToSelfConnNl n  = case filter (isSelf . InPortId . view dstPortId) $ n ^. outConns of
+        onlyToSelfConnNl n  = case filter (isSelf . view dstPortId) $ n ^. outConns of
             [conn] -> Just $ conn ^. dstNodeLoc
             _      -> Nothing
 
@@ -191,8 +191,8 @@ alignChainsX nl = withJustM (lookupNode nl) $ \n -> do
 sortOutConns :: [Connection] -> [Connection]
 sortOutConns conns = do
     let sortFunction c1 c2 =
-            if      c1 ^. dstPortId == Self then LT
-            else if c2 ^. dstPortId == Self then GT
+            if      c1 ^. dstPortId == [Self] then LT
+            else if c2 ^. dstPortId == [Self] then GT
             else (c1 ^. srcPortId) `compare` (c2 ^. srcPortId)
     sortBy sortFunction conns
 

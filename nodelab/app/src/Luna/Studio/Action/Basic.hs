@@ -1,10 +1,10 @@
 module Luna.Studio.Action.Basic
-    ( addNode
-    , addPort
+    ( addPort
     , addSubgraph
     , centerGraph
     , connect
     , createGraph
+    , createNode
     , destroyGraph
     , dropSelectionHistory
     , enterBreadcrumb
@@ -19,9 +19,7 @@ module Luna.Studio.Action.Basic
     , localAddConnection
     , localAddConnections
     , localAddExpressionNode
-    , localAddNode
     , localAddPort
-    , localAddSidebarNode
     , localAddSubgraph
     , localMerge
     , localMoveNode
@@ -47,11 +45,9 @@ module Luna.Studio.Action.Basic
     , localUpdateConnection
     , localUpdateExpressionNode
     , localUpdateExpressionNodes
-    , localUpdateNode
-    , localUpdateNodes
+    , localUpdateInputNode
     , localUpdateNodeTypecheck
-    , localUpdateSidebarNode
-    , localUpdateSidebarNodes
+    , localUpdateOutputNode
     , localUpdateSubgraph
     , modifyCamera
     , modifySelectionHistory
@@ -77,19 +73,22 @@ module Luna.Studio.Action.Basic
     , selectAll
     , selectNodes
     , selectPreviousNodes
+    , setInputMode
+    , setInputSidebarPortMode
     , setNodeCode
     , setNodeExpression
     , setNodeMeta
     , setNodeProfilingData
     , setNodesMeta
     , setNodeValue
+    , setOutputMode
+    , setOutputSidebarPortMode
     , setPortDefault
-    , setSidebarMode
-    , setSidebarPortMode
+    , toggleInputMode
+    , toggleOutputMode
     , toggleSelect
     , toggleSelectedNodesMode
     , toggleSelectedNodesUnfold
-    , toggleSidebarMode
     , toggleVisualizations
     , unselectAll
     , updateAllPortsSelfVisibility
@@ -103,7 +102,7 @@ module Luna.Studio.Action.Basic
     ) where
 
 import           Luna.Studio.Action.Basic.AddConnection       (connect, localAddConnection, localAddConnections)
-import           Luna.Studio.Action.Basic.AddNode             (addNode, localAddExpressionNode, localAddNode, localAddSidebarNode)
+import           Luna.Studio.Action.Basic.AddNode             (createNode, localAddExpressionNode)
 import           Luna.Studio.Action.Basic.AddPort             (addPort, localAddPort)
 import           Luna.Studio.Action.Basic.AddSubgraph         (addSubgraph, localAddSubgraph, localUpdateSubgraph)
 import           Luna.Studio.Action.Basic.CenterGraph         (centerGraph)
@@ -137,11 +136,11 @@ import           Luna.Studio.Action.Basic.SetNodeMeta         (localMoveNode, lo
 import           Luna.Studio.Action.Basic.SetNodeMode         (toggleSelectedNodesMode, toggleSelectedNodesUnfold)
 import           Luna.Studio.Action.Basic.SetNodeResult       (setNodeProfilingData, setNodeValue)
 import           Luna.Studio.Action.Basic.SetPortDefault      (localSetPortDefault, setPortDefault)
-import           Luna.Studio.Action.Basic.SetPortMode         (setSidebarPortMode)
-import           Luna.Studio.Action.Basic.SetSidebarMode      (setSidebarMode, toggleSidebarMode)
+import           Luna.Studio.Action.Basic.SetPortMode         (setInputSidebarPortMode, setOutputSidebarPortMode)
+import           Luna.Studio.Action.Basic.SetSidebarMode      (setInputMode, setOutputMode, toggleInputMode, toggleOutputMode)
 import           Luna.Studio.Action.Basic.UpdateCollaboration (updateClient, updateCollaboration)
 import           Luna.Studio.Action.Basic.UpdateConnection    (localUpdateConnection, updateConnection)
-import           Luna.Studio.Action.Basic.UpdateNode          (localUpdateExpressionNode, localUpdateExpressionNodes, localUpdateNode,
-                                                               localUpdateNodeTypecheck, localUpdateNodes, localUpdateSidebarNode,
-                                                               localUpdateSidebarNodes, updateAllPortsSelfVisibility,
-                                                               updatePortSelfVisibility, updatePortSelfVisibilityForIds)
+import           Luna.Studio.Action.Basic.UpdateNode          (localUpdateExpressionNode, localUpdateExpressionNodes, localUpdateInputNode,
+                                                               localUpdateNodeTypecheck, localUpdateOutputNode,
+                                                               updateAllPortsSelfVisibility, updatePortSelfVisibility,
+                                                               updatePortSelfVisibilityForIds)

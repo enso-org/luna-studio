@@ -1,6 +1,6 @@
 module Luna.Studio.Action.Basic.SearchNodes where
 
-import           Empire.API.Data.Node                (Node)
+import           Empire.API.Data.Node                (ExpressionNode)
 import           Luna.Studio.Action.Command          (Command)
 import           Luna.Studio.Action.State.NodeEditor (getNodeSearcherData, modifySearcher)
 import           Luna.Studio.Batch.Workspace         (nodeSearcherData)
@@ -11,7 +11,7 @@ import           Text.ScopeSearcher.Item             (Items)
 import           Text.ScopeSearcher.Scope            (searchInScope)
 
 
-localSetSearcherHints :: Items Node -> Command State ()
+localSetSearcherHints :: Items ExpressionNode -> Command State ()
 localSetSearcherHints items' = do
     workspace . nodeSearcherData .= items'
     nodesData' <- getNodeSearcherData
