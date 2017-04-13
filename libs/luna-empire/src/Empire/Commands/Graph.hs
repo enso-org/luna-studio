@@ -540,7 +540,8 @@ getConnections :: GraphLocation -> Empire [(OutPortRef, InPortRef)]
 getConnections loc = withTC loc True $ runASTOp $ view APIGraph.connections <$> GraphBuilder.buildGraph
 
 decodeLocation :: GraphLocation -> Empire (Breadcrumb (Named BreadcrumbItem))
-decodeLocation loc@(GraphLocation _ crumbs) = withGraph loc $ GraphBuilder.decodeBreadcrumbs crumbs
+decodeLocation loc@(GraphLocation file crumbs) =
+    withGraph (GraphLocation file $ Breadcrumb []) $ GraphBuilder.decodeBreadcrumbs crumbs
 
 renameNode :: GraphLocation -> NodeId -> Text -> Empire ()
 renameNode loc nid name = withTC loc False $ do
