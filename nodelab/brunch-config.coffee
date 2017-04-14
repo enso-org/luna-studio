@@ -45,7 +45,7 @@ exports.config =
     ghcjs:
       placeholder:  'app/env.ghcjs'
       projectName:  cabalProjectName
-      buildCommand: 'stack build nodelab:nodelab --install-ghc --ghc-options=-j8 ' + if process.env.CIRCLECI then '--fast' else ''
+      buildCommand: 'stack build nodelab --install-ghc --ghc-options=-j8 ' + if process.env.CIRCLECI then '--fast' else ''
       clearScreen:  false
       interactive:  false
       ghciCommand:  "./interactive"
