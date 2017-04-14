@@ -23,7 +23,7 @@ import           Luna.Studio.React.Model.Port                (InPort (Self), Por
 import           Luna.Studio.State.Global                    (State)
 
 
-data DFSState = NotProccessed | InProccess | Proccessed deriving (Eq, Show)
+data DFSState = NotProcessed | InProcess | Processed deriving (Eq, Show)
 data NodeInfo = NodeInfo { _nodeLoc    :: NodeLoc
                          , _name       :: Text
                          , _actPos     :: Position
@@ -66,7 +66,7 @@ autolayoutNodes nodes = do
             return $ (nl, NodeInfo nl
                                    (n ^. Node.name)
                                    leftTop'
-                                   NotProccessed
+                                   NotProcessed
                                    Nothing
                                    inConns'
                                    outConns' )
@@ -74,7 +74,7 @@ autolayoutNodes nodes = do
         moveNodes . Map.toList . fmap (view actPos) $ ns
 
 clearDFSState :: AutolayoutState ()
-clearDFSState = modify $ fmap (\n -> n & dfsState .~ NotProccessed)
+clearDFSState = modify $ fmap (\n -> n & dfsState .~ NotProcessed)
 
 findPositions :: Position -> AutolayoutState ()
 findPositions pos = do
@@ -83,6 +83,7 @@ findPositions pos = do
     clearDFSState
     mapM_ findPositionRecursive nls
     mapM_ alignChainsX nls
+    clearDFSState
     alignNodesY pos
 
 
@@ -90,7 +91,7 @@ findPositionRecursive :: NodeLoc -> AutolayoutState ()
 findPositionRecursive nl = lookupNode nl >>= \mayNode -> case mayNode of
     Nothing -> return ()
     Just n  -> do
-        modify $ Map.update (\n' -> Just $ n' & dfsState .~ Proccessed) nl
+        modify $ Map.update (\n' -> Just $ n' & dfsState .~ Processed) nl
         alignNeighbours n >>= mapM_ findPositionRecursive
 
 lookupNode :: NodeLoc -> AutolayoutState (Maybe NodeInfo)
@@ -141,20 +142,20 @@ removeCycles :: AutolayoutState ()
 removeCycles = get >>= mapM_ removeCyclesForNode . Map.keys
 
 removeCyclesForNode :: NodeLoc -> AutolayoutState ()
-removeCyclesForNode nl = withJustM (lookupNode nl) $ \n -> when (n ^. dfsState == NotProccessed) $ do
-    modify $ Map.update (\node -> Just $ node & dfsState .~ InProccess) nl
+removeCyclesForNode nl = withJustM (lookupNode nl) $ \n -> when (n ^. dfsState == NotProcessed) $ do
+    modify $ Map.update (\node -> Just $ node & dfsState .~ InProcess) nl
     let removeConnectionsWithNode :: NodeLoc -> [Connection] -> [Connection]
         removeConnectionsWithNode nl' = filter (\conn -> conn ^. srcNodeLoc /= nl'
                                                       && conn ^. dstNodeLoc /= nl')
         processDstNode :: NodeLoc -> AutolayoutState ()
         processDstNode dstNl = withJustM (lookupNode dstNl) $ \dstNode -> case dstNode ^. dfsState of
-            NotProccessed -> removeCyclesForNode dstNl
-            Proccessed -> return ()
-            InProccess -> modify $
+            NotProcessed -> removeCyclesForNode dstNl
+            Processed -> return ()
+            InProcess -> modify $
                 Map.update (\node -> Just $ node & inConns  %~ removeConnectionsWithNode nl) dstNl .
                 Map.update (\node -> Just $ node & outConns %~ removeConnectionsWithNode dstNl) nl
     forM_ (map (view dstNodeLoc) $ n ^. outConns) $ processDstNode
-    modify $ Map.update (\node -> Just $ node & dfsState .~ Proccessed) nl
+    modify $ Map.update (\node -> Just $ node & dfsState .~ Processed) nl
 
 alignNeighbours :: NodeInfo -> AutolayoutState [NodeLoc]
 alignNeighbours = fmap nub' . alignNeighboursX
@@ -164,14 +165,14 @@ alignNeighboursX n = do
     let prevX = n ^. actPos . x - gapBetweenNodes
         nextX = n ^. actPos . x + gapBetweenNodes
         proccessPred :: NodeInfo -> AutolayoutState (Maybe NodeLoc)
-        proccessPred node = if node ^. dfsState == Proccessed && node ^. actPos . x <= prevX
+        proccessPred node = if node ^. dfsState == Processed && node ^. actPos . x <= prevX
             then return Nothing
             else do
                 let nl = node ^. nodeLoc
                 modify $ Map.update (\n' -> Just $ n' & actPos . x .~ prevX) nl
                 return $ Just nl
         proccessSucc :: NodeInfo -> AutolayoutState (Maybe NodeLoc)
-        proccessSucc node = if node ^. dfsState == Proccessed && node ^. actPos . x >= nextX
+        proccessSucc node = if node ^. dfsState == Processed && node ^. actPos . x >= nextX
             then return Nothing
             else do
                 let nl = node ^. nodeLoc
@@ -222,14 +223,14 @@ sortOutConns conns = do
 --
 -- alignYForward :: NodeInfo -> AutolayoutState Double
 -- alignYForward n = do
---     if n ^. dfsState /= NotProccessed then return (n ^. actPos . y + gapBetweenNodes) else do
---         modify $ Map.update (\n' -> Just $ n' & dfsState .~ Proccessed) (n ^. nodeLoc)
+--     if n ^. dfsState /= NotProcessed then return (n ^. actPos . y + gapBetweenNodes) else do
+--         modify $ Map.update (\n' -> Just $ n' & dfsState .~ Processed) (n ^. nodeLoc)
 --         let sortedNls = map (view dstNodeLoc) . sortOutConns $ n ^. outConns
 --             proccessNode maxY nl = do
 --                 mayNode <- lookupNode nl
 --                 case mayNode of
 --                     Nothing   -> return maxY
---                     Just node -> if node ^. dfsState /= NotProccessed then return maxY else do
+--                     Just node -> if node ^. dfsState /= NotProcessed then return maxY else do
 --                         modify $ Map.update (\n' -> Just $ n' & actPos . y .~ maxY) nl
 --                         alignYForward $ node & actPos . y .~ maxY
 --         maxY <- foldlM proccessNode (n ^. actPos . y) sortedNls
@@ -242,14 +243,14 @@ sortInConns conns = do
 --
 -- alignYBackward :: NodeInfo -> AutolayoutState Double
 -- alignYBackward n = do
---     if n ^. dfsState /= NotProccessed then return (n ^. actPos . y + gapBetweenNodes) else do
---         modify $ Map.update (\n' -> Just $ n' & dfsState .~ Proccessed) (n ^. nodeLoc)
+--     if n ^. dfsState /= NotProcessed then return (n ^. actPos . y + gapBetweenNodes) else do
+--         modify $ Map.update (\n' -> Just $ n' & dfsState .~ Processed) (n ^. nodeLoc)
 --         let sortedNls = map (view srcNodeLoc) . sortInConns $ n ^. inConns
 --             proccessNode maxY nl = do
 --                 mayNode <- lookupNode nl
 --                 case mayNode of
 --                     Nothing   -> return maxY
---                     Just node -> if node ^. dfsState /= NotProccessed then return maxY else do
+--                     Just node -> if node ^. dfsState /= NotProcessed then return maxY else do
 --                         modify $ Map.update (\n' -> Just $ n' & actPos . y .~ maxY) nl
 --                         alignYBackward $ node & actPos . y .~ maxY
 --         maxY <- foldlM proccessNode (n ^. actPos . y) sortedNls
@@ -284,46 +285,49 @@ findYPositionBackward n s = do
 findYPosition :: NodeInfo -> Subgraph -> AutolayoutState (Maybe Double)
 findYPosition n s = maxMaybe <$> findYPositionBackward n s <*> findYPositionForward n s
 
-findHigherNodeForward :: Subgraph -> NodeInfo -> AutolayoutState (Maybe NodeInfo)
-findHigherNodeForward s n = do
+findHigherNodeForward :: NodeInfo -> AutolayoutState (Maybe NodeInfo)
+findHigherNodeForward n = do
     succs <- lookupNodes . map (view dstNodeLoc) . sortOutConns $ n ^. outConns
     if null succs || (isJust . view subgraphId $ head succs)
         then return Nothing
     else if areOnTheSameLevel n $ head succs
-        then findHigherNodeForward s $ head succs
+        then findHigherNodeForward $ head succs
         else return . Just $ head succs
 
-findHigherNodeBackward :: Subgraph -> NodeInfo -> AutolayoutState (Maybe NodeInfo)
-findHigherNodeBackward s n = do
+findHigherNodeBackward :: NodeInfo -> AutolayoutState (Maybe NodeInfo)
+findHigherNodeBackward n = do
     preds <- lookupNodes . map (view srcNodeLoc) . sortInConns $ n ^. inConns
     if null preds || (isJust . view subgraphId $ head preds)
         then return Nothing
     else if areOnTheSameLevel n $ head preds
-        then findHigherNodeBackward s $ head preds
+        then findHigherNodeBackward $ head preds
         else return . Just $ head preds
 
-findHigherNode :: Subgraph -> NodeInfo -> AutolayoutState (Maybe NodeInfo)
-findHigherNode s n = do
-    mayNode <- findHigherNodeBackward s n
-    case mayNode of
-        Just node -> return $ Just node
-        Nothing   -> findHigherNodeForward s n
+findHigherNode :: NodeInfo -> AutolayoutState (Maybe NodeInfo)
+findHigherNode n = if n ^. dfsState == InProcess then return Nothing else do
+        mayNode <- findHigherNodeBackward n
+        case mayNode of
+            Just node -> return $ Just node
+            Nothing   -> findHigherNodeForward n
 
 -- add consistency to subgraph position map
 addToSubgraph :: Subgraph -> NodeInfo -> AutolayoutState Subgraph
-addToSubgraph s n = if isJust $ n ^. subgraphId then return s else findHigherNode s n >>= \mayN ->
-    if isJust mayN then addToSubgraph s $ fromJust mayN else do
-        y' <- maybe (n ^. actPos . y) id <$> findYPosition n s
-        modify $ Map.update (\n' -> Just $ n' & actPos . y .~ y'
-                                              & subgraphId ?~ s ^. sid) (n ^. nodeLoc)
-        let shapeAtX = maybe (y', y') (\(minY, maxY) -> (min minY y', max maxY y')) $ Map.lookup (n ^. actPos . x) $ s ^. shape
-            updatedS :: Subgraph
-            updatedS = s & nodeLocs %~ Set.insert (n ^. nodeLoc)
-                         & shape    %~ Map.insert (n ^. actPos . x) shapeAtX
-            proccessN :: Subgraph -> NodeLoc -> AutolayoutState Subgraph
-            proccessN s' nl = lookupNode nl >>= maybe (return s') (addToSubgraph s')
-        foldlM proccessN updatedS $ (map (view srcNodeLoc) . sortInConns  $ n ^. inConns)
-                                 ++ (map (view dstNodeLoc) . sortOutConns $ n ^. outConns)
+addToSubgraph s n = do
+    modify $ Map.update (\n' -> Just $ n' & dfsState .~ InProcess) (n ^. nodeLoc)
+    if isJust $ n ^. subgraphId then return s else findHigherNode n >>= \mayN ->
+        if isJust mayN then addToSubgraph s $ fromJust mayN else do
+            y' <- maybe (n ^. actPos . y) id <$> findYPosition n s
+            modify $ Map.update (\n' -> Just $ n' & actPos . y .~ y'
+                                                  & subgraphId ?~ s ^. sid
+                                                  & dfsState   .~ Processed) (n ^. nodeLoc)
+            let shapeAtX = maybe (y', y') (\(minY, maxY) -> (min minY y', max maxY y')) $ Map.lookup (n ^. actPos . x) $ s ^. shape
+                updatedS :: Subgraph
+                updatedS = s & nodeLocs %~ Set.insert (n ^. nodeLoc)
+                             & shape    %~ Map.insert (n ^. actPos . x) shapeAtX
+                proccessN :: Subgraph -> NodeLoc -> AutolayoutState Subgraph
+                proccessN s' nl = lookupNode nl >>= maybe (return s') (addToSubgraph s')
+            foldlM proccessN updatedS $ (map (view srcNodeLoc) . sortInConns  $ n ^. inConns)
+                             ++ (map (view dstNodeLoc) . sortOutConns $ n ^. outConns)
 
 alignSubgraph :: Position -> Subgraph -> AutolayoutState Position
 alignSubgraph pos s = case getSubgraphMinimumRectangle s of
