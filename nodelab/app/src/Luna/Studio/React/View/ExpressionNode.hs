@@ -32,7 +32,7 @@ import           Luna.Studio.React.View.Plane                          (planeMon
 import           Luna.Studio.React.View.Port                           (portExpanded_, portPhantom_, port_)
 import           Luna.Studio.React.View.Style                          (blurBackground_, errorMark_, selectionMark_)
 import qualified Luna.Studio.React.View.Style                          as Style
-import           Luna.Studio.React.View.Visualization                  (nodeShortValue_, nodeVisualizations_, strValue, visualization_)
+import           Luna.Studio.React.View.Visualization                  (nodeShortValue_, nodeVisualizations_)
 import           React.Flux
 import qualified React.Flux                                            as React
 

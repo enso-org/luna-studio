@@ -7,8 +7,8 @@ import           Empire.API.Data.PortDefault (PortDefault(Expression))
 import qualified Empire.API.Data.Node         as Node
 import qualified Empire.API.Data.Port         as Port
 import           Empire.API.Data.LabeledTree  (LabeledTree (..))
-import           Empire.API.Data.TypeRep      (TypeRep(TStar))
-import qualified Empire.Commands.Graph        as Graph
+import           Empire.API.Data.TypeRep       (TypeRep(TStar))
+import qualified Empire.Commands.Graph         as Graph
 
 import           Prologue                   hiding ((|>))
 

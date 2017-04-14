@@ -12,6 +12,7 @@ import qualified Data.UUID.Types                        as UUID
 import           Prologue
 import           Text.Read                              (readMaybe)
 
+import           Empire.API.Atom.IsSaved                as IsSaved
 import           Empire.API.Atom.CloseFile              as CloseFile
 import           Empire.API.Atom.GetBuffer              as GetBuffer
 import           Empire.API.Atom.OpenFile               as OpenFile
@@ -89,6 +90,7 @@ instance FromJSON a => FromJSON (Breadcrumb.Named a)
 instance               FromJSON Breadcrumb.BreadcrumbItem
 
 instance ToJSON GraphLocation.GraphLocation
+instance FromJSON GraphLocation.GraphLocation
 
 instance ToJSON   Node.ExpressionNode
 instance FromJSON Node.ExpressionNode
@@ -144,8 +146,10 @@ instance FromJSON PortRef.InPortRef
 instance ToJSON Connection.Connection
 instance FromJSON Connection.Connection
 
-instance ToJSON PortDefault.Value
-instance FromJSON PortDefault.Value
+instance ToJSON PortDefault.VisualizationValue
+instance FromJSON PortDefault.VisualizationValue
+instance ToJSON PortDefault.PortValue
+instance FromJSON PortDefault.PortValue
 instance ToJSON PortDefault.PortDefault
 instance FromJSON PortDefault.PortDefault
 
@@ -154,6 +158,8 @@ instance FromJSON Graph.Graph
 
 instance ToJSON MonadPath.MonadPath
 instance FromJSON MonadPath.MonadPath
+
+instance ToJSON IsSaved.Saved
 
 instance ToJSON t => ToJSON (Error.Error t)
 
@@ -272,6 +278,9 @@ instance ToJSON CloseFile.Request
 instance ToJSON OpenFile.Request
 
 instance ToJSON SaveFile.Request
+
+instance ToJSON IsSaved.Request
+instance ToJSON IsSaved.Result
 
 instance ToJSON SetProject.Request
 

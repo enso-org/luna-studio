@@ -3,10 +3,13 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 
 module Empire.ASTOps.Parse (
-    parseExpr
+    ParserException
+  , parseExpr
   , parsePortDefault
   , runParser
   , runReparser
+  , runUnitParser
+  , runUnitReparser
   ) where
 
 import           Data.Convert
@@ -27,7 +30,7 @@ import           Empire.Data.Graph               (Graph)
 import           Empire.Data.Layers              (CodeMarkers)
 import           Empire.Data.Parser              (ParserPass)
 
-import           Empire.API.Data.PortDefault     (PortDefault (..), Value (..))
+import           Empire.API.Data.PortDefault     (PortDefault (..), PortValue (..))
 
 import           Data.TypeDesc                   (getTypeDesc)
 import qualified Luna.IR                         as IR
@@ -52,6 +55,51 @@ parseExpr s = do
     res     <- IR.getAttr @Parser.ParsedExpr
     exprMap <- IR.getAttr @Parser.MarkedExprMap
     return $ unwrap' res
+
+runUnitParser :: Text.Text -> Command Graph (NodeRef, Parser.MarkedExprMap)
+runUnitParser code = do
+    let inits = do
+          IR.setAttr (getTypeDesc @Source.SourceTree)      $ (mempty :: Source.SourceTree)
+          IR.setAttr (getTypeDesc @Parser.MarkedExprMap)   $ (mempty :: Parser.MarkedExprMap)
+          IR.setAttr (getTypeDesc @Source.Source)          $ (convert code :: Source.Source)
+          IR.setAttr (getTypeDesc @Parser.ParsedExpr)      $ (error "Data not provided: ParsedExpr")
+          IR.setAttr (getTypeDesc @Parser.ReparsingStatus) $ (error "Data not provided: ReparsingStatus")
+        run = runPass @ParserPass inits
+    run $ do
+        let protoFunc = (\body -> uncurry Parsing.seqLines body)
+        Parsing.parsingBase (protoFunc <$> Parsing.discoverBlock Parsing.lineExpr) `catchAll` (\e -> throwM $ ParserException e)
+        res     <- IR.getAttr @Parser.ParsedExpr
+        exprMap <- IR.getAttr @Parser.MarkedExprMap
+        IR.putLayer @CodeMarkers (unwrap' res) exprMap
+        return (unwrap' res, exprMap)
+
+runUnitReparser :: Text.Text -> NodeRef -> Command Graph (NodeRef, Parser.MarkedExprMap, Parser.ReparsingStatus)
+runUnitReparser code oldExpr = do
+    let inits = do
+          IR.setAttr (getTypeDesc @Source.SourceTree)      $ (mempty :: Source.SourceTree)
+          IR.setAttr (getTypeDesc @Parser.MarkedExprMap)   $ (mempty :: Parser.MarkedExprMap)
+          IR.setAttr (getTypeDesc @Source.Source)          $ (convert code :: Source.Source)
+          IR.setAttr (getTypeDesc @Parser.ParsedExpr)      $ (wrap' oldExpr :: Parser.ParsedExpr)
+          IR.setAttr (getTypeDesc @Parser.ReparsingStatus) $ (error "Data not provided: ReparsingStatus")
+        run = runPass @ParserPass inits
+    run $ do
+        do
+            gidMapOld <- IR.getLayer @CodeMarkers oldExpr
+
+            -- parsing new file and updating updated analysis
+            let protoFunc = (\body -> uncurry Parsing.seqLines body)
+            Parsing.parsingBase (protoFunc <$> Parsing.discoverBlock Parsing.lineExpr) `catchAll` (\e -> throwM $ ParserException e)
+            gidMap    <- IR.getAttr @Parser.MarkedExprMap
+
+            -- Preparing reparsing status
+            rs        <- Parsing.cmpMarkedExprMaps gidMapOld gidMap
+            IR.putAttr @Parser.ReparsingStatus (wrap rs)
+
+        res     <- IR.getAttr @Parser.ParsedExpr
+        exprMap <- IR.getAttr @Parser.MarkedExprMap
+        rs      <- IR.getAttr @Parser.ReparsingStatus
+        IR.putLayer @CodeMarkers (unwrap' res) exprMap
+        return (unwrap' res, exprMap, rs)
 
 runParser :: Text.Text -> Command Graph (NodeRef, Parser.MarkedExprMap)
 runParser expr = do
@@ -104,10 +152,9 @@ instance Exception PortDefaultNotConstructibleException where
     fromException = astExceptionFromException
 
 parsePortDefault :: ASTOp m => PortDefault -> m NodeRef
-parsePortDefault (Expression expr)            = parseExpr expr
-parsePortDefault (Constant (IntValue i))      = IR.generalize <$> IR.number (fromIntegral i)
-parsePortDefault (Constant (StringValue s))   = IR.generalize <$> IR.string s
-parsePortDefault (Constant (DoubleValue d))   = IR.generalize <$> IR.number (Lit.fromDouble d)
-parsePortDefault (Constant (RationalValue r)) = IR.generalize <$> IR.number (Lit.fromDouble $ realToFrac r)
-parsePortDefault (Constant (BoolValue b))     = IR.generalize <$> IR.cons_ (convert $ show b)
+parsePortDefault (Expression expr)          = parseExpr expr
+parsePortDefault (Constant (IntValue    i)) = IR.generalize <$> IR.number (fromIntegral i)
+parsePortDefault (Constant (StringValue s)) = IR.generalize <$> IR.string s
+parsePortDefault (Constant (DoubleValue d)) = IR.generalize <$> IR.number (Lit.fromDouble d)
+parsePortDefault (Constant (BoolValue   b)) = IR.generalize <$> IR.cons_ (convert $ show b)
 parsePortDefault d = throwM $ PortDefaultNotConstructibleException d

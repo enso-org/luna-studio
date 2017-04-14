@@ -21,7 +21,7 @@ import qualified Empire.API.Data.Node                     as Empire
 import           Empire.API.Data.NodeLoc                  (NodeLoc (NodeLoc), NodePath)
 import qualified Empire.API.Data.NodeMeta                 as NodeMeta
 import           Empire.API.Graph.CollaborationUpdate     (ClientId)
-import           Empire.API.Graph.NodeResultUpdate        (NodeValue, NodeValue (Error))
+import           Empire.API.Graph.NodeResultUpdate    (NodeValue (NodeError), NodeVisualization)
 import           Luna.Studio.Prelude
 import           Luna.Studio.React.Model.IsNode           as X
 import           Luna.Studio.React.Model.Node.SidebarNode (InputNode, OutputNode)
@@ -40,6 +40,7 @@ data ExpressionNode = ExpressionNode { _nodeLoc'              :: NodeLoc
                                      , _visualizationsEnabled :: Bool
                                      , _code                  :: Maybe Text
                                      , _value                 :: Maybe NodeValue
+                                     , _visualizations        :: [NodeVisualization]
                                      , _zPos                  :: Int
                                      , _isSelected            :: Bool
                                      , _mode                  :: Mode
@@ -53,9 +54,9 @@ data Mode = Collapsed
           deriving (Eq, Generic, NFData, Show)
 
 data ExpandedMode = Editor
-                | Controls
-                | Function (Map BreadcrumbItem Subgraph)
-                deriving (Eq, Generic, NFData, Show)
+                  | Controls
+                  | Function (Map BreadcrumbItem Subgraph)
+                  deriving (Eq, Generic, NFData, Show)
 
 data Subgraph = Subgraph
         { _expressionNodes :: ExpressionNodesMap
@@ -63,7 +64,6 @@ data Subgraph = Subgraph
         , _outputNode      :: Maybe OutputNode
         , _monads          :: [MonadPath]
         } deriving (Default, Eq, Generic, NFData, Show)
-
 
 data Collaboration = Collaboration { _touch  :: Map ClientId (UTCTime, ColorId)
                                    , _modify :: Map ClientId  UTCTime
@@ -88,8 +88,8 @@ instance Convertible (NodePath, Empire.ExpressionNode) ExpressionNode where
         {- position              -} (fromTuple $ n ^. Empire.position)
         {- visualizationsEnabled -} (n ^. Empire.nodeMeta . NodeMeta.displayResult)
         {- code                  -} (n ^. Empire.code)
-
         {- value                 -} def
+        {- visualization         -} def
         {- zPos                  -} def
         {- isSelected            -} False
         {- mode                  -} def
@@ -124,8 +124,8 @@ subgraphs = mode . _Expanded . _Function
 
 returnsError :: ExpressionNode -> Bool
 returnsError node = case node ^. value of
-    Just (Error _) -> True
-    _              -> False
+    Just (NodeError _) -> True
+    _                  -> False
 
 isMode :: Mode -> ExpressionNode -> Bool
 isMode mode' node = node ^. mode == mode'

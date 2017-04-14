@@ -1,0 +1,19 @@
+var app              = require('./app-internals'),
+    init             = require('./init'),
+    common           = require('./common'),
+    config           = require('./config');
+    atomCallbackInternals = require('./atom-callback-internals')();
+
+var run = function() {
+
+GHCJS_CODE_BE_THERE
+
+};
+
+return { start     : function() { run();}
+       , pushText  : function(data) { atomCallbackInternals.pushText(data); }
+       , bufferListener  : function(callback) { atomCallbackInternals.bufferListener(callback); }
+       , statusListener  : function(callback) { atomCallbackInternals.statusListener(callback); }
+       , codeListener  : function(callback) { atomCallbackInternals.codeListener(callback); }
+       , pushInternalEvent : function(data) { atomCallbackInternals.pushInternalEvent(data); }
+       }

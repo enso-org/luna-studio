@@ -124,7 +124,6 @@ handleNodeDragMouseUp evt nodeDrag = do
             withJust mayConn $ \conn -> do
                 connect (Left $ conn ^. src) $ Right nl
                 connect (Right nl)           $ Left $ conn ^. dst
-        clearSnappedConnection nodeDrag
     continue stopNodeDrag
 
 

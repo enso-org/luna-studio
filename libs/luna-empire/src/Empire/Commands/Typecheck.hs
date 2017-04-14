@@ -22,8 +22,8 @@ import           Empire.API.Data.MonadPath         (MonadPath (MonadPath))
 import           Empire.API.Data.Node              (NodeId, nodeId)
 import qualified Empire.API.Data.NodeMeta          as NodeMeta
 import           Empire.API.Data.TypeRep           (TypeRep (TCons))
-import           Empire.API.Data.PortDefault       (Value (StringValue))
-import qualified Empire.API.Graph.NodeResultUpdate as NodeResult
+import           Empire.API.Data.PortDefault       (PortValue (StringValue))
+import           Empire.API.Graph.NodeResultUpdate (NodeValue(..))
 import           Empire.ASTOp                      (EmpirePass, runASTOp)
 import qualified Empire.ASTOps.Read                as ASTRead
 import qualified Empire.Commands.AST               as AST
@@ -39,6 +39,7 @@ import qualified Empire.Data.Graph                 as Graph
 import           Empire.Empire
 
 import           Luna.Builtin.Data.LunaValue       (LunaData, listenReps)
+import           Luna.Builtin.Data.LunaEff         (runIO, runError)
 import           Luna.Builtin.Data.Module          (Imports (..), Module (..))
 import qualified Luna.Builtin.Std                  as Std
 import qualified Luna.IR                           as IR
@@ -64,7 +65,7 @@ runInterpreter imports = runASTOp $ do
     case res of
         Nothing -> return Nothing
         Just v  -> do
-            result <- liftIO $ runExceptT $ execStateT v def
+            result <- liftIO $ runIO $ runError $ execStateT v def
             case result of
                 Left e  -> return Nothing
                 Right r -> return $ Just r
@@ -76,11 +77,11 @@ reportError loc nid err = do
         errorsCache %= Map.alter (const err) nid
         valuesCache %= Map.delete nid
         case err of
-            Just e  -> Publisher.notifyResultUpdate loc nid (NodeResult.Error e)     0
-            Nothing -> Publisher.notifyResultUpdate loc nid (NodeResult.Value "" []) 0
+            Just e  -> Publisher.notifyResultUpdate loc nid (NodeError e)     0
+            Nothing -> Publisher.notifyResultUpdate loc nid (NodeValue "" []) 0
 
 updateNodes :: GraphLocation -> Command InterpreterEnv ()
-updateNodes loc@(GraphLocation _ _ br) = zoom graph $ zoomBreadcrumb br $ do
+updateNodes loc@(GraphLocation _ br) = zoom graph $ zoomBreadcrumb br $ do
     portMapping <- preuse $ Graph.breadcrumbHierarchy . BH._LambdaParent . BH.portMapping
     updates <- runASTOp $ do
         sidebarUpdates <- case portMapping of
@@ -94,7 +95,7 @@ updateNodes loc@(GraphLocation _ _ br) = zoom graph $ zoomBreadcrumb br $ do
     mapM_ (Publisher.notifyNodeTypecheck loc) updates
 
 updateMonads :: GraphLocation -> Command InterpreterEnv ()
-updateMonads loc@(GraphLocation _ _ br) = zoom graph $ zoomBreadcrumb br $ do
+updateMonads loc@(GraphLocation _ br) = zoom graph $ zoomBreadcrumb br $ do
     newMonads <- runASTOp GraphBuilder.buildMonads
     Publisher.notifyMonadsUpdate loc newMonads
 
@@ -109,8 +110,8 @@ updateValues loc scope = do
     forM_ allVars $ \(nid, ref) -> do
         let resVal = Interpreter.localLookup (IR.unsafeGeneralize ref) scope
         liftIO $ forM_ resVal $ \v -> listenReps v $ \case
-            Left  err            -> flip runReaderT env $ Publisher.notifyResultUpdate loc nid (NodeResult.Error $ APIError.RuntimeError err) 0
-            Right (short, longs) -> flip runReaderT env $ Publisher.notifyResultUpdate loc nid (NodeResult.Value (fromString short) $ StringValue <$> longs) 0
+            Left  err            -> flip runReaderT env $ Publisher.notifyResultUpdate loc nid (NodeError $ APIError.RuntimeError err) 0
+            Right (short, longs) -> flip runReaderT env $ Publisher.notifyResultUpdate loc nid (NodeValue (fromString short) $ StringValue <$> longs) 0
 
 flushCache :: Command InterpreterEnv ()
 flushCache = do

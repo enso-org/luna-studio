@@ -8,7 +8,6 @@ module Luna.Studio.Action.Visualization
     ) where
 
 import           React.Flux                                  (MouseEvent)
-
 import           Data.Position                               (Position)
 import           Empire.API.Data.NodeLoc                     (NodeLoc)
 import           Luna.Studio.Action.Command                  (Command)
@@ -29,7 +28,6 @@ instance Action (Command State) VisualizationDrag where
     continue = continueActionWithKey visualizationDragAction
     update   = updateActionWithKey   visualizationDragAction
     end _    = removeActionFromState visualizationDragAction
-
 
 pin :: NodeLoc -> Int -> Command State ()
 pin nl visIx = do
