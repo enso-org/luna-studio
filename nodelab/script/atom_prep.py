@@ -25,6 +25,14 @@ def prepare_ghcjs(output, placeholder, ghcjs):
     prepare_holder(output, 'module.exports = (function(){', '});', '../vendor/uuid.js', '../script/imports.js', placeholder)
     put_ghcjs(output, ghcjs, 'GHCJS_CODE_BE_THERE')
 
+def prepare_css(output, styles_dir):
+    styles_files = glob.glob(styles_dir)
+    with open(output, 'a+') as outfile:
+        for infile in styles_files:
+            with open(infile, 'r') as f:
+                shutil.copyfileobj(f, outfile)
+
+
 # delete old dirs for atom
 
 shutil.rmtree('../atom/lib/gen', ignore_errors=True)
@@ -43,7 +51,7 @@ internals_js = glob.glob('../.stack-work/**/bin/internals.jsexe/all.js',recursiv
 
 prepare_ghcjs('../atom/lib/gen/ghcjs-code.js', '../app/env.ghcjs', nodelab_js[0])
 prepare_ghcjs('../atom/lib/gen/ghcjs-code2.js', '../internals/env-internals.ghcjs', internals_js[0])
-
+prepare_css('../atom/styles/app.css', '../app/styles/*')
 # copy files
 
 distutils.dir_util.copy_tree('../app/js', '../atom/lib/gen')
@@ -51,4 +59,3 @@ shutil.copy('../internals/js/atom-callback-internals.js', '../atom/lib/gen')
 shutil.copy('../internals/js/app-internals.coffee', '../atom/lib/gen')
 shutil.copy('../app/config.release.js', '../atom/lib/gen')
 shutil.copy('../app/config.debug.js', '../atom/lib/gen')
-shutil.copy('../www/stylesheets/app.css', '../atom/styles')
