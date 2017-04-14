@@ -8,7 +8,6 @@ import           Data.ScreenPosition                      (ScreenPosition)
 import           Data.Size                                (y)
 import           Empire.API.Data.PortRef                  (AnyPortRef (OutPortRef'), OutPortRef)
 import qualified Empire.API.Data.PortRef                  as PortRef
-import qualified JS.Scene                                 as Scene
 import           Luna.Studio.Action.Basic                 (getScene, localMovePort, localRemovePort, redrawConnectionsForNode,
                                                            setInputSidebarPortMode)
 import qualified Luna.Studio.Action.Basic                 as Basic
@@ -18,7 +17,6 @@ import qualified Luna.Studio.Action.Connect               as Connect
 import           Luna.Studio.Action.State.Action          (beginActionWithKey, continueActionWithKey, removeActionFromState,
                                                            updateActionWithKey)
 import           Luna.Studio.Action.State.App             (renderIfNeeded)
-import           Luna.Studio.Action.State.Model           (getPortPositionInInputSidebar)
 import           Luna.Studio.Action.State.NodeEditor      (getInputNode, modifyInputNode)
 import           Luna.Studio.Action.State.Scene           (getInputSidebarSize)
 import           Luna.Studio.Event.Mouse                  (mousePosition)
@@ -27,6 +25,9 @@ import           Luna.Studio.React.Model.Constants        (gridSize)
 import           Luna.Studio.React.Model.Node.SidebarNode (NodeLoc, countProjectionPorts, fixedBottomPos, outPortAt)
 import           Luna.Studio.React.Model.Port             (OutPortIndex (Projection), getPortNumber)
 import qualified Luna.Studio.React.Model.Port             as Port
+import qualified Luna.Studio.React.Model.Scene            as Scene
+import           Luna.Studio.React.Model.Sidebar          (portPositionInInputSidebar, portPositionInOutputSidebar)
+import qualified Luna.Studio.React.Model.Sidebar          as Sidebar
 import qualified Luna.Studio.React.View.Sidebar           as Sidebar
 import           Luna.Studio.State.Action                 (Action (begin, continue, end, update), Connect, Mode (Click, Drag),
                                                            PortDrag (PortDrag), connectIsPortPhantom, connectMode, connectSourcePort,
@@ -54,7 +55,7 @@ getInputSidebarBottomDistance = getScene >>= \mayScene -> return $
         (Nothing, _)               -> Nothing
         (_, Nothing)               -> Nothing
         (Just scene, Just sidebar) -> Just $
-            scene ^. Scene.size . y - sidebar ^. Scene.inputSidebarPosition . y - sidebar ^. Scene.inputSidebarSize . y
+            scene ^. Scene.size . y - sidebar ^. Sidebar.inputSidebarPosition . y - sidebar ^. Sidebar.inputSidebarSize . y
 
 setFixedBottomPos :: OutPortRef -> Command State ()
 setFixedBottomPos portRef = do
@@ -117,7 +118,7 @@ startPortDrag :: ScreenPosition -> OutPortRef -> Bool -> Mode -> Command State (
 startPortDrag mousePos portRef isPhantom mode = do
     maySuccess <- runMaybeT $ do
         let portId  = portRef ^. PortRef.srcPortId
-        portPos <- MaybeT $ fmap2 (flip getPortPositionInInputSidebar portId) getInputSidebarSize
+        portPos <- MaybeT $ fmap2 (flip portPositionInInputSidebar portId) getInputSidebarSize
         lift . setInputSidebarPortMode portRef $ Port.Moved portPos
         lift . begin $ PortDrag mousePos portPos portRef portRef isPhantom mode
     when (isNothing maySuccess && isPhantom) $ void $ localRemovePort portRef

@@ -12,7 +12,7 @@ import qualified Data.HashMap.Strict                          as HashMap
 import qualified Data.Map.Lazy                                as Map
 import           Data.Monoid                                  (First (First), getFirst)
 import qualified Data.Set                                     as Set
-import           JS.Scene                                     (Scene)
+import           Luna.Studio.React.Model.Scene                (Scene)
 
 import           Empire.API.Data.MonadPath                    (MonadPath)
 import qualified Empire.API.Data.Node                         as Empire

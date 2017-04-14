@@ -10,7 +10,6 @@ import           Data.Position                               (Position)
 import qualified Empire.API.Data.Breadcrumb                  as B
 import           Empire.API.Data.MonadPath                   (MonadPath)
 import qualified Empire.API.Data.NodeLoc                     as NodeLoc
-import           JS.Scene                                    (Scene)
 import           Luna.Studio.Data.CameraTransformation       (CameraTransformation)
 import           Luna.Studio.Prelude
 import           Luna.Studio.React.Model.Connection          (ConnectionsMap, CurrentConnection)
@@ -18,6 +17,7 @@ import           Luna.Studio.React.Model.ConnectionPen       (ConnectionPen)
 import           Luna.Studio.React.Model.Node                (ExpressionNode, ExpressionNodesMap, HasNodeLoc, InputNode, NodeLoc,
                                                               OutputNode, nodeId)
 import qualified Luna.Studio.React.Model.Node.ExpressionNode as ExpressionNode
+import           Luna.Studio.React.Model.Scene               (Scene)
 import           Luna.Studio.React.Model.Searcher            (Searcher)
 import           Luna.Studio.React.Model.SelectionBox        (SelectionBox)
 

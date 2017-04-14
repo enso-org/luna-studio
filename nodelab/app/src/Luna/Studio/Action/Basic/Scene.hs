@@ -1,10 +1,10 @@
 module Luna.Studio.Action.Basic.Scene where
 
-import           JS.Scene                                (Scene)
 import           Luna.Studio.Action.Basic.DrawConnection (redrawConnectionsForSidebarNodes)
 import           Luna.Studio.Action.Command              (Command)
 import qualified Luna.Studio.Action.State.Scene          as Scene
 import           Luna.Studio.Prelude
+import           Luna.Studio.React.Model.Scene           (Scene)
 import           Luna.Studio.State.Global                (State)
 
 

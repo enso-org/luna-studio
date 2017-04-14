@@ -1,6 +1,5 @@
 module Luna.Studio.Action.Basic.Revert where
 
-import           Control.Arrow                              ((&&&))
 import           Empire.API.Data.Connection                 (dst, src)
 import           Empire.API.Data.Node                       (nodeId)
 import           Empire.API.Data.NodeLoc                    (NodeLoc, prependPath)
@@ -79,7 +78,6 @@ revertRemoveNodes :: RemoveNodes.Request -> Response.Status RemoveNodes.Inverse 
 revertRemoveNodes (RemoveNodes.Request loc _) (Response.Ok (RemoveNodes.Inverse nodes conns)) =
     inCurrentLocation loc $ \path -> do
         let nodes' = map (convert . (path,)) nodes
-            conns' = map (view src &&& view dst) conns
         void $ localAddSubgraph nodes' $ map (\conn -> (prependPath path (conn ^. src), prependPath path (conn ^. dst))) conns
 revertRemoveNodes (RemoveNodes.Request _loc _) (Response.Error _msg) = panic
 

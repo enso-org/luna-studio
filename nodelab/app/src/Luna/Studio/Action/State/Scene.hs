@@ -8,7 +8,6 @@ import           Data.ScreenPosition                   (ScreenPosition (ScreenPo
 import qualified Data.ScreenPosition                   as ScreenPosition
 import           Data.Size                             (Size)
 import           Data.Vector                           (scalarProduct, vector, x, y)
-import           JS.Scene                              (InputSidebar, OutputSidebar, Scene)
 import qualified JS.Scene                              as Scene
 import           Luna.Studio.Action.Command            (Command)
 import           Luna.Studio.Action.State.App          (renderIfNeeded)
@@ -17,6 +16,10 @@ import qualified Luna.Studio.Action.State.NodeEditor   as NE
 import           Luna.Studio.Data.CameraTransformation (logicalToScreen, screenToLogical)
 import           Luna.Studio.Prelude
 import qualified Luna.Studio.React.Model.NodeEditor    as NodeEditor
+import           Luna.Studio.React.Model.Scene         (Scene)
+import qualified Luna.Studio.React.Model.Scene         as Scene
+import           Luna.Studio.React.Model.Sidebar       (InputSidebar, OutputSidebar)
+import qualified Luna.Studio.React.Model.Sidebar       as Sidebar
 import           Luna.Studio.State.Global              (State)
 
 
@@ -64,21 +67,10 @@ getScreenCenter :: Command State (Maybe ScreenPosition)
 getScreenCenter = fmap2 (ScreenPosition . flip scalarProduct 0.5 . view vector) getScreenSize
 
 getInputSidebar :: Command State (Maybe InputSidebar)
-getInputSidebar =  getInputSidebar' >>= maybe (updateScene >> getInputSidebar') (return . return . id) where
-    getInputSidebar' = maybe Nothing (view Scene.inputSidebar) <$> NE.getScene
+getInputSidebar =  join <$> view Scene.inputSidebar `fmap2` getScene
 
 getOutputSidebar :: Command State (Maybe OutputSidebar)
-getOutputSidebar =  getOutputSidebar' >>= maybe (updateScene >> getOutputSidebar') (return . return . id) where
-    getOutputSidebar' = maybe Nothing (view Scene.outputSidebar) <$> NE.getScene
-
-getInputSidebarPosition :: Command State (Maybe ScreenPosition)
-getInputSidebarPosition = view Scene.inputSidebarPosition `fmap2` getInputSidebar
+getOutputSidebar = join <$> view Scene.outputSidebar `fmap2` getScene
 
 getInputSidebarSize :: Command State (Maybe Size)
-getInputSidebarSize = view Scene.inputSidebarSize `fmap2` getInputSidebar
-
-getOutputSidebarPosition :: Command State (Maybe ScreenPosition)
-getOutputSidebarPosition = view Scene.outputSidebarPosition `fmap2` getOutputSidebar
-
-getOutputSidebarSize :: Command State (Maybe Size)
-getOutputSidebarSize = view Scene.outputSidebarSize `fmap2` getOutputSidebar
+getInputSidebarSize = view Sidebar.inputSidebarSize `fmap2` getInputSidebar
