@@ -18,8 +18,6 @@ module EmpireUtils (
     , withChannels
     , emptyGraphLocation
     , connectToInput
-    , inputPorts
-    , outputPorts
     , outPortRef
     , inPortRef
     ) where
@@ -39,7 +37,7 @@ import           Empire.API.Data.Port          (Port)
 import qualified Empire.API.Data.Port          as Port
 import           Empire.API.Data.NodeLoc       (NodeLoc(..))
 import           Empire.API.Data.PortRef       (AnyPortRef(InPortRef'), InPortRef(..), OutPortRef(..))
-import           Empire.API.Data.Node          (ExpressionNode, NodeId, nodeId, ports)
+import           Empire.API.Data.Node          (ExpressionNode, NodeId, nodeId)
 import qualified Empire.Commands.Graph         as Graph (connect, getNodes)
 import           Empire.Commands.Library       (createLibrary, listLibraries, withLibrary)
 import           Empire.Data.AST               ()
@@ -111,14 +109,8 @@ mkUUID = nextRandom
 connectToInput :: GraphLocation -> OutPortRef -> InPortRef -> Empire Connection
 connectToInput loc outPort inPort = Graph.connect loc outPort (InPortRef' inPort)
 
-inputPorts :: ExpressionNode -> [Port]
-inputPorts node = Map.elems $ Map.filter (Port.isInPort . view Port.portId) $ node ^. ports
-
-outputPorts :: ExpressionNode -> [Port]
-outputPorts node = Map.elems $ Map.filter (Port.isOutPort . view Port.portId) $ node ^. ports
-
-outPortRef :: NodeId -> Port.OutPort -> OutPortRef
+outPortRef :: NodeId -> Port.OutPortId -> OutPortRef
 outPortRef = OutPortRef . NodeLoc def
 
-inPortRef :: NodeId -> Port.InPort -> InPortRef
+inPortRef :: NodeId -> Port.InPortId -> InPortRef
 inPortRef = InPortRef . NodeLoc def

@@ -511,7 +511,7 @@ copyMeta donor recipient = do
 markNode :: ASTOp m => NodeRef -> NodeId -> m ()
 markNode expr nodeId = do
     var <- ASTRead.getVarNode expr
-    IR.putLayer @Marker var (Just $ OutPortRef (NodeLoc def nodeId) [])
+    ASTBuilder.attachNodeMarkers nodeId [] var
 
 insertNode :: ASTOp m => NodeRef -> m NodeId
 insertNode expr = do

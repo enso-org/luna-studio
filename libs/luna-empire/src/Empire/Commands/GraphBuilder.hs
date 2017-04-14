@@ -431,7 +431,7 @@ getNodeInputs :: ASTOp m => NodeId -> m [(OutPortRef, InPortRef)]
 getNodeInputs nid = do
     ref      <- ASTRead.getASTTarget   nid
     self     <- ASTRead.getSelfNodeRef ref
-    args     <- ASTDeconstruct.extractArguments ref
+    args     <- reverse <$> ASTDeconstruct.extractAppArguments ref
     selfIn   <- catMaybes . toList <$> mapM resolveInput self
     argsIn   <- mapM resolveInput args
     wholeIn  <- filter ((/= nid) . view srcNodeId) . toList <$> resolveInput ref
