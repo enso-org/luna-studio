@@ -12,7 +12,8 @@ import qualified Data.HashMap.Strict                          as HashMap
 import qualified Data.Map.Lazy                                as Map
 import           Data.Monoid                                  (First (First), getFirst)
 import qualified Data.Set                                     as Set
-import           Luna.Studio.React.Model.Scene                (Scene)
+import           Luna.Studio.React.Model.Layout               (Layout, Scene)
+import qualified Luna.Studio.React.Model.Layout               as Scene
 
 import           Empire.API.Data.MonadPath                    (MonadPath)
 import qualified Empire.API.Data.Node                         as Empire
@@ -24,6 +25,7 @@ import           Luna.Studio.Action.Command                   (Command)
 import           Luna.Studio.Action.State.App                 (get, modify)
 import qualified Luna.Studio.Action.State.Internal.NodeEditor as Internal
 import           Luna.Studio.Batch.Workspace                  (nodeSearcherData)
+import           Luna.Studio.Data.CameraTransformation        (CameraTransformation)
 import           Luna.Studio.Data.Graph                       (Graph (Graph))
 import           Luna.Studio.Prelude
 import           Luna.Studio.React.Model.App                  (nodeEditor)
@@ -208,8 +210,14 @@ getSearcher = view NE.searcher <$> getNodeEditor
 modifySearcher :: Monoid r => M.State Searcher r -> Command State r
 modifySearcher = modify (nodeEditor . NE.searcher) . zoom traverse
 
+getLayout :: Command State Layout
+getLayout = view NE.layout <$> getNodeEditor
+
 getScene :: Command State (Maybe Scene)
-getScene = view NE.scene <$> getNodeEditor
+getScene = view Scene.scene <$> getLayout
+
+getScreenTranform :: Command State CameraTransformation
+getScreenTranform = view Scene.screenTransform <$> getLayout
 
 globalFunctions :: Items a -> Items a
 globalFunctions = Map.filter isElement
