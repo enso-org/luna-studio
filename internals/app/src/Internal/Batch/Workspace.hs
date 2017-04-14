@@ -6,7 +6,7 @@ import           Internal.Prelude
 import           Empire.API.Data.Breadcrumb    (Breadcrumb (..))
 import           Empire.API.Data.GraphLocation (GraphLocation (..))
 import qualified Empire.API.Data.GraphLocation as GraphLocation
-import           Empire.API.Data.Node       (Node)
+import           Empire.API.Data.Node       (ExpressionNode)
 
 import           Text.ScopeSearcher.Item       (Items)
 
@@ -14,7 +14,7 @@ import           Text.ScopeSearcher.Item       (Items)
 data Workspace = Workspace { _currentLocation  :: GraphLocation
                            , _lastUILocation   :: Maybe GraphLocation
                            , _isGraphLoaded    :: Bool
-                           , _nodeSearcherData :: Items Node
+                           , _nodeSearcherData :: Items ExpressionNode
                            } deriving (Show, Eq, Generic)
 
 instance ToJSON Workspace
