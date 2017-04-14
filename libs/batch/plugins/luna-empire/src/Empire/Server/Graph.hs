@@ -23,6 +23,8 @@ import           Data.Traversable                   (forM)
 import           Data.UUID.Types                    (UUID)
 import qualified Data.UUID.Types                    as UUID
 import qualified Data.UUID.V4                       as UUID
+import qualified Empire.API.Atom.GetBuffer          as GetBuffer
+import qualified Empire.API.Atom.Substitute         as Substitute
 import           Empire.API.Data.Breadcrumb         (Breadcrumb (..))
 import qualified Empire.API.Data.Breadcrumb         as Breadcrumb
 import           Empire.API.Data.Connection         as Connection
@@ -31,16 +33,14 @@ import           Empire.API.Data.GraphLocation      (GraphLocation)
 import qualified Empire.API.Data.GraphLocation      as GraphLocation
 import           Empire.API.Data.Node               (ExpressionNode (..), NodeId)
 import qualified Empire.API.Data.Node               as Node
-import           Empire.API.Data.NodeMeta           (NodeMeta)
 import           Empire.API.Data.NodeLoc            (NodeLoc (..))
+import           Empire.API.Data.NodeMeta           (NodeMeta)
 import qualified Empire.API.Data.NodeSearcher       as NS
 import           Empire.API.Data.Port               (InPort (..), OutPort (..), Port (..), InPortIndex (..), OutPortIndex (..), PortState (..), getPortNumber)
 import           Empire.API.Data.PortDefault        (PortValue (..))
 import           Empire.API.Data.PortRef            (InPortRef (..), OutPortRef (..))
 import           Empire.API.Data.PortRef            as PortRef
 import           Empire.API.Data.TypeRep            (TypeRep (TStar))
-import qualified Empire.API.Atom.GetBuffer          as GetBuffer
-import qualified Empire.API.Atom.Substitute         as Substitute
 import qualified Empire.API.Graph.AddConnection     as AddConnection
 import qualified Empire.API.Graph.AddNode           as AddNode
 import qualified Empire.API.Graph.AddPort           as AddPort
@@ -51,7 +51,7 @@ import qualified Empire.API.Graph.DumpGraphViz      as DumpGraphViz
 import qualified Empire.API.Graph.GetProgram        as GetProgram
 import qualified Empire.API.Graph.GetSubgraphs      as GetSubgraphs
 import qualified Empire.API.Graph.MovePort          as MovePort
-import           Empire.API.Graph.NodeResultUpdate  (NodeValue(NodeValue))
+import           Empire.API.Graph.NodeResultUpdate  (NodeValue (NodeValue))
 import qualified Empire.API.Graph.NodeResultUpdate  as NodeResultUpdate
 import qualified Empire.API.Graph.NodesUpdate       as NodesUpdate
 import qualified Empire.API.Graph.RemoveConnection  as RemoveConnection
@@ -251,7 +251,7 @@ handleRemoveConnection = modifyGraphOk inverse action where
     inverse (RemoveConnection.Request location dst) = do
         connections <- Graph.withGraph location $ runASTOp buildConnections
         case find (\conn -> snd conn == dst) connections of
-            Nothing       -> $notImplemented --TODO[LJK, MM]: Return error here like: Response.Error $ "Cannot find connection by this id: " <> show dst
+            Nothing       -> throwError "Connection does not exist"
             Just (src, _) -> return $ RemoveConnection.Inverse src
     action  (RemoveConnection.Request location dst) = Graph.disconnect location dst
 

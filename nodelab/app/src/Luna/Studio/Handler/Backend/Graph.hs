@@ -5,7 +5,7 @@ module Luna.Studio.Handler.Backend.Graph
 import qualified Data.DateTime                                as DT
 import           Empire.API.Data.Connection                   (dst, src)
 import qualified Empire.API.Data.Graph                        as Graph
-import           Empire.API.Data.NodeLoc                      (prependPath)
+import           Empire.API.Data.NodeLoc                      (nodeLoc, prependPath)
 import qualified Empire.API.Data.NodeLoc                      as NodeLoc
 import qualified Empire.API.Graph.AddConnection               as AddConnection
 import qualified Empire.API.Graph.AddNode                     as AddNode
@@ -56,7 +56,6 @@ import           Luna.Studio.Event.Batch                      (Event (..))
 import qualified Luna.Studio.Event.Event                      as Event
 import           Luna.Studio.Handler.Backend.Common           (doNothing, handleResponse)
 import           Luna.Studio.Prelude
-import           Luna.Studio.React.Model.Node                 (Node (Expression), nodeLoc, _Expression)
 import qualified Luna.Studio.React.Model.Node.ExpressionNode  as Node
 import           Luna.Studio.Report
 import           Luna.Studio.State.Global                     (State)
@@ -148,7 +147,7 @@ handle (Event.Batch ev) = Just $ case ev of
             else void $ localAddSubgraph nodes (map (\conn -> (prependPath path (conn ^. src), prependPath path (conn ^. dst))) conns)
 
     CodeUpdate update -> do
-       inCurrentLocation (update ^. CodeUpdate.location) $ \path -> do
+       inCurrentLocation (update ^. CodeUpdate.location) $ \_ -> do
             localSetCode $ update ^. CodeUpdate.code
 
     CollaborationUpdate update -> inCurrentLocation (update ^. CollaborationUpdate.location) $ \path -> do
@@ -186,7 +185,7 @@ handle (Event.Batch ev) = Just $ case ev of
 
     MonadsUpdate update -> do
         inCurrentLocation (update ^. MonadsUpdate.location) $ \path ->
-            updateMonads $ update ^. MonadsUpdate.monads
+            updateMonads $ update ^. MonadsUpdate.monads --FIXME updateMonads in path!
 
     MovePortResponse response -> handleResponse response success failure where
         requestId     = response ^. Response.requestId

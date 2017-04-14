@@ -5,7 +5,7 @@ import           Control.Monad.State.Lazy                    (execStateT, get, m
 import qualified Control.Monad.State.Lazy                    as S
 import           Data.Map.Lazy                               (Map)
 import qualified Data.Map.Lazy                               as Map
-import           Data.Position                               (Position, fromDoubles, minimumRectangle, move, toTuple, vector, x, y)
+import           Data.Position                               (Position, fromDoubles, minimumRectangle, move, vector, x, y)
 import           Data.Set                                    (Set)
 import qualified Data.Set                                    as Set
 import           Data.Vector                                 (Vector2)
@@ -19,7 +19,7 @@ import           Luna.Studio.React.Model.Connection          (Connection, dstNod
 import           Luna.Studio.React.Model.Constants           (gridSize)
 import           Luna.Studio.React.Model.Node.ExpressionNode (ExpressionNode, NodeLoc)
 import qualified Luna.Studio.React.Model.Node.ExpressionNode as Node
-import           Luna.Studio.React.Model.Port                (AnyPortId (InPortId'), InPortIndex (Self), isSelf)
+import           Luna.Studio.React.Model.Port                (InPortIndex (Self), isSelf)
 import           Luna.Studio.State.Global                    (State)
 
 
