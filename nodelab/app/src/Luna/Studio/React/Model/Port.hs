@@ -81,7 +81,7 @@ outPortTreeLeafs (LabeledTree (OutPorts []) p) = [p]
 outPortTreeLeafs (LabeledTree (OutPorts ps) _) = concatMap outPortTreeLeafs ps
 
 inPortTreeLeafs :: InPortTree (Port i) -> [Port i]
-inPortTreeLeafs (LabeledTree (InPorts Nothing []) p) = [p]
+inPortTreeLeafs (LabeledTree (InPorts Nothing []) p) = if p ^. state == Connected then [p] else []
 inPortTreeLeafs (LabeledTree (InPorts mps     ps) _) = concatMap inPortTreeLeafs $ maybeToList mps <> ps
 
 

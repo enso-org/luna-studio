@@ -78,9 +78,9 @@ instance HasPorts InputNode where
     outPortsList  = concatMap Port.outPortTreeLeafs . view inputSidebarPorts
     inPortAt      = const ignored
     outPortAt ((Projection i):t) = inputSidebarPorts . ix i . ix t
-    outPortAt _                              = ignored
+    outPortAt _                  = ignored
 
-class (IsNode node, HasPorts node) => SidebarNode node where
+class IsNode node => SidebarNode node where
     mode :: Lens' node SidebarMode
     fixedBottomPos :: Lens' node (Maybe Double)
     isInputSidebar :: node -> Bool
