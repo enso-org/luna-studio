@@ -11,9 +11,9 @@ dependencies:
         - sudo mv /tmp/stack-1.3.0-linux-x86_64/stack /usr/bin
     override:
         - stack build --stack-yaml=build/backend/stack.yaml --only-dependencies --install-ghc --test --fast -j2
-        - stack build --stack-yaml=internals/stack.yaml --only-dependencies --install-ghc --fast -j1
+        - stack build internals --stack-yaml=nodelab/stack.yaml --only-dependencies --install-ghc --fast -j1
         - npm install -g brunch@1.8.5 bower
-        - cd nodelab && stack build --only-dependencies --install-ghc --test --fast -j1
+        - cd nodelab && stack build nodelab --only-dependencies --install-ghc --test --fast -j1
         - cd nodelab && npm install
         - cd nodelab && bower install --allow-root
 
@@ -27,7 +27,7 @@ dependencies:
 compile:
     override:
         - stack build --stack-yaml build/backend/stack.yaml --copy-bins --fast --no-run-tests --no-run-benchmarks -j2
-        - stack build --stack-yaml internals/stack.yaml --fast
+        - stack build internals --stack-yaml nodelab/stack.yaml --fast
         - cd nodelab && brunch build
         - python atom_prep.py
         - cd nodelab && tar -cvf frontend.zip atom && mv frontend.zip $CIRCLE_ARTIFACTS
