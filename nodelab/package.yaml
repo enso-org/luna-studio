@@ -68,6 +68,9 @@ dependencies:
   - visualization-api
 
 executables:
+  internals:
+    main:             Main.hs
+    source-dirs:      internals/src
   nodelab:
     main:             Main.hs
     source-dirs:      app/src

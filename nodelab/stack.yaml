@@ -11,6 +11,7 @@ setup-info:
 
 ghc-options:
   nodelab: -DGHCJS_BROWSER
+  internals: -DGHCJS_BROWSER
 extra-deps:
   - cond-0.4.1.1
   - datetime-0.3.1
