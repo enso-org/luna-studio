@@ -3,7 +3,6 @@ module Luna.Studio.State.UI where
 
 import           Data.ScreenPosition         (ScreenPosition (ScreenPosition))
 import           Data.Vector                 (Vector2 (Vector2))
-import           JS.Scene                    (Scene)
 import           Luna.Studio.Prelude
 import           Luna.Studio.React.Model.App (App)
 import           Luna.Studio.React.Store     (Ref)
@@ -11,7 +10,6 @@ import           Luna.Studio.React.Store     (Ref)
 
 data State = State { _app                  :: Ref App
                    , _renderNeeded         :: Bool
-                   , _scene                :: Maybe Scene
                    , _mousePos             :: ScreenPosition
                    , _topZIndex            :: Int
                    }
@@ -22,6 +20,5 @@ mkState :: Ref App -> State
 mkState ref = State
     {- app          -} ref
     {- renderNeeded -} False
-    {- scene        -} def
     {- mousePos     -} (ScreenPosition $ Vector2 200 200)
     {- topZIndex    -} def

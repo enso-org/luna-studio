@@ -10,6 +10,7 @@ import           Data.Position                               (Position)
 import qualified Empire.API.Data.Breadcrumb                  as B
 import           Empire.API.Data.MonadPath                   (MonadPath)
 import qualified Empire.API.Data.NodeLoc                     as NodeLoc
+import           JS.Scene                                    (Scene)
 import           Luna.Studio.Data.CameraTransformation       (CameraTransformation)
 import           Luna.Studio.Prelude
 import           Luna.Studio.React.Model.Connection          (ConnectionsMap, CurrentConnection)
@@ -33,6 +34,8 @@ data NodeEditor = NodeEditor { _screenTransform     :: CameraTransformation
                              , _connectionPen       :: Maybe ConnectionPen
                              , _selectionBox        :: Maybe SelectionBox
                              , _searcher            :: Maybe Searcher
+
+                             , _scene               :: Maybe Scene
                              } deriving (Default, Eq, Generic)
 
 makeLenses ''NodeEditor

@@ -12,6 +12,7 @@ import qualified Data.HashMap.Strict                          as HashMap
 import qualified Data.Map.Lazy                                as Map
 import           Data.Monoid                                  (First (First), getFirst)
 import qualified Data.Set                                     as Set
+import           JS.Scene                                     (Scene)
 
 import           Empire.API.Data.MonadPath                    (MonadPath)
 import qualified Empire.API.Data.Node                         as Empire
@@ -206,6 +207,9 @@ getSearcher = view NE.searcher <$> getNodeEditor
 
 modifySearcher :: Monoid r => M.State Searcher r -> Command State r
 modifySearcher = modify (nodeEditor . NE.searcher) . zoom traverse
+
+getScene :: Command State (Maybe Scene)
+getScene = view NE.scene <$> getNodeEditor
 
 globalFunctions :: Items a -> Items a
 globalFunctions = Map.filter isElement
