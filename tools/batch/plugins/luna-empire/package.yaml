@@ -23,7 +23,7 @@ executables:
   luna-empire:
     source-dirs: src
     main:        Main.hs
-    ghc-options: -Wall -O2 -threaded
+    ghc-options: -Wall -O2 -threaded -with-rtsopts=-T
 
   luna-empire-logger:
     source-dirs: src
