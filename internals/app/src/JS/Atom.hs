@@ -11,10 +11,8 @@ module JS.Atom
 
 import           GHCJS.Foreign.Callback
 import           GHCJS.Marshal.Pure         (pFromJSVal)
-import qualified Data.JSString              as JSString
 import qualified Data.Text                  as Text
 import           Internal.Event.Internal (InternalEvent, InternalEvent(..))
-import qualified Internal.Event.Internal as Internal
 import           Internal.Event.Text (TextEvent, TextEvent (..))
 import qualified Internal.Event.Text as TextEvent
 import           Internal.Prelude

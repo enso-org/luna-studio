@@ -9,7 +9,7 @@ import qualified Data.HashMap.Strict      as HashMap
 import           Data.JSString            (JSString)
 import qualified Data.JSString            as JSString
 import qualified Data.Map.Strict          as Map
-import           Development.Placeholders
+-- import           Development.Placeholders
 import           Empire.API.JSONInstances ()
 import           Prologue
 
@@ -35,11 +35,3 @@ instance Convertible JSString String where
 instance ToJSON b => ToJSON (HashMap UUID b) where
     toJSON = toJSON . Map.fromList . HashMap.toList
     {-# INLINE toJSON #-}
-
--- instance ToJSON b => ToJSON (HashMap AnyPortRef b) where
---     toJSON = toJSON . Map.fromList . HashMap.toList
---     {-# INLINE toJSON #-}
---
--- instance ToJSON b => ToJSON (HashMap InPortRef b) where
---     toJSON = toJSON . Map.fromList . HashMap.toList
---     {-# INLINE toJSON #-}
