@@ -12,15 +12,11 @@ module JS.WebSocket (WebSocket
                     , onOpen
                     , send
                     ) where
-import           Data.Coerce             (coerce)
 import           Data.JSString
 import           GHCJS.Foreign.Callback
 import           GHCJS.Marshal.Pure     (PFromJSVal (..), PToJSVal (..))
 import           GHCJS.Types            (IsJSVal)
 import           Internal.Prelude
-
-import           Control.DeepSeq (force)
-
 
 
 newtype WebSocket      = WebSocket      JSVal deriving (PFromJSVal, PToJSVal, NFData)

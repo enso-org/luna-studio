@@ -5,10 +5,7 @@ module JS.Config
   ( getBackendAddress
   ) where
 
-import qualified Data.List           as List
-import           GHCJS.Marshal.Pure  (pFromJSVal)
 import           Internal.Prelude
-import           System.IO.Unsafe    (unsafePerformIO)
 
 
 

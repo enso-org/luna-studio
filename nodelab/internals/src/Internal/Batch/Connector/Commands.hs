@@ -8,7 +8,7 @@ import qualified Empire.API.Atom.OpenFile               as OpenFile
 import qualified Empire.API.Atom.SaveFile               as SaveFile
 import qualified Empire.API.Atom.SetProject             as SetProject
 import qualified Empire.API.Atom.Substitute             as Substitute
-import           Internal.Batch.Connector.Connection (Message (Message), sendRequest, sendUpdate)
+import           Internal.Batch.Connector.Connection (Message (Message), sendRequest)
 import           Internal.Prelude
 
 

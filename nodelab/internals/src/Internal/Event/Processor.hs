@@ -17,7 +17,6 @@ import qualified Internal.Event.Preprocessor.Batch       as BatchEventPreprocess
 import qualified Internal.Event.Preprocessor.CustomEvent as CustomEventPreprocessor
 import           Internal.Event.Source                   (AddHandler (..))
 import qualified Internal.Event.Source                   as JSHandlers
-import qualified Internal.Handler.App                    as App
 import qualified Internal.Handler.Backend.ProjectManager as ProjectManager
 import qualified Internal.Handler.Backend.Text           as Text
 import           Internal.Prelude
