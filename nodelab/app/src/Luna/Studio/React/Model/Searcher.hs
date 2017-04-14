@@ -1,7 +1,7 @@
 module Luna.Studio.React.Model.Searcher where
 
 import           Data.Position                  (Position)
-import           Empire.API.Data.Node           (Node)
+import           Empire.API.Data.Node           (ExpressionNode)
 import           Empire.API.Data.NodeLoc        (NodeLoc)
 import           Luna.Studio.Prelude
 import           Text.ScopeSearcher.QueryResult (QueryResult)
@@ -9,7 +9,7 @@ import qualified Text.ScopeSearcher.QueryResult as Result
 
 
 data Mode = Command [QueryResult ()]
-          | Node [QueryResult Node]
+          | Node [QueryResult ExpressionNode]
           deriving (Eq, Generic, Show)
 
 data Searcher = Searcher
@@ -33,14 +33,14 @@ defCommand = mkDef $ Command def
 selectedExpression :: Getter Searcher Text
 selectedExpression = to getExpression where
     getExpression searcher = expression where
-        selected'  = searcher ^. selected
+        selected' = searcher ^. selected
         mayResult = if selected' == 0 then Just $ searcher ^. input else
             listToMaybe $ drop (selected' - 1) $ case searcher ^. mode of
                 Command results -> Result._name <$> results
                 Node    results -> Result._name <$> results
         expression = fromMaybe (searcher ^. input) mayResult
 
-selectedNode :: Getter Searcher (Maybe Node)
+selectedNode :: Getter Searcher (Maybe ExpressionNode)
 selectedNode = to getNode where
     getNode searcher = mayNode where
         selected' = searcher ^. selected

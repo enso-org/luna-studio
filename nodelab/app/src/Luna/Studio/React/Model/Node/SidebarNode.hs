@@ -9,21 +9,17 @@ module Luna.Studio.React.Model.Node.SidebarNode
     , NodeLoc
     ) where
 
-import           Control.Arrow                  ((&&&))
 import           Data.Convert                   (Convertible (convert))
 import           Data.HashMap.Strict            (HashMap)
-import qualified Data.HashMap.Strict            as HashMap
-import qualified Data.Map.Lazy                  as Map
-import           Empire.API.Data.Node           (NodeId, inputEdgePorts)
+import           Empire.API.Data.Node           (NodeId)
 import qualified Empire.API.Data.Node           as Empire
 import           Empire.API.Data.NodeLoc        (NodeLoc (NodeLoc), NodePath)
 import           Luna.Studio.Prelude
-import           Luna.Studio.React.Model.IsNode as X (IsNode (..))
-import           Luna.Studio.React.Model.Port   (PortsMap, toPortsMap)
+import           Luna.Studio.React.Model.IsNode as X
+import           Luna.Studio.React.Model.Port   (InPort, InPortTree, OutPort, OutPortIndex (Projection), OutPortTree)
 import qualified Luna.Studio.React.Model.Port   as Port
 
 
-data SidebarType = Input | Output  deriving (Generic, Eq, NFData, Show)
 data SidebarMode = AddRemove
               | MoveConnect
               deriving (Generic, Eq, NFData, Show)
@@ -31,53 +27,79 @@ data SidebarMode = AddRemove
 instance Default SidebarMode where
     def = MoveConnect
 
-data SidebarNode = SidebarNode { _nodeLoc'       :: NodeLoc
-                               , _sidebarType    :: SidebarType
-                               , _ports'         :: PortsMap
-                               , _mode           :: SidebarMode
-                               , _fixedBottomPos :: Maybe Double
-                               } deriving (Eq, Generic, NFData, Show)
+data InputNode = InputNode
+        { _inputNodeLoc        :: NodeLoc
+        , _inputSidebarPorts   :: [OutPortTree OutPort]
+        , _inputMode           :: SidebarMode
+        , _inputFixedBottomPos :: Maybe Double
+        } deriving (Eq, Generic, NFData, Show)
 
-makeLenses ''SidebarNode
+data OutputNode = OutputNode
+        { _outputNodeLoc        :: NodeLoc
+        , _outputSidebarPorts   :: InPortTree InPort
+        , _outputMode           :: SidebarMode
+        , _outputFixedBottomPos :: Maybe Double
+        } deriving (Eq, Generic, NFData, Show)
 
-type SidebarNodesMap = HashMap NodeId SidebarNode
+makeLenses ''InputNode
+makeLenses ''OutputNode
 
-instance Convertible (NodePath, Empire.Node, SidebarType) SidebarNode where
-    convert (path, n, type') = SidebarNode
-        {- nodeLoc        -} (NodeLoc path (n ^. Empire.nodeId))
-        {- sidebarType    -} type'
-        {- ports          -} ( case type' of
-            Output -> convert <$> n ^. Empire.ports
-            Input  -> toPortsMap . convert . maybe [] id $ n ^? Empire.nodeType . inputEdgePorts
-            )
-        {- mode           -} def
-        {- fixedBottomPos -} def
+type InputNodesMap  = HashMap NodeId InputNode
+type OutputNodesMap = HashMap NodeId OutputNode
 
-instance IsNode SidebarNode where
-    nodeLoc              = nodeLoc'
-    ports                = ports'
-    getPorts             = Map.elems . view ports
-    hasPort pid          = Map.member pid . view ports
-    countInPorts         = Port.countInPorts . Map.keys . (view ports)
-    countOutPorts        = Port.countOutPorts . Map.keys . (view ports)
-    countArgPorts        = Port.countArgPorts . Map.keys . (view ports)
-    countProjectionPorts = Port.countProjectionPorts . Map.keys . (view ports)
+instance Convertible (NodePath, Empire.InputSidebar) InputNode where
+    convert (path, n) = InputNode
+        {- inputNodeLoc        -} (NodeLoc path (n ^. Empire.inputNodeId))
+        {- inputSidebarPorts   -} (convert `fmap2` (n ^. Empire.inputEdgePorts))
+        {- inputMode           -} def
+        {- inputFixedBottomPos -} def
 
-toSidebarNodesMap :: [SidebarNode] -> SidebarNodesMap
-toSidebarNodesMap = HashMap.fromList . map (view nodeId &&& id)
+instance Convertible (NodePath, Empire.OutputSidebar) OutputNode where
+    convert (path, n) = OutputNode
+        {- outputNodeLoc        -} (NodeLoc path (n ^. Empire.outputNodeId))
+        {- outputSideBarPorts   -} (convert <$> n ^. Empire.outputEdgePorts)
+        {- outputMode           -} def
+        {- outputFixedBottomPos -} def
 
+instance HasNodeLoc InputNode where
+    nodeLoc = inputNodeLoc
 
-isInputSidebar :: SidebarNode -> Bool
-isInputSidebar n = n ^. sidebarType == Input
+instance HasNodeLoc OutputNode where
+    nodeLoc = outputNodeLoc
 
-isOutputSidebar :: SidebarNode -> Bool
-isOutputSidebar n = n ^. sidebarType == Output
+instance HasPorts OutputNode where
+    inPortsList  = Port.inPortTreeLeafs . view outputSidebarPorts
+    outPortsList = const def
+    inPortAt pid = outputSidebarPorts . ix pid
+    outPortAt    = const ignored
 
-isInMode :: SidebarMode -> SidebarNode -> Bool
-isInMode mode' n = n ^. mode == mode'
+instance HasPorts InputNode where
+    inPortsList   = const def
+    outPortsList  = concatMap Port.outPortTreeLeafs . view inputSidebarPorts
+    inPortAt      = const ignored
+    outPortAt ((Projection i):t) = inputSidebarPorts . ix i . ix t
+    outPortAt _                  = ignored
 
-isInAddRemoveMode :: SidebarNode -> Bool
-isInAddRemoveMode = isInMode AddRemove
+class IsNode node => SidebarNode node where
+    mode :: Lens' node SidebarMode
+    fixedBottomPos :: Lens' node (Maybe Double)
+    isInputSidebar :: node -> Bool
 
-isInMoveConnectMode :: SidebarNode -> Bool
-isInMoveConnectMode = isInMode MoveConnect
+    isInMode :: SidebarMode -> node -> Bool
+    isInMode mode' n = n ^. mode == mode'
+
+    isInAddRemoveMode :: node -> Bool
+    isInAddRemoveMode = isInMode AddRemove
+
+    isInMoveConnectMode :: node -> Bool
+    isInMoveConnectMode = isInMode MoveConnect
+
+instance SidebarNode InputNode where
+    mode = inputMode
+    fixedBottomPos = inputFixedBottomPos
+    isInputSidebar = const True
+
+instance SidebarNode OutputNode where
+    mode = outputMode
+    fixedBottomPos = outputFixedBottomPos
+    isInputSidebar = const False

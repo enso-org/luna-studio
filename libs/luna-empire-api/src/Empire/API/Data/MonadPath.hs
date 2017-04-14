@@ -1,7 +1,7 @@
 module Empire.API.Data.MonadPath where
 
 import           Data.Binary             (Binary)
-import           Empire.API.Data.Node    (Node, NodeId)
+import           Empire.API.Data.Node    (NodeId)
 import           Prologue                hiding (TypeRep)
 
 import           Empire.API.Data.TypeRep (TypeRep)

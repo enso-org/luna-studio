@@ -92,11 +92,13 @@ instance               FromJSON Breadcrumb.BreadcrumbItem
 instance ToJSON GraphLocation.GraphLocation
 instance FromJSON GraphLocation.GraphLocation
 
-instance ToJSON Node.Node
-instance FromJSON Node.Node
-instance ToJSON Node.NodeType
-instance FromJSON Node.NodeType
-instance ToJSON Node.NodeTypecheckerUpdate
+instance ToJSON   Node.ExpressionNode
+instance FromJSON Node.ExpressionNode
+instance ToJSON   Node.InputSidebar
+instance FromJSON Node.InputSidebar
+instance ToJSON   Node.OutputSidebar
+instance FromJSON Node.OutputSidebar
+instance ToJSON   Node.NodeTypecheckerUpdate
 instance FromJSON Node.NodeTypecheckerUpdate
 
 instance ToJSON NodeMeta.NodeMeta
@@ -107,10 +109,12 @@ instance ToJSON NodePath
 instance FromJSON NodeLoc
 instance FromJSON NodePath
 
-instance {-# OVERLAPPING #-} ToJSON   v => ToJSON   (Map NodeLoc     v) where toJSON = toJSON . Map.toList
-instance {-# OVERLAPPING #-} FromJSON v => FromJSON (Map NodeLoc     v) where parseJSON = fmap Map.fromList . parseJSON
-instance {-# OVERLAPPING #-} ToJSON   v => ToJSON   (Map PortId     v) where toJSON = toJSON . Map.toList
-instance {-# OVERLAPPING #-} FromJSON v => FromJSON (Map PortId     v) where parseJSON = fmap Map.fromList . parseJSON
+instance {-# OVERLAPPING #-} ToJSON   v => ToJSON   (Map NodeLoc    v) where toJSON = toJSON . Map.toList
+instance {-# OVERLAPPING #-} FromJSON v => FromJSON (Map NodeLoc    v) where parseJSON = fmap Map.fromList . parseJSON
+instance {-# OVERLAPPING #-} ToJSON   v => ToJSON   (Map InPortId   v) where toJSON = toJSON . Map.toList
+instance {-# OVERLAPPING #-} FromJSON v => FromJSON (Map InPortId   v) where parseJSON = fmap Map.fromList . parseJSON
+instance {-# OVERLAPPING #-} ToJSON   v => ToJSON   (Map AnyPortId  v) where toJSON = toJSON . Map.toList
+instance {-# OVERLAPPING #-} FromJSON v => FromJSON (Map AnyPortId  v) where parseJSON = fmap Map.fromList . parseJSON
 instance {-# OVERLAPPING #-} ToJSON   v => ToJSON   (Map UUID       v) where toJSON = toJSON . Map.toList
 instance {-# OVERLAPPING #-} FromJSON v => FromJSON (Map UUID       v) where parseJSON = fmap Map.fromList . parseJSON
 instance {-# OVERLAPPING #-} ToJSON   v => ToJSON   (Map AnyPortRef v) where toJSON = toJSON . Map.toList
@@ -120,16 +124,10 @@ instance {-# OVERLAPPING #-} FromJSON v => FromJSON (Map InPortRef  v) where par
 instance {-# OVERLAPPING #-} ToJSON   v => ToJSON   (Map Breadcrumb.BreadcrumbItem v) where toJSON = toJSON . Map.toList
 instance {-# OVERLAPPING #-} FromJSON v => FromJSON (Map Breadcrumb.BreadcrumbItem v) where parseJSON = fmap Map.fromList . parseJSON
 
-instance ToJSON Port.Port
-instance FromJSON Port.Port
-instance ToJSON Port.InPort
-instance FromJSON Port.InPort
-instance ToJSON Port.OutPort
-instance FromJSON Port.OutPort
-instance ToJSON Port.PortId
-instance FromJSON Port.PortId
-instance ToJSON   a => ToJSON   (Port.OutPortTree a)
-instance FromJSON a => FromJSON (Port.OutPortTree a)
+instance ToJSON i => ToJSON (Port.Port i)
+instance FromJSON i => FromJSON (Port.Port i)
+instance ToJSON Port.AnyPortId
+instance FromJSON Port.AnyPortId
 instance ToJSON Port.PortState
 instance FromJSON Port.PortState
 

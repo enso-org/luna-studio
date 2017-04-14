@@ -6,7 +6,7 @@ import           Prologue
 import           Empire.API.Data.Breadcrumb    (Breadcrumb, BreadcrumbItem, Named)
 import           Empire.API.Data.Graph         (Graph)
 import           Empire.API.Data.GraphLocation (GraphLocation)
-import           Empire.API.Data.Node          (Node)
+import           Empire.API.Data.Node          (ExpressionNode)
 import           Empire.API.Data.NodeSearcher  (Items)
 import qualified Empire.API.Graph.Request      as G
 import qualified Empire.API.Request            as R
@@ -18,7 +18,7 @@ data Request = Request { _query    :: Text
                        , _location :: GraphLocation
                        } deriving (Generic, Eq, NFData, Show)
 
-data Result  = Result  { _nodeSearcherData :: Items Node
+data Result  = Result  { _nodeSearcherData :: Items ExpressionNode
                        } deriving (Generic, Eq, NFData, Show)
 
 type Response = Response.Response Request () Result

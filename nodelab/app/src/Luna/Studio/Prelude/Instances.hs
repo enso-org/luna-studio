@@ -17,7 +17,7 @@ import           React.Flux.Store           (ReactStoreRef)
 
 import           Empire.API.Data.Breadcrumb (Breadcrumb, BreadcrumbItem)
 import           Empire.API.Data.NodeLoc    (NodeLoc, NodePath)
-import           Empire.API.Data.Port       (InPort, OutPort)
+import           Empire.API.Data.Port       (InPortIndex, OutPortIndex)
 import           Empire.API.Data.PortRef    (AnyPortRef, InPortRef, OutPortRef)
 
 -- ======= React.Flux ==========================================================
@@ -84,9 +84,9 @@ instance Default (HashMap a b) where def = HashMap.empty
 instance Hashable a => Hashable (Breadcrumb a)
 instance Hashable AnyPortRef
 instance Hashable BreadcrumbItem
-instance Hashable InPort
+instance Hashable InPortIndex
 instance Hashable InPortRef
 instance Hashable NodeLoc
 instance Hashable NodePath
-instance Hashable OutPort
+instance Hashable OutPortIndex
 instance Hashable OutPortRef

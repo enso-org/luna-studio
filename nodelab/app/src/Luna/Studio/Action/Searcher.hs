@@ -13,7 +13,7 @@ import           Empire.API.Data.NodeLoc                     (NodeLoc)
 import qualified Empire.API.Data.NodeLoc                     as NodeLoc
 import qualified JS.GoogleAnalytics                          as GA
 import qualified JS.Searcher                                 as Searcher
-import           Luna.Studio.Action.Basic                    (addNode, setNodeExpression)
+import           Luna.Studio.Action.Basic                    (createNode, setNodeExpression)
 import qualified Luna.Studio.Action.Batch                    as Batch
 import           Luna.Studio.Action.Command                  (Command)
 import           Luna.Studio.Action.State.Action             (beginActionWithKey, continueActionWithKey, removeActionFromState,
@@ -106,7 +106,7 @@ accept scheduleEvent action = do
             case searcher ^. Searcher.nodeLoc of
                 Nothing     -> do
                     let path = NodeLoc.empty --FIXME
-                    addNode path (searcher ^. Searcher.position) expression
+                    createNode path (searcher ^. Searcher.position) expression
                 Just nodeLoc -> setNodeExpression nodeLoc expression
             close action
         else

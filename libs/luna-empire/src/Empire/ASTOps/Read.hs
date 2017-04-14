@@ -19,10 +19,11 @@ import           Prologue                           (preview)
 
 import           Empire.API.Data.Node               (NodeId)
 import qualified Empire.API.Data.PortRef            as PortRef
+import           Empire.API.Data.Port               as Port
 import qualified Empire.API.Data.NodeLoc            as NodeLoc
 import           Empire.ASTOp                       (ASTOp, match)
 import           Empire.Data.AST                    (NodeRef, EdgeRef, NotUnifyException(..),
-                                                     NotLambdaException(..),
+                                                     NotLambdaException(..), PortDoesNotExistException (..),
                                                      astExceptionFromException, astExceptionToException)
 import qualified Empire.Data.Graph                  as Graph
 import qualified Empire.Data.BreadcrumbHierarchy    as BH
@@ -32,6 +33,37 @@ import qualified OCI.IR.Combinators as IRExpr
 import           Luna.IR.Term.Uni
 import qualified Luna.IR as IR
 
+cutThroughGroups :: ASTOp m => NodeRef -> m NodeRef
+cutThroughGroups r = match r $ \case
+    Grouped g -> cutThroughGroups =<< IR.source g
+    _         -> return r
+
+getASTOutForPort :: ASTOp m => NodeId -> OutPortId -> m NodeRef
+getASTOutForPort nodeId port = do
+    asLambda <- preuse $ Graph.breadcrumbHierarchy . BH._LambdaParent
+    case asLambda of
+        Just l -> do
+            if l ^. BH.portMapping . _1 == nodeId
+              then getLambdaInputForPort port =<< getTargetFromNodeIdTarget (l ^. BH.self) 
+              else getOutputForPort      port =<< getASTVar nodeId
+        _ -> getOutputForPort port =<< getASTVar nodeId
+
+getLambdaInputForPort :: ASTOp m => OutPortId -> NodeRef -> m NodeRef
+getLambdaInputForPort []                    lam = throwM PortDoesNotExistException
+getLambdaInputForPort (Projection 0 : rest) lam = cutThroughGroups lam >>= flip match `id` \case
+    Lam i _ -> getOutputForPort rest =<< IR.source i
+    _       -> throwM PortDoesNotExistException
+getLambdaInputForPort (Projection i : rest) lam = cutThroughGroups lam >>= flip match `id` \case
+    Lam _ o -> getLambdaInputForPort (Projection (i - 1) : rest) =<< IR.source o
+    _       -> throwM PortDoesNotExistException
+
+getOutputForPort :: ASTOp m => OutPortId -> NodeRef -> m NodeRef
+getOutputForPort []                    ref = cutThroughGroups ref
+getOutputForPort (Projection i : rest) ref = cutThroughGroups ref >>= flip match `id` \case
+    Cons _ as -> case as ^? ix i of
+        Just s  -> getOutputForPort rest =<< IR.source s
+        Nothing -> throwM PortDoesNotExistException
+    _ -> throwM PortDoesNotExistException
 
 isGraphNode :: ASTOp m => NodeRef -> m Bool
 isGraphNode = fmap isJust . getNodeId
@@ -93,24 +125,28 @@ instance Exception NodeDoesNotExistException where
     toException = astExceptionToException
     fromException = astExceptionFromException
 
+getASTRef :: ASTOp m => NodeId -> m BH.NodeIDTarget
+getASTRef nodeId = preuse (Graph.breadcrumbHierarchy . BH.children . ix nodeId . BH.self) <?!> NodeDoesNotExistException nodeId
+
 getASTPointer :: ASTOp m => NodeId -> m NodeRef
-getASTPointer nodeId = preuse (Graph.breadcrumbHierarchy . BH.children . ix nodeId . BH.self . BH.anyRef) <?!> NodeDoesNotExistException nodeId
+getASTPointer nodeId = view BH.anyRef <$> getASTRef nodeId
 
 getCurrentASTPointer :: ASTOp m => m (Maybe NodeRef)
 getCurrentASTPointer = preuse $ Graph.breadcrumbHierarchy . BH._LambdaParent . BH.self . BH.anyRef
 
+getTargetFromNodeIdTarget :: ASTOp m => BH.NodeIDTarget -> m NodeRef
+getTargetFromNodeIdTarget (BH.AnonymousNode r) = return r
+getTargetFromNodeIdTarget (BH.MatchNode     u) = getTargetNode u
+
 getASTTarget :: ASTOp m => NodeId -> m NodeRef
 getASTTarget nodeId = do
-    matchNode <- getASTPointer nodeId
-    getTargetNode matchNode
+    ref <- getASTRef nodeId
+    getTargetFromNodeIdTarget ref
 
 getCurrentASTTarget :: ASTOp m => m (Maybe NodeRef)
 getCurrentASTTarget = do
     ref <- preuse $ Graph.breadcrumbHierarchy . BH._LambdaParent . BH.self
-    case ref of
-        Just (BH.AnonymousNode r) -> return $ Just r
-        Just (BH.MatchNode     r) -> Just <$> getTargetNode r
-        Nothing                   -> return Nothing
+    mapM getTargetFromNodeIdTarget ref
 
 getASTVar :: ASTOp m => NodeId -> m NodeRef
 getASTVar nodeId = do
@@ -194,6 +230,13 @@ isMatch expr = isJust <$> IRExpr.narrowTerm @IR.Unify expr
 
 isCons :: ASTOp m => NodeRef -> m Bool
 isCons expr = isJust <$> IRExpr.narrowTerm @IR.Cons expr
+
+dumpPatternVars :: ASTOp m => NodeRef -> m [NodeRef]
+dumpPatternVars ref = match ref $ \case
+    Var _     -> return [ref]
+    Cons _ as -> fmap concat $ mapM (dumpPatternVars <=< IR.source) as
+    Grouped g -> dumpPatternVars =<< IR.source g
+    _         -> return []
 
 nodeIsPatternMatch :: ASTOp m => NodeId -> m Bool
 nodeIsPatternMatch nid = (do

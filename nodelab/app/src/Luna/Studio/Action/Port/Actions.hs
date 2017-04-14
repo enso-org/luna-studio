@@ -3,23 +3,22 @@ module Luna.Studio.Action.Port.Actions
     , handleClick
     ) where
 
-import           Empire.API.Data.PortRef                  (AnyPortRef, nodeLoc, portId)
-import           Luna.Studio.Action.Basic                 (localAddPort)
-import           Luna.Studio.Action.Command               (Command)
-import           Luna.Studio.Action.Connect               (connectToPort, startConnecting)
-import           Luna.Studio.Action.Sidebar               (startPortDrag)
-import           Luna.Studio.Event.Mouse                  (mousePosition)
+import           Empire.API.Data.PortRef             (AnyPortRef (OutPortRef'), OutPortRef, nodeLoc, srcPortId)
+import           Luna.Studio.Action.Basic            (localAddPort)
+import           Luna.Studio.Action.Command          (Command)
+import           Luna.Studio.Action.Connect          (connectToPort, startConnecting)
+import           Luna.Studio.Action.Sidebar          (startPortDrag)
+import           Luna.Studio.Event.Mouse             (mousePosition)
 import           Luna.Studio.Prelude
-import           Luna.Studio.React.Model.Node             (Node (Sidebar), countProjectionPorts, hasPort)
-import           Luna.Studio.React.Model.Node.SidebarNode (isOutputSidebar)
-import           Luna.Studio.React.Model.Port             (getPortNumber)
-import           Luna.Studio.State.Action                 (Action (continue), Mode (Click, Drag), connectAction, connectMode,
-                                                           portDragAction, portDragMode)
+import           Luna.Studio.React.Model.Node        (countProjectionPorts, hasPort)
+import           Luna.Studio.React.Model.Port        (getPortNumber)
+import           Luna.Studio.State.Action            (Action (continue), Mode (Click, Drag), connectAction, connectMode, portDragAction,
+                                                      portDragMode)
 
-import           Luna.Studio.Action.State.Action          (checkAction, checkIfActionPerfoming)
-import           Luna.Studio.Action.State.NodeEditor      (getNode)
-import           Luna.Studio.State.Global                 (State)
-import           React.Flux                               (MouseEvent)
+import           Luna.Studio.Action.State.Action     (checkAction, checkIfActionPerfoming)
+import           Luna.Studio.Action.State.NodeEditor (getInputNode)
+import           Luna.Studio.State.Global            (State)
+import           React.Flux                          (MouseEvent)
 
 
 handleMouseDown :: MouseEvent -> AnyPortRef -> Command State ()
@@ -40,24 +39,19 @@ handleClick evt portRef = do
 
 startPortDragOrConnect :: MouseEvent -> AnyPortRef -> Mode -> Command State ()
 startPortDragOrConnect evt portRef mode = do
-    mayNode <- getNode $ portRef ^. nodeLoc
-    withJust mayNode $ \node -> do
-        mousePos <- mousePosition evt
-        let doConnect = case node of
-                Sidebar n -> isOutputSidebar n
-                _         -> True
-        if doConnect
-            then startConnecting mousePos portRef Nothing False mode
-            else do
-                isPhantom <- addPhantomPortIfPossibleAndNeeded portRef
-                startPortDrag mousePos portRef isPhantom mode
+    mousePos     <- mousePosition evt
+    mayInputNode <- getInputNode (portRef ^. nodeLoc)
+    case (mayInputNode, portRef) of
+        (Just _, OutPortRef' inPortRef) -> do
+            isPhantom <- addPhantomPortIfPossibleAndNeeded inPortRef
+            startPortDrag mousePos inPortRef isPhantom mode
+        _ -> startConnecting mousePos portRef Nothing False mode
 
-addPhantomPortIfPossibleAndNeeded :: AnyPortRef -> Command State Bool
+addPhantomPortIfPossibleAndNeeded :: OutPortRef -> Command State Bool
 addPhantomPortIfPossibleAndNeeded portRef = do
     let nid = portRef ^. nodeLoc
-        pid = portRef ^. portId
-    mayNode <- getNode nid
-    case mayNode of
+        pid = portRef ^. srcPortId
+    getInputNode nid >>= \case
         Nothing   -> return False
         Just node -> if hasPort pid node || countProjectionPorts node /= getPortNumber pid
             then return False

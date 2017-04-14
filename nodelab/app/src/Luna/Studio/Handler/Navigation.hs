@@ -52,8 +52,8 @@ goPrev = do
     else do
         let nodeSrc = findLeftMost selectedNodes
             nl     = nodeSrc ^. nodeLoc
-            inPortRefSelf      = R.InPortRef nl   P.Self
-            inPortRefFirstPort = R.InPortRef nl $ P.Arg 0
+            inPortRefSelf      = R.InPortRef nl [P.Self]
+            inPortRefFirstPort = R.InPortRef nl [P.Arg 0]
         prevSelfNodeLocMay <- view (C.src . R.srcNodeLoc) <∘> getConnection inPortRefSelf
         case prevSelfNodeLocMay of
             Just prevSelfNodeLoc -> selectNodes [prevSelfNodeLoc]

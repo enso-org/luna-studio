@@ -6,12 +6,11 @@ module Luna.Studio.React.View.Sidebar
     ) where
 
 import qualified Data.Aeson                               as Aeson
-import qualified Data.Map.Lazy                            as Map
 import           Data.Position                            (y)
+import           Empire.API.Data.PortRef                  (AnyPortRef (OutPortRef'), OutPortRef (OutPortRef), toAnyPortRef)
 import qualified JS.Config                                as Config
 import           JS.Scene                                 (inputSidebarId, outputSidebarId)
 import qualified JS.UI                                    as UI
-import           Empire.API.Data.PortRef                 (AnyPortRef (OutPortRef'), OutPortRef (OutPortRef), toAnyPortRef)
 import qualified Luna.Studio.Event.UI                     as UI
 import           Luna.Studio.Prelude
 import qualified Luna.Studio.React.Event.Sidebar          as Sidebar
@@ -21,7 +20,7 @@ import qualified Luna.Studio.React.Model.Field            as Field
 import           Luna.Studio.React.Model.Node.SidebarNode (NodeLoc, SidebarMode (AddRemove, MoveConnect), SidebarNode, countProjectionPorts,
                                                            isInputSidebar)
 import qualified Luna.Studio.React.Model.Node.SidebarNode as SidebarNode
-import           Luna.Studio.React.Model.Port             (OutPort (All, Projection), Port (..), getPortNumber, getPositionInSidebar,
+import           Luna.Studio.React.Model.Port             (AnyPort, OutPortIndex (Projection), getPortNumber, getPositionInSidebar,
                                                            isHighlighted, isInMovedMode, isInNameEditMode, isInPort, isOutPort)
 import qualified Luna.Studio.React.Model.Port             as Port
 import           Luna.Studio.React.Store                  (Ref, dispatch)
@@ -32,7 +31,7 @@ import qualified Luna.Studio.React.View.Style             as Style
 import           React.Flux                               hiding (view)
 
 
-name :: SidebarNode -> JSString
+name :: SidebarNode node => node -> JSString
 name node = "sidebarPorts" <> if isInputSidebar node then "Inputs" else "Outputs"
 
 portHandlers :: Ref App -> SidebarMode -> Bool -> Bool -> AnyPortRef -> [PropertyOrHandler [SomeStoreAction]]
@@ -49,9 +48,9 @@ portHandlers ref MoveConnect False _ portRef =
     ]
 portHandlers _ _ _ _ _ = []
 
-sidebar_ :: Ref App -> SidebarNode -> ReactElementM ViewEventHandler ()
+sidebar_ :: SidebarNode node => Ref App -> node -> ReactElementM ViewEventHandler ()
 sidebar_ ref node = do
-    let ports             = node ^. SidebarNode.ports . to Map.elems
+    let ports             = SidebarNode.portsList node
         nodeLoc           = node ^. SidebarNode.nodeLoc
         mode              = node ^. SidebarNode.mode
         mayFixedPos       = map (\pos -> "style" @= Aeson.object [ "bottom" Aeson..= show pos]) $
@@ -60,7 +59,7 @@ sidebar_ ref node = do
         classes           = [ "sidebar", if isInputSidebar node then "sidebar--i" else "sidebar--o" ]
                          ++ if mode == AddRemove then ["sidebar--editmode"] else []
                          ++ if isPortDragged then ["sidebar--dragmode"] else []
-        addButtonHandlers = let portRef = OutPortRef' (OutPortRef nodeLoc (Projection (countProjectionPorts node) All)) in
+        addButtonHandlers = let portRef = OutPortRef' (OutPortRef nodeLoc [Projection (countProjectionPorts node)]) in
             case mode of
                 AddRemove   -> [ onMouseDown $ \e _ -> [stopPropagation e]
                                , onClick     $ \e _ -> stopPropagation e : dispatch ref (UI.SidebarEvent $ Sidebar.AddPort portRef)
@@ -129,7 +128,7 @@ sidebar_ ref node = do
                             ] mempty
                     svg_
                         [ "className" $= Style.prefix "edit-icon"
-                        , onClick $ \e _ -> stopPropagation e : dispatch ref (UI.SidebarEvent $ Sidebar.ToggleSidebarMode nodeLoc)
+                        , onClick $ \e _ -> stopPropagation e : dispatch ref (UI.SidebarEvent $ Sidebar.ToggleInputMode nodeLoc)
                         , "key"       $= (name node <> "editIcon")
                         ] $ do
                         circle_
@@ -162,7 +161,7 @@ addButton_ ref portRef =
                     plainRect_ "key2" 8 2 (-4) (-1)
             plainPath_ (Style.prefix "port-add-inbetween__selectable") "M 20 0 A 10 10 0 0 1 20 16 L 10 16 A 10 10 0 0 1 10 0 Z"
 
-sidebarPort_ :: Ref App -> SidebarMode -> NodeLoc -> Bool -> Bool -> Port -> ReactElementM ViewEventHandler ()
+sidebarPort_ :: Ref App -> SidebarMode -> NodeLoc -> Bool -> Bool -> AnyPort -> ReactElementM ViewEventHandler ()
 sidebarPort_ ref mode nl isPortDragged isOnly p = do
     let portId    = p ^. Port.portId
         portRef   = toAnyPortRef nl portId
@@ -210,7 +209,7 @@ sidebarPlaceholderForPort_ = div_
     , "className" $= Style.prefixFromList [ "port", "sidebar__port", "sidebar__port--i", "noselect" ]
     ] mempty
 
-sidebarDraggedPort_ :: Ref App -> Port -> ReactElementM ViewEventHandler ()
+sidebarDraggedPort_ :: Ref App -> AnyPort -> ReactElementM ViewEventHandler ()
 sidebarDraggedPort_ _ref p = withJust (getPositionInSidebar p) $ \pos ->
     div_
         [ "className" $= Style.prefixFromList [ "port", "sidebar__port", "sidebar__port--dragged", "hover" ]

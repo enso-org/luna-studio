@@ -12,25 +12,24 @@ import           JS.Scene                              (InputSidebar, OutputSide
 import qualified JS.Scene                              as Scene
 import           Luna.Studio.Action.Command            (Command)
 import           Luna.Studio.Action.State.App          (renderIfNeeded)
-import           Luna.Studio.Action.State.NodeEditor   (getNodeEditor)
+import           Luna.Studio.Action.State.NodeEditor   (getNodeEditor, modifyNodeEditor)
+import qualified Luna.Studio.Action.State.NodeEditor   as NE
 import           Luna.Studio.Data.CameraTransformation (logicalToScreen, screenToLogical)
 import           Luna.Studio.Prelude
-import           Luna.Studio.React.Model.NodeEditor    (screenTransform)
+import qualified Luna.Studio.React.Model.NodeEditor    as NodeEditor
 import           Luna.Studio.State.Global              (State)
-import qualified Luna.Studio.State.Global              as Global
-import qualified Luna.Studio.State.UI                  as UI
 
 
 translateToWorkspace :: ScreenPosition -> Command State Position
 translateToWorkspace pos = do
-    transformMatrix <- view (screenTransform . screenToLogical) <$> getNodeEditor
+    transformMatrix <- view (NodeEditor.screenTransform . screenToLogical) <$> getNodeEditor
     let posMatrix      = Matrix.fromList 1 4 [ pos ^. x, pos ^. y, 1, 1]
         posInWorkspace = multStd2 posMatrix transformMatrix
     return $ Position.fromDoubles (getElem 1 1 posInWorkspace) (getElem 1 2 posInWorkspace)
 
 translateToScreen :: Position -> Command State ScreenPosition
 translateToScreen pos = do
-    transformMatrix <- view (screenTransform . logicalToScreen) <$> getNodeEditor
+    transformMatrix <- view (NodeEditor.screenTransform . logicalToScreen) <$> getNodeEditor
     let posMatrix      = Matrix.fromList 1 4 [ pos ^. x, pos ^. y, 1, 1]
         posInWorkspace = multStd2 posMatrix transformMatrix
     return $ ScreenPosition.fromDoubles (getElem 1 1 posInWorkspace) (getElem 1 2 posInWorkspace)
@@ -39,7 +38,7 @@ translateToScreen pos = do
 -- WARNING: Those functions can discretely change our app, be sure to redraw connections for sidebars!
 
 getScene :: Command State (Maybe Scene)
-getScene = use (Global.ui . UI.scene) >>= maybe (updateScene >> use (Global.ui . UI.scene)) (return . return . id)
+getScene = NE.getScene >>= maybe (updateScene >> NE.getScene) (return . return . id)
 
 updateScene :: Command State ()
 updateScene = do
@@ -47,7 +46,7 @@ updateScene = do
     mayNewScene <- Scene.get
     let shouldUpdate = flip (maybe True) mayNewScene $ \newScene ->
             newScene ^. Scene.position /= def || newScene ^. Scene.size /= def
-    when shouldUpdate $ Global.ui . UI.scene .= mayNewScene
+    when shouldUpdate $ modifyNodeEditor $ NodeEditor.scene .= mayNewScene
 
 getWorkspacePosition :: Command State (Maybe ScreenPosition)
 getWorkspacePosition = view Scene.position `fmap2` getScene
@@ -66,11 +65,11 @@ getScreenCenter = fmap2 (ScreenPosition . flip scalarProduct 0.5 . view vector) 
 
 getInputSidebar :: Command State (Maybe InputSidebar)
 getInputSidebar =  getInputSidebar' >>= maybe (updateScene >> getInputSidebar') (return . return . id) where
-    getInputSidebar' = maybe Nothing (view Scene.inputSidebar) <$> use (Global.ui . UI.scene)
+    getInputSidebar' = maybe Nothing (view Scene.inputSidebar) <$> NE.getScene
 
 getOutputSidebar :: Command State (Maybe OutputSidebar)
 getOutputSidebar =  getOutputSidebar' >>= maybe (updateScene >> getOutputSidebar') (return . return . id) where
-    getOutputSidebar' = maybe Nothing (view Scene.outputSidebar) <$> use (Global.ui . UI.scene)
+    getOutputSidebar' = maybe Nothing (view Scene.outputSidebar) <$> NE.getScene
 
 getInputSidebarPosition :: Command State (Maybe ScreenPosition)
 getInputSidebarPosition = view Scene.inputSidebarPosition `fmap2` getInputSidebar

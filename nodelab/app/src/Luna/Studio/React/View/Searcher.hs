@@ -3,8 +3,6 @@ module Luna.Studio.React.View.Searcher where
 
 import qualified Data.Aeson                                  as Aeson
 import           Data.Matrix                                 (Matrix)
-import           Empire.API.Data.Node                        (NodeType (ExpressionNode))
-import qualified Empire.API.Data.Node                        as Empire
 import qualified Empire.API.Data.NodeLoc                     as NodeLoc
 import           JS.Searcher                                 (searcherId)
 import           Luna.Studio.Data.Matrix                     (showNodeTranslate)
@@ -41,10 +39,7 @@ searcher :: ReactView (Ref App, Matrix Double, Searcher)
 searcher =  React.defineView name $ \(ref, camera, s) -> do
     let nodePos     = s ^. Searcher.position
         mode        = s ^. Searcher.mode
-        nodePreview = flip (maybe Nothing) (s ^. Searcher.selectedNode) $
-            \empireNode -> case empireNode ^. Empire.nodeType of
-                ExpressionNode expr -> Just $ convert (NodeLoc.empty, empireNode, expr)
-                _                   -> Nothing
+        nodePreview = convert . (NodeLoc.empty,) <$> (s ^. Searcher.selectedNode)
         className = Style.prefixFromList ( "searcher" : ( case mode of
                                                                     Searcher.Node    { } -> [ "searcher--node" ]
                                                                     Searcher.Command { } -> [ "searcher--command"   ]))

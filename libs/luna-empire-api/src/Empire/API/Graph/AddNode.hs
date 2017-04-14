@@ -4,7 +4,7 @@ import           Data.Binary                   (Binary)
 import           Prologue
 
 import           Empire.API.Data.GraphLocation (GraphLocation)
-import           Empire.API.Data.Node          (Node, NodeId)
+import           Empire.API.Data.Node          (ExpressionNode, NodeId)
 import           Empire.API.Data.NodeLoc       (NodeLoc)
 import           Empire.API.Data.NodeMeta      (NodeMeta)
 import qualified Empire.API.Graph.Request      as G
@@ -18,7 +18,7 @@ data Request = Request { _location   :: GraphLocation
                        , _nodeMeta   :: NodeMeta
                        , _connectTo  :: Maybe NodeId
                        } deriving (Generic, Eq, NFData, Show)
-type Result = Node
+type Result = ExpressionNode
 
 type Response = Response.Response Request () Result
 instance Response.ResponseResult Request () Result

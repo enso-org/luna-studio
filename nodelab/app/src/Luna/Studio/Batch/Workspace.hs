@@ -9,8 +9,8 @@ import           Empire.API.Data.Breadcrumb    (Breadcrumb (Breadcrumb), Breadcr
 import qualified Empire.API.Data.Breadcrumb    as Breadcrumb
 import           Empire.API.Data.GraphLocation (GraphLocation (..))
 import qualified Empire.API.Data.GraphLocation as GraphLocation
-import           Empire.API.Data.Node          (Node, NodeId)
-import           Empire.API.Data.NodeLoc       (HasBreadcrumb (..), NodeLoc (NodeLoc), NodePath (NodePath))
+import           Empire.API.Data.Node          (ExpressionNode)
+import           Empire.API.Data.NodeLoc       (HasBreadcrumb (..))
 import           Empire.API.Data.Project       (Project, ProjectId)
 import qualified Empire.API.Data.Project       as Project
 import           Text.ScopeSearcher.Item       (Items)
@@ -19,7 +19,7 @@ import           Text.ScopeSearcher.Item       (Items)
 data Workspace = Workspace { _currentLocation  :: GraphLocation
                            , _lastUILocation   :: Maybe GraphLocation
                            , _isGraphLoaded    :: Bool
-                           , _nodeSearcherData :: Items Node
+                           , _nodeSearcherData :: Items ExpressionNode
                            } deriving (Show, Eq, Generic)
 
 instance ToJSON Workspace

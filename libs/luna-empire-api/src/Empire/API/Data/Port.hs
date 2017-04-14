@@ -1,82 +1,121 @@
+{-# LANGUAGE DeriveFoldable    #-}
+{-# LANGUAGE DeriveFunctor     #-}
+{-# LANGUAGE DeriveTraversable #-}
+{-# LANGUAGE TypeFamilies      #-}
+
 module Empire.API.Data.Port where
 
 import           Data.Binary                 (Binary)
 import           Prologue                    hiding (TypeRep)
 
+import           Data.Aeson.Types            (FromJSON, ToJSON)
+import           Empire.API.Data.LabeledTree (LabeledTree)
 import           Empire.API.Data.PortDefault (PortDefault)
 import           Empire.API.Data.TypeRep     (TypeRep)
-import           Data.Map                    (Map)
 
-data InPort  = Self | Arg Int                deriving (Generic, Show, Eq, Read, NFData)
-data OutPort = All  | Projection Int OutPort deriving (Generic, Show, Eq, Read, NFData)
 
-data OutPortTree a = OutPortTree a [OutPortTree a] deriving (Generic, Show, Eq, Read, NFData)
+data InPortIndex = Self | Arg Int                             deriving (Show, Eq, Ord, NFData, Generic, Read)
+data InPorts s   = InPorts { _self :: Maybe s, _args :: [s] } deriving (Default, Eq, Foldable, Functor, Generic, NFData, Show, Traversable)
+type InPortId    = [InPortIndex]
+makeLenses ''InPorts
 
-instance Binary InPort
-instance Binary OutPort
-instance Binary a => Binary (OutPortTree a)
+data    OutPortIndex  = Projection Int deriving (Show, Eq, Ord, NFData, Generic, Read)
+newtype OutPorts s    = OutPorts [s]   deriving (Default, Eq, Foldable, Functor, Generic, NFData, Show, Traversable)
+type    OutPortId     = [OutPortIndex]
+makeWrapped ''OutPorts
 
-data PortId = InPortId InPort | OutPortId OutPort deriving (Generic, Show, Read, Eq, NFData)
+type InPortTree  a = LabeledTree InPorts  a
+type OutPortTree a = LabeledTree OutPorts a
 
-makePrisms ''PortId
-instance Ord PortId where
-  (InPortId  _) `compare` (OutPortId _) = LT
-  (OutPortId _) `compare` (InPortId  _) = GT
-  (InPortId  a) `compare` (InPortId  b) = a `compare` b
-  (OutPortId a) `compare` (OutPortId b) = a `compare` b
+instance Binary   InPortIndex
+instance ToJSON   InPortIndex
+instance FromJSON InPortIndex
+instance Binary   s => Binary   (InPorts s)
+instance ToJSON   s => ToJSON   (InPorts s)
+instance FromJSON s => FromJSON (InPorts s)
 
-instance Ord InPort where
-  Self `compare` Self = EQ
-  Self `compare` (Arg _) = LT
-  (Arg _) `compare` Self = GT
-  (Arg a) `compare` (Arg b) = a `compare` b
+instance Binary   OutPortIndex
+instance ToJSON   OutPortIndex
+instance FromJSON OutPortIndex
+instance Binary   s => Binary   (OutPorts s)
+instance ToJSON   s => ToJSON   (OutPorts s)
+instance FromJSON s => FromJSON (OutPorts s)
 
-instance Ord OutPort where
-  All              `compare` All              = EQ
-  All              `compare` (Projection _ _) = LT
-  (Projection _ _) `compare` All              = GT
-  (Projection a _) `compare` (Projection b _) = a `compare` b
+type instance Index   (InPorts s) = InPortIndex
+type instance IxValue (InPorts s) = s
+instance Ixed (InPorts s) where
+    ix Self    = self . _Just
+    ix (Arg i) = args . ix i
+
+type instance Index   (OutPorts s) = OutPortIndex
+type instance IxValue (OutPorts s) = s
+instance Ixed (OutPorts s) where
+    ix (Projection i) = wrapped . ix i
+
+
+data AnyPortId = InPortId' InPortId | OutPortId' OutPortId deriving (Generic, Show, Eq, Ord, NFData)
+makePrisms ''AnyPortId
 
 data PortState = NotConnected | Connected | WithDefault PortDefault deriving (Show, Eq, Generic, NFData)
 
-data Port = Port { _portId     :: PortId
-                 , _name       :: String
-                 , _valueType  :: TypeRep
-                 , _state      :: PortState
-                 } deriving (Show, Eq, Generic, NFData)
+data Port i = Port
+        { _portId     :: i
+        , _name       :: String
+        , _valueType  :: TypeRep
+        , _state      :: PortState
+        } deriving (Show, Eq, Generic, NFData)
+
+type InPort  = Port InPortId
+type OutPort = Port OutPortId
 
 makeLenses ''Port
 makePrisms ''PortState
-instance Binary PortId
-instance Binary Port
+instance Binary AnyPortId
+instance Binary i => Binary (Port i)
 instance Binary PortState
 
-isInPort :: PortId -> Bool
-isInPort (InPortId _) = True
-isInPort _            = False
+isInPort :: AnyPortId -> Bool
+isInPort (InPortId' _) = True
+isInPort _             = False
 
-isOutPort :: PortId -> Bool
-isOutPort (OutPortId _) = True
-isOutPort _             = False
+isOutPort :: AnyPortId -> Bool
+isOutPort (OutPortId' _) = True
+isOutPort _              = False
 
+isSelf :: InPortId -> Bool
+isSelf (Self:_) = True
+isSelf _        = False
 
-isSelf :: PortId -> Bool
-isSelf (InPortId Self) = True
-isSelf _               = False
+isInAll :: InPortId -> Bool
+isInAll [] = True
+isInAll _  = False
 
-isArg :: PortId -> Bool
-isArg (InPortId (Arg _)) = True
-isArg _                  = False
+isArg :: InPortId -> Bool
+isArg (Arg _:_) = True
+isArg _         = False
 
-isAll :: PortId -> Bool
-isAll (OutPortId All) = True
-isAll _               = False
+isOutAll :: OutPortId -> Bool
+isOutAll [] = True
+isOutAll _  = False
 
-isProjection :: PortId -> Bool
-isProjection (OutPortId (Projection _ _)) = True
-isProjection _                            = False
+isProjection :: OutPortId -> Bool
+isProjection (Projection _:_) = True
+isProjection _                = False
 
-getPortNumber :: PortId -> Int
-getPortNumber (InPortId  (Arg i))          = i
-getPortNumber (OutPortId (Projection i _)) = i
-getPortNumber _                            = 0
+withOut :: (OutPortId -> Bool) -> AnyPortId -> Bool
+withOut = anyOf _OutPortId'
+
+withIn :: (InPortId -> Bool) -> AnyPortId -> Bool
+withIn = anyOf _InPortId'
+
+class PortNumber p where
+    getPortNumber :: p -> Int
+instance PortNumber InPortId where
+    getPortNumber (Arg i : _) = i
+    getPortNumber _           = 0
+instance PortNumber OutPortId where
+    getPortNumber (Projection i : _) = i
+    getPortNumber _                  = 0
+instance PortNumber AnyPortId where
+    getPortNumber (InPortId' i) = getPortNumber i
+    getPortNumber (OutPortId' i) = getPortNumber i

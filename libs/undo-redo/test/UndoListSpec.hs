@@ -29,7 +29,9 @@ import qualified Data.Text.Lazy                as Text
 import           Prologue
 
 import qualified Empire.API.Data.Node          as Node
-import qualified Empire.API.Data.Node          (NodeType (..))
+import           Empire.API.Data.Port
+import           Empire.API.Data.LabeledTree
+import           Empire.API.Data.TypeRep
 import           Empire.API.Data.NodeLoc       (NodeLoc (..))
 import           Empire.API.Graph.AddNode      (Request (..), Result (..))
 import qualified Empire.API.Graph.AddNode      as AddNode
@@ -52,10 +54,10 @@ generateGraphLocation ::  IO GraphLocation
 generateGraphLocation = do
     return $ GraphLocation "file" $ Breadcrumb []
 
-generateNode :: IO Node.Node
+generateNode :: IO Node.ExpressionNode
 generateNode = do
     nodeId <- UUID.nextRandom
-    return $ Node.Node nodeId "3" (Node.ExpressionNode "3") False def def Nothing
+    return $ Node.ExpressionNode nodeId "3" (Just "3") (Just "3") (LabeledTree def (Port [] "whole" TStar NotConnected)) (LabeledTree def (Port [] "" TStar NotConnected)) def False
 
 spec :: Spec
 spec = describe "Undo-Redo for single user" $ do

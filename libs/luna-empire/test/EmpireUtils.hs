@@ -10,7 +10,6 @@ module EmpireUtils (
     , runEmpire
     , graphIDs
     , extractGraph
-    , excludeEdges
     , withResult
     , top
     , (|>)
@@ -19,8 +18,6 @@ module EmpireUtils (
     , withChannels
     , emptyGraphLocation
     , connectToInput
-    , inputPorts
-    , outputPorts
     , outPortRef
     , inPortRef
     ) where
@@ -40,7 +37,7 @@ import           Empire.API.Data.Port          (Port)
 import qualified Empire.API.Data.Port          as Port
 import           Empire.API.Data.NodeLoc       (NodeLoc(..))
 import           Empire.API.Data.PortRef       (AnyPortRef(InPortRef'), InPortRef(..), OutPortRef(..))
-import           Empire.API.Data.Node          (Node, NodeId, NodeType(..), nodeId, nodeType, ports)
+import           Empire.API.Data.Node          (ExpressionNode, NodeId, nodeId)
 import qualified Empire.Commands.Graph         as Graph (connect, getNodes)
 import           Empire.Commands.Library       (createLibrary, listLibraries, withLibrary)
 import           Empire.Data.AST               ()
@@ -79,13 +76,6 @@ graphIDs loc = do
 extractGraph :: InterpreterEnv -> Graph
 extractGraph (InterpreterEnv _ _ _ g _) = g
 
-excludeEdges :: [Node] -> [Node]
-excludeEdges = filter (not . isEdge . view nodeType)
-    where
-        isEdge InputEdge{}  = True
-        isEdge OutputEdge{} = True
-        isEdge _            = False
-
 data DummyB = DummyB deriving (Show, Exception)
 
 -- DummyB is only here because expectationFailure returns IO () and we need to
@@ -119,14 +109,8 @@ mkUUID = nextRandom
 connectToInput :: GraphLocation -> OutPortRef -> InPortRef -> Empire Connection
 connectToInput loc outPort inPort = Graph.connect loc outPort (InPortRef' inPort)
 
-inputPorts :: Node -> [Port]
-inputPorts node = Map.elems $ Map.filter (Port.isInPort . view Port.portId) $ node ^. ports
-
-outputPorts :: Node -> [Port]
-outputPorts node = Map.elems $ Map.filter (Port.isOutPort . view Port.portId) $ node ^. ports
-
-outPortRef :: NodeId -> Port.OutPort -> OutPortRef
+outPortRef :: NodeId -> Port.OutPortId -> OutPortRef
 outPortRef = OutPortRef . NodeLoc def
 
-inPortRef :: NodeId -> Port.InPort -> InPortRef
+inPortRef :: NodeId -> Port.InPortId -> InPortRef
 inPortRef = InPortRef . NodeLoc def

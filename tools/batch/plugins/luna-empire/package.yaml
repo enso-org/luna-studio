@@ -29,22 +29,6 @@ executables:
     source-dirs: src
     main:        LoggerMain.hs
 
-  luna-empire-result-saver:
-    source-dirs: src
-    main:        ResultSaverMain.hs
-    dependencies:
-      - aeson
-      - aeson-pretty
-      - binary
-      - bytestring
-      - containers
-      - docopt
-      - luna-empire
-      - luna-empire-api
-      - m-logger
-      - text
-      - uuid
-
   luna-empire-invoker:
     source-dirs: src
     main:        Invoker.hs

@@ -81,7 +81,7 @@ addConnection src dst = do
 addNode :: NodeLoc -> Text -> Position -> Bool -> Maybe NodeLoc -> Command State ()
 addNode nl expr pos dispRes connectTo = withWorkspace $ BatchCmd.addNode nl expr (NodeMeta (toTuple pos) dispRes) connectTo
 
-addPort :: AnyPortRef -> Command State ()
+addPort :: OutPortRef -> Command State ()
 addPort = withWorkspace . BatchCmd.addPort
 
 addSubgraph :: [ExpressionNode] -> [(OutPortRef, InPortRef)] -> Command State ()
@@ -90,7 +90,7 @@ addSubgraph nodes conns = withWorkspace $ BatchCmd.addSubgraph (convert <$> node
 getSubgraph :: NodeLoc -> Command State ()
 getSubgraph nl = withWorkspace (BatchCmd.getSubgraph nl)
 
-movePort :: AnyPortRef -> Int -> Command State ()
+movePort :: OutPortRef -> Int -> Command State ()
 movePort = withWorkspace .: BatchCmd.movePort
 
 redo :: Command State ()
@@ -104,13 +104,13 @@ removeConnection connId = do
 removeNodes :: [NodeLoc] -> Command State ()
 removeNodes = withWorkspace . BatchCmd.removeNodes
 
-removePort :: AnyPortRef -> Command State ()
+removePort :: OutPortRef -> Command State ()
 removePort = withWorkspace . BatchCmd.removePort
 
 renameNode :: NodeLoc -> Text -> Command State ()
 renameNode = withWorkspace .:  BatchCmd.renameNode
 
-renamePort :: AnyPortRef -> String -> Command State ()
+renamePort :: OutPortRef -> String -> Command State ()
 renamePort = withWorkspace .: BatchCmd.renamePort
 
 searchNodes :: Text -> (Int, Int) -> Command State ()
@@ -129,7 +129,7 @@ setNodeExpression = withWorkspace .: BatchCmd.setNodeExpression
 setNodesMeta :: [(NodeLoc, Position, Bool)] -> Command State ()
 setNodesMeta = withWorkspace . BatchCmd.setNodesMeta . map convert
 
-setPortDefault :: AnyPortRef -> PortDefault -> Command State ()
+setPortDefault :: InPortRef -> PortDefault -> Command State ()
 setPortDefault portRef portDefault = do
     collaborativeModify [portRef ^. nodeLoc]
     withWorkspace $ BatchCmd.setPortDefault portRef portDefault

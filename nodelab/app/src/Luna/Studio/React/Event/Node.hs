@@ -4,7 +4,7 @@ module Luna.Studio.React.Event.Node where
 import           Data.Aeson                  (FromJSON, ToJSON)
 import           Empire.API.Data.NodeLoc     (NodeLoc)
 import           Empire.API.Data.PortDefault (PortDefault)
-import           Empire.API.Data.PortRef     (AnyPortRef)
+import           Empire.API.Data.PortRef     (InPortRef)
 import           Luna.Studio.Prelude
 import           Luna.Studio.State.Action    (InitValue)
 import           React.Flux                  (KeyboardEvent, MouseEvent)
@@ -17,10 +17,10 @@ data Event = DisplayResultChanged Bool          NodeLoc
            | NameEditApply                      NodeLoc Text
            | NameEditDiscard                    NodeLoc
            | NameEditStart                      NodeLoc
-           | PortApplyString      KeyboardEvent AnyPortRef PortDefault
-           | PortEditString                     AnyPortRef PortDefault
-           | PortInitSlider          MouseEvent AnyPortRef InitValue
-           | PortSetPortDefault                 AnyPortRef PortDefault
+           | PortApplyString      KeyboardEvent InPortRef PortDefault
+           | PortEditString                     InPortRef PortDefault
+           | PortInitSlider          MouseEvent InPortRef InitValue
+           | PortSetPortDefault                 InPortRef PortDefault
            | Select               MouseEvent    NodeLoc
            | SetCode                            NodeLoc Text
             deriving (Show, Generic, NFData, Typeable)

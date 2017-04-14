@@ -9,35 +9,33 @@ module Luna.Studio.React.Model.Node.ExpressionNode
     , NodeLoc
     ) where
 
-import           Control.Arrow                        ((&&&))
-import           Data.Convert                         (Convertible (convert))
-import           Data.HashMap.Strict                  (HashMap)
-import qualified Data.HashMap.Strict                  as HashMap
-import           Data.Map.Lazy                        (Map)
-import qualified Data.Map.Lazy                        as Map
-import           Data.Position                        (Position, fromTuple, toTuple)
-import           Data.Time.Clock                      (UTCTime)
-import           Empire.API.Data.Breadcrumb           (BreadcrumbItem)
-import           Empire.API.Data.MonadPath            (MonadPath)
-import           Empire.API.Data.Node                 (NodeId)
-import qualified Empire.API.Data.Node                 as Empire
-import           Empire.API.Data.NodeLoc              (NodeLoc (NodeLoc), NodePath)
-import qualified Empire.API.Data.NodeMeta             as NodeMeta
-import           Empire.API.Graph.CollaborationUpdate (ClientId)
+import           Data.Convert                             (Convertible (convert))
+import           Data.HashMap.Strict                      (HashMap)
+import           Data.Map.Lazy                            (Map)
+import           Data.Position                            (Position, fromTuple, toTuple)
+import           Data.Time.Clock                          (UTCTime)
+import           Empire.API.Data.Breadcrumb               (BreadcrumbItem)
+import           Empire.API.Data.MonadPath                (MonadPath)
+import           Empire.API.Data.Node                     (NodeId)
+import qualified Empire.API.Data.Node                     as Empire
+import           Empire.API.Data.NodeLoc                  (NodeLoc (NodeLoc), NodePath)
+import qualified Empire.API.Data.NodeMeta                 as NodeMeta
+import           Empire.API.Graph.CollaborationUpdate     (ClientId)
 import           Empire.API.Graph.NodeResultUpdate    (NodeValue (NodeError), NodeVisualization)
 import           Luna.Studio.Prelude
-import           Luna.Studio.React.Model.IsNode           as X (IsNode (..))
-import           Luna.Studio.React.Model.Node.SidebarNode (SidebarNodesMap)
-import           Luna.Studio.React.Model.Port             (PortsMap, isInPort)
+import           Luna.Studio.React.Model.IsNode           as X
+import           Luna.Studio.React.Model.Node.SidebarNode (InputNode, OutputNode)
+import           Luna.Studio.React.Model.Port             (InPort, InPortTree, OutPort, OutPortTree)
 import qualified Luna.Studio.React.Model.Port             as Port
 import           Luna.Studio.State.Collaboration          (ColorId)
 
 
 data ExpressionNode = ExpressionNode { _nodeLoc'              :: NodeLoc
-                                     , _name                  :: Text
+                                     , _name                  :: Maybe Text
                                      , _expression            :: Text
                                      , _canEnter              :: Bool
-                                     , _ports'                :: PortsMap
+                                     , _inPorts               :: InPortTree InPort
+                                     , _outPorts              :: OutPortTree OutPort
                                      , _position              :: Position
                                      , _visualizationsEnabled :: Bool
                                      , _code                  :: Maybe Text
@@ -61,10 +59,11 @@ data ExpandedMode = Editor
                   deriving (Eq, Generic, NFData, Show)
 
 data Subgraph = Subgraph
-  { _expressionNodes :: ExpressionNodesMap
-  , _sidebarNodes    :: SidebarNodesMap
-  , _monads          :: [MonadPath]
-  } deriving (Default, Eq, Generic, NFData, Show)
+        { _expressionNodes :: ExpressionNodesMap
+        , _inputNode       :: Maybe InputNode
+        , _outputNode      :: Maybe OutputNode
+        , _monads          :: [MonadPath]
+        } deriving (Default, Eq, Generic, NFData, Show)
 
 data Collaboration = Collaboration { _touch  :: Map ClientId (UTCTime, ColorId)
                                    , _modify :: Map ClientId  UTCTime
@@ -78,13 +77,14 @@ makeLenses ''Subgraph
 makePrisms ''ExpandedMode
 makePrisms ''Mode
 
-instance Convertible (NodePath, Empire.Node, Text) ExpressionNode where
-    convert (path, n, expr) = ExpressionNode
+instance Convertible (NodePath, Empire.ExpressionNode) ExpressionNode where
+    convert (path, n) = ExpressionNode
         {- nodeLoc               -} (NodeLoc path $ n ^. Empire.nodeId)
         {- name                  -} (n ^. Empire.name)
-        {- expression            -} expr
+        {- expression            -} (n ^. Empire.expression)
         {- canEnter              -} (n ^. Empire.canEnter)
-        {- ports                 -} (convert <$> n ^. Empire.ports)
+        {- inPorts               -} (convert <$> n ^. Empire.inPorts)
+        {- outPorts              -} (convert <$> n ^. Empire.outPorts)
         {- position              -} (fromTuple $ n ^. Empire.position)
         {- visualizationsEnabled -} (n ^. Empire.nodeMeta . NodeMeta.displayResult)
         {- code                  -} (n ^. Empire.code)
@@ -97,30 +97,27 @@ instance Convertible (NodePath, Empire.Node, Text) ExpressionNode where
         {- execTime              -} def
         {- collaboration         -} def
 
-instance Convertible ExpressionNode Empire.Node where
-    convert n = Empire.Node
-        {- nodeId   -} (n ^. nodeId)
-        {- name     -} (n ^. name)
-        {- nodeType -} (Empire.ExpressionNode $ n ^. expression)
-        {- canEnter -} (n ^. canEnter)
-        {- ports    -} (convert <$> n ^. ports)
-        {- nodeMeta -} (NodeMeta.NodeMeta (toTuple $ n ^. position) (n ^. visualizationsEnabled))
-        {- code     -} (n ^. code)
+instance Convertible ExpressionNode Empire.ExpressionNode where
+    convert n = Empire.ExpressionNode
+        {- exprNodeId -} (n ^. nodeId)
+        {- expression -} (n ^. expression)
+        {- name       -} (n ^. name)
+        {- code       -} (n ^. code)
+        {- inPorts    -} (convert <$> n ^. inPorts)
+        {- outPorts   -} (convert <$> n ^. outPorts)
+        {- nodeMeta   -} (NodeMeta.NodeMeta (toTuple $ n ^. position) (n ^. visualizationsEnabled))
+        {- canEnter   -} (n ^. canEnter)
 
 instance Default Mode where def = Collapsed
 
-instance IsNode ExpressionNode where
-    nodeLoc              = nodeLoc'
-    ports                = ports'
-    getPorts             = Map.elems . view ports
-    hasPort pid          = Map.member pid . view ports
-    countInPorts         = Port.countInPorts . Map.keys . (view ports)
-    countOutPorts        = Port.countOutPorts . Map.keys . (view ports)
-    countArgPorts        = Port.countArgPorts . Map.keys . (view ports)
-    countProjectionPorts = Port.countProjectionPorts . Map.keys . (view ports)
+instance HasNodeLoc ExpressionNode where
+    nodeLoc = nodeLoc'
 
-toExpressionNodesMap :: [ExpressionNode] -> ExpressionNodesMap
-toExpressionNodesMap = HashMap.fromList . map (view nodeId &&& id)
+instance HasPorts ExpressionNode where
+    inPortsList = Port.inPortTreeLeafs . view inPorts
+    outPortsList = Port.outPortTreeLeafs . view outPorts
+    inPortAt  pid = inPorts . ix pid
+    outPortAt pid = outPorts . ix pid
 
 subgraphs :: Applicative f => (Map BreadcrumbItem Subgraph -> f (Map BreadcrumbItem Subgraph)) -> ExpressionNode -> f ExpressionNode
 subgraphs = mode . _Expanded . _Function
@@ -148,7 +145,3 @@ isExpandedFunction node = case node ^. mode of
 
 isCollapsed :: ExpressionNode -> Bool
 isCollapsed = isMode Collapsed
-
-isLiteral :: ExpressionNode -> Bool
-isLiteral node = not $ any isInPort portIds where
-    portIds = Map.keys $ node ^. ports
