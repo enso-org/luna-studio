@@ -22,7 +22,6 @@ import qualified Luna.Studio.Event.Source                   as JSHandlers
 import qualified Luna.Studio.Handler.App                    as App
 import qualified Luna.Studio.Handler.Backend.Control        as Control
 import qualified Luna.Studio.Handler.Backend.Graph          as Graph
-import qualified Luna.Studio.Handler.Backend.ProjectManager as ProjectManager
 import qualified Luna.Studio.Handler.Breadcrumbs            as Breadcrumbs
 import qualified Luna.Studio.Handler.Camera                 as Camera
 import qualified Luna.Studio.Handler.Clipboard              as Clipboard
@@ -76,7 +75,6 @@ actions loop =
     , Port.handle
     , Sidebar.handle
     , Undo.handle
-    , ProjectManager.handle
     , Searcher.handle (scheduleEvent loop)
     , Visualization.handle
     ]

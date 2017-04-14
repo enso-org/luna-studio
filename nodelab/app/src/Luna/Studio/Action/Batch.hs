@@ -6,7 +6,6 @@ import           Empire.API.Data.NodeMeta             (NodeMeta (NodeMeta))
 import           Empire.API.Data.PortDefault          (PortDefault)
 import           Empire.API.Data.PortRef              (AnyPortRef (InPortRef', OutPortRef'), InPortRef (InPortRef), OutPortRef (OutPortRef),
                                                        dstNodeLoc, nodeLoc)
-import           Empire.API.Data.Project              (ProjectId)
 import           Luna.Studio.Action.Command           (Command)
 import           Luna.Studio.Action.UUID              (registerRequest)
 import qualified Luna.Studio.Batch.Connector.Commands as BatchCmd
@@ -34,28 +33,6 @@ withUUID act = do
     uuid  <- registerRequest
     guiID <- use $ backend . clientId
     liftIO $ act uuid $ Just guiID
-
--- createLibrary :: Text -> Text -> Command State ()
--- createLibrary = withWorkspace .: BatchCmd.createLibrary
---
--- listLibraries :: ProjectId -> Command State ()
--- listLibraries = withUUID . BatchCmd.listLibraries
---
---
--- createProject :: Text -> Command State ()
--- createProject = withUUID . BatchCmd.createProject
---
--- exportProject :: ProjectId -> Command State ()
--- exportProject = withUUID . BatchCmd.exportProject
---
--- importProject :: Text -> Command State ()
--- importProject = withUUID . BatchCmd.importProject
---
--- listProjects :: Command State ()
--- listProjects = withUUID BatchCmd.listProjects
---
--- openProject :: FilePath -> Command State ()
--- openProject = withUUID . BatchCmd.openProject
 
 openFile :: FilePath -> Command State ()
 openFile = withUUID . BatchCmd.openFile
@@ -115,10 +92,6 @@ renamePort = withWorkspace .: BatchCmd.renamePort
 
 searchNodes :: Text -> (Int, Int) -> Command State ()
 searchNodes = withWorkspace .: BatchCmd.searchNodes
-
--- TODO[LJK, PM]: Probably remove
--- setInputNodeType :: NodeId -> Text -> Command State ()
--- setInputNodeType = withWorkspace .: BatchCmd.setInputNodeType
 
 setNodeCode :: NodeLoc -> Text -> Command State ()
 setNodeCode = withWorkspace .:  BatchCmd.setNodeCode
