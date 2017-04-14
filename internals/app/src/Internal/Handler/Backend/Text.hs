@@ -7,7 +7,6 @@ import           Internal.Prelude
 import qualified Empire.API.Atom.GetBuffer  as GetBuffer
 import           Empire.API.Atom.GetBuffer  (Result(..))
 import qualified Empire.API.Atom.Substitute as Substitute
-import qualified Empire.API.Graph.GetProgram            as GetProgram
 import qualified Empire.API.Response                    as Response
 
 
