@@ -1,31 +1,31 @@
 shelljs = require 'shelljs'
 logger = require 'loggy'
 
-cabalProjectName = "nodelab"
+cabalProjectName = "node-editor"
 
 exports.config =
   paths:
     public: 'www'
-    watched: ['app', 'vendor', "#{cabalProjectName}.cabal"]
+    watched: ['node-editor', 'vendor', "#{cabalProjectName}.cabal"]
 
   files:
     javascripts:
       joinTo:
-        'javascripts/ghcjs.js' : /^app\/.*\.(ghcjs)$/
-        'javascripts/app.js'   : /^app\/(js|shaders|config|brunch\.buildenv)/
+        'javascripts/ghcjs.js' : /^node-editor\/.*\.(ghcjs)$/
+        'javascripts/app.js'   : /^node-editor\/(js|shaders|config|brunch\.buildenv)/
         'javascripts/vendor.js': /^(vendor|bower_components)/
       order:
         before: []
 
     stylesheets:
       joinTo:
-        'stylesheets/app.css': /^(app|vendor|bower_components)/
+        'stylesheets/app.css': /^(node-editor|vendor|bower_components)/
       order:
         before: []
         after : []
     templates:
       joinTo:
-        'javascripts/app.js': /^(app|vendor|bower_components)/
+        'javascripts/app.js': /^(node-editor|vendor|bower_components)/
       order:
         before: []
         after : []
@@ -39,20 +39,20 @@ exports.config =
         ]
   modules:
     nameCleaner: (path) ->
-      path.replace /^app\/(js\/)?/, ''
+      path.replace /^node-editor\/(js\/)?/, ''
 
   plugins:
     ghcjs:
-      placeholder:  'app/env.ghcjs'
+      placeholder:  'node-editor/env.ghcjs'
       projectName:  cabalProjectName
-      buildCommand: 'stack build nodelab --install-ghc --ghc-options=-j8 ' + if process.env.CIRCLECI then '--fast' else ''
+      buildCommand: 'stack build node-editor --install-ghc --ghc-options=-j8 ' + if process.env.CIRCLECI then '--fast' else ''
       clearScreen:  false
       interactive:  false
       ghciCommand:  "./interactive"
 
 
     jshint:
-      pattern: /^app\/.*\.js$/
+      pattern: /^node-editor\/.*\.js$/
       warnOnly: true
 
     build_env:
