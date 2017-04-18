@@ -18,7 +18,6 @@ module.exports =
             rootPath = atom.project.getPaths().shift()
             if rootPath != ""
                 internal.pushInternalEvent(event: "SetProject", uri: rootPath)
-                console.log("setProject")
     internal.statusListener actStatus
 
 
@@ -44,12 +43,11 @@ module.exports =
     #         console.log("in if")
     #         console.log(atom.workspace.getActiveTextEditor().getSelections())
     #         internal.pushInternalEvent("GetBuffer " + "activeFilePath")
-    @subs.add atom.workspace.onDidOpen (e) =>
-        try
-            atom.workspace.saveActivePaneItem()
-        catch error
-            console.log error
-            atom.workspace.destroyActivePaneItem()
+    # @subs.add atom.workspace.onDidOpen (e) =>
+    #     try
+    #         atom.workspace.saveActivePaneItem()
+    #     catch error
+    #         atom.workspace.destroyActivePaneItem()
 
     @subs.add atom.commands.add 'atom-workspace', 'core:close': ->
         if atom.workspace.getActivePaneItem().buffer
@@ -58,7 +56,6 @@ module.exports =
         if path.extname(activeFilePath) is ".luna"
             internal.pushInternalEvent(event: "CloseFile", uri: activeFilePath)
     @subs.add atom.commands.add 'atom-workspace', 'core:save', (e)                 ->
-      console.log('save')
       if atom.workspace.getActivePaneItem().buffer
           activeFilePath =  atom.workspace.getActivePaneItem().buffer.file.path
       else activeFilePath = atom.workspace.getActivePane().activeItem.uri
