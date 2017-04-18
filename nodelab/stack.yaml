@@ -20,8 +20,10 @@ extra-deps:
   - lens-4.15.1
 
 packages:
-  - location: ./app
-  - location: ./internals
+  - location: ./node-editor
+  - location: ./luna-atom
+  - location: ./lib
+    extra-dep: true
   - location: ../libs/luna-empire-api
     extra-dep: true
   - location: ../libs/luna-empire-api-json

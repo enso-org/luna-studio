@@ -1,0 +1,96 @@
+-- This file has been generated from package.yaml by hpack version 0.14.0.
+--
+-- see: https://github.com/sol/hpack
+
+name:           luna-atom
+version:        0.1.0.0
+synopsis:       NodeLab
+homepage:       www.nodelab.io
+author:         New Byte Order
+maintainer:     contact@nodelab.io
+license:        AllRightsReserved
+build-type:     Simple
+cabal-version:  >= 1.10
+
+executable luna-atom
+  main-is: Main.hs
+  hs-source-dirs:
+      src
+  default-extensions: BangPatterns ConstraintKinds DefaultSignatures DeriveDataTypeable DeriveFoldable DeriveFunctor DeriveGeneric DeriveTraversable DoAndIfThenElse FlexibleContexts FlexibleInstances GeneralizedNewtypeDeriving LambdaCase MultiParamTypeClasses NoImplicitPrelude ScopedTypeVariables StandaloneDeriving TemplateHaskell TupleSections ViewPatterns
+  ghc-options: -Wall -O2
+  build-depends:
+      base >= 4.9 && < 4.10
+    , aeson
+    , base64-bytestring
+    , binary
+    , bytestring
+    , containers
+    , convert
+    , data-default
+    , datetime
+    , deepseq
+    , frontend-lib
+    , ghcjs-base
+    , ghcjs-dom
+    , ghcjs-prim
+    , hashable
+    , lens
+    , luna-empire-api
+    , luna-empire-api-json
+    , matrix
+    , mtl
+    , placeholders
+    , prologue
+    , random
+    , react-flux
+    , scope-searcher
+    , split
+    , text
+    , time
+    , transformers
+    , unordered-containers
+    , uuid-types
+    , visualization-api
+  other-modules:
+      Data.Timestamp
+      Internal.Action.Batch
+      Internal.Action.Command
+      Internal.Action.State.App
+      Internal.Action.UUID
+      Internal.Batch.Connector.Commands
+      Internal.Batch.Connector.Connection
+      Internal.Batch.Workspace
+      Internal.Error.Error
+      Internal.Event.Batch
+      Internal.Event.Connection
+      Internal.Event.CustomEvent
+      Internal.Event.Debug
+      Internal.Event.Engine
+      Internal.Event.Event
+      Internal.Event.Internal
+      Internal.Event.Loader
+      Internal.Event.Loop
+      Internal.Event.Preprocessor.Batch
+      Internal.Event.Preprocessor.CustomEvent
+      Internal.Event.Processor
+      Internal.Event.Source
+      Internal.Event.Text
+      Internal.Handler.App
+      Internal.Handler.Backend.Common
+      Internal.Handler.Backend.Control
+      Internal.Handler.Backend.ProjectManager
+      Internal.Handler.Backend.Text
+      Internal.Handler.Collaboration
+      Internal.Prelude
+      Internal.Prelude.Instances
+      Internal.State.Collaboration
+      Internal.State.Global
+      JS.Atom
+      JS.Config
+      JS.CustomEvent
+      JS.Debug
+      JS.DownloadFile
+      JS.GraphLocation
+      JS.UUID
+      JS.WebSocket
+  default-language: Haskell2010
