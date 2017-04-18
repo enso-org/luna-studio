@@ -18,6 +18,7 @@ module.exports =
             rootPath = atom.project.getPaths().shift()
             if rootPath != ""
                 internal.pushInternalEvent(event: "SetProject", uri: rootPath)
+                console.log("setProject")
     internal.statusListener actStatus
 
 
@@ -28,7 +29,8 @@ module.exports =
 
       if path.extname(uri) is '.luna'
         internal.pushInternalEvent(event: "OpenFile", uri: uri)
-          
+        console.log("openFile")
+
         atom.workspace.getActivePane().activateItem new LunaEditorTab(uri, internal)
         atom.workspace.getActivePane().activateItem new LunaStudioTab(uri, code)
 

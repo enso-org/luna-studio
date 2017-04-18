@@ -82,7 +82,7 @@ class LunaEditorTab extends TextEditor
 
 
   getTitle: -> path.basename(@uri)
-  destroy: -> console.log(event.item.buffer.file.path)
+  # destroy: -> console.log(event.item.buffer.file.path)
 
   deactivate: ->
     @subscribe.dispose()
