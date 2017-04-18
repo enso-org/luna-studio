@@ -2,13 +2,8 @@
 module Luna.Studio.Data.Geometry where
 
 import           Data.Position       (Position, distanceSquared, fromDoubles, move, vector, x, y)
-<<<<<<< HEAD:nodelab/node-editor/src/Luna/Studio/Data/Geometry.hs
-import           Data.Vector         (dotV, scalarProduct)
-import           Luna.Prelude
-=======
 import           Data.Vector2         (dotV, scalarProduct)
-import           Luna.Studio.Prelude
->>>>>>> origin:nodelab/app/src/Luna/Studio/Data/Geometry.hs
+import           Luna.Prelude
 
 
 epsilon :: Double
