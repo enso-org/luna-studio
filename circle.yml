@@ -24,7 +24,7 @@ compile:
     override:
         - stack build --stack-yaml build/backend/stack.yaml --copy-bins --fast --no-run-tests --no-run-benchmarks -j2
         - stack build --stack-yaml nodelab/stack.yaml --fast
-        - python atom_prep.py
+        - cd nodelab/script && python atom_prep.py
         - cd nodelab && tar -cvf frontend.zip atom && mv frontend.zip $CIRCLE_ARTIFACTS
 test:
     override:
