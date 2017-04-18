@@ -9,7 +9,9 @@ module Luna.Studio.React.View.Visualization
 , strValue
 ) where
 
+import           Data.Aeson                                     (FromJSON)
 import qualified Data.Aeson                                     as Aeson
+import qualified Data.ByteString.Lazy.Char8                     as ByteString
 import           Data.List.Split                                (wordsBy)
 import           Data.Position                                  (Position)
 import qualified Data.Text                                      as Text
@@ -101,18 +103,32 @@ nodeValue_ ref nl mayPos visIx value = do
     translatedDiv_ $ do
         withJust mayPos $ \pos ->
             button_ [ onMouseDown $ \e m -> stopPropagation e : dispatch ref (UI.VisualizationEvent $ Visualization.MouseDown m nl visIx pos)
+                    , "className" $= "pin-button"
                     , "key" $= "button1"
                     ] $
                 elemString "move"
         button_ [ onClick $ \_ _ -> dispatch ref $ UI.VisualizationEvent $ event nl visIx
                 , "key" $= "button2"
+                , "className" $= "pin-button"
                 ] $
             elemString $ if isPinned then "unpin" else "pin"
         case value of
-            JsonValue v -> strDiv v
+            JsonValue v -> fromJsonValue v
             HtmlValue v -> strDiv v
     where
-        strDiv = div_ . elemString . normalize
+        strDiv = div_ [ "className" $= "visual" ] . elemString . normalize
+
+fromJsonValue :: String -> ReactElementM ViewEventHandler ()
+fromJsonValue a = case (Aeson.decode $ ByteString.pack a :: Maybe Aeson.Value) of
+    Just (Aeson.Array  _) -> table_ $ do
+                                mempty
+    Just (Aeson.Object _) -> elemString "(Object)"
+    Just (Aeson.String _) -> elemString "(String)"
+    Just (Aeson.Number _) -> elemString "(Number)"
+    Just (Aeson.Bool   _) -> elemString "(Bool)"
+    Just (Aeson.Null    ) -> elemString "(Null)"
+    Nothing               -> elemString "(Nothing)"
+
 
 strValue :: ExpressionNode -> String
 strValue n = case n ^. Node.value of
