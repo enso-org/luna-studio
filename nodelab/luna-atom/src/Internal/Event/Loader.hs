@@ -4,7 +4,6 @@ import           JS.Atom                 (pushStatus)
 import           JS.Config               (getBackendAddress)
 import           JS.WebSocket            (WebSocket)
 import qualified JS.WebSocket            as WS
-import           Internal.Error.Error
 import           Luna.Prelude
 
 
