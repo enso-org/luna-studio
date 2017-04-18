@@ -4,7 +4,6 @@ import           Control.Monad                               (filterM)
 import           Empire.API.Data.Node                        (NodeTypecheckerUpdate, tcNodeId)
 import qualified Empire.API.Data.Node                        as Empire
 import           Empire.API.Data.Port                        (InPortIndex (Self))
-import           Luna.Studio.Action.Basic.DrawConnection     (redrawConnectionsForNode)
 import           Luna.Studio.Action.Basic.Scene              (updateScene)
 import           Luna.Studio.Action.Command                  (Command)
 import           Luna.Studio.Action.State.Model              (shouldDisplayPortSelf)
@@ -50,7 +49,6 @@ localUpdateExpressionNode node = NodeEditor.getExpressionNode (node ^. nodeLoc) 
         NodeEditor.addExpressionNode $ node & isSelected                      .~ selected
                                             & inPortAt [Self] . mode %~ selfMode
                                             & ExpressionNode.mode             .~ mode'
-        void . redrawConnectionsForNode $ node ^. nodeLoc
         return True
 
 localUpdateNodeTypecheck :: NodePath -> NodeTypecheckerUpdate -> Command State ()
@@ -64,7 +62,6 @@ localUpdateNodeTypecheck path update = do
             SidebarNode.outputSidebarPorts .= convert `fmap` inPorts
         Empire.InputSidebarUpdate _ outPorts -> NodeEditor.modifyInputNode nl $
             SidebarNode.inputSidebarPorts .= convert `fmap2` outPorts
-    void $ redrawConnectionsForNode nl
 
 updateAllPortsSelfVisibility :: Command State ()
 updateAllPortsSelfVisibility = do

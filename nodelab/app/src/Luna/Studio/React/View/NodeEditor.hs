@@ -18,7 +18,7 @@ import           Luna.Studio.React.Model.App           (App)
 import           Luna.Studio.React.Model.NodeEditor    (NodeEditor)
 import qualified Luna.Studio.React.Model.NodeEditor    as NodeEditor
 import           Luna.Studio.React.Store               (Ref, dispatch, dispatch')
-import           Luna.Studio.React.View.Connection     (connection_, currentConnection_)
+import           Luna.Studio.React.View.Connection     (connection_, halfConnection_)
 import           Luna.Studio.React.View.ConnectionPen  (connectionPen_)
 import           Luna.Studio.React.View.ExpressionNode (nodeDynamicStyles_, node_)
 import           Luna.Studio.React.View.Monad          (monads_)
@@ -93,10 +93,10 @@ nodeEditor = React.defineView name $ \(ref, ne) -> do
             planeMonads_ $
                 monads_ monads
             planeConnections_ $ do
-                forM_     (ne ^. NodeEditor.connections . to HashMap.toList        ) $ uncurry $ connection_ ref
-                forKeyed_ (ne ^. NodeEditor.currentConnections                     ) $ uncurry currentConnection_
-                forM_     (ne ^. NodeEditor.selectionBox                           ) selectionBox_
-                forM_     (ne ^. NodeEditor.connectionPen                          ) connectionPen_
+                forM_     (ne ^. NodeEditor.posConnections ) $ connection_ ref
+                forKeyed_ (ne ^. NodeEditor.posHalfConnections) $ uncurry halfConnection_
+                forM_     (ne ^. NodeEditor.selectionBox   ) selectionBox_
+                forM_     (ne ^. NodeEditor.connectionPen  ) connectionPen_
 
         planeNodes_ $ do
             forM_  nodes                            $ node_ ref

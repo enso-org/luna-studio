@@ -2,7 +2,6 @@ module Luna.Studio.Action.Basic.SetNodeMeta where
 
 import           Control.Monad                               (filterM)
 import           Data.Position                               (Position)
-import           Luna.Studio.Action.Basic.DrawConnection     (redrawConnectionsForNode)
 import qualified Luna.Studio.Action.Batch                    as Batch
 import           Luna.Studio.Action.Command                  (Command)
 import qualified Luna.Studio.Action.State.NodeEditor         as NodeEditor
@@ -56,5 +55,4 @@ localSetNodeMeta nl pos dispRes = do
     NodeEditor.modifyExpressionNode nl $ do
         visualizationsEnabled .= dispRes
         position              .= pos
-    void $ redrawConnectionsForNode nl
     NodeEditor.inGraph nl

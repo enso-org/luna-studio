@@ -8,8 +8,7 @@ import           Data.ScreenPosition                      (ScreenPosition)
 import           Data.Size                                (y)
 import           Empire.API.Data.PortRef                  (AnyPortRef (OutPortRef'), OutPortRef)
 import qualified Empire.API.Data.PortRef                  as PortRef
-import           Luna.Studio.Action.Basic                 (getScene, localMovePort, localRemovePort, redrawConnectionsForNode,
-                                                           setInputSidebarPortMode)
+import           Luna.Studio.Action.Basic                 (getScene, localMovePort, localRemovePort, setInputSidebarPortMode)
 import qualified Luna.Studio.Action.Basic                 as Basic
 import qualified Luna.Studio.Action.Batch                 as Batch
 import           Luna.Studio.Action.Command               (Command)
@@ -147,12 +146,10 @@ cancelPortDragUnsafe :: PortDrag -> Command State ()
 cancelPortDragUnsafe portDrag = do
     let portRef    = portDrag ^. portDragActPortRef
         orgPortRef = portDrag ^. portDragStartPortRef
-        nodeLoc    = portRef ^. PortRef.nodeLoc
         orgPortId  = orgPortRef ^. PortRef.srcPortId
     setInputSidebarPortMode portRef Port.Normal
-    if portRef /= orgPortRef
-        then void $ localMovePort portRef $ getPortNumber orgPortId
-        else void $ redrawConnectionsForNode nodeLoc
+    when (portRef /= orgPortRef) $
+        void $ localMovePort portRef $ getPortNumber orgPortId
     removeActionFromState portDragAction
 
 finishPortDrag :: PortDrag -> Command State ()

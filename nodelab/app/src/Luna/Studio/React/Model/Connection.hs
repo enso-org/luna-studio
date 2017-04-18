@@ -6,7 +6,7 @@ import           Data.Convert                                (Convertible (conve
 import           Data.HashMap.Strict                         (HashMap)
 import qualified Data.HashMap.Strict                         as HashMap
 import           Data.Position                               (Position, move, x, y)
-import           Data.Vector2                                 (Vector2 (Vector2))
+import           Data.Vector2                                (Vector2 (Vector2))
 import qualified Empire.API.Data.Connection                  as Empire
 import           Empire.API.Data.PortRef                     (AnyPortRef (InPortRef', OutPortRef'), InPortRef, OutPortRef)
 import qualified Empire.API.Data.PortRef                     as PortRef
@@ -27,35 +27,75 @@ data Mode = Normal | Sidebar | Highlighted | Dimmed deriving (Eq, Show, Typeable
 
 instance ToJSON Mode
 
-data Connection = Connection { _src    :: OutPortRef
-                             , _dst    :: InPortRef
-                             , _srcPos :: Position
-                             , _dstPos :: Position
-                             , _mode   :: Mode
-                             , _color  :: Color
-                             } deriving (Eq, Show, Typeable, Generic)
+
+data Connection = Connection
+        { _rSrc  :: OutPortRef
+        , _rDst  :: InPortRef
+        , _rMode :: Mode
+        } deriving (Eq, Show, Typeable, Generic)
+
+
+data PosConnection = PosConnection
+        { _pSrc    :: OutPortRef
+        , _pDst    :: InPortRef
+        , _pSrcPos  :: Position
+        , _pDstPos  :: Position
+        , _pMode   :: Mode
+        , _pColor  :: Color
+        } deriving (Eq, Show, Typeable, Generic)
+
+
+data HalfConnection = HalfConnection
+        { _from  :: AnyPortRef
+        , _hDst  :: Position
+        , _hMode :: Mode
+        } deriving (Eq, Show, Typeable, Generic)
+
+data PosHalfConnection = PosHalfConnection
+        { _phSrc    :: Position
+        , _phDst    :: Position
+        , _phMode   :: Mode
+        , _phColor  :: Color
+        } deriving (Eq, Show, Typeable, Generic)
 
 makeLenses ''Connection
+makeLenses ''PosConnection
+makeLenses ''HalfConnection
+makeLenses ''PosHalfConnection
 instance ToJSON Connection
+instance ToJSON PosConnection
+instance ToJSON HalfConnection
+instance ToJSON PosHalfConnection
 
-data CurrentConnection = CurrentConnection { _currentFrom  :: Position
-                                           , _currentTo    :: Position
-                                           , _currentMode  :: Mode
-                                           , _currentColor :: Color
-                                           } deriving (Eq, Show, Typeable, Generic)
-
-makeLenses ''CurrentConnection
-instance ToJSON CurrentConnection
-
+class HasSrc a where src :: Lens' a OutPortRef
+class HasDst a where
+    dst :: Lens' a InPortRef
+    connectionId :: Lens' a InPortRef
+    connectionId = dst
+class HasSrcPos a where srcPos :: Lens' a Position
+class HasDstPos a where dstPos :: Lens' a Position
+class HasMode   a where mode   :: Lens' a Mode
+class HasColor  a where color  :: Lens' a Color
+instance HasSrc    Connection        where src    = rSrc
+instance HasDst    Connection        where dst    = rDst
+instance HasMode   Connection        where mode   = rMode
+instance HasSrc    PosConnection     where src    = pSrc
+instance HasDst    PosConnection     where dst    = pDst
+instance HasSrcPos PosConnection     where srcPos = pSrcPos
+instance HasDstPos PosConnection     where dstPos = pDstPos
+instance HasMode   PosConnection     where mode   = pMode
+instance HasColor  PosConnection     where color  = pColor
+instance HasDstPos HalfConnection    where dstPos = hDst
+instance HasMode   HalfConnection    where mode   = hMode
+instance HasSrcPos PosHalfConnection where srcPos = phSrc
+instance HasDstPos PosHalfConnection where dstPos = phDst
+instance HasMode   PosHalfConnection where mode   = phMode
+instance HasColor  PosHalfConnection where color  = phColor
 
 type ConnectionsMap = HashMap ConnectionId Connection
 
 toConnectionsMap :: [Connection] -> ConnectionsMap
 toConnectionsMap = HashMap.fromList . map (view connectionId &&& id)
-
-
-connectionId :: Lens' Connection ConnectionId
-connectionId = dst
 
 srcNodeLoc :: Lens' Connection NodeLoc
 srcNodeLoc = src . PortRef.srcNodeLoc
@@ -76,7 +116,7 @@ raw = to raw' where
 nodeLocs :: Getter Connection (NodeLoc, NodeLoc)
 nodeLocs = to nodeLocs' where
     nodeLocs' conn = ( conn ^. src . PortRef.srcNodeLoc
-                    , conn ^. dst . PortRef.dstNodeLoc )
+                     , conn ^. dst . PortRef.dstNodeLoc )
 
 containsNode :: NodeLoc -> Connection -> Bool
 containsNode nid conn = (conn ^. srcNodeLoc == nid)
@@ -95,11 +135,11 @@ toValidEmpireConnection dst'@(InPortRef' _) src'@(OutPortRef' _) = toValidEmpire
 toValidEmpireConnection _ _                                      = Nothing
 
 
-instance Convertible Connection CurrentConnection where
-    convert = CurrentConnection <$> view srcPos <*> view dstPos <*> view mode <*> view color
+instance Convertible PosConnection HalfConnection where
+    convert = HalfConnection <$> OutPortRef' . view src <*> view dstPos <*> view mode
 
-toConnection :: OutPortRef -> InPortRef -> CurrentConnection -> Connection
-toConnection src' dst' = Connection src' dst' <$> view currentFrom <*> view currentTo <*> view currentMode <*> view currentColor
+toPosConnection :: OutPortRef -> InPortRef -> PosHalfConnection -> PosConnection
+toPosConnection src' dst' = PosConnection src' dst' <$> view srcPos <*> view dstPos <*> view mode <*> view color
 
 instance Convertible Connection Empire.Connection where
     convert = Empire.Connection <$> view src <*> view dst
@@ -107,20 +147,20 @@ instance Convertible Connection Empire.Connection where
 portPhantomPosition :: ExpressionNode -> Position
 portPhantomPosition n = n ^. position & y %~ (+ 2 * gridSize)
 
-connectionPositionAndMode :: Node -> OutPort -> Node -> InPort -> Layout -> Maybe ((Position, Position), Mode)
-connectionPositionAndMode srcNode' srcPort dstNode' dstPort layout = case (srcNode', dstNode') of
+connectionPositions :: Node -> OutPort -> Node -> InPort -> Layout -> Maybe (Position, Position)
+connectionPositions srcNode' srcPort dstNode' dstPort layout = case (srcNode', dstNode') of
     (Node.Input _, Node.Output _) -> do
         srcConnPos <- inputSidebarPortPosition srcPort layout
         dstConnPos <- outputSidebarPortPosition dstPort layout
-        return ((srcConnPos, dstConnPos), Sidebar)
+        return (srcConnPos, dstConnPos)
     (Node.Input _, _) -> do
         srcConnPos <- inputSidebarPortPosition srcPort layout
-        dstConnPos <- fst <$> currentConnectionSrcPositionAndMode dstNode' (Left dstPort) srcConnPos layout
-        return ((srcConnPos, dstConnPos), Sidebar)
+        dstConnPos <- halfConnectionSrcPosition dstNode' (Left dstPort) srcConnPos layout
+        return (srcConnPos, dstConnPos)
     (_, Node.Output _) -> do
         dstConnPos <- outputSidebarPortPosition dstPort layout
-        srcConnPos <- fst <$> currentConnectionSrcPositionAndMode srcNode' (Right srcPort) dstConnPos layout
-        return ((srcConnPos, dstConnPos), Sidebar)
+        srcConnPos <- halfConnectionSrcPosition srcNode' (Right srcPort) dstConnPos layout
+        return (srcConnPos, dstConnPos)
     (Expression srcNode, Expression dstNode) -> do
         let srcPos'    = srcNode ^. position
             dstPos'    = dstNode ^. position
@@ -132,14 +172,23 @@ connectionPositionAndMode srcNode' srcPort dstNode' dstPort layout = case (srcNo
             numOfDstInPorts  = countArgPorts dstNode
             srcConnPos = connectionSrc srcPos' dstPos' isSrcExp isDstExp srcPortNum numOfSrcOutPorts $ countOutPorts srcNode + countArgPorts srcNode == 1
             dstConnPos = connectionDst srcPos' dstPos' isSrcExp isDstExp dstPortNum numOfDstInPorts $ isSelf $ dstPort ^. portId
-        return ((srcConnPos, dstConnPos), Normal)
+        return (srcConnPos, dstConnPos)
 
-currentConnectionSrcPositionAndMode :: Node -> EitherPort -> Position -> Layout -> Maybe (Position, Mode)
-currentConnectionSrcPositionAndMode (Node.Input  _  ) (Right port) _ layout = (, Sidebar) <$> inputSidebarPortPosition  port layout
-currentConnectionSrcPositionAndMode (Node.Output _  ) (Left  port) _ layout = (, Sidebar) <$> outputSidebarPortPosition port layout
-currentConnectionSrcPositionAndMode (Expression node) eport mousePos _ = Just $ case eport of
-        Right port -> (, Normal) $ connectionSrc pos mousePos isExp False (getPortNumber $ port ^. portId) numOfSameTypePorts $ countOutPorts node + countArgPorts node == 1
-        Left  port -> (, Normal) $ connectionDst mousePos pos False isExp (getPortNumber $ port ^. portId) numOfSameTypePorts $ isSelf $ port ^. portId
+connectionMode :: Node -> Node -> Mode
+connectionMode (Node.Input {}) _  = Sidebar
+connectionMode _ (Node.Output {}) = Sidebar
+connectionMode _ _ = Normal
+
+halfConnectionMode :: Node -> Mode
+halfConnectionMode (Node.Expression {}) = Sidebar
+halfConnectionMode _                    = Normal
+
+halfConnectionSrcPosition :: Node -> EitherPort -> Position -> Layout -> Maybe Position
+halfConnectionSrcPosition (Node.Input  _  ) (Right port) _ layout = inputSidebarPortPosition  port layout
+halfConnectionSrcPosition (Node.Output _  ) (Left  port) _ layout = outputSidebarPortPosition port layout
+halfConnectionSrcPosition (Expression node) eport mousePos _ = Just $ case eport of
+        Right port -> connectionSrc pos mousePos isExp False (getPortNumber $ port ^. portId) numOfSameTypePorts $ countOutPorts node + countArgPorts node == 1
+        Left  port -> connectionDst mousePos pos False isExp (getPortNumber $ port ^. portId) numOfSameTypePorts $ isSelf $ port ^. portId
     where
         pos                = node ^. position
         isExp              = not . isCollapsed $ node

@@ -1,28 +1,26 @@
 module Luna.Studio.Action.Basic.AddNode where
 
-import           Data.Position                           (Position, toTuple)
-import           Data.Text                               (Text)
-import           Data.Vector2                             ()
-import           Empire.API.Data.LabeledTree             (LabeledTree (LabeledTree))
-import qualified Empire.API.Data.Node                    as Empire
-import           Empire.API.Data.NodeMeta                (NodeMeta (NodeMeta))
-import           Empire.API.Data.Port                    (InPortIndex (Arg, Self), Port (Port), PortState (NotConnected))
-import           Empire.API.Data.TypeRep                 (TypeRep (TStar))
-import qualified JS.GoogleAnalytics                      as GA
-import           Luna.Studio.Action.Basic.DrawConnection (redrawConnectionsForNode)
-import           Luna.Studio.Action.Basic.FocusNode      (focusNode)
-import           Luna.Studio.Action.Basic.SelectNode     (selectNode)
-import qualified Luna.Studio.Action.Batch                as Batch
-import           Luna.Studio.Action.Command              (Command)
-import           Luna.Studio.Action.Node.Snap            (snap)
-import           Luna.Studio.Action.State.Model          (shouldDisplayPortSelf)
-import           Luna.Studio.Action.State.NodeEditor     (getSelectedNodes)
-import qualified Luna.Studio.Action.State.NodeEditor     as NodeEditor
-import           Luna.Studio.Action.UUID                 (getUUID)
+import           Data.Position                       (Position, toTuple)
+import           Data.Text                           (Text)
+import           Empire.API.Data.LabeledTree         (LabeledTree (LabeledTree))
+import qualified Empire.API.Data.Node                as Empire
+import           Empire.API.Data.NodeMeta            (NodeMeta (NodeMeta))
+import           Empire.API.Data.Port                (InPortIndex (Arg, Self), Port (Port), PortState (NotConnected))
+import           Empire.API.Data.TypeRep             (TypeRep (TStar))
+import qualified JS.GoogleAnalytics                  as GA
+import           Luna.Studio.Action.Basic.FocusNode  (focusNode)
+import           Luna.Studio.Action.Basic.SelectNode (selectNode)
+import qualified Luna.Studio.Action.Batch            as Batch
+import           Luna.Studio.Action.Command          (Command)
+import           Luna.Studio.Action.Node.Snap        (snap)
+import           Luna.Studio.Action.State.Model      (shouldDisplayPortSelf)
+import           Luna.Studio.Action.State.NodeEditor (getSelectedNodes)
+import qualified Luna.Studio.Action.State.NodeEditor as NodeEditor
+import           Luna.Studio.Action.UUID             (getUUID)
 import           Luna.Studio.Prelude
-import           Luna.Studio.React.Model.Node            (ExpressionNode, NodeLoc (NodeLoc), NodePath, inPortAt, nodeLoc)
-import           Luna.Studio.React.Model.Port            (Mode (Invisible), ensureVisibility, mode)
-import           Luna.Studio.State.Global                (State)
+import           Luna.Studio.React.Model.Node        (ExpressionNode, NodeLoc (NodeLoc), NodePath, inPortAt, nodeLoc)
+import           Luna.Studio.React.Model.Port        (Mode (Invisible), ensureVisibility, mode)
+import           Luna.Studio.State.Global            (State)
 
 
 createNode :: NodePath -> Position -> Text -> Command State ()
@@ -53,5 +51,4 @@ localAddExpressionNode node = do
     let selfMode = if selfPortVis then ensureVisibility else const Invisible
         node' = node & inPortAt [Self] . mode %~ selfMode
     NodeEditor.addExpressionNode node'
-    void . redrawConnectionsForNode $ node ^. nodeLoc
     focusNode $ node ^. nodeLoc

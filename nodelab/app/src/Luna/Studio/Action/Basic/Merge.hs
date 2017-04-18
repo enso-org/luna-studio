@@ -8,7 +8,6 @@ import           Empire.API.Data.Graph                       (Graph)
 import qualified Empire.API.Data.Graph                       as GraphAPI
 import qualified Empire.API.Data.NodeLoc                     as NodeLoc
 import           Luna.Studio.Action.Basic.AddConnection      (localAddConnections)
-import           Luna.Studio.Action.Basic.DrawConnection     (redrawConnectionsForNode)
 import           Luna.Studio.Action.Basic.RemoveConnection   (localRemoveConnectionsContainingNodes)
 import           Luna.Studio.Action.Command                  (Command)
 import           Luna.Studio.Action.State.NodeEditor         (modifyExpressionNode)
@@ -33,7 +32,6 @@ localMerge parentPath graphs = do
     forM_ (Map.elems graphs) $ \graph -> do
         let connections        = map ((_1 %~ NodeLoc.prependPath parentPath) . (_2 %~ NodeLoc.prependPath parentPath)) $ graph ^. GraphAPI.connections
         void $ localAddConnections connections
-    void $ redrawConnectionsForNode parentLoc
 
 localUnmerge :: ExpressionNode -> Command State ()
 localUnmerge node = case node ^. mode of

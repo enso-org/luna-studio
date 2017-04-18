@@ -25,7 +25,7 @@ import           Luna.Studio.Action.Command                  (Command)
 import           Luna.Studio.Action.Node.Drag                (startNodeDrag)
 import           Luna.Studio.Action.State.Action             (beginActionWithKey, continueActionWithKey, removeActionFromState,
                                                               updateActionWithKey)
-import           Luna.Studio.Action.State.Model              (createConnectionModel, createCurrentConnectionModel)
+import           Luna.Studio.Action.State.Model              (createHalfConnectionModel, createHalfConnectionModel')
 import           Luna.Studio.Action.State.NodeEditor         (getConnection, getNode, modifyNodeEditor)
 import           Luna.Studio.Action.State.Scene              (translateToWorkspace)
 import           Luna.Studio.Event.Mouse                     (mousePosition, workspacePosition)
@@ -78,7 +78,7 @@ startConnecting screenMousePos anyPortRef mayModifiedConnId isPortPhantom connec
         if shouldDoNodeDrag
         then lift $ when (connectMode' == Drag) $ startNodeDrag mousePos nodeLoc True
         else do
-            currentConnectionModel <- MaybeT $ createCurrentConnectionModel anyPortRef mousePos
+            halfConnectionModel <- MaybeT $ createHalfConnectionModel anyPortRef mousePos
             let action = Connect screenMousePos anyPortRef (isJust mayModifiedConnId) Nothing isPortPhantom connectMode'
             lift $ do
                 withJust mayModifiedConnId removeConnection
@@ -87,7 +87,7 @@ startConnecting screenMousePos anyPortRef mayModifiedConnId isPortPhantom connec
                 modifyNodeEditor $ do
                     withJust mayModifiedConnId $ \connId ->
                         NodeEditor.connections . at connId .= Nothing
-                    NodeEditor.currentConnections .= [currentConnectionModel]
+                    NodeEditor.halfConnections .= [halfConnectionModel]
     when (isNothing maySuccess && isPortPhantom) $ case anyPortRef of
         OutPortRef' outPortRef -> void $ localRemovePort outPortRef
         _                      -> return ()
@@ -95,9 +95,9 @@ startConnecting screenMousePos anyPortRef mayModifiedConnId isPortPhantom connec
 handleMove :: MouseEvent -> Connect -> Command State ()
 handleMove evt action = when (isNothing $ action ^. connectSnappedPort) $ do
     mousePos                  <- workspacePosition evt
-    mayCurrentConnectionModel <- createCurrentConnectionModel (action ^. connectSourcePort) mousePos
-    modifyNodeEditor $ NodeEditor.currentConnections .= maybeToList mayCurrentConnectionModel
-    when (isNothing mayCurrentConnectionModel) $ end action
+    mayHalfConnectionModel <- createHalfConnectionModel (action ^. connectSourcePort) mousePos
+    modifyNodeEditor $ NodeEditor.halfConnections .= maybeToList mayHalfConnectionModel
+    when (isNothing mayHalfConnectionModel) $ end action
 
 handlePortMouseUp :: AnyPortRef -> Connect -> Command State ()
 handlePortMouseUp portRef action = when (action ^. connectMode == Drag) $
@@ -106,10 +106,10 @@ handlePortMouseUp portRef action = when (action ^. connectMode == Drag) $
 snapToPort :: AnyPortRef -> Connect -> Command State ()
 snapToPort portRef action =
     withJust (toValidEmpireConnection (action ^. connectSourcePort) portRef) $ \conn -> do
-        mayConnModel <- createConnectionModel (conn ^. ConnectionAPI.src) (conn ^. ConnectionAPI.dst)
+        mayConnModel <- createHalfConnectionModel' (conn ^. ConnectionAPI.src) (conn ^. ConnectionAPI.dst)
         withJust mayConnModel $ \connModel -> do
             update $ action & connectSnappedPort ?~ portRef
-            modifyNodeEditor $ NodeEditor.currentConnections .= [convert connModel]
+            modifyNodeEditor $ NodeEditor.halfConnections .= [connModel]
 
 cancelSnapToPort :: AnyPortRef -> Connect -> Command State ()
 cancelSnapToPort portRef action = when (Just portRef == action ^. connectSnappedPort) $
@@ -124,7 +124,7 @@ handleMouseUp evt action = when (action ^. connectMode == Drag) $ do
 
 stopConnectingUnsafe :: Connect -> Command State ()
 stopConnectingUnsafe _ = do
-    modifyNodeEditor $ NodeEditor.currentConnections .= def
+    modifyNodeEditor $ NodeEditor.halfConnections .= def
     actions . currentConnectAction .= Nothing
     removeActionFromState connectAction
     void $ updateAllPortsSelfVisibility
