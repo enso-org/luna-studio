@@ -9,7 +9,7 @@ import qualified Data.ScreenPosition                   as ScreenPosition
 import           Data.Size                             (Size)
 import           Data.Vector                           (Vector2 (Vector2), x, y)
 import           Luna.Studio.Data.CameraTransformation (CameraTransformation, logicalToScreen, screenToLogical)
-import           Luna.Studio.Prelude
+import           Luna.Prelude
 import           Luna.Studio.React.Model.Constants     (gridSize)
 import           Luna.Studio.React.Model.Port          (InPort, OutPort, getPositionInSidebar, portId)
 import           Luna.Studio.React.Model.Sidebar       (InputSidebar, OutputSidebar, inputSidebarPosition, inputSidebarSize,
