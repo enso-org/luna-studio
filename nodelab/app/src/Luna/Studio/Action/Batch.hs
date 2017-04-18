@@ -6,7 +6,6 @@ import           Empire.API.Data.NodeMeta             (NodeMeta (NodeMeta))
 import           Empire.API.Data.PortDefault          (PortDefault)
 import           Empire.API.Data.PortRef              (AnyPortRef (InPortRef', OutPortRef'), InPortRef (InPortRef), OutPortRef (OutPortRef),
                                                        dstNodeLoc, nodeLoc)
-import           Empire.API.Data.Project              (ProjectId)
 import           Luna.Studio.Action.Command           (Command)
 import           Luna.Studio.Action.UUID              (registerRequest)
 import qualified Luna.Studio.Batch.Connector.Commands as BatchCmd
@@ -35,28 +34,6 @@ withUUID act = do
     guiID <- use $ backend . clientId
     liftIO $ act uuid $ Just guiID
 
--- createLibrary :: Text -> Text -> Command State ()
--- createLibrary = withWorkspace .: BatchCmd.createLibrary
---
--- listLibraries :: ProjectId -> Command State ()
--- listLibraries = withUUID . BatchCmd.listLibraries
---
---
--- createProject :: Text -> Command State ()
--- createProject = withUUID . BatchCmd.createProject
---
--- exportProject :: ProjectId -> Command State ()
--- exportProject = withUUID . BatchCmd.exportProject
---
--- importProject :: Text -> Command State ()
--- importProject = withUUID . BatchCmd.importProject
---
--- listProjects :: Command State ()
--- listProjects = withUUID BatchCmd.listProjects
---
--- openProject :: FilePath -> Command State ()
--- openProject = withUUID . BatchCmd.openProject
-
 openFile :: FilePath -> Command State ()
 openFile = withUUID . BatchCmd.openFile
 
@@ -81,7 +58,7 @@ addConnection src dst = do
 addNode :: NodeLoc -> Text -> Position -> Bool -> Maybe NodeLoc -> Command State ()
 addNode nl expr pos dispRes connectTo = withWorkspace $ BatchCmd.addNode nl expr (NodeMeta (toTuple pos) dispRes) connectTo
 
-addPort :: AnyPortRef -> Command State ()
+addPort :: OutPortRef -> Command State ()
 addPort = withWorkspace . BatchCmd.addPort
 
 addSubgraph :: [ExpressionNode] -> [(OutPortRef, InPortRef)] -> Command State ()
@@ -90,7 +67,7 @@ addSubgraph nodes conns = withWorkspace $ BatchCmd.addSubgraph (convert <$> node
 getSubgraph :: NodeLoc -> Command State ()
 getSubgraph nl = withWorkspace (BatchCmd.getSubgraph nl)
 
-movePort :: AnyPortRef -> Int -> Command State ()
+movePort :: OutPortRef -> Int -> Command State ()
 movePort = withWorkspace .: BatchCmd.movePort
 
 redo :: Command State ()
@@ -104,21 +81,17 @@ removeConnection connId = do
 removeNodes :: [NodeLoc] -> Command State ()
 removeNodes = withWorkspace . BatchCmd.removeNodes
 
-removePort :: AnyPortRef -> Command State ()
+removePort :: OutPortRef -> Command State ()
 removePort = withWorkspace . BatchCmd.removePort
 
 renameNode :: NodeLoc -> Text -> Command State ()
 renameNode = withWorkspace .:  BatchCmd.renameNode
 
-renamePort :: AnyPortRef -> String -> Command State ()
+renamePort :: OutPortRef -> String -> Command State ()
 renamePort = withWorkspace .: BatchCmd.renamePort
 
 searchNodes :: Text -> (Int, Int) -> Command State ()
 searchNodes = withWorkspace .: BatchCmd.searchNodes
-
--- TODO[LJK, PM]: Probably remove
--- setInputNodeType :: NodeId -> Text -> Command State ()
--- setInputNodeType = withWorkspace .: BatchCmd.setInputNodeType
 
 setNodeCode :: NodeLoc -> Text -> Command State ()
 setNodeCode = withWorkspace .:  BatchCmd.setNodeCode
@@ -129,7 +102,7 @@ setNodeExpression = withWorkspace .: BatchCmd.setNodeExpression
 setNodesMeta :: [(NodeLoc, Position, Bool)] -> Command State ()
 setNodesMeta = withWorkspace . BatchCmd.setNodesMeta . map convert
 
-setPortDefault :: AnyPortRef -> PortDefault -> Command State ()
+setPortDefault :: InPortRef -> PortDefault -> Command State ()
 setPortDefault portRef portDefault = do
     collaborativeModify [portRef ^. nodeLoc]
     withWorkspace $ BatchCmd.setPortDefault portRef portDefault

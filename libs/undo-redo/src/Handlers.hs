@@ -25,10 +25,10 @@ import           Empire.API.Data.Connection         (Connection)
 import           Empire.API.Data.Connection         as Connection
 import           Empire.API.Data.Graph              (Graph)
 import           Empire.API.Data.GraphLocation      (GraphLocation)
-import           Empire.API.Data.Node               (Node, NodeId)
+import           Empire.API.Data.Node               (NodeId)
 import qualified Empire.API.Data.Node               as Node
 import           Empire.API.Data.NodeMeta           (NodeMeta)
-import           Empire.API.Data.Port               (OutPort (Projection), PortId (OutPortId))
+import           Empire.API.Data.Port               (OutPortIndex (Projection))
 import qualified Empire.API.Data.Port               as Port
 import           Empire.API.Data.PortRef            (AnyPortRef (InPortRef', OutPortRef'), InPortRef, OutPortRef (..), dstNodeId, srcNodeId,
                                                      toAnyPortRef)
@@ -178,9 +178,8 @@ handleAddConnectionUndo (Response.Response _ _ req _ (Response.Ok res)) =
 
 getUndoMovePort :: MovePort.Request -> MovePort.Request
 getUndoMovePort (MovePort.Request location oldPortRef newPos) = case oldPortRef of
-    OutPortRef' (OutPortRef nid (Projection i p)) ->
-        MovePort.Request location (toAnyPortRef nid $ OutPortId $ Projection newPos p) i
-    _                                           -> $notImplemented
+    OutPortRef nid (Projection i : rest) ->
+        MovePort.Request location (OutPortRef nid $ Projection newPos : rest) i
 
 handleMovePortUndo :: MovePort.Response -> Maybe (MovePort.Request, MovePort.Request)
 handleMovePortUndo (Response.Response _ _ req _ (Response.Ok _)) =
@@ -207,8 +206,7 @@ handleRemoveNodesUndo (Response.Response _ _ req (Response.Ok inv) (Response.Ok 
 
 -- TODO[LJK/SB]: Preserve connections
 getUndoRemovePort :: RemovePort.Request -> AddPort.Request
-getUndoRemovePort (RemovePort.Request location portRef) =
-    AddPort.Request location portRef
+getUndoRemovePort (RemovePort.Request location portRef) = AddPort.Request location portRef
 
 handleRemovePortUndo :: RemovePort.Response -> Maybe (AddPort.Request, RemovePort.Request)
 handleRemovePortUndo (Response.Response _ _ req _ (Response.Ok _)) = Just (getUndoRemovePort req, req)

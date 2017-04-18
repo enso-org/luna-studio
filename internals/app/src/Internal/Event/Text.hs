@@ -2,7 +2,6 @@
 module Internal.Event.Text where
 
 import           Data.Aeson          (FromJSON, ToJSON)
-import qualified Data.List           as List
 import           Internal.Prelude
 
 

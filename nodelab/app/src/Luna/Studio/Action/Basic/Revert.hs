@@ -1,10 +1,9 @@
 module Luna.Studio.Action.Basic.Revert where
 
-import           Control.Arrow                              ((&&&))
 import           Empire.API.Data.Connection                 (dst, src)
 import           Empire.API.Data.Node                       (nodeId)
 import           Empire.API.Data.NodeLoc                    (NodeLoc, prependPath)
-import           Empire.API.Data.PortRef                    (AnyPortRef (InPortRef', OutPortRef'), OutPortRef (OutPortRef), toAnyPortRef)
+import           Empire.API.Data.PortRef                    (AnyPortRef (InPortRef'), OutPortRef (OutPortRef))
 import qualified Empire.API.Graph.AddConnection             as AddConnection
 import qualified Empire.API.Graph.AddNode                   as AddNode
 import qualified Empire.API.Graph.AddPort                   as AddPort
@@ -36,8 +35,7 @@ import qualified Luna.Studio.Action.Batch                   as Batch
 import           Luna.Studio.Action.Command                 (Command)
 import           Luna.Studio.Action.State.Graph             (inCurrentLocation)
 import           Luna.Studio.Prelude
-import           Luna.Studio.React.Model.Node               (_Expression)
-import           Luna.Studio.React.Model.Port               (OutPort (Projection), PortId (OutPortId))
+import           Luna.Studio.React.Model.Port               (OutPortIndex (Projection))
 import           Luna.Studio.State.Global                   (State)
 
 
@@ -66,8 +64,8 @@ revertAddSubgraph (AddSubgraph.Request loc nodes _) =
 revertMovePort :: MovePort.Request -> Command State ()
 revertMovePort (MovePort.Request loc oldPortRef newPos) =
     inCurrentLocation loc $ \path -> case oldPortRef of
-        OutPortRef' (OutPortRef nid (Projection i p)) ->
-            void $ localMovePort (prependPath path (toAnyPortRef nid $ OutPortId $ Projection newPos p)) i
+        OutPortRef nid (Projection i : p) ->
+            void $ localMovePort (prependPath path (OutPortRef nid $ Projection newPos : p)) i
         _                                           -> panic
 
 revertRemoveConnection :: RemoveConnection.Request -> Response.Status RemoveConnection.Inverse -> Command State ()
@@ -79,8 +77,7 @@ revertRemoveConnection (RemoveConnection.Request _loc _dst) (Response.Error _msg
 revertRemoveNodes :: RemoveNodes.Request -> Response.Status RemoveNodes.Inverse -> Command State ()
 revertRemoveNodes (RemoveNodes.Request loc _) (Response.Ok (RemoveNodes.Inverse nodes conns)) =
     inCurrentLocation loc $ \path -> do
-        let nodes' = (map (convert . (path,)) nodes) ^.. traverse . _Expression
-            conns' = map (view src &&& view dst) conns
+        let nodes' = map (convert . (path,)) nodes
         void $ localAddSubgraph nodes' $ map (\conn -> (prependPath path (conn ^. src), prependPath path (conn ^. dst))) conns
 revertRemoveNodes (RemoveNodes.Request _loc _) (Response.Error _msg) = panic
 

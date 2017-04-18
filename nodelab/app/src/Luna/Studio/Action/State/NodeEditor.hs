@@ -1,7 +1,8 @@
-{-# LANGUAGE DataKinds      #-}
-{-# LANGUAGE DeriveAnyClass #-}
-{-# LANGUAGE LambdaCase     #-}
-{-# LANGUAGE TypeFamilies   #-}
+{-# LANGUAGE DataKinds              #-}
+{-# LANGUAGE DeriveAnyClass         #-}
+{-# LANGUAGE FunctionalDependencies #-}
+{-# LANGUAGE LambdaCase             #-}
+{-# LANGUAGE TypeFamilies           #-}
 module Luna.Studio.Action.State.NodeEditor where
 
 import           Control.Arrow                                ((&&&))
@@ -11,30 +12,32 @@ import qualified Data.HashMap.Strict                          as HashMap
 import qualified Data.Map.Lazy                                as Map
 import           Data.Monoid                                  (First (First), getFirst)
 import qualified Data.Set                                     as Set
+import           Luna.Studio.React.Model.Layout               (Layout, Scene)
+import qualified Luna.Studio.React.Model.Layout               as Scene
 
 import           Empire.API.Data.MonadPath                    (MonadPath)
 import qualified Empire.API.Data.Node                         as Empire
-import           Empire.API.Data.Port                         (OutPort (All), _WithDefault)
+import           Empire.API.Data.Port                         (_WithDefault)
 import           Empire.API.Data.PortDefault                  (PortDefault)
-import           Empire.API.Data.PortRef                      (AnyPortRef (InPortRef', OutPortRef'), InPortRef, OutPortRef (OutPortRef))
+import           Empire.API.Data.PortRef                      (AnyPortRef, InPortRef, OutPortRef (OutPortRef))
 import qualified Empire.API.Data.PortRef                      as PortRef
 import           Luna.Studio.Action.Command                   (Command)
 import           Luna.Studio.Action.State.App                 (get, modify)
 import qualified Luna.Studio.Action.State.Internal.NodeEditor as Internal
 import           Luna.Studio.Batch.Workspace                  (nodeSearcherData)
+import           Luna.Studio.Data.CameraTransformation        (CameraTransformation)
 import           Luna.Studio.Data.Graph                       (Graph (Graph))
 import           Luna.Studio.Prelude
 import           Luna.Studio.React.Model.App                  (nodeEditor)
 import           Luna.Studio.React.Model.Connection           (Connection, ConnectionId, ConnectionsMap, CurrentConnection, connectionId,
                                                                containsNode, containsPortRef, dstNodeLoc, srcNodeLoc, toConnectionsMap)
-import           Luna.Studio.React.Model.Node                 (ExpressionNode, Node (Expression, Sidebar), NodeLoc, SidebarNode, nodeLoc,
-                                                               ports, toExpressionNodesMap, toNodesList, toSidebarNodesMap, _Expression,
-                                                               _Sidebar)
-import           Luna.Studio.React.Model.Node.ExpressionNode  (isSelected)
+import           Luna.Studio.React.Model.Node                 (InputNode, Node (Expression, Input, Output), NodeLoc, OutputNode, lookupPort,
+                                                               nodeLoc, toNodesMap)
+import           Luna.Studio.React.Model.Node.ExpressionNode  (ExpressionNode, isSelected)
 import qualified Luna.Studio.React.Model.Node.ExpressionNode  as ExpressionNode
 import           Luna.Studio.React.Model.NodeEditor           (NodeEditor)
 import qualified Luna.Studio.React.Model.NodeEditor           as NE
-import           Luna.Studio.React.Model.Port                 (Port, state, valueType)
+import           Luna.Studio.React.Model.Port                 (AnyPort, InPort, OutPort, state, valueType)
 import           Luna.Studio.React.Model.Searcher             (Searcher)
 import           Luna.Studio.State.Global                     (State, workspace)
 import           Text.ScopeSearcher.Item                      (Items, isElement, items)
@@ -49,7 +52,8 @@ modifyNodeEditor = modify nodeEditor
 resetGraph :: Command State ()
 resetGraph = modifyNodeEditor $ do
     NE.expressionNodes     .= def
-    NE.sidebarNodes        .= def
+    NE.inputNode          .= def
+    NE.outputNode         .= def
     NE.monads              .= def
     NE.connections         .= def
     NE.visualizations      .= def
@@ -68,29 +72,40 @@ separateSubgraph nodeLocs = do
 
 addNode :: Node -> Command State ()
 addNode (Expression node) = addExpressionNode node
-addNode (Sidebar    node) = addSidebarNode node
+addNode (Input      node) = addInputNode node
+addNode (Output     node) = addOutputNode node
 
 addExpressionNode :: ExpressionNode -> Command State ()
 addExpressionNode node = Internal.addNodeRec NE.expressionNodes ExpressionNode.expressionNodes (node ^. nodeLoc) node
 
-addSidebarNode :: SidebarNode -> Command State ()
-addSidebarNode node = Internal.addNodeRec NE.sidebarNodes ExpressionNode.sidebarNodes (node ^. nodeLoc) node
+addInputNode :: InputNode -> Command State ()
+addInputNode node = Internal.setNodeRec NE.inputNode ExpressionNode.inputNode (node ^. nodeLoc) node
+
+addOutputNode :: OutputNode -> Command State ()
+addOutputNode node = Internal.setNodeRec NE.outputNode ExpressionNode.outputNode (node ^. nodeLoc) node
 
 getNode :: NodeLoc -> Command State (Maybe Node)
 getNode nl = do
     mayExpressionNode <- Expression `fmap2` getExpressionNode nl
     if isJust mayExpressionNode
         then return mayExpressionNode
-        else Sidebar `fmap2` getSidebarNode nl
+        else do
+            mayInputNode <- Input `fmap2` getInputNode nl
+            if isJust mayInputNode
+                then return mayInputNode
+                else Output `fmap2` getOutputNode nl
 
-getNodes :: Command State [Node]
-getNodes = toNodesList <$> getExpressionNodes <*> getSidebarNodes
+getInputNode :: NodeLoc -> Command State (Maybe InputNode)
+getInputNode nl = NE.getInputNode nl <$> getNodeEditor
 
-getSidebarNode :: NodeLoc -> Command State (Maybe SidebarNode)
-getSidebarNode nl = NE.getSidebarNode nl <$> getNodeEditor
+getOutputNode :: NodeLoc -> Command State (Maybe OutputNode)
+getOutputNode nl = NE.getOutputNode nl <$> getNodeEditor
 
-getSidebarNodes :: Command State [SidebarNode]
-getSidebarNodes = view NE.sidebarNodesRecursive <$> getNodeEditor
+getInputNodes :: Command State [InputNode]
+getInputNodes = view NE.inputNodesRecursive <$> getNodeEditor
+
+getOutputNodes :: Command State [OutputNode]
+getOutputNodes = view NE.outputNodesRecursive <$> getNodeEditor
 
 getExpressionNode :: NodeLoc -> Command State (Maybe ExpressionNode)
 getExpressionNode nl = NE.getExpressionNode nl <$> getNodeEditor
@@ -109,27 +124,29 @@ modifyExpressionNodes modifier = do
     nodeLocs <- view ExpressionNode.nodeLoc `fmap2` getExpressionNodes --FIXME it can be done faster
     catMaybes . map getFirst <$> forM nodeLocs (flip modifyExpressionNode $ (fmap (First . Just) modifier))
 
-modifySidebarNode :: Monoid r => NodeLoc -> M.State SidebarNode r -> Command State r
-modifySidebarNode = Internal.modifyNodeRec NE.sidebarNodes ExpressionNode.sidebarNodes
+modifyInputNode :: Monoid r => NodeLoc -> M.State InputNode r -> Command State r
+modifyInputNode = Internal.modifySidebarRec NE.inputNode ExpressionNode.inputNode
+
+modifyOutputNode :: Monoid r => NodeLoc -> M.State OutputNode r -> Command State r
+modifyOutputNode = Internal.modifySidebarRec NE.outputNode ExpressionNode.outputNode
 
 removeNode :: NodeLoc -> Command State ()
 removeNode nl = do
-    Internal.removeNodeRec NE.sidebarNodes    ExpressionNode.sidebarNodes    nl
+    Internal.unsetNodeRec  NE.outputNode      ExpressionNode.outputNode     nl
+    Internal.unsetNodeRec  NE.inputNode       ExpressionNode.inputNode      nl
     Internal.removeNodeRec NE.expressionNodes ExpressionNode.expressionNodes nl
 
 getSelectedNodes :: Command State [ExpressionNode]
 getSelectedNodes = filter (view isSelected) <$> getExpressionNodes
 
-updateNodes :: [Node] -> Command State ()
-updateNodes nodes = do
-    updateExpressionNodes $ nodes ^.. traverse . _Expression
-    updateSidebarNodes    $ nodes ^.. traverse . _Sidebar
+updateInputNode :: Maybe InputNode -> Command State ()
+updateInputNode update = modifyNodeEditor $ NE.inputNode .= update
 
-updateSidebarNodes :: [SidebarNode] -> Command State ()
-updateSidebarNodes update = modifyNodeEditor $ NE.sidebarNodes .= toSidebarNodesMap update
+updateOutputNode :: Maybe OutputNode -> Command State ()
+updateOutputNode update = modifyNodeEditor $ NE.outputNode .= update
 
 updateExpressionNodes :: [ExpressionNode] -> Command State ()
-updateExpressionNodes update = modifyNodeEditor $ NE.expressionNodes .= toExpressionNodesMap update
+updateExpressionNodes update = modifyNodeEditor $ NE.expressionNodes .= toNodesMap update
 
 addConnection :: Connection -> Command State ()
 addConnection conn = modifyNodeEditor $ NE.connections . at connId ?= conn where
@@ -193,15 +210,24 @@ getSearcher = view NE.searcher <$> getNodeEditor
 modifySearcher :: Monoid r => M.State Searcher r -> Command State r
 modifySearcher = modify (nodeEditor . NE.searcher) . zoom traverse
 
+getLayout :: Command State Layout
+getLayout = view NE.layout <$> getNodeEditor
+
+getScene :: Command State (Maybe Scene)
+getScene = view Scene.scene <$> getLayout
+
+getScreenTranform :: Command State CameraTransformation
+getScreenTranform = view Scene.screenTransform <$> getLayout
+
 globalFunctions :: Items a -> Items a
 globalFunctions = Map.filter isElement
 
-getNodeSearcherData :: Command State (Items Empire.Node)
+getNodeSearcherData :: Command State (Items Empire.ExpressionNode)
 getNodeSearcherData = do
     completeData <- use $ workspace . nodeSearcherData
     selected     <- getSelectedNodes
     mscope       <- case selected of
-        [node] -> (fmap . fmap) (convert . view valueType) $ getPort (OutPortRef (node ^. nodeLoc) All)
+        [node] -> (fmap . fmap) (convert . view valueType) $ getPort (OutPortRef (node ^. nodeLoc) [])
         _      -> return Nothing
     return $ case mscope of
         Nothing -> completeData
@@ -215,19 +241,18 @@ instance NodeEditorElementId NodeLoc where
 instance NodeEditorElementId ConnectionId where
     inGraph = fmap isJust . getConnection
 
-class HasPort a where
-    getPort :: a -> Command State (Maybe Port)
-instance HasPort InPortRef where
-    getPort portRef = getPortFromAnyPortRef $ InPortRef' portRef
-instance HasPort OutPortRef where
-    getPort portRef = getPortFromAnyPortRef $ OutPortRef' portRef
-instance HasPort AnyPortRef where
-    getPort = getPortFromAnyPortRef
+class GetPort a b | a -> b where
+    getPort :: a -> Command State (Maybe b)
 
-getPortFromAnyPortRef :: AnyPortRef -> Command State (Maybe Port)
-getPortFromAnyPortRef portRef = runMaybeT $ do
-    node <- MaybeT . getNode $ portRef ^. PortRef.nodeLoc
-    fromJustM $ node ^? ports . ix (portRef ^. PortRef.portId)
+instance GetPort InPortRef InPort where
+    getPort portRef = runMaybeT $
+        MaybeT (getNode $ portRef ^. PortRef.nodeLoc) >>= fromJustM . flip lookupPort (portRef ^. PortRef.dstPortId)
+instance GetPort OutPortRef OutPort where
+    getPort portRef = runMaybeT $
+        MaybeT (getNode $ portRef ^. PortRef.nodeLoc) >>= fromJustM . flip lookupPort (portRef ^. PortRef.srcPortId)
+instance GetPort AnyPortRef AnyPort where
+    getPort portRef = runMaybeT $ do
+        MaybeT (getNode $ portRef ^. PortRef.nodeLoc) >>= fromJustM . flip lookupPort (portRef ^. PortRef.portId)
 
-getPortDefault :: AnyPortRef -> Command State (Maybe PortDefault)
+getPortDefault :: InPortRef -> Command State (Maybe PortDefault)
 getPortDefault portRef = maybe Nothing (\mayPort -> mayPort ^? state . _WithDefault) <$> getPort portRef

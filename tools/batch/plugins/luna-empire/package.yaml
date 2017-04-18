@@ -23,27 +23,11 @@ executables:
   luna-empire:
     source-dirs: src
     main:        Main.hs
-    ghc-options: -Wall -O2 -threaded
+    ghc-options: -Wall -O2 -threaded -with-rtsopts=-T
 
   luna-empire-logger:
     source-dirs: src
     main:        LoggerMain.hs
-
-  luna-empire-result-saver:
-    source-dirs: src
-    main:        ResultSaverMain.hs
-    dependencies:
-      - aeson
-      - aeson-pretty
-      - binary
-      - bytestring
-      - containers
-      - docopt
-      - luna-empire
-      - luna-empire-api
-      - m-logger
-      - text
-      - uuid
 
   luna-empire-invoker:
     source-dirs: src

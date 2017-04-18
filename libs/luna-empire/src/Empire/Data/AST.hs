@@ -2,7 +2,7 @@
 
 module Empire.Data.AST where
 
-import           Empire.Prelude
+import           Empire.Prelude hiding (cast)
 
 import           Data.Typeable  (cast)
 
@@ -51,8 +51,20 @@ instance Exception NotAppException where
     toException = astExceptionToException
     fromException = astExceptionFromException
 
+data InvalidConnectionException = InvalidConnectionException deriving (Show)
+
+instance Exception InvalidConnectionException where
+    toException   = astExceptionToException
+    fromException = astExceptionFromException
+
 data NotInputEdgeException = NotInputEdgeException deriving (Show)
 
 instance Exception NotInputEdgeException where
+    toException   = astExceptionToException
+    fromException = astExceptionFromException
+
+data PortDoesNotExistException = PortDoesNotExistException deriving (Show)
+
+instance Exception PortDoesNotExistException where
     toException   = astExceptionToException
     fromException = astExceptionFromException

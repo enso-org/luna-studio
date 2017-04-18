@@ -23,24 +23,24 @@ import           Data.Traversable                   (forM)
 import           Data.UUID.Types                    (UUID)
 import qualified Data.UUID.Types                    as UUID
 import qualified Data.UUID.V4                       as UUID
+import qualified Empire.API.Atom.GetBuffer          as GetBuffer
+import qualified Empire.API.Atom.Substitute         as Substitute
 import           Empire.API.Data.Breadcrumb         (Breadcrumb (..))
 import qualified Empire.API.Data.Breadcrumb         as Breadcrumb
 import           Empire.API.Data.Connection         as Connection
 import           Empire.API.Data.Graph              (Graph (..))
 import           Empire.API.Data.GraphLocation      (GraphLocation)
 import qualified Empire.API.Data.GraphLocation      as GraphLocation
-import           Empire.API.Data.Node               (Node (..), NodeId)
+import           Empire.API.Data.Node               (ExpressionNode (..), NodeId)
 import qualified Empire.API.Data.Node               as Node
-import           Empire.API.Data.NodeMeta           (NodeMeta)
 import           Empire.API.Data.NodeLoc            (NodeLoc (..))
+import           Empire.API.Data.NodeMeta           (NodeMeta)
 import qualified Empire.API.Data.NodeSearcher       as NS
-import           Empire.API.Data.Port               (InPort (..), OutPort (..), Port (..), PortId (..), PortState (..), getPortNumber)
+import           Empire.API.Data.Port               (InPort (..), OutPort (..), Port (..), InPortIndex (..), OutPortIndex (..), PortState (..), getPortNumber)
 import           Empire.API.Data.PortDefault        (PortValue (..))
 import           Empire.API.Data.PortRef            (InPortRef (..), OutPortRef (..))
 import           Empire.API.Data.PortRef            as PortRef
 import           Empire.API.Data.TypeRep            (TypeRep (TStar))
-import qualified Empire.API.Atom.GetBuffer          as GetBuffer
-import qualified Empire.API.Atom.Substitute         as Substitute
 import qualified Empire.API.Graph.AddConnection     as AddConnection
 import qualified Empire.API.Graph.AddNode           as AddNode
 import qualified Empire.API.Graph.AddPort           as AddPort
@@ -51,7 +51,7 @@ import qualified Empire.API.Graph.DumpGraphViz      as DumpGraphViz
 import qualified Empire.API.Graph.GetProgram        as GetProgram
 import qualified Empire.API.Graph.GetSubgraphs      as GetSubgraphs
 import qualified Empire.API.Graph.MovePort          as MovePort
-import           Empire.API.Graph.NodeResultUpdate  (NodeValue(NodeValue))
+import           Empire.API.Graph.NodeResultUpdate  (NodeValue (NodeValue))
 import qualified Empire.API.Graph.NodeResultUpdate  as NodeResultUpdate
 import qualified Empire.API.Graph.NodesUpdate       as NodesUpdate
 import qualified Empire.API.Graph.RemoveConnection  as RemoveConnection
@@ -173,7 +173,7 @@ defInverse = const $ return ()
 generateNodeId :: IO NodeId
 generateNodeId = UUID.nextRandom
 
-addExpressionNode :: GraphLocation -> NodeId -> Text -> NodeMeta -> Maybe NodeId -> Empire Node
+addExpressionNode :: GraphLocation -> NodeId -> Text -> NodeMeta -> Maybe NodeId -> Empire ExpressionNode
 addExpressionNode location nodeId expression nodeMeta connectTo = do
     case parseExpr expression of
         Expression expression -> do
@@ -187,8 +187,8 @@ addExpressionNode location nodeId expression nodeMeta connectTo = do
 connectNodes :: UUID -> Maybe UUID -> GraphLocation -> Text -> NodeId -> NodeId -> StateT Env BusT ()
 connectNodes reqId guiId location expr dstNodeId srcNodeId = do
     let exprCall = head $ splitOneOf " ." $ Text.unpack expr
-        inPort   = if exprCall `elem` stdlibFunctions then Arg 0 else Self
-        request  = Request reqId guiId $ AddConnection.Request location (Left $ OutPortRef (NodeLoc def srcNodeId) All) (Left . InPortRef' $ InPortRef (NodeLoc def dstNodeId) inPort)
+        inPort   = if exprCall `elem` stdlibFunctions then [Arg 0] else [Self]
+        request  = Request reqId guiId $ AddConnection.Request location (Left $ OutPortRef (NodeLoc def srcNodeId) []) (Left . InPortRef' $ InPortRef (NodeLoc def dstNodeId) inPort)
         action (AddConnection.Request location (Left src) (Left dst)) = Graph.connectCondTC False location src dst
         success _ _ connection                                        = sendToBus' $ ConnectUpdate.Update location connection
     modifyGraph defInverse action success request
@@ -211,10 +211,10 @@ handleAddConnection :: Request AddConnection.Request -> StateT Env BusT ()
 handleAddConnection = modifyGraph defInverse action replyResult where
     getSrcPort src = case src of
         Left portRef -> portRef
-        Right nodeId -> OutPortRef (NodeLoc def nodeId) All
+        Right nodeId -> OutPortRef (NodeLoc def nodeId) []
     getDstPort dst = case dst of
         Left portRef  -> portRef
-        Right nodeLoc -> InPortRef' $ InPortRef nodeLoc Self
+        Right nodeLoc -> InPortRef' $ InPortRef nodeLoc [Self]
     action  (AddConnection.Request location src dst) = Graph.connectCondTC True location (getSrcPort src) (getDstPort dst)
 
 handleAddNode :: Request AddNode.Request -> StateT Env BusT ()
@@ -226,7 +226,7 @@ handleAddNode = modifyGraph defInverse action success where
 
 handleAddPort :: Request AddPort.Request -> StateT Env BusT ()
 handleAddPort = modifyGraph defInverse action replyResult where
-    action  (AddPort.Request location (OutPortRef' (OutPortRef (NodeLoc _ nid) (Projection i _)))) = Graph.addPort location nid i
+    action  (AddPort.Request location (OutPortRef (NodeLoc _ nid) (Projection i : _))) = Graph.addPort location nid i
 
 handleAddSubgraph :: Request AddSubgraph.Request -> StateT Env BusT ()
 handleAddSubgraph = modifyGraph defInverse action replyResult where
@@ -251,7 +251,7 @@ handleRemoveConnection = modifyGraphOk inverse action where
     inverse (RemoveConnection.Request location dst) = do
         connections <- Graph.withGraph location $ runASTOp buildConnections
         case find (\conn -> snd conn == dst) connections of
-            Nothing       -> $notImplemented --TODO[LJK, MM]: Return error here like: Response.Error $ "Cannot find connection by this id: " <> show dst
+            Nothing       -> throwError "Connection does not exist"
             Just (src, _) -> return $ RemoveConnection.Inverse src
     action  (RemoveConnection.Request location dst) = Graph.disconnect location dst
 
@@ -259,7 +259,7 @@ handleRemoveNodes :: Request RemoveNodes.Request -> StateT Env BusT ()
 handleRemoveNodes = modifyGraphOk inverse action where
     inverse (RemoveNodes.Request location nodeLocs) = do
         let nodeIds = convert <$> nodeLocs --TODO[PM -> MM] Use NodeLoc instead of NodeId
-        Graph allNodes allConnections monads <- Graph.withGraph location $ runASTOp buildGraph
+        Graph allNodes allConnections _ _ monads <- Graph.withGraph location $ runASTOp buildGraph
         let idSet = Set.fromList nodeIds
             nodes = flip filter allNodes       $ \node ->   Set.member (node ^. Node.nodeId)            idSet
             conns = flip filter allConnections $ \conn -> ( Set.member (conn ^. _1 . PortRef.srcNodeId) idSet
@@ -270,10 +270,8 @@ handleRemoveNodes = modifyGraphOk inverse action where
 handleRemovePort :: Request RemovePort.Request -> StateT Env BusT ()
 handleRemovePort = modifyGraphOk inverse action where
     inverse (RemovePort.Request location portRef) = do
-        Graph allNodes allConnections monads <- Graph.withGraph location $ runASTOp buildGraph
-        let conns = flip filter allConnections $ case portRef of
-                (OutPortRef' outPortRef) -> (\(src, _) -> src == outPortRef)
-                (InPortRef'  inPortRef)  -> (\(_, dst) -> dst == inPortRef)
+        Graph allNodes allConnections _ _ monads <- Graph.withGraph location $ runASTOp buildGraph
+        let conns = flip filter allConnections $ (== portRef) . fst
         return $ RemovePort.Inverse $ map (uncurry Connection) conns
     action (RemovePort.Request location portRef)  = Graph.removePort location portRef
 
@@ -378,7 +376,7 @@ stdlibFunctions = ["mockFunction"]
 stdlibMethods :: [String]
 stdlibMethods = ["mockMethod"]
 
-mockNSData :: NS.Items Node
+mockNSData :: NS.Items ExpressionNode
 mockNSData = Map.empty
 -- mockNSData = Map.fromList $ functionsList <> modulesList where
 --     nodeSearcherSymbols = words "mockNode1 mockNode2 mockNode3 mockNode4"

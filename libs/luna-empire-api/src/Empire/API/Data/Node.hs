@@ -10,52 +10,57 @@ import           Data.Text                (Text)
 import           Data.UUID.Types          (UUID)
 import           Empire.API.Data.NodeMeta (NodeMeta)
 import qualified Empire.API.Data.NodeMeta as NodeMeta
-import           Empire.API.Data.Port     (OutPortTree, Port, PortId)
+import           Empire.API.Data.Port     (AnyPortId, InPort, InPortId, InPortTree, OutPort, OutPortTree)
 import qualified Empire.API.Data.Port     as Port
 import           Prologue
 
 
 type NodeId = UUID
 
-data NodeType = ExpressionNode { _expression     :: Text }
-              | InputEdge      { _inputEdgePorts :: [OutPortTree Port] }
-              | OutputEdge
-              deriving (Generic, Eq, NFData, Show)
+data ExpressionNode = ExpressionNode { _exprNodeId :: NodeId
+                                     , _expression :: Text
+                                     , _name       :: Maybe Text
+                                     , _code       :: Maybe Text
+                                     , _inPorts    :: InPortTree  InPort
+                                     , _outPorts   :: OutPortTree OutPort
+                                     , _nodeMeta   :: NodeMeta
+                                     , _canEnter   :: Bool
+                                     } deriving (Generic, Eq, NFData, Show, Typeable)
 
-data Node = Node { _nodeId   :: NodeId
-                 , _name     :: Text
-                 , _nodeType :: NodeType
-                 , _canEnter :: Bool
-                 , _ports    :: Map PortId Port -- FIXME[LJK, MK]: At some point we need to drop this map and unify all port types across the project
-                 , _nodeMeta :: NodeMeta
-                 , _code     :: Maybe Text
-                 } deriving (Generic, Eq, NFData, Show, Typeable)
+data InputSidebar = InputSidebar { _inputNodeId    :: NodeId
+                                 , _inputEdgePorts :: [OutPortTree OutPort]
+                                 } deriving (Generic, Eq, NFData, Show, Typeable)
 
-data NodeTypecheckerUpdate = NodeTypecheckerUpdate {
-      _tcNodeId :: NodeId
-    , _tcPorts  :: Map PortId Port
-    } deriving (Generic, Eq, NFData, Show, Typeable)
+data OutputSidebar = OutputSidebar { _outputNodeId    :: NodeId
+                                   , _outputEdgePorts :: InPortTree InPort
+                                   } deriving (Generic, Eq, NFData, Show, Typeable)
 
-makeLenses ''Node
-makeLenses ''NodeType
-makePrisms ''NodeType
+data NodeTypecheckerUpdate = ExpressionUpdate    { _tcNodeId   :: NodeId, _tcInPorts       :: InPortTree InPort, _tcOutPorts :: OutPortTree OutPort }
+                           | OutputSidebarUpdate { _tcNodeId   :: NodeId, _tcInPorts       :: InPortTree InPort }
+                           | InputSidebarUpdate  { _tcNodeId   :: NodeId, _tcInputOutPorts :: [OutPortTree OutPort] }
+                           deriving (Generic, Eq, NFData, Show, Typeable)
+
+makeLenses ''ExpressionNode
+makeLenses ''InputSidebar
+makeLenses ''OutputSidebar
 makeLenses ''NodeTypecheckerUpdate
 
-position :: Lens' Node (Double, Double)
+position :: Lens' ExpressionNode (Double, Double)
 position = nodeMeta . NodeMeta.position
 
-instance Binary Node
-instance Binary NodeType
+instance Binary ExpressionNode
+instance Binary InputSidebar
+instance Binary OutputSidebar
 instance Binary NodeTypecheckerUpdate
 
-isEdge :: Node -> Bool
-isEdge node = isInputEdge node || isOutputEdge node
+class HasNodeId a where
+    nodeId :: Lens' a NodeId
 
-isInputEdge :: Node -> Bool
-isInputEdge node = isJust $ node ^? nodeType . _InputEdge
+instance HasNodeId ExpressionNode where
+    nodeId = exprNodeId
 
-isOutputEdge :: Node -> Bool
-isOutputEdge node = node ^. nodeType == OutputEdge
+instance HasNodeId InputSidebar where
+    nodeId = inputNodeId
 
-makePortsMap :: [Port] -> Map PortId Port
-makePortsMap = Map.fromList . map (view Port.portId &&& id)
+instance HasNodeId OutputSidebar where
+    nodeId = outputNodeId

@@ -7,7 +7,7 @@ import           Data.Text                              (Text)
 import           Empire.API.Data.AsyncUpdate            (AsyncUpdate (..))
 import           Empire.API.Data.GraphLocation          (GraphLocation)
 import           Empire.API.Data.MonadPath              (MonadPath)
-import           Empire.API.Data.Node                   (Node, NodeId, NodeTypecheckerUpdate)
+import           Empire.API.Data.Node                   (ExpressionNode, NodeId, NodeTypecheckerUpdate)
 import           Empire.API.Data.TypeRep                (TypeRep)
 import           Empire.Data.Graph                      (Graph)
 import           Empire.Empire
@@ -23,7 +23,7 @@ notifyMonadsUpdate :: (MonadReader CommunicationEnv m, MonadIO m) => GraphLocati
 notifyMonadsUpdate loc m =
     sendUpdate $ MonadsUpdate $ Monads.Update loc m
 
-notifyNodeUpdate :: (MonadReader CommunicationEnv m, MonadIO m) => GraphLocation -> Node -> m ()
+notifyNodeUpdate :: (MonadReader CommunicationEnv m, MonadIO m) => GraphLocation -> ExpressionNode -> m ()
 notifyNodeUpdate loc n =
     sendUpdate $ NodesUpdate $ Node.Update loc [n]
 

@@ -4,7 +4,7 @@ import           Data.Binary                   (Binary)
 import           Prologue
 
 import           Empire.API.Data.GraphLocation (GraphLocation)
-import           Empire.API.Data.Node          (Node, NodeId)
+import           Empire.API.Data.Node          (NodeId)
 import qualified Empire.API.Response           as Response
 
 import qualified Empire.API.Graph.Request      as G

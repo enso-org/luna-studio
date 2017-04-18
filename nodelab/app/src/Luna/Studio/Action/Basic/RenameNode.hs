@@ -16,6 +16,6 @@ renameNode nl update =
 localRenameNode :: NodeLoc -> Text -> Command State Bool
 localRenameNode nl update = do
     NodeEditor.modifyExpressionNode nl $ do
-        Node.name         .= update
+        Node.name         ?= update
         Node.isNameEdited .= False
     NodeEditor.inGraph nl

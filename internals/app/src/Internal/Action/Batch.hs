@@ -1,12 +1,6 @@
 module Internal.Action.Batch  where
 
 import           Data.UUID.Types                      (UUID)
-import           Empire.API.Data.Connection           (Connection, ConnectionId)
-import           Empire.API.Data.Node                 (Node, NodeId)
-import           Empire.API.Data.NodeMeta             (NodeMeta)
-import           Empire.API.Data.PortDefault          (PortDefault)
-import           Empire.API.Data.PortRef              (AnyPortRef, InPortRef, OutPortRef, dstNodeId, nodeId)
-import           Empire.API.Data.Project              (ProjectId)
 import           Internal.Action.Command           (Command)
 import           Internal.Action.UUID              (registerRequest)
 import qualified Internal.Batch.Connector.Commands as BatchCmd

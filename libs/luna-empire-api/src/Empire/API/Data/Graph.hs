@@ -4,14 +4,16 @@ import           Data.Binary               (Binary)
 import           Prologue                  hiding (TypeRep)
 
 import           Empire.API.Data.MonadPath (MonadPath)
-import           Empire.API.Data.Node      (Node, NodeId)
+import           Empire.API.Data.Node      (ExpressionNode, InputSidebar, OutputSidebar, NodeId)
 import           Empire.API.Data.PortRef   (InPortRef, OutPortRef)
 import           Empire.API.Data.TypeRep   (TypeRep)
 
 
-data Graph = Graph { _nodes       :: [Node]
-                   , _connections :: [(OutPortRef, InPortRef)]
-                   , _monads      :: [MonadPath]
+data Graph = Graph { _nodes         :: [ExpressionNode]
+                   , _connections   :: [(OutPortRef, InPortRef)]
+                   , _inputSidebar  :: Maybe InputSidebar
+                   , _outputSidebar :: Maybe OutputSidebar
+                   , _monads        :: [MonadPath]
                    } deriving (Generic, Eq, NFData, Show)
 
 makeLenses ''Graph

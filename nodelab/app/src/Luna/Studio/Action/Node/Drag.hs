@@ -10,7 +10,7 @@ import           Control.Arrow
 import qualified Data.Map                                    as Map
 import           Data.Position                               (Position, move, vector)
 import           Empire.API.Data.NodeLoc                     (NodeLoc)
-import           Empire.API.Data.Port                        (InPort (Self), OutPort (All), PortId (InPortId))
+import           Empire.API.Data.Port                        (InPortIndex (Self))
 import           Empire.API.Data.PortRef                     (InPortRef (InPortRef), OutPortRef (OutPortRef))
 import           Luna.Studio.Action.Basic                    (connect, localMoveNodes, moveNodes, selectNodes, updatePortSelfVisibility)
 import           Luna.Studio.Action.Command                  (Command)
@@ -23,7 +23,7 @@ import           Luna.Studio.Prelude
 import           Luna.Studio.React.Model.Connection          (Mode (Dimmed, Highlighted), dst, src)
 import qualified Luna.Studio.React.Model.Connection          as Connection
 
-import           Luna.Studio.React.Model.Node.ExpressionNode (isSelected, nodeLoc, ports, position)
+import           Luna.Studio.React.Model.Node.ExpressionNode (inPortAt, isSelected, nodeLoc, position)
 import           Luna.Studio.React.Model.NodeEditor          (currentConnections)
 import           Luna.Studio.React.Model.Port                (ensureVisibility, mode)
 import           Luna.Studio.State.Action                    (Action (begin, continue, end, update), NodeDrag (NodeDrag), nodeDragAction,
@@ -92,10 +92,10 @@ snapConnectionsForNodes mousePos nodeLocs = when (length nodeLocs == 1) $ forM_ 
         mayConnId <- getIntersectingConnections node mousePos
         case mayConnId of
             Just connId -> do
-                let selfPortRef = InPortRef  nl Self
-                    outPortRef  = OutPortRef nl All
+                let selfPortRef = InPortRef  nl [Self]
+                    outPortRef  = OutPortRef nl []
                 mayConn       <- getConnection connId
-                modifyExpressionNode nl $ ports . ix (InPortId Self) . mode %= ensureVisibility
+                modifyExpressionNode nl $ inPortAt [Self] . mode %= ensureVisibility
                 mayConnModel1 <- fmap join . mapM (flip createConnectionModel selfPortRef) $ view src <$> mayConn
                 mayConnModel2 <- fmap join $ mapM (createConnectionModel outPortRef)       $ view dst <$> mayConn
                 case (,,) <$> mayConn <*> mayConnModel1 <*> mayConnModel2 of
@@ -124,7 +124,6 @@ handleNodeDragMouseUp evt nodeDrag = do
             withJust mayConn $ \conn -> do
                 connect (Left $ conn ^. src) $ Right nl
                 connect (Right nl)           $ Left $ conn ^. dst
-        clearSnappedConnection nodeDrag
     continue stopNodeDrag
 
 

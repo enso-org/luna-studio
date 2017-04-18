@@ -5,7 +5,6 @@ module JS.Config
   ( getBackendAddress
   ) where
 
-import qualified Data.JSString       as JSString
 import qualified Data.List           as List
 import           GHCJS.Marshal.Pure  (pFromJSVal)
 import           Internal.Prelude

@@ -4,30 +4,25 @@ module Internal.Handler.Backend.ProjectManager
 
 
 import           JS.Atom
-import qualified Data.UUID.Types                    as UUID
 import qualified Empire.API.Atom.OpenFile           as OpenFile
 import qualified Empire.API.Atom.IsSaved            as IsSaved
-import           Empire.API.Data.Project            (Project, ProjectId)
 import qualified Empire.API.Response                as Response
-
-import qualified Internal.Action.Batch           as BatchCmd (closeFile, isSaved, openFile, saveFile, setProject)
-import           Internal.Action.Command         (Command)
-import qualified Internal.Event.Batch            as Batch
-import qualified Internal.Event.Event                as Event
-import           Internal.Event.Event            (Event (Batch, CustomEvent, Atom))
-import           Internal.Event.Internal         (InternalEvent(..), ActionType(..))
-import           Internal.Handler.Backend.Common (doNothing, handleResponse)
+import qualified Internal.Action.Batch              as BatchCmd (closeFile, isSaved, openFile, saveFile, setProject)
+import           Internal.Action.Command            (Command)
+import qualified Internal.Event.Batch               as Batch
+import           Internal.Event.Event               (Event (Batch, Atom))
+import           Internal.Event.Internal            (InternalEvent(..), ActionType(..))
+import           Internal.Handler.Backend.Common    (doNothing, handleResponse)
 import           Internal.Prelude
-import           Internal.State.Global           (State)
-import           Data.Char                       (toUpper)
+import           Internal.State.Global              (State)
+import           Data.Char                          (toUpper)
 
 handle :: Event -> Maybe (Command State ())
-
-handle (Event.Atom (InternalEvent SetProject path _)) = Just $ BatchCmd.setProject path
-handle (Event.Atom (InternalEvent CloseFile path _))  = Just $ BatchCmd.closeFile path
-handle (Event.Atom (InternalEvent OpenFile path _))   = Just $ BatchCmd.openFile path
-handle (Event.Atom (InternalEvent SaveFile path _))   = Just $ BatchCmd.saveFile path
-handle (Event.Atom (InternalEvent IsSaved path _))    = Just $ BatchCmd.isSaved path
+handle (Atom (InternalEvent SetProject path _)) = Just $ BatchCmd.setProject path
+handle (Atom (InternalEvent CloseFile path _))  = Just $ BatchCmd.closeFile path
+handle (Atom (InternalEvent OpenFile path _))   = Just $ BatchCmd.openFile path
+handle (Atom (InternalEvent SaveFile path _))   = Just $ BatchCmd.saveFile path
+handle (Atom (InternalEvent IsSaved path _))    = Just $ BatchCmd.isSaved path
 
 handle (Batch (Batch.ProjectSet response))    = Just $ handleResponse response doNothing doNothing
 handle (Batch (Batch.FileOpened response))    = Just $ handleResponse response success doNothing where

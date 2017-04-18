@@ -4,14 +4,14 @@ import           Data.Binary                   (Binary)
 import           Prologue
 
 import           Empire.API.Data.GraphLocation (GraphLocation)
-import           Empire.API.Data.PortRef       (AnyPortRef)
+import           Empire.API.Data.PortRef       (OutPortRef)
 import qualified Empire.API.Graph.Request      as G
 import qualified Empire.API.Request            as R
 import qualified Empire.API.Response           as Response
 import qualified Empire.API.Topic              as T
 
 data Request = Request { _location :: GraphLocation
-                       , _portRef  :: AnyPortRef
+                       , _portRef  :: OutPortRef
                        , _name     :: String
                        } deriving (Generic, Eq, NFData, Show)
 

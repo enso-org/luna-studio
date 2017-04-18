@@ -6,7 +6,6 @@ import           Prologue                      hiding (Text)
 import           Prologue                      hiding (Text)
 
 import           Empire.API.Data.GraphLocation (GraphLocation)
-import           Empire.API.Data.Node          (Node)
 import qualified Empire.API.Topic              as T
 
 data Update = Update { _location :: GraphLocation

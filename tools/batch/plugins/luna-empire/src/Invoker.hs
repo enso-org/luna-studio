@@ -17,7 +17,7 @@ import           Empire.API.Data.Node              (NodeId)
 import qualified Empire.API.Data.Node              as Node
 import qualified Empire.API.Data.NodeMeta          as NodeMeta
 import           Empire.API.Data.NodeLoc           (NodeLoc (..))
-import           Empire.API.Data.Port              (InPort (..), OutPort)
+import           Empire.API.Data.Port              (InPortId, OutPortId, InPortIndex (..), OutPortIndex (..))
 import           Empire.API.Data.PortDefault       (PortDefault (Constant), PortValue (DoubleValue))
 import           Empire.API.Data.PortRef           (AnyPortRef (..), InPortRef (..), OutPortRef (..))
 import           Empire.API.Data.Project           (ProjectId)
@@ -135,14 +135,14 @@ removeNode endPoints graphLocation nodeId = sendToBus endPoints $ RemoveNodes.Re
 setNodeMeta :: EP.BusEndPoints -> GraphLocation -> NodeId -> Double -> Double -> Bool -> IO ()
 setNodeMeta endPoints graphLocation nodeId x y req = sendToBus endPoints $ SetNodesMeta.Request graphLocation [(nodeId, NodeMeta.NodeMeta (x, y) req)]
 
-connect :: EP.BusEndPoints -> GraphLocation -> NodeId -> OutPort -> NodeId -> InPort -> IO ()
+connect :: EP.BusEndPoints -> GraphLocation -> NodeId -> OutPortId -> NodeId -> InPortId -> IO ()
 connect endPoints graphLocation srcNodeId outPort dstNodeId inPort = sendToBus endPoints $ AddConnection.Request graphLocation (Left $ OutPortRef (NodeLoc def srcNodeId) outPort) (Left . InPortRef' $ InPortRef (NodeLoc def dstNodeId) inPort)
 
-disconnect :: EP.BusEndPoints -> GraphLocation -> NodeId -> InPort -> IO ()
+disconnect :: EP.BusEndPoints -> GraphLocation -> NodeId -> InPortId -> IO ()
 disconnect endPoints graphLocation  dstNodeId inPort = sendToBus endPoints $ RemoveConnection.Request graphLocation (InPortRef (NodeLoc def dstNodeId) inPort)
 
 setPortValue :: EP.BusEndPoints -> GraphLocation -> NodeId -> Int -> Double -> IO ()
-setPortValue endPoints graphLocation nodeId portId value = sendToBus endPoints $ SetPortDefault.Request graphLocation (InPortRef' $ InPortRef (NodeLoc def nodeId) (Arg portId)) (Constant $ DoubleValue value)
+setPortValue endPoints graphLocation nodeId portId value = sendToBus endPoints $ SetPortDefault.Request graphLocation (InPortRef (NodeLoc def nodeId) [Arg portId]) (Constant $ DoubleValue value)
 
 getProgram :: EP.BusEndPoints -> GraphLocation -> IO ()
 getProgram endPoints graphLocation = sendToBus endPoints $ GetProgram.Request graphLocation

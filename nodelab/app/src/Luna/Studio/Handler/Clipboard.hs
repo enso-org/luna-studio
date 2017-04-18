@@ -22,7 +22,7 @@ import qualified Luna.Studio.Data.Graph                      as Graph
 import           Luna.Studio.Event.Event                     (Event (Shortcut))
 import qualified Luna.Studio.Event.Shortcut                  as Shortcut
 import           Luna.Studio.Prelude
-import           Luna.Studio.React.Model.Node                (ExpressionNode, _Expression)
+import           Luna.Studio.React.Model.Node                (ExpressionNode)
 import           Luna.Studio.React.Model.Node.ExpressionNode (nodeLoc, position)
 import           Luna.Studio.State.Global                    (State, workspace)
 import qualified Luna.Studio.State.Global                    as Global
@@ -49,7 +49,7 @@ pasteFromClipboard clipboardData = do
     withJust (decode $ pack clipboardData) $ \subgraph -> do
         selectedBc <- use (workspace . currentLocation . GraphLocation.breadcrumb) --FIXME
         graphNodesLocs <- Set.fromList . map (view nodeLoc)  <$> getExpressionNodes
-        let nodes       = (convert . (NodePath selectedBc,) <$> HashMap.elems (subgraph ^. Graph.nodesMap)) ^.. traverse . _Expression
+        let nodes       = (convert . (NodePath selectedBc,) <$> HashMap.elems (subgraph ^. Graph.nodesMap))
             connections = filter (\conn -> Set.member (conn ^. Connection.src . PortRef.srcNodeLoc) graphNodesLocs) $ HashMap.elems $ subgraph ^. Graph.connectionsMap
         workspacePos <- translateToWorkspace =<< use (Global.ui . UI.mousePos)
         let shiftX = workspacePos ^. x - minimum (map (^. position . x) nodes)

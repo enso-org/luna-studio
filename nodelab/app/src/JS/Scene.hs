@@ -2,38 +2,17 @@
 {-# LANGUAGE OverloadedStrings #-}
 module JS.Scene where
 
-import           Control.Exception      (handle)
-import           Data.ScreenPosition    (ScreenPosition, fromDoubles)
-import           Data.Size              (Size)
-import qualified Data.Size              as Size
+import           Control.Exception               (handle)
+import           Data.ScreenPosition             (fromDoubles)
+import qualified Data.Size                       as Size
 import           GHCJS.Foreign.Callback
-import           GHCJS.Types            (JSException (JSException))
+import           GHCJS.Types                     (JSException (JSException))
 
-import qualified JS.Config              as Config
+import qualified JS.Config                       as Config
 import           Luna.Studio.Prelude
+import           Luna.Studio.React.Model.Layout  (Scene (Scene))
+import           Luna.Studio.React.Model.Sidebar (InputSidebar (InputSidebar), OutputSidebar (OutputSidebar))
 
-
-
-data InputSidebar = InputSidebar { _inputSidebarPosition :: ScreenPosition
-                                 , _inputSidebarSize     :: Size
-                                 } deriving (Default, Eq, Generic, Show)
-
-makeLenses ''InputSidebar
-
-data OutputSidebar = OutputSidebar { _outputSidebarPosition :: ScreenPosition
-                                   , _outputSidebarSize     :: Size
-                                   } deriving (Default, Eq, Generic, Show)
-
-makeLenses ''OutputSidebar
-
-data Scene = Scene
-        { _position      :: ScreenPosition
-        , _size          :: Size
-        , _inputSidebar  :: Maybe InputSidebar
-        , _outputSidebar :: Maybe OutputSidebar
-        } deriving (Default, Eq, Generic, Show)
-
-makeLenses ''Scene
 
 sceneId :: JSString
 sceneId = Config.prefix "Graph"
