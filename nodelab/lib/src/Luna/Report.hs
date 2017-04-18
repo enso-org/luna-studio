@@ -1,9 +1,9 @@
 {-# LANGUAGE DeriveAnyClass #-}
 
-module Luna.Studio.Report where
+module Luna.Report where
 
-import           JS.Atom                       (pushNotification)
-import           Luna.Studio.Data.Notification
+import           Atom                       (pushNotification)
+import           Luna.Data.Notification
 import           Luna.Prelude
 
 

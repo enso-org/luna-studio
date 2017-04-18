@@ -4,7 +4,7 @@ import           JS.Config                     (getBackendAddress)
 import           JS.WebSocket                  (WebSocket)
 import qualified JS.WebSocket                  as WS
 import           Luna.Prelude
-import           Luna.Studio.Report
+import           Luna.Report
 
 
 withActiveConnection :: (WebSocket -> IO ()) -> IO ()

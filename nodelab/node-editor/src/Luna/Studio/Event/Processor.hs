@@ -39,7 +39,7 @@ import qualified Luna.Studio.Handler.Sidebar                as Sidebar
 import qualified Luna.Studio.Handler.Undo                   as Undo
 import qualified Luna.Studio.Handler.Visualization          as Visualization
 import           Luna.Prelude
-import           Luna.Studio.Report
+import           Luna.Report
 import           Luna.Studio.State.Global                   (State)
 import qualified Luna.Studio.State.Global                   as Global
 

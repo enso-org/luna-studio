@@ -3,7 +3,7 @@ module Luna.Studio.Handler.Backend.Control
     ) where
 
 import           Luna.Prelude
-import           Luna.Studio.Report
+import           Luna.Report
 
 import qualified Luna.Studio.Event.Batch    as Batch
 import           Luna.Studio.Event.Event    (Event (Batch))

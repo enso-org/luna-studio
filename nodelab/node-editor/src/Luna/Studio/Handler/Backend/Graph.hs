@@ -57,7 +57,7 @@ import qualified Luna.Studio.Event.Event                      as Event
 import           Luna.Studio.Handler.Backend.Common           (doNothing, handleResponse)
 import           Luna.Prelude
 import qualified Luna.Studio.React.Model.Node.ExpressionNode  as Node
-import           Luna.Studio.Report
+import           Luna.Report
 import           Luna.Studio.State.Global                     (State)
 import qualified Luna.Studio.State.Global                     as Global
 

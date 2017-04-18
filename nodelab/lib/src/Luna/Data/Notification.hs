@@ -1,6 +1,6 @@
 {-# LANGUAGE DeriveAnyClass #-}
 
-module Internal.Error.Error where
+module Luna.Data.Notification where
 
 import           Luna.Prelude
 
