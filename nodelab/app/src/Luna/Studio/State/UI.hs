@@ -2,7 +2,7 @@
 module Luna.Studio.State.UI where
 
 import           Data.ScreenPosition         (ScreenPosition (ScreenPosition))
-import           Data.Vector                 (Vector2 (Vector2))
+import           Data.Vector2                 (Vector2 (Vector2))
 import           Luna.Studio.Prelude
 import           Luna.Studio.React.Model.App (App)
 import           Luna.Studio.React.Store     (Ref)

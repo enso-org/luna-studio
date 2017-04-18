@@ -8,7 +8,7 @@ module Data.Position
 where
 
 import           Data.Aeson          (FromJSON, ToJSON)
-import           Data.Vector         hiding (fromTuple, toTuple)
+import           Data.Vector2         hiding (fromTuple, toTuple)
 import           Luna.Studio.Prelude
 
 -----------------------

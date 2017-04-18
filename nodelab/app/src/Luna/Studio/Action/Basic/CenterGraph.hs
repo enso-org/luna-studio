@@ -3,7 +3,7 @@ module Luna.Studio.Action.Basic.CenterGraph where
 import           Data.Matrix                                 (multStd2)
 import           Data.Position                               (minimumRectangle, vector, x, y)
 import           Data.Size                                   (Size (Size))
-import           Data.Vector                                 (Vector2 (Vector2), scalarProduct)
+import           Data.Vector2                                 (Vector2 (Vector2), scalarProduct)
 import           Luna.Studio.Action.Basic.DrawConnection     (redrawConnectionsForSidebarNodes)
 import           Luna.Studio.Action.Basic.ModifyCamera       (resetCamera)
 import           Luna.Studio.Action.Command                  (Command)

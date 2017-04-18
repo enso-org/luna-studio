@@ -2,7 +2,7 @@
 module Luna.Studio.Data.Geometry where
 
 import           Data.Position       (Position, distanceSquared, fromDoubles, move, vector, x, y)
-import           Data.Vector         (dotV, scalarProduct)
+import           Data.Vector2         (dotV, scalarProduct)
 import           Luna.Studio.Prelude
 
 

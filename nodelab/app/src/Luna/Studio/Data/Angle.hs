@@ -2,7 +2,7 @@ module Luna.Studio.Data.Angle where
 
 import           Data.Fixed
 import           Data.Position
-import           Data.Vector
+import           Data.Vector2
 import           Luna.Studio.Prelude
 
 type Angle  = Double

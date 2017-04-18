@@ -13,7 +13,7 @@ module Luna.Studio.Action.Camera.Pan
 
 import           Data.Matrix                           (setElem)
 import           Data.ScreenPosition                   (ScreenPosition, vector)
-import           Data.Vector                           (Vector2 (Vector2))
+import           Data.Vector2                           (Vector2 (Vector2))
 import           Luna.Studio.Action.Basic              (modifyCamera)
 import           Luna.Studio.Action.Command            (Command)
 import           Luna.Studio.Action.State.Action       (beginActionWithKey, continueActionWithKey, removeActionFromState,
