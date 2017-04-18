@@ -14,16 +14,16 @@ import           Luna.Studio.Data.CameraTransformation       (CameraTransformati
 import           Luna.Prelude
 import           Luna.Studio.React.Model.Connection          (ConnectionsMap, CurrentConnection)
 import           Luna.Studio.React.Model.ConnectionPen       (ConnectionPen)
+import           Luna.Studio.React.Model.Layout              (Layout)
+import qualified Luna.Studio.React.Model.Layout              as Layout
 import           Luna.Studio.React.Model.Node                (ExpressionNode, ExpressionNodesMap, HasNodeLoc, InputNode, NodeLoc,
                                                               OutputNode, nodeId)
 import qualified Luna.Studio.React.Model.Node.ExpressionNode as ExpressionNode
-import           Luna.Studio.React.Model.Scene               (Scene)
 import           Luna.Studio.React.Model.Searcher            (Searcher)
 import           Luna.Studio.React.Model.SelectionBox        (SelectionBox)
 
 
-data NodeEditor = NodeEditor { _screenTransform     :: CameraTransformation
-                             , _expressionNodes     :: ExpressionNodesMap
+data NodeEditor = NodeEditor { _expressionNodes     :: ExpressionNodesMap
                              , _inputNode           :: Maybe InputNode
                              , _outputNode          :: Maybe OutputNode
                              , _monads              :: [MonadPath]
@@ -35,10 +35,13 @@ data NodeEditor = NodeEditor { _screenTransform     :: CameraTransformation
                              , _selectionBox        :: Maybe SelectionBox
                              , _searcher            :: Maybe Searcher
 
-                             , _scene               :: Maybe Scene
+                             , _layout              :: Layout
                              } deriving (Default, Eq, Generic)
 
 makeLenses ''NodeEditor
+
+screenTransform :: Lens' NodeEditor CameraTransformation
+screenTransform = layout . Layout.screenTransform
 
 expressionNodesRecursive :: Getter NodeEditor [ExpressionNode]
 expressionNodesRecursive = to (concatMap expressionNodesRecursive' . HashMap.elems . view expressionNodes) where

@@ -4,14 +4,13 @@ module JS.Scene where
 
 import           Control.Exception               (handle)
 import           Data.ScreenPosition             (fromDoubles)
-import           Data.Size                       (Size)
 import qualified Data.Size                       as Size
 import           GHCJS.Foreign.Callback
 import           GHCJS.Types                     (JSException (JSException))
 
 import qualified JS.Config                       as Config
 import           Luna.Prelude
-import           Luna.Studio.React.Model.Scene   (Scene (Scene))
+import           Luna.Studio.React.Model.Layout  (Scene (Scene))
 import           Luna.Studio.React.Model.Sidebar (InputSidebar (InputSidebar), OutputSidebar (OutputSidebar))
 
 

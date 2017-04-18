@@ -37,7 +37,7 @@ import           Empire.API.Data.NodeLoc            (NodeLoc (..))
 import           Empire.API.Data.NodeMeta           (NodeMeta)
 import qualified Empire.API.Data.NodeSearcher       as NS
 import           Empire.API.Data.Port               (InPort (..), OutPort (..), Port (..), InPortIndex (..), OutPortIndex (..), PortState (..), getPortNumber)
-import           Empire.API.Data.PortDefault        (PortValue (..))
+import           Empire.API.Data.PortDefault        (PortValue (..),VisualizationValue (..))
 import           Empire.API.Data.PortRef            (InPortRef (..), OutPortRef (..))
 import           Empire.API.Data.PortRef            as PortRef
 import           Empire.API.Data.TypeRep            (TypeRep (TStar))
@@ -99,7 +99,7 @@ notifyCodeUpdate location = do
         Left err -> logger Logger.error $ errorMessage <> err
         Right code -> sendToBus' $ CodeUpdate.Update location $ Text.pack code
 
-notifyNodeResultUpdate :: GraphLocation -> NodeId -> [PortValue] -> Text -> StateT Env BusT ()
+notifyNodeResultUpdate :: GraphLocation -> NodeId -> [VisualizationValue] -> Text -> StateT Env BusT ()
 notifyNodeResultUpdate location nodeId values name = sendToBus' $ NodeResultUpdate.Update location nodeId (NodeValue name values) 42
 -- FIXME: report correct execution time
 

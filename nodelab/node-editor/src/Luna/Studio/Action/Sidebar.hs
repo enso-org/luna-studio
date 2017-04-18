@@ -22,11 +22,11 @@ import           Luna.Studio.Action.State.Scene           (getInputSidebarSize)
 import           Luna.Studio.Event.Mouse                  (mousePosition)
 import           Luna.Prelude
 import           Luna.Studio.React.Model.Constants        (gridSize)
+import qualified Luna.Studio.React.Model.Layout           as Scene
 import           Luna.Studio.React.Model.Node.SidebarNode (NodeLoc, countProjectionPorts, fixedBottomPos, outPortAt)
 import           Luna.Studio.React.Model.Port             (OutPortIndex (Projection), getPortNumber)
 import qualified Luna.Studio.React.Model.Port             as Port
-import qualified Luna.Studio.React.Model.Scene            as Scene
-import           Luna.Studio.React.Model.Sidebar          (portPositionInInputSidebar, portPositionInOutputSidebar)
+import           Luna.Studio.React.Model.Sidebar          (portPositionInInputSidebar)
 import qualified Luna.Studio.React.Model.Sidebar          as Sidebar
 import qualified Luna.Studio.React.View.Sidebar           as Sidebar
 import           Luna.Studio.State.Action                 (Action (begin, continue, end, update), Connect, Mode (Click, Drag),
