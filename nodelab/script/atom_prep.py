@@ -51,10 +51,10 @@ internals_js = glob.glob('../.stack-work/**/bin/luna-atom.jsexe/all.js',recursiv
 
 prepare_ghcjs('../atom/lib/gen/ghcjs-code.js', '../node-editor/env.ghcjs', nodelab_js[0])
 prepare_ghcjs('../atom/lib/gen/ghcjs-code2.js', '../luna-atom/env-internals.ghcjs', internals_js[0])
-prepare_css('../atom/styles/app.css', '../node-editor/styles/*')
+prepare_css('../atom/styles/app.css', '../node-editor/styles/*.css')
 # copy files
 
-distutils.dir_util.copy_tree('../app/js', '../atom/lib/gen')
+distutils.dir_util.copy_tree('../node-editor/js', '../atom/lib/gen')
 shutil.copy('../luna-atom/js/atom-callback-internals.js', '../atom/lib/gen')
 shutil.copy('../luna-atom/js/app-internals.coffee', '../atom/lib/gen')
 shutil.copy('../node-editor/config.release.js', '../atom/lib/gen')
