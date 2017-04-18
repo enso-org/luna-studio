@@ -119,9 +119,8 @@ nodeValue_ ref nl mayPos visIx value = do
         strDiv = div_ [ "className" $= "visual" ] . elemString . normalize
 
 fromJsonValue :: String -> ReactElementM ViewEventHandler ()
-fromJsonValue a = case (Aeson.decode $ ByteString.pack a :: Maybe Aeson.Value) of
-    Just (Aeson.Array  _) -> table_ $ do
-                                mempty
+fromJsonValue value = case (Aeson.decode $ ByteString.pack value :: Maybe Aeson.Value) of
+    Just (Aeson.Array  a) -> elemString "(Array)"
     Just (Aeson.Object _) -> elemString "(Object)"
     Just (Aeson.String _) -> elemString "(String)"
     Just (Aeson.Number _) -> elemString "(Number)"
