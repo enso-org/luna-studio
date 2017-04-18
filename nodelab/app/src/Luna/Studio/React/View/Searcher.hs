@@ -40,9 +40,10 @@ searcher =  React.defineView name $ \(ref, camera, s) -> do
     let nodePos     = s ^. Searcher.position
         mode        = s ^. Searcher.mode
         nodePreview = convert . (NodeLoc.empty,) <$> (s ^. Searcher.selectedNode)
-        className = Style.prefixFromList ( "searcher" : ( case mode of
+        className   = Style.prefixFromList ( "searcher" : ( case mode of
                                                                     Searcher.Node    { } -> [ "searcher--node" ]
                                                                     Searcher.Command { } -> [ "searcher--command"   ]))
+        mayCustomInput = if s ^. Searcher.replaceInput then ["value" $= convert (s ^. Searcher.input)] else []
     div_
         [ "key"       $= name
         , "className" $= className
@@ -55,15 +56,14 @@ searcher =  React.defineView name $ \(ref, camera, s) -> do
             , onMouseUp   $ \e _ -> [stopPropagation e]
             , onClick     $ \e _ -> [stopPropagation e]
             ] $ do
-            input_
+            input_ (
                 [ "key"       $= "searchInput"
                 , "className" $= Style.prefix "searcher__input"
                 , "id"        $= searcherId
-                , "value"     $= convert (s ^. Searcher.input)
                 , onKeyDown   $ handleKeyDown ref
                 , onKeyUp     $ \_ k -> dispatch ref $ UI.SearcherEvent $ KeyUp k
                 , onChange    $ \e -> let val = target e "value" in dispatch ref $ UI.SearcherEvent $ InputChanged val
-                ]
+                ] ++ mayCustomInput )
             div_
                 [ "key"       $= "searcherResults"
                 , "className" $= Style.prefix "searcher__results"
