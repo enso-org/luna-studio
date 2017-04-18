@@ -1,14 +1,13 @@
 module Luna.Studio.Action.State.Model.ExpressionNode where
 
 import           Control.Monad                               (filterM)
-import           Data.Position                               (Position, x, y)
+import           Data.Position                               (Position)
 import           Data.ScreenPosition                         (fromDoubles)
 import           Empire.API.Data.PortRef                     (InPortRef (InPortRef), toAnyPortRef)
 import           Luna.Studio.Action.Command                  (Command)
 import           Luna.Studio.Action.State.Action             (checkIfActionPerfoming)
 import           Luna.Studio.Action.State.NodeEditor         (getExpressionNodes, inGraph)
 import           Luna.Studio.Action.State.Scene              (translateToWorkspace)
-import           Luna.Studio.Data.Angle                      (Angle)
 import           Luna.Studio.Data.Geometry                   (isPointInCircle, isPointInRectangle)
 import           Luna.Studio.Prelude
 import           Luna.Studio.React.Model.Connection          (toValidEmpireConnection)
@@ -25,15 +24,6 @@ foreign import javascript safe "document.getElementById($1).getBoundingClientRec
 foreign import javascript safe "document.getElementById($1).getBoundingClientRect().right"  expandedNodeRight  :: JSString -> IO Double
 foreign import javascript safe "document.getElementById($1).getBoundingClientRect().bottom" expandedNodeBottom :: JSString -> IO Double
 
-nodeToNodeAngle :: Position -> Position -> Angle
-nodeToNodeAngle src dst =
-    let srcX = src ^. x
-        srcY = src ^. y
-        dstX = dst ^. x
-        dstY = dst ^. y
-    in  if srcX < dstX
-            then atan ((srcY - dstY) / (srcX - dstX))
-            else atan ((srcY - dstY) / (srcX - dstX)) + pi
 
 isPointInNode :: Position -> ExpressionNode -> Command State Bool
 isPointInNode p node =

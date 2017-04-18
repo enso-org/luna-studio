@@ -21,7 +21,7 @@ import qualified Empire.API.Data.Node                     as Empire
 import           Empire.API.Data.NodeLoc                  (NodeLoc (NodeLoc), NodePath)
 import qualified Empire.API.Data.NodeMeta                 as NodeMeta
 import           Empire.API.Graph.CollaborationUpdate     (ClientId)
-import           Empire.API.Graph.NodeResultUpdate    (NodeValue (NodeError), NodeVisualization)
+import           Empire.API.Graph.NodeResultUpdate        (NodeValue (NodeError), NodeVisualization)
 import           Luna.Studio.Prelude
 import           Luna.Studio.React.Model.IsNode           as X
 import           Luna.Studio.React.Model.Node.SidebarNode (InputNode, OutputNode)
