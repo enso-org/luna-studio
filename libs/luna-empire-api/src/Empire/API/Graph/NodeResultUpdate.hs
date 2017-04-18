@@ -3,7 +3,6 @@ module Empire.API.Graph.NodeResultUpdate where
 import           Data.Binary                   (Binary)
 import           Data.Text                     (Text)
 import           Prologue                      hiding (Text, TypeRep)
-import           Prologue                      hiding (Text, TypeRep)
 import           Empire.API.Data.Error         (Error)
 import           Empire.API.Data.GraphLocation (GraphLocation)
 import           Empire.API.Data.Node          (NodeId)
@@ -14,7 +13,7 @@ import qualified Empire.API.Topic              as Topic
 type ShortValue = Text
 
 data NodeValue = NodeValue ShortValue [VisualizationValue]
-               | NodeError (Error TypeRep)
+               | NodeError Error
                deriving (Show, Eq, Generic, NFData)
 makePrisms ''NodeValue
 

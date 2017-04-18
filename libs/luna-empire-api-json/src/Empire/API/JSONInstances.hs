@@ -161,7 +161,8 @@ instance FromJSON MonadPath.MonadPath
 
 instance ToJSON IsSaved.Saved
 
-instance ToJSON t => ToJSON (Error.Error t)
+instance ToJSON Error.ErrorType
+instance ToJSON Error.Error
 
 
 instance ToJSON AddConnection.Request
