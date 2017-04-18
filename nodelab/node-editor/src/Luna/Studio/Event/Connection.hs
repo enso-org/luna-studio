@@ -3,7 +3,7 @@
 module Luna.Studio.Event.Connection where
 
 import           Data.Aeson                             (ToJSON, toJSON)
-import           Luna.Studio.Batch.Connector.Connection (WebMessage)
+import           Luna.Batch.Connector.Connection (WebMessage)
 import           Luna.Prelude
 
 data Event = Message { _message :: WebMessage }

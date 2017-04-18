@@ -7,7 +7,7 @@ import           Data.Monoid                                (Last (..))
 import           GHCJS.Prim                                 (JSException)
 
 import qualified JS.Debug
-import           JS.WebSocket                               (WebSocket)
+import           WebSocket                               (WebSocket)
 import           Internal.Action.Command                 (Command, execCommand)
 import           Internal.Event.Event                    (Event)
 import qualified Internal.Event.Event                    as Event

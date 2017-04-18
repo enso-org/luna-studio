@@ -2,8 +2,8 @@ module Internal.Event.Loader where
 
 import           JS.Atom                 (pushStatus)
 import           JS.Config               (getBackendAddress)
-import           JS.WebSocket            (WebSocket)
-import qualified JS.WebSocket            as WS
+import           WebSocket            (WebSocket)
+import qualified WebSocket            as WS
 import           Luna.Prelude
 
 

@@ -15,10 +15,8 @@ import           GHCJS.Prim                             (fromJSString)
 
 import qualified JS.Atom                                as Atom
 import qualified JS.CustomEvent                         as CustomEvent
--- import qualified JS.Scene                               as Scene
--- import qualified JS.UI                                  as UI
-import qualified JS.WebSocket                           as WebSocket
-import qualified Internal.Batch.Connector.Connection as BatchConnection
+import qualified WebSocket                           as WebSocket
+import qualified Luna.Batch.Connector.Connection as BatchConnection
 import qualified Internal.Event.Connection           as Connection
 import qualified Internal.Event.CustomEvent          as CustomEvent
 import           Internal.Event.Event                (Event (Atom, Connection, CustomEvent, Text))

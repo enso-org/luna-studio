@@ -42,7 +42,7 @@ import qualified Empire.API.Project.ExportProject       as ExportProject
 import qualified Empire.API.Project.ImportProject       as ImportProject
 import qualified Empire.API.Project.ListProjects        as ListProjects
 import qualified Empire.API.Project.OpenProject         as OpenProject
-import           Luna.Studio.Batch.Connector.Connection (Message (Message), sendRequest, sendUpdate)
+import           Luna.Batch.Connector.Connection (Message (Message), sendRequest, sendUpdate)
 import           Luna.Studio.Batch.Workspace            (Workspace)
 import           Luna.Studio.Batch.Workspace            (currentLocation)
 import           Luna.Prelude

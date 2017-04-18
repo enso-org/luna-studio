@@ -12,7 +12,7 @@ import           System.Random               (newStdGen)
 import qualified JS.Config                   as Config
 import qualified JS.GraphLocation            as GraphLocation
 import           JS.UUID                     (generateUUID)
-import           JS.WebSocket                (WebSocket)
+import           WebSocket                   (WebSocket)
 import qualified Luna.Studio.Batch.Workspace as Workspace
 import           Luna.Studio.Event.Engine    (LoopRef (LoopRef))
 import qualified Luna.Studio.Event.Engine    as Engine

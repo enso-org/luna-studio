@@ -1,6 +1,6 @@
 {-# LANGUAGE JavaScriptFFI #-}
 
-module JS.WebSocket (WebSocket
+module WebSocket (WebSocket
                     , connect
                     , getCode
                     , getData
@@ -12,14 +12,14 @@ module JS.WebSocket (WebSocket
                     , onOpen
                     , send
                     ) where
+
 import           Data.JSString
 import           GHCJS.Foreign.Callback
 import           GHCJS.Marshal.Pure     (PFromJSVal (..), PToJSVal (..))
 import           GHCJS.Types            (IsJSVal)
 import           Luna.Prelude
 
-
-newtype WebSocket      = WebSocket      JSVal deriving (PFromJSVal, PToJSVal, NFData)
+newtype WebSocket      = WebSocket      JSVal deriving (PFromJSVal, PToJSVal)
 newtype WSMessageEvent = WSMessageEvent JSVal deriving (PFromJSVal, PToJSVal)
 newtype WSClosedEvent  = WSClosedEvent  JSVal deriving (PFromJSVal, PToJSVal)
 

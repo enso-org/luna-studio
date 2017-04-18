@@ -10,7 +10,7 @@ import           System.Random               (newStdGen)
 
 import qualified JS.GraphLocation            as GraphLocation
 import           JS.UUID                     (generateUUID)
-import           JS.WebSocket                (WebSocket)
+import           WebSocket                (WebSocket)
 import qualified Internal.Batch.Workspace as Workspace
 import           Internal.Event.Engine    (LoopRef (LoopRef))
 import qualified Internal.Event.Engine    as Engine

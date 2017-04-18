@@ -1,5 +1,5 @@
 {-# LANGUAGE DeriveAnyClass #-}
-module Internal.Batch.Connector.Connection where
+module Luna.Batch.Connector.Connection where
 
 import           Data.Binary                 (Binary)
 import qualified Data.Binary                 as Binary
@@ -10,7 +10,7 @@ import           Data.Text.Lazy.Encoding     (decodeUtf8)
 import           Data.UUID.Types             (UUID)
 import           Empire.API.Request          (Request (..))
 import qualified Empire.API.Topic            as Topic
-import           JS.WebSocket
+import           WebSocket
 import           Luna.Prelude         hiding (Text)
 
 data ControlCode = ConnectionTakeover
@@ -49,8 +49,7 @@ deserialize = Binary.decode . Base64.decodeLenient . pack
 sendMessages :: [WebMessage] -> IO ()
 sendMessages msgs = do
     socket <- getWebSocket
-    let serialized = serialize $ Frame msgs
-    send socket serialized
+    send socket $ serialize $ Frame msgs
 
 sendMessage :: WebMessage -> IO ()
 sendMessage msg = sendMessages [msg]

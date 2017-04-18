@@ -7,7 +7,7 @@ import qualified Data.Map.Lazy                          as Map
 import           Luna.Prelude                    hiding (cons)
 
 import qualified Empire.API.Topic                       as Topic
-import           Internal.Batch.Connector.Connection (ControlCode (ConnectionTakeover, Welcome), WebMessage (ControlMessage, WebMessage))
+import           Luna.Batch.Connector.Connection (ControlCode (ConnectionTakeover, Welcome), WebMessage (ControlMessage, WebMessage))
 import           Internal.Event.Batch                as Batch
 import           Internal.Event.Connection           as Connection
 import qualified Internal.Event.Event                as Event
@@ -21,35 +21,8 @@ handle :: forall a. (Binary a, Topic.MessageTopic a) => (a -> Batch.Event) -> (S
 handle cons = (Topic.topic (undefined :: a), cons . decode)
 
 handlers :: Map.Map String (ByteString -> Batch.Event)
-handlers = Map.fromList [ --handle GetProgramResponse
-                        -- , handle AddConnectionResponse
-                        -- , handle AddNodeResponse
-                        -- , handle AddPortResponse
-                        -- , handle AddSubgraphResponse
-                        -- , handle CodeUpdate
-                          handle CollaborationUpdate
-                        -- , handle ConnectUpdate
-                        -- , handle DumpGraphVizResponse
+handlers = Map.fromList [ handle CollaborationUpdate
                         , handle EmpireStarted
-                        -- , handle GetSubgraphsResponse
-                        -- , handle MonadsUpdate
-                        -- , handle MovePortResponse
-                        -- , handle NodeResultUpdate
-                        -- , handle NodesUpdate
-                        -- , handle NodeTypecheckerUpdate
-                        -- , handle RedoResponse
-                        -- , handle RemoveConnectionResponse
-                        -- , handle RemoveConnectionUpdate
-                        -- , handle RemoveNodesResponse
-                        -- , handle RemovePortResponse
-                        -- , handle RenameNodeResponse
-                        -- , handle RenamePortResponse
-                        -- , handle SearchNodesResponse
-                        -- , handle SetNodeCodeResponse
-                        -- , handle SetNodeExpressionResponse
-                        -- , handle SetNodesMetaResponse
-                        -- , handle SetPortDefaultResponse
-                        -- , handle TypeCheckResponse
                         , handle ProjectSet
                         , handle FileClosed
                         , handle FileOpened

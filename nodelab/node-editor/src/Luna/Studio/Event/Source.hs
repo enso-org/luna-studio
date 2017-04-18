@@ -17,8 +17,8 @@ import qualified JS.Atom                                as Atom
 import qualified JS.CustomEvent                         as CustomEvent
 import qualified JS.Scene                               as Scene
 import qualified JS.UI                                  as UI
-import qualified JS.WebSocket                           as WebSocket
-import qualified Luna.Studio.Batch.Connector.Connection as BatchConnection
+import qualified WebSocket                              as WebSocket
+import qualified Luna.Batch.Connector.Connection as BatchConnection
 import qualified Luna.Studio.Event.Connection           as Connection
 import qualified Luna.Studio.Event.CustomEvent          as CustomEvent
 import           Luna.Studio.Event.Event                (Event (Connection, CustomEvent, UI))

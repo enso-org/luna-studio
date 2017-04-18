@@ -7,7 +7,7 @@ import qualified Data.Map.Lazy                          as Map
 import           Luna.Prelude                    hiding (cons)
 
 import qualified Empire.API.Topic                       as Topic
-import           Luna.Studio.Batch.Connector.Connection (ControlCode (ConnectionTakeover, Welcome), WebMessage (ControlMessage, WebMessage))
+import           Luna.Batch.Connector.Connection (ControlCode (ConnectionTakeover, Welcome), WebMessage (ControlMessage, WebMessage))
 import           Luna.Studio.Event.Batch                as Batch
 import           Luna.Studio.Event.Connection           as Connection
 import qualified Luna.Studio.Event.Event                as Event

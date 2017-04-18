@@ -7,7 +7,7 @@ import           Data.Monoid                                (Last (..))
 import           GHCJS.Prim                                 (JSException)
 
 import qualified JS.Debug
-import           JS.WebSocket                               (WebSocket)
+import           WebSocket                                  (WebSocket)
 import           Luna.Studio.Action.Command                 (Command, execCommand)
 import           Luna.Studio.Action.State.App               (renderIfNeeded)
 import           Luna.Studio.Event.Event                    (Event)

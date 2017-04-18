@@ -52,6 +52,7 @@ dependencies:
   - react-flux
   - text
   - transformers
+  - uuid-types
   - unordered-containers
 
 
