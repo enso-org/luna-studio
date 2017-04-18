@@ -8,7 +8,7 @@ module Data.ScreenPosition
 where
 
 import           Data.Aeson          (FromJSON, ToJSON)
-import           Data.Vector
+import           Data.Vector2
 import           Luna.Prelude
 -----------------------------
 -- === ScreenPosition === ---

@@ -5,7 +5,7 @@ import           Control.DeepSeq     (NFData)
 import           Data.Aeson          (ToJSON)
 import           Data.Position       (Position (Position), vector)
 import           Data.Timestamp      (Timestamp)
-import           Data.Vector         (scalarProduct)
+import           Data.Vector2         (scalarProduct)
 import           Luna.Prelude
 
 

@@ -5,7 +5,8 @@ import           Data.Position                       (Position)
 import           Data.ScreenPosition                 (ScreenPosition (ScreenPosition))
 import qualified Data.ScreenPosition                 as ScreenPosition
 import           Data.Size                           (Size)
-import           Data.Vector                         (scalarProduct, vector, x, y)
+import           Data.Vector2                         (scalarProduct, vector, x, y)
+import qualified JS.Scene                            as Scene
 import           Luna.Studio.Action.Command          (Command)
 import qualified JS.Scene                            as Scene
 import           Luna.Studio.Action.State.App        (renderIfNeeded)

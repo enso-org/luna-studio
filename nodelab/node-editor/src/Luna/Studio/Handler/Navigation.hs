@@ -1,7 +1,7 @@
 module Luna.Studio.Handler.Navigation where
 
 import           Data.Position                               (Position (Position), vector, x, y)
-import           Data.Vector                                 (lengthSquared, magnitude)
+import           Data.Vector2                                 (lengthSquared, magnitude)
 import           Luna.Prelude
 
 import qualified Empire.API.Data.Port                        as P

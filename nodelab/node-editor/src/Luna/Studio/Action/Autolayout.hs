@@ -8,7 +8,7 @@ import qualified Data.Map.Lazy                               as Map
 import           Data.Position                               (Position, fromDoubles, minimumRectangle, move, vector, x, y)
 import           Data.Set                                    (Set)
 import qualified Data.Set                                    as Set
-import           Data.Vector                                 (Vector2)
+import           Data.Vector2                                 (Vector2)
 import           Luna.Studio.Action.Basic                    (centerGraph, moveNodes)
 import           Luna.Studio.Action.Command                  (Command)
 import           Luna.Studio.Action.Node                     (snap)

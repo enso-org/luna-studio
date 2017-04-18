@@ -11,7 +11,7 @@ module Luna.Studio.Action.Camera.Zoom
 
 import           Data.Matrix                           (getElem, setElem)
 import           Data.ScreenPosition                   (ScreenPosition, vector, x, y)
-import           Data.Vector                           (Vector2)
+import           Data.Vector2                           (Vector2)
 import           Luna.Studio.Action.Basic              (modifyCamera)
 import           Luna.Studio.Action.Command            (Command)
 import           Luna.Studio.Action.State.Action       (beginActionWithKey, continueActionWithKey, removeActionFromState,

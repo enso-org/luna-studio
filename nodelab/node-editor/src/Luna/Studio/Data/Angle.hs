@@ -2,8 +2,13 @@ module Luna.Studio.Data.Angle where
 
 import           Data.Fixed
 import           Data.Position
+<<<<<<< HEAD:nodelab/node-editor/src/Luna/Studio/Data/Angle.hs
 import           Data.Vector
 import           Luna.Prelude
+=======
+import           Data.Vector2
+import           Luna.Studio.Prelude
+>>>>>>> origin:nodelab/app/src/Luna/Studio/Data/Angle.hs
 
 type Angle  = Double
 

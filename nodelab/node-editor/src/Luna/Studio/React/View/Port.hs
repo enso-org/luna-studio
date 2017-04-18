@@ -3,7 +3,6 @@
 module Luna.Studio.React.View.Port where
 
 import           Empire.API.Data.PortRef           (AnyPortRef, toAnyPortRef)
-import           Luna.Studio.Action.State.Model    (portAngleStart, portAngleStop)
 import qualified Luna.Studio.Event.Mouse           as Mouse
 import qualified Luna.Studio.Event.UI              as UI
 import           Luna.Prelude
@@ -13,7 +12,8 @@ import           Luna.Studio.React.Model.Constants (gridSize, lineHeight, nodeRa
 import           Luna.Studio.React.Model.Node      (NodeLoc)
 --import           Luna.Studio.React.Model.Port (Port (..))
 import           Luna.Studio.React.Model.Port      (AnyPort, AnyPortId (InPortId', OutPortId'), InPortIndex (Self),
-                                                    Mode (Highlighted, Invisible), getPortNumber, isHighlighted, isInPort)
+                                                    Mode (Highlighted, Invisible), getPortNumber, isHighlighted, isInPort, portAngleStart,
+                                                    portAngleStop)
 import qualified Luna.Studio.React.Model.Port      as Port
 import           Luna.Studio.React.Store           (Ref, dispatch)
 import qualified Luna.Studio.React.View.Style      as Style

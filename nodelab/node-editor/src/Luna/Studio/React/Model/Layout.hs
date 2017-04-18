@@ -7,7 +7,7 @@ import qualified Data.Position                         as Position
 import           Data.ScreenPosition                   (ScreenPosition (ScreenPosition))
 import qualified Data.ScreenPosition                   as ScreenPosition
 import           Data.Size                             (Size)
-import           Data.Vector                           (Vector2 (Vector2), x, y)
+import           Data.Vector2                           (Vector2 (Vector2), x, y)
 import           Luna.Studio.Data.CameraTransformation (CameraTransformation, logicalToScreen, screenToLogical)
 import           Luna.Prelude
 import           Luna.Studio.React.Model.Constants     (gridSize)

@@ -2,7 +2,7 @@ module Luna.Studio.Action.Basic.AddNode where
 
 import           Data.Position                           (Position, toTuple)
 import           Data.Text                               (Text)
-import           Data.Vector                             ()
+import           Data.Vector2                             ()
 import           Empire.API.Data.LabeledTree             (LabeledTree (LabeledTree))
 import qualified Empire.API.Data.Node                    as Empire
 import           Empire.API.Data.NodeMeta                (NodeMeta (NodeMeta))

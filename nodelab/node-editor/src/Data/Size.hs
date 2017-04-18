@@ -8,7 +8,7 @@ module Data.Size
 where
 
 import           Data.Aeson          (ToJSON)
-import           Data.Vector
+import           Data.Vector2
 import           Luna.Prelude
 
 

@@ -5,18 +5,23 @@ module Luna.Studio.React.Model.Port
     )
     where
 
-import           Data.Aeson                  (ToJSON)
-import           Data.Convert                (Convertible (convert))
-import           Data.Position               (Position)
-import           Empire.API.Data.LabeledTree (LabeledTree (LabeledTree))
-import           Empire.API.Data.Port        as X hiding (InPort, OutPort, Port (..), name, portId, state, valueType)
-import qualified Empire.API.Data.Port        as Empire
-import           Empire.API.Data.PortDefault as X (PortDefault (..))
-import           Empire.API.Data.PortRef     as X (AnyPortRef (InPortRef', OutPortRef'), InPortRef (InPortRef), OutPortRef (OutPortRef))
-import           Empire.API.Data.TypeRep     (TypeRep (..))
-import           Luna.Studio.Data.Color      (Color)
-import qualified Luna.Studio.Data.Color      as Color
-import           Luna.Prelude         hiding (set)
+
+import           Data.Aeson                        (ToJSON)
+import           Data.Convert                      (Convertible (convert))
+import           Data.Position                     (Position)
+import           Empire.API.Data.LabeledTree       (LabeledTree (LabeledTree))
+import           Empire.API.Data.Port              as X hiding (InPort, OutPort, Port (..), name, portId, state, valueType)
+import qualified Empire.API.Data.Port              as Empire
+import           Empire.API.Data.PortDefault       as X (PortDefault (..))
+import           Empire.API.Data.PortRef           as X (AnyPortRef (InPortRef', OutPortRef'), InPortRef (InPortRef),
+                                                         OutPortRef (OutPortRef))
+import           Empire.API.Data.TypeRep           (TypeRep (..))
+import           Luna.Studio.Data.Angle            (Angle)
+import           Luna.Studio.Data.Color            (Color)
+import qualified Luna.Studio.Data.Color            as Color
+import           Luna.Prelude               hiding (set)
+import           Luna.Studio.React.Model.Constants (nodeRadius)
+
 
 
 data Mode = Normal
@@ -113,3 +118,24 @@ instance Convertible (Port i) (Empire.Port i) where
         {- name      -} (p ^. name)
         {- nodeType  -} (p ^. valueType)
         {- state     -} (p ^. state)
+
+
+portGap :: Double -> Angle
+portGap r = 0.2 * nodeRadius / r -- to avoid gap narrowing
+
+portAngle :: Int -> Angle
+portAngle numOfPorts = pi / fromIntegral numOfPorts
+
+portAngleStart :: Bool -> Int -> Int -> Double -> Angle
+portAngleStart isShape num numOfPorts r =
+    let number = fromIntegral num + 1
+        gap    = if isShape then (portGap r)/2 else 0
+        t      = portAngle numOfPorts
+    in  pi - number * t + gap
+
+portAngleStop :: Bool -> Int -> Int -> Double -> Angle
+portAngleStop isShape num numOfPorts r =
+    let number = fromIntegral num + 1
+        gap    = if isShape then (portGap r)/2 else 0
+        t      = portAngle numOfPorts
+    in  pi - number * t + t - gap

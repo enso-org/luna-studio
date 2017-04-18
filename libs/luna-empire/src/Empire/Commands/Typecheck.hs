@@ -70,7 +70,7 @@ runInterpreter imports = runASTOp $ do
                 Left e  -> return Nothing
                 Right r -> return $ Just r
 
-reportError :: GraphLocation -> NodeId -> Maybe (APIError.Error TypeRep) -> Command InterpreterEnv ()
+reportError :: GraphLocation -> NodeId -> Maybe APIError.Error -> Command InterpreterEnv ()
 reportError loc nid err = do
     cachedErr <- uses errorsCache $ Map.lookup nid
     when (cachedErr /= err) $ do
@@ -110,7 +110,7 @@ updateValues loc scope = do
     forM_ allVars $ \(nid, ref) -> do
         let resVal = Interpreter.localLookup (IR.unsafeGeneralize ref) scope
         liftIO $ forM_ resVal $ \v -> listenReps v $ \case
-            Left  err            -> flip runReaderT env $ Publisher.notifyResultUpdate loc nid (NodeError $ APIError.RuntimeError err) 0
+            Left  err            -> flip runReaderT env $ Publisher.notifyResultUpdate loc nid (NodeError $ APIError.Error APIError.RuntimeError $ convert err) 0
             Right (short, longs) -> flip runReaderT env $ Publisher.notifyResultUpdate loc nid (NodeValue (fromString short) $ JsonValue <$> longs) 0
 
 flushCache :: Command InterpreterEnv ()

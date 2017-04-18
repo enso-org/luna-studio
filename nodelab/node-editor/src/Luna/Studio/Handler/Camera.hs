@@ -2,7 +2,7 @@ module Luna.Studio.Handler.Camera
     ( handle
     ) where
 
-import           Data.Vector                        (Vector2 (Vector2))
+import           Data.Vector2                        (Vector2 (Vector2))
 import           Luna.Studio.Action.Camera          (centerGraph, panCamera, panDown, panDrag, panLeft, panRight, panUp, resetCamera,
                                                      resetPan, resetZoom, startPanDrag, startZoomDrag, stopPanDrag, stopZoomDrag, wheelZoom,
                                                      zoomDrag, zoomIn, zoomOut)

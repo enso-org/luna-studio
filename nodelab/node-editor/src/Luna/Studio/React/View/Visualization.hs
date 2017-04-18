@@ -136,15 +136,13 @@ strValue n = case n ^. Node.value of
     Just (NodeValue value _ ) -> Text.unpack value
     Just (NodeError msg     ) -> showError msg --limitString errorLen (convert $ showError msg)
 
-showError :: LunaError.Error TypeRep -> String
+showError :: LunaError.Error -> String
 showError = showErrorSep ""
 
-showErrorSep :: String -> LunaError.Error TypeRep -> String
+showErrorSep :: String -> LunaError.Error -> String
 showErrorSep sep err = case err of
-    LunaError.ImportError   name     -> "Cannot find symbol \"" <> name        <> "\""
-    LunaError.NoMethodError name tpe -> "Cannot find method \"" <> name        <> "\" for type \"" <> toString tpe <> "\""
-    LunaError.TypeError     t1   t2  -> "Cannot match type  \"" <> toString t1 <> "\" with \""     <> toString t2  <> "\""
-    LunaError.RuntimeError  msg      -> "Runtime error: " <> sep <> msg
+    LunaError.Error LunaError.CompileError msg -> "Compile error: " <> sep <> convert msg
+    LunaError.Error LunaError.RuntimeError msg -> "Runtime error: " <> sep <> convert msg
 
 normalize :: String -> String
 normalize = intercalate "<br />" . wordsBy (== '\n')
