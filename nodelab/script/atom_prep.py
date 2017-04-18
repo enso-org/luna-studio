@@ -46,16 +46,16 @@ os.makedirs('../atom/styles')
 
 # find and change ghcjs code for internals
 
-nodelab_js = glob.glob('../.stack-work/**/bin/nodelab.jsexe/all.js',recursive=True)
-internals_js = glob.glob('../.stack-work/**/bin/internals.jsexe/all.js',recursive=True)
+nodelab_js = glob.glob('../.stack-work/**/bin/node-editor.jsexe/all.js',recursive=True)
+internals_js = glob.glob('../.stack-work/**/bin/luna-atom.jsexe/all.js',recursive=True)
 
-prepare_ghcjs('../atom/lib/gen/ghcjs-code.js', '../app/env.ghcjs', nodelab_js[0])
-prepare_ghcjs('../atom/lib/gen/ghcjs-code2.js', '../internals/env-internals.ghcjs', internals_js[0])
-prepare_css('../atom/styles/app.css', '../app/styles/*')
+prepare_ghcjs('../atom/lib/gen/ghcjs-code.js', '../node-editor/env.ghcjs', nodelab_js[0])
+prepare_ghcjs('../atom/lib/gen/ghcjs-code2.js', '../luna-atom/env-internals.ghcjs', internals_js[0])
+prepare_css('../atom/styles/app.css', '../node-editor/styles/*')
 # copy files
 
 distutils.dir_util.copy_tree('../app/js', '../atom/lib/gen')
-shutil.copy('../internals/js/atom-callback-internals.js', '../atom/lib/gen')
-shutil.copy('../internals/js/app-internals.coffee', '../atom/lib/gen')
-shutil.copy('../app/config.release.js', '../atom/lib/gen')
-shutil.copy('../app/config.debug.js', '../atom/lib/gen')
+shutil.copy('../luna-atom/js/atom-callback-internals.js', '../atom/lib/gen')
+shutil.copy('../luna-atom/js/app-internals.coffee', '../atom/lib/gen')
+shutil.copy('../node-editor/config.release.js', '../atom/lib/gen')
+shutil.copy('../node-editor/config.debug.js', '../atom/lib/gen')
