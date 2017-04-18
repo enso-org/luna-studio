@@ -22,7 +22,7 @@ import           Empire.API.Data.MonadPath         (MonadPath (MonadPath))
 import           Empire.API.Data.Node              (NodeId, nodeId)
 import qualified Empire.API.Data.NodeMeta          as NodeMeta
 import           Empire.API.Data.TypeRep           (TypeRep (TCons))
-import           Empire.API.Data.PortDefault       (PortValue (StringValue))
+import           Empire.API.Data.PortDefault       (PortValue (StringValue), VisualizationValue (JsonValue))
 import           Empire.API.Graph.NodeResultUpdate (NodeValue(..))
 import           Empire.ASTOp                      (EmpirePass, runASTOp)
 import qualified Empire.ASTOps.Read                as ASTRead
@@ -111,7 +111,7 @@ updateValues loc scope = do
         let resVal = Interpreter.localLookup (IR.unsafeGeneralize ref) scope
         liftIO $ forM_ resVal $ \v -> listenReps v $ \case
             Left  err            -> flip runReaderT env $ Publisher.notifyResultUpdate loc nid (NodeError $ APIError.RuntimeError err) 0
-            Right (short, longs) -> flip runReaderT env $ Publisher.notifyResultUpdate loc nid (NodeValue (fromString short) $ StringValue <$> longs) 0
+            Right (short, longs) -> flip runReaderT env $ Publisher.notifyResultUpdate loc nid (NodeValue (fromString short) $ JsonValue <$> longs) 0
 
 flushCache :: Command InterpreterEnv ()
 flushCache = do

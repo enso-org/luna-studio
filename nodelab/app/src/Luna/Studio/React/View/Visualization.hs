@@ -9,14 +9,16 @@ module Luna.Studio.React.View.Visualization
 , strValue
 ) where
 
+import           Data.Aeson                                     (FromJSON)
 import qualified Data.Aeson                                     as Aeson
+import qualified Data.ByteString.Lazy.Char8                     as ByteString
 import           Data.List.Split                                (wordsBy)
 import           Data.Position                                  (Position)
 import qualified Data.Text                                      as Text
 import           React.Flux                                     hiding (image_)
 import qualified React.Flux                                     as React
 import qualified Empire.API.Data.Error                          as LunaError
-import           Empire.API.Data.PortDefault                    (PortValue(..))
+import           Empire.API.Data.PortDefault                    (VisualizationValue(..),PortValue(..))
 import           Empire.API.Data.TypeRep                        (TypeRep)
 import           Empire.API.Graph.NodeResultUpdate              (NodeValue(..))
 import qualified Luna.Studio.Event.UI                           as UI
@@ -87,7 +89,7 @@ visualization = React.defineView viewName $ \(ref, nl, mayPos, nodeValue) ->
 --     --, onMouseDown $ \_ _ -> traceShowMToStdout "NIE JEST NAJGORZEJ"
 --     ] mempty
 
-nodeValue_ :: Ref App -> NodeLoc -> Maybe Position -> Int -> PortValue -> ReactElementM ViewEventHandler ()
+nodeValue_ :: Ref App -> NodeLoc -> Maybe Position -> Int -> VisualizationValue -> ReactElementM ViewEventHandler ()
 nodeValue_ ref nl mayPos visIx value = do
     let isPinned = isJust mayPos
         event = case mayPos of
@@ -101,20 +103,31 @@ nodeValue_ ref nl mayPos visIx value = do
     translatedDiv_ $ do
         withJust mayPos $ \pos ->
             button_ [ onMouseDown $ \e m -> stopPropagation e : dispatch ref (UI.VisualizationEvent $ Visualization.MouseDown m nl visIx pos)
+                    , "className" $= "pin-button"
                     , "key" $= "button1"
                     ] $
                 elemString "move"
         button_ [ onClick $ \_ _ -> dispatch ref $ UI.VisualizationEvent $ event nl visIx
                 , "key" $= "button2"
+                , "className" $= "pin-button"
                 ] $
             elemString $ if isPinned then "unpin" else "pin"
         case value of
-            BoolValue   v -> strDiv $ show v
-            DoubleValue v -> strDiv $ show v
-            IntValue    v -> strDiv $ show v
-            StringValue v -> strDiv v
+            JsonValue v -> fromJsonValue v
+            HtmlValue v -> strDiv v
     where
-        strDiv = div_ . elemString . normalize
+        strDiv = div_ [ "className" $= "visual" ] . elemString . normalize
+
+fromJsonValue :: String -> ReactElementM ViewEventHandler ()
+fromJsonValue value = case (Aeson.decode $ ByteString.pack value :: Maybe Aeson.Value) of
+    Just (Aeson.Array  a) -> elemString "(Array)"
+    Just (Aeson.Object _) -> elemString "(Object)"
+    Just (Aeson.String _) -> elemString "(String)"
+    Just (Aeson.Number _) -> elemString "(Number)"
+    Just (Aeson.Bool   _) -> elemString "(Bool)"
+    Just (Aeson.Null    ) -> elemString "(Null)"
+    Nothing               -> elemString "(Nothing)"
+
 
 strValue :: ExpressionNode -> String
 strValue n = case n ^. Node.value of
