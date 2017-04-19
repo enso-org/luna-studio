@@ -47,7 +47,7 @@ localAddExpressionNodes = mapM_ localAddExpressionNode
 
 localAddExpressionNode :: ExpressionNode -> Command State ()
 localAddExpressionNode node = do
-    selfPortVis <- shouldDisplayPortSelf $ node
+    selfPortVis <- shouldDisplayPortSelf node
     let selfMode = if selfPortVis then ensureVisibility else const Invisible
         node' = node & inPortAt [Self] . mode %~ selfMode
     NodeEditor.addExpressionNode node'

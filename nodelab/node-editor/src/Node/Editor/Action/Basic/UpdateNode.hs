@@ -59,9 +59,10 @@ localUpdateNodeTypecheck :: NodePath -> NodeTypecheckerUpdate -> Command State (
 localUpdateNodeTypecheck path update = do
     let nl = convert (path, update ^. tcNodeId)
     case update of
-        Empire.ExpressionUpdate _ inPorts outPorts -> NodeEditor.modifyExpressionNode nl $ do
-            ExpressionNode.inPorts  .= convert `fmap` inPorts
-            ExpressionNode.outPorts .= convert `fmap` outPorts
+        Empire.ExpressionUpdate _ inPorts outPorts ->
+            withJustM (NodeEditor.getExpressionNode nl) $ \node -> void . localUpdateExpressionNode $
+                node & ExpressionNode.inPorts  .~ convert `fmap` inPorts
+                     & ExpressionNode.outPorts .~ convert `fmap` outPorts
         Empire.OutputSidebarUpdate _ inPorts -> NodeEditor.modifyOutputNode nl $
             SidebarNode.outputSidebarPorts .= convert `fmap` inPorts
         Empire.InputSidebarUpdate _ outPorts -> NodeEditor.modifyInputNode nl $
