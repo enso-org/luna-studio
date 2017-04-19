@@ -21,8 +21,7 @@ handle :: forall a. (Binary a, Topic.MessageTopic a) => (a -> Batch.Event) -> (S
 handle cons = (Topic.topic (undefined :: a), cons . decode)
 
 handlers :: Map.Map String (ByteString -> Batch.Event)
-handlers = Map.fromList [ handle CollaborationUpdate
-                        , handle EmpireStarted
+handlers = Map.fromList [ handle EmpireStarted
                         , handle ProjectSet
                         , handle FileClosed
                         , handle FileOpened
