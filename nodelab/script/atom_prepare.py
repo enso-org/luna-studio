@@ -66,14 +66,10 @@ def cp_files():
     shutil.copy(prep_path('../node-editor/config.debug.js'), prep_path('../atom/lib/gen'))
 
 def main():
-    # delete old dirs for atom
     rm_old()
-    # create directories
     create_dirs()
-    # find and change ghcjs code for internals
     ghcjs_code()
     prepare_css('../atom/styles/app.css', '../node-editor/styles/style.less')
-    # copy files
     cp_files()
 
 if __name__ == '__main__':
