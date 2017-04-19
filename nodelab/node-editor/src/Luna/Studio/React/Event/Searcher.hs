@@ -17,7 +17,6 @@ data Event = InputChanged Text
            | EditEntry
            | MoveDown
            | MoveUp
-           | MoveRight
            | MoveLeft
            | KeyDown KeyboardEvent
            | KeyUp   KeyboardEvent

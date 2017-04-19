@@ -157,6 +157,13 @@
         transform: scale(1);
     }
 }
+
+.luna-sidebar__port__svg--addbutton {
+    position: relative;
+    padding-top: 8px;
+    padding-bottom: 7px;
+}
+
 .luna-sidebar__port__svg--inbetween--last:hover {
     &+.luna-sidebar__port__svg--addbutton {
         circle { r: 0 }
@@ -223,7 +230,7 @@
         }
     }
     .luna-edit-icon {
-        bottom:   -20px;
+        bottom:   -8px;
         opacity:  0;
         circle { r: 0 }
     }
@@ -237,8 +244,6 @@
         }
     }
     .luna-sidebar__port__svg--addbutton {
-        top:        inherit;
-        bottom:     0;
         .luna-port__shape {
             r:    6px !important;
             fill: #444;
@@ -283,15 +288,13 @@
     }
     .luna-sidebar__port__svg:hover .luna-port__shape { r: 7px }
     .luna-edit-icon {
-        bottom: -20px;
+        bottom: -8px;
         .luna-edit-icon__shape01 {
             fill: #fff;
             r:    7;
         }
     }
     .luna-sidebar__port__svg--addbutton {
-        top:        inherit;
-        bottom:     0;
         .luna-port__shape { fill: #444 }
         &:hover {
             .luna-port__shape { fill: #fff }

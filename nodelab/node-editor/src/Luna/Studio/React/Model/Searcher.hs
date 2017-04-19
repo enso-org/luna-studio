@@ -17,6 +17,7 @@ data Searcher = Searcher
       , _selected      :: Int
       , _mode          :: Mode
       , _input         :: Text
+      , _replaceInput  :: Bool
       , _nodeLoc       :: Maybe NodeLoc
       , _rollbackReady :: Bool
       } deriving (Eq, Generic, Show)
@@ -24,7 +25,7 @@ data Searcher = Searcher
 makeLenses ''Searcher
 
 mkDef :: Mode -> Searcher
-mkDef mode' = Searcher def def mode' def def False
+mkDef mode' = Searcher def def mode' def False def False
 
 defNode, defCommand :: Searcher
 defNode    = mkDef $ Node def

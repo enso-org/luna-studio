@@ -60,7 +60,7 @@ openWith nodeLoc pos = do
           _              -> translateToWorkspace pos
     begin Searcher
     GA.sendEvent GA.NodeSearcher
-    modifyNodeEditor $ NodeEditor.searcher ?= Searcher.Searcher pos' 0 (Searcher.Node def) def nodeLoc False
+    modifyNodeEditor $ NodeEditor.searcher ?= Searcher.Searcher pos' 0 (Searcher.Node def) def False nodeLoc False
     renderIfNeeded
     liftIO Searcher.focus
 
@@ -143,9 +143,13 @@ acceptEntry scheduleEvent entryNum searcher = do
         accept scheduleEvent searcher
 
 substituteInputWithEntry :: Searcher -> Command State ()
-substituteInputWithEntry _ = modifySearcher $ do
-    newInput <- use Searcher.selectedExpression
-    Searcher.input .= newInput
+substituteInputWithEntry _ = do
+    modifySearcher $ do
+        newInput <- use Searcher.selectedExpression
+        Searcher.input        .= newInput
+        Searcher.replaceInput .= True
+    renderIfNeeded
+    modifySearcher $ Searcher.replaceInput .= False
 
 querySearch :: Text -> Searcher -> Command State ()
 querySearch query _ = do
