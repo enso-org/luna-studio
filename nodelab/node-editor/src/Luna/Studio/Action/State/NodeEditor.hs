@@ -7,7 +7,6 @@ module Luna.Studio.Action.State.NodeEditor where
 
 import           Control.Arrow                                ((&&&))
 import qualified Control.Monad.State                          as M
-import           Control.Monad.Trans.Maybe                    (MaybeT (MaybeT), runMaybeT)
 import qualified Data.HashMap.Strict                          as HashMap
 import qualified Data.Map.Lazy                                as Map
 import           Data.Monoid                                  (First (First), getFirst)
@@ -20,7 +19,6 @@ import qualified Empire.API.Data.Node                         as Empire
 import           Empire.API.Data.Port                         (_WithDefault)
 import           Empire.API.Data.PortDefault                  (PortDefault)
 import           Empire.API.Data.PortRef                      (AnyPortRef, InPortRef, OutPortRef (OutPortRef))
-import qualified Empire.API.Data.PortRef                      as PortRef
 import           Luna.Studio.Action.Command                   (Command)
 import           Luna.Studio.Action.State.App                 (get, modify)
 import qualified Luna.Studio.Action.State.Internal.NodeEditor as Internal
@@ -29,15 +27,16 @@ import           Luna.Studio.Data.CameraTransformation        (CameraTransformat
 import           Luna.Studio.Data.Graph                       (Graph (Graph))
 import           Luna.Prelude
 import           Luna.Studio.React.Model.App                  (nodeEditor)
-import           Luna.Studio.React.Model.Connection           (Connection, ConnectionId, ConnectionsMap, CurrentConnection, connectionId,
-                                                               containsNode, containsPortRef, dstNodeLoc, srcNodeLoc, toConnectionsMap)
-import           Luna.Studio.React.Model.Node                 (InputNode, Node (Expression, Input, Output), NodeLoc, OutputNode, lookupPort,
-                                                               nodeLoc, toNodesMap)
+import           Luna.Studio.React.Model.Connection           (Connection, ConnectionId, ConnectionsMap, HalfConnection, PosConnection,
+                                                               connectionId, containsNode, containsPortRef, dstNodeLoc, srcNodeLoc,
+                                                               toConnectionsMap)
+import           Luna.Studio.React.Model.Node                 (InputNode, Node (Expression, Input, Output), NodeLoc, OutputNode, nodeLoc,
+                                                               toNodesMap)
 import           Luna.Studio.React.Model.Node.ExpressionNode  (ExpressionNode, isSelected)
 import qualified Luna.Studio.React.Model.Node.ExpressionNode  as ExpressionNode
 import           Luna.Studio.React.Model.NodeEditor           (NodeEditor)
 import qualified Luna.Studio.React.Model.NodeEditor           as NE
-import           Luna.Studio.React.Model.Port                 (AnyPort, InPort, OutPort, state, valueType)
+import           Luna.Studio.React.Model.Port                 (state, valueType)
 import           Luna.Studio.React.Model.Searcher             (Searcher)
 import           Luna.Studio.State.Global                     (State, workspace)
 import           Text.ScopeSearcher.Item                      (Items, isElement, items)
@@ -85,15 +84,7 @@ addOutputNode :: OutputNode -> Command State ()
 addOutputNode node = Internal.setNodeRec NE.outputNode ExpressionNode.outputNode (node ^. nodeLoc) node
 
 getNode :: NodeLoc -> Command State (Maybe Node)
-getNode nl = do
-    mayExpressionNode <- Expression `fmap2` getExpressionNode nl
-    if isJust mayExpressionNode
-        then return mayExpressionNode
-        else do
-            mayInputNode <- Input `fmap2` getInputNode nl
-            if isJust mayInputNode
-                then return mayInputNode
-                else Output `fmap2` getOutputNode nl
+getNode nl = NE.getNode nl <$> getNodeEditor
 
 getInputNode :: NodeLoc -> Command State (Maybe InputNode)
 getInputNode nl = NE.getInputNode nl <$> getNodeEditor
@@ -158,6 +149,15 @@ getConnection connId = HashMap.lookup connId <$> getConnectionsMap
 getConnections :: Command State [Connection]
 getConnections = HashMap.elems <$> getConnectionsMap
 
+getPosConnection :: ConnectionId -> Command State (Maybe PosConnection)
+getPosConnection connId = do
+    mayConnection <- getConnection connId
+    ne <- getNodeEditor
+    return $ join $ NE.toPosConnection ne <$> mayConnection
+
+getPosConnections :: Command State [PosConnection]
+getPosConnections = view NE.posConnections <$> getNodeEditor
+
 getConnectionsMap :: Command State ConnectionsMap
 getConnectionsMap = view NE.connections <$> getNodeEditor
 
@@ -200,8 +200,8 @@ updateMonads :: [MonadPath] -> Command State ()
 updateMonads update = modifyNodeEditor $ NE.monads .= update
 
 
-modifyCurrentConnections :: M.State [CurrentConnection] r -> Command State r
-modifyCurrentConnections = modify (nodeEditor . NE.currentConnections)
+modifyHalfConnections :: M.State [HalfConnection] r -> Command State r
+modifyHalfConnections = modify (nodeEditor . NE.halfConnections)
 
 
 getSearcher :: Command State (Maybe Searcher)
@@ -226,9 +226,10 @@ getNodeSearcherData :: Command State (Items Empire.ExpressionNode)
 getNodeSearcherData = do
     completeData <- use $ workspace . nodeSearcherData
     selected     <- getSelectedNodes
-    mscope       <- case selected of
-        [node] -> (fmap . fmap) (convert . view valueType) $ getPort (OutPortRef (node ^. nodeLoc) [])
-        _      -> return Nothing
+    ne           <- getNodeEditor
+    let mscope = case selected of
+            [node] -> convert . view valueType <$> NE.getPort (OutPortRef (node ^. nodeLoc) []) ne
+            _      -> Nothing
     return $ case mscope of
         Nothing -> completeData
         Just tn -> Map.union (globalFunctions scope) (globalFunctions completeData) where
@@ -241,18 +242,5 @@ instance NodeEditorElementId NodeLoc where
 instance NodeEditorElementId ConnectionId where
     inGraph = fmap isJust . getConnection
 
-class GetPort a b | a -> b where
-    getPort :: a -> Command State (Maybe b)
-
-instance GetPort InPortRef InPort where
-    getPort portRef = runMaybeT $
-        MaybeT (getNode $ portRef ^. PortRef.nodeLoc) >>= fromJustM . flip lookupPort (portRef ^. PortRef.dstPortId)
-instance GetPort OutPortRef OutPort where
-    getPort portRef = runMaybeT $
-        MaybeT (getNode $ portRef ^. PortRef.nodeLoc) >>= fromJustM . flip lookupPort (portRef ^. PortRef.srcPortId)
-instance GetPort AnyPortRef AnyPort where
-    getPort portRef = runMaybeT $ do
-        MaybeT (getNode $ portRef ^. PortRef.nodeLoc) >>= fromJustM . flip lookupPort (portRef ^. PortRef.portId)
-
 getPortDefault :: InPortRef -> Command State (Maybe PortDefault)
-getPortDefault portRef = maybe Nothing (\mayPort -> mayPort ^? state . _WithDefault) <$> getPort portRef
+getPortDefault portRef = maybe Nothing (\mayPort -> mayPort ^? state . _WithDefault) <$> (NE.getPort portRef <$> getNodeEditor)

@@ -94,6 +94,8 @@ inPortTreeLeafs (LabeledTree (InPorts mps     ps) _) = concatMap inPortTreeLeafs
 
 instance Convertible InPort  AnyPort where convert = fmap InPortId'
 instance Convertible OutPort AnyPort where convert = fmap OutPortId'
+instance Convertible InPort  EitherPort where convert = convert . fmap InPortId'
+instance Convertible OutPort EitherPort where convert = convert . fmap OutPortId'
 
 instance Convertible AnyPort EitherPort where
     convert (Port (InPortId'  i) n nt s c m) = Left $ Port i n nt s c m

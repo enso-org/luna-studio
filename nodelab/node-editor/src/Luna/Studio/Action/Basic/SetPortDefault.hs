@@ -8,6 +8,7 @@ import           Luna.Studio.Action.Command          (Command)
 import qualified Luna.Studio.Action.State.NodeEditor as NodeEditor
 import           Luna.Prelude
 import qualified Luna.Studio.React.Model.Node        as Node
+import           Luna.Studio.React.Model.NodeEditor  (getPort)
 import qualified Luna.Studio.React.Model.Port        as Port
 import           Luna.Studio.State.Global            (State)
 
@@ -21,4 +22,4 @@ localSetPortDefault portRef portDef = do
     let nl  = portRef ^. nodeLoc
         pid = portRef ^. dstPortId
     NodeEditor.modifyExpressionNode nl $ Node.inPortAt pid . Port.state .= WithDefault portDef
-    isJust <$> NodeEditor.getPort portRef
+    isJust <$> (getPort portRef <$> NodeEditor.getNodeEditor)

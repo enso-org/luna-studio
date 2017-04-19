@@ -2,13 +2,12 @@
 module Luna.Studio.React.View.Connection where
 
 import           Data.Position                      (Position, averagePosition, x, y)
-import           Empire.API.Data.PortRef            (InPortRef)
 import qualified Luna.Studio.Event.UI               as UI
 import           Luna.Prelude
 import           Luna.Studio.React.Event.Connection (ModifiedEnd (Destination, Source))
 import qualified Luna.Studio.React.Event.Connection as Connection
 import           Luna.Studio.React.Model.App        (App)
-import           Luna.Studio.React.Model.Connection (Connection, CurrentConnection)
+import           Luna.Studio.React.Model.Connection (PosConnection, PosHalfConnection)
 import qualified Luna.Studio.React.Model.Connection as Connection
 import           Luna.Studio.React.Store            (Ref, dispatch)
 import qualified Luna.Studio.React.View.Style       as Style
@@ -42,7 +41,7 @@ line src dst b = do
             ]
     line_ (mergeList a b) mempty
 
-connection :: ReactView (Ref App, Connection)
+connection :: ReactView (Ref App, PosConnection)
 connection = React.defineView name $ \(ref, model) -> do
     let connId   = model ^. Connection.connectionId
         src      = model ^. Connection.srcPos
@@ -85,15 +84,15 @@ connection = React.defineView name $ \(ref, model) -> do
                 , eventDst
                 ]
 
-connection_ :: Ref App -> InPortRef -> Connection -> ReactElementM ViewEventHandler ()
-connection_ ref inPortRef model = React.viewWithSKey connection (jsShow inPortRef) (ref, model) mempty
+connection_ :: Ref App -> PosConnection -> ReactElementM ViewEventHandler ()
+connection_ ref model = React.viewWithSKey connection (jsShow $ model ^. Connection.connectionId) (ref, model) mempty
 
-currentConnection :: ReactView CurrentConnection
-currentConnection = React.defineView name $ \model -> do
-    let src   = model ^. Connection.currentFrom
-        dst   = model ^. Connection.currentTo
-        color = "stroke" $= convert (model ^. Connection.currentColor)
+halfConnection :: ReactView PosHalfConnection
+halfConnection = React.defineView name $ \model -> do
+    let src   = model ^. Connection.srcPos
+        dst   = model ^. Connection.dstPos
+        color = "stroke" $= convert (model ^. Connection.color)
     line src dst [ color, "className" $= Style.prefix "connection__line" ]
 
-currentConnection_ :: Int -> CurrentConnection -> ReactElementM ViewEventHandler ()
-currentConnection_ key model = React.viewWithSKey currentConnection (fromString $ "current-connection" <> show key) model mempty
+halfConnection_ :: Int -> PosHalfConnection -> ReactElementM ViewEventHandler ()
+halfConnection_ key model = React.viewWithSKey halfConnection (fromString $ "half-connection" <> show key) model mempty

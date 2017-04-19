@@ -1,7 +1,6 @@
 --TODO[LJK, PM]: Review names in this module
 module Luna.Studio.Action.Basic.SetNodeMode where
 
-import           Luna.Studio.Action.Basic.DrawConnection     (redrawConnectionsForNodes)
 import           Luna.Studio.Action.Basic.Merge              (localUnmerge)
 import           Luna.Studio.Action.Basic.UpdateNode         (updatePortSelfVisibilityForIds)
 import qualified Luna.Studio.Action.Batch                    as Batch
@@ -37,4 +36,3 @@ toggleNodesMode allNewMode newMode nodes = do
     let nodeLocs = map (view nodeLoc) updatedNodes
     forM_ updatedNodes $ \node -> NodeEditor.addExpressionNode node
     void $ updatePortSelfVisibilityForIds nodeLocs
-    void $ redrawConnectionsForNodes      nodeLocs
