@@ -41,30 +41,40 @@ def prep_path(path):
     script_abs_path = os.path.abspath(os.path.dirname(__file__))
     return os.path.normpath(os.path.join(script_abs_path, path))
 
-
-def main():
-    # delete old dirs for atom
+def rm_old():
     shutil.rmtree(prep_path('../atom/lib/gen'), ignore_errors=True)
     shutil.rmtree(prep_path('../atom/styles'), ignore_errors=True)
     shutil.rmtree(prep_path('../atom/node_modules'), ignore_errors=True)
-    # create directories
+
+def create_dirs():
     os.makedirs(prep_path('../atom/lib/gen'))
     os.makedirs(prep_path('../atom/styles'))
-    # find and change ghcjs code for internals
+
+def ghcjs_code():
     nodelab = prep_path('../.stack-work/') + '/**/bin/node-editor.jsexe/all.js'
     internals = prep_path('../.stack-work/') + '/**/bin/luna-atom.jsexe/all.js'
     nodelab_js = glob.glob(nodelab,recursive=True)
     internals_js = glob.glob(internals,recursive=True)
-
     prepare_ghcjs('../atom/lib/gen/node-editor-ghcjs.js', '../node-editor/env.ghcjs', nodelab_js[0])
     prepare_ghcjs('../atom/lib/gen/luna-atom-ghcjs.js', '../luna-atom/env-internals.ghcjs', internals_js[0])
-    prepare_css('../atom/styles/app.css', '../node-editor/styles/style.less')
-    # copy files
+
+def cp_files():
     distutils.dir_util.copy_tree(prep_path('../node-editor/js'), prep_path('../atom/lib/gen'))
     shutil.copy(prep_path('../luna-atom/js/atom-callback-internals.js'), prep_path('../atom/lib/gen'))
     shutil.copy(prep_path('../luna-atom/js/app-internals.coffee'), prep_path('../atom/lib/gen'))
     shutil.copy(prep_path('../node-editor/config.release.js'), prep_path('../atom/lib/gen'))
     shutil.copy(prep_path('../node-editor/config.debug.js'), prep_path('../atom/lib/gen'))
+
+def main():
+    # delete old dirs for atom
+    rm_old()
+    # create directories
+    create_dirs()
+    # find and change ghcjs code for internals
+    ghcjs_code()
+    prepare_css('../atom/styles/app.css', '../node-editor/styles/style.less')
+    # copy files
+    cp_files()
 
 if __name__ == '__main__':
   main()
