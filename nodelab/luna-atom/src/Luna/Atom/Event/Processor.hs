@@ -6,7 +6,6 @@ import           Data.DateTime                              (getCurrentTime)
 import           Data.Monoid                                (Last (..))
 import           GHCJS.Prim                                 (JSException)
 
-import qualified JS.Debug
 import           WebSocket                               (WebSocket)
 import           Luna.Atom.Action.Command                 (Command, execCommand)
 import           Luna.Atom.Event.Event                    (Event)
@@ -16,12 +15,12 @@ import qualified Luna.Atom.Event.Loop                     as Loop
 import qualified Luna.Atom.Event.Preprocessor.Batch       as BatchEventPreprocessor
 import           Luna.Atom.Event.Source                   (AddHandler (..))
 import qualified Luna.Atom.Event.Source                   as JSHandlers
-import qualified Luna.Atom.Handler.Backend.ProjectManager as ProjectManager
-import qualified Luna.Atom.Handler.Backend.Text           as Text
+import qualified Luna.Atom.Handler.ProjectManager as ProjectManager
+import qualified Luna.Atom.Handler.Text           as Text
 import           Luna.Prelude
 import           Luna.Atom.State.Global                   (State)
 import qualified Luna.Atom.State.Global                   as Global
-
+import           Luna.Report                              (error)
 
 displayProcessingTime :: Bool
 displayProcessingTime = False
@@ -54,7 +53,7 @@ processEvent loop ev = modifyMVar_ (loop ^. Loop.state) $ \state -> do
     when displayProcessingTime $ do
         consoleTimeStart $ (realEvent ^. Event.name) <>" show and force"
         --putStrLn . show . length $ show realEvent
-        JS.Debug.error (convert $ realEvent ^. Event.name) realEvent
+        error (realEvent ^. Event.name) --realEvent
         consoleTimeEnd $ (realEvent ^. Event.name) <> " show and force"
         consoleTimeStart (realEvent ^. Event.name)
     timestamp <- getCurrentTime

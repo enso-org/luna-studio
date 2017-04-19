@@ -1,4 +1,4 @@
-module Luna.Atom.Handler.Backend.Text
+module Luna.Atom.Handler.Text
     ( handle
     ) where
 

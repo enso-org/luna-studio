@@ -1,4 +1,4 @@
-module Luna.Atom.Handler.Backend.ProjectManager
+module Luna.Atom.Handler.ProjectManager
     ( handle
     ) where
 
