@@ -10,7 +10,7 @@ module JS.GoogleAnalytics
 import           GHCJS.Nullable             (Nullable)
 import           Luna.Prelude
 
-import           Luna.Studio.Action.Command (Command)
+import           Node.Editor.Action.Command (Command)
 
 data ConnectType = Manual
                  | Pen

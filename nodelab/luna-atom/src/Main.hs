@@ -11,11 +11,11 @@ import           System.Random               (newStdGen)
 import qualified JS.GraphLocation            as GraphLocation
 import           JS.UUID                     (generateUUID)
 import           WebSocket                (WebSocket)
-import qualified Internal.Batch.Workspace as Workspace
-import           Internal.Event.Engine    (LoopRef (LoopRef))
-import qualified Internal.Event.Engine    as Engine
-import           Internal.State.Global    (mkState)
-import qualified Internal.State.Global    as Global
+import qualified Luna.Atom.Batch.Workspace as Workspace
+import           Luna.Atom.Event.Engine    (LoopRef (LoopRef))
+import qualified Luna.Atom.Event.Engine    as Engine
+import           Luna.Atom.State.Global    (mkState)
+import qualified Luna.Atom.State.Global    as Global
 
 
 runApp :: Chan (IO ()) -> WebSocket -> IO ()

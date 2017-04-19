@@ -10,8 +10,8 @@ import           GHCJS.Types                     (JSException (JSException))
 
 import qualified JS.Config                       as Config
 import           Luna.Prelude
-import           Luna.Studio.React.Model.Layout  (Scene (Scene))
-import           Luna.Studio.React.Model.Sidebar (InputSidebar (InputSidebar), OutputSidebar (OutputSidebar))
+import           Node.Editor.React.Model.Layout  (Scene (Scene))
+import           Node.Editor.React.Model.Sidebar (InputSidebar (InputSidebar), OutputSidebar (OutputSidebar))
 
 
 sceneId :: JSString

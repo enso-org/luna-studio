@@ -12,9 +12,9 @@ module JS.Atom
 import           GHCJS.Foreign.Callback
 import           GHCJS.Marshal.Pure         (pFromJSVal)
 import qualified Data.Text                  as Text
-import           Internal.Event.Internal (InternalEvent, InternalEvent(..))
-import           Internal.Event.Text (TextEvent, TextEvent (..))
-import qualified Internal.Event.Text as TextEvent
+import           Luna.Atom.Event.Internal (InternalEvent, InternalEvent(..))
+import           Luna.Atom.Event.Text (TextEvent, TextEvent (..))
+import qualified Luna.Atom.Event.Text as TextEvent
 import           Luna.Prelude
 
 

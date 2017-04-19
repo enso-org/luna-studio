@@ -1,0 +1,55 @@
+-- TODO[LJK, PM]: Remove or restore
+{-# OPTIONS_GHC -fno-warn-unused-binds #-}
+{-# LANGUAGE OverloadedStrings #-}
+module Node.Editor.Handler.Debug
+    ( handle
+    , handleEv
+    ) where
+
+
+import           JS.Debug                   (cinfo, clog, lastEv, processedEvent, saveState, shouldExportState)
+import           Luna.Prelude
+
+import qualified Node.Editor.Event.Debug    as Debug
+import           Node.Editor.Event.Event    (Event (..))
+
+import           Control.Monad.State        hiding (state)
+import           Node.Editor.Action.Command (Command)
+import qualified Node.Editor.State.Global   as Global
+
+import           Data.Aeson                 (toJSON)
+
+handle :: Event -> Maybe (Command Global.State ())
+-- handle (Debug Debug.GetState) = Just $ do
+--     state <- get
+--     let json = toJSON state
+--     liftIO $ do
+--         val <- toJSVal json
+--         clog val
+--         saveState val
+-- handle _ev = Just $ do
+--     -- logBatch ev
+--     when shouldExportState $ do
+--         state <- get
+--         let json = toJSON state
+--         liftIO $ do
+--             val <- toJSVal json
+--             saveState val
+handle _ = Nothing
+
+handleEv :: Event -> Maybe (Command Global.State ())
+handleEv ev = Just $
+    -- Global.debug . Global.lastEvent ?= ev
+    -- Global.debug . Global.eventNum  += 1
+    when shouldExportState $ do
+        evN <- use $ Global.debug . Global.eventNum
+        liftIO $ do
+            processedEvent evN
+            val <- toJSVal $ toJSON ev
+            lastEv val
+
+logBatch :: Event -> Command Global.State ()
+logBatch (Batch e) = liftIO $ do
+    val <- toJSVal $ toJSON e
+    cinfo val
+logBatch _ = return ()

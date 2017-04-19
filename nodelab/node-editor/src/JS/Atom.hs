@@ -6,9 +6,9 @@ import qualified Data.List                     as List
 import           GHCJS.Foreign.Callback
 import           GHCJS.Marshal.Pure            (pFromJSVal)
 import           GHCJS.Types                   (JSVal)
-import           Luna.Studio.Event.Event       (Event (Shortcut, UI))
-import qualified Luna.Studio.Event.Shortcut    as Shortcut
-import           Luna.Studio.Event.UI          (UIEvent (SearcherEvent))
+import           Node.Editor.Event.Event       (Event (Shortcut, UI))
+import qualified Node.Editor.Event.Shortcut    as Shortcut
+import           Node.Editor.Event.UI          (UIEvent (SearcherEvent))
 import           Luna.Prelude
 import           Text.Read                     (readMaybe)
 

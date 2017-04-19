@@ -13,13 +13,13 @@ import qualified JS.Config                   as Config
 import qualified JS.GraphLocation            as GraphLocation
 import           JS.UUID                     (generateUUID)
 import           WebSocket                   (WebSocket)
-import qualified Luna.Studio.Batch.Workspace as Workspace
-import           Luna.Studio.Event.Engine    (LoopRef (LoopRef))
-import qualified Luna.Studio.Event.Engine    as Engine
-import qualified Luna.Studio.React.Store     as Store
-import qualified Luna.Studio.React.View.App  as App
-import           Luna.Studio.State.Global    (mkState)
-import qualified Luna.Studio.State.Global    as Global
+import qualified Node.Editor.Batch.Workspace as Workspace
+import           Node.Editor.Event.Engine    (LoopRef (LoopRef))
+import qualified Node.Editor.Event.Engine    as Engine
+import qualified Node.Editor.React.Store     as Store
+import qualified Node.Editor.React.View.App  as App
+import           Node.Editor.State.Global    (mkState)
+import qualified Node.Editor.State.Global    as Global
 
 
 runApp :: Chan (IO ()) -> WebSocket -> IO ()
