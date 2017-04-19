@@ -24,8 +24,8 @@ cabal.sandbox.config
 .cabal-sandbox
 public
 
-app/features.local.js
-app/config.local.js
+node-editor/features.local.js
+node-editor/config.local.js
 brunch-config.local.coffee
 
 atom/styles
@@ -34,4 +34,6 @@ atom/styles
 *.js_hi
 .autoenv.zsh
 .stack-work
-nodelab.cabal
+lib/frontend-lib.cabal
+luna-atom/luna-atom.cabal
+node-editor/node-editor.cabal
