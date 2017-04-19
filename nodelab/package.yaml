@@ -59,13 +59,17 @@ dependencies:
   - random
   - react-flux
   - scope-searcher
+  - scientific
   - split
   - text
   - time
   - transformers
   - unordered-containers
   - uuid-types
+  - vector
   - visualization-api
+
+
 
 executables:
   nodelab:
