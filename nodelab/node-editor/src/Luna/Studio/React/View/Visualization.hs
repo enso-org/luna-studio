@@ -14,7 +14,10 @@ import qualified Data.Aeson                                     as Aeson
 import qualified Data.ByteString.Lazy.Char8                     as ByteString
 import           Data.List.Split                                (wordsBy)
 import           Data.Position                                  (Position)
-import qualified Data.Text                                      as Text
+import           Data.Scientific                                (coefficient)
+import           Data.Text                                      as Text
+import           Data.Vector                                    (Vector(..))
+import qualified Data.Vector                                    as Vector
 import           React.Flux                                     hiding (image_)
 import qualified React.Flux                                     as React
 import qualified Empire.API.Data.Error                          as LunaError
@@ -116,23 +119,35 @@ nodeValue_ ref nl mayPos visIx value = do
             JsonValue v -> fromJsonValue v
             HtmlValue v -> strDiv v
     where
-        strDiv = div_ [ "className" $= "visual" ] . elemString . normalize
+        strDiv = div_ [ "className" $= "visual" ] . elemString -- . normalize
 
 fromJsonValue :: String -> ReactElementM ViewEventHandler ()
 fromJsonValue value = case (Aeson.decode $ ByteString.pack value :: Maybe Aeson.Value) of
-    Just (Aeson.Array  a) -> elemString "(Array)"
-    Just (Aeson.Object _) -> elemString "(Object)"
-    Just (Aeson.String _) -> elemString "(String)"
-    Just (Aeson.Number _) -> elemString "(Number)"
-    Just (Aeson.Bool   _) -> elemString "(Bool)"
-    Just (Aeson.Null    ) -> elemString "(Null)"
-    Nothing               -> elemString "(Nothing)"
+    Just (Aeson.Array  a) -> table_ $ rows $ Vector.toList a
+    Just (Aeson.Object _) -> mempty
+    Just (Aeson.String _) -> mempty
+    Just (Aeson.Number _) -> mempty
+    Just (Aeson.Bool   _) -> mempty
+    Just (Aeson.Null    ) -> mempty
+    Nothing               -> mempty
+    where
+        rows []     = mempty
+        rows (x:xs) = do
+            fromJsonArray x
+            rows xs
 
+fromJsonArray :: Aeson.Value -> ReactElementM ViewEventHandler ()
+fromJsonArray value = case value of
+    Aeson.Array  _ -> tr_ $ td_ $ elemString "(Array)"
+    Aeson.Object a -> tr_ $ td_ $ elemString "(Object)"
+    Aeson.String a -> tr_ $ td_ $ elemString $ convert a
+    Aeson.Number a -> tr_ $ td_ $ elemString $ show $ coefficient a
+    Aeson.Bool   a -> tr_ $ td_ $ elemString "(Bool)"
+    Aeson.Null     -> tr_ $ td_ $ elemString "Null"
 
 strValue :: ExpressionNode -> String
 strValue n = case n ^. Node.value of
     Nothing -> ""
-    Just (NodeValue value []) -> Text.unpack value
     Just (NodeValue value _ ) -> Text.unpack value
     Just (NodeError msg     ) -> showError msg --limitString errorLen (convert $ showError msg)
 
@@ -144,5 +159,5 @@ showErrorSep sep err = case err of
     LunaError.Error LunaError.CompileError msg -> "Compile error: " <> sep <> convert msg
     LunaError.Error LunaError.RuntimeError msg -> "Runtime error: " <> sep <> convert msg
 
-normalize :: String -> String
-normalize = intercalate "<br />" . wordsBy (== '\n')
+-- normalize :: String -> String
+-- normalize = intercalate "<br />" . wordsBy (== '\n')
