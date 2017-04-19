@@ -1,4 +1,4 @@
-module Luna.Atom.Batch.Connector.Commands where
+module Luna.Atom.Batch.Commands where
 
 import           Data.UUID.Types                        (UUID)
 import qualified Empire.API.Atom.IsSaved              as IsSaved

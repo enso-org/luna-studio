@@ -3,7 +3,7 @@ module Luna.Atom.Action.Batch  where
 import           Data.UUID.Types                      (UUID)
 import           Luna.Atom.Action.Command           (Command)
 import           Luna.Atom.Action.UUID              (registerRequest)
-import qualified Luna.Atom.Batch.Connector.Commands as BatchCmd
+import qualified Luna.Atom.Batch.Commands as BatchCmd
 import           Luna.Prelude
 import           Luna.Atom.State.Global             (State, clientId)
 
