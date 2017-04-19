@@ -4,7 +4,6 @@ module Luna.Atom.Event.Source
     ( AddHandler(..)
     , fileHandler
     , textHandler
-    , customEventHandler
     , webSocketHandler
     ) where
 
@@ -14,13 +13,10 @@ import           GHCJS.Marshal.Pure                     (pFromJSVal)
 import           GHCJS.Prim                             (fromJSString)
 
 import qualified JS.Atom                                as Atom
-import qualified JS.CustomEvent                         as CustomEvent
 import qualified WebSocket                           as WebSocket
 import qualified Luna.Batch.Connector.Connection as BatchConnection
 import qualified Luna.Atom.Event.Connection           as Connection
-import qualified Luna.Atom.Event.CustomEvent          as CustomEvent
-import           Luna.Atom.Event.Event                (Event (Atom, Connection, CustomEvent, Text))
--- import qualified Luna.Atom.React.Event.App            as App
+import           Luna.Atom.Event.Event                (Event (Atom, Connection, Text))
 
 
 data AddHandler a = AddHandler ((a -> IO ()) -> IO (IO ()))
@@ -50,9 +46,3 @@ webSocketHandler conn = AddHandler $ \h -> do
         h $ Connection $ Connection.Closed code
     WebSocket.onError conn $
         h $ Connection Connection.Error
-
-customEventHandler :: AddHandler Event
-customEventHandler  = AddHandler $ \h -> do
-    CustomEvent.initializeEvents
-    CustomEvent.registerCallback $ \topic payload ->
-        liftIO $ h $ CustomEvent $ CustomEvent.RawEvent (pFromJSVal topic) payload

@@ -14,7 +14,6 @@ import qualified Luna.Atom.Event.Event                    as Event
 import           Luna.Atom.Event.Loop                     (LoopRef)
 import qualified Luna.Atom.Event.Loop                     as Loop
 import qualified Luna.Atom.Event.Preprocessor.Batch       as BatchEventPreprocessor
-import qualified Luna.Atom.Event.Preprocessor.CustomEvent as CustomEventPreprocessor
 import           Luna.Atom.Event.Source                   (AddHandler (..))
 import qualified Luna.Atom.Event.Source                   as JSHandlers
 import qualified Luna.Atom.Handler.Backend.ProjectManager as ProjectManager
@@ -47,9 +46,7 @@ runCommands cmds event = sequence_ . catMaybes $ fmap ($ event) cmds
 preprocessEvent :: Event -> IO Event
 preprocessEvent ev = do
     let batchEvent    = BatchEventPreprocessor.process ev
-        -- shortcutEvent = ShortcutEventPreprocessor.process ev
-    customEvent   <- CustomEventPreprocessor.process ev
-    return $ fromMaybe ev $ getLast $ Last batchEvent <> Last customEvent
+    return $ fromMaybe ev $ getLast $ Last batchEvent
 
 processEvent :: LoopRef -> Event -> IO ()
 processEvent loop ev = modifyMVar_ (loop ^. Loop.state) $ \state -> do
@@ -76,9 +73,6 @@ connectEventSources conn loop = do
                    ]
         mkSource (AddHandler rh) = rh $ scheduleEvent loop
     sequence_ $ mkSource <$> handlers
-    -- mkSource $ JSHandlers.webSocketHandler conn
-    -- mkSource $ JSHandlers.textHandler
-    -- mkSource $ JSHandlers.fileHandler
 
 handleExcept :: State -> Event -> JSException -> IO State
 handleExcept oldState event except = do
