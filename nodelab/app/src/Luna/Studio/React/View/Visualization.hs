@@ -9,36 +9,36 @@ module Luna.Studio.React.View.Visualization
 , strValue
 ) where
 
-import           Data.Aeson                                     (FromJSON)
+--import           Data.Aeson                                     (FromJSON)
 import qualified Data.Aeson                                     as Aeson
 import qualified Data.ByteString.Lazy.Char8                     as ByteString
-import           Data.List.Split                                (wordsBy)
+--import           Data.List.Split                                (wordsBy)
 import           Data.Position                                  (Position)
 import           Data.Scientific                                (coefficient)
 import           Data.Text                                      as Text
-import           Data.Vector                                    (Vector(..))
+--import           Data.Vector                                    (Vector)
 import qualified Data.Vector                                    as Vector
 import           React.Flux                                     hiding (image_)
 import qualified React.Flux                                     as React
 import qualified Empire.API.Data.Error                          as LunaError
-import           Empire.API.Data.PortDefault                    (VisualizationValue(..),PortValue(..))
-import           Empire.API.Data.TypeRep                        (TypeRep)
+import           Empire.API.Data.PortDefault                    (VisualizationValue(..))
+--import           Empire.API.Data.TypeRep                        (TypeRep)
 import           Empire.API.Graph.NodeResultUpdate              (NodeValue(..))
 import qualified Luna.Studio.Event.UI                           as UI
 import           Luna.Studio.Prelude
 import qualified Luna.Studio.React.Event.Visualization          as Visualization
 import           Luna.Studio.React.Model.App                    (App)
-import           Luna.Studio.React.Model.DataFrame              (DataFrame)
-import qualified Luna.Studio.React.Model.DataFrame              as DataFrame
-import qualified Luna.Studio.React.Model.Image                  as Image
+--import           Luna.Studio.React.Model.DataFrame              (DataFrame)
+--import qualified Luna.Studio.React.Model.DataFrame              as DataFrame
+--import qualified Luna.Studio.React.Model.Image                  as Image
 import           Luna.Studio.React.Model.Node.ExpressionNode    (ExpressionNode, NodeLoc)
 import qualified Luna.Studio.React.Model.Node.ExpressionNode    as Node
 import           Luna.Studio.React.Model.NodeEditor             (NodeEditor)
 import qualified Luna.Studio.React.Model.NodeEditor             as NodeEditor
 import           Luna.Studio.React.Store                        (Ref, dispatch)
 import qualified Luna.Studio.React.View.Style                   as Style
-import           Luna.Studio.React.View.Visualization.DataFrame (dataFrame_)
-import           Luna.Studio.React.View.Visualization.Image     (image_)
+--import           Luna.Studio.React.View.Visualization.DataFrame (dataFrame_)
+--import           Luna.Studio.React.View.Visualization.Image     (image_)
 
 viewName, objNameVis, objNameShortVal :: JSString
 viewName        = "visualization"
@@ -123,7 +123,7 @@ nodeValue_ ref nl mayPos visIx value = do
 
 fromJsonValue :: String -> ReactElementM ViewEventHandler ()
 fromJsonValue value = case (Aeson.decode $ ByteString.pack value :: Maybe Aeson.Value) of
-    Just (Aeson.Array  a) -> table_ $ rows $ Vector.toList a
+    Just (Aeson.Array  a) -> table_ $ rows $ keyed $ Vector.toList a
     Just (Aeson.Object _) -> mempty
     Just (Aeson.String _) -> mempty
     Just (Aeson.Number _) -> mempty
@@ -136,14 +136,20 @@ fromJsonValue value = case (Aeson.decode $ ByteString.pack value :: Maybe Aeson.
             fromJsonArray x
             rows xs
 
-fromJsonArray :: Aeson.Value -> ReactElementM ViewEventHandler ()
-fromJsonArray value = case value of
-    Aeson.Array  _ -> tr_ $ td_ $ elemString "(Array)"
-    Aeson.Object a -> tr_ $ td_ $ elemString "(Object)"
-    Aeson.String a -> tr_ $ td_ $ elemString $ convert a
-    Aeson.Number a -> tr_ $ td_ $ elemString $ show $ coefficient a
-    Aeson.Bool   a -> tr_ $ td_ $ elemString "(Bool)"
-    Aeson.Null     -> tr_ $ td_ $ elemString "Null"
+fromJsonArray :: (Int, Aeson.Value) -> ReactElementM ViewEventHandler ()
+fromJsonArray (k, val) = case val of
+    Aeson.Array  _ -> row "(Array)"
+    Aeson.Object _ -> row "(Object)"
+    Aeson.String a -> row $ convert a
+    Aeson.Number a -> row $ show $ coefficient a
+    Aeson.Bool   _ -> row "(Bool)"
+    Aeson.Null     -> row "(Null)"
+    where
+        cell = td_ . elemString
+        key  = cell $ show k
+        row x = tr_ $ do
+            key
+            cell x
 
 strValue :: ExpressionNode -> String
 strValue n = case n ^. Node.value of
