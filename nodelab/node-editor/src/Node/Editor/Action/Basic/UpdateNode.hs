@@ -24,8 +24,10 @@ localUpdateInputNode :: InputNode -> Command State Bool
 localUpdateInputNode node = NodeEditor.getInputNode (node ^. nodeLoc) >>= \case
     Nothing       -> return False
     Just prevNode -> do
-        let sidebarMode = prevNode ^. SidebarNode.mode
-        NodeEditor.addInputNode $ node & SidebarNode.mode .~ sidebarMode
+        let sidebarMode  = prevNode ^. SidebarNode.mode
+            frozenHeight = prevNode ^. SidebarNode.inputFrozenHeight
+        NodeEditor.addInputNode $ node & SidebarNode.mode              .~ sidebarMode
+                                       & SidebarNode.inputFrozenHeight .~ frozenHeight
         updateScene
         return True
 
@@ -33,8 +35,10 @@ localUpdateOutputNode :: OutputNode -> Command State Bool
 localUpdateOutputNode node = NodeEditor.getOutputNode (node ^. nodeLoc) >>= \case
     Nothing       -> return False
     Just prevNode -> do
-        let sidebarMode = prevNode ^. SidebarNode.mode
+        let sidebarMode  = prevNode ^. SidebarNode.mode
+            frozenHeight = prevNode ^. SidebarNode.outputFrozenHeight
         NodeEditor.addOutputNode $ node & SidebarNode.mode .~ sidebarMode
+                                       & SidebarNode.outputFrozenHeight .~ frozenHeight
         updateScene
         return True
 

@@ -28,17 +28,17 @@ instance Default SidebarMode where
     def = MoveConnect
 
 data InputNode = InputNode
-        { _inputNodeLoc        :: NodeLoc
-        , _inputSidebarPorts   :: [OutPortTree OutPort]
-        , _inputMode           :: SidebarMode
-        , _inputFixedBottomPos :: Maybe Double
+        { _inputNodeLoc      :: NodeLoc
+        , _inputSidebarPorts :: [OutPortTree OutPort]
+        , _inputMode         :: SidebarMode
+        , _inputFrozenHeight :: Maybe Double
         } deriving (Eq, Generic, NFData, Show)
 
 data OutputNode = OutputNode
-        { _outputNodeLoc        :: NodeLoc
-        , _outputSidebarPorts   :: InPortTree InPort
-        , _outputMode           :: SidebarMode
-        , _outputFixedBottomPos :: Maybe Double
+        { _outputNodeLoc      :: NodeLoc
+        , _outputSidebarPorts :: InPortTree InPort
+        , _outputMode         :: SidebarMode
+        , _outputFrozenHeight :: Maybe Double
         } deriving (Eq, Generic, NFData, Show)
 
 makeLenses ''InputNode
@@ -49,17 +49,17 @@ type OutputNodesMap = HashMap NodeId OutputNode
 
 instance Convertible (NodePath, Empire.InputSidebar) InputNode where
     convert (path, n) = InputNode
-        {- inputNodeLoc        -} (NodeLoc path (n ^. Empire.inputNodeId))
-        {- inputSidebarPorts   -} (convert `fmap2` (n ^. Empire.inputEdgePorts))
-        {- inputMode           -} def
-        {- inputFixedBottomPos -} def
+        {- inputNodeLoc      -} (NodeLoc path (n ^. Empire.inputNodeId))
+        {- inputSidebarPorts -} (convert `fmap2` (n ^. Empire.inputEdgePorts))
+        {- inputMode         -} def
+        {- inputFrozenHeight -} def
 
 instance Convertible (NodePath, Empire.OutputSidebar) OutputNode where
     convert (path, n) = OutputNode
-        {- outputNodeLoc        -} (NodeLoc path (n ^. Empire.outputNodeId))
-        {- outputSideBarPorts   -} (convert <$> n ^. Empire.outputEdgePorts)
-        {- outputMode           -} def
-        {- outputFixedBottomPos -} def
+        {- outputNodeLoc      -} (NodeLoc path (n ^. Empire.outputNodeId))
+        {- outputSideBarPorts -} (convert <$> n ^. Empire.outputEdgePorts)
+        {- outputMode         -} def
+        {- outputFrozenHeight -} def
 
 instance HasNodeLoc InputNode where
     nodeLoc = inputNodeLoc
@@ -81,8 +81,8 @@ instance HasPorts InputNode where
     outPortAt _                  = ignored
 
 class IsNode node => SidebarNode node where
-    mode :: Lens' node SidebarMode
-    fixedBottomPos :: Lens' node (Maybe Double)
+    mode           :: Lens' node SidebarMode
+    frozenHeight   :: Lens' node (Maybe Double)
     isInputSidebar :: node -> Bool
 
     isInMode :: SidebarMode -> node -> Bool
@@ -95,11 +95,11 @@ class IsNode node => SidebarNode node where
     isInMoveConnectMode = isInMode MoveConnect
 
 instance SidebarNode InputNode where
-    mode = inputMode
-    fixedBottomPos = inputFixedBottomPos
+    mode           = inputMode
+    frozenHeight   = inputFrozenHeight
     isInputSidebar = const True
 
 instance SidebarNode OutputNode where
-    mode = outputMode
-    fixedBottomPos = outputFixedBottomPos
+    mode           = outputMode
+    frozenHeight   = outputFrozenHeight
     isInputSidebar = const False
