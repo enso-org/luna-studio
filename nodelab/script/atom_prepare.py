@@ -6,7 +6,6 @@ import fileinput
 import glob
 import subprocess
 import shutil
-import lesscpy
 
 def prepare_holder(output, content_start, content_end, input1, input2, placeholder):
     with open(output, 'a+') as modified:
@@ -42,13 +41,12 @@ def prep_path(path):
     return os.path.normpath(os.path.join(script_abs_path, path))
 
 def rm_old():
-    shutil.rmtree(prep_path('../atom/lib/gen'), ignore_errors=True)
-    shutil.rmtree(prep_path('../atom/styles'), ignore_errors=True)
-    shutil.rmtree(prep_path('../atom/node_modules'), ignore_errors=True)
+    for path in ('../atom/lib/gen', '../atom/styles', '../atom/node_modules')
+        shutil.rmtree(prep_path(path), ignore_errors=True)
 
 def create_dirs():
-    os.makedirs(prep_path('../atom/lib/gen'))
-    os.makedirs(prep_path('../atom/styles'))
+    for path in ('../atom/lib/gen', '../atom/styles'):
+        os.makedirs(prep_path(path)
 
 def ghcjs_code():
     nodelab = prep_path('../.stack-work/') + '/**/bin/node-editor.jsexe/all.js'
@@ -60,10 +58,8 @@ def ghcjs_code():
 
 def cp_files():
     distutils.dir_util.copy_tree(prep_path('../node-editor/js'), prep_path('../atom/lib/gen'))
-    shutil.copy(prep_path('../luna-atom/js/atom-callback-internals.js'), prep_path('../atom/lib/gen'))
-    shutil.copy(prep_path('../luna-atom/js/app-internals.coffee'), prep_path('../atom/lib/gen'))
-    shutil.copy(prep_path('../node-editor/config.release.js'), prep_path('../atom/lib/gen'))
-    shutil.copy(prep_path('../node-editor/config.debug.js'), prep_path('../atom/lib/gen'))
+    for path in ('../luna-atom/js/atom-callback-internals.js', '../luna-atom/js/app-internals.coffee', '../node-editor/config.release.js', '../node-editor/config.debug.js')
+        shutil.copy(prep_path(path), prep_path('../atom/lib/gen'))
 
 def main():
     rm_old()
