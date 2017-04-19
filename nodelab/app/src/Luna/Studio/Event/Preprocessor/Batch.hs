@@ -26,7 +26,6 @@ handlers = Map.fromList [ handle GetProgramResponse
                         , handle AddNodeResponse
                         , handle AddPortResponse
                         , handle AddSubgraphResponse
-                        , handle CodeUpdate
                         , handle CollaborationUpdate
                         , handle ConnectUpdate
                         , handle DumpGraphVizResponse

@@ -45,7 +45,6 @@ import qualified Empire.API.Graph.AddConnection     as AddConnection
 import qualified Empire.API.Graph.AddNode           as AddNode
 import qualified Empire.API.Graph.AddPort           as AddPort
 import qualified Empire.API.Graph.AddSubgraph       as AddSubgraph
-import qualified Empire.API.Graph.CodeUpdate        as CodeUpdate
 import qualified Empire.API.Graph.ConnectUpdate     as ConnectUpdate
 import qualified Empire.API.Graph.DumpGraphViz      as DumpGraphViz
 import qualified Empire.API.Graph.GetProgram        as GetProgram
@@ -89,15 +88,6 @@ import           ZMQ.Bus.Trans                      (BusT (..))
 
 logger :: Logger.Logger
 logger = Logger.getLogger $(Logger.moduleName)
-
-notifyCodeUpdate :: GraphLocation -> StateT Env BusT ()
-notifyCodeUpdate location = do
-    currentEmpireEnv <- use Env.empireEnv
-    empireNotifEnv   <- use Env.empireNotif
-    (resultCode, _) <- liftIO $ Empire.runEmpire empireNotifEnv currentEmpireEnv $ Graph.getCode location
-    case resultCode of
-        Left err -> logger Logger.error $ errorMessage <> err
-        Right code -> sendToBus' $ CodeUpdate.Update location $ Text.pack code
 
 notifyNodeResultUpdate :: GraphLocation -> NodeId -> [VisualizationValue] -> Text -> StateT Env BusT ()
 notifyNodeResultUpdate location nodeId values name = sendToBus' $ NodeResultUpdate.Update location nodeId (NodeValue name values) 42
@@ -159,7 +149,6 @@ modifyGraph inverse action success origReq@(Request uuid guiID request') = do
                 Right result -> do
                     Env.empireEnv .= newEmpireEnv
                     success origReq inv result
-                    notifyCodeUpdate $ request ^. G.location
                     saveCurrentProject $ request ^. G.location
 
 modifyGraphOk :: forall req inv res . (Bin.Binary req, G.GraphRequest req, Response.ResponseResult req inv ()) => (req -> Empire inv) -> (req -> Empire res) -> Request req -> StateT Env BusT ()

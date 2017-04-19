@@ -11,7 +11,6 @@ import qualified Empire.API.Graph.AddConnection               as AddConnection
 import qualified Empire.API.Graph.AddNode                     as AddNode
 import qualified Empire.API.Graph.AddPort                     as AddPort
 import qualified Empire.API.Graph.AddSubgraph                 as AddSubgraph
-import qualified Empire.API.Graph.CodeUpdate                  as CodeUpdate
 import qualified Empire.API.Graph.CollaborationUpdate         as CollaborationUpdate
 import qualified Empire.API.Graph.ConnectUpdate               as ConnectUpdate
 import qualified Empire.API.Graph.GetProgram                  as GetProgram
@@ -34,7 +33,7 @@ import qualified Empire.API.Graph.SetPortDefault              as SetPortDefault
 import qualified Empire.API.Response                          as Response
 import           Luna.Studio.Action.Basic                     (createGraph, localAddConnection, localAddExpressionNode, localAddPort,
                                                                localAddSubgraph, localMerge, localMovePort, localRemoveConnection,
-                                                               localRemoveNodes, localRemovePort, localRenameNode, localSetCode,
+                                                               localRemoveNodes, localRemovePort, localRenameNode,
                                                                localSetNodeCode, localSetNodeExpression, localSetNodesMeta,
                                                                localSetPortDefault, localSetSearcherHints, localUpdateExpressionNode,
                                                                localUpdateExpressionNodes, localUpdateInputNode, localUpdateNodeTypecheck,
@@ -82,7 +81,6 @@ handle (Event.Batch ev) = Just $ case ev of
                 Global.workspace . Workspace.nodeSearcherData .= nsData
                 setBreadcrumbs breadcrumb
                 createGraph nodes input output connections monads
-                localSetCode code
                 unless isGraphLoaded $ do
                     centerGraph
                     requestCollaborationRefresh
@@ -145,10 +143,6 @@ handle (Event.Batch ev) = Just $ case ev of
                 localUpdateExpressionNodes nodes
                 collaborativeModify $ flip map nodes $ view nodeLoc
             else void $ localAddSubgraph nodes (map (\conn -> (prependPath path (conn ^. src), prependPath path (conn ^. dst))) conns)
-
-    CodeUpdate update -> do
-       inCurrentLocation (update ^. CodeUpdate.location) $ \_ -> do
-            localSetCode $ update ^. CodeUpdate.code
 
     CollaborationUpdate update -> inCurrentLocation (update ^. CollaborationUpdate.location) $ \path -> do
         let clientId = update ^. CollaborationUpdate.clientId

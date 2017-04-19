@@ -32,7 +32,6 @@ module Luna.Studio.Action.Basic
     , localRemovePort
     , localRemoveSelectedNodes
     , localRenameNode
-    , localSetCode
     , localSetNodeCode
     , localSetNodeExpression
     , localSetNodeMeta
@@ -126,7 +125,6 @@ import           Luna.Studio.Action.Basic.Scene               (getScene, updateS
 import           Luna.Studio.Action.Basic.SearchNodes         (localSetSearcherHints)
 import           Luna.Studio.Action.Basic.SelectNode          (dropSelectionHistory, modifySelectionHistory, selectAll, selectNodes,
                                                                selectPreviousNodes, toggleSelect, unselectAll)
-import           Luna.Studio.Action.Basic.SetCode             (localSetCode)
 import           Luna.Studio.Action.Basic.SetNodeCode         (localSetNodeCode, setNodeCode)
 import           Luna.Studio.Action.Basic.SetNodeExpression   (localSetNodeExpression, setNodeExpression)
 import           Luna.Studio.Action.Basic.SetNodeMeta         (localMoveNode, localMoveNodes, localSetNodeMeta, localSetNodesMeta,
