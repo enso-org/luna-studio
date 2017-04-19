@@ -59,6 +59,7 @@ dependencies:
   - prologue
   - random
   - react-flux
+  - scientific
   - scope-searcher
   - split
   - text
@@ -66,6 +67,7 @@ dependencies:
   - transformers
   - unordered-containers
   - uuid-types
+  - vector
   - visualization-api
 
 executables:
