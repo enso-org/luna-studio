@@ -4,22 +4,10 @@ import           Data.UUID.Types                      (UUID)
 import           Luna.Atom.Action.Command           (Command)
 import           Luna.Atom.Action.UUID              (registerRequest)
 import qualified Luna.Atom.Batch.Connector.Commands as BatchCmd
-import           Luna.Atom.Batch.Workspace          (Workspace)
 import           Luna.Prelude
-import           Luna.Atom.State.Global             (State, clientId, workspace)
+import           Luna.Atom.State.Global             (State, clientId)
 
 
-withWorkspace :: (Workspace -> UUID -> Maybe UUID -> IO ()) -> Command State ()
-withWorkspace act = do
-    uuid       <- registerRequest
-    guiID      <- use clientId
-    workspace' <- use workspace
-    liftIO $ act workspace' uuid $ Just guiID
-
-withWorkspace' :: (Workspace -> IO ()) -> Command State ()
-withWorkspace' act = do
-    workspace' <- use workspace
-    liftIO $ act workspace'
 
 withUUID :: (UUID -> Maybe UUID -> IO ()) -> Command State ()
 withUUID act = do
