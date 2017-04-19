@@ -70,14 +70,13 @@ $ brunch watch --server # or serve $REPO_DIR/nodelab/www using any HTTP server
 Create folder ```.luna-atom``` (name can be changed) and export path to it as ```LUNA_HOME```. Then:
 
 ```shell
-$ cd $REPO_DIR/internals
-$ stack build --fast
 $ cd $REPO_DIR/nodelab
-$ ./script/atom-install
-$ ./script/atom-run
+$ npm install -g less
+$ python3 ./script/atom_install.py
+$ python3 ./script/atom_run.py
 ```
 
-Every change in nodelab code requires rerun of ```atom-install``` script and reload of Atom (OSX shortcut: ```ctrl + alt + cmd + L```, Linux shortcut: ```ctrl + shift + F5```).
+Every change in nodelab code requires rerun of ```atom_install.py``` script and reload of Atom (OSX shortcut: ```ctrl + alt + cmd + L```, Linux shortcut: ```ctrl + shift + F5```).
 
 
 ## Known problems
