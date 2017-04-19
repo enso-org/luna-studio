@@ -2,9 +2,9 @@ LunaEditorTab = require './luna-editor-tab'
 LunaStudioTab = require './luna-studio-tab'
 SubAtom       = require 'sub-atom'
 
-i             = require "./gen/ghcjs-code2.js"
+i             = require './gen/luna-atom-ghcjs.js'
 internal = i()
-c             = require "./gen/ghcjs-code.js"
+c             = require './gen/node-editor-ghcjs.js'
 code = c()
 path = require 'path'
 

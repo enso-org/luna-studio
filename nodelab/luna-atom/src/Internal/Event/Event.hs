@@ -22,9 +22,7 @@ data Event = Init
            | CustomEvent             CustomEvent.Event
            | Debug                         Debug.Event
            | Tick
-          --  | Shortcut                    ShortcutEvent
            | Text                            TextEvent
-        --    | UI                                UIEvent
            deriving (Generic, Show, NFData)
 
 

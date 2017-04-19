@@ -12,6 +12,7 @@ dependencies:
     override:
         - stack build --stack-yaml=build/backend/stack.yaml --only-dependencies --install-ghc --test --fast -j2
         - stack build --stack-yaml=nodelab/stack.yaml --only-dependencies --install-ghc --fast -j1
+        - npm install -g less
 
     cache_directories:
         - "~/.stack"
