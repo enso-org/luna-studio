@@ -8,6 +8,7 @@ module Luna.Studio.React.View.Sidebar
 import qualified Data.Aeson                               as Aeson
 import           Data.Position                            (y)
 import           Empire.API.Data.PortRef                  (AnyPortRef (OutPortRef'), OutPortRef (OutPortRef), toAnyPortRef)
+import qualified Empire.API.Data.PortRef                  as PortRef
 import qualified JS.Config                                as Config
 import           JS.Scene                                 (inputSidebarId, outputSidebarId)
 import qualified JS.UI                                    as UI
@@ -18,7 +19,7 @@ import           Luna.Studio.React.Model.App              (App)
 import           Luna.Studio.React.Model.Constants        (lineHeight)
 import qualified Luna.Studio.React.Model.Field            as Field
 import           Luna.Studio.React.Model.Node.SidebarNode (NodeLoc, SidebarMode (AddRemove, MoveConnect), SidebarNode, countProjectionPorts,
-                                                           isInputSidebar)
+                                                           frozenHeight, isInputSidebar)
 import qualified Luna.Studio.React.Model.Node.SidebarNode as SidebarNode
 import           Luna.Studio.React.Model.Port             (AnyPort, OutPortIndex (Projection), getPortNumber, getPositionInSidebar,
                                                            isHighlighted, isInMovedMode, isInNameEditMode, isInPort, isOutPort)
@@ -38,7 +39,9 @@ portHandlers :: Ref App -> SidebarMode -> Bool -> Bool -> AnyPortRef -> [Propert
 portHandlers ref AddRemove _ isOnly portRef =
     [ onMouseDown $ \e _ -> [stopPropagation e] ] ++
     if isOnly then [] else
-    [ onClick     $ \e _ -> stopPropagation e : dispatch ref (UI.SidebarEvent $ Sidebar.RemovePort portRef) ]
+    [ onClick      $ \e _ -> stopPropagation e : dispatch ref (UI.SidebarEvent $ Sidebar.RemovePort portRef)
+    , onMouseLeave $ \_ _ -> dispatch ref (UI.SidebarEvent . Sidebar.UnfreezeSidebar $ portRef ^. PortRef.nodeLoc)
+    ]
 
 portHandlers ref MoveConnect False _ portRef =
     [ onMouseDown $ \e _ -> [stopPropagation e]
@@ -53,12 +56,12 @@ sidebar_ ref node = do
     let ports             = SidebarNode.portsList node
         nodeLoc           = node ^. SidebarNode.nodeLoc
         mode              = node ^. SidebarNode.mode
-        mayFixedPos       = map (\pos -> "style" @= Aeson.object [ "bottom" Aeson..= show pos]) $
-            maybeToList $ node ^. SidebarNode.fixedBottomPos
         isPortDragged     = any isInMovedMode ports
         classes           = [ "sidebar", if isInputSidebar node then "sidebar--i" else "sidebar--o" ]
-                         ++ if mode == AddRemove then ["sidebar--editmode"] else []
-                         ++ if isPortDragged then ["sidebar--dragmode"] else []
+                         ++ if mode == AddRemove             then ["sidebar--editmode"]   else []
+                         ++ if isPortDragged                 then ["sidebar--dragmode"]   else []
+                         ++ if isJust $ node ^. frozenHeight then ["sidebar--freezemode"] else []
+        mayFreeze         = if isJust $ node ^. frozenHeight then ["style" @= Aeson.object [ "height" Aeson..= (fromJust $ node ^. frozenHeight) ]] else []
         addButtonHandlers = let portRef = OutPortRef' (OutPortRef nodeLoc [Projection (countProjectionPorts node)]) in
             case mode of
                 AddRemove   -> [ onMouseDown $ \e _ -> [stopPropagation e]
@@ -67,17 +70,17 @@ sidebar_ ref node = do
                 MoveConnect -> portHandlers ref mode False False portRef
 
 
-    div_ (
+    div_
         [ "key"         $= name node
         , "className"   $= Style.prefixFromList classes
         , onDoubleClick $ \e _ -> [stopPropagation e]
         , onMouseDown   $ \e _ -> [stopPropagation e]
         , onMouseMove   $ \e m -> stopPropagation e : (dispatch ref $ UI.SidebarEvent $ Sidebar.MouseMove m nodeLoc)
-        ] ++ mayFixedPos ) $ do
-        div_
+        ] $ do
+        div_ (
             [ "key" $= "activeArea"
             , "className" $= Style.prefixFromList [ "sidebar__active-area", "noselect" ]
-            ] $
+            ] ++ mayFreeze) $
             div_
                 [ "key"       $= "SidebarPortsBody"
                 , "id"        $= if isInputSidebar node then inputSidebarId else outputSidebarId
@@ -149,9 +152,10 @@ sidebar_ ref node = do
 addButton_ :: Ref App -> AnyPortRef -> ReactElementM ViewEventHandler ()
 addButton_ ref portRef =
     svg_
-        [ "className" $= Style.prefixFromList ["sidebar__port__svg", "sidebar__port__svg--inbetween"]
-        , onMouseDown $ \e _ -> [stopPropagation e]
-        , onClick     $ \e _ -> stopPropagation e : dispatch ref (UI.SidebarEvent $ Sidebar.AddPort portRef)
+        [ "className"  $= Style.prefixFromList ["sidebar__port__svg", "sidebar__port__svg--inbetween"]
+        , onMouseDown  $ \e _ -> [stopPropagation e]
+        , onClick      $ \e _ -> stopPropagation e : dispatch ref (UI.SidebarEvent $ Sidebar.AddPort portRef)
+        , onMouseLeave $ \_ _ -> dispatch ref (UI.SidebarEvent . Sidebar.UnfreezeSidebar $ portRef ^. PortRef.nodeLoc)
         ] $
         g_ [ "className" $= Style.prefix "port-add-inbetween" ] $ do
             g_ [ "className" $= Style.prefix "port-add-inbetween__shape" ] $ do

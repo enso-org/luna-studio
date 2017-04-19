@@ -22,7 +22,7 @@ import           Luna.Studio.Event.Mouse                  (mousePosition)
 import           Luna.Studio.Prelude
 import           Luna.Studio.React.Model.Constants        (gridSize)
 import qualified Luna.Studio.React.Model.Layout           as Scene
-import           Luna.Studio.React.Model.Node.SidebarNode (NodeLoc, countProjectionPorts, fixedBottomPos, outPortAt)
+import           Luna.Studio.React.Model.Node.SidebarNode (NodeLoc, countProjectionPorts, inputFrozenHeight, outPortAt, outPortsList)
 import           Luna.Studio.React.Model.Port             (OutPortIndex (Projection), getPortNumber)
 import qualified Luna.Studio.React.Model.Port             as Port
 import           Luna.Studio.React.Model.Sidebar          (portPositionInInputSidebar)
@@ -49,27 +49,28 @@ instance Action (Command State) PortDrag where
             else cancelPortDragUnsafe action
 
 getInputSidebarBottomDistance :: Command State (Maybe Double)
-getInputSidebarBottomDistance = getScene >>= \mayScene -> return $
+getInputSidebarBottomDistance = getScene >>= \mayScene -> print mayScene >> (return $
     case (mayScene, (join $ view Scene.inputSidebar <$> mayScene)) of
         (Nothing, _)               -> Nothing
         (_, Nothing)               -> Nothing
         (Just scene, Just sidebar) -> Just $
-            scene ^. Scene.size . y - sidebar ^. Sidebar.inputSidebarPosition . y - sidebar ^. Sidebar.inputSidebarSize . y
+            scene ^. Scene.size . y - sidebar ^. Sidebar.inputSidebarPosition . y - sidebar ^. Sidebar.inputSidebarSize . y)
 
-setFixedBottomPos :: OutPortRef -> Command State ()
-setFixedBottomPos portRef = do
-    let nodeLoc = portRef ^. PortRef.nodeLoc
-    mayBottomPos <- getInputSidebarBottomDistance
-    modifyInputNode nodeLoc $ fixedBottomPos .= mayBottomPos
+unfreezeSidebar :: NodeLoc -> Command State ()
+unfreezeSidebar nl = modifyInputNode nl $ inputFrozenHeight .= def
+
+freezeSidebar :: NodeLoc -> Command State ()
+freezeSidebar nl = withJustM (getInputNode nl) $ \node -> unless (isJust $ node ^. inputFrozenHeight) $
+    modifyInputNode nl $ inputFrozenHeight ?= (fromIntegral . length $ outPortsList node) * gridSize + 31
 
 addPort :: OutPortRef -> Command State ()
 addPort portRef = do
-    setFixedBottomPos portRef
+    freezeSidebar $ portRef ^. PortRef.nodeLoc
     Basic.addPort portRef
 
 removePort :: OutPortRef -> Command State ()
 removePort portRef = do
-    setFixedBottomPos portRef
+    freezeSidebar $ portRef ^. PortRef.nodeLoc
     Basic.removePort portRef
 
 startPortNameEdit :: OutPortRef -> Command State ()
