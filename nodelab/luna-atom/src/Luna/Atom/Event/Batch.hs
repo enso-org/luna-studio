@@ -12,11 +12,9 @@ import qualified Empire.API.Atom.OpenFile               as OpenFile
 import qualified Empire.API.Atom.SaveFile               as SaveFile
 import qualified Empire.API.Atom.SetProject             as SetProject
 import qualified Empire.API.Control.EmpireStarted       as EmpireStarted
-import qualified Empire.API.Graph.CollaborationUpdate   as CollaborationUpdate
 
 
 data Event = UnknownEvent String
-           | CollaborationUpdate           CollaborationUpdate.Update
            | ConnectionDropped
            | ConnectionOpened
            | EmpireStarted                       EmpireStarted.Status
