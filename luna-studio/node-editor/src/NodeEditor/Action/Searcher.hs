@@ -2,29 +2,29 @@
 {-# LANGUAGE OverloadedStrings #-}
 module NodeEditor.Action.Searcher where
 
-import qualified Data.Map                                    as Map
-import           Data.Monoid                                 (All (All), getAll)
-import qualified Data.Text                                   as Text
-import           Text.Read                                   (readMaybe)
+import qualified Data.Map                                   as Map
+import           Data.Monoid                                (All (All), getAll)
+import qualified Data.Text                                  as Text
+import           Text.Read                                  (readMaybe)
 
-import           Data.Position                               (Position)
-import           Data.ScreenPosition                         (ScreenPosition, x)
-import           Empire.API.Data.NodeLoc                     (NodeLoc)
-import qualified Empire.API.Data.NodeLoc                     as NodeLoc
-import qualified JS.GoogleAnalytics                          as GA
-import qualified JS.Searcher                                 as Searcher
+import           Common.Prelude
+import           Data.Position                              (Position)
+import           Data.ScreenPosition                        (ScreenPosition, x)
+import           Empire.API.Data.NodeLoc                    (NodeLoc)
+import qualified Empire.API.Data.NodeLoc                    as NodeLoc
+import qualified JS.GoogleAnalytics                         as GA
+import qualified JS.Searcher                                as Searcher
 import           NodeEditor.Action.Basic                    (createNode, setNodeExpression)
 import qualified NodeEditor.Action.Batch                    as Batch
 import           NodeEditor.Action.Command                  (Command)
 import           NodeEditor.Action.State.Action             (beginActionWithKey, continueActionWithKey, removeActionFromState,
-                                                              updateActionWithKey)
+                                                             updateActionWithKey)
 import           NodeEditor.Action.State.App                (renderIfNeeded)
 import           NodeEditor.Action.State.NodeEditor         (getSearcher, getSelectedNodes, getSelectedNodes, modifyNodeEditor,
-                                                              modifySearcher)
+                                                             modifySearcher)
 import           NodeEditor.Action.State.Scene              (translateToScreen, translateToWorkspace)
 import           NodeEditor.Event.Event                     (Event (Shortcut))
 import qualified NodeEditor.Event.Shortcut                  as Shortcut
-import           Common.Prelude
 import           NodeEditor.React.Model.Node.ExpressionNode (position)
 import qualified NodeEditor.React.Model.NodeEditor          as NodeEditor
 import qualified NodeEditor.React.Model.Searcher            as Searcher
@@ -33,8 +33,8 @@ import           NodeEditor.State.Action                    (Action (begin, cont
 import           NodeEditor.State.Global                    (State)
 import qualified NodeEditor.State.Global                    as Global
 import qualified NodeEditor.State.UI                        as UI
-import           Text.ScopeSearcher.Item                     (Item (..), Items)
-import qualified Text.ScopeSearcher.Scope                    as Scope
+import           Text.ScopeSearcher.Item                    (Item (..), Items)
+import qualified Text.ScopeSearcher.Scope                   as Scope
 
 
 instance Action (Command State) Searcher where
@@ -146,10 +146,9 @@ substituteInputWithEntry :: Searcher -> Command State ()
 substituteInputWithEntry _ = do
     modifySearcher $ do
         newInput <- use Searcher.selectedExpression
-        Searcher.input        .= newInput
-        Searcher.replaceInput .= True
-    renderIfNeeded
-    modifySearcher $ Searcher.replaceInput .= False
+        Searcher.input .= newInput
+    forceSearcherInputUpdate
+
 
 querySearch :: Text -> Searcher -> Command State ()
 querySearch query _ = do
@@ -168,3 +167,10 @@ querySearch query _ = do
             Searcher.rollbackReady .= False
         return $ All isNode
     when (getAll isNode) $ Batch.searchNodes query selection
+    forceSearcherInputUpdate
+
+forceSearcherInputUpdate :: Command State ()
+forceSearcherInputUpdate = do
+    modifySearcher $ Searcher.replaceInput .= True
+    renderIfNeeded
+    modifySearcher $ Searcher.replaceInput .= False
