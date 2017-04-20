@@ -5,31 +5,31 @@ module NodeEditor.React.View.Sidebar
     , focusPortLabel
     ) where
 
-import qualified Data.Aeson                               as Aeson
-import           Data.Position                            (y)
-import           Empire.API.Data.PortRef                  (AnyPortRef (OutPortRef'), OutPortRef (OutPortRef), toAnyPortRef)
-import qualified Empire.API.Data.PortRef                  as PortRef
-import qualified JS.Config                                as Config
-import           JS.Scene                                 (inputSidebarId, outputSidebarId)
-import qualified JS.UI                                    as UI
-import qualified NodeEditor.Event.UI                     as UI
 import           Common.Prelude
+import qualified Data.Aeson                              as Aeson
+import           Data.Position                           (y)
+import           Empire.API.Data.PortRef                 (AnyPortRef (OutPortRef'), OutPortRef (OutPortRef), toAnyPortRef)
+import qualified Empire.API.Data.PortRef                 as PortRef
+import qualified JS.Config                               as Config
+import           JS.Scene                                (inputSidebarId, outputSidebarId)
+import qualified JS.UI                                   as UI
+import qualified NodeEditor.Event.UI                     as UI
 import qualified NodeEditor.React.Event.Sidebar          as Sidebar
 import           NodeEditor.React.Model.App              (App)
 import           NodeEditor.React.Model.Constants        (lineHeight)
 import qualified NodeEditor.React.Model.Field            as Field
 import           NodeEditor.React.Model.Node.SidebarNode (NodeLoc, SidebarMode (AddRemove, MoveConnect), SidebarNode, countProjectionPorts,
-                                                           frozenHeight, isInputSidebar)
+                                                          frozenHeight, isInputSidebar)
 import qualified NodeEditor.React.Model.Node.SidebarNode as SidebarNode
 import           NodeEditor.React.Model.Port             (AnyPort, OutPortIndex (Projection), getPortNumber, getPositionInSidebar,
-                                                           isHighlighted, isInMovedMode, isInNameEditMode, isInPort, isOutPort)
+                                                          isHighlighted, isInMovedMode, isInNameEditMode, isInPort, isOutPort)
 import qualified NodeEditor.React.Model.Port             as Port
 import           NodeEditor.React.Store                  (Ref, dispatch)
 import           NodeEditor.React.View.Field             (singleField_)
 import           NodeEditor.React.View.Port              (handleClick, handleMouseDown, handleMouseUp, jsShow2)
 import           NodeEditor.React.View.Style             (plainPath_, plainRect_)
 import qualified NodeEditor.React.View.Style             as Style
-import           React.Flux                               hiding (view)
+import           React.Flux                              hiding (view)
 
 
 name :: SidebarNode node => node -> JSString
@@ -109,7 +109,7 @@ sidebar_ ref node = do
                     then sidebarPlaceholderForPort_ >> sidebarDraggedPort_ ref p
                     else sidebarPort_ ref mode nodeLoc isPortDragged (countProjectionPorts node == 1) p
 
-                when (isInputSidebar node && not isPortDragged) $ do
+                when (isInputSidebar node) $ do
                     svg_ (
                         [ "className" $= Style.prefixFromList [ "sidebar__port__svg", "sidebar__port__svg--addbutton" ]
                         , "key"       $= (name node <> "AddButton")

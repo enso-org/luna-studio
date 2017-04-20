@@ -3,23 +3,23 @@
 {-# LANGUAGE RankNTypes #-}
 module NodeEditor.Action.Sidebar where
 
-import           Control.Monad.Trans.Maybe                (MaybeT (MaybeT), runMaybeT)
-import           Data.ScreenPosition                      (ScreenPosition)
-import           Data.Size                                (y)
-import           Empire.API.Data.PortRef                  (AnyPortRef (OutPortRef'), OutPortRef)
-import qualified Empire.API.Data.PortRef                  as PortRef
-import           NodeEditor.Action.Basic                 (getScene, localMovePort, localRemovePort, setInputSidebarPortMode)
+import           Common.Prelude
+import           Control.Monad.Trans.Maybe               (MaybeT (MaybeT), runMaybeT)
+import           Data.ScreenPosition                     (ScreenPosition)
+import           Data.Size                               (y)
+import           Empire.API.Data.PortRef                 (AnyPortRef (OutPortRef'), OutPortRef)
+import qualified Empire.API.Data.PortRef                 as PortRef
+import           NodeEditor.Action.Basic                 (getScene, localMovePort, localRemovePort, setInputSidebarPortMode, updateScene)
 import qualified NodeEditor.Action.Basic                 as Basic
 import qualified NodeEditor.Action.Batch                 as Batch
 import           NodeEditor.Action.Command               (Command)
 import qualified NodeEditor.Action.Connect               as Connect
 import           NodeEditor.Action.State.Action          (beginActionWithKey, continueActionWithKey, removeActionFromState,
-                                                           updateActionWithKey)
+                                                          updateActionWithKey)
 import           NodeEditor.Action.State.App             (renderIfNeeded)
 import           NodeEditor.Action.State.NodeEditor      (getInputNode, modifyInputNode)
 import           NodeEditor.Action.State.Scene           (getInputSidebarSize)
 import           NodeEditor.Event.Mouse                  (mousePosition)
-import           Common.Prelude
 import           NodeEditor.React.Model.Constants        (gridSize)
 import qualified NodeEditor.React.Model.Layout           as Scene
 import           NodeEditor.React.Model.Node.SidebarNode (NodeLoc, countProjectionPorts, inputFrozenHeight, outPortAt, outPortsList)
@@ -29,12 +29,12 @@ import           NodeEditor.React.Model.Sidebar          (portPositionInInputSid
 import qualified NodeEditor.React.Model.Sidebar          as Sidebar
 import qualified NodeEditor.React.View.Sidebar           as Sidebar
 import           NodeEditor.State.Action                 (Action (begin, continue, end, update), Connect, Mode (Click, Drag),
-                                                           PortDrag (PortDrag), connectIsPortPhantom, connectMode, connectSourcePort,
-                                                           connectStartPos, portDragActPortRef, portDragAction, portDragIsPortPhantom,
-                                                           portDragMode, portDragPortStartPosInSidebar, portDragStartPortRef,
-                                                           portDragStartPos)
+                                                          PortDrag (PortDrag), connectIsPortPhantom, connectMode, connectSourcePort,
+                                                          connectStartPos, portDragActPortRef, portDragAction, portDragIsPortPhantom,
+                                                          portDragMode, portDragPortStartPosInSidebar, portDragStartPortRef,
+                                                          portDragStartPos)
 import           NodeEditor.State.Global                 (State)
-import           React.Flux                               (MouseEvent)
+import           React.Flux                              (MouseEvent)
 
 
 instance Action (Command State) PortDrag where
@@ -57,7 +57,9 @@ getInputSidebarBottomDistance = getScene >>= \mayScene -> print mayScene >> (ret
             scene ^. Scene.size . y - sidebar ^. Sidebar.inputSidebarPosition . y - sidebar ^. Sidebar.inputSidebarSize . y)
 
 unfreezeSidebar :: NodeLoc -> Command State ()
-unfreezeSidebar nl = modifyInputNode nl $ inputFrozenHeight .= def
+unfreezeSidebar nl = do
+    modifyInputNode nl $ inputFrozenHeight .= def
+    updateScene
 
 freezeSidebar :: NodeLoc -> Command State ()
 freezeSidebar nl = withJustM (getInputNode nl) $ \node -> unless (isJust $ node ^. inputFrozenHeight) $
