@@ -1,10 +1,11 @@
-{-# LANGUAGE LambdaCase          #-}
-{-# LANGUAGE MultiWayIf          #-}
-{-# LANGUAGE OverloadedStrings   #-}
-{-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE StandaloneDeriving  #-}
-{-# LANGUAGE TypeApplications    #-}
-{-# LANGUAGE TupleSections       #-}
+{-# LANGUAGE LambdaCase            #-}
+{-# LANGUAGE MultiWayIf            #-}
+{-# LANGUAGE OverloadedStrings     #-}
+{-# LANGUAGE PartialTypeSignatures #-}
+{-# LANGUAGE ScopedTypeVariables   #-}
+{-# LANGUAGE StandaloneDeriving    #-}
+{-# LANGUAGE TypeApplications      #-}
+{-# LANGUAGE TupleSections         #-}
 
 module Empire.Commands.Graph
     ( addNode
@@ -37,12 +38,15 @@ module Empire.Commands.Graph
     , typecheck
     , substituteCode
     , loadCode
+    , markerCodeSpan
+    , getNodeIdForMarker
     , withTC
     , withGraph
     ) where
 
+import           Control.Exception             (evaluate)
 import           Control.Monad                 (forM, forM_)
-import           Control.Monad.Catch           (MonadCatch(..), handle)
+import           Control.Monad.Catch           (MonadCatch(..), catchAll, handle)
 import           Control.Monad.State           hiding (when)
 import           Control.Arrow                 ((&&&))
 import           Control.Monad.Error           (throwError)
@@ -103,8 +107,10 @@ import qualified Empire.Commands.Library         as Library
 import qualified Empire.Commands.Publisher       as Publisher
 import           Empire.Empire
 
+import           Data.SpanTree                    (RightSpacedSpan(..))
 import qualified Luna.IR                          as IR
 import qualified OCI.IR.Combinators               as IR (replaceSource, deleteSubtree, narrowTerm)
+import           Luna.Syntax.Text.Parser.CodeSpan (CodeSpan, DeltaSpan)
 import           Luna.Syntax.Text.Parser.Marker   (MarkedExprMap(..))
 import qualified Luna.Syntax.Text.Parser.Marker   as Luna
 import qualified Luna.Syntax.Text.Parser.Parser   as Parser (ReparsingStatus(..), ReparsingChange(..))
@@ -284,21 +290,36 @@ renamePort loc portRef newName = withGraph loc $ runASTOp $ do
     GraphBuilder.buildInputSidebar nodeId
 
 setNodeExpression :: GraphLocation -> NodeId -> Text -> Empire ExpressionNode
-setNodeExpression loc nodeId expression = withTC loc False $ do
-    oldExpr    <- runASTOp $ ASTRead.getASTTarget nodeId
-    parsedRef  <- view _1 <$> ASTParse.runReparser expression oldExpr
-    runASTOp $ ASTModify.rewireNode nodeId parsedRef
-    runAliasAnalysis
-    node <- runASTOp $ do
-        expr      <- ASTRead.getASTPointer nodeId
-        lamItem   <- prepareLambdaChild (BH.MatchNode expr) parsedRef
-        exprItem  <- prepareExprChild   (BH.MatchNode expr) parsedRef
-        forM_ lamItem  $ (Graph.breadcrumbHierarchy . BH.children . ix nodeId .=) . BH.LambdaChild
-        forM_ exprItem $ (Graph.breadcrumbHierarchy . BH.children . ix nodeId .=) . BH.ExprChild
-        updateNodeSequence
-        GraphBuilder.buildNode nodeId
-    Publisher.notifyNodeUpdate loc node
+setNodeExpression loc@(GraphLocation file _) nodeId expression = do
+    (node, codespan, code) <- withTC loc False $ do
+        (oldExpr, codespan) <- runASTOp $ do
+            oldExpr  <- ASTRead.getASTTarget nodeId
+            codespan <- readRange oldExpr
+            return (oldExpr, codespan)
+        parsedRef <- view _1 <$> ASTParse.runReparser expression oldExpr
+        runASTOp $ ASTModify.rewireNode nodeId parsedRef
+        runAliasAnalysis
+        (node, code)  <- runASTOp $ do
+            expr      <- ASTRead.getASTPointer nodeId
+            lamItem   <- prepareLambdaChild (BH.MatchNode expr) parsedRef
+            exprItem  <- prepareExprChild   (BH.MatchNode expr) parsedRef
+            forM_ lamItem  $ (Graph.breadcrumbHierarchy . BH.children . ix nodeId .=) . BH.LambdaChild
+            forM_ exprItem $ (Graph.breadcrumbHierarchy . BH.children . ix nodeId .=) . BH.ExprChild
+            -- updateNodeSequence
+            node <- GraphBuilder.buildNode nodeId
+            code <- ASTPrint.printExpression parsedRef
+            return (node, code)
+        Publisher.notifyNodeUpdate loc node
+        return (node, codespan, code)
+    Library.withLibrary file $ Library.applyDiff (fst codespan) (snd codespan) (Text.pack code)
+    resendCode file
     return node
+
+resendCode :: FilePath -> Empire ()
+resendCode file = do
+    code <- Library.withLibrary file $ use Library.code
+    Publisher.notifyCodeUpdate file 0 0 "" Nothing
+    Publisher.notifyCodeUpdate file 0 (Text.length code) code Nothing
 
 setNodeMeta :: GraphLocation -> NodeId -> NodeMeta -> Empire ()
 setNodeMeta loc nodeId newMeta = withGraph loc $ do
@@ -310,7 +331,7 @@ setNodeMeta loc nodeId newMeta = withGraph loc $ do
         doTCMay <- forM oldMetaMay $ \oldMeta ->
             return $ triggerTC oldMeta newMeta
         AST.writeMeta ref newMeta
-        updateNodeSequence
+        -- updateNodeSequence
         return doTCMay
     forM_ doTCMay $ \doTC ->
         when doTC $ runTC loc False
@@ -447,14 +468,7 @@ typecheck loc = withGraph loc $ runTC loc False
 
 substituteCode :: FilePath -> Int -> Int -> Text -> Maybe Int -> Empire (Maybe Parser.ReparsingStatus)
 substituteCode path start end code cursor = do
-    newCode <- Library.withLibrary path $ do
-        currentCode <- use Library.code
-        let len            = end - start
-            (prefix, rest) = Text.splitAt start currentCode
-            suffix         = Text.drop len rest
-            newCode        = Text.concat [prefix, code, suffix]
-        Library.code .= newCode
-        return newCode
+    newCode <- Library.withLibrary path $ Library.applyDiff start end code
     let loc = GraphLocation path (Breadcrumb [])
     withTC loc True $ reloadCode loc newCode
 
@@ -560,6 +574,62 @@ updateCode loc@(GraphLocation file _) = do
         return newCode
     Library.withLibrary file $ Library.code .= newCode
     Publisher.notifyCodeUpdate file 0 (Text.length newCode) newCode Nothing
+
+readRange' :: ASTOp m => NodeRef -> m (RightSpacedSpan _)
+readRange' ref = IR.matchExpr ref $ \case
+    IR.Seq{} -> return mempty
+    _        -> do
+        parents <- IR.getLayer @IR.Succs ref
+        liftIO $ print ref >> IO.hFlush IO.stdout
+        case toList parents of
+            []       -> return mempty
+            [parent] -> do
+                inputs <- mapM IR.source =<< IR.inputs =<< IR.readTarget parent
+                let lefts = takeWhile (/= ref) inputs
+                spans  <- mapM readCodeSpan lefts
+                let leftSpan = mconcat spans
+                parentSpan <- readRange' =<< IR.readTarget parent
+                return $ parentSpan <> leftSpan
+            _ -> error "something is no yes"
+
+readRange :: ASTOp m => NodeRef -> m (Int, Int)
+readRange ref = do
+    RightSpacedSpan len off <- readRange' ref
+    RightSpacedSpan len'  _ <- readCodeSpan ref
+    return (fromIntegral len + fromIntegral off, fromIntegral len + fromIntegral off + fromIntegral len')
+
+
+readCodeSpan :: ASTOp m => NodeRef -> m (RightSpacedSpan _)
+readCodeSpan ref = do
+    codespan  <- IR.getLayer @CodeSpan ref
+    rightSpan <- liftIO $ evaluate codespan `catchAll` (\_ -> return $ RightSpacedSpan 0 0)
+    return rightSpan
+
+getNodeIdForMarker :: ASTOp m => Int -> m (Maybe NodeId)
+getNodeIdForMarker index = do
+    nodeSeq <- GraphBuilder.getNodeSeq
+    case nodeSeq of
+        Just nodeSeq -> do
+            exprMap      <- IR.getLayer @CodeMarkers nodeSeq
+            let exprMap' :: Map.Map Luna.Marker NodeRef
+                exprMap' = coerce exprMap
+                Just ref = Map.lookup (fromIntegral index) exprMap'
+            nodeId <- ASTRead.getNodeId ref
+            return nodeId
+        _            -> return Nothing
+
+markerCodeSpan :: GraphLocation -> Int -> Empire (Int, Int)
+markerCodeSpan loc index = withGraph loc $ runASTOp $ do
+    nodeSeq <- GraphBuilder.getNodeSeq
+    case nodeSeq of
+        Just nodeSeq -> do
+            exprMap      <- IR.getLayer @CodeMarkers nodeSeq
+            let exprMap' :: Map.Map Luna.Marker NodeRef
+                exprMap' = coerce exprMap
+                Just ref = Map.lookup (fromIntegral index) exprMap'
+            codespan     <- readRange ref
+            return codespan
+        _            -> return (0,0)
 
 -- internal
 

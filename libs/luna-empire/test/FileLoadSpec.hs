@@ -5,6 +5,7 @@
 
 module FileLoadSpec (spec) where
 
+import           Control.Monad                  (forM)
 import           Data.Coerce
 import           Data.List                      (find)
 import qualified Data.Map                       as Map
@@ -24,7 +25,7 @@ import qualified Empire.Commands.GraphBuilder   as GraphBuilder
 import qualified Empire.Commands.Library        as Library
 import qualified Luna.Syntax.Text.Parser.Parser as Parser (ReparsingStatus(..), ReparsingChange(..))
 
-import           Prologue                   hiding ((|>))
+import           Empire.Prelude
 
 import           Test.Hspec (Spec, around, describe, it, xit, expectationFailure,
                              parallel, shouldBe, shouldMatchList, shouldStartWith)
@@ -218,3 +219,30 @@ bar ‹3›= foo 8 c
                 connections `shouldMatchList` [
                       (outPortRef (c ^. Node.nodeId) [], inPortRef (bar ^. Node.nodeId) [Port.Arg 1])
                     ]
+    describe "code spans" $ do
+        xit "pi <0>= 3.14" $ \env -> do
+            let code = [r|‹0›print 3.14
+‹1›delete root
+‹2›suspend computer
+|]
+            res <- evalEmp env $ do
+                Library.createLibrary Nothing "TestPath" code
+                let loc = GraphLocation "TestPath" $ Breadcrumb []
+                Graph.withGraph loc $ Graph.loadCode code
+                forM [0..2] $ Graph.markerCodeSpan loc
+                -- Graph.markerCodeSpan loc 3
+            withResult res $ \span -> do
+                return ()
+        xit "shows proper expressions ranges" $ \env -> do
+            let code = [r|pi ‹0›= 3.14
+foo ‹1›= a: b: a + b
+c ‹2›= 4
+bar ‹3›= foo 8 c
+|]
+            res <- evalEmp env $ do
+                Library.createLibrary Nothing "TestPath" code
+                let loc = GraphLocation "TestPath" $ Breadcrumb []
+                Graph.withGraph loc $ Graph.loadCode code
+                forM [0..3] $ Graph.markerCodeSpan loc
+            withResult res $ \spans -> do
+                return ()

@@ -5,6 +5,7 @@ module Empire.Commands.Library
     , listLibraries
     , createLibrary
     , getBuffer
+    , applyDiff
     ) where
 
 import           Control.Monad.Except    (throwError)
@@ -58,3 +59,13 @@ getBuffer :: FilePath -> Maybe (Int, Int) -> Empire Text
 getBuffer path Nothing = withLibrary path $ do
     source <- use Library.code
     return source
+
+applyDiff :: Int -> Int -> Text -> Command Library Text
+applyDiff start end code = do
+    currentCode <- use Library.code
+    let len            = end - start
+        (prefix, rest) = Text.splitAt start currentCode
+        suffix         = Text.drop len rest
+        newCode        = Text.concat [prefix, code, suffix]
+    Library.code .= newCode
+    return newCode

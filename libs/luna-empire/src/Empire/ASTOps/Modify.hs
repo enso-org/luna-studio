@@ -24,6 +24,7 @@ import qualified Empire.ASTOps.Remove               as ASTRemove
 import           Empire.Data.AST                    (EdgeRef, NodeRef, NotLambdaException(..),
                                                      NotUnifyException(..), astExceptionToException,
                                                      astExceptionFromException)
+import           Empire.Data.BreadcrumbHierarchy    (NodeIDTarget(AnonymousNode, MatchNode))
 
 import qualified OCI.IR.Combinators as IR (replaceSource, narrowTerm, replace, substitute)
 import           Luna.IR.Term.Uni
@@ -152,10 +153,13 @@ replaceVarNode matchNode newVar = do
 
 rewireNode :: ASTOp m => NodeId -> NodeRef -> m ()
 rewireNode nodeId newTarget = do
-    matchNode <- ASTRead.getASTPointer nodeId
-    oldTarget <- ASTRead.getASTTarget  nodeId
-    replaceTargetNode matchNode newTarget
-    ASTRemove.removeSubtree oldTarget
+    ref <- ASTRead.getASTRef nodeId
+    case ref of
+        AnonymousNode n -> IR.replace newTarget n
+        MatchNode     n -> do
+            oldTarget <- ASTRead.getASTTarget  nodeId
+            replaceTargetNode n newTarget
+            ASTRemove.removeSubtree oldTarget
 
 rewireNodeName :: ASTOp m => NodeId -> NodeRef -> m ()
 rewireNodeName nodeId newVar = do

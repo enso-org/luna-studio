@@ -1,4 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE QuasiQuotes       #-}
 {-# LANGUAGE ViewPatterns      #-}
 
 module EmpireSpec (spec) where
@@ -6,6 +7,7 @@ module EmpireSpec (spec) where
 import           Data.Foldable                   (toList)
 import           Data.List                       (find, stripPrefix)
 import qualified Data.Map                        as Map
+import           Empire.API.Data.Breadcrumb      (Breadcrumb(..))
 import qualified Empire.API.Data.Graph           as Graph
 import           Empire.API.Data.GraphLocation   (GraphLocation (..))
 import qualified Empire.API.Data.Node            as Node
@@ -26,9 +28,10 @@ import qualified Empire.ASTOps.Read              as ASTRead
 import qualified Empire.Commands.AST             as AST (isTrivialLambda, dumpGraphViz)
 import qualified Empire.Commands.Graph           as Graph (addNode, addPort, connect, disconnect, getConnections, getGraph,
                                                            getNodes, movePort, removeNodes, removePort, renameNode,
-                                                           renamePort, setNodeExpression, setNodeMeta, withGraph)
+                                                           renamePort, setNodeExpression, setNodeMeta, withGraph,
+                                                           loadCode, getNodeIdForMarker)
 import qualified Empire.Commands.GraphBuilder    as GraphBuilder
-import           Empire.Commands.Library         (withLibrary)
+import           Empire.Commands.Library         (createLibrary, withLibrary)
 import qualified Empire.Commands.Typecheck       as Typecheck (run)
 import           Empire.Data.Graph               (breadcrumbHierarchy)
 import qualified Empire.Data.Library             as Library (body)
@@ -411,6 +414,20 @@ spec = around withChannels $ parallel $ do
                 let [node] = nodes
                 node ^. Node.expression `shouldBe` "a + b"
                 connections `shouldSatisfy` ((== 3) . length)
+        it "changes expression to anonymous node" $ \env -> do
+            let code = [r|‹0›print 3.14
+‹1›print 3.1414
+|]
+            res <- evalEmp env $ do
+                createLibrary Nothing "TestPath" code
+                let loc = GraphLocation "TestPath" $ Breadcrumb []
+                Just nodeId <- Graph.withGraph loc $ do
+                    Graph.loadCode code
+                    runASTOp $ Graph.getNodeIdForMarker 0
+                Graph.setNodeExpression loc nodeId "print 3.141"
+                Graph.withGraph loc $ runASTOp $ GraphBuilder.buildNode nodeId
+            withResult res $ \node -> do
+                node ^. Node.expression `shouldBe` "print 3.141"
     describe "dumpAccessors" $ do
         it "foo.bar" $ \env -> do
             u1 <- mkUUID
