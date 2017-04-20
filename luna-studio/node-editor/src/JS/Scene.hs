@@ -65,5 +65,5 @@ get = liftIO . handle (\JSException {} -> return Nothing) $ do
     outputSSiz <- handle (\JSException {} -> return Nothing) $ Just <$> (Size.fromDoubles <$> outputSidebarWidth <*> outputSidebarHeight)
     return $ Just $ Scene scenePos
                           sceneSiz
-                          (InputSidebar  <$> inputSPos  <*> inputSSiz)
-                          (OutputSidebar <$> outputSPos <*> outputSSiz)
+                          (InputSidebar  <$> ((flip (-) scenePos) <$> inputSPos) <*> inputSSiz)
+                          (OutputSidebar <$> ((flip (-) scenePos) <$> outputSPos) <*> outputSSiz)
