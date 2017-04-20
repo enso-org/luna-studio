@@ -2,6 +2,8 @@
     display:        flex;
     flex-direction: column;
     align-items:    center;
+    font-size:      10rem;
+    line-height:    12rem;
 }
 .luna-node__short-value {
     white-space: nowrap;
@@ -12,13 +14,16 @@
     table {
         border-collapse: collapse;
         background: #1e1e1e;
-        border-radius: 3px;
-        margin-top: 10px;
+        border-radius: 3rem;
+        margin-top: 10rem;
+        padding: 4rem 0;
     }
+    tr:first-child td { padding-top:    8rem; }
+    tr:last-child td  { padding-bottom: 8rem; }
     td {
         cell-spacing: 0;
         border: none;
-        padding: 2px 8rem 4rem;
+        padding: 2rem 8rem 4rem;
     }
     td:first-child {
         color: #333;
