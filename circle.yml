@@ -12,7 +12,6 @@ dependencies:
     override:
         - stack build --stack-yaml=build/backend/stack.yaml --only-dependencies --install-ghc --test --fast -j2
         - stack build --stack-yaml=luna-studio/stack.yaml --only-dependencies --install-ghc --fast -j1
-        - npm install -g less
 
     cache_directories:
         - "~/.stack"
@@ -25,7 +24,7 @@ compile:
     override:
         - stack build --stack-yaml build/backend/stack.yaml --copy-bins --fast --no-run-tests --no-run-benchmarks -j2
         - stack build --stack-yaml luna-studio/stack.yaml --fast
-        - cd luna-studio/script && python atom_prepare.py
+        - cd luna-studio/script && npm install -g less && python atom_prepare.py
         - cd luna-studio && tar -cvf frontend.zip atom && mv frontend.zip $CIRCLE_ARTIFACTS
 test:
     override:
