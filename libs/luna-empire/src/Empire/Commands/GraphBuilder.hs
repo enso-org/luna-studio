@@ -269,13 +269,16 @@ getPortsNames node = do
         _      -> return backup
 
 extractAppliedPorts :: ASTOp m => Bool -> Bool -> [NodeRef] -> NodeRef -> m [Maybe (TypeRep, PortState)]
-extractAppliedPorts seenApp  seenLam bound node = IR.matchExpr node $ \case
-    Lam i o -> case seenApp of
-        True  -> return []
-        False -> do
-            inp <- IR.source i
-            out <- IR.source o
-            extractAppliedPorts False True (inp : bound) out
+extractAppliedPorts seenApp seenLam bound node = IR.matchExpr node $ \case
+    Lam i o -> do
+        inp   <- IR.source i
+        nameH <- IR.matchExpr inp $ \case
+            Var n -> return $ Just $ head $ convert n
+            _     -> return Nothing
+        case (seenApp, nameH) of
+            (_, Just '#') -> extractAppliedPorts seenApp seenLam (inp : bound) =<< IR.source o
+            (False, _)    -> extractAppliedPorts False True (inp : bound) =<< IR.source o
+            _          -> return []
     App f a -> case seenLam of
         True  -> return []
         False -> do
