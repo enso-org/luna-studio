@@ -42,7 +42,7 @@ def getChangedTrackedFiles():
     return paths
 
 def style(args):
-    path_prefixes = ['libs', 'tools', 'nodelab']
+    path_prefixes = ['libs', 'tools', 'luna-studio']
 
     (out, err) = Popen('stylish-haskell --version', stdout=PIPE, stderr=PIPE, shell=True).communicate()
     if not out:

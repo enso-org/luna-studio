@@ -29,6 +29,7 @@ node-editor/config.local.js
 brunch-config.local.coffee
 
 atom/styles
+atom/*.backup
 
 *.js_o
 *.js_hi
