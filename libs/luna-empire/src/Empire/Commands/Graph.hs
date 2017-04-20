@@ -289,6 +289,11 @@ renamePort loc portRef newName = withGraph loc $ runASTOp $ do
         _ -> throwM NotInputEdgeException
     GraphBuilder.buildInputSidebar nodeId
 
+makeTarget :: ASTOp m => NodeRef -> m BH.NodeIDTarget
+makeTarget ref = IR.matchExpr ref $ \case
+    IR.Unify{} -> return $ BH.MatchNode ref
+    _          -> return $ BH.AnonymousNode ref
+
 setNodeExpression :: GraphLocation -> NodeId -> Text -> Empire ExpressionNode
 setNodeExpression loc@(GraphLocation file _) nodeId expression = do
     (node, codespan, code) <- withTC loc False $ do
@@ -297,12 +302,15 @@ setNodeExpression loc@(GraphLocation file _) nodeId expression = do
             codespan <- readRange oldExpr
             return (oldExpr, codespan)
         parsedRef <- view _1 <$> ASTParse.runReparser expression oldExpr
-        runASTOp $ ASTModify.rewireNode nodeId parsedRef
+        runASTOp $ do
+            ASTModify.rewireNode nodeId parsedRef
+            putIntoHierarchy nodeId $ BH.AnonymousNode parsedRef
         runAliasAnalysis
         (node, code)  <- runASTOp $ do
             expr      <- ASTRead.getASTPointer nodeId
-            lamItem   <- prepareLambdaChild (BH.MatchNode expr) parsedRef
-            exprItem  <- prepareExprChild   (BH.MatchNode expr) parsedRef
+            target    <- makeTarget expr
+            lamItem   <- prepareLambdaChild target parsedRef
+            exprItem  <- prepareExprChild   target parsedRef
             forM_ lamItem  $ (Graph.breadcrumbHierarchy . BH.children . ix nodeId .=) . BH.LambdaChild
             forM_ exprItem $ (Graph.breadcrumbHierarchy . BH.children . ix nodeId .=) . BH.ExprChild
             -- updateNodeSequence
@@ -487,16 +495,16 @@ reloadCode loc code = handle (\(_e :: ASTParse.ParserException SomeException) ->
 
                     forM_ oldNodeId $ \nodeId -> do
                         copyMeta oldExpr expr
-                        markNode expr nodeId
                         putIntoHierarchy nodeId $ BH.MatchNode expr
+                        markNode nodeId
                         ASTModify.rewireNode nodeId =<< ASTRead.getTargetNode expr
                 Parser.UnchangedExpr oldExpr expr -> do
                     oldNodeId <- ASTRead.safeGetVarNodeId oldExpr
 
                     forM_ oldNodeId $ \nodeId -> do
                         copyMeta oldExpr expr
-                        markNode expr nodeId
                         putIntoHierarchy nodeId $ BH.MatchNode expr
+                        markNode nodeId
                 Parser.RemovedExpr oldExpr -> do
                     oldNodeId <- ASTRead.safeGetVarNodeId oldExpr
                     forM_ oldNodeId $ removeNodeNoTC
@@ -511,9 +519,10 @@ putIntoHierarchy nodeId target = do
 
 putChildrenIntoHierarchy :: ASTOp m => NodeId -> NodeRef -> m ()
 putChildrenIntoHierarchy uuid expr = do
-    target   <- ASTRead.getASTTarget uuid
-    lamItem  <- prepareLambdaChild (BH.MatchNode expr) target
-    exprItem <- prepareExprChild   (BH.MatchNode expr) target
+    target       <- ASTRead.getASTTarget uuid
+    nodeIdTarget <- makeTarget expr
+    lamItem      <- prepareLambdaChild nodeIdTarget target
+    exprItem     <- prepareExprChild   nodeIdTarget target
     forM_ lamItem  $ (Graph.breadcrumbHierarchy . BH.children . ix uuid .=) . BH.LambdaChild
     forM_ exprItem $ (Graph.breadcrumbHierarchy . BH.children . ix uuid .=) . BH.ExprChild
 
@@ -522,9 +531,9 @@ copyMeta donor recipient = do
     meta <- AST.readMeta donor
     forM_ meta $ AST.writeMeta recipient
 
-markNode :: ASTOp m => NodeRef -> NodeId -> m ()
-markNode expr nodeId = do
-    var <- ASTRead.getVarNode expr
+markNode :: ASTOp m => NodeId -> m ()
+markNode nodeId = do
+    var <- ASTRead.getASTMarkerPosition nodeId
     ASTBuilder.attachNodeMarkers nodeId [] var
 
 insertNode :: ASTOp m => NodeRef -> m NodeId
@@ -532,11 +541,11 @@ insertNode expr = do
     uuid <- liftIO $ UUID.nextRandom
     assignment <- ASTRead.isMatch expr
     if assignment then do
-        markNode expr uuid
         putIntoHierarchy uuid $ BH.MatchNode expr
         putChildrenIntoHierarchy uuid expr
     else do
         putIntoHierarchy uuid $ BH.AnonymousNode expr
+    markNode uuid
     return uuid
 
 loadCode :: Text -> Command Graph ()
