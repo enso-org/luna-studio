@@ -51,7 +51,7 @@ import           Control.Monad.State           hiding (when)
 import           Control.Arrow                 ((&&&))
 import           Control.Monad.Error           (throwError)
 import           Data.Coerce                   (coerce)
-import           Data.List                     (sort, group)
+import           Data.List                     (elemIndex, sort, group)
 import qualified Data.Map                      as Map
 import           Data.Maybe                    (catMaybes, fromMaybe, isJust)
 import           Data.Foldable                 (toList)
@@ -296,15 +296,19 @@ makeTarget ref = IR.matchExpr ref $ \case
 
 setNodeExpression :: GraphLocation -> NodeId -> Text -> Empire ExpressionNode
 setNodeExpression loc@(GraphLocation file _) nodeId expression = do
-    (node, codespan, code) <- withTC loc False $ do
-        (oldExpr, codespan) <- runASTOp $ do
+    (node, line, code) <- withTC loc False $ do
+        (oldExpr, line) <- runASTOp $ do
             oldExpr  <- ASTRead.getASTTarget nodeId
-            codespan <- readRange oldExpr
-            return (oldExpr, codespan)
+            line     <- nodeLine nodeId
+            return (oldExpr, line)
         parsedRef <- view _1 <$> ASTParse.runReparser expression oldExpr
         runASTOp $ do
+            oldPointer <- ASTRead.getASTPointer nodeId
+            isMatch <- ASTRead.isMatch oldPointer
             ASTModify.rewireNode nodeId parsedRef
-            putIntoHierarchy nodeId $ BH.AnonymousNode parsedRef
+            when (not isMatch) $ do
+                putIntoHierarchy nodeId $ BH.AnonymousNode parsedRef
+                updateExprMap parsedRef oldExpr
         runAliasAnalysis
         (node, code)  <- runASTOp $ do
             expr      <- ASTRead.getASTPointer nodeId
@@ -315,13 +319,19 @@ setNodeExpression loc@(GraphLocation file _) nodeId expression = do
             forM_ exprItem $ (Graph.breadcrumbHierarchy . BH.children . ix nodeId .=) . BH.ExprChild
             -- updateNodeSequence
             node <- GraphBuilder.buildNode nodeId
-            code <- ASTPrint.printExpression parsedRef
+            code <- printMarkedExpression expr
             return (node, code)
         Publisher.notifyNodeUpdate loc node
-        return (node, codespan, code)
-    Library.withLibrary file $ Library.applyDiff (fst codespan) (snd codespan) (Text.pack code)
+        return (node, line, code)
+    Library.withLibrary file $ forM line $ \l -> Library.substituteLine l code
     resendCode file
     return node
+
+updateExprMap :: ASTOp m => NodeRef -> NodeRef -> m ()
+updateExprMap new old = do
+    exprMap <- getExprMap
+    let updated = Map.map (\a -> if a == old then new else a) exprMap
+    setExprMap updated
 
 resendCode :: FilePath -> Empire ()
 resendCode file = do
@@ -556,29 +566,42 @@ loadCode code = do
     Graph.breadcrumbHierarchy . BH.body .= ref
     runAliasAnalysis
 
-printMarkedExpression :: ASTOp m => Map.Map Luna.Marker NodeRef -> NodeRef -> m Text
-printMarkedExpression exprMap ref = do
+nodeLine :: ASTOp m => NodeId -> m (Maybe Int)
+nodeLine nodeId = do
+    nodeIds <- GraphBuilder.getNodeIdSequence
+    let line = elemIndex nodeId nodeIds
+    return line
+
+getExprMap :: ASTOp m => m (Map.Map Luna.Marker NodeRef)
+getExprMap = do
+    Just nodeSeq <- GraphBuilder.getNodeSeq
+    coerce <$> IR.getLayer @CodeMarkers nodeSeq
+
+setExprMap :: ASTOp m => Map.Map Luna.Marker NodeRef -> m ()
+setExprMap exprMap = do
+    Just nodeSeq <- GraphBuilder.getNodeSeq
+    IR.putLayer @CodeMarkers nodeSeq (coerce exprMap)
+
+printMarkedExpression :: ASTOp m => NodeRef -> m Text
+printMarkedExpression ref = do
+    exprMap <- getExprMap
     expr <- Text.pack <$> ASTPrint.printExpression ref
-    let chunks = Text.splitOn " = " expr
-    case chunks of
-        [e] -> return e
-        [var, val] -> do
-            let markers = Map.keys $ Map.filter (== ref) exprMap
-            case markers of
-                [index] -> do
-                    let marker = " ‹" ++ show index ++ "›= "
-                    return $ Text.concat [var, Text.pack marker, val]
-                _   -> return $ Text.concat [var, val]
-        _ -> error "printMarkedExpression: bigger mistake"
+    let chunks  = Text.splitOn " = " expr
+        markers = Map.keys $ Map.filter (== ref) exprMap
+        marker  = case markers of
+            (index:_) -> Text.pack $ "‹" ++ show index ++ "›"
+            _         -> ""
+    return $ case chunks of
+        [e]        -> Text.concat [marker, e]
+        [var, val] -> Text.concat [var, " ", marker, "= ", val]
+        list       -> Text.concat list
 
 updateCode :: GraphLocation -> Empire ()
 updateCode loc@(GraphLocation file _) = do
     newCode <- withGraph loc $ runASTOp $ do
-        Just nodeSeq <- GraphBuilder.getNodeSeq
-        exprMap      <- IR.getLayer @CodeMarkers nodeSeq
         nodeSequence <- GraphBuilder.getNodeIdSequence
         refs         <- mapM ASTRead.getASTPointer nodeSequence
-        expressions  <- mapM (printMarkedExpression (coerce exprMap)) refs
+        expressions  <- mapM printMarkedExpression refs
         let newCode = Text.unlines $ expressions
         return newCode
     Library.withLibrary file $ Library.code .= newCode
@@ -589,7 +612,6 @@ readRange' ref = IR.matchExpr ref $ \case
     IR.Seq{} -> return mempty
     _        -> do
         parents <- IR.getLayer @IR.Succs ref
-        liftIO $ print ref >> IO.hFlush IO.stdout
         case toList parents of
             []       -> return mempty
             [parent] -> do

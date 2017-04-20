@@ -6,6 +6,7 @@ module Empire.Commands.Library
     , createLibrary
     , getBuffer
     , applyDiff
+    , substituteLine
     ) where
 
 import           Control.Monad.Except    (throwError)
@@ -67,5 +68,13 @@ applyDiff start end code = do
         (prefix, rest) = Text.splitAt start currentCode
         suffix         = Text.drop len rest
         newCode        = Text.concat [prefix, code, suffix]
+    Library.code .= newCode
+    return newCode
+
+substituteLine :: Int -> Text -> Command Library Text
+substituteLine index newLine = do
+    currentCode <- use Library.code
+    let codeLines = Text.lines currentCode
+        newCode   = Text.unlines $ codeLines & ix index .~ newLine
     Library.code .= newCode
     return newCode
