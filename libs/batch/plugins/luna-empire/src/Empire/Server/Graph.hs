@@ -31,13 +31,16 @@ import           Empire.API.Data.Connection         as Connection
 import           Empire.API.Data.Graph              (Graph (..))
 import           Empire.API.Data.GraphLocation      (GraphLocation)
 import qualified Empire.API.Data.GraphLocation      as GraphLocation
+import           Empire.API.Data.LabeledTree        (LabeledTree (LabeledTree))
 import           Empire.API.Data.Node               (ExpressionNode (..), NodeId)
 import qualified Empire.API.Data.Node               as Node
 import           Empire.API.Data.NodeLoc            (NodeLoc (..))
 import           Empire.API.Data.NodeMeta           (NodeMeta)
 import qualified Empire.API.Data.NodeSearcher       as NS
-import           Empire.API.Data.Port               (InPort (..), OutPort (..), Port (..), InPortIndex (..), OutPortIndex (..), PortState (..), getPortNumber)
-import           Empire.API.Data.PortDefault        (PortValue (..),VisualizationValue (..))
+import           Empire.API.Data.Port               (InPort (..), InPortIndex (..), OutPort (..), OutPortIndex (..), Port (..),
+                                                     PortState (..), getPortNumber)
+import qualified Empire.API.Data.Port               as Port
+import           Empire.API.Data.PortDefault        (PortValue (..), VisualizationValue (..))
 import           Empire.API.Data.PortRef            (InPortRef (..), OutPortRef (..))
 import           Empire.API.Data.PortRef            as PortRef
 import           Empire.API.Data.TypeRep            (TypeRep (TStar))
@@ -366,21 +369,19 @@ stdlibMethods :: [String]
 stdlibMethods = ["mockMethod"]
 
 mockNSData :: NS.Items ExpressionNode
-mockNSData = Map.empty
--- mockNSData = Map.fromList $ functionsList <> modulesList where
---     nodeSearcherSymbols = words "mockNode1 mockNode2 mockNode3 mockNode4"
---     (methods, functions) = partition (elem '.') nodeSearcherSymbols
---     functionsList = functionEntry <$> functions
---     functionEntry function = (convert function, NS.Element $ mockNode "mockNode")
---     modulesMethodsMap = foldl updateModulesMethodsMap Map.empty methods
---     updateModulesMethodsMap map el = Map.insert moduleName methodNames map where
---         (moduleName, dotMethodName) = break (== '.') el
---         methodName = tail dotMethodName
---         methodNames = methodName : (fromMaybe [] $ Map.lookup moduleName map)
---     modulesList = (uncurry moduleEntry) <$> Map.toList modulesMethodsMap
---     moduleEntry moduleName methodList = (convert moduleName, NS.Group (Map.fromList $ functionEntry <$> methodList) $ mockNode "mockGroupNode")
---     mockNode name = Node (fromJust $ UUID.fromString "094f9784-3f07-40a1-84df-f9cf08679a27") name (Node.ExpressionNode name) False mockPorts def def
---     mockPorts = Map.fromList [ (InPortId  Self  , Port (InPortId  Self)    "self" TStar NotConnected)
---                              , (InPortId (Arg 0), Port (InPortId (Arg 0)) "arg 0" TStar NotConnected)
---                              , (OutPortId All   , Port (OutPortId All)   "Output" TStar NotConnected)
---                              ]
+-- mockNSData = Map.empty
+mockNSData = Map.fromList $ functionsList <> modulesList where
+    nodeSearcherSymbols = words "mockNodeA mockNodeB mockNodeC mockNodeD"
+    (methods, functions) = partition (elem '.') nodeSearcherSymbols
+    functionsList = functionEntry <$> functions
+    functionEntry function = (convert function, NS.Element $ mockNode $ Just "mockNode")
+    modulesMethodsMap = foldl updateModulesMethodsMap Map.empty methods
+    updateModulesMethodsMap map el = Map.insert moduleName methodNames map where
+        (moduleName, dotMethodName) = break (== '.') el
+        methodName = tail dotMethodName
+        methodNames = methodName : (fromMaybe [] $ Map.lookup moduleName map)
+    modulesList = (uncurry moduleEntry) <$> Map.toList modulesMethodsMap
+    moduleEntry moduleName methodList = (convert moduleName, NS.Group (Map.fromList $ functionEntry <$> methodList) $ mockNode $ Just "mockGroupNode")
+    mockNode name = Node.ExpressionNode (fromJust $ UUID.fromString "094f9784-3f07-40a1-84df-f9cf08679a27") "" name Nothing mockInPorts mockOutPorts def False
+    mockInPorts  = LabeledTree def $ Port.Port [Port.Arg 0]        "" TStar NotConnected
+    mockOutPorts = LabeledTree def $ Port.Port [Port.Projection 0] "" TStar NotConnected

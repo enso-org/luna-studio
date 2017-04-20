@@ -1,0 +1,32 @@
+.luna-node__results {
+    display:        flex;
+    flex-direction: column;
+    align-items:    center;
+}
+.luna-node__short-value {
+    white-space: nowrap;
+}
+
+.luna-node__visualizations {
+    white-space: nowrap;
+    table {
+        border-collapse: collapse;
+        background: #1e1e1e;
+        border-radius: 3px;
+        margin-top: 10px;
+    }
+    td {
+        cell-spacing: 0;
+        border: none;
+        padding: 2px 8rem 4rem;
+    }
+    td:first-child {
+        color: #333;
+        padding-right: 0;
+    }
+    tr + tr {
+        td {
+            //border-top: 1px solid #181818;
+        }
+    }
+}

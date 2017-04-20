@@ -132,7 +132,7 @@ tryHead :: [a] -> Maybe a
 tryHead [] = Nothing
 tryHead (a:_) = Just a
 
-getError :: ASTOp m => NodeRef -> m (Maybe (APIError.Error TypeRep))
+getError :: ASTOp m => NodeRef -> m (Maybe APIError.Error)
 getError n = return $ Nothing
     {-tc <- view tcErrors <$> IR.readLayer @TCData n-}
     {-err <- mapM reprError tc-}

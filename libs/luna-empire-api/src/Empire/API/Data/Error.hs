@@ -4,6 +4,9 @@ import           Control.DeepSeq (NFData)
 import           Data.Binary     (Binary)
 import           Prologue
 
-data Error t = ImportError String | NoMethodError String t | TypeError t t | RuntimeError String deriving (Show, Eq, Generic, NFData)
+data ErrorType = CompileError | RuntimeError deriving (Show, Eq, Generic, NFData)
 
-instance Binary t => Binary (Error t)
+data Error = Error ErrorType Text deriving (Show, Eq, Generic, NFData)
+
+instance Binary ErrorType
+instance Binary Error

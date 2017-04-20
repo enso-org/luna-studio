@@ -44,7 +44,7 @@ instance Show CommunicationEnv where
 
 data InterpreterEnv = InterpreterEnv { _valuesCache :: Map NodeId [PortValue]
                                      , _nodesCache  :: Map NodeId ExpressionNode
-                                     , _errorsCache :: Map NodeId (APIError.Error TypeRep)
+                                     , _errorsCache :: Map NodeId APIError.Error
                                      , _graph       :: Graph
                                      , _destructors :: [IO ()]
                                      }
