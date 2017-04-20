@@ -53,23 +53,21 @@ portHandlers _ _ _ _ _ = []
 
 sidebar_ :: SidebarNode node => Ref App -> node -> ReactElementM ViewEventHandler ()
 sidebar_ ref node = do
-    let ports             = SidebarNode.portsList node
-        nodeLoc           = node ^. SidebarNode.nodeLoc
-        mode              = node ^. SidebarNode.mode
-        isPortDragged     = any isInMovedMode ports
-        classes           = [ "sidebar", if isInputSidebar node then "sidebar--i" else "sidebar--o" ]
-                         ++ if mode == AddRemove             then ["sidebar--editmode"]   else []
-                         ++ if isPortDragged                 then ["sidebar--dragmode"]   else []
-                         ++ if isJust $ node ^. frozenHeight then ["sidebar--freezemode"] else []
-        mayFreeze         = if isJust $ node ^. frozenHeight then ["style" @= Aeson.object [ "height" Aeson..= (fromJust $ node ^. frozenHeight) ]] else []
+    let ports         = SidebarNode.portsList node
+        nodeLoc       = node ^. SidebarNode.nodeLoc
+        mode          = node ^. SidebarNode.mode
+        isPortDragged = any isInMovedMode ports
+        ifFreeze a    = if isJust $ node ^. frozenHeight then a else []
+        classes       = [ "sidebar", if isInputSidebar node then "sidebar--i" else "sidebar--o" ]
+                      ++ ifFreeze ["sidebar--freezemode"]
+                      ++ if mode == AddRemove then ["sidebar--editmode"] else []
+                      ++ if isPortDragged then ["sidebar--dragmode"] else []
         addButtonHandlers = let portRef = OutPortRef' (OutPortRef nodeLoc [Projection (countProjectionPorts node)]) in
             case mode of
                 AddRemove   -> [ onMouseDown $ \e _ -> [stopPropagation e]
                                , onClick     $ \e _ -> stopPropagation e : dispatch ref (UI.SidebarEvent $ Sidebar.AddPort portRef)
                                ]
                 MoveConnect -> portHandlers ref mode False False portRef
-
-
     div_
         [ "key"         $= name node
         , "className"   $= Style.prefixFromList classes
@@ -80,7 +78,7 @@ sidebar_ ref node = do
         div_ (
             [ "key" $= "activeArea"
             , "className" $= Style.prefixFromList [ "sidebar__active-area", "noselect" ]
-            ] ++ mayFreeze) $
+            ] ++ ifFreeze ["style" @= Aeson.object [ "height" Aeson..= (fromJust $ node ^. frozenHeight) ]]) $
             div_
                 [ "key"       $= "SidebarPortsBody"
                 , "id"        $= if isInputSidebar node then inputSidebarId else outputSidebarId
