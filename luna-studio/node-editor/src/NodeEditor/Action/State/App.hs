@@ -1,10 +1,10 @@
 module NodeEditor.Action.State.App where
 
-import           Control.Lens.Internal.Zoom          (Focusing)
-import qualified Control.Monad.State                 as M
-import qualified JS.GoogleAnalytics                  as GA
+import           Common.Prelude                     hiding (lens)
+import           Control.Lens.Internal.Zoom         (Focusing)
+import qualified Control.Monad.State                as M
+import qualified JS.GoogleAnalytics                 as GA
 import           NodeEditor.Action.Command          (Command)
-import           Common.Prelude                 hiding (lens)
 import           NodeEditor.React.Model.App         (App, breadcrumbs, codeEditor)
 import           NodeEditor.React.Model.Breadcrumbs (Breadcrumb, BreadcrumbItem, Named)
 import           NodeEditor.React.Model.CodeEditor  (CodeEditor, visible)

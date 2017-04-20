@@ -1,14 +1,13 @@
 module NodeEditor.Action.State.Scene where
 
 import           Common.Prelude
-import           Data.Position                       (Position)
-import           Data.ScreenPosition                 (ScreenPosition (ScreenPosition))
-import qualified Data.ScreenPosition                 as ScreenPosition
-import           Data.Size                           (Size)
-import           Data.Vector2                         (scalarProduct, vector, x, y)
-import qualified JS.Scene                            as Scene
+import           Data.Position                      (Position)
+import           Data.ScreenPosition                (ScreenPosition (ScreenPosition))
+import qualified Data.ScreenPosition                as ScreenPosition
+import           Data.Size                          (Size)
+import           Data.Vector2                       (scalarProduct, vector, x, y)
+import qualified JS.Scene                           as Scene
 import           NodeEditor.Action.Command          (Command)
-import qualified JS.Scene                            as Scene
 import           NodeEditor.Action.State.App        (renderIfNeeded)
 import           NodeEditor.Action.State.NodeEditor (getScreenTranform, modifyNodeEditor)
 import qualified NodeEditor.Action.State.NodeEditor as NE
