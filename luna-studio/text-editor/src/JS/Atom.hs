@@ -18,43 +18,43 @@ import qualified TextEditor.Event.Text as TextEvent
 import           Common.Prelude
 
 
-foreign import javascript safe "atomCallbackInternals.pushCode($1, $2, $3, $4)"
+foreign import javascript safe "atomCallbackTextEditor.pushCode($1, $2, $3, $4)"
     pushCode' :: JSString -> Int -> Int -> JSString -> IO ()
 
-foreign import javascript safe "atomCallbackInternals.pushBuffer($1, $2)"
+foreign import javascript safe "atomCallbackTextEditor.pushBuffer($1, $2)"
     pushBuffer :: JSString -> JSString -> IO ()
 
-foreign import javascript safe "atomCallbackInternals.pushStatus($1, $2, $3)"
+foreign import javascript safe "atomCallbackTextEditor.pushStatus($1, $2, $3)"
     pushStatus :: JSString -> JSString -> JSString -> IO ()
 
-foreign import javascript safe "atomCallbackInternals.subscribeEventListenerInternal($1)"
+foreign import javascript safe "atomCallbackTextEditor.subscribeEventListenerInternal($1)"
   subscribeEventListenerInternal' :: Callback (JSVal -> IO ()) -> IO ()
 
 foreign import javascript safe "($1).unsubscribeEventListenerInternal()"
   unsubscribeEventListenerInternal' :: Callback (JSVal -> IO ()) -> IO ()
 
-foreign import javascript safe "atomCallbackInternals.subscribeText($1)"
+foreign import javascript safe "atomCallbackTextEditor.subscribeText($1)"
   subscribeText' :: Callback (JSVal -> IO ()) -> IO ()
 
 foreign import javascript safe "($1).unsubscribeText()"
   unsubscribeText' :: Callback (JSVal -> IO ()) -> IO ()
 
-foreign import javascript safe "atomCallbackInternals.getEvent($1)"
+foreign import javascript safe "atomCallbackTextEditor.getEvent($1)"
   getEvent :: JSVal -> JSVal
 
-foreign import javascript safe "atomCallbackInternals.getPath($1)"
+foreign import javascript safe "atomCallbackTextEditor.getPath($1)"
   getPath :: JSVal -> JSVal
 
-foreign import javascript safe "atomCallbackInternals.getStart($1)"
+foreign import javascript safe "atomCallbackTextEditor.getStart($1)"
   getStart :: JSVal -> JSVal
 
-foreign import javascript safe "atomCallbackInternals.getStop($1)"
+foreign import javascript safe "atomCallbackTextEditor.getStop($1)"
   getStop :: JSVal -> JSVal
 
-foreign import javascript safe "atomCallbackInternals.getText($1)"
+foreign import javascript safe "atomCallbackTextEditor.getText($1)"
   getText :: JSVal -> JSVal
 
-foreign import javascript safe "atomCallbackInternals.getCursor($1)"
+foreign import javascript safe "atomCallbackTextEditor.getCursor($1)"
   getCursor :: JSVal -> JSVal
 
 jsvalToText :: JSVal -> TextEvent

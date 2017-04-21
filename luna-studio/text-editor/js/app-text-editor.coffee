@@ -1,6 +1,6 @@
 $$              = require('./common')
 config          = require('./config')
-atomCallbackInternals    = require('./atom-callback-text-editor')
+atomCallbackTextEditor    = require('./atom-callback-text-editor')
 GoogleAnalytics = require('./GoogleAnalytics')
 
 
