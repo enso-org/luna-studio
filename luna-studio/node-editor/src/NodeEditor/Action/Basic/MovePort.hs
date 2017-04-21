@@ -1,6 +1,7 @@
 module NodeEditor.Action.Basic.MovePort where
 
 import           Common.Prelude
+import           Empire.API.Data.LabeledTree             (value)
 import           Empire.API.Data.PortRef                 (OutPortRef (OutPortRef), srcPortId)
 import           NodeEditor.Action.Basic.AddConnection   (localAddConnection)
 import           NodeEditor.Action.Basic.UpdateNode      (localUpdateInputNode)
@@ -9,7 +10,7 @@ import           NodeEditor.Action.Command               (Command)
 import           NodeEditor.Action.State.NodeEditor      (getConnectionsContainingNode, getInputNode)
 import           NodeEditor.React.Model.Connection       (dst, src)
 import           NodeEditor.React.Model.Node.SidebarNode (countProjectionPorts, hasPort, inputSidebarPorts, isInputSidebar)
-import           NodeEditor.React.Model.Port             (OutPortIndex (Projection))
+import           NodeEditor.React.Model.Port             (OutPortIndex (Projection), getPortNumber, portId)
 import           NodeEditor.State.Global                 (State)
 
 
@@ -31,7 +32,9 @@ localMovePort (OutPortRef nid pid@(Projection pos : p')) newPos = do
                     upper       = max pos newPos
                     (a, node1:b) = splitAt lower oldPorts
                     (c, node2:d) = splitAt (upper - lower - 1) b
-                    newPorts = a <> [node2] <> c <> [node1] <> d
+                    newPorts' = a <> [node2] <> c <> [node1] <> d
+                    setNum i = value . portId .~ [Projection i]
+                    newPorts = map (uncurry setNum) $ zip [0..] newPorts'
                 void . localUpdateInputNode $ node & inputSidebarPorts .~ newPorts
                 conns <- getConnectionsContainingNode nid
                 forM_ conns $ \conn -> case conn ^. src of
