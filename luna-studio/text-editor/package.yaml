@@ -1,10 +1,10 @@
 name:                text-editor
 version:             0.1.0.0
-synopsis:            NodeLab
-homepage:            www.nodelab.io
+synopsis:            Luna code editor backend
+homepage:            www.luna-lang.org
 license:             AllRightsReserved
-author:              New Byte Order
-maintainer:          contact@nodelab.io
+author:              New Byte Order <contact@newbyteorder.com>
+maintainer:          New Byte Order <contact@newbyteorder.com>
 
 default-extensions:
   - BangPatterns

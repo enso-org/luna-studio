@@ -4,8 +4,8 @@ import atom_prepare
 import os
 import subprocess
 
-nodelab_dir = atom_prepare.prep_path('..')
-os.chdir(nodelab_dir)
+app_dir = atom_prepare.prep_path('..')
+os.chdir(app_dir)
 subprocess.call(['stack', 'build'])
 atom_prepare.main()
 os.environ['ATOM_HOME'] = os.environ.get('LUNA_HOME', os.path.expanduser('~') + '/.luna-atom')

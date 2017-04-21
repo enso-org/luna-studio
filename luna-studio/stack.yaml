@@ -10,8 +10,8 @@ setup-info:
            sha1: d2cfc25f9cda32a25a87d9af68891b2186ee52f9
 
 ghc-options:
-  nodelab: -DGHCJS_BROWSER
-  internals: -DGHCJS_BROWSER
+  node-editor: -DGHCJS_BROWSER
+  text-editor: -DGHCJS_BROWSER
 extra-deps:
   - cond-0.4.1.1
   - datetime-0.3.1
