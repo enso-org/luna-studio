@@ -196,7 +196,8 @@ sidebarPort_ ref mode nl isPortDragged isOnly p = do
                 ] ++ portHandlers ref mode isPortDragged isOnly portRef ) mempty
 
         if isInNameEditMode p then
-            singleField_ [ "id" $= portLabelId ] (jsShow portId)
+            singleField_ [ "className" $= Style.prefix "input"
+                         , "id" $= portLabelId ] (jsShow portId)
                 $ Field.mk ref (convert $ p ^. Port.name)
                 & Field.onCancel .~ Just (const $ UI.SidebarEvent $ Sidebar.PortNameDiscard portRef)
                 & Field.onAccept .~ Just (UI.SidebarEvent . Sidebar.PortNameApply portRef . convert)

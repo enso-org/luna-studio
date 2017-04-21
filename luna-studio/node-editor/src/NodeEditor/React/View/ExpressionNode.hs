@@ -1,27 +1,27 @@
 {-# LANGUAGE OverloadedStrings #-}
 module NodeEditor.React.View.ExpressionNode where
 
-import qualified Data.Aeson                                            as Aeson
-import qualified Data.HashMap.Strict                                   as HashMap
-import qualified Data.Map.Lazy                                         as Map
-import           Data.Matrix                                           (Matrix)
-import qualified Empire.API.Data.MonadPath                             as MonadPath
-import           Empire.API.Data.PortRef                               (toAnyPortRef)
-import qualified JS.Config                                             as Config
-import qualified JS.UI                                                 as UI
+import           Common.Prelude
+import qualified Data.Aeson                                           as Aeson
+import qualified Data.HashMap.Strict                                  as HashMap
+import qualified Data.Map.Lazy                                        as Map
+import           Data.Matrix                                          (Matrix)
+import qualified Empire.API.Data.MonadPath                            as MonadPath
+import           Empire.API.Data.PortRef                              (toAnyPortRef)
+import qualified JS.Config                                            as Config
+import qualified JS.UI                                                as UI
 import           NodeEditor.Data.Matrix                               (showNodeMatrix, showNodeTranslate)
 import qualified NodeEditor.Event.Mouse                               as Mouse
 import qualified NodeEditor.Event.UI                                  as UI
-import           Common.Prelude
 import qualified NodeEditor.React.Event.Node                          as Node
 import           NodeEditor.React.Model.App                           (App)
 import qualified NodeEditor.React.Model.Field                         as Field
 import           NodeEditor.React.Model.Node.ExpressionNode           (ExpressionNode, NodeLoc, Subgraph, countArgPorts, countOutPorts,
-                                                                        isCollapsed, returnsError)
+                                                                       isCollapsed, returnsError)
 import qualified NodeEditor.React.Model.Node.ExpressionNode           as Node
 import qualified NodeEditor.React.Model.Node.ExpressionNodeProperties as Prop
 import           NodeEditor.React.Model.Port                          (AnyPortId (InPortId'), InPortIndex (Arg, Self), isInPort, isOutAll,
-                                                                        withOut)
+                                                                       withOut)
 import qualified NodeEditor.React.Model.Port                          as Port
 import           NodeEditor.React.Store                               (Ref, dispatch)
 import           NodeEditor.React.View.ExpressionNode.Properties      (nodeProperties_)
@@ -34,7 +34,7 @@ import           NodeEditor.React.View.Style                          (blurBackg
 import qualified NodeEditor.React.View.Style                          as Style
 import           NodeEditor.React.View.Visualization                  (nodeShortValue_, nodeVisualizations_)
 import           React.Flux
-import qualified React.Flux                                            as React
+import qualified React.Flux                                           as React
 
 
 name, objNameBody, objNamePorts :: JSString
@@ -97,9 +97,10 @@ node = React.defineView name $ \(ref, n) -> case n ^. Node.mode of
 
                     if n ^. Node.isNameEdited then
                         term "foreignObject"
-                            [ "key"    $= "nameEdit"
-                            , "width"  $= "200"
+                            [ "className" $= Style.prefix "input"
                             , "height" $= "30"
+                            , "key"    $= "nameEdit"
+                            , "width"  $= "200"
                             ] $ singleField_ ["id"  $= nameLabelId] "name-label"
                                 $ Field.mk ref (fromMaybe def $ n ^. Node.name)
                                 & Field.onCancel .~ Just (const $ UI.NodeEvent $ Node.NameEditDiscard nodeLoc)
@@ -152,7 +153,7 @@ nodeBody = React.defineView objNameBody $ \(ref, n) -> do
         selectionMark_
         div_
             [ "key"       $= "properties-crop"
-            , "className" $= Style.prefix "node__properties-crop"
+            , "className" $= Style.prefixFromList ["node__properties-crop", "input"]
             ] $ do
             blurBackground_
             case n ^. Node.mode of

@@ -10,7 +10,7 @@ import           NodeEditor.Action.Command               (Command)
 import           NodeEditor.Action.State.NodeEditor      (getConnectionsContainingNode, getInputNode)
 import           NodeEditor.React.Model.Connection       (dst, src)
 import           NodeEditor.React.Model.Node.SidebarNode (countProjectionPorts, hasPort, inputSidebarPorts, isInputSidebar)
-import           NodeEditor.React.Model.Port             (OutPortIndex (Projection), getPortNumber, portId)
+import           NodeEditor.React.Model.Port             (OutPortIndex (Projection), portId)
 import           NodeEditor.State.Global                 (State)
 
 
