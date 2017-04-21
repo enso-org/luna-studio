@@ -56,6 +56,8 @@ import           Luna.Syntax.Text.Source                      (Source, SourceTre
 import qualified OCI.IR.Repr.Vis                   as Vis
 import qualified Control.Monad.State.Dependent.Old as DepOld
 
+import           GHC.Stack
+
 type ASTOp m = (MonadThrow m,
                 MonadCatch m,
                 MonadPassManager m,
@@ -67,7 +69,8 @@ type ASTOp m = (MonadThrow m,
                 Editors Layer EmpireLayers m,
                 DepOld.MonadGet Vis.V Vis.Vis m,
                 DepOld.MonadPut Vis.V Vis.Vis m,
-                Parser.IRSpanTreeBuilding m)
+                Parser.IRSpanTreeBuilding m,
+                HasCallStack)
 
 
 type EmpireLayers = '[AnyExpr // Model, AnyExprLink // Model,
