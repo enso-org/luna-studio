@@ -1,14 +1,14 @@
 module NodeEditor.Action.Basic.UpdateNode where
 
-import           Control.Monad                               (filterM)
-import           Empire.API.Data.Node                        (NodeTypecheckerUpdate, tcNodeId)
-import qualified Empire.API.Data.Node                        as Empire
-import           Empire.API.Data.Port                        (InPortIndex (Self))
+import           Common.Prelude
+import           Control.Monad                              (filterM)
+import           Empire.API.Data.Node                       (NodeTypecheckerUpdate, tcNodeId)
+import qualified Empire.API.Data.Node                       as Empire
+import           Empire.API.Data.Port                       (InPortIndex (Self))
 import           NodeEditor.Action.Basic.Scene              (updateScene)
 import           NodeEditor.Action.Command                  (Command)
 import           NodeEditor.Action.State.Model              (shouldDisplayPortSelf)
 import qualified NodeEditor.Action.State.NodeEditor         as NodeEditor
-import           Common.Prelude
 import           NodeEditor.React.Model.Node                (ExpressionNode, InputNode, NodeLoc, NodePath, OutputNode, inPortAt, nodeLoc)
 import           NodeEditor.React.Model.Node.ExpressionNode (isSelected)
 import qualified NodeEditor.React.Model.Node.ExpressionNode as ExpressionNode
@@ -24,10 +24,10 @@ localUpdateInputNode :: InputNode -> Command State Bool
 localUpdateInputNode node = NodeEditor.getInputNode (node ^. nodeLoc) >>= \case
     Nothing       -> return False
     Just prevNode -> do
-        let sidebarMode  = prevNode ^. SidebarNode.mode
-            frozenHeight = prevNode ^. SidebarNode.inputFrozenHeight
-        NodeEditor.addInputNode $ node & SidebarNode.mode              .~ sidebarMode
-                                       & SidebarNode.inputFrozenHeight .~ frozenHeight
+        let sidebarMode = prevNode ^. SidebarNode.mode
+            frozenState = prevNode ^. SidebarNode.inputFrozenState
+        NodeEditor.addInputNode $ node & SidebarNode.mode             .~ sidebarMode
+                                       & SidebarNode.inputFrozenState .~ frozenState
         updateScene
         return True
 
@@ -35,10 +35,10 @@ localUpdateOutputNode :: OutputNode -> Command State Bool
 localUpdateOutputNode node = NodeEditor.getOutputNode (node ^. nodeLoc) >>= \case
     Nothing       -> return False
     Just prevNode -> do
-        let sidebarMode  = prevNode ^. SidebarNode.mode
-            frozenHeight = prevNode ^. SidebarNode.outputFrozenHeight
-        NodeEditor.addOutputNode $ node & SidebarNode.mode .~ sidebarMode
-                                       & SidebarNode.outputFrozenHeight .~ frozenHeight
+        let sidebarMode = prevNode ^. SidebarNode.mode
+            frozenState = prevNode ^. SidebarNode.outputFrozenState
+        NodeEditor.addOutputNode $ node & SidebarNode.mode             .~ sidebarMode
+                                       & SidebarNode.outputFrozenState .~ frozenState
         updateScene
         return True
 

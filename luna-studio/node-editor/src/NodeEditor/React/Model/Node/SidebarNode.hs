@@ -9,14 +9,14 @@ module NodeEditor.React.Model.Node.SidebarNode
     , NodeLoc
     ) where
 
-import           Data.Convert                   (Convertible (convert))
-import           Data.HashMap.Strict            (HashMap)
-import           Empire.API.Data.Node           (NodeId)
-import qualified Empire.API.Data.Node           as Empire
-import           Empire.API.Data.NodeLoc        (NodeLoc (NodeLoc), NodePath)
 import           Common.Prelude
+import           Data.Convert                  (Convertible (convert))
+import           Data.HashMap.Strict           (HashMap)
+import           Empire.API.Data.Node          (NodeId)
+import qualified Empire.API.Data.Node          as Empire
+import           Empire.API.Data.NodeLoc       (NodeLoc (NodeLoc), NodePath)
 import           NodeEditor.React.Model.IsNode as X
-import           NodeEditor.React.Model.Port   (InPort, InPortTree, OutPort, OutPortIndex (Projection), OutPortTree)
+import           NodeEditor.React.Model.Port   (AnyPortId, InPort, InPortTree, OutPort, OutPortIndex (Projection), OutPortTree)
 import qualified NodeEditor.React.Model.Port   as Port
 
 
@@ -27,18 +27,21 @@ data SidebarMode = AddRemove
 instance Default SidebarMode where
     def = MoveConnect
 
+type Height = Double
+
 data InputNode = InputNode
         { _inputNodeLoc      :: NodeLoc
         , _inputSidebarPorts :: [OutPortTree OutPort]
         , _inputMode         :: SidebarMode
-        , _inputFrozenHeight :: Maybe Double
+        -- TODO[LJK, PM]: We should store OutPortId here but then lenses are invalid
+        , _inputFrozenState  :: Maybe (Height, Maybe AnyPortId)
         } deriving (Eq, Generic, NFData, Show)
 
 data OutputNode = OutputNode
         { _outputNodeLoc      :: NodeLoc
         , _outputSidebarPorts :: InPortTree InPort
         , _outputMode         :: SidebarMode
-        , _outputFrozenHeight :: Maybe Double
+        , _outputFrozenState  :: Maybe (Height, Maybe AnyPortId)
         } deriving (Eq, Generic, NFData, Show)
 
 makeLenses ''InputNode
@@ -52,14 +55,14 @@ instance Convertible (NodePath, Empire.InputSidebar) InputNode where
         {- inputNodeLoc      -} (NodeLoc path (n ^. Empire.inputNodeId))
         {- inputSidebarPorts -} (convert `fmap2` (n ^. Empire.inputEdgePorts))
         {- inputMode         -} def
-        {- inputFrozenHeight -} def
+        {- inputFrozenState  -} def
 
 instance Convertible (NodePath, Empire.OutputSidebar) OutputNode where
     convert (path, n) = OutputNode
         {- outputNodeLoc      -} (NodeLoc path (n ^. Empire.outputNodeId))
         {- outputSideBarPorts -} (convert <$> n ^. Empire.outputEdgePorts)
         {- outputMode         -} def
-        {- outputFrozenHeight -} def
+        {- outputFrozenState  -} def
 
 instance HasNodeLoc InputNode where
     nodeLoc = inputNodeLoc
@@ -82,7 +85,7 @@ instance HasPorts InputNode where
 
 class IsNode node => SidebarNode node where
     mode           :: Lens' node SidebarMode
-    frozenHeight   :: Lens' node (Maybe Double)
+    frozenState    :: Lens' node (Maybe (Height, Maybe AnyPortId))
     isInputSidebar :: node -> Bool
 
     isInMode :: SidebarMode -> node -> Bool
@@ -96,10 +99,10 @@ class IsNode node => SidebarNode node where
 
 instance SidebarNode InputNode where
     mode           = inputMode
-    frozenHeight   = inputFrozenHeight
+    frozenState    = inputFrozenState
     isInputSidebar = const True
 
 instance SidebarNode OutputNode where
     mode           = outputMode
-    frozenHeight   = outputFrozenHeight
+    frozenState    = outputFrozenState
     isInputSidebar = const False
