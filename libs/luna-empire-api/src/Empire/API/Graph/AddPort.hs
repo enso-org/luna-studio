@@ -3,6 +3,7 @@ module Empire.API.Graph.AddPort where
 import           Data.Binary                   (Binary)
 import           Prologue
 
+import           Empire.API.Data.Connection    (Connection)
 import           Empire.API.Data.GraphLocation (GraphLocation)
 import           Empire.API.Data.Node          (InputSidebar)
 import           Empire.API.Data.PortRef       (OutPortRef)
@@ -14,6 +15,7 @@ import qualified Empire.API.Topic              as T
 
 data Request = Request { _location   :: GraphLocation
                        , _outPortRef :: OutPortRef
+                       , _connections :: Maybe [Connection]
                        } deriving (Generic, Eq, NFData, Show)
 
 type Result = InputSidebar

@@ -54,7 +54,7 @@ revertAddNode (AddNode.Request loc nl _ _ _) =
     inCurrentLocation loc $ \path -> void $ localRemoveNode $ prependPath path nl
 
 revertAddPort :: AddPort.Request -> Command State ()
-revertAddPort (AddPort.Request loc portRef) =
+revertAddPort (AddPort.Request loc portRef connections) =
     inCurrentLocation loc $ \path -> void $ localRemovePort $ prependPath path portRef
 
 revertAddSubgraph :: AddSubgraph.Request -> Command State ()

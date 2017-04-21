@@ -95,7 +95,7 @@ addNode nodeLoc expression meta connectTo workspace uuid guiID =
         (workspace', nodeLoc') = normalise workspace nodeLoc
 
 addPort :: OutPortRef -> Workspace -> UUID -> Maybe UUID -> IO ()
-addPort portRef workspace uuid guiID = sendRequest $ Message uuid guiID $ (withLibrary workspace' AddPort.Request) portRef' where
+addPort portRef workspace uuid guiID = sendRequest $ Message uuid guiID $ (withLibrary workspace' AddPort.Request) portRef' Nothing where
     (workspace', portRef') = normalise workspace portRef
 
 addSubgraph :: [ExpressionNode] -> [Connection] -> Workspace -> UUID -> Maybe UUID -> IO ()

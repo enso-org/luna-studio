@@ -10,6 +10,7 @@ module Empire.Commands.Graph
     ( addNode
     , addNodeCondTC
     , addPort
+    , addPortWithConnection
     , addSubgraph
     , removeNodes
     , movePort
@@ -211,7 +212,10 @@ updateGraphSeq newOut = do
     forM_ newOut $ (Graph.breadcrumbHierarchy . BH.body .=)
 
 addPort :: GraphLocation -> NodeId -> Int -> Empire InputSidebar
-addPort loc nid position = withGraph loc $ runASTOp $ do
+addPort loc nid position = withTC loc False $ addPortNoTC loc nid position
+
+addPortNoTC :: GraphLocation -> NodeId -> Int -> Command Graph InputSidebar
+addPortNoTC loc nid position = runASTOp $ do
     edges <- GraphBuilder.getEdgePortMapping
     when ((fst <$> edges) /= Just nid) $ throwM NotInputEdgeException
     Just ref <- ASTRead.getCurrentASTTarget
@@ -220,6 +224,13 @@ addPort loc nid position = withGraph loc $ runASTOp $ do
     newLam  <- ASTRead.getCurrentASTTarget
     mapM_ (ASTBuilder.attachNodeMarkersForArgs nid []) newLam
     GraphBuilder.buildInputSidebar nid
+
+addPortWithConnection :: GraphLocation -> NodeId -> Int -> [Connection] -> Empire InputSidebar
+addPortWithConnection loc nid position conns = withTC loc False $ do
+    newPorts <- addPortNoTC loc nid position
+    forM_ conns $ \(Connection src dst) -> connectNoTC loc src (InPortRef' dst)
+    return newPorts
+
 
 generateNodeId :: IO NodeId
 generateNodeId = UUID.nextRandom
