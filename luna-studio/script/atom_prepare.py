@@ -53,12 +53,12 @@ def ghcjs_code():
     text_editor = prep_path('../.stack-work/') + '/**/bin/text-editor.jsexe/all.js'
     node_editor_js = glob.glob(node_editor,recursive=True)
     text_editor_js = glob.glob(text_editor,recursive=True)
-    prepare_ghcjs('../atom/lib/gen/node-editor-ghcjs.js', '../node-editor/env.ghcjs', node_editor_js[0])
-    prepare_ghcjs('../atom/lib/gen/text-editor-ghcjs.js', '../text-editor/env-internals.ghcjs', text_editor_js[0])
+    prepare_ghcjs('../atom/lib/gen/node-editor-ghcjs.js', '../node-editor/env-node-editor.ghcjs', node_editor_js[0])
+    prepare_ghcjs('../atom/lib/gen/text-editor-ghcjs.js', '../text-editor/env-text-editor.ghcjs', text_editor_js[0])
 
 def cp_files():
     distutils.dir_util.copy_tree(prep_path('../node-editor/js'), prep_path('../atom/lib/gen'))
-    for path in ('../text-editor/js/atom-callback-internals.js', '../text-editor/js/app-internals.coffee', '../node-editor/config.release.js', '../node-editor/config.debug.js'):
+    for path in ('../text-editor/js/atom-callback-text-editor.js', '../text-editor/js/app-text-editor.coffee', '../node-editor/config.release.js', '../node-editor/config.debug.js'):
         shutil.copy(prep_path(path), prep_path('../atom/lib/gen'))
 
 def main():

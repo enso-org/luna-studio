@@ -43,7 +43,7 @@ exports.config =
 
   plugins:
     ghcjs:
-      placeholder:  'node-editor/env.ghcjs'
+      placeholder:  'node-editor/env-node-editor.ghcjs'
       projectName:  cabalProjectName
       buildCommand: 'stack build node-editor --install-ghc --ghc-options=-j8 ' + if process.env.CIRCLECI then '--fast' else ''
       clearScreen:  false
