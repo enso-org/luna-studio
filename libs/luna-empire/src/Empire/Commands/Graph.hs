@@ -51,9 +51,9 @@ import           Control.Monad.State           hiding (when)
 import           Control.Arrow                 ((&&&))
 import           Control.Monad.Error           (throwError)
 import           Data.Coerce                   (coerce)
-import           Data.List                     (elemIndex, sort, group)
+import           Data.List                     (elemIndex, sort, sortOn, group)
 import qualified Data.Map                      as Map
-import           Data.Maybe                    (catMaybes, fromMaybe, isJust)
+import           Data.Maybe                    (catMaybes, fromMaybe, isJust, listToMaybe)
 import           Data.Foldable                 (toList)
 import           Data.Text                     (Text)
 import qualified Data.Text                     as Text
@@ -142,10 +142,51 @@ addNodeNoTC loc uuid input meta = do
     node <- runASTOp $ do
         putChildrenIntoHierarchy uuid expr
         AST.writeMeta expr meta
-        updateNodeSequence
+        putInSequence expr meta
         GraphBuilder.buildNode uuid
     Publisher.notifyNodeUpdate loc node
     return node
+
+distanceTo :: (Double, Double) -> (Double, Double) -> Double
+distanceTo (xRef, yRef) (xPoint, yPoint) = sqrt $ (xRef - xPoint) ** 2 + (yRef - yPoint) ** 2
+
+findPreviousNodeInSequence :: ASTOp m => NodeMeta -> [(NodeRef, NodeMeta)] -> m (Maybe NodeRef)
+findPreviousNodeInSequence meta nodes = do
+    let position           = view NodeMeta.position meta
+        nodesWithPositions = map (\(n, m) -> (n, m ^. NodeMeta.position)) nodes
+        nodesToTheLeft     = filter (\(n, (x, y)) -> x < fst position || (x == fst position && y < snd position)) nodesWithPositions
+        nearestNode        = listToMaybe $ sortOn (\(n, p) -> distanceTo position p) nodesToTheLeft
+    return $ fmap fst nearestNode
+
+findM :: Monad m => (a -> m Bool) -> [a] -> m (Maybe a)
+findM p [] = return Nothing
+findM p (x:xs) = do
+     b <- p x
+     if b then return (Just x) else findM p xs
+
+putInSequence :: ASTOp m => NodeRef -> NodeMeta -> m ()
+putInSequence ref meta = do
+    oldSeq <- preuse $ Graph.breadcrumbHierarchy . BH.body
+    case oldSeq of
+        Just s -> do
+            nodes              <- AST.readSeq s
+            nodesAndMetas      <- mapM (\n -> (n,) <$> AST.readMeta n) nodes
+            let nodesWithMetas =  mapMaybe (\(n,m) -> (n,) <$> m) nodesAndMetas
+            nearestNode        <- findPreviousNodeInSequence meta nodesWithMetas
+            seqs               <- AST.getSeqs s
+            case nearestNode of
+                Just n -> do
+                    seqToModify <- findM (\seq -> (== Just n) <$> AST.previousNodeForSeq seq) seqs
+                    case seqToModify of
+                        Just seq -> IR.matchExpr seq $ \case
+                            IR.Seq l r -> do
+                                l' <- IR.source l
+                                newSeq <- IR.generalize <$> IR.seq l' ref
+                                IR.replaceSource newSeq l
+                            _       -> undefined
+                        _        -> updateGraphSeq =<< AST.makeSeq (ref:nodes)
+                _ -> updateGraphSeq =<< AST.makeSeq (ref:nodes)
+        _ -> updateGraphSeq =<< AST.makeSeq [ref]
 
 prepareLambdaChild :: ASTOp m => BH.NodeIDTarget -> NodeRef -> m (Maybe BH.LamItem)
 prepareLambdaChild tgt ref = do
@@ -428,20 +469,7 @@ getNodeMeta loc nodeId = withGraph loc $ runASTOp $ do
     AST.readMeta ref
 
 getCode :: GraphLocation -> Empire String
-getCode loc = withGraph loc $ runASTOp $ do
-    function <- ASTPrint.printCurrentFunction
-    returnedNodeId <- GraphBuilder.nodeConnectedToOutput
-    allNodes <- uses Graph.breadcrumbHierarchy BH.topLevelIDs
-    refs     <- mapM GraphUtils.getASTPointer $ flip filter allNodes $ \nid ->
-        case returnedNodeId of
-            Just id' -> id' /= nid
-            _       -> True
-    metas    <- mapM AST.readMeta refs
-    let sorted = fmap snd $ sort $ zip metas allNodes
-    lines' <- mapM printNodeLine sorted
-    return $ unlines $ case function of
-        Just (header, ret) -> header : map ("    " ++) (lines' ++ [ret])
-        _                  -> lines'
+getCode loc@(GraphLocation file _) = Text.unpack <$> Library.withLibrary file (use Library.code)
 
 getBuffer :: FilePath -> Maybe (Int, Int) -> Empire Text
 getBuffer file span = Library.getBuffer file span

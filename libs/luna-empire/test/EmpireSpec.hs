@@ -874,8 +874,8 @@ spec = around withChannels $ parallel $ do
             u3 <- mkUUID
             res <- evalEmp env $ do
                 Graph.addNode top u1 "1" $ NodeMeta (10, 10) False
-                Graph.addNode top u2 "2" $ NodeMeta (10, 20) False
-                Graph.addNode top u3 "3" $ NodeMeta (10, 30) False
+                Graph.addNode top u2 "2" $ NodeMeta (20, 10) False
+                Graph.addNode top u3 "3" $ NodeMeta (30, 10) False
                 Graph.withGraph top $ runASTOp $ GraphBuilder.getNodeIdSequence
             withResult res $ \nodeSeq -> do
                 nodeSeq `shouldMatchList` [u1, u2, u3]
@@ -884,8 +884,8 @@ spec = around withChannels $ parallel $ do
             u2 <- mkUUID
             u3 <- mkUUID
             res <- evalEmp env $ do
-                Graph.addNode top u1 "1" $ NodeMeta (10, 30) False
-                Graph.addNode top u2 "2" $ NodeMeta (10, 20) False
+                Graph.addNode top u1 "1" $ NodeMeta (30, 10) False
+                Graph.addNode top u2 "2" $ NodeMeta (20, 10) False
                 Graph.addNode top u3 "3" $ NodeMeta (10, 10) False
                 Graph.withGraph top $ runASTOp $ GraphBuilder.getNodeIdSequence
             withResult res $ \nodeSeq -> do
