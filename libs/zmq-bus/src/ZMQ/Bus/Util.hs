@@ -9,7 +9,8 @@ module ZMQ.Bus.Util where
 
 import           Data.Binary        (Binary)
 
-import           Prologue
+import           Prelude            (fail)
+import           Prologue           hiding (fail)
 import           System.Log.MLogger as L
 import           ZMQ.Bus.Bus        (Bus)
 import qualified ZMQ.Bus.Bus        as Bus

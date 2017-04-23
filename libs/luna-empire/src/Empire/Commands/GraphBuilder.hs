@@ -277,7 +277,7 @@ extractAppliedPorts seenApp seenLam bound node = IR.matchExpr node $ \case
             _     -> return Nothing
         case (seenApp, nameH) of
             (_, Just '#') -> extractAppliedPorts seenApp seenLam (inp : bound) =<< IR.source o
-            (False, _)    -> extractAppliedPorts False True (inp : bound) =<< IR.source o
+            (False, _)    -> extractAppliedPorts False   True    (inp : bound) =<< IR.source o
             _          -> return []
     App f a -> case seenLam of
         True  -> return []

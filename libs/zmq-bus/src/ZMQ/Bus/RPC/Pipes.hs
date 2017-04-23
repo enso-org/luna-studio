@@ -8,7 +8,8 @@ import           Control.Monad             (forever)
 import           Pipes                     ((>->))
 import qualified Pipes
 import qualified Pipes.Concurrent          as Pipes
-import           Prologue                  hiding (error)
+import           Prelude                   (fail)
+import           Prologue                  hiding (error, fail)
 
 import           System.Log.MLogger
 import qualified ZMQ.Bus.Bus               as Bus

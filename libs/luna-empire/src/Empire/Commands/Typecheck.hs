@@ -83,7 +83,7 @@ reportError loc nid err = do
 updateNodes :: GraphLocation -> Command InterpreterEnv ()
 updateNodes loc@(GraphLocation _ br) = zoom graph $ zoomBreadcrumb br $ do
     portMapping <- preuse $ Graph.breadcrumbHierarchy . BH._LambdaParent . BH.portMapping
-    updates <- runASTOp $ do
+    (updates, errors) <- runASTOp $ do
         sidebarUpdates <- case portMapping of
             Just (i, o) -> do
                 (u1, u2) <- (,) <$> GraphBuilder.buildInputSidebarTypecheckUpdate i <*> GraphBuilder.buildOutputSidebarTypecheckUpdate o
@@ -91,8 +91,14 @@ updateNodes loc@(GraphLocation _ br) = zoom graph $ zoomBreadcrumb br $ do
             Nothing     -> return []
         allNodeIds  <- uses Graph.breadcrumbHierarchy topLevelIDs
         nodeUpdates <- mapM GraphBuilder.buildNodeTypecheckUpdate allNodeIds
-        return $ sidebarUpdates ++ nodeUpdates
+        errors      <- forM allNodeIds $ \nid -> do
+            errs <- IR.getLayer @IR.Errors =<< ASTRead.getASTPointer nid
+            case errs of
+                []     -> return Nothing
+                e : es -> return $ Just $ (nid, NodeError $ APIError.Error APIError.CompileError e)
+        return (sidebarUpdates ++ nodeUpdates, errors)
     mapM_ (Publisher.notifyNodeTypecheck loc) updates
+    forM_ (catMaybes errors) $ \(nid, e) -> Publisher.notifyResultUpdate loc nid e 0
 
 updateMonads :: GraphLocation -> Command InterpreterEnv ()
 updateMonads loc@(GraphLocation _ br) = zoom graph $ zoomBreadcrumb br $ do
