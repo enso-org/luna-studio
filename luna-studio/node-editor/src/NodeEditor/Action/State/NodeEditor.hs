@@ -5,33 +5,33 @@
 {-# LANGUAGE TypeFamilies           #-}
 module NodeEditor.Action.State.NodeEditor where
 
-import           Control.Arrow                                ((&&&))
-import qualified Control.Monad.State                          as M
-import qualified Data.HashMap.Strict                          as HashMap
-import qualified Data.Map.Lazy                                as Map
-import           Data.Monoid                                  (First (First), getFirst)
-import qualified Data.Set                                     as Set
+import           Control.Arrow                               ((&&&))
+import qualified Control.Monad.State                         as M
+import qualified Data.HashMap.Strict                         as HashMap
+import qualified Data.Map.Lazy                               as Map
+import           Data.Monoid                                 (First (First), getFirst)
+import qualified Data.Set                                    as Set
 import           NodeEditor.React.Model.Layout               (Layout, Scene)
 import qualified NodeEditor.React.Model.Layout               as Scene
 
-import           Empire.API.Data.MonadPath                    (MonadPath)
-import qualified Empire.API.Data.Node                         as Empire
-import           Empire.API.Data.Port                         (_WithDefault)
-import           Empire.API.Data.PortDefault                  (PortDefault)
-import           Empire.API.Data.PortRef                      (AnyPortRef, InPortRef, OutPortRef (OutPortRef))
+import           Common.Prelude
+import           Empire.API.Data.MonadPath                   (MonadPath)
+import qualified Empire.API.Data.Node                        as Empire
+import           Empire.API.Data.Port                        (_WithDefault)
+import           Empire.API.Data.PortDefault                 (PortDefault)
+import           Empire.API.Data.PortRef                     (AnyPortRef, InPortRef, OutPortRef (OutPortRef))
 import           NodeEditor.Action.Command                   (Command)
 import           NodeEditor.Action.State.App                 (get, modify)
 import qualified NodeEditor.Action.State.Internal.NodeEditor as Internal
 import           NodeEditor.Batch.Workspace                  (nodeSearcherData)
 import           NodeEditor.Data.CameraTransformation        (CameraTransformation)
 import           NodeEditor.Data.Graph                       (Graph (Graph))
-import           Common.Prelude
 import           NodeEditor.React.Model.App                  (nodeEditor)
 import           NodeEditor.React.Model.Connection           (Connection, ConnectionId, ConnectionsMap, HalfConnection, PosConnection,
-                                                               connectionId, containsNode, containsPortRef, dstNodeLoc, srcNodeLoc,
-                                                               toConnectionsMap)
+                                                              connectionId, containsNode, containsPortRef, dstNodeLoc, srcNodeLoc,
+                                                              toConnectionsMap)
 import           NodeEditor.React.Model.Node                 (InputNode, Node (Expression, Input, Output), NodeLoc, OutputNode, nodeLoc,
-                                                               toNodesMap)
+                                                              toNodesMap)
 import           NodeEditor.React.Model.Node.ExpressionNode  (ExpressionNode, isSelected)
 import qualified NodeEditor.React.Model.Node.ExpressionNode  as ExpressionNode
 import           NodeEditor.React.Model.NodeEditor           (NodeEditor)
@@ -39,7 +39,7 @@ import qualified NodeEditor.React.Model.NodeEditor           as NE
 import           NodeEditor.React.Model.Port                 (state, valueType)
 import           NodeEditor.React.Model.Searcher             (Searcher)
 import           NodeEditor.State.Global                     (State, workspace)
-import           Text.ScopeSearcher.Item                      (Items, isElement, items)
+import           Text.ScopeSearcher.Item                     (Items, isElement, items)
 
 
 getNodeEditor :: Command State NodeEditor
@@ -51,8 +51,8 @@ modifyNodeEditor = modify nodeEditor
 resetGraph :: Command State ()
 resetGraph = modifyNodeEditor $ do
     NE.expressionNodes     .= def
-    NE.inputNode          .= def
-    NE.outputNode         .= def
+    NE.inputNode           .= def
+    NE.outputNode          .= def
     NE.monads              .= def
     NE.connections         .= def
     NE.visualizations      .= def
@@ -122,10 +122,7 @@ modifyOutputNode :: Monoid r => NodeLoc -> M.State OutputNode r -> Command State
 modifyOutputNode = Internal.modifySidebarRec NE.outputNode ExpressionNode.outputNode
 
 removeNode :: NodeLoc -> Command State ()
-removeNode nl = do
-    Internal.unsetNodeRec  NE.outputNode      ExpressionNode.outputNode     nl
-    Internal.unsetNodeRec  NE.inputNode       ExpressionNode.inputNode      nl
-    Internal.removeNodeRec NE.expressionNodes ExpressionNode.expressionNodes nl
+removeNode = Internal.removeNodeRec NE.expressionNodes ExpressionNode.expressionNodes
 
 getSelectedNodes :: Command State [ExpressionNode]
 getSelectedNodes = filter (view isSelected) <$> getExpressionNodes
