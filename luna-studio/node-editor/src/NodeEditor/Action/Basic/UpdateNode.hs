@@ -5,6 +5,7 @@ import           Control.Monad                              (filterM)
 import           Empire.API.Data.Node                       (NodeTypecheckerUpdate, tcNodeId)
 import qualified Empire.API.Data.Node                       as Empire
 import           Empire.API.Data.Port                       (InPortIndex (Self))
+import           NodeEditor.Action.Basic.AddNode            (localAddExpressionNode, localAddInputNode, localAddOutputNode)
 import           NodeEditor.Action.Basic.Scene              (updateScene)
 import           NodeEditor.Action.Command                  (Command)
 import           NodeEditor.Action.State.Model              (shouldDisplayPortSelf)
@@ -31,6 +32,9 @@ localUpdateInputNode node = NodeEditor.getInputNode (node ^. nodeLoc) >>= \case
         updateScene
         return True
 
+localUpdateOrAddInputNode :: InputNode -> Command State ()
+localUpdateOrAddInputNode node = unlessM (localUpdateInputNode node) $ localAddInputNode node
+
 localUpdateOutputNode :: OutputNode -> Command State Bool
 localUpdateOutputNode node = NodeEditor.getOutputNode (node ^. nodeLoc) >>= \case
     Nothing       -> return False
@@ -41,6 +45,9 @@ localUpdateOutputNode node = NodeEditor.getOutputNode (node ^. nodeLoc) >>= \cas
                                        & SidebarNode.outputFrozenState .~ frozenState
         updateScene
         return True
+
+localUpdateOrAddOutputNode :: OutputNode -> Command State ()
+localUpdateOrAddOutputNode node = unlessM (localUpdateOutputNode node) $ localAddOutputNode node
 
 localUpdateExpressionNode :: ExpressionNode -> Command State Bool
 localUpdateExpressionNode node = NodeEditor.getExpressionNode (node ^. nodeLoc) >>= \case
@@ -54,6 +61,9 @@ localUpdateExpressionNode node = NodeEditor.getExpressionNode (node ^. nodeLoc) 
                                             & inPortAt [Self] . mode %~ selfMode
                                             & ExpressionNode.mode             .~ mode'
         return True
+
+localUpdateOrAddExpressionNode :: ExpressionNode -> Command State ()
+localUpdateOrAddExpressionNode node = unlessM (localUpdateExpressionNode node) $ localAddExpressionNode node
 
 localUpdateNodeTypecheck :: NodePath -> NodeTypecheckerUpdate -> Command State ()
 localUpdateNodeTypecheck path update = do

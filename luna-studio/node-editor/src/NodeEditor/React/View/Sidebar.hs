@@ -31,10 +31,7 @@ import           NodeEditor.React.View.Port              (handleClick, handleMou
 import           NodeEditor.React.View.Style             (plainPath_, plainRect_)
 import qualified NodeEditor.React.View.Style             as Style
 import           React.Flux                              hiding (view)
-import           System.IO.Unsafe                        (unsafePerformIO)
 
-traceShowMToStdout :: (Show a, Monad m) => a -> m ()
-traceShowMToStdout v = unsafePerformIO $ print v >> return (return ())
 
 name :: SidebarNode node => node -> JSString
 name node = "sidebarPorts" <> if isInputSidebar node then "Inputs" else "Outputs"

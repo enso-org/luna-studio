@@ -1,13 +1,14 @@
 module NodeEditor.Action.Basic.AddNode where
 
-import           Data.Position                       (Position, toTuple)
-import           Data.Text                           (Text)
-import           Empire.API.Data.LabeledTree         (LabeledTree (LabeledTree))
-import qualified Empire.API.Data.Node                as Empire
-import           Empire.API.Data.NodeMeta            (NodeMeta (NodeMeta))
-import           Empire.API.Data.Port                (InPortIndex (Arg, Self), Port (Port), PortState (NotConnected))
-import           Empire.API.Data.TypeRep             (TypeRep (TStar))
-import qualified JS.GoogleAnalytics                  as GA
+import           Common.Prelude
+import           Data.Position                      (Position, toTuple)
+import           Data.Text                          (Text)
+import           Empire.API.Data.LabeledTree        (LabeledTree (LabeledTree))
+import qualified Empire.API.Data.Node               as Empire
+import           Empire.API.Data.NodeMeta           (NodeMeta (NodeMeta))
+import           Empire.API.Data.Port               (InPortIndex (Arg, Self), Port (Port), PortState (NotConnected))
+import           Empire.API.Data.TypeRep            (TypeRep (TStar))
+import qualified JS.GoogleAnalytics                 as GA
 import           NodeEditor.Action.Basic.FocusNode  (focusNode)
 import           NodeEditor.Action.Basic.SelectNode (selectNode)
 import qualified NodeEditor.Action.Batch            as Batch
@@ -15,10 +16,10 @@ import           NodeEditor.Action.Command          (Command)
 import           NodeEditor.Action.Node.Snap        (snap)
 import           NodeEditor.Action.State.Model      (shouldDisplayPortSelf)
 import           NodeEditor.Action.State.NodeEditor (getSelectedNodes)
+import           NodeEditor.Action.State.NodeEditor (addInputNode, addOutputNode)
 import qualified NodeEditor.Action.State.NodeEditor as NodeEditor
 import           NodeEditor.Action.UUID             (getUUID)
-import           Common.Prelude
-import           NodeEditor.React.Model.Node        (ExpressionNode, NodeLoc (NodeLoc), NodePath, inPortAt, nodeLoc)
+import           NodeEditor.React.Model.Node        (ExpressionNode, InputNode, NodeLoc (NodeLoc), NodePath, OutputNode, inPortAt, nodeLoc)
 import           NodeEditor.React.Model.Port        (Mode (Invisible), ensureVisibility, mode)
 import           NodeEditor.State.Global            (State)
 
@@ -52,3 +53,9 @@ localAddExpressionNode node = do
         node' = node & inPortAt [Self] . mode %~ selfMode
     NodeEditor.addExpressionNode node'
     focusNode $ node ^. nodeLoc
+
+localAddInputNode :: InputNode -> Command State ()
+localAddInputNode = addInputNode
+
+localAddOutputNode :: OutputNode -> Command State ()
+localAddOutputNode = addOutputNode

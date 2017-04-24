@@ -34,13 +34,13 @@ import qualified Empire.API.Graph.SetNodeExpression          as SetNodeExpressio
 import qualified Empire.API.Graph.SetNodesMeta               as SetNodesMeta
 import qualified Empire.API.Graph.SetPortDefault             as SetPortDefault
 import qualified Empire.API.Response                         as Response
-import           NodeEditor.Action.Basic                     (createGraph, localAddConnection, localAddExpressionNode, localAddPort,
-                                                              localAddSubgraph, localMerge, localMovePort, localRemoveConnection,
-                                                              localRemoveNodes, localRemovePort, localRenameNode, localSetCode,
-                                                              localSetNodeCode, localSetNodeExpression, localSetNodesMeta,
-                                                              localSetPortDefault, localSetSearcherHints, localUpdateExpressionNode,
-                                                              localUpdateExpressionNodes, localUpdateInputNode, localUpdateNodeTypecheck,
-                                                              setNodeProfilingData, setNodeValue, updateScene)
+import           NodeEditor.Action.Basic                     (localAddConnection, localAddExpressionNode, localAddPort, localAddSubgraph,
+                                                              localMerge, localMovePort, localRemoveConnection, localRemoveNodes,
+                                                              localRemovePort, localRenameNode, localSetCode, localSetNodeCode,
+                                                              localSetNodeExpression, localSetNodesMeta, localSetPortDefault,
+                                                              localSetSearcherHints, localUpdateExpressionNode, localUpdateExpressionNodes,
+                                                              localUpdateInputNode, localUpdateNodeTypecheck, setNodeProfilingData,
+                                                              setNodeValue, updateGraph, updateScene)
 import           NodeEditor.Action.Basic.Revert              (revertAddConnection, revertAddNode, revertAddPort, revertAddSubgraph,
                                                               revertMovePort, revertRemoveConnection, revertRemoveNodes, revertRemovePort,
                                                               revertRenameNode, revertSetNodeCode, revertSetNodeExpression,
@@ -81,7 +81,7 @@ handle (Event.Batch ev) = Just $ case ev of
                     breadcrumb  = result ^. GetProgram.breadcrumb
                 Global.workspace . Workspace.nodeSearcherData .= nsData
                 setBreadcrumbs breadcrumb
-                createGraph nodes input output connections monads
+                updateGraph nodes input output connections monads
                 localSetCode code
                 unless isGraphLoaded $ do
                     centerGraph
