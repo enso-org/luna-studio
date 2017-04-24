@@ -1,9 +1,9 @@
 -- TODO[LJK, PM]: Find better place or name for this module
 module NodeEditor.Data.Geometry where
 
-import           Data.Position       (Position, distanceSquared, fromDoubles, move, vector, x, y)
-import           Data.Vector2         (dotV, scalarProduct)
 import           Common.Prelude
+import           Data.Position  (Position, distanceSquared, fromDoubles, move, vector, x, y)
+import           Data.Vector2   (dotV, scalarProduct)
 
 
 epsilon :: Double
@@ -49,7 +49,7 @@ closestPointOnLineParam (p1, p2) p3 = (v3 - v1) `dotV` (v2 - v1) / (v2 - v1) `do
     v3 = p3 ^. vector
 
 doesSegmentsIntersects :: (Position, Position) -> (Position, Position) -> Bool
-doesSegmentsIntersects seg1@(beg1, end1) seg2@(beg2, end2) =
+doesSegmentsIntersects seg1@(beg1, end1) seg2@(beg2, end2) = if beg1 == end1 || beg2 == end2 then False else
     case intersectLineLine seg1 seg2 of
         Nothing -> isBeg1OnSeg2 || isBeg2OnSeg1 where
             isBeg1OnSeg2 = distanceSquared beg1 beg2 + distanceSquared beg1 end2 == distanceSquared beg2 end2
