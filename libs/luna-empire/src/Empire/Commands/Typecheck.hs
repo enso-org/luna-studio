@@ -24,7 +24,7 @@ import qualified Empire.API.Data.NodeMeta          as NodeMeta
 import           Empire.API.Data.TypeRep           (TypeRep (TCons))
 import           Empire.API.Data.PortDefault       (PortValue (StringValue), VisualizationValue (JsonValue))
 import           Empire.API.Graph.NodeResultUpdate (NodeValue(..))
-import           Empire.ASTOp                      (EmpirePass, runASTOp)
+import           Empire.ASTOp                      (EmpirePass, runASTOp, runTypecheck)
 import qualified Empire.ASTOps.Read                as ASTRead
 import qualified Empire.Commands.AST               as AST
 import           Empire.Commands.Breadcrumb        (zoomBreadcrumb)
@@ -48,14 +48,17 @@ import qualified Luna.Pass.Typechecking.Typecheck  as Typecheck
 import qualified OCI.IR.Combinators                as IR
 import           OCI.Pass                          (SubPass)
 import           Luna.Pass.Resolution.Data.CurrentTarget (CurrentTarget (TgtNone))
+import           Luna.Pass.Data.ExprMapping
 
 import System.IO.Unsafe
 import Data.IORef
 
 runTC :: Imports -> Command Graph ()
 runTC imports = do
-    root <- preuse $ Graph.breadcrumbHierarchy . BH.body
-    runASTOp $ Typecheck.typecheck TgtNone imports $ map IR.unsafeGeneralize $ maybeToList root
+    runTypecheck imports
+    runASTOp $ do
+        mapping <- unwrap <$> IR.getAttr @ExprMapping
+        Graph.breadcrumbHierarchy . BH.refs %= (\x -> Map.findWithDefault x x mapping)
     return ()
 
 runInterpreter :: Imports -> Command Graph (Maybe Interpreter.LocalScope)

@@ -102,6 +102,35 @@ instance HasBody BParent where
         LambdaParent   i -> LambdaParent   <$> body trans i
         ToplevelParent i -> ToplevelParent <$> body trans i
 
+class HasRefs a where
+    refs :: Traversal' a NodeRef
+
+instance HasRefs NodeIDTarget where
+    refs = anyRef
+
+instance HasRefs NodeRef where
+    refs = id
+
+instance {-# OVERLAPPABLE #-} (Traversable t, HasRefs a) => HasRefs (t a) where
+    refs = traverse . refs
+
+instance HasRefs TopItem where
+    refs f (TopItem children top) = TopItem <$> refs f children <*> refs f top
+
+instance HasRefs LamItem where
+    refs f (LamItem pm ref children body) = LamItem pm <$> refs f ref <*> refs f children <*> refs f body
+
+instance HasRefs ExprItem where
+    refs f (ExprItem children ref) = ExprItem <$> refs f children <*> refs f ref
+
+instance HasRefs BChild where
+    refs f (ExprChild   it) = ExprChild   <$> refs f it
+    refs f (LambdaChild it) = LambdaChild <$> refs f it
+
+instance HasRefs BParent where
+    refs f (ToplevelParent it) = ToplevelParent <$> refs f it
+    refs f (LambdaParent   it) = LambdaParent   <$> refs f it
+
 getBreadcrumbItems :: BParent -> Breadcrumb BreadcrumbItem -> [BChild]
 getBreadcrumbItems b (Breadcrumb crumbs) = go crumbs b where
     go [] _ = []
