@@ -419,7 +419,8 @@ getBuffer :: FilePath -> Maybe (Int, Int) -> Empire Text
 getBuffer file span = Library.getBuffer file span
 
 getGraph :: GraphLocation -> Empire APIGraph.Graph
-getGraph loc = withTC loc True $ runASTOp GraphBuilder.buildGraph
+getGraph loc = withTC loc True $ runASTOp $ do
+    GraphBuilder.buildGraph
 
 getNodes :: GraphLocation -> Empire [ExpressionNode]
 getNodes loc = withTC loc True $ runASTOp $ view APIGraph.nodes <$> GraphBuilder.buildGraph
@@ -610,7 +611,14 @@ setToNothing dst = do
             Nothing       -> False
             Just (_, out) -> out == dst
     nothing <- IR.generalize <$> IR.cons_ "None"
-    if disconnectOutputEdge then updateNodeSequenceWithOutput (Just nothing) else GraphUtils.rewireNode dst nothing
+    if disconnectOutputEdge
+        then do
+            updateNodeSequenceWithOutput (Just nothing)
+            let item = BH.ExprItem Map.empty $ BH.AnonymousNode nothing
+            uid <- liftIO $ UUID.nextRandom
+            Graph.breadcrumbHierarchy . BH.children . at uid ?= BH.ExprChild item
+            IR.putLayer @Marker nothing $ Just $ OutPortRef (NodeLoc def uid) []
+        else GraphUtils.rewireNode dst nothing
 
 unAcc :: ASTOp m => NodeId -> m ()
 unAcc nodeId = do
@@ -620,18 +628,9 @@ unAcc nodeId = do
 
 unApp :: ASTOp m => NodeId -> Int -> m ()
 unApp nodeId pos = do
-    edges <- GraphBuilder.getEdgePortMapping
-    let connectionToOutputEdge = case edges of
-            Nothing              -> False
-            Just (_, outputEdge) -> outputEdge == nodeId
-    if | connectionToOutputEdge -> do
-        Just astNode <- ASTRead.getCurrentASTTarget
-        newNodeRef   <- ASTModify.setLambdaOutputToBlank astNode
-        ASTModify.rewireCurrentNode newNodeRef
-       | otherwise -> do
-        astNode <- GraphUtils.getASTTarget nodeId
-        newNodeRef <- ASTRemove.removeArg astNode pos
-        GraphUtils.rewireNode nodeId newNodeRef
+    astNode <- GraphUtils.getASTTarget nodeId
+    newNodeRef <- ASTRemove.removeArg astNode pos
+    GraphUtils.rewireNode nodeId newNodeRef
 
 makeAcc :: ASTOp m => NodeId -> NodeId -> OutPortId -> m ()
 makeAcc src dst outPort = do

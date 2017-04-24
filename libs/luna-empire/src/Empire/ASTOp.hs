@@ -14,10 +14,11 @@ module Empire.ASTOp (
   , runAliasAnalysis
   , runASTOp
   , runPass
+  , runTypecheck
   , match
   ) where
 
-import           Empire.Prelude       hiding (mempty)
+import           Empire.Prelude       hiding (mempty, toList)
 import           Prologue             (Text, mempty, toListOf)
 
 import           Control.Monad.Catch  (MonadCatch(..))
@@ -52,9 +53,13 @@ import qualified Luna.Syntax.Text.Parser.CodeSpan             as CodeSpan
 import           Luna.Syntax.Text.Parser.Marker               (MarkedExprMap)
 import qualified Data.SpanTree                                as SpanTree
 import           Luna.Syntax.Text.Source                      (Source, SourceTree)
+import qualified Luna.Pass.Typechecking.Typecheck             as Typecheck
 
 import qualified OCI.IR.Repr.Vis                   as Vis
 import qualified Control.Monad.State.Dependent.Old as DepOld
+import           Luna.Pass.Data.ExprMapping
+import           Luna.Builtin.Data.Module          (Imports (..))
+import           Luna.Pass.Resolution.Data.CurrentTarget (CurrentTarget (TgtNone))
 
 type ASTOp m = (MonadThrow m,
                 MonadCatch m,
@@ -90,7 +95,7 @@ data EmpirePass
 type instance Abstract   EmpirePass = EmpirePass
 type instance Inputs     Net   EmpirePass = '[AnyExpr, AnyExprLink]
 type instance Inputs     Layer EmpirePass = EmpireLayers
-type instance Inputs     Attr  EmpirePass = '[Source, Parser.ParsedExpr, SourceTree, MarkedExprMap] -- Parser attrs temporarily - probably need to call it as a separate Pass
+type instance Inputs     Attr  EmpirePass = '[Source, Parser.ParsedExpr, SourceTree, MarkedExprMap, ExprMapping] -- Parser attrs temporarily - probably need to call it as a separate Pass
 type instance Inputs     Event EmpirePass = '[]
 
 type instance Outputs    Net   EmpirePass = '[AnyExpr, AnyExprLink]
@@ -138,6 +143,25 @@ runAliasAnalysis = do
             Pass.setAttr (getTypeDesc @NegativeConses)   $ NegativeConses   []
             Pass.setAttr (getTypeDesc @ExprRoots) $ ExprRoots $ map unsafeGeneralize roots
     runPass inits AliasAnalysis.runAliasAnalysis
+
+runTypecheck :: Imports -> Command Graph ()
+runTypecheck imports = do
+    g <- get
+    ASTState currentStateIR currentStatePass <- use Graph.ast
+    root <- preuse $ Graph.breadcrumbHierarchy . BH.body
+    let evalIR = flip runStateT g
+               . withVis
+               . dropLogs
+               . DepState.evalDefStateT @Cache
+               . (\a -> SpanTree.runTreeBuilder a >>= \(foo, _) -> return foo)
+               . flip evalIRBuilder currentStateIR
+               . flip evalPassManager currentStatePass
+    ((st, passSt), newG) <- liftIO $ evalIR $ do
+        Typecheck.typecheck TgtNone imports $ map unsafeGeneralize $ toList root
+        st     <- snapshot
+        passSt <- DepState.get @Pass.State
+        return (st, passSt)
+    put $ newG & Graph.ast .~ ASTState st passSt
 
 runPass :: forall pass b a. KnownPass pass
         => Pass.PassManager (IRBuilder (Parser.IRSpanTreeBuilder (DepState.StateT Cache (Logger DropLogger (Vis.VisStateT (StateT Graph IO)))))) b

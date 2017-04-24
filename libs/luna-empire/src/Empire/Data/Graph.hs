@@ -44,6 +44,7 @@ import qualified Data.ByteString.Lazy.Char8 as ByteString
 import           Data.Maybe                 (isJust)
 import           System.Environment         (lookupEnv)
 import           Web.Browser                (openBrowser)
+import           Luna.Pass.Data.ExprMapping
 
 
 data Graph = Graph { _ast                   :: AST
@@ -104,6 +105,7 @@ defaultAST = mdo
         Parser.init
         attachLayer 5 (getTypeDesc @Parser.Parser) (getTypeDesc @AnyExpr)
         attachEmpireLayers
+        initExprMapping
         st   <- snapshot
         pass <- DepState.get @PassManager.State
         return $ ASTState st pass
