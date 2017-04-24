@@ -99,9 +99,10 @@ nodeEditor = React.defineView name $ \(ref, ne) -> do
                 forM_     (ne ^. NodeEditor.connectionPen  ) connectionPen_
 
         planeNodes_ $ do
+            forM_ (ne ^. NodeEditor.searcher      ) $ searcher_ ref camera
             forM_  nodes                            $ node_ ref
             forM_ (ne ^. NodeEditor.visualizations) $ pinnedVisualization_ ref ne
-            forM_ (ne ^. NodeEditor.searcher      ) $ searcher_ ref camera
+
 
         forM_ input  $ sidebar_ ref
         forM_ output  $ sidebar_ ref
