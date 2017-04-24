@@ -4,14 +4,14 @@
 {-# LANGUAGE TypeFamilies   #-}
 module NodeEditor.Action.State.Internal.NodeEditor where
 
-import qualified Control.Monad.State                         as M
-import           Data.HashMap.Strict                         (HashMap)
-import qualified Empire.API.Data.Breadcrumb                  as B
-import qualified Empire.API.Data.NodeLoc                     as NodeLoc
+import qualified Control.Monad.State                        as M
+import           Data.HashMap.Strict                        (HashMap)
+import qualified Empire.API.Data.Breadcrumb                 as B
+import qualified Empire.API.Data.NodeLoc                    as NodeLoc
 
+import           Common.Prelude
 import           NodeEditor.Action.Command                  (Command)
 import           NodeEditor.Action.State.App                (modify)
-import           Common.Prelude
 import           NodeEditor.React.Model.App                 (nodeEditor)
 import           NodeEditor.React.Model.Node                (HasNodeLoc, NodeId, NodeLoc, nodeId)
 import qualified NodeEditor.React.Model.Node.ExpressionNode as ExpressionNode
@@ -29,12 +29,6 @@ setNodeRec :: Lens' NodeEditor (Maybe n) -> Lens' ExpressionNode.Subgraph (Maybe
 setNodeRec rootLens subLens nl node = modifyNodeRec'
     (\_ -> modify nodeEditor $ rootLens ?= node)
     (\_ -> subLens ?= node)
-    nl
-
-unsetNodeRec :: Lens' NodeEditor (Maybe n) -> Lens' ExpressionNode.Subgraph (Maybe n) -> NodeLoc -> Command State ()
-unsetNodeRec rootLens subLens nl = modifyNodeRec'
-    (\nid -> when (nid == nl ^. nodeId) $ modify nodeEditor $ rootLens .= Nothing)
-    (\nid -> when (nid == nl ^. nodeId) $ subLens .= Nothing)
     nl
 
 removeNodeRec :: Lens' NodeEditor (HashMap NodeId n) -> Lens' ExpressionNode.Subgraph (HashMap NodeId n) -> NodeLoc -> Command State ()
