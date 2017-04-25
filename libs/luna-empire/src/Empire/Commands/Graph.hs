@@ -366,18 +366,21 @@ connectNoTC loc outPort anyPort = do
         Publisher.notifyNodeUpdate loc n
     return connection
 
-getPortDefault :: GraphLocation -> InPortRef -> Empire PortDefault
+getPortDefault :: GraphLocation -> InPortRef -> Empire (Maybe PortDefault)
 getPortDefault loc (InPortRef  _ (Self : _))                   = throwError "Cannot set default value on self port"
 getPortDefault loc (InPortRef  (NodeLoc _ nodeId) (Arg x : _)) = withGraph loc $ runASTOp $ flip GraphBuilder.getInPortDefault x =<< GraphUtils.getASTTarget nodeId
 
-setPortDefault :: GraphLocation -> InPortRef -> PortDefault -> Empire ()
-setPortDefault loc (InPortRef (NodeLoc _ nodeId) port) val = withTC loc False $ runASTOp $ do
+setPortDefault :: GraphLocation -> InPortRef -> Maybe PortDefault -> Empire ()
+setPortDefault loc (InPortRef (NodeLoc _ nodeId) port) (Just val) = withTC loc False $ runASTOp $ do
+    print "VAL"
+    print val
     parsed <- ASTParse.parsePortDefault val
-    ref <- GraphUtils.getASTTarget nodeId
+    ref    <- GraphUtils.getASTTarget nodeId
     newRef <- case port of
         [Self]    -> ASTBuilder.makeAccessor parsed ref
         [Arg num] -> ASTBuilder.applyFunction ref parsed num
     GraphUtils.rewireNode nodeId newRef
+setPortDefault loc port Nothing = withTC loc False $ runASTOp $ disconnectPort port
 
 disconnect :: GraphLocation -> InPortRef -> Empire ()
 disconnect loc port@(InPortRef (NodeLoc _ nid) _) = withTC loc False $ do
