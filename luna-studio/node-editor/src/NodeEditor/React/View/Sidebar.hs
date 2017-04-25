@@ -19,9 +19,9 @@ import           NodeEditor.React.Model.App              (App)
 import           NodeEditor.React.Model.Constants        (lineHeight)
 import qualified NodeEditor.React.Model.Field            as Field
 import           NodeEditor.React.Model.Node.SidebarNode (NodeLoc, SidebarMode (AddRemove, MoveConnect), SidebarNode, countProjectionPorts,
-                                                          frozenState, isInputSidebar)
+                                                          isInputSidebar)
 import qualified NodeEditor.React.Model.Node.SidebarNode as SidebarNode
-import           NodeEditor.React.Model.Port             (AnyPort, AnyPortId, OutPortIndex (Projection), getPortNumber,
+import           NodeEditor.React.Model.Port             (AnyPort, OutPortIndex (Projection), getPortNumber,
                                                           getPositionInSidebar, isHighlighted, isInMovedMode, isInNameEditMode, isInPort,
                                                           isOutPort)
 import qualified NodeEditor.React.Model.Port             as Port
@@ -31,7 +31,6 @@ import           NodeEditor.React.View.Port              (handleClick, handleMou
 import           NodeEditor.React.View.Style             (plainPath_, plainRect_)
 import qualified NodeEditor.React.View.Style             as Style
 import           React.Flux                              hiding (view)
-
 
 name :: SidebarNode node => node -> JSString
 name node = "sidebarPorts" <> if isInputSidebar node then "Inputs" else "Outputs"
@@ -58,58 +57,34 @@ sidebar_ ref node = do
         nodeLoc       = node ^. SidebarNode.nodeLoc
         mode          = node ^. SidebarNode.mode
         isPortDragged = any isInMovedMode ports
-        frozenButton  = if isJust $ node ^. frozenState then snd . fromJust $ node ^. frozenState else Nothing
-        ifFreeze a    = if isJust $ node ^. frozenState then a else []
         classes       = [ "sidebar", if isInputSidebar node then "sidebar--i" else "sidebar--o" ]
-                      ++ ifFreeze ["sidebar--freezemode"]
                       ++ if mode == AddRemove then ["sidebar--editmode"] else []
                       ++ if isPortDragged then ["sidebar--dragmode"] else []
-        addButtonHandlers = let portRef = OutPortRef' (OutPortRef nodeLoc [Projection (countProjectionPorts node)]) in
-            case mode of
-                AddRemove   -> [ onMouseDown $ \e _ -> [stopPropagation e]
-                               , onClick     $ \e _ -> stopPropagation e : dispatch ref (UI.SidebarEvent $ Sidebar.AddPort portRef)
-                               ]
-                MoveConnect -> portHandlers ref mode False False portRef
+        addButtonHandlers = case mode of
+                                AddRemove   -> [ onMouseDown $ \e _ -> [stopPropagation e]
+                                               , onClick     $ \e _ -> stopPropagation e : dispatch ref (UI.SidebarEvent $ Sidebar.AddPort portRef)
+                                               ]
+                                MoveConnect -> portHandlers ref mode False False portRef
+                            where portRef = OutPortRef' (OutPortRef nodeLoc [Projection (countProjectionPorts node)])
     div_
         [ "key"         $= name node
         , "className"   $= Style.prefixFromList classes
         , onDoubleClick $ \e _ -> [stopPropagation e]
         , onMouseDown   $ \e _ -> [stopPropagation e]
         , onMouseMove   $ \e m -> stopPropagation e : (dispatch ref $ UI.SidebarEvent $ Sidebar.MouseMove m nodeLoc)
-        ] $ do
-        div_ (
+        ] $
+        div_
             [ "key" $= "activeArea"
             , "className" $= Style.prefixFromList [ "sidebar__active-area", "noselect" ]
-            ] ++ ifFreeze ["style" @= Aeson.object [ "height" Aeson..= fst (fromJust $ node ^. frozenState) ]]) $
+            ] $
             div_
                 [ "key"       $= "SidebarPortsBody"
                 , "id"        $= if isInputSidebar node then inputSidebarId else outputSidebarId
                 , "className" $= Style.prefixFromList [ "sidebar__body", "noselect" ]
                 ] $ do
-                -- TODO[LJK]: Find out how self port works in this case
-                -- when (isInputSidebar node) $
-                --     div_
-                --         [ "className" $= Style.prefixFromList ["port", "sidebarport", "sidebarport--i", "sidebarport--self"]
-                --         ] $
-                --         svg_
-                --             [ "className" $= Style.prefix "sidebarport__svg"
-                --             ] $
-                --             g_
-                --                 [ "className" $= Style.prefixFromList [ "port", "port--self" ]
-                --                 ] $ do
-                --                 circle_
-                --                     [ "className" $= Style.prefix "port__shape"
-                --                     , "fill"      $= "rgba(119,119,119,255)"
-                --                     , "r"         $= "5"
-                --                     ] mempty
-                --                 circle_
-                --                     [ "className" $= Style.prefix "port__select"
-                --                     , "r"         $= "13"
-                --                     ] mempty
-
                 forM_ ports $ \p -> if isInMovedMode p
                     then sidebarPlaceholderForPort_ >> sidebarDraggedPort_ ref p
-                    else sidebarPort_ ref mode nodeLoc isPortDragged (countProjectionPorts node == 1) p frozenButton
+                    else sidebarPort_ ref mode nodeLoc isPortDragged (countProjectionPorts node == 1) p
                 when (isInputSidebar node) $ do
                     svg_ (
                         [ "className" $= Style.prefixFromList [ "sidebar__port__svg", "sidebar__port__svg--addbutton" ]
@@ -148,26 +123,8 @@ sidebar_ ref node = do
                             , "r"         $= jsShow2 (lineHeight/1.5)
                             ] mempty
 
-addButton_ :: Ref App -> AnyPortRef -> Bool -> ReactElementM ViewEventHandler ()
-addButton_ ref portRef displayButton = do
-    let classes = ["sidebar__port__svg", "sidebar__port__svg--inbetween"]
-               ++ if displayButton then ["show"] else []
-    svg_
-        [ "className"  $= Style.prefixFromList classes
-        , onMouseDown  $ \e _ -> [stopPropagation e]
-        , onClick      $ \e _ -> stopPropagation e : dispatch ref (UI.SidebarEvent $ Sidebar.AddPort portRef)
-        , onMouseLeave $ \_ _ -> dispatch ref (UI.SidebarEvent . Sidebar.UnfreezeSidebar $ portRef ^. PortRef.nodeLoc)
-        ] $
-        g_ [ "className" $= Style.prefix "port-add-inbetween" ] $ do
-            g_ [ "className" $= Style.prefix "port-add-inbetween__shape" ] $ do
-                plainPath_ (Style.prefix "port-add-inbetween__droplet") "M10.0749836,12.9509892 C11.4541267,14.1514559 13.0835452,14.9902759 15.0097241,14.9902759 C18.8703469,14.9902759 22,11.8606228 22,8 C22,4.13937722 18.8703469,1.0097241 15.0097241,1.0097241 C13.0977164,1.0097241 11.4518168,1.82232527 10.1029674,3.02127407 C5.44945277,7.13675725 4.06697429,7.99999996 1.05578798,7.99999996 C4.06697429,7.99999996 5.38818292,8.87139207 10.0749836,12.9509892 Z"
-                g_ [ "className" $= Style.prefix "port-add-inbetween__plus" ] $ do
-                    plainRect_ "key1" 2 8 (-1) (-4)
-                    plainRect_ "key2" 8 2 (-4) (-1)
-            plainPath_ (Style.prefix "port-add-inbetween__selectable") "M 20 0 A 10 10 0 0 1 20 16 L 10 16 A 10 10 0 0 1 10 0 Z"
-
-sidebarPort_ :: Ref App -> SidebarMode -> NodeLoc -> Bool -> Bool -> AnyPort -> Maybe AnyPortId -> ReactElementM ViewEventHandler ()
-sidebarPort_ ref mode nl isPortDragged isOnly p mayFrozenAddButton = do
+sidebarPort_ :: Ref App -> SidebarMode -> NodeLoc -> Bool -> Bool -> AnyPort -> ReactElementM ViewEventHandler ()
+sidebarPort_ ref mode nl isPortDragged isOnly p = do
     let portId    = p ^. Port.portId
         portRef   = toAnyPortRef nl portId
         color     = convert $ p ^. Port.color
@@ -179,7 +136,7 @@ sidebarPort_ ref mode nl isPortDragged isOnly p mayFrozenAddButton = do
         [ "key"       $= ( jsShow portId <> "-port-" <> jsShow num )
         , "className" $= Style.prefixFromList classes
         ] $ do
-        when (isOutPort portId) $ addButton_ ref portRef (mayFrozenAddButton == Just portId)
+        when (isOutPort portId) $ addButton_ ref portRef
         svg_
             [ "className" $= Style.prefix "sidebar__port__svg"
             ] $ do
@@ -208,6 +165,23 @@ sidebarPort_ ref mode nl isPortDragged isOnly p mayFrozenAddButton = do
             div_ [ "className" $= Style.prefixFromList ["sidebar__port__name", "noselect"]
                  , onDoubleClick $ \_ _ -> dispatch ref $ UI.SidebarEvent $ Sidebar.PortNameStartEdit portRef
                  ] $ elemString $ p ^. Port.name
+
+addButton_ :: Ref App -> AnyPortRef -> ReactElementM ViewEventHandler ()
+addButton_ ref portRef = do
+    let classes = ["sidebar__port__svg", "sidebar__port__svg--inbetween"]
+    svg_
+        [ "className"  $= Style.prefixFromList classes
+        , onMouseDown  $ \e _ -> [stopPropagation e]
+        , onClick      $ \e _ -> stopPropagation e : dispatch ref (UI.SidebarEvent $ Sidebar.AddPort portRef)
+        , onMouseLeave $ \_ _ -> dispatch ref (UI.SidebarEvent . Sidebar.UnfreezeSidebar $ portRef ^. PortRef.nodeLoc)
+        ] $
+        g_ [ "className" $= Style.prefix "port-add-inbetween" ] $ do
+            g_ [ "className" $= Style.prefix "port-add-inbetween__shape" ] $ do
+                plainPath_ (Style.prefix "port-add-inbetween__droplet") "M10.0749836,12.9509892 C11.4541267,14.1514559 13.0835452,14.9902759 15.0097241,14.9902759 C18.8703469,14.9902759 22,11.8606228 22,8 C22,4.13937722 18.8703469,1.0097241 15.0097241,1.0097241 C13.0977164,1.0097241 11.4518168,1.82232527 10.1029674,3.02127407 C5.44945277,7.13675725 4.06697429,7.99999996 1.05578798,7.99999996 C4.06697429,7.99999996 5.38818292,8.87139207 10.0749836,12.9509892 Z"
+                g_ [ "className" $= Style.prefix "port-add-inbetween__plus" ] $ do
+                    plainRect_ "key1" 2 8 (-1) (-4)
+                    plainRect_ "key2" 8 2 (-4) (-1)
+            plainPath_ (Style.prefix "port-add-inbetween__selectable") "M 20 0 A 10 10 0 0 1 20 16 L 10 16 A 10 10 0 0 1 10 0 Z"
 
 sidebarPlaceholderForPort_ :: ReactElementM ViewEventHandler ()
 sidebarPlaceholderForPort_ = div_

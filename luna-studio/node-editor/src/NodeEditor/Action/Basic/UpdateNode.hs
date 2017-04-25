@@ -26,9 +26,9 @@ localUpdateInputNode node = NodeEditor.getInputNode (node ^. nodeLoc) >>= \case
     Nothing       -> return False
     Just prevNode -> do
         let sidebarMode = prevNode ^. SidebarNode.mode
-            frozenState = prevNode ^. SidebarNode.inputFrozenState
+            --frozenState = prevNode ^. SidebarNode.inputFrozenState
         NodeEditor.addInputNode $ node & SidebarNode.mode             .~ sidebarMode
-                                       & SidebarNode.inputFrozenState .~ frozenState
+                                    --    & SidebarNode.inputFrozenState .~ frozenState
         updateScene
         return True
 
@@ -40,9 +40,9 @@ localUpdateOutputNode node = NodeEditor.getOutputNode (node ^. nodeLoc) >>= \cas
     Nothing       -> return False
     Just prevNode -> do
         let sidebarMode = prevNode ^. SidebarNode.mode
-            frozenState = prevNode ^. SidebarNode.outputFrozenState
+            -- frozenState = prevNode ^. SidebarNode.outputFrozenState
         NodeEditor.addOutputNode $ node & SidebarNode.mode             .~ sidebarMode
-                                       & SidebarNode.outputFrozenState .~ frozenState
+                                    --    & SidebarNode.outputFrozenState .~ frozenState
         updateScene
         return True
 

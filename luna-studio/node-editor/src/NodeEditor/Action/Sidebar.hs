@@ -21,7 +21,7 @@ import           NodeEditor.Action.State.Scene           (getInputSidebarSize)
 import           NodeEditor.Event.Mouse                  (mousePosition)
 import           NodeEditor.React.Model.Constants        (gridSize)
 import qualified NodeEditor.React.Model.Layout           as Scene
-import           NodeEditor.React.Model.Node.SidebarNode (NodeLoc, countProjectionPorts, inputFrozenState, outPortAt, outPortsList)
+import           NodeEditor.React.Model.Node.SidebarNode (NodeLoc, countProjectionPorts, outPortAt, outPortsList)
 import           NodeEditor.React.Model.Port             (AnyPortId (OutPortId'), AnyPortRef (OutPortRef'), OutPortIndex (Projection),
                                                           OutPortRef (OutPortRef), getPortNumber)
 import qualified NodeEditor.React.Model.Port             as Port
@@ -47,27 +47,27 @@ instance Action (Command State) PortDrag where
             removeActionFromState portDragAction
         else cancelPortDragUnsafe action
 
-unfreezeSidebar :: NodeLoc -> Command State ()
-unfreezeSidebar nl = do
-    modifyInputNode nl $ inputFrozenState .= def
-    updateScene
-
-freezeSidebar :: NodeLoc -> Command State ()
-freezeSidebar nl =
-    withJustM (getInputNode nl) $ \node -> unless (isJust $ node ^. inputFrozenState) $
-        modifyInputNode nl $ inputFrozenState ?= ((fromIntegral . length $ outPortsList node) * gridSize + 31, Nothing)
+-- unfreezeSidebar :: NodeLoc -> Command State ()
+-- unfreezeSidebar nl = do
+--     modifyInputNode nl $ inputFrozenState .= def
+--     updateScene
+--
+-- freezeSidebar :: NodeLoc -> Command State ()
+-- freezeSidebar nl =
+--     withJustM (getInputNode nl) $ \node -> unless (isJust $ node ^. inputFrozenState) $
+--         modifyInputNode nl $ inputFrozenState ?= ((fromIntegral . length $ outPortsList node) * gridSize + 31, Nothing)
 
 addPort :: OutPortRef -> Command State ()
 addPort portRef = do
-    let next (Projection x : _) = OutPortId' [Projection (x+1)]
-        nl = portRef ^. PortRef.nodeLoc
-    freezeSidebar nl
-    modifyInputNode nl $ inputFrozenState . _Just . _2 ?= (next $ portRef ^. PortRef.srcPortId)
+    -- let next (Projection x : _) = OutPortId' [Projection (x+1)]
+    --     nl = portRef ^. PortRef.nodeLoc
+    -- freezeSidebar nl
+    -- modifyInputNode nl $ inputFrozenState . _Just . _2 ?= (next $ portRef ^. PortRef.srcPortId)
     Basic.addPort portRef
 
 removePort :: OutPortRef -> Command State ()
 removePort portRef = do
-    freezeSidebar $ portRef ^. PortRef.nodeLoc
+    -- freezeSidebar $ portRef ^. PortRef.nodeLoc
     Basic.removePort portRef
 
 startPortNameEdit :: OutPortRef -> Command State ()
