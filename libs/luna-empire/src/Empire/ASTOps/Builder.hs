@@ -61,9 +61,9 @@ rewireApplication fun arg' pos = do
     apps target withNewArg
 
 applyFunction :: ASTOp m => NodeRef -> NodeRef -> Int -> m NodeRef
-applyFunction fun arg' pos = match fun $ \case
-    App{} -> rewireApplication fun arg' pos
-    _     -> newApplication fun arg' pos
+applyFunction fun arg pos = match fun $ \case
+    App{} -> rewireApplication fun arg pos
+    _     -> newApplication    fun arg pos
 
 
 reapply :: ASTOp m => NodeRef -> [NodeRef] -> m NodeRef

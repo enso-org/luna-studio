@@ -14,10 +14,10 @@ import qualified Empire.API.Topic              as T
 
 data Request = Request { _location     :: GraphLocation
                        , _portRef      :: InPortRef
-                       , _defaultValue :: PortDefault
+                       , _defaultValue :: Maybe PortDefault
                        } deriving (Generic, Eq, NFData, Show)
 
-data Inverse = Inverse { _prevPortDefault :: PortDefault
+data Inverse = Inverse { _prevPortDefault :: Maybe PortDefault
                        } deriving (Generic, Eq, NFData, Show)
 
 

@@ -179,20 +179,20 @@ getUniName root = do
 getNodeName :: ASTOp m => NodeId -> m (Maybe Text)
 getNodeName nid = ASTRead.getASTPointer nid >>= getUniName
 
-getDefault :: ASTOp m => NodeRef -> m PortDefault
+getDefault :: ASTOp m => NodeRef -> m (Maybe PortDefault)
 getDefault arg = match arg $ \case
-        IR.String s       -> return $ Constant $ StringValue $ s
-        IR.Number i       -> return $ Constant $ if Lit.isInteger i then IntValue $ Lit.toInt i else DoubleValue $ Lit.toDouble i
-        IR.Cons "True"  _ -> return $ Constant $ BoolValue True
-        IR.Cons "False" _ -> return $ Constant $ BoolValue False
-        _                 -> Expression <$> Print.printExpression arg
+        IR.String s       -> return $ Just $ Constant $ StringValue $ s
+        IR.Number i       -> return $ Just $ Constant $ if Lit.isInteger i then IntValue $ Lit.toInt i else DoubleValue $ Lit.toDouble i
+        IR.Cons "True"  _ -> return $ Just $ Constant $ BoolValue True
+        IR.Cons "False" _ -> return $ Just $ Constant $ BoolValue False
+        IR.Blank          -> return $ Nothing
+        _                 -> Just . Expression <$> Print.printExpression arg
 
-getInPortDefault :: ASTOp m => NodeRef -> Int -> m PortDefault
+getInPortDefault :: ASTOp m => NodeRef -> Int -> m (Maybe PortDefault)
 getInPortDefault ref pos = do
-    (_, args) <- ASTDeconstruct.deconstructApp ref
-    argRef    <- maybe (throwM $ NotAppException ref) return $ args ^? ix pos
-    getDefault argRef
-
+    (_, args)  <- ASTDeconstruct.deconstructApp ref
+    let argRef = args ^? ix pos
+    join <$> mapM getDefault argRef
 
 getPortState :: ASTOp m => NodeRef -> m PortState
 getPortState node = do
