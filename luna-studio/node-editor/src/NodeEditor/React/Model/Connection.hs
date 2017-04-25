@@ -235,6 +235,6 @@ nodeToNodeAngle src' dst' =
         srcY = src' ^. y
         dstX = dst' ^. x
         dstY = dst' ^. y
-    in  if srcX < dstX      then atan ((srcY - dstY) / (srcX - dstX))
+    in  if      srcX < dstX then atan ((srcY - dstY) / (srcX - dstX))
         else if srcX > dstX then atan ((srcY - dstY) / (srcX - dstX)) + pi
         else 0
