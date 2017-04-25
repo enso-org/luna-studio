@@ -55,8 +55,9 @@ module.exports =
             else atom.workspace.destroyActivePaneItem()
 
     @subs.add atom.commands.add 'atom-workspace', 'core:close': ->
-        if atom.workspace.getActivePaneItem().buffer.file
-            activeFilePath = atom.workspace.getActivePaneItem().buffer.file.path
+        if atom.workspace.getActivePaneItem().buffer
+            if atom.workspace.getActivePaneItem().buffer.file
+                activeFilePath = atom.workspace.getActivePaneItem().buffer.file.path
         else activeFilePath = atom.workspace.getActivePane().activeItem.uri
         if path.extname(activeFilePath) is ".luna"
             internal.pushInternalEvent(event: "CloseFile", uri: activeFilePath)
