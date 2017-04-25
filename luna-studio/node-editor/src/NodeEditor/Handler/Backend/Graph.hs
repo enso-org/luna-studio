@@ -348,7 +348,7 @@ handle (Event.Batch ev) = Just $ case ev of
             ownRequest <- isOwnRequest requestId
             if ownRequest then
                 return ()
-            else void $ localSetPortDefault (prependPath path portRef) defaultVal
+            else void $ mapM (localSetPortDefault (prependPath path portRef)) defaultVal
 
     TypeCheckResponse response -> handleResponse response doNothing doNothing
 

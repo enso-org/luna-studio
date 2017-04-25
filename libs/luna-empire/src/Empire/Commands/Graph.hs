@@ -372,8 +372,6 @@ getPortDefault loc (InPortRef  (NodeLoc _ nodeId) (Arg x : _)) = withGraph loc $
 
 setPortDefault :: GraphLocation -> InPortRef -> Maybe PortDefault -> Empire ()
 setPortDefault loc (InPortRef (NodeLoc _ nodeId) port) (Just val) = withTC loc False $ runASTOp $ do
-    print "VAL"
-    print val
     parsed <- ASTParse.parsePortDefault val
     ref    <- GraphUtils.getASTTarget nodeId
     newRef <- case port of
