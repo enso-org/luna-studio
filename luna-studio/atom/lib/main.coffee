@@ -26,10 +26,13 @@ module.exports =
 
       if path.extname(uri) is '.luna'
         internal.pushInternalEvent(event: "OpenFile", uri: uri)
+        console.log("openFile")
 
-        atom.workspace.getActivePane().activateItem new LunaEditorTab(uri, internal)
-        atom.workspace.getActivePane().activateItem new LunaStudioTab(uri, code)
+        atom.workspace.getActivePane().activateItem new LunaEditorTab({uri, internal})
+        atom.workspace.getActivePane().activateItem new LunaStudioTab({uri, code})
 
+    deserializeActiveLunaTextEditor: ({uri, internal}) -> new LunaEditorTab({uri, internal})
+    deserializeActiveLunaNodeEditor: ({uri, code}) -> new LunaStudioTab({uri, code})
 
     @subs = new SubAtom
 

@@ -29,7 +29,7 @@ TextBuffer::onDidStopChangingWithDiffs = (callback) ->
 module.exports =
 class LunaEditorTab extends TextEditor
 
-  constructor: (@uri, @internal) ->
+  constructor: ({@uri, @internal}) ->
 
       super
       @getBuffer().setPath(@uri)
@@ -69,6 +69,11 @@ class LunaEditorTab extends TextEditor
                 #   cursor: (@getBuffer().characterIndexForPosition(x) for x in @.getCursorBufferPositions()) #for multiple cursors
               @internal.pushText(diff)
 
+  serialize: ->
+      {deserializer: "luna-studio/LunaTextEditor", @uri, @internal}
+
+  atom.deserializers.add(this)
+  @deserialize: (state) -> new LunaEditorTab(state)
 
   markSnippet: (start, end, classes) =>
       textBuffer = @getBuffer()
