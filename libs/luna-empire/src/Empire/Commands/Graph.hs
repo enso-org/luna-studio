@@ -507,19 +507,21 @@ setPortDefault loc (InPortRef (NodeLoc _ nodeId) port) val = withTC loc False $ 
     GraphUtils.rewireNode nodeId newRef
 
 disconnect :: GraphLocation -> InPortRef -> Empire ()
-disconnect loc port@(InPortRef (NodeLoc _ nid) _) = withTC loc False $ do
-    nodeToUpdate <- runASTOp $ do
-        disconnectPort port
+disconnect loc port@(InPortRef (NodeLoc _ nid) _) = do
+    nodeId <- withTC loc False $ do
+        nodeToUpdate <- runASTOp $ do
+            disconnectPort port
 
-        -- if input port is not an edge, send update to gui
-        edges <- GraphBuilder.getEdgePortMapping
-        case edges of
-            Just (input, output) -> do
-                if (nid /= input && nid /= output) then Just <$> GraphBuilder.buildNode nid
-                                                   else return Nothing
-            _ -> Just <$> GraphBuilder.buildNode nid
-    forM_ nodeToUpdate $ Publisher.notifyNodeUpdate loc
-    return ()
+            -- if input port is not an edge, send update to gui
+            edges <- GraphBuilder.getEdgePortMapping
+            case edges of
+                Just (input, output) -> do
+                    if (nid /= input && nid /= output) then Just <$> GraphBuilder.buildNode nid
+                                                       else return Nothing
+                _ -> Just <$> GraphBuilder.buildNode nid
+        forM_ nodeToUpdate $ Publisher.notifyNodeUpdate loc
+        return $ view Node.nodeId <$> nodeToUpdate
+    forM_ nodeId $ updateNodeCode loc
 
 getNodeMeta :: GraphLocation -> NodeId -> Empire (Maybe NodeMeta)
 getNodeMeta loc nodeId = withGraph loc $ runASTOp $ do
