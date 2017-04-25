@@ -182,12 +182,10 @@ putInSequence ref meta = do
             let nodesWithMetas =  mapMaybe (\(n,m) -> (n,) <$> m) nodesAndMetas
             nearestNode        <- findPreviousNodeInSequence meta nodesWithMetas
             seqs               <- AST.getSeqs s
-            liftIO $ print nearestNode >> print seqs
             case nearestNode of
                 Just n -> do
                     previous <- mapM AST.previousNodeForSeq seqs
                     seqToModify <- findM (\seq -> (== Just n) <$> AST.previousNodeForSeq seq) seqs
-                    liftIO $ print previous >> print seqToModify
                     case seqToModify of
                         Just seq -> IR.matchExpr seq $ \case
                             IR.Seq l r -> do
@@ -199,7 +197,6 @@ putInSequence ref meta = do
                 _ -> updateGraphSeq =<< AST.makeSeq (ref:nodes)
             Just newSeq <- preuse $ Graph.breadcrumbHierarchy . BH.body
             newNodes    <- AST.readSeq newSeq
-            liftIO $ print nodes >> print newNodes
             return nearestNode
         _ -> do
             updateGraphSeq =<< AST.makeSeq [ref]
@@ -214,7 +211,6 @@ addToCode loc@(GraphLocation file _) previous inserted = do
         expr <- printMarkedExpression =<< ASTRead.getASTPointer inserted
         line <- join <$> (forM previous nodeLine)
         return (expr, fromMaybe 0 line)
-    liftIO $ print line
     Library.withLibrary file $ Library.addLineAfter line expr
     return ()
 
@@ -399,7 +395,6 @@ setNodeExpression loc@(GraphLocation file _) nodeId expression = do
         (oldExpr, line) <- runASTOp $ do
             oldExpr  <- ASTRead.getASTTarget nodeId
             line     <- nodeLineById nodeId
-            liftIO $ print line
             return (oldExpr, line)
         parsedRef <- view _1 <$> ASTParse.runReparser expression oldExpr
         runASTOp $ do
@@ -454,10 +449,16 @@ setNodeMeta loc nodeId newMeta = withGraph loc $ do
 
 connectCondTC :: Bool -> GraphLocation -> OutPortRef -> AnyPortRef -> Empire Connection
 connectCondTC True  loc outPort anyPort = connect loc outPort anyPort
-connectCondTC False loc outPort anyPort = withGraph loc $ connectNoTC loc outPort anyPort
+connectCondTC False loc outPort anyPort = do
+    connection <- withGraph loc $ connectNoTC loc outPort anyPort
+    updateNodeCode loc $ anyPort ^. PortRef.nodeId
+    return connection
 
 connect :: GraphLocation -> OutPortRef -> AnyPortRef -> Empire Connection
-connect loc outPort anyPort = withTC loc False $ connectNoTC loc outPort anyPort
+connect loc outPort anyPort = do
+    connection <- withTC loc False $ connectNoTC loc outPort anyPort
+    updateNodeCode loc $ anyPort ^. PortRef.nodeId
+    return connection
 
 connectPersistent :: ASTOp m => OutPortRef -> AnyPortRef -> m Connection
 connectPersistent src@(OutPortRef (NodeLoc _ srcNodeId) srcPort) (InPortRef' dst@(InPortRef (NodeLoc _ dstNodeId) dstPort)) = do
@@ -662,7 +663,6 @@ nodeLine :: ASTOp m => NodeRef -> m (Maybe Int)
 nodeLine ref = do
     Just nodeSeq <- GraphBuilder.getNodeSeq
     nodes        <- AST.readSeq nodeSeq
-    liftIO $ print nodes >> print ref
     let line = elemIndex ref nodes
     return line
 
@@ -690,16 +690,24 @@ printMarkedExpression ref = do
         [var, val] -> Text.concat [var, " ", marker, "= ", val]
         list       -> Text.concat list
 
-updateCode :: GraphLocation -> Empire ()
-updateCode loc@(GraphLocation file _) = do
-    newCode <- withGraph loc $ runASTOp $ do
-        nodeSequence <- GraphBuilder.getNodeIdSequence
-        refs         <- mapM ASTRead.getASTPointer nodeSequence
-        expressions  <- mapM printMarkedExpression refs
-        let newCode = Text.unlines $ expressions
-        return newCode
-    Library.withLibrary file $ Library.code .= newCode
-    Publisher.notifyCodeUpdate file 0 (Text.length newCode) newCode Nothing
+isSidebar :: ASTOp m => NodeId -> m Bool
+isSidebar nodeId = do
+    sidebars <- GraphBuilder.getEdgePortMapping
+    case sidebars of
+        Nothing              -> return False
+        Just (input, output) -> return $ input == nodeId || output == nodeId
+
+updateNodeCode :: GraphLocation -> NodeId -> Empire ()
+updateNodeCode loc@(GraphLocation file _) nodeId = do
+    sidebar <- withGraph loc $ runASTOp $ isSidebar nodeId
+    if sidebar then return () else do
+        (line, expression) <- withGraph loc $ runASTOp $ do
+            ref        <- ASTRead.getASTPointer nodeId
+            expression <- printMarkedExpression ref
+            line       <- nodeLine ref
+            return (line, expression)
+        Library.withLibrary file $ forM_ line $ \l -> Library.substituteLine l expression
+        resendCode file
 
 readRange' :: ASTOp m => NodeRef -> m (RightSpacedSpan _)
 readRange' ref = IR.matchExpr ref $ \case
