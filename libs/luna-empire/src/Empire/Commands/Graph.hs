@@ -587,6 +587,7 @@ insertNode expr = do
     return uuid
 
 loadCode :: Text -> Command Graph ()
+loadCode code | Text.null code = return ()
 loadCode code = do
     (ref, exprMap) <- ASTParse.runUnitParser code
     runASTOp $ forM_ (coerce exprMap :: Map.Map Luna.Marker NodeRef) $ insertNode
