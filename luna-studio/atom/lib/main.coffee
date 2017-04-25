@@ -43,19 +43,21 @@ module.exports =
     #         console.log(atom.workspace.getActiveTextEditor().getSelections())
     #         internal.pushInternalEvent(event: "GetBuffer", uri: "activeFilePath")
     @subs.add atom.workspace.onDidOpen (e) =>
-        atom.workspace.saveActivePaneItem()
-        if atom.workspace.getActivePaneItem().getPath()
-            if path.extname(atom.workspace.getActivePaneItem().getPath()) is '.luna'
-                uri = atom.workspace.getActivePaneItem().getPath()
-                internal.pushInternalEvent(event: "OpenFile", uri: uri)
-                atom.workspace.destroyActivePaneItem()
-                atom.workspace.getActivePane().activateItem new LunaEditorTab(uri, internal)
-                atom.workspace.getActivePane().activateItem new LunaStudioTab(uri, code)
-        else atom.workspace.destroyActivePaneItem()
+        if e.uri == 'undefined'
+            atom.workspace.saveActivePaneItem()
+            if atom.workspace.getActivePaneItem().getPath()
+                if path.extname(atom.workspace.getActivePaneItem().getPath()) is '.luna'
+                    uri = atom.workspace.getActivePaneItem().getPath()
+                    internal.pushInternalEvent(event: "OpenFile", uri: uri)
+                    atom.workspace.destroyActivePaneItem()
+                    atom.workspace.getActivePane().activateItem new LunaEditorTab(uri, internal)
+                    atom.workspace.getActivePane().activateItem new LunaStudioTab(uri, code)
+            else atom.workspace.destroyActivePaneItem()
 
     @subs.add atom.commands.add 'atom-workspace', 'core:close': ->
-        if atom.workspace.getActivePaneItem().buffer.file
-            activeFilePath = atom.workspace.getActivePaneItem().buffer.file.path
+        if atom.workspace.getActivePaneItem().buffer
+            if atom.workspace.getActivePaneItem().buffer.file
+                activeFilePath = atom.workspace.getActivePaneItem().buffer.file.path
         else activeFilePath = atom.workspace.getActivePane().activeItem.uri
         if path.extname(activeFilePath) is ".luna"
             internal.pushInternalEvent(event: "CloseFile", uri: activeFilePath)
