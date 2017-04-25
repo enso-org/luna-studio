@@ -53,10 +53,11 @@ class LunaEditorTab extends TextEditor
       setCode = (uri_send, start_send, end_send, text) =>
           withoutTrigger =>
             if @uri == uri_send
-              start = @getBuffer().positionForCharacterIndex(start_send)
-              end = @getBuffer().positionForCharacterIndex(end_send)
-              @getBuffer().setTextInRange [start, end], text
-              @.scrollToBufferPosition(start)
+            #   start = @getBuffer().positionForCharacterIndex(start_send)
+            #   end = @getBuffer().positionForCharacterIndex(end_send)
+            #   @getBuffer().setTextInRange [start, end], text
+            #   @.scrollToBufferPosition(start)
+                @getBuffer().setText(text)
       @internal.codeListener setCode
 
       @subscribe = new SubAtom
@@ -70,14 +71,13 @@ class LunaEditorTab extends TextEditor
                   text: event.newText
                   cursor: @getBuffer().characterIndexForPosition(@.getCursorBufferPosition())
               @internal.pushText(diff)
-      @subscribe.add @buffer.onWillSave (event) => internal.pushInternalEvent(event: "SaveFile", uri: @uri)
-      @subscribe.add @buffer.onWillReload (event) => internal.pushInternalEvent(event: "GetBuffer", uri: @uri)
-    #   @subscribe.add atom.workspace.onDidDestroyPaneItem (event) => #console.log(event.item.buffer.file.path)
-    #       if event.item.buffer
-    #           activeFilePath = event.item.buffer.file.path
-    #       else activeFilePath = event.item.uri
-    #       if path.extname(activeFilePath) is '.luna'
-    #           @internal.pushInternalEvent("CloseFile " + activeFilePath)
+      @subscribe.add  @getBuffer().onWillSave (event) => internal.pushInternalEvent(event: "SaveFile", uri: @uri)
+      @subscribe.add atom.workspace.onDidDestroyPaneItem (event) => #console.log(event.item.buffer.file.path)
+          if event.item.buffer
+              activeFilePath = event.item.buffer.file.path
+          else activeFilePath = event.item.uri
+          if path.extname(activeFilePath) is '.luna'
+              @internal.pushInternalEvent(event: "CloseFile", uri: activeFilePath)
     #           # internal.statusListener isSaved
 
 

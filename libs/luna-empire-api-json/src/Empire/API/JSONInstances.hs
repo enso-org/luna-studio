@@ -40,7 +40,6 @@ import           Empire.API.Graph.AddConnection         as AddConnection
 import           Empire.API.Graph.AddNode               as AddNode
 import           Empire.API.Graph.AddPort               as AddPort
 import           Empire.API.Graph.AddSubgraph           as AddSubgraph
-import           Empire.API.Graph.CodeUpdate            as CodeUpdate
 import           Empire.API.Graph.CollaborationUpdate   as CollaborationUpdate
 import           Empire.API.Graph.ConnectUpdate         as ConnectUpdate
 import           Empire.API.Graph.DumpGraphViz          as DumpGraphViz
@@ -168,8 +167,6 @@ instance ToJSON AddNode.Request
 instance ToJSON AddPort.Request
 
 instance ToJSON AddSubgraph.Request
-
-instance ToJSON CodeUpdate.Update
 
 instance ToJSON CollaborationUpdate.Update
 instance ToJSON CollaborationUpdate.Event

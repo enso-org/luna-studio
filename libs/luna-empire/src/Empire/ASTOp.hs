@@ -61,6 +61,8 @@ import           Luna.Pass.Data.ExprMapping
 import           Luna.Builtin.Data.Module          (Imports (..))
 import           Luna.Pass.Resolution.Data.CurrentTarget (CurrentTarget (TgtNone))
 
+import           GHC.Stack
+
 type ASTOp m = (MonadThrow m,
                 MonadCatch m,
                 MonadPassManager m,
@@ -72,7 +74,8 @@ type ASTOp m = (MonadThrow m,
                 Editors Layer EmpireLayers m,
                 DepOld.MonadGet Vis.V Vis.Vis m,
                 DepOld.MonadPut Vis.V Vis.Vis m,
-                Parser.IRSpanTreeBuilding m)
+                Parser.IRSpanTreeBuilding m,
+                HasCallStack)
 
 
 type EmpireLayers = '[AnyExpr // Model, AnyExprLink // Model,

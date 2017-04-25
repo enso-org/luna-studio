@@ -1,17 +1,23 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE ViewPatterns      #-}
 
 module Empire.Commands.Library
     ( withLibrary
     , listLibraries
     , createLibrary
     , getBuffer
+    , applyDiff
+    , addLineAfter
+    , removeLine
+    , substituteLine
     ) where
 
 import           Control.Monad.Except    (throwError)
 import           Control.Monad.Reader
 import           Control.Monad.State
 import qualified Data.Map                as Map
-import           Data.Text               as Text
+import           Data.Text               (Text)
+import qualified Data.Text               as Text
 import           Data.Text.IO            as Text
 import           Empire.Prelude
 
@@ -58,3 +64,37 @@ getBuffer :: FilePath -> Maybe (Int, Int) -> Empire Text
 getBuffer path Nothing = withLibrary path $ do
     source <- use Library.code
     return source
+
+applyDiff :: Int -> Int -> Text -> Command Library Text
+applyDiff start end code = do
+    currentCode <- use Library.code
+    let len            = end - start
+        (prefix, rest) = Text.splitAt start currentCode
+        suffix         = Text.drop len rest
+        newCode        = Text.concat [prefix, code, suffix]
+    Library.code .= newCode
+    return newCode
+
+substituteLine :: Int -> Text -> Command Library Text
+substituteLine index newLine = do
+    currentCode <- use Library.code
+    let codeLines = Text.lines currentCode
+        newCode   = Text.unlines $ codeLines & ix index .~ newLine
+    Library.code .= newCode
+    return newCode
+
+removeLine :: Int -> Command Library Text
+removeLine index = do
+    currentCode <- use Library.code
+    let codeLines = Text.lines currentCode
+        newCode   = Text.unlines $ take index codeLines ++ drop (index + 1) codeLines
+    Library.code .= newCode
+    return newCode
+
+addLineAfter :: Int -> Text -> Command Library Text
+addLineAfter ((+1) -> index) line = do
+    currentCode <- use Library.code
+    let codeLines = Text.lines currentCode
+        newCode   = Text.unlines $ take index codeLines ++ [line] ++ drop index codeLines
+    Library.code .= newCode
+    return newCode

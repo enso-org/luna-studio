@@ -5,6 +5,7 @@ module Empire.ASTOps.Print (
   , printExpression
   , printNodeExpression
   , printCurrentFunction
+  , printNodeTarget
   ) where
 
 import           Control.Monad                  (forM, (<=<))
@@ -73,3 +74,8 @@ printExpression = printExpression'
 
 printNodeExpression :: ASTOp m => NodeRef -> m String
 printNodeExpression = printExpression'
+
+printNodeTarget :: ASTOp m => NodeRef -> m String
+printNodeTarget ref = match ref $ \case
+    Unify _ r -> printExpression =<< IR.source r
+    _         -> printExpression ref

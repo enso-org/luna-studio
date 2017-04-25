@@ -138,6 +138,13 @@ getTargetFromNodeIdTarget :: ASTOp m => BH.NodeIDTarget -> m NodeRef
 getTargetFromNodeIdTarget (BH.AnonymousNode r) = return r
 getTargetFromNodeIdTarget (BH.MatchNode     u) = getTargetNode u
 
+getASTMarkerPosition :: ASTOp m => NodeId -> m NodeRef
+getASTMarkerPosition nodeId = do
+    ref <- getASTRef nodeId
+    case ref of
+        BH.AnonymousNode n -> return n
+        BH.MatchNode     n -> getVarNode n
+
 getASTTarget :: ASTOp m => NodeId -> m NodeRef
 getASTTarget nodeId = do
     ref <- getASTRef nodeId

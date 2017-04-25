@@ -1,10 +1,12 @@
 {-# LANGUAGE OverloadedStrings   #-}
 {-# LANGUAGE QuasiQuotes         #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TupleSections       #-}
 {-# LANGUAGE ViewPatterns        #-}
 
 module FileLoadSpec (spec) where
 
+import           Control.Monad                  (forM)
 import           Data.Coerce
 import           Data.List                      (find)
 import qualified Data.Map                       as Map
@@ -14,6 +16,7 @@ import qualified Empire.API.Data.Node           as Node
 import qualified Empire.API.Data.Port           as Port
 import           Empire.API.Data.Breadcrumb     (Breadcrumb(..))
 import           Empire.API.Data.GraphLocation  (GraphLocation(..))
+import           Empire.API.Data.NodeMeta       (NodeMeta (..))
 import           Empire.API.Data.PortRef        (AnyPortRef (..), InPortRef (..), OutPortRef (..))
 import           Empire.API.Data.TypeRep        (TypeRep(TStar))
 import           Empire.ASTOp                   (runASTOp)
@@ -24,10 +27,11 @@ import qualified Empire.Commands.GraphBuilder   as GraphBuilder
 import qualified Empire.Commands.Library        as Library
 import qualified Luna.Syntax.Text.Parser.Parser as Parser (ReparsingStatus(..), ReparsingChange(..))
 
-import           Prologue                   hiding ((|>))
+import           Empire.Prelude
 
 import           Test.Hspec (Spec, around, describe, it, xit, expectationFailure,
-                             parallel, shouldBe, shouldMatchList, shouldStartWith)
+                             parallel, shouldBe, shouldMatchList, shouldStartWith,
+                             shouldSatisfy)
 
 import EmpireUtils
 
@@ -218,3 +222,107 @@ bar ‹3›= foo 8 c
                 connections `shouldMatchList` [
                       (outPortRef (c ^. Node.nodeId) [], inPortRef (bar ^. Node.nodeId) [Port.Arg 1])
                     ]
+    describe "code spans" $ do
+        xit "pi <0>= 3.14" $ \env -> do
+            let code = [r|‹0›print 3.14
+‹1›delete root
+‹2›suspend computer
+|]
+            res <- evalEmp env $ do
+                Library.createLibrary Nothing "TestPath" code
+                let loc = GraphLocation "TestPath" $ Breadcrumb []
+                Graph.withGraph loc $ Graph.loadCode code
+                forM [0..2] $ Graph.markerCodeSpan loc
+                -- Graph.markerCodeSpan loc 3
+            withResult res $ \span -> do
+                return ()
+        xit "shows proper expressions ranges" $ \env -> do
+            let code = [r|pi ‹0›= 3.14
+foo ‹1›= a: b: a + b
+c ‹2›= 4
+bar ‹3›= foo 8 c
+|]
+            res <- evalEmp env $ do
+                Library.createLibrary Nothing "TestPath" code
+                let loc = GraphLocation "TestPath" $ Breadcrumb []
+                Graph.withGraph loc $ Graph.loadCode code
+                forM [0..3] $ Graph.markerCodeSpan loc
+            withResult res $ \spans -> do
+                return ()
+        it "adds one node to code" $ \env -> do
+            u1 <- mkUUID
+            res <- evalEmp env $ do
+                Graph.addNode top u1 "4" def
+                Graph.getCode top
+            withResult res $ \code -> do
+                code `shouldBe` "node1 ‹0›= 4\n"
+        it "adds one node and updates it" $ \env -> do
+            u1 <- mkUUID
+            res <- evalEmp env $ do
+                Graph.addNode top u1 "4" def
+                Graph.setNodeExpression top u1 "5"
+                Graph.getCode top
+            withResult res $ \code -> do
+                code `shouldBe` "node1 ‹0›= 5\n"
+        it "assigns nodeids to marked expressions" $ \env -> do
+            let code = [r|pi ‹0›= 3.14
+foo ‹1›= a: b: a + b
+c ‹2›= 4
+bar ‹3›= foo 8 c
+|]
+            res <- evalEmp env $ do
+                Library.createLibrary Nothing "TestPath" code
+                let loc = GraphLocation "TestPath" $ Breadcrumb []
+                Graph.withGraph loc $ Graph.loadCode code
+                Graph.withGraph loc $ runASTOp $ forM [0..3] Graph.getNodeIdForMarker
+            withResult res $ \ids -> do
+                ids `shouldSatisfy` (all isJust)
+        it "adds one node to existing file" $ \env -> do
+            let code = [r|pi ‹0›= 3.14
+foo ‹1›= a: b: a + b
+c ‹2›= 4
+bar ‹3›= foo 8 c
+|]
+            u1 <- mkUUID
+            res <- evalEmp env $ do
+                Library.createLibrary Nothing "TestPath" code
+                let loc = GraphLocation "TestPath" $ Breadcrumb []
+                Graph.withGraph loc $ Graph.loadCode code
+                nodeIds <- Graph.withGraph loc $ runASTOp $ forM [0..3] $
+                    \i -> (i,) <$> Graph.getNodeIdForMarker i
+                forM nodeIds $ \(i, Just nodeId) ->
+                    Graph.setNodeMeta loc nodeId $ NodeMeta (0, fromIntegral i*10) False
+                Graph.addNode loc u1 "4" (NodeMeta (10, 50) False)
+                Graph.getCode loc
+            withResult res $ \code -> do
+                code `shouldBe` [r|pi ‹0›= 3.14
+foo ‹1›= a: b: a + b
+c ‹2›= 4
+bar ‹3›= foo 8 c
+node1 ‹4›= 4
+|]
+        it "adds one node to existing file and updates it" $ \env -> do
+            let code = [r|pi ‹0›= 3.14
+foo ‹1›= a: b: a + b
+c ‹2›= 4
+bar ‹3›= foo 8 c
+|]
+            u1 <- mkUUID
+            res <- evalEmp env $ do
+                Library.createLibrary Nothing "TestPath" code
+                let loc = GraphLocation "TestPath" $ Breadcrumb []
+                Graph.withGraph loc $ Graph.loadCode code
+                nodeIds <- Graph.withGraph loc $ runASTOp $ forM [0..3] $
+                    \i -> (i,) <$> Graph.getNodeIdForMarker i
+                forM nodeIds $ \(i, Just nodeId) ->
+                    Graph.setNodeMeta loc nodeId $ NodeMeta (0, fromIntegral i*10) False
+                Graph.addNode loc u1 "4" (NodeMeta (10, 50) False)
+                Graph.setNodeExpression loc u1 "5"
+                Graph.getCode loc
+            withResult res $ \code -> do
+                code `shouldBe` [r|pi ‹0›= 3.14
+foo ‹1›= a: b: a + b
+c ‹2›= 4
+bar ‹3›= foo 8 c
+node1 ‹4›= 5
+|]

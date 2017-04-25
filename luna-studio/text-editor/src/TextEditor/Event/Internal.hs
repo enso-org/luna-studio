@@ -10,12 +10,14 @@ data ActionType = CloseFile
                   | OpenFile
                   | SaveFile
                   | SetProject
+                  | Copy
                   | GetBuffer
                   deriving (Bounded, Eq, Enum, Generic, NFData, Read, Show, Typeable)
 
 data InternalEvent = InternalEvent
-                   { _dataType  :: ActionType
-                   , _path      :: String
+                   { _dataType   :: ActionType
+                   , _path       :: String
+                   , _selections :: Maybe [(Int, Int)]
                    } deriving (Generic, NFData, Show, Typeable)
 
 makeLenses ''InternalEvent

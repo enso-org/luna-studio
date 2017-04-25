@@ -10,7 +10,7 @@ import qualified Empire.API.Response      as Response
 import qualified Empire.API.Topic         as T
 
 data Request = Request { _filePath :: FilePath
-                       , _span     :: Maybe (Int, Int)
+                       , _span     :: Maybe [(Int, Int)]
                        } deriving (Generic, Eq, NFData, Show)
 
 data Result  = Result { _code             :: Text
