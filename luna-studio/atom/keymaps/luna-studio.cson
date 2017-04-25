@@ -1,9 +1,38 @@
 #
 # http://flight-manual.atom.io/behind-atom/sections/keymaps-in-depth/
 #
+'.luna-input':
+  'backspace'  : 'native!'
+  'cmd-a'      : 'native!'
+  'cmd-down'   : 'native!'
+  'cmd-l'      : 'native!'
+  'cmd-left'   : 'native!'
+  'cmd-right'  : 'native!'
+  'cmd-up'     : 'native!'
+  'ctrl-a'     : 'native!'
+  'ctrl-down'  : 'native!'
+  'ctrl-l'     : 'native!'
+  'ctrl-left'  : 'native!'
+  'ctrl-right' : 'native!'
+  'ctrl-up'    : 'native!'
+  'delete'     : 'native!'
+  'down'       : 'native!'
+  'enter'      : 'native!'
+  'esc'        : 'native!'
+  'h'          : 'native!'
+  'l'          : 'native!'
+  'left'       : 'native!'
+  'left'       : 'native!'
+  'right'      : 'native!'
+  'right'      : 'native!'
+  'shift-down' : 'native!'
+  'shift-left' : 'native!'
+  'shift-right': 'native!'
+  'shift-up'   : 'native!'
+  'space'      : 'native!'
+  'up'         : 'native!'
 
 '.luna-searcher__input':
-  'backspace'  : 'native!'
   'ctrl-0'     : 'luna-studio:searcher-accept-0'              # Searcher AcceptEntry 0
   'cmd-0'      : 'luna-studio:searcher-accept-0'              # Searcher AcceptEntry 0
   'ctrl-1'     : 'luna-studio:searcher-accept-1'              # Searcher AcceptEntry 1
@@ -24,22 +53,10 @@
   'cmd-8'      : 'luna-studio:searcher-accept-8'              # Searcher AcceptEntry 8
   'ctrl-9'     : 'luna-studio:searcher-accept-9'              # Searcher AcceptEntry 9
   'cmd-9'      : 'luna-studio:searcher-accept-9'              # Searcher AcceptEntry 9
-  'ctrl-a'     : 'native!'
-  'cmd-a'      : 'native!'
   'ctrl-enter' : 'luna-studio:searcher-accept-input'          # Searcher AcceptInput
   'cmd-enter'  : 'luna-studio:searcher-accept-input'          # Searcher AcceptInput
-  'delete'     : 'native!'
   'down'       : 'luna-studio:searcher-move-down'             # Searcher MoveDown
   'enter'      : 'luna-studio:searcher-accept'                # Searcher Accept
-  'h'          : 'native!'
-  'left'       : 'native!'
-  'right'      : 'native!'
-  'shift-left' : 'native!'
-  'shift-right': 'native!'
-  'space'      : 'native!'
-  'l'          : 'native!'
-  'cmd-l'      : 'native!'
-  'ctrl-l'     : 'native!'
   'tab'        : 'luna-studio:searcher-edit-entry'            # Searcher EditEntry
   'up'         : 'luna-studio:searcher-move-up'               # Searcher MoveUp
 

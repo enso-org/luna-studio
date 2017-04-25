@@ -1,16 +1,16 @@
 module NodeEditor.Action.Basic.RemoveNode where
 
-import           Control.Monad                             (filterM)
-import qualified Data.Set                                  as Set
-import           Empire.API.Data.NodeLoc                   (NodeLoc)
-import qualified JS.GoogleAnalytics                        as GA
+import           Common.Prelude
+import           Control.Monad                            (filterM)
+import qualified Data.Set                                 as Set
+import           Empire.API.Data.NodeLoc                  (NodeLoc)
+import qualified JS.GoogleAnalytics                       as GA
 import           NodeEditor.Action.Basic.RemoveConnection (localRemoveConnectionsContainingNodes)
 import           NodeEditor.Action.Basic.SelectNode       (selectPreviousNodes)
 import qualified NodeEditor.Action.Batch                  as Batch
 import           NodeEditor.Action.Command                (Command)
 import           NodeEditor.Action.State.NodeEditor       (getSelectedNodes, inGraph)
 import qualified NodeEditor.Action.State.NodeEditor       as NodeEditor
-import           Common.Prelude
 import           NodeEditor.React.Model.Node              (nodeLoc)
 import           NodeEditor.State.Global                  (State)
 

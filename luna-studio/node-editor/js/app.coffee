@@ -11,7 +11,7 @@ start = ->
     else
       window.already_initialized = true
       GoogleAnalytics.startGA()
-      require('env')().start()
+      require('env-node-editor')().start()
 
 module.exports =
   start: start

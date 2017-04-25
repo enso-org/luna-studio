@@ -19,9 +19,10 @@ import           Luna.IR.Term.Uni
 
 deconstructApp :: ASTOp m => NodeRef -> m (NodeRef, [NodeRef])
 deconstructApp app' = match app' $ \case
-    App a _ -> do
+    Grouped g -> deconstructApp =<< IR.source g
+    App a _   -> do
         unpackedArgs <- extractArguments app'
-        target <- extractFun app'
+        target       <- extractFun app'
         return (target, unpackedArgs)
     _ -> throwM $ NotAppException app'
 

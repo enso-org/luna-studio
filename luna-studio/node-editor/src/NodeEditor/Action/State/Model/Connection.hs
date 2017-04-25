@@ -1,16 +1,16 @@
 {-# LANGUAGE MultiWayIf #-}
 module NodeEditor.Action.State.Model.Connection where
 
-import           Control.Monad.Trans.Maybe                   (MaybeT (MaybeT), runMaybeT)
-import           Data.Position                               (Position, distanceSquared)
-import           Empire.API.Data.PortRef                     (AnyPortRef, InPortRef, OutPortRef)
-import qualified Empire.API.Data.PortRef                     as PortRef
+import           Common.Prelude
+import           Control.Monad.Trans.Maybe                  (MaybeT (MaybeT), runMaybeT)
+import           Data.Position                              (Position, distanceSquared)
+import           Empire.API.Data.PortRef                    (AnyPortRef, InPortRef, OutPortRef)
+import qualified Empire.API.Data.PortRef                    as PortRef
 import           NodeEditor.Action.Command                  (Command)
 import           NodeEditor.Action.State.NodeEditor         (getConnection, getNode, getNodeEditor, getPosConnection, getPosConnections)
 import           NodeEditor.Data.Geometry                   (closestPointOnLine, closestPointOnLineParam, doesSegmentsIntersects)
-import           Common.Prelude
 import           NodeEditor.React.Model.Connection          (Connection (Connection), ConnectionId, HalfConnection (HalfConnection),
-                                                              connectionId, connectionMode, containsNode, halfConnectionMode)
+                                                             connectionId, connectionMode, containsNode, halfConnectionMode)
 import qualified NodeEditor.React.Model.Connection          as Model
 import           NodeEditor.React.Model.Constants           (nodeRadius)
 import           NodeEditor.React.Model.Node                (NodeLoc)
@@ -49,7 +49,7 @@ distSqFromMouseIfIntersect nl nodePos connId = runMaybeT $ do
             proj    = closestPointOnLine (srcPos, dstPos) nodePos
             u       = closestPointOnLineParam (srcPos, dstPos) nodePos
             distSq  = distanceSquared proj nodePos
-        if u < 0 || u > 1 || distSq > nodeRadius ^ (2 :: Integer)
+        if srcPos == dstPos || u < 0 || u > 1 || distSq > nodeRadius ^ (2 :: Integer)
             then nothing
             else return (connId, distSq)
 

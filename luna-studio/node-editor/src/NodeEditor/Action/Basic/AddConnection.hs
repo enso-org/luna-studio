@@ -1,13 +1,13 @@
 module NodeEditor.Action.Basic.AddConnection where
 
-import           Control.Monad                       (filterM)
-import           Empire.API.Data.PortRef             (AnyPortRef (InPortRef'), InPortRef, OutPortRef, dstNodeLoc, dstPortId)
+import           Common.Prelude
+import           Control.Monad                      (filterM)
+import           Empire.API.Data.PortRef            (AnyPortRef (InPortRef'), InPortRef, OutPortRef, dstNodeLoc, dstPortId)
 import           NodeEditor.Action.Basic.UpdateNode (updatePortSelfVisibility)
 import qualified NodeEditor.Action.Batch            as Batch
 import           NodeEditor.Action.Command          (Command)
 import           NodeEditor.Action.State.Model      (createConnectionModel)
 import qualified NodeEditor.Action.State.NodeEditor as NodeEditor
-import           Common.Prelude
 import           NodeEditor.React.Model.Connection  (ConnectionId)
 import           NodeEditor.React.Model.Node        (NodeLoc)
 import           NodeEditor.React.Model.Port        (InPortIndex (Self))

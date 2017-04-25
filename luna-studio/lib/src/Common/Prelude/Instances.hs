@@ -71,13 +71,6 @@ instance Convertible String JSString where
 instance Convertible JSString String where
     convert = JSString.unpack
 
-instance (ToJSON k, ToJSON v) => ToJSON (HashMap k v) where
-    toJSON = toJSON . HashMap.toList
-    {-# INLINE toJSON #-}
-
-instance (Eq k, FromJSON k, FromJSON v, Hashable k) => FromJSON (HashMap k v) where
-    parseJSON = fmap HashMap.fromList . parseJSON
-    {-# INLINE parseJSON #-}
 -- ======= Data.HashMap ========================================================
 
 instance Default (HashMap a b) where def = HashMap.empty

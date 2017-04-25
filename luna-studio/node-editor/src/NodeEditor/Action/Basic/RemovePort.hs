@@ -2,7 +2,7 @@ module NodeEditor.Action.Basic.RemovePort where
 
 import           Empire.API.Data.PortRef                   (OutPortRef (OutPortRef), srcPortId)
 import           NodeEditor.Action.Basic.AddConnection    (localAddConnection)
-import           NodeEditor.Action.Basic.RemoveConnection (removeConnection)
+import           NodeEditor.Action.Basic.RemoveConnection (localRemoveConnection)
 import           NodeEditor.Action.Basic.UpdateNode       (localUpdateInputNode)
 import qualified NodeEditor.Action.Batch                  as Batch
 import           NodeEditor.Action.Command                (Command)
@@ -33,7 +33,7 @@ localRemovePort (OutPortRef nid pid@(Projection pos : _)) = do
                     OutPortRef srcNid (Projection i : p) ->
                         when (srcNid == nid) $
                             if i == pos
-                                then void . removeConnection $ conn ^. connectionId
+                                then void . localRemoveConnection $ conn ^. connectionId
                             else if (i >= pos)
                                 then void $ localAddConnection (conn ^. src & srcPortId .~ Projection (i-1) : p) (conn ^. dst)
                                 else return ()

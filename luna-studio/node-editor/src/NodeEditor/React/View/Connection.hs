@@ -1,9 +1,9 @@
 {-# LANGUAGE OverloadedStrings #-}
 module NodeEditor.React.View.Connection where
 
-import           Data.Position                      (Position, averagePosition, x, y)
-import qualified NodeEditor.Event.UI               as UI
 import           Common.Prelude
+import           Data.Position                     (Position, averagePosition, x, y)
+import qualified NodeEditor.Event.UI               as UI
 import           NodeEditor.React.Event.Connection (ModifiedEnd (Destination, Source))
 import qualified NodeEditor.React.Event.Connection as Connection
 import           NodeEditor.React.Model.App        (App)
@@ -11,8 +11,8 @@ import           NodeEditor.React.Model.Connection (PosConnection, PosHalfConnec
 import qualified NodeEditor.React.Model.Connection as Connection
 import           NodeEditor.React.Store            (Ref, dispatch)
 import qualified NodeEditor.React.View.Style       as Style
-import           Numeric                            (showFFloat)
-import           React.Flux                         as React
+import           Numeric                           (showFFloat)
+import           React.Flux                        as React
 
 
 name :: JSString

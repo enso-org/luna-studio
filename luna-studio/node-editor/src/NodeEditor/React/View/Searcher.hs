@@ -40,7 +40,7 @@ searcher =  React.defineView name $ \(ref, camera, s) -> do
     let nodePos     = s ^. Searcher.position
         mode        = s ^. Searcher.mode
         nodePreview = convert . (NodeLoc.empty,) <$> (s ^. Searcher.selectedNode)
-        className   = Style.prefixFromList ( "searcher" : ( case mode of
+        className   = Style.prefixFromList ( "input" : "searcher" : ( case mode of
                                                                     Searcher.Node    { } -> [ "searcher--node" ]
                                                                     Searcher.Command { } -> [ "searcher--command"   ]))
         mayCustomInput = if s ^. Searcher.replaceInput then ["value" $= convert (s ^. Searcher.input)] else []

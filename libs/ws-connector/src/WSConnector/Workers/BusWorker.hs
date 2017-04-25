@@ -3,7 +3,8 @@
 
 module WSConnector.Workers.BusWorker (start) where
 
-import           Prologue
+import           Prologue                     hiding (fail)
+import           Prelude                      (fail)
 import           System.Log.MLogger
 
 import           Control.Concurrent           (forkIO)

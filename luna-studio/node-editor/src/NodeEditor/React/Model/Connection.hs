@@ -1,25 +1,25 @@
 module NodeEditor.React.Model.Connection where
 
-import           Control.Arrow                               ((&&&))
-import           Data.Aeson                                  (ToJSON)
-import           Data.Convert                                (Convertible (convert))
-import           Data.HashMap.Strict                         (HashMap)
-import qualified Data.HashMap.Strict                         as HashMap
-import           Data.Position                               (Position, move, x, y)
-import           Data.Vector2                                (Vector2 (Vector2))
-import qualified Empire.API.Data.Connection                  as Empire
-import           Empire.API.Data.PortRef                     (AnyPortRef (InPortRef', OutPortRef'), InPortRef, OutPortRef)
-import qualified Empire.API.Data.PortRef                     as PortRef
+import           Common.Prelude
+import           Control.Arrow                              ((&&&))
+import           Data.Aeson                                 (ToJSON)
+import           Data.Convert                               (Convertible (convert))
+import           Data.HashMap.Strict                        (HashMap)
+import qualified Data.HashMap.Strict                        as HashMap
+import           Data.Position                              (Position, move, x, y)
+import           Data.Vector2                               (Vector2 (Vector2))
+import qualified Empire.API.Data.Connection                 as Empire
+import           Empire.API.Data.PortRef                    (AnyPortRef (InPortRef', OutPortRef'), InPortRef, OutPortRef)
+import qualified Empire.API.Data.PortRef                    as PortRef
 import           NodeEditor.Data.Angle                      (Angle)
 import           NodeEditor.Data.Color                      (Color)
-import           Common.Prelude
 import           NodeEditor.React.Model.Constants           (gridSize, lineHeight, nodeExpandedWidth, portRadius)
 import           NodeEditor.React.Model.Layout              (Layout, inputSidebarPortPosition, outputSidebarPortPosition)
 import           NodeEditor.React.Model.Node                (ExpressionNode, Node (Expression), NodeLoc)
 import qualified NodeEditor.React.Model.Node                as Node
 import           NodeEditor.React.Model.Node.ExpressionNode (countArgPorts, countOutPorts, isCollapsed, position)
 import           NodeEditor.React.Model.Port                (EitherPort, InPort, InPortId, OutPort, OutPortId, getPortNumber, isSelf,
-                                                              portAngleStart, portAngleStop, portGap, portId)
+                                                             portAngleStart, portAngleStop, portGap, portId)
 
 
 type ConnectionId = InPortRef
@@ -214,8 +214,8 @@ connectionSrc :: Position -> Position -> Bool -> Bool -> Int -> Int -> Bool -> P
 connectionSrc src' dst' isSrcExpanded _isDstExpanded num numOfSameTypePorts isSingle =
     if isSrcExpanded then move (Vector2 nodeExpandedWidth 0) src'
     else move (Vector2 (portRadius * cos t) (portRadius * sin t)) src' where
-        t = if isSingle then
-                 nodeToNodeAngle src' dst'
+        t = if isSingle
+            then nodeToNodeAngle src' dst'
             else connectionAngle src' dst' num numOfSameTypePorts
 
 connectionDst :: Position -> Position -> Bool -> Bool -> Int -> Int -> Bool -> Position
@@ -231,10 +231,12 @@ connectionDst src' dst' isSrcExpanded isDstExpanded num numOfSameTypePorts isSel
 
 nodeToNodeAngle :: Position -> Position -> Angle
 nodeToNodeAngle src' dst' =
-    let srcX = src' ^. x
+    if src' == dst' then pi else 
+        if srcX < dstX
+            then atan ((srcY - dstY) / (srcX - dstX))
+            else atan ((srcY - dstY) / (srcX - dstX)) + pi
+    where
+        srcX = src' ^. x
         srcY = src' ^. y
         dstX = dst' ^. x
         dstY = dst' ^. y
-    in  if srcX < dstX
-            then atan ((srcY - dstY) / (srcX - dstX))
-            else atan ((srcY - dstY) / (srcX - dstX)) + pi

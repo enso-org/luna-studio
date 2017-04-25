@@ -33,13 +33,13 @@ import qualified Empire.API.Graph.SetNodeExpression          as SetNodeExpressio
 import qualified Empire.API.Graph.SetNodesMeta               as SetNodesMeta
 import qualified Empire.API.Graph.SetPortDefault             as SetPortDefault
 import qualified Empire.API.Response                         as Response
-import           NodeEditor.Action.Basic                     (createGraph, localAddConnection, localAddExpressionNode, localAddPort,
-                                                              localAddSubgraph, localMerge, localMovePort, localRemoveConnection,
-                                                              localRemoveNodes, localRemovePort, localRenameNode, localSetCode,
-                                                              localSetNodeCode, localSetNodeExpression, localSetNodesMeta,
-                                                              localSetPortDefault, localSetSearcherHints, localUpdateExpressionNode,
-                                                              localUpdateExpressionNodes, localUpdateInputNode, localUpdateNodeTypecheck,
-                                                              setNodeProfilingData, setNodeValue, updateScene)
+import           NodeEditor.Action.Basic                     (localAddConnection, localAddExpressionNode, localAddPort, localAddSubgraph,
+                                                              localMerge, localMovePort, localRemoveConnection, localRemoveNodes,
+                                                              localRemovePort, localRenameNode, localSetCode, localSetNodeCode,
+                                                              localSetNodeExpression, localSetNodesMeta, localSetPortDefault,
+                                                              localSetSearcherHints, localUpdateExpressionNode, localUpdateExpressionNodes,
+                                                              localUpdateInputNode, localUpdateNodeTypecheck, setNodeProfilingData,
+                                                              setNodeValue, updateGraph, updateScene)
 import           NodeEditor.Action.Basic.Revert              (revertAddConnection, revertAddNode, revertAddPort, revertAddSubgraph,
                                                               revertMovePort, revertRemoveConnection, revertRemoveNodes, revertRemovePort,
                                                               revertRenameNode, revertSetNodeCode, revertSetNodeExpression,
@@ -80,7 +80,7 @@ handle (Event.Batch ev) = Just $ case ev of
                     breadcrumb  = result ^. GetProgram.breadcrumb
                 Global.workspace . Workspace.nodeSearcherData .= nsData
                 setBreadcrumbs breadcrumb
-                createGraph nodes input output connections monads
+                updateGraph nodes input output connections monads
                 unless isGraphLoaded $ do
                     centerGraph
                     requestCollaborationRefresh
@@ -109,7 +109,7 @@ handle (Event.Batch ev) = Just $ case ev of
         failure _     = whenM (isOwnRequest requestId) $ revertAddNode request
         success node' = inCurrentLocation location $ \path -> do
             let node = convert (path, node')
-            ownRequest    <- isOwnRequest requestId
+            ownRequest <- isOwnRequest requestId
             if ownRequest then do
                  void $ localUpdateExpressionNode node
                  collaborativeModify [node ^. nodeLoc]
@@ -220,7 +220,7 @@ handle (Event.Batch ev) = Just $ case ev of
         connId          = request  ^. RemoveConnection.connId
         failure inverse = whenM (isOwnRequest requestId) $ revertRemoveConnection request inverse
         success _       = inCurrentLocation location $ \path -> do
-            ownRequest    <- isOwnRequest requestId
+            ownRequest <- isOwnRequest requestId
             if ownRequest then
                 --TODO[LJK]: This is left to remind to set Confirmed flag in changes
                 return ()
@@ -237,7 +237,7 @@ handle (Event.Batch ev) = Just $ case ev of
         nodeLocs        = request  ^. RemoveNodes.nodeLocs
         failure inverse = whenM (isOwnRequest requestId) $ revertRemoveNodes request inverse
         success _       = inCurrentLocation location $ \path -> do
-            ownRequest    <- isOwnRequest requestId
+            ownRequest <- isOwnRequest requestId
             if ownRequest then
                 --TODO[LJK]: This is left to remind to set Confirmed flag in changes
                 return ()
@@ -250,7 +250,7 @@ handle (Event.Batch ev) = Just $ case ev of
         portRef         = request  ^. RemovePort.portRef
         failure inverse = whenM (isOwnRequest requestId) $ revertRemovePort request inverse
         success _       = inCurrentLocation location $ \path -> do
-            ownRequest    <- isOwnRequest requestId
+            ownRequest <- isOwnRequest requestId
             if ownRequest then
                 --TODO[LJK]: This is left to remind to set Confirmed flag in changes
                 return ()
@@ -264,7 +264,7 @@ handle (Event.Batch ev) = Just $ case ev of
         name            = request  ^. RenameNode.name
         failure inverse = whenM (isOwnRequest requestId) $ revertRenameNode request inverse
         success _       = inCurrentLocation location $ \path -> do
-            ownRequest    <- isOwnRequest requestId
+            ownRequest <- isOwnRequest requestId
             if ownRequest then
                 --TODO[LJK]: This is left to remind to set Confirmed flag in changes
                 return ()
@@ -278,7 +278,7 @@ handle (Event.Batch ev) = Just $ case ev of
         name            = request  ^. RenamePort.name
         failure inverse = whenM (isOwnRequest requestId) $ $notImplemented
         success _       = inCurrentLocation location $ \path -> do
-            ownRequest    <- isOwnRequest requestId
+            ownRequest <- isOwnRequest requestId
             if ownRequest then
                 --TODO[LJK]: This is left to remind to set Confirmed flag in changes
                 return ()
@@ -289,7 +289,7 @@ handle (Event.Batch ev) = Just $ case ev of
         requestId      = response ^. Response.requestId
         location       = response ^. Response.request . SearchNodes.location
         success result = inCurrentLocation location $ \path -> do
-            ownRequest    <- isOwnRequest requestId
+            ownRequest <- isOwnRequest requestId
             when ownRequest $
                 localSetSearcherHints $ result ^. SearchNodes.nodeSearcherData
 
@@ -301,7 +301,7 @@ handle (Event.Batch ev) = Just $ case ev of
         code            = request  ^. SetNodeCode.newCode
         failure inverse = whenM (isOwnRequest requestId) $ revertSetNodeCode request inverse
         success _       = inCurrentLocation location $ \path ->  do
-            ownRequest    <- isOwnRequest requestId
+            ownRequest <- isOwnRequest requestId
             if ownRequest then
                 return ()
             else void $ localSetNodeCode (convert (path, nid)) code
@@ -314,7 +314,7 @@ handle (Event.Batch ev) = Just $ case ev of
         expression      = request  ^. SetNodeExpression.expression
         failure inverse = whenM (isOwnRequest requestId) $ revertSetNodeExpression request inverse
         success _       = inCurrentLocation location $ \path -> do
-            ownRequest    <- isOwnRequest requestId
+            ownRequest <- isOwnRequest requestId
             if ownRequest then
                 return ()
             else void $ localSetNodeExpression (convert (path, nid)) expression
@@ -326,7 +326,7 @@ handle (Event.Batch ev) = Just $ case ev of
         updates         = request  ^. SetNodesMeta.updates
         failure inverse = whenM (isOwnRequest requestId) $ revertSetNodesMeta request inverse
         success _       = inCurrentLocation location $ \path -> do
-            ownRequest    <- isOwnRequest requestId
+            ownRequest <- isOwnRequest requestId
             if ownRequest then
                 return ()
             else void $ localSetNodesMeta $ map (convert . (path,)) updates
@@ -339,10 +339,10 @@ handle (Event.Batch ev) = Just $ case ev of
         defaultVal      = request  ^. SetPortDefault.defaultValue
         failure inverse = whenM (isOwnRequest requestId) $ revertSetPortDefault request inverse
         success _       = inCurrentLocation location $ \path -> do
-            ownRequest    <- isOwnRequest requestId
+            ownRequest <- isOwnRequest requestId
             if ownRequest then
                 return ()
-            else void $ localSetPortDefault (prependPath path portRef) defaultVal
+            else void $ mapM (localSetPortDefault (prependPath path portRef)) defaultVal
 
     TypeCheckResponse response -> handleResponse response doNothing doNothing
 

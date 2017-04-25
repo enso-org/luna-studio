@@ -11,6 +11,7 @@ module Empire.Commands.Graph
     ( addNode
     , addNodeCondTC
     , addPort
+    , addPortWithConnection
     , addSubgraph
     , removeNodes
     , movePort
@@ -297,7 +298,10 @@ updateGraphSeq newOut = do
     forM_ newOut $ (Graph.breadcrumbHierarchy . BH.body .=)
 
 addPort :: GraphLocation -> NodeId -> Int -> Empire InputSidebar
-addPort loc nid position = withGraph loc $ runASTOp $ do
+addPort loc nid position = withTC loc False $ addPortNoTC loc nid position
+
+addPortNoTC :: GraphLocation -> NodeId -> Int -> Command Graph InputSidebar
+addPortNoTC loc nid position = runASTOp $ do
     edges <- GraphBuilder.getEdgePortMapping
     when ((fst <$> edges) /= Just nid) $ throwM NotInputEdgeException
     Just ref <- ASTRead.getCurrentASTTarget
@@ -306,6 +310,13 @@ addPort loc nid position = withGraph loc $ runASTOp $ do
     newLam  <- ASTRead.getCurrentASTTarget
     mapM_ (ASTBuilder.attachNodeMarkersForArgs nid []) newLam
     GraphBuilder.buildInputSidebar nid
+
+addPortWithConnection :: GraphLocation -> NodeId -> Int -> [Connection] -> Empire InputSidebar
+addPortWithConnection loc nid position conns = withTC loc False $ do
+    newPorts <- addPortNoTC loc nid position
+    forM_ conns $ \(Connection src dst) -> connectNoTC loc src (InPortRef' dst)
+    return newPorts
+
 
 generateNodeId :: IO NodeId
 generateNodeId = UUID.nextRandom
@@ -493,18 +504,19 @@ connectNoTC loc outPort anyPort = do
         Publisher.notifyNodeUpdate loc n
     return connection
 
-getPortDefault :: GraphLocation -> InPortRef -> Empire PortDefault
+getPortDefault :: GraphLocation -> InPortRef -> Empire (Maybe PortDefault)
 getPortDefault loc (InPortRef  _ (Self : _))                   = throwError "Cannot set default value on self port"
 getPortDefault loc (InPortRef  (NodeLoc _ nodeId) (Arg x : _)) = withGraph loc $ runASTOp $ flip GraphBuilder.getInPortDefault x =<< GraphUtils.getASTTarget nodeId
 
-setPortDefault :: GraphLocation -> InPortRef -> PortDefault -> Empire ()
-setPortDefault loc (InPortRef (NodeLoc _ nodeId) port) val = withTC loc False $ runASTOp $ do
+setPortDefault :: GraphLocation -> InPortRef -> Maybe PortDefault -> Empire ()
+setPortDefault loc (InPortRef (NodeLoc _ nodeId) port) (Just val) = withTC loc False $ runASTOp $ do
     parsed <- ASTParse.parsePortDefault val
-    ref <- GraphUtils.getASTTarget nodeId
+    ref    <- GraphUtils.getASTTarget nodeId
     newRef <- case port of
         [Self]    -> ASTBuilder.makeAccessor parsed ref
         [Arg num] -> ASTBuilder.applyFunction ref parsed num
     GraphUtils.rewireNode nodeId newRef
+setPortDefault loc port Nothing = withTC loc False $ runASTOp $ disconnectPort port
 
 disconnect :: GraphLocation -> InPortRef -> Empire ()
 disconnect loc port@(InPortRef (NodeLoc _ nid) _) = do
@@ -535,7 +547,8 @@ getBuffer :: FilePath -> Maybe (Int, Int) -> Empire Text
 getBuffer file span = Library.getBuffer file span
 
 getGraph :: GraphLocation -> Empire APIGraph.Graph
-getGraph loc = withTC loc True $ runASTOp GraphBuilder.buildGraph
+getGraph loc = withTC loc True $ runASTOp $ do
+    GraphBuilder.buildGraph
 
 getNodes :: GraphLocation -> Empire [ExpressionNode]
 getNodes loc = withTC loc True $ runASTOp $ view APIGraph.nodes <$> GraphBuilder.buildGraph
@@ -805,7 +818,14 @@ setToNothing dst = do
             Nothing       -> False
             Just (_, out) -> out == dst
     nothing <- IR.generalize <$> IR.cons_ "None"
-    if disconnectOutputEdge then updateNodeSequenceWithOutput (Just nothing) else GraphUtils.rewireNode dst nothing
+    if disconnectOutputEdge
+        then do
+            updateNodeSequenceWithOutput (Just nothing)
+            let item = BH.ExprItem Map.empty $ BH.AnonymousNode nothing
+            uid <- liftIO $ UUID.nextRandom
+            Graph.breadcrumbHierarchy . BH.children . at uid ?= BH.ExprChild item
+            IR.putLayer @Marker nothing $ Just $ OutPortRef (NodeLoc def uid) []
+        else GraphUtils.rewireNode dst nothing
 
 unAcc :: ASTOp m => NodeId -> m ()
 unAcc nodeId = do
@@ -815,18 +835,9 @@ unAcc nodeId = do
 
 unApp :: ASTOp m => NodeId -> Int -> m ()
 unApp nodeId pos = do
-    edges <- GraphBuilder.getEdgePortMapping
-    let connectionToOutputEdge = case edges of
-            Nothing              -> False
-            Just (_, outputEdge) -> outputEdge == nodeId
-    if | connectionToOutputEdge -> do
-        Just astNode <- ASTRead.getCurrentASTTarget
-        newNodeRef   <- ASTModify.setLambdaOutputToBlank astNode
-        ASTModify.rewireCurrentNode newNodeRef
-       | otherwise -> do
-        astNode <- GraphUtils.getASTTarget nodeId
-        newNodeRef <- ASTRemove.removeArg astNode pos
-        GraphUtils.rewireNode nodeId newNodeRef
+    astNode <- GraphUtils.getASTTarget nodeId
+    newNodeRef <- ASTRemove.removeArg astNode pos
+    GraphUtils.rewireNode nodeId newNodeRef
 
 makeAcc :: ASTOp m => NodeId -> NodeId -> OutPortId -> m ()
 makeAcc src dst outPort = do

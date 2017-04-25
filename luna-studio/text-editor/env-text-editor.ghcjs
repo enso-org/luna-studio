@@ -1,0 +1,19 @@
+var app              = require('./app-text-editor'),
+    init             = require('./init'),
+    common           = require('./common'),
+    config           = require('./config');
+    atomCallbackTextEditor = require('./atom-callback-text-editor')();
+
+var run = function() {
+
+GHCJS_CODE_BE_THERE
+
+};
+
+return { start     : function() { run();}
+       , pushText  : function(data) { atomCallbackTextEditor.pushText(data); }
+       , bufferListener  : function(callback) { atomCallbackTextEditor.bufferListener(callback); }
+       , statusListener  : function(callback) { atomCallbackTextEditor.statusListener(callback); }
+       , codeListener  : function(callback) { atomCallbackTextEditor.codeListener(callback); }
+       , pushInternalEvent : function(data) { atomCallbackTextEditor.pushInternalEvent(data); }
+       }

@@ -5,12 +5,19 @@
 .luna-searcher {
     z-index:  100000000;
     position: absolute;
-    top:     ~"calc(-34rem - 15.4px)";
+    top:     ~"calc(-34rem - 16.5px)";
 }
+
+.luna-searcher--node ~ .luna-node--selected {
+    .luna-node__name--expression {
+        display: none;
+    }
+}
+
 .luna-searcher--command {
     top: ~"calc(-34rem - 7.4px)";
     .luna-searcher__input {
-        background: #004D40;
+        background: transparent; // #004D40;
         padding:    8px;
     }
     .luna-searcher__results {
@@ -27,7 +34,7 @@
 }
 
 .luna-searcher__input {
-    background:    @colorBackground;
+    background:    transparent;
     border-radius: @borderRadius;
     color:         #fff;
     font-family:   @fontDefault;

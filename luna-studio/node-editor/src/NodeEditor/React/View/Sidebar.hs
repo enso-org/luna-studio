@@ -5,31 +5,32 @@ module NodeEditor.React.View.Sidebar
     , focusPortLabel
     ) where
 
-import qualified Data.Aeson                               as Aeson
-import           Data.Position                            (y)
-import           Empire.API.Data.PortRef                  (AnyPortRef (OutPortRef'), OutPortRef (OutPortRef), toAnyPortRef)
-import qualified Empire.API.Data.PortRef                  as PortRef
-import qualified JS.Config                                as Config
-import           JS.Scene                                 (inputSidebarId, outputSidebarId)
-import qualified JS.UI                                    as UI
-import qualified NodeEditor.Event.UI                     as UI
 import           Common.Prelude
+import qualified Data.Aeson                              as Aeson
+import           Data.Position                           (y)
+import           Empire.API.Data.PortRef                 (AnyPortRef (OutPortRef'), OutPortRef (OutPortRef), toAnyPortRef)
+import qualified Empire.API.Data.PortRef                 as PortRef
+import qualified JS.Config                               as Config
+import           JS.Scene                                (inputSidebarId, outputSidebarId)
+import qualified JS.UI                                   as UI
+import qualified NodeEditor.Event.UI                     as UI
 import qualified NodeEditor.React.Event.Sidebar          as Sidebar
 import           NodeEditor.React.Model.App              (App)
 import           NodeEditor.React.Model.Constants        (lineHeight)
 import qualified NodeEditor.React.Model.Field            as Field
 import           NodeEditor.React.Model.Node.SidebarNode (NodeLoc, SidebarMode (AddRemove, MoveConnect), SidebarNode, countProjectionPorts,
-                                                           frozenHeight, isInputSidebar)
+                                                          frozenState, isInputSidebar)
 import qualified NodeEditor.React.Model.Node.SidebarNode as SidebarNode
-import           NodeEditor.React.Model.Port             (AnyPort, OutPortIndex (Projection), getPortNumber, getPositionInSidebar,
-                                                           isHighlighted, isInMovedMode, isInNameEditMode, isInPort, isOutPort)
+import           NodeEditor.React.Model.Port             (AnyPort, AnyPortId, OutPortIndex (Projection), getPortNumber,
+                                                          getPositionInSidebar, isHighlighted, isInMovedMode, isInNameEditMode, isInPort,
+                                                          isOutPort)
 import qualified NodeEditor.React.Model.Port             as Port
 import           NodeEditor.React.Store                  (Ref, dispatch)
 import           NodeEditor.React.View.Field             (singleField_)
 import           NodeEditor.React.View.Port              (handleClick, handleMouseDown, handleMouseUp, jsShow2)
 import           NodeEditor.React.View.Style             (plainPath_, plainRect_)
 import qualified NodeEditor.React.View.Style             as Style
-import           React.Flux                               hiding (view)
+import           React.Flux                              hiding (view)
 
 
 name :: SidebarNode node => node -> JSString
@@ -57,7 +58,8 @@ sidebar_ ref node = do
         nodeLoc       = node ^. SidebarNode.nodeLoc
         mode          = node ^. SidebarNode.mode
         isPortDragged = any isInMovedMode ports
-        ifFreeze a    = if isJust $ node ^. frozenHeight then a else []
+        frozenButton  = if isJust $ node ^. frozenState then snd . fromJust $ node ^. frozenState else Nothing
+        ifFreeze a    = if isJust $ node ^. frozenState then a else []
         classes       = [ "sidebar", if isInputSidebar node then "sidebar--i" else "sidebar--o" ]
                       ++ ifFreeze ["sidebar--freezemode"]
                       ++ if mode == AddRemove then ["sidebar--editmode"] else []
@@ -78,7 +80,7 @@ sidebar_ ref node = do
         div_ (
             [ "key" $= "activeArea"
             , "className" $= Style.prefixFromList [ "sidebar__active-area", "noselect" ]
-            ] ++ ifFreeze ["style" @= Aeson.object [ "height" Aeson..= (fromJust $ node ^. frozenHeight) ]]) $
+            ] ++ ifFreeze ["style" @= Aeson.object [ "height" Aeson..= fst (fromJust $ node ^. frozenState) ]]) $
             div_
                 [ "key"       $= "SidebarPortsBody"
                 , "id"        $= if isInputSidebar node then inputSidebarId else outputSidebarId
@@ -107,9 +109,8 @@ sidebar_ ref node = do
 
                 forM_ ports $ \p -> if isInMovedMode p
                     then sidebarPlaceholderForPort_ >> sidebarDraggedPort_ ref p
-                    else sidebarPort_ ref mode nodeLoc isPortDragged (countProjectionPorts node == 1) p
-
-                when (isInputSidebar node && not isPortDragged) $ do
+                    else sidebarPort_ ref mode nodeLoc isPortDragged (countProjectionPorts node == 1) p frozenButton
+                when (isInputSidebar node) $ do
                     svg_ (
                         [ "className" $= Style.prefixFromList [ "sidebar__port__svg", "sidebar__port__svg--addbutton" ]
                         , "key"       $= (name node <> "AddButton")
@@ -147,10 +148,12 @@ sidebar_ ref node = do
                             , "r"         $= jsShow2 (lineHeight/1.5)
                             ] mempty
 
-addButton_ :: Ref App -> AnyPortRef -> ReactElementM ViewEventHandler ()
-addButton_ ref portRef =
+addButton_ :: Ref App -> AnyPortRef -> Bool -> ReactElementM ViewEventHandler ()
+addButton_ ref portRef displayButton = do
+    let classes = ["sidebar__port__svg", "sidebar__port__svg--inbetween"]
+               ++ if displayButton then ["show"] else []
     svg_
-        [ "className"  $= Style.prefixFromList ["sidebar__port__svg", "sidebar__port__svg--inbetween"]
+        [ "className"  $= Style.prefixFromList classes
         , onMouseDown  $ \e _ -> [stopPropagation e]
         , onClick      $ \e _ -> stopPropagation e : dispatch ref (UI.SidebarEvent $ Sidebar.AddPort portRef)
         , onMouseLeave $ \_ _ -> dispatch ref (UI.SidebarEvent . Sidebar.UnfreezeSidebar $ portRef ^. PortRef.nodeLoc)
@@ -163,8 +166,8 @@ addButton_ ref portRef =
                     plainRect_ "key2" 8 2 (-4) (-1)
             plainPath_ (Style.prefix "port-add-inbetween__selectable") "M 20 0 A 10 10 0 0 1 20 16 L 10 16 A 10 10 0 0 1 10 0 Z"
 
-sidebarPort_ :: Ref App -> SidebarMode -> NodeLoc -> Bool -> Bool -> AnyPort -> ReactElementM ViewEventHandler ()
-sidebarPort_ ref mode nl isPortDragged isOnly p = do
+sidebarPort_ :: Ref App -> SidebarMode -> NodeLoc -> Bool -> Bool -> AnyPort -> Maybe AnyPortId -> ReactElementM ViewEventHandler ()
+sidebarPort_ ref mode nl isPortDragged isOnly p mayFrozenAddButton = do
     let portId    = p ^. Port.portId
         portRef   = toAnyPortRef nl portId
         color     = convert $ p ^. Port.color
@@ -176,7 +179,7 @@ sidebarPort_ ref mode nl isPortDragged isOnly p = do
         [ "key"       $= ( jsShow portId <> "-port-" <> jsShow num )
         , "className" $= Style.prefixFromList classes
         ] $ do
-        when (isOutPort portId) $ addButton_ ref portRef
+        when (isOutPort portId) $ addButton_ ref portRef (mayFrozenAddButton == Just portId)
         svg_
             [ "className" $= Style.prefix "sidebar__port__svg"
             ] $ do
@@ -196,7 +199,8 @@ sidebarPort_ ref mode nl isPortDragged isOnly p = do
                 ] ++ portHandlers ref mode isPortDragged isOnly portRef ) mempty
 
         if isInNameEditMode p then
-            singleField_ [ "id" $= portLabelId ] (jsShow portId)
+            singleField_ [ "className" $= Style.prefix "input"
+                         , "id" $= portLabelId ] (jsShow portId)
                 $ Field.mk ref (convert $ p ^. Port.name)
                 & Field.onCancel .~ Just (const $ UI.SidebarEvent $ Sidebar.PortNameDiscard portRef)
                 & Field.onAccept .~ Just (UI.SidebarEvent . Sidebar.PortNameApply portRef . convert)
