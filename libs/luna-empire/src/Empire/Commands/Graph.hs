@@ -54,6 +54,7 @@ import           Control.Monad.Error           (throwError)
 import           Data.Coerce                   (coerce)
 import           Data.List                     (delete, elemIndex, sort, sortOn, group)
 import qualified Data.Map                      as Map
+import qualified Data.Set                      as Set
 import           Data.Maybe                    (catMaybes, fromMaybe, isJust, listToMaybe)
 import           Data.Foldable                 (toList)
 import           Data.Text                     (Text)
@@ -135,7 +136,7 @@ addNode :: GraphLocation -> NodeId -> Text -> NodeMeta -> Empire ExpressionNode
 addNode loc@(GraphLocation file _) uuid expr meta = do
     (nearestNode, node) <- withTC loc False $ addNodeNoTC loc uuid expr meta
     addToCode loc nearestNode $ node ^. Node.nodeId
-    resendCode file
+    resendCode loc
     return node
 
 addNodeNoTC :: GraphLocation -> NodeId -> Text -> NodeMeta -> Command Graph (Maybe NodeRef, ExpressionNode)
@@ -330,21 +331,34 @@ addSubgraph loc nodes conns = withTC loc False $ do
 removeNodes :: GraphLocation -> [NodeId] -> Empire ()
 removeNodes loc@(GraphLocation file _) nodeIds = do
     forM_ nodeIds $ removeFromCode loc
-    withTC loc False $ runASTOp $ forM_ nodeIds removeNodeNoTC
-    resendCode file
+    affectedNodes <- withTC loc False $ runASTOp $ mapM removeNodeNoTC nodeIds
+    let distinctNodes = Set.toList $ Set.fromList $ concat affectedNodes
+    forM_ distinctNodes $ updateNodeCode loc
+    withGraph loc $ do
+        nodes <- runASTOp $ mapM GraphBuilder.buildNode distinctNodes
+        mapM (Publisher.notifyNodeUpdate loc) nodes
+    resendCode loc
 
 removeFromCode :: GraphLocation -> NodeId -> Empire ()
 removeFromCode loc@(GraphLocation file _) nodeId = do
     line <- withGraph loc $ runASTOp $ nodeLineById nodeId
     Library.withLibrary file $ forM_ line $ \l -> Library.removeLine l
 
-removeNodeNoTC :: ASTOp m => NodeId -> m ()
+removeNodeNoTC :: ASTOp m => NodeId -> m [NodeId]
 removeNodeNoTC nodeId = do
     astRef        <- GraphUtils.getASTPointer nodeId
     obsoleteEdges <- getOutEdges nodeId
     mapM_ disconnectPort obsoleteEdges
     Graph.breadcrumbHierarchy . BH.children . at nodeId .= Nothing
     removeFromSequence astRef
+    removeExprMarker astRef
+    return $ map (view PortRef.dstNodeId) obsoleteEdges
+
+removeExprMarker :: ASTOp m => NodeRef -> m ()
+removeExprMarker ref = do
+    exprMap <- getExprMap
+    let newExprMap = Map.filter (/= ref) exprMap
+    setExprMap newExprMap
 
 removeFromSequence :: ASTOp m => NodeRef -> m ()
 removeFromSequence ref = do
@@ -429,7 +443,7 @@ setNodeExpression loc@(GraphLocation file _) nodeId expression = do
         Publisher.notifyNodeUpdate loc node
         return (node, line, code)
     Library.withLibrary file $ forM line $ \l -> Library.substituteLine l code
-    resendCode file
+    resendCode loc
     return node
 
 updateExprMap :: ASTOp m => NodeRef -> NodeRef -> m ()
@@ -438,8 +452,8 @@ updateExprMap new old = do
     let updated = Map.map (\a -> if a == old then new else a) exprMap
     setExprMap updated
 
-resendCode :: FilePath -> Empire ()
-resendCode file = do
+resendCode :: GraphLocation -> Empire ()
+resendCode (GraphLocation file _) = do
     code <- Library.withLibrary file $ use Library.code
     Publisher.notifyCodeUpdate file 0 (Text.length code) code Nothing
 
@@ -463,12 +477,14 @@ connectCondTC True  loc outPort anyPort = connect loc outPort anyPort
 connectCondTC False loc outPort anyPort = do
     connection <- withGraph loc $ connectNoTC loc outPort anyPort
     updateNodeCode loc $ anyPort ^. PortRef.nodeId
+    resendCode loc
     return connection
 
 connect :: GraphLocation -> OutPortRef -> AnyPortRef -> Empire Connection
 connect loc outPort anyPort = do
     connection <- withTC loc False $ connectNoTC loc outPort anyPort
     updateNodeCode loc $ anyPort ^. PortRef.nodeId
+    resendCode loc
     return connection
 
 connectPersistent :: ASTOp m => OutPortRef -> AnyPortRef -> m Connection
@@ -534,6 +550,7 @@ disconnect loc port@(InPortRef (NodeLoc _ nid) _) = do
         forM_ nodeToUpdate $ Publisher.notifyNodeUpdate loc
         return $ view Node.nodeId <$> nodeToUpdate
     forM_ nodeId $ updateNodeCode loc
+    resendCode loc
 
 getNodeMeta :: GraphLocation -> NodeId -> Empire (Maybe NodeMeta)
 getNodeMeta loc nodeId = withGraph loc $ runASTOp $ do
@@ -683,13 +700,15 @@ nodeLine ref = do
 
 getExprMap :: ASTOp m => m (Map.Map Luna.Marker NodeRef)
 getExprMap = do
-    Just nodeSeq <- GraphBuilder.getNodeSeq
-    coerce <$> IR.getLayer @CodeMarkers nodeSeq
+    nodeSeq <- GraphBuilder.getNodeSeq
+    case nodeSeq of
+        Just s -> coerce <$> IR.getLayer @CodeMarkers s
+        _      -> return Map.empty
 
 setExprMap :: ASTOp m => Map.Map Luna.Marker NodeRef -> m ()
 setExprMap exprMap = do
-    Just nodeSeq <- GraphBuilder.getNodeSeq
-    IR.putLayer @CodeMarkers nodeSeq (coerce exprMap)
+    nodeSeq <- GraphBuilder.getNodeSeq
+    forM_ nodeSeq $ \s -> IR.putLayer @CodeMarkers s (coerce exprMap)
 
 printMarkedExpression :: ASTOp m => NodeRef -> m Text
 printMarkedExpression ref = do
@@ -722,7 +741,6 @@ updateNodeCode loc@(GraphLocation file _) nodeId = do
             line       <- nodeLine ref
             return (line, expression)
         Library.withLibrary file $ forM_ line $ \l -> Library.substituteLine l expression
-        resendCode file
 
 readRange' :: ASTOp m => NodeRef -> m (RightSpacedSpan _)
 readRange' ref = IR.matchExpr ref $ \case
