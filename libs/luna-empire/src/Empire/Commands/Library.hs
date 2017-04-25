@@ -8,6 +8,7 @@ module Empire.Commands.Library
     , getBuffer
     , applyDiff
     , addLineAfter
+    , removeLine
     , substituteLine
     ) where
 
@@ -79,6 +80,14 @@ substituteLine index newLine = do
     currentCode <- use Library.code
     let codeLines = Text.lines currentCode
         newCode   = Text.unlines $ codeLines & ix index .~ newLine
+    Library.code .= newCode
+    return newCode
+
+removeLine :: Int -> Command Library Text
+removeLine index = do
+    currentCode <- use Library.code
+    let codeLines = Text.lines currentCode
+        newCode   = Text.unlines $ take index codeLines ++ drop (index + 1) codeLines
     Library.code .= newCode
     return newCode
 

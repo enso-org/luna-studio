@@ -51,7 +51,7 @@ import           Control.Monad.State           hiding (when)
 import           Control.Arrow                 ((&&&))
 import           Control.Monad.Error           (throwError)
 import           Data.Coerce                   (coerce)
-import           Data.List                     (elemIndex, sort, sortOn, group)
+import           Data.List                     (delete, elemIndex, sort, sortOn, group)
 import qualified Data.Map                      as Map
 import           Data.Maybe                    (catMaybes, fromMaybe, isJust, listToMaybe)
 import           Data.Foldable                 (toList)
@@ -321,9 +321,15 @@ addSubgraph loc nodes conns = withTC loc False $ do
     return $ map snd newNodes
 
 removeNodes :: GraphLocation -> [NodeId] -> Empire ()
-removeNodes loc nodeIds = withTC loc False $ runASTOp $ do
-    forM_ nodeIds removeNodeNoTC
-    when (not . null $ nodeIds) $ updateNodeSequence
+removeNodes loc@(GraphLocation file _) nodeIds = do
+    forM_ nodeIds $ removeFromCode loc
+    withTC loc False $ runASTOp $ forM_ nodeIds removeNodeNoTC
+    resendCode file
+
+removeFromCode :: GraphLocation -> NodeId -> Empire ()
+removeFromCode loc@(GraphLocation file _) nodeId = do
+    line <- withGraph loc $ runASTOp $ nodeLineById nodeId
+    Library.withLibrary file $ forM_ line $ \l -> Library.removeLine l
 
 removeNodeNoTC :: ASTOp m => NodeId -> m ()
 removeNodeNoTC nodeId = do
@@ -331,6 +337,15 @@ removeNodeNoTC nodeId = do
     obsoleteEdges <- getOutEdges nodeId
     mapM_ disconnectPort obsoleteEdges
     Graph.breadcrumbHierarchy . BH.children . at nodeId .= Nothing
+    removeFromSequence astRef
+
+removeFromSequence :: ASTOp m => NodeRef -> m ()
+removeFromSequence ref = do
+    Just oldSeq <- preuse $ Graph.breadcrumbHierarchy . BH.body
+    nodes       <- AST.readSeq oldSeq
+    let removed  = delete ref nodes
+    newSeq      <- AST.makeSeq removed
+    updateGraphSeq newSeq
 
 removePort :: GraphLocation -> OutPortRef -> Empire InputSidebar
 removePort loc portRef = withGraph loc $ runASTOp $ do
@@ -420,7 +435,6 @@ updateExprMap new old = do
 resendCode :: FilePath -> Empire ()
 resendCode file = do
     code <- Library.withLibrary file $ use Library.code
-    Publisher.notifyCodeUpdate file 0 0 "" Nothing
     Publisher.notifyCodeUpdate file 0 (Text.length code) code Nothing
 
 setNodeMeta :: GraphLocation -> NodeId -> NodeMeta -> Empire ()
