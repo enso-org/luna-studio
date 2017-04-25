@@ -1,4 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE ViewPatterns      #-}
 
 module Empire.Commands.Library
     ( withLibrary
@@ -6,6 +7,7 @@ module Empire.Commands.Library
     , createLibrary
     , getBuffer
     , applyDiff
+    , addLineAfter
     , substituteLine
     ) where
 
@@ -13,7 +15,8 @@ import           Control.Monad.Except    (throwError)
 import           Control.Monad.Reader
 import           Control.Monad.State
 import qualified Data.Map                as Map
-import           Data.Text               as Text
+import           Data.Text               (Text)
+import qualified Data.Text               as Text
 import           Data.Text.IO            as Text
 import           Empire.Prelude
 
@@ -76,5 +79,13 @@ substituteLine index newLine = do
     currentCode <- use Library.code
     let codeLines = Text.lines currentCode
         newCode   = Text.unlines $ codeLines & ix index .~ newLine
+    Library.code .= newCode
+    return newCode
+
+addLineAfter :: Int -> Text -> Command Library Text
+addLineAfter ((+1) -> index) line = do
+    currentCode <- use Library.code
+    let codeLines = Text.lines currentCode
+        newCode   = Text.unlines $ take index codeLines ++ [line] ++ drop index codeLines
     Library.code .= newCode
     return newCode

@@ -125,12 +125,19 @@ generateNodeName = do
 
 addNodeCondTC :: Bool -> GraphLocation -> NodeId -> Text -> NodeMeta -> Empire ExpressionNode
 addNodeCondTC True  loc uuid expr meta = addNode loc uuid expr meta
-addNodeCondTC False loc uuid expr meta = withGraph loc $ addNodeNoTC loc uuid expr meta
+addNodeCondTC False loc uuid expr meta = do
+    (nearestNode, node) <- withGraph loc $ addNodeNoTC loc uuid expr meta
+    addToCode loc nearestNode $ node ^. Node.nodeId
+    return node
 
 addNode :: GraphLocation -> NodeId -> Text -> NodeMeta -> Empire ExpressionNode
-addNode loc uuid expr meta = withTC loc False $ addNodeNoTC loc uuid expr meta
+addNode loc@(GraphLocation file _) uuid expr meta = do
+    (nearestNode, node) <- withTC loc False $ addNodeNoTC loc uuid expr meta
+    addToCode loc nearestNode $ node ^. Node.nodeId
+    resendCode file
+    return node
 
-addNodeNoTC :: GraphLocation -> NodeId -> Text -> NodeMeta -> Command Graph ExpressionNode
+addNodeNoTC :: GraphLocation -> NodeId -> Text -> NodeMeta -> Command Graph (Maybe NodeRef, ExpressionNode)
 addNodeNoTC loc uuid input meta = do
     parse <- fst <$> ASTParse.runParser input
     expr <- runASTOp $ do
@@ -139,13 +146,14 @@ addNodeNoTC loc uuid input meta = do
         putIntoHierarchy uuid $ BH.MatchNode parsedNode
         return parsedNode
     runAliasAnalysis
-    node <- runASTOp $ do
+    (nearestNode, node) <- runASTOp $ do
         putChildrenIntoHierarchy uuid expr
         AST.writeMeta expr meta
-        putInSequence expr meta
-        GraphBuilder.buildNode uuid
+        nearestNode <- putInSequence expr meta
+        node        <- GraphBuilder.buildNode uuid
+        return (nearestNode, node)
     Publisher.notifyNodeUpdate loc node
-    return node
+    return (nearestNode, node)
 
 distanceTo :: (Double, Double) -> (Double, Double) -> Double
 distanceTo (xRef, yRef) (xPoint, yPoint) = sqrt $ (xRef - xPoint) ** 2 + (yRef - yPoint) ** 2
@@ -164,29 +172,64 @@ findM p (x:xs) = do
      b <- p x
      if b then return (Just x) else findM p xs
 
-putInSequence :: ASTOp m => NodeRef -> NodeMeta -> m ()
+putInSequence :: ASTOp m => NodeRef -> NodeMeta -> m (Maybe NodeRef)
 putInSequence ref meta = do
-    oldSeq <- preuse $ Graph.breadcrumbHierarchy . BH.body
-    case oldSeq of
+    oldSeq      <- preuse $ Graph.breadcrumbHierarchy . BH.body
+    nearestNode <- case oldSeq of
         Just s -> do
             nodes              <- AST.readSeq s
             nodesAndMetas      <- mapM (\n -> (n,) <$> AST.readMeta n) nodes
             let nodesWithMetas =  mapMaybe (\(n,m) -> (n,) <$> m) nodesAndMetas
             nearestNode        <- findPreviousNodeInSequence meta nodesWithMetas
             seqs               <- AST.getSeqs s
+            liftIO $ print nearestNode >> print seqs
             case nearestNode of
                 Just n -> do
+                    previous <- mapM AST.previousNodeForSeq seqs
                     seqToModify <- findM (\seq -> (== Just n) <$> AST.previousNodeForSeq seq) seqs
+                    liftIO $ print previous >> print seqToModify
                     case seqToModify of
                         Just seq -> IR.matchExpr seq $ \case
                             IR.Seq l r -> do
-                                l' <- IR.source l
+                                l'     <- IR.source l
                                 newSeq <- IR.generalize <$> IR.seq l' ref
                                 IR.replaceSource newSeq l
                             _       -> undefined
-                        _        -> updateGraphSeq =<< AST.makeSeq (ref:nodes)
+                        _        -> updateGraphSeq =<< AST.makeSeq (nodes ++ [ref])
                 _ -> updateGraphSeq =<< AST.makeSeq (ref:nodes)
-        _ -> updateGraphSeq =<< AST.makeSeq [ref]
+            Just newSeq <- preuse $ Graph.breadcrumbHierarchy . BH.body
+            newNodes    <- AST.readSeq newSeq
+            liftIO $ print nodes >> print newNodes
+            return nearestNode
+        _ -> do
+            updateGraphSeq =<< AST.makeSeq [ref]
+            return Nothing
+    index <- getNextExprMarker
+    addExprMapping index ref
+    return nearestNode
+
+addToCode :: GraphLocation -> Maybe NodeRef -> NodeId -> Empire ()
+addToCode loc@(GraphLocation file _) previous inserted = do
+    (expr, line) <- withGraph loc $ runASTOp $ do
+        expr <- printMarkedExpression =<< ASTRead.getASTPointer inserted
+        line <- join <$> (forM previous nodeLine)
+        return (expr, fromMaybe 0 line)
+    liftIO $ print line
+    Library.withLibrary file $ Library.addLineAfter line expr
+    return ()
+
+addExprMapping :: ASTOp m => Word64 -> NodeRef -> m ()
+addExprMapping index ref = do
+    exprMap    <- getExprMap
+    let newMap = exprMap & at index ?~ ref
+    setExprMap newMap
+
+getNextExprMarker :: ASTOp m => m Word64
+getNextExprMarker = do
+    exprMap <- getExprMap
+    let keys         = Map.keys exprMap
+        highestIndex = Safe.maximumMay keys
+    return $ maybe 0 succ highestIndex
 
 prepareLambdaChild :: ASTOp m => BH.NodeIDTarget -> NodeRef -> m (Maybe BH.LamItem)
 prepareLambdaChild tgt ref = do
@@ -275,7 +318,7 @@ addSubgraph :: GraphLocation -> [ExpressionNode] -> [Connection] -> Empire [Expr
 addSubgraph loc nodes conns = withTC loc False $ do
     newNodes <- forM nodes $ \n -> addNodeNoTC loc (n ^. Node.nodeId) (n ^. Node.expression) (n ^. Node.nodeMeta)
     forM_ conns $ \(Connection src dst) -> connectNoTC loc src (InPortRef' dst)
-    return newNodes
+    return $ map snd newNodes
 
 removeNodes :: GraphLocation -> [NodeId] -> Empire ()
 removeNodes loc nodeIds = withTC loc False $ runASTOp $ do
@@ -340,7 +383,8 @@ setNodeExpression loc@(GraphLocation file _) nodeId expression = do
     (node, line, code) <- withTC loc False $ do
         (oldExpr, line) <- runASTOp $ do
             oldExpr  <- ASTRead.getASTTarget nodeId
-            line     <- nodeLine nodeId
+            line     <- nodeLineById nodeId
+            liftIO $ print line
             return (oldExpr, line)
         parsedRef <- view _1 <$> ASTParse.runReparser expression oldExpr
         runASTOp $ do
@@ -358,7 +402,6 @@ setNodeExpression loc@(GraphLocation file _) nodeId expression = do
             exprItem  <- prepareExprChild   target parsedRef
             forM_ lamItem  $ (Graph.breadcrumbHierarchy . BH.children . ix nodeId .=) . BH.LambdaChild
             forM_ exprItem $ (Graph.breadcrumbHierarchy . BH.children . ix nodeId .=) . BH.ExprChild
-            -- updateNodeSequence
             node <- GraphBuilder.buildNode nodeId
             code <- printMarkedExpression expr
             return (node, code)
@@ -595,10 +638,18 @@ loadCode code = do
     Graph.breadcrumbHierarchy . BH.body .= ref
     runAliasAnalysis
 
-nodeLine :: ASTOp m => NodeId -> m (Maybe Int)
-nodeLine nodeId = do
+nodeLineById :: ASTOp m => NodeId -> m (Maybe Int)
+nodeLineById nodeId = do
     nodeIds <- GraphBuilder.getNodeIdSequence
     let line = elemIndex nodeId nodeIds
+    return line
+
+nodeLine :: ASTOp m => NodeRef -> m (Maybe Int)
+nodeLine ref = do
+    Just nodeSeq <- GraphBuilder.getNodeSeq
+    nodes        <- AST.readSeq nodeSeq
+    liftIO $ print nodes >> print ref
+    let line = elemIndex ref nodes
     return line
 
 getExprMap :: ASTOp m => m (Map.Map Luna.Marker NodeRef)
@@ -674,8 +725,9 @@ getNodeIdForMarker index = do
             let exprMap' :: Map.Map Luna.Marker NodeRef
                 exprMap' = coerce exprMap
                 Just ref = Map.lookup (fromIntegral index) exprMap'
-            nodeId <- ASTRead.getNodeId ref
-            return nodeId
+            varNodeId <- ASTRead.safeGetVarNodeId ref
+            nodeId    <- ASTRead.getNodeId ref
+            return $ varNodeId <|> nodeId
         _            -> return Nothing
 
 markerCodeSpan :: GraphLocation -> Int -> Empire (Int, Int)
