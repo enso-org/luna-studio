@@ -228,10 +228,9 @@ connectionDst src' dst' isSrcExpanded isDstExpanded num numOfSameTypePorts isSel
             src'' = if isSrcExpanded then move (Vector2 nodeExpandedWidth 0) src' else src'
             t    = connectionAngle src'' dst' num numOfSameTypePorts
 
-
 nodeToNodeAngle :: Position -> Position -> Angle
 nodeToNodeAngle src' dst' =
-    if src' == dst' then pi else 
+    if src' == dst' then pi else
         if srcX < dstX
             then atan ((srcY - dstY) / (srcX - dstX))
             else atan ((srcY - dstY) / (srcX - dstX)) + pi

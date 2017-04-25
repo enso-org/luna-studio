@@ -34,14 +34,14 @@ data InputNode = InputNode
         , _inputSidebarPorts :: [OutPortTree OutPort]
         , _inputMode         :: SidebarMode
         -- TODO[LJK, PM]: We should store OutPortId here but then lenses are invalid
-        , _inputFrozenState  :: Maybe (Height, Maybe AnyPortId)
+        -- , _inputFrozenState  :: Maybe (Height, Maybe AnyPortId)
         } deriving (Eq, Generic, NFData, Show)
 
 data OutputNode = OutputNode
         { _outputNodeLoc      :: NodeLoc
         , _outputSidebarPorts :: InPortTree InPort
         , _outputMode         :: SidebarMode
-        , _outputFrozenState  :: Maybe (Height, Maybe AnyPortId)
+        -- , _outputFrozenState  :: Maybe (Height, Maybe AnyPortId)
         } deriving (Eq, Generic, NFData, Show)
 
 makeLenses ''InputNode
@@ -55,14 +55,14 @@ instance Convertible (NodePath, Empire.InputSidebar) InputNode where
         {- inputNodeLoc      -} (NodeLoc path (n ^. Empire.inputNodeId))
         {- inputSidebarPorts -} (convert `fmap2` (n ^. Empire.inputEdgePorts))
         {- inputMode         -} def
-        {- inputFrozenState  -} def
+        -- {- inputFrozenState  -} def
 
 instance Convertible (NodePath, Empire.OutputSidebar) OutputNode where
     convert (path, n) = OutputNode
         {- outputNodeLoc      -} (NodeLoc path (n ^. Empire.outputNodeId))
         {- outputSideBarPorts -} (convert <$> n ^. Empire.outputEdgePorts)
         {- outputMode         -} def
-        {- outputFrozenState  -} def
+        -- {- outputFrozenState  -} def
 
 instance HasNodeLoc InputNode where
     nodeLoc = inputNodeLoc
@@ -85,7 +85,7 @@ instance HasPorts InputNode where
 
 class IsNode node => SidebarNode node where
     mode           :: Lens' node SidebarMode
-    frozenState    :: Lens' node (Maybe (Height, Maybe AnyPortId))
+    -- frozenState    :: Lens' node (Maybe (Height, Maybe AnyPortId))
     isInputSidebar :: node -> Bool
 
     isInMode :: SidebarMode -> node -> Bool
@@ -99,10 +99,10 @@ class IsNode node => SidebarNode node where
 
 instance SidebarNode InputNode where
     mode           = inputMode
-    frozenState    = inputFrozenState
+    -- frozenState    = inputFrozenState
     isInputSidebar = const True
 
 instance SidebarNode OutputNode where
     mode           = outputMode
-    frozenState    = outputFrozenState
+    -- frozenState    = outputFrozenState
     isInputSidebar = const False
