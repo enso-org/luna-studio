@@ -231,9 +231,10 @@ connectionDst src' dst' isSrcExpanded isDstExpanded num numOfSameTypePorts isSel
 
 nodeToNodeAngle :: Position -> Position -> Angle
 nodeToNodeAngle src' dst' =
-    if srcX < dstX
-        then atan ((srcY - dstY) / (srcX - dstX))
-        else atan ((srcY - dstY) / (srcX - dstX)) + pi
+    if src' == dst' then pi else 
+        if srcX < dstX
+            then atan ((srcY - dstY) / (srcX - dstX))
+            else atan ((srcY - dstY) / (srcX - dstX)) + pi
     where
         srcX = src' ^. x
         srcY = src' ^. y
