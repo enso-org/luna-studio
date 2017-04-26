@@ -41,7 +41,7 @@ def prep_path(path):
     return os.path.normpath(os.path.join(script_abs_path, path))
 
 def rm_old():
-    for path in ('../atom/lib/gen', '../atom/styles', '../atom/node_modules'):
+    for path in ('../atom/lib/gen', '../atom/styles/app.css', '../atom/node_modules'):
         shutil.rmtree(prep_path(path), ignore_errors=True)
 
 def create_dirs():
