@@ -1,59 +1,59 @@
 module NodeEditor.Batch.Connector.Commands where
 
-import qualified Data.Text                              as Text
-import           Data.UUID.Types                        (UUID)
-import qualified Empire.API.Atom.OpenFile               as OpenFile
-import           Empire.API.Data.Connection             (Connection)
-import           Empire.API.Data.GraphLocation          (GraphLocation)
-import qualified Empire.API.Data.GraphLocation          as GraphLocation
-import           Empire.API.Data.Node                   (ExpressionNode)
-import           Empire.API.Data.NodeLoc                (NodeLoc, normalise, normalise')
-import qualified Empire.API.Data.NodeLoc                as NodeLoc
-import           Empire.API.Data.NodeMeta               (NodeMeta)
-import           Empire.API.Data.PortDefault            (PortDefault)
-import           Empire.API.Data.PortRef                (AnyPortRef, InPortRef, OutPortRef)
-import           Empire.API.Data.Project                (ProjectId)
-import qualified Empire.API.Graph.AddConnection         as AddConnection
-import qualified Empire.API.Graph.AddNode               as AddNode
-import qualified Empire.API.Graph.AddPort               as AddPort
-import qualified Empire.API.Graph.AddSubgraph           as AddSubgraph
-import           Empire.API.Graph.CollaborationUpdate   (ClientId)
-import qualified Empire.API.Graph.CollaborationUpdate   as CollaborationUpdate
-import qualified Empire.API.Graph.DumpGraphViz          as DumpGraphViz
-import qualified Empire.API.Graph.GetProgram            as GetProgram
-import qualified Empire.API.Graph.GetSubgraphs          as GetSubgraphs
-import qualified Empire.API.Graph.MovePort              as MovePort
-import qualified Empire.API.Graph.Redo                  as Redo
-import qualified Empire.API.Graph.RemoveConnection      as RemoveConnection
-import qualified Empire.API.Graph.RemoveNodes           as RemoveNodes
-import qualified Empire.API.Graph.RemovePort            as RemovePort
-import qualified Empire.API.Graph.RenameNode            as RenameNode
-import qualified Empire.API.Graph.RenamePort            as RenamePort
-import qualified Empire.API.Graph.SearchNodes           as SearchNodes
-import qualified Empire.API.Graph.SetNodeCode           as SetNodeCode
-import qualified Empire.API.Graph.SetNodeExpression     as SetNodeExpression
-import qualified Empire.API.Graph.SetNodesMeta          as SetNodesMeta
-import qualified Empire.API.Graph.SetPortDefault        as SetPortDefault
-import qualified Empire.API.Graph.Undo                  as Undo
-import qualified Empire.API.Library.CreateLibrary       as CreateLibrary
-import qualified Empire.API.Library.ListLibraries       as ListLibraries
-import qualified Empire.API.Project.CreateProject       as CreateProject
-import qualified Empire.API.Project.ExportProject       as ExportProject
-import qualified Empire.API.Project.ImportProject       as ImportProject
-import qualified Empire.API.Project.ListProjects        as ListProjects
-import qualified Empire.API.Project.OpenProject         as OpenProject
-import           Common.Batch.Connector.Connection (Message (Message), sendRequest, sendUpdate)
-import           NodeEditor.Batch.Workspace            (Workspace)
-import           NodeEditor.Batch.Workspace            (currentLocation)
+import           Common.Batch.Connector.Connection    (Message (Message), sendRequest, sendUpdate)
 import           Common.Prelude
-import           NodeEditor.React.Model.Connection     (ConnectionId)
+import qualified Data.Text                            as Text
+import           Data.UUID.Types                      (UUID)
+import qualified Empire.API.Atom.OpenFile             as OpenFile
+import           Empire.API.Data.Connection           (Connection)
+import           Empire.API.Data.GraphLocation        (GraphLocation)
+import qualified Empire.API.Data.GraphLocation        as GraphLocation
+import           Empire.API.Data.Node                 (ExpressionNode)
+import           Empire.API.Data.NodeLoc              (NodeLoc, normalise, normalise')
+import qualified Empire.API.Data.NodeLoc              as NodeLoc
+import           Empire.API.Data.NodeMeta             (NodeMeta)
+import           Empire.API.Data.PortDefault          (PortDefault)
+import           Empire.API.Data.PortRef              (AnyPortRef, InPortRef, OutPortRef)
+import           Empire.API.Data.Project              (ProjectId)
+import qualified Empire.API.Graph.AddConnection       as AddConnection
+import qualified Empire.API.Graph.AddNode             as AddNode
+import qualified Empire.API.Graph.AddPort             as AddPort
+import qualified Empire.API.Graph.AddSubgraph         as AddSubgraph
+import           Empire.API.Graph.CollaborationUpdate (ClientId)
+import qualified Empire.API.Graph.CollaborationUpdate as CollaborationUpdate
+import qualified Empire.API.Graph.DumpGraphViz        as DumpGraphViz
+import qualified Empire.API.Graph.GetProgram          as GetProgram
+import qualified Empire.API.Graph.GetSubgraphs        as GetSubgraphs
+import qualified Empire.API.Graph.MovePort            as MovePort
+import qualified Empire.API.Graph.Redo                as Redo
+import qualified Empire.API.Graph.RemoveConnection    as RemoveConnection
+import qualified Empire.API.Graph.RemoveNodes         as RemoveNodes
+import qualified Empire.API.Graph.RemovePort          as RemovePort
+import qualified Empire.API.Graph.RenameNode          as RenameNode
+import qualified Empire.API.Graph.RenamePort          as RenamePort
+import qualified Empire.API.Graph.SearchNodes         as SearchNodes
+import qualified Empire.API.Graph.SetNodeCode         as SetNodeCode
+import qualified Empire.API.Graph.SetNodeExpression   as SetNodeExpression
+import qualified Empire.API.Graph.SetNodesMeta        as SetNodesMeta
+import qualified Empire.API.Graph.SetPortDefault      as SetPortDefault
+import qualified Empire.API.Graph.Undo                as Undo
+import qualified Empire.API.Library.CreateLibrary     as CreateLibrary
+import qualified Empire.API.Library.ListLibraries     as ListLibraries
+import qualified Empire.API.Project.CreateProject     as CreateProject
+import qualified Empire.API.Project.ExportProject     as ExportProject
+import qualified Empire.API.Project.ImportProject     as ImportProject
+import qualified Empire.API.Project.ListProjects      as ListProjects
+import qualified Empire.API.Project.OpenProject       as OpenProject
+import           NodeEditor.Batch.Workspace           (Workspace)
+import           NodeEditor.Batch.Workspace           (currentLocation)
+import           NodeEditor.React.Model.Connection    (ConnectionId)
 
 withLibrary :: Workspace -> (GraphLocation -> a) -> a
 withLibrary w f = f $ w ^. currentLocation
 
 
 createLibrary :: Text -> Text -> Workspace -> UUID -> Maybe UUID -> IO ()
-createLibrary name path workspace uuid guiID= sendRequest $ Message uuid guiID $ CreateLibrary.Request $notImplemented (Just $ Text.unpack name) (Text.unpack path)
+createLibrary name path workspace uuid guiID = sendRequest $ Message uuid guiID $ CreateLibrary.Request $notImplemented (Just $ Text.unpack name) (Text.unpack path)
 
 listLibraries :: ProjectId -> UUID -> Maybe UUID -> IO ()
 listLibraries pid uuid guiID = sendRequest $ Message uuid guiID $ ListLibraries.Request pid
@@ -150,7 +150,8 @@ setNodeExpression nodeLoc expression workspace uuid guiID =
 
 setNodesMeta :: [(NodeLoc, NodeMeta)] -> Workspace -> UUID -> Maybe UUID -> IO ()
 setNodesMeta updates workspace uuid guiID = sendRequest $ Message uuid guiID $ withLibrary workspace' SetNodesMeta.Request (map (_1 %~ convert) updates') where
-    (workspace', updates') = normalise' workspace updates
+    (workspace', nls) = normalise' workspace $ map fst updates
+    updates'          = zip nls $ map snd updates
 
 setPortDefault :: InPortRef -> PortDefault -> Workspace -> UUID -> Maybe UUID -> IO ()
 setPortDefault portRef portDef workspace uuid guiID = sendRequest $ Message uuid guiID $ withLibrary workspace' SetPortDefault.Request portRef' (Just portDef) where

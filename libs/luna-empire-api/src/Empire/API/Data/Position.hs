@@ -7,6 +7,7 @@ module Empire.API.Data.Position
     )
 where
 
+import           Data.Binary             (Binary)
 import           Empire.API.Data.Vector2 hiding (fromTuple, toTuple)
 import           Prologue
 
@@ -17,7 +18,7 @@ import           Prologue
 
 -- === Definition === --
 
-newtype Position = Position { fromPosition :: Vector2 Double } deriving (Eq, Show, Generic, Default, NFData, Num)
+newtype Position = Position { fromPosition :: Vector2 Double } deriving (Eq, Show, Generic, Default, NFData, Num, Ord)
 makeWrapped ''Position
 
 
@@ -28,6 +29,7 @@ type instance VectorOf Position = Vector2 Double
 instance Dim1      Position
 instance Dim2      Position
 instance IsVector  Position
+instance Binary Position
 
 type instance Item Position = Double
 instance ToList    Position where toList = toList . view vector

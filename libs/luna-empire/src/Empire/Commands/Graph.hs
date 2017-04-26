@@ -92,6 +92,7 @@ import           Empire.API.Data.Port            (InPortId, OutPortId, InPort, O
 import qualified Empire.API.Data.Port            as Port
 import           Empire.API.Data.PortRef         (AnyPortRef (..), InPortRef (..), OutPortRef (..))
 import qualified Empire.API.Data.PortRef         as PortRef
+import qualified Empire.API.Data.Position        as Position
 import           Empire.ASTOp                    (ASTOp, runASTOp, runAliasAnalysis)
 
 import qualified Empire.ASTOps.Builder           as ASTBuilder
@@ -162,8 +163,8 @@ distanceTo (xRef, yRef) (xPoint, yPoint) = sqrt $ (xRef - xPoint) ** 2 + (yRef -
 
 findPreviousNodeInSequence :: ASTOp m => NodeMeta -> [(NodeRef, NodeMeta)] -> m (Maybe NodeRef)
 findPreviousNodeInSequence meta nodes = do
-    let position           = view NodeMeta.position meta
-        nodesWithPositions = map (\(n, m) -> (n, m ^. NodeMeta.position)) nodes
+    let position           = Position.toTuple $ view NodeMeta.position meta
+        nodesWithPositions = map (\(n, m) -> (n, Position.toTuple $ m ^. NodeMeta.position)) nodes
         nodesToTheLeft     = filter (\(n, (x, y)) -> x < fst position || (x == fst position && y < snd position)) nodesWithPositions
         nearestNode        = listToMaybe $ sortOn (\(n, p) -> distanceTo position p) nodesToTheLeft
     return $ fmap fst nearestNode

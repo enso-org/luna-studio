@@ -20,7 +20,7 @@ import           Empire.API.Data.Node                    (NodeId)
 import qualified Empire.API.Data.Node                    as Empire
 import           Empire.API.Data.NodeLoc                 (NodeLoc (NodeLoc), NodePath)
 import qualified Empire.API.Data.NodeMeta                as NodeMeta
-import           Empire.API.Data.Position                (Position, fromTuple, toTuple)
+import           Empire.API.Data.Position                (Position)
 import           Empire.API.Graph.CollaborationUpdate    (ClientId)
 import           Empire.API.Graph.NodeResultUpdate       (NodeValue (NodeError), NodeVisualization)
 import           NodeEditor.React.Model.IsNode           as X
@@ -85,7 +85,7 @@ instance Convertible (NodePath, Empire.ExpressionNode) ExpressionNode where
         {- canEnter              -} (n ^. Empire.canEnter)
         {- inPorts               -} (convert <$> n ^. Empire.inPorts)
         {- outPorts              -} (convert <$> n ^. Empire.outPorts)
-        {- position              -} (fromTuple $ n ^. Empire.position)
+        {- position              -} (n ^. Empire.position)
         {- visualizationsEnabled -} (n ^. Empire.nodeMeta . NodeMeta.displayResult)
         {- code                  -} (n ^. Empire.code)
         {- value                 -} def
@@ -105,7 +105,7 @@ instance Convertible ExpressionNode Empire.ExpressionNode where
         {- code       -} (n ^. code)
         {- inPorts    -} (convert <$> n ^. inPorts)
         {- outPorts   -} (convert <$> n ^. outPorts)
-        {- nodeMeta   -} (NodeMeta.NodeMeta (toTuple $ n ^. position) (n ^. visualizationsEnabled))
+        {- nodeMeta   -} (NodeMeta.NodeMeta (n ^. position) (n ^. visualizationsEnabled))
         {- canEnter   -} (n ^. canEnter)
 
 instance Default Mode where def = Collapsed

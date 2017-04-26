@@ -6,7 +6,7 @@ import           Empire.API.Data.LabeledTree        (LabeledTree (LabeledTree))
 import qualified Empire.API.Data.Node               as Empire
 import           Empire.API.Data.NodeMeta           (NodeMeta (NodeMeta))
 import           Empire.API.Data.Port               (InPortIndex (Arg, Self), Port (Port), PortState (NotConnected))
-import           Empire.API.Data.Position           (Position, toTuple)
+import           Empire.API.Data.Position           (Position)
 import           Empire.API.Data.TypeRep            (TypeRep (TStar))
 import qualified JS.GoogleAnalytics                 as GA
 import           NodeEditor.Action.Basic.FocusNode  (focusNode)
@@ -29,7 +29,7 @@ createNode parentPath nodePos expr = do
     selected <- getSelectedNodes
     nid      <- getUUID
     let snappedPos  = snap nodePos
-        nodeMeta    = NodeMeta (toTuple snappedPos) True
+        nodeMeta    = NodeMeta snappedPos True
         connectTo   = if length selected == 1
                       then view nodeLoc <$> listToMaybe selected
                       else Nothing

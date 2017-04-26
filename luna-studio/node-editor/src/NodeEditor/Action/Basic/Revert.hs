@@ -1,24 +1,26 @@
 module NodeEditor.Action.Basic.Revert where
 
-import           Empire.API.Data.Connection                 (dst, src)
-import           Empire.API.Data.Node                       (nodeId)
-import           Empire.API.Data.NodeLoc                    (NodeLoc, prependPath)
-import           Empire.API.Data.PortRef                    (AnyPortRef (InPortRef'), OutPortRef (OutPortRef))
-import qualified Empire.API.Graph.AddConnection             as AddConnection
-import qualified Empire.API.Graph.AddNode                   as AddNode
-import qualified Empire.API.Graph.AddPort                   as AddPort
-import qualified Empire.API.Graph.AddSubgraph               as AddSubgraph
-import qualified Empire.API.Graph.MovePort                  as MovePort
-import qualified Empire.API.Graph.RemoveConnection          as RemoveConnection
-import qualified Empire.API.Graph.RemoveNodes               as RemoveNodes
-import qualified Empire.API.Graph.RemovePort                as RemovePort
-import qualified Empire.API.Graph.RenameNode                as RenameNode
-import qualified Empire.API.Graph.RenamePort                as RenamePort
-import qualified Empire.API.Graph.SetNodeCode               as SetNodeCode
-import qualified Empire.API.Graph.SetNodeExpression         as SetNodeExpression
-import qualified Empire.API.Graph.SetNodesMeta              as SetNodesMeta
-import qualified Empire.API.Graph.SetPortDefault            as SetPortDefault
-import qualified Empire.API.Response                        as Response
+import           Common.Prelude
+import           Empire.API.Data.Connection                (dst, src)
+import           Empire.API.Data.Node                      (nodeId)
+import           Empire.API.Data.NodeLoc                   (NodeLoc, prependPath)
+import           Empire.API.Data.NodeMeta                  (displayResult, position)
+import           Empire.API.Data.PortRef                   (AnyPortRef (InPortRef'), OutPortRef (OutPortRef))
+import qualified Empire.API.Graph.AddConnection            as AddConnection
+import qualified Empire.API.Graph.AddNode                  as AddNode
+import qualified Empire.API.Graph.AddPort                  as AddPort
+import qualified Empire.API.Graph.AddSubgraph              as AddSubgraph
+import qualified Empire.API.Graph.MovePort                 as MovePort
+import qualified Empire.API.Graph.RemoveConnection         as RemoveConnection
+import qualified Empire.API.Graph.RemoveNodes              as RemoveNodes
+import qualified Empire.API.Graph.RemovePort               as RemovePort
+import qualified Empire.API.Graph.RenameNode               as RenameNode
+import qualified Empire.API.Graph.RenamePort               as RenamePort
+import qualified Empire.API.Graph.SetNodeCode              as SetNodeCode
+import qualified Empire.API.Graph.SetNodeExpression        as SetNodeExpression
+import qualified Empire.API.Graph.SetNodesMeta             as SetNodesMeta
+import qualified Empire.API.Graph.SetPortDefault           as SetPortDefault
+import qualified Empire.API.Response                       as Response
 import           NodeEditor.Action.Basic.AddConnection     (localAddConnection, localAddConnections)
 import           NodeEditor.Action.Basic.AddPort           (localAddPort)
 import           NodeEditor.Action.Basic.AddSubgraph       (localAddSubgraph)
@@ -34,7 +36,6 @@ import           NodeEditor.Action.Basic.SetPortDefault    (localSetPortDefault)
 import qualified NodeEditor.Action.Batch                   as Batch
 import           NodeEditor.Action.Command                 (Command)
 import           NodeEditor.Action.State.Graph             (inCurrentLocation)
-import           Common.Prelude
 import           NodeEditor.React.Model.Port               (OutPortIndex (Projection))
 import           NodeEditor.State.Global                   (State)
 
@@ -111,7 +112,8 @@ revertSetNodeExpression (SetNodeExpression.Request _loc _nid _) (Response.Error 
 revertSetNodesMeta :: SetNodesMeta.Request -> Response.Status SetNodesMeta.Inverse -> Command State ()
 revertSetNodesMeta (SetNodesMeta.Request loc _) (Response.Ok (SetNodesMeta.Inverse prevMeta)) =
     inCurrentLocation loc $ \path -> do
-        let conv (nid, meta) = convert (convert (path, nid) :: NodeLoc, meta)
+        let unpackMeta (nid, meta) = (nid, meta ^. position, meta ^. displayResult)
+            conv       (nid, meta) = unpackMeta (convert (path, nid) :: NodeLoc, meta)
         void . localSetNodesMeta $ map conv prevMeta
 revertSetNodesMeta (SetNodesMeta.Request _loc _) (Response.Error _msg) = panic
 

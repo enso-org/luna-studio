@@ -9,6 +9,7 @@ import           Empire.API.Data.Connection                  (dst, src)
 import qualified Empire.API.Data.Graph                       as Graph
 import           Empire.API.Data.NodeLoc                     (nodeLoc, prependPath)
 import qualified Empire.API.Data.NodeLoc                     as NodeLoc
+import           Empire.API.Data.NodeMeta                    (displayResult, position)
 import qualified Empire.API.Graph.AddConnection              as AddConnection
 import qualified Empire.API.Graph.AddNode                    as AddNode
 import qualified Empire.API.Graph.AddPort                    as AddPort
@@ -329,7 +330,7 @@ handle (Event.Batch ev) = Just $ case ev of
             ownRequest <- isOwnRequest requestId
             if ownRequest then
                 return ()
-            else void $ localSetNodesMeta $ map (convert . (path,)) updates
+            else void $ localSetNodesMeta $ map (\(nid, meta) -> (convert (path, nid), meta ^. position, meta ^. displayResult)) updates
 
     SetPortDefaultResponse response -> handleResponse response success failure where
         requestId       = response ^. Response.requestId

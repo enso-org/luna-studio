@@ -7,15 +7,14 @@ module NodeEditor.React.Model.Node
     , module NodeEditor.React.Model.Node
     ) where
 
-import           Data.HashMap.Strict                         (HashMap)
-import           Empire.API.Data.Node                        as X (NodeId)
-import           Empire.API.Data.NodeLoc                     as X (NodeLoc (NodeLoc), NodePath (NodePath))
 import           Common.Prelude
+import           Data.HashMap.Strict                        (HashMap)
+import           Empire.API.Data.Node                       as X (NodeId)
+import           Empire.API.Data.NodeLoc                    as X (NodeLoc (NodeLoc), NodePath (NodePath))
 import           NodeEditor.React.Model.IsNode              as X
 import           NodeEditor.React.Model.Node.ExpressionNode as X (ExpressionNode, ExpressionNodesMap)
-import           NodeEditor.React.Model.Node.NodeMeta       ()
 import           NodeEditor.React.Model.Node.SidebarNode    as X (InputNode (InputNode), InputNodesMap, OutputNode (OutputNode),
-                                                                   OutputNodesMap)
+                                                                  OutputNodesMap)
 
 
 data Node = Expression ExpressionNode
