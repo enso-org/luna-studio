@@ -1,15 +1,12 @@
 {-# LANGUAGE TypeFamilies #-}
-module Data.Size
-    ( module Data.Size
+module Empire.API.Data.Size
+    ( module Empire.API.Data.Size
     , vector
-    , x
-    , y
     )
 where
 
-import           Data.Aeson          (ToJSON)
-import           Data.Vector2
-import           Common.Prelude
+import           Empire.API.Data.Vector2
+import           Prologue
 
 
 -------------------
@@ -22,6 +19,12 @@ newtype Size = Size (Vector2 Double) deriving (Eq, Show, Generic, Default)
 makeWrapped ''Size
 
 
+height :: Lens' Size Double
+height = y
+
+width :: Lens' Size Double
+width = x
+
 -- === Instances === --
 
 type instance VectorOf Size = Vector2 Double
@@ -29,12 +32,10 @@ type instance VectorOf Size = Vector2 Double
 instance IsVector Size
 instance Dim1 Size
 instance Dim2 Size
-instance ToJSON Size
 
-instance IsList Size where
-    type Item Size = Double
-    fromList l = Size (fromList l)
-    toList   p = [p ^. x, p ^. y]
+type instance Item Size = Double
+instance ToList    Size where toList   = toList . view vector
+instance FromList  Size where fromList = Size . fromList
 
 
 -- === Functions === ---

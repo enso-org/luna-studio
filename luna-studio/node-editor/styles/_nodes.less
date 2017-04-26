@@ -26,8 +26,14 @@
 }
 
 .luna-node__text {
-    top:    inherit !important;
-    bottom: 36rem !important;
+    color:          lightslategrey;
+    bottom:         36rem !important;
+    position:       absolute;
+    display:        flex;
+    flex-direction: column;
+    align-items:    center;
+    width:          0;
+    white-space:    nowrap;
 }
 
 .luna-node__name {
@@ -38,12 +44,6 @@
     &::selection {
         background: none;
     }
-}
-
-.luna-node__name--expression {
-    fill:        lightslategrey;
-    font-size:   12px;
-    line-height: 16px;
 }
 
 .luna-node__returned-value {
@@ -144,7 +144,7 @@
         opacity:       1;
         border-radius: @borderRadius;
         left:          0;
-        padding:      ~"calc(12px * var(--scale)) calc(12px * var(--scale)) calc(8px * var(--scale))";
+        padding:       12rem 12rem 8rem;
     }
     .luna-selection {
         border-radius: 1px;
@@ -166,12 +166,12 @@
 }
 
 .luna-node__properties * {
-    font-size: ~"calc(10px * var(--scale))";
+    font-size: 10rem;
 }
 
 .luna-node__properties {
     color:         @colorTextUneditable;
-    line-height:   ~"calc(16px * var(--scale))";
+    line-height:   16rem;
     width:         40rem;
     height:        40rem;
     opacity:       1;

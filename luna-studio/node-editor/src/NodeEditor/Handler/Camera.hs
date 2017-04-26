@@ -2,22 +2,22 @@ module NodeEditor.Handler.Camera
     ( handle
     ) where
 
-import           Data.Vector2                        (Vector2 (Vector2))
+import           Common.Prelude
+import           Empire.API.Data.Vector2           (Vector2 (Vector2))
 import           NodeEditor.Action.Camera          (centerGraph, panCamera, panDown, panDrag, panLeft, panRight, panUp, resetCamera,
-                                                     resetPan, resetZoom, startPanDrag, startZoomDrag, stopPanDrag, stopZoomDrag, wheelZoom,
-                                                     zoomDrag, zoomIn, zoomOut)
+                                                    resetPan, resetZoom, startPanDrag, startZoomDrag, stopPanDrag, stopZoomDrag, wheelZoom,
+                                                    zoomDrag, zoomIn, zoomOut)
 import           NodeEditor.Action.Command         (Command)
 import           NodeEditor.Event.Event            (Event (Shortcut, UI))
 import           NodeEditor.Event.Mouse            (mousePosition)
 import qualified NodeEditor.Event.Mouse            as Mouse
 import qualified NodeEditor.Event.Shortcut         as Shortcut
 import           NodeEditor.Event.UI               (UIEvent (AppEvent, NodeEditorEvent))
-import           Common.Prelude
 import qualified NodeEditor.React.Event.App        as App
 import qualified NodeEditor.React.Event.NodeEditor as NodeEditor
 import           NodeEditor.State.Action           (Action (continue))
 import           NodeEditor.State.Global           (State)
-import           React.Flux                         (MouseEvent, wheelDeltaX, wheelDeltaY)
+import           React.Flux                        (MouseEvent, wheelDeltaX, wheelDeltaY)
 
 
 

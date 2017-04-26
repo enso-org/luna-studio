@@ -5,21 +5,21 @@ module NodeEditor.Action.MultiSelection
     , stopMultiSelection
     ) where
 
-import           Data.Position                               (Position, fromDoubles, x, y)
+import           Common.Prelude
+import           Empire.API.Data.Position                   (Position, fromDoubles, x, y)
 import           NodeEditor.Action.Basic                    (modifySelectionHistory, selectNodes, unselectAll)
 import           NodeEditor.Action.Command                  (Command)
 import           NodeEditor.Action.State.NodeEditor         (getExpressionNodes, getSelectedNodes, modifyNodeEditor)
 import           NodeEditor.Data.Geometry                   (isPointInRectangle)
 import           NodeEditor.Event.Mouse                     (workspacePosition)
-import           Common.Prelude
 import           NodeEditor.React.Model.Node.ExpressionNode (nodeLoc, position)
 import           NodeEditor.React.Model.SelectionBox        (SelectionBox (SelectionBox))
 import           NodeEditor.State.Action                    (Action (begin, continue, end, update), MultiSelection (MultiSelection),
-                                                              multiSelecectionStartPos, multiSelectionAction)
-import           React.Flux                                  (MouseEvent)
+                                                             multiSelecectionStartPos, multiSelectionAction)
+import           React.Flux                                 (MouseEvent)
 
 import           NodeEditor.Action.State.Action             (beginActionWithKey, continueActionWithKey, removeActionFromState,
-                                                              updateActionWithKey)
+                                                             updateActionWithKey)
 import           NodeEditor.React.Model.NodeEditor          (selectionBox)
 import           NodeEditor.State.Global                    (State)
 

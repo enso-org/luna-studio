@@ -1,12 +1,12 @@
 {-# LANGUAGE DeriveAnyClass #-}
 module Data.Curve where
 
-import           Control.DeepSeq     (NFData)
-import           Data.Aeson          (ToJSON)
-import           Data.Position       (Position (Position), vector)
-import           Data.Timestamp      (Timestamp)
-import           Data.Vector2         (scalarProduct)
 import           Common.Prelude
+import           Control.DeepSeq          (NFData)
+import           Data.Aeson               (ToJSON)
+import           Data.Timestamp           (Timestamp)
+import           Empire.API.Data.Position (Position (Position), vector)
+import           Empire.API.Data.Vector2  (scalarProduct)
 
 
 data CurveSegment = CurveSegment { _segmentBegin :: Position

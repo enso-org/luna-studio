@@ -3,9 +3,9 @@ module NodeEditor.Action.State.Model.Connection where
 
 import           Common.Prelude
 import           Control.Monad.Trans.Maybe                  (MaybeT (MaybeT), runMaybeT)
-import           Data.Position                              (Position, distanceSquared)
 import           Empire.API.Data.PortRef                    (AnyPortRef, InPortRef, OutPortRef)
 import qualified Empire.API.Data.PortRef                    as PortRef
+import           Empire.API.Data.Position                   (Position, distanceSquared)
 import           NodeEditor.Action.Command                  (Command)
 import           NodeEditor.Action.State.NodeEditor         (getConnection, getNode, getNodeEditor, getPosConnection, getPosConnections)
 import           NodeEditor.Data.Geometry                   (closestPointOnLine, closestPointOnLineParam, doesSegmentsIntersects)

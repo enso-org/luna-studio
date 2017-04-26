@@ -1,20 +1,20 @@
 {-# LANGUAGE MultiWayIf #-}
 module NodeEditor.Action.Autolayout where
 
-import           Control.Monad.State.Lazy                    (execStateT, get, modify)
-import qualified Control.Monad.State.Lazy                    as S
-import           Data.Map.Lazy                               (Map)
-import qualified Data.Map.Lazy                               as Map
-import           Data.Position                               (Position, fromDoubles, minimumRectangle, move, vector, x, y)
-import           Data.Set                                    (Set)
-import qualified Data.Set                                    as Set
-import           Data.Vector2                                (Vector2)
+import           Common.Prelude
+import           Control.Monad.State.Lazy                   (execStateT, get, modify)
+import qualified Control.Monad.State.Lazy                   as S
+import           Data.Map.Lazy                              (Map)
+import qualified Data.Map.Lazy                              as Map
+import           Data.Set                                   (Set)
+import qualified Data.Set                                   as Set
+import           Empire.API.Data.Position                   (Position, fromDoubles, minimumRectangle, move, vector, x, y)
+import           Empire.API.Data.Vector2                    (Vector2)
 import           NodeEditor.Action.Basic                    (centerGraph, moveNodes)
 import           NodeEditor.Action.Command                  (Command)
 import           NodeEditor.Action.Node                     (snap)
 import           NodeEditor.Action.State.NodeEditor         (getConnectionsFromNode, getConnectionsToNode, getExpressionNodes,
-                                                              getSelectedNodes)
-import           Common.Prelude
+                                                             getSelectedNodes)
 import           NodeEditor.React.Model.Connection          (Connection, dstNodeLoc, dstPortId, srcNodeLoc, srcPortId)
 import           NodeEditor.React.Model.Constants           (gridSize)
 import           NodeEditor.React.Model.Node.ExpressionNode (ExpressionNode, NodeLoc)

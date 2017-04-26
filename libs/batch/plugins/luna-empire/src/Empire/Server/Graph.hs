@@ -55,7 +55,6 @@ import qualified Empire.API.Graph.GetSubgraphs      as GetSubgraphs
 import qualified Empire.API.Graph.MovePort          as MovePort
 import           Empire.API.Graph.NodeResultUpdate  (NodeValue (NodeValue))
 import qualified Empire.API.Graph.NodeResultUpdate  as NodeResultUpdate
-import qualified Empire.API.Graph.NodesUpdate       as NodesUpdate
 import qualified Empire.API.Graph.RemoveConnection  as RemoveConnection
 import qualified Empire.API.Graph.RemoveNodes       as RemoveNodes
 import qualified Empire.API.Graph.RemovePort        as RemovePort
@@ -182,6 +181,7 @@ connectNodes reqId guiId location expr dstNodeId srcNodeId = do
         inPort   = if exprCall `elem` stdlibFunctions then [Arg 0] else [Self]
         request  = Request reqId guiId $ AddConnection.Request location (Left $ OutPortRef (NodeLoc def srcNodeId) []) (Left . InPortRef' $ InPortRef (NodeLoc def dstNodeId) inPort)
         action (AddConnection.Request location (Left src) (Left dst)) = Graph.connectCondTC False location src dst
+        --TODO[LJK]: There should be result, not update
         success _ _ connection                                        = sendToBus' $ ConnectUpdate.Update location connection
     modifyGraph defInverse action success request
     forceTC location --TODO[MM]: is this not the same as: `Graph.connectCondTC True location src dst` in action???

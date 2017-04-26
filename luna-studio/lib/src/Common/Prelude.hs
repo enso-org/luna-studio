@@ -8,40 +8,39 @@ module Common.Prelude (
 ) where
 
 
-import           Control.Applicative           as X
-import           Control.Lens                  as X
-import           Control.Monad                 as X (MonadPlus, join, mplus, mzero, unless, void, when, (<=<), (>=>))
-import           Control.Monad.IO.Class        as X (MonadIO, liftIO)
-import           Control.Monad.Trans           as X (MonadTrans, lift)
-import qualified Control.Monad.Trans.Maybe     as MaybeT
-import           Data.Char                     as X
-import           Data.Default                  as X
-import           Data.Either                   as X (isLeft, isRight)
-import           Data.Foldable                 as X (Foldable, foldlM, forM_, mapM_, sequenceA_, traverse_)
-import           Data.Function                 as X (on)
-import           Data.Hashable                 (Hashable)
-import qualified Data.HashSet                  as HashSet
-import           Data.JSString                 as X (JSString)
-import           Data.List                     as X hiding (uncons, (++))
-import           Data.Maybe                    as X
-import           Data.Monoid                   as X (Monoid, mappend, mconcat, mempty, (<>))
-import qualified Data.Set                      as Set
-import           Data.String                   as X (IsString (fromString))
-import           Data.Text                     as X (Text)
-import           Data.Traversable              as X (forM, mapM, sequenceA)
-import           Data.Typeable                 as X (Typeable)
-import           Development.Placeholders      as X
-import           GHC.Exts                      as X (IsList, Item, fromList, fromListN, toList)
-import           GHC.Generics                  as X (Generic)
-import           GHCJS.Marshal                 as X (FromJSVal (..), ToJSVal (..))
-import           GHCJS.Types                   as X (JSVal)
-import           Common.Prelude.Instances ()
-import           Prelude                       hiding (curry, error, print, putStr, putStrLn, uncurry, (++), (.))
-import           Prologue                      as X (NFData, convert, curry, fmap1, fmap2, fmap3, fmap4, fmap5, fmap6, fmap7, fmap8, fmap9,
-                                                     foldlDef, fromJustM, ifElseId, ifM, lift2, lift3, pprint, putStr, show', switch,
-                                                     toString, uncurry, unlessM, whenLeft, whenLeft', whenM, whenRight, whenRight',
-                                                     withJust, ($>), (++), (.), (.:), (.:.), (.::), (.::.), (.:::), (.:::.), (.::::),
-                                                     (.::::.), (<<∘>>), (<<∘∘>>), (<∘>), (<∘∘>), (<∘∘∘>), (<∘∘∘∘>), (<∘∘∘∘∘>))
+import           Common.Prelude.Instances  ()
+import           Control.Applicative       as X
+import           Control.Lens              as X
+import           Control.Monad             as X (MonadPlus, join, mplus, mzero, unless, void, when, (<=<), (>=>))
+import           Control.Monad.IO.Class    as X (MonadIO, liftIO)
+import           Control.Monad.Trans       as X (MonadTrans, lift)
+import qualified Control.Monad.Trans.Maybe as MaybeT
+import           Data.Char                 as X
+import           Data.Default              as X
+import           Data.Either               as X (isLeft, isRight)
+import           Data.Foldable             as X (Foldable, foldlM, forM_, mapM_, sequenceA_, traverse_)
+import           Data.Function             as X (on)
+import           Data.Hashable             (Hashable)
+import qualified Data.HashSet              as HashSet
+import           Data.JSString             as X (JSString)
+import           Data.List                 as X hiding (uncons, (++))
+import           Data.Maybe                as X
+import           Data.Monoid               as X ((<>))
+import qualified Data.Set                  as Set
+import           Data.String               as X (IsString (fromString))
+import           Data.Text                 as X (Text)
+import           Data.Traversable          as X (forM, mapM, sequenceA)
+import           Data.Typeable             as X (Typeable)
+import           Development.Placeholders  as X
+import           GHC.Generics              as X (Generic)
+import           GHCJS.Marshal             as X (FromJSVal (..), ToJSVal (..))
+import           GHCJS.Types               as X (JSVal)
+import           Prelude                   hiding (curry, error, print, putStr, putStrLn, uncurry, (++), (.))
+import           Prologue                  as X (FromList, IsList, Item, Mempty, NFData, Semigroup, ToList, convert, curry, fmap1, fmap2,
+                                                 fmap3, fmap4, fmap5, fmap6, fmap7, fmap8, fmap9, foldlDef, fromJustM, fromList, ifElseId,
+                                                 ifM, lift2, lift3, pprint, putStr, show', switch, toList, toString, uncurry, unlessM,
+                                                 whenLeft, whenM, whenRight, withJust, ($>), (++), (.), (.:), (.:.), (.::), (.::.), (.:::),
+                                                 (.:::.), (.::::), (.::::.), (<<∘>>), (<<∘∘>>), (<∘>), (<∘∘>), (<∘∘∘>), (<∘∘∘∘>), (<∘∘∘∘∘>))
 
 foreign import javascript safe "console.log($1)" consoleLog :: JSString -> IO ()
 

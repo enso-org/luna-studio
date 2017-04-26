@@ -3,8 +3,8 @@ module NodeEditor.Action.Node.Snap
     , snapCoord
     ) where
 
-import           Data.Position                     (Position, x, y)
 import           Common.Prelude
+import           Empire.API.Data.Position         (Position, x, y)
 import           NodeEditor.React.Model.Constants (gridSize)
 
 snapCoord :: Double -> Double

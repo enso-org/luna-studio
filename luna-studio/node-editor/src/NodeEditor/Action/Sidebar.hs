@@ -5,9 +5,9 @@ module NodeEditor.Action.Sidebar where
 
 import           Common.Prelude
 import           Control.Monad.Trans.Maybe               (MaybeT (MaybeT), runMaybeT)
-import           Data.ScreenPosition                     (ScreenPosition)
-import           Data.Size                               (y)
+import           Data.ScreenPosition                     (ScreenPosition, y)
 import qualified Empire.API.Data.PortRef                 as PortRef
+import           Empire.API.Data.Size                    (height)
 import           NodeEditor.Action.Basic                 (getScene, localMovePort, localRemovePort, setInputSidebarPortMode, updateScene)
 import qualified NodeEditor.Action.Basic                 as Basic
 import qualified NodeEditor.Action.Batch                 as Batch

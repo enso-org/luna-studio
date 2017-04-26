@@ -6,20 +6,20 @@ module NodeEditor.Action.Node.Drag
     , handleNodeDragMouseUp
     ) where
 
+import           Common.Prelude
 import           Control.Arrow
-import qualified Data.Map                                    as Map
-import           Data.Position                               (Position, move, vector)
-import           Empire.API.Data.NodeLoc                     (NodeLoc)
-import           Empire.API.Data.Port                        (InPortIndex (Self))
-import           Empire.API.Data.PortRef                     (InPortRef (InPortRef), OutPortRef (OutPortRef))
+import qualified Data.Map                                   as Map
+import           Empire.API.Data.NodeLoc                    (NodeLoc)
+import           Empire.API.Data.Port                       (InPortIndex (Self))
+import           Empire.API.Data.PortRef                    (InPortRef (InPortRef), OutPortRef (OutPortRef))
+import           Empire.API.Data.Position                   (Position, move, vector)
 import           NodeEditor.Action.Basic                    (connect, localMoveNodes, moveNodes, selectNodes, updatePortSelfVisibility)
 import           NodeEditor.Action.Command                  (Command)
 import           NodeEditor.Action.Node.Snap                (snap)
 import           NodeEditor.Action.State.Model              (createConnectionModel, getIntersectingConnections)
 import           NodeEditor.Action.State.NodeEditor         (getConnection, getExpressionNode, getNodeEditor, getSelectedNodes,
-                                                              modifyConnection, modifyExpressionNode, modifyNodeEditor)
+                                                             modifyConnection, modifyExpressionNode, modifyNodeEditor)
 import           NodeEditor.Event.Mouse                     (workspacePosition)
-import           Common.Prelude
 import           NodeEditor.React.Model.Connection          (Mode (Dimmed, Highlighted), dst, src)
 import qualified NodeEditor.React.Model.Connection          as Connection
 
@@ -27,13 +27,13 @@ import           NodeEditor.React.Model.Node.ExpressionNode (inPortAt, isSelecte
 import           NodeEditor.React.Model.NodeEditor          (halfConnections, toPosConnection)
 import           NodeEditor.React.Model.Port                (ensureVisibility, mode)
 import           NodeEditor.State.Action                    (Action (begin, continue, end, update), NodeDrag (NodeDrag), nodeDragAction,
-                                                              nodeDragNodeLoc, nodeDragNodesStartPos, nodeDragSnappedConnIdAndPrevMode,
-                                                              nodeDragStartPos)
+                                                             nodeDragNodeLoc, nodeDragNodesStartPos, nodeDragSnappedConnIdAndPrevMode,
+                                                             nodeDragStartPos)
 
 import           NodeEditor.Action.State.Action             (beginActionWithKey, continueActionWithKey, removeActionFromState,
-                                                              updateActionWithKey)
+                                                             updateActionWithKey)
 import           NodeEditor.State.Global                    (State)
-import           React.Flux                                  (MouseEvent)
+import           React.Flux                                 (MouseEvent)
 
 
 instance Action (Command State) NodeDrag where

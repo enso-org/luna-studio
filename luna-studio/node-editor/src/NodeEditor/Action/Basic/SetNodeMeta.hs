@@ -1,11 +1,11 @@
 module NodeEditor.Action.Basic.SetNodeMeta where
 
-import           Control.Monad                               (filterM)
-import           Data.Position                               (Position)
+import           Common.Prelude
+import           Control.Monad                              (filterM)
+import           Empire.API.Data.Position                   (Position)
 import qualified NodeEditor.Action.Batch                    as Batch
 import           NodeEditor.Action.Command                  (Command)
 import qualified NodeEditor.Action.State.NodeEditor         as NodeEditor
-import           Common.Prelude
 import           NodeEditor.React.Model.Node.ExpressionNode (NodeLoc, position, visualizationsEnabled)
 import           NodeEditor.State.Global                    (State)
 

@@ -8,10 +8,10 @@ import qualified Data.Text                                  as Text
 import           Text.Read                                  (readMaybe)
 
 import           Common.Prelude
-import           Data.Position                              (Position)
 import           Data.ScreenPosition                        (ScreenPosition, x)
 import           Empire.API.Data.NodeLoc                    (NodeLoc)
 import qualified Empire.API.Data.NodeLoc                    as NodeLoc
+import           Empire.API.Data.Position                   (Position)
 import qualified JS.GoogleAnalytics                         as GA
 import qualified JS.Searcher                                as Searcher
 import           NodeEditor.Action.Basic                    (createNode, setNodeExpression)

@@ -1,19 +1,19 @@
 {-# LANGUAGE DeriveAnyClass #-}
 module NodeEditor.React.Model.Layout where
 
-import qualified Data.Matrix                           as Matrix
-import           Data.Position                         (Position, move, vector)
-import qualified Data.Position                         as Position
-import           Data.ScreenPosition                   (ScreenPosition (ScreenPosition))
-import qualified Data.ScreenPosition                   as ScreenPosition
-import           Data.Size                             (Size)
-import           Data.Vector2                           (Vector2 (Vector2), x, y)
-import           NodeEditor.Data.CameraTransformation (CameraTransformation, logicalToScreen, screenToLogical)
 import           Common.Prelude
+import qualified Data.Matrix                          as Matrix
+import           Data.ScreenPosition                  (ScreenPosition (ScreenPosition))
+import qualified Data.ScreenPosition                  as ScreenPosition
+import           Empire.API.Data.Position             (Position, move, vector)
+import qualified Empire.API.Data.Position             as Position
+import           Empire.API.Data.Size                 (Size)
+import           Empire.API.Data.Vector2              (Vector2 (Vector2), x, y)
+import           NodeEditor.Data.CameraTransformation (CameraTransformation, logicalToScreen, screenToLogical)
 import           NodeEditor.React.Model.Constants     (gridSize)
 import           NodeEditor.React.Model.Port          (InPort, OutPort, getPositionInSidebar, portId)
 import           NodeEditor.React.Model.Sidebar       (InputSidebar, OutputSidebar, inputSidebarPosition, inputSidebarSize,
-                                                        outputSidebarPosition, portPositionInInputSidebar, portPositionInOutputSidebar)
+                                                       outputSidebarPosition, portPositionInInputSidebar, portPositionInOutputSidebar)
 
 data Layout = Layout
         { _screenTransform :: CameraTransformation

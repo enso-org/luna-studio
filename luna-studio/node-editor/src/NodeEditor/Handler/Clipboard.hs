@@ -1,17 +1,18 @@
 -- TODO[PM]: Finish implementation
 module NodeEditor.Handler.Clipboard where
 
-import           Data.Aeson                                  (decode, encode)
-import           Data.ByteString.Lazy.Char8                  (pack, unpack)
-import qualified Data.HashMap.Strict                         as HashMap
-import           Data.Position                               (x, y)
-import qualified Data.Set                                    as Set
+import           Data.Aeson                                 (decode, encode)
+import           Data.ByteString.Lazy.Char8                 (pack, unpack)
+import qualified Data.HashMap.Strict                        as HashMap
+import qualified Data.Set                                   as Set
+import           Empire.API.Data.Position                   (x, y)
 
-import qualified Empire.API.Data.Connection                  as Connection
-import qualified Empire.API.Data.GraphLocation               as GraphLocation
-import           Empire.API.Data.NodeLoc                     (NodePath (NodePath))
-import qualified Empire.API.Data.PortRef                     as PortRef
-import qualified JS.Clipboard                                as JS (copyStringToClipboard)
+import           Common.Prelude
+import qualified Empire.API.Data.Connection                 as Connection
+import qualified Empire.API.Data.GraphLocation              as GraphLocation
+import           Empire.API.Data.NodeLoc                    (NodePath (NodePath))
+import qualified Empire.API.Data.PortRef                    as PortRef
+import qualified JS.Clipboard                               as JS (copyStringToClipboard)
 import           NodeEditor.Action.Basic                    (addSubgraph, removeSelectedNodes)
 import           NodeEditor.Action.Command                  (Command)
 import           NodeEditor.Action.Node                     (snapCoord)
@@ -21,7 +22,6 @@ import           NodeEditor.Batch.Workspace                 (currentLocation)
 import qualified NodeEditor.Data.Graph                      as Graph
 import           NodeEditor.Event.Event                     (Event (Shortcut))
 import qualified NodeEditor.Event.Shortcut                  as Shortcut
-import           Common.Prelude
 import           NodeEditor.React.Model.Node                (ExpressionNode)
 import           NodeEditor.React.Model.Node.ExpressionNode (nodeLoc, position)
 import           NodeEditor.State.Global                    (State, workspace)

@@ -1,11 +1,10 @@
-{-# LANGUAGE TypeFamilies #-}
-module Data.Vector2 where
+{-# LANGUAGE DefaultSignatures #-}
+{-# LANGUAGE DeriveFunctor     #-}
+{-# LANGUAGE FlexibleContexts  #-}
+{-# LANGUAGE TypeFamilies      #-}
+module Empire.API.Data.Vector2 where
 
-import           Data.Aeson          (FromJSON, ToJSON)
-import           Common.Prelude
-
-import           Prologue            (wrapped')
-
+import           Prologue
 
 
 --TODO[react]: Consider change Vector2 -> V2: https://hackage.haskell.org/package/linear-1.20.5/docs/Linear-V2.html
@@ -55,9 +54,7 @@ makeLenses ''Vector2
 
 instance Dim1 (Vector2 a) where x = vector2_x
 instance Dim2 (Vector2 a) where y = vector2_y
-instance FromJSON a => FromJSON (Vector2 a)
 instance NFData a => NFData (Vector2 a)
-instance ToJSON a => ToJSON (Vector2 a)
 
 instance Default a => Default (Vector2 a) where
     def = Vector2 def def
@@ -70,19 +67,21 @@ instance Num a => Num (Vector2 a) where
     signum (Vector2 x1 y1)            = Vector2 (signum x1) (signum y1)
     fromInteger i                     = let val = fromInteger i in Vector2 val val
 
-instance IsList (Vector2 a) where
-    type Item (Vector2 a) = a
+type instance Item (Vector2 a) = a
+instance ToList    (Vector2 a) where toList vec = [vec ^. x, vec ^. y]
+instance FromList  (Vector2 a) where
     fromList [x',y'] = Vector2 x' y'
-    fromList _     = $(placeholder "List must be of length 2 to create Vector2.")
-    toList   vec   = [vec ^. x, vec ^. y]
+    fromList _       = $(placeholder "List must be of length 2 to create Vector2.")
 
 instance Applicative Vector2 where
     pure v                            = Vector2 v v
     (Vector2 f g) <*> (Vector2 x' y') = Vector2 (f x') (g y')
 
-instance Monoid a => Monoid (Vector2 a) where
-    mempty                                    = Vector2 mempty mempty
-    (Vector2 x1 y1) `mappend` (Vector2 x2 y2) = Vector2 (x1 `mappend` x2) (y1 `mappend` y2)
+instance Mempty a => Mempty (Vector2 a) where
+    mempty = Vector2 mempty mempty
+
+instance Semigroup a => Semigroup (Vector2 a) where
+    (Vector2 x1 y1) <> (Vector2 x2 y2) = Vector2 (x1 <> x2) (y1 <> y2)
 
 
 -- === Functions === --

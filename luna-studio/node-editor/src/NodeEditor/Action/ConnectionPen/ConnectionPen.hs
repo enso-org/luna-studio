@@ -5,27 +5,27 @@ module NodeEditor.Action.ConnectionPen.ConnectionPen
     , stopConnecting
     ) where
 
-import           Data.Curve                                  (CurveSegment, getPointsOnCurveSegment)
-import qualified Data.Curve                                  as Curve
-import           Data.Position                               (distance)
-import           Data.Timestamp                              (Timestamp)
+import           Common.Prelude
+import           Data.Curve                                 (CurveSegment, getPointsOnCurveSegment)
+import qualified Data.Curve                                 as Curve
+import           Data.Timestamp                             (Timestamp)
+import           Empire.API.Data.Position                   (distance)
 import           NodeEditor.Action.Basic                    (connect, updateAllPortsSelfVisibility)
 import           NodeEditor.Action.Command                  (Command)
 import           NodeEditor.Action.ConnectionPen.SmoothLine (addPointToCurve, beginCurve, curveToSvgPath)
 import           NodeEditor.Action.State.Action             (beginActionWithKey, continueActionWithKey, removeActionFromState,
-                                                              updateActionWithKey)
+                                                             updateActionWithKey)
 import           NodeEditor.Action.State.Model              (getNodeAtPosition)
 import           NodeEditor.Action.State.NodeEditor         (modifyNodeEditor)
 import           NodeEditor.Data.Color                      (Color (Color))
 import           NodeEditor.Event.Mouse                     (workspacePosition)
-import           Common.Prelude
 import           NodeEditor.React.Model.ConnectionPen       (ConnectionPen (ConnectionPen))
 import qualified NodeEditor.React.Model.ConnectionPen       as ConnectionPen
 import qualified NodeEditor.React.Model.NodeEditor          as NodeEditor
 import           NodeEditor.State.Action                    (Action (begin, continue, end, update), PenConnect (PenConnect),
-                                                              penConnectAction, penConnectCurve, penConnectLastVisitedNode)
+                                                             penConnectAction, penConnectCurve, penConnectLastVisitedNode)
 import           NodeEditor.State.Global                    (State)
-import           React.Flux                                  (MouseEvent)
+import           React.Flux                                 (MouseEvent)
 
 
 instance Action (Command State) PenConnect where

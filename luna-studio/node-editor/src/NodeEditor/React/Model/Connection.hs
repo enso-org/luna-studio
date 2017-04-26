@@ -6,11 +6,11 @@ import           Data.Aeson                                 (ToJSON)
 import           Data.Convert                               (Convertible (convert))
 import           Data.HashMap.Strict                        (HashMap)
 import qualified Data.HashMap.Strict                        as HashMap
-import           Data.Position                              (Position, move, x, y)
-import           Data.Vector2                               (Vector2 (Vector2))
 import qualified Empire.API.Data.Connection                 as Empire
 import           Empire.API.Data.PortRef                    (AnyPortRef (InPortRef', OutPortRef'), InPortRef, OutPortRef)
 import qualified Empire.API.Data.PortRef                    as PortRef
+import           Empire.API.Data.Position                   (Position, move, x, y)
+import           Empire.API.Data.Vector2                    (Vector2 (Vector2))
 import           NodeEditor.Data.Angle                      (Angle)
 import           NodeEditor.Data.Color                      (Color)
 import           NodeEditor.React.Model.Constants           (gridSize, lineHeight, nodeExpandedWidth, portRadius)

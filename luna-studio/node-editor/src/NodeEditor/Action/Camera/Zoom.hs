@@ -9,21 +9,21 @@ module NodeEditor.Action.Camera.Zoom
      , wheelZoom
      ) where
 
-import           Data.Matrix                           (getElem, setElem)
-import           Data.ScreenPosition                   (ScreenPosition, vector, x, y)
-import           Data.Vector2                           (Vector2)
+import           Common.Prelude
+import           Data.Matrix                          (getElem, setElem)
+import           Data.ScreenPosition                  (ScreenPosition, vector, x, y)
+import           Empire.API.Data.Vector2              (Vector2)
 import           NodeEditor.Action.Basic              (modifyCamera)
 import           NodeEditor.Action.Command            (Command)
 import           NodeEditor.Action.State.Action       (beginActionWithKey, continueActionWithKey, removeActionFromState,
-                                                        updateActionWithKey)
+                                                       updateActionWithKey)
 import           NodeEditor.Action.State.NodeEditor   (getNodeEditor, modifyNodeEditor)
 import           NodeEditor.Action.State.Scene        (getScreenCenter)
 import           NodeEditor.Data.CameraTransformation (logicalToScreen, screenToLogical)
 import           NodeEditor.Data.Matrix               (homothetyMatrix, invertedHomothetyMatrix)
-import           Common.Prelude
 import           NodeEditor.React.Model.NodeEditor    (screenTransform)
 import           NodeEditor.State.Action              (Action (begin, continue, end, update), ZoomDrag (ZoomDrag), zoomDragAction,
-                                                        zoomDragFixedPoint, zoomDragPreviousPos)
+                                                       zoomDragFixedPoint, zoomDragPreviousPos)
 import           NodeEditor.State.Global              (State)
 
 

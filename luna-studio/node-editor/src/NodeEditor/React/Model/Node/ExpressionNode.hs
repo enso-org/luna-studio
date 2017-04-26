@@ -9,20 +9,20 @@ module NodeEditor.React.Model.Node.ExpressionNode
     , NodeLoc
     ) where
 
-import           Data.Convert                             (Convertible (convert))
-import           Data.HashMap.Strict                      (HashMap)
-import           Data.Map.Lazy                            (Map)
-import           Data.Position                            (Position, fromTuple, toTuple)
-import           Data.Time.Clock                          (UTCTime)
-import           Empire.API.Data.Breadcrumb               (BreadcrumbItem)
-import           Empire.API.Data.MonadPath                (MonadPath)
-import           Empire.API.Data.Node                     (NodeId)
-import qualified Empire.API.Data.Node                     as Empire
-import           Empire.API.Data.NodeLoc                  (NodeLoc (NodeLoc), NodePath)
-import qualified Empire.API.Data.NodeMeta                 as NodeMeta
-import           Empire.API.Graph.CollaborationUpdate     (ClientId)
-import           Empire.API.Graph.NodeResultUpdate        (NodeValue (NodeError), NodeVisualization)
 import           Common.Prelude
+import           Data.Convert                            (Convertible (convert))
+import           Data.HashMap.Strict                     (HashMap)
+import           Data.Map.Lazy                           (Map)
+import           Data.Time.Clock                         (UTCTime)
+import           Empire.API.Data.Breadcrumb              (BreadcrumbItem)
+import           Empire.API.Data.MonadPath               (MonadPath)
+import           Empire.API.Data.Node                    (NodeId)
+import qualified Empire.API.Data.Node                    as Empire
+import           Empire.API.Data.NodeLoc                 (NodeLoc (NodeLoc), NodePath)
+import qualified Empire.API.Data.NodeMeta                as NodeMeta
+import           Empire.API.Data.Position                (Position, fromTuple, toTuple)
+import           Empire.API.Graph.CollaborationUpdate    (ClientId)
+import           Empire.API.Graph.NodeResultUpdate       (NodeValue (NodeError), NodeVisualization)
 import           NodeEditor.React.Model.IsNode           as X
 import           NodeEditor.React.Model.Node.SidebarNode (InputNode, OutputNode)
 import           NodeEditor.React.Model.Port             (InPort, InPortTree, OutPort, OutPortTree)

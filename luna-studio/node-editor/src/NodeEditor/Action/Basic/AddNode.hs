@@ -1,12 +1,12 @@
 module NodeEditor.Action.Basic.AddNode where
 
 import           Common.Prelude
-import           Data.Position                      (Position, toTuple)
 import           Data.Text                          (Text)
 import           Empire.API.Data.LabeledTree        (LabeledTree (LabeledTree))
 import qualified Empire.API.Data.Node               as Empire
 import           Empire.API.Data.NodeMeta           (NodeMeta (NodeMeta))
 import           Empire.API.Data.Port               (InPortIndex (Arg, Self), Port (Port), PortState (NotConnected))
+import           Empire.API.Data.Position           (Position, toTuple)
 import           Empire.API.Data.TypeRep            (TypeRep (TStar))
 import qualified JS.GoogleAnalytics                 as GA
 import           NodeEditor.Action.Basic.FocusNode  (focusNode)

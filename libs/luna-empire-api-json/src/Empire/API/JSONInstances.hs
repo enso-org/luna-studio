@@ -1,7 +1,7 @@
 {-# LANGUAGE FlexibleInstances #-}
 module Empire.API.JSONInstances where
 
-import           Data.Aeson.Types                       (FromJSON, FromJSONKey, ToJSONKey, ToJSON, parseJSON, toJSON, typeMismatch)
+import           Data.Aeson.Types                       (FromJSON, FromJSONKey, ToJSON, ToJSONKey, parseJSON, toJSON, typeMismatch)
 import qualified Data.Aeson.Types                       as JSONTypes
 import           Data.Map.Lazy                          (Map)
 import qualified Data.Map.Lazy                          as Map
@@ -12,9 +12,9 @@ import qualified Data.UUID.Types                        as UUID
 import           Prologue
 import           Text.Read                              (readMaybe)
 
-import           Empire.API.Atom.IsSaved                as IsSaved
 import           Empire.API.Atom.CloseFile              as CloseFile
 import           Empire.API.Atom.GetBuffer              as GetBuffer
+import           Empire.API.Atom.IsSaved                as IsSaved
 import           Empire.API.Atom.OpenFile               as OpenFile
 import           Empire.API.Atom.SaveFile               as SaveFile
 import           Empire.API.Atom.SetProject             as SetProject
@@ -33,9 +33,12 @@ import           Empire.API.Data.NodeMeta               as NodeMeta
 import           Empire.API.Data.Port                   as Port
 import           Empire.API.Data.PortDefault            as PortDefault
 import           Empire.API.Data.PortRef                as PortRef
+import           Empire.API.Data.Position               as Position
 import           Empire.API.Data.Project                as Project
+import           Empire.API.Data.Size                   as Size
 import           Empire.API.Data.TypeRep                as TypeRep
 import           Empire.API.Data.ValueType              as ValueType
+import           Empire.API.Data.Vector2                as Vector2
 import           Empire.API.Graph.AddConnection         as AddConnection
 import           Empire.API.Graph.AddNode               as AddNode
 import           Empire.API.Graph.AddPort               as AddPort
@@ -75,6 +78,15 @@ import           Empire.API.Project.ListProjects        as ListProjects
 import           Empire.API.Project.OpenProject         as OpenProject
 import           Empire.API.Request                     as Request
 import           Empire.API.Response                    as Response
+
+
+instance FromJSON a => FromJSON (Vector2.Vector2 a)
+instance ToJSON   a => ToJSON (Vector2.Vector2 a)
+
+instance FromJSON  Position.Position
+instance ToJSON    Position.Position
+
+instance ToJSON    Size.Size
 
 
 instance ToJSON Project.Project

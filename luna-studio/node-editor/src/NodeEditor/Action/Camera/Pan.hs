@@ -11,20 +11,20 @@ module NodeEditor.Action.Camera.Pan
      , panDrag
      ) where
 
-import           Data.Matrix                           (setElem)
-import           Data.ScreenPosition                   (ScreenPosition, vector)
-import           Data.Vector2                           (Vector2 (Vector2))
+import           Common.Prelude
+import           Data.Matrix                          (setElem)
+import           Data.ScreenPosition                  (ScreenPosition, vector)
+import           Empire.API.Data.Vector2              (Vector2 (Vector2))
 import           NodeEditor.Action.Basic              (modifyCamera)
 import           NodeEditor.Action.Command            (Command)
 import           NodeEditor.Action.State.Action       (beginActionWithKey, continueActionWithKey, removeActionFromState,
-                                                        updateActionWithKey)
+                                                       updateActionWithKey)
 import           NodeEditor.Action.State.NodeEditor   (modifyNodeEditor)
 import           NodeEditor.Data.CameraTransformation (logicalToScreen, screenToLogical)
 import           NodeEditor.Data.Matrix               (invertedTranslationMatrix, translationMatrix)
-import           Common.Prelude
 import           NodeEditor.React.Model.NodeEditor    (screenTransform)
 import           NodeEditor.State.Action              (Action (begin, continue, end, update), PanDrag (PanDrag), panDragAction,
-                                                        panDragPreviousPos)
+                                                       panDragPreviousPos)
 import           NodeEditor.State.Global              (State)
 
 

@@ -2,8 +2,8 @@
 module NodeEditor.Data.Geometry where
 
 import           Common.Prelude
-import           Data.Position  (Position, distanceSquared, fromDoubles, move, vector, x, y)
-import           Data.Vector2   (dotV, scalarProduct)
+import           Empire.API.Data.Position (Position, distanceSquared, fromDoubles, move, vector, x, y)
+import           Empire.API.Data.Vector2  (dotV, scalarProduct)
 
 
 epsilon :: Double

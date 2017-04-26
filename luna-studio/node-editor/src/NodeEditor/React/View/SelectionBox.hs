@@ -1,12 +1,12 @@
 {-# LANGUAGE OverloadedStrings #-}
 module NodeEditor.React.View.SelectionBox where
 
-import qualified Data.Aeson                           as Aeson
-import           Data.Position                        (fromDoubles, x, y)
 import           Common.Prelude
+import qualified Data.Aeson                          as Aeson
+import           Empire.API.Data.Position            (fromDoubles, x, y)
 import           NodeEditor.React.Model.SelectionBox (SelectionBox, end, start)
 import           React.Flux
-import qualified React.Flux                           as React
+import qualified React.Flux                          as React
 
 
 name :: JSString

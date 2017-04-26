@@ -1,9 +1,9 @@
 module NodeEditor.Data.Angle where
 
-import           Data.Fixed
-import           Data.Position
-import           Data.Vector2
 import           Common.Prelude
+import           Data.Fixed
+import           Empire.API.Data.Position
+import           Empire.API.Data.Vector2
 
 type Angle  = Double
 

@@ -1,12 +1,12 @@
 module NodeEditor.Data.Matrix where
 
-import           Data.Matrix         (Matrix)
-import qualified Data.Matrix         as Matrix
-import           Data.Position       (Position,  x, y)
-import           Data.ScreenPosition (ScreenPosition)
-import           Data.Vector2         (Vector2)
 import           Common.Prelude
-import           Numeric             (showFFloat)
+import           Data.Matrix              (Matrix)
+import qualified Data.Matrix              as Matrix
+import           Data.ScreenPosition      (ScreenPosition)
+import           Empire.API.Data.Position (Position, x, y)
+import           Empire.API.Data.Vector2  (Vector2)
+import           Numeric                  (showFFloat)
 
 
 translationMatrix :: Vector2 Double -> Matrix Double
