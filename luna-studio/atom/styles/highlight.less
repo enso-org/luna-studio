@@ -1,0 +1,18 @@
+@import "syntax-variables";
+
+@red-color: @syntax-color-removed;
+@green-color: @syntax-color-added;
+@blue-color: @syntax-color-renamed;
+
+
+.highlight-foo {
+  border: 1px solid @green-color;
+}
+
+.highlight-bar {
+  border-bottom: 1px solid @blue-color;
+}
+
+.highlight-baz {
+  border-bottom: 1px solid @red-color;
+}

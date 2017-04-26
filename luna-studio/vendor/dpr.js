@@ -10,4 +10,3 @@ window.getDevicePixelRatio = function () {
     }
     return ratio;
 };
-

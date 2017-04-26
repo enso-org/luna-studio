@@ -71,6 +71,13 @@ class LunaEditorTab extends TextEditor
       @subscribe.add  @getBuffer().onWillSave (event) => internal.pushInternalEvent(event: "SaveFile", uri: @uri)
 
 
+  markSnippet: (start, end, classes) =>
+      textBuffer = @getBuffer()
+      startPos = textBuffer.positionForCharacterIndex(start)
+      endPos   = textBuffer.positionForCharacterIndex(end)
+      marker = @markBufferRange([startPos, endPos], {invalidate: 'never'})
+      for cls in classes
+          @decorateMarker(marker, {type: 'line', class: cls})
 
   getTitle: -> path.basename(@uri)
 
