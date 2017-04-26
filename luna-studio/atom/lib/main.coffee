@@ -59,7 +59,7 @@ module.exports =
             buffer = atom.workspace.getActiveTextEditor().buffer
             selection = atom.workspace.getActiveTextEditor().getSelections()
             spanList = ([buffer.characterIndexForPosition(s.marker.oldHeadBufferPosition), buffer.characterIndexForPosition(s.marker.oldTailBufferPosition)] for s in selection)
-            internal.pushInternalEvent(event: "GetBuffer", uri: activeFilePath, span: spanList)
+            internal.pushInternalEvent(event: "Copy", uri: activeFilePath, selections: spanList)
 
     @subs.add atom.commands.add 'atom-workspace', 'core:close': ->
         if atom.workspace.getActivePaneItem().buffer
