@@ -34,12 +34,10 @@ module.exports =
     @subs = new SubAtom
 
     @subs.add atom.workspace.onDidDestroyPaneItem (event) =>
-        if event.item.buffer
-            if event.item.buffer.file
-                activeFilePath = event.item.buffer.file.path
-        else activeFilePath = event.item.uri
+        if event.item.uri
+            activeFilePath = event.item.uri
         if path.extname(activeFilePath) is '.luna'
-            @internal.pushInternalEvent(event: "CloseFile", uri: activeFilePath)
+            internal.pushInternalEvent(event: "CloseFile", uri: activeFilePath)
 
     @subs.add atom.workspace.onDidOpen (e) =>
         if e.uri == 'undefined'
@@ -79,7 +77,7 @@ module.exports =
         e.stopImmediatePropagation()
         internal.pushInternalEvent(event: "SaveFile", uri: activeFilePath)
 
-        
+
     @subs.add atom.commands.add '.luna-studio', 'luna-studio:cancel':       -> code.pushEvent("Shortcut Cancel")
     # camera
     @subs.add atom.commands.add '.luna-studio', 'luna-studio:center-graph': -> code.pushEvent("Shortcut CenterGraph")
