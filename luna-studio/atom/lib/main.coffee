@@ -22,8 +22,6 @@ module.exports =
 
 
 
-
-
     atom.workspace.addOpener (uri) ->
 
       if path.extname(uri) is '.luna'
@@ -34,14 +32,15 @@ module.exports =
 
 
     @subs = new SubAtom
-    # @subs.add atom.commands.add 'atom-text-editor', 'core:copy': ->
-    #     if atom.workspace.getActivePaneItem().buffer
-    #         activeFilePath = atom.workspace.getActivePaneItem().buffer.file.path
-    #         activeEd = atom.workspace.getActivePaneItem().buffer
-    #     if path.extname(activeFilePath) is ".luna"
-    #         console.log("in if")
-    #         console.log(atom.workspace.getActiveTextEditor().getSelections())
-    #         internal.pushInternalEvent(event: "GetBuffer", uri: "activeFilePath")
+    @subs.add atom.commands.add 'atom-text-editor', 'core:copy': ->
+        if atom.workspace.getActivePaneItem().buffer
+            activeFilePath = atom.workspace.getActivePaneItem().buffer.file.path
+
+        if path.extname(activeFilePath) is ".luna"
+            buffer = atom.workspace.getActiveTextEditor().buffer
+            selection = atom.workspace.getActiveTextEditor().getSelections()
+            spanList = ([buffer.characterIndexForPosition(s.marker.oldHeadBufferPosition), buffer.characterIndexForPosition(s.marker.oldTailBufferPosition)] for s in selection)
+            internal.pushInternalEvent(event: "GetBuffer", uri: activeFilePath, span: spanList)
 
     @subs.add atom.workspace.onDidDestroyPaneItem (event) =>
         if event.item.buffer
