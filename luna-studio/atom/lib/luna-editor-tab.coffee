@@ -32,9 +32,6 @@ class LunaEditorTab extends TextEditor
   constructor: (@uri, @internal) ->
 
       super
-      #@editor = atom.workspace.buildTextEditor()
-    #   atom.workspace.open().then (@editor) ->
-    #   @getBuffer = @getBuffer() #@editor.buffer
       @getBuffer().setPath(@uri)
 
       @internal.pushInternalEvent(event: "GetBuffer", uri: @uri)
@@ -45,7 +42,6 @@ class LunaEditorTab extends TextEditor
           @triggerPush = true
       setBuffer = (uri_send, text) =>
           withoutTrigger =>
-            console.log(@uri, @getBuffer())
             if @uri == uri_send
               @getBuffer().setText(text)
       @internal.bufferListener setBuffer
@@ -72,17 +68,10 @@ class LunaEditorTab extends TextEditor
                   cursor: @getBuffer().characterIndexForPosition(@.getCursorBufferPosition())
               @internal.pushText(diff)
       @subscribe.add  @getBuffer().onWillSave (event) => internal.pushInternalEvent(event: "SaveFile", uri: @uri)
-      @subscribe.add atom.workspace.onDidDestroyPaneItem (event) => #console.log(event.item.buffer.file.path)
-          if event.item.buffer
-              activeFilePath = event.item.buffer.file.path
-          else activeFilePath = event.item.uri
-          if path.extname(activeFilePath) is '.luna'
-              @internal.pushInternalEvent(event: "CloseFile", uri: activeFilePath)
-    #           # internal.statusListener isSaved
+
 
 
   getTitle: -> path.basename(@uri)
-  # destroy: -> console.log(event.item.buffer.file.path)
 
   deactivate: ->
     @subscribe.dispose()

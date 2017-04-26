@@ -42,6 +42,15 @@ module.exports =
     #         console.log("in if")
     #         console.log(atom.workspace.getActiveTextEditor().getSelections())
     #         internal.pushInternalEvent(event: "GetBuffer", uri: "activeFilePath")
+
+    @subs.add atom.workspace.onDidDestroyPaneItem (event) =>
+        if event.item.buffer
+            if event.item.buffer.file
+                activeFilePath = event.item.buffer.file.path
+        else activeFilePath = event.item.uri
+        if path.extname(activeFilePath) is '.luna'
+            @internal.pushInternalEvent(event: "CloseFile", uri: activeFilePath)
+
     @subs.add atom.workspace.onDidOpen (e) =>
         if e.uri == 'undefined'
             atom.workspace.saveActivePaneItem()
