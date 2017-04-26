@@ -32,15 +32,6 @@ module.exports =
 
 
     @subs = new SubAtom
-    @subs.add atom.commands.add 'atom-text-editor', 'core:copy': ->
-        if atom.workspace.getActivePaneItem().buffer
-            activeFilePath = atom.workspace.getActivePaneItem().buffer.file.path
-
-        if path.extname(activeFilePath) is ".luna"
-            buffer = atom.workspace.getActiveTextEditor().buffer
-            selection = atom.workspace.getActiveTextEditor().getSelections()
-            spanList = ([buffer.characterIndexForPosition(s.marker.oldHeadBufferPosition), buffer.characterIndexForPosition(s.marker.oldTailBufferPosition)] for s in selection)
-            internal.pushInternalEvent(event: "GetBuffer", uri: activeFilePath, span: spanList)
 
     @subs.add atom.workspace.onDidDestroyPaneItem (event) =>
         if event.item.buffer
@@ -62,6 +53,16 @@ module.exports =
                     atom.workspace.getActivePane().activateItem new LunaStudioTab(uri, code)
             else atom.workspace.destroyActivePaneItem()
 
+    @subs.add atom.commands.add 'atom-text-editor', 'core:copy': ->
+        if atom.workspace.getActivePaneItem().buffer
+            activeFilePath = atom.workspace.getActivePaneItem().buffer.file.path
+
+        if path.extname(activeFilePath) is ".luna"
+            buffer = atom.workspace.getActiveTextEditor().buffer
+            selection = atom.workspace.getActiveTextEditor().getSelections()
+            spanList = ([buffer.characterIndexForPosition(s.marker.oldHeadBufferPosition), buffer.characterIndexForPosition(s.marker.oldTailBufferPosition)] for s in selection)
+            internal.pushInternalEvent(event: "GetBuffer", uri: activeFilePath, span: spanList)
+
     @subs.add atom.commands.add 'atom-workspace', 'core:close': ->
         if atom.workspace.getActivePaneItem().buffer
             if atom.workspace.getActivePaneItem().buffer.file
@@ -77,6 +78,8 @@ module.exports =
         e.preventDefault()
         e.stopImmediatePropagation()
         internal.pushInternalEvent(event: "SaveFile", uri: activeFilePath)
+
+        
     @subs.add atom.commands.add '.luna-studio', 'luna-studio:cancel':       -> code.pushEvent("Shortcut Cancel")
     # camera
     @subs.add atom.commands.add '.luna-studio', 'luna-studio:center-graph': -> code.pushEvent("Shortcut CenterGraph")
