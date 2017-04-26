@@ -31,15 +31,15 @@ packages:
     extra-dep: true
   - location:
       git: https://github.com/luna/container.git
-      commit: 9d451ec9eeb06d4e28bbd66915fe1698bae2f001
+      commit: 14540e932e14953b0eb5ebdea85045e8d261f023
     extra-dep: true
   - location:
       git:    https://github.com/luna/convert.git
-      commit: 5cb0cedea0c761ad3f833888f4c70c4231392316
+      commit: 901b1491ddf84c309ba1e6a670d9a519e4c673b6
     extra-dep: true
   - location:
       git:    https://github.com/luna/data-construction.git
-      commit: 211164cbb214790b26fb5bac7f2771d18c1b9574
+      commit: fb0e46aacaa7060046f88d4c5a5f708fd443c8ae
     extra-dep: true
   - location:
       git:    https://github.com/luna/data-layer.git
@@ -59,7 +59,7 @@ packages:
     extra-dep: true
   - location:
       git:    https://github.com/luna/functor-utils.git
-      commit: 891b8882a5b5cb4673c36a57c3cbd55085f975cd
+      commit: 8a5a3c6c132b71eed041269c17182100ff98603f
     extra-dep: true
   - location:
       git: https://github.com/luna/hsprocessing.git
@@ -71,11 +71,15 @@ packages:
     extra-dep: true
   - location:
       git:    https://github.com/luna/lens-utils.git
-      commit: 446533d1169324542c220a7fe179616759fcbd8a
+      commit: 944351bc0b972b21ae4c6a092c596edf96f13129
+    extra-dep: true
+  - location:
+      git: https://github.com/luna/monoid
+      commit: 7f5f64d1b1f81827431c9462d35665adbb609ba8
     extra-dep: true
   - location:
       git: https://github.com/luna/prologue.git
-      commit: 773179796be933097e3c1468c16307f8015e6a1d
+      commit: d46ca8c8e8333009c96b35e082f7bc2fda1f9ce3
     extra-dep: true
   - location:
       git: https://github.com/luna/react-flux
@@ -87,5 +91,5 @@ packages:
     extra-dep: true
   - location:
       git: https://github.com/luna/visualization-api.git
-      commit: 03b31eb5994a8d3ac9f70c3914360bf5263936db
+      commit: af5a618f5813ac639a6760836a6d6fa7ef5af1da
     extra-dep: true

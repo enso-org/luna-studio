@@ -1,11 +1,11 @@
 module NodeEditor.Action.State.Scene where
 
 import           Common.Prelude
-import           Data.Position                      (Position)
 import           Data.ScreenPosition                (ScreenPosition (ScreenPosition))
 import qualified Data.ScreenPosition                as ScreenPosition
-import           Data.Size                          (Size)
-import           Data.Vector2                       (scalarProduct, vector, x, y)
+import           Empire.API.Data.Position           (Position)
+import           Empire.API.Data.Size               (Size)
+import           Empire.API.Data.Vector2            (scalarProduct, vector, x, y)
 import qualified JS.Scene                           as Scene
 import           NodeEditor.Action.Command          (Command)
 import           NodeEditor.Action.State.App        (renderIfNeeded)

@@ -7,9 +7,9 @@ module NodeEditor.React.View.Sidebar
 
 import           Common.Prelude
 import qualified Data.Aeson                              as Aeson
-import           Data.Position                           (y)
 import           Empire.API.Data.PortRef                 (AnyPortRef (OutPortRef'), OutPortRef (OutPortRef), toAnyPortRef)
 import qualified Empire.API.Data.PortRef                 as PortRef
+import           Empire.API.Data.Position                (y)
 import qualified JS.Config                               as Config
 import           JS.Scene                                (inputSidebarId, outputSidebarId)
 import qualified JS.UI                                   as UI
@@ -21,9 +21,8 @@ import qualified NodeEditor.React.Model.Field            as Field
 import           NodeEditor.React.Model.Node.SidebarNode (NodeLoc, SidebarMode (AddRemove, MoveConnect), SidebarNode, countProjectionPorts,
                                                           isInputSidebar)
 import qualified NodeEditor.React.Model.Node.SidebarNode as SidebarNode
-import           NodeEditor.React.Model.Port             (AnyPort, OutPortIndex (Projection), getPortNumber,
-                                                          getPositionInSidebar, isHighlighted, isInMovedMode, isInNameEditMode, isInPort,
-                                                          isOutPort)
+import           NodeEditor.React.Model.Port             (AnyPort, OutPortIndex (Projection), getPortNumber, getPositionInSidebar,
+                                                          isHighlighted, isInMovedMode, isInNameEditMode, isInPort, isOutPort)
 import qualified NodeEditor.React.Model.Port             as Port
 import           NodeEditor.React.Store                  (Ref, dispatch)
 import           NodeEditor.React.View.Field             (singleField_)

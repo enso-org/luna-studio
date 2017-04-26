@@ -10,33 +10,33 @@ module NodeEditor.React.View.Visualization
 ) where
 
 --import           Data.Aeson                                     (FromJSON)
-import qualified Data.Aeson                                     as Aeson
-import qualified Data.ByteString.Lazy.Char8                     as ByteString
+import qualified Data.Aeson                                 as Aeson
+import qualified Data.ByteString.Lazy.Char8                 as ByteString
 --import           Data.List.Split                                (wordsBy)
-import           Data.Position                                  (Position)
-import           Data.Scientific                                (coefficient)
-import           Data.Text                                      as Text
+import           Data.Scientific                            (coefficient)
+import           Data.Text                                  as Text
+import           Empire.API.Data.Position                   (Position)
 --import           Data.Vector                                    (Vector)
-import qualified Data.Vector                                    as Vector
-import           React.Flux                                     hiding (image_)
-import qualified React.Flux                                     as React
-import qualified Empire.API.Data.Error                          as LunaError
-import           Empire.API.Data.PortDefault                    (VisualizationValue(..))
+import qualified Data.Vector                                as Vector
+import qualified Empire.API.Data.Error                      as LunaError
+import           Empire.API.Data.PortDefault                (VisualizationValue (..))
+import           React.Flux                                 hiding (image_)
+import qualified React.Flux                                 as React
 --import           Empire.API.Data.TypeRep                        (TypeRep)
-import           Empire.API.Graph.NodeResultUpdate              (NodeValue(..))
-import qualified NodeEditor.Event.UI                           as UI
 import           Common.Prelude
-import qualified NodeEditor.React.Event.Visualization          as Visualization
-import           NodeEditor.React.Model.App                    (App)
+import           Empire.API.Graph.NodeResultUpdate          (NodeValue (..))
+import qualified NodeEditor.Event.UI                        as UI
+import qualified NodeEditor.React.Event.Visualization       as Visualization
+import           NodeEditor.React.Model.App                 (App)
 --import           NodeEditor.React.Model.DataFrame              (DataFrame)
 --import qualified NodeEditor.React.Model.DataFrame              as DataFrame
 --import qualified NodeEditor.React.Model.Image                  as Image
-import           NodeEditor.React.Model.Node.ExpressionNode    (ExpressionNode, NodeLoc)
-import qualified NodeEditor.React.Model.Node.ExpressionNode    as Node
-import           NodeEditor.React.Model.NodeEditor             (NodeEditor)
-import qualified NodeEditor.React.Model.NodeEditor             as NodeEditor
-import           NodeEditor.React.Store                        (Ref, dispatch)
-import qualified NodeEditor.React.View.Style                   as Style
+import           NodeEditor.React.Model.Node.ExpressionNode (ExpressionNode, NodeLoc)
+import qualified NodeEditor.React.Model.Node.ExpressionNode as Node
+import           NodeEditor.React.Model.NodeEditor          (NodeEditor)
+import qualified NodeEditor.React.Model.NodeEditor          as NodeEditor
+import           NodeEditor.React.Store                     (Ref, dispatch)
+import qualified NodeEditor.React.View.Style                as Style
 --import           NodeEditor.React.View.Visualization.DataFrame (dataFrame_)
 --import           NodeEditor.React.View.Visualization.Image     (image_)
 

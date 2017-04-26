@@ -1,17 +1,17 @@
 {-# LANGUAGE ExistentialQuantification #-}
 module NodeEditor.State.Action where
 
-import           Data.Aeson                         (FromJSON, ToJSON)
-import           Data.Curve                         (Curve)
-import           Data.Dynamic
-import           Data.Map                           (Map)
-import           Data.Position                      (Position)
-import           Data.ScreenPosition                (ScreenPosition)
-import           Data.Set                           (Set)
-import qualified Data.Set                           as Set
-import           Empire.API.Data.NodeLoc            (NodeLoc)
-import           Empire.API.Data.PortRef            (AnyPortRef, InPortRef, OutPortRef)
 import           Common.Prelude
+import           Data.Aeson                        (FromJSON, ToJSON)
+import           Data.Curve                        (Curve)
+import           Data.Dynamic
+import           Data.Map                          (Map)
+import           Data.ScreenPosition               (ScreenPosition)
+import           Data.Set                          (Set)
+import qualified Data.Set                          as Set
+import           Empire.API.Data.NodeLoc           (NodeLoc)
+import           Empire.API.Data.PortRef           (AnyPortRef, InPortRef, OutPortRef)
+import           Empire.API.Data.Position          (Position)
 import           NodeEditor.React.Model.Connection (ConnectionId)
 import qualified NodeEditor.React.Model.Connection as Connection
 

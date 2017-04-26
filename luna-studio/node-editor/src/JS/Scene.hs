@@ -2,14 +2,14 @@
 {-# LANGUAGE OverloadedStrings #-}
 module JS.Scene where
 
-import           Control.Exception               (handle)
-import           Data.ScreenPosition             (fromDoubles)
-import qualified Data.Size                       as Size
+import           Control.Exception              (handle)
+import           Data.ScreenPosition            (fromDoubles)
+import qualified Empire.API.Data.Size           as Size
 import           GHCJS.Foreign.Callback
-import           GHCJS.Types                     (JSException (JSException))
+import           GHCJS.Types                    (JSException (JSException))
 
-import qualified JS.Config                       as Config
 import           Common.Prelude
+import qualified JS.Config                      as Config
 import           NodeEditor.React.Model.Layout  (Scene (Scene))
 import           NodeEditor.React.Model.Sidebar (InputSidebar (InputSidebar), OutputSidebar (OutputSidebar))
 

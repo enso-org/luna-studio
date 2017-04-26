@@ -1,12 +1,12 @@
 module NodeEditor.Action.State.Model.Sidebar where
 
-import           Data.Position                     (Position, move, vector)
-import           Data.ScreenPosition               (ScreenPosition (ScreenPosition))
-import qualified Data.ScreenPosition               as SP
-import           Data.Vector                       (Vector2 (Vector2))
+import           Common.Prelude
+import           Data.ScreenPosition              (ScreenPosition (ScreenPosition))
+import qualified Data.ScreenPosition              as SP
+import           Data.Vector                      (Vector2 (Vector2))
+import           Empire.API.Data.Position         (Position, move, vector)
 import           NodeEditor.Action.Command        (Command)
 import           NodeEditor.Action.State.Scene    (getInputSidebar, getOutputSidebar, translateToWorkspace)
-import           Common.Prelude
 import           NodeEditor.React.Model.Constants (gridSize)
 import           NodeEditor.React.Model.Port      (InPort, OutPort, getPositionInSidebar, portId)
 import           NodeEditor.React.Model.Sidebar   (inputSidebarPosition, inputSidebarSize, outputSidebarPosition)

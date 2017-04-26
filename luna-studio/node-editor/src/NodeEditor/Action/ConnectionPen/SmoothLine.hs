@@ -4,13 +4,13 @@ module NodeEditor.Action.ConnectionPen.SmoothLine
     , curveToSvgPath
     ) where
 
-import           Data.Curve          (Curve (Curve), CurveSegment (CurveSegment))
-import qualified Data.Curve          as Curve
-import           Data.Position       (Position (Position), distance, vector, x, y)
-import           Data.Timestamp      (Timestamp)
-import           Data.Vector2         (scalarProduct)
 import           Common.Prelude
-import           Prologue            (unwrap)
+import           Data.Curve               (Curve (Curve), CurveSegment (CurveSegment))
+import qualified Data.Curve               as Curve
+import           Data.Timestamp           (Timestamp)
+import           Empire.API.Data.Position (Position (Position), distance, vector, x, y)
+import           Empire.API.Data.Vector2  (scalarProduct)
+import           Prologue                 (unwrap)
 
 
 fingerDragSmoothing :: Bool

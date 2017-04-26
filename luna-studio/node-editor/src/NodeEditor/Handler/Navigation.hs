@@ -1,15 +1,15 @@
 module NodeEditor.Handler.Navigation where
 
-import           Data.Position                               (Position (Position), vector, x, y)
-import           Data.Vector2                                 (lengthSquared, magnitude)
 import           Common.Prelude
+import           Empire.API.Data.Position                   (Position (Position), vector, x, y)
+import           Empire.API.Data.Vector2                    (lengthSquared, magnitude)
 
-import qualified Empire.API.Data.Port                        as P
-import qualified Empire.API.Data.PortRef                     as R
+import qualified Empire.API.Data.Port                       as P
+import qualified Empire.API.Data.PortRef                    as R
 import           NodeEditor.Action.Basic                    (selectNodes)
 import           NodeEditor.Action.Command                  (Command)
 import           NodeEditor.Action.State.NodeEditor         (getConnection, getConnections, getExpressionNode, getExpressionNodes,
-                                                              getSelectedNodes)
+                                                             getSelectedNodes)
 import           NodeEditor.Action.State.Scene              (getScreenCenter, translateToWorkspace)
 import           NodeEditor.Event.Event                     (Event (Shortcut))
 import qualified NodeEditor.Event.Shortcut                  as Shortcut

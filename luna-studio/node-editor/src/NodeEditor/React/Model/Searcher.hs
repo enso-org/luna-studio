@@ -1,9 +1,9 @@
 module NodeEditor.React.Model.Searcher where
 
-import           Data.Position                  (Position)
+import           Common.Prelude
 import           Empire.API.Data.Node           (ExpressionNode)
 import           Empire.API.Data.NodeLoc        (NodeLoc)
-import           Common.Prelude
+import           Empire.API.Data.Position       (Position)
 import           Text.ScopeSearcher.QueryResult (QueryResult)
 import qualified Text.ScopeSearcher.QueryResult as Result
 

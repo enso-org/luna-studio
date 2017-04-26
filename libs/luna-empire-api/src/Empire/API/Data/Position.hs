@@ -1,15 +1,15 @@
 {-# LANGUAGE TypeFamilies #-}
-module Data.Position
-    ( module Data.Position
+module Empire.API.Data.Position
+    ( module Empire.API.Data.Position
     , vector
     , x
     , y
     )
 where
 
-import           Data.Aeson          (FromJSON, ToJSON)
-import           Data.Vector2         hiding (fromTuple, toTuple)
-import           Common.Prelude
+import           Empire.API.Data.Vector2 hiding (fromTuple, toTuple)
+import           Prologue
+
 
 -----------------------
 -- === Position === ---
@@ -27,14 +27,11 @@ type instance VectorOf Position = Vector2 Double
 
 instance Dim1      Position
 instance Dim2      Position
-instance FromJSON  Position
 instance IsVector  Position
-instance ToJSON    Position
 
-instance IsList Position where
-    type Item Position = Double
-    fromList l = Position (fromList l)
-    toList   p = [p ^. x, p ^. y]
+type instance Item Position = Double
+instance ToList    Position where toList = toList . view vector
+instance FromList  Position where fromList = Position . fromList
 
 -- === Functions === ---
 

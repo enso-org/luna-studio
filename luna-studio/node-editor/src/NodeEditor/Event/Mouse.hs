@@ -1,12 +1,12 @@
 module NodeEditor.Event.Mouse where
 
-import           Data.Position                  (Position)
-import           Data.ScreenPosition            (ScreenPosition, fromDoubles)
+import           Common.Prelude
+import           Data.ScreenPosition           (ScreenPosition, fromDoubles)
+import           Empire.API.Data.Position      (Position)
 import           NodeEditor.Action.Command     (Command)
 import           NodeEditor.Action.State.Scene (getWorkspacePosition, translateToWorkspace)
-import           Common.Prelude
 import           NodeEditor.State.Global       (State)
-import           React.Flux                     (MouseEvent (MouseEvent), mousePageX, mousePageY)
+import           React.Flux                    (MouseEvent (MouseEvent), mousePageX, mousePageY)
 -- import           Data.Bits (setBit, testBit)
 -- import           Type.List (Index)
 -- import           Data.Typeable

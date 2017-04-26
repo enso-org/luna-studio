@@ -4,12 +4,12 @@
 {-# OPTIONS_GHC -fno-warn-orphans  #-}
 module NodeEditor.React.Model.Node.NodeMeta where
 
-import           Data.Convert             (Convertible (convert))
-import           Data.Position            (Position, fromTuple, toTuple)
-import           Empire.API.Data.Node     (NodeId)
-import           Empire.API.Data.NodeLoc  (NodeLoc (NodeLoc), NodePath, HasNodeLoc(..))
-import           Empire.API.Data.NodeMeta (NodeMeta (NodeMeta))
 import           Common.Prelude
+import           Data.Convert             (Convertible (convert))
+import           Empire.API.Data.Node     (NodeId)
+import           Empire.API.Data.NodeLoc  (HasNodeLoc (..), NodeLoc (NodeLoc), NodePath)
+import           Empire.API.Data.NodeMeta (NodeMeta (NodeMeta))
+import           Empire.API.Data.Position (Position, fromTuple, toTuple)
 
 
 instance Convertible (Position, Bool) NodeMeta where

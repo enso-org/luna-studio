@@ -7,9 +7,9 @@ module Data.ScreenPosition
     )
 where
 
-import           Data.Aeson          (FromJSON, ToJSON)
-import           Data.Vector2
 import           Common.Prelude
+import           Data.Aeson              (FromJSON, ToJSON)
+import           Empire.API.Data.Vector2
 -----------------------------
 -- === ScreenPosition === ---
 -----------------------------
@@ -30,10 +30,9 @@ instance FromJSON  ScreenPosition
 instance IsVector  ScreenPosition
 instance ToJSON    ScreenPosition
 
-instance IsList ScreenPosition where
-    type Item ScreenPosition = Double
-    fromList l = ScreenPosition (fromList l)
-    toList   p = [p ^. x, p ^. y]
+type instance Item ScreenPosition = Double
+instance ToList    ScreenPosition where toList   = toList . view vector
+instance FromList  ScreenPosition where fromList = ScreenPosition . fromList
 
 
 -- === Functions === ---

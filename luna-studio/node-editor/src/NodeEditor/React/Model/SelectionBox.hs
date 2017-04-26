@@ -1,7 +1,7 @@
 module NodeEditor.React.Model.SelectionBox where
 
-import           Data.Position       (Position)
 import           Common.Prelude
+import           Empire.API.Data.Position (Position)
 
 
 

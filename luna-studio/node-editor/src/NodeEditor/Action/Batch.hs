@@ -1,12 +1,12 @@
 module NodeEditor.Action.Batch  where
 
 import           Common.Prelude
-import           Data.Position                       (Position, toTuple)
 import           Data.UUID.Types                     (UUID)
 import           Empire.API.Data.NodeMeta            (NodeMeta (NodeMeta))
 import           Empire.API.Data.PortDefault         (PortDefault)
 import           Empire.API.Data.PortRef             (AnyPortRef (InPortRef', OutPortRef'), InPortRef (InPortRef), OutPortRef (OutPortRef),
                                                       dstNodeLoc, nodeLoc)
+import           Empire.API.Data.Position            (Position, toTuple)
 import           NodeEditor.Action.Command           (Command)
 import           NodeEditor.Action.UUID              (registerRequest)
 import qualified NodeEditor.Batch.Connector.Commands as BatchCmd

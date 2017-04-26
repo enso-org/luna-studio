@@ -1,9 +1,9 @@
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 module NodeEditor.State.UI where
 
-import           Data.ScreenPosition         (ScreenPosition (ScreenPosition))
-import           Data.Vector2                 (Vector2 (Vector2))
 import           Common.Prelude
+import           Data.ScreenPosition        (ScreenPosition (ScreenPosition))
+import           Empire.API.Data.Vector2    (Vector2 (Vector2))
 import           NodeEditor.React.Model.App (App)
 import           NodeEditor.React.Store     (Ref)
 

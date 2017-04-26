@@ -1,10 +1,10 @@
 {-# LANGUAGE DeriveAnyClass #-}
 module NodeEditor.React.Model.Sidebar where
 
-import           Data.Position                     (Position, fromDoubles)
-import           Data.ScreenPosition               (ScreenPosition)
-import           Data.Size                         (Size, x)
 import           Common.Prelude
+import           Data.ScreenPosition              (ScreenPosition)
+import           Empire.API.Data.Position         (Position, fromDoubles)
+import           Empire.API.Data.Size             (Size, width)
 import           NodeEditor.React.Model.Constants (gridSize)
 import           NodeEditor.React.Model.Port      (InPortId, OutPortId, getPortNumber, isSelf)
 
@@ -24,7 +24,7 @@ makeLenses ''OutputSidebar
 portPositionInInputSidebar :: Size -> OutPortId -> Position
 portPositionInInputSidebar sidebarSize pid = fromDoubles posX posY where
     portNum = getPortNumber pid
-    posX    = sidebarSize ^. x
+    posX    = sidebarSize ^. width
     posY    = (fromIntegral portNum) * gridSize
 
 portPositionInOutputSidebar :: InPortId -> Position

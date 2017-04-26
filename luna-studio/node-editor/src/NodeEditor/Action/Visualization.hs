@@ -7,20 +7,20 @@ module NodeEditor.Action.Visualization
     , drag
     ) where
 
-import           React.Flux                                  (MouseEvent)
-import           Data.Position                               (Position)
-import           Empire.API.Data.NodeLoc                     (NodeLoc)
+import           Common.Prelude
+import           Empire.API.Data.NodeLoc                    (NodeLoc)
+import           Empire.API.Data.Position                   (Position)
 import           NodeEditor.Action.Command                  (Command)
 import           NodeEditor.Action.State.Action             (beginActionWithKey, continueActionWithKey, removeActionFromState,
-                                                              updateActionWithKey)
+                                                             updateActionWithKey)
 import           NodeEditor.Action.State.NodeEditor         (getExpressionNode, modifyNodeEditor)
 import           NodeEditor.Event.Mouse                     (workspacePosition)
-import           Common.Prelude
 import           NodeEditor.React.Model.Node.ExpressionNode (position)
 import           NodeEditor.React.Model.NodeEditor          (visualizations)
 import           NodeEditor.State.Action                    (Action (begin, continue, end, update), VisualizationDrag (VisualizationDrag),
-                                                              visualizationDragAction)
+                                                             visualizationDragAction)
 import           NodeEditor.State.Global                    (State)
+import           React.Flux                                 (MouseEvent)
 
 
 instance Action (Command State) VisualizationDrag where
