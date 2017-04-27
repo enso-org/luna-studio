@@ -55,7 +55,7 @@ module.exports =
         if path.extname(activeFilePath) is ".luna"
             buffer = atom.workspace.getActiveTextEditor().buffer
             selection = atom.workspace.getActiveTextEditor().getSelections()
-            spanList = ([buffer.characterIndexForPosition(s.marker.oldHeadBufferPosition), buffer.characterIndexForPosition(s.marker.oldTailBufferPosition)] for s in selection)
+            spanList = ({start: buffer.characterIndexForPosition(s.marker.oldHeadBufferPosition), stop: buffer.characterIndexForPosition(s.marker.oldTailBufferPosition)} for s in selection)
             internal.pushInternalEvent(event: "Copy", uri: activeFilePath, selections: spanList)
 
     @subs.add atom.commands.add 'atom-workspace', 'core:close': ->
