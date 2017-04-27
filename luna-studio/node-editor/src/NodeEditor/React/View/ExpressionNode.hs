@@ -90,30 +90,33 @@ node = React.defineView name $ \(ref, n) -> case n ^. Node.mode of
                     , onDoubleClick $ \e _ -> stopPropagation e : dispatch ref (UI.NodeEvent $ Node.EditExpression nodeLoc)
                     , "className"   $= Style.prefixFromList [ "node__expression", "noselect" ]
                     ] $ elemString . convert $ n ^. Node.expression
-                if n ^. Node.isNameEdited then
-                    singleField_
-                        ["id"  $= nameLabelId
-                        , "className" $= Style.prefix "node__name--input"
-                        , "key"       $= "nameEdit"
-                        ] "name-label"
-                        $ Field.mk ref (fromMaybe def $ n ^. Node.name)
-                        & Field.onCancel .~ Just (const $ UI.NodeEvent $ Node.NameEditDiscard nodeLoc)
-                        & Field.onAccept .~ Just (UI.NodeEvent . Node.NameEditApply nodeLoc)
-                else div_
-                    [ "key"         $= "nameText"
-                    , onDoubleClick $ \e _ -> stopPropagation e : dispatch ref (UI.NodeEvent $ Node.NameEditStart nodeLoc)
-                    , "className"   $= Style.prefixFromList [ "node__name", "noselect" ]
+                div_
+                    [ "className"   $= Style.prefixFromList [ "node__name", "noselect" ]
                     ] $ do
-                    elemString $ convert $ fromMaybe def $ n ^. Node.name
-                    span_
-                        [ "key"       $= "icons"
-                        , "className" $= Style.prefix "node__icons"
+                    if n ^. Node.isNameEdited then
+                        singleField_
+                            ["id"  $= nameLabelId
+                            , "className" $= Style.prefix "node__name--input"
+                            , "key"       $= "nameEdit"
+                            ] "name-label"
+                            $ Field.mk ref (fromMaybe def $ n ^. Node.name)
+                            & Field.onCancel .~ Just (const $ UI.NodeEvent $ Node.NameEditDiscard nodeLoc)
+                            & Field.onAccept .~ Just (UI.NodeEvent . Node.NameEditApply nodeLoc)
+                    else div_
+                        [ "key"         $= "nameText"
+                        , onDoubleClick $ \e _ -> stopPropagation e : dispatch ref (UI.NodeEvent $ Node.NameEditStart nodeLoc)
+                        , "className"   $= Style.prefixFromList [ "node__name--text", "noselect" ]
                         ] $ do
-                        div_
-                            [ "key"       $= "ctrlSwitch"
-                            , "className" $= Style.prefixFromList (["icon", "icon--show"] ++ if isVisualization then ["icon--show--on"] else ["icon--show--off"])
-                            , onClick $ \_ _ -> dispatch ref $ UI.NodeEvent $ Node.DisplayResultChanged (not isVisualization) nodeLoc
-                            ] mempty
+                        elemString $ convert $ fromMaybe def $ n ^. Node.name
+                        span_
+                            [ "key"       $= "icons"
+                            , "className" $= Style.prefix "node__icons"
+                            ] $ do
+                            div_
+                                [ "key"       $= "ctrlSwitch"
+                                , "className" $= Style.prefixFromList (["icon", "icon--show"] ++ if isVisualization then ["icon--show--on"] else ["icon--show--off"])
+                                , onClick $ \_ _ -> dispatch ref $ UI.NodeEvent $ Node.DisplayResultChanged (not isVisualization) nodeLoc
+                                ] mempty
             nodeBody_ ref n
             div_
                 [ "key"       $= "results"
