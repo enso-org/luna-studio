@@ -14,6 +14,7 @@ data Request = Request { _filePath :: FilePath
                        } deriving (Generic, Eq, NFData, Show)
 
 data Result  = Result { _code             :: Text
+                      , _tags             :: [(Int, [String])]
                       } deriving (Generic, Eq, NFData, Show)
 
 type Response = Response.Response Request () Result

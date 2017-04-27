@@ -59,7 +59,7 @@ defaultGraph = do
 
 type AST      = ASTState
 data ASTState = ASTState { _ir      :: IR
-                         , _pmState :: Pass.RefState (PassManager.PassManager (IRBuilder (Parser.IRSpanTreeBuilder (DepState.StateT Cache (Logger DropLogger (Vis.VisStateT (StateT Graph IO)))))))
+                         , _pmState :: Pass.RefState (PassManager.PassManager (IRBuilder (Parser.IRSpanTreeBuilderR (DepState.StateT Cache (Logger DropLogger (Vis.VisStateT (StateT Graph IO)))))))
                          }
 
 instance Show ASTState where

@@ -109,6 +109,7 @@ import qualified Empire.Commands.Autolayout      as Autolayout
 import           Empire.Commands.Breadcrumb      (withBreadcrumb)
 import qualified Empire.Commands.GraphBuilder    as GraphBuilder
 import qualified Empire.Commands.GraphUtils      as GraphUtils
+import qualified Empire.Commands.Lexer           as Lexer
 import qualified Empire.Commands.Library         as Library
 import qualified Empire.Commands.Publisher       as Publisher
 import           Empire.Empire
@@ -570,8 +571,10 @@ getNodeMeta loc nodeId = withGraph loc $ runASTOp $ do
 getCode :: GraphLocation -> Empire String
 getCode loc@(GraphLocation file _) = Text.unpack <$> Library.withLibrary file (use Library.code)
 
-getBuffer :: FilePath -> Maybe (Int, Int) -> Empire Text
-getBuffer file span = Library.getBuffer file span
+getBuffer :: FilePath -> Maybe (Int, Int) -> Empire (Text, [(Int, [String])])
+getBuffer file span = do
+    text <- Library.getBuffer file span
+    return $ (text, Lexer.lexer text)
 
 getGraph :: GraphLocation -> Empire APIGraph.Graph
 getGraph loc = withTC loc True $ runASTOp $ do

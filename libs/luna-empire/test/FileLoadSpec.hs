@@ -10,6 +10,7 @@ import           Control.Monad                  (forM)
 import           Data.Coerce
 import           Data.List                      (find)
 import qualified Data.Map                       as Map
+import qualified Data.Text                      as Text
 import           Empire.API.Data.Breadcrumb     (Breadcrumb (..))
 import qualified Empire.API.Data.Graph          as Graph
 import           Empire.API.Data.GraphLocation  (GraphLocation (..))
@@ -24,6 +25,7 @@ import qualified Empire.ASTOps.Parse            as ASTParse
 import qualified Empire.ASTOps.Print            as ASTPrint
 import qualified Empire.Commands.Graph          as Graph
 import qualified Empire.Commands.GraphBuilder   as GraphBuilder
+import qualified Empire.Commands.Lexer          as Lexer
 import qualified Empire.Commands.Library        as Library
 import qualified Empire.Data.Graph              as Graph (breadcrumbHierarchy)
 import qualified Luna.Syntax.Text.Parser.Parser as Parser (ReparsingChange (..), ReparsingStatus (..))
@@ -342,3 +344,12 @@ node1 ‹4›= 5
             withResult res $ \(Graph.Graph nodes connections _ _ _) -> do
                 nodes `shouldBe` []
                 connections `shouldSatisfy` (not . null)
+        it "lex" $ \env -> do
+            let code = [r|pi ‹0›= 3.14
+foo ‹1›= a: b: a + b
+c ‹2›= 4
+bar ‹3›= foo 8 c
+|]
+            let tokens = Lexer.lexer code
+            tokens `shouldSatisfy` (not . null)
+            sum (map fst tokens) `shouldBe` Text.length code

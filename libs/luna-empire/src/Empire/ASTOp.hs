@@ -74,7 +74,7 @@ type ASTOp m = (MonadThrow m,
                 Editors Layer EmpireLayers m,
                 DepOld.MonadGet Vis.V Vis.Vis m,
                 DepOld.MonadPut Vis.V Vis.Vis m,
-                Parser.IRSpanTreeBuilding m,
+                Parser.IRSpanTreeBuildingR m,
                 HasCallStack)
 
 
@@ -126,7 +126,7 @@ deriving instance MonadCatch m => MonadCatch (Pass.PassManager m)
 deriving instance MonadCatch m => MonadCatch (DepState.StateT s m)
 deriving instance MonadCatch m => MonadCatch (SpanTree.TreeBuilder k t m)
 
-runASTOp :: Pass.SubPass EmpirePass (Pass.PassManager (IRBuilder (Parser.IRSpanTreeBuilder (DepState.StateT Cache (Logger DropLogger (Vis.VisStateT (StateT Graph IO))))))) a
+runASTOp :: Pass.SubPass EmpirePass (Pass.PassManager (IRBuilder (Parser.IRSpanTreeBuilderR (DepState.StateT Cache (Logger DropLogger (Vis.VisStateT (StateT Graph IO))))))) a
          -> Command Graph a
 runASTOp pass = runPass inits pass where
     inits = do
@@ -167,8 +167,8 @@ runTypecheck imports = do
     put $ newG & Graph.ast .~ ASTState st passSt
 
 runPass :: forall pass b a. KnownPass pass
-        => Pass.PassManager (IRBuilder (Parser.IRSpanTreeBuilder (DepState.StateT Cache (Logger DropLogger (Vis.VisStateT (StateT Graph IO)))))) b
-        -> Pass.SubPass pass (Pass.PassManager (IRBuilder (Parser.IRSpanTreeBuilder (DepState.StateT Cache (Logger DropLogger (Vis.VisStateT (StateT Graph IO))))))) a
+        => Pass.PassManager (IRBuilder (Parser.IRSpanTreeBuilderR (DepState.StateT Cache (Logger DropLogger (Vis.VisStateT (StateT Graph IO)))))) b
+        -> Pass.SubPass pass (Pass.PassManager (IRBuilder (Parser.IRSpanTreeBuilderR (DepState.StateT Cache (Logger DropLogger (Vis.VisStateT (StateT Graph IO))))))) a
         -> Command Graph a
 runPass inits pass = do
     g <- get
