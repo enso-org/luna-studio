@@ -4,6 +4,7 @@
 {-# LANGUAGE TypeFamilies      #-}
 module Empire.API.Data.Vector2 where
 
+import           Data.Binary (Binary)
 import           Prologue
 
 
@@ -46,12 +47,13 @@ class Dim2 a => Dim3 a where
 
 -- === Definition === --
 
-data Vector2 a = Vector2 { _vector2_x, _vector2_y :: a } deriving (Eq, Show, Functor, Generic)
+data Vector2 a = Vector2 { _vector2_x, _vector2_y :: a } deriving (Eq, Show, Functor, Generic, Ord)
 makeLenses ''Vector2
 
 
 -- === Instances === --
 
+instance Binary a => Binary (Vector2 a)
 instance Dim1 (Vector2 a) where x = vector2_x
 instance Dim2 (Vector2 a) where y = vector2_y
 instance NFData a => NFData (Vector2 a)

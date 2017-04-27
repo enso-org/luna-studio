@@ -10,32 +10,32 @@ import           Control.Monad                  (forM)
 import           Data.Coerce
 import           Data.List                      (find)
 import qualified Data.Map                       as Map
-import qualified Empire.Data.Graph              as Graph (breadcrumbHierarchy)
+import           Empire.API.Data.Breadcrumb     (Breadcrumb (..))
 import qualified Empire.API.Data.Graph          as Graph
+import           Empire.API.Data.GraphLocation  (GraphLocation (..))
 import qualified Empire.API.Data.Node           as Node
-import qualified Empire.API.Data.Port           as Port
-import           Empire.API.Data.Breadcrumb     (Breadcrumb(..))
-import           Empire.API.Data.GraphLocation  (GraphLocation(..))
 import           Empire.API.Data.NodeMeta       (NodeMeta (..))
+import qualified Empire.API.Data.Port           as Port
 import           Empire.API.Data.PortRef        (AnyPortRef (..), InPortRef (..), OutPortRef (..))
-import           Empire.API.Data.TypeRep        (TypeRep(TStar))
+import qualified Empire.API.Data.Position       as Position
+import           Empire.API.Data.TypeRep        (TypeRep (TStar))
 import           Empire.ASTOp                   (runASTOp)
 import qualified Empire.ASTOps.Parse            as ASTParse
 import qualified Empire.ASTOps.Print            as ASTPrint
 import qualified Empire.Commands.Graph          as Graph
 import qualified Empire.Commands.GraphBuilder   as GraphBuilder
 import qualified Empire.Commands.Library        as Library
-import qualified Luna.Syntax.Text.Parser.Parser as Parser (ReparsingStatus(..), ReparsingChange(..))
+import qualified Empire.Data.Graph              as Graph (breadcrumbHierarchy)
+import qualified Luna.Syntax.Text.Parser.Parser as Parser (ReparsingChange (..), ReparsingStatus (..))
 
 import           Empire.Prelude
 
-import           Test.Hspec (Spec, around, describe, it, xit, expectationFailure,
-                             parallel, shouldBe, shouldMatchList, shouldStartWith,
-                             shouldSatisfy)
+import           Test.Hspec                     (Spec, around, describe, expectationFailure, it, parallel, shouldBe, shouldMatchList,
+                                                 shouldSatisfy, shouldStartWith, xit)
 
-import EmpireUtils
+import           EmpireUtils
 
-import           Text.RawString.QQ (r)
+import           Text.RawString.QQ              (r)
 
 
 spec :: Spec
@@ -291,8 +291,8 @@ bar ‹3›= foo 8 c
                 nodeIds <- Graph.withGraph loc $ runASTOp $ forM [0..3] $
                     \i -> (i,) <$> Graph.getNodeIdForMarker i
                 forM nodeIds $ \(i, Just nodeId) ->
-                    Graph.setNodeMeta loc nodeId $ NodeMeta (0, fromIntegral i*10) False
-                Graph.addNode loc u1 "4" (NodeMeta (10, 50) False)
+                    Graph.setNodeMeta loc nodeId $ NodeMeta (Position.fromTuple (0, fromIntegral i*10)) False
+                Graph.addNode loc u1 "4" (NodeMeta (Position.fromTuple (10, 50)) False)
                 Graph.getCode loc
             withResult res $ \code -> do
                 code `shouldBe` [r|pi ‹0›= 3.14
@@ -315,8 +315,8 @@ bar ‹3›= foo 8 c
                 nodeIds <- Graph.withGraph loc $ runASTOp $ forM [0..3] $
                     \i -> (i,) <$> Graph.getNodeIdForMarker i
                 forM nodeIds $ \(i, Just nodeId) ->
-                    Graph.setNodeMeta loc nodeId $ NodeMeta (0, fromIntegral i*10) False
-                Graph.addNode loc u1 "4" (NodeMeta (10, 50) False)
+                    Graph.setNodeMeta loc nodeId $ NodeMeta (Position.fromTuple (0, fromIntegral i*10)) False
+                Graph.addNode loc u1 "4" (NodeMeta (Position.fromTuple (10, 50)) False)
                 Graph.setNodeExpression loc u1 "5"
                 Graph.getCode loc
             withResult res $ \code -> do

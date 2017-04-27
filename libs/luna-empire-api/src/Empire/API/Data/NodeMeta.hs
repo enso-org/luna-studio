@@ -1,9 +1,10 @@
 module Empire.API.Data.NodeMeta where
 
-import           Data.Binary (Binary)
+import           Data.Binary              (Binary)
+import           Empire.API.Data.Position (Position)
 import           Prologue
 
-data NodeMeta = NodeMeta { _position      :: (Double, Double)
+data NodeMeta = NodeMeta { _position      :: Position
                          , _displayResult :: Bool
                          } deriving (Eq, Generic, NFData, Ord, Show)
 

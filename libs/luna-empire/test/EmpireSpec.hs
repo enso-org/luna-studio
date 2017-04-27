@@ -7,37 +7,37 @@ module EmpireSpec (spec) where
 import           Data.Foldable                   (toList)
 import           Data.List                       (find, stripPrefix)
 import qualified Data.Map                        as Map
-import           Empire.API.Data.Breadcrumb      (Breadcrumb(..))
+import           Empire.API.Data.Breadcrumb      (Breadcrumb (..))
 import qualified Empire.API.Data.Graph           as Graph
 import           Empire.API.Data.GraphLocation   (GraphLocation (..))
-import qualified Empire.API.Data.Node            as Node
-import           Empire.API.Data.Node            (NodeId)
-import           Empire.API.Data.NodeMeta        (NodeMeta (..))
-import qualified Empire.API.Data.Port            as Port
-import           Empire.API.Data.Port            (OutPorts (..), InPorts (..))
 import           Empire.API.Data.LabeledTree     (LabeledTree (..))
+import           Empire.API.Data.Node            (NodeId)
+import qualified Empire.API.Data.Node            as Node
+import           Empire.API.Data.NodeLoc         (NodeLoc (..))
+import           Empire.API.Data.NodeMeta        (NodeMeta (..))
+import           Empire.API.Data.Port            (InPorts (..), OutPorts (..))
+import qualified Empire.API.Data.Port            as Port
 import           Empire.API.Data.PortDefault     (PortDefault (Expression))
 import           Empire.API.Data.PortRef         (AnyPortRef (..), InPortRef (..), OutPortRef (..))
-import           Empire.API.Data.NodeLoc         (NodeLoc (..))
+import qualified Empire.API.Data.Position        as Position
 import           Empire.API.Data.TypeRep         (TypeRep (TCons, TLam, TStar, TVar))
 import           Empire.ASTOp                    (runASTOp)
 import qualified Empire.ASTOps.Deconstruct       as ASTDeconstruct
 import qualified Empire.ASTOps.Parse             as Parser
 import           Empire.ASTOps.Print             (printExpression)
 import qualified Empire.ASTOps.Read              as ASTRead
-import qualified Empire.Commands.AST             as AST (isTrivialLambda, dumpGraphViz)
+import qualified Empire.Commands.AST             as AST (dumpGraphViz, isTrivialLambda)
 import qualified Empire.Commands.Graph           as Graph (addNode, addPort, connect, disconnect, getConnections, getGraph,
-                                                           getNodes, movePort, removeNodes, removePort, renameNode,
-                                                           renamePort, setNodeExpression, setNodeMeta, withGraph,
-                                                           loadCode, getNodeIdForMarker)
+                                                           getNodeIdForMarker, getNodes, loadCode, movePort, removeNodes, removePort,
+                                                           renameNode, renamePort, setNodeExpression, setNodeMeta, withGraph)
 import qualified Empire.Commands.GraphBuilder    as GraphBuilder
 import           Empire.Commands.Library         (createLibrary, withLibrary)
 import qualified Empire.Commands.Typecheck       as Typecheck (run)
-import           Empire.Data.Graph               (breadcrumbHierarchy)
-import qualified Empire.Data.Library             as Library (body)
 import           Empire.Data.BreadcrumbHierarchy (NodeIDTarget (..))
 import qualified Empire.Data.BreadcrumbHierarchy as BH
+import           Empire.Data.Graph               (breadcrumbHierarchy)
 import           Empire.Data.Graph               (ast, breadcrumbHierarchy)
+import qualified Empire.Data.Library             as Library (body)
 import qualified Empire.Data.Library             as Library (body)
 import           Empire.Empire                   (InterpreterEnv (..))
 import           OCI.IR.Class                    (exprs, links)
@@ -873,9 +873,9 @@ spec = around withChannels $ parallel $ do
             u2 <- mkUUID
             u3 <- mkUUID
             res <- evalEmp env $ do
-                Graph.addNode top u1 "1" $ NodeMeta (10, 10) False
-                Graph.addNode top u2 "2" $ NodeMeta (20, 10) False
-                Graph.addNode top u3 "3" $ NodeMeta (30, 10) False
+                Graph.addNode top u1 "1" $ NodeMeta (Position.fromTuple (10, 10)) False
+                Graph.addNode top u2 "2" $ NodeMeta (Position.fromTuple (20, 10)) False
+                Graph.addNode top u3 "3" $ NodeMeta (Position.fromTuple (30, 10)) False
                 Graph.withGraph top $ runASTOp $ GraphBuilder.getNodeIdSequence
             withResult res $ \nodeSeq -> do
                 nodeSeq `shouldMatchList` [u1, u2, u3]
@@ -884,9 +884,9 @@ spec = around withChannels $ parallel $ do
             u2 <- mkUUID
             u3 <- mkUUID
             res <- evalEmp env $ do
-                Graph.addNode top u1 "1" $ NodeMeta (30, 10) False
-                Graph.addNode top u2 "2" $ NodeMeta (20, 10) False
-                Graph.addNode top u3 "3" $ NodeMeta (10, 10) False
+                Graph.addNode top u1 "1" $ NodeMeta (Position.fromTuple (30, 10)) False
+                Graph.addNode top u2 "2" $ NodeMeta (Position.fromTuple (20, 10)) False
+                Graph.addNode top u3 "3" $ NodeMeta (Position.fromTuple (10, 10)) False
                 Graph.withGraph top $ runASTOp $ GraphBuilder.getNodeIdSequence
             withResult res $ \nodeSeq -> do
                 nodeSeq `shouldMatchList` [u3, u2, u1]
@@ -895,9 +895,9 @@ spec = around withChannels $ parallel $ do
             u2 <- mkUUID
             u3 <- mkUUID
             res <- evalEmp env $ do
-                Graph.addNode top u1 "1" $ NodeMeta (10, 30) False
-                Graph.addNode top u2 "2" $ NodeMeta (10, 20) False
-                Graph.addNode top u3 "3" $ NodeMeta (10, 10) False
+                Graph.addNode top u1 "1" $ NodeMeta (Position.fromTuple (10, 30)) False
+                Graph.addNode top u2 "2" $ NodeMeta (Position.fromTuple (10, 20)) False
+                Graph.addNode top u3 "3" $ NodeMeta (Position.fromTuple (10, 10)) False
                 Graph.removeNodes top [u2]
                 Graph.withGraph top $ runASTOp $ GraphBuilder.getNodeIdSequence
             withResult res $ \nodeSeq -> do
@@ -907,12 +907,12 @@ spec = around withChannels $ parallel $ do
             u2 <- mkUUID
             u3 <- mkUUID
             res <- evalEmp env $ do
-                Graph.addNode top u1 "1" $ NodeMeta (10, 10) False
-                Graph.addNode top u2 "2" $ NodeMeta (10, 20) False
-                Graph.addNode top u3 "3" $ NodeMeta (10, 30) False
-                Graph.setNodeMeta top u3 $ NodeMeta (10, 10) False
-                Graph.setNodeMeta top u2 $ NodeMeta (20, 30) False
-                Graph.setNodeMeta top u1 $ NodeMeta (30, 20) False
+                Graph.addNode top u1 "1" $ NodeMeta (Position.fromTuple (10, 10)) False
+                Graph.addNode top u2 "2" $ NodeMeta (Position.fromTuple (10, 20)) False
+                Graph.addNode top u3 "3" $ NodeMeta (Position.fromTuple (10, 30)) False
+                Graph.setNodeMeta top u3 $ NodeMeta (Position.fromTuple (10, 10)) False
+                Graph.setNodeMeta top u2 $ NodeMeta (Position.fromTuple (20, 30)) False
+                Graph.setNodeMeta top u1 $ NodeMeta (Position.fromTuple (30, 20)) False
                 Graph.withGraph top $ runASTOp $ GraphBuilder.getNodeIdSequence
             withResult res $ \nodeSeq -> do
                 nodeSeq `shouldMatchList` [u3, u2, u1]
@@ -933,8 +933,8 @@ spec = around withChannels $ parallel $ do
             res <- evalEmp env $ do
                 Graph.addNode top u1 "foo = a: a" def
                 let loc = top |> u1
-                Graph.addNode loc u2 "4" $ NodeMeta (10, 10) False
-                Graph.addNode loc u3 "6" $ NodeMeta (10, 20) False
+                Graph.addNode loc u2 "4" $ NodeMeta (Position.fromTuple (10, 10)) False
+                Graph.addNode loc u3 "6" $ NodeMeta (Position.fromTuple (10, 20)) False
                 Graph.withGraph loc $ runASTOp $ GraphBuilder.getNodeIdSequence
             withResult res $ \idSeq -> do
                 idSeq    `shouldBe` [u2, u3]

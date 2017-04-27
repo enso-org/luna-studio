@@ -6,7 +6,7 @@ import           Empire.API.Data.NodeMeta            (NodeMeta (NodeMeta))
 import           Empire.API.Data.PortDefault         (PortDefault)
 import           Empire.API.Data.PortRef             (AnyPortRef (InPortRef', OutPortRef'), InPortRef (InPortRef), OutPortRef (OutPortRef),
                                                       dstNodeLoc, nodeLoc)
-import           Empire.API.Data.Position            (Position, toTuple)
+import           Empire.API.Data.Position            (Position)
 import           NodeEditor.Action.Command           (Command)
 import           NodeEditor.Action.UUID              (registerRequest)
 import qualified NodeEditor.Batch.Connector.Commands as BatchCmd
@@ -56,7 +56,7 @@ addConnection src dst = do
     withWorkspace $ BatchCmd.addConnection src dst
 
 addNode :: NodeLoc -> Text -> Position -> Bool -> Maybe NodeLoc -> Command State ()
-addNode nl expr pos dispRes connectTo = withWorkspace $ BatchCmd.addNode nl expr (NodeMeta (toTuple pos) dispRes) connectTo
+addNode nl expr pos dispRes connectTo = withWorkspace $ BatchCmd.addNode nl expr (NodeMeta pos dispRes) connectTo
 
 addPort :: OutPortRef -> Command State ()
 addPort = withWorkspace . BatchCmd.addPort
@@ -100,7 +100,7 @@ setNodeExpression :: NodeLoc -> Text -> Command State ()
 setNodeExpression = withWorkspace .: BatchCmd.setNodeExpression
 
 setNodesMeta :: [(NodeLoc, Position, Bool)] -> Command State ()
-setNodesMeta = withWorkspace . BatchCmd.setNodesMeta . map convert
+setNodesMeta = withWorkspace . BatchCmd.setNodesMeta . map (\(nl, pos, dis) -> (nl, NodeMeta pos dis))
 
 setPortDefault :: InPortRef -> PortDefault -> Command State ()
 setPortDefault portRef portDefault = do

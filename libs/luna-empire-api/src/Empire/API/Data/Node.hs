@@ -12,6 +12,7 @@ import           Empire.API.Data.NodeMeta (NodeMeta)
 import qualified Empire.API.Data.NodeMeta as NodeMeta
 import           Empire.API.Data.Port     (AnyPortId, InPort, InPortId, InPortTree, OutPort, OutPortTree)
 import qualified Empire.API.Data.Port     as Port
+import           Empire.API.Data.Position (Position)
 import           Prologue
 
 
@@ -45,7 +46,7 @@ makeLenses ''InputSidebar
 makeLenses ''OutputSidebar
 makeLenses ''NodeTypecheckerUpdate
 
-position :: Lens' ExpressionNode (Double, Double)
+position :: Lens' ExpressionNode Position
 position = nodeMeta . NodeMeta.position
 
 instance Binary ExpressionNode

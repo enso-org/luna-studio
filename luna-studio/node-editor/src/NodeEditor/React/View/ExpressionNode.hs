@@ -91,14 +91,12 @@ node = React.defineView name $ \(ref, n) -> case n ^. Node.mode of
                     , "className"   $= Style.prefixFromList [ "node__expression", "noselect" ]
                     ] $ elemString . convert $ n ^. Node.expression
                 div_
-                    [ "key"         $= "nodeName"
-                    , onDoubleClick $ \e _ -> stopPropagation e : dispatch ref (UI.NodeEvent $ Node.EditExpression nodeLoc)
-                    , "className"   $= Style.prefixFromList [ "node__name", "noselect" ]
+                    [ "className"   $= Style.prefixFromList [ "node__name", "noselect" ]
                     ] $ do
                     if n ^. Node.isNameEdited then
                         singleField_
                             ["id"  $= nameLabelId
-                            , "className" $= Style.prefix "node__text__name--input"
+                            , "className" $= Style.prefix "node__name--input"
                             , "key"       $= "nameEdit"
                             ] "name-label"
                             $ Field.mk ref (fromMaybe def $ n ^. Node.name)
@@ -107,7 +105,7 @@ node = React.defineView name $ \(ref, n) -> case n ^. Node.mode of
                     else div_
                         [ "key"         $= "nameText"
                         , onDoubleClick $ \e _ -> stopPropagation e : dispatch ref (UI.NodeEvent $ Node.NameEditStart nodeLoc)
-                        , "className"   $= Style.prefixFromList [ "node__name", "noselect" ]
+                        , "className"   $= Style.prefixFromList [ "node__name--text", "noselect" ]
                         ] $ do
                         elemString $ convert $ fromMaybe def $ n ^. Node.name
                         span_
