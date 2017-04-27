@@ -624,28 +624,34 @@ reloadCode loc code = handle (\(_e :: ASTParse.ParserException SomeException) ->
         Just e -> do
             (ref, exprMap, rs) <- ASTParse.runUnitReparser code e
             Graph.breadcrumbHierarchy . BH.body .= ref
-            runASTOp $ forM_ (coerce rs :: [Parser.ReparsingChange]) $ \x -> case x of
+            children <- runASTOp $ forM (coerce rs :: [Parser.ReparsingChange]) $ \x -> case x of
                 Parser.AddedExpr expr -> do
-                    void $ insertNode expr
+                    nodeId <- insertNode expr
+                    return $ Just (nodeId, expr)
                 Parser.ChangedExpr oldExpr expr -> do
                     oldNodeId <- ASTRead.safeGetVarNodeId oldExpr
 
-                    forM_ oldNodeId $ \nodeId -> do
+                    forM oldNodeId $ \nodeId -> do
                         copyMeta oldExpr expr
                         putIntoHierarchy nodeId $ BH.MatchNode expr
                         markNode nodeId
                         ASTModify.rewireNode nodeId =<< ASTRead.getTargetNode expr
+                        return (nodeId, expr)
                 Parser.UnchangedExpr oldExpr expr -> do
                     oldNodeId <- ASTRead.safeGetVarNodeId oldExpr
 
-                    forM_ oldNodeId $ \nodeId -> do
+                    forM oldNodeId $ \nodeId -> do
                         copyMeta oldExpr expr
                         putIntoHierarchy nodeId $ BH.MatchNode expr
+                        putChildrenIntoHierarchy nodeId expr
                         markNode nodeId
+                        return (nodeId, expr)
                 Parser.RemovedExpr oldExpr -> do
                     oldNodeId <- ASTRead.safeGetVarNodeId oldExpr
                     forM_ oldNodeId $ removeNodeNoTC
+                    return Nothing
             runAliasAnalysis
+            runASTOp $ forM (catMaybes children) $ \(n, e) -> putChildrenIntoHierarchy n e
             return $ Just rs
         Nothing -> return Nothing
 
@@ -677,11 +683,7 @@ insertNode :: ASTOp m => NodeRef -> m NodeId
 insertNode expr = do
     uuid <- liftIO $ UUID.nextRandom
     assignment <- ASTRead.isMatch expr
-    if assignment then do
-        putIntoHierarchy uuid $ BH.MatchNode expr
-        putChildrenIntoHierarchy uuid expr
-    else do
-        putIntoHierarchy uuid $ BH.AnonymousNode expr
+    putIntoHierarchy uuid $ if assignment then BH.MatchNode expr else BH.AnonymousNode expr
     markNode uuid
     return uuid
 
