@@ -45,7 +45,8 @@ def rm_old():
         shutil.rmtree(prep_path(path), ignore_errors=True)
 
 def create_dirs():
-    os.makedirs(prep_path('../atom/lib/gen'))
+    for path in ('../atom/lib/gen', '../atom/styles'):
+       os.makedirs(prep_path(path), exist_ok=True)
 
 def ghcjs_code():
     node_editor = prep_path('../.stack-work/') + '/**/bin/node-editor.jsexe/all.js'

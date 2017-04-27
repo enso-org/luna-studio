@@ -1,7 +1,8 @@
 {TextEditor, TextBuffer} = require 'atom'
 {TextEditorView, View} = require 'atom-space-pen-views'
 path = require 'path'
-SubAtom       = require 'sub-atom'
+SubAtom = require 'sub-atom'
+LunaSemanticGrammar = require './luna-grammar'
 
 TextBuffer::onDidStopChangingWithDiffs = (callback) ->
   diffs = []
@@ -44,6 +45,16 @@ class LunaEditorTab extends TextEditor
           withoutTrigger =>
             if @uri == uri_send
               @getBuffer().setText(text)
+
+              lexer = [ { length : 3, tags: ['Var'] }
+                      , { length : 3, tags: [] }
+                      , { length : 2, tags: ['Operator'] }
+                      , { length : 4, tags: ['Number'] }
+                      , { length : 3, tags: ['Var']}
+                      ]
+
+              @setGrammar(new LunaSemanticGrammar(atom.grammars, lexer))
+
       @internal.bufferListener setBuffer
 
       setCode = (uri_send, start_send, end_send, text) =>
@@ -69,14 +80,6 @@ class LunaEditorTab extends TextEditor
                 #   cursor: (@getBuffer().characterIndexForPosition(x) for x in @.getCursorBufferPositions()) #for multiple cursors
               @internal.pushText(diff)
 
-
-  markSnippet: (start, end, classes) =>
-      textBuffer = @getBuffer()
-      startPos = textBuffer.positionForCharacterIndex(start)
-      endPos   = textBuffer.positionForCharacterIndex(end)
-      marker = @markBufferRange([startPos, endPos], {invalidate: 'never'})
-      for cls in classes
-          @decorateMarker(marker, {type: 'line', class: cls})
 
   getTitle: -> path.basename(@uri)
 

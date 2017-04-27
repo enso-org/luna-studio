@@ -1,6 +1,3 @@
-# If you want some example snippets, check out:
-# https://github.com/atom/language-gfm/blob/master/snippets/gfm.cson
-
 '.source.luna':
   'Method documentation':
     'prefix': 'doc'
@@ -17,3 +14,9 @@
       class ${1:name}:
           ${2:constuctor}
     """
+  'TODO':
+    'prefix': 't'
+    'body': '#TODO [ ] - $1'
+  'TODO':
+    'prefix': 'T'
+    'body': '#TODO [ ] - $1'
