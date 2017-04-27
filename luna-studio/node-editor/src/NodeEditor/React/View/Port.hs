@@ -2,18 +2,18 @@
 {-# LANGUAGE OverloadedStrings #-}
 module NodeEditor.React.View.Port where
 
+import           Common.Prelude
 import           Empire.API.Data.PortRef          (AnyPortRef, toAnyPortRef)
 import qualified NodeEditor.Event.Mouse           as Mouse
 import qualified NodeEditor.Event.UI              as UI
-import           Common.Prelude
 import qualified NodeEditor.React.Event.Port      as Port
 import           NodeEditor.React.Model.App       (App)
 import           NodeEditor.React.Model.Constants (gridSize, lineHeight, nodeRadius, nodeRadius')
 import           NodeEditor.React.Model.Node      (NodeLoc)
 --import           NodeEditor.React.Model.Port (Port (..))
 import           NodeEditor.React.Model.Port      (AnyPort, AnyPortId (InPortId', OutPortId'), InPortIndex (Self),
-                                                   Mode (Highlighted, Invisible), getPortNumber, isHighlighted, isInPort, portAngleStart,
-                                                  portAngleStop)
+                                                   Mode (Highlighted, Invisible), getPortNumber, isHighlighted, isInPort, isInvisible,
+                                                   portAngleStart, portAngleStop)
 import qualified NodeEditor.React.Model.Port      as Port
 import           NodeEditor.React.Store           (Ref, dispatch)
 import qualified NodeEditor.React.View.Style      as Style
@@ -100,7 +100,8 @@ portSelf_ ref nl p = do
             Highlighted -> ["hover"]
             Invisible   -> ["port--invisible"]
             _           -> []
-        className = Style.prefixFromList $ ["port", "port--self"] ++ modeClass
+        className    = Style.prefixFromList $ ["port", "port--self"] ++ modeClass
+        portHandlers = if isInvisible p then [] else handlers ref portRef
     g_
         [ "className" $= className ] $ do
         circle_
@@ -109,7 +110,7 @@ portSelf_ ref nl p = do
             , "fill"      $= color
             ] mempty
         circle_
-            ( handlers ref portRef ++
+            ( portHandlers ++
             [ "className" $= Style.prefix "port__select"
             , "key"       $= (jsShow portId <> "b")
             , "r"         $= jsShow2 (lineHeight/1.5)
