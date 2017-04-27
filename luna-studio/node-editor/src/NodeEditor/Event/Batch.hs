@@ -1,14 +1,15 @@
 {-# LANGUAGE DeriveAnyClass #-}
 module NodeEditor.Event.Batch where
 
-import           Data.Aeson                             (ToJSON)
 import           Common.Prelude
+import           Data.Aeson                             (ToJSON)
 
 import qualified Empire.API.Control.EmpireStarted       as EmpireStarted
 import qualified Empire.API.Graph.AddConnection         as AddConnection
 import qualified Empire.API.Graph.AddNode               as AddNode
 import qualified Empire.API.Graph.AddPort               as AddPort
 import qualified Empire.API.Graph.AddSubgraph           as AddSubgraph
+import qualified Empire.API.Graph.AutolayoutNodes       as AutolayoutNodes
 import qualified Empire.API.Graph.CollaborationUpdate   as CollaborationUpdate
 import qualified Empire.API.Graph.ConnectUpdate         as ConnectUpdate
 import qualified Empire.API.Graph.DumpGraphViz          as DumpGraphViz
@@ -45,6 +46,7 @@ data Event = UnknownEvent String
            | AddNodeResponse                           AddNode.Response
            | AddPortResponse                           AddPort.Response
            | AddSubgraphResponse                   AddSubgraph.Response
+           | AutolayoutNodesResponse           AutolayoutNodes.Response
            | CollaborationUpdate           CollaborationUpdate.Update
            | ConnectionDropped
            | ConnectionOpened

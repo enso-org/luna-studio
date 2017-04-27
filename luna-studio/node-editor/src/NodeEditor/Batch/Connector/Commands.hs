@@ -19,6 +19,7 @@ import qualified Empire.API.Graph.AddConnection       as AddConnection
 import qualified Empire.API.Graph.AddNode             as AddNode
 import qualified Empire.API.Graph.AddPort             as AddPort
 import qualified Empire.API.Graph.AddSubgraph         as AddSubgraph
+import qualified Empire.API.Graph.AutolayoutNodes     as AutolayoutNodes
 import           Empire.API.Graph.CollaborationUpdate (ClientId)
 import qualified Empire.API.Graph.CollaborationUpdate as CollaborationUpdate
 import qualified Empire.API.Graph.DumpGraphViz        as DumpGraphViz
@@ -100,6 +101,9 @@ addPort portRef workspace uuid guiID = sendRequest $ Message uuid guiID $ (withL
 
 addSubgraph :: [ExpressionNode] -> [Connection] -> Workspace -> UUID -> Maybe UUID -> IO ()
 addSubgraph nodes connections workspace uuid guiID = sendRequest $ Message uuid guiID $ (withLibrary workspace AddSubgraph.Request) nodes connections
+
+autolayoutNodes :: [NodeLoc] -> Workspace -> UUID -> Maybe UUID -> IO ()
+autolayoutNodes nls workspace uuid guiID = sendRequest $ Message uuid guiID $ (withLibrary workspace AutolayoutNodes.Request) nls
 
 getSubgraph :: NodeLoc -> Workspace -> UUID -> Maybe UUID -> IO ()
 getSubgraph nodeLoc workspace uuid guiID = sendRequest $ Message uuid guiID $ withLibrary workspace $ GetSubgraphs.Request . (GraphLocation.breadcrumb .~ NodeLoc.toBreadcrumb (NodeLoc.prependPath workspace nodeLoc))

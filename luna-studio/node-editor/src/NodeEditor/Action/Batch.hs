@@ -64,6 +64,9 @@ addPort = withWorkspace . BatchCmd.addPort
 addSubgraph :: [ExpressionNode] -> [(OutPortRef, InPortRef)] -> Command State ()
 addSubgraph nodes conns = withWorkspace $ BatchCmd.addSubgraph (convert <$> nodes) (convert <$> conns)
 
+autolayoutNodes :: [NodeLoc] -> Command State ()
+autolayoutNodes nls = withWorkspace $ BatchCmd.autolayoutNodes nls
+
 getSubgraph :: NodeLoc -> Command State ()
 getSubgraph nl = withWorkspace (BatchCmd.getSubgraph nl)
 

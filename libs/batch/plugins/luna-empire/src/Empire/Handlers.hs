@@ -27,6 +27,7 @@ handlersMap = Map.fromList
     , makeHandler Graph.handleAddNode
     , makeHandler Graph.handleAddPort
     , makeHandler Graph.handleAddSubgraph
+    , makeHandler Graph.handleAutolayoutNodes
     , makeHandler Graph.handleDumpGraphViz
     , makeHandler Graph.handleGetProgram
     , makeHandler Graph.handleGetSubgraphs

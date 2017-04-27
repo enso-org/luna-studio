@@ -1,27 +1,27 @@
 module NodeEditor.Handler.Node where
 
-import           NodeEditor.Action.Autolayout               (autolayoutAllNodes, autolayoutSelectedNodes)
-import           NodeEditor.Action.Basic                    (enterNode, localSetPortDefault, localToggleVisualizations,
-                                                              removeSelectedNodes, selectAll, setNodeCode, setPortDefault, toggleSelect,
-                                                              toggleSelectedNodesMode, toggleSelectedNodesUnfold, unselectAll)
+import           Common.Prelude
+import           NodeEditor.Action.Basic                    (enterNode, localSetPortDefault, localToggleVisualizations, removeSelectedNodes,
+                                                             selectAll, setNodeCode, setPortDefault, toggleSelect, toggleSelectedNodesMode,
+                                                             toggleSelectedNodesUnfold, unselectAll)
+import           NodeEditor.Action.Batch                    (autolayoutNodes)
 import           NodeEditor.Action.Command                  (Command)
 import qualified NodeEditor.Action.Node                     as Node
 import qualified NodeEditor.Action.Port                     as PortControl
-import           NodeEditor.Action.State.NodeEditor         (getExpressionNode)
+import           NodeEditor.Action.State.NodeEditor         (getExpressionNode, getExpressionNodes, getSelectedNodes)
 import           NodeEditor.Event.Event                     (Event (Shortcut, UI))
 import qualified NodeEditor.Event.Keys                      as Keys
 import           NodeEditor.Event.Mouse                     (mousePosition, workspacePosition)
 import qualified NodeEditor.Event.Mouse                     as Mouse
 import qualified NodeEditor.Event.Shortcut                  as Shortcut
 import           NodeEditor.Event.UI                        (UIEvent (AppEvent, NodeEvent))
-import           Common.Prelude
 import qualified NodeEditor.React.Event.App                 as App
 import qualified NodeEditor.React.Event.Node                as Node
 import           NodeEditor.React.Model.Node.ExpressionNode (NodeLoc)
 import qualified NodeEditor.React.Model.Node.ExpressionNode as Node
 import           NodeEditor.State.Action                    (Action (continue))
 import           NodeEditor.State.Global                    (State)
-import           React.Flux                                  (MouseEvent, mouseButton, mouseCtrlKey, mouseMetaKey)
+import           React.Flux                                 (MouseEvent, mouseButton, mouseCtrlKey, mouseMetaKey)
 
 
 handle :: Event -> Maybe (Command State ())
@@ -52,8 +52,8 @@ handleCommand = \case
     Shortcut.ExpandSelectedNodes     -> toggleSelectedNodesMode $ Node.Expanded Node.Controls
     Shortcut.EditSelectedNodes       -> toggleSelectedNodesMode $ Node.Expanded Node.Editor
     Shortcut.UnfoldSelectedNodes     -> toggleSelectedNodesUnfold
-    Shortcut.AutolayoutSelectedNodes -> autolayoutSelectedNodes
-    Shortcut.AutolayoutAllNodes      -> autolayoutAllNodes
+    Shortcut.AutolayoutSelectedNodes -> map (view Node.nodeLoc) <$> getSelectedNodes   >>= autolayoutNodes
+    Shortcut.AutolayoutAllNodes      -> map (view Node.nodeLoc) <$> getExpressionNodes >>= autolayoutNodes
     _                                -> return ()
 
 handleMouseDown :: MouseEvent -> NodeLoc -> Command State ()
