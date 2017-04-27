@@ -2,7 +2,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 module NodeEditor.React.View.Port where
 
-import           Empire.API.Data.PortRef           (AnyPortRef, toAnyPortRef)
+import           Empire.API.Data.PortRef          (AnyPortRef, toAnyPortRef)
 import qualified NodeEditor.Event.Mouse           as Mouse
 import qualified NodeEditor.Event.UI              as UI
 import           Common.Prelude
@@ -12,14 +12,14 @@ import           NodeEditor.React.Model.Constants (gridSize, lineHeight, nodeRad
 import           NodeEditor.React.Model.Node      (NodeLoc)
 --import           NodeEditor.React.Model.Port (Port (..))
 import           NodeEditor.React.Model.Port      (AnyPort, AnyPortId (InPortId', OutPortId'), InPortIndex (Self),
-                                                    Mode (Highlighted, Invisible), getPortNumber, isHighlighted, isInPort, portAngleStart,
-                                                    portAngleStop)
+                                                   Mode (Highlighted, Invisible), getPortNumber, isHighlighted, isInPort, portAngleStart,
+                                                  portAngleStop)
 import qualified NodeEditor.React.Model.Port      as Port
 import           NodeEditor.React.Store           (Ref, dispatch)
 import qualified NodeEditor.React.View.Style      as Style
-import           Numeric                           (showFFloat)
-import           React.Flux                        hiding (view)
-import qualified React.Flux                        as React
+import           Numeric                          (showFFloat)
+import           React.Flux                       hiding (view)
+import qualified React.Flux                       as React
 
 name :: JSString
 name = "port"
