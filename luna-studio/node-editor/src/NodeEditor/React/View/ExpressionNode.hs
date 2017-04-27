@@ -8,6 +8,7 @@ import qualified Data.Map.Lazy                                        as Map
 import           Data.Matrix                                          (Matrix)
 import qualified Empire.API.Data.MonadPath                            as MonadPath
 import           Empire.API.Data.PortRef                              (toAnyPortRef)
+import           Empire.API.Data.LabeledTree                          (LabeledTree (LabeledTree))
 import qualified JS.Config                                            as Config
 import qualified JS.UI                                                as UI
 import           NodeEditor.Data.Matrix                               (showNodeMatrix, showNodeTranslate)
@@ -17,7 +18,7 @@ import qualified NodeEditor.React.Event.Node                          as Node
 import           NodeEditor.React.Model.App                           (App)
 import qualified NodeEditor.React.Model.Field                         as Field
 import           NodeEditor.React.Model.Node.ExpressionNode           (ExpressionNode, NodeLoc, Subgraph, countArgPorts, countOutPorts,
-                                                                       isCollapsed, returnsError)
+                                                                      isCollapsed, returnsError)
 import qualified NodeEditor.React.Model.Node.ExpressionNode           as Node
 import qualified NodeEditor.React.Model.Node.ExpressionNodeProperties as Prop
 import           NodeEditor.React.Model.Port                          (AnyPortId (InPortId'), InPortIndex (Arg, Self), isInPort, isOutAll,
@@ -35,7 +36,6 @@ import qualified NodeEditor.React.View.Style                          as Style
 import           NodeEditor.React.View.Visualization                  (nodeShortValue_, nodeVisualizations_)
 import           React.Flux
 import qualified React.Flux                                           as React
-
 
 name, objNameBody, objNamePorts :: JSString
 name            = "node"
@@ -171,8 +171,13 @@ nodePorts = React.defineView objNamePorts $ \(ref, n) -> do
         ports p   = forM_ p $ \port -> port_ ref
                                              nodeLoc
                                              port
-                                            (if isInPort $ port ^. Port.portId then countArgPorts n else countOutPorts n)
-                                            (withOut isOutAll (port ^. Port.portId) && countArgPorts n + countOutPorts n == 1)
+                                             (if isInPort $ port ^. Port.portId then countArgPorts n else countOutPorts n)
+                                             (withOut isOutAll (port ^. Port.portId) && countArgPorts n + countOutPorts n == 1)
+                                             $ case (n ^. Node.inPorts) of
+                                                          LabeledTree (Port.InPorts Nothing []) p -> case (p ^. Port.state) of
+                                                                                                     Port.Connected -> True
+                                                                                                     _              -> False
+                                                          _                                       -> False
     svg_
         [ "key"       $= "nodePorts"
         , "className" $= Style.prefixFromList [ "node__ports" ]
@@ -213,9 +218,7 @@ nodeContainer = React.defineView name $ \(ref, subgraphs) -> do
     div_
         [ "className" $= Style.prefix "subgraphs"
         ] $ forM_ subgraphs $ \subgraph -> do
-        let input        = subgraph ^. Node.inputNode
-            output       = subgraph ^. Node.outputNode
-            nodes        = subgraph ^. Node.expressionNodes . to HashMap.elems
+        let nodes        = subgraph ^. Node.expressionNodes . to HashMap.elems
             lookupNode m = ( m ^. MonadPath.monadType
                            , m ^. MonadPath.path . to (mapMaybe $ flip HashMap.lookup $ subgraph ^. Node.expressionNodes))
             monads       = map lookupNode $ subgraph ^. Node.monads

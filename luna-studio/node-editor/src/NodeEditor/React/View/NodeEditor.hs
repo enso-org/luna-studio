@@ -86,6 +86,7 @@ nodeEditor = React.defineView name $ \(ref, ne) -> do
 
             --expanded nodes
             elemString $ "circle.luna-port__shape { r: " <> show (3 + (1 / scale)) <> "px }"
+            elemString $ ".luna-port--alias circle.luna-port__shape { r: " <> show (7 + (1 / scale)) <> "px }"
 
             forM_ (ne ^. NodeEditor.expressionNodesRecursive) $ nodeDynamicStyles_ camera
 

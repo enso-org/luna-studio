@@ -7,8 +7,7 @@ import           Common.Prelude
 import           Control.Monad.Trans.Maybe               (MaybeT (MaybeT), runMaybeT)
 import           Data.ScreenPosition                     (ScreenPosition, y)
 import qualified Empire.API.Data.PortRef                 as PortRef
-import           Empire.API.Data.Size                    (height)
-import           NodeEditor.Action.Basic                 (getScene, localMovePort, localRemovePort, setInputSidebarPortMode, updateScene)
+import           NodeEditor.Action.Basic                 (localMovePort, localRemovePort, setInputSidebarPortMode)
 import qualified NodeEditor.Action.Basic                 as Basic
 import qualified NodeEditor.Action.Batch                 as Batch
 import           NodeEditor.Action.Command               (Command)
@@ -20,9 +19,8 @@ import           NodeEditor.Action.State.NodeEditor      (getInputNode, modifyIn
 import           NodeEditor.Action.State.Scene           (getInputSidebarSize)
 import           NodeEditor.Event.Mouse                  (mousePosition)
 import           NodeEditor.React.Model.Constants        (gridSize)
-import qualified NodeEditor.React.Model.Layout           as Scene
-import           NodeEditor.React.Model.Node.SidebarNode (NodeLoc, countProjectionPorts, outPortAt, outPortsList)
-import           NodeEditor.React.Model.Port             (AnyPortId (OutPortId'), AnyPortRef (OutPortRef'), OutPortIndex (Projection),
+import           NodeEditor.React.Model.Node.SidebarNode (NodeLoc, countProjectionPorts, outPortAt)
+import           NodeEditor.React.Model.Port             (AnyPortRef (OutPortRef'), OutPortIndex (Projection),
                                                           OutPortRef (OutPortRef), getPortNumber)
 import qualified NodeEditor.React.Model.Port             as Port
 import           NodeEditor.React.Model.Sidebar          (portPositionInInputSidebar)
@@ -47,23 +45,8 @@ instance Action (Command State) PortDrag where
             removeActionFromState portDragAction
         else cancelPortDragUnsafe action
 
--- unfreezeSidebar :: NodeLoc -> Command State ()
--- unfreezeSidebar nl = do
---     modifyInputNode nl $ inputFrozenState .= def
---     updateScene
---
--- freezeSidebar :: NodeLoc -> Command State ()
--- freezeSidebar nl =
---     withJustM (getInputNode nl) $ \node -> unless (isJust $ node ^. inputFrozenState) $
---         modifyInputNode nl $ inputFrozenState ?= ((fromIntegral . length $ outPortsList node) * gridSize + 31, Nothing)
-
 addPort :: OutPortRef -> Command State ()
-addPort portRef = do
-    -- let next (Projection x : _) = OutPortId' [Projection (x+1)]
-    --     nl = portRef ^. PortRef.nodeLoc
-    -- freezeSidebar nl
-    -- modifyInputNode nl $ inputFrozenState . _Just . _2 ?= (next $ portRef ^. PortRef.srcPortId)
-    Basic.addPort portRef
+addPort portRef = Basic.addPort portRef
 
 removePort :: OutPortRef -> Command State ()
 removePort portRef = do
