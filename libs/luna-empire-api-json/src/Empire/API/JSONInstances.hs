@@ -1,16 +1,8 @@
 {-# LANGUAGE FlexibleInstances #-}
 module Empire.API.JSONInstances where
 
-import           Data.Aeson.Types                       (FromJSON, FromJSONKey, ToJSON, ToJSONKey, parseJSON, toJSON, typeMismatch)
-import qualified Data.Aeson.Types                       as JSONTypes
-import           Data.Map.Lazy                          (Map)
-import qualified Data.Map.Lazy                          as Map
-import           Data.Maybe                             (fromMaybe)
-import qualified Data.Text                              as Text
-import           Data.UUID.Types                        (UUID)
-import qualified Data.UUID.Types                        as UUID
+import           Data.Aeson.Types                       (FromJSON, FromJSONKey, ToJSON, ToJSONKey)
 import           Prologue
-import           Text.Read                              (readMaybe)
 
 import           Empire.API.Atom.CloseFile              as CloseFile
 import           Empire.API.Atom.GetBuffer              as GetBuffer
@@ -125,12 +117,10 @@ instance FromJSONKey AnyPortRef
 instance FromJSONKey Breadcrumb.BreadcrumbItem
 instance FromJSONKey InPortRef
 instance FromJSONKey NodeLoc
-instance FromJSONKey UUID
 instance ToJSONKey AnyPortRef
 instance ToJSONKey Breadcrumb.BreadcrumbItem
 instance ToJSONKey InPortRef
 instance ToJSONKey NodeLoc
-instance ToJSONKey UUID
 
 instance ToJSON i => ToJSON (Port.Port i)
 instance FromJSON i => FromJSON (Port.Port i)
@@ -306,11 +296,3 @@ instance ToJSON PLibrary.Library
 instance FromJSON PLibrary.Library
 instance ToJSON PEnvelope.Envelope
 instance FromJSON PEnvelope.Envelope
-
-instance ToJSON UUID where
-  toJSON = toJSON . UUID.toString
-instance FromJSON UUID where
-  parseJSON (JSONTypes.String w) = case (UUID.fromString $ Text.unpack w) of
-    Just s  -> return s
-    Nothing -> fail "expected UUID"
-  parseJSON w = typeMismatch "UUID" w
