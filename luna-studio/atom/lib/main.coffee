@@ -39,17 +39,14 @@ module.exports =
         if path.extname(activeFilePath) is '.luna'
             internal.pushInternalEvent(event: "CloseFile", uri: activeFilePath)
 
-    @subs.add atom.workspace.onDidOpen (e) =>
-        if e.uri == 'undefined'
-            atom.workspace.saveActivePaneItem()
-            if atom.workspace.getActivePaneItem().getPath()
-                if path.extname(atom.workspace.getActivePaneItem().getPath()) is '.luna'
-                    uri = atom.workspace.getActivePaneItem().getPath()
-                    internal.pushInternalEvent(event: "OpenFile", uri: uri)
-                    atom.workspace.destroyActivePaneItem()
-                    atom.workspace.getActivePane().activateItem new LunaEditorTab(uri, internal)
-                    atom.workspace.getActivePane().activateItem new LunaStudioTab(uri, code)
-            else atom.workspace.destroyActivePaneItem()
+    @subs.add atom.workspace.observeTextEditors (editor) ->
+      editor.onDidSave (e) =>
+        if path.extname(e.path) is ".luna"
+          atom.workspace.destroyActivePaneItem()
+          internal.pushInternalEvent(event: "OpenFile", uri: e.path)
+          atom.workspace.getActivePane().activateItem new LunaEditorTab(e.path, internal)
+          internal.pushInternalEvent(event: "SaveFile", uri: e.path)
+
 
     @subs.add atom.commands.add 'atom-text-editor', 'core:copy': ->
         if atom.workspace.getActivePaneItem().buffer
@@ -65,17 +62,18 @@ module.exports =
         if atom.workspace.getActivePaneItem().buffer
             if atom.workspace.getActivePaneItem().buffer.file
                 activeFilePath = atom.workspace.getActivePaneItem().buffer.file.path
-        else activeFilePath = atom.workspace.getActivePane().activeItem.uri
-        if path.extname(activeFilePath) is ".luna"
-            internal.pushInternalEvent(event: "CloseFile", uri: activeFilePath)
+            else activeFilePath = atom.workspace.getActivePane().activeItem.uri
+            if path.extname(activeFilePath) is ".luna"
+                internal.pushInternalEvent(event: "CloseFile", uri: activeFilePath)
+
     @subs.add atom.commands.add 'atom-workspace', 'core:save', (e)                 ->
-      if atom.workspace.getActivePaneItem().buffer
-          activeFilePath =  atom.workspace.getActivePaneItem().buffer.file.path
-      else activeFilePath = atom.workspace.getActivePane().activeItem.uri
-      if path.extname(activeFilePath) is ".luna"
-        e.preventDefault()
-        e.stopImmediatePropagation()
-        internal.pushInternalEvent(event: "SaveFile", uri: activeFilePath)
+      if atom.workspace.getActivePaneItem().uri
+          activeFilePath = atom.workspace.getActivePaneItem().uri
+          if path.extname(activeFilePath) is ".luna"
+            e.preventDefault()
+            e.stopImmediatePropagation()
+            internal.pushInternalEvent(event: "SaveFile", uri: activeFilePath)
+
 
 
     @subs.add atom.commands.add '.luna-studio', 'luna-studio:cancel':       -> code.pushEvent("Shortcut Cancel")

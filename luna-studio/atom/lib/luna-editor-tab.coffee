@@ -68,7 +68,6 @@ class LunaEditorTab extends TextEditor
                   cursor: @getBuffer().characterIndexForPosition(@.getCursorBufferPosition())
                 #   cursor: (@getBuffer().characterIndexForPosition(x) for x in @.getCursorBufferPositions()) #for multiple cursors
               @internal.pushText(diff)
-      @subscribe.add  @getBuffer().onWillSave (event) => internal.pushInternalEvent(event: "SaveFile", uri: @uri)
 
 
   markSnippet: (start, end, classes) =>
