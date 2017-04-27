@@ -50,8 +50,8 @@ module.exports =
 
     @subs.add atom.commands.add 'atom-text-editor', 'core:copy': ->
         if atom.workspace.getActivePaneItem().buffer
-            activeFilePath = atom.workspace.getActivePaneItem().buffer.file.path
-
+          if atom.workspace.getActivePaneItem().buffer.file
+              activeFilePath = atom.workspace.getActivePaneItem().buffer.file.path
         if path.extname(activeFilePath) is ".luna"
             buffer = atom.workspace.getActiveTextEditor().buffer
             selection = atom.workspace.getActiveTextEditor().getSelections()
