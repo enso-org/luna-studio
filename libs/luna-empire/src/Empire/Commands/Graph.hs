@@ -19,6 +19,7 @@ module Empire.Commands.Graph
     , renamePort
     , setNodeExpression
     , setNodeMeta
+    , setNodePosition
     , connect
     , connectPersistent
     , connectCondTC
@@ -92,6 +93,7 @@ import           Empire.API.Data.Port            (InPortId, OutPortId, InPort, O
 import qualified Empire.API.Data.Port            as Port
 import           Empire.API.Data.PortRef         (AnyPortRef (..), InPortRef (..), OutPortRef (..))
 import qualified Empire.API.Data.PortRef         as PortRef
+import           Empire.API.Data.Position        (Position)
 import qualified Empire.API.Data.Position        as Position
 import           Empire.ASTOp                    (ASTOp, runASTOp, runAliasAnalysis)
 
@@ -472,6 +474,12 @@ setNodeMeta loc nodeId newMeta = withGraph loc $ do
         return doTCMay
     forM_ doTCMay $ \doTC ->
         when doTC $ runTC loc False
+
+setNodePosition :: GraphLocation -> NodeId -> Position -> Empire ()
+setNodePosition loc nodeId newPos = do
+    mayOldMeta <- getNodeMeta loc nodeId
+    withJust mayOldMeta $ \oldMeta ->
+        setNodeMeta loc nodeId $ oldMeta & NodeMeta.position .~ newPos
 
 connectCondTC :: Bool -> GraphLocation -> OutPortRef -> AnyPortRef -> Empire Connection
 connectCondTC True  loc outPort anyPort = connect loc outPort anyPort

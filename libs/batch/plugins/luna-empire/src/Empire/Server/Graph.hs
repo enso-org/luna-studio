@@ -35,7 +35,9 @@ import           Empire.API.Data.LabeledTree        (LabeledTree (LabeledTree))
 import           Empire.API.Data.Node               (ExpressionNode (..), NodeId)
 import qualified Empire.API.Data.Node               as Node
 import           Empire.API.Data.NodeLoc            (NodeLoc (..))
+import qualified Empire.API.Data.NodeLoc            as NodeLoc
 import           Empire.API.Data.NodeMeta           (NodeMeta)
+import qualified Empire.API.Data.NodeMeta           as NodeMeta
 import qualified Empire.API.Data.NodeSearcher       as NS
 import           Empire.API.Data.Port               (InPort (..), InPortIndex (..), OutPort (..), OutPortIndex (..), Port (..),
                                                      PortState (..), getPortNumber)
@@ -43,11 +45,13 @@ import qualified Empire.API.Data.Port               as Port
 import           Empire.API.Data.PortDefault        (PortValue (..), VisualizationValue (..))
 import           Empire.API.Data.PortRef            (InPortRef (..), OutPortRef (..))
 import           Empire.API.Data.PortRef            as PortRef
+import           Empire.API.Data.Position           (Position)
 import           Empire.API.Data.TypeRep            (TypeRep (TStar))
 import qualified Empire.API.Graph.AddConnection     as AddConnection
 import qualified Empire.API.Graph.AddNode           as AddNode
 import qualified Empire.API.Graph.AddPort           as AddPort
 import qualified Empire.API.Graph.AddSubgraph       as AddSubgraph
+import qualified Empire.API.Graph.AutolayoutNodes   as AutolayoutNodes
 import qualified Empire.API.Graph.ConnectUpdate     as ConnectUpdate
 import qualified Empire.API.Graph.DumpGraphViz      as DumpGraphViz
 import qualified Empire.API.Graph.GetProgram        as GetProgram
@@ -72,6 +76,7 @@ import qualified Empire.API.Response                as Response
 import qualified Empire.API.Topic                   as Topic
 import           Empire.ASTOp                       (runASTOp)
 import qualified Empire.ASTOps.Print                as Print
+import           Empire.Commands.Autolayout         (autolayoutNodes)
 import qualified Empire.Commands.Graph              as Graph
 import           Empire.Commands.GraphBuilder       (buildConnections, buildGraph, buildNodes, getNodeName)
 import qualified Empire.Commands.GraphUtils         as GraphUtils
@@ -190,14 +195,12 @@ connectNodes reqId guiId location expr dstNodeId srcNodeId = do
 
 
 handleGetProgram :: Request GetProgram.Request -> StateT Env BusT ()
-handleGetProgram = modifyGraph defInverse action success where
+handleGetProgram = modifyGraph defInverse action replyResult where
     action (GetProgram.Request location) = do
         graph <- Graph.getGraph location
         code <-  Graph.getCode location
         crumb <- Graph.decodeLocation location
         return $ GetProgram.Result graph (Text.pack code) crumb mockNSData
-    success req inv res                  = replyResult req inv res
-
 
 handleAddConnection :: Request AddConnection.Request -> StateT Env BusT ()
 handleAddConnection = modifyGraph defInverse action replyResult where
@@ -223,11 +226,23 @@ handleAddPort = modifyGraph defInverse action replyResult where
             Nothing -> Graph.addPort location nid i
             Just conns -> Graph.addPortWithConnection location nid i conns
 
-
-
 handleAddSubgraph :: Request AddSubgraph.Request -> StateT Env BusT ()
 handleAddSubgraph = modifyGraph defInverse action replyResult where
     action (AddSubgraph.Request location nodes connections) = Graph.addSubgraph location nodes connections
+
+handleAutolayoutNodes :: Request AutolayoutNodes.Request -> StateT Env BusT ()
+handleAutolayoutNodes = modifyGraph inverse action replyResult where
+    action (AutolayoutNodes.Request location nodeLocs) = do
+        updates <- autolayoutNodes location $ convert <$> nodeLocs --TODO[PM -> MM] Use NodeLoc instead of NodeId
+        mapM_ (uncurry $ Graph.setNodePosition location) updates
+        let nidToNlMap = Map.fromList $ map (\nl -> (nl ^. NodeLoc.nodeId, nl)) nodeLocs
+        return . catMaybes . map (\(nid, meta) -> (, meta) <$> Map.lookup nid nidToNlMap) $ updates
+    inverse (AutolayoutNodes.Request location nodeLocs) = do
+        let getNlAndPos :: NodeLoc -> Empire (Maybe (NodeLoc, Position))
+            getNlAndPos nl = do
+                mayMeta <- Graph.getNodeMeta location $ convert nl --TODO[PM -> MM] Use NodeLoc instead of NodeId
+                return $ (nl,) . view NodeMeta.position <$> mayMeta
+        AutolayoutNodes.Inverse . catMaybes <$> mapM getNlAndPos nodeLocs
 
 handleDumpGraphViz :: Request DumpGraphViz.Request -> StateT Env BusT ()
 handleDumpGraphViz = modifyGraphOk defInverse action where
