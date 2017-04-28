@@ -611,7 +611,6 @@ openFile path = do
     nodes     <- getNodes loc
     conns     <- getConnections loc
     let positions = Autolayout.autolayoutNodes nodeIds nodes conns
-    liftIO $ print positions >> IO.hFlush IO.stdout
     mapM_ (uncurry $ setNodePosition loc) positions
 
 typecheck :: GraphLocation -> Empire ()
