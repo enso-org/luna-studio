@@ -2,7 +2,7 @@ module Empire.Prelude (module X, nameToString, pathNameToString, stringToName, (
 
 import qualified Data.Convert              as Convert
 import qualified OCI.IR.Name.Qualified     as IR
-import Prologue as X hiding (TypeRep, s, r, (|>))
+import Prologue as X hiding (TypeRep, p, r, s, (|>))
 
 infixr 0 <?!>
 (<?!>) :: (Exception e, MonadThrow m) => m (Maybe a) -> e -> m a

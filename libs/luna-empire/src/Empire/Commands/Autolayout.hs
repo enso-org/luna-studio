@@ -10,14 +10,11 @@ import qualified Data.Map.Lazy                 as Map
 import           Data.Set                      (Set)
 import qualified Data.Set                      as Set
 import           Data.Traversable              (forM)
-import           Empire.API.Data.GraphLocation (GraphLocation)
 import           Empire.API.Data.Node          (ExpressionNode, NodeId, exprNodeId, position)
 import           Empire.API.Data.Port          (isSelf)
 import           Empire.API.Data.PortRef       (InPortRef, OutPortRef, dstNodeId, dstPortId, srcNodeId, srcPortId)
 import           Empire.API.Data.Position      (Position, fromDoubles, leftTopPoint, move, vector, x, y)
 import           Empire.API.Data.Vector2       (Vector2)
-import           Empire.Commands.Graph         (getConnections, getNodes)
-import           Empire.Empire                 (Empire)
 import           Empire.Prelude
 
 -- This should be changed to Connection from Empire.API.Data.Connection in whole backend
@@ -66,19 +63,18 @@ snap = (x %~ snapCoord) . (y %~ snapCoord)
 
 
 
-autolayoutNodes :: GraphLocation -> [NodeId] -> Empire [(NodeId, Position)]
-autolayoutNodes loc nids = do
+autolayoutNodes :: [NodeId] -> [ExpressionNode] -> [Connection] -> [(NodeId, Position)]
+autolayoutNodes nids allNodes allConns =
     let nidsSet   = Set.fromList nids
         nodeInSet = flip Set.member nidsSet . view exprNodeId
-    nodes <- filter nodeInSet <$> getNodes loc
-    conns <- getConnections loc
-    let leftTop  = maybe (fromDoubles 0 0) snap $ leftTopPoint $ view position <$> nodes
-        nodesMap = Map.fromList $ flip map nodes $ \n -> do
+        nodes = filter nodeInSet allNodes
+        leftTop  = maybe (fromDoubles 0 0) snap $ leftTopPoint $ view position <$> nodes
+        nodesMap = Map.fromList $ flip map nodes $ \n ->
             let nid       = n ^. exprNodeId
-                inConns'  = filter (\(_, dst) -> dst ^. dstNodeId == nid) conns
-                outConns' = filter (\(src, _) -> src ^. srcNodeId == nid) conns
-            (nid, NodeInfo nid leftTop Nothing NotProcessed inConns' outConns')
-    return . Map.toList . fmap (view actPos) $ execState (findPositions leftTop) nodesMap
+                inConns'  = filter (\(_, dst) -> dst ^. dstNodeId == nid) allConns
+                outConns' = filter (\(src, _) -> src ^. srcNodeId == nid) allConns
+            in (nid, NodeInfo nid leftTop Nothing NotProcessed inConns' outConns')
+    in Map.toList $ fmap (view actPos) $ execState (findPositions leftTop) nodesMap
 
 clearDFSState :: AutolayoutState ()
 clearDFSState = traverse . dfsState .= NotProcessed

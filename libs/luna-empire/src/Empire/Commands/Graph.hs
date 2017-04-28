@@ -105,6 +105,7 @@ import qualified Empire.ASTOps.Parse             as ASTParse
 import qualified Empire.ASTOps.Print             as ASTPrint
 import qualified Empire.ASTOps.Remove            as ASTRemove
 import qualified Empire.Commands.AST             as AST
+import qualified Empire.Commands.Autolayout      as Autolayout
 import           Empire.Commands.Breadcrumb      (withBreadcrumb)
 import qualified Empire.Commands.GraphBuilder    as GraphBuilder
 import qualified Empire.Commands.GraphUtils      as GraphUtils
@@ -606,7 +607,12 @@ openFile path = do
         return $ Text.stripEnd rawCode
     Library.createLibrary Nothing path code
     let loc = GraphLocation path $ Breadcrumb []
-    withGraph loc $ loadCode code
+    nodeIds   <- withGraph loc $ loadCode code
+    nodes     <- getNodes loc
+    conns     <- getConnections loc
+    let positions = Autolayout.autolayoutNodes nodeIds nodes conns
+    liftIO $ print positions >> IO.hFlush IO.stdout
+    mapM_ (uncurry $ setNodePosition loc) positions
 
 typecheck :: GraphLocation -> Empire ()
 typecheck loc = withGraph loc $ runTC loc False
@@ -685,16 +691,18 @@ insertNode expr = do
     assignment <- ASTRead.isMatch expr
     putIntoHierarchy uuid $ if assignment then BH.MatchNode expr else BH.AnonymousNode expr
     markNode uuid
+    AST.writeMeta expr def
     return uuid
 
-loadCode :: Text -> Command Graph ()
-loadCode code | Text.null code = return ()
+loadCode :: Text -> Command Graph [NodeId]
+loadCode code | Text.null code = return []
 loadCode code = do
     (ref, exprMap) <- ASTParse.runUnitParser code
-    runASTOp $ forM_ (coerce exprMap :: Map.Map Luna.Marker NodeRef) $ insertNode
+    nodeIds <- runASTOp $ forM (coerce exprMap :: Map.Map Luna.Marker NodeRef) $ insertNode
     Graph.breadcrumbHierarchy . BH._ToplevelParent . BH.topBody .= Just ref
     Graph.breadcrumbHierarchy . BH.body .= ref
     runAliasAnalysis
+    return $ Map.elems nodeIds
 
 nodeLineById :: ASTOp m => NodeId -> m (Maybe Int)
 nodeLineById nodeId = do
