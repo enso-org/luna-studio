@@ -9,14 +9,13 @@ module TextEditor.Event.Source
 
 import           Common.Prelude                    hiding (on)
 
-import           GHCJS.Marshal.Pure                     (pFromJSVal)
-import           GHCJS.Prim                             (fromJSString)
+import           GHCJS.Prim                        (fromJSString)
 
-import qualified JS.Atom                                as Atom
-import qualified WebSocket                           as WebSocket
 import qualified Common.Batch.Connector.Connection as BatchConnection
-import qualified TextEditor.Event.Connection           as Connection
-import           TextEditor.Event.Event                (Event (Atom, Connection, Text))
+import qualified JS.Atom                           as Atom
+import qualified TextEditor.Event.Connection       as Connection
+import           TextEditor.Event.Event            (Event (Atom, Connection, Text))
+import qualified WebSocket                         as WebSocket
 
 
 data AddHandler a = AddHandler ((a -> IO ()) -> IO (IO ()))

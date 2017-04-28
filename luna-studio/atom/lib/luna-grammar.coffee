@@ -86,6 +86,8 @@ class LunaSemanticGrammar extends Grammar
                 tokenInfo = ruleStack.shift()
                 token = buffer.substr(0, tokenInfo.length)
                 buffer = buffer.substr(tokenInfo.length, buffer.length)
+            console.log token 
+            console.log tokenInfo
             addToken(token, tokenInfo.tags)
         else
             addToken(buffer, [])

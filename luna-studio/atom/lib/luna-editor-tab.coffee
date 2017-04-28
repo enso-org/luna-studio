@@ -41,18 +41,10 @@ class LunaEditorTab extends TextEditor
           @triggerPush = false
           callback()
           @triggerPush = true
-      setBuffer = (uri_send, text) =>
+      setBuffer = (uri_send, text, lexer) =>
           withoutTrigger =>
             if @uri == uri_send
               @getBuffer().setText(text)
-
-              lexer = [ { length : 3, tags: ['Var'] }
-                      , { length : 3, tags: [] }
-                      , { length : 2, tags: ['Operator'] }
-                      , { length : 4, tags: ['Number'] }
-                      , { length : 3, tags: ['Var']}
-                      ]
-
               @setGrammar(new LunaSemanticGrammar(atom.grammars, lexer))
 
       @internal.bufferListener setBuffer
