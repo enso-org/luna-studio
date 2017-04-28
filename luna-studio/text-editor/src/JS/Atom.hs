@@ -65,10 +65,10 @@ foreign import javascript safe "atomCallbackInternals.getSelections($1)"
 foreign import javascript safe "[]"
     emptyArray :: IO JSVal
 
-foreign import javascript safe "function () { $3.push({ length: $1, tags: $2}) ; return $3 ;} ()"
+foreign import javascript safe "function () { $3.unshift({ length: $1, tags: $2}) ; return $3 ;} ()"
     appendTags :: Int -> JSVal -> JSVal -> JSVal
 
-foreign import javascript safe "function () { $2.push($1); return $2; }()"
+foreign import javascript safe "function () { $2.unshift($1); return $2; }()"
     appendTag :: JSString -> JSVal -> JSVal
 
 jsvalToText :: JSVal -> TextEvent
