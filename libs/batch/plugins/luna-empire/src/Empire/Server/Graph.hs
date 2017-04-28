@@ -378,8 +378,8 @@ handleSubstitute = modifyGraph defInverse action success where
 handleGetBuffer :: Request GetBuffer.Request -> StateT Env BusT ()
 handleGetBuffer = modifyGraph defInverse action replyResult where
     action (GetBuffer.Request file span) = do
-        code <- Graph.getBuffer file (head <$> span)
-        return $ GetBuffer.Result code
+        (code, tags) <- Graph.getBuffer file (head <$> span)
+        return $ GetBuffer.Result code tags
 
 
 
