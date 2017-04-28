@@ -132,22 +132,27 @@ generateNodeName = do
 addNodeCondTC :: Bool -> GraphLocation -> NodeId -> Text -> NodeMeta -> Empire ExpressionNode
 addNodeCondTC True  loc uuid expr meta = addNode loc uuid expr meta
 addNodeCondTC False loc uuid expr meta = do
-    (nearestNode, node) <- withGraph loc $ addNodeNoTC loc uuid expr meta
+    (nearestNode, node) <- withGraph loc $ addNodeNoTC loc uuid expr Nothing meta
     addToCode loc nearestNode $ node ^. Node.nodeId
     return node
 
 addNode :: GraphLocation -> NodeId -> Text -> NodeMeta -> Empire ExpressionNode
-addNode loc@(GraphLocation file _) uuid expr meta = do
-    (nearestNode, node) <- withTC loc False $ addNodeNoTC loc uuid expr meta
+addNode loc uuid expr meta = addNodeWithName loc uuid expr Nothing meta
+
+addNodeWithName :: GraphLocation -> NodeId -> Text -> Maybe Text -> NodeMeta -> Empire ExpressionNode
+addNodeWithName loc uuid expr name meta = do
+    (nearestNode, node) <- withTC loc False $ addNodeNoTC loc uuid expr Nothing meta
     addToCode loc nearestNode $ node ^. Node.nodeId
     resendCode loc
     return node
 
-addNodeNoTC :: GraphLocation -> NodeId -> Text -> NodeMeta -> Command Graph (Maybe NodeRef, ExpressionNode)
-addNodeNoTC loc uuid input meta = do
+addNodeNoTC :: GraphLocation -> NodeId -> Text -> Maybe Text -> NodeMeta -> Command Graph (Maybe NodeRef, ExpressionNode)
+addNodeNoTC loc uuid input name meta = do
     parse <- fst <$> ASTParse.runParser input
     expr <- runASTOp $ do
-        newNodeName  <- generateNodeName
+        newNodeName  <- case name of
+            Just n -> return $ Text.unpack n
+            _      -> generateNodeName
         parsedNode   <- AST.addNode uuid newNodeName parse
         putIntoHierarchy uuid $ BH.MatchNode parsedNode
         return parsedNode
@@ -328,7 +333,7 @@ generateNodeId = UUID.nextRandom
 
 addSubgraph :: GraphLocation -> [ExpressionNode] -> [Connection] -> Empire [ExpressionNode]
 addSubgraph loc nodes conns = withTC loc False $ do
-    newNodes <- forM nodes $ \n -> addNodeNoTC loc (n ^. Node.nodeId) (n ^. Node.expression) (n ^. Node.nodeMeta)
+    newNodes <- forM nodes $ \n -> addNodeNoTC loc (n ^. Node.nodeId) (n ^. Node.expression) (n ^. Node.name) (n ^. Node.nodeMeta)
     forM_ conns $ \(Connection src dst) -> connectNoTC loc src (InPortRef' dst)
     return $ map snd newNodes
 
