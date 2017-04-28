@@ -66,7 +66,6 @@ module.exports =
       if (atom.workspace.getActivePaneItem() instanceof LunaEditorTab) or (atom.workspace.getActivePaneItem() instanceof LunaStudioTab)
           e.preventDefault()
           e.stopImmediatePropagation()
-          console.log("savefile " + atom.workspace.getActivePaneItem().uri)
           internal.pushInternalEvent(event: "SaveFile", uri: atom.workspace.getActivePaneItem().uri)
 
 
