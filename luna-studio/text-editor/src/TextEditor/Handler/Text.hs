@@ -21,7 +21,7 @@ import           TextEditor.Handler.Backend.Common (doNothing, handleResponse)
 
 
 handle :: Event.Event -> Maybe (Command State ())
-handle (Event.Text (TextEvent filepath start stop text cursor)) = Just $ putStrLn "textEvent"  >>  ActBatch.substitute filepath start stop text cursor >> putStrLn "textEvent after send req"
+handle (Event.Text (TextEvent filepath start stop text cursor _)) = Just $ putStrLn "textEvent"  >>  ActBatch.substitute filepath start stop text cursor >> putStrLn "textEvent after send req"
 handle (Event.Atom (InternalEvent GetBuffer filepath Nothing)) = Just $ putStrLn "getBuffer" >> ActBatch.getBuffer filepath Nothing
 handle (Event.Atom (InternalEvent Copy filepath selections)) = Just $ putStrLn "getBuffer" >> ActBatch.getBuffer filepath selections
 
@@ -32,7 +32,8 @@ handle (Event.Batch (BufferGetResponse  response)) = Just $ handleResponse respo
         liftIO $ pushBuffer (convert uri) (convert code) (convertTags tags)
 
 
-handle (Event.Batch (SubstituteUpdate (Substitute.Update path start end text cursor))) = Just $ liftIO $ pushCode $ TextEvent path start end text cursor
+handle (Event.Batch (SubstituteUpdate (Substitute.Update path start end text cursor tags))) =
+    Just $ pushCode $ TextEvent path start end text cursor tags
 
 
 handle _ = Nothing

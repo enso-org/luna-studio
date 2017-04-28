@@ -24,6 +24,7 @@ data Update = Update { _filePath' :: FilePath
                      , _end'      :: Int
                      , _newText'  :: Text
                      , _cursor'   :: Maybe Int
+                     , _tags      :: [(Int, [String])]
                      } deriving (Generic, Eq, NFData, Show)
 
 makeLenses ''Request

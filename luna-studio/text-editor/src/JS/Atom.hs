@@ -20,8 +20,8 @@ import           TextEditor.Event.Text     (TextEvent, TextEvent (..))
 import qualified TextEditor.Event.Text     as TextEvent
 
 
-foreign import javascript safe "atomCallbackTextEditor.pushCode($1, $2, $3, $4)"
-    pushCode' :: JSString -> Int -> Int -> JSString -> IO ()
+foreign import javascript safe "atomCallbackTextEditor.pushCode($1, $2, $3, $4, $5)"
+    pushCode' :: JSString -> Int -> Int -> JSString -> JSVal -> IO ()
 
 foreign import javascript safe "atomCallbackTextEditor.pushBuffer($1, $2, $3)"
     pushBuffer :: JSString -> JSString -> JSVal -> IO ()
@@ -78,7 +78,7 @@ jsvalToText jsval = result where
     stop     = pFromJSVal $ getStop jsval
     text     = pFromJSVal $ getText jsval
     cursor   = pFromJSVal $ getCursor jsval
-    result   = TextEvent filepath start stop text $ Just cursor
+    result   = TextEvent filepath start stop text (Just cursor) []
 
 jsvalToInternalEvent :: JSVal -> InternalEvent
 jsvalToInternalEvent jsval = result where
@@ -93,13 +93,14 @@ subscribeText callback = do
     subscribeText' wrappedCallback
     return $ unsubscribeText' wrappedCallback >> releaseCallback wrappedCallback
 
-pushCode :: TextEvent -> IO ()
-pushCode = do
-    uri   <- (^. TextEvent.filePath)
-    start <- (^. TextEvent.start)
-    end   <- (^. TextEvent.stop)
-    text  <- (^. TextEvent.text)
-    return $ pushCode' (convert uri) start end $ convert $ Text.unpack text
+pushCode :: MonadIO m => TextEvent -> m ()
+pushCode = liftIO . do
+    uri   <- view TextEvent.filePath
+    start <- view TextEvent.start
+    end   <- view TextEvent.stop
+    text  <- view TextEvent.text
+    tags  <- view TextEvent.tags
+    return $ pushCode' (convert uri) start end (convert $ Text.unpack text) $ convertTags tags
 
 subscribeEventListenerInternal :: (InternalEvent -> IO ()) -> IO (IO ())
 subscribeEventListenerInternal callback = do

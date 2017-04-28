@@ -12,6 +12,7 @@ data TextEvent = TextEvent
                , _stop      :: Int
                , _text      :: Text
                , _cursor    :: Maybe Int
+               , _tags      :: [(Int, [String])]
                } deriving (Generic, NFData, Show, Typeable)
 
 makeLenses ''TextEvent

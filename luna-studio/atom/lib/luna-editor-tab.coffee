@@ -49,7 +49,7 @@ class LunaEditorTab extends TextEditor
 
       @internal.bufferListener setBuffer
 
-      setCode = (uri_send, start_send, end_send, text) =>
+      setCode = (uri_send, start_send, end_send, text, tags) =>
           withoutTrigger =>
             if @uri == uri_send
             #   start = @getBuffer().positionForCharacterIndex(start_send)

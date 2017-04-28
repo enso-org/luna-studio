@@ -460,7 +460,7 @@ updateExprMap new old = do
 resendCode :: GraphLocation -> Empire ()
 resendCode (GraphLocation file _) = do
     code <- Library.withLibrary file $ use Library.code
-    Publisher.notifyCodeUpdate file 0 (Text.length code) code Nothing
+    Publisher.notifyCodeUpdate file 0 (Text.length code) code Nothing $ Lexer.lexer code
 
 setNodeMeta :: GraphLocation -> NodeId -> NodeMeta -> Empire ()
 setNodeMeta loc nodeId newMeta = withGraph loc $ do
