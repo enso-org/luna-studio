@@ -18,12 +18,8 @@ import           React.Flux                        as React
 name :: JSString
 name = "connection"
 
-show2 :: Double -> JSString
-show2 a = convert $ showFFloat (Just 2) a "" -- limit Double to two decimal numbers
-
 show0 :: Double -> JSString
 show0 a = convert $ showFFloat (Just 0) a "" -- limit Double to two decimal numbers
-
 
 --TODO: move & refactor: the list is inversed
 mergeList :: [a] -> [a] -> [a]

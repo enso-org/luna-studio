@@ -10,10 +10,9 @@ import qualified NodeEditor.React.Event.Port      as Port
 import           NodeEditor.React.Model.App       (App)
 import           NodeEditor.React.Model.Constants (gridSize, lineHeight, nodeRadius, nodeRadius')
 import           NodeEditor.React.Model.Node      (NodeLoc)
---import           NodeEditor.React.Model.Port (Port (..))
 import           NodeEditor.React.Model.Port      (AnyPort, AnyPortId (InPortId', OutPortId'), InPortIndex (Self),
                                                    Mode (Highlighted, Invisible), getPortNumber, isHighlighted, isInPort, isInvisible,
-                                                   portAngleStart, portAngleStop)
+                                                   portAngleStart, portAngleStop, IsOnly, IsAlias)
 import qualified NodeEditor.React.Model.Port      as Port
 import           NodeEditor.React.Store           (Ref, dispatch)
 import qualified NodeEditor.React.View.Style      as Style
@@ -60,14 +59,15 @@ handleMouseEnter ref portRef _ _ = dispatch ref (UI.PortEvent $ Port.MouseEnter 
 handleMouseLeave :: Ref App -> AnyPortRef -> Event -> MouseEvent -> [SomeStoreAction]
 handleMouseLeave ref portRef _ _ = dispatch ref (UI.PortEvent $ Port.MouseLeave portRef)
 
-port :: ReactView (Ref App, NodeLoc, Int, Bool, Bool, AnyPort)
+port :: ReactView (Ref App, NodeLoc, Int, IsOnly, IsAlias, AnyPort)
 port = React.defineView name $ \(ref, nl, numOfPorts, isOnly, isAlias, p) ->
-    if isAlias then portAlias_ ref nl p else
-        case p ^. Port.portId of
-            InPortId' (Self:_) ->                portSelf_   ref nl p
-            OutPortId' []      -> if isOnly then portSingle_ ref nl p
-                                  else           portIO_     ref nl p numOfPorts
-            _                  ->                portIO_     ref nl p numOfPorts
+    case p ^. Port.portId of
+        InPortId' (Self:_) -> if isAlias then return ()
+                                         else portSelf_   ref nl p
+        OutPortId' []      -> if isOnly  then portSingle_ ref nl p
+                                         else portIO_     ref nl p numOfPorts
+        _                  -> if isAlias then portAlias_  ref nl p
+                                         else portIO_     ref nl p numOfPorts
 
 portExpanded :: ReactView (Ref App, NodeLoc, AnyPort)
 portExpanded = React.defineView name $ \(ref, nl, p) ->
@@ -75,7 +75,7 @@ portExpanded = React.defineView name $ \(ref, nl, p) ->
         InPortId' (Self:_) -> portSelf_       ref nl p
         _                  -> portIOExpanded_ ref nl p
 
-port_ :: Ref App -> NodeLoc -> AnyPort -> Int -> Bool -> Bool -> ReactElementM ViewEventHandler ()
+port_ :: Ref App -> NodeLoc -> AnyPort -> Int -> IsOnly -> IsAlias -> ReactElementM ViewEventHandler ()
 port_ ref nl p numOfPorts isOnly isAlias =
     React.viewWithSKey port (jsShow $ p ^. Port.portId) (ref, nl, numOfPorts, isOnly, isAlias, p) mempty
 

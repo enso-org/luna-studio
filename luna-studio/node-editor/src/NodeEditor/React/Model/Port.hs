@@ -22,7 +22,9 @@ import           NodeEditor.Data.Color            (Color)
 import qualified NodeEditor.Data.Color            as Color
 import           NodeEditor.React.Model.Constants (nodeRadius)
 
-
+type IsAlias = Bool
+type IsSelf  = Bool
+type IsOnly  = Bool
 
 data Mode = Normal
           | Invisible
