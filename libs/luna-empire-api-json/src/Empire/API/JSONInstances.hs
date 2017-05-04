@@ -102,6 +102,8 @@ instance ToJSON   Node.InputSidebar
 instance FromJSON Node.InputSidebar
 instance ToJSON   Node.OutputSidebar
 instance FromJSON Node.OutputSidebar
+instance ToJSON   Node.Node
+instance FromJSON Node.Node
 instance ToJSON   Node.NodeTypecheckerUpdate
 instance FromJSON Node.NodeTypecheckerUpdate
 
@@ -164,6 +166,7 @@ instance ToJSON Error.Error
 
 
 instance ToJSON AddConnection.Request
+instance ToJSON AddConnection.Result
 
 instance ToJSON AddNode.Request
 

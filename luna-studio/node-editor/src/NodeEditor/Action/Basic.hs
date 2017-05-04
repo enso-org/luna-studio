@@ -46,6 +46,9 @@ module NodeEditor.Action.Basic
     , localUpdateExpressionNodes
     , localUpdateInputNode
     , localUpdateNodeTypecheck
+    , localUpdateOrAddExpressionNode
+    , localUpdateOrAddInputNode
+    , localUpdateOrAddOutputNode
     , localUpdateOutputNode
     , localUpdateSubgraph
     , modifyCamera
@@ -134,5 +137,7 @@ import           NodeEditor.Action.Basic.SetSidebarMode      (setInputMode, setO
 import           NodeEditor.Action.Basic.UpdateCollaboration (updateClient, updateCollaboration)
 import           NodeEditor.Action.Basic.UpdateConnection    (localUpdateConnection, updateConnection)
 import           NodeEditor.Action.Basic.UpdateNode          (localUpdateExpressionNode, localUpdateExpressionNodes, localUpdateInputNode,
-                                                              localUpdateNodeTypecheck, localUpdateOutputNode, updateAllPortsSelfVisibility,
-                                                              updatePortSelfVisibility, updatePortSelfVisibilityForIds)
+                                                              localUpdateNodeTypecheck, localUpdateOrAddExpressionNode,
+                                                              localUpdateOrAddInputNode, localUpdateOrAddOutputNode, localUpdateOutputNode,
+                                                              updateAllPortsSelfVisibility, updatePortSelfVisibility,
+                                                              updatePortSelfVisibilityForIds)

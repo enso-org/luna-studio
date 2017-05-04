@@ -15,7 +15,7 @@ import qualified Data.IntMap                        as IntMap
 import           Data.List                          (break, find, partition)
 import           Data.List.Split                    (splitOneOf)
 import qualified Data.Map                           as Map
-import           Data.Maybe                         (fromMaybe, isJust, isNothing)
+import           Data.Maybe                         (fromMaybe, isJust, isNothing, maybeToList)
 import qualified Data.Set                           as Set
 import           Data.Text                          (stripPrefix)
 import qualified Data.Text                          as Text
@@ -29,6 +29,7 @@ import           Empire.API.Data.Breadcrumb         (Breadcrumb (..))
 import qualified Empire.API.Data.Breadcrumb         as Breadcrumb
 import           Empire.API.Data.Connection         as Connection
 import           Empire.API.Data.Graph              (Graph (..))
+import qualified Empire.API.Data.Graph              as GraphAPI
 import           Empire.API.Data.GraphLocation      (GraphLocation)
 import qualified Empire.API.Data.GraphLocation      as GraphLocation
 import           Empire.API.Data.LabeledTree        (LabeledTree (LabeledTree))
@@ -210,7 +211,19 @@ handleAddConnection = modifyGraph defInverse action replyResult where
     getDstPort dst = case dst of
         Left portRef  -> portRef
         Right nodeLoc -> InPortRef' $ InPortRef nodeLoc [Self]
-    action  (AddConnection.Request location src dst) = Graph.connectCondTC True location (getSrcPort src) (getDstPort dst)
+    action  (AddConnection.Request location src' dst') = do
+        let src = getSrcPort src'
+            dst = getDstPort dst'
+        conn  <- Graph.connectCondTC True location src dst
+        graph <- Graph.getGraph location
+        let allNodes = map Node.ExpressionNode' (graph ^. GraphAPI.nodes)
+                    ++ map Node.InputSidebar'   (maybeToList $ graph ^. GraphAPI.inputSidebar)
+                    ++ map Node.OutputSidebar'  (maybeToList $ graph ^. GraphAPI.outputSidebar)
+            srcNode = find (\n -> n ^. Node.nodeId == src ^. PortRef.srcNodeId) allNodes
+            dstNode = find (\n -> n ^. Node.nodeId == dst ^. PortRef.nodeId) allNodes
+        if      isNothing srcNode then throwError "Connection source node not found"
+        else if isNothing dstNode then throwError "Connection source node not found"
+        else return $ AddConnection.Result conn (fromJust srcNode) (fromJust dstNode)
 
 handleAddNode :: Request AddNode.Request -> StateT Env BusT ()
 handleAddNode = modifyGraph defInverse action success where

@@ -7,6 +7,7 @@ import           Common.Report
 import qualified Data.DateTime                               as DT
 import           Empire.API.Data.Connection                  (dst, src)
 import qualified Empire.API.Data.Graph                       as Graph
+import           Empire.API.Data.Node                        (Node (ExpressionNode', InputSidebar', OutputSidebar'))
 import           Empire.API.Data.NodeLoc                     (nodeLoc, prependPath)
 import qualified Empire.API.Data.NodeLoc                     as NodeLoc
 import           Empire.API.Data.NodeMeta                    (displayResult, position)
@@ -41,7 +42,9 @@ import           NodeEditor.Action.Basic                     (localAddConnection
                                                               localSetNodeCode, localSetNodeExpression, localSetNodesMeta,
                                                               localSetPortDefault, localSetSearcherHints, localUpdateExpressionNode,
                                                               localUpdateExpressionNodes, localUpdateInputNode, localUpdateNodeTypecheck,
-                                                              setNodeProfilingData, setNodeValue, updateGraph, updateScene)
+                                                              localUpdateOrAddExpressionNode, localUpdateOrAddInputNode,
+                                                              localUpdateOrAddOutputNode, setNodeProfilingData, setNodeValue, updateGraph,
+                                                              updateScene)
 import           NodeEditor.Action.Basic.Revert              (revertAddConnection, revertAddNode, revertAddPort, revertAddSubgraph,
                                                               revertMovePort, revertRemoveConnection, revertRemoveNodes, revertRemovePort,
                                                               revertRenameNode, revertSetNodeCode, revertSetNodeExpression,
@@ -101,8 +104,16 @@ handle (Event.Batch ev) = Just $ case ev of
         request            = response ^. Response.request
         location           = request  ^. AddConnection.location
         failure _          = whenM (isOwnRequest requestId) $ revertAddConnection request
-        success connection = inCurrentLocation location $ \path -> do
-            void $ localAddConnection (prependPath path (connection ^. src)) (prependPath path (connection ^. dst))
+        success result = inCurrentLocation location $ \path -> do
+            case result ^. AddConnection.srcNode of
+                ExpressionNode' n -> localUpdateOrAddExpressionNode $ convert (path, n)
+                InputSidebar'   n -> localUpdateOrAddInputNode      $ convert (path, n)
+                _ -> $notImplemented
+            case result ^. AddConnection.dstNode of
+                ExpressionNode' n -> localUpdateOrAddExpressionNode $ convert (path, n)
+                OutputSidebar'  n -> localUpdateOrAddOutputNode     $ convert (path, n)
+                _ -> $notImplemented
+            void $ localAddConnection (prependPath path (result ^. AddConnection.connection . src)) (prependPath path (result ^. AddConnection.connection . dst))
 
     AddNodeResponse response -> handleResponse response success failure where
         requestId     = response ^. Response.requestId

@@ -168,7 +168,7 @@ handleAddSubgraphUndo (Response.Response _ _ req _ (Response.Ok _)) =
 
 
 getUndoAddConnection :: AddConnection.Request -> AddConnection.Result -> RemoveConnection.Request
-getUndoAddConnection (AddConnection.Request location _ _) conn =
+getUndoAddConnection (AddConnection.Request location _ _) (AddConnection.Result conn _ _) =
     RemoveConnection.Request location $ conn ^. Connection.dst
 
 handleAddConnectionUndo :: AddConnection.Response -> Maybe (RemoveConnection.Request, AddConnection.Request)
