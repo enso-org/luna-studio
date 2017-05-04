@@ -174,7 +174,7 @@ nodePorts = React.defineView objNamePorts $ \(ref, n) -> do
                                              (if isInPort $ port ^. Port.portId then countArgPorts n else countOutPorts n)
                                              (withOut isOutAll (port ^. Port.portId) && countArgPorts n + countOutPorts n == 1)
                                              $ case (n ^. Node.inPorts) of
-                                                 LabeledTree _ p -> case (p ^. Port.state) of
+                                                 LabeledTree _ a -> case (a ^. Port.state) of
                                                                         Port.Connected -> True
                                                                         _              -> False
                                                  _               ->                       False

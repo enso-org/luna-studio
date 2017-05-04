@@ -62,12 +62,11 @@ handleMouseLeave ref portRef _ _ = dispatch ref (UI.PortEvent $ Port.MouseLeave 
 port :: ReactView (Ref App, NodeLoc, Int, IsOnly, IsAlias, AnyPort)
 port = React.defineView name $ \(ref, nl, numOfPorts, isOnly, isAlias, p) ->
     case p ^. Port.portId of
-        InPortId' (Self:_) -> if isAlias then return ()
-                                         else portSelf_   ref nl p
-        OutPortId' []      -> if isOnly  then portSingle_ ref nl p
-                                         else portIO_     ref nl p numOfPorts
-        _                  -> if isAlias then portAlias_  ref nl p
-                                         else portIO_     ref nl p numOfPorts
+        InPortId' (Self:_) ->                  portSelf_   ref nl p
+        OutPortId' []      -> if isOnly && not isAlias then portSingle_ ref nl p
+                                          else portIO_     ref nl p numOfPorts
+        _                  -> if isAlias  then portAlias_  ref nl p
+                                          else portIO_     ref nl p numOfPorts
 
 portExpanded :: ReactView (Ref App, NodeLoc, AnyPort)
 portExpanded = React.defineView name $ \(ref, nl, p) ->
