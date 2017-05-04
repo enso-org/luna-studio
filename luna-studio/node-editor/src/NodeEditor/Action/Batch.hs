@@ -58,8 +58,8 @@ addConnection src dst = do
 addNode :: NodeLoc -> Text -> Position -> Bool -> Maybe NodeLoc -> Command State ()
 addNode nl expr pos dispRes connectTo = withWorkspace $ BatchCmd.addNode nl expr (NodeMeta pos dispRes) connectTo
 
-addPort :: OutPortRef -> Command State ()
-addPort = withWorkspace . BatchCmd.addPort
+addPort :: OutPortRef -> Maybe InPortRef -> Command State ()
+addPort = withWorkspace .: BatchCmd.addPort
 
 addSubgraph :: [ExpressionNode] -> [(OutPortRef, InPortRef)] -> Command State ()
 addSubgraph nodes conns = withWorkspace $ BatchCmd.addSubgraph (convert <$> nodes) (convert <$> conns)

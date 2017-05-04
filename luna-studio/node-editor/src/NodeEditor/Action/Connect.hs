@@ -12,24 +12,25 @@ module NodeEditor.Action.Connect
     , stopConnectingUnsafe
     ) where
 
-import           Control.Monad.Trans.Maybe                   (MaybeT (MaybeT), runMaybeT)
-import           Data.ScreenPosition                         (ScreenPosition)
-import qualified Empire.API.Data.Connection                  as ConnectionAPI
-import           Empire.API.Data.Port                        (AnyPortId (InPortId'), InPortIndex (Self))
-import           Empire.API.Data.PortRef                     (AnyPortRef (InPortRef', OutPortRef'))
-import qualified Empire.API.Data.PortRef                     as PortRef
-import qualified JS.GoogleAnalytics                          as GA
-import           NodeEditor.Action.Basic                    (connect, localRemovePort, removeConnection, updateAllPortsSelfVisibility)
+import           Common.Prelude
+import           Control.Monad.Trans.Maybe                  (MaybeT (MaybeT), runMaybeT)
+import           Data.ScreenPosition                        (ScreenPosition)
+import qualified Empire.API.Data.Connection                 as ConnectionAPI
+import           Empire.API.Data.Port                       (AnyPortId (InPortId'), InPortIndex (Self))
+import           Empire.API.Data.PortRef                    (AnyPortRef (InPortRef', OutPortRef'))
+import qualified Empire.API.Data.PortRef                    as PortRef
+import qualified JS.GoogleAnalytics                         as GA
+import           NodeEditor.Action.Basic                    (connect, localAddConnection, localRemovePort, removeConnection,
+                                                             updateAllPortsSelfVisibility)
 import qualified NodeEditor.Action.Batch                    as Batch
 import           NodeEditor.Action.Command                  (Command)
 import           NodeEditor.Action.Node.Drag                (startNodeDrag)
 import           NodeEditor.Action.State.Action             (beginActionWithKey, continueActionWithKey, removeActionFromState,
-                                                              updateActionWithKey)
+                                                             updateActionWithKey)
 import           NodeEditor.Action.State.Model              (createHalfConnectionModel, createHalfConnectionModel')
 import           NodeEditor.Action.State.NodeEditor         (getConnection, getNode, modifyNodeEditor)
 import           NodeEditor.Action.State.Scene              (translateToWorkspace)
 import           NodeEditor.Event.Mouse                     (mousePosition, workspacePosition)
-import           Common.Prelude
 import           NodeEditor.React.Event.Connection          (ModifiedEnd (Destination, Source))
 import           NodeEditor.React.Model.Connection          (ConnectionId, toValidEmpireConnection)
 import qualified NodeEditor.React.Model.Connection          as Connection
@@ -37,10 +38,10 @@ import           NodeEditor.React.Model.Node                (Node (Expression))
 import           NodeEditor.React.Model.Node.ExpressionNode (isCollapsed)
 import qualified NodeEditor.React.Model.NodeEditor          as NodeEditor
 import           NodeEditor.State.Action                    (Action (begin, continue, end, update), Connect (Connect), Mode (Click, Drag),
-                                                              connectAction, connectIsPortPhantom, connectMode, connectSnappedPort,
-                                                              connectSourcePort, connectStartPos)
+                                                             connectAction, connectIsPortPhantom, connectMode, connectSnappedPort,
+                                                             connectSourcePort, connectStartPos)
 import           NodeEditor.State.Global                    (State, actions, currentConnectAction)
-import           React.Flux                                  (MouseEvent)
+import           React.Flux                                 (MouseEvent)
 
 
 instance Action (Command State) Connect where
@@ -132,9 +133,10 @@ stopConnectingUnsafe _ = do
 connectToPort :: AnyPortRef -> Connect -> Command State ()
 connectToPort dst action = do
     withJust (toValidEmpireConnection dst $ action ^. connectSourcePort) $ \newConn -> do
-        when (action ^. connectIsPortPhantom) $ case action ^. connectSourcePort of
-            OutPortRef' outPortRef -> Batch.addPort outPortRef
-            _                      -> return ()
-        connect (Left $ newConn ^. ConnectionAPI.src) (Left $ newConn ^. ConnectionAPI.dst)
+        case (action ^. connectIsPortPhantom, action ^. connectSourcePort) of
+            (True, OutPortRef' outPortRef) -> do
+                void . localAddConnection outPortRef $ newConn ^. ConnectionAPI.dst
+                Batch.addPort outPortRef $ Just $ newConn ^. ConnectionAPI.dst
+            _ -> connect (Left $ newConn ^. ConnectionAPI.src) (Left $ newConn ^. ConnectionAPI.dst)
         GA.sendEvent $ GA.Connect GA.Manual
     stopConnectingUnsafe action

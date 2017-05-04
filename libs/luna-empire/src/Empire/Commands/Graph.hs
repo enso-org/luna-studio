@@ -89,7 +89,7 @@ import           Empire.API.Data.NodeLoc         (NodeLoc (..))
 import qualified Empire.API.Data.NodeLoc         as NodeLoc
 import           Empire.API.Data.NodeMeta        (NodeMeta)
 import qualified Empire.API.Data.NodeMeta        as NodeMeta
-import           Empire.API.Data.Port            (InPortId, OutPortId, InPort, OutPort, InPortIndex (..), OutPortIndex (..), AnyPortId (..))
+import           Empire.API.Data.Port            (InPortId, OutPortId, InPort, OutPort, InPortIndex (..), OutPortIndex (..), AnyPortId (..), getPortNumber)
 import qualified Empire.API.Data.Port            as Port
 import           Empire.API.Data.PortRef         (AnyPortRef (..), InPortRef (..), OutPortRef (..))
 import qualified Empire.API.Data.PortRef         as PortRef
@@ -307,11 +307,13 @@ updateGraphSeq newOut = do
     Graph.breadcrumbHierarchy . BH._ToplevelParent . BH.topBody .= newOut
     forM_ newOut $ (Graph.breadcrumbHierarchy . BH.body .=)
 
-addPort :: GraphLocation -> NodeId -> Int -> Empire InputSidebar
-addPort loc nid position = withTC loc False $ addPortNoTC loc nid position
+addPort :: GraphLocation -> OutPortRef -> Empire InputSidebar
+addPort loc portRef = withTC loc False $ addPortNoTC loc portRef
 
-addPortNoTC :: GraphLocation -> NodeId -> Int -> Command Graph InputSidebar
-addPortNoTC loc nid position = runASTOp $ do
+addPortNoTC :: GraphLocation -> OutPortRef -> Command Graph InputSidebar
+addPortNoTC loc (OutPortRef nl pid) = runASTOp $ do
+    let nid      = nl ^. NodeLoc.nodeId
+        position = getPortNumber pid
     edges <- GraphBuilder.getEdgePortMapping
     when ((fst <$> edges) /= Just nid) $ throwM NotInputEdgeException
     Just ref <- ASTRead.getCurrentASTTarget
@@ -321,10 +323,10 @@ addPortNoTC loc nid position = runASTOp $ do
     mapM_ (ASTBuilder.attachNodeMarkersForArgs nid []) newLam
     GraphBuilder.buildInputSidebar nid
 
-addPortWithConnection :: GraphLocation -> NodeId -> Int -> [Connection] -> Empire InputSidebar
-addPortWithConnection loc nid position conns = withTC loc False $ do
-    newPorts <- addPortNoTC loc nid position
-    forM_ conns $ \(Connection src dst) -> connectNoTC loc src (InPortRef' dst)
+addPortWithConnection :: GraphLocation -> OutPortRef -> [AnyPortRef] -> Empire InputSidebar
+addPortWithConnection loc portRef connectTo = withTC loc False $ do
+    newPorts <- addPortNoTC loc portRef
+    forM_ connectTo $ connectNoTC loc portRef
     return newPorts
 
 

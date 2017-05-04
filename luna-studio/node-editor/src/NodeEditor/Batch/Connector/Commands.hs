@@ -13,7 +13,7 @@ import           Empire.API.Data.NodeLoc              (NodeLoc, normalise, norma
 import qualified Empire.API.Data.NodeLoc              as NodeLoc
 import           Empire.API.Data.NodeMeta             (NodeMeta)
 import           Empire.API.Data.PortDefault          (PortDefault)
-import           Empire.API.Data.PortRef              (AnyPortRef, InPortRef, OutPortRef)
+import           Empire.API.Data.PortRef              (AnyPortRef (InPortRef'), InPortRef, OutPortRef)
 import           Empire.API.Data.Project              (ProjectId)
 import qualified Empire.API.Graph.AddConnection       as AddConnection
 import qualified Empire.API.Graph.AddNode             as AddNode
@@ -95,8 +95,8 @@ addNode nodeLoc expression meta connectTo workspace uuid guiID =
     sendRequest $ Message uuid guiID $ (withLibrary workspace' AddNode.Request) nodeLoc' expression meta (convert <$> connectTo) where
         (workspace', nodeLoc') = normalise workspace nodeLoc
 
-addPort :: OutPortRef -> Workspace -> UUID -> Maybe UUID -> IO ()
-addPort portRef workspace uuid guiID = sendRequest $ Message uuid guiID $ (withLibrary workspace' AddPort.Request) portRef' Nothing where
+addPort :: OutPortRef -> Maybe InPortRef -> Workspace -> UUID -> Maybe UUID -> IO ()
+addPort portRef connDst workspace uuid guiID = sendRequest $ Message uuid guiID $ (withLibrary workspace' AddPort.Request) portRef' (InPortRef' <$> maybeToList connDst) where
     (workspace', portRef') = normalise workspace portRef
 
 addSubgraph :: [ExpressionNode] -> [Connection] -> Workspace -> UUID -> Maybe UUID -> IO ()

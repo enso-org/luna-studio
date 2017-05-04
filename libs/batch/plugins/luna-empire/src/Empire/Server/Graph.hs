@@ -181,6 +181,11 @@ getNodesByIds :: GraphLocation -> [NodeId] -> Empire [Node.Node]
 getNodesByIds location nids = filter (\n -> Set.member (n ^. Node.nodeId) nidsSet) <$> getAllNodes location where
     nidsSet = Set.fromList nids
 
+getExpressionNodesByIds :: GraphLocation -> [NodeId] -> Empire [Node.ExpressionNode]
+getExpressionNodesByIds location nids = filter (\n -> Set.member (n ^. Node.nodeId) nidsSet) <$> Graph.getNodes location where
+    nidsSet = Set.fromList nids
+
+
 getNodeById :: GraphLocation -> NodeId -> Empire (Maybe Node.Node)
 getNodeById location nid = fmap listToMaybe $ getNodesByIds location [nid]
 
@@ -243,10 +248,10 @@ handleAddNode = modifyGraph defInverse action replyResult where
 
 handleAddPort :: Request AddPort.Request -> StateT Env BusT ()
 handleAddPort = modifyGraph defInverse action replyResult where
-    action  (AddPort.Request location (OutPortRef (NodeLoc _ nid) (Projection i : _)) connections) = do
-        case connections of
-            Nothing -> Graph.addPort location nid i
-            Just conns -> Graph.addPortWithConnection location nid i conns
+    action (AddPort.Request location portRef connsDst) = do
+        sidebar  <- if null connsDst then Graph.addPort location portRef else Graph.addPortWithConnection location portRef connsDst
+        dstNodes <- getExpressionNodesByIds location $ map (view PortRef.nodeId) connsDst
+        return $ AddPort.Result sidebar dstNodes
 
 handleAddSubgraph :: Request AddSubgraph.Request -> StateT Env BusT ()
 handleAddSubgraph = modifyGraph defInverse action replyResult where

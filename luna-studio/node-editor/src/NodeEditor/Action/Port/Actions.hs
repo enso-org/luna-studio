@@ -3,22 +3,22 @@ module NodeEditor.Action.Port.Actions
     , handleClick
     ) where
 
-import           Empire.API.Data.PortRef             (AnyPortRef (OutPortRef'), OutPortRef, nodeLoc, srcPortId)
+import           Common.Prelude
+import           Empire.API.Data.PortRef            (AnyPortRef (OutPortRef'), OutPortRef, nodeLoc, srcPortId)
 import           NodeEditor.Action.Basic            (localAddPort)
 import           NodeEditor.Action.Command          (Command)
 import           NodeEditor.Action.Connect          (connectToPort, startConnecting)
 import           NodeEditor.Action.Sidebar          (startPortDrag)
 import           NodeEditor.Event.Mouse             (mousePosition)
-import           Common.Prelude
 import           NodeEditor.React.Model.Node        (countProjectionPorts, hasPort)
 import           NodeEditor.React.Model.Port        (getPortNumber)
 import           NodeEditor.State.Action            (Action (continue), Mode (Click, Drag), connectAction, connectMode, portDragAction,
-                                                      portDragMode)
+                                                     portDragMode)
 
 import           NodeEditor.Action.State.Action     (checkAction, checkIfActionPerfoming)
 import           NodeEditor.Action.State.NodeEditor (getInputNode)
 import           NodeEditor.State.Global            (State)
-import           React.Flux                          (MouseEvent)
+import           React.Flux                         (MouseEvent)
 
 
 handleMouseDown :: MouseEvent -> AnyPortRef -> Command State ()
@@ -55,4 +55,4 @@ addPhantomPortIfPossibleAndNeeded portRef = do
         Nothing   -> return False
         Just node -> if hasPort pid node || countProjectionPorts node /= getPortNumber pid
             then return False
-            else localAddPort portRef
+            else localAddPort portRef Nothing

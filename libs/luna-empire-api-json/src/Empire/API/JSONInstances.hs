@@ -172,6 +172,7 @@ instance ToJSON AddNode.Request
 instance ToJSON AddNode.Result
 
 instance ToJSON AddPort.Request
+instance ToJSON AddPort.Result
 
 instance ToJSON AddSubgraph.Request
 

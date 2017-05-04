@@ -20,11 +20,9 @@ import           NodeEditor.Action.State.Scene           (getInputSidebarSize)
 import           NodeEditor.Event.Mouse                  (mousePosition)
 import           NodeEditor.React.Model.Constants        (gridSize)
 import           NodeEditor.React.Model.Node.SidebarNode (NodeLoc, countProjectionPorts, outPortAt)
-import           NodeEditor.React.Model.Port             (AnyPortRef (OutPortRef'), OutPortIndex (Projection),
-                                                          OutPortRef (OutPortRef), getPortNumber)
+import           NodeEditor.React.Model.Port             (AnyPortRef (OutPortRef'), OutPortIndex (Projection), OutPortRef, getPortNumber)
 import qualified NodeEditor.React.Model.Port             as Port
 import           NodeEditor.React.Model.Sidebar          (portPositionInInputSidebar)
-import qualified NodeEditor.React.Model.Sidebar          as Sidebar
 import qualified NodeEditor.React.View.Sidebar           as Sidebar
 import           NodeEditor.State.Action                 (Action (begin, continue, end, update), Connect, Mode (Click, Drag),
                                                           PortDrag (PortDrag), connectIsPortPhantom, connectMode, connectSourcePort,
@@ -46,7 +44,7 @@ instance Action (Command State) PortDrag where
         else cancelPortDragUnsafe action
 
 addPort :: OutPortRef -> Command State ()
-addPort portRef = Basic.addPort portRef
+addPort portRef = Basic.addPort portRef Nothing
 
 removePort :: OutPortRef -> Command State ()
 removePort portRef = do
@@ -142,7 +140,7 @@ finishPortDrag portDrag = do
     if portRef == orgPortRef then end portDrag else do
         setInputSidebarPortMode portRef Port.Normal
         if isPhantom
-            then Batch.addPort portRef
+            then Batch.addPort portRef Nothing
             else Batch.movePort orgPortRef $ getPortNumber portId
         removeActionFromState portDragAction
 

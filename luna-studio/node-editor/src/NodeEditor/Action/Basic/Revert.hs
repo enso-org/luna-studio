@@ -85,7 +85,7 @@ revertRemoveNodes (RemoveNodes.Request _loc _) (Response.Error _msg) = panic
 revertRemovePort :: RemovePort.Request -> Response.Status RemovePort.Inverse -> Command State ()
 revertRemovePort (RemovePort.Request loc portRef) (Response.Ok (RemovePort.Inverse conns)) =
     inCurrentLocation loc $ \path -> do
-        void $ localAddPort $ prependPath path portRef
+        void $ localAddPort (prependPath path portRef) Nothing
         void $ localAddConnections (map (\conn -> (prependPath path (conn ^. src), prependPath path (conn ^. dst))) conns)
 revertRemovePort (RemovePort.Request _loc _portRef) (Response.Error _msg) = panic
 

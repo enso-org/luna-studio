@@ -11,6 +11,7 @@ import           Empire.API.Data.Node                        (Node (ExpressionNo
 import           Empire.API.Data.NodeLoc                     (nodeLoc, prependPath)
 import qualified Empire.API.Data.NodeLoc                     as NodeLoc
 import           Empire.API.Data.NodeMeta                    (displayResult, position)
+import           Empire.API.Data.PortRef                     (AnyPortRef (InPortRef', OutPortRef'))
 import qualified Empire.API.Graph.AddConnection              as AddConnection
 import qualified Empire.API.Graph.AddNode                    as AddNode
 import qualified Empire.API.Graph.AddPort                    as AddPort
@@ -134,20 +135,24 @@ handle (Event.Batch ev) = Just $ case ev of
             void . localAddConnections . map convert $ result ^. AddNode.newConns
 
     AddPortResponse response -> handleResponse response success failure where
-        requestId     = response ^. Response.requestId
-        request       = response ^. Response.request
-        location      = request  ^. AddPort.location
-        portRef       = request  ^. AddPort.outPortRef
-        failure _     = whenM (isOwnRequest requestId) $ revertAddPort request
-        success node' = inCurrentLocation location $ \path -> do
-            let node = convert (path, node')
-            ownRequest    <- isOwnRequest requestId
+        requestId      = response ^. Response.requestId
+        request        = response ^. Response.request
+        location       = request  ^. AddPort.location
+        portRef        = request  ^. AddPort.outPortRef
+        failure _      = whenM (isOwnRequest requestId) $ revertAddPort request
+        success result = inCurrentLocation location $ \path -> do
+            let sidebar = convert (path, result ^. AddPort.sidebar)
+            ownRequest <- isOwnRequest requestId
             if ownRequest then do
-                 void $ localUpdateInputNode node
+                 void $ localUpdateOrAddInputNode sidebar
             else do
                 --TODO[LJK, PM]: What should happen if localAddPort fails? (Example reason - node is not in graph)
-                void $ localAddPort $ prependPath path portRef
-                void $ localUpdateInputNode node
+                void $ localAddPort (prependPath path portRef) Nothing
+                void $ localAddConnections . catMaybes $ flip map (request ^. AddPort.connectTo) $ \connDst -> case connDst of
+                    OutPortRef' _   -> $notImplemented
+                    InPortRef'  dst -> Just (portRef, dst)
+                void $ localUpdateOrAddInputNode sidebar
+            mapM_ (localUpdateOrAddExpressionNode . convert) $ map (path,) $ result ^. AddPort.dstNodes
 
     AddSubgraphResponse response -> handleResponse response success failure where
         requestId      = response ^. Response.requestId

@@ -207,7 +207,7 @@ handleRemoveNodesUndo (Response.Response _ _ req (Response.Ok inv) (Response.Ok 
 -- TODO[LJK/SB]: Preserve connections
 getUndoRemovePort :: RemovePort.Request -> RemovePort.Inverse -> AddPort.Request
 getUndoRemovePort (RemovePort.Request location portRef) (RemovePort.Inverse conns) =
-    AddPort.Request location portRef $ Just conns
+    AddPort.Request location portRef $ map (InPortRef' . view Connection.dst) conns
 
 handleRemovePortUndo :: RemovePort.Response -> Maybe (AddPort.Request, RemovePort.Request)
 handleRemovePortUndo (Response.Response _ _ req (Response.Ok inv) (Response.Ok _)) =
