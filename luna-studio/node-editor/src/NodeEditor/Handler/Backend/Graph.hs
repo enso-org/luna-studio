@@ -36,10 +36,10 @@ import qualified Empire.API.Graph.SetNodeExpression          as SetNodeExpressio
 import qualified Empire.API.Graph.SetNodesMeta               as SetNodesMeta
 import qualified Empire.API.Graph.SetPortDefault             as SetPortDefault
 import qualified Empire.API.Response                         as Response
-import           NodeEditor.Action.Basic                     (localAddConnection, localAddExpressionNode, localAddPort, localAddSubgraph,
-                                                              localMerge, localMoveNodes, localMovePort, localRemoveConnection,
-                                                              localRemoveNodes, localRemovePort, localRenameNode, localSetCode,
-                                                              localSetNodeCode, localSetNodeExpression, localSetNodesMeta,
+import           NodeEditor.Action.Basic                     (localAddConnection, localAddConnections, localAddExpressionNode, localAddPort,
+                                                              localAddSubgraph, localMerge, localMoveNodes, localMovePort,
+                                                              localRemoveConnection, localRemoveNodes, localRemovePort, localRenameNode,
+                                                              localSetCode, localSetNodeCode, localSetNodeExpression, localSetNodesMeta,
                                                               localSetPortDefault, localSetSearcherHints, localUpdateExpressionNode,
                                                               localUpdateExpressionNodes, localUpdateInputNode, localUpdateNodeTypecheck,
                                                               localUpdateOrAddExpressionNode, localUpdateOrAddInputNode,
@@ -108,25 +108,30 @@ handle (Event.Batch ev) = Just $ case ev of
             case result ^. AddConnection.srcNode of
                 ExpressionNode' n -> localUpdateOrAddExpressionNode $ convert (path, n)
                 InputSidebar'   n -> localUpdateOrAddInputNode      $ convert (path, n)
-                _ -> $notImplemented
+                OutputSidebar'  n -> localUpdateOrAddOutputNode     $ convert (path, n) -- this should not happen
             case result ^. AddConnection.dstNode of
                 ExpressionNode' n -> localUpdateOrAddExpressionNode $ convert (path, n)
                 OutputSidebar'  n -> localUpdateOrAddOutputNode     $ convert (path, n)
-                _ -> $notImplemented
+                InputSidebar'   n -> localUpdateOrAddInputNode      $ convert (path, n) -- this should not happen
             void $ localAddConnection (prependPath path (result ^. AddConnection.connection . src)) (prependPath path (result ^. AddConnection.connection . dst))
 
     AddNodeResponse response -> handleResponse response success failure where
-        requestId     = response ^. Response.requestId
-        request       = response ^. Response.request
-        location      = request  ^. AddNode.location
-        failure _     = whenM (isOwnRequest requestId) $ revertAddNode request
-        success node' = inCurrentLocation location $ \path -> do
-            let node = convert (path, node')
+        requestId      = response ^. Response.requestId
+        request        = response ^. Response.request
+        location       = request  ^. AddNode.location
+        failure _      = whenM (isOwnRequest requestId) $ revertAddNode request
+        success result = inCurrentLocation location $ \path -> do
+            let node = convert (path, result ^. AddNode.node)
             ownRequest <- isOwnRequest requestId
             if ownRequest then do
                  void $ localUpdateExpressionNode node
                  collaborativeModify [node ^. nodeLoc]
             else localAddExpressionNode node
+            withJust (result ^. AddNode.connectedNode) $ \n -> case n of
+                ExpressionNode' n -> localUpdateOrAddExpressionNode $ convert (path, n)
+                InputSidebar'   n -> localUpdateOrAddInputNode      $ convert (path, n) -- this may happen but no reason why
+                OutputSidebar'  n -> localUpdateOrAddOutputNode     $ convert (path, n) -- this should not happen
+            void . localAddConnections . map convert $ result ^. AddNode.newConns
 
     AddPortResponse response -> handleResponse response success failure where
         requestId     = response ^. Response.requestId

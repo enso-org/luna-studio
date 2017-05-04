@@ -15,7 +15,7 @@ import qualified Data.IntMap                        as IntMap
 import           Data.List                          (break, find, partition)
 import           Data.List.Split                    (splitOneOf)
 import qualified Data.Map                           as Map
-import           Data.Maybe                         (fromMaybe, isJust, isNothing, maybeToList)
+import           Data.Maybe                         (fromMaybe, isJust, isNothing, listToMaybe, maybeToList)
 import qualified Data.Set                           as Set
 import           Data.Text                          (stripPrefix)
 import qualified Data.Text                          as Text
@@ -170,6 +170,26 @@ defInverse = const $ return ()
 generateNodeId :: IO NodeId
 generateNodeId = UUID.nextRandom
 
+getAllNodes :: GraphLocation -> Empire [Node.Node]
+getAllNodes location = do
+    graph <- Graph.getGraph location
+    return $ map Node.ExpressionNode' (graph ^. GraphAPI.nodes)
+          ++ map Node.InputSidebar'   (maybeToList $ graph ^. GraphAPI.inputSidebar)
+          ++ map Node.OutputSidebar'  (maybeToList $ graph ^. GraphAPI.outputSidebar)
+
+getNodesByIds :: GraphLocation -> [NodeId] -> Empire [Node.Node]
+getNodesByIds location nids = filter (\n -> Set.member (n ^. Node.nodeId) nidsSet) <$> getAllNodes location where
+    nidsSet = Set.fromList nids
+
+getNodeById :: GraphLocation -> NodeId -> Empire (Maybe Node.Node)
+getNodeById location nid = fmap listToMaybe $ getNodesByIds location [nid]
+
+getSrcPortByNodeId :: NodeId -> OutPortRef
+getSrcPortByNodeId nid = OutPortRef (NodeLoc def nid) []
+
+getDstPortByNodeLoc :: NodeLoc -> AnyPortRef
+getDstPortByNodeLoc nl = InPortRef' $ InPortRef nl [Self]
+
 addExpressionNode :: GraphLocation -> NodeId -> Text -> NodeMeta -> Maybe NodeId -> Empire ExpressionNode
 addExpressionNode location nodeId expression nodeMeta connectTo = do
     case parseExpr expression of
@@ -180,17 +200,6 @@ addExpressionNode location nodeId expression nodeMeta connectTo = do
         Module   name -> throwError "Module Nodes not yet supported"
         Input    name -> throwError "Input Nodes not yet supported"
         Output   name -> throwError "Output Nodes not yet supported"
-
-connectNodes :: UUID -> Maybe UUID -> GraphLocation -> Text -> NodeId -> NodeId -> StateT Env BusT ()
-connectNodes reqId guiId location expr dstNodeId srcNodeId = do
-    let exprCall = head $ splitOneOf " ." $ Text.unpack expr
-        inPort   = if exprCall `elem` stdlibFunctions then [Arg 0] else [Self]
-        request  = Request reqId guiId $ AddConnection.Request location (Left $ OutPortRef (NodeLoc def srcNodeId) []) (Left . InPortRef' $ InPortRef (NodeLoc def dstNodeId) inPort)
-        action (AddConnection.Request location (Left src) (Left dst)) = Graph.connectCondTC False location src dst
-        --TODO[LJK]: There should be result, not update
-        success _ _ connection                                        = sendToBus' $ ConnectUpdate.Update location connection
-    modifyGraph defInverse action success request
-    forceTC location --TODO[MM]: is this not the same as: `Graph.connectCondTC True location src dst` in action???
 
 -- Handlers
 
@@ -205,32 +214,32 @@ handleGetProgram = modifyGraph defInverse action replyResult where
 
 handleAddConnection :: Request AddConnection.Request -> StateT Env BusT ()
 handleAddConnection = modifyGraph defInverse action replyResult where
-    getSrcPort src = case src of
-        Left portRef -> portRef
-        Right nodeId -> OutPortRef (NodeLoc def nodeId) []
-    getDstPort dst = case dst of
-        Left portRef  -> portRef
-        Right nodeLoc -> InPortRef' $ InPortRef nodeLoc [Self]
+    getSrcPort = either id getSrcPortByNodeId
+    getDstPort = either id getDstPortByNodeLoc
     action  (AddConnection.Request location src' dst') = do
         let src = getSrcPort src'
             dst = getDstPort dst'
         conn  <- Graph.connectCondTC True location src dst
-        graph <- Graph.getGraph location
-        let allNodes = map Node.ExpressionNode' (graph ^. GraphAPI.nodes)
-                    ++ map Node.InputSidebar'   (maybeToList $ graph ^. GraphAPI.inputSidebar)
-                    ++ map Node.OutputSidebar'  (maybeToList $ graph ^. GraphAPI.outputSidebar)
-            srcNode = find (\n -> n ^. Node.nodeId == src ^. PortRef.srcNodeId) allNodes
+        allNodes <- getAllNodes location
+        let srcNode = find (\n -> n ^. Node.nodeId == src ^. PortRef.srcNodeId) allNodes
             dstNode = find (\n -> n ^. Node.nodeId == dst ^. PortRef.nodeId) allNodes
         if      isNothing srcNode then throwError "Connection source node not found"
         else if isNothing dstNode then throwError "Connection source node not found"
         else return $ AddConnection.Result conn (fromJust srcNode) (fromJust dstNode)
 
 handleAddNode :: Request AddNode.Request -> StateT Env BusT ()
-handleAddNode = modifyGraph defInverse action success where
-    action (AddNode.Request location (NodeLoc _ nodeId) expression nodeMeta connectTo) = addExpressionNode location nodeId expression nodeMeta connectTo
-    success req@(Request reqId guiId (AddNode.Request location (NodeLoc _ nodeId) expression _ connectTo)) inv node = do
-        replyResult req inv node
-        withJust connectTo $ connectNodes reqId guiId location expression nodeId
+handleAddNode = modifyGraph defInverse action replyResult where
+    action (AddNode.Request location nl@(NodeLoc _ nodeId) expression nodeMeta connectTo) = do
+        oldConnsSet <- Set.fromList <$> Graph.getConnections location
+        node        <- addExpressionNode location nodeId expression nodeMeta connectTo
+        forM connectTo $ \nid -> do
+            let srcPortRef = getSrcPortByNodeId nid
+                dstPortRef = getDstPortByNodeLoc nl
+            catchAll (void $ Graph.connectCondTC False location srcPortRef dstPortRef) (const $ return ())
+        newConnsSet <- Set.fromList <$> Graph.getConnections location
+        let conns = map convert . Set.toList $ Set.filter (flip Set.notMember oldConnsSet) newConnsSet
+        connectedNode <- maybe (return Nothing) (getNodeById location) connectTo
+        return $ AddNode.Result node conns connectedNode
 
 handleAddPort :: Request AddPort.Request -> StateT Env BusT ()
 handleAddPort = modifyGraph defInverse action replyResult where

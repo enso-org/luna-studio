@@ -169,6 +169,7 @@ instance ToJSON AddConnection.Request
 instance ToJSON AddConnection.Result
 
 instance ToJSON AddNode.Request
+instance ToJSON AddNode.Result
 
 instance ToJSON AddPort.Request
 
