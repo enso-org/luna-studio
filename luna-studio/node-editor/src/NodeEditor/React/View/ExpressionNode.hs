@@ -150,7 +150,7 @@ nodeBody = React.defineView objNameBody $ \(ref, n) -> do
         selectionMark_
         div_
             [ "key"       $= "properties-crop"
-            , "className" $= Style.prefixFromList ["node__properties-crop", "input"]
+            , "className" $= Style.prefix "node__properties-crop"
             ] $ do
             blurBackground_
             case n ^. Node.mode of
