@@ -6,6 +6,7 @@
 
 module Empire.Server.Graph where
 
+import           Control.Arrow                      ((&&&))
 import           Control.Monad.Error                (throwError)
 import           Control.Monad.State                (StateT)
 import qualified Data.Binary                        as Bin
@@ -255,7 +256,15 @@ handleAddPort = modifyGraph defInverse action replyResult where
 
 handleAddSubgraph :: Request AddSubgraph.Request -> StateT Env BusT ()
 handleAddSubgraph = modifyGraph defInverse action replyResult where
-    action (AddSubgraph.Request location nodes connections) = Graph.addSubgraph location nodes connections
+    action (AddSubgraph.Request location nodes connections) = do
+        oldNodes <- Map.fromList . map (view Node.nodeId &&& id) <$> getAllNodes location
+        oldConns <- Map.fromList . map (snd &&& id) <$> Graph.getConnections location
+        Graph.addSubgraph location nodes connections
+        newNodes <- getAllNodes location
+        newConns <- Graph.getConnections location
+        let resNodes = filter (\n -> Just n /= Map.lookup (n ^. Node.nodeId) oldNodes) newNodes
+            resConns = filter (\c -> Just c /= Map.lookup (snd c)            oldConns) newConns
+        return $ AddSubgraph.Result resNodes $ map convert resConns
 
 handleAutolayoutNodes :: Request AutolayoutNodes.Request -> StateT Env BusT ()
 handleAutolayoutNodes = modifyGraph inverse action replyResult where

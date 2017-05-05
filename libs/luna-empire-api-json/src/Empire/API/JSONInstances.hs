@@ -175,6 +175,7 @@ instance ToJSON AddPort.Request
 instance ToJSON AddPort.Result
 
 instance ToJSON AddSubgraph.Request
+instance ToJSON AddSubgraph.Result
 
 instance ToJSON AutolayoutNodes.Request
 instance ToJSON AutolayoutNodes.Inverse
