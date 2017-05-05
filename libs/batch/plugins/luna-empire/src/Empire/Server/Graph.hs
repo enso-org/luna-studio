@@ -323,12 +323,16 @@ handleRemoveNodes = modifyGraphOk inverse action where
     action (RemoveNodes.Request location nodeLocs)  = Graph.removeNodes location $ convert <$> nodeLocs --TODO[PM -> MM] Use NodeLoc instead of NodeId
 
 handleRemovePort :: Request RemovePort.Request -> StateT Env BusT ()
-handleRemovePort = modifyGraphOk inverse action where
+handleRemovePort = modifyGraph inverse action replyResult where
     inverse (RemovePort.Request location portRef) = do
         Graph allNodes allConnections _ _ monads <- Graph.withGraph location $ runASTOp buildGraph
         let conns = flip filter allConnections $ (== portRef) . fst
         return $ RemovePort.Inverse $ map (uncurry Connection) conns
-    action (RemovePort.Request location portRef)  = Graph.removePort location portRef
+    action (RemovePort.Request location portRef) = do
+        Graph.removePort location portRef
+        maySidebar <- view GraphAPI.inputSidebar <$> Graph.getGraph location
+        maybe (throwError "Sidebar does not exist") return maySidebar
+
 
 handleRenameNode :: Request RenameNode.Request -> StateT Env BusT ()
 handleRenameNode = modifyGraphOk inverse action where

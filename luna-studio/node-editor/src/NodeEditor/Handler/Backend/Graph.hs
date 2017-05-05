@@ -259,7 +259,6 @@ handle (Event.Batch ev) = Just $ case ev of
             else void $ localRemoveConnection $ prependPath path connId
             void . localAddConnections . map (prependPath path . view src &&& prependPath path . view dst) $ result ^. RemoveConnection.newConns
 
-
     RemoveConnectionUpdate update -> do
         inCurrentLocation (update ^. RemoveConnection.location') $ \path ->
             void $ localRemoveConnection $ prependPath path $ update ^. RemoveConnection.connId'
@@ -283,12 +282,13 @@ handle (Event.Batch ev) = Just $ case ev of
         location        = request  ^. RemovePort.location
         portRef         = request  ^. RemovePort.portRef
         failure inverse = whenM (isOwnRequest requestId) $ revertRemovePort request inverse
-        success _       = inCurrentLocation location $ \path -> do
+        success result  = inCurrentLocation location $ \path -> do
             ownRequest <- isOwnRequest requestId
             if ownRequest then
                 --TODO[LJK]: This is left to remind to set Confirmed flag in changes
                 return ()
             else void $ localRemovePort $ prependPath path portRef
+            localUpdateOrAddInputNode $ convert (path, result)
 
     RenameNodeResponse response -> handleResponse response success failure where
         requestId       = response ^. Response.requestId

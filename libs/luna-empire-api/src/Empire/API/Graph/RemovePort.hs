@@ -6,6 +6,7 @@ import           Prologue
 import           Data.Map                      (Map (..))
 import           Empire.API.Data.Connection    (Connection)
 import           Empire.API.Data.GraphLocation (GraphLocation)
+import           Empire.API.Data.Node          (InputSidebar)
 import           Empire.API.Data.PortRef       (OutPortRef)
 import qualified Empire.API.Graph.Request      as G
 import qualified Empire.API.Request            as R
@@ -20,8 +21,10 @@ data Request = Request { _location :: GraphLocation
 data Inverse = Inverse { _connections :: [Connection]
                        } deriving (Generic, Eq, NFData, Show)
 
-type Response = Response.SimpleResponse Request Inverse
-instance Response.ResponseResult Request Inverse ()
+type Result = InputSidebar
+
+type Response = Response.Response Request Inverse Result
+instance Response.ResponseResult Request Inverse Result
 
 makeLenses ''Request
 makeLenses ''Inverse
