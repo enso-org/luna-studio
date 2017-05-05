@@ -216,6 +216,7 @@ instance ToJSON Substitute.Request
 instance ToJSON Substitute.Update
 
 instance ToJSON RemoveConnection.Request
+instance ToJSON RemoveConnection.Result
 instance ToJSON RemoveConnection.Inverse
 instance ToJSON RemoveConnection.Update
 

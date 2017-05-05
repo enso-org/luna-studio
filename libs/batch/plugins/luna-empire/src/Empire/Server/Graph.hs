@@ -296,13 +296,19 @@ handleMovePort = modifyGraph defInverse action replyResult where
     action (MovePort.Request location portRef newPortPos) = Graph.movePort location portRef newPortPos
 
 handleRemoveConnection :: Request RemoveConnection.Request -> StateT Env BusT ()
-handleRemoveConnection = modifyGraphOk inverse action where
+handleRemoveConnection = modifyGraph inverse action replyResult where
     inverse (RemoveConnection.Request location dst) = do
         connections <- Graph.withGraph location $ runASTOp buildConnections
         case find (\conn -> snd conn == dst) connections of
             Nothing       -> throwError "Connection does not exist"
             Just (src, _) -> return $ RemoveConnection.Inverse src
-    action  (RemoveConnection.Request location dst) = Graph.disconnect location dst
+    action (RemoveConnection.Request location dst) = do
+        oldConns <- Set.fromList <$> Graph.getConnections location
+        Graph.disconnect location dst
+        mayDstNode <- getNodeById location $ dst ^. PortRef.dstNodeId
+        case mayDstNode of
+            Nothing      -> throwError "Connection destination does not exist"
+            Just dstNode -> RemoveConnection.Result dstNode . map convert . filter (flip Set.notMember oldConns) <$> Graph.getConnections location
 
 handleRemoveNodes :: Request RemoveNodes.Request -> StateT Env BusT ()
 handleRemoveNodes = modifyGraphOk inverse action where
