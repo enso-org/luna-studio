@@ -18,9 +18,9 @@ import           NodeEditor.React.Model.Constants           (gridSize, lineHeigh
 import           NodeEditor.React.Model.Layout              (Layout, inputSidebarPortPosition, outputSidebarPortPosition)
 import           NodeEditor.React.Model.Node                (ExpressionNode, Node (Expression), NodeLoc)
 import qualified NodeEditor.React.Model.Node                as Node
-import           NodeEditor.React.Model.Node.ExpressionNode (countArgPorts, countOutPorts, isCollapsed, position, inPorts)
-import           NodeEditor.React.Model.Port                (EitherPort, InPort, InPortId, OutPort, OutPortId, getPortNumber, isSelf,
-                                                             portAngleStart, portAngleStop, portGap, portId, IsSelf, IsOnly, IsAlias)
+import           NodeEditor.React.Model.Node.ExpressionNode (countArgPorts, countOutPorts, inPorts, isCollapsed, position)
+import           NodeEditor.React.Model.Port                (EitherPort, InPort, InPortId, IsAlias, IsOnly, IsSelf, OutPort, OutPortId,
+                                                             getPortNumber, isSelf, portAngleStart, portAngleStop, portGap, portId)
 import qualified NodeEditor.React.Model.Port                as Port
 
 
@@ -40,8 +40,8 @@ data Connection = Connection
 data PosConnection = PosConnection
         { _pSrc    :: OutPortRef
         , _pDst    :: InPortRef
-        , _pSrcPos  :: Position
-        , _pDstPos  :: Position
+        , _pSrcPos :: Position
+        , _pDstPos :: Position
         , _pMode   :: Mode
         , _pColor  :: Color
         } deriving (Eq, Show, Typeable, Generic)
