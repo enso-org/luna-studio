@@ -4,6 +4,7 @@ import           Data.Binary                   (Binary)
 import           Prologue
 
 import           Empire.API.Data.GraphLocation (GraphLocation)
+import           Empire.API.Data.Node          (ExpressionNode, InputSidebar)
 import           Empire.API.Data.PortRef       (OutPortRef)
 import qualified Empire.API.Graph.Request      as G
 import qualified Empire.API.Request            as R
@@ -18,13 +19,19 @@ data Request = Request { _location :: GraphLocation
 data Inverse = Inverse { _prevName :: String
                        } deriving (Generic, Show, Eq, NFData)
 
-type Response = Response.SimpleResponse Request Inverse
-instance Response.ResponseResult Request Inverse ()
+data Result = Result { _sidebar      :: InputSidebar
+                     , _updatedNodes :: [ExpressionNode]
+                     } deriving (Generic, Show, Eq, NFData)
+
+type Response = Response.Response Request Inverse Result
+instance Response.ResponseResult Request Inverse Result
 
 makeLenses ''Request
 makeLenses ''Inverse
+makeLenses ''Result
 instance Binary Request
 instance Binary Inverse
+instance Binary Result
 instance G.GraphRequest Request where location = location
 
 topicPrefix = "empire.graph.node.renamePort"

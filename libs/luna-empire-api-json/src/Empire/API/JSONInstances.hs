@@ -231,6 +231,7 @@ instance ToJSON RenameNode.Inverse
 
 instance ToJSON RenamePort.Request
 instance ToJSON RenamePort.Inverse
+instance ToJSON RenamePort.Result
 
 instance ToJSON a => ToJSON (Request.Request a)
 

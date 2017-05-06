@@ -307,12 +307,9 @@ handle (Event.Batch ev) = Just $ case ev of
         portRef         = request  ^. RenamePort.portRef
         name            = request  ^. RenamePort.name
         failure inverse = whenM (isOwnRequest requestId) $ $notImplemented
-        success _       = inCurrentLocation location $ \path -> do
-            ownRequest <- isOwnRequest requestId
-            if ownRequest then
-                --TODO[LJK]: This is left to remind to set Confirmed flag in changes
-                return ()
-            else void $ $notImplemented
+        success result  = inCurrentLocation location $ \path -> do
+            localUpdateOrAddInputNode $ convert (path, result ^. RenamePort.sidebar)
+            forM_ (result ^. RenamePort.updatedNodes) $ localUpdateOrAddExpressionNode . convert . (path,)
 
 
     SearchNodesResponse response -> handleResponse response success doNothing where

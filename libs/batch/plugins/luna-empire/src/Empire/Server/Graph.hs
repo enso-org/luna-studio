@@ -345,11 +345,15 @@ handleRenameNode = modifyGraph inverse action replyResult where
         filter (\n -> Just n /= Map.lookup (n ^. Node.nodeId) oldNodes) <$> Graph.getNodes location
 
 handleRenamePort :: Request RenamePort.Request -> StateT Env BusT ()
-handleRenamePort = modifyGraphOk inverse action where --FIXME[pm] implement this!
+handleRenamePort = modifyGraph inverse action replyResult where --FIXME[pm] implement this!
     inverse (RenamePort.Request location portRef name) = do
         let oldName = "oldname" --FIXME
         return $ RenamePort.Inverse oldName
-    action (RenamePort.Request location portRef name)  = void $ Graph.renamePort location portRef name
+    action (RenamePort.Request location portRef name) = do
+        oldNodes <- Map.fromList . map (view Node.nodeId &&& id) <$> Graph.getNodes location
+        sidebar  <- Graph.renamePort location portRef name
+        RenamePort.Result sidebar . filter (\n -> Just n /= Map.lookup (n ^. Node.nodeId) oldNodes) <$> Graph.getNodes location
+
 
 handleSearchNodes :: Request SearchNodes.Request -> StateT Env BusT ()
 handleSearchNodes = modifyGraph defInverse action replyResult where
