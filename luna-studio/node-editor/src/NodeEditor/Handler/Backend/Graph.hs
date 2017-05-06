@@ -297,12 +297,8 @@ handle (Event.Batch ev) = Just $ case ev of
         nid             = request  ^. RenameNode.nodeId
         name            = request  ^. RenameNode.name
         failure inverse = whenM (isOwnRequest requestId) $ revertRenameNode request inverse
-        success _       = inCurrentLocation location $ \path -> do
-            ownRequest <- isOwnRequest requestId
-            if ownRequest then
-                --TODO[LJK]: This is left to remind to set Confirmed flag in changes
-                return ()
-            else void $ localRenameNode (convert (path, nid)) name
+        success nodes   = inCurrentLocation location $ \path ->
+            forM_ nodes $ localUpdateOrAddExpressionNode . convert . (path,)
 
     RenamePortResponse response -> handleResponse response success failure where
         requestId       = response ^. Response.requestId
