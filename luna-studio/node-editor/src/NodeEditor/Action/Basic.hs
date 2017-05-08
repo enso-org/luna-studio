@@ -32,7 +32,6 @@ module NodeEditor.Action.Basic
     , localRemovePort
     , localRemoveSelectedNodes
     , localRenameNode
-    , localSetCode
     , localSetNodeCode
     , localSetNodeExpression
     , localSetNodeMeta
@@ -123,7 +122,6 @@ import           NodeEditor.Action.Basic.Scene               (getScene, updateSc
 import           NodeEditor.Action.Basic.SearchNodes         (localSetSearcherHints)
 import           NodeEditor.Action.Basic.SelectNode          (dropSelectionHistory, modifySelectionHistory, selectAll, selectNodes,
                                                               selectPreviousNodes, toggleSelect, unselectAll)
-import           NodeEditor.Action.Basic.SetCode             (localSetCode)
 import           NodeEditor.Action.Basic.SetNodeCode         (localSetNodeCode, setNodeCode)
 import           NodeEditor.Action.Basic.SetNodeExpression   (localSetNodeExpression, setNodeExpression)
 import           NodeEditor.Action.Basic.SetNodeMeta         (localMoveNode, localMoveNodes, localSetNodeMeta, localSetNodesMeta,

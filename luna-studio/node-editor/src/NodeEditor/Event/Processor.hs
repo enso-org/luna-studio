@@ -1,13 +1,14 @@
 module NodeEditor.Event.Processor where
 
 import           Control.Concurrent.MVar
-import           Control.Exception                          (handle)
-import           Data.DateTime                              (getCurrentTime)
-import           Data.Monoid                                (Last (..))
-import           GHCJS.Prim                                 (JSException)
+import           Control.Exception                         (handle)
+import           Data.DateTime                             (getCurrentTime)
+import           Data.Monoid                               (Last (..))
+import           GHCJS.Prim                                (JSException)
 
+import           Common.Prelude
+import           Common.Report
 import qualified JS.Debug
-import           WebSocket                                  (WebSocket)
 import           NodeEditor.Action.Command                 (Command, execCommand)
 import           NodeEditor.Action.State.App               (renderIfNeeded)
 import           NodeEditor.Event.Event                    (Event)
@@ -25,7 +26,6 @@ import qualified NodeEditor.Handler.Backend.Graph          as Graph
 import qualified NodeEditor.Handler.Breadcrumbs            as Breadcrumbs
 import qualified NodeEditor.Handler.Camera                 as Camera
 import qualified NodeEditor.Handler.Clipboard              as Clipboard
-import qualified NodeEditor.Handler.CodeEditor             as CodeEditor
 import qualified NodeEditor.Handler.Collaboration          as Collaboration
 import qualified NodeEditor.Handler.Connect                as Connect
 import qualified NodeEditor.Handler.ConnectionPen          as ConnectionPen
@@ -38,10 +38,9 @@ import qualified NodeEditor.Handler.Searcher               as Searcher
 import qualified NodeEditor.Handler.Sidebar                as Sidebar
 import qualified NodeEditor.Handler.Undo                   as Undo
 import qualified NodeEditor.Handler.Visualization          as Visualization
-import           Common.Prelude
-import           Common.Report
 import           NodeEditor.State.Global                   (State)
 import qualified NodeEditor.State.Global                   as Global
+import           WebSocket                                 (WebSocket)
 
 
 displayProcessingTime :: Bool
@@ -61,7 +60,6 @@ actions loop =
     , Breadcrumbs.handle
     , Camera.handle
     , Clipboard.handle
-    , CodeEditor.handle
     , Collaboration.handle
     , Connect.handle
     , ConnectionPen.handle
