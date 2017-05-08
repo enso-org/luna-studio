@@ -67,6 +67,7 @@ import qualified Empire.API.Graph.RemovePort        as RemovePort
 import qualified Empire.API.Graph.RenameNode        as RenameNode
 import qualified Empire.API.Graph.RenamePort        as RenamePort
 import qualified Empire.API.Graph.Request           as G
+import qualified Empire.API.Graph.Result            as Result
 import qualified Empire.API.Graph.SearchNodes       as SearchNodes
 import qualified Empire.API.Graph.SetNodeCode       as SetNodeCode
 import qualified Empire.API.Graph.SetNodeExpression as SetNodeExpression
@@ -185,6 +186,22 @@ getNodesByIds location nids = filter (\n -> Set.member (n ^. Node.nodeId) nidsSe
 getExpressionNodesByIds :: GraphLocation -> [NodeId] -> Empire [Node.ExpressionNode]
 getExpressionNodesByIds location nids = filter (\n -> Set.member (n ^. Node.nodeId) nidsSet) <$> Graph.getNodes location where
     nidsSet = Set.fromList nids
+
+constructResult :: GraphAPI.Graph -> GraphAPI.Graph -> Result.Result
+constructResult oldGraph newGraph = Result.Result removedNodeIds removedConnIds updatedInGraph where
+    updatedInGraph = GraphAPI.Graph updatedNodes updatedConns updatedInputSidebar updatedOutputSidebar []
+    oldNodesMap    = Map.fromList . map (view Node.nodeId &&& id) $ oldGraph ^. GraphAPI.nodes
+    newNodeIdsSet  = Set.fromList . map (view Node.nodeId) $ newGraph ^. GraphAPI.nodes
+    removedNodeIds = filter (flip Set.notMember newNodeIdsSet) $ Map.keys oldNodesMap
+    updatedNodes   = filter (\n -> Just n /= Map.lookup (n ^. Node.nodeId) oldNodesMap) $ newGraph ^. GraphAPI.nodes
+    oldConnsMap    = Map.fromList . map (snd &&& id) $ oldGraph ^. GraphAPI.connections
+    newConnIdsSet  = Set.fromList . map snd $ newGraph ^. GraphAPI.connections
+    removedConnIds = filter (flip Set.notMember newConnIdsSet) $ Map.keys oldConnsMap
+    updatedConns   = filter (\c@(_, dst) -> Just c /= Map.lookup dst oldConnsMap) $ newGraph ^. GraphAPI.connections
+    updatedInputSidebar = if oldGraph ^. GraphAPI.inputSidebar /= newGraph ^. GraphAPI.inputSidebar
+        then newGraph ^. GraphAPI.inputSidebar else Nothing
+    updatedOutputSidebar = if oldGraph ^. GraphAPI.outputSidebar /= newGraph ^. GraphAPI.outputSidebar
+        then newGraph ^. GraphAPI.outputSidebar else Nothing
 
 
 getNodeById :: GraphLocation -> NodeId -> Empire (Maybe Node.Node)
@@ -367,11 +384,14 @@ handleSetNodeCode = modifyGraphOk inverse action where --FIXME[pm] implement thi
     action (SetNodeCode.Request location nodeId code)  = void $ Graph.setNodeExpression location nodeId code
 
 handleSetNodeExpression :: Request SetNodeExpression.Request -> StateT Env BusT ()-- fixme [SB] returns Result with no new informations and change node expression has addNode+removeNodes
-handleSetNodeExpression = modifyGraphOk inverse action where
-    inverse (SetNodeExpression.Request location nodeId _)         = do
+handleSetNodeExpression = modifyGraph inverse action replyResult where
+    inverse (SetNodeExpression.Request location nodeId _) = do
         oldExpr <- Graph.withGraph location $ runASTOp $ GraphUtils.getASTTarget nodeId >>= Print.printNodeExpression
         return $ SetNodeExpression.Inverse (Text.pack oldExpr)
-    action (SetNodeExpression.Request location nodeId expression) = Graph.setNodeExpression location nodeId expression
+    action (SetNodeExpression.Request location nodeId expression) = do
+        oldGraph <- Graph.getGraph location
+        Graph.setNodeExpression location nodeId expression
+        constructResult oldGraph <$> Graph.getGraph location
 
 handleSetNodesMeta :: Request SetNodesMeta.Request -> StateT Env BusT ()
 handleSetNodesMeta = modifyGraphOk inverse action where

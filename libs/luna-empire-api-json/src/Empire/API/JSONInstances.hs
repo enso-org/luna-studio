@@ -52,6 +52,7 @@ import           Empire.API.Graph.RemoveNodes           as RemoveNodes
 import           Empire.API.Graph.RemovePort            as RemovePort
 import           Empire.API.Graph.RenameNode            as RenameNode
 import           Empire.API.Graph.RenamePort            as RenamePort
+import           Empire.API.Graph.Result                as Result
 import           Empire.API.Graph.SearchNodes           as SearchNodes
 import           Empire.API.Graph.SetNodeCode           as SetNodeCode
 import           Empire.API.Graph.SetNodeExpression     as SetNodeExpression
@@ -163,6 +164,9 @@ instance ToJSON IsSaved.Saved
 
 instance ToJSON Error.ErrorType
 instance ToJSON Error.Error
+
+instance ToJSON Result.Result
+instance FromJSON Result.Result
 
 
 instance ToJSON AddConnection.Request

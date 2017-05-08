@@ -8,6 +8,7 @@ import           Empire.API.Data.Node          (NodeId)
 import qualified Empire.API.Response           as Response
 
 import qualified Empire.API.Graph.Request      as G
+import           Empire.API.Graph.Result       (Result)
 import qualified Empire.API.Request            as R
 import qualified Empire.API.Response           as Response
 import qualified Empire.API.Topic              as T
@@ -20,8 +21,8 @@ data Request = Request { _location   :: GraphLocation
 data Inverse = Inverse { _prevExpression :: Text
                        } deriving (Generic, Show, Eq, NFData)
 
-type Response = Response.SimpleResponse Request Inverse
-instance Response.ResponseResult Request Inverse ()
+type Response = Response.Response Request Inverse Result
+instance Response.ResponseResult Request Inverse Result
 
 makeLenses ''Request
 makeLenses ''Inverse

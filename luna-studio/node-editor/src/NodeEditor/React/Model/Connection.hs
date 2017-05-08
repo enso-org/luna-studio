@@ -1,4 +1,7 @@
-module NodeEditor.React.Model.Connection where
+module NodeEditor.React.Model.Connection
+    ( module X
+    , module NodeEditor.React.Model.Connection
+    ) where
 
 import           Common.Prelude
 import           Control.Arrow                              ((&&&))
@@ -6,6 +9,7 @@ import           Data.Aeson                                 (ToJSON)
 import           Data.Convert                               (Convertible (convert))
 import           Data.HashMap.Strict                        (HashMap)
 import qualified Data.HashMap.Strict                        as HashMap
+import           Empire.API.Data.Connection                 as X (ConnectionId)
 import qualified Empire.API.Data.Connection                 as Empire
 import           Empire.API.Data.LabeledTree                (LabeledTree (LabeledTree))
 import           Empire.API.Data.PortRef                    (AnyPortRef (InPortRef', OutPortRef'), InPortRef, OutPortRef)
@@ -24,7 +28,6 @@ import           NodeEditor.React.Model.Port                (EitherPort, InPort,
 import qualified NodeEditor.React.Model.Port                as Port
 
 
-type ConnectionId = InPortRef
 data Mode = Normal | Sidebar | Highlighted | Dimmed deriving (Eq, Show, Typeable, Generic)
 
 instance ToJSON Mode
