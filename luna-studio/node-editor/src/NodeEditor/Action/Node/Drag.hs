@@ -79,6 +79,7 @@ clearSnappedConnection :: NodeDrag -> Command State ()
 clearSnappedConnection nodeDrag = do
     let nl = nodeDrag ^. nodeDragNodeLoc
     modifyNodeEditor $ halfConnections .= def
+    print $ nodeDrag ^. nodeDragSnappedConnIdAndPrevMode
     withJust (nodeDrag ^. nodeDragSnappedConnIdAndPrevMode) $ \(connId, m) ->
         modifyConnection connId $ Connection.mode .= m
     void $ updatePortSelfVisibility nl
@@ -104,7 +105,8 @@ snapConnectionsForNodes mousePos nodeLocs = when (length nodeLocs == 1) $ forM_ 
                         let conns = map (Connection.mode .~ Highlighted) [connModel1, connModel2]
                             conns' = mapMaybe (toPosConnection ne) conns
                         modifyNodeEditor $ halfConnections .= map convert conns'
-                        continue $ \nodeDrag -> update $ nodeDrag & nodeDragSnappedConnIdAndPrevMode ?~ (connId, conn ^. Connection.mode)
+                        continue $ \nodeDrag -> when (Just connId /= (fst <$> nodeDrag ^. nodeDragSnappedConnIdAndPrevMode))
+                                                    $ update $ nodeDrag & nodeDragSnappedConnIdAndPrevMode ?~ (connId, conn ^. Connection.mode)
                         modifyConnection connId $ Connection.mode .= Dimmed
                     _ -> continue clearSnappedConnection
             _ -> continue clearSnappedConnection
