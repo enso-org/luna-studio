@@ -79,7 +79,6 @@ clearSnappedConnection :: NodeDrag -> Command State ()
 clearSnappedConnection nodeDrag = do
     let nl = nodeDrag ^. nodeDragNodeLoc
     modifyNodeEditor $ halfConnections .= def
-    print $ nodeDrag ^. nodeDragSnappedConnIdAndPrevMode
     withJust (nodeDrag ^. nodeDragSnappedConnIdAndPrevMode) $ \(connId, m) ->
         modifyConnection connId $ Connection.mode .= m
     void $ updatePortSelfVisibility nl
