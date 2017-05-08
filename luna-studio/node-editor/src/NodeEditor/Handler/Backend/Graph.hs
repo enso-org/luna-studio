@@ -360,11 +360,7 @@ handle (Event.Batch ev) = Just $ case ev of
         location        = request  ^. SetNodesMeta.location
         updates         = request  ^. SetNodesMeta.updates
         failure inverse = whenM (isOwnRequest requestId) $ revertSetNodesMeta request inverse
-        success _       = inCurrentLocation location $ \path -> do
-            ownRequest <- isOwnRequest requestId
-            if ownRequest then
-                return ()
-            else void $ localSetNodesMeta $ map (\(nid, meta) -> (convert (path, nid), meta ^. position, meta ^. displayResult)) updates
+        success result  = whenM (not <$> isOwnRequest requestId) $ inCurrentLocation location $ \path -> applyResult path result
 
     SetPortDefaultResponse response -> handleResponse response success failure where
         requestId       = response ^. Response.requestId

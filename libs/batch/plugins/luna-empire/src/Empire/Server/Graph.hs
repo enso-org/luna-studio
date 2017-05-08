@@ -394,7 +394,7 @@ handleSetNodeExpression = modifyGraph inverse action replyResult where
         constructResult oldGraph <$> Graph.getGraph location
 
 handleSetNodesMeta :: Request SetNodesMeta.Request -> StateT Env BusT ()
-handleSetNodesMeta = modifyGraphOk inverse action where
+handleSetNodesMeta = modifyGraph inverse action replyResult where
     inverse (SetNodesMeta.Request location updates) = do
         allNodes <- Graph.withGraph location $ runASTOp buildNodes
         let idSet = Set.fromList $ map fst updates
@@ -403,7 +403,10 @@ handleSetNodesMeta = modifyGraphOk inverse action where
                      Just (node ^. Node.nodeId, node ^. Node.nodeMeta)
                 else Nothing
         return $ SetNodesMeta.Inverse prevMeta
-    action (SetNodesMeta.Request location updates) = forM_ updates $ uncurry $ Graph.setNodeMeta location
+    action (SetNodesMeta.Request location updates) = do
+        oldGraph <- Graph.getGraph location
+        forM_ updates $ uncurry $ Graph.setNodeMeta location
+        constructResult oldGraph <$> Graph.getGraph location
 
 handleSetPortDefault :: Request SetPortDefault.Request -> StateT Env BusT ()
 handleSetPortDefault = modifyGraphOk inverse action where
