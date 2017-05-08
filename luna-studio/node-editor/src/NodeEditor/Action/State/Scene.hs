@@ -25,8 +25,6 @@ translateToWorkspace pos = Scene.translateToWorkspace pos <$> getScreenTranform
 translateToScreen :: Position -> Command State ScreenPosition
 translateToScreen pos = Scene.translateToScreen pos <$> getScreenTranform
 
--- WARNING: Those functions can discretely change our app, be sure to redraw connections for sidebars!
-
 getScene :: Command State (Maybe Scene)
 getScene = NE.getScene >>= maybe (updateScene >> NE.getScene) (return . return . id)
 

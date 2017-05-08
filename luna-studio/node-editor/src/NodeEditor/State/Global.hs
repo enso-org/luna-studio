@@ -30,7 +30,7 @@ data State = State
         , _collaboration        :: Collaboration.State
         , _debug                :: DebugState
         , _selectionHistory     :: [Set NodeLoc]
-        , _workspace            :: Workspace
+        , _workspace            :: Maybe Workspace
         , _lastEventTimestamp   :: DateTime
         , _random               :: StdGen
         }
@@ -56,15 +56,15 @@ makeLenses ''BackendState
 makeLenses ''State
 makeLenses ''DebugState
 
-mkState :: Ref App -> ClientId -> FilePath -> DateTime -> StdGen -> State
-mkState ref clientId' path = State
+mkState :: Ref App -> ClientId -> Maybe FilePath -> DateTime -> StdGen -> State
+mkState ref clientId' mpath = State
     {- react                -} (UI.mkState ref)
     {- backend              -} (BackendState def clientId')
     {- actions              -} def
     {- collaboration        -} def
     {- debug                -} def
     {- selectionHistory     -} def
-    {- workspace            -} (Workspace.mk path)
+    {- workspace            -} (Workspace.mk <$> mpath)
 
 nextRandom :: Command State Word8
 nextRandom = uses random Random.random >>= \(val, rnd) -> random .= rnd >> return val

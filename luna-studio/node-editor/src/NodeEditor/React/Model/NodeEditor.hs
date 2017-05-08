@@ -44,8 +44,24 @@ data NodeEditor = NodeEditor { _expressionNodes     :: ExpressionNodesMap
                              , _selectionBox        :: Maybe SelectionBox
                              , _searcher            :: Maybe Searcher
 
+                             , _isGraphLoaded       :: Bool
                              , _layout              :: Layout
-                             } deriving (Default, Eq, Generic)
+                             } deriving (Eq, Generic)
+
+instance Default NodeEditor where
+    def = NodeEditor
+        {- expressionNodes -} def
+        {- inputNode       -} def
+        {- outputNode      -} def
+        {- monads          -} def
+        {- connections     -} def
+        {- visualizations  -} def
+        {- halfConnections -} def
+        {- connectionPen   -} def
+        {- selectionBox    -} def
+        {- searcher        -} def
+        {- isGraphLoaded   -} False
+        {- layout          -} def
 
 makeLenses ''NodeEditor
 

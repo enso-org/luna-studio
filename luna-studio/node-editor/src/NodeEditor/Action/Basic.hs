@@ -5,7 +5,6 @@ module NodeEditor.Action.Basic
     , connect
     , createGraph
     , createNode
-    , destroyGraph
     , dropSelectionHistory
     , enterBreadcrumb
     , enterBreadcrumbs
@@ -104,7 +103,6 @@ import           NodeEditor.Action.Basic.AddPort             (addPort, localAddP
 import           NodeEditor.Action.Basic.AddSubgraph         (addSubgraph, localAddSubgraph, localUpdateSubgraph)
 import           NodeEditor.Action.Basic.CenterGraph         (centerGraph)
 import           NodeEditor.Action.Basic.CreateGraph         (createGraph, updateGraph)
-import           NodeEditor.Action.Basic.DestroyGraph        (destroyGraph)
 import           NodeEditor.Action.Basic.EnterBreadcrumb     (enterBreadcrumb, enterBreadcrumbs, enterNode, exitBreadcrumb)
 import           NodeEditor.Action.Basic.FocusNode           (focusNode, focusNodes, updateNodeZOrder)
 import           NodeEditor.Action.Basic.Merge               (localMerge, localUnmerge)

@@ -20,13 +20,12 @@ withWorkspace :: (Workspace -> UUID -> Maybe UUID -> IO ()) -> Command State ()
 withWorkspace act = do
     uuid       <- registerRequest
     guiID      <- use $ backend . clientId
-    workspace' <- use workspace
-    liftIO $ act workspace' uuid $ Just guiID
+    withJustM (use workspace) $ \workspace' ->
+        liftIO $ act workspace' uuid $ Just guiID
 
 withWorkspace' :: (Workspace -> IO ()) -> Command State ()
 withWorkspace' act = do
-    workspace' <- use workspace
-    liftIO $ act workspace'
+    withJustM (use workspace) $ liftIO . act
 
 withUUID :: (UUID -> Maybe UUID -> IO ()) -> Command State ()
 withUUID act = do

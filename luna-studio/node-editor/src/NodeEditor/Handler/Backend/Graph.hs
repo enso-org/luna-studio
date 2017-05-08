@@ -6,12 +6,11 @@ import           Common.Prelude
 import           Common.Report
 import           Control.Arrow                               ((&&&))
 import qualified Data.DateTime                               as DT
-import           Empire.API.Data.Connection                  (ConnectionId, dst, src)
+import           Empire.API.Data.Connection                  (dst, src)
 import qualified Empire.API.Data.Graph                       as Graph
 import           Empire.API.Data.Node                        (Node (ExpressionNode', InputSidebar', OutputSidebar'), nodeId)
 import           Empire.API.Data.NodeLoc                     (NodePath, nodeLoc, prependPath)
 import qualified Empire.API.Data.NodeLoc                     as NodeLoc
-import           Empire.API.Data.NodeMeta                    (displayResult, position)
 import           Empire.API.Data.PortRef                     (AnyPortRef (InPortRef', OutPortRef'))
 import qualified Empire.API.Graph.AddConnection              as AddConnection
 import qualified Empire.API.Graph.AddNode                    as AddNode
@@ -42,12 +41,11 @@ import qualified Empire.API.Response                         as Response
 import           NodeEditor.Action.Basic                     (localAddConnection, localAddConnections, localAddExpressionNode, localAddPort,
                                                               localMerge, localMoveNodes, localMovePort, localRemoveConnection,
                                                               localRemoveConnections, localRemoveNodes, localRemovePort, localSetNodeCode,
-                                                              localSetNodeExpression, localSetNodesMeta, localSetPortDefault,
-                                                              localSetSearcherHints, localUpdateExpressionNode, localUpdateExpressionNodes,
-                                                              localUpdateInputNode, localUpdateNodeTypecheck,
-                                                              localUpdateOrAddExpressionNode, localUpdateOrAddInputNode,
-                                                              localUpdateOrAddOutputNode, setNodeProfilingData, setNodeValue, updateGraph,
-                                                              updateScene)
+                                                              localSetNodesMeta, localSetPortDefault, localSetSearcherHints,
+                                                              localUpdateExpressionNode, localUpdateExpressionNodes, localUpdateInputNode,
+                                                              localUpdateNodeTypecheck, localUpdateOrAddExpressionNode,
+                                                              localUpdateOrAddInputNode, localUpdateOrAddOutputNode, setNodeProfilingData,
+                                                              setNodeValue, updateGraph, updateScene)
 import           NodeEditor.Action.Basic.Revert              (revertAddConnection, revertAddNode, revertAddPort, revertAddSubgraph,
                                                               revertMovePort, revertRemoveConnection, revertRemoveNodes, revertRemovePort,
                                                               revertRenameNode, revertSetNodeCode, revertSetNodeExpression,
@@ -58,7 +56,7 @@ import           NodeEditor.Action.Camera                    (centerGraph)
 import           NodeEditor.Action.Command                   (Command)
 import           NodeEditor.Action.State.App                 (setBreadcrumbs)
 import           NodeEditor.Action.State.Graph               (inCurrentLocation, isCurrentLocation)
-import           NodeEditor.Action.State.NodeEditor          (modifyExpressionNode, updateMonads)
+import           NodeEditor.Action.State.NodeEditor          (isGraphLoaded, modifyExpressionNode, setGraphLoaded, updateMonads)
 import           NodeEditor.Action.UUID                      (isOwnRequest)
 import qualified NodeEditor.Batch.Workspace                  as Workspace
 import           NodeEditor.Event.Batch                      (Event (..))
@@ -84,9 +82,7 @@ handle (Event.Batch ev) = Just $ case ev of
     GetProgramResponse response -> handleResponse response success failure where
         location       = response ^. Response.request . GetProgram.location
         success result = do
-            isGraphLoaded  <- use $ Global.workspace . Workspace.isGraphLoaded
-            isGoodLocation <- isCurrentLocation location
-            when isGoodLocation $ do
+            whenM (isCurrentLocation location) $ do
                 putStrLn "GetProgram"
                 let nodes       = convert . (NodeLoc.empty,) <$> result ^. GetProgram.graph . Graph.nodes
                     input       = convert . (NodeLoc.empty,) <$> result ^. GetProgram.graph . Graph.inputSidebar
@@ -96,20 +92,20 @@ handle (Event.Batch ev) = Just $ case ev of
                     code        = result ^. GetProgram.code
                     nsData      = result ^. GetProgram.nodeSearcherData
                     breadcrumb  = result ^. GetProgram.breadcrumb
-                Global.workspace . Workspace.nodeSearcherData .= nsData
+                Global.workspace . _Just . Workspace.nodeSearcherData .= nsData
                 setBreadcrumbs breadcrumb
                 updateGraph nodes input output connections monads
-                unless isGraphLoaded $ do
+                unlessM isGraphLoaded $ do
                     centerGraph
                     requestCollaborationRefresh
-                Global.workspace . Workspace.isGraphLoaded .= True
+                setGraphLoaded True
                 updateScene
         failure _ = do
-            isOnTop <- uses Global.workspace Workspace.isOnTopBreadcrumb
+            isOnTop <- fromMaybe True <$> preuses (Global.workspace . traverse) Workspace.isOnTopBreadcrumb
             if isOnTop
                 then fatal "Cannot get file from backend"
                 else do
-                    Global.workspace %= Workspace.upperWorkspace
+                    Global.workspace . _Just %= Workspace.upperWorkspace
                     getProgram
 
     AddConnectionResponse response -> handleResponse response success failure where
