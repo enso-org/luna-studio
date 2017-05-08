@@ -39,14 +39,13 @@ import qualified Empire.API.Graph.SetNodesMeta               as SetNodesMeta
 import qualified Empire.API.Graph.SetPortDefault             as SetPortDefault
 import qualified Empire.API.Response                         as Response
 import           NodeEditor.Action.Basic                     (localAddConnection, localAddConnections, localAddExpressionNode, localAddPort,
-                                                              localAddSubgraph, localMerge, localMoveNodes, localMovePort,
-                                                              localRemoveConnection, localRemoveNodes, localRemovePort, localRenameNode,
-                                                              localSetCode, localSetNodeCode, localSetNodeExpression, localSetNodesMeta,
-                                                              localSetPortDefault, localSetSearcherHints, localUpdateExpressionNode,
-                                                              localUpdateExpressionNodes, localUpdateInputNode, localUpdateNodeTypecheck,
-                                                              localUpdateOrAddExpressionNode, localUpdateOrAddInputNode,
-                                                              localUpdateOrAddOutputNode, setNodeProfilingData, setNodeValue, updateGraph,
-                                                              updateScene)
+                                                              localMerge, localMoveNodes, localMovePort, localRemoveConnection,
+                                                              localRemoveNodes, localRemovePort, localSetNodeCode, localSetNodeExpression,
+                                                              localSetNodesMeta, localSetPortDefault, localSetSearcherHints,
+                                                              localUpdateExpressionNode, localUpdateExpressionNodes, localUpdateInputNode,
+                                                              localUpdateNodeTypecheck, localUpdateOrAddExpressionNode,
+                                                              localUpdateOrAddInputNode, localUpdateOrAddOutputNode, setNodeProfilingData,
+                                                              setNodeValue, updateGraph, updateScene)
 import           NodeEditor.Action.Basic.Revert              (revertAddConnection, revertAddNode, revertAddPort, revertAddSubgraph,
                                                               revertMovePort, revertRemoveConnection, revertRemoveNodes, revertRemovePort,
                                                               revertRenameNode, revertSetNodeCode, revertSetNodeExpression,
@@ -129,7 +128,7 @@ handle (Event.Batch ev) = Just $ case ev of
                  void $ localUpdateExpressionNode node
                  collaborativeModify [node ^. nodeLoc]
             else localAddExpressionNode node
-            withJust (result ^. AddNode.connectedNode) $ \node -> case node of
+            withJust (result ^. AddNode.connectedNode) $ \case
                 ExpressionNode' n -> localUpdateOrAddExpressionNode $ convert (path, n)
                 InputSidebar'   n -> localUpdateOrAddInputNode      $ convert (path, n) -- this may happen but no reason why
                 OutputSidebar'  n -> localUpdateOrAddOutputNode     $ convert (path, n) -- this should not happen
@@ -149,7 +148,7 @@ handle (Event.Batch ev) = Just $ case ev of
             else do
                 --TODO[LJK, PM]: What should happen if localAddPort fails? (Example reason - node is not in graph)
                 void $ localAddPort (prependPath path portRef) Nothing
-                void $ localAddConnections . catMaybes $ flip map (request ^. AddPort.connectTo) $ \connDst -> case connDst of
+                void $ localAddConnections . catMaybes $ flip map (request ^. AddPort.connectTo) $ \case
                     OutPortRef' _   -> $notImplemented
                     InPortRef'  dst -> Just (portRef, dst)
                 void $ localUpdateOrAddInputNode sidebar
@@ -162,7 +161,7 @@ handle (Event.Batch ev) = Just $ case ev of
         conns          = request  ^. AddSubgraph.connections
         failure _      = whenM (isOwnRequest requestId) $ revertAddSubgraph request
         success result = inCurrentLocation location $ \path -> do
-            forM (result ^. AddSubgraph.newAndUpdatedNodes) $ \node -> case node of
+            forM_ (result ^. AddSubgraph.newAndUpdatedNodes) $ \case
                 ExpressionNode' n -> localUpdateOrAddExpressionNode $ convert (path, n)
                 InputSidebar'   n -> localUpdateOrAddInputNode      $ convert (path, n)
                 OutputSidebar'  n -> localUpdateOrAddOutputNode     $ convert (path, n)

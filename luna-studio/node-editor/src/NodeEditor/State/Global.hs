@@ -2,6 +2,7 @@
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 module NodeEditor.State.Global where
 
+import           Common.Prelude
 import           Data.DateTime                        (DateTime)
 import           Data.Map                             (Map)
 import           Data.Set                             (Set)
@@ -9,16 +10,15 @@ import           Data.UUID.Types                      (UUID)
 import           Data.Word                            (Word8)
 import           Empire.API.Data.NodeLoc              (NodeLoc)
 import           Empire.API.Graph.CollaborationUpdate (ClientId)
-import           NodeEditor.Action.Command           (Command)
-import           NodeEditor.Batch.Workspace (Workspace)
-import           qualified NodeEditor.Batch.Workspace as Workspace
-import           NodeEditor.Event.Event              (Event)
-import           Common.Prelude
-import           NodeEditor.React.Model.App          (App)
-import           NodeEditor.React.Store              (Ref)
-import           NodeEditor.State.Action             (ActionRep, Connect, SomeAction)
-import qualified NodeEditor.State.Collaboration      as Collaboration
-import qualified NodeEditor.State.UI                 as UI
+import           NodeEditor.Action.Command            (Command)
+import           NodeEditor.Batch.Workspace           (Workspace)
+import qualified NodeEditor.Batch.Workspace           as Workspace
+import           NodeEditor.Event.Event               (Event)
+import           NodeEditor.React.Model.App           (App)
+import           NodeEditor.React.Store               (Ref)
+import           NodeEditor.State.Action              (ActionRep, Connect, SomeAction)
+import qualified NodeEditor.State.Collaboration       as Collaboration
+import qualified NodeEditor.State.UI                  as UI
 import           System.Random                        (StdGen)
 import qualified System.Random                        as Random
 
