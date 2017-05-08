@@ -10,6 +10,7 @@ import qualified Text.ScopeSearcher.QueryResult as Result
 
 data Mode = Command [QueryResult ()]
           | Node [QueryResult ExpressionNode]
+          | NodeName [QueryResult Text]
           deriving (Eq, Generic, Show)
 
 data Searcher = Searcher
@@ -56,8 +57,21 @@ resultsLength = to getLength where
       Command results -> length results
       Node    results -> length results
 
+
+isCommand :: Getter Searcher Bool
+isCommand = to matchCommand where
+  matchCommand searcher = case searcher ^. mode of
+      Command {} -> True
+      _          -> False
+
 isNode :: Getter Searcher Bool
 isNode = to matchNode where
     matchNode searcher = case searcher ^. mode of
         Node {} -> True
         _       -> False
+
+isNodeName :: Getter Searcher Bool
+isNodeName = to matchNodeName where
+    matchNodeName searcher = case searcher ^. mode of
+        NodeName {} -> True
+        _           -> False

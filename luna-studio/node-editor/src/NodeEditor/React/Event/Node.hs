@@ -12,11 +12,9 @@ import           React.Flux                  (KeyboardEvent, MouseEvent)
 
 data Event = DisplayResultChanged Bool          NodeLoc
            | EditExpression                     NodeLoc
+           | EditName                           NodeLoc
            | Enter                              NodeLoc
            | MouseDown            MouseEvent    NodeLoc
-           | NameEditApply                      NodeLoc Text
-           | NameEditDiscard                    NodeLoc
-           | NameEditStart                      NodeLoc
            | PortApplyString      KeyboardEvent InPortRef PortDefault
            | PortEditString                     InPortRef PortDefault
            | PortInitSlider          MouseEvent InPortRef InitValue

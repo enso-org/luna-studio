@@ -1,30 +1,17 @@
---TODO[PM]: Refactor and treat this as Action
 module NodeEditor.Action.Node.EditName where
 
-import           Empire.API.Data.NodeLoc                     (NodeLoc)
-import           NodeEditor.Action.Basic                    (renameNode)
-import           NodeEditor.Action.Command                  (Command)
-import           NodeEditor.Action.State.App                (renderIfNeeded)
-import           NodeEditor.Action.State.NodeEditor         (modifyExpressionNode)
 import           Common.Prelude
-import           NodeEditor.React.Model.Node.ExpressionNode (isNameEdited)
-import           NodeEditor.React.View.App                  (focus)
-import           NodeEditor.React.View.ExpressionNode       (focusNameLabel)
+import           Control.Arrow                              ((&&&))
+import           NodeEditor.Action.Command                  (Command)
+import qualified NodeEditor.Action.Searcher                 as Searcher
+import           NodeEditor.Action.State.NodeEditor         (getExpressionNode)
+import           NodeEditor.React.Model.Node.ExpressionNode (NodeLoc, name, position)
 import           NodeEditor.State.Global                    (State)
 
 
-startEditName :: NodeLoc -> Command State ()
-startEditName nl = do
-    modifyExpressionNode nl $ isNameEdited .= True
-    renderIfNeeded
-    liftIO focusNameLabel
-
-applyName :: NodeLoc -> Text -> Command State ()
-applyName nl newName = do
-    renameNode nl newName
-    liftIO focus
-
-discardName :: NodeLoc -> Command State ()
-discardName nl = do
-    modifyExpressionNode nl $ isNameEdited .= False
-    liftIO focus
+editName :: NodeLoc -> Command State ()
+editName nl = do
+    mayNode <- getExpressionNode nl
+    case (view position &&& maybe def id . view name) <$> mayNode of
+        Just (pos, name) -> Searcher.openEditName name nl pos
+        _                -> return ()

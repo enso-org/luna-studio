@@ -1,14 +1,14 @@
 {-# LANGUAGE OverloadedStrings #-}
 module NodeEditor.React.View.Searcher where
 
-import qualified Data.Aeson                                  as Aeson
-import           Data.Matrix                                 (Matrix)
-import qualified Empire.API.Data.NodeLoc                     as NodeLoc
-import           JS.Searcher                                 (searcherId)
+import           Common.Prelude
+import qualified Data.Aeson                                 as Aeson
+import           Data.Matrix                                (Matrix)
+import qualified Empire.API.Data.NodeLoc                    as NodeLoc
+import           JS.Searcher                                (searcherId)
 import           NodeEditor.Data.Matrix                     (showNodeTranslate)
 import qualified NodeEditor.Event.Keys                      as Keys
 import qualified NodeEditor.Event.UI                        as UI
-import           Common.Prelude
 import qualified NodeEditor.React.Event.App                 as App
 import           NodeEditor.React.Event.Searcher
 import           NodeEditor.React.Model.App                 (App)
@@ -19,8 +19,8 @@ import           NodeEditor.React.Store                     (Ref, dispatch)
 import           NodeEditor.React.View.ExpressionNode       (nodeBody_)
 import qualified NodeEditor.React.View.Style                as Style
 import           React.Flux
-import qualified React.Flux                                  as React
-import qualified Text.ScopeSearcher.QueryResult              as Result
+import qualified React.Flux                                 as React
+import qualified Text.ScopeSearcher.QueryResult             as Result
 
 name :: JSString
 name = "searcher"
@@ -41,8 +41,9 @@ searcher =  React.defineView name $ \(ref, camera, s) -> do
         mode        = s ^. Searcher.mode
         nodePreview = convert . (NodeLoc.empty,) <$> (s ^. Searcher.selectedNode)
         className   = Style.prefixFromList ( "input" : "searcher" : ( case mode of
-                                                                    Searcher.Node    { } -> [ "searcher--node" ]
-                                                                    Searcher.Command { } -> [ "searcher--command"   ]))
+            Searcher.Command  { } -> [ "searcher--command"]
+            Searcher.Node     { } -> [ "searcher--node" ]
+            Searcher.NodeName { } -> [ "searcher--node-name" ]))
         mayCustomInput = if s ^. Searcher.replaceInput then ["value" $= convert (s ^. Searcher.input)] else []
     div_
         [ "key"       $= name
@@ -69,6 +70,7 @@ searcher =  React.defineView name $ \(ref, camera, s) -> do
                 , "className" $= Style.prefix "searcher__results"
                 ] $ do
                 let resultClasses i = Style.prefixFromList ( "searcher__results__item" : (if i + 1 == s ^. Searcher.selected then [ "searcher__results__item--selected" ] else []))
+                -- TODO [LJK, PM]: Refactor this piece of code:
                 case s ^. Searcher.mode of
                     Searcher.Command results -> forKeyed_ results $ \(idx, result) ->
                         div_
@@ -81,6 +83,20 @@ searcher =  React.defineView name $ \(ref, camera, s) -> do
                                 , "className" $= Style.prefix "searcher__result__item__name"
                                 ] $ elemString $ convert $ result ^. Result.name
                     Searcher.Node results -> forKeyed_ results $ \(idx, result) ->
+                        div_
+                            [ "key"       $= jsShow idx
+                            , "className" $= resultClasses idx
+                            , onClick     $ \e _ -> stopPropagation e : (dispatch ref $ UI.SearcherEvent $ AcceptEntry (idx + 1))
+                            ] $ do
+                            div_
+                                ["key"       $= "prefix"
+                                ,"className" $= Style.prefix "searcher__results__item__prefix"
+                                ] $ elemString $ convert (result ^. Result.prefix) <> "."
+                            div_
+                                ["key" $= "name"
+                                ,"className" $= Style.prefix "searcher__results__item__name"
+                                ] $ elemString $ convert $ result ^. Result.name
+                    Searcher.NodeName results -> forKeyed_ results $ \(idx, result) ->
                         div_
                             [ "key"       $= jsShow idx
                             , "className" $= resultClasses idx
