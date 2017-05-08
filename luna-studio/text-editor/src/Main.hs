@@ -13,7 +13,6 @@ import           WebSocket                (WebSocket)
 import           TextEditor.Event.Engine    (LoopRef (LoopRef))
 import qualified TextEditor.Event.Engine    as Engine
 import           TextEditor.State.Global    (mkState)
-import qualified TextEditor.State.Global    as Global
 
 
 runApp :: Chan (IO ()) -> WebSocket -> IO ()

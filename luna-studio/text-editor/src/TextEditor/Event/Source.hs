@@ -9,7 +9,6 @@ module TextEditor.Event.Source
 
 import           Common.Prelude                    hiding (on)
 
-import           GHCJS.Marshal.Pure                     (pFromJSVal)
 import           GHCJS.Prim                             (fromJSString)
 
 import qualified JS.Atom                                as Atom
