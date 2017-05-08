@@ -66,8 +66,9 @@ inPortControl = React.defineView "inPortControl" $ \(ref, portRef, port) ->
                                 _                          -> undefined
                             defaultValue = PortDefault.Constant zeroValue
                         button_
-                            [ onClick $ \_ _ -> dispatch ref $ UI.NodeEvent $ Node.PortSetPortDefault portRef defaultValue
-                            ] $ elemString "not set"
+                            [ "className" $= Style.prefix "ctrl-set"
+                            , onClick $ \_ _ -> dispatch ref $ UI.NodeEvent $ Node.PortSetPortDefault portRef defaultValue
+                            ] $ elemString "set"
             PortAPI.Connected -> elemString "(connected)"
             PortAPI.WithDefault defVal -> void $ case port ^. Port.valueType . ValueType.toEnum of
                 ValueType.DiscreteNumber -> do
