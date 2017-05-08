@@ -11,14 +11,12 @@ import qualified Empire.API.Graph.AddPort               as AddPort
 import qualified Empire.API.Graph.AddSubgraph           as AddSubgraph
 import qualified Empire.API.Graph.AutolayoutNodes       as AutolayoutNodes
 import qualified Empire.API.Graph.CollaborationUpdate   as CollaborationUpdate
-import qualified Empire.API.Graph.ConnectUpdate         as ConnectUpdate
 import qualified Empire.API.Graph.DumpGraphViz          as DumpGraphViz
 import qualified Empire.API.Graph.GetProgram            as GetProgram
 import qualified Empire.API.Graph.GetSubgraphs          as GetSubgraphs
 import qualified Empire.API.Graph.MonadsUpdate          as MonadsUpdate
 import qualified Empire.API.Graph.MovePort              as MovePort
 import qualified Empire.API.Graph.NodeResultUpdate      as NodeResultUpdate
-import qualified Empire.API.Graph.NodesUpdate           as NodesUpdate
 import qualified Empire.API.Graph.NodeTypecheckerUpdate as NodeTCUpdate
 import qualified Empire.API.Graph.Redo                  as Redo
 import qualified Empire.API.Graph.RemoveConnection      as RemoveConnection
@@ -27,7 +25,6 @@ import qualified Empire.API.Graph.RemovePort            as RemovePort
 import qualified Empire.API.Graph.RenameNode            as RenameNode
 import qualified Empire.API.Graph.RenamePort            as RenamePort
 import qualified Empire.API.Graph.SearchNodes           as SearchNodes
-import qualified Empire.API.Graph.SetNodeCode           as SetNodeCode
 import qualified Empire.API.Graph.SetNodeExpression     as SetNodeExpression
 import qualified Empire.API.Graph.SetNodesMeta          as SetNodesMeta
 import qualified Empire.API.Graph.SetPortDefault        as SetPortDefault
@@ -50,14 +47,12 @@ data Event = UnknownEvent String
            | CollaborationUpdate           CollaborationUpdate.Update
            | ConnectionDropped
            | ConnectionOpened
-           | ConnectUpdate                       ConnectUpdate.Update
            | DumpGraphVizResponse                 DumpGraphViz.Response
            | EmpireStarted                       EmpireStarted.Status
            | GetSubgraphsResponse                 GetSubgraphs.Response
            | MonadsUpdate                         MonadsUpdate.Update
            | MovePortResponse                         MovePort.Response
            | NodeResultUpdate                 NodeResultUpdate.Update
-           | NodesUpdate                           NodesUpdate.Update
            | NodeTypecheckerUpdate                NodeTCUpdate.Update
            | RedoResponse                                 Redo.Response
            | RemoveConnectionResponse         RemoveConnection.Response
@@ -67,7 +62,6 @@ data Event = UnknownEvent String
            | RenameNodeResponse                     RenameNode.Response
            | RenamePortResponse                     RenamePort.Response
            | SearchNodesResponse                   SearchNodes.Response
-           | SetNodeCodeResponse                   SetNodeCode.Response
            | SetNodeExpressionResponse       SetNodeExpression.Response
            | SetNodesMetaResponse                 SetNodesMeta.Response
            | SetPortDefaultResponse             SetPortDefault.Response

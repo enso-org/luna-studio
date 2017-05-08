@@ -95,9 +95,6 @@ renamePort = withWorkspace .: BatchCmd.renamePort
 searchNodes :: Text -> (Int, Int) -> Command State ()
 searchNodes = withWorkspace .: BatchCmd.searchNodes
 
-setNodeCode :: NodeLoc -> Text -> Command State ()
-setNodeCode = withWorkspace .:  BatchCmd.setNodeCode
-
 setNodeExpression :: NodeLoc -> Text -> Command State ()
 setNodeExpression = withWorkspace .: BatchCmd.setNodeExpression
 

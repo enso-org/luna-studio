@@ -18,13 +18,11 @@ import qualified Empire.API.Graph.AddPort                    as AddPort
 import qualified Empire.API.Graph.AddSubgraph                as AddSubgraph
 import qualified Empire.API.Graph.AutolayoutNodes            as AutolayoutNodes
 import qualified Empire.API.Graph.CollaborationUpdate        as CollaborationUpdate
-import qualified Empire.API.Graph.ConnectUpdate              as ConnectUpdate
 import qualified Empire.API.Graph.GetProgram                 as GetProgram
 import qualified Empire.API.Graph.GetSubgraphs               as GetSubgraphs
 import qualified Empire.API.Graph.MonadsUpdate               as MonadsUpdate
 import qualified Empire.API.Graph.MovePort                   as MovePort
 import qualified Empire.API.Graph.NodeResultUpdate           as NodeResultUpdate
-import qualified Empire.API.Graph.NodesUpdate                as NodesUpdate
 import qualified Empire.API.Graph.NodeTypecheckerUpdate      as NodeTCUpdate
 import qualified Empire.API.Graph.RemoveConnection           as RemoveConnection
 import qualified Empire.API.Graph.RemoveNodes                as RemoveNodes
@@ -33,23 +31,22 @@ import qualified Empire.API.Graph.RenameNode                 as RenameNode
 import qualified Empire.API.Graph.RenamePort                 as RenamePort
 import qualified Empire.API.Graph.Result                     as Result
 import qualified Empire.API.Graph.SearchNodes                as SearchNodes
-import qualified Empire.API.Graph.SetNodeCode                as SetNodeCode
 import qualified Empire.API.Graph.SetNodeExpression          as SetNodeExpression
 import qualified Empire.API.Graph.SetNodesMeta               as SetNodesMeta
 import qualified Empire.API.Graph.SetPortDefault             as SetPortDefault
 import qualified Empire.API.Response                         as Response
 import           NodeEditor.Action.Basic                     (localAddConnection, localAddConnections, localAddExpressionNode, localAddPort,
                                                               localMerge, localMoveNodes, localMovePort, localRemoveConnection,
-                                                              localRemoveConnections, localRemoveNodes, localRemovePort, localSetNodeCode,
-                                                              localSetNodesMeta, localSetPortDefault, localSetSearcherHints,
-                                                              localUpdateExpressionNode, localUpdateExpressionNodes, localUpdateInputNode,
-                                                              localUpdateNodeTypecheck, localUpdateOrAddExpressionNode,
-                                                              localUpdateOrAddInputNode, localUpdateOrAddOutputNode, setNodeProfilingData,
-                                                              setNodeValue, updateGraph, updateScene)
+                                                              localRemoveConnections, localRemoveNodes, localRemovePort, localSetNodesMeta,
+                                                              localSetPortDefault, localSetSearcherHints, localUpdateExpressionNode,
+                                                              localUpdateExpressionNodes, localUpdateInputNode, localUpdateNodeTypecheck,
+                                                              localUpdateOrAddExpressionNode, localUpdateOrAddInputNode,
+                                                              localUpdateOrAddOutputNode, setNodeProfilingData, setNodeValue, updateGraph,
+                                                              updateScene)
 import           NodeEditor.Action.Basic.Revert              (revertAddConnection, revertAddNode, revertAddPort, revertAddSubgraph,
                                                               revertMovePort, revertRemoveConnection, revertRemoveNodes, revertRemovePort,
-                                                              revertRenameNode, revertSetNodeCode, revertSetNodeExpression,
-                                                              revertSetNodesMeta, revertSetPortDefault)
+                                                              revertRenameNode, revertSetNodeExpression, revertSetNodesMeta,
+                                                              revertSetPortDefault)
 import           NodeEditor.Action.Basic.UpdateCollaboration (bumpTime, modifyTime, refreshTime, touchCurrentlySelected, updateClient)
 import           NodeEditor.Action.Batch                     (collaborativeModify, getProgram, requestCollaborationRefresh)
 import           NodeEditor.Action.Camera                    (centerGraph)
@@ -197,12 +194,6 @@ handle (Event.Batch ev) = Just $ case ev of
                 CollaborationUpdate.CancelTouch nodeLocs -> touchNodes nodeLocs $  Node.collaboration . Node.touch  . at clientId .= Nothing
                 CollaborationUpdate.Refresh             -> touchCurrentlySelected
 
-    ConnectUpdate update -> do
-        let src' = update ^. ConnectUpdate.connection' . src
-            dst' = update ^. ConnectUpdate.connection' . dst
-        inCurrentLocation (update ^. ConnectUpdate.location') $ \path -> do
-            void $ localAddConnection (prependPath path src') (prependPath path dst')
-
     DumpGraphVizResponse response -> handleResponse response doNothing doNothing
 
     --TODO[LJK, PM]: Review this Handler
@@ -238,10 +229,6 @@ handle (Event.Batch ev) = Just $ case ev of
             let nid = update ^. NodeResultUpdate.nodeId
             setNodeValue         (convert (path, nid)) $ update ^. NodeResultUpdate.value
             setNodeProfilingData (convert (path, nid)) $ update ^. NodeResultUpdate.execTime
-
-    NodesUpdate update -> do
-        inCurrentLocation (update ^. NodesUpdate.location) $ \path -> do
-            localUpdateExpressionNodes $ convert . (path,) <$> update ^. NodesUpdate.nodes
 
     NodeTypecheckerUpdate update -> do
       inCurrentLocation (update ^. NodeTCUpdate.location) $ \path ->
@@ -327,19 +314,6 @@ handle (Event.Batch ev) = Just $ case ev of
             ownRequest <- isOwnRequest requestId
             when ownRequest $
                 localSetSearcherHints $ result ^. SearchNodes.nodeSearcherData
-
-    SetNodeCodeResponse response -> handleResponse response success failure where
-        requestId       = response ^. Response.requestId
-        request         = response ^. Response.request
-        location        = request  ^. SetNodeCode.location
-        nid             = request  ^. SetNodeCode.nodeId
-        code            = request  ^. SetNodeCode.newCode
-        failure inverse = whenM (isOwnRequest requestId) $ revertSetNodeCode request inverse
-        success _       = inCurrentLocation location $ \path ->  do
-            ownRequest <- isOwnRequest requestId
-            if ownRequest then
-                return ()
-            else void $ localSetNodeCode (convert (path, nid)) code
 
     SetNodeExpressionResponse response -> handleResponse response success failure where
         requestId       = response ^. Response.requestId

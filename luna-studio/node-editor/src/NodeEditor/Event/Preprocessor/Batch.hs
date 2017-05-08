@@ -28,14 +28,12 @@ handlers = Map.fromList [ handle GetProgramResponse
                         , handle AddSubgraphResponse
                         , handle AutolayoutNodesResponse
                         , handle CollaborationUpdate
-                        , handle ConnectUpdate
                         , handle DumpGraphVizResponse
                         , handle EmpireStarted
                         , handle GetSubgraphsResponse
                         , handle MonadsUpdate
                         , handle MovePortResponse
                         , handle NodeResultUpdate
-                        , handle NodesUpdate
                         , handle NodeTypecheckerUpdate
                         , handle RedoResponse
                         , handle RemoveConnectionResponse
@@ -45,7 +43,6 @@ handlers = Map.fromList [ handle GetProgramResponse
                         , handle RenameNodeResponse
                         , handle RenamePortResponse
                         , handle SearchNodesResponse
-                        , handle SetNodeCodeResponse
                         , handle SetNodeExpressionResponse
                         , handle SetNodesMetaResponse
                         , handle SetPortDefaultResponse

@@ -37,14 +37,12 @@ import           Empire.API.Graph.AddPort               as AddPort
 import           Empire.API.Graph.AddSubgraph           as AddSubgraph
 import           Empire.API.Graph.AutolayoutNodes       as AutolayoutNodes
 import           Empire.API.Graph.CollaborationUpdate   as CollaborationUpdate
-import           Empire.API.Graph.ConnectUpdate         as ConnectUpdate
 import           Empire.API.Graph.DumpGraphViz          as DumpGraphViz
 import           Empire.API.Graph.GetProgram            as GetProgram
 import           Empire.API.Graph.GetSubgraphs          as GetSubgraphs
 import           Empire.API.Graph.MonadsUpdate          as MonadsUpdate
 import           Empire.API.Graph.MovePort              as MovePort
 import           Empire.API.Graph.NodeResultUpdate      as NodeResultUpdate
-import           Empire.API.Graph.NodesUpdate           as NodesUpdate
 import           Empire.API.Graph.NodeTypecheckerUpdate as NodeTypecheckerUpdate
 import           Empire.API.Graph.Redo                  as Redo
 import           Empire.API.Graph.RemoveConnection      as RemoveConnection
@@ -54,7 +52,6 @@ import           Empire.API.Graph.RenameNode            as RenameNode
 import           Empire.API.Graph.RenamePort            as RenamePort
 import           Empire.API.Graph.Result                as Result
 import           Empire.API.Graph.SearchNodes           as SearchNodes
-import           Empire.API.Graph.SetNodeCode           as SetNodeCode
 import           Empire.API.Graph.SetNodeExpression     as SetNodeExpression
 import           Empire.API.Graph.SetNodesMeta          as SetNodesMeta
 import           Empire.API.Graph.SetPortDefault        as SetPortDefault
@@ -187,8 +184,6 @@ instance ToJSON AutolayoutNodes.Inverse
 instance ToJSON CollaborationUpdate.Update
 instance ToJSON CollaborationUpdate.Event
 
-instance ToJSON ConnectUpdate.Update
-
 instance ToJSON DumpGraphViz.Request
 
 instance ToJSON GetProgram.Request
@@ -200,8 +195,6 @@ instance ToJSON GetSubgraphs.Result
 instance ToJSON MonadsUpdate.Update
 
 instance ToJSON MovePort.Request
-
-instance ToJSON NodesUpdate.Update
 
 instance ToJSON NodeResultUpdate.Update
 instance ToJSON NodeResultUpdate.NodeValue
@@ -241,9 +234,6 @@ instance ToJSON a => ToJSON (Request.Request a)
 
 instance ToJSON SearchNodes.Request
 instance ToJSON SearchNodes.Result
-
-instance ToJSON SetNodeCode.Request
-instance ToJSON SetNodeCode.Inverse
 
 instance ToJSON SetNodeExpression.Request
 instance ToJSON SetNodeExpression.Inverse

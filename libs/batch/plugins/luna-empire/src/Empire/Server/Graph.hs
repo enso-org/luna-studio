@@ -54,7 +54,6 @@ import qualified Empire.API.Graph.AddNode           as AddNode
 import qualified Empire.API.Graph.AddPort           as AddPort
 import qualified Empire.API.Graph.AddSubgraph       as AddSubgraph
 import qualified Empire.API.Graph.AutolayoutNodes   as AutolayoutNodes
-import qualified Empire.API.Graph.ConnectUpdate     as ConnectUpdate
 import qualified Empire.API.Graph.DumpGraphViz      as DumpGraphViz
 import qualified Empire.API.Graph.GetProgram        as GetProgram
 import qualified Empire.API.Graph.GetSubgraphs      as GetSubgraphs
@@ -69,7 +68,6 @@ import qualified Empire.API.Graph.RenamePort        as RenamePort
 import qualified Empire.API.Graph.Request           as G
 import qualified Empire.API.Graph.Result            as Result
 import qualified Empire.API.Graph.SearchNodes       as SearchNodes
-import qualified Empire.API.Graph.SetNodeCode       as SetNodeCode
 import qualified Empire.API.Graph.SetNodeExpression as SetNodeExpression
 import qualified Empire.API.Graph.SetNodesMeta      as SetNodesMeta
 import qualified Empire.API.Graph.SetPortDefault    as SetPortDefault
@@ -375,13 +373,6 @@ handleRenamePort = modifyGraph inverse action replyResult where --FIXME[pm] impl
 handleSearchNodes :: Request SearchNodes.Request -> StateT Env BusT ()
 handleSearchNodes = modifyGraph defInverse action replyResult where
     action  _ = return $ SearchNodes.Result mockNSData
-
-handleSetNodeCode :: Request SetNodeCode.Request -> StateT Env BusT ()
-handleSetNodeCode = modifyGraphOk inverse action where --FIXME[pm] implement this!
-    inverse (SetNodeCode.Request location nodeId code) = do
-        oldCode <- Graph.withGraph location $ runASTOp $ getNodeName nodeId
-        return $ SetNodeCode.Inverse $ fromMaybe def oldCode
-    action (SetNodeCode.Request location nodeId code)  = void $ Graph.setNodeExpression location nodeId code
 
 handleSetNodeExpression :: Request SetNodeExpression.Request -> StateT Env BusT ()-- fixme [SB] returns Result with no new informations and change node expression has addNode+removeNodes
 handleSetNodeExpression = modifyGraph inverse action replyResult where

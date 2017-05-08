@@ -6,9 +6,9 @@ import qualified Data.Aeson                                           as Aeson
 import qualified Data.HashMap.Strict                                  as HashMap
 import qualified Data.Map.Lazy                                        as Map
 import           Data.Matrix                                          (Matrix)
+import           Empire.API.Data.LabeledTree                          (LabeledTree (LabeledTree))
 import qualified Empire.API.Data.MonadPath                            as MonadPath
 import           Empire.API.Data.PortRef                              (toAnyPortRef)
-import           Empire.API.Data.LabeledTree                          (LabeledTree (LabeledTree))
 import qualified JS.Config                                            as Config
 import qualified JS.UI                                                as UI
 import           NodeEditor.Data.Matrix                               (showNodeMatrix, showNodeTranslate)
@@ -18,7 +18,7 @@ import qualified NodeEditor.React.Event.Node                          as Node
 import           NodeEditor.React.Model.App                           (App)
 import qualified NodeEditor.React.Model.Field                         as Field
 import           NodeEditor.React.Model.Node.ExpressionNode           (ExpressionNode, NodeLoc, Subgraph, countArgPorts, countOutPorts,
-                                                                      isCollapsed, returnsError)
+                                                                       isCollapsed, returnsError)
 import qualified NodeEditor.React.Model.Node.ExpressionNode           as Node
 import qualified NodeEditor.React.Model.Node.ExpressionNodeProperties as Prop
 import           NodeEditor.React.Model.Port                          (AnyPortId (InPortId'), InPortIndex (Arg, Self), isInPort, isOutAll,
@@ -157,7 +157,7 @@ nodeBody = React.defineView objNameBody $ \(ref, n) -> do
                 Node.Expanded Node.Controls      -> nodeProperties_ ref $ Prop.fromNode n
                 Node.Expanded Node.Editor        -> multilineField_ [] "editor"
                     $ Field.mk ref (fromMaybe def $ n ^. Node.code)
-                    & Field.onCancel .~ Just (UI.NodeEvent . Node.SetCode nodeLoc)
+                    & Field.onCancel .~ Just (UI.NodeEvent . Node.SetExpression nodeLoc)
                 _                                -> ""
 
 nodePorts_ :: Ref App -> ExpressionNode -> ReactElementM ViewEventHandler ()

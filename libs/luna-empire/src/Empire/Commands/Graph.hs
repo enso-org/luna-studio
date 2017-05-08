@@ -163,7 +163,6 @@ addNodeNoTC loc uuid input name meta = do
         nearestNode <- putInSequence expr meta
         node        <- GraphBuilder.buildNode uuid
         return (nearestNode, node)
-    Publisher.notifyNodeUpdate loc node
     return (nearestNode, node)
 
 distanceTo :: (Double, Double) -> (Double, Double) -> Double
@@ -345,9 +344,6 @@ removeNodes loc@(GraphLocation file _) nodeIds = do
     affectedNodes <- withTC loc False $ runASTOp $ mapM removeNodeNoTC nodeIds
     let distinctNodes = Set.toList $ Set.fromList $ concat affectedNodes
     forM_ distinctNodes $ updateNodeCode loc
-    withGraph loc $ do
-        nodes <- runASTOp $ mapM GraphBuilder.buildNode distinctNodes
-        mapM (Publisher.notifyNodeUpdate loc) nodes
     resendCode loc
 
 removeFromCode :: GraphLocation -> NodeId -> Empire ()
@@ -451,7 +447,6 @@ setNodeExpression loc@(GraphLocation file _) nodeId expression = do
             node <- GraphBuilder.buildNode nodeId
             code <- printMarkedExpression expr
             return (node, code)
-        Publisher.notifyNodeUpdate loc node
         return (node, line, code)
     Library.withLibrary file $ forM line $ \l -> Library.substituteLine l code
     resendCode loc
@@ -533,8 +528,6 @@ connectNoTC loc outPort anyPort = do
                                                        else return Nothing
                 _ -> Just <$> GraphBuilder.buildNode nid
         (connection,) <$> nodeToUpdate
-    forM_ nodeToUpdate $ \n -> do
-        Publisher.notifyNodeUpdate loc n
     return connection
 
 getPortDefault :: GraphLocation -> InPortRef -> Empire (Maybe PortDefault)
@@ -564,7 +557,6 @@ disconnect loc port@(InPortRef (NodeLoc _ nid) _) = do
                     if (nid /= input && nid /= output) then Just <$> GraphBuilder.buildNode nid
                                                        else return Nothing
                 _ -> Just <$> GraphBuilder.buildNode nid
-        forM_ nodeToUpdate $ Publisher.notifyNodeUpdate loc
         return $ view Node.nodeId <$> nodeToUpdate
     forM_ nodeId $ updateNodeCode loc
     resendCode loc

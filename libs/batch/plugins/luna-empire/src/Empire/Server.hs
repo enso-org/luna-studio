@@ -55,7 +55,7 @@ import           ZMQ.Bus.EndPoint                 (BusEndPoints)
 import           ZMQ.Bus.Trans                    (BusT (..))
 import qualified ZMQ.Bus.Trans                    as BusT
 
-import System.Remote.Monitoring
+import           System.Remote.Monitoring
 
 logger :: Logger.Logger
 logger = Logger.getLogger $(Logger.moduleName)
@@ -120,11 +120,9 @@ startAsyncUpdateWorker :: TChan AsyncUpdate -> StateT Env BusT ()
 startAsyncUpdateWorker asyncChan = forever $ do
     update <- liftIO $ atomically $ readTChan asyncChan
     case update of
-        NodesUpdate       up -> Server.sendToBus' up
         MonadsUpdate      up -> Server.sendToBus' up
         TypecheckerUpdate up -> Server.sendToBus' up
         ResultUpdate      up -> Server.sendToBus' up
-        ConnectionUpdate  up -> Server.sendToBus' up
         CodeUpdate        up -> Server.sendToBus' up
 
 projectFiles :: FilePath -> IO [FilePath]

@@ -2,8 +2,8 @@ module NodeEditor.Handler.Node where
 
 import           Common.Prelude
 import           NodeEditor.Action.Basic                    (enterNode, localSetPortDefault, localToggleVisualizations, removeSelectedNodes,
-                                                             selectAll, setNodeCode, setPortDefault, toggleSelect, toggleSelectedNodesMode,
-                                                             toggleSelectedNodesUnfold, unselectAll)
+                                                             selectAll, setNodeExpression, setPortDefault, toggleSelect,
+                                                             toggleSelectedNodesMode, toggleSelectedNodesUnfold, unselectAll)
 import           NodeEditor.Action.Batch                    (autolayoutNodes)
 import           NodeEditor.Action.Command                  (Command)
 import qualified NodeEditor.Action.Node                     as Node
@@ -36,7 +36,7 @@ handle (UI (NodeEvent (Node.DisplayResultChanged flag nl))) = Just $ localToggle
 handle (UI (NodeEvent (Node.NameEditStart             nl))) = Just $ Node.startEditName nl
 handle (UI (NodeEvent (Node.NameEditDiscard           nl))) = Just $ Node.discardName nl
 handle (UI (NodeEvent (Node.NameEditApply             nl val)))  = Just $ Node.applyName nl val
-handle (UI (NodeEvent (Node.SetCode                   nl code))) = Just $ setNodeCode nl code
+handle (UI (NodeEvent (Node.SetExpression             nl expr))) = Just $ setNodeExpression nl expr
 handle (UI (NodeEvent (Node.PortEditString            portRef portDef)))    = Just $ void $ localSetPortDefault portRef portDef
 handle (UI (NodeEvent (Node.PortApplyString      kevt portRef portDef)))    = Just $ when (Keys.withoutMods kevt Keys.enter) $ setPortDefault portRef portDef
 handle (UI (NodeEvent (Node.PortSetPortDefault        portRef portDef)))    = Just $ setPortDefault portRef portDef

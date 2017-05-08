@@ -33,7 +33,6 @@ import qualified Empire.API.Graph.RemovePort          as RemovePort
 import qualified Empire.API.Graph.RenameNode          as RenameNode
 import qualified Empire.API.Graph.RenamePort          as RenamePort
 import qualified Empire.API.Graph.SearchNodes         as SearchNodes
-import qualified Empire.API.Graph.SetNodeCode         as SetNodeCode
 import qualified Empire.API.Graph.SetNodeExpression   as SetNodeExpression
 import qualified Empire.API.Graph.SetNodesMeta        as SetNodesMeta
 import qualified Empire.API.Graph.SetPortDefault      as SetPortDefault
@@ -137,15 +136,6 @@ renamePort portRef name workspace uuid guiID = sendRequest $ Message uuid guiID 
 
 searchNodes :: Text -> (Int, Int) -> Workspace -> UUID -> Maybe UUID -> IO ()
 searchNodes query cursor workspace uuid guiID = sendRequest $ Message uuid guiID $ withLibrary workspace $ SearchNodes.Request query cursor
-
--- TODO[LJK, PM]: Probably remove
--- setInputNodeType :: NodeId -> Text -> Workspace -> UUID -> Maybe UUID -> IO ()
--- setInputNodeType nodeId tpe workspace uuid guiID = sendRequest $ Message uuid guiID $ withLibrary workspace SetInputNodeType.Request nodeId (convert tpe)
-
-setNodeCode :: NodeLoc -> Text -> Workspace -> UUID -> Maybe UUID -> IO ()
-setNodeCode nodeLoc newCode workspace uuid guiID =
-    sendRequest $ Message uuid guiID $ withLibrary workspace' SetNodeCode.Request nodeId newCode where
-        (workspace', nodeId) = convert (workspace, nodeLoc)
 
 setNodeExpression :: NodeLoc -> Text -> Workspace -> UUID -> Maybe UUID -> IO ()
 setNodeExpression nodeLoc expression workspace uuid guiID =

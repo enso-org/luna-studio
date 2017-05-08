@@ -38,7 +38,6 @@ handlersMap = Map.fromList
     , makeHandler Graph.handleRenameNode
     , makeHandler Graph.handleRenamePort
     , makeHandler Graph.handleSearchNodes
-    , makeHandler Graph.handleSetNodeCode
     , makeHandler Graph.handleSetNodeExpression
     , makeHandler Graph.handleSetNodesMeta
     , makeHandler Graph.handleSetPortDefault
