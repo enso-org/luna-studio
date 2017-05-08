@@ -66,6 +66,7 @@ import qualified NodeEditor.React.Model.Node.ExpressionNode  as Node
 import           NodeEditor.State.Global                     (State)
 import qualified NodeEditor.State.Global                     as Global
 
+
 applyResult :: NodePath -> Result.Result -> Command State ()
 applyResult path res = do
     void $ localRemoveNodes       . map (convert . (path,)) $ res ^. Result.removedNodes
@@ -365,11 +366,7 @@ handle (Event.Batch ev) = Just $ case ev of
         portRef         = request  ^. SetPortDefault.portRef
         defaultVal      = request  ^. SetPortDefault.defaultValue
         failure inverse = whenM (isOwnRequest requestId) $ revertSetPortDefault request inverse
-        success _       = inCurrentLocation location $ \path -> do
-            ownRequest <- isOwnRequest requestId
-            if ownRequest then
-                return ()
-            else void $ mapM (localSetPortDefault (prependPath path portRef)) defaultVal
+        success result  = inCurrentLocation location $ \path -> applyResult path result
 
     TypeCheckResponse response -> handleResponse response doNothing doNothing
 

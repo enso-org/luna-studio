@@ -409,9 +409,12 @@ handleSetNodesMeta = modifyGraph inverse action replyResult where
         constructResult oldGraph <$> Graph.getGraph location
 
 handleSetPortDefault :: Request SetPortDefault.Request -> StateT Env BusT ()
-handleSetPortDefault = modifyGraphOk inverse action where
+handleSetPortDefault = modifyGraph inverse action replyResult where
     inverse (SetPortDefault.Request location portRef _)            = SetPortDefault.Inverse <$> Graph.getPortDefault location portRef
-    action  (SetPortDefault.Request location portRef defaultValue) = Graph.setPortDefault location portRef defaultValue
+    action  (SetPortDefault.Request location portRef defaultValue) = do
+        oldGraph <- Graph.getGraph location
+        Graph.setPortDefault location portRef defaultValue
+        constructResult oldGraph <$> Graph.getGraph location
 
 handleTypecheck :: Request TypeCheck.Request -> StateT Env BusT ()
 handleTypecheck req@(Request _ _ request) = do
