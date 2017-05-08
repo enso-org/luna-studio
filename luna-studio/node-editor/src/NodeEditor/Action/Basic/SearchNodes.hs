@@ -5,7 +5,7 @@ import           Empire.API.Data.Node               (ExpressionNode)
 import           NodeEditor.Action.Command          (Command)
 import           NodeEditor.Action.State.NodeEditor (getNodeSearcherData, modifySearcher)
 import           NodeEditor.Batch.Workspace         (nodeSearcherData)
-import           NodeEditor.React.Model.Searcher    (Mode (Node), input, isNode, mode, rollbackReady, selected)
+import           NodeEditor.React.Model.Searcher    (input, isNode, mode, rollbackReady, selected, updateNodeResult)
 import           NodeEditor.State.Global            (State, workspace)
 import           Text.ScopeSearcher.Item            (Items)
 import           Text.ScopeSearcher.Scope           (searchInScope)
@@ -20,4 +20,4 @@ localSetSearcherHints items' = do
         let items'' = searchInScope nodesData' query
         selected      .= min 1 (length items'')
         rollbackReady .= False
-        mode          .= Node items''
+        mode          %= updateNodeResult items''

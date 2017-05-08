@@ -1,6 +1,7 @@
 module NodeEditor.Action.Basic.AddPort where
 
 import           Common.Prelude
+import qualified Data.Text                               as Text
 import           Empire.API.Data.LabeledTree             (LabeledTree (LabeledTree))
 import           Empire.API.Data.Port                    (Port (Port))
 import           Empire.API.Data.PortRef                 (InPortRef, OutPortRef (OutPortRef), srcPortId)
@@ -27,7 +28,7 @@ localAddPort portRef@(OutPortRef nid pid@[Projection pos]) mayConnDst = do
         || pos < 0
             then return False
             else do
-                let newPort     = LabeledTree (OutPorts []) $ convert $ Port pid "" TStar NotConnected
+                let newPort     = LabeledTree (OutPorts []) $ convert $ Port pid (Text.pack "") TStar NotConnected
                     oldPorts    = node ^. inputSidebarPorts
                     (portsBefore, portsAfter) = splitAt pos oldPorts
                     newPorts    = portsBefore <> [newPort] <> portsAfter

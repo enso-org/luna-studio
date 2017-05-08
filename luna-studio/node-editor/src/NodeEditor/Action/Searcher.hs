@@ -11,10 +11,12 @@ import           Common.Prelude
 import           Data.ScreenPosition                        (ScreenPosition, x)
 import           Empire.API.Data.NodeLoc                    (NodeLoc)
 import qualified Empire.API.Data.NodeLoc                    as NodeLoc
+import           Empire.API.Data.PortRef                    (OutPortRef)
+import qualified Empire.API.Data.PortRef                    as PortRef
 import           Empire.API.Data.Position                   (Position)
 import qualified JS.GoogleAnalytics                         as GA
 import qualified JS.Searcher                                as Searcher
-import           NodeEditor.Action.Basic                    (createNode, renameNode, setNodeExpression)
+import           NodeEditor.Action.Basic                    (createNode, renameNode, renamePort, setNodeExpression)
 import qualified NodeEditor.Action.Batch                    as Batch
 import           NodeEditor.Action.Command                  (Command)
 import           NodeEditor.Action.State.Action             (beginActionWithKey, continueActionWithKey, removeActionFromState,
@@ -48,19 +50,24 @@ data OtherCommands = AddNode
                    deriving (Bounded, Enum, Eq, Generic, Read, Show)
 
 open :: Command State ()
-open = openWith def (Searcher.Node def) =<< use (Global.ui . UI.mousePos)
+open = openWith (Searcher.Node def def) =<< use (Global.ui . UI.mousePos)
 
 positionDelta :: Double
 positionDelta = 100
 
-openWith :: Maybe NodeLoc -> Searcher.Mode -> ScreenPosition -> Command State ()
-openWith nodeLoc mode pos = do
+openWith :: Searcher.Mode -> ScreenPosition -> Command State ()
+openWith mode pos = do
+    let nodeLoc = case mode of
+            Searcher.Node (Just nl) _   -> Just nl
+            Searcher.NodeName nl _      -> Just nl
+            Searcher.PortName portRef _ -> Just $ portRef ^. PortRef.nodeLoc
+            _                           -> Nothing
     pos' <- (map (view position) <$> getSelectedNodes) >>= \case
           [nodePosition] -> if isNothing nodeLoc then return $ nodePosition & x %~ (+positionDelta) else translateToWorkspace pos
           _              -> translateToWorkspace pos
     begin Searcher
     GA.sendEvent GA.NodeSearcher
-    modifyNodeEditor $ NodeEditor.searcher ?= Searcher.Searcher pos' 0 mode def False nodeLoc False
+    modifyNodeEditor $ NodeEditor.searcher ?= Searcher.Searcher pos' 0 mode def False False
     renderIfNeeded
     liftIO Searcher.focus
 
@@ -104,25 +111,30 @@ accept scheduleEvent action = do
         let expression = searcher ^. Searcher.selectedExpression
         case searcher ^. Searcher.mode of
             Searcher.Command  _ -> execCommand action scheduleEvent $ convert expression
-            Searcher.Node     _ -> do
-                case searcher ^. Searcher.nodeLoc of
+            Searcher.Node nl  _ -> do
+                case nl of
                     Nothing     -> do
                         let path = NodeLoc.empty --FIXME
                         createNode path (searcher ^. Searcher.position) expression
                     Just nodeLoc -> setNodeExpression nodeLoc expression
                 close action
-            Searcher.NodeName _ -> withJust (searcher ^. Searcher.nodeLoc) $ \nodeLoc -> do
-                renameNode nodeLoc expression
-                close action
+            Searcher.NodeName nl _      -> renameNode nl expression >> close action
+            Searcher.PortName portRef _ -> renamePort portRef expression >> close action
+
 
 openEditExpression :: Text -> NodeLoc -> Position -> Command State ()
 openEditExpression expr nodeLoc pos = do
-    openWith (Just nodeLoc) (Searcher.Node def) =<< translateToScreen pos
+    openWith (Searcher.Node (Just nodeLoc) def) =<< translateToScreen pos
     continue $ querySearch expr
 
 openEditName :: Text -> NodeLoc -> Position -> Command State ()
 openEditName name nodeLoc pos = do
-    openWith (Just nodeLoc) (Searcher.NodeName def) =<< translateToScreen pos
+    openWith (Searcher.NodeName nodeLoc def) =<< translateToScreen pos
+    continue $ querySearch name
+
+openEditPortName :: Text -> OutPortRef -> Position -> Command State ()
+openEditPortName name portRef pos = do
+    openWith (Searcher.PortName portRef def) =<< translateToScreen pos
     continue $ querySearch name
 
 allCommands :: Items ()
@@ -138,7 +150,7 @@ execCommand action scheduleEvent expression = case readMaybe expression of
     Nothing -> case readMaybe expression of
         Just AddNode -> modifySearcher $ do
             Searcher.selected .= def
-            Searcher.mode     .= Searcher.Node def
+            Searcher.mode     %= (\(Searcher.Node nl _) -> Searcher.Node nl def)
             Searcher.input    .= def
             Searcher.rollbackReady .= False
         Nothing -> return ()
@@ -166,10 +178,11 @@ querySearch query _ = do
         isNode <- use Searcher.isNode
         Searcher.input .= query
         case mode of
-            Searcher.Node _ -> Searcher.rollbackReady .= False
+            Searcher.Node _ _ -> Searcher.rollbackReady .= False
                 {- clearing results prevents from selecting out of date result, but make searcher blink. -}
                 -- Searcher.mode .= Searcher.Node def
-            Searcher.NodeName _ -> Searcher.rollbackReady .= False
+            Searcher.NodeName _ _ -> Searcher.rollbackReady .= False
+            Searcher.PortName _ _ -> Searcher.rollbackReady .= False
             Searcher.Command _ -> do
                 let items = Scope.searchInScope allCommands query
                 Searcher.selected      .= min 1 (length items)

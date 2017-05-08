@@ -89,7 +89,7 @@ removePort = withWorkspace . BatchCmd.removePort
 renameNode :: NodeLoc -> Text -> Command State ()
 renameNode = withWorkspace .:  BatchCmd.renameNode
 
-renamePort :: OutPortRef -> String -> Command State ()
+renamePort :: OutPortRef -> Text -> Command State ()
 renamePort = withWorkspace .: BatchCmd.renamePort
 
 searchNodes :: Text -> (Int, Int) -> Command State ()

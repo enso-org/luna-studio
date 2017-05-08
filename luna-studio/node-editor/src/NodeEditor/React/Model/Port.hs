@@ -39,7 +39,7 @@ instance Default Mode where
 
 data Port i = Port
         { _portId    :: i
-        , _name      :: String
+        , _name      :: Text
         , _valueType :: TypeRep
         , _state     :: PortState
         , _color     :: Color

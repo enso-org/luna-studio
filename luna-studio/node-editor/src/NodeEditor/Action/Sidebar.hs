@@ -12,14 +12,17 @@ import qualified NodeEditor.Action.Basic                 as Basic
 import qualified NodeEditor.Action.Batch                 as Batch
 import           NodeEditor.Action.Command               (Command)
 import qualified NodeEditor.Action.Connect               as Connect
+import qualified NodeEditor.Action.Searcher              as Searcher
 import           NodeEditor.Action.State.Action          (beginActionWithKey, continueActionWithKey, removeActionFromState,
                                                           updateActionWithKey)
 import           NodeEditor.Action.State.App             (renderIfNeeded)
-import           NodeEditor.Action.State.NodeEditor      (getInputNode, modifyInputNode)
+import           NodeEditor.Action.State.NodeEditor      (getInputNode, getNodeEditor, modifyInputNode)
 import           NodeEditor.Action.State.Scene           (getInputSidebarSize)
 import           NodeEditor.Event.Mouse                  (mousePosition)
 import           NodeEditor.React.Model.Constants        (gridSize)
+import           NodeEditor.React.Model.Layout           (inputSidebarPortPosition)
 import           NodeEditor.React.Model.Node.SidebarNode (NodeLoc, countProjectionPorts, outPortAt)
+import           NodeEditor.React.Model.NodeEditor       (getPort, layout)
 import           NodeEditor.React.Model.Port             (AnyPortRef (OutPortRef'), OutPortIndex (Projection), OutPortRef, getPortNumber)
 import qualified NodeEditor.React.Model.Port             as Port
 import           NodeEditor.React.Model.Sidebar          (portPositionInInputSidebar)
@@ -51,27 +54,15 @@ removePort portRef = do
     -- freezeSidebar $ portRef ^. PortRef.nodeLoc
     Basic.removePort portRef
 
-startPortNameEdit :: OutPortRef -> Command State ()
-startPortNameEdit portRef = do
-    let nodeLoc = portRef ^. PortRef.nodeLoc
-        pid     = portRef ^. PortRef.srcPortId
-    modifyInputNode nodeLoc $ outPortAt pid . Port.mode .= Port.NameEdit
-    renderIfNeeded
-    liftIO Sidebar.focusPortLabel
+editPortName :: OutPortRef -> Command State ()
+editPortName portRef = do
+    ne <- getNodeEditor
+    let mayPort = getPort portRef ne
+        mayPos  = maybe Nothing (flip inputSidebarPortPosition (ne ^. layout)) mayPort
+    case (,) <$> mayPos <*> (view Port.name <$> mayPort) of
+        Just (pos, name) -> Searcher.openEditPortName name portRef pos
+        _                -> return ()
 
-cancelPortNameEdit :: OutPortRef -> Command State ()
-cancelPortNameEdit portRef = do
-    let nodeLoc = portRef ^. PortRef.nodeLoc
-        portId  = portRef ^. PortRef.srcPortId
-    modifyInputNode nodeLoc $ outPortAt portId . Port.mode .= Port.Normal
-
-finishPortNameEdit :: OutPortRef -> String -> Command State ()
-finishPortNameEdit portRef name = do
-    let nodeLoc = portRef ^. PortRef.nodeLoc
-        portId  = portRef ^. PortRef.srcPortId
-    Batch.renamePort portRef name
-    modifyInputNode nodeLoc $ outPortAt portId %= (\p -> p & Port.name .~ name
-                                                           & Port.mode .~ Port.Normal)
 
 handleMouseUp :: MouseEvent -> PortDrag -> Command State ()
 handleMouseUp evt portDrag = do

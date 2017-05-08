@@ -31,6 +31,7 @@ module NodeEditor.Action.Basic
     , localRemovePort
     , localRemoveSelectedNodes
     , localRenameNode
+    , localRenamePort
     , localSetNodeExpression
     , localSetNodeMeta
     , localSetNodesMeta
@@ -62,6 +63,7 @@ module NodeEditor.Action.Basic
     , removePort
     , removeSelectedNodes
     , renameNode
+    , renamePort
     , resetCamera
     , saveCurrentLocation
     , selectAll
@@ -114,6 +116,7 @@ import           NodeEditor.Action.Basic.RemoveNode          (localRemoveNode, l
                                                               removeNodes, removeSelectedNodes)
 import           NodeEditor.Action.Basic.RemovePort          (localRemovePort, removePort)
 import           NodeEditor.Action.Basic.RenameNode          (localRenameNode, renameNode)
+import           NodeEditor.Action.Basic.RenamePort          (localRenamePort, renamePort)
 import           NodeEditor.Action.Basic.Scene               (getScene, updateScene)
 import           NodeEditor.Action.Basic.SearchNodes         (localSetSearcherHints)
 import           NodeEditor.Action.Basic.SelectNode          (dropSelectionHistory, modifySelectionHistory, selectAll, selectNodes,

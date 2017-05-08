@@ -302,10 +302,7 @@ handle (Event.Batch ev) = Just $ case ev of
         portRef         = request  ^. RenamePort.portRef
         name            = request  ^. RenamePort.name
         failure inverse = whenM (isOwnRequest requestId) $ $notImplemented
-        success result  = inCurrentLocation location $ \path -> do
-            localUpdateOrAddInputNode $ convert (path, result ^. RenamePort.sidebar)
-            forM_ (result ^. RenamePort.updatedNodes) $ localUpdateOrAddExpressionNode . convert . (path,)
-
+        success result  = inCurrentLocation location $ \path -> applyResult path result
 
     SearchNodesResponse response -> handleResponse response success doNothing where
         requestId      = response ^. Response.requestId

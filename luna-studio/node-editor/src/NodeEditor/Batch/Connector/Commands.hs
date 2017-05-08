@@ -130,7 +130,7 @@ renameNode :: NodeLoc -> Text -> Workspace -> UUID -> Maybe UUID -> IO ()
 renameNode nl name workspace uuid guiID = sendRequest $ Message uuid guiID $ withLibrary workspace' RenameNode.Request nodeId name where
     (workspace', nodeId) = convert (workspace, nl)
 
-renamePort :: OutPortRef -> String -> Workspace -> UUID -> Maybe UUID -> IO ()
+renamePort :: OutPortRef -> Text -> Workspace -> UUID -> Maybe UUID -> IO ()
 renamePort portRef name workspace uuid guiID = sendRequest $ Message uuid guiID $ withLibrary workspace' RenamePort.Request portRef' name where
     (workspace', portRef') = normalise workspace portRef
 

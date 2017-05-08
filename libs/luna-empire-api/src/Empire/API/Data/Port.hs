@@ -60,7 +60,7 @@ data PortState = NotConnected | Connected | WithDefault PortDefault deriving (Sh
 
 data Port i = Port
         { _portId     :: i
-        , _name       :: String
+        , _name       :: Text
         , _valueType  :: TypeRep
         , _state      :: PortState
         } deriving (Show, Eq, Generic, NFData)

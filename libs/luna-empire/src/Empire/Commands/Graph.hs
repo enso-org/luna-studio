@@ -404,14 +404,14 @@ movePort loc portRef newPosition = withGraph loc $ runASTOp $ do
     ASTBuilder.attachNodeMarkersForArgs nodeId [] ref
     GraphBuilder.buildInputSidebar nodeId
 
-renamePort :: GraphLocation -> OutPortRef -> String -> Empire InputSidebar
+renamePort :: GraphLocation -> OutPortRef -> Text -> Empire InputSidebar
 renamePort loc portRef newName = withGraph loc $ runASTOp $ do
     let nodeId = portRef ^. PortRef.srcNodeId
     Just ref    <- ASTRead.getCurrentASTTarget
     edges       <- GraphBuilder.getEdgePortMapping
     _newRef     <- case edges of
         Just (input, _) -> do
-            if nodeId == input then ASTModify.renameLambdaArg (portRef ^. PortRef.srcPortId) newName ref
+            if nodeId == input then ASTModify.renameLambdaArg (portRef ^. PortRef.srcPortId) (Text.unpack newName) ref
                                else throwM NotInputEdgeException
         _ -> throwM NotInputEdgeException
     GraphBuilder.buildInputSidebar nodeId

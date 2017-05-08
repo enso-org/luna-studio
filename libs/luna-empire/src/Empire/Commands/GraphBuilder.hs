@@ -264,9 +264,7 @@ getPortsNames :: ASTOp m => NodeRef -> m [String]
 getPortsNames node = do
     names <- extractArgNames node
     let backupNames = map (\i -> "arg" ++ show i) [(0::Int)..]
-    forM (zip names backupNames) $ \(name, backup) -> case name of
-        Just n -> return n
-        _      -> return backup
+    forM (zip names backupNames) $ \(name, backup) -> return $ maybe backup id name
 
 extractAppliedPorts :: ASTOp m => Bool -> Bool -> [NodeRef] -> NodeRef -> m [Maybe (TypeRep, PortState)]
 extractAppliedPorts seenApp seenLam bound node = IR.matchExpr node $ \case
@@ -316,7 +314,7 @@ buildArgPorts ref = do
     let portsTypes = fmap fst typed ++ List.replicate (length names - length typed) TStar
         psCons = zipWith3 Port
                           (pure . Arg <$> [(0::Int)..])
-                          (names ++ (("arg" ++) . show <$> [0..]))
+                          (map Text.pack $ names ++ (("arg" ++) . show <$> [0..]))
                           portsTypes
     return $ zipWith ($) psCons (fmap snd typed ++ repeat NotConnected)
 
@@ -367,7 +365,7 @@ buildOutPortTree portId ref' = do
     ref   <- ASTRead.cutThroughGroups ref'
     name  <- Print.printExpression ref
     tp    <- followTypeRep ref
-    let wholePort = Port portId name tp NotConnected
+    let wholePort = Port portId (Text.pack name) tp NotConnected
     children <- match ref $ \case
         Cons _ as -> zipWithM buildOutPortTree ((portId ++) . pure . Port.Projection <$> [0 ..]) =<< mapM IR.source as
         _         -> return []

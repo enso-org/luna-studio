@@ -41,9 +41,10 @@ searcher =  React.defineView name $ \(ref, camera, s) -> do
         mode        = s ^. Searcher.mode
         nodePreview = convert . (NodeLoc.empty,) <$> (s ^. Searcher.selectedNode)
         className   = Style.prefixFromList ( "input" : "searcher" : ( case mode of
-            Searcher.Command  { } -> [ "searcher--command"]
-            Searcher.Node     { } -> [ "searcher--node" ]
-            Searcher.NodeName { } -> [ "searcher--node-name" ]))
+            Searcher.Command    _ -> [ "searcher--command"]
+            Searcher.Node     _ _ -> [ "searcher--node" ]
+            Searcher.NodeName _ _ -> [ "searcher--node-name"]
+            Searcher.PortName _ _ -> [ "searcher--port-name"]))
         mayCustomInput = if s ^. Searcher.replaceInput then ["value" $= convert (s ^. Searcher.input)] else []
     div_
         [ "key"       $= name
@@ -82,7 +83,7 @@ searcher =  React.defineView name $ \(ref, camera, s) -> do
                                 [ "key" $= "name"
                                 , "className" $= Style.prefix "searcher__result__item__name"
                                 ] $ elemString $ convert $ result ^. Result.name
-                    Searcher.Node results -> forKeyed_ results $ \(idx, result) ->
+                    Searcher.Node _ results -> forKeyed_ results $ \(idx, result) ->
                         div_
                             [ "key"       $= jsShow idx
                             , "className" $= resultClasses idx
@@ -96,7 +97,21 @@ searcher =  React.defineView name $ \(ref, camera, s) -> do
                                 ["key" $= "name"
                                 ,"className" $= Style.prefix "searcher__results__item__name"
                                 ] $ elemString $ convert $ result ^. Result.name
-                    Searcher.NodeName results -> forKeyed_ results $ \(idx, result) ->
+                    Searcher.NodeName _ results -> forKeyed_ results $ \(idx, result) ->
+                        div_
+                            [ "key"       $= jsShow idx
+                            , "className" $= resultClasses idx
+                            , onClick     $ \e _ -> stopPropagation e : (dispatch ref $ UI.SearcherEvent $ AcceptEntry (idx + 1))
+                            ] $ do
+                            div_
+                                ["key"       $= "prefix"
+                                ,"className" $= Style.prefix "searcher__results__item__prefix"
+                                ] $ elemString $ convert (result ^. Result.prefix) <> "."
+                            div_
+                                ["key" $= "name"
+                                ,"className" $= Style.prefix "searcher__results__item__name"
+                                ] $ elemString $ convert $ result ^. Result.name
+                    Searcher.PortName _ results -> forKeyed_ results $ \(idx, result) ->
                         div_
                             [ "key"       $= jsShow idx
                             , "className" $= resultClasses idx
