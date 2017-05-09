@@ -5,7 +5,6 @@ module TextEditor.Handler.Text
 import           JS.Atom
 import           Common.Prelude
 import qualified Empire.API.Atom.GetBuffer  as GetBuffer
-import           Empire.API.Atom.GetBuffer  (Result(..))
 import qualified Empire.API.Atom.Substitute as Substitute
 import qualified Empire.API.Response                    as Response
 

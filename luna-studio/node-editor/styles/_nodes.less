@@ -72,6 +72,7 @@
     r: 10;
 }
 
+
 .luna-port__select {
     opacity: 0;
 }
@@ -215,7 +216,7 @@
 .luna-ctrl-switch {
     cursor:        pointer;
     height:        8rem;
-    width:         16rem;
+    width:         23rem;
     background:    #111;
     border-radius: 1000px;
     position:      relative;
@@ -236,14 +237,28 @@
     background: #888;
     &::after {
         background: #bbb;
-        left:       6rem;
+        left:       11rem;
     }
 }
 .luna-ctrl-switch--off {
     background: #3a3a3a;
     &::after {
         background: #666;
-        left:      -2rem;
+        left:       -1rem;
+    }
+}
+
+.luna-ctrl-set {
+    width: 24rem;
+    opacity: .1;
+    background: #fff;
+    color: @colorNodeBackground;
+    text-align: center;
+    border-radius: 100rem;
+    line-height: 11rem;
+    padding-bottom: 1rem;
+    &:hover {
+        opacity: .3;
     }
 }
 

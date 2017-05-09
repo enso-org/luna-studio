@@ -17,7 +17,6 @@ import qualified NodeEditor.Event.UI                     as UI
 import qualified NodeEditor.React.Event.Sidebar          as Sidebar
 import           NodeEditor.React.Model.App              (App)
 import           NodeEditor.React.Model.Constants        (lineHeight)
-import qualified NodeEditor.React.Model.Field            as Field
 import           NodeEditor.React.Model.Node.SidebarNode (NodeLoc, SidebarMode (AddRemove, MoveConnect), SidebarNode, countProjectionPorts,
                                                           isInputSidebar)
 import qualified NodeEditor.React.Model.Node.SidebarNode as SidebarNode
@@ -25,7 +24,6 @@ import           NodeEditor.React.Model.Port             (AnyPort, OutPortIndex 
                                                           isHighlighted, isInMovedMode, isInNameEditMode, isInPort, isOutPort)
 import qualified NodeEditor.React.Model.Port             as Port
 import           NodeEditor.React.Store                  (Ref, dispatch)
-import           NodeEditor.React.View.Field             (singleField_)
 import           NodeEditor.React.View.Port              (handleClick, handleMouseDown, handleMouseUp, jsShow2)
 import           NodeEditor.React.View.Style             (plainPath_, plainRect_)
 import qualified NodeEditor.React.View.Style             as Style
@@ -153,17 +151,12 @@ sidebarPort_ ref mode nl isPortDragged isOnly p = do
                 , "key"       $= (jsShow portId <> jsShow num <> "b")
                 , "r"         $= jsShow2 (lineHeight/1.5)
                 ] ++ portHandlers ref mode isPortDragged isOnly portRef ) mempty
-
-        if isInNameEditMode p then
-            singleField_ [ "className" $= Style.prefix "input"
-                         , "id" $= portLabelId ] (jsShow portId)
-                $ Field.mk ref (convert $ p ^. Port.name)
-                & Field.onCancel .~ Just (const $ UI.SidebarEvent $ Sidebar.PortNameDiscard portRef)
-                & Field.onAccept .~ Just (UI.SidebarEvent . Sidebar.PortNameApply portRef . convert)
-        else
-            div_ [ "className" $= Style.prefixFromList ["sidebar__port__name", "noselect"]
-                 , onDoubleClick $ \_ _ -> dispatch ref $ UI.SidebarEvent $ Sidebar.PortNameStartEdit portRef
-                 ] $ elemString $ p ^. Port.name
+        div_ (
+            [ "className"   $= Style.prefixFromList [ "sidebar__port__name", "noselect" ]]
+            ++ case portRef of
+                OutPortRef' outPortRef -> [onDoubleClick $ \e _ -> stopPropagation e : dispatch ref (UI.SidebarEvent $ Sidebar.EditPortName outPortRef)]
+                _                      -> [])
+            $ elemString . convert $ p ^. Port.name
 
 addButton_ :: Ref App -> AnyPortRef -> ReactElementM ViewEventHandler ()
 addButton_ ref portRef = do
@@ -194,7 +187,7 @@ sidebarDraggedPort_ _ref p = withJust (getPositionInSidebar p) $ \pos ->
         [ "className" $= Style.prefixFromList [ "port", "sidebar__port", "sidebar__port--dragged", "hover" ]
         , "style"     @= Aeson.object [ "transform"  Aeson..= ("translate(0px, " <> show (pos ^. y) <> "px)") ]
         ] $ do
-        div_ [ "className" $= Style.prefix "sidebar__port__name" ] $ elemString $ p ^. Port.name
+        div_ [ "className" $= Style.prefix "sidebar__port__name" ] $ elemString . convert $ p ^. Port.name
         svg_
             [ "className" $= Style.prefix "sidebar__port__svg" ] $
             circle_

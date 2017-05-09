@@ -4,7 +4,7 @@ import           Data.Binary                   (Binary)
 import           Prologue
 
 import           Empire.API.Data.GraphLocation (GraphLocation)
-import           Empire.API.Data.Node          (NodeId)
+import           Empire.API.Data.Node          (ExpressionNode, NodeId)
 import qualified Empire.API.Graph.Request      as G
 import qualified Empire.API.Request            as R
 import qualified Empire.API.Response           as Response
@@ -18,8 +18,10 @@ data Request = Request { _location :: GraphLocation
 data Inverse = Inverse { _prevName :: Text
                        } deriving (Generic, Show, Eq, NFData)
 
-type Response = Response.SimpleResponse Request Inverse
-instance Response.ResponseResult Request Inverse ()
+type Result = [ExpressionNode]
+
+type Response = Response.Response Request Inverse Result
+instance Response.ResponseResult Request Inverse Result
 
 makeLenses ''Request
 makeLenses ''Inverse

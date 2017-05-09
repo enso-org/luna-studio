@@ -44,7 +44,6 @@ data ExpressionNode = ExpressionNode { _nodeLoc'              :: NodeLoc
                                      , _zPos                  :: Int
                                      , _isSelected            :: Bool
                                      , _mode                  :: Mode
-                                     , _isNameEdited          :: Bool
                                      , _execTime              :: Maybe Integer
                                      , _collaboration         :: Collaboration
                                      } deriving (Eq, Generic, NFData, Show)
@@ -93,7 +92,6 @@ instance Convertible (NodePath, Empire.ExpressionNode) ExpressionNode where
         {- zPos                  -} def
         {- isSelected            -} False
         {- mode                  -} def
-        {- isNameEdited          -} False
         {- execTime              -} def
         {- collaboration         -} def
 

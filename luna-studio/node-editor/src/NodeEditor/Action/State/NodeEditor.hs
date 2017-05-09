@@ -48,17 +48,14 @@ getNodeEditor = get nodeEditor
 modifyNodeEditor :: M.State NodeEditor r -> Command State r
 modifyNodeEditor = modify nodeEditor
 
+isGraphLoaded :: Command State Bool
+isGraphLoaded = view NE.isGraphLoaded <$> getNodeEditor
+
+setGraphLoaded :: Bool -> Command State ()
+setGraphLoaded flag = modifyNodeEditor $ NE.isGraphLoaded .= flag
+
 resetGraph :: Command State ()
-resetGraph = modifyNodeEditor $ do
-    NE.expressionNodes     .= def
-    NE.inputNode           .= def
-    NE.outputNode          .= def
-    NE.monads              .= def
-    NE.connections         .= def
-    NE.visualizations      .= def
-    NE.connectionPen       .= def
-    NE.selectionBox        .= def
-    NE.searcher            .= def
+resetGraph = modifyNodeEditor $ M.put def
 
 separateSubgraph :: [NodeLoc] -> Command State Graph
 separateSubgraph nodeLocs = do
@@ -220,17 +217,18 @@ globalFunctions :: Items a -> Items a
 globalFunctions = Map.filter isElement
 
 getNodeSearcherData :: Command State (Items Empire.ExpressionNode)
-getNodeSearcherData = do
-    completeData <- use $ workspace . nodeSearcherData
-    selected     <- getSelectedNodes
-    ne           <- getNodeEditor
-    let mscope = case selected of
-            [node] -> convert . view valueType <$> NE.getPort (OutPortRef (node ^. nodeLoc) []) ne
-            _      -> Nothing
-    return $ case mscope of
-        Nothing -> completeData
-        Just tn -> Map.union (globalFunctions scope) (globalFunctions completeData) where
-            scope = fromMaybe mempty $ completeData ^? ix tn . items
+getNodeSearcherData = preuse (workspace . traverse . nodeSearcherData) >>= \case
+    Nothing -> return def
+    Just completeData -> do
+        selected     <- getSelectedNodes
+        ne           <- getNodeEditor
+        let mscope = case selected of
+                [node] -> convert . view valueType <$> NE.getPort (OutPortRef (node ^. nodeLoc) []) ne
+                _      -> Nothing
+        return $ case mscope of
+            Nothing -> completeData
+            Just tn -> Map.union (globalFunctions scope) (globalFunctions completeData) where
+                scope = fromMaybe mempty $ completeData ^? ix tn . items
 
 class NodeEditorElementId a where
     inGraph :: a -> Command State Bool

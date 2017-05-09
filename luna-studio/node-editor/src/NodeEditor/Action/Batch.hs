@@ -20,13 +20,12 @@ withWorkspace :: (Workspace -> UUID -> Maybe UUID -> IO ()) -> Command State ()
 withWorkspace act = do
     uuid       <- registerRequest
     guiID      <- use $ backend . clientId
-    workspace' <- use workspace
-    liftIO $ act workspace' uuid $ Just guiID
+    withJustM (use workspace) $ \workspace' ->
+        liftIO $ act workspace' uuid $ Just guiID
 
 withWorkspace' :: (Workspace -> IO ()) -> Command State ()
 withWorkspace' act = do
-    workspace' <- use workspace
-    liftIO $ act workspace'
+    withJustM (use workspace) $ liftIO . act
 
 withUUID :: (UUID -> Maybe UUID -> IO ()) -> Command State ()
 withUUID act = do
@@ -58,8 +57,8 @@ addConnection src dst = do
 addNode :: NodeLoc -> Text -> Position -> Bool -> Maybe NodeLoc -> Command State ()
 addNode nl expr pos dispRes connectTo = withWorkspace $ BatchCmd.addNode nl expr (NodeMeta pos dispRes) connectTo
 
-addPort :: OutPortRef -> Command State ()
-addPort = withWorkspace . BatchCmd.addPort
+addPort :: OutPortRef -> Maybe InPortRef -> Command State ()
+addPort = withWorkspace .: BatchCmd.addPort
 
 addSubgraph :: [ExpressionNode] -> [(OutPortRef, InPortRef)] -> Command State ()
 addSubgraph nodes conns = withWorkspace $ BatchCmd.addSubgraph (convert <$> nodes) (convert <$> conns)
@@ -90,14 +89,11 @@ removePort = withWorkspace . BatchCmd.removePort
 renameNode :: NodeLoc -> Text -> Command State ()
 renameNode = withWorkspace .:  BatchCmd.renameNode
 
-renamePort :: OutPortRef -> String -> Command State ()
+renamePort :: OutPortRef -> Text -> Command State ()
 renamePort = withWorkspace .: BatchCmd.renamePort
 
 searchNodes :: Text -> (Int, Int) -> Command State ()
 searchNodes = withWorkspace .: BatchCmd.searchNodes
-
-setNodeCode :: NodeLoc -> Text -> Command State ()
-setNodeCode = withWorkspace .:  BatchCmd.setNodeCode
 
 setNodeExpression :: NodeLoc -> Text -> Command State ()
 setNodeExpression = withWorkspace .: BatchCmd.setNodeExpression

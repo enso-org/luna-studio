@@ -1,12 +1,11 @@
 module NodeEditor.Handler.Sidebar where
 
+import           Common.Prelude
 import           NodeEditor.Action.Basic        (toggleInputMode, toggleOutputMode)
 import           NodeEditor.Action.Command      (Command)
-import           NodeEditor.Action.Sidebar      (addPort, cancelPortNameEdit, finishPortNameEdit, handleAppMove, handleMouseUp,
-                                                  handleSidebarMove, removePort, startPortNameEdit)
+import           NodeEditor.Action.Sidebar      (addPort, editPortName, handleAppMove, handleMouseUp, handleSidebarMove, removePort)
 import           NodeEditor.Event.Event         (Event (UI))
 import           NodeEditor.Event.UI            (UIEvent (AppEvent, SidebarEvent))
-import           Common.Prelude
 import qualified NodeEditor.React.Event.App     as App
 import qualified NodeEditor.React.Event.Sidebar as Sidebar
 import           NodeEditor.React.Model.Port    (AnyPortRef (OutPortRef'))
@@ -22,7 +21,5 @@ handle (UI (SidebarEvent (Sidebar.AddPort           (OutPortRef' portRef))))    
 handle (UI (AppEvent     (App.MouseMove             evt _)))                      = Just $ handleAppMove evt
 handle (UI (SidebarEvent (Sidebar.MouseMove         evt nodeLoc)))                = Just $ handleSidebarMove evt nodeLoc
 handle (UI (AppEvent     (App.MouseUp               evt)))                        = Just $ continue $ handleMouseUp evt
-handle (UI (SidebarEvent (Sidebar.PortNameStartEdit (OutPortRef' portRef))))      = Just $ startPortNameEdit  portRef
-handle (UI (SidebarEvent (Sidebar.PortNameApply     (OutPortRef' portRef) name))) = Just $ finishPortNameEdit portRef name
-handle (UI (SidebarEvent (Sidebar.PortNameDiscard   (OutPortRef' portRef))))      = Just $ cancelPortNameEdit portRef
+handle (UI (SidebarEvent (Sidebar.EditPortName      portRef)))                    = Just $ editPortName portRef
 handle _                                                                          = Nothing

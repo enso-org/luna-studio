@@ -18,6 +18,8 @@ import           Prologue
 
 type NodeId = UUID
 
+data Node = ExpressionNode' ExpressionNode | InputSidebar' InputSidebar | OutputSidebar' OutputSidebar deriving (Generic, Eq, NFData, Show, Typeable)
+
 data ExpressionNode = ExpressionNode { _exprNodeId :: NodeId
                                      , _expression :: Text
                                      , _name       :: Maybe Text
@@ -53,6 +55,7 @@ instance Binary ExpressionNode
 instance Binary InputSidebar
 instance Binary OutputSidebar
 instance Binary NodeTypecheckerUpdate
+instance Binary Node
 
 class HasNodeId a where
     nodeId :: Lens' a NodeId
@@ -65,3 +68,12 @@ instance HasNodeId InputSidebar where
 
 instance HasNodeId OutputSidebar where
     nodeId = outputNodeId
+
+instance HasNodeId Node where
+    nodeId = lens getNodeId setNodeId where
+        getNodeId (ExpressionNode' n) = n ^. exprNodeId
+        getNodeId (InputSidebar'   n) = n ^. inputNodeId
+        getNodeId (OutputSidebar'  n) = n ^. outputNodeId
+        setNodeId (ExpressionNode' n) nid = ExpressionNode' $ n & exprNodeId   .~ nid
+        setNodeId (InputSidebar'   n) nid = InputSidebar'   $ n & inputNodeId  .~ nid
+        setNodeId (OutputSidebar'  n) nid = OutputSidebar'  $ n & outputNodeId .~ nid

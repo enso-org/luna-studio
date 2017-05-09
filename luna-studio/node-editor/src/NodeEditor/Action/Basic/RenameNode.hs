@@ -1,9 +1,9 @@
 module NodeEditor.Action.Basic.RenameNode where
 
+import           Common.Prelude
 import qualified NodeEditor.Action.Batch                    as Batch
 import           NodeEditor.Action.Command                  (Command)
 import qualified NodeEditor.Action.State.NodeEditor         as NodeEditor
-import           Common.Prelude
 import           NodeEditor.React.Model.Node.ExpressionNode (NodeLoc)
 import qualified NodeEditor.React.Model.Node.ExpressionNode as Node
 import           NodeEditor.State.Global                    (State)
@@ -15,7 +15,5 @@ renameNode nl update =
 
 localRenameNode :: NodeLoc -> Text -> Command State Bool
 localRenameNode nl update = do
-    NodeEditor.modifyExpressionNode nl $ do
-        Node.name         ?= update
-        Node.isNameEdited .= False
+    NodeEditor.modifyExpressionNode nl $ Node.name ?= update
     NodeEditor.inGraph nl

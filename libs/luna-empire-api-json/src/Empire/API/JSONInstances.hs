@@ -1,16 +1,8 @@
 {-# LANGUAGE FlexibleInstances #-}
 module Empire.API.JSONInstances where
 
-import           Data.Aeson.Types                       (FromJSON, FromJSONKey, ToJSON, ToJSONKey, parseJSON, toJSON, typeMismatch)
-import qualified Data.Aeson.Types                       as JSONTypes
-import           Data.Map.Lazy                          (Map)
-import qualified Data.Map.Lazy                          as Map
-import           Data.Maybe                             (fromMaybe)
-import qualified Data.Text                              as Text
-import           Data.UUID.Types                        (UUID)
-import qualified Data.UUID.Types                        as UUID
+import           Data.Aeson.Types                       (FromJSON, FromJSONKey, ToJSON, ToJSONKey)
 import           Prologue
-import           Text.Read                              (readMaybe)
 
 import           Empire.API.Atom.CloseFile              as CloseFile
 import           Empire.API.Atom.GetBuffer              as GetBuffer
@@ -45,14 +37,12 @@ import           Empire.API.Graph.AddPort               as AddPort
 import           Empire.API.Graph.AddSubgraph           as AddSubgraph
 import           Empire.API.Graph.AutolayoutNodes       as AutolayoutNodes
 import           Empire.API.Graph.CollaborationUpdate   as CollaborationUpdate
-import           Empire.API.Graph.ConnectUpdate         as ConnectUpdate
 import           Empire.API.Graph.DumpGraphViz          as DumpGraphViz
 import           Empire.API.Graph.GetProgram            as GetProgram
 import           Empire.API.Graph.GetSubgraphs          as GetSubgraphs
 import           Empire.API.Graph.MonadsUpdate          as MonadsUpdate
 import           Empire.API.Graph.MovePort              as MovePort
 import           Empire.API.Graph.NodeResultUpdate      as NodeResultUpdate
-import           Empire.API.Graph.NodesUpdate           as NodesUpdate
 import           Empire.API.Graph.NodeTypecheckerUpdate as NodeTypecheckerUpdate
 import           Empire.API.Graph.Redo                  as Redo
 import           Empire.API.Graph.RemoveConnection      as RemoveConnection
@@ -60,8 +50,8 @@ import           Empire.API.Graph.RemoveNodes           as RemoveNodes
 import           Empire.API.Graph.RemovePort            as RemovePort
 import           Empire.API.Graph.RenameNode            as RenameNode
 import           Empire.API.Graph.RenamePort            as RenamePort
+import           Empire.API.Graph.Result                as Result
 import           Empire.API.Graph.SearchNodes           as SearchNodes
-import           Empire.API.Graph.SetNodeCode           as SetNodeCode
 import           Empire.API.Graph.SetNodeExpression     as SetNodeExpression
 import           Empire.API.Graph.SetNodesMeta          as SetNodesMeta
 import           Empire.API.Graph.SetPortDefault        as SetPortDefault
@@ -110,6 +100,8 @@ instance ToJSON   Node.InputSidebar
 instance FromJSON Node.InputSidebar
 instance ToJSON   Node.OutputSidebar
 instance FromJSON Node.OutputSidebar
+instance ToJSON   Node.Node
+instance FromJSON Node.Node
 instance ToJSON   Node.NodeTypecheckerUpdate
 instance FromJSON Node.NodeTypecheckerUpdate
 
@@ -125,12 +117,10 @@ instance FromJSONKey AnyPortRef
 instance FromJSONKey Breadcrumb.BreadcrumbItem
 instance FromJSONKey InPortRef
 instance FromJSONKey NodeLoc
-instance FromJSONKey UUID
 instance ToJSONKey AnyPortRef
 instance ToJSONKey Breadcrumb.BreadcrumbItem
 instance ToJSONKey InPortRef
 instance ToJSONKey NodeLoc
-instance ToJSONKey UUID
 
 instance ToJSON i => ToJSON (Port.Port i)
 instance FromJSON i => FromJSON (Port.Port i)
@@ -172,22 +162,27 @@ instance ToJSON IsSaved.Saved
 instance ToJSON Error.ErrorType
 instance ToJSON Error.Error
 
+instance ToJSON Result.Result
+instance FromJSON Result.Result
+
 
 instance ToJSON AddConnection.Request
+instance ToJSON AddConnection.Result
 
 instance ToJSON AddNode.Request
+instance ToJSON AddNode.Result
 
 instance ToJSON AddPort.Request
+instance ToJSON AddPort.Result
 
 instance ToJSON AddSubgraph.Request
+instance ToJSON AddSubgraph.Result
 
 instance ToJSON AutolayoutNodes.Request
 instance ToJSON AutolayoutNodes.Inverse
 
 instance ToJSON CollaborationUpdate.Update
 instance ToJSON CollaborationUpdate.Event
-
-instance ToJSON ConnectUpdate.Update
 
 instance ToJSON DumpGraphViz.Request
 
@@ -200,8 +195,6 @@ instance ToJSON GetSubgraphs.Result
 instance ToJSON MonadsUpdate.Update
 
 instance ToJSON MovePort.Request
-
-instance ToJSON NodesUpdate.Update
 
 instance ToJSON NodeResultUpdate.Update
 instance ToJSON NodeResultUpdate.NodeValue
@@ -220,6 +213,7 @@ instance ToJSON Substitute.Request
 instance ToJSON Substitute.Update
 
 instance ToJSON RemoveConnection.Request
+instance ToJSON RemoveConnection.Result
 instance ToJSON RemoveConnection.Inverse
 instance ToJSON RemoveConnection.Update
 
@@ -239,9 +233,6 @@ instance ToJSON a => ToJSON (Request.Request a)
 
 instance ToJSON SearchNodes.Request
 instance ToJSON SearchNodes.Result
-
-instance ToJSON SetNodeCode.Request
-instance ToJSON SetNodeCode.Inverse
 
 instance ToJSON SetNodeExpression.Request
 instance ToJSON SetNodeExpression.Inverse
@@ -306,11 +297,3 @@ instance ToJSON PLibrary.Library
 instance FromJSON PLibrary.Library
 instance ToJSON PEnvelope.Envelope
 instance FromJSON PEnvelope.Envelope
-
-instance ToJSON UUID where
-  toJSON = toJSON . UUID.toString
-instance FromJSON UUID where
-  parseJSON (JSONTypes.String w) = case (UUID.fromString $ Text.unpack w) of
-    Just s  -> return s
-    Nothing -> fail "expected UUID"
-  parseJSON w = typeMismatch "UUID" w

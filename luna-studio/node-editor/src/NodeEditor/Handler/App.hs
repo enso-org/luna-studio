@@ -4,11 +4,12 @@ module NodeEditor.Handler.App
 
 import           Common.Prelude
 
-import           NodeEditor.Action.Basic        (updateScene)
+import           NodeEditor.Action.Basic        (closeFile, openFile, updateScene)
 import qualified NodeEditor.Action.Batch        as Batch
 import           NodeEditor.Action.Command      (Command)
 import           NodeEditor.Action.State.Action (endAll)
-import           NodeEditor.Event.Event         (Event (Init, Shortcut, UI))
+import qualified NodeEditor.Event.Atom          as Atom
+import           NodeEditor.Event.Event         (Event (Atom, Init, Shortcut, UI))
 import           NodeEditor.Event.Mouse         (mousePosition)
 import qualified NodeEditor.Event.Shortcut      as Shortcut
 import           NodeEditor.Event.UI            (UIEvent (AppEvent))
@@ -24,6 +25,8 @@ handle (UI (AppEvent  App.Resize          )) = Just   updateScene
 handle (UI (AppEvent  App.MouseLeave      )) = Just   endAll
 handle (Shortcut (Shortcut.Event command _)) = Just $ handleCommand command
 handle  Init                                 = Just   Batch.getProgram
+handle (Atom (Atom.OpenFile path)          ) = Just $ openFile path
+handle (Atom  Atom.CloseFile               ) = Just   closeFile
 handle _                                     = Nothing
 
 

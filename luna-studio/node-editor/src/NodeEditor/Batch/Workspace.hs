@@ -1,7 +1,7 @@
 module NodeEditor.Batch.Workspace where
 
-import           Data.Aeson                    (ToJSON)
 import           Common.Prelude
+import           Data.Aeson                    (ToJSON)
 
 import qualified Empire.API.Data.Breadcrumb    as Breadcrumb
 import           Empire.API.Data.GraphLocation (GraphLocation (..))
@@ -13,14 +13,13 @@ import           Text.ScopeSearcher.Item       (Items)
 
 data Workspace = Workspace { _currentLocation  :: GraphLocation
                            , _lastUILocation   :: Maybe GraphLocation
-                           , _isGraphLoaded    :: Bool
                            , _nodeSearcherData :: Items ExpressionNode
                            } deriving (Show, Eq, Generic)
 
 instance ToJSON Workspace
 
 mk :: FilePath -> Workspace
-mk path = Workspace (GraphLocation path def) def False def
+mk path = Workspace (GraphLocation path def) def def
 
 makeLenses ''Workspace
 

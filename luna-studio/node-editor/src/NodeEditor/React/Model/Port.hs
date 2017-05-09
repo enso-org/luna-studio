@@ -22,7 +22,9 @@ import           NodeEditor.Data.Color            (Color)
 import qualified NodeEditor.Data.Color            as Color
 import           NodeEditor.React.Model.Constants (nodeRadius)
 
-
+type IsAlias = Bool
+type IsSelf  = Bool
+type IsOnly  = Bool
 
 data Mode = Normal
           | Invisible
@@ -37,7 +39,7 @@ instance Default Mode where
 
 data Port i = Port
         { _portId    :: i
-        , _name      :: String
+        , _name      :: Text
         , _valueType :: TypeRep
         , _state     :: PortState
         , _color     :: Color
@@ -89,7 +91,7 @@ inPortTreeLeafs :: InPortTree (Port i) -> [Port i]
 inPortTreeLeafs (LabeledTree (InPorts Nothing []) p) = if p ^. state == Connected then [p] else []
 inPortTreeLeafs (LabeledTree (InPorts mps     ps) _) = concatMap inPortTreeLeafs' $ maybeToList mps <> ps where
     inPortTreeLeafs' (LabeledTree (InPorts Nothing []) p') = [p']
-    inPortTreeLeafs' (LabeledTree (InPorts mps'     ps') _) = concatMap inPortTreeLeafs $ maybeToList mps' <> ps'
+    inPortTreeLeafs' (LabeledTree (InPorts mps'    ps') _) = concatMap inPortTreeLeafs $ maybeToList mps' <> ps'
 
 
 instance Convertible InPort  AnyPort where convert = fmap InPortId'

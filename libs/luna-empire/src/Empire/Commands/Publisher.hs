@@ -16,16 +16,11 @@ import           Empire.Prelude
 import qualified Empire.API.Atom.Substitute             as Substitute
 import qualified Empire.API.Graph.MonadsUpdate          as Monads
 import qualified Empire.API.Graph.NodeResultUpdate      as NodeResult
-import qualified Empire.API.Graph.NodesUpdate           as Node
 import qualified Empire.API.Graph.NodeTypecheckerUpdate as NodeTCUpdate
 
 notifyMonadsUpdate :: (MonadReader CommunicationEnv m, MonadIO m) => GraphLocation -> [MonadPath] -> m ()
 notifyMonadsUpdate loc m =
     sendUpdate $ MonadsUpdate $ Monads.Update loc m
-
-notifyNodeUpdate :: (MonadReader CommunicationEnv m, MonadIO m) => GraphLocation -> ExpressionNode -> m ()
-notifyNodeUpdate loc n =
-    sendUpdate $ NodesUpdate $ Node.Update loc [n]
 
 notifyNodeTypecheck :: (MonadReader CommunicationEnv m, MonadIO m) => GraphLocation -> NodeTypecheckerUpdate -> m ()
 notifyNodeTypecheck loc n =

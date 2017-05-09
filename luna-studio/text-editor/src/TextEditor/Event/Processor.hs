@@ -34,7 +34,7 @@ consoleTimeStart = consoleTimeStart' . convert
 consoleTimeEnd   = consoleTimeEnd'   . convert
 
 actions :: LoopRef -> [Event -> Maybe (Command State ())]
-actions loop =
+actions _ =
     [ ProjectManager.handle
     , Text.handle
     ]

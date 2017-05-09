@@ -18,11 +18,9 @@ import           Prologue
 import qualified Empire.API.Control.EmpireStarted  as EmpireStarted
 import qualified Empire.API.Graph.AddConnection    as AddConnection
 import qualified Empire.API.Graph.AddNode          as AddNode
-import qualified Empire.API.Graph.ConnectUpdate    as ConnectUpdate
 import qualified Empire.API.Graph.DumpGraphViz     as DumpGraphViz
 import qualified Empire.API.Graph.GetProgram       as GetProgram
 import qualified Empire.API.Graph.NodeResultUpdate as NodeResultUpdate
-import qualified Empire.API.Graph.NodesUpdate      as NodesUpdate
 import qualified Empire.API.Graph.RemoveConnection as RemoveConnection
 import qualified Empire.API.Graph.RemoveNodes      as RemoveNodes
 import qualified Empire.API.Graph.RenameNode       as RenameNode

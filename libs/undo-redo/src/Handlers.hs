@@ -44,7 +44,6 @@ import qualified Empire.API.Graph.RemoveNodes       as RemoveNodes
 import qualified Empire.API.Graph.RemovePort        as RemovePort
 import qualified Empire.API.Graph.RenameNode        as RenameNode
 import qualified Empire.API.Graph.RenamePort        as RenamePort
-import qualified Empire.API.Graph.SetNodeCode       as SetNodeCode
 import qualified Empire.API.Graph.SetNodeExpression as SetNodeExpression
 import           Empire.API.Graph.SetNodesMeta      (SingleUpdate)
 import qualified Empire.API.Graph.SetNodesMeta      as SetNodesMeta
@@ -71,7 +70,6 @@ handlersMap = Map.fromList
     , makeHandler handleRemovePortUndo
     , makeHandler handleRenameNodeUndo
     , makeHandler handleRenamePortUndo
-    , makeHandler handleSetNodeCodeUndo
     , makeHandler handleSetNodeExpressionUndo
     , makeHandler handleSetNodesMetaUndo
     , makeHandler handleSetPortDefaultUndo
@@ -90,7 +88,6 @@ type family UndoResponseRequest t where
     UndoResponseRequest RemovePort.Response           = AddPort.Request
     UndoResponseRequest RenameNode.Response           = RenameNode.Request
     UndoResponseRequest RenamePort.Response           = RenamePort.Request
-    UndoResponseRequest SetNodeCode.Response          = SetNodeCode.Request
     UndoResponseRequest SetNodeExpression.Response    = SetNodeExpression.Request
     UndoResponseRequest SetNodesMeta.Response         = SetNodesMeta.Request
     UndoResponseRequest SetPortDefault.Response       = SetPortDefault.Request
@@ -106,7 +103,6 @@ type family RedoResponseRequest t where
     RedoResponseRequest RemovePort.Response           = RemovePort.Request
     RedoResponseRequest RenameNode.Response           = RenameNode.Request
     RedoResponseRequest RenamePort.Response           = RenamePort.Request
-    RedoResponseRequest SetNodeCode.Response          = SetNodeCode.Request
     RedoResponseRequest SetNodeExpression.Response    = SetNodeExpression.Request
     RedoResponseRequest SetNodesMeta.Response         = SetNodesMeta.Request
     RedoResponseRequest SetPortDefault.Response       = SetPortDefault.Request
@@ -168,7 +164,7 @@ handleAddSubgraphUndo (Response.Response _ _ req _ (Response.Ok _)) =
 
 
 getUndoAddConnection :: AddConnection.Request -> AddConnection.Result -> RemoveConnection.Request
-getUndoAddConnection (AddConnection.Request location _ _) conn =
+getUndoAddConnection (AddConnection.Request location _ _) (AddConnection.Result conn _ _) =
     RemoveConnection.Request location $ conn ^. Connection.dst
 
 handleAddConnectionUndo :: AddConnection.Response -> Maybe (RemoveConnection.Request, AddConnection.Request)
@@ -207,7 +203,7 @@ handleRemoveNodesUndo (Response.Response _ _ req (Response.Ok inv) (Response.Ok 
 -- TODO[LJK/SB]: Preserve connections
 getUndoRemovePort :: RemovePort.Request -> RemovePort.Inverse -> AddPort.Request
 getUndoRemovePort (RemovePort.Request location portRef) (RemovePort.Inverse conns) =
-    AddPort.Request location portRef $ Just conns
+    AddPort.Request location portRef $ map (InPortRef' . view Connection.dst) conns
 
 handleRemovePortUndo :: RemovePort.Response -> Maybe (AddPort.Request, RemovePort.Request)
 handleRemovePortUndo (Response.Response _ _ req (Response.Ok inv) (Response.Ok _)) =
@@ -230,15 +226,6 @@ getUndoRenamePort (RenamePort.Request location portRef _) (RenamePort.Inverse pr
 handleRenamePortUndo :: RenamePort.Response -> Maybe (RenamePort.Request, RenamePort.Request)
 handleRenamePortUndo (Response.Response _ _ req (Response.Ok inv) (Response.Ok _)) =
     Just (getUndoRenamePort req inv, req)
-
-
-getUndoSetNodeCode :: SetNodeCode.Request -> SetNodeCode.Inverse -> SetNodeCode.Request
-getUndoSetNodeCode (SetNodeCode.Request location nodeId _) (SetNodeCode.Inverse prevCode) =
-    SetNodeCode.Request location nodeId prevCode
-
-handleSetNodeCodeUndo :: SetNodeCode.Response -> Maybe (SetNodeCode.Request, SetNodeCode.Request)
-handleSetNodeCodeUndo (Response.Response _ _ req (Response.Ok inv) (Response.Ok _)) =
-    Just (getUndoSetNodeCode req inv, req)
 
 
 getUndoSetNodeExpression :: SetNodeExpression.Request -> SetNodeExpression.Inverse -> SetNodeExpression.Request

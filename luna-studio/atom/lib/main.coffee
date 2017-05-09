@@ -50,6 +50,7 @@ module.exports = LunaStudio =
     @subs.add atom.workspace.onDidChangeActivePaneItem (items) ->
       if items instanceof LunaEditorTab
         console.log('should send uri to node editor ' + items.uri)
+        code.pushEvent("OpenFile \"" + items.uri.replace(/["]+/g, '\\\"') +  "\"")
 
     @subs.add atom.workspace.onDidDestroyPaneItem (event) =>
         if (event.item instanceof LunaEditorTab) or (event.item instanceof LunaStudioTab)

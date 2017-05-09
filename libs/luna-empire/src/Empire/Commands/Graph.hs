@@ -89,7 +89,7 @@ import           Empire.API.Data.NodeLoc         (NodeLoc (..))
 import qualified Empire.API.Data.NodeLoc         as NodeLoc
 import           Empire.API.Data.NodeMeta        (NodeMeta)
 import qualified Empire.API.Data.NodeMeta        as NodeMeta
-import           Empire.API.Data.Port            (InPortId, OutPortId, InPort, OutPort, InPortIndex (..), OutPortIndex (..), AnyPortId (..))
+import           Empire.API.Data.Port            (InPortId, OutPortId, InPort, OutPort, InPortIndex (..), OutPortIndex (..), AnyPortId (..), getPortNumber)
 import qualified Empire.API.Data.Port            as Port
 import           Empire.API.Data.PortRef         (AnyPortRef (..), InPortRef (..), OutPortRef (..))
 import qualified Empire.API.Data.PortRef         as PortRef
@@ -105,6 +105,7 @@ import qualified Empire.ASTOps.Parse             as ASTParse
 import qualified Empire.ASTOps.Print             as ASTPrint
 import qualified Empire.ASTOps.Remove            as ASTRemove
 import qualified Empire.Commands.AST             as AST
+import qualified Empire.Commands.Autolayout      as Autolayout
 import           Empire.Commands.Breadcrumb      (withBreadcrumb)
 import qualified Empire.Commands.GraphBuilder    as GraphBuilder
 import qualified Empire.Commands.GraphUtils      as GraphUtils
@@ -131,22 +132,27 @@ generateNodeName = do
 addNodeCondTC :: Bool -> GraphLocation -> NodeId -> Text -> NodeMeta -> Empire ExpressionNode
 addNodeCondTC True  loc uuid expr meta = addNode loc uuid expr meta
 addNodeCondTC False loc uuid expr meta = do
-    (nearestNode, node) <- withGraph loc $ addNodeNoTC loc uuid expr meta
+    (nearestNode, node) <- withGraph loc $ addNodeNoTC loc uuid expr Nothing meta
     addToCode loc nearestNode $ node ^. Node.nodeId
     return node
 
 addNode :: GraphLocation -> NodeId -> Text -> NodeMeta -> Empire ExpressionNode
-addNode loc@(GraphLocation file _) uuid expr meta = do
-    (nearestNode, node) <- withTC loc False $ addNodeNoTC loc uuid expr meta
+addNode loc uuid expr meta = addNodeWithName loc uuid expr Nothing meta
+
+addNodeWithName :: GraphLocation -> NodeId -> Text -> Maybe Text -> NodeMeta -> Empire ExpressionNode
+addNodeWithName loc uuid expr name meta = do
+    (nearestNode, node) <- withTC loc False $ addNodeNoTC loc uuid expr Nothing meta
     addToCode loc nearestNode $ node ^. Node.nodeId
     resendCode loc
     return node
 
-addNodeNoTC :: GraphLocation -> NodeId -> Text -> NodeMeta -> Command Graph (Maybe NodeRef, ExpressionNode)
-addNodeNoTC loc uuid input meta = do
+addNodeNoTC :: GraphLocation -> NodeId -> Text -> Maybe Text -> NodeMeta -> Command Graph (Maybe NodeRef, ExpressionNode)
+addNodeNoTC loc uuid input name meta = do
     parse <- fst <$> ASTParse.runParser input
     expr <- runASTOp $ do
-        newNodeName  <- generateNodeName
+        newNodeName  <- case name of
+            Just n -> return $ Text.unpack n
+            _      -> generateNodeName
         parsedNode   <- AST.addNode uuid newNodeName parse
         putIntoHierarchy uuid $ BH.MatchNode parsedNode
         return parsedNode
@@ -157,7 +163,6 @@ addNodeNoTC loc uuid input meta = do
         nearestNode <- putInSequence expr meta
         node        <- GraphBuilder.buildNode uuid
         return (nearestNode, node)
-    Publisher.notifyNodeUpdate loc node
     return (nearestNode, node)
 
 distanceTo :: (Double, Double) -> (Double, Double) -> Double
@@ -301,11 +306,13 @@ updateGraphSeq newOut = do
     Graph.breadcrumbHierarchy . BH._ToplevelParent . BH.topBody .= newOut
     forM_ newOut $ (Graph.breadcrumbHierarchy . BH.body .=)
 
-addPort :: GraphLocation -> NodeId -> Int -> Empire InputSidebar
-addPort loc nid position = withTC loc False $ addPortNoTC loc nid position
+addPort :: GraphLocation -> OutPortRef -> Empire InputSidebar
+addPort loc portRef = withTC loc False $ addPortNoTC loc portRef
 
-addPortNoTC :: GraphLocation -> NodeId -> Int -> Command Graph InputSidebar
-addPortNoTC loc nid position = runASTOp $ do
+addPortNoTC :: GraphLocation -> OutPortRef -> Command Graph InputSidebar
+addPortNoTC loc (OutPortRef nl pid) = runASTOp $ do
+    let nid      = nl ^. NodeLoc.nodeId
+        position = getPortNumber pid
     edges <- GraphBuilder.getEdgePortMapping
     when ((fst <$> edges) /= Just nid) $ throwM NotInputEdgeException
     Just ref <- ASTRead.getCurrentASTTarget
@@ -315,10 +322,10 @@ addPortNoTC loc nid position = runASTOp $ do
     mapM_ (ASTBuilder.attachNodeMarkersForArgs nid []) newLam
     GraphBuilder.buildInputSidebar nid
 
-addPortWithConnection :: GraphLocation -> NodeId -> Int -> [Connection] -> Empire InputSidebar
-addPortWithConnection loc nid position conns = withTC loc False $ do
-    newPorts <- addPortNoTC loc nid position
-    forM_ conns $ \(Connection src dst) -> connectNoTC loc src (InPortRef' dst)
+addPortWithConnection :: GraphLocation -> OutPortRef -> [AnyPortRef] -> Empire InputSidebar
+addPortWithConnection loc portRef connectTo = withTC loc False $ do
+    newPorts <- addPortNoTC loc portRef
+    forM_ connectTo $ connectNoTC loc portRef
     return newPorts
 
 
@@ -327,7 +334,7 @@ generateNodeId = UUID.nextRandom
 
 addSubgraph :: GraphLocation -> [ExpressionNode] -> [Connection] -> Empire [ExpressionNode]
 addSubgraph loc nodes conns = withTC loc False $ do
-    newNodes <- forM nodes $ \n -> addNodeNoTC loc (n ^. Node.nodeId) (n ^. Node.expression) (n ^. Node.nodeMeta)
+    newNodes <- forM nodes $ \n -> addNodeNoTC loc (n ^. Node.nodeId) (n ^. Node.expression) (n ^. Node.name) (n ^. Node.nodeMeta)
     forM_ conns $ \(Connection src dst) -> connectNoTC loc src (InPortRef' dst)
     return $ map snd newNodes
 
@@ -337,9 +344,6 @@ removeNodes loc@(GraphLocation file _) nodeIds = do
     affectedNodes <- withTC loc False $ runASTOp $ mapM removeNodeNoTC nodeIds
     let distinctNodes = Set.toList $ Set.fromList $ concat affectedNodes
     forM_ distinctNodes $ updateNodeCode loc
-    withGraph loc $ do
-        nodes <- runASTOp $ mapM GraphBuilder.buildNode distinctNodes
-        mapM (Publisher.notifyNodeUpdate loc) nodes
     resendCode loc
 
 removeFromCode :: GraphLocation -> NodeId -> Empire ()
@@ -400,14 +404,14 @@ movePort loc portRef newPosition = withGraph loc $ runASTOp $ do
     ASTBuilder.attachNodeMarkersForArgs nodeId [] ref
     GraphBuilder.buildInputSidebar nodeId
 
-renamePort :: GraphLocation -> OutPortRef -> String -> Empire InputSidebar
+renamePort :: GraphLocation -> OutPortRef -> Text -> Empire InputSidebar
 renamePort loc portRef newName = withGraph loc $ runASTOp $ do
     let nodeId = portRef ^. PortRef.srcNodeId
     Just ref    <- ASTRead.getCurrentASTTarget
     edges       <- GraphBuilder.getEdgePortMapping
     _newRef     <- case edges of
         Just (input, _) -> do
-            if nodeId == input then ASTModify.renameLambdaArg (portRef ^. PortRef.srcPortId) newName ref
+            if nodeId == input then ASTModify.renameLambdaArg (portRef ^. PortRef.srcPortId) (Text.unpack newName) ref
                                else throwM NotInputEdgeException
         _ -> throwM NotInputEdgeException
     GraphBuilder.buildInputSidebar nodeId
@@ -443,7 +447,6 @@ setNodeExpression loc@(GraphLocation file _) nodeId expression = do
             node <- GraphBuilder.buildNode nodeId
             code <- printMarkedExpression expr
             return (node, code)
-        Publisher.notifyNodeUpdate loc node
         return (node, line, code)
     Library.withLibrary file $ forM line $ \l -> Library.substituteLine l code
     resendCode loc
@@ -525,8 +528,6 @@ connectNoTC loc outPort anyPort = do
                                                        else return Nothing
                 _ -> Just <$> GraphBuilder.buildNode nid
         (connection,) <$> nodeToUpdate
-    forM_ nodeToUpdate $ \n -> do
-        Publisher.notifyNodeUpdate loc n
     return connection
 
 getPortDefault :: GraphLocation -> InPortRef -> Empire (Maybe PortDefault)
@@ -556,7 +557,6 @@ disconnect loc port@(InPortRef (NodeLoc _ nid) _) = do
                     if (nid /= input && nid /= output) then Just <$> GraphBuilder.buildNode nid
                                                        else return Nothing
                 _ -> Just <$> GraphBuilder.buildNode nid
-        forM_ nodeToUpdate $ Publisher.notifyNodeUpdate loc
         return $ view Node.nodeId <$> nodeToUpdate
     forM_ nodeId $ updateNodeCode loc
     resendCode loc
@@ -606,7 +606,11 @@ openFile path = do
         return $ Text.stripEnd rawCode
     Library.createLibrary Nothing path code
     let loc = GraphLocation path $ Breadcrumb []
-    withGraph loc $ loadCode code
+    nodeIds   <- withGraph loc $ loadCode code
+    nodes     <- getNodes loc
+    conns     <- getConnections loc
+    let positions = Autolayout.autolayoutNodes nodeIds nodes conns
+    mapM_ (uncurry $ setNodePosition loc) positions
 
 typecheck :: GraphLocation -> Empire ()
 typecheck loc = withGraph loc $ runTC loc False
@@ -624,28 +628,34 @@ reloadCode loc code = handle (\(_e :: ASTParse.ParserException SomeException) ->
         Just e -> do
             (ref, exprMap, rs) <- ASTParse.runUnitReparser code e
             Graph.breadcrumbHierarchy . BH.body .= ref
-            runASTOp $ forM_ (coerce rs :: [Parser.ReparsingChange]) $ \x -> case x of
+            children <- runASTOp $ forM (coerce rs :: [Parser.ReparsingChange]) $ \x -> case x of
                 Parser.AddedExpr expr -> do
-                    void $ insertNode expr
+                    nodeId <- insertNode expr
+                    return $ Just (nodeId, expr)
                 Parser.ChangedExpr oldExpr expr -> do
                     oldNodeId <- ASTRead.safeGetVarNodeId oldExpr
 
-                    forM_ oldNodeId $ \nodeId -> do
+                    forM oldNodeId $ \nodeId -> do
                         copyMeta oldExpr expr
                         putIntoHierarchy nodeId $ BH.MatchNode expr
                         markNode nodeId
                         ASTModify.rewireNode nodeId =<< ASTRead.getTargetNode expr
+                        return (nodeId, expr)
                 Parser.UnchangedExpr oldExpr expr -> do
                     oldNodeId <- ASTRead.safeGetVarNodeId oldExpr
 
-                    forM_ oldNodeId $ \nodeId -> do
+                    forM oldNodeId $ \nodeId -> do
                         copyMeta oldExpr expr
                         putIntoHierarchy nodeId $ BH.MatchNode expr
+                        putChildrenIntoHierarchy nodeId expr
                         markNode nodeId
+                        return (nodeId, expr)
                 Parser.RemovedExpr oldExpr -> do
                     oldNodeId <- ASTRead.safeGetVarNodeId oldExpr
                     forM_ oldNodeId $ removeNodeNoTC
+                    return Nothing
             runAliasAnalysis
+            runASTOp $ forM (catMaybes children) $ \(n, e) -> putChildrenIntoHierarchy n e
             return $ Just rs
         Nothing -> return Nothing
 
@@ -677,22 +687,20 @@ insertNode :: ASTOp m => NodeRef -> m NodeId
 insertNode expr = do
     uuid <- liftIO $ UUID.nextRandom
     assignment <- ASTRead.isMatch expr
-    if assignment then do
-        putIntoHierarchy uuid $ BH.MatchNode expr
-        putChildrenIntoHierarchy uuid expr
-    else do
-        putIntoHierarchy uuid $ BH.AnonymousNode expr
+    putIntoHierarchy uuid $ if assignment then BH.MatchNode expr else BH.AnonymousNode expr
     markNode uuid
+    AST.writeMeta expr def
     return uuid
 
-loadCode :: Text -> Command Graph ()
-loadCode code | Text.null code = return ()
+loadCode :: Text -> Command Graph [NodeId]
+loadCode code | Text.null code = return []
 loadCode code = do
     (ref, exprMap) <- ASTParse.runUnitParser code
-    runASTOp $ forM_ (coerce exprMap :: Map.Map Luna.Marker NodeRef) $ insertNode
+    nodeIds <- runASTOp $ forM (coerce exprMap :: Map.Map Luna.Marker NodeRef) $ insertNode
     Graph.breadcrumbHierarchy . BH._ToplevelParent . BH.topBody .= Just ref
     Graph.breadcrumbHierarchy . BH.body .= ref
     runAliasAnalysis
+    return $ Map.elems nodeIds
 
 nodeLineById :: ASTOp m => NodeId -> m (Maybe Int)
 nodeLineById nodeId = do

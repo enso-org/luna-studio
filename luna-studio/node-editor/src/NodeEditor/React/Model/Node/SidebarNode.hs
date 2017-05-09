@@ -16,7 +16,7 @@ import           Empire.API.Data.Node          (NodeId)
 import qualified Empire.API.Data.Node          as Empire
 import           Empire.API.Data.NodeLoc       (NodeLoc (NodeLoc), NodePath)
 import           NodeEditor.React.Model.IsNode as X
-import           NodeEditor.React.Model.Port   (AnyPortId, InPort, InPortTree, OutPort, OutPortIndex (Projection), OutPortTree)
+import           NodeEditor.React.Model.Port   (InPort, InPortTree, OutPort, OutPortIndex (Projection), OutPortTree)
 import qualified NodeEditor.React.Model.Port   as Port
 
 

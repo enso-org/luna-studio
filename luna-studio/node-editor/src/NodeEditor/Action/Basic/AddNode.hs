@@ -2,6 +2,7 @@ module NodeEditor.Action.Basic.AddNode where
 
 import           Common.Prelude
 import           Data.Text                          (Text)
+import qualified Data.Text                          as Text
 import           Empire.API.Data.LabeledTree        (LabeledTree (LabeledTree))
 import qualified Empire.API.Data.Node               as Empire
 import           Empire.API.Data.NodeMeta           (NodeMeta (NodeMeta))
@@ -33,8 +34,8 @@ createNode parentPath nodePos expr = do
         connectTo   = if length selected == 1
                       then view nodeLoc <$> listToMaybe selected
                       else Nothing
-        defInPorts  = LabeledTree def $ Port [Arg 0] "" TStar NotConnected
-        defOutPorts = LabeledTree def $ Port [] "" TStar NotConnected
+        defInPorts  = LabeledTree def $ Port [Arg 0] (Text.pack "") TStar NotConnected
+        defOutPorts = LabeledTree def $ Port []      (Text.pack "") TStar NotConnected
         empireNode  = Empire.ExpressionNode nid expr def def defInPorts defOutPorts nodeMeta False
         node        = convert (parentPath, empireNode)
         nl          = NodeLoc parentPath nid

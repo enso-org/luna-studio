@@ -16,7 +16,6 @@ import qualified Empire.API.Graph.RemoveNodes              as RemoveNodes
 import qualified Empire.API.Graph.RemovePort               as RemovePort
 import qualified Empire.API.Graph.RenameNode               as RenameNode
 import qualified Empire.API.Graph.RenamePort               as RenamePort
-import qualified Empire.API.Graph.SetNodeCode              as SetNodeCode
 import qualified Empire.API.Graph.SetNodeExpression        as SetNodeExpression
 import qualified Empire.API.Graph.SetNodesMeta             as SetNodesMeta
 import qualified Empire.API.Graph.SetPortDefault           as SetPortDefault
@@ -29,7 +28,6 @@ import           NodeEditor.Action.Basic.RemoveConnection  (localRemoveConnectio
 import           NodeEditor.Action.Basic.RemoveNode        (localRemoveNode, localRemoveNodes)
 import           NodeEditor.Action.Basic.RemovePort        (localRemovePort)
 import           NodeEditor.Action.Basic.RenameNode        (localRenameNode)
-import           NodeEditor.Action.Basic.SetNodeCode       (localSetNodeCode)
 import           NodeEditor.Action.Basic.SetNodeExpression (localSetNodeExpression)
 import           NodeEditor.Action.Basic.SetNodeMeta       (localSetNodesMeta)
 import           NodeEditor.Action.Basic.SetPortDefault    (localSetPortDefault)
@@ -85,7 +83,7 @@ revertRemoveNodes (RemoveNodes.Request _loc _) (Response.Error _msg) = panic
 revertRemovePort :: RemovePort.Request -> Response.Status RemovePort.Inverse -> Command State ()
 revertRemovePort (RemovePort.Request loc portRef) (Response.Ok (RemovePort.Inverse conns)) =
     inCurrentLocation loc $ \path -> do
-        void $ localAddPort $ prependPath path portRef
+        void $ localAddPort (prependPath path portRef) Nothing
         void $ localAddConnections (map (\conn -> (prependPath path (conn ^. src), prependPath path (conn ^. dst))) conns)
 revertRemovePort (RemovePort.Request _loc _portRef) (Response.Error _msg) = panic
 
@@ -98,11 +96,6 @@ revertRenamePort :: RenamePort.Request -> Response.Status RenamePort.Inverse -> 
 revertRenamePort (RenamePort.Request loc portRef _) (Response.Ok (RenamePort.Inverse prevName)) =
     inCurrentLocation loc $ \path -> void $ $notImplemented
 revertRenamePort (RenamePort.Request _loc _portRef _) (Response.Error _msg) = panic
-
-revertSetNodeCode :: SetNodeCode.Request -> Response.Status SetNodeCode.Inverse -> Command State ()
-revertSetNodeCode (SetNodeCode.Request loc nid _) (Response.Ok (SetNodeCode.Inverse prevCode)) =
-    inCurrentLocation loc $ \path -> void $ localSetNodeCode (convert (path, nid)) prevCode
-revertSetNodeCode (SetNodeCode.Request _loc _nid _) (Response.Error _msg) = panic
 
 revertSetNodeExpression :: SetNodeExpression.Request -> Response.Status SetNodeExpression.Inverse -> Command State ()
 revertSetNodeExpression (SetNodeExpression.Request loc nid _) (Response.Ok (SetNodeExpression.Inverse prevCode)) =

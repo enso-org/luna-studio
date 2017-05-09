@@ -4,7 +4,7 @@ import           Data.Binary               (Binary)
 import           Prologue                  hiding (TypeRep)
 
 import           Empire.API.Data.MonadPath (MonadPath)
-import           Empire.API.Data.Node      (ExpressionNode, InputSidebar, OutputSidebar, NodeId)
+import           Empire.API.Data.Node      (ExpressionNode, InputSidebar, OutputSidebar)
 import           Empire.API.Data.PortRef   (InPortRef, OutPortRef)
 import           Empire.API.Data.TypeRep   (TypeRep)
 

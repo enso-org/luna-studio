@@ -10,10 +10,9 @@ import qualified NodeEditor.React.Event.Port      as Port
 import           NodeEditor.React.Model.App       (App)
 import           NodeEditor.React.Model.Constants (gridSize, lineHeight, nodeRadius, nodeRadius')
 import           NodeEditor.React.Model.Node      (NodeLoc)
---import           NodeEditor.React.Model.Port (Port (..))
 import           NodeEditor.React.Model.Port      (AnyPort, AnyPortId (InPortId', OutPortId'), InPortIndex (Self),
                                                    Mode (Highlighted, Invisible), getPortNumber, isHighlighted, isInPort, isInvisible,
-                                                   portAngleStart, portAngleStop)
+                                                   portAngleStart, portAngleStop, IsOnly, IsAlias)
 import qualified NodeEditor.React.Model.Port      as Port
 import           NodeEditor.React.Store           (Ref, dispatch)
 import qualified NodeEditor.React.View.Style      as Style
@@ -60,24 +59,24 @@ handleMouseEnter ref portRef _ _ = dispatch ref (UI.PortEvent $ Port.MouseEnter 
 handleMouseLeave :: Ref App -> AnyPortRef -> Event -> MouseEvent -> [SomeStoreAction]
 handleMouseLeave ref portRef _ _ = dispatch ref (UI.PortEvent $ Port.MouseLeave portRef)
 
-
-port :: ReactView (Ref App, NodeLoc, Int, Bool, AnyPort)
-port = React.defineView name $ \(ref, nl, numOfPorts, isOnly, p) ->
+port :: ReactView (Ref App, NodeLoc, Int, IsOnly, IsAlias, AnyPort)
+port = React.defineView name $ \(ref, nl, numOfPorts, isOnly, isAlias, p) ->
     case p ^. Port.portId of
-        InPortId' (Self:_)       ->                portSelf_   ref nl p
-        OutPortId' []            -> if isOnly then portSingle_ ref nl p
-                                    else           portIO_     ref nl p numOfPorts
-        _                        ->                portIO_     ref nl p numOfPorts
+        InPortId' (Self:_) ->                  portSelf_   ref nl p
+        OutPortId' []      -> if isOnly && not isAlias then portSingle_ ref nl p
+                                          else portIO_     ref nl p numOfPorts
+        _                  -> if isAlias  then portAlias_  ref nl p
+                                          else portIO_     ref nl p numOfPorts
 
 portExpanded :: ReactView (Ref App, NodeLoc, AnyPort)
 portExpanded = React.defineView name $ \(ref, nl, p) ->
     case p ^. Port.portId of
-        InPortId' (Self:_)       -> portSelf_       ref nl p
-        _                        -> portIOExpanded_ ref nl p
+        InPortId' (Self:_) -> portSelf_       ref nl p
+        _                  -> portIOExpanded_ ref nl p
 
-port_ :: Ref App -> NodeLoc -> AnyPort -> Int -> Bool -> ReactElementM ViewEventHandler ()
-port_ ref nl p numOfPorts isOnly =
-    React.viewWithSKey port (jsShow $ p ^. Port.portId) (ref, nl, numOfPorts, isOnly, p) mempty
+port_ :: Ref App -> NodeLoc -> AnyPort -> Int -> IsOnly -> IsAlias -> ReactElementM ViewEventHandler ()
+port_ ref nl p numOfPorts isOnly isAlias =
+    React.viewWithSKey port (jsShow $ p ^. Port.portId) (ref, nl, numOfPorts, isOnly, isAlias, p) mempty
 
 portExpanded_ :: Ref App -> NodeLoc -> AnyPort -> ReactElementM ViewEventHandler ()
 portExpanded_ ref nl p =
@@ -90,6 +89,31 @@ handlers ref portRef = [ onMouseDown  $ handleMouseDown  ref portRef
                        , onMouseEnter $ handleMouseEnter ref portRef
                        , onMouseLeave $ handleMouseLeave ref portRef
                        ]
+
+portAlias_ :: Ref App -> NodeLoc -> AnyPort -> ReactElementM ViewEventHandler ()
+portAlias_ ref nl p = do
+   let portId    = p ^. Port.portId
+       portRef   = toAnyPortRef nl portId
+       color     = convert $ p ^. Port.color
+       modeClass = case p ^. Port.mode of
+           Highlighted -> ["hover"]
+           Invisible   -> ["port--invisible"]
+           _           -> []
+       className = Style.prefixFromList $ ["port", "port--alias"] -- ++ modeClass
+   g_
+       [ "className" $= className ] $ do
+       circle_
+           [ "className" $= Style.prefix "port__shape"
+           , "key"       $= (jsShow portId <> "a")
+           , "fill"      $= color
+           ] mempty
+    --    circle_
+    --        ( handlers ref portRef ++
+    --        [ "className" $= Style.prefix "port__select"
+    --        , "key"       $= (jsShow portId <> "b")
+    --        , "r"         $= jsShow2 (lineHeight/1.5)
+    --        ]) mempty
+
 
 portSelf_ :: Ref App -> NodeLoc -> AnyPort -> ReactElementM ViewEventHandler ()
 portSelf_ ref nl p = do

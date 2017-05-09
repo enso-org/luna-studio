@@ -326,3 +326,19 @@ c ‹2›= 4
 bar ‹3›= foo 8 c
 node1 ‹4›= 5
 |]
+        it "lambda in code can be entered" $ \env -> do
+            let code = [r|foo ‹0›= a: a|]
+            u1 <- mkUUID
+            u2 <- mkUUID
+            res <- evalEmp env $ do
+                Library.createLibrary Nothing "TestPath" code
+                let loc = GraphLocation "TestPath" $ Breadcrumb []
+                Graph.withGraph loc $ Graph.loadCode code
+                Just foo <- Graph.withGraph loc $ runASTOp $ Graph.getNodeIdForMarker 0
+                Graph.addNode loc u1 "node2" def
+                Graph.addNode loc u2 "node1" def
+                Graph.substituteCode "TestPath" 35 36 "9" Nothing
+                Graph.getGraph $ loc |> foo
+            withResult res $ \(Graph.Graph nodes connections _ _ _) -> do
+                nodes `shouldBe` []
+                connections `shouldSatisfy` (not . null)

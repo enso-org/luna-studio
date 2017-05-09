@@ -4,14 +4,12 @@ module NodeEditor.Action.Node
     , nodesDrag
     , startNodeDrag
     , editExpression
-    , applyName
-    , discardName
-    , startEditName
+    , editName
     , snap
     , snapCoord
     ) where
 
 import           NodeEditor.Action.Node.Drag           (handleNodeDragMouseUp, nodesDrag, startNodeDrag)
 import           NodeEditor.Action.Node.EditExpression (editExpression)
-import           NodeEditor.Action.Node.EditName       (applyName, discardName, startEditName)
+import           NodeEditor.Action.Node.EditName       (editName)
 import           NodeEditor.Action.Node.Snap           (snap, snapCoord)

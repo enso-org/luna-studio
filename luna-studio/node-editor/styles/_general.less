@@ -49,19 +49,33 @@ body {
 }
 
 .luna-breadcrumbs {
-    position:    absolute;
-    top:         0;
-    left:        0;
-    flex:        none;
-    line-height: 30px;
-    padding:     2px;
-    color:       @colorText;
+    font-size:     10px;
+    position:      absolute;
+    top:           8px;
+    left:          6px;
+    flex:          none;
+    line-height:   16px;
+    padding:       0 8px;
+    background:    @colorBreadcrumbs;
+    border-radius: 100px;
 }
 
 .luna-breadcrumbs__item {
-    float:        left;
-    padding-left: 10px;
-    cursor:       pointer;
+    float:   left;
+    padding: 4px;
+    cursor:  pointer;
+    color:   @colorBreadcrumbsText;
+    &:not(:last-child) {
+        color: @colorBreadcrumbsTextInactive;
+        &::after {
+            cursor:      default;
+            content:     ">";
+            color:       #444;
+            margin-left: 8px;
+            position:    relative;
+            top:         1px;
+        }
+    }
 }
 
 .luna-graph-editor {

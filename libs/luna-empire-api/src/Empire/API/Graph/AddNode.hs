@@ -3,8 +3,9 @@ module Empire.API.Graph.AddNode where
 import           Data.Binary                   (Binary)
 import           Prologue
 
+import           Empire.API.Data.Connection    (Connection)
 import           Empire.API.Data.GraphLocation (GraphLocation)
-import           Empire.API.Data.Node          (ExpressionNode, NodeId)
+import           Empire.API.Data.Node          (ExpressionNode, Node, NodeId)
 import           Empire.API.Data.NodeLoc       (NodeLoc)
 import           Empire.API.Data.NodeMeta      (NodeMeta)
 import qualified Empire.API.Graph.Request      as G
@@ -18,14 +19,19 @@ data Request = Request { _location   :: GraphLocation
                        , _nodeMeta   :: NodeMeta
                        , _connectTo  :: Maybe NodeId
                        } deriving (Generic, Eq, NFData, Show)
-type Result = ExpressionNode
+
+data Result = Result { _node          :: ExpressionNode
+                     , _newConns      :: [Connection]
+                     , _connectedNode :: Maybe Node
+                     } deriving (Generic, Eq, NFData, Show)
 
 type Response = Response.Response Request () Result
 instance Response.ResponseResult Request () Result
 
 makeLenses ''Request
-
+makeLenses ''Result
 instance Binary Request
+instance Binary Result
 
 instance G.GraphRequest Request where location = location
 

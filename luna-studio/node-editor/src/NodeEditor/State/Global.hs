@@ -2,6 +2,7 @@
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 module NodeEditor.State.Global where
 
+import           Common.Prelude
 import           Data.DateTime                        (DateTime)
 import           Data.Map                             (Map)
 import           Data.Set                             (Set)
@@ -9,16 +10,15 @@ import           Data.UUID.Types                      (UUID)
 import           Data.Word                            (Word8)
 import           Empire.API.Data.NodeLoc              (NodeLoc)
 import           Empire.API.Graph.CollaborationUpdate (ClientId)
-import           NodeEditor.Action.Command           (Command)
-import           NodeEditor.Batch.Workspace (Workspace)
-import           qualified NodeEditor.Batch.Workspace as Workspace
-import           NodeEditor.Event.Event              (Event)
-import           Common.Prelude
-import           NodeEditor.React.Model.App          (App)
-import           NodeEditor.React.Store              (Ref)
-import           NodeEditor.State.Action             (ActionRep, Connect, SomeAction)
-import qualified NodeEditor.State.Collaboration      as Collaboration
-import qualified NodeEditor.State.UI                 as UI
+import           NodeEditor.Action.Command            (Command)
+import           NodeEditor.Batch.Workspace           (Workspace)
+import qualified NodeEditor.Batch.Workspace           as Workspace
+import           NodeEditor.Event.Event               (Event)
+import           NodeEditor.React.Model.App           (App)
+import           NodeEditor.React.Store               (Ref)
+import           NodeEditor.State.Action              (ActionRep, Connect, SomeAction)
+import qualified NodeEditor.State.Collaboration       as Collaboration
+import qualified NodeEditor.State.UI                  as UI
 import           System.Random                        (StdGen)
 import qualified System.Random                        as Random
 
@@ -30,7 +30,7 @@ data State = State
         , _collaboration        :: Collaboration.State
         , _debug                :: DebugState
         , _selectionHistory     :: [Set NodeLoc]
-        , _workspace            :: Workspace
+        , _workspace            :: Maybe Workspace
         , _lastEventTimestamp   :: DateTime
         , _random               :: StdGen
         }
@@ -56,15 +56,15 @@ makeLenses ''BackendState
 makeLenses ''State
 makeLenses ''DebugState
 
-mkState :: Ref App -> ClientId -> FilePath -> DateTime -> StdGen -> State
-mkState ref clientId' path = State
+mkState :: Ref App -> ClientId -> Maybe FilePath -> DateTime -> StdGen -> State
+mkState ref clientId' mpath = State
     {- react                -} (UI.mkState ref)
     {- backend              -} (BackendState def clientId')
     {- actions              -} def
     {- collaboration        -} def
     {- debug                -} def
     {- selectionHistory     -} def
-    {- workspace            -} (Workspace.mk path)
+    {- workspace            -} (Workspace.mk <$> mpath)
 
 nextRandom :: Command State Word8
 nextRandom = uses random Random.random >>= \(val, rnd) -> random .= rnd >> return val

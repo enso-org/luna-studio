@@ -45,19 +45,19 @@ cutSelectionToClipboard :: Command State()
 cutSelectionToClipboard = copySelectionToClipboard >> removeSelectedNodes
 
 pasteFromClipboard :: String -> Command State ()
-pasteFromClipboard clipboardData = do
-    withJust (decode $ pack clipboardData) $ \subgraph -> do
-        selectedBc <- use (workspace . currentLocation . GraphLocation.breadcrumb) --FIXME
-        graphNodesLocs <- Set.fromList . map (view nodeLoc)  <$> getExpressionNodes
-        let nodes       = (convert . (NodePath selectedBc,) <$> HashMap.elems (subgraph ^. Graph.nodesMap))
-            connections = filter (\conn -> Set.member (conn ^. Connection.src . PortRef.srcNodeLoc) graphNodesLocs) $ HashMap.elems $ subgraph ^. Graph.connectionsMap
-        workspacePos <- translateToWorkspace =<< use (Global.ui . UI.mousePos)
-        let shiftX = workspacePos ^. x - minimum (map (^. position . x) nodes)
-            shiftY = workspacePos ^. y - minimum (map (^. position . y) nodes)
-            shiftNode, shiftNodeX, shiftNodeY :: ExpressionNode -> ExpressionNode
-            shiftNodeX = position . x %~ snapCoord . (+shiftX)
-            shiftNodeY = position . y %~ snapCoord . (+shiftY)
-            shiftNode = shiftNodeY . shiftNodeX
-            nodes' = map shiftNode nodes
-        --TODO[LJK]: Use unwrap here
-        addSubgraph nodes' $ convert <$> connections
+pasteFromClipboard clipboardData =
+    withJust (decode $ pack clipboardData) $ \subgraph ->
+        withJustM (preuse (workspace . traverse . currentLocation . GraphLocation.breadcrumb)) $ \selectedBc -> do --FIXME
+            graphNodesLocs <- Set.fromList . map (view nodeLoc)  <$> getExpressionNodes
+            let nodes       = (convert . (NodePath selectedBc,) <$> HashMap.elems (subgraph ^. Graph.nodesMap))
+                connections = filter (\conn -> Set.member (conn ^. Connection.src . PortRef.srcNodeLoc) graphNodesLocs) $ HashMap.elems $ subgraph ^. Graph.connectionsMap
+            workspacePos <- translateToWorkspace =<< use (Global.ui . UI.mousePos)
+            let shiftX = workspacePos ^. x - minimum (map (^. position . x) nodes)
+                shiftY = workspacePos ^. y - minimum (map (^. position . y) nodes)
+                shiftNode, shiftNodeX, shiftNodeY :: ExpressionNode -> ExpressionNode
+                shiftNodeX = position . x %~ snapCoord . (+shiftX)
+                shiftNodeY = position . y %~ snapCoord . (+shiftY)
+                shiftNode = shiftNodeY . shiftNodeX
+                nodes' = map shiftNode nodes
+            --TODO[LJK]: Use unwrap here
+            addSubgraph nodes' $ convert <$> connections

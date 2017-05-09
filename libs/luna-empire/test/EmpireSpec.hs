@@ -625,7 +625,7 @@ spec = around withChannels $ parallel $ do
                 Graph.addNode top u1 "foo = a: a" def
                 let loc' = top |> u1
                 Just (input, output) <- Graph.withGraph loc' $ runASTOp GraphBuilder.getEdgePortMapping
-                Graph.addPort loc' input 1
+                Graph.addPort loc' (outPortRef input [Port.Projection 1])
                 inputEdge <- buildInputEdge' loc' input
                 defFoo <- Graph.withGraph top $ runASTOp $ GraphBuilder.buildNode u1
                 connections <- Graph.getConnections loc'
@@ -648,7 +648,7 @@ spec = around withChannels $ parallel $ do
                 Graph.addNode top u1 "foo = a: a" def
                 let loc' = top |> u1
                 Just (input, output) <- Graph.withGraph loc' $ runASTOp GraphBuilder.getEdgePortMapping
-                Graph.addPort loc' input 0
+                Graph.addPort loc' (outPortRef input [Port.Projection 0])
                 inputEdge <- buildInputEdge' loc' input
                 defFoo <- Graph.withGraph top $ runASTOp $ GraphBuilder.buildNode u1
                 connections <- Graph.getConnections loc'
@@ -671,8 +671,8 @@ spec = around withChannels $ parallel $ do
                 Graph.addNode top u1 "foo = a: a" def
                 let loc' = top |> u1
                 Just (input, _) <- Graph.withGraph loc' $ runASTOp GraphBuilder.getEdgePortMapping
-                Graph.addPort loc' input 1
-                Graph.addPort loc' input 2
+                Graph.addPort loc' (outPortRef input [Port.Projection 1])
+                Graph.addPort loc' (outPortRef input [Port.Projection 2])
                 inputEdge <- buildInputEdge' loc' input
                 defFoo <- Graph.withGraph top $ runASTOp $ GraphBuilder.buildNode u1
                 return (inputEdge, defFoo)
@@ -694,7 +694,7 @@ spec = around withChannels $ parallel $ do
                 Graph.addNode top u1 "a: b: a + b" def
                 let loc' = top |> u1
                 Just (input, _) <- Graph.withGraph loc' $ runASTOp GraphBuilder.getEdgePortMapping
-                Graph.addPort loc' input 2
+                Graph.addPort loc' (outPortRef input [Port.Projection 2])
                 inputEdge <- buildInputEdge' loc' input
                 defFoo <- Graph.withGraph top $ runASTOp $ GraphBuilder.buildNode u1
                 connections <- Graph.getConnections loc'
@@ -720,7 +720,7 @@ spec = around withChannels $ parallel $ do
                 Graph.addNode top u2 "func" def
                 let loc' = top |> u1
                 Just (input, _) <- Graph.withGraph loc' $ runASTOp GraphBuilder.getEdgePortMapping
-                Graph.addPort loc' input 1
+                Graph.addPort loc' (outPortRef input [Port.Projection 1])
                 connectToInput top (outPortRef u2 []) (inPortRef u1 [Port.Arg 1])
                 node <- Graph.withGraph top $ runASTOp $ GraphBuilder.buildNode u1
                 connections <- Graph.getConnections top
@@ -791,7 +791,7 @@ spec = around withChannels $ parallel $ do
                 let loc' = top |> u1
                 Graph.addNode loc' u2 "func" def
                 Just (input, output) <- Graph.withGraph loc' $ runASTOp GraphBuilder.getEdgePortMapping
-                Graph.addPort loc' input 1
+                Graph.addPort loc' (outPortRef input [Port.Projection 1])
                 connectToInput loc' (outPortRef input [Port.Projection 1]) (inPortRef u2 [Port.Arg 0])
                 inputEdge <- buildInputEdge' loc' input
                 connections <- Graph.getConnections loc'
@@ -824,7 +824,7 @@ spec = around withChannels $ parallel $ do
                 let loc' = top |> u1
                 Graph.addNode loc' u2 "func" def
                 Just (input, output) <- Graph.withGraph loc' $ runASTOp GraphBuilder.getEdgePortMapping
-                Graph.addPort loc' input 1
+                Graph.addPort loc' (outPortRef input [Port.Projection 1])
                 connectToInput loc' (outPortRef input [Port.Projection 1]) (inPortRef u2 [Port.Arg 0])
                 Graph.removePort loc' (outPortRef input [Port.Projection 1])
                 inputEdge <- buildInputEdge' loc' input
@@ -850,7 +850,7 @@ spec = around withChannels $ parallel $ do
                 Graph.addNode top u1 "foo = a: a" def
                 let loc' = top |> u1
                 Just (input, _) <- Graph.withGraph loc' $ runASTOp GraphBuilder.getEdgePortMapping
-                Graph.addPort loc' input 1
+                Graph.addPort loc' (outPortRef input [Port.Projection 1])
                 Graph.addNode loc' u2 "succ" def
                 connectToInput loc' (outPortRef input [Port.Projection 1]) (inPortRef u2 [Port.Self])
                 inputEdge <- buildInputEdge' loc' input
