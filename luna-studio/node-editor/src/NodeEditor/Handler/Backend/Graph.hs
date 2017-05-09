@@ -116,19 +116,11 @@ handle (Event.Batch ev) = Just $ case ev of
         requestId      = response ^. Response.requestId
         request        = response ^. Response.request
         location       = request  ^. AddNode.location
+        nl             = request  ^. AddNode.nodeLoc
         failure _      = whenM (isOwnRequest requestId) $ revertAddNode request
         success result = inCurrentLocation location $ \path -> do
-            let node = convert (path, result ^. AddNode.node)
-            ownRequest <- isOwnRequest requestId
-            if ownRequest then do
-                 void $ localUpdateExpressionNode node
-                 collaborativeModify [node ^. nodeLoc]
-            else localAddExpressionNode node
-            withJust (result ^. AddNode.connectedNode) $ \case
-                ExpressionNode' n -> localUpdateOrAddExpressionNode $ convert (path, n)
-                InputSidebar'   n -> localUpdateOrAddInputNode      $ convert (path, n) -- this may happen but no reason why
-                OutputSidebar'  n -> localUpdateOrAddOutputNode     $ convert (path, n) -- this should not happen
-            void . localAddConnections . map convert $ result ^. AddNode.newConns
+            applyResult path result
+            whenM (isOwnRequest requestId) $ collaborativeModify [nl]
 
     AddPortResponse response -> handleResponse response success failure where
         requestId      = response ^. Response.requestId

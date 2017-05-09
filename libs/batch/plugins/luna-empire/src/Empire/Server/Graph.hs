@@ -251,17 +251,10 @@ handleAddConnection = modifyGraph inverse action replyResult where
 
 handleAddNode :: Request AddNode.Request -> StateT Env BusT ()
 handleAddNode = modifyGraph defInverse action replyResult where
-    action (AddNode.Request location nl@(NodeLoc _ nodeId) expression nodeMeta connectTo) = do
-        oldConnsSet <- Set.fromList <$> Graph.getConnections location
-        node        <- addExpressionNode location nodeId expression nodeMeta connectTo
-        forM connectTo $ \nid -> do
-            let srcPortRef = getSrcPortByNodeId nid
-                dstPortRef = getDstPortByNodeLoc nl
-            catchAll (void $ Graph.connectCondTC False location srcPortRef dstPortRef) (const $ return ())
-        newConnsSet <- Set.fromList <$> Graph.getConnections location
-        let conns = map convert . Set.toList $ Set.filter (flip Set.notMember oldConnsSet) newConnsSet
-        connectedNode <- maybe (return Nothing) (getNodeById location) connectTo
-        return $ AddNode.Result node conns connectedNode
+    action (AddNode.Request location nl@(NodeLoc _ nodeId) expression nodeMeta connectTo) = withDefaultResult location $ do
+        addExpressionNode location nodeId expression nodeMeta connectTo
+        forM_ connectTo $ \nid ->
+            catchAll (void $ Graph.connectCondTC False location (getSrcPortByNodeId nid) (getDstPortByNodeLoc nl)) (const $ return ())
 
 handleAddPort :: Request AddPort.Request -> StateT Env BusT ()
 handleAddPort = modifyGraph defInverse action replyResult where
