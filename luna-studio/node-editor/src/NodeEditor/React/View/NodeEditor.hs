@@ -77,7 +77,7 @@ nodeEditor = React.defineView name $ \(ref, ne) -> do
                 elemString $ ".luna-camera-translate { transform: " <> showCameraTranslate camera <> " }"
                 elemString $ ".luna-camera-transform { transform: " <> showCameraMatrix    camera <> " }"
 
-                elemString $ ".luna-connection__line { stroke-width: "   <> show (1.6 + (1 / scale)) <> " }"
+                elemString $ ".luna-connection__line { stroke-width: "   <> show (1.2 + (1 / scale)) <> " }"
                 elemString $ ".luna-connection__select { stroke-width: " <> show (10/scale)          <> " }"
 
                 --collapsed nodes
