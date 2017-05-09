@@ -11,7 +11,7 @@ module Empire.Commands.Graph
     ( addNode
     , addNodeCondTC
     , addPort
-    , addPortWithConnection
+    , addPortWithConnections
     , addSubgraph
     , removeNodes
     , movePort
@@ -323,8 +323,8 @@ addPortNoTC loc (OutPortRef nl pid) = runASTOp $ do
     mapM_ (ASTBuilder.attachNodeMarkersForArgs nid []) newLam
     GraphBuilder.buildInputSidebar nid
 
-addPortWithConnection :: GraphLocation -> OutPortRef -> [AnyPortRef] -> Empire InputSidebar
-addPortWithConnection loc portRef connectTo = withTC loc False $ do
+addPortWithConnections :: GraphLocation -> OutPortRef -> [AnyPortRef] -> Empire InputSidebar
+addPortWithConnections loc portRef connectTo = withTC loc False $ do
     newPorts <- addPortNoTC loc portRef
     forM_ connectTo $ connectNoTC loc portRef
     return newPorts

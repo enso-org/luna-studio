@@ -63,8 +63,8 @@ import           NodeEditor.State.Global                     (State)
 import qualified NodeEditor.State.Global                     as Global
 
 
-applyResult :: NodePath -> Result.Result -> Command State ()
-applyResult path res = do
+applyResult :: Result.Result -> NodePath -> Command State ()
+applyResult res path = do
     void $ localRemoveNodes       . map (convert . (path,)) $ res ^. Result.removedNodes
     void $ localRemoveConnections . map (prependPath path)  $ res ^. Result.removedConnections
     mapM_ (localUpdateOrAddExpressionNode . convert . (path,)) $ res ^. Result.graphUpdates . Graph.nodes
@@ -110,7 +110,7 @@ handle (Event.Batch ev) = Just $ case ev of
         request        = response ^. Response.request
         location       = request  ^. AddConnection.location
         failure _      = whenM (isOwnRequest requestId) $ revertAddConnection request
-        success result = inCurrentLocation location $ \path -> applyResult path result
+        success result = inCurrentLocation location $ applyResult result
 
     AddNodeResponse response -> handleResponse response success failure where
         requestId      = response ^. Response.requestId
@@ -119,7 +119,7 @@ handle (Event.Batch ev) = Just $ case ev of
         nl             = request  ^. AddNode.nodeLoc
         failure _      = whenM (isOwnRequest requestId) $ revertAddNode request
         success result = inCurrentLocation location $ \path -> do
-            applyResult path result
+            applyResult result path
             whenM (isOwnRequest requestId) $ collaborativeModify [nl]
 
     AddPortResponse response -> handleResponse response success failure where
@@ -128,19 +128,7 @@ handle (Event.Batch ev) = Just $ case ev of
         location       = request  ^. AddPort.location
         portRef        = request  ^. AddPort.outPortRef
         failure _      = whenM (isOwnRequest requestId) $ revertAddPort request
-        success result = inCurrentLocation location $ \path -> do
-            let sidebar = convert (path, result ^. AddPort.sidebar)
-            ownRequest <- isOwnRequest requestId
-            if ownRequest then do
-                 void $ localUpdateOrAddInputNode sidebar
-            else do
-                --TODO[LJK, PM]: What should happen if localAddPort fails? (Example reason - node is not in graph)
-                void $ localAddPort (prependPath path portRef) Nothing
-                void $ localAddConnections . catMaybes $ flip map (request ^. AddPort.connectTo) $ \case
-                    OutPortRef' _   -> $notImplemented
-                    InPortRef'  dst -> Just (portRef, dst)
-                void $ localUpdateOrAddInputNode sidebar
-            mapM_ (localUpdateOrAddExpressionNode . convert) $ map (path,) $ result ^. AddPort.dstNodes
+        success result = inCurrentLocation location $ applyResult result
 
     AddSubgraphResponse response -> handleResponse response success failure where
         requestId      = response ^. Response.requestId
@@ -284,7 +272,7 @@ handle (Event.Batch ev) = Just $ case ev of
         portRef         = request  ^. RenamePort.portRef
         name            = request  ^. RenamePort.name
         failure inverse = whenM (isOwnRequest requestId) $ $notImplemented
-        success result  = inCurrentLocation location $ \path -> applyResult path result
+        success result  = inCurrentLocation location $ applyResult result
 
     SearchNodesResponse response -> handleResponse response success doNothing where
         requestId      = response ^. Response.requestId
@@ -301,7 +289,7 @@ handle (Event.Batch ev) = Just $ case ev of
         nid             = request  ^. SetNodeExpression.nodeId
         expression      = request  ^. SetNodeExpression.expression
         failure inverse = whenM (isOwnRequest requestId) $ revertSetNodeExpression request inverse
-        success result  = inCurrentLocation location $ \path -> applyResult path result
+        success result  = inCurrentLocation location $ applyResult result
 
 
     SetNodesMetaResponse response -> handleResponse response success failure where
@@ -310,7 +298,7 @@ handle (Event.Batch ev) = Just $ case ev of
         location        = request  ^. SetNodesMeta.location
         updates         = request  ^. SetNodesMeta.updates
         failure inverse = whenM (isOwnRequest requestId) $ revertSetNodesMeta request inverse
-        success result  = whenM (not <$> isOwnRequest requestId) $ inCurrentLocation location $ \path -> applyResult path result
+        success result  = whenM (not <$> isOwnRequest requestId) $ inCurrentLocation location $ applyResult result
 
     SetPortDefaultResponse response -> handleResponse response success failure where
         requestId       = response ^. Response.requestId
@@ -319,7 +307,7 @@ handle (Event.Batch ev) = Just $ case ev of
         portRef         = request  ^. SetPortDefault.portRef
         defaultVal      = request  ^. SetPortDefault.defaultValue
         failure inverse = whenM (isOwnRequest requestId) $ revertSetPortDefault request inverse
-        success result  = inCurrentLocation location $ \path -> applyResult path result
+        success result  = inCurrentLocation location $ applyResult result
 
     TypeCheckResponse response -> handleResponse response doNothing doNothing
 

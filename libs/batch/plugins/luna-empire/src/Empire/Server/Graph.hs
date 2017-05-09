@@ -216,17 +216,6 @@ getSrcPortByNodeId nid = OutPortRef (NodeLoc def nid) []
 getDstPortByNodeLoc :: NodeLoc -> AnyPortRef
 getDstPortByNodeLoc nl = InPortRef' $ InPortRef nl [Self]
 
-addExpressionNode :: GraphLocation -> NodeId -> Text -> NodeMeta -> Maybe NodeId -> Empire ExpressionNode
-addExpressionNode location nodeId expression nodeMeta connectTo = do
-    case parseExpr expression of
-        Expression expression -> do
-            Graph.addNodeCondTC (isNothing connectTo) location nodeId expression nodeMeta
-        Function (Just name) -> do
-            Graph.addNodeCondTC False location nodeId (Text.append "def " name) nodeMeta
-        Module   name -> throwError "Module Nodes not yet supported"
-        Input    name -> throwError "Input Nodes not yet supported"
-        Output   name -> throwError "Output Nodes not yet supported"
-
 -- Handlers
 
 
@@ -252,16 +241,14 @@ handleAddConnection = modifyGraph inverse action replyResult where
 handleAddNode :: Request AddNode.Request -> StateT Env BusT ()
 handleAddNode = modifyGraph defInverse action replyResult where
     action (AddNode.Request location nl@(NodeLoc _ nodeId) expression nodeMeta connectTo) = withDefaultResult location $ do
-        addExpressionNode location nodeId expression nodeMeta connectTo
+        Graph.addNodeCondTC (isNothing connectTo) location nodeId expression nodeMeta
         forM_ connectTo $ \nid ->
-            catchAll (void $ Graph.connectCondTC False location (getSrcPortByNodeId nid) (getDstPortByNodeLoc nl)) (const $ return ())
+            catchAll (void $ Graph.connectCondTC True location (getSrcPortByNodeId nid) (getDstPortByNodeLoc nl)) (const $ return ())
 
 handleAddPort :: Request AddPort.Request -> StateT Env BusT ()
 handleAddPort = modifyGraph defInverse action replyResult where
-    action (AddPort.Request location portRef connsDst) = do
-        sidebar  <- if null connsDst then Graph.addPort location portRef else Graph.addPortWithConnection location portRef connsDst
-        dstNodes <- getExpressionNodesByIds location $ map (view PortRef.nodeId) connsDst
-        return $ AddPort.Result sidebar dstNodes
+    action (AddPort.Request location portRef connsDst) = withDefaultResult location $
+        Graph.addPortWithConnections location portRef connsDst
 
 handleAddSubgraph :: Request AddSubgraph.Request -> StateT Env BusT ()
 handleAddSubgraph = modifyGraph defInverse action replyResult where
