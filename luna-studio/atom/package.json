@@ -9,10 +9,10 @@
     "atom": ">0.170.0"
   },
   "deserializers": {
-      "luna-studio/LunaTextEditor":
-"deserializeActiveLunaTextEditor",
-      "luna-studio/LunaNodeEditor":
-"deserializeActiveLunaNodeEditor"
+      "LunaEditorTab":
+"deserializeLunaEditorTab",
+      "LunaStudioTab":
+"deserializeLunaStudioTab"
   },
   "dependencies": {
     "atom-space-pen-views": "^2.0.3",
@@ -21,6 +21,7 @@
     "react" : "*",
     "react-dom" : "*",
     "resize-observer-polyfill": "1.3.2",
-    "underscore" : "*"
+    "underscore" : "*",
+    "first-mate" : "*"
   }
 }

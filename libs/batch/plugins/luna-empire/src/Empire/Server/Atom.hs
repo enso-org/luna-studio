@@ -18,7 +18,7 @@ import qualified Empire.API.Atom.CloseFile             as CloseFile
 import qualified Empire.API.Atom.GetBuffer             as GetBuffer
 import qualified Empire.API.Atom.IsSaved               as IsSaved
 import qualified Empire.API.Atom.Substitute            as Substitute
-import qualified Empire.API.Response                as Response
+import qualified Empire.API.Response                   as Response
 
 import qualified Empire.Commands.Graph                 as Graph
 import qualified Empire.Commands.Library               as Library
@@ -32,7 +32,7 @@ logger :: Logger.Logger
 logger = Logger.getLogger $(Logger.moduleName)
 
 handleSetProject :: Request SetProject.Request -> StateT Env BusT ()
-handleSetProject = $notImplemented
+handleSetProject a = return ()
 
 handleOpenFile :: Request OpenFile.Request -> StateT Env BusT ()
 handleOpenFile req@(Request _ _ (OpenFile.Request path)) = do
