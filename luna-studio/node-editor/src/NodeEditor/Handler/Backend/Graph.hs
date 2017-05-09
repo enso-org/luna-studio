@@ -106,20 +106,11 @@ handle (Event.Batch ev) = Just $ case ev of
                     getProgram
 
     AddConnectionResponse response -> handleResponse response success failure where
-        requestId          = response ^. Response.requestId
-        request            = response ^. Response.request
-        location           = request  ^. AddConnection.location
-        failure _          = whenM (isOwnRequest requestId) $ revertAddConnection request
-        success result = inCurrentLocation location $ \path -> do
-            case result ^. AddConnection.srcNode of
-                ExpressionNode' n -> localUpdateOrAddExpressionNode $ convert (path, n)
-                InputSidebar'   n -> localUpdateOrAddInputNode      $ convert (path, n)
-                OutputSidebar'  n -> localUpdateOrAddOutputNode     $ convert (path, n) -- this should not happen
-            case result ^. AddConnection.dstNode of
-                ExpressionNode' n -> localUpdateOrAddExpressionNode $ convert (path, n)
-                OutputSidebar'  n -> localUpdateOrAddOutputNode     $ convert (path, n)
-                InputSidebar'   n -> localUpdateOrAddInputNode      $ convert (path, n) -- this should not happen
-            void $ localAddConnection (prependPath path (result ^. AddConnection.connection . src)) (prependPath path (result ^. AddConnection.connection . dst))
+        requestId      = response ^. Response.requestId
+        request        = response ^. Response.request
+        location       = request  ^. AddConnection.location
+        failure _      = whenM (isOwnRequest requestId) $ revertAddConnection request
+        success result = inCurrentLocation location $ \path -> applyResult path result
 
     AddNodeResponse response -> handleResponse response success failure where
         requestId      = response ^. Response.requestId

@@ -239,19 +239,15 @@ handleGetProgram = modifyGraph defInverse action replyResult where
         return $ GetProgram.Result graph (Text.pack code) crumb mockNSData
 
 handleAddConnection :: Request AddConnection.Request -> StateT Env BusT ()
-handleAddConnection = modifyGraph defInverse action replyResult where
+handleAddConnection = modifyGraph inverse action replyResult where
     getSrcPort = either id getSrcPortByNodeId
     getDstPort = either id getDstPortByNodeLoc
-    action  (AddConnection.Request location src' dst') = do
-        let src = getSrcPort src'
-            dst = getDstPort dst'
-        conn  <- Graph.connectCondTC True location src dst
-        allNodes <- getAllNodes location
-        let srcNode = find (\n -> n ^. Node.nodeId == src ^. PortRef.srcNodeId) allNodes
-            dstNode = find (\n -> n ^. Node.nodeId == dst ^. PortRef.nodeId) allNodes
-        if      isNothing srcNode then throwError "Connection source node not found"
-        else if isNothing dstNode then throwError "Connection source node not found"
-        else return $ AddConnection.Result conn (fromJust srcNode) (fromJust dstNode)
+    inverse (AddConnection.Request _ _ dst') = return . AddConnection.Inverse $
+        case getDstPort dst' of
+            InPortRef'  portRef -> portRef
+            OutPortRef' portRef -> InPortRef (portRef ^. PortRef.nodeLoc) []
+    action  (AddConnection.Request location src' dst') = withDefaultResult location $
+        Graph.connectCondTC True location (getSrcPort src') (getDstPort dst')
 
 handleAddNode :: Request AddNode.Request -> StateT Env BusT ()
 handleAddNode = modifyGraph defInverse action replyResult where

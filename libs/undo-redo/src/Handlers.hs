@@ -163,13 +163,13 @@ handleAddSubgraphUndo (Response.Response _ _ req _ (Response.Ok _)) =
     Just (getUndoAddSubgraph req, req)
 
 
-getUndoAddConnection :: AddConnection.Request -> AddConnection.Result -> RemoveConnection.Request
-getUndoAddConnection (AddConnection.Request location _ _) (AddConnection.Result conn _ _) =
-    RemoveConnection.Request location $ conn ^. Connection.dst
+getUndoAddConnection :: AddConnection.Request -> AddConnection.Inverse -> RemoveConnection.Request
+getUndoAddConnection (AddConnection.Request location _ _) (AddConnection.Inverse connId) =
+    RemoveConnection.Request location connId
 
 handleAddConnectionUndo :: AddConnection.Response -> Maybe (RemoveConnection.Request, AddConnection.Request)
-handleAddConnectionUndo (Response.Response _ _ req _ (Response.Ok res)) =
-    Just (getUndoAddConnection req res, req)
+handleAddConnectionUndo (Response.Response _ _ req (Response.Ok inv) (Response.Ok _)) =
+    Just (getUndoAddConnection req inv, req)
 
 
 getUndoMovePort :: MovePort.Request -> MovePort.Request

@@ -167,7 +167,7 @@ instance FromJSON Result.Result
 
 
 instance ToJSON AddConnection.Request
-instance ToJSON AddConnection.Result
+instance ToJSON AddConnection.Inverse
 
 instance ToJSON AddNode.Request
 instance ToJSON AddNode.Result
