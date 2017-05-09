@@ -201,6 +201,11 @@ constructResult oldGraph newGraph = Result.Result removedNodeIds removedConnIds 
     updatedOutputSidebar = if oldGraph ^. GraphAPI.outputSidebar /= newGraph ^. GraphAPI.outputSidebar
         then newGraph ^. GraphAPI.outputSidebar else Nothing
 
+withDefaultResult :: GraphLocation -> Empire a -> Empire Result.Result
+withDefaultResult location action = do
+    oldGraph <- Graph.getGraphNoTC location
+    void action
+    constructResult oldGraph <$> Graph.getGraphNoTC location
 
 getNodeById :: GraphLocation -> NodeId -> Empire (Maybe Node.Node)
 getNodeById location nid = fmap listToMaybe $ getNodesByIds location [nid]
@@ -364,10 +369,8 @@ handleRenamePort = modifyGraph inverse action replyResult where --FIXME[pm] impl
     inverse (RenamePort.Request location portRef name) = do
         let oldName = "oldname" --FIXME
         return $ RenamePort.Inverse oldName
-    action (RenamePort.Request location portRef name) = do
-        oldGraph <- Graph.getGraph location
-        void $ Graph.renamePort location portRef name
-        constructResult oldGraph <$> Graph.getGraph location
+    action (RenamePort.Request location portRef name) = withDefaultResult location $
+        Graph.renamePort location portRef name
 
 handleSearchNodes :: Request SearchNodes.Request -> StateT Env BusT ()
 handleSearchNodes = modifyGraph defInverse action replyResult where
@@ -378,10 +381,8 @@ handleSetNodeExpression = modifyGraph inverse action replyResult where
     inverse (SetNodeExpression.Request location nodeId _) = do
         oldExpr <- Graph.withGraph location $ runASTOp $ GraphUtils.getASTTarget nodeId >>= Print.printNodeExpression
         return $ SetNodeExpression.Inverse (Text.pack oldExpr)
-    action (SetNodeExpression.Request location nodeId expression) = do
-        oldGraph <- Graph.getGraph location
+    action (SetNodeExpression.Request location nodeId expression) = withDefaultResult location $
         Graph.setNodeExpression location nodeId expression
-        constructResult oldGraph <$> Graph.getGraph location
 
 handleSetNodesMeta :: Request SetNodesMeta.Request -> StateT Env BusT ()
 handleSetNodesMeta = modifyGraph inverse action replyResult where
@@ -393,18 +394,14 @@ handleSetNodesMeta = modifyGraph inverse action replyResult where
                      Just (node ^. Node.nodeId, node ^. Node.nodeMeta)
                 else Nothing
         return $ SetNodesMeta.Inverse prevMeta
-    action (SetNodesMeta.Request location updates) = do
-        oldGraph <- Graph.getGraph location
+    action (SetNodesMeta.Request location updates) = withDefaultResult location $
         forM_ updates $ uncurry $ Graph.setNodeMeta location
-        constructResult oldGraph <$> Graph.getGraph location
 
 handleSetPortDefault :: Request SetPortDefault.Request -> StateT Env BusT ()
 handleSetPortDefault = modifyGraph inverse action replyResult where
     inverse (SetPortDefault.Request location portRef _)            = SetPortDefault.Inverse <$> Graph.getPortDefault location portRef
-    action  (SetPortDefault.Request location portRef defaultValue) = do
-        oldGraph <- Graph.getGraph location
+    action  (SetPortDefault.Request location portRef defaultValue) = withDefaultResult location $
         Graph.setPortDefault location portRef defaultValue
-        constructResult oldGraph <$> Graph.getGraph location
 
 handleTypecheck :: Request TypeCheck.Request -> StateT Env BusT ()
 handleTypecheck req@(Request _ _ request) = do

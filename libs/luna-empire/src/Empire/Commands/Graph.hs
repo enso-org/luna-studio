@@ -30,6 +30,7 @@ module Empire.Commands.Graph
     , getBuffer
     , getCode
     , getGraph
+    , getGraphNoTC
     , getNodes
     , getConnections
     , setPortDefault
@@ -575,6 +576,9 @@ getBuffer file span = Library.getBuffer file span
 getGraph :: GraphLocation -> Empire APIGraph.Graph
 getGraph loc = withTC loc True $ runASTOp $ do
     GraphBuilder.buildGraph
+
+getGraphNoTC :: GraphLocation -> Empire APIGraph.Graph
+getGraphNoTC loc = withGraph loc $ runASTOp $ GraphBuilder.buildGraph
 
 getNodes :: GraphLocation -> Empire [ExpressionNode]
 getNodes loc = withTC loc True $ runASTOp $ view APIGraph.nodes <$> GraphBuilder.buildGraph
