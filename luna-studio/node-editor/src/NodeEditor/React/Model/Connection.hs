@@ -190,8 +190,8 @@ connectionMode _ (Node.Output {}) = Sidebar
 connectionMode _ _ = Normal
 
 halfConnectionMode :: Node -> Mode
-halfConnectionMode (Node.Expression {}) = Sidebar
-halfConnectionMode _                    = Normal
+halfConnectionMode (Node.Expression {}) = Normal
+halfConnectionMode _                    = Sidebar
 
 halfConnectionSrcPosition :: Node -> EitherPort -> Position -> Layout -> Maybe Position
 halfConnectionSrcPosition (Node.Input  _  ) (Right port) _ layout = inputSidebarPortPosition  port layout
