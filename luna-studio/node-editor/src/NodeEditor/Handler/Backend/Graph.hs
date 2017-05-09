@@ -37,12 +37,11 @@ import qualified Empire.API.Graph.SetPortDefault             as SetPortDefault
 import qualified Empire.API.Response                         as Response
 import           NodeEditor.Action.Basic                     (localAddConnection, localAddConnections, localAddExpressionNode, localAddPort,
                                                               localMerge, localMoveNodes, localMovePort, localRemoveConnection,
-                                                              localRemoveConnections, localRemoveNodes, localRemovePort, localSetNodesMeta,
-                                                              localSetPortDefault, localSetSearcherHints, localUpdateExpressionNode,
-                                                              localUpdateExpressionNodes, localUpdateInputNode, localUpdateNodeTypecheck,
-                                                              localUpdateOrAddExpressionNode, localUpdateOrAddInputNode,
-                                                              localUpdateOrAddOutputNode, setNodeProfilingData, setNodeValue, updateGraph,
-                                                              updateScene)
+                                                              localRemoveConnections, localRemoveNodes, localRemovePort,
+                                                              localSetSearcherHints, localUpdateExpressionNode, localUpdateInputNode,
+                                                              localUpdateNodeTypecheck, localUpdateOrAddExpressionNode,
+                                                              localUpdateOrAddInputNode, localUpdateOrAddOutputNode, setNodeProfilingData,
+                                                              setNodeValue, updateGraph, updateScene)
 import           NodeEditor.Action.Basic.Revert              (revertAddConnection, revertAddNode, revertAddPort, revertAddSubgraph,
                                                               revertMovePort, revertRemoveConnection, revertRemoveNodes, revertRemovePort,
                                                               revertRenameNode, revertSetNodeExpression, revertSetNodesMeta,

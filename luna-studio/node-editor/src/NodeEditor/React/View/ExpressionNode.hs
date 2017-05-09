@@ -26,7 +26,6 @@ import           NodeEditor.React.Model.Port                          (AnyPortId
 import qualified NodeEditor.React.Model.Port                          as Port
 import           NodeEditor.React.Store                               (Ref, dispatch)
 import           NodeEditor.React.View.ExpressionNode.Properties      (nodeProperties_)
-import           NodeEditor.React.View.Field                          (singleField_)
 import           NodeEditor.React.View.Field                          (multilineField_)
 import           NodeEditor.React.View.Monad                          (monads_)
 import           NodeEditor.React.View.Plane                          (planeMonads_, svgPlanes_)
@@ -165,7 +164,6 @@ nodePorts = React.defineView objNamePorts $ \(ref, n) -> do
                                                  LabeledTree _ a -> case (a ^. Port.state) of
                                                                         Port.Connected -> True
                                                                         _              -> False
-                                                 _               ->                       False
     svg_
         [ "key"       $= "nodePorts"
         , "className" $= Style.prefixFromList [ "node__ports" ]

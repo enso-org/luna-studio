@@ -17,7 +17,6 @@ import qualified NodeEditor.Event.UI                     as UI
 import qualified NodeEditor.React.Event.Sidebar          as Sidebar
 import           NodeEditor.React.Model.App              (App)
 import           NodeEditor.React.Model.Constants        (lineHeight)
-import qualified NodeEditor.React.Model.Field            as Field
 import           NodeEditor.React.Model.Node.SidebarNode (NodeLoc, SidebarMode (AddRemove, MoveConnect), SidebarNode, countProjectionPorts,
                                                           isInputSidebar)
 import qualified NodeEditor.React.Model.Node.SidebarNode as SidebarNode
@@ -25,7 +24,6 @@ import           NodeEditor.React.Model.Port             (AnyPort, OutPortIndex 
                                                           isHighlighted, isInMovedMode, isInNameEditMode, isInPort, isOutPort)
 import qualified NodeEditor.React.Model.Port             as Port
 import           NodeEditor.React.Store                  (Ref, dispatch)
-import           NodeEditor.React.View.Field             (singleField_)
 import           NodeEditor.React.View.Port              (handleClick, handleMouseDown, handleMouseUp, jsShow2)
 import           NodeEditor.React.View.Style             (plainPath_, plainRect_)
 import qualified NodeEditor.React.View.Style             as Style

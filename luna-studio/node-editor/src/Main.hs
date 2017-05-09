@@ -26,8 +26,8 @@ runApp :: Chan (IO ()) -> WebSocket -> IO ()
 runApp chan socket = do
     lastLocation <- GraphLocation.loadLocation
     random       <- newStdGen
-    clientId             <- generateUUID
-    initTime             <- getCurrentTime
+    clientId     <- generateUUID
+    initTime     <- getCurrentTime
     let openedFile = Config.openedFile
     mdo
         let loop = LoopRef chan state

@@ -2,15 +2,15 @@
 module JS.Atom
     ( onEvent
     ) where
-import qualified Data.List                     as List
-import           GHCJS.Foreign.Callback
-import           GHCJS.Marshal.Pure            (pFromJSVal)
-import           GHCJS.Types                   (JSVal)
-import           NodeEditor.Event.Event       (Event (Shortcut, UI))
-import qualified NodeEditor.Event.Shortcut    as Shortcut
-import           NodeEditor.Event.UI          (UIEvent (SearcherEvent))
 import           Common.Prelude
-import           Text.Read                     (readMaybe)
+import qualified Data.List                 as List
+import           GHCJS.Foreign.Callback
+import           GHCJS.Marshal.Pure        (pFromJSVal)
+import           GHCJS.Types               (JSVal)
+import           NodeEditor.Event.Event    (Event (Atom, Shortcut, UI))
+import qualified NodeEditor.Event.Shortcut as Shortcut
+import           NodeEditor.Event.UI       (UIEvent (SearcherEvent))
+import           Text.Read                 (readMaybe)
 
 
 foreign import javascript safe "atomCallback.onEvent($1)"
@@ -34,4 +34,4 @@ parseEvent str = do
                          Shortcut .: Shortcut.Event <$> readMaybe commandStr
                                                     <*> pure (if null argStr then Nothing else Just argStr)
         "Searcher" -> UI . SearcherEvent <$> readMaybe r
-        _          -> Nothing
+        _          -> Atom <$> readMaybe str
