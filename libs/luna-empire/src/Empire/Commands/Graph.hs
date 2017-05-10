@@ -13,6 +13,7 @@ module Empire.Commands.Graph
     , addPort
     , addPortWithConnections
     , addSubgraph
+    , autolayoutNodes
     , removeNodes
     , movePort
     , removePort
@@ -603,6 +604,12 @@ renameNodeGraph nid name = do
 dumpGraphViz :: GraphLocation -> Empire ()
 dumpGraphViz loc = withGraph loc $ return ()
 
+autolayoutNodes :: GraphLocation -> [NodeId] -> Empire ()
+autolayoutNodes loc nids = do
+    nodes <- getNodes loc
+    conns <- getConnections loc
+    mapM_ (uncurry $ setNodePosition loc) $ Autolayout.autolayoutNodes nids nodes conns
+
 openFile :: FilePath -> Empire ()
 openFile path = do
     code <- do
@@ -611,10 +618,7 @@ openFile path = do
     Library.createLibrary Nothing path code
     let loc = GraphLocation path $ Breadcrumb []
     nodeIds   <- withGraph loc $ loadCode code
-    nodes     <- getNodes loc
-    conns     <- getConnections loc
-    let positions = Autolayout.autolayoutNodes nodeIds nodes conns
-    mapM_ (uncurry $ setNodePosition loc) positions
+    autolayoutNodes loc nodeIds
 
 typecheck :: GraphLocation -> Empire ()
 typecheck loc = withGraph loc $ runTC loc False

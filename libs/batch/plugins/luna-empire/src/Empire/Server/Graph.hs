@@ -241,18 +241,14 @@ handleAddSubgraph = modifyGraph defInverse action replyResult where
 
 handleAutolayoutNodes :: Request AutolayoutNodes.Request -> StateT Env BusT ()
 handleAutolayoutNodes = modifyGraph inverse action replyResult where
-    action (AutolayoutNodes.Request location nodeLocs) = do
-        Graph nodes connections _ _ _ <- Graph.getGraph location
-        let updates = autolayoutNodes (convert <$> nodeLocs) nodes connections --TODO[PM -> MM] Use NodeLoc instead of NodeId
-        mapM_ (uncurry $ Graph.setNodePosition location) updates
-        let nidToNlMap = Map.fromList $ map (\nl -> (nl ^. NodeLoc.nodeId, nl)) nodeLocs
-        return . catMaybes . map (\(nid, meta) -> (, meta) <$> Map.lookup nid nidToNlMap) $ updates
     inverse (AutolayoutNodes.Request location nodeLocs) = do
         let getNlAndPos :: NodeLoc -> Empire (Maybe (NodeLoc, Position))
             getNlAndPos nl = do
                 mayMeta <- Graph.getNodeMeta location $ convert nl --TODO[PM -> MM] Use NodeLoc instead of NodeId
                 return $ (nl,) . view NodeMeta.position <$> mayMeta
         AutolayoutNodes.Inverse . catMaybes <$> mapM getNlAndPos nodeLocs
+    action (AutolayoutNodes.Request location nodeLocs) = withDefaultResult location $
+        Graph.autolayoutNodes location (convert <$> nodeLocs) --TODO[PM -> MM] Use NodeLoc instead of NodeId
 
 handleDumpGraphViz :: Request DumpGraphViz.Request -> StateT Env BusT ()
 handleDumpGraphViz = modifyGraphOk defInverse action where

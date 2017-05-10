@@ -141,7 +141,7 @@ handle (Event.Batch ev) = Just $ case ev of
 
     AutolayoutNodesResponse response -> handleResponse response success doNothing where
         location       = response ^. Response.request . AutolayoutNodes.location
-        success result = inCurrentLocation location $ \_ -> void $ localMoveNodes result
+        success result = inCurrentLocation location $ applyResult result
 
     CollaborationUpdate update -> inCurrentLocation (update ^. CollaborationUpdate.location) $ \path -> do
         let clientId = update ^. CollaborationUpdate.clientId
