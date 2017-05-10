@@ -302,11 +302,9 @@ handleRenameNode = modifyGraph inverse action replyResult where
     inverse (RenameNode.Request location nodeId name) = do
         prevName <- Graph.withGraph location $ runASTOp $ getNodeName nodeId
         return $ RenameNode.Inverse $ maybe "" id  prevName
-    action (RenameNode.Request location nodeId name) = do
-        oldNodes <- Map.fromList . map (view Node.nodeId &&& id) <$> Graph.getNodes location
+    action (RenameNode.Request location nodeId name) = withDefaultResult location $
         Graph.renameNode location nodeId name
-        filter (\n -> Just n /= Map.lookup (n ^. Node.nodeId) oldNodes) <$> Graph.getNodes location
-
+    
 handleRenamePort :: Request RenamePort.Request -> StateT Env BusT ()
 handleRenamePort = modifyGraph inverse action replyResult where --FIXME[pm] implement this!
     inverse (RenamePort.Request location portRef name) = do

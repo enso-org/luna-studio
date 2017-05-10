@@ -228,8 +228,7 @@ handle (Event.Batch ev) = Just $ case ev of
         nid             = request  ^. RenameNode.nodeId
         name            = request  ^. RenameNode.name
         failure inverse = whenM (isOwnRequest requestId) $ revertRenameNode request inverse
-        success nodes   = inCurrentLocation location $ \path ->
-            forM_ nodes $ localUpdateOrAddExpressionNode . convert . (path,)
+        success result  = inCurrentLocation location $ applyResult result
 
     RenamePortResponse response -> handleResponse response success failure where
         requestId       = response ^. Response.requestId
