@@ -7,6 +7,7 @@ import           Empire.API.Data.GraphLocation (GraphLocation)
 import           Empire.API.Data.Node          (InputSidebar)
 import           Empire.API.Data.PortRef       (OutPortRef)
 import qualified Empire.API.Graph.Request      as G
+import           Empire.API.Graph.Result       (Result)
 import qualified Empire.API.Request            as R
 import qualified Empire.API.Response           as Response
 import qualified Empire.API.Topic              as T
@@ -17,8 +18,6 @@ data Request = Request { _location    :: GraphLocation
                        , _portRef     :: OutPortRef
                        , _newPortPos  :: Int
                        } deriving (Generic, Eq, NFData, Show)
-
-type Result = InputSidebar
 
 type Response = Response.Response Request () Result
 instance Response.ResponseResult Request () Result

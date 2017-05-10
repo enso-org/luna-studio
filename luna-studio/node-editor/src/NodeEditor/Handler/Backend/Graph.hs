@@ -176,18 +176,13 @@ handle (Event.Batch ev) = Just $ case ev of
             updateMonads $ update ^. MonadsUpdate.monads --FIXME updateMonads in path!
 
     MovePortResponse response -> handleResponse response success failure where
-        requestId     = response ^. Response.requestId
-        request       = response ^. Response.request
-        location      = request  ^. MovePort.location
-        portRef       = request  ^. MovePort.portRef
-        newPos        = request  ^. MovePort.newPortPos
-        failure _     = whenM (isOwnRequest requestId) $ revertMovePort request
-        success node' = inCurrentLocation location $ \path -> do
-            let node = convert (path, node')
-            ownRequest <- isOwnRequest requestId
-            if ownRequest then
-                void $ localUpdateInputNode node
-            else void $ localMovePort portRef newPos >> localUpdateInputNode node
+        requestId      = response ^. Response.requestId
+        request        = response ^. Response.request
+        location       = request  ^. MovePort.location
+        portRef        = request  ^. MovePort.portRef
+        newPos         = request  ^. MovePort.newPortPos
+        failure _      = whenM (isOwnRequest requestId) $ revertMovePort request
+        success result = inCurrentLocation location $ applyResult result
 
     NodeResultUpdate update -> do
         let location = update ^. NodeResultUpdate.location

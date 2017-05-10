@@ -262,7 +262,8 @@ handleGetSubgraphs = modifyGraph defInverse action replyResult where
 
 handleMovePort :: Request MovePort.Request -> StateT Env BusT ()
 handleMovePort = modifyGraph defInverse action replyResult where
-    action (MovePort.Request location portRef newPortPos) = Graph.movePort location portRef newPortPos
+    action (MovePort.Request location portRef newPortPos) = withDefaultResult location $
+        Graph.movePort location portRef newPortPos
 
 handleRemoveConnection :: Request RemoveConnection.Request -> StateT Env BusT ()
 handleRemoveConnection = modifyGraph inverse action replyResult where
