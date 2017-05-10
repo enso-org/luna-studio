@@ -87,14 +87,15 @@ handle (Event.Batch ev) = Just $ case ev of
                     code        = result ^. GetProgram.code
                     nsData      = result ^. GetProgram.nodeSearcherData
                     breadcrumb  = result ^. GetProgram.breadcrumb
+                shouldCenter <- not <$> isGraphLoaded
                 Global.workspace . _Just . Workspace.nodeSearcherData .= nsData
                 setBreadcrumbs breadcrumb
                 updateGraph nodes input output connections monads
-                unlessM isGraphLoaded $ do
-                    centerGraph
-                    requestCollaborationRefresh
                 setGraphLoaded True
                 updateScene
+                when shouldCenter $ do
+                    centerGraph
+                    requestCollaborationRefresh
         failure _ = do
             isOnTop <- fromMaybe True <$> preuses (Global.workspace . traverse) Workspace.isOnTopBreadcrumb
             if isOnTop

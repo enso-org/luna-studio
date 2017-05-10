@@ -34,7 +34,8 @@ updateScene = do
     mayNewScene <- Scene.get
     let shouldUpdate = flip (maybe True) mayNewScene $ \newScene ->
             newScene ^. Scene.position /= def || newScene ^. Scene.size /= def
-    when shouldUpdate $ modifyNodeEditor $ NodeEditor.layout . Scene.scene .= mayNewScene
+    when shouldUpdate $
+        modifyNodeEditor $ NodeEditor.layout . Scene.scene .= mayNewScene
 
 getWorkspacePosition :: Command State (Maybe ScreenPosition)
 getWorkspacePosition = view Scene.position `fmap2` getScene
