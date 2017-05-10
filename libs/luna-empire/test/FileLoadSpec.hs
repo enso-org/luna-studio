@@ -222,6 +222,19 @@ bar ‹3›= foo 8 c
                 connections `shouldMatchList` [
                       (outPortRef (c ^. Node.nodeId) [], inPortRef (bar ^. Node.nodeId) [Port.Arg 1])
                     ]
+        it "enters lambda written in file" $ \env -> do
+            let code = [r|foo ‹0›= a: b: a + b|]
+                loc = GraphLocation "TestPath" $ Breadcrumb []
+            res <- evalEmp env $ do
+                Library.createLibrary Nothing "TestPath" code
+                let loc = GraphLocation "TestPath" $ Breadcrumb []
+                Graph.withGraph loc $ Graph.loadCode code
+                Just foo <- Graph.withGraph loc $ runASTOp $ Graph.getNodeIdForMarker 0
+                Graph.withGraph (loc |> foo) $ runASTOp $ GraphBuilder.buildGraph
+            withResult res $ \graph -> do
+                let Graph.Graph nodes connections _ _ _ = graph
+                nodes `shouldSatisfy` ((== 1) . length)
+                connections `shouldSatisfy` ((== 3) . length)
     describe "code spans" $ do
         xit "pi <0>= 3.14" $ \env -> do
             let code = [r|‹0›print 3.14
