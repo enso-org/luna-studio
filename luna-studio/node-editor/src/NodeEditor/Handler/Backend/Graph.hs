@@ -4,11 +4,9 @@ module NodeEditor.Handler.Backend.Graph
 
 import           Common.Prelude
 import           Common.Report
-import           Control.Arrow                               ((&&&))
 import qualified Data.DateTime                               as DT
-import           Empire.API.Data.Connection                  (dst, src)
 import qualified Empire.API.Data.Graph                       as Graph
-import           Empire.API.Data.Node                        (Node (ExpressionNode', InputSidebar', OutputSidebar'), nodeId)
+import           Empire.API.Data.Node                        (nodeId)
 import           Empire.API.Data.NodeLoc                     (NodePath, prependPath)
 import qualified Empire.API.Data.NodeLoc                     as NodeLoc
 import qualified Empire.API.Graph.AddConnection              as AddConnection
@@ -34,12 +32,11 @@ import qualified Empire.API.Graph.SetNodeExpression          as SetNodeExpressio
 import qualified Empire.API.Graph.SetNodesMeta               as SetNodesMeta
 import qualified Empire.API.Graph.SetPortDefault             as SetPortDefault
 import qualified Empire.API.Response                         as Response
-import           NodeEditor.Action.Basic                     (localAddConnections, localMerge, localMoveNodes, localMovePort,
-                                                              localRemoveConnection, localRemoveConnections, localRemoveNodes,
-                                                              localRemovePort, localSetSearcherHints, localUpdateInputNode,
-                                                              localUpdateNodeTypecheck, localUpdateOrAddExpressionNode,
-                                                              localUpdateOrAddInputNode, localUpdateOrAddOutputNode, setNodeProfilingData,
-                                                              setNodeValue, updateGraph, updateScene)
+import           NodeEditor.Action.Basic                     (localAddConnections, localMerge, localRemoveConnections, localRemoveNodes,
+                                                              localSetSearcherHints, localUpdateNodeTypecheck,
+                                                              localUpdateOrAddExpressionNode, localUpdateOrAddInputNode,
+                                                              localUpdateOrAddOutputNode, setNodeProfilingData, setNodeValue, updateGraph,
+                                                              updateScene)
 import           NodeEditor.Action.Basic.Revert              (revertAddConnection, revertAddNode, revertAddPort, revertAddSubgraph,
                                                               revertMovePort, revertRemoveConnection, revertRemoveNodes, revertRemovePort,
                                                               revertRenameNode, revertSetNodeExpression, revertSetNodesMeta,
@@ -66,7 +63,7 @@ applyResult res path = do
     void $ localRemoveNodes       . map (convert . (path,)) $ res ^. Result.removedNodes
     void $ localRemoveConnections . map (prependPath path)  $ res ^. Result.removedConnections
     mapM_ (localUpdateOrAddExpressionNode . convert . (path,)) $ res ^. Result.graphUpdates . Graph.nodes
-    void $ localAddConnections . map (\(src, dst) -> (prependPath path src, prependPath path dst)) $ res ^. Result.graphUpdates . Graph.connections
+    void $ localAddConnections . map (\(src', dst') -> (prependPath path src', prependPath path dst')) $ res ^. Result.graphUpdates . Graph.connections
     let inputSidebar  = res ^. Result.graphUpdates . Graph.inputSidebar
         outputSidebar = res ^. Result.graphUpdates . Graph.outputSidebar
     when (isJust inputSidebar)  $ forM_ inputSidebar  $ localUpdateOrAddInputNode  . convert . (path,)
@@ -84,7 +81,6 @@ handle (Event.Batch ev) = Just $ case ev of
                     output      = convert . (NodeLoc.empty,) <$> result ^. GetProgram.graph . Graph.outputSidebar
                     connections = result ^. GetProgram.graph . Graph.connections
                     monads      = result ^. GetProgram.graph . Graph.monads
-                    code        = result ^. GetProgram.code
                     nsData      = result ^. GetProgram.nodeSearcherData
                     breadcrumb  = result ^. GetProgram.breadcrumb
                 shouldCenter <- not <$> isGraphLoaded
@@ -125,7 +121,6 @@ handle (Event.Batch ev) = Just $ case ev of
         requestId      = response ^. Response.requestId
         request        = response ^. Response.request
         location       = request  ^. AddPort.location
-        portRef        = request  ^. AddPort.outPortRef
         failure _      = whenM (isOwnRequest requestId) $ revertAddPort request
         success result = inCurrentLocation location $ applyResult result
 
@@ -133,7 +128,6 @@ handle (Event.Batch ev) = Just $ case ev of
         requestId      = response ^. Response.requestId
         request        = response ^. Response.request
         location       = request  ^. AddSubgraph.location
-        conns          = request  ^. AddSubgraph.connections
         failure _      = whenM (isOwnRequest requestId) $ revertAddSubgraph request
         success result = inCurrentLocation location $ \path -> do
             applyResult result path
@@ -179,8 +173,6 @@ handle (Event.Batch ev) = Just $ case ev of
         requestId      = response ^. Response.requestId
         request        = response ^. Response.request
         location       = request  ^. MovePort.location
-        portRef        = request  ^. MovePort.portRef
-        newPos         = request  ^. MovePort.newPortPos
         failure _      = whenM (isOwnRequest requestId) $ revertMovePort request
         success result = inCurrentLocation location $ applyResult result
 
@@ -201,7 +193,6 @@ handle (Event.Batch ev) = Just $ case ev of
         requestId       = response ^. Response.requestId
         request         = response ^. Response.request
         location        = request  ^. RemoveConnection.location
-        connId          = request  ^. RemoveConnection.connId
         failure inverse = whenM (isOwnRequest requestId) $ revertRemoveConnection request inverse
         success result  = inCurrentLocation location $ applyResult result
 
@@ -209,7 +200,6 @@ handle (Event.Batch ev) = Just $ case ev of
         requestId       = response ^. Response.requestId
         request         = response ^. Response.request
         location        = request  ^. RemoveNodes.location
-        nodeLocs        = request  ^. RemoveNodes.nodeLocs
         failure inverse = whenM (isOwnRequest requestId) $ revertRemoveNodes request inverse
         success result  = inCurrentLocation location $ applyResult result
 
@@ -217,7 +207,6 @@ handle (Event.Batch ev) = Just $ case ev of
         requestId       = response ^. Response.requestId
         request         = response ^. Response.request
         location        = request  ^. RemovePort.location
-        portRef         = request  ^. RemovePort.portRef
         failure inverse = whenM (isOwnRequest requestId) $ revertRemovePort request inverse
         success result  = inCurrentLocation location $ applyResult result
 
@@ -225,8 +214,6 @@ handle (Event.Batch ev) = Just $ case ev of
         requestId       = response ^. Response.requestId
         request         = response ^. Response.request
         location        = request  ^. RenameNode.location
-        nid             = request  ^. RenameNode.nodeId
-        name            = request  ^. RenameNode.name
         failure inverse = whenM (isOwnRequest requestId) $ revertRenameNode request inverse
         success result  = inCurrentLocation location $ applyResult result
 
@@ -234,15 +221,13 @@ handle (Event.Batch ev) = Just $ case ev of
         requestId       = response ^. Response.requestId
         request         = response ^. Response.request
         location        = request  ^. RenamePort.location
-        portRef         = request  ^. RenamePort.portRef
-        name            = request  ^. RenamePort.name
         failure inverse = whenM (isOwnRequest requestId) $ $notImplemented
         success result  = inCurrentLocation location $ applyResult result
 
     SearchNodesResponse response -> handleResponse response success doNothing where
         requestId      = response ^. Response.requestId
         location       = response ^. Response.request . SearchNodes.location
-        success result = inCurrentLocation location $ \path -> do
+        success result = inCurrentLocation location $ \_ -> do
             ownRequest <- isOwnRequest requestId
             when ownRequest $
                 localSetSearcherHints $ result ^. SearchNodes.nodeSearcherData
@@ -251,8 +236,6 @@ handle (Event.Batch ev) = Just $ case ev of
         requestId       = response ^. Response.requestId
         request         = response ^. Response.request
         location        = request  ^. SetNodeExpression.location
-        nid             = request  ^. SetNodeExpression.nodeId
-        expression      = request  ^. SetNodeExpression.expression
         failure inverse = whenM (isOwnRequest requestId) $ revertSetNodeExpression request inverse
         success result  = inCurrentLocation location $ applyResult result
 
@@ -261,7 +244,6 @@ handle (Event.Batch ev) = Just $ case ev of
         requestId       = response ^. Response.requestId
         request         = response ^. Response.request
         location        = request  ^. SetNodesMeta.location
-        updates         = request  ^. SetNodesMeta.updates
         failure inverse = whenM (isOwnRequest requestId) $ revertSetNodesMeta request inverse
         success result  = whenM (not <$> isOwnRequest requestId) $ inCurrentLocation location $ applyResult result
 
@@ -269,8 +251,6 @@ handle (Event.Batch ev) = Just $ case ev of
         requestId       = response ^. Response.requestId
         request         = response ^. Response.request
         location        = request  ^. SetPortDefault.location
-        portRef         = request  ^. SetPortDefault.portRef
-        defaultVal      = request  ^. SetPortDefault.defaultValue
         failure inverse = whenM (isOwnRequest requestId) $ revertSetPortDefault request inverse
         success result  = inCurrentLocation location $ applyResult result
 
