@@ -37,7 +37,6 @@ handlers = Map.fromList [ handle GetProgramResponse
                         , handle NodeTypecheckerUpdate
                         , handle RedoResponse
                         , handle RemoveConnectionResponse
-                        , handle RemoveConnectionUpdate
                         , handle RemoveNodesResponse
                         , handle RemovePortResponse
                         , handle RenameNodeResponse

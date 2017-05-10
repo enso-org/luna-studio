@@ -205,10 +205,6 @@ handle (Event.Batch ev) = Just $ case ev of
         failure inverse = whenM (isOwnRequest requestId) $ revertRemoveConnection request inverse
         success result  = inCurrentLocation location $ applyResult result
 
-    RemoveConnectionUpdate update -> do
-        inCurrentLocation (update ^. RemoveConnection.location') $ \path ->
-            void $ localRemoveConnection $ prependPath path $ update ^. RemoveConnection.connId'
-
     RemoveNodesResponse response -> handleResponse response success failure where
         requestId       = response ^. Response.requestId
         request         = response ^. Response.request

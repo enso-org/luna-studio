@@ -56,7 +56,6 @@ data Event = UnknownEvent String
            | NodeTypecheckerUpdate                NodeTCUpdate.Update
            | RedoResponse                                 Redo.Response
            | RemoveConnectionResponse         RemoveConnection.Response
-           | RemoveConnectionUpdate           RemoveConnection.Update
            | RemoveNodesResponse                   RemoveNodes.Response
            | RemovePortResponse                     RemovePort.Response
            | RenameNodeResponse                     RenameNode.Response
