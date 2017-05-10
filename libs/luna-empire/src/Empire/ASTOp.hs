@@ -47,6 +47,7 @@ import           Luna.Pass.Data.ExprRoots                     (ExprRoots(..))
 import           Luna.Pass.Resolution.Data.UnresolvedVars     (UnresolvedVars(..))
 import           Luna.Pass.Resolution.Data.UnresolvedConses   (UnresolvedConses(..), NegativeConses(..))
 import qualified Luna.Pass.Resolution.AliasAnalysis           as AliasAnalysis
+import           Luna.Syntax.Text.Parser.Errors (Invalids)
 import qualified Luna.Syntax.Text.Parser.Parser               as Parser
 import qualified Luna.Syntax.Text.Parser.Parsing              as Parsing
 import qualified Luna.Syntax.Text.Parser.CodeSpan             as CodeSpan
@@ -70,7 +71,7 @@ type ASTOp m = (MonadThrow m,
                 MonadState Graph m,
                 Emitters EmpireEmitters m,
                 Editors Net  '[AnyExpr, AnyExprLink] m,
-                Editors Attr '[Source, Parser.ParsedExpr, SourceTree, MarkedExprMap] m,
+                Editors Attr '[Source, Parser.ParsedExpr, SourceTree, MarkedExprMap, Invalids] m,
                 Editors Layer EmpireLayers m,
                 DepOld.MonadGet Vis.V Vis.Vis m,
                 DepOld.MonadPut Vis.V Vis.Vis m,
@@ -86,7 +87,6 @@ type EmpireLayers = '[AnyExpr // Model, AnyExprLink // Model,
                       AnyExpr // TypeLayer,
                       AnyExpr // UID, AnyExprLink // UID,
                       AnyExpr // CodeSpan.CodeSpan,
-                      AnyExpr // Parser.Parser,
                       AnyExpr // CodeMarkers]
 
 type EmpireEmitters = '[New // AnyExpr, New // AnyExprLink,
@@ -98,12 +98,12 @@ data EmpirePass
 type instance Abstract   EmpirePass = EmpirePass
 type instance Inputs     Net   EmpirePass = '[AnyExpr, AnyExprLink]
 type instance Inputs     Layer EmpirePass = EmpireLayers
-type instance Inputs     Attr  EmpirePass = '[Source, Parser.ParsedExpr, SourceTree, MarkedExprMap, ExprMapping] -- Parser attrs temporarily - probably need to call it as a separate Pass
+type instance Inputs     Attr  EmpirePass = '[Source, Parser.ParsedExpr, SourceTree, MarkedExprMap, ExprMapping, Invalids] -- Parser attrs temporarily - probably need to call it as a separate Pass
 type instance Inputs     Event EmpirePass = '[]
 
 type instance Outputs    Net   EmpirePass = '[AnyExpr, AnyExprLink]
 type instance Outputs    Layer EmpirePass = EmpireLayers
-type instance Outputs    Attr  EmpirePass = '[Source, Parser.ParsedExpr, SourceTree, MarkedExprMap]
+type instance Outputs    Attr  EmpirePass = '[Source, Parser.ParsedExpr, SourceTree, MarkedExprMap, Invalids]
 type instance Outputs    Event EmpirePass = EmpireEmitters
 
 type instance Preserves        EmpirePass = '[]

@@ -34,6 +34,7 @@ import           Empire.API.Data.PortDefault     (PortDefault (..), PortValue (.
 
 import           Data.TypeDesc                   (getTypeDesc)
 import qualified Luna.IR                         as IR
+import           Luna.Syntax.Text.Parser.Errors  (Invalids)
 import qualified Luna.Syntax.Text.Parser.Marker  as Parser (MarkedExprMap)
 import qualified Luna.Syntax.Text.Parser.Parser  as Parser
 import qualified Luna.Syntax.Text.Parser.Parsing as Parsing
@@ -51,7 +52,7 @@ instance Exception e => Exception (ParserException e) where
 parseExpr :: ASTOp m => String -> m NodeRef
 parseExpr s = do
     IR.putAttr @Source.Source $ convert s
-    Parsing.parsingBase Parsing.expr
+    Parsing.parsingPassM Parsing.expr
     res     <- IR.getAttr @Parser.ParsedExpr
     exprMap <- IR.getAttr @Parser.MarkedExprMap
     return $ unwrap' res
@@ -60,6 +61,7 @@ runUnitParser :: Text.Text -> Command Graph (NodeRef, Parser.MarkedExprMap)
 runUnitParser code = do
     let inits = do
           IR.setAttr (getTypeDesc @Source.SourceTree)      $ (mempty :: Source.SourceTree)
+          IR.setAttr (getTypeDesc @Invalids)               $ (mempty :: Invalids)
           IR.setAttr (getTypeDesc @Parser.MarkedExprMap)   $ (mempty :: Parser.MarkedExprMap)
           IR.setAttr (getTypeDesc @Source.Source)          $ (convert code :: Source.Source)
           IR.setAttr (getTypeDesc @Parser.ParsedExpr)      $ (error "Data not provided: ParsedExpr")
@@ -67,7 +69,7 @@ runUnitParser code = do
         run = runPass @ParserPass inits
     run $ do
         let protoFunc = (\body -> uncurry Parsing.seqLines body)
-        Parsing.parsingBase (protoFunc <$> Parsing.discoverBlock Parsing.lineExpr) `catchAll` (\e -> throwM $ ParserException e)
+        Parsing.parsingPassM (protoFunc <$> Parsing.discoverBlock Parsing.lineExpr) `catchAll` (\e -> throwM $ ParserException e)
         res     <- IR.getAttr @Parser.ParsedExpr
         exprMap <- IR.getAttr @Parser.MarkedExprMap
         IR.putLayer @CodeMarkers (unwrap' res) exprMap
@@ -77,6 +79,8 @@ runUnitReparser :: Text.Text -> NodeRef -> Command Graph (NodeRef, Parser.Marked
 runUnitReparser code oldExpr = do
     let inits = do
           IR.setAttr (getTypeDesc @Source.SourceTree)      $ (mempty :: Source.SourceTree)
+          IR.setAttr (getTypeDesc @Invalids)               $ (mempty :: Invalids)
+
           IR.setAttr (getTypeDesc @Parser.MarkedExprMap)   $ (mempty :: Parser.MarkedExprMap)
           IR.setAttr (getTypeDesc @Source.Source)          $ (convert code :: Source.Source)
           IR.setAttr (getTypeDesc @Parser.ParsedExpr)      $ (wrap' oldExpr :: Parser.ParsedExpr)
@@ -88,7 +92,7 @@ runUnitReparser code oldExpr = do
 
             -- parsing new file and updating updated analysis
             let protoFunc = (\body -> uncurry Parsing.seqLines body)
-            Parsing.parsingBase (protoFunc <$> Parsing.discoverBlock Parsing.lineExpr) `catchAll` (\e -> throwM $ ParserException e)
+            Parsing.parsingPassM (protoFunc <$> Parsing.discoverBlock Parsing.lineExpr) `catchAll` (\e -> throwM $ ParserException e)
             gidMap    <- IR.getAttr @Parser.MarkedExprMap
 
             -- Preparing reparsing status
@@ -105,13 +109,15 @@ runParser :: Text.Text -> Command Graph (NodeRef, Parser.MarkedExprMap)
 runParser expr = do
     let inits = do
             IR.setAttr (getTypeDesc @Source.SourceTree)      $ (mempty :: Source.SourceTree)
+            IR.setAttr (getTypeDesc @Invalids)               $ (mempty :: Invalids)
+
             IR.setAttr (getTypeDesc @Parser.MarkedExprMap)   $ (mempty :: Parser.MarkedExprMap)
             IR.setAttr (getTypeDesc @Source.Source)          $ (convert expr :: Source.Source)
             IR.setAttr (getTypeDesc @Parser.ParsedExpr)      $ (error "Data not provided: ParsedExpr")
             IR.setAttr (getTypeDesc @Parser.ReparsingStatus) $ (error "Data not provided: ReparsingStatus")
         run = runPass @ParserPass inits
     run $ do
-        Parsing.parsingBase Parsing.expr `catchAll` (\e -> throwM $ ParserException e)
+        Parsing.parsingPassM Parsing.expr `catchAll` (\e -> throwM $ ParserException e)
         res     <- IR.getAttr @Parser.ParsedExpr
         exprMap <- IR.getAttr @Parser.MarkedExprMap
         IR.putLayer @CodeMarkers (unwrap' res) exprMap
@@ -121,6 +127,8 @@ runReparser :: Text.Text -> NodeRef -> Command Graph (NodeRef, Parser.MarkedExpr
 runReparser expr oldExpr = do
     let inits = do
             IR.setAttr (getTypeDesc @Source.SourceTree)      $ (mempty :: Source.SourceTree)
+            IR.setAttr (getTypeDesc @Invalids)               $ (mempty :: Invalids)
+
             IR.setAttr (getTypeDesc @Parser.MarkedExprMap)   $ (mempty :: Parser.MarkedExprMap)
             IR.setAttr (getTypeDesc @Source.Source)          $ (convert expr :: Source.Source)
             IR.setAttr (getTypeDesc @Parser.ParsedExpr)      $ (wrap' oldExpr :: Parser.ParsedExpr)
@@ -131,7 +139,7 @@ runReparser expr oldExpr = do
             gidMapOld <- IR.getLayer @CodeMarkers oldExpr
 
             -- parsing new file and updating updated analysis
-            Parsing.parsingBase Parsing.nonAssignmentExpr `catchAll` (\e -> throwM $ ParserException e)
+            Parsing.parsingPassM Parsing.valExpr2 `catchAll` (\e -> throwM $ ParserException e)
             gidMap    <- IR.getAttr @Parser.MarkedExprMap
 
             -- Preparing reparsing status

@@ -57,7 +57,7 @@ valueDecoderRep :: ASTOp m => NodeRef -> m (Maybe ValueDecoderRep)
 valueDecoderRep node = match node $ \case
     -- FIXME, use this second parameter
     Cons n _ -> do
-        name <- pure $ pathNameToString n
+        name <- pure $ nameToString n
         return $ Just $ ConsRep name
     App tc typ -> do
         tc'    <- IR.source tc

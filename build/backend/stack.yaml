@@ -43,7 +43,7 @@ packages:
   - location: ../../tools/batch/plugins/luna-empire
   - location: ../../tools/batch/plugins/request-monitor
   - location:
-      commit: 8d723667dc4f2c35223c76cb77ec3becdd0df535
+      commit: ef653aea16530145266c96a4b18adc7ac79f7035
       git: git@github.com:luna/luna.git
     subdirs: [core, passes, syntax/text, stdlib]
     extra-dep: true
@@ -56,7 +56,7 @@ packages:
       git: https://github.com/luna/data-pool.git
     extra-dep: true
   - location:
-      commit: 901b1491ddf84c309ba1e6a670d9a519e4c673b6
+      commit: 327eea626f582b7b857bc67e8886158b3a5630cc
       git: https://github.com/luna/convert.git
     extra-dep: true
   - location:
@@ -84,7 +84,7 @@ packages:
       git: https://github.com/luna/dependent-state.git
     extra-dep: true
   - location:
-      commit: 8a5a3c6c132b71eed041269c17182100ff98603f
+      commit: 409dc63cc1ccd2c85000460ce39df5c19dd15d0c
       git: https://github.com/luna/functor-utils.git
     extra-dep: true
   - location:
@@ -92,7 +92,7 @@ packages:
       git: https://github.com/luna/impossible.git
     extra-dep: true
   - location:
-      commit: 944351bc0b972b21ae4c6a092c596edf96f13129
+      commit: 4af8e1021a8127b05d98920e387150fa4f0aa2e4
       git: https://github.com/luna/lens-utils.git
     extra-dep: true
   - location:
@@ -100,7 +100,7 @@ packages:
       git: https://github.com/luna/poly-control.git
     extra-dep: true
   - location:
-      commit: 02d8c0d339dd9755c1b6c29512f63116e0fbc089
+      commit: 7b41799a2c33704593ae6da56bc46caa882b9161
       git: https://github.com/luna/prologue.git
     extra-dep: true
   - location:

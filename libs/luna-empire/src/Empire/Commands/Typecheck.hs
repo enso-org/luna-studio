@@ -40,7 +40,7 @@ import           Empire.Empire
 
 import           Luna.Builtin.Data.LunaValue       (LunaData, listenReps)
 import           Luna.Builtin.Data.LunaEff         (runIO, runError)
-import           Luna.Builtin.Data.Module          (Imports (..), Module (..))
+import           Luna.Builtin.Data.Module          (Imports (..))
 import qualified Luna.Builtin.Std                  as Std
 import qualified Luna.IR                           as IR
 import qualified Luna.Pass.Evaluation.Interpreter  as Interpreter

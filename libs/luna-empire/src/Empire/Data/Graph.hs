@@ -29,6 +29,7 @@ import           Luna.IR                                (IR, IRBuilder, AnyExpr,
                                                          attachLayer, snapshot, runRegs, Cache)
 import qualified OCI.Pass.Manager                       as Pass (RefState)
 import qualified OCI.Pass.Manager                       as PassManager (PassManager, State)
+import           Luna.Syntax.Text.Parser.Errors         (Invalids)
 import qualified Luna.Syntax.Text.Parser.Parser         as Parser
 import qualified Luna.Syntax.Text.Parser.Parsing        as Parser ()
 import qualified Luna.Syntax.Text.Parser.CodeSpan       as CodeSpan
@@ -102,8 +103,6 @@ defaultAST = mdo
         runRegs
         CodeSpan.init
         attachLayer 5 (getTypeDesc @CodeSpan.CodeSpan) (getTypeDesc @AnyExpr)
-        Parser.init
-        attachLayer 5 (getTypeDesc @Parser.Parser) (getTypeDesc @AnyExpr)
         attachEmpireLayers
         initExprMapping
         st   <- snapshot

@@ -117,7 +117,7 @@ import           Empire.Empire
 import           Data.SpanTree                    (RightSpacedSpan(..))
 import qualified Luna.IR                          as IR
 import qualified OCI.IR.Combinators               as IR (replaceSource, deleteSubtree, narrowTerm)
-import           Luna.Syntax.Text.Parser.CodeSpan (CodeSpan, DeltaSpan)
+import           Luna.Syntax.Text.Parser.CodeSpan (CodeSpan)
 import           Luna.Syntax.Text.Parser.Marker   (MarkedExprMap(..))
 import qualified Luna.Syntax.Text.Parser.Marker   as Luna
 import qualified Luna.Syntax.Text.Parser.Parser   as Parser (ReparsingStatus(..), ReparsingChange(..))
@@ -739,7 +739,7 @@ printMarkedExpression ref = do
     let chunks  = Text.splitOn " = " expr
         markers = Map.keys $ Map.filter (== ref) exprMap
         marker  = case markers of
-            (index:_) -> Text.pack $ "‹" ++ show index ++ "›"
+            (index:_) -> Text.pack $ "«" ++ show index ++ "»"
             _         -> ""
     return $ case chunks of
         [e]        -> Text.concat [marker, e]
@@ -764,34 +764,34 @@ updateNodeCode loc@(GraphLocation file _) nodeId = do
             return (line, expression)
         Library.withLibrary file $ forM_ line $ \l -> Library.substituteLine l expression
 
-readRange' :: ASTOp m => NodeRef -> m (RightSpacedSpan _)
-readRange' ref = IR.matchExpr ref $ \case
-    IR.Seq{} -> return mempty
-    _        -> do
-        parents <- IR.getLayer @IR.Succs ref
-        case toList parents of
-            []       -> return mempty
-            [parent] -> do
-                inputs <- mapM IR.source =<< IR.inputs =<< IR.readTarget parent
-                let lefts = takeWhile (/= ref) inputs
-                spans  <- mapM readCodeSpan lefts
-                let leftSpan = mconcat spans
-                parentSpan <- readRange' =<< IR.readTarget parent
-                return $ parentSpan <> leftSpan
-            _ -> error "something is no yes"
+-- readRange' :: (ASTOp m, Ord t, Num t) => NodeRef -> m (RightSpacedSpan t)
+-- readRange' ref = IR.matchExpr ref $ \case
+--     IR.Seq{} -> return mempty
+--     _        -> do
+--         parents <- IR.getLayer @IR.Succs ref
+--         case toList parents of
+--             []       -> return mempty
+--             [parent] -> do
+--                 inputs <- mapM IR.source =<< IR.inputs =<< IR.readTarget parent
+--                 let lefts = takeWhile (/= ref) inputs
+--                 spans  <- mapM readCodeSpan lefts
+--                 let leftSpan = mconcat spans
+--                 parentSpan <- readRange' =<< IR.readTarget parent
+--                 return $ parentSpan <> leftSpan
+--             _ -> error "something is no yes"
+--
+-- readRange :: ASTOp m => NodeRef -> m (Int, Int)
+-- readRange ref = do
+--     RightSpacedSpan len off <- readRange' ref
+--     RightSpacedSpan len'  _ <- readCodeSpan ref
+--     return (fromIntegral len + fromIntegral off, fromIntegral len + fromIntegral off + fromIntegral len')
 
-readRange :: ASTOp m => NodeRef -> m (Int, Int)
-readRange ref = do
-    RightSpacedSpan len off <- readRange' ref
-    RightSpacedSpan len'  _ <- readCodeSpan ref
-    return (fromIntegral len + fromIntegral off, fromIntegral len + fromIntegral off + fromIntegral len')
 
-
-readCodeSpan :: ASTOp m => NodeRef -> m (RightSpacedSpan _)
-readCodeSpan ref = do
-    codespan  <- IR.getLayer @CodeSpan ref
-    rightSpan <- liftIO $ evaluate codespan `catchAll` (\_ -> return $ RightSpacedSpan 0 0)
-    return rightSpan
+-- readCodeSpan :: ASTOp m => NodeRef -> m (RightSpacedSpan _)
+-- readCodeSpan ref = do
+--     codespan  <- IR.getLayer @CodeSpan ref
+--     rightSpan <- liftIO $ evaluate codespan `catchAll` (\_ -> return $ RightSpacedSpan 0 0)
+--     return rightSpan
 
 getNodeIdForMarker :: ASTOp m => Int -> m (Maybe NodeId)
 getNodeIdForMarker index = do
@@ -808,17 +808,17 @@ getNodeIdForMarker index = do
         _            -> return Nothing
 
 markerCodeSpan :: GraphLocation -> Int -> Empire (Int, Int)
-markerCodeSpan loc index = withGraph loc $ runASTOp $ do
-    nodeSeq <- GraphBuilder.getNodeSeq
-    case nodeSeq of
-        Just nodeSeq -> do
-            exprMap      <- IR.getLayer @CodeMarkers nodeSeq
-            let exprMap' :: Map.Map Luna.Marker NodeRef
-                exprMap' = coerce exprMap
-                Just ref = Map.lookup (fromIntegral index) exprMap'
-            codespan     <- readRange ref
-            return codespan
-        _            -> return (0,0)
+markerCodeSpan loc index = $notImplemented -- withGraph loc $ runASTOp $ do
+    -- nodeSeq <- GraphBuilder.getNodeSeq
+    -- case nodeSeq of
+    --     Just nodeSeq -> do
+    --         exprMap      <- IR.getLayer @CodeMarkers nodeSeq
+    --         let exprMap' :: Map.Map Luna.Marker NodeRef
+    --             exprMap' = coerce exprMap
+    --             Just ref = Map.lookup (fromIntegral index) exprMap'
+    --         codespan     <- readRange ref
+    --         return codespan
+    --     _            -> return (0,0)
 
 -- internal
 

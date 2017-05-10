@@ -39,6 +39,8 @@ import           Luna.Pass.Data.ExprRoots                     (ExprRoots(..))
 import           Luna.Pass.Resolution.Data.UnresolvedVars     (UnresolvedVars(..))
 import           Luna.Pass.Resolution.Data.UnresolvedConses   (UnresolvedConses(..), NegativeConses(..))
 import qualified Luna.Pass.Resolution.AliasAnalysis           as AliasAnalysis
+import           Luna.Syntax.Text.Parser.Errors               (Invalids)
+
 import qualified Luna.Syntax.Text.Parser.Parser               as Parser
 import qualified Luna.Syntax.Text.Parser.Parsing              as Parsing
 import qualified Luna.Syntax.Text.Parser.CodeSpan             as CodeSpan
@@ -56,7 +58,6 @@ type ParserLayers = '[AnyExpr // Model, AnyExprLink // Model,
                       AnyExpr // TypeLayer,
                       AnyExpr // UID, AnyExprLink // UID,
                       AnyExpr // CodeSpan.CodeSpan,
-                      AnyExpr // Parser.Parser,
                       AnyExpr // CodeMarkers]
 
 type ParserEmitters = '[New // AnyExpr, New // AnyExprLink,
@@ -67,12 +68,12 @@ data ParserPass
 type instance Abstract   ParserPass = ParserPass
 type instance Inputs     Net   ParserPass = '[AnyExpr, AnyExprLink]
 type instance Inputs     Layer ParserPass = ParserLayers
-type instance Inputs     Attr  ParserPass = '[Source, Parser.ParsedExpr, SourceTree, MarkedExprMap, Parser.ReparsingStatus]
+type instance Inputs     Attr  ParserPass = '[Invalids, Source, Parser.ParsedExpr, SourceTree, MarkedExprMap, Parser.ReparsingStatus]
 type instance Inputs     Event ParserPass = '[]
 
 type instance Outputs    Net   ParserPass = '[AnyExpr, AnyExprLink]
 type instance Outputs    Layer ParserPass = ParserLayers
-type instance Outputs    Attr  ParserPass = '[Source, Parser.ParsedExpr, SourceTree, MarkedExprMap, Parser.ReparsingStatus]
+type instance Outputs    Attr  ParserPass = '[Invalids, Source, Parser.ParsedExpr, SourceTree, MarkedExprMap, Parser.ReparsingStatus]
 type instance Outputs    Event ParserPass = ParserEmitters
 
 type instance Preserves        ParserPass = '[]
