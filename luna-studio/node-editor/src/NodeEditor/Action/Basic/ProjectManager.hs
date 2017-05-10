@@ -18,9 +18,10 @@ loadGraph location = do
     Batch.getProgram
 
 navigateToGraph :: GraphLocation -> Command State ()
-navigateToGraph location =
-    withJustM (preuse $ workspace . traverse . currentLocation) $ \currentLoc ->
-        when (currentLoc /= location) $ loadGraph location
+navigateToGraph location = do
+    mayCurrentLoc <- preuse $ workspace . traverse . currentLocation
+    when (mayCurrentLoc /= Just location) $ do
+        loadGraph location
 
 saveCurrentLocation :: Command State ()
 saveCurrentLocation =

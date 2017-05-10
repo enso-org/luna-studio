@@ -19,5 +19,6 @@ class LunaStudioTab extends View
       =>
         @h1 "Loading ..."
 
-  getTitle:     -> path.basename(@uri)
+  # getTitle:     -> path.basename(@uri)
+  getTitle:     -> 'Node editor'
   serialize: -> {deserializer: 'LunaStudioTab', uri: @uri}

@@ -9,9 +9,8 @@ import qualified Data.DateTime                               as DT
 import           Empire.API.Data.Connection                  (dst, src)
 import qualified Empire.API.Data.Graph                       as Graph
 import           Empire.API.Data.Node                        (Node (ExpressionNode', InputSidebar', OutputSidebar'), nodeId)
-import           Empire.API.Data.NodeLoc                     (NodePath, nodeLoc, prependPath)
+import           Empire.API.Data.NodeLoc                     (NodePath, prependPath)
 import qualified Empire.API.Data.NodeLoc                     as NodeLoc
-import           Empire.API.Data.PortRef                     (AnyPortRef (InPortRef', OutPortRef'))
 import qualified Empire.API.Graph.AddConnection              as AddConnection
 import qualified Empire.API.Graph.AddNode                    as AddNode
 import qualified Empire.API.Graph.AddPort                    as AddPort
@@ -35,10 +34,9 @@ import qualified Empire.API.Graph.SetNodeExpression          as SetNodeExpressio
 import qualified Empire.API.Graph.SetNodesMeta               as SetNodesMeta
 import qualified Empire.API.Graph.SetPortDefault             as SetPortDefault
 import qualified Empire.API.Response                         as Response
-import           NodeEditor.Action.Basic                     (localAddConnection, localAddConnections, localAddExpressionNode, localAddPort,
-                                                              localMerge, localMoveNodes, localMovePort, localRemoveConnection,
-                                                              localRemoveConnections, localRemoveNodes, localRemovePort,
-                                                              localSetSearcherHints, localUpdateExpressionNode, localUpdateInputNode,
+import           NodeEditor.Action.Basic                     (localAddConnections, localMerge, localMoveNodes, localMovePort,
+                                                              localRemoveConnection, localRemoveConnections, localRemoveNodes,
+                                                              localRemovePort, localSetSearcherHints, localUpdateInputNode,
                                                               localUpdateNodeTypecheck, localUpdateOrAddExpressionNode,
                                                               localUpdateOrAddInputNode, localUpdateOrAddOutputNode, setNodeProfilingData,
                                                               setNodeValue, updateGraph, updateScene)
