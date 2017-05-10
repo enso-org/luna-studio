@@ -4,7 +4,6 @@ import           Data.Binary                   (Binary)
 import           Prologue
 
 import           Empire.API.Data.GraphLocation (GraphLocation)
-import           Empire.API.Data.Node          (InputSidebar)
 import           Empire.API.Data.PortRef       (OutPortRef)
 import qualified Empire.API.Graph.Request      as G
 import           Empire.API.Graph.Result       (Result)

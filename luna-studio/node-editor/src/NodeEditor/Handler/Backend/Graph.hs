@@ -203,17 +203,7 @@ handle (Event.Batch ev) = Just $ case ev of
         location        = request  ^. RemoveConnection.location
         connId          = request  ^. RemoveConnection.connId
         failure inverse = whenM (isOwnRequest requestId) $ revertRemoveConnection request inverse
-        success result  = inCurrentLocation location $ \path -> do
-            case result ^. RemoveConnection.dstNode of
-                ExpressionNode' n -> localUpdateOrAddExpressionNode $ convert (path, n)
-                InputSidebar'   n -> localUpdateOrAddInputNode      $ convert (path, n)
-                OutputSidebar'  n -> localUpdateOrAddOutputNode     $ convert (path, n)
-            ownRequest <- isOwnRequest requestId
-            if ownRequest then
-                --TODO[LJK]: This is left to remind to set Confirmed flag in changes
-                return ()
-            else void $ localRemoveConnection $ prependPath path connId
-            void . localAddConnections . map (prependPath path . view src &&& prependPath path . view dst) $ result ^. RemoveConnection.newConns
+        success result  = inCurrentLocation location $ applyResult result
 
     RemoveConnectionUpdate update -> do
         inCurrentLocation (update ^. RemoveConnection.location') $ \path ->

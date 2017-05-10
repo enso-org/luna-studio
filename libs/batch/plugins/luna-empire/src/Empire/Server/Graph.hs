@@ -272,13 +272,8 @@ handleRemoveConnection = modifyGraph inverse action replyResult where
         case find (\conn -> snd conn == dst) connections of
             Nothing       -> throwError "Connection does not exist"
             Just (src, _) -> return $ RemoveConnection.Inverse src
-    action (RemoveConnection.Request location dst) = do
-        oldConns <- Set.fromList <$> Graph.getConnections location
+    action (RemoveConnection.Request location dst) = withDefaultResult location $
         Graph.disconnect location dst
-        mayDstNode <- getNodeById location $ dst ^. PortRef.dstNodeId
-        case mayDstNode of
-            Nothing      -> throwError "Connection destination does not exist"
-            Just dstNode -> RemoveConnection.Result dstNode . map convert . filter (flip Set.notMember oldConns) <$> Graph.getConnections location
 
 handleRemoveNodes :: Request RemoveNodes.Request -> StateT Env BusT ()
 handleRemoveNodes = modifyGraphOk inverse action where
