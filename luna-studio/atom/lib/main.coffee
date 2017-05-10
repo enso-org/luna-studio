@@ -22,6 +22,7 @@ module.exports = LunaStudio =
 
   deserializeLunaStudioTab: ({uri}) ->
     actStatus = (status) ->
+      if uri != null
         if status == 'activate'
           internal.pushInternalEvent(event: "OpenFile", uri: uri)
           atom.workspace.getActivePane().activateItem new LunaStudioTab(uri, code)
