@@ -215,12 +215,7 @@ handle (Event.Batch ev) = Just $ case ev of
         location        = request  ^. RemoveNodes.location
         nodeLocs        = request  ^. RemoveNodes.nodeLocs
         failure inverse = whenM (isOwnRequest requestId) $ revertRemoveNodes request inverse
-        success _       = inCurrentLocation location $ \path -> do
-            ownRequest <- isOwnRequest requestId
-            if ownRequest then
-                --TODO[LJK]: This is left to remind to set Confirmed flag in changes
-                return ()
-            else void $ localRemoveNodes $ prependPath path <$> nodeLocs
+        success result  = inCurrentLocation location $ applyResult result
 
     RemovePortResponse response -> handleResponse response success failure where
         requestId       = response ^. Response.requestId
