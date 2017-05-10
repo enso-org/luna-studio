@@ -135,16 +135,13 @@ handle (Event.Batch ev) = Just $ case ev of
         conns          = request  ^. AddSubgraph.connections
         failure _      = whenM (isOwnRequest requestId) $ revertAddSubgraph request
         success result = inCurrentLocation location $ \path -> do
-            forM_ (result ^. AddSubgraph.newAndUpdatedNodes) $ \case
-                ExpressionNode' n -> localUpdateOrAddExpressionNode $ convert (path, n)
-                InputSidebar'   n -> localUpdateOrAddInputNode      $ convert (path, n)
-                OutputSidebar'  n -> localUpdateOrAddOutputNode     $ convert (path, n)
-            void . localAddConnections . map (prependPath path . view src &&& prependPath path . view dst) $ result ^. AddSubgraph.newAndUpdatedConnections
-            whenM (isOwnRequest requestId) $ collaborativeModify $ map (convert . (path,) . view nodeId) $ result ^. AddSubgraph.newAndUpdatedNodes
+            applyResult result path
+            whenM (isOwnRequest requestId) $
+                collaborativeModify $ map (convert . (path,) . view nodeId) $ result ^. Result.graphUpdates . Graph.nodes
 
     AutolayoutNodesResponse response -> handleResponse response success doNothing where
         location       = response ^. Response.request . AutolayoutNodes.location
-        success result = inCurrentLocation location $ \_ -> void $ localMoveNodes result
+        success result = inCurrentLocation location $ applyResult result
 
     CollaborationUpdate update -> inCurrentLocation (update ^. CollaborationUpdate.location) $ \path -> do
         let clientId = update ^. CollaborationUpdate.clientId

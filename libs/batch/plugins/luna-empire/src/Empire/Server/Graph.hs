@@ -2,7 +2,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RankNTypes        #-}
 {-# LANGUAGE TupleSections     #-}
-{-# LANGUAGE ViewPatterns      #-}
 
 module Empire.Server.Graph where
 
@@ -107,21 +106,6 @@ saveCurrentProject loc = do
   empireNotifEnv   <- use Env.empireNotif
   projectRoot      <- use Env.projectRoot
   void $ liftIO $ Empire.runEmpire empireNotifEnv currentEmpireEnv $ Persistence.saveLocation projectRoot loc
-
-data Expr = Expression        Text
-          | Function   (Maybe Text)
-          | Module     (Maybe Text)
-          | Input      (Maybe Text)
-          | Output     (Maybe Text)
-
-parseExpr :: Text -> Expr
-parseExpr (stripPrefix "module " -> Just name) = Module   $ Just name
-parseExpr (stripPrefix "in "     -> Just name) = Input    $ Just name
-parseExpr (stripPrefix "out "    -> Just name) = Output   $ Just name
-parseExpr "module"                             = Module     Nothing
-parseExpr "in"                                 = Input      Nothing
-parseExpr "out"                                = Output     Nothing
-parseExpr expr                                 = Expression expr
 
 forceTC :: GraphLocation -> StateT Env BusT ()
 forceTC location = do
@@ -252,30 +236,19 @@ handleAddPort = modifyGraph defInverse action replyResult where
 
 handleAddSubgraph :: Request AddSubgraph.Request -> StateT Env BusT ()
 handleAddSubgraph = modifyGraph defInverse action replyResult where
-    action (AddSubgraph.Request location nodes connections) = do
-        oldNodes <- Map.fromList . map (view Node.nodeId &&& id) <$> getAllNodes location
-        oldConns <- Map.fromList . map (snd &&& id) <$> Graph.getConnections location
+    action (AddSubgraph.Request location nodes connections) = withDefaultResult location $
         Graph.addSubgraph location nodes connections
-        newNodes <- getAllNodes location
-        newConns <- Graph.getConnections location
-        let resNodes = filter (\n -> Just n /= Map.lookup (n ^. Node.nodeId) oldNodes) newNodes
-            resConns = filter (\c -> Just c /= Map.lookup (snd c)            oldConns) newConns
-        return $ AddSubgraph.Result resNodes $ map convert resConns
 
 handleAutolayoutNodes :: Request AutolayoutNodes.Request -> StateT Env BusT ()
 handleAutolayoutNodes = modifyGraph inverse action replyResult where
-    action (AutolayoutNodes.Request location nodeLocs) = do
-        Graph nodes connections _ _ _ <- Graph.getGraph location
-        let updates = autolayoutNodes (convert <$> nodeLocs) nodes connections --TODO[PM -> MM] Use NodeLoc instead of NodeId
-        mapM_ (uncurry $ Graph.setNodePosition location) updates
-        let nidToNlMap = Map.fromList $ map (\nl -> (nl ^. NodeLoc.nodeId, nl)) nodeLocs
-        return . catMaybes . map (\(nid, meta) -> (, meta) <$> Map.lookup nid nidToNlMap) $ updates
     inverse (AutolayoutNodes.Request location nodeLocs) = do
         let getNlAndPos :: NodeLoc -> Empire (Maybe (NodeLoc, Position))
             getNlAndPos nl = do
                 mayMeta <- Graph.getNodeMeta location $ convert nl --TODO[PM -> MM] Use NodeLoc instead of NodeId
                 return $ (nl,) . view NodeMeta.position <$> mayMeta
         AutolayoutNodes.Inverse . catMaybes <$> mapM getNlAndPos nodeLocs
+    action (AutolayoutNodes.Request location nodeLocs) = withDefaultResult location $
+        Graph.autolayoutNodes location (convert <$> nodeLocs) --TODO[PM -> MM] Use NodeLoc instead of NodeId
 
 handleDumpGraphViz :: Request DumpGraphViz.Request -> StateT Env BusT ()
 handleDumpGraphViz = modifyGraphOk defInverse action where
