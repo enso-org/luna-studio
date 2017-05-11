@@ -132,6 +132,7 @@ runASTOp pass = runPass inits pass where
     inits = do
         setAttr (getTypeDesc @SourceTree)        $ (mempty :: SourceTree)
         setAttr (getTypeDesc @MarkedExprMap)     $ (mempty :: MarkedExprMap)
+        setAttr (getTypeDesc @Invalids)          $ (mempty :: Invalids)
         setAttr (getTypeDesc @Source)            $ (error "Data not provided: Source")
         setAttr (getTypeDesc @Parser.ParsedExpr) $ (error "Data not provided: ParsedExpr")
 

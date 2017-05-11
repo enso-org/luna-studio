@@ -1,3 +1,4 @@
+{-# LANGUAGE LambdaCase          #-}
 {-# LANGUAGE OverloadedStrings   #-}
 {-# LANGUAGE TypeApplications    #-}
 {-# LANGUAGE ScopedTypeVariables #-}
@@ -20,6 +21,7 @@ import           Prologue (convert, unwrap', mempty, wrap', wrap)
 import           Control.Monad.Catch          (catchAll)
 import           Data.Char                    (isUpper)
 import           Data.List                    (partition)
+import qualified Data.Map                     as Map
 import qualified Data.Text                    as Text
 
 import           Empire.ASTOp                    (ASTOp, runPass)
@@ -33,9 +35,10 @@ import           Empire.Data.Parser              (ParserPass)
 import           Empire.API.Data.PortDefault     (PortDefault (..), PortValue (..))
 
 import           Data.TypeDesc                   (getTypeDesc)
+import qualified Luna.Builtin.Data.Function      as Function (importRooted)
 import qualified Luna.IR                         as IR
 import           Luna.Syntax.Text.Parser.Errors  (Invalids)
-import qualified Luna.Syntax.Text.Parser.Marker  as Parser (MarkedExprMap)
+import qualified Luna.Syntax.Text.Parser.Marker  as Parser (MarkedExprMap(..))
 import qualified Luna.Syntax.Text.Parser.Parser  as Parser
 import qualified Luna.Syntax.Text.Parser.Parsing as Parsing
 import qualified Luna.Syntax.Text.Source         as Source
@@ -68,12 +71,21 @@ runUnitParser code = do
           IR.setAttr (getTypeDesc @Parser.ReparsingStatus) $ (error "Data not provided: ReparsingStatus")
         run = runPass @ParserPass inits
     run $ do
-        let protoFunc = (\body -> uncurry Parsing.seqLines body)
-        Parsing.parsingPassM (protoFunc <$> Parsing.discoverBlock Parsing.lineExpr) `catchAll` (\e -> throwM $ ParserException e)
+        Parsing.parsingPassM Parsing.unit' `catchAll` (\e -> throwM $ ParserException e)
         res     <- IR.getAttr @Parser.ParsedExpr
-        exprMap <- IR.getAttr @Parser.MarkedExprMap
-        IR.putLayer @CodeMarkers (unwrap' res) exprMap
-        return (unwrap' res, exprMap)
+        funRoot@(IR.Rooted _ funExpr) <- IR.matchExpr (unwrap' res) $ \case
+            IR.Unit _ _ cls -> do
+                klass <- IR.source cls
+                IR.matchExpr klass $ \case
+                    IR.ClsASG _ _ (main : _) -> do
+                        main' <- IR.source main
+                        IR.matchExpr main' $ \case
+                            IR.ASGFunction _ rootedIR -> return rootedIR
+        translator <- Function.importRooted funRoot
+        exprMap    <- unwrap' <$> IR.getAttr @Parser.MarkedExprMap
+        let transMap = Parser.MarkedExprMap $ Map.map translator exprMap
+        IR.putLayer @CodeMarkers (translator funExpr) transMap
+        return (translator funExpr, transMap)
 
 runUnitReparser :: Text.Text -> NodeRef -> Command Graph (NodeRef, Parser.MarkedExprMap, Parser.ReparsingStatus)
 runUnitReparser code oldExpr = do
@@ -87,23 +99,33 @@ runUnitReparser code oldExpr = do
           IR.setAttr (getTypeDesc @Parser.ReparsingStatus) $ (error "Data not provided: ReparsingStatus")
         run = runPass @ParserPass inits
     run $ do
-        do
+        (expr, exprMap) <- do
             gidMapOld <- IR.getLayer @CodeMarkers oldExpr
 
             -- parsing new file and updating updated analysis
-            let protoFunc = (\body -> uncurry Parsing.seqLines body)
-            Parsing.parsingPassM (protoFunc <$> Parsing.discoverBlock Parsing.lineExpr) `catchAll` (\e -> throwM $ ParserException e)
-            gidMap    <- IR.getAttr @Parser.MarkedExprMap
+            Parsing.parsingPassM Parsing.unit' `catchAll` (\e -> throwM $ ParserException e)
+            res       <- IR.getAttr @Parser.ParsedExpr
+            funRoot@(IR.Rooted _ funExpr) <- IR.matchExpr (unwrap' res) $ \case
+                IR.Unit _ _ cls -> do
+                    klass <- IR.source cls
+                    IR.matchExpr klass $ \case
+                        IR.ClsASG _ _ (main : _) -> do
+                            main' <- IR.source main
+                            IR.matchExpr main' $ \case
+                                IR.ASGFunction _ rootedIR -> return rootedIR
+            translator <- Function.importRooted funRoot
+            exprMap    <- unwrap' <$> IR.getAttr @Parser.MarkedExprMap
+            let transMap = Parser.MarkedExprMap $ Map.map translator exprMap
 
             -- Preparing reparsing status
-            rs        <- Parsing.cmpMarkedExprMaps gidMapOld gidMap
+            rs        <- Parsing.cmpMarkedExprMaps gidMapOld transMap
             IR.putAttr @Parser.ReparsingStatus (wrap rs)
+            return (translator funExpr, transMap)
 
-        res     <- IR.getAttr @Parser.ParsedExpr
         exprMap <- IR.getAttr @Parser.MarkedExprMap
         rs      <- IR.getAttr @Parser.ReparsingStatus
-        IR.putLayer @CodeMarkers (unwrap' res) exprMap
-        return (unwrap' res, exprMap, rs)
+        IR.putLayer @CodeMarkers (expr) exprMap
+        return (expr, exprMap, rs)
 
 runParser :: Text.Text -> Command Graph (NodeRef, Parser.MarkedExprMap)
 runParser expr = do

@@ -44,11 +44,12 @@ spec :: Spec
 spec = around withChannels $ do
     describe "file loading" $ do
         it "parses unit" $ \env -> do
-            let code = [r|pi «0»= 3.14
-foo «1»= a: b: a + b
-bar «2»= foo c 6
-«3»print pi
-c «4»= 3
+            let code = [r|def main:
+    pi «0»= 3.14
+    foo «1»= a: b: a + b
+    bar «2»= foo c 6
+    «3»print pi
+    c «4»= 3
 |]
             res <- evalEmp env $ do
                 Library.createLibrary Nothing "TestPath" code
@@ -77,30 +78,32 @@ c «4»= 3
                     , (outPortRef (c ^. Node.nodeId)  [], inPortRef (bar ^. Node.nodeId)  [Port.Arg 0])
                     ]
         it "shows proper changes to expressions" $ \env -> do
-            let code = [r|pi «0»= 3.14
+            let code = [r|def main:
+    pi «0»= 3.14
 
-foo «1»= a: b: a + b
+    foo «1»= a: b: a + b
 
-c «2»= 4
-bar «3»= foo 8 c
+    c «2»= 4
+    bar «3»= foo 8 c
 |]
             res <- evalEmp env $ do
                 Library.createLibrary Nothing "TestPath" code
                 let loc = GraphLocation "TestPath" $ Breadcrumb []
                 Graph.withGraph loc $ Graph.loadCode code
-                Graph.substituteCode "TestPath" 59 59 "3" (Just 60)
+                Graph.substituteCode "TestPath" 85 85 "3" (Just 86)
             withResult res $ \(coerce -> Just (rs :: [Parser.ReparsingChange])) -> do
                 let unchanged = filter (\x -> case x of Parser.UnchangedExpr{} -> True; _ -> False) rs
                     changed   = filter (\x -> case x of Parser.ChangedExpr{} -> True; _ -> False) rs
                 length unchanged `shouldBe` 3
                 length changed `shouldBe` 1
         it "does not duplicate nodes on edit" $ \env -> do
-            let code = [r|pi «0»= 3.14
+            let code = [r|def main:
+    pi «0»= 3.14
 
-foo «1»= a: b: a + b
+    foo «1»= a: b: a + b
 
-c «2»= 4
-bar «3»= foo 8 c
+    c «2»= 4
+    bar «3»= foo 8 c
 |]
             res <- evalEmp env $ do
                 Library.createLibrary Nothing "TestPath" code
@@ -123,19 +126,20 @@ bar «3»= foo 8 c
                       (outPortRef (cNode ^. Node.nodeId) [], inPortRef (bar ^. Node.nodeId) [Port.Arg 1])
                     ]
         it "double modification gives proper value" $ \env -> do
-            let code = [r|pi «0»= 3.14
+            let code = [r|def main:
+    pi «0»= 3.14
 
-foo «1»= a: b: a + b
+    foo «1»= a: b: a + b
 
-c «2»= 4
-bar «3»= foo 8 c
+    c «2»= 4
+    bar «3»= foo 8 c
 |]
             res <- evalEmp env $ do
                 Library.createLibrary Nothing "TestPath" code
                 let loc = GraphLocation "TestPath" $ Breadcrumb []
                 Graph.withGraph loc $ Graph.loadCode code
-                Graph.substituteCode "TestPath" 43 43 "3" (Just 44)
-                Graph.substituteCode "TestPath" 43 43 "3" (Just 44)
+                Graph.substituteCode "TestPath" 65 65 "3" (Just 66)
+                Graph.substituteCode "TestPath" 65 65 "3" (Just 66)
                 Graph.getGraph loc
             withResult res $ \graph -> do
                 let Graph.Graph nodes connections _ _ _ = graph
@@ -149,19 +153,20 @@ bar «3»= foo 8 c
                       (outPortRef (cNode ^. Node.nodeId) [], inPortRef (bar ^. Node.nodeId) [Port.Arg 1])
                     ]
         it "modifying two expressions give proper values" $ \env -> do
-            let code = [r|pi «0»= 3.14
+            let code = [r|def main:
+    pi «0»= 3.14
 
-foo «1»= a: b: a + b
+    foo «1»= a: b: a + b
 
-c «2»= 4
-bar «3»= foo 8 c
+    c «2»= 4
+    bar «3»= foo 8 c
 |]
             res <- evalEmp env $ do
                 Library.createLibrary Nothing "TestPath" code
                 let loc = GraphLocation "TestPath" $ Breadcrumb []
                 Graph.withGraph loc $ Graph.loadCode code
-                Graph.substituteCode "TestPath" 43 43 "3" (Just 44)
-                Graph.substituteCode "TestPath" 59 59 "1" (Just 60)
+                Graph.substituteCode "TestPath" 65 65 "3" (Just 66)
+                Graph.substituteCode "TestPath" 85 85 "1" (Just 86)
                 Graph.getGraph loc
             withResult res $ \graph -> do
                 let Graph.Graph nodes connections _ _ _ = graph
@@ -176,18 +181,19 @@ bar «3»= foo 8 c
                       (outPortRef (cNode ^. Node.nodeId) [], inPortRef (bar ^. Node.nodeId) [Port.Arg 1])
                     ]
         it "adding an expression works" $ \env -> do
-            let code = [r|pi «0»= 3.14
+            let code = [r|def main:
+    pi «0»= 3.14
 
-foo «1»= a: b: a + b
+    foo «1»= a: b: a + b
 
-c «2»= 4
-bar «3»= foo 8 c
+    c «2»= 4
+    bar «3»= foo 8 c
 |]
             res <- evalEmp env $ do
                 Library.createLibrary Nothing "TestPath" code
                 let loc = GraphLocation "TestPath" $ Breadcrumb []
                 Graph.withGraph loc $ Graph.loadCode code
-                Graph.substituteCode "TestPath" 35 35 "d «4»= 10" (Just 36)
+                Graph.substituteCode "TestPath" 53 53 "    d «4»= 10" (Just 36)
                 Graph.getGraph loc
             withResult res $ \graph -> do
                 let Graph.Graph nodes connections _ _ _ = graph
@@ -199,19 +205,18 @@ bar «3»= foo 8 c
                       (outPortRef (c ^. Node.nodeId) [], inPortRef (bar ^. Node.nodeId) [Port.Arg 1])
                     ]
         it "unparseable expression does not sabotage whole file" $ \env -> do
-            let code = [r|pi «0»= 3.14
-
-foo «1»= a: b: a + b
-
-c «2»= 4
-bar «3»= foo 8 c
+            let code = [r|def main:
+    pi «0»= 3.14
+    foo «1»= a: b: a + b
+    c «2»= 4
+    bar «3»= foo 8 c
 |]
             res <- evalEmp env $ do
                 Library.createLibrary Nothing "TestPath" code
                 let loc = GraphLocation "TestPath" $ Breadcrumb []
                 Graph.withGraph loc $ Graph.loadCode code
-                Graph.substituteCode "TestPath" 8 12 ")" (Just 8)
-                Graph.substituteCode "TestPath" 8 9 "5" (Just 8)
+                Graph.substituteCode "TestPath" 22 26 ")" (Just 26)
+                Graph.substituteCode "TestPath" 22 23 "5" (Just 23)
                 Graph.getGraph loc
             withResult res $ \graph -> do
                 let Graph.Graph nodes connections _ _ _ = graph
@@ -226,9 +231,10 @@ bar «3»= foo 8 c
                     ]
     describe "code spans" $ do
         xit "pi <0>= 3.14" $ \env -> do
-            let code = [r|«0»print 3.14
-«1»delete root
-«2»suspend computer
+            let code = [r|def main:
+    «0»print 3.14
+    «1»delete root
+    «2»suspend computer
 |]
             res <- evalEmp env $ do
                 Library.createLibrary Nothing "TestPath" code
@@ -239,10 +245,11 @@ bar «3»= foo 8 c
             withResult res $ \span -> do
                 return ()
         xit "shows proper expressions ranges" $ \env -> do
-            let code = [r|pi «0»= 3.14
-foo «1»= a: b: a + b
-c «2»= 4
-bar «3»= foo 8 c
+            let code = [r|def main:
+    pi «0»= 3.14
+    foo «1»= a: b: a + b
+    c «2»= 4
+    bar «3»= foo 8 c
 |]
             res <- evalEmp env $ do
                 Library.createLibrary Nothing "TestPath" code
@@ -267,10 +274,11 @@ bar «3»= foo 8 c
             withResult res $ \code -> do
                 code `shouldBe` "node1 «0»= 5\n"
         it "assigns nodeids to marked expressions" $ \env -> do
-            let code = [r|pi «0»= 3.14
-foo «1»= a: b: a + b
-c «2»= 4
-bar «3»= foo 8 c
+            let code = [r|def main:
+    pi «0»= 3.14
+    foo «1»= a: b: a + b
+    c «2»= 4
+    bar «3»= foo 8 c
 |]
             res <- evalEmp env $ do
                 Library.createLibrary Nothing "TestPath" code
@@ -280,10 +288,11 @@ bar «3»= foo 8 c
             withResult res $ \ids -> do
                 ids `shouldSatisfy` (all isJust)
         it "adds one node to existing file" $ \env -> do
-            let code = [r|pi «0»= 3.14
-foo «1»= a: b: a + b
-c «2»= 4
-bar «3»= foo 8 c
+            let code = [r|def main:
+    pi «0»= 3.14
+    foo «1»= a: b: a + b
+    c «2»= 4
+    bar «3»= foo 8 c
 |]
             u1 <- mkUUID
             res <- evalEmp env $ do
@@ -297,17 +306,19 @@ bar «3»= foo 8 c
                 Graph.addNode loc u1 "4" (NodeMeta (Position.fromTuple (10, 50)) False)
                 Graph.getCode loc
             withResult res $ \code -> do
-                code `shouldBe` [r|pi «0»= 3.14
-foo «1»= a: b: a + b
-c «2»= 4
-bar «3»= foo 8 c
-node1 «4»= 4
+                code `shouldBe` [r|def main:
+    pi «0»= 3.14
+    foo «1»= a: b: a + b
+    c «2»= 4
+    bar «3»= foo 8 c
+    node1 «4»= 4
 |]
         it "adds one node to existing file and updates it" $ \env -> do
-            let code = [r|pi «0»= 3.14
-foo «1»= a: b: a + b
-c «2»= 4
-bar «3»= foo 8 c
+            let code = [r|def main:
+    pi «0»= 3.14
+    foo «1»= a: b: a + b
+    c «2»= 4
+    bar «3»= foo 8 c
 |]
             u1 <- mkUUID
             res <- evalEmp env $ do
@@ -322,14 +333,16 @@ bar «3»= foo 8 c
                 Graph.setNodeExpression loc u1 "5"
                 Graph.getCode loc
             withResult res $ \code -> do
-                code `shouldBe` [r|pi «0»= 3.14
-foo «1»= a: b: a + b
-c «2»= 4
-bar «3»= foo 8 c
-node1 «4»= 5
+                code `shouldBe` [r|def main:
+    pi «0»= 3.14
+    foo «1»= a: b: a + b
+    c «2»= 4
+    bar «3»= foo 8 c
+    node1 «4»= 5
 |]
         it "lambda in code can be entered" $ \env -> do
-            let code = [r|foo «0»= a: a|]
+            let code = [r|def main:
+foo «0»= a: a|]
             u1 <- mkUUID
             u2 <- mkUUID
             res <- evalEmp env $ do
@@ -345,10 +358,11 @@ node1 «4»= 5
                 nodes `shouldBe` []
                 connections `shouldSatisfy` (not . null)
         it "lex" $ \env -> do
-            let code = [r|pi «0»= 3.14
-foo «1»= a: b: a + b
-c «2»= 4
-bar «3»= foo 8 c
+            let code = [r|def main:
+    pi «0»= 3.14
+    foo «1»= a: b: a + b
+    c «2»= 4
+    bar «3»= foo 8 c
 |]
             let tokens = Lexer.lexer code
             tokens `shouldSatisfy` (not . null)

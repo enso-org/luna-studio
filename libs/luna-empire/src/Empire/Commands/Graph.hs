@@ -614,7 +614,6 @@ openFile path = do
     nodes     <- getNodes loc
     conns     <- getConnections loc
     let positions = Autolayout.autolayoutNodes nodeIds nodes conns
-    liftIO $ print positions >> IO.hFlush IO.stdout
     mapM_ (uncurry $ setNodePosition loc) positions
 
 typecheck :: GraphLocation -> Empire ()
@@ -701,11 +700,14 @@ loadCode :: Text -> Command Graph [NodeId]
 loadCode code | Text.null code = return []
 loadCode code = do
     (ref, exprMap) <- ASTParse.runUnitParser code
-    nodeIds <- runASTOp $ forM (coerce exprMap :: Map.Map Luna.Marker NodeRef) $ insertNode
+    nodeIds <- runASTOp $ forM (Map.elems $ (coerce exprMap :: Map.Map Luna.Marker NodeRef)) $ \e -> do
+        nodeId <- insertNode e
+        return (nodeId, e)
     Graph.breadcrumbHierarchy . BH._ToplevelParent . BH.topBody .= Just ref
     Graph.breadcrumbHierarchy . BH.body .= ref
     runAliasAnalysis
-    return $ Map.elems nodeIds
+    runASTOp $ forM nodeIds $ \(n, e) -> putChildrenIntoHierarchy n e
+    return $ map fst nodeIds
 
 nodeLineById :: ASTOp m => NodeId -> m (Maybe Int)
 nodeLineById nodeId = do

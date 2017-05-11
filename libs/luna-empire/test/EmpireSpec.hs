@@ -415,8 +415,9 @@ spec = around withChannels $ parallel $ do
                 node ^. Node.expression `shouldBe` "a + b"
                 connections `shouldSatisfy` ((== 3) . length)
         it "changes expression to anonymous node" $ \env -> do
-            let code = [r|«0»print 3.14
-«1»print 3.1414
+            let code = [r|def main:
+    «0»print 3.14
+    «1»print 3.1414
 |]
             res <- evalEmp env $ do
                 createLibrary Nothing "TestPath" code
