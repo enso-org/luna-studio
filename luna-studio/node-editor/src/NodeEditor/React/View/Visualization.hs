@@ -30,6 +30,10 @@ import           NodeEditor.React.Model.NodeEditor          (NodeEditor)
 import qualified NodeEditor.React.Model.NodeEditor          as NodeEditor
 import           NodeEditor.React.Store                     (Ref, dispatch)
 import qualified NodeEditor.React.View.Style                as Style
+import System.IO.Unsafe (unsafePerformIO)
+
+traceShowMToStdout :: (Show a, Monad m) => a -> m ()
+traceShowMToStdout v = unsafePerformIO $ print v >> return (return ())
 
 viewName, objNameVis, objNameShortVal :: JSString
 viewName        = "visualization"
@@ -116,8 +120,8 @@ fromJsonValue :: String -> ReactElementM ViewEventHandler ()
 fromJsonValue value = case (Aeson.decode $ ByteString.pack value :: Maybe Aeson.Value) of
     --Just (Aeson.Array  a) -> div_ [ "className" $= Style.prefix "table-scroll" ] $ table_ $ rows $ keyed $ Vector.toList a
     Just (Aeson.Array  a) -> div_ [ "className" $= Style.prefix "table-scroll"
-                                  , onScroll    $ \e -> [stopPropagation e, preventDefault e]
-                                  ] $ table_ $ rows $ keyed $ Vector.toList a
+                                  , onScroll    $ \e -> traceShowMToStdout "Hello Leszke" >> [stopPropagation e, preventDefault e]
+                                  ] $ table_ $ tbody_ $ rows $ keyed $ Vector.toList a
     Just (Aeson.Object _) -> mempty
     Just (Aeson.String _) -> mempty
     Just (Aeson.Number _) -> mempty
