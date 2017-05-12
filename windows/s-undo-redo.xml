@@ -1,0 +1,21 @@
+
+<configuration>
+  <id>s-undo-redo</id>
+  <name>Luna Undo-Redo Service</name>
+  <description>Undo-Redo support for Luna</description>
+  <executable>%BASE%\..\dist\bin\undo-redo.exe</executable>
+
+  <onfailure action="restart" delay="1 sec"/>
+  <onfailure action="restart" delay="1 sec"/>
+  <onfailure action="restart" delay="1 sec"/>
+  <onfailure action="restart" delay="10 sec"/>
+
+  <resetfailure>1 hour</resetfailure>
+
+  <env name="LUNAROOT" value="%BASE%\..\env" />
+  <env name="PATH" value="%PATH%;C:\Users\vm\AppData\Roaming\ghcjs\x86_64-mingw32-0.2.1.9007019-8.0.1\mingw\bin" />
+
+  <logpath>%BASE%\logs</logpath>
+  <log mode="roll">
+  </log>
+</configuration>
