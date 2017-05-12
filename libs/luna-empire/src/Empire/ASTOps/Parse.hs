@@ -1,9 +1,11 @@
-{-# LANGUAGE OverloadedStrings   #-}
-{-# LANGUAGE TypeApplications    #-}
-{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE ExistentialQuantification #-}
+{-# LANGUAGE OverloadedStrings         #-}
+{-# LANGUAGE TypeApplications          #-}
+{-# LANGUAGE ScopedTypeVariables       #-}
+{-# LANGUAGE StandaloneDeriving        #-}
 
 module Empire.ASTOps.Parse (
-    ParserException
+    SomeParserException
   , parseExpr
   , parsePortDefault
   , runParser
@@ -40,13 +42,14 @@ import qualified Luna.Syntax.Text.Parser.Parsing as Parsing
 import qualified Luna.Syntax.Text.Source         as Source
 import qualified Luna.IR.Term.Literal            as Lit
 
-data ParserException e = ParserException e
-    deriving (Show)
+data SomeParserException = forall e. Exception e => SomeParserException e
 
-instance Exception e => Exception (ParserException e) where
+deriving instance Show SomeParserException
+
+instance Exception SomeParserException where
     toException = astExceptionToException
     fromException = astExceptionFromException
-    displayException (ParserException e) = "ParserException (" ++ displayException e ++ ")"
+    displayException exc = case exc of SomeParserException e -> "SomeParserException (" ++ displayException e ++ ")"
 
 parseExpr :: ASTOp m => String -> m NodeRef
 parseExpr s = do
@@ -67,7 +70,7 @@ runUnitParser code = do
         run = runPass @ParserPass inits
     run $ do
         let protoFunc = (\body -> uncurry Parsing.seqLines body)
-        Parsing.parsingBase (protoFunc <$> Parsing.discoverBlock Parsing.lineExpr) `catchAll` (\e -> throwM $ ParserException e)
+        Parsing.parsingBase (protoFunc <$> Parsing.discoverBlock Parsing.lineExpr) `catchAll` (\e -> throwM $ SomeParserException e)
         res     <- IR.getAttr @Parser.ParsedExpr
         exprMap <- IR.getAttr @Parser.MarkedExprMap
         IR.putLayer @CodeMarkers (unwrap' res) exprMap
@@ -88,7 +91,7 @@ runUnitReparser code oldExpr = do
 
             -- parsing new file and updating updated analysis
             let protoFunc = (\body -> uncurry Parsing.seqLines body)
-            Parsing.parsingBase (protoFunc <$> Parsing.discoverBlock Parsing.lineExpr) `catchAll` (\e -> throwM $ ParserException e)
+            Parsing.parsingBase (protoFunc <$> Parsing.discoverBlock Parsing.lineExpr) `catchAll` (\e -> throwM $ SomeParserException e)
             gidMap    <- IR.getAttr @Parser.MarkedExprMap
 
             -- Preparing reparsing status
@@ -111,7 +114,7 @@ runParser expr = do
             IR.setAttr (getTypeDesc @Parser.ReparsingStatus) $ (error "Data not provided: ReparsingStatus")
         run = runPass @ParserPass inits
     run $ do
-        Parsing.parsingBase Parsing.expr `catchAll` (\e -> throwM $ ParserException e)
+        Parsing.parsingBase Parsing.expr `catchAll` (\e -> throwM $ SomeParserException e)
         res     <- IR.getAttr @Parser.ParsedExpr
         exprMap <- IR.getAttr @Parser.MarkedExprMap
         IR.putLayer @CodeMarkers (unwrap' res) exprMap
@@ -131,7 +134,7 @@ runReparser expr oldExpr = do
             gidMapOld <- IR.getLayer @CodeMarkers oldExpr
 
             -- parsing new file and updating updated analysis
-            Parsing.parsingBase Parsing.nonAssignmentExpr `catchAll` (\e -> throwM $ ParserException e)
+            Parsing.parsingBase Parsing.nonAssignmentExpr `catchAll` (\e -> throwM $ SomeParserException e)
             gidMap    <- IR.getAttr @Parser.MarkedExprMap
 
             -- Preparing reparsing status

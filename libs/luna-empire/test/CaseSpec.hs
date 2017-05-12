@@ -24,6 +24,7 @@ import qualified Empire.ASTOps.Parse           as Parser
 import           Empire.ASTOps.Print           (printExpression)
 import qualified Empire.ASTOps.Read            as ASTRead
 import qualified Empire.Commands.AST           as AST (isTrivialLambda, dumpGraphViz)
+import           Empire.Commands.Breadcrumb    (BreadcrumbDoesNotExistException)
 import qualified Empire.Commands.Graph         as Graph (addNode, connect, getGraph, getNodes,
                                                          getConnections, removeNodes, withGraph,
                                                          renameNode, disconnect, addPort, movePort,
@@ -39,9 +40,9 @@ import           Empire.Empire                   (InterpreterEnv(..))
 import           Prologue                        hiding (mapping, toList, (|>))
 import           OCI.IR.Class                    (exprs, links)
 
-import           Test.Hspec (Spec, around, describe, expectationFailure, it, parallel,
+import           Test.Hspec (Spec, Selector, around, describe, expectationFailure, it, parallel,
                              shouldBe, shouldContain, shouldSatisfy, shouldMatchList,
-                             shouldStartWith, xit, xdescribe)
+                             shouldStartWith, shouldThrow, xit, xdescribe)
 
 import           EmpireUtils
 
@@ -125,11 +126,9 @@ spec = around withChannels $ id $ do
                 {---     ]-}
         it "cannot enter map node in map (x:x)" $ \env -> do
             u1 <- mkUUID
-            res <- evalEmp env $ do
-                Graph.addNode top u1 "map x:x" def
-                Graph.getGraph (top |> u1)
-            case res of
-                Left err -> case stripPrefix "Breadcrumb" err of
-                    Just _ -> return ()
-                    _      -> expectationFailure err
-                Right _  -> expectationFailure "should throw"
+            let res = evalEmp env $ do
+                    Graph.addNode top u1 "map x:x" def
+                    Graph.getGraph (top |> u1)
+            let breadcrumbException :: Selector BreadcrumbDoesNotExistException
+                breadcrumbException = const True
+            res `shouldThrow` breadcrumbException

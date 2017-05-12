@@ -12,6 +12,7 @@ dependencies:
   - either
   - ekg
   - errors
+  - exceptions
   - filemanip
   - filepath
   - groom

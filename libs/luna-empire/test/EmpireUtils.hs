@@ -50,17 +50,17 @@ import           Prologue                      hiding (mapping, toList, (|>))
 import           Test.Hspec                    (expectationFailure)
 
 
-runEmp :: CommunicationEnv -> (Given GraphLocation => Empire a) -> IO (Either Error a, Env)
+runEmp :: CommunicationEnv -> (Given GraphLocation => Empire a) -> IO (a, Env)
 runEmp env act = runEmpire env def $ do
     _ <- createLibrary (Just "TestFile") "TestFile" ""
     let toLoc = GraphLocation "TestFile"
     give (toLoc $ Breadcrumb []) act
 
-evalEmp :: CommunicationEnv -> (Given GraphLocation => Empire a) -> IO (Either Error a)
+evalEmp :: CommunicationEnv -> (Given GraphLocation => Empire a) -> IO a
 evalEmp env act = fst <$> runEmp env act
 
 runEmp' :: CommunicationEnv -> Env -> Graph ->
-              (Given GraphLocation => Empire a) -> IO (Either Error a, Env)
+              (Given GraphLocation => Empire a) -> IO (a, Env)
 runEmp' env st newGraph act = runEmpire env st $ do
     lib <- head <$> listLibraries
     withLibrary (lib ^. Library.path) $ Library.body .= newGraph
@@ -76,13 +76,8 @@ graphIDs loc = do
 extractGraph :: InterpreterEnv -> Graph
 extractGraph (InterpreterEnv _ _ _ g _) = g
 
-data DummyB = DummyB deriving (Show, Exception)
-
--- DummyB is only here because expectationFailure returns IO () and we need to
--- return arbitrary type from lambda
-withResult :: Either String a -> (a -> IO b) -> IO b
-withResult (Left err)  _   = expectationFailure err >> throwM DummyB
-withResult (Right res) act = act res
+withResult :: a -> (a -> IO b) -> IO b
+withResult res act = act res
 
 top :: Given GraphLocation => GraphLocation
 top = given

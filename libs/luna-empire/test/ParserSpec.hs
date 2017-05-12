@@ -7,13 +7,14 @@ import           Empire.API.Data.PortDefault (PortDefault(Expression))
 import qualified Empire.API.Data.Node         as Node
 import qualified Empire.API.Data.Port         as Port
 import           Empire.API.Data.LabeledTree  (LabeledTree (..))
-import           Empire.API.Data.TypeRep       (TypeRep(TStar))
-import qualified Empire.Commands.Graph         as Graph
+import           Empire.API.Data.TypeRep      (TypeRep(TStar))
+import           Empire.ASTOps.Parse          (SomeParserException)
+import qualified Empire.Commands.Graph        as Graph
 
 import           Prologue                   hiding ((|>))
 
-import           Test.Hspec (Spec, around, describe, it, xit, expectationFailure,
-                             shouldBe, shouldMatchList, shouldStartWith)
+import           Test.Hspec (Spec, Selector, around, describe, it, xit, expectationFailure,
+                             shouldBe, shouldMatchList, shouldStartWith, shouldThrow)
 
 import EmpireUtils
 
@@ -23,10 +24,10 @@ spec = around withChannels $ do
     describe "parser" $ do
         it "shows error on parse error" $ \env -> do
             u1 <- mkUUID
-            res <- evalEmp env $ Graph.addNode top u1 ")()#%&&@^#&$....1foo0x3r2" def
-            case res of
-                Right _ -> expectationFailure "should throw exception"
-                Left err -> err `shouldStartWith` "ParserException"
+            let res = evalEmp env $ Graph.addNode top u1 ")()#%&&@^#&$....1foo0x3r2" def
+            let parserException :: Selector SomeParserException
+                parserException = const True
+            res `shouldThrow` parserException
         it "parses 123" $ \env -> do
             u1 <- mkUUID
             res <- evalEmp env $ Graph.addNode top u1 "123" def

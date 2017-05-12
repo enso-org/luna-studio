@@ -1,6 +1,7 @@
 {-# LANGUAGE FlexibleContexts  #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RankNTypes        #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TemplateHaskell   #-}
 
 module Empire.Server where
@@ -9,6 +10,7 @@ import           Control.Concurrent               (forkIO)
 import           Control.Concurrent.STM           (STM)
 import           Control.Concurrent.STM.TChan     (TChan, newTChan, readTChan, tryPeekTChan)
 import           Control.Monad                    (forever)
+import           Control.Monad.Catch              (try)
 import           Control.Monad.State              (StateT, evalStateT)
 import           Control.Monad.STM                (atomically)
 import qualified Data.Binary                      as Bin
@@ -27,6 +29,7 @@ import qualified Empire.API.Control.EmpireStarted as EmpireStarted
 import           Empire.API.Data.AsyncUpdate      (AsyncUpdate (..))
 import           Empire.API.Data.GraphLocation    (GraphLocation)
 import qualified Empire.API.Topic                 as Topic
+import           Empire.Data.AST                  (SomeASTException)
 import           Empire.Data.Graph                (Graph, ast)
 import qualified Empire.Data.Graph                as Graph
 
@@ -136,19 +139,21 @@ loadAllProjects = do
   projects <- liftIO $ projectFiles projectRoot
   loadedProjects <- flip mapM projects $ \proj -> do
     currentEmpireEnv <- use Env.empireEnv
-    (result, newEmpireEnv) <- liftIO $ Empire.runEmpire empireNotifEnv currentEmpireEnv $ Graph.openFile proj
+    result <- liftIO $ try $ Empire.runEmpire empireNotifEnv currentEmpireEnv $ Graph.openFile proj
     case result of
-        Left err -> do
-          logger Logger.error $ "Cannot load project [" <> proj <> "]: " <> err
+        Left (exc :: SomeASTException) -> do
+          logger Logger.error $ "Cannot load project [" <> proj <> "]: " <> (displayException exc)
           return Nothing
-        Right _ -> do
+        Right (_, newEmpireEnv) -> do
           Env.empireEnv .= newEmpireEnv
           return $ Just ()
 
   when ((catMaybes loadedProjects) == []) $ do
     currentEmpireEnv <- use Env.empireEnv
-    (_, newEmpireEnv) <- liftIO $ Empire.runEmpire empireNotifEnv currentEmpireEnv $  Persistence.createDefaultProject
-    Env.empireEnv .= newEmpireEnv
+    result <- liftIO $ try $ Empire.runEmpire empireNotifEnv currentEmpireEnv $  Persistence.createDefaultProject
+    case result of
+        Right (_, newEmpireEnv) -> Env.empireEnv .= newEmpireEnv
+        Left (exc :: SomeASTException) -> return ()
 
 
 

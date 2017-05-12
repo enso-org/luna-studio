@@ -1,12 +1,13 @@
-{-# LANGUAGE FlexibleContexts  #-}
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE RankNTypes        #-}
-{-# LANGUAGE TupleSections     #-}
+{-# LANGUAGE FlexibleContexts    #-}
+{-# LANGUAGE OverloadedStrings   #-}
+{-# LANGUAGE RankNTypes          #-}
+{-# LANGUAGE TupleSections       #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 
 module Empire.Server.Graph where
 
 import           Control.Arrow                      ((&&&))
-import           Control.Monad.Error                (throwError)
+import           Control.Monad.Catch                (handle, try)
 import           Control.Monad.State                (StateT)
 import qualified Data.Binary                        as Bin
 import           Data.ByteString                    (ByteString)
@@ -76,6 +77,7 @@ import qualified Empire.API.Response                as Response
 import qualified Empire.API.Topic                   as Topic
 import           Empire.ASTOp                       (runASTOp)
 import qualified Empire.ASTOps.Print                as Print
+import           Empire.Data.AST                    (SomeASTException, astExceptionToException, astExceptionFromException)
 import           Empire.Commands.Autolayout         (autolayoutNodes)
 import qualified Empire.Commands.Graph              as Graph
 import           Empire.Commands.GraphBuilder       (buildConnections, buildGraph, buildNodes, getNodeName)
@@ -130,15 +132,17 @@ modifyGraph inverse action success origReq@(Request uuid guiID request') = do
     request          <- liftIO $ webGUIHack request'
     currentEmpireEnv <- use Env.empireEnv
     empireNotifEnv   <- use Env.empireNotif
-    (inv', _)        <- liftIO $ Empire.runEmpire empireNotifEnv currentEmpireEnv $ inverse request
+    inv'             <- liftIO $ try $ Empire.runEmpire empireNotifEnv currentEmpireEnv $ inverse request
     case inv' of
-        Left err  -> replyFail logger err origReq (Response.Error err)
-        Right inv -> do
+        Left (exc :: SomeASTException) ->
+            let err = displayException exc in replyFail logger err origReq (Response.Error err)
+        Right (inv, _) -> do
             let invStatus = Response.Ok inv
-            (result, newEmpireEnv) <- liftIO $ Empire.runEmpire empireNotifEnv currentEmpireEnv $ action request
+            result <- liftIO $ try $ Empire.runEmpire empireNotifEnv currentEmpireEnv $ action request
             case result of
-                Left  err    -> replyFail logger err origReq invStatus
-                Right result -> do
+                Left  (exc :: SomeASTException) ->
+                    let err = displayException exc in replyFail logger err origReq invStatus
+                Right (result, newEmpireEnv) -> do
                     Env.empireEnv .= newEmpireEnv
                     success origReq inv result
                     saveCurrentProject $ request ^. G.location
@@ -225,9 +229,10 @@ handleAddConnection = modifyGraph inverse action replyResult where
 handleAddNode :: Request AddNode.Request -> StateT Env BusT ()
 handleAddNode = modifyGraph defInverse action replyResult where
     action (AddNode.Request location nl@(NodeLoc _ nodeId) expression nodeMeta connectTo) = withDefaultResult location $ do
-        Graph.addNodeCondTC (isNothing connectTo) location nodeId expression nodeMeta
+        Graph.addNodeCondTC False location nodeId expression nodeMeta
         forM_ connectTo $ \nid ->
-            catchAll (void $ Graph.connectCondTC True location (getSrcPortByNodeId nid) (getDstPortByNodeLoc nl)) (const $ return ())
+            handle (\(e :: SomeASTException) -> return ()) (void $ Graph.connectCondTC False location (getSrcPortByNodeId nid) (getDstPortByNodeLoc nl))
+        Graph.withGraph location $ Graph.runTC location False
 
 handleAddPort :: Request AddPort.Request -> StateT Env BusT ()
 handleAddPort = modifyGraph defInverse action replyResult where
@@ -265,19 +270,33 @@ handleMovePort = modifyGraph defInverse action replyResult where
     action (MovePort.Request location portRef newPortPos) = withDefaultResult location $
         Graph.movePort location portRef newPortPos
 
+data ConnectionDoesNotExistException = ConnectionDoesNotExistException InPortRef
+    deriving (Show)
+
+instance Exception ConnectionDoesNotExistException where
+    fromException = astExceptionFromException
+    toException = astExceptionToException
+
+data DestinationDoesNotExistException = DestinationDoesNotExistException InPortRef
+    deriving (Show)
+
+instance Exception DestinationDoesNotExistException where
+    fromException = astExceptionFromException
+    toException = astExceptionToException
+
 handleRemoveConnection :: Request RemoveConnection.Request -> StateT Env BusT ()
 handleRemoveConnection = modifyGraph inverse action replyResult where
     inverse (RemoveConnection.Request location dst) = do
         connections <- Graph.withGraph location $ runASTOp buildConnections
         case find (\conn -> snd conn == dst) connections of
-            Nothing       -> throwError "Connection does not exist"
+            Nothing       -> throwM $ ConnectionDoesNotExistException dst
             Just (src, _) -> return $ RemoveConnection.Inverse src
     action (RemoveConnection.Request location dst) = do
         oldConns <- Set.fromList <$> Graph.getConnections location
         Graph.disconnect location dst
         mayDstNode <- getNodeById location $ dst ^. PortRef.dstNodeId
         case mayDstNode of
-            Nothing      -> throwError "Connection destination does not exist"
+            Nothing      -> throwM $ DestinationDoesNotExistException dst
             Just dstNode -> RemoveConnection.Result dstNode . map convert . filter (flip Set.notMember oldConns) <$> Graph.getConnections location
 
 handleRemoveNodes :: Request RemoveNodes.Request -> StateT Env BusT ()
@@ -292,6 +311,13 @@ handleRemoveNodes = modifyGraphOk inverse action where
         return $ RemoveNodes.Inverse nodes $ map (uncurry Connection) conns
     action (RemoveNodes.Request location nodeLocs)  = Graph.removeNodes location $ convert <$> nodeLocs --TODO[PM -> MM] Use NodeLoc instead of NodeId
 
+data SidebarDoesNotExistException = SidebarDoesNotExistException
+    deriving (Show)
+
+instance Exception SidebarDoesNotExistException where
+    fromException = astExceptionFromException
+    toException = astExceptionToException
+
 handleRemovePort :: Request RemovePort.Request -> StateT Env BusT ()
 handleRemovePort = modifyGraph inverse action replyResult where
     inverse (RemovePort.Request location portRef) = do
@@ -301,7 +327,7 @@ handleRemovePort = modifyGraph inverse action replyResult where
     action (RemovePort.Request location portRef) = do
         Graph.removePort location portRef
         maySidebar <- view GraphAPI.inputSidebar <$> Graph.getGraph location
-        maybe (throwError "Sidebar does not exist") return maySidebar
+        maybe (throwM SidebarDoesNotExistException) return maySidebar
 
 
 handleRenameNode :: Request RenameNode.Request -> StateT Env BusT ()
@@ -358,10 +384,10 @@ handleTypecheck req@(Request _ _ request) = do
     let location = request ^. TypeCheck.location
     currentEmpireEnv <- use Env.empireEnv
     empireNotifEnv   <- use Env.empireNotif
-    (result, newEmpireEnv) <- liftIO $ Empire.runEmpire empireNotifEnv currentEmpireEnv $ Graph.typecheck location
+    result           <- liftIO $ try $ Empire.runEmpire empireNotifEnv currentEmpireEnv $ Graph.typecheck location
     case result of
-        Left err -> replyFail logger err req (Response.Error err)
-        Right _  -> Env.empireEnv .= newEmpireEnv
+        Left (exc :: SomeASTException) -> let err = displayException exc in replyFail logger err req (Response.Error err)
+        Right (_, newEmpireEnv) -> Env.empireEnv .= newEmpireEnv
     return ()
 
 -- FIXME[MM]: it's wrong but it works

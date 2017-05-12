@@ -21,6 +21,7 @@ import qualified Data.Text               as Text
 import           Data.Text.IO            as Text
 import           Empire.Prelude
 
+import           Empire.Data.AST         (astExceptionToException, astExceptionFromException)
 import           Empire.Data.Graph       as Graph (defaultGraph)
 import           Empire.Data.Library     (Library)
 import qualified Empire.Data.Library     as Library
@@ -49,13 +50,20 @@ listLibraries = do
     files <- use Empire.activeFiles
     return $ Map.elems files
 
+data LibraryNotFoundException = LibraryNotFoundException FilePath
+    deriving (Show)
+
+instance Exception LibraryNotFoundException where
+    toException = astExceptionToException
+    fromException = astExceptionFromException
+
 withLibrary :: FilePath -> Command Library a -> Empire a
 withLibrary file cmd = do
     zoom (Empire.activeFiles . at file) $ do
         libMay <- get
         notifEnv <- ask
         case libMay of
-            Nothing  -> throwError $ "Library " ++ (show file) ++ " does not exist."
+            Nothing  -> throwM $ LibraryNotFoundException file -- $ "Library " ++ (show file) ++ " does not exist."
             Just lib -> do
                 let result = (_2 %~ Just) <$> Empire.runEmpire notifEnv lib cmd
                 Empire.empire $ const $ const result

@@ -17,7 +17,6 @@ import           Empire.Prelude
 
 import           Control.Concurrent.STM.TChan  (TChan)
 import           Control.Exception             (try)
-import           Control.Monad.Except          (ExceptT (..), MonadError, runExceptT, throwError)
 import           Control.Monad.Reader
 import           Control.Monad.State
 import           Data.Map.Lazy                 (Map)
@@ -55,24 +54,16 @@ defaultInterpreterEnv = do
     g <- defaultGraph
     return $ InterpreterEnv def def def g []
 
-type CommandStack s = ExceptT Error (ReaderT CommunicationEnv (StateT s IO))
-type Command s a = ExceptT Error (ReaderT CommunicationEnv (StateT s IO)) a
+type CommandStack s = ReaderT CommunicationEnv (StateT s IO)
+type Command s a = ReaderT CommunicationEnv (StateT s IO) a
 
 type Empire a = Command Env a
 
-runEmpire :: CommunicationEnv -> s -> Command s a -> IO (Either Error a, s)
-runEmpire notif st cmd = do
-    res <- try $ runStateT (runReaderT (runExceptT cmd) notif) st
-    case res of
-        Left (exc :: SomeASTException) -> return (Left (displayException exc), st)
-        Right (eea, st')               -> return (eea, st')
+runEmpire :: CommunicationEnv -> s -> Command s a -> IO (a, s)
+runEmpire notif st cmd = runStateT (runReaderT cmd notif) st
 
-execEmpire :: CommunicationEnv -> s -> Command s a -> IO (Either Error a)
+execEmpire :: CommunicationEnv -> s -> Command s a -> IO a
 execEmpire = fmap fst .:. runEmpire
 
-empire :: (CommunicationEnv -> s -> IO (Either Error a, s)) -> Command s a
-empire = ExceptT . ReaderT . fmap StateT
-
-infixr 4 <?!>
-(<?!>) :: MonadError Error m => m (Maybe a) -> Error -> m a
-(<?!>) cmd err = cmd >>= maybe (throwError err) return
+empire :: (CommunicationEnv -> s -> IO (a, s)) -> Command s a
+empire = ReaderT . fmap StateT

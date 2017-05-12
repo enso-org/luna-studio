@@ -46,6 +46,7 @@ module Empire.Commands.Graph
     , getNodeIdForMarker
     , withTC
     , withGraph
+    , runTC
     ) where
 
 import           Control.Exception             (evaluate)
@@ -136,6 +137,7 @@ addNodeCondTC True  loc uuid expr meta = addNode loc uuid expr meta
 addNodeCondTC False loc uuid expr meta = do
     (nearestNode, node) <- withGraph loc $ addNodeNoTC loc uuid expr Nothing meta
     addToCode loc nearestNode $ node ^. Node.nodeId
+    resendCode loc
     return node
 
 addNode :: GraphLocation -> NodeId -> Text -> NodeMeta -> Empire ExpressionNode
@@ -532,8 +534,15 @@ connectNoTC loc outPort anyPort = do
         (connection,) <$> nodeToUpdate
     return connection
 
+data SelfPortDefaultException = SelfPortDefaultException InPortRef
+    deriving (Show)
+
+instance Exception SelfPortDefaultException where
+    fromException = astExceptionFromException
+    toException = astExceptionToException
+
 getPortDefault :: GraphLocation -> InPortRef -> Empire (Maybe PortDefault)
-getPortDefault loc (InPortRef  _ (Self : _))                   = throwError "Cannot set default value on self port"
+getPortDefault loc port@(InPortRef  _ (Self : _))              = throwM $ SelfPortDefaultException port
 getPortDefault loc (InPortRef  (NodeLoc _ nodeId) (Arg x : _)) = withGraph loc $ runASTOp $ flip GraphBuilder.getInPortDefault x =<< GraphUtils.getASTTarget nodeId
 
 setPortDefault :: GraphLocation -> InPortRef -> Maybe PortDefault -> Empire ()
@@ -630,7 +639,7 @@ substituteCode path start end code cursor = do
     withTC loc True $ reloadCode loc newCode
 
 reloadCode :: GraphLocation -> Text -> Command Graph (Maybe Parser.ReparsingStatus)
-reloadCode loc code = handle (\(_e :: ASTParse.ParserException SomeException) -> return Nothing) $ do
+reloadCode loc code = handle (\(_e :: ASTParse.SomeParserException) -> return Nothing) $ do
     expr <- preuse $ Graph.breadcrumbHierarchy . BH.body
     case expr of
         Just e -> do
