@@ -229,8 +229,7 @@ handleAddNode = modifyGraph defInverse action replyResult where
     action (AddNode.Request location@(GraphLocation.GraphLocation file _) nl@(NodeLoc _ nodeId) expression nodeMeta connectTo) = withDefaultResult location $ do
         Graph.addNodeCondTC False location nodeId expression nodeMeta
         forM_ connectTo $ \nid ->
-            catch (void $ Graph.connectCondTC False location (getSrcPortByNodeId nid) (getDstPortByNodeLoc nl)) (\(e :: SomeASTException) -> return ())
-        Graph.withGraph (GraphLocation.GraphLocation file $ Breadcrumb []) $ Graph.runTC location False
+            Graph.connectCondTC False location (getSrcPortByNodeId nid) (getDstPortByNodeLoc nl)
 
 handleAddPort :: Request AddPort.Request -> StateT Env BusT ()
 handleAddPort = modifyGraph defInverse action replyResult where
