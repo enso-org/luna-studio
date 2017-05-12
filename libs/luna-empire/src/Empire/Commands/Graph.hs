@@ -44,6 +44,7 @@ module Empire.Commands.Graph
     , loadCode
     , markerCodeSpan
     , getNodeIdForMarker
+    , runTC
     , withTC
     , withGraph
     ) where

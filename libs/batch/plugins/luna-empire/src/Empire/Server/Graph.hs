@@ -1,7 +1,8 @@
-{-# LANGUAGE FlexibleContexts  #-}
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE RankNTypes        #-}
-{-# LANGUAGE TupleSections     #-}
+{-# LANGUAGE FlexibleContexts    #-}
+{-# LANGUAGE OverloadedStrings   #-}
+{-# LANGUAGE RankNTypes          #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TupleSections       #-}
 
 module Empire.Server.Graph where
 
@@ -81,6 +82,7 @@ import qualified Empire.Commands.Graph              as Graph
 import           Empire.Commands.GraphBuilder       (buildConnections, buildGraph, buildNodes, getNodeName)
 import qualified Empire.Commands.GraphUtils         as GraphUtils
 import qualified Empire.Commands.Persistence        as Persistence
+import           Empire.Data.AST                    (SomeASTException)
 import           Empire.Empire                      (Empire)
 import qualified Empire.Empire                      as Empire
 import           Empire.Env                         (Env)
@@ -224,10 +226,11 @@ handleAddConnection = modifyGraph inverse action replyResult where
 
 handleAddNode :: Request AddNode.Request -> StateT Env BusT ()
 handleAddNode = modifyGraph defInverse action replyResult where
-    action (AddNode.Request location nl@(NodeLoc _ nodeId) expression nodeMeta connectTo) = withDefaultResult location $ do
-        Graph.addNodeCondTC (isNothing connectTo) location nodeId expression nodeMeta
+    action (AddNode.Request location@(GraphLocation.GraphLocation file _) nl@(NodeLoc _ nodeId) expression nodeMeta connectTo) = withDefaultResult location $ do
+        Graph.addNodeCondTC False location nodeId expression nodeMeta
         forM_ connectTo $ \nid ->
-            catchAll (void $ Graph.connectCondTC True location (getSrcPortByNodeId nid) (getDstPortByNodeLoc nl)) (const $ return ())
+            catch (void $ Graph.connectCondTC False location (getSrcPortByNodeId nid) (getDstPortByNodeLoc nl)) (\(e :: SomeASTException) -> return ())
+        Graph.withGraph (GraphLocation.GraphLocation file $ Breadcrumb []) $ Graph.runTC location False
 
 handleAddPort :: Request AddPort.Request -> StateT Env BusT ()
 handleAddPort = modifyGraph defInverse action replyResult where
@@ -304,7 +307,7 @@ handleRenameNode = modifyGraph inverse action replyResult where
         return $ RenameNode.Inverse $ maybe "" id  prevName
     action (RenameNode.Request location nodeId name) = withDefaultResult location $
         Graph.renameNode location nodeId name
-    
+
 handleRenamePort :: Request RenamePort.Request -> StateT Env BusT ()
 handleRenamePort = modifyGraph inverse action replyResult where --FIXME[pm] implement this!
     inverse (RenamePort.Request location portRef name) = do
