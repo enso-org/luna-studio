@@ -7,20 +7,20 @@ module EmpireSpec (spec) where
 import           Data.Foldable                   (toList)
 import           Data.List                       (find, stripPrefix)
 import qualified Data.Map                        as Map
-import           Empire.API.Data.Breadcrumb      (Breadcrumb (..))
-import qualified Empire.API.Data.Graph           as Graph
-import           Empire.API.Data.GraphLocation   (GraphLocation (..))
-import           Empire.API.Data.LabeledTree     (LabeledTree (..))
-import           Empire.API.Data.Node            (NodeId)
-import qualified Empire.API.Data.Node            as Node
-import           Empire.API.Data.NodeLoc         (NodeLoc (..))
-import           Empire.API.Data.NodeMeta        (NodeMeta (..))
-import           Empire.API.Data.Port            (InPorts (..), OutPorts (..))
-import qualified Empire.API.Data.Port            as Port
-import           Empire.API.Data.PortDefault     (PortDefault (Expression))
-import           Empire.API.Data.PortRef         (AnyPortRef (..), InPortRef (..), OutPortRef (..))
-import qualified Empire.API.Data.Position        as Position
-import           Empire.API.Data.TypeRep         (TypeRep (TCons, TLam, TStar, TVar))
+import           LunaStudio.Data.Breadcrumb      (Breadcrumb (..))
+import qualified LunaStudio.Data.Graph           as Graph
+import           LunaStudio.Data.GraphLocation   (GraphLocation (..))
+import           LunaStudio.Data.LabeledTree     (LabeledTree (..))
+import           LunaStudio.Data.Node            (NodeId)
+import qualified LunaStudio.Data.Node            as Node
+import           LunaStudio.Data.NodeLoc         (NodeLoc (..))
+import           LunaStudio.Data.NodeMeta        (NodeMeta (..))
+import           LunaStudio.Data.Port            (InPorts (..), OutPorts (..))
+import qualified LunaStudio.Data.Port            as Port
+import           LunaStudio.Data.PortDefault     (PortDefault (Expression))
+import           LunaStudio.Data.PortRef         (AnyPortRef (..), InPortRef (..), OutPortRef (..))
+import qualified LunaStudio.Data.Position        as Position
+import           LunaStudio.Data.TypeRep         (TypeRep (TCons, TLam, TStar, TVar))
 import           Empire.ASTOp                    (runASTOp)
 import qualified Empire.ASTOps.Deconstruct       as ASTDeconstruct
 import qualified Empire.ASTOps.Parse             as Parser

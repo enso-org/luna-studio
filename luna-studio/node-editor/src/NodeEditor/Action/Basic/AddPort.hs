@@ -2,10 +2,10 @@ module NodeEditor.Action.Basic.AddPort where
 
 import           Common.Prelude
 import qualified Data.Text                               as Text
-import           Empire.API.Data.LabeledTree             (LabeledTree (LabeledTree))
-import           Empire.API.Data.Port                    (Port (Port))
-import           Empire.API.Data.PortRef                 (InPortRef, OutPortRef (OutPortRef), srcPortId)
-import           Empire.API.Data.TypeRep                 (TypeRep (TStar))
+import           LunaStudio.Data.LabeledTree             (LabeledTree (LabeledTree))
+import           LunaStudio.Data.Port                    (Port (Port))
+import           LunaStudio.Data.PortRef                 (InPortRef, OutPortRef (OutPortRef), srcPortId)
+import           LunaStudio.Data.TypeRep                 (TypeRep (TStar))
 import           NodeEditor.Action.Basic.AddConnection   (localAddConnection)
 import           NodeEditor.Action.Basic.UpdateNode      (localUpdateInputNode)
 import qualified NodeEditor.Action.Batch                 as Batch

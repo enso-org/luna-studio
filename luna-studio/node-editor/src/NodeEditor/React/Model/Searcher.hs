@@ -1,10 +1,10 @@
 module NodeEditor.React.Model.Searcher where
 
 import           Common.Prelude
-import           Empire.API.Data.Node           (ExpressionNode)
-import           Empire.API.Data.NodeLoc        (NodeLoc)
-import           Empire.API.Data.PortRef        (OutPortRef)
-import           Empire.API.Data.Position       (Position)
+import           LunaStudio.Data.Node           (ExpressionNode)
+import           LunaStudio.Data.NodeLoc        (NodeLoc)
+import           LunaStudio.Data.PortRef        (OutPortRef)
+import           LunaStudio.Data.Position       (Position)
 import           Text.ScopeSearcher.QueryResult (QueryResult)
 import qualified Text.ScopeSearcher.QueryResult as Result
 

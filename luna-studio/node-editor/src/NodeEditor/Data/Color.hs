@@ -15,7 +15,7 @@ import qualified Data.Color              as Color
 import           Data.Convert            (Convertible (convert))
 import           Data.Fixed              (mod')
 import           Data.Hashable           (hash)
-import           Empire.API.Data.TypeRep (TypeRep (..))
+import           LunaStudio.Data.TypeRep (TypeRep (..))
 import           Common.Prelude
 
 

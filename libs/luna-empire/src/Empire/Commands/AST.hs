@@ -15,10 +15,10 @@ import           Data.Maybe                        (catMaybes, fromMaybe)
 import qualified Data.Text                         as Text
 import           Empire.Prelude
 
-import qualified Empire.API.Data.Error             as APIError
-import           Empire.API.Data.Node              (NodeId)
-import           Empire.API.Data.NodeMeta          (NodeMeta)
-import           Empire.API.Data.TypeRep           (TypeRep)
+import qualified LunaStudio.Data.Error             as APIError
+import           LunaStudio.Data.Node              (NodeId)
+import           LunaStudio.Data.NodeMeta          (NodeMeta)
+import           LunaStudio.Data.TypeRep           (TypeRep)
 import           Empire.Data.AST                   (NodeRef, NotLambdaException(..), NotUnifyException(..))
 import           Empire.Data.Layers                (Meta, TypeLayer)
 

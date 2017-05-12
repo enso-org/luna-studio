@@ -1,25 +1,25 @@
 module NodeEditor.Action.Basic.Revert where
 
 import           Common.Prelude
-import           Empire.API.Data.Connection                (dst, src)
-import           Empire.API.Data.Node                      (nodeId)
-import           Empire.API.Data.NodeLoc                   (NodeLoc, prependPath)
-import           Empire.API.Data.NodeMeta                  (displayResult, position)
-import           Empire.API.Data.PortRef                   (AnyPortRef (InPortRef'), OutPortRef (OutPortRef))
-import qualified Empire.API.Graph.AddConnection            as AddConnection
-import qualified Empire.API.Graph.AddNode                  as AddNode
-import qualified Empire.API.Graph.AddPort                  as AddPort
-import qualified Empire.API.Graph.AddSubgraph              as AddSubgraph
-import qualified Empire.API.Graph.MovePort                 as MovePort
-import qualified Empire.API.Graph.RemoveConnection         as RemoveConnection
-import qualified Empire.API.Graph.RemoveNodes              as RemoveNodes
-import qualified Empire.API.Graph.RemovePort               as RemovePort
-import qualified Empire.API.Graph.RenameNode               as RenameNode
-import qualified Empire.API.Graph.RenamePort               as RenamePort
-import qualified Empire.API.Graph.SetNodeExpression        as SetNodeExpression
-import qualified Empire.API.Graph.SetNodesMeta             as SetNodesMeta
-import qualified Empire.API.Graph.SetPortDefault           as SetPortDefault
-import qualified Empire.API.Response                       as Response
+import           LunaStudio.Data.Connection                (dst, src)
+import           LunaStudio.Data.Node                      (nodeId)
+import           LunaStudio.Data.NodeLoc                   (NodeLoc, prependPath)
+import           LunaStudio.Data.NodeMeta                  (displayResult, position)
+import           LunaStudio.Data.PortRef                   (AnyPortRef (InPortRef'), OutPortRef (OutPortRef))
+import qualified LunaStudio.API.Graph.AddConnection            as AddConnection
+import qualified LunaStudio.API.Graph.AddNode                  as AddNode
+import qualified LunaStudio.API.Graph.AddPort                  as AddPort
+import qualified LunaStudio.API.Graph.AddSubgraph              as AddSubgraph
+import qualified LunaStudio.API.Graph.MovePort                 as MovePort
+import qualified LunaStudio.API.Graph.RemoveConnection         as RemoveConnection
+import qualified LunaStudio.API.Graph.RemoveNodes              as RemoveNodes
+import qualified LunaStudio.API.Graph.RemovePort               as RemovePort
+import qualified LunaStudio.API.Graph.RenameNode               as RenameNode
+import qualified LunaStudio.API.Graph.RenamePort               as RenamePort
+import qualified LunaStudio.API.Graph.SetNodeExpression        as SetNodeExpression
+import qualified LunaStudio.API.Graph.SetNodesMeta             as SetNodesMeta
+import qualified LunaStudio.API.Graph.SetPortDefault           as SetPortDefault
+import qualified LunaStudio.API.Response                       as Response
 import           NodeEditor.Action.Basic.AddConnection     (localAddConnection, localAddConnections)
 import           NodeEditor.Action.Basic.AddPort           (localAddPort)
 import           NodeEditor.Action.Basic.AddSubgraph       (localAddSubgraph)
@@ -72,7 +72,7 @@ revertRemoveConnection (RemoveConnection.Request loc dst') (Response.Ok (RemoveC
     inCurrentLocation loc $ \path -> void $ localAddConnection (prependPath path src') (prependPath path dst')
 revertRemoveConnection (RemoveConnection.Request _loc _dst) (Response.Error _msg) = panic
 
---TODO[LJK]: Force Empire.API.Data.Connection to be instance of wrapped to make functions like this cleaner
+--TODO[LJK]: Force LunaStudio.Data.Connection to be instance of wrapped to make functions like this cleaner
 revertRemoveNodes :: RemoveNodes.Request -> Response.Status RemoveNodes.Inverse -> Command State ()
 revertRemoveNodes (RemoveNodes.Request loc _) (Response.Ok (RemoveNodes.Inverse nodes conns)) =
     inCurrentLocation loc $ \path -> do

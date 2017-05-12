@@ -17,10 +17,10 @@ import           Data.Maybe                         (isJust)
 import           Empire.Prelude
 import           Prologue                           (preview)
 
-import           Empire.API.Data.Node               (NodeId)
-import qualified Empire.API.Data.PortRef            as PortRef
-import           Empire.API.Data.Port               as Port
-import qualified Empire.API.Data.NodeLoc            as NodeLoc
+import           LunaStudio.Data.Node               (NodeId)
+import qualified LunaStudio.Data.PortRef            as PortRef
+import           LunaStudio.Data.Port               as Port
+import qualified LunaStudio.Data.NodeLoc            as NodeLoc
 import           Empire.ASTOp                       (ASTOp, match)
 import           Empire.Data.AST                    (NodeRef, EdgeRef, NotUnifyException(..),
                                                      NotLambdaException(..), PortDoesNotExistException (..),

@@ -3,12 +3,12 @@ module NodeEditor.Action.State.Model.Connection where
 
 import           Common.Prelude
 import           Control.Monad.Trans.Maybe                  (MaybeT (MaybeT), runMaybeT)
-import           Empire.API.Data.PortRef                    (AnyPortRef, InPortRef, OutPortRef)
-import qualified Empire.API.Data.PortRef                    as PortRef
-import           Empire.API.Data.Position                   (Position, distanceSquared)
+import           LunaStudio.Data.Geometry                   (closestPointOnLine, closestPointOnLineParam, doesSegmentsIntersects)
+import           LunaStudio.Data.PortRef                    (AnyPortRef, InPortRef, OutPortRef)
+import qualified LunaStudio.Data.PortRef                    as PortRef
+import           LunaStudio.Data.Position                   (Position, distanceSquared)
 import           NodeEditor.Action.Command                  (Command)
 import           NodeEditor.Action.State.NodeEditor         (getConnection, getNode, getNodeEditor, getPosConnection, getPosConnections)
-import           NodeEditor.Data.Geometry                   (closestPointOnLine, closestPointOnLineParam, doesSegmentsIntersects)
 import           NodeEditor.React.Model.Connection          (Connection (Connection), ConnectionId, HalfConnection (HalfConnection),
                                                              connectionId, connectionMode, containsNode, halfConnectionMode)
 import qualified NodeEditor.React.Model.Connection          as Model

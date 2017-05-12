@@ -6,8 +6,8 @@ module NodeEditor.Handler.Backend.Common
 
 import qualified Data.Aeson                 as JSON (ToJSON)
 import qualified Data.UUID.Types            as UUID (toString)
-import qualified Empire.API.Response        as Response
-import qualified Empire.API.Topic           as Topic
+import qualified LunaStudio.API.Response        as Response
+import qualified LunaStudio.API.Topic           as Topic
 import qualified JS.Debug                   as Debug
 import           NodeEditor.Action.Command (Command)
 import           NodeEditor.Action.UUID    (isOwnRequest, unregisterRequest)

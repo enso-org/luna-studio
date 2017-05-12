@@ -15,10 +15,10 @@ module NodeEditor.Action.Connect
 import           Common.Prelude
 import           Control.Monad.Trans.Maybe                  (MaybeT (MaybeT), runMaybeT)
 import           Data.ScreenPosition                        (ScreenPosition)
-import qualified Empire.API.Data.Connection                 as ConnectionAPI
-import           Empire.API.Data.Port                       (AnyPortId (InPortId'), InPortIndex (Self))
-import           Empire.API.Data.PortRef                    (AnyPortRef (InPortRef', OutPortRef'))
-import qualified Empire.API.Data.PortRef                    as PortRef
+import qualified LunaStudio.Data.Connection                 as ConnectionAPI
+import           LunaStudio.Data.Port                       (AnyPortId (InPortId'), InPortIndex (Self))
+import           LunaStudio.Data.PortRef                    (AnyPortRef (InPortRef', OutPortRef'))
+import qualified LunaStudio.Data.PortRef                    as PortRef
 import qualified JS.GoogleAnalytics                         as GA
 import           NodeEditor.Action.Basic                    (connect, localAddConnection, localRemovePort, removeConnection,
                                                              updateAllPortsSelfVisibility)

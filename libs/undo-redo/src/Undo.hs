@@ -28,13 +28,13 @@ import           Util                              as Util
 
 import           Data.UUID as UUID (nil)
 import           Data.UUID.V4 as UUID (nextRandom)
-import qualified Empire.API.Topic                  as Topic
-import           Empire.API.Response               (Response (..))
-import qualified Empire.API.Response               as Response
-import qualified Empire.API.Request                as Request
-import           Empire.API.Request                (Request (..))
-import qualified Empire.API.Graph.Undo             as UndoRequest
-import qualified Empire.API.Graph.Redo             as RedoRequest
+import qualified LunaStudio.API.Topic                  as Topic
+import           LunaStudio.API.Response               (Response (..))
+import qualified LunaStudio.API.Response               as Response
+import qualified LunaStudio.API.Request                as Request
+import           LunaStudio.API.Request                (Request (..))
+import qualified LunaStudio.API.Graph.Undo             as UndoRequest
+import qualified LunaStudio.API.Graph.Redo             as RedoRequest
 
 import qualified ZMQ.Bus.Bus                       as Bus
 import qualified ZMQ.Bus.Data.Flag                 as Flag

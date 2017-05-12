@@ -5,10 +5,10 @@ import           Common.Prelude
 import qualified Data.Matrix                          as Matrix
 import           Data.ScreenPosition                  (ScreenPosition (ScreenPosition))
 import qualified Data.ScreenPosition                  as ScreenPosition
-import           Empire.API.Data.Position             (Position, move, vector)
-import qualified Empire.API.Data.Position             as Position
-import           Empire.API.Data.Size                 (Size)
-import           Empire.API.Data.Vector2              (Vector2 (Vector2), x, y)
+import           LunaStudio.Data.Position             (Position, move, vector)
+import qualified LunaStudio.Data.Position             as Position
+import           LunaStudio.Data.Size                 (Size)
+import           LunaStudio.Data.Vector2              (Vector2 (Vector2), x, y)
 import           NodeEditor.Data.CameraTransformation (CameraTransformation, logicalToScreen, screenToLogical)
 import           NodeEditor.React.Model.Constants     (gridSize)
 import           NodeEditor.React.Model.Port          (InPort, OutPort, getPositionInSidebar, portId)

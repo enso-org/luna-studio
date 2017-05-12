@@ -4,37 +4,37 @@ module NodeEditor.Event.Batch where
 import           Common.Prelude
 import           Data.Aeson                             (ToJSON)
 
-import qualified Empire.API.Control.EmpireStarted       as EmpireStarted
-import qualified Empire.API.Graph.AddConnection         as AddConnection
-import qualified Empire.API.Graph.AddNode               as AddNode
-import qualified Empire.API.Graph.AddPort               as AddPort
-import qualified Empire.API.Graph.AddSubgraph           as AddSubgraph
-import qualified Empire.API.Graph.AutolayoutNodes       as AutolayoutNodes
-import qualified Empire.API.Graph.CollaborationUpdate   as CollaborationUpdate
-import qualified Empire.API.Graph.DumpGraphViz          as DumpGraphViz
-import qualified Empire.API.Graph.GetProgram            as GetProgram
-import qualified Empire.API.Graph.GetSubgraphs          as GetSubgraphs
-import qualified Empire.API.Graph.MonadsUpdate          as MonadsUpdate
-import qualified Empire.API.Graph.MovePort              as MovePort
-import qualified Empire.API.Graph.NodeResultUpdate      as NodeResultUpdate
-import qualified Empire.API.Graph.NodeTypecheckerUpdate as NodeTCUpdate
-import qualified Empire.API.Graph.Redo                  as Redo
-import qualified Empire.API.Graph.RemoveConnection      as RemoveConnection
-import qualified Empire.API.Graph.RemoveNodes           as RemoveNodes
-import qualified Empire.API.Graph.RemovePort            as RemovePort
-import qualified Empire.API.Graph.RenameNode            as RenameNode
-import qualified Empire.API.Graph.RenamePort            as RenamePort
-import qualified Empire.API.Graph.SearchNodes           as SearchNodes
-import qualified Empire.API.Graph.SetNodeExpression     as SetNodeExpression
-import qualified Empire.API.Graph.SetNodesMeta          as SetNodesMeta
-import qualified Empire.API.Graph.SetPortDefault        as SetPortDefault
-import qualified Empire.API.Graph.TypeCheck             as TypeCheck
-import qualified Empire.API.Graph.Undo                  as Undo
-import qualified Empire.API.Project.CreateProject       as CreateProject
-import qualified Empire.API.Project.ExportProject       as ExportProject
-import qualified Empire.API.Project.ImportProject       as ImportProject
-import qualified Empire.API.Project.ListProjects        as ListProjects
-import qualified Empire.API.Project.OpenProject         as OpenProject
+import qualified LunaStudio.API.Control.EmpireStarted       as EmpireStarted
+import qualified LunaStudio.API.Graph.AddConnection         as AddConnection
+import qualified LunaStudio.API.Graph.AddNode               as AddNode
+import qualified LunaStudio.API.Graph.AddPort               as AddPort
+import qualified LunaStudio.API.Graph.AddSubgraph           as AddSubgraph
+import qualified LunaStudio.API.Graph.AutolayoutNodes       as AutolayoutNodes
+import qualified LunaStudio.API.Graph.CollaborationUpdate   as CollaborationUpdate
+import qualified LunaStudio.API.Graph.DumpGraphViz          as DumpGraphViz
+import qualified LunaStudio.API.Graph.GetProgram            as GetProgram
+import qualified LunaStudio.API.Graph.GetSubgraphs          as GetSubgraphs
+import qualified LunaStudio.API.Graph.MonadsUpdate          as MonadsUpdate
+import qualified LunaStudio.API.Graph.MovePort              as MovePort
+import qualified LunaStudio.API.Graph.NodeResultUpdate      as NodeResultUpdate
+import qualified LunaStudio.API.Graph.NodeTypecheckerUpdate as NodeTCUpdate
+import qualified LunaStudio.API.Graph.Redo                  as Redo
+import qualified LunaStudio.API.Graph.RemoveConnection      as RemoveConnection
+import qualified LunaStudio.API.Graph.RemoveNodes           as RemoveNodes
+import qualified LunaStudio.API.Graph.RemovePort            as RemovePort
+import qualified LunaStudio.API.Graph.RenameNode            as RenameNode
+import qualified LunaStudio.API.Graph.RenamePort            as RenamePort
+import qualified LunaStudio.API.Graph.SearchNodes           as SearchNodes
+import qualified LunaStudio.API.Graph.SetNodeExpression     as SetNodeExpression
+import qualified LunaStudio.API.Graph.SetNodesMeta          as SetNodesMeta
+import qualified LunaStudio.API.Graph.SetPortDefault        as SetPortDefault
+import qualified LunaStudio.API.Graph.TypeCheck             as TypeCheck
+import qualified LunaStudio.API.Graph.Undo                  as Undo
+import qualified LunaStudio.API.Project.CreateProject       as CreateProject
+import qualified LunaStudio.API.Project.ExportProject       as ExportProject
+import qualified LunaStudio.API.Project.ImportProject       as ImportProject
+import qualified LunaStudio.API.Project.ListProjects        as ListProjects
+import qualified LunaStudio.API.Project.OpenProject         as OpenProject
 
 
 data Event = UnknownEvent String
@@ -56,7 +56,6 @@ data Event = UnknownEvent String
            | NodeTypecheckerUpdate                NodeTCUpdate.Update
            | RedoResponse                                 Redo.Response
            | RemoveConnectionResponse         RemoveConnection.Response
-           | RemoveConnectionUpdate           RemoveConnection.Update
            | RemoveNodesResponse                   RemoveNodes.Response
            | RemovePortResponse                     RemovePort.Response
            | RenameNodeResponse                     RenameNode.Response

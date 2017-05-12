@@ -28,8 +28,8 @@ import qualified Empire.Data.Library     as Library
 import           Empire.Data.Project     (Project)
 import qualified Empire.Data.Project     as Project
 
-import           Empire.API.Data.Library (LibraryId)
-import           Empire.API.Data.Project (ProjectId)
+import           LunaStudio.Data.Library (LibraryId)
+import           LunaStudio.Data.Project (ProjectId)
 
 import           Empire.Empire           (Command, Empire)
 import qualified Empire.Empire           as Empire

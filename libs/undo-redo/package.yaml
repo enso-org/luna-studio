@@ -13,7 +13,7 @@ dependencies:
   - ghc
   - hspec
   - lens
-  - luna-empire-api
+  - luna-studio-common
   - mtl
   - prologue
   - safe-exceptions

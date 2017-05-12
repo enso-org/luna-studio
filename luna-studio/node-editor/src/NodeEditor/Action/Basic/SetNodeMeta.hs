@@ -2,7 +2,7 @@ module NodeEditor.Action.Basic.SetNodeMeta where
 
 import           Common.Prelude
 import           Control.Monad                              (filterM)
-import           Empire.API.Data.Position                   (Position)
+import           LunaStudio.Data.Position                   (Position)
 import qualified NodeEditor.Action.Batch                    as Batch
 import           NodeEditor.Action.Command                  (Command)
 import qualified NodeEditor.Action.State.NodeEditor         as NodeEditor

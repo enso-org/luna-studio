@@ -2,7 +2,7 @@ module NodeEditor.Action.Basic.AddConnection where
 
 import           Common.Prelude
 import           Control.Monad                      (filterM)
-import           Empire.API.Data.PortRef            (AnyPortRef (InPortRef'), InPortRef, OutPortRef, dstNodeLoc, dstPortId)
+import           LunaStudio.Data.PortRef            (AnyPortRef (InPortRef'), InPortRef, OutPortRef, dstNodeLoc, dstPortId)
 import           NodeEditor.Action.Basic.UpdateNode (updatePortSelfVisibility)
 import qualified NodeEditor.Action.Batch            as Batch
 import           NodeEditor.Action.Command          (Command)

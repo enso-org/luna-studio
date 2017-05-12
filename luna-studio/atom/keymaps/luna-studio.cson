@@ -11,6 +11,7 @@
   'cmd-up'     : 'native!'
   'ctrl-a'     : 'native!'
   'ctrl-down'  : 'native!'
+  'ctrl-e'     : 'native!'
   'ctrl-l'     : 'native!'
   'ctrl-left'  : 'native!'
   'ctrl-right' : 'native!'

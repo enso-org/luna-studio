@@ -3,9 +3,9 @@ module NodeEditor.React.Event.Node where
 
 import           Common.Prelude
 import           Data.Aeson                  (FromJSON, ToJSON)
-import           Empire.API.Data.NodeLoc     (NodeLoc)
-import           Empire.API.Data.PortDefault (PortDefault)
-import           Empire.API.Data.PortRef     (InPortRef)
+import           LunaStudio.Data.NodeLoc     (NodeLoc)
+import           LunaStudio.Data.PortDefault (PortDefault)
+import           LunaStudio.Data.PortRef     (InPortRef)
 import           NodeEditor.State.Action     (InitValue)
 import           React.Flux                  (KeyboardEvent, MouseEvent)
 

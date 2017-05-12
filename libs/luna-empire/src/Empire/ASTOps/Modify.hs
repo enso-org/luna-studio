@@ -14,8 +14,8 @@ import           Data.List    (find)
 
 import           Empire.Prelude
 
-import           Empire.API.Data.Node               (NodeId)
-import qualified Empire.API.Data.Port               as Port
+import           LunaStudio.Data.Node               (NodeId)
+import qualified LunaStudio.Data.Port               as Port
 import           Empire.ASTOp                       (ASTOp, match)
 import qualified Empire.ASTOps.Builder              as ASTBuilder
 import qualified Empire.ASTOps.Deconstruct          as ASTDeconstruct

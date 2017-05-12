@@ -7,10 +7,10 @@ import           Prologue
 
 import           Control.Monad.Catch              (try)
 import           Control.Monad.State              (StateT)
-import qualified Empire.API.Library.CreateLibrary as CreateLibrary
-import qualified Empire.API.Library.ListLibraries as ListLibraries
-import           Empire.API.Request               (Request (..))
-import qualified Empire.API.Response              as Response
+import qualified LunaStudio.API.Library.CreateLibrary as CreateLibrary
+import qualified LunaStudio.API.Library.ListLibraries as ListLibraries
+import           LunaStudio.API.Request               (Request (..))
+import qualified LunaStudio.API.Response              as Response
 import qualified Empire.Commands.Library          as Library
 import           Empire.Data.AST                  (SomeASTException)
 import qualified Empire.Data.Library              as DataLibrary

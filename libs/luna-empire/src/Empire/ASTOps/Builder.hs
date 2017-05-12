@@ -11,10 +11,10 @@ import           Data.Maybe                         (isNothing)
 import           Empire.Prelude                     (stringToName)
 import           Prologue
 
-import           Empire.API.Data.Node               (NodeId)
-import           Empire.API.Data.PortRef            (OutPortRef (..))
-import           Empire.API.Data.NodeLoc            (NodeLoc (..))
-import qualified Empire.API.Data.Port               as Port
+import           LunaStudio.Data.Node               (NodeId)
+import           LunaStudio.Data.PortRef            (OutPortRef (..))
+import           LunaStudio.Data.NodeLoc            (NodeLoc (..))
+import qualified LunaStudio.Data.Port               as Port
 import           Empire.ASTOp                       (ASTOp, match)
 import           Empire.ASTOps.Deconstruct          (deconstructApp, extractArguments, dumpAccessors)
 import           Empire.ASTOps.Remove               (removeSubtree)

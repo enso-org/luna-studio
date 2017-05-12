@@ -2,9 +2,9 @@
 module Empire.Data.Library where
 
 import           Data.Text                      (Text)
-import qualified Empire.API.Data.Graph          as API (Graph)
-import qualified Empire.API.Data.Library        as API
-import qualified Empire.API.Persistence.Library as Persistence
+import qualified LunaStudio.Data.Graph          as API (Graph)
+import qualified LunaStudio.Data.Library        as API
+import qualified LunaStudio.API.Persistence.Library as Persistence
 import           Empire.Data.Graph              (Graph, defaultGraph)
 import           Empire.Prelude
 

@@ -2,16 +2,16 @@
 
 module ParserSpec (spec) where
 
-import qualified Data.Map                     as Map
-import           Empire.API.Data.PortDefault (PortDefault(Expression))
-import qualified Empire.API.Data.Node         as Node
-import qualified Empire.API.Data.Port         as Port
-import           Empire.API.Data.LabeledTree  (LabeledTree (..))
-import           Empire.API.Data.TypeRep      (TypeRep(TStar))
-import           Empire.ASTOps.Parse          (SomeParserException)
-import qualified Empire.Commands.Graph        as Graph
+import qualified Data.Map                    as Map
+import           LunaStudio.Data.PortDefault (PortDefault(Expression))
+import qualified LunaStudio.Data.Node        as Node
+import qualified LunaStudio.Data.Port        as Port
+import           LunaStudio.Data.LabeledTree (LabeledTree (..))
+import           LunaStudio.Data.TypeRep     (TypeRep(TStar))
+import           Empire.ASTOps.Parse         (SomeParserException)
+import qualified Empire.Commands.Graph       as Graph
 
-import           Prologue                   hiding ((|>))
+import           Prologue                    hiding ((|>))
 
 import           Test.Hspec (Spec, Selector, around, describe, it, xit, expectationFailure,
                              shouldBe, shouldMatchList, shouldStartWith, shouldThrow)

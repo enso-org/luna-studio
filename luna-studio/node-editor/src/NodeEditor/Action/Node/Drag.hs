@@ -9,10 +9,10 @@ module NodeEditor.Action.Node.Drag
 import           Common.Prelude
 import           Control.Arrow
 import qualified Data.Map                                   as Map
-import           Empire.API.Data.NodeLoc                    (NodeLoc)
-import           Empire.API.Data.Port                       (InPortIndex (Self))
-import           Empire.API.Data.PortRef                    (InPortRef (InPortRef), OutPortRef (OutPortRef))
-import           Empire.API.Data.Position                   (Position, move, vector)
+import           LunaStudio.Data.NodeLoc                    (NodeLoc)
+import           LunaStudio.Data.Port                       (InPortIndex (Self))
+import           LunaStudio.Data.PortRef                    (InPortRef (InPortRef), OutPortRef (OutPortRef))
+import           LunaStudio.Data.Position                   (Position, move, vector)
 import           NodeEditor.Action.Basic                    (connect, localMoveNodes, moveNodes, selectNodes, updatePortSelfVisibility)
 import           NodeEditor.Action.Command                  (Command)
 import           NodeEditor.Action.Node.Snap                (snap)

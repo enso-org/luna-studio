@@ -9,11 +9,11 @@ import           Text.Read                                  (readMaybe)
 
 import           Common.Prelude
 import           Data.ScreenPosition                        (ScreenPosition, x)
-import           Empire.API.Data.NodeLoc                    (NodeLoc)
-import qualified Empire.API.Data.NodeLoc                    as NodeLoc
-import           Empire.API.Data.PortRef                    (OutPortRef)
-import qualified Empire.API.Data.PortRef                    as PortRef
-import           Empire.API.Data.Position                   (Position)
+import           LunaStudio.Data.NodeLoc                    (NodeLoc)
+import qualified LunaStudio.Data.NodeLoc                    as NodeLoc
+import           LunaStudio.Data.PortRef                    (OutPortRef)
+import qualified LunaStudio.Data.PortRef                    as PortRef
+import           LunaStudio.Data.Position                   (Position)
 import qualified JS.GoogleAnalytics                         as GA
 import qualified JS.Searcher                                as Searcher
 import           NodeEditor.Action.Basic                    (createNode, renameNode, renamePort, setNodeExpression)

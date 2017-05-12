@@ -1,7 +1,7 @@
 module NodeEditor.Action.Basic.SearchNodes where
 
 import           Common.Prelude
-import           Empire.API.Data.Node               (ExpressionNode)
+import           LunaStudio.Data.Node               (ExpressionNode)
 import           NodeEditor.Action.Command          (Command)
 import           NodeEditor.Action.State.NodeEditor (getNodeSearcherData, modifySearcher)
 import           NodeEditor.Batch.Workspace         (nodeSearcherData)

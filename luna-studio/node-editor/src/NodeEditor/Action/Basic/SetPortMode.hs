@@ -1,6 +1,6 @@
 module NodeEditor.Action.Basic.SetPortMode where
 
-import           Empire.API.Data.PortRef             (InPortRef, OutPortRef, dstPortId, nodeLoc, srcPortId)
+import           LunaStudio.Data.PortRef             (InPortRef, OutPortRef, dstPortId, nodeLoc, srcPortId)
 import           NodeEditor.Action.Command          (Command)
 import           NodeEditor.Action.State.NodeEditor (modifyInputNode, modifyOutputNode)
 import           Common.Prelude

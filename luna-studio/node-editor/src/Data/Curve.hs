@@ -5,8 +5,8 @@ import           Common.Prelude
 import           Control.DeepSeq          (NFData)
 import           Data.Aeson               (ToJSON)
 import           Data.Timestamp           (Timestamp)
-import           Empire.API.Data.Position (Position (Position), vector)
-import           Empire.API.Data.Vector2  (scalarProduct)
+import           LunaStudio.Data.Position (Position (Position), vector)
+import           LunaStudio.Data.Vector2  (scalarProduct)
 
 
 data CurveSegment = CurveSegment { _segmentBegin :: Position

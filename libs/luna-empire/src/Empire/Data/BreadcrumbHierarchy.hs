@@ -4,8 +4,8 @@ module Empire.Data.BreadcrumbHierarchy where
 
 import           Prologue                   hiding (children)
 
-import           Empire.API.Data.Breadcrumb (Breadcrumb (..), BreadcrumbItem (..))
-import           Empire.API.Data.Node       (NodeId)
+import           LunaStudio.Data.Breadcrumb (Breadcrumb (..), BreadcrumbItem (..))
+import           LunaStudio.Data.Node       (NodeId)
 
 import           Empire.Data.AST            (NodeRef)
 

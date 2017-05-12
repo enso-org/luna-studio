@@ -4,7 +4,7 @@ module NodeEditor.Action.Port.Actions
     ) where
 
 import           Common.Prelude
-import           Empire.API.Data.PortRef            (AnyPortRef (OutPortRef'), OutPortRef, nodeLoc, srcPortId)
+import           LunaStudio.Data.PortRef            (AnyPortRef (OutPortRef'), OutPortRef, nodeLoc, srcPortId)
 import           NodeEditor.Action.Basic            (localAddPort)
 import           NodeEditor.Action.Command          (Command)
 import           NodeEditor.Action.Connect          (connectToPort, startConnecting)

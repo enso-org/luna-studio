@@ -2,18 +2,18 @@
 
 module Empire.Empire where
 
-import           Empire.Prelude                hiding (TypeRep)
-import           Empire.API.Data.AsyncUpdate   (AsyncUpdate)
-import qualified Empire.API.Data.Error         as APIError
-import           Empire.API.Data.GraphLocation (GraphLocation)
-import           Empire.API.Data.Node          (ExpressionNode, NodeId)
-import           Empire.API.Data.PortDefault   (PortValue)
-import           Empire.API.Data.Project       (ProjectId)
-import           Empire.API.Data.TypeRep       (TypeRep)
 import           Empire.Data.AST               (SomeASTException)
 import           Empire.Data.Graph             (Graph, defaultGraph)
 import           Empire.Data.Library           (Library)
+import           Empire.Prelude                hiding (TypeRep)
 import           Empire.Prelude
+import           LunaStudio.API.AsyncUpdate    (AsyncUpdate)
+import qualified LunaStudio.Data.Error         as APIError
+import           LunaStudio.Data.GraphLocation (GraphLocation)
+import           LunaStudio.Data.Node          (ExpressionNode, NodeId)
+import           LunaStudio.Data.PortDefault   (PortValue)
+import           LunaStudio.Data.Project       (ProjectId)
+import           LunaStudio.Data.TypeRep       (TypeRep)
 
 import           Control.Concurrent.STM.TChan  (TChan)
 import           Control.Exception             (try)

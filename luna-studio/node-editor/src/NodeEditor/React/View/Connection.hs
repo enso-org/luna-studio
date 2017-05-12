@@ -2,7 +2,7 @@
 module NodeEditor.React.View.Connection where
 
 import           Common.Prelude
-import           Empire.API.Data.Position          (Position, averagePosition, x, y)
+import           LunaStudio.Data.Position          (Position, averagePosition, x, y)
 import qualified NodeEditor.Event.UI               as UI
 import           NodeEditor.React.Event.Connection (ModifiedEnd (Destination, Source))
 import qualified NodeEditor.React.Event.Connection as Connection

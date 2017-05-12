@@ -6,7 +6,7 @@ import           Common.Prelude                       hiding (transform)
 import qualified Data.HashMap.Strict                  as HashMap
 import qualified Data.Matrix                          as Matrix
 import           Data.Maybe                           (mapMaybe)
-import qualified Empire.API.Data.MonadPath            as MonadPath
+import qualified LunaStudio.Data.MonadPath            as MonadPath
 import           JS.Scene                             (sceneId)
 import qualified NodeEditor.Data.CameraTransformation as CameraTransformation
 import           NodeEditor.Data.Matrix               (showCameraMatrix, showCameraScale, showCameraTranslate)

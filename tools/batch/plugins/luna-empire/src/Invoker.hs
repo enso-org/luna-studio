@@ -10,34 +10,34 @@ import qualified Data.ByteString.Char8             as Char8 (pack)
 import           Data.ByteString.Lazy              (fromStrict, toStrict)
 import qualified Data.Text                         as Text
 import qualified Data.UUID.V4                      as UUID
-import qualified Empire.API.Data.Breadcrumb        as Breadcrumb
-import           Empire.API.Data.GraphLocation     (GraphLocation)
-import qualified Empire.API.Data.GraphLocation     as GraphLocation
-import           Empire.API.Data.Node              (NodeId)
-import qualified Empire.API.Data.Node              as Node
-import           Empire.API.Data.NodeLoc           (NodeLoc (..))
-import qualified Empire.API.Data.NodeMeta          as NodeMeta
-import           Empire.API.Data.Port              (InPortId, InPortIndex (..), OutPortId, OutPortIndex (..))
-import           Empire.API.Data.PortDefault       (PortDefault (Constant), PortValue (DoubleValue))
-import           Empire.API.Data.PortRef           (AnyPortRef (..), InPortRef (..), OutPortRef (..))
-import qualified Empire.API.Data.Position          as Position
-import           Empire.API.Data.Project           (ProjectId)
-import qualified Empire.API.Graph.AddConnection    as AddConnection
-import qualified Empire.API.Graph.AddNode          as AddNode
-import qualified Empire.API.Graph.DumpGraphViz     as DumpGraphViz
-import qualified Empire.API.Graph.GetProgram       as GetProgram
-import qualified Empire.API.Graph.RemoveConnection as RemoveConnection
-import qualified Empire.API.Graph.RemoveNodes      as RemoveNodes
-import qualified Empire.API.Graph.SetNodesMeta     as SetNodesMeta
-import qualified Empire.API.Graph.SetPortDefault   as SetPortDefault
-import qualified Empire.API.Graph.TypeCheck        as TypeCheck
-import qualified Empire.API.Library.CreateLibrary  as CreateLibrary
-import qualified Empire.API.Library.ListLibraries  as ListLibraries
-import qualified Empire.API.Project.CreateProject  as CreateProject
-import qualified Empire.API.Project.ListProjects   as ListProjects
-import           Empire.API.Request                (Request (..))
-import qualified Empire.API.Response               as Response
-import qualified Empire.API.Topic                  as Topic
+import qualified LunaStudio.Data.Breadcrumb        as Breadcrumb
+import           LunaStudio.Data.GraphLocation     (GraphLocation)
+import qualified LunaStudio.Data.GraphLocation     as GraphLocation
+import           LunaStudio.Data.Node              (NodeId)
+import qualified LunaStudio.Data.Node              as Node
+import           LunaStudio.Data.NodeLoc           (NodeLoc (..))
+import qualified LunaStudio.Data.NodeMeta          as NodeMeta
+import           LunaStudio.Data.Port              (InPortId, InPortIndex (..), OutPortId, OutPortIndex (..))
+import           LunaStudio.Data.PortDefault       (PortDefault (Constant), PortValue (DoubleValue))
+import           LunaStudio.Data.PortRef           (AnyPortRef (..), InPortRef (..), OutPortRef (..))
+import qualified LunaStudio.Data.Position          as Position
+import           LunaStudio.Data.Project           (ProjectId)
+import qualified LunaStudio.API.Graph.AddConnection    as AddConnection
+import qualified LunaStudio.API.Graph.AddNode          as AddNode
+import qualified LunaStudio.API.Graph.DumpGraphViz     as DumpGraphViz
+import qualified LunaStudio.API.Graph.GetProgram       as GetProgram
+import qualified LunaStudio.API.Graph.RemoveConnection as RemoveConnection
+import qualified LunaStudio.API.Graph.RemoveNodes      as RemoveNodes
+import qualified LunaStudio.API.Graph.SetNodesMeta     as SetNodesMeta
+import qualified LunaStudio.API.Graph.SetPortDefault   as SetPortDefault
+import qualified LunaStudio.API.Graph.TypeCheck        as TypeCheck
+import qualified LunaStudio.API.Library.CreateLibrary  as CreateLibrary
+import qualified LunaStudio.API.Library.ListLibraries  as ListLibraries
+import qualified LunaStudio.API.Project.CreateProject  as CreateProject
+import qualified LunaStudio.API.Project.ListProjects   as ListProjects
+import           LunaStudio.API.Request                (Request (..))
+import qualified LunaStudio.API.Response               as Response
+import qualified LunaStudio.API.Topic                  as Topic
 import           Prologue                          hiding (argument)
 import           System.Console.Docopt
 import           System.Environment                (getArgs)

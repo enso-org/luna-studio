@@ -3,10 +3,10 @@ module NodeEditor.Action.Basic.Merge where
 import qualified Data.HashMap.Strict                         as HashMap
 import           Data.Map.Lazy                               (Map)
 import qualified Data.Map.Lazy                               as Map
-import           Empire.API.Data.Breadcrumb                  (BreadcrumbItem)
-import           Empire.API.Data.Graph                       (Graph)
-import qualified Empire.API.Data.Graph                       as GraphAPI
-import qualified Empire.API.Data.NodeLoc                     as NodeLoc
+import           LunaStudio.Data.Breadcrumb                  (BreadcrumbItem)
+import           LunaStudio.Data.Graph                       (Graph)
+import qualified LunaStudio.Data.Graph                       as GraphAPI
+import qualified LunaStudio.Data.NodeLoc                     as NodeLoc
 import           NodeEditor.Action.Basic.AddConnection      (localAddConnections)
 import           NodeEditor.Action.Basic.RemoveConnection   (localRemoveConnectionsContainingNodes)
 import           NodeEditor.Action.Command                  (Command)

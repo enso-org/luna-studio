@@ -39,8 +39,7 @@ dependencies:
   - ghcjs-base
   - ghcjs-prim
   - lens
-  - luna-empire-api
-  - luna-empire-api-json
+  - luna-studio-common
   - mtl
   - prologue
   - random

@@ -10,7 +10,7 @@ import           Data.Curve                                 (CurveSegment, getPo
 import qualified Data.Curve                                 as Curve
 import qualified Data.HashMap.Strict                        as HashMap
 import           Data.Timestamp                             (Timestamp)
-import           Empire.API.Data.Position                   (Position, distance)
+import           LunaStudio.Data.Position                   (Position, distance)
 import           NodeEditor.Action.Basic.RemoveConnection   (removeConnection, removeConnectionsBetweenNodes)
 import           NodeEditor.Action.Command                  (Command)
 import           NodeEditor.Action.ConnectionPen.SmoothLine (addPointToCurve, beginCurve, curveToSvgPath)

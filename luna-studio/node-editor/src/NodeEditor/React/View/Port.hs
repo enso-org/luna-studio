@@ -3,7 +3,7 @@
 module NodeEditor.React.View.Port where
 
 import           Common.Prelude
-import           Empire.API.Data.PortRef          (AnyPortRef, toAnyPortRef)
+import           LunaStudio.Data.PortRef          (AnyPortRef, toAnyPortRef)
 import qualified NodeEditor.Event.Mouse           as Mouse
 import qualified NodeEditor.Event.UI              as UI
 import qualified NodeEditor.React.Event.Port      as Port

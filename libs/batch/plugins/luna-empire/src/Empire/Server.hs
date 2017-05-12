@@ -25,13 +25,13 @@ import           System.FilePath.Glob             ()
 import           System.FilePath.Manip            ()
 
 
-import qualified Empire.API.Control.EmpireStarted as EmpireStarted
-import           Empire.API.Data.AsyncUpdate      (AsyncUpdate (..))
-import           Empire.API.Data.GraphLocation    (GraphLocation)
-import qualified Empire.API.Topic                 as Topic
-import           Empire.Data.AST                  (SomeASTException)
-import           Empire.Data.Graph                (Graph, ast)
-import qualified Empire.Data.Graph                as Graph
+import           Empire.Data.AST                      (SomeASTException)
+import           Empire.Data.Graph                    (Graph, ast)
+import qualified Empire.Data.Graph                    as Graph
+import           LunaStudio.API.AsyncUpdate           (AsyncUpdate (..))
+import qualified LunaStudio.API.Control.EmpireStarted as EmpireStarted
+import qualified LunaStudio.API.Topic                 as Topic
+import           LunaStudio.Data.GraphLocation        (GraphLocation)
 
 import qualified Empire.Commands.AST              as AST
 import qualified Empire.Commands.Graph            as Graph (openFile)

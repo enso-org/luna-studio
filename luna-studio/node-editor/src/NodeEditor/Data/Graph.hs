@@ -4,9 +4,9 @@ module NodeEditor.Data.Graph where
 
 import           Data.Aeson                 (FromJSON, ToJSON)
 import           Data.HashMap.Strict        (HashMap)
-import           Empire.API.Data.Connection (Connection, ConnectionId)
-import           Empire.API.Data.Node       (ExpressionNode)
-import           Empire.API.Data.NodeLoc    (NodeLoc)
+import           LunaStudio.Data.Connection (Connection, ConnectionId)
+import           LunaStudio.Data.Node       (ExpressionNode)
+import           LunaStudio.Data.NodeLoc    (NodeLoc)
 import           Common.Prelude
 
 

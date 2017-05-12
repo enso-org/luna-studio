@@ -16,14 +16,14 @@ import           Data.Maybe                        (isNothing, maybeToList)
 import           Empire.Prelude                    hiding (toList)
 import           Prologue                          (catMaybes, fromString, itoListOf, itraverse, toListOf)
 
-import qualified Empire.API.Data.Error             as APIError
-import           Empire.API.Data.GraphLocation     (GraphLocation (..))
-import           Empire.API.Data.MonadPath         (MonadPath (MonadPath))
-import           Empire.API.Data.Node              (NodeId, nodeId)
-import qualified Empire.API.Data.NodeMeta          as NodeMeta
-import           Empire.API.Data.TypeRep           (TypeRep (TCons))
-import           Empire.API.Data.PortDefault       (PortValue (StringValue), VisualizationValue (JsonValue))
-import           Empire.API.Graph.NodeResultUpdate (NodeValue(..))
+import qualified LunaStudio.Data.Error             as APIError
+import           LunaStudio.Data.GraphLocation     (GraphLocation (..))
+import           LunaStudio.Data.MonadPath         (MonadPath (MonadPath))
+import           LunaStudio.Data.Node              (NodeId, nodeId)
+import qualified LunaStudio.Data.NodeMeta          as NodeMeta
+import           LunaStudio.Data.TypeRep           (TypeRep (TCons))
+import           LunaStudio.Data.PortDefault       (PortValue (StringValue), VisualizationValue (JsonValue))
+import           LunaStudio.API.Graph.NodeResultUpdate (NodeValue(..))
 import           Empire.ASTOp                      (EmpirePass, runASTOp, runTypecheck)
 import qualified Empire.ASTOps.Read                as ASTRead
 import qualified Empire.Commands.AST               as AST

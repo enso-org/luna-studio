@@ -8,8 +8,8 @@ module NodeEditor.Action.Visualization
     ) where
 
 import           Common.Prelude
-import           Empire.API.Data.NodeLoc                    (NodeLoc)
-import           Empire.API.Data.Position                   (Position)
+import           LunaStudio.Data.NodeLoc                    (NodeLoc)
+import           LunaStudio.Data.Position                   (Position)
 import           NodeEditor.Action.Command                  (Command)
 import           NodeEditor.Action.State.Action             (beginActionWithKey, continueActionWithKey, removeActionFromState,
                                                              updateActionWithKey)

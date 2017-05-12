@@ -4,7 +4,7 @@ module NodeEditor.React.View.Searcher where
 import           Common.Prelude
 import qualified Data.Aeson                                 as Aeson
 import           Data.Matrix                                (Matrix)
-import qualified Empire.API.Data.NodeLoc                    as NodeLoc
+import qualified LunaStudio.Data.NodeLoc                    as NodeLoc
 import           JS.Searcher                                (searcherId)
 import           NodeEditor.Data.Matrix                     (showNodeTranslate)
 import qualified NodeEditor.Event.Keys                      as Keys

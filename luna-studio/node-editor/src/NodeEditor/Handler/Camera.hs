@@ -3,7 +3,7 @@ module NodeEditor.Handler.Camera
     ) where
 
 import           Common.Prelude
-import           Empire.API.Data.Vector2           (Vector2 (Vector2))
+import           LunaStudio.Data.Vector2           (Vector2 (Vector2))
 import           NodeEditor.Action.Camera          (centerGraph, panCamera, panDown, panDrag, panLeft, panRight, panUp, resetCamera,
                                                     resetPan, resetZoom, startPanDrag, startZoomDrag, stopPanDrag, stopZoomDrag, wheelZoom,
                                                     zoomDrag, zoomIn, zoomOut)

@@ -28,25 +28,25 @@ import qualified Data.Text.Lazy                as Text
 
 import           Prologue
 
-import qualified Empire.API.Data.Graph         as Graph
-import           Empire.API.Data.LabeledTree
-import qualified Empire.API.Data.Node          as Node
-import           Empire.API.Data.NodeLoc       (NodeLoc (..))
-import           Empire.API.Data.Port
-import           Empire.API.Data.TypeRep
-import           Empire.API.Graph.AddNode      (Request (..))
-import qualified Empire.API.Graph.AddNode      as AddNode
-import qualified Empire.API.Graph.Result       as Result
-import qualified Empire.API.Topic              as Topic
+import qualified LunaStudio.Data.Graph         as Graph
+import           LunaStudio.Data.LabeledTree
+import qualified LunaStudio.Data.Node          as Node
+import           LunaStudio.Data.NodeLoc       (NodeLoc (..))
+import           LunaStudio.Data.Port
+import           LunaStudio.Data.TypeRep
+import           LunaStudio.API.Graph.AddNode      (Request (..))
+import qualified LunaStudio.API.Graph.AddNode      as AddNode
+import qualified LunaStudio.API.Graph.Result       as Result
+import qualified LunaStudio.API.Topic              as Topic
 
-import           Empire.API.Data.Breadcrumb    (Breadcrumb (..))
-import           Empire.API.Data.GraphLocation (GraphLocation (..))
-import           Empire.API.Data.Library       (Library)
-import qualified Empire.API.Graph.Redo         as Redo
-import qualified Empire.API.Graph.Undo         as Undo
-import qualified Empire.API.Response           as Response
+import           LunaStudio.Data.Breadcrumb    (Breadcrumb (..))
+import           LunaStudio.Data.GraphLocation (GraphLocation (..))
+import           LunaStudio.Data.Library       (Library)
+import qualified LunaStudio.API.Graph.Redo         as Redo
+import qualified LunaStudio.API.Graph.Undo         as Undo
+import qualified LunaStudio.API.Response           as Response
 
-import           Empire.API.Request            as Request
+import           LunaStudio.API.Request            as Request
 
 import           Undo                          (checkGuiId, handleMessage, run', withBus)
 import           UndoState                     (Undo (..), UndoMessage (..), UndoState (..))

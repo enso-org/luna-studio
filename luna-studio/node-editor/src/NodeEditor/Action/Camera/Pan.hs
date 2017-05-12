@@ -14,7 +14,7 @@ module NodeEditor.Action.Camera.Pan
 import           Common.Prelude
 import           Data.Matrix                          (setElem)
 import           Data.ScreenPosition                  (ScreenPosition, vector)
-import           Empire.API.Data.Vector2              (Vector2 (Vector2))
+import           LunaStudio.Data.Vector2              (Vector2 (Vector2))
 import           NodeEditor.Action.Basic              (modifyCamera)
 import           NodeEditor.Action.Command            (Command)
 import           NodeEditor.Action.State.Action       (beginActionWithKey, continueActionWithKey, removeActionFromState,

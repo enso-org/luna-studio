@@ -2,9 +2,9 @@ module NodeEditor.Action.Basic.CenterGraph where
 
 import           Common.Prelude                             hiding (span)
 import           Data.Matrix                                (multStd2)
-import           Empire.API.Data.Position                   (minimumRectangle, vector, x, y)
-import           Empire.API.Data.Size                       (Size (Size))
-import           Empire.API.Data.Vector2                    (Vector2 (Vector2), scalarProduct)
+import           LunaStudio.Data.Position                   (minimumRectangle, vector, x, y)
+import           LunaStudio.Data.Size                       (Size (Size))
+import           LunaStudio.Data.Vector2                    (Vector2 (Vector2), scalarProduct)
 import           NodeEditor.Action.Basic.ModifyCamera       (resetCamera)
 import           NodeEditor.Action.Command                  (Command)
 import           NodeEditor.Action.State.NodeEditor         (getExpressionNodes, modifyNodeEditor)

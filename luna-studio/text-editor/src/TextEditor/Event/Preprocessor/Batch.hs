@@ -6,7 +6,7 @@ import           Data.ByteString.Lazy.Char8             (ByteString)
 import qualified Data.Map.Lazy                          as Map
 import           Common.Prelude                    hiding (cons)
 
-import qualified Empire.API.Topic                       as Topic
+import qualified LunaStudio.API.Topic                       as Topic
 import           Common.Batch.Connector.Connection (ControlCode (ConnectionTakeover, Welcome), WebMessage (ControlMessage, WebMessage))
 import           TextEditor.Event.Batch                as Batch
 import           TextEditor.Event.Connection           as Connection

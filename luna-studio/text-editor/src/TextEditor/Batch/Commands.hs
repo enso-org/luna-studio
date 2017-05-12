@@ -1,13 +1,13 @@
 module TextEditor.Batch.Commands where
 
 import           Data.UUID.Types                        (UUID)
-import qualified Empire.API.Atom.IsSaved              as IsSaved
-import qualified Empire.API.Atom.CloseFile              as CloseFile
-import qualified Empire.API.Atom.GetBuffer              as GetBuffer
-import qualified Empire.API.Atom.OpenFile               as OpenFile
-import qualified Empire.API.Atom.SaveFile               as SaveFile
-import qualified Empire.API.Atom.SetProject             as SetProject
-import qualified Empire.API.Atom.Substitute             as Substitute
+import qualified LunaStudio.API.Atom.IsSaved              as IsSaved
+import qualified LunaStudio.API.Atom.CloseFile              as CloseFile
+import qualified LunaStudio.API.Atom.GetBuffer              as GetBuffer
+import qualified LunaStudio.API.Atom.OpenFile               as OpenFile
+import qualified LunaStudio.API.Atom.SaveFile               as SaveFile
+import qualified LunaStudio.API.Atom.SetProject             as SetProject
+import qualified LunaStudio.API.Atom.Substitute             as Substitute
 import           Common.Batch.Connector.Connection (Message (Message), sendRequest)
 import           Common.Prelude
 
