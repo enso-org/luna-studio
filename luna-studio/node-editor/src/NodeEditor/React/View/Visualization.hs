@@ -93,7 +93,7 @@ nodeValue_ ref nl mayPos visIx value = do
             Just pos -> div_ [ "className" $= Style.prefixFromList [ "node-trans", "noselect", "node-root" ]
                              , "style"     @= Aeson.object [ "zIndex" Aeson..= show (1000 :: Integer) ]
                              ] . div_ [ "className" $= Style.prefix "node__visuals" ]
-            Nothing -> div_
+            Nothing  -> div_ [ "className" $= Style.prefixFromList ["noselect"] ]
     translatedDiv_ $ do
         withJust mayPos $ \pos ->
             button_ [ onMouseDown $ \e m -> stopPropagation e : dispatch ref (UI.VisualizationEvent $ Visualization.MouseDown m nl visIx pos)
@@ -114,7 +114,7 @@ nodeValue_ ref nl mayPos visIx value = do
 
 fromJsonValue :: String -> ReactElementM ViewEventHandler ()
 fromJsonValue value = case (Aeson.decode $ ByteString.pack value :: Maybe Aeson.Value) of
-    Just (Aeson.Array  a) -> table_ $ rows $ keyed $ Vector.toList a
+    Just (Aeson.Array  a) -> div_ [ "className" $= Style.prefix "table-scroll" ] $ table_ $ rows $ keyed $ Vector.toList a
     Just (Aeson.Object _) -> mempty
     Just (Aeson.String _) -> mempty
     Just (Aeson.Number _) -> mempty
