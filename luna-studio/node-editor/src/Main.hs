@@ -10,7 +10,7 @@ import qualified React.Flux                 as React
 import           System.Random              (newStdGen)
 
 import qualified JS.Config                  as Config
-import qualified JS.GraphLocation           as GraphLocation
+import qualified JS.LocalStorage            as GraphLocation
 import           JS.UUID                    (generateUUID)
 import qualified NodeEditor.Batch.Workspace as Workspace
 import           NodeEditor.Event.Engine    (LoopRef (LoopRef))

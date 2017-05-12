@@ -2,7 +2,7 @@ module NodeEditor.Action.Basic.ProjectManager where
 
 import           Common.Prelude
 import           Empire.API.Data.GraphLocation      (GraphLocation)
-import qualified JS.GraphLocation                   as JS
+import qualified JS.LocalStorage                    as JS
 import qualified NodeEditor.Action.Batch            as Batch
 import           NodeEditor.Action.Command          (Command)
 import           NodeEditor.Action.State.NodeEditor (resetGraph)

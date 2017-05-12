@@ -43,7 +43,7 @@ import           NodeEditor.Action.Basic.Revert              (revertAddConnectio
                                                               revertSetPortDefault)
 import           NodeEditor.Action.Basic.UpdateCollaboration (bumpTime, modifyTime, refreshTime, touchCurrentlySelected, updateClient)
 import           NodeEditor.Action.Batch                     (collaborativeModify, getProgram, requestCollaborationRefresh)
-import           NodeEditor.Action.Camera                    (centerGraph)
+import           NodeEditor.Action.Camera                    (tryLoadCamera)
 import           NodeEditor.Action.Command                   (Command)
 import           NodeEditor.Action.State.App                 (setBreadcrumbs)
 import           NodeEditor.Action.State.Graph               (inCurrentLocation, isCurrentLocation)
@@ -90,7 +90,7 @@ handle (Event.Batch ev) = Just $ case ev of
                 setGraphLoaded True
                 updateScene
                 when shouldCenter $ do
-                    centerGraph
+                    tryLoadCamera
                     requestCollaborationRefresh
         failure _ = do
             isOnTop <- fromMaybe True <$> preuses (Global.workspace . traverse) Workspace.isOnTopBreadcrumb

@@ -1,8 +1,8 @@
 module NodeEditor.Action.Basic.Atom where
 
 import           Common.Prelude
-import           Empire.API.Data.GraphLocation          (GraphLocation (GraphLocation))
 import           NodeEditor.Action.Basic.ProjectManager (loadGraph)
+import           NodeEditor.Action.Camera.Persistence   (saveCamera)
 import           NodeEditor.Action.Command              (Command)
 import           NodeEditor.Action.State.NodeEditor     (resetGraph)
 import           NodeEditor.Batch.Workspace             (currentLocation)
@@ -12,6 +12,7 @@ import           NodeEditor.State.Global                (State, workspace)
 
 openFile :: FilePath -> Command State ()
 openFile path = do
+    saveCamera
     mayCurrentLoc <- preuse $ workspace . traverse . currentLocation
     let newWorkspace = Workspace.mk path
         newLocation = newWorkspace ^. currentLocation
@@ -21,5 +22,6 @@ openFile path = do
 
 closeFile :: Command State ()
 closeFile = do
+    saveCamera
     workspace .= def
     resetGraph
