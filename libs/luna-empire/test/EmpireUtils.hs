@@ -74,7 +74,7 @@ graphIDs loc = do
     return ids
 
 extractGraph :: InterpreterEnv -> Graph
-extractGraph (InterpreterEnv _ _ _ g _) = g
+extractGraph (InterpreterEnv _ _ _ g _ _) = g
 
 withResult :: a -> (a -> IO b) -> IO b
 withResult res act = act res

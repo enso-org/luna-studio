@@ -14,7 +14,7 @@ import           LunaStudio.Data.LabeledTree     (LabeledTree (..))
 import           LunaStudio.Data.Node            (NodeId)
 import qualified LunaStudio.Data.Node            as Node
 import           LunaStudio.Data.NodeLoc         (NodeLoc (..))
-import           LunaStudio.Data.NodeMeta        (NodeMeta (..))
+import           LunaStudio.Data.NodeMeta        (NodeMeta (..), position)
 import           LunaStudio.Data.Port            (InPorts (..), OutPorts (..))
 import qualified LunaStudio.Data.Port            as Port
 import           LunaStudio.Data.PortDefault     (PortDefault (Expression))
@@ -359,7 +359,7 @@ spec = around withChannels $ parallel $ do
             u2 <- mkUUID
             res <- evalEmp env $ do
                 Graph.addNode top u1 "4" def
-                Graph.addNode top u2 "id node1" def
+                Graph.addNode top u2 "id node1" $ def & position . Position.x .~ 20.0
                 Graph.renameNode top u1 "node5"
                 graph <- Graph.getGraph top
                 expression <- Graph.withGraph top $ runASTOp $ do

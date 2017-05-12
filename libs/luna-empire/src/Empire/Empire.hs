@@ -14,6 +14,7 @@ import           LunaStudio.Data.Node          (ExpressionNode, NodeId)
 import           LunaStudio.Data.PortDefault   (PortValue)
 import           LunaStudio.Data.Project       (ProjectId)
 import           LunaStudio.Data.TypeRep       (TypeRep)
+import           Luna.Builtin.Data.Module      (Imports)
 
 import           Control.Concurrent.STM.TChan  (TChan)
 import           Control.Exception             (try)
@@ -46,13 +47,14 @@ data InterpreterEnv = InterpreterEnv { _valuesCache :: Map NodeId [PortValue]
                                      , _errorsCache :: Map NodeId APIError.Error
                                      , _graph       :: Graph
                                      , _destructors :: [IO ()]
+                                     , _imports     :: Imports
                                      }
 makeLenses ''InterpreterEnv
 
 defaultInterpreterEnv :: IO InterpreterEnv
 defaultInterpreterEnv = do
     g <- defaultGraph
-    return $ InterpreterEnv def def def g []
+    return $ InterpreterEnv def def def g [] def
 
 type CommandStack s = ReaderT CommunicationEnv (StateT s IO)
 type Command s a = ReaderT CommunicationEnv (StateT s IO) a

@@ -38,6 +38,7 @@ dependencies:
     - luna-syntax-text
     - luna-studio-common
     - luna-stdlib
+    - luna-project
     - m-logger
     - megaparsec
     - mtl

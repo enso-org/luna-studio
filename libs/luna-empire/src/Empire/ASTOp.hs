@@ -138,8 +138,7 @@ runASTOp pass = runPass inits pass where
 
 runAliasAnalysis :: Command Graph ()
 runAliasAnalysis = do
-    --TODO[MK]: AA is broken, fix it and then just pass BH.body here
-    roots <- gets $ toListOf $ Graph.breadcrumbHierarchy . BH.children . traverse . BH.self . BH.anyRef
+    roots <- gets $ toListOf $ Graph.breadcrumbHierarchy . BH.body
     let inits = do
             Pass.setAttr (getTypeDesc @UnresolvedVars)   $ UnresolvedVars   []
             Pass.setAttr (getTypeDesc @UnresolvedConses) $ UnresolvedConses []

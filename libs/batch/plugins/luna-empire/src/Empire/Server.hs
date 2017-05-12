@@ -59,6 +59,8 @@ import           ZMQ.Bus.Trans                    (BusT (..))
 import qualified ZMQ.Bus.Trans                    as BusT
 
 import           System.Remote.Monitoring
+import           System.Environment               (getEnv)
+import           System.Directory                 (canonicalizePath)
 
 logger :: Logger.Logger
 logger = Logger.getLogger $(Logger.moduleName)
@@ -103,7 +105,10 @@ readAll chan = do
 
 startTCWorker :: Empire.CommunicationEnv -> TChan (GraphLocation, Graph, Bool) -> Bus ()
 startTCWorker env chan = liftIO $ do
-    interpreterEnv <- Empire.defaultInterpreterEnv
+    baseIntEnv <- Empire.defaultInterpreterEnv
+    lunaroot   <- canonicalizePath =<< getEnv "LUNAROOT"
+    std        <- Typecheck.createStdlib $ lunaroot ++ "/Std/"
+    let interpreterEnv = baseIntEnv & Empire.imports .~ std
     let pmState = interpreterEnv ^. Empire.graph . Graph.ast . Graph.pmState
     void $ Empire.runEmpire env interpreterEnv $ forever $ do
         (loc, g, flush) <- liftIO $ atomically $ readAll chan

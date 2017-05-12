@@ -154,20 +154,20 @@ addNodeWithName loc uuid expr name meta = do
 addNodeNoTC :: GraphLocation -> NodeId -> Text -> Maybe Text -> NodeMeta -> Command Graph (Maybe NodeRef, ExpressionNode)
 addNodeNoTC loc uuid input name meta = do
     parse <- fst <$> ASTParse.runParser input
-    expr <- runASTOp $ do
+    (nearestNode, expr) <- runASTOp $ do
         newNodeName  <- case name of
             Just n -> return $ Text.unpack n
             _      -> generateNodeName
         parsedNode   <- AST.addNode uuid newNodeName parse
         putIntoHierarchy uuid $ BH.MatchNode parsedNode
-        return parsedNode
+        nearestNode  <- putInSequence parsedNode meta
+        return (nearestNode, parsedNode)
     runAliasAnalysis
-    (nearestNode, node) <- runASTOp $ do
+    node <- runASTOp $ do
         putChildrenIntoHierarchy uuid expr
         AST.writeMeta expr meta
-        nearestNode <- putInSequence expr meta
-        node        <- GraphBuilder.buildNode uuid
-        return (nearestNode, node)
+        node <- GraphBuilder.buildNode uuid
+        return node
     return (nearestNode, node)
 
 distanceTo :: (Double, Double) -> (Double, Double) -> Double

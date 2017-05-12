@@ -44,9 +44,9 @@ spec = around withChannels $ do
         it "parses unit" $ \env -> do
             let code = [r|pi ‹0›= 3.14
 foo ‹1›= a: b: a + b
+c ‹4›= 3
 bar ‹2›= foo c 6
 ‹3›print pi
-c ‹4›= 3
 |]
             res <- evalEmp env $ do
                 Library.createLibrary Nothing "TestPath" code
