@@ -24,9 +24,11 @@ import           LunaStudio.Data.TypeRep         (TypeRep (TCons, TLam, TStar, T
 import           Empire.ASTOp                    (runASTOp)
 import qualified Empire.ASTOps.Deconstruct       as ASTDeconstruct
 import qualified Empire.ASTOps.Parse             as Parser
+import           Empire.ASTOps.Modify            (CannotRemovePortException)
 import           Empire.ASTOps.Print             (printExpression)
 import qualified Empire.ASTOps.Read              as ASTRead
 import qualified Empire.Commands.AST             as AST (dumpGraphViz, isTrivialLambda)
+import           Empire.Commands.Breadcrumb      (BreadcrumbDoesNotExistException)
 import qualified Empire.Commands.Graph           as Graph (addNode, addPort, connect, disconnect, getConnections, getGraph,
                                                            getNodeIdForMarker, getNodes, loadCode, movePort, removeNodes, removePort,
                                                            renameNode, renamePort, setNodeExpression, setNodeMeta, withGraph)
@@ -44,7 +46,8 @@ import           OCI.IR.Class                    (exprs, links)
 import           Prologue                        hiding (mapping, toList, (|>))
 
 import           Test.Hspec                      (Spec, around, describe, expectationFailure, it, parallel, shouldBe, shouldContain,
-                                                  shouldMatchList, shouldSatisfy, shouldStartWith, xdescribe, xit)
+                                                  shouldMatchList, shouldSatisfy, shouldStartWith, xdescribe, xit,
+                                                  Selector, shouldThrow)
 
 import           EmpireUtils
 
@@ -201,14 +204,12 @@ spec = around withChannels $ parallel $ do
                 ids `shouldSatisfy` null
         it "int literal has no nodes inside" $ \env -> do
             u1 <- mkUUID
-            res <- evalEmp env $ do
-                Graph.addNode top u1 "4" def
-                graphIDs $ top |> u1
-            case res of
-                Left err -> case stripPrefix "Breadcrumb" err of
-                    Just _ -> return ()
-                    _      -> expectationFailure err
-                Right _  -> expectationFailure "should throw"
+            let res = evalEmp env $ do
+                    Graph.addNode top u1 "4" def
+                    graphIDs $ top |> u1
+            let breadcrumbException :: Selector BreadcrumbDoesNotExistException
+                breadcrumbException = const True
+            res `shouldThrow` breadcrumbException
         {-xit "properly typechecks input nodes" $ \env -> do-}
             {-u1 <- mkUUID-}
             {-(res, st) <- runEmp env $ do-}
@@ -397,12 +398,12 @@ spec = around withChannels $ parallel $ do
                 nodes `shouldSatisfy` ((== 1) . length)
         it "does not allow to change expression to assignment" $ \env -> do
             u1 <- mkUUID
-            res <- evalEmp env $ do
-                Graph.addNode top u1 "1" def
-                Graph.setNodeExpression top u1 "foo = a: a"
-            case res of
-                Left err -> err `shouldStartWith` "ParserException"
-                Right _  -> expectationFailure "should throw ParserException"
+            let res = evalEmp env $ do
+                    Graph.addNode top u1 "1" def
+                    Graph.setNodeExpression top u1 "foo = a: a"
+            let parserException :: Selector Parser.SomeParserException
+                parserException = const True
+            res `shouldThrow` parserException
         it "changes expression to lambda with node inside" $ \env -> do
             u1 <- mkUUID
             res <- evalEmp env $ do
@@ -808,14 +809,14 @@ spec = around withChannels $ parallel $ do
                 connections `shouldMatchList` referenceConnections
         it "does not allow to remove All port" $ \env -> do
             u1 <- mkUUID
-            res <- evalEmp env $ do
-                Graph.addNode top u1 "foo = a: a" def
-                let loc' = top |> u1
-                Just (input, _) <- Graph.withGraph loc' $ runASTOp GraphBuilder.getEdgePortMapping
-                Graph.removePort loc' (outPortRef input [])
-            case res of
-                Right _ -> expectationFailure "should throw exception"
-                Left err -> err `shouldStartWith` "CannotRemovePortException"
+            let res = evalEmp env $ do
+                    Graph.addNode top u1 "foo = a: a" def
+                    let loc' = top |> u1
+                    Just (input, _) <- Graph.withGraph loc' $ runASTOp GraphBuilder.getEdgePortMapping
+                    Graph.removePort loc' (outPortRef input [])
+            let cannotRemovePortException :: Selector CannotRemovePortException
+                cannotRemovePortException = const True
+            res `shouldThrow` cannotRemovePortException
         it "removes port that is connected inside lambda" $ \env -> do
             u1 <- mkUUID
             u2 <- mkUUID

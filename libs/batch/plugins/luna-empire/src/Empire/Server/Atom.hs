@@ -1,5 +1,8 @@
+{-# LANGUAGE ScopedTypeVariables #-}
+
 module Empire.Server.Atom where
 
+import           Control.Monad.Catch                   (try)
 import           Control.Monad.State                   (StateT)
 import qualified Data.Text.IO                          as Text
 import           Prologue                              hiding (Item)
@@ -22,6 +25,7 @@ import qualified LunaStudio.API.Response                   as Response
 
 import qualified Empire.Commands.Graph                 as Graph
 import qualified Empire.Commands.Library               as Library
+import           Empire.Data.AST                       (SomeASTException)
 import qualified Empire.Data.Library                   as Library
 import qualified Empire.Empire                         as Empire
 import           Empire.Server.Server                  (errorMessage, replyFail, replyOk)
@@ -38,10 +42,11 @@ handleOpenFile :: Request OpenFile.Request -> StateT Env BusT ()
 handleOpenFile req@(Request _ _ (OpenFile.Request path)) = do
     currentEmpireEnv <- use Env.empireEnv
     empireNotifEnv   <- use Env.empireNotif
-    (result, newEmpireEnv) <- liftIO $ Empire.runEmpire empireNotifEnv currentEmpireEnv $ Graph.openFile path
+    result <- liftIO $ try $ Empire.runEmpire empireNotifEnv currentEmpireEnv $ Graph.openFile path
     case result of
-        Left err -> replyFail logger err req (Response.Error err)
-        Right _  -> do
+        Left (exc :: SomeASTException) ->
+            let err = displayException exc in replyFail logger err req (Response.Error err)
+        Right (_, newEmpireEnv)  -> do
             Env.empireEnv .= newEmpireEnv
             replyOk req ()
 

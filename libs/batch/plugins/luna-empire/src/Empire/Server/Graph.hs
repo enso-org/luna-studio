@@ -6,49 +6,40 @@
 
 module Empire.Server.Graph where
 
-import           Control.Arrow                      ((&&&))
-import           Control.Monad.Error                (throwError)
-import           Control.Monad.State                (StateT)
-import qualified Data.Binary                        as Bin
-import           Data.ByteString                    (ByteString)
-import           Data.ByteString.Lazy               (fromStrict)
-import qualified Data.IntMap                        as IntMap
-import           Data.List                          (break, find, partition)
-import           Data.List.Split                    (splitOneOf)
-import qualified Data.Map                           as Map
-import           Data.Maybe                         (fromMaybe, isJust, isNothing, listToMaybe, maybeToList)
-import qualified Data.Set                           as Set
-import           Data.Text                          (stripPrefix)
-import qualified Data.Text                          as Text
-import           Data.Traversable                   (forM)
-import           Data.UUID.Types                    (UUID)
-import qualified Data.UUID.Types                    as UUID
-import qualified Data.UUID.V4                       as UUID
+import           Control.Arrow                          ((&&&))
+import           Control.Monad.Catch                    (handle, try)
+import           Control.Monad.State                    (StateT)
+import qualified Data.Binary                            as Bin
+import           Data.ByteString                        (ByteString)
+import           Data.ByteString.Lazy                   (fromStrict)
+import qualified Data.IntMap                            as IntMap
+import           Data.List                              (break, find, partition)
+import           Data.List.Split                        (splitOneOf)
+import qualified Data.Map                               as Map
+import           Data.Maybe                             (fromMaybe, isJust, isNothing, listToMaybe, maybeToList)
+import qualified Data.Set                               as Set
+import           Data.Text                              (stripPrefix)
+import qualified Data.Text                              as Text
+import           Data.Traversable                       (forM)
+import           Data.UUID.Types                        (UUID)
+import qualified Data.UUID.Types                        as UUID
+import qualified Data.UUID.V4                           as UUID
+import           Empire.ASTOp                           (runASTOp)
+import qualified Empire.ASTOps.Print                    as Print
+import           Empire.Commands.Autolayout             (autolayoutNodes)
+import qualified Empire.Commands.Graph                  as Graph
+import           Empire.Commands.GraphBuilder           (buildConnections, buildGraph, buildNodes, getNodeName)
+import qualified Empire.Commands.GraphUtils             as GraphUtils
+import qualified Empire.Commands.Persistence            as Persistence
+import           Empire.Data.AST                        (SomeASTException, astExceptionFromException, astExceptionToException)
+import           Empire.Data.AST                        (SomeASTException)
+import           Empire.Empire                          (Empire)
+import qualified Empire.Empire                          as Empire
+import           Empire.Env                             (Env)
+import qualified Empire.Env                             as Env
+import           Empire.Server.Server                   (errorMessage, replyFail, replyOk, replyResult, sendToBus')
 import qualified LunaStudio.API.Atom.GetBuffer          as GetBuffer
 import qualified LunaStudio.API.Atom.Substitute         as Substitute
-import           LunaStudio.Data.Breadcrumb         (Breadcrumb (..))
-import qualified LunaStudio.Data.Breadcrumb         as Breadcrumb
-import           LunaStudio.Data.Connection         as Connection
-import           LunaStudio.Data.Graph              (Graph (..))
-import qualified LunaStudio.Data.Graph              as GraphAPI
-import           LunaStudio.Data.GraphLocation      (GraphLocation)
-import qualified LunaStudio.Data.GraphLocation      as GraphLocation
-import           LunaStudio.Data.LabeledTree        (LabeledTree (LabeledTree))
-import           LunaStudio.Data.Node               (ExpressionNode (..), NodeId)
-import qualified LunaStudio.Data.Node               as Node
-import           LunaStudio.Data.NodeLoc            (NodeLoc (..))
-import qualified LunaStudio.Data.NodeLoc            as NodeLoc
-import           LunaStudio.Data.NodeMeta           (NodeMeta)
-import qualified LunaStudio.Data.NodeMeta           as NodeMeta
-import qualified LunaStudio.Data.NodeSearcher       as NS
-import           LunaStudio.Data.Port               (InPort (..), InPortIndex (..), OutPort (..), OutPortIndex (..), Port (..),
-                                                     PortState (..), getPortNumber)
-import qualified LunaStudio.Data.Port               as Port
-import           LunaStudio.Data.PortDefault        (PortValue (..), VisualizationValue (..))
-import           LunaStudio.Data.PortRef            (InPortRef (..), OutPortRef (..))
-import           LunaStudio.Data.PortRef            as PortRef
-import           LunaStudio.Data.Position           (Position)
-import           LunaStudio.Data.TypeRep            (TypeRep (TStar))
 import qualified LunaStudio.API.Graph.AddConnection     as AddConnection
 import qualified LunaStudio.API.Graph.AddNode           as AddNode
 import qualified LunaStudio.API.Graph.AddPort           as AddPort
@@ -75,24 +66,34 @@ import qualified LunaStudio.API.Graph.TypeCheck         as TypeCheck
 import           LunaStudio.API.Request                 (Request (..))
 import qualified LunaStudio.API.Response                as Response
 import qualified LunaStudio.API.Topic                   as Topic
-import           Empire.ASTOp                       (runASTOp)
-import qualified Empire.ASTOps.Print                as Print
-import           Empire.Commands.Autolayout         (autolayoutNodes)
-import qualified Empire.Commands.Graph              as Graph
-import           Empire.Commands.GraphBuilder       (buildConnections, buildGraph, buildNodes, getNodeName)
-import qualified Empire.Commands.GraphUtils         as GraphUtils
-import qualified Empire.Commands.Persistence        as Persistence
-import           Empire.Data.AST                    (SomeASTException)
-import           Empire.Empire                      (Empire)
-import qualified Empire.Empire                      as Empire
-import           Empire.Env                         (Env)
-import qualified Empire.Env                         as Env
-import           Empire.Server.Server               (errorMessage, replyFail, replyOk, replyResult, sendToBus')
-import           Prologue                           hiding (Item)
-import           System.Environment                 (getEnv)
-import           System.FilePath                    ((</>))
-import qualified System.Log.MLogger                 as Logger
-import           ZMQ.Bus.Trans                      (BusT (..))
+import           LunaStudio.Data.Breadcrumb             (Breadcrumb (..))
+import qualified LunaStudio.Data.Breadcrumb             as Breadcrumb
+import           LunaStudio.Data.Connection             as Connection
+import           LunaStudio.Data.Graph                  (Graph (..))
+import qualified LunaStudio.Data.Graph                  as GraphAPI
+import           LunaStudio.Data.GraphLocation          (GraphLocation)
+import qualified LunaStudio.Data.GraphLocation          as GraphLocation
+import           LunaStudio.Data.LabeledTree            (LabeledTree (LabeledTree))
+import           LunaStudio.Data.Node                   (ExpressionNode (..), NodeId)
+import qualified LunaStudio.Data.Node                   as Node
+import           LunaStudio.Data.NodeLoc                (NodeLoc (..))
+import qualified LunaStudio.Data.NodeLoc                as NodeLoc
+import           LunaStudio.Data.NodeMeta               (NodeMeta)
+import qualified LunaStudio.Data.NodeMeta               as NodeMeta
+import qualified LunaStudio.Data.NodeSearcher           as NS
+import           LunaStudio.Data.Port                   (InPort (..), InPortIndex (..), OutPort (..), OutPortIndex (..), Port (..),
+                                                         PortState (..), getPortNumber)
+import qualified LunaStudio.Data.Port                   as Port
+import           LunaStudio.Data.PortDefault            (PortValue (..), VisualizationValue (..))
+import           LunaStudio.Data.PortRef                (InPortRef (..), OutPortRef (..))
+import           LunaStudio.Data.PortRef                as PortRef
+import           LunaStudio.Data.Position               (Position)
+import           LunaStudio.Data.TypeRep                (TypeRep (TStar))
+import           Prologue                               hiding (Item)
+import           System.Environment                     (getEnv)
+import           System.FilePath                        ((</>))
+import qualified System.Log.MLogger                     as Logger
+import           ZMQ.Bus.Trans                          (BusT (..))
 
 
 logger :: Logger.Logger
@@ -132,15 +133,17 @@ modifyGraph inverse action success origReq@(Request uuid guiID request') = do
     request          <- liftIO $ webGUIHack request'
     currentEmpireEnv <- use Env.empireEnv
     empireNotifEnv   <- use Env.empireNotif
-    (inv', _)        <- liftIO $ Empire.runEmpire empireNotifEnv currentEmpireEnv $ inverse request
+    inv'             <- liftIO $ try $ Empire.runEmpire empireNotifEnv currentEmpireEnv $ inverse request
     case inv' of
-        Left err  -> replyFail logger err origReq (Response.Error err)
-        Right inv -> do
+        Left (exc :: SomeASTException) ->
+            let err = displayException exc in replyFail logger err origReq (Response.Error err)
+        Right (inv, _) -> do
             let invStatus = Response.Ok inv
-            (result, newEmpireEnv) <- liftIO $ Empire.runEmpire empireNotifEnv currentEmpireEnv $ action request
+            result <- liftIO $ try $ Empire.runEmpire empireNotifEnv currentEmpireEnv $ action request
             case result of
-                Left  err    -> replyFail logger err origReq invStatus
-                Right result -> do
+                Left  (exc :: SomeASTException) ->
+                    let err = displayException exc in replyFail logger err origReq invStatus
+                Right (result, newEmpireEnv) -> do
                     Env.empireEnv .= newEmpireEnv
                     success origReq inv result
                     saveCurrentProject $ request ^. G.location
@@ -226,10 +229,11 @@ handleAddConnection = modifyGraph inverse action replyResult where
 
 handleAddNode :: Request AddNode.Request -> StateT Env BusT ()
 handleAddNode = modifyGraph defInverse action replyResult where
-    action (AddNode.Request location@(GraphLocation.GraphLocation file _) nl@(NodeLoc _ nodeId) expression nodeMeta connectTo) = withDefaultResult location $ do
+    action (AddNode.Request location nl@(NodeLoc _ nodeId) expression nodeMeta connectTo) = withDefaultResult location $ do
         Graph.addNodeCondTC False location nodeId expression nodeMeta
         forM_ connectTo $ \nid ->
-            Graph.connectCondTC False location (getSrcPortByNodeId nid) (getDstPortByNodeLoc nl)
+            handle (\(e :: SomeASTException) -> return ()) (void $ Graph.connectCondTC False location (getSrcPortByNodeId nid) (getDstPortByNodeLoc nl))
+        Graph.withGraph location $ Graph.runTC location False
 
 handleAddPort :: Request AddPort.Request -> StateT Env BusT ()
 handleAddPort = modifyGraph defInverse action replyResult where
@@ -267,14 +271,30 @@ handleMovePort = modifyGraph defInverse action replyResult where
     action (MovePort.Request location portRef newPortPos) = withDefaultResult location $
         Graph.movePort location portRef newPortPos
 
+data ConnectionDoesNotExistException = ConnectionDoesNotExistException InPortRef
+    deriving (Show)
+
+instance Exception ConnectionDoesNotExistException where
+    fromException = astExceptionFromException
+    toException = astExceptionToException
+
+data DestinationDoesNotExistException = DestinationDoesNotExistException InPortRef
+    deriving (Show)
+
+instance Exception DestinationDoesNotExistException where
+    fromException = astExceptionFromException
+    toException = astExceptionToException
+
 handleRemoveConnection :: Request RemoveConnection.Request -> StateT Env BusT ()
 handleRemoveConnection = modifyGraph inverse action replyResult where
     inverse (RemoveConnection.Request location dst) = do
         connections <- Graph.withGraph location $ runASTOp buildConnections
         case find (\conn -> snd conn == dst) connections of
-            Nothing       -> throwError "Connection does not exist"
+            Nothing       -> throwM $ ConnectionDoesNotExistException dst
             Just (src, _) -> return $ RemoveConnection.Inverse src
-    action (RemoveConnection.Request location dst) = withDefaultResult location $
+    action (RemoveConnection.Request location dst) = withDefaultResult location $ do
+        mayDstNode <- getNodeById location $ dst ^. PortRef.dstNodeId
+        when (isNothing mayDstNode) $ throwM $ DestinationDoesNotExistException dst
         Graph.disconnect location dst
 
 handleRemoveNodes :: Request RemoveNodes.Request -> StateT Env BusT ()
@@ -290,13 +310,22 @@ handleRemoveNodes = modifyGraph inverse action replyResult where
     action (RemoveNodes.Request location nodeLocs) = withDefaultResult location $
         Graph.removeNodes location $ convert <$> nodeLocs --TODO[PM -> MM] Use NodeLoc instead of NodeId
 
+data SidebarDoesNotExistException = SidebarDoesNotExistException
+    deriving (Show)
+
+instance Exception SidebarDoesNotExistException where
+    fromException = astExceptionFromException
+    toException = astExceptionToException
+
 handleRemovePort :: Request RemovePort.Request -> StateT Env BusT ()
 handleRemovePort = modifyGraph inverse action replyResult where
     inverse (RemovePort.Request location portRef) = do
         Graph allNodes allConnections _ _ monads <- Graph.withGraph location $ runASTOp buildGraph
         let conns = flip filter allConnections $ (== portRef) . fst
         return $ RemovePort.Inverse $ map (uncurry Connection) conns
-    action (RemovePort.Request location portRef) = withDefaultResult location $
+    action (RemovePort.Request location portRef) = withDefaultResult location $ do
+        maySidebar <- view GraphAPI.inputSidebar <$> Graph.getGraph location
+        when (isNothing maySidebar) $ throwM SidebarDoesNotExistException
         Graph.removePort location portRef
 
 handleRenameNode :: Request RenameNode.Request -> StateT Env BusT ()
@@ -351,10 +380,10 @@ handleTypecheck req@(Request _ _ request) = do
     let location = request ^. TypeCheck.location
     currentEmpireEnv <- use Env.empireEnv
     empireNotifEnv   <- use Env.empireNotif
-    (result, newEmpireEnv) <- liftIO $ Empire.runEmpire empireNotifEnv currentEmpireEnv $ Graph.typecheck location
+    result           <- liftIO $ try $ Empire.runEmpire empireNotifEnv currentEmpireEnv $ Graph.typecheck location
     case result of
-        Left err -> replyFail logger err req (Response.Error err)
-        Right _  -> Env.empireEnv .= newEmpireEnv
+        Left (exc :: SomeASTException) -> let err = displayException exc in replyFail logger err req (Response.Error err)
+        Right (_, newEmpireEnv) -> Env.empireEnv .= newEmpireEnv
     return ()
 
 -- FIXME[MM]: it's wrong but it works
