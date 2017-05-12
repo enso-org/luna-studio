@@ -10,14 +10,14 @@ import qualified Data.Map.Lazy            as Map
 import           Data.Set                 (Set)
 import qualified Data.Set                 as Set
 import           Data.Traversable         (forM)
-import           Empire.API.Data.Node     (ExpressionNode, NodeId, exprNodeId, position)
-import           Empire.API.Data.Port     (isSelf)
-import           Empire.API.Data.PortRef  (InPortRef, OutPortRef, dstNodeId, dstPortId, srcNodeId, srcPortId)
-import           Empire.API.Data.Position (Position, fromDoubles, leftTopPoint, move, vector, x, y)
-import           Empire.API.Data.Vector2  (Vector2)
+import           LunaStudio.Data.Node     (ExpressionNode, NodeId, exprNodeId, position)
+import           LunaStudio.Data.Port     (isSelf)
+import           LunaStudio.Data.PortRef  (InPortRef, OutPortRef, dstNodeId, dstPortId, srcNodeId, srcPortId)
+import           LunaStudio.Data.Position (Position, fromDoubles, leftTopPoint, move, vector, x, y)
+import           LunaStudio.Data.Vector2  (Vector2)
 import           Empire.Prelude
 
--- This should be changed to Connection from Empire.API.Data.Connection in whole backend
+-- This should be changed to Connection from LunaStudio.Data.Connection in whole backend
 type Connection = (OutPortRef, InPortRef)
 
 

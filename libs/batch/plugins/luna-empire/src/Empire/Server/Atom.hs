@@ -10,15 +10,15 @@ import qualified System.IO.Temp                        as Temp
 import           Empire.Env                            (Env)
 import qualified Empire.Env                            as Env
 
-import           Empire.API.Request                    (Request (..))
-import qualified Empire.API.Atom.SetProject            as SetProject
-import qualified Empire.API.Atom.OpenFile              as OpenFile
-import qualified Empire.API.Atom.SaveFile              as SaveFile
-import qualified Empire.API.Atom.CloseFile             as CloseFile
-import qualified Empire.API.Atom.GetBuffer             as GetBuffer
-import qualified Empire.API.Atom.IsSaved               as IsSaved
-import qualified Empire.API.Atom.Substitute            as Substitute
-import qualified Empire.API.Response                   as Response
+import           LunaStudio.API.Request                    (Request (..))
+import qualified LunaStudio.API.Atom.SetProject            as SetProject
+import qualified LunaStudio.API.Atom.OpenFile              as OpenFile
+import qualified LunaStudio.API.Atom.SaveFile              as SaveFile
+import qualified LunaStudio.API.Atom.CloseFile             as CloseFile
+import qualified LunaStudio.API.Atom.GetBuffer             as GetBuffer
+import qualified LunaStudio.API.Atom.IsSaved               as IsSaved
+import qualified LunaStudio.API.Atom.Substitute            as Substitute
+import qualified LunaStudio.API.Response                   as Response
 
 import qualified Empire.Commands.Graph                 as Graph
 import qualified Empire.Commands.Library               as Library

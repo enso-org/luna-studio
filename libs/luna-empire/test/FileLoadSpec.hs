@@ -10,15 +10,15 @@ import           Control.Monad                  (forM)
 import           Data.Coerce
 import           Data.List                      (find)
 import qualified Data.Map                       as Map
-import           Empire.API.Data.Breadcrumb     (Breadcrumb (..))
-import qualified Empire.API.Data.Graph          as Graph
-import           Empire.API.Data.GraphLocation  (GraphLocation (..))
-import qualified Empire.API.Data.Node           as Node
-import           Empire.API.Data.NodeMeta       (NodeMeta (..))
-import qualified Empire.API.Data.Port           as Port
-import           Empire.API.Data.PortRef        (AnyPortRef (..), InPortRef (..), OutPortRef (..))
-import qualified Empire.API.Data.Position       as Position
-import           Empire.API.Data.TypeRep        (TypeRep (TStar))
+import           LunaStudio.Data.Breadcrumb     (Breadcrumb (..))
+import qualified LunaStudio.Data.Graph          as Graph
+import           LunaStudio.Data.GraphLocation  (GraphLocation (..))
+import qualified LunaStudio.Data.Node           as Node
+import           LunaStudio.Data.NodeMeta       (NodeMeta (..))
+import qualified LunaStudio.Data.Port           as Port
+import           LunaStudio.Data.PortRef        (AnyPortRef (..), InPortRef (..), OutPortRef (..))
+import qualified LunaStudio.Data.Position       as Position
+import           LunaStudio.Data.TypeRep        (TypeRep (TStar))
 import           Empire.ASTOp                   (runASTOp)
 import qualified Empire.ASTOps.Parse            as ASTParse
 import qualified Empire.ASTOps.Print            as ASTPrint

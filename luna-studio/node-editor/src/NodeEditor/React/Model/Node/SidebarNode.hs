@@ -12,9 +12,9 @@ module NodeEditor.React.Model.Node.SidebarNode
 import           Common.Prelude
 import           Data.Convert                  (Convertible (convert))
 import           Data.HashMap.Strict           (HashMap)
-import           Empire.API.Data.Node          (NodeId)
-import qualified Empire.API.Data.Node          as Empire
-import           Empire.API.Data.NodeLoc       (NodeLoc (NodeLoc), NodePath)
+import           LunaStudio.Data.Node          (NodeId)
+import qualified LunaStudio.Data.Node          as Empire
+import           LunaStudio.Data.NodeLoc       (NodeLoc (NodeLoc), NodePath)
 import           NodeEditor.React.Model.IsNode as X
 import           NodeEditor.React.Model.Port   (InPort, InPortTree, OutPort, OutPortIndex (Projection), OutPortTree)
 import qualified NodeEditor.React.Model.Port   as Port

@@ -29,7 +29,7 @@ ghcjs  -package-db $(stack path --snapshot-pkg-db) \
        -package errors \
        -package vector \
        -package aeson \
-       -package luna-empire-api \
+       -package luna-studio-common \
        -package datetime \
        -XNoImplicitPrelude \
        -XDoAndIfThenElse \

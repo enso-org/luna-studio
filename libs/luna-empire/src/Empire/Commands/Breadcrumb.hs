@@ -12,10 +12,10 @@ import           Empire.Data.BreadcrumbHierarchy (navigateTo, replaceAt)
 import qualified Empire.Data.Graph               as Graph
 import qualified Empire.Data.Library             as Library
 
-import           Empire.API.Data.Breadcrumb      (Breadcrumb (..), BreadcrumbItem (..))
-import           Empire.API.Data.Library         (LibraryId)
-import           Empire.API.Data.Node            (NodeId)
-import           Empire.API.Data.Project         (ProjectId)
+import           LunaStudio.Data.Breadcrumb      (Breadcrumb (..), BreadcrumbItem (..))
+import           LunaStudio.Data.Library         (LibraryId)
+import           LunaStudio.Data.Node            (NodeId)
+import           LunaStudio.Data.Project         (ProjectId)
 
 import           Empire.Commands.Library         (withLibrary)
 import           Empire.Empire                   (Command, Empire, runEmpire)

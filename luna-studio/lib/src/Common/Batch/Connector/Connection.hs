@@ -8,8 +8,8 @@ import           Data.ByteString.Lazy.Char8  (ByteString, pack)
 import           Data.JSString.Text
 import           Data.Text.Lazy.Encoding     (decodeUtf8)
 import           Data.UUID.Types             (UUID)
-import           Empire.API.Request          (Request (..))
-import qualified Empire.API.Topic            as Topic
+import           LunaStudio.API.Request          (Request (..))
+import qualified LunaStudio.API.Topic            as Topic
 import           WebSocket
 import           Common.Prelude         hiding (Text)
 

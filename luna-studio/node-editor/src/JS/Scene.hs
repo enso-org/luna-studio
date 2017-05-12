@@ -4,7 +4,7 @@ module JS.Scene where
 
 import           Control.Exception              (handle)
 import           Data.ScreenPosition            (fromDoubles)
-import qualified Empire.API.Data.Size           as Size
+import qualified LunaStudio.Data.Size           as Size
 import           GHCJS.Foreign.Callback
 import           GHCJS.Types                    (JSException (JSException))
 

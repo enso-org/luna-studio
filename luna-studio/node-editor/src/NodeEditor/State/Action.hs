@@ -9,9 +9,9 @@ import           Data.Map                          (Map)
 import           Data.ScreenPosition               (ScreenPosition)
 import           Data.Set                          (Set)
 import qualified Data.Set                          as Set
-import           Empire.API.Data.NodeLoc           (NodeLoc)
-import           Empire.API.Data.PortRef           (AnyPortRef, InPortRef, OutPortRef)
-import           Empire.API.Data.Position          (Position)
+import           LunaStudio.Data.NodeLoc           (NodeLoc)
+import           LunaStudio.Data.PortRef           (AnyPortRef, InPortRef, OutPortRef)
+import           LunaStudio.Data.Position          (Position)
 import           NodeEditor.React.Model.Connection (ConnectionId)
 import qualified NodeEditor.React.Model.Connection as Connection
 

@@ -1,11 +1,11 @@
 module NodeEditor.Handler.Navigation where
 
 import           Common.Prelude
-import           Empire.API.Data.Position                   (Position (Position), vector, x, y)
-import           Empire.API.Data.Vector2                    (lengthSquared, magnitude)
+import           LunaStudio.Data.Position                   (Position (Position), vector, x, y)
+import           LunaStudio.Data.Vector2                    (lengthSquared, magnitude)
 
-import qualified Empire.API.Data.Port                       as P
-import qualified Empire.API.Data.PortRef                    as R
+import qualified LunaStudio.Data.Port                       as P
+import qualified LunaStudio.Data.PortRef                    as R
 import           NodeEditor.Action.Basic                    (selectNodes)
 import           NodeEditor.Action.Command                  (Command)
 import           NodeEditor.Action.State.NodeEditor         (getConnection, getConnections, getExpressionNode, getExpressionNodes,

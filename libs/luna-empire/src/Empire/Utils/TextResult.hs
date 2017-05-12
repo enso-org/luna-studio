@@ -3,7 +3,7 @@ module Empire.Utils.TextResult where
 import qualified Data.Text                   as Text
 import           Empire.Prelude
 
-import           Empire.API.Data.PortDefault (PortValue (..))
+import           LunaStudio.Data.PortDefault (PortValue (..))
 
 
 showLength :: [a] -> String

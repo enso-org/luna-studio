@@ -1,8 +1,8 @@
 module NodeEditor.Action.Basic.EnterBreadcrumb where
 
 import           Common.Prelude
-import           Empire.API.Data.Breadcrumb                 (Breadcrumb, BreadcrumbItem (Lambda), items)
-import           Empire.API.Data.GraphLocation              (breadcrumb)
+import           LunaStudio.Data.Breadcrumb                 (Breadcrumb, BreadcrumbItem (Lambda), items)
+import           LunaStudio.Data.GraphLocation              (breadcrumb)
 import           NodeEditor.Action.Basic.ProjectManager     (navigateToGraph)
 import           NodeEditor.Action.Command                  (Command)
 import           NodeEditor.Batch.Workspace                 (currentLocation)

@@ -5,33 +5,33 @@ module NodeEditor.Handler.Backend.Graph
 import           Common.Prelude
 import           Common.Report
 import qualified Data.DateTime                               as DT
-import qualified Empire.API.Data.Graph                       as Graph
-import           Empire.API.Data.Node                        (nodeId)
-import           Empire.API.Data.NodeLoc                     (NodePath, prependPath)
-import qualified Empire.API.Data.NodeLoc                     as NodeLoc
-import qualified Empire.API.Graph.AddConnection              as AddConnection
-import qualified Empire.API.Graph.AddNode                    as AddNode
-import qualified Empire.API.Graph.AddPort                    as AddPort
-import qualified Empire.API.Graph.AddSubgraph                as AddSubgraph
-import qualified Empire.API.Graph.AutolayoutNodes            as AutolayoutNodes
-import qualified Empire.API.Graph.CollaborationUpdate        as CollaborationUpdate
-import qualified Empire.API.Graph.GetProgram                 as GetProgram
-import qualified Empire.API.Graph.GetSubgraphs               as GetSubgraphs
-import qualified Empire.API.Graph.MonadsUpdate               as MonadsUpdate
-import qualified Empire.API.Graph.MovePort                   as MovePort
-import qualified Empire.API.Graph.NodeResultUpdate           as NodeResultUpdate
-import qualified Empire.API.Graph.NodeTypecheckerUpdate      as NodeTCUpdate
-import qualified Empire.API.Graph.RemoveConnection           as RemoveConnection
-import qualified Empire.API.Graph.RemoveNodes                as RemoveNodes
-import qualified Empire.API.Graph.RemovePort                 as RemovePort
-import qualified Empire.API.Graph.RenameNode                 as RenameNode
-import qualified Empire.API.Graph.RenamePort                 as RenamePort
-import qualified Empire.API.Graph.Result                     as Result
-import qualified Empire.API.Graph.SearchNodes                as SearchNodes
-import qualified Empire.API.Graph.SetNodeExpression          as SetNodeExpression
-import qualified Empire.API.Graph.SetNodesMeta               as SetNodesMeta
-import qualified Empire.API.Graph.SetPortDefault             as SetPortDefault
-import qualified Empire.API.Response                         as Response
+import qualified LunaStudio.Data.Graph                       as Graph
+import           LunaStudio.Data.Node                        (nodeId)
+import           LunaStudio.Data.NodeLoc                     (NodePath, prependPath)
+import qualified LunaStudio.Data.NodeLoc                     as NodeLoc
+import qualified LunaStudio.API.Graph.AddConnection              as AddConnection
+import qualified LunaStudio.API.Graph.AddNode                    as AddNode
+import qualified LunaStudio.API.Graph.AddPort                    as AddPort
+import qualified LunaStudio.API.Graph.AddSubgraph                as AddSubgraph
+import qualified LunaStudio.API.Graph.AutolayoutNodes            as AutolayoutNodes
+import qualified LunaStudio.API.Graph.CollaborationUpdate        as CollaborationUpdate
+import qualified LunaStudio.API.Graph.GetProgram                 as GetProgram
+import qualified LunaStudio.API.Graph.GetSubgraphs               as GetSubgraphs
+import qualified LunaStudio.API.Graph.MonadsUpdate               as MonadsUpdate
+import qualified LunaStudio.API.Graph.MovePort                   as MovePort
+import qualified LunaStudio.API.Graph.NodeResultUpdate           as NodeResultUpdate
+import qualified LunaStudio.API.Graph.NodeTypecheckerUpdate      as NodeTCUpdate
+import qualified LunaStudio.API.Graph.RemoveConnection           as RemoveConnection
+import qualified LunaStudio.API.Graph.RemoveNodes                as RemoveNodes
+import qualified LunaStudio.API.Graph.RemovePort                 as RemovePort
+import qualified LunaStudio.API.Graph.RenameNode                 as RenameNode
+import qualified LunaStudio.API.Graph.RenamePort                 as RenamePort
+import qualified LunaStudio.API.Graph.Result                     as Result
+import qualified LunaStudio.API.Graph.SearchNodes                as SearchNodes
+import qualified LunaStudio.API.Graph.SetNodeExpression          as SetNodeExpression
+import qualified LunaStudio.API.Graph.SetNodesMeta               as SetNodesMeta
+import qualified LunaStudio.API.Graph.SetPortDefault             as SetPortDefault
+import qualified LunaStudio.API.Response                         as Response
 import           NodeEditor.Action.Basic                     (localAddConnections, localMerge, localRemoveConnections, localRemoveNodes,
                                                               localSetSearcherHints, localUpdateNodeTypecheck,
                                                               localUpdateOrAddExpressionNode, localUpdateOrAddInputNode,

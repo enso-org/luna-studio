@@ -6,9 +6,9 @@ import qualified Data.Aeson                                           as Aeson
 import qualified Data.HashMap.Strict                                  as HashMap
 import qualified Data.Map.Lazy                                        as Map
 import           Data.Matrix                                          (Matrix)
-import           Empire.API.Data.LabeledTree                          (LabeledTree (LabeledTree))
-import qualified Empire.API.Data.MonadPath                            as MonadPath
-import           Empire.API.Data.PortRef                              (toAnyPortRef)
+import           LunaStudio.Data.LabeledTree                          (LabeledTree (LabeledTree))
+import qualified LunaStudio.Data.MonadPath                            as MonadPath
+import           LunaStudio.Data.PortRef                              (toAnyPortRef)
 import qualified JS.Config                                            as Config
 import qualified JS.UI                                                as UI
 import           NodeEditor.Data.Matrix                               (showNodeMatrix, showNodeTranslate)

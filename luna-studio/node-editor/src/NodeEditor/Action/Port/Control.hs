@@ -7,8 +7,8 @@ module NodeEditor.Action.Port.Control
     ) where
 
 import           Data.ScreenPosition                 (ScreenPosition, x)
-import           Empire.API.Data.PortDefault         (PortDefault (Constant), PortValue (DoubleValue, IntValue))
-import           Empire.API.Data.PortRef             (InPortRef)
+import           LunaStudio.Data.PortDefault         (PortDefault (Constant), PortValue (DoubleValue, IntValue))
+import           LunaStudio.Data.PortRef             (InPortRef)
 import qualified JS.UI                               as JS
 import           NodeEditor.Action.Basic            (localSetPortDefault)
 import qualified NodeEditor.Action.Batch            as Batch

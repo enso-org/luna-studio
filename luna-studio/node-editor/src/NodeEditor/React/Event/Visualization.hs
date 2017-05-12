@@ -4,7 +4,7 @@
 module NodeEditor.React.Event.Visualization where
 
 import           Data.Aeson                  (FromJSON, ToJSON)
-import           Empire.API.Data.Position    (Position)
+import           LunaStudio.Data.Position    (Position)
 import           React.Flux                  (MouseEvent)
 
 import           Common.Prelude

@@ -3,7 +3,7 @@ module NodeEditor.State.Collaboration where
 import           Data.Aeson                           (ToJSON)
 import           Data.DateTime                        (DateTime)
 import           Data.Map.Lazy                        (Map)
-import           Empire.API.Graph.CollaborationUpdate (ClientId)
+import           LunaStudio.API.Graph.CollaborationUpdate (ClientId)
 import           Common.Prelude
 
 

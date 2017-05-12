@@ -15,11 +15,11 @@ import           NodeEditor.React.Model.Layout               (Layout, Scene)
 import qualified NodeEditor.React.Model.Layout               as Scene
 
 import           Common.Prelude
-import           Empire.API.Data.MonadPath                   (MonadPath)
-import qualified Empire.API.Data.Node                        as Empire
-import           Empire.API.Data.Port                        (_WithDefault)
-import           Empire.API.Data.PortDefault                 (PortDefault)
-import           Empire.API.Data.PortRef                     (AnyPortRef, InPortRef, OutPortRef (OutPortRef))
+import           LunaStudio.Data.MonadPath                   (MonadPath)
+import qualified LunaStudio.Data.Node                        as Empire
+import           LunaStudio.Data.Port                        (_WithDefault)
+import           LunaStudio.Data.PortDefault                 (PortDefault)
+import           LunaStudio.Data.PortRef                     (AnyPortRef, InPortRef, OutPortRef (OutPortRef))
 import           NodeEditor.Action.Command                   (Command)
 import           NodeEditor.Action.State.App                 (get, modify)
 import qualified NodeEditor.Action.State.Internal.NodeEditor as Internal

@@ -17,8 +17,8 @@ import           Empire.ASTOp              (ASTOp, match)
 import           Empire.Data.AST           (NodeRef)
 import qualified Empire.ASTOps.Read        as ASTRead
 import qualified Empire.ASTOps.Deconstruct as ASTDeconstruct
-import           Empire.API.Data.Node      (NodeId)
-import           Empire.API.Data.TypeRep
+import           LunaStudio.Data.Node      (NodeId)
+import           LunaStudio.Data.TypeRep
 import qualified Luna.IR                        as IR
 import           Luna.IR.Term.Uni
 

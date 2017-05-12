@@ -3,12 +3,12 @@ module NodeEditor.Action.Basic.AddNode where
 import           Common.Prelude
 import           Data.Text                          (Text)
 import qualified Data.Text                          as Text
-import           Empire.API.Data.LabeledTree        (LabeledTree (LabeledTree))
-import qualified Empire.API.Data.Node               as Empire
-import           Empire.API.Data.NodeMeta           (NodeMeta (NodeMeta))
-import           Empire.API.Data.Port               (InPortIndex (Arg, Self), Port (Port), PortState (NotConnected))
-import           Empire.API.Data.Position           (Position)
-import           Empire.API.Data.TypeRep            (TypeRep (TStar))
+import           LunaStudio.Data.LabeledTree        (LabeledTree (LabeledTree))
+import qualified LunaStudio.Data.Node               as Empire
+import           LunaStudio.Data.NodeMeta           (NodeMeta (NodeMeta))
+import           LunaStudio.Data.Port               (InPortIndex (Arg, Self), Port (Port), PortState (NotConnected))
+import           LunaStudio.Data.Position           (Position)
+import           LunaStudio.Data.TypeRep            (TypeRep (TStar))
 import qualified JS.GoogleAnalytics                 as GA
 import           NodeEditor.Action.Basic.FocusNode  (focusNode)
 import           NodeEditor.Action.Basic.SelectNode (selectNode)

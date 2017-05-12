@@ -7,9 +7,9 @@ module NodeEditor.React.View.Sidebar
 
 import           Common.Prelude
 import qualified Data.Aeson                              as Aeson
-import           Empire.API.Data.PortRef                 (AnyPortRef (OutPortRef'), OutPortRef (OutPortRef), toAnyPortRef)
-import qualified Empire.API.Data.PortRef                 as PortRef
-import           Empire.API.Data.Position                (y)
+import           LunaStudio.Data.PortRef                 (AnyPortRef (OutPortRef'), OutPortRef (OutPortRef), toAnyPortRef)
+import qualified LunaStudio.Data.PortRef                 as PortRef
+import           LunaStudio.Data.Position                (y)
 import qualified JS.Config                               as Config
 import           JS.Scene                                (inputSidebarId, outputSidebarId)
 import qualified JS.UI                                   as UI

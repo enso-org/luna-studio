@@ -1,8 +1,8 @@
 module NodeEditor.Action.Basic.MovePort where
 
 import           Common.Prelude
-import           Empire.API.Data.LabeledTree             (value)
-import           Empire.API.Data.PortRef                 (OutPortRef (OutPortRef), srcPortId)
+import           LunaStudio.Data.LabeledTree             (value)
+import           LunaStudio.Data.PortRef                 (OutPortRef (OutPortRef), srcPortId)
 import           NodeEditor.Action.Basic.AddConnection   (localAddConnection)
 import           NodeEditor.Action.Basic.UpdateNode      (localUpdateInputNode)
 import qualified NodeEditor.Action.Batch                 as Batch

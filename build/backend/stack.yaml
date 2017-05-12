@@ -20,9 +20,7 @@ packages:
     extra-dep: true
   - location: ../../libs/batch/plugins/request-monitor
     extra-dep: true
-  - location: ../../libs/luna-empire-api-json
-    extra-dep: true
-  - location: ../../libs/luna-empire-api
+  - location: ../../libs/luna-studio-common
     extra-dep: true
   - location: ../../libs/m-logger
     extra-dep: true

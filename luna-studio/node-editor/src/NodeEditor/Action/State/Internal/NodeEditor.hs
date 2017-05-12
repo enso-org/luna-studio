@@ -6,8 +6,8 @@ module NodeEditor.Action.State.Internal.NodeEditor where
 
 import qualified Control.Monad.State                        as M
 import           Data.HashMap.Strict                        (HashMap)
-import qualified Empire.API.Data.Breadcrumb                 as B
-import qualified Empire.API.Data.NodeLoc                    as NodeLoc
+import qualified LunaStudio.Data.Breadcrumb                 as B
+import qualified LunaStudio.Data.NodeLoc                    as NodeLoc
 
 import           Common.Prelude
 import           NodeEditor.Action.Command                  (Command)

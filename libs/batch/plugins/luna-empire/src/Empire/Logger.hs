@@ -15,27 +15,27 @@ import           Data.Map.Strict                   (Map)
 import qualified Data.Map.Strict                   as Map
 import           Prologue
 
-import qualified Empire.API.Control.EmpireStarted  as EmpireStarted
-import qualified Empire.API.Graph.AddConnection    as AddConnection
-import qualified Empire.API.Graph.AddNode          as AddNode
-import qualified Empire.API.Graph.DumpGraphViz     as DumpGraphViz
-import qualified Empire.API.Graph.GetProgram       as GetProgram
-import qualified Empire.API.Graph.NodeResultUpdate as NodeResultUpdate
-import qualified Empire.API.Graph.RemoveConnection as RemoveConnection
-import qualified Empire.API.Graph.RemoveNodes      as RemoveNodes
-import qualified Empire.API.Graph.RenameNode       as RenameNode
-import qualified Empire.API.Graph.SetNodesMeta     as SetNodesMeta
-import qualified Empire.API.Graph.SetPortDefault   as SetPortDefault
-import qualified Empire.API.Graph.TypeCheck        as TypeCheck
-import qualified Empire.API.Library.CreateLibrary  as CreateLibrary
-import qualified Empire.API.Library.ListLibraries  as ListLibraries
-import qualified Empire.API.Project.CreateProject  as CreateProject
-import qualified Empire.API.Project.ExportProject  as ExportProject
-import qualified Empire.API.Project.ImportProject  as ImportProject
-import qualified Empire.API.Project.ListProjects   as ListProjects
-import qualified Empire.API.Project.OpenProject    as OpenProject
-import           Empire.API.Request                (Request)
-import qualified Empire.API.Topic                  as Topic
+import qualified LunaStudio.API.Control.EmpireStarted  as EmpireStarted
+import qualified LunaStudio.API.Graph.AddConnection    as AddConnection
+import qualified LunaStudio.API.Graph.AddNode          as AddNode
+import qualified LunaStudio.API.Graph.DumpGraphViz     as DumpGraphViz
+import qualified LunaStudio.API.Graph.GetProgram       as GetProgram
+import qualified LunaStudio.API.Graph.NodeResultUpdate as NodeResultUpdate
+import qualified LunaStudio.API.Graph.RemoveConnection as RemoveConnection
+import qualified LunaStudio.API.Graph.RemoveNodes      as RemoveNodes
+import qualified LunaStudio.API.Graph.RenameNode       as RenameNode
+import qualified LunaStudio.API.Graph.SetNodesMeta     as SetNodesMeta
+import qualified LunaStudio.API.Graph.SetPortDefault   as SetPortDefault
+import qualified LunaStudio.API.Graph.TypeCheck        as TypeCheck
+import qualified LunaStudio.API.Library.CreateLibrary  as CreateLibrary
+import qualified LunaStudio.API.Library.ListLibraries  as ListLibraries
+import qualified LunaStudio.API.Project.CreateProject  as CreateProject
+import qualified LunaStudio.API.Project.ExportProject  as ExportProject
+import qualified LunaStudio.API.Project.ImportProject  as ImportProject
+import qualified LunaStudio.API.Project.ListProjects   as ListProjects
+import qualified LunaStudio.API.Project.OpenProject    as OpenProject
+import           LunaStudio.API.Request                (Request)
+import qualified LunaStudio.API.Topic                  as Topic
 import qualified Empire.Commands.Library           as Library
 import qualified Empire.Empire                     as Empire
 import           Empire.Env                        (LoggerEnv)

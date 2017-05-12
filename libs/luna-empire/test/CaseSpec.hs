@@ -6,18 +6,18 @@ module CaseSpec (spec) where
 import           Data.Foldable                 (toList)
 import           Data.List                     (find, stripPrefix)
 import qualified Data.Map                      as Map
-import qualified Empire.API.Data.Graph         as Graph
+import qualified LunaStudio.Data.Graph         as Graph
 import qualified Empire.Data.Graph             as Graph (breadcrumbHierarchy)
-import           Empire.API.Data.GraphLocation (GraphLocation(..))
-import qualified Empire.API.Data.Node          as Node
-import           Empire.API.Data.NodeMeta      (NodeMeta(..))
-import qualified Empire.API.Data.Port          as Port
-import           Empire.API.Data.Port          (OutPortTree (..))
-import           Empire.API.Data.NodeLoc       (NodeLoc (..))
-import           Empire.API.Data.PortDefault   (PortDefault (Constant, Expression))
-import           Empire.API.Data.LabeledTree   (LabeledTree (..))
-import           Empire.API.Data.PortRef       (InPortRef (..), OutPortRef (..), AnyPortRef(..))
-import           Empire.API.Data.TypeRep       (TypeRep(TCons, TStar, TLam, TVar))
+import           LunaStudio.Data.GraphLocation (GraphLocation(..))
+import qualified LunaStudio.Data.Node          as Node
+import           LunaStudio.Data.NodeMeta      (NodeMeta(..))
+import qualified LunaStudio.Data.Port          as Port
+import           LunaStudio.Data.Port          (OutPortTree (..))
+import           LunaStudio.Data.NodeLoc       (NodeLoc (..))
+import           LunaStudio.Data.PortDefault   (PortDefault (Constant, Expression))
+import           LunaStudio.Data.LabeledTree   (LabeledTree (..))
+import           LunaStudio.Data.PortRef       (InPortRef (..), OutPortRef (..), AnyPortRef(..))
+import           LunaStudio.Data.TypeRep       (TypeRep(TCons, TStar, TLam, TVar))
 import           Empire.ASTOp                  (runASTOp)
 import qualified Empire.ASTOps.Deconstruct     as ASTDeconstruct
 import qualified Empire.ASTOps.Parse           as Parser

@@ -3,11 +3,11 @@ module NodeEditor.Batch.Workspace where
 import           Common.Prelude
 import           Data.Aeson                    (ToJSON)
 
-import qualified Empire.API.Data.Breadcrumb    as Breadcrumb
-import           Empire.API.Data.GraphLocation (GraphLocation (..))
-import qualified Empire.API.Data.GraphLocation as GraphLocation
-import           Empire.API.Data.Node          (ExpressionNode)
-import           Empire.API.Data.NodeLoc       (HasBreadcrumb (..))
+import qualified LunaStudio.Data.Breadcrumb    as Breadcrumb
+import           LunaStudio.Data.GraphLocation (GraphLocation (..))
+import qualified LunaStudio.Data.GraphLocation as GraphLocation
+import           LunaStudio.Data.Node          (ExpressionNode)
+import           LunaStudio.Data.NodeLoc       (HasBreadcrumb (..))
 import           Text.ScopeSearcher.Item       (Items)
 
 

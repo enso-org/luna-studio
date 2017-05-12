@@ -2,9 +2,9 @@ module NodeEditor.Action.Basic.UpdateNode where
 
 import           Common.Prelude
 import           Control.Monad                              (filterM)
-import           Empire.API.Data.Node                       (NodeTypecheckerUpdate, tcNodeId)
-import qualified Empire.API.Data.Node                       as Empire
-import           Empire.API.Data.Port                       (InPortIndex (Self))
+import           LunaStudio.Data.Node                       (NodeTypecheckerUpdate, tcNodeId)
+import qualified LunaStudio.Data.Node                       as Empire
+import           LunaStudio.Data.Port                       (InPortIndex (Self))
 import           NodeEditor.Action.Basic.AddNode            (localAddExpressionNode, localAddInputNode, localAddOutputNode)
 import           NodeEditor.Action.Basic.Scene              (updateScene)
 import           NodeEditor.Action.Command                  (Command)

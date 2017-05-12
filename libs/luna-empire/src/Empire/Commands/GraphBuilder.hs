@@ -38,24 +38,24 @@ import           Data.Text                         (Text)
 import qualified Data.Text                         as Text
 import qualified Data.UUID.V4                      as UUID (nextRandom)
 
-import           Empire.API.Data.Breadcrumb        (Breadcrumb(..), BreadcrumbItem, Named(..))
-import qualified Empire.API.Data.Breadcrumb        as Breadcrumb
+import           LunaStudio.Data.Breadcrumb        (Breadcrumb(..), BreadcrumbItem, Named(..))
+import qualified LunaStudio.Data.Breadcrumb        as Breadcrumb
 import qualified Empire.Data.BreadcrumbHierarchy   as BH
 import           Empire.Data.Graph                 (Graph)
 import qualified Empire.Data.Graph                 as Graph
 
-import           Empire.API.Data.PortDefault       (PortDefault (..), PortValue (..))
-import qualified Empire.API.Data.Graph             as API
-import           Empire.API.Data.MonadPath         (MonadPath(MonadPath))
-import           Empire.API.Data.Node              (NodeId)
-import qualified Empire.API.Data.Node              as API
-import qualified Empire.API.Data.NodeLoc           as NodeLoc
-import           Empire.API.Data.NodeLoc           (NodeLoc (..))
-import           Empire.API.Data.Port              (InPortIndex (..), OutPortIndex (..), OutPort, InPort, InPortId, OutPortId, OutPorts (..), InPorts (..), Port (..), InPortTree, OutPortTree, PortState (..))
-import qualified Empire.API.Data.Port              as Port
-import           Empire.API.Data.LabeledTree       (LabeledTree (..))
-import           Empire.API.Data.PortRef           (InPortRef (..), OutPortRef (..), srcNodeId, dstNodeId)
-import           Empire.API.Data.TypeRep           (TypeRep(TLam, TStar, TCons))
+import           LunaStudio.Data.PortDefault       (PortDefault (..), PortValue (..))
+import qualified LunaStudio.Data.Graph             as API
+import           LunaStudio.Data.MonadPath         (MonadPath(MonadPath))
+import           LunaStudio.Data.Node              (NodeId)
+import qualified LunaStudio.Data.Node              as API
+import qualified LunaStudio.Data.NodeLoc           as NodeLoc
+import           LunaStudio.Data.NodeLoc           (NodeLoc (..))
+import           LunaStudio.Data.Port              (InPortIndex (..), OutPortIndex (..), OutPort, InPort, InPortId, OutPortId, OutPorts (..), InPorts (..), Port (..), InPortTree, OutPortTree, PortState (..))
+import qualified LunaStudio.Data.Port              as Port
+import           LunaStudio.Data.LabeledTree       (LabeledTree (..))
+import           LunaStudio.Data.PortRef           (InPortRef (..), OutPortRef (..), srcNodeId, dstNodeId)
+import           LunaStudio.Data.TypeRep           (TypeRep(TLam, TStar, TCons))
 
 import           Empire.ASTOp                      (ASTOp, match, runASTOp)
 import qualified Empire.ASTOps.Deconstruct         as ASTDeconstruct

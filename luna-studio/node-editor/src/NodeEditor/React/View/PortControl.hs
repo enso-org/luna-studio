@@ -4,11 +4,11 @@ module NodeEditor.React.View.PortControl
     ) where
 
 import           Common.Prelude              hiding (group)
-import           Empire.API.Data.Port        (InPortIndex (Arg))
-import qualified Empire.API.Data.Port        as PortAPI
-import qualified Empire.API.Data.PortDefault as PortDefault
-import           Empire.API.Data.PortRef     (InPortRef (InPortRef))
-import qualified Empire.API.Data.ValueType   as ValueType
+import           LunaStudio.Data.Port        (InPortIndex (Arg))
+import qualified LunaStudio.Data.Port        as PortAPI
+import qualified LunaStudio.Data.PortDefault as PortDefault
+import           LunaStudio.Data.PortRef     (InPortRef (InPortRef))
+import qualified LunaStudio.Data.ValueType   as ValueType
 import qualified JS.Config                   as Config
 import qualified NodeEditor.Event.UI         as UI
 import qualified NodeEditor.React.Event.Node as Node

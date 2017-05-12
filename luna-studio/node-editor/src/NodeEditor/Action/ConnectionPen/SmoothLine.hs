@@ -8,8 +8,8 @@ import           Common.Prelude
 import           Data.Curve               (Curve (Curve), CurveSegment (CurveSegment))
 import qualified Data.Curve               as Curve
 import           Data.Timestamp           (Timestamp)
-import           Empire.API.Data.Position (Position (Position), distance, vector, x, y)
-import           Empire.API.Data.Vector2  (scalarProduct)
+import           LunaStudio.Data.Position (Position (Position), distance, vector, x, y)
+import           LunaStudio.Data.Vector2  (scalarProduct)
 import           Prologue                 (unwrap)
 
 

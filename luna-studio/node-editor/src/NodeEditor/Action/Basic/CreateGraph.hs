@@ -2,8 +2,8 @@ module NodeEditor.Action.Basic.CreateGraph where
 
 import           Common.Prelude
 import qualified Data.Set                              as Set
-import           Empire.API.Data.MonadPath             (MonadPath)
-import           Empire.API.Data.PortRef               (InPortRef, OutPortRef)
+import           LunaStudio.Data.MonadPath             (MonadPath)
+import           LunaStudio.Data.PortRef               (InPortRef, OutPortRef)
 import           NodeEditor.Action.Basic.AddConnection (localAddConnections)
 import           NodeEditor.Action.Basic.AddNode       (localAddExpressionNodes)
 import           NodeEditor.Action.Basic.FocusNode     (updateNodeZOrder)

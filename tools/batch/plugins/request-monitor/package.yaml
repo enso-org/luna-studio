@@ -16,7 +16,7 @@ dependencies:
   - containers
   - docopt
   - luna-empire
-  - luna-empire-api
+  - luna-studio-common
   - m-logger
   - optparse-applicative
   - prologue

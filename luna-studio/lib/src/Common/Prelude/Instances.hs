@@ -10,15 +10,15 @@ import qualified Data.HashMap.Strict        as HashMap
 import           Data.JSString              (JSString)
 import qualified Data.JSString              as JSString
 import           Development.Placeholders
-import           Empire.API.JSONInstances   ()
+import           LunaStudio.API.JSONInstances   ()
 import           Prologue
 import           React.Flux
 import           React.Flux.Store           (ReactStoreRef)
 
-import           Empire.API.Data.Breadcrumb (Breadcrumb, BreadcrumbItem)
-import           Empire.API.Data.NodeLoc    (NodeLoc, NodePath)
-import           Empire.API.Data.Port       (InPortIndex, OutPortIndex)
-import           Empire.API.Data.PortRef    (AnyPortRef, InPortRef, OutPortRef)
+import           LunaStudio.Data.Breadcrumb (Breadcrumb, BreadcrumbItem)
+import           LunaStudio.Data.NodeLoc    (NodeLoc, NodePath)
+import           LunaStudio.Data.Port       (InPortIndex, OutPortIndex)
+import           LunaStudio.Data.PortRef    (AnyPortRef, InPortRef, OutPortRef)
 
 -- ======= React.Flux ==========================================================
 

@@ -5,13 +5,13 @@ import           Data.Aeson                                 (decode, encode)
 import           Data.ByteString.Lazy.Char8                 (pack, unpack)
 import qualified Data.HashMap.Strict                        as HashMap
 import qualified Data.Set                                   as Set
-import           Empire.API.Data.Position                   (x, y)
+import           LunaStudio.Data.Position                   (x, y)
 
 import           Common.Prelude
-import qualified Empire.API.Data.Connection                 as Connection
-import qualified Empire.API.Data.GraphLocation              as GraphLocation
-import           Empire.API.Data.NodeLoc                    (NodePath (NodePath))
-import qualified Empire.API.Data.PortRef                    as PortRef
+import qualified LunaStudio.Data.Connection                 as Connection
+import qualified LunaStudio.Data.GraphLocation              as GraphLocation
+import           LunaStudio.Data.NodeLoc                    (NodePath (NodePath))
+import qualified LunaStudio.Data.PortRef                    as PortRef
 import qualified JS.Clipboard                               as JS (copyStringToClipboard)
 import           NodeEditor.Action.Basic                    (addSubgraph, removeSelectedNodes)
 import           NodeEditor.Action.Command                  (Command)

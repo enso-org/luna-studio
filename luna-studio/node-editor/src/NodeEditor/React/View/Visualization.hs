@@ -15,10 +15,10 @@ import qualified Data.ByteString.Lazy.Char8                 as ByteString
 import           Data.Scientific                            (coefficient)
 import           Data.Text                                  as Text
 import qualified Data.Vector                                as Vector
-import qualified Empire.API.Data.Error                      as LunaError
-import           Empire.API.Data.PortDefault                (VisualizationValue (..))
-import           Empire.API.Data.Position                   (Position)
-import           Empire.API.Graph.NodeResultUpdate          (NodeValue (..))
+import qualified LunaStudio.Data.Error                      as LunaError
+import           LunaStudio.Data.PortDefault                (VisualizationValue (..))
+import           LunaStudio.Data.Position                   (Position)
+import           LunaStudio.API.Graph.NodeResultUpdate          (NodeValue (..))
 import qualified NodeEditor.Event.UI                        as UI
 import qualified NodeEditor.React.Event.Visualization       as Visualization
 import           NodeEditor.React.Model.App                 (App)

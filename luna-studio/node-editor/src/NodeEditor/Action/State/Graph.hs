@@ -2,9 +2,9 @@ module NodeEditor.Action.State.Graph where
 
 import           Common.Prelude
 import qualified Data.List                          as List
-import           Empire.API.Data.Breadcrumb         (Breadcrumb (Breadcrumb), items)
-import           Empire.API.Data.GraphLocation      (GraphLocation, breadcrumb)
-import           Empire.API.Data.NodeLoc            (NodePath)
+import           LunaStudio.Data.Breadcrumb         (Breadcrumb (Breadcrumb), items)
+import           LunaStudio.Data.GraphLocation      (GraphLocation, breadcrumb)
+import           LunaStudio.Data.NodeLoc            (NodePath)
 import           NodeEditor.Action.Command          (Command)
 import           NodeEditor.Action.State.NodeEditor (isGraphLoaded)
 import           NodeEditor.Batch.Workspace         (currentLocation)

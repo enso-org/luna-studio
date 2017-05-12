@@ -1,22 +1,22 @@
 module Empire.Commands.Publisher where
 
-import           Control.Concurrent.STM.TChan           (writeTChan)
+import           Control.Concurrent.STM.TChan               (writeTChan)
 import           Control.Monad.Reader
-import           Control.Monad.STM                      (atomically)
-import           Data.Text                              (Text)
-import           Empire.API.Data.AsyncUpdate            (AsyncUpdate (..))
-import           Empire.API.Data.GraphLocation          (GraphLocation)
-import           Empire.API.Data.MonadPath              (MonadPath)
-import           Empire.API.Data.Node                   (ExpressionNode, NodeId, NodeTypecheckerUpdate)
-import           Empire.API.Data.TypeRep                (TypeRep)
-import           Empire.Data.Graph                      (Graph)
+import           Control.Monad.STM                          (atomically)
+import           Data.Text                                  (Text)
+import           Empire.Data.Graph                          (Graph)
 import           Empire.Empire
 import           Empire.Prelude
+import           LunaStudio.API.AsyncUpdate                 (AsyncUpdate (..))
+import           LunaStudio.Data.GraphLocation              (GraphLocation)
+import           LunaStudio.Data.MonadPath                  (MonadPath)
+import           LunaStudio.Data.Node                       (ExpressionNode, NodeId, NodeTypecheckerUpdate)
+import           LunaStudio.Data.TypeRep                    (TypeRep)
 
-import qualified Empire.API.Atom.Substitute             as Substitute
-import qualified Empire.API.Graph.MonadsUpdate          as Monads
-import qualified Empire.API.Graph.NodeResultUpdate      as NodeResult
-import qualified Empire.API.Graph.NodeTypecheckerUpdate as NodeTCUpdate
+import qualified LunaStudio.API.Atom.Substitute             as Substitute
+import qualified LunaStudio.API.Graph.MonadsUpdate          as Monads
+import qualified LunaStudio.API.Graph.NodeResultUpdate      as NodeResult
+import qualified LunaStudio.API.Graph.NodeTypecheckerUpdate as NodeTCUpdate
 
 notifyMonadsUpdate :: (MonadReader CommunicationEnv m, MonadIO m) => GraphLocation -> [MonadPath] -> m ()
 notifyMonadsUpdate loc m =

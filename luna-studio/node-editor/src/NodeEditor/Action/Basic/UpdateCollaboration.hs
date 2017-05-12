@@ -3,7 +3,7 @@ module NodeEditor.Action.Basic.UpdateCollaboration where
 import qualified Control.Monad.State                         as M
 import qualified Data.DateTime                               as DT
 import qualified Data.Map.Lazy                               as Map
-import           Empire.API.Graph.CollaborationUpdate        (ClientId)
+import           LunaStudio.API.Graph.CollaborationUpdate        (ClientId)
 import qualified NodeEditor.Action.Batch                    as Batch
 import           NodeEditor.Action.Command                  (Command)
 import           NodeEditor.Action.State.NodeEditor         (getSelectedNodes, modifyExpressionNodes_)

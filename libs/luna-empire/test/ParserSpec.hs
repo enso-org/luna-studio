@@ -3,11 +3,11 @@
 module ParserSpec (spec) where
 
 import qualified Data.Map                     as Map
-import           Empire.API.Data.PortDefault (PortDefault(Expression))
-import qualified Empire.API.Data.Node         as Node
-import qualified Empire.API.Data.Port         as Port
-import           Empire.API.Data.LabeledTree  (LabeledTree (..))
-import           Empire.API.Data.TypeRep       (TypeRep(TStar))
+import           LunaStudio.Data.PortDefault (PortDefault(Expression))
+import qualified LunaStudio.Data.Node         as Node
+import qualified LunaStudio.Data.Port         as Port
+import           LunaStudio.Data.LabeledTree  (LabeledTree (..))
+import           LunaStudio.Data.TypeRep       (TypeRep(TStar))
 import qualified Empire.Commands.Graph         as Graph
 
 import           Prologue                   hiding ((|>))

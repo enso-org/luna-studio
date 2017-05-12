@@ -23,9 +23,7 @@ packages:
   - location: ./text-editor
   - location: ./lib
     extra-dep: true
-  - location: ../libs/luna-empire-api
-    extra-dep: true
-  - location: ../libs/luna-empire-api-json
+  - location: ../libs/luna-studio-common
     extra-dep: true
   - location: ../libs/scope-searcher
     extra-dep: true

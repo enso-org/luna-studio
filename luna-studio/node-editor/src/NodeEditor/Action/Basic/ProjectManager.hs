@@ -1,7 +1,7 @@
 module NodeEditor.Action.Basic.ProjectManager where
 
 import           Common.Prelude
-import           Empire.API.Data.GraphLocation      (GraphLocation)
+import           LunaStudio.Data.GraphLocation      (GraphLocation)
 import qualified JS.LocalStorage                    as JS
 import qualified NodeEditor.Action.Batch            as Batch
 import           NodeEditor.Action.Command          (Command)

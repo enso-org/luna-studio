@@ -12,7 +12,7 @@ module NodeEditor.Action.Camera.Zoom
 import           Common.Prelude
 import           Data.Matrix                          (getElem, setElem)
 import           Data.ScreenPosition                  (ScreenPosition, vector, x, y)
-import           Empire.API.Data.Vector2              (Vector2)
+import           LunaStudio.Data.Vector2              (Vector2)
 import           NodeEditor.Action.Basic              (modifyCamera)
 import           NodeEditor.Action.Command            (Command)
 import           NodeEditor.Action.State.Action       (beginActionWithKey, continueActionWithKey, removeActionFromState,

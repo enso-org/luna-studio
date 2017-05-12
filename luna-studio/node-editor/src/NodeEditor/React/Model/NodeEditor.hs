@@ -8,11 +8,11 @@ module NodeEditor.React.Model.NodeEditor where
 
 import           Common.Prelude
 import qualified Data.HashMap.Strict                        as HashMap
-import qualified Empire.API.Data.Breadcrumb                 as B
-import           Empire.API.Data.MonadPath                  (MonadPath)
-import qualified Empire.API.Data.NodeLoc                    as NodeLoc
-import qualified Empire.API.Data.PortRef                    as PortRef
-import           Empire.API.Data.Position                   (Position)
+import qualified LunaStudio.Data.Breadcrumb                 as B
+import           LunaStudio.Data.MonadPath                  (MonadPath)
+import qualified LunaStudio.Data.NodeLoc                    as NodeLoc
+import qualified LunaStudio.Data.PortRef                    as PortRef
+import           LunaStudio.Data.Position                   (Position)
 import           NodeEditor.Data.CameraTransformation       (CameraTransformation)
 import           NodeEditor.Data.Color                      (Color (Color))
 import           NodeEditor.React.Model.Connection          (Connection, ConnectionsMap, HalfConnection (HalfConnection),

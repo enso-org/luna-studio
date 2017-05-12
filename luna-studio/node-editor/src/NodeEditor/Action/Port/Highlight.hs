@@ -5,8 +5,8 @@ module NodeEditor.Action.Port.Highlight
     ) where
 
 import qualified Data.Set                                    as Set
-import           Empire.API.Data.Port                        (AnyPortId (InPortId', OutPortId'), InPortIndex (Self))
-import           Empire.API.Data.PortRef                     (AnyPortRef, nodeLoc, portId)
+import           LunaStudio.Data.Port                        (AnyPortId (InPortId', OutPortId'), InPortIndex (Self))
+import           LunaStudio.Data.PortRef                     (AnyPortRef, nodeLoc, portId)
 import           NodeEditor.Action.Command                  (Command)
 import           NodeEditor.Action.Connect                  ()
 import           Common.Prelude

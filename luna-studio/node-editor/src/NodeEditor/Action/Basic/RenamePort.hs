@@ -1,7 +1,7 @@
 module NodeEditor.Action.Basic.RenamePort where
 
 import           Common.Prelude
-import           Empire.API.Data.LabeledTree             (value)
+import           LunaStudio.Data.LabeledTree             (value)
 import           NodeEditor.Action.Basic.UpdateNode      (localUpdateInputNode)
 import qualified NodeEditor.Action.Batch                 as Batch
 import           NodeEditor.Action.Command               (Command)

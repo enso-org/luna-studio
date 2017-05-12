@@ -30,7 +30,7 @@ import           Empire.Data.Graph               (Graph)
 import           Empire.Data.Layers              (CodeMarkers)
 import           Empire.Data.Parser              (ParserPass)
 
-import           Empire.API.Data.PortDefault     (PortDefault (..), PortValue (..))
+import           LunaStudio.Data.PortDefault     (PortDefault (..), PortValue (..))
 
 import           Data.TypeDesc                   (getTypeDesc)
 import qualified Luna.IR                         as IR

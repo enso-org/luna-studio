@@ -3,7 +3,7 @@ module NodeEditor.Action.Basic.RemoveNode where
 import           Common.Prelude
 import           Control.Monad                            (filterM)
 import qualified Data.Set                                 as Set
-import           Empire.API.Data.NodeLoc                  (NodeLoc)
+import           LunaStudio.Data.NodeLoc                  (NodeLoc)
 import qualified JS.GoogleAnalytics                       as GA
 import           NodeEditor.Action.Basic.RemoveConnection (localRemoveConnectionsContainingNodes)
 import           NodeEditor.Action.Basic.SelectNode       (selectPreviousNodes)

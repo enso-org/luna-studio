@@ -2,11 +2,11 @@ module NodeEditor.Action.Batch  where
 
 import           Common.Prelude
 import           Data.UUID.Types                     (UUID)
-import           Empire.API.Data.NodeMeta            (NodeMeta (NodeMeta))
-import           Empire.API.Data.PortDefault         (PortDefault)
-import           Empire.API.Data.PortRef             (AnyPortRef (InPortRef', OutPortRef'), InPortRef (InPortRef), OutPortRef (OutPortRef),
+import           LunaStudio.Data.NodeMeta            (NodeMeta (NodeMeta))
+import           LunaStudio.Data.PortDefault         (PortDefault)
+import           LunaStudio.Data.PortRef             (AnyPortRef (InPortRef', OutPortRef'), InPortRef (InPortRef), OutPortRef (OutPortRef),
                                                       dstNodeLoc, nodeLoc)
-import           Empire.API.Data.Position            (Position)
+import           LunaStudio.Data.Position            (Position)
 import           NodeEditor.Action.Command           (Command)
 import           NodeEditor.Action.UUID              (registerRequest)
 import qualified NodeEditor.Batch.Connector.Commands as BatchCmd

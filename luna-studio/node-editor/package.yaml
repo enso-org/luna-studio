@@ -51,8 +51,7 @@ dependencies:
   - ghcjs-prim
   - hashable
   - lens
-  - luna-empire-api
-  - luna-empire-api-json
+  - luna-studio-common
   - matrix
   - mtl
   - placeholders

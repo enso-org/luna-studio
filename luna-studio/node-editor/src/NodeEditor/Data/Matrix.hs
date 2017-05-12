@@ -4,8 +4,8 @@ import           Common.Prelude
 import           Data.Matrix              (Matrix)
 import qualified Data.Matrix              as Matrix
 import           Data.ScreenPosition      (ScreenPosition)
-import           Empire.API.Data.Position (Position, x, y)
-import           Empire.API.Data.Vector2  (Vector2)
+import           LunaStudio.Data.Position (Position, x, y)
+import           LunaStudio.Data.Vector2  (Vector2)
 import           Numeric                  (showFFloat)
 
 

@@ -10,10 +10,10 @@ module Empire.Env where
 import           Prologue
 
 import           Control.Concurrent.STM.TChan  (TChan)
-import           Empire.API.Data.AsyncUpdate   (AsyncUpdate)
-import           Empire.API.Data.GraphLocation (GraphLocation (..))
 import           Empire.Data.Graph             (Graph)
 import qualified Empire.Empire                 as Empire
+import           LunaStudio.API.AsyncUpdate    (AsyncUpdate)
+import           LunaStudio.Data.GraphLocation (GraphLocation (..))
 import           ZMQ.Bus.Data.Message          (Message)
 
 instance Show (TChan Message) where

@@ -11,7 +11,7 @@ import           Data.Aeson                           (FromJSON, ToJSON, decode,
 import           Data.ByteString.Lazy.Char8           as ByteString
 import           JavaScript.Web.Storage               (getItem, localStorage, setItem)
 
-import           Empire.API.Data.GraphLocation        (GraphLocation)
+import           LunaStudio.Data.GraphLocation        (GraphLocation)
 import           NodeEditor.Data.CameraTransformation (CameraTransformation)
 
 
