@@ -114,7 +114,10 @@ nodeValue_ ref nl mayPos visIx value = do
 
 fromJsonValue :: String -> ReactElementM ViewEventHandler ()
 fromJsonValue value = case (Aeson.decode $ ByteString.pack value :: Maybe Aeson.Value) of
-    Just (Aeson.Array  a) -> div_ [ "className" $= Style.prefix "table-scroll" ] $ table_ $ rows $ keyed $ Vector.toList a
+    --Just (Aeson.Array  a) -> div_ [ "className" $= Style.prefix "table-scroll" ] $ table_ $ rows $ keyed $ Vector.toList a
+    Just (Aeson.Array  a) -> div_ [ "className" $= Style.prefix "table-scroll"
+                                  , onScroll    $ \e -> [stopPropagation e, preventDefault e]
+                                  ] $ table_ $ rows $ keyed $ Vector.toList a
     Just (Aeson.Object _) -> mempty
     Just (Aeson.String _) -> mempty
     Just (Aeson.Number _) -> mempty
