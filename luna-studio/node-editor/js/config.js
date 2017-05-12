@@ -2,7 +2,6 @@
 
 var release = require('./config.release');
 var config;
-var customEvent = require('./CustomEvent').customEvent;
 
 try {
   var u = require('underscore');

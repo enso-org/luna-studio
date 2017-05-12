@@ -3,7 +3,6 @@
 module NodeEditor.Event.Source
     ( AddHandler(..)
     , atomHandler
-    , customEventHandler
     , sceneResizeHandler
     , webSocketHandler
     ) where
@@ -15,12 +14,10 @@ import           GHCJS.Prim                        (fromJSString)
 
 import qualified Common.Batch.Connector.Connection as BatchConnection
 import qualified JS.Atom                           as Atom
-import qualified JS.CustomEvent                    as CustomEvent
 import qualified JS.Scene                          as Scene
 import qualified JS.UI                             as UI
 import qualified NodeEditor.Event.Connection       as Connection
-import qualified NodeEditor.Event.CustomEvent      as CustomEvent
-import           NodeEditor.Event.Event            (Event (Atom, Connection, CustomEvent, UI))
+import           NodeEditor.Event.Event            (Event (Atom, Connection, UI))
 import           NodeEditor.Event.UI               (UIEvent (AppEvent))
 import qualified NodeEditor.React.Event.App        as App
 import qualified WebSocket                         as WebSocket
@@ -53,9 +50,3 @@ webSocketHandler conn = AddHandler $ \h -> do
         h $ Connection $ Connection.Closed code
     WebSocket.onError conn $
         h $ Connection Connection.Error
-
-customEventHandler :: AddHandler Event
-customEventHandler  = AddHandler $ \h -> do
-    CustomEvent.initializeEvents
-    CustomEvent.registerCallback $ \topic payload ->
-        liftIO $ h $ CustomEvent $ CustomEvent.RawEvent (pFromJSVal topic) payload
