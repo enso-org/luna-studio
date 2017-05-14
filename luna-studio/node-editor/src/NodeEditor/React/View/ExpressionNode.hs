@@ -6,11 +6,11 @@ import qualified Data.Aeson                                           as Aeson
 import qualified Data.HashMap.Strict                                  as HashMap
 import qualified Data.Map.Lazy                                        as Map
 import           Data.Matrix                                          (Matrix)
+import qualified JS.Config                                            as Config
+import qualified JS.UI                                                as UI
 import           LunaStudio.Data.LabeledTree                          (LabeledTree (LabeledTree))
 import qualified LunaStudio.Data.MonadPath                            as MonadPath
 import           LunaStudio.Data.PortRef                              (toAnyPortRef)
-import qualified JS.Config                                            as Config
-import qualified JS.UI                                                as UI
 import           NodeEditor.Data.Matrix                               (showNodeMatrix, showNodeTranslate)
 import qualified NodeEditor.Event.Mouse                               as Mouse
 import qualified NodeEditor.Event.UI                                  as UI
@@ -152,18 +152,21 @@ nodePorts_ ref model = React.viewWithSKey nodePorts objNamePorts (ref, model) me
 
 nodePorts :: ReactView (Ref App, ExpressionNode)
 nodePorts = React.defineView objNamePorts $ \(ref, n) -> do
-    let nodeId     = n ^. Node.nodeId
-        nodeLoc    = n ^. Node.nodeLoc
-        nodePorts' = Node.portsList n
-        ports p   = forM_ p $ \port -> port_ ref
-                                             nodeLoc
-                                             port
-                                             (if isInPort $ port ^. Port.portId then countArgPorts n else countOutPorts n)
-                                             (withOut isOutAll (port ^. Port.portId) && countArgPorts n + countOutPorts n == 1)
-                                             $ case (n ^. Node.inPorts) of
-                                                 LabeledTree _ a -> case (a ^. Port.state) of
-                                                                        Port.Connected -> True
-                                                                        _              -> False
+    let nodeId             = n ^. Node.nodeId
+        nodeLoc            = n ^. Node.nodeLoc
+        nodePorts'         = Node.portsList n
+        visibleSelfPresent = any (\p -> (Port.isSelf $ p ^. Port.portId) && (not $ Port.isInvisible p)) $ Node.inPortsList n
+        ports p =
+            forM_ p $ \port -> port_ ref
+                                     nodeLoc
+                                     port
+                                     (if isInPort $ port ^. Port.portId then countArgPorts n else countOutPorts n)
+                                     (withOut isOutAll (port ^. Port.portId) && countArgPorts n + countOutPorts n == 1)
+                                     (case (n ^. Node.inPorts) of
+                                         LabeledTree _ a -> case (a ^. Port.state) of
+                                             Port.Connected -> True
+                                             _              -> False )
+                                     visibleSelfPresent
     svg_
         [ "key"       $= "nodePorts"
         , "className" $= Style.prefixFromList [ "node__ports" ]
