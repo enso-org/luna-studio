@@ -61,9 +61,11 @@ addPort :: OutPortRef -> Maybe InPortRef -> Command State ()
 addPort = withWorkspace .: BatchCmd.addPort
 
 addSubgraph :: [ExpressionNode] -> [(OutPortRef, InPortRef)] -> Command State ()
+addSubgraph [] []       = return ()
 addSubgraph nodes conns = withWorkspace $ BatchCmd.addSubgraph (convert <$> nodes) (convert <$> conns)
 
 autolayoutNodes :: [NodeLoc] -> Command State ()
+autolayoutNodes []  = return ()
 autolayoutNodes nls = withWorkspace $ BatchCmd.autolayoutNodes nls
 
 getSubgraph :: NodeLoc -> Command State ()
@@ -81,7 +83,8 @@ removeConnection connId = do
     withWorkspace $ BatchCmd.removeConnection connId
 
 removeNodes :: [NodeLoc] -> Command State ()
-removeNodes = withWorkspace . BatchCmd.removeNodes
+removeNodes []  = return ()
+removeNodes nls = withWorkspace $ BatchCmd.removeNodes nls
 
 removePort :: OutPortRef -> Command State ()
 removePort = withWorkspace . BatchCmd.removePort
@@ -99,7 +102,8 @@ setNodeExpression :: NodeLoc -> Text -> Command State ()
 setNodeExpression = withWorkspace .: BatchCmd.setNodeExpression
 
 setNodesMeta :: [(NodeLoc, Position, Bool)] -> Command State ()
-setNodesMeta = withWorkspace . BatchCmd.setNodesMeta . map (\(nl, pos, dis) -> (nl, NodeMeta pos dis))
+setNodesMeta []  = return ()
+setNodesMeta nls = withWorkspace . BatchCmd.setNodesMeta $ map (\(nl, pos, dis) -> (nl, NodeMeta pos dis)) nls
 
 setPortDefault :: InPortRef -> PortDefault -> Command State ()
 setPortDefault portRef portDefault = do
