@@ -1,6 +1,7 @@
 {-# LANGUAGE MultiWayIf #-}
 module Empire.Commands.Autolayout where
 
+import           Control.Arrow            ((&&&))
 import           Control.Monad.State.Lazy (execState, get, gets, modify)
 import qualified Control.Monad.State.Lazy as S
 import           Data.Foldable            (find)
@@ -10,12 +11,12 @@ import qualified Data.Map.Lazy            as Map
 import           Data.Set                 (Set)
 import qualified Data.Set                 as Set
 import           Data.Traversable         (forM)
+import           Empire.Prelude
 import           LunaStudio.Data.Node     (ExpressionNode, NodeId, exprNodeId, position)
 import           LunaStudio.Data.Port     (isSelf)
 import           LunaStudio.Data.PortRef  (InPortRef, OutPortRef, dstNodeId, dstPortId, srcNodeId, srcPortId)
 import           LunaStudio.Data.Position (Position, fromDoubles, leftTopPoint, move, vector, x, y)
 import           LunaStudio.Data.Vector2  (Vector2)
-import           Empire.Prelude
 
 -- This should be changed to Connection from LunaStudio.Data.Connection in whole backend
 type Connection = (OutPortRef, InPortRef)
@@ -74,20 +75,21 @@ autolayoutNodes nids allNodes allConns =
                 inConns'  = filter ((== nid) . view (_2 . dstNodeId)) allConns
                 outConns' = filter ((== nid) . view (_1 . srcNodeId)) allConns
             in (nid, NodeInfo nid leftTop Nothing NotProcessed inConns' outConns')
-    in Map.toList $ fmap (view actPos) $ execState (findPositions leftTop) nodesMap
+    in Map.toList $ fmap (view actPos) $ execState (findPositions leftTop allNodes allConns) nodesMap
 
 clearDFSState :: AutolayoutState ()
 clearDFSState = traverse . dfsState .= NotProcessed
 
-findPositions :: Position -> AutolayoutState ()
-findPositions pos = do
+findPositions :: Position -> [ExpressionNode] -> [Connection] -> AutolayoutState ()
+findPositions pos allNodes allConns = do
     removeCycles
     nids <- gets Map.keys
     clearDFSState
     mapM_ findPositionRecursive nids
     mapM_ alignChainsX nids
     clearDFSState
-    alignNodesY pos
+    subgraphs <- alignNodesY pos
+    alignToEndpoint subgraphs allNodes allConns
 
 findPositionRecursive :: NodeId -> AutolayoutState ()
 findPositionRecursive nid = withJustM (lookupNode nid) $ \n -> do
@@ -301,7 +303,16 @@ getSubgraphMinimumRectangle s = if Map.null $ s ^. yMinMaxAtX
     else Just ( fromDoubles (minimum . Map.keys $ s ^. yMinMaxAtX) (minimum . map fst . Map.elems $ s ^. yMinMaxAtX)
               , fromDoubles (maximum . Map.keys $ s ^. yMinMaxAtX) (maximum . map snd . Map.elems $ s ^. yMinMaxAtX) )
 
-alignNodesY :: Position -> AutolayoutState ()
+refreshSubgraph :: Subgraph -> AutolayoutState Subgraph
+refreshSubgraph (Subgraph sid nids _) = Subgraph sid nids <$> updatedMap where
+    updatedMap :: AutolayoutState (Map Double (Double, Double))
+    updatedMap = do
+        nodes <- lookupNodes (Set.toList nids)
+        let mapUpdate :: Map Double (Double, Double) -> NodeInfo -> Map Double (Double, Double)
+            mapUpdate m n = Map.insertWith (\(y1Min, y1Max) (y2Min, y2Max) -> (min y1Min y2Min, max y1Max y2Max)) (n ^. actPos . x) (n ^. actPos . y, n ^. actPos . y) m
+        return $ foldl mapUpdate def nodes
+
+alignNodesY :: Position -> AutolayoutState SubgraphMap
 alignNodesY pos = do
     nids <- gets Map.keys
     let makeSubgraph :: NodeInfo -> AutolayoutState Subgraph
@@ -311,3 +322,7 @@ alignNodesY pos = do
             then return Nothing
             else forM mayNode makeSubgraph
     void $ foldlM alignSubgraph pos subgraphs
+    fmap Map.fromList . forM subgraphs $ fmap (view subgraphId &&& id) . refreshSubgraph
+
+alignToEndpoint :: SubgraphMap -> [ExpressionNode] -> [Connection] -> AutolayoutState ()
+alignToEndpoint subgraphs nodes conns = return ()
