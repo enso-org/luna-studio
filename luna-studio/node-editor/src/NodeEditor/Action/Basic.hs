@@ -42,10 +42,12 @@ module NodeEditor.Action.Basic
     , localUnmerge
     , localUpdateConnection
     , localUpdateExpressionNode
+    , localUpdateExpressionNodePreventingPorts
     , localUpdateExpressionNodes
     , localUpdateInputNode
     , localUpdateNodeTypecheck
     , localUpdateOrAddExpressionNode
+    , localUpdateOrAddExpressionNodePreventingPorts
     , localUpdateOrAddInputNode
     , localUpdateOrAddOutputNode
     , localUpdateOutputNode
@@ -135,8 +137,9 @@ import           NodeEditor.Action.Basic.SetPortMode         (setInputSidebarPor
 import           NodeEditor.Action.Basic.SetSidebarMode      (setInputMode, setOutputMode, toggleInputMode, toggleOutputMode)
 import           NodeEditor.Action.Basic.UpdateCollaboration (updateClient, updateCollaboration)
 import           NodeEditor.Action.Basic.UpdateConnection    (localUpdateConnection, updateConnection)
-import           NodeEditor.Action.Basic.UpdateNode          (localUpdateExpressionNode, localUpdateExpressionNodes, localUpdateInputNode,
-                                                              localUpdateNodeTypecheck, localUpdateOrAddExpressionNode,
+import           NodeEditor.Action.Basic.UpdateNode          (localUpdateExpressionNode, localUpdateExpressionNodePreventingPorts,
+                                                              localUpdateExpressionNodes, localUpdateInputNode, localUpdateNodeTypecheck,
+                                                              localUpdateOrAddExpressionNode, localUpdateOrAddExpressionNodePreventingPorts,
                                                               localUpdateOrAddInputNode, localUpdateOrAddOutputNode, localUpdateOutputNode,
                                                               updateAllPortsSelfVisibility, updatePortSelfVisibility,
                                                               updatePortSelfVisibilityForIds)

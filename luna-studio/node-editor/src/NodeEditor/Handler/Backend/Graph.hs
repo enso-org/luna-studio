@@ -5,38 +5,38 @@ module NodeEditor.Handler.Backend.Graph
 import           Common.Prelude
 import           Common.Report
 import qualified Data.DateTime                               as DT
+import qualified LunaStudio.API.Graph.AddConnection          as AddConnection
+import qualified LunaStudio.API.Graph.AddNode                as AddNode
+import qualified LunaStudio.API.Graph.AddPort                as AddPort
+import qualified LunaStudio.API.Graph.AddSubgraph            as AddSubgraph
+import qualified LunaStudio.API.Graph.AutolayoutNodes        as AutolayoutNodes
+import qualified LunaStudio.API.Graph.CollaborationUpdate    as CollaborationUpdate
+import qualified LunaStudio.API.Graph.GetProgram             as GetProgram
+import qualified LunaStudio.API.Graph.GetSubgraphs           as GetSubgraphs
+import qualified LunaStudio.API.Graph.MonadsUpdate           as MonadsUpdate
+import qualified LunaStudio.API.Graph.MovePort               as MovePort
+import qualified LunaStudio.API.Graph.NodeResultUpdate       as NodeResultUpdate
+import qualified LunaStudio.API.Graph.NodeTypecheckerUpdate  as NodeTCUpdate
+import qualified LunaStudio.API.Graph.RemoveConnection       as RemoveConnection
+import qualified LunaStudio.API.Graph.RemoveNodes            as RemoveNodes
+import qualified LunaStudio.API.Graph.RemovePort             as RemovePort
+import qualified LunaStudio.API.Graph.RenameNode             as RenameNode
+import qualified LunaStudio.API.Graph.RenamePort             as RenamePort
+import qualified LunaStudio.API.Graph.Result                 as Result
+import qualified LunaStudio.API.Graph.SearchNodes            as SearchNodes
+import qualified LunaStudio.API.Graph.SetNodeExpression      as SetNodeExpression
+import qualified LunaStudio.API.Graph.SetNodesMeta           as SetNodesMeta
+import qualified LunaStudio.API.Graph.SetPortDefault         as SetPortDefault
+import qualified LunaStudio.API.Response                     as Response
 import qualified LunaStudio.Data.Graph                       as Graph
 import           LunaStudio.Data.Node                        (nodeId)
 import           LunaStudio.Data.NodeLoc                     (NodePath, prependPath)
 import qualified LunaStudio.Data.NodeLoc                     as NodeLoc
-import qualified LunaStudio.API.Graph.AddConnection              as AddConnection
-import qualified LunaStudio.API.Graph.AddNode                    as AddNode
-import qualified LunaStudio.API.Graph.AddPort                    as AddPort
-import qualified LunaStudio.API.Graph.AddSubgraph                as AddSubgraph
-import qualified LunaStudio.API.Graph.AutolayoutNodes            as AutolayoutNodes
-import qualified LunaStudio.API.Graph.CollaborationUpdate        as CollaborationUpdate
-import qualified LunaStudio.API.Graph.GetProgram                 as GetProgram
-import qualified LunaStudio.API.Graph.GetSubgraphs               as GetSubgraphs
-import qualified LunaStudio.API.Graph.MonadsUpdate               as MonadsUpdate
-import qualified LunaStudio.API.Graph.MovePort                   as MovePort
-import qualified LunaStudio.API.Graph.NodeResultUpdate           as NodeResultUpdate
-import qualified LunaStudio.API.Graph.NodeTypecheckerUpdate      as NodeTCUpdate
-import qualified LunaStudio.API.Graph.RemoveConnection           as RemoveConnection
-import qualified LunaStudio.API.Graph.RemoveNodes                as RemoveNodes
-import qualified LunaStudio.API.Graph.RemovePort                 as RemovePort
-import qualified LunaStudio.API.Graph.RenameNode                 as RenameNode
-import qualified LunaStudio.API.Graph.RenamePort                 as RenamePort
-import qualified LunaStudio.API.Graph.Result                     as Result
-import qualified LunaStudio.API.Graph.SearchNodes                as SearchNodes
-import qualified LunaStudio.API.Graph.SetNodeExpression          as SetNodeExpression
-import qualified LunaStudio.API.Graph.SetNodesMeta               as SetNodesMeta
-import qualified LunaStudio.API.Graph.SetPortDefault             as SetPortDefault
-import qualified LunaStudio.API.Response                         as Response
 import           NodeEditor.Action.Basic                     (localAddConnections, localMerge, localRemoveConnections, localRemoveNodes,
                                                               localSetSearcherHints, localUpdateNodeTypecheck,
-                                                              localUpdateOrAddExpressionNode, localUpdateOrAddInputNode,
-                                                              localUpdateOrAddOutputNode, setNodeProfilingData, setNodeValue, updateGraph,
-                                                              updateScene)
+                                                              localUpdateOrAddExpressionNode, localUpdateOrAddExpressionNodePreventingPorts,
+                                                              localUpdateOrAddInputNode, localUpdateOrAddOutputNode, setNodeProfilingData,
+                                                              setNodeValue, updateGraph, updateScene)
 import           NodeEditor.Action.Basic.Revert              (revertAddConnection, revertAddNode, revertAddPort, revertAddSubgraph,
                                                               revertMovePort, revertRemoveConnection, revertRemoveNodes, revertRemovePort,
                                                               revertRenameNode, revertSetNodeExpression, revertSetNodesMeta,
@@ -59,10 +59,17 @@ import qualified NodeEditor.State.Global                     as Global
 
 
 applyResult :: Result.Result -> NodePath -> Command State ()
-applyResult res path = do
+applyResult = applyResult' False
+
+applyResultPreventingExpressionNodesPorts :: Result.Result -> NodePath -> Command State ()
+applyResultPreventingExpressionNodesPorts = applyResult' True
+
+applyResult' :: Bool -> Result.Result -> NodePath -> Command State ()
+applyResult' preventPorts res path = do
+    let exprNodeUpdateFunction = if preventPorts then localUpdateOrAddExpressionNodePreventingPorts else localUpdateOrAddExpressionNode
     void $ localRemoveNodes       . map (convert . (path,)) $ res ^. Result.removedNodes
     void $ localRemoveConnections . map (prependPath path)  $ res ^. Result.removedConnections
-    mapM_ (localUpdateOrAddExpressionNode . convert . (path,)) $ res ^. Result.graphUpdates . Graph.nodes
+    mapM_ (exprNodeUpdateFunction . convert . (path,)) $ res ^. Result.graphUpdates . Graph.nodes
     void $ localAddConnections . map (\(src', dst') -> (prependPath path src', prependPath path dst')) $ res ^. Result.graphUpdates . Graph.connections
     let inputSidebar  = res ^. Result.graphUpdates . Graph.inputSidebar
         outputSidebar = res ^. Result.graphUpdates . Graph.outputSidebar
@@ -252,7 +259,7 @@ handle (Event.Batch ev) = Just $ case ev of
         request         = response ^. Response.request
         location        = request  ^. SetPortDefault.location
         failure inverse = whenM (isOwnRequest requestId) $ revertSetPortDefault request inverse
-        success result  = inCurrentLocation location $ applyResult result
+        success result  = inCurrentLocation location $ applyResultPreventingExpressionNodesPorts result
 
     TypeCheckResponse response -> handleResponse response doNothing doNothing
 

@@ -46,20 +46,33 @@ localUpdateOrAddOutputNode :: OutputNode -> Command State ()
 localUpdateOrAddOutputNode node = unlessM (localUpdateOutputNode node) $ localAddOutputNode node
 
 localUpdateExpressionNode :: ExpressionNode -> Command State Bool
-localUpdateExpressionNode node = NodeEditor.getExpressionNode (node ^. nodeLoc) >>= \case
+localUpdateExpressionNode = localUpdateExpressionNode' False
+
+localUpdateExpressionNodePreventingPorts :: ExpressionNode -> Command State Bool
+localUpdateExpressionNodePreventingPorts = localUpdateExpressionNode' True
+
+localUpdateExpressionNode' :: Bool -> ExpressionNode -> Command State Bool
+localUpdateExpressionNode' preventPorts node = NodeEditor.getExpressionNode (node ^. nodeLoc) >>= \case
     Nothing       -> return False
     Just prevNode -> do
         let selected = prevNode ^. isSelected
             mode'    = prevNode ^. ExpressionNode.mode
+            inPorts  = if preventPorts then prevNode ^. ExpressionNode.inPorts  else node ^. ExpressionNode.inPorts
+            outPorts = if preventPorts then prevNode ^. ExpressionNode.outPorts else node ^. ExpressionNode.outPorts
         portSelfVis <- shouldDisplayPortSelf node
         let (selfMode :: Mode -> Mode) = if portSelfVis then ensureVisibility else const Invisible
-        NodeEditor.addExpressionNode $ node & isSelected                      .~ selected
-                                            & inPortAt [Self] . mode %~ selfMode
-                                            & ExpressionNode.mode             .~ mode'
+        NodeEditor.addExpressionNode $ node & isSelected              .~ selected
+                                            & ExpressionNode.mode     .~ mode'
+                                            & ExpressionNode.inPorts  .~ inPorts
+                                            & ExpressionNode.outPorts .~ outPorts
+                                            & inPortAt [Self] . mode  %~ selfMode
         return True
 
 localUpdateOrAddExpressionNode :: ExpressionNode -> Command State ()
 localUpdateOrAddExpressionNode node = unlessM (localUpdateExpressionNode node) $ localAddExpressionNode node
+
+localUpdateOrAddExpressionNodePreventingPorts :: ExpressionNode -> Command State ()
+localUpdateOrAddExpressionNodePreventingPorts node = unlessM (localUpdateExpressionNodePreventingPorts node) $ localAddExpressionNode node
 
 localUpdateNodeTypecheck :: NodePath -> NodeTypecheckerUpdate -> Command State ()
 localUpdateNodeTypecheck path update = do
