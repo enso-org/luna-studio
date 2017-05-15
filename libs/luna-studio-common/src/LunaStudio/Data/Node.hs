@@ -1,13 +1,14 @@
 {-# LANGUAGE Rank2Types #-}
 module LunaStudio.Data.Node where
 
-import           Data.Binary              (Binary)
-import           Data.Text                (Text)
-import           Data.UUID.Types          (UUID)
-import           LunaStudio.Data.NodeMeta (NodeMeta)
-import qualified LunaStudio.Data.NodeMeta as NodeMeta
-import           LunaStudio.Data.Port     (InPort, InPortTree, OutPort, OutPortTree)
-import           LunaStudio.Data.Position (Position)
+import           Data.Binary               (Binary)
+import           Data.Text                 (Text)
+import           Data.UUID.Types           (UUID)
+import           LunaStudio.Data.Constants (gapBetweenNodes)
+import           LunaStudio.Data.NodeMeta  (NodeMeta)
+import qualified LunaStudio.Data.NodeMeta  as NodeMeta
+import           LunaStudio.Data.Port      (InPort, InPortTree, OutPort, OutPortTree)
+import           LunaStudio.Data.Position  (Position, fromDoubles, x, y)
 import           Prologue
 
 
@@ -72,3 +73,15 @@ instance HasNodeId Node where
         setNodeId (ExpressionNode' n) nid = ExpressionNode' $ n & exprNodeId   .~ nid
         setNodeId (InputSidebar'   n) nid = InputSidebar'   $ n & inputNodeId  .~ nid
         setNodeId (OutputSidebar'  n) nid = OutputSidebar'  $ n & outputNodeId .~ nid
+
+findSuccessorPosition :: ExpressionNode -> [ExpressionNode] -> Position
+findSuccessorPosition node nodes = fromDoubles xPos yPos where
+    xPos = (node ^. position . x) + gapBetweenNodes
+    yPos = findYPos $ node ^. position . y
+    findYPos y' = if any (\n -> n ^. position . x == xPos && n ^. position . y == y') nodes then findYPos $ y' - gapBetweenNodes else y'
+
+findPredecessorPosition :: ExpressionNode -> [ExpressionNode] -> Position
+findPredecessorPosition node nodes = fromDoubles xPos yPos where
+    xPos = (node ^. position . x) - gapBetweenNodes
+    yPos = findYPos $ node ^. position . y
+    findYPos y' = if any (\n -> n ^. position . x == xPos && n ^. position . y == y') nodes then findYPos $ y' + gapBetweenNodes else y'

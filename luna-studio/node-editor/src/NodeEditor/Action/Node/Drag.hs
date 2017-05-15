@@ -15,7 +15,7 @@ import           LunaStudio.Data.PortRef                    (InPortRef (InPortRe
 import           LunaStudio.Data.Position                   (Position, move, vector)
 import           NodeEditor.Action.Basic                    (connect, localMoveNodes, moveNodes, selectNodes, updatePortSelfVisibility)
 import           NodeEditor.Action.Command                  (Command)
-import           NodeEditor.Action.Node.Snap                (snap)
+import           LunaStudio.Data.Geometry                   (snap)
 import           NodeEditor.Action.State.Model              (createConnectionModel, getIntersectingConnections)
 import           NodeEditor.Action.State.NodeEditor         (getConnection, getExpressionNode, getNodeEditor, getSelectedNodes,
                                                              modifyConnection, modifyExpressionNode, modifyNodeEditor)

@@ -14,7 +14,7 @@ import           NodeEditor.Action.Basic.FocusNode  (focusNode)
 import           NodeEditor.Action.Basic.SelectNode (selectNode)
 import qualified NodeEditor.Action.Batch            as Batch
 import           NodeEditor.Action.Command          (Command)
-import           NodeEditor.Action.Node.Snap        (snap)
+import           LunaStudio.Data.Geometry        (snap)
 import           NodeEditor.Action.State.Model      (shouldDisplayPortSelf)
 import           NodeEditor.Action.State.NodeEditor (getSelectedNodes)
 import           NodeEditor.Action.State.NodeEditor (addInputNode, addOutputNode)

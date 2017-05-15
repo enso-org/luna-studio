@@ -1,10 +1,13 @@
-module NodeEditor.React.Model.Constants where
+module NodeEditor.React.Model.Constants
+    ( module NodeEditor.React.Model.Constants
+    , module X
+    ) where
 
 import           Common.Prelude
+import           LunaStudio.Data.Constants as X
 
-gridSize, fontSize, lineHeight, connectionWidth, nodeRadius, nodeRadius', portRadius, nodeExpandedWidth :: Double
+fontSize, lineHeight, connectionWidth, nodeRadius, nodeRadius', portRadius, nodeExpandedWidth :: Double
 
-gridSize          = 16
 fontSize          = 12
 lineHeight        = gridSize
 

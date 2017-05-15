@@ -2,23 +2,25 @@
 {-# LANGUAGE TupleSections #-}
 module Empire.Commands.Autolayout where
 
-import           Control.Arrow            ((&&&))
-import           Control.Monad.State.Lazy (execState, get, gets, modify)
-import qualified Control.Monad.State.Lazy as S
-import           Data.Foldable            (find)
-import qualified Data.List                as List
-import           Data.Map.Lazy            (Map)
-import qualified Data.Map.Lazy            as Map
-import           Data.Maybe               (listToMaybe)
-import           Data.Set                 (Set)
-import qualified Data.Set                 as Set
-import           Data.Traversable         (forM)
+import           Control.Arrow             ((&&&))
+import           Control.Monad.State.Lazy  (execState, get, gets, modify)
+import qualified Control.Monad.State.Lazy  as S
+import           Data.Foldable             (find)
+import qualified Data.List                 as List
+import           Data.Map.Lazy             (Map)
+import qualified Data.Map.Lazy             as Map
+import           Data.Maybe                (listToMaybe)
+import           Data.Set                  (Set)
+import qualified Data.Set                  as Set
+import           Data.Traversable          (forM)
 import           Empire.Prelude
-import           LunaStudio.Data.Node     (ExpressionNode, NodeId, exprNodeId, position)
-import           LunaStudio.Data.Port     (isSelf)
-import           LunaStudio.Data.PortRef  (InPortRef, OutPortRef, dstNodeId, dstPortId, srcNodeId, srcPortId)
-import           LunaStudio.Data.Position (Position, fromDoubles, leftTopPoint, move, vector, x, y)
-import           LunaStudio.Data.Vector2  (Vector2 (Vector2))
+import           LunaStudio.Data.Constants (gapBetweenNodes)
+import           LunaStudio.Data.Geometry  (snap)
+import           LunaStudio.Data.Node      (ExpressionNode, NodeId, exprNodeId, findPredecessorPosition, findSuccessorPosition, position)
+import           LunaStudio.Data.Port      (isSelf)
+import           LunaStudio.Data.PortRef   (InPortRef, OutPortRef, dstNodeId, dstPortId, srcNodeId, srcPortId)
+import           LunaStudio.Data.Position  (Position, fromDoubles, leftTopPoint, move, vector, x, y)
+import           LunaStudio.Data.Vector2   (Vector2 (Vector2))
 
 -- This should be changed to Connection from LunaStudio.Data.Connection in whole backend
 type Connection = (OutPortRef, InPortRef)
@@ -45,27 +47,6 @@ type SubgraphMap       = Map NodeId Subgraph
 type AutolayoutState a = S.State NodesInfoMap a
 
 
-
-gapBetweenNodes :: Double
-gapBetweenNodes = 16 * gridSize
-
-
--- Things in this section exist in GUI
-
-gridSize :: Double
-gridSize = 16
-
-
-snapCoord :: Double -> Double
-snapCoord p = (* gridSize) . fromIntegral $ (round $ p / gridSize :: Integer)
-
-snap :: Position -> Position
-snap = (x %~ snapCoord) . (y %~ snapCoord)
-
--------
-
-
-
 autolayoutNodes :: [NodeId] -> [ExpressionNode] -> [Connection] -> [(NodeId, Position)]
 autolayoutNodes nids allNodes allConns =
     let nidsSet   = Set.fromList nids
@@ -78,18 +59,6 @@ autolayoutNodes nids allNodes allConns =
                 outConns' = filter ((== nid) . view (_1 . srcNodeId)) allConns
             in (nid, NodeInfo nid leftTop Nothing NotProcessed inConns' outConns')
     in Map.toList $ fmap (view actPos) $ execState (findPositions leftTop allNodes allConns) nodesMap
-
-findSuccessorPosition :: ExpressionNode -> [ExpressionNode] -> Position
-findSuccessorPosition node nodes = fromDoubles xPos yPos where
-    xPos = (node ^. position . x) + gapBetweenNodes
-    yPos = findYPos $ node ^. position . y
-    findYPos y' = if any (\n -> n ^. position . x == xPos && n ^. position . y == yPos) nodes then findYPos $ y' + gapBetweenNodes else y'
-
-findPredecessorPosition :: ExpressionNode -> [ExpressionNode] -> Position
-findPredecessorPosition node nodes = fromDoubles xPos yPos where
-    xPos = (node ^. position . x) - gapBetweenNodes
-    yPos = findYPos $ node ^. position . y
-    findYPos y' = if any (\n -> n ^. position . x == xPos && n ^. position . y == yPos) nodes then findYPos $ y' - gapBetweenNodes else y'
 
 
 clearDFSState :: AutolayoutState ()

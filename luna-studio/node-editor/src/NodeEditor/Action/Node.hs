@@ -12,4 +12,4 @@ module NodeEditor.Action.Node
 import           NodeEditor.Action.Node.Drag           (handleNodeDragMouseUp, nodesDrag, startNodeDrag)
 import           NodeEditor.Action.Node.EditExpression (editExpression)
 import           NodeEditor.Action.Node.EditName       (editName)
-import           NodeEditor.Action.Node.Snap           (snap, snapCoord)
+import           LunaStudio.Data.Geometry           (snap, snapCoord)

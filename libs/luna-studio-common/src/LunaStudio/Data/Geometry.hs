@@ -1,8 +1,15 @@
 module LunaStudio.Data.Geometry where
 
-import           LunaStudio.Data.Position (Position, distanceSquared, fromDoubles, move, vector, x, y)
-import           LunaStudio.Data.Vector2  (dotV, scalarProduct)
-import           Prologue                 hiding (p)
+import           LunaStudio.Data.Constants (gridSize)
+import           LunaStudio.Data.Position  (Position, distanceSquared, fromDoubles, move, vector, x, y)
+import           LunaStudio.Data.Vector2   (dotV, scalarProduct)
+import           Prologue                  hiding (p)
+
+snapCoord :: Double -> Double
+snapCoord p = (* gridSize) . fromIntegral $ (round $ p / gridSize :: Integer)
+
+snap :: Position -> Position
+snap = (x %~ snapCoord) . (y %~ snapCoord)
 
 
 epsilon :: Double
