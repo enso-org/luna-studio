@@ -1,4 +1,5 @@
-{-# LANGUAGE MultiWayIf #-}
+{-# LANGUAGE MultiWayIf    #-}
+{-# LANGUAGE TupleSections #-}
 module Empire.Commands.Autolayout where
 
 import           Control.Arrow            ((&&&))
@@ -8,6 +9,7 @@ import           Data.Foldable            (find)
 import qualified Data.List                as List
 import           Data.Map.Lazy            (Map)
 import qualified Data.Map.Lazy            as Map
+import           Data.Maybe               (listToMaybe)
 import           Data.Set                 (Set)
 import qualified Data.Set                 as Set
 import           Data.Traversable         (forM)
@@ -326,3 +328,12 @@ alignNodesY pos = do
 
 alignToEndpoint :: SubgraphMap -> [ExpressionNode] -> [Connection] -> AutolayoutState ()
 alignToEndpoint subgraphs nodes conns = return ()
+
+findEndPoint :: Subgraph -> [ExpressionNode] -> [Connection] -> Maybe (Connection, ExpressionNode)
+findEndPoint s nodes conns = listToMaybe endPoints where
+    inSubgraph nid = Set.member nid $ s ^. members
+    endPoints :: [(Connection, ExpressionNode)]
+    endPoints = catMaybes . flip map conns $ \conn@(src, dst) ->
+        if      inSubgraph (src ^. srcNodeId) && (not $ inSubgraph (dst ^. dstNodeId)) then (conn, ) <$> find (\n -> n ^. exprNodeId == src ^. srcNodeId) nodes
+        else if (not $ inSubgraph (src ^. srcNodeId)) && inSubgraph (dst ^. dstNodeId) then (conn, ) <$> find (\n -> n ^. exprNodeId == dst ^. dstNodeId) nodes
+        else    Nothing
