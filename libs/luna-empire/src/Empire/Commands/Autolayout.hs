@@ -18,7 +18,7 @@ import           LunaStudio.Data.Node     (ExpressionNode, NodeId, exprNodeId, p
 import           LunaStudio.Data.Port     (isSelf)
 import           LunaStudio.Data.PortRef  (InPortRef, OutPortRef, dstNodeId, dstPortId, srcNodeId, srcPortId)
 import           LunaStudio.Data.Position (Position, fromDoubles, leftTopPoint, move, vector, x, y)
-import           LunaStudio.Data.Vector2  (Vector2)
+import           LunaStudio.Data.Vector2  (Vector2 (Vector2))
 
 -- This should be changed to Connection from LunaStudio.Data.Connection in whole backend
 type Connection = (OutPortRef, InPortRef)
@@ -327,13 +327,18 @@ alignNodesY pos = do
     fmap Map.fromList . forM subgraphs $ fmap (view subgraphId &&& id) . refreshSubgraph
 
 alignToEndpoint :: SubgraphMap -> [ExpressionNode] -> [Connection] -> AutolayoutState ()
-alignToEndpoint subgraphs nodes conns = return ()
+alignToEndpoint subgraphs nodes conns = forM_ subgraphs $ \s -> forM_ (findEndPoint s nodes conns) $ \((src, dst), node) -> do
+    mayNode <- lookupNode $ if src ^. srcNodeId /= node ^. exprNodeId then src ^. srcNodeId else dst ^. dstNodeId
+    forM_ mayNode $ \n -> do
+        let gap   = Vector2 (if src ^. srcNodeId == node ^. exprNodeId then gapBetweenNodes else (-gapBetweenNodes)) 0
+            shift = node ^. position . vector - n ^. actPos . vector + gap
+        moveSubgraph shift s
 
 findEndPoint :: Subgraph -> [ExpressionNode] -> [Connection] -> Maybe (Connection, ExpressionNode)
 findEndPoint s nodes conns = listToMaybe endPoints where
     inSubgraph nid = Set.member nid $ s ^. members
     endPoints :: [(Connection, ExpressionNode)]
     endPoints = catMaybes . flip map conns $ \conn@(src, dst) ->
-        if      inSubgraph (src ^. srcNodeId) && (not $ inSubgraph (dst ^. dstNodeId)) then (conn, ) <$> find (\n -> n ^. exprNodeId == src ^. srcNodeId) nodes
-        else if (not $ inSubgraph (src ^. srcNodeId)) && inSubgraph (dst ^. dstNodeId) then (conn, ) <$> find (\n -> n ^. exprNodeId == dst ^. dstNodeId) nodes
+        if      inSubgraph (src ^. srcNodeId) && (not $ inSubgraph (dst ^. dstNodeId)) then (conn, ) <$> find (\n -> n ^. exprNodeId == dst ^. dstNodeId) nodes
+        else if (not $ inSubgraph (src ^. srcNodeId)) && inSubgraph (dst ^. dstNodeId) then (conn, ) <$> find (\n -> n ^. exprNodeId == src ^. srcNodeId) nodes
         else    Nothing
