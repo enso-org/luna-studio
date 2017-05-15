@@ -10,24 +10,24 @@ module NodeEditor.React.Model.Node.ExpressionNode
     ) where
 
 import           Common.Prelude
-import           Data.Convert                            (Convertible (convert))
-import           Data.HashMap.Strict                     (HashMap)
-import           Data.Map.Lazy                           (Map)
-import           Data.Time.Clock                         (UTCTime)
-import           LunaStudio.Data.Breadcrumb              (BreadcrumbItem)
-import           LunaStudio.Data.MonadPath               (MonadPath)
-import           LunaStudio.Data.Node                    (NodeId)
-import qualified LunaStudio.Data.Node                    as Empire
-import           LunaStudio.Data.NodeLoc                 (NodeLoc (NodeLoc), NodePath)
-import qualified LunaStudio.Data.NodeMeta                as NodeMeta
-import           LunaStudio.Data.Position                (Position)
-import           LunaStudio.API.Graph.CollaborationUpdate    (ClientId)
-import           LunaStudio.API.Graph.NodeResultUpdate       (NodeValue (NodeError), NodeVisualization)
-import           NodeEditor.React.Model.IsNode           as X
-import           NodeEditor.React.Model.Node.SidebarNode (InputNode, OutputNode)
-import           NodeEditor.React.Model.Port             (InPort, InPortTree, OutPort, OutPortTree)
-import qualified NodeEditor.React.Model.Port             as Port
-import           NodeEditor.State.Collaboration          (ColorId)
+import           Data.Convert                             (Convertible (convert))
+import           Data.HashMap.Strict                      (HashMap)
+import           Data.Map.Lazy                            (Map)
+import           Data.Time.Clock                          (UTCTime)
+import           LunaStudio.API.Graph.CollaborationUpdate (ClientId)
+import           LunaStudio.API.Graph.NodeResultUpdate    (NodeValue (NodeError), NodeVisualization)
+import           LunaStudio.Data.Breadcrumb               (BreadcrumbItem)
+import           LunaStudio.Data.MonadPath                (MonadPath)
+import           LunaStudio.Data.Node                     (NodeId)
+import qualified LunaStudio.Data.Node                     as Empire
+import           LunaStudio.Data.NodeLoc                  (NodeLoc (NodeLoc), NodePath)
+import qualified LunaStudio.Data.NodeMeta                 as NodeMeta
+import           LunaStudio.Data.Position                 (Position)
+import           NodeEditor.React.Model.IsNode            as X
+import           NodeEditor.React.Model.Node.SidebarNode  (InputNode, OutputNode)
+import           NodeEditor.React.Model.Port              (InPort, InPortTree, OutPort, OutPortTree)
+import qualified NodeEditor.React.Model.Port              as Port
+import           NodeEditor.State.Collaboration           (ColorId)
 
 
 data ExpressionNode = ExpressionNode { _nodeLoc'              :: NodeLoc
@@ -143,3 +143,9 @@ isExpandedFunction node = case node ^. mode of
 
 isCollapsed :: ExpressionNode -> Bool
 isCollapsed = isMode Collapsed
+
+findPredecessorPosition :: ExpressionNode -> [ExpressionNode] -> Position
+findPredecessorPosition n nodes = Empire.findPredecessorPosition (convert n) $ map convert nodes
+
+findSuccessorPosition :: ExpressionNode -> [ExpressionNode] -> Position
+findSuccessorPosition n nodes = Empire.findSuccessorPosition (convert n) $ map convert nodes

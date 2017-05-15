@@ -9,21 +9,21 @@ import           Text.Read                                  (readMaybe)
 
 import           Common.Prelude
 import           Data.ScreenPosition                        (ScreenPosition, x)
+import qualified JS.GoogleAnalytics                         as GA
+import qualified JS.Searcher                                as Searcher
 import           LunaStudio.Data.NodeLoc                    (NodeLoc)
 import qualified LunaStudio.Data.NodeLoc                    as NodeLoc
 import           LunaStudio.Data.PortRef                    (OutPortRef)
 import qualified LunaStudio.Data.PortRef                    as PortRef
 import           LunaStudio.Data.Position                   (Position)
-import qualified JS.GoogleAnalytics                         as GA
-import qualified JS.Searcher                                as Searcher
 import           NodeEditor.Action.Basic                    (createNode, renameNode, renamePort, setNodeExpression)
 import qualified NodeEditor.Action.Batch                    as Batch
 import           NodeEditor.Action.Command                  (Command)
 import           NodeEditor.Action.State.Action             (beginActionWithKey, continueActionWithKey, removeActionFromState,
                                                              updateActionWithKey)
 import           NodeEditor.Action.State.App                (renderIfNeeded)
-import           NodeEditor.Action.State.NodeEditor         (getSearcher, getSelectedNodes, getSelectedNodes, modifyNodeEditor,
-                                                             modifySearcher)
+import           NodeEditor.Action.State.NodeEditor         (findSuccessorPosition, getSearcher, getSelectedNodes, getSelectedNodes,
+                                                             modifyNodeEditor, modifySearcher)
 import           NodeEditor.Action.State.Scene              (translateToScreen, translateToWorkspace)
 import           NodeEditor.Event.Event                     (Event (Shortcut))
 import qualified NodeEditor.Event.Shortcut                  as Shortcut
@@ -62,9 +62,11 @@ openWith mode pos = do
             Searcher.NodeName nl _      -> Just nl
             Searcher.PortName portRef _ -> Just $ portRef ^. PortRef.nodeLoc
             _                           -> Nothing
-    pos' <- (map (view position) <$> getSelectedNodes) >>= \case
-          [nodePosition] -> if isNothing nodeLoc then return $ nodePosition & x %~ (+positionDelta) else translateToWorkspace pos
-          _              -> translateToWorkspace pos
+    pos' <- if isJust nodeLoc
+        then translateToWorkspace pos
+        else getSelectedNodes >>= \case
+          [node] -> findSuccessorPosition node
+          _      -> translateToWorkspace pos
     begin Searcher
     GA.sendEvent GA.NodeSearcher
     modifyNodeEditor $ NodeEditor.searcher ?= Searcher.Searcher pos' 0 mode def False False

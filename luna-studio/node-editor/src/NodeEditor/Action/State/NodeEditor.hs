@@ -20,6 +20,7 @@ import qualified LunaStudio.Data.Node                        as Empire
 import           LunaStudio.Data.Port                        (_WithDefault)
 import           LunaStudio.Data.PortDefault                 (PortDefault)
 import           LunaStudio.Data.PortRef                     (AnyPortRef, InPortRef, OutPortRef (OutPortRef))
+import           LunaStudio.Data.Position                    (Position)
 import           NodeEditor.Action.Command                   (Command)
 import           NodeEditor.Action.State.App                 (get, modify)
 import qualified NodeEditor.Action.State.Internal.NodeEditor as Internal
@@ -79,6 +80,12 @@ addInputNode node = Internal.setNodeRec NE.inputNode ExpressionNode.inputNode (n
 
 addOutputNode :: OutputNode -> Command State ()
 addOutputNode node = Internal.setNodeRec NE.outputNode ExpressionNode.outputNode (node ^. nodeLoc) node
+
+findPredecessorPosition :: ExpressionNode -> Command State Position
+findPredecessorPosition n = ExpressionNode.findPredecessorPosition n <$> getExpressionNodes
+
+findSuccessorPosition :: ExpressionNode -> Command State Position
+findSuccessorPosition n = ExpressionNode.findSuccessorPosition n <$> getExpressionNodes
 
 getNode :: NodeLoc -> Command State (Maybe Node)
 getNode nl = NE.getNode nl <$> getNodeEditor
