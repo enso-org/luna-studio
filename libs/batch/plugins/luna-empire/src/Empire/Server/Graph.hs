@@ -231,8 +231,10 @@ handleAddNode :: Request AddNode.Request -> StateT Env BusT ()
 handleAddNode = modifyGraph defInverse action replyResult where
     action (AddNode.Request location nl@(NodeLoc _ nodeId) expression nodeMeta connectTo) = withDefaultResult location $ do
         Graph.addNodeCondTC False location nodeId expression nodeMeta
-        forM_ connectTo $ \nid ->
-            handle (\(e :: SomeASTException) -> return ()) (void $ Graph.connectCondTC False location (getSrcPortByNodeId nid) (getDstPortByNodeLoc nl))
+        forM_ connectTo $ \nid -> do
+            handle (\(e :: SomeASTException) -> return ()) $ do
+                void $ Graph.connectCondTC False location (getSrcPortByNodeId nid) (getDstPortByNodeLoc nl)
+                Graph.autolayoutNodes location [nodeId]
         Graph.withGraph location $ Graph.runTC location False
 
 handleAddPort :: Request AddPort.Request -> StateT Env BusT ()
