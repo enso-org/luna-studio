@@ -79,6 +79,19 @@ autolayoutNodes nids allNodes allConns =
             in (nid, NodeInfo nid leftTop Nothing NotProcessed inConns' outConns')
     in Map.toList $ fmap (view actPos) $ execState (findPositions leftTop allNodes allConns) nodesMap
 
+findSuccessorPosition :: ExpressionNode -> [ExpressionNode] -> Position
+findSuccessorPosition node nodes = fromDoubles xPos yPos where
+    xPos = (node ^. position . x) + gapBetweenNodes
+    yPos = findYPos $ node ^. position . y
+    findYPos y' = if any (\n -> n ^. position . x == xPos && n ^. position . y == yPos) nodes then findYPos $ y' + gapBetweenNodes else y'
+
+findPredecessorPosition :: ExpressionNode -> [ExpressionNode] -> Position
+findPredecessorPosition node nodes = fromDoubles xPos yPos where
+    xPos = (node ^. position . x) - gapBetweenNodes
+    yPos = findYPos $ node ^. position . y
+    findYPos y' = if any (\n -> n ^. position . x == xPos && n ^. position . y == yPos) nodes then findYPos $ y' - gapBetweenNodes else y'
+
+
 clearDFSState :: AutolayoutState ()
 clearDFSState = traverse . dfsState .= NotProcessed
 
@@ -330,8 +343,11 @@ alignToEndpoint :: SubgraphMap -> [ExpressionNode] -> [Connection] -> Autolayout
 alignToEndpoint subgraphs nodes conns = forM_ subgraphs $ \s -> forM_ (findEndPoint s nodes conns) $ \((src, dst), node) -> do
     mayNode <- lookupNode $ if src ^. srcNodeId /= node ^. exprNodeId then src ^. srcNodeId else dst ^. dstNodeId
     forM_ mayNode $ \n -> do
-        let gap   = Vector2 (if src ^. srcNodeId == node ^. exprNodeId then gapBetweenNodes else (-gapBetweenNodes)) 0
-            shift = node ^. position . vector - n ^. actPos . vector + gap
+        state <- get
+        let newPos = if src ^. srcNodeId == node ^. exprNodeId
+                then findSuccessorPosition   node $ filter (\n -> Map.notMember (n ^. exprNodeId) state) nodes
+                else findPredecessorPosition node $ filter (\n -> Map.notMember (n ^. exprNodeId) state) nodes
+            shift  = newPos ^. vector - n ^. actPos . vector
         moveSubgraph shift s
 
 findEndPoint :: Subgraph -> [ExpressionNode] -> [Connection] -> Maybe (Connection, ExpressionNode)
