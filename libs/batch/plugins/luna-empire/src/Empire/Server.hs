@@ -8,6 +8,7 @@ module Empire.Server where
 
 import           Control.Concurrent               (forkIO)
 import           Control.Concurrent.STM           (STM)
+import           Control.Concurrent.MVar
 import           Control.Concurrent.STM.TChan     (TChan, newTChan, readTChan, tryPeekTChan)
 import           Control.Monad                    (forever)
 import           Control.Monad.Catch              (try)
@@ -38,6 +39,7 @@ import qualified Empire.Commands.Graph            as Graph (openFile)
 import qualified Empire.Commands.Library          as Library
 import qualified Empire.Commands.Persistence      as Persistence
 import qualified Empire.Commands.Typecheck        as Typecheck
+import           Empire.Commands.Typecheck        (Scope (..))
 import qualified Empire.Empire                    as Empire
 import           Empire.Env                       (Env)
 import qualified Empire.Env                       as Env
@@ -72,18 +74,19 @@ sendStarted endPoints = do
 
 run :: BusEndPoints -> [Topic] -> Bool -> FilePath -> IO (Either Bus.Error ())
 run endPoints topics formatted projectRoot = do
+    sendStarted endPoints
     forkServer "localhost" 1234
     logger Logger.info $ "Subscribing to topics: " <> show topics
     logger Logger.info $ (Utils.display formatted) endPoints
-    sendStarted endPoints
-    toBusChan      <- atomically newTChan
-    fromEmpireChan <- atomically newTChan
-    tcChan         <- atomically newTChan
-    let env     = Env.make toBusChan fromEmpireChan tcChan projectRoot
-    let commEnv = Empire.CommunicationEnv fromEmpireChan tcChan
+    scope            <- newEmptyMVar
+    toBusChan        <- atomically newTChan
+    fromEmpireChan   <- atomically newTChan
+    tcChan           <- atomically newTChan
+    let env     = Env.make toBusChan fromEmpireChan tcChan scope projectRoot
+    let commEnv = Empire.CommunicationEnv fromEmpireChan tcChan scope
     forkIO $ void $ Bus.runBus endPoints $ BusT.runBusT $ evalStateT (startAsyncUpdateWorker fromEmpireChan) env
     forkIO $ void $ Bus.runBus endPoints $ startToBusWorker toBusChan
-    forkIO $ void $ Bus.runBus endPoints $ startTCWorker commEnv tcChan
+    forkIO $ void $ Bus.runBus endPoints $ startTCWorker commEnv tcChan scope
     Bus.runBus endPoints $ do
         mapM_ Bus.subscribe topics
         BusT.runBusT $ evalStateT (runBus formatted projectRoot) env
@@ -103,11 +106,17 @@ readAll chan = do
         Nothing -> return v
         Just _  -> readAll chan
 
-startTCWorker :: Empire.CommunicationEnv -> TChan (GraphLocation, Graph, Bool) -> Bus ()
-startTCWorker env chan = liftIO $ do
-    baseIntEnv <- Empire.defaultInterpreterEnv
+prepareStdlib :: IO (Scope, Empire.SymbolMap)
+prepareStdlib = do
     lunaroot   <- canonicalizePath =<< getEnv "LUNAROOT"
     std        <- Typecheck.createStdlib $ lunaroot ++ "/Std/"
+    return (std, Typecheck.getSymbolMap std)
+
+startTCWorker :: Empire.CommunicationEnv -> TChan (GraphLocation, Graph, Bool) -> MVar Empire.SymbolMap -> Bus ()
+startTCWorker env chan scopeVar = liftIO $ do
+    (Scope std, symbolMap) <- prepareStdlib
+    putMVar scopeVar symbolMap
+    baseIntEnv <- Empire.defaultInterpreterEnv
     let interpreterEnv = baseIntEnv & Empire.imports .~ std
     let pmState = interpreterEnv ^. Empire.graph . Graph.ast . Graph.pmState
     void $ Empire.runEmpire env interpreterEnv $ forever $ do
@@ -115,7 +124,6 @@ startTCWorker env chan = liftIO $ do
         if flush then Typecheck.flushCache else return ()
         Empire.graph .= (g & Graph.ast . Graph.pmState .~ pmState)
         Typecheck.run loc
-
 
 startToBusWorker :: TChan Message -> Bus ()
 startToBusWorker toBusChan = forever $ do

@@ -23,6 +23,7 @@ module EmpireUtils (
     ) where
 
 import           Control.Concurrent.STM        (atomically)
+import           Control.Concurrent.MVar       (newEmptyMVar)
 import           Control.Concurrent.STM.TChan  (newTChan)
 import           Control.Exception             (Exception, bracket)
 import           Data.Coerce                   (coerce)
@@ -93,7 +94,7 @@ infixl 5 |>-
 withChannels :: (CommunicationEnv -> IO a) -> IO a
 withChannels = bracket createChannels (const $ return ())
     where
-        createChannels = atomically $ CommunicationEnv <$> newTChan <*> newTChan
+        createChannels = CommunicationEnv <$> atomically newTChan <*> atomically newTChan <*> newEmptyMVar
 
 emptyGraphLocation :: GraphLocation
 emptyGraphLocation = GraphLocation "" $ Breadcrumb []
