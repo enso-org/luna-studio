@@ -5,7 +5,7 @@ module NodeEditor.React.Event.Breadcrumbs where
 
 import           Data.Aeson                 (FromJSON, ToJSON)
 
-import           Empire.API.Data.Breadcrumb (Breadcrumb, BreadcrumbItem)
+import           LunaStudio.Data.Breadcrumb (Breadcrumb, BreadcrumbItem)
 import           Common.Prelude
 
 

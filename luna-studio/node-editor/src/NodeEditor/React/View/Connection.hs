@@ -2,12 +2,12 @@
 module NodeEditor.React.View.Connection where
 
 import           Common.Prelude
-import           Empire.API.Data.Position          (Position, averagePosition, x, y)
+import           LunaStudio.Data.Position          (Position, averagePosition, x, y)
 import qualified NodeEditor.Event.UI               as UI
 import           NodeEditor.React.Event.Connection (ModifiedEnd (Destination, Source))
 import qualified NodeEditor.React.Event.Connection as Connection
 import           NodeEditor.React.Model.App        (App)
-import           NodeEditor.React.Model.Connection (PosConnection, PosHalfConnection)
+import           NodeEditor.React.Model.Connection (Mode (Dimmed, Highlighted, Sidebar), PosConnection, PosHalfConnection)
 import qualified NodeEditor.React.Model.Connection as Connection
 import           NodeEditor.React.Store            (Ref, dispatch)
 import qualified NodeEditor.React.View.Style       as Style
@@ -18,12 +18,8 @@ import           React.Flux                        as React
 name :: JSString
 name = "connection"
 
-show2 :: Double -> JSString
-show2 a = convert $ showFFloat (Just 2) a "" -- limit Double to two decimal numbers
-
 show0 :: Double -> JSString
 show0 a = convert $ showFFloat (Just 0) a "" -- limit Double to two decimal numbers
-
 
 --TODO: move & refactor: the list is inversed
 mergeList :: [a] -> [a] -> [a]
@@ -49,13 +45,18 @@ connection = React.defineView name $ \(ref, model) -> do
         mid      = averagePosition src dst
         eventSrc = onMouseDown $ \e m -> stopPropagation e : dispatch ref (UI.ConnectionEvent $ Connection.MouseDown m connId Source)
         eventDst = onMouseDown $ \e m -> stopPropagation e : dispatch ref (UI.ConnectionEvent $ Connection.MouseDown m connId Destination)
+        lineClassWithMode = ["connection__line"] ++ case model ^. Connection.pMode of
+            Sidebar     -> ["connection__sidebar"]
+            Highlighted -> ["connection__highligthed"]
+            Dimmed      -> ["connection__dimmed"]
+            _           -> []
     g_
         [ "key"       $= "connection"
         , "className" $= Style.prefix "connection"
         ] $ do
         line src dst
             [ "key"       $= "line"
-            , "className" $= Style.prefix "connection__line"
+            , "className" $= Style.prefixFromList lineClassWithMode
             , "stroke"    $= convert (model ^. Connection.color)
             ]
         g_
@@ -64,7 +65,7 @@ connection = React.defineView name $ \(ref, model) -> do
             ] $ do
             line src mid
                 [ "key"       $= "1"
-                , "className" $= Style.prefix "connection__line"
+                , "className" $= Style.prefixFromList lineClassWithMode
                 ]
             line src mid
                 [ "key"       $= "2"
@@ -76,7 +77,7 @@ connection = React.defineView name $ \(ref, model) -> do
             , "key" $= "dst" ] $ do
             line mid dst
                 [ "key"       $= "1"
-                , "className" $= Style.prefix "connection__line"
+                , "className" $= Style.prefixFromList lineClassWithMode
                 ]
             line mid dst
                 [ "key"       $= "2"
@@ -92,7 +93,12 @@ halfConnection = React.defineView name $ \model -> do
     let src   = model ^. Connection.srcPos
         dst   = model ^. Connection.dstPos
         color = "stroke" $= convert (model ^. Connection.color)
-    line src dst [ color, "className" $= Style.prefix "connection__line" ]
+        lineClassWithMode = ["connection__line"] ++ case model ^. Connection.phMode of
+            Sidebar     -> ["connection__sidebar"]
+            Highlighted -> ["connection__highligthed"]
+            Dimmed      -> ["connection__dimmed"]
+            _           -> []
+    line src dst [ color, "className" $= Style.prefixFromList lineClassWithMode ]
 
 halfConnection_ :: Int -> PosHalfConnection -> ReactElementM ViewEventHandler ()
 halfConnection_ key model = React.viewWithSKey halfConnection (fromString $ "half-connection" <> show key) model mempty

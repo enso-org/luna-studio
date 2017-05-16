@@ -2,8 +2,8 @@
 module NodeEditor.React.View.Monad where
 
 import           Common.Prelude
-import           Empire.API.Data.Position                   (Position, fromDoubles, x, y)
-import           Empire.API.Data.TypeRep                    (TypeRep)
+import           LunaStudio.Data.Position                   (Position, fromDoubles, x, y)
+import           LunaStudio.Data.TypeRep                    (TypeRep)
 import qualified NodeEditor.Data.Color                      as Color
 import           NodeEditor.React.Model.Constants           (gridSize)
 import           NodeEditor.React.Model.Node.ExpressionNode (ExpressionNode, position)

@@ -30,14 +30,14 @@ import qualified Data.Map                      as Map
 import           Data.Reflection               (Given (..), give)
 import           Data.UUID                     (UUID, nil)
 import           Data.UUID.V4                  (nextRandom)
-import           Empire.API.Data.Breadcrumb    (Breadcrumb(..), BreadcrumbItem(Lambda, Arg))
-import           Empire.API.Data.Connection    (Connection)
-import           Empire.API.Data.GraphLocation (GraphLocation(..))
-import           Empire.API.Data.Port          (Port)
-import qualified Empire.API.Data.Port          as Port
-import           Empire.API.Data.NodeLoc       (NodeLoc(..))
-import           Empire.API.Data.PortRef       (AnyPortRef(InPortRef'), InPortRef(..), OutPortRef(..))
-import           Empire.API.Data.Node          (ExpressionNode, NodeId, nodeId)
+import           LunaStudio.Data.Breadcrumb    (Breadcrumb(..), BreadcrumbItem(Lambda, Arg))
+import           LunaStudio.Data.Connection    (Connection)
+import           LunaStudio.Data.GraphLocation (GraphLocation(..))
+import           LunaStudio.Data.Port          (Port)
+import qualified LunaStudio.Data.Port          as Port
+import           LunaStudio.Data.NodeLoc       (NodeLoc(..))
+import           LunaStudio.Data.PortRef       (AnyPortRef(InPortRef'), InPortRef(..), OutPortRef(..))
+import           LunaStudio.Data.Node          (ExpressionNode, NodeId, nodeId)
 import qualified Empire.Commands.Graph         as Graph (connect, getNodes)
 import           Empire.Commands.Library       (createLibrary, listLibraries, withLibrary)
 import           Empire.Data.AST               ()
@@ -50,17 +50,17 @@ import           Prologue                      hiding (mapping, toList, (|>))
 import           Test.Hspec                    (expectationFailure)
 
 
-runEmp :: CommunicationEnv -> (Given GraphLocation => Empire a) -> IO (Either Error a, Env)
+runEmp :: CommunicationEnv -> (Given GraphLocation => Empire a) -> IO (a, Env)
 runEmp env act = runEmpire env def $ do
     _ <- createLibrary (Just "TestFile") "TestFile" ""
     let toLoc = GraphLocation "TestFile"
     give (toLoc $ Breadcrumb []) act
 
-evalEmp :: CommunicationEnv -> (Given GraphLocation => Empire a) -> IO (Either Error a)
+evalEmp :: CommunicationEnv -> (Given GraphLocation => Empire a) -> IO a
 evalEmp env act = fst <$> runEmp env act
 
 runEmp' :: CommunicationEnv -> Env -> Graph ->
-              (Given GraphLocation => Empire a) -> IO (Either Error a, Env)
+              (Given GraphLocation => Empire a) -> IO (a, Env)
 runEmp' env st newGraph act = runEmpire env st $ do
     lib <- head <$> listLibraries
     withLibrary (lib ^. Library.path) $ Library.body .= newGraph
@@ -74,15 +74,10 @@ graphIDs loc = do
     return ids
 
 extractGraph :: InterpreterEnv -> Graph
-extractGraph (InterpreterEnv _ _ _ g _) = g
+extractGraph (InterpreterEnv _ _ _ g _ _) = g
 
-data DummyB = DummyB deriving (Show, Exception)
-
--- DummyB is only here because expectationFailure returns IO () and we need to
--- return arbitrary type from lambda
-withResult :: Either String a -> (a -> IO b) -> IO b
-withResult (Left err)  _   = expectationFailure err >> throwM DummyB
-withResult (Right res) act = act res
+withResult :: a -> (a -> IO b) -> IO b
+withResult res act = act res
 
 top :: Given GraphLocation => GraphLocation
 top = given

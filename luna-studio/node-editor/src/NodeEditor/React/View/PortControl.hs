@@ -3,14 +3,14 @@ module NodeEditor.React.View.PortControl
     ( portControl_
     ) where
 
-import           Empire.API.Data.Port         (InPortIndex (Arg))
-import qualified Empire.API.Data.Port         as PortAPI
-import qualified Empire.API.Data.PortDefault  as PortDefault
-import           Empire.API.Data.PortRef      (InPortRef (InPortRef))
-import qualified Empire.API.Data.ValueType    as ValueType
-import qualified JS.Config                    as Config
+import           Common.Prelude              hiding (group)
+import           LunaStudio.Data.Port        (InPortIndex (Arg))
+import qualified LunaStudio.Data.Port        as PortAPI
+import qualified LunaStudio.Data.PortDefault as PortDefault
+import           LunaStudio.Data.PortRef     (InPortRef (InPortRef))
+import qualified LunaStudio.Data.ValueType   as ValueType
+import qualified JS.Config                   as Config
 import qualified NodeEditor.Event.UI         as UI
-import           Common.Prelude          hiding (group)
 import qualified NodeEditor.React.Event.Node as Node
 import           NodeEditor.React.Model.App  (App)
 import           NodeEditor.React.Model.Node (NodeLoc)
@@ -19,7 +19,7 @@ import qualified NodeEditor.React.Model.Port as Port
 import           NodeEditor.React.Store      (Ref, dispatch)
 import qualified NodeEditor.React.View.Style as Style
 import           NodeEditor.State.Action     (InitValue (Continous, Discrete))
-import           React.Flux                   as React
+import           React.Flux                  as React
 
 
 
@@ -40,7 +40,11 @@ inPortControl_ :: Ref App -> InPortRef -> InPort -> ReactElementM ViewEventHandl
 inPortControl_ ref portRef port = React.viewWithSKey inPortControl "inPortControl" (ref, portRef, port) mempty
 
 inPortControl :: ReactView (Ref App, InPortRef, InPort)
-inPortControl = React.defineView "inPortControl" $ \(ref, portRef, port) ->
+inPortControl = React.defineView "inPortControl" $ \(ref, portRef, port) -> do
+    let valueClass = case port ^. Port.state of
+                          PortAPI.NotConnected  -> "value--not-connected"
+                          PortAPI.Connected     -> "value--connected"
+                          PortAPI.WithDefault _ -> "value--with-default"
     div_
         [ "key"       $= jsShow (port ^. Port.portId)
         , "className" $= Style.prefixFromList [ "row", "row--arg" ]
@@ -48,15 +52,15 @@ inPortControl = React.defineView "inPortControl" $ \(ref, portRef, port) ->
         div_
             [ "key"       $= "label"
             , "className" $= Style.prefix "label"
-            ] $ elemString $ port ^. Port.name
+            ] $ elemString . convert $ port ^. Port.name
         div_
             [ "key"       $= "value"
-            , "className" $= Style.prefix "value"
+            , "className" $= Style.prefixFromList ["value", valueClass]
             ] $
             case port ^. Port.state of
             PortAPI.NotConnected ->
                 case port ^. Port.valueType . ValueType.toEnum of
-                    ValueType.Other -> elemString "(other)"
+                    ValueType.Other -> elemString ""
                     _               -> do
                         let zeroValue    = case port ^. Port.valueType . ValueType.toEnum of
                                 ValueType.DiscreteNumber   -> PortDefault.IntValue    def
@@ -66,12 +70,13 @@ inPortControl = React.defineView "inPortControl" $ \(ref, portRef, port) ->
                                 _                          -> undefined
                             defaultValue = PortDefault.Constant zeroValue
                         button_
-                            [ onClick $ \_ _ -> dispatch ref $ UI.NodeEvent $ Node.PortSetPortDefault portRef defaultValue
-                            ] $ elemString "not set"
+                            [ "className" $= Style.prefix "ctrl-set"
+                            , onClick $ \_ _ -> dispatch ref $ UI.NodeEvent $ Node.PortSetPortDefault portRef defaultValue
+                            ] $ elemString "set"
             PortAPI.Connected -> elemString "(connected)"
             PortAPI.WithDefault defVal -> void $ case port ^. Port.valueType . ValueType.toEnum of
                 ValueType.DiscreteNumber -> do
-                    let value = fromMaybe 0 $ defVal ^? PortDefault._Constant . PortDefault._IntValue
+                    let value       = fromMaybe 0 $ defVal ^? PortDefault._Constant . PortDefault._IntValue
                     div_
                         [ "className" $= Style.prefix "horizontal-slider"
                         --TODO[react]: +1 with Q and up key, -1 with W and down key, edit on double click
@@ -100,5 +105,4 @@ inPortControl = React.defineView "inPortControl" $ \(ref, portRef, port) ->
                     button_
                         [ onClick $ \_ _ -> dispatch ref $ UI.NodeEvent $ Node.PortSetPortDefault portRef defaultValue
                         ] $ elemString $ show value
-                ValueType.Other ->
-                    elemString "(other)"
+                ValueType.Other -> elemString ""

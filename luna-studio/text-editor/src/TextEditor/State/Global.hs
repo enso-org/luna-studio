@@ -6,7 +6,7 @@ import           Data.DateTime                        (DateTime)
 import           Data.Set                             (Set)
 import           Data.UUID.Types                      (UUID)
 import           Data.Word                            (Word8)
-import           Empire.API.Graph.CollaborationUpdate (ClientId)
+import           LunaStudio.API.Graph.CollaborationUpdate (ClientId)
 import           TextEditor.Action.Command           (Command)
 import           TextEditor.Event.Event              (Event)
 import           Common.Prelude

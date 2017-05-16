@@ -18,9 +18,9 @@ import           System.Cmd                       (system)
 import           System.Directory                 (getCurrentDirectory)
 import           System.Exit                      (exitFailure)
 
-import qualified Empire.API.Control.EmpireStarted as EmpireStarted
-import           Empire.API.Request               (Request)
-import qualified Empire.API.Topic                 as Topic
+import qualified LunaStudio.API.Control.EmpireStarted as EmpireStarted
+import           LunaStudio.API.Request               (Request)
+import qualified LunaStudio.API.Topic                 as Topic
 import qualified Empire.Commands.Library          as Library
 import qualified Empire.Empire                    as Empire
 import           Empire.Env                       (MonitorEnv)

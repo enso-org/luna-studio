@@ -2,8 +2,8 @@ module NodeEditor.React.Model.Image where
 
 import           Common.Prelude
 import           Data.Aeson               (ToJSON)
-import           Empire.API.Data.Position (Position)
-import           Empire.API.Data.Size     (Size)
+import           LunaStudio.Data.Position (Position)
+import           LunaStudio.Data.Size     (Size)
 
 
 

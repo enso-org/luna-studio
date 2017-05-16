@@ -2,8 +2,8 @@ module NodeEditor.Handler.Node where
 
 import           Common.Prelude
 import           NodeEditor.Action.Basic                    (enterNode, localSetPortDefault, localToggleVisualizations, removeSelectedNodes,
-                                                             selectAll, setNodeCode, setPortDefault, toggleSelect, toggleSelectedNodesMode,
-                                                             toggleSelectedNodesUnfold, unselectAll)
+                                                             selectAll, setNodeExpression, setPortDefault, toggleSelect,
+                                                             toggleSelectedNodesMode, toggleSelectedNodesUnfold, unselectAll)
 import           NodeEditor.Action.Batch                    (autolayoutNodes)
 import           NodeEditor.Action.Command                  (Command)
 import qualified NodeEditor.Action.Node                     as Node
@@ -31,12 +31,10 @@ handle (UI (AppEvent  (App.MouseMove             mevt _ ))) = Just $ handleMouse
 handle (UI (AppEvent  (App.MouseUp               mevt   ))) = Just $ handleMouseUp   mevt
 handle (UI (NodeEvent (Node.Enter                     nl))) = Just $ withJustM (getExpressionNode nl) enterNode
 handle (UI (NodeEvent (Node.EditExpression            nl))) = Just $ Node.editExpression nl
+handle (UI (NodeEvent (Node.EditName                  nl))) = Just $ Node.editName nl
 handle (UI (NodeEvent (Node.Select               kevt nl))) = Just $ when (mouseCtrlKey kevt || mouseMetaKey kevt) $ toggleSelect nl
 handle (UI (NodeEvent (Node.DisplayResultChanged flag nl))) = Just $ localToggleVisualizations nl flag
-handle (UI (NodeEvent (Node.NameEditStart             nl))) = Just $ Node.startEditName nl
-handle (UI (NodeEvent (Node.NameEditDiscard           nl))) = Just $ Node.discardName nl
-handle (UI (NodeEvent (Node.NameEditApply             nl val)))  = Just $ Node.applyName nl val
-handle (UI (NodeEvent (Node.SetCode                   nl code))) = Just $ setNodeCode nl code
+handle (UI (NodeEvent (Node.SetExpression             nl expr))) = Just $ setNodeExpression nl expr
 handle (UI (NodeEvent (Node.PortEditString            portRef portDef)))    = Just $ void $ localSetPortDefault portRef portDef
 handle (UI (NodeEvent (Node.PortApplyString      kevt portRef portDef)))    = Just $ when (Keys.withoutMods kevt Keys.enter) $ setPortDefault portRef portDef
 handle (UI (NodeEvent (Node.PortSetPortDefault        portRef portDef)))    = Just $ setPortDefault portRef portDef

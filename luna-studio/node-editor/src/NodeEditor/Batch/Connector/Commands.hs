@@ -4,47 +4,46 @@ import           Common.Batch.Connector.Connection    (Message (Message), sendRe
 import           Common.Prelude
 import qualified Data.Text                            as Text
 import           Data.UUID.Types                      (UUID)
-import qualified Empire.API.Atom.OpenFile             as OpenFile
-import           Empire.API.Data.Connection           (Connection)
-import           Empire.API.Data.GraphLocation        (GraphLocation)
-import qualified Empire.API.Data.GraphLocation        as GraphLocation
-import           Empire.API.Data.Node                 (ExpressionNode)
-import           Empire.API.Data.NodeLoc              (NodeLoc, normalise, normalise')
-import qualified Empire.API.Data.NodeLoc              as NodeLoc
-import           Empire.API.Data.NodeMeta             (NodeMeta)
-import           Empire.API.Data.PortDefault          (PortDefault)
-import           Empire.API.Data.PortRef              (AnyPortRef, InPortRef, OutPortRef)
-import           Empire.API.Data.Project              (ProjectId)
-import qualified Empire.API.Graph.AddConnection       as AddConnection
-import qualified Empire.API.Graph.AddNode             as AddNode
-import qualified Empire.API.Graph.AddPort             as AddPort
-import qualified Empire.API.Graph.AddSubgraph         as AddSubgraph
-import qualified Empire.API.Graph.AutolayoutNodes     as AutolayoutNodes
-import           Empire.API.Graph.CollaborationUpdate (ClientId)
-import qualified Empire.API.Graph.CollaborationUpdate as CollaborationUpdate
-import qualified Empire.API.Graph.DumpGraphViz        as DumpGraphViz
-import qualified Empire.API.Graph.GetProgram          as GetProgram
-import qualified Empire.API.Graph.GetSubgraphs        as GetSubgraphs
-import qualified Empire.API.Graph.MovePort            as MovePort
-import qualified Empire.API.Graph.Redo                as Redo
-import qualified Empire.API.Graph.RemoveConnection    as RemoveConnection
-import qualified Empire.API.Graph.RemoveNodes         as RemoveNodes
-import qualified Empire.API.Graph.RemovePort          as RemovePort
-import qualified Empire.API.Graph.RenameNode          as RenameNode
-import qualified Empire.API.Graph.RenamePort          as RenamePort
-import qualified Empire.API.Graph.SearchNodes         as SearchNodes
-import qualified Empire.API.Graph.SetNodeCode         as SetNodeCode
-import qualified Empire.API.Graph.SetNodeExpression   as SetNodeExpression
-import qualified Empire.API.Graph.SetNodesMeta        as SetNodesMeta
-import qualified Empire.API.Graph.SetPortDefault      as SetPortDefault
-import qualified Empire.API.Graph.Undo                as Undo
-import qualified Empire.API.Library.CreateLibrary     as CreateLibrary
-import qualified Empire.API.Library.ListLibraries     as ListLibraries
-import qualified Empire.API.Project.CreateProject     as CreateProject
-import qualified Empire.API.Project.ExportProject     as ExportProject
-import qualified Empire.API.Project.ImportProject     as ImportProject
-import qualified Empire.API.Project.ListProjects      as ListProjects
-import qualified Empire.API.Project.OpenProject       as OpenProject
+import qualified LunaStudio.API.Atom.OpenFile             as OpenFile
+import           LunaStudio.Data.Connection           (Connection)
+import           LunaStudio.Data.GraphLocation        (GraphLocation)
+import qualified LunaStudio.Data.GraphLocation        as GraphLocation
+import           LunaStudio.Data.Node                 (ExpressionNode)
+import           LunaStudio.Data.NodeLoc              (NodeLoc, normalise, normalise')
+import qualified LunaStudio.Data.NodeLoc              as NodeLoc
+import           LunaStudio.Data.NodeMeta             (NodeMeta)
+import           LunaStudio.Data.PortDefault          (PortDefault)
+import           LunaStudio.Data.PortRef              (AnyPortRef (InPortRef'), InPortRef, OutPortRef)
+import           LunaStudio.Data.Project              (ProjectId)
+import qualified LunaStudio.API.Graph.AddConnection       as AddConnection
+import qualified LunaStudio.API.Graph.AddNode             as AddNode
+import qualified LunaStudio.API.Graph.AddPort             as AddPort
+import qualified LunaStudio.API.Graph.AddSubgraph         as AddSubgraph
+import qualified LunaStudio.API.Graph.AutolayoutNodes     as AutolayoutNodes
+import           LunaStudio.API.Graph.CollaborationUpdate (ClientId)
+import qualified LunaStudio.API.Graph.CollaborationUpdate as CollaborationUpdate
+import qualified LunaStudio.API.Graph.DumpGraphViz        as DumpGraphViz
+import qualified LunaStudio.API.Graph.GetProgram          as GetProgram
+import qualified LunaStudio.API.Graph.GetSubgraphs        as GetSubgraphs
+import qualified LunaStudio.API.Graph.MovePort            as MovePort
+import qualified LunaStudio.API.Graph.Redo                as Redo
+import qualified LunaStudio.API.Graph.RemoveConnection    as RemoveConnection
+import qualified LunaStudio.API.Graph.RemoveNodes         as RemoveNodes
+import qualified LunaStudio.API.Graph.RemovePort          as RemovePort
+import qualified LunaStudio.API.Graph.RenameNode          as RenameNode
+import qualified LunaStudio.API.Graph.RenamePort          as RenamePort
+import qualified LunaStudio.API.Graph.SearchNodes         as SearchNodes
+import qualified LunaStudio.API.Graph.SetNodeExpression   as SetNodeExpression
+import qualified LunaStudio.API.Graph.SetNodesMeta        as SetNodesMeta
+import qualified LunaStudio.API.Graph.SetPortDefault      as SetPortDefault
+import qualified LunaStudio.API.Graph.Undo                as Undo
+import qualified LunaStudio.API.Library.CreateLibrary     as CreateLibrary
+import qualified LunaStudio.API.Library.ListLibraries     as ListLibraries
+import qualified LunaStudio.API.Project.CreateProject     as CreateProject
+import qualified LunaStudio.API.Project.ExportProject     as ExportProject
+import qualified LunaStudio.API.Project.ImportProject     as ImportProject
+import qualified LunaStudio.API.Project.ListProjects      as ListProjects
+import qualified LunaStudio.API.Project.OpenProject       as OpenProject
 import           NodeEditor.Batch.Workspace           (Workspace)
 import           NodeEditor.Batch.Workspace           (currentLocation)
 import           NodeEditor.React.Model.Connection    (ConnectionId)
@@ -95,8 +94,8 @@ addNode nodeLoc expression meta connectTo workspace uuid guiID =
     sendRequest $ Message uuid guiID $ (withLibrary workspace' AddNode.Request) nodeLoc' expression meta (convert <$> connectTo) where
         (workspace', nodeLoc') = normalise workspace nodeLoc
 
-addPort :: OutPortRef -> Workspace -> UUID -> Maybe UUID -> IO ()
-addPort portRef workspace uuid guiID = sendRequest $ Message uuid guiID $ (withLibrary workspace' AddPort.Request) portRef' Nothing where
+addPort :: OutPortRef -> Maybe InPortRef -> Workspace -> UUID -> Maybe UUID -> IO ()
+addPort portRef connDst workspace uuid guiID = sendRequest $ Message uuid guiID $ (withLibrary workspace' AddPort.Request) portRef' (InPortRef' <$> maybeToList connDst) where
     (workspace', portRef') = normalise workspace portRef
 
 addSubgraph :: [ExpressionNode] -> [Connection] -> Workspace -> UUID -> Maybe UUID -> IO ()
@@ -131,21 +130,12 @@ renameNode :: NodeLoc -> Text -> Workspace -> UUID -> Maybe UUID -> IO ()
 renameNode nl name workspace uuid guiID = sendRequest $ Message uuid guiID $ withLibrary workspace' RenameNode.Request nodeId name where
     (workspace', nodeId) = convert (workspace, nl)
 
-renamePort :: OutPortRef -> String -> Workspace -> UUID -> Maybe UUID -> IO ()
+renamePort :: OutPortRef -> Text -> Workspace -> UUID -> Maybe UUID -> IO ()
 renamePort portRef name workspace uuid guiID = sendRequest $ Message uuid guiID $ withLibrary workspace' RenamePort.Request portRef' name where
     (workspace', portRef') = normalise workspace portRef
 
 searchNodes :: Text -> (Int, Int) -> Workspace -> UUID -> Maybe UUID -> IO ()
 searchNodes query cursor workspace uuid guiID = sendRequest $ Message uuid guiID $ withLibrary workspace $ SearchNodes.Request query cursor
-
--- TODO[LJK, PM]: Probably remove
--- setInputNodeType :: NodeId -> Text -> Workspace -> UUID -> Maybe UUID -> IO ()
--- setInputNodeType nodeId tpe workspace uuid guiID = sendRequest $ Message uuid guiID $ withLibrary workspace SetInputNodeType.Request nodeId (convert tpe)
-
-setNodeCode :: NodeLoc -> Text -> Workspace -> UUID -> Maybe UUID -> IO ()
-setNodeCode nodeLoc newCode workspace uuid guiID =
-    sendRequest $ Message uuid guiID $ withLibrary workspace' SetNodeCode.Request nodeId newCode where
-        (workspace', nodeId) = convert (workspace, nodeLoc)
 
 setNodeExpression :: NodeLoc -> Text -> Workspace -> UUID -> Maybe UUID -> IO ()
 setNodeExpression nodeLoc expression workspace uuid guiID =

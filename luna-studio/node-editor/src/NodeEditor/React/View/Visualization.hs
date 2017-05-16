@@ -1,26 +1,24 @@
 {-# LANGUAGE LambdaCase        #-}
 {-# LANGUAGE OverloadedStrings #-}
 module NodeEditor.React.View.Visualization
-( nodeShortValue_
-, nodeVisualizations_
-, visualization
-, visualization_
-, pinnedVisualization_
-, strValue
-) where
+    ( nodeShortValue_
+    , nodeVisualizations_
+    , visualization
+    , visualization_
+    , pinnedVisualization_
+    , strValue
+    ) where
 
+import           Common.Prelude
 import qualified Data.Aeson                                 as Aeson
 import qualified Data.ByteString.Lazy.Char8                 as ByteString
 import           Data.Scientific                            (coefficient)
 import           Data.Text                                  as Text
-import           Empire.API.Data.Position                   (Position)
 import qualified Data.Vector                                as Vector
-import qualified Empire.API.Data.Error                      as LunaError
-import           Empire.API.Data.PortDefault                (VisualizationValue (..))
-import           React.Flux                                 hiding (image_)
-import qualified React.Flux                                 as React
-import           Common.Prelude
-import           Empire.API.Graph.NodeResultUpdate          (NodeValue (..))
+import qualified LunaStudio.Data.Error                      as LunaError
+import           LunaStudio.Data.PortDefault                (VisualizationValue (..))
+import           LunaStudio.Data.Position                   (Position)
+import           LunaStudio.API.Graph.NodeResultUpdate          (NodeValue (..))
 import qualified NodeEditor.Event.UI                        as UI
 import qualified NodeEditor.React.Event.Visualization       as Visualization
 import           NodeEditor.React.Model.App                 (App)
@@ -30,6 +28,8 @@ import           NodeEditor.React.Model.NodeEditor          (NodeEditor)
 import qualified NodeEditor.React.Model.NodeEditor          as NodeEditor
 import           NodeEditor.React.Store                     (Ref, dispatch)
 import qualified NodeEditor.React.View.Style                as Style
+import           React.Flux                                 hiding (image_)
+import qualified React.Flux                                 as React
 
 viewName, objNameVis, objNameShortVal :: JSString
 viewName        = "visualization"
@@ -93,7 +93,7 @@ nodeValue_ ref nl mayPos visIx value = do
             Just pos -> div_ [ "className" $= Style.prefixFromList [ "node-trans", "noselect", "node-root" ]
                              , "style"     @= Aeson.object [ "zIndex" Aeson..= show (1000 :: Integer) ]
                              ] . div_ [ "className" $= Style.prefix "node__visuals" ]
-            Nothing -> div_
+            Nothing  -> div_ [ "className" $= Style.prefixFromList ["noselect"] ]
     translatedDiv_ $ do
         withJust mayPos $ \pos ->
             button_ [ onMouseDown $ \e m -> stopPropagation e : dispatch ref (UI.VisualizationEvent $ Visualization.MouseDown m nl visIx pos)
@@ -114,7 +114,11 @@ nodeValue_ ref nl mayPos visIx value = do
 
 fromJsonValue :: String -> ReactElementM ViewEventHandler ()
 fromJsonValue value = case (Aeson.decode $ ByteString.pack value :: Maybe Aeson.Value) of
-    Just (Aeson.Array  a) -> table_ $ rows $ keyed $ Vector.toList a
+    --Just (Aeson.Array  a) -> div_ [ "className" $= Style.prefix "table-scroll" ] $ table_ $ rows $ keyed $ Vector.toList a
+    Just (Aeson.Array  a) -> div_ [ "className" $= Style.prefix "table-scroll"
+                                  , onScroll    $ \e     -> [stopPropagation e]
+                                  , onWheel     $ \e _ _ -> [stopPropagation e]
+                                  ] $ table_ $ tbody_ $ rows $ keyed $ Vector.toList a
     Just (Aeson.Object _) -> mempty
     Just (Aeson.String _) -> mempty
     Just (Aeson.Number _) -> mempty

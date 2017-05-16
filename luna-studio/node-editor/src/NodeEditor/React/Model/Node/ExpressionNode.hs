@@ -10,24 +10,24 @@ module NodeEditor.React.Model.Node.ExpressionNode
     ) where
 
 import           Common.Prelude
-import           Data.Convert                            (Convertible (convert))
-import           Data.HashMap.Strict                     (HashMap)
-import           Data.Map.Lazy                           (Map)
-import           Data.Time.Clock                         (UTCTime)
-import           Empire.API.Data.Breadcrumb              (BreadcrumbItem)
-import           Empire.API.Data.MonadPath               (MonadPath)
-import           Empire.API.Data.Node                    (NodeId)
-import qualified Empire.API.Data.Node                    as Empire
-import           Empire.API.Data.NodeLoc                 (NodeLoc (NodeLoc), NodePath)
-import qualified Empire.API.Data.NodeMeta                as NodeMeta
-import           Empire.API.Data.Position                (Position)
-import           Empire.API.Graph.CollaborationUpdate    (ClientId)
-import           Empire.API.Graph.NodeResultUpdate       (NodeValue (NodeError), NodeVisualization)
-import           NodeEditor.React.Model.IsNode           as X
-import           NodeEditor.React.Model.Node.SidebarNode (InputNode, OutputNode)
-import           NodeEditor.React.Model.Port             (InPort, InPortTree, OutPort, OutPortTree)
-import qualified NodeEditor.React.Model.Port             as Port
-import           NodeEditor.State.Collaboration          (ColorId)
+import           Data.Convert                             (Convertible (convert))
+import           Data.HashMap.Strict                      (HashMap)
+import           Data.Map.Lazy                            (Map)
+import           Data.Time.Clock                          (UTCTime)
+import           LunaStudio.API.Graph.CollaborationUpdate (ClientId)
+import           LunaStudio.API.Graph.NodeResultUpdate    (NodeValue (NodeError), NodeVisualization)
+import           LunaStudio.Data.Breadcrumb               (BreadcrumbItem)
+import           LunaStudio.Data.MonadPath                (MonadPath)
+import           LunaStudio.Data.Node                     (NodeId)
+import qualified LunaStudio.Data.Node                     as Empire
+import           LunaStudio.Data.NodeLoc                  (NodeLoc (NodeLoc), NodePath)
+import qualified LunaStudio.Data.NodeMeta                 as NodeMeta
+import           LunaStudio.Data.Position                 (Position)
+import           NodeEditor.React.Model.IsNode            as X
+import           NodeEditor.React.Model.Node.SidebarNode  (InputNode, OutputNode)
+import           NodeEditor.React.Model.Port              (InPort, InPortTree, OutPort, OutPortTree)
+import qualified NodeEditor.React.Model.Port              as Port
+import           NodeEditor.State.Collaboration           (ColorId)
 
 
 data ExpressionNode = ExpressionNode { _nodeLoc'              :: NodeLoc
@@ -44,7 +44,6 @@ data ExpressionNode = ExpressionNode { _nodeLoc'              :: NodeLoc
                                      , _zPos                  :: Int
                                      , _isSelected            :: Bool
                                      , _mode                  :: Mode
-                                     , _isNameEdited          :: Bool
                                      , _execTime              :: Maybe Integer
                                      , _collaboration         :: Collaboration
                                      } deriving (Eq, Generic, NFData, Show)
@@ -93,7 +92,6 @@ instance Convertible (NodePath, Empire.ExpressionNode) ExpressionNode where
         {- zPos                  -} def
         {- isSelected            -} False
         {- mode                  -} def
-        {- isNameEdited          -} False
         {- execTime              -} def
         {- collaboration         -} def
 
@@ -145,3 +143,9 @@ isExpandedFunction node = case node ^. mode of
 
 isCollapsed :: ExpressionNode -> Bool
 isCollapsed = isMode Collapsed
+
+findPredecessorPosition :: ExpressionNode -> [ExpressionNode] -> Position
+findPredecessorPosition n nodes = Empire.findPredecessorPosition (convert n) $ map convert nodes
+
+findSuccessorPosition :: ExpressionNode -> [ExpressionNode] -> Position
+findSuccessorPosition n nodes = Empire.findSuccessorPosition (convert n) $ map convert nodes

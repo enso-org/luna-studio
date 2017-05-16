@@ -3,9 +3,9 @@ module NodeEditor.Action.State.Scene where
 import           Common.Prelude
 import           Data.ScreenPosition                (ScreenPosition (ScreenPosition))
 import qualified Data.ScreenPosition                as ScreenPosition
-import           Empire.API.Data.Position           (Position)
-import           Empire.API.Data.Size               (Size)
-import           Empire.API.Data.Vector2            (scalarProduct, vector, x, y)
+import           LunaStudio.Data.Position           (Position)
+import           LunaStudio.Data.Size               (Size)
+import           LunaStudio.Data.Vector2            (scalarProduct, vector, x, y)
 import qualified JS.Scene                           as Scene
 import           NodeEditor.Action.Command          (Command)
 import           NodeEditor.Action.State.App        (renderIfNeeded)
@@ -25,8 +25,6 @@ translateToWorkspace pos = Scene.translateToWorkspace pos <$> getScreenTranform
 translateToScreen :: Position -> Command State ScreenPosition
 translateToScreen pos = Scene.translateToScreen pos <$> getScreenTranform
 
--- WARNING: Those functions can discretely change our app, be sure to redraw connections for sidebars!
-
 getScene :: Command State (Maybe Scene)
 getScene = NE.getScene >>= maybe (updateScene >> NE.getScene) (return . return . id)
 
@@ -36,7 +34,8 @@ updateScene = do
     mayNewScene <- Scene.get
     let shouldUpdate = flip (maybe True) mayNewScene $ \newScene ->
             newScene ^. Scene.position /= def || newScene ^. Scene.size /= def
-    when shouldUpdate $ modifyNodeEditor $ NodeEditor.layout . Scene.scene .= mayNewScene
+    when shouldUpdate $
+        modifyNodeEditor $ NodeEditor.layout . Scene.scene .= mayNewScene
 
 getWorkspacePosition :: Command State (Maybe ScreenPosition)
 getWorkspacePosition = view Scene.position `fmap2` getScene

@@ -44,8 +44,7 @@ dependencies:
   - ghcjs-base
   - hashable
   - lens
-  - luna-empire-api
-  - luna-empire-api-json
+  - luna-studio-common
   - mtl
   - prologue
   - placeholders

@@ -2,18 +2,19 @@ module NodeEditor.Action.Basic.AddNode where
 
 import           Common.Prelude
 import           Data.Text                          (Text)
-import           Empire.API.Data.LabeledTree        (LabeledTree (LabeledTree))
-import qualified Empire.API.Data.Node               as Empire
-import           Empire.API.Data.NodeMeta           (NodeMeta (NodeMeta))
-import           Empire.API.Data.Port               (InPortIndex (Arg, Self), Port (Port), PortState (NotConnected))
-import           Empire.API.Data.Position           (Position)
-import           Empire.API.Data.TypeRep            (TypeRep (TStar))
+import qualified Data.Text                          as Text
+import           LunaStudio.Data.LabeledTree        (LabeledTree (LabeledTree))
+import qualified LunaStudio.Data.Node               as Empire
+import           LunaStudio.Data.NodeMeta           (NodeMeta (NodeMeta))
+import           LunaStudio.Data.Port               (InPortIndex (Arg, Self), Port (Port), PortState (NotConnected))
+import           LunaStudio.Data.Position           (Position)
+import           LunaStudio.Data.TypeRep            (TypeRep (TStar))
 import qualified JS.GoogleAnalytics                 as GA
 import           NodeEditor.Action.Basic.FocusNode  (focusNode)
 import           NodeEditor.Action.Basic.SelectNode (selectNode)
 import qualified NodeEditor.Action.Batch            as Batch
 import           NodeEditor.Action.Command          (Command)
-import           NodeEditor.Action.Node.Snap        (snap)
+import           LunaStudio.Data.Geometry        (snap)
 import           NodeEditor.Action.State.Model      (shouldDisplayPortSelf)
 import           NodeEditor.Action.State.NodeEditor (getSelectedNodes)
 import           NodeEditor.Action.State.NodeEditor (addInputNode, addOutputNode)
@@ -33,8 +34,8 @@ createNode parentPath nodePos expr = do
         connectTo   = if length selected == 1
                       then view nodeLoc <$> listToMaybe selected
                       else Nothing
-        defInPorts  = LabeledTree def $ Port [Arg 0] "" TStar NotConnected
-        defOutPorts = LabeledTree def $ Port [] "" TStar NotConnected
+        defInPorts  = LabeledTree def $ Port [Arg 0] (Text.pack "") TStar NotConnected
+        defOutPorts = LabeledTree def $ Port []      (Text.pack "") TStar NotConnected
         empireNode  = Empire.ExpressionNode nid expr def def defInPorts defOutPorts nodeMeta False
         node        = convert (parentPath, empireNode)
         nl          = NodeLoc parentPath nid

@@ -44,6 +44,7 @@ import qualified OCI.Pass.Manager     as Pass (PassManager, Cache, setAttr, Stat
 
 import           System.Log                                   (Logger, DropLogger, dropLogs)
 import           Luna.Pass.Data.ExprRoots                     (ExprRoots(..))
+import qualified Luna.Pass.Transform.Desugaring.PatternTransformation as PatternTransformation
 import           Luna.Pass.Resolution.Data.UnresolvedVars     (UnresolvedVars(..))
 import           Luna.Pass.Resolution.Data.UnresolvedConses   (UnresolvedConses(..), NegativeConses(..))
 import qualified Luna.Pass.Resolution.AliasAnalysis           as AliasAnalysis
@@ -139,13 +140,13 @@ runASTOp pass = runPass inits pass where
 
 runAliasAnalysis :: Command Graph ()
 runAliasAnalysis = do
-    --TODO[MK]: AA is broken, fix it and then just pass BH.body here
-    roots <- gets $ toListOf $ Graph.breadcrumbHierarchy . BH.children . traverse . BH.self . BH.anyRef
+    roots <- gets $ toListOf $ Graph.breadcrumbHierarchy . BH.body
     let inits = do
             Pass.setAttr (getTypeDesc @UnresolvedVars)   $ UnresolvedVars   []
             Pass.setAttr (getTypeDesc @UnresolvedConses) $ UnresolvedConses []
             Pass.setAttr (getTypeDesc @NegativeConses)   $ NegativeConses   []
             Pass.setAttr (getTypeDesc @ExprRoots) $ ExprRoots $ map unsafeGeneralize roots
+    runPass inits PatternTransformation.runPatternTransformation
     runPass inits AliasAnalysis.runAliasAnalysis
 
 runTypecheck :: Imports -> Command Graph ()

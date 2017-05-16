@@ -36,9 +36,9 @@ dependencies:
     - luna-core
     - luna-passes
     - luna-syntax-text
-    - luna-empire-api
+    - luna-studio-common
     - luna-stdlib
-    - luna-empire-api-json
+    - luna-project
     - m-logger
     - megaparsec
     - mtl

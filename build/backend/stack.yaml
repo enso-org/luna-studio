@@ -5,11 +5,13 @@ local-bin-path:
   ../../dist/bin
 
 extra-deps:
-  - ghc-session-0.1.2.0
-  - error-util-0.0.1.1
+  - aeson-1.1.1.0
   - cond-0.4.1.1
+  - error-util-0.0.1.1
   - ghc-mtl-1.2.1.0
+  - ghc-session-0.1.2.0
   - serialport-0.4.7
+  - uuid-1.3.13
 
 packages:
   - location: ../../libs/luna-empire
@@ -18,9 +20,7 @@ packages:
     extra-dep: true
   - location: ../../libs/batch/plugins/request-monitor
     extra-dep: true
-  - location: ../../libs/luna-empire-api-json
-    extra-dep: true
-  - location: ../../libs/luna-empire-api
+  - location: ../../libs/luna-studio-common
     extra-dep: true
   - location: ../../libs/m-logger
     extra-dep: true
@@ -43,9 +43,9 @@ packages:
   - location: ../../tools/batch/plugins/luna-empire
   - location: ../../tools/batch/plugins/request-monitor
   - location:
-      commit: c88b90f51254474aa1cb1140ddb49ff9aecf8c3c
+      commit: a297895da854a4fb63dcdf67eb275c1704d5e8ad
       git: git@github.com:luna/luna.git
-    subdirs: [core, passes, syntax/text, stdlib]
+    subdirs: [core, passes, syntax/text, stdlib, project]
     extra-dep: true
   - location:
       commit: 14540e932e14953b0eb5ebdea85045e8d261f023

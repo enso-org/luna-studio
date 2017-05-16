@@ -21,40 +21,39 @@ import qualified Data.Set                           as Set
 import           Prologue                           hiding (throwM)
 
 import           Data.UUID                          as UUID (nil)
-import           Empire.API.Data.Connection         (Connection)
-import           Empire.API.Data.Connection         as Connection
-import           Empire.API.Data.Graph              (Graph)
-import           Empire.API.Data.GraphLocation      (GraphLocation)
-import           Empire.API.Data.Node               (NodeId)
-import qualified Empire.API.Data.Node               as Node
-import           Empire.API.Data.NodeMeta           (NodeMeta)
-import           Empire.API.Data.Port               (OutPortIndex (Projection))
-import qualified Empire.API.Data.Port               as Port
-import           Empire.API.Data.PortRef            (AnyPortRef (InPortRef', OutPortRef'), InPortRef, OutPortRef (..), dstNodeId, srcNodeId,
+import           LunaStudio.Data.Connection         (Connection)
+import           LunaStudio.Data.Connection         as Connection
+import           LunaStudio.Data.Graph              (Graph)
+import           LunaStudio.Data.GraphLocation      (GraphLocation)
+import           LunaStudio.Data.Node               (NodeId)
+import qualified LunaStudio.Data.Node               as Node
+import           LunaStudio.Data.NodeMeta           (NodeMeta)
+import           LunaStudio.Data.Port               (OutPortIndex (Projection))
+import qualified LunaStudio.Data.Port               as Port
+import           LunaStudio.Data.PortRef            (AnyPortRef (InPortRef', OutPortRef'), InPortRef, OutPortRef (..), dstNodeId, srcNodeId,
                                                      toAnyPortRef)
-import qualified Empire.API.Data.PortRef            as PortRef
-import qualified Empire.API.Graph.AddConnection     as AddConnection
-import qualified Empire.API.Graph.AddNode           as AddNode
-import qualified Empire.API.Graph.AddPort           as AddPort
-import qualified Empire.API.Graph.AddSubgraph       as AddSubgraph
-import qualified Empire.API.Graph.MovePort          as MovePort
-import qualified Empire.API.Graph.Redo              as RedoRequest
-import qualified Empire.API.Graph.RemoveConnection  as RemoveConnection
-import qualified Empire.API.Graph.RemoveNodes       as RemoveNodes
-import qualified Empire.API.Graph.RemovePort        as RemovePort
-import qualified Empire.API.Graph.RenameNode        as RenameNode
-import qualified Empire.API.Graph.RenamePort        as RenamePort
-import qualified Empire.API.Graph.SetNodeCode       as SetNodeCode
-import qualified Empire.API.Graph.SetNodeExpression as SetNodeExpression
-import           Empire.API.Graph.SetNodesMeta      (SingleUpdate)
-import qualified Empire.API.Graph.SetNodesMeta      as SetNodesMeta
-import qualified Empire.API.Graph.SetPortDefault    as SetPortDefault
-import qualified Empire.API.Graph.Undo              as UndoRequest
-import           Empire.API.Request                 (Request (..))
-import qualified Empire.API.Request                 as Request
-import           Empire.API.Response                (Response (..))
-import qualified Empire.API.Response                as Response
-import qualified Empire.API.Topic                   as Topic
+import qualified LunaStudio.Data.PortRef            as PortRef
+import qualified LunaStudio.API.Graph.AddConnection     as AddConnection
+import qualified LunaStudio.API.Graph.AddNode           as AddNode
+import qualified LunaStudio.API.Graph.AddPort           as AddPort
+import qualified LunaStudio.API.Graph.AddSubgraph       as AddSubgraph
+import qualified LunaStudio.API.Graph.MovePort          as MovePort
+import qualified LunaStudio.API.Graph.Redo              as RedoRequest
+import qualified LunaStudio.API.Graph.RemoveConnection  as RemoveConnection
+import qualified LunaStudio.API.Graph.RemoveNodes       as RemoveNodes
+import qualified LunaStudio.API.Graph.RemovePort        as RemovePort
+import qualified LunaStudio.API.Graph.RenameNode        as RenameNode
+import qualified LunaStudio.API.Graph.RenamePort        as RenamePort
+import qualified LunaStudio.API.Graph.SetNodeExpression as SetNodeExpression
+import           LunaStudio.API.Graph.SetNodesMeta      (SingleUpdate)
+import qualified LunaStudio.API.Graph.SetNodesMeta      as SetNodesMeta
+import qualified LunaStudio.API.Graph.SetPortDefault    as SetPortDefault
+import qualified LunaStudio.API.Graph.Undo              as UndoRequest
+import           LunaStudio.API.Request                 (Request (..))
+import qualified LunaStudio.API.Request                 as Request
+import           LunaStudio.API.Response                (Response (..))
+import qualified LunaStudio.API.Response                as Response
+import qualified LunaStudio.API.Topic                   as Topic
 
 
 type Handler = ByteString -> UndoPure ()
@@ -71,7 +70,6 @@ handlersMap = Map.fromList
     , makeHandler handleRemovePortUndo
     , makeHandler handleRenameNodeUndo
     , makeHandler handleRenamePortUndo
-    , makeHandler handleSetNodeCodeUndo
     , makeHandler handleSetNodeExpressionUndo
     , makeHandler handleSetNodesMetaUndo
     , makeHandler handleSetPortDefaultUndo
@@ -90,7 +88,6 @@ type family UndoResponseRequest t where
     UndoResponseRequest RemovePort.Response           = AddPort.Request
     UndoResponseRequest RenameNode.Response           = RenameNode.Request
     UndoResponseRequest RenamePort.Response           = RenamePort.Request
-    UndoResponseRequest SetNodeCode.Response          = SetNodeCode.Request
     UndoResponseRequest SetNodeExpression.Response    = SetNodeExpression.Request
     UndoResponseRequest SetNodesMeta.Response         = SetNodesMeta.Request
     UndoResponseRequest SetPortDefault.Response       = SetPortDefault.Request
@@ -106,7 +103,6 @@ type family RedoResponseRequest t where
     RedoResponseRequest RemovePort.Response           = RemovePort.Request
     RedoResponseRequest RenameNode.Response           = RenameNode.Request
     RedoResponseRequest RenamePort.Response           = RenamePort.Request
-    RedoResponseRequest SetNodeCode.Response          = SetNodeCode.Request
     RedoResponseRequest SetNodeExpression.Response    = SetNodeExpression.Request
     RedoResponseRequest SetNodesMeta.Response         = SetNodesMeta.Request
     RedoResponseRequest SetPortDefault.Response       = SetPortDefault.Request
@@ -167,13 +163,13 @@ handleAddSubgraphUndo (Response.Response _ _ req _ (Response.Ok _)) =
     Just (getUndoAddSubgraph req, req)
 
 
-getUndoAddConnection :: AddConnection.Request -> AddConnection.Result -> RemoveConnection.Request
-getUndoAddConnection (AddConnection.Request location _ _) conn =
-    RemoveConnection.Request location $ conn ^. Connection.dst
+getUndoAddConnection :: AddConnection.Request -> AddConnection.Inverse -> RemoveConnection.Request
+getUndoAddConnection (AddConnection.Request location _ _) (AddConnection.Inverse connId) =
+    RemoveConnection.Request location connId
 
 handleAddConnectionUndo :: AddConnection.Response -> Maybe (RemoveConnection.Request, AddConnection.Request)
-handleAddConnectionUndo (Response.Response _ _ req _ (Response.Ok res)) =
-    Just (getUndoAddConnection req res, req)
+handleAddConnectionUndo (Response.Response _ _ req (Response.Ok inv) (Response.Ok _)) =
+    Just (getUndoAddConnection req inv, req)
 
 
 getUndoMovePort :: MovePort.Request -> MovePort.Request
@@ -207,7 +203,7 @@ handleRemoveNodesUndo (Response.Response _ _ req (Response.Ok inv) (Response.Ok 
 -- TODO[LJK/SB]: Preserve connections
 getUndoRemovePort :: RemovePort.Request -> RemovePort.Inverse -> AddPort.Request
 getUndoRemovePort (RemovePort.Request location portRef) (RemovePort.Inverse conns) =
-    AddPort.Request location portRef $ Just conns
+    AddPort.Request location portRef $ map (InPortRef' . view Connection.dst) conns
 
 handleRemovePortUndo :: RemovePort.Response -> Maybe (AddPort.Request, RemovePort.Request)
 handleRemovePortUndo (Response.Response _ _ req (Response.Ok inv) (Response.Ok _)) =
@@ -230,15 +226,6 @@ getUndoRenamePort (RenamePort.Request location portRef _) (RenamePort.Inverse pr
 handleRenamePortUndo :: RenamePort.Response -> Maybe (RenamePort.Request, RenamePort.Request)
 handleRenamePortUndo (Response.Response _ _ req (Response.Ok inv) (Response.Ok _)) =
     Just (getUndoRenamePort req inv, req)
-
-
-getUndoSetNodeCode :: SetNodeCode.Request -> SetNodeCode.Inverse -> SetNodeCode.Request
-getUndoSetNodeCode (SetNodeCode.Request location nodeId _) (SetNodeCode.Inverse prevCode) =
-    SetNodeCode.Request location nodeId prevCode
-
-handleSetNodeCodeUndo :: SetNodeCode.Response -> Maybe (SetNodeCode.Request, SetNodeCode.Request)
-handleSetNodeCodeUndo (Response.Response _ _ req (Response.Ok inv) (Response.Ok _)) =
-    Just (getUndoSetNodeCode req inv, req)
 
 
 getUndoSetNodeExpression :: SetNodeExpression.Request -> SetNodeExpression.Inverse -> SetNodeExpression.Request

@@ -5,13 +5,13 @@ import           Data.Aeson                                 (decode, encode)
 import           Data.ByteString.Lazy.Char8                 (pack, unpack)
 import qualified Data.HashMap.Strict                        as HashMap
 import qualified Data.Set                                   as Set
-import           Empire.API.Data.Position                   (x, y)
+import           LunaStudio.Data.Position                   (x, y)
 
 import           Common.Prelude
-import qualified Empire.API.Data.Connection                 as Connection
-import qualified Empire.API.Data.GraphLocation              as GraphLocation
-import           Empire.API.Data.NodeLoc                    (NodePath (NodePath))
-import qualified Empire.API.Data.PortRef                    as PortRef
+import qualified LunaStudio.Data.Connection                 as Connection
+import qualified LunaStudio.Data.GraphLocation              as GraphLocation
+import           LunaStudio.Data.NodeLoc                    (NodePath (NodePath))
+import qualified LunaStudio.Data.PortRef                    as PortRef
 import qualified JS.Clipboard                               as JS (copyStringToClipboard)
 import           NodeEditor.Action.Basic                    (addSubgraph, removeSelectedNodes)
 import           NodeEditor.Action.Command                  (Command)
@@ -45,19 +45,19 @@ cutSelectionToClipboard :: Command State()
 cutSelectionToClipboard = copySelectionToClipboard >> removeSelectedNodes
 
 pasteFromClipboard :: String -> Command State ()
-pasteFromClipboard clipboardData = do
-    withJust (decode $ pack clipboardData) $ \subgraph -> do
-        selectedBc <- use (workspace . currentLocation . GraphLocation.breadcrumb) --FIXME
-        graphNodesLocs <- Set.fromList . map (view nodeLoc)  <$> getExpressionNodes
-        let nodes       = (convert . (NodePath selectedBc,) <$> HashMap.elems (subgraph ^. Graph.nodesMap))
-            connections = filter (\conn -> Set.member (conn ^. Connection.src . PortRef.srcNodeLoc) graphNodesLocs) $ HashMap.elems $ subgraph ^. Graph.connectionsMap
-        workspacePos <- translateToWorkspace =<< use (Global.ui . UI.mousePos)
-        let shiftX = workspacePos ^. x - minimum (map (^. position . x) nodes)
-            shiftY = workspacePos ^. y - minimum (map (^. position . y) nodes)
-            shiftNode, shiftNodeX, shiftNodeY :: ExpressionNode -> ExpressionNode
-            shiftNodeX = position . x %~ snapCoord . (+shiftX)
-            shiftNodeY = position . y %~ snapCoord . (+shiftY)
-            shiftNode = shiftNodeY . shiftNodeX
-            nodes' = map shiftNode nodes
-        --TODO[LJK]: Use unwrap here
-        addSubgraph nodes' $ convert <$> connections
+pasteFromClipboard clipboardData =
+    withJust (decode $ pack clipboardData) $ \subgraph ->
+        withJustM (preuse (workspace . traverse . currentLocation . GraphLocation.breadcrumb)) $ \selectedBc -> do --FIXME
+            graphNodesLocs <- Set.fromList . map (view nodeLoc)  <$> getExpressionNodes
+            let nodes       = (convert . (NodePath selectedBc,) <$> HashMap.elems (subgraph ^. Graph.nodesMap))
+                connections = filter (\conn -> Set.member (conn ^. Connection.src . PortRef.srcNodeLoc) graphNodesLocs) $ HashMap.elems $ subgraph ^. Graph.connectionsMap
+            workspacePos <- translateToWorkspace =<< use (Global.ui . UI.mousePos)
+            let shiftX = workspacePos ^. x - minimum (map (^. position . x) nodes)
+                shiftY = workspacePos ^. y - minimum (map (^. position . y) nodes)
+                shiftNode, shiftNodeX, shiftNodeY :: ExpressionNode -> ExpressionNode
+                shiftNodeX = position . x %~ snapCoord . (+shiftX)
+                shiftNodeY = position . y %~ snapCoord . (+shiftY)
+                shiftNode = shiftNodeY . shiftNodeX
+                nodes' = map shiftNode nodes
+            --TODO[LJK]: Use unwrap here
+            addSubgraph nodes' $ convert <$> connections

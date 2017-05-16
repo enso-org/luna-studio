@@ -1,6 +1,6 @@
 module NodeEditor.Action.Basic.SetNodeResult where
 
-import           Empire.API.Graph.NodeResultUpdate           (NodeValue)
+import           LunaStudio.API.Graph.NodeResultUpdate           (NodeValue)
 import           NodeEditor.Action.Command                  (Command)
 import           NodeEditor.Action.State.NodeEditor         (modifyExpressionNode)
 import           Common.Prelude

@@ -15,8 +15,7 @@ dependencies:
   - filepath
   - groom
   - luna-empire
-  - luna-empire-api
-  - luna-empire-api-json
+  - luna-studio-common
   - m-logger
   - mtl
   - optparse-applicative

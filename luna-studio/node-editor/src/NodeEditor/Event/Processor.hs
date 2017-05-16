@@ -1,47 +1,44 @@
 module NodeEditor.Event.Processor where
 
 import           Control.Concurrent.MVar
-import           Control.Exception                          (handle)
-import           Data.DateTime                              (getCurrentTime)
-import           Data.Monoid                                (Last (..))
-import           GHCJS.Prim                                 (JSException)
+import           Control.Exception                      (handle)
+import           Data.DateTime                          (getCurrentTime)
+import           Data.Monoid                            (Last (..))
+import           GHCJS.Prim                             (JSException)
 
-import qualified JS.Debug
-import           WebSocket                                  (WebSocket)
-import           NodeEditor.Action.Command                 (Command, execCommand)
-import           NodeEditor.Action.State.App               (renderIfNeeded)
-import           NodeEditor.Event.Event                    (Event)
-import qualified NodeEditor.Event.Event                    as Event
-import           NodeEditor.Event.Loop                     (LoopRef)
-import qualified NodeEditor.Event.Loop                     as Loop
-import qualified NodeEditor.Event.Preprocessor.Batch       as BatchEventPreprocessor
-import qualified NodeEditor.Event.Preprocessor.CustomEvent as CustomEventPreprocessor
-import qualified NodeEditor.Event.Preprocessor.Shortcut    as ShortcutEventPreprocessor
-import           NodeEditor.Event.Source                   (AddHandler (..))
-import qualified NodeEditor.Event.Source                   as JSHandlers
-import qualified NodeEditor.Handler.App                    as App
-import qualified NodeEditor.Handler.Backend.Control        as Control
-import qualified NodeEditor.Handler.Backend.Graph          as Graph
-import qualified NodeEditor.Handler.Breadcrumbs            as Breadcrumbs
-import qualified NodeEditor.Handler.Camera                 as Camera
-import qualified NodeEditor.Handler.Clipboard              as Clipboard
-import qualified NodeEditor.Handler.CodeEditor             as CodeEditor
-import qualified NodeEditor.Handler.Collaboration          as Collaboration
-import qualified NodeEditor.Handler.Connect                as Connect
-import qualified NodeEditor.Handler.ConnectionPen          as ConnectionPen
-import qualified NodeEditor.Handler.Debug                  as Debug
-import qualified NodeEditor.Handler.MultiSelection         as MultiSelection
-import qualified NodeEditor.Handler.Navigation             as Navigation
-import qualified NodeEditor.Handler.Node                   as Node
-import qualified NodeEditor.Handler.Port                   as Port
-import qualified NodeEditor.Handler.Searcher               as Searcher
-import qualified NodeEditor.Handler.Sidebar                as Sidebar
-import qualified NodeEditor.Handler.Undo                   as Undo
-import qualified NodeEditor.Handler.Visualization          as Visualization
 import           Common.Prelude
 import           Common.Report
-import           NodeEditor.State.Global                   (State)
-import qualified NodeEditor.State.Global                   as Global
+import qualified JS.Debug
+import           NodeEditor.Action.Command              (Command, execCommand)
+import           NodeEditor.Action.State.App            (renderIfNeeded)
+import           NodeEditor.Event.Event                 (Event)
+import qualified NodeEditor.Event.Event                 as Event
+import           NodeEditor.Event.Loop                  (LoopRef)
+import qualified NodeEditor.Event.Loop                  as Loop
+import qualified NodeEditor.Event.Preprocessor.Batch    as BatchEventPreprocessor
+import qualified NodeEditor.Event.Preprocessor.Shortcut as ShortcutEventPreprocessor
+import           NodeEditor.Event.Source                (AddHandler (..))
+import qualified NodeEditor.Event.Source                as JSHandlers
+import qualified NodeEditor.Handler.App                 as App
+import qualified NodeEditor.Handler.Backend.Control     as Control
+import qualified NodeEditor.Handler.Backend.Graph       as Graph
+import qualified NodeEditor.Handler.Breadcrumbs         as Breadcrumbs
+import qualified NodeEditor.Handler.Camera              as Camera
+import qualified NodeEditor.Handler.Clipboard           as Clipboard
+import qualified NodeEditor.Handler.Connect             as Connect
+import qualified NodeEditor.Handler.ConnectionPen       as ConnectionPen
+import qualified NodeEditor.Handler.Debug               as Debug
+import qualified NodeEditor.Handler.MultiSelection      as MultiSelection
+import qualified NodeEditor.Handler.Navigation          as Navigation
+import qualified NodeEditor.Handler.Node                as Node
+import qualified NodeEditor.Handler.Port                as Port
+import qualified NodeEditor.Handler.Searcher            as Searcher
+import qualified NodeEditor.Handler.Sidebar             as Sidebar
+import qualified NodeEditor.Handler.Undo                as Undo
+import qualified NodeEditor.Handler.Visualization       as Visualization
+import           NodeEditor.State.Global                (State)
+import qualified NodeEditor.State.Global                as Global
+import           WebSocket                              (WebSocket)
 
 
 displayProcessingTime :: Bool
@@ -61,8 +58,6 @@ actions loop =
     , Breadcrumbs.handle
     , Camera.handle
     , Clipboard.handle
-    , CodeEditor.handle
-    , Collaboration.handle
     , Connect.handle
     , ConnectionPen.handle
     , Control.handle
@@ -86,8 +81,7 @@ preprocessEvent :: Event -> IO Event
 preprocessEvent ev = do
     let batchEvent    = BatchEventPreprocessor.process ev
         shortcutEvent = ShortcutEventPreprocessor.process ev
-    customEvent   <- CustomEventPreprocessor.process ev
-    return $ fromMaybe ev $ getLast $ Last batchEvent <> Last customEvent <> Last shortcutEvent
+    return $ fromMaybe ev $ getLast $ Last batchEvent <> Last shortcutEvent
 
 processEvent :: LoopRef -> Event -> IO ()
 processEvent loop ev = modifyMVar_ (loop ^. Loop.state) $ \state -> do

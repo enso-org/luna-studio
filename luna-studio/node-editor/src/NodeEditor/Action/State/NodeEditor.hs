@@ -15,11 +15,12 @@ import           NodeEditor.React.Model.Layout               (Layout, Scene)
 import qualified NodeEditor.React.Model.Layout               as Scene
 
 import           Common.Prelude
-import           Empire.API.Data.MonadPath                   (MonadPath)
-import qualified Empire.API.Data.Node                        as Empire
-import           Empire.API.Data.Port                        (_WithDefault)
-import           Empire.API.Data.PortDefault                 (PortDefault)
-import           Empire.API.Data.PortRef                     (AnyPortRef, InPortRef, OutPortRef (OutPortRef))
+import           LunaStudio.Data.MonadPath                   (MonadPath)
+import qualified LunaStudio.Data.Node                        as Empire
+import           LunaStudio.Data.Port                        (_WithDefault)
+import           LunaStudio.Data.PortDefault                 (PortDefault)
+import           LunaStudio.Data.PortRef                     (AnyPortRef, InPortRef, OutPortRef (OutPortRef))
+import           LunaStudio.Data.Position                    (Position)
 import           NodeEditor.Action.Command                   (Command)
 import           NodeEditor.Action.State.App                 (get, modify)
 import qualified NodeEditor.Action.State.Internal.NodeEditor as Internal
@@ -48,17 +49,14 @@ getNodeEditor = get nodeEditor
 modifyNodeEditor :: M.State NodeEditor r -> Command State r
 modifyNodeEditor = modify nodeEditor
 
+isGraphLoaded :: Command State Bool
+isGraphLoaded = view NE.isGraphLoaded <$> getNodeEditor
+
+setGraphLoaded :: Bool -> Command State ()
+setGraphLoaded flag = modifyNodeEditor $ NE.isGraphLoaded .= flag
+
 resetGraph :: Command State ()
-resetGraph = modifyNodeEditor $ do
-    NE.expressionNodes     .= def
-    NE.inputNode           .= def
-    NE.outputNode          .= def
-    NE.monads              .= def
-    NE.connections         .= def
-    NE.visualizations      .= def
-    NE.connectionPen       .= def
-    NE.selectionBox        .= def
-    NE.searcher            .= def
+resetGraph = modifyNodeEditor $ M.put def
 
 separateSubgraph :: [NodeLoc] -> Command State Graph
 separateSubgraph nodeLocs = do
@@ -82,6 +80,12 @@ addInputNode node = Internal.setNodeRec NE.inputNode ExpressionNode.inputNode (n
 
 addOutputNode :: OutputNode -> Command State ()
 addOutputNode node = Internal.setNodeRec NE.outputNode ExpressionNode.outputNode (node ^. nodeLoc) node
+
+findPredecessorPosition :: ExpressionNode -> Command State Position
+findPredecessorPosition n = ExpressionNode.findPredecessorPosition n <$> getExpressionNodes
+
+findSuccessorPosition :: ExpressionNode -> Command State Position
+findSuccessorPosition n = ExpressionNode.findSuccessorPosition n <$> getExpressionNodes
 
 getNode :: NodeLoc -> Command State (Maybe Node)
 getNode nl = NE.getNode nl <$> getNodeEditor
@@ -220,17 +224,18 @@ globalFunctions :: Items a -> Items a
 globalFunctions = Map.filter isElement
 
 getNodeSearcherData :: Command State (Items Empire.ExpressionNode)
-getNodeSearcherData = do
-    completeData <- use $ workspace . nodeSearcherData
-    selected     <- getSelectedNodes
-    ne           <- getNodeEditor
-    let mscope = case selected of
-            [node] -> convert . view valueType <$> NE.getPort (OutPortRef (node ^. nodeLoc) []) ne
-            _      -> Nothing
-    return $ case mscope of
-        Nothing -> completeData
-        Just tn -> Map.union (globalFunctions scope) (globalFunctions completeData) where
-            scope = fromMaybe mempty $ completeData ^? ix tn . items
+getNodeSearcherData = preuse (workspace . traverse . nodeSearcherData) >>= \case
+    Nothing -> return def
+    Just completeData -> do
+        selected     <- getSelectedNodes
+        ne           <- getNodeEditor
+        let mscope = case selected of
+                [node] -> convert . view valueType <$> NE.getPort (OutPortRef (node ^. nodeLoc) []) ne
+                _      -> Nothing
+        return $ case mscope of
+            Nothing -> completeData
+            Just tn -> Map.union (globalFunctions scope) (globalFunctions completeData) where
+                scope = fromMaybe mempty $ completeData ^? ix tn . items
 
 class NodeEditorElementId a where
     inGraph :: a -> Command State Bool

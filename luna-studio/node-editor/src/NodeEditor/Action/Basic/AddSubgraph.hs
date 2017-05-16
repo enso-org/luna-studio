@@ -1,8 +1,8 @@
 module NodeEditor.Action.Basic.AddSubgraph where
 
 import qualified Data.Map.Lazy                               as Map
-import qualified Empire.API.Data.NodeLoc                     as NodeLoc
-import           Empire.API.Data.PortRef                     (InPortRef, OutPortRef, dstNodeLoc, srcNodeLoc)
+import qualified LunaStudio.Data.NodeLoc                     as NodeLoc
+import           LunaStudio.Data.PortRef                     (InPortRef, OutPortRef, dstNodeLoc, srcNodeLoc)
 import           NodeEditor.Action.Basic.AddConnection      (localAddConnection)
 import           NodeEditor.Action.Basic.AddNode            (localAddExpressionNodes)
 import           NodeEditor.Action.Basic.SelectNode         (selectNodes)

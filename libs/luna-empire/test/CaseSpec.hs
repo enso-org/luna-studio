@@ -6,24 +6,25 @@ module CaseSpec (spec) where
 import           Data.Foldable                 (toList)
 import           Data.List                     (find, stripPrefix)
 import qualified Data.Map                      as Map
-import qualified Empire.API.Data.Graph         as Graph
+import qualified LunaStudio.Data.Graph         as Graph
 import qualified Empire.Data.Graph             as Graph (breadcrumbHierarchy)
-import           Empire.API.Data.GraphLocation (GraphLocation(..))
-import qualified Empire.API.Data.Node          as Node
-import           Empire.API.Data.NodeMeta      (NodeMeta(..))
-import qualified Empire.API.Data.Port          as Port
-import           Empire.API.Data.Port          (OutPortTree (..))
-import           Empire.API.Data.NodeLoc       (NodeLoc (..))
-import           Empire.API.Data.PortDefault   (PortDefault (Constant, Expression))
-import           Empire.API.Data.LabeledTree   (LabeledTree (..))
-import           Empire.API.Data.PortRef       (InPortRef (..), OutPortRef (..), AnyPortRef(..))
-import           Empire.API.Data.TypeRep       (TypeRep(TCons, TStar, TLam, TVar))
+import           LunaStudio.Data.GraphLocation (GraphLocation(..))
+import qualified LunaStudio.Data.Node          as Node
+import           LunaStudio.Data.NodeMeta      (NodeMeta(..))
+import qualified LunaStudio.Data.Port          as Port
+import           LunaStudio.Data.Port          (OutPortTree (..))
+import           LunaStudio.Data.NodeLoc       (NodeLoc (..))
+import           LunaStudio.Data.PortDefault   (PortDefault (Constant, Expression))
+import           LunaStudio.Data.LabeledTree   (LabeledTree (..))
+import           LunaStudio.Data.PortRef       (InPortRef (..), OutPortRef (..), AnyPortRef(..))
+import           LunaStudio.Data.TypeRep       (TypeRep(TCons, TStar, TLam, TVar))
 import           Empire.ASTOp                  (runASTOp)
 import qualified Empire.ASTOps.Deconstruct     as ASTDeconstruct
 import qualified Empire.ASTOps.Parse           as Parser
 import           Empire.ASTOps.Print           (printExpression)
 import qualified Empire.ASTOps.Read            as ASTRead
 import qualified Empire.Commands.AST           as AST (isTrivialLambda, dumpGraphViz)
+import           Empire.Commands.Breadcrumb    (BreadcrumbDoesNotExistException)
 import qualified Empire.Commands.Graph         as Graph (addNode, connect, getGraph, getNodes,
                                                          getConnections, removeNodes, withGraph,
                                                          renameNode, disconnect, addPort, movePort,
@@ -39,9 +40,9 @@ import           Empire.Empire                   (InterpreterEnv(..))
 import           Prologue                        hiding (mapping, toList, (|>))
 import           OCI.IR.Class                    (exprs, links)
 
-import           Test.Hspec (Spec, around, describe, expectationFailure, it, parallel,
+import           Test.Hspec (Spec, Selector, around, describe, expectationFailure, it, parallel,
                              shouldBe, shouldContain, shouldSatisfy, shouldMatchList,
-                             shouldStartWith, xit, xdescribe)
+                             shouldStartWith, shouldThrow, xit, xdescribe)
 
 import           EmpireUtils
 
@@ -125,11 +126,9 @@ spec = around withChannels $ id $ do
                 {---     ]-}
         it "cannot enter map node in map (x:x)" $ \env -> do
             u1 <- mkUUID
-            res <- evalEmp env $ do
-                Graph.addNode top u1 "map x:x" def
-                Graph.getGraph (top |> u1)
-            case res of
-                Left err -> case stripPrefix "Breadcrumb" err of
-                    Just _ -> return ()
-                    _      -> expectationFailure err
-                Right _  -> expectationFailure "should throw"
+            let res = evalEmp env $ do
+                    Graph.addNode top u1 "map x:x" def
+                    Graph.getGraph (top |> u1)
+            let breadcrumbException :: Selector BreadcrumbDoesNotExistException
+                breadcrumbException = const True
+            res `shouldThrow` breadcrumbException

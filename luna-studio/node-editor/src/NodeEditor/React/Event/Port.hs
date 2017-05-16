@@ -3,7 +3,7 @@
 module NodeEditor.React.Event.Port where
 
 import           Data.Aeson              (FromJSON, ToJSON)
-import           Empire.API.Data.PortRef (AnyPortRef)
+import           LunaStudio.Data.PortRef (AnyPortRef)
 import           Common.Prelude
 import           React.Flux              (MouseEvent)
 

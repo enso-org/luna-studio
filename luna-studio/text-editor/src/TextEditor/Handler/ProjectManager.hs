@@ -4,9 +4,9 @@ module TextEditor.Handler.ProjectManager
 
 
 import           JS.Atom
-import qualified Empire.API.Atom.OpenFile           as OpenFile
-import qualified Empire.API.Atom.IsSaved            as IsSaved
-import qualified Empire.API.Response                as Response
+import qualified LunaStudio.API.Atom.OpenFile           as OpenFile
+import qualified LunaStudio.API.Atom.IsSaved            as IsSaved
+import qualified LunaStudio.API.Response                as Response
 import qualified TextEditor.Action.Batch              as BatchCmd (closeFile, isSaved, openFile, saveFile, setProject)
 import           TextEditor.Action.Command            (Command)
 import qualified TextEditor.Event.Batch               as Batch

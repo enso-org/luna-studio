@@ -6,8 +6,8 @@ module TextEditor.Handler.Backend.Common
 
 import qualified Data.Aeson                 as JSON (ToJSON)
 import qualified Data.UUID.Types            as UUID (toString)
-import qualified Empire.API.Response        as Response
-import qualified Empire.API.Topic           as Topic
+import qualified LunaStudio.API.Response        as Response
+import qualified LunaStudio.API.Topic           as Topic
 import           TextEditor.Action.Command (Command)
 import           TextEditor.Action.UUID    (isOwnRequest, unregisterRequest)
 import           Common.Prelude

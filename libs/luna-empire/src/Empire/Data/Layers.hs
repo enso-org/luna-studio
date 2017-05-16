@@ -17,9 +17,9 @@ module Empire.Data.Layers (
 import Empire.Prelude
 
 import           Control.Lens.Iso         (from)
-import           Empire.API.Data.Node     (NodeId)
-import           Empire.API.Data.NodeMeta (NodeMeta)
-import           Empire.API.Data.PortRef  (OutPortRef)
+import           LunaStudio.Data.Node     (NodeId)
+import           LunaStudio.Data.NodeMeta (NodeMeta)
+import           LunaStudio.Data.PortRef  (OutPortRef)
 
 import           Control.Monad.Raise            (Throws)
 import           Data.TypeDesc

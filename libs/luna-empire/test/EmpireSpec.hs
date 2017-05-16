@@ -7,26 +7,28 @@ module EmpireSpec (spec) where
 import           Data.Foldable                   (toList)
 import           Data.List                       (find, stripPrefix)
 import qualified Data.Map                        as Map
-import           Empire.API.Data.Breadcrumb      (Breadcrumb (..))
-import qualified Empire.API.Data.Graph           as Graph
-import           Empire.API.Data.GraphLocation   (GraphLocation (..))
-import           Empire.API.Data.LabeledTree     (LabeledTree (..))
-import           Empire.API.Data.Node            (NodeId)
-import qualified Empire.API.Data.Node            as Node
-import           Empire.API.Data.NodeLoc         (NodeLoc (..))
-import           Empire.API.Data.NodeMeta        (NodeMeta (..))
-import           Empire.API.Data.Port            (InPorts (..), OutPorts (..))
-import qualified Empire.API.Data.Port            as Port
-import           Empire.API.Data.PortDefault     (PortDefault (Expression))
-import           Empire.API.Data.PortRef         (AnyPortRef (..), InPortRef (..), OutPortRef (..))
-import qualified Empire.API.Data.Position        as Position
-import           Empire.API.Data.TypeRep         (TypeRep (TCons, TLam, TStar, TVar))
+import           LunaStudio.Data.Breadcrumb      (Breadcrumb (..))
+import qualified LunaStudio.Data.Graph           as Graph
+import           LunaStudio.Data.GraphLocation   (GraphLocation (..))
+import           LunaStudio.Data.LabeledTree     (LabeledTree (..))
+import           LunaStudio.Data.Node            (NodeId)
+import qualified LunaStudio.Data.Node            as Node
+import           LunaStudio.Data.NodeLoc         (NodeLoc (..))
+import           LunaStudio.Data.NodeMeta        (NodeMeta (..), position)
+import           LunaStudio.Data.Port            (InPorts (..), OutPorts (..))
+import qualified LunaStudio.Data.Port            as Port
+import           LunaStudio.Data.PortDefault     (PortDefault (Expression))
+import           LunaStudio.Data.PortRef         (AnyPortRef (..), InPortRef (..), OutPortRef (..))
+import qualified LunaStudio.Data.Position        as Position
+import           LunaStudio.Data.TypeRep         (TypeRep (TCons, TLam, TStar, TVar))
 import           Empire.ASTOp                    (runASTOp)
 import qualified Empire.ASTOps.Deconstruct       as ASTDeconstruct
 import qualified Empire.ASTOps.Parse             as Parser
+import           Empire.ASTOps.Modify            (CannotRemovePortException)
 import           Empire.ASTOps.Print             (printExpression)
 import qualified Empire.ASTOps.Read              as ASTRead
 import qualified Empire.Commands.AST             as AST (dumpGraphViz, isTrivialLambda)
+import           Empire.Commands.Breadcrumb      (BreadcrumbDoesNotExistException)
 import qualified Empire.Commands.Graph           as Graph (addNode, addPort, connect, disconnect, getConnections, getGraph,
                                                            getNodeIdForMarker, getNodes, loadCode, movePort, removeNodes, removePort,
                                                            renameNode, renamePort, setNodeExpression, setNodeMeta, withGraph)
@@ -44,7 +46,8 @@ import           OCI.IR.Class                    (exprs, links)
 import           Prologue                        hiding (mapping, toList, (|>))
 
 import           Test.Hspec                      (Spec, around, describe, expectationFailure, it, parallel, shouldBe, shouldContain,
-                                                  shouldMatchList, shouldSatisfy, shouldStartWith, xdescribe, xit)
+                                                  shouldMatchList, shouldSatisfy, shouldStartWith, xdescribe, xit,
+                                                  Selector, shouldThrow)
 
 import           EmpireUtils
 
@@ -201,14 +204,12 @@ spec = around withChannels $ parallel $ do
                 ids `shouldSatisfy` null
         it "int literal has no nodes inside" $ \env -> do
             u1 <- mkUUID
-            res <- evalEmp env $ do
-                Graph.addNode top u1 "4" def
-                graphIDs $ top |> u1
-            case res of
-                Left err -> case stripPrefix "Breadcrumb" err of
-                    Just _ -> return ()
-                    _      -> expectationFailure err
-                Right _  -> expectationFailure "should throw"
+            let res = evalEmp env $ do
+                    Graph.addNode top u1 "4" def
+                    graphIDs $ top |> u1
+            let breadcrumbException :: Selector BreadcrumbDoesNotExistException
+                breadcrumbException = const True
+            res `shouldThrow` breadcrumbException
         {-xit "properly typechecks input nodes" $ \env -> do-}
             {-u1 <- mkUUID-}
             {-(res, st) <- runEmp env $ do-}
@@ -358,7 +359,7 @@ spec = around withChannels $ parallel $ do
             u2 <- mkUUID
             res <- evalEmp env $ do
                 Graph.addNode top u1 "4" def
-                Graph.addNode top u2 "id node1" def
+                Graph.addNode top u2 "id node1" $ def & position . Position.x .~ 20.0
                 Graph.renameNode top u1 "node5"
                 graph <- Graph.getGraph top
                 expression <- Graph.withGraph top $ runASTOp $ do
@@ -397,12 +398,12 @@ spec = around withChannels $ parallel $ do
                 nodes `shouldSatisfy` ((== 1) . length)
         it "does not allow to change expression to assignment" $ \env -> do
             u1 <- mkUUID
-            res <- evalEmp env $ do
-                Graph.addNode top u1 "1" def
-                Graph.setNodeExpression top u1 "foo = a: a"
-            case res of
-                Left err -> err `shouldStartWith` "ParserException"
-                Right _  -> expectationFailure "should throw ParserException"
+            let res = evalEmp env $ do
+                    Graph.addNode top u1 "1" def
+                    Graph.setNodeExpression top u1 "foo = a: a"
+            let parserException :: Selector Parser.SomeParserException
+                parserException = const True
+            res `shouldThrow` parserException
         it "changes expression to lambda with node inside" $ \env -> do
             u1 <- mkUUID
             res <- evalEmp env $ do
@@ -626,7 +627,7 @@ spec = around withChannels $ parallel $ do
                 Graph.addNode top u1 "foo = a: a" def
                 let loc' = top |> u1
                 Just (input, output) <- Graph.withGraph loc' $ runASTOp GraphBuilder.getEdgePortMapping
-                Graph.addPort loc' input 1
+                Graph.addPort loc' (outPortRef input [Port.Projection 1])
                 inputEdge <- buildInputEdge' loc' input
                 defFoo <- Graph.withGraph top $ runASTOp $ GraphBuilder.buildNode u1
                 connections <- Graph.getConnections loc'
@@ -649,7 +650,7 @@ spec = around withChannels $ parallel $ do
                 Graph.addNode top u1 "foo = a: a" def
                 let loc' = top |> u1
                 Just (input, output) <- Graph.withGraph loc' $ runASTOp GraphBuilder.getEdgePortMapping
-                Graph.addPort loc' input 0
+                Graph.addPort loc' (outPortRef input [Port.Projection 0])
                 inputEdge <- buildInputEdge' loc' input
                 defFoo <- Graph.withGraph top $ runASTOp $ GraphBuilder.buildNode u1
                 connections <- Graph.getConnections loc'
@@ -672,8 +673,8 @@ spec = around withChannels $ parallel $ do
                 Graph.addNode top u1 "foo = a: a" def
                 let loc' = top |> u1
                 Just (input, _) <- Graph.withGraph loc' $ runASTOp GraphBuilder.getEdgePortMapping
-                Graph.addPort loc' input 1
-                Graph.addPort loc' input 2
+                Graph.addPort loc' (outPortRef input [Port.Projection 1])
+                Graph.addPort loc' (outPortRef input [Port.Projection 2])
                 inputEdge <- buildInputEdge' loc' input
                 defFoo <- Graph.withGraph top $ runASTOp $ GraphBuilder.buildNode u1
                 return (inputEdge, defFoo)
@@ -695,7 +696,7 @@ spec = around withChannels $ parallel $ do
                 Graph.addNode top u1 "a: b: a + b" def
                 let loc' = top |> u1
                 Just (input, _) <- Graph.withGraph loc' $ runASTOp GraphBuilder.getEdgePortMapping
-                Graph.addPort loc' input 2
+                Graph.addPort loc' (outPortRef input [Port.Projection 2])
                 inputEdge <- buildInputEdge' loc' input
                 defFoo <- Graph.withGraph top $ runASTOp $ GraphBuilder.buildNode u1
                 connections <- Graph.getConnections loc'
@@ -721,7 +722,7 @@ spec = around withChannels $ parallel $ do
                 Graph.addNode top u2 "func" def
                 let loc' = top |> u1
                 Just (input, _) <- Graph.withGraph loc' $ runASTOp GraphBuilder.getEdgePortMapping
-                Graph.addPort loc' input 1
+                Graph.addPort loc' (outPortRef input [Port.Projection 1])
                 connectToInput top (outPortRef u2 []) (inPortRef u1 [Port.Arg 1])
                 node <- Graph.withGraph top $ runASTOp $ GraphBuilder.buildNode u1
                 connections <- Graph.getConnections top
@@ -792,7 +793,7 @@ spec = around withChannels $ parallel $ do
                 let loc' = top |> u1
                 Graph.addNode loc' u2 "func" def
                 Just (input, output) <- Graph.withGraph loc' $ runASTOp GraphBuilder.getEdgePortMapping
-                Graph.addPort loc' input 1
+                Graph.addPort loc' (outPortRef input [Port.Projection 1])
                 connectToInput loc' (outPortRef input [Port.Projection 1]) (inPortRef u2 [Port.Arg 0])
                 inputEdge <- buildInputEdge' loc' input
                 connections <- Graph.getConnections loc'
@@ -809,14 +810,14 @@ spec = around withChannels $ parallel $ do
                 connections `shouldMatchList` referenceConnections
         it "does not allow to remove All port" $ \env -> do
             u1 <- mkUUID
-            res <- evalEmp env $ do
-                Graph.addNode top u1 "foo = a: a" def
-                let loc' = top |> u1
-                Just (input, _) <- Graph.withGraph loc' $ runASTOp GraphBuilder.getEdgePortMapping
-                Graph.removePort loc' (outPortRef input [])
-            case res of
-                Right _ -> expectationFailure "should throw exception"
-                Left err -> err `shouldStartWith` "CannotRemovePortException"
+            let res = evalEmp env $ do
+                    Graph.addNode top u1 "foo = a: a" def
+                    let loc' = top |> u1
+                    Just (input, _) <- Graph.withGraph loc' $ runASTOp GraphBuilder.getEdgePortMapping
+                    Graph.removePort loc' (outPortRef input [])
+            let cannotRemovePortException :: Selector CannotRemovePortException
+                cannotRemovePortException = const True
+            res `shouldThrow` cannotRemovePortException
         it "removes port that is connected inside lambda" $ \env -> do
             u1 <- mkUUID
             u2 <- mkUUID
@@ -825,7 +826,7 @@ spec = around withChannels $ parallel $ do
                 let loc' = top |> u1
                 Graph.addNode loc' u2 "func" def
                 Just (input, output) <- Graph.withGraph loc' $ runASTOp GraphBuilder.getEdgePortMapping
-                Graph.addPort loc' input 1
+                Graph.addPort loc' (outPortRef input [Port.Projection 1])
                 connectToInput loc' (outPortRef input [Port.Projection 1]) (inPortRef u2 [Port.Arg 0])
                 Graph.removePort loc' (outPortRef input [Port.Projection 1])
                 inputEdge <- buildInputEdge' loc' input
@@ -851,7 +852,7 @@ spec = around withChannels $ parallel $ do
                 Graph.addNode top u1 "foo = a: a" def
                 let loc' = top |> u1
                 Just (input, _) <- Graph.withGraph loc' $ runASTOp GraphBuilder.getEdgePortMapping
-                Graph.addPort loc' input 1
+                Graph.addPort loc' (outPortRef input [Port.Projection 1])
                 Graph.addNode loc' u2 "succ" def
                 connectToInput loc' (outPortRef input [Port.Projection 1]) (inPortRef u2 [Port.Self])
                 inputEdge <- buildInputEdge' loc' input

@@ -6,7 +6,8 @@ uniqueTabNo = 0
 module.exports =
 class LunaStudioTab extends View
   mountPoint = ""
-  initialize: (@uri, @code) ->
+  constructor: (@uri, @code) ->
+      super
       @on 'contextmenu', -> false
       @code.start(@uri, mountPoint)
 
@@ -18,4 +19,6 @@ class LunaStudioTab extends View
       =>
         @h1 "Loading ..."
 
-  getTitle:     -> path.basename(@uri)
+  # getTitle:     -> path.basename(@uri)
+  getTitle:     -> 'Node editor'
+  serialize: -> {deserializer: 'LunaStudioTab', uri: @uri}

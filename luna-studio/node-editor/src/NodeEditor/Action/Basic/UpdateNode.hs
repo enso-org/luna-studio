@@ -2,9 +2,9 @@ module NodeEditor.Action.Basic.UpdateNode where
 
 import           Common.Prelude
 import           Control.Monad                              (filterM)
-import           Empire.API.Data.Node                       (NodeTypecheckerUpdate, tcNodeId)
-import qualified Empire.API.Data.Node                       as Empire
-import           Empire.API.Data.Port                       (InPortIndex (Self))
+import           LunaStudio.Data.Node                       (NodeTypecheckerUpdate, tcNodeId)
+import qualified LunaStudio.Data.Node                       as Empire
+import           LunaStudio.Data.Port                       (InPortIndex (Self))
 import           NodeEditor.Action.Basic.AddNode            (localAddExpressionNode, localAddInputNode, localAddOutputNode)
 import           NodeEditor.Action.Basic.Scene              (updateScene)
 import           NodeEditor.Action.Command                  (Command)
@@ -26,9 +26,7 @@ localUpdateInputNode node = NodeEditor.getInputNode (node ^. nodeLoc) >>= \case
     Nothing       -> return False
     Just prevNode -> do
         let sidebarMode = prevNode ^. SidebarNode.mode
-            --frozenState = prevNode ^. SidebarNode.inputFrozenState
-        NodeEditor.addInputNode $ node & SidebarNode.mode             .~ sidebarMode
-                                    --    & SidebarNode.inputFrozenState .~ frozenState
+        NodeEditor.addInputNode $ node & SidebarNode.mode .~ sidebarMode
         updateScene
         return True
 
@@ -40,9 +38,7 @@ localUpdateOutputNode node = NodeEditor.getOutputNode (node ^. nodeLoc) >>= \cas
     Nothing       -> return False
     Just prevNode -> do
         let sidebarMode = prevNode ^. SidebarNode.mode
-            -- frozenState = prevNode ^. SidebarNode.outputFrozenState
-        NodeEditor.addOutputNode $ node & SidebarNode.mode             .~ sidebarMode
-                                    --    & SidebarNode.outputFrozenState .~ frozenState
+        NodeEditor.addOutputNode $ node & SidebarNode.mode .~ sidebarMode
         updateScene
         return True
 
@@ -50,20 +46,33 @@ localUpdateOrAddOutputNode :: OutputNode -> Command State ()
 localUpdateOrAddOutputNode node = unlessM (localUpdateOutputNode node) $ localAddOutputNode node
 
 localUpdateExpressionNode :: ExpressionNode -> Command State Bool
-localUpdateExpressionNode node = NodeEditor.getExpressionNode (node ^. nodeLoc) >>= \case
+localUpdateExpressionNode = localUpdateExpressionNode' False
+
+localUpdateExpressionNodePreventingPorts :: ExpressionNode -> Command State Bool
+localUpdateExpressionNodePreventingPorts = localUpdateExpressionNode' True
+
+localUpdateExpressionNode' :: Bool -> ExpressionNode -> Command State Bool
+localUpdateExpressionNode' preventPorts node = NodeEditor.getExpressionNode (node ^. nodeLoc) >>= \case
     Nothing       -> return False
     Just prevNode -> do
         let selected = prevNode ^. isSelected
             mode'    = prevNode ^. ExpressionNode.mode
+            inPorts  = if preventPorts then prevNode ^. ExpressionNode.inPorts  else node ^. ExpressionNode.inPorts
+            outPorts = if preventPorts then prevNode ^. ExpressionNode.outPorts else node ^. ExpressionNode.outPorts
         portSelfVis <- shouldDisplayPortSelf node
         let (selfMode :: Mode -> Mode) = if portSelfVis then ensureVisibility else const Invisible
-        NodeEditor.addExpressionNode $ node & isSelected                      .~ selected
-                                            & inPortAt [Self] . mode %~ selfMode
-                                            & ExpressionNode.mode             .~ mode'
+        NodeEditor.addExpressionNode $ node & isSelected              .~ selected
+                                            & ExpressionNode.mode     .~ mode'
+                                            & ExpressionNode.inPorts  .~ inPorts
+                                            & ExpressionNode.outPorts .~ outPorts
+                                            & inPortAt [Self] . mode  %~ selfMode
         return True
 
 localUpdateOrAddExpressionNode :: ExpressionNode -> Command State ()
 localUpdateOrAddExpressionNode node = unlessM (localUpdateExpressionNode node) $ localAddExpressionNode node
+
+localUpdateOrAddExpressionNodePreventingPorts :: ExpressionNode -> Command State ()
+localUpdateOrAddExpressionNodePreventingPorts node = unlessM (localUpdateExpressionNodePreventingPorts node) $ localAddExpressionNode node
 
 localUpdateNodeTypecheck :: NodePath -> NodeTypecheckerUpdate -> Command State ()
 localUpdateNodeTypecheck path update = do

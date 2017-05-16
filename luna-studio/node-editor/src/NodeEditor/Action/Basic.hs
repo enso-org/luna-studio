@@ -2,10 +2,10 @@ module NodeEditor.Action.Basic
     ( addPort
     , addSubgraph
     , centerGraph
+    , closeFile
     , connect
     , createGraph
     , createNode
-    , destroyGraph
     , dropSelectionHistory
     , enterBreadcrumb
     , enterBreadcrumbs
@@ -32,8 +32,7 @@ module NodeEditor.Action.Basic
     , localRemovePort
     , localRemoveSelectedNodes
     , localRenameNode
-    , localSetCode
-    , localSetNodeCode
+    , localRenamePort
     , localSetNodeExpression
     , localSetNodeMeta
     , localSetNodesMeta
@@ -43,9 +42,14 @@ module NodeEditor.Action.Basic
     , localUnmerge
     , localUpdateConnection
     , localUpdateExpressionNode
+    , localUpdateExpressionNodePreventingPorts
     , localUpdateExpressionNodes
     , localUpdateInputNode
     , localUpdateNodeTypecheck
+    , localUpdateOrAddExpressionNode
+    , localUpdateOrAddExpressionNodePreventingPorts
+    , localUpdateOrAddInputNode
+    , localUpdateOrAddOutputNode
     , localUpdateOutputNode
     , localUpdateSubgraph
     , modifyCamera
@@ -54,6 +58,7 @@ module NodeEditor.Action.Basic
     , moveNodes
     , movePort
     , navigateToGraph
+    , openFile
     , removeConnection
     , removeConnections
     , removeConnectionsBetweenNodes
@@ -62,6 +67,7 @@ module NodeEditor.Action.Basic
     , removePort
     , removeSelectedNodes
     , renameNode
+    , renamePort
     , resetCamera
     , saveCurrentLocation
     , selectAll
@@ -69,7 +75,6 @@ module NodeEditor.Action.Basic
     , selectPreviousNodes
     , setInputMode
     , setInputSidebarPortMode
-    , setNodeCode
     , setNodeExpression
     , setNodeMeta
     , setNodeProfilingData
@@ -100,9 +105,9 @@ import           NodeEditor.Action.Basic.AddConnection       (connect, localAddC
 import           NodeEditor.Action.Basic.AddNode             (createNode, localAddExpressionNode)
 import           NodeEditor.Action.Basic.AddPort             (addPort, localAddPort)
 import           NodeEditor.Action.Basic.AddSubgraph         (addSubgraph, localAddSubgraph, localUpdateSubgraph)
+import           NodeEditor.Action.Basic.Atom                (closeFile, openFile)
 import           NodeEditor.Action.Basic.CenterGraph         (centerGraph)
 import           NodeEditor.Action.Basic.CreateGraph         (createGraph, updateGraph)
-import           NodeEditor.Action.Basic.DestroyGraph        (destroyGraph)
 import           NodeEditor.Action.Basic.EnterBreadcrumb     (enterBreadcrumb, enterBreadcrumbs, enterNode, exitBreadcrumb)
 import           NodeEditor.Action.Basic.FocusNode           (focusNode, focusNodes, updateNodeZOrder)
 import           NodeEditor.Action.Basic.Merge               (localMerge, localUnmerge)
@@ -116,12 +121,11 @@ import           NodeEditor.Action.Basic.RemoveNode          (localRemoveNode, l
                                                               removeNodes, removeSelectedNodes)
 import           NodeEditor.Action.Basic.RemovePort          (localRemovePort, removePort)
 import           NodeEditor.Action.Basic.RenameNode          (localRenameNode, renameNode)
+import           NodeEditor.Action.Basic.RenamePort          (localRenamePort, renamePort)
 import           NodeEditor.Action.Basic.Scene               (getScene, updateScene)
 import           NodeEditor.Action.Basic.SearchNodes         (localSetSearcherHints)
 import           NodeEditor.Action.Basic.SelectNode          (dropSelectionHistory, modifySelectionHistory, selectAll, selectNodes,
                                                               selectPreviousNodes, toggleSelect, unselectAll)
-import           NodeEditor.Action.Basic.SetCode             (localSetCode)
-import           NodeEditor.Action.Basic.SetNodeCode         (localSetNodeCode, setNodeCode)
 import           NodeEditor.Action.Basic.SetNodeExpression   (localSetNodeExpression, setNodeExpression)
 import           NodeEditor.Action.Basic.SetNodeMeta         (localMoveNode, localMoveNodes, localSetNodeMeta, localSetNodesMeta,
                                                               localToggleVisualizations, moveNode, moveNodes, setNodeMeta, setNodesMeta,
@@ -133,6 +137,9 @@ import           NodeEditor.Action.Basic.SetPortMode         (setInputSidebarPor
 import           NodeEditor.Action.Basic.SetSidebarMode      (setInputMode, setOutputMode, toggleInputMode, toggleOutputMode)
 import           NodeEditor.Action.Basic.UpdateCollaboration (updateClient, updateCollaboration)
 import           NodeEditor.Action.Basic.UpdateConnection    (localUpdateConnection, updateConnection)
-import           NodeEditor.Action.Basic.UpdateNode          (localUpdateExpressionNode, localUpdateExpressionNodes, localUpdateInputNode,
-                                                              localUpdateNodeTypecheck, localUpdateOutputNode, updateAllPortsSelfVisibility,
-                                                              updatePortSelfVisibility, updatePortSelfVisibilityForIds)
+import           NodeEditor.Action.Basic.UpdateNode          (localUpdateExpressionNode, localUpdateExpressionNodePreventingPorts,
+                                                              localUpdateExpressionNodes, localUpdateInputNode, localUpdateNodeTypecheck,
+                                                              localUpdateOrAddExpressionNode, localUpdateOrAddExpressionNodePreventingPorts,
+                                                              localUpdateOrAddInputNode, localUpdateOrAddOutputNode, localUpdateOutputNode,
+                                                              updateAllPortsSelfVisibility, updatePortSelfVisibility,
+                                                              updatePortSelfVisibilityForIds)

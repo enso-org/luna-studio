@@ -9,7 +9,7 @@ where
 
 import           Common.Prelude
 import           Data.Aeson              (FromJSON, ToJSON)
-import           Empire.API.Data.Vector2
+import           LunaStudio.Data.Vector2
 -----------------------------
 -- === ScreenPosition === ---
 -----------------------------

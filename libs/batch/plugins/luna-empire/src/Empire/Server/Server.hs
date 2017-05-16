@@ -10,10 +10,10 @@ import qualified Data.Binary                  as Bin
 import           Data.ByteString.Lazy         (toStrict)
 import           Prologue
 
-import           Empire.API.Request           (Request)
-import qualified Empire.API.Response          as Response
-import           Empire.API.Topic             (MessageTopic)
-import qualified Empire.API.Topic             as Topic
+import           LunaStudio.API.Request           (Request)
+import qualified LunaStudio.API.Response          as Response
+import           LunaStudio.API.Topic             (MessageTopic)
+import qualified LunaStudio.API.Topic             as Topic
 import           Empire.Env                   (Env)
 import qualified Empire.Env                   as Env
 import qualified System.Log.MLogger           as Logger

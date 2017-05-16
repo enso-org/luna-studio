@@ -16,14 +16,14 @@ import           Data.Maybe                        (isNothing, maybeToList)
 import           Empire.Prelude                    hiding (toList)
 import           Prologue                          (catMaybes, fromString, itoListOf, itraverse, toListOf)
 
-import qualified Empire.API.Data.Error             as APIError
-import           Empire.API.Data.GraphLocation     (GraphLocation (..))
-import           Empire.API.Data.MonadPath         (MonadPath (MonadPath))
-import           Empire.API.Data.Node              (NodeId, nodeId)
-import qualified Empire.API.Data.NodeMeta          as NodeMeta
-import           Empire.API.Data.TypeRep           (TypeRep (TCons))
-import           Empire.API.Data.PortDefault       (PortValue (StringValue), VisualizationValue (JsonValue))
-import           Empire.API.Graph.NodeResultUpdate (NodeValue(..))
+import qualified LunaStudio.Data.Error             as APIError
+import           LunaStudio.Data.GraphLocation     (GraphLocation (..))
+import           LunaStudio.Data.MonadPath         (MonadPath (MonadPath))
+import           LunaStudio.Data.Node              (NodeId, nodeId)
+import qualified LunaStudio.Data.NodeMeta          as NodeMeta
+import           LunaStudio.Data.TypeRep           (TypeRep (TCons))
+import           LunaStudio.Data.PortDefault       (PortValue (StringValue), VisualizationValue (JsonValue))
+import           LunaStudio.API.Graph.NodeResultUpdate (NodeValue(..))
 import           Empire.ASTOp                      (EmpirePass, runASTOp, runTypecheck)
 import qualified Empire.ASTOps.Read                as ASTRead
 import qualified Empire.Commands.AST               as AST
@@ -40,7 +40,7 @@ import           Empire.Empire
 
 import           Luna.Builtin.Data.LunaValue       (LunaData, listenReps)
 import           Luna.Builtin.Data.LunaEff         (runIO, runError)
-import           Luna.Builtin.Data.Module          (Imports (..))
+import           Luna.Builtin.Data.Module          (Imports (..), importedClasses, importedFunctions)
 import qualified Luna.Builtin.Std                  as Std
 import qualified Luna.IR                           as IR
 import qualified Luna.Pass.Evaluation.Interpreter  as Interpreter
@@ -49,6 +49,8 @@ import qualified OCI.IR.Combinators                as IR
 import           OCI.Pass                          (SubPass)
 import           Luna.Pass.Resolution.Data.CurrentTarget (CurrentTarget (TgtNone))
 import           Luna.Pass.Data.ExprMapping
+import qualified Luna.Compilation                  as Compilation
+
 
 import System.IO.Unsafe
 import Data.IORef
@@ -104,9 +106,9 @@ updateNodes loc@(GraphLocation _ br) = zoom graph $ zoomBreadcrumb br $ do
     forM_ (catMaybes errors) $ \(nid, e) -> Publisher.notifyResultUpdate loc nid e 0
 
 updateMonads :: GraphLocation -> Command InterpreterEnv ()
-updateMonads loc@(GraphLocation _ br) = zoom graph $ zoomBreadcrumb br $ do
-    newMonads <- runASTOp GraphBuilder.buildMonads
-    Publisher.notifyMonadsUpdate loc newMonads
+updateMonads loc@(GraphLocation _ br) = return ()--zoom graph $ zoomBreadcrumb br $ do
+    {-newMonads <- runASTOp GraphBuilder.buildMonads-}
+    {-Publisher.notifyMonadsUpdate loc newMonads-}
 
 updateValues :: GraphLocation -> Interpreter.LocalScope -> Command InterpreterEnv ()
 updateValues loc scope = do
@@ -128,19 +130,15 @@ flushCache = do
     valuesCache .= def
     nodesCache  .= def
 
--- temporary: at some point this will be part of our state
-std :: (Std.WorldState, Imports)
-std = unsafePerformIO Std.mockStdlib
-{-# NOINLINE std #-}
-
-flushWorld :: IO ()
-flushWorld = let Std.WorldState c s = fst std in writeIORef c 1 >> writeIORef s []
+createStdlib :: String -> IO Imports
+createStdlib = Compilation.createStdlib
 
 run :: GraphLocation -> Command InterpreterEnv ()
 run loc = do
-    zoom graph $ runTC $ snd std
+    std <- use imports
+    liftIO $ print $ Map.keys $ std ^. importedClasses
+    zoom graph $ runTC std
     updateNodes  loc
-    updateMonads loc
-    liftIO flushWorld
-    scope <- zoom graph $ runInterpreter $ snd std
+    {-updateMonads loc-}
+    scope <- zoom graph $ runInterpreter std
     mapM_ (updateValues loc) scope

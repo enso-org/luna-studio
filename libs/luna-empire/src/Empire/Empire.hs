@@ -2,22 +2,22 @@
 
 module Empire.Empire where
 
-import           Empire.Prelude                hiding (TypeRep)
-import           Empire.API.Data.AsyncUpdate   (AsyncUpdate)
-import qualified Empire.API.Data.Error         as APIError
-import           Empire.API.Data.GraphLocation (GraphLocation)
-import           Empire.API.Data.Node          (ExpressionNode, NodeId)
-import           Empire.API.Data.PortDefault   (PortValue)
-import           Empire.API.Data.Project       (ProjectId)
-import           Empire.API.Data.TypeRep       (TypeRep)
 import           Empire.Data.AST               (SomeASTException)
 import           Empire.Data.Graph             (Graph, defaultGraph)
 import           Empire.Data.Library           (Library)
+import           Empire.Prelude                hiding (TypeRep)
 import           Empire.Prelude
+import           LunaStudio.API.AsyncUpdate    (AsyncUpdate)
+import qualified LunaStudio.Data.Error         as APIError
+import           LunaStudio.Data.GraphLocation (GraphLocation)
+import           LunaStudio.Data.Node          (ExpressionNode, NodeId)
+import           LunaStudio.Data.PortDefault   (PortValue)
+import           LunaStudio.Data.Project       (ProjectId)
+import           LunaStudio.Data.TypeRep       (TypeRep)
+import           Luna.Builtin.Data.Module      (Imports)
 
 import           Control.Concurrent.STM.TChan  (TChan)
 import           Control.Exception             (try)
-import           Control.Monad.Except          (ExceptT (..), MonadError, runExceptT, throwError)
 import           Control.Monad.Reader
 import           Control.Monad.State
 import           Data.Map.Lazy                 (Map)
@@ -47,32 +47,25 @@ data InterpreterEnv = InterpreterEnv { _valuesCache :: Map NodeId [PortValue]
                                      , _errorsCache :: Map NodeId APIError.Error
                                      , _graph       :: Graph
                                      , _destructors :: [IO ()]
+                                     , _imports     :: Imports
                                      }
 makeLenses ''InterpreterEnv
 
 defaultInterpreterEnv :: IO InterpreterEnv
 defaultInterpreterEnv = do
     g <- defaultGraph
-    return $ InterpreterEnv def def def g []
+    return $ InterpreterEnv def def def g [] def
 
-type CommandStack s = ExceptT Error (ReaderT CommunicationEnv (StateT s IO))
-type Command s a = ExceptT Error (ReaderT CommunicationEnv (StateT s IO)) a
+type CommandStack s = ReaderT CommunicationEnv (StateT s IO)
+type Command s a = ReaderT CommunicationEnv (StateT s IO) a
 
 type Empire a = Command Env a
 
-runEmpire :: CommunicationEnv -> s -> Command s a -> IO (Either Error a, s)
-runEmpire notif st cmd = do
-    res <- try $ runStateT (runReaderT (runExceptT cmd) notif) st
-    case res of
-        Left (exc :: SomeASTException) -> return (Left (displayException exc), st)
-        Right (eea, st')               -> return (eea, st')
+runEmpire :: CommunicationEnv -> s -> Command s a -> IO (a, s)
+runEmpire notif st cmd = runStateT (runReaderT cmd notif) st
 
-execEmpire :: CommunicationEnv -> s -> Command s a -> IO (Either Error a)
+execEmpire :: CommunicationEnv -> s -> Command s a -> IO a
 execEmpire = fmap fst .:. runEmpire
 
-empire :: (CommunicationEnv -> s -> IO (Either Error a, s)) -> Command s a
-empire = ExceptT . ReaderT . fmap StateT
-
-infixr 4 <?!>
-(<?!>) :: MonadError Error m => m (Maybe a) -> Error -> m a
-(<?!>) cmd err = cmd >>= maybe (throwError err) return
+empire :: (CommunicationEnv -> s -> IO (a, s)) -> Command s a
+empire = ReaderT . fmap StateT

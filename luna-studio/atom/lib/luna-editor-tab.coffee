@@ -26,54 +26,59 @@ TextBuffer::onDidStopChangingWithDiffs = (callback) ->
     sub.dispose()
 
 
+subscribe = null
 
 module.exports =
-class LunaEditorTab extends TextEditor
+  class LunaEditorTab extends TextEditor
 
-  constructor: (@uri, @internal) ->
+    constructor: (@uri, @internal) ->
 
-      super
-      @getBuffer().setPath(@uri)
+        super
+        @getBuffer().setPath(@uri)
 
-      @internal.pushInternalEvent(event: "GetBuffer", uri: @uri)
+        @internal.pushInternalEvent(event: "GetBuffer", uri: @uri)
 
-      withoutTrigger = (callback) =>
-          @triggerPush = false
-          callback()
-          @triggerPush = true
-      setBuffer = (uri_send, text, lexer) =>
-          withoutTrigger =>
-            if @uri == uri_send
-              @getBuffer().setText(text)
-              @setGrammar(new LunaSemanticGrammar(atom.grammars, lexer))
-
-      @internal.bufferListener setBuffer
-
-      setCode = (uri_send, start_send, end_send, text, tags) =>
-          withoutTrigger =>
-            if @uri == uri_send
-            #   start = @getBuffer().positionForCharacterIndex(start_send)
-            #   end = @getBuffer().positionForCharacterIndex(end_send)
-            #   @getBuffer().setTextInRange [start, end], text
-            #   @.scrollToBufferPosition(start)
+        withoutTrigger = (callback) =>
+            @triggerPush = false
+            callback()
+            @triggerPush = true
+        setBuffer = (uri_send, text, lexer) =>
+            console.log(uri_send, @uri)
+            withoutTrigger =>
+              if @uri == uri_send
                 @getBuffer().setText(text)
-      @internal.codeListener setCode
+                console.log("setBuffer")
 
-      @subscribe = new SubAtom
-      @subscribe.add @getBuffer().onDidChange (event) =>
-          return unless @triggerPush
-          if event.newText != '' or event.oldText != ''
-              diff =
-                  uri: @uri
-                  start: @getBuffer().characterIndexForPosition(event.oldRange.start)
-                  end: @getBuffer().characterIndexForPosition(event.oldRange.start) + event.oldText.length
-                  text: event.newText
-                  cursor: @getBuffer().characterIndexForPosition(@.getCursorBufferPosition())
-                #   cursor: (@getBuffer().characterIndexForPosition(x) for x in @.getCursorBufferPositions()) #for multiple cursors
-              @internal.pushText(diff)
+                @setGrammar(new LunaSemanticGrammar(atom.grammars, lexer))
 
+        @internal.bufferListener setBuffer
 
-  getTitle: -> path.basename(@uri)
+        setCode = (uri_send, start_send, end_send, text) =>
+            withoutTrigger =>
+              if @uri == uri_send
+              #   start = @getBuffer().positionForCharacterIndex(start_send)
+              #   end = @getBuffer().positionForCharacterIndex(end_send)
+              #   @getBuffer().setTextInRange [start, end], text
+              #   @.scrollToBufferPosition(start)
+                  @getBuffer().setText(text)
+        @internal.codeListener setCode
 
-  deactivate: ->
-    @subscribe.dispose()
+        @subscribe = new SubAtom
+        @subscribe.add @getBuffer().onDidChange (event) =>
+            return unless @triggerPush
+            if event.newText != '' or event.oldText != ''
+                diff =
+                    uri: @uri
+                    start: @getBuffer().characterIndexForPosition(event.oldRange.start)
+                    end: @getBuffer().characterIndexForPosition(event.oldRange.start) + event.oldText.length
+                    text: event.newText
+                    cursor: @getBuffer().characterIndexForPosition(@.getCursorBufferPosition())
+                  #   cursor: (@getBuffer().characterIndexForPosition(x) for x in @.getCursorBufferPositions()) #for multiple cursors
+                @internal.pushText(diff)
+
+    serialize: -> { deserializer: 'LunaEditorTab', uri: @uri }
+
+    getTitle: -> path.basename(@uri)
+
+    deactivate: ->
+      @subscribe.dispose()

@@ -9,7 +9,7 @@ import           Common.Prelude
 import           Data.Curve                                 (CurveSegment, getPointsOnCurveSegment)
 import qualified Data.Curve                                 as Curve
 import           Data.Timestamp                             (Timestamp)
-import           Empire.API.Data.Position                   (distance)
+import           LunaStudio.Data.Position                   (distance)
 import           NodeEditor.Action.Basic                    (connect, updateAllPortsSelfVisibility)
 import           NodeEditor.Action.Command                  (Command)
 import           NodeEditor.Action.ConnectionPen.SmoothLine (addPointToCurve, beginCurve, curveToSvgPath)

@@ -1,8 +1,8 @@
 module NodeEditor.Action.Basic.RemoveConnection where
 
 import           Control.Monad                       (filterM)
-import           Empire.API.Data.NodeLoc             (NodeLoc)
-import           Empire.API.Data.PortRef             (dstNodeLoc)
+import           LunaStudio.Data.NodeLoc             (NodeLoc)
+import           LunaStudio.Data.PortRef             (dstNodeLoc)
 import           NodeEditor.Action.Basic.UpdateNode (updatePortSelfVisibility)
 import qualified NodeEditor.Action.Batch            as Batch
 import           NodeEditor.Action.Command          (Command)

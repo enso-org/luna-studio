@@ -25,13 +25,13 @@ import qualified Empire.Data.Library             as Library
 import           Empire.Data.Project             (Project)
 import qualified Empire.Data.Project             as Project
 
-import qualified Empire.API.Data.Graph           as G
-import           Empire.API.Data.GraphLocation   (GraphLocation (..))
-import           Empire.API.Data.PortRef         (AnyPortRef(InPortRef'))
-import           Empire.API.Data.Project         (ProjectId)
-import qualified Empire.API.Persistence.Envelope as E
-import qualified Empire.API.Persistence.Library  as L
-import qualified Empire.API.Persistence.Project  as P
+import qualified LunaStudio.Data.Graph           as G
+import           LunaStudio.Data.GraphLocation   (GraphLocation (..))
+import           LunaStudio.Data.PortRef         (AnyPortRef(InPortRef'))
+import           LunaStudio.Data.Project         (ProjectId)
+import qualified LunaStudio.API.Persistence.Envelope as E
+import qualified LunaStudio.API.Persistence.Library  as L
+import qualified LunaStudio.API.Persistence.Project  as P
 
 import           Empire.ASTOp                    (runASTOp)
 import qualified Empire.Commands.Graph           as Graph
@@ -42,7 +42,7 @@ import           Empire.Empire                   (Empire)
 import qualified Data.Aeson                      as JSON
 import qualified Data.Aeson.Encode.Pretty        as JSON
 
-import           Empire.API.JSONInstances        ()
+import           LunaStudio.API.JSONInstances        ()
 
 import qualified System.Log.MLogger              as Logger
 

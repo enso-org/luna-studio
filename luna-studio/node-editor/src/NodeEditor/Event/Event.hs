@@ -1,24 +1,22 @@
 {-# LANGUAGE DeriveAnyClass #-}
 module NodeEditor.Event.Event where
 
-import           Data.Aeson                    (ToJSON)
+import           Data.Aeson                  (ToJSON)
 
-import qualified NodeEditor.Event.Batch       as Batch
-import qualified NodeEditor.Event.Connection  as Connection
-import qualified NodeEditor.Event.CustomEvent as CustomEvent
-import qualified NodeEditor.Event.Debug       as Debug
-import           NodeEditor.Event.Shortcut    (ShortcutEvent)
-import           NodeEditor.Event.UI          (UIEvent)
 import           Common.Prelude
-
+import qualified NodeEditor.Event.Atom       as Atom
+import qualified NodeEditor.Event.Batch      as Batch
+import qualified NodeEditor.Event.Connection as Connection
+import qualified NodeEditor.Event.Debug      as Debug
+import           NodeEditor.Event.Shortcut   (ShortcutEvent)
+import           NodeEditor.Event.UI         (UIEvent)
 
 
 data Event = Init
            | Batch                         Batch.Event
            | Connection               Connection.Event
-           | CustomEvent             CustomEvent.Event
            | Debug                         Debug.Event
-           | Tick
+           | Atom                           Atom.Event
            | Shortcut                    ShortcutEvent
            | UI                                UIEvent
            deriving (Generic, Show, NFData)

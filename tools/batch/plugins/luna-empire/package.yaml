@@ -37,7 +37,7 @@ executables:
       - containers
       - docopt
       - luna-empire
-      - luna-empire-api
+      - luna-studio-common
       - m-logger
       - text
       - uuid

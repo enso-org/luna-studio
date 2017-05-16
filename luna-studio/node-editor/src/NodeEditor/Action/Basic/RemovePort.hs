@@ -1,6 +1,6 @@
 module NodeEditor.Action.Basic.RemovePort where
 
-import           Empire.API.Data.PortRef                   (OutPortRef (OutPortRef), srcPortId)
+import           LunaStudio.Data.PortRef                   (OutPortRef (OutPortRef), srcPortId)
 import           NodeEditor.Action.Basic.AddConnection    (localAddConnection)
 import           NodeEditor.Action.Basic.RemoveConnection (localRemoveConnection)
 import           NodeEditor.Action.Basic.UpdateNode       (localUpdateInputNode)

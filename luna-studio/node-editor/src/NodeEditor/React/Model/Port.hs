@@ -9,20 +9,22 @@ module NodeEditor.React.Model.Port
 import           Common.Prelude                   hiding (set)
 import           Data.Aeson                       (ToJSON)
 import           Data.Convert                     (Convertible (convert))
-import           Empire.API.Data.LabeledTree      (LabeledTree (LabeledTree))
-import           Empire.API.Data.Port             as X hiding (InPort, OutPort, Port (..), name, portId, state, valueType)
-import qualified Empire.API.Data.Port             as Empire
-import           Empire.API.Data.PortDefault      as X (PortDefault (..))
-import           Empire.API.Data.PortRef          as X (AnyPortRef (InPortRef', OutPortRef'), InPortRef (InPortRef),
+import           LunaStudio.Data.Angle            (Angle)
+import           LunaStudio.Data.LabeledTree      (LabeledTree (LabeledTree))
+import           LunaStudio.Data.Port             as X hiding (InPort, OutPort, Port (..), name, portId, state, valueType)
+import qualified LunaStudio.Data.Port             as Empire
+import           LunaStudio.Data.PortDefault      as X (PortDefault (..))
+import           LunaStudio.Data.PortRef          as X (AnyPortRef (InPortRef', OutPortRef'), InPortRef (InPortRef),
                                                         OutPortRef (OutPortRef))
-import           Empire.API.Data.Position         (Position)
-import           Empire.API.Data.TypeRep          (TypeRep (..))
-import           NodeEditor.Data.Angle            (Angle)
+import           LunaStudio.Data.Position         (Position)
+import           LunaStudio.Data.TypeRep          (TypeRep (..))
 import           NodeEditor.Data.Color            (Color)
 import qualified NodeEditor.Data.Color            as Color
 import           NodeEditor.React.Model.Constants (nodeRadius)
 
-
+type IsAlias = Bool
+type IsSelf  = Bool
+type IsOnly  = Bool
 
 data Mode = Normal
           | Invisible
@@ -37,7 +39,7 @@ instance Default Mode where
 
 data Port i = Port
         { _portId    :: i
-        , _name      :: String
+        , _name      :: Text
         , _valueType :: TypeRep
         , _state     :: PortState
         , _color     :: Color

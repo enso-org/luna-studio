@@ -1,10 +1,12 @@
-{-# LANGUAGE LambdaCase          #-}
-{-# LANGUAGE OverloadedStrings   #-}
-{-# LANGUAGE TypeApplications    #-}
-{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE ExistentialQuantification #-}
+{-# LANGUAGE LambdaCase                #-}
+{-# LANGUAGE OverloadedStrings         #-}
+{-# LANGUAGE TypeApplications          #-}
+{-# LANGUAGE ScopedTypeVariables       #-}
+{-# LANGUAGE StandaloneDeriving        #-}
 
 module Empire.ASTOps.Parse (
-    ParserException
+    SomeParserException
   , parseExpr
   , parsePortDefault
   , runParser
@@ -32,7 +34,7 @@ import           Empire.Data.Graph               (Graph)
 import           Empire.Data.Layers              (CodeMarkers)
 import           Empire.Data.Parser              (ParserPass)
 
-import           Empire.API.Data.PortDefault     (PortDefault (..), PortValue (..))
+import           LunaStudio.Data.PortDefault     (PortDefault (..), PortValue (..))
 
 import           Data.TypeDesc                   (getTypeDesc)
 import qualified Luna.Builtin.Data.Function      as Function (importRooted)
@@ -44,13 +46,14 @@ import qualified Luna.Syntax.Text.Parser.Parsing as Parsing
 import qualified Luna.Syntax.Text.Source         as Source
 import qualified Luna.IR.Term.Literal            as Lit
 
-data ParserException e = ParserException e
-    deriving (Show)
+data SomeParserException = forall e. Exception e => SomeParserException e
 
-instance Exception e => Exception (ParserException e) where
+deriving instance Show SomeParserException
+
+instance Exception SomeParserException where
     toException = astExceptionToException
     fromException = astExceptionFromException
-    displayException (ParserException e) = "ParserException (" ++ displayException e ++ ")"
+    displayException exc = case exc of SomeParserException e -> "SomeParserException (" ++ displayException e ++ ")"
 
 parseExpr :: ASTOp m => String -> m NodeRef
 parseExpr s = do
@@ -71,13 +74,13 @@ runUnitParser code = do
           IR.setAttr (getTypeDesc @Parser.ReparsingStatus) $ (error "Data not provided: ReparsingStatus")
         run = runPass @ParserPass inits
     run $ do
-        Parsing.parsingPassM Parsing.unit' `catchAll` (\e -> throwM $ ParserException e)
+        Parsing.parsingPassM Parsing.unit' `catchAll` (\e -> throwM $ SomeParserException e)
         res     <- IR.getAttr @Parser.ParsedExpr
         funRoot@(IR.Rooted _ funExpr) <- IR.matchExpr (unwrap' res) $ \case
             IR.Unit _ _ cls -> do
                 klass <- IR.source cls
                 IR.matchExpr klass $ \case
-                    IR.ClsASG _ _ (main : _) -> do
+                    IR.ClsASG _ _ _ (main : _) -> do
                         main' <- IR.source main
                         IR.matchExpr main' $ \case
                             IR.ASGFunction _ rootedIR -> return rootedIR
@@ -103,13 +106,13 @@ runUnitReparser code oldExpr = do
             gidMapOld <- IR.getLayer @CodeMarkers oldExpr
 
             -- parsing new file and updating updated analysis
-            Parsing.parsingPassM Parsing.unit' `catchAll` (\e -> throwM $ ParserException e)
+            Parsing.parsingPassM Parsing.unit' `catchAll` (\e -> throwM $ SomeParserException e)
             res       <- IR.getAttr @Parser.ParsedExpr
             funRoot@(IR.Rooted _ funExpr) <- IR.matchExpr (unwrap' res) $ \case
                 IR.Unit _ _ cls -> do
                     klass <- IR.source cls
                     IR.matchExpr klass $ \case
-                        IR.ClsASG _ _ (main : _) -> do
+                        IR.ClsASG _ _ _ (main : _) -> do
                             main' <- IR.source main
                             IR.matchExpr main' $ \case
                                 IR.ASGFunction _ rootedIR -> return rootedIR
@@ -139,7 +142,7 @@ runParser expr = do
             IR.setAttr (getTypeDesc @Parser.ReparsingStatus) $ (error "Data not provided: ReparsingStatus")
         run = runPass @ParserPass inits
     run $ do
-        Parsing.parsingPassM Parsing.expr `catchAll` (\e -> throwM $ ParserException e)
+        Parsing.parsingPassM Parsing.expr `catchAll` (\e -> throwM $ SomeParserException e)
         res     <- IR.getAttr @Parser.ParsedExpr
         exprMap <- IR.getAttr @Parser.MarkedExprMap
         IR.putLayer @CodeMarkers (unwrap' res) exprMap
@@ -161,7 +164,7 @@ runReparser expr oldExpr = do
             gidMapOld <- IR.getLayer @CodeMarkers oldExpr
 
             -- parsing new file and updating updated analysis
-            Parsing.parsingPassM Parsing.valExpr2 `catchAll` (\e -> throwM $ ParserException e)
+            Parsing.parsingPassM Parsing.valExpr2 `catchAll` (\e -> throwM $ SomeParserException e)
             gidMap    <- IR.getAttr @Parser.MarkedExprMap
 
             -- Preparing reparsing status

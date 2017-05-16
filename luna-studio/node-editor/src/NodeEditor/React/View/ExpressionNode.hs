@@ -6,11 +6,11 @@ import qualified Data.Aeson                                           as Aeson
 import qualified Data.HashMap.Strict                                  as HashMap
 import qualified Data.Map.Lazy                                        as Map
 import           Data.Matrix                                          (Matrix)
-import qualified Empire.API.Data.MonadPath                            as MonadPath
-import           Empire.API.Data.PortRef                              (toAnyPortRef)
-import           Empire.API.Data.LabeledTree                          (LabeledTree (LabeledTree))
 import qualified JS.Config                                            as Config
 import qualified JS.UI                                                as UI
+import           LunaStudio.Data.LabeledTree                          (LabeledTree (LabeledTree))
+import qualified LunaStudio.Data.MonadPath                            as MonadPath
+import           LunaStudio.Data.PortRef                              (toAnyPortRef)
 import           NodeEditor.Data.Matrix                               (showNodeMatrix, showNodeTranslate)
 import qualified NodeEditor.Event.Mouse                               as Mouse
 import qualified NodeEditor.Event.UI                                  as UI
@@ -18,7 +18,7 @@ import qualified NodeEditor.React.Event.Node                          as Node
 import           NodeEditor.React.Model.App                           (App)
 import qualified NodeEditor.React.Model.Field                         as Field
 import           NodeEditor.React.Model.Node.ExpressionNode           (ExpressionNode, NodeLoc, Subgraph, countArgPorts, countOutPorts,
-                                                                      isCollapsed, returnsError)
+                                                                       isCollapsed, returnsError)
 import qualified NodeEditor.React.Model.Node.ExpressionNode           as Node
 import qualified NodeEditor.React.Model.Node.ExpressionNodeProperties as Prop
 import           NodeEditor.React.Model.Port                          (AnyPortId (InPortId'), InPortIndex (Arg, Self), isInPort, isOutAll,
@@ -26,7 +26,6 @@ import           NodeEditor.React.Model.Port                          (AnyPortId
 import qualified NodeEditor.React.Model.Port                          as Port
 import           NodeEditor.React.Store                               (Ref, dispatch)
 import           NodeEditor.React.View.ExpressionNode.Properties      (nodeProperties_)
-import           NodeEditor.React.View.Field                          (singleField_)
 import           NodeEditor.React.View.Field                          (multilineField_)
 import           NodeEditor.React.View.Monad                          (monads_)
 import           NodeEditor.React.View.Plane                          (planeMonads_, svgPlanes_)
@@ -87,36 +86,24 @@ node = React.defineView name $ \(ref, n) -> case n ^. Node.mode of
                 ] $ do
                 div_
                     [ "key"         $= "nodeExpression"
-                    , onDoubleClick $ \e _ -> stopPropagation e : dispatch ref (UI.NodeEvent $ Node.EditExpression nodeLoc)
                     , "className"   $= Style.prefixFromList [ "node__expression", "noselect" ]
+                    , onDoubleClick $ \e _ -> stopPropagation e : dispatch ref (UI.NodeEvent $ Node.EditExpression nodeLoc)
                     ] $ elemString . convert $ n ^. Node.expression
                 div_
                     [ "className"   $= Style.prefixFromList [ "node__name", "noselect" ]
+                    , onDoubleClick $ \e _ -> stopPropagation e : dispatch ref (UI.NodeEvent $ Node.EditName nodeLoc)
                     ] $ do
-                    if n ^. Node.isNameEdited then
-                        singleField_
-                            ["id"  $= nameLabelId
-                            , "className" $= Style.prefix "node__name--input"
-                            , "key"       $= "nameEdit"
-                            ] "name-label"
-                            $ Field.mk ref (fromMaybe def $ n ^. Node.name)
-                            & Field.onCancel .~ Just (const $ UI.NodeEvent $ Node.NameEditDiscard nodeLoc)
-                            & Field.onAccept .~ Just (UI.NodeEvent . Node.NameEditApply nodeLoc)
-                    else div_
-                        [ "key"         $= "nameText"
-                        , onDoubleClick $ \e _ -> stopPropagation e : dispatch ref (UI.NodeEvent $ Node.NameEditStart nodeLoc)
-                        , "className"   $= Style.prefixFromList [ "node__name--text", "noselect" ]
-                        ] $ do
                         elemString $ convert $ fromMaybe def $ n ^. Node.name
-                        span_
-                            [ "key"       $= "icons"
-                            , "className" $= Style.prefix "node__icons"
-                            ] $ do
-                            div_
-                                [ "key"       $= "ctrlSwitch"
-                                , "className" $= Style.prefixFromList (["icon", "icon--show"] ++ if isVisualization then ["icon--show--on"] else ["icon--show--off"])
-                                , onClick $ \_ _ -> dispatch ref $ UI.NodeEvent $ Node.DisplayResultChanged (not isVisualization) nodeLoc
-                                ] mempty
+                        -- TODO [LJK, JK]: Restore it once we have controls back
+                        -- when (n ^. Node.isNameEdited) $ span_
+                        --     [ "key"       $= "icons"
+                        --     , "className" $= Style.prefix "node__icons"
+                        --     ] $ do
+                        --     div_
+                        --         [ "key"       $= "ctrlSwitch"
+                        --         , "className" $= Style.prefixFromList (["icon", "icon--show"] ++ if isVisualization then ["icon--show--on"] else ["icon--show--off"])
+                        --         , onClick $ \_ _ -> dispatch ref $ UI.NodeEvent $ Node.DisplayResultChanged (not isVisualization) nodeLoc
+                        --         ] mempty
             nodeBody_ ref n
             div_
                 [ "key"       $= "results"
@@ -150,14 +137,14 @@ nodeBody = React.defineView objNameBody $ \(ref, n) -> do
         selectionMark_
         div_
             [ "key"       $= "properties-crop"
-            , "className" $= Style.prefixFromList ["node__properties-crop", "input"]
+            , "className" $= Style.prefix "node__properties-crop"
             ] $ do
             blurBackground_
             case n ^. Node.mode of
                 Node.Expanded Node.Controls      -> nodeProperties_ ref $ Prop.fromNode n
                 Node.Expanded Node.Editor        -> multilineField_ [] "editor"
                     $ Field.mk ref (fromMaybe def $ n ^. Node.code)
-                    & Field.onCancel .~ Just (UI.NodeEvent . Node.SetCode nodeLoc)
+                    & Field.onCancel .~ Just (UI.NodeEvent . Node.SetExpression nodeLoc)
                 _                                -> ""
 
 nodePorts_ :: Ref App -> ExpressionNode -> ReactElementM ViewEventHandler ()
@@ -165,19 +152,21 @@ nodePorts_ ref model = React.viewWithSKey nodePorts objNamePorts (ref, model) me
 
 nodePorts :: ReactView (Ref App, ExpressionNode)
 nodePorts = React.defineView objNamePorts $ \(ref, n) -> do
-    let nodeId     = n ^. Node.nodeId
-        nodeLoc    = n ^. Node.nodeLoc
-        nodePorts' = Node.portsList n
-        ports p   = forM_ p $ \port -> port_ ref
-                                             nodeLoc
-                                             port
-                                             (if isInPort $ port ^. Port.portId then countArgPorts n else countOutPorts n)
-                                             (withOut isOutAll (port ^. Port.portId) && countArgPorts n + countOutPorts n == 1)
-                                             $ case (n ^. Node.inPorts) of
-                                                          LabeledTree (Port.InPorts Nothing []) p -> case (p ^. Port.state) of
-                                                                                                     Port.Connected -> True
-                                                                                                     _              -> False
-                                                          _                                       -> False
+    let nodeId             = n ^. Node.nodeId
+        nodeLoc            = n ^. Node.nodeLoc
+        nodePorts'         = Node.portsList n
+        visibleSelfPresent = any (\p -> (Port.isSelf $ p ^. Port.portId) && (not $ Port.isInvisible p)) $ Node.inPortsList n
+        ports p =
+            forM_ p $ \port -> port_ ref
+                                     nodeLoc
+                                     port
+                                     (if isInPort $ port ^. Port.portId then countArgPorts n else countOutPorts n)
+                                     (withOut isOutAll (port ^. Port.portId) && countArgPorts n + countOutPorts n == 1)
+                                     (case (n ^. Node.inPorts) of
+                                         LabeledTree _ a -> case (a ^. Port.state) of
+                                             Port.Connected -> True
+                                             _              -> False )
+                                     visibleSelfPresent
     svg_
         [ "key"       $= "nodePorts"
         , "className" $= Style.prefixFromList [ "node__ports" ]

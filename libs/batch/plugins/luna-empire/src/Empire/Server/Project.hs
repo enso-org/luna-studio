@@ -5,13 +5,13 @@ module Empire.Server.Project where
 import           Prologue
 
 import           Control.Monad.State              (StateT)
-import qualified Empire.API.Project.CreateProject as CreateProject
-import qualified Empire.API.Project.ExportProject as ExportProject
-import qualified Empire.API.Project.ImportProject as ImportProject
-import qualified Empire.API.Project.ListProjects  as ListProjects
-import qualified Empire.API.Project.OpenProject   as OpenProject
-import           Empire.API.Request               (Request (..))
-import qualified Empire.API.Response              as Response
+import qualified LunaStudio.API.Project.CreateProject as CreateProject
+import qualified LunaStudio.API.Project.ExportProject as ExportProject
+import qualified LunaStudio.API.Project.ImportProject as ImportProject
+import qualified LunaStudio.API.Project.ListProjects  as ListProjects
+import qualified LunaStudio.API.Project.OpenProject   as OpenProject
+import           LunaStudio.API.Request               (Request (..))
+import qualified LunaStudio.API.Response              as Response
 import qualified Empire.Commands.Library          as Library
 import qualified Empire.Commands.Persistence      as Persistence
 import qualified Empire.Data.Project              as DataProject

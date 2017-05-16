@@ -8,9 +8,9 @@ module NodeEditor.React.Model.IsNode
 import           Control.Arrow                ((&&&))
 import           Data.HashMap.Strict          (HashMap)
 import qualified Data.HashMap.Strict          as HashMap
-import           Empire.API.Data.Node         (NodeId)
-import           Empire.API.Data.NodeLoc      as X (HasNodeLoc (..), nodeLoc)
-import qualified Empire.API.Data.NodeLoc      as NodeLoc
+import           LunaStudio.Data.Node         (NodeId)
+import           LunaStudio.Data.NodeLoc      as X (HasNodeLoc (..), nodeLoc)
+import qualified LunaStudio.Data.NodeLoc      as NodeLoc
 import           Common.Prelude
 import           NodeEditor.React.Model.Port (AnyPort, AnyPortId (InPortId', OutPortId'), InPort, InPortId, OutPort, OutPortId)
 import qualified NodeEditor.React.Model.Port as Port

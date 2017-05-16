@@ -3,9 +3,9 @@ module TextEditor.Handler.Text
     ) where
 
 import           Common.Prelude
-import qualified Empire.API.Atom.GetBuffer         as GetBuffer
-import qualified Empire.API.Atom.Substitute        as Substitute
-import qualified Empire.API.Response               as Response
+import qualified LunaStudio.API.Atom.GetBuffer         as GetBuffer
+import qualified LunaStudio.API.Atom.Substitute        as Substitute
+import qualified LunaStudio.API.Response               as Response
 import           JS.Atom
 
 

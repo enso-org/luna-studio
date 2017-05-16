@@ -1,6 +1,7 @@
 {-# LANGUAGE FlexibleContexts  #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RankNTypes        #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TemplateHaskell   #-}
 
 module Empire.Server where
@@ -9,6 +10,7 @@ import           Control.Concurrent               (forkIO)
 import           Control.Concurrent.STM           (STM)
 import           Control.Concurrent.STM.TChan     (TChan, newTChan, readTChan, tryPeekTChan)
 import           Control.Monad                    (forever)
+import           Control.Monad.Catch              (try)
 import           Control.Monad.State              (StateT, evalStateT)
 import           Control.Monad.STM                (atomically)
 import qualified Data.Binary                      as Bin
@@ -23,12 +25,13 @@ import           System.FilePath.Glob             ()
 import           System.FilePath.Manip            ()
 
 
-import qualified Empire.API.Control.EmpireStarted as EmpireStarted
-import           Empire.API.Data.AsyncUpdate      (AsyncUpdate (..))
-import           Empire.API.Data.GraphLocation    (GraphLocation)
-import qualified Empire.API.Topic                 as Topic
-import           Empire.Data.Graph                (Graph, ast)
-import qualified Empire.Data.Graph                as Graph
+import           Empire.Data.AST                      (SomeASTException)
+import           Empire.Data.Graph                    (Graph, ast)
+import qualified Empire.Data.Graph                    as Graph
+import           LunaStudio.API.AsyncUpdate           (AsyncUpdate (..))
+import qualified LunaStudio.API.Control.EmpireStarted as EmpireStarted
+import qualified LunaStudio.API.Topic                 as Topic
+import           LunaStudio.Data.GraphLocation        (GraphLocation)
 
 import qualified Empire.Commands.AST              as AST
 import qualified Empire.Commands.Graph            as Graph (openFile)
@@ -55,7 +58,9 @@ import           ZMQ.Bus.EndPoint                 (BusEndPoints)
 import           ZMQ.Bus.Trans                    (BusT (..))
 import qualified ZMQ.Bus.Trans                    as BusT
 
-import System.Remote.Monitoring
+import           System.Remote.Monitoring
+import           System.Environment               (getEnv)
+import           System.Directory                 (canonicalizePath)
 
 logger :: Logger.Logger
 logger = Logger.getLogger $(Logger.moduleName)
@@ -100,7 +105,10 @@ readAll chan = do
 
 startTCWorker :: Empire.CommunicationEnv -> TChan (GraphLocation, Graph, Bool) -> Bus ()
 startTCWorker env chan = liftIO $ do
-    interpreterEnv <- Empire.defaultInterpreterEnv
+    baseIntEnv <- Empire.defaultInterpreterEnv
+    lunaroot   <- canonicalizePath =<< getEnv "LUNAROOT"
+    std        <- Typecheck.createStdlib $ lunaroot ++ "/Std/"
+    let interpreterEnv = baseIntEnv & Empire.imports .~ std
     let pmState = interpreterEnv ^. Empire.graph . Graph.ast . Graph.pmState
     void $ Empire.runEmpire env interpreterEnv $ forever $ do
         (loc, g, flush) <- liftIO $ atomically $ readAll chan
@@ -120,11 +128,9 @@ startAsyncUpdateWorker :: TChan AsyncUpdate -> StateT Env BusT ()
 startAsyncUpdateWorker asyncChan = forever $ do
     update <- liftIO $ atomically $ readTChan asyncChan
     case update of
-        NodesUpdate       up -> Server.sendToBus' up
         MonadsUpdate      up -> Server.sendToBus' up
         TypecheckerUpdate up -> Server.sendToBus' up
         ResultUpdate      up -> Server.sendToBus' up
-        ConnectionUpdate  up -> Server.sendToBus' up
         CodeUpdate        up -> Server.sendToBus' up
 
 projectFiles :: FilePath -> IO [FilePath]
@@ -138,19 +144,21 @@ loadAllProjects = do
   projects <- liftIO $ projectFiles projectRoot
   loadedProjects <- flip mapM projects $ \proj -> do
     currentEmpireEnv <- use Env.empireEnv
-    (result, newEmpireEnv) <- liftIO $ Empire.runEmpire empireNotifEnv currentEmpireEnv $ Graph.openFile proj
+    result <- liftIO $ try $ Empire.runEmpire empireNotifEnv currentEmpireEnv $ Graph.openFile proj
     case result of
-        Left err -> do
-          logger Logger.error $ "Cannot load project [" <> proj <> "]: " <> err
+        Left (exc :: SomeASTException) -> do
+          logger Logger.error $ "Cannot load project [" <> proj <> "]: " <> (displayException exc)
           return Nothing
-        Right _ -> do
+        Right (_, newEmpireEnv) -> do
           Env.empireEnv .= newEmpireEnv
           return $ Just ()
 
   when ((catMaybes loadedProjects) == []) $ do
     currentEmpireEnv <- use Env.empireEnv
-    (_, newEmpireEnv) <- liftIO $ Empire.runEmpire empireNotifEnv currentEmpireEnv $  Persistence.createDefaultProject
-    Env.empireEnv .= newEmpireEnv
+    result <- liftIO $ try $ Empire.runEmpire empireNotifEnv currentEmpireEnv $  Persistence.createDefaultProject
+    case result of
+        Right (_, newEmpireEnv) -> Env.empireEnv .= newEmpireEnv
+        Left (exc :: SomeASTException) -> return ()
 
 
 

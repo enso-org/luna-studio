@@ -5,54 +5,49 @@ module NodeEditor.Handler.Backend.Graph
 import           Common.Prelude
 import           Common.Report
 import qualified Data.DateTime                               as DT
-import           Empire.API.Data.Connection                  (dst, src)
-import qualified Empire.API.Data.Graph                       as Graph
-import           Empire.API.Data.NodeLoc                     (nodeLoc, prependPath)
-import qualified Empire.API.Data.NodeLoc                     as NodeLoc
-import           Empire.API.Data.NodeMeta                    (displayResult, position)
-import qualified Empire.API.Graph.AddConnection              as AddConnection
-import qualified Empire.API.Graph.AddNode                    as AddNode
-import qualified Empire.API.Graph.AddPort                    as AddPort
-import qualified Empire.API.Graph.AddSubgraph                as AddSubgraph
-import qualified Empire.API.Graph.AutolayoutNodes            as AutolayoutNodes
-import qualified Empire.API.Graph.CollaborationUpdate        as CollaborationUpdate
-import qualified Empire.API.Graph.ConnectUpdate              as ConnectUpdate
-import qualified Empire.API.Graph.GetProgram                 as GetProgram
-import qualified Empire.API.Graph.GetSubgraphs               as GetSubgraphs
-import qualified Empire.API.Graph.MonadsUpdate               as MonadsUpdate
-import qualified Empire.API.Graph.MovePort                   as MovePort
-import qualified Empire.API.Graph.NodeResultUpdate           as NodeResultUpdate
-import qualified Empire.API.Graph.NodesUpdate                as NodesUpdate
-import qualified Empire.API.Graph.NodeTypecheckerUpdate      as NodeTCUpdate
-import qualified Empire.API.Graph.RemoveConnection           as RemoveConnection
-import qualified Empire.API.Graph.RemoveNodes                as RemoveNodes
-import qualified Empire.API.Graph.RemovePort                 as RemovePort
-import qualified Empire.API.Graph.RenameNode                 as RenameNode
-import qualified Empire.API.Graph.RenamePort                 as RenamePort
-import qualified Empire.API.Graph.SearchNodes                as SearchNodes
-import qualified Empire.API.Graph.SetNodeCode                as SetNodeCode
-import qualified Empire.API.Graph.SetNodeExpression          as SetNodeExpression
-import qualified Empire.API.Graph.SetNodesMeta               as SetNodesMeta
-import qualified Empire.API.Graph.SetPortDefault             as SetPortDefault
-import qualified Empire.API.Response                         as Response
-import           NodeEditor.Action.Basic                     (localAddConnection, localAddExpressionNode, localAddPort, localAddSubgraph,
-                                                              localMerge, localMoveNodes, localMovePort, localRemoveConnection,
-                                                              localRemoveNodes, localRemovePort, localRenameNode, localSetCode,
-                                                              localSetNodeCode, localSetNodeExpression, localSetNodesMeta,
-                                                              localSetPortDefault, localSetSearcherHints, localUpdateExpressionNode,
-                                                              localUpdateExpressionNodes, localUpdateInputNode, localUpdateNodeTypecheck,
-                                                              setNodeProfilingData, setNodeValue, updateGraph, updateScene)
+import qualified LunaStudio.API.Graph.AddConnection          as AddConnection
+import qualified LunaStudio.API.Graph.AddNode                as AddNode
+import qualified LunaStudio.API.Graph.AddPort                as AddPort
+import qualified LunaStudio.API.Graph.AddSubgraph            as AddSubgraph
+import qualified LunaStudio.API.Graph.AutolayoutNodes        as AutolayoutNodes
+import qualified LunaStudio.API.Graph.CollaborationUpdate    as CollaborationUpdate
+import qualified LunaStudio.API.Graph.GetProgram             as GetProgram
+import qualified LunaStudio.API.Graph.GetSubgraphs           as GetSubgraphs
+import qualified LunaStudio.API.Graph.MonadsUpdate           as MonadsUpdate
+import qualified LunaStudio.API.Graph.MovePort               as MovePort
+import qualified LunaStudio.API.Graph.NodeResultUpdate       as NodeResultUpdate
+import qualified LunaStudio.API.Graph.NodeTypecheckerUpdate  as NodeTCUpdate
+import qualified LunaStudio.API.Graph.RemoveConnection       as RemoveConnection
+import qualified LunaStudio.API.Graph.RemoveNodes            as RemoveNodes
+import qualified LunaStudio.API.Graph.RemovePort             as RemovePort
+import qualified LunaStudio.API.Graph.RenameNode             as RenameNode
+import qualified LunaStudio.API.Graph.RenamePort             as RenamePort
+import qualified LunaStudio.API.Graph.Result                 as Result
+import qualified LunaStudio.API.Graph.SearchNodes            as SearchNodes
+import qualified LunaStudio.API.Graph.SetNodeExpression      as SetNodeExpression
+import qualified LunaStudio.API.Graph.SetNodesMeta           as SetNodesMeta
+import qualified LunaStudio.API.Graph.SetPortDefault         as SetPortDefault
+import qualified LunaStudio.API.Response                     as Response
+import qualified LunaStudio.Data.Graph                       as Graph
+import           LunaStudio.Data.Node                        (nodeId)
+import           LunaStudio.Data.NodeLoc                     (NodePath, prependPath)
+import qualified LunaStudio.Data.NodeLoc                     as NodeLoc
+import           NodeEditor.Action.Basic                     (localAddConnections, localMerge, localRemoveConnections, localRemoveNodes,
+                                                              localSetSearcherHints, localUpdateNodeTypecheck,
+                                                              localUpdateOrAddExpressionNode, localUpdateOrAddExpressionNodePreventingPorts,
+                                                              localUpdateOrAddInputNode, localUpdateOrAddOutputNode, setNodeProfilingData,
+                                                              setNodeValue, updateGraph, updateScene)
 import           NodeEditor.Action.Basic.Revert              (revertAddConnection, revertAddNode, revertAddPort, revertAddSubgraph,
                                                               revertMovePort, revertRemoveConnection, revertRemoveNodes, revertRemovePort,
-                                                              revertRenameNode, revertSetNodeCode, revertSetNodeExpression,
-                                                              revertSetNodesMeta, revertSetPortDefault)
+                                                              revertRenameNode, revertSetNodeExpression, revertSetNodesMeta,
+                                                              revertSetPortDefault)
 import           NodeEditor.Action.Basic.UpdateCollaboration (bumpTime, modifyTime, refreshTime, touchCurrentlySelected, updateClient)
 import           NodeEditor.Action.Batch                     (collaborativeModify, getProgram, requestCollaborationRefresh)
-import           NodeEditor.Action.Camera                    (centerGraph)
+import           NodeEditor.Action.Camera                    (tryLoadCamera)
 import           NodeEditor.Action.Command                   (Command)
 import           NodeEditor.Action.State.App                 (setBreadcrumbs)
 import           NodeEditor.Action.State.Graph               (inCurrentLocation, isCurrentLocation)
-import           NodeEditor.Action.State.NodeEditor          (modifyExpressionNode, updateMonads)
+import           NodeEditor.Action.State.NodeEditor          (isGraphLoaded, modifyExpressionNode, setGraphLoaded, updateMonads)
 import           NodeEditor.Action.UUID                      (isOwnRequest)
 import qualified NodeEditor.Batch.Workspace                  as Workspace
 import           NodeEditor.Event.Batch                      (Event (..))
@@ -63,93 +58,92 @@ import           NodeEditor.State.Global                     (State)
 import qualified NodeEditor.State.Global                     as Global
 
 
+applyResult :: Result.Result -> NodePath -> Command State ()
+applyResult = applyResult' False
+
+applyResultPreventingExpressionNodesPorts :: Result.Result -> NodePath -> Command State ()
+applyResultPreventingExpressionNodesPorts = applyResult' True
+
+applyResult' :: Bool -> Result.Result -> NodePath -> Command State ()
+applyResult' preventPorts res path = do
+    let exprNodeUpdateFunction = if preventPorts then localUpdateOrAddExpressionNodePreventingPorts else localUpdateOrAddExpressionNode
+    void $ localRemoveNodes       . map (convert . (path,)) $ res ^. Result.removedNodes
+    void $ localRemoveConnections . map (prependPath path)  $ res ^. Result.removedConnections
+    mapM_ (exprNodeUpdateFunction . convert . (path,)) $ res ^. Result.graphUpdates . Graph.nodes
+    void $ localAddConnections . map (\(src', dst') -> (prependPath path src', prependPath path dst')) $ res ^. Result.graphUpdates . Graph.connections
+    let inputSidebar  = res ^. Result.graphUpdates . Graph.inputSidebar
+        outputSidebar = res ^. Result.graphUpdates . Graph.outputSidebar
+    when (isJust inputSidebar)  $ forM_ inputSidebar  $ localUpdateOrAddInputNode  . convert . (path,)
+    when (isJust outputSidebar) $ forM_ outputSidebar $ localUpdateOrAddOutputNode . convert . (path,)
+
 handle :: Event.Event -> Maybe (Command State ())
 handle (Event.Batch ev) = Just $ case ev of
     GetProgramResponse response -> handleResponse response success failure where
         location       = response ^. Response.request . GetProgram.location
         success result = do
-            isGraphLoaded  <- use $ Global.workspace . Workspace.isGraphLoaded
-            isGoodLocation <- isCurrentLocation location
-            when isGoodLocation $ do
+            whenM (isCurrentLocation location) $ do
                 putStrLn "GetProgram"
                 let nodes       = convert . (NodeLoc.empty,) <$> result ^. GetProgram.graph . Graph.nodes
                     input       = convert . (NodeLoc.empty,) <$> result ^. GetProgram.graph . Graph.inputSidebar
                     output      = convert . (NodeLoc.empty,) <$> result ^. GetProgram.graph . Graph.outputSidebar
                     connections = result ^. GetProgram.graph . Graph.connections
                     monads      = result ^. GetProgram.graph . Graph.monads
-                    code        = result ^. GetProgram.code
                     nsData      = result ^. GetProgram.nodeSearcherData
                     breadcrumb  = result ^. GetProgram.breadcrumb
-                Global.workspace . Workspace.nodeSearcherData .= nsData
+                shouldCenter <- not <$> isGraphLoaded
+                Global.workspace . _Just . Workspace.nodeSearcherData .= nsData
                 setBreadcrumbs breadcrumb
                 updateGraph nodes input output connections monads
-                unless isGraphLoaded $ do
-                    centerGraph
-                    requestCollaborationRefresh
-                Global.workspace . Workspace.isGraphLoaded .= True
+                setGraphLoaded True
                 updateScene
+                when shouldCenter $ do
+                    tryLoadCamera
+                    requestCollaborationRefresh
         failure _ = do
-            isOnTop <- uses Global.workspace Workspace.isOnTopBreadcrumb
+            isOnTop <- fromMaybe True <$> preuses (Global.workspace . traverse) Workspace.isOnTopBreadcrumb
             if isOnTop
                 then fatal "Cannot get file from backend"
                 else do
-                    Global.workspace %= Workspace.upperWorkspace
+                    Global.workspace . _Just %= Workspace.upperWorkspace
                     getProgram
 
     AddConnectionResponse response -> handleResponse response success failure where
-        requestId          = response ^. Response.requestId
-        request            = response ^. Response.request
-        location           = request  ^. AddConnection.location
-        failure _          = whenM (isOwnRequest requestId) $ revertAddConnection request
-        success connection = inCurrentLocation location $ \path -> do
-            void $ localAddConnection (prependPath path (connection ^. src)) (prependPath path (connection ^. dst))
+        requestId      = response ^. Response.requestId
+        request        = response ^. Response.request
+        location       = request  ^. AddConnection.location
+        failure _      = whenM (isOwnRequest requestId) $ revertAddConnection request
+        success result = inCurrentLocation location $ applyResult result
 
     AddNodeResponse response -> handleResponse response success failure where
-        requestId     = response ^. Response.requestId
-        request       = response ^. Response.request
-        location      = request  ^. AddNode.location
-        failure _     = whenM (isOwnRequest requestId) $ revertAddNode request
-        success node' = inCurrentLocation location $ \path -> do
-            let node = convert (path, node')
-            ownRequest <- isOwnRequest requestId
-            if ownRequest then do
-                 void $ localUpdateExpressionNode node
-                 collaborativeModify [node ^. nodeLoc]
-            else localAddExpressionNode node
+        requestId      = response ^. Response.requestId
+        request        = response ^. Response.request
+        location       = request  ^. AddNode.location
+        nl             = request  ^. AddNode.nodeLoc
+        failure _      = whenM (isOwnRequest requestId) $ revertAddNode request
+        success result = inCurrentLocation location $ \path -> do
+            applyResult result path
+            whenM (isOwnRequest requestId) $ collaborativeModify [nl]
 
     AddPortResponse response -> handleResponse response success failure where
-        requestId     = response ^. Response.requestId
-        request       = response ^. Response.request
-        location      = request  ^. AddPort.location
-        portRef       = request  ^. AddPort.outPortRef
-        failure _     = whenM (isOwnRequest requestId) $ revertAddPort request
-        success node' = inCurrentLocation location $ \path -> do
-            let node = convert (path, node')
-            ownRequest    <- isOwnRequest requestId
-            if ownRequest then do
-                 void $ localUpdateInputNode node
-            else do
-                --TODO[LJK, PM]: What should happen if localAddPort fails? (Example reason - node is not in graph)
-                void $ localAddPort $ prependPath path portRef
-                void $ localUpdateInputNode node
+        requestId      = response ^. Response.requestId
+        request        = response ^. Response.request
+        location       = request  ^. AddPort.location
+        failure _      = whenM (isOwnRequest requestId) $ revertAddPort request
+        success result = inCurrentLocation location $ applyResult result
 
     AddSubgraphResponse response -> handleResponse response success failure where
         requestId      = response ^. Response.requestId
         request        = response ^. Response.request
         location       = request  ^. AddSubgraph.location
-        conns          = request  ^. AddSubgraph.connections
         failure _      = whenM (isOwnRequest requestId) $ revertAddSubgraph request
-        success nodes' = inCurrentLocation location $ \path -> do
-            let nodes = (convert . (path,) <$> nodes')
-            ownRequest <- isOwnRequest requestId
-            if ownRequest then do
-                localUpdateExpressionNodes nodes
-                collaborativeModify $ flip map nodes $ view nodeLoc
-            else void $ localAddSubgraph nodes (map (\conn -> (prependPath path (conn ^. src), prependPath path (conn ^. dst))) conns)
+        success result = inCurrentLocation location $ \path -> do
+            applyResult result path
+            whenM (isOwnRequest requestId) $
+                collaborativeModify $ map (convert . (path,) . view nodeId) $ result ^. Result.graphUpdates . Graph.nodes
 
     AutolayoutNodesResponse response -> handleResponse response success doNothing where
         location       = response ^. Response.request . AutolayoutNodes.location
-        success result = inCurrentLocation location $ \_ -> void $ localMoveNodes result
+        success result = inCurrentLocation location $ applyResult result
 
     CollaborationUpdate update -> inCurrentLocation (update ^. CollaborationUpdate.location) $ \path -> do
         let clientId = update ^. CollaborationUpdate.clientId
@@ -167,12 +161,6 @@ handle (Event.Batch ev) = Just $ case ev of
                 CollaborationUpdate.CancelTouch nodeLocs -> touchNodes nodeLocs $  Node.collaboration . Node.touch  . at clientId .= Nothing
                 CollaborationUpdate.Refresh             -> touchCurrentlySelected
 
-    ConnectUpdate update -> do
-        let src' = update ^. ConnectUpdate.connection' . src
-            dst' = update ^. ConnectUpdate.connection' . dst
-        inCurrentLocation (update ^. ConnectUpdate.location') $ \path -> do
-            void $ localAddConnection (prependPath path src') (prependPath path dst')
-
     DumpGraphVizResponse response -> handleResponse response doNothing doNothing
 
     --TODO[LJK, PM]: Review this Handler
@@ -189,18 +177,11 @@ handle (Event.Batch ev) = Just $ case ev of
             updateMonads $ update ^. MonadsUpdate.monads --FIXME updateMonads in path!
 
     MovePortResponse response -> handleResponse response success failure where
-        requestId     = response ^. Response.requestId
-        request       = response ^. Response.request
-        location      = request  ^. MovePort.location
-        portRef       = request  ^. MovePort.portRef
-        newPos        = request  ^. MovePort.newPortPos
-        failure _     = whenM (isOwnRequest requestId) $ revertMovePort request
-        success node' = inCurrentLocation location $ \path -> do
-            let node = convert (path, node')
-            ownRequest <- isOwnRequest requestId
-            if ownRequest then
-                void $ localUpdateInputNode node
-            else void $ localMovePort portRef newPos >> localUpdateInputNode node
+        requestId      = response ^. Response.requestId
+        request        = response ^. Response.request
+        location       = request  ^. MovePort.location
+        failure _      = whenM (isOwnRequest requestId) $ revertMovePort request
+        success result = inCurrentLocation location $ applyResult result
 
     NodeResultUpdate update -> do
         let location = update ^. NodeResultUpdate.location
@@ -208,10 +189,6 @@ handle (Event.Batch ev) = Just $ case ev of
             let nid = update ^. NodeResultUpdate.nodeId
             setNodeValue         (convert (path, nid)) $ update ^. NodeResultUpdate.value
             setNodeProfilingData (convert (path, nid)) $ update ^. NodeResultUpdate.execTime
-
-    NodesUpdate update -> do
-        inCurrentLocation (update ^. NodesUpdate.location) $ \path -> do
-            localUpdateExpressionNodes $ convert . (path,) <$> update ^. NodesUpdate.nodes
 
     NodeTypecheckerUpdate update -> do
       inCurrentLocation (update ^. NodeTCUpdate.location) $ \path ->
@@ -223,132 +200,66 @@ handle (Event.Batch ev) = Just $ case ev of
         requestId       = response ^. Response.requestId
         request         = response ^. Response.request
         location        = request  ^. RemoveConnection.location
-        connId          = request  ^. RemoveConnection.connId
         failure inverse = whenM (isOwnRequest requestId) $ revertRemoveConnection request inverse
-        success _       = inCurrentLocation location $ \path -> do
-            ownRequest <- isOwnRequest requestId
-            if ownRequest then
-                --TODO[LJK]: This is left to remind to set Confirmed flag in changes
-                return ()
-            else void $ localRemoveConnection $ prependPath path connId
-
-    RemoveConnectionUpdate update -> do
-        inCurrentLocation (update ^. RemoveConnection.location') $ \path ->
-            void $ localRemoveConnection $ prependPath path $ update ^. RemoveConnection.connId'
+        success result  = inCurrentLocation location $ applyResult result
 
     RemoveNodesResponse response -> handleResponse response success failure where
         requestId       = response ^. Response.requestId
         request         = response ^. Response.request
         location        = request  ^. RemoveNodes.location
-        nodeLocs        = request  ^. RemoveNodes.nodeLocs
         failure inverse = whenM (isOwnRequest requestId) $ revertRemoveNodes request inverse
-        success _       = inCurrentLocation location $ \path -> do
-            ownRequest <- isOwnRequest requestId
-            if ownRequest then
-                --TODO[LJK]: This is left to remind to set Confirmed flag in changes
-                return ()
-            else void $ localRemoveNodes $ prependPath path <$> nodeLocs
+        success result  = inCurrentLocation location $ applyResult result
 
     RemovePortResponse response -> handleResponse response success failure where
         requestId       = response ^. Response.requestId
         request         = response ^. Response.request
         location        = request  ^. RemovePort.location
-        portRef         = request  ^. RemovePort.portRef
         failure inverse = whenM (isOwnRequest requestId) $ revertRemovePort request inverse
-        success _       = inCurrentLocation location $ \path -> do
-            ownRequest <- isOwnRequest requestId
-            if ownRequest then
-                --TODO[LJK]: This is left to remind to set Confirmed flag in changes
-                return ()
-            else void $ localRemovePort $ prependPath path portRef
+        success result  = inCurrentLocation location $ applyResult result
 
     RenameNodeResponse response -> handleResponse response success failure where
         requestId       = response ^. Response.requestId
         request         = response ^. Response.request
         location        = request  ^. RenameNode.location
-        nid             = request  ^. RenameNode.nodeId
-        name            = request  ^. RenameNode.name
         failure inverse = whenM (isOwnRequest requestId) $ revertRenameNode request inverse
-        success _       = inCurrentLocation location $ \path -> do
-            ownRequest <- isOwnRequest requestId
-            if ownRequest then
-                --TODO[LJK]: This is left to remind to set Confirmed flag in changes
-                return ()
-            else void $ localRenameNode (convert (path, nid)) name
+        success result  = inCurrentLocation location $ applyResult result
 
     RenamePortResponse response -> handleResponse response success failure where
         requestId       = response ^. Response.requestId
         request         = response ^. Response.request
         location        = request  ^. RenamePort.location
-        portRef         = request  ^. RenamePort.portRef
-        name            = request  ^. RenamePort.name
         failure inverse = whenM (isOwnRequest requestId) $ $notImplemented
-        success _       = inCurrentLocation location $ \path -> do
-            ownRequest <- isOwnRequest requestId
-            if ownRequest then
-                --TODO[LJK]: This is left to remind to set Confirmed flag in changes
-                return ()
-            else void $ $notImplemented
-
+        success result  = inCurrentLocation location $ applyResult result
 
     SearchNodesResponse response -> handleResponse response success doNothing where
         requestId      = response ^. Response.requestId
         location       = response ^. Response.request . SearchNodes.location
-        success result = inCurrentLocation location $ \path -> do
+        success result = inCurrentLocation location $ \_ -> do
             ownRequest <- isOwnRequest requestId
             when ownRequest $
                 localSetSearcherHints $ result ^. SearchNodes.nodeSearcherData
-
-    SetNodeCodeResponse response -> handleResponse response success failure where
-        requestId       = response ^. Response.requestId
-        request         = response ^. Response.request
-        location        = request  ^. SetNodeCode.location
-        nid             = request  ^. SetNodeCode.nodeId
-        code            = request  ^. SetNodeCode.newCode
-        failure inverse = whenM (isOwnRequest requestId) $ revertSetNodeCode request inverse
-        success _       = inCurrentLocation location $ \path ->  do
-            ownRequest <- isOwnRequest requestId
-            if ownRequest then
-                return ()
-            else void $ localSetNodeCode (convert (path, nid)) code
 
     SetNodeExpressionResponse response -> handleResponse response success failure where
         requestId       = response ^. Response.requestId
         request         = response ^. Response.request
         location        = request  ^. SetNodeExpression.location
-        nid             = request  ^. SetNodeExpression.nodeId
-        expression      = request  ^. SetNodeExpression.expression
         failure inverse = whenM (isOwnRequest requestId) $ revertSetNodeExpression request inverse
-        success _       = inCurrentLocation location $ \path -> do
-            ownRequest <- isOwnRequest requestId
-            if ownRequest then
-                return ()
-            else void $ localSetNodeExpression (convert (path, nid)) expression
+        success result  = inCurrentLocation location $ applyResult result
+
 
     SetNodesMetaResponse response -> handleResponse response success failure where
         requestId       = response ^. Response.requestId
         request         = response ^. Response.request
         location        = request  ^. SetNodesMeta.location
-        updates         = request  ^. SetNodesMeta.updates
         failure inverse = whenM (isOwnRequest requestId) $ revertSetNodesMeta request inverse
-        success _       = inCurrentLocation location $ \path -> do
-            ownRequest <- isOwnRequest requestId
-            if ownRequest then
-                return ()
-            else void $ localSetNodesMeta $ map (\(nid, meta) -> (convert (path, nid), meta ^. position, meta ^. displayResult)) updates
+        success result  = whenM (not <$> isOwnRequest requestId) $ inCurrentLocation location $ applyResult result
 
     SetPortDefaultResponse response -> handleResponse response success failure where
         requestId       = response ^. Response.requestId
         request         = response ^. Response.request
         location        = request  ^. SetPortDefault.location
-        portRef         = request  ^. SetPortDefault.portRef
-        defaultVal      = request  ^. SetPortDefault.defaultValue
         failure inverse = whenM (isOwnRequest requestId) $ revertSetPortDefault request inverse
-        success _       = inCurrentLocation location $ \path -> do
-            ownRequest <- isOwnRequest requestId
-            if ownRequest then
-                return ()
-            else void $ mapM (localSetPortDefault (prependPath path portRef)) defaultVal
+        success result  = inCurrentLocation location $ applyResultPreventingExpressionNodesPorts result
 
     TypeCheckResponse response -> handleResponse response doNothing doNothing
 

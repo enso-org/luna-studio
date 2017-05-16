@@ -13,7 +13,7 @@ import           Prologue             hiding (throwM)
 import           Util                 as Util
 import qualified ZMQ.Bus.Trans        as Bus
 
-import qualified Empire.API.Topic     as Topic
+import qualified LunaStudio.API.Topic     as Topic
 
 
 type GuiID   = UUID

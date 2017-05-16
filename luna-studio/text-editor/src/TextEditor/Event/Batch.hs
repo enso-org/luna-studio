@@ -4,14 +4,14 @@ module TextEditor.Event.Batch where
 import           Data.Aeson                             (ToJSON)
 import           Common.Prelude
 
-import qualified Empire.API.Atom.IsSaved                as IsSaved
-import qualified Empire.API.Atom.GetBuffer              as GetBuffer
-import qualified Empire.API.Atom.Substitute             as Substitute
-import qualified Empire.API.Atom.CloseFile              as CloseFile
-import qualified Empire.API.Atom.OpenFile               as OpenFile
-import qualified Empire.API.Atom.SaveFile               as SaveFile
-import qualified Empire.API.Atom.SetProject             as SetProject
-import qualified Empire.API.Control.EmpireStarted       as EmpireStarted
+import qualified LunaStudio.API.Atom.IsSaved                as IsSaved
+import qualified LunaStudio.API.Atom.GetBuffer              as GetBuffer
+import qualified LunaStudio.API.Atom.Substitute             as Substitute
+import qualified LunaStudio.API.Atom.CloseFile              as CloseFile
+import qualified LunaStudio.API.Atom.OpenFile               as OpenFile
+import qualified LunaStudio.API.Atom.SaveFile               as SaveFile
+import qualified LunaStudio.API.Atom.SetProject             as SetProject
+import qualified LunaStudio.API.Control.EmpireStarted       as EmpireStarted
 
 
 data Event = UnknownEvent String

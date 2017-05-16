@@ -9,13 +9,13 @@ module NodeEditor.Action.Node.Drag
 import           Common.Prelude
 import           Control.Arrow
 import qualified Data.Map                                   as Map
-import           Empire.API.Data.NodeLoc                    (NodeLoc)
-import           Empire.API.Data.Port                       (InPortIndex (Self))
-import           Empire.API.Data.PortRef                    (InPortRef (InPortRef), OutPortRef (OutPortRef))
-import           Empire.API.Data.Position                   (Position, move, vector)
+import           LunaStudio.Data.NodeLoc                    (NodeLoc)
+import           LunaStudio.Data.Port                       (InPortIndex (Self))
+import           LunaStudio.Data.PortRef                    (InPortRef (InPortRef), OutPortRef (OutPortRef))
+import           LunaStudio.Data.Position                   (Position, move, vector)
 import           NodeEditor.Action.Basic                    (connect, localMoveNodes, moveNodes, selectNodes, updatePortSelfVisibility)
 import           NodeEditor.Action.Command                  (Command)
-import           NodeEditor.Action.Node.Snap                (snap)
+import           LunaStudio.Data.Geometry                   (snap)
 import           NodeEditor.Action.State.Model              (createConnectionModel, getIntersectingConnections)
 import           NodeEditor.Action.State.NodeEditor         (getConnection, getExpressionNode, getNodeEditor, getSelectedNodes,
                                                              modifyConnection, modifyExpressionNode, modifyNodeEditor)
@@ -104,7 +104,8 @@ snapConnectionsForNodes mousePos nodeLocs = when (length nodeLocs == 1) $ forM_ 
                         let conns = map (Connection.mode .~ Highlighted) [connModel1, connModel2]
                             conns' = mapMaybe (toPosConnection ne) conns
                         modifyNodeEditor $ halfConnections .= map convert conns'
-                        continue $ \nodeDrag -> update $ nodeDrag & nodeDragSnappedConnIdAndPrevMode ?~ (connId, conn ^. Connection.mode)
+                        continue $ \nodeDrag -> when (Just connId /= (fst <$> nodeDrag ^. nodeDragSnappedConnIdAndPrevMode))
+                                                    $ update $ nodeDrag & nodeDragSnappedConnIdAndPrevMode ?~ (connId, conn ^. Connection.mode)
                         modifyConnection connId $ Connection.mode .= Dimmed
                     _ -> continue clearSnappedConnection
             _ -> continue clearSnappedConnection

@@ -7,7 +7,7 @@ import           Data.ByteString.Lazy.Char8        (ByteString)
 import qualified Data.Map.Lazy                     as Map
 
 import           Common.Batch.Connector.Connection (ControlCode (ConnectionTakeover, Welcome), WebMessage (ControlMessage, WebMessage))
-import qualified Empire.API.Topic                  as Topic
+import qualified LunaStudio.API.Topic                  as Topic
 import           NodeEditor.Event.Batch            as Batch
 import           NodeEditor.Event.Connection       as Connection
 import qualified NodeEditor.Event.Event            as Event
@@ -28,24 +28,20 @@ handlers = Map.fromList [ handle GetProgramResponse
                         , handle AddSubgraphResponse
                         , handle AutolayoutNodesResponse
                         , handle CollaborationUpdate
-                        , handle ConnectUpdate
                         , handle DumpGraphVizResponse
                         , handle EmpireStarted
                         , handle GetSubgraphsResponse
                         , handle MonadsUpdate
                         , handle MovePortResponse
                         , handle NodeResultUpdate
-                        , handle NodesUpdate
                         , handle NodeTypecheckerUpdate
                         , handle RedoResponse
                         , handle RemoveConnectionResponse
-                        , handle RemoveConnectionUpdate
                         , handle RemoveNodesResponse
                         , handle RemovePortResponse
                         , handle RenameNodeResponse
                         , handle RenamePortResponse
                         , handle SearchNodesResponse
-                        , handle SetNodeCodeResponse
                         , handle SetNodeExpressionResponse
                         , handle SetNodesMetaResponse
                         , handle SetPortDefaultResponse

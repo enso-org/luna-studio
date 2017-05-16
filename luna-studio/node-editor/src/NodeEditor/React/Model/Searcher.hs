@@ -1,15 +1,18 @@
 module NodeEditor.React.Model.Searcher where
 
 import           Common.Prelude
-import           Empire.API.Data.Node           (ExpressionNode)
-import           Empire.API.Data.NodeLoc        (NodeLoc)
-import           Empire.API.Data.Position       (Position)
+import           LunaStudio.Data.Node           (ExpressionNode)
+import           LunaStudio.Data.NodeLoc        (NodeLoc)
+import           LunaStudio.Data.PortRef        (OutPortRef)
+import           LunaStudio.Data.Position       (Position)
 import           Text.ScopeSearcher.QueryResult (QueryResult)
 import qualified Text.ScopeSearcher.QueryResult as Result
 
 
-data Mode = Command [QueryResult ()]
-          | Node [QueryResult ExpressionNode]
+data Mode = Command                  [QueryResult ()]
+          | Node     (Maybe NodeLoc) [QueryResult ExpressionNode]
+          | NodeName NodeLoc         [QueryResult Text]
+          | PortName OutPortRef      [QueryResult Text]
           deriving (Eq, Generic, Show)
 
 data Searcher = Searcher
@@ -18,17 +21,16 @@ data Searcher = Searcher
       , _mode          :: Mode
       , _input         :: Text
       , _replaceInput  :: Bool
-      , _nodeLoc       :: Maybe NodeLoc
       , _rollbackReady :: Bool
       } deriving (Eq, Generic, Show)
 
 makeLenses ''Searcher
 
 mkDef :: Mode -> Searcher
-mkDef mode' = Searcher def def mode' def False def False
+mkDef mode' = Searcher def def mode' def False False
 
 defNode, defCommand :: Searcher
-defNode    = mkDef $ Node def
+defNode    = mkDef $ Node def def
 defCommand = mkDef $ Command def
 
 selectedExpression :: Getter Searcher Text
@@ -37,8 +39,10 @@ selectedExpression = to getExpression where
         selected' = searcher ^. selected
         mayResult = if selected' == 0 then Just $ searcher ^. input else
             listToMaybe $ drop (selected' - 1) $ case searcher ^. mode of
-                Command results -> Result._name <$> results
-                Node    results -> Result._name <$> results
+                Command    results -> Result._name <$> results
+                Node     _ results -> Result._name <$> results
+                NodeName _ results -> Result._name <$> results
+                PortName _ results -> Result._name <$> results
         expression = fromMaybe (searcher ^. input) mayResult
 
 selectedNode :: Getter Searcher (Maybe ExpressionNode)
@@ -47,17 +51,35 @@ selectedNode = to getNode where
         selected' = searcher ^. selected
         mayNode   = if selected' == 0 then Nothing else
             listToMaybe $ drop (selected' - 1) $ case searcher ^. mode of
-                Node results -> Result._element <$> results
+                Node _ results -> Result._element <$> results
                 _            -> def
 
 resultsLength :: Getter Searcher Int
 resultsLength = to getLength where
     getLength searcher = case searcher ^. mode of
-      Command results -> length results
-      Node    results -> length results
+      Command    results -> length results
+      Node     _ results -> length results
+      NodeName _ results -> length results
+      PortName _ results -> length results
+
+updateNodeResult :: [QueryResult ExpressionNode] -> Mode -> Mode
+updateNodeResult r (Node nl _) = Node nl r
+updateNodeResult _ m           = m
+
+isCommand :: Getter Searcher Bool
+isCommand = to matchCommand where
+  matchCommand searcher = case searcher ^. mode of
+      Command _ -> True
+      _         -> False
 
 isNode :: Getter Searcher Bool
 isNode = to matchNode where
     matchNode searcher = case searcher ^. mode of
-        Node {} -> True
-        _       -> False
+        Node _ _ -> True
+        _        -> False
+
+isNodeName :: Getter Searcher Bool
+isNodeName = to matchNodeName where
+    matchNodeName searcher = case searcher ^. mode of
+        NodeName _ _ -> True
+        _            -> False

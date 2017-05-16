@@ -1,5 +1,8 @@
+{-# LANGUAGE ScopedTypeVariables #-}
+
 module Empire.Server.Atom where
 
+import           Control.Monad.Catch                   (try)
 import           Control.Monad.State                   (StateT)
 import qualified Data.Text.IO                          as Text
 import           Prologue                              hiding (Item)
@@ -10,18 +13,19 @@ import qualified System.IO.Temp                        as Temp
 import           Empire.Env                            (Env)
 import qualified Empire.Env                            as Env
 
-import           Empire.API.Request                    (Request (..))
-import qualified Empire.API.Atom.SetProject            as SetProject
-import qualified Empire.API.Atom.OpenFile              as OpenFile
-import qualified Empire.API.Atom.SaveFile              as SaveFile
-import qualified Empire.API.Atom.CloseFile             as CloseFile
-import qualified Empire.API.Atom.GetBuffer             as GetBuffer
-import qualified Empire.API.Atom.IsSaved               as IsSaved
-import qualified Empire.API.Atom.Substitute            as Substitute
-import qualified Empire.API.Response                   as Response
+import           LunaStudio.API.Request                    (Request (..))
+import qualified LunaStudio.API.Atom.SetProject            as SetProject
+import qualified LunaStudio.API.Atom.OpenFile              as OpenFile
+import qualified LunaStudio.API.Atom.SaveFile              as SaveFile
+import qualified LunaStudio.API.Atom.CloseFile             as CloseFile
+import qualified LunaStudio.API.Atom.GetBuffer             as GetBuffer
+import qualified LunaStudio.API.Atom.IsSaved               as IsSaved
+import qualified LunaStudio.API.Atom.Substitute            as Substitute
+import qualified LunaStudio.API.Response                   as Response
 
 import qualified Empire.Commands.Graph                 as Graph
 import qualified Empire.Commands.Library               as Library
+import           Empire.Data.AST                       (SomeASTException)
 import qualified Empire.Data.Library                   as Library
 import qualified Empire.Empire                         as Empire
 import           Empire.Server.Server                  (errorMessage, replyFail, replyOk)
@@ -32,16 +36,17 @@ logger :: Logger.Logger
 logger = Logger.getLogger $(Logger.moduleName)
 
 handleSetProject :: Request SetProject.Request -> StateT Env BusT ()
-handleSetProject = $notImplemented
+handleSetProject a = return ()
 
 handleOpenFile :: Request OpenFile.Request -> StateT Env BusT ()
 handleOpenFile req@(Request _ _ (OpenFile.Request path)) = do
     currentEmpireEnv <- use Env.empireEnv
     empireNotifEnv   <- use Env.empireNotif
-    (result, newEmpireEnv) <- liftIO $ Empire.runEmpire empireNotifEnv currentEmpireEnv $ Graph.openFile path
+    result <- liftIO $ try $ Empire.runEmpire empireNotifEnv currentEmpireEnv $ Graph.openFile path
     case result of
-        Left err -> replyFail logger err req (Response.Error err)
-        Right _  -> do
+        Left (exc :: SomeASTException) ->
+            let err = displayException exc in replyFail logger err req (Response.Error err)
+        Right (_, newEmpireEnv)  -> do
             Env.empireEnv .= newEmpireEnv
             replyOk req ()
 

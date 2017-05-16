@@ -3,11 +3,9 @@ module NodeEditor.Action.State.App where
 import           Common.Prelude                     hiding (lens)
 import           Control.Lens.Internal.Zoom         (Focusing)
 import qualified Control.Monad.State                as M
-import qualified JS.GoogleAnalytics                 as GA
 import           NodeEditor.Action.Command          (Command)
-import           NodeEditor.React.Model.App         (App, breadcrumbs, codeEditor)
+import           NodeEditor.React.Model.App         (App, breadcrumbs)
 import           NodeEditor.React.Model.Breadcrumbs (Breadcrumb, BreadcrumbItem, Named)
-import           NodeEditor.React.Model.CodeEditor  (CodeEditor, visible)
 import           NodeEditor.React.Store             (Ref, commit, continueModify)
 import qualified NodeEditor.React.Store             as Store
 import           NodeEditor.State.Global            (State, ui)
@@ -37,13 +35,3 @@ renderIfNeeded = whenM (use $ ui . renderNeeded) $ do
 
 setBreadcrumbs :: Breadcrumb (Named BreadcrumbItem)-> Command State ()
 setBreadcrumbs input = modifyApp $ breadcrumbs .= input
-
-modifyCodeEditor :: (CodeEditor -> CodeEditor) -> Command State ()
-modifyCodeEditor f = modifyApp $ codeEditor %= f
-
-toggleCodeEditor :: Command State ()
-toggleCodeEditor = do
-    GA.sendEvent GA.ToggleText
-    modifyCodeEditor $ visible %~ not
-    -- size <- use $ Global.camera . Camera.camera . Camera.windowSize --TODO[react] remove
-    -- Camera.updateWindowSize size

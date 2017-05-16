@@ -10,7 +10,7 @@ import           Data.ByteString       (ByteString)
 import           Data.ByteString.Lazy  (fromStrict)
 import           Data.Map.Strict       (Map)
 import qualified Data.Map.Strict       as Map
-import qualified Empire.API.Topic      as Topic
+import qualified LunaStudio.API.Topic      as Topic
 import           Empire.Env            (Env)
 import qualified Empire.Server.Atom    as Atom
 import qualified Empire.Server.Graph   as Graph
@@ -38,7 +38,6 @@ handlersMap = Map.fromList
     , makeHandler Graph.handleRenameNode
     , makeHandler Graph.handleRenamePort
     , makeHandler Graph.handleSearchNodes
-    , makeHandler Graph.handleSetNodeCode
     , makeHandler Graph.handleSetNodeExpression
     , makeHandler Graph.handleSetNodesMeta
     , makeHandler Graph.handleSetPortDefault
