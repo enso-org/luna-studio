@@ -1,5 +1,6 @@
 module Main where
 
+import           GHC.IO.Encoding        (setLocaleEncoding, utf8)
 import           Prologue
 import           System.Log.MLogger
 import           System.Log.Options
@@ -26,7 +27,9 @@ opts = Opt.info (helper <*> parser)
                 (Opt.fullDesc <> Opt.header (Version.full False))
 
 main :: IO ()
-main = execParser opts >>= run
+main = do
+    setLocaleEncoding utf8
+    execParser opts >>= run
 
 run :: Cmd -> IO ()
 run cmd = case cmd of

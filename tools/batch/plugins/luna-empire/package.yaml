@@ -3,6 +3,7 @@ version:            0.1.0.0
 author:             New Byte Order <contact@newbyteorder.com>
 
 default-extensions:
+  - LambdaCase
   - NoImplicitPrelude
   - TemplateHaskell
 

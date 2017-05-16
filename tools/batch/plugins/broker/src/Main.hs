@@ -3,6 +3,7 @@
 module Main where
 
 import qualified Control.Concurrent              as Concurrent
+import           GHC.IO.Encoding                 (setLocaleEncoding, utf8)
 
 import           Prologue                        hiding (error, switch)
 import           System.Log.MLogger
@@ -40,7 +41,9 @@ opts = Opt.info (helper <*> parser)
 
 
 main :: IO ()
-main = execParser opts >>= run
+main = do
+    setLocaleEncoding utf8
+    execParser opts >>= run
 
 
 run :: Cmd -> IO ()
