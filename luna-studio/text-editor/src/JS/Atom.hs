@@ -20,8 +20,8 @@ import           TextEditor.Event.Text     (TextEvent, TextEvent (..))
 import qualified TextEditor.Event.Text     as TextEvent
 
 
-foreign import javascript safe "atomCallbackTextEditor.pushCode($1, $2, $3, $4, $5)"
-    pushCode' :: JSString -> Int -> Int -> JSString -> JSVal -> IO ()
+foreign import javascript safe "atomCallbackTextEditor.pushCode($1, $2, $3, $4, $5, $6)"
+    pushCode' :: JSString -> Int -> Int -> JSString -> JSVal -> JSVal -> IO ()
 
 foreign import javascript safe "atomCallbackTextEditor.pushBuffer($1, $2, $3)"
     pushBuffer :: JSString -> JSString -> JSVal -> IO ()
@@ -94,13 +94,17 @@ subscribeText callback = do
     return $ unsubscribeText' wrappedCallback >> releaseCallback wrappedCallback
 
 pushCode :: MonadIO m => TextEvent -> m ()
-pushCode = liftIO . do
-    uri   <- view TextEvent.filePath
-    start <- view TextEvent.start
-    end   <- view TextEvent.stop
-    text  <- view TextEvent.text
-    tags  <- view TextEvent.tags
-    return $ pushCode' (convert uri) start end (convert $ Text.unpack text) $ convertTags tags
+pushCode e = liftIO $ do
+    let uri    = view TextEvent.filePath e
+        start  = view TextEvent.start e
+        end    = view TextEvent.stop e
+        text   = view TextEvent.text e
+        cursor = view TextEvent.cursor e
+        tags   = view TextEvent.tags e
+    jsvalCursor <- toJSVal cursor
+    let lexer = convertTags tags
+    print tags
+    pushCode' (convert uri) start end (convert $ Text.unpack text) jsvalCursor $ lexer
 
 subscribeEventListenerInternal :: (InternalEvent -> IO ()) -> IO (IO ())
 subscribeEventListenerInternal callback = do

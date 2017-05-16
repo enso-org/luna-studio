@@ -465,9 +465,13 @@ updateExprMap new old = do
     setExprMap updated
 
 resendCode :: GraphLocation -> Empire ()
-resendCode (GraphLocation file _) = do
+resendCode loc = resendCodeWithCursor loc Nothing
+
+resendCodeWithCursor :: GraphLocation -> Maybe Int -> Empire ()
+resendCodeWithCursor (GraphLocation file _) cursor = do
     code <- Library.withLibrary file $ use Library.code
-    Publisher.notifyCodeUpdate file 0 (Text.length code) code Nothing $ Lexer.lexer code
+    let lexer = Lexer.lexer code
+    Publisher.notifyCodeUpdate file 0 (Text.length code) code cursor lexer
 
 setNodeMeta :: GraphLocation -> NodeId -> NodeMeta -> Empire ()
 setNodeMeta loc nodeId newMeta = withGraph loc $ do
@@ -640,7 +644,9 @@ substituteCode :: FilePath -> Int -> Int -> Text -> Maybe Int -> Empire (Maybe P
 substituteCode path start end code cursor = do
     newCode <- Library.withLibrary path $ Library.applyDiff start end code
     let loc = GraphLocation path (Breadcrumb [])
-    withTC loc True $ reloadCode loc newCode
+    reparsing <- withTC loc True $ reloadCode loc newCode
+    resendCodeWithCursor loc cursor
+    return reparsing
 
 reloadCode :: GraphLocation -> Text -> Command Graph (Maybe Parser.ReparsingStatus)
 reloadCode loc code = handle (\(_e :: ASTParse.SomeParserException) -> return Nothing) $ do

@@ -19,9 +19,9 @@ module.exports = function () {
     codeListener: function (listener) {
       listeners.codeListener.push(listener);
     },
-    pushCode: function(uri_send, start_send, end_send, text, tags) {
+    pushCode: function(uri_send, start_send, end_send, text, cursor, tags) {
       listeners.codeListener.forEach(function(listener) {
-        listener(uri_send, start_send, end_send, text, tags);
+        listener(uri_send, start_send, end_send, text, cursor, tags);
       });
     },
 

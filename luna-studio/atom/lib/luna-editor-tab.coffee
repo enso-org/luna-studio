@@ -53,7 +53,10 @@ module.exports =
 
         @internal.bufferListener setBuffer
 
-        setCode = (uri_send, start_send, end_send, text) =>
+        setCode = (uri_send, start_send, end_send, text, cursor, lexer) =>
+            console.log(text)
+            console.log(cursor)
+            console.log(lexer)
             withoutTrigger =>
               if @uri == uri_send
               #   start = @getBuffer().positionForCharacterIndex(start_send)
@@ -61,6 +64,8 @@ module.exports =
               #   @getBuffer().setTextInRange [start, end], text
               #   @.scrollToBufferPosition(start)
                   @getBuffer().setText(text)
+                  @.getLastCursor().setScreenPosition(@getBuffer().positionForCharacterIndex(cursor))
+                  @setGrammar(new LunaSemanticGrammar(atom.grammars, lexer))
         @internal.codeListener setCode
 
         @subscribe = new SubAtom
