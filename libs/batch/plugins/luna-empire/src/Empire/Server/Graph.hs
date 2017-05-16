@@ -99,22 +99,12 @@ import           ZMQ.Bus.Trans                          (BusT (..))
 logger :: Logger.Logger
 logger = Logger.getLogger $(Logger.moduleName)
 
-notifyNodeResultUpdate :: GraphLocation -> NodeId -> [VisualizationValue] -> Text -> StateT Env BusT ()
-notifyNodeResultUpdate location nodeId values name = sendToBus' $ NodeResultUpdate.Update location nodeId (NodeValue name values) 42
--- FIXME: report correct execution time
-
 saveCurrentProject :: GraphLocation -> StateT Env BusT ()
 saveCurrentProject loc = do
   currentEmpireEnv <- use Env.empireEnv
   empireNotifEnv   <- use Env.empireNotif
   projectRoot      <- use Env.projectRoot
   void $ liftIO $ Empire.runEmpire empireNotifEnv currentEmpireEnv $ Persistence.saveLocation projectRoot loc
-
-forceTC :: GraphLocation -> StateT Env BusT ()
-forceTC location = do
-    currentEmpireEnv <- use Env.empireEnv
-    empireNotifEnv   <- use Env.empireNotif
-    void $ liftIO $ Empire.runEmpire empireNotifEnv currentEmpireEnv $ Graph.typecheck location
 
 defaultLibraryPath = "Main.luna"
 
@@ -235,7 +225,7 @@ handleAddNode = modifyGraph defInverse action replyResult where
             handle (\(e :: SomeASTException) -> return ()) $ do
                 void $ Graph.connectCondTC False location (getSrcPortByNodeId nid) (getDstPortByNodeLoc nl)
                 Graph.autolayoutNodes location [nodeId]
-        Graph.withGraph location $ Graph.runTC location False
+        Graph.typecheck location
 
 handleAddPort :: Request AddPort.Request -> StateT Env BusT ()
 handleAddPort = modifyGraph defInverse action replyResult where

@@ -112,11 +112,9 @@ startTCWorker env chan = liftIO $ do
     let pmState = interpreterEnv ^. Empire.graph . Graph.ast . Graph.pmState
     void $ Empire.runEmpire env interpreterEnv $ forever $ do
         (loc, g, flush) <- liftIO $ atomically $ readAll chan
-        return ()
         if flush then Typecheck.flushCache else return ()
         Empire.graph .= (g & Graph.ast . Graph.pmState .~ pmState)
         Typecheck.run loc
-        {-zoom (Empire.graph . ast) $ AST.dumpGraphViz "tc_graph"-}
 
 
 startToBusWorker :: TChan Message -> Bus ()
