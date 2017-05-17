@@ -645,7 +645,7 @@ substituteCode path start end code cursor = do
     newCode <- Library.withLibrary path $ Library.applyDiff start end code
     let loc = GraphLocation path (Breadcrumb [])
     reparsing <- withTC loc True $ reloadCode loc newCode
-    resendCodeWithCursor loc cursor
+    Publisher.notifyLexerUpdate path $ Lexer.lexer newCode
     return reparsing
 
 reloadCode :: GraphLocation -> Text -> Command Graph (Maybe Parser.ReparsingStatus)

@@ -14,6 +14,7 @@ import           LunaStudio.Data.Node                       (ExpressionNode, Nod
 import           LunaStudio.Data.TypeRep                    (TypeRep)
 
 import qualified LunaStudio.API.Atom.Substitute             as Substitute
+import qualified LunaStudio.API.Atom.GetBuffer              as GetBuffer
 import qualified LunaStudio.API.Graph.MonadsUpdate          as Monads
 import qualified LunaStudio.API.Graph.NodeResultUpdate      as NodeResult
 import qualified LunaStudio.API.Graph.NodeTypecheckerUpdate as NodeTCUpdate
@@ -33,6 +34,9 @@ notifyResultUpdate loc nid v t =
 notifyCodeUpdate :: (MonadReader CommunicationEnv m, MonadIO m) => FilePath -> Int -> Int -> Text -> Maybe Int -> [(Int, [String])] -> m ()
 notifyCodeUpdate path start end code cursor tags =
     sendUpdate $ CodeUpdate $ Substitute.Update path start end code cursor tags
+
+notifyLexerUpdate :: (MonadReader CommunicationEnv m, MonadIO m) => FilePath -> [(Int, [String])] -> m ()
+notifyLexerUpdate path lexer = sendUpdate $ LexerUpdate $ GetBuffer.LexUpdate path lexer
 
 sendUpdate :: (MonadReader CommunicationEnv m, MonadIO m) => AsyncUpdate -> m ()
 sendUpdate upd = do
