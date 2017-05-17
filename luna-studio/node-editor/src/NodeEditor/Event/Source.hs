@@ -9,7 +9,6 @@ module NodeEditor.Event.Source
 
 import           Common.Prelude                    hiding (on)
 
-import           GHCJS.Marshal.Pure                (pFromJSVal)
 import           GHCJS.Prim                        (fromJSString)
 
 import qualified Common.Batch.Connector.Connection as BatchConnection

@@ -6,6 +6,7 @@ import           Data.Aeson.Types                           (FromJSON, FromJSONK
 import           LunaStudio.API.Atom.CloseFile              as CloseFile
 import           LunaStudio.API.Atom.GetBuffer              as GetBuffer
 import           LunaStudio.API.Atom.IsSaved                as IsSaved
+import           LunaStudio.API.Atom.Lexer                  as Lexer
 import           LunaStudio.API.Atom.OpenFile               as OpenFile
 import           LunaStudio.API.Atom.SaveFile               as SaveFile
 import           LunaStudio.API.Atom.SetProject             as SetProject
@@ -204,6 +205,8 @@ instance ToJSON Redo.Request
 
 instance ToJSON GetBuffer.Request
 instance ToJSON GetBuffer.Result
+
+instance ToJSON Lexer.Update
 
 instance ToJSON Substitute.Request
 instance ToJSON Substitute.Update

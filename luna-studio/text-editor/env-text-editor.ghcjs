@@ -15,5 +15,6 @@ return { start     : function() { run();}
        , bufferListener  : function(callback) { atomCallbackTextEditor.bufferListener(callback); }
        , statusListener  : function(callback) { atomCallbackTextEditor.statusListener(callback); }
        , codeListener  : function(callback) { atomCallbackTextEditor.codeListener(callback); }
+       , lexerListener  : function(callback) { atomCallbackTextEditor.lexerListener(callback); }
        , pushInternalEvent : function(data) { atomCallbackTextEditor.pushInternalEvent(data); }
        }

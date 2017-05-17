@@ -58,15 +58,22 @@ module.exports =
             console.log(cursor)
             console.log(lexer)
             withoutTrigger =>
-              if @uri == uri_send
-              #   start = @getBuffer().positionForCharacterIndex(start_send)
-              #   end = @getBuffer().positionForCharacterIndex(end_send)
-              #   @getBuffer().setTextInRange [start, end], text
-              #   @.scrollToBufferPosition(start)
-                  @getBuffer().setText(text)
-                  @.getLastCursor().setScreenPosition(@getBuffer().positionForCharacterIndex(cursor))
-                  @setGrammar(new LunaSemanticGrammar(atom.grammars, lexer))
+                if @uri == uri_send
+                #   start = @getBuffer().positionForCharacterIndex(start_send)
+                #   end = @getBuffer().positionForCharacterIndex(end_send)
+                #   @getBuffer().setTextInRange [start, end], text
+                #   @.scrollToBufferPosition(start)
+                    @getBuffer().setText(text)
+                    @.getLastCursor().setScreenPosition(@getBuffer().positionForCharacterIndex(cursor))
+                    @setGrammar(new LunaSemanticGrammar(atom.grammars, lexer))
+
+        setLexer = (uri_send, lexer) =>
+            withoutTrigger =>
+                if @uri == uri_send
+                    @setGrammar(new LunaSemanticGrammar(atom.grammars, lexer))
+
         @internal.codeListener setCode
+        @internal.lexerListener setLexer
 
         @subscribe = new SubAtom
         @subscribe.add @getBuffer().onDidChange (event) =>

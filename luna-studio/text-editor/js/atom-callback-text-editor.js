@@ -10,6 +10,7 @@ module.exports = function () {
   var listeners = {
     bufferListener: [],
     codeListener: [],
+    lexerListener: [],
     eventListenerInternal: [],
     textListener: [],
     statusListener: [],
@@ -31,6 +32,15 @@ module.exports = function () {
     pushBuffer: function(data1, data2, data3) {
       listeners.bufferListener.forEach(function(listener) {
         listener(data1, data2, data3);
+      });
+    },
+
+    lexerListener: function (listener) {
+      listeners.lexerListener.push(listener);
+    },
+    pushLexer: function(data1, data2) {
+      listeners.lexerListener.forEach(function(listener) {
+        listener(data1, data2);
       });
     },
 

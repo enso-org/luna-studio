@@ -67,7 +67,6 @@ class LunaSemanticGrammar extends Grammar
     outerRegistry = @registry
     addToken = (text, lexerTags) ->
         scopes = if lexerTags.length == 0 then undefined else lunaClasses[lexerTags[lexerTags.length - 1]] #FIXME use all keywords
-        console.log scopes
         fullScopes = @scopeName + (if scopes != undefined then ("." + scopes) else "")
         tags.push outerRegistry.startIdForScope(fullScopes)
         tags.push text.length
@@ -77,7 +76,6 @@ class LunaSemanticGrammar extends Grammar
     while buffer.length != 0
         if ruleStack.length > 0
             tokenInfo = ruleStack.shift()
-            console.log tokenInfo
             if tokenInfo.tags[0] != "EOL"
                 token = buffer.substr(0, tokenInfo.length)
                 buffer = buffer.substr(tokenInfo.length, buffer.length)

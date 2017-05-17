@@ -3,10 +3,11 @@ module TextEditor.Handler.Text
     ) where
 
 import           Common.Prelude
-import qualified LunaStudio.API.Atom.GetBuffer         as GetBuffer
-import qualified LunaStudio.API.Atom.Substitute        as Substitute
-import qualified LunaStudio.API.Response               as Response
-import           JS.Atom
+import           JS.Atom                           (convertTags, pushBuffer, pushCode, pushLexer)
+import qualified LunaStudio.API.Atom.GetBuffer     as GetBuffer
+import qualified LunaStudio.API.Atom.Lexer         as Lexer
+import qualified LunaStudio.API.Atom.Substitute    as Substitute
+import qualified LunaStudio.API.Response           as Response
 
 
 import           TextEditor.Action.Command         (Command)
@@ -30,6 +31,7 @@ handle (Event.Batch (BufferGetResponse  response)) = Just $ handleResponse respo
     success (GetBuffer.Result code tags) = do
         let uri  = response ^. Response.request . GetBuffer.filePath
         liftIO $ pushBuffer (convert uri) (convert code) (convertTags tags)
+handle (Event.Batch (LexerUpdate (Lexer.Update uri tags))) = Just $ liftIO $ pushLexer (convert uri) (convertTags tags)
 
 
 handle (Event.Batch (SubstituteUpdate (Substitute.Update path start end text cursor tags))) =

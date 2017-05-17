@@ -3,10 +3,11 @@
 module JS.Atom
     ( convertTags
     , pushBuffer
+    , pushCode
+    , pushLexer
     , pushStatus
     , subscribeEventListenerInternal
     , subscribeText
-    , pushCode
     ) where
 
 
@@ -25,6 +26,9 @@ foreign import javascript safe "atomCallbackTextEditor.pushCode($1, $2, $3, $4, 
 
 foreign import javascript safe "atomCallbackTextEditor.pushBuffer($1, $2, $3)"
     pushBuffer :: JSString -> JSString -> JSVal -> IO ()
+
+foreign import javascript safe "atomCallbackTextEditor.pushLexer($1, $2)"
+    pushLexer :: JSString -> JSVal -> IO ()
 
 foreign import javascript safe "atomCallbackTextEditor.pushStatus($1, $2, $3)"
     pushStatus :: JSString -> JSString -> JSString -> IO ()
