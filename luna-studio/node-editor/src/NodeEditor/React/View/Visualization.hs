@@ -120,7 +120,10 @@ fromJsonValue value = case (Aeson.decode $ ByteString.pack value :: Maybe Aeson.
                                   , onWheel     $ \e _ _ -> [stopPropagation e]
                                   ] $ table_ $ tbody_ $ rows $ keyed $ Vector.toList a
     Just (Aeson.Object _) -> mempty
-    Just (Aeson.String _) -> mempty
+    Just (Aeson.String a) -> div_ [ "className" $= Style.prefix "string-scroll"
+                                  , onScroll    $ \e     -> [stopPropagation e]
+                                  , onWheel     $ \e _ _ -> [stopPropagation e]
+                                  ] $ elemString $ convert a
     Just (Aeson.Number _) -> mempty
     Just (Aeson.Bool   _) -> mempty
     Just (Aeson.Null    ) -> mempty

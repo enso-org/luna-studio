@@ -6,12 +6,15 @@
     line-height:    16rem;
     top:           -6rem !important;
 }
+
 .luna-node__short-value {
-    white-space: nowrap;
+    white-space:   nowrap;
+    max-width:     200rem;
+    text-overflow: ellipsis;
+    overflow:      hidden;
 }
 
 .luna-node__visualizations {
-    white-space: nowrap;
     table {
         border-collapse: collapse;
     }
@@ -26,11 +29,16 @@
         color:         #333;
         padding-right: 0;
     }
-    .luna-table-scroll {
+    .luna-table-scroll,
+    .luna-string-scroll {
         margin-top:    10rem;
         max-height:    345rem;
         background:    #1e1e1e;
         border-radius: 3rem;
         overflow-y:    scroll;
+    }
+    .luna-string-scroll {
+        padding: 10rem;
+        width:   200rem;
     }
 }
