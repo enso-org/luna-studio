@@ -5,9 +5,9 @@ lunaClasses = {
     ## Layout
     # BOF: '',
     # EOF: '',
-    # EOL: '',
+    EOL: '',
     # Terminator: ''
-    # BlockStart: '',
+    BlockStart: 'keyword',
     # Block: '',
     # Group: '',
     # Marker: '',
@@ -67,8 +67,7 @@ class LunaSemanticGrammar extends Grammar
     outerRegistry = @registry
     addToken = (text, lexerTags) ->
         scopes = if lexerTags.length == 0 then undefined else lunaClasses[lexerTags[lexerTags.length - 1]] #FIXME use all keywords
-        console.log lexerTags
-        console.log text
+        console.log scopes
         fullScopes = @scopeName + (if scopes != undefined then ("." + scopes) else "")
         tags.push outerRegistry.startIdForScope(fullScopes)
         tags.push text.length
@@ -77,18 +76,12 @@ class LunaSemanticGrammar extends Grammar
 
     while buffer.length != 0
         if ruleStack.length > 0
-            lengthDiff = ruleStack[0].length - buffer.length
-
-            if lengthDiff > 0
-                tokenInfo = ruleStack[0]
-                token = buffer
-                buffer = ''
-                ruleStack[0].length = lengthDiff
-            else
-                tokenInfo = ruleStack.shift()
+            tokenInfo = ruleStack.shift()
+            console.log tokenInfo
+            if tokenInfo.tags[0] != "EOL"
                 token = buffer.substr(0, tokenInfo.length)
                 buffer = buffer.substr(tokenInfo.length, buffer.length)
-            addToken(token, tokenInfo.tags)
+                addToken(token, tokenInfo.tags)
         else
             addToken(buffer, [])
             buffer = ""
