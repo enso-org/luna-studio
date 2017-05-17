@@ -53,14 +53,27 @@ class LunaSemanticGrammar extends Grammar
     name = "Luna (Semantic Highlighting)"
     @scopeName = "source.luna"
     super(registry, {name, @scopeName})
-    @lexer = lexer
+    @setLexer lexer
+
+  setLexer: (lexer) ->
+      @lexer = []
+      line   = []
+      for token in lexer
+          if token.tags[token.tags.length - 1] == "EOL"
+              @lexer.push line
+              line = []
+          else
+              line.push token
+      @lexer.push line
 
   getScore: ->
     lunaGrammar = @registry.grammarForScopeName("source.luna")
     return if lunaGrammar? then (lunaGrammar.getScore.apply(lunaGrammar, arguments) + 1) else 0
 
   tokenizeLine: (line, ruleStack, firstLine = false) ->
-    ruleStack = @lexer unless ruleStack?
+    ruleStack = 0 unless ruleStack?
+    lexerLine = @lexer[ruleStack]
+    lexerLine = [] unless lexerLine?
     buffer = line
     tags = []
     tokens = []
@@ -74,14 +87,13 @@ class LunaSemanticGrammar extends Grammar
         tokens.push { value: text, scopes: [fullScopes] }
 
     while buffer.length != 0
-        if ruleStack.length > 0
-            tokenInfo = ruleStack.shift()
-            if tokenInfo.tags[0] != "EOL"
-                token = buffer.substr(0, tokenInfo.length)
-                buffer = buffer.substr(tokenInfo.length, buffer.length)
-                addToken(token, tokenInfo.tags)
+        if lexerLine.length > 0
+            tokenInfo = lexerLine.shift()
+            token = buffer.substr(0, tokenInfo.length)
+            buffer = buffer.substr(tokenInfo.length, buffer.length)
+            addToken(token, tokenInfo.tags)
         else
             addToken(buffer, [])
             buffer = ""
 
-    return { line: line, tags: tags, tokens: tokens, ruleStack: ruleStack }
+    return { line: line, tags: tags, tokens: tokens, ruleStack: ruleStack + 1 }

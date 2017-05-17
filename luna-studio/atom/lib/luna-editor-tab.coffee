@@ -48,8 +48,8 @@ module.exports =
               if @uri == uri_send
                 @getBuffer().setText(text)
                 console.log("setBuffer")
-
-                @setGrammar(new LunaSemanticGrammar(atom.grammars, lexer))
+                @lunaGrammar = new LunaSemanticGrammar(atom.grammars, lexer)
+                @setGrammar(@lunaGrammar)
 
         @internal.bufferListener setBuffer
 
@@ -65,12 +65,16 @@ module.exports =
                 #   @.scrollToBufferPosition(start)
                     @getBuffer().setText(text)
                     @.getLastCursor().setScreenPosition(@getBuffer().positionForCharacterIndex(cursor))
-                    @setGrammar(new LunaSemanticGrammar(atom.grammars, lexer))
+                    @lunaGrammar = new LunaSemanticGrammar(atom.grammars, lexer)
+                    @setGrammar(@lunaGrammar)
+                    # @lunaGrammar.setLexer(lexer)
 
         setLexer = (uri_send, lexer) =>
             withoutTrigger =>
                 if @uri == uri_send
-                    @setGrammar(new LunaSemanticGrammar(atom.grammars, lexer))
+                    @lunaGrammar = new LunaSemanticGrammar(atom.grammars, lexer)
+                    @setGrammar(@lunaGrammar)
+                    # @lunaGrammar.setLexer(lexer)
 
         @internal.codeListener setCode
         @internal.lexerListener setLexer
