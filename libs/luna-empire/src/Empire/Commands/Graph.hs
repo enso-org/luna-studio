@@ -790,27 +790,28 @@ updateNodeCode loc@(GraphLocation file _) nodeId = do
             return (line, expression)
         Library.withLibrary file $ forM_ line $ \l -> Library.substituteLine l expression
 
--- readRange' :: (ASTOp m, Ord t, Num t) => NodeRef -> m (LeftSpacedSpan t)
--- readRange' ref = IR.matchExpr ref $ \case
---     IR.Seq{} -> return mempty
---     _        -> do
---         parents <- IR.getLayer @IR.Succs ref
---         case toList parents of
---             []       -> return mempty
---             [parent] -> do
---                 inputs <- mapM IR.source =<< IR.inputs =<< IR.readTarget parent
---                 let lefts = takeWhile (/= ref) inputs
---                 spans  <- mapM readCodeSpan lefts
---                 let leftSpan = mconcat spans
---                 parentSpan <- readRange' =<< IR.readTarget parent
---                 return $ parentSpan <> leftSpan
---             _ -> error "something is no yes"
---
--- readRange :: ASTOp m => NodeRef -> m (Int, Int)
--- readRange ref = do
---     LeftSpacedSpan len off <- readRange' ref
---     LeftSpacedSpan len'  _ <- readCodeSpan ref
---     return (fromIntegral len + fromIntegral off, fromIntegral len + fromIntegral off + fromIntegral len')
+readRange' :: ASTOp m => NodeRef -> m (LeftSpacedSpan Delta)
+readRange' ref = IR.matchExpr ref $ \case
+    IR.Seq{} -> return mempty
+    _        -> do
+        parents <- IR.getLayer @IR.Succs ref
+        case toList parents of
+            []       -> return mempty
+            [parent] -> do
+                inputs <- mapM IR.source =<< IR.inputs =<< IR.readTarget parent
+                let lefts = takeWhile (/= ref) inputs
+                spans  <- mapM readCodeSpan lefts
+                let leftSpan = mconcat spans
+                parentSpan <- readRange' =<< IR.readTarget parent
+                return $ parentSpan <> leftSpan
+            _ -> error "something is no yes"
+
+readRange :: ASTOp m => NodeRef -> m (Int, Int)
+readRange ref = do
+    LeftSpacedSpan off  len  <- readRange' ref
+    LeftSpacedSpan off' len' <- readCodeSpan ref
+    let left = fromIntegral off + fromIntegral len + fromIntegral off'
+    return (left, left + fromIntegral len')
 
 
 readCodeSpan :: ASTOp m => NodeRef -> m (LeftSpacedSpan Delta)
@@ -842,8 +843,8 @@ markerCodeSpan loc index = withGraph loc $ runASTOp $ do
             let exprMap' :: Map.Map Luna.Marker NodeRef
                 exprMap' = coerce exprMap
                 Just ref = Map.lookup (fromIntegral index) exprMap'
-            LeftSpacedSpan off len     <- readCodeSpan ref
-            return (fromIntegral len, fromIntegral off)
+            range <- readRange ref
+            return range
         _            -> return (0,0)
 
 -- internal

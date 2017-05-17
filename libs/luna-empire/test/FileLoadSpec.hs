@@ -257,9 +257,9 @@ spec = around withChannels $ do
                 forM [0..2] $ Graph.markerCodeSpan loc
             withResult res $ \spans -> do
                 spans `shouldBe` [
-                      (10, 8)
-                    , (11, 8)
-                    , (16, 8)
+                      (8, 18)
+                    , (26, 37)
+                    , (45, 61)
                     ]
         it "shows proper expressions ranges" $ \env -> do
             let code = [r|def main:
@@ -275,10 +275,10 @@ spec = around withChannels $ do
                 forM [0..3] $ Graph.markerCodeSpan loc
             withResult res $ \spans -> do
                 spans `shouldBe` [
-                      (12, 5)
-                    , (20, 5)
-                    , (8, 5)
-                    , (16, 5)
+                      (5, 17)
+                    , (22, 42)
+                    , (47, 55)
+                    , (60, 76)
                     ]
         it "adds one node to code" $ \env -> do
             u1 <- mkUUID
