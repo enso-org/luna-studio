@@ -23,6 +23,7 @@ import           LunaStudio.Data.TypeRep        (TypeRep (TStar))
 import           Empire.ASTOp                   (runASTOp)
 import qualified Empire.ASTOps.Parse            as ASTParse
 import qualified Empire.ASTOps.Print            as ASTPrint
+import qualified Empire.Commands.AST            as AST
 import qualified Empire.Commands.Graph          as Graph
 import qualified Empire.Commands.GraphBuilder   as GraphBuilder
 import qualified Empire.Commands.Lexer          as Lexer
@@ -75,7 +76,6 @@ spec = around withChannels $ do
                 c ^. Node.canEnter `shouldBe` False
                 connections `shouldMatchList` [
                       (outPortRef (pi ^. Node.nodeId) [], inPortRef (anon ^. Node.nodeId) [Port.Arg 0])
-                    , (outPortRef (c ^. Node.nodeId)  [], inPortRef (bar ^. Node.nodeId)  [Port.Arg 0])
                     ]
         it "shows proper changes to expressions" $ \env -> do
             let code = [r|def main:
@@ -244,7 +244,7 @@ spec = around withChannels $ do
                 nodes `shouldSatisfy` ((== 1) . length)
                 connections `shouldSatisfy` ((== 3) . length)
     describe "code spans" $ do
-        xit "pi «0»= 3.14" $ \env -> do
+        it "pi «0»= 3.14" $ \env -> do
             let code = [r|def main:
     «0»print 3.14
     «1»delete root
@@ -255,10 +255,13 @@ spec = around withChannels $ do
                 let loc = GraphLocation "TestPath" $ Breadcrumb []
                 Graph.withGraph loc $ Graph.loadCode code
                 forM [0..2] $ Graph.markerCodeSpan loc
-                -- Graph.markerCodeSpan loc 3
-            withResult res $ \span -> do
-                return ()
-        xit "shows proper expressions ranges" $ \env -> do
+            withResult res $ \spans -> do
+                spans `shouldBe` [
+                      (10, 8)
+                    , (11, 8)
+                    , (16, 8)
+                    ]
+        it "shows proper expressions ranges" $ \env -> do
             let code = [r|def main:
     pi «0»= 3.14
     foo «1»= a: b: a + b
@@ -271,7 +274,12 @@ spec = around withChannels $ do
                 Graph.withGraph loc $ Graph.loadCode code
                 forM [0..3] $ Graph.markerCodeSpan loc
             withResult res $ \spans -> do
-                return ()
+                spans `shouldBe` [
+                      (12, 5)
+                    , (20, 5)
+                    , (8, 5)
+                    , (16, 5)
+                    ]
         it "adds one node to code" $ \env -> do
             u1 <- mkUUID
             res <- evalEmp env $ do

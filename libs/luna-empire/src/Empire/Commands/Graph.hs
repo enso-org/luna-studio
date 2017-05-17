@@ -118,7 +118,8 @@ import qualified Empire.Commands.Library         as Library
 import qualified Empire.Commands.Publisher       as Publisher
 import           Empire.Empire
 
-import           Data.SpanTree                    (RightSpacedSpan(..))
+import           Data.Text.Position               (Delta)
+import           Data.SpanTree                    (LeftSpacedSpan(..))
 import qualified Luna.IR                          as IR
 import qualified OCI.IR.Combinators               as IR (replaceSource, deleteSubtree, narrowTerm)
 import           Luna.Syntax.Text.Parser.CodeSpan (CodeSpan)
@@ -789,7 +790,7 @@ updateNodeCode loc@(GraphLocation file _) nodeId = do
             return (line, expression)
         Library.withLibrary file $ forM_ line $ \l -> Library.substituteLine l expression
 
--- readRange' :: (ASTOp m, Ord t, Num t) => NodeRef -> m (RightSpacedSpan t)
+-- readRange' :: (ASTOp m, Ord t, Num t) => NodeRef -> m (LeftSpacedSpan t)
 -- readRange' ref = IR.matchExpr ref $ \case
 --     IR.Seq{} -> return mempty
 --     _        -> do
@@ -807,16 +808,15 @@ updateNodeCode loc@(GraphLocation file _) nodeId = do
 --
 -- readRange :: ASTOp m => NodeRef -> m (Int, Int)
 -- readRange ref = do
---     RightSpacedSpan len off <- readRange' ref
---     RightSpacedSpan len'  _ <- readCodeSpan ref
+--     LeftSpacedSpan len off <- readRange' ref
+--     LeftSpacedSpan len'  _ <- readCodeSpan ref
 --     return (fromIntegral len + fromIntegral off, fromIntegral len + fromIntegral off + fromIntegral len')
 
 
--- readCodeSpan :: ASTOp m => NodeRef -> m (RightSpacedSpan _)
--- readCodeSpan ref = do
---     codespan  <- IR.getLayer @CodeSpan ref
---     rightSpan <- liftIO $ evaluate codespan `catchAll` (\_ -> return $ RightSpacedSpan 0 0)
---     return rightSpan
+readCodeSpan :: ASTOp m => NodeRef -> m (LeftSpacedSpan Delta)
+readCodeSpan ref = do
+    maybecodespan  <- IR.getLayer @CodeSpan ref
+    return $ fromMaybe (LeftSpacedSpan 0 0) maybecodespan
 
 getNodeIdForMarker :: ASTOp m => Int -> m (Maybe NodeId)
 getNodeIdForMarker index = do
@@ -833,17 +833,18 @@ getNodeIdForMarker index = do
         _            -> return Nothing
 
 markerCodeSpan :: GraphLocation -> Int -> Empire (Int, Int)
-markerCodeSpan loc index = $notImplemented -- withGraph loc $ runASTOp $ do
-    -- nodeSeq <- GraphBuilder.getNodeSeq
-    -- case nodeSeq of
-    --     Just nodeSeq -> do
-    --         exprMap      <- IR.getLayer @CodeMarkers nodeSeq
-    --         let exprMap' :: Map.Map Luna.Marker NodeRef
-    --             exprMap' = coerce exprMap
-    --             Just ref = Map.lookup (fromIntegral index) exprMap'
-    --         codespan     <- readRange ref
-    --         return codespan
-    --     _            -> return (0,0)
+markerCodeSpan loc index = withGraph loc $ runASTOp $ do
+    nodeSeq <- GraphBuilder.getNodeSeq
+    case nodeSeq of
+        Just nodeSeq -> do
+            seqs <- AST.getSeqs nodeSeq
+            exprMap      <- IR.getLayer @CodeMarkers nodeSeq
+            let exprMap' :: Map.Map Luna.Marker NodeRef
+                exprMap' = coerce exprMap
+                Just ref = Map.lookup (fromIntegral index) exprMap'
+            LeftSpacedSpan off len     <- readCodeSpan ref
+            return (fromIntegral len, fromIntegral off)
+        _            -> return (0,0)
 
 -- internal
 
