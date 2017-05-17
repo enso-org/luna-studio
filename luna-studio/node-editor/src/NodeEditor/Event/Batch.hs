@@ -2,7 +2,6 @@
 module NodeEditor.Event.Batch where
 
 import           Common.Prelude
-import           Data.Aeson                             (ToJSON)
 
 import qualified LunaStudio.API.Control.EmpireStarted       as EmpireStarted
 import qualified LunaStudio.API.Graph.AddConnection         as AddConnection
@@ -75,5 +74,3 @@ data Event = UnknownEvent String
            | ProjectOpened                         OpenProject.Response
            | ProjectOpenedUpdate                   OpenProject.Update
            deriving (Eq, Show, Generic, NFData)
-
-instance ToJSON Event

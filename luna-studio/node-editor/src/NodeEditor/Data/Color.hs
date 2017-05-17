@@ -10,20 +10,16 @@ module NodeEditor.Data.Color
     , buildHsl
     ) where
 
-import           Data.Aeson              (FromJSON, ToJSON)
+import           Common.Prelude
 import qualified Data.Color              as Color
 import           Data.Convert            (Convertible (convert))
 import           Data.Fixed              (mod')
 import           Data.Hashable           (hash)
 import           LunaStudio.Data.TypeRep (TypeRep (..))
-import           Common.Prelude
 
 
 newtype Color = Color { fromColor :: Int }
               deriving (Eq, Generic, Ord, Show, NFData)
-
-instance FromJSON Color
-instance ToJSON Color
 
 
 data HSL a = HSL { _h :: a

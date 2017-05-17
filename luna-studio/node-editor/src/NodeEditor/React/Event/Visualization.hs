@@ -3,7 +3,6 @@
 
 module NodeEditor.React.Event.Visualization where
 
-import           Data.Aeson                  (FromJSON, ToJSON)
 import           LunaStudio.Data.Position    (Position)
 import           React.Flux                  (MouseEvent)
 
@@ -16,6 +15,3 @@ data Event = Pin                  NodeLoc Int
            | Unpin                NodeLoc Int Position
            | MouseDown MouseEvent NodeLoc Int Position
             deriving (Show, Generic, NFData, Typeable)
-
-instance ToJSON   Event
-instance FromJSON Event

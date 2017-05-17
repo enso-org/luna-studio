@@ -2,41 +2,39 @@
 {-# LANGUAGE OverloadedStrings #-}
 module NodeEditor.Action.Searcher where
 
-import qualified Data.Map                                   as Map
-import           Data.Monoid                                (All (All), getAll)
-import qualified Data.Text                                  as Text
-import           Text.Read                                  (readMaybe)
+import qualified Data.Map                           as Map
+import           Data.Monoid                        (All (All), getAll)
+import qualified Data.Text                          as Text
+import           Text.Read                          (readMaybe)
 
 import           Common.Prelude
-import           Data.ScreenPosition                        (ScreenPosition, x)
-import qualified JS.GoogleAnalytics                         as GA
-import qualified JS.Searcher                                as Searcher
-import           LunaStudio.Data.NodeLoc                    (NodeLoc)
-import qualified LunaStudio.Data.NodeLoc                    as NodeLoc
-import           LunaStudio.Data.PortRef                    (OutPortRef)
-import qualified LunaStudio.Data.PortRef                    as PortRef
-import           LunaStudio.Data.Position                   (Position)
-import           NodeEditor.Action.Basic                    (createNode, renameNode, renamePort, setNodeExpression)
-import qualified NodeEditor.Action.Batch                    as Batch
-import           NodeEditor.Action.Command                  (Command)
-import           NodeEditor.Action.State.Action             (beginActionWithKey, continueActionWithKey, removeActionFromState,
-                                                             updateActionWithKey)
-import           NodeEditor.Action.State.App                (renderIfNeeded)
-import           NodeEditor.Action.State.NodeEditor         (findSuccessorPosition, getSearcher, getSelectedNodes, getSelectedNodes,
-                                                             modifyNodeEditor, modifySearcher)
-import           NodeEditor.Action.State.Scene              (translateToScreen, translateToWorkspace)
-import           NodeEditor.Event.Event                     (Event (Shortcut))
-import qualified NodeEditor.Event.Shortcut                  as Shortcut
-import           NodeEditor.React.Model.Node.ExpressionNode (position)
-import qualified NodeEditor.React.Model.NodeEditor          as NodeEditor
-import qualified NodeEditor.React.Model.Searcher            as Searcher
-import qualified NodeEditor.React.View.App                  as App
-import           NodeEditor.State.Action                    (Action (begin, continue, end, update), Searcher (Searcher), searcherAction)
-import           NodeEditor.State.Global                    (State)
-import qualified NodeEditor.State.Global                    as Global
-import qualified NodeEditor.State.UI                        as UI
-import           Text.ScopeSearcher.Item                    (Item (..), Items)
-import qualified Text.ScopeSearcher.Scope                   as Scope
+import           Data.ScreenPosition                (ScreenPosition)
+import qualified JS.GoogleAnalytics                 as GA
+import qualified JS.Searcher                        as Searcher
+import           LunaStudio.Data.NodeLoc            (NodeLoc)
+import qualified LunaStudio.Data.NodeLoc            as NodeLoc
+import           LunaStudio.Data.PortRef            (OutPortRef)
+import qualified LunaStudio.Data.PortRef            as PortRef
+import           LunaStudio.Data.Position           (Position)
+import           NodeEditor.Action.Basic            (createNode, renameNode, renamePort, setNodeExpression)
+import qualified NodeEditor.Action.Batch            as Batch
+import           NodeEditor.Action.Command          (Command)
+import           NodeEditor.Action.State.Action     (beginActionWithKey, continueActionWithKey, removeActionFromState, updateActionWithKey)
+import           NodeEditor.Action.State.App        (renderIfNeeded)
+import           NodeEditor.Action.State.NodeEditor (findSuccessorPosition, getSearcher, getSelectedNodes, getSelectedNodes,
+                                                     modifyNodeEditor, modifySearcher)
+import           NodeEditor.Action.State.Scene      (translateToScreen, translateToWorkspace)
+import           NodeEditor.Event.Event             (Event (Shortcut))
+import qualified NodeEditor.Event.Shortcut          as Shortcut
+import qualified NodeEditor.React.Model.NodeEditor  as NodeEditor
+import qualified NodeEditor.React.Model.Searcher    as Searcher
+import qualified NodeEditor.React.View.App          as App
+import           NodeEditor.State.Action            (Action (begin, continue, end, update), Searcher (Searcher), searcherAction)
+import           NodeEditor.State.Global            (State)
+import qualified NodeEditor.State.Global            as Global
+import qualified NodeEditor.State.UI                as UI
+import           Text.ScopeSearcher.Item            (Item (..), Items)
+import qualified Text.ScopeSearcher.Scope           as Scope
 
 
 instance Action (Command State) Searcher where

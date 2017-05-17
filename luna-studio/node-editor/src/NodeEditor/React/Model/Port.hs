@@ -7,7 +7,6 @@ module NodeEditor.React.Model.Port
 
 
 import           Common.Prelude                   hiding (set)
-import           Data.Aeson                       (ToJSON)
 import           Data.Convert                     (Convertible (convert))
 import           LunaStudio.Data.Angle            (Angle)
 import           LunaStudio.Data.LabeledTree      (LabeledTree (LabeledTree))
@@ -33,7 +32,6 @@ data Mode = Normal
           | NameEdit
           deriving (Eq, Show, Typeable, Generic, NFData)
 
-instance ToJSON Mode
 instance Default Mode where
     def = Normal
 
@@ -52,7 +50,6 @@ type AnyPort = Port AnyPortId
 type EitherPort = Either InPort OutPort
 
 makeLenses ''Port
-instance ToJSON i => ToJSON (Port i)
 
 isInMode :: Mode -> Port i -> Bool
 isInMode m p = case (m, p ^. mode) of

@@ -23,26 +23,22 @@ data NodeDrag = NodeDrag { _nodeDragStartPos                 :: Position
                          } deriving (Eq, Show, Generic, Typeable)
 
 makeLenses ''NodeDrag
-instance ToJSON NodeDrag
 
 data MultiSelection = MultiSelection { _multiSelecectionStartPos :: Position
                                      } deriving (Eq, Show, Generic, Typeable)
 
 makeLenses ''MultiSelection
-instance ToJSON MultiSelection
 
 data PanDrag = PanDrag { _panDragPreviousPos :: ScreenPosition
                        } deriving (Eq, Show, Generic, Typeable)
 
 makeLenses ''PanDrag
-instance ToJSON PanDrag
 
 data ZoomDrag = ZoomDrag { _zoomDragFixedPoint  :: ScreenPosition
                          , _zoomDragPreviousPos :: ScreenPosition
                          } deriving (Eq, Show, Generic, Typeable)
 
 makeLenses ''ZoomDrag
-instance ToJSON ZoomDrag
 
 
 data SliderDrag = SliderDrag { _sliderDragPortRef   :: InPortRef
@@ -59,7 +55,6 @@ instance NFData InitValue
 makeLenses ''InitValue
 makeLenses ''SliderDrag
 
-instance ToJSON SliderDrag
 instance ToJSON InitValue
 instance FromJSON InitValue
 
@@ -68,7 +63,6 @@ data PenConnect = PenConnect { _penConnectCurve           :: Curve
                              } deriving (Eq, Generic, Show, Typeable)
 
 makeLenses ''PenConnect
-instance ToJSON PenConnect
 
 data PenDisconnect = PenDisconnect { _penDisconnectCurve               :: Curve
                                    , _penDisconnectLastVisitedNode     :: Maybe NodeLoc
@@ -76,10 +70,8 @@ data PenDisconnect = PenDisconnect { _penDisconnectCurve               :: Curve
                                    } deriving (Eq, Generic, Show, Typeable)
 
 makeLenses ''PenDisconnect
-instance ToJSON PenDisconnect
 
 data Mode = Drag | Click deriving (Eq, Generic, Show, Typeable)
-instance ToJSON Mode
 
 data Connect = Connect { _connectStartPos       :: ScreenPosition
                        , _connectSourcePort     :: AnyPortRef
@@ -90,7 +82,6 @@ data Connect = Connect { _connectStartPos       :: ScreenPosition
                        } deriving (Eq, Generic, Show, Typeable)
 
 makeLenses ''Connect
-instance ToJSON Connect
 
 data PortDrag = PortDrag { _portDragStartPos              :: ScreenPosition
                          , _portDragPortStartPosInSidebar :: Position
@@ -101,12 +92,10 @@ data PortDrag = PortDrag { _portDragStartPos              :: ScreenPosition
                          } deriving (Eq, Generic, Show, Typeable)
 
 makeLenses ''PortDrag
-instance ToJSON PortDrag
 
 data Searcher = Searcher deriving (Eq, Generic, Show, Typeable)
 
 makeLenses ''Searcher
-instance ToJSON Searcher
 
 data VisualizationDrag = VisualizationDrag
     { _visNodeLoc :: NodeLoc
@@ -115,7 +104,6 @@ data VisualizationDrag = VisualizationDrag
     } deriving (Eq, Show, Generic, Typeable)
 
 makeLenses ''VisualizationDrag
-instance ToJSON VisualizationDrag
 
 data SomeAction m = forall a. (Action m a, Show a, Typeable a) => SomeAction Dynamic a deriving (Typeable)
 

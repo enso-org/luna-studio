@@ -1,7 +1,6 @@
 {-# LANGUAGE DeriveAnyClass #-}
 module NodeEditor.Event.UI where
 
-import           Data.Aeson                            (FromJSON, ToJSON)
 import           Common.Prelude
 
 import qualified NodeEditor.React.Event.App           as App
@@ -25,6 +24,3 @@ data UIEvent = AppEvent           App.Event
              | SidebarEvent       Sidebar.Event
              | VisualizationEvent Visualization.Event
                deriving (Show, Generic, NFData, Typeable)
-
-instance ToJSON   UIEvent
-instance FromJSON UIEvent

@@ -2,7 +2,6 @@
 module NodeEditor.React.Event.Node where
 
 import           Common.Prelude
-import           Data.Aeson                  (FromJSON, ToJSON)
 import           LunaStudio.Data.NodeLoc     (NodeLoc)
 import           LunaStudio.Data.PortDefault (PortDefault)
 import           LunaStudio.Data.PortRef     (InPortRef)
@@ -22,6 +21,3 @@ data Event = DisplayResultChanged Bool          NodeLoc
            | Select               MouseEvent    NodeLoc
            | SetExpression                      NodeLoc Text
             deriving (Show, Generic, NFData, Typeable)
-
-instance ToJSON   Event
-instance FromJSON Event

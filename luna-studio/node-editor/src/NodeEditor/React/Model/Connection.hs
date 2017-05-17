@@ -5,7 +5,6 @@ module NodeEditor.React.Model.Connection
 
 import           Common.Prelude
 import           Control.Arrow                              ((&&&))
-import           Data.Aeson                                 (ToJSON)
 import           Data.Convert                               (Convertible (convert))
 import           Data.HashMap.Strict                        (HashMap)
 import qualified Data.HashMap.Strict                        as HashMap
@@ -29,8 +28,6 @@ import qualified NodeEditor.React.Model.Port                as Port
 
 
 data Mode = Normal | Sidebar | Highlighted | Dimmed deriving (Eq, Show, Typeable, Generic)
-
-instance ToJSON Mode
 
 
 data Connection = Connection
@@ -67,10 +64,6 @@ makeLenses ''Connection
 makeLenses ''PosConnection
 makeLenses ''HalfConnection
 makeLenses ''PosHalfConnection
-instance ToJSON Connection
-instance ToJSON PosConnection
-instance ToJSON HalfConnection
-instance ToJSON PosHalfConnection
 
 class HasSrc a where src :: Lens' a OutPortRef
 class HasDst a where
