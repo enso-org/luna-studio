@@ -24,4 +24,4 @@ explodeToken (Token (RightSpacedSpan len (Delta 0)) _, tags) = [(fromIntegral le
 explodeToken (Token (RightSpacedSpan len off) _, tags) = [(fromIntegral len, stringify tags), (fromIntegral off, [])]
 
 stringify :: Lexer.Tags -> [String]
-stringify tags = Set.toList $ Set.map nameToString tags
+stringify tags = map nameToString tags
