@@ -32,7 +32,7 @@ import           Empire.ASTOps.Builder           (lams)
 import           Empire.ASTOps.Print
 import           Empire.Data.AST                 (NodeRef, astExceptionFromException, astExceptionToException)
 import           Empire.Data.Graph               (Graph)
-import           Empire.Data.Layers              (CodeMarkers)
+import           Empire.Data.Layers              (CodeMarkers, attachEmpireLayers)
 import           Empire.Data.Parser              (ParserPass)
 
 import           LunaStudio.Data.PortDefault     (PortDefault (..), PortValue (..))
@@ -85,6 +85,7 @@ runProperParser :: Text.Text -> IO (NodeRef, IR.Rooted NodeRef, Parser.MarkedExp
 runProperParser code = do
     runPM $ do
         parserBoilerplate
+        attachEmpireLayers
         IR.setAttr (getTypeDesc @Source.Source) $ (convert code :: Source.Source)
         (unit, root) <- Pass.eval' @Parser.Reparsing $ do
             Parsing.parsingPassM Parsing.unit' `catchAll` (\e -> throwM $ SomeParserException e)

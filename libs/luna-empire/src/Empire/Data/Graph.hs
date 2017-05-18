@@ -11,6 +11,7 @@ module Empire.Data.Graph (
   , breadcrumbHierarchy
   , lastNameId
   , defaultGraph
+  , defaultAST
   , withVis
   , AST
   , ASTState(..)

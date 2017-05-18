@@ -30,7 +30,7 @@ import qualified Control.Monad.State.Dependent as DepState
 import qualified Data.Map             as Map
 import           Data.Foldable        (toList)
 import           Empire.Data.Graph    (ASTState(..), Graph, withVis)
-import qualified Empire.Data.Graph    as Graph (ast, breadcrumbHierarchy)
+import qualified Empire.Data.Graph    as Graph (ast, breadcrumbHierarchy, pmState, ir, defaultAST)
 import qualified Empire.Data.BreadcrumbHierarchy as BH
 import           Empire.Data.Layers   (CodeMarkers, Marker, Meta, TypeLayer, attachEmpireLayers)
 import           Empire.Empire        (Command)
@@ -178,24 +178,8 @@ runTypecheck imports = do
 
 putNewIR :: IR -> Command Graph ()
 putNewIR ir = do
-    -- g <- get
-    -- passState <- liftIO $ flip evalStateT g $ withVis $ dropLogs $ DepState.evalDefStateT @Cache $ (\a -> SpanTree.runTreeBuilder a >>= \(foo, _) -> return foo) $ evalIRBuilder' $ evalPassManager' $ do
-    --     runRegs
-    --     attachEmpireLayers
-    --     DepState.get @Pass.State
-    -- Graph.ast .= ASTState ir passState
-    --
-    g <- get
-    passState <- liftIO $ flip evalStateT g $ withVis $ dropLogs $ DepState.evalDefStateT @Cache $ (\a -> SpanTree.runTreeBuilder a >>= \(foo, _) -> return foo) $ evalIRBuilder' $ evalPassManager' $ do
-        runRegs
-        CodeSpan.init
-        attachLayer 5 (getTypeDesc @CodeSpan.CodeSpan) (getTypeDesc @AnyExpr)
-        attachEmpireLayers
-        initExprMapping
-        DepState.get @Pass.State
-        -- return def
-    Graph.ast .= ASTState ir passState
-    -- Graph.ast .= ASTState ir def
+    newAST <- liftIO $ Graph.defaultAST
+    Graph.ast .= (newAST & Graph.ir .~ ir)
 
 
 runPass :: forall pass b a. KnownPass pass
