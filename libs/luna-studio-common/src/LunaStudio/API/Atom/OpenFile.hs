@@ -19,6 +19,7 @@ instance Binary Request
 type Response = Response.SimpleResponse Request ()
 instance Response.ResponseResult Request () ()
 
+topicPrefix :: T.Topic
 topicPrefix = "empire.atom.file.open"
 instance T.MessageTopic (R.Request Request) where topic _ = topicPrefix <> T.request
 instance T.MessageTopic Response            where topic _ = topicPrefix <> T.response

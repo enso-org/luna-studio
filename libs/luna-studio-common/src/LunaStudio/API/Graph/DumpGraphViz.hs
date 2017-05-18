@@ -20,6 +20,7 @@ instance G.GraphRequest Request where location = location
 type Response = Response.SimpleResponse Request ()
 instance Response.ResponseResult Request () ()
 
+topicPrefix :: T.Topic
 topicPrefix = "empire.environment.debug.graphviz"
 instance T.MessageTopic (R.Request Request) where topic _ = topicPrefix <> T.request
 instance T.MessageTopic Response            where topic _ = topicPrefix <> T.response

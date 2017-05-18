@@ -2,7 +2,7 @@ module LunaStudio.API.Graph.NodeResultUpdate where
 
 import           Data.Binary                   (Binary)
 import           Data.Text                     (Text)
-import qualified LunaStudio.API.Topic          as Topic
+import qualified LunaStudio.API.Topic          as T
 import           LunaStudio.Data.Error         (Error)
 import           LunaStudio.Data.GraphLocation (GraphLocation)
 import           LunaStudio.Data.Node          (NodeId)
@@ -34,5 +34,6 @@ instance Binary Update
 instance Binary NodeValue
 
 
+topicPrefix :: T.Topic
 topicPrefix = "empire.graph.result"
-instance Topic.MessageTopic Update where topic _ = topicPrefix <> Topic.update
+instance T.MessageTopic Update where topic _ = topicPrefix <> T.update

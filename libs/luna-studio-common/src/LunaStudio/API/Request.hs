@@ -11,4 +11,4 @@ data Request a = Request { _requestId :: UUID
                          } deriving (Eq, Generic, Show)
 
 makeLenses ''Request
-instance (Binary a) => Binary (Request a)
+instance Binary a => Binary (Request a)

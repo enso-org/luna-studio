@@ -29,6 +29,7 @@ instance G.GraphRequest Request where location = location
 type Response = Response.Response Request Inverse Result
 instance Response.ResponseResult Request Inverse Result
 
+topicPrefix :: T.Topic
 topicPrefix = "empire.graph.node.removePort"
 instance T.MessageTopic (R.Request Request) where topic _ = topicPrefix <> T.request
 instance T.MessageTopic Response            where topic _ = topicPrefix <> T.response

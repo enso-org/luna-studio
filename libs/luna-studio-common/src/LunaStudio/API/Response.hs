@@ -17,7 +17,7 @@ data Status a = Ok    { _resultData  :: a }
 
 makeLenses ''Status
 makePrisms ''Status
-instance (Binary a) => Binary (Status a)
+instance Binary a => Binary (Status a)
 
 data Response req inv res = Response { _requestId :: UUID
                                      , _guiID     :: Maybe UUID
