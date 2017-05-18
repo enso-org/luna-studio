@@ -11,9 +11,12 @@
 module Empire.ASTOp (
     ASTOp
   , EmpirePass
+  , PMStack
+  , putNewIR
   , runAliasAnalysis
   , runASTOp
   , runPass
+  , runPM
   , runTypecheck
   , match
   ) where
@@ -22,14 +25,14 @@ import           Empire.Prelude       hiding (mempty, toList)
 import           Prologue             (Text, mempty, toListOf)
 
 import           Control.Monad.Catch  (MonadCatch(..))
-import           Control.Monad.State  (MonadState, StateT, runStateT, get, gets, put)
+import           Control.Monad.State  (MonadState, StateT, evalStateT, runStateT, get, gets, put)
 import qualified Control.Monad.State.Dependent as DepState
 import qualified Data.Map             as Map
 import           Data.Foldable        (toList)
 import           Empire.Data.Graph    (ASTState(..), Graph, withVis)
-import qualified Empire.Data.Graph    as Graph (ast, breadcrumbHierarchy)
+import qualified Empire.Data.Graph    as Graph (ast, breadcrumbHierarchy, pmState, ir, defaultAST)
 import qualified Empire.Data.BreadcrumbHierarchy as BH
-import           Empire.Data.Layers   (CodeMarkers, Marker, Meta, TypeLayer)
+import           Empire.Data.Layers   (CodeMarkers, Marker, Meta, TypeLayer, attachEmpireLayers)
 import           Empire.Empire        (Command)
 
 import           Data.Event           (Emitters, type (//))
@@ -64,6 +67,11 @@ import           Luna.Builtin.Data.Module          (Imports (..))
 import           Luna.Pass.Resolution.Data.CurrentTarget (CurrentTarget (TgtNone))
 
 import           GHC.Stack
+
+type PMStack m = PassManager (IRBuilder (DepState.StateT Cache (Logger DropLogger m)))
+
+runPM :: MonadIO m => PMStack m a -> m a
+runPM = dropLogs . DepState.evalDefStateT @Cache . evalIRBuilder' . evalPassManager'
 
 type ASTOp m = (MonadThrow m,
                 MonadCatch m,
@@ -167,6 +175,12 @@ runTypecheck imports = do
         passSt <- DepState.get @Pass.State
         return (st, passSt)
     put $ newG & Graph.ast .~ ASTState st passSt
+
+putNewIR :: IR -> Command Graph ()
+putNewIR ir = do
+    newAST <- liftIO $ Graph.defaultAST
+    Graph.ast .= (newAST & Graph.ir .~ ir)
+
 
 runPass :: forall pass b a. KnownPass pass
         => Pass.PassManager (IRBuilder (Parser.IRSpanTreeBuilderR (DepState.StateT Cache (Logger DropLogger (Vis.VisStateT (StateT Graph IO)))))) b
