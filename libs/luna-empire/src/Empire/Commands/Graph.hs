@@ -726,9 +726,11 @@ loadCode code = do
     (ir, IR.Rooted main ref, exprMap) <- liftIO $ ASTParse.runProperParser code
     Graph.unit .= ir
     putNewIR main
-    nodeIds <- runASTOp $ forM (Map.elems $ (coerce exprMap :: Map.Map Luna.Marker NodeRef)) $ \e -> do
-        nodeId <- insertNode e
-        return (nodeId, e)
+    nodeIds <- runASTOp $ do
+        IR.putLayer @CodeMarkers ref exprMap
+        forM (Map.elems $ (coerce exprMap :: Map.Map Luna.Marker NodeRef)) $ \e -> do
+            nodeId <- insertNode e
+            return (nodeId, e)
     Graph.breadcrumbHierarchy . BH._ToplevelParent . BH.topBody .= Just ref
     Graph.breadcrumbHierarchy . BH.body .= ref
     runAliasAnalysis
