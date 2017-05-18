@@ -7,6 +7,7 @@
 module Empire.Data.Graph (
     Graph(..)
   , ast
+  , unit
   , breadcrumbHierarchy
   , lastNameId
   , defaultGraph
@@ -21,6 +22,7 @@ import           Empire.Data.BreadcrumbHierarchy   (BParent)
 import           Empire.Prelude
 
 import           Control.Monad.State               (MonadState(..), StateT, evalStateT, lift)
+import           Empire.Data.AST                   (NodeRef)
 import           Empire.Data.Layers                (attachEmpireLayers)
 import qualified Control.Monad.State.Dependent     as DepState
 
@@ -49,6 +51,7 @@ import           Luna.Pass.Data.ExprMapping
 
 
 data Graph = Graph { _ast                   :: AST
+                   , _unit                  :: NodeRef
                    , _breadcrumbHierarchy   :: BParent
                    , _lastNameId            :: Integer
                    } deriving Show
@@ -56,7 +59,7 @@ data Graph = Graph { _ast                   :: AST
 defaultGraph :: IO Graph
 defaultGraph = do
     ast' <- defaultAST
-    return $ Graph ast' def 0
+    return $ Graph ast' $notImplemented def 0
 
 type AST      = ASTState
 data ASTState = ASTState { _ir      :: IR
@@ -98,7 +101,7 @@ withVis m = do
 
 defaultAST :: IO AST
 defaultAST = mdo
-    let g = Graph ast def 0
+    let g = Graph ast $notImplemented def 0
     ast <- flip evalStateT g $ withVis $ dropLogs $ DepState.evalDefStateT @Cache $ (\a -> SpanTree.runTreeBuilder a >>= \(foo, _) -> return foo) $ evalIRBuilder' $ evalPassManager' $ do
         runRegs
         CodeSpan.init

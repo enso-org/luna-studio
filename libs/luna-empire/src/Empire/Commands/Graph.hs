@@ -99,7 +99,7 @@ import           LunaStudio.Data.PortRef         (AnyPortRef (..), InPortRef (..
 import qualified LunaStudio.Data.PortRef         as PortRef
 import           LunaStudio.Data.Position        (Position)
 import qualified LunaStudio.Data.Position        as Position
-import           Empire.ASTOp                    (ASTOp, runASTOp, runAliasAnalysis)
+import           Empire.ASTOp                    (ASTOp, putNewIR, runASTOp, runAliasAnalysis)
 
 import qualified Empire.ASTOps.Builder           as ASTBuilder
 import qualified Empire.ASTOps.Deconstruct       as ASTDeconstruct
@@ -723,7 +723,9 @@ insertNode expr = do
 loadCode :: Text -> Command Graph [NodeId]
 loadCode code | Text.null code = return []
 loadCode code = do
-    (ref, exprMap) <- ASTParse.runUnitParser code
+    (ir, IR.Rooted main ref, exprMap) <- liftIO $ ASTParse.runProperParser code
+    Graph.unit .= ir
+    putNewIR main
     nodeIds <- runASTOp $ forM (Map.elems $ (coerce exprMap :: Map.Map Luna.Marker NodeRef)) $ \e -> do
         nodeId <- insertNode e
         return (nodeId, e)

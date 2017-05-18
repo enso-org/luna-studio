@@ -13,6 +13,7 @@ module Empire.ASTOps.Parse (
   , runReparser
   , runUnitParser
   , runUnitReparser
+  , runProperParser
   ) where
 
 import           Data.Convert
@@ -26,7 +27,7 @@ import           Data.List                    (partition)
 import qualified Data.Map                     as Map
 import qualified Data.Text                    as Text
 
-import           Empire.ASTOp                    (ASTOp, runPass)
+import           Empire.ASTOp                    (ASTOp, PMStack, runPass, runPM)
 import           Empire.ASTOps.Builder           (lams)
 import           Empire.ASTOps.Print
 import           Empire.Data.AST                 (NodeRef, astExceptionFromException, astExceptionToException)
@@ -36,15 +37,19 @@ import           Empire.Data.Parser              (ParserPass)
 
 import           LunaStudio.Data.PortDefault     (PortDefault (..), PortValue (..))
 
+import qualified Data.Text.Position              as Pos
 import           Data.TypeDesc                   (getTypeDesc)
 import qualified Luna.Builtin.Data.Function      as Function (importRooted)
 import qualified Luna.IR                         as IR
+import qualified Luna.Syntax.Text.Layer.Loc      as Loc
+import qualified Luna.Syntax.Text.Parser.CodeSpan as CodeSpan
 import           Luna.Syntax.Text.Parser.Errors  (Invalids)
 import qualified Luna.Syntax.Text.Parser.Marker  as Parser (MarkedExprMap(..))
 import qualified Luna.Syntax.Text.Parser.Parser  as Parser
 import qualified Luna.Syntax.Text.Parser.Parsing as Parsing
 import qualified Luna.Syntax.Text.Source         as Source
 import qualified Luna.IR.Term.Literal            as Lit
+import qualified OCI.Pass                        as Pass
 
 data SomeParserException = forall e. Exception e => SomeParserException e
 
@@ -62,6 +67,39 @@ parseExpr s = do
     res     <- IR.getAttr @Parser.ParsedExpr
     exprMap <- IR.getAttr @Parser.MarkedExprMap
     return $ unwrap' res
+
+parserBoilerplate :: PMStack IO ()
+parserBoilerplate = do
+    IR.runRegs
+    Loc.init
+    IR.attachLayer 5 (getTypeDesc @Pos.Range)         (getTypeDesc @IR.AnyExpr)
+    CodeSpan.init
+    IR.attachLayer 5 (getTypeDesc @CodeSpan.CodeSpan) (getTypeDesc @IR.AnyExpr)
+    IR.setAttr (getTypeDesc @Source.SourceTree)      $ (mempty :: Source.SourceTree)
+    IR.setAttr (getTypeDesc @Parser.MarkedExprMap)   $ (mempty :: Parser.MarkedExprMap)
+    IR.setAttr (getTypeDesc @Parser.ParsedExpr)      $ (error "Data not provided: ParsedExpr")
+    IR.setAttr (getTypeDesc @Parser.ReparsingStatus) $ (error "Data not provided: ReparsingStatus")
+    IR.setAttr (getTypeDesc @Invalids) $ (mempty :: Invalids)
+
+runProperParser :: Text.Text -> IO (NodeRef, IR.Rooted NodeRef, Parser.MarkedExprMap)
+runProperParser code = do
+    runPM $ do
+        parserBoilerplate
+        IR.setAttr (getTypeDesc @Source.Source) $ (convert code :: Source.Source)
+        (unit, root) <- Pass.eval' @Parser.Reparsing $ do
+            Parsing.parsingPassM Parsing.unit' `catchAll` (\e -> throwM $ SomeParserException e)
+            res                 <- IR.getAttr @Parser.ParsedExpr
+            root <- IR.matchExpr (unwrap' res) $ \case
+                IR.Unit _ _ cls -> do
+                    klass <- IR.source cls
+                    IR.matchExpr klass $ \case
+                        IR.ClsASG _ _ _ (main : _) -> do
+                            main' <- IR.source main
+                            IR.matchExpr main' $ \case
+                                IR.ASGFunction _ rootedIR -> return rootedIR
+            return (unwrap' res, root)
+        Just exprMap <- unsafeCoerce <$> IR.unsafeGetAttr (getTypeDesc @Parser.MarkedExprMap)
+        return (unit, root, exprMap)
 
 runUnitParser :: Text.Text -> Command Graph (NodeRef, Parser.MarkedExprMap)
 runUnitParser code = do
