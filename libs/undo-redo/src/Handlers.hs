@@ -7,54 +7,40 @@ module Handlers where
 
 import           UndoState
 
-import           Control.Exception                  (Exception)
-import           Control.Exception.Safe             (MonadThrow, throwM)
-import           Data.Binary                        (Binary, decode)
-import qualified Data.Binary                        as Bin
-import           Data.ByteString                    (ByteString, empty)
-import           Data.ByteString.Lazy               (fromStrict, toStrict)
-import qualified Data.List                          as List
-import           Data.Map.Strict                    (Map)
-import qualified Data.Map.Strict                    as Map
+import           Control.Exception                      (Exception)
+import           Control.Exception.Safe                 (throwM)
+import           Data.Binary                            (Binary, decode)
+import           Data.ByteString                        (ByteString)
+import           Data.ByteString.Lazy                   (fromStrict)
+import qualified Data.List                              as List
+import           Data.Map.Strict                        (Map)
+import qualified Data.Map.Strict                        as Map
 import           Data.Maybe
-import qualified Data.Set                           as Set
-import           Prologue                           hiding (throwM)
-
-import           Data.UUID                          as UUID (nil)
-import           LunaStudio.Data.Connection         (Connection)
-import           LunaStudio.Data.Connection         as Connection
-import           LunaStudio.Data.Graph              (Graph)
-import           LunaStudio.Data.GraphLocation      (GraphLocation)
-import           LunaStudio.Data.Node               (NodeId)
-import qualified LunaStudio.Data.Node               as Node
-import           LunaStudio.Data.NodeMeta           (NodeMeta)
-import           LunaStudio.Data.Port               (OutPortIndex (Projection))
-import qualified LunaStudio.Data.Port               as Port
-import           LunaStudio.Data.PortRef            (AnyPortRef (InPortRef', OutPortRef'), InPortRef, OutPortRef (..), dstNodeId, srcNodeId,
-                                                     toAnyPortRef)
-import qualified LunaStudio.Data.PortRef            as PortRef
+import           Data.UUID                              as UUID (nil)
 import qualified LunaStudio.API.Graph.AddConnection     as AddConnection
 import qualified LunaStudio.API.Graph.AddNode           as AddNode
 import qualified LunaStudio.API.Graph.AddPort           as AddPort
 import qualified LunaStudio.API.Graph.AddSubgraph       as AddSubgraph
 import qualified LunaStudio.API.Graph.MovePort          as MovePort
-import qualified LunaStudio.API.Graph.Redo              as RedoRequest
 import qualified LunaStudio.API.Graph.RemoveConnection  as RemoveConnection
 import qualified LunaStudio.API.Graph.RemoveNodes       as RemoveNodes
 import qualified LunaStudio.API.Graph.RemovePort        as RemovePort
 import qualified LunaStudio.API.Graph.RenameNode        as RenameNode
 import qualified LunaStudio.API.Graph.RenamePort        as RenamePort
 import qualified LunaStudio.API.Graph.SetNodeExpression as SetNodeExpression
-import           LunaStudio.API.Graph.SetNodesMeta      (SingleUpdate)
 import qualified LunaStudio.API.Graph.SetNodesMeta      as SetNodesMeta
 import qualified LunaStudio.API.Graph.SetPortDefault    as SetPortDefault
-import qualified LunaStudio.API.Graph.Undo              as UndoRequest
 import           LunaStudio.API.Request                 (Request (..))
 import qualified LunaStudio.API.Request                 as Request
 import           LunaStudio.API.Response                (Response (..))
 import qualified LunaStudio.API.Response                as Response
 import qualified LunaStudio.API.Topic                   as Topic
-
+import           LunaStudio.Data.Connection             as Connection
+import qualified LunaStudio.Data.Graph                  as Graph
+import qualified LunaStudio.Data.Node                   as Node
+import           LunaStudio.Data.Port                   (OutPortIndex (Projection))
+import           LunaStudio.Data.PortRef                (AnyPortRef (InPortRef'), OutPortRef (..))
+import           Prologue                               hiding (throwM)
 
 type Handler = ByteString -> UndoPure ()
 
@@ -110,7 +96,7 @@ type family RedoResponseRequest t where
 data ResponseErrorException = ResponseErrorException deriving (Show)
 instance Exception ResponseErrorException
 
-makeHandler :: forall req inv res z. (Topic.MessageTopic (Response req inv res), Binary (Response req inv res),
+makeHandler :: forall req inv res. (Topic.MessageTopic (Response req inv res), Binary (Response req inv res),
             Topic.MessageTopic (Request (UndoResponseRequest (Response req inv res))), Binary (UndoResponseRequest (Response req inv res)),
             Topic.MessageTopic (Request (RedoResponseRequest (Response req inv res))), Binary (RedoResponseRequest (Response req inv res)))
             => (Response req inv res -> Maybe (UndoRequests (Response req inv res))) -> (String, Handler)

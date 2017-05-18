@@ -7,7 +7,7 @@ import           Data.ByteString.Lazy.Char8        (ByteString)
 import qualified Data.Map.Lazy                     as Map
 
 import           Common.Batch.Connector.Connection (ControlCode (ConnectionTakeover, Welcome), WebMessage (ControlMessage, WebMessage))
-import qualified LunaStudio.API.Topic                  as Topic
+import qualified LunaStudio.API.Topic              as Topic
 import           NodeEditor.Event.Batch            as Batch
 import           NodeEditor.Event.Connection       as Connection
 import qualified NodeEditor.Event.Event            as Event
@@ -21,8 +21,7 @@ handle :: forall a. (Binary a, Topic.MessageTopic a) => (a -> Batch.Event) -> (S
 handle cons = (Topic.topic (undefined :: a), cons . decode)
 
 handlers :: Map.Map String (ByteString -> Batch.Event)
-handlers = Map.fromList [ handle GetProgramResponse
-                        , handle AddConnectionResponse
+handlers = Map.fromList [ handle AddConnectionResponse
                         , handle AddNodeResponse
                         , handle AddPortResponse
                         , handle AddSubgraphResponse
@@ -30,11 +29,19 @@ handlers = Map.fromList [ handle GetProgramResponse
                         , handle CollaborationUpdate
                         , handle DumpGraphVizResponse
                         , handle EmpireStarted
+                        , handle GetProgramResponse
                         , handle GetSubgraphsResponse
                         , handle MonadsUpdate
                         , handle MovePortResponse
                         , handle NodeResultUpdate
                         , handle NodeTypecheckerUpdate
+                        , handle ProjectCreated
+                        , handle ProjectCreatedUpdate
+                        , handle ProjectExported
+                        , handle ProjectImported
+                        , handle ProjectList
+                        , handle ProjectOpened
+                        , handle ProjectOpenedUpdate
                         , handle RedoResponse
                         , handle RemoveConnectionResponse
                         , handle RemoveNodesResponse
@@ -47,13 +54,6 @@ handlers = Map.fromList [ handle GetProgramResponse
                         , handle SetPortDefaultResponse
                         , handle TypeCheckResponse
                         , handle UndoResponse
-                        , handle ProjectCreated
-                        , handle ProjectCreatedUpdate
-                        , handle ProjectExported
-                        , handle ProjectImported
-                        , handle ProjectList
-                        , handle ProjectOpened
-                        , handle ProjectOpenedUpdate
                         ]
 
 processMessage :: WebMessage -> Batch.Event

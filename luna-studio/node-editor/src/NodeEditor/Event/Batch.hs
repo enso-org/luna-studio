@@ -37,7 +37,6 @@ import qualified LunaStudio.API.Project.OpenProject         as OpenProject
 
 
 data Event = UnknownEvent String
-           | GetProgramResponse                     GetProgram.Response
            | AddConnectionResponse               AddConnection.Response
            | AddNodeResponse                           AddNode.Response
            | AddPortResponse                           AddPort.Response
@@ -48,11 +47,19 @@ data Event = UnknownEvent String
            | ConnectionOpened
            | DumpGraphVizResponse                 DumpGraphViz.Response
            | EmpireStarted                       EmpireStarted.Status
+           | GetProgramResponse                     GetProgram.Response
            | GetSubgraphsResponse                 GetSubgraphs.Response
            | MonadsUpdate                         MonadsUpdate.Update
            | MovePortResponse                         MovePort.Response
            | NodeResultUpdate                 NodeResultUpdate.Update
            | NodeTypecheckerUpdate                NodeTCUpdate.Update
+           | ProjectCreated                      CreateProject.Response
+           | ProjectCreatedUpdate                CreateProject.Update
+           | ProjectExported                     ExportProject.Response
+           | ProjectImported                     ImportProject.Response
+           | ProjectList                          ListProjects.Response
+           | ProjectOpened                         OpenProject.Response
+           | ProjectOpenedUpdate                   OpenProject.Update
            | RedoResponse                                 Redo.Response
            | RemoveConnectionResponse         RemoveConnection.Response
            | RemoveNodesResponse                   RemoveNodes.Response
@@ -65,12 +72,4 @@ data Event = UnknownEvent String
            | SetPortDefaultResponse             SetPortDefault.Response
            | TypeCheckResponse                       TypeCheck.Response
            | UndoResponse                                 Undo.Response
-
-           | ProjectCreated                      CreateProject.Response
-           | ProjectCreatedUpdate                CreateProject.Update
-           | ProjectExported                     ExportProject.Response
-           | ProjectImported                     ImportProject.Response
-           | ProjectList                          ListProjects.Response
-           | ProjectOpened                         OpenProject.Response
-           | ProjectOpenedUpdate                   OpenProject.Update
            deriving (Eq, Show, Generic, NFData)
