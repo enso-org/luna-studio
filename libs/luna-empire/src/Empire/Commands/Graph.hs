@@ -52,7 +52,7 @@ module Empire.Commands.Graph
 
 import           Control.Exception             (evaluate)
 import           Control.Monad                 (forM, forM_)
-import           Control.Monad.Catch           (MonadCatch(..), catchAll, handle)
+import           Control.Monad.Catch           (MonadCatch(..), catchAll, handle, onException)
 import           Control.Monad.State           hiding (when)
 import           Control.Arrow                 ((&&&))
 import           Control.Monad.Error           (throwError)
@@ -72,7 +72,7 @@ import qualified Safe
 import qualified System.IO                     as IO
 
 import           Empire.Data.AST                 (NodeRef, NotInputEdgeException (..), NotUnifyException,
-                                                  InvalidConnectionException (..),
+                                                  InvalidConnectionException (..), SomeASTException,
                                                   astExceptionFromException, astExceptionToException)
 import qualified Empire.Data.BreadcrumbHierarchy as BH
 import           Empire.Data.Graph               (Graph)
@@ -641,51 +641,28 @@ openFile path = do
 typecheck :: GraphLocation -> Empire ()
 typecheck loc = withGraph loc $ runTC loc False
 
-substituteCode :: FilePath -> Int -> Int -> Text -> Maybe Int -> Empire (Maybe Parser.ReparsingStatus)
+substituteCode :: FilePath -> Int -> Int -> Text -> Maybe Int -> Empire ()
 substituteCode path start end code cursor = do
     newCode <- Library.withLibrary path $ Library.applyDiff start end code
     let loc = GraphLocation path (Breadcrumb [])
-    reparsing <- withTC loc True $ reloadCode loc newCode
-    Publisher.notifyLexerUpdate path $ Lexer.lexer newCode
-    return reparsing
+    handle (\(_e :: SomeASTException) -> return ()) $ do
+        withGraph loc $ reloadCode loc newCode
+        Publisher.notifyLexerUpdate path $ Lexer.lexer newCode
 
-reloadCode :: GraphLocation -> Text -> Command Graph (Maybe Parser.ReparsingStatus)
-reloadCode loc code = handle (\(_e :: ASTParse.SomeParserException) -> return Nothing) $ do
-    expr <- preuse $ Graph.breadcrumbHierarchy . BH.body
-    case expr of
-        Just e -> do
-            (ref, exprMap, rs) <- ASTParse.runUnitReparser code e
-            Graph.breadcrumbHierarchy . BH.body .= ref
-            children <- runASTOp $ forM (coerce rs :: [Parser.ReparsingChange]) $ \x -> case x of
-                Parser.AddedExpr expr -> do
-                    nodeId <- insertNode expr
-                    return $ Just (nodeId, expr)
-                Parser.ChangedExpr oldExpr expr -> do
-                    oldNodeId <- ASTRead.safeGetVarNodeId oldExpr
-
-                    forM oldNodeId $ \nodeId -> do
-                        copyMeta oldExpr expr
-                        putIntoHierarchy nodeId $ BH.MatchNode expr
-                        markNode nodeId
-                        ASTModify.rewireNode nodeId =<< ASTRead.getTargetNode expr
-                        return (nodeId, expr)
-                Parser.UnchangedExpr oldExpr expr -> do
-                    oldNodeId <- ASTRead.safeGetVarNodeId oldExpr
-
-                    forM oldNodeId $ \nodeId -> do
-                        copyMeta oldExpr expr
-                        putIntoHierarchy nodeId $ BH.MatchNode expr
-                        putChildrenIntoHierarchy nodeId expr
-                        markNode nodeId
-                        return (nodeId, expr)
-                Parser.RemovedExpr oldExpr -> do
-                    oldNodeId <- ASTRead.safeGetVarNodeId oldExpr
-                    forM_ oldNodeId $ removeNodeNoTC
-                    return Nothing
-            runAliasAnalysis
-            runASTOp $ forM (catMaybes children) $ \(n, e) -> putChildrenIntoHierarchy n e
-            return $ Just rs
-        Nothing -> return Nothing
+reloadCode :: GraphLocation -> Text -> Command Graph ()
+reloadCode loc code = do
+    oldMetas <- runASTOp $ do
+        m <- getExprMap
+        oldMetas <- forM (Map.assocs m) $ \(marker, expr) -> (marker,) <$> AST.readMeta expr
+        return [ (marker, meta) | (marker, Just meta) <- oldMetas ]
+    oldHierarchy <- use Graph.breadcrumbHierarchy
+    Graph.breadcrumbHierarchy .= def
+    loadCode code `onException` (Graph.breadcrumbHierarchy .= oldHierarchy)
+    runASTOp $ do
+        currentExprMap <- getExprMap
+        forM_ oldMetas $ \(marker, oldMeta) -> do
+            let expr = Map.lookup marker currentExprMap
+            forM_ expr $ \e -> AST.writeMeta e oldMeta
 
 putIntoHierarchy :: ASTOp m => NodeId -> BH.NodeIDTarget -> m ()
 putIntoHierarchy nodeId target = do
@@ -814,9 +791,9 @@ readRange :: ASTOp m => NodeRef -> m (Int, Int)
 readRange ref = do
     LeftSpacedSpan off  len  <- readRange' ref
     LeftSpacedSpan off' len' <- readCodeSpan ref
-    let left = fromIntegral off + fromIntegral len + fromIntegral off'
+    let left' = fromIntegral off + fromIntegral len + fromIntegral off'
+        left  = left' + (length ("def main:" :: String))
     return (left, left + fromIntegral len')
-
 
 readCodeSpan :: ASTOp m => NodeRef -> m (LeftSpacedSpan Delta)
 readCodeSpan ref = do

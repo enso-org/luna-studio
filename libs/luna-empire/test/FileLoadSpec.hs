@@ -23,6 +23,7 @@ import           LunaStudio.Data.TypeRep        (TypeRep (TStar))
 import           Empire.ASTOp                   (runASTOp)
 import qualified Empire.ASTOps.Parse            as ASTParse
 import qualified Empire.ASTOps.Print            as ASTPrint
+import           Empire.Data.AST                (SomeASTException)
 import qualified Empire.Commands.AST            as AST
 import qualified Empire.Commands.Graph          as Graph
 import qualified Empire.Commands.GraphBuilder   as GraphBuilder
@@ -77,25 +78,6 @@ spec = around withChannels $ do
                 connections `shouldMatchList` [
                       (outPortRef (pi ^. Node.nodeId) [], inPortRef (anon ^. Node.nodeId) [Port.Arg 0])
                     ]
-        it "shows proper changes to expressions" $ \env -> do
-            let code = [r|def main:
-    pi «0»= 3.14
-
-    foo «1»= a: b: a + b
-
-    c «2»= 4
-    bar «3»= foo 8 c
-|]
-            res <- evalEmp env $ do
-                Library.createLibrary Nothing "TestPath" code
-                let loc = GraphLocation "TestPath" $ Breadcrumb []
-                Graph.withGraph loc $ Graph.loadCode code
-                Graph.substituteCode "TestPath" 85 85 "3" (Just 86)
-            withResult res $ \(coerce -> Just (rs :: [Parser.ReparsingChange])) -> do
-                let unchanged = filter (\x -> case x of Parser.UnchangedExpr{} -> True; _ -> False) rs
-                    changed   = filter (\x -> case x of Parser.ChangedExpr{} -> True; _ -> False) rs
-                length unchanged `shouldBe` 3
-                length changed `shouldBe` 1
         it "does not duplicate nodes on edit" $ \env -> do
             let code = [r|def main:
     pi «0»= 3.14
@@ -109,14 +91,9 @@ spec = around withChannels $ do
                 Library.createLibrary Nothing "TestPath" code
                 let loc = GraphLocation "TestPath" $ Breadcrumb []
                 Graph.withGraph loc $ Graph.loadCode code
-                changes <- Graph.substituteCode "TestPath" 43 43 "3" (Just 44)
-                graph   <- Graph.getGraph loc
-                return (changes, graph)
-            withResult res $ \(coerce -> Just (rs :: [Parser.ReparsingChange]), graph) -> do
-                let unchanged = filter (\x -> case x of Parser.UnchangedExpr{} -> True; _ -> False) rs
-                    changed   = filter (\x -> case x of Parser.ChangedExpr{} -> True; _ -> False) rs
-                length unchanged `shouldBe` 3
-                length changed `shouldBe` 1
+                Graph.substituteCode "TestPath" 43 43 "3" (Just 44)
+                Graph.getGraph loc
+            withResult res $ \graph -> do
                 let Graph.Graph nodes connections _ _ _ = graph
                     cNodes = filter (\node -> node ^. Node.name == Just "c") nodes
                 length cNodes `shouldBe` 1
@@ -183,9 +160,7 @@ spec = around withChannels $ do
         it "adding an expression works" $ \env -> do
             let code = [r|def main:
     pi «0»= 3.14
-
     foo «1»= a: b: a + b
-
     c «2»= 4
     bar «3»= foo 8 c
 |]
@@ -193,7 +168,7 @@ spec = around withChannels $ do
                 Library.createLibrary Nothing "TestPath" code
                 let loc = GraphLocation "TestPath" $ Breadcrumb []
                 Graph.withGraph loc $ Graph.loadCode code
-                Graph.substituteCode "TestPath" 53 53 "    d «4»= 10" (Just 36)
+                Graph.substituteCode "TestPath" 86 86 "    d «4»= 10\n" (Just 86)
                 Graph.getGraph loc
             withResult res $ \graph -> do
                 let Graph.Graph nodes connections _ _ _ = graph
@@ -215,7 +190,7 @@ spec = around withChannels $ do
                 Library.createLibrary Nothing "TestPath" code
                 let loc = GraphLocation "TestPath" $ Breadcrumb []
                 Graph.withGraph loc $ Graph.loadCode code
-                Graph.substituteCode "TestPath" 22 26 ")" (Just 26)
+                Graph.substituteCode "TestPath" 22 26 ")" (Just 26) `catch` (\(_e :: SomeASTException) -> return ())
                 Graph.substituteCode "TestPath" 22 23 "5" (Just 23)
                 Graph.getGraph loc
             withResult res $ \graph -> do
@@ -257,9 +232,9 @@ spec = around withChannels $ do
                 forM [0..2] $ Graph.markerCodeSpan loc
             withResult res $ \spans -> do
                 spans `shouldBe` [
-                      (8, 18)
-                    , (26, 37)
-                    , (45, 61)
+                      (17, 27)
+                    , (35, 46)
+                    , (54, 70)
                     ]
         it "shows proper expressions ranges" $ \env -> do
             let code = [r|def main:
@@ -275,10 +250,10 @@ spec = around withChannels $ do
                 forM [0..3] $ Graph.markerCodeSpan loc
             withResult res $ \spans -> do
                 spans `shouldBe` [
-                      (5, 17)
-                    , (22, 42)
-                    , (47, 55)
-                    , (60, 76)
+                      (14, 26)
+                    , (31, 51)
+                    , (56, 64)
+                    , (69, 85)
                     ]
         it "adds one node to code" $ \env -> do
             u1 <- mkUUID
@@ -309,7 +284,7 @@ spec = around withChannels $ do
                 Graph.withGraph loc $ runASTOp $ forM [0..3] Graph.getNodeIdForMarker
             withResult res $ \ids -> do
                 ids `shouldSatisfy` (all isJust)
-        it "adds one node to existing file" $ \env -> do
+        it "adds one node to existing file via node editor" $ \env -> do
             let code = [r|def main:
     pi «0»= 3.14
     foo «1»= a: b: a + b
@@ -335,6 +310,36 @@ spec = around withChannels $ do
     bar «3»= foo 8 c
     node1 «4»= 4
 |]
+        it "adds one node to existing file via text" $ \env -> do
+            let code = [r|def main:
+    pi «0»= 3.14
+    foo «1»= a: b: a + b
+    c «2»= 4
+    bar «3»= foo 8 c
+|]
+            u1 <- mkUUID
+            (code, spans) <- evalEmp env $ do
+                Library.createLibrary Nothing "TestPath" code
+                let loc = GraphLocation "TestPath" $ Breadcrumb []
+                Graph.withGraph loc $ Graph.loadCode code
+                Graph.substituteCode "TestPath" 65 65 "    d «4»= 6\n" Nothing
+                code  <- Graph.getCode loc
+                spans <- forM [0..4] $ Graph.markerCodeSpan loc
+                return (code, spans)
+            code `shouldBe` [r|def main:
+    pi «0»= 3.14
+    foo «1»= a: b: a + b
+    c «2»= 4
+    d «4»= 6
+    bar «3»= foo 8 c
+|]
+            spans `shouldBe` [
+                  (14, 26)
+                , (31, 51)
+                , (56, 64)
+                , (82, 98)
+                , (69, 77)
+                ]
         it "adds one node to existing file and updates it" $ \env -> do
             let code = [r|def main:
     pi «0»= 3.14
@@ -364,7 +369,7 @@ spec = around withChannels $ do
 |]
         it "lambda in code can be entered" $ \env -> do
             let code = [r|def main:
-foo «0»= a: a|]
+    foo «0»= a: a|]
             u1 <- mkUUID
             u2 <- mkUUID
             res <- evalEmp env $ do
@@ -374,7 +379,7 @@ foo «0»= a: a|]
                 Just foo <- Graph.withGraph loc $ runASTOp $ Graph.getNodeIdForMarker 0
                 Graph.addNode loc u1 "node2" def
                 Graph.addNode loc u2 "node1" def
-                Graph.substituteCode "TestPath" 35 36 "9" Nothing
+                -- Graph.substituteCode "TestPath" 35 36 "9" Nothing
                 Graph.getGraph $ loc |> foo
             withResult res $ \(Graph.Graph nodes connections _ _ _) -> do
                 nodes `shouldBe` []
