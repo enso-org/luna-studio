@@ -97,6 +97,16 @@ getExpressionNode nl ne = getNodeRec' (nl ^. NodeLoc.pathItems) where
 
     getRootNode nid = ne ^. expressionNodes . at nid
 
+updateExpressionNode :: ExpressionNode -> NodeEditor -> NodeEditor
+updateExpressionNode n ne = updateExpressionNode' (nl ^. NodeLoc.pathItems) where
+    nl                          = n ^. ExpressionNode.nodeLoc
+    updateExpressionNode' []    = ne & expressionNodes . at (nl ^. nodeId)  ?~ n
+    updateExpressionNode' (h:t) = ne & expressionNodes . ix (h ^. B.nodeId) %~ updateNode t
+
+    updateNode []    n' = n
+    updateNode (h:t) n' = n' & ExpressionNode.subgraphs . ix h . ExpressionNode.expressionNodes . ix (h ^. B.nodeId) %~ updateNode t
+
+
 getInputNode :: NodeLoc -> NodeEditor -> Maybe InputNode
 getInputNode = _getNodeRec inputNode ExpressionNode.inputNode
 

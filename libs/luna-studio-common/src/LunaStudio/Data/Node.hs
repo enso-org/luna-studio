@@ -3,12 +3,15 @@ module LunaStudio.Data.Node where
 
 import           Data.Binary               (Binary)
 import           Data.Text                 (Text)
+import qualified Data.Text                 as Text
 import           Data.UUID.Types           (UUID)
 import           LunaStudio.Data.Constants (gapBetweenNodes)
 import           LunaStudio.Data.NodeMeta  (NodeMeta)
 import qualified LunaStudio.Data.NodeMeta  as NodeMeta
 import           LunaStudio.Data.Port      (InPort, InPortTree, OutPort, OutPortTree)
+import qualified LunaStudio.Data.Port      as Port
 import           LunaStudio.Data.Position  (Position, fromDoubles, x, y)
+import           LunaStudio.Data.TypeRep   (TypeRep (TStar))
 import           Prologue
 
 
@@ -74,6 +77,15 @@ instance HasNodeId Node where
         setNodeId (InputSidebar'   n) nid = InputSidebar'   $ n & inputNodeId  .~ nid
         setNodeId (OutputSidebar'  n) nid = OutputSidebar'  $ n & outputNodeId .~ nid
 
+mkExprNode :: NodeId -> Text -> Position -> ExpressionNode
+mkExprNode nid expr pos = ExpressionNode nid
+                                         expr
+                                         def
+                                         def
+                                         (Port.LabeledTree def $ Port.Port [Port.Self] (Text.pack "") TStar Port.NotConnected)
+                                         (Port.LabeledTree def $ Port.Port []            (Text.pack "") TStar Port.NotConnected)
+                                         (NodeMeta.NodeMeta pos False)
+                                         False
 
 findPredecessorPosition :: ExpressionNode -> [ExpressionNode] -> Position
 findPredecessorPosition node nodes = fromDoubles xPos yPos where

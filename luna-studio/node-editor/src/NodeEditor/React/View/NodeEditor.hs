@@ -3,35 +3,41 @@
 module NodeEditor.React.View.NodeEditor where
 
 
-import           Common.Prelude                       hiding (transform)
-import qualified Data.HashMap.Strict                  as HashMap
-import qualified Data.Matrix                          as Matrix
-import           Data.Maybe                           (mapMaybe)
-import           JS.Scene                             (sceneId)
-import qualified LunaStudio.Data.MonadPath            as MonadPath
-import qualified NodeEditor.Data.CameraTransformation as CameraTransformation
-import           NodeEditor.Data.Matrix               (showCameraMatrix, showCameraScale, showCameraTranslate)
-import           NodeEditor.Event.Event               (Event (Shortcut))
-import qualified NodeEditor.Event.Shortcut            as Shortcut
-import qualified NodeEditor.Event.UI                  as UI
-import qualified NodeEditor.React.Event.NodeEditor    as NE
-import           NodeEditor.React.Model.App           (App)
-import           NodeEditor.React.Model.NodeEditor    (NodeEditor)
-import qualified NodeEditor.React.Model.NodeEditor    as NodeEditor
-import           NodeEditor.React.Store               (Ref, dispatch, dispatch')
-import           NodeEditor.React.View.Connection     (connection_, halfConnection_)
-import           NodeEditor.React.View.ConnectionPen  (connectionPen_)
-import           NodeEditor.React.View.ExpressionNode (nodeDynamicStyles_, node_)
-import           NodeEditor.React.View.Monad          (monads_)
-import           NodeEditor.React.View.Plane          (planeCanvas_, planeConnections_, planeMonads_, planeNodes_, svgPlanes_)
-import           NodeEditor.React.View.Searcher       (searcher_)
-import           NodeEditor.React.View.SelectionBox   (selectionBox_)
-import           NodeEditor.React.View.Sidebar        (sidebar_)
-import qualified NodeEditor.React.View.Style          as Style
-import           NodeEditor.React.View.Visualization  (pinnedVisualization_)
-import           Numeric                              (showFFloat)
-import           React.Flux                           hiding (transform)
-import qualified React.Flux                           as React
+import           Common.Prelude                             hiding (transform)
+import qualified Data.HashMap.Strict                        as HashMap
+import qualified Data.Matrix                                as Matrix
+import           Data.Maybe                                 (mapMaybe)
+import           JS.Scene                                   (sceneId)
+import qualified LunaStudio.Data.MonadPath                  as MonadPath
+import           LunaStudio.Data.NodeLoc                    (NodeLoc)
+import qualified LunaStudio.Data.PortRef                    as PortRef
+import qualified NodeEditor.Data.CameraTransformation       as CameraTransformation
+import           NodeEditor.Data.Matrix                     (showCameraMatrix, showCameraScale, showCameraTranslate)
+import           NodeEditor.Event.Event                     (Event (Shortcut))
+import qualified NodeEditor.Event.Shortcut                  as Shortcut
+import qualified NodeEditor.Event.UI                        as UI
+import qualified NodeEditor.React.Event.NodeEditor          as NE
+import           NodeEditor.React.Model.App                 (App)
+import qualified NodeEditor.React.Model.Node                as Node
+import qualified NodeEditor.React.Model.Node.ExpressionNode as ExpressionNode
+import           NodeEditor.React.Model.NodeEditor          (NodeEditor)
+import qualified NodeEditor.React.Model.NodeEditor          as NodeEditor
+import           NodeEditor.React.Model.Searcher            (Searcher)
+import qualified NodeEditor.React.Model.Searcher            as Searcher
+import           NodeEditor.React.Store                     (Ref, dispatch, dispatch')
+import           NodeEditor.React.View.Connection           (connection_, halfConnection_)
+import           NodeEditor.React.View.ConnectionPen        (connectionPen_)
+import           NodeEditor.React.View.ExpressionNode       (filterOutSearcherIfNotRelated, nodeDynamicStyles_, node_)
+import           NodeEditor.React.View.Monad                (monads_)
+import           NodeEditor.React.View.Plane                (planeCanvas_, planeConnections_, planeMonads_, planeNodes_, svgPlanes_)
+import           NodeEditor.React.View.Searcher             (searcher_)
+import           NodeEditor.React.View.SelectionBox         (selectionBox_)
+import           NodeEditor.React.View.Sidebar              (sidebar_)
+import qualified NodeEditor.React.View.Style                as Style
+import           NodeEditor.React.View.Visualization        (pinnedVisualization_)
+import           Numeric                                    (showFFloat)
+import           React.Flux                                 hiding (transform)
+import qualified React.Flux                                 as React
 
 
 name :: JSString
@@ -43,12 +49,22 @@ show1 a = showFFloat (Just 1) a "" -- limit Double to two decimal numbers TODO: 
 show4 :: Double -> String
 show4 a = showFFloat (Just 4) a "" -- limit Double to two decimal numbers TODO: remove before the release
 
+applySearcherHints :: NodeEditor -> NodeEditor
+applySearcherHints ne = maybe ne replaceNode $ ne ^. NodeEditor.searcher where
+    replaceNode s = case s ^. Searcher.mode of
+        Searcher.Node nl Nothing    results -> ne -- when (s ^. Searcher.selected > 0) $ NodeEditor.setExpressionNode  ne
+        Searcher.Node nl (Just pos) results -> if s ^. Searcher.selected == 0
+            then NodeEditor.updateExpressionNode (ExpressionNode.mkExprNode nl (s ^. Searcher.input) pos) ne
+            else NodeEditor.updateExpressionNode (ExpressionNode.mkExprNode nl (s ^. Searcher.input) pos) ne
+        _ -> ne
+
 nodeEditor_ :: Ref App -> NodeEditor -> ReactElementM ViewEventHandler ()
 nodeEditor_ ref ne = React.viewWithSKey nodeEditor name (ref, ne) mempty
 
 nodeEditor :: ReactView (Ref App, NodeEditor)
-nodeEditor = React.defineView name $ \(ref, ne) -> do
-    let camera       = ne ^. NodeEditor.screenTransform . CameraTransformation.logicalToScreen
+nodeEditor = React.defineView name $ \(ref, ne') -> do
+    let ne           = applySearcherHints ne'
+        camera       = ne ^. NodeEditor.screenTransform . CameraTransformation.logicalToScreen
         nodes        = ne ^. NodeEditor.expressionNodes . to HashMap.elems
         input        = ne ^. NodeEditor.inputNode
         output       = ne ^. NodeEditor.outputNode
@@ -56,6 +72,7 @@ nodeEditor = React.defineView name $ \(ref, ne) -> do
                        , m ^. MonadPath.path . to (mapMaybe $ flip HashMap.lookup $ ne ^. NodeEditor.expressionNodes))
         monads       = map lookupNode $ ne ^. NodeEditor.monads
         scale        = (Matrix.toList camera)!!0 :: Double
+        maySearcher  = ne ^. NodeEditor.searcher
     if ne ^. NodeEditor.isGraphLoaded then
         div_
             [ "className"   $= Style.prefix "graph"
@@ -101,13 +118,13 @@ nodeEditor = React.defineView name $ \(ref, ne) -> do
                     forM_     (ne ^. NodeEditor.connectionPen  ) connectionPen_
 
             planeNodes_ $ do
-                forM_ (ne ^. NodeEditor.searcher      ) $ searcher_ ref camera
-                forM_  nodes                            $ node_ ref
+                -- forM_ (ne ^. NodeEditor.searcher      ) $ searcher_ ref camera
+                forM_  nodes                            $ \n -> node_ ref n (filterOutSearcherIfNotRelated (n ^. Node.nodeLoc) maySearcher)
                 forM_ (ne ^. NodeEditor.visualizations) $ pinnedVisualization_ ref ne
 
 
-            forM_ input  $ sidebar_ ref
-            forM_ output  $ sidebar_ ref
+            forM_ input  $ \n -> sidebar_ ref (filterOutSearcherIfNotRelated (n ^. Node.nodeLoc) maySearcher) n
+            forM_ output $ sidebar_ ref Nothing
 
             planeCanvas_ mempty
     else

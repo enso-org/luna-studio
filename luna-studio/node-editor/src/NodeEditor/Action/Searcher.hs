@@ -11,7 +11,7 @@ import           Common.Prelude
 import           Data.ScreenPosition                (ScreenPosition)
 import qualified JS.GoogleAnalytics                 as GA
 import qualified JS.Searcher                        as Searcher
-import           LunaStudio.Data.NodeLoc            (NodeLoc)
+import           LunaStudio.Data.NodeLoc            (NodeLoc, NodePath)
 import qualified LunaStudio.Data.NodeLoc            as NodeLoc
 import           LunaStudio.Data.PortRef            (OutPortRef)
 import qualified LunaStudio.Data.PortRef            as PortRef
@@ -24,6 +24,7 @@ import           NodeEditor.Action.State.App        (renderIfNeeded)
 import           NodeEditor.Action.State.NodeEditor (findSuccessorPosition, getSearcher, getSelectedNodes, getSelectedNodes,
                                                      modifyNodeEditor, modifySearcher)
 import           NodeEditor.Action.State.Scene      (translateToScreen, translateToWorkspace)
+import           NodeEditor.Action.UUID             (getUUID)
 import           NodeEditor.Event.Event             (Event (Shortcut))
 import qualified NodeEditor.Event.Shortcut          as Shortcut
 import qualified NodeEditor.React.Model.NodeEditor  as NodeEditor
@@ -48,26 +49,21 @@ data OtherCommands = AddNode
                    deriving (Bounded, Enum, Eq, Generic, Read, Show)
 
 open :: Command State ()
-open = openWith (Searcher.Node def def) =<< use (Global.ui . UI.mousePos)
+open = do
+    pos <- getSelectedNodes >>= \case
+        [n] -> findSuccessorPosition n
+        _   -> translateToWorkspace =<< use (Global.ui . UI.mousePos)
+    nl <- convert . ((def :: NodePath), ) <$> getUUID
+    openWith (Searcher.Node nl (Just pos) def)
 
 positionDelta :: Double
 positionDelta = 100
 
-openWith :: Searcher.Mode -> ScreenPosition -> Command State ()
-openWith mode pos = do
-    let nodeLoc = case mode of
-            Searcher.Node (Just nl) _   -> Just nl
-            Searcher.NodeName nl _      -> Just nl
-            Searcher.PortName portRef _ -> Just $ portRef ^. PortRef.nodeLoc
-            _                           -> Nothing
-    pos' <- if isJust nodeLoc
-        then translateToWorkspace pos
-        else getSelectedNodes >>= \case
-          [node] -> findSuccessorPosition node
-          _      -> translateToWorkspace pos
+openWith :: Searcher.Mode -> Command State ()
+openWith mode = do
     begin Searcher
     GA.sendEvent GA.NodeSearcher
-    modifyNodeEditor $ NodeEditor.searcher ?= Searcher.Searcher pos' 0 mode def False False
+    modifyNodeEditor $ NodeEditor.searcher ?= Searcher.Searcher 0 mode def False False
     renderIfNeeded
     liftIO Searcher.focus
 
@@ -110,31 +106,25 @@ accept scheduleEvent action = do
     withJustM getSearcher $ \searcher -> do
         let expression = searcher ^. Searcher.selectedExpression
         case searcher ^. Searcher.mode of
-            Searcher.Command  _ -> execCommand action scheduleEvent $ convert expression
-            Searcher.Node nl  _ -> do
-                case nl of
-                    Nothing     -> do
-                        let path = NodeLoc.empty --FIXME
-                        createNode path (searcher ^. Searcher.position) expression
-                    Just nodeLoc -> setNodeExpression nodeLoc expression
-                close action
-            Searcher.NodeName nl _      -> renameNode nl expression >> close action
-            Searcher.PortName portRef _ -> renamePort portRef expression >> close action
+            Searcher.Command                _ -> execCommand action scheduleEvent $ convert expression
+            Searcher.Node     nl (Just pos) _ -> createNode (nl ^. NodeLoc.path) pos expression >> close action
+            Searcher.Node     nl _          _ -> setNodeExpression nl expression >> close action
+            Searcher.NodeName nl            _ -> renameNode nl expression >> close action
+            Searcher.PortName portRef       _ -> renamePort portRef expression >> close action
 
-
-openEditExpression :: Text -> NodeLoc -> Position -> Command State ()
-openEditExpression expr nodeLoc pos = do
-    openWith (Searcher.Node (Just nodeLoc) def) =<< translateToScreen pos
+openEditExpression :: NodeLoc -> Text -> Command State ()
+openEditExpression nodeLoc expr = do
+    openWith $ Searcher.Node nodeLoc def def
     continue $ querySearch expr
 
-openEditName :: Text -> NodeLoc -> Position -> Command State ()
-openEditName name nodeLoc pos = do
-    openWith (Searcher.NodeName nodeLoc def) =<< translateToScreen pos
-    continue $ querySearch name
+openEditName :: NodeLoc -> Maybe Text -> Command State ()
+openEditName nodeLoc mayName = do
+    openWith $ Searcher.NodeName nodeLoc def
+    continue $ querySearch $ maybe "" id mayName
 
-openEditPortName :: Text -> OutPortRef -> Position -> Command State ()
-openEditPortName name portRef pos = do
-    openWith (Searcher.PortName portRef def) =<< translateToScreen pos
+openEditPortName :: OutPortRef -> Text -> Command State ()
+openEditPortName portRef name = do
+    openWith $ Searcher.PortName portRef def
     continue $ querySearch name
 
 allCommands :: Items ()
@@ -150,7 +140,7 @@ execCommand action scheduleEvent expression = case readMaybe expression of
     Nothing -> case readMaybe expression of
         Just AddNode -> modifySearcher $ do
             Searcher.selected .= def
-            Searcher.mode     %= (\(Searcher.Node nl _) -> Searcher.Node nl def)
+            Searcher.mode     %= (\(Searcher.Node nl pos _) -> Searcher.Node nl pos def)
             Searcher.input    .= def
             Searcher.rollbackReady .= False
         Nothing -> return ()
@@ -178,7 +168,7 @@ querySearch query _ = do
         isNode <- use Searcher.isNode
         Searcher.input .= query
         case mode of
-            Searcher.Node _ _ -> Searcher.rollbackReady .= False
+            Searcher.Node _ _ _   -> Searcher.rollbackReady .= False
                 {- clearing results prevents from selecting out of date result, but make searcher blink. -}
                 -- Searcher.mode .= Searcher.Node def
             Searcher.NodeName _ _ -> Searcher.rollbackReady .= False

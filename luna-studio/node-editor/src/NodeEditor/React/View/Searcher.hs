@@ -2,25 +2,23 @@
 module NodeEditor.React.View.Searcher where
 
 import           Common.Prelude
-import qualified Data.Aeson                                 as Aeson
-import           Data.Matrix                                (Matrix)
-import qualified LunaStudio.Data.NodeLoc                    as NodeLoc
-import           JS.Searcher                                (searcherId)
-import           NodeEditor.Data.Matrix                     (showNodeTranslate)
-import qualified NodeEditor.Event.Keys                      as Keys
-import qualified NodeEditor.Event.UI                        as UI
-import qualified NodeEditor.React.Event.App                 as App
+import qualified Data.Aeson                      as Aeson
+import           Data.Matrix                     (Matrix)
+import           JS.Searcher                     (searcherId)
+import qualified LunaStudio.Data.NodeLoc         as NodeLoc
+import           NodeEditor.Data.Matrix          (showNodeTranslate)
+import qualified NodeEditor.Event.Keys           as Keys
+import qualified NodeEditor.Event.UI             as UI
+import qualified NodeEditor.React.Event.App      as App
 import           NodeEditor.React.Event.Searcher
-import           NodeEditor.React.Model.App                 (App)
-import qualified NodeEditor.React.Model.Node.ExpressionNode as Node
-import           NodeEditor.React.Model.Searcher            (Searcher)
-import qualified NodeEditor.React.Model.Searcher            as Searcher
-import           NodeEditor.React.Store                     (Ref, dispatch)
-import           NodeEditor.React.View.ExpressionNode       (nodeBody_)
-import qualified NodeEditor.React.View.Style                as Style
+import           NodeEditor.React.Model.App      (App)
+import           NodeEditor.React.Model.Searcher (Searcher)
+import qualified NodeEditor.React.Model.Searcher as Searcher
+import           NodeEditor.React.Store          (Ref, dispatch)
+import qualified NodeEditor.React.View.Style     as Style
 import           React.Flux
-import qualified React.Flux                                 as React
-import qualified Text.ScopeSearcher.QueryResult             as Result
+import qualified React.Flux                      as React
+import qualified Text.ScopeSearcher.QueryResult  as Result
 
 name :: JSString
 name = "searcher"
@@ -35,16 +33,16 @@ handleKeyDown ref e k = prevent $ stopPropagation e : dispatch' where
             UI.AppEvent $ App.KeyDown k
         else UI.SearcherEvent $ KeyDown k
 
-searcher :: ReactView (Ref App, Matrix Double, Searcher)
-searcher =  React.defineView name $ \(ref, camera, s) -> do
-    let nodePos     = s ^. Searcher.position
-        mode        = s ^. Searcher.mode
-        nodePreview = convert . (NodeLoc.empty,) <$> (s ^. Searcher.selectedNode)
+searcher :: ReactView (Ref App, Searcher)
+searcher =  React.defineView name $ \(ref, s) -> do
+    let mode        = s ^. Searcher.mode
+        -- nodePos     = s ^. Searcher.position
+        -- nodePreview = convert . (NodeLoc.empty,) <$> (s ^. Searcher.selectedNode)
         className   = Style.prefixFromList ( "input" : "searcher" : ( case mode of
-            Searcher.Command    _ -> [ "searcher--command"]
-            Searcher.Node     _ _ -> [ "searcher--node" ]
-            Searcher.NodeName _ _ -> [ "searcher--node-name"]
-            Searcher.PortName _ _ -> [ "searcher--port-name"]))
+            Searcher.Command      _ -> [ "searcher--command"]
+            Searcher.Node     _ _ _ -> [ "searcher--node" ]
+            Searcher.NodeName _   _ -> [ "searcher--node-name"]
+            Searcher.PortName _   _ -> [ "searcher--port-name"]))
         mayCustomInput = if s ^. Searcher.replaceInput then ["value" $= convert (s ^. Searcher.input)] else []
     div_
         [ "key"       $= name
@@ -53,7 +51,7 @@ searcher =  React.defineView name $ \(ref, camera, s) -> do
         div_
             [ "key"       $= "searcherBody"
             , "className" $= Style.prefix "searcher__body"
-            , "style"     @= Aeson.object [ "transform" Aeson..= (showNodeTranslate camera $ s ^. Searcher.position) ]
+            -- , "style"     @= Aeson.object [ "transform" Aeson..= (showNodeTranslate camera $ s ^. Searcher.position) ]
             , onMouseDown $ \e _ -> [stopPropagation e]
             , onMouseUp   $ \e _ -> [stopPropagation e]
             , onClick     $ \e _ -> [stopPropagation e]
@@ -83,7 +81,7 @@ searcher =  React.defineView name $ \(ref, camera, s) -> do
                                 [ "key" $= "name"
                                 , "className" $= Style.prefix "searcher__result__item__name"
                                 ] $ elemString $ convert $ result ^. Result.name
-                    Searcher.Node _ results -> forKeyed_ results $ \(idx, result) ->
+                    Searcher.Node _ _ results -> forKeyed_ results $ \(idx, result) ->
                         div_
                             [ "key"       $= jsShow idx
                             , "className" $= resultClasses idx
@@ -125,11 +123,11 @@ searcher =  React.defineView name $ \(ref, camera, s) -> do
                                 ["key" $= "name"
                                 ,"className" $= Style.prefix "searcher__results__item__name"
                                 ] $ elemString $ convert $ result ^. Result.name
-        div_
-            [ "key"       $= "searcherPreview"
-            , "className" $= Style.prefix "searcher__preview"
-            ] $ withJust nodePreview $ nodeBody_ ref . (Node.position .~ nodePos)
+        -- div_
+        --     [ "key"       $= "searcherPreview"
+        --     , "className" $= Style.prefix "searcher__preview"
+        --     ] $ withJust nodePreview $ nodeBody_ ref . (Node.position .~ nodePos)
                                               -- . (Node.isExpandedControls .~ True)
 
-searcher_ :: Ref App -> Matrix Double -> Searcher -> ReactElementM ViewEventHandler ()
-searcher_ ref camera model = React.viewWithSKey searcher name (ref, camera, model) mempty
+searcher_ :: Ref App -> Searcher -> ReactElementM ViewEventHandler ()
+searcher_ ref model = React.viewWithSKey searcher name (ref, model) mempty

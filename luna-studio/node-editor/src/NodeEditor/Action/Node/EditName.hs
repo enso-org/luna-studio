@@ -10,8 +10,4 @@ import           NodeEditor.State.Global                    (State)
 
 
 editName :: NodeLoc -> Command State ()
-editName nl = do
-    mayNode <- getExpressionNode nl
-    case (view position &&& maybe def id . view name) <$> mayNode of
-        Just (pos, name) -> Searcher.openEditName name nl pos
-        _                -> return ()
+editName nl = withJustM (fmap2 (view name) $ getExpressionNode nl) $ Searcher.openEditName nl

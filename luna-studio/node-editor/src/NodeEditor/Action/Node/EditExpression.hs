@@ -12,8 +12,4 @@ import           NodeEditor.State.Global                    (State)
 
 
 editExpression :: NodeLoc -> Command State ()
-editExpression nl = do
-    mayNode <- getExpressionNode nl
-    case (view position &&& view expression) <$> mayNode of
-        Just (pos, expr) -> Searcher.openEditExpression expr nl pos
-        _                -> return ()
+editExpression nl = withJustM (fmap2 (view expression) $ getExpressionNode nl) $ Searcher.openEditExpression nl
