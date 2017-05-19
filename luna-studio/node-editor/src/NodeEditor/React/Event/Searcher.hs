@@ -3,9 +3,9 @@
 
 module NodeEditor.React.Event.Searcher where
 
-import           React.Flux     (KeyboardEvent)
-
 import           Common.Prelude
+import           Data.Aeson     (FromJSON)
+import           React.Flux     (KeyboardEvent)
 
 
 
@@ -19,4 +19,4 @@ data Event = InputChanged Text
            | MoveLeft
            | KeyDown KeyboardEvent
            | KeyUp   KeyboardEvent
-            deriving (Read, Show, Generic, NFData, Typeable)
+            deriving (FromJSON, Generic, NFData, Show, Typeable)

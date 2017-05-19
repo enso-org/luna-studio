@@ -2,7 +2,6 @@ module NodeEditor.Action.Basic
     ( addPort
     , addSubgraph
     , centerGraph
-    , closeFile
     , connect
     , createGraph
     , createNode
@@ -58,7 +57,6 @@ module NodeEditor.Action.Basic
     , moveNodes
     , movePort
     , navigateToGraph
-    , openFile
     , removeConnection
     , removeConnections
     , removeConnectionsBetweenNodes
@@ -73,6 +71,7 @@ module NodeEditor.Action.Basic
     , selectAll
     , selectNodes
     , selectPreviousNodes
+    , setFile
     , setInputMode
     , setInputSidebarPortMode
     , setNodeExpression
@@ -90,6 +89,7 @@ module NodeEditor.Action.Basic
     , toggleSelectedNodesUnfold
     , toggleVisualizations
     , unselectAll
+    , unsetFile
     , updateAllPortsSelfVisibility
     , updateClient
     , updateCollaboration
@@ -105,7 +105,7 @@ import           NodeEditor.Action.Basic.AddConnection       (connect, localAddC
 import           NodeEditor.Action.Basic.AddNode             (createNode, localAddExpressionNode)
 import           NodeEditor.Action.Basic.AddPort             (addPort, localAddPort)
 import           NodeEditor.Action.Basic.AddSubgraph         (addSubgraph, localAddSubgraph, localUpdateSubgraph)
-import           NodeEditor.Action.Basic.Atom                (closeFile, openFile)
+import           NodeEditor.Action.Basic.Atom                (setFile, unsetFile)
 import           NodeEditor.Action.Basic.CenterGraph         (centerGraph)
 import           NodeEditor.Action.Basic.CreateGraph         (createGraph, updateGraph)
 import           NodeEditor.Action.Basic.EnterBreadcrumb     (enterBreadcrumb, enterBreadcrumbs, enterNode, exitBreadcrumb)

@@ -4,7 +4,7 @@ module NodeEditor.Handler.App
 
 import           Common.Prelude
 
-import           NodeEditor.Action.Basic        (closeFile, openFile, updateScene)
+import           NodeEditor.Action.Basic        (setFile, unsetFile, updateScene)
 import qualified NodeEditor.Action.Batch        as Batch
 import           NodeEditor.Action.Command      (Command)
 import           NodeEditor.Action.State.Action (endAll)
@@ -25,8 +25,8 @@ handle (UI (AppEvent  App.Resize          )) = Just   updateScene
 handle (UI (AppEvent  App.MouseLeave      )) = Just   endAll
 handle (Shortcut (Shortcut.Event command _)) = Just $ handleCommand command
 handle  Init                                 = Just   Batch.getProgram
-handle (Atom (Atom.OpenFile path)          ) = Just $ openFile path
-handle (Atom  Atom.CloseFile               ) = Just   closeFile
+handle (Atom (Atom.SetFile path)           ) = Just $ setFile path
+handle (Atom  Atom.UnsetFile               ) = Just   unsetFile
 handle _                                     = Nothing
 
 

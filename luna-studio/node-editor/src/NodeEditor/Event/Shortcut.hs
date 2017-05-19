@@ -2,7 +2,7 @@
 module NodeEditor.Event.Shortcut where
 
 import           Common.Prelude
-
+import           Data.Aeson     (FromJSON)
 
 data Command = Cancel
              | OpenSearcher
@@ -46,11 +46,11 @@ data Command = Cancel
              -- undo/redo
              | Undo
              | Redo
-             deriving (Bounded, Eq, Enum, Generic, NFData, Read, Show, Typeable)
+             deriving (Bounded, Eq, Enum, FromJSON, Generic, NFData, Read, Show, Typeable)
 
 data ShortcutEvent = Event
-                   { _command :: Command
+                   { _shortcut :: Command
                    , _arg :: Maybe String
-                   } deriving (Generic, NFData, Show, Typeable)
+                   } deriving (FromJSON, Generic, NFData, Show, Typeable)
 
 makeLenses ''ShortcutEvent
