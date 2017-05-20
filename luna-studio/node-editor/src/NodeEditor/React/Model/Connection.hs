@@ -22,7 +22,7 @@ import           NodeEditor.React.Model.Layout              (Layout, inputSideba
 import           NodeEditor.React.Model.Node                (ExpressionNode, Node (Expression), NodeLoc)
 import qualified NodeEditor.React.Model.Node                as Node
 import           NodeEditor.React.Model.Node.ExpressionNode (countArgPorts, countOutPorts, inPorts, isCollapsed, position)
-import           NodeEditor.React.Model.Port                (EitherPort, InPort, InPortId, IsAlias, IsOnly, IsSelf, OutPort, OutPortId,
+import           NodeEditor.React.Model.Port                (EitherPort, InPort, InPortId, IsAlias, IsOnly, IsSelf, HasSelf, OutPort, OutPortId,
                                                              getPortNumber, isSelf, portAngleStart, portAngleStop, portGap, portId)
 import qualified NodeEditor.React.Model.Port                as Port
 
@@ -160,7 +160,8 @@ connectionPositions srcNode' srcPort dstNode' dstPort layout = case (srcNode', d
         srcConnPos <- halfConnectionSrcPosition srcNode' (Right srcPort) dstConnPos layout
         return (srcConnPos, dstConnPos)
     (Expression srcNode, Expression dstNode) -> do
-        let srcPos'    = srcNode ^. position
+        let hasAlias   = True
+            srcPos'    = srcNode ^. position
             dstPos'    = dstNode ^. position
             isSrcExp   = not . isCollapsed $ srcNode
             isDstExp   = not . isCollapsed $ dstNode
@@ -169,7 +170,7 @@ connectionPositions srcNode' srcPort dstNode' dstPort layout = case (srcNode', d
             numOfSrcOutPorts = countOutPorts srcNode
             numOfDstInPorts  = countArgPorts dstNode
             srcConnPos = connectionSrc srcPos' dstPos' isSrcExp isDstExp srcPortNum numOfSrcOutPorts $ countOutPorts srcNode + countArgPorts srcNode == 1
-            dstConnPos = connectionDst srcPos' dstPos' isSrcExp isDstExp dstPortNum numOfDstInPorts (isSelf $ dstPort ^. portId)
+            dstConnPos = connectionDst srcPos' dstPos' isSrcExp isDstExp dstPortNum numOfDstInPorts (isSelf $ dstPort ^. portId) hasAlias
                 $ case (dstNode ^. inPorts) of
                     LabeledTree _ p -> case (p ^. Port.state) of
                                            Port.Connected -> True
@@ -192,13 +193,14 @@ halfConnectionSrcPosition (Node.Output _  ) (Left  port) _ layout = outputSideba
 halfConnectionSrcPosition (Expression node) eport mousePos _ =
     Just $ case eport of
         Right port -> connectionSrc pos mousePos isExp False (getPortNumber $ port ^. portId) numOfSameTypePorts $ countOutPorts node + countArgPorts node == 1
-        Left  port -> connectionDst mousePos pos False isExp (getPortNumber $ port ^. portId) numOfSameTypePorts (isSelf $ port ^. portId)
+        Left  port -> connectionDst mousePos pos False isExp (getPortNumber $ port ^. portId) numOfSameTypePorts (isSelf $ port ^. portId) hasSelf
             $ case (node ^. inPorts) of
                 LabeledTree _ p -> case (p ^. Port.state) of
                                        Port.Connected -> True
                                        _              -> False
                 _               ->                       False
     where
+        hasSelf            = True
         pos                = node ^. position
         isExp              = not . isCollapsed $ node
         numOfSameTypePorts = case eport of
@@ -227,15 +229,21 @@ connectionSrc src' dst' isSrcExpanded _isDstExpanded num numOfSameTypePorts isSi
             then nodeToNodeAngle src' dst'
             else connectionAngle src' dst' num numOfSameTypePorts
 
-connectionDst :: Position -> Position -> Bool -> Bool -> Int -> Int -> IsSelf -> IsAlias -> Position
-connectionDst src' dst' isSrcExpanded isDstExpanded num numOfSameTypePorts isSelf' isAlias =
-    if isAlias then dst'
-        else if isSelf' then dst'
+connectionDst :: Position -> Position -> Bool -> Bool -> Int -> Int -> IsSelf -> HasSelf -> IsAlias -> Position
+connectionDst src' dst' isSrcExpanded isDstExpanded num numOfSameTypePorts isSelf' hasSelf isAlias = do
+    let n       = if hasSelf then 1 else 0
+        hasSelf = True
+        src''   = if isSrcExpanded then move (Vector2 nodeExpandedWidth 0) src' else src'
+        t       = connectionAngle src'' dst' num numOfSameTypePorts
+    if isAlias
+        then    dst'
+        else if isSelf'
+            then    dst'
             else if isDstExpanded
-                then move (Vector2 0 (lineHeight * (fromIntegral num + 1))) dst'
-                else move (Vector2 (portRadius * (-cos t)) (portRadius * (-sin t))) dst' where
-                    src'' = if isSrcExpanded then move (Vector2 nodeExpandedWidth 0) src' else src'
-                    t    = connectionAngle src'' dst' num numOfSameTypePorts
+                then move (Vector2 0 (lineHeight * (fromIntegral $ num + n))) dst'
+                else move (Vector2 (portRadius * (-cos t)) (portRadius * (-sin t))) dst'
+
+
 
 nodeToNodeAngle :: Position -> Position -> Angle
 nodeToNodeAngle src' dst' =

@@ -33,7 +33,7 @@ import           NodeEditor.React.View.Monad                          (monads_)
 import           NodeEditor.React.View.Plane                          (planeMonads_, svgPlanes_)
 import           NodeEditor.React.View.Port                           (portExpanded_, portPhantom_, port_)
 import           NodeEditor.React.View.Searcher                       (searcher_)
-import           NodeEditor.React.View.Style                          (blurBackground_, errorMark_, selectionMark_)
+import           NodeEditor.React.View.Style                          (errorMark_, selectionMark_)
 import qualified NodeEditor.React.View.Style                          as Style
 import           NodeEditor.React.View.Visualization                  (nodeShortValue_, nodeVisualizations_)
 import           React.Flux
@@ -96,16 +96,16 @@ node = React.defineView name $ \(ref, n, maySearcher) -> case n ^. Node.mode of
         div_
             [ "key"       $= (nodePrefix <> fromString (show nodeId))
             , "id"        $= (nodePrefix <> fromString (show nodeId))
-            , "className" $= Style.prefixFromList ( [ "node", (if isCollapsed n then "node--collapsed" else "node--expanded") ]
-                                                           ++ (if returnsError n then ["node--error"] else [])
-                                                           ++ (if n ^. Node.isSelected then ["node--selected"] else []) )
+            , "className" $= Style.prefixFromList ( [ "node", "noselect", (if isCollapsed n then "node--collapsed" else "node--expanded") ]
+                                                                       ++ (if returnsError n then ["node--error"] else [])
+                                                                       ++ (if n ^. Node.isSelected then ["node--selected"] else []) )
             , "style"     @= Aeson.object [ "zIndex" Aeson..= show z ]
             , onMouseDown   $ handleMouseDown ref nodeLoc
             , onClick       $ \_ m -> dispatch ref $ UI.NodeEvent $ Node.Select m nodeLoc
             , onDoubleClick $ \e _ -> stopPropagation e : (dispatch ref $ UI.NodeEvent $ Node.Enter nodeLoc)
             ] $ do
             div_
-                [ "className" $= Style.prefixFromList ["node-translate","node__text"]
+                [ "className" $= Style.prefixFromList [ "node-translate","node__text", "noselect" ]
                 , "key"       $= "nodeText"
                 ] $ do
                 nodeName_ ref nodeLoc (n ^. Node.name) maySearcher
@@ -141,17 +141,12 @@ nodeBody = React.defineView objNameBody $ \(ref, n) -> do
         ] $ do
         errorMark_
         selectionMark_
-        div_
-            [ "key"       $= "properties-crop"
-            , "className" $= Style.prefix "node__properties-crop"
-            ] $ do
-            blurBackground_
-            case n ^. Node.mode of
-                Node.Expanded Node.Controls      -> nodeProperties_ ref $ Prop.fromNode n
-                Node.Expanded Node.Editor        -> multilineField_ [] "editor"
-                    $ Field.mk ref (fromMaybe def $ n ^. Node.code)
-                    & Field.onCancel .~ Just (UI.NodeEvent . Node.SetExpression nodeLoc)
-                _                                -> ""
+        case n ^. Node.mode of
+            Node.Expanded Node.Controls -> nodeProperties_ ref $ Prop.fromNode n
+            Node.Expanded Node.Editor   -> multilineField_ [] "editor"
+                $ Field.mk ref (fromMaybe def $ n ^. Node.code)
+                & Field.onCancel .~ Just (UI.NodeEvent . Node.SetExpression nodeLoc)
+            _                           -> ""
 
 nodePorts_ :: Ref App -> ExpressionNode -> ReactElementM ViewEventHandler ()
 nodePorts_ ref model = React.viewWithSKey nodePorts objNamePorts (ref, model) mempty

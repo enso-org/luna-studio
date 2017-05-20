@@ -244,12 +244,13 @@ portIOExpanded_ ref nl p = if p ^. Port.portId == InPortId' [Self] then portSelf
         portType  = toString $ p ^. Port.valueType
         isInput   = isInPort portId
         num       = getPortNumber portId
+        hasSelf   = True
+        n         = if hasSelf then 1 else 0
         color     = convert $ p ^. Port.color
         py        = jsShow2 (lineHeight * fromIntegral (num + n))
         highlight = if isHighlighted p then ["hover"] else []
         classes   = if isInput then [ "port", "port--i", "port--i--" <> show (num + 1)] ++ highlight
                                else [ "port", "port--o", "port--o--" <> show (num + 1)] ++ highlight
-        n         = if isInput then 1 else 0
     g_
         [ "className" $= Style.prefixFromList classes
         ] $ do

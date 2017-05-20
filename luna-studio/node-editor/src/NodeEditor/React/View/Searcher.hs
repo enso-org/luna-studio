@@ -53,12 +53,13 @@ searcher =  React.defineView name $ \(ref, s) -> do
             , onClick     $ \e _ -> [stopPropagation e]
             ] $ do
             input_ (
-                [ "key"       $= "searchInput"
-                , "className" $= Style.prefix "searcher__input"
-                , "id"        $= searcherId
-                , onKeyDown   $ handleKeyDown ref
-                , onKeyUp     $ \_ k -> dispatch ref $ UI.SearcherEvent $ KeyUp k
-                , onChange    $ \e -> let val = target e "value" in dispatch ref $ UI.SearcherEvent $ InputChanged val
+                [ "key"         $= "searchInput"
+                , "className"   $= Style.prefix "searcher__input"
+                , "id"          $= searcherId
+                , "placeholder" $= "Command search…"
+                , onKeyDown     $ handleKeyDown ref
+                , onKeyUp       $ \_ k -> dispatch ref $ UI.SearcherEvent $ KeyUp k
+                , onChange      $ \e -> let val = target e "value" in dispatch ref $ UI.SearcherEvent $ InputChanged val
                 ] ++ mayCustomInput )
             div_
                 [ "key"       $= "searcherResults"

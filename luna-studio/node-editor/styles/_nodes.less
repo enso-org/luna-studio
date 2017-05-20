@@ -1,21 +1,6 @@
 @import '_variables';
 
 /////////////////////////////
-//        utilities        //
-/////////////////////////////
-
-.luna-blur {
-    //backdrop-filter: blur(0);
-    background: rgba(255,255,255,0);
-    position:   absolute;
-    z-index:   -1;
-    top:        0;
-    left:       0;
-    height:     100%;
-    width:      100%;
-}
-
-/////////////////////////////
 //          nodes          //
 /////////////////////////////
 
@@ -37,6 +22,7 @@
 }
 
 .luna-node__name {
+    color:          #ddd;
     font-weight:    300;
     width:          0;
     display:        flex;
@@ -49,7 +35,7 @@
 }
 
 .luna-node__expression {
-    max-width:         320px;
+    max-width:     320px;
     overflow:      hidden;
     text-overflow: ellipsis;
 }
@@ -136,24 +122,6 @@
         width:  @expandedNodeWidth;
         left:   0;
     }
-    .luna-blur {
-        //backdrop-filter: blur(12px);
-        //background:      rgba(40,40,40,.5);
-        background:    #222;
-        border-radius: @borderRadius;
-        box-shadow:    0 0 10px @colorBackground;
-    }
-    .luna-node__properties-crop {
-        max-height: 110rem;
-        max-width:  @expandedNodeWidth;
-    }
-    .luna-node__properties {
-        height:        auto;
-        opacity:       1;
-        border-radius: @borderRadius;
-        left:          0;
-        padding:       12rem 0;
-    }
     .luna-selection {
         border-radius: 1px;
     }
@@ -165,40 +133,8 @@
     position: relative;
     top:     -20rem;
     left:    -20rem;
-}
-
-.luna-node__properties-crop {
-    max-width:  40rem;
-    max-height: 40rem;
-    overflow:   hidden;
-}
-
-.luna-node__properties * {
-    font-size: 10rem;
-}
-
-.luna-node__properties {
-    color:         @colorTextUneditable;
-    line-height:   16rem;
-    width:         100%;
-    height:        40rem;
-    opacity:       1;
-    position:      relative;
-    left:          0;
-    border-radius: 20rem;
-    overflow:      hidden;
-    .luna-blur {
-        border-radius: 20rem;
-    }
-    .luna-row {
-        display:         flex;
-        justify-content: space-between;
-        position:        relative;
-        padding:         0 12rem 0 8rem;
-    }
-    .luna-row--first {
-        height:          16rem;
-        justify-content: flex-end;
+    * {
+        font-size: 10rem;
     }
 }
 
@@ -217,6 +153,77 @@
 }
 
 // controls
+
+.luna-node__controls {
+    padding:               12rem 12rem 12rem 4rem;
+    overflow:              hidden;
+    background:            #222;
+    border-radius:         3rem;
+    display:               grid;
+    grid-template-rows:    16rem;
+    grid-template-columns: auto auto;
+    line-height:           16rem;
+    justify-items:         stretch;
+    justify-content:       stretch;
+}
+
+.luna-node__label {
+    padding-left: 4rem;
+    width:        50rem;
+}
+
+.luna-node__label--self {
+    grid-column-start: 1;
+    grid-column-end:   3;
+}
+
+.luna-node__ctrl {
+    text-align: center;
+    min-width:  90rem;
+    align-self: center;
+}
+
+.luna-ctrl--slider,
+.luna-ctrl--set {
+    width:          100%;
+    background:     #2a2a2a;
+    color:          @colorText;
+    text-align:     center;
+    border-radius:  100rem;
+    line-height:    11rem;
+    padding-bottom: 1rem;
+    cursor:         pointer;
+}
+
+.luna-ctrl--set {
+    background: #2a2a2a;
+    color:      #555;
+    &:hover {
+        color:      #fff;
+        background: #444;
+    }
+}
+
+.luna-ctrl--slider--double {
+    display:               grid;
+    grid-template-columns: 50% 50%;
+}
+
+.luna-ctrl--slider__right {
+    overflow:      hidden;
+    text-overflow: ellipsis;
+}
+.luna-ctrl--slider__left {
+    text-align: right;
+    &::after {
+        content: ".";
+        opacity: .3;
+    }
+}
+.luna-ctrl--slider__right {
+    text-align: left;
+}
+
 
 .luna-ctrl-switch {
     cursor:        pointer;
@@ -238,6 +245,7 @@
         border-radius: 1000px;
     }
 }
+
 .luna-ctrl-switch--on {
     background: #888;
     &::after {
@@ -245,25 +253,12 @@
         left:       11rem;
     }
 }
+
 .luna-ctrl-switch--off {
     background: #3a3a3a;
     &::after {
         background: #666;
         left:       -1rem;
-    }
-}
-
-.luna-ctrl-set {
-    width: 24px;
-    opacity: .1;
-    background: #fff;
-    color: @colorNodeBackground;
-    text-align: center;
-    border-radius: 100rem;
-    line-height: 11px;
-    padding-bottom: 1px;
-    &:hover {
-        opacity: .3;
     }
 }
 
@@ -274,6 +269,7 @@
 .luna-node__icons {
     display: none;
 }
+
 .luna-icon--show {
     x:     -5px;
     y:     -100px;

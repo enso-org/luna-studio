@@ -5,7 +5,6 @@ module NodeEditor.React.Model.Port
     )
     where
 
-
 import           Common.Prelude                   hiding (set)
 import           Data.Convert                     (Convertible (convert))
 import           LunaStudio.Data.Angle            (Angle)
@@ -23,6 +22,7 @@ import           NodeEditor.React.Model.Constants (nodeRadius)
 
 type IsAlias = Bool
 type IsSelf  = Bool
+type HasSelf = Bool
 type IsOnly  = Bool
 
 data Mode = Normal

@@ -6,7 +6,7 @@ import           NodeEditor.React.Model.App                           (App)
 import           NodeEditor.React.Model.Node.ExpressionNodeProperties (NodeProperties)
 import qualified NodeEditor.React.Model.Node.ExpressionNodeProperties as Prop
 import           NodeEditor.React.Store                               (Ref)
-import           NodeEditor.React.View.PortControl                    (portControl_)
+import           NodeEditor.React.View.PortControl                    (portLabel_, portControl_)
 import qualified NodeEditor.React.View.Style                          as Style
 import           React.Flux
 import qualified React.Flux                                            as React
@@ -16,17 +16,14 @@ objName = "node-properties"
 
 nodeProperties :: ReactView (Ref App, NodeProperties)
 nodeProperties = React.defineView objName $ \(ref, p) -> do
-    let nodeLoc = p ^. Prop.nodeLoc
+    let nodeLoc    = p ^. Prop.nodeLoc
+        controls p = do
+            portLabel_ p
+            portControl_ ref nodeLoc p
     div_
-        [ "key"       $= "properties"
-        , "className" $= Style.prefixFromList [ "node__properties", "noselect" ]
-        ] $ do
-        div_
-            [ "key"       $= "value"
-            , "className" $= Style.prefixFromList [ "row", "row--first" ]
-            --, onDoubleClick $ \_ _ -> dispatch ref $ UI.NodeEvent $ Node.NameEditStart nodeLoc
-            ] $ mempty
-        forM_ (Prop.inPortsList p) $ portControl_ ref nodeLoc
+        [ "key"       $= "controls"
+        , "className" $= Style.prefixFromList [ "node__controls", "noselect" ]
+        ] $ forM_ (Prop.inPortsList p) $ controls
         -- div_
         --     [ "key"       $= "showResults"
         --     , "className" $= Style.prefix "row"

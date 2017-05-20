@@ -2,8 +2,9 @@ module LunaStudio.Data.Constants where
 
 import           Prologue
 
-gridSize :: Double
-gridSize = 16
+gridSize, nodeWidth, nodePropertiesWidth, gapBetweenNodes :: Double
+gridSize            = 16
+nodeWidth           = 240
+nodePropertiesWidth = 220
+gapBetweenNodes     = 8 * gridSize --256
 
-gapBetweenNodes :: Double
-gapBetweenNodes = 8 * gridSize
