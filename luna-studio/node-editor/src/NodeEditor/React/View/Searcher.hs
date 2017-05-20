@@ -2,11 +2,7 @@
 module NodeEditor.React.View.Searcher where
 
 import           Common.Prelude
-import qualified Data.Aeson                      as Aeson
-import           Data.Matrix                     (Matrix)
 import           JS.Searcher                     (searcherId)
-import qualified LunaStudio.Data.NodeLoc         as NodeLoc
-import           NodeEditor.Data.Matrix          (showNodeTranslate)
 import qualified NodeEditor.Event.Keys           as Keys
 import qualified NodeEditor.Event.UI             as UI
 import qualified NodeEditor.React.Event.App      as App

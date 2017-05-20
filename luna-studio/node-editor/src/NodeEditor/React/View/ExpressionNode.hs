@@ -61,9 +61,9 @@ handleMouseDown ref nodeLoc e m =
     else []
 
 nodeName_ :: Ref App -> NodeLoc -> Maybe Text -> Maybe Searcher -> ReactElementM ViewEventHandler ()
-nodeName_ ref nl name mayS = div_ ([ "className" $= Style.prefixFromList ["node__name", "noselect"] ] ++ handlers) nameElement where
+nodeName_ ref nl nodeName mayS = div_ ([ "className" $= Style.prefixFromList ["node__name", "noselect"] ] ++ handlers) nameElement where
     regularHandlersAndElem = ( [onDoubleClick $ \e _ -> stopPropagation e : dispatch ref (UI.NodeEvent $ Node.EditName nl)]
-                             , elemString . convert $ fromMaybe def name )
+                             , elemString . convert $ fromMaybe def nodeName )
     (handlers, nameElement) = flip (maybe regularHandlersAndElem) mayS $ \s -> case s ^. Searcher.mode of
         Searcher.NodeName snl _ -> if snl /= nl then regularHandlersAndElem else ([], searcher_ ref s)
         _                       -> regularHandlersAndElem
@@ -224,5 +224,5 @@ nodeContainer = React.defineView name $ \(ref, maySearcher, subgraphs) -> do
             svgPlanes_ $ planeMonads_ $ monads_ monads
 
 filterOutSearcherIfNotRelated :: NodeLoc -> Maybe Searcher -> Maybe Searcher
-filterOutSearcherIfNotRelated nl Nothing  = Nothing
+filterOutSearcherIfNotRelated _  Nothing  = Nothing
 filterOutSearcherIfNotRelated nl (Just s) = if Searcher.isSearcherRelated nl s then return s else Nothing

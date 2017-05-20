@@ -1,13 +1,11 @@
 {-# LANGUAGE OverloadedStrings #-}
 module NodeEditor.React.View.ExpressionNode.Properties where
 
-import qualified NodeEditor.Event.UI                                  as UI
 import           Common.Prelude
-import qualified NodeEditor.React.Event.Node                          as Node
 import           NodeEditor.React.Model.App                           (App)
 import           NodeEditor.React.Model.Node.ExpressionNodeProperties (NodeProperties)
 import qualified NodeEditor.React.Model.Node.ExpressionNodeProperties as Prop
-import           NodeEditor.React.Store                               (Ref, dispatch)
+import           NodeEditor.React.Store                               (Ref)
 import           NodeEditor.React.View.PortControl                    (portControl_)
 import qualified NodeEditor.React.View.Style                          as Style
 import           React.Flux

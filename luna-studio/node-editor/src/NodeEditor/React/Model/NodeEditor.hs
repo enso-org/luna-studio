@@ -103,7 +103,7 @@ updateExpressionNode n ne = updateExpressionNode' (nl ^. NodeLoc.pathItems) wher
     updateExpressionNode' []    = ne & expressionNodes . at (nl ^. nodeId)  ?~ n
     updateExpressionNode' (h:t) = ne & expressionNodes . ix (h ^. B.nodeId) %~ updateNode t
 
-    updateNode []    n' = n
+    updateNode []    _  = n
     updateNode (h:t) n' = n' & ExpressionNode.subgraphs . ix h . ExpressionNode.expressionNodes . ix (h ^. B.nodeId) %~ updateNode t
 
 

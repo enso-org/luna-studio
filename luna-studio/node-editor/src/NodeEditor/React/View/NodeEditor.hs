@@ -9,8 +9,6 @@ import qualified Data.Matrix                                as Matrix
 import           Data.Maybe                                 (mapMaybe)
 import           JS.Scene                                   (sceneId)
 import qualified LunaStudio.Data.MonadPath                  as MonadPath
-import           LunaStudio.Data.NodeLoc                    (NodeLoc)
-import qualified LunaStudio.Data.PortRef                    as PortRef
 import qualified NodeEditor.Data.CameraTransformation       as CameraTransformation
 import           NodeEditor.Data.Matrix                     (showCameraMatrix, showCameraScale, showCameraTranslate)
 import           NodeEditor.Event.Event                     (Event (Shortcut))
@@ -22,7 +20,6 @@ import qualified NodeEditor.React.Model.Node                as Node
 import qualified NodeEditor.React.Model.Node.ExpressionNode as ExpressionNode
 import           NodeEditor.React.Model.NodeEditor          (NodeEditor)
 import qualified NodeEditor.React.Model.NodeEditor          as NodeEditor
-import           NodeEditor.React.Model.Searcher            (Searcher)
 import qualified NodeEditor.React.Model.Searcher            as Searcher
 import           NodeEditor.React.Store                     (Ref, dispatch, dispatch')
 import           NodeEditor.React.View.Connection           (connection_, halfConnection_)
@@ -30,7 +27,6 @@ import           NodeEditor.React.View.ConnectionPen        (connectionPen_)
 import           NodeEditor.React.View.ExpressionNode       (filterOutSearcherIfNotRelated, nodeDynamicStyles_, node_)
 import           NodeEditor.React.View.Monad                (monads_)
 import           NodeEditor.React.View.Plane                (planeCanvas_, planeConnections_, planeMonads_, planeNodes_, svgPlanes_)
-import           NodeEditor.React.View.Searcher             (searcher_)
 import           NodeEditor.React.View.SelectionBox         (selectionBox_)
 import           NodeEditor.React.View.Sidebar              (sidebar_)
 import qualified NodeEditor.React.View.Style                as Style
@@ -118,7 +114,6 @@ nodeEditor = React.defineView name $ \(ref, ne') -> do
                     forM_     (ne ^. NodeEditor.connectionPen  ) connectionPen_
 
             planeNodes_ $ do
-                -- forM_ (ne ^. NodeEditor.searcher      ) $ searcher_ ref camera
                 forM_  nodes                            $ \n -> node_ ref n (filterOutSearcherIfNotRelated (n ^. Node.nodeLoc) maySearcher)
                 forM_ (ne ^. NodeEditor.visualizations) $ pinnedVisualization_ ref ne
 

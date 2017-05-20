@@ -3,11 +3,10 @@ module NodeEditor.Action.Node.EditExpression
     ) where
 
 import           Common.Prelude
-import           Control.Arrow                              ((&&&))
 import           NodeEditor.Action.Command                  (Command)
 import qualified NodeEditor.Action.Searcher                 as Searcher
 import           NodeEditor.Action.State.NodeEditor         (getExpressionNode)
-import           NodeEditor.React.Model.Node.ExpressionNode (NodeLoc, expression, position)
+import           NodeEditor.React.Model.Node.ExpressionNode (NodeLoc, expression)
 import           NodeEditor.State.Global                    (State)
 
 

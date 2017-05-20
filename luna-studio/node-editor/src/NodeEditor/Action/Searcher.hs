@@ -8,14 +8,11 @@ import qualified Data.Text                          as Text
 import           Text.Read                          (readMaybe)
 
 import           Common.Prelude
-import           Data.ScreenPosition                (ScreenPosition)
 import qualified JS.GoogleAnalytics                 as GA
 import qualified JS.Searcher                        as Searcher
 import           LunaStudio.Data.NodeLoc            (NodeLoc, NodePath)
 import qualified LunaStudio.Data.NodeLoc            as NodeLoc
 import           LunaStudio.Data.PortRef            (OutPortRef)
-import qualified LunaStudio.Data.PortRef            as PortRef
-import           LunaStudio.Data.Position           (Position)
 import           NodeEditor.Action.Basic            (createNode, renameNode, renamePort, setNodeExpression)
 import qualified NodeEditor.Action.Batch            as Batch
 import           NodeEditor.Action.Command          (Command)
@@ -23,7 +20,7 @@ import           NodeEditor.Action.State.Action     (beginActionWithKey, continu
 import           NodeEditor.Action.State.App        (renderIfNeeded)
 import           NodeEditor.Action.State.NodeEditor (findSuccessorPosition, getSearcher, getSelectedNodes, getSelectedNodes,
                                                      modifyNodeEditor, modifySearcher)
-import           NodeEditor.Action.State.Scene      (translateToScreen, translateToWorkspace)
+import           NodeEditor.Action.State.Scene      (translateToWorkspace)
 import           NodeEditor.Action.UUID             (getUUID)
 import           NodeEditor.Event.Event             (Event (Shortcut))
 import qualified NodeEditor.Event.Shortcut          as Shortcut

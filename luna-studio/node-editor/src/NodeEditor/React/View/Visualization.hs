@@ -89,11 +89,11 @@ nodeValue_ ref nl mayPos visIx value = do
         event = case mayPos of
             Just pos -> \n v -> Visualization.Unpin n v pos
             Nothing  -> Visualization.Pin
-        translatedDiv_ = case mayPos of
-            Just pos -> div_ [ "className" $= Style.prefixFromList [ "node-trans", "noselect", "node-root" ]
-                             , "style"     @= Aeson.object [ "zIndex" Aeson..= show (1000 :: Integer) ]
-                             ] . div_ [ "className" $= Style.prefix "node__visuals" ]
-            Nothing  -> div_ [ "className" $= Style.prefixFromList ["noselect"] ]
+        translatedDiv_ = if isJust mayPos
+            then div_ [ "className" $= Style.prefixFromList [ "node-trans", "noselect", "node-root" ]
+                      , "style"     @= Aeson.object [ "zIndex" Aeson..= show (1000 :: Integer) ]
+                      ] . div_ [ "className" $= Style.prefix "node__visuals" ]
+            else div_ [ "className" $= Style.prefixFromList ["noselect"] ]
     translatedDiv_ $ do
         withJust mayPos $ \pos ->
             button_ [ onMouseDown $ \e m -> stopPropagation e : dispatch ref (UI.VisualizationEvent $ Visualization.MouseDown m nl visIx pos)

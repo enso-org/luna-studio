@@ -19,9 +19,8 @@ import           NodeEditor.Action.State.NodeEditor      (getInputNode, getNodeE
 import           NodeEditor.Action.State.Scene           (getInputSidebarSize)
 import           NodeEditor.Event.Mouse                  (mousePosition)
 import           NodeEditor.React.Model.Constants        (gridSize)
-import           NodeEditor.React.Model.Layout           (inputSidebarPortPosition)
 import           NodeEditor.React.Model.Node.SidebarNode (NodeLoc, countProjectionPorts)
-import           NodeEditor.React.Model.NodeEditor       (getPort, layout)
+import           NodeEditor.React.Model.NodeEditor       (getPort)
 import           NodeEditor.React.Model.Port             (AnyPortRef (OutPortRef'), OutPortIndex (Projection), OutPortRef, getPortNumber)
 import qualified NodeEditor.React.Model.Port             as Port
 import           NodeEditor.React.Model.Sidebar          (portPositionInInputSidebar)
