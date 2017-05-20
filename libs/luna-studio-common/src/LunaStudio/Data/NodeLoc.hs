@@ -73,6 +73,9 @@ fromPath path' = NodeLoc newPath $ lastItem ^. Breadcrumb.nodeId where
     newPath = path' & localBc . Breadcrumb.items %~ init
     lastItem = path' ^. localBc . Breadcrumb.items . to last
 
+toNodeIdList :: NodeLoc -> [NodeId]
+toNodeIdList nl = (view Breadcrumb.nodeId <$> nl ^. pathItems) ++ [nl ^. nodeId]
+
 toBreadcrumb :: NodeLoc -> Breadcrumb BreadcrumbItem
 toBreadcrumb nl = (nl ^. breadcrumb) <> Breadcrumb [Breadcrumb.Lambda $ nl ^. nodeId]
 
