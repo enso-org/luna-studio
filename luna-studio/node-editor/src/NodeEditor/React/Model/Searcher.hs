@@ -1,13 +1,15 @@
 module NodeEditor.React.Model.Searcher where
 
 import           Common.Prelude
-import           LunaStudio.Data.Node           (ExpressionNode)
-import           LunaStudio.Data.NodeLoc        (NodeLoc)
-import qualified LunaStudio.Data.NodeLoc        as NodeLoc
-import           LunaStudio.Data.PortRef        (OutPortRef, srcNodeLoc)
-import           LunaStudio.Data.Position       (Position)
-import           Text.ScopeSearcher.QueryResult (QueryResult)
-import qualified Text.ScopeSearcher.QueryResult as Result
+import           LunaStudio.Data.Node                       (ExpressionNode)
+import qualified LunaStudio.Data.Node                       as Node
+import           LunaStudio.Data.NodeLoc                    (NodeLoc)
+import qualified LunaStudio.Data.NodeLoc                    as NodeLoc
+import           LunaStudio.Data.PortRef                    (OutPortRef, srcNodeLoc)
+import           LunaStudio.Data.Position                   (Position)
+import qualified NodeEditor.React.Model.Node.ExpressionNode as Model
+import           Text.ScopeSearcher.QueryResult             (QueryResult)
+import qualified Text.ScopeSearcher.QueryResult             as Result
 
 
 data Mode = Command                            [QueryResult ()]
@@ -52,6 +54,13 @@ selectedNode = to getNode where
             listToMaybe $ drop (selected' - 1) $ case searcher ^. mode of
                 Node _ _ results -> Result._element <$> results
                 _                -> def
+
+applyExpressionHint :: ExpressionNode -> Model.ExpressionNode -> Model.ExpressionNode
+applyExpressionHint n exprN = exprN & Model.expression .~ n ^. Node.expression
+                                    & Model.canEnter   .~ n ^. Node.canEnter
+                                    & Model.inPorts    .~ (convert <$> n ^. Node.inPorts)
+                                    & Model.outPorts   .~ (convert <$> n ^. Node.outPorts)
+                                    & Model.code       .~ n ^. Node.code
 
 resultsLength :: Getter Searcher Int
 resultsLength = to getLength where

@@ -9,6 +9,7 @@ import qualified Data.Matrix                                as Matrix
 import           Data.Maybe                                 (mapMaybe)
 import           JS.Scene                                   (sceneId)
 import qualified LunaStudio.Data.MonadPath                  as MonadPath
+import           LunaStudio.Data.NodeLoc                    (NodePath)
 import qualified NodeEditor.Data.CameraTransformation       as CameraTransformation
 import           NodeEditor.Data.Matrix                     (showCameraMatrix, showCameraScale, showCameraTranslate)
 import           NodeEditor.Event.Event                     (Event (Shortcut))
@@ -47,12 +48,14 @@ show4 a = showFFloat (Just 4) a "" -- limit Double to two decimal numbers TODO: 
 
 applySearcherHints :: NodeEditor -> NodeEditor
 applySearcherHints ne = maybe ne replaceNode $ ne ^. NodeEditor.searcher where
-    replaceNode s = case s ^. Searcher.mode of
-        Searcher.Node nl Nothing    results -> ne -- when (s ^. Searcher.selected > 0) $ NodeEditor.setExpressionNode  ne
-        Searcher.Node nl (Just pos) results -> if s ^. Searcher.selected == 0
-            then NodeEditor.updateExpressionNode (ExpressionNode.mkExprNode nl (s ^. Searcher.input) pos) ne
-            else NodeEditor.updateExpressionNode (ExpressionNode.mkExprNode nl (s ^. Searcher.input) pos) ne
-        _ -> ne
+    toModel n nl pos = (convert (def :: NodePath, n)) & ExpressionNode.nodeLoc  .~ nl
+                                                      & ExpressionNode.position .~ pos
+    updateNode nl n  = maybe ne (flip NodeEditor.updateExpressionNode ne . Searcher.applyExpressionHint n) $ NodeEditor.getExpressionNode nl ne
+    replaceNode s    = case (s ^. Searcher.mode, s ^. Searcher.selectedNode) of
+        (Searcher.Node nl Nothing    _, Just n) -> updateNode nl n
+        (Searcher.Node nl (Just pos) _, Just n) -> NodeEditor.updateExpressionNode (toModel n nl pos) ne
+        (Searcher.Node nl (Just pos) _, _)      -> NodeEditor.updateExpressionNode (ExpressionNode.mkExprNode nl (s ^. Searcher.input) pos) ne
+        _                                       -> ne
 
 nodeEditor_ :: Ref App -> NodeEditor -> ReactElementM ViewEventHandler ()
 nodeEditor_ ref ne = React.viewWithSKey nodeEditor name (ref, ne) mempty
