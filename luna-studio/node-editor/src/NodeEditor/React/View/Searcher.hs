@@ -83,10 +83,10 @@ searcher =  React.defineView name $ \(ref, s) -> do
                             , "className" $= resultClasses idx
                             , onClick     $ \e _ -> stopPropagation e : (dispatch ref $ UI.SearcherEvent $ AcceptEntry (idx + 1))
                             ] $ do
-                            div_
-                                ["key"       $= "prefix"
-                                ,"className" $= Style.prefix "searcher__results__item__prefix"
-                                ] $ elemString $ convert (result ^. Result.prefix) <> "."
+                            -- div_
+                            --     ["key"       $= "prefix"
+                            --     ,"className" $= Style.prefix "searcher__results__item__prefix"
+                            --     ] $ elemString $ convert (result ^. Result.prefix) <> "."
                             div_
                                 ["key" $= "name"
                                 ,"className" $= Style.prefix "searcher__results__item__name"
@@ -97,10 +97,10 @@ searcher =  React.defineView name $ \(ref, s) -> do
                             , "className" $= resultClasses idx
                             , onClick     $ \e _ -> stopPropagation e : (dispatch ref $ UI.SearcherEvent $ AcceptEntry (idx + 1))
                             ] $ do
-                            div_
-                                ["key"       $= "prefix"
-                                ,"className" $= Style.prefix "searcher__results__item__prefix"
-                                ] $ elemString $ convert (result ^. Result.prefix) <> "."
+                            -- div_
+                            --     ["key"       $= "prefix"
+                            --     ,"className" $= Style.prefix "searcher__results__item__prefix"
+                            --     ] $ elemString $ convert (result ^. Result.prefix) <> "."
                             div_
                                 ["key" $= "name"
                                 ,"className" $= Style.prefix "searcher__results__item__name"
@@ -111,10 +111,10 @@ searcher =  React.defineView name $ \(ref, s) -> do
                             , "className" $= resultClasses idx
                             , onClick     $ \e _ -> stopPropagation e : (dispatch ref $ UI.SearcherEvent $ AcceptEntry (idx + 1))
                             ] $ do
-                            div_
-                                ["key"       $= "prefix"
-                                ,"className" $= Style.prefix "searcher__results__item__prefix"
-                                ] $ elemString $ convert (result ^. Result.prefix) <> "."
+                            -- div_
+                            --     ["key"       $= "prefix"
+                            --     ,"className" $= Style.prefix "searcher__results__item__prefix"
+                            --     ] $ elemString $ convert (result ^. Result.prefix) <> "."
                             div_
                                 ["key" $= "name"
                                 ,"className" $= Style.prefix "searcher__results__item__name"

@@ -7,15 +7,21 @@ import           LunaStudio.Data.NodeLoc                    (NodeLoc)
 import qualified LunaStudio.Data.NodeLoc                    as NodeLoc
 import           LunaStudio.Data.PortRef                    (OutPortRef, srcNodeLoc)
 import           LunaStudio.Data.Position                   (Position)
+import           LunaStudio.Data.TypeRep                    (TypeRep)
 import qualified NodeEditor.React.Model.Node.ExpressionNode as Model
 import           Text.ScopeSearcher.QueryResult             (QueryResult)
 import qualified Text.ScopeSearcher.QueryResult             as Result
 
+data NewNode = NewNode { _position :: Position
+                       , _predInfo :: Maybe (OutPortRef, TypeRep)
+                       } deriving (Eq, Generic, Show)
 
-data Mode = Command                            [QueryResult ()]
-          | Node     NodeLoc  (Maybe Position) [QueryResult ExpressionNode]
-          | NodeName NodeLoc                   [QueryResult ExpressionNode]
-          | PortName OutPortRef                [QueryResult ExpressionNode]
+makeLenses ''NewNode
+
+data Mode = Command                           [QueryResult ()]
+          | Node     NodeLoc  (Maybe NewNode) [QueryResult ExpressionNode]
+          | NodeName NodeLoc                  [QueryResult ExpressionNode]
+          | PortName OutPortRef               [QueryResult ExpressionNode]
           deriving (Eq, Generic, Show)
 
 data Searcher = Searcher

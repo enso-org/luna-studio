@@ -1,4 +1,3 @@
-
 {-# LANGUAGE OverloadedStrings #-}
 module NodeEditor.React.View.NodeEditor where
 
@@ -10,6 +9,7 @@ import           Data.Maybe                                 (mapMaybe)
 import           JS.Scene                                   (sceneId)
 import qualified LunaStudio.Data.MonadPath                  as MonadPath
 import           LunaStudio.Data.NodeLoc                    (NodePath)
+import           LunaStudio.Data.PortRef                    (InPortRef (InPortRef))
 import qualified NodeEditor.Data.CameraTransformation       as CameraTransformation
 import           NodeEditor.Data.Matrix                     (showCameraMatrix, showCameraScale, showCameraTranslate)
 import           NodeEditor.Event.Event                     (Event (Shortcut))
@@ -17,10 +17,12 @@ import qualified NodeEditor.Event.Shortcut                  as Shortcut
 import qualified NodeEditor.Event.UI                        as UI
 import qualified NodeEditor.React.Event.NodeEditor          as NE
 import           NodeEditor.React.Model.App                 (App)
+import qualified NodeEditor.React.Model.Connection          as Connection
 import qualified NodeEditor.React.Model.Node                as Node
 import qualified NodeEditor.React.Model.Node.ExpressionNode as ExpressionNode
 import           NodeEditor.React.Model.NodeEditor          (NodeEditor)
 import qualified NodeEditor.React.Model.NodeEditor          as NodeEditor
+import           NodeEditor.React.Model.Port                (InPortIndex (Self))
 import qualified NodeEditor.React.Model.Searcher            as Searcher
 import           NodeEditor.React.Store                     (Ref, dispatch, dispatch')
 import           NodeEditor.React.View.Connection           (connection_, halfConnection_)
@@ -48,14 +50,18 @@ show4 a = showFFloat (Just 4) a "" -- limit Double to two decimal numbers TODO: 
 
 applySearcherHints :: NodeEditor -> NodeEditor
 applySearcherHints ne = maybe ne replaceNode $ ne ^. NodeEditor.searcher where
+    connect srcPortRef dstPortRef ne' = ne' & NodeEditor.connections . at dstPortRef ?~ Connection.Connection srcPortRef dstPortRef Connection.Normal
+    tryConnect nl nn ne' = case nn ^. Searcher.predInfo of
+        Nothing              -> ne'
+        Just (srcPortRef, _) -> connect srcPortRef (InPortRef nl [Self]) ne'
     toModel n nl pos = (convert (def :: NodePath, n)) & ExpressionNode.nodeLoc  .~ nl
                                                       & ExpressionNode.position .~ pos
-    updateNode nl n  = maybe ne (flip NodeEditor.updateExpressionNode ne . Searcher.applyExpressionHint n) $ NodeEditor.getExpressionNode nl ne
+    updateNode nl n ne' = maybe ne' (flip NodeEditor.updateExpressionNode ne . Searcher.applyExpressionHint n) $ NodeEditor.getExpressionNode nl ne'
     replaceNode s    = case (s ^. Searcher.mode, s ^. Searcher.selectedNode) of
-        (Searcher.Node nl Nothing    _, Just n) -> updateNode nl n
-        (Searcher.Node nl (Just pos) _, Just n) -> NodeEditor.updateExpressionNode (toModel n nl pos) ne
-        (Searcher.Node nl (Just pos) _, _)      -> NodeEditor.updateExpressionNode (ExpressionNode.mkExprNode nl (s ^. Searcher.input) pos) ne
-        _                                       -> ne
+        (Searcher.Node nl Nothing   _, Just n) -> updateNode nl n ne
+        (Searcher.Node nl (Just nn) _, Just n) -> tryConnect nl nn $ NodeEditor.updateExpressionNode (toModel n nl (nn ^. Searcher.position)) ne
+        (Searcher.Node nl (Just nn) _, _)      -> tryConnect nl nn $ NodeEditor.updateExpressionNode (ExpressionNode.mkExprNode nl (s ^. Searcher.input) (nn ^. Searcher.position)) ne
+        _                                      -> ne
 
 nodeEditor_ :: Ref App -> NodeEditor -> ReactElementM ViewEventHandler ()
 nodeEditor_ ref ne = React.viewWithSKey nodeEditor name (ref, ne) mempty

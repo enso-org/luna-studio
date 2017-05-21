@@ -82,8 +82,8 @@ mkExprNode nid expr pos = ExpressionNode nid
                                          expr
                                          def
                                          def
-                                         (Port.LabeledTree def $ Port.Port [Port.Self] (Text.pack "") TStar Port.NotConnected)
-                                         (Port.LabeledTree def $ Port.Port []            (Text.pack "") TStar Port.NotConnected)
+                                         (Port.LabeledTree (Port.InPorts (Just $ Port.LabeledTree def $ Port.Port [Port.Self] (Text.pack "") TStar Port.NotConnected) def) (Port.Port [] (Text.pack "") TStar Port.NotConnected))
+                                         (Port.LabeledTree def $ Port.Port []          (Text.pack "") TStar Port.NotConnected)
                                          (NodeMeta.NodeMeta pos False)
                                          False
 
