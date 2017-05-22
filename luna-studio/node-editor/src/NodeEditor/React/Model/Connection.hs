@@ -223,7 +223,7 @@ connectionAngle srcPos' dstPos' num numOfSameTypePorts =
 -- TODO[JK]: dst numOfInputs
 connectionSrc :: Position -> Position -> Bool -> Bool -> Int -> Int -> IsOnly -> Position
 connectionSrc src' dst' isSrcExpanded _isDstExpanded num numOfSameTypePorts isSingle =
-    if isSrcExpanded then move (Vector2 nodeExpandedWidth 0) src'
+    if isSrcExpanded then move (Vector2 (nodeExpandedWidth/2) 0) src'
     else move (Vector2 (portRadius * cos t) (portRadius * sin t)) src' where
         t = if isSingle
             then nodeToNodeAngle src' dst'
@@ -231,16 +231,13 @@ connectionSrc src' dst' isSrcExpanded _isDstExpanded num numOfSameTypePorts isSi
 
 connectionDst :: Position -> Position -> Bool -> Bool -> Int -> Int -> IsSelf -> HasSelf -> IsAlias -> Position
 connectionDst src' dst' isSrcExpanded isDstExpanded num numOfSameTypePorts isSelf' hasSelf isAlias = do
-    let n       = if hasSelf then 1 else 0
-        hasSelf = True
-        src''   = if isSrcExpanded then move (Vector2 nodeExpandedWidth 0) src' else src'
+    let n       = if isSelf' || isAlias then 0 else 1
+        src''   = if isSrcExpanded then move (Vector2 (nodeExpandedWidth/2) 0) src' else src'
         t       = connectionAngle src'' dst' num numOfSameTypePorts
-    if isAlias
-        then    dst'
-        else if isSelf'
-            then    dst'
-            else if isDstExpanded
-                then move (Vector2 0 (lineHeight * (fromIntegral $ num + n))) dst'
+    if isDstExpanded
+        then move (Vector2 (-(nodeExpandedWidth/2)) (lineHeight * (fromIntegral $ num + n))) dst'
+        else if isAlias || isSelf'
+                then dst'
                 else move (Vector2 (portRadius * (-cos t)) (portRadius * (-sin t))) dst'
 
 

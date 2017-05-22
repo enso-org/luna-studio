@@ -60,6 +60,7 @@
         }
     }
 }
+
 .luna-port--self .luna-port__select {
     r: 10;
 }
@@ -108,11 +109,10 @@
     .luna-port {
         position: relative;
     }
+    .luna-port--self * {
+        cx: -@expandedNodeWidth/2;
+    }
     .luna-port--o {
-        .luna-port__shape,
-        .luna-port__select {
-            cx: @expandedNodeWidthPx;
-        }
         .luna-port__type {
             text-anchor: start;
         }
@@ -120,10 +120,16 @@
     .luna-node__body {
         height: auto;
         width:  @expandedNodeWidth;
-        left:   0;
+        left:  -@expandedNodeWidth/2;
     }
     .luna-selection {
         border-radius: 1px;
+    }
+    &.luna-node--no-self {
+        .luna-node__label--self {
+
+            opacity: 0;
+        }
     }
 }
 
@@ -176,7 +182,9 @@
     grid-column-start: 1;
     grid-column-end:   3;
 }
-
+.luna-node__ctrl--self {
+    display: none;
+}
 .luna-node__ctrl {
     text-align: center;
     min-width:  90rem;

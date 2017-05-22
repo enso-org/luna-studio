@@ -93,12 +93,14 @@ node = React.defineView name $ \(ref, n, maySearcher) -> case n ^. Node.mode of
             zIndex          = n ^. Node.zPos
             z               = if isCollapsed n then zIndex else zIndex + nodeLimit
             isVisualization = Prop.fromNode n ^. Prop.visualizationsEnabled
+            hasSelf         = any (\p -> (Port.isSelf $ p ^. Port.portId) && (not $ Port.isInvisible p)) $ Node.inPortsList n
         div_
             [ "key"       $= (nodePrefix <> fromString (show nodeId))
             , "id"        $= (nodePrefix <> fromString (show nodeId))
             , "className" $= Style.prefixFromList ( [ "node", "noselect", (if isCollapsed n then "node--collapsed" else "node--expanded") ]
                                                                        ++ (if returnsError n then ["node--error"] else [])
-                                                                       ++ (if n ^. Node.isSelected then ["node--selected"] else []) )
+                                                                       ++ (if n ^. Node.isSelected then ["node--selected"] else [])
+                                                                       ++ (if hasSelf then ["node--has-self"] else ["node--no-self"]))
             , "style"     @= Aeson.object [ "zIndex" Aeson..= show z ]
             , onMouseDown   $ handleMouseDown ref nodeLoc
             , onClick       $ \_ m -> dispatch ref $ UI.NodeEvent $ Node.Select m nodeLoc

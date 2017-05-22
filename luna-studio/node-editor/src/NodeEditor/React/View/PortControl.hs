@@ -143,6 +143,7 @@ portControl_ ref' nl' port' = React.viewWithSKey portControl (jsShow $ port' ^. 
                                     ] $ elemString $ show value
                             ValueType.Other -> elemString ""
 
-                _ -> div_ [ "key"       $= "self"
-                          , "className" $= Style.prefixFromList ["node__label", "node__label--self"]
-                          ] $ elemString "self"
+                _ -> div_
+                        [ "key"       $= "self-ctrl"
+                        , "className" $= Style.prefixFromList ["node__ctrl", "node__ctrl--self"]
+                        ] $ elemString ""

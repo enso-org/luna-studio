@@ -7,4 +7,3 @@ gridSize            = 16
 nodeWidth           = 240
 nodePropertiesWidth = 220
 gapBetweenNodes     = 8 * gridSize --256
-

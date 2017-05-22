@@ -23,7 +23,12 @@ nodeProperties = React.defineView objName $ \(ref, p) -> do
     div_
         [ "key"       $= "controls"
         , "className" $= Style.prefixFromList [ "node__controls", "noselect" ]
-        ] $ forM_ (Prop.inPortsList p) $ controls
+        ] $ do
+        div_
+           [ "key"       $= "label-self"
+           , "className" $= Style.prefixFromList [ "node__label", "node__label--self" ]
+           ] $ elemString "self"
+        forM_ (Prop.inPortsList p) $ controls
         -- div_
         --     [ "key"       $= "showResults"
         --     , "className" $= Style.prefix "row"
