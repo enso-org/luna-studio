@@ -47,9 +47,9 @@ selectedExpression = to getExpression where
         mayResult = if selected' == 0 then Just $ searcher ^. input else
             listToMaybe $ drop (selected' - 1) $ case searcher ^. mode of
                 Command      results -> Result._name <$> results
-                Node     _ _ results -> Result._name <$> results
-                NodeName _   results -> Result._name <$> results
-                PortName _   results -> Result._name <$> results
+                Node     _ _ results -> view Node.expression . Result._element <$> results
+                NodeName _   results -> view Node.expression . Result._element <$> results
+                PortName _   results -> view Node.expression . Result._element <$> results
         expression = fromMaybe (searcher ^. input) mayResult
 
 selectedNode :: Getter Searcher (Maybe ExpressionNode)
