@@ -52,6 +52,9 @@ modifyNodeEditor = modify nodeEditor
 isGraphLoaded :: Command State Bool
 isGraphLoaded = view NE.isGraphLoaded <$> getNodeEditor
 
+whenGraphLoaded :: Command State () -> Command State ()
+whenGraphLoaded = whenM isGraphLoaded
+
 setGraphLoaded :: Bool -> Command State ()
 setGraphLoaded flag = modifyNodeEditor $ NE.isGraphLoaded .= flag
 
