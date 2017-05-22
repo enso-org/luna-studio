@@ -6,4 +6,4 @@ gridSize :: Double
 gridSize = 16
 
 gapBetweenNodes :: Double
-gapBetweenNodes = 16 * gridSize
+gapBetweenNodes = 8 * gridSize
