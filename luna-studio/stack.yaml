@@ -39,6 +39,8 @@ packages:
 - extra-dep: true
   location: {commit: 0f86d4dff7192db7b4f4001f427126a889ff311f, git: 'https://github.com/luna/data-rtuple.git'}
 - extra-dep: true
+  location: {commit: e1156d3445eca43b4d99aa2a4a427bfd549802d6, git: 'https://github.com/luna/dependent-state.git'}
+- extra-dep: true
   location: {commit: 409dc63cc1ccd2c85000460ce39df5c19dd15d0c, git: 'https://github.com/luna/functor-utils.git'}
 - extra-dep: true
   location: {commit: 7917cc1d84e421823b6291bb4c5ec065a29e9c42, git: 'https://github.com/luna/hsprocessing.git'}
@@ -47,11 +49,16 @@ packages:
 - extra-dep: true
   location: {commit: 4af8e1021a8127b05d98920e387150fa4f0aa2e4, git: 'https://github.com/luna/lens-utils.git'}
 - extra-dep: true
+  location: {commit: b55d7537de9517e4a16488e3d748c00f0b9b4b8f, git: 'https://github.com/luna/luna.git'}
+  subdirs: [syntax/text/lexer]
+- extra-dep: true
   location: {commit: 7f5f64d1b1f81827431c9462d35665adbb609ba8, git: 'https://github.com/luna/monoid'}
 - extra-dep: true
   location: {commit: 642b290e21d94b01273bfae05963b203f75c8191, git: 'https://github.com/luna/prologue.git'}
 - extra-dep: true
   location: {commit: ad94b1f2e4bc87b81853ff746b64c59b3eae7f09, git: 'https://github.com/luna/react-flux'}
+- extra-dep: true
+  location: {commit: 296a00c92ab5b77a38e49b93d9d1c3a7d53378a4, git: 'https://github.com/luna/text-processing.git'}
 - extra-dep: true
   location: {commit: 9165d1818d9ec0b0f030623282b80c2d654089ea, git: 'https://github.com/luna/typelevel.git'}
 - extra-dep: true
