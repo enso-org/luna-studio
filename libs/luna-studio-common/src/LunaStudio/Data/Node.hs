@@ -91,10 +91,10 @@ findPredecessorPosition :: ExpressionNode -> [ExpressionNode] -> Position
 findPredecessorPosition node nodes = fromDoubles xPos yPos where
     xPos = (node ^. position . x) - gapBetweenNodes
     yPos = findYPos $ node ^. position . y
-    findYPos y' = if any (\n -> n ^. position . x == xPos && n ^. position . y == y') nodes then findYPos $ y' + gapBetweenNodes else y'
+    findYPos y' = if any (\n -> n ^. position . x == xPos && n ^. position . y == y') nodes then findYPos $ y' - gapBetweenNodes else y'
 
 findSuccessorPosition :: ExpressionNode -> [ExpressionNode] -> Position
 findSuccessorPosition node nodes = fromDoubles xPos yPos where
     xPos = (node ^. position . x) + gapBetweenNodes
     yPos = findYPos $ node ^. position . y
-    findYPos y' = if any (\n -> n ^. position . x == xPos && n ^. position . y == y') nodes then findYPos $ y' - gapBetweenNodes else y'
+    findYPos y' = if any (\n -> n ^. position . x == xPos && n ^. position . y == y') nodes then findYPos $ y' + gapBetweenNodes else y'
