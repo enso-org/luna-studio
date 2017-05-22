@@ -7,8 +7,8 @@ import           GHC.Generics             (Generic)
 import           Text.ScopeSearcher.Score (Score)
 
 
-data Highlight = Highlight { _start :: Int
-                           , _len   :: Int
+data Highlight = Highlight { _start  :: Int
+                           , _length :: Int
                            } deriving (Show, Eq, Generic)
 
 data QueryResult a = QueryResult { _prefix     :: Text

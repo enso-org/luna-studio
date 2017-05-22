@@ -14,7 +14,7 @@ import           System.IO
 import           Text.Show.Pretty
 
 import           Text.ScopeSearcher.Item
-import           Text.ScopeSearcher.QueryResult
+import           Text.ScopeSearcher.QueryResult (Highlight (Highlight), QueryResult (QueryResult))
 import qualified Text.ScopeSearcher.Scope       as Scope
 import qualified Text.ScopeSearcher.Searcher    as Searcher
 

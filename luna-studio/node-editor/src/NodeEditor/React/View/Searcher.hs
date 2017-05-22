@@ -64,61 +64,13 @@ searcher =  React.defineView name $ \(ref, s) -> do
                 [ "key"       $= "searcherResults"
                 , "className" $= Style.prefix "searcher__results"
                 ] $ do
-                let resultClasses i = Style.prefixFromList ( "searcher__results__item" : (if i + 1 == s ^. Searcher.selected then [ "searcher__results__item--selected" ] else []))
                 -- TODO [LJK, PM]: Refactor this piece of code:
+                let selected = s ^. Searcher.selected
                 case s ^. Searcher.mode of
-                    Searcher.Command results -> forKeyed_ results $ \(idx, result) ->
-                        div_
-                            [ "key"       $= jsShow idx
-                            , "className" $= resultClasses idx
-                            , onClick     $ \e _ -> stopPropagation e : (dispatch ref $ UI.SearcherEvent $ AcceptEntry (idx + 1))
-                            ] $
-                            div_
-                                [ "key" $= "name"
-                                , "className" $= Style.prefix "searcher__result__item__name"
-                                ] $ elemString $ convert $ result ^. Result.name
-                    Searcher.Node _ _ results -> forKeyed_ results $ \(idx, result) ->
-                        div_
-                            [ "key"       $= jsShow idx
-                            , "className" $= resultClasses idx
-                            , onClick     $ \e _ -> stopPropagation e : (dispatch ref $ UI.SearcherEvent $ AcceptEntry (idx + 1))
-                            ] $ do
-                            -- div_
-                            --     ["key"       $= "prefix"
-                            --     ,"className" $= Style.prefix "searcher__results__item__prefix"
-                            --     ] $ elemString $ convert (result ^. Result.prefix) <> "."
-                            div_
-                                ["key" $= "name"
-                                ,"className" $= Style.prefix "searcher__results__item__name"
-                                ] $ elemString $ convert $ result ^. Result.name
-                    Searcher.NodeName _ results -> forKeyed_ results $ \(idx, result) ->
-                        div_
-                            [ "key"       $= jsShow idx
-                            , "className" $= resultClasses idx
-                            , onClick     $ \e _ -> stopPropagation e : (dispatch ref $ UI.SearcherEvent $ AcceptEntry (idx + 1))
-                            ] $ do
-                            -- div_
-                            --     ["key"       $= "prefix"
-                            --     ,"className" $= Style.prefix "searcher__results__item__prefix"
-                            --     ] $ elemString $ convert (result ^. Result.prefix) <> "."
-                            div_
-                                ["key" $= "name"
-                                ,"className" $= Style.prefix "searcher__results__item__name"
-                                ] $ elemString $ convert $ result ^. Result.name
-                    Searcher.PortName _ results -> forKeyed_ results $ \(idx, result) ->
-                        div_
-                            [ "key"       $= jsShow idx
-                            , "className" $= resultClasses idx
-                            , onClick     $ \e _ -> stopPropagation e : (dispatch ref $ UI.SearcherEvent $ AcceptEntry (idx + 1))
-                            ] $ do
-                            -- div_
-                            --     ["key"       $= "prefix"
-                            --     ,"className" $= Style.prefix "searcher__results__item__prefix"
-                            --     ] $ elemString $ convert (result ^. Result.prefix) <> "."
-                            div_
-                                ["key" $= "name"
-                                ,"className" $= Style.prefix "searcher__results__item__name"
-                                ] $ elemString $ convert $ result ^. Result.name
+                    Searcher.Command    results -> results_ ref selected results
+                    Searcher.Node   _ _ results -> results_ ref selected results
+                    Searcher.NodeName _ results -> results_ ref selected results
+                    Searcher.PortName _ results -> results_ ref selected results
         -- div_
         --     [ "key"       $= "searcherPreview"
         --     , "className" $= Style.prefix "searcher__preview"
@@ -127,3 +79,30 @@ searcher =  React.defineView name $ \(ref, s) -> do
 
 searcher_ :: Ref App -> Searcher -> ReactElementM ViewEventHandler ()
 searcher_ ref model = React.viewWithSKey searcher name (ref, model) mempty
+
+results_ :: Ref App -> Int -> [Result.QueryResult r] -> ReactElementM ViewEventHandler ()
+results_ ref selected results = forKeyed_ results $ \(idx, result) ->
+    let resultClasses i = Style.prefixFromList ( "searcher__results__item" : (if i + 1 == selected then [ "searcher__results__item--selected" ] else []))
+    in div_
+        [ "key"       $= jsShow idx
+        , "className" $= resultClasses idx
+        , onClick     $ \e _ -> stopPropagation e : (dispatch ref $ UI.SearcherEvent $ AcceptEntry (idx + 1))
+        ] $ do
+        div_
+            ["key" $= "name"
+            ,"className" $= Style.prefix "searcher__results__item__name"
+            ] $ highlighted_ (convert $ result ^. Result.name) $ result ^. Result.highlights
+
+highlighted_ :: String -> [Result.Highlight] -> ReactElementM ViewEventHandler ()
+highlighted_ text = highlighted_' 0 where
+    highlighted_' :: Int -> [Result.Highlight] -> ReactElementM ViewEventHandler ()
+    highlighted_' omit [] = span_ $ elemString $ snd $ splitAt omit text
+    highlighted_' omit (highlight:rest) = do
+        let start = highlight ^. Result.start
+            len   = highlight ^. Result.length
+            (r1         , r2    ) = splitAt start text
+            (_          , normal) = splitAt omit r1
+            (highlighted, _     ) = splitAt len r2
+        span_ $ elemString normal
+        span_ ["className" $= Style.prefix "searcher__results__item__highlighs"] $ elemString highlighted
+        highlighted_' (start + len) rest
