@@ -19,75 +19,40 @@ extra-deps:
   - ghcjs-dom-jsffi-0.7.0.4
 
 packages:
-  - location: ./node-editor
-  - location: ./text-editor
-  - location: ./lib
-    extra-dep: true
-  - location: ../libs/luna-studio-common
-    extra-dep: true
-  - location: ../libs/scope-searcher
-    extra-dep: true
-  - location:
-      git: https://github.com/luna/container.git
-      commit: 14540e932e14953b0eb5ebdea85045e8d261f023
-    extra-dep: true
-  - location:
-      git:    https://github.com/luna/convert.git
-      commit: 901b1491ddf84c309ba1e6a670d9a519e4c673b6
-    extra-dep: true
-  - location:
-      git:    https://github.com/luna/data-construction.git
-      commit: fb0e46aacaa7060046f88d4c5a5f708fd443c8ae
-    extra-dep: true
-  - location:
-      git:    https://github.com/luna/data-layer.git
-      commit: 62aebd5ecb6ea873ce8db4cc230d156126cd82ee
-    extra-dep: true
-  - location:
-      git:    https://github.com/luna/data-prop.git
-      commit: adb894846d34ceaa005961bd8fe676023cf1b036
-    extra-dep: true
-  - location:
-      git:    https://github.com/luna/data-repr.git
-      commit: c20f35c8e2f25fd84df385e8646b125d9fca8ac4
-    extra-dep: true
-  - location:
-      git:    https://github.com/luna/data-rtuple.git
-      commit: 0f86d4dff7192db7b4f4001f427126a889ff311f
-    extra-dep: true
-  - location:
-      git:    https://github.com/luna/functor-utils.git
-      commit: 8a5a3c6c132b71eed041269c17182100ff98603f
-    extra-dep: true
-  - location:
-      git: https://github.com/luna/hsprocessing.git
-      commit: b96747cf0c3a4362b4d5827eb567be85c2d1dd13
-    extra-dep: true
-  - location:
-      git:    https://github.com/luna/impossible.git
-      commit: 5dc5b731a4313e44d55677ed6b9f38456feb2d56
-    extra-dep: true
-  - location:
-      git:    https://github.com/luna/lens-utils.git
-      commit: 944351bc0b972b21ae4c6a092c596edf96f13129
-    extra-dep: true
-  - location:
-      git: https://github.com/luna/monoid
-      commit: 7f5f64d1b1f81827431c9462d35665adbb609ba8
-    extra-dep: true
-  - location:
-      git: https://github.com/luna/prologue.git
-      commit: d46ca8c8e8333009c96b35e082f7bc2fda1f9ce3
-    extra-dep: true
-  - location:
-      git: https://github.com/luna/react-flux
-      commit: ad94b1f2e4bc87b81853ff746b64c59b3eae7f09
-    extra-dep: true
-  - location:
-      git: https://github.com/luna/typelevel.git
-      commit: 9165d1818d9ec0b0f030623282b80c2d654089ea
-    extra-dep: true
-  - location:
-      git: https://github.com/luna/visualization-api.git
-      commit: af5a618f5813ac639a6760836a6d6fa7ef5af1da
-    extra-dep: true
+- {location: ./node-editor}
+- {location: ./text-editor}
+- {extra-dep: true, location: ./lib}
+- {extra-dep: true, location: ../libs/luna-studio-common}
+- {extra-dep: true, location: ../libs/scope-searcher}
+- extra-dep: true
+  location: {commit: 14540e932e14953b0eb5ebdea85045e8d261f023, git: 'https://github.com/luna/container.git'}
+- extra-dep: true
+  location: {commit: 93447d94a88d812b2df840eced3a7d3ec4d1e82d, git: 'https://github.com/luna/convert.git'}
+- extra-dep: true
+  location: {commit: fb0e46aacaa7060046f88d4c5a5f708fd443c8ae, git: 'https://github.com/luna/data-construction.git'}
+- extra-dep: true
+  location: {commit: 62aebd5ecb6ea873ce8db4cc230d156126cd82ee, git: 'https://github.com/luna/data-layer.git'}
+- extra-dep: true
+  location: {commit: adb894846d34ceaa005961bd8fe676023cf1b036, git: 'https://github.com/luna/data-prop.git'}
+- extra-dep: true
+  location: {commit: c20f35c8e2f25fd84df385e8646b125d9fca8ac4, git: 'https://github.com/luna/data-repr.git'}
+- extra-dep: true
+  location: {commit: 0f86d4dff7192db7b4f4001f427126a889ff311f, git: 'https://github.com/luna/data-rtuple.git'}
+- extra-dep: true
+  location: {commit: 409dc63cc1ccd2c85000460ce39df5c19dd15d0c, git: 'https://github.com/luna/functor-utils.git'}
+- extra-dep: true
+  location: {commit: 7917cc1d84e421823b6291bb4c5ec065a29e9c42, git: 'https://github.com/luna/hsprocessing.git'}
+- extra-dep: true
+  location: {commit: 5dc5b731a4313e44d55677ed6b9f38456feb2d56, git: 'https://github.com/luna/impossible.git'}
+- extra-dep: true
+  location: {commit: 4af8e1021a8127b05d98920e387150fa4f0aa2e4, git: 'https://github.com/luna/lens-utils.git'}
+- extra-dep: true
+  location: {commit: 7f5f64d1b1f81827431c9462d35665adbb609ba8, git: 'https://github.com/luna/monoid'}
+- extra-dep: true
+  location: {commit: 642b290e21d94b01273bfae05963b203f75c8191, git: 'https://github.com/luna/prologue.git'}
+- extra-dep: true
+  location: {commit: ad94b1f2e4bc87b81853ff746b64c59b3eae7f09, git: 'https://github.com/luna/react-flux'}
+- extra-dep: true
+  location: {commit: 9165d1818d9ec0b0f030623282b80c2d654089ea, git: 'https://github.com/luna/typelevel.git'}
+- extra-dep: true
+  location: {commit: ddfcd1e0372b93e947b380b911c123fe67227b21, git: 'https://github.com/luna/visualization-api.git'}

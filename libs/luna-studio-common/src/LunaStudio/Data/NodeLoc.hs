@@ -49,10 +49,6 @@ instance HasNodeLoc NodeLoc                        where nodeLoc = id
 instance HasBreadcrumb b => Convertible b NodePath where
     convert = NodePath . view breadcrumb
 
-instance HasBreadcrumb b => Convertible (b, NodeLoc) (b, NodeId) where
-    convert (b, n) = (b & breadcrumb %~ (<> (n ^. breadcrumb)), n ^. nodeId) where
-
-
 empty :: NodePath
 empty = def
 
@@ -85,6 +81,9 @@ prependPath b = nodeLoc . path . localBc %~ (b ^. breadcrumb <>)
 normalise :: (HasBreadcrumb b, HasNodeLoc n) => b -> n -> (b, n)
 normalise b n = ( b & breadcrumb %~ (<> (n ^. nodeLoc . path . localBc))
                 , n & nodeLoc . path .~ def)
+
+normalise_ :: HasBreadcrumb b => b -> NodeLoc -> (b, NodeId)
+normalise_ b n = (b & breadcrumb %~ (<> (n ^. breadcrumb)), n ^. nodeId)
 
 normalise' :: (HasBreadcrumb b, HasNodeLoc n) => b -> [n] -> (b, [n])
 normalise' b ns =

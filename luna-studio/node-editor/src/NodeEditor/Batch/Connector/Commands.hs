@@ -38,7 +38,7 @@ import           LunaStudio.Data.Connection               (Connection)
 import           LunaStudio.Data.GraphLocation            (GraphLocation)
 import qualified LunaStudio.Data.GraphLocation            as GraphLocation
 import           LunaStudio.Data.Node                     (ExpressionNode)
-import           LunaStudio.Data.NodeLoc                  (NodeLoc, normalise, normalise')
+import           LunaStudio.Data.NodeLoc                  (NodeLoc, normalise, normalise', normalise_)
 import qualified LunaStudio.Data.NodeLoc                  as NodeLoc
 import           LunaStudio.Data.NodeMeta                 (NodeMeta)
 import           LunaStudio.Data.PortDefault              (PortDefault)
@@ -129,7 +129,7 @@ removePort portRef workspace uuid guiID = sendRequest $ Message uuid guiID $ (wi
 
 renameNode :: NodeLoc -> Text -> Workspace -> UUID -> Maybe UUID -> IO ()
 renameNode nl name workspace uuid guiID = sendRequest $ Message uuid guiID $ withLibrary workspace' RenameNode.Request nodeId name where
-    (workspace', nodeId) = convert (workspace, nl)
+    (workspace', nodeId) = normalise_ workspace nl
 
 renamePort :: OutPortRef -> Text -> Workspace -> UUID -> Maybe UUID -> IO ()
 renamePort portRef name workspace uuid guiID = sendRequest $ Message uuid guiID $ withLibrary workspace' RenamePort.Request portRef' name where
@@ -141,7 +141,7 @@ searchNodes query cursor workspace uuid guiID = sendRequest $ Message uuid guiID
 setNodeExpression :: NodeLoc -> Text -> Workspace -> UUID -> Maybe UUID -> IO ()
 setNodeExpression nodeLoc expression workspace uuid guiID =
     sendRequest $ Message uuid guiID $ withLibrary workspace' SetNodeExpression.Request nodeId expression where
-        (workspace', nodeId) = convert (workspace, nodeLoc)
+        (workspace', nodeId) = normalise_ workspace nodeLoc
 
 setNodesMeta :: [(NodeLoc, NodeMeta)] -> Workspace -> UUID -> Maybe UUID -> IO ()
 setNodesMeta updates workspace uuid guiID = sendRequest $ Message uuid guiID $ withLibrary workspace' SetNodesMeta.Request (map (_1 %~ convert) updates') where
