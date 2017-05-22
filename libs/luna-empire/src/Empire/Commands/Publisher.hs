@@ -11,6 +11,7 @@ import           LunaStudio.API.AsyncUpdate                 (AsyncUpdate (..))
 import           LunaStudio.Data.GraphLocation              (GraphLocation)
 import           LunaStudio.Data.MonadPath                  (MonadPath)
 import           LunaStudio.Data.Node                       (ExpressionNode, NodeId, NodeTypecheckerUpdate)
+import           LunaStudio.Data.NodeValue                  (NodeValue)
 import           LunaStudio.Data.TypeRep                    (TypeRep)
 
 import qualified LunaStudio.API.Atom.Substitute             as Substitute
@@ -26,7 +27,7 @@ notifyNodeTypecheck :: (MonadReader CommunicationEnv m, MonadIO m) => GraphLocat
 notifyNodeTypecheck loc n =
     sendUpdate $ TypecheckerUpdate $ NodeTCUpdate.Update loc n
 
-notifyResultUpdate :: (MonadReader CommunicationEnv m, MonadIO m) => GraphLocation -> NodeId -> NodeResult.NodeValue -> Integer -> m ()
+notifyResultUpdate :: (MonadReader CommunicationEnv m, MonadIO m) => GraphLocation -> NodeId -> NodeValue -> Integer -> m ()
 notifyResultUpdate loc nid v t =
     sendUpdate $ ResultUpdate $ NodeResult.Update loc nid v t
 

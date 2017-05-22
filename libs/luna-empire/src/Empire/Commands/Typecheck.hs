@@ -21,9 +21,10 @@ import           LunaStudio.Data.GraphLocation     (GraphLocation (..))
 import           LunaStudio.Data.MonadPath         (MonadPath (MonadPath))
 import           LunaStudio.Data.Node              (NodeId, nodeId)
 import qualified LunaStudio.Data.NodeMeta          as NodeMeta
+import           LunaStudio.Data.NodeValue         (NodeValue(..), VisualizationValue (JsonValue))
 import           LunaStudio.Data.TypeRep           (TypeRep (TCons))
-import           LunaStudio.Data.PortDefault       (PortValue (StringValue), VisualizationValue (JsonValue))
-import           LunaStudio.API.Graph.NodeResultUpdate (NodeValue(..))
+import           LunaStudio.Data.PortDefault       (PortValue (StringValue))
+
 import           Empire.ASTOp                      (EmpirePass, runASTOp, runTypecheck)
 import qualified Empire.ASTOps.Read                as ASTRead
 import qualified Empire.Commands.AST               as AST

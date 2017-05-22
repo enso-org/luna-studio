@@ -6,9 +6,6 @@ import           Data.Text       (Text, pack)
 import           Prologue        hiding (Text)
 
 
-data VisualizationValue = JsonValue String
-                        | HtmlValue String
-                        deriving (Eq, Generic, NFData, Show)
 
 data PortValue = IntValue    Int
                | DoubleValue Double
@@ -22,10 +19,8 @@ data PortDefault = Expression String
 
 makePrisms ''PortValue
 makePrisms ''PortDefault
-makePrisms ''VisualizationValue
 instance Binary PortValue
 instance Binary PortDefault
-instance Binary VisualizationValue
 
 stringify :: PortValue -> Text
 stringify = pack . show

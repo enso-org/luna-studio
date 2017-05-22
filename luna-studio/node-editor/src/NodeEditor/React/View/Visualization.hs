@@ -16,9 +16,8 @@ import           Data.Scientific                            (coefficient)
 import           Data.Text                                  as Text
 import qualified Data.Vector                                as Vector
 import qualified LunaStudio.Data.Error                      as LunaError
-import           LunaStudio.Data.PortDefault                (VisualizationValue (..))
+import           LunaStudio.Data.NodeValue                  (NodeValue (..), VisualizationValue (..))
 import           LunaStudio.Data.Position                   (Position)
-import           LunaStudio.API.Graph.NodeResultUpdate          (NodeValue (..))
 import qualified NodeEditor.Event.UI                        as UI
 import qualified NodeEditor.React.Event.Visualization       as Visualization
 import           NodeEditor.React.Model.App                 (App)

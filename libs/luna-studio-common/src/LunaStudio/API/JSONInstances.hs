@@ -59,6 +59,7 @@ import           LunaStudio.Data.MonadPath                  as MonadPath
 import           LunaStudio.Data.Node                       as Node
 import           LunaStudio.Data.NodeLoc                    as NodeLoc
 import           LunaStudio.Data.NodeMeta                   as NodeMeta
+import           LunaStudio.Data.NodeValue                  as NodeValue
 import           LunaStudio.Data.Port                       as Port
 import           LunaStudio.Data.PortDefault                as PortDefault
 import           LunaStudio.Data.PortRef                    as PortRef
@@ -143,12 +144,14 @@ instance FromJSON PortRef.InPortRef
 instance ToJSON Connection.Connection
 instance FromJSON Connection.Connection
 
-instance ToJSON PortDefault.VisualizationValue
-instance FromJSON PortDefault.VisualizationValue
 instance ToJSON PortDefault.PortValue
 instance FromJSON PortDefault.PortValue
 instance ToJSON PortDefault.PortDefault
 instance FromJSON PortDefault.PortDefault
+
+instance ToJSON NodeValue.NodeValue
+instance ToJSON NodeValue.VisualizationValue
+instance FromJSON NodeValue.VisualizationValue
 
 instance ToJSON Graph.Graph
 instance FromJSON Graph.Graph
@@ -193,7 +196,6 @@ instance ToJSON MonadsUpdate.Update
 instance ToJSON MovePort.Request
 
 instance ToJSON NodeResultUpdate.Update
-instance ToJSON NodeResultUpdate.NodeValue
 
 instance ToJSON NodeTypecheckerUpdate.Update
 

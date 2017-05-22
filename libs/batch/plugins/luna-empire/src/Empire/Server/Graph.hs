@@ -51,7 +51,6 @@ import qualified LunaStudio.API.Graph.DumpGraphViz      as DumpGraphViz
 import qualified LunaStudio.API.Graph.GetProgram        as GetProgram
 import qualified LunaStudio.API.Graph.GetSubgraphs      as GetSubgraphs
 import qualified LunaStudio.API.Graph.MovePort          as MovePort
-import           LunaStudio.API.Graph.NodeResultUpdate  (NodeValue (NodeValue))
 import qualified LunaStudio.API.Graph.NodeResultUpdate  as NodeResultUpdate
 import qualified LunaStudio.API.Graph.RemoveConnection  as RemoveConnection
 import qualified LunaStudio.API.Graph.RemoveNodes       as RemoveNodes
@@ -83,10 +82,11 @@ import qualified LunaStudio.Data.NodeLoc                as NodeLoc
 import           LunaStudio.Data.NodeMeta               (NodeMeta)
 import qualified LunaStudio.Data.NodeMeta               as NodeMeta
 import qualified LunaStudio.Data.NodeSearcher           as NS
+import           LunaStudio.Data.NodeValue              (NodeValue (NodeValue), VisualizationValue (..))
 import           LunaStudio.Data.Port                   (InPort (..), InPortIndex (..), OutPort (..), OutPortIndex (..), Port (..),
                                                          PortState (..), getPortNumber)
 import qualified LunaStudio.Data.Port                   as Port
-import           LunaStudio.Data.PortDefault            (PortValue (..), VisualizationValue (..))
+import           LunaStudio.Data.PortDefault            (PortValue (..))
 import           LunaStudio.Data.PortRef                (InPortRef (..), OutPortRef (..))
 import           LunaStudio.Data.PortRef                as PortRef
 import           LunaStudio.Data.Position               (Position)

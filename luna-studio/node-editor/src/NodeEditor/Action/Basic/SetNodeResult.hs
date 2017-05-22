@@ -1,9 +1,9 @@
 module NodeEditor.Action.Basic.SetNodeResult where
 
-import           LunaStudio.API.Graph.NodeResultUpdate           (NodeValue)
+import           Common.Prelude
+import           LunaStudio.Data.NodeValue                  (NodeValue)
 import           NodeEditor.Action.Command                  (Command)
 import           NodeEditor.Action.State.NodeEditor         (modifyExpressionNode)
-import           Common.Prelude
 import           NodeEditor.React.Model.Node.ExpressionNode (NodeLoc, execTime, value)
 import           NodeEditor.State.Global                    (State)
 
