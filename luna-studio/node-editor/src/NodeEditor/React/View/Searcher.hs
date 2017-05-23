@@ -39,7 +39,7 @@ searcher =  React.defineView name $ \(ref, s) -> do
             Searcher.Node     _ _ _ -> [ "searcher--node" ]
             Searcher.NodeName _   _ -> [ "searcher--node-name"]
             Searcher.PortName _   _ -> [ "searcher--port-name"]))
-        mayCustomInput = if s ^. Searcher.replaceInput then ["value" $= convert (s ^. Searcher.input)] else []
+        mayCustomInput = if s ^. Searcher.replaceInput then ["value" $= convert (s ^. Searcher.inputText)] else []
     div_
         [ "key"       $= name
         , "className" $= className
@@ -59,7 +59,10 @@ searcher =  React.defineView name $ \(ref, s) -> do
                 , "placeholder" $= "Command search…"
                 , onKeyDown     $ handleKeyDown ref
                 , onKeyUp       $ \_ k -> dispatch ref $ UI.SearcherEvent $ KeyUp k
-                , onChange      $ \e -> let val = target e "value" in dispatch ref $ UI.SearcherEvent $ InputChanged val
+                , onChange      $ \e -> let val = target e "value"
+                                            ss  = target e "selectionStart"
+                                            se  = target e "selectionEnd"
+                                        in dispatch ref $ UI.SearcherEvent $ InputChanged val ss se
                 ] ++ mayCustomInput )
             div_
                 [ "key"       $= "searcherResults"

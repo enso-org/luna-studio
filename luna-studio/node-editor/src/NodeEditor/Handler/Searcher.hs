@@ -27,14 +27,13 @@ handle _ _                                                   = Nothing
 
 handleEvent :: (Event -> IO ()) -> Searcher.Event -> Command State ()
 handleEvent scheduleEvent = \case
-    Searcher.InputChanged input -> continue $ Searcher.querySearch input
-    Searcher.Accept             -> continue $ Searcher.accept scheduleEvent
-    Searcher.AcceptInput        -> continue $ Searcher.acceptEntry scheduleEvent 0
-    Searcher.AcceptEntry  i     -> continue $ Searcher.acceptEntry scheduleEvent i
-    Searcher.EditEntry          -> continue $ Searcher.substituteInputWithEntry
-    Searcher.MoveDown           -> continue Searcher.moveDown
-    Searcher.KeyUp k            -> when (Keys.withoutMods k Keys.backspace) $
-                                      continue Searcher.enableRollback
-    Searcher.MoveLeft           -> continue Searcher.tryRollback
-    Searcher.MoveUp             -> continue Searcher.moveUp
-    _                           -> return ()
+    Searcher.InputChanged input ss se -> continue $ Searcher.updateInput input ss se
+    Searcher.Accept                   -> continue $ Searcher.accept scheduleEvent
+    Searcher.AcceptInput              -> continue $ Searcher.acceptHint scheduleEvent 0
+    Searcher.AcceptEntry  i           -> continue $ Searcher.acceptHint scheduleEvent i
+    Searcher.EditEntry                -> continue $ \action -> Searcher.updateInputWithSelectedHint action >> Searcher.forceSearcherInputUpdate
+    Searcher.MoveDown                 -> continue Searcher.selectPreviousHint
+    -- Searcher.KeyUp k                  -> when (Keys.withoutMods k Keys.backspace) $ continue Searcher.enableRollback
+    -- Searcher.MoveLeft                 -> continue Searcher.tryRollback
+    Searcher.MoveUp                   -> continue Searcher.selectNextHint
+    _                                 -> return ()

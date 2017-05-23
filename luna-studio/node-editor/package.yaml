@@ -63,6 +63,7 @@ dependencies:
   - scope-searcher
   - split
   - text
+  - text-processing
   - time
   - transformers
   - unordered-containers

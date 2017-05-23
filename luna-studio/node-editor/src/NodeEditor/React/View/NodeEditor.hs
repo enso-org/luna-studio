@@ -60,7 +60,7 @@ applySearcherHints ne = maybe ne replaceNode $ ne ^. NodeEditor.searcher where
     replaceNode s    = case (s ^. Searcher.mode, s ^. Searcher.selectedNode) of
         (Searcher.Node nl Nothing   _, Just n) -> updateNode nl n ne
         (Searcher.Node nl (Just nn) _, Just n) -> tryConnect nl nn $ NodeEditor.updateExpressionNode (toModel n nl (nn ^. Searcher.position)) ne
-        (Searcher.Node nl (Just nn) _, _)      -> tryConnect nl nn $ NodeEditor.updateExpressionNode (ExpressionNode.mkExprNode nl (s ^. Searcher.input) (nn ^. Searcher.position)) ne
+        (Searcher.Node nl (Just nn) _, _)      -> tryConnect nl nn $ NodeEditor.updateExpressionNode (ExpressionNode.mkExprNode nl (s ^. Searcher.inputText) (nn ^. Searcher.position)) ne
         _                                      -> ne
 
 nodeEditor_ :: Ref App -> NodeEditor -> ReactElementM ViewEventHandler ()
