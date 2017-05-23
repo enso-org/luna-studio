@@ -124,7 +124,6 @@ import           NodeEditor.Action.Basic.RemovePort          (localRemovePort, r
 import           NodeEditor.Action.Basic.RenameNode          (localRenameNode, renameNode)
 import           NodeEditor.Action.Basic.RenamePort          (localRenamePort, renamePort)
 import           NodeEditor.Action.Basic.Scene               (getScene, updateScene)
-import           NodeEditor.Action.Basic.SearchNodes         (localSetSearcherHints, localUpdateSearcherHints)
 import           NodeEditor.Action.Basic.SelectNode          (dropSelectionHistory, modifySelectionHistory, selectAll, selectNodes,
                                                               selectPreviousNodes, toggleSelect, unselectAll)
 import           NodeEditor.Action.Basic.SetNodeExpression   (localSetNodeExpression, setNodeExpression)
@@ -144,3 +143,4 @@ import           NodeEditor.Action.Basic.UpdateNode          (localUpdateExpress
                                                               localUpdateOrAddInputNode, localUpdateOrAddOutputNode, localUpdateOutputNode,
                                                               updateAllPortsSelfVisibility, updatePortSelfVisibility,
                                                               updatePortSelfVisibilityForIds)
+import           NodeEditor.Action.Basic.UpdateSearcherHints (localSetSearcherHints, localUpdateSearcherHints)
