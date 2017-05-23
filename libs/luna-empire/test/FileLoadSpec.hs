@@ -261,15 +261,16 @@ spec = around withChannels $ do
                 Graph.addNode top u1 "4" def
                 Graph.getCode top
             withResult res $ \code -> do
-                code `shouldBe` "node1 «0»= 4\n"
+                code `shouldBe` "def main:\n    node1 «0»= 4\n"
         it "adds one node and updates it" $ \env -> do
             u1 <- mkUUID
             res <- evalEmp env $ do
                 Graph.addNode top u1 "4" def
+                Graph.markerCodeSpan top 0
                 Graph.setNodeExpression top u1 "5"
                 Graph.getCode top
             withResult res $ \code -> do
-                code `shouldBe` "node1 «0»= 5\n"
+                code `shouldBe` "def main:\n    node1 «0»= 5\n"
         it "assigns nodeids to marked expressions" $ \env -> do
             let code = [r|def main:
     pi «0»= 3.14
@@ -298,18 +299,28 @@ spec = around withChannels $ do
                 Graph.withGraph loc $ Graph.loadCode code
                 nodeIds <- Graph.withGraph loc $ runASTOp $ forM [0..3] $
                     \i -> (i,) <$> Graph.getNodeIdForMarker i
+                spans <- forM [0..3] $ Graph.markerCodeSpan loc
                 forM nodeIds $ \(i, Just nodeId) ->
                     Graph.setNodeMeta loc nodeId $ NodeMeta (Position.fromTuple (0, fromIntegral i*10)) False
-                Graph.addNode loc u1 "4" (NodeMeta (Position.fromTuple (10, 50)) False)
-                Graph.getCode loc
-            withResult res $ \code -> do
+                Graph.addNode loc u1 "4" (NodeMeta (Position.fromTuple (0, 5)) False)
+                spans <- forM [0..4] $ Graph.markerCodeSpan loc
+                code  <- Graph.getCode loc
+                return (spans, code)
+            withResult res $ \(spans, code) -> do
                 code `shouldBe` [r|def main:
     pi «0»= 3.14
+    node1 «4»= 4
     foo «1»= a: b: a + b
     c «2»= 4
     bar «3»= foo 8 c
-    node1 «4»= 4
 |]
+                spans `shouldBe` [
+                      (14, 26)
+                    , (48, 68)
+                    , (73, 81)
+                    , (86, 102)
+                    , (31, 43)
+                    ]
         it "adds one node to existing file via text" $ \env -> do
             let code = [r|def main:
     pi «0»= 3.14
@@ -377,9 +388,6 @@ spec = around withChannels $ do
                 let loc = GraphLocation "TestPath" $ Breadcrumb []
                 Graph.withGraph loc $ Graph.loadCode code
                 Just foo <- Graph.withGraph loc $ runASTOp $ Graph.getNodeIdForMarker 0
-                Graph.addNode loc u1 "node2" def
-                Graph.addNode loc u2 "node1" def
-                -- Graph.substituteCode "TestPath" 35 36 "9" Nothing
                 Graph.getGraph $ loc |> foo
             withResult res $ \(Graph.Graph nodes connections _ _ _) -> do
                 nodes `shouldBe` []

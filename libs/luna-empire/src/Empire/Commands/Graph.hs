@@ -47,6 +47,7 @@ module Empire.Commands.Graph
     , withTC
     , withGraph
     , runTC
+    , printSeqsSpans
     ) where
 
 import           Control.Exception             (evaluate)
@@ -160,8 +161,11 @@ addNodeNoTC loc uuid input name meta = do
             Just n -> return $ Text.unpack n
             _      -> generateNodeName
         parsedNode   <- AST.addNode uuid newNodeName parse
+        index        <- getNextExprMarker
+        IR.putLayer @CodeSpan parsedNode (Just $ LeftSpacedSpan 5 (fromIntegral $ Text.length input + length newNodeName + length (show index) + 2 + 2 + 1))
         putIntoHierarchy uuid $ BH.MatchNode parsedNode
         nearestNode  <- putInSequence parsedNode meta
+        addExprMapping index parsedNode
         return (nearestNode, parsedNode)
     runAliasAnalysis
     node <- runASTOp $ do
@@ -208,6 +212,7 @@ putInSequence ref meta = do
                                 l'     <- IR.source l
                                 newSeq <- IR.generalize <$> IR.seq l' ref
                                 IR.replaceSource newSeq l
+                                void $ updateCodeSpan s
                             _       -> undefined
                         _        -> updateGraphSeq =<< AST.makeSeq (nodes ++ [ref])
                 _ -> updateGraphSeq =<< AST.makeSeq (ref:nodes)
@@ -217,17 +222,18 @@ putInSequence ref meta = do
         _ -> do
             updateGraphSeq =<< AST.makeSeq [ref]
             return Nothing
-    index <- getNextExprMarker
-    addExprMapping index ref
     return nearestNode
 
 addToCode :: GraphLocation -> Maybe NodeRef -> NodeId -> Empire ()
 addToCode loc@(GraphLocation file _) previous inserted = do
-    (expr, line) <- withGraph loc $ runASTOp $ do
-        expr <- printMarkedExpression =<< ASTRead.getASTPointer inserted
-        line <- join <$> (forM previous nodeLine)
-        return (expr, fromMaybe 0 line)
-    Library.withLibrary file $ Library.addLineAfter line expr
+    (expr, position) <- withGraph loc $ runASTOp $ do
+        ref   <- ASTRead.getASTPointer inserted
+        expr  <- printMarkedExpression ref
+        range <- readRange ref
+        LeftSpacedSpan off _ <- readCodeSpan ref
+        let offset = Text.replicate (fromIntegral off - 1) " "
+        return (Text.concat [offset, expr], fst range - fromIntegral off + 1)
+    Library.withLibrary file $ Library.applyDiff position position (Text.concat [expr, "\n"])
     return ()
 
 addExprMapping :: ASTOp m => Word64 -> NodeRef -> m ()
@@ -311,6 +317,16 @@ updateGraphSeq newOut = do
     when (newOut /= oldSeq) $ mapM_ ASTRemove.removeSubtree oldSeq
     Graph.breadcrumbHierarchy . BH._ToplevelParent . BH.topBody .= newOut
     forM_ newOut $ (Graph.breadcrumbHierarchy . BH.body .=)
+    forM_ newOut $ updateCodeSpan
+
+updateCodeSpan :: ASTOp m => NodeRef -> m (LeftSpacedSpan Delta)
+updateCodeSpan ref = IR.matchExpr ref $ \case
+    IR.Seq l r -> do
+        l' <- updateCodeSpan =<< IR.source l
+        r' <- updateCodeSpan =<< IR.source r
+        IR.putLayer @CodeSpan ref (Just $ l' <> r')
+        return (l' <> r')
+    _          -> fromMaybe mempty <$> IR.getLayer @CodeSpan ref
 
 addPort :: GraphLocation -> OutPortRef -> Empire InputSidebar
 addPort loc portRef = withTC loc False $ addPortNoTC loc portRef
@@ -429,19 +445,18 @@ makeTarget ref = IR.matchExpr ref $ \case
 
 setNodeExpression :: GraphLocation -> NodeId -> Text -> Empire ExpressionNode
 setNodeExpression loc@(GraphLocation file _) nodeId expression = do
-    (node, line, code) <- withTC loc False $ do
-        (oldExpr, line) <- runASTOp $ do
-            oldExpr  <- ASTRead.getASTTarget nodeId
-            line     <- nodeLineById nodeId
-            return (oldExpr, line)
+    (node, oldRange, code) <- withTC loc False $ do
+        oldExpr   <- runASTOp $ ASTRead.getASTTarget nodeId
         parsedRef <- view _1 <$> ASTParse.runReparser expression oldExpr
-        runASTOp $ do
+        oldRange  <- runASTOp $ do
             oldPointer <- ASTRead.getASTPointer nodeId
-            isMatch <- ASTRead.isMatch oldPointer
+            oldRange   <- readRange oldPointer
+            isMatch    <- ASTRead.isMatch oldPointer
             ASTModify.rewireNode nodeId parsedRef
             when (not isMatch) $ do
                 putIntoHierarchy nodeId $ BH.AnonymousNode parsedRef
                 updateExprMap parsedRef oldExpr
+            return oldRange
         runAliasAnalysis
         (node, code)  <- runASTOp $ do
             expr      <- ASTRead.getASTPointer nodeId
@@ -453,8 +468,8 @@ setNodeExpression loc@(GraphLocation file _) nodeId expression = do
             node <- GraphBuilder.buildNode nodeId
             code <- printMarkedExpression expr
             return (node, code)
-        return (node, line, code)
-    Library.withLibrary file $ forM line $ \l -> Library.substituteLine l code
+        return (node, oldRange, code)
+    Library.withLibrary file $ Library.applyDiff (fst oldRange) (snd oldRange) code
     resendCode loc
     return node
 
@@ -765,8 +780,7 @@ readRange' ref = IR.matchExpr ref $ \case
                 let lefts = takeWhile (/= ref) inputs
                 spans  <- mapM readCodeSpan lefts
                 let leftSpan = mconcat spans
-                parentSpan <- readRange' =<< IR.readTarget parent
-                return $ parentSpan <> leftSpan
+                return leftSpan
             _ -> error "something is no yes"
 
 readRange :: ASTOp m => NodeRef -> m (Int, Int)
@@ -796,18 +810,23 @@ getNodeIdForMarker index = do
             return $ varNodeId <|> nodeId
         _            -> return Nothing
 
+printSeqsSpans :: GraphLocation -> Empire ()
+printSeqsSpans loc = withGraph loc $ runASTOp $ do
+    nodeSeq <- GraphBuilder.getNodeSeq
+    forM_ nodeSeq $ \s -> do
+        seqs <- AST.getSeqs s
+        ranges <- mapM (\s' -> (s',) <$> readRange s') seqs
+
 markerCodeSpan :: GraphLocation -> Int -> Empire (Int, Int)
 markerCodeSpan loc index = withGraph loc $ runASTOp $ do
     nodeSeq <- GraphBuilder.getNodeSeq
     case nodeSeq of
         Just nodeSeq -> do
-            seqs <- AST.getSeqs nodeSeq
             exprMap      <- IR.getLayer @CodeMarkers nodeSeq
             let exprMap' :: Map.Map Luna.Marker NodeRef
                 exprMap' = coerce exprMap
                 Just ref = Map.lookup (fromIntegral index) exprMap'
-            range <- readRange ref
-            return range
+            readRange ref
         _            -> return (0,0)
 
 -- internal

@@ -53,7 +53,7 @@ import           Test.Hspec                    (expectationFailure)
 
 runEmp :: CommunicationEnv -> (Given GraphLocation => Empire a) -> IO (a, Env)
 runEmp env act = runEmpire env def $ do
-    _ <- createLibrary (Just "TestFile") "TestFile" ""
+    _ <- createLibrary (Just "TestFile") "TestFile" "def main:\n"
     let toLoc = GraphLocation "TestFile"
     give (toLoc $ Breadcrumb []) act
 
