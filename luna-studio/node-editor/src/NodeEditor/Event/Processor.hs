@@ -27,7 +27,6 @@ import qualified NodeEditor.Handler.Camera              as Camera
 import qualified NodeEditor.Handler.Clipboard           as Clipboard
 import qualified NodeEditor.Handler.Connect             as Connect
 import qualified NodeEditor.Handler.ConnectionPen       as ConnectionPen
-import qualified NodeEditor.Handler.Debug               as Debug
 import qualified NodeEditor.Handler.MultiSelection      as MultiSelection
 import qualified NodeEditor.Handler.Navigation          as Navigation
 import qualified NodeEditor.Handler.Node                as Node
@@ -61,8 +60,6 @@ actions loop =
     , Connect.handle
     , ConnectionPen.handle
     , Control.handle
-    , Debug.handle
-    , Debug.handleEv
     , Graph.handle
     , MultiSelection.handle
     , Navigation.handle
@@ -89,7 +86,7 @@ processEvent loop ev = modifyMVar_ (loop ^. Loop.state) $ \state -> do
     when displayProcessingTime $ do
         consoleTimeStart $ (realEvent ^. Event.name) <>" show and force"
         --putStrLn . show . length $ show realEvent
-        JS.Debug.error (convert $ realEvent ^. Event.name) realEvent
+        JS.Debug.error (convert $ realEvent ^. Event.name) ()
         consoleTimeEnd $ (realEvent ^. Event.name) <> " show and force"
         consoleTimeStart (realEvent ^. Event.name)
     timestamp <- getCurrentTime

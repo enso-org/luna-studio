@@ -85,11 +85,6 @@ node = React.defineView name $ \(ref, n) -> case n ^. Node.mode of
                 , "key"       $= "nodeText"
                 ] $ do
                 div_
-                    [ "key"         $= "nodeExpression"
-                    , "className"   $= Style.prefixFromList [ "node__expression", "noselect" ]
-                    , onDoubleClick $ \e _ -> stopPropagation e : dispatch ref (UI.NodeEvent $ Node.EditExpression nodeLoc)
-                    ] $ elemString . convert $ n ^. Node.expression
-                div_
                     [ "className"   $= Style.prefixFromList [ "node__name", "noselect" ]
                     , onDoubleClick $ \e _ -> stopPropagation e : dispatch ref (UI.NodeEvent $ Node.EditName nodeLoc)
                     ] $ do
@@ -104,6 +99,11 @@ node = React.defineView name $ \(ref, n) -> case n ^. Node.mode of
                         --         , "className" $= Style.prefixFromList (["icon", "icon--show"] ++ if isVisualization then ["icon--show--on"] else ["icon--show--off"])
                         --         , onClick $ \_ _ -> dispatch ref $ UI.NodeEvent $ Node.DisplayResultChanged (not isVisualization) nodeLoc
                         --         ] mempty
+                div_
+                    [ "key"         $= "nodeExpression"
+                    , "className"   $= Style.prefixFromList [ "node__expression", "noselect" ]
+                    , onDoubleClick $ \e _ -> stopPropagation e : dispatch ref (UI.NodeEvent $ Node.EditExpression nodeLoc)
+                    ] $ elemString . convert $ n ^. Node.expression
             nodeBody_ ref n
             div_
                 [ "key"       $= "results"

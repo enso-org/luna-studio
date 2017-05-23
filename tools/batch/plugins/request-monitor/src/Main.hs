@@ -4,6 +4,7 @@
 
 module Main where
 
+import           GHC.IO.Encoding      (setLocaleEncoding, utf8)
 import           Prologue              hiding (argument)
 import           System.Console.Docopt
 import           System.Environment    (getArgs)
@@ -16,6 +17,7 @@ import qualified ZMQ.Bus.EndPoint      as EP
 patterns :: Docopt
 patterns = [docoptFile|src/RequestMonitorUsage.txt|]
 
+getArgOrExit :: Arguments -> Option -> IO String
 getArgOrExit = getArgOrExitWith patterns
 
 rootLogger :: Logger
@@ -26,6 +28,7 @@ logger = getLogger $moduleName
 
 main :: IO ()
 main = do
+    setLocaleEncoding utf8
     args <- parseArgsOrExit patterns =<< getArgs
     endPoints <- EP.clientFromConfig <$> Config.load
     projectRoot <- Config.projectRoot <$> Config.projects <$> Config.load
@@ -38,7 +41,6 @@ main = do
 runOnIdle :: EP.BusEndPoints -> FilePath -> Integer -> FilePath -> IO ()
 runOnIdle endPoints projectRoot time script = do
     rootLogger setIntLevel 3
-    r <- Monitor.run endPoints projectRoot time script
-    case r of
+    Monitor.run endPoints projectRoot time script >>= \case
         Left err -> logger criticalFail err
         _        -> return ()

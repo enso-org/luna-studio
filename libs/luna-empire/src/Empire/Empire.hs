@@ -17,6 +17,7 @@ import           LunaStudio.Data.TypeRep       (TypeRep)
 import           Luna.Builtin.Data.Module      (Imports)
 
 import           Control.Concurrent.STM.TChan  (TChan)
+import           Control.Concurrent.MVar       (MVar)
 import           Control.Exception             (try)
 import           Control.Monad.Reader
 import           Control.Monad.State
@@ -27,7 +28,15 @@ type Error = String
 
 type ActiveFiles = Map FilePath Library
 
-newtype Env = Env { _activeFiles :: ActiveFiles } deriving Show
+data SymbolMap = SymbolMap { _functions :: [Text]
+                           , _classes   :: Map Text [Text]
+                           } deriving (Show, Eq)
+makeLenses ''SymbolMap
+
+instance Default SymbolMap where
+    def = SymbolMap def def
+
+newtype Env = Env { _activeFiles :: ActiveFiles } deriving (Show)
 makeLenses ''Env
 
 instance Default Env where
@@ -36,6 +45,7 @@ instance Default Env where
 data CommunicationEnv = CommunicationEnv { _updatesChan   :: TChan AsyncUpdate
                                          -- FIXME[MK]: Yeah, let's use 3-tuples, way to code!
                                          , _typecheckChan :: TChan (GraphLocation, Graph, Bool)
+                                         , _scopeVar      :: MVar SymbolMap
                                          }
 makeLenses ''CommunicationEnv
 

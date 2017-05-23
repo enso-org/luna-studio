@@ -8,7 +8,6 @@ module Data.ScreenPosition
 where
 
 import           Common.Prelude
-import           Data.Aeson              (FromJSON, ToJSON)
 import           LunaStudio.Data.Vector2
 -----------------------------
 -- === ScreenPosition === ---
@@ -26,9 +25,7 @@ type instance VectorOf ScreenPosition = Vector2 Double
 
 instance Dim1      ScreenPosition
 instance Dim2      ScreenPosition
-instance FromJSON  ScreenPosition
 instance IsVector  ScreenPosition
-instance ToJSON    ScreenPosition
 
 type instance Item ScreenPosition = Double
 instance ToList    ScreenPosition where toList   = toList . view vector

@@ -3,6 +3,7 @@
 module Main where
 
 import qualified Data.List              as List
+import           GHC.IO.Encoding        (setLocaleEncoding, utf8)
 
 import           Prologue               hiding (switch)
 import           System.Log.MLogger
@@ -39,7 +40,9 @@ opts = Opt.info (helper <*> parser)
 
 
 main :: IO ()
-main = execParser opts >>= run
+main = do
+    setLocaleEncoding utf8
+    execParser opts >>= run
 
 
 run :: Cmd -> IO ()

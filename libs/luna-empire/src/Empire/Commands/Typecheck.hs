@@ -41,6 +41,7 @@ import           Empire.Empire
 import           Luna.Builtin.Data.LunaValue       (LunaData, listenReps)
 import           Luna.Builtin.Data.LunaEff         (runIO, runError)
 import           Luna.Builtin.Data.Module          (Imports (..), importedClasses, importedFunctions)
+import           Luna.Builtin.Data.Class           (Class (..))
 import qualified Luna.Builtin.Std                  as Std
 import qualified Luna.IR                           as IR
 import qualified Luna.Pass.Evaluation.Interpreter  as Interpreter
@@ -130,8 +131,15 @@ flushCache = do
     valuesCache .= def
     nodesCache  .= def
 
-createStdlib :: String -> IO Imports
-createStdlib = Compilation.createStdlib
+newtype Scope = Scope Imports
+
+createStdlib :: String -> IO Scope
+createStdlib = fmap Scope . Compilation.createStdlib
+
+getSymbolMap :: Scope -> SymbolMap
+getSymbolMap (Scope (Imports clss funcs)) = SymbolMap (convert <$> Map.keys funcs) classes where
+    classes = processClass <$> Map.mapKeys convert clss
+    processClass (Class conses methods) = convert <$> Map.keys methods
 
 run :: GraphLocation -> Command InterpreterEnv ()
 run loc = do

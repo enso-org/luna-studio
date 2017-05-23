@@ -7,8 +7,10 @@
 module Empire.Server.Graph where
 
 import           Control.Arrow                          ((&&&))
+import           Control.Concurrent.MVar                (readMVar)
 import           Control.Monad.Catch                    (handle, try)
 import           Control.Monad.State                    (StateT)
+import           Control.Monad.Reader                   (asks)
 import qualified Data.Binary                            as Bin
 import           Data.ByteString                        (ByteString)
 import           Data.ByteString.Lazy                   (fromStrict)
@@ -99,22 +101,12 @@ import           ZMQ.Bus.Trans                          (BusT (..))
 logger :: Logger.Logger
 logger = Logger.getLogger $(Logger.moduleName)
 
-notifyNodeResultUpdate :: GraphLocation -> NodeId -> [VisualizationValue] -> Text -> StateT Env BusT ()
-notifyNodeResultUpdate location nodeId values name = sendToBus' $ NodeResultUpdate.Update location nodeId (NodeValue name values) 42
--- FIXME: report correct execution time
-
 saveCurrentProject :: GraphLocation -> StateT Env BusT ()
 saveCurrentProject loc = do
   currentEmpireEnv <- use Env.empireEnv
   empireNotifEnv   <- use Env.empireNotif
   projectRoot      <- use Env.projectRoot
   void $ liftIO $ Empire.runEmpire empireNotifEnv currentEmpireEnv $ Persistence.saveLocation projectRoot loc
-
-forceTC :: GraphLocation -> StateT Env BusT ()
-forceTC location = do
-    currentEmpireEnv <- use Env.empireEnv
-    empireNotifEnv   <- use Env.empireNotif
-    void $ liftIO $ Empire.runEmpire empireNotifEnv currentEmpireEnv $ Graph.typecheck location
 
 defaultLibraryPath = "Main.luna"
 
@@ -212,8 +204,11 @@ handleGetProgram :: Request GetProgram.Request -> StateT Env BusT ()
 handleGetProgram = modifyGraph defInverse action replyResult where
     action (GetProgram.Request location) = do
         graph <- Graph.getGraph location
-        code <-  Graph.getCode location
+        code  <- Graph.getCode location
         crumb <- Graph.decodeLocation location
+        -- LESZEK! Tutaj pobieramy scope!
+        d <- view Empire.scopeVar
+        print =<< liftIO (readMVar d)
         return $ GetProgram.Result graph (Text.pack code) crumb mockNSData
 
 handleAddConnection :: Request AddConnection.Request -> StateT Env BusT ()
@@ -235,7 +230,7 @@ handleAddNode = modifyGraph defInverse action replyResult where
             handle (\(e :: SomeASTException) -> return ()) $ do
                 void $ Graph.connectCondTC False location (getSrcPortByNodeId nid) (getDstPortByNodeLoc nl)
                 Graph.autolayoutNodes location [nodeId]
-        Graph.withGraph location $ Graph.runTC location False
+        Graph.typecheck location
 
 handleAddPort :: Request AddPort.Request -> StateT Env BusT ()
 handleAddPort = modifyGraph defInverse action replyResult where
@@ -431,17 +426,17 @@ stdlibMethods = ["mockMethod"]
 mockNSData :: NS.Items ExpressionNode
 -- mockNSData = Map.empty
 mockNSData = Map.fromList $ functionsList <> modulesList where
-    nodeSearcherSymbols = words "mockNodeA mockNodeB mockNodeC mockNodeD"
+    nodeSearcherSymbols = words "foo bar baz List.xD"
     (methods, functions) = partition (elem '.') nodeSearcherSymbols
     functionsList = functionEntry <$> functions
-    functionEntry function = (convert function, NS.Element $ mockNode $ Just "mockNode")
+    functionEntry function = (convert function, NS.Element mockNode)
     modulesMethodsMap = foldl updateModulesMethodsMap Map.empty methods
     updateModulesMethodsMap map el = Map.insert moduleName methodNames map where
         (moduleName, dotMethodName) = break (== '.') el
         methodName = tail dotMethodName
         methodNames = methodName : (fromMaybe [] $ Map.lookup moduleName map)
     modulesList = (uncurry moduleEntry) <$> Map.toList modulesMethodsMap
-    moduleEntry moduleName methodList = (convert moduleName, NS.Group (Map.fromList $ functionEntry <$> methodList) $ mockNode $ Just "mockGroupNode")
-    mockNode name = Node.ExpressionNode (fromJust $ UUID.fromString "094f9784-3f07-40a1-84df-f9cf08679a27") "" name Nothing mockInPorts mockOutPorts def False
-    mockInPorts  = LabeledTree def $ Port.Port [Port.Arg 0]        "" TStar NotConnected
-    mockOutPorts = LabeledTree def $ Port.Port [Port.Projection 0] "" TStar NotConnected
+    moduleEntry moduleName methodList = (convert moduleName, NS.Group (Map.fromList $ functionEntry <$> methodList) mockNode)
+    mockNode = Node.ExpressionNode (fromJust $ UUID.fromString "094f9784-3f07-40a1-84df-f9cf08679a27") "" Nothing Nothing mockInPorts mockOutPorts def False
+    mockInPorts  = LabeledTree def $ Port.Port [] "" TStar NotConnected
+    mockOutPorts = LabeledTree def $ Port.Port [] "" TStar NotConnected

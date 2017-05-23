@@ -3,6 +3,7 @@ version:            0.1.0.0
 author:             Nodelab <contact@nodelab.io>
 
 default-extensions:
+  - LambdaCase
   - NoImplicitPrelude
   - TemplateHaskell
 

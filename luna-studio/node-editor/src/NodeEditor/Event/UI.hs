@@ -1,12 +1,10 @@
 {-# LANGUAGE DeriveAnyClass #-}
 module NodeEditor.Event.UI where
 
-import           Data.Aeson                            (FromJSON, ToJSON)
 import           Common.Prelude
 
 import qualified NodeEditor.React.Event.App           as App
 import qualified NodeEditor.React.Event.Breadcrumbs   as Breadcrumbs
-import qualified NodeEditor.React.Event.CodeEditor    as CodeEditor
 import qualified NodeEditor.React.Event.Connection    as Connection
 import qualified NodeEditor.React.Event.Node          as Node
 import qualified NodeEditor.React.Event.NodeEditor    as NodeEditor
@@ -18,7 +16,6 @@ import qualified NodeEditor.React.Event.Visualization as Visualization
 
 data UIEvent = AppEvent           App.Event
              | BreadcrumbsEvent   Breadcrumbs.Event
-             | CodeEditorEvent    CodeEditor.Event
              | ConnectionEvent    Connection.Event
              | NodeEditorEvent    NodeEditor.Event
              | NodeEvent          Node.Event
@@ -27,6 +24,3 @@ data UIEvent = AppEvent           App.Event
              | SidebarEvent       Sidebar.Event
              | VisualizationEvent Visualization.Event
                deriving (Show, Generic, NFData, Typeable)
-
-instance ToJSON   UIEvent
-instance FromJSON UIEvent

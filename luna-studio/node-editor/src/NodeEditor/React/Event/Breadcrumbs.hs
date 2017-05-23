@@ -3,15 +3,10 @@
 
 module NodeEditor.React.Event.Breadcrumbs where
 
-import           Data.Aeson                 (FromJSON, ToJSON)
-
-import           LunaStudio.Data.Breadcrumb (Breadcrumb, BreadcrumbItem)
 import           Common.Prelude
+import           LunaStudio.Data.Breadcrumb (Breadcrumb, BreadcrumbItem)
 
 
 
 data Event = Enter (Breadcrumb BreadcrumbItem)
             deriving (Show, Generic, NFData, Typeable)
-
-instance ToJSON   Event
-instance FromJSON Event

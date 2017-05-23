@@ -1,8 +1,7 @@
 module NodeEditor.React.Model.ConnectionPen where
 
-import           Data.Aeson             (ToJSON)
-import           NodeEditor.Data.Color (Color)
 import           Common.Prelude
+import           NodeEditor.Data.Color (Color)
 
 
 data ConnectionPen = ConnectionPen { _path  :: String
@@ -10,4 +9,3 @@ data ConnectionPen = ConnectionPen { _path  :: String
                                    } deriving (Eq, Show, Typeable, Generic)
 
 makeLenses ''ConnectionPen
-instance ToJSON ConnectionPen

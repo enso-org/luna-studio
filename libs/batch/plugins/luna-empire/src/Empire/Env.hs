@@ -10,6 +10,7 @@ module Empire.Env where
 import           Prologue
 
 import           Control.Concurrent.STM.TChan  (TChan)
+import           Control.Concurrent.MVar       (MVar)
 import           Empire.Data.Graph             (Graph)
 import qualified Empire.Empire                 as Empire
 import           LunaStudio.API.AsyncUpdate    (AsyncUpdate)
@@ -27,8 +28,8 @@ data Env = Env { _empireEnv   :: Empire.Env
                } deriving (Show)
 makeLenses ''Env
 
-make :: TChan Message -> TChan AsyncUpdate -> TChan (GraphLocation, Graph, Bool) -> FilePath -> Env
-make toBus fromEmpire tc = Env def (Empire.CommunicationEnv fromEmpire tc) True toBus
+make :: TChan Message -> TChan AsyncUpdate -> TChan (GraphLocation, Graph, Bool) -> MVar Empire.SymbolMap -> FilePath -> Env
+make toBus fromEmpire tc sm = Env def (Empire.CommunicationEnv fromEmpire tc sm) True toBus
 
 newtype LoggerEnv = LoggerEnv { _formatLog :: Bool }
 makeLenses ''LoggerEnv

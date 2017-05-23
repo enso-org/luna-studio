@@ -5,19 +5,17 @@
 module Main where
 
 import qualified Data.Binary                       as Bin
-import qualified Data.ByteString                   as ByteString
-import qualified Data.ByteString.Char8             as Char8 (pack)
-import           Data.ByteString.Lazy              (fromStrict, toStrict)
+import           Data.ByteString.Lazy              (toStrict)
 import qualified Data.Text                         as Text
 import qualified Data.UUID.V4                      as UUID
+import           GHC.IO.Encoding                   (setLocaleEncoding, utf8)
 import qualified LunaStudio.Data.Breadcrumb        as Breadcrumb
 import           LunaStudio.Data.GraphLocation     (GraphLocation)
 import qualified LunaStudio.Data.GraphLocation     as GraphLocation
 import           LunaStudio.Data.Node              (NodeId)
-import qualified LunaStudio.Data.Node              as Node
 import           LunaStudio.Data.NodeLoc           (NodeLoc (..))
 import qualified LunaStudio.Data.NodeMeta          as NodeMeta
-import           LunaStudio.Data.Port              (InPortId, InPortIndex (..), OutPortId, OutPortIndex (..))
+import           LunaStudio.Data.Port              (InPortId, InPortIndex (..), OutPortId)
 import           LunaStudio.Data.PortDefault       (PortDefault (Constant), PortValue (DoubleValue))
 import           LunaStudio.Data.PortRef           (AnyPortRef (..), InPortRef (..), OutPortRef (..))
 import qualified LunaStudio.Data.Position          as Position
@@ -36,13 +34,10 @@ import qualified LunaStudio.API.Library.ListLibraries  as ListLibraries
 import qualified LunaStudio.API.Project.CreateProject  as CreateProject
 import qualified LunaStudio.API.Project.ListProjects   as ListProjects
 import           LunaStudio.API.Request                (Request (..))
-import qualified LunaStudio.API.Response               as Response
 import qualified LunaStudio.API.Topic                  as Topic
 import           Prologue                          hiding (argument)
 import           System.Console.Docopt
 import           System.Environment                (getArgs)
-import           System.Log.Options                (help, long, metavar, short)
-import qualified System.Log.Options                as Opt
 import qualified ZMQ.Bus.Bus                       as Bus
 import qualified ZMQ.Bus.Config                    as Config
 import qualified ZMQ.Bus.Data.Flag                 as Flag
@@ -56,10 +51,12 @@ toGraphLocation file = GraphLocation.GraphLocation file (Breadcrumb.Breadcrumb [
 patterns :: Docopt
 patterns = [docoptFile|src/InvokerUsage.txt|]
 
+getArgOrExit :: Arguments -> Option -> IO String
 getArgOrExit = getArgOrExitWith patterns
 
 main :: IO ()
 main = do
+    setLocaleEncoding utf8
     args <- parseArgsOrExit patterns =<< getArgs
     endPoints <- EP.clientFromConfig <$> Config.load
     when (args `isPresent` command "addNode") $ do

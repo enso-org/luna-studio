@@ -1,7 +1,6 @@
 {-# LANGUAGE DeriveAnyClass #-}
 module NodeEditor.Event.Shortcut where
 
-import           Data.Aeson          (FromJSON, ToJSON)
 import           Common.Prelude
 
 
@@ -55,8 +54,3 @@ data ShortcutEvent = Event
                    } deriving (Generic, NFData, Show, Typeable)
 
 makeLenses ''ShortcutEvent
-
-instance ToJSON   Command
-instance FromJSON Command
-instance ToJSON   ShortcutEvent
-instance FromJSON ShortcutEvent

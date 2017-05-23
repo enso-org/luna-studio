@@ -3,7 +3,6 @@ module Data.Curve where
 
 import           Common.Prelude
 import           Control.DeepSeq          (NFData)
-import           Data.Aeson               (ToJSON)
 import           Data.Timestamp           (Timestamp)
 import           LunaStudio.Data.Position (Position (Position), vector)
 import           LunaStudio.Data.Vector2  (scalarProduct)
@@ -16,7 +15,6 @@ data CurveSegment = CurveSegment { _segmentBegin :: Position
                                  } deriving (Eq, Show, Generic, NFData)
 
 makeLenses ''CurveSegment
-instance ToJSON CurveSegment
 
 data Curve = Curve { _segments     :: [CurveSegment]
                    , _lastUpdate   :: Maybe Timestamp
@@ -24,7 +22,6 @@ data Curve = Curve { _segments     :: [CurveSegment]
                    } deriving (Eq, Show, Generic, NFData)
 
 makeLenses ''Curve
-instance ToJSON Curve
 
 
 getPointOnCurveSegment :: CurveSegment -> Double -> Position

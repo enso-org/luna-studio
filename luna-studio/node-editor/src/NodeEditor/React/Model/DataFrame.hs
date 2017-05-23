@@ -1,7 +1,6 @@
 module NodeEditor.React.Model.DataFrame where
 
 import           Common.Prelude
-import           Data.Aeson (ToJSON)
 
 data DataFrame = DataFrame { _headers   :: [Text]
                            , _rows      :: [[Text]]
@@ -9,7 +8,6 @@ data DataFrame = DataFrame { _headers   :: [Text]
 
 
 makeLenses ''DataFrame
-instance ToJSON DataFrame
 
 create :: [Text] -> [[Text]] -> DataFrame
 create = DataFrame

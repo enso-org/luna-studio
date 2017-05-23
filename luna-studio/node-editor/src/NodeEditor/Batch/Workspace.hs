@@ -1,8 +1,6 @@
 module NodeEditor.Batch.Workspace where
 
 import           Common.Prelude
-import           Data.Aeson                    (ToJSON)
-
 import qualified LunaStudio.Data.Breadcrumb    as Breadcrumb
 import           LunaStudio.Data.GraphLocation (GraphLocation (..))
 import qualified LunaStudio.Data.GraphLocation as GraphLocation
@@ -15,8 +13,6 @@ data Workspace = Workspace { _currentLocation  :: GraphLocation
                            , _lastUILocation   :: Maybe GraphLocation
                            , _nodeSearcherData :: Items ExpressionNode
                            } deriving (Show, Eq, Generic)
-
-instance ToJSON Workspace
 
 mk :: FilePath -> Workspace
 mk path = Workspace (GraphLocation path def) def def

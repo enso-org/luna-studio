@@ -44,7 +44,6 @@ module Empire.Commands.Graph
     , loadCode
     , markerCodeSpan
     , getNodeIdForMarker
-    , runTC
     , withTC
     , withGraph
     , runTC
@@ -475,19 +474,9 @@ resendCodeWithCursor (GraphLocation file _) cursor = do
     Publisher.notifyCodeUpdate file 0 (Text.length code) code cursor lexer
 
 setNodeMeta :: GraphLocation -> NodeId -> NodeMeta -> Empire ()
-setNodeMeta loc nodeId newMeta = withGraph loc $ do
-    doTCMay <- runASTOp $ do
-        ref <- GraphUtils.getASTPointer nodeId
-        oldMetaMay <- AST.readMeta ref
-        let triggerTC :: NodeMeta -> NodeMeta -> Bool
-            triggerTC oldMeta' newMeta' = oldMeta' ^. NodeMeta.displayResult /= newMeta' ^. NodeMeta.displayResult
-        doTCMay <- forM oldMetaMay $ \oldMeta ->
-            return $ triggerTC oldMeta newMeta
-        AST.writeMeta ref newMeta
-        -- updateNodeSequence
-        return doTCMay
-    forM_ doTCMay $ \doTC ->
-        when doTC $ runTC loc False
+setNodeMeta loc nodeId newMeta = withGraph loc $ runASTOp $ do
+    ref <- GraphUtils.getASTPointer nodeId
+    AST.writeMeta ref newMeta
 
 setNodePosition :: GraphLocation -> NodeId -> Position -> Empire ()
 setNodePosition loc nodeId newPos = do
@@ -639,7 +628,7 @@ openFile path = do
     autolayoutNodes loc nodeIds
 
 typecheck :: GraphLocation -> Empire ()
-typecheck loc = withGraph loc $ runTC loc False
+typecheck loc = withTC loc False $ return ()
 
 substituteCode :: FilePath -> Int -> Int -> Text -> Maybe Int -> Empire ()
 substituteCode path start end code cursor = do

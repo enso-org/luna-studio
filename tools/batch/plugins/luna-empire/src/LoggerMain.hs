@@ -3,6 +3,7 @@
 module Main where
 
 import qualified Data.List          as List
+import           GHC.IO.Encoding    (setLocaleEncoding, utf8)
 import           Prologue
 
 import           Empire.Cmd         (Cmd)
@@ -36,7 +37,9 @@ opts = Opt.info (Opt.helper <*> parser)
                 (Opt.fullDesc <> Opt.header Version.fullVersion)
 
 main :: IO ()
-main = Opt.execParser opts >>= run
+main = do
+    setLocaleEncoding utf8
+    Opt.execParser opts >>= run
 
 run :: Cmd -> IO ()
 run cmd = case cmd of
@@ -48,7 +51,6 @@ run cmd = case cmd of
                         then defaultTopics
                         else Cmd.topics cmd
             formatted = Cmd.formatted cmd
-        r <- Logger.run endPoints topics formatted
-        case r of
+        Logger.run endPoints topics formatted >>= \case
             Left err -> logger criticalFail err
             _        -> return ()
