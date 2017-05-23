@@ -13,6 +13,7 @@ module.exports = function () {
     eventListenerInternal: [],
     textListener: [],
     statusListener: [],
+    lexer: null,
   };
 
   return {
@@ -90,5 +91,14 @@ module.exports = function () {
         return data.selections;
       };
     },
+    setLexer: function(fun) {
+      listeners.lexer = fun;
+    },
+    unsetLexer: function() {
+      listeners.lexer = null;
+    },
+    lex: function(data) {
+      return listeners.lexer(data);
+    }
   };
 };

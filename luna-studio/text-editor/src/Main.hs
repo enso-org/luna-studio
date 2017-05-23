@@ -1,19 +1,19 @@
 {-# LANGUAGE RecursiveDo #-}
 module Main where
 
-import           Control.Concurrent.Chan     (Chan)
-import qualified Control.Concurrent.Chan     as Chan
-import           Control.Concurrent.MVar
-import           Data.DateTime               (getCurrentTime)
 import           Common.Prelude
-import           System.Random               (newStdGen)
+import           Control.Concurrent.Chan (Chan)
+import qualified Control.Concurrent.Chan as Chan
+import           Control.Concurrent.MVar
+import           Data.DateTime           (getCurrentTime)
+import           System.Random           (newStdGen)
 
-import           JS.UUID                     (generateUUID)
-import           WebSocket                (WebSocket)
-import           TextEditor.Event.Engine    (LoopRef (LoopRef))
-import qualified TextEditor.Event.Engine    as Engine
-import           TextEditor.State.Global    (mkState)
-
+import           JS.Lexer                (installLexer)
+import           JS.UUID                 (generateUUID)
+import           TextEditor.Event.Engine (LoopRef (LoopRef))
+import qualified TextEditor.Event.Engine as Engine
+import           TextEditor.State.Global (mkState)
+import           WebSocket               (WebSocket)
 
 runApp :: Chan (IO ()) -> WebSocket -> IO ()
 runApp chan socket = do
@@ -29,6 +29,8 @@ runApp chan socket = do
 
 main :: IO ()
 main = do
+    cleanup <- installLexer
     chan <- Chan.newChan
     Engine.withActiveConnection $ runApp chan
     Engine.start chan
+    cleanup
