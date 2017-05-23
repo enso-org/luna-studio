@@ -24,15 +24,19 @@ foreign import javascript safe "atomCallbackTextEditor.unsetLexer()"
     unsetLexer :: IO ()
 
 foreign import javascript safe "{length: $1, tags: $2}"
-    exportToken :: Int -> JSArray -> JSVal
+    exportToken' :: Int -> JSArray -> JSVal
 
-instance ToJSVal (Token (Lexer.Symbol JSString)) where
-    toJSVal token = return $ exportToken
-        (fromIntegral $ unwrap $ token ^. Token.span . Span.length)
-        (JSArray.fromList $ map pToJSVal $ Lexer.tags $ Token.untoken token)
+exportToken :: Token (Lexer.Symbol JSString) -> [JSVal]
+exportToken token =
+    [ exportToken' (fromIntegral $ unwrap $ token ^. Token.span . Span.length)
+                   (JSArray.fromList $ map pToJSVal $ Lexer.tags $ Token.untoken token)
+    , exportToken' (fromIntegral $ unwrap $ token ^. Token.span . Span.offset)
+                   (JSArray.fromList [])
+
+    ]
 
 instance ToJSVal (Lexer.Stream JSString) where
-    toJSVal (Lexer.Stream tokens) = toJSValListOf tokens
+    toJSVal (Lexer.Stream tokens) = toJSValListOf $ concatMap exportToken tokens
 
 setLexer :: (String -> IO (Lexer.Stream JSString)) -> IO (IO ())
 setLexer lexer = do
