@@ -15,5 +15,6 @@ makeLenses ''Update
 instance Binary Update
 
 
+topicPrefix :: T.Topic
 topicPrefix = "empire.graph.monad"
 instance T.MessageTopic Update where topic _ = topicPrefix <> T.update

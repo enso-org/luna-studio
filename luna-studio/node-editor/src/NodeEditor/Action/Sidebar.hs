@@ -19,9 +19,8 @@ import           NodeEditor.Action.State.NodeEditor      (getInputNode, getNodeE
 import           NodeEditor.Action.State.Scene           (getInputSidebarSize)
 import           NodeEditor.Event.Mouse                  (mousePosition)
 import           NodeEditor.React.Model.Constants        (gridSize)
-import           NodeEditor.React.Model.Layout           (inputSidebarPortPosition)
 import           NodeEditor.React.Model.Node.SidebarNode (NodeLoc, countProjectionPorts)
-import           NodeEditor.React.Model.NodeEditor       (getPort, layout)
+import           NodeEditor.React.Model.NodeEditor       (getPort)
 import           NodeEditor.React.Model.Port             (AnyPortRef (OutPortRef'), OutPortIndex (Projection), OutPortRef, getPortNumber)
 import qualified NodeEditor.React.Model.Port             as Port
 import           NodeEditor.React.Model.Sidebar          (portPositionInInputSidebar)
@@ -53,14 +52,7 @@ removePort portRef = do
     Basic.removePort portRef
 
 editPortName :: OutPortRef -> Command State ()
-editPortName portRef = do
-    ne <- getNodeEditor
-    let mayPort = getPort portRef ne
-        mayPos  = maybe Nothing (flip inputSidebarPortPosition (ne ^. layout)) mayPort
-    case (,) <$> mayPos <*> (view Port.name <$> mayPort) of
-        Just (pos, name) -> Searcher.openEditPortName name portRef pos
-        _                -> return ()
-
+editPortName portRef = withJustM (fmap (view Port.name) . getPort portRef <$> getNodeEditor) $ Searcher.openEditPortName portRef
 
 handleMouseUp :: MouseEvent -> PortDrag -> Command State ()
 handleMouseUp evt portDrag = do

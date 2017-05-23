@@ -10,8 +10,8 @@ import qualified NodeEditor.Batch.Workspace             as Workspace
 import           NodeEditor.State.Global                (State, workspace)
 
 
-openFile :: FilePath -> Command State ()
-openFile path = do
+setFile :: FilePath -> Command State ()
+setFile path = do
     saveCamera
     mayCurrentLoc <- preuse $ workspace . traverse . currentLocation
     let newWorkspace = Workspace.mk path
@@ -20,8 +20,8 @@ openFile path = do
         workspace ?= newWorkspace
         loadGraph newLocation
 
-closeFile :: Command State ()
-closeFile = do
+unsetFile :: Command State ()
+unsetFile = do
     saveCamera
     workspace .= def
     resetGraph

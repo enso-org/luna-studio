@@ -23,4 +23,4 @@ data UIEvent = AppEvent           App.Event
              | SearcherEvent      Searcher.Event
              | SidebarEvent       Sidebar.Event
              | VisualizationEvent Visualization.Event
-               deriving (Show, Generic, NFData, Typeable)
+             deriving (Generic, NFData, Show, Typeable)

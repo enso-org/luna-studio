@@ -3,14 +3,17 @@
 {-# LANGUAGE DeriveTraversable #-}
 {-# LANGUAGE TypeFamilies      #-}
 
-module LunaStudio.Data.Port where
+module LunaStudio.Data.Port
+    ( module LunaStudio.Data.Port
+    , module X
+    ) where
 
-import           Data.Binary                 (Binary)
-import           Prologue                    hiding (TypeRep)
 import           Data.Aeson.Types            (FromJSON, ToJSON)
-import           LunaStudio.Data.LabeledTree (LabeledTree)
+import           Data.Binary                 (Binary)
+import           LunaStudio.Data.LabeledTree as X (LabeledTree (LabeledTree))
 import           LunaStudio.Data.PortDefault (PortDefault)
 import           LunaStudio.Data.TypeRep     (TypeRep)
+import           Prologue                    hiding (TypeRep)
 
 
 data InPortIndex = Self | Arg Int                             deriving (Eq, Generic, NFData, Ord, Read, Show)

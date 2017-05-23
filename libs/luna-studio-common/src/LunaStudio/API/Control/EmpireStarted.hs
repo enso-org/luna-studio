@@ -5,7 +5,7 @@ import qualified LunaStudio.API.Topic as T
 import           Prologue
 
 
-data Status = Status { } deriving (Eq, Generic, NFData, Show)
+data Status = Status deriving (Eq, Generic, NFData, Show)
 
 makeLenses ''Status
 instance Binary Status

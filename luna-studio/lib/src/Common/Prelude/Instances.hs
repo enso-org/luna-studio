@@ -26,7 +26,7 @@ instance Eq (ReactStore a) where _ == _ = True
 instance NFData a => NFData (ReactStoreRef a)
 instance NFData a => NFData (ReactStore a)
 
-instance Read KeyboardEvent where readPrec = error "Read KeyboardEvent"
+instance FromJSON KeyboardEvent where parseJSON = $(placeholder "Read KeyboardEvent")
 
 -- ======= GHCJS ===============================================================
 

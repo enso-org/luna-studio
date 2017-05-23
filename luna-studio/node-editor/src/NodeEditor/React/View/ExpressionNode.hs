@@ -24,17 +24,21 @@ import qualified NodeEditor.React.Model.Node.ExpressionNodeProperties as Prop
 import           NodeEditor.React.Model.Port                          (AnyPortId (InPortId'), InPortIndex (Arg, Self), isInPort, isOutAll,
                                                                        withOut)
 import qualified NodeEditor.React.Model.Port                          as Port
+import           NodeEditor.React.Model.Searcher                      (Searcher)
+import qualified NodeEditor.React.Model.Searcher                      as Searcher
 import           NodeEditor.React.Store                               (Ref, dispatch)
 import           NodeEditor.React.View.ExpressionNode.Properties      (nodeProperties_)
 import           NodeEditor.React.View.Field                          (multilineField_)
 import           NodeEditor.React.View.Monad                          (monads_)
 import           NodeEditor.React.View.Plane                          (planeMonads_, svgPlanes_)
 import           NodeEditor.React.View.Port                           (portExpanded_, portPhantom_, port_)
-import           NodeEditor.React.View.Style                          (blurBackground_, errorMark_, selectionMark_)
+import           NodeEditor.React.View.Searcher                       (searcher_)
+import           NodeEditor.React.View.Style                          (errorMark_, selectionMark_)
 import qualified NodeEditor.React.View.Style                          as Style
 import           NodeEditor.React.View.Visualization                  (nodeShortValue_, nodeVisualizations_)
 import           React.Flux
 import qualified React.Flux                                           as React
+
 
 name, objNameBody, objNamePorts :: JSString
 name            = "node"
@@ -56,12 +60,32 @@ handleMouseDown ref nodeLoc e m =
     then stopPropagation e : dispatch ref (UI.NodeEvent $ Node.MouseDown m nodeLoc)
     else []
 
-node_ :: Ref App -> ExpressionNode -> ReactElementM ViewEventHandler ()
-node_ ref model = React.viewWithSKey node (jsShow $ model ^. Node.nodeId) (ref, model) mempty
+nodeName_ :: Ref App -> NodeLoc -> Maybe Text -> Maybe Searcher -> ReactElementM ViewEventHandler ()
+nodeName_ ref nl nodeName mayS = div_ ([ "className" $= Style.prefixFromList ["node__name", "noselect"] ] ++ handlers) nameElement where
+    regularHandlersAndElem = ( [onDoubleClick $ \e _ -> stopPropagation e : dispatch ref (UI.NodeEvent $ Node.EditName nl)]
+                             , elemString . convert $ fromMaybe def nodeName )
+    (handlers, nameElement) = flip (maybe regularHandlersAndElem) mayS $ \s -> case s ^. Searcher.mode of
+        Searcher.NodeName snl _ -> if snl /= nl then regularHandlersAndElem else ([], searcher_ ref s)
+        _                       -> regularHandlersAndElem
 
-node :: ReactView (Ref App, ExpressionNode)
-node = React.defineView name $ \(ref, n) -> case n ^. Node.mode of
-    Node.Expanded (Node.Function fs) -> nodeContainer_ ref $ Map.elems fs
+nodeExpression_ :: Ref App -> NodeLoc -> Text -> Maybe Searcher -> ReactElementM ViewEventHandler ()
+nodeExpression_ ref nl expr mayS = div_ (
+    [ "className" $= Style.prefixFromList ["node__expression", "noselect"]
+    , "key"       $= "nodeExpression" ]
+    ++ handlers) nameElement where
+        regularHandlersAndElem = ( [onDoubleClick $ \e _ -> stopPropagation e : dispatch ref (UI.NodeEvent $ Node.EditExpression nl)]
+                                 , elemString $ convert expr )
+        (handlers, nameElement) = flip (maybe regularHandlersAndElem) mayS $ \s -> case s ^. Searcher.mode of
+            Searcher.Node snl _ _ -> if snl /= nl then regularHandlersAndElem else ([], searcher_ ref s)
+            _                     -> regularHandlersAndElem
+
+
+node_ :: Ref App -> ExpressionNode -> Maybe Searcher -> ReactElementM ViewEventHandler ()
+node_ ref model s = React.viewWithSKey node (jsShow $ model ^. Node.nodeId) (ref, model, s) mempty
+
+node :: ReactView (Ref App, ExpressionNode, Maybe Searcher)
+node = React.defineView name $ \(ref, n, maySearcher) -> case n ^. Node.mode of
+    Node.Expanded (Node.Function fs) -> nodeContainer_ ref maySearcher $ Map.elems fs
     _ -> do
         let nodeId          = n ^. Node.nodeId
             nodeLoc         = n ^. Node.nodeLoc
@@ -69,41 +93,25 @@ node = React.defineView name $ \(ref, n) -> case n ^. Node.mode of
             zIndex          = n ^. Node.zPos
             z               = if isCollapsed n then zIndex else zIndex + nodeLimit
             isVisualization = Prop.fromNode n ^. Prop.visualizationsEnabled
+            hasSelf         = any (\p -> (Port.isSelf $ p ^. Port.portId) && (not $ Port.isInvisible p)) $ Node.inPortsList n
         div_
             [ "key"       $= (nodePrefix <> fromString (show nodeId))
             , "id"        $= (nodePrefix <> fromString (show nodeId))
-            , "className" $= Style.prefixFromList ( [ "node", (if isCollapsed n then "node--collapsed" else "node--expanded") ]
-                                                           ++ (if returnsError n then ["node--error"] else [])
-                                                           ++ (if n ^. Node.isSelected then ["node--selected"] else []) )
+            , "className" $= Style.prefixFromList ( [ "node", "noselect", (if isCollapsed n then "node--collapsed" else "node--expanded") ]
+                                                                       ++ (if returnsError n then ["node--error"] else [])
+                                                                       ++ (if n ^. Node.isSelected then ["node--selected"] else [])
+                                                                       ++ (if hasSelf then ["node--has-self"] else ["node--no-self"]))
             , "style"     @= Aeson.object [ "zIndex" Aeson..= show z ]
             , onMouseDown   $ handleMouseDown ref nodeLoc
             , onClick       $ \_ m -> dispatch ref $ UI.NodeEvent $ Node.Select m nodeLoc
             , onDoubleClick $ \e _ -> stopPropagation e : (dispatch ref $ UI.NodeEvent $ Node.Enter nodeLoc)
             ] $ do
             div_
-                [ "className" $= Style.prefixFromList ["node-translate","node__text"]
+                [ "className" $= Style.prefixFromList [ "node-translate","node__text", "noselect" ]
                 , "key"       $= "nodeText"
                 ] $ do
-                div_
-                    [ "className"   $= Style.prefixFromList [ "node__name", "noselect" ]
-                    , onDoubleClick $ \e _ -> stopPropagation e : dispatch ref (UI.NodeEvent $ Node.EditName nodeLoc)
-                    ] $ do
-                        elemString $ convert $ fromMaybe def $ n ^. Node.name
-                        -- TODO [LJK, JK]: Restore it once we have controls back
-                        -- when (n ^. Node.isNameEdited) $ span_
-                        --     [ "key"       $= "icons"
-                        --     , "className" $= Style.prefix "node__icons"
-                        --     ] $ do
-                        --     div_
-                        --         [ "key"       $= "ctrlSwitch"
-                        --         , "className" $= Style.prefixFromList (["icon", "icon--show"] ++ if isVisualization then ["icon--show--on"] else ["icon--show--off"])
-                        --         , onClick $ \_ _ -> dispatch ref $ UI.NodeEvent $ Node.DisplayResultChanged (not isVisualization) nodeLoc
-                        --         ] mempty
-                div_
-                    [ "key"         $= "nodeExpression"
-                    , "className"   $= Style.prefixFromList [ "node__expression", "noselect" ]
-                    , onDoubleClick $ \e _ -> stopPropagation e : dispatch ref (UI.NodeEvent $ Node.EditExpression nodeLoc)
-                    ] $ elemString . convert $ n ^. Node.expression
+                nodeName_ ref nodeLoc (n ^. Node.name) maySearcher
+                nodeExpression_ ref nodeLoc (n ^. Node.expression) maySearcher
             nodeBody_ ref n
             div_
                 [ "key"       $= "results"
@@ -135,17 +143,12 @@ nodeBody = React.defineView objNameBody $ \(ref, n) -> do
         ] $ do
         errorMark_
         selectionMark_
-        div_
-            [ "key"       $= "properties-crop"
-            , "className" $= Style.prefix "node__properties-crop"
-            ] $ do
-            blurBackground_
-            case n ^. Node.mode of
-                Node.Expanded Node.Controls      -> nodeProperties_ ref $ Prop.fromNode n
-                Node.Expanded Node.Editor        -> multilineField_ [] "editor"
-                    $ Field.mk ref (fromMaybe def $ n ^. Node.code)
-                    & Field.onCancel .~ Just (UI.NodeEvent . Node.SetExpression nodeLoc)
-                _                                -> ""
+        case n ^. Node.mode of
+            Node.Expanded Node.Controls -> nodeProperties_ ref $ Prop.fromNode n
+            Node.Expanded Node.Editor   -> multilineField_ [] "editor"
+                $ Field.mk ref (fromMaybe def $ n ^. Node.code)
+                & Field.onCancel .~ Just (UI.NodeEvent . Node.SetExpression nodeLoc)
+            _                           -> ""
 
 nodePorts_ :: Ref App -> ExpressionNode -> ReactElementM ViewEventHandler ()
 nodePorts_ ref model = React.viewWithSKey nodePorts objNamePorts (ref, model) mempty
@@ -199,11 +202,11 @@ nodePorts = React.defineView objNamePorts $ \(ref, n) -> do
                 forM_  (filter (\port -> (port ^. Port.portId) /= InPortId' [Self]) nodePorts') $ \port -> portExpanded_ ref nodeLoc port
             portPhantom_ ref $ toAnyPortRef nodeLoc $ InPortId' [Arg $ countArgPorts n]
 
-nodeContainer_ :: Ref App -> [Subgraph] -> ReactElementM ViewEventHandler ()
-nodeContainer_ ref subgraphs = React.viewWithSKey nodeContainer "node-container" (ref, subgraphs) mempty
+nodeContainer_ :: Ref App -> Maybe Searcher -> [Subgraph] -> ReactElementM ViewEventHandler ()
+nodeContainer_ ref maySearcher subgraphs = React.viewWithSKey nodeContainer "node-container" (ref, maySearcher, subgraphs) mempty
 
-nodeContainer :: ReactView (Ref App, [Subgraph])
-nodeContainer = React.defineView name $ \(ref, subgraphs) -> do
+nodeContainer :: ReactView (Ref App, Maybe Searcher, [Subgraph])
+nodeContainer = React.defineView name $ \(ref, maySearcher, subgraphs) -> do
     div_
         [ "className" $= Style.prefix "subgraphs"
         ] $ forM_ subgraphs $ \subgraph -> do
@@ -214,5 +217,9 @@ nodeContainer = React.defineView name $ \(ref, subgraphs) -> do
         div_
             [ "className" $= Style.prefix "subgraph"
             ] $ do
-            forM_ nodes $ node_ ref
+            forM_ nodes $ \n -> node_ ref n (filterOutSearcherIfNotRelated (n ^. Node.nodeLoc) maySearcher)
             svgPlanes_ $ planeMonads_ $ monads_ monads
+
+filterOutSearcherIfNotRelated :: NodeLoc -> Maybe Searcher -> Maybe Searcher
+filterOutSearcherIfNotRelated _  Nothing  = Nothing
+filterOutSearcherIfNotRelated nl (Just s) = if Searcher.isSearcherRelated nl s then return s else Nothing

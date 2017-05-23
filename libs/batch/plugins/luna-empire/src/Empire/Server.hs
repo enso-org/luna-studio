@@ -138,7 +138,6 @@ startAsyncUpdateWorker asyncChan = forever $ do
         TypecheckerUpdate up -> Server.sendToBus' up
         ResultUpdate      up -> Server.sendToBus' up
         CodeUpdate        up -> Server.sendToBus' up
-        LexerUpdate       up -> Server.sendToBus' up
 
 projectFiles :: FilePath -> IO [FilePath]
 projectFiles = find always (extension ==? ".luna")

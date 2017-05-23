@@ -11,10 +11,10 @@ GHCJS_CODE_BE_THERE
 };
 
 return { start     : function() { run();}
+       , lex       : function(data) { return atomCallbackTextEditor.lex(data); }
        , pushText  : function(data) { atomCallbackTextEditor.pushText(data); }
        , bufferListener  : function(callback) { atomCallbackTextEditor.bufferListener(callback); }
        , statusListener  : function(callback) { atomCallbackTextEditor.statusListener(callback); }
        , codeListener  : function(callback) { atomCallbackTextEditor.codeListener(callback); }
-       , lexerListener  : function(callback) { atomCallbackTextEditor.lexerListener(callback); }
        , pushInternalEvent : function(data) { atomCallbackTextEditor.pushInternalEvent(data); }
        }

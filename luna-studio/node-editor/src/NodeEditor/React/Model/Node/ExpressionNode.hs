@@ -15,13 +15,14 @@ import           Data.HashMap.Strict                      (HashMap)
 import           Data.Map.Lazy                            (Map)
 import           Data.Time.Clock                          (UTCTime)
 import           LunaStudio.API.Graph.CollaborationUpdate (ClientId)
-import           LunaStudio.API.Graph.NodeResultUpdate    (NodeValue (NodeError), NodeVisualization)
 import           LunaStudio.Data.Breadcrumb               (BreadcrumbItem)
 import           LunaStudio.Data.MonadPath                (MonadPath)
 import           LunaStudio.Data.Node                     (NodeId)
 import qualified LunaStudio.Data.Node                     as Empire
 import           LunaStudio.Data.NodeLoc                  (NodeLoc (NodeLoc), NodePath)
+import qualified LunaStudio.Data.NodeLoc                  as NodeLoc
 import qualified LunaStudio.Data.NodeMeta                 as NodeMeta
+import           LunaStudio.Data.NodeValue                (NodeValue (NodeError), NodeVisualization)
 import           LunaStudio.Data.Position                 (Position)
 import           NodeEditor.React.Model.IsNode            as X
 import           NodeEditor.React.Model.Node.SidebarNode  (InputNode, OutputNode)
@@ -116,6 +117,9 @@ instance HasPorts ExpressionNode where
     outPortsList = Port.outPortTreeLeafs . view outPorts
     inPortAt  pid = inPorts . ix pid
     outPortAt pid = outPorts . ix pid
+
+mkExprNode :: NodeLoc -> Text -> Position -> ExpressionNode
+mkExprNode nl expr pos = convert (nl ^. NodeLoc.path, Empire.mkExprNode (nl ^. NodeLoc.nodeId) expr pos)
 
 subgraphs :: Applicative f => (Map BreadcrumbItem Subgraph -> f (Map BreadcrumbItem Subgraph)) -> ExpressionNode -> f ExpressionNode
 subgraphs = mode . _Expanded . _Function

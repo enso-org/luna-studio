@@ -6,7 +6,6 @@ import           Data.Aeson.Types                           (FromJSON, FromJSONK
 import           LunaStudio.API.Atom.CloseFile              as CloseFile
 import           LunaStudio.API.Atom.GetBuffer              as GetBuffer
 import           LunaStudio.API.Atom.IsSaved                as IsSaved
-import           LunaStudio.API.Atom.Lexer                  as Lexer
 import           LunaStudio.API.Atom.OpenFile               as OpenFile
 import           LunaStudio.API.Atom.SaveFile               as SaveFile
 import           LunaStudio.API.Atom.SetProject             as SetProject
@@ -60,6 +59,7 @@ import           LunaStudio.Data.MonadPath                  as MonadPath
 import           LunaStudio.Data.Node                       as Node
 import           LunaStudio.Data.NodeLoc                    as NodeLoc
 import           LunaStudio.Data.NodeMeta                   as NodeMeta
+import           LunaStudio.Data.NodeValue                  as NodeValue
 import           LunaStudio.Data.Port                       as Port
 import           LunaStudio.Data.PortDefault                as PortDefault
 import           LunaStudio.Data.PortRef                    as PortRef
@@ -144,12 +144,14 @@ instance FromJSON PortRef.InPortRef
 instance ToJSON Connection.Connection
 instance FromJSON Connection.Connection
 
-instance ToJSON PortDefault.VisualizationValue
-instance FromJSON PortDefault.VisualizationValue
 instance ToJSON PortDefault.PortValue
 instance FromJSON PortDefault.PortValue
 instance ToJSON PortDefault.PortDefault
 instance FromJSON PortDefault.PortDefault
+
+instance ToJSON NodeValue.NodeValue
+instance ToJSON NodeValue.VisualizationValue
+instance FromJSON NodeValue.VisualizationValue
 
 instance ToJSON Graph.Graph
 instance FromJSON Graph.Graph
@@ -194,7 +196,6 @@ instance ToJSON MonadsUpdate.Update
 instance ToJSON MovePort.Request
 
 instance ToJSON NodeResultUpdate.Update
-instance ToJSON NodeResultUpdate.NodeValue
 
 instance ToJSON NodeTypecheckerUpdate.Update
 
@@ -205,8 +206,6 @@ instance ToJSON Redo.Request
 
 instance ToJSON GetBuffer.Request
 instance ToJSON GetBuffer.Result
-
-instance ToJSON Lexer.Update
 
 instance ToJSON Substitute.Request
 instance ToJSON Substitute.Update

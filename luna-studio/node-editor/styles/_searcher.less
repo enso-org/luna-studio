@@ -2,13 +2,18 @@
 //         searcher        //
 /////////////////////////////
 
+.luna-node__name,
+.luna-node__expression {
+    min-height: 16px;
+}
+
 .luna-searcher {
     z-index:  100000000;
     position: absolute;
 }
 
 .luna-searcher__body {
-    bottom:   ~"calc(36rem + 15px)";
+    //bottom: ~"calc(36rem + 15px)";
     position: absolute;
 }
 
@@ -20,14 +25,16 @@
 
 .luna-searcher--command {
     .luna-searcher__body {
-        bottom: ~"calc(36rem + 7.4px)";
+        //bottom: ~"calc(36rem + 7.4px)";
     }
     .luna-searcher__input {
-        background: transparent; // #004D40;
-        padding:    8px;
+        background: #004D40;
+        padding:    8px 0;
+        width:      200px;
     }
     .luna-searcher__results {
         bottom: 32px;
+        width:  200px;
     }
 }
 
@@ -84,4 +91,9 @@
         border-top-left-radius:  @borderRadius;
         padding-top:             8px;
     }
+}
+
+.luna-searcher__results__item__highlighs {
+    color: @colorText;
+    font-weight: bold;
 }

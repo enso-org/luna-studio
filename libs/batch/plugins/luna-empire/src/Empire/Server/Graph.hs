@@ -9,8 +9,8 @@ module Empire.Server.Graph where
 import           Control.Arrow                          ((&&&))
 import           Control.Concurrent.MVar                (readMVar)
 import           Control.Monad.Catch                    (handle, try)
-import           Control.Monad.State                    (StateT)
 import           Control.Monad.Reader                   (asks)
+import           Control.Monad.State                    (StateT)
 import qualified Data.Binary                            as Bin
 import           Data.ByteString                        (ByteString)
 import           Data.ByteString.Lazy                   (fromStrict)
@@ -51,7 +51,6 @@ import qualified LunaStudio.API.Graph.DumpGraphViz      as DumpGraphViz
 import qualified LunaStudio.API.Graph.GetProgram        as GetProgram
 import qualified LunaStudio.API.Graph.GetSubgraphs      as GetSubgraphs
 import qualified LunaStudio.API.Graph.MovePort          as MovePort
-import           LunaStudio.API.Graph.NodeResultUpdate  (NodeValue (NodeValue))
 import qualified LunaStudio.API.Graph.NodeResultUpdate  as NodeResultUpdate
 import qualified LunaStudio.API.Graph.RemoveConnection  as RemoveConnection
 import qualified LunaStudio.API.Graph.RemoveNodes       as RemoveNodes
@@ -83,10 +82,11 @@ import qualified LunaStudio.Data.NodeLoc                as NodeLoc
 import           LunaStudio.Data.NodeMeta               (NodeMeta)
 import qualified LunaStudio.Data.NodeMeta               as NodeMeta
 import qualified LunaStudio.Data.NodeSearcher           as NS
+import           LunaStudio.Data.NodeValue              (NodeValue (NodeValue), VisualizationValue (..))
 import           LunaStudio.Data.Port                   (InPort (..), InPortIndex (..), OutPort (..), OutPortIndex (..), Port (..),
                                                          PortState (..), getPortNumber)
 import qualified LunaStudio.Data.Port                   as Port
-import           LunaStudio.Data.PortDefault            (PortValue (..), VisualizationValue (..))
+import           LunaStudio.Data.PortDefault            (PortValue (..))
 import           LunaStudio.Data.PortRef                (InPortRef (..), OutPortRef (..))
 import           LunaStudio.Data.PortRef                as PortRef
 import           LunaStudio.Data.Position               (Position)
@@ -197,6 +197,16 @@ getSrcPortByNodeId nid = OutPortRef (NodeLoc def nid) []
 getDstPortByNodeLoc :: NodeLoc -> AnyPortRef
 getDstPortByNodeLoc nl = InPortRef' $ InPortRef nl [Self]
 
+prepareNSData :: Empire.SymbolMap -> NS.Items ExpressionNode
+prepareNSData sMap = Map.fromList $ functionsList <> methodsList where
+    functionsList = entry "" <$> sMap ^. Empire.functions
+    entry prefix name = (prefix <> name, NS.Element $ mockNode name)
+    classesMap = sMap ^. Empire.classes
+    methodsList = (uncurry methodEntry) <$> Map.toList classesMap
+    methodEntry className methodList = (className, NS.Group (Map.fromList $ entry "." <$> methodList) $ mockNode className)
+    mockNode expr = Node.mkExprNode (fromJust $ UUID.fromString "094f9784-3f07-40a1-84df-f9cf08679a27") expr def
+
+
 -- Handlers
 
 
@@ -206,10 +216,8 @@ handleGetProgram = modifyGraph defInverse action replyResult where
         graph <- Graph.getGraph location
         code  <- Graph.getCode location
         crumb <- Graph.decodeLocation location
-        -- LESZEK! Tutaj pobieramy scope!
-        d <- view Empire.scopeVar
-        print =<< liftIO (readMVar d)
-        return $ GetProgram.Result graph (Text.pack code) crumb mockNSData
+        sMap  <- liftIO . readMVar =<< view Empire.scopeVar
+        return $ GetProgram.Result graph (Text.pack code) crumb (prepareNSData sMap)
 
 handleAddConnection :: Request AddConnection.Request -> StateT Env BusT ()
 handleAddConnection = modifyGraph inverse action replyResult where
@@ -343,7 +351,7 @@ handleRenamePort = modifyGraph inverse action replyResult where --FIXME[pm] impl
 
 handleSearchNodes :: Request SearchNodes.Request -> StateT Env BusT ()
 handleSearchNodes = modifyGraph defInverse action replyResult where
-    action  _ = return $ SearchNodes.Result mockNSData
+    action  _ = SearchNodes.Result . prepareNSData <$> (liftIO . readMVar =<< view Empire.scopeVar)
 
 handleSetNodeExpression :: Request SetNodeExpression.Request -> StateT Env BusT ()-- fixme [SB] returns Result with no new informations and change node expression has addNode+removeNodes
 handleSetNodeExpression = modifyGraph inverse action replyResult where
@@ -402,7 +410,8 @@ handleSubstitute = modifyGraph defInverse action success where
         graph <- Graph.getGraph loc
         code  <- Graph.getCode loc
         crumb <- Graph.decodeLocation loc
-        return $ GetProgram.Result graph (Text.pack code) crumb mockNSData
+        sMap  <- liftIO . readMVar =<< view Empire.scopeVar
+        return $ GetProgram.Result graph (Text.pack code) crumb (prepareNSData sMap)
     success (Request uuid guiID request) inv res = do
         -- DISCLAIMER, FIXME[MM]: ugly hack - send response to bogus GetProgram request
         -- after each substitute
@@ -412,8 +421,8 @@ handleSubstitute = modifyGraph defInverse action success where
 handleGetBuffer :: Request GetBuffer.Request -> StateT Env BusT ()
 handleGetBuffer = modifyGraph defInverse action replyResult where
     action (GetBuffer.Request file span) = do
-        (code, tags) <- Graph.getBuffer file (head <$> span)
-        return $ GetBuffer.Result code tags
+        code <- Graph.getBuffer file (head <$> span)
+        return $ GetBuffer.Result code
 
 
 
@@ -422,21 +431,3 @@ stdlibFunctions = ["mockFunction"]
 
 stdlibMethods :: [String]
 stdlibMethods = ["mockMethod"]
-
-mockNSData :: NS.Items ExpressionNode
--- mockNSData = Map.empty
-mockNSData = Map.fromList $ functionsList <> modulesList where
-    nodeSearcherSymbols = words "foo bar baz List.xD"
-    (methods, functions) = partition (elem '.') nodeSearcherSymbols
-    functionsList = functionEntry <$> functions
-    functionEntry function = (convert function, NS.Element mockNode)
-    modulesMethodsMap = foldl updateModulesMethodsMap Map.empty methods
-    updateModulesMethodsMap map el = Map.insert moduleName methodNames map where
-        (moduleName, dotMethodName) = break (== '.') el
-        methodName = tail dotMethodName
-        methodNames = methodName : (fromMaybe [] $ Map.lookup moduleName map)
-    modulesList = (uncurry moduleEntry) <$> Map.toList modulesMethodsMap
-    moduleEntry moduleName methodList = (convert moduleName, NS.Group (Map.fromList $ functionEntry <$> methodList) mockNode)
-    mockNode = Node.ExpressionNode (fromJust $ UUID.fromString "094f9784-3f07-40a1-84df-f9cf08679a27") "" Nothing Nothing mockInPorts mockOutPorts def False
-    mockInPorts  = LabeledTree def $ Port.Port [] "" TStar NotConnected
-    mockOutPorts = LabeledTree def $ Port.Port [] "" TStar NotConnected

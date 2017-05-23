@@ -465,13 +465,9 @@ updateExprMap new old = do
     setExprMap updated
 
 resendCode :: GraphLocation -> Empire ()
-resendCode loc = resendCodeWithCursor loc Nothing
-
-resendCodeWithCursor :: GraphLocation -> Maybe Int -> Empire ()
-resendCodeWithCursor (GraphLocation file _) cursor = do
+resendCode (GraphLocation file _) = do
     code <- Library.withLibrary file $ use Library.code
-    let lexer = Lexer.lexer code
-    Publisher.notifyCodeUpdate file 0 (Text.length code) code cursor lexer
+    Publisher.notifyCodeUpdate file 0 (Text.length code) code Nothing
 
 setNodeMeta :: GraphLocation -> NodeId -> NodeMeta -> Empire ()
 setNodeMeta loc nodeId newMeta = withGraph loc $ runASTOp $ do
@@ -576,10 +572,8 @@ getNodeMeta loc nodeId = withGraph loc $ runASTOp $ do
 getCode :: GraphLocation -> Empire String
 getCode loc@(GraphLocation file _) = Text.unpack <$> Library.withLibrary file (use Library.code)
 
-getBuffer :: FilePath -> Maybe (Int, Int) -> Empire (Text, [(Int, [String])])
-getBuffer file span = do
-    text <- Library.getBuffer file span
-    return $ (text, Lexer.lexer text)
+getBuffer :: FilePath -> Maybe (Int, Int) -> Empire Text
+getBuffer file span = Library.getBuffer file span
 
 getGraph :: GraphLocation -> Empire APIGraph.Graph
 getGraph loc = withTC loc True $ runASTOp $ do
@@ -636,7 +630,6 @@ substituteCode path start end code cursor = do
     let loc = GraphLocation path (Breadcrumb [])
     handle (\(_e :: SomeASTException) -> return ()) $ do
         withGraph loc $ reloadCode loc newCode
-        Publisher.notifyLexerUpdate path $ Lexer.lexer newCode
 
 reloadCode :: GraphLocation -> Text -> Command Graph ()
 reloadCode loc code = do

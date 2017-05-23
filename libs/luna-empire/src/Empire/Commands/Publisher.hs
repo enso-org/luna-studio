@@ -11,9 +11,9 @@ import           LunaStudio.API.AsyncUpdate                 (AsyncUpdate (..))
 import           LunaStudio.Data.GraphLocation              (GraphLocation)
 import           LunaStudio.Data.MonadPath                  (MonadPath)
 import           LunaStudio.Data.Node                       (ExpressionNode, NodeId, NodeTypecheckerUpdate)
+import           LunaStudio.Data.NodeValue                  (NodeValue)
 import           LunaStudio.Data.TypeRep                    (TypeRep)
 
-import qualified LunaStudio.API.Atom.Lexer                  as Lexer
 import qualified LunaStudio.API.Atom.Substitute             as Substitute
 import qualified LunaStudio.API.Graph.MonadsUpdate          as Monads
 import qualified LunaStudio.API.Graph.NodeResultUpdate      as NodeResult
@@ -27,16 +27,13 @@ notifyNodeTypecheck :: (MonadReader CommunicationEnv m, MonadIO m) => GraphLocat
 notifyNodeTypecheck loc n =
     sendUpdate $ TypecheckerUpdate $ NodeTCUpdate.Update loc n
 
-notifyResultUpdate :: (MonadReader CommunicationEnv m, MonadIO m) => GraphLocation -> NodeId -> NodeResult.NodeValue -> Integer -> m ()
+notifyResultUpdate :: (MonadReader CommunicationEnv m, MonadIO m) => GraphLocation -> NodeId -> NodeValue -> Integer -> m ()
 notifyResultUpdate loc nid v t =
     sendUpdate $ ResultUpdate $ NodeResult.Update loc nid v t
 
-notifyCodeUpdate :: (MonadReader CommunicationEnv m, MonadIO m) => FilePath -> Int -> Int -> Text -> Maybe Int -> [(Int, [String])] -> m ()
-notifyCodeUpdate path start end code cursor tags =
-    sendUpdate $ CodeUpdate $ Substitute.Update path start end code cursor tags
-
-notifyLexerUpdate :: (MonadReader CommunicationEnv m, MonadIO m) => FilePath -> [(Int, [String])] -> m ()
-notifyLexerUpdate path lexer = sendUpdate $ LexerUpdate $ Lexer.Update path lexer
+notifyCodeUpdate :: (MonadReader CommunicationEnv m, MonadIO m) => FilePath -> Int -> Int -> Text -> Maybe Int -> m ()
+notifyCodeUpdate path start end code cursor =
+    sendUpdate $ CodeUpdate $ Substitute.Update path start end code cursor
 
 sendUpdate :: (MonadReader CommunicationEnv m, MonadIO m) => AsyncUpdate -> m ()
 sendUpdate upd = do

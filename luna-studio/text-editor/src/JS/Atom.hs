@@ -1,34 +1,28 @@
 {-# LANGUAGE JavaScriptFFI #-}
 
 module JS.Atom
-    ( convertTags
+    ( pushCode
     , pushBuffer
-    , pushCode
-    , pushLexer
     , pushStatus
-    , subscribeEventListenerInternal
     , subscribeText
+    , subscribeEventListenerInternal
     ) where
 
 
 import           Common.Prelude
 import qualified Data.Text                 as Text
 import           GHCJS.Foreign.Callback
-import           GHCJS.Marshal.Pure        (pFromJSVal)
-import           System.IO.Unsafe          (unsafePerformIO)
+import           GHCJS.Marshal.Pure        (pFromJSVal, pToJSVal)
 import           TextEditor.Event.Internal (InternalEvent, InternalEvent (..))
 import           TextEditor.Event.Text     (TextEvent, TextEvent (..))
 import qualified TextEditor.Event.Text     as TextEvent
 
 
-foreign import javascript safe "atomCallbackTextEditor.pushCode($1, $2, $3, $4, $5, $6)"
-    pushCode' :: JSString -> Int -> Int -> JSString -> JSVal -> JSVal -> IO ()
+foreign import javascript safe "atomCallbackTextEditor.pushCode($1, $2, $3, $4)"
+    pushCode' :: JSString -> Int -> Int -> JSString -> IO ()
 
-foreign import javascript safe "atomCallbackTextEditor.pushBuffer($1, $2, $3)"
-    pushBuffer :: JSString -> JSString -> JSVal -> IO ()
-
-foreign import javascript safe "atomCallbackTextEditor.pushLexer($1, $2)"
-    pushLexer :: JSString -> JSVal -> IO ()
+foreign import javascript safe "atomCallbackTextEditor.pushBuffer($1, $2)"
+    pushBuffer :: JSString -> JSString -> IO ()
 
 foreign import javascript safe "atomCallbackTextEditor.pushStatus($1, $2, $3)"
     pushStatus :: JSString -> JSString -> JSString -> IO ()
@@ -63,17 +57,8 @@ foreign import javascript safe "atomCallbackTextEditor.getText($1)"
 foreign import javascript safe "atomCallbackTextEditor.getCursor($1)"
     getCursor :: JSVal -> JSVal
 
-foreign import javascript safe "atomCallbackInternals.getSelections($1)"
+foreign import javascript safe "atomCallbackTextEditor.getSelections($1)"
     getSelections :: JSVal -> JSVal
-
-foreign import javascript safe "[]"
-    emptyArray :: IO JSVal
-
-foreign import javascript safe "function () { $3.unshift({ length: $1, tags: $2}) ; return $3 ;} ()"
-    appendTags :: Int -> JSVal -> JSVal -> JSVal
-
-foreign import javascript safe "function () { $2.unshift($1); return $2; }()"
-    appendTag :: JSString -> JSVal -> JSVal
 
 jsvalToText :: JSVal -> TextEvent
 jsvalToText jsval = result where
@@ -82,7 +67,7 @@ jsvalToText jsval = result where
     stop     = pFromJSVal $ getStop jsval
     text     = pFromJSVal $ getText jsval
     cursor   = pFromJSVal $ getCursor jsval
-    result   = TextEvent filepath start stop text (Just cursor) []
+    result   = TextEvent filepath start stop text $ Just cursor
 
 jsvalToInternalEvent :: JSVal -> InternalEvent
 jsvalToInternalEvent jsval = result where
@@ -97,33 +82,16 @@ subscribeText callback = do
     subscribeText' wrappedCallback
     return $ unsubscribeText' wrappedCallback >> releaseCallback wrappedCallback
 
-pushCode :: MonadIO m => TextEvent -> m ()
-pushCode e = liftIO $ do
-    let uri    = view TextEvent.filePath e
-        start  = view TextEvent.start e
-        end    = view TextEvent.stop e
-        text   = view TextEvent.text e
-        cursor = view TextEvent.cursor e
-        tags   = view TextEvent.tags e
-    jsvalCursor <- toJSVal cursor
-    let lexer = convertTags tags
-    print tags
-    pushCode' (convert uri) start end (convert $ Text.unpack text) jsvalCursor $ lexer
+pushCode :: TextEvent -> IO ()
+pushCode = do
+    uri   <- (^. TextEvent.filePath)
+    start <- (^. TextEvent.start)
+    end   <- (^. TextEvent.stop)
+    text  <- (^. TextEvent.text)
+    return $ pushCode' (convert uri) start end $ convert $ Text.unpack text
 
 subscribeEventListenerInternal :: (InternalEvent -> IO ()) -> IO (IO ())
 subscribeEventListenerInternal callback = do
     wrappedCallback <- syncCallback1 ContinueAsync $ callback . jsvalToInternalEvent
     subscribeEventListenerInternal' wrappedCallback
     return $ unsubscribeEventListenerInternal' wrappedCallback >> releaseCallback wrappedCallback
-
-convertTags :: [(Int, [String])] -> JSVal
-convertTags tags = unsafePerformIO $ convertTags' tags where
-    convertTags' :: [(Int, [String])] -> IO JSVal
-    convertTags' [] = emptyArray
-    convertTags' ((l, t):r) = do
-        tgs <- convertList t
-        appendTags l tgs <$> convertTags' r
-
-    convertList :: [String] -> IO JSVal
-    convertList []    = emptyArray
-    convertList (h:t) = appendTag (convert h) <$> convertList t

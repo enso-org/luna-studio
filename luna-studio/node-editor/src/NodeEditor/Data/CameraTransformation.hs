@@ -1,4 +1,5 @@
 {-# LANGUAGE DeriveAnyClass #-}
+{-# OPTIONS_GHC -fno-warn-orphans #-}
 module NodeEditor.Data.CameraTransformation where
 
 import           Common.Prelude

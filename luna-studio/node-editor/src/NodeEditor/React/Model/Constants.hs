@@ -16,4 +16,4 @@ nodeRadius        = 20
 nodeRadius'       = nodeRadius - connectionWidth
 portRadius        = nodeRadius - connectionWidth/2
 
-nodeExpandedWidth = 160
+nodeExpandedWidth = X.nodePropertiesWidth

@@ -10,36 +10,27 @@ module.exports = function () {
   var listeners = {
     bufferListener: [],
     codeListener: [],
-    lexerListener: [],
     eventListenerInternal: [],
     textListener: [],
     statusListener: [],
+    lexer: null,
   };
 
   return {
     codeListener: function (listener) {
       listeners.codeListener.push(listener);
     },
-    pushCode: function(uri_send, start_send, end_send, text, cursor, tags) {
+    pushCode: function(uri_send, start_send, end_send, text) {
       listeners.codeListener.forEach(function(listener) {
-        listener(uri_send, start_send, end_send, text, cursor, tags);
+        listener(uri_send, start_send, end_send, text);
       });
     },
 
     bufferListener: function (listener) {
       listeners.bufferListener.push(listener);
     },
-    pushBuffer: function(data1, data2, data3) {
+    pushBuffer: function(data1, data2) {
       listeners.bufferListener.forEach(function(listener) {
-        listener(data1, data2, data3);
-      });
-    },
-
-    lexerListener: function (listener) {
-      listeners.lexerListener.push(listener);
-    },
-    pushLexer: function(data1, data2) {
-      listeners.lexerListener.forEach(function(listener) {
         listener(data1, data2);
       });
     },
@@ -100,5 +91,14 @@ module.exports = function () {
         return data.selections;
       };
     },
+    setLexer: function(fun) {
+      listeners.lexer = fun;
+    },
+    unsetLexer: function() {
+      listeners.lexer = null;
+    },
+    lex: function(data) {
+      return listeners.lexer(data);
+    }
   };
 };

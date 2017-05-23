@@ -1,6 +1,5 @@
 module LunaStudio.API.AsyncUpdate where
 
-import qualified LunaStudio.API.Atom.Lexer                  as Lexer
 import qualified LunaStudio.API.Atom.Substitute             as Substitute
 import qualified LunaStudio.API.Graph.MonadsUpdate          as MonadsUpdate
 import qualified LunaStudio.API.Graph.NodeResultUpdate      as NodeResult
@@ -12,5 +11,4 @@ data AsyncUpdate = MonadsUpdate      MonadsUpdate.Update
                  | TypecheckerUpdate NodeTCUpdate.Update
                  | ResultUpdate        NodeResult.Update
                  | CodeUpdate          Substitute.Update
-                 | LexerUpdate              Lexer.Update
                  deriving (Eq, Show)

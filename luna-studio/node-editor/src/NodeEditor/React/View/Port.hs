@@ -3,6 +3,7 @@
 module NodeEditor.React.View.Port where
 
 import           Common.Prelude
+import           LunaStudio.Data.Constants        (nodePropertiesWidth)
 import           LunaStudio.Data.PortRef          (AnyPortRef, toAnyPortRef)
 import qualified NodeEditor.Event.Mouse           as Mouse
 import qualified NodeEditor.Event.UI              as UI
@@ -64,9 +65,9 @@ port = React.defineView name $ \(ref, nl, numOfPorts, isOnly, isAlias, p, visibl
     case p ^. Port.portId of
         InPortId' (Self:_) ->                  portSelf_   ref nl p
         OutPortId' []      -> if isOnly && not isAlias then portSingle_ ref nl p
-                                          else portIO_     ref nl p numOfPorts
+                                          else portIO_     ref nl p numOfPorts visibleSelfPresent
         _                  -> if isAlias  then portAlias_  ref nl p
-                                          else portIO_     ref nl p numOfPorts
+                                          else portIO_     ref nl p numOfPorts visibleSelfPresent
 
 portExpanded :: ReactView (Ref App, NodeLoc, AnyPort)
 portExpanded = React.defineView name $ \(ref, nl, p) ->
@@ -107,12 +108,6 @@ portAlias_ ref nl p = do
            , "key"       $= (jsShow portId <> "a")
            , "fill"      $= color
            ] mempty
-    --    circle_
-    --        ( handlers ref portRef ++
-    --        [ "className" $= Style.prefix "port__select"
-    --        , "key"       $= (jsShow portId <> "b")
-    --        , "r"         $= jsShow2 (lineHeight/1.5)
-    --        ]) mempty
 
 
 portSelf_ :: Ref App -> NodeLoc -> AnyPort -> ReactElementM ViewEventHandler ()
@@ -175,8 +170,8 @@ portSingle_ ref nl p = do
               ]
             ) mempty
 
-portIO_ :: Ref App -> NodeLoc -> AnyPort -> Int -> ReactElementM ViewEventHandler ()
-portIO_ ref nl p numOfPorts = do
+portIO_ :: Ref App -> NodeLoc -> AnyPort -> Int -> Bool -> ReactElementM ViewEventHandler ()
+portIO_ ref nl p numOfPorts visibleSelfPresent = do
     let portId    = p ^. Port.portId
         portRef   = toAnyPortRef nl portId
         portType  = toString $ p ^. Port.valueType
@@ -244,12 +239,13 @@ portIOExpanded_ ref nl p = if p ^. Port.portId == InPortId' [Self] then portSelf
         portType  = toString $ p ^. Port.valueType
         isInput   = isInPort portId
         num       = getPortNumber portId
+        n         = if isInput then 1 else 0
         color     = convert $ p ^. Port.color
+        px        = jsShow2 (if isInput then (-nodePropertiesWidth/2) else nodePropertiesWidth/2)
         py        = jsShow2 (lineHeight * fromIntegral (num + n))
         highlight = if isHighlighted p then ["hover"] else []
-        classes   = if isInput then [ "port", "port--i", "port--i--" <> show (num + 1)] ++ highlight
-                               else [ "port", "port--o", "port--o--" <> show (num + 1)] ++ highlight
-        n         = if isInput then 1 else 0
+        classes   =  if isInput then [ "port", "port--i", "port--i--" <> show (num + 1)] ++ highlight
+                                else [ "port", "port--o", "port--o--" <> show (num + 1)] ++ highlight
     g_
         [ "className" $= Style.prefixFromList classes
         ] $ do
@@ -258,13 +254,14 @@ portIOExpanded_ ref nl p = if p ^. Port.portId == InPortId' [Self] then portSelf
             , "key"       $= (jsShow portId <> "-type")
             , "y"         $= py
             , "dy"        $= "4px"
-            , "dx"        $= (if isInput then "-16px" else "176px")
+            , "dx"        $= jsShow2 (if isInput then (-(16 + nodePropertiesWidth/2)) else 16 + nodePropertiesWidth/2 )
             ] $ elemString portType
         circle_
             [ "className" $= Style.prefix "port__shape"
             , "key"       $= (jsShow portId <> jsShow num <> "-shape")
             , "fill"      $= color
             , "r"         $= jsShow2 3
+            , "cx"        $= (px <> "px")
             , "cy"        $= (py <> "px")
             ] mempty
         circle_
@@ -272,6 +269,7 @@ portIOExpanded_ ref nl p = if p ^. Port.portId == InPortId' [Self] then portSelf
               [ "className" $= Style.prefix "port__select"
               , "key"       $= (jsShow portId <> jsShow num <> "-select")
               , "r"         $= jsShow2 (lineHeight/1.5)
+              , "cx"        $= (px <> "px")
               , "cy"        $= (py <> "px")
               ]
             ) mempty

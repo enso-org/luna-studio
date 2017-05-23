@@ -14,11 +14,7 @@ data Request = Request { _filePath :: FilePath
                        } deriving (Eq, Generic, NFData, Show)
 
 data Result  = Result { _code             :: Text
-                      , _tags             :: [(Int, [String])]
-                      } deriving (Generic, Eq, NFData, Show)
-
-type Response = Response.Response Request () Result
-instance Response.ResponseResult Request () Result
+                      } deriving (Eq, Generic, NFData, Show)
 
 makeLenses ''Request
 makeLenses ''Result
@@ -26,6 +22,10 @@ instance Binary Request
 instance Binary Result
 
 
+type Response = Response.Response Request () Result
+instance Response.ResponseResult Request () Result
+
+topicPrefix :: T.Topic
 topicPrefix = "empire.atom.file.get"
 instance T.MessageTopic (R.Request Request) where topic _ = topicPrefix <> T.request
 instance T.MessageTopic Response            where topic _ = topicPrefix <> T.response

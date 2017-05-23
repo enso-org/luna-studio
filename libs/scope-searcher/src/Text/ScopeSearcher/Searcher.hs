@@ -49,7 +49,6 @@ findSuggestions index query =
         lowQuery = Text.toLower query
 
 tryMatch :: (Nameable a, Weightable a) => Text -> a -> Maybe (Match a)
-tryMatch ""    _                 = Nothing
 tryMatch query choice
     | name choice == ""          = Nothing
     | otherwise                  = isSubstringMatch

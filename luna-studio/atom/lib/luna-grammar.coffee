@@ -49,22 +49,11 @@ lunaClasses = {
 
 module.exports =
 class LunaSemanticGrammar extends Grammar
-    constructor: (registry, lexer) ->
+    constructor: (registry, lex) ->
         name = "Luna (Semantic Highlighting)"
         @scopeName = "source.luna"
         super(registry, {name, @scopeName})
-        @setLexer lexer
-
-    setLexer: (lexer) ->
-        @lexer = []
-        line   = []
-        for token in lexer
-            if token.tags[token.tags.length - 1] == "EOL"
-                @lexer.push line
-                line = []
-            else
-                line.push token
-        @lexer.push line
+        @lex = lex
 
     getScore: ->
         lunaGrammar = @registry.grammarForScopeName("source.luna")
@@ -72,8 +61,7 @@ class LunaSemanticGrammar extends Grammar
 
     tokenizeLine: (line, ruleStack, firstLine = false) ->
         ruleStack = 0 unless ruleStack?
-        lexerLine = @lexer[ruleStack]
-        lexerLine = [] unless lexerLine?
+        lexerLine = @lex(line)
         buffer = line
         tags = []
         tokens = []

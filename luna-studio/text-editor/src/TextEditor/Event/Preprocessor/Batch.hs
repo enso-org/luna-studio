@@ -1,16 +1,16 @@
 {-# LANGUAGE Rank2Types #-}
 module TextEditor.Event.Preprocessor.Batch (process) where
 
+import           Data.Binary                            (Binary, decode)
+import           Data.ByteString.Lazy.Char8             (ByteString)
+import qualified Data.Map.Lazy                          as Map
 import           Common.Prelude                    hiding (cons)
-import           Data.Binary                       (Binary, decode)
-import           Data.ByteString.Lazy.Char8        (ByteString)
-import qualified Data.Map.Lazy                     as Map
 
+import qualified LunaStudio.API.Topic                       as Topic
 import           Common.Batch.Connector.Connection (ControlCode (ConnectionTakeover, Welcome), WebMessage (ControlMessage, WebMessage))
-import qualified LunaStudio.API.Topic              as Topic
-import           TextEditor.Event.Batch            as Batch
-import           TextEditor.Event.Connection       as Connection
-import qualified TextEditor.Event.Event            as Event
+import           TextEditor.Event.Batch                as Batch
+import           TextEditor.Event.Connection           as Connection
+import qualified TextEditor.Event.Event                as Event
 
 
 process :: Event.Event -> Maybe Event.Event
@@ -27,7 +27,6 @@ handlers = Map.fromList [ handle EmpireStarted
                         , handle FileOpened
                         , handle FileSaved
                         , handle BufferGetResponse
-                        , handle LexerUpdate
                         , handle SubstituteResponse
                         , handle SubstituteUpdate
                         ]

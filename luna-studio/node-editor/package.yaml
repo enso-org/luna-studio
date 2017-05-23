@@ -51,6 +51,7 @@ dependencies:
   - ghcjs-prim
   - hashable
   - lens
+  - luna-syntax-text-lexer
   - luna-studio-common
   - matrix
   - mtl

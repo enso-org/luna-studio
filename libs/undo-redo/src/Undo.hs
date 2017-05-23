@@ -1,54 +1,42 @@
-{-# LANGUAGE FlexibleContexts          #-}
-{-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE FlexibleContexts    #-}
+{-# LANGUAGE PatternSynonyms     #-}
+{-# LANGUAGE RankNTypes          #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE PatternSynonyms #-}
 
 module Undo where
 
-import Handlers (handlersMap)
-import UndoState
-
-import           Control.Exception                 (Exception)
-import           Control.Exception.Safe            (MonadThrow, throwM)
 import           Control.Lens
-import           Control.Monad.State               hiding (when)
-import           Control.Monad.STM                 (atomically)
-import           Data.ByteString                   (ByteString, null)
-import           Data.ByteString.Lazy              (toStrict,fromStrict)
-import           Data.Binary                       (Binary, decode)
-import qualified Data.Binary                       as Bin
-import qualified Data.Text.Lazy                    as Text
-import qualified Data.List                         as List
-import qualified Data.Map.Strict                   as Map
+import           Control.Monad.State       (MonadState, StateT (StateT), forM, runStateT)
+import           Data.Binary               (decode)
+import qualified Data.Binary               as Bin
+import           Data.ByteString           (ByteString, null)
+import           Data.ByteString.Lazy      (fromStrict, toStrict)
+import qualified Data.List                 as List
+import qualified Data.Map.Strict           as Map
 import           Data.Maybe
-import qualified Data.Set                          as Set
-import           Data.UUID.Types                   (UUID)
-import           Prologue                          hiding (throwM, null)
-import           Util                              as Util
+import           Data.UUID.Types           (UUID)
+import           Data.UUID.V4              as UUID (nextRandom)
+import           Handlers                  (handlersMap)
+import qualified LunaStudio.API.Graph.Redo as RedoRequest
+import qualified LunaStudio.API.Graph.Undo as UndoRequest
+import qualified LunaStudio.API.Request    as Request
+import           LunaStudio.API.Topic      (Topic)
+import           Prologue                  hiding (null, throwM)
+import           UndoState
+import qualified ZMQ.Bus.Bus               as Bus
+import qualified ZMQ.Bus.Data.Flag         as Flag
+import qualified ZMQ.Bus.Data.Message      as Message
+import           ZMQ.Bus.Data.MessageFrame (MessageFrame (MessageFrame))
+import qualified ZMQ.Bus.Data.MessageFrame as MessageFrame
+import           ZMQ.Bus.EndPoint          (BusEndPoints)
+import qualified ZMQ.Bus.Trans             as Bus
 
-import           Data.UUID as UUID (nil)
-import           Data.UUID.V4 as UUID (nextRandom)
-import qualified LunaStudio.API.Topic                  as Topic
-import           LunaStudio.API.Response               (Response (..))
-import qualified LunaStudio.API.Response               as Response
-import qualified LunaStudio.API.Request                as Request
-import           LunaStudio.API.Request                (Request (..))
-import qualified LunaStudio.API.Graph.Undo             as UndoRequest
-import qualified LunaStudio.API.Graph.Redo             as RedoRequest
 
-import qualified ZMQ.Bus.Bus                       as Bus
-import qualified ZMQ.Bus.Data.Flag                 as Flag
-import qualified ZMQ.Bus.Data.Message              as Message
-import           ZMQ.Bus.Data.MessageFrame         (MessageFrame (MessageFrame))
-import           ZMQ.Bus.EndPoint                  (BusEndPoints)
-import qualified ZMQ.Bus.Trans                     as Bus
-import qualified ZMQ.Bus.Data.MessageFrame         as MessageFrame
-import           Control.Error                     (ExceptT, hoistEither, runExceptT)
-
+topic :: Topic
 topic = "empire."
 
 withBus :: forall a. UndoPure a -> Undo a
-withBus act = Undo $ StateT $ \s -> liftIO $ runStateT (runUndo act) s
+withBus action = Undo $ StateT $ liftIO . runStateT (runUndo action)
 
 
 run :: BusEndPoints -> IO (Either Bus.Error ((), UndoState))
@@ -59,7 +47,7 @@ run endPoints = do
             Bus.runBusT $ runStateT (runUndo $ forever receiveAndHandleMessage) state
 
 run' :: UndoState -> UndoPure a -> IO (a, UndoState)
-run' state undo = runStateT (runUndo undo) state
+run' state undo' = runStateT (runUndo undo') state
 
 receiveAndHandleMessage :: Undo ()
 receiveAndHandleMessage = do
@@ -67,14 +55,16 @@ receiveAndHandleMessage = do
     action <- withBus $ handleMessage $ msgFrame ^. MessageFrame.message
     forM_ action $ \msg -> lift $ Bus.BusT $ sendMessage msg
 
+pattern UndoRequestTopic :: Topic
 pattern UndoRequestTopic <- "empire.undo.request"
+pattern RedoRequestTopic :: Topic
 pattern RedoRequestTopic <- "empire.redo.request"
 
 handleMessage :: Message.Message -> UndoPure (Maybe Action)
 handleMessage msg = do
-    let topic   = msg ^. Message.topic
+    let topic'  = msg ^. Message.topic
         content = msg ^. Message.message
-    case topic of
+    case topic' of
         UndoRequestTopic -> do
             let Request.Request _ undoGuiID (UndoRequest.Request _) = decode . fromStrict $ content
             case undoGuiID of
@@ -86,7 +76,7 @@ handleMessage msg = do
                 Just guiID -> doRedo guiID
                 Nothing    -> return Nothing
         _ -> do
-            runMessageHandler topic content
+            runMessageHandler topic' content
             return Nothing
 
 receiveMessage :: Undo MessageFrame
@@ -124,8 +114,8 @@ doRedo guiID = do
         return $ act ActRedo msg
 
 runMessageHandler :: String -> ByteString -> UndoPure ()
-runMessageHandler topic content = do
-    let handler   = Map.findWithDefault doNothing topic handlersMap
+runMessageHandler topic' content = do
+    let handler   = Map.findWithDefault doNothing topic' handlersMap
         doNothing _ = return ()
     void $ handler content
 
@@ -134,4 +124,4 @@ sendMessage :: Action -> Bus.Bus ()
 sendMessage action = do
     uuid <- liftIO $ UUID.nextRandom
     void $ Bus.send Flag.Enable $ case action of
-        Action topic msg -> Message.Message topic $ toStrict $ Bin.encode $ Request.Request uuid Nothing msg
+        Action topic' msg -> Message.Message topic' $ toStrict $ Bin.encode $ Request.Request uuid Nothing msg

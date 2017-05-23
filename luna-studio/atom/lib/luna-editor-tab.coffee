@@ -42,42 +42,25 @@ module.exports =
             @triggerPush = false
             callback()
             @triggerPush = true
-        setBuffer = (uri_send, text, lexer) =>
+        setBuffer = (uri_send, text) =>
             console.log(uri_send, @uri)
             withoutTrigger =>
               if @uri == uri_send
                 @getBuffer().setText(text)
                 console.log("setBuffer")
-                @lunaGrammar = new LunaSemanticGrammar(atom.grammars, lexer)
-                @setGrammar(@lunaGrammar)
+                @setGrammar(new LunaSemanticGrammar(atom.grammars, @internal.lex))
 
         @internal.bufferListener setBuffer
 
-        setCode = (uri_send, start_send, end_send, text, cursor, lexer) =>
-            console.log(text)
-            console.log(cursor)
-            console.log(lexer)
+        setCode = (uri_send, start_send, end_send, text) =>
             withoutTrigger =>
-                if @uri == uri_send
-                #   start = @getBuffer().positionForCharacterIndex(start_send)
-                #   end = @getBuffer().positionForCharacterIndex(end_send)
-                #   @getBuffer().setTextInRange [start, end], text
-                #   @.scrollToBufferPosition(start)
-                    @getBuffer().setText(text)
-                    @.getLastCursor().setScreenPosition(@getBuffer().positionForCharacterIndex(cursor))
-                    @lunaGrammar = new LunaSemanticGrammar(atom.grammars, lexer)
-                    @setGrammar(@lunaGrammar)
-                    # @lunaGrammar.setLexer(lexer)
-
-        setLexer = (uri_send, lexer) =>
-            withoutTrigger =>
-                if @uri == uri_send
-                    @lunaGrammar = new LunaSemanticGrammar(atom.grammars, lexer)
-                    @setGrammar(@lunaGrammar)
-                    # @lunaGrammar.setLexer(lexer)
-
+              if @uri == uri_send
+              #   start = @getBuffer().positionForCharacterIndex(start_send)
+              #   end = @getBuffer().positionForCharacterIndex(end_send)
+              #   @getBuffer().setTextInRange [start, end], text
+              #   @.scrollToBufferPosition(start)
+                  @getBuffer().setText(text)
         @internal.codeListener setCode
-        @internal.lexerListener setLexer
 
         @subscribe = new SubAtom
         @subscribe.add @getBuffer().onDidChange (event) =>

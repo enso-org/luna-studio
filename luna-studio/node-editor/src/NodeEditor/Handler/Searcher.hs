@@ -4,22 +4,23 @@ module NodeEditor.Handler.Searcher where
 
 import           Common.Prelude
 
-import           NodeEditor.Action.Command         (Command)
-import qualified NodeEditor.Action.Searcher        as Searcher
-import           NodeEditor.Event.Event            (Event (Shortcut, UI))
-import qualified NodeEditor.Event.Keys             as Keys
-import qualified NodeEditor.Event.Shortcut         as Shortcut
-import           NodeEditor.Event.UI               (UIEvent (AppEvent, NodeEditorEvent, SearcherEvent))
-import qualified NodeEditor.React.Event.App        as App
-import qualified NodeEditor.React.Event.NodeEditor as NodeEditor
-import qualified NodeEditor.React.Event.Searcher   as Searcher
-import           NodeEditor.State.Action           (Action (continue))
-import           NodeEditor.State.Global           (State)
+import           NodeEditor.Action.Command          (Command)
+import qualified NodeEditor.Action.Searcher         as Searcher
+import           NodeEditor.Action.State.NodeEditor (whenGraphLoaded)
+import           NodeEditor.Event.Event             (Event (Shortcut, UI))
+import qualified NodeEditor.Event.Keys              as Keys
+import qualified NodeEditor.Event.Shortcut          as Shortcut
+import           NodeEditor.Event.UI                (UIEvent (AppEvent, NodeEditorEvent, SearcherEvent))
+import qualified NodeEditor.React.Event.App         as App
+import qualified NodeEditor.React.Event.NodeEditor  as NodeEditor
+import qualified NodeEditor.React.Event.Searcher    as Searcher
+import           NodeEditor.State.Action            (Action (continue))
+import           NodeEditor.State.Global            (State)
 
 
 handle :: (Event -> IO ()) -> Event -> Maybe (Command State ())
-handle _ (Shortcut (Shortcut.Event Shortcut.SearcherOpen _)) = Just   Searcher.open
-handle _ (UI (NodeEditorEvent NodeEditor.ContextMenu))       = Just   Searcher.open
+handle _ (Shortcut (Shortcut.Event Shortcut.SearcherOpen _)) = Just $ whenGraphLoaded Searcher.open
+handle _ (UI (NodeEditorEvent NodeEditor.ContextMenu))       = Just $ whenGraphLoaded Searcher.open
 handle scheduleEvent (UI (SearcherEvent evt))                = Just $ handleEvent scheduleEvent evt
 handle _ (UI (AppEvent (App.MouseDown _ _)))                 = Just $ continue Searcher.close
 handle _ _                                                   = Nothing

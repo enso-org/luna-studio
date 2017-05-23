@@ -40,11 +40,13 @@ dependencies:
   - ghcjs-prim
   - lens
   - luna-studio-common
+  - luna-syntax-text-lexer
   - mtl
   - prologue
   - random
   - scope-searcher
   - text
+  - text-processing
   - time
   - transformers
   - uuid-types
