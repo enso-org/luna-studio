@@ -8,7 +8,6 @@ import           NodeEditor.Action.Command          (Command)
 import qualified NodeEditor.Action.Searcher         as Searcher
 import           NodeEditor.Action.State.NodeEditor (whenGraphLoaded)
 import           NodeEditor.Event.Event             (Event (Shortcut, UI))
-import qualified NodeEditor.Event.Keys              as Keys
 import qualified NodeEditor.Event.Shortcut          as Shortcut
 import           NodeEditor.Event.UI                (UIEvent (AppEvent, NodeEditorEvent, SearcherEvent))
 import qualified NodeEditor.React.Event.App         as App
