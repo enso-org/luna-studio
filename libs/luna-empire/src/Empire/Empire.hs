@@ -56,7 +56,7 @@ data InterpreterEnv = InterpreterEnv { _valuesCache :: Map NodeId [PortValue]
                                      , _nodesCache  :: Map NodeId ExpressionNode
                                      , _errorsCache :: Map NodeId APIError.Error
                                      , _graph       :: Graph
-                                     , _destructors :: [IO ()]
+                                     , _cleanUp     :: IO ()
                                      , _imports     :: Imports
                                      }
 makeLenses ''InterpreterEnv
@@ -64,7 +64,7 @@ makeLenses ''InterpreterEnv
 defaultInterpreterEnv :: IO InterpreterEnv
 defaultInterpreterEnv = do
     g <- defaultGraph
-    return $ InterpreterEnv def def def g [] def
+    return $ InterpreterEnv def def def g (return ()) def
 
 type CommandStack s = ReaderT CommunicationEnv (StateT s IO)
 type Command s a = ReaderT CommunicationEnv (StateT s IO) a

@@ -106,18 +106,18 @@ readAll chan = do
         Nothing -> return v
         Just _  -> readAll chan
 
-prepareStdlib :: IO (Scope, Empire.SymbolMap)
+prepareStdlib :: IO (Scope, Empire.SymbolMap, IO ())
 prepareStdlib = do
-    lunaroot   <- canonicalizePath =<< getEnv "LUNAROOT"
-    std        <- Typecheck.createStdlib $ lunaroot ++ "/Std/"
-    return (std, Typecheck.getSymbolMap std)
+    lunaroot       <- canonicalizePath =<< getEnv "LUNAROOT"
+    (cleanup, std) <- Typecheck.createStdlib $ lunaroot ++ "/Std/"
+    return (std, Typecheck.getSymbolMap std, cleanup)
 
 startTCWorker :: Empire.CommunicationEnv -> TChan (GraphLocation, Graph, Bool) -> MVar Empire.SymbolMap -> Bus ()
 startTCWorker env chan scopeVar = liftIO $ do
-    (Scope std, symbolMap) <- prepareStdlib
+    (Scope std, symbolMap, cleanup) <- prepareStdlib
     putMVar scopeVar symbolMap
     baseIntEnv <- Empire.defaultInterpreterEnv
-    let interpreterEnv = baseIntEnv & Empire.imports .~ std
+    let interpreterEnv = baseIntEnv & Empire.imports .~ std & Empire.cleanUp .~ cleanup
     let pmState = interpreterEnv ^. Empire.graph . Graph.ast . Graph.pmState
     void $ Empire.runEmpire env interpreterEnv $ forever $ do
         (loc, g, flush) <- liftIO $ atomically $ readAll chan

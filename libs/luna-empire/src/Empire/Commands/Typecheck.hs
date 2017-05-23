@@ -9,6 +9,7 @@ import           Control.Monad                     (forM_, void)
 import           Control.Monad.Except              hiding (when)
 import           Control.Monad.Reader              (ask, runReaderT)
 import           Control.Monad.State               (execStateT, gets)
+import           Control.Arrow                     ((***))
 import           Data.List                         (sort)
 import           Data.Map                          (Map)
 import qualified Data.Map                          as Map
@@ -38,7 +39,8 @@ import           Empire.Data.Graph                 (Graph)
 import qualified Empire.Data.Graph                 as Graph
 import           Empire.Empire
 
-import           Luna.Builtin.Data.LunaValue       (LunaData, listenReps)
+import           Luna.Builtin.Data.LunaValue       (LunaData)
+import           Luna.Builtin.Prim                 (listenReps)
 import           Luna.Builtin.Data.LunaEff         (runIO, runError)
 import           Luna.Builtin.Data.Module          (Imports (..), importedClasses, importedFunctions)
 import           Luna.Builtin.Data.Class           (Class (..))
@@ -123,7 +125,7 @@ updateValues loc scope = do
         let resVal = Interpreter.localLookup (IR.unsafeGeneralize ref) scope
         liftIO $ forM_ resVal $ \v -> listenReps v $ \case
             Left  err            -> flip runReaderT env $ Publisher.notifyResultUpdate loc nid (NodeError $ APIError.Error APIError.RuntimeError $ convert err) 0
-            Right (short, longs) -> flip runReaderT env $ Publisher.notifyResultUpdate loc nid (NodeValue (fromString short) $ JsonValue <$> longs) 0
+            Right (short, longs) -> flip runReaderT env $ Publisher.notifyResultUpdate loc nid (NodeValue (convert short) $ JsonValue . convert <$> longs) 0
 
 flushCache :: Command InterpreterEnv ()
 flushCache = do
@@ -133,8 +135,8 @@ flushCache = do
 
 newtype Scope = Scope Imports
 
-createStdlib :: String -> IO Scope
-createStdlib = fmap Scope . Compilation.createStdlib
+createStdlib :: String -> IO (IO (), Scope)
+createStdlib = fmap (id *** Scope) . Compilation.createStdlib
 
 getSymbolMap :: Scope -> SymbolMap
 getSymbolMap (Scope (Imports clss funcs)) = SymbolMap (convert <$> Map.keys funcs) classes where
@@ -144,9 +146,11 @@ getSymbolMap (Scope (Imports clss funcs)) = SymbolMap (convert <$> Map.keys func
 run :: GraphLocation -> Command InterpreterEnv ()
 run loc = do
     std <- use imports
+    cln <- use cleanUp
     liftIO $ print $ Map.keys $ std ^. importedClasses
     zoom graph $ runTC std
     updateNodes  loc
     {-updateMonads loc-}
+    liftIO cln
     scope <- zoom graph $ runInterpreter std
     mapM_ (updateValues loc) scope
