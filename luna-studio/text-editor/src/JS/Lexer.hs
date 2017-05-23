@@ -6,9 +6,15 @@ module JS.Lexer
 
 
 import           Common.Prelude
+import qualified Data.Text.Span               as Span
 import           GHCJS.Foreign.Callback
-import           GHCJS.Marshal.Pure     (pFromJSVal, PToJSVal(pToJSVal))
-import qualified Luna.Syntax.Text.Lexer as Lexer
+import           GHCJS.Marshal                (ToJSVal (toJSVal))
+import           GHCJS.Marshal.Pure           (pFromJSVal, pToJSVal)
+import           JavaScript.Array             (JSArray)
+import qualified JavaScript.Array             as JSArray
+import qualified Luna.Syntax.Text.Lexer       as Lexer
+import           Luna.Syntax.Text.Lexer.Class (Token)
+import qualified Luna.Syntax.Text.Lexer.Class as Token
 
 
 foreign import javascript safe "atomCallbackTextEditor.setLexer($1)"
@@ -17,12 +23,20 @@ foreign import javascript safe "atomCallbackTextEditor.setLexer($1)"
 foreign import javascript safe "atomCallbackTextEditor.unsetLexer()"
     unsetLexer :: IO ()
 
-instance PToJSVal (Lexer.Stream JSString) where
-    pToJSVal = $notImplemented
+foreign import javascript safe "{length: $1, tags: $2}"
+    exportToken :: Int -> JSArray -> JSVal
+
+instance ToJSVal (Token (Lexer.Symbol JSString)) where
+    toJSVal token = return $ exportToken
+        (fromIntegral $ unwrap $ token ^. Token.span . Span.length)
+        (JSArray.fromList $ map pToJSVal $ Lexer.tags $ Token.untoken token)
+
+instance ToJSVal (Lexer.Stream JSString) where
+    toJSVal (Lexer.Stream tokens) = toJSValListOf tokens
 
 setLexer :: (String -> IO (Lexer.Stream JSString)) -> IO (IO ())
 setLexer lexer = do
-    wrappedCallback <- syncCallback1' $ fmap pToJSVal . lexer . pFromJSVal
+    wrappedCallback <- syncCallback1' $ toJSVal <=< lexer . pFromJSVal
     setLexer' wrappedCallback
     return $ unsetLexer >> releaseCallback wrappedCallback
 

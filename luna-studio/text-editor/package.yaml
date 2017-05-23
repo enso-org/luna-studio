@@ -46,6 +46,7 @@ dependencies:
   - random
   - scope-searcher
   - text
+  - text-processing
   - time
   - transformers
   - uuid-types

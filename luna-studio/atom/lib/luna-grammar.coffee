@@ -53,13 +53,6 @@ class LunaSemanticGrammar extends Grammar
         name = "Luna (Semantic Highlighting)"
         @scopeName = "source.luna"
         super(registry, {name, @scopeName})
-        @lexer = [ { length : 3, tags: ['Var'] }
-                 , { length : 3, tags: [] }
-                 , { length : 2, tags: ['Operator'] }
-                 , { length : 4, tags: ['Number'] }
-                 , { length : 3, tags: ['Var']}
-                 ]
-
         @lex = lex
 
     getScore: ->
@@ -68,9 +61,7 @@ class LunaSemanticGrammar extends Grammar
 
     tokenizeLine: (line, ruleStack, firstLine = false) ->
         ruleStack = 0 unless ruleStack?
-        # lexerLine = @lex(line)
-        lexerLine = @lexer[ruleStack]
-        lexerLine = [] unless lexerLine?
+        lexerLine = @lex(line)
         buffer = line
         tags = []
         tokens = []
