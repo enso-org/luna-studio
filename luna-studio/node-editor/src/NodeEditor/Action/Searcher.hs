@@ -137,8 +137,8 @@ selectPreviousHint _ = modifySearcher $ do
     hintsLen <- use Searcher.resultsLength
     Searcher.selected %= \p -> (p - 1) `mod` (hintsLen + 1)
 
-selectHint :: Searcher -> Int -> Command State Bool
-selectHint _ i = do
+selectHint :: Int -> Searcher -> Command State Bool
+selectHint i _ = do
     mayHintsLen <- fmap2 (view Searcher.resultsLength) getSearcher
     case mayHintsLen of
         Nothing       -> return False
@@ -148,7 +148,7 @@ selectHint _ i = do
 
 acceptHint :: (Event -> IO ()) -> Int -> Searcher -> Command State ()
 acceptHint scheduleEvent hintNum action =
-    whenM (selectHint action hintNum) $ accept scheduleEvent action
+    whenM (selectHint hintNum action) $ accept scheduleEvent action
 
 
 forceSearcherInputUpdate :: Command State ()

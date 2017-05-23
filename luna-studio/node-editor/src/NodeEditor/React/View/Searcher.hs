@@ -92,9 +92,10 @@ results_ ref selected results = forKeyed_ results $ \(idx, result) ->
             then result ^. Result.name
             else result ^. Result.prefix <> " . " <> result ^. Result.name
     in div_
-        [ "key"       $= jsShow idx
-        , "className" $= resultClasses idx
-        , onClick     $ \e _ -> stopPropagation e : (dispatch ref $ UI.SearcherEvent $ AcceptEntry (idx + 1))
+        [ "key"        $= jsShow idx
+        , "className"  $= resultClasses idx
+        , onClick      $ \e _ -> stopPropagation e : (dispatch ref $ UI.SearcherEvent $ AcceptEntry (idx + 1))
+        , onMouseEnter $ \_ _ -> (dispatch ref $ UI.SearcherEvent $ SelectEntry (idx + 1))
         ] $ do
         div_
             ["key" $= "name"

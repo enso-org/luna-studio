@@ -5,7 +5,7 @@ import qualified Data.Map.Lazy                      as Map
 import qualified Data.Text                          as Text
 import           LunaStudio.Data.Node               (ExpressionNode)
 import           NodeEditor.Action.Command          (Command)
-import           NodeEditor.Action.State.NodeEditor (getNodeSearcherData, getSearcher, modifySearcher)
+import           NodeEditor.Action.State.NodeEditor (getNodeSearcherData, modifySearcher)
 import           NodeEditor.Batch.Workspace         (nodeSearcherData)
 import           NodeEditor.React.Model.Searcher    (Mode, allCommands, updateCommandsResult, updateNodeResult)
 import qualified NodeEditor.React.Model.Searcher    as Searcher
@@ -39,8 +39,6 @@ localUpdateSearcherHints = do
         Searcher.selected      .= min 1 hintsLen
         Searcher.rollbackReady .= False
         Searcher.mode          .= mode
-    m <- fmap2 (view Searcher.mode) getSearcher
-    print m
 
 filterNodesData :: Mode -> Items ExpressionNode -> Items ExpressionNode
 filterNodesData (Searcher.Node _ (Just (Searcher.NewNode _ (Just (_, typeRep)))) _) =
