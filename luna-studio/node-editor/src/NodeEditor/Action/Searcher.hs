@@ -71,7 +71,7 @@ openWith input mode = do
     GA.sendEvent GA.NodeSearcher
     modifyNodeEditor $ NodeEditor.searcher ?= Searcher.Searcher 0 mode def False False
     updateInput input inputLen inputLen action
-    renderIfNeeded
+    forceSearcherInputUpdate
     liftIO Searcher.focus
 
 
