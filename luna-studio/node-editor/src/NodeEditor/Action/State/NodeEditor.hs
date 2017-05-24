@@ -227,19 +227,8 @@ globalFunctions :: Items a -> Items a
 globalFunctions = Map.filter isElement
 
 getNodeSearcherData :: Command State (Items Empire.ExpressionNode)
-getNodeSearcherData = preuse (workspace . traverse . nodeSearcherData) >>= \case
-    Nothing -> return def
-    Just completeData -> do
-        selected     <- getSelectedNodes
-        ne           <- getNodeEditor
-        let mscope = case selected of
-                [node] -> convert . view valueType <$> NE.getPort (OutPortRef (node ^. nodeLoc) []) ne
-                _      -> Nothing
-        return $ case mscope of
-            Nothing -> completeData
-            Just tn -> Map.union (globalFunctions scope) (globalFunctions completeData) where
-                scope = fromMaybe mempty $ completeData ^? ix tn . items
-
+getNodeSearcherData = maybe def id <$> preuse (workspace . traverse . nodeSearcherData)
+    
 class NodeEditorElementId a where
     inGraph :: a -> Command State Bool
 instance NodeEditorElementId NodeLoc where
