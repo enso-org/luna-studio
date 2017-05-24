@@ -36,10 +36,10 @@ searcher =  React.defineView name $ \(ref, s) -> do
         -- nodePos     = s ^. Searcher.position
         -- nodePreview = convert . (NodeLoc.empty,) <$> (s ^. Searcher.selectedNode)
         className   = Style.prefixFromList ( "input" : "searcher" : ( case mode of
-            Searcher.Command      _ -> [ "searcher--command"]
-            Searcher.Node     _ _ _ -> [ "searcher--node" ]
-            Searcher.NodeName _   _ -> [ "searcher--node-name"]
-            Searcher.PortName _   _ -> [ "searcher--port-name"]))
+            Searcher.Command  {} -> [ "searcher--command"]
+            Searcher.Node     {} -> [ "searcher--node" ]
+            Searcher.NodeName {} -> [ "searcher--node-name"]
+            Searcher.PortName {} -> [ "searcher--port-name"]))
         mayCustomInput = if s ^. Searcher.replaceInput then ["value" $= convert (s ^. Searcher.inputText)] else []
     div_
         [ "key"       $= name
@@ -73,7 +73,7 @@ searcher =  React.defineView name $ \(ref, s) -> do
                 let selected = s ^. Searcher.selected
                 case s ^. Searcher.mode of
                     Searcher.Command    results -> results_ ref selected results
-                    Searcher.Node   _ _ results -> results_ ref selected results
+                    Searcher.Node _ _ _ results -> results_ ref selected results
                     Searcher.NodeName _ results -> results_ ref selected results
                     Searcher.PortName _ results -> results_ ref selected results
         -- div_

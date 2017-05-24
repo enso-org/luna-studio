@@ -26,13 +26,13 @@ localUpdateSearcherHints = do
         mayQuery <- preuse $ Searcher.input . Searcher._Divided
         m        <- use Searcher.mode
         let (mode, hintsLen) = case m of
-                Searcher.Node _ _ _ -> do
+                Searcher.Node {}    -> do
                     let getHints q = if Text.null $ q ^. Searcher.prefix
                             then filterNodesData m nodesData
                             else nodesData
                         items' = maybe [] (\q -> searchInScope (getHints q) (q ^. Searcher.query)) mayQuery
                     (updateNodeResult items' m, length items')
-                Searcher.Command _  -> do
+                Searcher.Command {} -> do
                     let items' = maybe [] (searchInScope allCommands . view Searcher.query) mayQuery
                     (updateCommandsResult items' m, length items')
                 _                   -> (m, 0)
@@ -41,7 +41,7 @@ localUpdateSearcherHints = do
         Searcher.mode          .= mode
 
 filterNodesData :: Mode -> Items ExpressionNode -> Items ExpressionNode
-filterNodesData (Searcher.Node _ (Just (Searcher.NewNode _ (Just (_, typeRep)))) _) =
+filterNodesData (Searcher.Node _ (Just typeRep) _ _) =
     Map.filterWithKey filterFunction where
         filterFunction k a = isElement a || k == (convert $ toString typeRep)
 filterNodesData _ = Map.filter isElement

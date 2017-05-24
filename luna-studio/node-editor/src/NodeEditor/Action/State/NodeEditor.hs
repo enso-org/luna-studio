@@ -19,7 +19,7 @@ import           LunaStudio.Data.MonadPath                   (MonadPath)
 import qualified LunaStudio.Data.Node                        as Empire
 import           LunaStudio.Data.Port                        (_WithDefault)
 import           LunaStudio.Data.PortDefault                 (PortDefault)
-import           LunaStudio.Data.PortRef                     (AnyPortRef, InPortRef, OutPortRef (OutPortRef))
+import           LunaStudio.Data.PortRef                     (AnyPortRef, InPortRef)
 import           LunaStudio.Data.Position                    (Position)
 import           NodeEditor.Action.Command                   (Command)
 import           NodeEditor.Action.State.App                 (get, modify)
@@ -37,10 +37,10 @@ import           NodeEditor.React.Model.Node.ExpressionNode  (ExpressionNode, is
 import qualified NodeEditor.React.Model.Node.ExpressionNode  as ExpressionNode
 import           NodeEditor.React.Model.NodeEditor           (NodeEditor)
 import qualified NodeEditor.React.Model.NodeEditor           as NE
-import           NodeEditor.React.Model.Port                 (state, valueType)
+import           NodeEditor.React.Model.Port                 (state)
 import           NodeEditor.React.Model.Searcher             (Searcher)
 import           NodeEditor.State.Global                     (State, workspace)
-import           Text.ScopeSearcher.Item                     (Items, isElement, items)
+import           Text.ScopeSearcher.Item                     (Items, isElement)
 
 
 getNodeEditor :: Command State NodeEditor
@@ -228,13 +228,16 @@ globalFunctions = Map.filter isElement
 
 getNodeSearcherData :: Command State (Items Empire.ExpressionNode)
 getNodeSearcherData = maybe def id <$> preuse (workspace . traverse . nodeSearcherData)
-    
+
 class NodeEditorElementId a where
     inGraph :: a -> Command State Bool
 instance NodeEditorElementId NodeLoc where
     inGraph = fmap isJust . getNode
 instance NodeEditorElementId ConnectionId where
     inGraph = fmap isJust . getConnection
+
+getPort :: NE.GetPort a b => a -> Command State (Maybe b)
+getPort portRef = NE.getPort portRef <$> getNodeEditor
 
 getPortDefault :: InPortRef -> Command State (Maybe PortDefault)
 getPortDefault portRef = maybe Nothing (\mayPort -> mayPort ^? state . _WithDefault) <$> (NE.getPort portRef <$> getNodeEditor)

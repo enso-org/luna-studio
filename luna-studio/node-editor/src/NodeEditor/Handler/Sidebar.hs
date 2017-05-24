@@ -3,7 +3,8 @@ module NodeEditor.Handler.Sidebar where
 import           Common.Prelude
 import           NodeEditor.Action.Basic        (toggleInputMode, toggleOutputMode)
 import           NodeEditor.Action.Command      (Command)
-import           NodeEditor.Action.Sidebar      (addPort, editPortName, handleAppMove, handleMouseUp, handleSidebarMove, removePort)
+import           NodeEditor.Action.Searcher     (editPortName)
+import           NodeEditor.Action.Sidebar      (addPort, handleAppMove, handleMouseUp, handleSidebarMove, removePort)
 import           NodeEditor.Event.Event         (Event (UI))
 import           NodeEditor.Event.UI            (UIEvent (AppEvent, SidebarEvent))
 import qualified NodeEditor.React.Event.App     as App

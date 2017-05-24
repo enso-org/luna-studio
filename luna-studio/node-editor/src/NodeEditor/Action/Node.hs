@@ -9,7 +9,7 @@ module NodeEditor.Action.Node
     , snapCoord
     ) where
 
-import           NodeEditor.Action.Node.Drag           (handleNodeDragMouseUp, nodesDrag, startNodeDrag)
-import           NodeEditor.Action.Node.EditExpression (editExpression)
-import           NodeEditor.Action.Node.EditName       (editName)
-import           LunaStudio.Data.Geometry           (snap, snapCoord)
+import           LunaStudio.Data.Geometry   (snap, snapCoord)
+import           NodeEditor.Action.NodeDrag (handleNodeDragMouseUp, nodesDrag, startNodeDrag)
+import           NodeEditor.Action.Searcher (editExpression)
+import           NodeEditor.Action.Searcher (editName)

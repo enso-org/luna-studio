@@ -20,8 +20,8 @@ import           Text.ScopeSearcher.QueryResult             (QueryResult)
 import qualified Text.ScopeSearcher.QueryResult             as Result
 
 
-data NewNode = NewNode { _position :: Position
-                       , _predInfo :: Maybe (OutPortRef, TypeRep)
+data NewNode = NewNode { _position    :: Position
+                       , _predPortRef :: Maybe OutPortRef
                        } deriving (Eq, Generic, Show)
 
 makeLenses ''NewNode
@@ -36,10 +36,10 @@ data Input = Raw     Text
            | Divided DividedInput
            deriving (Eq, Generic, Show)
 
-data Mode = Command                           [QueryResult ()]
-          | Node     NodeLoc  (Maybe NewNode) [QueryResult ExpressionNode]
-          | NodeName NodeLoc                  [QueryResult ExpressionNode]
-          | PortName OutPortRef               [QueryResult ExpressionNode]
+data Mode = Command                                          [QueryResult ()]
+          | Node     NodeLoc (Maybe TypeRep) (Maybe NewNode) [QueryResult ExpressionNode]
+          | NodeName NodeLoc                                 [QueryResult ExpressionNode]
+          | PortName OutPortRef                              [QueryResult ExpressionNode]
           deriving (Eq, Generic, Show)
 
 data Searcher = Searcher
@@ -98,17 +98,17 @@ selectedExpression :: Getter Searcher (Maybe Text)
 selectedExpression = to getExpression where
     getExpression s = let i = s ^. selected in
         if i == 0 then Nothing else case s ^. mode of
-            Command      results -> Result._name <$> results ^? ix (i - 1)
-            Node     _ _ results -> view Node.expression . Result._element <$> results ^? ix (i - 1)
-            NodeName _   results -> view Node.expression . Result._element <$> results ^? ix (i - 1)
-            PortName _   results -> view Node.expression . Result._element <$> results ^? ix (i - 1)
+            Command    results -> Result._name <$> results ^? ix (i - 1)
+            Node _ _ _ results -> view Node.expression . Result._element <$> results ^? ix (i - 1)
+            NodeName _ results -> view Node.expression . Result._element <$> results ^? ix (i - 1)
+            PortName _ results -> view Node.expression . Result._element <$> results ^? ix (i - 1)
 
 selectedNode :: Getter Searcher (Maybe ExpressionNode)
 selectedNode = to getNode where
     getNode s = let i = s ^. selected in
         if i == 0 then Nothing else case s ^. mode of
-            Node _ _ results -> Result._element <$> results ^? ix (i - 1)
-            _                -> Nothing
+            Node _ _ _ results -> Result._element <$> results ^? ix (i - 1)
+            _                  -> Nothing
 
 applyExpressionHint :: ExpressionNode -> Model.ExpressionNode -> Model.ExpressionNode
 applyExpressionHint n exprN = exprN & Model.expression .~ n ^. Node.expression
@@ -120,14 +120,14 @@ applyExpressionHint n exprN = exprN & Model.expression .~ n ^. Node.expression
 resultsLength :: Getter Searcher Int
 resultsLength = to getLength where
     getLength searcher = case searcher ^. mode of
-      Command      results -> length results
-      Node     _ _ results -> length results
-      NodeName _   results -> length results
-      PortName _   results -> length results
+      Command    results -> length results
+      Node _ _ _ results -> length results
+      NodeName _ results -> length results
+      PortName _ results -> length results
 
 updateNodeResult :: [QueryResult ExpressionNode] -> Mode -> Mode
-updateNodeResult r (Node nl nn _) = Node nl nn r
-updateNodeResult _ m              = m
+updateNodeResult r (Node nl tr nn _) = Node nl tr nn r
+updateNodeResult _ m                 = m
 
 updateCommandsResult :: [QueryResult ()] -> Mode -> Mode
 updateCommandsResult r (Command _) = Command r
@@ -136,26 +136,26 @@ updateCommandsResult _ m           = m
 isCommand :: Getter Searcher Bool
 isCommand = to matchCommand where
   matchCommand searcher = case searcher ^. mode of
-      Command _ -> True
-      _         -> False
+      Command {} -> True
+      _          -> False
 
 isNode :: Getter Searcher Bool
 isNode = to matchNode where
     matchNode searcher = case searcher ^. mode of
-        Node _ _ _ -> True
-        _          -> False
+        Node {} -> True
+        _       -> False
 
 isNodeName :: Getter Searcher Bool
 isNodeName = to matchNodeName where
     matchNodeName searcher = case searcher ^. mode of
-        NodeName _ _ -> True
-        _            -> False
+        NodeName {} -> True
+        _           -> False
 
 isSearcherRelated :: NodeLoc -> Searcher -> Bool
 isSearcherRelated nl s = isPrefixOf nlIdPath sIdPath where
     nlIdPath = NodeLoc.toNodeIdList nl
     sIdPath = case s ^. mode of
-        Node     snl   _ _ -> NodeLoc.toNodeIdList snl
+        Node     snl _ _ _ -> NodeLoc.toNodeIdList snl
         NodeName snl     _ -> NodeLoc.toNodeIdList snl
         PortName portRef _ -> NodeLoc.toNodeIdList $ portRef ^. srcNodeLoc
         _                  -> []
