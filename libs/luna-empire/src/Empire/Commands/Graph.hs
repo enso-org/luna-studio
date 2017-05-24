@@ -47,7 +47,6 @@ module Empire.Commands.Graph
     , withTC
     , withGraph
     , runTC
-    , printSeqsSpans
     ) where
 
 import           Control.Exception             (evaluate)
@@ -526,20 +525,7 @@ connectPersistent src@(OutPortRef (NodeLoc _ srcNodeId) srcPort) (OutPortRef' ds
         _ : _ -> throwM InvalidConnectionException
 
 connectNoTC :: GraphLocation -> OutPortRef -> AnyPortRef -> Command Graph Connection
-connectNoTC loc outPort anyPort = do
-    (connection, nodeToUpdate) <- runASTOp $ do
-        connection <- connectPersistent outPort anyPort
-
-        -- if input port is not an edge, send update to gui
-        edges <- GraphBuilder.getEdgePortMapping
-        let nid = PortRef.nodeId' anyPort
-        let nodeToUpdate = case edges of
-                Just (input, output) -> do
-                    if (nid /= input && nid /= output) then Just <$> GraphBuilder.buildNode nid
-                                                       else return Nothing
-                _ -> Just <$> GraphBuilder.buildNode nid
-        (connection,) <$> nodeToUpdate
-    return connection
+connectNoTC loc outPort anyPort = runASTOp $ connectPersistent outPort anyPort
 
 data SelfPortDefaultException = SelfPortDefaultException InPortRef
     deriving (Show)
@@ -809,13 +795,6 @@ getNodeIdForMarker index = do
             nodeId    <- ASTRead.getNodeId ref
             return $ varNodeId <|> nodeId
         _            -> return Nothing
-
-printSeqsSpans :: GraphLocation -> Empire ()
-printSeqsSpans loc = withGraph loc $ runASTOp $ do
-    nodeSeq <- GraphBuilder.getNodeSeq
-    forM_ nodeSeq $ \s -> do
-        seqs <- AST.getSeqs s
-        ranges <- mapM (\s' -> (s',) <$> readRange s') seqs
 
 markerCodeSpan :: GraphLocation -> Int -> Empire (Int, Int)
 markerCodeSpan loc index = withGraph loc $ runASTOp $ do
