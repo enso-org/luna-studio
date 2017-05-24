@@ -34,7 +34,6 @@ import qualified Empire.Data.Graph              as Graph (breadcrumbHierarchy)
 import qualified Luna.Syntax.Text.Parser.Parser as Parser (ReparsingChange (..), ReparsingStatus (..))
 
 import           Empire.Prelude
-import           Luna.Prelude (normalizeQQ)
 
 import           Test.Hspec                     (Spec, around, describe, expectationFailure, it, parallel, shouldBe, shouldMatchList,
                                                  shouldSatisfy, shouldStartWith, xit)
@@ -42,6 +41,22 @@ import           Test.Hspec                     (Spec, around, describe, expecta
 import           EmpireUtils
 
 import           Text.RawString.QQ              (r)
+
+mainCondensed = [r|def main:
+    pi «0»= 3.14
+    foo «1»= a: b: a + b
+    c «2»= 4
+    bar «3»= foo 8 c
+|]
+
+mainFile = [r|def main:
+    pi «0»= 3.14
+
+    foo «1»= a: b: a + b
+
+    c «2»= 4
+    bar «3»= foo 8 c
+|]
 
 
 spec :: Spec
@@ -81,18 +96,10 @@ spec = around withChannels $ do
                       (outPortRef (pi ^. Node.nodeId) [], inPortRef (anon ^. Node.nodeId) [Port.Arg 0])
                     ]
         it "does not duplicate nodes on edit" $ \env -> do
-            let code = [r|def main:
-    pi «0»= 3.14
-
-    foo «1»= a: b: a + b
-
-    c «2»= 4
-    bar «3»= foo 8 c
-|]
             res <- evalEmp env $ do
-                Library.createLibrary Nothing "TestPath" code
+                Library.createLibrary Nothing "TestPath" mainFile
                 let loc = GraphLocation "TestPath" $ Breadcrumb []
-                Graph.withGraph loc $ Graph.loadCode code
+                Graph.withGraph loc $ Graph.loadCode mainFile
                 Graph.substituteCode "TestPath" 43 43 "3" (Just 44)
                 Graph.getGraph loc
             withResult res $ \graph -> do
@@ -105,18 +112,10 @@ spec = around withChannels $ do
                       (outPortRef (cNode ^. Node.nodeId) [], inPortRef (bar ^. Node.nodeId) [Port.Arg 1])
                     ]
         it "double modification gives proper value" $ \env -> do
-            let code = [r|def main:
-    pi «0»= 3.14
-
-    foo «1»= a: b: a + b
-
-    c «2»= 4
-    bar «3»= foo 8 c
-|]
             res <- evalEmp env $ do
-                Library.createLibrary Nothing "TestPath" code
+                Library.createLibrary Nothing "TestPath" mainFile
                 let loc = GraphLocation "TestPath" $ Breadcrumb []
-                Graph.withGraph loc $ Graph.loadCode code
+                Graph.withGraph loc $ Graph.loadCode mainFile
                 Graph.substituteCode "TestPath" 65 65 "3" (Just 66)
                 Graph.substituteCode "TestPath" 65 65 "3" (Just 66)
                 Graph.getGraph loc
@@ -132,18 +131,10 @@ spec = around withChannels $ do
                       (outPortRef (cNode ^. Node.nodeId) [], inPortRef (bar ^. Node.nodeId) [Port.Arg 1])
                     ]
         it "modifying two expressions give proper values" $ \env -> do
-            let code = [r|def main:
-    pi «0»= 3.14
-
-    foo «1»= a: b: a + b
-
-    c «2»= 4
-    bar «3»= foo 8 c
-|]
             res <- evalEmp env $ do
-                Library.createLibrary Nothing "TestPath" code
+                Library.createLibrary Nothing "TestPath" mainFile
                 let loc = GraphLocation "TestPath" $ Breadcrumb []
-                Graph.withGraph loc $ Graph.loadCode code
+                Graph.withGraph loc $ Graph.loadCode mainFile
                 Graph.substituteCode "TestPath" 65 65 "3" (Just 66)
                 Graph.substituteCode "TestPath" 85 85 "1" (Just 86)
                 Graph.getGraph loc
@@ -160,16 +151,10 @@ spec = around withChannels $ do
                       (outPortRef (cNode ^. Node.nodeId) [], inPortRef (bar ^. Node.nodeId) [Port.Arg 1])
                     ]
         it "adding an expression works" $ \env -> do
-            let code = [r|def main:
-    pi «0»= 3.14
-    foo «1»= a: b: a + b
-    c «2»= 4
-    bar «3»= foo 8 c
-|]
             res <- evalEmp env $ do
-                Library.createLibrary Nothing "TestPath" code
+                Library.createLibrary Nothing "TestPath" mainCondensed
                 let loc = GraphLocation "TestPath" $ Breadcrumb []
-                Graph.withGraph loc $ Graph.loadCode code
+                Graph.withGraph loc $ Graph.loadCode mainCondensed
                 Graph.substituteCode "TestPath" 86 86 "    d «4»= 10\n" (Just 86)
                 Graph.getGraph loc
             withResult res $ \graph -> do
@@ -182,16 +167,10 @@ spec = around withChannels $ do
                       (outPortRef (c ^. Node.nodeId) [], inPortRef (bar ^. Node.nodeId) [Port.Arg 1])
                     ]
         it "unparseable expression does not sabotage whole file" $ \env -> do
-            let code = [r|def main:
-    pi «0»= 3.14
-    foo «1»= a: b: a + b
-    c «2»= 4
-    bar «3»= foo 8 c
-|]
             res <- evalEmp env $ do
-                Library.createLibrary Nothing "TestPath" code
+                Library.createLibrary Nothing "TestPath" mainCondensed
                 let loc = GraphLocation "TestPath" $ Breadcrumb []
-                Graph.withGraph loc $ Graph.loadCode code
+                Graph.withGraph loc $ Graph.loadCode mainCondensed
                 Graph.substituteCode "TestPath" 22 26 ")" (Just 26) `catch` (\(_e :: SomeASTException) -> return ())
                 Graph.substituteCode "TestPath" 22 23 "5" (Just 23)
                 Graph.getGraph loc
@@ -239,16 +218,10 @@ spec = around withChannels $ do
                     , (54, 70)
                     ]
         it "shows proper expressions ranges" $ \env -> do
-            let code = [r|def main:
-    pi «0»= 3.14
-    foo «1»= a: b: a + b
-    c «2»= 4
-    bar «3»= foo 8 c
-|]
             res <- evalEmp env $ do
-                Library.createLibrary Nothing "TestPath" code
+                Library.createLibrary Nothing "TestPath" mainCondensed
                 let loc = GraphLocation "TestPath" $ Breadcrumb []
-                Graph.withGraph loc $ Graph.loadCode code
+                Graph.withGraph loc $ Graph.loadCode mainCondensed
                 forM [0..3] $ Graph.markerCodeSpan loc
             withResult res $ \spans -> do
                 spans `shouldBe` [
@@ -258,16 +231,10 @@ spec = around withChannels $ do
                     , (69, 85)
                     ]
         it "disconnect updates code at proper range" $ \env -> do
-            let code = [r|def main:
-    pi «0»= 3.14
-    foo «1»= a: b: a + b
-    c «2»= 4
-    bar «3»= foo 8 c
-|]
             code <- evalEmp env $ do
-                Library.createLibrary Nothing "TestPath" code
+                Library.createLibrary Nothing "TestPath" mainCondensed
                 let loc = GraphLocation "TestPath" $ Breadcrumb []
-                Graph.withGraph loc $ Graph.loadCode code
+                Graph.withGraph loc $ Graph.loadCode mainCondensed
                 [Just c, Just bar] <- Graph.withGraph loc $ runASTOp $ mapM (Graph.getNodeIdForMarker) [2,3]
                 Graph.disconnect loc (inPortRef bar [Port.Arg 1])
                 Graph.getCode loc
@@ -278,16 +245,10 @@ spec = around withChannels $ do
     bar «3»= foo 8
 |]
         it "disconnect/connect updates code at proper range" $ \env -> do
-            let code = [r|def main:
-    pi «0»= 3.14
-    foo «1»= a: b: a + b
-    c «2»= 4
-    bar «3»= foo 8 c
-|]
             code <- evalEmp env $ do
-                Library.createLibrary Nothing "TestPath" code
+                Library.createLibrary Nothing "TestPath" mainCondensed
                 let loc = GraphLocation "TestPath" $ Breadcrumb []
-                Graph.withGraph loc $ Graph.loadCode code
+                Graph.withGraph loc $ Graph.loadCode mainCondensed
                 [Just pi, Just bar] <- Graph.withGraph loc $ runASTOp $ mapM (Graph.getNodeIdForMarker) [0,3]
                 Graph.disconnect loc (inPortRef bar [Port.Arg 1])
                 Graph.connect loc (outPortRef pi []) (InPortRef' $ inPortRef bar [Port.Arg 1])
@@ -315,31 +276,19 @@ spec = around withChannels $ do
             withResult res $ \code -> do
                 code `shouldBe` "def main:\n    node1 «0»= 5\n"
         it "assigns nodeids to marked expressions" $ \env -> do
-            let code = [r|def main:
-    pi «0»= 3.14
-    foo «1»= a: b: a + b
-    c «2»= 4
-    bar «3»= foo 8 c
-|]
             res <- evalEmp env $ do
-                Library.createLibrary Nothing "TestPath" code
+                Library.createLibrary Nothing "TestPath" mainCondensed
                 let loc = GraphLocation "TestPath" $ Breadcrumb []
-                Graph.withGraph loc $ Graph.loadCode code
+                Graph.withGraph loc $ Graph.loadCode mainCondensed
                 Graph.withGraph loc $ runASTOp $ forM [0..3] Graph.getNodeIdForMarker
             withResult res $ \ids -> do
                 ids `shouldSatisfy` (all isJust)
         it "adds one node to existing file via node editor" $ \env -> do
-            let code = [r|def main:
-    pi «0»= 3.14
-    foo «1»= a: b: a + b
-    c «2»= 4
-    bar «3»= foo 8 c
-|]
             u1 <- mkUUID
             res <- evalEmp env $ do
-                Library.createLibrary Nothing "TestPath" code
+                Library.createLibrary Nothing "TestPath" mainCondensed
                 let loc = GraphLocation "TestPath" $ Breadcrumb []
-                Graph.withGraph loc $ Graph.loadCode code
+                Graph.withGraph loc $ Graph.loadCode mainCondensed
                 nodeIds <- Graph.withGraph loc $ runASTOp $ forM [0..3] $
                     \i -> (i,) <$> Graph.getNodeIdForMarker i
                 spans <- forM [0..3] $ Graph.markerCodeSpan loc
@@ -365,17 +314,11 @@ spec = around withChannels $ do
                     , (31, 43)
                     ]
         it "updates code span after editing an expression" $ \env -> do
-            let code = [r|def main:
-    pi «0»= 3.14
-    foo «1»= a: b: a + b
-    c «2»= 4
-    bar «3»= foo 8 c
-|]
             u1 <- mkUUID
             res <- evalEmp env $ do
-                Library.createLibrary Nothing "TestPath" code
+                Library.createLibrary Nothing "TestPath" mainCondensed
                 let loc = GraphLocation "TestPath" $ Breadcrumb []
-                Graph.withGraph loc $ Graph.loadCode code
+                Graph.withGraph loc $ Graph.loadCode mainCondensed
                 Just c <- Graph.withGraph loc $ runASTOp $ Graph.getNodeIdForMarker 2
                 Graph.setNodeExpression loc c "123456789"
                 spans <- forM [0..3] $ Graph.markerCodeSpan loc
@@ -395,17 +338,11 @@ spec = around withChannels $ do
                     , (77, 93)
                     ]
         it "adds one node to existing file via text" $ \env -> do
-            let code = [r|def main:
-    pi «0»= 3.14
-    foo «1»= a: b: a + b
-    c «2»= 4
-    bar «3»= foo 8 c
-|]
             u1 <- mkUUID
             (code, spans) <- evalEmp env $ do
-                Library.createLibrary Nothing "TestPath" code
+                Library.createLibrary Nothing "TestPath" mainCondensed
                 let loc = GraphLocation "TestPath" $ Breadcrumb []
-                Graph.withGraph loc $ Graph.loadCode code
+                Graph.withGraph loc $ Graph.loadCode mainCondensed
                 Graph.substituteCode "TestPath" 65 65 "    d «4»= 6\n" Nothing
                 code  <- Graph.getCode loc
                 spans <- forM [0..4] $ Graph.markerCodeSpan loc
@@ -425,17 +362,11 @@ spec = around withChannels $ do
                 , (69, 77)
                 ]
         it "adds one node to existing file and updates it" $ \env -> do
-            let code = [r|def main:
-    pi «0»= 3.14
-    foo «1»= a: b: a + b
-    c «2»= 4
-    bar «3»= foo 8 c
-|]
             u1 <- mkUUID
             res <- evalEmp env $ do
-                Library.createLibrary Nothing "TestPath" code
+                Library.createLibrary Nothing "TestPath" mainCondensed
                 let loc = GraphLocation "TestPath" $ Breadcrumb []
-                Graph.withGraph loc $ Graph.loadCode code
+                Graph.withGraph loc $ Graph.loadCode mainCondensed
                 nodeIds <- Graph.withGraph loc $ runASTOp $ forM [0..3] $
                     \i -> (i,) <$> Graph.getNodeIdForMarker i
                 forM nodeIds $ \(i, Just nodeId) ->
@@ -466,12 +397,6 @@ spec = around withChannels $ do
                 nodes `shouldBe` []
                 connections `shouldSatisfy` (not . null)
         it "lex" $ \env -> do
-            let code = [r|def main:
-    pi «0»= 3.14
-    foo «1»= a: b: a + b
-    c «2»= 4
-    bar «3»= foo 8 c
-|]
-            let tokens = Lexer.lexer code
+            let tokens = Lexer.lexer mainCondensed
             tokens `shouldSatisfy` (not . null)
-            sum (map fst tokens) `shouldBe` Text.length code
+            sum (map fst tokens) `shouldBe` Text.length mainCondensed
