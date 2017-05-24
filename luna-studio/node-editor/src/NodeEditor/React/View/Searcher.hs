@@ -2,7 +2,6 @@
 module NodeEditor.React.View.Searcher where
 
 import           Common.Prelude
-import qualified Data.Text                       as Text
 import           JS.Searcher                     (searcherId)
 import qualified NodeEditor.Event.Keys           as Keys
 import qualified NodeEditor.Event.UI             as UI
@@ -15,6 +14,7 @@ import           NodeEditor.React.Store          (Ref, dispatch)
 import qualified NodeEditor.React.View.Style     as Style
 import           React.Flux
 import qualified React.Flux                      as React
+import           Text.ScopeSearcher.QueryResult  (QueryResult)
 import qualified Text.ScopeSearcher.QueryResult  as Result
 
 name :: JSString
@@ -85,12 +85,9 @@ searcher =  React.defineView name $ \(ref, s) -> do
 searcher_ :: Ref App -> Searcher -> ReactElementM ViewEventHandler ()
 searcher_ ref model = React.viewWithSKey searcher name (ref, model) mempty
 
-results_ :: Ref App -> Int -> [Result.QueryResult r] -> ReactElementM ViewEventHandler ()
+results_ :: Ref App -> Int -> [QueryResult r] -> ReactElementM ViewEventHandler ()
 results_ ref selected results = forKeyed_ results $ \(idx, result) ->
     let resultClasses i   = Style.prefixFromList ( "searcher__results__item" : (if i + 1 == selected then [ "searcher__results__item--selected" ] else []))
-        displayedName res = if Text.null $ result ^. Result.prefix
-            then result ^. Result.name
-            else result ^. Result.prefix <> " . " <> result ^. Result.name
     in div_
         [ "key"        $= jsShow idx
         , "className"  $= resultClasses idx
@@ -99,16 +96,20 @@ results_ ref selected results = forKeyed_ results $ \(idx, result) ->
         div_
             ["key" $= "name"
             ,"className" $= Style.prefix "searcher__results__item__name"
-            ] $ highlighted_ (convert $ displayedName result) $ result ^. Result.highlights
+            ] $ highlighted_ result
 
-highlighted_ :: String -> [Result.Highlight] -> ReactElementM ViewEventHandler ()
-highlighted_ text = highlighted_' 0 where
+highlighted_ :: QueryResult r -> ReactElementM ViewEventHandler ()
+highlighted_ result = prefixElem >> highlighted_' 0 highlights where
+    prefix     = convert $ result ^. Result.prefix
+    prefixElem = span_ $ elemString $ if prefix == "" then prefix else prefix <> " . "
+    highlights = result ^. Result.highlights
+    name'      = convert $ result ^. Result.name
     highlighted_' :: Int -> [Result.Highlight] -> ReactElementM ViewEventHandler ()
-    highlighted_' omit [] = span_ $ elemString $ snd $ splitAt omit text
+    highlighted_' omit [] = span_ $ elemString $ snd $ splitAt omit name'
     highlighted_' omit (highlight:rest) = do
         let start = highlight ^. Result.start
             len   = highlight ^. Result.length
-            (r1         , r2    ) = splitAt start text
+            (r1         , r2    ) = splitAt start name'
             (_          , normal) = splitAt omit r1
             (highlighted, _     ) = splitAt len r2
         span_ $ elemString normal

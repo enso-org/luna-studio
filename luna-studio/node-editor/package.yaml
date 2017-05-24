@@ -46,6 +46,7 @@ dependencies:
   - data-default
   - datetime
   - deepseq
+  - extra
   - ghcjs-base
   - ghcjs-dom
   - ghcjs-prim
