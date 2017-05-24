@@ -126,8 +126,8 @@ resultsLength = to getLength where
       PortName _   results -> length results
 
 updateNodeResult :: [QueryResult ExpressionNode] -> Mode -> Mode
-updateNodeResult r (Node nl pos _) = Node nl pos r
-updateNodeResult _ m               = m
+updateNodeResult r (Node nl nn _) = Node nl nn r
+updateNodeResult _ m              = m
 
 updateCommandsResult :: [QueryResult ()] -> Mode -> Mode
 updateCommandsResult r (Command _) = Command r

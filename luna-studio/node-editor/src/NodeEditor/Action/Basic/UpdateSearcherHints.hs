@@ -43,5 +43,5 @@ localUpdateSearcherHints = do
 filterNodesData :: Mode -> Items ExpressionNode -> Items ExpressionNode
 filterNodesData (Searcher.Node _ (Just (Searcher.NewNode _ (Just (_, typeRep)))) _) =
     Map.filterWithKey filterFunction where
-        filterFunction k a = isElement a || k  == (convert $ toString typeRep)
+        filterFunction k a = isElement a || k == (convert $ toString typeRep)
 filterNodesData _ = Map.filter isElement
