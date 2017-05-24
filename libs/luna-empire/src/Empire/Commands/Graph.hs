@@ -747,12 +747,12 @@ updateNodeCode :: GraphLocation -> NodeId -> Empire ()
 updateNodeCode loc@(GraphLocation file _) nodeId = do
     sidebar <- withGraph loc $ runASTOp $ isSidebar nodeId
     if sidebar then return () else do
-        (line, expression) <- withGraph loc $ runASTOp $ do
+        (range, expression) <- withGraph loc $ runASTOp $ do
             ref        <- ASTRead.getASTPointer nodeId
             expression <- printMarkedExpression ref
-            line       <- nodeLine ref
-            return (line, expression)
-        Library.withLibrary file $ forM_ line $ \l -> Library.substituteLine l expression
+            range      <- readRange ref
+            return (range, expression)
+        void $ Library.withLibrary file $ Library.applyDiff (fst range) (snd range + 1) $ Text.concat [expression, "\n"]
 
 readRange' :: ASTOp m => NodeRef -> m (LeftSpacedSpan Delta)
 readRange' ref = IR.matchExpr ref $ \case

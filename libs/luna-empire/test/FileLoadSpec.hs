@@ -15,6 +15,7 @@ import           LunaStudio.Data.Breadcrumb     (Breadcrumb (..))
 import qualified LunaStudio.Data.Graph          as Graph
 import           LunaStudio.Data.GraphLocation  (GraphLocation (..))
 import qualified LunaStudio.Data.Node           as Node
+import           LunaStudio.Data.NodeLoc        (NodeLoc (..))
 import           LunaStudio.Data.NodeMeta       (NodeMeta (..))
 import qualified LunaStudio.Data.Port           as Port
 import           LunaStudio.Data.PortRef        (AnyPortRef (..), InPortRef (..), OutPortRef (..))
@@ -33,6 +34,7 @@ import qualified Empire.Data.Graph              as Graph (breadcrumbHierarchy)
 import qualified Luna.Syntax.Text.Parser.Parser as Parser (ReparsingChange (..), ReparsingStatus (..))
 
 import           Empire.Prelude
+import           Luna.Prelude (normalizeQQ)
 
 import           Test.Hspec                     (Spec, around, describe, expectationFailure, it, parallel, shouldBe, shouldMatchList,
                                                  shouldSatisfy, shouldStartWith, xit)
@@ -255,6 +257,47 @@ spec = around withChannels $ do
                     , (56, 64)
                     , (69, 85)
                     ]
+        it "disconnect updates code at proper range" $ \env -> do
+            let code = [r|def main:
+    pi «0»= 3.14
+    foo «1»= a: b: a + b
+    c «2»= 4
+    bar «3»= foo 8 c
+|]
+            code <- evalEmp env $ do
+                Library.createLibrary Nothing "TestPath" code
+                let loc = GraphLocation "TestPath" $ Breadcrumb []
+                Graph.withGraph loc $ Graph.loadCode code
+                [Just c, Just bar] <- Graph.withGraph loc $ runASTOp $ mapM (Graph.getNodeIdForMarker) [2,3]
+                Graph.disconnect loc (inPortRef bar [Port.Arg 1])
+                Graph.getCode loc
+            code `shouldBe` [r|def main:
+    pi «0»= 3.14
+    foo «1»= a: b: a + b
+    c «2»= 4
+    bar «3»= foo 8
+|]
+        it "disconnect/connect updates code at proper range" $ \env -> do
+            let code = [r|def main:
+    pi «0»= 3.14
+    foo «1»= a: b: a + b
+    c «2»= 4
+    bar «3»= foo 8 c
+|]
+            code <- evalEmp env $ do
+                Library.createLibrary Nothing "TestPath" code
+                let loc = GraphLocation "TestPath" $ Breadcrumb []
+                Graph.withGraph loc $ Graph.loadCode code
+                [Just pi, Just bar] <- Graph.withGraph loc $ runASTOp $ mapM (Graph.getNodeIdForMarker) [0,3]
+                Graph.disconnect loc (inPortRef bar [Port.Arg 1])
+                Graph.connect loc (outPortRef pi []) (InPortRef' $ inPortRef bar [Port.Arg 1])
+                Graph.getCode loc
+            code `shouldBe` [r|def main:
+    pi «0»= 3.14
+    foo «1»= a: b: a + b
+    c «2»= 4
+    bar «3»= foo 8 pi
+|]
         it "adds one node to code" $ \env -> do
             u1 <- mkUUID
             res <- evalEmp env $ do
