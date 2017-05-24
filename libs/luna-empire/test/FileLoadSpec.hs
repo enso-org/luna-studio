@@ -364,6 +364,36 @@ spec = around withChannels $ do
                     , (86, 102)
                     , (31, 43)
                     ]
+        it "updates code span after editing an expression" $ \env -> do
+            let code = [r|def main:
+    pi «0»= 3.14
+    foo «1»= a: b: a + b
+    c «2»= 4
+    bar «3»= foo 8 c
+|]
+            u1 <- mkUUID
+            res <- evalEmp env $ do
+                Library.createLibrary Nothing "TestPath" code
+                let loc = GraphLocation "TestPath" $ Breadcrumb []
+                Graph.withGraph loc $ Graph.loadCode code
+                Just c <- Graph.withGraph loc $ runASTOp $ Graph.getNodeIdForMarker 2
+                Graph.setNodeExpression loc c "123456789"
+                spans <- forM [0..3] $ Graph.markerCodeSpan loc
+                code  <- Graph.getCode loc
+                return (spans, code)
+            withResult res $ \(spans, code) -> do
+                code `shouldBe` [r|def main:
+    pi «0»= 3.14
+    foo «1»= a: b: a + b
+    c «2»= 123456789
+    bar «3»= foo 8 c
+|]
+                spans `shouldBe` [
+                      (14, 26)
+                    , (31, 51)
+                    , (56, 72)
+                    , (77, 93)
+                    ]
         it "adds one node to existing file via text" $ \env -> do
             let code = [r|def main:
     pi «0»= 3.14

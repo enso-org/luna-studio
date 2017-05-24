@@ -466,6 +466,10 @@ setNodeExpression loc@(GraphLocation file _) nodeId expression = do
             forM_ exprItem $ (Graph.breadcrumbHierarchy . BH.children . ix nodeId .=) . BH.ExprChild
             node <- GraphBuilder.buildNode nodeId
             code <- printMarkedExpression expr
+            LeftSpacedSpan off _ <- readCodeSpan expr
+            IR.putLayer @CodeSpan expr (Just $ LeftSpacedSpan off (fromIntegral $ Text.length code))
+            oldSeq      <- preuse $ Graph.breadcrumbHierarchy . BH.body
+            forM_ oldSeq updateCodeSpan
             return (node, code)
         return (node, oldRange, code)
     Library.withLibrary file $ Library.applyDiff (fst oldRange) (snd oldRange) code
