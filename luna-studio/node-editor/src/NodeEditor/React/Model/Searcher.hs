@@ -12,7 +12,6 @@ import           LunaStudio.Data.NodeLoc                    (NodeLoc)
 import qualified LunaStudio.Data.NodeLoc                    as NodeLoc
 import           LunaStudio.Data.PortRef                    (OutPortRef, srcNodeLoc)
 import           LunaStudio.Data.Position                   (Position)
-import           LunaStudio.Data.TypeRep                    (TypeRep)
 import qualified NodeEditor.Event.Shortcut                  as Shortcut
 import qualified NodeEditor.React.Model.Node.ExpressionNode as Model
 import           Text.ScopeSearcher.Item                    (Item (Element), Items)
@@ -36,10 +35,12 @@ data Input = Raw     Text
            | Divided DividedInput
            deriving (Eq, Generic, Show)
 
-data Mode = Command                                          [QueryResult ()]
-          | Node     NodeLoc (Maybe TypeRep) (Maybe NewNode) [QueryResult ExpressionNode]
-          | NodeName NodeLoc                                 [QueryResult ExpressionNode]
-          | PortName OutPortRef                              [QueryResult ExpressionNode]
+type ClassName = Text
+
+data Mode = Command                                            [QueryResult ()]
+          | Node     NodeLoc (Maybe ClassName) (Maybe NewNode) [QueryResult ExpressionNode]
+          | NodeName NodeLoc                                   [QueryResult ExpressionNode]
+          | PortName OutPortRef                                [QueryResult ExpressionNode]
           deriving (Eq, Generic, Show)
 
 data Searcher = Searcher

@@ -9,6 +9,7 @@ import qualified JS.Searcher                                as Searcher
 import           LunaStudio.Data.NodeLoc                    (NodeLoc, NodePath)
 import qualified LunaStudio.Data.NodeLoc                    as NodeLoc
 import           LunaStudio.Data.PortRef                    (OutPortRef (OutPortRef))
+import           LunaStudio.Data.TypeRep                    (TypeRep (TCons))
 import           NodeEditor.Action.Basic                    (createNode, localUpdateSearcherHints, renameNode, renamePort,
                                                              setNodeExpression)
 import           NodeEditor.Action.Command                  (Command)
@@ -42,9 +43,12 @@ instance Action (Command State) Searcher where
 
 editExpression :: NodeLoc -> Command State ()
 editExpression nodeLoc = do
+    let getClassName n = case n ^? ExpressionNode.inPortAt [Port.Self] . Port.valueType of
+            Just (TCons cn _) -> Just $ convert cn
+            _                 -> Nothing
     mayN <- getExpressionNode nodeLoc
     withJust mayN $ \n -> do
-        openWith (n ^. ExpressionNode.expression) $ Searcher.Node nodeLoc (n ^? ExpressionNode.inPortAt [Port.Self] . Port.valueType) def def
+        openWith (n ^. ExpressionNode.expression) $ Searcher.Node nodeLoc (getClassName n) def def
 
 editName :: NodeLoc -> Command State ()
 editName nodeLoc = do
@@ -60,18 +64,20 @@ editPortName portRef = do
 
 open :: Command State ()
 open = do
-    (tpe, nn) <- getSelectedNodes >>= \case
+    (className, nn) <- getSelectedNodes >>= \case
         [n] -> do
             pos <- findSuccessorPosition n
             let mayP        = listToMaybe $ ExpressionNode.outPortsList n
-                tpe         = view Port.valueType <$> mayP
+                className   = case view Port.valueType <$> mayP of
+                    Just (TCons cn _) -> Just $ convert cn
+                    _                 -> Nothing
                 predPortRef = OutPortRef (n ^. ExpressionNode.nodeLoc) . view Port.portId <$> mayP
-            return $ (tpe, Searcher.NewNode pos predPortRef)
+            return $ (className, Searcher.NewNode pos predPortRef)
         _   -> do
             pos <- translateToWorkspace =<< use (Global.ui . UI.mousePos)
             return $ (def, Searcher.NewNode pos def)
     nl <- convert . ((def :: NodePath), ) <$> getUUID
-    openWith "" $ Searcher.Node nl tpe (Just nn) def
+    openWith "" $ Searcher.Node nl className (Just nn) def
 
 openWith :: Text -> Searcher.Mode -> Command State ()
 openWith input mode = do

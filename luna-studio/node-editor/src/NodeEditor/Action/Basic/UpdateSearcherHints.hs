@@ -8,11 +8,10 @@ import qualified Data.Map.Lazy                      as Map
 import           Data.Text                          (Text)
 import qualified Data.Text                          as Text
 import           LunaStudio.Data.Node               (ExpressionNode)
-import           LunaStudio.Data.TypeRep            (TypeRep)
 import           NodeEditor.Action.Command          (Command)
 import           NodeEditor.Action.State.NodeEditor (getNodeSearcherData, modifySearcher)
 import           NodeEditor.Batch.Workspace         (nodeSearcherData)
-import           NodeEditor.React.Model.Searcher    (allCommands, updateCommandsResult, updateNodeResult)
+import           NodeEditor.React.Model.Searcher    (ClassName, allCommands, updateCommandsResult, updateNodeResult)
 import qualified NodeEditor.React.Model.Searcher    as Searcher
 import           NodeEditor.State.Global            (State, workspace)
 import           Text.ScopeSearcher.Item            (Items, isElement, isGroup)
@@ -33,9 +32,9 @@ localUpdateSearcherHints = do
         mayQuery <- preuse $ Searcher.input . Searcher._Divided
         m        <- use Searcher.mode
         let (mode, hintsLen) = case m of
-                (Searcher.Node _ tpe _ _) -> do
-                    let tpe' q = if Text.null . Text.dropWhile (== ' ') $ q ^. Searcher.prefix then tpe else def
-                        items' = mergeByName $ maybe [] (\q -> getHintsForNode (q ^. Searcher.query) (tpe' q) nsData) mayQuery
+                (Searcher.Node _ cn _ _) -> do
+                    let cn' q = if Text.null . Text.dropWhile (== ' ') $ q ^. Searcher.prefix then cn else def
+                        items' = mergeByName $ maybe [] (\q -> getHintsForNode (q ^. Searcher.query) (cn' q) nsData) mayQuery
                     (updateNodeResult items' m, length items')
                 Searcher.Command {} -> do
                     let items' = maybe [] (searchInScope allCommands . view Searcher.query) mayQuery
@@ -45,12 +44,12 @@ localUpdateSearcherHints = do
         Searcher.rollbackReady .= False
         Searcher.mode          .= mode
 
-getHintsForNode :: Text -> Maybe TypeRep -> Items ExpressionNode -> [QueryResult ExpressionNode]
-getHintsForNode query Nothing    nsData = searchInScope (globalFunctions nsData) query
-                                       <> searchInScope (allMethods nsData) query
-getHintsForNode query (Just tpe) nsData = searchInScope (methodsForClass (convert $ toString tpe) nsData) query
-                                       <> searchInScope (globalFunctions nsData) query
-                                       <> searchInScope (allMethodsWithoutClass (convert $ toString tpe) nsData) query
+getHintsForNode :: Text -> Maybe ClassName -> Items ExpressionNode -> [QueryResult ExpressionNode]
+getHintsForNode query Nothing   nsData = searchInScope (globalFunctions nsData) query
+                                      <> searchInScope (allMethods nsData) query
+getHintsForNode query (Just cn) nsData = searchInScope (methodsForClass cn nsData) query
+                                      <> searchInScope (globalFunctions nsData) query
+                                      <> searchInScope (allMethodsWithoutClass cn nsData) query
 
 globalFunctions :: Items ExpressionNode -> Items ExpressionNode
 globalFunctions = Map.filter isElement
