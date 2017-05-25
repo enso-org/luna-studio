@@ -69,8 +69,9 @@ toText :: Input -> Text
 toText (Raw t)                        = t
 toText (Divided (DividedInput p q s)) = p <> q <> s
 
-fromStream :: SymbolStream Text -> Int -> Input
-fromStream inputStream pos = getInput (findQueryBegin inputStream pos) pos where
+--TODO[LJK]: Once WD fixes convert use convert on Stream instead of passing input
+fromStream :: Text -> SymbolStream Text -> Int -> Input
+fromStream input' inputStream pos = getInput (findQueryBegin inputStream pos) pos where
     isQuery :: Symbol Text -> Bool
     isQuery (Var  _) = True
     isQuery (Cons _) = True
@@ -85,9 +86,9 @@ fromStream inputStream pos = getInput (findQueryBegin inputStream pos) pos where
             then Just 0
             else Nothing
     getInput :: Maybe Int -> Int -> Input
-    getInput Nothing    _   = Raw $ convert inputStream
+    getInput Nothing    _   = Raw input'
     getInput (Just beg) end = do
-        let (pref', suff) = Text.splitAt end (convert inputStream)
+        let (pref', suff) = Text.splitAt end input'
             (pref , q)    = Text.splitAt beg pref'
         Divided $ DividedInput pref q suff
 

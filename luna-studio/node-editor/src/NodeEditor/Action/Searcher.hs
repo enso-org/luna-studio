@@ -97,11 +97,11 @@ updateInput input selectionStart selectionEnd action = do
     let inputStream = runLexer input
         newInput    = if Text.null input then Searcher.Divided $ Searcher.DividedInput def def def
                       else if selectionStart /= selectionEnd then Searcher.Raw input
-                      else Searcher.fromStream inputStream selectionStart
+                      else Searcher.fromStream input inputStream selectionStart
     modifySearcher $ Searcher.input .= newInput
     m <- fmap2 (view Searcher.mode) $ getSearcher
-    if      isNothing $ newInput ^? Searcher._Divided    then clearHints action
-    else if isJust $ maybe def (^? Searcher._Node) m then do
+    if      isNothing $ newInput ^? Searcher._Divided then clearHints action
+    else if isJust $ maybe def (^? Searcher._Node) m  then do
         case Searcher.findLambdaArgsAndEndOfLambdaArgs inputStream of
             Nothing             -> do
                 modifySearcher $ Searcher.mode %= Searcher.updateNodeArgs []
