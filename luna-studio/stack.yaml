@@ -27,7 +27,7 @@ packages:
 - extra-dep: true
   location: {commit: 14540e932e14953b0eb5ebdea85045e8d261f023, git: 'https://github.com/luna/container.git'}
 - extra-dep: true
-  location: {commit: 93447d94a88d812b2df840eced3a7d3ec4d1e82d, git: 'https://github.com/luna/convert.git'}
+  location: {commit: 44cba787646109313c579b80e5ebe58a75e3ba8e, git: 'https://github.com/luna/convert.git'}
 - extra-dep: true
   location: {commit: fb0e46aacaa7060046f88d4c5a5f708fd443c8ae, git: 'https://github.com/luna/data-construction.git'}
 - extra-dep: true
@@ -49,10 +49,10 @@ packages:
 - extra-dep: true
   location: {commit: 4af8e1021a8127b05d98920e387150fa4f0aa2e4, git: 'https://github.com/luna/lens-utils.git'}
 - extra-dep: true
-  location: {commit: ab3635b2804dfa550094100436a481be001a8dac, git: 'https://github.com/luna/luna.git'}
+  location: {commit: c6691458d99d40b8c39aa6ba3f7b0e665ac95d0b, git: 'https://github.com/luna/luna.git'}
   subdirs: [syntax/text/lexer]
 - extra-dep: true
-  location: {commit: 7f5f64d1b1f81827431c9462d35665adbb609ba8, git: 'https://github.com/luna/monoid'}
+  location: {commit: ffd97a6ec0eab065cebf06663a37362c1e13a05b, git: 'https://github.com/luna/monoid'}
 - extra-dep: true
   location: {commit: 642b290e21d94b01273bfae05963b203f75c8191, git: 'https://github.com/luna/prologue.git'}
 - extra-dep: true
