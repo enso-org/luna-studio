@@ -41,6 +41,7 @@ import qualified NodeEditor.React.Model.NodeEditor           as NE
 import           NodeEditor.React.Model.Port                 (state)
 import qualified NodeEditor.React.Model.Port                 as Port
 import           NodeEditor.React.Model.Searcher             (Searcher)
+import qualified NodeEditor.React.Model.Searcher             as Searcher
 import           NodeEditor.State.Global                     (State, workspace)
 import           Text.ScopeSearcher.Item                     (Items, isElement)
 
@@ -252,5 +253,10 @@ getPortDefault :: InPortRef -> Command State (Maybe PortDefault)
 getPortDefault portRef = maybe Nothing (\mayPort -> mayPort ^? state . _WithDefault) <$> (NE.getPort portRef <$> getNodeEditor)
 
 getLocalFunctions :: Command State (Items Empire.ExpressionNode)
-getLocalFunctions = Map.fromList . map NS.entry <$> functionsNames where
-    functionsNames = Set.toList . Set.fromList . map (view Port.name) . concatMap outPortsList <$> getAllNodes
+getLocalFunctions = do
+    functionsNames  <- Set.toList . Set.fromList . map (view Port.name) . concatMap outPortsList <$> getAllNodes
+    searcherMode    <- fmap2 (view Searcher.mode) $ getSearcher
+    let lambdaArgsNames = case searcherMode of
+            Just (Searcher.Node _ (Searcher.NodeModeInfo _ _ argNames) _) -> argNames
+            _                                                             -> []
+    return . Map.fromList . map NS.entry $ (functionsNames <> lambdaArgsNames)

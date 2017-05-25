@@ -6,12 +6,13 @@ import           Common.Prelude
 import qualified Data.Text                                  as Text
 import qualified JS.GoogleAnalytics                         as GA
 import qualified JS.Searcher                                as Searcher
+import           Luna.Syntax.Text.Lexer                     (runLexer)
 import           LunaStudio.Data.NodeLoc                    (NodeLoc, NodePath)
 import qualified LunaStudio.Data.NodeLoc                    as NodeLoc
 import           LunaStudio.Data.PortRef                    (OutPortRef (OutPortRef))
 import           LunaStudio.Data.TypeRep                    (TypeRep (TCons))
-import           NodeEditor.Action.Basic                    (createNode, localUpdateSearcherHints, renameNode, renamePort,
-                                                             setNodeExpression)
+import           NodeEditor.Action.Basic                    (createNode, localClearSearcherHints, localUpdateSearcherHints, renameNode,
+                                                             renamePort, setNodeExpression)
 import           NodeEditor.Action.Command                  (Command)
 import           NodeEditor.Action.State.Action             (beginActionWithKey, continueActionWithKey, removeActionFromState,
                                                              updateActionWithKey)
@@ -93,24 +94,40 @@ openWith input mode = do
 
 updateInput :: Text -> Int -> Int -> Searcher -> Command State ()
 updateInput input selectionStart selectionEnd action = do
-    modifySearcher $ if selectionStart == selectionEnd
-        then Searcher.input .= Searcher.fromText input selectionStart
-        else Searcher.input .= Searcher.Raw input
-    updateHints action
+    let inputStream = runLexer input
+        newInput    = if Text.null input then Searcher.Divided $ Searcher.DividedInput def def def
+                      else if selectionStart /= selectionEnd then Searcher.Raw input
+                      else Searcher.fromStream inputStream selectionStart
+    modifySearcher $ Searcher.input .= newInput
+    m <- fmap2 (view Searcher.mode) $ getSearcher
+    if      isNothing $ newInput ^? Searcher._Divided    then clearHints action
+    else if isJust $ maybe def (^? Searcher._Node) m then do
+        case Searcher.findLambdaArgsAndEndOfLambdaArgs inputStream of
+            Nothing             -> do
+                modifySearcher $ Searcher.mode %= Searcher.updateNodeArgs []
+                updateHints action
+            Just (args, endPos) -> do
+                modifySearcher $ Searcher.mode %= Searcher.updateNodeArgs args
+                if selectionStart < endPos then clearHints action else do updateHints action
+    else updateHints action
 
 updateHints :: Searcher -> Command State ()
 updateHints _ = localUpdateSearcherHints
 
+clearHints :: Searcher -> Command State ()
+clearHints _ = localClearSearcherHints
+
 updateInputWithSelectedHint :: Searcher -> Command State Bool
-updateInputWithSelectedHint _ = getSearcher >>= maybe (return False) updateWithSearcher where
+updateInputWithSelectedHint action = getSearcher >>= maybe (return False) updateWithSearcher where
     updateWithSearcher s = if s ^. Searcher.selected == 0 then return True else do
         let mayExpr         = s ^. Searcher.selectedExpression
             mayDividedInput = s ^? Searcher.input . Searcher._Divided
-        withJust ((,) <$> mayExpr <*> mayDividedInput) $ \(expr, divInput) -> modifySearcher $ do
-            let expr' = if divInput ^? Searcher.suffix . ix 0 == Just ' ' then expr else expr <> " "
-            Searcher.input    .= Searcher.Divided (divInput & Searcher.query .~ expr')
-            Searcher.selected .= def
-        localUpdateSearcherHints
+        withJust ((,) <$> mayExpr <*> mayDividedInput) $ \(expr, divInput) -> do
+            modifySearcher $ do
+                let expr' = if divInput ^? Searcher.suffix . ix 0 == Just ' ' then expr else expr <> " "
+                Searcher.input    .= Searcher.Raw (Searcher.toText . Searcher.Divided $ divInput & Searcher.query .~ expr')
+                Searcher.selected .= def
+            clearHints action
         return $ isJust mayExpr && isJust mayDividedInput
 
 accept :: (Event -> IO ()) -> Searcher -> Command State ()

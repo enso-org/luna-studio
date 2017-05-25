@@ -46,6 +46,16 @@ localUpdateSearcherHints = do
         Searcher.rollbackReady .= False
         Searcher.mode          .= mode
 
+localClearSearcherHints :: Command State ()
+localClearSearcherHints = modifySearcher $ do
+    Searcher.selected      .= def
+    Searcher.rollbackReady .= False
+    Searcher.mode          %= \case
+        Searcher.Command         _ -> Searcher.Command def
+        Searcher.Node     nl nmi _ -> Searcher.Node nl nmi def
+        Searcher.NodeName nl     _ -> Searcher.NodeName nl def
+        Searcher.PortName pr     _ -> Searcher.PortName pr def
+
 getHintsForNode :: Text -> Maybe Text -> Items ExpressionNode -> Items ExpressionNode -> IsFirstQuery -> [QueryResult ExpressionNode]
 getHintsForNode query _         nsData localFunctions False = (setPrefix (convert "Local Function")  $ searchInScope localFunctions query)
                                                            <> (setPrefix (convert "Global Function") $ searchInScope (globalFunctions nsData) query)

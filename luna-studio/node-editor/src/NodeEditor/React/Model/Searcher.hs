@@ -4,7 +4,8 @@ import           Common.Prelude
 import qualified Data.Map.Lazy                              as Map
 import qualified Data.Text                                  as Text
 import qualified Data.Text.Span                             as Span
-import           Luna.Syntax.Text.Lexer                     (Stream (Stream), Symbol (Cons, Var), SymbolStream, runLexer)
+import           Luna.Syntax.Text.Lexer                     (Bound (Begin, End), Stream (Stream), Symbol (Block, BlockStart, Cons, Var),
+                                                             SymbolStream)
 import qualified Luna.Syntax.Text.Lexer.Class               as Lexer
 import           LunaStudio.Data.Node                       (ExpressionNode)
 import qualified LunaStudio.Data.Node                       as Node
@@ -57,6 +58,7 @@ data Searcher = Searcher
 makeLenses ''Searcher
 makeLenses ''DividedInput
 makePrisms ''Input
+makePrisms ''Mode
 
 instance Default Input where def = Raw def
 
@@ -67,33 +69,45 @@ toText :: Input -> Text
 toText (Raw t)                        = t
 toText (Divided (DividedInput p q s)) = p <> q <> s
 
-fromText :: Text -> Int -> Input
-fromText input' pos = if Text.null input'
-    then Divided $ DividedInput def def def
-    else getInput (findQueryBegin pos $ runLexer input') pos where
-        isQuery :: Symbol Text -> Bool
-        isQuery (Var  _) = True
-        isQuery (Cons _) = True
-        isQuery _        = False
-        findQueryBegin :: Int -> SymbolStream Text -> Maybe Int
-        findQueryBegin _ (Stream [])    = Nothing
-        findQueryBegin p (Stream (h:t)) = do
-            let tokenLength = fromIntegral . unwrap $ h ^. Lexer.span . Span.length + h ^. Lexer.span . Span.offset
-            if p > tokenLength
-                then (tokenLength +) <$> findQueryBegin (p - tokenLength) (Stream t)
-            else if p <= (fromIntegral . unwrap $ h ^. Lexer.span . Span.length) && isQuery (h ^. Lexer.token_elem)
-                then Just 0
-                else Nothing
-        getInput :: Maybe Int -> Int -> Input
-        getInput Nothing    _   = Raw input'
-        getInput (Just beg) end = do
-            let (pref', suff) = Text.splitAt end input'
-                (pref , q)    = Text.splitAt beg pref'
-            Divided $ DividedInput pref q suff
+fromStream :: SymbolStream Text -> Int -> Input
+fromStream inputStream pos = getInput (findQueryBegin inputStream pos) pos where
+    isQuery :: Symbol Text -> Bool
+    isQuery (Var  _) = True
+    isQuery (Cons _) = True
+    isQuery _        = False
+    findQueryBegin :: SymbolStream Text -> Int -> Maybe Int
+    findQueryBegin (Stream [])    _ = Nothing
+    findQueryBegin (Stream (h:t)) p = do
+        let tokenLength = fromIntegral . unwrap $ h ^. Lexer.span . Span.length + h ^. Lexer.span . Span.offset
+        if p > tokenLength
+            then (tokenLength +) <$> findQueryBegin (Stream t) (p - tokenLength)
+        else if p <= (fromIntegral . unwrap $ h ^. Lexer.span . Span.length) && isQuery (h ^. Lexer.token_elem)
+            then Just 0
+            else Nothing
+    getInput :: Maybe Int -> Int -> Input
+    getInput Nothing    _   = Raw $ convert inputStream
+    getInput (Just beg) end = do
+        let (pref', suff) = Text.splitAt end (convert inputStream)
+            (pref , q)    = Text.splitAt beg pref'
+        Divided $ DividedInput pref q suff
 
+findLambdaArgsAndEndOfLambdaArgs :: SymbolStream Text -> Maybe ([Text], Int)
+findLambdaArgsAndEndOfLambdaArgs (Stream tokens) = findRecursive tokens (0 :: Int) 0 def where
+    exprLength   t = fromIntegral . unwrap $ t ^. Lexer.span . Span.length
+    offsetLength t = fromIntegral . unwrap $ t ^. Lexer.span . Span.offset
+    tokenLength  t = exprLength t + offsetLength t
+    findRecursive []    _                     _      _   = def
+    findRecursive (h:t) openParanthesisNumber endPos res = case h ^. Lexer.token_elem of
+        BlockStart    -> if openParanthesisNumber == 0
+                    then Just (res, endPos + exprLength h)
+                    else findRecursive t openParanthesisNumber        (endPos + tokenLength h) res
+        Var        {} -> findRecursive t openParanthesisNumber        (endPos + tokenLength h) $ h ^. Lexer.src : res
+        Block Begin   -> findRecursive t (succ openParanthesisNumber) (endPos + tokenLength h) res
+        Block End     -> findRecursive t (pred openParanthesisNumber) (endPos + tokenLength h) res
+        _             -> findRecursive t openParanthesisNumber        (endPos + tokenLength h) res
 
 mkDef :: Mode -> Searcher
-mkDef mode' = Searcher def mode' (fromText def 0) False False
+mkDef mode' = Searcher def mode' (Divided $ DividedInput def def def) False False
 
 defCommand :: Searcher
 defCommand = mkDef $ Command def
@@ -132,6 +146,10 @@ resultsLength = to getLength where
 updateNodeResult :: [QueryResult ExpressionNode] -> Mode -> Mode
 updateNodeResult r (Node nl nmi _) = Node nl nmi r
 updateNodeResult _ m               = m
+
+updateNodeArgs :: [Text] -> Mode -> Mode
+updateNodeArgs args (Node nl (NodeModeInfo cn nnd _) r) = (Node nl (NodeModeInfo cn nnd args) r)
+updateNodeArgs _ m                                      = m
 
 updateCommandsResult :: [QueryResult ()] -> Mode -> Mode
 updateCommandsResult r (Command _) = Command r

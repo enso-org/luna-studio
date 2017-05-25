@@ -19,6 +19,7 @@ module NodeEditor.Action.Basic
     , localAddExpressionNode
     , localAddPort
     , localAddSubgraph
+    , localClearSearcherHints
     , localMerge
     , localMoveNode
     , localMoveNodes
@@ -143,4 +144,4 @@ import           NodeEditor.Action.Basic.UpdateNode          (localUpdateExpress
                                                               localUpdateOrAddInputNode, localUpdateOrAddOutputNode, localUpdateOutputNode,
                                                               updateAllPortsSelfVisibility, updatePortSelfVisibility,
                                                               updatePortSelfVisibilityForIds)
-import           NodeEditor.Action.Basic.UpdateSearcherHints (localSetSearcherHints, localUpdateSearcherHints)
+import           NodeEditor.Action.Basic.UpdateSearcherHints (localClearSearcherHints, localSetSearcherHints, localUpdateSearcherHints)
