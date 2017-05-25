@@ -47,15 +47,15 @@ localUpdateSearcherHints = do
         Searcher.mode          .= mode
 
 getHintsForNode :: Text -> Maybe ClassName -> Items ExpressionNode -> Items ExpressionNode -> IsFirstQuery -> [QueryResult ExpressionNode]
-getHintsForNode query _         nsData localFunctions False = searchInScope localFunctions query
-                                                           <> searchInScope (globalFunctions nsData) query
+getHintsForNode query _         nsData localFunctions False = (setPrefix (convert "Local Function")  $ searchInScope localFunctions query)
+                                                           <> (setPrefix (convert "Global Function") $ searchInScope (globalFunctions nsData) query)
                                                            <> searchInScope (allMethods nsData) query
-getHintsForNode query Nothing   nsData localFunctions True  = searchInScope (globalFunctions nsData) query
-                                                           <> searchInScope localFunctions query
+getHintsForNode query Nothing   nsData localFunctions True  = (setPrefix (convert "Global Function") $ searchInScope (globalFunctions nsData) query)
+                                                           <> (setPrefix (convert "Local Function")  $ searchInScope localFunctions query)
                                                            <> searchInScope (allMethods nsData) query
 getHintsForNode query (Just cn) nsData localFunctions True  = searchInScope (methodsForClass cn nsData) query
-                                                           <> searchInScope (globalFunctions nsData) query
-                                                           <> searchInScope localFunctions query
+                                                           <> (setPrefix (convert "Global Function") $ searchInScope (globalFunctions nsData) query)
+                                                           <> (setPrefix (convert "Local Function")  $ searchInScope localFunctions query)
                                                            <> searchInScope (allMethodsWithoutClass cn nsData) query
 
 globalFunctions :: Items ExpressionNode -> Items ExpressionNode
@@ -71,6 +71,9 @@ allMethods = Map.filter isGroup
 allMethodsWithoutClass :: Text -> Items ExpressionNode -> Items ExpressionNode
 allMethodsWithoutClass className = Map.filterWithKey filterFunction where
     filterFunction k a = isGroup a && k /= className
+
+setPrefix :: Text -> [QueryResult a] -> [QueryResult a]
+setPrefix prefix = map (\r -> r & Result.prefix .~ prefix)
 
 mergeByName :: [QueryResult a] -> [QueryResult a]
 mergeByName results = S.evalState (mapMaybeM processResult results) prefixesMap where
@@ -88,4 +91,4 @@ mergeByName results = S.evalState (mapMaybeM processResult results) prefixesMap 
             return . Just $ res & Result.prefix .~ mergePrefixes prefixes
     mergePrefixes :: [Text] -> Text
     mergePrefixes [t]      = t
-    mergePrefixes prefixes = Text.intercalate (convert ", ") $ map (\p -> if Text.null p then convert "Function" else p) prefixes
+    mergePrefixes prefixes = Text.intercalate (convert ", ") $ map (\p -> if Text.null p then convert "Class" else p) prefixes
