@@ -361,6 +361,34 @@ spec = around withChannels $ do
                 , (82, 98)
                 , (69, 77)
                 ]
+        it "renames unused node in code" $ \env -> do
+            code <- evalEmp env $ do
+                Library.createLibrary Nothing "TestPath" mainCondensed
+                let loc = GraphLocation "TestPath" $ Breadcrumb []
+                Graph.withGraph loc $ Graph.loadCode mainCondensed
+                Just pi <- Graph.withGraph loc $ runASTOp $ Graph.getNodeIdForMarker 0
+                Graph.renameNode loc pi "ddd"
+                Graph.getCode loc
+            code `shouldBe` [r|def main:
+    ddd «0»= 3.14
+    foo «1»= a: b: a + b
+    c «2»= 4
+    bar «3»= foo 8 c
+|]
+        it "renames used node in code" $ \env -> do
+            code <- evalEmp env $ do
+                Library.createLibrary Nothing "TestPath" mainCondensed
+                let loc = GraphLocation "TestPath" $ Breadcrumb []
+                Graph.withGraph loc $ Graph.loadCode mainCondensed
+                Just c <- Graph.withGraph loc $ runASTOp $ Graph.getNodeIdForMarker 2
+                Graph.renameNode loc c "ddd"
+                Graph.getCode loc
+            code `shouldBe` [r|def main:
+    pi «0»= 3.14
+    foo «1»= a: b: a + b
+    ddd «2»= 4
+    bar «3»= foo 8 ddd
+|]
         it "adds one node to existing file and updates it" $ \env -> do
             u1 <- mkUUID
             res <- evalEmp env $ do

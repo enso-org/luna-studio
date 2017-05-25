@@ -598,9 +598,12 @@ decodeLocation loc@(GraphLocation file crumbs) =
     withGraph (GraphLocation file $ Breadcrumb []) $ GraphBuilder.decodeBreadcrumbs crumbs
 
 renameNode :: GraphLocation -> NodeId -> Text -> Empire ()
-renameNode loc nid name = withTC loc False $ do
-    runASTOp $ renameNodeGraph nid name
-    runAliasAnalysis
+renameNode loc nid name = do
+    withTC loc False $ do
+        runASTOp $ renameNodeGraph nid name
+        runAliasAnalysis
+    updateNodeCode loc nid
+    resendCode loc
 
 renameNodeGraph :: ASTOp m => NodeId -> Text -> m ()
 renameNodeGraph nid name = do
