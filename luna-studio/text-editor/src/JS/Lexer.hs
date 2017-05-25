@@ -35,10 +35,10 @@ exportToken token =
 
     ]
 
-instance ToJSVal (Lexer.Stream JSString) where
+instance ToJSVal (Lexer.SymbolStream JSString) where
     toJSVal (Lexer.Stream tokens) = toJSValListOf $ concatMap exportToken tokens
 
-setLexer :: (String -> IO (Lexer.Stream JSString)) -> IO (IO ())
+setLexer :: (String -> IO (Lexer.SymbolStream JSString)) -> IO (IO ())
 setLexer lexer = do
     wrappedCallback <- syncCallback1' $ toJSVal <=< lexer . pFromJSVal
     setLexer' wrappedCallback

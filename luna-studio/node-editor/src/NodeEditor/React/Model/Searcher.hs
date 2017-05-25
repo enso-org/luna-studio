@@ -4,7 +4,7 @@ import           Common.Prelude
 import qualified Data.Map.Lazy                              as Map
 import qualified Data.Text                                  as Text
 import qualified Data.Text.Span                             as Span
-import           Luna.Syntax.Text.Lexer                     (Stream (Stream), Symbol (Cons, Var), runLexer)
+import           Luna.Syntax.Text.Lexer                     (Stream (Stream), Symbol (Cons, Var), SymbolStream, runLexer)
 import qualified Luna.Syntax.Text.Lexer.Class               as Lexer
 import           LunaStudio.Data.Node                       (ExpressionNode)
 import qualified LunaStudio.Data.Node                       as Node
@@ -72,7 +72,7 @@ fromText input' pos = if Text.null input'
         isQuery (Var  _) = True
         isQuery (Cons _) = True
         isQuery _        = False
-        findQueryBegin :: Int -> Stream Text -> Maybe Int
+        findQueryBegin :: Int -> SymbolStream Text -> Maybe Int
         findQueryBegin _ (Stream [])    = Nothing
         findQueryBegin p (Stream (h:t)) = do
             let tokenLength = fromIntegral . unwrap $ h ^. Lexer.span . Span.length + h ^. Lexer.span . Span.offset
