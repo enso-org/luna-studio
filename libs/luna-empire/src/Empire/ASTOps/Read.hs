@@ -44,7 +44,7 @@ getASTOutForPort nodeId port = do
     case asLambda of
         Just l -> do
             if l ^. BH.portMapping . _1 == nodeId
-              then getLambdaInputForPort port =<< getTargetFromNodeIdTarget (l ^. BH.self) 
+              then getLambdaInputForPort port =<< getTargetFromNodeIdTarget (l ^. BH.self)
               else getOutputForPort      port =<< getASTVar nodeId
         _ -> getOutputForPort port =<< getASTVar nodeId
 
@@ -90,7 +90,7 @@ instance Exception NoNameException where
 getVarName :: ASTOp m => NodeRef -> m String
 getVarName node = match node $ \case
     Var n    -> return $ nameToString n
-    Cons n _ -> return $ pathNameToString n
+    Cons n _ -> return $ nameToString n
     Blank{}  -> return "_"
     _        -> throwM $ NoNameException node
 

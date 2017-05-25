@@ -201,7 +201,7 @@ getPortState node = do
         IR.String s     -> return . WithDefault . Constant . StringValue $ s
         IR.Number i     -> return . WithDefault . Constant $ if Lit.isInteger i then IntValue $ Lit.toInt i else DoubleValue $ Lit.toDouble i
         Cons n _ -> do
-            name <- pure $ pathNameToString n
+            name <- pure $ nameToString n
             case name of
                 "False" -> return . WithDefault . Constant . BoolValue $ False
                 "True"  -> return . WithDefault . Constant . BoolValue $ True

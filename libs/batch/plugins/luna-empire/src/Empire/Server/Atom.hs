@@ -2,35 +2,34 @@
 
 module Empire.Server.Atom where
 
-import           Control.Monad.Catch                   (try)
-import           Control.Monad.State                   (StateT)
-import qualified Data.Text.IO                          as Text
-import           Prologue                              hiding (Item)
+import           Control.Monad.Catch            (try)
+import           Control.Monad.State            (StateT)
+import qualified Data.Text.IO                   as Text
 import qualified Path
-import qualified System.Directory                      as Dir
-import qualified System.IO.Temp                        as Temp
+import           Prologue                       hiding (Item)
+import qualified System.Directory               as Dir
+import qualified System.IO.Temp                 as Temp
 
-import           Empire.Env                            (Env)
-import qualified Empire.Env                            as Env
+import           Empire.Env                     (Env)
+import qualified Empire.Env                     as Env
 
-import           LunaStudio.API.Request                    (Request (..))
-import qualified LunaStudio.API.Atom.SetProject            as SetProject
-import qualified LunaStudio.API.Atom.OpenFile              as OpenFile
-import qualified LunaStudio.API.Atom.SaveFile              as SaveFile
-import qualified LunaStudio.API.Atom.CloseFile             as CloseFile
-import qualified LunaStudio.API.Atom.GetBuffer             as GetBuffer
-import qualified LunaStudio.API.Atom.IsSaved               as IsSaved
-import qualified LunaStudio.API.Atom.Substitute            as Substitute
-import qualified LunaStudio.API.Response                   as Response
+import qualified LunaStudio.API.Atom.CloseFile  as CloseFile
+import qualified LunaStudio.API.Atom.IsSaved    as IsSaved
+import qualified LunaStudio.API.Atom.OpenFile   as OpenFile
+import qualified LunaStudio.API.Atom.SaveFile   as SaveFile
+import qualified LunaStudio.API.Atom.SetProject as SetProject
+import qualified LunaStudio.API.Atom.Substitute as Substitute
+import           LunaStudio.API.Request         (Request (..))
+import qualified LunaStudio.API.Response        as Response
 
-import qualified Empire.Commands.Graph                 as Graph
-import qualified Empire.Commands.Library               as Library
-import           Empire.Data.AST                       (SomeASTException)
-import qualified Empire.Data.Library                   as Library
-import qualified Empire.Empire                         as Empire
-import           Empire.Server.Server                  (errorMessage, replyFail, replyOk)
-import qualified System.Log.MLogger                    as Logger
-import           ZMQ.Bus.Trans                         (BusT (..))
+import qualified Empire.Commands.Graph          as Graph
+import qualified Empire.Commands.Library        as Library
+import           Empire.Data.AST                (SomeASTException)
+import qualified Empire.Data.Library            as Library
+import qualified Empire.Empire                  as Empire
+import           Empire.Server.Server           (errorMessage, replyFail, replyOk)
+import qualified System.Log.MLogger             as Logger
+import           ZMQ.Bus.Trans                  (BusT (..))
 
 logger :: Logger.Logger
 logger = Logger.getLogger $(Logger.moduleName)

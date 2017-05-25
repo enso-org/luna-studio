@@ -376,8 +376,8 @@ spec = around withChannels $ parallel $ do
         it "changes node expression" $ \env -> do
             u1 <- mkUUID
             res <- evalEmp env $ do
-                Graph.addNode top u1 "‹0›123" def
-                node  <- Graph.setNodeExpression top u1 "‹0›456"
+                Graph.addNode top u1 "«0»123" def
+                node  <- Graph.setNodeExpression top u1 "«0»456"
                 nodes <- Graph.getNodes top
                 return (node, nodes)
             withResult res $ \(node, nodes) -> do
@@ -416,8 +416,9 @@ spec = around withChannels $ parallel $ do
                 node ^. Node.expression `shouldBe` "a + b"
                 connections `shouldSatisfy` ((== 3) . length)
         it "changes expression to anonymous node" $ \env -> do
-            let code = [r|‹0›print 3.14
-‹1›print 3.1414
+            let code = [r|def main:
+    «0»print 3.14
+    «1»print 3.1414
 |]
             res <- evalEmp env $ do
                 createLibrary Nothing "TestPath" code

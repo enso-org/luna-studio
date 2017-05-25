@@ -7,9 +7,11 @@
 module Empire.Data.Graph (
     Graph(..)
   , ast
+  , unit
   , breadcrumbHierarchy
   , lastNameId
   , defaultGraph
+  , defaultAST
   , withVis
   , AST
   , ASTState(..)
@@ -21,6 +23,7 @@ import           Empire.Data.BreadcrumbHierarchy   (BParent)
 import           Empire.Prelude
 
 import           Control.Monad.State               (MonadState(..), StateT, evalStateT, lift)
+import           Empire.Data.AST                   (NodeRef)
 import           Empire.Data.Layers                (attachEmpireLayers)
 import qualified Control.Monad.State.Dependent     as DepState
 
@@ -29,6 +32,7 @@ import           Luna.IR                                (IR, IRBuilder, AnyExpr,
                                                          attachLayer, snapshot, runRegs, Cache)
 import qualified OCI.Pass.Manager                       as Pass (RefState)
 import qualified OCI.Pass.Manager                       as PassManager (PassManager, State)
+import           Luna.Syntax.Text.Parser.Errors         (Invalids)
 import qualified Luna.Syntax.Text.Parser.Parser         as Parser
 import qualified Luna.Syntax.Text.Parser.Parsing        as Parser ()
 import qualified Luna.Syntax.Text.Parser.CodeSpan       as CodeSpan
@@ -48,6 +52,7 @@ import           Luna.Pass.Data.ExprMapping
 
 
 data Graph = Graph { _ast                   :: AST
+                   , _unit                  :: NodeRef
                    , _breadcrumbHierarchy   :: BParent
                    , _lastNameId            :: Integer
                    } deriving Show
@@ -55,11 +60,11 @@ data Graph = Graph { _ast                   :: AST
 defaultGraph :: IO Graph
 defaultGraph = do
     ast' <- defaultAST
-    return $ Graph ast' def 0
+    return $ Graph ast' $notImplemented def 0
 
 type AST      = ASTState
 data ASTState = ASTState { _ir      :: IR
-                         , _pmState :: Pass.RefState (PassManager.PassManager (IRBuilder (Parser.IRSpanTreeBuilder (DepState.StateT Cache (Logger DropLogger (Vis.VisStateT (StateT Graph IO)))))))
+                         , _pmState :: Pass.RefState (PassManager.PassManager (IRBuilder (Parser.IRSpanTreeBuilderR (DepState.StateT Cache (Logger DropLogger (Vis.VisStateT (StateT Graph IO)))))))
                          }
 
 instance Show ASTState where
@@ -97,13 +102,11 @@ withVis m = do
 
 defaultAST :: IO AST
 defaultAST = mdo
-    let g = Graph ast def 0
+    let g = Graph ast $notImplemented def 0
     ast <- flip evalStateT g $ withVis $ dropLogs $ DepState.evalDefStateT @Cache $ (\a -> SpanTree.runTreeBuilder a >>= \(foo, _) -> return foo) $ evalIRBuilder' $ evalPassManager' $ do
         runRegs
         CodeSpan.init
         attachLayer 5 (getTypeDesc @CodeSpan.CodeSpan) (getTypeDesc @AnyExpr)
-        Parser.init
-        attachLayer 5 (getTypeDesc @Parser.Parser) (getTypeDesc @AnyExpr)
         attachEmpireLayers
         initExprMapping
         st   <- snapshot
