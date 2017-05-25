@@ -369,8 +369,12 @@ removeNodes loc@(GraphLocation file _) nodeIds = do
 
 removeFromCode :: GraphLocation -> NodeId -> Empire ()
 removeFromCode loc@(GraphLocation file _) nodeId = do
-    line <- withGraph loc $ runASTOp $ nodeLineById nodeId
-    Library.withLibrary file $ forM_ line $ \l -> Library.removeLine l
+    (start, end) <- withGraph loc $ runASTOp $ do
+        ref   <- ASTRead.getASTPointer nodeId
+        range <- readRange ref
+        LeftSpacedSpan off _ <- readCodeSpan ref
+        return (fst range - fromIntegral off, snd range)
+    void $ Library.withLibrary file $ Library.applyDiff start end ""
 
 removeNodeNoTC :: ASTOp m => NodeId -> m [NodeId]
 removeNodeNoTC nodeId = do
@@ -621,9 +625,7 @@ autolayoutNodes loc nids = do
 
 openFile :: FilePath -> Empire ()
 openFile path = do
-    code <- do
-        rawCode <- liftIO $ Text.readFile path
-        return $ Text.stripEnd rawCode
+    code <- liftIO $ Text.readFile path
     Library.createLibrary Nothing path code
     let loc = GraphLocation path $ Breadcrumb []
     nodeIds   <- withGraph loc $ loadCode code

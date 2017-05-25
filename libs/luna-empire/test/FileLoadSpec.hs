@@ -313,6 +313,65 @@ spec = around withChannels $ do
                     , (86, 102)
                     , (31, 43)
                     ]
+        it "adds lambda to existing file via node editor" $ \env -> do
+            u1 <- mkUUID
+            res <- evalEmp env $ do
+                Library.createLibrary Nothing "TestPath" mainCondensed
+                let loc = GraphLocation "TestPath" $ Breadcrumb []
+                Graph.withGraph loc $ Graph.loadCode mainCondensed
+                nodeIds <- Graph.withGraph loc $ runASTOp $ forM [0..3] $
+                    \i -> (i,) <$> Graph.getNodeIdForMarker i
+                spans <- forM [0..3] $ Graph.markerCodeSpan loc
+                forM nodeIds $ \(i, Just nodeId) ->
+                    Graph.setNodeMeta loc nodeId $ NodeMeta (Position.fromTuple (0, fromIntegral i*10)) False
+                Graph.addNode loc u1 "x: x" (NodeMeta (Position.fromTuple (10, 50)) False)
+                spans <- forM [0..4] $ Graph.markerCodeSpan loc
+                code  <- Graph.getCode loc
+                return (spans, code)
+            withResult res $ \(spans, code) -> do
+                code `shouldBe` [r|def main:
+    pi «0»= 3.14
+    foo «1»= a: b: a + b
+    c «2»= 4
+    bar «3»= foo 8 c
+    node1 «4»= x: x
+|]
+                spans `shouldBe` [
+                      (14, 26)
+                    , (31, 51)
+                    , (56, 64)
+                    , (69, 85)
+                    , (90, 105)
+                    ]
+        it "adds node via node editor and removes it" $ \env -> do
+            u1 <- mkUUID
+            res <- evalEmp env $ do
+                Library.createLibrary Nothing "TestPath" mainCondensed
+                let loc = GraphLocation "TestPath" $ Breadcrumb []
+                Graph.withGraph loc $ Graph.loadCode mainCondensed
+                nodeIds <- Graph.withGraph loc $ runASTOp $ forM [0..3] $
+                    \i -> (i,) <$> Graph.getNodeIdForMarker i
+                spans <- forM [0..3] $ Graph.markerCodeSpan loc
+                forM nodeIds $ \(i, Just nodeId) ->
+                    Graph.setNodeMeta loc nodeId $ NodeMeta (Position.fromTuple (0, fromIntegral i*10)) False
+                Graph.addNode loc u1 "x: x" (NodeMeta (Position.fromTuple (10, 50)) False)
+                Graph.removeNodes loc [u1]
+                spans <- forM [0..3] $ Graph.markerCodeSpan loc
+                code  <- Graph.getCode loc
+                return (spans, code)
+            withResult res $ \(spans, code) -> do
+                code `shouldBe` [r|def main:
+    pi «0»= 3.14
+    foo «1»= a: b: a + b
+    c «2»= 4
+    bar «3»= foo 8 c
+|]
+                spans `shouldBe` [
+                      (14, 26)
+                    , (31, 51)
+                    , (56, 64)
+                    , (69, 85)
+                    ]
         it "updates code span after editing an expression" $ \env -> do
             u1 <- mkUUID
             res <- evalEmp env $ do
