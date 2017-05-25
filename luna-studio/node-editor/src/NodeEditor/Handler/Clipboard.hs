@@ -8,11 +8,11 @@ import qualified Data.Set                                   as Set
 import           LunaStudio.Data.Position                   (x, y)
 
 import           Common.Prelude
+import qualified JS.Clipboard                               as JS (copyStringToClipboard)
 import qualified LunaStudio.Data.Connection                 as Connection
 import qualified LunaStudio.Data.GraphLocation              as GraphLocation
 import           LunaStudio.Data.NodeLoc                    (NodePath (NodePath))
 import qualified LunaStudio.Data.PortRef                    as PortRef
-import qualified JS.Clipboard                               as JS (copyStringToClipboard)
 import           NodeEditor.Action.Basic                    (addSubgraph, removeSelectedNodes)
 import           NodeEditor.Action.Command                  (Command)
 import           NodeEditor.Action.Node                     (snapCoord)

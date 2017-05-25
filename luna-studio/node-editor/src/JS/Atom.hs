@@ -3,13 +3,13 @@ module JS.Atom
     ( onEvent
     ) where
 import           Common.Prelude
+import           Common.Report          (error)
 import           Data.Aeson             (Result (Success), fromJSON)
 import           GHCJS.Foreign.Callback
 import           GHCJS.Marshal          (fromJSVal)
 import           GHCJS.Types            (JSVal)
 import           NodeEditor.Event.Event (Event (Atom, Shortcut, UI))
 import           NodeEditor.Event.UI    (UIEvent (SearcherEvent))
-
 
 foreign import javascript safe "atomCallback.onEvent($1)"
     onEvent' :: Callback (JSVal -> IO ()) -> IO ()
@@ -26,8 +26,8 @@ onEvent callback = do
 parseEvent :: JSVal -> IO (Maybe Event)
 parseEvent jsval = do
     fromJSVal jsval >>= \case
-        Just value -> return $ do
+        Just value -> do
             case (Atom <$> fromJSON value) <> ((UI . SearcherEvent) <$> fromJSON value) <> (Shortcut <$> fromJSON value) of
-                Success r -> Just r
-                _ -> Nothing
-        Nothing -> return Nothing
+                Success r -> return $ Just r
+                _ -> error "Unparseable event" >> return Nothing
+        Nothing -> error "Unknown event" >> return Nothing

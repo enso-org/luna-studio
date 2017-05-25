@@ -8,7 +8,7 @@ c             = require './gen/node-editor-ghcjs.js'
 code = c()
 path = require 'path'
 
-pushShortcutEvent = (name, arg = null) -> code.pushEvent({_shortcut: name, arg : arg})
+pushShortcutEvent = (name, arg = null) -> code.pushEvent({_shortcut: name, _arg : arg})
 pushSearcherEvent = (name, arg = null) -> code.pushEvent(if arg == null then {tag: name} else {tag: name, contents : arg})
 
 module.exports = LunaStudio =
