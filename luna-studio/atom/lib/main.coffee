@@ -57,6 +57,7 @@ module.exports = LunaStudio =
         if (event.item instanceof LunaEditorTab) or (event.item instanceof LunaStudioTab)
             uris = (pane.uri for pane in atom.workspace.getPaneItems())
             if event.item.uri not in uris
+              code.pushEvent(tag: "UnsetFile")
               return internal.pushInternalEvent(event: "CloseFile", uri: event.item.uri)
 
     @subs.add atom.workspace.observeTextEditors (editor) ->
@@ -80,6 +81,7 @@ module.exports = LunaStudio =
         if (atom.workspace.getActivePaneItem() instanceof LunaEditorTab) or (atom.workspace.getActivePaneItem() instanceof LunaStudioTab)
             uris = (pane.uri for pane in atom.workspace.getPaneItems())
             if atom.workspace.getActivePaneItem().uri not in uris
+              code.pushEvent(tag: "UnsetFile")
               return internal.pushInternalEvent(event: "CloseFile", uri: atom.workspace.getActivePaneItem().uri)
 
     @subs.add atom.commands.add 'atom-workspace', 'core:save', (e)                 ->
