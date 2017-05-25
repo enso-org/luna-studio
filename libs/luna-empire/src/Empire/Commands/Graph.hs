@@ -58,6 +58,7 @@ import           Control.Monad.Error           (throwError)
 import           Data.Coerce                   (coerce)
 import           Data.List                     (delete, elemIndex, sort, sortOn, group)
 import qualified Data.Map                      as Map
+import           Data.Map                      (Map)
 import qualified Data.Set                      as Set
 import           Data.Maybe                    (catMaybes, fromMaybe, isJust, listToMaybe)
 import           Data.Foldable                 (toList)
@@ -248,37 +249,64 @@ getNextExprMarker = do
         highestIndex = Safe.maximumMay keys
     return $ maybe 0 succ highestIndex
 
-prepareLambdaChild :: ASTOp m => BH.NodeIDTarget -> NodeRef -> m (Maybe BH.LamItem)
-prepareLambdaChild tgt ref = do
-    parsedIsLambda <- ASTRead.isLambda ref
-    if parsedIsLambda then do
-        portMapping            <- liftIO $ (,) <$> UUID.nextRandom <*> UUID.nextRandom
-        lambdaOutput           <- ASTRead.getLambdaOutputRef   ref
-        lambdaBody             <- ASTRead.getFirstNonLambdaRef ref
-        outputIsOneOfTheInputs <- AST.isTrivialLambda ref
-        ASTBuilder.attachNodeMarkersForArgs (fst $ portMapping) [] ref
-        lambdaUUID <- liftIO $ UUID.nextRandom
-        anonOutput <- if not outputIsOneOfTheInputs
-            then do
-                IR.putLayer @Marker lambdaOutput $ Just $ OutPortRef (NodeLoc def lambdaUUID) []
-                return $ Just $ BH.ExprChild $ BH.ExprItem Map.empty (BH.AnonymousNode lambdaOutput)
-            else return Nothing
-        let lamItem = BH.LamItem portMapping tgt (Map.empty & at lambdaUUID .~ anonOutput) lambdaBody
-        return $ Just lamItem
-    else return Nothing
+makeTopBreadcrumbHierarchy :: ASTOp m => NodeRef -> m BH.TopItem
+makeTopBreadcrumbHierarchy ref = do
+    let bareItem = BH.TopItem def $ Just ref
+    children <- childrenFromSeq ref
+    return $ bareItem & BH.children .~ children
 
-prepareExprChild :: ASTOp m => BH.NodeIDTarget -> NodeRef -> m (Maybe BH.ExprItem)
+childrenFromSeq :: ASTOp m => NodeRef -> m (Map NodeId BH.BChild)
+childrenFromSeq ref = do
+    IR.matchExpr ref $ \case
+        IR.Seq   l r -> Map.union <$> (childrenFromSeq =<< IR.source l) <*> (childrenFromSeq =<< IR.source r)
+        IR.Unify l r -> do
+            uid   <- liftIO UUID.nextRandom
+            ASTBuilder.attachNodeMarkers uid []      =<< IR.source l
+            child <- prepareChild (BH.MatchNode ref) =<< IR.source r
+            return $ Map.singleton uid child
+        _ -> do
+            uid   <- liftIO UUID.nextRandom
+            IR.putLayer @Marker ref $ Just $ OutPortRef (NodeLoc def uid) []
+            child <- prepareChild (BH.AnonymousNode ref) ref
+            return $ Map.singleton uid child
+
+lambdaChildren :: ASTOp m => NodeRef -> m (Map NodeId BH.BChild)
+lambdaChildren ref = IR.matchExpr ref $ \case
+    IR.Seq l r -> Map.union <$> (childrenFromSeq =<< IR.source l) <*> (lambdaChildren =<< IR.source r)
+    _          -> do
+        marker <- IR.getLayer @Marker ref
+        case marker of
+            Just a  -> return Map.empty
+            Nothing -> childrenFromSeq ref
+
+prepareChild :: ASTOp m => BH.NodeIDTarget -> NodeRef -> m BH.BChild
+prepareChild tgt ref = do
+    isLambda <- ASTRead.isLambda ref
+    (if isLambda then fmap BH.LambdaChild .: prepareLambdaChild else prepareExprChild) tgt ref
+
+prepareChildWhenLambda :: ASTOp m => BH.NodeIDTarget -> NodeRef -> m (Maybe BH.LamItem)
+prepareChildWhenLambda tgt ref = do
+    isLambda <- ASTRead.isLambda ref
+    if isLambda then Just <$> prepareLambdaChild tgt ref else return Nothing
+
+prepareLambdaChild :: ASTOp m => BH.NodeIDTarget -> NodeRef -> m BH.LamItem
+prepareLambdaChild tgt ref = do
+    portMapping  <- liftIO $ (,) <$> UUID.nextRandom <*> UUID.nextRandom
+    lambdaOutput <- ASTRead.getLambdaOutputRef   ref
+    lambdaBody   <- ASTRead.getFirstNonLambdaRef ref
+    ASTBuilder.attachNodeMarkersForArgs (fst portMapping) [] ref
+    children     <- lambdaChildren lambdaBody
+    return $ BH.LamItem portMapping tgt children lambdaBody
+
+prepareExprChild :: ASTOp m => BH.NodeIDTarget -> NodeRef -> m BH.BChild
 prepareExprChild tgt ref = do
-    parsedIsLambda <- ASTRead.isLambda ref
-    if not parsedIsLambda then do
-        let bareItem = BH.ExprItem Map.empty tgt
-        args  <- ASTDeconstruct.extractAppArguments ref
-        items <- mapM (uncurry prepareLambdaChild . (BH.AnonymousNode &&& id)) args
-        let addItem par (port, child) = case child of
-              Just ch -> par & BH.portChildren . at port ?~ ch
-              _       -> par
-        return $ Just $ foldl addItem bareItem $ zip [0..] items
-    else return Nothing
+    let bareItem = BH.ExprItem Map.empty tgt
+    args  <- ASTDeconstruct.extractAppArguments ref
+    items <- mapM (uncurry prepareChildWhenLambda . (BH.AnonymousNode &&& id)) args
+    let addItem par (port, child) = case child of
+          Just ch -> par & BH.portChildren . at port ?~ ch
+          _       -> par
+    return $ BH.ExprChild $ foldl addItem bareItem $ zip [0..] items
 
 updateNodeSequenceWithOutput :: ASTOp m => Maybe NodeRef -> m ()
 updateNodeSequenceWithOutput outputRef = do
@@ -464,10 +492,8 @@ setNodeExpression loc@(GraphLocation file _) nodeId expression = do
         (node, code)  <- runASTOp $ do
             expr      <- ASTRead.getASTPointer nodeId
             target    <- makeTarget expr
-            lamItem   <- prepareLambdaChild target parsedRef
-            exprItem  <- prepareExprChild   target parsedRef
-            forM_ lamItem  $ (Graph.breadcrumbHierarchy . BH.children . ix nodeId .=) . BH.LambdaChild
-            forM_ exprItem $ (Graph.breadcrumbHierarchy . BH.children . ix nodeId .=) . BH.ExprChild
+            item      <- prepareChild target parsedRef
+            Graph.breadcrumbHierarchy . BH.children . ix nodeId .= item
             node <- GraphBuilder.buildNode nodeId
             code <- printMarkedExpression expr
             LeftSpacedSpan off _ <- readCodeSpan expr
@@ -628,7 +654,9 @@ openFile path = do
     code <- liftIO $ Text.readFile path
     Library.createLibrary Nothing path code
     let loc = GraphLocation path $ Breadcrumb []
-    nodeIds   <- withGraph loc $ loadCode code
+    nodeIds <- withGraph loc $ do
+        loadCode code
+        uses Graph.breadcrumbHierarchy BH.topLevelIDs
     autolayoutNodes loc nodeIds
 
 typecheck :: GraphLocation -> Empire ()
@@ -665,10 +693,8 @@ putChildrenIntoHierarchy :: ASTOp m => NodeId -> NodeRef -> m ()
 putChildrenIntoHierarchy uuid expr = do
     target       <- ASTRead.getASTTarget uuid
     nodeIdTarget <- makeTarget expr
-    lamItem      <- prepareLambdaChild nodeIdTarget target
-    exprItem     <- prepareExprChild   nodeIdTarget target
-    forM_ lamItem  $ (Graph.breadcrumbHierarchy . BH.children . ix uuid .=) . BH.LambdaChild
-    forM_ exprItem $ (Graph.breadcrumbHierarchy . BH.children . ix uuid .=) . BH.ExprChild
+    item         <- prepareChild nodeIdTarget target
+    Graph.breadcrumbHierarchy . BH.children . ix uuid .= item
 
 copyMeta :: ASTOp m => NodeRef -> NodeRef -> m ()
 copyMeta donor recipient = do
@@ -689,22 +715,18 @@ insertNode expr = do
     AST.writeMeta expr def
     return uuid
 
-loadCode :: Text -> Command Graph [NodeId]
-loadCode code | Text.null code = return []
+loadCode :: Text -> Command Graph ()
+loadCode code | Text.null code = return ()
 loadCode code = do
     (ir, IR.Rooted main ref, exprMap) <- liftIO $ ASTParse.runProperParser code
     Graph.unit .= ir
     putNewIR main
-    nodeIds <- runASTOp $ do
-        IR.putLayer @CodeMarkers ref exprMap
-        forM (Map.elems $ (coerce exprMap :: Map.Map Luna.Marker NodeRef)) $ \e -> do
-            nodeId <- insertNode e
-            return (nodeId, e)
-    Graph.breadcrumbHierarchy . BH._ToplevelParent . BH.topBody .= Just ref
-    Graph.breadcrumbHierarchy . BH.body .= ref
+    Graph.breadcrumbHierarchy . BH._ToplevelParent . BH.topBody ?= ref
     runAliasAnalysis
-    runASTOp $ forM nodeIds $ \(n, e) -> putChildrenIntoHierarchy n e
-    return $ map fst nodeIds
+    newBH <- runASTOp $ do
+        IR.putLayer @CodeMarkers ref exprMap
+        makeTopBreadcrumbHierarchy ref
+    Graph.breadcrumbHierarchy .= BH.ToplevelParent newBH
 
 nodeLineById :: ASTOp m => NodeId -> m (Maybe Int)
 nodeLineById nodeId = do

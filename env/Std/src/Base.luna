@@ -40,8 +40,8 @@ class Maybe a:
     Just a
 
     def toJSON: case (self) of
-        Just a:  "Just " + a.toJSON
-        Nothing: "Nothing"
+        Just a: a.toJSON
+        Nothing: JSONNull
 
     def toList: case (self) of
         Just a: Prepend a Empty

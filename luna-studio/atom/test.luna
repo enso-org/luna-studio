@@ -1,5 +1,12 @@
 def main:
     pi «0»= 3.14
-    foo «1»= a: b: a + b
-    c «2»= 4
-    bar «3»= foo 8 c
+    foo «1»= a: b:
+        lala «5»= 17.0
+        buzz «12»= x: y:
+            «9»x * y
+        pi «6»= 3.14
+        n «7»= buzz a lala
+        m «8»= buzz b pi
+        «11»m + n
+    c «2»= 4.0
+    bar «3»= foo 8.0 c
