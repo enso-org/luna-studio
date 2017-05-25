@@ -76,8 +76,8 @@ nodeExpression_ ref nl expr mayS = div_ (
         regularHandlersAndElem = ( [onDoubleClick $ \e _ -> stopPropagation e : dispatch ref (UI.NodeEvent $ Node.EditExpression nl)]
                                  , elemString $ convert expr )
         (handlers, nameElement) = flip (maybe regularHandlersAndElem) mayS $ \s -> case s ^. Searcher.mode of
-            Searcher.Node snl _ _ -> if snl /= nl then regularHandlersAndElem else ([], searcher_ ref s)
-            _                     -> regularHandlersAndElem
+            Searcher.Node snl _ _ _ -> if snl /= nl then regularHandlersAndElem else ([], searcher_ ref s)
+            _                       -> regularHandlersAndElem
 
 
 node_ :: Ref App -> ExpressionNode -> Maybe Searcher -> ReactElementM ViewEventHandler ()

@@ -1,6 +1,6 @@
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 {-# LANGUAGE TypeApplications #-}
-module NodeEditor.Action.Node.Drag
+module NodeEditor.Action.NodeDrag
     ( startNodeDrag
     , nodesDrag
     , handleNodeDragMouseUp
@@ -9,13 +9,13 @@ module NodeEditor.Action.Node.Drag
 import           Common.Prelude
 import           Control.Arrow
 import qualified Data.Map                                   as Map
+import           LunaStudio.Data.Geometry                   (snap)
 import           LunaStudio.Data.NodeLoc                    (NodeLoc)
 import           LunaStudio.Data.Port                       (InPortIndex (Self))
 import           LunaStudio.Data.PortRef                    (InPortRef (InPortRef), OutPortRef (OutPortRef))
 import           LunaStudio.Data.Position                   (Position, move, vector)
 import           NodeEditor.Action.Basic                    (connect, localMoveNodes, moveNodes, selectNodes, updatePortSelfVisibility)
 import           NodeEditor.Action.Command                  (Command)
-import           LunaStudio.Data.Geometry                   (snap)
 import           NodeEditor.Action.State.Model              (createConnectionModel, getIntersectingConnections)
 import           NodeEditor.Action.State.NodeEditor         (getConnection, getExpressionNode, getNodeEditor, getSelectedNodes,
                                                              modifyConnection, modifyExpressionNode, modifyNodeEditor)

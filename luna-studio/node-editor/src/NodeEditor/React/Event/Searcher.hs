@@ -9,7 +9,7 @@ import           React.Flux     (KeyboardEvent)
 
 
 
-data Event = InputChanged Text
+data Event = InputChanged Text Int Int
            | Accept
            | AcceptInput
            | AcceptEntry Int

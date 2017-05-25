@@ -2,36 +2,37 @@
 # http://flight-manual.atom.io/behind-atom/sections/keymaps-in-depth/
 #
 '.luna-input':
-  'backspace'  : 'native!'
-  'cmd-a'      : 'native!'
-  'cmd-down'   : 'native!'
-  'cmd-l'      : 'native!'
-  'cmd-left'   : 'native!'
-  'cmd-right'  : 'native!'
-  'cmd-up'     : 'native!'
-  'ctrl-a'     : 'native!'
-  'ctrl-down'  : 'native!'
-  'ctrl-e'     : 'native!'
-  'ctrl-l'     : 'native!'
-  'ctrl-left'  : 'native!'
-  'ctrl-right' : 'native!'
-  'ctrl-up'    : 'native!'
-  'delete'     : 'native!'
-  'down'       : 'native!'
-  'enter'      : 'native!'
-  'esc'        : 'native!'
-  'h'          : 'native!'
-  'l'          : 'native!'
-  'left'       : 'native!'
-  'left'       : 'native!'
-  'right'      : 'native!'
-  'right'      : 'native!'
-  'shift-down' : 'native!'
-  'shift-left' : 'native!'
-  'shift-right': 'native!'
-  'shift-up'   : 'native!'
-  'space'      : 'native!'
-  'up'         : 'native!'
+  'backspace'       : 'native!'
+  'shift-backspace' : 'native!'
+  'cmd-a'           : 'native!'
+  'cmd-down'        : 'native!'
+  'cmd-l'           : 'native!'
+  'cmd-left'        : 'native!'
+  'cmd-right'       : 'native!'
+  'cmd-up'          : 'native!'
+  'ctrl-a'          : 'native!'
+  'ctrl-down'       : 'native!'
+  'ctrl-e'          : 'native!'
+  'ctrl-l'          : 'native!'
+  'ctrl-left'       : 'native!'
+  'ctrl-right'      : 'native!'
+  'ctrl-up'         : 'native!'
+  'delete'          : 'native!'
+  'down'            : 'native!'
+  'enter'           : 'native!'
+  'esc'             : 'native!'
+  'h'               : 'native!'
+  'l'               : 'native!'
+  'left'            : 'native!'
+  'left'            : 'native!'
+  'right'           : 'native!'
+  'right'           : 'native!'
+  'shift-down'      : 'native!'
+  'shift-left'      : 'native!'
+  'shift-right'     : 'native!'
+  'shift-up'        : 'native!'
+  'space'           : 'native!'
+  'up'              : 'native!'
 
 '.luna-searcher__input':
   'ctrl-0'     : 'luna-studio:searcher-accept-0'              # Searcher AcceptEntry 0
@@ -62,10 +63,13 @@
   'up'         : 'luna-studio:searcher-move-up'               # Searcher MoveUp
 
 '.luna-studio':
-  'escape'           : 'luna-studio:cancel'                   # Cancel
   # camera
   'ctrl--'           : 'luna-studio:zoom-out'                 # ZoomOut
   'cmd--'            : 'luna-studio:zoom-out'                 # ZoomOut
+  'ctrl-_'           : 'luna-studio:zoom-out'                 # ZoomOut
+  'cmd-_'            : 'luna-studio:zoom-out'                 # ZoomOut
+  'ctrl-='           : 'luna-studio:zoom-in'                  # ZoomIn
+  'cmd-='            : 'luna-studio:zoom-in'                  # ZoomIn
   'ctrl-+'           : 'luna-studio:zoom-in'                  # ZoomIn
   'cmd-+'            : 'luna-studio:zoom-in'                  # ZoomIn
   'ctrl-0'           : 'luna-studio:reset-zoom'               # ResetZoom
@@ -78,10 +82,6 @@
   'cmd-left'         : 'luna-studio:pan-left'                 # PanLeft
   'ctrl-right'       : 'luna-studio:pan-right'                # PanRight
   'cmd-right'        : 'luna-studio:pan-right'                # PanRight
-  'ctrl-shift--'     : 'luna-studio:zoom-out'                 # ZoomOut
-  'cmd-shift--'      : 'luna-studio:zoom-out'                 # ZoomOut
-  'ctrl-shift-+'     : 'luna-studio:zoom-in'                  # ZoomIn
-  'cmd-shift-+'      : 'luna-studio:zoom-in'                  # ZoomIn
   'ctrl-shift-0'     : 'luna-studio:reset-pan'                # ResetPan
   'cmd-shift-0'      : 'luna-studio:reset-pan'                # ResetPan
   'ctrl-up'          : 'luna-studio:pan-up'                   # PanUp
@@ -106,8 +106,6 @@
   'up'               : 'luna-studio:go-up'                    # GoUp
   # nodes
   'backspace'       : 'luna-studio:remove-selected-nodes'     # RemoveSelectedNodes
-  'ctrl-a'          : 'luna-studio:select-all'                # SelectAll
-  'cmd-a'           : 'luna-studio:select-all'                # SelectAll
   'ctrl-e'          : 'luna-studio:unfold-selected-nodes'     # UnfoldSelectedNodes
   'cmd-e'           : 'luna-studio:unfold-selected-nodes'     # UnfoldSelectedNodes
   'delete'          : 'luna-studio:remove-selected-nodes'     # RemoveSelectedNodes

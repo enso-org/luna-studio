@@ -3,17 +3,17 @@ module NodeEditor.Event.Preprocessor.Shortcut
     , isEventHandled
     ) where
 
-import           React.Flux                       (KeyboardEvent)
+import           React.Flux                      (KeyboardEvent)
 
+import           Common.Prelude
 import           NodeEditor.Event.Event          (Event (Shortcut, UI))
 import qualified NodeEditor.Event.Keys           as Keys
 import           NodeEditor.Event.Shortcut       (Command (..))
 import qualified NodeEditor.Event.Shortcut       as Shortcut
 import           NodeEditor.Event.UI             (UIEvent (AppEvent, SearcherEvent))
-import           Common.Prelude
 import qualified NodeEditor.React.Event.App      as App
 import qualified NodeEditor.React.Event.Searcher as Searcher
-import qualified React.Flux                       as React
+import qualified React.Flux                      as React
 
 
 process :: Event -> Maybe Event

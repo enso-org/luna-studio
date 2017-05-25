@@ -20,6 +20,11 @@ isElement :: Item a -> Bool
 isElement (Element {}) = True
 isElement _            = False
 
+isGroup :: Item a -> Bool
+isGroup (Group {}) = True
+isGroup _          = False
+
+
 instance Binary a => Binary (Item a)
 
 instance ToJSON a => ToJSON (Item a)

@@ -46,6 +46,7 @@ dependencies:
   - data-default
   - datetime
   - deepseq
+  - extra
   - ghcjs-base
   - ghcjs-dom
   - ghcjs-prim
@@ -63,6 +64,7 @@ dependencies:
   - scope-searcher
   - split
   - text
+  - text-processing
   - time
   - transformers
   - unordered-containers

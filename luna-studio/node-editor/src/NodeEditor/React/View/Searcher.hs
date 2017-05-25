@@ -14,6 +14,7 @@ import           NodeEditor.React.Store          (Ref, dispatch)
 import qualified NodeEditor.React.View.Style     as Style
 import           React.Flux
 import qualified React.Flux                      as React
+import           Text.ScopeSearcher.QueryResult  (QueryResult)
 import qualified Text.ScopeSearcher.QueryResult  as Result
 
 name :: JSString
@@ -35,11 +36,11 @@ searcher =  React.defineView name $ \(ref, s) -> do
         -- nodePos     = s ^. Searcher.position
         -- nodePreview = convert . (NodeLoc.empty,) <$> (s ^. Searcher.selectedNode)
         className   = Style.prefixFromList ( "input" : "searcher" : ( case mode of
-            Searcher.Command      _ -> [ "searcher--command"]
-            Searcher.Node     _ _ _ -> [ "searcher--node" ]
-            Searcher.NodeName _   _ -> [ "searcher--node-name"]
-            Searcher.PortName _   _ -> [ "searcher--port-name"]))
-        mayCustomInput = if s ^. Searcher.replaceInput then ["value" $= convert (s ^. Searcher.input)] else []
+            Searcher.Command  {} -> [ "searcher--command"]
+            Searcher.Node     {} -> [ "searcher--node" ]
+            Searcher.NodeName {} -> [ "searcher--node-name"]
+            Searcher.PortName {} -> [ "searcher--port-name"]))
+        mayCustomInput = if s ^. Searcher.replaceInput then ["value" $= convert (s ^. Searcher.inputText)] else []
     div_
         [ "key"       $= name
         , "className" $= className
@@ -59,7 +60,10 @@ searcher =  React.defineView name $ \(ref, s) -> do
                 , "placeholder" $= "Command search…"
                 , onKeyDown     $ handleKeyDown ref
                 , onKeyUp       $ \_ k -> dispatch ref $ UI.SearcherEvent $ KeyUp k
-                , onChange      $ \e -> let val = target e "value" in dispatch ref $ UI.SearcherEvent $ InputChanged val
+                , onChange      $ \e -> let val = target e "value"
+                                            ss  = target e "selectionStart"
+                                            se  = target e "selectionEnd"
+                                        in dispatch ref $ UI.SearcherEvent $ InputChanged val ss se
                 ] ++ mayCustomInput )
             div_
                 [ "key"       $= "searcherResults"
@@ -69,7 +73,7 @@ searcher =  React.defineView name $ \(ref, s) -> do
                 let selected = s ^. Searcher.selected
                 case s ^. Searcher.mode of
                     Searcher.Command    results -> results_ ref selected results
-                    Searcher.Node   _ _ results -> results_ ref selected results
+                    Searcher.Node _ _ _ results -> results_ ref selected results
                     Searcher.NodeName _ results -> results_ ref selected results
                     Searcher.PortName _ results -> results_ ref selected results
         -- div_
@@ -81,27 +85,31 @@ searcher =  React.defineView name $ \(ref, s) -> do
 searcher_ :: Ref App -> Searcher -> ReactElementM ViewEventHandler ()
 searcher_ ref model = React.viewWithSKey searcher name (ref, model) mempty
 
-results_ :: Ref App -> Int -> [Result.QueryResult r] -> ReactElementM ViewEventHandler ()
+results_ :: Ref App -> Int -> [QueryResult r] -> ReactElementM ViewEventHandler ()
 results_ ref selected results = forKeyed_ results $ \(idx, result) ->
-    let resultClasses i = Style.prefixFromList ( "searcher__results__item" : (if i + 1 == selected then [ "searcher__results__item--selected" ] else []))
+    let resultClasses i   = Style.prefixFromList ( "searcher__results__item" : (if i + 1 == selected then [ "searcher__results__item--selected" ] else []))
     in div_
-        [ "key"       $= jsShow idx
-        , "className" $= resultClasses idx
-        , onClick     $ \e _ -> stopPropagation e : (dispatch ref $ UI.SearcherEvent $ AcceptEntry (idx + 1))
+        [ "key"        $= jsShow idx
+        , "className"  $= resultClasses idx
+        , onClick      $ \e _ -> stopPropagation e : (dispatch ref $ UI.SearcherEvent $ AcceptEntry (idx + 1))
         ] $ do
         div_
             ["key" $= "name"
             ,"className" $= Style.prefix "searcher__results__item__name"
-            ] $ highlighted_ (convert $ result ^. Result.name) $ result ^. Result.highlights
+            ] $ highlighted_ result
 
-highlighted_ :: String -> [Result.Highlight] -> ReactElementM ViewEventHandler ()
-highlighted_ text = highlighted_' 0 where
+highlighted_ :: QueryResult r -> ReactElementM ViewEventHandler ()
+highlighted_ result = prefixElem >> highlighted_' 0 highlights where
+    prefix     = convert $ result ^. Result.prefix
+    prefixElem = span_ $ elemString $ if prefix == "" then prefix else prefix <> " . "
+    highlights = result ^. Result.highlights
+    name'      = convert $ result ^. Result.name
     highlighted_' :: Int -> [Result.Highlight] -> ReactElementM ViewEventHandler ()
-    highlighted_' omit [] = span_ $ elemString $ snd $ splitAt omit text
+    highlighted_' omit [] = span_ $ elemString $ snd $ splitAt omit name'
     highlighted_' omit (highlight:rest) = do
         let start = highlight ^. Result.start
             len   = highlight ^. Result.length
-            (r1         , r2    ) = splitAt start text
+            (r1         , r2    ) = splitAt start name'
             (_          , normal) = splitAt omit r1
             (highlighted, _     ) = splitAt len r2
         span_ $ elemString normal

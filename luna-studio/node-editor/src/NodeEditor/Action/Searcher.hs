@@ -3,8 +3,6 @@
 module NodeEditor.Action.Searcher where
 
 import           Common.Prelude
-import qualified Data.Map                                   as Map
-import           Data.Monoid                                (All (All), getAll)
 import qualified Data.Text                                  as Text
 import qualified JS.GoogleAnalytics                         as GA
 import qualified JS.Searcher                                as Searcher
@@ -17,8 +15,8 @@ import           NodeEditor.Action.Command                  (Command)
 import           NodeEditor.Action.State.Action             (beginActionWithKey, continueActionWithKey, removeActionFromState,
                                                              updateActionWithKey)
 import           NodeEditor.Action.State.App                (renderIfNeeded)
-import           NodeEditor.Action.State.NodeEditor         (findSuccessorPosition, getSearcher, getSelectedNodes, getSelectedNodes,
-                                                             modifyNodeEditor, modifySearcher)
+import           NodeEditor.Action.State.NodeEditor         (findSuccessorPosition, getExpressionNode, getPort, getSearcher,
+                                                             getSelectedNodes, getSelectedNodes, modifyNodeEditor, modifySearcher)
 import           NodeEditor.Action.State.Scene              (translateToWorkspace)
 import           NodeEditor.Action.UUID                     (getUUID)
 import           NodeEditor.Event.Event                     (Event (Shortcut))
@@ -33,8 +31,6 @@ import           NodeEditor.State.Global                    (State)
 import qualified NodeEditor.State.Global                    as Global
 import qualified NodeEditor.State.UI                        as UI
 import           Text.Read                                  (readMaybe)
-import           Text.ScopeSearcher.Item                    (Item (..), Items)
-import qualified Text.ScopeSearcher.Scope                   as Scope
 
 
 instance Action (Command State) Searcher where
@@ -44,99 +40,83 @@ instance Action (Command State) Searcher where
     end      = close
 
 
-data OtherCommands = AddNode
-                   deriving (Bounded, Enum, Eq, Generic, Read, Show)
+editExpression :: NodeLoc -> Command State ()
+editExpression nodeLoc = do
+    mayN <- getExpressionNode nodeLoc
+    withJust mayN $ \n -> do
+        openWith (n ^. ExpressionNode.expression) $ Searcher.Node nodeLoc (n ^? ExpressionNode.inPortAt [Port.Self] . Port.valueType) def def
+
+editName :: NodeLoc -> Command State ()
+editName nodeLoc = do
+    mayN <- getExpressionNode nodeLoc
+    withJust mayN $ \n -> do
+        openWith (maybe "" id $ n ^. ExpressionNode.name) $ Searcher.NodeName nodeLoc def
+
+editPortName :: OutPortRef -> Command State ()
+editPortName portRef = do
+    mayP <- getPort portRef
+    withJust mayP $ \p -> do
+        openWith (p ^. Port.name) $ Searcher.PortName portRef def
 
 open :: Command State ()
 open = do
-    nn <- getSelectedNodes >>= \case
+    (tpe, nn) <- getSelectedNodes >>= \case
         [n] -> do
             pos <- findSuccessorPosition n
-            let predInfoFromPort p = (OutPortRef (n ^. ExpressionNode.nodeLoc) (p ^. Port.portId), p ^. Port.valueType)
-                predInfo = predInfoFromPort <$> (listToMaybe $ ExpressionNode.outPortsList n)
-            return $ Searcher.NewNode pos predInfo
+            let mayP        = listToMaybe $ ExpressionNode.outPortsList n
+                tpe         = view Port.valueType <$> mayP
+                predPortRef = OutPortRef (n ^. ExpressionNode.nodeLoc) . view Port.portId <$> mayP
+            return $ (tpe, Searcher.NewNode pos predPortRef)
         _   -> do
             pos <- translateToWorkspace =<< use (Global.ui . UI.mousePos)
-            return $ Searcher.NewNode pos Nothing
+            return $ (def, Searcher.NewNode pos def)
     nl <- convert . ((def :: NodePath), ) <$> getUUID
-    openWith (Searcher.Node nl (Just nn) def)
+    openWith "" $ Searcher.Node nl tpe (Just nn) def
 
-positionDelta :: Double
-positionDelta = 100
-
-openWith :: Searcher.Mode -> Command State ()
-openWith mode = do
-    begin Searcher
+openWith :: Text -> Searcher.Mode -> Command State ()
+openWith input mode = do
+    let action   = Searcher
+        inputLen = Text.length input
+    begin action
     GA.sendEvent GA.NodeSearcher
     modifyNodeEditor $ NodeEditor.searcher ?= Searcher.Searcher 0 mode def False False
-    localUpdateSearcherHints
-    renderIfNeeded
+    updateInput input inputLen inputLen action
+    forceSearcherInputUpdate
     liftIO Searcher.focus
 
-close :: Searcher -> Command State ()
-close _ = do
-    modifyNodeEditor $ NodeEditor.searcher .= Nothing
-    removeActionFromState searcherAction
-    liftIO App.focus
 
-moveDown :: Searcher -> Command State ()
-moveDown _ = modifySearcher $ do
-    items <- use Searcher.resultsLength
-    unless (items == 0) $
-        Searcher.selected %= \p -> (p - 1) `mod` (items + 1)
+updateInput :: Text -> Int -> Int -> Searcher -> Command State ()
+updateInput input selectionStart selectionEnd action = do
+    modifySearcher $ if selectionStart == selectionEnd
+        then Searcher.input .= Searcher.fromText input selectionStart
+        else Searcher.input .= Searcher.Raw input
+    updateHints action
 
-moveUp :: Searcher -> Command State ()
-moveUp _ = modifySearcher $ do
-    items <- use Searcher.resultsLength
-    unless (items == 0) $
-        Searcher.selected %= \p -> (p + 1) `mod` (items + 1)
+updateHints :: Searcher -> Command State ()
+updateHints _ = localUpdateSearcherHints
 
-tryRollback :: Searcher -> Command State ()
-tryRollback _ = do
-    withJustM getSearcher $ \searcher -> do
-       when (Text.null (searcher ^. Searcher.input)
-         && (searcher ^. Searcher.isNode)
-         && (searcher ^. Searcher.rollbackReady)) $
-            modifySearcher $ do
-                Searcher.rollbackReady .= False
-                Searcher.selected      .= def
-                Searcher.mode          .= Searcher.Command def
-                Searcher.input         .= def
-
-enableRollback :: Searcher -> Command State ()
-enableRollback _ = modifySearcher $
-    Searcher.rollbackReady .= True
+updateInputWithSelectedHint :: Searcher -> Command State Bool
+updateInputWithSelectedHint _ = getSearcher >>= maybe (return False) updateWithSearcher where
+    updateWithSearcher s = if s ^. Searcher.selected == 0 then return True else do
+        let mayExpr         = s ^. Searcher.selectedExpression
+            mayDividedInput = s ^? Searcher.input . Searcher._Divided
+        withJust ((,) <$> mayExpr <*> mayDividedInput) $ \(expr, divInput) -> modifySearcher $ do
+            let expr' = if divInput ^? Searcher.suffix . ix 0 == Just ' ' then expr else expr <> " "
+            Searcher.input    .= Searcher.Divided (divInput & Searcher.query .~ expr')
+            Searcher.selected .= def
+        localUpdateSearcherHints
+        return $ isJust mayExpr && isJust mayDividedInput
 
 accept :: (Event -> IO ()) -> Searcher -> Command State ()
-accept scheduleEvent action = do
+accept scheduleEvent action = whenM (updateInputWithSelectedHint action) $
     withJustM getSearcher $ \searcher -> do
-        let expression = searcher ^. Searcher.selectedExpression
+        let expression = searcher ^. Searcher.inputText
         case searcher ^. Searcher.mode of
-            Searcher.Command               _ -> execCommand action scheduleEvent $ convert expression
-            Searcher.Node     nl (Just nn) _ -> createNode (nl ^. NodeLoc.path) (nn ^. Searcher.position) expression >> close action
-            Searcher.Node     nl _         _ -> setNodeExpression nl expression >> close action
-            Searcher.NodeName nl           _ -> renameNode nl expression >> close action
-            Searcher.PortName portRef      _ -> renamePort portRef expression >> close action
-
-openEditExpression :: NodeLoc -> Text -> Command State ()
-openEditExpression nodeLoc expr = do
-    openWith $ Searcher.Node nodeLoc def def
-    continue $ querySearch expr
-
-openEditName :: NodeLoc -> Maybe Text -> Command State ()
-openEditName nodeLoc mayName = do
-    openWith $ Searcher.NodeName nodeLoc def
-    continue $ querySearch $ maybe "" id mayName
-
-openEditPortName :: OutPortRef -> Text -> Command State ()
-openEditPortName portRef name = do
-    openWith $ Searcher.PortName portRef def
-    continue $ querySearch name
-
-allCommands :: Items ()
-allCommands = Map.fromList $ (,Element ()) . convert <$> (commands <> otherCommands) where
-    commands = show <$> [(minBound :: Shortcut.Command) ..]
-    otherCommands = show <$> [(minBound :: OtherCommands)]
+            Searcher.Command                 _ -> execCommand action scheduleEvent $ convert expression
+            Searcher.Node     nl _ (Just nn) _ -> createNode (nl ^. NodeLoc.path) (nn ^. Searcher.position) expression >> close action
+            Searcher.Node     nl _ _         _ -> setNodeExpression nl expression >> close action
+            Searcher.NodeName nl             _ -> renameNode nl expression >> close action
+            Searcher.PortName portRef        _ -> renamePort portRef expression >> close action
 
 execCommand :: Searcher -> (Event -> IO ()) -> String -> Command State ()
 execCommand action scheduleEvent expression = case readMaybe expression of
@@ -144,53 +124,61 @@ execCommand action scheduleEvent expression = case readMaybe expression of
         liftIO $ scheduleEvent $ Shortcut $ Shortcut.Event command def
         close action
     Nothing -> case readMaybe expression of
-        Just AddNode -> modifySearcher $ do
+        Just Searcher.AddNode -> modifySearcher $ do
             Searcher.selected .= def
-            Searcher.mode     %= (\(Searcher.Node nl pos _) -> Searcher.Node nl pos def)
-            Searcher.input    .= def
+            Searcher.mode     %= (\(Searcher.Node nl tpe nn _) -> Searcher.Node nl tpe nn def)
+            Searcher.input    .= Searcher.Raw def
             Searcher.rollbackReady .= False
         Nothing -> return ()
 
-acceptEntry :: (Event -> IO ()) -> Int -> Searcher -> Command State ()
-acceptEntry scheduleEvent entryNum searcher = do
-    mayItemsLength <- (fmap . fmap) (view Searcher.resultsLength) $ getSearcher
-    withJust mayItemsLength $ \itemsLength -> when (itemsLength >= entryNum) $ do
-        modifySearcher $ Searcher.selected .= entryNum
-        accept scheduleEvent searcher
+close :: Searcher -> Command State ()
+close _ = do
+    modifyNodeEditor $ NodeEditor.searcher .= Nothing
+    removeActionFromState searcherAction
+    liftIO App.focus
 
-substituteInputWithEntry :: Searcher -> Command State ()
-substituteInputWithEntry _ = do
-    modifySearcher $ do
-        newInput <- use Searcher.selectedExpression
-        Searcher.input .= newInput
-    forceSearcherInputUpdate
+selectNextHint :: Searcher -> Command State ()
+selectNextHint _ = modifySearcher $ do
+    hintsLen <- use Searcher.resultsLength
+    Searcher.selected %= \p -> (p + 1) `mod` (hintsLen + 1)
 
+selectPreviousHint :: Searcher -> Command State ()
+selectPreviousHint _ = modifySearcher $ do
+    hintsLen <- use Searcher.resultsLength
+    Searcher.selected %= \p -> (p - 1) `mod` (hintsLen + 1)
 
-querySearch :: Text -> Searcher -> Command State ()
-querySearch query _ = do
-    -- selection <- Searcher.selection
-    isNode <- modifySearcher $ do
-        mode   <- use Searcher.mode
-        isNode <- use Searcher.isNode
-        Searcher.input .= query
-        case mode of
-            Searcher.Node _ _ _   -> Searcher.rollbackReady .= False
-                {- clearing results prevents from selecting out of date result, but make searcher blink. -}
-                -- Searcher.mode .= Searcher.Node def
-            Searcher.NodeName _ _ -> Searcher.rollbackReady .= False
-            Searcher.PortName _ _ -> Searcher.rollbackReady .= False
-            Searcher.Command _ -> do
-                let items = Scope.searchInScope allCommands query
-                Searcher.selected      .= min 1 (length items)
-                Searcher.mode          .= Searcher.Command items
-                Searcher.rollbackReady .= False
-        return $ All isNode
-    -- when (getAll isNode) $ Batch.searchNodes query selection
-    when (getAll isNode) localUpdateSearcherHints
-    forceSearcherInputUpdate
+selectHint :: Int -> Searcher -> Command State Bool
+selectHint i _ = do
+    mayHintsLen <- fmap2 (view Searcher.resultsLength) getSearcher
+    case mayHintsLen of
+        Nothing       -> return False
+        Just hintsLen -> if i < 0 || i > hintsLen then return False else do
+            modifySearcher $ Searcher.selected .= i
+            return True
+
+acceptHint :: (Event -> IO ()) -> Int -> Searcher -> Command State ()
+acceptHint scheduleEvent hintNum action =
+    whenM (selectHint hintNum action) $ accept scheduleEvent action
+
 
 forceSearcherInputUpdate :: Command State ()
 forceSearcherInputUpdate = do
     modifySearcher $ Searcher.replaceInput .= True
     renderIfNeeded
     modifySearcher $ Searcher.replaceInput .= False
+
+-- tryRollback :: Searcher -> Command State ()
+-- tryRollback _ = do
+--     withJustM getSearcher $ \searcher -> do
+--        when (Text.null (searcher ^. Searcher.inputText)
+--          && (searcher ^. Searcher.isNode)
+--          && (searcher ^. Searcher.rollbackReady)) $
+--             modifySearcher $ do
+--                 Searcher.rollbackReady .= False
+--                 Searcher.selected      .= def
+--                 Searcher.mode          .= Searcher.Command def
+--                 Searcher.input         .= Searcher.Raw def
+--
+-- enableRollback :: Searcher -> Command State ()
+-- enableRollback _ = modifySearcher $
+--     Searcher.rollbackReady .= True
