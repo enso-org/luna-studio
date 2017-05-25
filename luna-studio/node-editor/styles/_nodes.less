@@ -104,35 +104,6 @@
 //      node expanded      //
 /////////////////////////////
 
-.luna-node--expanded {
-    z-index: 10000;
-    .luna-port {
-        position: relative;
-    }
-    .luna-port--self * {
-        cx: -@expandedNodeWidth/2;
-    }
-    .luna-port--o {
-        .luna-port__type {
-            text-anchor: start;
-        }
-    }
-    .luna-node__body {
-        height: auto;
-        width:  @expandedNodeWidth;
-        left:  -@expandedNodeWidth/2;
-    }
-    .luna-selection {
-        border-radius: 1px;
-    }
-    &.luna-node--no-self {
-        .luna-node__label--self {
-
-            opacity: 0;
-        }
-    }
-}
-
 .luna-node__body {
     width:    40rem;
     height:   40rem;
@@ -141,6 +112,34 @@
     left:    -20rem;
     * {
         font-size: 10rem;
+    }
+}
+
+.luna-node--expanded {
+    z-index: 10000;
+    .luna-port {
+        position: relative;
+    }
+    .luna-port--self circle {
+        cx: -80px;
+    }
+    .luna-port--o {
+        .luna-port__type {
+            text-anchor: start;
+        }
+    }
+    .luna-node__body {
+        height: auto;
+        width:  160rem;
+        left:  -80rem;
+    }
+    .luna-selection {
+        border-radius: 1px;
+    }
+    &.luna-node--no-self {
+        .luna-node__label--self {
+            opacity: 0;
+        }
     }
 }
 
