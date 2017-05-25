@@ -48,7 +48,7 @@ editExpression nodeLoc = do
             _                 -> Nothing
     mayN <- getExpressionNode nodeLoc
     withJust mayN $ \n -> do
-        openWith (n ^. ExpressionNode.expression) $ Searcher.Node nodeLoc (getClassName n) def def
+        openWith (n ^. ExpressionNode.expression) $ Searcher.Node nodeLoc (Searcher.NodeModeInfo (getClassName n) def def) def
 
 editName :: NodeLoc -> Command State ()
 editName nodeLoc = do
@@ -77,7 +77,7 @@ open = do
             pos <- translateToWorkspace =<< use (Global.ui . UI.mousePos)
             return $ (def, Searcher.NewNode pos def)
     nl <- convert . ((def :: NodePath), ) <$> getUUID
-    openWith "" $ Searcher.Node nl className (Just nn) def
+    openWith "" $ Searcher.Node nl (Searcher.NodeModeInfo className (Just nn) def) def
 
 openWith :: Text -> Searcher.Mode -> Command State ()
 openWith input mode = do
@@ -118,11 +118,11 @@ accept scheduleEvent action = whenM (updateInputWithSelectedHint action) $
     withJustM getSearcher $ \searcher -> do
         let expression = searcher ^. Searcher.inputText
         case searcher ^. Searcher.mode of
-            Searcher.Command                 _ -> execCommand action scheduleEvent $ convert expression
-            Searcher.Node     nl _ (Just nn) _ -> createNode (nl ^. NodeLoc.path) (nn ^. Searcher.position) expression >> close action
-            Searcher.Node     nl _ _         _ -> setNodeExpression nl expression >> close action
-            Searcher.NodeName nl             _ -> renameNode nl expression >> close action
-            Searcher.PortName portRef        _ -> renamePort portRef expression >> close action
+            Searcher.Command                                           _ -> execCommand action scheduleEvent $ convert expression
+            Searcher.Node     nl (Searcher.NodeModeInfo _ (Just nn) _) _ -> createNode (nl ^. NodeLoc.path) (nn ^. Searcher.position) expression >> close action
+            Searcher.Node     nl _                                     _ -> setNodeExpression nl expression >> close action
+            Searcher.NodeName nl                                       _ -> renameNode nl expression >> close action
+            Searcher.PortName portRef                                  _ -> renamePort portRef expression >> close action
 
 execCommand :: Searcher -> (Event -> IO ()) -> String -> Command State ()
 execCommand action scheduleEvent expression = case readMaybe expression of
@@ -132,7 +132,7 @@ execCommand action scheduleEvent expression = case readMaybe expression of
     Nothing -> case readMaybe expression of
         Just Searcher.AddNode -> modifySearcher $ do
             Searcher.selected .= def
-            Searcher.mode     %= (\(Searcher.Node nl tpe nn _) -> Searcher.Node nl tpe nn def)
+            Searcher.mode     %= (\(Searcher.Node nl nmi _) -> Searcher.Node nl nmi def)
             Searcher.input    .= Searcher.Raw def
             Searcher.rollbackReady .= False
         Nothing -> return ()

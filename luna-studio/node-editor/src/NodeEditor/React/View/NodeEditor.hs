@@ -56,10 +56,10 @@ applySearcherHints ne = maybe ne replaceNode $ ne ^. NodeEditor.searcher where
                                                       & ExpressionNode.position .~ pos
     updateNode nl n ne' = maybe ne' (flip NodeEditor.updateExpressionNode ne . Searcher.applyExpressionHint n) $ NodeEditor.getExpressionNode nl ne'
     replaceNode s    = case (s ^. Searcher.mode, s ^. Searcher.selectedNode) of
-        (Searcher.Node nl _ Nothing   _, Just n) -> updateNode nl n ne
-        (Searcher.Node nl _ (Just nn) _, Just n) -> tryConnect nl nn $ NodeEditor.updateExpressionNode (toModel n nl (nn ^. Searcher.position)) ne
-        (Searcher.Node nl _ (Just nn) _, _)      -> tryConnect nl nn $ NodeEditor.updateExpressionNode (ExpressionNode.mkExprNode nl (s ^. Searcher.inputText) (nn ^. Searcher.position)) ne
-        _                                        -> ne
+        (Searcher.Node nl (Searcher.NodeModeInfo _ Nothing   _) _, Just n) -> updateNode nl n ne
+        (Searcher.Node nl (Searcher.NodeModeInfo _ (Just nn) _) _, Just n) -> tryConnect nl nn $ NodeEditor.updateExpressionNode (toModel n nl (nn ^. Searcher.position)) ne
+        (Searcher.Node nl (Searcher.NodeModeInfo _ (Just nn) _) _, _)      -> tryConnect nl nn $ NodeEditor.updateExpressionNode (ExpressionNode.mkExprNode nl (s ^. Searcher.inputText) (nn ^. Searcher.position)) ne
+        _                                                                  -> ne
 
 nodeEditor_ :: Ref App -> NodeEditor -> ReactElementM ViewEventHandler ()
 nodeEditor_ ref ne = React.viewWithSKey nodeEditor name (ref, ne) mempty

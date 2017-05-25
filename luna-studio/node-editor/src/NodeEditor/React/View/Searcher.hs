@@ -73,7 +73,7 @@ searcher =  React.defineView name $ \(ref, s) -> do
                 let selected = s ^. Searcher.selected
                 case s ^. Searcher.mode of
                     Searcher.Command    results -> results_ ref selected results
-                    Searcher.Node _ _ _ results -> results_ ref selected results
+                    Searcher.Node   _ _ results -> results_ ref selected results
                     Searcher.NodeName _ results -> results_ ref selected results
                     Searcher.PortName _ results -> results_ ref selected results
         -- div_

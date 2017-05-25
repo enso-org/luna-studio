@@ -23,7 +23,12 @@ data NewNode = NewNode { _position    :: Position
                        , _predPortRef :: Maybe OutPortRef
                        } deriving (Eq, Generic, Show)
 
+data NodeModeInfo = NodeModeInfo { _className   :: Maybe Text
+                                 , _newNodeData :: Maybe NewNode
+                                 , _argNames    :: [Text]
+                                 } deriving (Eq, Generic, Show)
 makeLenses ''NewNode
+makeLenses ''NodeModeInfo
 
 data DividedInput = DividedInput { _prefix :: Text
                                  , _query  :: Text
@@ -35,12 +40,10 @@ data Input = Raw     Text
            | Divided DividedInput
            deriving (Eq, Generic, Show)
 
-type ClassName = Text
-
-data Mode = Command                                            [QueryResult ()]
-          | Node     NodeLoc (Maybe ClassName) (Maybe NewNode) [QueryResult ExpressionNode]
-          | NodeName NodeLoc                                   [QueryResult ExpressionNode]
-          | PortName OutPortRef                                [QueryResult ExpressionNode]
+data Mode = Command                       [QueryResult ()]
+          | Node     NodeLoc NodeModeInfo [QueryResult ExpressionNode]
+          | NodeName NodeLoc              [QueryResult ExpressionNode]
+          | PortName OutPortRef           [QueryResult ExpressionNode]
           deriving (Eq, Generic, Show)
 
 data Searcher = Searcher
@@ -100,7 +103,7 @@ selectedExpression = to getExpression where
     getExpression s = let i = s ^. selected in
         if i == 0 then Nothing else case s ^. mode of
             Command    results -> Result._name <$> results ^? ix (i - 1)
-            Node _ _ _ results -> view Node.expression . Result._element <$> results ^? ix (i - 1)
+            Node   _ _ results -> view Node.expression . Result._element <$> results ^? ix (i - 1)
             NodeName _ results -> view Node.expression . Result._element <$> results ^? ix (i - 1)
             PortName _ results -> view Node.expression . Result._element <$> results ^? ix (i - 1)
 
@@ -108,8 +111,8 @@ selectedNode :: Getter Searcher (Maybe ExpressionNode)
 selectedNode = to getNode where
     getNode s = let i = s ^. selected in
         if i == 0 then Nothing else case s ^. mode of
-            Node _ _ _ results -> Result._element <$> results ^? ix (i - 1)
-            _                  -> Nothing
+            Node _ _ results -> Result._element <$> results ^? ix (i - 1)
+            _                -> Nothing
 
 applyExpressionHint :: ExpressionNode -> Model.ExpressionNode -> Model.ExpressionNode
 applyExpressionHint n exprN = exprN & Model.expression .~ n ^. Node.expression
@@ -122,13 +125,13 @@ resultsLength :: Getter Searcher Int
 resultsLength = to getLength where
     getLength searcher = case searcher ^. mode of
       Command    results -> length results
-      Node _ _ _ results -> length results
+      Node   _ _ results -> length results
       NodeName _ results -> length results
       PortName _ results -> length results
 
 updateNodeResult :: [QueryResult ExpressionNode] -> Mode -> Mode
-updateNodeResult r (Node nl tr nn _) = Node nl tr nn r
-updateNodeResult _ m                 = m
+updateNodeResult r (Node nl nmi _) = Node nl nmi r
+updateNodeResult _ m               = m
 
 updateCommandsResult :: [QueryResult ()] -> Mode -> Mode
 updateCommandsResult r (Command _) = Command r
@@ -156,7 +159,7 @@ isSearcherRelated :: NodeLoc -> Searcher -> Bool
 isSearcherRelated nl s = isPrefixOf nlIdPath sIdPath where
     nlIdPath = NodeLoc.toNodeIdList nl
     sIdPath = case s ^. mode of
-        Node     snl _ _ _ -> NodeLoc.toNodeIdList snl
+        Node     snl   _ _ -> NodeLoc.toNodeIdList snl
         NodeName snl     _ -> NodeLoc.toNodeIdList snl
         PortName portRef _ -> NodeLoc.toNodeIdList $ portRef ^. srcNodeLoc
         _                  -> []

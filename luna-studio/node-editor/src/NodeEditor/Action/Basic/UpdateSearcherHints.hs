@@ -11,7 +11,7 @@ import           LunaStudio.Data.Node               (ExpressionNode)
 import           NodeEditor.Action.Command          (Command)
 import           NodeEditor.Action.State.NodeEditor (getLocalFunctions, getNodeSearcherData, modifySearcher)
 import           NodeEditor.Batch.Workspace         (nodeSearcherData)
-import           NodeEditor.React.Model.Searcher    (ClassName, allCommands, updateCommandsResult, updateNodeResult)
+import           NodeEditor.React.Model.Searcher    (allCommands, className, updateCommandsResult, updateNodeResult)
 import qualified NodeEditor.React.Model.Searcher    as Searcher
 import           NodeEditor.State.Global            (State, workspace)
 import           Text.ScopeSearcher.Item            (Items, isElement, isGroup)
@@ -34,9 +34,9 @@ localUpdateSearcherHints = do
         mayQuery <- preuse $ Searcher.input . Searcher._Divided
         m        <- use Searcher.mode
         let (mode, hintsLen) = case m of
-                (Searcher.Node _ cn _ _) -> do
+                (Searcher.Node _ nmi _) -> do
                     let isFirstQuery q = Text.null . Text.dropWhile (== ' ') $ q ^. Searcher.prefix
-                        items' = mergeByName $ maybe [] (\q -> getHintsForNode (q ^. Searcher.query) cn nsData localFunctions (isFirstQuery q)) mayQuery
+                        items' = mergeByName $ maybe [] (\q -> getHintsForNode (q ^. Searcher.query) (nmi ^. className) nsData localFunctions (isFirstQuery q)) mayQuery
                     (updateNodeResult items' m, length items')
                 Searcher.Command {} -> do
                     let items' = maybe [] (searchInScope allCommands . view Searcher.query) mayQuery
@@ -46,7 +46,7 @@ localUpdateSearcherHints = do
         Searcher.rollbackReady .= False
         Searcher.mode          .= mode
 
-getHintsForNode :: Text -> Maybe ClassName -> Items ExpressionNode -> Items ExpressionNode -> IsFirstQuery -> [QueryResult ExpressionNode]
+getHintsForNode :: Text -> Maybe Text -> Items ExpressionNode -> Items ExpressionNode -> IsFirstQuery -> [QueryResult ExpressionNode]
 getHintsForNode query _         nsData localFunctions False = (setPrefix (convert "Local Function")  $ searchInScope localFunctions query)
                                                            <> (setPrefix (convert "Global Function") $ searchInScope (globalFunctions nsData) query)
                                                            <> searchInScope (allMethods nsData) query
@@ -62,15 +62,15 @@ globalFunctions :: Items ExpressionNode -> Items ExpressionNode
 globalFunctions = Map.filter isElement
 
 methodsForClass :: Text -> Items ExpressionNode -> Items ExpressionNode
-methodsForClass className = Map.filterWithKey filterFunction where
-    filterFunction k a = isGroup a && k == className
+methodsForClass className' = Map.filterWithKey filterFunction where
+    filterFunction k a = isGroup a && k == className'
 
 allMethods :: Items ExpressionNode -> Items ExpressionNode
 allMethods = Map.filter isGroup
 
 allMethodsWithoutClass :: Text -> Items ExpressionNode -> Items ExpressionNode
-allMethodsWithoutClass className = Map.filterWithKey filterFunction where
-    filterFunction k a = isGroup a && k /= className
+allMethodsWithoutClass className' = Map.filterWithKey filterFunction where
+    filterFunction k a = isGroup a && k /= className'
 
 setPrefix :: Text -> [QueryResult a] -> [QueryResult a]
 setPrefix prefix = map (\r -> r & Result.prefix .~ prefix)
