@@ -50,6 +50,10 @@ class Maybe a:
     def fromJust: case self of
         Just a: a
 
+    def shortRep: case self of
+        Just a: "Just " + a.shortRep
+        Nothing: "Nothing"
+
 class List a:
     Empty
     Prepend a (List a)
@@ -100,7 +104,7 @@ class List a:
         Empty: Empty
         Prepend x xs: xs . prependAll sep . prepend x
 
-    def toJSON: JSONArray (self . map (.toJSON))
+    def toJSON: JSONArray (self . map (x: x.toJSON))
 
     def filter f: case (self) of
          Empty: Empty
@@ -175,8 +179,6 @@ class JSON:
 
     def toJSON: self
 
-    def shortRep: self.render
-
     def render: case self of
         JSONNumber d: d.shortRep
         JSONString s: s.escapeJSON
@@ -186,6 +188,8 @@ class JSON:
             False: "false"
         JSONNull: "null"
         JSONObject m: "{" + (m . toList . map ((Pair k v): k.escapeJSON + ": " + v.render) . intersperse "," . fold "" (+)) + "}"
+
+    def shortRep: self.render
 
     def lookup key: case self of
         JSONObject m: m.lookup key

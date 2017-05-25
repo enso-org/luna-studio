@@ -155,7 +155,7 @@ buildNode nid = do
     meta      <- fromMaybe def <$> AST.readMeta root
     name      <- getNodeName nid
     canEnter  <- ASTRead.isLambda ref
-    inports   <- buildInPorts  ref
+    inports   <- buildInPorts nid ref
     outports  <- buildOutPorts root
     let code      = Just expr
     return $ API.ExpressionNode nid expr name code inports outports meta canEnter
@@ -164,7 +164,7 @@ buildNodeTypecheckUpdate :: ASTOp m => NodeId -> m API.NodeTypecheckerUpdate
 buildNodeTypecheckUpdate nid = do
   root     <- GraphUtils.getASTPointer nid
   ref      <- GraphUtils.getASTTarget  nid
-  inPorts  <- buildInPorts  ref
+  inPorts  <- buildInPorts nid ref
   outPorts <- buildOutPorts root
   return $ API.ExpressionUpdate nid inPorts outPorts
 
@@ -336,10 +336,11 @@ buildSelfPort' seenAcc node = do
 buildSelfPort :: ASTOp m => NodeRef -> m (Maybe InPort)
 buildSelfPort = buildSelfPort' False
 
-buildWholePort :: ASTOp m => NodeRef -> m InPort
-buildWholePort ref = do
+buildWholePort :: ASTOp m => NodeId -> NodeRef -> m InPort
+buildWholePort nid ref = do
     tp    <- followTypeRep ref
-    state <- getPortState ref
+    pid   <- ASTRead.getNodeId ref
+    state <- if pid == Just nid then return NotConnected else getPortState ref
     return $ Port [] "base" tp state
 
 followTypeRep :: ASTOp m => NodeRef -> m TypeRep
@@ -347,11 +348,11 @@ followTypeRep ref = do
     tp <- IR.source =<< IR.getLayer @TypeLayer ref
     Print.getTypeRep tp
 
-buildInPorts :: ASTOp m => NodeRef -> m (InPortTree InPort)
-buildInPorts ref = do
+buildInPorts :: ASTOp m => NodeId -> NodeRef -> m (InPortTree InPort)
+buildInPorts nid ref = do
     selfPort <- buildSelfPort ref
     argPorts <- buildArgPorts ref
-    whole    <- buildWholePort ref
+    whole    <- buildWholePort nid ref
     return $ LabeledTree (InPorts (LabeledTree def <$> selfPort) (LabeledTree def <$> argPorts)) whole
 
 
