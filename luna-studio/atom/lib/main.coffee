@@ -2,71 +2,69 @@ LunaEditorTab = require './luna-editor-tab'
 LunaStudioTab = require './luna-studio-tab'
 SubAtom       = require 'sub-atom'
 
-i             = require './gen/text-editor-ghcjs.js'
-internal = i()
-c             = require './gen/node-editor-ghcjs.js'
-code = c()
+codeEditor = (require './gen/text-editor-ghcjs.js')()
+nodeEditor = (require './gen/node-editor-ghcjs.js')()
 path = require 'path'
 
-pushShortcutEvent = (name, arg = null) -> code.pushEvent({_shortcut: name, _arg : arg})
-pushSearcherEvent = (name, arg = null) -> code.pushEvent(if arg == null then {tag: name} else {tag: name, contents : arg})
+pushShortcutEvent = (name, arg = null) -> nodeEditor.pushEvent({_shortcut: name, _arg : arg})
+pushSearcherEvent = (name, arg = null) -> nodeEditor.pushEvent(if arg == null then {tag: name} else {tag: name, contents : arg})
 
 module.exports = LunaStudio =
 
   deserializeLunaEditorTab: ({uri}) ->
     actStatus = (status) ->
         if status == 'activate'
-          internal.pushInternalEvent(event: "OpenFile", uri: uri)
-          atom.workspace.getActivePane().activateItem new LunaEditorTab(uri, internal)
+            codeEditor.pushInternalEvent(event: "OpenFile", uri: uri)
+            atom.workspace.getActivePane().activateItem new LunaEditorTab(uri, codeEditor)
 
-    internal.statusListener actStatus
+    codeEditor.statusListener actStatus
 
 
   deserializeLunaStudioTab: ({uri}) ->
     actStatus = (status) ->
       if uri != null
-        if status == 'activate'
-          internal.pushInternalEvent(event: "OpenFile", uri: uri)
-          atom.workspace.getActivePane().activateItem new LunaStudioTab(uri, code)
-    internal.statusListener actStatus
+          if status == 'activate'
+              codeEditor.pushInternalEvent(event: "OpenFile", uri: uri)
+              atom.workspace.getActivePane().activateItem new LunaStudioTab(uri, nodeEditor)
+    codeEditor.statusListener actStatus
 
   activate: (state) ->
-    internal.start()
+    codeEditor.start()
     actStatus = (data) ->
         if data == 'activate'
             rootPath = atom.project.getPaths().shift()
             if rootPath != ""
-                internal.pushInternalEvent(event: "SetProject", uri: rootPath)
-            atom.workspace.getActivePane().activateItem new LunaStudioTab(null, code)
-    internal.statusListener actStatus
+                codeEditor.pushInternalEvent(event: "SetProject", uri: rootPath)
+            atom.workspace.getActivePane().activateItem new LunaStudioTab(null, nodeEditor)
+    codeEditor.statusListener actStatus
 
 
 
     atom.workspace.addOpener (uri) ->
 
       if path.extname(uri) is '.luna'
-        internal.pushInternalEvent(event: "OpenFile", uri: uri)
-        atom.workspace.getActivePane().activateItem new LunaEditorTab(uri, internal)
+          codeEditor.pushInternalEvent(event: "OpenFile", uri: uri)
+          atom.workspace.getActivePane().activateItem new LunaEditorTab(uri, codeEditor)
     @subs = new SubAtom
 
     @subs.add atom.workspace.onDidChangeActivePaneItem (items) ->
         if items instanceof LunaEditorTab
-            code.pushEvent(tag: "SetFile", path: items.uri)
+            nodeEditor.pushEvent(tag: "SetFile", path: items.uri)
 
     @subs.add atom.workspace.onDidDestroyPaneItem (event) =>
         if (event.item instanceof LunaEditorTab) or (event.item instanceof LunaStudioTab)
             uris = (pane.uri for pane in atom.workspace.getPaneItems())
             if event.item.uri not in uris
-              code.pushEvent(tag: "UnsetFile")
-              return internal.pushInternalEvent(event: "CloseFile", uri: event.item.uri)
+                nodeEditor.pushEvent(tag: "UnsetFile")
+                return codeEditor.pushInternalEvent(event: "CloseFile", uri: event.item.uri)
 
     @subs.add atom.workspace.observeTextEditors (editor) ->
       editor.onDidSave (e) =>
-        if path.extname(e.path) is ".luna"
-          atom.workspace.destroyActivePaneItem()
-          internal.pushInternalEvent(event: "OpenFile", uri: e.path)
-          atom.workspace.getActivePane().activateItem new LunaEditorTab(e.path, internal)
-          internal.pushInternalEvent(event: "SaveFile", uri: e.path)
+          if path.extname(e.path) is ".luna"
+              atom.workspace.destroyActivePaneItem()
+              codeEditor.pushInternalEvent(event: "OpenFile", uri: e.path)
+              atom.workspace.getActivePane().activateItem new LunaEditorTab(e.path, codeEditor)
+              codeEditor.pushInternalEvent(event: "SaveFile", uri: e.path)
 
 
     @subs.add atom.commands.add 'atom-text-editor', 'core:copy': ->
@@ -75,20 +73,20 @@ module.exports = LunaStudio =
             buffer = atom.workspace.getActiveTextEditor().buffer
             selection = atom.workspace.getActiveTextEditor().getSelections()
             spanList = ({start: buffer.characterIndexForPosition(s.marker.oldHeadBufferPosition), stop: buffer.characterIndexForPosition(s.marker.oldTailBufferPosition)} for s in selection)
-            internal.pushInternalEvent(event: "Copy", uri: activeFilePath, selections: spanList)
+            codeEditor.pushInternalEvent(event: "Copy", uri: activeFilePath, selections: spanList)
 
     @subs.add atom.commands.add 'atom-workspace', 'core:close': ->
         if (atom.workspace.getActivePaneItem() instanceof LunaEditorTab) or (atom.workspace.getActivePaneItem() instanceof LunaStudioTab)
             uris = (pane.uri for pane in atom.workspace.getPaneItems())
             if atom.workspace.getActivePaneItem().uri not in uris
-              code.pushEvent(tag: "UnsetFile")
-              return internal.pushInternalEvent(event: "CloseFile", uri: atom.workspace.getActivePaneItem().uri)
+                nodeEditor.pushEvent(tag: "UnsetFile")
+                return codeEditor.pushInternalEvent(event: "CloseFile", uri: atom.workspace.getActivePaneItem().uri)
 
     @subs.add atom.commands.add 'atom-workspace', 'core:save', (e)                 ->
       if (atom.workspace.getActivePaneItem() instanceof LunaEditorTab) or (atom.workspace.getActivePaneItem() instanceof LunaStudioTab)
           e.preventDefault()
           e.stopImmediatePropagation()
-          internal.pushInternalEvent(event: "SaveFile", uri: atom.workspace.getActivePaneItem().uri)
+          codeEditor.pushInternalEvent(event: "SaveFile", uri: atom.workspace.getActivePaneItem().uri)
 
 
 
