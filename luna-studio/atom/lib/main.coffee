@@ -90,7 +90,7 @@ module.exports = LunaStudio =
 
 
 
-    @subs.add atom.commands.add '.luna-studio', 'luna-studio:cancel':       -> pushShortcutEvent("Cancel")
+    @subs.add atom.commands.add '.luna-studio', 'core:cancel':              -> pushShortcutEvent("Cancel")
     # camera
     @subs.add atom.commands.add '.luna-studio', 'luna-studio:center-graph': -> pushShortcutEvent("CenterGraph")
     @subs.add atom.commands.add '.luna-studio', 'luna-studio:pan-down':     -> pushShortcutEvent("PanDown")
@@ -122,12 +122,12 @@ module.exports = LunaStudio =
     @subs.add atom.commands.add '.luna-studio', 'luna-studio:edit-selected-nodes':       -> pushShortcutEvent("EditSelectedNodes")
     @subs.add atom.commands.add '.luna-studio', 'luna-studio:expand-selected-nodes':     -> pushShortcutEvent("ExpandSelectedNodes")
     @subs.add atom.commands.add '.luna-studio', 'luna-studio:remove-selected-nodes':     -> pushShortcutEvent("RemoveSelectedNodes")
-    @subs.add atom.commands.add '.luna-studio', 'luna-studio:select-all':                -> pushShortcutEvent("SelectAll")
+    @subs.add atom.commands.add '.luna-studio', 'core:select-all':                       -> pushShortcutEvent("SelectAll")
     @subs.add atom.commands.add '.luna-studio', 'luna-studio:unfold-selected-nodes':     -> pushShortcutEvent("UnfoldSelectedNodes")
     @subs.add atom.commands.add '.luna-studio', 'luna-studio:autolayout-selected-nodes': -> pushShortcutEvent("AutolayoutSelectedNodes")
     @subs.add atom.commands.add '.luna-studio', 'luna-studio:autolayout-all-nodes':      -> pushShortcutEvent("AutolayoutAllNodes")
     # searcher
-    @subs.add atom.commands.add '.luna-studio', 'luna-studio:searcher-open':           -> pushShortcutEvent("SearcherOpen")
+    @subs.add atom.commands.add '.luna-studio',   'luna-studio:searcher-open':         -> pushShortcutEvent("SearcherOpen")
     @subs.add atom.commands.add '.luna-searcher', 'luna-studio:searcher-accept-0':     -> pushSearcherEvent("AcceptEntry", 0)
     @subs.add atom.commands.add '.luna-searcher', 'luna-studio:searcher-accept-1':     -> pushSearcherEvent("AcceptEntry", 1)
     @subs.add atom.commands.add '.luna-searcher', 'luna-studio:searcher-accept-2':     -> pushSearcherEvent("AcceptEntry", 2)

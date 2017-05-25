@@ -63,10 +63,13 @@
   'up'         : 'luna-studio:searcher-move-up'               # Searcher MoveUp
 
 '.luna-studio':
-  'escape'           : 'luna-studio:cancel'                   # Cancel
   # camera
   'ctrl--'           : 'luna-studio:zoom-out'                 # ZoomOut
   'cmd--'            : 'luna-studio:zoom-out'                 # ZoomOut
+  'ctrl-_'           : 'luna-studio:zoom-out'                 # ZoomOut
+  'cmd-_'            : 'luna-studio:zoom-out'                 # ZoomOut
+  'ctrl-='           : 'luna-studio:zoom-in'                  # ZoomIn
+  'cmd-='            : 'luna-studio:zoom-in'                  # ZoomIn
   'ctrl-+'           : 'luna-studio:zoom-in'                  # ZoomIn
   'cmd-+'            : 'luna-studio:zoom-in'                  # ZoomIn
   'ctrl-0'           : 'luna-studio:reset-zoom'               # ResetZoom
@@ -79,10 +82,6 @@
   'cmd-left'         : 'luna-studio:pan-left'                 # PanLeft
   'ctrl-right'       : 'luna-studio:pan-right'                # PanRight
   'cmd-right'        : 'luna-studio:pan-right'                # PanRight
-  'ctrl-shift--'     : 'luna-studio:zoom-out'                 # ZoomOut
-  'cmd-shift--'      : 'luna-studio:zoom-out'                 # ZoomOut
-  'ctrl-shift-+'     : 'luna-studio:zoom-in'                  # ZoomIn
-  'cmd-shift-+'      : 'luna-studio:zoom-in'                  # ZoomIn
   'ctrl-shift-0'     : 'luna-studio:reset-pan'                # ResetPan
   'cmd-shift-0'      : 'luna-studio:reset-pan'                # ResetPan
   'ctrl-up'          : 'luna-studio:pan-up'                   # PanUp
@@ -107,8 +106,6 @@
   'up'               : 'luna-studio:go-up'                    # GoUp
   # nodes
   'backspace'       : 'luna-studio:remove-selected-nodes'     # RemoveSelectedNodes
-  'ctrl-a'          : 'luna-studio:select-all'                # SelectAll
-  'cmd-a'           : 'luna-studio:select-all'                # SelectAll
   'ctrl-e'          : 'luna-studio:unfold-selected-nodes'     # UnfoldSelectedNodes
   'cmd-e'           : 'luna-studio:unfold-selected-nodes'     # UnfoldSelectedNodes
   'delete'          : 'luna-studio:remove-selected-nodes'     # RemoveSelectedNodes
