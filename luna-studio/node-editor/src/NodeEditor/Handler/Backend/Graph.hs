@@ -46,7 +46,7 @@ import           NodeEditor.Action.Batch                     (collaborativeModif
 import           NodeEditor.Action.Camera                    (tryLoadCamera)
 import           NodeEditor.Action.Command                   (Command)
 import           NodeEditor.Action.State.App                 (setBreadcrumbs)
-import           NodeEditor.Action.State.Graph               (inCurrentLocation, isCurrentLocation)
+import           NodeEditor.Action.State.Graph               (inCurrentLocation, isCurrentFile, isCurrentLocation)
 import           NodeEditor.Action.State.NodeEditor          (isGraphLoaded, modifyExpressionNode, setGraphLoaded, updateMonads)
 import           NodeEditor.Action.UUID                      (isOwnRequest)
 import qualified NodeEditor.Batch.Workspace                  as Workspace
@@ -88,10 +88,8 @@ handle (Event.Batch ev) = Just $ case ev of
                     output      = convert . (NodeLoc.empty,) <$> result ^. GetProgram.graph . Graph.outputSidebar
                     connections = result ^. GetProgram.graph . Graph.connections
                     monads      = result ^. GetProgram.graph . Graph.monads
-                    nsData      = result ^. GetProgram.nodeSearcherData
                     breadcrumb  = result ^. GetProgram.breadcrumb
                 shouldCenter <- not <$> isGraphLoaded
-                Global.workspace . _Just . Workspace.nodeSearcherData .= nsData
                 setBreadcrumbs breadcrumb
                 updateGraph nodes input output connections monads
                 setGraphLoaded True
@@ -234,10 +232,8 @@ handle (Event.Batch ev) = Just $ case ev of
     SearchNodesResponse response -> handleResponse response success doNothing where
         requestId      = response ^. Response.requestId
         location       = response ^. Response.request . SearchNodes.location
-        success result = inCurrentLocation location $ \_ -> do
-            ownRequest <- isOwnRequest requestId
-            when ownRequest $
-                localSetSearcherHints $ result ^. SearchNodes.nodeSearcherData
+        success result = whenM (isCurrentFile location) $
+            localSetSearcherHints $ result ^. SearchNodes.nodeSearcherData
 
     SetNodeExpressionResponse response -> handleResponse response success failure where
         requestId       = response ^. Response.requestId

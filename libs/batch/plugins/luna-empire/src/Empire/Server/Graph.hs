@@ -216,8 +216,7 @@ handleGetProgram = modifyGraph defInverse action replyResult where
         graph <- Graph.getGraph location
         code  <- Graph.getCode location
         crumb <- Graph.decodeLocation location
-        sMap  <- liftIO . readMVar =<< view Empire.scopeVar
-        return $ GetProgram.Result graph (Text.pack code) crumb (prepareNSData sMap)
+        return $ GetProgram.Result graph (Text.pack code) crumb
 
 handleAddConnection :: Request AddConnection.Request -> StateT Env BusT ()
 handleAddConnection = modifyGraph inverse action replyResult where
@@ -351,7 +350,7 @@ handleRenamePort = modifyGraph inverse action replyResult where --FIXME[pm] impl
 
 handleSearchNodes :: Request SearchNodes.Request -> StateT Env BusT ()
 handleSearchNodes = modifyGraph defInverse action replyResult where
-    action  _ = SearchNodes.Result . prepareNSData <$> (liftIO . readMVar =<< view Empire.scopeVar)
+    action _ = SearchNodes.Result . prepareNSData <$> (liftIO . readMVar =<< view Empire.scopeVar)
 
 handleSetNodeExpression :: Request SetNodeExpression.Request -> StateT Env BusT ()-- fixme [SB] returns Result with no new informations and change node expression has addNode+removeNodes
 handleSetNodeExpression = modifyGraph inverse action replyResult where
@@ -410,8 +409,7 @@ handleSubstitute = modifyGraph defInverse action success where
         graph <- Graph.getGraph loc
         code  <- Graph.getCode loc
         crumb <- Graph.decodeLocation loc
-        sMap  <- liftIO . readMVar =<< view Empire.scopeVar
-        return $ GetProgram.Result graph (Text.pack code) crumb (prepareNSData sMap)
+        return $ GetProgram.Result graph (Text.pack code) crumb
     success (Request uuid guiID request) inv res = do
         -- DISCLAIMER, FIXME[MM]: ugly hack - send response to bogus GetProgram request
         -- after each substitute

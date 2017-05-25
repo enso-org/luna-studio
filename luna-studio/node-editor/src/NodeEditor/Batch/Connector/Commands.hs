@@ -135,8 +135,8 @@ renamePort :: OutPortRef -> Text -> Workspace -> UUID -> Maybe UUID -> IO ()
 renamePort portRef name workspace uuid guiID = sendRequest $ Message uuid guiID $ withLibrary workspace' RenamePort.Request portRef' name where
     (workspace', portRef') = normalise workspace portRef
 
-searchNodes :: Text -> (Int, Int) -> Workspace -> UUID -> Maybe UUID -> IO ()
-searchNodes query cursor workspace uuid guiID = sendRequest $ Message uuid guiID $ withLibrary workspace $ SearchNodes.Request query cursor
+searchNodes :: Workspace -> UUID -> Maybe UUID -> IO ()
+searchNodes workspace uuid guiID = sendRequest $ Message uuid guiID $ withLibrary workspace $ SearchNodes.Request
 
 setNodeExpression :: NodeLoc -> Text -> Workspace -> UUID -> Maybe UUID -> IO ()
 setNodeExpression nodeLoc expression workspace uuid guiID =

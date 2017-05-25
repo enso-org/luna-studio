@@ -11,9 +11,7 @@ import           LunaStudio.Data.NodeSearcher  (Items)
 import           Prologue
 
 
-data Request = Request { _query    :: Text
-                       , _cursor   :: (Int, Int)
-                       , _location :: GraphLocation
+data Request = Request { _location :: GraphLocation
                        } deriving (Eq, Generic, NFData, Show)
 
 data Result  = Result  { _nodeSearcherData :: Items ExpressionNode

@@ -8,8 +8,6 @@ import qualified LunaStudio.API.Topic          as T
 import           LunaStudio.Data.Breadcrumb    (Breadcrumb, BreadcrumbItem, Named)
 import           LunaStudio.Data.Graph         (Graph)
 import           LunaStudio.Data.GraphLocation (GraphLocation)
-import           LunaStudio.Data.Node          (ExpressionNode)
-import           LunaStudio.Data.NodeSearcher  (Items)
 import           Prologue
 
 
@@ -19,7 +17,6 @@ data Request = Request { _location :: GraphLocation
 data Result  = Result  { _graph            :: Graph
                        , _code             :: Text
                        , _breadcrumb       :: Breadcrumb (Named BreadcrumbItem)
-                       , _nodeSearcherData :: Items ExpressionNode
                        } deriving (Eq, Generic, NFData, Show)
 
 makeLenses ''Request
