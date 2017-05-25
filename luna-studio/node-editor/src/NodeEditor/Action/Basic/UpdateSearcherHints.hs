@@ -9,7 +9,7 @@ import           Data.Text                          (Text)
 import qualified Data.Text                          as Text
 import           LunaStudio.Data.Node               (ExpressionNode)
 import           NodeEditor.Action.Command          (Command)
-import           NodeEditor.Action.State.NodeEditor (getNodeSearcherData, modifySearcher)
+import           NodeEditor.Action.State.NodeEditor (getLocalFunctions, getNodeSearcherData, modifySearcher)
 import           NodeEditor.Batch.Workspace         (nodeSearcherData)
 import           NodeEditor.React.Model.Searcher    (ClassName, allCommands, updateCommandsResult, updateNodeResult)
 import qualified NodeEditor.React.Model.Searcher    as Searcher
@@ -19,6 +19,7 @@ import           Text.ScopeSearcher.QueryResult     (QueryResult)
 import qualified Text.ScopeSearcher.QueryResult     as Result
 import           Text.ScopeSearcher.Scope           (searchInScope)
 
+type IsFirstQuery = Bool
 
 localSetSearcherHints :: Items ExpressionNode -> Command State ()
 localSetSearcherHints items' = do
@@ -27,14 +28,15 @@ localSetSearcherHints items' = do
 
 localUpdateSearcherHints :: Command State ()
 localUpdateSearcherHints = do
-    nsData <- getNodeSearcherData
+    nsData         <- getNodeSearcherData
+    localFunctions <- getLocalFunctions
     modifySearcher $ do
         mayQuery <- preuse $ Searcher.input . Searcher._Divided
         m        <- use Searcher.mode
         let (mode, hintsLen) = case m of
                 (Searcher.Node _ cn _ _) -> do
-                    let cn' q = if Text.null . Text.dropWhile (== ' ') $ q ^. Searcher.prefix then cn else def
-                        items' = mergeByName $ maybe [] (\q -> getHintsForNode (q ^. Searcher.query) (cn' q) nsData) mayQuery
+                    let isFirstQuery q = Text.null . Text.dropWhile (== ' ') $ q ^. Searcher.prefix
+                        items' = mergeByName $ maybe [] (\q -> getHintsForNode (q ^. Searcher.query) cn nsData localFunctions (isFirstQuery q)) mayQuery
                     (updateNodeResult items' m, length items')
                 Searcher.Command {} -> do
                     let items' = maybe [] (searchInScope allCommands . view Searcher.query) mayQuery
@@ -44,12 +46,17 @@ localUpdateSearcherHints = do
         Searcher.rollbackReady .= False
         Searcher.mode          .= mode
 
-getHintsForNode :: Text -> Maybe ClassName -> Items ExpressionNode -> [QueryResult ExpressionNode]
-getHintsForNode query Nothing   nsData = searchInScope (globalFunctions nsData) query
-                                      <> searchInScope (allMethods nsData) query
-getHintsForNode query (Just cn) nsData = searchInScope (methodsForClass cn nsData) query
-                                      <> searchInScope (globalFunctions nsData) query
-                                      <> searchInScope (allMethodsWithoutClass cn nsData) query
+getHintsForNode :: Text -> Maybe ClassName -> Items ExpressionNode -> Items ExpressionNode -> IsFirstQuery -> [QueryResult ExpressionNode]
+getHintsForNode query _         nsData localFunctions False = searchInScope localFunctions query
+                                                           <> searchInScope (globalFunctions nsData) query
+                                                           <> searchInScope (allMethods nsData) query
+getHintsForNode query Nothing   nsData localFunctions True  = searchInScope (globalFunctions nsData) query
+                                                           <> searchInScope localFunctions query
+                                                           <> searchInScope (allMethods nsData) query
+getHintsForNode query (Just cn) nsData localFunctions True  = searchInScope (methodsForClass cn nsData) query
+                                                           <> searchInScope (globalFunctions nsData) query
+                                                           <> searchInScope localFunctions query
+                                                           <> searchInScope (allMethodsWithoutClass cn nsData) query
 
 globalFunctions :: Items ExpressionNode -> Items ExpressionNode
 globalFunctions = Map.filter isElement

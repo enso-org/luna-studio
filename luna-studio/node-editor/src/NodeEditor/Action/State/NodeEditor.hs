@@ -17,6 +17,7 @@ import qualified NodeEditor.React.Model.Layout               as Scene
 import           Common.Prelude
 import           LunaStudio.Data.MonadPath                   (MonadPath)
 import qualified LunaStudio.Data.Node                        as Empire
+import qualified LunaStudio.Data.NodeSearcher                as NS
 import           LunaStudio.Data.Port                        (_WithDefault)
 import           LunaStudio.Data.PortDefault                 (PortDefault)
 import           LunaStudio.Data.PortRef                     (AnyPortRef, InPortRef)
@@ -32,12 +33,13 @@ import           NodeEditor.React.Model.Connection           (Connection, Connec
                                                               connectionId, containsNode, containsPortRef, dstNodeLoc, srcNodeLoc,
                                                               toConnectionsMap)
 import           NodeEditor.React.Model.Node                 (InputNode, Node (Expression, Input, Output), NodeLoc, OutputNode, nodeLoc,
-                                                              toNodesMap)
+                                                              outPortsList, toNodesMap)
 import           NodeEditor.React.Model.Node.ExpressionNode  (ExpressionNode, isSelected)
 import qualified NodeEditor.React.Model.Node.ExpressionNode  as ExpressionNode
 import           NodeEditor.React.Model.NodeEditor           (NodeEditor)
 import qualified NodeEditor.React.Model.NodeEditor           as NE
 import           NodeEditor.React.Model.Port                 (state)
+import qualified NodeEditor.React.Model.Port                 as Port
 import           NodeEditor.React.Model.Searcher             (Searcher)
 import           NodeEditor.State.Global                     (State, workspace)
 import           Text.ScopeSearcher.Item                     (Items, isElement)
@@ -92,6 +94,13 @@ findSuccessorPosition n = ExpressionNode.findSuccessorPosition n <$> getExpressi
 
 getNode :: NodeLoc -> Command State (Maybe Node)
 getNode nl = NE.getNode nl <$> getNodeEditor
+
+getAllNodes :: Command State [Node]
+getAllNodes = do
+    inputNodes      <- getInputNodes
+    outputNodes     <- getOutputNodes
+    expressionNodes <- getExpressionNodes
+    return $ map Input inputNodes <> map Output outputNodes <> map Expression expressionNodes
 
 getInputNode :: NodeLoc -> Command State (Maybe InputNode)
 getInputNode nl = NE.getInputNode nl <$> getNodeEditor
@@ -241,3 +250,7 @@ getPort portRef = NE.getPort portRef <$> getNodeEditor
 
 getPortDefault :: InPortRef -> Command State (Maybe PortDefault)
 getPortDefault portRef = maybe Nothing (\mayPort -> mayPort ^? state . _WithDefault) <$> (NE.getPort portRef <$> getNodeEditor)
+
+getLocalFunctions :: Command State (Items Empire.ExpressionNode)
+getLocalFunctions = Map.fromList . map NS.entry <$> functionsNames where
+    functionsNames = Set.toList . Set.fromList . map (view Port.name) . concatMap outPortsList <$> getAllNodes

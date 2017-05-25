@@ -199,12 +199,9 @@ getDstPortByNodeLoc nl = InPortRef' $ InPortRef nl [Self]
 
 prepareNSData :: Empire.SymbolMap -> NS.Items ExpressionNode
 prepareNSData sMap = Map.fromList $ functionsList <> methodsList where
-    functionsList = entry <$> sMap ^. Empire.functions
-    entry name = (name, NS.Element $ mockNode name)
+    functionsList = NS.entry <$> sMap ^. Empire.functions
     classesMap = sMap ^. Empire.classes
-    methodsList = (uncurry methodEntry) <$> Map.toList classesMap
-    methodEntry className methodList = (className, NS.Group (Map.fromList $ entry <$> methodList) $ mockNode className)
-    mockNode expr = Node.mkExprNode (fromJust $ UUID.fromString "094f9784-3f07-40a1-84df-f9cf08679a27") expr def
+    methodsList = (uncurry NS.methodEntry) <$> Map.toList classesMap
 
 
 -- Handlers
