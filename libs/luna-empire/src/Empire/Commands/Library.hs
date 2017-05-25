@@ -63,7 +63,7 @@ withLibrary file cmd = do
         libMay <- get
         notifEnv <- ask
         case libMay of
-            Nothing  -> throwM $ LibraryNotFoundException file -- $ "Library " ++ (show file) ++ " does not exist."
+            Nothing  -> throwM $ LibraryNotFoundException file
             Just lib -> do
                 let result = (_2 %~ Just) <$> Empire.runEmpire notifEnv lib cmd
                 Empire.empire $ const $ const result

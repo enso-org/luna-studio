@@ -51,7 +51,7 @@ module Empire.Commands.Graph
 
 import           Control.Exception             (evaluate)
 import           Control.Monad                 (forM, forM_)
-import           Control.Monad.Catch           (MonadCatch(..), catchAll, handle)
+import           Control.Monad.Catch           (MonadCatch(..), catchAll, handle, onException)
 import           Control.Monad.State           hiding (when)
 import           Control.Arrow                 ((&&&))
 import           Control.Monad.Error           (throwError)
@@ -71,7 +71,7 @@ import qualified Safe
 import qualified System.IO                     as IO
 
 import           Empire.Data.AST                 (NodeRef, NotInputEdgeException (..), NotUnifyException,
-                                                  InvalidConnectionException (..),
+                                                  InvalidConnectionException (..), SomeASTException,
                                                   astExceptionFromException, astExceptionToException)
 import qualified Empire.Data.BreadcrumbHierarchy as BH
 import           Empire.Data.Graph               (Graph)
@@ -98,7 +98,7 @@ import           LunaStudio.Data.PortRef         (AnyPortRef (..), InPortRef (..
 import qualified LunaStudio.Data.PortRef         as PortRef
 import           LunaStudio.Data.Position        (Position)
 import qualified LunaStudio.Data.Position        as Position
-import           Empire.ASTOp                    (ASTOp, runASTOp, runAliasAnalysis)
+import           Empire.ASTOp                    (ASTOp, putNewIR, runASTOp, runAliasAnalysis)
 
 import qualified Empire.ASTOps.Builder           as ASTBuilder
 import qualified Empire.ASTOps.Deconstruct       as ASTDeconstruct
@@ -112,14 +112,16 @@ import qualified Empire.Commands.Autolayout      as Autolayout
 import           Empire.Commands.Breadcrumb      (withBreadcrumb)
 import qualified Empire.Commands.GraphBuilder    as GraphBuilder
 import qualified Empire.Commands.GraphUtils      as GraphUtils
+import qualified Empire.Commands.Lexer           as Lexer
 import qualified Empire.Commands.Library         as Library
 import qualified Empire.Commands.Publisher       as Publisher
 import           Empire.Empire
 
-import           Data.SpanTree                    (RightSpacedSpan(..))
+import           Data.Text.Position               (Delta)
+import           Data.SpanTree                    (LeftSpacedSpan(..))
 import qualified Luna.IR                          as IR
 import qualified OCI.IR.Combinators               as IR (replaceSource, deleteSubtree, narrowTerm)
-import           Luna.Syntax.Text.Parser.CodeSpan (CodeSpan, DeltaSpan)
+import           Luna.Syntax.Text.Parser.CodeSpan (CodeSpan)
 import           Luna.Syntax.Text.Parser.Marker   (MarkedExprMap(..))
 import qualified Luna.Syntax.Text.Parser.Marker   as Luna
 import qualified Luna.Syntax.Text.Parser.Parser   as Parser (ReparsingStatus(..), ReparsingChange(..))
@@ -158,8 +160,11 @@ addNodeNoTC loc uuid input name meta = do
             Just n -> return $ Text.unpack n
             _      -> generateNodeName
         parsedNode   <- AST.addNode uuid newNodeName parse
+        index        <- getNextExprMarker
+        IR.putLayer @CodeSpan parsedNode (Just $ LeftSpacedSpan 5 (fromIntegral $ Text.length input + length newNodeName + length (show index) + 2 + 2 + 1))
         putIntoHierarchy uuid $ BH.MatchNode parsedNode
         nearestNode  <- putInSequence parsedNode meta
+        addExprMapping index parsedNode
         return (nearestNode, parsedNode)
     runAliasAnalysis
     node <- runASTOp $ do
@@ -206,6 +211,7 @@ putInSequence ref meta = do
                                 l'     <- IR.source l
                                 newSeq <- IR.generalize <$> IR.seq l' ref
                                 IR.replaceSource newSeq l
+                                void $ updateCodeSpan s
                             _       -> undefined
                         _        -> updateGraphSeq =<< AST.makeSeq (nodes ++ [ref])
                 _ -> updateGraphSeq =<< AST.makeSeq (ref:nodes)
@@ -215,17 +221,18 @@ putInSequence ref meta = do
         _ -> do
             updateGraphSeq =<< AST.makeSeq [ref]
             return Nothing
-    index <- getNextExprMarker
-    addExprMapping index ref
     return nearestNode
 
 addToCode :: GraphLocation -> Maybe NodeRef -> NodeId -> Empire ()
 addToCode loc@(GraphLocation file _) previous inserted = do
-    (expr, line) <- withGraph loc $ runASTOp $ do
-        expr <- printMarkedExpression =<< ASTRead.getASTPointer inserted
-        line <- join <$> (forM previous nodeLine)
-        return (expr, fromMaybe 0 line)
-    Library.withLibrary file $ Library.addLineAfter line expr
+    (expr, position) <- withGraph loc $ runASTOp $ do
+        ref   <- ASTRead.getASTPointer inserted
+        expr  <- printMarkedExpression ref
+        range <- readRange ref
+        LeftSpacedSpan off _ <- readCodeSpan ref
+        let offset = Text.replicate (fromIntegral off - 1) " "
+        return (Text.concat [offset, expr], fst range - fromIntegral off + 1)
+    Library.withLibrary file $ Library.applyDiff position position (Text.concat [expr, "\n"])
     return ()
 
 addExprMapping :: ASTOp m => Word64 -> NodeRef -> m ()
@@ -309,6 +316,16 @@ updateGraphSeq newOut = do
     when (newOut /= oldSeq) $ mapM_ ASTRemove.removeSubtree oldSeq
     Graph.breadcrumbHierarchy . BH._ToplevelParent . BH.topBody .= newOut
     forM_ newOut $ (Graph.breadcrumbHierarchy . BH.body .=)
+    forM_ newOut $ updateCodeSpan
+
+updateCodeSpan :: ASTOp m => NodeRef -> m (LeftSpacedSpan Delta)
+updateCodeSpan ref = IR.matchExpr ref $ \case
+    IR.Seq l r -> do
+        l' <- updateCodeSpan =<< IR.source l
+        r' <- updateCodeSpan =<< IR.source r
+        IR.putLayer @CodeSpan ref (Just $ l' <> r')
+        return (l' <> r')
+    _          -> fromMaybe mempty <$> IR.getLayer @CodeSpan ref
 
 addPort :: GraphLocation -> OutPortRef -> Empire InputSidebar
 addPort loc portRef = withTC loc False $ addPortNoTC loc portRef
@@ -352,8 +369,12 @@ removeNodes loc@(GraphLocation file _) nodeIds = do
 
 removeFromCode :: GraphLocation -> NodeId -> Empire ()
 removeFromCode loc@(GraphLocation file _) nodeId = do
-    line <- withGraph loc $ runASTOp $ nodeLineById nodeId
-    Library.withLibrary file $ forM_ line $ \l -> Library.removeLine l
+    (start, end) <- withGraph loc $ runASTOp $ do
+        ref   <- ASTRead.getASTPointer nodeId
+        range <- readRange ref
+        LeftSpacedSpan off _ <- readCodeSpan ref
+        return (fst range - fromIntegral off, snd range)
+    void $ Library.withLibrary file $ Library.applyDiff start end ""
 
 removeNodeNoTC :: ASTOp m => NodeId -> m [NodeId]
 removeNodeNoTC nodeId = do
@@ -427,19 +448,18 @@ makeTarget ref = IR.matchExpr ref $ \case
 
 setNodeExpression :: GraphLocation -> NodeId -> Text -> Empire ExpressionNode
 setNodeExpression loc@(GraphLocation file _) nodeId expression = do
-    (node, line, code) <- withTC loc False $ do
-        (oldExpr, line) <- runASTOp $ do
-            oldExpr  <- ASTRead.getASTTarget nodeId
-            line     <- nodeLineById nodeId
-            return (oldExpr, line)
+    (node, oldRange, code) <- withTC loc False $ do
+        oldExpr   <- runASTOp $ ASTRead.getASTTarget nodeId
         parsedRef <- view _1 <$> ASTParse.runReparser expression oldExpr
-        runASTOp $ do
+        oldRange  <- runASTOp $ do
             oldPointer <- ASTRead.getASTPointer nodeId
-            isMatch <- ASTRead.isMatch oldPointer
+            oldRange   <- readRange oldPointer
+            isMatch    <- ASTRead.isMatch oldPointer
             ASTModify.rewireNode nodeId parsedRef
             when (not isMatch) $ do
                 putIntoHierarchy nodeId $ BH.AnonymousNode parsedRef
                 updateExprMap parsedRef oldExpr
+            return oldRange
         runAliasAnalysis
         (node, code)  <- runASTOp $ do
             expr      <- ASTRead.getASTPointer nodeId
@@ -450,9 +470,13 @@ setNodeExpression loc@(GraphLocation file _) nodeId expression = do
             forM_ exprItem $ (Graph.breadcrumbHierarchy . BH.children . ix nodeId .=) . BH.ExprChild
             node <- GraphBuilder.buildNode nodeId
             code <- printMarkedExpression expr
+            LeftSpacedSpan off _ <- readCodeSpan expr
+            IR.putLayer @CodeSpan expr (Just $ LeftSpacedSpan off (fromIntegral $ Text.length code))
+            oldSeq      <- preuse $ Graph.breadcrumbHierarchy . BH.body
+            forM_ oldSeq updateCodeSpan
             return (node, code)
-        return (node, line, code)
-    Library.withLibrary file $ forM line $ \l -> Library.substituteLine l code
+        return (node, oldRange, code)
+    Library.withLibrary file $ Library.applyDiff (fst oldRange) (snd oldRange) code
     resendCode loc
     return node
 
@@ -509,20 +533,7 @@ connectPersistent src@(OutPortRef (NodeLoc _ srcNodeId) srcPort) (OutPortRef' ds
         _ : _ -> throwM InvalidConnectionException
 
 connectNoTC :: GraphLocation -> OutPortRef -> AnyPortRef -> Command Graph Connection
-connectNoTC loc outPort anyPort = do
-    (connection, nodeToUpdate) <- runASTOp $ do
-        connection <- connectPersistent outPort anyPort
-
-        -- if input port is not an edge, send update to gui
-        edges <- GraphBuilder.getEdgePortMapping
-        let nid = PortRef.nodeId' anyPort
-        let nodeToUpdate = case edges of
-                Just (input, output) -> do
-                    if (nid /= input && nid /= output) then Just <$> GraphBuilder.buildNode nid
-                                                       else return Nothing
-                _ -> Just <$> GraphBuilder.buildNode nid
-        (connection,) <$> nodeToUpdate
-    return connection
+connectNoTC loc outPort anyPort = runASTOp $ connectPersistent outPort anyPort
 
 data SelfPortDefaultException = SelfPortDefaultException InPortRef
     deriving (Show)
@@ -591,9 +602,12 @@ decodeLocation loc@(GraphLocation file crumbs) =
     withGraph (GraphLocation file $ Breadcrumb []) $ GraphBuilder.decodeBreadcrumbs crumbs
 
 renameNode :: GraphLocation -> NodeId -> Text -> Empire ()
-renameNode loc nid name = withTC loc False $ do
-    runASTOp $ renameNodeGraph nid name
-    runAliasAnalysis
+renameNode loc nid name = do
+    withTC loc False $ do
+        runASTOp $ renameNodeGraph nid name
+        runAliasAnalysis
+    updateNodeCode loc nid
+    resendCode loc
 
 renameNodeGraph :: ASTOp m => NodeId -> Text -> m ()
 renameNodeGraph nid name = do
@@ -611,9 +625,7 @@ autolayoutNodes loc nids = do
 
 openFile :: FilePath -> Empire ()
 openFile path = do
-    code <- do
-        rawCode <- liftIO $ Text.readFile path
-        return $ Text.stripEnd rawCode
+    code <- liftIO $ Text.readFile path
     Library.createLibrary Nothing path code
     let loc = GraphLocation path $ Breadcrumb []
     nodeIds   <- withGraph loc $ loadCode code
@@ -622,49 +634,27 @@ openFile path = do
 typecheck :: GraphLocation -> Empire ()
 typecheck loc = withTC loc False $ return ()
 
-substituteCode :: FilePath -> Int -> Int -> Text -> Maybe Int -> Empire (Maybe Parser.ReparsingStatus)
+substituteCode :: FilePath -> Int -> Int -> Text -> Maybe Int -> Empire ()
 substituteCode path start end code cursor = do
     newCode <- Library.withLibrary path $ Library.applyDiff start end code
     let loc = GraphLocation path (Breadcrumb [])
-    withTC loc True $ reloadCode loc newCode
+    handle (\(_e :: SomeASTException) -> return ()) $ do
+        withGraph loc $ reloadCode loc newCode
 
-reloadCode :: GraphLocation -> Text -> Command Graph (Maybe Parser.ReparsingStatus)
-reloadCode loc code = handle (\(_e :: ASTParse.SomeParserException) -> return Nothing) $ do
-    expr <- preuse $ Graph.breadcrumbHierarchy . BH.body
-    case expr of
-        Just e -> do
-            (ref, exprMap, rs) <- ASTParse.runUnitReparser code e
-            Graph.breadcrumbHierarchy . BH.body .= ref
-            children <- runASTOp $ forM (coerce rs :: [Parser.ReparsingChange]) $ \x -> case x of
-                Parser.AddedExpr expr -> do
-                    nodeId <- insertNode expr
-                    return $ Just (nodeId, expr)
-                Parser.ChangedExpr oldExpr expr -> do
-                    oldNodeId <- ASTRead.safeGetVarNodeId oldExpr
-
-                    forM oldNodeId $ \nodeId -> do
-                        copyMeta oldExpr expr
-                        putIntoHierarchy nodeId $ BH.MatchNode expr
-                        markNode nodeId
-                        ASTModify.rewireNode nodeId =<< ASTRead.getTargetNode expr
-                        return (nodeId, expr)
-                Parser.UnchangedExpr oldExpr expr -> do
-                    oldNodeId <- ASTRead.safeGetVarNodeId oldExpr
-
-                    forM oldNodeId $ \nodeId -> do
-                        copyMeta oldExpr expr
-                        putIntoHierarchy nodeId $ BH.MatchNode expr
-                        putChildrenIntoHierarchy nodeId expr
-                        markNode nodeId
-                        return (nodeId, expr)
-                Parser.RemovedExpr oldExpr -> do
-                    oldNodeId <- ASTRead.safeGetVarNodeId oldExpr
-                    forM_ oldNodeId $ removeNodeNoTC
-                    return Nothing
-            runAliasAnalysis
-            runASTOp $ forM (catMaybes children) $ \(n, e) -> putChildrenIntoHierarchy n e
-            return $ Just rs
-        Nothing -> return Nothing
+reloadCode :: GraphLocation -> Text -> Command Graph ()
+reloadCode loc code = do
+    oldMetas <- runASTOp $ do
+        m <- getExprMap
+        oldMetas <- forM (Map.assocs m) $ \(marker, expr) -> (marker,) <$> AST.readMeta expr
+        return [ (marker, meta) | (marker, Just meta) <- oldMetas ]
+    oldHierarchy <- use Graph.breadcrumbHierarchy
+    Graph.breadcrumbHierarchy .= def
+    loadCode code `onException` (Graph.breadcrumbHierarchy .= oldHierarchy)
+    runASTOp $ do
+        currentExprMap <- getExprMap
+        forM_ oldMetas $ \(marker, oldMeta) -> do
+            let expr = Map.lookup marker currentExprMap
+            forM_ expr $ \e -> AST.writeMeta e oldMeta
 
 putIntoHierarchy :: ASTOp m => NodeId -> BH.NodeIDTarget -> m ()
 putIntoHierarchy nodeId target = do
@@ -702,10 +692,14 @@ insertNode expr = do
 loadCode :: Text -> Command Graph [NodeId]
 loadCode code | Text.null code = return []
 loadCode code = do
-    (ref, exprMap) <- ASTParse.runUnitParser code
-    nodeIds <- runASTOp $ forM (Map.elems $ (coerce exprMap :: Map.Map Luna.Marker NodeRef)) $ \e -> do
-        nodeId <- insertNode e
-        return (nodeId, e)
+    (ir, IR.Rooted main ref, exprMap) <- liftIO $ ASTParse.runProperParser code
+    Graph.unit .= ir
+    putNewIR main
+    nodeIds <- runASTOp $ do
+        IR.putLayer @CodeMarkers ref exprMap
+        forM (Map.elems $ (coerce exprMap :: Map.Map Luna.Marker NodeRef)) $ \e -> do
+            nodeId <- insertNode e
+            return (nodeId, e)
     Graph.breadcrumbHierarchy . BH._ToplevelParent . BH.topBody .= Just ref
     Graph.breadcrumbHierarchy . BH.body .= ref
     runAliasAnalysis
@@ -744,7 +738,7 @@ printMarkedExpression ref = do
     let chunks  = Text.splitOn " = " expr
         markers = Map.keys $ Map.filter (== ref) exprMap
         marker  = case markers of
-            (index:_) -> Text.pack $ "‹" ++ show index ++ "›"
+            (index:_) -> Text.pack $ "«" ++ show index ++ "»"
             _         -> ""
     return $ case chunks of
         [e]        -> Text.concat [marker, e]
@@ -762,14 +756,14 @@ updateNodeCode :: GraphLocation -> NodeId -> Empire ()
 updateNodeCode loc@(GraphLocation file _) nodeId = do
     sidebar <- withGraph loc $ runASTOp $ isSidebar nodeId
     if sidebar then return () else do
-        (line, expression) <- withGraph loc $ runASTOp $ do
+        (range, expression) <- withGraph loc $ runASTOp $ do
             ref        <- ASTRead.getASTPointer nodeId
             expression <- printMarkedExpression ref
-            line       <- nodeLine ref
-            return (line, expression)
-        Library.withLibrary file $ forM_ line $ \l -> Library.substituteLine l expression
+            range      <- readRange ref
+            return (range, expression)
+        void $ Library.withLibrary file $ Library.applyDiff (fst range) (snd range + 1) $ Text.concat [expression, "\n"]
 
-readRange' :: ASTOp m => NodeRef -> m (RightSpacedSpan _)
+readRange' :: ASTOp m => NodeRef -> m (LeftSpacedSpan Delta)
 readRange' ref = IR.matchExpr ref $ \case
     IR.Seq{} -> return mempty
     _        -> do
@@ -781,22 +775,21 @@ readRange' ref = IR.matchExpr ref $ \case
                 let lefts = takeWhile (/= ref) inputs
                 spans  <- mapM readCodeSpan lefts
                 let leftSpan = mconcat spans
-                parentSpan <- readRange' =<< IR.readTarget parent
-                return $ parentSpan <> leftSpan
+                return leftSpan
             _ -> error "something is no yes"
 
 readRange :: ASTOp m => NodeRef -> m (Int, Int)
 readRange ref = do
-    RightSpacedSpan len off <- readRange' ref
-    RightSpacedSpan len'  _ <- readCodeSpan ref
-    return (fromIntegral len + fromIntegral off, fromIntegral len + fromIntegral off + fromIntegral len')
+    LeftSpacedSpan off  len  <- readRange' ref
+    LeftSpacedSpan off' len' <- readCodeSpan ref
+    let left' = fromIntegral off + fromIntegral len + fromIntegral off'
+        left  = left' + (length ("def main:" :: String))
+    return (left, left + fromIntegral len')
 
-
-readCodeSpan :: ASTOp m => NodeRef -> m (RightSpacedSpan _)
+readCodeSpan :: ASTOp m => NodeRef -> m (LeftSpacedSpan Delta)
 readCodeSpan ref = do
-    codespan  <- IR.getLayer @CodeSpan ref
-    rightSpan <- liftIO $ evaluate codespan `catchAll` (\_ -> return $ RightSpacedSpan 0 0)
-    return rightSpan
+    maybecodespan  <- IR.getLayer @CodeSpan ref
+    return $ fromMaybe (LeftSpacedSpan 0 0) maybecodespan
 
 getNodeIdForMarker :: ASTOp m => Int -> m (Maybe NodeId)
 getNodeIdForMarker index = do
@@ -821,8 +814,7 @@ markerCodeSpan loc index = withGraph loc $ runASTOp $ do
             let exprMap' :: Map.Map Luna.Marker NodeRef
                 exprMap' = coerce exprMap
                 Just ref = Map.lookup (fromIntegral index) exprMap'
-            codespan     <- readRange ref
-            return codespan
+            readRange ref
         _            -> return (0,0)
 
 -- internal

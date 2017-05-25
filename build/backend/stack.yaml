@@ -12,6 +12,7 @@ extra-deps:
   - ghc-session-0.1.2.0
   - serialport-0.4.7
   - uuid-1.3.13
+  - containers-0.5.8.2
 
 packages:
   - location: ../../libs/luna-empire
@@ -43,7 +44,7 @@ packages:
   - location: ../../tools/batch/plugins/luna-empire
   - location: ../../tools/batch/plugins/request-monitor
   - location:
-      commit: 06f57d72c18075041725e0471f6ecf9567ff878d
+      commit: 2c49071077088a7ff67c211bf0d7ce89eb4a8584
       git: git@github.com:luna/luna.git
     subdirs: [core, passes, syntax/text, stdlib, project]
     extra-dep: true
@@ -56,7 +57,7 @@ packages:
       git: https://github.com/luna/data-pool.git
     extra-dep: true
   - location:
-      commit: 901b1491ddf84c309ba1e6a670d9a519e4c673b6
+      commit: 327eea626f582b7b857bc67e8886158b3a5630cc
       git: https://github.com/luna/convert.git
     extra-dep: true
   - location:
@@ -84,7 +85,7 @@ packages:
       git: https://github.com/luna/dependent-state.git
     extra-dep: true
   - location:
-      commit: 8a5a3c6c132b71eed041269c17182100ff98603f
+      commit: 409dc63cc1ccd2c85000460ce39df5c19dd15d0c
       git: https://github.com/luna/functor-utils.git
     extra-dep: true
   - location:
@@ -92,7 +93,7 @@ packages:
       git: https://github.com/luna/impossible.git
     extra-dep: true
   - location:
-      commit: 944351bc0b972b21ae4c6a092c596edf96f13129
+      commit: 4af8e1021a8127b05d98920e387150fa4f0aa2e4
       git: https://github.com/luna/lens-utils.git
     extra-dep: true
   - location:
@@ -100,7 +101,7 @@ packages:
       git: https://github.com/luna/poly-control.git
     extra-dep: true
   - location:
-      commit: d46ca8c8e8333009c96b35e082f7bc2fda1f9ce3
+      commit: 7b41799a2c33704593ae6da56bc46caa882b9161
       git: https://github.com/luna/prologue.git
     extra-dep: true
   - location:
