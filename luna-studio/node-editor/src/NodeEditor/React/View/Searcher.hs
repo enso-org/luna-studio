@@ -46,12 +46,13 @@ searcher =  React.defineView name $ \(ref, s) -> do
         , "className" $= className
         ] $ do
         div_
-            [ "key"       $= "searcherBody"
-            , "className" $= Style.prefix "searcher__body"
+            [ "key"         $= "searcherBody"
+            , "className"   $= Style.prefix "searcher__body"
             -- , "style"     @= Aeson.object [ "transform" Aeson..= (showNodeTranslate camera $ s ^. Searcher.position) ]
-            , onMouseDown $ \e _ -> [stopPropagation e]
-            , onMouseUp   $ \e _ -> [stopPropagation e]
-            , onClick     $ \e _ -> [stopPropagation e]
+            , onMouseDown   $ \e _ -> [stopPropagation e]
+            , onMouseUp     $ \e _ -> [stopPropagation e]
+            , onClick       $ \e _ -> [stopPropagation e]
+            , onDoubleClick $ \e _ -> [stopPropagation e]
             ] $ do
             input_ (
                 [ "key"         $= "searchInput"
