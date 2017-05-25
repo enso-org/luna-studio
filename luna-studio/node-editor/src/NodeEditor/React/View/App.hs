@@ -37,10 +37,10 @@ app ref = React.defineControllerView name ref $ \store () -> do
         [ onKeyDown     $ handleKeyDown ref
         , onContextMenu $ \e _ -> [preventDefault e]
         , onMouseDown   $ \e m -> dispatch ref $ UI.AppEvent $ App.MouseDown m (Timestamp (evtTimestamp e))
-        , onMouseUp     $ \_ m -> dispatch ref $ UI.AppEvent $ App.MouseUp   m
+        , onMouseUp     $ \e m -> preventDefault e : dispatch ref (UI.AppEvent $ App.MouseUp m)
         , onMouseMove   $ \e m -> dispatch ref $ UI.AppEvent $ App.MouseMove m (Timestamp (evtTimestamp e))
-        , onClick       $ \_ _ -> dispatch ref $ UI.AppEvent $ App.Click
-        , onMouseLeave  $ \_ _ -> dispatch ref $ UI.AppEvent   App.MouseLeave
+        , onClick       $ \_ _ -> dispatch ref $ UI.AppEvent App.Click
+        , onMouseLeave  $ \_ _ -> dispatch ref $ UI.AppEvent App.MouseLeave
         , on "onPaste"  $ \e   -> let val = Clipboard.getClipboardData (evtHandlerArg e)
                                   in dispatch' ref $ Shortcut $ Shortcut.Event Shortcut.Paste $ Just val
         , on "onCut"    $ \_   -> dispatch' ref $ Shortcut $ Shortcut.Event Shortcut.Cut def
