@@ -122,7 +122,7 @@ module.exports = LunaStudio =
     @subs.add atom.commands.add '.luna-studio', 'luna-studio:edit-selected-nodes':       -> pushShortcutEvent("EditSelectedNodes")
     @subs.add atom.commands.add '.luna-studio', 'luna-studio:expand-selected-nodes':     -> pushShortcutEvent("ExpandSelectedNodes")
     @subs.add atom.commands.add '.luna-studio', 'luna-studio:remove-selected-nodes':     -> pushShortcutEvent("RemoveSelectedNodes")
-    @subs.add atom.commands.add '.luna-studio', 'core:select-all':                       -> pushShortcutEvent("SelectAll")
+    @subs.add atom.commands.add '.luna-studio', 'luna-studio:select-all':                -> pushShortcutEvent("SelectAll")
     @subs.add atom.commands.add '.luna-studio', 'luna-studio:unfold-selected-nodes':     -> pushShortcutEvent("UnfoldSelectedNodes")
     @subs.add atom.commands.add '.luna-studio', 'luna-studio:autolayout-selected-nodes': -> pushShortcutEvent("AutolayoutSelectedNodes")
     @subs.add atom.commands.add '.luna-studio', 'luna-studio:autolayout-all-nodes':      -> pushShortcutEvent("AutolayoutAllNodes")

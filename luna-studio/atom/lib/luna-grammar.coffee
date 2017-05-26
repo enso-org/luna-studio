@@ -10,7 +10,7 @@ lunaClasses = {
         BlockStart: 'keyword',
         # Block: '',
         # Group: '',
-        # Marker: '',
+        Marker: 'marker',
         ## Ident
         Var: 'variable'
         Cons: 'variable'

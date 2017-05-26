@@ -14,6 +14,7 @@ import           Control.Monad.State                    (StateT)
 import qualified Data.Binary                            as Bin
 import           Data.ByteString                        (ByteString)
 import           Data.ByteString.Lazy                   (fromStrict)
+import           Data.Char                              (isUpper)
 import qualified Data.IntMap                            as IntMap
 import           Data.List                              (break, find, partition)
 import           Data.List.Split                        (splitOneOf)
@@ -232,7 +233,11 @@ handleAddNode = modifyGraph defInverse action replyResult where
         Graph.addNodeCondTC False location nodeId expression nodeMeta
         forM_ connectTo $ \nid -> do
             handle (\(e :: SomeASTException) -> return ()) $ do
-                void $ Graph.connectCondTC False location (getSrcPortByNodeId nid) (getDstPortByNodeLoc nl)
+                let firstWord = head $ Text.words expression
+                symbolMap <- liftIO . readMVar =<< view Empire.scopeVar
+                let shouldConnectToArg w = elem w (symbolMap ^. Empire.functions) || isUpper (Text.head w)
+                let port = if shouldConnectToArg firstWord then [Arg 0] else [Self]
+                void $ Graph.connectCondTC False location (getSrcPortByNodeId nid) (InPortRef' $ InPortRef nl port)
                 Graph.withGraph location $ runASTOp $ Graph.autolayoutNodes [nodeId]
         Graph.typecheck location
 

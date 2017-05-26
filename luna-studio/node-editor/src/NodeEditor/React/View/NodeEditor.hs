@@ -16,7 +16,7 @@ import           NodeEditor.Event.Event                     (Event (Shortcut))
 import qualified NodeEditor.Event.Shortcut                  as Shortcut
 import qualified NodeEditor.Event.UI                        as UI
 import qualified NodeEditor.React.Event.NodeEditor          as NE
-import           NodeEditor.React.Model.App                 (App)
+import           NodeEditor.React.Model.App                 (App, VisualizatorsMap)
 import qualified NodeEditor.React.Model.Connection          as Connection
 import qualified NodeEditor.React.Model.Node                as Node
 import qualified NodeEditor.React.Model.Node.ExpressionNode as ExpressionNode
@@ -61,11 +61,11 @@ applySearcherHints ne = maybe ne replaceNode $ ne ^. NodeEditor.searcher where
         (Searcher.Node nl (Searcher.NodeModeInfo _ (Just nn) _) _, _)      -> tryConnect nl nn $ NodeEditor.updateExpressionNode (ExpressionNode.mkExprNode nl (s ^. Searcher.inputText) (nn ^. Searcher.position)) ne
         _                                                                  -> ne
 
-nodeEditor_ :: Ref App -> NodeEditor -> ReactElementM ViewEventHandler ()
-nodeEditor_ ref ne = React.viewWithSKey nodeEditor name (ref, ne) mempty
+nodeEditor_ :: Ref App -> NodeEditor -> VisualizatorsMap -> ReactElementM ViewEventHandler ()
+nodeEditor_ ref ne visMap = React.viewWithSKey nodeEditor name (ref, ne, visMap) mempty
 
-nodeEditor :: ReactView (Ref App, NodeEditor)
-nodeEditor = React.defineView name $ \(ref, ne') -> do
+nodeEditor :: ReactView (Ref App, NodeEditor, VisualizatorsMap)
+nodeEditor = React.defineView name $ \(ref, ne', visMap) -> do
     let ne           = applySearcherHints ne'
         camera       = ne ^. NodeEditor.screenTransform . CameraTransformation.logicalToScreen
         nodes        = ne ^. NodeEditor.expressionNodes . to HashMap.elems
@@ -121,8 +121,8 @@ nodeEditor = React.defineView name $ \(ref, ne') -> do
                     forM_     (ne ^. NodeEditor.connectionPen  ) connectionPen_
 
             planeNodes_ $ do
-                forM_  nodes                            $ \n -> node_ ref n (filterOutSearcherIfNotRelated (n ^. Node.nodeLoc) maySearcher)
-                forM_ (ne ^. NodeEditor.visualizations) $ pinnedVisualization_ ref ne
+                forM_  nodes                            $ \n -> node_ ref n visMap (filterOutSearcherIfNotRelated (n ^. Node.nodeLoc) maySearcher)
+                forM_ (ne ^. NodeEditor.visualizations) $ pinnedVisualization_ ref ne visMap
 
 
             forM_ input  $ \n -> sidebar_ ref (filterOutSearcherIfNotRelated (n ^. Node.nodeLoc) maySearcher) n

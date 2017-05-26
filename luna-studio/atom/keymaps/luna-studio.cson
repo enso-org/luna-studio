@@ -3,20 +3,33 @@
 #
 '.luna-input':
   'backspace'       : 'native!'
-  'shift-backspace' : 'native!'
   'cmd-a'           : 'native!'
+  'cmd-c'           : 'native!'
   'cmd-down'        : 'native!'
   'cmd-l'           : 'native!'
   'cmd-left'        : 'native!'
   'cmd-right'       : 'native!'
+  'cmd-shift-z'     : 'native!'
   'cmd-up'          : 'native!'
+  'cmd-v'           : 'native!'
+  'cmd-x'           : 'native!'
+  'cmd-y'           : 'native!'
+  'cmd-z'           : 'native!'
   'ctrl-a'          : 'native!'
+  'ctrl-c'          : 'native!'
   'ctrl-down'       : 'native!'
   'ctrl-e'          : 'native!'
   'ctrl-l'          : 'native!'
   'ctrl-left'       : 'native!'
   'ctrl-right'      : 'native!'
+  'ctrl-shift-left' : 'native!'
+  'ctrl-shift-right': 'native!'
+  'ctrl-shift-z'    : 'native!'
   'ctrl-up'         : 'native!'
+  'ctrl-v'          : 'native!'
+  'ctrl-x'          : 'native!'
+  'ctrl-y'          : 'native!'
+  'ctrl-z'          : 'native!'
   'delete'          : 'native!'
   'down'            : 'native!'
   'enter'           : 'native!'
@@ -27,6 +40,7 @@
   'left'            : 'native!'
   'right'           : 'native!'
   'right'           : 'native!'
+  'shift-backspace' : 'native!'
   'shift-down'      : 'native!'
   'shift-left'      : 'native!'
   'shift-right'     : 'native!'
@@ -106,6 +120,8 @@
   'up'               : 'luna-studio:go-up'                    # GoUp
   # nodes
   'backspace'       : 'luna-studio:remove-selected-nodes'     # RemoveSelectedNodes
+  'ctrl-a'          : 'luna-studio:select-all'                # SelectAll
+  'cmd-a'           : 'luna-studio:select-all'                # SelectAll
   'ctrl-e'          : 'luna-studio:unfold-selected-nodes'     # UnfoldSelectedNodes
   'cmd-e'           : 'luna-studio:unfold-selected-nodes'     # UnfoldSelectedNodes
   'delete'          : 'luna-studio:remove-selected-nodes'     # RemoveSelectedNodes

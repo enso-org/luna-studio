@@ -61,7 +61,7 @@ import           Data.List                     (delete, elemIndex, sort, sortOn,
 import qualified Data.Map                      as Map
 import           Data.Map                      (Map)
 import qualified Data.Set                      as Set
-import           Data.Maybe                    (catMaybes, fromMaybe, isJust, listToMaybe)
+import           Data.Maybe                    (catMaybes, fromMaybe, isJust, listToMaybe, maybeToList)
 import           Data.Foldable                 (toList)
 import           Data.Text                     (Text)
 import qualified Data.Text                     as Text
@@ -342,7 +342,7 @@ updateGraphSeq newOut = do
         Just (l, o) -> IR.replaceSource o l
         Nothing     -> return ()
     transplantExprMap oldSeq newOut
-    when (newOut /= oldSeq) $ mapM_ ASTRemove.removeSubtree oldSeq
+    forM_ oldSeq $ flip IR.deepDeleteWithWhitelist $ Set.fromList $ maybeToList newOut
     Graph.breadcrumbHierarchy . BH._ToplevelParent . BH.topBody .= newOut
     forM_ newOut $ (Graph.breadcrumbHierarchy . BH.body .=)
     forM_ newOut $ updateCodeSpan
@@ -392,7 +392,7 @@ removeNodes :: GraphLocation -> [NodeId] -> Empire ()
 removeNodes loc@(GraphLocation file _) nodeIds = do
     forM_ nodeIds $ removeFromCode loc
     affectedNodes <- withTC loc False $ runASTOp $ mapM removeNodeNoTC nodeIds
-    let distinctNodes = Set.toList $ Set.fromList $ concat affectedNodes
+    let distinctNodes = Set.toList $ (Set.fromList $ concat affectedNodes) Set.\\ Set.fromList nodeIds
     forM_ distinctNodes $ updateNodeCode loc
     resendCode loc
 

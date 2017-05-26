@@ -2,18 +2,18 @@
 {-# LANGUAGE OverloadedStrings #-}
 module NodeEditor.React.View.App where
 
-import           React.Flux                              hiding (Event)
-import qualified React.Flux                              as React
+import           React.Flux                             hiding (Event)
+import qualified React.Flux                             as React
 
-import           Data.Timestamp                          (Timestamp (Timestamp))
-import qualified JS.Clipboard                            as Clipboard
-import           JS.Scene                                (appId)
-import qualified JS.UI                                   as UI
+import           Common.Prelude                         hiding (on)
+import           Data.Timestamp                         (Timestamp (Timestamp))
+import qualified JS.Clipboard                           as Clipboard
+import           JS.Scene                               (appId)
+import qualified JS.UI                                  as UI
 import           NodeEditor.Event.Event                 (Event (Shortcut))
 import           NodeEditor.Event.Preprocessor.Shortcut (isEventHandled)
 import qualified NodeEditor.Event.Shortcut              as Shortcut
 import qualified NodeEditor.Event.UI                    as UI
-import           Common.Prelude                     hiding (on)
 import qualified NodeEditor.React.Event.App             as App
 import           NodeEditor.React.Model.App             (App)
 import qualified NodeEditor.React.Model.App             as App
@@ -41,14 +41,14 @@ app ref = React.defineControllerView name ref $ \store () -> do
         , onMouseMove   $ \e m -> dispatch ref $ UI.AppEvent $ App.MouseMove m (Timestamp (evtTimestamp e))
         , onClick       $ \_ _ -> dispatch ref $ UI.AppEvent App.Click
         , onMouseLeave  $ \_ _ -> dispatch ref $ UI.AppEvent App.MouseLeave
-        , on "onPaste"  $ \e   -> let val = Clipboard.getClipboardData (evtHandlerArg e)
-                                  in dispatch' ref $ Shortcut $ Shortcut.Event Shortcut.Paste $ Just val
-        , on "onCut"    $ \_   -> dispatch' ref $ Shortcut $ Shortcut.Event Shortcut.Cut def
-        , on "onCopy"   $ \_   -> dispatch' ref $ Shortcut $ Shortcut.Event Shortcut.Copy def
+        -- , on "onPaste"  $ \e   -> let val = Clipboard.getClipboardData (evtHandlerArg e)
+        --                           in dispatch' ref $ Shortcut $ Shortcut.Event Shortcut.Paste $ Just val
+        -- , on "onCut"    $ \_   -> dispatch' ref $ Shortcut $ Shortcut.Event Shortcut.Cut def
+        -- , on "onCopy"   $ \_   -> dispatch' ref $ Shortcut $ Shortcut.Event Shortcut.Copy def
         , "key"       $= "app"
         , "id"        $= appId
         , "tabIndex"  $= "-1"
-        , "className" $= Style.prefix "studio"
+        , "className" $= Style.prefixFromList [ "studio", "noselect"]
         ] $
         div_
             [ "className" $= Style.prefix "main"
@@ -58,7 +58,7 @@ app ref = React.defineControllerView name ref $ \store () -> do
                 [ "className" $= Style.prefix "graph-editor"
                 , "key"       $= "graph-editor"
                 ] $ do
-                nodeEditor_  ref $ s ^. App.nodeEditor
+                nodeEditor_  ref (s ^. App.nodeEditor) (s ^. App.visualizatorsMap)
                 breadcrumbs_ ref $ s ^. App.breadcrumbs
 
 focus :: IO ()
