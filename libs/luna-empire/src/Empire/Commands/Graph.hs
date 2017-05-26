@@ -391,7 +391,7 @@ removeNodes :: GraphLocation -> [NodeId] -> Empire ()
 removeNodes loc@(GraphLocation file _) nodeIds = do
     forM_ nodeIds $ removeFromCode loc
     affectedNodes <- withTC loc False $ runASTOp $ mapM removeNodeNoTC nodeIds
-    let distinctNodes = Set.toList $ Set.fromList $ concat affectedNodes
+    let distinctNodes = Set.toList $ (Set.fromList $ concat affectedNodes) Set.\\ Set.fromList nodeIds
     forM_ distinctNodes $ updateNodeCode loc
     resendCode loc
 
