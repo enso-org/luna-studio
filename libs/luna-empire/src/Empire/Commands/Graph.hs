@@ -583,20 +583,18 @@ setPortDefault loc (InPortRef (NodeLoc _ nodeId) port) (Just val) = withTC loc F
 setPortDefault loc port Nothing = withTC loc False $ runASTOp $ disconnectPort port
 
 disconnect :: GraphLocation -> InPortRef -> Empire ()
-disconnect loc port@(InPortRef (NodeLoc _ nid) _) = do
-    nodeId <- withTC loc False $ do
-        nodeToUpdate <- runASTOp $ do
-            disconnectPort port
+disconnect loc@(GraphLocation file _) port@(InPortRef (NodeLoc _ nid) _) = do
+    nodeId <- withTC loc False $ runASTOp $ do
+        disconnectPort port
 
-            -- if input port is not an edge, send update to gui
-            edges <- GraphBuilder.getEdgePortMapping
-            case edges of
-                Just (input, output) -> do
-                    if (nid /= input && nid /= output) then Just <$> GraphBuilder.buildNode nid
-                                                       else return Nothing
-                _ -> Just <$> GraphBuilder.buildNode nid
-        return $ view Node.nodeId <$> nodeToUpdate
-    forM_ nodeId $ updateNodeCode loc
+        edges <- GraphBuilder.getEdgePortMapping
+        return $ case edges of
+            Just (input, output) -> do
+                if | nid == input  -> Nothing
+                   | nid == output -> Just nid
+                   | otherwise     -> Just nid
+            _ -> Just nid
+    updateNodeCode loc nid
     resendCode loc
 
 getNodeMeta :: GraphLocation -> NodeId -> Empire (Maybe NodeMeta)
@@ -756,7 +754,7 @@ setExprMap exprMap = do
 printMarkedExpression :: ASTOp m => NodeRef -> m Text
 printMarkedExpression ref = do
     exprMap <- getExprMap
-    expr <- Text.pack <$> ASTPrint.printExpression ref
+    expr    <- Text.pack <$> ASTPrint.printExpression ref
     let chunks  = Text.splitOn " = " expr
         markers = Map.keys $ Map.filter (== ref) exprMap
         marker  = case markers of
@@ -767,22 +765,41 @@ printMarkedExpression ref = do
         [var, val] -> Text.concat [var, " ", marker, "= ", val]
         list       -> Text.concat list
 
-isSidebar :: ASTOp m => NodeId -> m Bool
+data Sidebar = SidebarInput | SidebarOutput | NotSidebar
+    deriving Eq
+
+isSidebar :: ASTOp m => NodeId -> m Sidebar
 isSidebar nodeId = do
     sidebars <- GraphBuilder.getEdgePortMapping
-    case sidebars of
-        Nothing              -> return False
-        Just (input, output) -> return $ input == nodeId || output == nodeId
+    return $ case sidebars of
+        Just (input, output) | input  == nodeId -> SidebarInput
+                             | output == nodeId -> SidebarOutput
+                             | otherwise        -> NotSidebar
+        Nothing                                 -> NotSidebar
+
+isInput :: ASTOp m => NodeId -> m Bool
+isInput nodeId = (== SidebarInput) <$> isSidebar nodeId
+
+isOutput :: ASTOp m => NodeId -> m Bool
+isOutput nodeId = (== SidebarOutput) <$> isSidebar nodeId
 
 updateNodeCode :: GraphLocation -> NodeId -> Empire ()
 updateNodeCode loc@(GraphLocation file _) nodeId = do
-    sidebar <- withGraph loc $ runASTOp $ isSidebar nodeId
-    if sidebar then return () else do
-        (range, expression) <- withGraph loc $ runASTOp $ do
-            ref        <- ASTRead.getASTPointer nodeId
-            expression <- printMarkedExpression ref
-            range      <- readRange ref
+    input <- withGraph loc $ runASTOp $ isInput nodeId
+    if input then return () else do
+        ref <- withGraph loc $ runASTOp $ do
+            output     <- isOutput nodeId
+            ref        <- if output then fromJust <$> ASTRead.getCurrentASTPointer else ASTRead.getASTPointer nodeId
+            return ref
+        (range, expression) <- withGraph (GraphLocation file (Breadcrumb [])) $ runASTOp $ do
+            range                <- readRange ref
+            expression           <- printMarkedExpression ref
+            LeftSpacedSpan off _ <- readCodeSpan ref
+            IR.putLayer @CodeSpan ref (Just $ LeftSpacedSpan off (fromIntegral $ Text.length expression))
             return (range, expression)
+        withGraph (GraphLocation file (Breadcrumb [])) $ runASTOp $ do
+            oldSeq      <- preuse $ Graph.breadcrumbHierarchy . BH.body
+            forM_ oldSeq updateCodeSpan
         void $ Library.withLibrary file $ Library.applyDiff (fst range) (snd range + 1) $ Text.concat [expression, "\n"]
 
 readRange' :: ASTOp m => NodeRef -> m (LeftSpacedSpan Delta)

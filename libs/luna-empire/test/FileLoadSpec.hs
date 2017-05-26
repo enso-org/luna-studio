@@ -60,7 +60,7 @@ mainFile = [r|def main:
 
 
 spec :: Spec
-spec = around withChannels $ do
+spec = around withChannels $ parallel $ do
     describe "file loading" $ do
         it "parses unit" $ \env -> do
             let code = [r|def main:
@@ -469,6 +469,38 @@ spec = around withChannels $ do
     bar «3»= foo 8 c
     node1 «4»= 5
 |]
+        it "updates code after disconnecting lambda output" $ \env -> do
+            let code = [r|def main:
+    pi «0»= 3.14
+    foo «1»= a: b:
+        a + b
+    c «2»= 4
+    bar «3»= foo 8 c|]
+            u1 <- mkUUID
+            res <- evalEmp env $ do
+                Library.createLibrary Nothing "TestPath" mainCondensed
+                let loc = GraphLocation "TestPath" $ Breadcrumb []
+                Graph.withGraph loc $ Graph.loadCode mainCondensed
+                Just foo <- Graph.withGraph loc $ runASTOp $ Graph.getNodeIdForMarker 1
+                Just (_, output) <- Graph.withGraph (loc |> foo) $ runASTOp $ GraphBuilder.getEdgePortMapping
+                Graph.disconnect (loc |> foo) (inPortRef output [])
+                code <- Graph.getCode loc
+                spans <- forM [0..3] $ Graph.markerCodeSpan loc
+                return (code, spans)
+            withResult res $ \(code, spans) -> do
+                code `shouldBe` [r|def main:
+    pi «0»= 3.14
+    foo «1»= a: b: a + b
+            None
+    c «2»= 4
+    bar «3»= foo 8 c
+|]
+                spans `shouldBe` [
+                      (14, 26)
+                    , (31, 68)
+                    , (73, 81)
+                    , (86, 102)
+                    ]
         it "lambda in code can be entered" $ \env -> do
             let code = [r|def main:
     foo «0»= a: a|]
