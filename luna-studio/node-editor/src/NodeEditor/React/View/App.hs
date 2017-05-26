@@ -41,14 +41,14 @@ app ref = React.defineControllerView name ref $ \store () -> do
         , onMouseMove   $ \e m -> dispatch ref $ UI.AppEvent $ App.MouseMove m (Timestamp (evtTimestamp e))
         , onClick       $ \_ _ -> dispatch ref $ UI.AppEvent App.Click
         , onMouseLeave  $ \_ _ -> dispatch ref $ UI.AppEvent App.MouseLeave
-        , on "onPaste"  $ \e   -> let val = Clipboard.getClipboardData (evtHandlerArg e)
-                                  in dispatch' ref $ Shortcut $ Shortcut.Event Shortcut.Paste $ Just val
-        , on "onCut"    $ \_   -> dispatch' ref $ Shortcut $ Shortcut.Event Shortcut.Cut def
-        , on "onCopy"   $ \_   -> dispatch' ref $ Shortcut $ Shortcut.Event Shortcut.Copy def
+        -- , on "onPaste"  $ \e   -> let val = Clipboard.getClipboardData (evtHandlerArg e)
+        --                           in dispatch' ref $ Shortcut $ Shortcut.Event Shortcut.Paste $ Just val
+        -- , on "onCut"    $ \_   -> dispatch' ref $ Shortcut $ Shortcut.Event Shortcut.Cut def
+        -- , on "onCopy"   $ \_   -> dispatch' ref $ Shortcut $ Shortcut.Event Shortcut.Copy def
         , "key"       $= "app"
         , "id"        $= appId
         , "tabIndex"  $= "-1"
-        , "className" $= Style.prefix "studio"
+        , "className" $= Style.prefixFromList [ "studio", "noselect"]
         ] $
         div_
             [ "className" $= Style.prefix "main"
