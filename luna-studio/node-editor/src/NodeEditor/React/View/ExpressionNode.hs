@@ -15,7 +15,7 @@ import           NodeEditor.Data.Matrix                               (showNodeM
 import qualified NodeEditor.Event.Mouse                               as Mouse
 import qualified NodeEditor.Event.UI                                  as UI
 import qualified NodeEditor.React.Event.Node                          as Node
-import           NodeEditor.React.Model.App                           (App)
+import           NodeEditor.React.Model.App                           (App, VisualizatorsMap)
 import qualified NodeEditor.React.Model.Field                         as Field
 import           NodeEditor.React.Model.Node.ExpressionNode           (ExpressionNode, NodeLoc, Subgraph, countArgPorts, countOutPorts,
                                                                        isCollapsed, returnsError)
@@ -35,7 +35,7 @@ import           NodeEditor.React.View.Port                           (portExpan
 import           NodeEditor.React.View.Searcher                       (searcher_)
 import           NodeEditor.React.View.Style                          (errorMark_, selectionMark_)
 import qualified NodeEditor.React.View.Style                          as Style
-import           NodeEditor.React.View.Visualization                  (nodeShortValue_, nodeVisualizations_)
+import           NodeEditor.React.View.Visualization                  (getVisualizators, nodeShortValue_, nodeVisualizations_)
 import           React.Flux
 import qualified React.Flux                                           as React
 
@@ -80,12 +80,12 @@ nodeExpression_ ref nl expr mayS = div_ (
             _                     -> regularHandlersAndElem
 
 
-node_ :: Ref App -> ExpressionNode -> Maybe Searcher -> ReactElementM ViewEventHandler ()
-node_ ref model s = React.viewWithSKey node (jsShow $ model ^. Node.nodeId) (ref, model, s) mempty
+node_ :: Ref App -> ExpressionNode -> VisualizatorsMap -> Maybe Searcher -> ReactElementM ViewEventHandler ()
+node_ ref model vMap s = React.viewWithSKey node (jsShow $ model ^. Node.nodeId) (ref, model, vMap, s) mempty
 
-node :: ReactView (Ref App, ExpressionNode, Maybe Searcher)
-node = React.defineView name $ \(ref, n, maySearcher) -> case n ^. Node.mode of
-    Node.Expanded (Node.Function fs) -> nodeContainer_ ref maySearcher $ Map.elems fs
+node :: ReactView (Ref App, ExpressionNode, VisualizatorsMap, Maybe Searcher)
+node = React.defineView name $ \(ref, n, vMap, maySearcher) -> case n ^. Node.mode of
+    Node.Expanded (Node.Function fs) -> nodeContainer_ ref vMap maySearcher $ Map.elems fs
     _ -> do
         let nodeId          = n ^. Node.nodeId
             nodeLoc         = n ^. Node.nodeLoc
@@ -118,7 +118,7 @@ node = React.defineView name $ \(ref, n, maySearcher) -> case n ^. Node.mode of
                 , "className" $= Style.prefixFromList ["node__results", "node-translate"]
                 ] $ do
                 nodeShortValue_ n
-                if isVisualization then nodeVisualizations_ ref n else return ()
+                if isVisualization then nodeVisualizations_ ref n (getVisualizators n vMap) else return ()
             nodePorts_ ref n
 
 nodeDynamicStyles_ :: Matrix Double -> ExpressionNode -> ReactElementM ViewEventHandler ()
@@ -202,11 +202,11 @@ nodePorts = React.defineView objNamePorts $ \(ref, n) -> do
                 forM_  (filter (\port -> (port ^. Port.portId) /= InPortId' [Self]) nodePorts') $ \port -> portExpanded_ ref nodeLoc port
             portPhantom_ ref $ toAnyPortRef nodeLoc $ InPortId' [Arg $ countArgPorts n]
 
-nodeContainer_ :: Ref App -> Maybe Searcher -> [Subgraph] -> ReactElementM ViewEventHandler ()
-nodeContainer_ ref maySearcher subgraphs = React.viewWithSKey nodeContainer "node-container" (ref, maySearcher, subgraphs) mempty
+nodeContainer_ :: Ref App -> VisualizatorsMap -> Maybe Searcher -> [Subgraph] -> ReactElementM ViewEventHandler ()
+nodeContainer_ ref vMap maySearcher subgraphs = React.viewWithSKey nodeContainer "node-container" (ref, vMap, maySearcher, subgraphs) mempty
 
-nodeContainer :: ReactView (Ref App, Maybe Searcher, [Subgraph])
-nodeContainer = React.defineView name $ \(ref, maySearcher, subgraphs) -> do
+nodeContainer :: ReactView (Ref App, VisualizatorsMap, Maybe Searcher, [Subgraph])
+nodeContainer = React.defineView name $ \(ref, vMap, maySearcher, subgraphs) -> do
     div_
         [ "className" $= Style.prefix "subgraphs"
         ] $ forM_ subgraphs $ \subgraph -> do
@@ -217,7 +217,7 @@ nodeContainer = React.defineView name $ \(ref, maySearcher, subgraphs) -> do
         div_
             [ "className" $= Style.prefix "subgraph"
             ] $ do
-            forM_ nodes $ \n -> node_ ref n (filterOutSearcherIfNotRelated (n ^. Node.nodeLoc) maySearcher)
+            forM_ nodes $ \n -> node_ ref n vMap (filterOutSearcherIfNotRelated (n ^. Node.nodeLoc) maySearcher)
             svgPlanes_ $ planeMonads_ $ monads_ monads
 
 filterOutSearcherIfNotRelated :: NodeLoc -> Maybe Searcher -> Maybe Searcher

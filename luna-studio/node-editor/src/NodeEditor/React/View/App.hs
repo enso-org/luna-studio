@@ -2,18 +2,18 @@
 {-# LANGUAGE OverloadedStrings #-}
 module NodeEditor.React.View.App where
 
-import           React.Flux                              hiding (Event)
-import qualified React.Flux                              as React
+import           React.Flux                             hiding (Event)
+import qualified React.Flux                             as React
 
-import           Data.Timestamp                          (Timestamp (Timestamp))
-import qualified JS.Clipboard                            as Clipboard
-import           JS.Scene                                (appId)
-import qualified JS.UI                                   as UI
+import           Common.Prelude                         hiding (on)
+import           Data.Timestamp                         (Timestamp (Timestamp))
+import qualified JS.Clipboard                           as Clipboard
+import           JS.Scene                               (appId)
+import qualified JS.UI                                  as UI
 import           NodeEditor.Event.Event                 (Event (Shortcut))
 import           NodeEditor.Event.Preprocessor.Shortcut (isEventHandled)
 import qualified NodeEditor.Event.Shortcut              as Shortcut
 import qualified NodeEditor.Event.UI                    as UI
-import           Common.Prelude                     hiding (on)
 import qualified NodeEditor.React.Event.App             as App
 import           NodeEditor.React.Model.App             (App)
 import qualified NodeEditor.React.Model.App             as App
@@ -58,7 +58,7 @@ app ref = React.defineControllerView name ref $ \store () -> do
                 [ "className" $= Style.prefix "graph-editor"
                 , "key"       $= "graph-editor"
                 ] $ do
-                nodeEditor_  ref $ s ^. App.nodeEditor
+                nodeEditor_  ref (s ^. App.nodeEditor) (s ^. App.visualizatorsMap)
                 breadcrumbs_ ref $ s ^. App.breadcrumbs
 
 focus :: IO ()

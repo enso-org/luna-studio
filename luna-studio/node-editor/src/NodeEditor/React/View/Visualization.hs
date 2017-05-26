@@ -7,11 +7,13 @@ module NodeEditor.React.View.Visualization
     , visualization_
     , pinnedVisualization_
     , strValue
+    , getVisualizators
     ) where
 
 import           Common.Prelude
 import qualified Data.Aeson                                 as Aeson
 import qualified Data.ByteString.Lazy.Char8                 as ByteString
+import qualified Data.HashMap.Lazy                          as Map
 import           Data.Scientific                            (coefficient)
 import           Data.Text                                  as Text
 import qualified Data.Vector                                as Vector
@@ -20,11 +22,12 @@ import           LunaStudio.Data.NodeValue                  (NodeValue (..), Vis
 import           LunaStudio.Data.Position                   (Position)
 import qualified NodeEditor.Event.UI                        as UI
 import qualified NodeEditor.React.Event.Visualization       as Visualization
-import           NodeEditor.React.Model.App                 (App)
-import           NodeEditor.React.Model.Node.ExpressionNode (ExpressionNode, NodeLoc)
+import           NodeEditor.React.Model.App                 (App, Visualizator, VisualizatorsMap)
+import           NodeEditor.React.Model.Node.ExpressionNode (ExpressionNode, NodeLoc, outPortAt)
 import qualified NodeEditor.React.Model.Node.ExpressionNode as Node
 import           NodeEditor.React.Model.NodeEditor          (NodeEditor)
 import qualified NodeEditor.React.Model.NodeEditor          as NodeEditor
+import qualified NodeEditor.React.Model.Port                as Port
 import           NodeEditor.React.Store                     (Ref, dispatch)
 import qualified NodeEditor.React.View.Style                as Style
 import           React.Flux                                 hiding (image_)
@@ -34,6 +37,10 @@ viewName, objNameVis, objNameShortVal :: JSString
 viewName        = "visualization"
 objNameVis      = "node-vis"
 objNameShortVal = "node-short-value"
+
+getVisualizators :: ExpressionNode -> VisualizatorsMap -> [Visualizator]
+getVisualizators n vMap = fromMaybe [] $ maybe def (flip Map.lookup vMap) mayTpe where
+    mayTpe = n ^? outPortAt [] . Port.valueType
 
 nodeShortValue_ :: ExpressionNode -> ReactElementM ViewEventHandler ()
 nodeShortValue_ model = React.viewWithSKey nodeShortValue objNameShortVal (model) mempty
@@ -46,29 +53,29 @@ nodeShortValue = React.defineView objNameShortVal $ \(n) -> do
         , onDoubleClick $ \e _ -> [stopPropagation e]
         ] $ elemString $ strValue n
 
-nodeVisualizations_ :: Ref App -> ExpressionNode -> ReactElementM ViewEventHandler ()
-nodeVisualizations_ ref model = React.viewWithSKey nodeVisualizations objNameVis (ref, model) mempty
+nodeVisualizations_ :: Ref App -> ExpressionNode -> [Visualizator] -> ReactElementM ViewEventHandler ()
+nodeVisualizations_ ref model v = React.viewWithSKey nodeVisualizations objNameVis (ref, model, v) mempty
 
-nodeVisualizations :: ReactView (Ref App, ExpressionNode)
-nodeVisualizations = React.defineView objNameVis $ \(ref, n) -> do
+nodeVisualizations :: ReactView (Ref App, ExpressionNode, [Visualizator])
+nodeVisualizations = React.defineView objNameVis $ \(ref, n, visualizators) -> do
     let nodeLoc = n ^. Node.nodeLoc
     div_
         [ "key"       $= "visualizations"
         , "className" $= Style.prefixFromList [ "node__visualizations", "noselect" ]
         , onDoubleClick $ \e _ -> [stopPropagation e]
-        ] $ forM_ (n ^. Node.value) $ visualization_ ref nodeLoc def
+        ] $ forM_ (n ^. Node.value) $ visualization_ ref nodeLoc def visualizators
 
-pinnedVisualization_ :: Ref App -> NodeEditor -> (NodeLoc, Int, Position) -> ReactElementM ViewEventHandler ()
-pinnedVisualization_ ref ne (nl, _, position) =
+pinnedVisualization_ :: Ref App -> NodeEditor -> VisualizatorsMap -> (NodeLoc, Int, Position) -> ReactElementM ViewEventHandler ()
+pinnedVisualization_ ref ne vMap (nl, _, position) =
     withJust (NodeEditor.getExpressionNode nl ne) $ \node ->
         withJust (node ^. Node.value) $
-            visualization_ ref nl $ Just position
+            visualization_ ref nl (Just position) (getVisualizators node vMap)
 
-visualization_ :: Ref App -> NodeLoc -> Maybe Position -> NodeValue -> ReactElementM ViewEventHandler ()
-visualization_ ref nl mayPos v = React.view visualization (ref, nl, mayPos, v) mempty
+visualization_ :: Ref App -> NodeLoc -> Maybe Position -> [Visualizator] -> NodeValue -> ReactElementM ViewEventHandler ()
+visualization_ ref nl mayPos visualizators v = React.view visualization (ref, nl, mayPos, visualizators, v) mempty
 
-visualization :: ReactView (Ref App, NodeLoc, Maybe Position, NodeValue)
-visualization = React.defineView viewName $ \(ref, nl, mayPos, nodeValue) ->
+visualization :: ReactView (Ref App, NodeLoc, Maybe Position, [Visualizator], NodeValue)
+visualization = React.defineView viewName $ \(ref, nl, mayPos, visualizators, nodeValue) ->
     div_ [ "className" $= Style.prefixFromList [ "noselect" ] ] $
         case nodeValue of
             NodeValue _ valueReprs -> mapM_ (uncurry $ nodeValue_ ref nl mayPos) $ keyed valueReprs
