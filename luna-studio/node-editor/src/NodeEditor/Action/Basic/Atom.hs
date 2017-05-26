@@ -15,17 +15,12 @@ import           NodeEditor.State.Global                (State, workspace)
 setFile :: FilePath -> Command State ()
 setFile path = do
     saveCamera
-    mayWorkspace <- use workspace
-    let mayCurrentLoc = view currentLocation <$> mayWorkspace
-        newWorkspace  = Workspace.mk path
-        newLocation   = newWorkspace ^. currentLocation
-    when (mayCurrentLoc /= Just newLocation) $ do
+    mayCurrentFilePath <- preuse $ workspace . traverse . currentLocation . filePath
+    when (Just path /= mayCurrentFilePath) $ do
+        let newWorkspace = Workspace.mk path
         workspace ?= newWorkspace
-        nsData <- if Just path == (view filePath <$> mayCurrentLoc)
-            then return . fromMaybe def $ view nodeSearcherData <$> mayWorkspace
-            else searchNodes >> return def
-        workspace . _Just . nodeSearcherData .= nsData
-        loadGraph newLocation
+        searchNodes
+        loadGraph $ newWorkspace ^. currentLocation
 
 unsetFile :: Command State ()
 unsetFile = do
