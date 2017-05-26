@@ -232,18 +232,16 @@ class Stream a:
     def map f: case self of
         Stream elt s: Stream (f elt) (s.map f)
 
-def bitcoinPrice currency:
-    putStr "pricing bitcoin!"
-    uri = "https://min-api.cryptocompare.com/data/price?fsym=BTC&tsyms=" + currency
-    res = Http.getJSON uri
-    res . lookup currency . fromJust . toReal
+def average stream:
+    folder = el: (Pair count sum): Pair count.succ (sum + el)
+    stream . foldFrom (Pair 0 0.0) folder . map ((Pair count sum): sum./ count.toReal)
 
 def delayAsync time act:
     var = newMVar
     fork (seq (sleep time) (var.put act))
     var
 
-def computeEvery time act:
+def every time act:
     current = act
-    future  = delayAsync time (computeEvery time act)
+    future  = delayAsync time (every time act)
     Stream current future.read
