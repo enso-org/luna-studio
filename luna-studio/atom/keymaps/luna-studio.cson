@@ -106,6 +106,8 @@
   'up'               : 'luna-studio:go-up'                    # GoUp
   # nodes
   'backspace'       : 'luna-studio:remove-selected-nodes'     # RemoveSelectedNodes
+  'ctrl-a'          : 'luna-studio:select-all'                # SelectAll
+  'cmd-a'           : 'luna-studio:select-all'                # SelectAll
   'ctrl-e'          : 'luna-studio:unfold-selected-nodes'     # UnfoldSelectedNodes
   'cmd-e'           : 'luna-studio:unfold-selected-nodes'     # UnfoldSelectedNodes
   'delete'          : 'luna-studio:remove-selected-nodes'     # RemoveSelectedNodes
