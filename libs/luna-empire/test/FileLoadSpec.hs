@@ -10,6 +10,7 @@ import           Control.Monad                  (forM)
 import           Data.Coerce
 import           Data.List                      (find)
 import qualified Data.Map                       as Map
+import qualified Data.Set                       as Set
 import qualified Data.Text                      as Text
 import           LunaStudio.Data.Breadcrumb     (Breadcrumb (..))
 import qualified LunaStudio.Data.Graph          as Graph
@@ -17,6 +18,7 @@ import           LunaStudio.Data.GraphLocation  (GraphLocation (..))
 import qualified LunaStudio.Data.Node           as Node
 import           LunaStudio.Data.NodeLoc        (NodeLoc (..))
 import           LunaStudio.Data.NodeMeta       (NodeMeta (..))
+import qualified LunaStudio.Data.NodeMeta       as NodeMeta
 import qualified LunaStudio.Data.Port           as Port
 import           LunaStudio.Data.PortRef        (AnyPortRef (..), InPortRef (..), OutPortRef (..))
 import qualified LunaStudio.Data.Position       as Position
@@ -36,7 +38,7 @@ import qualified Luna.Syntax.Text.Parser.Parser as Parser (ReparsingChange (..),
 import           Empire.Prelude
 
 import           Test.Hspec                     (Spec, around, describe, expectationFailure, it, parallel, shouldBe, shouldMatchList,
-                                                 shouldSatisfy, shouldStartWith, xit)
+                                                 shouldNotBe, shouldSatisfy, shouldStartWith, xit)
 
 import           EmpireUtils
 
@@ -476,7 +478,6 @@ spec = around withChannels $ parallel $ do
         a + b
     c «2»= 4
     bar «3»= foo 8 c|]
-            u1 <- mkUUID
             res <- evalEmp env $ do
                 Library.createLibrary Nothing "TestPath" mainCondensed
                 let loc = GraphLocation "TestPath" $ Breadcrumb []
@@ -504,8 +505,6 @@ spec = around withChannels $ parallel $ do
         it "lambda in code can be entered" $ \env -> do
             let code = [r|def main:
     foo «0»= a: a|]
-            u1 <- mkUUID
-            u2 <- mkUUID
             res <- evalEmp env $ do
                 Library.createLibrary Nothing "TestPath" code
                 let loc = GraphLocation "TestPath" $ Breadcrumb []
@@ -519,3 +518,35 @@ spec = around withChannels $ parallel $ do
             let tokens = Lexer.lexer mainCondensed
             tokens `shouldSatisfy` (not . null)
             sum (map fst tokens) `shouldBe` Text.length mainCondensed
+        it "autolayouts nodes on file load" $ \env -> do
+            nodes <- evalEmp env $ do
+                Library.createLibrary Nothing "TestPath" mainCondensed
+                let loc = GraphLocation "TestPath" $ Breadcrumb []
+                Graph.withGraph loc $ Graph.loadCode mainCondensed
+                Graph.autolayout loc
+                view Graph.nodes <$> Graph.getGraph loc
+            let positions = map (view (Node.nodeMeta . NodeMeta.position)) nodes
+                uniquePositions = Set.size $ Set.fromList positions
+            uniquePositions `shouldBe` length nodes
+        it "autolayouts nested nodes on file load" $ \env -> do
+            let code = [r|def main:
+    pi «0»= 3.14
+    foo «1»= a: b:
+        lala «5»= 17.0
+        buzz «12»= x: y:
+            «9»x * y
+        pi «6»= 3.14
+        n «7»= buzz a lala
+        m «8»= buzz b pi
+        «11»m + n
+|]
+            nodes <- evalEmp env $ do
+                Library.createLibrary Nothing "TestPath" code
+                let loc = GraphLocation "TestPath" $ Breadcrumb []
+                Graph.withGraph loc $ Graph.loadCode code
+                Graph.autolayout loc
+                Just foo <- Graph.withGraph loc $ runASTOp $ Graph.getNodeIdForMarker 1
+                view Graph.nodes <$> Graph.getGraph (loc |> foo)
+            let positions = map (view (Node.nodeMeta . NodeMeta.position)) nodes
+                uniquePositions = Set.size $ Set.fromList positions
+            uniquePositions `shouldBe` length nodes

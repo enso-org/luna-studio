@@ -233,7 +233,7 @@ handleAddNode = modifyGraph defInverse action replyResult where
         forM_ connectTo $ \nid -> do
             handle (\(e :: SomeASTException) -> return ()) $ do
                 void $ Graph.connectCondTC False location (getSrcPortByNodeId nid) (getDstPortByNodeLoc nl)
-                Graph.autolayoutNodes location [nodeId]
+                Graph.withGraph location $ runASTOp $ Graph.autolayoutNodes [nodeId]
         Graph.typecheck location
 
 handleAddPort :: Request AddPort.Request -> StateT Env BusT ()
@@ -255,7 +255,7 @@ handleAutolayoutNodes = modifyGraph inverse action replyResult where
                 return $ (nl,) . view NodeMeta.position <$> mayMeta
         AutolayoutNodes.Inverse . catMaybes <$> mapM getNlAndPos nodeLocs
     action (AutolayoutNodes.Request location nodeLocs) = withDefaultResult location $
-        Graph.autolayoutNodes location (convert <$> nodeLocs) --TODO[PM -> MM] Use NodeLoc instead of NodeId
+        Graph.withGraph location $ runASTOp $ Graph.autolayoutNodes (convert <$> nodeLocs) --TODO[PM -> MM] Use NodeLoc instead of NodeId
 
 handleDumpGraphViz :: Request DumpGraphViz.Request -> StateT Env BusT ()
 handleDumpGraphViz = modifyGraphOk defInverse action where

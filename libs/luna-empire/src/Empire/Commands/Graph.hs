@@ -13,6 +13,7 @@ module Empire.Commands.Graph
     , addPort
     , addPortWithConnections
     , addSubgraph
+    , autolayout
     , autolayoutNodes
     , removeNodes
     , movePort
@@ -524,9 +525,14 @@ setNodeMeta loc nodeId newMeta = withGraph loc $ runASTOp $ do
 
 setNodePosition :: GraphLocation -> NodeId -> Position -> Empire ()
 setNodePosition loc nodeId newPos = do
-    mayOldMeta <- getNodeMeta loc nodeId
-    withJust mayOldMeta $ \oldMeta ->
-        setNodeMeta loc nodeId $ oldMeta & NodeMeta.position .~ newPos
+    oldMeta <- fromMaybe def <$> getNodeMeta loc nodeId
+    setNodeMeta loc nodeId $ oldMeta & NodeMeta.position .~ newPos
+
+setNodePositionAST :: ASTOp m => NodeId -> Position -> m ()
+setNodePositionAST nodeId newPos = do
+    ref <- GraphUtils.getASTPointer nodeId
+    oldMeta <- fromMaybe def <$> AST.readMeta ref
+    AST.writeMeta ref $ oldMeta & NodeMeta.position .~ newPos
 
 connectCondTC :: Bool -> GraphLocation -> OutPortRef -> AnyPortRef -> Empire Connection
 connectCondTC True  loc outPort anyPort = connect loc outPort anyPort
@@ -641,21 +647,20 @@ renameNodeGraph nid name = do
 dumpGraphViz :: GraphLocation -> Empire ()
 dumpGraphViz loc = withGraph loc $ return ()
 
-autolayoutNodes :: GraphLocation -> [NodeId] -> Empire ()
-autolayoutNodes loc nids = do
-    nodes <- getNodes loc
-    conns <- getConnections loc
-    mapM_ (uncurry $ setNodePosition loc) $ Autolayout.autolayoutNodes nids nodes conns
+autolayoutNodes :: ASTOp m => [NodeId] -> m ()
+autolayoutNodes nids = do
+    nodes <- GraphBuilder.buildNodes
+    conns <- GraphBuilder.buildConnections
+    let autolayout = Autolayout.autolayoutNodes nids nodes conns
+    mapM_ (uncurry setNodePositionAST) autolayout
 
 openFile :: FilePath -> Empire ()
 openFile path = do
     code <- liftIO $ Text.readFile path
     Library.createLibrary Nothing path code
     let loc = GraphLocation path $ Breadcrumb []
-    nodeIds <- withGraph loc $ do
-        loadCode code
-        uses Graph.breadcrumbHierarchy BH.topLevelIDs
-    autolayoutNodes loc nodeIds
+    withGraph loc $ loadCode code
+    autolayout loc
 
 typecheck :: GraphLocation -> Empire ()
 typecheck loc = withTC loc False $ return ()
@@ -725,6 +730,21 @@ loadCode code = do
         IR.putLayer @CodeMarkers ref exprMap
         makeTopBreadcrumbHierarchy ref
     Graph.breadcrumbHierarchy .= BH.ToplevelParent newBH
+
+infixl 5 |>
+(|>) :: GraphLocation -> BreadcrumbItem -> GraphLocation
+(|>) (GraphLocation file bc) item = GraphLocation file $ coerce $ (++ [item]) $ coerce bc
+
+autolayout :: GraphLocation -> Empire ()
+autolayout loc = do
+    kids <- withGraph loc $ do
+        kids <- uses Graph.breadcrumbHierarchy (view BH.children)
+        runASTOp $ autolayoutNodes $ Map.keys kids
+        return kids
+    let next = concatMap (\(k, v) -> case v of
+            BH.LambdaChild{}                -> [Breadcrumb.Lambda k]
+            BH.ExprChild (BH.ExprItem pc _) -> map (Breadcrumb.Arg k) (Map.keys pc)) $ Map.assocs kids
+    mapM_ (\a -> autolayout (loc |> a)) next
 
 nodeLineById :: ASTOp m => NodeId -> m (Maybe Int)
 nodeLineById nodeId = do
