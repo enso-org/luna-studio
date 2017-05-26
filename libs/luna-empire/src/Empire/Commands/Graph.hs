@@ -524,9 +524,8 @@ setNodeMeta loc nodeId newMeta = withGraph loc $ runASTOp $ do
 
 setNodePosition :: GraphLocation -> NodeId -> Position -> Empire ()
 setNodePosition loc nodeId newPos = do
-    mayOldMeta <- getNodeMeta loc nodeId
-    withJust mayOldMeta $ \oldMeta ->
-        setNodeMeta loc nodeId $ oldMeta & NodeMeta.position .~ newPos
+    oldMeta <- fromMaybe def <$> getNodeMeta loc nodeId
+    setNodeMeta loc nodeId $ oldMeta & NodeMeta.position .~ newPos
 
 connectCondTC :: Bool -> GraphLocation -> OutPortRef -> AnyPortRef -> Empire Connection
 connectCondTC True  loc outPort anyPort = connect loc outPort anyPort
