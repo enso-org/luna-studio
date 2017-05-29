@@ -1,11 +1,11 @@
 module JS.Visualizers (mkVisualizersMap) where
 
 import           Common.Prelude     hiding (toList)
-import           JavaScript.Array   (JSArray, toList)
-import           GHCJS.Marshal.Pure (pFromJSVal)
+import           Control.Arrow      ((&&&))
 import           Data.Map           (Map)
 import qualified Data.Map           as Map
-import           Control.Arrow      ((&&&))
+import           GHCJS.Marshal.Pure (pFromJSVal)
+import           JavaScript.Array   (JSArray, toList)
 
 foreign import javascript safe "Object.keys(window.visualizers)"
     getVisualizers' :: IO JSArray
@@ -20,6 +20,4 @@ checkVisualizer :: String -> String -> IO String
 checkVisualizer name rep = convert <$> checkVisualizer' (convert name) (convert rep)
 
 mkVisualizersMap :: IO (Map String (String -> IO String))
-mkVisualizersMap = do
-    visualizers <- getVisualizers
-    Map.fromList $ (id &&& checkVisualizer) <$> visualizers
+mkVisualizersMap = Map.fromList . fmap (id &&& checkVisualizer) <$> getVisualizers
