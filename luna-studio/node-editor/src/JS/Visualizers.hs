@@ -7,7 +7,7 @@ import qualified Data.Map           as Map
 import           GHCJS.Marshal.Pure (pFromJSVal)
 import           JavaScript.Array   (JSArray, toList)
 
-foreign import javascript safe "Object.keys(window.visualizers)"
+foreign import javascript safe "Object.keys(typeof window.visualizers == 'object' ? window.visualizers : {})"
     getVisualizers' :: IO JSArray
 
 getVisualizers :: IO [String]
