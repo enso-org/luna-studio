@@ -12,11 +12,6 @@
     position: absolute;
 }
 
-.luna-searcher__body {
-    //bottom: ~"calc(36rem + 15px)";
-    position: absolute;
-}
-
 .luna-searcher--node ~ .luna-node--selected {
     .luna-node__expression {
         display: none;
@@ -24,17 +19,12 @@
 }
 
 .luna-searcher--command {
-    .luna-searcher__body {
-        //bottom: ~"calc(36rem + 7.4px)";
-    }
     .luna-searcher__input {
         background: #004D40;
         padding:    8px 0;
-        width:      200px;
     }
     .luna-searcher__results {
         bottom: 32px;
-        width:  200px;
     }
 }
 
@@ -54,15 +44,14 @@
     line-height:   15px;
     overflow:      inherit;
     text-align:    center;
-    width:         1000px;
     &:focus {
         outline: 0;
     }
 }
 .luna-searcher__input {
-    transform:     translate(-50%);
-    height:        13px;
-    line-height:   13px;
+    transform:   translate(-50%);
+    height:      13px;
+    line-height: 13px;
 }
 
 
@@ -71,29 +60,35 @@
     display:        flex;
     flex-direction: column-reverse;
     position:       absolute;
-    width:          100%;
-    left:          -50%;
+    left:          -250px;
+    width:          500px;
     text-align:     center;
+    border-radius:  4px;
+    overflow:       hidden;
+    padding:        0;
+    background:     #222;
 }
 
 .luna-searcher__results__item {
-    background:      #222;
-    line-height:     16px;
-    display:         flex;
-    justify-content: center;
-    &:first-child {
-        border-bottom-right-radius: @borderRadius;
-        border-bottom-left-radius:  @borderRadius;
-        padding-bottom:             8px;
-    }
-    &:last-child {
-        border-top-right-radius: @borderRadius;
-        border-top-left-radius:  @borderRadius;
-        padding-top:             8px;
-    }
+    line-height: 24px;
 }
-
-.luna-searcher__results__item__highlighs {
-    color: @colorText;
-    font-weight: bold;
+.luna-searcher__results__item--selected {
+    background: rgba(255,255,255,.1);
 }
+.luna-searcher__pre,
+.luna-searcher__pre + span {
+    height:     24px;
+    display:    block;
+    text-align: left;
+    width:      50%;
+    float:      left;
+}
+.luna-searcher__pre {
+    opacity: .5;
+    text-align: right;
+}
+.luna-searcher__pre + span::before {
+    content: ".";
+    opacity: 0;
+}
+.luna-searcher__hl {}

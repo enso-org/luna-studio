@@ -102,17 +102,18 @@ results_ ref selected results = forKeyed_ results $ \(idx, result) ->
 highlighted_ :: QueryResult r -> ReactElementM ViewEventHandler ()
 highlighted_ result = prefixElem >> highlighted_' 0 highlights where
     prefix     = convert $ result ^. Result.prefix
-    prefixElem = span_ $ elemString $ if prefix == "" then prefix else prefix <> " . "
+    prefixElem = span_ [ "className" $= Style.prefix "searcher__pre" ] $ elemString $ if prefix == "" then prefix else prefix <> " . "
     highlights = result ^. Result.highlights
     name'      = convert $ result ^. Result.name
     highlighted_' :: Int -> [Result.Highlight] -> ReactElementM ViewEventHandler ()
     highlighted_' omit [] = span_ $ elemString $ snd $ splitAt omit name'
     highlighted_' omit (highlight:rest) = do
-        let start = highlight ^. Result.start
-            len   = highlight ^. Result.length
+        let start                 = highlight ^. Result.start
+            len                   = highlight ^. Result.length
             (r1         , r2    ) = splitAt start name'
             (_          , normal) = splitAt omit r1
             (highlighted, _     ) = splitAt len r2
-        span_ $ elemString normal
-        span_ ["className" $= Style.prefix "searcher__results__item__highlighs"] $ elemString highlighted
-        highlighted_' (start + len) rest
+        span_ $ do
+            span_ $ elemString normal
+            span_ [ "className" $= Style.prefix "searcher__hl" ] $ elemString highlighted
+            highlighted_' (start + len) rest
