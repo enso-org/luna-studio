@@ -4,18 +4,21 @@ import           Common.Prelude
 import           Control.Monad                              (filterM)
 import           LunaStudio.Data.Node                       (NodeTypecheckerUpdate, tcNodeId)
 import qualified LunaStudio.Data.Node                       as Empire
+import           LunaStudio.Data.NodeValue                  (applyType)
 import           LunaStudio.Data.Port                       (InPortIndex (Self))
 import           NodeEditor.Action.Basic.AddNode            (localAddExpressionNode, localAddInputNode, localAddOutputNode)
 import           NodeEditor.Action.Basic.Scene              (updateScene)
 import           NodeEditor.Action.Command                  (Command)
 import           NodeEditor.Action.State.Model              (shouldDisplayPortSelf)
 import qualified NodeEditor.Action.State.NodeEditor         as NodeEditor
-import           NodeEditor.React.Model.Node                (ExpressionNode, InputNode, NodeLoc, NodePath, OutputNode, inPortAt, nodeLoc)
+import           NodeEditor.React.Model.Node                (ExpressionNode, InputNode, NodeLoc, NodePath, OutputNode, inPortAt, nodeLoc,
+                                                             outPortAt)
 import           NodeEditor.React.Model.Node.ExpressionNode (isSelected)
 import qualified NodeEditor.React.Model.Node.ExpressionNode as ExpressionNode
 import qualified NodeEditor.React.Model.Node.SidebarNode    as SidebarNode
-import           NodeEditor.React.Model.Port                (Mode (Invisible), ensureVisibility, mode)
+import           NodeEditor.React.Model.Port                (Mode (Invisible), ensureVisibility, mode, valueType)
 import           NodeEditor.State.Global                    (State)
+import qualified NodeEditor.State.Global                    as Global
 
 
 localUpdateExpressionNodes :: [ExpressionNode] -> Command State ()
@@ -55,17 +58,21 @@ localUpdateExpressionNode' :: Bool -> ExpressionNode -> Command State Bool
 localUpdateExpressionNode' preventPorts node = NodeEditor.getExpressionNode (node ^. nodeLoc) >>= \case
     Nothing       -> return False
     Just prevNode -> do
-        let selected = prevNode ^. isSelected
-            mode'    = prevNode ^. ExpressionNode.mode
-            inPorts  = if preventPorts then prevNode ^. ExpressionNode.inPorts  else node ^. ExpressionNode.inPorts
-            outPorts = if preventPorts then prevNode ^. ExpressionNode.outPorts else node ^. ExpressionNode.outPorts
+        let selected    = prevNode ^. isSelected
+            mode'       = prevNode ^. ExpressionNode.mode
+            inPorts     = if preventPorts then prevNode ^. ExpressionNode.inPorts  else node ^. ExpressionNode.inPorts
+            outPorts    = if preventPorts then prevNode ^. ExpressionNode.outPorts else node ^. ExpressionNode.outPorts
         portSelfVis <- shouldDisplayPortSelf node
         let (selfMode :: Mode -> Mode) = if portSelfVis then ensureVisibility else const Invisible
-        NodeEditor.addExpressionNode $ node & isSelected              .~ selected
-                                            & ExpressionNode.mode     .~ mode'
-                                            & ExpressionNode.inPorts  .~ inPorts
-                                            & ExpressionNode.outPorts .~ outPorts
-                                            & inPortAt [Self] . mode  %~ selfMode
+        visualizers <- case node ^? outPortAt [] . valueType of
+            Nothing  -> return def
+            Just tpe -> use Global.visualizers >>= applyType tpe
+        NodeEditor.addExpressionNode $ node & isSelected                 .~ selected
+                                            & ExpressionNode.mode        .~ mode'
+                                            & ExpressionNode.inPorts     .~ inPorts
+                                            & ExpressionNode.outPorts    .~ outPorts
+                                            & ExpressionNode.visualizers .~ visualizers
+                                            & inPortAt [Self] . mode     %~ selfMode
         return True
 
 localUpdateOrAddExpressionNode :: ExpressionNode -> Command State ()

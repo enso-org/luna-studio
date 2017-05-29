@@ -1,3 +1,4 @@
+{-# LANGUAGE TupleSections #-}
 module LunaStudio.Data.NodeValue where
 
 import qualified Data.Aeson                 as Aeson
@@ -15,15 +16,18 @@ type VisualizerName    = Text
 type VisualizerPath    = Text
 type VisualizerMatcher = TypeRep -> IO (Maybe VisualizerPath)
 
-transformJSVisualizerMatcher :: (String -> IO String) -> TypeRep -> IO (Maybe VisualizerPath)
+transformJSVisualizerMatcher :: MonadIO m => (String -> m String) -> TypeRep -> m (Maybe VisualizerPath)
 transformJSVisualizerMatcher f r = case toConstructorRep r of
     Nothing -> return Nothing
     Just r' -> Aeson.decode . BS.pack <$> f (BS.unpack $ Aeson.encode r')
 
-fromJSVisualizersMap :: Map String (String -> IO String) -> Map Text (TypeRep -> IO (Maybe VisualizerPath))
+fromJSVisualizersMap :: Map String (String -> IO String) -> Map VisualizerName VisualizerMatcher
 fromJSVisualizersMap = Map.fromList . map convertEntry . Map.toList where
     convertEntry (k, v) = (convert k, transformJSVisualizerMatcher v)
 
+applyType :: MonadIO m => TypeRep -> Map VisualizerName VisualizerMatcher -> m (Map VisualizerName VisualizerPath)
+applyType tpe = fmap (Map.fromList . catMaybes) . mapM applyToEntry . Map.toList where
+    applyToEntry (k, f) = (k,) `fmap2` liftIO (f tpe)
 
 type ShortValue = Text
 
