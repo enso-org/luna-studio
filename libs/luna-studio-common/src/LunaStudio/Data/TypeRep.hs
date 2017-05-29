@@ -1,10 +1,11 @@
 module LunaStudio.Data.TypeRep where
 
-import           Control.DeepSeq (NFData)
-import           Data.Binary     (Binary)
-import           Data.Hashable   (Hashable)
-import           Data.Text       (Text)
-import           Prologue        hiding (Text, TypeRep, intercalate)
+import           Control.DeepSeq  (NFData)
+import           Data.Aeson.Types (ToJSON)
+import           Data.Binary      (Binary)
+import           Data.Hashable    (Hashable)
+import           Data.Text        (Text)
+import           Prologue         hiding (Text, TypeRep, intercalate)
 
 
 data TypeRep = TCons String  [TypeRep]
@@ -37,3 +38,14 @@ instance ToString TypeRep where
 
 instance Convertible TypeRep Text where
     convert = convert . toString ; {-# INLINE convert #-}
+
+
+data ConstructorRep = ConstructorRep { constructor :: Text
+                                     , fields      :: [ConstructorRep]
+                                     } deriving (Eq, Generic, NFData, Show)
+
+instance ToJSON ConstructorRep
+
+toConstructorRep :: TypeRep -> Maybe ConstructorRep
+toConstructorRep (TCons c f) = ConstructorRep (convert c) <$> mapM toConstructorRep f
+toConstructorRep _           = Nothing
