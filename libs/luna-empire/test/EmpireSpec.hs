@@ -1104,7 +1104,7 @@ spec = around withChannels $ parallel $ do
                     ]
                 isPatternMatch `shouldBe` True
                 connections `shouldMatchList` [(outPortRef u1 [], inPortRef u2 [])]
-        it "supports lambdas pattern matching on their argument" $ \env -> do
+        xit "supports lambdas pattern matching on their argument" $ \env -> do -- FIXME[MK, MM]: Waiting for new printer
             u1 <- mkUUID
             res <- evalEmp env $ do
                 Graph.addNode top u1 "(Foobar a b c): b" def
@@ -1134,7 +1134,7 @@ spec = around withChannels $ parallel $ do
                 connections `shouldMatchList` [
                       (outPortRef (input ^. Node.nodeId) [Port.Projection 0, Port.Projection 1], inPortRef (output ^. Node.nodeId) [])
                     ]
-        it "supports multi-parameter lambdas pattern matching on their arguments" $ \env -> do
+        xit "supports multi-parameter lambdas pattern matching on their arguments" $ \env -> do -- FIXME[MK, MM]: Waiting for new printer
             u1 <- mkUUID
             res <- evalEmp env $ do
                 Graph.addNode top u1 "(Foobar a b (Just c)): x: (Quux y z): c" def
