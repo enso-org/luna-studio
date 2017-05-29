@@ -20,9 +20,9 @@ data NodeValue = NodeValue ShortValue [VisualizationValue]
                | NodeError Error
                deriving (Eq, Generic, NFData, Show)
 
-data NodeVisualization = NodeVisualization { _visualizationValue :: VisualizationValue
-                                           , _visualizationId    :: Int
-                                           , _isPinned           :: Bool
+data NodeVisualization = NodeVisualization { _visualizerName     :: VisualizerName
+                                           , _visualizerPath     :: VisualizerPath
+                                           , _visualizationData  :: VisualizationValue
                                            } deriving (Eq, Generic, NFData, Show)
 
 makePrisms ''NodeValue
