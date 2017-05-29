@@ -14,28 +14,6 @@
     cursor: col-resize;
 }
 
-.luna-searcher-results {
-    overflow: hidden;
-    .luna-result-selected {
-        overflow:   hidden;
-        background: @colorSelect;
-    }
-    .luna-result {
-        overflow: hidden;
-    }
-    .luna-result-prefix {
-        width:      100px;
-        display:    block;
-        float:      left;
-        text-align: right;
-    }
-    .luna-result-name {
-        width:       100px;
-        margin-left: 4px;
-        float:       left;
-    }
-}
-
 .luna-message-container {
     position:   fixed;
     top:        0;
@@ -89,7 +67,6 @@
         }
     }
 }
-.luna-node-searcher svg { overflow: inherit }
 
 .luna-scrollbar(@backgroundColor, @slider, @radius) {
     &::-webkit-scrollbar {
@@ -128,6 +105,28 @@
 }
 
 // searcher
+.luna-searcher-results {
+    overflow: hidden;
+    .luna-result-selected {
+        overflow:   hidden;
+        background: @colorSelect;
+    }
+    .luna-result {
+        overflow: hidden;
+    }
+    .luna-result-prefix {
+        width:      100px;
+        display:    block;
+        float:      left;
+        text-align: right;
+    }
+    .luna-result-name {
+        width:       100px;
+        margin-left: 4px;
+        float:       left;
+    }
+}
+.luna-node-searcher svg { overflow: inherit }
 
 .luna-searcher__results__item--selected {
     background:      #FF9900 !important;

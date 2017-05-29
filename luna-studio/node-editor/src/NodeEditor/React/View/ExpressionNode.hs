@@ -87,13 +87,14 @@ node :: ReactView (Ref App, ExpressionNode, Maybe Searcher)
 node = React.defineView name $ \(ref, n, maySearcher) -> case n ^. Node.mode of
     Node.Expanded (Node.Function fs) -> nodeContainer_ ref maySearcher $ Map.elems fs
     _ -> do
-        let nodeId          = n ^. Node.nodeId
-            nodeLoc         = n ^. Node.nodeLoc
-            nodeLimit       = 10000::Int
-            zIndex          = n ^. Node.zPos
-            z               = if isCollapsed n then zIndex else zIndex + nodeLimit
-            isVisualization = Prop.fromNode n ^. Prop.visualizationsEnabled
-            hasSelf         = any (\p -> (Port.isSelf $ p ^. Port.portId) && (not $ Port.isInvisible p)) $ Node.inPortsList n
+        let nodeId       = n ^. Node.nodeId
+            nodeLoc      = n ^. Node.nodeLoc
+            nodeLimit    = 10000::Int
+            zIndex       = n ^. Node.zPos
+            z            = if isCollapsed n then zIndex else zIndex + nodeLimit
+            isVisEnabled = Prop.fromNode n ^. Prop.visualizationsEnabled
+            hasVis       = if n ^. Node.value == Nothing then False else True
+            hasSelf      = any (\p -> (Port.isSelf $ p ^. Port.portId) && (not $ Port.isInvisible p)) $ Node.inPortsList n
         div_
             [ "key"       $= (nodePrefix <> fromString (show nodeId))
             , "id"        $= (nodePrefix <> fromString (show nodeId))
@@ -118,7 +119,8 @@ node = React.defineView name $ \(ref, n, maySearcher) -> case n ^. Node.mode of
                 , "className" $= Style.prefixFromList ["node__results", "node-translate"]
                 ] $ do
                 nodeShortValue_ n
-                if isVisualization then nodeVisualizations_ ref n else return ()
+                if isVisEnabled then nodeVisualizations_ ref n else return ()
+
             nodePorts_ ref n
 
 nodeDynamicStyles_ :: Matrix Double -> ExpressionNode -> ReactElementM ViewEventHandler ()

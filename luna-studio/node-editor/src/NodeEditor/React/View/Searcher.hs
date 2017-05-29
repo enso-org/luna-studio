@@ -58,7 +58,7 @@ searcher =  React.defineView name $ \(ref, s) -> do
                 [ "key"         $= "searchInput"
                 , "className"   $= Style.prefix "searcher__input"
                 , "id"          $= searcherId
-                , "placeholder" $= "Command search…"
+                , "placeholder" $= ""
                 , onKeyDown     $ handleKeyDown ref
                 , onKeyUp       $ \_ k -> dispatch ref $ UI.SearcherEvent $ KeyUp k
                 , onChange      $ \e -> let val = target e "value"

@@ -72,7 +72,7 @@ visualization = React.defineView viewName $ \(ref, nl, mayPos, nodeValue) ->
     div_ [ "className" $= Style.prefixFromList [ "noselect" ] ] $
         case nodeValue of
             NodeValue _ valueReprs -> mapM_ (uncurry $ nodeValue_ ref nl mayPos) $ keyed valueReprs
-            _                             -> mempty
+            _                      -> mempty
 -- iframe_
 --     [ "srcDoc" $= ("<style>"
 --                 <> "* { font:12px/16px Hasklig, monospace;color: #fff; padding:0; margin:0; border:none; }"
