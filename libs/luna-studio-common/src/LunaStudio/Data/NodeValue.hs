@@ -1,9 +1,14 @@
 module LunaStudio.Data.NodeValue where
 
-import           Data.Binary           (Binary)
-import           Data.Text             (Text)
-import           LunaStudio.Data.Error (Error)
-import           Prologue              hiding (Text, TypeRep)
+import           Data.Binary             (Binary)
+import           Data.Text               (Text)
+import           LunaStudio.Data.Error   (Error)
+import           LunaStudio.Data.TypeRep (TypeRep)
+import           Prologue                hiding (Text, TypeRep)
+
+type VisualizerName    = Text
+type VisualizerPath    = Text
+type VisualizerMatcher = TypeRep -> IO (Maybe VisualizerPath)
 
 type ShortValue = Text
 
