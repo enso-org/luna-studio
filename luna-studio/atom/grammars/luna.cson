@@ -4,5 +4,5 @@
 'scopeName': 'source.luna'
 'name': 'Luna'
 'fileTypes': [
-  '.luna'
+  'luna'
 ]

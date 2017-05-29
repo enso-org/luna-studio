@@ -52,6 +52,7 @@ class LunaSemanticGrammar extends Grammar
     constructor: (registry, lex) ->
         name = "Luna (Semantic Highlighting)"
         @scopeName = "source.luna"
+        @fileTypes = ["luna"]
         super(registry, {name, @scopeName})
         @lex = lex
 
