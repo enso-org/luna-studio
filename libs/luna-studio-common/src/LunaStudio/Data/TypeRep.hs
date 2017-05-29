@@ -3,7 +3,6 @@ module LunaStudio.Data.TypeRep where
 import           Control.DeepSeq  (NFData)
 import           Data.Aeson.Types (ToJSON)
 import           Data.Binary      (Binary)
-import           Data.Hashable    (Hashable)
 import           Data.Text        (Text)
 import           Prologue         hiding (Text, TypeRep, intercalate)
 
@@ -16,8 +15,7 @@ data TypeRep = TCons String  [TypeRep]
              | TAcc  String TypeRep
              deriving (Eq, Generic, NFData, Show)
 
-instance Binary   TypeRep
-instance Hashable TypeRep
+instance Binary TypeRep
 
 instance ToString TypeRep where
     toString = toString' False False where

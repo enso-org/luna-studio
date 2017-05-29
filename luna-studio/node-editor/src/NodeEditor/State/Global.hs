@@ -3,25 +3,24 @@
 module NodeEditor.State.Global where
 
 import           Common.Prelude
-import           Data.DateTime                            (DateTime)
-import           Data.Map                                 (Map)
-import           Data.Set                                 (Set)
-import           Data.UUID.Types                          (UUID)
-import           Data.Word                                (Word8)
+import           Data.DateTime                        (DateTime)
+import           Data.Map                             (Map)
+import           Data.Set                             (Set)
+import           Data.UUID.Types                      (UUID)
+import           Data.Word                            (Word8)
+import           LunaStudio.Data.NodeLoc              (NodeLoc)
 import           LunaStudio.API.Graph.CollaborationUpdate (ClientId)
-import           LunaStudio.Data.NodeLoc                  (NodeLoc)
-import           NodeEditor.Action.Command                (Command)
-import           NodeEditor.Batch.Workspace               (Workspace)
-import qualified NodeEditor.Batch.Workspace               as Workspace
-import           NodeEditor.Event.Event                   (Event)
-import           NodeEditor.React.Model.App               (App)
-import           NodeEditor.React.Store                   (Ref)
-import           NodeEditor.State.Action                  (ActionRep, Connect, SomeAction)
-import qualified NodeEditor.State.Collaboration           as Collaboration
-import qualified NodeEditor.State.UI                      as UI
-import           System.Random                            (StdGen)
-import qualified System.Random                            as Random
-
+import           NodeEditor.Action.Command            (Command)
+import           NodeEditor.Batch.Workspace           (Workspace)
+import qualified NodeEditor.Batch.Workspace           as Workspace
+import           NodeEditor.Event.Event               (Event)
+import           NodeEditor.React.Model.App           (App)
+import           NodeEditor.React.Store               (Ref)
+import           NodeEditor.State.Action              (ActionRep, Connect, SomeAction)
+import qualified NodeEditor.State.Collaboration       as Collaboration
+import qualified NodeEditor.State.UI                  as UI
+import           System.Random                        (StdGen)
+import qualified System.Random                        as Random
 
 -- TODO: Reconsider our design. @wdanilo says that we shouldn't use MonadState at all
 data State = State
